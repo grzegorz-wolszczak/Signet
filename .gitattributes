@@ -1,0 +1,18 @@
+# Set the default behavior, in case people don't have core.autocrlf set.
+#* text=auto
+
+
+# Declare files that will always have CRLF line endings on checkout.
+*.sln text eol=crlf
+*.csproj text eol=crlf
+*.cs text eol=crlf
+*.ps1 text eol=crlf
+
+*.sh text eol=lf
+
+*.bin binary
+
+# Embedded reference data tables - byte-stable on every platform.
+src/Signet.Core/EmbeddedData/*.tsv text eol=lf
+src/Signet.Core/EmbeddedData/*.json text eol=lf
+src/Signet.Core/EmbeddedData/*.gz binary
