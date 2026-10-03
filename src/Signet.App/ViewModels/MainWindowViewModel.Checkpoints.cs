@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Signet.App.Actions;
 using Signet.App.Docking;
 using Signet.App.Resources;
+using Signet.App.Services;
 using Signet.App.Tabs;
 using Signet.Core;
 using Signet.Core.BookManipulation;
@@ -132,7 +133,7 @@ public sealed partial class MainWindowViewModel
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             _logger.LogError(ex, "Failed to compare the checkpoint");
-            _statusBar.ShowMessage(Strings.Format("Status_CheckpointError", ex.Message), TimeSpan.FromSeconds(6));
+            _statusBar.ShowMessage(Strings.Format("Status_CheckpointError", ex.Message), TimeSpan.FromSeconds(6), NotificationLevel.Warning);
             return null;
         }
 
@@ -195,7 +196,7 @@ public sealed partial class MainWindowViewModel
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
         {
             _logger.LogError(ex, "Failed to start the checkpoint history");
-            _statusBar.ShowMessage(Strings.Format("Status_CheckpointError", ex.Message), TimeSpan.FromSeconds(6));
+            _statusBar.ShowMessage(Strings.Format("Status_CheckpointError", ex.Message), TimeSpan.FromSeconds(6), NotificationLevel.Warning);
         }
 
         RefreshCheckpointActions();
@@ -218,7 +219,7 @@ public sealed partial class MainWindowViewModel
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
         {
             _logger.LogError(ex, "Failed to create a checkpoint");
-            _statusBar.ShowMessage(Strings.Format("Status_CheckpointError", ex.Message), TimeSpan.FromSeconds(6));
+            _statusBar.ShowMessage(Strings.Format("Status_CheckpointError", ex.Message), TimeSpan.FromSeconds(6), NotificationLevel.Warning);
             return false;
         }
     }
@@ -241,7 +242,7 @@ public sealed partial class MainWindowViewModel
         catch (Exception ex) when (ex is EpubLoadException or IOException or UnauthorizedAccessException or InvalidOperationException)
         {
             _logger.LogError(ex, "Failed to restore the checkpoint");
-            _statusBar.ShowMessage(Strings.Format("Status_CheckpointError", ex.Message), TimeSpan.FromSeconds(6));
+            _statusBar.ShowMessage(Strings.Format("Status_CheckpointError", ex.Message), TimeSpan.FromSeconds(6), NotificationLevel.Warning);
             return;
         }
 

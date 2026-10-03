@@ -531,6 +531,45 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public void Blocked_action_shows_the_notifications_panel_collapsed_with_an_unread_warning()
+    {
+        using TempDir temp = new();
+        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub2Minimal, temp);
+        MainWindowViewModel sut = New();
+        sut.LoadBook(new ImportEpub(epub).GetBook(), epub);
+        var factory = (MainDockFactory)sut.DockFactory;
+        factory.IsToolVisible(DockableIds.Notifications).Should().BeFalse("the panel is hidden until needed");
+        sut.HasUnreadWarnings.Should().BeFalse("the 'book loaded' message is only informational");
+
+        // "Add Nav to Reading Order" is not available for EPUB 2 — the action is blocked.
+        sut.Actions.Require(AppActionIds.AddNavToSpine).Execute(null);
+
+        sut.Notifications.Entries[0].IsWarning.Should().BeTrue();
+        sut.IsStatusMessageWarning.Should().BeTrue();
+        factory.IsToolVisible(DockableIds.Notifications).Should().BeTrue();
+        factory.IsToolPinned(DockableIds.Notifications).Should().BeTrue("the panel appears collapsed, not over the editor");
+        sut.HasUnreadWarnings.Should().BeTrue();
+        sut.UnreadWarningsText.Should().Be("1");
+
+        sut.OpenNotificationsCommand.Execute(null);
+
+        sut.HasUnreadWarnings.Should().BeFalse("opening the panel marks the warnings as read");
+    }
+
+    [Fact]
+    public void Notifications_panel_action_toggles_the_panel()
+    {
+        MainWindowViewModel sut = New();
+        var factory = (MainDockFactory)sut.DockFactory;
+
+        sut.Actions.Require(AppActionIds.ToggleNotifications).Execute(null);
+        factory.IsToolVisible(DockableIds.Notifications).Should().BeTrue();
+
+        sut.Actions.Require(AppActionIds.ToggleNotifications).Execute(null);
+        factory.IsToolVisible(DockableIds.Notifications).Should().BeFalse();
+    }
+
+    [Fact]
     public void Format_actions_are_enabled_only_for_an_html_code_tab()
     {
         using TempDir temp = new();

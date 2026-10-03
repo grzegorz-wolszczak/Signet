@@ -102,7 +102,7 @@ public sealed class AppActionRegistry
 
         string label = StripMnemonics(action.DefaultText);
         _logger.LogInformation("Action without implementation: {ActionId} ({Label})", action.Id, label);
-        _statusBar.ShowMessage(Strings.Format("Status_NotImplemented", label), TimeSpan.FromSeconds(4));
+        _statusBar.ShowMessage(Strings.Format("Status_NotImplemented", label), TimeSpan.FromSeconds(4), NotificationLevel.Warning);
     }
 
     private static void ApplyShortcut(AppAction action, KeyboardShortcut shortcut)

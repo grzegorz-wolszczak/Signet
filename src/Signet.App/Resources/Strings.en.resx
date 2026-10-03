@@ -3413,4 +3413,22 @@ You can later restore the book to this checkpoint via the "Revert to..." entries
   <data name="LoadWarningsDialog_Copy" xml:space="preserve">
     <value>Copy</value>
   </data>
+  <data name="Action_MainWindow_NotificationsWindow" xml:space="preserve">
+    <value>&amp;Notifications Panel</value>
+  </data>
+  <data name="Panel_Notifications" xml:space="preserve">
+    <value>Notifications</value>
+  </data>
+  <data name="NotificationsView_Empty" xml:space="preserve">
+    <value>No notifications.</value>
+  </data>
+  <data name="NotificationsView_Clear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="MainWindow_UnreadWarningsTooltip" xml:space="preserve">
+    <value>Unread warnings: {0}. Click to open the Notifications panel.</value>
+  </data>
+  <data name="MainWindow_StatusMessageTooltip" xml:space="preserve">
+    <value>Click to open the Notifications panel (message history).</value>
+  </data>
 </root>

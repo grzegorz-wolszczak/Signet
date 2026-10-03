@@ -93,13 +93,13 @@ public sealed class ImageTabViewModel : ContentTabViewModel
         }
         catch (IOException ex)
         {
-            _statusBar.ShowMessage(Strings.Format("ImageTab_SaveFailed", ex.Message), TimeSpan.FromSeconds(6));
+            _statusBar.ShowMessage(Strings.Format("ImageTab_SaveFailed", ex.Message), TimeSpan.FromSeconds(6), NotificationLevel.Warning);
             return;
         }
 
         if (!ok)
         {
-            _statusBar.ShowMessage(Strings.Get("ImageTab_ResizeFailed"), TimeSpan.FromSeconds(6));
+            _statusBar.ShowMessage(Strings.Get("ImageTab_ResizeFailed"), TimeSpan.FromSeconds(6), NotificationLevel.Warning);
             return;
         }
 

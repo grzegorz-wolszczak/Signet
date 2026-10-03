@@ -195,6 +195,7 @@ public static class AppActionCatalog
         new("MainWindow.ValidationResults", "&Validation Results", "Alt+F2", null, "View"),
         new("MainWindow.CheckpointsWindow", "C&heckpoints", "", null, "View"),
         new("MainWindow.FindReplaceWindow", "&Find && Replace Panel", "", null, "View"),
+        new("MainWindow.NotificationsWindow", "&Notifications Panel", "", null, "View"),
         new("MainWindow.FocusOnBookBrowser", "Focus on Book Browser", "", null, "View"),
         new("MainWindow.FocusOnCodeView", "Focus on Code View", "", null, "View"),
         new("MainWindow.FocusOnPreview", "Focus on Preview", "", null, "View"),

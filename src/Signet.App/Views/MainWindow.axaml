@@ -42,6 +42,16 @@
       <Style Selector="SplitButton.toolbar:disabled">
         <Setter Property="Opacity" Value="0.4" />
       </Style>
+      <!-- The status bar message: a flat clickable area (opens the Notifications panel). -->
+      <Style Selector="Button.statusMessage">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="MinHeight" Value="0" />
+      </Style>
+      <Style Selector="TextBlock.warning">
+        <Setter Property="Foreground" Value="{DynamicResource SignetWarningBrush}" />
+      </Style>
       <!-- Find & Replace sits below the document tab area (below the editor),
            not below the whole window: the DocumentDockControl template from Dock.Avalonia.Themes.Fluent
            (v12.1.0.6) extended with a FindReplacePanel docked at the bottom. The panel takes its context
@@ -129,12 +139,33 @@
     <Border DockPanel.Dock="Bottom"
             Padding="8,3"
             Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
-      <Grid ColumnDefinitions="*,Auto">
-        <TextBlock Grid.Column="0"
-                   Text="{Binding StatusMessage}"
-                   VerticalAlignment="Center"
-                   TextTrimming="CharacterEllipsis" />
-        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+      <Grid ColumnDefinitions="*,Auto,Auto">
+        <Button Grid.Column="0" x:Name="StatusMessageButton"
+                Classes="statusMessage"
+                HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                VerticalAlignment="Stretch" VerticalContentAlignment="Center"
+                Command="{Binding OpenNotificationsCommand}"
+                IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                ToolTip.Tip="{loc:Loc MainWindow_StatusMessageTooltip}">
+          <TextBlock Text="{Binding StatusMessage}"
+                     Classes.warning="{Binding IsStatusMessageWarning}"
+                     TextTrimming="CharacterEllipsis" />
+        </Button>
+        <!-- Unread warnings: a bell + count; a click opens the Notifications panel. -->
+        <Button Grid.Column="1" x:Name="UnreadWarningsButton"
+                Classes="toolbar" Padding="4,0" Margin="8,0,0,0"
+                Command="{Binding OpenNotificationsCommand}"
+                IsVisible="{Binding HasUnreadWarnings}"
+                ToolTip.Tip="{Binding UnreadWarningsTooltip}">
+          <StackPanel Orientation="Horizontal" Spacing="3">
+            <Path Data="{StaticResource SignetBellGeometry}"
+                  Fill="{DynamicResource SignetWarningBrush}"
+                  Stretch="Uniform" Width="13" Height="13" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding UnreadWarningsText}"
+                       Classes="warning" FontWeight="SemiBold" VerticalAlignment="Center" />
+          </StackPanel>
+        </Button>
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" Margin="8,0,0,0">
           <TextBlock Text="{Binding TabStatus}"
                      VerticalAlignment="Center"
                      IsVisible="{Binding TabStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />

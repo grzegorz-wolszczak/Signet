@@ -303,7 +303,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
 
         if (entry.ResourceType == ResourceType.Opf)
         {
-            _statusBar.ShowMessage(Strings.Get("BookBrowser_CannotRenameOpf"), TimeSpan.FromSeconds(4));
+            _statusBar.ShowMessage(Strings.Get("BookBrowser_CannotRenameOpf"), TimeSpan.FromSeconds(4), NotificationLevel.Warning);
             return;
         }
 
@@ -313,13 +313,13 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
             if (_model is not null && !_model.RenameResource(entry.Resource, newFilename.Trim(), out string? error))
             {
                 Rewind(checkpoint);
-                _statusBar.ShowMessage(error ?? Strings.Get("BookBrowser_RenameFailed"), TimeSpan.FromSeconds(5));
+                _statusBar.ShowMessage(error ?? Strings.Get("BookBrowser_RenameFailed"), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
             }
         }
         catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or System.IO.IOException)
         {
             Rewind(checkpoint);
-            _statusBar.ShowMessage(Strings.Format("BookBrowser_RenameFailedDetail", ex.Message), TimeSpan.FromSeconds(5));
+            _statusBar.ShowMessage(Strings.Format("BookBrowser_RenameFailedDetail", ex.Message), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
         }
 
         _model?.Refresh();
@@ -347,21 +347,21 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         string navBookPath = opf.EpubVersion.StartsWith('3') ? opf.GetNavResourceBookPath() : string.Empty;
         if (navBookPath.Length > 0 && removable.Any(r => string.Equals(r.BookPath, navBookPath, StringComparison.Ordinal)))
         {
-            _statusBar.ShowMessage(Strings.Get("BookBrowser_CannotDeleteNav"), TimeSpan.FromSeconds(4));
+            _statusBar.ShowMessage(Strings.Get("BookBrowser_CannotDeleteNav"), TimeSpan.FromSeconds(4), NotificationLevel.Warning);
             return;
         }
 
         NcxResource? ncx = _book.GetNcx();
         if (ncx is not null && removable.Contains(ncx))
         {
-            _statusBar.ShowMessage(Strings.Get("BookBrowser_CannotDeleteNcx"), TimeSpan.FromSeconds(4));
+            _statusBar.ShowMessage(Strings.Get("BookBrowser_CannotDeleteNcx"), TimeSpan.FromSeconds(4), NotificationLevel.Warning);
             return;
         }
 
         int htmlCountAfterRemoval = _book.GetHtmlResources().Count - removable.OfType<HtmlResource>().Count();
         if (htmlCountAfterRemoval < 1)
         {
-            _statusBar.ShowMessage(Strings.Get("BookBrowser_CannotDeleteAllHtml"), TimeSpan.FromSeconds(5));
+            _statusBar.ShowMessage(Strings.Get("BookBrowser_CannotDeleteAllHtml"), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
             return;
         }
 
@@ -374,7 +374,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         catch (Exception ex) when (ex is InvalidOperationException or System.IO.IOException)
         {
             Rewind(checkpoint);
-            _statusBar.ShowMessage(Strings.Format("BookBrowser_DeleteFailed", ex.Message), TimeSpan.FromSeconds(5));
+            _statusBar.ShowMessage(Strings.Format("BookBrowser_DeleteFailed", ex.Message), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
         }
 
         _model?.Refresh();
@@ -412,7 +412,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or System.IO.IOException)
         {
             Rewind(checkpoint);
-            _statusBar.ShowMessage(Strings.Format("BookBrowser_AddFilesFailed", ex.Message), TimeSpan.FromSeconds(5));
+            _statusBar.ShowMessage(Strings.Format("BookBrowser_AddFilesFailed", ex.Message), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
         }
     }
 
@@ -432,7 +432,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
 
         if (!RenameTemplateNaming.IsTemplateNameValid(templateName, out string? templateError))
         {
-            _statusBar.ShowMessage(templateError ?? Strings.Get("BookBrowser_InvalidTemplate"), TimeSpan.FromSeconds(5));
+            _statusBar.ShowMessage(templateError ?? Strings.Get("BookBrowser_InvalidTemplate"), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
             return;
         }
 
@@ -445,7 +445,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
 
         if (newFilenames is null)
         {
-            _statusBar.ShowMessage(buildError ?? Strings.Get("BookBrowser_NamesFailed"), TimeSpan.FromSeconds(5));
+            _statusBar.ShowMessage(buildError ?? Strings.Get("BookBrowser_NamesFailed"), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
             return;
         }
 
@@ -485,7 +485,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
             string message = wellFormedErrors.Count > 0
                 ? Strings.Format("BookBrowser_RenameRejectedXml", string.Join(", ", wellFormedErrors))
                 : Strings.Format("BookBrowser_RenameFailedDetail", string.Join(", ", notRenamed));
-            _statusBar.ShowMessage(message, TimeSpan.FromSeconds(6));
+            _statusBar.ShowMessage(message, TimeSpan.FromSeconds(6), NotificationLevel.Warning);
         }
 
         _model?.Refresh();
@@ -528,7 +528,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         if (!ok)
         {
             Rewind(checkpoint);
-            _statusBar.ShowMessage(error ?? Strings.Get("BookBrowser_MoveFailed"), TimeSpan.FromSeconds(5));
+            _statusBar.ShowMessage(error ?? Strings.Get("BookBrowser_MoveFailed"), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
         }
 
         _model?.Refresh();
@@ -625,7 +625,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         // Only a single file is edited in the tree; the OPF cannot be renamed.
         if (_selection[0].Entry!.ResourceType == ResourceType.Opf)
         {
-            _statusBar.ShowMessage(Strings.Get("BookBrowser_CannotRenameOpf"), TimeSpan.FromSeconds(4));
+            _statusBar.ShowMessage(Strings.Get("BookBrowser_CannotRenameOpf"), TimeSpan.FromSeconds(4), NotificationLevel.Warning);
             return;
         }
 
@@ -802,7 +802,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         }
         catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException)
         {
-            _statusBar.ShowMessage(Strings.Format("BookBrowser_SaveFailed", ex.Message), TimeSpan.FromSeconds(5));
+            _statusBar.ShowMessage(Strings.Format("BookBrowser_SaveFailed", ex.Message), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
         }
     }
 
@@ -853,7 +853,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         if (rejected is not null)
         {
             Rewind(checkpoint);
-            _statusBar.ShowMessage(Strings.Get("BookBrowser_CannotMergeNav"), TimeSpan.FromSeconds(4));
+            _statusBar.ShowMessage(Strings.Get("BookBrowser_CannotMergeNav"), TimeSpan.FromSeconds(4), NotificationLevel.Warning);
             return;
         }
 
@@ -963,7 +963,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         {
             _statusBar.ShowMessage(
                 Strings.Format("Status_CancelledNotWellFormed", operationName, result.NotWellFormed?.Filename),
-                TimeSpan.FromSeconds(6));
+                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
             return;
         }
 

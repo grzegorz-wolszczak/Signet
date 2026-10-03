@@ -201,6 +201,7 @@ public static class AppActionIds
     public const string ToggleToc = "MainWindow.TableOfContents";
     public const string ToggleValidationResults = "MainWindow.ValidationResults";
     public const string ToggleCheckpoints = "MainWindow.CheckpointsWindow";
+    public const string ToggleNotifications = "MainWindow.NotificationsWindow";
     public const string ToggleFindReplace = "MainWindow.FindReplaceWindow";
 
     /// <summary>

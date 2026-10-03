@@ -157,7 +157,7 @@ public sealed class TabManager : IDisposable
         if (ContentTabKindMap.ForResource(resource) == ContentTabKind.Unsupported)
         {
             _statusBar.ShowMessage(
-                Strings.Format("Tabs_CannotOpenFile", resource.Filename), TimeSpan.FromSeconds(4));
+                Strings.Format("Tabs_CannotOpenFile", resource.Filename), TimeSpan.FromSeconds(4), NotificationLevel.Warning);
             return;
         }
 
@@ -467,7 +467,7 @@ public sealed class TabManager : IDisposable
         Resource? target = book.GetFolderKeeper().GetResourceByBookPathNoThrow(targetBookPath);
         if (target is null)
         {
-            _statusBar.ShowMessage(Strings.Format("Tabs_FileNotInBook", targetBookPath), TimeSpan.FromSeconds(4));
+            _statusBar.ShowMessage(Strings.Format("Tabs_FileNotInBook", targetBookPath), TimeSpan.FromSeconds(4), NotificationLevel.Warning);
             return;
         }
 

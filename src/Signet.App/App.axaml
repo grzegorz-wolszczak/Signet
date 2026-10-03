@@ -1,6 +1,7 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:dockFluent="using:Dock.Avalonia.Themes.Fluent"
+             xmlns:dock="using:Dock.Avalonia.Controls"
              xmlns:docking="using:Signet.App.Docking"
              xmlns:views="using:Signet.App.Views"
              xmlns:tabViews="using:Signet.App.Views.Tabs"
@@ -29,6 +30,10 @@
 
     <DataTemplate DataType="docking:ClipsTool">
       <views:ClipsPanelView DataContext="{Binding ViewModel}" />
+    </DataTemplate>
+
+    <DataTemplate DataType="docking:NotificationsTool">
+      <views:NotificationsView DataContext="{Binding ViewModel}" />
     </DataTemplate>
 
     <DataTemplate DataType="docking:CheckpointsTool">
@@ -73,12 +78,19 @@
         <ResourceDictionary x:Key="Light">
           <SolidColorBrush x:Key="SignetTextSelectionBrush" Color="#ADD6FF" />
           <SolidColorBrush x:Key="SignetTextSelectionForegroundBrush" Color="#000000" />
+          <!-- Warnings (Notifications panel, status bar indicator, attention tabs). -->
+          <SolidColorBrush x:Key="SignetWarningBrush" Color="#B35C00" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
           <SolidColorBrush x:Key="SignetTextSelectionBrush" Color="#264F78" />
           <SolidColorBrush x:Key="SignetTextSelectionForegroundBrush" Color="#FFFFFF" />
+          <SolidColorBrush x:Key="SignetWarningBrush" Color="#FFB900" />
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
+
+      <!-- Notification icons (16×16, drawn for Signet). -->
+      <StreamGeometry x:Key="SignetBellGeometry">M8,1.5 C5.5,1.5 4,3.5 4,6 L4,9.5 L2.5,11.5 L13.5,11.5 L12,9.5 L12,6 C12,3.5 10.5,1.5 8,1.5 Z M6.3,12.5 C6.5,13.5 7.2,14.3 8,14.3 C8.8,14.3 9.5,13.5 9.7,12.5 Z</StreamGeometry>
+      <StreamGeometry x:Key="SignetWarningGeometry">F1 M8,1 L15.5,14.5 L0.5,14.5 Z M7.2,5.5 L8.8,5.5 L8.5,10 L7.5,10 Z M7.2,11.2 L8.8,11.2 L8.8,12.8 L7.2,12.8 Z</StreamGeometry>
     </ResourceDictionary>
   </Application.Resources>
 
@@ -100,6 +112,24 @@
     <Style Selector="TextBox">
       <Setter Property="SelectionBrush" Value="{DynamicResource SignetTextSelectionBrush}" />
       <Setter Property="SelectionForegroundBrush" Value="{DynamicResource SignetTextSelectionForegroundBrush}" />
+    </Style>
+
+    <!-- Dock tabs of a panel that needs attention (the Notifications panel with unread warnings):
+         SignetTool.NeedsAttention → the "attention" class (DockAttention) → the warning color. -->
+    <Style Selector="dock|ToolTabStripItem" x:DataType="docking:SignetTool">
+      <Setter Property="docking:DockAttention.IsActive" Value="{Binding NeedsAttention, FallbackValue=False}" />
+    </Style>
+    <Style Selector="dock|ToolPinItemControl" x:DataType="docking:SignetTool">
+      <Setter Property="docking:DockAttention.IsActive" Value="{Binding NeedsAttention, FallbackValue=False}" />
+    </Style>
+    <Style Selector="dock|ToolTabStripItem.attention, dock|ToolPinItemControl.attention">
+      <Setter Property="Foreground" Value="{DynamicResource SignetWarningBrush}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <!-- A collapsed ("Auto Hide") tab draws its title inside a Button with its own foreground. -->
+    <Style Selector="dock|ToolPinItemControl.attention /template/ Button">
+      <Setter Property="Foreground" Value="{DynamicResource SignetWarningBrush}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
     </Style>
 
     <!-- Spinner buttons (NumericUpDown, ButtonSpinner): "down" on the left, "up" on the right.

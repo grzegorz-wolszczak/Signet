@@ -63,6 +63,7 @@ public sealed partial class MainWindowViewModel
     private readonly AppActionRegistry _actions;
     private readonly ToolbarManager _toolbarManager;
     private readonly MainDockFactory _dockFactory;
+    private readonly NotificationsViewModel _notifications;
     private readonly IStatusBarService _statusBar;
     private readonly SettingsStore _settings;
     private readonly TabManager _tabManager;
@@ -185,6 +186,9 @@ public sealed partial class MainWindowViewModel
 
         InitCheckpoints();
 
+        _notifications = new NotificationsViewModel(statusBar);
+        InitNotifications();
+
         Layout = _dockFactory.CreateLayout();
         _dockFactory.InitLayout(Layout);
         // RestoreDockLayout() is disabled: restoring a saved layout could degenerate the
@@ -194,6 +198,7 @@ public sealed partial class MainWindowViewModel
         RestoreSideRegionWidths();
         RestorePanelVisibility();
         WirePanelActions();
+        WireNotificationsActions();
         MarkCheckableFormatActions();
         if (_actions.Get(AppActionIds.WordWrap) is { } wordWrapAction)
         {
@@ -800,7 +805,7 @@ public sealed partial class MainWindowViewModel
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error initializing the publication at startup");
-            _statusBar.ShowMessage(Strings.Get("Status_StartupBookFailed"), TimeSpan.FromSeconds(6));
+            _statusBar.ShowMessage(Strings.Get("Status_StartupBookFailed"), TimeSpan.FromSeconds(6), NotificationLevel.Warning);
         }
 
         RefreshTitle();
@@ -967,7 +972,8 @@ public sealed partial class MainWindowViewModel
             book.LoadWarnings.Count > 0
                 ? Strings.Format("Status_BookLoadedWithWarnings", book.LoadWarnings.Count)
                 : Strings.Get("Status_BookLoaded"),
-            TimeSpan.FromSeconds(book.LoadWarnings.Count > 0 ? 6 : 3));
+            TimeSpan.FromSeconds(book.LoadWarnings.Count > 0 ? 6 : 3),
+            book.LoadWarnings.Count > 0 ? NotificationLevel.Warning : NotificationLevel.Info);
     }
 
     // ------------------------------------------------------ IRecentFilesMenu --- //
@@ -1098,7 +1104,7 @@ public sealed partial class MainWindowViewModel
             .FirstOrDefault(r => string.Equals(r.BookPath, bookmark.BookPath, StringComparison.Ordinal));
         if (resource is null)
         {
-            _statusBar.ShowMessage(Strings.Get("Status_NavigationFileGone"), TimeSpan.FromSeconds(4));
+            _statusBar.ShowMessage(Strings.Get("Status_NavigationFileGone"), TimeSpan.FromSeconds(4), NotificationLevel.Warning);
             _bookmarks.Remove(bookmark);
             BookmarksChangedInternal?.Invoke(this, EventArgs.Empty);
             return;
@@ -1138,7 +1144,7 @@ public sealed partial class MainWindowViewModel
             .FirstOrDefault(r => string.Equals(r.BookPath, entry.TargetBookPath, StringComparison.Ordinal));
         if (resource is null)
         {
-            _statusBar.ShowMessage(Strings.Format("Status_TocTargetMissing", entry.TargetBookPath), TimeSpan.FromSeconds(4));
+            _statusBar.ShowMessage(Strings.Format("Status_TocTargetMissing", entry.TargetBookPath), TimeSpan.FromSeconds(4), NotificationLevel.Warning);
             return;
         }
 
@@ -1224,7 +1230,7 @@ public sealed partial class MainWindowViewModel
     {
         if (_fileWorkflow is null)
         {
-            _statusBar.ShowMessage(Strings.Get("Status_FileOperationsNotReady"), TimeSpan.FromSeconds(3));
+            _statusBar.ShowMessage(Strings.Get("Status_FileOperationsNotReady"), TimeSpan.FromSeconds(3), NotificationLevel.Warning);
             return;
         }
 
@@ -1236,7 +1242,7 @@ public sealed partial class MainWindowViewModel
         catch (Exception ex)
         {
             _logger.LogError(ex, "File operation error");
-            _statusBar.ShowMessage(Strings.Format("Status_FileOperationError", ex.Message), TimeSpan.FromSeconds(6));
+            _statusBar.ShowMessage(Strings.Format("Status_FileOperationError", ex.Message), TimeSpan.FromSeconds(6), NotificationLevel.Warning);
         }
     }
 
@@ -1562,7 +1568,7 @@ public sealed partial class MainWindowViewModel
         {
             _statusBar.ShowMessage(
                 Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_DeleteUnusedMedia"), result.NotWellFormed?.Filename),
-                TimeSpan.FromSeconds(6));
+                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
             return null;
         }
 
@@ -1607,7 +1613,7 @@ public sealed partial class MainWindowViewModel
         {
             _statusBar.ShowMessage(
                 Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_DeleteUnusedStyles"), result.NotWellFormed?.Filename),
-                TimeSpan.FromSeconds(6));
+                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
             return null;
         }
 
@@ -1664,7 +1670,7 @@ public sealed partial class MainWindowViewModel
         {
             _statusBar.ShowMessage(
                 Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_CssCleanup"), result.NotWellFormed?.Filename),
-                TimeSpan.FromSeconds(6));
+                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
             return null;
         }
 
@@ -1768,7 +1774,7 @@ public sealed partial class MainWindowViewModel
         if (formatted is null)
         {
             _statusBar.ShowMessage(
-                Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_PrettyPrint"), html.Filename), TimeSpan.FromSeconds(6));
+                Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_PrettyPrint"), html.Filename), TimeSpan.FromSeconds(6), NotificationLevel.Warning);
         }
 
         return formatted;
@@ -1788,7 +1794,7 @@ public sealed partial class MainWindowViewModel
         {
             _statusBar.ShowMessage(
                 Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_RenameClass"), preparation.NotWellFormed?.Filename),
-                TimeSpan.FromSeconds(6));
+                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
         }
 
         return preparation.Renamer;
@@ -1827,7 +1833,7 @@ public sealed partial class MainWindowViewModel
         }
         else
         {
-            _statusBar.ShowMessage(Strings.Format("Status_ImageMissing", bookPath), TimeSpan.FromSeconds(5));
+            _statusBar.ShowMessage(Strings.Format("Status_ImageMissing", bookPath), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
         }
     }
 
@@ -1851,7 +1857,7 @@ public sealed partial class MainWindowViewModel
 
             _statusBar.ShowMessage(
                 Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_MendPrettifyAll"), result.NotWellFormed?.Filename),
-                TimeSpan.FromSeconds(6));
+                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
             return;
         }
 
@@ -1888,7 +1894,7 @@ public sealed partial class MainWindowViewModel
         {
             _statusBar.ShowMessage(
                 Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_AddSoftHyphens"), result.NotWellFormed?.Filename),
-                TimeSpan.FromSeconds(6));
+                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
             return;
         }
 
@@ -1910,7 +1916,7 @@ public sealed partial class MainWindowViewModel
         {
             _statusBar.ShowMessage(
                 Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_RemoveSoftHyphens"), result.NotWellFormed?.Filename),
-                TimeSpan.FromSeconds(6));
+                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
             return;
         }
 
@@ -1990,7 +1996,7 @@ public sealed partial class MainWindowViewModel
 
             _statusBar.ShowMessage(
                 Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_Restructure"), result.NotWellFormed?.Filename),
-                TimeSpan.FromSeconds(6));
+                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
             return;
         }
 
@@ -2012,7 +2018,7 @@ public sealed partial class MainWindowViewModel
         {
             _statusBar.ShowMessage(
                 Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_BulkRename"), result.NotWellFormed?.Filename),
-                TimeSpan.FromSeconds(6));
+                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
             return;
         }
 
@@ -2033,7 +2039,7 @@ public sealed partial class MainWindowViewModel
         {
             _statusBar.ShowMessage(
                 Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_Rebase"), result.NotWellFormed?.Filename),
-                TimeSpan.FromSeconds(6));
+                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
             return;
         }
 
@@ -2057,7 +2063,7 @@ public sealed partial class MainWindowViewModel
             .FirstOrDefault(r => string.Equals(r.BookPath, bookPath, StringComparison.Ordinal));
         if (resource is null)
         {
-            _statusBar.ShowMessage(Strings.Format("Status_ResourceMissing", bookPath), TimeSpan.FromSeconds(4));
+            _statusBar.ShowMessage(Strings.Format("Status_ResourceMissing", bookPath), TimeSpan.FromSeconds(4), NotificationLevel.Warning);
             return;
         }
 
@@ -2085,7 +2091,7 @@ public sealed partial class MainWindowViewModel
             .FirstOrDefault(r => string.Equals(r.BookPath, result.BookPath, StringComparison.Ordinal));
         if (resource is null)
         {
-            _statusBar.ShowMessage(Strings.Format("Status_ResourceMissing", result.BookPath), TimeSpan.FromSeconds(4));
+            _statusBar.ShowMessage(Strings.Format("Status_ResourceMissing", result.BookPath), TimeSpan.FromSeconds(4), NotificationLevel.Warning);
             return;
         }
 
@@ -2129,7 +2135,7 @@ public sealed partial class MainWindowViewModel
     {
         if (_currentBook is null || !_currentBook.IsEpub3)
         {
-            _statusBar.ShowMessage(Strings.Get("Status_NotAvailableForEpub2"), TimeSpan.FromSeconds(4));
+            _statusBar.ShowMessage(Strings.Get("Status_NotAvailableForEpub2"), TimeSpan.FromSeconds(4), NotificationLevel.Warning);
             return;
         }
 
@@ -2151,7 +2157,7 @@ public sealed partial class MainWindowViewModel
     {
         if (_currentBook is null || !_currentBook.IsEpub3)
         {
-            _statusBar.ShowMessage(Strings.Get("Status_NotAvailableForEpub2"), TimeSpan.FromSeconds(4));
+            _statusBar.ShowMessage(Strings.Get("Status_NotAvailableForEpub2"), TimeSpan.FromSeconds(4), NotificationLevel.Warning);
             return;
         }
 
@@ -2258,7 +2264,7 @@ public sealed partial class MainWindowViewModel
     {
         if (_currentBook is null || !_currentBook.IsEpub3)
         {
-            _statusBar.ShowMessage(Strings.Get("Status_NotAvailableForEpub2"), TimeSpan.FromSeconds(4));
+            _statusBar.ShowMessage(Strings.Get("Status_NotAvailableForEpub2"), TimeSpan.FromSeconds(4), NotificationLevel.Warning);
             return;
         }
 
@@ -2267,7 +2273,7 @@ public sealed partial class MainWindowViewModel
         HtmlResource? nav = _currentBook.GetNavResource();
         if (nav is null || nav.GetText().Length == 0)
         {
-            _statusBar.ShowMessage(Strings.Get("Status_NcxGuideFailed"), TimeSpan.FromSeconds(4));
+            _statusBar.ShowMessage(Strings.Get("Status_NcxGuideFailed"), TimeSpan.FromSeconds(4), NotificationLevel.Warning);
             return;
         }
 
@@ -2318,7 +2324,7 @@ public sealed partial class MainWindowViewModel
     {
         if (_currentBook is null || !_currentBook.IsEpub3)
         {
-            _statusBar.ShowMessage(Strings.Get("Status_NotAvailableForEpub2"), TimeSpan.FromSeconds(4));
+            _statusBar.ShowMessage(Strings.Get("Status_NotAvailableForEpub2"), TimeSpan.FromSeconds(4), NotificationLevel.Warning);
             return;
         }
 
@@ -2363,7 +2369,7 @@ public sealed partial class MainWindowViewModel
     {
         if (_currentBook is null || !_currentBook.IsEpub3)
         {
-            _statusBar.ShowMessage(Strings.Get("Status_NotAvailableForEpub2"), TimeSpan.FromSeconds(4));
+            _statusBar.ShowMessage(Strings.Get("Status_NotAvailableForEpub2"), TimeSpan.FromSeconds(4), NotificationLevel.Warning);
             return;
         }
 
@@ -3144,7 +3150,7 @@ public sealed partial class MainWindowViewModel
         {
             _statusBar.ShowMessage(
                 Strings.Get("Status_InvalidId"),
-                TimeSpan.FromSeconds(6));
+                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
             return;
         }
 
@@ -3197,7 +3203,7 @@ public sealed partial class MainWindowViewModel
         if (target.Contains('<', StringComparison.Ordinal) || target.Contains('>', StringComparison.Ordinal))
         {
             _statusBar.ShowMessage(
-                Strings.Get("Status_InvalidLink"), TimeSpan.FromSeconds(6));
+                Strings.Get("Status_InvalidLink"), TimeSpan.FromSeconds(6), NotificationLevel.Warning);
             return;
         }
 
@@ -3209,6 +3215,10 @@ public sealed partial class MainWindowViewModel
         if (e.PropertyName == nameof(IStatusBarService.CurrentMessage))
         {
             OnPropertyChanged(nameof(StatusMessage));
+        }
+        else if (e.PropertyName == nameof(IStatusBarService.CurrentLevel))
+        {
+            OnPropertyChanged(nameof(IsStatusMessageWarning));
         }
     }
 

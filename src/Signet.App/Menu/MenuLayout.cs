@@ -194,7 +194,7 @@ public static class MenuLayout
             Sep,
             A("MainWindow.BookBrowser"), A("MainWindow.ClipsWindow"), A("MainWindow.PreviewWindow"),
             A("MainWindow.TableOfContents"), A("MainWindow.ValidationResults"), A("MainWindow.CheckpointsWindow"),
-            A("MainWindow.FindReplaceWindow"),
+            A("MainWindow.FindReplaceWindow"), A("MainWindow.NotificationsWindow"),
             Sep,
             A("MainWindow.FocusOnBookBrowser"), A("MainWindow.FocusOnCodeView"), A("MainWindow.FocusOnPreview"),
             A("MainWindow.FocusOnTOC"), A("MainWindow.FocusOnClips")),

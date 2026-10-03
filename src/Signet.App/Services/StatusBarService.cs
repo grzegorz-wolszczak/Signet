@@ -6,6 +6,25 @@ using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace Signet.App.Services;
 
+/// <summary>Importance of a status bar message.</summary>
+public enum NotificationLevel
+{
+    /// <summary>An ordinary message (e.g. the result of an operation).</summary>
+    Info,
+
+    /// <summary>
+    /// An operation was blocked or failed (e.g. cancelled because a file is not well-formed) — the
+    /// user must not miss it, so the Notifications panel is shown and the unread indicator is raised.
+    /// </summary>
+    Warning,
+}
+
+/// <summary>A message shown in the status bar, as recorded in the Notifications panel.</summary>
+/// <param name="Time">When the message was shown (local time).</param>
+/// <param name="Message">The message text.</param>
+/// <param name="Level">The message importance.</param>
+public sealed record StatusNotification(DateTime Time, string Message, NotificationLevel Level);
+
 /// <summary>
 /// Status bar message service.
 /// </summary>
@@ -14,8 +33,17 @@ public interface IStatusBarService : INotifyPropertyChanged
     /// <summary>Current message (empty = none).</summary>
     string CurrentMessage { get; }
 
-    /// <summary>Shows a message for <paramref name="timeout"/> (zero/negative = until cleared).</summary>
-    void ShowMessage(string message, TimeSpan timeout = default);
+    /// <summary>Importance of <see cref="CurrentMessage"/>.</summary>
+    NotificationLevel CurrentLevel { get; }
+
+    /// <summary>Raised for every non-empty message shown (the Notifications panel history).</summary>
+    event EventHandler<StatusNotification>? MessageShown;
+
+    /// <summary>
+    /// Shows a message for <paramref name="timeout"/> (zero/negative = until cleared). Use
+    /// <see cref="NotificationLevel.Warning"/> when an operation was blocked or failed.
+    /// </summary>
+    void ShowMessage(string message, TimeSpan timeout = default, NotificationLevel level = NotificationLevel.Info);
 
     /// <summary>Clears the current message.</summary>
     void Clear();
@@ -42,10 +70,22 @@ public sealed partial class StatusBarService : ObservableObject, IStatusBarServi
     private string _currentMessage = string.Empty;
 
     /// <inheritdoc />
-    public void ShowMessage(string message, TimeSpan timeout = default)
+    [ObservableProperty]
+    private NotificationLevel _currentLevel;
+
+    /// <inheritdoc />
+    public event EventHandler<StatusNotification>? MessageShown;
+
+    /// <inheritdoc />
+    public void ShowMessage(string message, TimeSpan timeout = default, NotificationLevel level = NotificationLevel.Info)
     {
         long generation = Interlocked.Increment(ref _generation);
+        CurrentLevel = level;
         CurrentMessage = message ?? string.Empty;
+        if (CurrentMessage.Length > 0)
+        {
+            MessageShown?.Invoke(this, new StatusNotification(DateTime.Now, CurrentMessage, level));
+        }
 
         if (timeout > TimeSpan.Zero)
         {
@@ -64,6 +104,7 @@ public sealed partial class StatusBarService : ObservableObject, IStatusBarServi
         Interlocked.Increment(ref _generation);
         _timer.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         CurrentMessage = string.Empty;
+        CurrentLevel = NotificationLevel.Info;
     }
 
     /// <inheritdoc />
@@ -76,6 +117,7 @@ public sealed partial class StatusBarService : ObservableObject, IStatusBarServi
             if (Interlocked.Read(ref _generation) == generation)
             {
                 CurrentMessage = string.Empty;
+                CurrentLevel = NotificationLevel.Info;
             }
         }
 

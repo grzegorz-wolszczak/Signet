@@ -3413,4 +3413,22 @@ Do tego stanu książki możesz później wrócić przez pozycje „Przywróć d
   <data name="LoadWarningsDialog_Copy" xml:space="preserve">
     <value>Kopiuj</value>
   </data>
+  <data name="Action_MainWindow_NotificationsWindow" xml:space="preserve">
+    <value>Panel &amp;powiadomień</value>
+  </data>
+  <data name="Panel_Notifications" xml:space="preserve">
+    <value>Powiadomienia</value>
+  </data>
+  <data name="NotificationsView_Empty" xml:space="preserve">
+    <value>Brak powiadomień.</value>
+  </data>
+  <data name="NotificationsView_Clear" xml:space="preserve">
+    <value>Wyczyść</value>
+  </data>
+  <data name="MainWindow_UnreadWarningsTooltip" xml:space="preserve">
+    <value>Nieprzeczytane ostrzeżenia: {0}. Kliknij, aby otworzyć panel Powiadomienia.</value>
+  </data>
+  <data name="MainWindow_StatusMessageTooltip" xml:space="preserve">
+    <value>Kliknij, aby otworzyć panel Powiadomienia (historia komunikatów).</value>
+  </data>
 </root>

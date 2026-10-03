@@ -41,6 +41,7 @@ public sealed class MainDockFactory : Factory
 
     private readonly Dictionary<string, Tool> _tools = new(StringComparer.Ordinal);
     private readonly HashSet<string> _hidden = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, int> _attentionCounts = new(StringComparer.Ordinal);
     private readonly Dictionary<string, IToolDock> _regionDocks = new(StringComparer.Ordinal);
     private readonly BookBrowserViewModel? _bookBrowser;
     private readonly PreviewViewModel? _preview;
@@ -77,6 +78,12 @@ public sealed class MainDockFactory : Factory
     /// </summary>
     public CheckpointsViewModel? Checkpoints { get; set; }
 
+    /// <summary>
+    /// View model of the "Notifications" panel. Set by the main window BEFORE
+    /// <see cref="CreateLayout"/>.
+    /// </summary>
+    public NotificationsViewModel? Notifications { get; set; }
+
     /// <summary>Document tab area.</summary>
     public IDocumentDock? DocumentDock { get; private set; }
 
@@ -89,6 +96,7 @@ public sealed class MainDockFactory : Factory
         DockableIds.Clips,
         DockableIds.ValidationResults,
         DockableIds.Checkpoints,
+        DockableIds.Notifications,
     };
 
     /// <summary>
@@ -113,10 +121,11 @@ public sealed class MainDockFactory : Factory
         TableOfContentsTool toc = new() { ViewModel = TableOfContents };
         ValidationResultsTool validation = new() { ViewModel = ValidationResults };
         CheckpointsTool checkpoints = new() { ViewModel = Checkpoints };
+        NotificationsTool notifications = new() { ViewModel = Notifications };
 
         foreach (Tool tool in new Tool[]
                  {
-                     bookBrowser, clips, preview, toc, validation, checkpoints,
+                     bookBrowser, clips, preview, toc, validation, checkpoints, notifications,
                  })
         {
             _tools[tool.Id] = tool;
@@ -140,7 +149,7 @@ public sealed class MainDockFactory : Factory
         bottomDock.Id = "BottomDock";
         bottomDock.Alignment = Alignment.Bottom;
         bottomDock.Proportion = 0.28;
-        bottomDock.VisibleDockables = CreateList<IDockable>(validation);
+        bottomDock.VisibleDockables = CreateList<IDockable>(validation, notifications);
         bottomDock.ActiveDockable = validation;
 
         _regionDocks["LeftDock"] = leftDock;
@@ -218,7 +227,9 @@ public sealed class MainDockFactory : Factory
         {
             if (Strings.TryGet("Panel_" + tool.Id) is { } title)
             {
-                tool.Title = title;
+                tool.Title = _attentionCounts.TryGetValue(tool.Id, out int count) && count > 0
+                    ? $"{title} ({count})"
+                    : title;
             }
         }
 
@@ -454,6 +465,65 @@ public sealed class MainDockFactory : Factory
         if (_root is not null)
         {
             SetFocusedDockable(_root, tool);
+        }
+    }
+
+    /// <summary>
+    /// Makes a hidden panel visible but collapsed ("Auto Hide" — only its tab at the window edge),
+    /// so it does not take space from the editor. A panel that is already visible is left as it is.
+    /// </summary>
+    public void ShowToolCollapsed(string id)
+    {
+        if (!_tools.TryGetValue(id, out Tool? tool) || !_hidden.Remove(id))
+        {
+            return;
+        }
+
+        RestoreDockable(tool);
+        if (!IsToolPinned(id))
+        {
+            PinDockable(tool);
+        }
+    }
+
+    /// <summary>
+    /// Shows the panel expanded: makes it visible (if hidden), slides it out when it is collapsed
+    /// by "Auto Hide" and activates it.
+    /// </summary>
+    public void ExpandTool(string id)
+    {
+        if (!_tools.TryGetValue(id, out Tool? tool))
+        {
+            return;
+        }
+
+        if (IsToolPinned(id))
+        {
+            PreviewPinnedDockable(tool);
+            SetActiveDockable(tool);
+            return;
+        }
+
+        FocusTool(id);
+    }
+
+    /// <summary>
+    /// Sets the attention state of a panel tab: <paramref name="count"/> &gt; 0 appends "(count)" to
+    /// the title and draws the tab with the warning color (<see cref="SignetTool.NeedsAttention"/>).
+    /// </summary>
+    public void SetToolAttention(string id, int count)
+    {
+        if (!_tools.TryGetValue(id, out Tool? tool))
+        {
+            return;
+        }
+
+        _attentionCounts[id] = count;
+        string title = Strings.TryGet("Panel_" + id) ?? tool.Title ?? id;
+        tool.Title = count > 0 ? $"{title} ({count})" : title;
+        if (tool is SignetTool signetTool)
+        {
+            signetTool.NeedsAttention = count > 0;
         }
     }
 }

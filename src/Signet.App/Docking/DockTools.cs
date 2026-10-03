@@ -26,6 +26,9 @@ public static class DockableIds
     /// <summary>Book checkpoints panel.</summary>
     public const string Checkpoints = "Checkpoints";
 
+    /// <summary>Notifications panel (the status bar message history).</summary>
+    public const string Notifications = "Notifications";
+
     /// <summary>Document area (tabs).</summary>
     public const string Documents = "Documents";
 }
@@ -39,7 +42,19 @@ public static class DockableIds
 /// </summary>
 public abstract class SignetTool : Tool, IDeferredContentPresentation
 {
+    private bool _needsAttention;
+
     bool IDeferredContentPresentation.DeferContentPresentation => false;
+
+    /// <summary>
+    /// Whether the panel's tab should draw attention (warning color) — e.g. the Notifications
+    /// panel with unread warnings. Applied to the tab by a style in <c>App.axaml</c>.
+    /// </summary>
+    public bool NeedsAttention
+    {
+        get => _needsAttention;
+        set => SetProperty(ref _needsAttention, value);
+    }
 }
 
 /// <summary>
@@ -139,4 +154,19 @@ public sealed class CheckpointsTool : SignetTool
 
     /// <summary>Checkpoint list view model (embedded by <see cref="MainDockFactory"/>).</summary>
     public CheckpointsViewModel? ViewModel { get; init; }
+}
+
+/// <summary>Notifications panel — the history of the status bar messages.</summary>
+public sealed class NotificationsTool : SignetTool
+{
+    /// <summary>Initializes the panel.</summary>
+    public NotificationsTool()
+    {
+        Id = DockableIds.Notifications;
+        Title = Strings.Get("Panel_Notifications");
+        CanClose = false;
+    }
+
+    /// <summary>Panel view model (embedded by <see cref="MainDockFactory"/>).</summary>
+    public NotificationsViewModel? ViewModel { get; init; }
 }

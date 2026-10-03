@@ -569,7 +569,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         }
         catch (Exception ex) when (ex is System.IO.IOException or UnauthorizedAccessException)
         {
-            _statusBar.ShowMessage(Strings.Format("Preview_PrepareFailed", ex.Message), TimeSpan.FromSeconds(5));
+            _statusBar.ShowMessage(Strings.Format("Preview_PrepareFailed", ex.Message), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
             return false;
         }
     }
