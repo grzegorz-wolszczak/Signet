@@ -1,0 +1,22 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.AboutWindow"
+        Width="360" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Title="{loc:Loc AboutWindow_Title}">
+
+  <!-- Logo, name and version. -->
+  <StackPanel Margin="20" Spacing="12">
+    <Image Source="avares://Signet.App/Assets/AppIcon/app_icon_256.png"
+           Width="96" Height="96" HorizontalAlignment="Center" />
+    <TextBlock Text="Signet" FontSize="22" FontWeight="SemiBold" HorizontalAlignment="Center" />
+    <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Center">
+      <TextBlock Text="{loc:Loc AboutWindow_Version}" FontWeight="SemiBold" />
+      <SelectableTextBlock x:Name="VersionText" />
+    </StackPanel>
+    <Button x:Name="OkButton" Content="{loc:Loc Common_Ok}" IsDefault="True" IsCancel="True"
+            MinWidth="80" HorizontalAlignment="Center" HorizontalContentAlignment="Center" />
+  </StackPanel>
+</Window>

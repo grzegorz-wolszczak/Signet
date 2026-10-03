@@ -1,0 +1,52 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Signet.App.ViewModels"
+        xmlns:loc="using:Signet.App.Resources"
+        xmlns:infra="using:Signet.App.Infrastructure"
+        x:Class="Signet.App.Views.LiveCssPanelWindow"
+        x:DataType="vm:LiveCssPanelViewModel"
+        Title="{loc:Loc LiveCssPanelWindow_Title}"
+        Width="480" Height="560"
+        WindowStartupLocation="Manual"
+        CanResize="True">
+
+  <Grid Margin="10" RowDefinitions="Auto,*" RowSpacing="8">
+
+    <TextBlock Grid.Row="0" Text="{Binding ElementDescription}" FontWeight="Bold" FontSize="14"
+               TextTrimming="CharacterEllipsis" />
+
+    <ScrollViewer Grid.Row="1">
+      <StackPanel Spacing="10">
+
+        <TextBlock Text="{loc:Loc LiveCssPanelWindow_NoRules}" IsVisible="{Binding !HasRules}"
+                   Foreground="Gray" />
+
+        <ItemsControl ItemsSource="{Binding Rules}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:LiveCssRuleViewModel">
+              <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                      BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,4">
+                <StackPanel Spacing="4">
+                  <Button Content="{Binding Header}" Command="{Binding JumpCommand}"
+                          HorizontalAlignment="Left" Padding="0" Background="Transparent"
+                          BorderThickness="0" FontFamily="Consolas,Cascadia Mono,monospace"
+                          HorizontalContentAlignment="Left" />
+                  <ItemsControl ItemsSource="{Binding Declarations}" Margin="12,0,0,0">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate x:DataType="vm:LiveCssDeclarationViewModel">
+                        <TextBlock Text="{Binding Text}" FontFamily="Consolas,Cascadia Mono,monospace"
+                                   Opacity="{Binding IsOverridden, Converter={x:Static infra:OverriddenDeclarationConverters.Opacity}}"
+                                   TextDecorations="{Binding IsOverridden, Converter={x:Static infra:OverriddenDeclarationConverters.Strikethrough}}" />
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</Window>

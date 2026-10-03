@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="pub-id" xml:lang="en">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:identifier id="pub-id">urn:uuid:55555555-5555-4555-8555-555555555555</dc:identifier>
+    <dc:title>Deeply Nested Folders</dc:title>
+    <dc:language>en</dc:language>
+    <meta property="dcterms:modified">2026-01-01T00:00:00Z</meta>
+  </metadata>
+  <manifest>
+    <item id="nav" href="pages/nav/nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+    <item id="css" href="resources/styles/main.css" media-type="text/css"/>
+    <item id="pic" href="resources/img/pic.png" media-type="image/png"/>
+    <item id="title" href="pages/front/title.xhtml" media-type="application/xhtml+xml"/>
+    <item id="ch01" href="pages/body/ch01.xhtml" media-type="application/xhtml+xml"/>
+  </manifest>
+  <spine>
+    <itemref idref="title"/>
+    <itemref idref="ch01"/>
+  </spine>
+</package>

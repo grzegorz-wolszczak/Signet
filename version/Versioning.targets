@@ -1,0 +1,28 @@
+<Project>
+
+  <!--
+    Signet versioning: <VersionPrefix>-<yyyyMMddHHmm UTC>, e.g. 0.1.0-202610021432.
+
+    VersionPrefix comes from Directory.Build.props; the timestamp is the build time (UTC).
+    The full version goes into AssemblyInformationalVersionAttribute and is read at runtime
+    by Signet.App.Infrastructure.AppVersion.
+
+    Imported only by Signet.App.csproj. Skipped in IDE design-time builds.
+  -->
+  <PropertyGroup>
+    <!-- No "+<commit hash>" appended by the SDK to InformationalVersion. -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
+  <Target Name="SignetSetVersion"
+          BeforeTargets="GetAssemblyVersion;GenerateAssemblyInfo"
+          Condition="'$(DesignTimeBuild)' != 'true'">
+    <PropertyGroup>
+      <SignetBuildTimestamp>$([System.DateTime]::UtcNow.ToString('yyyyMMddHHmm'))</SignetBuildTimestamp>
+      <InformationalVersion>$(VersionPrefix)-$(SignetBuildTimestamp)</InformationalVersion>
+    </PropertyGroup>
+
+    <Message Importance="high" Text="Signet $(InformationalVersion)" />
+  </Target>
+
+</Project>

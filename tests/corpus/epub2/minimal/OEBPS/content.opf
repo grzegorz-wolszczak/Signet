@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="2.0" unique-identifier="BookId">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf">
+    <dc:identifier id="BookId" opf:scheme="UUID">urn:uuid:22222222-2222-4222-8222-222222222222</dc:identifier>
+    <dc:title>Minimal EPUB 2</dc:title>
+    <dc:language>en</dc:language>
+    <dc:creator opf:role="aut" opf:file-as="Doe, Jane">Jane Doe</dc:creator>
+  </metadata>
+  <manifest>
+    <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
+    <item id="css" href="Styles/style.css" media-type="text/css"/>
+    <item id="ch1" href="Text/chapter1.xhtml" media-type="application/xhtml+xml"/>
+  </manifest>
+  <spine toc="ncx">
+    <itemref idref="ch1"/>
+  </spine>
+  <guide>
+    <reference type="text" title="Beginning" href="Text/chapter1.xhtml"/>
+  </guide>
+</package>

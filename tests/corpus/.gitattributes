@@ -1,0 +1,8 @@
+# Fixtures must be byte-identical on every platform (round-trip tests compare bytes).
+* text eol=lf
+mimetype -text
+*.png binary
+*.ttf binary
+*.otf binary
+*.mp3 binary
+*.m4a binary

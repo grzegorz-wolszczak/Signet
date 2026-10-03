@@ -1,0 +1,43 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:tabs="using:Signet.App.ViewModels.Tabs"
+             xmlns:loc="using:Signet.App.Resources"
+             x:Class="Signet.App.Views.Tabs.ImageTabView"
+             x:DataType="tabs:ImageTabViewModel">
+
+  <Grid RowDefinitions="Auto,*">
+
+    <Border Grid.Row="0"
+            Padding="10,6"
+            Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Grid.Column="0"
+                   Text="{Binding InfoLine}"
+                   VerticalAlignment="Center"
+                   FontSize="12"
+                   Opacity="0.85"
+                   TextTrimming="CharacterEllipsis" />
+        <Button Grid.Column="1"
+                x:Name="ResizeButton"
+                Content="{loc:Loc ImageTabView_ResizeImage}"
+                Padding="8,2"
+                FontSize="12" />
+      </Grid>
+    </Border>
+
+    <ScrollViewer Grid.Row="1"
+                  x:Name="Scroller"
+                  HorizontalScrollBarVisibility="Auto"
+                  VerticalScrollBarVisibility="Auto"
+                  Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+      <Image x:Name="Preview"
+             Source="{Binding Bitmap}"
+             Stretch="None"
+             HorizontalAlignment="Center"
+             VerticalAlignment="Center"
+             RenderOptions.BitmapInterpolationMode="HighQuality" />
+    </ScrollViewer>
+
+  </Grid>
+
+</UserControl>

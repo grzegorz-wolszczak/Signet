@@ -1,0 +1,30 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Signet.App.ViewModels"
+             xmlns:loc="using:Signet.App.Resources"
+             xmlns:views="using:Signet.App.Views"
+             x:Class="Signet.App.Views.FindReplacePanel"
+             x:DataType="vm:MainWindowViewModel">
+
+  <!-- Find & Replace: a non-dockable panel below the document tab area
+       (inserted into the DocumentDockControl template in MainWindow.axaml), closable only (X / Esc). -->
+  <Border IsVisible="{Binding IsFindReplaceVisible, FallbackValue=False}"
+          BorderThickness="0,1,0,0"
+          BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+          Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
+    <Border.KeyBindings>
+      <KeyBinding Gesture="Escape" Command="{Binding HideFindPanelCommand}" />
+    </Border.KeyBindings>
+    <Grid ColumnDefinitions="Auto,*">
+      <Button Grid.Column="0"
+              Content="✕"
+              Command="{Binding HideFindPanelCommand}"
+              Classes="toolbar"
+              VerticalAlignment="Top"
+              Margin="4,8,0,0"
+              Padding="4,2"
+              ToolTip.Tip="{loc:Loc MainWindow_HideFindReplace}" />
+      <views:FindReplaceView Grid.Column="1" DataContext="{Binding FindReplace}" />
+    </Grid>
+  </Border>
+</UserControl>

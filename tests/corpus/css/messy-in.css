@@ -1,0 +1,23 @@
+/* a stylesheet that needs tidying */
+@charset "utf-8";
+@import   url("reset.css") ;
+
+body{margin:0;padding:0;color:#333}
+
+h1 , h2,h3   {
+   font-family: "Fancy Serif", Georgia, serif ;
+   line-height:1.2;
+}
+
+.note   {   background : #ffffcc ;   border-left : 3px solid #cc0 ;   }
+
+@media screen and (max-width:600px){
+  body { font-size: 90% }
+  .note{padding:0.5em}
+}
+
+@font-face{font-family:"Fancy Serif";src:url("fonts/fancy.woff2") format("woff2")}
+
+a:hover,a:focus{text-decoration:underline}
+
+p[data-role="lead"] > span.big { font-size: 1.4em; font-weight: bold ; }

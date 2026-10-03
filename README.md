@@ -20,6 +20,30 @@ The code is now a hybrid of these approaches and has drifted away from upstream 
 the UI still looks very similar. This is **not** Sigil and is not affiliated with the Sigil or
 calibre projects.
 
+## Sigil features that are not implemented
+
+Compared with Sigil, the following features are missing from Signet:
+
+- **Python plugin framework**: no Plugins menu, plugin runner or plugin preferences page.
+- **Automation lists**: no "Automate" lists or automation editor.
+- **Python function replacements in Find & Replace**: replacement patterns of the form
+  `\F<name>` and the function editor are not supported. Such a pattern is treated as literal text.
+- **Index Editor**: no Index Editor, "Mark for Index", "Add to Index" or "Create Index"
+  (index generation).
+- **Git-based checkpoints**: there are no Sigil repositories (Manage Repositories, Commit,
+  Checkout, Log, checkpoint compare). Signet has its own, simpler checkpoint snapshots instead.
+- **Audio, video and PDF viewing**: tabs for these resources show only file information and an
+  "open externally" button. There is no playback and no PDF rendering.
+- **External editors**: no "Open With" (other application) for resources and no "Edit with
+  external XHTML editor" action. The external editor path can be set in Preferences, but nothing
+  uses it.
+- **Change Reading Order dialog**: the reading order can be changed only with Move Up / Move Down
+  and Sort in the Book Browser.
+- **Help menu links**: no User Guide, FAQ, Tutorials, website or donation links, and no Markdown
+  viewer for plugin help.
+- **File dialog with preview**: the "Add Existing Files" dialog is the system dialog, without
+  Sigil's built-in file preview.
+
 Signet is built for the repository owner's personal use. There are no plans to turn it into a
 product, so there are no releases, support or roadmap commitments.
 

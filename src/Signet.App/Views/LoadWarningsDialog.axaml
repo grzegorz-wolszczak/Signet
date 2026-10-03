@@ -1,0 +1,19 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.LoadWarningsDialog"
+        Width="640" Height="420" MinWidth="380" MinHeight="240"
+        WindowStartupLocation="CenterOwner"
+        ShowInTaskbar="False"
+        Title="{loc:Loc LoadWarningsDialog_Title}">
+
+  <DockPanel Margin="16">
+    <TextBlock x:Name="HeaderText" DockPanel.Dock="Top" TextWrapping="Wrap" FontWeight="SemiBold" Margin="0,0,0,10" />
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,12,0,0">
+      <Button x:Name="CopyButton" Content="{loc:Loc LoadWarningsDialog_Copy}" MinWidth="90" />
+      <Button x:Name="OkButton" Content="{loc:Loc Common_Ok}" IsDefault="True" IsCancel="True" MinWidth="90" />
+    </StackPanel>
+    <TextBox x:Name="WarningsText" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap"
+             ScrollViewer.VerticalScrollBarVisibility="Auto" />
+  </DockPanel>
+</Window>

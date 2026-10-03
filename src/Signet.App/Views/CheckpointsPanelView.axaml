@@ -1,0 +1,38 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Signet.App.ViewModels"
+             xmlns:loc="using:Signet.App.Resources"
+             x:Class="Signet.App.Views.CheckpointsPanelView"
+             x:DataType="vm:CheckpointsViewModel">
+
+  <UserControl.Styles>
+    <Style Selector="TextBlock.current">
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+  </UserControl.Styles>
+
+  <DockPanel Margin="8">
+    <Grid DockPanel.Dock="Bottom" ColumnDefinitions="*,8,*" Margin="0,6,0,0">
+      <Button Grid.Column="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+              Content="{loc:Loc Checkpoint_Compare}"
+              ToolTip.Tip="{loc:Loc Checkpoint_CompareTooltip}"
+              Command="{Binding CompareCommand}" />
+      <Button Grid.Column="2" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+              Content="{loc:Loc Checkpoint_Revert}"
+              ToolTip.Tip="{loc:Loc Checkpoint_RevertTooltip}"
+              Command="{Binding RevertCommand}" />
+    </Grid>
+
+    <ListBox ItemsSource="{Binding Items}"
+             SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
+             BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="vm:CheckpointItem">
+          <TextBlock Text="{Binding Label}" Classes.current="{Binding IsCurrent}"
+                     TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Label}"
+                     VerticalAlignment="Center" MinHeight="22" />
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </DockPanel>
+</UserControl>

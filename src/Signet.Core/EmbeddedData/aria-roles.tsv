@@ -1,0 +1,43 @@
+doc-abstract	Abstract	A short summary of the principle ideas, concepts and conclusions of the work, or of section or excerpt within it.
+doc-acknowledgments	Acknowledgments	A section or statement that acknowledges significant contributions by persons, organizations, governments, and other entities to the realization of the work.
+doc-afterword	Afterword	A closing statement from the author or a person of importance, typically providing insight into how the content came to be written, its significance or related events that have transpired since its timeline.
+doc-appendix	Appendix	A section of supplemental information located after the primary content that informs the content but is not central to it.
+doc-backlink	Back Link	A link that allows the user to return to a related location in the content (e.g., from a footnote to its references or from a glossary definition to where a term is used.)
+doc-bibliography	Bibliography	A list of external references cited in the work, which may be to print or digital sources.
+biblioentry	Bibliography Entry	A single reference to an external source in a bibliography. [epub:type ONLY]
+doc-biblioref	Bibliography Reference	A reference to a bibliography entry.
+doc-chapter	Chapter	A major thematic section of content in a work.
+doc-colophon	Colophon	A short section of production notes particular to the edition (e.g., describing the typeface used), often located at the end of a work.
+doc-conclusion	Conclusion	A concluding section or statement that summarizes the work or wraps up the narrative.
+doc-cover	Cover	An image that sets the mood or tone for the work and typically includes the title and author.
+doc-credit	Credit	An acknowledgement of the source of integrated content from third-party sources, such as photos.  Typically identifies the creator, copyright, and any restrictions on reuse.
+doc-credits	Credits	A collection of credits.
+doc-dedication	Dedication	An inscription at the front of the work, typically addressed in tribute to one or more persons close to the author.
+endnote	Endnote	One of a collection of notes that occur at the end of a work, or a section within it that provides additional context to a referenced passage of text. [epub:type ONLY]
+doc-endnotes	Endnotes	A collection of notes at the end of a work or a section within it.
+doc-epigraph	Epigraph	A quotation set at the start of the work or a section that establishes the theme or sets the mood.
+doc-epilogue	Epilogue	A concluding section of narrative that wraps up or comments on the actions and events of the work, typically from a future perspective.
+doc-errata	Errata	A set of corrections discovered after initial publication of the work, sometimes referred to as corrigenda.
+doc-example	Example	An illustration of a key concept of the work, such as a code listing, case study or problem. [aria role ONLY]
+doc-footnote	Footnote	Ancillary information, such as a citation or commentary, that provides additional context to a referenced passage of text.
+footnotes	Footnotes	A collection of footnotes. [epub:type ONLY]
+doc-foreword	Foreword	An introductory section that precedes the work, typically not written by the author of the work.
+doc-glossary	Glossary	A brief dictionary of new, uncommon, or specialized terms used in the content.
+doc-glossref	Glossary Reference	A reference to a glossary definition.
+doc-index	Index	A navigational aid that provides a detailed list of links to key subjects, names and other important topics covered in the work.
+doc-introduction	Introduction	A preliminary section that typically introduces the scope or nature of the work.
+doc-noteref	Note Reference	A reference to a footnote or endnote, typically appearing as a superscripted number or symbol in the main body of the text.
+doc-notice	Notice	Notifies the user of consequences that might arise from an action or event.  Examples include warnings, cautions and dangers.
+doc-pagebreak	Pagebreak	A separator denoting the position before which a break occurs between contiguous pages in a statically paginated version of the content.
+doc-pagefooter	Page Footer	A section of text appearing at the bottom of a page that provides context about the current work and location within it. The page footer is distinct from the body text and normally follows a repeating template that contains (possibly truncated) items such as the document title, current section, author name(s), and page number.
+doc-pageheader	Page Header	A section of text appearing at the top of a page that provides context about the current work and location within it. The page header is distinct from the body text and normally follows a repeating template that contains (possibly truncated) items such as the document title, current section, author name(s), and page number.
+doc-pagelist	Page List	A navigational aid that provides a list of links to the page breaks in the content.
+doc-part	Part	A major structural division in a work that contains a set of related sections dealing with a particular subject, narrative arc, or similar encapsulated theme.
+preamble	Preamble	A section at the beginning of a work, typically containing introductory and/or explanatory prose regarding the scope or nature of the work's content. [epub:type ONLY]
+doc-preface	Preface	An introductory section that precedes the work, typically written by the author of the work.
+doc-prologue	Prologue	An introductory section that sets the background to a work, typically part of the narrative.
+doc-pullquote	Pull Quote	A distinctively placed or highlighted quotation from the current content designed to draw attention to a topic or highlight a key point.
+doc-qna	Questions and Answers	A section of content structured as a series of questions and answers, such as an interview or list of frequently asked questions.
+doc-subtitle	Subtitle	An explanatory or alternate title for the work, or a section or components within it.
+doc-tip	Tip	Helpful information that clarifies some aspect of the content or assists in comprehension.
+doc-toc	Table of Contents	A navigational aid that provides an ordered list of links to the major sectional headings in the content.  A table of contents may cover an entire work, or only a smaller section of it.

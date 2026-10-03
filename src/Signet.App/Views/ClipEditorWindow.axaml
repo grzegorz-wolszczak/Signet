@@ -1,0 +1,128 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Signet.App.ViewModels"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.ClipEditorWindow"
+        x:DataType="vm:ClipsViewModel"
+        Width="820" Height="560"
+        WindowStartupLocation="CenterOwner">
+
+  <!-- "*" in the title for unsaved changes (like the main window title). -->
+  <Window.Title>
+    <MultiBinding StringFormat="{}{0}{1}">
+      <ReflectionBinding Path="[ClipEditorWindow_Title]" Source="{x:Static loc:Localizer.Instance}" />
+      <Binding Path="ModifiedMarker" />
+    </MultiBinding>
+  </Window.Title>
+
+  <Grid Margin="12" RowDefinitions="Auto,*,Auto,Auto" RowSpacing="6">
+
+    <!-- Filter -->
+    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="6">
+      <TextBlock Text="{loc:Loc ClipEditorWindow_Filter}" VerticalAlignment="Center" />
+      <TextBox Text="{Binding FilterText, Mode=TwoWay}" Width="240"
+               PlaceholderText="{loc:Loc ClipEditorWindow_FilterPlaceholder}" />
+      <CheckBox Content="{loc:Loc ClipEditorWindow_FilterNameAndText}" IsChecked="{Binding FilterAll, Mode=TwoWay}"
+                VerticalAlignment="Center" />
+    </StackPanel>
+
+    <!-- Tree + details + button panel -->
+    <Grid Grid.Row="1" ColumnDefinitions="2*,3*,Auto" ColumnSpacing="8">
+      <TreeView x:Name="Tree" Grid.Column="0"
+                ItemsSource="{Binding Nodes}"
+                SelectionMode="Multiple"
+                BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+        <TreeView.Styles>
+          <Style Selector="TreeViewItem" x:DataType="vm:ClipNodeViewModel">
+            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+            <Setter Property="IsVisible" Value="{Binding IsVisible}" />
+          </Style>
+          <!-- The built-in TreeView chevron appears only for a group with children — we replace it
+               with our own (in the template below), visible for every group, even an empty one. -->
+          <Style Selector="TreeViewItem /template/ Panel#PART_ExpandCollapseChevronContainer">
+            <Setter Property="IsVisible" Value="False" />
+          </Style>
+          <Style Selector="ToggleButton.groupChevron">
+            <Setter Property="Width" Value="16" />
+            <Setter Property="Height" Value="16" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Template">
+              <ControlTemplate>
+                <Border Background="Transparent">
+                  <Path x:Name="Chevron" Data="M 5,3 L 10,8 L 5,13"
+                        Stroke="{DynamicResource TreeViewItemForeground}" StrokeThickness="1.5"
+                        HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+              </ControlTemplate>
+            </Setter>
+          </Style>
+          <Style Selector="ToggleButton.groupChevron:checked /template/ Path#Chevron">
+            <Setter Property="RenderTransform" Value="rotate(90deg)" />
+          </Style>
+          <Style Selector="TextBlock.group">
+            <Setter Property="FontWeight" Value="Bold" />
+          </Style>
+        </TreeView.Styles>
+        <TreeView.ItemTemplate>
+          <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:ClipNodeViewModel">
+            <!-- The name as text; editing only after a double click or F2 (handled in ClipEditorWindow):
+                 Enter and focus loss commit, Esc cancels. -->
+            <Grid ColumnDefinitions="18,*" Background="Transparent" MinHeight="24"
+                  DoubleTapped="OnNodeDoubleTapped">
+              <ToggleButton Grid.Column="0" Classes="groupChevron"
+                            IsVisible="{Binding IsGroup}" IsChecked="{Binding IsExpanded, Mode=TwoWay}" />
+              <TextBlock Grid.Column="1" Text="{Binding Name}" Classes.group="{Binding IsGroup}"
+                         VerticalAlignment="Center" IsVisible="{Binding !IsEditing}" />
+              <TextBox Grid.Column="1" Classes="inPlaceRename" Text="{Binding EditText, Mode=TwoWay}"
+                       IsVisible="{Binding IsEditing}" MinWidth="140"
+                       MinHeight="0" Padding="2,0" VerticalAlignment="Center" VerticalContentAlignment="Center" />
+            </Grid>
+          </TreeDataTemplate>
+        </TreeView.ItemTemplate>
+      </TreeView>
+
+      <Grid Grid.Column="1" RowDefinitions="Auto,*" RowSpacing="4"
+            IsEnabled="{Binding SelectedNode.IsGroup, Converter={x:Static BoolConverters.Not}, FallbackValue=False}">
+        <TextBlock Grid.Row="0" Text="{loc:Loc ClipEditorWindow_ClipTextLabel}" Opacity="0.8" />
+        <TextBox Grid.Row="1" Text="{Binding SelectedNode.Text, Mode=TwoWay}"
+                 AcceptsReturn="True" TextWrapping="Wrap"
+                 VerticalContentAlignment="Top" FontFamily="Cascadia Code,Consolas,monospace" />
+      </Grid>
+
+      <StackPanel Grid.Column="2" Spacing="4" Width="130">
+        <Button Content="{loc:Loc ClipEditorWindow_Paste}" Command="{Binding PasteCommand}" HorizontalAlignment="Stretch" />
+        <Separator />
+        <Button Content="{loc:Loc ClipEditorWindow_AddEntry}" Command="{Binding AddEntryCommand}" HorizontalAlignment="Stretch" />
+        <Button Content="{loc:Loc ClipEditorWindow_AddGroup}" Command="{Binding AddGroupCommand}" HorizontalAlignment="Stretch" />
+        <Button Content="{loc:Loc Common_Delete}" Command="{Binding DeleteCommand}" HorizontalAlignment="Stretch" />
+        <UniformGrid Columns="4">
+          <Button Content="↑" Command="{Binding MoveUpCommand}" />
+          <Button Content="←" Command="{Binding MoveLeftCommand}" />
+          <Button Content="→" Command="{Binding MoveRightCommand}" />
+          <Button Content="↓" Command="{Binding MoveDownCommand}" />
+        </UniformGrid>
+        <Separator />
+        <Button Content="{loc:Loc ClipEditorWindow_AutoFillCss}" Command="{Binding AutoFillCommand}" HorizontalAlignment="Stretch" />
+        <Separator />
+        <Button Content="{loc:Loc Common_Import}" Command="{Binding ImportCommand}" HorizontalAlignment="Stretch" />
+        <Button Content="{loc:Loc Common_Export}" Command="{Binding ExportCommand}" HorizontalAlignment="Stretch" />
+        <Button Content="{loc:Loc ClipEditorWindow_ExportAll}" Command="{Binding ExportAllCommand}" HorizontalAlignment="Stretch" />
+        <Button Content="{loc:Loc Common_Save}" Command="{Binding SaveCommand}" HorizontalAlignment="Stretch" />
+        <Button Content="{loc:Loc Common_Reload}" Command="{Binding ReloadCommand}" HorizontalAlignment="Stretch" />
+        <UniformGrid Columns="2">
+          <Button Content="{loc:Loc Common_Expand}" Command="{Binding ExpandAllCommand}" />
+          <Button Content="{loc:Loc Common_Collapse}" Command="{Binding CollapseAllCommand}" />
+        </UniformGrid>
+      </StackPanel>
+    </Grid>
+
+    <TextBlock Grid.Row="2" Text="{Binding Message}"
+               Foreground="{DynamicResource SystemAccentColor}" TextWrapping="Wrap" />
+
+    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right">
+      <Button Content="{loc:Loc Common_Close}" Click="OnCloseClicked" MinWidth="80" IsCancel="True" />
+    </StackPanel>
+  </Grid>
+</Window>

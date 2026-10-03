@@ -1,0 +1,79 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Signet.App.ViewModels"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.EditTocWindow"
+        x:DataType="vm:EditTocViewModel"
+        Width="720" Height="520"
+        WindowStartupLocation="CenterOwner"
+        Title="{loc:Loc EditTocWindow_Title}">
+
+  <DockPanel Margin="12">
+
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right"
+                Spacing="8" Margin="0,10,0,0">
+      <Button Content="{loc:Loc Common_Ok}" IsDefault="True" MinWidth="90" Command="{Binding AcceptCommand}" />
+      <Button Content="{loc:Loc Common_Cancel}" IsCancel="True" MinWidth="80" Command="{Binding CancelCommand}" />
+    </StackPanel>
+
+    <TextBlock DockPanel.Dock="Bottom" Text="{Binding Message}" Margin="0,8,0,0"
+               TextWrapping="Wrap" Foreground="{DynamicResource SystemAccentColor}"
+               IsVisible="{Binding Message, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+    <StackPanel DockPanel.Dock="Right" Width="120" Margin="8,0,0,0" Spacing="4">
+      <Button Content="{loc:Loc EditTocWindow_AddAbove}" HorizontalAlignment="Stretch" Command="{Binding AddAboveCommand}"
+              ToolTip.Tip="{loc:Loc EditTocWindow_AddAboveTip}" />
+      <Button Content="{loc:Loc EditTocWindow_AddBelow}" HorizontalAlignment="Stretch" Command="{Binding AddBelowCommand}"
+              ToolTip.Tip="{loc:Loc EditTocWindow_AddBelowTip}" />
+      <Button Content="{loc:Loc Common_Delete}" HorizontalAlignment="Stretch" Command="{Binding DeleteCommand}"
+              ToolTip.Tip="{loc:Loc EditTocWindow_DeleteTip}" />
+      <Button Content="{loc:Loc EditTocWindow_SelectTarget}" HorizontalAlignment="Stretch" Command="{Binding SelectTargetCommand}"
+              ToolTip.Tip="{loc:Loc EditTocWindow_SelectTargetTip}" />
+      <Separator />
+      <UniformGrid Columns="4">
+        <Button Content="←" Command="{Binding MoveLeftCommand}" ToolTip.Tip="{loc:Loc EditTocWindow_DecreaseLevelTip}" />
+        <Button Content="↑" Command="{Binding MoveUpCommand}" ToolTip.Tip="{loc:Loc EditTocWindow_MoveUpTip}" />
+        <Button Content="↓" Command="{Binding MoveDownCommand}" ToolTip.Tip="{loc:Loc EditTocWindow_MoveDownTip}" />
+        <Button Content="→" Command="{Binding MoveRightCommand}" ToolTip.Tip="{loc:Loc EditTocWindow_IncreaseLevelTip}" />
+      </UniformGrid>
+      <Separator />
+      <UniformGrid Columns="2">
+        <Button Content="{loc:Loc Common_Expand}" Command="{Binding ExpandAllCommand}" />
+        <Button Content="{loc:Loc Common_Collapse}" Command="{Binding CollapseAllCommand}" />
+      </UniformGrid>
+    </StackPanel>
+
+    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1">
+      <TreeView x:Name="Tree"
+                ItemsSource="{Binding Nodes}"
+                SelectionMode="Multiple">
+        <TreeView.Styles>
+          <Style Selector="TreeViewItem" x:DataType="vm:EditTocNodeViewModel">
+            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+          </Style>
+        </TreeView.Styles>
+        <TreeView.ContextMenu>
+          <ContextMenu>
+            <MenuItem Header="{loc:Loc Common_Rename}" Command="{Binding RenameCommand}" />
+            <MenuItem Header="{loc:Loc Common_Delete}" Command="{Binding DeleteCommand}" />
+            <Separator />
+            <MenuItem Header="{loc:Loc ClipsPanelView_CollapseAll}" Command="{Binding CollapseAllCommand}" />
+            <MenuItem Header="{loc:Loc ClipsPanelView_ExpandAll}" Command="{Binding ExpandAllCommand}" />
+          </ContextMenu>
+        </TreeView.ContextMenu>
+        <TreeView.ItemTemplate>
+          <TreeDataTemplate x:DataType="vm:EditTocNodeViewModel" ItemsSource="{Binding Children}">
+            <Grid ColumnDefinitions="*,2*" ColumnSpacing="6" Margin="0,1" MinHeight="26">
+              <TextBox x:Name="EntryText" Grid.Column="0" Text="{Binding Text, Mode=TwoWay}"
+                       BorderThickness="0" Background="Transparent" Padding="2,1"
+                       PlaceholderText="{loc:Loc EditTocWindow_EntryTextPlaceholder}" />
+              <TextBlock Grid.Column="1" Text="{Binding TargetDisplay}" VerticalAlignment="Center"
+                         Opacity="0.7" TextTrimming="CharacterEllipsis"
+                         ToolTip.Tip="{Binding TargetDisplay}" />
+            </Grid>
+          </TreeDataTemplate>
+        </TreeView.ItemTemplate>
+      </TreeView>
+    </Border>
+  </DockPanel>
+</Window>

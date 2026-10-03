@@ -1,0 +1,123 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Signet.App.ViewModels"
+             xmlns:loc="using:Signet.App.Resources"
+             x:Class="Signet.App.Views.BookBrowserView"
+             x:DataType="vm:BookBrowserViewModel"
+             x:Name="Root">
+
+  <UserControl.Resources>
+    <!-- A compact tree (uniform row height, indentation 10). -->
+    <x:Double x:Key="TreeViewItemMinHeight">22</x:Double>
+    <x:Double x:Key="TreeViewItemIndent">10</x:Double>
+
+    <!-- Folder and file icons: custom vector drawings in one style, identical on every system. -->
+    <DrawingImage x:Key="BookBrowserFolderIcon">
+      <DrawingImage.Drawing>
+        <DrawingGroup>
+          <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+          <GeometryDrawing Brush="#3d7fd6" Geometry="M 1 3 H 6 L 7.5 4.5 H 15 V 13.5 H 1 Z" />
+          <GeometryDrawing Brush="#8cc2f5" Geometry="M 1.75 6 H 14.25 V 12.75 H 1.75 Z" />
+        </DrawingGroup>
+      </DrawingImage.Drawing>
+    </DrawingImage>
+    <DrawingImage x:Key="BookBrowserFileIcon">
+      <DrawingImage.Drawing>
+        <DrawingGroup>
+          <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+          <GeometryDrawing Brush="#ffffff" Geometry="M 3 1.5 H 9.5 L 13 5 V 14.5 H 3 Z">
+            <GeometryDrawing.Pen>
+              <Pen Brush="#8a8a8a" Thickness="1" LineJoin="Miter" />
+            </GeometryDrawing.Pen>
+          </GeometryDrawing>
+          <GeometryDrawing Brush="#d8d8d8" Geometry="M 9.5 1.5 V 5 H 13 Z">
+            <GeometryDrawing.Pen>
+              <Pen Brush="#8a8a8a" Thickness="1" LineJoin="Miter" />
+            </GeometryDrawing.Pen>
+          </GeometryDrawing>
+        </DrawingGroup>
+      </DrawingImage.Drawing>
+    </DrawingImage>
+  </UserControl.Resources>
+
+  <Panel>
+    <TextBlock Text="{loc:Loc BookBrowserView_NoBookOpen}"
+               IsVisible="{Binding !HasBook}"
+               Margin="16" Opacity="0.6" TextWrapping="Wrap" VerticalAlignment="Top" />
+
+    <TreeView x:Name="Tree"
+              IsVisible="{Binding HasBook}"
+              ItemsSource="{Binding Nodes}"
+              SelectionMode="Multiple"
+              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+
+      <TreeView.Styles>
+        <!-- Only Text is expanded at startup; the expansion state is kept by the VM,
+             so it survives rebuilding the tree. -->
+        <Style Selector="TreeViewItem" x:DataType="vm:BookBrowserNode">
+          <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+          <Setter Property="Padding" Value="2,0" />
+        </Style>
+      </TreeView.Styles>
+
+      <TreeView.ContextMenu>
+        <ContextMenu x:DataType="vm:BookBrowserViewModel">
+          <MenuItem Header="{loc:Loc BookBrowserView_Open}" Command="{Binding OpenSelectedCommand}" />
+          <MenuItem Header="{loc:Loc Common_RenameEllipsis}" Command="{Binding RenameSelectedCommand}" />
+          <MenuItem Header="{loc:Loc BookBrowserView_RenameWithTemplate}" Command="{Binding RenameSelectedWithTemplateCommand}" />
+          <MenuItem Header="{loc:Loc RegexRenameWindow_Title}" Command="{Binding BulkRegexRenameSelectedCommand}" />
+          <MenuItem Header="{loc:Loc Common_Delete}" Command="{Binding DeleteSelectedCommand}" />
+          <MenuItem Header="{loc:Loc BookBrowserView_MoveToFolder}" Command="{Binding MoveSelectedCommand}" />
+          <Separator />
+          <MenuItem Header="{loc:Loc BookBrowserView_MoveUp}" Command="{Binding MoveTextUpCommand}" />
+          <MenuItem Header="{loc:Loc BookBrowserView_MoveDown}" Command="{Binding MoveTextDownCommand}" />
+          <MenuItem Header="{loc:Loc BookBrowserView_SortSelected}" Command="{Binding SortTextCommand}" />
+          <MenuItem Header="{loc:Loc BookBrowserView_MergeSelected}" Command="{Binding MergeSelectedCommand}" />
+          <MenuItem Header="{loc:Loc BookBrowserView_SplitAtMarkers}" Command="{Binding SplitSelectedCommand}" />
+          <Separator />
+          <MenuItem Header="{loc:Loc BookBrowserView_AddBlankHtml}" Command="{Binding AddBlankHtmlCommand}" />
+          <MenuItem Header="{loc:Loc BookBrowserView_AddBlankCss}" Command="{Binding AddBlankCssCommand}" />
+          <MenuItem Header="{loc:Loc BookBrowserView_AddBlankSvg}" Command="{Binding AddBlankSvgCommand}" />
+          <MenuItem Header="{loc:Loc BookBrowserView_AddBlankJs}" Command="{Binding AddBlankJsCommand}" />
+          <MenuItem Header="{loc:Loc BookBrowserView_AddExistingFiles}" Command="{Binding AddExistingFilesCommand}" />
+          <Separator />
+          <MenuItem Header="{loc:Loc BookBrowserView_AddSemantics}" Command="{Binding AddSemanticsSelectedCommand}" />
+          <MenuItem Header="{loc:Loc BookBrowserView_CoverImage}" Command="{Binding CoverImageSelectedCommand}" />
+          <Separator />
+          <MenuItem Header="{loc:Loc BookBrowserView_LinkStylesheetsMenu}" Command="{Binding LinkStylesheetsSelectedCommand}" />
+          <MenuItem Header="{loc:Loc BookBrowserView_LinkJavascriptsMenu}" Command="{Binding LinkJavascriptsSelectedCommand}" />
+          <MenuItem Header="{loc:Loc BookBrowserView_ValidateWithW3C}" Command="{Binding ValidateSelectedWithW3CCommand}" />
+          <Separator />
+          <MenuItem Header="{loc:Loc BookBrowserView_AddCopy}" Command="{Binding AddCopySelectedCommand}" />
+          <MenuItem Header="{loc:Loc BookBrowserView_RenumberToc}" Command="{Binding RenumberTocSelectedCommand}" />
+          <MenuItem Header="{loc:Loc BookBrowserView_SaveAs}" Command="{Binding SaveAsSelectedCommand}" />
+          <MenuItem Header="{loc:Loc BookBrowserView_SelectAll}" Command="{Binding SelectAllInFolderCommand}" />
+          <MenuItem Header="{loc:Loc BookBrowserView_GetInfo}" Command="{Binding GetInfoSelectedCommand}" />
+        </ContextMenu>
+      </TreeView.ContextMenu>
+
+      <TreeView.ItemTemplate>
+        <TreeDataTemplate DataType="vm:BookBrowserNode" ItemsSource="{Binding Children}">
+          <!-- The cover/nav have no markers (the information is in the tooltip); the ⚠ for a
+               file that is not well-formed is a deliberate addition. -->
+          <DockPanel ToolTip.Tip="{Binding ToolTip}" Background="Transparent">
+            <Image DockPanel.Dock="Left" Width="16" Height="16" Margin="0,0,5,0"
+                   Source="{StaticResource BookBrowserFolderIcon}" IsVisible="{Binding IsFolder}" />
+            <Image DockPanel.Dock="Left" Width="16" Height="16" Margin="0,0,5,0"
+                   Source="{StaticResource BookBrowserFileIcon}" IsVisible="{Binding !IsFolder}" />
+            <TextBlock DockPanel.Dock="Right" Text="⚠" Foreground="#C0392B" Margin="4,0,0,0"
+                       IsVisible="{Binding IsMalformed}" ToolTip.Tip="{loc:Loc BookBrowserView_MalformedTip}" />
+            <!-- Trimming in the middle of the name. -->
+            <TextBlock Text="{Binding Header}" TextTrimming="PrefixCharacterEllipsis" VerticalAlignment="Center"
+                       IsVisible="{Binding !IsEditing}" />
+            <!-- In-place rename: Enter confirms, Esc and focus loss cancel —
+                 handled in BookBrowserView. -->
+            <TextBox Classes="inPlaceRename" Text="{Binding EditText, Mode=TwoWay}"
+                     IsVisible="{Binding IsEditing}"
+                     MinHeight="0" Padding="2,0" VerticalAlignment="Center" VerticalContentAlignment="Center" />
+          </DockPanel>
+        </TreeDataTemplate>
+      </TreeView.ItemTemplate>
+    </TreeView>
+  </Panel>
+</UserControl>

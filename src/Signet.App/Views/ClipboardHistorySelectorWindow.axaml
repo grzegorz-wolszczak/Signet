@@ -1,0 +1,25 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.ClipboardHistorySelectorWindow"
+        Width="480" Height="420"
+        WindowStartupLocation="CenterOwner"
+        Title="{loc:Loc ClipboardHistorySelectorWindow_Title}">
+
+  <DockPanel Margin="16">
+    <TextBlock DockPanel.Dock="Top" Text="{loc:Loc ClipboardHistorySelectorWindow_Prompt}" Margin="0,0,0,8" />
+
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,10,0,0">
+      <Button x:Name="OkButton" Content="{loc:Loc Common_Ok}" IsDefault="True" MinWidth="80" />
+      <Button x:Name="CancelButton" Content="{loc:Loc Common_Cancel}" IsCancel="True" MinWidth="80" />
+    </StackPanel>
+
+    <ListBox x:Name="ItemsList" SelectionMode="Single">
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="x:String">
+          <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis" MaxLines="1" />
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </DockPanel>
+</Window>

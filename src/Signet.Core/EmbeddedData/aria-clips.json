@@ -1,0 +1,87 @@
+[
+  {
+    "code": "aside",
+    "name": "Aside",
+    "template": "<aside>\n  \\1\n</aside>\n"
+  },
+  {
+    "code": "sidebar",
+    "name": "Aside: Sidebar",
+    "template": "<aside aria-label=\"LABEL_FOR_SIDEBAR\">\n  \\1\n</aside>\n"
+  },
+  {
+    "code": "tip",
+    "name": "Aside: Tip",
+    "template": "<aside role=\"doc-tip\" epub:type=\"tip\" aria-label=\"LABEL_FOR_TIP\">\n  \\1\n</aside>\n"
+  },
+  {
+    "code": "fn_backlink",
+    "name": "Backlink from Footnote",
+    "template": "<a href=\"#ref_fn_N_\" epub:type=\"backlink\" role=\"doc-backlink\">LABEL_FOR_FOOTNOTE_BACKLINK [_N_]</a>"
+  },
+  {
+    "code": "endnote_backlink",
+    "name": "Backlink from Endnote",
+    "template": "<a href=\"HREF_RETURN_FROM_ENDNOTE#en_N_\" epub:type=\"backlink\" role=\"doc-backlink\">LABEL_FOR_ENDNOTE_BACKLINK [_N_]</a>"
+  },
+  {
+    "code": "endnote_li",
+    "name": "Endnote in li",
+    "template": "    <li id=\"en_N_\" epub:type=\"endnote\">\n      <p>\\1\n        <a href=\"HREF_RETURN_FROM_ENDNOTE#en_N_\" epub:type=\"backlink\" role=\"doc-backlink\">LABEL_FOR_ENDNOTE_BACKLINK [_N_]</a>\n      </p>\n    </li>\n"
+  },
+  {
+    "code": "fn_aside",
+    "name": "Footnote in aside",
+    "template": "<aside id=\"fn_N_\" epub:type=\"footnote\" role=\"doc-footnote\">\n  <p>\\1\n    <a href=\"#ref_fn_N_\" epub:type=\"backlink\" role=\"doc-backlink\">LABEL_FOR_FOOTNOTE_BACKLINK [_N_]</a>\n  </p>\n</aside>\n"
+  },
+  {
+    "code": "fn_div",
+    "name": "Footnote in div",
+    "template": "<div id=\"fn_N_\" epub:type=\"footnote\" role=\"doc-footnote\">\n  <p>\\1\n    <a href=\"#ref_fn_N_\" epub:type=\"backlink\" role=\"doc-backlink\">LABEL_FOR_FOOTNOTE_BACKLINK [_N_]</a>\n  </p>\n</div>\n"
+  },
+  {
+    "code": "fn_p",
+    "name": "Footnote in p",
+    "template": "<p id=\"fn_N_\" epub:type=\"footnote\" role=\"doc-footnote\">\n    \\1\n     <a href=\"#ref_fn_N_\" epub:type=\"backlink\" role=\"doc-backlink\">LABEL_FOR_FOOTNOTE_BACKLINK [_N_]</a>\n  </p>\n"
+  },
+  {
+    "code": "pagebreak_hr",
+    "name": "PageBreak in hr",
+    "template": "<hr epub:type=\"pagebreak\" role=\"doc-pagebreak\" />\n"
+  },
+  {
+    "code": "pagebreak_span",
+    "name": "PageBreak in span",
+    "template": "<span id=\"page_N_\" epub:type=\"pagebreak\" role=\"doc-pagebreak\" aria-label=\"LABEL_FOR_PAGE _N_\" />"
+  },
+  {
+    "code": "fn_ref",
+    "name": "Reference to Footnote",
+    "template": "<a id=\"ref_fn_N_\" href=\"#fn_N_\" epub:type=\"noteref\" role=\"doc-noteref\" aria-label=\"LABEL_FOR_FOOTNOTE_REFERENCE _N_\">[_N_]</a>"
+  },
+  {
+    "code": "endnote_ref",
+    "name": "Reference to Endnote",
+    "template": "<a id=\"ref_en_N_\" href=\"HREF_TO_ENDNOTE#en_N_\" epub:type=\"noteref\" role=\"doc-noteref\" aria-label=\"LABEL_FOR_ENDNOTE_REFERENCE _N_\">[_N_]</a>"
+  },
+  {
+    "code": "section",
+    "name": "Section",
+    "template": "<section>\n  \\1\n</section>\n"
+  },
+  {
+    "code": "chapter",
+    "name": "Section: Chapter",
+    "template": "<section role=\"doc-chapter\" epub:type=\"chapter\" aria-labelledby=\"heading1\">\n  <h1 id=\"heading1\">CHAPTER_TITLE_HERE</h1>\n  \\1\n</section>\n"
+  },
+  {
+    "code": "endnotes",
+    "name": "Section: Endnotes",
+    "template": "<section epub:type=\"endnotes\" role=\"doc-endnotes\">\n  <ol>\n  </ol>\n</section>\n"
+  },
+  {
+    "code": "footnotes",
+    "name": "Section: Footnotes",
+    "template": "<section epub:type=\"footnotes\" aria-label=\"LABEL_FOR_FOOTNOTES\">\n  \\1\n</section>\n"
+  }
+]

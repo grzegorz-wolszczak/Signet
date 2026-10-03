@@ -552,3 +552,6 @@ hs_err_pid*
 .claude/settings.local.json
 .claude/worktrees/
 CLAUDE.local.md
+
+# FreeFileSync database
+*.ffs_db

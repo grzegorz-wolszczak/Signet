@@ -1,0 +1,22 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Signet.App.ViewModels"
+        xmlns:loc="using:Signet.App.Resources"
+        xmlns:views="using:Signet.App.Views"
+        x:Class="Signet.App.Views.SearchEditorWindow"
+        x:DataType="vm:SearchEditorViewModel"
+        Title="{loc:Loc SearchEditorWindow_Title}"
+        Width="900" Height="720"
+        MinWidth="640" MinHeight="420"
+        WindowStartupLocation="CenterOwner">
+
+  <!-- Tree + action buttons, with Keep / Close at the bottom. -->
+  <DockPanel>
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right"
+                Spacing="8" Margin="8">
+      <Button Content="{loc:Loc SearchEditorWindow_Keep}" Command="{Binding SaveCommand}" MinWidth="80" />
+      <Button Content="{loc:Loc Common_Close}" Click="OnCloseClick" MinWidth="80" />
+    </StackPanel>
+    <views:SearchEditorView />
+  </DockPanel>
+</Window>

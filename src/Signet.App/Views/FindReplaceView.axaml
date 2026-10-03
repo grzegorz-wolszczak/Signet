@@ -1,0 +1,176 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Signet.App.ViewModels"
+             xmlns:loc="using:Signet.App.Resources"
+             xmlns:infra="using:Signet.App.Infrastructure"
+             x:Class="Signet.App.Views.FindReplaceView"
+             x:DataType="vm:FindReplaceViewModel">
+
+  <UserControl.Styles>
+    <!-- Action buttons: the icon from the current set
+         (key in Tag) to the left of the text (Content). -->
+    <Style Selector="Button.findAction">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="ContentTemplate">
+        <DataTemplate x:DataType="x:String">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <Panel Width="16" Height="16" VerticalAlignment="Center">
+              <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                     IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+              <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                        IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            </Panel>
+            <TextBlock Text="{Binding}" VerticalAlignment="Center" />
+          </StackPanel>
+        </DataTemplate>
+      </Setter>
+    </Style>
+  </UserControl.Styles>
+
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+    <Grid Margin="8" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*,Auto" RowSpacing="6" ColumnSpacing="8">
+
+      <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc FindReplaceView_Find}" VerticalAlignment="Center" />
+      <AutoCompleteBox Grid.Row="0" Grid.Column="1"
+                       x:Name="FindBox"
+                       Text="{Binding FindText, Mode=TwoWay}"
+                       ItemsSource="{Binding FindHistory}"
+                       FilterMode="None" MinimumPrefixLength="0"
+                       PlaceholderText="{loc:Loc FindReplaceView_FindPlaceholder}">
+        <AutoCompleteBox.InnerRightContent>
+          <Button x:Name="FindBoxHistoryButton"
+                  Focusable="False" Padding="6,0" Margin="0" VerticalAlignment="Stretch"
+                  Background="Transparent" BorderThickness="0"
+                  ToolTip.Tip="{loc:Loc FindReplaceView_FindHistoryTooltip}">
+            <PathIcon Data="M0,0 L8,0 L4,5 Z" Width="8" Height="5" />
+          </Button>
+        </AutoCompleteBox.InnerRightContent>
+      </AutoCompleteBox>
+      <!-- Six buttons: Find · Replace · Restart /
+           Replace/Find · Replace All · Count All; columns aligned between the rows. -->
+      <Grid Grid.Row="0" Grid.RowSpan="2" Grid.Column="2" x:Name="ActionButtons"
+            RowDefinitions="Auto,Auto" ColumnDefinitions="Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="4"
+            VerticalAlignment="Center">
+        <Button Grid.Row="0" Grid.Column="0" Classes="findAction" Tag="find"
+                Content="{loc:Loc FindReplaceView_FindNext}" Command="{Binding FindNextCommand}" />
+        <Button Grid.Row="0" Grid.Column="1" Classes="findAction" Tag="replace"
+                Content="{loc:Loc FindReplaceView_ReplaceButton}" Command="{Binding ReplaceCommand}" />
+        <Button Grid.Row="0" Grid.Column="2" Classes="findAction" Tag="restart"
+                Content="{loc:Loc FindReplaceView_Restart}" Command="{Binding RestartCommand}"
+                ToolTip.Tip="{loc:Loc FindReplaceView_RestartTooltip}" />
+        <Button Grid.Row="1" Grid.Column="0" Classes="findAction" Tag="replace-find"
+                Content="{loc:Loc FindReplaceView_ReplaceFind}" Command="{Binding ReplaceFindCommand}" />
+        <Button Grid.Row="1" Grid.Column="1" Classes="findAction" Tag="replace-all"
+                Content="{loc:Loc FindReplaceView_ReplaceAll}" Command="{Binding ReplaceAllCommand}" />
+        <Button Grid.Row="1" Grid.Column="2" Classes="findAction" Tag="count-all"
+                Content="{loc:Loc FindReplaceView_CountAll}" Command="{Binding CountCommand}" />
+      </Grid>
+
+      <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc FindReplaceView_Replace}" VerticalAlignment="Center" />
+      <AutoCompleteBox Grid.Row="1" Grid.Column="1"
+                       x:Name="ReplaceBox"
+                       Text="{Binding ReplaceText, Mode=TwoWay}"
+                       ItemsSource="{Binding ReplaceHistory}"
+                       FilterMode="None" MinimumPrefixLength="0"
+                       PlaceholderText="{loc:Loc FindReplaceView_ReplacePlaceholder}">
+        <AutoCompleteBox.InnerRightContent>
+          <Button x:Name="ReplaceBoxHistoryButton"
+                  Focusable="False" Padding="6,0" Margin="0" VerticalAlignment="Stretch"
+                  Background="Transparent" BorderThickness="0"
+                  ToolTip.Tip="{loc:Loc FindReplaceView_ReplaceHistoryTooltip}">
+            <PathIcon Data="M0,0 L8,0 L4,5 Z" Width="8" Height="5" />
+          </Button>
+        </AutoCompleteBox.InnerRightContent>
+      </AutoCompleteBox>
+
+      <WrapPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal">
+        <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,12,0">
+          <TextBlock Text="{loc:Loc FindReplaceView_Mode}" VerticalAlignment="Center" />
+          <ComboBox SelectedIndex="{Binding ModeIndex, Mode=TwoWay}" MinWidth="130">
+            <ComboBoxItem Content="{loc:Loc FindReplaceView_ModeNormal}" />
+            <ComboBoxItem Content="{loc:Loc FindReplaceView_ModeCaseSensitive}" />
+            <ComboBoxItem Content="{loc:Loc FindReplaceView_ModeRegex}" />
+          </ComboBox>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,12,0">
+          <TextBlock Text="{loc:Loc FindReplaceView_Direction}" VerticalAlignment="Center" />
+          <ComboBox SelectedIndex="{Binding DirectionIndex, Mode=TwoWay}" MinWidth="80">
+            <ComboBoxItem Content="{loc:Loc FindReplaceView_DirectionDown}" />
+            <ComboBoxItem Content="{loc:Loc FindReplaceView_DirectionUp}" />
+          </ComboBox>
+        </StackPanel>
+        <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,12,0">
+          <TextBlock Text="{loc:Loc FindReplaceView_LookIn}" VerticalAlignment="Center" />
+          <ComboBox ItemsSource="{Binding LookWhereOptions}"
+                    SelectedIndex="{Binding LookWhereIndex, Mode=TwoWay}" MinWidth="180" />
+        </StackPanel>
+      </WrapPanel>
+
+      <!-- The "Options:" row: a "Regex Options" button with a menu (Dot All,
+           Minimal Match, Auto Tokenise, Unicode Property), always-visible Wrap and Text; then
+           the extras (Restrict to selection, Highlight all matches). -->
+      <WrapPanel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal">
+        <TextBlock Text="{loc:Loc FindReplaceView_Options}" VerticalAlignment="Center" Margin="0,0,6,0" />
+        <DropDownButton x:Name="RegexOptionsButton" Margin="0,0,12,0"
+                        Content="{loc:Loc FindReplaceView_RegexOptions}"
+                        ToolTip.Tip="{loc:Loc FindReplaceView_RegexOptionsTooltip}">
+          <DropDownButton.Flyout>
+            <MenuFlyout Placement="BottomEdgeAlignedLeft">
+              <MenuItem Header="{loc:Loc FindReplaceView_DotMatchesAll}" ToggleType="CheckBox"
+                        IsChecked="{Binding RegexDotAll, Mode=TwoWay}" StaysOpenOnClick="True" />
+              <MenuItem Header="{loc:Loc FindReplaceView_MinimalMatch}" ToggleType="CheckBox"
+                        IsChecked="{Binding RegexMinimalMatch, Mode=TwoWay}" StaysOpenOnClick="True" />
+              <MenuItem Header="{loc:Loc FindReplaceView_AutoTokenise}" ToggleType="CheckBox"
+                        IsChecked="{Binding RegexAutoTokenise, Mode=TwoWay}" StaysOpenOnClick="True"
+                        ToolTip.Tip="{loc:Loc FindReplaceView_AutoTokeniseTooltip}" />
+              <MenuItem Header="{loc:Loc FindReplaceView_UnicodeProperty}" ToggleType="CheckBox"
+                        IsChecked="{Binding RegexUnicodeProperty, Mode=TwoWay}" StaysOpenOnClick="True" />
+            </MenuFlyout>
+          </DropDownButton.Flyout>
+        </DropDownButton>
+        <CheckBox Content="{loc:Loc FindReplaceView_Wrap}" IsChecked="{Binding OptionWrap, Mode=TwoWay}" Margin="0,0,12,0" />
+        <CheckBox x:Name="TextOnlyCheckBox"
+                  Content="{loc:Loc FindReplaceView_TextOnly}" IsChecked="{Binding RegexTextOnly, Mode=TwoWay}"
+                  ToolTip.Tip="{loc:Loc FindReplaceView_SearchTextNotTags}" Margin="0,0,12,0" />
+        <CheckBox Content="{loc:Loc FindReplaceView_RestrictToSelection}" IsChecked="{Binding RestrictToSelection, Mode=TwoWay}" Margin="0,0,12,0" />
+        <CheckBox x:Name="HighlightAllMatchesCheckBox"
+                  Content="{loc:Loc FindReplaceView_HighlightAllMatches}"
+                  IsChecked="{Binding HighlightAllMatches, Mode=TwoWay}"
+                  ToolTip.Tip="{loc:Loc FindReplaceView_HighlightAllMatchesTooltip}" />
+      </WrapPanel>
+
+      <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="12">
+        <TextBlock Text="{Binding Message}" Foreground="{DynamicResource SystemAccentColor}" VerticalAlignment="Center" />
+        <TextBlock Text="{Binding RegexError, StringFormat='Regex: {0}'}"
+                   IsVisible="{Binding HasRegexError}"
+                   Foreground="IndianRed" VerticalAlignment="Center" TextWrapping="Wrap" />
+      </StackPanel>
+
+      <Grid Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3"
+            ColumnDefinitions="Auto,Auto" ColumnSpacing="4"
+            IsVisible="{Binding HasReport}">
+        <Expander Grid.Column="0" x:Name="ReportExpander"
+                  Header="{Binding ReportSummary}"
+                  IsExpanded="False">
+          <ScrollViewer x:Name="ReportScroll" MaxHeight="180"
+                        HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding ReportRows}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:MultiFileReportRow">
+                  <TextBlock Text="{Binding Display}" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </Expander>
+        <Button Grid.Column="1" x:Name="CloseReportButton"
+                VerticalAlignment="Top" Padding="8,4"
+                Background="Transparent" BorderThickness="0"
+                Command="{Binding CloseReportCommand}"
+                Content="✕"
+                ToolTip.Tip="{loc:Loc Common_CloseReportTooltip}" />
+      </Grid>
+    </Grid>
+  </ScrollViewer>
+</UserControl>

@@ -1,0 +1,60 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Signet.App.ViewModels"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.HeadingSelectorWindow"
+        x:DataType="vm:HeadingSelectorViewModel"
+        Width="640" Height="480"
+        WindowStartupLocation="CenterOwner"
+        Title="{loc:Loc HeadingSelectorWindow_Title}">
+
+  <DockPanel Margin="12">
+
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,10,0,0">
+      <Button Content="{loc:Loc Common_Ok}" IsDefault="True" MinWidth="90" Command="{Binding AcceptCommand}" />
+      <Button Content="{loc:Loc Common_Cancel}" IsCancel="True" MinWidth="80" Command="{Binding CancelCommand}" />
+    </StackPanel>
+
+    <TextBlock DockPanel.Dock="Bottom" Text="{Binding CountsSummary}" Opacity="0.7" Margin="0,8,0,0" />
+
+    <ComboBox DockPanel.Dock="Bottom" Margin="0,8,0,0" HorizontalAlignment="Left" MinWidth="260"
+              ItemsSource="{Binding LevelChoices}"
+              SelectedIndex="{Binding SelectedLevelChoiceIndex}"
+              ToolTip.Tip="{loc:Loc HeadingSelectorWindow_LevelChoiceTip}" />
+
+    <CheckBox DockPanel.Dock="Bottom" Margin="0,8,0,0" Content="{loc:Loc HeadingSelectorWindow_TocItemsOnly}"
+              IsChecked="{Binding TocItemsOnly}" />
+
+    <StackPanel DockPanel.Dock="Right" Width="46" Margin="8,0,0,0" Spacing="6">
+      <Button Content="◀" MinWidth="40" Command="{Binding DecreaseLevelCommand}"
+              ToolTip.Tip="{loc:Loc HeadingSelectorWindow_DecreaseLevelTip}" />
+      <Button Content="▶" MinWidth="40" Command="{Binding IncreaseLevelCommand}"
+              ToolTip.Tip="{loc:Loc HeadingSelectorWindow_IncreaseLevelTip}" />
+    </StackPanel>
+
+    <Border BorderBrush="Gray" BorderThickness="1">
+      <TreeView x:Name="Tree"
+                ItemsSource="{Binding Nodes}"
+                SelectedItem="{Binding SelectedNode, Mode=TwoWay}">
+        <TreeView.Styles>
+          <Style Selector="TreeViewItem" x:DataType="vm:HeadingNodeViewModel">
+            <Setter Property="IsExpanded" Value="True" />
+          </Style>
+        </TreeView.Styles>
+        <TreeView.ItemTemplate>
+          <TreeDataTemplate x:DataType="vm:HeadingNodeViewModel" ItemsSource="{Binding Children}">
+            <Grid ColumnDefinitions="*,Auto,Auto" Margin="0,1">
+              <TextBox Grid.Column="0" Text="{Binding TitleText, Mode=TwoWay}"
+                       BorderThickness="0" Background="Transparent" Padding="2,1" />
+              <TextBlock Grid.Column="1" Text="{Binding LevelLabel}" VerticalAlignment="Center"
+                         Margin="8,0" Opacity="0.7" />
+              <CheckBox Grid.Column="2" IsChecked="{Binding IncludeInToc, Mode=TwoWay}"
+                        VerticalAlignment="Center" Margin="4,0,0,0"
+                        ToolTip.Tip="{loc:Loc HeadingSelectorWindow_IncludeInTocTip}" />
+            </Grid>
+          </TreeDataTemplate>
+        </TreeView.ItemTemplate>
+      </TreeView>
+    </Border>
+  </DockPanel>
+</Window>

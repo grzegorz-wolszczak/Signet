@@ -1,0 +1,113 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:dockFluent="using:Dock.Avalonia.Themes.Fluent"
+             xmlns:docking="using:Signet.App.Docking"
+             xmlns:views="using:Signet.App.Views"
+             xmlns:tabViews="using:Signet.App.Views.Tabs"
+             xmlns:tabVm="using:Signet.App.ViewModels.Tabs"
+             x:Class="Signet.App.App"
+             RequestedThemeVariant="Default">
+
+  <Application.DataTemplates>
+    <DataTemplate DataType="docking:BookBrowserTool">
+      <views:BookBrowserView DataContext="{Binding ViewModel}" />
+    </DataTemplate>
+
+    <DataTemplate DataType="docking:PreviewTool">
+      <views:PreviewView DataContext="{Binding ViewModel}" />
+    </DataTemplate>
+
+    <DataTemplate DataType="docking:TableOfContentsTool">
+      <views:TableOfContentsView DataContext="{Binding ViewModel}" />
+    </DataTemplate>
+
+
+    <DataTemplate DataType="docking:ValidationResultsTool">
+      <views:ValidationResultsView DataContext="{Binding ViewModel}" />
+    </DataTemplate>
+
+
+    <DataTemplate DataType="docking:ClipsTool">
+      <views:ClipsPanelView DataContext="{Binding ViewModel}" />
+    </DataTemplate>
+
+    <DataTemplate DataType="docking:CheckpointsTool">
+      <views:CheckpointsPanelView DataContext="{Binding ViewModel}" />
+    </DataTemplate>
+
+    <DataTemplate DataType="tabVm:PlaceholderContentTabViewModel">
+      <tabViews:PlaceholderContentTabView />
+    </DataTemplate>
+
+    <DataTemplate DataType="tabVm:CodeTabViewModel">
+      <tabViews:CodeTabView />
+    </DataTemplate>
+
+    <DataTemplate DataType="tabVm:ImageTabViewModel">
+      <tabViews:ImageTabView />
+    </DataTemplate>
+
+    <DataTemplate DataType="tabVm:FontTabViewModel">
+      <tabViews:FontTabView />
+    </DataTemplate>
+
+    <DataTemplate DataType="tabVm:MediaTabViewModel">
+      <tabViews:MediaTabView />
+    </DataTemplate>
+
+    <DataTemplate DataType="docking:PlaceholderTool">
+      <Border Padding="16">
+        <TextBlock Text="{Binding Placeholder}"
+                   TextWrapping="Wrap"
+                   VerticalAlignment="Top"
+                   Opacity="0.7" />
+      </Border>
+    </DataTemplate>
+  </Application.DataTemplates>
+
+  <Application.Resources>
+    <ResourceDictionary>
+      <!-- Text selection in edit boxes: Fluent uses the dark system accent color, on which
+           black text is unreadable. Light blue background as in Windows / VS Code. -->
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="SignetTextSelectionBrush" Color="#ADD6FF" />
+          <SolidColorBrush x:Key="SignetTextSelectionForegroundBrush" Color="#000000" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="SignetTextSelectionBrush" Color="#264F78" />
+          <SolidColorBrush x:Key="SignetTextSelectionForegroundBrush" Color="#FFFFFF" />
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme />
+    <dockFluent:DockFluentTheme />
+    <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml" />
+    <!-- Theme for Avalonia.Controls.DataGrid (Reports). -->
+    <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
+    <!-- ColorView theme (color picker in Preferences). -->
+    <StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml" />
+
+    <!-- Application icon on every window (main, dialogs, tool windows) — without it child
+         windows show the default Avalonia icon. -->
+    <Style Selector=":is(Window)">
+      <Setter Property="Icon" Value="/Assets/AppIcon/app.ico" />
+    </Style>
+
+    <Style Selector="TextBox">
+      <Setter Property="SelectionBrush" Value="{DynamicResource SignetTextSelectionBrush}" />
+      <Setter Property="SelectionForegroundBrush" Value="{DynamicResource SignetTextSelectionForegroundBrush}" />
+    </Style>
+
+    <!-- Spinner buttons (NumericUpDown, ButtonSpinner): "down" on the left, "up" on the right.
+         The Fluent template stacks Increase before Decrease horizontally; reversing the flow
+         direction of that panel swaps them (the chevrons are horizontally symmetric). -->
+    <Style Selector="ButtonSpinner /template/ StackPanel#PART_SpinnerPanel">
+      <Setter Property="FlowDirection" Value="RightToLeft" />
+    </Style>
+  </Application.Styles>
+
+</Application>

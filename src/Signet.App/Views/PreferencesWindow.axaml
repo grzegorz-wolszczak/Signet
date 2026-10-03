@@ -1,0 +1,596 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Signet.App.ViewModels"
+        xmlns:loc="using:Signet.App.Resources"
+        xmlns:infra="using:Signet.App.Infrastructure"
+        x:Class="Signet.App.Views.PreferencesWindow"
+        x:DataType="vm:PreferencesViewModel"
+        Width="820" Height="640"
+        WindowStartupLocation="CenterOwner"
+        Title="{loc:Loc PreferencesWindow_Title}">
+
+  <Window.Styles>
+    <!-- A subtle separation of the tab list (left) from the content (right): the tab strip
+         gets a dimmed background derived from the window background, and the content area gets its own
+         background and a thin border. Without this, in the light theme both parts are white and blend
+         into a single plane. Colors come from DynamicResource, so it also works in the dark theme. -->
+    <Style Selector="TabControl.preferences">
+      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" />
+    </Style>
+    <Style Selector="TabControl.preferences /template/ ContentPresenter#PART_SelectedContentHost">
+      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="4" />
+    </Style>
+
+    <!-- Sections inside a tab as subtle cards (e.g. "Code View — Light/Dark theme"). -->
+    <Style Selector="Border.section">
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="Padding" Value="10" />
+    </Style>
+    <!-- Shortcut editor: a framed list, rows highlighted under the cursor,
+         an expanded row editor with an accent bar on the left. -->
+    <Style Selector="Border.shortcutList, Border.listFrame">
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="4" />
+    </Style>
+    <Style Selector="Border.shortcutRow">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Padding" Value="24,4,8,4" />
+    </Style>
+    <Style Selector="Border.shortcutRow:pointerover">
+      <Setter Property="Background" Value="{DynamicResource SystemControlHighlightListLowBrush}" />
+    </Style>
+    <Style Selector="Border.shortcutEditor">
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlHighlightAccentBrush}" />
+      <Setter Property="BorderThickness" Value="6,1,1,1" />
+      <Setter Property="Padding" Value="12,8" />
+      <Setter Property="Margin" Value="0,2" />
+    </Style>
+    <!-- Code View color fields: the background takes the color of the entered value, also on hover and when focused
+         (Fluent then replaces the template border's background with its own). -->
+    <Style Selector="TextBox.colorValue:pointerover /template/ Border#PART_BorderElement">
+      <Setter Property="Background" Value="{Binding $parent[TextBox].Background}" />
+    </Style>
+    <Style Selector="TextBox.colorValue:focus /template/ Border#PART_BorderElement">
+      <Setter Property="Background" Value="{Binding $parent[TextBox].Background}" />
+    </Style>
+    <!-- "Label + control" grids: 2/3 of the width for the (wrapping) label, 1/3 for the control
+         stretched across the whole column — long labels do not hide under the fields. -->
+    <Style Selector="Grid.labeled > TextBlock">
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Grid.labeled > ComboBox">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+    </Style>
+    <Style Selector="Border.fontField > TextBlock">
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+    <!-- Font field: a read-only name rendered in the chosen font; changed via "Choose…". -->
+    <Style Selector="Border.fontField">
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="3" />
+      <Setter Property="Padding" Value="8,4" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel Margin="10">
+
+    <Grid DockPanel.Dock="Bottom" ColumnDefinitions="Auto,*,Auto" Margin="0,8,0,0">
+      <Button Grid.Column="0" x:Name="OpenPreferencesLocationButton"
+              Content="{loc:Loc PreferencesWindow_OpenPreferencesLocation}" Click="OnOpenPreferencesLocationClicked" />
+      <Button Grid.Column="2" Content="{loc:Loc Common_Close}" Click="OnCloseClicked" IsDefault="True" />
+    </Grid>
+
+    <TabControl TabStripPlacement="Left" Classes="preferences">
+
+      <!-- ================================ Language ================================ -->
+      <TabItem Header="{loc:Loc PreferencesWindow_Language}">
+        <StackPanel Spacing="10" Margin="8">
+          <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+            <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_Language}" />
+            <ComboBox Grid.Column="1" ItemsSource="{Binding AvailableLanguages}" SelectedItem="{Binding SelectedLanguage}"
+                      DisplayMemberBinding="{Binding DisplayName}" />
+          </Grid>
+          <TextBlock Text="{loc:Loc PreferencesWindow_LanguageRestartNotice}"
+                     Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
+        </StackPanel>
+      </TabItem>
+
+      <!-- ============================== Appearance ============================== -->
+      <TabItem Header="{loc:Loc PreferencesWindow_Appearance}">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="8">
+
+            <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+              <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_Theme}" />
+              <ComboBox Grid.Column="1" ItemsSource="{Binding AvailableThemes}" SelectedItem="{Binding SelectedTheme}">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate>
+                    <TextBlock Text="{Binding Converter={x:Static infra:DisplayNameConverters.ThemePreference}}" />
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+            </Grid>
+
+            <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+              <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_IconTheme}" />
+              <ComboBox Grid.Column="1" ItemsSource="{Binding AvailableIconThemes}" SelectedItem="{Binding SelectedIconTheme}"
+                        DisplayMemberBinding="{Binding DisplayName}" />
+            </Grid>
+
+            <CheckBox Content="{loc:Loc PreferencesWindow_CompactUi}" IsChecked="{Binding CompactUi}" />
+
+            <!-- Interface font: the description rendered in the chosen font (empty = the mode's default). -->
+            <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+              <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_UiFont}" />
+              <StackPanel Grid.Column="1" Spacing="4">
+                <Border Classes="fontField uiFont">
+                  <TextBlock Text="{Binding UiFontDescription}" TextTrimming="CharacterEllipsis"
+                             FontFamily="{Binding EffectiveUiFontFamily, Converter={x:Static infra:FontFamilyConverters.FromName}}" />
+                </Border>
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <Button Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChooseUiFontCommand}" />
+                  <Button Content="{loc:Loc PreferencesWindow_UiFontReset}" Command="{Binding ResetUiFontCommand}" />
+                </StackPanel>
+              </StackPanel>
+            </Grid>
+
+            <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+              <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_CustomIconFolder}" />
+              <TextBox Grid.Column="1" Text="{Binding CustomIconFolder}" />
+            </Grid>
+
+            <Border Classes="section">
+              <StackPanel Spacing="6">
+                <TextBlock Text="{loc:Loc PreferencesWindow_SpecialCharacterFont}" FontWeight="Bold" />
+                <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                  <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_Family}" VerticalAlignment="Center" />
+                  <DockPanel Grid.Row="0" Grid.Column="1">
+                    <Button DockPanel.Dock="Right" Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChooseSpecialCharacterFontCommand}" Margin="6,0,0,0" />
+                    <Border Classes="fontField"><TextBlock Text="{Binding SpecialCharacterFontFamily}" FontFamily="{Binding SpecialCharacterFontFamily, Converter={x:Static infra:FontFamilyConverters.FromName}}" /></Border>
+                  </DockPanel>
+                  <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_Size}" VerticalAlignment="Center" />
+                  <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SpecialCharacterFontSize}" Width="80" HorizontalAlignment="Left" />
+                </Grid>
+              </StackPanel>
+            </Border>
+
+            <CheckBox Content="{loc:Loc PreferencesWindow_ExtendedHighlighting}" IsChecked="{Binding ExtendedHighlighting}" />
+
+            <Border Classes="section">
+              <StackPanel Spacing="6">
+                <TextBlock Text="{loc:Loc PreferencesWindow_CodeViewLight}" FontWeight="Bold" />
+                <ContentControl Content="{Binding CodeViewLight}">
+                  <ContentControl.DataTemplates>
+                    <DataTemplate DataType="vm:CodeViewAppearanceEditor">
+                      <StackPanel Spacing="6">
+                        <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                          <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_FontFamily}" VerticalAlignment="Center" />
+                          <DockPanel Grid.Row="0" Grid.Column="1">
+                            <Button DockPanel.Dock="Right" Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChooseFontCommand}" Margin="6,0,0,0" />
+                            <Border Classes="fontField"><TextBlock Text="{Binding FontFamily}" FontFamily="{Binding FontFamily, Converter={x:Static infra:FontFamilyConverters.FromName}}" /></Border>
+                          </DockPanel>
+                          <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_FontSize}" VerticalAlignment="Center" />
+                          <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding FontSize}" Width="80" HorizontalAlignment="Left" />
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding Colors}">
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="vm:ColorSettingRow">
+                              <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8" Margin="0,2">
+                                <TextBlock Grid.Column="0" Text="{Binding Label}" />
+                                <DockPanel Grid.Column="1">
+                                  <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
+                                          ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
+                                  <TextBox Classes="colorValue" Text="{Binding Value}"
+                                           Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
+                                           Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
+                                </DockPanel>
+                              </Grid>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                      </StackPanel>
+                    </DataTemplate>
+                  </ContentControl.DataTemplates>
+                </ContentControl>
+              </StackPanel>
+            </Border>
+
+            <Border Classes="section">
+              <StackPanel Spacing="6">
+                <TextBlock Text="{loc:Loc PreferencesWindow_CodeViewDark}" FontWeight="Bold" />
+                <ContentControl Content="{Binding CodeViewDark}">
+                  <ContentControl.DataTemplates>
+                    <DataTemplate DataType="vm:CodeViewAppearanceEditor">
+                      <StackPanel Spacing="6">
+                        <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                          <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_FontFamily}" VerticalAlignment="Center" />
+                          <DockPanel Grid.Row="0" Grid.Column="1">
+                            <Button DockPanel.Dock="Right" Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChooseFontCommand}" Margin="6,0,0,0" />
+                            <Border Classes="fontField"><TextBlock Text="{Binding FontFamily}" FontFamily="{Binding FontFamily, Converter={x:Static infra:FontFamilyConverters.FromName}}" /></Border>
+                          </DockPanel>
+                          <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_FontSize}" VerticalAlignment="Center" />
+                          <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding FontSize}" Width="80" HorizontalAlignment="Left" />
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding Colors}">
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="vm:ColorSettingRow">
+                              <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8" Margin="0,2">
+                                <TextBlock Grid.Column="0" Text="{Binding Label}" />
+                                <DockPanel Grid.Column="1">
+                                  <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
+                                          ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
+                                  <TextBox Classes="colorValue" Text="{Binding Value}"
+                                           Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
+                                           Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
+                                </DockPanel>
+                              </Grid>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                      </StackPanel>
+                    </DataTemplate>
+                  </ContentControl.DataTemplates>
+                </ContentControl>
+              </StackPanel>
+            </Border>
+
+            <TextBlock Text="{loc:Loc PreferencesWindow_FontColorRestartNotice}"
+                       IsVisible="{Binding RestartNoticeVisible}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
+
+            <Button Content="{loc:Loc PreferencesWindow_RestoreAppearanceDefaults}" Command="{Binding RestoreAppearanceDefaultsCommand}"
+                    HorizontalAlignment="Left" />
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- ================================ Preview ================================ -->
+      <TabItem Header="{loc:Loc PreferencesWindow_Preview}">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="8">
+
+            <Border Classes="section">
+              <StackPanel Spacing="6">
+                <TextBlock Text="{loc:Loc PreferencesWindow_PreviewFonts}" FontWeight="Bold" />
+                <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                  <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_Standard}" VerticalAlignment="Center" />
+                  <DockPanel Grid.Row="0" Grid.Column="1">
+                    <Button DockPanel.Dock="Right" Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChoosePreviewFontStandardCommand}" Margin="6,0,0,0" />
+                    <Border Classes="fontField"><TextBlock Text="{Binding PreviewFontStandard}" FontFamily="{Binding PreviewFontStandard, Converter={x:Static infra:FontFamilyConverters.FromName}}" /></Border>
+                  </DockPanel>
+                  <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_Serif}" VerticalAlignment="Center" />
+                  <DockPanel Grid.Row="1" Grid.Column="1">
+                    <Button DockPanel.Dock="Right" Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChoosePreviewFontSerifCommand}" Margin="6,0,0,0" />
+                    <Border Classes="fontField"><TextBlock Text="{Binding PreviewFontSerif}" FontFamily="{Binding PreviewFontSerif, Converter={x:Static infra:FontFamilyConverters.FromName}}" /></Border>
+                  </DockPanel>
+                  <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc PreferencesWindow_SansSerif}" VerticalAlignment="Center" />
+                  <DockPanel Grid.Row="2" Grid.Column="1">
+                    <Button DockPanel.Dock="Right" Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChoosePreviewFontSansSerifCommand}" Margin="6,0,0,0" />
+                    <Border Classes="fontField"><TextBlock Text="{Binding PreviewFontSansSerif}" FontFamily="{Binding PreviewFontSansSerif, Converter={x:Static infra:FontFamilyConverters.FromName}}" /></Border>
+                  </DockPanel>
+                  <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Loc PreferencesWindow_Size}" VerticalAlignment="Center" />
+                  <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PreviewFontSize}" Width="80" HorizontalAlignment="Left" />
+                </Grid>
+              </StackPanel>
+            </Border>
+
+            <Border Classes="section">
+              <StackPanel Spacing="6">
+                <TextBlock Text="{loc:Loc PreferencesWindow_PreviewLiveRefresh}" FontWeight="Bold" />
+                <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+                  <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewRefreshDelay}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                  <TextBox Grid.Column="1" Text="{Binding PreviewRefreshDelay}" Width="80" HorizontalAlignment="Left" />
+                </Grid>
+              </StackPanel>
+            </Border>
+
+            <Border Classes="section">
+              <StackPanel Spacing="6">
+                <TextBlock Text="{loc:Loc PreferencesWindow_PreviewHighlight}" FontWeight="Bold" />
+                <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                  <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightStyle}" VerticalAlignment="Center" />
+                  <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding AvailablePreviewHighlightStyles}" SelectedItem="{Binding PreviewHighlightStyle}">
+                    <ComboBox.ItemTemplate>
+                      <DataTemplate>
+                        <TextBlock Text="{Binding Converter={x:Static infra:DisplayNameConverters.PreviewHighlightStyle}}" />
+                      </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                  </ComboBox>
+
+                  <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding PreviewHighlightLightColor.Label}" VerticalAlignment="Center" />
+                  <DockPanel Grid.Row="1" Grid.Column="1" DataContext="{Binding PreviewHighlightLightColor}">
+                    <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
+                            ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
+                    <TextBox Classes="colorValue" Text="{Binding Value}"
+                             Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
+                             Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
+                  </DockPanel>
+
+                  <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding PreviewHighlightDarkColor.Label}" VerticalAlignment="Center" />
+                  <DockPanel Grid.Row="2" Grid.Column="1" DataContext="{Binding PreviewHighlightDarkColor}">
+                    <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
+                            ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
+                    <TextBox Classes="colorValue" Text="{Binding Value}"
+                             Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
+                             Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
+                  </DockPanel>
+
+                  <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightOpacity}" VerticalAlignment="Center" TextWrapping="Wrap"
+                             IsEnabled="{Binding IsPreviewHighlightBackground}" />
+                  <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PreviewHighlightOpacity}" Width="80" HorizontalAlignment="Left"
+                           IsEnabled="{Binding IsPreviewHighlightBackground}" />
+
+                  <TextBlock Grid.Row="4" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightOutlineWidth}" VerticalAlignment="Center" TextWrapping="Wrap"
+                             IsEnabled="{Binding IsPreviewHighlightOutline}" />
+                  <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding PreviewHighlightOutlineWidth}" Width="80" HorizontalAlignment="Left"
+                           IsEnabled="{Binding IsPreviewHighlightOutline}" />
+
+                  <CheckBox Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Content="{loc:Loc PreferencesWindow_PreviewHighlightAutoHide}"
+                            IsChecked="{Binding PreviewHighlightAutoHide}" />
+
+                  <TextBlock Grid.Row="6" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightAutoHideDelay}" VerticalAlignment="Center" TextWrapping="Wrap"
+                             IsEnabled="{Binding PreviewHighlightAutoHide}" />
+                  <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding PreviewHighlightAutoHideDelay}" Width="80" HorizontalAlignment="Left"
+                           IsEnabled="{Binding PreviewHighlightAutoHide}" />
+                </Grid>
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- ================================ General ================================ -->
+      <TabItem Header="{loc:Loc PreferencesWindow_General}">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="8">
+            <CheckBox Content="{loc:Loc PreferencesWindow_DefaultEpub3}" IsChecked="{Binding DefaultVersionIsEpub3}" />
+            <CheckBox Content="{loc:Loc PreferencesWindow_MendOnOpen}" IsChecked="{Binding MendOnOpen}" />
+            <CheckBox Content="{loc:Loc PreferencesWindow_MendOnSave}" IsChecked="{Binding MendOnSave}" />
+            <CheckBox Content="{loc:Loc PreferencesWindow_ReopenLastFile}" IsChecked="{Binding ReopenLastFileOnStartup}" />
+            <CheckBox Content="{loc:Loc PreferencesWindow_EnableFileDropZone}" IsChecked="{Binding FileDropZoneEnabled}" />
+            <CheckBox Content="{loc:Loc PreferencesWindow_AutoCloseTags}" IsChecked="{Binding AutoCloseTags}" />
+
+            <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8" Margin="0,6,0,0">
+              <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_ClipboardHistoryLimit}" VerticalAlignment="Center" />
+              <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ClipboardHistoryLimit}" Width="80" HorizontalAlignment="Left" />
+
+              <TextBlock Grid.Row="5" Grid.Column="0" Text="{loc:Loc PreferencesWindow_RecentFilesLimit}" VerticalAlignment="Center" TextWrapping="Wrap" />
+              <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding RecentFilesLimit}" Width="80" HorizontalAlignment="Left" />
+
+
+              <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_TempFolder}" VerticalAlignment="Center" />
+              <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding TempFolderHome}" />
+
+              <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc PreferencesWindow_ExternalXEditorPath}" VerticalAlignment="Center" />
+              <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding ExternalXEditorPath}" />
+
+              <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Loc PreferencesWindow_CssEpub2Profile}" VerticalAlignment="Center" />
+              <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding AvailableCssValidationSpecs}"
+                        SelectedItem="{Binding CssEpub2ValidationSpec}" />
+
+              <TextBlock Grid.Row="4" Grid.Column="0" Text="{loc:Loc PreferencesWindow_CssEpub3Profile}" VerticalAlignment="Center" />
+              <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding AvailableCssValidationSpecs}"
+                        SelectedItem="{Binding CssEpub3ValidationSpec}" />
+            </Grid>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- =============================== Spellcheck =============================== -->
+      <!-- Layout: Hunspell dictionaries and options at the top, below them the tabs
+           "user dictionaries" (Add/Rename/Copy/Delete + a list with an enable toggle)
+           and the "word list" of the selected dictionary; the selected dictionary is also the default one. -->
+      <TabItem Header="{loc:Loc PreferencesWindow_Spellcheck}">
+        <DockPanel Margin="8">
+          <StackPanel DockPanel.Dock="Top" Spacing="10">
+            <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8">
+              <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PrimaryDictionary}" />
+              <ComboBox Grid.Row="0" Grid.Column="1" x:Name="PrimaryDictionaryBox"
+                        ItemsSource="{Binding AvailableDictionaries}"
+                        SelectedItem="{Binding SelectedPrimaryDictionary}"
+                        DisplayMemberBinding="{Binding DisplayName, DataType=vm:DictionaryOption}" />
+              <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_SecondaryDictionary}" />
+              <ComboBox Grid.Row="1" Grid.Column="1" x:Name="SecondaryDictionaryBox"
+                        ItemsSource="{Binding AvailableSecondaryDictionaries}"
+                        SelectedItem="{Binding SelectedSecondaryDictionary}"
+                        DisplayMemberBinding="{Binding DisplayName, DataType=vm:DictionaryOption}" />
+            </Grid>
+            <CheckBox Content="{loc:Loc PreferencesWindow_EnableSpellCheck}" IsChecked="{Binding SpellCheckEnabled}" />
+            <CheckBox Content="{loc:Loc PreferencesWindow_CheckWordsWithNumbers}" IsChecked="{Binding SpellCheckNumbers}" />
+            <Separator />
+          </StackPanel>
+
+          <TextBlock DockPanel.Dock="Bottom" x:Name="DefaultUserDictionaryText"
+                     Text="{Binding DefaultUserDictionaryText}" Margin="0,8,0,0" />
+
+          <TabControl>
+            <TabItem Header="{loc:Loc PreferencesWindow_UserDictionaries}">
+              <DockPanel Margin="0,8,0,0">
+                <StackPanel DockPanel.Dock="Left" Spacing="6" Margin="0,0,8,0" MinWidth="110">
+                  <Button x:Name="AddUserDictionaryButton" Content="{loc:Loc Common_Add}"
+                          Command="{Binding AddUserDictionaryCommand}" HorizontalAlignment="Stretch" />
+                  <Button x:Name="RenameUserDictionaryButton" Content="{loc:Loc Common_Rename}"
+                          Command="{Binding RenameUserDictionaryCommand}" HorizontalAlignment="Stretch" />
+                  <Button x:Name="CopyUserDictionaryButton" Content="{loc:Loc PreferencesWindow_CopyDictionary}"
+                          Command="{Binding CopyUserDictionaryCommand}" HorizontalAlignment="Stretch" />
+                  <Button x:Name="RemoveUserDictionaryButton" Content="{loc:Loc Common_Remove}"
+                          Command="{Binding RemoveUserDictionaryCommand}" HorizontalAlignment="Stretch" />
+                </StackPanel>
+                <Border Classes="listFrame">
+                  <DockPanel>
+                    <Grid DockPanel.Dock="Top" ColumnDefinitions="70,*" Margin="8,4">
+                      <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_DictionaryEnabledColumn}" FontWeight="Bold" />
+                      <TextBlock Grid.Column="1" Text="{loc:Loc PreferencesWindow_DictionaryNameColumn}" FontWeight="Bold" />
+                    </Grid>
+                    <ListBox x:Name="UserDictionaryList" ItemsSource="{Binding UserDictionaries}"
+                             SelectedItem="{Binding SelectedUserDictionary}" SelectionMode="Single">
+                      <ListBox.ItemTemplate>
+                        <DataTemplate DataType="vm:UserDictionaryRow">
+                          <Grid ColumnDefinitions="62,*">
+                            <CheckBox Grid.Column="0" IsChecked="{Binding IsEnabled}" />
+                            <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center"
+                                       TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" />
+                          </Grid>
+                        </DataTemplate>
+                      </ListBox.ItemTemplate>
+                    </ListBox>
+                  </DockPanel>
+                </Border>
+              </DockPanel>
+            </TabItem>
+
+            <TabItem Header="{loc:Loc PreferencesWindow_UserWordList}">
+              <DockPanel Margin="0,8,0,0">
+                <StackPanel DockPanel.Dock="Left" Spacing="6" Margin="0,0,8,0" MinWidth="110">
+                  <Button x:Name="AddUserWordsButton" Content="{loc:Loc Common_Add}"
+                          Command="{Binding AddUserWordsCommand}" HorizontalAlignment="Stretch" />
+                  <Button x:Name="EditUserWordButton" Content="{loc:Loc PreferencesWindow_EditWord}"
+                          Command="{Binding EditUserWordCommand}" HorizontalAlignment="Stretch" />
+                  <Button x:Name="RemoveUserWordsButton" Content="{loc:Loc Common_Remove}"
+                          Command="{Binding RemoveUserWordsCommand}" HorizontalAlignment="Stretch" />
+                  <Button x:Name="RemoveAllUserWordsButton" Content="{loc:Loc PreferencesWindow_RemoveAllWords}"
+                          Command="{Binding RemoveAllUserWordsCommand}" HorizontalAlignment="Stretch" />
+                </StackPanel>
+                <Border Classes="listFrame">
+                  <ListBox x:Name="UserWordList" ItemsSource="{Binding UserWords}" SelectionMode="Multiple"
+                           SelectionChanged="OnUserWordSelectionChanged" DoubleTapped="OnUserWordDoubleTapped" />
+                </Border>
+              </DockPanel>
+            </TabItem>
+          </TabControl>
+        </DockPanel>
+      </TabItem>
+
+      <!-- =========================== Keyboard Shortcuts =========================== -->
+      <!-- Layout: collapsible sections by category (menu), two-line rows
+           (name + current shortcut), a double click expands the row editor (Default / Custom with key
+           combination capture), a filter by name or shortcut. Conflicts: in the row and summarized at the bottom. -->
+      <TabItem Header="{loc:Loc PreferencesWindow_KeyboardShortcuts}">
+        <DockPanel Margin="8">
+          <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_ShortcutsHint}"
+                     TextWrapping="Wrap" Margin="0,0,0,6" />
+
+          <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" ColumnSpacing="10" Margin="0,0,0,6">
+            <TextBox Grid.Column="0" Text="{Binding ShortcutFilter}"
+                     PlaceholderText="{loc:Loc PreferencesWindow_ShortcutsSearch}" />
+            <CheckBox Grid.Column="1" Content="{loc:Loc PreferencesWindow_ShortcutsOnlyConflicts}"
+                      IsChecked="{Binding ShowOnlyShortcutConflicts}" VerticalAlignment="Center" />
+          </Grid>
+
+          <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="0,8,0,0">
+            <StackPanel Spacing="2" IsVisible="{Binding !!Conflicts.Count}">
+              <TextBlock Text="{loc:Loc PreferencesWindow_ShortcutConflictsHeader}" FontWeight="SemiBold"
+                         Foreground="Crimson" />
+              <ItemsControl ItemsSource="{Binding Conflicts}" Foreground="Crimson">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="x:String">
+                    <TextBlock Text="{Binding}" TextWrapping="Wrap" />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+            <Button Content="{loc:Loc PreferencesWindow_ResetAll}" Command="{Binding ResetAllShortcutsCommand}" HorizontalAlignment="Left" />
+          </StackPanel>
+
+          <Border Classes="shortcutList">
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+              <ItemsControl ItemsSource="{Binding ShortcutGroups}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate DataType="vm:ShortcutGroup">
+                    <Expander Header="{Binding Category}" IsExpanded="{Binding IsExpanded}"
+                              IsVisible="{Binding IsVisible}" HorizontalAlignment="Stretch"
+                              HorizontalContentAlignment="Stretch" Padding="0" Margin="0,0,0,2">
+                      <ItemsControl ItemsSource="{Binding Rows}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate DataType="vm:ShortcutRow">
+                            <StackPanel IsVisible="{Binding IsVisible}">
+                              <!-- Collapsed row: name + shortcut (+ conflict). A double click expands the editor. -->
+                              <Border Classes="shortcutRow" IsVisible="{Binding !IsExpanded}"
+                                      DoubleTapped="OnShortcutRowDoubleTapped">
+                                <StackPanel Spacing="1">
+                                  <TextBlock Text="{Binding Label}" FontWeight="SemiBold" />
+                                  <TextBlock Text="{Binding ShortcutLine}" />
+                                  <TextBlock Text="{Binding ConflictText}" Foreground="Crimson"
+                                             IsVisible="{Binding HasConflict}" TextWrapping="Wrap" />
+                                </StackPanel>
+                              </Border>
+
+                              <!-- Row editor. -->
+                              <Border Classes="shortcutEditor" IsVisible="{Binding IsExpanded}">
+                                <StackPanel Spacing="6">
+                                  <DockPanel>
+                                    <Button DockPanel.Dock="Right" Content="{loc:Loc PreferencesWindow_ShortcutDone}"
+                                            Command="{Binding ToggleEditorCommand}" />
+                                    <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" TextWrapping="Wrap">
+                                      <Run Text="{loc:Loc PreferencesWindow_ShortcutCustomize}" />
+                                      <Run Text="{Binding Label}" />
+                                    </TextBlock>
+                                  </DockPanel>
+
+                                  <StackPanel Spacing="4">
+                                    <RadioButton Content="{Binding DefaultOptionText}" IsChecked="{Binding IsDefaultChoice}" />
+                                    <RadioButton Content="{loc:Loc PreferencesWindow_ShortcutCustom}" IsChecked="{Binding IsCustom}" />
+                                  </StackPanel>
+
+                                  <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="6" Margin="24,0,0,0"
+                                        IsEnabled="{Binding IsCustom}">
+                                    <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_ShortcutKey}"
+                                               VerticalAlignment="Center" />
+                                    <Button Grid.Column="2" MinWidth="160" HorizontalContentAlignment="Center"
+                                            Content="{Binding CaptureButtonText}"
+                                            Click="OnCaptureClicked" LostFocus="OnCaptureLostFocus" />
+                                    <Button Grid.Column="3" Content="✕" Command="{Binding ClearGestureCommand}"
+                                            ToolTip.Tip="{loc:Loc PreferencesWindow_ShortcutClear}" />
+                                  </Grid>
+
+                                  <TextBlock Text="{Binding EditorMessage}" Foreground="Crimson"
+                                             IsVisible="{Binding HasEditorMessage}" TextWrapping="Wrap" />
+                                  <TextBlock Text="{Binding ConflictText}" Foreground="Crimson"
+                                             IsVisible="{Binding HasConflict}" TextWrapping="Wrap" />
+                                </StackPanel>
+                              </Border>
+                            </StackPanel>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </Expander>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </Border>
+        </DockPanel>
+      </TabItem>
+
+      <!-- ============================ Preserve Entities ============================ -->
+      <TabItem Header="{loc:Loc PreferencesWindow_PreserveEntities}">
+        <DockPanel Margin="8">
+          <Button DockPanel.Dock="Bottom" Content="{loc:Loc Common_Add}" Command="{Binding AddPreserveEntityCommand}"
+                  HorizontalAlignment="Left" Margin="0,8,0,0" />
+          <ScrollViewer>
+            <ItemsControl ItemsSource="{Binding PreserveEntities}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="vm:PreserveEntityRow">
+                  <Grid ColumnDefinitions="100,*,80" Margin="0,2" ColumnSpacing="6">
+                    <TextBox Grid.Column="0" Text="{Binding CodeText}" PlaceholderText="{loc:Loc PreferencesWindow_CodePlaceholder}" />
+                    <TextBox Grid.Column="1" Text="{Binding Name}" PlaceholderText="{loc:Loc PreferencesWindow_EntityPlaceholder}" />
+                    <Button Grid.Column="2" Content="{loc:Loc Common_Remove}" Command="{Binding RemoveCommand}" />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </ScrollViewer>
+        </DockPanel>
+      </TabItem>
+
+    </TabControl>
+  </DockPanel>
+</Window>

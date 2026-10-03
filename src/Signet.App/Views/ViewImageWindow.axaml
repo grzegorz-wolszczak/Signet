@@ -1,0 +1,23 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.ViewImageWindow"
+        Width="450" Height="450" MinWidth="200" MinHeight="200"
+        WindowStartupLocation="CenterOwner"
+        Title="{loc:Loc ViewImageWindow_Title}">
+
+  <DockPanel Margin="10">
+    <DockPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
+      <Button x:Name="DoneButton" DockPanel.Dock="Right" Content="{loc:Loc ViewImageWindow_Done}"
+              ToolTip.Tip="{loc:Loc ViewImageWindow_DoneTip}" IsDefault="True" IsCancel="True" MinWidth="80" />
+      <TextBlock x:Name="InfoText" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Opacity="0.8" />
+    </DockPanel>
+
+    <Panel>
+      <!-- The image is scaled down to fit the window but never enlarged beyond its natural size. -->
+      <Image x:Name="ImageView" Stretch="Uniform" StretchDirection="DownOnly" />
+      <TextBlock x:Name="FallbackText" IsVisible="False" TextWrapping="Wrap" Opacity="0.7"
+                 HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" />
+    </Panel>
+  </DockPanel>
+</Window>

@@ -1,0 +1,19 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:tabs="using:Signet.App.ViewModels.Tabs"
+             xmlns:loc="using:Signet.App.Resources"
+             x:Class="Signet.App.Views.Tabs.MediaTabView"
+             x:DataType="tabs:MediaTabViewModel">
+
+  <Border Padding="24">
+    <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="480">
+      <TextBlock Text="{Binding KindLabel}" FontSize="18" FontWeight="SemiBold" HorizontalAlignment="Center" />
+      <TextBlock Text="{Binding InfoLine}" FontSize="12" Opacity="0.85" HorizontalAlignment="Center"
+                 TextWrapping="Wrap" TextAlignment="Center" />
+      <TextBlock Text="{Binding Notice}" FontSize="12" Opacity="0.7" HorizontalAlignment="Center"
+                 TextWrapping="Wrap" TextAlignment="Center" />
+      <Button x:Name="OpenExternallyButton" Content="{loc:Loc MediaTabView_OpenExternally}" HorizontalAlignment="Center" Padding="12,4" />
+    </StackPanel>
+  </Border>
+
+</UserControl>

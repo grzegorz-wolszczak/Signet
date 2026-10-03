@@ -1,0 +1,167 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
+using AwesomeAssertions;
+using Dock.Model.Controls;
+using Dock.Model.Core;
+using Signet.App.Docking;
+using Xunit;
+
+namespace Signet.App.Tests;
+
+/// <summary>
+/// Restoring the side panel widths (Book Browser / Preview) after a restart:
+/// <see cref="MainDockFactory.ApplySideRegionWidths"/>.
+/// </summary>
+public sealed class MainDockFactoryTests
+{
+    private static MainDockFactory NewFactory()
+    {
+        MainDockFactory factory = new();
+        factory.InitLayout(factory.CreateLayout());
+        return factory;
+    }
+
+    private static double Width(MainDockFactory factory, string dockId) =>
+        factory.CaptureLayoutState().Regions.Single(r => r.DockId == dockId).Proportion;
+
+    private static DockLayoutState Saved(double left, double right, double documents = 0.72, double bottom = 0.28) =>
+        new(
+            new[]
+            {
+                new DockRegionState("LeftDock", left, new[] { DockableIds.BookBrowser }, DockableIds.BookBrowser),
+                new DockRegionState("RightDock", right, new[] { DockableIds.Preview }, DockableIds.Preview),
+                new DockRegionState("BottomDock", bottom, Array.Empty<string>(), null),
+            },
+            documents);
+
+    [Fact]
+    public void Saved_side_widths_survive_a_json_round_trip_into_a_fresh_layout()
+    {
+        MainDockFactory before = NewFactory();
+        before.ApplySideRegionWidths(Saved(0.22, 0.33));
+        string json = JsonSerializer.Serialize(before.CaptureLayoutState());
+
+        MainDockFactory after = NewFactory();
+        after.ApplySideRegionWidths(JsonSerializer.Deserialize<DockLayoutState>(json)!);
+
+        Width(after, "LeftDock").Should().BeApproximately(0.22, 1e-9);
+        Width(after, "RightDock").Should().BeApproximately(0.33, 1e-9);
+    }
+
+    [Fact]
+    public void Vertical_proportions_are_left_at_defaults_even_when_bottom_was_saved_collapsed()
+    {
+        MainDockFactory sut = NewFactory();
+        double defaultDocuments = sut.DocumentDock!.Proportion;
+
+        // State saved with Validation Results hidden: documents ≈ 1, bottom = 0.
+        sut.ApplySideRegionWidths(Saved(0.2, 0.3, documents: 0.9999999999999999, bottom: 0));
+
+        sut.DocumentDock!.Proportion.Should().Be(defaultDocuments);
+    }
+
+    [Fact]
+    public void Degenerate_or_missing_widths_keep_the_default()
+    {
+        MainDockFactory sut = NewFactory();
+        double defaultLeft = Width(sut, "LeftDock");
+        double defaultRight = Width(sut, "RightDock");
+
+        sut.ApplySideRegionWidths(Saved(0, double.NaN));
+
+        Width(sut, "LeftDock").Should().Be(defaultLeft);
+        Width(sut, "RightDock").Should().Be(defaultRight);
+    }
+
+    [Fact]
+    public void Extreme_widths_are_clamped_so_the_center_column_keeps_room()
+    {
+        MainDockFactory sut = NewFactory();
+
+        sut.ApplySideRegionWidths(Saved(0.001, 0.95));
+        Width(sut, "LeftDock").Should().BeGreaterThanOrEqualTo(0.08);
+        Width(sut, "RightDock").Should().BeLessThanOrEqualTo(0.6);
+
+        sut.ApplySideRegionWidths(Saved(0.55, 0.55));
+        (Width(sut, "LeftDock") + Width(sut, "RightDock")).Should().BeLessThanOrEqualTo(0.8 + 1e-9);
+    }
+
+    private static (MainDockFactory Factory, IRootDock Root) NewWithRoot()
+    {
+        MainDockFactory factory = new();
+        IRootDock root = factory.CreateLayout();
+        factory.InitLayout(root);
+        return (factory, root);
+    }
+
+    private static IDockable Tool(MainDockFactory factory, IRootDock root, string id) =>
+        factory.FindDockable(root, d => d.Id == id)!;
+
+    [Fact]
+    public void Auto_hidden_panel_opens_inline_instead_of_overlaying_the_native_preview()
+    {
+        (_, IRootDock root) = NewWithRoot();
+
+        root.PinnedDockDisplayMode.Should().Be(PinnedDockDisplayMode.Inline);
+    }
+
+    [Fact]
+    public void Auto_hidden_panel_is_captured_as_pinned_not_as_visible()
+    {
+        (MainDockFactory sut, IRootDock root) = NewWithRoot();
+
+        sut.PinDockable(Tool(sut, root, DockableIds.TableOfContents));
+
+        sut.IsToolPinned(DockableIds.TableOfContents).Should().BeTrue();
+        sut.CaptureToolVisibility()[DockableIds.TableOfContents].Should().Be(MainDockFactory.PinnedState);
+        sut.CaptureToolVisibility()[DockableIds.Preview].Should().Be("1");
+    }
+
+    [Fact]
+    public void Pinned_state_is_restored_on_next_start()
+    {
+        (MainDockFactory before, IRootDock beforeRoot) = NewWithRoot();
+        before.PinDockable(Tool(before, beforeRoot, DockableIds.TableOfContents));
+        IReadOnlyDictionary<string, string> saved = before.CaptureToolVisibility();
+
+        (MainDockFactory after, IRootDock afterRoot) = NewWithRoot();
+        after.ApplyToolVisibility(saved);
+
+        after.IsToolVisible(DockableIds.TableOfContents).Should().BeTrue();
+        after.IsToolPinned(DockableIds.TableOfContents).Should().BeTrue();
+        afterRoot.RightPinnedDockables!.Select(d => d.Id).Should().Contain(DockableIds.TableOfContents);
+        after.IsToolPinned(DockableIds.Preview).Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData("1")]
+    [InlineData(MainDockFactory.PinnedState)]
+    public void Validation_results_always_start_hidden_whatever_was_saved(string saved)
+    {
+        (MainDockFactory sut, _) = NewWithRoot();
+
+        sut.ApplyToolVisibility(new Dictionary<string, string> { [DockableIds.ValidationResults] = saved });
+
+        sut.IsToolVisible(DockableIds.ValidationResults).Should().BeFalse();
+        sut.IsToolPinned(DockableIds.ValidationResults).Should().BeFalse();
+        sut.CaptureToolVisibility()[DockableIds.ValidationResults].Should().Be("0");
+    }
+
+    [Fact]
+    public void Toggling_an_auto_hidden_panel_hides_it_and_toggling_again_docks_it_back()
+    {
+        (MainDockFactory sut, IRootDock root) = NewWithRoot();
+        sut.ToggleTool(DockableIds.ValidationResults).Should().BeTrue();
+        sut.PinDockable(Tool(sut, root, DockableIds.ValidationResults));
+
+        sut.ToggleTool(DockableIds.ValidationResults).Should().BeFalse();
+        sut.CaptureToolVisibility()[DockableIds.ValidationResults].Should().Be("0");
+        root.BottomPinnedDockables.Should().BeNullOrEmpty();
+
+        sut.ToggleTool(DockableIds.ValidationResults).Should().BeTrue();
+        sut.IsToolPinned(DockableIds.ValidationResults).Should().BeFalse();
+        Tool(sut, root, DockableIds.ValidationResults).Owner!.Id.Should().Be("BottomDock");
+    }
+}

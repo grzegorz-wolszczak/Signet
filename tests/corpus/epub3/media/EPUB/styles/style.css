@@ -1,0 +1,17 @@
+@font-face {
+  font-family: "Fancy";
+  src: url("../fonts/font.ttf");
+}
+
+body {
+  margin: 1em;
+  font-family: serif;
+}
+
+.fancy {
+  font-family: "Fancy", serif;
+}
+
+figure img {
+  max-width: 100%;
+}

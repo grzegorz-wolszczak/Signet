@@ -1,0 +1,9 @@
+@font-face {
+  font-family: "Embedded IDPF";
+  src: url("../fonts/idpf-font.ttf");
+}
+@font-face {
+  font-family: "Embedded Adobe";
+  src: url("../fonts/adobe-font.otf");
+}
+body { font-family: "Embedded IDPF", serif; }

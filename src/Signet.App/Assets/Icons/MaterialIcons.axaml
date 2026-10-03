@@ -1,0 +1,1494 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <DrawingImage x:Key="arrow-down">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 7 10 l 5 5 5 -5 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="arrow-up">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 7 14 l 5 -5 5 5 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="automate_1">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-9,6" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 14 16 h 2 v -10 h -4 v 2 h 2 z" />
+        </DrawingGroup>
+        <GeometryDrawing Brush="#1dbc9c" Geometry="F1 m 15.083 10.864 -0.738 -0.517 c -0.621 0.287 -1.368 0.254 -1.971 -0.161 l -2.788 0.491 -4.107 -2.876 1.147 -1.638 3.429 2.401 2.785 -0.491 -0.491 -2.786 -3.429 -2.401 1.147 -1.638 4.108 2.876 0.491 2.788 c 0.596 0.425 0.883 1.116 0.826 1.797 l 0.817 0.572 c 0.473 -0.307 1.037 -0.486 1.643 -0.486 1.669 0 3.024 1.355 3.024 3.023 0 0.344 -0.058 0.675 -0.164 0.983 -0.313 0.973 -1.097 1.703 -2.106 1.946 -0.029 0.007 -0.059 0.015 -0.089 0.021 l -0.18 1.232 h 1.563 c 1.1 0 2 0.9 2 2 v 4 h -10 v -4 c 0 -1.1 0.9 -2 2 -2 h 1.437 l 0.488 -1.939 c -0.611 -0.554 -0.996 -1.354 -0.996 -2.243 0 -0.333 0.054 -0.654 0.154 -0.954 z m 4.917 7.136 h -6 v 2 h 6 z m -1.952 -7.16 -0.192 0.001 c -0.458 0.047 -0.824 0.403 -0.887 0.856 -0.005 0.045 -0.008 0.092 -0.008 0.14 0 0.044 0.002 0.088 0.007 0.13 0.064 0.49 0.484 0.869 0.991 0.869 0.552 0 1 -0.448 1 -1 0 -0.522 -0.401 -0.951 -0.911 -0.996 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="automate_2">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-8,6" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 16 14 h -4 v -2 h 2 c 1.1 0 2 -0.89 2 -2 v -2 c 0 -1.11 -0.9 -2 -2 -2 h -4 v 2 h 4 v 2 h -2 c -1.1 0 -2 0.89 -2 2 v 4 h 6 z" />
+        </DrawingGroup>
+        <GeometryDrawing Brush="#1dbc9c" Geometry="F1 m 15.083 10.864 -0.738 -0.517 c -0.621 0.287 -1.368 0.254 -1.971 -0.161 l -2.788 0.491 -4.107 -2.876 1.147 -1.638 3.429 2.401 2.785 -0.491 -0.491 -2.786 -3.429 -2.401 1.147 -1.638 4.108 2.876 0.491 2.788 c 0.596 0.425 0.883 1.116 0.826 1.797 l 0.817 0.572 c 0.473 -0.307 1.037 -0.486 1.643 -0.486 1.669 0 3.024 1.355 3.024 3.023 0 0.344 -0.058 0.675 -0.164 0.983 -0.313 0.973 -1.097 1.703 -2.106 1.946 -0.029 0.007 -0.059 0.015 -0.089 0.021 l -0.18 1.232 h 1.563 c 1.1 0 2 0.9 2 2 v 4 h -10 v -4 c 0 -1.1 0.9 -2 2 -2 h 1.437 l 0.488 -1.939 c -0.611 -0.554 -0.996 -1.354 -0.996 -2.243 0 -0.333 0.054 -0.654 0.154 -0.954 z m 4.917 7.136 h -6 v 2 h 6 z m -1.952 -7.16 -0.192 0.001 c -0.458 0.047 -0.824 0.403 -0.887 0.856 -0.005 0.045 -0.008 0.092 -0.008 0.14 0 0.044 0.002 0.088 0.007 0.13 0.064 0.49 0.484 0.869 0.991 0.869 0.552 0 1 -0.448 1 -1 0 -0.522 -0.401 -0.951 -0.911 -0.996 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="automate_3">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1dbc9c" Geometry="F1 m 15.083 10.864 -0.738 -0.517 c -0.621 0.287 -1.368 0.254 -1.971 -0.161 l -2.788 0.491 -4.107 -2.876 1.147 -1.638 3.429 2.401 2.785 -0.491 -0.491 -2.786 -3.429 -2.401 1.147 -1.638 4.108 2.876 0.491 2.788 c 0.596 0.425 0.883 1.116 0.826 1.797 l 0.817 0.572 c 0.473 -0.307 1.037 -0.486 1.643 -0.486 1.669 0 3.024 1.355 3.024 3.023 0 0.344 -0.058 0.675 -0.164 0.983 -0.313 0.973 -1.097 1.703 -2.106 1.946 -0.029 0.007 -0.059 0.015 -0.089 0.021 l -0.18 1.232 h 1.563 c 1.1 0 2 0.9 2 2 v 4 h -10 v -4 c 0 -1.1 0.9 -2 2 -2 h 1.437 l 0.488 -1.939 c -0.611 -0.554 -0.996 -1.354 -0.996 -2.243 0 -0.333 0.054 -0.654 0.154 -0.954 z m 4.917 7.136 h -6 v 2 h 6 z m -1.952 -7.16 -0.192 0.001 c -0.458 0.047 -0.824 0.403 -0.887 0.856 -0.005 0.045 -0.008 0.092 -0.008 0.14 0 0.044 0.002 0.088 0.007 0.13 0.064 0.49 0.484 0.869 0.991 0.869 0.552 0 1 -0.448 1 -1 0 -0.522 -0.401 -0.951 -0.911 -0.996 z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-9,6" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 17 14 v -1.5 c 0 -0.83 -0.67 -1.5 -1.5 -1.5 0.83 0 1.5 -0.67 1.5 -1.5 v -1.5 c 0 -1.11 -0.9 -2 -2 -2 h -4 v 2 h 4 v 2 h -2 v 2 h 2 v 2 h -4 v 2 h 4 c 1.1 0 2 -0.89 2 -2 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="back-to-link-style">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 21 11 H 6.83 l 3.58 -3.59 L 9 6 l -6 6 6 6 1.41 -1.41 L 6.83 13 H 21 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="back">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 15.41 7.41 L 14 6 l -6 6 6 6 1.41 -1.41 L 10.83 12 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="bookmark">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 7.01 2 c -1.096 0 -2 0.903 -2 1.998 l -0.01 18.002 7 -3 7 3 v -18 c 0 -1.093 -0.907 -2 -2 -2 z m 0 2 h 9.99 v 15.113 l -5 -2.25 -4.998 2.25 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="busy-working">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 -960 H 960 V 0 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 -960 H 960 V 0 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 316 -140 h 328 v -127 q 0 -70 -47.5 -120.5 T 480 -438 q -69 0 -116.5 50.5 T 316 -267 v 127 Z M 160 -80 v -60 h 96 v -127 q 0 -70 36.5 -128.5 T 394 -480 q -65 -26 -101.5 -85 T 256 -694 v -126 h -96 v -60 h 640 v 60 h -96 v 126 q 0 70 -36.5 129 T 566 -480 q 65 26 101.5 84.5 T 704 -267 v 127 h 96 v 60 H 160 Z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="case-change">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="17.0418,0,0,17.0418,12.0992,17.9949" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 0.493 -0.318 c 0 -0.119 -0.076 -0.184 -0.213 -0.184 -0.094 0 -0.165 0.029 -0.213 0.087 l 0.08 0.069 c 0.031 -0.037 0.072 -0.056 0.123 -0.056 0.07 0 0.105 0.03 0.105 0.089 v 0.017 h -0.141 c -0.119 0 -0.185 0.055 -0.185 0.152 s 0.066 0.156 0.175 0.156 c 0.077 0 0.132 -0.032 0.159 -0.092 v 0.08 h 0.11 z m -0.119 0.11 c -0.007 0.077 -0.052 0.122 -0.127 0.122 -0.049 0 -0.078 -0.022 -0.078 -0.061 s 0.026 -0.061 0.071 -0.061 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="17.0418,0,0,17.0418,2.5558,17.9949" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 0.412 0 h 0.122 l -0.191 -0.66 h -0.126 l -0.191 0.66 h 0.115 l 0.039 -0.141 h 0.193 z m -0.204 -0.245 0.069 -0.273 0.068 0.273 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="chevron-down">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 48 V 48 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 48 V 48 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0.000001,-0.000001,-1,-0.000001,47.999976" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#878787" Geometry="F1 m 14.18 32.231 2.769 2.769 7.051 -7.031 7.051 7.031 2.769 -2.769 -9.82 -9.821 z m 0 -9.821 2.769 2.77 7.051 -7.032 7.051 7.032 2.769 -2.77 -9.82 -9.82 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="chevron-up">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 48 V 48 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 48 V 48 H 0 Z" />
+        <GeometryDrawing Brush="#878787" Geometry="F1 m 14.18 32.231 2.769 2.769 7.051 -7.031 7.051 7.031 2.769 -2.769 -9.82 -9.821 z m 0 -9.821 2.769 2.77 7.051 -7.032 7.051 7.032 2.769 -2.77 -9.82 -9.82 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="count-all">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="0.777778,0,0,0.777778,-1.33333,-1.33333" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 20.5 10 0.5 -2 h -4 l 1 -4 h -2 l -1 4 h -4 l 1 -4 h -2 l -1 4 h -4 l -0.5 2 h 4 l -1 4 h -4 l -0.5 2 h 4 l -1 4 h 2 l 1 -4 h 4 l -1 4 h 2 l 1 -4 h 4 l 0.5 -2 h -4 l 1 -4 z m -7 4 h -4 l 1 -4 h 4 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="crop">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 21.293 1.293 -2.707 2.707 h -10.586 v 2 h 8.586 l -10.586 10.586 v -14.586 h -2 v 2 h -2 v 2 h 2 v 12 c 0 1.093 0.907 2 2 2 h 12 v 2 h 2 v -2 h 2 v -2 h -14.586 l 10.586 -10.586 v 8.586 h 2 v -10.586 l 2.707 -2.707 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="cycle-css">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 2 4 v 8 h 2 v -6 h 18 l -4 -5.001 v 3.001 z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="-1,0,0,-1,24,24" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 2 4 v 8 h 2 v -6 h 18 l -4 -5.001 v 3.001 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="0.665949,0,0,0.665949,-5.16114,-2.56828" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 21.826 25.403 c -0.34 0.137 -0.669 0.239 -0.987 0.305 -0.319 0.066 -0.65 0.1 -0.993 0.1 -0.551 0 -1.038 -0.081 -1.462 -0.244 -0.424 -0.162 -0.782 -0.403 -1.073 -0.723 -0.291 -0.321 -0.511 -0.718 -0.662 -1.193 -0.15 -0.474 -0.225 -1.026 -0.225 -1.655 0 -0.644 0.082 -1.218 0.246 -1.72 s 0.398 -0.925 0.703 -1.271 0.675 -0.609 1.11 -0.791 c 0.436 -0.182 0.925 -0.273 1.468 -0.273 0.176 0 0.341 0.004 0.495 0.012 s 0.306 0.023 0.454 0.044 c 0.149 0.022 0.299 0.05 0.451 0.085 0.153 0.035 0.311 0.08 0.475 0.135 v 1.43 c -0.332 -0.157 -0.648 -0.268 -0.949 -0.334 -0.301 -0.067 -0.574 -0.1 -0.82 -0.1 -0.364 0 -0.674 0.065 -0.932 0.196 s -0.47 0.315 -0.636 0.551 -0.288 0.518 -0.366 0.844 -0.117 0.684 -0.117 1.075 c 0 0.414 0.04 0.784 0.12 1.11 s 0.204 0.603 0.372 0.829 c 0.168 0.227 0.383 0.4 0.644 0.519 0.262 0.119 0.573 0.179 0.932 0.179 0.129 0 0.269 -0.013 0.419 -0.038 0.15 -0.026 0.303 -0.059 0.457 -0.1 s 0.307 -0.09 0.457 -0.147 c 0.151 -0.056 0.29 -0.114 0.419 -0.172 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="0.665949,0,0,0.665949,-5.16114,-2.56828" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 28.517 23.388 c 0 0.418 -0.077 0.781 -0.231 1.09 -0.154 0.308 -0.37 0.563 -0.647 0.764 -0.278 0.201 -0.608 0.351 -0.991 0.448 -0.382 0.098 -0.8 0.147 -1.254 0.147 -0.402 0 -0.791 -0.024 -1.166 -0.07 -0.375 -0.047 -0.746 -0.125 -1.113 -0.235 v -1.424 c 0.18 0.063 0.367 0.121 0.563 0.176 0.195 0.055 0.391 0.103 0.589 0.144 0.197 0.041 0.393 0.073 0.588 0.096 0.196 0.024 0.385 0.036 0.569 0.036 0.273 0 0.506 -0.024 0.697 -0.071 s 0.348 -0.111 0.469 -0.193 0.209 -0.18 0.263 -0.293 c 0.055 -0.113 0.082 -0.238 0.082 -0.375 0 -0.188 -0.053 -0.345 -0.161 -0.472 -0.107 -0.127 -0.249 -0.239 -0.424 -0.337 -0.176 -0.097 -0.376 -0.185 -0.601 -0.263 s -0.453 -0.162 -0.686 -0.252 c -0.232 -0.09 -0.461 -0.192 -0.685 -0.305 -0.225 -0.113 -0.425 -0.254 -0.601 -0.422 s -0.317 -0.368 -0.425 -0.6 c -0.107 -0.233 -0.161 -0.513 -0.161 -0.841 0 -0.301 0.055 -0.586 0.164 -0.856 0.11 -0.269 0.282 -0.505 0.516 -0.706 s 0.535 -0.361 0.902 -0.48 c 0.368 -0.119 0.811 -0.179 1.33 -0.179 0.153 0 0.312 0.007 0.478 0.021 0.166 0.013 0.33 0.031 0.492 0.052 0.162 0.022 0.319 0.047 0.469 0.076 0.15 0.03 0.288 0.06 0.413 0.091 v 1.319 c -0.125 -0.047 -0.262 -0.09 -0.41 -0.129 -0.149 -0.039 -0.302 -0.074 -0.46 -0.103 s -0.318 -0.052 -0.478 -0.067 c -0.16 -0.016 -0.312 -0.024 -0.457 -0.024 -0.254 0 -0.468 0.021 -0.644 0.062 s -0.321 0.098 -0.434 0.17 -0.195 0.161 -0.246 0.266 c -0.051 0.106 -0.076 0.223 -0.076 0.352 0 0.16 0.054 0.298 0.161 0.413 s 0.25 0.219 0.428 0.311 c 0.178 0.091 0.379 0.177 0.603 0.257 0.225 0.08 0.455 0.166 0.692 0.258 0.236 0.092 0.466 0.197 0.691 0.314 s 0.426 0.259 0.604 0.427 c 0.177 0.168 0.32 0.367 0.427 0.595 0.108 0.229 0.161 0.499 0.161 0.812 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="0.665949,0,0,0.665949,-5.16114,-2.56828" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 35.115 23.388 c 0 0.418 -0.077 0.781 -0.231 1.09 -0.155 0.308 -0.37 0.563 -0.648 0.764 -0.277 0.201 -0.607 0.351 -0.99 0.448 -0.383 0.098 -0.801 0.147 -1.254 0.147 -0.402 0 -0.791 -0.024 -1.166 -0.07 -0.375 -0.047 -0.746 -0.125 -1.113 -0.235 v -1.424 c 0.179 0.063 0.367 0.121 0.562 0.176 0.196 0.055 0.392 0.103 0.589 0.144 s 0.394 0.073 0.589 0.096 c 0.195 0.024 0.385 0.036 0.568 0.036 0.274 0 0.506 -0.024 0.698 -0.071 0.191 -0.047 0.347 -0.111 0.468 -0.193 s 0.209 -0.18 0.264 -0.293 0.082 -0.238 0.082 -0.375 c 0 -0.188 -0.054 -0.345 -0.161 -0.472 s -0.249 -0.239 -0.425 -0.337 c -0.176 -0.097 -0.376 -0.185 -0.6 -0.263 -0.225 -0.078 -0.454 -0.162 -0.686 -0.252 s -0.461 -0.192 -0.686 -0.305 c -0.224 -0.113 -0.424 -0.254 -0.6 -0.422 s -0.317 -0.368 -0.425 -0.6 c -0.107 -0.233 -0.161 -0.513 -0.161 -0.841 0 -0.301 0.055 -0.586 0.164 -0.856 0.109 -0.269 0.281 -0.505 0.516 -0.706 0.234 -0.201 0.535 -0.361 0.902 -0.48 s 0.811 -0.179 1.33 -0.179 c 0.152 0 0.312 0.007 0.478 0.021 0.166 0.013 0.33 0.031 0.492 0.052 0.162 0.022 0.318 0.047 0.469 0.076 0.15 0.03 0.288 0.06 0.413 0.091 v 1.319 c -0.125 -0.047 -0.262 -0.09 -0.411 -0.129 -0.148 -0.039 -0.301 -0.074 -0.459 -0.103 -0.159 -0.029 -0.318 -0.052 -0.478 -0.067 -0.16 -0.016 -0.313 -0.024 -0.457 -0.024 -0.254 0 -0.469 0.021 -0.645 0.062 -0.175 0.041 -0.32 0.098 -0.433 0.17 s -0.195 0.161 -0.246 0.266 c -0.051 0.106 -0.076 0.223 -0.076 0.352 0 0.16 0.053 0.298 0.161 0.413 0.107 0.115 0.25 0.219 0.427 0.311 0.178 0.091 0.379 0.177 0.604 0.257 s 0.455 0.166 0.691 0.258 c 0.237 0.092 0.467 0.197 0.692 0.314 0.224 0.117 0.426 0.259 0.603 0.427 0.178 0.168 0.321 0.367 0.428 0.595 0.107 0.229 0.161 0.499 0.161 0.812 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="document-add">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 13 7 h -2 v 4 H 7 v 2 h 4 v 4 h 2 v -4 h 4 v -2 h -4 V 7 z m -1 -5 C 6.48 2 2 6.48 2 12 s 4.48 10 10 10 10 -4.48 10 -10 S 17.52 2 12 2 z m 0 18 c -4.41 0 -8 -3.59 -8 -8 s 3.59 -8 8 -8 8 3.59 8 8 -3.59 8 -8 8 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="document-edit">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 3 17.25 v 3.75 h 3.75 l 11.06 -11.06 -3.75 -3.75 z m 17.71 -10.21 c 0.39 -0.39 0.39 -1.02 0 -1.41 l -2.34 -2.34 c -0.39 -0.39 -1.02 -0.39 -1.41 0 l -1.83 1.83 3.75 3.75 z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 16.4 13.471 4.602 7.529 -0.006 -0.002 0.004 0.002 h -7 l -1.945 -3.184 1.539 -1.539 1.713 2.723 h 2.155 l -2.483 -4.108 z m -8.799 -2.943 -4.598 -7.526 -0.003 -0.002 h 0.002 l -0.002 -0.002 0.004 0.002 h 6.996 l 1.946 3.183 -1.391 1.39 -1.555 -2.573 h -2.5 l 2.56 4.069 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="document-new-epub2">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,0,-2" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 13.667 16.667 h -2.667 v 1.333 h 4 v 2 h -6 v -3.333 c 0 -0.734 0.6 -1.334 1.333 -1.334 h 2.667 v -1.333 h -4 v -2 h 4.667 c 0.733 0 1.333 0.6 1.333 1.333 v 2 c 0 0.734 -0.6 1.334 -1.333 1.334 z" />
+        </DrawingGroup>
+        <GeometryDrawing Geometry="F0 m 19 20 c 0 0.551 -0.449 1 -1 1 h -12 c -0.551 0 -1 -0.449 -1 -1 v -16 c 0 -0.551 0.449 -1 1 -1 h 7.586 l 5.414 5.414 z">
+          <GeometryDrawing.Pen>
+            <Pen Brush="#1abc9c" Thickness="2" LineCap="Flat" LineJoin="Miter" MiterLimit="4" />
+          </GeometryDrawing.Pen>
+        </GeometryDrawing>
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 18.5 9 h -5.5 v -5.5 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="document-new-epub3">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,0,-2" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 15 18.667 c 0 0.733 -0.6 1.333 -1.333 1.333 h -4.667 v -2 h 4 v -1.333 h -2.667 v -1.334 h 2.667 v -1.333 h -4 v -2 h 4.667 c 0.733 0 1.333 0.6 1.333 1.333 z" />
+        </DrawingGroup>
+        <GeometryDrawing Geometry="F0 m 19 20 c 0 0.551 -0.449 1 -1 1 h -12 c -0.551 0 -1 -0.449 -1 -1 v -16 c 0 -0.551 0.449 -1 1 -1 h 7.586 l 5.414 5.414 z">
+          <GeometryDrawing.Pen>
+            <Pen Brush="#1abc9c" Thickness="2" LineCap="Flat" LineJoin="Miter" MiterLimit="4" />
+          </GeometryDrawing.Pen>
+        </GeometryDrawing>
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 18.5 9 h -5.5 v -5.5 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="document-new">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Geometry="F0 m 19 20 c 0 0.551 -0.449 1 -1 1 h -12 c -0.551 0 -1 -0.449 -1 -1 v -16 c 0 -0.551 0.449 -1 1 -1 h 7.586 l 5.414 5.414 z">
+          <GeometryDrawing.Pen>
+            <Pen Brush="#1abc9c" Thickness="2" LineCap="Flat" LineJoin="Miter" MiterLimit="4" />
+          </GeometryDrawing.Pen>
+        </GeometryDrawing>
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 18.5 9 h -5.5 v -5.5 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="document-open">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 20 6 h -8 l -2 -2 H 4 c -1.1 0 -1.99 0.9 -1.99 2 L 2 18 c 0 1.1 0.9 2 2 2 h 16 c 1.1 0 2 -0.9 2 -2 V 8 c 0 -1.1 -0.9 -2 -2 -2 z m 0 12 H 4 V 8 h 16 v 10 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="document-print-preview">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 6 21 c -1.654 0 -3 -1.346 -3 -3 v -2 h 14 v 2 c 0 0.551 0.448 1 1 1 0.553 0 1 -0.447 1 -1 v -13 h -12 v 9 h -2 v -11 h 16 v 15 c 0 1.658 -1.342 3 -3 3 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="document-print">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 19 8 H 5 c -1.66 0 -3 1.34 -3 3 v 6 h 4 v 4 h 12 v -4 h 4 v -6 c 0 -1.66 -1.34 -3 -3 -3 z m -3 11 H 8 v -5 h 8 v 5 z m 3 -7 c -0.55 0 -1 -0.45 -1 -1 s 0.45 -1 1 -1 1 0.45 1 1 -0.45 1 -1 1 z m -1 -9 H 6 v 4 h 12 V 3 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="document-save">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 11.5 12 c -1.371 0 -2.5 1.129 -2.5 2.5 s 1.129 2.5 2.5 2.5 2.5 -1.129 2.5 -2.5 -1.129 -2.5 -2.5 -2.5 z m -4.5 -5 h 8 v 3 h -8 z" />
+        <GeometryDrawing Geometry="F0 m 20 19 c 0 0.551 -0.449 1 -1 1 h -14 c -0.551 0 -1 -0.449 -1 -1 v -14 c 0 -0.551 0.449 -1 1 -1 h 11.586 l 3.414 3.414 z">
+          <GeometryDrawing.Pen>
+            <Pen Brush="#1abc9c" Thickness="2" LineCap="Flat" LineJoin="Miter" MiterLimit="4" />
+          </GeometryDrawing.Pen>
+        </GeometryDrawing>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="document-spellcheck">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 12.45 16 h 2.09 l -5.11 -13 h -1.86 l -5.11 13 h 2.09 l 1.12 -3 h 5.64 z m -6.02 -5 2.07 -5.52 2.07 5.52 z m 15.16 0.59 -8.09 8.09 -3.67 -3.68 -1.41 1.41 5.09 5.09 9.49 -9.5 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="edit-copy">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 16 1 H 4 c -1.1 0 -2 0.9 -2 2 v 14 h 2 V 3 h 12 V 1 z m 3 4 H 8 c -1.1 0 -2 0.9 -2 2 v 14 c 0 1.1 0.9 2 2 2 h 11 c 1.1 0 2 -0.9 2 -2 V 7 c 0 -1.1 -0.9 -2 -2 -2 z m 0 16 H 8 V 7 h 11 v 14 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="edit-cut">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 9.64 7.64 c 0.23 -0.5 0.36 -1.05 0.36 -1.64 0 -2.21 -1.79 -4 -4 -4 s -4 1.79 -4 4 1.79 4 4 4 c 0.59 0 1.14 -0.13 1.64 -0.36 l 2.36 2.36 -2.36 2.36 c -0.5 -0.23 -1.05 -0.36 -1.64 -0.36 -2.21 0 -4 1.79 -4 4 s 1.79 4 4 4 4 -1.79 4 -4 c 0 -0.59 -0.13 -1.14 -0.36 -1.64 l 2.36 -2.36 7 7 h 3 v -1 z m -3.64 0.36 c -1.1 0 -2 -0.89 -2 -2 s 0.9 -2 2 -2 2 0.89 2 2 -0.9 2 -2 2 z m 0 12 c -1.1 0 -2 -0.89 -2 -2 s 0.9 -2 2 -2 2 0.89 2 2 -0.9 2 -2 2 z m 6 -7.5 c -0.28 0 -0.5 -0.22 -0.5 -0.5 s 0.22 -0.5 0.5 -0.5 0.5 0.22 0.5 0.5 -0.22 0.5 -0.5 0.5 z m 7 -9.5 -6 6 2 2 7 -7 v -1 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="edit-find">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 15.5 14 h -0.79 l -0.28 -0.27 C 15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3 S 3 5.91 3 9.5 5.91 16 9.5 16 c 1.61 0 3.09 -0.59 4.23 -1.57 l 0.27 0.28 v 0.79 l 5 4.99 L 20.49 19 l -4.99 -5 z m -6 0 C 7.01 14 5 11.99 5 9.5 S 7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="edit-paste">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 19 2 h -4.18 C 14.4 0.84 13.3 0 12 0 c -1.3 0 -2.4 0.84 -2.82 2 H 5 c -1.1 0 -2 0.9 -2 2 v 16 c 0 1.1 0.9 2 2 2 h 14 c 1.1 0 2 -0.9 2 -2 V 4 c 0 -1.1 -0.9 -2 -2 -2 z m -7 0 c 0.55 0 1 0.45 1 1 s -0.45 1 -1 1 -1 -0.45 -1 -1 0.45 -1 1 -1 z m 7 18 H 5 V 4 h 2 v 3 h 10 V 4 h 2 v 16 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="edit-redo">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 18.4 10.6 C 16.55 8.99 14.15 8 11.5 8 c -4.65 0 -8.58 3.03 -9.96 7.22 L 3.9 16 c 1.05 -3.19 4.05 -5.5 7.6 -5.5 1.95 0 3.73 0.72 5.12 1.88 L 13 16 h 9 V 7 l -3.6 3.6 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="edit-select-all">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 7 5 h -2 v 2 h -2 v -2 c 0 -1.104 0.896 -2 2 -2 h 2 z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 5 11 v -2 h -2 v 2 z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 5 15 v -2 h -2 v 2 z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 5 19 h 2 v 2 h -2 c -1.104 0 -2 -0.896 -2 -2 v -2 h 2 z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 11 19 h -2 v 2 h 2 z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 15 19 h -2 v 2 h 2 z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 21 17 v 2 c 0 1.104 -0.896 2 -2 2 h -2 v -2 h 2 v -2 z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 18.99 12.894 0.01 2.111 2 -0.01 -0.01 -2.111 z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 19 9 v 2 h 2 v -2 z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 17 3 h 2 c 1.104 0 2 0.896 2 2 v 2 h -2 v -2 h -2 z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 13 5 h 2 v -2 h -2 z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 9 5 h 2 v -2 h -2 z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 7 9 h 10 v -2 h -10 z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 7 17 h 10 v -2 h -10 z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 7 13 h 7 v -2 h -7 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="edit-toc">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,0,-9" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 21 16.5 c 0.83 0 1.5 0.68 1.5 1.5 s -0.68 1.5 -1.5 1.5 -1.5 -0.68 -1.5 -1.5 0.67 -1.5 1.5 -1.5 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1.07143,0,0,1,-2.28571,-9" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 4 17 h 14 v 2 h -14 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,0,-8" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 21 10.5 c 0.83 0 1.5 0.67 1.5 1.5 s -0.67 1.5 -1.5 1.5 -1.5 -0.67 -1.5 -1.5 0.67 -1.5 1.5 -1.5 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1.07143,0,0,1,-2.28571,-8" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 4 11 h 14 v 2 h -14 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,-1,5,25" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 13.171 4.829 2 2 -6.171 6.171 h -2 v -2 z m 1.708 -1.708 -1 1 2 2 1 -1 c 0.195 -0.195 0.195 -0.512 0 -0.707 l -1.293 -1.293 c -0.196 -0.195 -0.512 -0.195 -0.707 0 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="edit-undo">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 12.5 8 c -2.65 0 -5.05 0.99 -6.9 2.6 L 2 7 v 9 h 9 l -3.62 -3.62 c 1.39 -1.16 3.16 -1.88 5.12 -1.88 3.54 0 6.55 2.31 7.6 5.5 l 2.37 -0.78 C 21.08 11.03 17.15 8 12.5 8 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="emblem-favorite">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 16.5 3 c -1.74 0 -3.41 0.81 -4.5 2.09 C 10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5 c 0 3.78 3.4 6.86 8.55 11.54 L 12 21.35 l 1.45 -1.32 C 18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3 z m -4.4 15.55 l -0.1 0.1 -0.1 -0.1 C 7.14 14.24 4 11.39 4 8.5 4 6.5 5.5 5 7.5 5 c 1.54 0 3.04 0.99 3.57 2.36 h 1.87 C 13.46 5.99 14.96 5 16.5 5 c 2 0 3.5 1.5 3.5 3.5 0 2.89 -3.14 5.74 -7.9 10.05 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="find">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 9.854 11.161 c -0.919 0.662 -2.045 1.052 -3.261 1.052 -3.087 0 -5.593 -2.512 -5.593 -5.606 0 -3.095 2.506 -5.607 5.593 -5.607 3.086 0 5.592 2.512 5.592 5.607 0 1.208 -0.382 2.328 -1.032 3.244 l 0.012 0.001 c -0.016 0.022 -0.031 0.043 -0.047 0.065 l 3.882 3.89 -1.193 1.193 -3.89 -3.882 c -0.021 0.015 -0.042 0.031 -0.063 0.046 z m -3.261 -8.554 c 2.207 0 4 1.792 4 4 0 2.207 -1.793 4 -4 4 -2.208 0 -4 -1.793 -4 -4 0 -2.208 1.792 -4 4 -4 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="format-case-capitalize">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="13.204958,0,0,13.204958,11.153777,12.998304" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 0.193 -0.075 c 0 0.049 0.038 0.087 0.087 0.087 0.051 0 0.087 -0.038 0.087 -0.087 0 -0.051 -0.036 -0.087 -0.087 -0.087 -0.049 0 -0.087 0.036 -0.087 0.087 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="13.204958,0,0,13.204958,6.681302,12.998304" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 0.523 -0.245 c 0 -0.159 -0.077 -0.257 -0.204 -0.257 -0.065 0 -0.112 0.025 -0.139 0.075 v -0.288 h -0.118 v 0.715 h 0.11 v -0.08 c 0.027 0.061 0.076 0.092 0.147 0.092 0.127 0 0.204 -0.098 0.204 -0.257 z m -0.12 0 c 0 0.095 -0.042 0.151 -0.111 0.151 -0.068 0 -0.112 -0.055 -0.112 -0.14 v -0.022 c 0 -0.085 0.044 -0.14 0.112 -0.14 0.069 0 0.111 0.056 0.111 0.151 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="13.204958,0,0,13.204958,-0.343327,12.987146" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 0.412 0 h 0.122 l -0.191 -0.66 h -0.126 l -0.191 0.66 h 0.115 l 0.039 -0.141 h 0.193 z m -0.204 -0.245 0.069 -0.273 0.068 0.273 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="format-case-lowercase">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="13.204958,0,0,13.204958,7.92077,12.991535" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 0.523 -0.245 c 0 -0.159 -0.077 -0.257 -0.204 -0.257 -0.065 0 -0.112 0.025 -0.139 0.075 v -0.288 h -0.118 v 0.715 h 0.11 v -0.08 c 0.027 0.061 0.076 0.092 0.147 0.092 0.127 0 0.204 -0.098 0.204 -0.257 z m -0.12 0 c 0 0.095 -0.042 0.151 -0.111 0.151 -0.068 0 -0.112 -0.055 -0.112 -0.14 v -0.022 c 0 -0.085 0.044 -0.14 0.112 -0.14 0.069 0 0.111 0.056 0.111 0.151 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="13.204958,0,0,13.204958,0.526,12.991535" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 0.493 -0.318 c 0 -0.119 -0.076 -0.184 -0.213 -0.184 -0.094 0 -0.165 0.029 -0.213 0.087 l 0.08 0.069 c 0.031 -0.037 0.072 -0.056 0.123 -0.056 0.07 0 0.105 0.03 0.105 0.089 v 0.017 h -0.141 c -0.119 0 -0.185 0.055 -0.185 0.152 s 0.066 0.156 0.175 0.156 c 0.077 0 0.132 -0.032 0.159 -0.092 v 0.08 h 0.11 z m -0.119 0.11 c -0.007 0.077 -0.052 0.122 -0.127 0.122 -0.049 0 -0.078 -0.022 -0.078 -0.061 s 0.026 -0.061 0.071 -0.061 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="format-case-titlecase">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="0.777778,0,0,0.866551,-1.34312,-3.064125" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 3 20.269 h 9.006 v 1.731 h -9.006 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="13.2547,0,0,13.2547,8.0729,12.9947" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 0.523 -0.245 c 0 -0.159 -0.077 -0.257 -0.204 -0.257 -0.065 0 -0.112 0.025 -0.139 0.075 v -0.288 h -0.118 v 0.715 h 0.11 v -0.08 c 0.027 0.061 0.076 0.092 0.147 0.092 0.127 0 0.204 -0.098 0.204 -0.257 z m -0.12 0 c 0 0.095 -0.042 0.151 -0.111 0.151 -0.068 0 -0.112 -0.055 -0.112 -0.14 v -0.022 c 0 -0.085 0.044 -0.14 0.112 -0.14 0.069 0 0.111 0.056 0.111 0.151 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="13.2547,0,0,13.2547,0.65025,12.9947" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 0.412 0 h 0.122 l -0.191 -0.66 h -0.126 l -0.191 0.66 h 0.115 l 0.039 -0.141 h 0.193 z m -0.204 -0.245 0.069 -0.273 0.068 0.273 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="format-case-uppercase">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="13.22,0,0,13.22,8.0595,13" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 0.525 -0.18 c 0 -0.089 -0.04 -0.146 -0.119 -0.167 0.066 -0.022 0.099 -0.071 0.099 -0.147 0 -0.111 -0.069 -0.166 -0.206 -0.166 h -0.233 v 0.66 h 0.245 c 0.143 0 0.214 -0.06 0.214 -0.18 z m -0.341 -0.376 h 0.11 c 0.064 0 0.093 0.024 0.093 0.079 0 0.061 -0.034 0.086 -0.117 0.086 h -0.086 z m 0.221 0.364 c 0 0.059 -0.033 0.088 -0.1 0.088 h -0.121 v -0.183 h 0.099 c 0.084 0 0.122 0.03 0.122 0.095 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="13.22,0,0,13.22,0.65628,13" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 0.412 0 h 0.122 l -0.191 -0.66 h -0.126 l -0.191 0.66 h 0.115 l 0.039 -0.141 h 0.193 z m -0.204 -0.245 0.069 -0.273 0.068 0.273 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="format-direction-default">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="-1,0,0,1,23,1" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 15 15 v -8 l 5 4 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,1,1" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 15 15 v -8 l 5 4 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="-1,0,0,1,24,0" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 11 4.502 c -0.353 -0.209 -1.022 -0.502 -2 -0.502 h -1 v -2 h 1 c 1.396 0 2.394 0.408 3 0.766 0.606 -0.358 1.604 -0.766 3 -0.766 h 1 v 2 h -1 c -0.978 0 -1.647 0.293 -2 0.502 v 14.996 c 0.353 0.209 1.022 0.502 2 0.502 h 1 v 2 h -1 c -1.396 0 -2.394 -0.408 -3 -0.766 -0.606 0.358 -1.604 0.766 -3 0.766 h -1 v -2 h 1 c 0.978 0 1.647 -0.293 2 -0.502 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="format-direction-ltr">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,1,1" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 15 10.048 v -3.048 l 5 4 -5 4 v -3 h -4 v -1.952 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-5,0" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 11 4.502 c -0.353 -0.209 -1.022 -0.502 -2 -0.502 h -1 v -2 h 1 c 1.396 0 2.394 0.408 3 0.766 0.606 -0.358 1.604 -0.766 3 -0.766 h 1 v 2 h -1 c -0.978 0 -1.647 0.293 -2 0.502 v 14.996 c 0.353 0.209 1.022 0.502 2 0.502 h 1 v 2 h -1 c -1.396 0 -2.394 -0.408 -3 -0.766 -0.606 0.358 -1.604 0.766 -3 0.766 h -1 v -2 h 1 c 0.978 0 1.647 -0.293 2 -0.502 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="format-direction-rtl">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="-1,0,0,1,23,1" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 15 10.048 v -3.048 l 5 4 -5 4 v -3 h -4 v -1.952 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="-1,0,0,1,29,0" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 11 4.502 c -0.353 -0.209 -1.022 -0.502 -2 -0.502 h -1 v -2 h 1 c 1.396 0 2.394 0.408 3 0.766 0.606 -0.358 1.604 -0.766 3 -0.766 h 1 v 2 h -1 c -0.978 0 -1.647 0.293 -2 0.502 v 14.996 c 0.353 0.209 1.022 0.502 2 0.502 h 1 v 2 h -1 c -1.396 0 -2.394 -0.408 -3 -0.766 -0.606 0.358 -1.604 0.766 -3 0.766 h -1 v -2 h 1 c 0.978 0 1.647 -0.293 2 -0.502 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="format-indent-less">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 11 17 h 10 v -2 h -10 z m -8 -5 4 4 v -8 z m 0 9 h 18 v -2 h -18 z m 0 -18 v 2 h 18 v -2 z m 8 6 h 10 v -2 h -10 z m 0 4 h 10 v -2 h -10 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="format-indent-more">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 3 21 h 18 v -2 h -18 z m 0 -13 v 8 l 4 -4 z m 8 9 h 10 v -2 h -10 z m -8 -14 v 2 h 18 v -2 z m 8 6 h 10 v -2 h -10 z m 0 4 h 10 v -2 h -10 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="format-justify-center">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 7 15 v 2 h 10 v -2 z m -4 6 h 18 v -2 h -18 z m 0 -8 h 18 v -2 h -18 z m 4 -6 v 2 h 10 v -2 z m -4 -4 v 2 h 18 v -2 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="format-justify-fill">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 3 21 h 18 v -2 H 3 v 2 z m 0 -4 h 18 v -2 H 3 v 2 z m 0 -4 h 18 v -2 H 3 v 2 z m 0 -4 h 18 V 7 H 3 v 2 z m 0 -6 v 2 h 18 V 3 H 3 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="format-justify-left">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 15 15 H 3 v 2 h 12 v -2 z m 0 -8 H 3 v 2 h 12 V 7 z M 3 13 h 18 v -2 H 3 v 2 z m 0 8 h 18 v -2 H 3 v 2 z M 3 3 v 2 h 18 V 3 H 3 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="format-justify-right">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 3 21 h 18 v -2 H 3 v 2 z m 6 -4 h 12 v -2 H 9 v 2 z m -6 -4 h 18 v -2 H 3 v 2 z m 6 -4 h 12 V 7 H 9 v 2 z M 3 3 v 2 h 18 V 3 H 3 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="format-text-bold">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 15.6 10.79 c 0.97 -0.67 1.65 -1.77 1.65 -2.79 0 -2.26 -1.75 -4 -4 -4 H 7 v 14 h 7.04 c 2.09 0 3.71 -1.7 3.71 -3.79 0 -1.52 -0.86 -2.82 -2.15 -3.42 z M 10 6.5 h 3 c 0.83 0 1.5 0.67 1.5 1.5 s -0.67 1.5 -1.5 1.5 h -3 v -3 z m 3.5 9 H 10 v -3 h 3.5 c 0.83 0 1.5 0.67 1.5 1.5 s -0.67 1.5 -1.5 1.5 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="format-text-italic">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 10 4 v 3 h 2.21 l -3.42 8 H 6 v 3 h 8 v -3 h -2.21 l 3.42 -8 H 18 V 4 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="format-text-strikethrough">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 6.85 7.08 c 0 -2.71 2.6 -4.08 5.39 -4.08 1.64 0 3 0.49 3.9 1.28 0.77 0.65 1.46 1.73 1.46 3.24 h -3.01 c 0 -0.31 -0.05 -0.59 -0.15 -0.85 -0.29 -0.86 -1.2 -1.28 -2.25 -1.28 -1.86 0 -2.34 1.02 -2.34 1.7 0 0.48 0.25 0.88 0.74 1.21 0.38 0.25 0.77 0.48 1.41 0.7 h -4.61 c -0.21 -0.34 -0.54 -0.89 -0.54 -1.92 z m 14.15 4.92 v -2 h -18 v 2 h 9.62 c 1.15 0.45 1.96 0.75 1.96 1.97 0 1 -0.81 1.67 -2.28 1.67 -1.54 0 -2.93 -0.54 -2.93 -2.51 h -2.97 c 0 0.55 0.08 1.13 0.24 1.58 0.81 2.29 3.29 3.3 5.67 3.3 2.27 0 5.3 -0.89 5.3 -4.05 0 -0.3 -0.01 -1.16 -0.48 -1.94 h 3.87 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="format-text-subscript">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 22 18 h -2 v 1 h 3 v 1 h -4 v -2 c 0 -0.55 0.45 -1 1 -1 h 2 v -1 h -3 v -1 h 3 c 0.55 0 1 0.45 1 1 v 1 c 0 0.55 -0.45 1 -1 1 z m -16.12 0 h 2.66 l 3.4 -5.42 h 0.12 l 3.4 5.42 h 2.66 l -4.65 -7.27 4.34 -6.73 h -2.68 l -3.07 4.99 h -0.12 l -3.09 -4.99 h -2.66 l 4.32 6.73 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="format-text-superscript">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 22 7 h -2 v 1 h 3 v 1 h -4 v -2 c 0 -0.55 0.45 -1 1 -1 h 2 v -1 h -3 v -1 h 3 c 0.55 0 1 0.45 1 1 v 1 c 0 0.55 -0.45 1 -1 1 z m -16.12 13 h 2.66 l 3.4 -5.42 h 0.12 l 3.4 5.42 h 2.66 l -4.65 -7.27 4.34 -6.73 h -2.68 l -3.07 4.99 h -0.12 l -3.09 -4.99 h -2.66 l 4.32 6.73 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="format-text-underline">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 12 17 c 3.31 0 6 -2.69 6 -6 V 3 h -2.5 v 8 c 0 1.93 -1.57 3.5 -3.5 3.5 S 8.5 12.93 8.5 11 V 3 H 6 v 8 c 0 3.31 2.69 6 6 6 z m -7 2 v 2 h 14 v -2 H 5 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="forward">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 10 6 L 8.59 7.41 13.17 12 l -4.58 4.59 L 10 18 l 6 -6 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="function">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#878787" Geometry="F1 m 15.296 11.255 h -2.092 c 0.126 -0.741 0.243 -1.437 0.333 -1.978 0.309 -1.853 0.759 -3.715 1.19 -4.353 0.482 -0.714 1.435 -0.371 1.802 0.616 0.205 0.548 0.817 0.868 1.438 0.83 0.828 -0.051 1.458 -0.764 1.407 -1.591 -0.025 -0.415 -0.342 -0.967 -0.846 -1.237 -0.714 -0.391 -1.541 -0.573 -2.414 -0.538 -2.205 0.089 -3.867 1.967 -4.501 4.04 -0.24 0.782 -0.592 2.513 -0.918 4.211 h -2.393 l -0.376 1.456 h 2.493 c -0.2 1.067 -0.37 1.99 -0.468 2.478 -0.288 1.428 -0.695 3.993 -2.047 4.171 -0.53 -0.203 -0.728 -0.429 -0.927 -0.648 -0.267 -0.294 -0.659 -0.468 -1.085 -0.442 -0.745 0.046 -1.312 0.688 -1.266 1.433 0.045 0.745 0.713 1.155 1.432 1.266 4.107 0.367 5.687 -2.622 6.288 -5.081 0.138 -0.564 0.371 -1.831 0.607 -3.177 h 1.967 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="generate-toc">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,0,-3" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 21 10.5 c 0.83 0 1.5 0.67 1.5 1.5 s -0.67 1.5 -1.5 1.5 -1.5 -0.67 -1.5 -1.5 0.67 -1.5 1.5 -1.5 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,0,-2" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 21 4.5 c 0.83 0 1.5 0.67 1.5 1.5 s -0.67 1.5 -1.5 1.5 -1.5 -0.67 -1.5 -1.5 0.67 -1.5 1.5 -1.5 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,0,1" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 21 16.5 c 0.83 0 1.5 0.68 1.5 1.5 s -0.68 1.5 -1.5 1.5 -1.5 -0.68 -1.5 -1.5 0.67 -1.5 1.5 -1.5 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1.07143,0,0,1,-2.28571,1" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 4 17 h 14 v 2 h -14 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1.07143,0,0,1,-2.28571,-3" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 4 11 h 14 v 2 h -14 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,0,2" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 21 10.5 c 0.83 0 1.5 0.67 1.5 1.5 s -0.67 1.5 -1.5 1.5 -1.5 -0.67 -1.5 -1.5 0.67 -1.5 1.5 -1.5 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1.07143,0,0,1,-2.28571,2" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 4 11 h 14 v 2 h -14 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1.07143,0,0,1,-2.28571,-2" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 4 5 h 14 v 2 h -14 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="git-checkout">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 4.218 7.5 c 1.559 -2.686 4.46 -4.5 7.782 -4.5 4.963 0 9 4.037 9 9 s -4.037 9 -9 9 -9 -4.037 -9 -9 h 2 c 0 3.863 3.137 7 7 7 s 7 -3.137 7 -7 -3.137 -7 -7 -7 c -2.15 0 -4.076 0.972 -5.36 2.5 z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="-0.857143,0,0,0.857143,21.8571,1.28571" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 22 2 v 7 h -7 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="git-commit">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,0,-1" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 4 12 1.41 1.41 5.59 -5.58 v 14.17 h 2 v -14.17 l 5.58 5.59 1.42 -1.42 -8 -8 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="git-diff">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="2.33333,0,0,-1,-16,20" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 9 17 h 6 v -2 h -6 z" />
+        </DrawingGroup>
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 13 13 h 6 v 2 h -6 v 6 h -2 v -6 h -6 v -2 h 6 v -6 h 2 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="git-manage">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,0.976086,0,0.282089" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 13.85 22.25 h -3.7 c -0.74 0 -1.36 -0.54 -1.45 -1.27 l -0.27 -1.89 c -0.27 -0.14 -0.53 -0.29 -0.79 -0.46 l -1.8 0.72 c -0.7 0.26 -1.47 -0.03 -1.81 -0.65 l -1.83 -3.17 c -0.35 -0.66 -0.2 -1.44 0.36 -1.88 l 1.53 -1.19 c -0.01 -0.15 -0.02 -0.3 -0.02 -0.46 0 -0.15 0.01 -0.31 0.02 -0.46 l -1.52 -1.19 c -0.59 -0.45 -0.74 -1.26 -0.37 -1.88 l 1.85 -3.19 c 0.34 -0.62 1.11 -0.9 1.79 -0.63 l 1.81 0.73 c 0.26 -0.17 0.52 -0.32 0.78 -0.46 l 0.27 -1.91 c 0.09 -0.7 0.71 -1.25 1.44 -1.25 h 3.7 c 0.74 0 1.36 0.54 1.45 1.27 l 0.27 1.89 c 0.27 0.14 0.53 0.29 0.79 0.46 l 1.8 -0.72 c 0.71 -0.26 1.48 0.03 1.82 0.65 l 1.84 3.18 c 0.36 0.66 0.2 1.44 -0.36 1.88 l -1.52 1.19 c 0.01 0.15 0.02 0.3 0.02 0.46 s -0.01 0.31 -0.02 0.46 l 1.52 1.19 c 0.56 0.45 0.72 1.23 0.37 1.86 l -1.86 3.22 c -0.34 0.62 -1.11 0.9 -1.8 0.63 l -1.8 -0.72 c -0.26 0.17 -0.52 0.32 -0.78 0.46 l -0.27 1.91 c -0.1 0.68 -0.72 1.22 -1.46 1.22 z m -3.23 -2 h 2.76 l 0.37 -2.55 0.53 -0.22 c 0.44 -0.18 0.88 -0.44 1.34 -0.78 l 0.45 -0.34 2.38 0.96 1.38 -2.4 -2.03 -1.58 0.07 -0.56 c 0.03 -0.26 0.06 -0.51 0.06 -0.78 s -0.03 -0.53 -0.06 -0.78 l -0.07 -0.56 2.03 -1.58 -1.39 -2.4 -2.39 0.96 -0.45 -0.35 c -0.42 -0.32 -0.87 -0.58 -1.33 -0.77 l -0.52 -0.22 -0.37 -2.55 h -2.76 l -0.37 2.55 -0.53 0.21 c -0.44 0.19 -0.88 0.44 -1.34 0.79 l -0.45 0.33 -2.38 -0.95 -1.39 2.39 2.03 1.58 -0.07 0.56 c -0.035 0.262 -0.055 0.526 -0.06 0.79 0 0.26 0.02 0.53 0.06 0.78 l 0.07 0.56 -2.03 1.58 1.38 2.4 2.39 -0.96 0.45 0.35 c 0.43 0.33 0.86 0.58 1.33 0.77 l 0.53 0.22 z" />
+        </DrawingGroup>
+        <GeometryDrawing Geometry="F0 m 12 15 c -1.654 0 -3 -1.346 -3 -3 s 1.346 -3 3 -3 3 1.346 3 3 -1.346 3 -3 3 z">
+          <GeometryDrawing.Pen>
+            <Pen Brush="#1abc9c" Thickness="2" LineCap="Flat" LineJoin="Miter" MiterLimit="4" />
+          </GeometryDrawing.Pen>
+        </GeometryDrawing>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="heading-1">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-3,-3" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 14 16 h 2 v -11 h -4 v 2 h 2 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-1,-5" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 4 11 h 2 c 1.11 0 2 0.9 2 2 v 5 h -2 v -5 h -2 v 5 h -2 v -11 h 2 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="heading-2">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-1,-3" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 16 14 h -4 v -3 h 2 c 1.1 0 2 -0.89 2 -2 v -2 c 0 -1.11 -0.9 -2 -2 -2 h -4 v 2 h 4 v 2 h -2 c -1.1 0 -2 0.89 -2 2 v 5 h 6 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-1,-5" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 4 11 h 2 c 1.11 0 2 0.9 2 2 v 5 h -2 v -5 h -2 v 5 h -2 v -11 h 2 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="heading-3">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-2,-3" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 17 14 v -2.5 c 0 -0.83 -0.67 -1.5 -1.5 -1.5 0.83 0 1.5 -0.67 1.5 -1.5 v -1.5 c 0 -1.11 -0.9 -2 -2 -2 h -4 v 2 h 4 v 2 h -2 v 2 h 2 v 3 h -4 v 2 h 4 c 1.1 0 2 -0.89 2 -2 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-1,-5" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 4 11 h 2 c 1.11 0 2 0.9 2 2 v 5 h -2 v -5 h -2 v 5 h -2 v -11 h 2 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="heading-4">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-1,-2" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 14 15 h 2 v -11 h -2 v 4 h -2 v -4 h -2 v 6 h 4 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-1,-5" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 4 11 h 2 c 1.11 0 2 0.9 2 2 v 5 h -2 v -5 h -2 v 5 h -2 v -11 h 2 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="heading-5">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-1,-2" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 16 13 v -3 c 0 -1.11 -0.9 -2 -2 -2 h -2 v -2 h 4 v -2 h -6 v 6 h 4 v 3 h -4 v 2 h 4 c 1.1 0 2 -0.89 2 -2 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-1,-5" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 4 11 h 2 c 1.11 0 2 0.9 2 2 v 5 h -2 v -5 h -2 v 5 h -2 v -11 h 2 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="heading-6">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-2,-4" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 13 17 h 2 c 1.1 0 2 -0.89 2 -2 v -3 c 0 -1.11 -0.9 -2 -2 -2 h -2 v -2 h 4 v -2 h -4 c -1.1 0 -2 0.89 -2 2 v 7 c 0 1.11 0.9 2 2 2 z m 0 -5 h 2 v 3 h -2 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-1,-5" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 4 11 h 2 c 1.11 0 2 0.9 2 2 v 5 h -2 v -5 h -2 v 5 h -2 v -11 h 2 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="heading-all">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 16 2 h 2 v 9 h -2 z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="0.5,-0.866025,0.866025,0.5,-0.45929,13.7404" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 14 7 h 2 v 9 h -2 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="0.5,0.866025,-0.866025,0.5,19.4593,-12.2404" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 14 7 h 2 v 9 h -2 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,1,0" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 4 11 h 4 c 1.11 0 2 0.9 2 2 v 6 h -2 v -6 h -4 v 6 h -2 v -13 h 2 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="heading-normal">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-4,-4" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 9 9 h 4 c 1.11 0 2 0.9 2 2 v 3 c 0 1.1 -0.89 2 -2 2 h -2 v 4 h -2 z m 2 2 v 3 h 2 v -3 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="help-browser">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 11 18 h 2 v -2 h -2 v 2 z m 1 -16 C 6.48 2 2 6.48 2 12 s 4.48 10 10 10 10 -4.48 10 -10 S 17.52 2 12 2 z m 0 18 c -4.41 0 -8 -3.59 -8 -8 s 3.59 -8 8 -8 8 3.59 8 8 -3.59 8 -8 8 z m 0 -14 c -2.21 0 -4 1.79 -4 4 h 2 c 0 -1.1 0.9 -2 2 -2 s 2 0.9 2 2 c 0 2 -3 1.75 -3 5 h 2 c 0 -2.25 3 -2.5 3 -5 0 -2.21 -1.79 -4 -4 -4 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="index-add">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="0.714286,0,0,1,7,-1" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 7 17 h 14 v 2 h -14 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="0,-0.714286,1,0,5,27" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 7 11 h 14 v 2 h -14 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-1,-12" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 7 15 h -2 c -1.103 0 -2 0.897 -2 2 v 2 c 0 1.103 0.897 2 2 2 h 2 c 1.103 0 2 -0.897 2 -2 v -2 c 0 -1.103 -0.897 -2 -2 -2 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-1,-12" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 12 17 h 10 c 0.552 0 1 -0.448 1 -1 s -0.448 -1 -1 -1 h -10 c -0.552 0 -1 0.448 -1 1 s 0.448 1 1 1 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-1,-12" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 12 21 h 6 c 0.552 0 1 -0.448 1 -1 s -0.448 -1 -1 -1 h -6 c -0.552 0 -1 0.448 -1 1 s 0.448 1 1 1 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="index-create">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-1,-12" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 7 15 h -2 c -1.103 0 -2 0.897 -2 2 v 2 c 0 1.103 0.897 2 2 2 h 2 c 1.103 0 2 -0.897 2 -2 v -2 c 0 -1.103 -0.897 -2 -2 -2 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-1,-12" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 12 17 h 10 c 0.552 0 1 -0.448 1 -1 s -0.448 -1 -1 -1 h -10 c -0.552 0 -1 0.448 -1 1 s 0.448 1 1 1 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-1,-12" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 12 21 h 6 c 0.552 0 1 -0.448 1 -1 s -0.448 -1 -1 -1 h -6 c -0.552 0 -1 0.448 -1 1 s 0.448 1 1 1 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,6,5" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 11 7 -1.41 1.41 3.58 3.59 -3.58 3.59 1.41 1.41 5 -5 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,1,5" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 11 7 -1.41 1.41 3.58 3.59 -3.58 3.59 1.41 1.41 5 -5 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-4,5" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 11 7 -1.41 1.41 3.58 3.59 -3.58 3.59 1.41 1.41 5 -5 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="index-edit">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,-1,5,25" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 13.171 4.829 2 2 -6.171 6.171 h -2 v -2 z m 1.708 -1.708 -1 1 2 2 1 -1 c 0.195 -0.195 0.195 -0.512 0 -0.707 l -1.293 -1.293 c -0.196 -0.195 -0.512 -0.195 -0.707 0 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-1,-12" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 7 15 h -2 c -1.103 0 -2 0.897 -2 2 v 2 c 0 1.103 0.897 2 2 2 h 2 c 1.103 0 2 -0.897 2 -2 v -2 c 0 -1.103 -0.897 -2 -2 -2 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-1,-12" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 12 17 h 10 c 0.552 0 1 -0.448 1 -1 s -0.448 -1 -1 -1 h -10 c -0.552 0 -1 0.448 -1 1 s 0.448 1 1 1 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-1,-12" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 12 21 h 6 c 0.552 0 1 -0.448 1 -1 s -0.448 -1 -1 -1 h -6 c -0.552 0 -1 0.448 -1 1 s 0.448 1 1 1 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="index-mark">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="-1,0,0,1,29,3" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 17.63 9.84 c -0.36 -0.51 -0.96 -0.84 -1.63 -0.84 l -7 0.01 c -1.1 0 -2 0.89 -2 1.99 v 6 c 0 1.1 0.9 1.99 2 1.99 l 7 0.01 c 0.67 0 1.27 -0.33 1.63 -0.84 l 4.37 -4.16 z m -1.63 7.16 h -7 v -6 h 7 l 3 3 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-1,-12" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 12 21 h 6 c 0.552 0 1 -0.448 1 -1 s -0.448 -1 -1 -1 h -6 c -0.552 0 -1 0.448 -1 1 s 0.448 1 1 1 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-1,-12" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 12 17 h 10 c 0.552 0 1 -0.448 1 -1 s -0.448 -1 -1 -1 h -10 c -0.552 0 -1 0.448 -1 1 s 0.448 1 1 1 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-1,-12" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 7 15 h -2 c -1.103 0 -2 0.897 -2 2 v 2 c 0 1.103 0.897 2 2 2 h 2 c 1.103 0 2 -0.897 2 -2 v -2 c 0 -1.103 -0.897 -2 -2 -2 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="insert-aria-clip">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 18.244 7.244 -1.396 1.397 3.348 3.359 -3.348 3.359 1.396 1.397 4.756 -4.756 z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 7.157 8.645 -1.401 -1.401 -4.756 4.756 4.756 4.756 1.401 -1.401 -3.35 -3.355 z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 12 5 c 1.105 0 2 0.895 2 2 s -0.895 2 -2 2 -2 -0.895 -2 -2 0.895 -2 2 -2 z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 18 13 h -4 v 1.807 l 1.929 4.822 -1.857 0.743 -1.749 -4.372 h -0.646 l -1.749 4.372 -1.857 -0.743 1.929 -4.822 v -1.807 h -4 v -2 h 12 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="insert-aria-role">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 19 5 v 14 h -14 v -14 z m 0 -2 h -14 c -1.1 0 -2 0.9 -2 2 v 14 c 0 1.1 0.9 2 2 2 h 14 c 1.1 0 2 -0.9 2 -2 v -14 c 0 -1.1 -0.9 -2 -2 -2 z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 8 10 v -2 h 6 c 0.55 0 1.021 0.196 1.412 0.588 0.392 0.391 0.588 0.862 0.588 1.412 v 1.35 c 0 0.4 -0.117 0.763 -0.35 1.088 s -0.517 0.579 -0.85 0.762 l 1.2 2.8 h -2 l -1 -2 h -3 v 2 h -2 v -4 h 6 v -2 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="insert-bullet-list">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 4 10.5 c -0.83 0 -1.5 0.67 -1.5 1.5 s 0.67 1.5 1.5 1.5 1.5 -0.67 1.5 -1.5 -0.67 -1.5 -1.5 -1.5 z m 0 -6 c -0.83 0 -1.5 0.67 -1.5 1.5 S 3.17 7.5 4 7.5 5.5 6.83 5.5 6 4.83 4.5 4 4.5 z m 0 12 c -0.83 0 -1.5 0.68 -1.5 1.5 s 0.68 1.5 1.5 1.5 1.5 -0.68 1.5 -1.5 -0.67 -1.5 -1.5 -1.5 z M 7 19 h 14 v -2 H 7 v 2 z m 0 -6 h 14 v -2 H 7 v 2 z m 0 -8 v 2 h 14 V 5 H 7 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="insert-hyperlink">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 3.9 12 c 0 -1.71 1.39 -3.1 3.1 -3.1 h 4 V 7 H 7 c -2.76 0 -5 2.24 -5 5 s 2.24 5 5 5 h 4 v -1.9 H 7 c -1.71 0 -3.1 -1.39 -3.1 -3.1 z M 8 13 h 8 v -2 H 8 v 2 z m 9 -6 h -4 v 1.9 h 4 c 1.71 0 3.1 1.39 3.1 3.1 s -1.39 3.1 -3.1 3.1 h -4 V 17 h 4 c 2.76 0 5 -2.24 5 -5 s -2.24 -5 -5 -5 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="insert-id">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 17 15 1.55 1.55 c -0.96 1.69 -3.33 3.04 -5.55 3.37 v -8.92 h 3 v -2 h -3 v -1.18 c 1.16 -0.42 2 -1.52 2 -2.82 0 -1.65 -1.35 -3 -3 -3 s -3 1.35 -3 3 c 0 1.3 0.84 2.4 2 2.82 v 1.18 h -3 v 2 h 3 v 8.92 c -2.22 -0.33 -4.59 -1.68 -5.55 -3.37 l 1.55 -1.55 -4 -3 v 3 c 0 3.88 4.92 7 9 7 s 9 -3.12 9 -7 v -3 z m -5 -11 c 0.55 0 1 0.45 1 1 s -0.45 1 -1 1 -1 -0.45 -1 -1 0.45 -1 1 -1 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="insert-image">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Geometry="F0 m 20 19 h -16 c -0.552 0 -1 -0.448 -1 -1 v -12 c 0 -0.552 0.448 -1 1 -1 h 16 c 0.552 0 1 0.448 1 1 v 12 c 0 0.552 -0.448 1 -1 1 z">
+          <GeometryDrawing.Pen>
+            <Pen Brush="#1abc9c" Thickness="2" LineCap="Flat" LineJoin="Round" MiterLimit="4" />
+          </GeometryDrawing.Pen>
+        </GeometryDrawing>
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 18.25 16 -3.75 -5 -3.5 4 -2.5 -2.5 -2.722 3.5 z m -8.25 -8 c -0.549 0 -1 0.451 -1 1 s 0.451 1 1 1 1 -0.451 1 -1 -0.451 -1 -1 -1 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="insert-numbered-list">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 2 17 h 2 v 0.5 H 3 v 1 h 1 v 0.5 H 2 v 1 h 3 v -4 H 2 v 1 z m 1 -9 h 1 V 4 H 2 v 1 h 1 v 3 z m -1 3 h 1.8 L 2 13.1 v 0.9 h 3 v -1 H 3.2 L 5 10.9 V 10 H 2 v 1 z m 5 -6 v 2 h 14 V 5 H 7 z m 0 14 h 14 v -2 H 7 v 2 z m 0 -6 h 14 v -2 H 7 v 2 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="insert-special-character">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 14 15.734 c 2.61 -0.714 4.5 -2.789 4.5 -5.234 0 -3.036 -2.913 -5.5 -6.5 -5.5 s -6.5 2.464 -6.5 5.5 c 0 2.445 1.89 4.52 4.5 5.234 v 5.266 h -7 v -4 h 2 v 2 h 3 v -1.781 c -2.962 -1.228 -5 -3.777 -5 -6.719 0 -4.139 4.033 -7.5 9 -7.5 s 9 3.361 9 7.5 c 0 2.942 -2.038 5.491 -5 6.719 v 1.781 h 3 v -2 h 2 v 4 h -7 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="inspect">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 12 4.5 -1.667 15 h 1.667 l 1.667 -15 z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 17.244 7.244 -1.396 1.397 3.348 3.359 -3.348 3.359 1.396 1.397 4.756 -4.756 z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 8.157 8.645 -1.401 -1.401 -4.756 4.756 4.756 4.756 1.401 -1.401 -3.35 -3.355 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="list-add">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-4,-4" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 19 13 h -6 v 6 h -2 v -6 h -6 v -2 h 6 v -6 h 2 v 6 h 6 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="list-remove">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 1 7 h 14 v 2 h -14 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="metadata-editor">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 19 5 v 14 h -14 v -14 z m 0 -2 h -14 c -1.1 0 -2 0.9 -2 2 v 14 c 0 1.1 0.9 2 2 2 h 14 c 1.1 0 2 -0.9 2 -2 v -14 c 0 -1.1 -0.9 -2 -2 -2 z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 17 17 h -2 v -6 l -1.611 3.221 c -0.263 0.526 -0.801 0.859 -1.389 0.859 s -1.126 -0.333 -1.389 -0.859 l -1.611 -3.221 v 6 h -2 v -10 h 2 l 3 6 3 -6 h 2 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="plugin_10pips">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 20.5 11 h -1.5 v -4 c 0 -1.1 -0.9 -2 -2 -2 h -4 v -1.5 c 0 -1.38 -1.12 -2.5 -2.5 -2.5 s -2.5 1.12 -2.5 2.5 v 1.5 h -4 c -1.1 0 -1.99 0.9 -1.99 2 v 3.8 h 1.49 c 1.49 0 2.7 1.21 2.7 2.7 s -1.21 2.7 -2.7 2.7 h -1.5 v 3.8 c 0 1.1 0.9 2 2 2 h 3.8 v -1.5 c 0 -1.49 1.21 -2.7 2.7 -2.7 s 2.7 1.21 2.7 2.7 v 1.5 h 3.8 c 1.1 0 2 -0.9 2 -2 v -4 h 1.5 c 1.38 0 2.5 -1.12 2.5 -2.5 s -1.12 -2.5 -2.5 -2.5 z m -3.3 1.8 c 0 0.7 0 3.9 -3.1 3.9 s -3.1 -3.3 -3.1 -3.9 v -1.6 c 0 -2.5 1 -3.9 3.1 -3.9 s 3.1 1.5 3.1 3.9 z m -7.2 3.8 h -1.8 v -7.1 l -2.2 0.7 v -1.5 l 3.8 -1.4 h 0.2 z m 4.1 -7.9 c -1.3 0 -1.3 1.6 -1.3 2.2 v 2.1 c 0 1.1 0.2 2.2 1.3 2.2 s 1.3 -1.2 1.3 -2.2 v -2.1 c 0 -0.5 0 -2.2 -1.3 -2.2 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="plugin_1pips">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 20.5 11 h -1.5 v -4 c 0 -1.1 -0.9 -2 -2 -2 h -4 v -1.5 c 0 -1.38 -1.12 -2.5 -2.5 -2.5 s -2.5 1.12 -2.5 2.5 v 1.5 h -4 c -1.1 0 -1.99 0.9 -1.99 2 v 3.8 h 1.49 c 1.49 0 2.7 1.21 2.7 2.7 s -1.21 2.7 -2.7 2.7 h -1.5 v 3.8 c 0 1.1 0.9 2 2 2 h 3.8 v -1.5 c 0 -1.49 1.21 -2.7 2.7 -2.7 s 2.7 1.21 2.7 2.7 v 1.5 h 3.8 c 1.1 0 2 -0.9 2 -2 v -4 h 1.5 c 1.38 0 2.5 -1.12 2.5 -2.5 s -1.12 -2.5 -2.5 -2.5 z m -7.2 5.6 h -1.8 v -7.1 l -2.2 0.7 v -1.5 l 3.8 -1.4 h 0.2 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="plugin_2pips">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 20.5 11 h -1.5 v -4 c 0 -1.1 -0.9 -2 -2 -2 h -4 v -1.5 c 0 -1.38 -1.12 -2.5 -2.5 -2.5 s -2.5 1.12 -2.5 2.5 v 1.5 h -4 c -1.1 0 -1.99 0.9 -1.99 2 v 3.8 h 1.49 c 1.49 0 2.7 1.21 2.7 2.7 s -1.21 2.7 -2.7 2.7 h -1.5 v 3.8 c 0 1.1 0.9 2 2 2 h 3.8 v -1.5 c 0 -1.49 1.21 -2.7 2.7 -2.7 s 2.7 1.21 2.7 2.7 v 1.5 h 3.8 c 1.1 0 2 -0.9 2 -2 v -4 h 1.5 c 1.38 0 2.5 -1.12 2.5 -2.5 s -1.12 -2.5 -2.5 -2.5 z m -8.629 -3.7 c -2.476 0.016 -3.171 2.104 -3.171 3 h 1.9 c 0 -0.3 0 -1.6 1.3 -1.6 1 0 1.2 0.9 1.2 1.3 0 1.2 -1.5 2.3 -4.2 5.3 v 1.3 h 6.3 v -1.4 h -4 c 2.6 -2.6 3.7 -3.8 3.7 -5.3 0 -1.1 -0.5 -2.6 -3 -2.6 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="plugin_3pips">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 20.5 11 h -1.5 v -4 c 0 -1.1 -0.9 -2 -2 -2 h -4 v -1.5 c 0 -1.38 -1.12 -2.5 -2.5 -2.5 s -2.5 1.12 -2.5 2.5 v 1.5 h -4 c -1.1 0 -1.99 0.9 -1.99 2 v 3.8 h 1.49 c 1.49 0 2.7 1.21 2.7 2.7 s -1.21 2.7 -2.7 2.7 h -1.5 v 3.8 c 0 1.1 0.9 2 2 2 h 3.8 v -1.5 c 0 -1.49 1.21 -2.7 2.7 -2.7 s 2.7 1.21 2.7 2.7 v 1.5 h 3.8 c 1.1 0 2 -0.9 2 -2 v -4 h 1.5 c 1.38 0 2.5 -1.12 2.5 -2.5 s -1.12 -2.5 -2.5 -2.5 z m -8.55 5.991 c -2.497 0 -3.33 -1.769 -3.226 -2.81 h 1.873 c -0.104 0.312 0.208 1.249 1.457 1.249 1.353 0 1.457 -1.145 1.457 -1.353 0 -1.457 -1.353 -1.457 -1.561 -1.457 h -1.04 v -1.457 h 1.04 c 0.521 0 1.457 -0.104 1.457 -1.353 0 -1.145 -1.04 -1.249 -1.353 -1.249 -1.04 0 -1.249 0.833 -1.249 1.041 h -1.977 c 0 -1.873 1.873 -2.602 3.122 -2.602 2.914 0 3.227 1.977 3.227 2.706 0 1.353 -1.249 1.977 -1.458 2.081 0.521 0.208 1.562 0.729 1.562 2.29 0.104 2.29 -1.874 2.914 -3.331 2.914 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="plugin_4pips">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 20.5 11 h -1.5 v -4 c 0 -1.1 -0.9 -2 -2 -2 h -4 v -1.5 c 0 -1.38 -1.12 -2.5 -2.5 -2.5 s -2.5 1.12 -2.5 2.5 v 1.5 h -4 c -1.1 0 -1.99 0.9 -1.99 2 v 3.8 h 1.49 c 1.49 0 2.7 1.21 2.7 2.7 s -1.21 2.7 -2.7 2.7 h -1.5 v 3.8 c 0 1.1 0.9 2 2 2 h 3.8 v -1.5 c 0 -1.49 1.21 -2.7 2.7 -2.7 s 2.7 1.21 2.7 2.7 v 1.5 h 3.8 c 1.1 0 2 -0.9 2 -2 v -4 h 1.5 c 1.38 0 2.5 -1.12 2.5 -2.5 s -1.12 -2.5 -2.5 -2.5 z m -5.5 3.6 h -1 v 2 h -1.8 v -2 h -3.8 l -0.1 -1.2 3.9 -6.1 h 1.8 v 5.8 h 1 z m -2.9 -1.5 v -3.2 l -2 3.2 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="plugin_5pips">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 20.5 11 h -1.5 v -4 c 0 -1.1 -0.9 -2 -2 -2 h -4 v -1.5 c 0 -1.38 -1.12 -2.5 -2.5 -2.5 s -2.5 1.12 -2.5 2.5 v 1.5 h -4 c -1.1 0 -1.99 0.9 -1.99 2 v 3.8 h 1.49 c 1.49 0 2.7 1.21 2.7 2.7 s -1.21 2.7 -2.7 2.7 h -1.5 v 3.8 c 0 1.1 0.9 2 2 2 h 3.8 v -1.5 c 0 -1.49 1.21 -2.7 2.7 -2.7 s 2.7 1.21 2.7 2.7 v 1.5 h 3.8 c 1.1 0 2 -0.9 2 -2 v -4 h 1.5 c 1.38 0 2.5 -1.12 2.5 -2.5 s -1.12 -2.5 -2.5 -2.5 z m -8.5 5.7 c -2.4 0 -3.2 -1.8 -3.1 -2.7 h 1.8 c 0 0.4 0.3 1.2 1.3 1.2 1.3 0 1.3 -1.5 1.3 -1.7 0 -1.6 -1.2 -1.6 -1.5 -1.6 -0.8 0 -1.2 0.4 -1.2 0.5 l -1.5 -0.4 0.5 -4.7 h 5.2 v 1.5 h -3.7 l -0.2 2 c 0.1 0 0.6 -0.3 1.4 -0.3 2.7 0 2.8 2.6 2.8 3.1 0 1.6 -1 3.1 -3.1 3.1 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="plugin_6pips">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 20.5 11 h -1.5 v -4 c 0 -1.1 -0.9 -2 -2 -2 h -4 v -1.5 c 0 -1.38 -1.12 -2.5 -2.5 -2.5 s -2.5 1.12 -2.5 2.5 v 1.5 h -4 c -1.1 0 -1.99 0.9 -1.99 2 v 3.8 h 1.49 c 1.49 0 2.7 1.21 2.7 2.7 s -1.21 2.7 -2.7 2.7 h -1.5 v 3.8 c 0 1.1 0.9 2 2 2 h 3.8 v -1.5 c 0 -1.49 1.21 -2.7 2.7 -2.7 s 2.7 1.21 2.7 2.7 v 1.5 h 3.8 c 1.1 0 2 -0.9 2 -2 v -4 h 1.5 c 1.38 0 2.5 -1.12 2.5 -2.5 s -1.12 -2.5 -2.5 -2.5 z m -8.4 5.7 c -2.3 0 -3.3 -1.9 -3.3 -3.7 v -0.7 c 0 -1.2 0.4 -5 4.7 -5.1 h 0.3 v 1.5 h -0.1 c -1.2 0 -2.7 0.5 -3 2.4 0.1 -0.1 0.7 -0.8 1.9 -0.8 2.5 0 2.6 2.7 2.6 3.1 0 2.2 -1.5 3.3 -3.1 3.3 z m -0.1 -4.8 c -0.9 0 -1.3 0.7 -1.3 0.9 v 0.6 c 0 1.4 0.6 2 1.4 2 1.2 0 1.3 -1.4 1.3 -1.7 0 -0.4 -0.1 -1.8 -1.4 -1.8 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="plugin_7pips">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 20.5 11 h -1.5 v -4 c 0 -1.1 -0.9 -2 -2 -2 h -4 v -1.5 c 0 -1.38 -1.12 -2.5 -2.5 -2.5 s -2.5 1.12 -2.5 2.5 v 1.5 h -4 c -1.1 0 -1.99 0.9 -1.99 2 v 3.8 h 1.49 c 1.49 0 2.7 1.21 2.7 2.7 s -1.21 2.7 -2.7 2.7 h -1.5 v 3.8 c 0 1.1 0.9 2 2 2 h 3.8 v -1.5 c 0 -1.49 1.21 -2.7 2.7 -2.7 s 2.7 1.21 2.7 2.7 v 1.5 h 3.8 c 1.1 0 2 -0.9 2 -2 v -4 h 1.5 c 1.38 0 2.5 -1.12 2.5 -2.5 s -1.12 -2.5 -2.5 -2.5 z m -5.1 -3.6 v 1.228 l -3.5 7.972 h -1.9 l 3.6 -7.8 h -4.7 v -1.4 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="plugin_8pips">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 20.5 11 h -1.5 v -4 c 0 -1.1 -0.9 -2 -2 -2 h -4 v -1.5 c 0 -1.38 -1.12 -2.5 -2.5 -2.5 s -2.5 1.12 -2.5 2.5 v 1.5 h -4 c -1.1 0 -1.99 0.9 -1.99 2 v 3.8 h 1.49 c 1.49 0 2.7 1.21 2.7 2.7 s -1.21 2.7 -2.7 2.7 h -1.5 v 3.8 c 0 1.1 0.9 2 2 2 h 3.8 v -1.5 c 0 -1.49 1.21 -2.7 2.7 -2.7 s 2.7 1.21 2.7 2.7 v 1.5 h 3.8 c 1.1 0 2 -0.9 2 -2 v -4 h 1.5 c 1.38 0 2.5 -1.12 2.5 -2.5 s -1.12 -2.5 -2.5 -2.5 z m -8.5 5.7 c -2.8 0 -3.1 -1.9 -3.1 -2.7 0 -1.4 1 -2 1.5 -2.2 -0.4 -0.2 -1.3 -0.8 -1.3 -2 0 -2.2 1.9 -2.6 2.9 -2.6 2.4 0 2.9 1.6 2.9 2.6 0 1.2 -0.9 1.8 -1.3 2 0.4 0.2 1.5 0.9 1.5 2.2 0 2.4 -2.1 2.7 -3.1 2.7 z m 0 -4.1 c -1.2 0 -1.3 1.1 -1.3 1.3 0 1.3 1.1 1.3 1.3 1.3 0.6 0 1.3 -0.3 1.3 -1.3 0 -0.1 -0.1 -1.3 -1.3 -1.3 z m 0 -1.5 c 0.9 0 1.1 -0.9 1.1 -1.2 0 -0.4 -0.1 -1.2 -1.1 -1.2 s -1.1 0.8 -1.1 1.2 0.1 1.2 1.1 1.2 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="plugin_9pips">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 20.5 11 h -1.5 v -4 c 0 -1.1 -0.9 -2 -2 -2 h -4 v -1.5 c 0 -1.38 -1.12 -2.5 -2.5 -2.5 s -2.5 1.12 -2.5 2.5 v 1.5 h -4 c -1.1 0 -1.99 0.9 -1.99 2 v 3.8 h 1.49 c 1.49 0 2.7 1.21 2.7 2.7 s -1.21 2.7 -2.7 2.7 h -1.5 v 3.8 c 0 1.1 0.9 2 2 2 h 3.8 v -1.5 c 0 -1.49 1.21 -2.7 2.7 -2.7 s 2.7 1.21 2.7 2.7 v 1.5 h 3.8 c 1.1 0 2 -0.9 2 -2 v -4 h 1.5 c 1.38 0 2.5 -1.12 2.5 -2.5 s -1.12 -2.5 -2.5 -2.5 z m -5.4 0.7 c 0 4.7 -3.6 5 -4.7 5 h -0.1 v -1.5 h 0.1 c 2.7 0 2.8 -1.9 2.9 -2.3 -0.2 0.2 -0.8 0.7 -1.7 0.7 -0.8 0 -2.7 -0.4 -2.7 -3.1 0 -1.5 1 -3.3 3.1 -3.3 2.4 0 3.1 2.3 3.1 3.8 z m -3.1 -3 c -1.2 0 -1.3 1.5 -1.3 1.8 0 0.2 0 1.7 1.3 1.7 0.8 0 1.1 -0.6 1.3 -0.8 v -0.8 c 0 -0.2 -0.1 -1.9 -1.3 -1.9 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="process-stop">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 14.59 8 L 12 10.59 9.41 8 8 9.41 10.59 12 8 14.59 9.41 16 12 13.41 14.59 16 16 14.59 13.41 12 16 9.41 14.59 8 z M 12 2 C 6.47 2 2 6.47 2 12 s 4.47 10 10 10 10 -4.47 10 -10 S 17.53 2 12 2 z m 0 18 c -4.41 0 -8 -3.59 -8 -8 s 3.59 -8 8 -8 8 3.59 8 8 -3.59 8 -8 8 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="reload-page">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 19 8 l -4 4 h 3 c 0 3.31 -2.69 6 -6 6 -1.01 0 -1.97 -0.25 -2.8 -0.7 l -1.46 1.46 C 8.97 19.54 10.43 20 12 20 c 4.42 0 8 -3.58 8 -8 h 3 l -4 -4 z M 6 12 c 0 -3.31 2.69 -6 6 -6 1.01 0 1.97 0.25 2.8 0.7 l 1.46 -1.46 C 15.03 4.46 13.57 4 12 4 c -4.42 0 -8 3.58 -8 8 H 1 l 4 4 4 -4 H 6 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="replace-all">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 9.547 1.172 v 1.817 c 0.791 0.247 1.54 0.674 2.165 1.299 l -1.856 1.856 h 4.949 v -4.949 l -1.856 1.856 c -0.971 -0.971 -2.156 -1.597 -3.402 -1.879 z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="0,1,-1,0,15.9581,0.024127" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 9.547 1.172 v 1.817 c 0.791 0.247 1.54 0.674 2.165 1.299 l -1.856 1.856 h 4.949 v -4.949 l -1.856 1.856 c -0.971 -0.971 -2.156 -1.597 -3.402 -1.879 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="-1,0,0,-1,15.9759,15.9581" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 9.547 1.172 v 1.817 c 0.791 0.247 1.54 0.674 2.165 1.299 l -1.856 1.856 h 4.949 v -4.949 l -1.856 1.856 c -0.971 -0.971 -2.156 -1.597 -3.402 -1.879 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="0,-1,1,0,0.041868,15.9759" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 9.547 1.172 v 1.817 c 0.791 0.247 1.54 0.674 2.165 1.299 l -1.856 1.856 h 4.949 v -4.949 l -1.856 1.856 c -0.971 -0.971 -2.156 -1.597 -3.402 -1.879 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="replace-find">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="0.800457,0,0,0.800457,-2.20183,-2.20183" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 11 6 c 1.38 0 2.63 0.56 3.54 1.46 l -2.54 2.54 h 6 v -6 l -2.05 2.05 c -1.27 -1.27 -3.02 -2.05 -4.95 -2.05 -3.53 0 -6.43 2.61 -6.92 6 h 2.02 c 0.46 -2.28 2.48 -4 4.9 -4 z m 5.64 9.14 c 0.66 -0.9 1.12 -1.97 1.28 -3.14 h -2.02 c -0.46 2.28 -2.48 4 -4.9 4 -1.38 0 -2.63 -0.56 -3.54 -1.46 l 2.54 -2.54 h -6 v 6 l 2.05 -2.05 c 1.27 1.27 3.02 2.05 4.95 2.05 1.55 0 2.98 -0.51 4.14 -1.36 l 4.86 4.85 1.49 -1.49 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="replace">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1.20299,0,0,1.20299,-1.6239,-1.6239" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 4.914 11.086 1.543 -1.543 h -4.114 v 4.114 l 1.543 -1.543 c 2.273 2.273 5.955 2.273 8.228 0 0.807 -0.807 1.322 -1.795 1.553 -2.828 h -1.501 c -0.196 0.658 -0.561 1.28 -1.08 1.8 -1.703 1.702 -4.469 1.702 -6.172 0 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1.20299,0,0,1.20299,-1.6239,-1.6239" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 2.333 6.714 h 1.501 c 0.206 -0.658 0.561 -1.28 1.08 -1.8 1.703 -1.702 4.469 -1.702 6.172 0 l -1.543 1.543 h 4.114 v -4.114 l -1.543 1.543 c -2.273 -2.273 -5.955 -2.273 -8.228 0 -0.807 0.807 -1.322 1.795 -1.553 2.828 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="resize">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 3 3 v 2 h 2 v -2 z m 4 0 v 2 h 2 v -2 z m 4 0 v 2 h 2 v -2 z m 4 0 v 2 h 2 v -2 z m 4 0 v 2 h 2 v -2 z m -16 4 v 2 h 2 v -2 z m 8.344 0 2.121 2.121 -1.879 1.879 h -6.586 c -1.093 0 -2 0.907 -2 2 v 6 c 0 1.093 0.907 2 2 2 h 6 c 1.093 0 2 -0.907 2 -2 v -6.586 l 1.879 -1.879 2.121 2.121 v -5.656 z m 7.656 0 v 2 h 2 v -2 z m 0 4 v 2 h 2 v -2 z m -14 2 h 6 v 6 h -6 z m 14 2 v 2 h 2 v -2 z m -4 4 v 2 h 2 v -2 z m 4 0 v 2 h 2 v -2 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="restart">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="-0.875547,0,0,0.875547,18.5143,-2.50657" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 17.65 6.35 c -1.45 -1.45 -3.44 -2.35 -5.65 -2.35 -4.42 0 -7.99 3.58 -7.99 8 s 3.57 8 7.99 8 c 3.73 0 6.84 -2.55 7.73 -6 h -2.08 c -0.82 2.33 -3.04 4 -5.65 4 -3.31 0 -6 -2.69 -6 -6 s 2.69 -6 6 -6 c 1.66 0 3.14 0.69 4.22 1.78 l -3.22 3.22 h 7 v -7 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="rotate-left">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 4 2 v 5 h 5 l -1.563 -1.563 c 1.295 -0.902 2.861 -1.437 4.563 -1.437 4.431 0 8 3.569 8 8 s -3.569 8 -8 8 c -0.595 0 -1.188 -0.092 -1.764 -0.223 l -0.437 1.977 c 0.718 0.164 1.458 0.246 2.201 0.246 5.511 0 10 -4.489 10 -10 s -4.489 -10 -10 -10 c -2.247 0 -4.328 0.745 -6 2 z m -1.998 10 c 0.012 0.753 0.104 1.537 0.277 2.26 l 1.946 -0.477 c -0.138 -0.579 -0.215 -1.178 -0.225 -1.783 z m 2.828 3.471 -1.791 0.9 c 0.328 0.67 0.732 1.307 1.199 1.889 l 1.551 -1.28 c -0.374 -0.466 -0.696 -0.972 -0.959 -1.509 z m 2.225 2.771 -1.237 1.59 c 0.583 0.465 1.216 0.866 1.883 1.188 l 0.86 -1.831 c -0.532 -0.257 -1.039 -0.575 -1.506 -0.947 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="rotate-right">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 12.002 2 c -5.511 0 -10 4.489 -10 10 s 4.489 10 10 10 c 0.743 0 1.483 -0.082 2.201 -0.246 l -0.437 -1.977 c -0.576 0.131 -1.169 0.223 -1.764 0.223 -4.431 0 -8 -3.569 -8 -8 s 3.569 -8 8 -8 c 1.703 0 3.268 0.535 4.562 1.438 l -1.562 1.562 h 5 v -5 l -2 2 c -1.672 -1.255 -3.753 -2 -6 -2 z m 8 10 c -0.01 0.605 -0.087 1.204 -0.225 1.783 l 1.944 0.477 c 0.173 -0.723 0.267 -1.507 0.279 -2.26 z m -0.83 3.471 c -0.263 0.536 -0.587 1.043 -0.961 1.509 l 1.553 1.28 c 0.467 -0.582 0.871 -1.219 1.199 -1.889 z m -2.227 2.771 c -0.466 0.372 -0.973 0.69 -1.506 0.947 l 0.862 1.831 c 0.666 -0.322 1.3 -0.723 1.883 -1.188 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="saved-search">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 15.5 14 h -0.79 l -0.28 -0.27 C 15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3 S 3 5.91 3 9.5 5.91 16 9.5 16 c 1.61 0 3.09 -0.59 4.23 -1.57 l 0.27 0.28 v 0.79 l 5 4.99 L 20.49 19 l -4.99 -5 z m -6 0 C 7.01 14 5 11.99 5 9.5 S 7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14 z m -2.17 -1.5 l 2.14 -1.53 2.14 1.53 -0.83 -2.46 2.15 -1.5 h -2.62 L 9.47 6 l -0.84 2.54 H 6 l 2.14 1.49 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="split-section">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,0,-14" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 8 21 h 11 v -5 h 2 v 5 c 0 1.1 -0.9 2 -2 2 h -11 c -1.1 0 -2 -0.9 -2 -2 v -5 h 2 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,-1,0,38" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 8 21 h 11 v -5 h 2 v 5 c 0 1.1 -0.9 2 -2 2 h -11 c -1.1 0 -2 -0.9 -2 -2 v -5 h 2 z" />
+        </DrawingGroup>
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 13 11 h 3 v 2 h -3 z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 8 11 h 3 v 2 h -3 z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 18 11 h 3 v 2 h -3 z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-1,0" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 3 8 v 8 l 4 -4 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="tag-pair-remove">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 14.59 8 -2.59 2.59 -2.59 -2.59 -1.41 1.41 2.59 2.59 -2.59 2.59 1.41 1.41 2.59 -2.59 2.59 2.59 1.41 -1.41 -2.59 -2.59 2.59 -2.59 z" />
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,1,0" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 17.244 7.244 -1.396 1.397 3.348 3.359 -3.348 3.359 1.396 1.397 4.756 -4.756 z" />
+        </DrawingGroup>
+        <DrawingGroup>
+          <DrawingGroup.Transform>
+            <MatrixTransform Matrix="1,0,0,1,-1,0" />
+          </DrawingGroup.Transform>
+          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 8.157 8.645 -1.401 -1.401 -4.756 4.756 4.756 4.756 1.401 -1.401 -3.35 -3.355 z" />
+        </DrawingGroup>
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="widget-close">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#878787" Geometry="F1 m 17.59 5 -5.59 5.59 -5.59 -5.59 -1.41 1.41 5.59 5.59 -5.59 5.59 1.41 1.41 5.59 -5.59 5.59 5.59 1.41 -1.41 -5.59 -5.59 5.59 -5.59 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="zoom-in">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 9 2 c -3.854 0 -7 3.146 -7 7 s 3.146 7 7 7 c 1.748 0 3.345 -0.652 4.574 -1.719 l 0.426 0.426 v 1.293 l 6 6 2 -2 -6 -6 h -1.293 l -0.426 -0.426 c 1.067 -1.229 1.719 -2.826 1.719 -4.574 0 -3.854 -3.146 -7 -7 -7 z m 0 2 c 2.773 0 5 2.227 5 5 s -2.227 5 -5 5 -5 -2.227 -5 -5 2.227 -5 5 -5 z m -1 2 v 2 h -2 v 2 h 2 v 2 h 2 v -2 h 2 v -2 h -2 v -2 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="zoom-out">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 9 2 c -3.854 0 -7 3.146 -7 7 s 3.146 7 7 7 c 1.748 0 3.345 -0.652 4.574 -1.719 l 0.426 0.426 v 1.293 l 6 6 2 -2 -6 -6 h -1.293 l -0.426 -0.426 c 1.067 -1.229 1.719 -2.826 1.719 -4.574 0 -3.854 -3.146 -7 -7 -7 z m 0 2 c 2.773 0 5 2.227 5 5 s -2.227 5 -5 5 -5 -2.227 -5 -5 2.227 -5 5 -5 z m -3 4 v 2 h 6 v -2 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+  <DrawingImage x:Key="zoom-to-window">
+    <DrawingImage.Drawing>
+      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
+        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
+        <GeometryDrawing Brush="#1abc9c" Geometry="F0 m 9 2 c 3.854 0 7 3.146 7 7 0 1.748 -0.652 3.345 -1.719 4.574 l 0.426 0.426 h 1.293 l 6 6 -2 2 -6 -6 v -1.293 l -0.426 -0.426 c -1.229 1.067 -2.826 1.719 -4.574 1.719 -3.854 0 -7 -3.146 -7 -7 s 3.146 -7 7 -7 z m 0 2 c -2.773 0 -5 2.227 -5 5 s 2.227 5 5 5 5 -2.227 5 -5 -2.227 -5 -5 -5 z m -3 2 h 6 v 6 h -6 z m 4 2 h -2 v 2 h 2 z" />
+      </DrawingGroup>
+    </DrawingImage.Drawing>
+  </DrawingImage>
+</ResourceDictionary>

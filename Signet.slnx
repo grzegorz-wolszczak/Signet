@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Signet.App/Signet.App.csproj" />
+    <Project Path="src/Signet.Cli/Signet.Cli.csproj" />
+    <Project Path="src/Signet.Core/Signet.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Signet.App.Tests/Signet.App.Tests.csproj" />
+    <Project Path="tests/Signet.App.UiTests/Signet.App.UiTests.csproj" />
+    <Project Path="tests/Signet.Core.Tests/Signet.Core.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -1,0 +1,117 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Signet.App.ViewModels"
+             xmlns:nwv="clr-namespace:NativeWebView.Controls;assembly=NativeWebView"
+             xmlns:loc="using:Signet.App.Resources"
+             xmlns:infra="using:Signet.App.Infrastructure"
+             x:Class="Signet.App.Views.PreviewView"
+             x:DataType="vm:PreviewViewModel">
+
+  <UserControl.Styles>
+    <!-- Flat icon buttons. -->
+    <Style Selector="Button.previewTool">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="3" />
+    </Style>
+    <Style Selector="Button.previewTool:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.previewTool:disabled">
+      <Setter Property="Opacity" Value="0.4" />
+    </Style>
+  </UserControl.Styles>
+
+  <!-- Layout: the page on top, a row of buttons (Inspect, Select-All,
+       Copy, Reload, Cycle CSS, Print) at the bottom. Zoom is in the main window's status bar. -->
+  <Grid RowDefinitions="*,Auto">
+
+    <Panel Grid.Row="0">
+      <!-- Opacity="0" until the first real frame: in GpuSurface mode the library, before WebView2
+           delivers an image, shows a synthetic test frame (a colored pattern) — see PreviewView.OnRenderFrameCaptured. -->
+      <nwv:NativeWebView x:Name="WebView" RenderMode="GpuSurface" Opacity="0" />
+
+      <TextBlock Text="{loc:Loc PreviewView_OpenFileToPreview}"
+                 IsVisible="{Binding !HasContent}"
+                 Margin="16"
+                 Opacity="0.6"
+                 TextWrapping="Wrap"
+                 VerticalAlignment="Top" />
+
+      <TextBlock x:Name="FallbackText"
+                 IsVisible="False"
+                 Margin="16"
+                 Opacity="0.7"
+                 TextWrapping="Wrap"
+                 VerticalAlignment="Top" />
+    </Panel>
+
+    <Border Grid.Row="1"
+            Padding="1"
+            BorderThickness="0,1,0,0"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+      <StackPanel Orientation="Horizontal" Spacing="2">
+        <Button Classes="previewTool" Tag="inspect" Command="{Binding InspectCommand}" ToolTip.Tip="{loc:Loc PreviewView_InspectPage}">
+          <Panel>
+            <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                   Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
+                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                      Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
+                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          </Panel>
+        </Button>
+        <Button Classes="previewTool" Tag="edit-select-all" Command="{Binding SelectAllContentCommand}" ToolTip.Tip="{loc:Loc PreviewView_SelectAll}">
+          <Panel>
+            <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                   Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
+                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                      Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
+                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          </Panel>
+        </Button>
+        <Button Classes="previewTool" Tag="edit-copy" Command="{Binding CopySelectionCommand}" ToolTip.Tip="{loc:Loc PreviewView_Copy}">
+          <Panel>
+            <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                   Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
+                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                      Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
+                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          </Panel>
+        </Button>
+        <Button Classes="previewTool" Tag="reload-page" Command="{Binding ReloadCommand}" ToolTip.Tip="{loc:Loc PreviewView_RefreshPreview}">
+          <Panel>
+            <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                   Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
+                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                      Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
+                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          </Panel>
+        </Button>
+        <Button Classes="previewTool" Tag="cycle-css" Command="{Binding CycleCustomCssCommand}" ToolTip.Tip="{loc:Loc PreviewView_CycleCustomCss}">
+          <Panel>
+            <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                   Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
+                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                      Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
+                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          </Panel>
+        </Button>
+        <Button Classes="previewTool" Tag="document-print" Command="{Binding PrintCommand}" ToolTip.Tip="{loc:Loc PreviewView_Print}">
+          <Panel>
+            <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                   Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
+                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                      Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
+                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          </Panel>
+        </Button>
+      </StackPanel>
+    </Border>
+  </Grid>
+</UserControl>

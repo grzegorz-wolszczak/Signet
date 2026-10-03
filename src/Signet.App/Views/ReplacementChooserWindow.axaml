@@ -1,0 +1,59 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Signet.App.ViewModels"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.ReplacementChooserWindow"
+        x:DataType="vm:ReplacementChooserViewModel"
+        Title="{loc:Loc ReplacementChooserWindow_Title}"
+        Width="920" Height="540"
+        WindowStartupLocation="CenterOwner">
+
+  <Grid Margin="12" RowDefinitions="Auto,*,Auto" RowSpacing="8">
+
+    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8">
+      <TextBlock Text="{Binding Summary}" VerticalAlignment="Center" FontWeight="Bold" />
+      <CheckBox Content="{loc:Loc ReplacementChooserWindow_SelectAll}" IsChecked="{Binding SelectAll, Mode=TwoWay}" Margin="16,0,0,0" />
+      <TextBlock Text="{loc:Loc DryRunReplaceWindow_Context}" VerticalAlignment="Center" Margin="16,0,0,0" />
+      <ComboBox ItemsSource="{Binding ContextOptions}"
+                SelectedItem="{Binding ContextAmount, Mode=TwoWay}" MinWidth="70" />
+      <TextBlock Text="{loc:Loc DryRunReplaceWindow_FunctionReplacementUnsupported}"
+                 Foreground="IndianRed" VerticalAlignment="Center"
+                 IsVisible="{Binding HasFunctionReplacement}" />
+    </StackPanel>
+
+    <Border Grid.Row="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+            BorderThickness="1">
+      <DockPanel>
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="40,220,70,*,*" ColumnSpacing="6"
+              Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+          <TextBlock Grid.Column="1" Text="{loc:Loc DryRunReplaceWindow_BookPathColumn}" FontWeight="Bold" Margin="6,4" />
+          <TextBlock Grid.Column="2" Text="{loc:Loc DryRunReplaceWindow_OffsetColumn}" FontWeight="Bold" Margin="6,4" />
+          <TextBlock Grid.Column="3" Text="{loc:Loc DryRunReplaceWindow_BeforeColumn}" FontWeight="Bold" Margin="6,4" />
+          <TextBlock Grid.Column="4" Text="{loc:Loc DryRunReplaceWindow_AfterColumn}" FontWeight="Bold" Margin="6,4" />
+        </Grid>
+        <ListBox ItemsSource="{Binding Rows}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:ChooserRowViewModel">
+              <Grid ColumnDefinitions="40,220,70,*,*" ColumnSpacing="6">
+                <CheckBox Grid.Column="0" IsChecked="{Binding IsChecked, Mode=TwoWay}" />
+                <TextBlock Grid.Column="1" Text="{Binding BookPath}" TextTrimming="CharacterEllipsis"
+                           VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2" Text="{Binding Offset}" HorizontalAlignment="Right"
+                           VerticalAlignment="Center" />
+                <TextBlock Grid.Column="3" Text="{Binding BeforeSnippet}" TextTrimming="CharacterEllipsis"
+                           VerticalAlignment="Center" />
+                <TextBlock Grid.Column="4" Text="{Binding AfterSnippet}" TextTrimming="CharacterEllipsis"
+                           VerticalAlignment="Center" />
+              </Grid>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+    </Border>
+
+    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+      <Button Content="{loc:Loc ReplacementChooserWindow_Apply}" Command="{Binding ApplyCommand}" IsDefault="True" MinWidth="90" />
+      <Button Content="{loc:Loc Common_Close}" Click="OnCloseClick" IsCancel="True" MinWidth="90" />
+    </StackPanel>
+  </Grid>
+</Window>

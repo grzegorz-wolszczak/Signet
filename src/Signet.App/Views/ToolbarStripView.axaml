@@ -1,0 +1,90 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Signet.App.ViewModels"
+             xmlns:tb="using:Signet.App.Toolbars"
+             xmlns:infra="using:Signet.App.Infrastructure"
+             xmlns:actions="using:Signet.App.Actions"
+             xmlns:loc="using:Signet.App.Resources"
+             x:Class="Signet.App.Views.ToolbarStripView"
+             x:DataType="vm:ToolbarViewModel"
+             Margin="0,0,8,0">
+
+  <!-- A single toolbar: buttons in a ToolbarOverflowPanel and, when they do not fit, a "»"
+       button at the end with a menu of the hidden items. -->
+  <Panel>
+    <ItemsControl x:Name="Items" ItemsSource="{Binding Items}">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <tb:ToolbarOverflowPanel />
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:ToolbarItemViewModel">
+          <Panel>
+            <Rectangle IsVisible="{Binding IsSeparator}"
+                       Width="1" Height="18"
+                       Margin="4,0"
+                       Fill="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+            <Button IsVisible="{Binding IsButton}"
+                    Command="{Binding Command}"
+                    ToolTip.Tip="{Binding ToolTip}"
+                    Classes="toolbar"
+                    Padding="3"
+                    FontSize="11">
+              <Panel>
+                <!-- Built-in sets (Default/Fluent/Material) are colored DrawingImages;
+                     "Custom" is a monochrome Geometry drawn by a PathIcon. -->
+                <Image Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
+                       IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}">
+                  <!-- Action icon state (e.g. the gray/red "Save" floppy disk) — ActionIcons. -->
+                  <Image.Source>
+                    <MultiBinding Converter="{x:Static infra:ActionIcons.ImageForState}">
+                      <Binding Path="IconKey" />
+                      <Binding Path="Action.IconState" FallbackValue="{x:Static actions:ActionIconState.Normal}" />
+                    </MultiBinding>
+                  </Image.Source>
+                </Image>
+                <PathIcon Data="{Binding IconKey, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                          Foreground="{Binding Action.IconState, Converter={x:Static infra:ActionIcons.ForegroundForState}, FallbackValue={x:Static AvaloniaProperty.UnsetValue}}"
+                          Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
+                          IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                <TextBlock Text="{Binding Label}"
+                           VerticalAlignment="Center"
+                           IsVisible="{Binding IconKey, Converter={x:Static StringConverters.IsNullOrEmpty}}" />
+              </Panel>
+            </Button>
+            <!-- Menu button (tbHeadings / tbCase): click = last chosen action, arrow = menu. -->
+            <SplitButton IsVisible="{Binding IsDropDown}"
+                         Command="{Binding Command}"
+                         ToolTip.Tip="{Binding ToolTip}"
+                         Classes="toolbar"
+                         Padding="3"
+                         FontSize="11"
+                         Loaded="OnDropDownLoaded">
+              <Panel>
+                <Image Source="{Binding IconKey, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                       Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
+                       IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                <PathIcon Data="{Binding IconKey, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                          Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
+                          IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+              </Panel>
+            </SplitButton>
+          </Panel>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+    <Button x:Name="Chevron"
+            Classes="toolbar"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Stretch"
+            Width="16"
+            Padding="0"
+            IsVisible="False"
+            Content="»"
+            FontSize="12"
+            ToolTip.Tip="{loc:Loc ToolbarStripView_MoreTip}"
+            Click="OnChevronClick" />
+  </Panel>
+</UserControl>

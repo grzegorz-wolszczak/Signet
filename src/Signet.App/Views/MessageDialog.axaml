@@ -1,0 +1,19 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.MessageDialog"
+        Width="460" SizeToContent="Height"
+        MaxHeight="520"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Title="Signet">
+
+  <StackPanel Margin="16" Spacing="14">
+    <ScrollViewer MaxHeight="380" HorizontalScrollBarVisibility="Disabled">
+      <TextBlock x:Name="MessageText" TextWrapping="Wrap" />
+    </ScrollViewer>
+    <Button x:Name="OkButton" Content="{loc:Loc Common_Ok}" IsDefault="True" IsCancel="True"
+            MinWidth="90" HorizontalAlignment="Right" />
+  </StackPanel>
+</Window>

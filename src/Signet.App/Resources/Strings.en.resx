@@ -1,0 +1,3416 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Common_Ok" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="SelectFolderWindow_Title" xml:space="preserve">
+    <value>Move Files</value>
+  </data>
+  <data name="SelectFolderWindow_Prompt" xml:space="preserve">
+    <value>Destination folder (empty = EPUB root):</value>
+  </data>
+  <data name="SelectFolderWindow_Root" xml:space="preserve">
+    <value>&lt;epub root&gt;</value>
+  </data>
+  <data name="Common_Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="Common_Import" xml:space="preserve">
+    <value>Import…</value>
+  </data>
+  <data name="Common_Export" xml:space="preserve">
+    <value>Export…</value>
+  </data>
+  <data name="Common_Save" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Common_Reload" xml:space="preserve">
+    <value>Reload</value>
+  </data>
+  <data name="Common_Expand" xml:space="preserve">
+    <value>Expand</value>
+  </data>
+  <data name="Common_Collapse" xml:space="preserve">
+    <value>Collapse</value>
+  </data>
+  <data name="Common_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="ClipEditorWindow_Title" xml:space="preserve">
+    <value>Clip Editor</value>
+  </data>
+  <data name="ClipEditor_SaveChangesPrompt" xml:space="preserve">
+    <value>The clips have been modified. Save changes?</value>
+  </data>
+  <data name="ClipEditorWindow_Filter" xml:space="preserve">
+    <value>Filter:</value>
+  </data>
+  <data name="ClipEditorWindow_FilterPlaceholder" xml:space="preserve">
+    <value>show only clips containing…</value>
+  </data>
+  <data name="ClipEditorWindow_FilterNameAndText" xml:space="preserve">
+    <value>name and text</value>
+  </data>
+  <data name="ClipEditorWindow_ClipTextLabel" xml:space="preserve">
+    <value>Clip text (placeholder \1 = selected text):</value>
+  </data>
+  <data name="ClipEditorWindow_Paste" xml:space="preserve">
+    <value>Paste</value>
+  </data>
+  <data name="ClipEditorWindow_AddEntry" xml:space="preserve">
+    <value>Add Entry</value>
+  </data>
+  <data name="ClipEditorWindow_AddGroup" xml:space="preserve">
+    <value>Add Group</value>
+  </data>
+  <data name="ClipEditorWindow_AutoFillCss" xml:space="preserve">
+    <value>AutoFill CSS…</value>
+  </data>
+  <data name="ClipEditorWindow_ExportAll" xml:space="preserve">
+    <value>Export All…</value>
+  </data>
+  <data name="AddSemanticsWindow_Title" xml:space="preserve">
+    <value>Add Semantics</value>
+  </data>
+  <data name="AddSemanticsWindow_Prompt" xml:space="preserve">
+    <value>File semantics:</value>
+  </data>
+  <data name="ClipsPanelView_CollapseAll" xml:space="preserve">
+    <value>Collapse All</value>
+  </data>
+  <data name="ClipsPanelView_ExpandAll" xml:space="preserve">
+    <value>Expand All</value>
+  </data>
+  <data name="Common_ToggleSelectAll" xml:space="preserve">
+    <value>Select / deselect all</value>
+  </data>
+  <data name="DeleteUnusedMediaWindow_Title" xml:space="preserve">
+    <value>Delete Unused Media Files</value>
+  </data>
+  <data name="DeleteUnusedMediaWindow_DeleteMarked" xml:space="preserve">
+    <value>Delete Marked Files</value>
+  </data>
+  <data name="DeleteUnusedStylesWindow_Title" xml:space="preserve">
+    <value>Delete Unused Stylesheet Selectors</value>
+  </data>
+  <data name="DeleteUnusedStylesWindow_DeleteMarked" xml:space="preserve">
+    <value>Delete Marked Styles</value>
+  </data>
+  <data name="DeleteUnusedStylesWindow_FileColumn" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="DeleteUnusedStylesWindow_StyleColumn" xml:space="preserve">
+    <value>Style</value>
+  </data>
+  <data name="CssCleanupWindow_Title" xml:space="preserve">
+    <value>Merge / Remove Unused CSS Rules</value>
+  </data>
+  <data name="CssCleanupWindow_Apply" xml:space="preserve">
+    <value>Apply Marked</value>
+  </data>
+  <data name="CssCleanupWindow_MergeHeader" xml:space="preserve">
+    <value>Rules to merge (identical selector / identical properties)</value>
+  </data>
+  <data name="CssCleanupWindow_UnusedStylesheetsHeader" xml:space="preserve">
+    <value>Stylesheets not linked by any file</value>
+  </data>
+  <data name="LiveCssPanelWindow_Title" xml:space="preserve">
+    <value>Live CSS Panel</value>
+  </data>
+  <data name="LiveCssPanelWindow_NoRules" xml:space="preserve">
+    <value>No CSS rule matches this element.</value>
+  </data>
+  <data name="LiveCssPanelWindow_Specificity" xml:space="preserve">
+    <value>specificity</value>
+  </data>
+  <data name="LiveCssPanelWindow_Inline" xml:space="preserve">
+    <value>(inline style)</value>
+  </data>
+  <data name="Common_Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="Common_Rename" xml:space="preserve">
+    <value>Rename</value>
+  </data>
+  <data name="DryRunReplaceWindow_Title" xml:space="preserve">
+    <value>Dry Run Replace All</value>
+  </data>
+  <data name="DryRunReplaceWindow_Context" xml:space="preserve">
+    <value>Context:</value>
+  </data>
+  <data name="DryRunReplaceWindow_FunctionReplacementUnsupported" xml:space="preserve">
+    <value>Replacement via Python function (\F&lt;…&gt;) is not supported.</value>
+  </data>
+  <data name="DryRunReplaceWindow_FilterPlaceholder" xml:space="preserve">
+    <value>show only rows containing…</value>
+  </data>
+  <data name="DryRunReplaceWindow_BookPathColumn" xml:space="preserve">
+    <value>Book Path</value>
+  </data>
+  <data name="DryRunReplaceWindow_OffsetColumn" xml:space="preserve">
+    <value>Offset</value>
+  </data>
+  <data name="DryRunReplaceWindow_BeforeColumn" xml:space="preserve">
+    <value>Before</value>
+  </data>
+  <data name="DryRunReplaceWindow_AfterColumn" xml:space="preserve">
+    <value>After</value>
+  </data>
+  <data name="EditTocWindow_Title" xml:space="preserve">
+    <value>Edit Table Of Contents</value>
+  </data>
+  <data name="EditTocWindow_AddAbove" xml:space="preserve">
+    <value>Add Above</value>
+  </data>
+  <data name="EditTocWindow_AddAboveTip" xml:space="preserve">
+    <value>Insert an empty entry above the selected one.</value>
+  </data>
+  <data name="EditTocWindow_AddBelow" xml:space="preserve">
+    <value>Add Below</value>
+  </data>
+  <data name="EditTocWindow_AddBelowTip" xml:space="preserve">
+    <value>Insert an empty entry below the selected one.</value>
+  </data>
+  <data name="EditTocWindow_DeleteTip" xml:space="preserve">
+    <value>Delete the selected entry.</value>
+  </data>
+  <data name="EditTocWindow_SelectTarget" xml:space="preserve">
+    <value>Select Target…</value>
+  </data>
+  <data name="EditTocWindow_SelectTargetTip" xml:space="preserve">
+    <value>Set the entry's target from the list of valid targets in the book.</value>
+  </data>
+  <data name="EditTocWindow_DecreaseLevelTip" xml:space="preserve">
+    <value>Decrease level (left arrow).</value>
+  </data>
+  <data name="EditTocWindow_MoveUpTip" xml:space="preserve">
+    <value>Move up.</value>
+  </data>
+  <data name="EditTocWindow_MoveDownTip" xml:space="preserve">
+    <value>Move down.</value>
+  </data>
+  <data name="EditTocWindow_IncreaseLevelTip" xml:space="preserve">
+    <value>Increase level (right arrow).</value>
+  </data>
+  <data name="EditTocWindow_EntryTextPlaceholder" xml:space="preserve">
+    <value>(entry text)</value>
+  </data>
+  <data name="EmptyLayoutWindow_Title" xml:space="preserve">
+    <value>EPUB Layout Wizard</value>
+  </data>
+  <data name="EmptyLayoutWindow_AddFolder" xml:space="preserve">
+    <value>Add Folder</value>
+  </data>
+  <data name="EmptyLayoutWindow_AddFile" xml:space="preserve">
+    <value>Add File ▾</value>
+  </data>
+  <data name="EmptyLayoutWindow_RenameButton" xml:space="preserve">
+    <value>Rename</value>
+  </data>
+  <data name="EmptyLayoutWindow_Load" xml:space="preserve">
+    <value>Load…</value>
+  </data>
+  <data name="EmptyLayoutWindow_SaveEllipsis" xml:space="preserve">
+    <value>Save…</value>
+  </data>
+  <data name="EmptyLayoutWindow_JsonFileType" xml:space="preserve">
+    <value>EPUB Layout (JSON)</value>
+  </data>
+  <data name="EmptyLayoutWindow_NewFolderNamePrompt" xml:space="preserve">
+    <value>Name of the new folder:</value>
+  </data>
+  <data name="EmptyLayoutWindow_NewFolderDefaultName" xml:space="preserve">
+    <value>new_folder</value>
+  </data>
+  <data name="EmptyLayoutWindow_NewNamePrompt" xml:space="preserve">
+    <value>New name:</value>
+  </data>
+  <data name="EmptyLayoutWindow_LoadDialogTitle" xml:space="preserve">
+    <value>Load saved layout</value>
+  </data>
+  <data name="EmptyLayoutWindow_InvalidLayoutFile" xml:space="preserve">
+    <value>The selected file does not contain a valid layout.</value>
+  </data>
+  <data name="EmptyLayoutWindow_SaveDialogTitle" xml:space="preserve">
+    <value>Save current layout</value>
+  </data>
+  <data name="EmptyLayoutWindow_MakeDefaultPrompt" xml:space="preserve">
+    <value>Set this layout as the default empty EPUB layout for Signet?</value>
+  </data>
+  <data name="FindReplaceView_Find" xml:space="preserve">
+    <value>Find:</value>
+  </data>
+  <data name="Common_CloseReportTooltip" xml:space="preserve">
+    <value>Close report</value>
+  </data>
+  <data name="FindReplaceView_HighlightAllMatches" xml:space="preserve">
+    <value>Highlight all matches</value>
+  </data>
+  <data name="FindReplaceView_HighlightAllMatchesTooltip" xml:space="preserve">
+    <value>Besides the current match, highlights all other occurrences of the search text in the active file</value>
+  </data>
+  <data name="FindReplaceView_Restart" xml:space="preserve">
+    <value>Restart</value>
+  </data>
+  <data name="FindReplaceView_RestartTooltip" xml:space="preserve">
+    <value>The next search starts over (from the current file)</value>
+  </data>
+  <data name="FindReplace_SearchWillRestart" xml:space="preserve">
+    <value>Search will restart</value>
+  </data>
+  <data name="FindReplaceView_Options" xml:space="preserve">
+    <value>Options:</value>
+  </data>
+  <data name="FindReplaceView_RegexOptions" xml:space="preserve">
+    <value>Regex Options</value>
+  </data>
+  <data name="FindReplaceView_RegexOptionsTooltip" xml:space="preserve">
+    <value>Set advanced Regex search flags / options.</value>
+  </data>
+  <data name="FindReplaceView_TextOnly" xml:space="preserve">
+    <value>Text</value>
+  </data>
+  <data name="FindReplaceView_FindHistoryTooltip" xml:space="preserve">
+    <value>Search history</value>
+  </data>
+  <data name="FindReplaceView_ReplaceHistoryTooltip" xml:space="preserve">
+    <value>Replace history</value>
+  </data>
+  <data name="FindReplaceView_FindPlaceholder" xml:space="preserve">
+    <value>search text / pattern</value>
+  </data>
+  <data name="FindReplaceView_FindNext" xml:space="preserve">
+    <value>Find Next</value>
+  </data>
+  <data name="FindReplaceView_CountAll" xml:space="preserve">
+    <value>Count All</value>
+  </data>
+  <data name="FindReplaceView_Replace" xml:space="preserve">
+    <value>Replace:</value>
+  </data>
+  <data name="FindReplaceView_ReplacePlaceholder" xml:space="preserve">
+    <value>replacement text</value>
+  </data>
+  <data name="FindReplaceView_ReplaceButton" xml:space="preserve">
+    <value>Replace</value>
+  </data>
+  <data name="FindReplaceView_ReplaceFind" xml:space="preserve">
+    <value>Replace/Find</value>
+  </data>
+  <data name="FindReplaceView_ReplaceAll" xml:space="preserve">
+    <value>Replace All</value>
+  </data>
+  <data name="FindReplaceView_Mode" xml:space="preserve">
+    <value>Mode:</value>
+  </data>
+  <data name="FindReplaceView_ModeNormal" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="FindReplaceView_ModeCaseSensitive" xml:space="preserve">
+    <value>Case Sensitive</value>
+  </data>
+  <data name="FindReplaceView_ModeRegex" xml:space="preserve">
+    <value>Regex</value>
+  </data>
+  <data name="FindReplaceView_Direction" xml:space="preserve">
+    <value>Direction:</value>
+  </data>
+  <data name="FindReplaceView_DirectionDown" xml:space="preserve">
+    <value>Down</value>
+  </data>
+  <data name="FindReplaceView_DirectionUp" xml:space="preserve">
+    <value>Up</value>
+  </data>
+  <data name="FindReplaceView_LookIn" xml:space="preserve">
+    <value>Look in:</value>
+  </data>
+  <data name="FindReplaceView_Wrap" xml:space="preserve">
+    <value>Wrap</value>
+  </data>
+  <data name="FindReplaceView_RestrictToSelection" xml:space="preserve">
+    <value>Restrict to selection</value>
+  </data>
+  <data name="FindReplaceView_DotMatchesAll" xml:space="preserve">
+    <value>Dot matches all (?s)</value>
+  </data>
+  <data name="FindReplaceView_MinimalMatch" xml:space="preserve">
+    <value>Minimal match (?U)</value>
+  </data>
+  <data name="FindReplaceView_UnicodeProperty" xml:space="preserve">
+    <value>Unicode property (*UCP)</value>
+  </data>
+  <data name="FindReplaceView_SearchTextNotTags" xml:space="preserve">
+    <value>Search in text, not tags</value>
+  </data>
+  <data name="FindReplaceView_AutoTokenise" xml:space="preserve">
+    <value>Auto Tokenise</value>
+  </data>
+  <data name="FindReplaceView_AutoTokeniseTooltip" xml:space="preserve">
+    <value>For Regex searches, tokenise/escape selection when inserted into Find.</value>
+  </data>
+  <data name="HeadingSelectorWindow_Title" xml:space="preserve">
+    <value>Generate Table Of Contents</value>
+  </data>
+  <data name="HeadingSelectorWindow_LevelChoiceTip" xml:space="preserve">
+    <value>Quickly select which headings go into the TOC.</value>
+  </data>
+  <data name="HeadingSelectorWindow_TocItemsOnly" xml:space="preserve">
+    <value>Show only TOC items</value>
+  </data>
+  <data name="HeadingSelectorWindow_DecreaseLevelTip" xml:space="preserve">
+    <value>Decrease heading level by 1 (left arrow).</value>
+  </data>
+  <data name="HeadingSelectorWindow_IncreaseLevelTip" xml:space="preserve">
+    <value>Increase heading level by 1 (right arrow).</value>
+  </data>
+  <data name="HeadingSelectorWindow_IncludeInTocTip" xml:space="preserve">
+    <value>Include this heading in the table of contents.</value>
+  </data>
+  <data name="ImageResizeWindow_Title" xml:space="preserve">
+    <value>Resize Image</value>
+  </data>
+  <data name="ImageResizeWindow_Width" xml:space="preserve">
+    <value>Width:</value>
+  </data>
+  <data name="ImageResizeWindow_Height" xml:space="preserve">
+    <value>Height:</value>
+  </data>
+  <data name="ImageResizeWindow_KeepAspectRatio" xml:space="preserve">
+    <value>Keep aspect ratio</value>
+  </data>
+  <data name="MetadataEditorWindow_Title" xml:space="preserve">
+    <value>Metadata Editor</value>
+  </data>
+  <data name="MetadataEditorWindow_AddElement" xml:space="preserve">
+    <value>Add Metadata Element…</value>
+  </data>
+  <data name="MetadataEditorWindow_AddElementTip" xml:space="preserve">
+    <value>Add a new top-level metadata element.</value>
+  </data>
+  <data name="MetadataEditorWindow_AddProperty" xml:space="preserve">
+    <value>Add Property…</value>
+  </data>
+  <data name="MetadataEditorWindow_AddPropertyTip" xml:space="preserve">
+    <value>Add an attribute/refinement to the selected row's element.</value>
+  </data>
+  <data name="MetadataEditorWindow_RemoveRow" xml:space="preserve">
+    <value>Remove row</value>
+  </data>
+  <data name="MetadataEditorWindow_AddElementMenu" xml:space="preserve">
+    <value>Add Metadata element</value>
+  </data>
+  <data name="MetadataEditorWindow_AddPropertyMenu" xml:space="preserve">
+    <value>Add Property to element</value>
+  </data>
+  <data name="MetadataEditorWindow_MoveRowUp" xml:space="preserve">
+    <value>Move row up</value>
+  </data>
+  <data name="MetadataEditorWindow_MoveRowDown" xml:space="preserve">
+    <value>Move row down</value>
+  </data>
+  <data name="Common_Add" xml:space="preserve">
+    <value>Add</value>
+  </data>
+  <data name="Common_Remove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="PreferencesWindow_Title" xml:space="preserve">
+    <value>Preferences</value>
+  </data>
+  <data name="PreferencesWindow_Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="PreferencesWindow_LanguageRestartNotice" xml:space="preserve">
+    <value>The language changes when you close the Preferences window.</value>
+  </data>
+  <data name="PreferencesWindow_Appearance" xml:space="preserve">
+    <value>Appearance</value>
+  </data>
+  <data name="PreferencesWindow_Theme" xml:space="preserve">
+    <value>Theme:</value>
+  </data>
+  <data name="PreferencesWindow_PreviewFonts" xml:space="preserve">
+    <value>Preview fonts</value>
+  </data>
+  <data name="PreferencesWindow_Standard" xml:space="preserve">
+    <value>Standard:</value>
+  </data>
+  <data name="PreferencesWindow_Serif" xml:space="preserve">
+    <value>Serif:</value>
+  </data>
+  <data name="PreferencesWindow_SansSerif" xml:space="preserve">
+    <value>Sans-serif:</value>
+  </data>
+  <data name="PreferencesWindow_Size" xml:space="preserve">
+    <value>Size:</value>
+  </data>
+  <data name="PreferencesWindow_SpecialCharacterFont" xml:space="preserve">
+    <value>Insert Special Character font</value>
+  </data>
+  <data name="PreferencesWindow_Family" xml:space="preserve">
+    <value>Family:</value>
+  </data>
+  <data name="PreferencesWindow_CodeViewLight" xml:space="preserve">
+    <value>Code View — Light theme</value>
+  </data>
+  <data name="PreferencesWindow_CodeViewDark" xml:space="preserve">
+    <value>Code View — Dark theme</value>
+  </data>
+  <data name="PreferencesWindow_FontFamily" xml:space="preserve">
+    <value>Font family:</value>
+  </data>
+  <data name="PreferencesWindow_FontSize" xml:space="preserve">
+    <value>Font size:</value>
+  </data>
+  <data name="PreferencesWindow_FontColorRestartNotice" xml:space="preserve">
+    <value>Code View/Preview font/color changes and the icon theme take effect after restarting Signet.</value>
+  </data>
+  <data name="PreferencesWindow_RestoreAppearanceDefaults" xml:space="preserve">
+    <value>Restore Appearance Defaults</value>
+  </data>
+  <data name="PreferencesWindow_General" xml:space="preserve">
+    <value>General</value>
+  </data>
+  <data name="PreferencesWindow_DefaultEpub3" xml:space="preserve">
+    <value>Default new publication to EPUB 3</value>
+  </data>
+  <data name="PreferencesWindow_MendOnOpen" xml:space="preserve">
+    <value>Mend automatically on open</value>
+  </data>
+  <data name="PreferencesWindow_MendOnSave" xml:space="preserve">
+    <value>Mend automatically on save</value>
+  </data>
+  <data name="PreferencesWindow_ReopenLastFile" xml:space="preserve">
+    <value>Reopen last file on startup</value>
+  </data>
+  <data name="PreferencesWindow_EnableFileDropZone" xml:space="preserve">
+    <value>Enable file drop zone</value>
+  </data>
+  <data name="PreferencesWindow_ClipboardHistoryLimit" xml:space="preserve">
+    <value>Clipboard history limit (0–20):</value>
+  </data>
+  <data name="PreferencesWindow_RecentFilesLimit" xml:space="preserve">
+    <value>Recent files shown in the File menu (0–20):</value>
+  </data>
+  <data name="PreferencesWindow_PreviewRefreshDelay" xml:space="preserve">
+    <value>Preview refresh delay after editing, ms (100–10000):</value>
+  </data>
+  <data name="PreferencesWindow_Preview" xml:space="preserve">
+    <value>Preview</value>
+  </data>
+  <data name="PreferencesWindow_PreviewLiveRefresh" xml:space="preserve">
+    <value>Live refresh</value>
+  </data>
+  <data name="PreferencesWindow_PreviewHighlight" xml:space="preserve">
+    <value>Cursor location highlight (code → preview)</value>
+  </data>
+  <data name="PreferencesWindow_PreviewHighlightStyle" xml:space="preserve">
+    <value>Highlight style:</value>
+  </data>
+  <data name="PreferencesWindow_PreviewHighlightColorLight" xml:space="preserve">
+    <value>Color — light theme</value>
+  </data>
+  <data name="PreferencesWindow_PreviewHighlightColorDark" xml:space="preserve">
+    <value>Color — dark theme</value>
+  </data>
+  <data name="PreferencesWindow_PreviewHighlightOpacity" xml:space="preserve">
+    <value>Background opacity, % (5–100):</value>
+  </data>
+  <data name="PreferencesWindow_PreviewHighlightOutlineWidth" xml:space="preserve">
+    <value>Frame width, px (1–20):</value>
+  </data>
+  <data name="PreferencesWindow_PreviewHighlightAutoHide" xml:space="preserve">
+    <value>Hide the highlight after a delay</value>
+  </data>
+  <data name="PreferencesWindow_PreviewHighlightAutoHideDelay" xml:space="preserve">
+    <value>Hide after, ms (500–30000):</value>
+  </data>
+  <data name="PreviewHighlightStyle_Background" xml:space="preserve">
+    <value>Block background</value>
+  </data>
+  <data name="PreviewHighlightStyle_Outline" xml:space="preserve">
+    <value>Frame around block</value>
+  </data>
+  <data name="PreferencesWindow_TempFolder" xml:space="preserve">
+    <value>Temp folder (blank = default):</value>
+  </data>
+  <data name="PreferencesWindow_ExternalXEditorPath" xml:space="preserve">
+    <value>External XHTML editor path:</value>
+  </data>
+  <data name="PreferencesWindow_CssEpub2Profile" xml:space="preserve">
+    <value>EPUB 2 W3C CSS validation profile:</value>
+  </data>
+  <data name="PreferencesWindow_CssEpub3Profile" xml:space="preserve">
+    <value>EPUB 3 W3C CSS validation profile:</value>
+  </data>
+  <data name="PreferencesWindow_Spellcheck" xml:space="preserve">
+    <value>Spellcheck</value>
+  </data>
+  <data name="PreferencesWindow_EnableSpellCheck" xml:space="preserve">
+    <value>Highlight misspelled words</value>
+  </data>
+  <data name="PreferencesWindow_CheckWordsWithNumbers" xml:space="preserve">
+    <value>Check words containing numbers</value>
+  </data>
+  <data name="PreferencesWindow_PrimaryDictionary" xml:space="preserve">
+    <value>Primary dictionary:</value>
+  </data>
+  <data name="PreferencesWindow_SecondaryDictionary" xml:space="preserve">
+    <value>Secondary dictionary:</value>
+  </data>
+  <data name="PreferencesWindow_UserDictionaries" xml:space="preserve">
+    <value>User dictionaries</value>
+  </data>
+  <data name="PreferencesWindow_UserWordList" xml:space="preserve">
+    <value>User Dictionary Word List</value>
+  </data>
+  <data name="PreferencesWindow_DictionaryEnabledColumn" xml:space="preserve">
+    <value>Enable</value>
+  </data>
+  <data name="PreferencesWindow_DictionaryNameColumn" xml:space="preserve">
+    <value>Dictionary</value>
+  </data>
+  <data name="PreferencesWindow_CopyDictionary" xml:space="preserve">
+    <value>Copy</value>
+  </data>
+  <data name="PreferencesWindow_EditWord" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="PreferencesWindow_RemoveAllWords" xml:space="preserve">
+    <value>Remove All</value>
+  </data>
+  <data name="PreferencesWindow_DefaultUserDictionary" xml:space="preserve">
+    <value>Default Dictionary: {0}</value>
+  </data>
+  <data name="PreferencesWindow_NoSecondaryDictionary" xml:space="preserve">
+    <value>(none)</value>
+  </data>
+  <data name="PreferencesWindow_AddDictionaryTitle" xml:space="preserve">
+    <value>Add Dictionary</value>
+  </data>
+  <data name="PreferencesWindow_RenameDictionaryTitle" xml:space="preserve">
+    <value>Rename Dictionary</value>
+  </data>
+  <data name="PreferencesWindow_DictionaryNamePrompt" xml:space="preserve">
+    <value>Name:</value>
+  </data>
+  <data name="PreferencesWindow_AddWordsTitle" xml:space="preserve">
+    <value>Add Words</value>
+  </data>
+  <data name="PreferencesWindow_AddWordsPrompt" xml:space="preserve">
+    <value>Words (separated by spaces or commas):</value>
+  </data>
+  <data name="PreferencesWindow_EditWordTitle" xml:space="preserve">
+    <value>Edit Word</value>
+  </data>
+  <data name="PreferencesWindow_EditWordPrompt" xml:space="preserve">
+    <value>Word:</value>
+  </data>
+  <data name="PreferencesWindow_ErrorTitle" xml:space="preserve">
+    <value>Error</value>
+  </data>
+  <data name="PreferencesWindow_DictionaryExists" xml:space="preserve">
+    <value>A user dictionary already exists with this name!</value>
+  </data>
+  <data name="PreferencesWindow_DictionaryNameInvalid" xml:space="preserve">
+    <value>A dictionary name cannot contain the characters &lt; &gt; : " / \ | ? *, start or end with a space, or end with a period.</value>
+  </data>
+  <data name="PreferencesWindow_CannotRemoveLastDictionary" xml:space="preserve">
+    <value>You cannot delete the last dictionary.</value>
+  </data>
+  <data name="PreferencesWindow_DictionaryFileError" xml:space="preserve">
+    <value>The dictionary file operation failed: {0}</value>
+  </data>
+  <data name="PreferencesWindow_OpenPreferencesLocation" xml:space="preserve">
+    <value>Open Preferences Location</value>
+  </data>
+  <data name="PreferencesWindow_KeyboardShortcuts" xml:space="preserve">
+    <value>Keyboard Shortcuts</value>
+  </data>
+  <data name="PreferencesWindow_ResetAll" xml:space="preserve">
+    <value>Reset All</value>
+  </data>
+  <data name="PreferencesWindow_Reset" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="PreferencesWindow_UiFont" xml:space="preserve">
+    <value>Interface font:</value>
+  </data>
+  <data name="PreferencesWindow_UiFontDefault" xml:space="preserve">
+    <value>Default ({0}, {1} px)</value>
+  </data>
+  <data name="PreferencesWindow_UiFontReset" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="PreferencesWindow_CompactUi" xml:space="preserve">
+    <value>Compact interface (Windows-like: system font, tighter spacing)</value>
+  </data>
+  <data name="CodeViewMenu_ViewImage" xml:space="preserve">
+    <value>View Image</value>
+  </data>
+  <data name="CodeViewMenu_OpenTabForImage" xml:space="preserve">
+    <value>Open Tab For Image</value>
+  </data>
+  <data name="CodeViewMenu_AddToDefaultDictionary" xml:space="preserve">
+    <value>Add To Default Dictionary</value>
+  </data>
+  <data name="CodeViewMenu_AddToDictionary" xml:space="preserve">
+    <value>Add To Dictionary</value>
+  </data>
+  <data name="CodeViewMenu_Ignore" xml:space="preserve">
+    <value>Ignore</value>
+  </data>
+  <data name="CodeViewMenu_Clips" xml:space="preserve">
+    <value>Clips</value>
+  </data>
+  <data name="CodeViewMenu_AddToClips" xml:space="preserve">
+    <value>Add To Clips...</value>
+  </data>
+  <data name="CodeViewMenu_ToggleLineWrapMode" xml:space="preserve">
+    <value>Toggle Line Wrap Mode</value>
+  </data>
+  <data name="CodeViewMenu_GoToLinkOrStyle" xml:space="preserve">
+    <value>Go To Link Or Style</value>
+  </data>
+  <data name="CodeViewMenu_MarkSelectedText" xml:space="preserve">
+    <value>Mark Selected Text</value>
+  </data>
+  <data name="CodeViewMenu_UnmarkMarkedText" xml:space="preserve">
+    <value>Unmark Marked Text</value>
+  </data>
+  <data name="CodeViewMenu_ReformatHtml" xml:space="preserve">
+    <value>Reformat HTML</value>
+  </data>
+  <data name="CodeViewMenu_Prettify" xml:space="preserve">
+    <value>Prettify Code</value>
+  </data>
+  <data name="CodeViewMenu_PrettifyAll" xml:space="preserve">
+    <value>Prettify Code - All HTML Files</value>
+  </data>
+  <data name="CodeViewMenu_Mend" xml:space="preserve">
+    <value>Mend Code</value>
+  </data>
+  <data name="CodeViewMenu_MendAll" xml:space="preserve">
+    <value>Mend Code - All HTML Files</value>
+  </data>
+  <data name="CodeViewMenu_RenameClass" xml:space="preserve">
+    <value>Rename Class...</value>
+  </data>
+  <data name="Action_MainWindow_MergeContent" xml:space="preserve">
+    <value>Merge C&amp;ontent</value>
+  </data>
+  <data name="CodeViewMenu_MergeContentCount" xml:space="preserve">
+    <value>Merge Content &lt;{0}&gt; ({1})</value>
+  </data>
+  <data name="MergeContent_Title" xml:space="preserve">
+    <value>Merge Content</value>
+  </data>
+  <data name="MergeContent_Merge" xml:space="preserve">
+    <value>Merge</value>
+  </data>
+  <data name="MergeContent_AttributesWarning" xml:space="preserve">
+    <value>The &lt;{0}&gt; elements being merged have different attributes. The merged element keeps only the attributes of the first tag:
+{1}
+
+The attributes of these tags will be lost:
+{2}</value>
+  </data>
+  <data name="MergeContent_TextBetweenWarning" xml:space="preserve">
+    <value>There is text between the elements being merged; it will go into the merged element (whitespace collapsed to a single space):
+{0}</value>
+  </data>
+  <data name="MergeContent_RemovedNodesWarning" xml:space="preserve">
+    <value>These comments and other nodes between the elements will be lost:
+{0}</value>
+  </data>
+  <data name="CodeViewMenu_ReformatCss" xml:space="preserve">
+    <value>Reformat CSS</value>
+  </data>
+  <data name="CodeViewMenu_CssMultipleLines" xml:space="preserve">
+    <value>Multiple Lines Per Style</value>
+  </data>
+  <data name="CodeViewMenu_CssSingleLine" xml:space="preserve">
+    <value>Single Line Per Style</value>
+  </data>
+  <data name="CodeViewMenu_Undo" xml:space="preserve">
+    <value>_Undo</value>
+  </data>
+  <data name="CodeViewMenu_Redo" xml:space="preserve">
+    <value>_Redo</value>
+  </data>
+  <data name="CodeViewMenu_Cut" xml:space="preserve">
+    <value>Cu_t</value>
+  </data>
+  <data name="CodeViewMenu_Copy" xml:space="preserve">
+    <value>_Copy</value>
+  </data>
+  <data name="CodeViewMenu_Paste" xml:space="preserve">
+    <value>_Paste</value>
+  </data>
+  <data name="CodeViewMenu_Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="CodeViewMenu_SelectAll" xml:space="preserve">
+    <value>Select All</value>
+  </data>
+  <data name="ViewImageWindow_Title" xml:space="preserve">
+    <value>View Image</value>
+  </data>
+  <data name="ViewImageWindow_Done" xml:space="preserve">
+    <value>Done</value>
+  </data>
+  <data name="ViewImageWindow_DoneTip" xml:space="preserve">
+    <value>Close this window</value>
+  </data>
+  <data name="ViewImageWindow_SvgNotSupported" xml:space="preserve">
+    <value>SVG preview is not available in this window — use “Open Tab For Image”.</value>
+  </data>
+  <data name="ViewImageWindow_CannotLoad" xml:space="preserve">
+    <value>Could not load the image.</value>
+  </data>
+  <data name="PreferencesWindow_ChooseFont" xml:space="preserve">
+    <value>Choose…</value>
+  </data>
+  <data name="FontPickerWindow_Title" xml:space="preserve">
+    <value>Choose Font</value>
+  </data>
+  <data name="FontPickerWindow_Search" xml:space="preserve">
+    <value>Search fonts…</value>
+  </data>
+  <data name="FontPickerWindow_MonospaceOnly" xml:space="preserve">
+    <value>Monospace only</value>
+  </data>
+  <data name="FontPickerWindow_Size" xml:space="preserve">
+    <value>Size:</value>
+  </data>
+  <data name="FontPickerWindow_Sample" xml:space="preserve">
+    <value>The quick brown fox jumps over the lazy dog — 0123456789 &lt;p class="x"&gt;</value>
+  </data>
+  <data name="PreferencesWindow_ShortcutsHint" xml:space="preserve">
+    <value>Double-click a command to change its keyboard shortcut.</value>
+  </data>
+  <data name="PreferencesWindow_ShortcutsSearch" xml:space="preserve">
+    <value>Search for a shortcut by command name or key combination…</value>
+  </data>
+  <data name="PreferencesWindow_ShortcutsOnlyConflicts" xml:space="preserve">
+    <value>Only conflicts</value>
+  </data>
+  <data name="PreferencesWindow_ShortcutLine" xml:space="preserve">
+    <value>Shortcut: {0}</value>
+  </data>
+  <data name="PreferencesWindow_ShortcutNone" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="PreferencesWindow_ShortcutConflictsWith" xml:space="preserve">
+    <value>Conflicts with: {0}</value>
+  </data>
+  <data name="PreferencesWindow_ShortcutCustomize" xml:space="preserve">
+    <value>Customize:</value>
+  </data>
+  <data name="PreferencesWindow_ShortcutDone" xml:space="preserve">
+    <value>Done</value>
+  </data>
+  <data name="PreferencesWindow_ShortcutDefault" xml:space="preserve">
+    <value>Default: {0}</value>
+  </data>
+  <data name="PreferencesWindow_ShortcutCustom" xml:space="preserve">
+    <value>Custom</value>
+  </data>
+  <data name="PreferencesWindow_ShortcutKey" xml:space="preserve">
+    <value>Shortcut:</value>
+  </data>
+  <data name="PreferencesWindow_ShortcutPressKeys" xml:space="preserve">
+    <value>Press keys…</value>
+  </data>
+  <data name="PreferencesWindow_ShortcutClear" xml:space="preserve">
+    <value>Clear shortcut</value>
+  </data>
+  <data name="PreferencesWindow_ShortcutInUse" xml:space="preserve">
+    <value>{0} is already assigned to: {1}</value>
+  </data>
+  <data name="PreferencesWindow_ShortcutConflictsHeader" xml:space="preserve">
+    <value>Shortcut conflicts:</value>
+  </data>
+  <data name="PreferencesWindow_PreserveEntities" xml:space="preserve">
+    <value>Preserve Entities</value>
+  </data>
+  <data name="PreferencesWindow_CodePlaceholder" xml:space="preserve">
+    <value>Code (e.g. 160)</value>
+  </data>
+  <data name="PreferencesWindow_EntityPlaceholder" xml:space="preserve">
+    <value>Entity (e.g. &amp;#160;)</value>
+  </data>
+  <data name="SelectFilesWindow_Title" xml:space="preserve">
+    <value>Select Files</value>
+  </data>
+  <data name="SelectFilesWindow_FromDisk" xml:space="preserve">
+    <value>Insert from disk…</value>
+  </data>
+  <data name="SelectFilesWindow_FilterPlaceholder" xml:space="preserve">
+    <value>Filter…</value>
+  </data>
+  <data name="SelectFilesWindow_MoveUpTip" xml:space="preserve">
+    <value>Move up</value>
+  </data>
+  <data name="SelectFilesWindow_MoveDownTip" xml:space="preserve">
+    <value>Move down</value>
+  </data>
+  <data name="SelectFilesWindow_FilterAll" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="SelectFilesWindow_FilterImages" xml:space="preserve">
+    <value>Images</value>
+  </data>
+  <data name="SelectFilesWindow_FilterVideo" xml:space="preserve">
+    <value>Video</value>
+  </data>
+  <data name="SelectFilesWindow_FilterAudio" xml:space="preserve">
+    <value>Audio</value>
+  </data>
+  <data name="MainWindow_AddCoverTitle" xml:space="preserve">
+    <value>Add Cover</value>
+  </data>
+  <data name="MainWindow_AddCoverPrompt" xml:space="preserve">
+    <value>Choose an image to set as cover:</value>
+  </data>
+  <data name="MainWindow_InsertFileTitle" xml:space="preserve">
+    <value>Insert File</value>
+  </data>
+  <data name="MainWindow_InsertFilePrompt" xml:space="preserve">
+    <value>Choose files to insert:</value>
+  </data>
+  <data name="BookBrowserView_LinkStylesheetsTitle" xml:space="preserve">
+    <value>Link Stylesheets</value>
+  </data>
+  <data name="BookBrowserView_LinkStylesheetsPrompt" xml:space="preserve">
+    <value>Stylesheets linked to the selected files (order = order in &lt;head&gt;):</value>
+  </data>
+  <data name="BookBrowserView_LinkJavascriptsTitle" xml:space="preserve">
+    <value>Link Javascripts</value>
+  </data>
+  <data name="BookBrowserView_LinkJavascriptsPrompt" xml:space="preserve">
+    <value>Scripts linked to the selected files (order = order in &lt;head&gt;):</value>
+  </data>
+  <data name="RegexRenameWindow_Title" xml:space="preserve">
+    <value>Bulk Rename (Regex)</value>
+  </data>
+  <data name="RegexRenameWindow_Pattern" xml:space="preserve">
+    <value>Regular expression (matched against the filename, not the folder):</value>
+  </data>
+  <data name="RegexRenameWindow_PatternPlaceholder" xml:space="preserve">
+    <value>e.g. Section(\d+)</value>
+  </data>
+  <data name="RegexRenameWindow_Replacement" xml:space="preserve">
+    <value>Replacement text (groups via $1, $2…):</value>
+  </data>
+  <data name="RegexRenameWindow_ReplacementPlaceholder" xml:space="preserve">
+    <value>e.g. Chapter$1</value>
+  </data>
+  <data name="RegexRenameWindow_RenameButton" xml:space="preserve">
+    <value>Rename</value>
+  </data>
+  <data name="ReplacementChooserWindow_Title" xml:space="preserve">
+    <value>Filter Replacements</value>
+  </data>
+  <data name="ReplacementChooserWindow_SelectAll" xml:space="preserve">
+    <value>Select all</value>
+  </data>
+  <data name="ReplacementChooserWindow_Apply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="ReportsWindow_Title" xml:space="preserve">
+    <value>Reports</value>
+  </data>
+  <data name="ReportsWindow_ExportCsv" xml:space="preserve">
+    <value>Export CSV…</value>
+  </data>
+  <data name="ReportsWindow_AllFiles" xml:space="preserve">
+    <value>All Files</value>
+  </data>
+  <data name="ReportsWindow_Name" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="ReportsWindow_Type" xml:space="preserve">
+    <value>Type</value>
+  </data>
+  <data name="ReportsWindow_SizeBytes" xml:space="preserve">
+    <value>Size (bytes)</value>
+  </data>
+  <data name="ReportsWindow_InSpine" xml:space="preserve">
+    <value>In Spine</value>
+  </data>
+  <data name="ReportsWindow_HtmlFiles" xml:space="preserve">
+    <value>HTML Files</value>
+  </data>
+  <data name="ReportsWindow_AllWords" xml:space="preserve">
+    <value>All Words</value>
+  </data>
+  <data name="ReportsWindow_WellFormed" xml:space="preserve">
+    <value>Well Formed</value>
+  </data>
+  <data name="ReportsWindow_ImageFiles" xml:space="preserve">
+    <value>Image Files</value>
+  </data>
+  <data name="ReportsWindow_Format" xml:space="preserve">
+    <value>Format</value>
+  </data>
+  <data name="ReportsWindow_UsedIn" xml:space="preserve">
+    <value>Used In</value>
+  </data>
+  <data name="ReportsWindow_CssFiles" xml:space="preserve">
+    <value>CSS Files</value>
+  </data>
+  <data name="ReportsWindow_SelectorCount" xml:space="preserve">
+    <value>Selector Count</value>
+  </data>
+  <data name="ReportsWindow_ClassesInHtml" xml:space="preserve">
+    <value>Classes in HTML</value>
+  </data>
+  <data name="ReportsWindow_HtmlFile" xml:space="preserve">
+    <value>HTML File</value>
+  </data>
+  <data name="ReportsWindow_Element" xml:space="preserve">
+    <value>Element</value>
+  </data>
+  <data name="ReportsWindow_Class" xml:space="preserve">
+    <value>Class</value>
+  </data>
+  <data name="ReportsWindow_MatchedSelector" xml:space="preserve">
+    <value>Matched Selector</value>
+  </data>
+  <data name="ReportsWindow_UsedInCss" xml:space="preserve">
+    <value>Used in CSS</value>
+  </data>
+  <data name="ReportsWindow_StylesInCss" xml:space="preserve">
+    <value>Styles in CSS</value>
+  </data>
+  <data name="ReportsWindow_CssFile" xml:space="preserve">
+    <value>CSS File</value>
+  </data>
+  <data name="ReportsWindow_CssSelector" xml:space="preserve">
+    <value>CSS Selector</value>
+  </data>
+  <data name="ReportsWindow_UsedInHtmlFile" xml:space="preserve">
+    <value>Used In HTML File</value>
+  </data>
+  <data name="ReportsWindow_Links" xml:space="preserve">
+    <value>Links</value>
+  </data>
+  <data name="ReportsWindow_File" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="ReportsWindow_Text" xml:space="preserve">
+    <value>Text</value>
+  </data>
+  <data name="ReportsWindow_Target" xml:space="preserve">
+    <value>Target</value>
+  </data>
+  <data name="ReportsWindow_Internal" xml:space="preserve">
+    <value>Internal</value>
+  </data>
+  <data name="ReportsWindow_TargetExists" xml:space="preserve">
+    <value>Target Exists</value>
+  </data>
+  <data name="ReportsWindow_CharactersInHtml" xml:space="preserve">
+    <value>Characters in HTML</value>
+  </data>
+  <data name="ReportsWindow_Character" xml:space="preserve">
+    <value>Character</value>
+  </data>
+  <data name="ReportsWindow_Decimal" xml:space="preserve">
+    <value>Decimal</value>
+  </data>
+  <data name="ReportsWindow_Hexadecimal" xml:space="preserve">
+    <value>Hexadecimal</value>
+  </data>
+  <data name="ReportsWindow_Count" xml:space="preserve">
+    <value>Count</value>
+  </data>
+  <data name="ReportsWindow_FoundIn" xml:space="preserve">
+    <value>Found In</value>
+  </data>
+  <data name="ReportsWindow_WordCharCounts" xml:space="preserve">
+    <value>Word &amp; Character Counts</value>
+  </data>
+  <data name="ReportsWindow_Total" xml:space="preserve">
+    <value>Total:</value>
+  </data>
+  <data name="ReportsWindow_Words" xml:space="preserve">
+    <value>words,</value>
+  </data>
+  <data name="ReportsWindow_Characters" xml:space="preserve">
+    <value>characters</value>
+  </data>
+  <data name="SaveChangesDialog_Message" xml:space="preserve">
+    <value>The document has been modified.
+Do you want to save the changes?</value>
+  </data>
+  <data name="SaveChangesDialog_Discard" xml:space="preserve">
+    <value>Discard</value>
+  </data>
+  <data name="SearchEditorView_FilterPlaceholder" xml:space="preserve">
+    <value>show only entries containing…</value>
+  </data>
+  <data name="SearchEditorView_AllColumns" xml:space="preserve">
+    <value>all columns</value>
+  </data>
+  <data name="SearchEditorView_Controls" xml:space="preserve">
+    <value>Controls</value>
+  </data>
+  <data name="SearchEditorView_LoadSearch" xml:space="preserve">
+    <value>Load Search</value>
+  </data>
+  <data name="SearchEditorView_CountsReport" xml:space="preserve">
+    <value>Counts Report</value>
+  </data>
+  <data name="SearchEditorView_SaveCurrentFR" xml:space="preserve">
+    <value>Save current F&amp;R</value>
+  </data>
+  <data name="SearchEditorView_FillControls" xml:space="preserve">
+    <value>Fill Controls</value>
+  </data>
+  <data name="SelectClipWindow_Title" xml:space="preserve">
+    <value>Insert Clip</value>
+  </data>
+  <data name="SelectClipWindow_Prompt" xml:space="preserve">
+    <value>Choose a clip to insert:</value>
+  </data>
+  <data name="SelectClipWindow_FilterPlaceholder" xml:space="preserve">
+    <value>filter clips…</value>
+  </data>
+  <data name="SelectHyperlinkWindow_Title" xml:space="preserve">
+    <value>Insert Link</value>
+  </data>
+  <data name="SelectHyperlinkWindow_Prompt" xml:space="preserve">
+    <value>Link target (href) — type an address or choose from the list:</value>
+  </data>
+  <data name="SelectHyperlinkWindow_FilterPlaceholder" xml:space="preserve">
+    <value>filter targets…</value>
+  </data>
+  <data name="SelectIdWindow_Title" xml:space="preserve">
+    <value>Insert ID</value>
+  </data>
+  <data name="SelectIdWindow_Prompt" xml:space="preserve">
+    <value>Identifier (must start with a letter; then letters, digits, _ : - or .):</value>
+  </data>
+  <data name="SpecialCharacterWindow_Title" xml:space="preserve">
+    <value>Insert Special Character</value>
+  </data>
+  <data name="SpecialCharacterWindow_Prompt" xml:space="preserve">
+    <value>Search by Unicode name / entity / description, or choose from the list:</value>
+  </data>
+  <data name="SpecialCharacterWindow_FilterPlaceholder" xml:space="preserve">
+    <value>e.g. arrow, U+2192, mdash</value>
+  </data>
+  <data name="SpecialCharacterWindow_Insert" xml:space="preserve">
+    <value>Insert</value>
+  </data>
+  <data name="SpecialCharacterWindow_AddFavorite" xml:space="preserve">
+    <value>Add to Favorites</value>
+  </data>
+  <data name="SpecialCharacterWindow_RemoveFavorite" xml:space="preserve">
+    <value>Remove from Favorites</value>
+  </data>
+  <data name="SpecialCharacterWindow_AllCategories" xml:space="preserve">
+    <value>All</value>
+  </data>
+  <data name="SpecialCharacterWindow_FavoritesCategory" xml:space="preserve">
+    <value>Favorites</value>
+  </data>
+  <data name="SpecialCharacterWindow_RecentlyUsed" xml:space="preserve">
+    <value>recently used</value>
+  </data>
+  <data name="SpecialCharacterWindow_FavoriteNote" xml:space="preserve">
+    <value>favorite</value>
+  </data>
+  <data name="SpellcheckEditorWindow_Title" xml:space="preserve">
+    <value>Spellcheck Editor</value>
+  </data>
+  <data name="SpellcheckEditorWindow_Filter" xml:space="preserve">
+    <value>Filter:</value>
+  </data>
+  <data name="SpellcheckEditorWindow_FilterPlaceholder" xml:space="preserve">
+    <value>show only words containing…</value>
+  </data>
+  <data name="SpellcheckEditorWindow_ShowAllWords" xml:space="preserve">
+    <value>Show All Words</value>
+  </data>
+  <data name="SpellcheckEditorWindow_Word" xml:space="preserve">
+    <value>Word</value>
+  </data>
+  <data name="SpellcheckEditorWindow_Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="SpellcheckEditorWindow_Misspelled" xml:space="preserve">
+    <value>Misspelled?</value>
+  </data>
+  <data name="SpellcheckEditorWindow_Ignore" xml:space="preserve">
+    <value>Ignore</value>
+  </data>
+  <data name="SpellcheckEditorWindow_AddToDictionary" xml:space="preserve">
+    <value>Add to Dictionary</value>
+  </data>
+  <data name="SpellcheckEditorWindow_ChangeAllTo" xml:space="preserve">
+    <value>Change All to...</value>
+  </data>
+  <data name="SpellcheckEditorWindow_ChangeAll" xml:space="preserve">
+    <value>Change All</value>
+  </data>
+  <data name="TableOfContentsView_Edit" xml:space="preserve">
+    <value>Edit…</value>
+  </data>
+  <data name="TableOfContentsView_EditTip" xml:space="preserve">
+    <value>Open the manual table of contents editor.</value>
+  </data>
+  <data name="TableOfContentsView_NoToc" xml:space="preserve">
+    <value>The publication has no table of contents (nav / NCX).</value>
+  </data>
+  <data name="FontTabView_Obfuscation" xml:space="preserve">
+    <value>Obfuscation:</value>
+  </data>
+  <data name="FontTabView_NoPreview" xml:space="preserve">
+    <value>Font preview is unavailable for this format (e.g. WOFF2).</value>
+  </data>
+  <data name="FontTabView_ObfuscationNone" xml:space="preserve">
+    <value>None</value>
+  </data>
+  <data name="ImageTabView_ResizeImage" xml:space="preserve">
+    <value>Resize Image…</value>
+  </data>
+  <data name="MediaTabView_OpenExternally" xml:space="preserve">
+    <value>Open externally</value>
+  </data>
+  <data name="ToolbarStripView_MoreTip" xml:space="preserve">
+    <value>More toolbar buttons</value>
+  </data>
+  <data name="ToolbarCustomizeWindow_Title" xml:space="preserve">
+    <value>Customize Toolbars</value>
+  </data>
+  <data name="ToolbarCustomizeWindow_Toolbar" xml:space="preserve">
+    <value>Toolbar:</value>
+  </data>
+  <data name="ToolbarCustomizeWindow_AvailableActions" xml:space="preserve">
+    <value>Available actions</value>
+  </data>
+  <data name="ToolbarCustomizeWindow_Add" xml:space="preserve">
+    <value>Add →</value>
+  </data>
+  <data name="ToolbarCustomizeWindow_AddSeparator" xml:space="preserve">
+    <value>Add separator</value>
+  </data>
+  <data name="ToolbarCustomizeWindow_Up" xml:space="preserve">
+    <value>↑ Up</value>
+  </data>
+  <data name="ToolbarCustomizeWindow_Down" xml:space="preserve">
+    <value>↓ Down</value>
+  </data>
+  <data name="ToolbarCustomizeWindow_Remove" xml:space="preserve">
+    <value>← Remove</value>
+  </data>
+  <data name="ToolbarCustomizeWindow_CurrentLayout" xml:space="preserve">
+    <value>Current layout</value>
+  </data>
+  <data name="ToolbarCustomizeWindow_ResetAll" xml:space="preserve">
+    <value>Reset all toolbars</value>
+  </data>
+  <data name="ValidationResultsView_NoProblems" xml:space="preserve">
+    <value>No problems found!</value>
+  </data>
+  <data name="ValidationResultsView_Line" xml:space="preserve">
+    <value>Line</value>
+  </data>
+  <data name="ValidationResultsView_Message" xml:space="preserve">
+    <value>Message</value>
+  </data>
+  <data name="BookBrowserView_NoBookOpen" xml:space="preserve">
+    <value>No book is open. Use File → Open.</value>
+  </data>
+  <data name="BookBrowserView_Open" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="Common_RenameEllipsis" xml:space="preserve">
+    <value>Rename…</value>
+  </data>
+  <data name="BookBrowserView_RenameWithTemplate" xml:space="preserve">
+    <value>Rename With Template…</value>
+  </data>
+  <data name="BookBrowserView_MoveToFolder" xml:space="preserve">
+    <value>Move to Folder…</value>
+  </data>
+  <data name="BookBrowserView_MoveUp" xml:space="preserve">
+    <value>Move Up</value>
+  </data>
+  <data name="BookBrowserView_MoveDown" xml:space="preserve">
+    <value>Move Down</value>
+  </data>
+  <data name="BookBrowserView_SortSelected" xml:space="preserve">
+    <value>Sort Selected</value>
+  </data>
+  <data name="BookBrowserView_MergeSelected" xml:space="preserve">
+    <value>Merge Selected</value>
+  </data>
+  <data name="BookBrowserView_SplitAtMarkers" xml:space="preserve">
+    <value>Split At Markers</value>
+  </data>
+  <data name="BookBrowserView_AddBlankHtml" xml:space="preserve">
+    <value>Add Blank HTML File</value>
+  </data>
+  <data name="BookBrowserView_AddBlankCss" xml:space="preserve">
+    <value>Add Blank Stylesheet</value>
+  </data>
+  <data name="BookBrowserView_AddBlankSvg" xml:space="preserve">
+    <value>Add Blank SVG</value>
+  </data>
+  <data name="BookBrowserView_AddBlankJs" xml:space="preserve">
+    <value>Add Blank JavaScript</value>
+  </data>
+  <data name="BookBrowserView_AddExistingFiles" xml:space="preserve">
+    <value>Add Existing Files…</value>
+  </data>
+  <data name="BookBrowserView_AddSemantics" xml:space="preserve">
+    <value>Add Semantics…</value>
+  </data>
+  <data name="BookBrowserView_CoverImage" xml:space="preserve">
+    <value>Cover Image</value>
+  </data>
+  <data name="BookBrowserView_LinkStylesheetsMenu" xml:space="preserve">
+    <value>Link Stylesheets…</value>
+  </data>
+  <data name="BookBrowserView_LinkJavascriptsMenu" xml:space="preserve">
+    <value>Link Javascripts…</value>
+  </data>
+  <data name="BookBrowserView_ValidateWithW3C" xml:space="preserve">
+    <value>Validate With W3C...</value>
+  </data>
+  <data name="BookBrowserView_AddCopy" xml:space="preserve">
+    <value>Add Copy</value>
+  </data>
+  <data name="BookBrowserView_RenumberToc" xml:space="preserve">
+    <value>Renumber TOC Entries</value>
+  </data>
+  <data name="BookBrowserView_SaveAs" xml:space="preserve">
+    <value>Save As...</value>
+  </data>
+  <data name="BookBrowserView_SelectAll" xml:space="preserve">
+    <value>Select All</value>
+  </data>
+  <data name="BookBrowserView_GetInfo" xml:space="preserve">
+    <value>Get Info...</value>
+  </data>
+  <data name="BookBrowserView_FolderTip" xml:space="preserve">
+    <value>{0} {1} file(s)</value>
+  </data>
+  <data name="BookBrowserView_MalformedTip" xml:space="preserve">
+    <value>Invalid XML</value>
+  </data>
+  <data name="ClipboardHistorySelectorWindow_Title" xml:space="preserve">
+    <value>Select Text to Paste</value>
+  </data>
+  <data name="ClipboardHistorySelectorWindow_Prompt" xml:space="preserve">
+    <value>Clipboard history (newest first):</value>
+  </data>
+  <data name="PreviewView_InspectPage" xml:space="preserve">
+    <value>Inspect Page</value>
+  </data>
+  <data name="PreviewView_RefreshPreview" xml:space="preserve">
+    <value>Refresh preview</value>
+  </data>
+  <data name="PreviewView_ZoomOut" xml:space="preserve">
+    <value>Zoom out</value>
+  </data>
+  <data name="PreviewView_ZoomIn" xml:space="preserve">
+    <value>Zoom in</value>
+  </data>
+  <data name="PreviewView_ZoomReset" xml:space="preserve">
+    <value>Reset zoom</value>
+  </data>
+  <data name="PreviewView_SelectAll" xml:space="preserve">
+    <value>Select All</value>
+  </data>
+  <data name="PreviewView_Copy" xml:space="preserve">
+    <value>Copy</value>
+  </data>
+  <data name="PreviewView_CycleCustomCss" xml:space="preserve">
+    <value>Cycle Custom CSS Files</value>
+  </data>
+  <data name="PreviewView_Print" xml:space="preserve">
+    <value>Print Preview View</value>
+  </data>
+  <data name="PreviewView_OpenFileToPreview" xml:space="preserve">
+    <value>Open an (X)HTML file in the editor to see a preview.</value>
+  </data>
+  <data name="MainWindow_HideFindReplace" xml:space="preserve">
+    <value>Close Find &amp; Replace</value>
+  </data>
+  <data name="SearchEditorWindow_Title" xml:space="preserve">
+    <value>Saved Searches</value>
+  </data>
+  <data name="SearchEditorWindow_Keep" xml:space="preserve">
+    <value>Keep</value>
+  </data>
+  <data name="MainWindow_ThemeLabel" xml:space="preserve">
+    <value>Theme:</value>
+  </data>
+  <data name="PreferencesWindow_IconTheme" xml:space="preserve">
+    <value>Icon theme:</value>
+  </data>
+  <data name="PreferencesWindow_CustomIconFolder" xml:space="preserve">
+    <value>Custom icon folder:</value>
+  </data>
+  <data name="PreferencesWindow_ExtendedHighlighting" xml:space="preserve">
+    <value>Extended syntax highlighting (calibre-style)</value>
+  </data>
+  <data name="CodeView_Issue_UnescapedLessThan" xml:space="preserve">
+    <value>An unescaped &lt; is not allowed. Replace it with &amp;lt;</value>
+  </data>
+  <data name="CodeView_Issue_UnescapedAmpersand" xml:space="preserve">
+    <value>An unescaped ampersand is not allowed. Replace it with &amp;amp;</value>
+  </data>
+  <data name="CodeView_Issue_UnescapedGreaterThan" xml:space="preserve">
+    <value>An unescaped &gt; is not allowed. Replace it with &amp;gt;</value>
+  </data>
+  <data name="CodeView_Issue_MisplacedSlash" xml:space="preserve">
+    <value>/ not allowed except at the end of the tag</value>
+  </data>
+  <data name="CodeView_Issue_UnknownCharacter" xml:space="preserve">
+    <value>Unknown character</value>
+  </data>
+  <data name="CodeView_Issue_BadClosingTag" xml:space="preserve">
+    <value>A closing tag must contain only the tag name and nothing else</value>
+  </data>
+  <data name="CodeView_Issue_MissingAttributeValue" xml:space="preserve">
+    <value>Expecting an attribute value</value>
+  </data>
+  <data name="CodeView_Issue_PrefixOnlyTagName" xml:space="preserve">
+    <value>A tag name cannot end with a colon</value>
+  </data>
+  <data name="CodeView_Issue_UnterminatedString" xml:space="preserve">
+    <value>Unterminated string</value>
+  </data>
+  <data name="CodeView_Issue_Link" xml:space="preserve">
+    <value>Hold down the Ctrl key and click to open this link</value>
+  </data>
+  <data name="CodeView_Issue_BrokenLink" xml:space="preserve">
+    <value>This link points to a file that is not present in the book</value>
+  </data>
+  <data name="RenameTag_Title" xml:space="preserve">
+    <value>Rename Tag</value>
+  </data>
+  <data name="RenameTag_Prompt" xml:space="preserve">
+    <value>New name of the element around the caret:</value>
+  </data>
+  <data name="PreferencesWindow_AutoCloseTags" xml:space="preserve">
+    <value>Auto-close tags after typing "&lt;/"</value>
+  </data>
+  <data name="Action_MainWindow_NewDefault" xml:space="preserve">
+    <value>New Default</value>
+  </data>
+  <data name="Action_MainWindow_NewEpub2" xml:space="preserve">
+    <value>ePub&amp;2</value>
+  </data>
+  <data name="Action_MainWindow_NewEpub3" xml:space="preserve">
+    <value>ePub&amp;3</value>
+  </data>
+  <data name="Action_MainWindow_NewHTMLFile" xml:space="preserve">
+    <value>Blank HTML File</value>
+  </data>
+  <data name="Action_MainWindow_NewCSSFile" xml:space="preserve">
+    <value>Blank Stylesheet</value>
+  </data>
+  <data name="Action_MainWindow_NewJSFile" xml:space="preserve">
+    <value>Blank Javascript</value>
+  </data>
+  <data name="Action_MainWindow_NewSVGFile" xml:space="preserve">
+    <value>Blank SVG Image</value>
+  </data>
+  <data name="Action_MainWindow_AddExistingFile" xml:space="preserve">
+    <value>Existing Files...</value>
+  </data>
+  <data name="Action_MainWindow_Open" xml:space="preserve">
+    <value>&amp;Open...</value>
+  </data>
+  <data name="Action_MainWindow_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="Action_MainWindow_Save" xml:space="preserve">
+    <value>&amp;Save</value>
+  </data>
+  <data name="Action_MainWindow_SaveAs" xml:space="preserve">
+    <value>Save &amp;As...</value>
+  </data>
+  <data name="Action_MainWindow_SaveACopy" xml:space="preserve">
+    <value>Save A &amp;Copy...</value>
+  </data>
+  <data name="Action_MainWindow_PrintPreview" xml:space="preserve">
+    <value>Print Pre&amp;view...</value>
+  </data>
+  <data name="Action_MainWindow_Print" xml:space="preserve">
+    <value>&amp;Print...</value>
+  </data>
+  <data name="Action_MainWindow_Exit" xml:space="preserve">
+    <value>&amp;Quit</value>
+  </data>
+  <data name="Action_MainWindow_Undo" xml:space="preserve">
+    <value>&amp;Undo</value>
+  </data>
+  <data name="Action_MainWindow_Redo" xml:space="preserve">
+    <value>&amp;Redo</value>
+  </data>
+  <data name="Action_MainWindow_Cut" xml:space="preserve">
+    <value>Cu&amp;t</value>
+  </data>
+  <data name="Action_MainWindow_Copy" xml:space="preserve">
+    <value>&amp;Copy</value>
+  </data>
+  <data name="Action_MainWindow_Paste" xml:space="preserve">
+    <value>&amp;Paste</value>
+  </data>
+  <data name="Action_MainWindow_PasteClipboardHistory" xml:space="preserve">
+    <value>Edit/Paste From Clipboard &amp;History...</value>
+  </data>
+  <data name="Action_MainWindow_DeleteLine" xml:space="preserve">
+    <value>&amp;Delete Line</value>
+  </data>
+  <data name="Action_MainWindow_ToggleComment" xml:space="preserve">
+    <value>Toggle &amp;Comment</value>
+  </data>
+  <data name="Action_MainWindow_CasingLowercase" xml:space="preserve">
+    <value>&amp;Lowercase</value>
+  </data>
+  <data name="Action_MainWindow_CasingUppercase" xml:space="preserve">
+    <value>&amp;Uppercase</value>
+  </data>
+  <data name="Action_MainWindow_CasingTitlecase" xml:space="preserve">
+    <value>&amp;Titlecase</value>
+  </data>
+  <data name="Action_MainWindow_CasingCapitalize" xml:space="preserve">
+    <value>&amp;Capitalize</value>
+  </data>
+  <data name="Action_MainWindow_SplitSection" xml:space="preserve">
+    <value>&amp;Split At Cursor</value>
+  </data>
+  <data name="Action_MainWindow_SplitOnSGFSectionMarkers" xml:space="preserve">
+    <value>Split At &amp;Markers</value>
+  </data>
+  <data name="Action_MainWindow_Preferences" xml:space="preserve">
+    <value>&amp;Preferences...</value>
+  </data>
+  <data name="Action_MainWindow_InsertSGFSectionMarker" xml:space="preserve">
+    <value>Split &amp;Marker</value>
+  </data>
+  <data name="Action_MainWindow_InsertFile" xml:space="preserve">
+    <value>&amp;File...</value>
+  </data>
+  <data name="Action_MainWindow_InsertSpecialCharacter" xml:space="preserve">
+    <value>&amp;Special Character...</value>
+  </data>
+  <data name="Action_MainWindow_InsertId" xml:space="preserve">
+    <value>I&amp;D...</value>
+  </data>
+  <data name="Action_MainWindow_InsertClip" xml:space="preserve">
+    <value>Aria Clip...</value>
+  </data>
+  <data name="Action_MainWindow_InsertRole" xml:space="preserve">
+    <value>Role...</value>
+  </data>
+  <data name="Action_MainWindow_InsertHyperlink" xml:space="preserve">
+    <value>&amp;Link...</value>
+  </data>
+  <data name="Action_MainWindow_InsertClosingTag" xml:space="preserve">
+    <value>&amp;Closing Tag</value>
+  </data>
+  <data name="Action_MainWindow_Bold" xml:space="preserve">
+    <value>&amp;Bold</value>
+  </data>
+  <data name="Action_MainWindow_Italic" xml:space="preserve">
+    <value>&amp;Italic</value>
+  </data>
+  <data name="Action_MainWindow_Underline" xml:space="preserve">
+    <value>&amp;Underline</value>
+  </data>
+  <data name="Action_MainWindow_Strikethrough" xml:space="preserve">
+    <value>Stri&amp;kethrough</value>
+  </data>
+  <data name="Action_MainWindow_Subscript" xml:space="preserve">
+    <value>&amp;Subscript</value>
+  </data>
+  <data name="Action_MainWindow_Superscript" xml:space="preserve">
+    <value>Su&amp;perscript</value>
+  </data>
+  <data name="Action_MainWindow_AlignLeft" xml:space="preserve">
+    <value>Align &amp;Left</value>
+  </data>
+  <data name="Action_MainWindow_AlignCenter" xml:space="preserve">
+    <value>&amp;Center</value>
+  </data>
+  <data name="Action_MainWindow_AlignRight" xml:space="preserve">
+    <value>Align &amp;Right</value>
+  </data>
+  <data name="Action_MainWindow_AlignJustify" xml:space="preserve">
+    <value>&amp;Justify</value>
+  </data>
+  <data name="Action_MainWindow_InsertNumberedList" xml:space="preserve">
+    <value>&amp;Numbered List</value>
+  </data>
+  <data name="Action_MainWindow_InsertBulletedList" xml:space="preserve">
+    <value>Bulle&amp;ted List</value>
+  </data>
+  <data name="Action_MainWindow_IncreaseIndent" xml:space="preserve">
+    <value>Incre&amp;ase Indent</value>
+  </data>
+  <data name="Action_MainWindow_DecreaseIndent" xml:space="preserve">
+    <value>&amp;Decrease Indent</value>
+  </data>
+  <data name="Action_MainWindow_TextDirectionLTR" xml:space="preserve">
+    <value>Te&amp;xt Direction LTR</value>
+  </data>
+  <data name="Action_MainWindow_TextDirectionRTL" xml:space="preserve">
+    <value>T&amp;ext Direction RTL</value>
+  </data>
+  <data name="Action_MainWindow_TextDirectionDefault" xml:space="preserve">
+    <value>Text Directi&amp;on Default</value>
+  </data>
+  <data name="Action_MainWindow_RemoveFormatting" xml:space="preserve">
+    <value>Remove &amp;Formatting</value>
+  </data>
+  <data name="Action_MainWindow_RemoveTagPair" xml:space="preserve">
+    <value>Remove Tag Pair</value>
+  </data>
+  <data name="Action_MainWindow_JumpToOpeningTag" xml:space="preserve">
+    <value>Jump To &amp;Opening Tag</value>
+  </data>
+  <data name="Action_MainWindow_JumpToClosingTag" xml:space="preserve">
+    <value>Jump To C&amp;losing Tag</value>
+  </data>
+  <data name="Action_MainWindow_SelectTagContents" xml:space="preserve">
+    <value>Select Tag &amp;Contents</value>
+  </data>
+  <data name="Action_MainWindow_RenameTag" xml:space="preserve">
+    <value>Re&amp;name Tag...</value>
+  </data>
+  <data name="Action_MainWindow_SplitTag" xml:space="preserve">
+    <value>S&amp;plit Tag</value>
+  </data>
+  <data name="Action_MainWindow_Heading1" xml:space="preserve">
+    <value>Heading &amp;1</value>
+  </data>
+  <data name="Action_MainWindow_Heading2" xml:space="preserve">
+    <value>Heading &amp;2</value>
+  </data>
+  <data name="Action_MainWindow_Heading3" xml:space="preserve">
+    <value>Heading &amp;3</value>
+  </data>
+  <data name="Action_MainWindow_Heading4" xml:space="preserve">
+    <value>Heading &amp;4</value>
+  </data>
+  <data name="Action_MainWindow_Heading5" xml:space="preserve">
+    <value>Heading &amp;5</value>
+  </data>
+  <data name="Action_MainWindow_Heading6" xml:space="preserve">
+    <value>Heading &amp;6</value>
+  </data>
+  <data name="Action_MainWindow_HeadingNormal" xml:space="preserve">
+    <value>&amp;Normal</value>
+  </data>
+  <data name="Action_MainWindow_HeadingPreserveAttributes" xml:space="preserve">
+    <value>&amp;Preserve Existing Attributes</value>
+  </data>
+  <data name="Action_MainWindow_Find" xml:space="preserve">
+    <value>&amp;Find &amp;&amp; Replace...</value>
+  </data>
+  <data name="Action_MainWindow_HideFind" xml:space="preserve">
+    <value>&amp;Hide Find &amp;&amp; Replace...</value>
+  </data>
+  <data name="Action_MainWindow_FindNext" xml:space="preserve">
+    <value>Find &amp;Next</value>
+  </data>
+  <data name="Action_MainWindow_FindPrevious" xml:space="preserve">
+    <value>Find &amp;Previous</value>
+  </data>
+  <data name="Action_MainWindow_ReplaceCurrent" xml:space="preserve">
+    <value>Replace</value>
+  </data>
+  <data name="Action_MainWindow_ReplaceNext" xml:space="preserve">
+    <value>&amp;Replace/Find Next</value>
+  </data>
+  <data name="Action_MainWindow_ReplacePrevious" xml:space="preserve">
+    <value>R&amp;eplace/Find Previous</value>
+  </data>
+  <data name="Action_MainWindow_ReplaceAll" xml:space="preserve">
+    <value>Replace &amp;All</value>
+  </data>
+  <data name="Action_MainWindow_Count" xml:space="preserve">
+    <value>&amp;Count All</value>
+  </data>
+  <data name="Action_MainWindow_DryRunReplaceAll" xml:space="preserve">
+    <value>Dry Run Replace All</value>
+  </data>
+  <data name="Action_MainWindow_FilterReplaceAll" xml:space="preserve">
+    <value>Filter Replacements</value>
+  </data>
+  <data name="Action_MainWindow_RestartSearch" xml:space="preserve">
+    <value>Restart Current Search</value>
+  </data>
+  <data name="Action_MainWindow_FindNextInFile" xml:space="preserve">
+    <value>Find &amp;Next In File</value>
+  </data>
+  <data name="Action_MainWindow_ReplaceNextInFile" xml:space="preserve">
+    <value>&amp;Replace Next In File</value>
+  </data>
+  <data name="Action_MainWindow_ReplaceAllInFile" xml:space="preserve">
+    <value>Replace &amp;All In File</value>
+  </data>
+  <data name="Action_MainWindow_CountInFile" xml:space="preserve">
+    <value>&amp;Count All In File</value>
+  </data>
+  <data name="Action_MainWindow_BookmarkLocation" xml:space="preserve">
+    <value>Book&amp;mark Location</value>
+  </data>
+  <data name="Action_MainWindow_GoToLinkOrStyle" xml:space="preserve">
+    <value>&amp;Go To Link Or Style</value>
+  </data>
+  <data name="Action_MainWindow_GoBackFromLinkOrStyle" xml:space="preserve">
+    <value>&amp;Back</value>
+  </data>
+  <data name="Action_MainWindow_MarkSelection" xml:space="preserve">
+    <value>Mar&amp;k Selected Text</value>
+  </data>
+  <data name="Action_MainWindow_GoToLine" xml:space="preserve">
+    <value>Go To &amp;Line...</value>
+  </data>
+  <data name="Action_MainWindow_ZoomIn" xml:space="preserve">
+    <value>Zoom &amp;In</value>
+  </data>
+  <data name="Action_MainWindow_ZoomOut" xml:space="preserve">
+    <value>Zoom &amp;Out</value>
+  </data>
+  <data name="Action_MainWindow_ZoomReset" xml:space="preserve">
+    <value>&amp;Zoom Reset</value>
+  </data>
+  <data name="Action_MainWindow_WordWrap" xml:space="preserve">
+    <value>&amp;Word Wrap</value>
+  </data>
+  <data name="Action_MainWindow_NextTab" xml:space="preserve">
+    <value>&amp;Next Tab</value>
+  </data>
+  <data name="Action_MainWindow_PreviousTab" xml:space="preserve">
+    <value>&amp;Previous Tab</value>
+  </data>
+  <data name="Action_MainWindow_CloseTab" xml:space="preserve">
+    <value>&amp;Close Tab</value>
+  </data>
+  <data name="Action_MainWindow_CloseOtherTabs" xml:space="preserve">
+    <value>Close &amp;Other Tabs</value>
+  </data>
+  <data name="Action_MainWindow_PreviousResource" xml:space="preserve">
+    <value>Pre&amp;vious File</value>
+  </data>
+  <data name="Action_MainWindow_NextResource" xml:space="preserve">
+    <value>Next &amp;File</value>
+  </data>
+  <data name="Action_MainWindow_AddCover" xml:space="preserve">
+    <value>Add &amp;Cover...</value>
+  </data>
+  <data name="Action_MainWindow_MetaEditor" xml:space="preserve">
+    <value>&amp;Metadata Editor...</value>
+  </data>
+  <data name="Action_MainWindow_GenerateTOC" xml:space="preserve">
+    <value>&amp;Generate Table Of Contents...</value>
+  </data>
+  <data name="Action_MainWindow_EditTOC" xml:space="preserve">
+    <value>&amp;Edit Table Of Contents...</value>
+  </data>
+  <data name="Action_MainWindow_CreateHTMLTOC" xml:space="preserve">
+    <value>&amp;Create HTML from Table Of Contents</value>
+  </data>
+  <data name="Action_MainWindow_StandardizeEpub" xml:space="preserve">
+    <value>Restructure Epub to Signet Norm</value>
+  </data>
+  <data name="Action_MainWindow_UseStandardFileExtensions" xml:space="preserve">
+    <value>Use Standard File Extensions</value>
+  </data>
+  <data name="Action_MainWindow_RebaseManifestIDs" xml:space="preserve">
+    <value>Rebase OPF Manifest IDs on Current Filenames</value>
+  </data>
+  <data name="Action_MainWindow_CustomLayout" xml:space="preserve">
+    <value>Create a Custom Empty Epub</value>
+  </data>
+  <data name="Action_MainWindow_UpdateManifestMediaTypes" xml:space="preserve">
+    <value>Update OPF Manifest Media Types</value>
+  </data>
+  <data name="Action_MainWindow_UpdateManifestProperties" xml:space="preserve">
+    <value>&amp;Update Manifest Properties</value>
+  </data>
+  <data name="Action_MainWindow_NCXGuideFromNav" xml:space="preserve">
+    <value>Generate &amp;NCX/Guide for epub2 e-readers</value>
+  </data>
+  <data name="Action_MainWindow_RemoveNCXGuide" xml:space="preserve">
+    <value>Remove the NCX and Guide</value>
+  </data>
+  <data name="Action_MainWindow_RemoveNavFromGuide" xml:space="preserve">
+    <value>Remove Nav from Reading Order</value>
+  </data>
+  <data name="Action_MainWindow_AddNavToSpine" xml:space="preserve">
+    <value>Add Nav to Reading Order</value>
+  </data>
+  <data name="Action_MainWindow_PrettifyCurrentHTML" xml:space="preserve">
+    <value>Prettify Code in Current File</value>
+  </data>
+  <data name="Action_MainWindow_MendCurrentHTML" xml:space="preserve">
+    <value>Mend Code in Current File</value>
+  </data>
+  <data name="Action_MainWindow_MendPrettifyHTML" xml:space="preserve">
+    <value>&amp;Prettify All HTML Files</value>
+  </data>
+  <data name="Action_MainWindow_MendHTML" xml:space="preserve">
+    <value>&amp;Mend All HTML Files</value>
+  </data>
+  <data name="Action_MainWindow_WellFormedCheckEpub" xml:space="preserve">
+    <value>Well-Formed Check &amp;EPUB</value>
+  </data>
+  <data name="Action_MainWindow_ValidateStylesheetsWithW3C" xml:space="preserve">
+    <value>Validate Stylesheets With &amp;W3C</value>
+  </data>
+  <data name="Action_MainWindow_Reports" xml:space="preserve">
+    <value>&amp;Reports...</value>
+  </data>
+  <data name="Action_MainWindow_ClipEditor" xml:space="preserve">
+    <value>&amp;Clip Editor...</value>
+  </data>
+  <data name="Action_MainWindow_SelectClip" xml:space="preserve">
+    <value>&amp;Insert Clip From Library...</value>
+  </data>
+  <data name="Action_MainWindow_SearchEditor" xml:space="preserve">
+    <value>&amp;Saved Searches...</value>
+  </data>
+  <data name="Action_MainWindow_DeleteUnusedMedia" xml:space="preserve">
+    <value>&amp;Delete Unused Media Files...</value>
+  </data>
+  <data name="Action_MainWindow_DeleteUnusedStyles" xml:space="preserve">
+    <value>Delete &amp;Unused Stylesheet Selectors...</value>
+  </data>
+  <data name="Action_MainWindow_CssCleanup" xml:space="preserve">
+    <value>&amp;Merge/Remove Unused CSS Rules...</value>
+  </data>
+  <data name="Action_MainWindow_LiveCssPanel" xml:space="preserve">
+    <value>&amp;Live CSS Panel</value>
+  </data>
+  <data name="Action_MainWindow_AddSoftHyphens" xml:space="preserve">
+    <value>Add &amp;Soft Hyphens</value>
+  </data>
+  <data name="Action_MainWindow_RemoveSoftHyphens" xml:space="preserve">
+    <value>&amp;Remove Soft Hyphens</value>
+  </data>
+  <data name="Action_MainWindow_SpellcheckEditor" xml:space="preserve">
+    <value>&amp;Spellcheck...</value>
+  </data>
+  <data name="Action_MainWindow_AutoSpellCheck" xml:space="preserve">
+    <value>&amp;Highlight Misspelled Words</value>
+  </data>
+  <data name="Action_MainWindow_Spellcheck" xml:space="preserve">
+    <value>&amp;Next Misspelled Word</value>
+  </data>
+  <data name="Action_MainWindow_AddMispelledWord" xml:space="preserve">
+    <value>&amp;Add Misspelled Word</value>
+  </data>
+  <data name="Action_MainWindow_IgnoreMispelledWord" xml:space="preserve">
+    <value>&amp;Ignore Misspelled Word</value>
+  </data>
+  <data name="Action_MainWindow_ClearIgnoredWords" xml:space="preserve">
+    <value>&amp;Clear Ignored Words</value>
+  </data>
+  <data name="Action_MainWindow_About" xml:space="preserve">
+    <value>&amp;About...</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser" xml:space="preserve">
+    <value>&amp;Book Browser</value>
+  </data>
+  <data name="Action_MainWindow_ClipsWindow" xml:space="preserve">
+    <value>&amp;Clips</value>
+  </data>
+  <data name="Action_MainWindow_PreviewWindow" xml:space="preserve">
+    <value>&amp;Preview</value>
+  </data>
+  <data name="Action_MainWindow_TableOfContents" xml:space="preserve">
+    <value>&amp;Table Of Contents</value>
+  </data>
+  <data name="Action_MainWindow_ValidationResults" xml:space="preserve">
+    <value>&amp;Validation Results</value>
+  </data>
+  <data name="Action_MainWindow_FindReplaceWindow" xml:space="preserve">
+    <value>&amp;Find &amp;&amp; Replace Panel</value>
+  </data>
+  <data name="Action_MainWindow_FocusOnBookBrowser" xml:space="preserve">
+    <value>Focus on Book Browser</value>
+  </data>
+  <data name="Action_MainWindow_FocusOnCodeView" xml:space="preserve">
+    <value>Focus on Code View</value>
+  </data>
+  <data name="Action_MainWindow_FocusOnPreview" xml:space="preserve">
+    <value>Focus on Preview</value>
+  </data>
+  <data name="Action_MainWindow_FocusOnTOC" xml:space="preserve">
+    <value>Focus on Table Of Contents</value>
+  </data>
+  <data name="Action_MainWindow_FocusOnClips" xml:space="preserve">
+    <value>Focus on Clips</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_Open" xml:space="preserve">
+    <value>&amp;Open</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_Rename" xml:space="preserve">
+    <value>&amp;Rename...</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_RenameWithTemplate" xml:space="preserve">
+    <value>Rename With &amp;Template...</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_RERename" xml:space="preserve">
+    <value>Regex Rename...</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_Delete" xml:space="preserve">
+    <value>&amp;Delete</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_Move" xml:space="preserve">
+    <value>&amp;Move To Folder...</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_MoveUp" xml:space="preserve">
+    <value>Move &amp;Up</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_MoveDown" xml:space="preserve">
+    <value>Move Do&amp;wn</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_Sort" xml:space="preserve">
+    <value>&amp;Sort</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_Merge" xml:space="preserve">
+    <value>Mer&amp;ge</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_Split" xml:space="preserve">
+    <value>Split At Markers</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_AddBlankHtml" xml:space="preserve">
+    <value>Add Blank HTML File</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_AddBlankCss" xml:space="preserve">
+    <value>Add Blank Stylesheet</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_AddBlankSvg" xml:space="preserve">
+    <value>Add Blank SVG Image</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_AddBlankJs" xml:space="preserve">
+    <value>Add Blank Javascript</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_AddExistingFiles" xml:space="preserve">
+    <value>Add Existing Files...</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_AddSemantics" xml:space="preserve">
+    <value>Add Semantics...</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_CoverImage" xml:space="preserve">
+    <value>Cover Image</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_LinkStylesheets" xml:space="preserve">
+    <value>Link Stylesheets...</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_LinkJavascripts" xml:space="preserve">
+    <value>Link Javascripts...</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_ValidateWithW3C" xml:space="preserve">
+    <value>Validate With W3C</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_AddCopy" xml:space="preserve">
+    <value>Add Copy</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_RenumberToc" xml:space="preserve">
+    <value>Renumber TOC Entries</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_SaveAs" xml:space="preserve">
+    <value>Save As...</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_SelectAll" xml:space="preserve">
+    <value>Select All In Folder</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_GetInfo" xml:space="preserve">
+    <value>Get Info</value>
+  </data>
+  <data name="Action_MainWindow_AddNavToSpineNonLinear" xml:space="preserve">
+    <value>Add Nav to Reading Order with linear="no"</value>
+  </data>
+  <data name="Action_ClipSlot" xml:space="preserve">
+    <value>Clip {0}</value>
+  </data>
+  <data name="ActionCategory_BookBrowser" xml:space="preserve">
+    <value>Book Browser</value>
+  </data>
+  <data name="ActionCategory_Clip" xml:space="preserve">
+    <value>Clip</value>
+  </data>
+  <data name="ActionCategory_Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="ActionCategory_File" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="ActionCategory_Format" xml:space="preserve">
+    <value>Format</value>
+  </data>
+  <data name="ActionCategory_Help" xml:space="preserve">
+    <value>Help</value>
+  </data>
+  <data name="ActionCategory_Insert" xml:space="preserve">
+    <value>Insert</value>
+  </data>
+  <data name="ActionCategory_Search" xml:space="preserve">
+    <value>Search</value>
+  </data>
+  <data name="ActionCategory_Tools" xml:space="preserve">
+    <value>Tools</value>
+  </data>
+  <data name="ActionCategory_View" xml:space="preserve">
+    <value>View</value>
+  </data>
+  <data name="ActionCategory_Window" xml:space="preserve">
+    <value>Window</value>
+  </data>
+  <data name="Menu_File" xml:space="preserve">
+    <value>&amp;File</value>
+  </data>
+  <data name="Menu_New" xml:space="preserve">
+    <value>&amp;New</value>
+  </data>
+  <data name="Menu_Add" xml:space="preserve">
+    <value>A&amp;dd</value>
+  </data>
+  <data name="Menu_Edit" xml:space="preserve">
+    <value>&amp;Edit</value>
+  </data>
+  <data name="Menu_ChangeCase" xml:space="preserve">
+    <value>C&amp;hange Case</value>
+  </data>
+  <data name="Menu_Insert" xml:space="preserve">
+    <value>&amp;Insert</value>
+  </data>
+  <data name="Menu_Clip" xml:space="preserve">
+    <value>Cli&amp;p</value>
+  </data>
+  <data name="Menu_Clip2" xml:space="preserve">
+    <value>Cli&amp;p2</value>
+  </data>
+  <data name="Menu_Format" xml:space="preserve">
+    <value>For&amp;mat</value>
+  </data>
+  <data name="Menu_Heading" xml:space="preserve">
+    <value>&amp;Heading</value>
+  </data>
+  <data name="Menu_Search" xml:space="preserve">
+    <value>&amp;Search</value>
+  </data>
+  <data name="Menu_CurrentFile" xml:space="preserve">
+    <value>Current Fil&amp;e</value>
+  </data>
+  <data name="Menu_Tools" xml:space="preserve">
+    <value>&amp;Tools</value>
+  </data>
+  <data name="Menu_TableOfContents" xml:space="preserve">
+    <value>&amp;Table Of Contents</value>
+  </data>
+  <data name="Menu_Spellcheck" xml:space="preserve">
+    <value>Spe&amp;llcheck</value>
+  </data>
+  <data name="Menu_ReformatHTML" xml:space="preserve">
+    <value>Re&amp;format HTML</value>
+  </data>
+  <data name="Menu_Epub3Tools" xml:space="preserve">
+    <value>Epub&amp;3 Tools</value>
+  </data>
+  <data name="Menu_View" xml:space="preserve">
+    <value>&amp;View</value>
+  </data>
+  <data name="Menu_Toolbars" xml:space="preserve">
+    <value>&amp;Toolbars</value>
+  </data>
+  <data name="Menu_Window" xml:space="preserve">
+    <value>&amp;Window</value>
+  </data>
+  <data name="Menu_Bookmarks" xml:space="preserve">
+    <value>&amp;Bookmarks</value>
+  </data>
+  <data name="Menu_Help" xml:space="preserve">
+    <value>&amp;Help</value>
+  </data>
+  <data name="Status_NotImplemented" xml:space="preserve">
+    <value>“{0}” — not implemented yet</value>
+  </data>
+  <data name="ToolbarCustomizeWindow_HeadingMenuEntry" xml:space="preserve">
+    <value>Format: Heading menu (h*)</value>
+  </data>
+  <data name="ToolbarCustomizeWindow_CaseMenuEntry" xml:space="preserve">
+    <value>Edit: Change Case menu (Aa)</value>
+  </data>
+  <data name="MetadataEditorWindow_SelectLanguage" xml:space="preserve">
+    <value>Select Language</value>
+  </data>
+  <data name="MetadataEditorWindow_SelectRole" xml:space="preserve">
+    <value>Select Role</value>
+  </data>
+  <data name="MetadataEditorWindow_IsbnPlaceholder" xml:space="preserve">
+    <value>[ISBN here]</value>
+  </data>
+  <data name="MetadataEditorWindow_IssnPlaceholder" xml:space="preserve">
+    <value>[ISSN here]</value>
+  </data>
+  <data name="MetadataEditorWindow_DoiPlaceholder" xml:space="preserve">
+    <value>[DOI here]</value>
+  </data>
+  <data name="MetadataEditorWindow_UuidPlaceholder" xml:space="preserve">
+    <value>[UUID here]</value>
+  </data>
+  <data name="MetadataEditorWindow_AsinPlaceholder" xml:space="preserve">
+    <value>[Amazon ASIN here]</value>
+  </data>
+  <data name="MetadataEditorWindow_CustomIdentifierPlaceholder" xml:space="preserve">
+    <value>[Custom identifier here]</value>
+  </data>
+  <data name="MetadataEditorWindow_TypePlaceholder" xml:space="preserve">
+    <value>[dictionary,index]</value>
+  </data>
+  <data name="MetadataEditorWindow_AuthorPlaceholder" xml:space="preserve">
+    <value>[Author name here]</value>
+  </data>
+  <data name="MetadataEditorWindow_CreatorPlaceholder" xml:space="preserve">
+    <value>[Creator name here]</value>
+  </data>
+  <data name="MetadataEditorWindow_ContributorPlaceholder" xml:space="preserve">
+    <value>[Contributor name here]</value>
+  </data>
+  <data name="MetadataEditorWindow_ValuePlaceholder" xml:space="preserve">
+    <value>[Value here]</value>
+  </data>
+  <data name="MetadataEditorWindow_NamePlaceholder" xml:space="preserve">
+    <value>[name]</value>
+  </data>
+  <data name="MetadataEditorWindow_YourValuePlaceholder" xml:space="preserve">
+    <value>[Your value here]</value>
+  </data>
+  <data name="MetadataEditorWindow_CustomElement" xml:space="preserve">
+    <value>Custom Element</value>
+  </data>
+  <data name="MetadataEditorWindow_CustomElementPlaceholder" xml:space="preserve">
+    <value>[Custom element]</value>
+  </data>
+  <data name="MetadataEditorWindow_InvalidElementNameTitle" xml:space="preserve">
+    <value>Invalid XML element name.</value>
+  </data>
+  <data name="MetadataEditorWindow_InvalidElementNameMessage" xml:space="preserve">
+    <value>Invalid characters were detected in the element name.</value>
+  </data>
+  <data name="MetadataEditorWindow_IdentifierTypePlaceholder" xml:space="preserve">
+    <value>[Insert identifier type here]</value>
+  </data>
+  <data name="MetadataEditorWindow_SchemePlaceholder" xml:space="preserve">
+    <value>[Insert scheme type here]</value>
+  </data>
+  <data name="MetadataEditorWindow_CustomProperty" xml:space="preserve">
+    <value>Custom Property</value>
+  </data>
+  <data name="MetadataEditorWindow_CustomPropertyPlaceholder" xml:space="preserve">
+    <value>[Custom property/attribute]</value>
+  </data>
+  <data name="MetadataEditorWindow_CustomAttribute" xml:space="preserve">
+    <value>Custom Attribute</value>
+  </data>
+  <data name="MetadataEditorWindow_CustomAttributePlaceholder" xml:space="preserve">
+    <value>[Custom metadata property/attribute]</value>
+  </data>
+  <data name="Status_StartupBookFailed" xml:space="preserve">
+    <value>Could not prepare the startup publication.</value>
+  </data>
+  <data name="Status_BookLoadedWithWarnings" xml:space="preserve">
+    <value>Loaded with {0} warning(s).</value>
+  </data>
+  <data name="Status_BookLoaded" xml:space="preserve">
+    <value>Publication loaded.</value>
+  </data>
+  <data name="Status_BookmarkOnlyInCodeView" xml:space="preserve">
+    <value>A bookmark can only be added in Code View.</value>
+  </data>
+  <data name="Status_BookmarkAdded" xml:space="preserve">
+    <value>Bookmark added: {0}</value>
+  </data>
+  <data name="Status_CaretNotOnLinkOrClass" xml:space="preserve">
+    <value>The caret is not on a link or a class name.</value>
+  </data>
+  <data name="Status_NoBookmarks" xml:space="preserve">
+    <value>No bookmarks.</value>
+  </data>
+  <data name="Status_NavigationFileGone" xml:space="preserve">
+    <value>Navigation cancelled — the file no longer exists.</value>
+  </data>
+  <data name="Status_BookmarksCleared" xml:space="preserve">
+    <value>Bookmarks cleared.</value>
+  </data>
+  <data name="Status_TocTargetMissing" xml:space="preserve">
+    <value>Table of contents target does not exist: {0}</value>
+  </data>
+  <data name="Status_FileOperationsNotReady" xml:space="preserve">
+    <value>File operations are not ready yet.</value>
+  </data>
+  <data name="Status_FileOperationError" xml:space="preserve">
+    <value>File operation failed: {0}</value>
+  </data>
+  <data name="Status_CoverAdded" xml:space="preserve">
+    <value>Cover added.</value>
+  </data>
+  <data name="Status_TocGenerated" xml:space="preserve">
+    <value>Table Of Contents generated.</value>
+  </data>
+  <data name="Status_TocNoChanges" xml:space="preserve">
+    <value>No Table Of Contents changes were necessary.</value>
+  </data>
+  <data name="Status_TocUpdated" xml:space="preserve">
+    <value>Table Of Contents updated.</value>
+  </data>
+  <data name="Status_MetadataUpdated" xml:space="preserve">
+    <value>Metadata updated.</value>
+  </data>
+  <data name="Status_WordUpdated" xml:space="preserve">
+    <value>Word updated.</value>
+  </data>
+  <data name="Status_CancelledNotWellFormed" xml:space="preserve">
+    <value>{0} cancelled: {1} is not well-formed.</value>
+  </data>
+  <data name="Operation_DeleteUnusedMedia" xml:space="preserve">
+    <value>Delete Unused Media Files</value>
+  </data>
+  <data name="Operation_DeleteUnusedStyles" xml:space="preserve">
+    <value>Delete Unused Stylesheet Selectors</value>
+  </data>
+  <data name="Operation_CssCleanup" xml:space="preserve">
+    <value>Merge/Remove Unused CSS Rules</value>
+  </data>
+  <data name="Operation_RenameClass" xml:space="preserve">
+    <value>Rename Class</value>
+  </data>
+  <data name="Operation_PrettyPrint" xml:space="preserve">
+    <value>Pretty print</value>
+  </data>
+  <data name="Operation_MendPrettifyAll" xml:space="preserve">
+    <value>Prettify All HTML Files</value>
+  </data>
+  <data name="Operation_AddSoftHyphens" xml:space="preserve">
+    <value>Add Soft Hyphens</value>
+  </data>
+  <data name="Operation_RemoveSoftHyphens" xml:space="preserve">
+    <value>Remove Soft Hyphens</value>
+  </data>
+  <data name="Operation_Restructure" xml:space="preserve">
+    <value>Restructure</value>
+  </data>
+  <data name="Operation_BulkRename" xml:space="preserve">
+    <value>Bulk rename</value>
+  </data>
+  <data name="Operation_Rebase" xml:space="preserve">
+    <value>Rebase manifest IDs</value>
+  </data>
+  <data name="Status_NoUnusedMedia" xml:space="preserve">
+    <value>There are no unused image, video or audio files to delete.</value>
+  </data>
+  <data name="Status_UnusedMediaDeleted" xml:space="preserve">
+    <value>Unused media files deleted.</value>
+  </data>
+  <data name="Status_NoUnusedSelectors" xml:space="preserve">
+    <value>There are no unused stylesheet selectors to delete.</value>
+  </data>
+  <data name="Status_SelectorsDeleted" xml:space="preserve">
+    <value>Selectors deleted.</value>
+  </data>
+  <data name="Status_NoCssToClean" xml:space="preserve">
+    <value>No rules to merge and no unlinked stylesheets were found.</value>
+  </data>
+  <data name="Status_CssCleaned" xml:space="preserve">
+    <value>CSS cleaned up.</value>
+  </data>
+  <data name="Status_ImageMissing" xml:space="preserve">
+    <value>Image does not exist: {0}</value>
+  </data>
+  <data name="Status_MendPrettifyAllDone" xml:space="preserve">
+    <value>Prettify All finished.</value>
+  </data>
+  <data name="Status_MendAllDone" xml:space="preserve">
+    <value>Mend All finished.</value>
+  </data>
+  <data name="Status_SoftHyphensAdded" xml:space="preserve">
+    <value>Soft hyphens added.</value>
+  </data>
+  <data name="Status_SoftHyphensRemoved" xml:space="preserve">
+    <value>Soft hyphens removed.</value>
+  </data>
+  <data name="Status_CaretNotInElement" xml:space="preserve">
+    <value>The caret is not inside any element.</value>
+  </data>
+  <data name="Status_RestructureDone" xml:space="preserve">
+    <value>Restructuring finished.</value>
+  </data>
+  <data name="Status_BulkRenameDone" xml:space="preserve">
+    <value>Bulk rename finished.</value>
+  </data>
+  <data name="Status_RebaseDone" xml:space="preserve">
+    <value>Manifest IDs rebased.</value>
+  </data>
+  <data name="Status_ResourceMissing" xml:space="preserve">
+    <value>Resource does not exist: {0}</value>
+  </data>
+  <data name="Status_NoBookOpen" xml:space="preserve">
+    <value>No publication is open.</value>
+  </data>
+  <data name="Status_HtmlTocCreated" xml:space="preserve">
+    <value>HTML Table Of Contents created.</value>
+  </data>
+  <data name="Status_NotAvailableForEpub2" xml:space="preserve">
+    <value>Not available for EPUB 2.</value>
+  </data>
+  <data name="Status_NavAddedToSpine" xml:space="preserve">
+    <value>Nav added to OPF Spine.</value>
+  </data>
+  <data name="Status_NavAddedToSpineNonLinear" xml:space="preserve">
+    <value>Nav added to OPF Spine with linear="no".</value>
+  </data>
+  <data name="Status_NavRemovedFromSpine" xml:space="preserve">
+    <value>Nav removed from OPF Spine.</value>
+  </data>
+  <data name="Status_ProblemsFound" xml:space="preserve">
+    <value>{0} problem(s) found.</value>
+  </data>
+  <data name="Status_NoStylesheetsToValidate" xml:space="preserve">
+    <value>This EPUB does not contain any CSS stylesheets to validate.</value>
+  </data>
+  <data name="Status_NcxGuideFailed" xml:space="preserve">
+    <value>NCX and Guide generation failed.</value>
+  </data>
+  <data name="Common_Unknown" xml:space="preserve">
+    <value>Unknown</value>
+  </data>
+  <data name="Status_NcxGuideGenerated" xml:space="preserve">
+    <value>NCX and Guide generated.</value>
+  </data>
+  <data name="Status_NcxGuideRemoved" xml:space="preserve">
+    <value>NCX and Guide removed.</value>
+  </data>
+  <data name="Status_ManifestMediaTypesUpdated" xml:space="preserve">
+    <value>OPF manifest media types updated.</value>
+  </data>
+  <data name="Status_ManifestPropertiesUpdated" xml:space="preserve">
+    <value>OPF manifest properties updated.</value>
+  </data>
+  <data name="Status_Focus" xml:space="preserve">
+    <value>Focus: {0}</value>
+  </data>
+  <data name="Panel_BookBrowser" xml:space="preserve">
+    <value>Book Browser</value>
+  </data>
+  <data name="Panel_Preview" xml:space="preserve">
+    <value>Preview</value>
+  </data>
+  <data name="Panel_TableOfContents" xml:space="preserve">
+    <value>Table Of Contents</value>
+  </data>
+  <data name="Panel_Clips" xml:space="preserve">
+    <value>Clips</value>
+  </data>
+  <data name="Panel_CodeView" xml:space="preserve">
+    <value>Code View</value>
+  </data>
+  <data name="Panel_ValidationResults" xml:space="preserve">
+    <value>Validation Results</value>
+  </data>
+  <data name="Panel_Documents" xml:space="preserve">
+    <value>Documents</value>
+  </data>
+  <data name="Status_PreserveHeadingAttributesOn" xml:space="preserve">
+    <value>Preserve existing heading attributes: ON</value>
+  </data>
+  <data name="Status_PreserveHeadingAttributesOff" xml:space="preserve">
+    <value>Preserve existing heading attributes: OFF</value>
+  </data>
+  <data name="Status_InvalidId" xml:space="preserve">
+    <value>Invalid ID — it must start with a letter, followed by letters, digits, _ : - or .</value>
+  </data>
+  <data name="Status_InvalidLink" xml:space="preserve">
+    <value>Invalid link — it must not contain &lt; or &gt;.</value>
+  </data>
+  <data name="FindReplace_ReportRowSkipped" xml:space="preserve">
+    <value>{0} — skipped ({1})</value>
+  </data>
+  <data name="FindReplace_LookInCurrentFile" xml:space="preserve">
+    <value>Current File</value>
+  </data>
+  <data name="FindReplace_LookInAllHtml" xml:space="preserve">
+    <value>All HTML Files</value>
+  </data>
+  <data name="FindReplace_LookInSelectedHtml" xml:space="preserve">
+    <value>Selected HTML Files</value>
+  </data>
+  <data name="FindReplace_LookInTabbedHtml" xml:space="preserve">
+    <value>Tabbed HTML Files</value>
+  </data>
+  <data name="FindReplace_LookInAllCss" xml:space="preserve">
+    <value>All CSS Files</value>
+  </data>
+  <data name="FindReplace_LookInSelectedCss" xml:space="preserve">
+    <value>Selected CSS Files</value>
+  </data>
+  <data name="FindReplace_LookInTabbedCss" xml:space="preserve">
+    <value>Tabbed CSS Files</value>
+  </data>
+  <data name="FindReplace_LookInOpf" xml:space="preserve">
+    <value>OPF File</value>
+  </data>
+  <data name="FindReplace_LookInNcx" xml:space="preserve">
+    <value>NCX File</value>
+  </data>
+  <data name="FindReplace_LookInSelectedSvg" xml:space="preserve">
+    <value>Selected SVG Files</value>
+  </data>
+  <data name="FindReplace_LookInSelectedJs" xml:space="preserve">
+    <value>Selected JavaScript Files</value>
+  </data>
+  <data name="FindReplace_LookInSelectedOtherXml" xml:space="preserve">
+    <value>Selected Other XML Files</value>
+  </data>
+  <data name="FindReplace_SelectToRestrict" xml:space="preserve">
+    <value>Select text to restrict the search.</value>
+  </data>
+  <data name="FindReplace_SelectionMarked" xml:space="preserve">
+    <value>Selected text marked for searching.</value>
+  </data>
+  <data name="FindReplace_SelectionUnmarked" xml:space="preserve">
+    <value>Marked text cleared.</value>
+  </data>
+  <data name="FindReplace_NoMatchToReplace" xml:space="preserve">
+    <value>No selected match to replace.</value>
+  </data>
+  <data name="FindReplace_NoReplacements" xml:space="preserve">
+    <value>No replacements made.</value>
+  </data>
+  <data name="FindReplace_ReplacementsDone" xml:space="preserve">
+    <value>Replacements made: {0}.</value>
+  </data>
+  <data name="FindReplace_NotFound" xml:space="preserve">
+    <value>Not found.</value>
+  </data>
+  <data name="FindReplace_MatchCount" xml:space="preserve">
+    <value>Matches: {0}.</value>
+  </data>
+  <data name="FindReplace_SearchLoaded" xml:space="preserve">
+    <value>Search loaded.</value>
+  </data>
+  <data name="FindReplace_SearchLoadedNamed" xml:space="preserve">
+    <value>Loaded: {0}</value>
+  </data>
+  <data name="FindReplace_NoMatches" xml:space="preserve">
+    <value>No matches found.</value>
+  </data>
+  <data name="FindReplace_TotalMatches" xml:space="preserve">
+    <value>Total matches: {0}.</value>
+  </data>
+  <data name="FindReplace_EnterSearchText" xml:space="preserve">
+    <value>Enter the text to find.</value>
+  </data>
+  <data name="FindReplace_NoActiveCodeTab" xml:space="preserve">
+    <value>No active Code View tab.</value>
+  </data>
+  <data name="FindReplace_NoBook" xml:space="preserve">
+    <value>No book is loaded.</value>
+  </data>
+  <data name="FindReplace_EmptyScope" xml:space="preserve">
+    <value>The search scope is empty (check the selection / tabs).</value>
+  </data>
+  <data name="FindReplace_InvalidRegex" xml:space="preserve">
+    <value>Invalid regular expression: {0}</value>
+  </data>
+  <data name="FindReplace_NoReplacementsChosen" xml:space="preserve">
+    <value>No replacements were selected.</value>
+  </data>
+  <data name="FindReplace_NotFoundEnd" xml:space="preserve">
+    <value>Not found — end of search.</value>
+  </data>
+  <data name="FindReplace_NotFoundInScope" xml:space="preserve">
+    <value>Not found in any file of the scope.</value>
+  </data>
+  <data name="FindReplace_MatchesInFiles" xml:space="preserve">
+    <value>Matches: {0} in {1} file(s).</value>
+  </data>
+  <data name="FindReplace_ReplacedInFiles" xml:space="preserve">
+    <value>Replaced: {0} in {1} file(s).</value>
+  </data>
+  <data name="FindReplace_FilesSkipped" xml:space="preserve">
+    <value>Files skipped: {0}.</value>
+  </data>
+  <data name="FindReplace_NotWellFormedReason" xml:space="preserve">
+    <value>not well-formed: {0}</value>
+  </data>
+  <data name="FindReplace_Wrapped" xml:space="preserve">
+    <value>The search wrapped to the start/end of the file.</value>
+  </data>
+  <data name="BookBrowser_CannotRenameOpf" xml:space="preserve">
+    <value>The OPF file cannot be renamed.</value>
+  </data>
+  <data name="BookBrowser_RenameFailed" xml:space="preserve">
+    <value>Could not rename the file.</value>
+  </data>
+  <data name="BookBrowser_RenameFailedDetail" xml:space="preserve">
+    <value>Could not rename: {0}</value>
+  </data>
+  <data name="BookBrowser_CannotDeleteNav" xml:space="preserve">
+    <value>The navigation document (nav) cannot be deleted.</value>
+  </data>
+  <data name="BookBrowser_CannotDeleteNcx" xml:space="preserve">
+    <value>The NCX file cannot be deleted.</value>
+  </data>
+  <data name="BookBrowser_CannotDeleteAllHtml" xml:space="preserve">
+    <value>Not all HTML files can be deleted — at least one must remain.</value>
+  </data>
+  <data name="BookBrowser_DeleteFailed" xml:space="preserve">
+    <value>Could not delete: {0}</value>
+  </data>
+  <data name="BookBrowser_AddFilesFailed" xml:space="preserve">
+    <value>Could not add files: {0}</value>
+  </data>
+  <data name="BookBrowser_InvalidTemplate" xml:space="preserve">
+    <value>Invalid name template.</value>
+  </data>
+  <data name="BookBrowser_NamesFailed" xml:space="preserve">
+    <value>Could not generate the names.</value>
+  </data>
+  <data name="BookBrowser_RenameRejectedXml" xml:space="preserve">
+    <value>Rename rejected — it would cause XML errors in: {0}</value>
+  </data>
+  <data name="BookBrowser_MoveFailed" xml:space="preserve">
+    <value>Could not move the files.</value>
+  </data>
+  <data name="BookBrowser_NavOnlyToc" xml:space="preserve">
+    <value>The nav document can only get the "toc" semantics.</value>
+  </data>
+  <data name="BookBrowser_NcxRenumbered" xml:space="preserve">
+    <value>NCX entries renumbered.</value>
+  </data>
+  <data name="BookBrowser_InfoRootFolder" xml:space="preserve">
+    <value>(root folder)</value>
+  </data>
+  <data name="BookBrowser_InfoTemplate" xml:space="preserve">
+    <value># {0}
+File name: {1}
+Folder: {2}
+Media type: {3}
+File size: {4} kB
+EPUB version: {5}</value>
+  </data>
+  <data name="BookBrowser_SaveFailed" xml:space="preserve">
+    <value>Could not save the file: {0}</value>
+  </data>
+  <data name="BookBrowser_CannotMergeNav" xml:space="preserve">
+    <value>The navigation document (nav) cannot be merged.</value>
+  </data>
+  <data name="BookBrowser_NoSplitMarkers" xml:space="preserve">
+    <value>No split markers in the selected files.</value>
+  </data>
+  <data name="BookBrowser_DeleteConfirm" xml:space="preserve">
+    <value>Delete {0} file(s)?
+
+{1}</value>
+  </data>
+  <data name="BookBrowser_AddExistingFilesTitle" xml:space="preserve">
+    <value>Add Existing Files</value>
+  </data>
+  <data name="BookBrowser_RenameWithTemplateTitle" xml:space="preserve">
+    <value>Rename With Template</value>
+  </data>
+  <data name="BookBrowser_RenameWithTemplatePrompt" xml:space="preserve">
+    <value>Name template for {0} file(s) (e.g. Section0001.xhtml):</value>
+  </data>
+  <data name="BookBrowser_GetInfoTitle" xml:space="preserve">
+    <value>Get Info</value>
+  </data>
+  <data name="BookBrowser_SaveAsTitle" xml:space="preserve">
+    <value>Save As File</value>
+  </data>
+  <data name="CodeViewColor_CSSComment" xml:space="preserve">
+    <value>CSS Comment</value>
+  </data>
+  <data name="CodeViewColor_CSSProperty" xml:space="preserve">
+    <value>CSS Property</value>
+  </data>
+  <data name="CodeViewColor_CSSQuote" xml:space="preserve">
+    <value>CSS Quote</value>
+  </data>
+  <data name="CodeViewColor_CSSSelector" xml:space="preserve">
+    <value>CSS Selector</value>
+  </data>
+  <data name="CodeViewColor_CSSValue" xml:space="preserve">
+    <value>CSS Value</value>
+  </data>
+  <data name="CodeViewColor_LineHighlight" xml:space="preserve">
+    <value>Line Highlight</value>
+  </data>
+  <data name="CodeViewColor_LineNumberBackground" xml:space="preserve">
+    <value>Line Number Background</value>
+  </data>
+  <data name="CodeViewColor_LineNumberForeground" xml:space="preserve">
+    <value>Line Number Foreground</value>
+  </data>
+  <data name="CodeViewColor_SpellingUnderline" xml:space="preserve">
+    <value>Spelling Underline</value>
+  </data>
+  <data name="CodeViewColor_XHTMLAttributeName" xml:space="preserve">
+    <value>XHTML Attribute Name</value>
+  </data>
+  <data name="CodeViewColor_XHTMLAttributeValue" xml:space="preserve">
+    <value>XHTML Attribute Value</value>
+  </data>
+  <data name="CodeViewColor_XHTMLCSS" xml:space="preserve">
+    <value>XHTML CSS</value>
+  </data>
+  <data name="CodeViewColor_XHTMLCSSComment" xml:space="preserve">
+    <value>XHTML CSS Comment</value>
+  </data>
+  <data name="CodeViewColor_XHTMLDOCTYPE" xml:space="preserve">
+    <value>XHTML DOCTYPE</value>
+  </data>
+  <data name="CodeViewColor_XHTMLEntity" xml:space="preserve">
+    <value>XHTML Entity</value>
+  </data>
+  <data name="CodeViewColor_XHTMLHTML" xml:space="preserve">
+    <value>XHTML HTML</value>
+  </data>
+  <data name="CodeViewColor_XHTMLHTMLComment" xml:space="preserve">
+    <value>XHTML HTML Comment</value>
+  </data>
+  <data name="CodeViewColor_CSSSpecialSelector" xml:space="preserve">
+    <value>CSS Special Selector</value>
+  </data>
+  <data name="CodeViewColor_CSSAtRule" xml:space="preserve">
+    <value>CSS At-Rule</value>
+  </data>
+  <data name="CodeViewColor_CSSConstant" xml:space="preserve">
+    <value>CSS Constant</value>
+  </data>
+  <data name="CodeViewColor_XHTMLNamespacePrefix" xml:space="preserve">
+    <value>XHTML Namespace Prefix</value>
+  </data>
+  <data name="CodeViewColor_Link" xml:space="preserve">
+    <value>Link</value>
+  </data>
+  <data name="CodeViewColor_ErrorUnderline" xml:space="preserve">
+    <value>Error Underline</value>
+  </data>
+  <data name="IconTheme_main" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="IconTheme_fluent" xml:space="preserve">
+    <value>Fluent</value>
+  </data>
+  <data name="IconTheme_material" xml:space="preserve">
+    <value>Material</value>
+  </data>
+  <data name="IconTheme_custom" xml:space="preserve">
+    <value>Custom</value>
+  </data>
+  <data name="Theme_System" xml:space="preserve">
+    <value>System</value>
+  </data>
+  <data name="Theme_Light" xml:space="preserve">
+    <value>Light</value>
+  </data>
+  <data name="Theme_Dark" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="Preview_EngineUnavailable" xml:space="preserve">
+    <value>Preview is not available in this environment — the WebView engine could not be started ({0}: {1}).</value>
+  </data>
+  <data name="Preview_LoadFailed" xml:space="preserve">
+    <value>Could not load the preview ({0}).</value>
+  </data>
+  <data name="SearchEditor_NothingImported" xml:space="preserve">
+    <value>No entries were imported.</value>
+  </data>
+  <data name="SearchEditor_ImportedGroup" xml:space="preserve">
+    <value>Imported</value>
+  </data>
+  <data name="SearchEditor_Imported" xml:space="preserve">
+    <value>Entries imported: {0}.</value>
+  </data>
+  <data name="SearchEditor_ReadError" xml:space="preserve">
+    <value>Could not read the file: {0}</value>
+  </data>
+  <data name="SearchEditor_Exported" xml:space="preserve">
+    <value>Entries exported: {0}.</value>
+  </data>
+  <data name="SearchEditor_WriteError" xml:space="preserve">
+    <value>Could not write the file: {0}</value>
+  </data>
+  <data name="SearchEditor_Saved" xml:space="preserve">
+    <value>Search library saved.</value>
+  </data>
+  <data name="SearchEditor_Reloaded" xml:space="preserve">
+    <value>Search library reloaded.</value>
+  </data>
+  <data name="SearchEditor_UnnamedSearch" xml:space="preserve">
+    <value>Unnamed Search</value>
+  </data>
+  <data name="SearchEditor_CurrentSaved" xml:space="preserve">
+    <value>Current search saved as a new entry.</value>
+  </data>
+  <data name="SearchEditor_EntryAdded" xml:space="preserve">
+    <value>New entry added.</value>
+  </data>
+  <data name="SearchEditor_NewGroup" xml:space="preserve">
+    <value>Group</value>
+  </data>
+  <data name="SearchEditor_GroupAdded" xml:space="preserve">
+    <value>New group added.</value>
+  </data>
+  <data name="SearchEditor_Deleted" xml:space="preserve">
+    <value>Selected entries deleted.</value>
+  </data>
+  <data name="SearchEditor_LoadedIntoFindReplace" xml:space="preserve">
+    <value>Loaded “{0}” into Find &amp; Replace.</value>
+  </data>
+  <data name="SearchEditor_SelectTwo" xml:space="preserve">
+    <value>Select at least two entries.</value>
+  </data>
+  <data name="SearchEditor_OptionsCopied" xml:space="preserve">
+    <value>Search options copied.</value>
+  </data>
+  <data name="SearchEditor_NothingSelected" xml:space="preserve">
+    <value>No searches selected.</value>
+  </data>
+  <data name="SearchEditor_CountsSummary" xml:space="preserve">
+    <value>Total matches: {0} ({1} searches).</value>
+  </data>
+  <data name="CodeView_ClassRenamed" xml:space="preserve">
+    <value>Class renamed.</value>
+  </data>
+  <data name="RenameClassWindow_Title" xml:space="preserve">
+    <value>Rename Class</value>
+  </data>
+  <data name="RenameClassWindow_Class" xml:space="preserve">
+    <value>Class: {0}</value>
+  </data>
+  <data name="RenameClassWindow_ClassInSource" xml:space="preserve">
+    <value>Class: {0} (in: {1})</value>
+  </data>
+  <data name="RenameClassWindow_StyleBlock" xml:space="preserve">
+    <value>{0}, &lt;style&gt; block no. {1}</value>
+  </data>
+  <data name="RenameClassWindow_Summary" xml:space="preserve">
+    <value>Class occurrences changed: {0} of {1} · files changed: {2}</value>
+  </data>
+  <data name="RenameClassWindow_MultipleSources" xml:space="preserve">
+    <value>The changed elements use definitions of this class from several sources ({0}) — each source is handled separately:</value>
+  </data>
+  <data name="RenameClassWindow_SourceRenamed" xml:space="preserve">
+    <value>• {0}: renamed in place (rules: {1})</value>
+  </data>
+  <data name="RenameClassWindow_SourceCopied" xml:space="preserve">
+    <value>• {0}: rules copied under the new name (rules: {1}) — elements that keep the old name use them too, so the original stays</value>
+  </data>
+  <data name="RenameClassWindow_SourceUnchanged" xml:space="preserve">
+    <value>• {0}: unchanged — no changed element uses these rules (rules: {1})</value>
+  </data>
+  <data name="RenameClassWindow_NoDefinitions" xml:space="preserve">
+    <value>The class is not defined in any stylesheet or &lt;style&gt; block — only class attributes change.</value>
+  </data>
+  <data name="RenameClassWindow_NewName" xml:space="preserve">
+    <value>New name:</value>
+  </data>
+  <data name="RenameClassWindow_Everywhere" xml:space="preserve">
+    <value>Rename everywhere (whole book; style definitions are renamed)</value>
+  </data>
+  <data name="RenameClassWindow_SameNesting" xml:space="preserve">
+    <value>Only elements with the same nesting: {0} (style definitions are copied under the new name)</value>
+  </data>
+  <data name="RenameClassWindow_RenameButton" xml:space="preserve">
+    <value>Rename</value>
+  </data>
+  <data name="RenameClass_Empty" xml:space="preserve">
+    <value>The name cannot be empty.</value>
+  </data>
+  <data name="RenameClass_Whitespace" xml:space="preserve">
+    <value>The name cannot contain spaces or other whitespace.</value>
+  </data>
+  <data name="RenameClass_InvalidCharacters" xml:space="preserve">
+    <value>The name cannot contain the characters: {0} (letters, digits, "-" and "_" are allowed).</value>
+  </data>
+  <data name="RenameClass_StartsWithDigit" xml:space="preserve">
+    <value>The name cannot start with a digit.</value>
+  </data>
+  <data name="RenameClass_StartsWithHyphenDigit" xml:space="preserve">
+    <value>The name cannot start with "-" followed by a digit.</value>
+  </data>
+  <data name="RenameClass_SingleHyphen" xml:space="preserve">
+    <value>The name cannot be a single "-".</value>
+  </data>
+  <data name="RenameClass_SameAsOld" xml:space="preserve">
+    <value>The new name is the same as the current one.</value>
+  </data>
+  <data name="RenameClass_AlreadyExists" xml:space="preserve">
+    <value>Class "{0}" already exists in the book.</value>
+  </data>
+  <data name="CodeView_WellFormed" xml:space="preserve">
+    <value>The document is well-formed.</value>
+  </data>
+  <data name="CodeView_NotWellFormed" xml:space="preserve">
+    <value>Well-formed error at line {0}, column {1}: {2}</value>
+  </data>
+  <data name="CodeView_NoEnclosingElement" xml:space="preserve">
+    <value>No element encloses the caret.</value>
+  </data>
+  <data name="CodeView_NoClosedEnclosingElement" xml:space="preserve">
+    <value>No closed element encloses the caret.</value>
+  </data>
+  <data name="CodeView_CssRuleCount" xml:space="preserve">
+    <value>CSS rules: {0}</value>
+  </data>
+  <data name="EmptyLayout_NeedOneOpf" xml:space="preserve">
+    <value>Exactly one OPF file is required.</value>
+  </data>
+  <data name="EmptyLayout_NeedXhtmlMarker" xml:space="preserve">
+    <value>There must be at least one XHTML marker.</value>
+  </data>
+  <data name="EmptyLayout_NeedImageMarker" xml:space="preserve">
+    <value>There must be at least one image marker.</value>
+  </data>
+  <data name="EmptyLayout_NeedCssMarker" xml:space="preserve">
+    <value>There must be at least one CSS marker.</value>
+  </data>
+  <data name="EmptyLayout_NeedOneNcx" xml:space="preserve">
+    <value>Exactly one NCX file is required.</value>
+  </data>
+  <data name="EmptyLayout_NeedOneNav" xml:space="preserve">
+    <value>Exactly one NAV file is required.</value>
+  </data>
+  <data name="EmptyLayout_TypeXhtml" xml:space="preserve">
+    <value>XHTML Files</value>
+  </data>
+  <data name="EmptyLayout_TypeCss" xml:space="preserve">
+    <value>Style Files</value>
+  </data>
+  <data name="EmptyLayout_TypeImages" xml:space="preserve">
+    <value>Image Files</value>
+  </data>
+  <data name="EmptyLayout_TypeFonts" xml:space="preserve">
+    <value>Font Files</value>
+  </data>
+  <data name="EmptyLayout_TypeAudio" xml:space="preserve">
+    <value>Audio Files</value>
+  </data>
+  <data name="EmptyLayout_TypeVideo" xml:space="preserve">
+    <value>Video Files</value>
+  </data>
+  <data name="EmptyLayout_TypeJs" xml:space="preserve">
+    <value>JavaScript Files</value>
+  </data>
+  <data name="EmptyLayout_TypeMisc" xml:space="preserve">
+    <value>Misc Files</value>
+  </data>
+  <data name="EmptyLayout_TypeOpf" xml:space="preserve">
+    <value>OPF File</value>
+  </data>
+  <data name="EmptyLayout_TypeNcx" xml:space="preserve">
+    <value>NCX File</value>
+  </data>
+  <data name="EmptyLayout_TypeNav" xml:space="preserve">
+    <value>Nav File</value>
+  </data>
+  <data name="File_DoesNotExist" xml:space="preserve">
+    <value>The file does not exist:
+{0}</value>
+  </data>
+  <data name="File_UnsupportedType" xml:space="preserve">
+    <value>Unsupported file type: {0}</value>
+  </data>
+  <data name="File_NotWellFormedOnOpen" xml:space="preserve">
+    <value>The file was not loaded — its content is not valid XML (line {0}: {1}).
+
+Enable mending XHTML on open in Preferences and try again.</value>
+  </data>
+  <data name="File_CannotLoadEpub" xml:space="preserve">
+    <value>Cannot load the EPUB:
+{0}
+
+{1}</value>
+  </data>
+  <data name="File_IoError" xml:space="preserve">
+    <value>Input/output error:
+{0}</value>
+  </data>
+  <data name="File_CannotSaveType" xml:space="preserve">
+    <value>Signet cannot save files of type "{0}".</value>
+  </data>
+  <data name="File_CannotSave" xml:space="preserve">
+    <value>Cannot save the file {0}:
+{1}</value>
+  </data>
+  <data name="MainWindow_ImportableFiles" xml:space="preserve">
+    <value>Files to import</value>
+  </data>
+  <data name="MainWindow_OpenFileTitle" xml:space="preserve">
+    <value>Open File</value>
+  </data>
+  <data name="MainWindow_SaveEpubTitle" xml:space="preserve">
+    <value>Save EPUB</value>
+  </data>
+  <data name="MainWindow_RecentFileMissing" xml:space="preserve">
+    <value>This file no longer exists. Click OK to remove it from the list.
+{0}</value>
+  </data>
+  <data name="MainWindow_GoToLineTitle" xml:space="preserve">
+    <value>Go To Line</value>
+  </data>
+  <data name="MainWindow_GoToLinePrompt" xml:space="preserve">
+    <value>Line number:</value>
+  </data>
+  <data name="MainWindow_AddCoverNoImages" xml:space="preserve">
+    <value>The publication has no images — add an image first (Add Existing Files).</value>
+  </data>
+  <data name="MainWindow_AddCoverOverwrite" xml:space="preserve">
+    <value>The existing cover page will be overwritten ({0}). Continue?</value>
+  </data>
+  <data name="MainWindow_InsertAriaClipTitle" xml:space="preserve">
+    <value>Insert Aria Clip</value>
+  </data>
+  <data name="MainWindow_RestructureConfirm" xml:space="preserve">
+    <value>Are you sure you want to restructure this EPUB to the Signet norm?
+This operation cannot be undone.</value>
+  </data>
+  <data name="Clips_UnnamedEntry" xml:space="preserve">
+    <value>Unnamed Entry</value>
+  </data>
+  <data name="Clips_Added" xml:space="preserve">
+    <value>New clip added.</value>
+  </data>
+  <data name="Clips_ChooseInsertPoint" xml:space="preserve">
+    <value>First choose where to insert the clip.</value>
+  </data>
+  <data name="Clips_NothingImported" xml:space="preserve">
+    <value>No clips were imported.</value>
+  </data>
+  <data name="Clips_Imported" xml:space="preserve">
+    <value>Clips imported: {0}.</value>
+  </data>
+  <data name="Clips_Exported" xml:space="preserve">
+    <value>Clips exported: {0}.</value>
+  </data>
+  <data name="Clips_Saved" xml:space="preserve">
+    <value>Clip library saved.</value>
+  </data>
+  <data name="Clips_Reloaded" xml:space="preserve">
+    <value>Clip library reloaded.</value>
+  </data>
+  <data name="Clips_Deleted" xml:space="preserve">
+    <value>Selected clips deleted.</value>
+  </data>
+  <data name="Clips_OpenBookForCss" xml:space="preserve">
+    <value>Open a book to generate CSS clips.</value>
+  </data>
+  <data name="Clips_CssAdded" xml:space="preserve">
+    <value>CSS clips added: {0}.</value>
+  </data>
+  <data name="PlaceholderTab_Truncated" xml:space="preserve">
+    <value>(preview truncated)</value>
+  </data>
+  <data name="PlaceholderTab_Summary" xml:space="preserve">
+    <value>{0}
+
+This file type cannot be edited in Signet yet.</value>
+  </data>
+  <data name="SearchEditor_JsonFileType" xml:space="preserve">
+    <value>Saved searches (*.json)</value>
+  </data>
+  <data name="SearchEditor_TsvFileType" xml:space="preserve">
+    <value>Tab-separated text (*.txt)</value>
+  </data>
+  <data name="SearchEditor_ImportTitle" xml:space="preserve">
+    <value>Import Search Entries</value>
+  </data>
+  <data name="SearchEditor_ExportAllTitle" xml:space="preserve">
+    <value>Export All Search Entries</value>
+  </data>
+  <data name="SearchEditor_ExportTitle" xml:space="preserve">
+    <value>Export Search Entries</value>
+  </data>
+  <data name="ReportsWindow_Width" xml:space="preserve">
+    <value>Width</value>
+  </data>
+  <data name="ReportsWindow_Height" xml:space="preserve">
+    <value>Height</value>
+  </data>
+  <data name="ReportsWindow_DefinedIn" xml:space="preserve">
+    <value>Defined In</value>
+  </data>
+  <data name="ReportsWindow_EntityName" xml:space="preserve">
+    <value>Entity Name</value>
+  </data>
+  <data name="ReportsWindow_WordsColumn" xml:space="preserve">
+    <value>Words</value>
+  </data>
+  <data name="ReportsWindow_CharactersColumn" xml:space="preserve">
+    <value>Characters</value>
+  </data>
+  <data name="ReportsWindow_TotalRow" xml:space="preserve">
+    <value>TOTAL</value>
+  </data>
+  <data name="Common_Yes" xml:space="preserve">
+    <value>Yes</value>
+  </data>
+  <data name="Common_No" xml:space="preserve">
+    <value>No</value>
+  </data>
+  <data name="Common_NotApplicable" xml:space="preserve">
+    <value>n/a</value>
+  </data>
+  <data name="Toolbar_New" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="Toolbar_File" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="Toolbar_Find" xml:space="preserve">
+    <value>Find</value>
+  </data>
+  <data name="Toolbar_Insert" xml:space="preserve">
+    <value>Insert</value>
+  </data>
+  <data name="Toolbar_Back" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="Toolbar_Tools" xml:space="preserve">
+    <value>Tools</value>
+  </data>
+  <data name="Toolbar_Heading" xml:space="preserve">
+    <value>Heading</value>
+  </data>
+  <data name="Toolbar_Format" xml:space="preserve">
+    <value>Format</value>
+  </data>
+  <data name="Toolbar_Align" xml:space="preserve">
+    <value>Align</value>
+  </data>
+  <data name="Toolbar_List" xml:space="preserve">
+    <value>List</value>
+  </data>
+  <data name="Toolbar_Indent" xml:space="preserve">
+    <value>Indent</value>
+  </data>
+  <data name="Toolbar_Edit" xml:space="preserve">
+    <value>Edit</value>
+  </data>
+  <data name="Toolbar_AddExisting" xml:space="preserve">
+    <value>Add Existing</value>
+  </data>
+  <data name="Toolbar_UndoRedo" xml:space="preserve">
+    <value>Undo/Redo</value>
+  </data>
+  <data name="Toolbar_ChangeCase" xml:space="preserve">
+    <value>Change Case</value>
+  </data>
+  <data name="Toolbar_TextDirection" xml:space="preserve">
+    <value>Text Direction</value>
+  </data>
+  <data name="Toolbar_Clips" xml:space="preserve">
+    <value>Clip Bar</value>
+  </data>
+  <data name="Toolbar_Clips2" xml:space="preserve">
+    <value>Clip Bar2</value>
+  </data>
+  <data name="Spellcheck_NoWordsSelected" xml:space="preserve">
+    <value>No words selected.</value>
+  </data>
+  <data name="Spellcheck_WordsIgnored" xml:space="preserve">
+    <value>Selected words ignored.</value>
+  </data>
+  <data name="Spellcheck_WordsAdded" xml:space="preserve">
+    <value>Selected words added to the dictionary.</value>
+  </data>
+  <data name="Spellcheck_WordsAddedDictionaryDisabled" xml:space="preserve">
+    <value>Selected words added to the dictionary. This dictionary is not enabled in Preferences.</value>
+  </data>
+  <data name="Spellcheck_SelectOneWord" xml:space="preserve">
+    <value>Select exactly one word.</value>
+  </data>
+  <data name="Spellcheck_EnterReplacement" xml:space="preserve">
+    <value>Enter the replacement text.</value>
+  </data>
+  <data name="Spellcheck_InvalidReplacement" xml:space="preserve">
+    <value>The new word must not contain "&lt;", "&gt;" or "&amp;".</value>
+  </data>
+  <data name="ImageTab_UnknownDimensions" xml:space="preserve">
+    <value>unknown dimensions</value>
+  </data>
+  <data name="ImageTab_SaveFailed" xml:space="preserve">
+    <value>Could not save the image: {0}</value>
+  </data>
+  <data name="ImageTab_ResizeFailed" xml:space="preserve">
+    <value>Could not resize the image (unsupported format?).</value>
+  </data>
+  <data name="ImageTab_Resized" xml:space="preserve">
+    <value>Image resized to {0}×{1} px.</value>
+  </data>
+  <data name="MediaTab_AudioFile" xml:space="preserve">
+    <value>Audio file</value>
+  </data>
+  <data name="MediaTab_VideoFile" xml:space="preserve">
+    <value>Video file</value>
+  </data>
+  <data name="MediaTab_PdfDocument" xml:space="preserve">
+    <value>PDF document</value>
+  </data>
+  <data name="MediaTab_PdfNotAvailable" xml:space="preserve">
+    <value>PDF preview is not available yet. Use “Open Externally” to view the document.</value>
+  </data>
+  <data name="MediaTab_PlayerNotAvailable" xml:space="preserve">
+    <value>The built-in player is not available yet. Use “Open Externally” to play the file.</value>
+  </data>
+  <data name="FontTab_Obfuscation" xml:space="preserve">
+    <value>Obfuscation: {0}</value>
+  </data>
+  <data name="FontTab_ObfuscationNone" xml:space="preserve">
+    <value>none</value>
+  </data>
+  <data name="Preview_ExternalNavigationBlocked" xml:space="preserve">
+    <value>Preview: navigation to the external address {0} was blocked</value>
+  </data>
+  <data name="Preview_PrepareFailed" xml:space="preserve">
+    <value>Preview: could not prepare the content ({0})</value>
+  </data>
+  <data name="Menu_ClearRecentFiles" xml:space="preserve">
+    <value>Clear List</value>
+  </data>
+  <data name="Menu_NoBookmarks" xml:space="preserve">
+    <value>(no bookmarks)</value>
+  </data>
+  <data name="Menu_ClearBookmarks" xml:space="preserve">
+    <value>Clear Bookmarks</value>
+  </data>
+  <data name="Menu_CustomizeToolbars" xml:space="preserve">
+    <value>&amp;Customize Toolbars...</value>
+  </data>
+  <data name="EditToc_PlaceholderEntry" xml:space="preserve">
+    <value>[placeholder]</value>
+  </data>
+  <data name="EditToc_OneInvalidEntry" xml:space="preserve">
+    <value>One entry has no text or target — fix it before saving.</value>
+  </data>
+  <data name="EditToc_InvalidEntries" xml:space="preserve">
+    <value>Entries without text or target: {0}. Fix them before saving.</value>
+  </data>
+  <data name="EditToc_NoTarget" xml:space="preserve">
+    <value>(no target)</value>
+  </data>
+  <data name="Tabs_CannotOpenFile" xml:space="preserve">
+    <value>Cannot open the file: {0}</value>
+  </data>
+  <data name="Tabs_NoCssRuleForClass" xml:space="preserve">
+    <value>No CSS rule found for the class "{0}".</value>
+  </data>
+  <data name="Tabs_FileNotInBook" xml:space="preserve">
+    <value>The book has no file "{0}".</value>
+  </data>
+  <data name="Tabs_FragmentNotFound" xml:space="preserve">
+    <value>"#{0}" not found in "{1}".</value>
+  </data>
+  <data name="ClipEditor_JsonFileType" xml:space="preserve">
+    <value>Clips (*.json)</value>
+  </data>
+  <data name="ClipEditor_ImportTitle" xml:space="preserve">
+    <value>Import Clips</value>
+  </data>
+  <data name="ClipEditor_ExportAllTitle" xml:space="preserve">
+    <value>Export All Clips</value>
+  </data>
+  <data name="ClipEditor_ExportTitle" xml:space="preserve">
+    <value>Export Clips</value>
+  </data>
+  <data name="ReportsWindow_ExportCsvTitle" xml:space="preserve">
+    <value>Export Report to CSV</value>
+  </data>
+  <data name="Toolbar_HeadingMenuTip" xml:space="preserve">
+    <value>Set Heading Level of Selected Text</value>
+  </data>
+  <data name="Toolbar_CaseMenuTip" xml:space="preserve">
+    <value>Set Case of Selected Text</value>
+  </data>
+  <data name="DryRun_Summary" xml:space="preserve">
+    <value>Matches: {0}</value>
+  </data>
+  <data name="DryRun_SummaryFiltered" xml:space="preserve">
+    <value>Matches: {0} (visible: {1})</value>
+  </data>
+  <data name="ReplacementChooser_Summary" xml:space="preserve">
+    <value>Selected: {0} of {1}</value>
+  </data>
+  <data name="FontTab_Pangram" xml:space="preserve">
+    <value>The quick brown fox jumps over the lazy dog.</value>
+  </data>
+  <data name="Toc_Untitled" xml:space="preserve">
+    <value>(untitled)</value>
+  </data>
+  <data name="ExternalOpen_FileMissing" xml:space="preserve">
+    <value>The file does not exist on disk.</value>
+  </data>
+  <data name="AboutWindow_Title" xml:space="preserve">
+    <value>About Signet</value>
+  </data>
+  <data name="AboutWindow_Version" xml:space="preserve">
+    <value>Version:</value>
+  </data>
+  <data name="CodeViewColor_SearchMatchBackground" xml:space="preserve">
+    <value>Search Match Background</value>
+  </data>
+  <data name="CodeViewColor_SelectionBackground" xml:space="preserve">
+    <value>Selection Background (current match)</value>
+  </data>
+  <data name="ColorPickerWindow_Title" xml:space="preserve">
+    <value>Choose Color</value>
+  </data>
+  <data name="PreferencesWindow_ChooseColor" xml:space="preserve">
+    <value>Choose color…</value>
+  </data>
+  <data name="Action_MainWindow_CreateCheckpoint" xml:space="preserve">
+    <value>Create &amp;Checkpoint...</value>
+  </data>
+  <data name="Action_MainWindow_RevertToBefore" xml:space="preserve">
+    <value>Revert to &amp;Before</value>
+  </data>
+  <data name="Action_MainWindow_RevertToAfter" xml:space="preserve">
+    <value>Revert to &amp;After</value>
+  </data>
+  <data name="Action_MainWindow_CheckpointsWindow" xml:space="preserve">
+    <value>C&amp;heckpoints</value>
+  </data>
+  <data name="Panel_Checkpoints" xml:space="preserve">
+    <value>Checkpoints</value>
+  </data>
+  <data name="Checkpoint_RevertToBeforeNamed" xml:space="preserve">
+    <value>Revert to before "{0}"</value>
+  </data>
+  <data name="Checkpoint_RevertToAfterNamed" xml:space="preserve">
+    <value>Revert to after "{0}"</value>
+  </data>
+  <data name="Checkpoint_StartOfSession" xml:space="preserve">
+    <value>Start of editing session</value>
+  </data>
+  <data name="Checkpoint_CurrentState" xml:space="preserve">
+    <value>Current state</value>
+  </data>
+  <data name="Checkpoint_CurrentStateWas" xml:space="preserve">
+    <value>Current state [was {0}]</value>
+  </data>
+  <data name="Checkpoint_Unnamed" xml:space="preserve">
+    <value>[Unnamed state]</value>
+  </data>
+  <data name="Checkpoint_Before" xml:space="preserve">
+    <value>Before: {0}</value>
+  </data>
+  <data name="Checkpoint_CreateTitle" xml:space="preserve">
+    <value>Create checkpoint</value>
+  </data>
+  <data name="Checkpoint_CreatePrompt" xml:space="preserve">
+    <value>Choose a name for the checkpoint.
+You can later restore the book to this checkpoint via the "Revert to..." entries in the Edit menu or in the Checkpoints panel.</value>
+  </data>
+  <data name="Checkpoint_Revert" xml:space="preserve">
+    <value>Revert to</value>
+  </data>
+  <data name="Checkpoint_RevertTooltip" xml:space="preserve">
+    <value>Revert the book to the selected checkpoint</value>
+  </data>
+  <data name="Checkpoint_Compare" xml:space="preserve">
+    <value>Compare</value>
+  </data>
+  <data name="Checkpoint_CompareTooltip" xml:space="preserve">
+    <value>Compare the state of the book at the selected checkpoint with the current state</value>
+  </data>
+  <data name="Status_CheckpointCreated" xml:space="preserve">
+    <value>Checkpoint "{0}" created</value>
+  </data>
+  <data name="Status_CheckpointReverted" xml:space="preserve">
+    <value>Book reverted to: {0}</value>
+  </data>
+  <data name="Status_CheckpointError" xml:space="preserve">
+    <value>Checkpoint error: {0}</value>
+  </data>
+  <data name="CheckpointOp_DeleteFiles" xml:space="preserve">
+    <value>Delete files</value>
+  </data>
+  <data name="CheckpointOp_ReorderText" xml:space="preserve">
+    <value>Re-order text</value>
+  </data>
+  <data name="CheckpointOp_AddFile" xml:space="preserve">
+    <value>Add file {0}</value>
+  </data>
+  <data name="CheckpointOp_AddFiles" xml:space="preserve">
+    <value>Add files</value>
+  </data>
+  <data name="CheckpointOp_Rename" xml:space="preserve">
+    <value>Rename {0}</value>
+  </data>
+  <data name="CheckpointOp_SetSemantics" xml:space="preserve">
+    <value>Set Semantics</value>
+  </data>
+  <data name="CheckpointOp_Split" xml:space="preserve">
+    <value>Split {0}</value>
+  </data>
+  <data name="CheckpointOp_MergeFiles" xml:space="preserve">
+    <value>Merge files into {0}</value>
+  </data>
+  <data name="CheckpointOp_LinkStylesheets" xml:space="preserve">
+    <value>Link stylesheets</value>
+  </data>
+  <data name="CheckpointOp_ReplaceAll" xml:space="preserve">
+    <value>Replace all</value>
+  </data>
+  <data name="CheckpointOp_SpellCheck" xml:space="preserve">
+    <value>Spell Check</value>
+  </data>
+  <data name="CheckpointOp_AddNewFile" xml:space="preserve">
+    <value>Add new file</value>
+  </data>
+  <data name="Diff_WindowTitle" xml:space="preserve">
+    <value>Differences: {0} ↔ {1}</value>
+  </data>
+  <data name="Diff_Files" xml:space="preserve">
+    <value>Changed files</value>
+  </data>
+  <data name="Diff_FileLabel" xml:space="preserve">
+    <value>[{0}] {1}</value>
+  </data>
+  <data name="Diff_Added" xml:space="preserve">
+    <value>added</value>
+  </data>
+  <data name="Diff_Removed" xml:space="preserve">
+    <value>removed</value>
+  </data>
+  <data name="Diff_Modified" xml:space="preserve">
+    <value>modified</value>
+  </data>
+  <data name="Diff_Renamed" xml:space="preserve">
+    <value>renamed</value>
+  </data>
+  <data name="Diff_PreviousChange" xml:space="preserve">
+    <value>Previous change</value>
+  </data>
+  <data name="Diff_NextChange" xml:space="preserve">
+    <value>Next change</value>
+  </data>
+  <data name="Diff_SearchPlaceholder" xml:space="preserve">
+    <value>Search for text</value>
+  </data>
+  <data name="Diff_FindNext" xml:space="preserve">
+    <value>Next match</value>
+  </data>
+  <data name="Diff_FindPrevious" xml:space="preserve">
+    <value>Previous match</value>
+  </data>
+  <data name="Diff_SearchLeft" xml:space="preserve">
+    <value>Left panel</value>
+  </data>
+  <data name="Diff_SearchRight" xml:space="preserve">
+    <value>Right panel</value>
+  </data>
+  <data name="Diff_ViewLabel" xml:space="preserve">
+    <value>View:</value>
+  </data>
+  <data name="Diff_ViewSideBySide" xml:space="preserve">
+    <value>Side by side</value>
+  </data>
+  <data name="Diff_ViewUnified" xml:space="preserve">
+    <value>Unified</value>
+  </data>
+  <data name="Diff_ContextLabel" xml:space="preserve">
+    <value>Context:</value>
+  </data>
+  <data name="Diff_ContextLines" xml:space="preserve">
+    <value>{0} lines of context</value>
+  </data>
+  <data name="Diff_ContextAll" xml:space="preserve">
+    <value>All text</value>
+  </data>
+  <data name="Diff_Collapsed" xml:space="preserve">
+    <value>⋯ {0} unchanged lines ⋯</value>
+  </data>
+  <data name="Diff_RenamedMessage" xml:space="preserve">
+    <value>File renamed from {0} to {1} (content unchanged).</value>
+  </data>
+  <data name="Diff_BinaryChanged" xml:space="preserve">
+    <value>Binary file {0} was changed.</value>
+  </data>
+  <data name="Diff_BinaryAdded" xml:space="preserve">
+    <value>Binary file {0} was added.</value>
+  </data>
+  <data name="Diff_BinaryRemoved" xml:space="preserve">
+    <value>Binary file {0} was removed.</value>
+  </data>
+  <data name="Diff_NoChanges" xml:space="preserve">
+    <value>No changes found between these book states.</value>
+  </data>
+  <data name="Diff_NotFound" xml:space="preserve">
+    <value>Not found.</value>
+  </data>
+  <data name="Diff_NoNextChange" xml:space="preserve">
+    <value>No more changes in this file.</value>
+  </data>
+  <data name="Diff_NoPreviousChange" xml:space="preserve">
+    <value>No earlier changes in this file.</value>
+  </data>
+  <data name="Diff_DoubleClickHint" xml:space="preserve">
+    <value>Double click a line of the current state to edit that location.</value>
+  </data>
+  <data name="Diff_ImageMissing" xml:space="preserve">
+    <value>(none)</value>
+  </data>
+  <data name="LoadWarningsDialog_Title" xml:space="preserve">
+    <value>Load warnings</value>
+  </data>
+  <data name="LoadWarningsDialog_Header" xml:space="preserve">
+    <value>The file "{0}" was loaded with warnings ({1}):</value>
+  </data>
+  <data name="LoadWarningsDialog_Copy" xml:space="preserve">
+    <value>Copy</value>
+  </data>
+</root>

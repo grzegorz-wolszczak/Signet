@@ -1,0 +1,164 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Signet.App.ViewModels"
+        xmlns:menu="using:Signet.App.Menu"
+        xmlns:infra="using:Signet.App.Infrastructure"
+        xmlns:dc="using:Dock.Avalonia.Controls"
+        xmlns:dconv="using:Dock.Avalonia.Converters"
+        xmlns:dmc="using:Dock.Model.Controls"
+        xmlns:loc="using:Signet.App.Resources"
+        xmlns:tb="using:Signet.App.Toolbars"
+        xmlns:views="using:Signet.App.Views"
+        x:Class="Signet.App.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="{Binding WindowTitle}"
+        Width="1100" Height="720"
+        MinWidth="640" MinHeight="420"
+        WindowStartupLocation="CenterScreen">
+
+  <Design.DataContext>
+    <vm:MainWindowViewModel />
+  </Design.DataContext>
+
+  <DockPanel>
+    <DockPanel.Styles>
+      <!-- Flat toolbar buttons: no background at rest,
+           highlighted only on hover (the Fluent style for :pointerover stays). -->
+      <Style Selector="Button.toolbar">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+      </Style>
+      <!-- A disabled action: no gray Fluent background, a dimmed icon. -->
+      <Style Selector="Button.toolbar:disabled /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent" />
+      </Style>
+      <Style Selector="Button.toolbar:disabled">
+        <Setter Property="Opacity" Value="0.4" />
+      </Style>
+      <Style Selector="SplitButton.toolbar">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+      </Style>
+      <Style Selector="SplitButton.toolbar:disabled">
+        <Setter Property="Opacity" Value="0.4" />
+      </Style>
+      <!-- Find & Replace sits below the document tab area (below the editor),
+           not below the whole window: the DocumentDockControl template from Dock.Avalonia.Themes.Fluent
+           (v12.1.0.6) extended with a FindReplacePanel docked at the bottom. The panel takes its context
+           from MainWindow, because the template's DataContext is IDocumentDock. -->
+      <Style Selector="dc|DocumentDockControl">
+        <Setter Property="Template">
+          <ControlTemplate>
+            <dc:DockableControl TrackingMode="Visible" x:DataType="dmc:IDocumentDock">
+              <DockPanel>
+                <views:FindReplacePanel DockPanel.Dock="Bottom"
+                                        DataContext="{Binding $parent[views:MainWindow].DataContext}" />
+                <Panel>
+                  <dc:DocumentControl IsActive="{Binding IsActive}"
+                                      IsVisible="{Binding LayoutMode, Converter={x:Static dconv:DocumentLayoutModeMatchConverter.Instance}, ConverterParameter=Tabbed}" />
+                  <dc:MdiDocumentControl IsActive="{Binding IsActive}"
+                                         IsVisible="{Binding LayoutMode, Converter={x:Static dconv:DocumentLayoutModeMatchConverter.Instance}, ConverterParameter=Mdi}" />
+                </Panel>
+              </DockPanel>
+            </dc:DockableControl>
+          </ControlTemplate>
+        </Setter>
+      </Style>
+    </DockPanel.Styles>
+
+    <Menu DockPanel.Dock="Top" ItemsSource="{Binding MenuItems}">
+      <Menu.Styles>
+        <Style Selector="MenuItem" x:DataType="menu:MenuItemViewModel">
+          <Setter Property="Header" Value="{Binding Header}" />
+          <Setter Property="ItemsSource" Value="{Binding Items}" />
+          <Setter Property="Command" Value="{Binding Command}" />
+          <Setter Property="InputGesture" Value="{Binding InputGesture}" />
+          <Setter Property="ToggleType" Value="{Binding ToggleType}" />
+          <Setter Property="IsChecked" Value="{Binding IsChecked, Mode=TwoWay}" />
+          <!-- Action icons in the menu (from the current icon set); the icon state
+               (e.g. the gray/red "Save" floppy disk) goes through ActionIcons. -->
+          <Setter Property="Icon">
+            <Template>
+              <Panel x:DataType="menu:MenuItemViewModel">
+                <Image Width="16" Height="16"
+                       IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}">
+                  <Image.Source>
+                    <MultiBinding Converter="{x:Static infra:ActionIcons.ImageForState}">
+                      <Binding Path="IconKey" />
+                      <Binding Path="IconState" />
+                    </MultiBinding>
+                  </Image.Source>
+                </Image>
+                <PathIcon Width="16" Height="16"
+                          Data="{Binding IconKey, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                          Foreground="{Binding IconState, Converter={x:Static infra:ActionIcons.ForegroundForState}}"
+                          IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+              </Panel>
+            </Template>
+          </Setter>
+        </Style>
+      </Menu.Styles>
+    </Menu>
+
+    <!-- Toolbar area: rows, with the toolbars side by side in a row;
+         toolbars that do not fit hide their buttons in the "»" menu. -->
+    <ItemsControl DockPanel.Dock="Top"
+                  ItemsSource="{Binding ToolbarRows}"
+                  Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
+                  Padding="2,1">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:ToolbarRowViewModel">
+          <ItemsControl ItemsSource="{Binding Toolbars}"
+                        IsVisible="{Binding HasVisibleToolbars}"
+                        Margin="0,1">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <tb:ToolbarRowPanel />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:ToolbarViewModel">
+                <views:ToolbarStripView IsVisible="{Binding IsVisible}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+    <Border DockPanel.Dock="Bottom"
+            Padding="8,3"
+            Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
+      <Grid ColumnDefinitions="*,Auto">
+        <TextBlock Grid.Column="0"
+                   Text="{Binding StatusMessage}"
+                   VerticalAlignment="Center"
+                   TextTrimming="CharacterEllipsis" />
+        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+          <TextBlock Text="{Binding TabStatus}"
+                     VerticalAlignment="Center"
+                     IsVisible="{Binding TabStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          <TextBlock Text="{Binding CaretStatus}"
+                     VerticalAlignment="Center"
+                     IsVisible="{Binding CaretStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          <StackPanel Orientation="Horizontal" Spacing="2">
+            <Button Content="−" Command="{Binding ZoomOutCommand}" Classes="toolbar" Padding="6,0" />
+            <Button Content="{Binding ZoomPercentText}" Command="{Binding ZoomResetCommand}"
+                    Classes="toolbar" Padding="4,0" MinWidth="44" FontSize="11" />
+            <Button Content="+" Command="{Binding ZoomInCommand}" Classes="toolbar" Padding="6,0" />
+          </StackPanel>
+          <TextBlock Text="{loc:Loc MainWindow_ThemeLabel}" VerticalAlignment="Center" />
+          <Button Content="{Binding CurrentTheme}"
+                  Command="{Binding CycleThemeCommand}"
+                  Padding="6,2" FontSize="11" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <dc:DockControl Layout="{Binding Layout}"
+                    Factory="{Binding DockFactory}"
+                    InitializeLayout="False" />
+
+  </DockPanel>
+
+</Window>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ONIXMessage release="3.0">
+  <Product>
+    <RecordReference>urn:uuid:66666666-6666-4666-8666-666666666666</RecordReference>
+  </Product>
+</ONIXMessage>

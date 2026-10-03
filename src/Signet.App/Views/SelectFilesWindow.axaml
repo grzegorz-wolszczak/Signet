@@ -1,0 +1,52 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:v="using:Signet.App.Views"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.SelectFilesWindow"
+        x:DataType="v:SelectFilesWindow"
+        Width="560" Height="480"
+        WindowStartupLocation="CenterOwner"
+        Title="{loc:Loc SelectFilesWindow_Title}">
+
+  <DockPanel Margin="16">
+    <TextBlock x:Name="PromptText" DockPanel.Dock="Top" TextWrapping="Wrap" Margin="0,0,0,8" />
+
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right"
+                Spacing="8" Margin="0,10,0,0">
+      <Button x:Name="FromDiskButton" Content="{loc:Loc SelectFilesWindow_FromDisk}" MinWidth="110" HorizontalAlignment="Left" />
+      <Button x:Name="OkButton" Content="{loc:Loc Common_Ok}" IsDefault="True" MinWidth="80" />
+      <Button x:Name="CancelButton" Content="{loc:Loc Common_Cancel}" IsCancel="True" MinWidth="80" />
+    </StackPanel>
+
+    <TextBox x:Name="FilterBox" DockPanel.Dock="Top" PlaceholderText="{loc:Loc SelectFilesWindow_FilterPlaceholder}" Margin="0,0,0,8" />
+
+    <ListBox x:Name="TypeFilterList" DockPanel.Dock="Left" Width="90" Margin="0,0,8,0" SelectionMode="Single" />
+
+    <StackPanel x:Name="ReorderButtons" DockPanel.Dock="Right" Spacing="6" Margin="8,0,0,0"
+                VerticalAlignment="Top" IsVisible="False">
+      <Button x:Name="MoveUpButton" Content="▲" MinWidth="40" ToolTip.Tip="{loc:Loc SelectFilesWindow_MoveUpTip}" />
+      <Button x:Name="MoveDownButton" Content="▼" MinWidth="40" ToolTip.Tip="{loc:Loc SelectFilesWindow_MoveDownTip}" />
+    </StackPanel>
+
+    <Panel>
+      <ListBox x:Name="PlainList">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="v:SelectFilesRow">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Image Source="{Binding Thumbnail}" Width="32" Height="32" IsVisible="{Binding HasThumbnail}" />
+              <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" />
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+
+      <ListBox x:Name="OrderedList" IsVisible="False" SelectionMode="Single">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="v:SelectFilesRow">
+            <CheckBox IsChecked="{Binding Included, Mode=TwoWay}" Content="{Binding DisplayName}" />
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </Panel>
+  </DockPanel>
+</Window>

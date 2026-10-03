@@ -1,0 +1,37 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Signet.App.ViewModels"
+             xmlns:loc="using:Signet.App.Resources"
+             x:Class="Signet.App.Views.TableOfContentsView"
+             x:DataType="vm:TableOfContentsViewModel"
+             x:Name="Root">
+
+  <DockPanel>
+    <Border DockPanel.Dock="Top" Padding="4" BorderThickness="0,0,0,1"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+      <Button Content="{loc:Loc TableOfContentsView_Edit}" Command="{Binding EditCommand}" HorizontalAlignment="Left"
+              ToolTip.Tip="{loc:Loc TableOfContentsView_EditTip}" />
+    </Border>
+
+    <Panel>
+      <TextBlock Text="{loc:Loc TableOfContentsView_NoToc}"
+                 IsVisible="{Binding !HasEntries}"
+                 Margin="16" Opacity="0.6" TextWrapping="Wrap" VerticalAlignment="Top" />
+
+      <TreeView x:Name="Tree"
+                IsVisible="{Binding HasEntries}"
+                ItemsSource="{Binding Nodes}">
+        <TreeView.Styles>
+          <Style Selector="TreeViewItem" x:DataType="vm:TocEntryViewModel">
+            <Setter Property="IsExpanded" Value="True" />
+          </Style>
+        </TreeView.Styles>
+        <TreeView.ItemTemplate>
+          <TreeDataTemplate x:DataType="vm:TocEntryViewModel" ItemsSource="{Binding Children}">
+            <TextBlock Text="{Binding Title}" />
+          </TreeDataTemplate>
+        </TreeView.ItemTemplate>
+      </TreeView>
+    </Panel>
+  </DockPanel>
+</UserControl>

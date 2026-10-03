@@ -1,0 +1,56 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Signet.App.ViewModels"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.SpellcheckEditorWindow"
+        x:DataType="vm:SpellcheckEditorViewModel"
+        Title="{loc:Loc SpellcheckEditorWindow_Title}"
+        Width="820" Height="560"
+        WindowStartupLocation="CenterOwner">
+
+  <Grid Margin="12" RowDefinitions="Auto,*,Auto" RowSpacing="8">
+
+    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8">
+      <TextBlock Text="{loc:Loc SpellcheckEditorWindow_Filter}" VerticalAlignment="Center" />
+      <TextBox Text="{Binding FilterText, Mode=TwoWay}" Width="220"
+               PlaceholderText="{loc:Loc SpellcheckEditorWindow_FilterPlaceholder}" />
+      <CheckBox Content="{loc:Loc SpellcheckEditorWindow_ShowAllWords}" IsChecked="{Binding ShowAllWords, Mode=TwoWay}"
+                 VerticalAlignment="Center" Margin="12,0,0,0" />
+      <Button Content="{loc:Loc Common_Refresh}" Command="{Binding RefreshCommand}" />
+      <TextBlock Text="{Binding Message}" VerticalAlignment="Center" Margin="12,0,0,0" />
+    </StackPanel>
+
+    <Grid Grid.Row="1" ColumnDefinitions="*,220" ColumnSpacing="10">
+
+      <DataGrid Grid.Column="0" x:Name="WordsGrid" ItemsSource="{Binding Words}"
+                IsReadOnly="True" AutoGenerateColumns="False" GridLinesVisibility="Horizontal"
+                CanUserSortColumns="True" SelectionMode="Extended">
+        <DataGrid.Columns>
+          <DataGridTextColumn Header="{loc:Loc SpellcheckEditorWindow_Word}" Binding="{Binding Word}" Width="*" />
+          <DataGridTextColumn Header="{loc:Loc ReportsWindow_Count}" Binding="{Binding Count}" Width="70" />
+          <DataGridTextColumn Header="{loc:Loc SpellcheckEditorWindow_Language}" Binding="{Binding LanguageName}" Width="110" />
+          <DataGridTextColumn Header="{loc:Loc SpellcheckEditorWindow_Misspelled}" Binding="{Binding MisspelledDisplay}" Width="90" />
+        </DataGrid.Columns>
+      </DataGrid>
+
+      <StackPanel Grid.Column="1" Spacing="8">
+        <Button Content="{loc:Loc SpellcheckEditorWindow_Ignore}" Command="{Binding IgnoreCommand}" HorizontalAlignment="Stretch" />
+
+        <Button Content="{loc:Loc SpellcheckEditorWindow_AddToDictionary}" Command="{Binding AddCommand}" HorizontalAlignment="Stretch" />
+        <ComboBox ItemsSource="{Binding Dictionaries}" SelectedItem="{Binding SelectedDictionary, Mode=TwoWay}"
+                  HorizontalAlignment="Stretch" />
+
+        <Separator Margin="0,8" />
+
+        <TextBlock Text="{loc:Loc SpellcheckEditorWindow_ChangeAllTo}" />
+        <AutoCompleteBox Text="{Binding ChangeAllText, Mode=TwoWay}" ItemsSource="{Binding Suggestions}"
+                          FilterMode="None" MinimumPrefixLength="0" HorizontalAlignment="Stretch" />
+        <Button Content="{loc:Loc SpellcheckEditorWindow_ChangeAll}" Command="{Binding ChangeAllCommand}" HorizontalAlignment="Stretch" />
+      </StackPanel>
+    </Grid>
+
+    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+      <Button Content="{loc:Loc Common_Close}" Click="OnCloseClicked" />
+    </StackPanel>
+  </Grid>
+</Window>

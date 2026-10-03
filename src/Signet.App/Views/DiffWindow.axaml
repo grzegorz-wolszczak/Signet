@@ -1,0 +1,139 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Signet.App.ViewModels"
+        xmlns:views="using:Signet.App.Views"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.DiffWindow"
+        x:DataType="vm:DiffViewModel"
+        Width="1200" Height="760" MinWidth="600" MinHeight="400"
+        WindowStartupLocation="CenterOwner"
+        Title="{Binding WindowTitle}">
+
+  <Window.Styles>
+    <Style Selector="TextBlock.lineNumber">
+      <Setter Property="FontFamily" Value="Cascadia Mono, Consolas, Menlo, DejaVu Sans Mono, monospace" />
+      <Setter Property="Opacity" Value="0.55" />
+      <Setter Property="TextAlignment" Value="Right" />
+      <Setter Property="Padding" Value="4,1" />
+    </Style>
+    <Style Selector="TextBlock.collapsed">
+      <Setter Property="FontStyle" Value="Italic" />
+      <Setter Property="Opacity" Value="0.6" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="Margin" Value="0,2" />
+    </Style>
+    <Style Selector="ListBox.diffRows ListBoxItem">
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="MinHeight" Value="0" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel Margin="8">
+    <!-- Toolbar: change navigation, search, view, context. -->
+    <WrapPanel DockPanel.Dock="Top" Margin="0,0,0,6" Orientation="Horizontal">
+      <Button Content="{loc:Loc Diff_PreviousChange}" Command="{Binding PreviousChangeCommand}" Margin="0,0,4,4" />
+      <Button Content="{loc:Loc Diff_NextChange}" Command="{Binding NextChangeCommand}" Margin="0,0,16,4" />
+
+      <TextBox Width="220" Text="{Binding SearchText}" PlaceholderText="{loc:Loc Diff_SearchPlaceholder}" Margin="0,0,4,4">
+        <TextBox.KeyBindings>
+          <KeyBinding Gesture="Enter" Command="{Binding FindNextCommand}" />
+          <KeyBinding Gesture="Shift+Enter" Command="{Binding FindPreviousCommand}" />
+        </TextBox.KeyBindings>
+      </TextBox>
+      <Button Content="{loc:Loc Diff_FindNext}" Command="{Binding FindNextCommand}" Margin="0,0,4,4" />
+      <Button Content="{loc:Loc Diff_FindPrevious}" Command="{Binding FindPreviousCommand}" Margin="0,0,8,4" />
+      <RadioButton GroupName="DiffSearchSide" Content="{loc:Loc Diff_SearchLeft}" IsChecked="{Binding SearchInLeft}" Margin="0,0,4,4" />
+      <RadioButton GroupName="DiffSearchSide" Content="{loc:Loc Diff_SearchRight}" IsChecked="{Binding SearchInRight}" Margin="0,0,16,4" />
+
+      <TextBlock Text="{loc:Loc Diff_ViewLabel}" VerticalAlignment="Center" Margin="0,0,4,4" />
+      <ComboBox ItemsSource="{Binding ViewOptions}" SelectedIndex="{Binding ViewIndex}" Margin="0,0,12,4" />
+      <TextBlock Text="{loc:Loc Diff_ContextLabel}" VerticalAlignment="Center" Margin="0,0,4,4" />
+      <ComboBox ItemsSource="{Binding ContextOptions}" SelectedIndex="{Binding ContextIndex}" Margin="0,0,0,4" />
+    </WrapPanel>
+
+    <DockPanel DockPanel.Dock="Bottom" Margin="0,6,0,0">
+      <TextBlock DockPanel.Dock="Right" Text="{Binding Status}" Foreground="{DynamicResource SystemAccentColor}" />
+      <TextBlock Text="{loc:Loc Diff_DoubleClickHint}" Opacity="0.7" TextTrimming="CharacterEllipsis" />
+    </DockPanel>
+
+    <Grid ColumnDefinitions="260,4,*">
+      <DockPanel Grid.Column="0">
+        <TextBlock DockPanel.Dock="Top" Text="{loc:Loc Diff_Files}" FontWeight="SemiBold" Margin="0,0,0,4" />
+        <ListBox ItemsSource="{Binding Files}" SelectedItem="{Binding SelectedFile, Mode=TwoWay}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:DiffFileItem">
+              <TextBlock Text="{Binding Label}" ToolTip.Tip="{Binding Label}" TextTrimming="CharacterEllipsis" />
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+
+      <GridSplitter Grid.Column="1" ResizeDirection="Columns" />
+
+      <Panel Grid.Column="2">
+        <TextBlock IsVisible="{Binding IsMessageVisible}" Text="{Binding Message}" TextWrapping="Wrap"
+                   FontSize="15" Opacity="0.75" HorizontalAlignment="Center" VerticalAlignment="Center"
+                   TextAlignment="Center" Margin="16" />
+
+        <!-- Images side by side. -->
+        <Grid IsVisible="{Binding IsImageVisible}" ColumnDefinitions="*,8,*" RowDefinitions="Auto,*">
+          <TextBlock Grid.Column="0" Text="{Binding LeftTitle}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Margin="0,0,0,4" />
+          <TextBlock Grid.Column="2" Text="{Binding RightTitle}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Margin="0,0,0,4" />
+          <Border Grid.Row="1" Grid.Column="0" BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+            <Image x:Name="LeftImage" Stretch="Uniform" StretchDirection="DownOnly" />
+          </Border>
+          <Border Grid.Row="1" Grid.Column="2" BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+            <Image x:Name="RightImage" Stretch="Uniform" StretchDirection="DownOnly" />
+          </Border>
+        </Grid>
+
+        <!-- Side-by-side diff: one row = a left and a right line, so scrolling is shared. -->
+        <DockPanel IsVisible="{Binding IsSideBySideTextVisible}">
+          <Grid DockPanel.Dock="Top" ColumnDefinitions="*,*" Margin="0,0,0,4">
+            <TextBlock Grid.Column="0" Text="{Binding LeftTitle}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+            <TextBlock Grid.Column="1" Text="{Binding RightTitle}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Margin="8,0,0,0" />
+          </Grid>
+          <ListBox x:Name="SideBySideList" Classes="diffRows"
+                   ItemsSource="{Binding SideBySideRows}"
+                   SelectedIndex="{Binding SelectedRowIndex, Mode=TwoWay}"
+                   DoubleTapped="OnRowDoubleTapped">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:SideBySideRowItem">
+                <Panel>
+                  <TextBlock Classes="collapsed" IsVisible="{Binding IsCollapsed}" Text="{Binding CollapsedText}" />
+                  <Grid IsVisible="{Binding IsLine}" ColumnDefinitions="48,*,48,*">
+                    <TextBlock Grid.Column="0" Classes="lineNumber" Text="{Binding LeftNumber}" />
+                    <views:DiffLineText Grid.Column="1" Spans="{Binding Row.Left.Spans}" Kind="{Binding Row.Left.Kind}" IsLeft="True" />
+                    <TextBlock Grid.Column="2" Classes="lineNumber" Text="{Binding RightNumber}" />
+                    <views:DiffLineText Grid.Column="3" Spans="{Binding Row.Right.Spans}" Kind="{Binding Row.Right.Kind}" IsLeft="False" />
+                  </Grid>
+                </Panel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DockPanel>
+
+        <!-- Single-column diff. -->
+        <ListBox x:Name="UnifiedList" Classes="diffRows"
+                 IsVisible="{Binding IsUnifiedTextVisible}"
+                 ItemsSource="{Binding UnifiedRows}"
+                 SelectedIndex="{Binding SelectedRowIndex, Mode=TwoWay}"
+                 DoubleTapped="OnRowDoubleTapped">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:UnifiedRowItem">
+              <Panel>
+                <TextBlock Classes="collapsed" IsVisible="{Binding IsCollapsed}" Text="{Binding CollapsedText}" />
+                <Grid IsVisible="{Binding IsLine}" ColumnDefinitions="48,48,18,*">
+                  <TextBlock Grid.Column="0" Classes="lineNumber" Text="{Binding LeftNumber}" />
+                  <TextBlock Grid.Column="1" Classes="lineNumber" Text="{Binding RightNumber}" />
+                  <TextBlock Grid.Column="2" Classes="lineNumber" Text="{Binding Marker}" />
+                  <views:DiffLineText Grid.Column="3" Spans="{Binding Row.Spans}" Kind="{Binding Row.Kind}" IsLeft="False" />
+                </Grid>
+              </Panel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </Panel>
+    </Grid>
+  </DockPanel>
+</Window>

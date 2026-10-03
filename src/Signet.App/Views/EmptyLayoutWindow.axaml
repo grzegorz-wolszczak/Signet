@@ -1,0 +1,48 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Signet.App.ViewModels"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.EmptyLayoutWindow"
+        x:DataType="vm:EmptyLayoutViewModel"
+        Width="560" Height="560"
+        WindowStartupLocation="CenterOwner"
+        Title="{loc:Loc EmptyLayoutWindow_Title}">
+
+  <DockPanel Margin="12">
+
+    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="6" Margin="0,0,0,8">
+      <Button x:Name="AddFolderButton" Content="{loc:Loc EmptyLayoutWindow_AddFolder}"
+              IsEnabled="{Binding CanAddToSelection}" />
+      <Button x:Name="AddFileButton" Content="{loc:Loc EmptyLayoutWindow_AddFile}"
+              IsEnabled="{Binding CanAddToSelection}" />
+      <Button x:Name="RenameButton" Content="{loc:Loc EmptyLayoutWindow_RenameButton}"
+              IsEnabled="{Binding CanRenameSelection}" />
+      <Button x:Name="DeleteButton" Content="{loc:Loc Common_Delete}"
+              IsEnabled="{Binding CanDeleteSelection}" />
+      <Border Width="1" Background="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="4,2" />
+      <Button x:Name="LoadButton" Content="{loc:Loc EmptyLayoutWindow_Load}" />
+      <Button x:Name="SaveButton" Content="{loc:Loc EmptyLayoutWindow_SaveEllipsis}" />
+    </StackPanel>
+
+    <StackPanel DockPanel.Dock="Bottom" Spacing="8" Margin="0,8,0,0">
+      <TextBlock Text="{Binding ValidationError}"
+                 Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"
+                 TextWrapping="Wrap"
+                 IsVisible="{Binding ValidationError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+        <Button x:Name="OkButton" Content="{loc:Loc Common_Ok}" IsDefault="True" MinWidth="90" />
+        <Button x:Name="CancelButton" Content="{loc:Loc Common_Cancel}" IsCancel="True" MinWidth="90" />
+      </StackPanel>
+    </StackPanel>
+
+    <TreeView x:Name="Tree" ItemsSource="{Binding RootNodes}"
+              SelectedItem="{Binding SelectedNode, Mode=TwoWay}">
+      <TreeView.ItemTemplate>
+        <TreeDataTemplate x:DataType="vm:LayoutNode" ItemsSource="{Binding Children}">
+          <TextBlock Text="{Binding Name}" />
+        </TreeDataTemplate>
+      </TreeView.ItemTemplate>
+    </TreeView>
+
+  </DockPanel>
+</Window>

@@ -1,0 +1,47 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Signet.App.ViewModels"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.RenameClassWindow"
+        x:DataType="vm:RenameClassViewModel"
+        Width="560" SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Title="{loc:Loc RenameClassWindow_Title}">
+
+  <StackPanel Margin="16" Spacing="8">
+    <TextBlock Text="{Binding ClassLabel}" FontWeight="SemiBold" TextWrapping="Wrap" />
+
+    <TextBlock Text="{loc:Loc RenameClassWindow_NewName}" Margin="0,4,0,0" />
+    <TextBox x:Name="NameBox" Text="{Binding NewName, Mode=TwoWay}" />
+    <TextBlock Text="{Binding ValidationError}"
+               Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"
+               TextWrapping="Wrap"
+               IsVisible="{Binding ValidationError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+    <StackPanel Spacing="8" Margin="0,6,0,0" IsVisible="{Binding ShowsScopeChoice}">
+      <RadioButton GroupName="Scope"
+                   Content="{loc:Loc RenameClassWindow_Everywhere}"
+                   IsChecked="{Binding IsEverywhere, Mode=TwoWay}" />
+      <RadioButton GroupName="Scope"
+                   IsChecked="{Binding IsSameNesting, Mode=TwoWay}">
+        <TextBlock Text="{Binding SameNestingLabel}" TextWrapping="Wrap" />
+      </RadioButton>
+    </StackPanel>
+
+    <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" Margin="0,4,0,0" />
+    <ItemsControl x:Name="SourceNotesList" ItemsSource="{Binding SourceNotes}" Opacity="0.8">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="x:String">
+          <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,1" />
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,8,0,0">
+      <Button x:Name="OkButton" Content="{loc:Loc RenameClassWindow_RenameButton}" IsDefault="True" MinWidth="100"
+              IsEnabled="{Binding CanAccept}" />
+      <Button x:Name="CancelButton" Content="{loc:Loc Common_Cancel}" IsCancel="True" MinWidth="80" />
+    </StackPanel>
+  </StackPanel>
+</Window>

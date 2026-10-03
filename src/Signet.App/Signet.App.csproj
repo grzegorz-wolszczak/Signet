@@ -1,0 +1,81 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>Signet.App</RootNamespace>
+    <AssemblyName>Signet.App</AssemblyName>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Application icon (wax seal with an open book) - Assets/AppIcon. -->
+    <ApplicationIcon>Assets\AppIcon\app.ico</ApplicationIcon>
+    <!--
+      CA1848 (LoggerMessage delegates) and CA1873 (lazy evaluation of log arguments) are
+      micro-optimizations relevant on hot server paths; logging in this desktop application
+      is infrequent (startup, settings changes) and readability matters more.
+    -->
+    <NoWarn>$(NoWarn);CA1848;CA1873</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="Avalonia.Fonts.Inter" />
+    <PackageReference Include="Avalonia.Controls.DataGrid" />
+    <PackageReference Include="Avalonia.Controls.ColorPicker" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="Avalonia.AvaloniaEdit" />
+    <PackageReference Include="AvaloniaEdit.TextMate" />
+    <PackageReference Include="TextMateSharp" />
+    <PackageReference Include="TextMateSharp.Grammars" />
+    <PackageReference Include="Dock.Avalonia" />
+    <PackageReference Include="Dock.Model.Mvvm" />
+    <PackageReference Include="Dock.Avalonia.Themes.Fluent" />
+    <PackageReference Include="Dock.Serializer.SystemTextJson" />
+    <PackageReference Include="Dock.Controls.DeferredContentControl" />
+    <!-- Preview: control + core + native backends for all desktop platforms. -->
+    <PackageReference Include="NativeWebView" />
+    <PackageReference Include="NativeWebView.Core" />
+    <PackageReference Include="NativeWebView.Platform.Windows" />
+    <PackageReference Include="NativeWebView.Platform.Linux" />
+    <PackageReference Include="NativeWebView.Platform.macOS" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Serilog" />
+    <PackageReference Include="Serilog.Extensions.Logging" />
+    <PackageReference Include="Serilog.Sinks.File" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <!-- Non-text tabs: image scaling + font pangram rendering. -->
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="System.CommandLine" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Signet.Core\Signet.Core.csproj" />
+  </ItemGroup>
+
+  <!-- Version 0.1-<timestamp>-<build number>; the number is bumped on every App build. -->
+  <Import Project="..\..\version\Versioning.targets" />
+
+  <ItemGroup>
+    <!-- The window icon (Window.Icon via a style in App.axaml). -->
+    <AvaloniaResource Include="Assets\AppIcon\app.ico" />
+    <!-- Logo in the About window. -->
+    <AvaloniaResource Include="Assets\AppIcon\app_icon_256.png" />
+    <!-- Colored icons (Prettify / Mend code) — see Assets/Icons/Calibre/README.md. -->
+    <AvaloniaResource Include="Assets\Icons\Calibre\*.png" />
+  </ItemGroup>
+
+  <!-- i18n: Strings.resx = neutral language (Polish), Strings.en.resx = English satellite
+       selected by CurrentUICulture at runtime.
+       No Visual Studio generator (ResXFileCodeGenerator works only as a "custom tool" in the IDE,
+       not in `dotnet build` from the command line) — access goes through the hand-written
+       Strings.Get(key) in Resources/Strings.cs, which wraps ResourceManager. -->
+  <ItemGroup>
+    <EmbeddedResource Update="Resources\Strings.en.resx">
+      <DependentUpon>Strings.resx</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>

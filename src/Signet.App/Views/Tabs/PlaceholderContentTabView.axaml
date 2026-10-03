@@ -1,0 +1,31 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:tabs="using:Signet.App.ViewModels.Tabs"
+             x:Class="Signet.App.Views.Tabs.PlaceholderContentTabView"
+             x:DataType="tabs:PlaceholderContentTabViewModel">
+
+  <Grid RowDefinitions="Auto,*">
+
+    <Border Grid.Row="0"
+            Padding="12,8"
+            Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
+      <TextBlock Text="{Binding Summary}"
+                 TextWrapping="Wrap"
+                 Opacity="0.75"
+                 FontSize="12" />
+    </Border>
+
+    <TextBox Grid.Row="1"
+             Text="{Binding Content}"
+             IsVisible="{Binding IsTextPreview}"
+             IsReadOnly="True"
+             AcceptsReturn="True"
+             TextWrapping="NoWrap"
+             FontFamily="Cascadia Code,Cascadia Mono,Consolas,Menlo,Monospace"
+             FontSize="12"
+             HorizontalAlignment="Stretch"
+             VerticalAlignment="Stretch" />
+
+  </Grid>
+
+</UserControl>

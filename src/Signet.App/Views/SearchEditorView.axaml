@@ -1,0 +1,108 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Signet.App.ViewModels"
+             xmlns:loc="using:Signet.App.Resources"
+             x:Class="Signet.App.Views.SearchEditorView"
+             x:DataType="vm:SearchEditorViewModel">
+
+  <Grid Margin="8" RowDefinitions="Auto,*,Auto,Auto" RowSpacing="6">
+
+    <!-- Filter -->
+    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="6">
+      <TextBlock Text="{loc:Loc ClipEditorWindow_Filter}" VerticalAlignment="Center" />
+      <TextBox Text="{Binding FilterText, Mode=TwoWay}" Width="240"
+               PlaceholderText="{loc:Loc SearchEditorView_FilterPlaceholder}" />
+      <CheckBox Content="{loc:Loc SearchEditorView_AllColumns}" IsChecked="{Binding FilterAll, Mode=TwoWay}"
+                VerticalAlignment="Center" />
+    </StackPanel>
+
+    <!-- Tree + button panel -->
+    <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+      <TreeView x:Name="Tree" Grid.Column="0"
+                ItemsSource="{Binding Nodes}"
+                SelectionMode="Multiple"
+                BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+        <TreeView.Styles>
+          <Style Selector="TreeViewItem" x:DataType="vm:SearchEntryNodeViewModel">
+            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+            <Setter Property="IsVisible" Value="{Binding IsVisible}" />
+          </Style>
+        </TreeView.Styles>
+        <TreeView.ItemTemplate>
+          <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:SearchEntryNodeViewModel">
+            <Grid ColumnDefinitions="200,*,*,110" ColumnSpacing="4" MinHeight="26">
+              <TextBox Grid.Column="0" Text="{Binding Name, Mode=TwoWay}"
+                       BorderThickness="0" Background="Transparent" />
+              <TextBox Grid.Column="1" Text="{Binding Find, Mode=TwoWay}"
+                       IsVisible="{Binding !IsGroup}" PlaceholderText="{loc:Loc FindReplaceView_FindNext}" />
+              <TextBox Grid.Column="2" Text="{Binding Replace, Mode=TwoWay}"
+                       IsVisible="{Binding !IsGroup}" PlaceholderText="{loc:Loc FindReplaceView_ReplaceButton}" />
+              <TextBox Grid.Column="3" Text="{Binding Controls, Mode=TwoWay}"
+                       IsVisible="{Binding !IsGroup}" ToolTip.Tip="{Binding ControlsToolTip}"
+                       PlaceholderText="{loc:Loc SearchEditorView_Controls}" />
+            </Grid>
+          </TreeDataTemplate>
+        </TreeView.ItemTemplate>
+      </TreeView>
+
+      <StackPanel Grid.Column="1" Spacing="4" Width="130">
+        <!-- Core search actions, grouped. -->
+        <Button Content="{loc:Loc SearchEditorView_LoadSearch}" Command="{Binding LoadSearchCommand}" HorizontalAlignment="Stretch" />
+        <Separator Margin="0,6" />
+        <Button Content="{loc:Loc FindReplaceView_FindNext}" Command="{Binding FindCommand}" HorizontalAlignment="Stretch" />
+        <Button Content="{loc:Loc FindReplaceView_ReplaceButton}" Command="{Binding ReplaceCurrentCommand}" HorizontalAlignment="Stretch" />
+        <Separator Margin="0,6" />
+        <Button Content="{loc:Loc FindReplaceView_ReplaceFind}" Command="{Binding ReplaceCommand}" HorizontalAlignment="Stretch" />
+        <Button Content="{loc:Loc FindReplaceView_ReplaceAll}" Command="{Binding ReplaceAllCommand}" HorizontalAlignment="Stretch" />
+        <Separator Margin="0,6" />
+        <Button Content="{loc:Loc FindReplaceView_CountAll}" Command="{Binding CountAllCommand}" HorizontalAlignment="Stretch" />
+        <Button Content="{loc:Loc SearchEditorView_CountsReport}" Command="{Binding CountsReportCommand}" HorizontalAlignment="Stretch" />
+        <Separator Margin="0,6" />
+        <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,*" HorizontalAlignment="Center">
+          <Button Grid.Row="0" Grid.ColumnSpan="2" Content="↑" Command="{Binding MoveUpCommand}" HorizontalAlignment="Center" />
+          <Button Grid.Row="1" Grid.Column="0" Content="←" Command="{Binding MoveLeftCommand}" />
+          <Button Grid.Row="1" Grid.Column="1" Content="→" Command="{Binding MoveRightCommand}" />
+          <Button Grid.Row="2" Grid.ColumnSpan="2" Content="↓" Command="{Binding MoveDownCommand}" HorizontalAlignment="Center" />
+        </Grid>
+
+        <!-- Entry management, import/export and tree actions. -->
+        <Separator Margin="0,10" />
+        <Button Content="{loc:Loc SearchEditorView_SaveCurrentFR}" Command="{Binding SaveCurrentSearchCommand}" HorizontalAlignment="Stretch" />
+        <Button Content="{loc:Loc ClipEditorWindow_AddEntry}" Command="{Binding AddEntryCommand}" HorizontalAlignment="Stretch" />
+        <Button Content="{loc:Loc ClipEditorWindow_AddGroup}" Command="{Binding AddGroupCommand}" HorizontalAlignment="Stretch" />
+        <Button Content="{loc:Loc Common_Delete}" Command="{Binding DeleteCommand}" HorizontalAlignment="Stretch" />
+        <Button Content="{loc:Loc SearchEditorView_FillControls}" Command="{Binding FillControlsCommand}" HorizontalAlignment="Stretch" />
+        <Separator />
+        <Button Content="{loc:Loc Common_Import}" Command="{Binding ImportCommand}" HorizontalAlignment="Stretch" />
+        <Button Content="{loc:Loc Common_Export}" Command="{Binding ExportCommand}" HorizontalAlignment="Stretch" />
+        <Button Content="{loc:Loc ClipEditorWindow_ExportAll}" Command="{Binding ExportAllCommand}" HorizontalAlignment="Stretch" />
+        <Button Content="{loc:Loc Common_Reload}" Command="{Binding ReloadCommand}" HorizontalAlignment="Stretch" />
+        <UniformGrid Columns="2">
+          <Button Content="{loc:Loc Common_Expand}" Command="{Binding ExpandAllCommand}" />
+          <Button Content="{loc:Loc Common_Collapse}" Command="{Binding CollapseAllCommand}" />
+        </UniformGrid>
+      </StackPanel>
+    </Grid>
+
+    <TextBlock Grid.Row="2" Text="{Binding Message}"
+               Foreground="{DynamicResource SystemAccentColor}" TextWrapping="Wrap" />
+
+    <Grid Grid.Row="3" ColumnDefinitions="*,Auto" ColumnSpacing="4"
+          IsVisible="{Binding HasReport}">
+      <Expander Grid.Column="0" x:Name="ReportExpander"
+                Header="{Binding ReportSummary}" IsExpanded="False"
+                HorizontalAlignment="Stretch">
+        <ScrollViewer x:Name="ReportScroll" MaxHeight="160"
+                      HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+          <ItemsControl ItemsSource="{Binding ReportRows}" />
+        </ScrollViewer>
+      </Expander>
+      <Button Grid.Column="1" x:Name="CloseReportButton"
+              VerticalAlignment="Top" Padding="8,4"
+              Background="Transparent" BorderThickness="0"
+              Command="{Binding CloseReportCommand}"
+              Content="✕"
+              ToolTip.Tip="{loc:Loc Common_CloseReportTooltip}" />
+    </Grid>
+  </Grid>
+</UserControl>

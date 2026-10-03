@@ -1,0 +1,40 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:tabs="using:Signet.App.ViewModels.Tabs"
+             xmlns:loc="using:Signet.App.Resources"
+             x:Class="Signet.App.Views.Tabs.FontTabView"
+             x:DataType="tabs:FontTabViewModel">
+
+  <Grid RowDefinitions="Auto,*">
+
+    <Border Grid.Row="0"
+            Padding="10,6"
+            Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
+      <StackPanel Spacing="4">
+        <Grid ColumnDefinitions="*,Auto">
+          <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="{Binding FamilyName}" FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding Subfamily}" FontSize="12" Opacity="0.75" VerticalAlignment="Center" />
+          </StackPanel>
+          <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+            <TextBlock Text="{loc:Loc FontTabView_Obfuscation}" VerticalAlignment="Center" FontSize="12" />
+            <ComboBox x:Name="ObfuscationBox" FontSize="12" MinWidth="90" />
+          </StackPanel>
+        </Grid>
+        <TextBlock Text="{Binding InfoLine}" FontSize="11" Opacity="0.7" TextTrimming="CharacterEllipsis" />
+      </StackPanel>
+    </Border>
+
+    <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+      <Panel>
+        <Image Source="{Binding Preview}" Stretch="None" HorizontalAlignment="Left" VerticalAlignment="Top"
+               IsVisible="{Binding HasPreview}" />
+        <TextBlock Text="{loc:Loc FontTabView_NoPreview}"
+                   Margin="16" Opacity="0.7" FontSize="12"
+                   IsVisible="{Binding !HasPreview}" />
+      </Panel>
+    </ScrollViewer>
+
+  </Grid>
+
+</UserControl>

@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Signet.Core</RootNamespace>
+    <AssemblyName>Signet.Core</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Ulid" />
+    <PackageReference Include="AngleSharp" />
+    <PackageReference Include="PCRE.NET" />
+    <PackageReference Include="WeCantSpell.Hunspell" />
+    <PackageReference Include="DiffPlex" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- MarkupTokenizer and other implementation details are tested directly. -->
+    <InternalsVisibleTo Include="Signet.Core.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- ASCII transliteration tables. -->
+    <EmbeddedResource Include="EmbeddedData\asciify-unidecode-pos.bin" LogicalName="AsciiFy.unidecode-pos" />
+    <EmbeddedResource Include="EmbeddedData\asciify-unidecode-text.bin" LogicalName="AsciiFy.unidecode-text" />
+
+    <!-- Reference data tables -->
+    <EmbeddedResource Include="EmbeddedData\marc-relators.tsv" LogicalName="ReferenceData.marc-relators" />
+    <EmbeddedResource Include="EmbeddedData\languages.tsv" LogicalName="ReferenceData.languages" />
+    <EmbeddedResource Include="EmbeddedData\xml-entities.tsv" LogicalName="ReferenceData.xml-entities" />
+    <EmbeddedResource Include="EmbeddedData\aria-roles.tsv" LogicalName="ReferenceData.aria-roles" />
+    <EmbeddedResource Include="EmbeddedData\aria-clips.json" LogicalName="ReferenceData.aria-clips" />
+    <EmbeddedResource Include="EmbeddedData\codepoint-names.tsv.gz" LogicalName="ReferenceData.codepoint-names" />
+
+    <!-- The built-in en_US spelling dictionary — LibreOffice dictionaries / SCOWL, LGPL
+         + BSD-style with an attribution clause; see EmbeddedData\dictionaries\README_en_US.txt
+         and COPYING_LGPL_v2.1.txt. The .dic is gzip-compressed (~887KB -> ~310KB). -->
+    <EmbeddedResource Include="EmbeddedData\dictionaries\en_US.aff" LogicalName="Spellcheck.dictionary.en_US.aff" />
+    <EmbeddedResource Include="EmbeddedData\dictionaries\en_US.dic.gz" LogicalName="Spellcheck.dictionary.en_US.dic" />
+  </ItemGroup>
+
+  <!-- i18n of Core texts (messages, reference catalogs): CoreStrings.resx = the neutral language
+       (Polish, like Strings.resx in App), CoreStrings.en.resx = the English satellite. Access through
+       Localization/CoreStrings.cs (ResourceManager, no VS generator). -->
+  <ItemGroup>
+    <EmbeddedResource Update="Localization\CoreStrings.en.resx">
+      <DependentUpon>CoreStrings.resx</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>
