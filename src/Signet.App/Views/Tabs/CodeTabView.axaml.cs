@@ -688,11 +688,17 @@ public partial class CodeTabView : UserControl
             return;
         }
 
-        var location = document.GetLocation(offset);
+        Editor.SelectionLength = 0;
         Editor.CaretOffset = offset;
-        Editor.TextArea.Caret.BringCaretToView();
-        Editor.ScrollToLine(location.Line);
+        Editor.TextArea.Caret.BringCaretToView(); // e.g. horizontal scrolling without word wrap
         Editor.Focus();
+
+        // The same mechanism as for Find Next: a tab that was just activated (e.g. by a click in the
+        // preview while a CSS tab was active) has no layout yet, so a single ScrollToLine would use
+        // stale dimensions and leave the line at the very top. The scroll is corrected after the
+        // following layout passes until the line is visible.
+        _pendingMatchScroll = (offset, offset, 0);
+        ScrollPendingMatch();
     }
 
     private void OnFocusRequested() => Editor.TextArea.Focus();

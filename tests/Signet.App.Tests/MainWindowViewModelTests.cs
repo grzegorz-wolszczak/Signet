@@ -553,6 +553,35 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public void Preview_click_while_another_tab_is_active_switches_to_the_previewed_file()
+    {
+        using TempDir temp = new();
+        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
+        MainWindowViewModel sut = New();
+        Book book = new ImportEpub(epub).GetBook();
+        sut.LoadBook(book, epub);
+
+        HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
+        sut.Tabs.OpenResources(new Resource[] { html });
+        var htmlTab = (Signet.App.ViewModels.Tabs.CodeTabViewModel)sut.Tabs.ActiveTab!;
+        int? htmlJump = null;
+        htmlTab.ScrollToOffsetRequested += offset => htmlJump = offset;
+
+        CssResource css = book.GetAllResources().OfType<CssResource>().First();
+        sut.Tabs.OpenResources(new Resource[] { css });
+        var cssTab = (Signet.App.ViewModels.Tabs.CodeTabViewModel)sut.Tabs.ActiveTab!;
+        bool cssJumped = false;
+        cssTab.ScrollToOffsetRequested += _ => cssJumped = true;
+        sut.Preview.CurrentBookPath.Should().Be(html.BookPath, "the preview stays on the last HTML file");
+
+        sut.Preview.HandlePreviewMessage("signet-loc:5");
+
+        sut.Tabs.ActiveTab.Should().BeSameAs(htmlTab, "the click refers to the previewed file, not the CSS tab");
+        htmlJump.Should().Be(5);
+        cssJumped.Should().BeFalse();
+    }
+
+    [Fact]
     public void Bold_action_wraps_the_active_code_tab_selection()
     {
         using TempDir temp = new();

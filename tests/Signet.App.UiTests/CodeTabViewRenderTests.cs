@@ -587,4 +587,58 @@ public sealed class CodeTabViewRenderTests
         (offset + textView.Bounds.Height - bottom).Should().BeGreaterThanOrEqualTo(margin - 0.5, "bottom margin");
         window.Close();
     }
+
+    /// <summary>
+    /// A caret jump (e.g. a click in the preview) requested right after the tab was activated,
+    /// before the editor is laid out. After layout the target line must be visible with a margin
+    /// (regression: the line ended up at the very top edge, partially cut off).
+    /// </summary>
+    [AvaloniaFact]
+    public void Caret_jump_requested_before_the_editor_is_laid_out_is_scrolled_into_view_with_a_margin()
+    {
+        using TempDir temp = new();
+        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
+        html.InitialLoad();
+        string paragraph = string.Concat(Enumerable.Repeat("Ala ma kota, a kot ma Alę i dużo innych słów. ", 12));
+        string body = string.Concat(Enumerable.Range(0, 60).Select(i => "  <p>" + paragraph + "</p>\n\n"));
+        html.SetText("<html>\n<body>\n" + body + "  <p class=\"target\">x</p>\n" + body + "</body>\n</html>");
+
+        var tabModel = new TabManagerModel();
+        OpenTab tab = tabModel.OpenResource(html);
+        (SettingsStore settings, SpellChecker spellChecker) = NewSpellChecker();
+        var vm = new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker) { WordWrap = true };
+        CssResource css = book.GetAllResources().OfType<CssResource>().First();
+        css.InitialLoad();
+        var cssVm = new CodeTabViewModel(tabModel.OpenResource(css), new StatusBarService(), settings, spellChecker) { WordWrap = true };
+        var view = new CodeTabView { DataContext = cssVm };
+        var window = new Window { Width = 500, Height = 300, Content = view };
+        int target = html.GetText().IndexOf("<p class=\"target\">", System.StringComparison.Ordinal);
+
+        // The view is laid out for another tab first (e.g. a CSS file), then switched to the HTML
+        // tab — the jump arrives together with the switch, before the new document is laid out.
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        view.DataContext = vm;
+        vm.GoToOffset(target);
+        for (int i = 0; i < 3; i++)
+        {
+            Dispatcher.UIThread.RunJobs();
+            window.CaptureRenderedFrame();
+        }
+
+        TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
+        TextView textView = editor.TextArea.TextView;
+        double margin = textView.DefaultLineHeight;
+        TextViewPosition position = new(editor.Document.GetLocation(target));
+        double top = textView.GetVisualPosition(position, VisualYPosition.LineTop).Y;
+        double bottom = textView.GetVisualPosition(position, VisualYPosition.LineBottom).Y;
+        double offset = textView.VerticalOffset;
+
+        editor.CaretOffset.Should().Be(target);
+        (top - offset).Should().BeGreaterThanOrEqualTo(margin - 0.5, "top margin");
+        (offset + textView.Bounds.Height - bottom).Should().BeGreaterThanOrEqualTo(margin - 0.5, "bottom margin");
+        window.Close();
+    }
 }

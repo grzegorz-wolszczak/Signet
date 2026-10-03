@@ -2445,8 +2445,34 @@ public sealed partial class MainWindowViewModel
 
     private void OnActiveContentChanged(object? sender, EventArgs e) => _preview.NotifyContentChanged();
 
-    private void OnPreviewCodeCaretJumpRequested(object? sender, int offset) =>
-        ActiveCodeTab?.GoToOffset(offset);
+    // A click in the preview always refers to the file shown in the preview. When another tab is
+    // active (a CSS file, a different HTML file, an image…), the previewed file's tab is activated
+    // (or opened) first, so the caret jump never lands in an unrelated file.
+    private void OnPreviewCodeCaretJumpRequested(object? sender, int offset)
+    {
+        string? previewBookPath = _preview.CurrentBookPath;
+        if (previewBookPath is null || _currentBook is null)
+        {
+            return;
+        }
+
+        if (!string.Equals(ActiveCodeTab?.ResourceBookPath, previewBookPath, StringComparison.Ordinal))
+        {
+            Resource? resource = _currentBook.GetAllResources()
+                .FirstOrDefault(r => string.Equals(r.BookPath, previewBookPath, StringComparison.Ordinal));
+            if (resource is null)
+            {
+                return;
+            }
+
+            _tabManager.OpenResource(resource);
+        }
+
+        if (ActiveCodeTab is { } tab && string.Equals(tab.ResourceBookPath, previewBookPath, StringComparison.Ordinal))
+        {
+            tab.GoToOffset(offset);
+        }
+    }
 
     private void OnActiveTabPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
