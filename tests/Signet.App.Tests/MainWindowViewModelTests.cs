@@ -12,7 +12,6 @@ using Signet.App.Toolbars;
 using Signet.App.ViewModels;
 using Signet.Core;
 using Signet.Core.BookManipulation;
-using Signet.Core.Parsers;
 using Signet.Core.Resources;
 using Signet.Core.Tests.TestSupport;
 using Signet.App.Tests.TestSupport;
@@ -219,110 +218,51 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public void DeleteUnusedMedia_action_raises_DeleteUnusedMediaRequested()
+    public void Cleanup_action_raises_CleanupRequested()
     {
         MainWindowViewModel sut = New();
         bool raised = false;
-        sut.DeleteUnusedMediaRequested += (_, _) => raised = true;
+        sut.CleanupRequested += (_, _) => raised = true;
 
-        sut.Actions.Require(AppActionIds.DeleteUnusedMedia).Execute(null);
+        sut.Actions.Require(AppActionIds.Cleanup).Execute(null);
 
         raised.Should().BeTrue();
     }
 
     [Fact]
-    public void DeleteUnusedStyles_action_raises_DeleteUnusedStylesRequested()
+    public async Task PrepareCleanup_returns_null_without_a_book()
     {
         MainWindowViewModel sut = New();
-        bool raised = false;
-        sut.DeleteUnusedStylesRequested += (_, _) => raised = true;
 
-        sut.Actions.Require(AppActionIds.DeleteUnusedStyles).Execute(null);
+        CleanupViewModel? cleanup = await sut.PrepareCleanupAsync();
 
-        raised.Should().BeTrue();
+        cleanup.Should().BeNull();
     }
 
     [Fact]
-    public async Task GetUnusedMediaCandidates_ReturnsNullAndReportsWhenNothingToDelete()
-    {
-        using TempDir temp = new();
-        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
-        MainWindowViewModel sut = New();
-        sut.LoadBook(new ImportEpub(epub).GetBook(), epub);
-
-        IReadOnlyList<Resource>? candidates = await sut.GetUnusedMediaCandidatesAsync();
-
-        candidates.Should().BeNull();
-        sut.StatusMessage.Should().Be(Strings.Get("Status_NoUnusedMedia"));
-    }
-
-    [Fact]
-    public async Task GetUnusedMediaCandidates_and_ApplyDeleteUnusedMedia_RemoveOrphanResource()
-    {
-        using UiCultureScope culture = new("en");
-        using TempDir temp = new();
-        string tree = temp.Combine("tree");
-        TestFs.CopyDirectory(CorpusPaths.Epub3Media, tree);
-        string opfPath = Path.Combine(tree, "EPUB", "package.opf");
-        File.WriteAllText(
-            opfPath,
-            File.ReadAllText(opfPath).Replace(
-                "  </manifest>",
-                "    <item id=\"orphan\" href=\"images/orphan.png\" media-type=\"image/png\"/>\n  </manifest>"));
-        File.Copy(
-            Path.Combine(tree, "EPUB", "images", "cover.png"), Path.Combine(tree, "EPUB", "images", "orphan.png"));
-        string epub = EpubBuilder.BuildInto(tree, temp, "book.epub");
-
-        MainWindowViewModel sut = New();
-        Book book = new ImportEpub(epub).GetBook();
-        sut.LoadBook(book, epub);
-
-        IReadOnlyList<Resource>? candidates = await sut.GetUnusedMediaCandidatesAsync();
-        candidates.Should().ContainSingle(r => r.BookPath.EndsWith("orphan.png"));
-
-        sut.ApplyDeleteUnusedMedia(candidates!);
-
-        book.GetMediaResources().Should().NotContain(r => r.BookPath.EndsWith("orphan.png"));
-        sut.StatusMessage.Should().Contain("deleted");
-    }
-
-    [Fact]
-    public async Task GetUnusedStyleSelectorCandidates_ReturnsNullAndReportsWhenNothingToDelete()
-    {
-        using TempDir temp = new();
-        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, temp);
-        MainWindowViewModel sut = New();
-        sut.LoadBook(new ImportEpub(epub).GetBook(), epub);
-
-        IReadOnlyList<CssSelectorUsage>? candidates = await sut.GetUnusedStyleSelectorCandidatesAsync();
-
-        candidates.Should().BeNull();
-        sut.StatusMessage.Should().Be(Strings.Get("Status_NoUnusedSelectors"));
-    }
-
-    [Fact]
-    public async Task GetUnusedStyleSelectorCandidates_and_ApplyDeleteUnusedStyles_RemoveSelectorFromCss()
+    public async Task PrepareCleanup_and_ApplyCleanup_remove_an_unused_selector_and_report_it()
     {
         using UiCultureScope culture = new("en");
         using TempDir temp = new();
         string tree = temp.Combine("tree");
         TestFs.CopyDirectory(CorpusPaths.Epub3Minimal, tree);
-        string cssPath = Path.Combine(tree, "EPUB", "styles", "style.css");
-        File.AppendAllText(cssPath, "\n.ghost { color: red }\n");
+        File.AppendAllText(Path.Combine(tree, "EPUB", "styles", "style.css"), "\n.ghost { color: red }\n");
         string epub = EpubBuilder.BuildInto(tree, temp, "book.epub");
 
         MainWindowViewModel sut = New();
         Book book = new ImportEpub(epub).GetBook();
         sut.LoadBook(book, epub);
 
-        IReadOnlyList<CssSelectorUsage>? candidates = await sut.GetUnusedStyleSelectorCandidatesAsync();
-        candidates.Should().ContainSingle(s => s.SelectorText == ".ghost");
+        CleanupViewModel? cleanup = await sut.PrepareCleanupAsync();
+        cleanup.Should().NotBeNull();
+        cleanup!.Sections.Single(s => s.Step == CleanupStep.UnusedSelectors).IsEnabled = true;
+        cleanup.HasChanges.Should().BeTrue();
 
-        sut.ApplyDeleteUnusedStyles(candidates!);
+        sut.ApplyCleanup(cleanup);
 
-        CssResource css = book.GetCssResources().Single();
-        css.GetText().Should().NotContain(".ghost");
-        sut.StatusMessage.Should().Contain("deleted");
+        book.GetCssResources().Single().GetText().Should().NotContain(".ghost");
+        book.Modified.Should().BeTrue();
+        sut.StatusMessage.Should().Be(Strings.Get("Status_CleanupDone"));
     }
 
     [Fact]

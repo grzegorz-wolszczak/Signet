@@ -338,9 +338,7 @@ public sealed partial class MainWindowViewModel
         _actions.SetHandler(AppActionIds.Reports, () => ReportsRequested?.Invoke(this, EventArgs.Empty));
 
         // Delete Unused Media Files / Delete Unused Stylesheet Selectors.
-        _actions.SetHandler(AppActionIds.DeleteUnusedMedia, () => DeleteUnusedMediaRequested?.Invoke(this, EventArgs.Empty));
-        _actions.SetHandler(AppActionIds.DeleteUnusedStyles, () => DeleteUnusedStylesRequested?.Invoke(this, EventArgs.Empty));
-        _actions.SetHandler(AppActionIds.CssCleanup, () => CssCleanupRequested?.Invoke(this, EventArgs.Empty));
+        _actions.SetHandler(AppActionIds.Cleanup, () => CleanupRequested?.Invoke(this, EventArgs.Empty));
         _actions.SetHandler(AppActionIds.LiveCssPanel, () => LiveCssPanelRequested?.Invoke(this, EventArgs.Empty));
 
         // Reformat HTML / Restructure Epub to Signet Norm / Use Standard File Extensions /
@@ -610,22 +608,10 @@ public sealed partial class MainWindowViewModel
     public event EventHandler? SpellcheckEditorRequested;
 
     /// <summary>
-    /// Raised by the "Delete Unused Media Files" action — the view asks
-    /// <see cref="GetUnusedMediaCandidatesAsync"/> for the candidates, shows a modal dialog with the list and,
-    /// once accepted, calls <see cref="ApplyDeleteUnusedMedia"/>.
+    /// Raised by the "Cleanup" action — the view calls <see cref="PrepareCleanupAsync"/>, shows the modal Cleanup
+    /// dialog and, once confirmed, calls <see cref="ApplyCleanup"/>.
     /// </summary>
-    public event EventHandler? DeleteUnusedMediaRequested;
-
-    /// <summary>
-    /// Raised by the "Delete Unused Stylesheet Selectors" action — analogous to
-    /// <see cref="DeleteUnusedMediaRequested"/>.
-    /// </summary>
-    public event EventHandler? DeleteUnusedStylesRequested;
-
-    /// <summary>
-    /// Raised by the "Merge/Remove Unused CSS Rules" action — analogous to <see cref="DeleteUnusedStylesRequested"/>.
-    /// </summary>
-    public event EventHandler? CssCleanupRequested;
+    public event EventHandler? CleanupRequested;
 
     /// <summary>
     /// Raised by the "Live CSS Panel" action — the view calls <see cref="TryResolveLiveCssPanel"/> for the
@@ -1578,13 +1564,11 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <summary>
-    /// Computes the candidates for "Delete Unused Media Files": flushes the open tabs,
-    /// checks the well-formed guard and returns the list of unused media resources to show in
-    /// the dialog. Returns <c>null</c> when no book is open, the well-formed guard failed,
-    /// or the list is empty (in the last two cases a message goes to the status bar and the
-    /// dialog is not shown), and also when the user cancelled the missing DOCTYPE warning.
+    /// Prepares the "Cleanup" dialog: flushes the open tabs, asks about files without a DOCTYPE and analyses the
+    /// book (<see cref="CleanupAnalysis.Prepare"/>). Returns the dialog's view model, or <c>null</c> when no book is
+    /// open, the user cancelled, or an (X)HTML file is not well-formed (then a message goes to the status bar).
     /// </summary>
-    public async Task<IReadOnlyList<Resource>?> GetUnusedMediaCandidatesAsync()
+    public async Task<CleanupViewModel?> PrepareCleanupAsync()
     {
         if (_currentBook is null)
         {
@@ -1592,169 +1576,38 @@ public sealed partial class MainWindowViewModel
         }
 
         _tabManager.SaveAllTabs();
-        if (!await ConfirmMissingDoctypeAsync("Operation_DeleteUnusedMedia").ConfigureAwait(true))
+        if (!await ConfirmMissingDoctypeAsync("Operation_Cleanup").ConfigureAwait(true))
         {
             return null;
         }
 
-        UnusedMediaResult result = _currentBook.FindUnusedMediaResources();
-        if (!result.Applied)
+        CleanupPreparation preparation = CleanupAnalysis.Prepare(_currentBook);
+        if (preparation.Analysis is null)
         {
             _statusBar.ShowMessage(
-                Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_DeleteUnusedMedia"), result.NotWellFormed?.Filename),
+                Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_Cleanup"), preparation.NotWellFormed?.Filename),
                 TimeSpan.FromSeconds(6), NotificationLevel.Warning);
             return null;
         }
 
-        if (result.UnusedResources.Count == 0)
-        {
-            _statusBar.ShowMessage(Strings.Get("Status_NoUnusedMedia"), TimeSpan.FromSeconds(4));
-            return null;
-        }
-
-        return result.UnusedResources;
-    }
-
-    /// <summary>Deletes the media resources selected in the dialog and refreshes the panels.</summary>
-    public void ApplyDeleteUnusedMedia(IReadOnlyList<Resource> resources)
-    {
-        ArgumentNullException.ThrowIfNull(resources);
-        if (_currentBook is null || resources.Count == 0)
-        {
-            return;
-        }
-
-        _currentBook.DeleteMediaResources(resources);
-        BookBrowser.Refresh();
-        _preview.Refresh();
-        _statusBar.ShowMessage(Strings.Get("Status_UnusedMediaDeleted"), TimeSpan.FromSeconds(4));
+        return new CleanupViewModel(preparation.Analysis, _settings.CleanupEnabledSteps, NavigateToBookPathAtOffset);
     }
 
     /// <summary>
-    /// Computes the candidates for "Delete Unused Stylesheet Selectors" — analogous to
-    /// <see cref="GetUnusedMediaCandidatesAsync"/>.
+    /// Applies the plan confirmed in the "Cleanup" dialog, remembers the checked steps for the next time and
+    /// refreshes the open tabs and panels.
     /// </summary>
-    public async Task<IReadOnlyList<CssSelectorUsage>?> GetUnusedStyleSelectorCandidatesAsync()
+    public void ApplyCleanup(CleanupViewModel cleanup)
     {
-        if (_currentBook is null)
-        {
-            return null;
-        }
-
-        _tabManager.SaveAllTabs();
-        if (!await ConfirmMissingDoctypeAsync("Operation_DeleteUnusedStyles").ConfigureAwait(true))
-        {
-            return null;
-        }
-
-        UnusedStyleSelectorsResult result = _currentBook.FindUnusedStyleSelectors();
-        if (!result.Applied)
-        {
-            _statusBar.ShowMessage(
-                Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_DeleteUnusedStyles"), result.NotWellFormed?.Filename),
-                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
-            return null;
-        }
-
-        if (result.UnusedSelectors.Count == 0)
-        {
-            _statusBar.ShowMessage(Strings.Get("Status_NoUnusedSelectors"), TimeSpan.FromSeconds(4));
-            return null;
-        }
-
-        return result.UnusedSelectors;
-    }
-
-    /// <summary>
-    /// Deletes the selectors chosen in the dialog and refreshes the panels (including reloading the open
-    /// tabs, because the CSS/XHTML text changed).
-    /// </summary>
-    public void ApplyDeleteUnusedStyles(IReadOnlyList<CssSelectorUsage> selectors)
-    {
-        ArgumentNullException.ThrowIfNull(selectors);
-        if (_currentBook is null || selectors.Count == 0)
+        ArgumentNullException.ThrowIfNull(cleanup);
+        _settings.CleanupEnabledSteps = cleanup.EnabledSteps;
+        if (_currentBook is null || !_currentBook.ApplyCleanup(cleanup.Plan))
         {
             return;
         }
 
-        if (!_currentBook.DeleteCssSelectors(selectors))
-        {
-            return;
-        }
-
-        foreach (ContentTabViewModel view in _tabManager.OpenTabViews)
-        {
-            view.Reload();
-        }
-
-        BookBrowser.Refresh();
-        _preview.Refresh();
-        _statusBar.ShowMessage(Strings.Get("Status_SelectorsDeleted"), TimeSpan.FromSeconds(4));
-    }
-
-    /// <summary>
-    /// Computes the candidates for "Merge/Remove Unused CSS Rules" — analogous to
-    /// <see cref="GetUnusedStyleSelectorCandidatesAsync"/>.
-    /// </summary>
-    public async Task<Signet.Core.BookManipulation.CssCleanupResult?> GetCssCleanupCandidatesAsync()
-    {
-        if (_currentBook is null)
-        {
-            return null;
-        }
-
-        _tabManager.SaveAllTabs();
-        if (!await ConfirmMissingDoctypeAsync("Operation_CssCleanup").ConfigureAwait(true))
-        {
-            return null;
-        }
-
-        Signet.Core.BookManipulation.CssCleanupResult result = _currentBook.FindCssCleanupCandidates();
-        if (!result.Applied)
-        {
-            _statusBar.ShowMessage(
-                Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_CssCleanup"), result.NotWellFormed?.Filename),
-                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
-            return null;
-        }
-
-        if (result.MergeCandidates.Count == 0 && result.UnusedStylesheets.Count == 0)
-        {
-            _statusBar.ShowMessage(Strings.Get("Status_NoCssToClean"), TimeSpan.FromSeconds(4));
-            return null;
-        }
-
-        return result;
-    }
-
-    /// <summary>Applies the chosen merges and/or removals of unlinked CSS stylesheets and refreshes the panels.</summary>
-    public void ApplyCssCleanup(
-        IReadOnlyList<Signet.Core.Parsers.CssMergeCandidate> merges,
-        IReadOnlyList<Signet.Core.Resources.CssResource> unusedStylesheets)
-    {
-        ArgumentNullException.ThrowIfNull(merges);
-        ArgumentNullException.ThrowIfNull(unusedStylesheets);
-        if (_currentBook is null)
-        {
-            return;
-        }
-
-        bool merged = merges.Count > 0 && _currentBook.ApplyCssMerges(merges);
-        bool deleted = unusedStylesheets.Count > 0 && _currentBook.DeleteUnreferencedStylesheets(unusedStylesheets);
-
-        if (!merged && !deleted)
-        {
-            return;
-        }
-
-        foreach (ContentTabViewModel view in _tabManager.OpenTabViews)
-        {
-            view.Reload();
-        }
-
-        BookBrowser.Refresh();
-        _preview.Refresh();
-        _statusBar.ShowMessage(Strings.Get("Status_CssCleaned"), TimeSpan.FromSeconds(4));
+        RefreshAfterMaintenanceOperation();
+        _statusBar.ShowMessage(Strings.Get("Status_CleanupDone"), TimeSpan.FromSeconds(4));
     }
 
     /// <summary>Refreshes the open tabs, the Book Browser panel and Preview after a whole-book maintenance operation.</summary>

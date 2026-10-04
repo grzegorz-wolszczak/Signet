@@ -1,0 +1,151 @@
+using System;
+using System.IO;
+using System.Linq;
+using AwesomeAssertions;
+using Signet.App.ViewModels;
+using Signet.Core.BookManipulation;
+using Signet.Core.Tests.TestSupport;
+using Xunit;
+
+namespace Signet.App.Tests;
+
+/// <summary>
+/// Tests for <see cref="CleanupViewModel"/> — the sections of the Cleanup dialog and re-planning after every toggle.
+/// </summary>
+public sealed class CleanupViewModelTests : IDisposable
+{
+    private readonly TempDir _temp = new();
+    private readonly Book _book;
+
+    public CleanupViewModelTests()
+    {
+        // A book with an unused selector whose rule is the only user of an image.
+        string tree = _temp.Combine("tree");
+        TestFs.CopyDirectory(CorpusPaths.Epub3Media, tree);
+        string opfPath = Path.Combine(tree, "EPUB", "package.opf");
+        File.WriteAllText(
+            opfPath,
+            File.ReadAllText(opfPath).Replace(
+                "  </manifest>",
+                "    <item id=\"bg\" href=\"images/bg.png\" media-type=\"image/png\"/>\n  </manifest>",
+                StringComparison.Ordinal));
+        File.Copy(Path.Combine(tree, "EPUB", "images", "cover.png"), Path.Combine(tree, "EPUB", "images", "bg.png"));
+        File.AppendAllText(Path.Combine(tree, "EPUB", "styles", "style.css"), "\n.ghost { background: url(../images/bg.png); }\n");
+        string epub = EpubBuilder.BuildInto(tree, _temp, "book.epub");
+        _book = new ImportEpub(epub).GetBook();
+    }
+
+    public void Dispose()
+    {
+        _book.Dispose();
+        _temp.Dispose();
+    }
+
+    private CleanupViewModel New(params CleanupStep[] enabled) =>
+        new(CleanupAnalysis.Prepare(_book).Analysis!, enabled, (_, _) => { });
+
+    private static CleanupSectionViewModel Section(CleanupViewModel vm, CleanupStep step) =>
+        vm.Sections.Single(s => s.Step == step);
+
+    [Fact]
+    public void Sections_follow_the_execution_order_and_the_remembered_choice()
+    {
+        CleanupViewModel vm = New(CleanupStep.UnusedMedia);
+
+        vm.Sections.Select(s => s.Step).Should().Equal(Enum.GetValues<CleanupStep>());
+        vm.EnabledSteps.Should().Equal(CleanupStep.UnusedMedia);
+        Section(vm, CleanupStep.MergeSameSelectors).HasWarning.Should().BeTrue();
+        Section(vm, CleanupStep.UnusedMedia).HasWarning.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Nothing_enabled_means_no_changes()
+    {
+        CleanupViewModel vm = New();
+
+        vm.HasChanges.Should().BeFalse();
+        vm.Sections.Should().OnlyContain(s => s.Items.Count == 0);
+    }
+
+    [Fact]
+    public void Enabling_an_earlier_section_replans_the_later_ones()
+    {
+        CleanupViewModel vm = New(CleanupStep.UnusedMedia);
+        Section(vm, CleanupStep.UnusedMedia).Items.Should().BeEmpty();
+
+        Section(vm, CleanupStep.UnusedSelectors).IsEnabled = true;
+
+        Section(vm, CleanupStep.UnusedSelectors).Items.Should().ContainSingle(i => i.Text == ".ghost");
+        Section(vm, CleanupStep.UnusedMedia).Items.Should().ContainSingle(i => i.BookPath.EndsWith("bg.png", StringComparison.Ordinal));
+        vm.HasChanges.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Unchecking_an_item_replans_the_later_sections_and_keeps_the_row()
+    {
+        CleanupViewModel vm = New(CleanupStep.UnusedSelectors, CleanupStep.UnusedMedia);
+        CleanupItemViewModel ghost = Section(vm, CleanupStep.UnusedSelectors).Items.Single(i => i.Text == ".ghost");
+
+        ghost.IsChecked = false;
+
+        Section(vm, CleanupStep.UnusedMedia).Items.Should().BeEmpty();
+        Section(vm, CleanupStep.UnusedSelectors).Items.Should().Contain(ghost);
+        vm.Plan.GetStep(CleanupStep.UnusedSelectors)!.AppliedCount.Should().Be(0);
+    }
+
+    [Fact]
+    public void A_risky_merge_is_unchecked_until_the_user_checks_it()
+    {
+        using TempDir temp = new();
+        using Book book = RiskyMergeBook(temp);
+        CleanupViewModel vm = new(CleanupAnalysis.Prepare(book).Analysis!, new[] { CleanupStep.MergeSameSelectors }, (_, _) => { });
+        CleanupSectionViewModel section = Section(vm, CleanupStep.MergeSameSelectors);
+        CleanupItemViewModel merge = section.Items.Single();
+
+        merge.IsRisky.Should().BeTrue();
+        merge.IsChecked.Should().BeFalse();
+        merge.Consequences.Should().NotBeEmpty();
+        vm.HasChanges.Should().BeFalse();
+
+        merge.IsChecked = true;
+
+        vm.HasChanges.Should().BeTrue();
+        vm.Plan.GetStep(CleanupStep.MergeSameSelectors)!.Items.Single().IsApplied.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Select_all_does_not_accept_a_risky_merge()
+    {
+        using TempDir temp = new();
+        using Book book = RiskyMergeBook(temp);
+        CleanupViewModel vm = new(CleanupAnalysis.Prepare(book).Analysis!, new[] { CleanupStep.MergeSameSelectors }, (_, _) => { });
+        CleanupSectionViewModel section = Section(vm, CleanupStep.MergeSameSelectors);
+
+        section.SelectAllCommand.Execute(null);
+
+        section.Items.Single().IsChecked.Should().BeFalse();
+        vm.HasChanges.Should().BeFalse();
+    }
+
+    private static Book RiskyMergeBook(TempDir temp)
+    {
+        string tree = temp.Combine("risky");
+        TestFs.CopyDirectory(CorpusPaths.Epub3Minimal, tree);
+        File.AppendAllText(Path.Combine(tree, "EPUB", "styles", "style.css"), "\n.a { color: red; }\n.b { color: green; background: white; }\n.a { background: blue; }\n");
+        string chapter = Path.Combine(tree, "EPUB", "text", "chapter1.xhtml");
+        File.WriteAllText(chapter, File.ReadAllText(chapter).Replace("<p>Hello, world.</p>", "<p class=\"a b\">Hello, world.</p>", StringComparison.Ordinal));
+        return new ImportEpub(EpubBuilder.BuildInto(tree, temp, "risky.epub")).GetBook();
+    }
+
+    [Fact]
+    public void Select_none_unchecks_every_item_of_the_section()
+    {
+        CleanupViewModel vm = New(CleanupStep.UnusedSelectors);
+        CleanupSectionViewModel section = Section(vm, CleanupStep.UnusedSelectors);
+
+        section.SelectNoneCommand.Execute(null);
+
+        section.Items.Should().OnlyContain(i => !i.IsChecked);
+        vm.HasChanges.Should().BeFalse();
+    }
+}

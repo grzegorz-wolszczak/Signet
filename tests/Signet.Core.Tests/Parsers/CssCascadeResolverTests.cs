@@ -333,6 +333,35 @@ public sealed class CssCascadeResolverTests
         loser.OverriddenBy!.SelectorText.Should().Be("#special");
     }
 
+    [Fact]
+    public void Resolve_includes_rules_from_an_imported_stylesheet_before_the_importing_one()
+    {
+        using TempDir temp = new();
+        using Book book = LoadModifiedMinimal(
+            temp,
+            tree =>
+            {
+                string styles = Path.Combine(tree, "EPUB", "styles");
+                File.WriteAllText(Path.Combine(styles, "imported.css"), ".note { color: red; }");
+                string opfPath = Path.Combine(tree, "EPUB", "package.opf");
+                File.WriteAllText(opfPath, File.ReadAllText(opfPath).Replace(
+                    "  </manifest>",
+                    "    <item id=\"imported\" href=\"styles/imported.css\" media-type=\"text/css\"/>\n  </manifest>",
+                    StringComparison.Ordinal));
+                string cssPath = Path.Combine(styles, "style.css");
+                File.WriteAllText(cssPath, "@import \"imported.css\";\n" + File.ReadAllText(cssPath) + "\n.note { color: blue; }\n");
+                SetChapter1Body(tree, "<p class=\"note\">hi</p>");
+            });
+
+        HtmlResource html = Chapter1(book);
+        CssCascadeResult? result = CssCascadeResolver.Resolve(html, OffsetOfTag(html, "<p class=\"note\">"), ResolveCssInfo(book));
+
+        result.Should().NotBeNull();
+        result!.MatchedRules.Select(r => r.BookPath.Split('/')[^1]).Should().Equal("imported.css", "style.css");
+        result.MatchedRules[0].Declarations.Single().IsOverridden.Should().BeTrue();
+        result.MatchedRules[1].Declarations.Single().IsOverridden.Should().BeFalse();
+    }
+
     [Theory]
     [InlineData("color", true)]
     [InlineData("Font-Size", true)]

@@ -110,9 +110,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             _boundViewModel.PreferencesRequested -= OnPreferencesRequested;
             _boundViewModel.ReportsRequested -= OnReportsRequested;
             _boundViewModel.SpellcheckEditorRequested -= OnSpellcheckEditorRequested;
-            _boundViewModel.DeleteUnusedMediaRequested -= OnDeleteUnusedMediaRequested;
-            _boundViewModel.DeleteUnusedStylesRequested -= OnDeleteUnusedStylesRequested;
-            _boundViewModel.CssCleanupRequested -= OnCssCleanupRequested;
+            _boundViewModel.CleanupRequested -= OnCleanupRequested;
             _boundViewModel.LiveCssPanelRequested -= OnLiveCssPanelRequested;
             _boundViewModel.LiveCssContextChanged -= OnLiveCssContextChanged;
             _boundViewModel.SearchEditorRequested -= OnSearchEditorRequested;
@@ -158,9 +156,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         _boundViewModel.PreferencesRequested += OnPreferencesRequested;
         _boundViewModel.ReportsRequested += OnReportsRequested;
         _boundViewModel.SpellcheckEditorRequested += OnSpellcheckEditorRequested;
-        _boundViewModel.DeleteUnusedMediaRequested += OnDeleteUnusedMediaRequested;
-        _boundViewModel.DeleteUnusedStylesRequested += OnDeleteUnusedStylesRequested;
-        _boundViewModel.CssCleanupRequested += OnCssCleanupRequested;
+        _boundViewModel.CleanupRequested += OnCleanupRequested;
         _boundViewModel.LiveCssPanelRequested += OnLiveCssPanelRequested;
         _boundViewModel.LiveCssContextChanged += OnLiveCssContextChanged;
         _boundViewModel.SearchEditorRequested += OnSearchEditorRequested;
@@ -1014,10 +1010,10 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
     }
 
     /// <summary>
-    /// Handles the "Delete Unused Media Files" action: computes the candidates, shows a modal
-    /// dialog with the list and, once accepted, deletes the checked resources.
+    /// Handles the "Cleanup" action: analyses the book, shows the modal Cleanup dialog with the preview of the
+    /// changes and, once confirmed, applies them.
     /// </summary>
-    private async void OnDeleteUnusedMediaRequested(object? sender, EventArgs e)
+    private async void OnCleanupRequested(object? sender, EventArgs e)
     {
         MainWindowViewModel? vm = _boundViewModel;
         if (vm is null)
@@ -1025,67 +1021,10 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             return;
         }
 
-        IReadOnlyList<Signet.Core.Resources.Resource>? candidates = await vm.GetUnusedMediaCandidatesAsync();
-        if (candidates is null)
+        CleanupViewModel? cleanup = await vm.PrepareCleanupAsync();
+        if (cleanup is not null && await CleanupWindow.AskAsync(this, cleanup))
         {
-            return;
-        }
-
-        IReadOnlyList<Signet.Core.Resources.Resource>? chosen = await DeleteUnusedMediaWindow.AskAsync(
-            this, candidates, bookPath => vm.NavigateToBookPathAtOffset(bookPath, 0));
-        if (chosen is not null)
-        {
-            vm.ApplyDeleteUnusedMedia(chosen);
-        }
-    }
-
-    /// <summary>
-    /// Handles the "Delete Unused Stylesheet Selectors" action — analogous to
-    /// <see cref="OnDeleteUnusedMediaRequested"/>.
-    /// </summary>
-    private async void OnDeleteUnusedStylesRequested(object? sender, EventArgs e)
-    {
-        MainWindowViewModel? vm = _boundViewModel;
-        if (vm is null)
-        {
-            return;
-        }
-
-        IReadOnlyList<Signet.Core.Parsers.CssSelectorUsage>? candidates = await vm.GetUnusedStyleSelectorCandidatesAsync();
-        if (candidates is null)
-        {
-            return;
-        }
-
-        IReadOnlyList<Signet.Core.Parsers.CssSelectorUsage>? chosen = await DeleteUnusedStylesWindow.AskAsync(
-            this, candidates, vm.NavigateToBookPathAtOffset);
-        if (chosen is not null)
-        {
-            vm.ApplyDeleteUnusedStyles(chosen);
-        }
-    }
-
-    /// <summary>
-    /// Handles the "Merge/Remove Unused CSS Rules" action — analogous to <see cref="OnDeleteUnusedStylesRequested"/>.
-    /// </summary>
-    private async void OnCssCleanupRequested(object? sender, EventArgs e)
-    {
-        MainWindowViewModel? vm = _boundViewModel;
-        if (vm is null)
-        {
-            return;
-        }
-
-        Signet.Core.BookManipulation.CssCleanupResult? candidates = await vm.GetCssCleanupCandidatesAsync();
-        if (candidates is null)
-        {
-            return;
-        }
-
-        CssCleanupSelection? chosen = await CssCleanupWindow.AskAsync(this, candidates);
-        if (chosen is not null)
-        {
-            vm.ApplyCssCleanup(chosen.Merges, chosen.UnusedStylesheets);
+            vm.ApplyCleanup(cleanup);
         }
     }
 

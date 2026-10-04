@@ -116,39 +116,6 @@
   <data name="ClipsPanelView_ExpandAll" xml:space="preserve">
     <value>Expand All</value>
   </data>
-  <data name="Common_ToggleSelectAll" xml:space="preserve">
-    <value>Select / deselect all</value>
-  </data>
-  <data name="DeleteUnusedMediaWindow_Title" xml:space="preserve">
-    <value>Delete Unused Media Files</value>
-  </data>
-  <data name="DeleteUnusedMediaWindow_DeleteMarked" xml:space="preserve">
-    <value>Delete Marked Files</value>
-  </data>
-  <data name="DeleteUnusedStylesWindow_Title" xml:space="preserve">
-    <value>Delete Unused Stylesheet Selectors</value>
-  </data>
-  <data name="DeleteUnusedStylesWindow_DeleteMarked" xml:space="preserve">
-    <value>Delete Marked Styles</value>
-  </data>
-  <data name="DeleteUnusedStylesWindow_FileColumn" xml:space="preserve">
-    <value>File</value>
-  </data>
-  <data name="DeleteUnusedStylesWindow_StyleColumn" xml:space="preserve">
-    <value>Style</value>
-  </data>
-  <data name="CssCleanupWindow_Title" xml:space="preserve">
-    <value>Merge / Remove Unused CSS Rules</value>
-  </data>
-  <data name="CssCleanupWindow_Apply" xml:space="preserve">
-    <value>Apply Marked</value>
-  </data>
-  <data name="CssCleanupWindow_MergeHeader" xml:space="preserve">
-    <value>Rules to merge (identical selector / identical properties)</value>
-  </data>
-  <data name="CssCleanupWindow_UnusedStylesheetsHeader" xml:space="preserve">
-    <value>Stylesheets not linked by any file</value>
-  </data>
   <data name="LiveCssPanelWindow_Title" xml:space="preserve">
     <value>Live CSS Panel</value>
   </data>
@@ -1821,15 +1788,6 @@ Do you want to save the changes?</value>
   <data name="Action_MainWindow_SearchEditor" xml:space="preserve">
     <value>&amp;Saved Searches...</value>
   </data>
-  <data name="Action_MainWindow_DeleteUnusedMedia" xml:space="preserve">
-    <value>&amp;Delete Unused Media Files...</value>
-  </data>
-  <data name="Action_MainWindow_DeleteUnusedStyles" xml:space="preserve">
-    <value>Delete &amp;Unused Stylesheet Selectors...</value>
-  </data>
-  <data name="Action_MainWindow_CssCleanup" xml:space="preserve">
-    <value>&amp;Merge/Remove Unused CSS Rules...</value>
-  </data>
   <data name="Action_MainWindow_LiveCssPanel" xml:space="preserve">
     <value>&amp;Live CSS Panel</value>
   </data>
@@ -2217,15 +2175,6 @@ Do you want to save the changes?</value>
   <data name="Status_CancelledNotWellFormed" xml:space="preserve">
     <value>{0} cancelled: {1} is not well-formed.</value>
   </data>
-  <data name="Operation_DeleteUnusedMedia" xml:space="preserve">
-    <value>Delete Unused Media Files</value>
-  </data>
-  <data name="Operation_DeleteUnusedStyles" xml:space="preserve">
-    <value>Delete Unused Stylesheet Selectors</value>
-  </data>
-  <data name="Operation_CssCleanup" xml:space="preserve">
-    <value>Merge/Remove Unused CSS Rules</value>
-  </data>
   <data name="Operation_RenameClass" xml:space="preserve">
     <value>Rename Class</value>
   </data>
@@ -2249,24 +2198,6 @@ Do you want to save the changes?</value>
   </data>
   <data name="Operation_Rebase" xml:space="preserve">
     <value>Rebase manifest IDs</value>
-  </data>
-  <data name="Status_NoUnusedMedia" xml:space="preserve">
-    <value>There are no unused image, video or audio files to delete.</value>
-  </data>
-  <data name="Status_UnusedMediaDeleted" xml:space="preserve">
-    <value>Unused media files deleted.</value>
-  </data>
-  <data name="Status_NoUnusedSelectors" xml:space="preserve">
-    <value>There are no unused stylesheet selectors to delete.</value>
-  </data>
-  <data name="Status_SelectorsDeleted" xml:space="preserve">
-    <value>Selectors deleted.</value>
-  </data>
-  <data name="Status_NoCssToClean" xml:space="preserve">
-    <value>No rules to merge and no unlinked stylesheets were found.</value>
-  </data>
-  <data name="Status_CssCleaned" xml:space="preserve">
-    <value>CSS cleaned up.</value>
   </data>
   <data name="Status_ImageMissing" xml:space="preserve">
     <value>Image does not exist: {0}</value>
@@ -3532,5 +3463,86 @@ Insert anyway?</value>
   </data>
   <data name="SpecialCharacterWindow_DoubleClickInsertsCell" xml:space="preserve">
     <value>Double-click inserts the cell content</value>
+  </data>
+  <data name="Action_MainWindow_Cleanup" xml:space="preserve">
+    <value>&amp;Cleanup...</value>
+  </data>
+  <data name="Operation_Cleanup" xml:space="preserve">
+    <value>Cleanup</value>
+  </data>
+  <data name="Status_CleanupDone" xml:space="preserve">
+    <value>Cleanup finished.</value>
+  </data>
+  <data name="CleanupWindow_Title" xml:space="preserve">
+    <value>Cleanup</value>
+  </data>
+  <data name="CleanupWindow_Intro" xml:space="preserve">
+    <value>Check the operations to perform. The preview shows what will change before anything is changed. The operations run in section order (top to bottom), and each one sees the result of the previous ones.</value>
+  </data>
+  <data name="CleanupWindow_Details" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="CleanupWindow_SelectAll" xml:space="preserve">
+    <value>Select all</value>
+  </data>
+  <data name="CleanupWindow_SelectNone" xml:space="preserve">
+    <value>Select none</value>
+  </data>
+  <data name="CleanupWindow_DoubleClickHint" xml:space="preserve">
+    <value>Double-click opens the file at that place.</value>
+  </data>
+  <data name="Cleanup_NothingFound" xml:space="preserve">
+    <value>Nothing to do.</value>
+  </data>
+  <data name="Cleanup_MergeWarning" xml:space="preserve">
+    <value>Merges that would change how the book looks are marked ⚠ and unchecked by default. Each one lists exactly what will change — check them only deliberately.</value>
+  </data>
+  <data name="Cleanup_UnreferencedStylesheets_Title" xml:space="preserve">
+    <value>Remove unreferenced stylesheets</value>
+  </data>
+  <data name="Cleanup_UnreferencedStylesheets_Description" xml:space="preserve">
+    <value>Removes CSS stylesheets that no XHTML file references.</value>
+  </data>
+  <data name="Cleanup_UnreferencedStylesheets_Summary" xml:space="preserve">
+    <value>Stylesheets to remove: {0} of {1}.</value>
+  </data>
+  <data name="Cleanup_UnusedSelectors_Title" xml:space="preserve">
+    <value>Remove unused CSS selectors</value>
+  </data>
+  <data name="Cleanup_UnusedSelectors_Description" xml:space="preserve">
+    <value>Removes selectors that match nothing in the XHTML files from stylesheets and &lt;style&gt; blocks (a rule disappears when none of its selectors is left).</value>
+  </data>
+  <data name="Cleanup_UnusedSelectors_Summary" xml:space="preserve">
+    <value>Selectors to remove: {0} of {1}.</value>
+  </data>
+  <data name="Cleanup_MergeSameSelectors_Title" xml:space="preserve">
+    <value>Merge CSS rules with identical selectors</value>
+  </data>
+  <data name="Cleanup_MergeSameSelectors_Description" xml:space="preserve">
+    <value>Merges rules in the same stylesheet that have identical selectors.</value>
+  </data>
+  <data name="Cleanup_MergeSameSelectors_Summary" xml:space="preserve">
+    <value>Groups to merge: {0} of {1} (rules in the merged groups: {2}).</value>
+  </data>
+  <data name="Cleanup_MergeSameProperties_Title" xml:space="preserve">
+    <value>Merge CSS rules with identical properties</value>
+  </data>
+  <data name="Cleanup_MergeSameProperties_Description" xml:space="preserve">
+    <value>Merges rules in the same stylesheet that have identical properties.</value>
+  </data>
+  <data name="Cleanup_MergeSameProperties_Summary" xml:space="preserve">
+    <value>Groups to merge: {0} of {1} (rules in the merged groups: {2}).</value>
+  </data>
+  <data name="Cleanup_UnusedMedia_Title" xml:space="preserve">
+    <value>Remove unused media files</value>
+  </data>
+  <data name="Cleanup_UnusedMedia_Description" xml:space="preserve">
+    <value>Removes images, SVG, audio and video that no XHTML or CSS file references (after the operations above). The cover is always kept.</value>
+  </data>
+  <data name="Cleanup_UnusedMedia_Summary" xml:space="preserve">
+    <value>Files to remove: {0} of {1}.</value>
+  </data>
+  <data name="Cleanup_RiskySummary" xml:space="preserve">
+    <value> Risky (⚠, unchecked by default): {0}.</value>
   </data>
 </root>

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using AngleSharp.Dom;
 using Signet.Core.Misc;
 using Signet.Core.Parsers;
@@ -189,22 +188,10 @@ public sealed record ClassRenameResult(ClassRenameStats Stats, IReadOnlyDictiona
 /// </remarks>
 public sealed class ClassRenamer
 {
-    private static readonly Regex CommentRegex = new(@"/\*.*?\*/", RegexOptions.Singleline | RegexOptions.Compiled);
-
-    private static readonly Regex ImportRegex = new(
-        @"@import\s+(?:url\(\s*)?[""']?(?<href>[^""')\s;]+)[""']?",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
-    // States and pseudo-elements — they cannot be checked on a static document, and the element uses
-    // such a rule anyway.
-    private static readonly Regex DynamicPseudoRegex = new(
-        @"::?(?:hover|focus|focus-within|focus-visible|active|visited|link|any-link|target|before|after|first-line|first-letter|marker|selection|placeholder|backdrop)\b(?:\([^)]*\))?",
-        RegexOptions.IgnoreCase | RegexOptions.Compiled);
-
     private readonly List<HtmlFile> _htmlFiles;
     private readonly List<StyleSheet> _sources = new();
     private readonly Dictionary<string, StyleSheet> _cssByPath = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, List<string>> _importsByPath = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, IReadOnlyList<string>> _importsByPath = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _cssTexts = new(StringComparer.Ordinal);
     private readonly HashSet<string> _existingClasses = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Usage> _usageCache = new(StringComparer.Ordinal);
@@ -221,7 +208,7 @@ public sealed class ClassRenamer
             _sources.Add(sheet);
             _cssByPath[css.BookPath] = sheet;
             _cssTexts[css.BookPath] = css.Text;
-            _importsByPath[css.BookPath] = ParseImports(css.BookPath, css.Text);
+            _importsByPath[css.BookPath] = CssImports.Parse(css.Text, Core.BookPath.StartingDir(css.BookPath));
         }
 
         _htmlFiles = htmlSources.Select(s => new HtmlFile(s.BookPath, s.Text)).ToList();
@@ -541,66 +528,18 @@ public sealed class ClassRenamer
         return usage;
     }
 
-    private static bool Matches(IElement element, string selector)
-    {
-        string stripped = DynamicPseudoRegex.Replace(selector, string.Empty).Trim();
-        if (stripped.Length == 0)
-        {
-            return true;
-        }
+    // A selector AngleSharp does not understand is treated as matching (safer to change too much than to lose a style).
+    private static bool Matches(IElement element, string selector) =>
+        CssSelectorMatching.TryMatch(element, selector) ?? true;
 
-        try
-        {
-            return element.Matches(stripped);
-        }
-        catch (Exception)
-        {
-            return true;
-        }
-    }
-
-    // Stylesheets visible to a document: the linked ones (document order) with @import expanded.
-    private List<StyleSheet> VisibleSheets(HtmlFile html)
-    {
-        List<StyleSheet> result = new();
-        HashSet<string> seen = new(StringComparer.Ordinal);
-        foreach (string bookPath in html.LinkedStylesheets)
-        {
-            AddWithImports(bookPath, result, seen);
-        }
-
-        return result;
-    }
-
-    private void AddWithImports(string bookPath, List<StyleSheet> result, HashSet<string> seen)
-    {
-        if (!seen.Add(bookPath) || !_cssByPath.TryGetValue(bookPath, out StyleSheet? sheet))
-        {
-            return;
-        }
-
-        foreach (string imported in _importsByPath[bookPath])
-        {
-            AddWithImports(imported, result, seen);
-        }
-
-        result.Add(sheet);
-    }
-
-    private static List<string> ParseImports(string bookPath, string cssText)
-    {
-        string folder = BookPath.StartingDir(bookPath);
-        List<string> imports = new();
-        foreach (Match match in ImportRegex.Matches(CommentRegex.Replace(cssText, string.Empty)))
-        {
-            if (LinkReference.ResolveBookPath(match.Groups["href"].Value, folder) is { } resolved)
-            {
-                imports.Add(resolved);
-            }
-        }
-
-        return imports;
-    }
+    // Stylesheets visible to a document: the linked ones (document order) and the ones imported by its
+    // <style> blocks, with @import expanded.
+    private List<StyleSheet> VisibleSheets(HtmlFile html) =>
+        CssImports.VisibleStylesheets(
+                html.LinkedStylesheets.Concat(CssImports.FromStyleBlocks(html.Text, html.BookPath)),
+                bookPath => _importsByPath.TryGetValue(bookPath, out IReadOnlyList<string>? imports) ? imports : null)
+            .Select(bookPath => _cssByPath[bookPath])
+            .ToList();
 
     private StyleSheet? FindSource(string bookPath, int styleBlockIndex) =>
         _sources.FirstOrDefault(s => string.Equals(s.BookPath, bookPath, StringComparison.Ordinal) && s.StyleBlockIndex == styleBlockIndex);

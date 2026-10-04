@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using AwesomeAssertions;
+using Signet.Core.BookManipulation;
 using Signet.Core.Misc;
 using Signet.Core.Tests.TestSupport;
 using Xunit;
@@ -55,6 +56,7 @@ public sealed class SettingsStoreTests
         writer.RecentFiles = new[] { "a.epub", "b.epub" };
         writer.ClipboardHistory = new[] { "newest", "older" };
         writer.FavoriteSpecialCharacters = new[] { "—", "§" };
+        writer.CleanupEnabledSteps = new[] { CleanupStep.UnusedSelectors, CleanupStep.UnusedMedia };
         writer.Save();
 
         File.Exists(path).Should().BeTrue();
@@ -68,6 +70,7 @@ public sealed class SettingsStoreTests
         reader.RecentFiles.Should().Equal("a.epub", "b.epub");
         reader.ClipboardHistory.Should().Equal("newest", "older");
         reader.FavoriteSpecialCharacters.Should().Equal("—", "§");
+        reader.CleanupEnabledSteps.Should().Equal(CleanupStep.UnusedSelectors, CleanupStep.UnusedMedia);
     }
 
     [Fact]
@@ -81,6 +84,7 @@ public sealed class SettingsStoreTests
 
         sut.DefaultVersion.Should().Be("3.0");
         sut.CodeViewWordWrap.Should().BeTrue("Code View wraps lines by default");
+        sut.CleanupEnabledSteps.Should().BeEmpty("no Cleanup step is checked until the user confirms one");
     }
 
     [Fact]

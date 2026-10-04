@@ -116,39 +116,6 @@
   <data name="ClipsPanelView_ExpandAll" xml:space="preserve">
     <value>Rozwiń wszystko</value>
   </data>
-  <data name="Common_ToggleSelectAll" xml:space="preserve">
-    <value>Zaznacz / odznacz wszystko</value>
-  </data>
-  <data name="DeleteUnusedMediaWindow_Title" xml:space="preserve">
-    <value>Usuń nieużywane pliki multimedialne</value>
-  </data>
-  <data name="DeleteUnusedMediaWindow_DeleteMarked" xml:space="preserve">
-    <value>Usuń zaznaczone pliki</value>
-  </data>
-  <data name="DeleteUnusedStylesWindow_Title" xml:space="preserve">
-    <value>Usuń nieużywane selektory arkuszy stylów</value>
-  </data>
-  <data name="DeleteUnusedStylesWindow_DeleteMarked" xml:space="preserve">
-    <value>Usuń zaznaczone style</value>
-  </data>
-  <data name="DeleteUnusedStylesWindow_FileColumn" xml:space="preserve">
-    <value>Plik</value>
-  </data>
-  <data name="DeleteUnusedStylesWindow_StyleColumn" xml:space="preserve">
-    <value>Styl</value>
-  </data>
-  <data name="CssCleanupWindow_Title" xml:space="preserve">
-    <value>Scal / usuń nieużywane reguły CSS</value>
-  </data>
-  <data name="CssCleanupWindow_Apply" xml:space="preserve">
-    <value>Zastosuj zaznaczone</value>
-  </data>
-  <data name="CssCleanupWindow_MergeHeader" xml:space="preserve">
-    <value>Reguły do scalenia (identyczny selektor / identyczne właściwości)</value>
-  </data>
-  <data name="CssCleanupWindow_UnusedStylesheetsHeader" xml:space="preserve">
-    <value>Arkusze CSS nielinkowane przez żaden plik</value>
-  </data>
   <data name="LiveCssPanelWindow_Title" xml:space="preserve">
     <value>Panel CSS na żywo</value>
   </data>
@@ -1821,15 +1788,6 @@ Czy chcesz zapisać zmiany?</value>
   <data name="Action_MainWindow_SearchEditor" xml:space="preserve">
     <value>&amp;Zapisane wyszukiwania...</value>
   </data>
-  <data name="Action_MainWindow_DeleteUnusedMedia" xml:space="preserve">
-    <value>&amp;Usuń nieużywane pliki multimedialne...</value>
-  </data>
-  <data name="Action_MainWindow_DeleteUnusedStyles" xml:space="preserve">
-    <value>Usuń nieużywane &amp;selektory arkuszy stylów...</value>
-  </data>
-  <data name="Action_MainWindow_CssCleanup" xml:space="preserve">
-    <value>&amp;Scal/usuń nieużywane reguły CSS...</value>
-  </data>
   <data name="Action_MainWindow_LiveCssPanel" xml:space="preserve">
     <value>Panel CSS na ż&amp;ywo</value>
   </data>
@@ -2217,15 +2175,6 @@ Czy chcesz zapisać zmiany?</value>
   <data name="Status_CancelledNotWellFormed" xml:space="preserve">
     <value>{0} — anulowano: plik {1} nie jest poprawny składniowo (well-formed).</value>
   </data>
-  <data name="Operation_DeleteUnusedMedia" xml:space="preserve">
-    <value>Usuwanie nieużywanych plików multimedialnych</value>
-  </data>
-  <data name="Operation_DeleteUnusedStyles" xml:space="preserve">
-    <value>Usuwanie nieużywanych selektorów</value>
-  </data>
-  <data name="Operation_CssCleanup" xml:space="preserve">
-    <value>Scalanie/usuwanie nieużywanych reguł CSS</value>
-  </data>
   <data name="Operation_RenameClass" xml:space="preserve">
     <value>Zmiana nazwy klasy</value>
   </data>
@@ -2249,24 +2198,6 @@ Czy chcesz zapisać zmiany?</value>
   </data>
   <data name="Operation_Rebase" xml:space="preserve">
     <value>Zmiana ID manifestu</value>
-  </data>
-  <data name="Status_NoUnusedMedia" xml:space="preserve">
-    <value>Nie ma nieużywanych plików obrazu, wideo lub dźwięku do usunięcia.</value>
-  </data>
-  <data name="Status_UnusedMediaDeleted" xml:space="preserve">
-    <value>Usunięto nieużywane pliki multimedialne.</value>
-  </data>
-  <data name="Status_NoUnusedSelectors" xml:space="preserve">
-    <value>Nie ma nieużywanych selektorów arkuszy stylów do usunięcia.</value>
-  </data>
-  <data name="Status_SelectorsDeleted" xml:space="preserve">
-    <value>Usunięto selektory.</value>
-  </data>
-  <data name="Status_NoCssToClean" xml:space="preserve">
-    <value>Nie znaleziono reguł do scalenia ani niepodłączonych arkuszy CSS.</value>
-  </data>
-  <data name="Status_CssCleaned" xml:space="preserve">
-    <value>Wyczyszczono CSS.</value>
   </data>
   <data name="Status_ImageMissing" xml:space="preserve">
     <value>Obraz nie istnieje: {0}</value>
@@ -3532,5 +3463,86 @@ Wstawić mimo to?</value>
   </data>
   <data name="SpecialCharacterWindow_DoubleClickInsertsCell" xml:space="preserve">
     <value>Dwuklik wstawia zawartość komórki</value>
+  </data>
+  <data name="Action_MainWindow_Cleanup" xml:space="preserve">
+    <value>&amp;Czyszczenie...</value>
+  </data>
+  <data name="Operation_Cleanup" xml:space="preserve">
+    <value>Czyszczenie</value>
+  </data>
+  <data name="Status_CleanupDone" xml:space="preserve">
+    <value>Czyszczenie zakończone.</value>
+  </data>
+  <data name="CleanupWindow_Title" xml:space="preserve">
+    <value>Czyszczenie</value>
+  </data>
+  <data name="CleanupWindow_Intro" xml:space="preserve">
+    <value>Zaznacz operacje do wykonania. Podgląd pokazuje, co się zmieni, zanim cokolwiek zostanie zmienione. Operacje są wykonywane w kolejności sekcji (od góry), a każda widzi wynik poprzednich.</value>
+  </data>
+  <data name="CleanupWindow_Details" xml:space="preserve">
+    <value>Szczegóły</value>
+  </data>
+  <data name="CleanupWindow_SelectAll" xml:space="preserve">
+    <value>Zaznacz wszystkie</value>
+  </data>
+  <data name="CleanupWindow_SelectNone" xml:space="preserve">
+    <value>Odznacz wszystkie</value>
+  </data>
+  <data name="CleanupWindow_DoubleClickHint" xml:space="preserve">
+    <value>Dwuklik otwiera plik w tym miejscu.</value>
+  </data>
+  <data name="Cleanup_NothingFound" xml:space="preserve">
+    <value>Nic do zrobienia.</value>
+  </data>
+  <data name="Cleanup_MergeWarning" xml:space="preserve">
+    <value>Scalenia, które zmieniłyby wygląd książki, są oznaczone ⚠ i domyślnie odznaczone. Pod każdym widać, co dokładnie się zmieni — zaznacz je tylko świadomie.</value>
+  </data>
+  <data name="Cleanup_UnreferencedStylesheets_Title" xml:space="preserve">
+    <value>Usuń arkusze stylów bez odwołań</value>
+  </data>
+  <data name="Cleanup_UnreferencedStylesheets_Description" xml:space="preserve">
+    <value>Usuwa arkusze stylów CSS, do których nie odwołuje się żaden plik XHTML.</value>
+  </data>
+  <data name="Cleanup_UnreferencedStylesheets_Summary" xml:space="preserve">
+    <value>Arkusze do usunięcia: {0} z {1}.</value>
+  </data>
+  <data name="Cleanup_UnusedSelectors_Title" xml:space="preserve">
+    <value>Usuń nieużywane selektory CSS</value>
+  </data>
+  <data name="Cleanup_UnusedSelectors_Description" xml:space="preserve">
+    <value>Usuwa z arkuszy stylów i bloków &lt;style&gt; selektory, które nie pasują do niczego w plikach XHTML (reguła znika, gdy nie zostanie jej żaden selektor).</value>
+  </data>
+  <data name="Cleanup_UnusedSelectors_Summary" xml:space="preserve">
+    <value>Selektory do usunięcia: {0} z {1}.</value>
+  </data>
+  <data name="Cleanup_MergeSameSelectors_Title" xml:space="preserve">
+    <value>Scal reguły CSS z identycznymi selektorami</value>
+  </data>
+  <data name="Cleanup_MergeSameSelectors_Description" xml:space="preserve">
+    <value>Scala reguły w tym samym arkuszu stylów, które mają identyczne selektory.</value>
+  </data>
+  <data name="Cleanup_MergeSameSelectors_Summary" xml:space="preserve">
+    <value>Grupy do scalenia: {0} z {1} (reguł w scalanych grupach: {2}).</value>
+  </data>
+  <data name="Cleanup_MergeSameProperties_Title" xml:space="preserve">
+    <value>Scal reguły CSS z identycznymi właściwościami</value>
+  </data>
+  <data name="Cleanup_MergeSameProperties_Description" xml:space="preserve">
+    <value>Scala reguły w tym samym arkuszu stylów, które mają identyczne właściwości.</value>
+  </data>
+  <data name="Cleanup_MergeSameProperties_Summary" xml:space="preserve">
+    <value>Grupy do scalenia: {0} z {1} (reguł w scalanych grupach: {2}).</value>
+  </data>
+  <data name="Cleanup_UnusedMedia_Title" xml:space="preserve">
+    <value>Usuń nieużywane pliki multimedialne</value>
+  </data>
+  <data name="Cleanup_UnusedMedia_Description" xml:space="preserve">
+    <value>Usuwa obrazy, SVG, audio i wideo, do których nie odwołuje się żaden plik XHTML ani CSS (po wcześniejszych operacjach). Okładka jest zawsze zachowywana.</value>
+  </data>
+  <data name="Cleanup_UnusedMedia_Summary" xml:space="preserve">
+    <value>Pliki do usunięcia: {0} z {1}.</value>
+  </data>
+  <data name="Cleanup_RiskySummary" xml:space="preserve">
+    <value> Ryzykowne (⚠, domyślnie odznaczone): {0}.</value>
   </data>
 </root>

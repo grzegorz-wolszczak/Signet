@@ -18,12 +18,16 @@ public enum CssMergeKind
 
 /// <summary>A group of <see cref="CssRule"/>s from one stylesheet eligible for merging.</summary>
 /// <param name="Kind">The reason for the merge.</param>
-/// <param name="Rules">The group's rules, in source order (the first becomes the "primary" one after merging).</param>
-public sealed record CssMergeGroup(CssMergeKind Kind, IReadOnlyList<CssRule> Rules);
+/// <param name="Rules">The group's rules, in source order.</param>
+/// <param name="AnchorIndex">
+/// The index (in <paramref name="Rules"/>) of the rule whose place the merged rule takes — the other rules are
+/// removed. Which place keeps the styling unchanged depends on the rules in between, so the caller may choose it.
+/// </param>
+public sealed record CssMergeGroup(CssMergeKind Kind, IReadOnlyList<CssRule> Rules, int AnchorIndex = 0);
 
 /// <summary>
 /// Detecting and performing merges of CSS rules with an identical selector or identical
-/// properties ("Remove unused CSS rules + merge identical selectors/properties"). Operates on a
+/// properties (the merge steps of the Cleanup, <see cref="BookManipulation.CleanupAnalysis"/>). Operates on a
 /// single stylesheet (<see cref="CssInfo"/>) — rules from <c>@media</c>/<c>@font-face</c>
 /// blocks etc. (<see cref="CssRule.AtRulePrelude"/> non-empty) are skipped, so that rules from different
 /// cascade contexts are not merged.
@@ -81,8 +85,8 @@ public static class CssRuleMerger
     /// <summary>
     /// Applies the given merge groups to the stylesheet text <paramref name="cssText"/> (it must be the
     /// same text the rules in the groups were built from). Each group is replaced by a single
-    /// rule at the place of the group's first (earliest) rule; the other rules of the group are
-    /// removed. Returns the new stylesheet text, or <c>null</c> when no group qualified
+    /// rule at the place of its anchor rule (<see cref="CssMergeGroup.AnchorIndex"/>, the first rule by default);
+    /// the other rules of the group are removed. Declarations / selectors keep their source order. Returns the new stylesheet text, or <c>null</c> when no group qualified
     /// for merging (fewer than 2 rules).
     /// </summary>
     public static string? ApplyMerges(string cssText, IEnumerable<CssMergeGroup> groups)
@@ -100,11 +104,11 @@ public static class CssRuleMerger
             }
 
             List<CssRule> rules = group.Rules.OrderBy(r => r.SelectorStart).ToList();
-            CssRule primary = rules[0];
+            CssRule primary = rules[Math.Clamp(group.AnchorIndex, 0, rules.Count - 1)];
             string replacement = BuildReplacement(cssText, group.Kind, rules, primary);
 
             edits.Add((primary.SelectorStart, primary.BlockEnd, replacement));
-            foreach (CssRule rule in rules.Skip(1))
+            foreach (CssRule rule in rules.Where(r => !ReferenceEquals(r, primary)))
             {
                 edits.Add((rule.SelectorStart, rule.BlockEnd, null));
             }
@@ -161,24 +165,7 @@ public static class CssRuleMerger
         return combinedSelectors + " " + block;
     }
 
-    private static string DeclarationsKey(IReadOnlyList<CssDeclaration> declarations) =>
+    /// <summary>The key under which rules with identical properties are grouped (order-sensitive, case-insensitive names).</summary>
+    internal static string DeclarationsKey(IReadOnlyList<CssDeclaration> declarations) =>
         string.Join("|", declarations.Select(d => $"{d.Property.Trim().ToLowerInvariant()}:{d.Value.Trim()}"));
 }
-
-/// <summary>
-/// A merge candidate at whole-book scale — the result of <c>Book.FindCssCleanupCandidates</c>,
-/// resilient to re-parsing the stylesheet when applied (<c>Book.ApplyCssMerges</c> matches the
-/// rules again by <see cref="RuleSelectorStarts"/>).
-/// </summary>
-/// <param name="CssBookPath">The bookpath of the CSS stylesheet the candidate concerns.</param>
-/// <param name="Kind">The reason for the merge.</param>
-/// <param name="Description">A readable description for the UI (which rules and why).</param>
-/// <param name="RuleSelectorStarts">
-/// The <see cref="CssRule.SelectorStart"/> offsets of the group's rules in source order — the matching
-/// key when the stylesheet is re-parsed.
-/// </param>
-public sealed record CssMergeCandidate(
-    string CssBookPath,
-    CssMergeKind Kind,
-    string Description,
-    IReadOnlyList<int> RuleSelectorStarts);

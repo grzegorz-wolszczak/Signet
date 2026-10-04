@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
+using Signet.Core.BookManipulation;
 using Signet.Core.Search;
 
 namespace Signet.Core.Misc;
@@ -799,6 +800,27 @@ public sealed class SettingsStore
         {
             _file.SetRaw(Group, "recentspecialchars", new JsonArray(value.Select(s => JsonValue.Create(s)).ToArray<JsonNode?>()));
             RaiseChangedQualified($"{Group}/recentspecialchars");
+        }
+    }
+
+    /// <summary>
+    /// The steps checked in the Cleanup dialog the last time it was confirmed (remembered between sessions);
+    /// unknown names are skipped. Empty by default.
+    /// </summary>
+    public IReadOnlyList<CleanupStep> CleanupEnabledSteps
+    {
+        get => (_file.GetRaw(Group, "cleanupsteps") as JsonArray)?
+            .Select(n => Enum.TryParse(n?.GetValue<string>(), out CleanupStep step) ? (CleanupStep?)step : null)
+            .Where(step => step is not null)
+            .Select(step => step!.Value)
+            .Distinct()
+            .ToList() ?? new List<CleanupStep>();
+
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            _file.SetRaw(Group, "cleanupsteps", new JsonArray(value.Select(step => JsonValue.Create(step.ToString())).ToArray<JsonNode?>()));
+            RaiseChangedQualified($"{Group}/cleanupsteps");
         }
     }
 

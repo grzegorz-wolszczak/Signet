@@ -793,287 +793,70 @@ public sealed class Book : IDisposable
     }
 
     /// <summary>
-    /// Detects media resources (image/SVG/video/audio) not referenced from any XHTML or CSS.
-    /// Checks references from
-    /// <see cref="HtmlResource.GetPathsToLinkedResources"/>, from <c>style="…url(…)"</c> attributes
-    /// and from <c>url(…)</c> properties in CSS stylesheets;
-    /// the cover image is always treated as used.
-    /// </summary>
-    public UnusedMediaResult FindUnusedMediaResources()
-    {
-        if (FindFirstNotWellFormed(GetHtmlResources()) is { } bad)
-        {
-            return new UnusedMediaResult(false, bad, Array.Empty<Resource>());
-        }
-
-        HashSet<string> referenced = new(StringComparer.Ordinal);
-
-        void MarkReferenced(string href, string startDir)
-        {
-            if (href.Length > 0 && !href.Contains(':', StringComparison.Ordinal))
-            {
-                referenced.Add(Core.BookPath.BuildBookPath(href, startDir));
-            }
-        }
-
-        void MarkUrlFunctionHrefs(string text, string startDir)
-        {
-            foreach (Match match in UrlFunctionHref.Matches(text))
-            {
-                MarkReferenced(match.Groups[1].Value.Trim(), startDir);
-            }
-        }
-
-        foreach (HtmlResource html in GetHtmlResources())
-        {
-            foreach (string path in html.GetPathsToLinkedResources())
-            {
-                referenced.Add(path);
-            }
-
-            foreach (IElement element in html.GetDocument().All)
-            {
-                string? style = element.GetAttribute("style");
-                if (!string.IsNullOrEmpty(style))
-                {
-                    MarkUrlFunctionHrefs(style, html.Folder);
-                }
-            }
-        }
-
-        foreach (CssResource css in GetCssResources())
-        {
-            foreach (string value in new CssInfo(css.GetText()).GetAllPropertyValues(""))
-            {
-                MarkUrlFunctionHrefs(value, css.Folder);
-            }
-        }
-
-        string coverImagePath = GetOpf().GetCoverImagePath();
-
-        List<Resource> unused = new();
-        foreach (Resource resource in GetMediaResources())
-        {
-            if (referenced.Contains(resource.BookPath))
-            {
-                continue;
-            }
-
-            if (resource is ImageResource && string.Equals(resource.BookPath, coverImagePath, StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            unused.Add(resource);
-        }
-
-        return new UnusedMediaResult(true, null, unused);
-    }
-
-    /// <summary>Removes the given media resources from the book (manifest + file).</summary>
-    public void DeleteMediaResources(IReadOnlyList<Resource> resources)
-    {
-        ArgumentNullException.ThrowIfNull(resources);
-        if (resources.Count == 0)
-        {
-            return;
-        }
-
-        _folderKeeper.BulkRemoveResources(resources);
-        Modified = true;
-    }
-
-    /// <summary>
-    /// Detects CSS selectors that are defined but never used
-    /// (delegates to <see cref="CssSelectorUsageAnalyzer.GetUnusedSelectors"/>).
-    /// </summary>
-    public UnusedStyleSelectorsResult FindUnusedStyleSelectors()
-    {
-        if (FindFirstNotWellFormed(GetHtmlResources()) is { } bad)
-        {
-            return new UnusedStyleSelectorsResult(false, bad, Array.Empty<CssSelectorUsage>());
-        }
-
-        return new UnusedStyleSelectorsResult(true, null, CssSelectorUsageAnalyzer.GetUnusedSelectors(this));
-    }
-
-    /// <summary>
-    /// Removes the given selectors from their CSS stylesheets or <c>&lt;style&gt;</c> blocks (matched by
-    /// <c>CssBookPath</c> + <c>Position</c> + <c>SelectorText</c>). A CSS stylesheet takes priority; only then is
-    /// the <c>&lt;style&gt;</c> block of the XHTML file with the same bookpath checked. Returns <c>true</c> when anything
-    /// was removed.
-    /// </summary>
-    public bool DeleteCssSelectors(IReadOnlyList<CssSelectorUsage> selectorsToDelete)
-    {
-        ArgumentNullException.ThrowIfNull(selectorsToDelete);
-
-        bool anyModified = false;
-
-        foreach (IGrouping<string, CssSelectorUsage> group in selectorsToDelete.GroupBy(s => s.CssBookPath, StringComparer.Ordinal))
-        {
-            bool Matches(CssSelector selector) =>
-                group.Any(g => g.Position == selector.Pos && string.Equals(g.SelectorText, selector.Text, StringComparison.Ordinal));
-
-            CssResource? css = GetCssResources().FirstOrDefault(c => string.Equals(c.BookPath, group.Key, StringComparison.Ordinal));
-            if (css is not null)
-            {
-                CssInfo info = new(css.GetText());
-                string? newText = info.RemoveMatchingSelectors(info.GetAllSelectors().Where(Matches));
-                if (newText is not null)
-                {
-                    css.SetText(newText);
-                    anyModified = true;
-                }
-
-                continue;
-            }
-
-            HtmlResource? html = GetHtmlResources().FirstOrDefault(h => string.Equals(h.BookPath, group.Key, StringComparison.Ordinal));
-            if (html is not null)
-            {
-                string originalText = html.GetText();
-                HtmlStyleInfo styleInfo = new(originalText);
-                string newText = styleInfo.RemoveMatchingSelectors(styleInfo.GetAllSelectors().Where(Matches));
-                if (!string.Equals(newText, originalText, StringComparison.Ordinal))
-                {
-                    html.SetText(newText);
-                    anyModified = true;
-                }
-            }
-        }
-
-        if (anyModified)
-        {
-            Modified = true;
-        }
-
-        return anyModified;
-    }
-
-    /// <summary>
-    /// Detects candidates for "Remove unused CSS rules + merge identical selectors/properties":
-    /// groups of rules with an identical selector or identical properties in each of the book's CSS stylesheets
-    /// (<see cref="CssRuleMerger.FindMergeGroups"/>), and CSS stylesheets from the manifest not linked
-    /// by any XHTML file (<see cref="FindUnusedStylesheets"/>). Removing the rules of unused selectors
-    /// (single rules) is handled by the separate, existing
-    /// <see cref="FindUnusedStyleSelectors"/> function and is not duplicated here.
-    /// </summary>
-    public CssCleanupResult FindCssCleanupCandidates()
-    {
-        if (FindFirstNotWellFormed(GetHtmlResources()) is { } bad)
-        {
-            return new CssCleanupResult(false, bad, Array.Empty<CssMergeCandidate>(), Array.Empty<CssResource>());
-        }
-
-        List<CssMergeCandidate> candidates = new();
-        foreach (CssResource css in GetCssResources())
-        {
-            CssInfo info = new(css.GetText());
-            foreach (CssMergeGroup group in CssRuleMerger.FindMergeGroups(info))
-            {
-                candidates.Add(new CssMergeCandidate(
-                    css.BookPath,
-                    group.Kind,
-                    DescribeMergeGroup(group),
-                    group.Rules.Select(r => r.SelectorStart).ToList()));
-            }
-        }
-
-        return new CssCleanupResult(true, null, candidates, FindUnusedStylesheets());
-    }
-
-    private static string DescribeMergeGroup(CssMergeGroup group) =>
-        group.Kind == CssMergeKind.SameSelector
-            ? CoreStrings.Format("Css_MergeSameSelector", group.Rules.Count, group.Rules[0].SelectorText)
-            : CoreStrings.Format("Css_MergeSameProperties", group.Rules.Count, string.Join(", ", group.Rules.Select(r => r.SelectorText)));
-
-    /// <summary>
-    /// Applies the chosen merge candidates (from <see cref="FindCssCleanupCandidates"/>) — each stylesheet
-    /// is re-parsed and the group's rules are matched by <see cref="CssMergeCandidate.RuleSelectorStarts"/>
-    /// so that it works correctly when the user checked only some of the candidates from the same file.
-    /// Returns <c>true</c> when anything was changed.
-    /// </summary>
-    public bool ApplyCssMerges(IReadOnlyList<CssMergeCandidate> candidates)
-    {
-        ArgumentNullException.ThrowIfNull(candidates);
-        if (candidates.Count == 0)
-        {
-            return false;
-        }
-
-        bool anyModified = false;
-        foreach (IGrouping<string, CssMergeCandidate> group in candidates.GroupBy(c => c.CssBookPath, StringComparer.Ordinal))
-        {
-            CssResource? css = GetCssResources().FirstOrDefault(c => string.Equals(c.BookPath, group.Key, StringComparison.Ordinal));
-            if (css is null)
-            {
-                continue;
-            }
-
-            string text = css.GetText();
-            CssInfo info = new(text);
-            Dictionary<int, CssRule> rulesByStart = info.Rules.ToDictionary(r => r.SelectorStart);
-
-            List<CssMergeGroup> mergeGroups = new();
-            foreach (CssMergeCandidate candidate in group)
-            {
-                List<CssRule> rules = candidate.RuleSelectorStarts
-                    .Select(pos => rulesByStart.TryGetValue(pos, out CssRule? rule) ? rule : null)
-                    .Where(rule => rule is not null)
-                    .Select(rule => rule!)
-                    .ToList();
-
-                if (rules.Count >= 2)
-                {
-                    mergeGroups.Add(new CssMergeGroup(candidate.Kind, rules));
-                }
-            }
-
-            string? newText = CssRuleMerger.ApplyMerges(text, mergeGroups);
-            if (newText is not null)
-            {
-                css.SetText(newText);
-                anyModified = true;
-            }
-        }
-
-        if (anyModified)
-        {
-            Modified = true;
-        }
-
-        return anyModified;
-    }
-
-    /// <summary>
-    /// CSS stylesheets from the manifest that no XHTML file links (<see cref="HtmlResource.GetLinkedStylesheets"/>) —
-    /// the "Remove unused stylesheets" sub-option of the CSS cleanup. Inline <c>&lt;style&gt;</c> blocks are not
+    /// CSS stylesheets from the manifest that no XHTML file uses — neither links nor imports (directly, through an
+    /// <c>@import</c> chain or from a <c>&lt;style&gt;</c> block, <see cref="GetVisibleStylesheets(HtmlResource)"/>) —
+    /// the "unreferenced stylesheets" step of the Cleanup (<see cref="CleanupAnalysis"/>). Inline <c>&lt;style&gt;</c> blocks are not
     /// covered (they are not separate resources).
     /// </summary>
     public IReadOnlyList<CssResource> FindUnusedStylesheets()
     {
+        IReadOnlyList<CssResource> cssResources = GetCssResources();
         HashSet<string> referenced = new(StringComparer.Ordinal);
         foreach (HtmlResource html in GetHtmlResources())
         {
-            foreach (string cssBookPath in html.GetLinkedStylesheets())
+            foreach (string cssBookPath in VisibleStylesheetsOf(html, cssResources))
             {
                 referenced.Add(cssBookPath);
             }
         }
 
-        return GetCssResources().Where(css => !referenced.Contains(css.BookPath)).ToList();
+        return cssResources.Where(css => !referenced.Contains(css.BookPath)).ToList();
     }
 
-    /// <summary>Removes the given unlinked CSS stylesheets from the book (manifest + file). Analogous to <see cref="DeleteMediaResources"/>.</summary>
-    public bool DeleteUnreferencedStylesheets(IReadOnlyList<CssResource> resources)
+    /// <summary>
+    /// The stylesheets <paramref name="html"/> actually uses, in cascade order: the linked ones and the ones imported
+    /// (<c>@import</c>, transitively) by them or by its <c>&lt;style&gt;</c> blocks (<see cref="CssImports"/>).
+    /// </summary>
+    public IReadOnlyList<string> GetVisibleStylesheets(HtmlResource html) => VisibleStylesheetsOf(html, GetCssResources());
+
+    private static IReadOnlyList<string> VisibleStylesheetsOf(HtmlResource html, IReadOnlyList<CssResource> cssResources)
     {
-        ArgumentNullException.ThrowIfNull(resources);
-        if (resources.Count == 0)
+        Dictionary<string, CssResource> byPath = cssResources.ToDictionary(c => c.BookPath, StringComparer.Ordinal);
+        IEnumerable<string> roots = html.GetLinkedStylesheets()
+            .Concat(CssImports.FromStyleBlocks(html.GetText(), html.BookPath));
+        return CssImports.VisibleStylesheets(
+            roots,
+            bookPath => byPath.TryGetValue(bookPath, out CssResource? css)
+                ? CssImports.Parse(css.GetText(), Core.BookPath.StartingDir(css.BookPath))
+                : null);
+    }
+
+    /// <summary>
+    /// Applies a <see cref="CleanupPlan"/> computed by <see cref="CleanupAnalysis.Plan"/> for this book: writes the
+    /// new texts of the changed CSS/XHTML files and removes the stylesheets and media files to delete. Returns
+    /// <c>true</c> when anything was changed.
+    /// </summary>
+    public bool ApplyCleanup(CleanupPlan plan)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        if (!plan.HasChanges)
         {
             return false;
         }
 
-        _folderKeeper.BulkRemoveResources(resources);
+        foreach ((string bookPath, string text) in plan.NewTexts)
+        {
+            if (_folderKeeper.GetResourceByBookPathNoThrow(bookPath) is TextResource resource)
+            {
+                resource.SetText(text);
+            }
+        }
+
+        if (plan.ResourcesToDelete.Count > 0)
+        {
+            _folderKeeper.BulkRemoveResources(plan.ResourcesToDelete);
+        }
+
         Modified = true;
         return true;
     }
@@ -1594,7 +1377,7 @@ public sealed class Book : IDisposable
         return null;
     }
 
-    private static readonly Regex UrlFunctionHref =
+    internal static readonly Regex UrlFunctionHref =
         new(@"url\s*\(\s*['""]?([^()'""]*)[""']?\)", RegexOptions.Compiled);
 
     private static readonly string[] JavascriptMediaTypes =
@@ -1632,7 +1415,7 @@ public sealed class Book : IDisposable
         return missing;
     }
 
-    private static HtmlResource? FindFirstNotWellFormed(IEnumerable<HtmlResource> resources)
+    internal static HtmlResource? FindFirstNotWellFormed(IEnumerable<HtmlResource> resources)
     {
         foreach (HtmlResource html in resources)
         {

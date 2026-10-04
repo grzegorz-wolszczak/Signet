@@ -165,11 +165,9 @@ public static class AppActionIds
     public const string SelectClip = "MainWindow.SelectClip";
 
     public const string SearchEditor = "MainWindow.SearchEditor";
-    public const string DeleteUnusedMedia = "MainWindow.DeleteUnusedMedia";
-    public const string DeleteUnusedStyles = "MainWindow.DeleteUnusedStyles";
 
-    /// <summary>Merge/Remove Unused CSS Rules.</summary>
-    public const string CssCleanup = "MainWindow.CssCleanup";
+    /// <summary>Cleanup — removing unused stylesheets/selectors/media and merging CSS rules in one dialog.</summary>
+    public const string Cleanup = "MainWindow.Cleanup";
 
     /// <summary>Live CSS Panel.</summary>
     public const string LiveCssPanel = "MainWindow.LiveCssPanel";

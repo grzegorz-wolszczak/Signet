@@ -103,7 +103,8 @@ public sealed record CssCascadeResult(
 /// itself is independent of that and can be hooked up to Preview in the future without changes in this class.</item>
 /// <item>Shorthands are not expanded (<c>font</c> does not override <c>font-size</c> and vice versa), and the
 /// <c>inherit</c>/<c>initial</c> keywords get no special treatment.</item>
-/// <item><c>@media</c>/<c>@import</c> are not taken into account — rules inside <c>@media</c> are
+/// <item><c>@import</c>ed stylesheets are included (before the importing one); <c>@media</c> is not taken
+/// into account — rules inside <c>@media</c> are
 /// treated as ordinary top-level rules (the same simplified model that
 /// <see cref="CssClassDefinitionLocator"/> uses).</item>
 /// <item>Rules from <c>CssInfo.Rules</c> without a selector (e.g. <c>@font-face</c> blocks) are skipped —
@@ -140,15 +141,26 @@ public static class CssCascadeResolver
             return null;
         }
 
-        List<(string BookPath, CssInfo Info)> sheets = new();
-        foreach (string cssBookPath in html.GetLinkedStylesheets())
+        // Linked stylesheets and the ones imported by them or by <style> blocks (@import, transitively).
+        Dictionary<string, CssInfo?> infos = new(StringComparer.Ordinal);
+        CssInfo? InfoOf(string bookPath)
         {
-            CssInfo? info = resolveCssInfo(cssBookPath);
-            if (info is not null)
+            if (!infos.TryGetValue(bookPath, out CssInfo? info))
             {
-                sheets.Add((cssBookPath, info));
+                info = resolveCssInfo(bookPath);
+                infos[bookPath] = info;
             }
+
+            return info;
         }
+
+        IEnumerable<string> roots = html.GetLinkedStylesheets().Concat(CssImports.FromStyleBlocks(html.GetText(), html.BookPath));
+        List<(string BookPath, CssInfo Info)> sheets = CssImports
+            .VisibleStylesheets(
+                roots,
+                bookPath => InfoOf(bookPath) is { } info ? CssImports.Parse(info.SourceText, BookPath.StartingDir(bookPath)) : null)
+            .Select(bookPath => (bookPath, InfoOf(bookPath)!))
+            .ToList();
 
         HtmlStyleInfo styleInfo = new(html.GetText());
         foreach (CssInfo block in styleInfo.Styles)
@@ -377,7 +389,7 @@ public static class CssCascadeResolver
         return result;
     }
 
-    private static string DescribeElement(IElement element)
+    internal static string DescribeElement(IElement element)
     {
         StringBuilder sb = new(element.TagName.ToLowerInvariant());
         string? id = element.Id;

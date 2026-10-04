@@ -181,7 +181,7 @@ public static class MenuLayout
             Sep,
             A("MainWindow.ClipEditor"), A("MainWindow.SelectClip"), A("MainWindow.SearchEditor"),
             Sep,
-            A("MainWindow.DeleteUnusedMedia"), A("MainWindow.DeleteUnusedStyles"), A("MainWindow.CssCleanup"),
+            A("MainWindow.Cleanup"),
             A("MainWindow.AddSoftHyphens"), A("MainWindow.RemoveSoftHyphens"),
             Sep, A("MainWindow.LiveCssPanel")),
 

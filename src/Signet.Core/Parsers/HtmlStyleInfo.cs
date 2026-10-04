@@ -25,6 +25,7 @@ public sealed class HtmlStyleInfo
         new(@"<\s*/\s*style\s*>", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private readonly List<CssInfo> _styles = new();
+    private readonly List<string> _styleTexts = new();
     private readonly List<int> _starts = new();
     private readonly List<int> _lengths = new();
     private string _source;
@@ -39,6 +40,7 @@ public sealed class HtmlStyleInfo
         while (FindInlineStyleBlock(htmlText, searchOffset, out int styleStart, out int styleEnd))
         {
             _styles.Add(new CssInfo(htmlText[styleStart..styleEnd], styleStart));
+            _styleTexts.Add(htmlText[styleStart..styleEnd]);
             _starts.Add(styleStart);
             _lengths.Add(styleEnd - styleStart);
             searchOffset = styleEnd;
@@ -50,6 +52,9 @@ public sealed class HtmlStyleInfo
 
     /// <summary>The parsers of the individual <c>&lt;style&gt;</c> blocks (source order).</summary>
     public IReadOnlyList<CssInfo> Styles => _styles;
+
+    /// <summary>The raw CSS text of the individual <c>&lt;style&gt;</c> blocks (source order), as found at construction.</summary>
+    public IReadOnlyList<string> StyleBlockTexts => _styleTexts;
 
     /// <summary>The selectors from all <c>&lt;style&gt;</c> blocks.</summary>
     public IReadOnlyList<CssSelector> GetAllSelectors()

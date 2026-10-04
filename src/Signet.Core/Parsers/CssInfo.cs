@@ -52,6 +52,9 @@ public sealed class CssInfo
     /// </summary>
     public IReadOnlyList<int?> ParseErrorPositions { get; }
 
+    /// <summary>The parsed CSS text (without the position offset).</summary>
+    internal string SourceText => _source;
+
     /// <summary>All selectors (after splitting groups) in source order. An alias of <see cref="GetAllSelectors"/>.</summary>
     public IReadOnlyList<CssSelector> Selectors => _selectors;
 

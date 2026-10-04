@@ -31,16 +31,17 @@ public readonly record struct CssSelectorUsage(string CssBookPath, string Select
 }
 
 /// <summary>
-/// Detecting unused CSS selectors in the book. A selector is "used" if
-/// <see cref="IParentNode.QuerySelectorAll(string)"/> on any associated XHTML file returns something
-/// — or if the selector is invalid (then, to be safe, it is considered used).
+/// Detecting unused CSS selectors in the book. A selector is "used" if it matches something in any associated
+/// XHTML file (state pseudo-classes and pseudo-elements stripped, <see cref="CssSelectorMatching"/>) — or if the
+/// selector is invalid (then, to be safe, it is considered used).
 /// </summary>
 public static class CssSelectorUsageAnalyzer
 {
     /// <summary>
     /// Returns the usage of every selector defined in CSS stylesheets and in the
     /// <c>&lt;style&gt;</c> blocks of XHTML files. Selectors from a stylesheet are tested only on the XHTML files
-    /// that link that stylesheet (<c>&lt;link rel="stylesheet"&gt;</c>).
+    /// that use that stylesheet — link it (<c>&lt;link rel="stylesheet"&gt;</c>) or import it through <c>@import</c>
+    /// (<see cref="Book.GetVisibleStylesheets"/>).
     /// </summary>
     public static IReadOnlyList<CssSelectorUsage> GetSelectorUsage(Book book)
     {
@@ -78,7 +79,7 @@ public static class CssSelectorUsageAnalyzer
             string text = html.GetText();
             IHtmlDocument document = XhtmlDoc.Parse(text);
 
-            foreach (string cssBookPath in html.GetLinkedStylesheets())
+            foreach (string cssBookPath in book.GetVisibleStylesheets(html))
             {
                 if (!cssInfos.TryGetValue(cssBookPath, out CssInfo? info))
                 {
@@ -164,6 +165,8 @@ public static class CssSelectorUsageAnalyzer
         return unused;
     }
 
+    // State pseudo-classes and pseudo-elements are stripped first (CssSelectorMatching): "a:hover" or "p::before"
+    // never match a static document, but they are used wherever "a"/"p" exist.
     private static (bool Matched, bool ParseError) TestSelector(IParentNode document, string selectorText)
     {
         if (string.IsNullOrWhiteSpace(selectorText))
@@ -171,14 +174,8 @@ public static class CssSelectorUsageAnalyzer
             return (false, true);
         }
 
-        try
-        {
-            return (document.QuerySelectorAll(selectorText).Length > 0, false);
-        }
-        catch (DomException)
-        {
-            return (false, true);
-        }
+        bool? matched = CssSelectorMatching.TryMatchAny(document, selectorText);
+        return matched is { } value ? (value, false) : (false, true);
     }
 
     private readonly record struct UsageKey(string BookPath, int Position, string SelectorText);

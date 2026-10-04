@@ -6026,4 +6026,37 @@
   <data name="UnicodeBlock_30A0_Name" xml:space="preserve">
     <value>Katakana</value>
   </data>
+  <data name="Cleanup_Risk_ValueChange" xml:space="preserve">
+    <value>{0}: &lt;{1}&gt;{2} — {3}: „{4}” → „{5}” (wygra „{6}”{7})</value>
+  </data>
+  <data name="Cleanup_Risk_MoreElements" xml:space="preserve">
+    <value> i jeszcze {0} el.</value>
+  </data>
+  <data name="Cleanup_Risk_Condition" xml:space="preserve">
+    <value> przy {0}</value>
+  </data>
+  <data name="Cleanup_Risk_NoValue" xml:space="preserve">
+    <value>(brak)</value>
+  </data>
+  <data name="Cleanup_Risk_MoreChanges" xml:space="preserve">
+    <value>… i jeszcze {0} innych zmian.</value>
+  </data>
+  <data name="Cleanup_Risk_SelectorList" xml:space="preserve">
+    <value>Czytnik, który nie obsługuje „{0}” ({1}), odrzuci całą scaloną regułę — „{2}” straci: {3}</value>
+  </data>
+  <data name="Cleanup_Risk_Reason_Vendor" xml:space="preserve">
+    <value>prefiks dostawcy</value>
+  </data>
+  <data name="Cleanup_Risk_Reason_Selectors4" xml:space="preserve">
+    <value>selektor z CSS Selectors 4</value>
+  </data>
+  <data name="Cleanup_Risk_Reason_Unparsed" xml:space="preserve">
+    <value>nieznany selektor</value>
+  </data>
+  <data name="Cleanup_Risk_Unverifiable" xml:space="preserve">
+    <value>Nie można sprawdzić skutków: parser nie rozumie selektora „{0}”.</value>
+  </data>
+  <data name="Css_MergeAtRule" xml:space="preserve">
+    <value> — w miejscu reguły {0} z {1}</value>
+  </data>
 </root>
