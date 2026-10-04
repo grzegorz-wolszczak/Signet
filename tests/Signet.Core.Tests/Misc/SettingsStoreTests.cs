@@ -231,6 +231,20 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
+    public void Window_geometry_can_be_read_back_from_the_same_store_after_setting_it()
+    {
+        // Regression: the values set in this session are int JSON nodes; reading them as double threw
+        // (opening Preferences a second time crashed the app).
+        using TempDir dir = new();
+        SettingsStore store = new(dir.Combine("settings.json"));
+        WindowGeometry geometry = new(0, 0, 900, 640, Maximized: false, FullScreen: false);
+
+        store.SetWindowGeometry("PreferencesWindow", geometry);
+
+        store.GetWindowGeometry("PreferencesWindow").Should().Be(geometry);
+    }
+
+    [Fact]
     public void Appearance_structs_roundtrip_and_reset()
     {
         using TempDir dir = new();

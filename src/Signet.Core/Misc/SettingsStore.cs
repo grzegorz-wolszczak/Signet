@@ -676,12 +676,29 @@ public sealed class SettingsStore
         }
 
         return new WindowGeometry(
-            (int)(obj["x"]?.GetValue<double>() ?? 0),
-            (int)(obj["y"]?.GetValue<double>() ?? 0),
-            (int)(obj["width"]?.GetValue<double>() ?? 0),
-            (int)(obj["height"]?.GetValue<double>() ?? 0),
-            obj["maximized"]?.GetValue<bool>() ?? false,
-            obj["fullscreen"]?.GetValue<bool>() ?? false);
+            ReadGeometryNumber(obj["x"]),
+            ReadGeometryNumber(obj["y"]),
+            ReadGeometryNumber(obj["width"]),
+            ReadGeometryNumber(obj["height"]),
+            obj["maximized"] is JsonValue maximized && maximized.TryGetValue(out bool isMaximized) && isMaximized,
+            obj["fullscreen"] is JsonValue fullScreen && fullScreen.TryGetValue(out bool isFullScreen) && isFullScreen);
+    }
+
+    // A number of the geometry: an int when it was set in this session (SetWindowGeometry stores the values as int
+    // nodes, which GetValue<double> refuses), or any JSON number when read from the file. 0 when missing/not a number.
+    private static int ReadGeometryNumber(JsonNode? node)
+    {
+        if (node is not JsonValue value)
+        {
+            return 0;
+        }
+
+        if (value.TryGetValue(out int intValue))
+        {
+            return intValue;
+        }
+
+        return value.TryGetValue(out double doubleValue) ? (int)doubleValue : 0;
     }
 
     /// <summary>Saves the geometry of the window with the given name.</summary>
