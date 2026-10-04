@@ -791,4 +791,36 @@ public sealed class CleanupAnalysisTests
         book.ApplyCleanup(plan).Should().BeTrue();
         Chapter1(book).Split("class=\"w\"").Length.Should().Be(2);
     }
+
+    [Fact]
+    public void BareSpans_without_css_reaching_them_are_one_safe_item_and_apply_unwraps_them()
+    {
+        using TempDir temp = new();
+        using Book book = LoadEmpty(temp, ".x { color: red; } p em { font-weight: bold; }", "  <p>a <span>b</span> <span>c <em>d</em></span></p>");
+
+        CleanupPlan plan = Plan(book, CleanupStep.BareSpans);
+
+        CleanupItem item = Step(plan, CleanupStep.BareSpans).Items.Should().ContainSingle().Subject;
+        item.IsRisky.Should().BeFalse();
+        item.RuleCount.Should().Be(2);
+        book.ApplyCleanup(plan).Should().BeTrue();
+        Chapter1(book).Should().Contain("<p>a b c <em>d</em></p>");
+    }
+
+    [Theory]
+    [InlineData("span { font-style: italic; }", "font-style")]
+    [InlineData("p span { color: red; }", "color")]
+    [InlineData("p > em { color: blue; }", "blue")]
+    public void BareSpans_a_span_that_css_reaches_is_risky(string css, string expected)
+    {
+        using TempDir temp = new();
+        using Book book = LoadEmpty(temp, css, "  <p>a <span>c <em>d</em></span></p>");
+
+        CleanupItem item = Step(Plan(book, CleanupStep.BareSpans), CleanupStep.BareSpans).Items.Single();
+
+        item.IsRisky.Should().BeTrue();
+        item.IsApplied.Should().BeFalse();
+        item.Text.Should().Contain("c d");
+        item.Consequences.Should().Contain(c => c.Text.Contains(expected, StringComparison.Ordinal));
+    }
 }

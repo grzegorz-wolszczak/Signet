@@ -424,6 +424,32 @@ public partial class CodeTabView : UserControl
             items.Add(new Separator());
         }
 
+        // ---- Remove span (the caret in a <span> / </span> tag) ----
+        if (vm.SpanAtCaret() is { } span)
+        {
+            string label = span.ClassValue is { } classValue
+                ? $"class=\"{classValue}\""
+                : Strings.Get("CodeViewMenu_RemoveSpanNoClass");
+            MenuItem removeSpan = new() { Header = EscapeAccessKeys(Strings.Format("CodeViewMenu_RemoveSpan", label)) };
+            if (span.HasId)
+            {
+                removeSpan.Items.Add(Item(Strings.Get("CodeViewMenu_RemoveSpanHasId"), () => { }, enabled: false));
+            }
+            else
+            {
+                removeSpan.Items.Add(Item(Strings.Get("CodeViewMenu_RemoveSpanSingle"), () => RemoveSpan(vm, SpanRemovalScope.This)));
+                removeSpan.Items.Add(Item(Strings.Format("CodeViewMenu_RemoveSpanAll", span.SameCount), () => RemoveSpan(vm, SpanRemovalScope.File)));
+                if (host is not null)
+                {
+                    removeSpan.Items.Add(Item(
+                        Strings.Format("CodeViewMenu_RemoveSpanBook", vm.CountSameSpansInBook()), () => RemoveSpan(vm, SpanRemovalScope.Book)));
+                }
+            }
+
+            items.Add(removeSpan);
+            items.Add(new Separator());
+        }
+
         // ---- Spelling ----
         if (vm.GetMisspelledWordAtCaret() is { } word)
         {
@@ -586,6 +612,20 @@ public partial class CodeTabView : UserControl
         {
             host.ApplyClassRename(result);
         }
+    }
+
+    // "Remove span": when the removal would change the styling, the consequences are shown first and the user has
+    // to accept them; otherwise it is carried out right away.
+    private async void RemoveSpan(CodeTabViewModel vm, SpanRemovalScope scope)
+    {
+        SpanRemovalPlan? plan = vm.PlanSpanRemoval(scope);
+        if (plan is { Consequences.Count: > 0 }
+            && (TopLevel.GetTopLevel(this) is not Window owner || !await SpanRemovalRiskWindow.AskAsync(owner, plan)))
+        {
+            return;
+        }
+
+        vm.ApplySpanRemoval(scope, plan);
     }
 
     private static MenuItem Item(

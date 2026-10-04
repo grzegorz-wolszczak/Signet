@@ -36,6 +36,12 @@ public enum CleanupStep
     EmptyElements,
 
     /// <summary>
+    /// Remove the tags of <c>&lt;span&gt;</c> elements without attributes and keep their content
+    /// (<see cref="BareSpanCleaner"/>).
+    /// </summary>
+    BareSpans,
+
+    /// <summary>
     /// Collapse chains of directly nested <c>&lt;div&gt;</c>s with identical attributes into one
     /// (<see cref="NestedDivCollapser"/>).
     /// </summary>
@@ -128,10 +134,10 @@ public sealed record CleanupPreparation(CleanupAnalysis? Analysis, HtmlResource?
 /// </summary>
 /// <remarks>
 /// <b>Execution order</b> (<see cref="CleanupStep"/>): unreferenced stylesheets → unused selectors → merging
-/// identical selectors → merging identical properties → empty elements → nested divs → unused media. Unused
-/// selectors are always computed on the original texts (only whole stylesheets can disappear before them), merges,
-/// empty elements and nested divs on the texts left by the previous steps, and media references on the CSS that
-/// remains at the end.
+/// identical selectors → merging identical properties → empty elements → bare spans → nested divs → unused media.
+/// Unused selectors are always computed on the original texts (only whole stylesheets can disappear before them),
+/// merges and the HTML steps on the texts left by the previous steps, and media references on the CSS that remains
+/// at the end.
 /// </remarks>
 public sealed class CleanupAnalysis
 {
@@ -142,6 +148,8 @@ public sealed class CleanupAnalysis
     private const string MediaKeyPrefix = "media|";
     private const string NestedDivsKeyPrefix = "divnest|";
     private const string EmptyElementsKeyPrefix = "empty|";
+    private const string BareSpansKeyPrefix = "barespan|";
+    private const int MaxSpanContentLength = 40;
     private const int MaxOpenTagLength = 80;
 
     // Attributes that reference a file: src (img, audio, video, source, track, embed, script…), href (link, a,
@@ -167,6 +175,10 @@ public sealed class CleanupAnalysis
     // sees) they were found in — finding the consequences means computing the cascade, so it is not repeated after
     // every toggle.
     private readonly Dictionary<string, (string Stamp, List<(NestedDivChain Chain, IReadOnlyList<CleanupConsequence> Consequences)> Chains)> _divChains =
+        new(StringComparer.Ordinal);
+
+    // The same for the bare spans of each XHTML file.
+    private readonly Dictionary<string, (string Stamp, List<(SpanTags Span, IReadOnlyList<CleanupConsequence> Consequences)> Spans)> _bareSpans =
         new(StringComparer.Ordinal);
 
     // The same for the empty elements of each XHTML file.
@@ -303,6 +315,11 @@ public sealed class CleanupAnalysis
         if (enabledSteps.Contains(CleanupStep.EmptyElements))
         {
             steps.Add(PlanEmptyElements(cssTexts, htmlTexts, excludedKeys, acceptedRiskyKeys));
+        }
+
+        if (enabledSteps.Contains(CleanupStep.BareSpans))
+        {
+            steps.Add(PlanBareSpans(cssTexts, htmlTexts, excludedKeys, acceptedRiskyKeys));
         }
 
         if (enabledSteps.Contains(CleanupStep.NestedDivs))
@@ -642,6 +659,95 @@ public sealed class CleanupAnalysis
         IReadOnlyList<IReadOnlyList<CleanupConsequence>> consequences = EmptyElementRiskAnalyzer.Analyse(path, text, found, sheets);
         var result = found.Select((element, i) => (element, consequences[i])).ToList();
         _emptyElements[path] = (stamp, result);
+        return result;
+    }
+
+    /// <summary>
+    /// Plans the bare-span step: per XHTML file, one item for all its safe bare spans and one item for every risky
+    /// one (<see cref="SpanRemovalRiskAnalyzer"/>), applied only when accepted. The
+    /// <see cref="CleanupItem.RuleCount"/> of an item is the number of spans it unwraps.
+    /// </summary>
+    private CleanupStepResult PlanBareSpans(
+        Dictionary<string, string> cssTexts,
+        Dictionary<string, string> htmlTexts,
+        IReadOnlySet<string> excludedKeys,
+        IReadOnlySet<string> acceptedRiskyKeys)
+    {
+        List<CleanupItem> items = new();
+        foreach (string path in htmlTexts.Keys.ToList())
+        {
+            string text = htmlTexts[path];
+            var spans = BareSpansOf(path, text, cssTexts);
+            if (spans.Count == 0)
+            {
+                continue;
+            }
+
+            List<int> toRemove = new();
+            List<SpanTags> safe = spans.Where(s => s.Consequences.Count == 0).Select(s => s.Span).ToList();
+            if (safe.Count > 0)
+            {
+                string key = BareSpansKeyPrefix + path;
+                bool isApplied = !excludedKeys.Contains(key);
+                items.Add(new CleanupItem(
+                    CleanupStep.BareSpans, key, CoreStrings.Format("Cleanup_BareSpans_File", safe.Count), path, safe[0].OpenPos, safe.Count)
+                {
+                    IsApplied = isApplied,
+                });
+                if (isApplied)
+                {
+                    toRemove.AddRange(safe.Select(s => s.OpenPos));
+                }
+            }
+
+            for (int i = 0; i < spans.Count; i++)
+            {
+                (SpanTags span, IReadOnlyList<CleanupConsequence> consequences) = spans[i];
+                if (consequences.Count == 0)
+                {
+                    continue;
+                }
+
+                string key = $"{BareSpansKeyPrefix}{path}|{i}";
+                bool isApplied = !excludedKeys.Contains(key) && acceptedRiskyKeys.Contains(key);
+                string content = Regex.Replace(Regex.Replace(span.Content, "<[^>]*>", string.Empty), @"\s+", " ").Trim();
+                items.Add(new CleanupItem(
+                    CleanupStep.BareSpans, key,
+                    CoreStrings.Format("Cleanup_BareSpans_Span", content.Length <= MaxSpanContentLength ? content : content[..MaxSpanContentLength] + "…"),
+                    path, span.OpenPos, 1)
+                {
+                    Consequences = consequences,
+                    IsApplied = isApplied,
+                });
+                if (isApplied)
+                {
+                    toRemove.Add(span.OpenPos);
+                }
+            }
+
+            if (toRemove.Count > 0)
+            {
+                htmlTexts[path] = BareSpanCleaner.Remove(text, toRemove);
+            }
+        }
+
+        return Result(CleanupStep.BareSpans, items);
+    }
+
+    private List<(SpanTags Span, IReadOnlyList<CleanupConsequence> Consequences)> BareSpansOf(
+        string path, string text, Dictionary<string, string> cssTexts)
+    {
+        (List<string> sheetTexts, string stamp) = SheetsAndStamp(path, text, cssTexts);
+        if (_bareSpans.TryGetValue(path, out var cached) && string.Equals(cached.Stamp, stamp, StringComparison.Ordinal))
+        {
+            return cached.Spans;
+        }
+
+        IReadOnlyList<SpanTags> found = BareSpanCleaner.Find(text);
+        List<CssInfo> sheets = found.Count == 0 ? new List<CssInfo>() : sheetTexts.Select(t => new CssInfo(t)).ToList();
+        IReadOnlyList<IReadOnlyList<CleanupConsequence>> consequences = SpanRemovalRiskAnalyzer.Analyse(path, text, found, sheets);
+        var result = found.Select((span, i) => (span, consequences[i])).ToList();
+        _bareSpans[path] = (stamp, result);
         return result;
     }
 

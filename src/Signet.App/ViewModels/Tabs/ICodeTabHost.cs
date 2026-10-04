@@ -42,6 +42,21 @@ public interface ICodeTabHost
     /// <summary>Writes the result of "Rename Class" into the book files and refreshes the tabs, Book Browser and Preview.</summary>
     void ApplyClassRename(ClassRenameResult result);
 
+    /// <summary>
+    /// "Remove span" — how many spans of the book are the same as the span under <paramref name="offset"/> in
+    /// <paramref name="text"/> (the current text of <paramref name="html"/>); 0 without a book.
+    /// </summary>
+    int CountSameSpansInBook(HtmlResource html, string text, int offset);
+
+    /// <summary>
+    /// "Remove span" — plans the removal (<see cref="SpanRemoval.Plan"/>) with the consequences for the styling.
+    /// For <see cref="SpanRemovalScope.Book"/> the open tabs are saved first. <c>null</c> without a book or a span.
+    /// </summary>
+    SpanRemovalPlan? PlanSpanRemoval(HtmlResource html, string text, int offset, SpanRemovalScope scope);
+
+    /// <summary>Writes a book-wide "Remove span" into the files (with a checkpoint) and refreshes the tabs and panels.</summary>
+    void ApplySpanRemovalInBook(SpanRemovalPlan plan);
+
     /// <summary>"View Image" — shows the image with the given book path in the preview window.</summary>
     void ViewImage(string bookPath);
 }

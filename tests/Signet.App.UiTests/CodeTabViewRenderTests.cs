@@ -469,6 +469,15 @@ public sealed class CodeTabViewRenderTests
         {
         }
 
+        public int CountSameSpansInBook(HtmlResource html, string text, int offset) => 0;
+
+        public Signet.Core.BookManipulation.SpanRemovalPlan? PlanSpanRemoval(
+            HtmlResource html, string text, int offset, Signet.Core.BookManipulation.SpanRemovalScope scope) => null;
+
+        public void ApplySpanRemovalInBook(Signet.Core.BookManipulation.SpanRemovalPlan plan)
+        {
+        }
+
         public void ViewImage(string bookPath)
         {
         }

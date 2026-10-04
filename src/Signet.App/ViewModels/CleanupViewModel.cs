@@ -73,7 +73,7 @@ public sealed partial class CleanupViewModel : ViewModelBase
     };
 
     /// <summary>The steps of the HTML tab, in execution order.</summary>
-    public static IReadOnlyList<CleanupStep> HtmlSteps { get; } = new[] { CleanupStep.EmptyElements, CleanupStep.NestedDivs };
+    public static IReadOnlyList<CleanupStep> HtmlSteps { get; } = new[] { CleanupStep.EmptyElements, CleanupStep.BareSpans, CleanupStep.NestedDivs };
 
     /// <summary>The steps of the Files tab, in execution order.</summary>
     public static IReadOnlyList<CleanupStep> FilesSteps { get; } = new[] { CleanupStep.UnusedMedia };
@@ -301,6 +301,7 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
         {
             CleanupStep.MergeSameSelectors or CleanupStep.MergeSameProperties => Strings.Get("Cleanup_MergeWarning"),
             CleanupStep.EmptyElements => Strings.Get("Cleanup_EmptyElementsWarning"),
+            CleanupStep.BareSpans => Strings.Get("Cleanup_BareSpansWarning"),
             CleanupStep.NestedDivs => Strings.Get("Cleanup_NestedDivsWarning"),
             _ => string.Empty,
         };
@@ -374,7 +375,7 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
             return Strings.Get("Cleanup_NothingFound");
         }
 
-        string summary = Step is CleanupStep.MergeSameSelectors or CleanupStep.MergeSameProperties or CleanupStep.EmptyElements or CleanupStep.NestedDivs
+        string summary = Step is CleanupStep.MergeSameSelectors or CleanupStep.MergeSameProperties or CleanupStep.EmptyElements or CleanupStep.BareSpans or CleanupStep.NestedDivs
             ? Strings.Format($"Cleanup_{Step}_Summary", result.AppliedCount, result.Items.Count, result.AppliedRuleCount)
             : Strings.Format($"Cleanup_{Step}_Summary", result.AppliedCount, result.Items.Count);
         return result.RiskyCount > 0 ? summary + Strings.Format("Cleanup_RiskySummary", result.RiskyCount) : summary;

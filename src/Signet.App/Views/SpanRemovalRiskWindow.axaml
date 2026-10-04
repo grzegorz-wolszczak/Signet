@@ -1,0 +1,43 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="using:Signet.App.Resources"
+        xmlns:core="using:Signet.Core.BookManipulation"
+        x:Class="Signet.App.Views.SpanRemovalRiskWindow"
+        Width="760" Height="460" MinWidth="420" MinHeight="260"
+        WindowStartupLocation="CenterOwner"
+        Title="{loc:Loc SpanRemovalRiskWindow_Title}">
+
+  <Window.Styles>
+    <!-- The same look as the consequences of a risky item in the Cleanup dialog. -->
+    <Style Selector="TextBlock.note">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel Margin="16">
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right"
+                Spacing="8" Margin="0,12,0,0">
+      <Button x:Name="AcceptButton" Content="{loc:Loc SpanRemovalRiskWindow_Accept}" MinWidth="80" />
+      <Button x:Name="CancelButton" Content="{loc:Loc Common_Cancel}" IsCancel="True" IsDefault="True" MinWidth="80" />
+    </StackPanel>
+
+    <TextBlock x:Name="Intro" DockPanel.Dock="Top" TextWrapping="Wrap" Margin="0,0,0,10" />
+
+    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1"
+            CornerRadius="4" Padding="10">
+      <ScrollViewer>
+        <ItemsControl x:Name="Consequences">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="core:CleanupConsequence">
+              <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2">
+                <TextBlock Text="⚠" FontWeight="Bold" Foreground="{DynamicResource SignetWarningBrush}" />
+                <TextBlock Text="{Binding Text}" Classes="note" Foreground="{DynamicResource SignetWarningBrush}" />
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </Border>
+  </DockPanel>
+</Window>

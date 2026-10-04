@@ -665,6 +665,39 @@
   <data name="CodeViewMenu_ViewImage" xml:space="preserve">
     <value>Pokaż obraz</value>
   </data>
+  <data name="CodeViewMenu_RemoveSpan" xml:space="preserve">
+    <value>Usuń span ({0})</value>
+  </data>
+  <data name="CodeViewMenu_RemoveSpanNoClass" xml:space="preserve">
+    <value>bez class</value>
+  </data>
+  <data name="CodeViewMenu_RemoveSpanSingle" xml:space="preserve">
+    <value>Usuń ten span</value>
+  </data>
+  <data name="CodeViewMenu_RemoveSpanAll" xml:space="preserve">
+    <value>Usuń wszystkie takie spany w pliku ({0})</value>
+  </data>
+  <data name="CodeViewMenu_RemoveSpanBook" xml:space="preserve">
+    <value>Usuń wszystkie takie spany w książce ({0})</value>
+  </data>
+  <data name="SpanRemovalRiskWindow_Title" xml:space="preserve">
+    <value>Usuwanie spanów — zmiany w wyglądzie</value>
+  </data>
+  <data name="SpanRemovalRiskWindow_Intro" xml:space="preserve">
+    <value>Usunięcie znaczników &lt;span&gt; ({0}, w plikach: {1}) zmieni wygląd książki — style tych spanów przestaną działać albo zmieni się to, do czego pasują reguły CSS. Sprawdź, co dokładnie się zmieni:</value>
+  </data>
+  <data name="SpanRemovalRiskWindow_Accept" xml:space="preserve">
+    <value>Usuń mimo to</value>
+  </data>
+  <data name="Operation_RemoveSpans" xml:space="preserve">
+    <value>Usuń span</value>
+  </data>
+  <data name="Status_SpansRemovedInBook" xml:space="preserve">
+    <value>Usunięto znaczniki &lt;span&gt;: {0} (w plikach: {1}).</value>
+  </data>
+  <data name="CodeViewMenu_RemoveSpanHasId" xml:space="preserve">
+    <value>Span ma atrybut id (może być celem linku) — nie jest usuwany</value>
+  </data>
   <data name="CodeViewMenu_OpenTabForImage" xml:space="preserve">
     <value>Otwórz kartę z obrazem</value>
   </data>
@@ -3583,6 +3616,18 @@ Wstawić mimo to?</value>
   </data>
   <data name="Cleanup_EmptyElementsWarning" xml:space="preserve">
     <value>Puste elementy, które dzięki CSS i tak coś robią (np. odstęp z margin/padding/height, łamanie strony, clear, treść z ::before/::after), są oznaczone ⚠ i domyślnie odznaczone. Pod każdym widać, która reguła i co robi.</value>
+  </data>
+  <data name="Cleanup_BareSpans_Title" xml:space="preserve">
+    <value>Usuń znaczniki &lt;span&gt; bez atrybutów</value>
+  </data>
+  <data name="Cleanup_BareSpans_Description" xml:space="preserve">
+    <value>&lt;span&gt; bez żadnych atrybutów (bez class, style, lang…) sam nic nie zmienia w wyglądzie. Usuwa takie znaczniki, a ich treść zostaje na miejscu.</value>
+  </data>
+  <data name="Cleanup_BareSpans_Summary" xml:space="preserve">
+    <value>Pozycje do wykonania: {0} z {1} (usuwanych znaczników &lt;span&gt;: {2}).</value>
+  </data>
+  <data name="Cleanup_BareSpansWarning" xml:space="preserve">
+    <value>CSS może trafić w goły &lt;span&gt; po samej nazwie (span { }, p span) albo przez strukturę (p &gt; em, :first-child, +, ~). Takie spany są oznaczone ⚠ i domyślnie odznaczone; pod każdym widać, co by się zmieniło.</value>
   </data>
   <data name="Cleanup_NestedDivs_Title" xml:space="preserve">
     <value>Usuń niepotrzebne zagnieżdżenia &lt;div&gt;</value>

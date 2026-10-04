@@ -1,9 +1,7 @@
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace Signet.Core.BookManipulation;
 
@@ -41,13 +39,7 @@ internal sealed record NestedDivSeparator(int Pos, string Text, bool IsCData);
 /// </remarks>
 internal static class NestedDivCollapser
 {
-    private static readonly Regex AttributeRegex = new(
-        @"(?<name>[^\s=/>""']+)(?:\s*=\s*(?:""(?<value>[^""]*)""|'(?<value>[^']*)'|(?<value>[^\s>""']+)))?",
-        RegexOptions.Compiled);
-
     private static readonly string[] WhitespaceSensitiveTags = { "pre", "textarea" };
-
-    private static readonly SearchValues<char> TagNameEnd = SearchValues.Create(" \t\r\n\f>/");
 
     /// <summary>All chains in <paramref name="text"/> (well-formed XHTML), in document order.</summary>
     public static IReadOnlyList<NestedDivChain> FindChains(string text)
@@ -147,7 +139,7 @@ internal static class NestedDivCollapser
         string text = lister.Source;
         List<int> divs = new() { outer };
         List<int> separators = new();
-        Dictionary<string, string> attributes = Attributes(text.Substring(tags[outer].Pos, tags[outer].Len));
+        Dictionary<string, string> attributes = ElementAttributes.Parse(text.Substring(tags[outer].Pos, tags[outer].Len));
 
         while (true)
         {
@@ -155,7 +147,7 @@ internal static class NestedDivCollapser
             List<int> found = new();
             int next = NextSignificant(lister, current, found);
             if (next < 0 || !IsDivOpen(tags[next])
-                || !SameAttributes(attributes, Attributes(text.Substring(tags[next].Pos, tags[next].Len))))
+                || !ElementAttributes.Same(attributes, ElementAttributes.Parse(text.Substring(tags[next].Pos, tags[next].Len))))
             {
                 break;
             }
@@ -205,28 +197,6 @@ internal static class NestedDivCollapser
 
     private static bool IsDivOpen(TagLister.TagInfo tag) =>
         tag.Kind == TagKind.Begin && string.Equals(tag.TagName, "div", StringComparison.OrdinalIgnoreCase);
-
-    private static Dictionary<string, string> Attributes(string openTag)
-    {
-        // Skip "<div" — the rest up to ">" are the attributes.
-        int start = openTag.AsSpan().IndexOfAny(TagNameEnd);
-        string body = start < 0 ? string.Empty : openTag[start..].TrimEnd('>').TrimEnd('/');
-        Dictionary<string, string> attributes = new(StringComparer.Ordinal);
-        foreach (Match match in AttributeRegex.Matches(body))
-        {
-            string name = match.Groups["name"].Value;
-            string value = match.Groups["value"].Success ? match.Groups["value"].Value : string.Empty;
-            attributes[name] = name == "class" ? NormalizeClasses(value) : value;
-        }
-
-        return attributes;
-    }
-
-    private static string NormalizeClasses(string value) =>
-        string.Join(' ', value.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal));
-
-    private static bool SameAttributes(Dictionary<string, string> a, Dictionary<string, string> b) =>
-        a.Count == b.Count && a.All(kv => b.TryGetValue(kv.Key, out string? value) && string.Equals(value, kv.Value, StringComparison.Ordinal));
 
     private static bool IsWhitespace(string text, int start, int end)
     {

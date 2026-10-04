@@ -1241,6 +1241,65 @@ public sealed class CodeTabViewModel : ContentTabViewModel
         ApplyFormat(ElementMerger.Merge(_model.Text, _selectionStart, _selectionEnd));
     }
 
+    /// <summary>
+    /// The <c>&lt;span&gt;</c> whose opening or closing tag is under the caret — for the "Remove span" context menu
+    /// (<see cref="SpanUnwrapper.Find"/>); <c>null</c> outside such a tag or in a non-HTML tab.
+    /// </summary>
+    public SpanAtCaret? SpanAtCaret()
+    {
+        if (Syntax != CodeViewSyntax.Html)
+        {
+            return null;
+        }
+
+        SyncModelFromDocument();
+        return SpanUnwrapper.Find(_model.Text, _caretOffset);
+    }
+
+    /// <summary>
+    /// "Remove span": removes the tags of the span under the caret (or, with <paramref name="all"/>, of every span of
+    /// the file that is the same as it) and keeps the content. Undoable.
+    /// </summary>
+    public void UnwrapSpan(bool all)
+    {
+        SyncModelFromDocument();
+        ApplyFormat(SpanUnwrapper.Unwrap(_model.Text, _caretOffset, all, _caretOffset));
+    }
+
+    /// <summary>"Remove span" — how many spans of the whole book are the same as the span under the caret.</summary>
+    public int CountSameSpansInBook() =>
+        Host is not null && Resource is HtmlResource html ? Host.CountSameSpansInBook(html, _model.Text, _caretOffset) : 0;
+
+    /// <summary>
+    /// "Remove span" — plans the removal of <paramref name="scope"/> with its consequences for the styling (shown to
+    /// the user for acceptance when not empty). <c>null</c> without a book (the removal then has no checked
+    /// consequences — <see cref="ApplySpanRemoval"/> with <c>null</c> still removes in this file).
+    /// </summary>
+    public SpanRemovalPlan? PlanSpanRemoval(SpanRemovalScope scope)
+    {
+        SyncModelFromDocument();
+        return Host is not null && Resource is HtmlResource html ? Host.PlanSpanRemoval(html, _model.Text, _caretOffset, scope) : null;
+    }
+
+    /// <summary>
+    /// Carries out "Remove span" of <paramref name="scope"/>: in this file through the editor (undoable), in the
+    /// whole book through the host (with a checkpoint) using <paramref name="plan"/>.
+    /// </summary>
+    public void ApplySpanRemoval(SpanRemovalScope scope, SpanRemovalPlan? plan)
+    {
+        if (scope == SpanRemovalScope.Book)
+        {
+            if (plan is not null)
+            {
+                Host?.ApplySpanRemovalInBook(plan);
+            }
+
+            return;
+        }
+
+        UnwrapSpan(all: scope == SpanRemovalScope.File);
+    }
+
     /// <summary>"Split Tag" — splits the enclosing element at the caret.</summary>
     public void SplitTag()
     {

@@ -760,6 +760,34 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public void Removing_a_span_in_the_whole_book_writes_the_files_and_reports_it()
+    {
+        using UiCultureScope culture = new("en");
+        using TempDir temp = new();
+        string tree = temp.Combine("tree");
+        TestFs.CopyDirectory(CorpusPaths.Epub3Minimal, tree);
+        string chapterPath = Path.Combine(tree, "EPUB", "text", "chapter1.xhtml");
+        File.WriteAllText(chapterPath, File.ReadAllText(chapterPath).Replace(
+            "<p>Hello, world.</p>", "<p><span class=\"s\">Hello</span>, <span class=\"s\">world</span>.</p>", StringComparison.Ordinal));
+        string epub = EpubBuilder.BuildInto(tree, temp, "book.epub");
+        MainWindowViewModel sut = New();
+        Book book = new ImportEpub(epub).GetBook();
+        sut.LoadBook(book, epub);
+        HtmlResource chapter = book.GetHtmlResources().Single(h => h.Filename == "chapter1.xhtml");
+        Signet.App.ViewModels.Tabs.ICodeTabHost host = sut;
+        string text = chapter.GetText();
+        int offset = text.IndexOf("<span", StringComparison.Ordinal) + 1;
+
+        host.CountSameSpansInBook(chapter, text, offset).Should().Be(2);
+        SpanRemovalPlan plan = host.PlanSpanRemoval(chapter, text, offset, SpanRemovalScope.Book)!;
+        host.ApplySpanRemovalInBook(plan);
+
+        chapter.GetText().Should().Contain("<p>Hello, world.</p>");
+        book.Modified.Should().BeTrue();
+        sut.StatusMessage.Should().Be(Strings.Format("Status_SpansRemovedInBook", 2, 1));
+    }
+
+    [Fact]
     public void ClipEditor_action_raises_ClipEditorRequested()
     {
         MainWindowViewModel sut = New();

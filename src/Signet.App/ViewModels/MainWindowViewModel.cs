@@ -1848,6 +1848,49 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <inheritdoc/>
+    int ICodeTabHost.CountSameSpansInBook(HtmlResource html, string text, int offset) =>
+        _currentBook is null ? 0 : SpanRemoval.CountInBook(_currentBook, html, text, offset);
+
+    /// <inheritdoc/>
+    SpanRemovalPlan? ICodeTabHost.PlanSpanRemoval(HtmlResource html, string text, int offset, SpanRemovalScope scope)
+    {
+        if (_currentBook is null)
+        {
+            return null;
+        }
+
+        if (scope == SpanRemovalScope.Book)
+        {
+            _tabManager.SaveAllTabs();
+        }
+
+        return SpanRemoval.Plan(_currentBook, html, text, offset, scope);
+    }
+
+    /// <inheritdoc/>
+    void ICodeTabHost.ApplySpanRemovalInBook(SpanRemovalPlan plan)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        if (_currentBook is null || plan.NewTexts.Count == 0)
+        {
+            return;
+        }
+
+        AddCheckpointBefore(Strings.Get("Operation_RemoveSpans"));
+        foreach (HtmlResource html in _currentBook.GetHtmlResources())
+        {
+            if (plan.NewTexts.TryGetValue(html.BookPath, out string? text))
+            {
+                html.SetText(text);
+            }
+        }
+
+        _currentBook.Modified = true;
+        RefreshAfterMaintenanceOperation();
+        _statusBar.ShowMessage(Strings.Format("Status_SpansRemovedInBook", plan.SpanCount, plan.NewTexts.Count), TimeSpan.FromSeconds(4));
+    }
+
+    /// <inheritdoc/>
     void ICodeTabHost.ViewImage(string bookPath)
     {
         Resource? resource = _currentBook?.GetFolderKeeper().GetResourceByBookPathNoThrow(bookPath);

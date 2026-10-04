@@ -305,6 +305,9 @@
   <data name="Status_NoTagToSplit" xml:space="preserve">
     <value>Nie znaleziono znacznika do podzielenia.</value>
   </data>
+  <data name="Status_SpansRemoved" xml:space="preserve">
+    <value>Usunięto znaczniki &lt;span&gt;: {0} (treść została).</value>
+  </data>
   <data name="Rename_InvalidRegex" xml:space="preserve">
     <value>Nieprawidłowe wyrażenie regularne: {0}</value>
   </data>
@@ -6082,6 +6085,15 @@
   </data>
   <data name="Cleanup_Risk_EmptyStyle" xml:space="preserve">
     <value>{0}: &lt;{1}&gt; — „{2}: {3}” (z „{4}”) działa także na pustym elemencie{5}</value>
+  </data>
+  <data name="Cleanup_BareSpans_File" xml:space="preserve">
+    <value>Znaczniki &lt;span&gt; bez atrybutów do usunięcia: {0}</value>
+  </data>
+  <data name="Cleanup_BareSpans_Span" xml:space="preserve">
+    <value>&lt;span&gt;{0}&lt;/span&gt;</value>
+  </data>
+  <data name="Cleanup_Risk_SpanStyle" xml:space="preserve">
+    <value>{0}: &lt;span&gt; — „{1}: {2}” (z „{3}”) działa na tym spanie{4}</value>
   </data>
   <data name="Css_MergeAtRule" xml:space="preserve">
     <value> — w miejscu reguły {0} z {1}</value>

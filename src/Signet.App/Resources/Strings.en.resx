@@ -665,6 +665,39 @@
   <data name="CodeViewMenu_ViewImage" xml:space="preserve">
     <value>View Image</value>
   </data>
+  <data name="CodeViewMenu_RemoveSpan" xml:space="preserve">
+    <value>Remove span ({0})</value>
+  </data>
+  <data name="CodeViewMenu_RemoveSpanNoClass" xml:space="preserve">
+    <value>no class</value>
+  </data>
+  <data name="CodeViewMenu_RemoveSpanSingle" xml:space="preserve">
+    <value>Remove this span</value>
+  </data>
+  <data name="CodeViewMenu_RemoveSpanAll" xml:space="preserve">
+    <value>Remove all such spans in the file ({0})</value>
+  </data>
+  <data name="CodeViewMenu_RemoveSpanBook" xml:space="preserve">
+    <value>Remove all such spans in the book ({0})</value>
+  </data>
+  <data name="SpanRemovalRiskWindow_Title" xml:space="preserve">
+    <value>Removing spans — changes to the look</value>
+  </data>
+  <data name="SpanRemovalRiskWindow_Intro" xml:space="preserve">
+    <value>Removing the &lt;span&gt; tags ({0}, in files: {1}) changes how the book looks — the styles of these spans stop applying, or CSS rules match different elements. Check what exactly changes:</value>
+  </data>
+  <data name="SpanRemovalRiskWindow_Accept" xml:space="preserve">
+    <value>Remove anyway</value>
+  </data>
+  <data name="Operation_RemoveSpans" xml:space="preserve">
+    <value>Remove span</value>
+  </data>
+  <data name="Status_SpansRemovedInBook" xml:space="preserve">
+    <value>&lt;span&gt; tags removed: {0} (in files: {1}).</value>
+  </data>
+  <data name="CodeViewMenu_RemoveSpanHasId" xml:space="preserve">
+    <value>The span has an id (it can be a link target) — it is not removed</value>
+  </data>
   <data name="CodeViewMenu_OpenTabForImage" xml:space="preserve">
     <value>Open Tab For Image</value>
   </data>
@@ -3583,6 +3616,18 @@ Insert anyway?</value>
   </data>
   <data name="Cleanup_EmptyElementsWarning" xml:space="preserve">
     <value>Empty elements that CSS still gives an effect (e.g. space from margin/padding/height, a page break, clear, content from ::before/::after) are marked ⚠ and unchecked by default. Each one lists which rule does what.</value>
+  </data>
+  <data name="Cleanup_BareSpans_Title" xml:space="preserve">
+    <value>Remove &lt;span&gt; tags without attributes</value>
+  </data>
+  <data name="Cleanup_BareSpans_Description" xml:space="preserve">
+    <value>A &lt;span&gt; without any attribute (no class, style, lang…) changes nothing on its own. Removes such tags and keeps their content in place.</value>
+  </data>
+  <data name="Cleanup_BareSpans_Summary" xml:space="preserve">
+    <value>Items to apply: {0} of {1} (&lt;span&gt; tags removed: {2}).</value>
+  </data>
+  <data name="Cleanup_BareSpansWarning" xml:space="preserve">
+    <value>CSS can reach a bare &lt;span&gt; by its name (span { }, p span) or through the structure (p &gt; em, :first-child, +, ~). Such spans are marked ⚠ and unchecked by default; each one lists what would change.</value>
   </data>
   <data name="Cleanup_NestedDivs_Title" xml:space="preserve">
     <value>Remove unnecessary &lt;div&gt; nesting</value>
