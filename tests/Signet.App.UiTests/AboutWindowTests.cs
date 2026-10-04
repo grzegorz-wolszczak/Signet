@@ -7,7 +7,7 @@ using Signet.App.Views;
 
 namespace Signet.App.UiTests;
 
-/// <summary>About window: version 0.1.0-&lt;timestamp&gt; compiled in by Versioning.targets.</summary>
+/// <summary>About window: version 0.2.0-&lt;timestamp&gt; compiled in by Versioning.targets.</summary>
 public sealed class AboutWindowTests
 {
     [AvaloniaFact]
@@ -19,7 +19,7 @@ public sealed class AboutWindowTests
         window.CaptureRenderedFrame();
 
         window.FindControl<SelectableTextBlock>("VersionText")!.Text
-            .Should().MatchRegex(@"^0\.1\.0-\d{12}$");
+            .Should().MatchRegex(@"^0\.2\.0-\d{12}$");
         window.Close();
     }
 }
