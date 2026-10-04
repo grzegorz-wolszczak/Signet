@@ -1,11 +1,12 @@
 # Signet
 
-A desktop editor for EPUB 2 and EPUB 3 ebooks, written in C# with [Avalonia](https://avaloniaui.net/).
+A desktop editor for EPUB 2 and EPUB 3 ebooks, written in C# with [Avalonia](https://avaloniaui.net/)
+(vibe coded with AI).
 
 ## Project status: use at your own risk
 
-Signet is still under heavy, active development. New features (and new bugs) are added all the
-time, so there is **no guarantee that any part of it works correctly**. Everyone who uses it does
+Signet is still under heavy, active development. New features are added all the time (and new
+bugs are discovered every day!), so there is **no guarantee that any part of it works correctly**. Everyone who uses it does
 so entirely at their own risk. If Signet ruins your book, you have only yourself to blame, so
 always keep a backup copy of the original.
 
