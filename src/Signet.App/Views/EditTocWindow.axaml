@@ -36,44 +36,52 @@
         <Button Content="↓" Command="{Binding MoveDownCommand}" ToolTip.Tip="{loc:Loc EditTocWindow_MoveDownTip}" />
         <Button Content="→" Command="{Binding MoveRightCommand}" ToolTip.Tip="{loc:Loc EditTocWindow_IncreaseLevelTip}" />
       </UniformGrid>
-      <Separator />
-      <UniformGrid Columns="2">
-        <Button Content="{loc:Loc Common_Expand}" Command="{Binding ExpandAllCommand}" />
-        <Button Content="{loc:Loc Common_Collapse}" Command="{Binding CollapseAllCommand}" />
-      </UniformGrid>
+
     </StackPanel>
 
-    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1">
-      <TreeView x:Name="Tree"
-                ItemsSource="{Binding Nodes}"
-                SelectionMode="Multiple">
-        <TreeView.Styles>
-          <Style Selector="TreeViewItem" x:DataType="vm:EditTocNodeViewModel">
-            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
-          </Style>
-        </TreeView.Styles>
-        <TreeView.ContextMenu>
-          <ContextMenu>
-            <MenuItem Header="{loc:Loc Common_Rename}" Command="{Binding RenameCommand}" />
-            <MenuItem Header="{loc:Loc Common_Delete}" Command="{Binding DeleteCommand}" />
-            <Separator />
-            <MenuItem Header="{loc:Loc ClipsPanelView_CollapseAll}" Command="{Binding CollapseAllCommand}" />
-            <MenuItem Header="{loc:Loc ClipsPanelView_ExpandAll}" Command="{Binding ExpandAllCommand}" />
-          </ContextMenu>
-        </TreeView.ContextMenu>
-        <TreeView.ItemTemplate>
-          <TreeDataTemplate x:DataType="vm:EditTocNodeViewModel" ItemsSource="{Binding Children}">
-            <Grid ColumnDefinitions="*,2*" ColumnSpacing="6" Margin="0,1" MinHeight="26">
-              <TextBox x:Name="EntryText" Grid.Column="0" Text="{Binding Text, Mode=TwoWay}"
-                       BorderThickness="0" Background="Transparent" Padding="2,1"
+    <!-- A flat table in reading order: the level is shown as the indentation of the title and in its own column;
+         ← → change it. Sorting is off — the order of the rows is the order of the table of contents. -->
+    <DataGrid x:Name="Grid"
+              ItemsSource="{Binding Rows}"
+              SelectionMode="Extended"
+              CanUserResizeColumns="True"
+              CanUserSortColumns="False"
+              CanUserReorderColumns="False"
+              GridLinesVisibility="Horizontal"
+              BorderThickness="1"
+              BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+      <DataGrid.ContextMenu>
+        <ContextMenu>
+          <MenuItem Header="{loc:Loc Common_Rename}" Command="{Binding RenameCommand}" />
+          <MenuItem Header="{loc:Loc Common_Delete}" Command="{Binding DeleteCommand}" />
+        </ContextMenu>
+      </DataGrid.ContextMenu>
+      <DataGrid.Columns>
+        <DataGridTemplateColumn Header="{loc:Loc EditTocWindow_ColumnTitle}" Width="2*" MinWidth="80">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate x:DataType="vm:EditTocNodeViewModel">
+              <TextBlock Text="{Binding Text}" Margin="{Binding Indent}" Padding="6,0" VerticalAlignment="Center"
+                         TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Text}" />
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+          <DataGridTemplateColumn.CellEditingTemplate>
+            <DataTemplate x:DataType="vm:EditTocNodeViewModel">
+              <TextBox Text="{Binding Text, Mode=TwoWay}" Margin="{Binding Indent}"
                        PlaceholderText="{loc:Loc EditTocWindow_EntryTextPlaceholder}" />
-              <TextBlock Grid.Column="1" Text="{Binding TargetDisplay}" VerticalAlignment="Center"
-                         Opacity="0.7" TextTrimming="CharacterEllipsis"
-                         ToolTip.Tip="{Binding TargetDisplay}" />
-            </Grid>
-          </TreeDataTemplate>
-        </TreeView.ItemTemplate>
-      </TreeView>
-    </Border>
+            </DataTemplate>
+          </DataGridTemplateColumn.CellEditingTemplate>
+        </DataGridTemplateColumn>
+        <DataGridTextColumn Header="{loc:Loc EditTocWindow_ColumnLevel}" Binding="{Binding Level}"
+                            IsReadOnly="True" Width="Auto" />
+        <DataGridTemplateColumn Header="{loc:Loc EditTocWindow_ColumnTarget}" Width="3*" MinWidth="80" IsReadOnly="True">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate x:DataType="vm:EditTocNodeViewModel">
+              <TextBlock Text="{Binding TargetDisplay}" Padding="6,0" VerticalAlignment="Center" Opacity="0.7"
+                         TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding TargetDisplay}" />
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+      </DataGrid.Columns>
+    </DataGrid>
   </DockPanel>
 </Window>

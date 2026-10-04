@@ -203,6 +203,15 @@
   <data name="EditTocWindow_EntryTextPlaceholder" xml:space="preserve">
     <value>(entry text)</value>
   </data>
+  <data name="EditTocWindow_ColumnTitle" xml:space="preserve">
+    <value>Title</value>
+  </data>
+  <data name="EditTocWindow_ColumnLevel" xml:space="preserve">
+    <value>Level</value>
+  </data>
+  <data name="EditTocWindow_ColumnTarget" xml:space="preserve">
+    <value>Target</value>
+  </data>
   <data name="EmptyLayoutWindow_Title" xml:space="preserve">
     <value>EPUB Layout Wizard</value>
   </data>

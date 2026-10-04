@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System;
+using Avalonia;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Signet.App.Resources;
@@ -59,8 +61,6 @@ public sealed class EditTocViewModel : ViewModelBase
         MoveRightCommand = new RelayCommand(MoveRight);
         SelectTargetCommand = new RelayCommand(() => SelectTargetRequested?.Invoke(this, EventArgs.Empty));
         RenameCommand = new RelayCommand(() => RenameRequested?.Invoke(this, EventArgs.Empty));
-        CollapseAllCommand = new RelayCommand(() => SetExpandedAll(false));
-        ExpandAllCommand = new RelayCommand(() => SetExpandedAll(true));
         AcceptCommand = new RelayCommand(Accept);
         CancelCommand = new RelayCommand(() => CloseRequested?.Invoke(this, EventArgs.Empty));
 
@@ -81,6 +81,12 @@ public sealed class EditTocViewModel : ViewModelBase
 
     /// <summary>Top-level nodes of the tree (children of the artificial root).</summary>
     public ObservableCollection<EditTocNodeViewModel> Nodes => _root.Children;
+
+    /// <summary>
+    /// All entries as a flat list in reading order (depth-first) — the rows of the table; the level of each one is
+    /// <see cref="EditTocNodeViewModel.Level"/>. Rebuilt after every change of the structure.
+    /// </summary>
+    public ObservableCollection<EditTocNodeViewModel> Rows { get; } = new();
 
     /// <summary>"Add Above" — insert an empty entry above the selected one.</summary>
     public RelayCommand AddAboveCommand { get; }
@@ -108,12 +114,6 @@ public sealed class EditTocViewModel : ViewModelBase
 
     /// <summary>"Rename" — start editing the selected entry's name.</summary>
     public RelayCommand RenameCommand { get; }
-
-    /// <summary>"Collapse All".</summary>
-    public RelayCommand CollapseAllCommand { get; }
-
-    /// <summary>"Expand All".</summary>
-    public RelayCommand ExpandAllCommand { get; }
 
     /// <summary>"OK" — validate, save to nav/NCX and close.</summary>
     public RelayCommand AcceptCommand { get; }
@@ -230,6 +230,35 @@ public sealed class EditTocViewModel : ViewModelBase
         {
             _root.Children.Add(CreateNode(child, _root));
         }
+
+        RefreshRows();
+    }
+
+    // Rebuilds Rows (depth-first order) and the levels; the collection is left alone when nothing changed.
+    private void RefreshRows()
+    {
+        List<EditTocNodeViewModel> rows = new();
+        void Add(IEnumerable<EditTocNodeViewModel> nodes, int level)
+        {
+            foreach (EditTocNodeViewModel node in nodes)
+            {
+                node.Level = level;
+                rows.Add(node);
+                Add(node.Children, level + 1);
+            }
+        }
+
+        Add(_root.Children, 1);
+        if (rows.SequenceEqual(Rows))
+        {
+            return;
+        }
+
+        Rows.Clear();
+        foreach (EditTocNodeViewModel row in rows)
+        {
+            Rows.Add(row);
+        }
     }
 
     private static EditTocNodeViewModel CreateNode(TocEntry entry, EditTocNodeViewModel parent)
@@ -257,6 +286,7 @@ public sealed class EditTocViewModel : ViewModelBase
         int index = parent.Children.IndexOf(item) + (above ? 0 : 1);
         EditTocNodeViewModel entry = new() { Parent = parent };
         parent.Children.Insert(index, entry);
+        RefreshRows();
         RequestSelection(new[] { entry });
     }
 
@@ -275,6 +305,8 @@ public sealed class EditTocViewModel : ViewModelBase
             placeholder.SetInitial(Strings.Get("EditToc_PlaceholderEntry"), string.Empty);
             _root.Children.Add(placeholder);
         }
+
+        RefreshRows();
     }
 
     // --- moving (preserving contiguous ranges) ---
@@ -305,7 +337,7 @@ public sealed class EditTocViewModel : ViewModelBase
             }
         }
 
-        ReselectAndExpand(moved);
+        Reselect(moved);
     }
 
     private void MoveRight()
@@ -330,11 +362,9 @@ public sealed class EditTocViewModel : ViewModelBase
                 newParent.Children.Add(child);
                 moved.Add(child);
             }
-
-            newParent.IsExpanded = true;
         }
 
-        ReselectAndExpand(moved);
+        Reselect(moved);
     }
 
     private void MoveUp()
@@ -364,7 +394,7 @@ public sealed class EditTocViewModel : ViewModelBase
             }
         }
 
-        ReselectAndExpand(moved);
+        Reselect(moved);
     }
 
     private void MoveDown()
@@ -393,7 +423,7 @@ public sealed class EditTocViewModel : ViewModelBase
             }
         }
 
-        ReselectAndExpand(moved);
+        Reselect(moved);
     }
 
     private List<MoveRange> SortedRanges()
@@ -485,24 +515,10 @@ public sealed class EditTocViewModel : ViewModelBase
         return path;
     }
 
-    private void ReselectAndExpand(List<EditTocNodeViewModel> moved)
+    private void Reselect(List<EditTocNodeViewModel> moved)
     {
-        foreach (EditTocNodeViewModel node in moved)
-        {
-            ExpandChildren(node);
-        }
-
+        RefreshRows();
         RequestSelection(moved);
-    }
-
-    private static void ExpandChildren(EditTocNodeViewModel node)
-    {
-        foreach (EditTocNodeViewModel child in node.Children)
-        {
-            ExpandChildren(child);
-        }
-
-        node.IsExpanded = true;
     }
 
     private void RequestSelection(IReadOnlyList<EditTocNodeViewModel> nodes)
@@ -510,19 +526,6 @@ public sealed class EditTocViewModel : ViewModelBase
         _selectedNodes = nodes;
         OnPropertyChanged(nameof(SelectedNode));
         SelectionChangeRequested?.Invoke(this, nodes);
-    }
-
-    // --- expanding / collapsing ---
-
-    private void SetExpandedAll(bool expanded) => SetExpandedAll(_root.Children, expanded);
-
-    private static void SetExpandedAll(IEnumerable<EditTocNodeViewModel> nodes, bool expanded)
-    {
-        foreach (EditTocNodeViewModel node in nodes)
-        {
-            node.IsExpanded = expanded;
-            SetExpandedAll(node.Children, expanded);
-        }
     }
 
     // --- saving ---
@@ -595,7 +598,7 @@ public sealed class EditTocNodeViewModel : ObservableObject
 {
     private string _text = string.Empty;
     private string _target = string.Empty;
-    private bool _isExpanded = true;
+    private int _level = 1;
 
     /// <summary>Parent in the tree (an artificial root for top-level entries).</summary>
     public EditTocNodeViewModel? Parent { get; set; }
@@ -626,12 +629,21 @@ public sealed class EditTocNodeViewModel : ObservableObject
     /// <summary>Target label shown in the "Target" column.</summary>
     public string TargetDisplay => _target.Length > 0 ? _target : Strings.Get("EditToc_NoTarget");
 
-    /// <summary>Whether the node is expanded in the tree.</summary>
-    public bool IsExpanded
+    /// <summary>The level of the entry (1 = top level); the "Level" column and the indentation of the title.</summary>
+    public int Level
     {
-        get => _isExpanded;
-        set => SetProperty(ref _isExpanded, value);
+        get => _level;
+        internal set
+        {
+            if (SetProperty(ref _level, value))
+            {
+                OnPropertyChanged(nameof(Indent));
+            }
+        }
     }
+
+    /// <summary>The indentation of the title in the table — 16 px per level below the top one.</summary>
+    public Thickness Indent => new((_level - 1) * 16, 0, 0, 0);
 
     /// <summary>Sets the initial values without notifications (while building the tree).</summary>
     internal void SetInitial(string text, string target)

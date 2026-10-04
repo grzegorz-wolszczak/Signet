@@ -4,14 +4,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.VisualTree;
 using Signet.App.ViewModels;
 
 namespace Signet.App.Views;
 
 /// <summary>
 /// The modal "Edit Table Of Contents" dialog.
-/// An editable table of contents tree with multi-selection, moving of contiguous ranges,
+/// An editable table of contents as a table (title / level / target, resizable columns) with multi-selection, moving of contiguous ranges,
 /// a context menu and the "Select Target" dialog.
 /// </summary>
 public partial class EditTocWindow : Window
@@ -23,7 +22,7 @@ public partial class EditTocWindow : Window
     {
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
-        Tree.SelectionChanged += OnSelectionChanged;
+        Grid.SelectionChanged += OnSelectionChanged;
         AddHandler(KeyDownEvent, OnKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
     }
 
@@ -60,22 +59,20 @@ public partial class EditTocWindow : Window
 
     private void OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        IEnumerable<EditTocNodeViewModel> selected =
-            Tree.SelectedItems?.OfType<EditTocNodeViewModel>() ?? Enumerable.Empty<EditTocNodeViewModel>();
-        _bound?.SetSelectedNodes(selected);
+        _bound?.SetSelectedNodes(Grid.SelectedItems.OfType<EditTocNodeViewModel>());
     }
 
     private void OnSelectionChangeRequested(object? sender, IReadOnlyList<EditTocNodeViewModel> nodes)
     {
-        if (Tree.SelectedItems is null)
-        {
-            return;
-        }
-
-        Tree.SelectedItems.Clear();
+        Grid.SelectedItems.Clear();
         foreach (EditTocNodeViewModel node in nodes)
         {
-            Tree.SelectedItems.Add(node);
+            Grid.SelectedItems.Add(node);
+        }
+
+        if (nodes.Count > 0)
+        {
+            Grid.ScrollIntoView(nodes[0], TitleColumn());
         }
     }
 
@@ -97,21 +94,14 @@ public partial class EditTocWindow : Window
 
     private void OnRenameRequested(object? sender, EventArgs e)
     {
-        if (Tree.SelectedItem is not EditTocNodeViewModel node)
+        if (Grid.SelectedItem is not EditTocNodeViewModel node)
         {
             return;
         }
 
-        TreeViewItem? container = Tree.GetVisualDescendants()
-            .OfType<TreeViewItem>()
-            .FirstOrDefault(item => ReferenceEquals(item.DataContext, node));
-
-        TextBox? editor = container?.GetVisualDescendants().OfType<TextBox>().FirstOrDefault();
-        if (editor is not null)
-        {
-            editor.Focus();
-            editor.SelectAll();
-        }
+        Grid.ScrollIntoView(node, TitleColumn());
+        Grid.CurrentColumn = TitleColumn();
+        Grid.BeginEdit();
     }
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
@@ -144,6 +134,9 @@ public partial class EditTocWindow : Window
             e.Handled = true;
         }
     }
+
+    // The editable "Title" column (DataGrid columns are not named elements of the window).
+    private DataGridColumn TitleColumn() => Grid.Columns[0];
 
     private static void Execute(CommunityToolkit.Mvvm.Input.RelayCommand command)
     {

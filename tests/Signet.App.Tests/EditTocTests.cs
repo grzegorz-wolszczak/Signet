@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using AwesomeAssertions;
 using Signet.App.ViewModels;
@@ -63,6 +64,38 @@ public sealed class EditTocTests : IDisposable
         vm.Nodes.Select(n => n.Text).Should().Equal("Alpha", "Beta", "Gamma");
         vm.Nodes[0].Children.Should().ContainSingle().Which.Text.Should().Be("Alpha One");
         vm.Nodes[0].Children[0].Target.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public void Rows_list_every_entry_in_reading_order_with_its_level()
+    {
+        EditTocViewModel vm = NewViewModel();
+
+        vm.Rows.Select(r => (r.Text, r.Level)).Should().Equal(("Alpha", 1), ("Alpha One", 2), ("Beta", 1), ("Gamma", 1));
+        vm.Rows[1].Indent.Left.Should().BeGreaterThan(vm.Rows[0].Indent.Left);
+    }
+
+    [Fact]
+    public void Rows_and_levels_follow_moves_additions_and_deletions()
+    {
+        EditTocViewModel vm = NewViewModel();
+        List<IReadOnlyList<EditTocNodeViewModel>> requested = new();
+        vm.SelectionChangeRequested += (_, nodes) => requested.Add(nodes);
+        vm.SetSelectedNodes(new[] { Find(vm, "Beta") });
+
+        vm.MoveRightCommand.Execute(null);
+
+        vm.Rows.Select(r => (r.Text, r.Level)).Should().Equal(("Alpha", 1), ("Alpha One", 2), ("Beta", 2), ("Gamma", 1));
+        requested.Last().Should().ContainSingle().Which.Text.Should().Be("Beta");
+
+        vm.AddBelowCommand.Execute(null);
+        vm.Rows.Should().HaveCount(5);
+        vm.Rows[3].Level.Should().Be(2);
+        vm.Rows[3].Text.Should().BeEmpty();
+
+        vm.SetSelectedNodes(new[] { Find(vm, "Gamma") });
+        vm.DeleteCommand.Execute(null);
+        vm.Rows.Select(r => r.Text).Should().NotContain("Gamma");
     }
 
     [Fact]
