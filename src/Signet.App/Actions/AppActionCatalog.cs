@@ -63,7 +63,7 @@ public static class AppActionCatalog
         new("MainWindow.CasingUppercase", "&Uppercase", "Ctrl+Alt+U", "format-case-uppercase", "Edit"),
         new("MainWindow.CasingTitlecase", "&Titlecase", "", "format-case-titlecase", "Edit"),
         new("MainWindow.CasingCapitalize", "&Capitalize", "", "format-case-capitalize", "Edit"),
-        new("MainWindow.SplitSection", "&Split At Cursor", "Ctrl+Return", "split-section", "Edit"),
+        new("MainWindow.SplitSection", "&Split File At Cursor", "Ctrl+Return", "split-section", "Edit"),
         new("MainWindow.SplitOnSGFSectionMarkers", "Split At &Markers", "F6", null, "Edit"),
         new("MainWindow.Preferences", "&Preferences...", "F5", null, "Edit"),
         new("MainWindow.MergeContent", "Merge C&ontent", "", null, "Edit"),

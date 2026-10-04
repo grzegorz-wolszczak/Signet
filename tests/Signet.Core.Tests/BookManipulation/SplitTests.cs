@@ -119,4 +119,101 @@ public sealed class SplitTests
         string expected = Signet.Core.BookPath.Relative(ncx.BookPath, created[0].BookPath) + "#chapter2";
         ncx.GetNcxDocument().NavMap[0].ContentSrc.Should().Be(expected);
     }
+
+    private const string Caret = "|";
+
+    private static string Compact(string text) => string.Concat(text.Where(c => !char.IsWhiteSpace(c)));
+
+    // Splits the book's first file at the position of "|" in the body (the marker itself is removed first).
+    private static (Book Book, HtmlResource Original, HtmlResource? Created) SplitAtCaret(string bodyWithCaret, string? existingMarker = null)
+    {
+        Book book = BookCreator.CreateNewBook("2.0");
+        HtmlResource original = book.GetHtmlResources()[0];
+        string text = Xhtml(bodyWithCaret + (existingMarker ?? string.Empty));
+        int caret = text.IndexOf(Caret, System.StringComparison.Ordinal);
+        original.SetText(text.Remove(caret, 1));
+        return (book, original, book.SplitAtPosition(original, caret));
+    }
+
+    [Fact]
+    public void SplitAtPosition_KeepsTheTopInTheFileAndMovesTheRestToANewFileRightAfterIt()
+    {
+        (Book book, HtmlResource original, HtmlResource? created) = SplitAtCaret("<p>first</p>|<p>second</p>");
+        using Book _ = book;
+
+        created.Should().NotBeNull();
+        original.GetText().Should().Contain("<p>first</p>").And.NotContain("second");
+        created!.GetText().Should().Contain("<p>second</p>").And.NotContain("first");
+        created.Filename.Should().Be(original.Filename[..original.Filename.LastIndexOf('.')] + "_0001.xhtml");
+
+        var spine = book.GetOpf().GetSpineOrderBookPaths().ToList();
+        spine.IndexOf(created.BookPath).Should().Be(spine.IndexOf(original.BookPath) + 1);
+        book.Modified.Should().BeTrue();
+    }
+
+    [Fact]
+    public void SplitAtPosition_InsideAnElement_ClosesItInTheTopAndReopensItInTheNewFile()
+    {
+        (Book book, HtmlResource original, HtmlResource? created) = SplitAtCaret("<div class=\"c\"><p>first</p>|<p>second</p></div>");
+        using Book _ = book;
+
+        Compact(original.GetText()).Should().Contain("<divclass=\"c\"><p>first</p></div></body>");
+        Compact(created!.GetText()).Should().Contain("<body><divclass=\"c\"><p>second</p></div></body>");
+    }
+
+    [Fact]
+    public void SplitAtPosition_LeavesOtherSplitMarkersAlone()
+    {
+        (Book book, HtmlResource _, HtmlResource? created) = SplitAtCaret("<p>a</p>|<p>b</p>", $"{Marker}<p>c</p>");
+        using Book __ = book;
+
+        book.GetHtmlResources().Should().HaveCount(2);
+        created!.GetText().Should().Contain("signet_split_marker").And.Contain("<p>c</p>");
+    }
+
+    [Fact]
+    public void SplitAtPosition_InsideATag_ReturnsNullAndLeavesTheBookUnchanged()
+    {
+        (Book book, HtmlResource original, HtmlResource? created) = SplitAtCaret("<p cl|ass=\"x\">first</p>");
+        using Book _ = book;
+
+        created.Should().BeNull();
+        book.GetHtmlResources().Should().ContainSingle();
+        original.GetText().Should().Contain("<p class=\"x\">first</p>");
+    }
+
+    [Fact]
+    public void SplitAtPosition_RightBeforeATag_Splits()
+    {
+        (Book book, HtmlResource original, HtmlResource? created) = SplitAtCaret("<p>first</p>|<p>second</p>");
+        using Book _ = book;
+
+        created.Should().NotBeNull();
+        original.GetText().Should().NotContain("second");
+    }
+
+    [Fact]
+    public void SplitAtPosition_AtTheStartOfTheBody_LeavesAnEmptyParagraphInTheFile()
+    {
+        (Book book, HtmlResource original, HtmlResource? created) = SplitAtCaret("|<p>all</p>");
+        using Book _ = book;
+
+        original.GetText().Should().Contain("<p>&#160;</p>").And.NotContain("all");
+        created!.GetText().Should().Contain("<p>all</p>");
+    }
+
+    [Fact]
+    public void SplitAtPosition_ExternalLinkToAMovedFragment_IsRedirectedToTheNewFile()
+    {
+        using Book book = BookCreator.CreateNewBook("2.0");
+        HtmlResource original = book.GetHtmlResources()[0];
+        string text = Xhtml("<p>first</p><p id=\"target\">second</p>");
+        original.SetText(text);
+        HtmlResource other = book.CreateEmptyHtmlFile();
+        other.SetText(Xhtml($"<a href=\"{original.Filename}#target\">go</a>"));
+
+        HtmlResource? created = book.SplitAtPosition(original, text.IndexOf("<p id", System.StringComparison.Ordinal));
+
+        other.GetText().Should().Contain($"href=\"{created!.Filename}#target\"");
+    }
 }

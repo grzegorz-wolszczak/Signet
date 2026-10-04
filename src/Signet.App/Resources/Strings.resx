@@ -1492,7 +1492,16 @@ Czy chcesz zapisać zmiany?</value>
     <value>&amp;Pierwsza wielka</value>
   </data>
   <data name="Action_MainWindow_SplitSection" xml:space="preserve">
-    <value>&amp;Podziel w miejscu kursora</value>
+    <value>&amp;Podziel plik w miejscu kursora</value>
+  </data>
+  <data name="Status_FileSplit" xml:space="preserve">
+    <value>Podzielono plik — dalsza część jest w pliku {0}.</value>
+  </data>
+  <data name="Status_CannotSplitFileHere" xml:space="preserve">
+    <value>Nie można podzielić pliku w tym miejscu (kursor wewnątrz znacznika albo plik bez &lt;body&gt;).</value>
+  </data>
+  <data name="Status_CannotSplitNav" xml:space="preserve">
+    <value>Pliku nawigacji (nav) nie można dzielić.</value>
   </data>
   <data name="Action_MainWindow_SplitOnSGFSectionMarkers" xml:space="preserve">
     <value>Podziel w miejscach &amp;znaczników</value>

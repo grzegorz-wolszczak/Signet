@@ -453,6 +453,45 @@ public static class XhtmlDoc
     }
 
     /// <summary>
+    /// Splits (X)HTML source into two documents at <paramref name="position"/> ("Split File At Cursor"): the
+    /// <c>&lt;body&gt;</c> content before the position and the content after it, each with a copy of the header
+    /// (prolog + <c>&lt;head&gt;</c> + the <c>&lt;body&gt;</c> opening tag). The second part re-opens the tags that
+    /// are open at the position (as <see cref="GetSgfSectionSplits"/> does); the first part is left with them
+    /// unclosed — <see cref="CleanSource.Mend"/> closes them. A position before the body content is moved to its
+    /// start, a position after it to its end; an empty part gets <c>&lt;p&gt;&amp;#160;&lt;/p&gt;</c> (as in Sigil).
+    /// Returns <c>null</c> when the source has no <c>&lt;body&gt;</c> or the position is inside a tag (except right
+    /// before its <c>&lt;</c>).
+    /// </summary>
+    public static (string Top, string Bottom)? GetSplitAtPosition(string source, int position)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+
+        TagLister tagList = new(source);
+        int bo = tagList.FindBodyOpenTag();
+        int bc = tagList.FindBodyCloseTag();
+        int pos = Math.Clamp(position, 0, source.Length);
+        if (bo < 0 || bc < 0 || (tagList.IsPositionInTag(pos) && (pos >= source.Length || source[pos] != '<')))
+        {
+            return null;
+        }
+
+        TagLister.TagInfo bodyOpen = tagList.At(bo);
+        int bodyTagEnd = bodyOpen.Pos + bodyOpen.Len;
+        int bodyContentsEnd = tagList.At(bc).Pos;
+        pos = Math.Clamp(pos, bodyTagEnd, bodyContentsEnd);
+
+        string header = source[..bodyTagEnd];
+        const string EmptyPart = "\n<p>&#160;</p>\n";
+        string top = source[bodyTagEnd..pos];
+        string bottom = source[pos..bodyContentsEnd];
+        string openTagSource = string.Join(" ", GetUnmatchedTagsForPosition(pos, tagList));
+
+        return (
+            header + (string.IsNullOrWhiteSpace(top) ? EmptyPart : top) + "</body>\n</html>\n",
+            header + openTagSource + (string.IsNullOrWhiteSpace(bottom) ? EmptyPart : bottom) + "</body>\n</html>\n");
+    }
+
+    /// <summary>
     /// Finds opening tags without a matching closing tag "to the left" of <paramref name="pos"/>, up
     /// to <c>&lt;body&gt;</c> — needed so that each split section inherits the containers that are open
     /// (e.g. <c>&lt;div&gt;</c>) before the cut point.

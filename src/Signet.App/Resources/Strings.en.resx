@@ -1492,7 +1492,16 @@ Do you want to save the changes?</value>
     <value>&amp;Capitalize</value>
   </data>
   <data name="Action_MainWindow_SplitSection" xml:space="preserve">
-    <value>&amp;Split At Cursor</value>
+    <value>&amp;Split File At Cursor</value>
+  </data>
+  <data name="Status_FileSplit" xml:space="preserve">
+    <value>File split — the rest is in {0}.</value>
+  </data>
+  <data name="Status_CannotSplitFileHere" xml:space="preserve">
+    <value>Cannot split the file here (the cursor is inside a tag, or the file has no &lt;body&gt;).</value>
+  </data>
+  <data name="Status_CannotSplitNav" xml:space="preserve">
+    <value>The navigation (nav) file cannot be split.</value>
   </data>
   <data name="Action_MainWindow_SplitOnSGFSectionMarkers" xml:space="preserve">
     <value>Split At &amp;Markers</value>

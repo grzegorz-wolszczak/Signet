@@ -1659,7 +1659,7 @@ public sealed class Book : IDisposable
 
     /// <summary>
     /// Splits <paramref name="originalResource"/> at the split markers
-    /// (used by "Split At Markers"/"Split At Cursor" after a marker is inserted in Code View).
+    /// (used by "Split At Markers" and by "Split File At Cursor", <see cref="SplitAtPosition"/>).
     /// Each new section is named <c>{base}_{number:D4}{extension}</c> and is inserted into the spine right after the
     /// source file. References (<c>&lt;a href&gt;</c>, NCX entries) are updated so that they point at
     /// the right new section according to the position of the <c>id</c> fragment.
@@ -1730,7 +1730,7 @@ public sealed class Book : IDisposable
 
     /// <summary>
     /// Splits <paramref name="html"/> at the <c>signet_split_marker</c> markers — the full flow of
-    /// "Split At Markers"/"Split At Cursor": the first section stays in <paramref name="html"/>
+    /// "Split At Markers": the first section stays in <paramref name="html"/>
     /// (after <see cref="CleanSource.Mend"/>), the rest goes to <see cref="CreateNewSections"/>. Works on a
     /// single file (file selection belongs to the App layer).
     /// </summary>
@@ -1746,6 +1746,27 @@ public sealed class Book : IDisposable
 
         html.SetText(CleanSource.Mend(sections[0], html.EpubVersion));
         return CreateNewSections(sections.Skip(1).ToList(), html);
+    }
+
+    /// <summary>
+    /// "Split File At Cursor": splits <paramref name="html"/> at <paramref name="position"/>
+    /// (<see cref="XhtmlDoc.GetSplitAtPosition"/>) — the part before the position stays in <paramref name="html"/>
+    /// (after <see cref="CleanSource.Mend"/>), the part after it goes to a new file right after it in the reading
+    /// order (<see cref="CreateNewSections"/>, which also updates the links and the NCX). Other split markers in the
+    /// file are left alone.
+    /// </summary>
+    /// <returns>The new HTML resource, or <c>null</c> when the file cannot be split there (no <c>&lt;body&gt;</c>, or
+    /// the position is inside a tag) — the book is then unchanged.</returns>
+    public HtmlResource? SplitAtPosition(HtmlResource html, int position)
+    {
+        ArgumentNullException.ThrowIfNull(html);
+        if (XhtmlDoc.GetSplitAtPosition(html.GetText(), position) is not { } split)
+        {
+            return null;
+        }
+
+        html.SetText(CleanSource.Mend(split.Top, html.EpubVersion));
+        return CreateNewSections(new[] { split.Bottom }, html)[0];
     }
 
     /// <summary>Creates one new HTML section (placeholder → content after <see cref="CleanSource.Mend"/>). The shared tail of <see cref="CreateNewSections"/>.</summary>

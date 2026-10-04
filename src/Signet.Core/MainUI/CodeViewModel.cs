@@ -22,7 +22,7 @@ namespace Signet.Core.MainUI;
 public sealed partial class CodeViewModel
 {
     /// <summary>
-    /// The section split marker inserted by "Insert Split Marker" / "Split At Cursor". The actual
+    /// The section split marker inserted by "Insert Split Marker". The actual
     /// file split is performed separately.
     /// </summary>
     public const string SectionMarker = "<hr class=\"signet_split_marker\" />";

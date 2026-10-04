@@ -261,7 +261,7 @@ public sealed partial class MainWindowViewModel
         _actions.SetHandler(AppActionIds.ZoomOut, () => AdjustActiveZoom(1 / 1.1));
         _actions.SetHandler(AppActionIds.ZoomReset, ResetActiveZoom);
         _actions.SetHandler(AppActionIds.InsertSgfSectionMarker, () => ActiveCodeTab?.InsertSectionMarkerAtCaret());
-        _actions.SetHandler(AppActionIds.SplitSection, () => ActiveCodeTab?.InsertSectionMarkerAtCaret());
+        _actions.SetHandler(AppActionIds.SplitSection, SplitFileAtCaret);
         _actions.SetHandler(
             AppActionIds.PasteClipboardHistory,
             () => PasteClipboardHistoryRequested?.Invoke(this, EventArgs.Empty));
@@ -1617,6 +1617,71 @@ public sealed partial class MainWindowViewModel
         return CleanupAnalysis.Prepare(_currentBook).Analysis;
     }
 
+    /// <summary>
+    /// "Split File At Cursor": splits the (X)HTML file of the active Code View tab at the caret
+    /// (<see cref="Book.SplitAtPosition"/>) — the part before the caret stays in the file, the part after it goes to
+    /// a new file right after it, which is then opened with the caret at the start of its content (as in Sigil, so
+    /// splitting can go on). Refused (status bar message) for the nav file, a file that is not well-formed, or a
+    /// caret inside a tag.
+    /// </summary>
+    public void SplitFileAtCaret()
+    {
+        if (_currentBook is null || ActiveCodeTab is not { IsHtmlFlow: true, Resource: HtmlResource html } tab)
+        {
+            return;
+        }
+
+        if (ReferenceEquals(_currentBook.GetNavResource(), html))
+        {
+            _statusBar.ShowMessage(Strings.Get("Status_CannotSplitNav"), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
+            return;
+        }
+
+        if (tab.RunWellFormedCheck() == false)
+        {
+            return;
+        }
+
+        int caret = tab.CaretOffset;
+        _tabManager.SaveAllTabs();
+        bool checkpoint = CheckpointBeforeAction(AppActionIds.SplitSection);
+        HtmlResource? created = _currentBook.SplitAtPosition(html, caret);
+        if (created is null)
+        {
+            if (checkpoint)
+            {
+                RewindCheckpoint();
+            }
+
+            _statusBar.ShowMessage(Strings.Get("Status_CannotSplitFileHere"), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
+            return;
+        }
+
+        RefreshAfterMaintenanceOperation();
+        NavigateToBookPathAtOffset(created.BookPath, BodyContentStart(created.GetText()));
+        _statusBar.ShowMessage(Strings.Format("Status_FileSplit", created.Filename), TimeSpan.FromSeconds(4));
+    }
+
+    // The offset of the first non-whitespace character after the <body> opening tag (0 without a body).
+    private static int BodyContentStart(string text)
+    {
+        TagLister lister = new(text);
+        int bodyOpen = lister.FindBodyOpenTag();
+        if (bodyOpen < 0)
+        {
+            return 0;
+        }
+
+        TagLister.TagInfo tag = lister.At(bodyOpen);
+        int offset = tag.Pos + tag.Len;
+        while (offset < text.Length && char.IsWhiteSpace(text[offset]))
+        {
+            offset++;
+        }
+
+        return offset;
+    }
+
     /// <summary>Refreshes the open tabs, the Book Browser panel and Preview after a whole-book maintenance operation.</summary>
     private void RefreshAfterMaintenanceOperation()
     {
@@ -2651,7 +2716,7 @@ public sealed partial class MainWindowViewModel
         _actions.SetEnabled(isHtml && (tab?.RemoveTagPairEnabled ?? false), AppActionIds.RemoveTagPair);
         _actions.SetEnabled(tab?.SupportsCommentToggle ?? false, AppActionIds.ToggleComment);
         _actions.SetEnabled(
-            tab?.IsHtmlFlow ?? false, AppActionIds.PrettifyCurrentHtml, AppActionIds.MendCurrentHtml);
+            tab?.IsHtmlFlow ?? false, AppActionIds.PrettifyCurrentHtml, AppActionIds.MendCurrentHtml, AppActionIds.SplitSection);
         _actions.SetEnabled(
             tab?.SupportsTagStructure ?? false,
             AppActionIds.JumpToOpeningTag, AppActionIds.JumpToClosingTag, AppActionIds.SelectTagContents,

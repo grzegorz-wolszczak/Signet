@@ -685,6 +685,51 @@ public sealed class MainWindowViewModelTests
         sut.ActiveCodeTab!.DocumentText.Should().Contain("epub:type=\"pagebreak\"");
     }
 
+    // Without a view the caret is set the way the editor view reports it.
+    private static void SetCaret(MainWindowViewModel sut, int offset) => sut.ActiveCodeTab!.UpdateCaret(1, 1, offset, 0);
+
+    private static (MainWindowViewModel Sut, Book Book, HtmlResource Chapter) OpenMinimalChapter(TempDir temp)
+    {
+        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, temp);
+        MainWindowViewModel sut = New();
+        Book book = new ImportEpub(epub).GetBook();
+        sut.LoadBook(book, epub);
+        HtmlResource chapter = book.GetHtmlResources().Single(h => h.Filename == "chapter1.xhtml");
+        sut.Tabs.OpenResources(new Resource[] { chapter });
+        return (sut, book, chapter);
+    }
+
+    [Fact]
+    public void SplitSection_splits_the_file_at_the_caret_and_opens_the_new_file_at_its_content()
+    {
+        using UiCultureScope culture = new("en");
+        using TempDir temp = new();
+        (MainWindowViewModel sut, Book book, HtmlResource chapter) = OpenMinimalChapter(temp);
+        SetCaret(sut, sut.ActiveCodeTab!.DocumentText.IndexOf("<p>Hello", StringComparison.Ordinal));
+
+        sut.Actions.Require(AppActionIds.SplitSection).Execute(null);
+
+        HtmlResource created = book.GetHtmlResources().Single(h => h.Filename == "chapter1_0001.xhtml");
+        chapter.GetText().Should().Contain("Chapter 1</h1>").And.NotContain("Hello, world.");
+        created.GetText().Should().Contain("<p>Hello, world.</p>").And.NotContain("<h1");
+        sut.ActiveCodeTab!.Resource.Should().BeSameAs(created);
+        sut.StatusMessage.Should().Be(Strings.Format("Status_FileSplit", "chapter1_0001.xhtml"));
+    }
+
+    [Fact]
+    public void SplitSection_inside_a_tag_changes_nothing_and_reports_it()
+    {
+        using UiCultureScope culture = new("en");
+        using TempDir temp = new();
+        (MainWindowViewModel sut, Book book, HtmlResource _) = OpenMinimalChapter(temp);
+        SetCaret(sut, sut.ActiveCodeTab!.DocumentText.IndexOf("<p>Hello", StringComparison.Ordinal) + 1);
+
+        sut.Actions.Require(AppActionIds.SplitSection).Execute(null);
+
+        book.GetHtmlResources().Should().NotContain(h => h.Filename.StartsWith("chapter1_", StringComparison.Ordinal));
+        sut.StatusMessage.Should().Be(Strings.Get("Status_CannotSplitFileHere"));
+    }
+
     [Fact]
     public void ClipEditor_action_raises_ClipEditorRequested()
     {
