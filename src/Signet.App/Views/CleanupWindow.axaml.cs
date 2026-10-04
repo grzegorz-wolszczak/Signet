@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -7,9 +8,10 @@ using Signet.Core.BookManipulation;
 namespace Signet.App.Views;
 
 /// <summary>
-/// The modal "Cleanup" dialog (<see cref="CleanupViewModel"/>): the cleanup steps as sections with a preview of
-/// their changes; OK applies the current plan, Cancel changes nothing. A double click on a report item (or on a
-/// consequence of a risky item) opens the file at that place in the main window behind the dialog.
+/// The modal "Cleanup" dialog (<see cref="CleanupViewModel"/>): the cleanup steps grouped into tabs, as sections
+/// with a preview of their changes. Each tab's "Clean" button applies that tab's plan and the dialog stays open;
+/// "Close" closes it. A double click on a report item (or on a consequence of a risky item) opens the file at that
+/// place in the main window behind the dialog.
 /// </summary>
 public partial class CleanupWindow : Window
 {
@@ -17,15 +19,24 @@ public partial class CleanupWindow : Window
     public CleanupWindow()
     {
         InitializeComponent();
-        OkButton.Click += (_, _) => Close(true);
-        CancelButton.Click += (_, _) => Close(false);
+        CloseButton.Click += (_, _) => Close();
     }
 
-    /// <summary>Shows the dialog; returns <c>true</c> when the user confirmed with OK.</summary>
-    public static async Task<bool> AskAsync(Window owner, CleanupViewModel viewModel)
+    /// <summary>Shows the dialog and waits until it is closed.</summary>
+    public static async Task ShowAsync(Window owner, CleanupViewModel viewModel)
     {
+        ArgumentNullException.ThrowIfNull(viewModel);
         CleanupWindow window = new() { DataContext = viewModel };
-        return await window.ShowDialog<bool>(owner);
+        void OnCloseRequested(object? sender, EventArgs e) => window.Close();
+        viewModel.CloseRequested += OnCloseRequested;
+        try
+        {
+            await window.ShowDialog(owner);
+        }
+        finally
+        {
+            viewModel.CloseRequested -= OnCloseRequested;
+        }
     }
 
     private void OnConsequenceDoubleTapped(object? sender, TappedEventArgs e)

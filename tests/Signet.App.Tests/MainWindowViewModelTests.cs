@@ -240,7 +240,7 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task PrepareCleanup_and_ApplyCleanup_remove_an_unused_selector_and_report_it()
+    public async Task PrepareCleanup_and_cleaning_the_CSS_tab_remove_an_unused_selector_and_report_it()
     {
         using UiCultureScope culture = new("en");
         using TempDir temp = new();
@@ -256,13 +256,15 @@ public sealed class MainWindowViewModelTests
         CleanupViewModel? cleanup = await sut.PrepareCleanupAsync();
         cleanup.Should().NotBeNull();
         cleanup!.Sections.Single(s => s.Step == CleanupStep.UnusedSelectors).IsEnabled = true;
-        cleanup.HasChanges.Should().BeTrue();
+        CleanupTabViewModel cssTab = cleanup.Tabs[0];
+        cssTab.HasChanges.Should().BeTrue();
 
-        sut.ApplyCleanup(cleanup);
+        cssTab.CleanCommand.Execute(null);
 
         book.GetCssResources().Single().GetText().Should().NotContain(".ghost");
         book.Modified.Should().BeTrue();
         sut.StatusMessage.Should().Be(Strings.Get("Status_CleanupDone"));
+        cssTab.HasChanges.Should().BeFalse();
     }
 
     [Fact]

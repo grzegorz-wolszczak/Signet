@@ -1010,8 +1010,8 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
     }
 
     /// <summary>
-    /// Handles the "Cleanup" action: analyses the book, shows the modal Cleanup dialog with the preview of the
-    /// changes and, once confirmed, applies them.
+    /// Handles the "Cleanup" action: analyses the book and shows the modal Cleanup dialog with the preview of the
+    /// changes; each of its tabs applies its own changes ("Clean") while the dialog stays open.
     /// </summary>
     private async void OnCleanupRequested(object? sender, EventArgs e)
     {
@@ -1022,9 +1022,9 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         }
 
         CleanupViewModel? cleanup = await vm.PrepareCleanupAsync();
-        if (cleanup is not null && await CleanupWindow.AskAsync(this, cleanup))
+        if (cleanup is not null)
         {
-            vm.ApplyCleanup(cleanup);
+            await CleanupWindow.ShowAsync(this, cleanup);
         }
     }
 

@@ -10,53 +10,77 @@ using Signet.Core.BookManipulation;
 namespace Signet.App.ViewModels;
 
 /// <summary>
-/// View model of the "Cleanup" dialog: one section per <see cref="CleanupStep"/> (in execution order), each with a
-/// checkbox, a description and — when enabled — a summary and an expandable list of the changes it will make.
-/// Every toggle (of a section or of a single item) re-plans the whole sequence
-/// (<see cref="CleanupAnalysis.Plan"/>), because the steps depend on each other. Risky items (merges that would
-/// change the styling) are unchecked until the user checks them — that is the explicit acceptance; the check state
-/// of every row always comes from the plan.
+/// View model of the "Cleanup" dialog: the steps grouped into independent tabs (<see cref="CleanupTabViewModel"/> —
+/// CSS, HTML, Files), each with its own sections and its own "Clean" button. A section has a checkbox, a
+/// description and — when enabled — a summary and an expandable list of the changes it will make.
+/// Every toggle (of a section or of a single item) re-plans the tabs (<see cref="CleanupAnalysis.Plan"/>), because
+/// the steps within a tab depend on each other. Each tab is planned only with its own steps, on the current state
+/// of the book; cleaning a tab applies its plan and re-analyses the book, so the other tabs see the result.
+/// Risky items (merges that would change the styling) are unchecked until the user checks them — that is the
+/// explicit acceptance; the check state of every row always comes from the plan.
 /// </summary>
 public sealed partial class CleanupViewModel : ViewModelBase
 {
-    private readonly CleanupAnalysis _analysis;
     private readonly Action<string, int> _navigate;
+    private readonly Func<CleanupPlan, IReadOnlyList<CleanupStep>, CleanupAnalysis?> _apply;
     private readonly HashSet<string> _excludedKeys = new(StringComparer.Ordinal);
     private readonly HashSet<string> _acceptedRiskyKeys = new(StringComparer.Ordinal);
+    private CleanupAnalysis _analysis;
     private bool _updating;
 
-    [ObservableProperty]
-    private bool _hasChanges;
-
-    /// <summary>Creates the view model and computes the first plan.</summary>
+    /// <summary>Creates the view model and computes the first plans.</summary>
     /// <param name="analysis">The prepared analysis of the book.</param>
     /// <param name="enabledSteps">The steps checked when the dialog opens (the remembered choice).</param>
     /// <param name="navigate">Opens a file at an offset (a double click on an item).</param>
-    public CleanupViewModel(CleanupAnalysis analysis, IEnumerable<CleanupStep> enabledSteps, Action<string, int> navigate)
+    /// <param name="apply">
+    /// Applies a tab's plan to the book and remembers the checked steps (the second argument); returns the analysis
+    /// of the changed book, or <c>null</c> when it cannot be analysed any more (the dialog then closes).
+    /// </param>
+    public CleanupViewModel(
+        CleanupAnalysis analysis,
+        IEnumerable<CleanupStep> enabledSteps,
+        Action<string, int> navigate,
+        Func<CleanupPlan, IReadOnlyList<CleanupStep>, CleanupAnalysis?> apply)
     {
         ArgumentNullException.ThrowIfNull(analysis);
         ArgumentNullException.ThrowIfNull(enabledSteps);
         ArgumentNullException.ThrowIfNull(navigate);
+        ArgumentNullException.ThrowIfNull(apply);
 
         _analysis = analysis;
         _navigate = navigate;
+        _apply = apply;
 
         HashSet<CleanupStep> enabled = enabledSteps.ToHashSet();
-        foreach (CleanupStep step in Enum.GetValues<CleanupStep>())
-        {
-            Sections.Add(new CleanupSectionViewModel(this, step, enabled.Contains(step)));
-        }
+        Tabs.Add(new CleanupTabViewModel(this, Strings.Get("CleanupWindow_Tab_Css"), CssSteps, enabled));
+        Tabs.Add(new CleanupTabViewModel(this, Strings.Get("CleanupWindow_Tab_Html"), Array.Empty<CleanupStep>(), enabled));
+        Tabs.Add(new CleanupTabViewModel(this, Strings.Get("CleanupWindow_Tab_Files"), FilesSteps, enabled));
 
-        Plan = Replan();
+        Replan();
     }
 
-    /// <summary>The sections, in execution order.</summary>
-    public ObservableCollection<CleanupSectionViewModel> Sections { get; } = new();
+    /// <summary>Raised when the dialog has to close (the book could not be re-analysed after cleaning).</summary>
+    public event EventHandler? CloseRequested;
 
-    /// <summary>The current plan — applied by OK.</summary>
-    public CleanupPlan Plan { get; private set; }
+    /// <summary>The steps of the CSS tab, in execution order.</summary>
+    public static IReadOnlyList<CleanupStep> CssSteps { get; } = new[]
+    {
+        CleanupStep.UnreferencedStylesheets,
+        CleanupStep.UnusedSelectors,
+        CleanupStep.MergeSameSelectors,
+        CleanupStep.MergeSameProperties,
+    };
 
-    /// <summary>The steps currently checked (remembered for the next time).</summary>
+    /// <summary>The steps of the Files tab, in execution order.</summary>
+    public static IReadOnlyList<CleanupStep> FilesSteps { get; } = new[] { CleanupStep.UnusedMedia };
+
+    /// <summary>The tabs: CSS, HTML, Files.</summary>
+    public ObservableCollection<CleanupTabViewModel> Tabs { get; } = new();
+
+    /// <summary>All sections of all tabs, in execution order.</summary>
+    public IEnumerable<CleanupSectionViewModel> Sections => Tabs.SelectMany(t => t.Sections);
+
+    /// <summary>The steps currently checked in all tabs (remembered for the next time).</summary>
     public IReadOnlyList<CleanupStep> EnabledSteps =>
         Sections.Where(s => s.IsEnabled).Select(s => s.Step).ToList();
 
@@ -74,7 +98,7 @@ public sealed partial class CleanupViewModel : ViewModelBase
         _navigate(consequence.BookPath, consequence.Offset);
     }
 
-    internal void OnSectionToggled() => Plan = Replan();
+    internal void OnSectionToggled() => Replan();
 
     internal void OnItemToggled(CleanupItemViewModel item)
     {
@@ -84,7 +108,7 @@ public sealed partial class CleanupViewModel : ViewModelBase
         }
 
         Remember(item, item.IsChecked);
-        Plan = Replan();
+        Replan();
     }
 
     internal void SetAllItems(CleanupSectionViewModel section, bool isChecked)
@@ -103,7 +127,26 @@ public sealed partial class CleanupViewModel : ViewModelBase
             _updating = false;
         }
 
-        Plan = Replan();
+        Replan();
+    }
+
+    /// <summary>Applies the plan of <paramref name="tab"/> and re-plans every tab on the changed book.</summary>
+    internal void Clean(CleanupTabViewModel tab)
+    {
+        if (!tab.HasChanges)
+        {
+            return;
+        }
+
+        CleanupAnalysis? analysis = _apply(tab.Plan, EnabledSteps);
+        if (analysis is null)
+        {
+            CloseRequested?.Invoke(this, EventArgs.Empty);
+            return;
+        }
+
+        _analysis = analysis;
+        Replan();
     }
 
     private void Remember(CleanupItemViewModel item, bool isChecked)
@@ -123,26 +166,67 @@ public sealed partial class CleanupViewModel : ViewModelBase
         }
     }
 
-    private CleanupPlan Replan()
+    // Every tab is planned with its own steps only, so the tabs stay independent of each other.
+    private void Replan()
     {
-        HashSet<CleanupStep> enabled = Sections.Where(s => s.IsEnabled).Select(s => s.Step).ToHashSet();
-        CleanupPlan plan = _analysis.Plan(enabled, _excludedKeys, _acceptedRiskyKeys);
-
         _updating = true;
         try
         {
-            foreach (CleanupSectionViewModel section in Sections)
+            foreach (CleanupTabViewModel tab in Tabs)
             {
-                section.Update(plan.GetStep(section.Step));
+                HashSet<CleanupStep> enabled = tab.Sections.Where(s => s.IsEnabled).Select(s => s.Step).ToHashSet();
+                tab.Update(_analysis.Plan(enabled, _excludedKeys, _acceptedRiskyKeys));
             }
         }
         finally
         {
             _updating = false;
         }
+    }
+}
+
+/// <summary>
+/// One tab of the Cleanup dialog: a group of steps planned and cleaned together, independently of the other tabs.
+/// </summary>
+public sealed partial class CleanupTabViewModel : ObservableObject
+{
+    [ObservableProperty]
+    private bool _hasChanges;
+
+    internal CleanupTabViewModel(CleanupViewModel owner, string header, IEnumerable<CleanupStep> steps, IReadOnlySet<CleanupStep> enabled)
+    {
+        Header = header;
+        foreach (CleanupStep step in steps)
+        {
+            Sections.Add(new CleanupSectionViewModel(owner, step, enabled.Contains(step)));
+        }
+
+        CleanCommand = new RelayCommand(() => owner.Clean(this), () => HasChanges);
+    }
+
+    /// <summary>The tab header.</summary>
+    public string Header { get; }
+
+    /// <summary>The sections of the tab, in execution order.</summary>
+    public ObservableCollection<CleanupSectionViewModel> Sections { get; } = new();
+
+    /// <summary>The current plan of the tab — applied by <see cref="CleanCommand"/>.</summary>
+    public CleanupPlan Plan { get; private set; } = null!;
+
+    /// <summary>Applies <see cref="Plan"/> to the book ("Clean").</summary>
+    public IRelayCommand CleanCommand { get; }
+
+    partial void OnHasChangesChanged(bool value) => CleanCommand.NotifyCanExecuteChanged();
+
+    internal void Update(CleanupPlan plan)
+    {
+        Plan = plan;
+        foreach (CleanupSectionViewModel section in Sections)
+        {
+            section.Update(plan.GetStep(section.Step));
+        }
 
         HasChanges = plan.HasChanges;
-        return plan;
     }
 }
 

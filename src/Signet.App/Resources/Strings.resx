@@ -3477,7 +3477,7 @@ Wstawić mimo to?</value>
     <value>Czyszczenie</value>
   </data>
   <data name="CleanupWindow_Intro" xml:space="preserve">
-    <value>Zaznacz operacje do wykonania. Podgląd pokazuje, co się zmieni, zanim cokolwiek zostanie zmienione. Operacje są wykonywane w kolejności sekcji (od góry), a każda widzi wynik poprzednich.</value>
+    <value>Zaznacz operacje do wykonania. Podgląd pokazuje, co się zmieni, zanim cokolwiek zostanie zmienione. Każda zakładka jest czyszczona osobno przyciskiem „Wyczyść”. W obrębie zakładki operacje są wykonywane w kolejności sekcji (od góry), a każda widzi wynik poprzednich.</value>
   </data>
   <data name="CleanupWindow_Details" xml:space="preserve">
     <value>Szczegóły</value>
@@ -3490,6 +3490,18 @@ Wstawić mimo to?</value>
   </data>
   <data name="CleanupWindow_DoubleClickHint" xml:space="preserve">
     <value>Dwuklik otwiera plik w tym miejscu.</value>
+  </data>
+  <data name="CleanupWindow_Clean" xml:space="preserve">
+    <value>Wyczyść</value>
+  </data>
+  <data name="CleanupWindow_Tab_Css" xml:space="preserve">
+    <value>CSS</value>
+  </data>
+  <data name="CleanupWindow_Tab_Html" xml:space="preserve">
+    <value>HTML</value>
+  </data>
+  <data name="CleanupWindow_Tab_Files" xml:space="preserve">
+    <value>Pliki</value>
   </data>
   <data name="Cleanup_NothingFound" xml:space="preserve">
     <value>Nic do zrobienia.</value>
@@ -3537,7 +3549,7 @@ Wstawić mimo to?</value>
     <value>Usuń nieużywane pliki multimedialne</value>
   </data>
   <data name="Cleanup_UnusedMedia_Description" xml:space="preserve">
-    <value>Usuwa obrazy, SVG, audio i wideo, do których nie odwołuje się żaden plik XHTML ani CSS (po wcześniejszych operacjach). Okładka jest zawsze zachowywana.</value>
+    <value>Usuwa obrazy, SVG, audio i wideo, do których nie odwołuje się żaden plik XHTML ani CSS. Okładka jest zawsze zachowywana.</value>
   </data>
   <data name="Cleanup_UnusedMedia_Summary" xml:space="preserve">
     <value>Pliki do usunięcia: {0} z {1}.</value>

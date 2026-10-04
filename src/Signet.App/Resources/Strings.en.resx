@@ -3477,7 +3477,7 @@ Insert anyway?</value>
     <value>Cleanup</value>
   </data>
   <data name="CleanupWindow_Intro" xml:space="preserve">
-    <value>Check the operations to perform. The preview shows what will change before anything is changed. The operations run in section order (top to bottom), and each one sees the result of the previous ones.</value>
+    <value>Check the operations to perform. The preview shows what will change before anything is changed. Each tab is cleaned separately with its "Clean" button. Within a tab, the operations run in section order (top to bottom), and each one sees the result of the previous ones.</value>
   </data>
   <data name="CleanupWindow_Details" xml:space="preserve">
     <value>Details</value>
@@ -3490,6 +3490,18 @@ Insert anyway?</value>
   </data>
   <data name="CleanupWindow_DoubleClickHint" xml:space="preserve">
     <value>Double-click opens the file at that place.</value>
+  </data>
+  <data name="CleanupWindow_Clean" xml:space="preserve">
+    <value>Clean</value>
+  </data>
+  <data name="CleanupWindow_Tab_Css" xml:space="preserve">
+    <value>CSS</value>
+  </data>
+  <data name="CleanupWindow_Tab_Html" xml:space="preserve">
+    <value>HTML</value>
+  </data>
+  <data name="CleanupWindow_Tab_Files" xml:space="preserve">
+    <value>Files</value>
   </data>
   <data name="Cleanup_NothingFound" xml:space="preserve">
     <value>Nothing to do.</value>
@@ -3537,7 +3549,7 @@ Insert anyway?</value>
     <value>Remove unused media files</value>
   </data>
   <data name="Cleanup_UnusedMedia_Description" xml:space="preserve">
-    <value>Removes images, SVG, audio and video that no XHTML or CSS file references (after the operations above). The cover is always kept.</value>
+    <value>Removes images, SVG, audio and video that no XHTML or CSS file references. The cover is always kept.</value>
   </data>
   <data name="Cleanup_UnusedMedia_Summary" xml:space="preserve">
     <value>Files to remove: {0} of {1}.</value>

@@ -27,78 +27,93 @@
   <DockPanel Margin="16">
     <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right"
                 Spacing="8" Margin="0,12,0,0">
-      <Button x:Name="OkButton" Content="{loc:Loc Common_Ok}" IsDefault="True" MinWidth="80"
-              IsEnabled="{Binding HasChanges}" />
-      <Button x:Name="CancelButton" Content="{loc:Loc Common_Cancel}" IsCancel="True" MinWidth="80" />
+      <Button x:Name="CloseButton" Content="{loc:Loc Common_Close}" IsCancel="True" MinWidth="80" />
     </StackPanel>
 
     <TextBlock DockPanel.Dock="Top" Text="{loc:Loc CleanupWindow_Intro}" TextWrapping="Wrap" Margin="0,0,0,12" />
 
-    <ScrollViewer>
-      <ItemsControl ItemsSource="{Binding Sections}">
-        <ItemsControl.ItemTemplate>
-          <DataTemplate x:DataType="vm:CleanupSectionViewModel">
-            <Border Classes="section" Margin="0,0,0,10">
-              <StackPanel Spacing="4">
-                <CheckBox IsChecked="{Binding IsEnabled, Mode=TwoWay}" FontWeight="SemiBold">
-                  <TextBlock Text="{Binding Title}" TextWrapping="Wrap" />
-                </CheckBox>
-                <TextBlock Classes="note" Text="{Binding Description}" Margin="28,0,0,0" />
-                <TextBlock Classes="note" Text="{Binding Warning}" IsVisible="{Binding HasWarning}"
-                           FontStyle="Italic" Margin="28,0,0,0" />
+    <!-- Independent tabs: each one is planned and cleaned on its own. -->
+    <TabControl ItemsSource="{Binding Tabs}">
+      <TabControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:CleanupTabViewModel">
+          <TextBlock Text="{Binding Header}" />
+        </DataTemplate>
+      </TabControl.ItemTemplate>
+      <TabControl.ContentTemplate>
+        <DataTemplate x:DataType="vm:CleanupTabViewModel">
+          <DockPanel Margin="0,8,0,0">
+            <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+              <Button Content="{loc:Loc CleanupWindow_Clean}" Command="{Binding CleanCommand}" MinWidth="80" />
+            </StackPanel>
+            <ScrollViewer>
+              <ItemsControl ItemsSource="{Binding Sections}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:CleanupSectionViewModel">
+                    <Border Classes="section" Margin="0,0,0,10">
+                      <StackPanel Spacing="4">
+                        <CheckBox IsChecked="{Binding IsEnabled, Mode=TwoWay}" FontWeight="SemiBold">
+                          <TextBlock Text="{Binding Title}" TextWrapping="Wrap" />
+                        </CheckBox>
+                        <TextBlock Classes="note" Text="{Binding Description}" Margin="28,0,0,0" />
+                        <TextBlock Classes="note" Text="{Binding Warning}" IsVisible="{Binding HasWarning}"
+                                   FontStyle="Italic" Margin="28,0,0,0" />
 
-                <StackPanel IsVisible="{Binding IsEnabled}" Margin="28,6,0,0" Spacing="4">
-                  <TextBlock Text="{Binding Summary}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                        <StackPanel IsVisible="{Binding IsEnabled}" Margin="28,6,0,0" Spacing="4">
+                          <TextBlock Text="{Binding Summary}" FontWeight="SemiBold" TextWrapping="Wrap" />
 
-                  <Expander IsVisible="{Binding HasItems}" IsExpanded="{Binding IsExpanded, Mode=TwoWay}"
-                            Header="{loc:Loc CleanupWindow_Details}" HorizontalAlignment="Stretch">
-                    <StackPanel Spacing="4">
-                      <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button Content="{loc:Loc CleanupWindow_SelectAll}" Command="{Binding SelectAllCommand}" />
-                        <Button Content="{loc:Loc CleanupWindow_SelectNone}" Command="{Binding SelectNoneCommand}" />
-                        <TextBlock Classes="note" Text="{loc:Loc CleanupWindow_DoubleClickHint}"
-                                   VerticalAlignment="Center" />
-                      </StackPanel>
-                      <ListBox ItemsSource="{Binding Items}" MaxHeight="320"
-                               DoubleTapped="OnItemsDoubleTapped">
-                        <ListBox.ItemTemplate>
-                          <DataTemplate x:DataType="vm:CleanupItemViewModel">
-                            <StackPanel>
-                              <Grid ColumnDefinitions="Auto,Auto,*,Auto">
-                                <CheckBox Grid.Column="0" IsChecked="{Binding IsChecked, Mode=TwoWay}" />
-                                <TextBlock Grid.Column="1" Text="⚠" IsVisible="{Binding IsRisky}" FontWeight="Bold"
-                                           Foreground="{DynamicResource SignetWarningBrush}"
-                                           Margin="2,0,2,0" VerticalAlignment="Center" />
-                                <TextBlock Grid.Column="2" Text="{Binding Text}" Margin="4,0"
-                                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
-                                           ToolTip.Tip="{Binding Text}" />
-                                <TextBlock Grid.Column="3" Text="{Binding FileText}" Classes="note" Margin="8,0,4,0"
+                          <Expander IsVisible="{Binding HasItems}" IsExpanded="{Binding IsExpanded, Mode=TwoWay}"
+                                    Header="{loc:Loc CleanupWindow_Details}" HorizontalAlignment="Stretch">
+                            <StackPanel Spacing="4">
+                              <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button Content="{loc:Loc CleanupWindow_SelectAll}" Command="{Binding SelectAllCommand}" />
+                                <Button Content="{loc:Loc CleanupWindow_SelectNone}" Command="{Binding SelectNoneCommand}" />
+                                <TextBlock Classes="note" Text="{loc:Loc CleanupWindow_DoubleClickHint}"
                                            VerticalAlignment="Center" />
-                              </Grid>
-                              <!-- What a risky item would change; double-click opens the affected element. -->
-                              <ItemsControl ItemsSource="{Binding Consequences}" IsVisible="{Binding IsRisky}"
-                                            Margin="48,2,4,4">
-                                <ItemsControl.ItemTemplate>
-                                  <DataTemplate x:DataType="core:CleanupConsequence">
-                                    <TextBlock Text="{Binding Text}" Classes="note" TextWrapping="Wrap"
-                                               Foreground="{DynamicResource SignetWarningBrush}"
-                                               Background="Transparent"
-                                               DoubleTapped="OnConsequenceDoubleTapped" />
+                              </StackPanel>
+                              <ListBox ItemsSource="{Binding Items}" MaxHeight="320"
+                                       DoubleTapped="OnItemsDoubleTapped">
+                                <ListBox.ItemTemplate>
+                                  <DataTemplate x:DataType="vm:CleanupItemViewModel">
+                                    <StackPanel>
+                                      <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+                                        <CheckBox Grid.Column="0" IsChecked="{Binding IsChecked, Mode=TwoWay}" />
+                                        <TextBlock Grid.Column="1" Text="⚠" IsVisible="{Binding IsRisky}" FontWeight="Bold"
+                                                   Foreground="{DynamicResource SignetWarningBrush}"
+                                                   Margin="2,0,2,0" VerticalAlignment="Center" />
+                                        <TextBlock Grid.Column="2" Text="{Binding Text}" Margin="4,0"
+                                                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                                   ToolTip.Tip="{Binding Text}" />
+                                        <TextBlock Grid.Column="3" Text="{Binding FileText}" Classes="note" Margin="8,0,4,0"
+                                                   VerticalAlignment="Center" />
+                                      </Grid>
+                                      <!-- What a risky item would change; double-click opens the affected element. -->
+                                      <ItemsControl ItemsSource="{Binding Consequences}" IsVisible="{Binding IsRisky}"
+                                                    Margin="48,2,4,4">
+                                        <ItemsControl.ItemTemplate>
+                                          <DataTemplate x:DataType="core:CleanupConsequence">
+                                            <TextBlock Text="{Binding Text}" Classes="note" TextWrapping="Wrap"
+                                                       Foreground="{DynamicResource SignetWarningBrush}"
+                                                       Background="Transparent"
+                                                       DoubleTapped="OnConsequenceDoubleTapped" />
+                                          </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                      </ItemsControl>
+                                    </StackPanel>
                                   </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                              </ItemsControl>
+                                </ListBox.ItemTemplate>
+                              </ListBox>
                             </StackPanel>
-                          </DataTemplate>
-                        </ListBox.ItemTemplate>
-                      </ListBox>
-                    </StackPanel>
-                  </Expander>
-                </StackPanel>
-              </StackPanel>
-            </Border>
-          </DataTemplate>
-        </ItemsControl.ItemTemplate>
-      </ItemsControl>
-    </ScrollViewer>
+                          </Expander>
+                        </StackPanel>
+                      </StackPanel>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </ScrollViewer>
+          </DockPanel>
+        </DataTemplate>
+      </TabControl.ContentTemplate>
+    </TabControl>
   </DockPanel>
 </Window>

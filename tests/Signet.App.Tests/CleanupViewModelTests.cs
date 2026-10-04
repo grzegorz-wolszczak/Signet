@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using AwesomeAssertions;
@@ -42,10 +43,21 @@ public sealed class CleanupViewModelTests : IDisposable
     }
 
     private CleanupViewModel New(params CleanupStep[] enabled) =>
-        new(CleanupAnalysis.Prepare(_book).Analysis!, enabled, (_, _) => { });
+        new(CleanupAnalysis.Prepare(_book).Analysis!, enabled, (_, _) => { }, ApplyToBook);
+
+    private CleanupAnalysis? ApplyToBook(CleanupPlan plan, IReadOnlyList<CleanupStep> enabledSteps)
+    {
+        _book.ApplyCleanup(plan);
+        return CleanupAnalysis.Prepare(_book).Analysis;
+    }
+
+    private static CleanupAnalysis? NoApply(CleanupPlan plan, IReadOnlyList<CleanupStep> enabledSteps) => null;
 
     private static CleanupSectionViewModel Section(CleanupViewModel vm, CleanupStep step) =>
         vm.Sections.Single(s => s.Step == step);
+
+    private static CleanupTabViewModel Tab(CleanupViewModel vm, CleanupStep step) =>
+        vm.Tabs.Single(t => t.Sections.Any(s => s.Step == step));
 
     [Fact]
     public void Sections_follow_the_execution_order_and_the_remembered_choice()
@@ -59,38 +71,77 @@ public sealed class CleanupViewModelTests : IDisposable
     }
 
     [Fact]
+    public void The_steps_are_grouped_into_CSS_HTML_and_Files_tabs()
+    {
+        CleanupViewModel vm = New();
+
+        vm.Tabs.Should().HaveCount(3);
+        vm.Tabs[0].Sections.Select(s => s.Step).Should().Equal(CleanupViewModel.CssSteps);
+        vm.Tabs[1].Sections.Should().BeEmpty();
+        vm.Tabs[2].Sections.Select(s => s.Step).Should().Equal(CleanupViewModel.FilesSteps);
+        vm.Tabs[1].CleanCommand.CanExecute(null).Should().BeFalse();
+    }
+
+    [Fact]
     public void Nothing_enabled_means_no_changes()
     {
         CleanupViewModel vm = New();
 
-        vm.HasChanges.Should().BeFalse();
+        vm.Tabs.Should().OnlyContain(t => !t.HasChanges && !t.CleanCommand.CanExecute(null));
         vm.Sections.Should().OnlyContain(s => s.Items.Count == 0);
     }
 
     [Fact]
-    public void Enabling_an_earlier_section_replans_the_later_ones()
+    public void The_tabs_are_planned_independently()
     {
         CleanupViewModel vm = New(CleanupStep.UnusedMedia);
-        Section(vm, CleanupStep.UnusedMedia).Items.Should().BeEmpty();
 
         Section(vm, CleanupStep.UnusedSelectors).IsEnabled = true;
 
         Section(vm, CleanupStep.UnusedSelectors).Items.Should().ContainSingle(i => i.Text == ".ghost");
-        Section(vm, CleanupStep.UnusedMedia).Items.Should().ContainSingle(i => i.BookPath.EndsWith("bg.png", StringComparison.Ordinal));
-        vm.HasChanges.Should().BeTrue();
+        Section(vm, CleanupStep.UnusedMedia).Items.Should().BeEmpty();
+        Tab(vm, CleanupStep.UnusedSelectors).HasChanges.Should().BeTrue();
+        Tab(vm, CleanupStep.UnusedMedia).HasChanges.Should().BeFalse();
     }
 
     [Fact]
-    public void Unchecking_an_item_replans_the_later_sections_and_keeps_the_row()
+    public void Unchecking_an_item_replans_and_keeps_the_row()
     {
-        CleanupViewModel vm = New(CleanupStep.UnusedSelectors, CleanupStep.UnusedMedia);
+        CleanupViewModel vm = New(CleanupStep.UnusedSelectors);
         CleanupItemViewModel ghost = Section(vm, CleanupStep.UnusedSelectors).Items.Single(i => i.Text == ".ghost");
 
         ghost.IsChecked = false;
 
-        Section(vm, CleanupStep.UnusedMedia).Items.Should().BeEmpty();
         Section(vm, CleanupStep.UnusedSelectors).Items.Should().Contain(ghost);
-        vm.Plan.GetStep(CleanupStep.UnusedSelectors)!.AppliedCount.Should().Be(0);
+        Tab(vm, CleanupStep.UnusedSelectors).Plan.GetStep(CleanupStep.UnusedSelectors)!.AppliedCount.Should().Be(0);
+    }
+
+    [Fact]
+    public void Cleaning_a_tab_applies_only_its_plan_and_replans_the_other_tabs_on_the_changed_book()
+    {
+        CleanupViewModel vm = New(CleanupStep.UnusedSelectors, CleanupStep.UnusedMedia);
+        Section(vm, CleanupStep.UnusedMedia).Items.Should().BeEmpty();
+
+        Tab(vm, CleanupStep.UnusedSelectors).CleanCommand.Execute(null);
+
+        _book.GetCssResources().Single().GetText().Should().NotContain(".ghost");
+        _book.GetMediaResources().Should().Contain(r => r.BookPath.EndsWith("bg.png", StringComparison.Ordinal));
+        Section(vm, CleanupStep.UnusedSelectors).Items.Should().NotContain(i => i.Text == ".ghost");
+        Tab(vm, CleanupStep.UnusedSelectors).HasChanges.Should().BeFalse();
+        Section(vm, CleanupStep.UnusedMedia).Items.Should().ContainSingle(i => i.BookPath.EndsWith("bg.png", StringComparison.Ordinal));
+        Tab(vm, CleanupStep.UnusedMedia).HasChanges.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Cleaning_requests_closing_when_the_book_cannot_be_reanalysed()
+    {
+        CleanupViewModel vm = new(CleanupAnalysis.Prepare(_book).Analysis!, new[] { CleanupStep.UnusedSelectors }, (_, _) => { }, NoApply);
+        bool closeRequested = false;
+        vm.CloseRequested += (_, _) => closeRequested = true;
+
+        Tab(vm, CleanupStep.UnusedSelectors).CleanCommand.Execute(null);
+
+        closeRequested.Should().BeTrue();
     }
 
     [Fact]
@@ -98,19 +149,19 @@ public sealed class CleanupViewModelTests : IDisposable
     {
         using TempDir temp = new();
         using Book book = RiskyMergeBook(temp);
-        CleanupViewModel vm = new(CleanupAnalysis.Prepare(book).Analysis!, new[] { CleanupStep.MergeSameSelectors }, (_, _) => { });
+        CleanupViewModel vm = new(CleanupAnalysis.Prepare(book).Analysis!, new[] { CleanupStep.MergeSameSelectors }, (_, _) => { }, NoApply);
         CleanupSectionViewModel section = Section(vm, CleanupStep.MergeSameSelectors);
         CleanupItemViewModel merge = section.Items.Single();
 
         merge.IsRisky.Should().BeTrue();
         merge.IsChecked.Should().BeFalse();
         merge.Consequences.Should().NotBeEmpty();
-        vm.HasChanges.Should().BeFalse();
+        Tab(vm, CleanupStep.MergeSameSelectors).HasChanges.Should().BeFalse();
 
         merge.IsChecked = true;
 
-        vm.HasChanges.Should().BeTrue();
-        vm.Plan.GetStep(CleanupStep.MergeSameSelectors)!.Items.Single().IsApplied.Should().BeTrue();
+        Tab(vm, CleanupStep.MergeSameSelectors).HasChanges.Should().BeTrue();
+        Tab(vm, CleanupStep.MergeSameSelectors).Plan.GetStep(CleanupStep.MergeSameSelectors)!.Items.Single().IsApplied.Should().BeTrue();
     }
 
     [Fact]
@@ -118,13 +169,13 @@ public sealed class CleanupViewModelTests : IDisposable
     {
         using TempDir temp = new();
         using Book book = RiskyMergeBook(temp);
-        CleanupViewModel vm = new(CleanupAnalysis.Prepare(book).Analysis!, new[] { CleanupStep.MergeSameSelectors }, (_, _) => { });
+        CleanupViewModel vm = new(CleanupAnalysis.Prepare(book).Analysis!, new[] { CleanupStep.MergeSameSelectors }, (_, _) => { }, NoApply);
         CleanupSectionViewModel section = Section(vm, CleanupStep.MergeSameSelectors);
 
         section.SelectAllCommand.Execute(null);
 
         section.Items.Single().IsChecked.Should().BeFalse();
-        vm.HasChanges.Should().BeFalse();
+        Tab(vm, CleanupStep.MergeSameSelectors).HasChanges.Should().BeFalse();
     }
 
     private static Book RiskyMergeBook(TempDir temp)
@@ -146,6 +197,6 @@ public sealed class CleanupViewModelTests : IDisposable
         section.SelectNoneCommand.Execute(null);
 
         section.Items.Should().OnlyContain(i => !i.IsChecked);
-        vm.HasChanges.Should().BeFalse();
+        Tab(vm, CleanupStep.UnusedSelectors).HasChanges.Should().BeFalse();
     }
 }

@@ -1590,24 +1590,31 @@ public sealed partial class MainWindowViewModel
             return null;
         }
 
-        return new CleanupViewModel(preparation.Analysis, _settings.CleanupEnabledSteps, NavigateToBookPathAtOffset);
+        return new CleanupViewModel(preparation.Analysis, _settings.CleanupEnabledSteps, NavigateToBookPathAtOffset, ApplyCleanup);
     }
 
     /// <summary>
-    /// Applies the plan confirmed in the "Cleanup" dialog, remembers the checked steps for the next time and
-    /// refreshes the open tabs and panels.
+    /// Applies the plan of one tab of the "Cleanup" dialog ("Clean"), remembers the checked steps for the next time,
+    /// refreshes the open tabs and panels and re-analyses the changed book, so the dialog can stay open. Returns the
+    /// new analysis, or <c>null</c> when no book is open or an (X)HTML file is not well-formed any more.
     /// </summary>
-    public void ApplyCleanup(CleanupViewModel cleanup)
+    public CleanupAnalysis? ApplyCleanup(CleanupPlan plan, IReadOnlyList<CleanupStep> enabledSteps)
     {
-        ArgumentNullException.ThrowIfNull(cleanup);
-        _settings.CleanupEnabledSteps = cleanup.EnabledSteps;
-        if (_currentBook is null || !_currentBook.ApplyCleanup(cleanup.Plan))
+        ArgumentNullException.ThrowIfNull(plan);
+        ArgumentNullException.ThrowIfNull(enabledSteps);
+        _settings.CleanupEnabledSteps = enabledSteps;
+        if (_currentBook is null)
         {
-            return;
+            return null;
         }
 
-        RefreshAfterMaintenanceOperation();
-        _statusBar.ShowMessage(Strings.Get("Status_CleanupDone"), TimeSpan.FromSeconds(4));
+        if (_currentBook.ApplyCleanup(plan))
+        {
+            RefreshAfterMaintenanceOperation();
+            _statusBar.ShowMessage(Strings.Get("Status_CleanupDone"), TimeSpan.FromSeconds(4));
+        }
+
+        return CleanupAnalysis.Prepare(_currentBook).Analysis;
     }
 
     /// <summary>Refreshes the open tabs, the Book Browser panel and Preview after a whole-book maintenance operation.</summary>
