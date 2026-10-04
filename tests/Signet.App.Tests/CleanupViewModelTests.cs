@@ -83,6 +83,28 @@ public sealed class CleanupViewModelTests : IDisposable
     }
 
     [Fact]
+    public void Check_all_and_uncheck_all_toggle_every_step_of_a_tab_and_are_offered_only_for_several_steps()
+    {
+        CleanupViewModel vm = New();
+        CleanupTabViewModel css = vm.Tabs[0];
+        css.HasSeveralSections.Should().BeTrue();
+        vm.Tabs[1].HasSeveralSections.Should().BeTrue();
+        vm.Tabs[2].HasSeveralSections.Should().BeFalse();
+
+        css.EnableAllCommand.Execute(null);
+
+        css.Sections.Should().OnlyContain(s => s.IsEnabled);
+        vm.Tabs[2].Sections.Should().OnlyContain(s => !s.IsEnabled);
+        Section(vm, CleanupStep.UnusedSelectors).Items.Should().ContainSingle(i => i.Text == ".ghost");
+        css.HasChanges.Should().BeTrue();
+
+        css.DisableAllCommand.Execute(null);
+
+        css.Sections.Should().OnlyContain(s => !s.IsEnabled);
+        css.HasChanges.Should().BeFalse();
+    }
+
+    [Fact]
     public void Nothing_enabled_means_no_changes()
     {
         CleanupViewModel vm = New();

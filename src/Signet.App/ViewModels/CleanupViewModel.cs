@@ -27,6 +27,7 @@ public sealed partial class CleanupViewModel : ViewModelBase
     private readonly HashSet<string> _acceptedRiskyKeys = new(StringComparer.Ordinal);
     private CleanupAnalysis _analysis;
     private bool _updating;
+    private bool _togglingSections;
 
     /// <summary>Creates the view model and computes the first plans.</summary>
     /// <param name="analysis">The prepared analysis of the book.</param>
@@ -101,7 +102,32 @@ public sealed partial class CleanupViewModel : ViewModelBase
         _navigate(consequence.BookPath, consequence.Offset);
     }
 
-    internal void OnSectionToggled() => Replan();
+    internal void OnSectionToggled()
+    {
+        if (!_togglingSections)
+        {
+            Replan();
+        }
+    }
+
+    /// <summary>Checks or unchecks every section (step) of <paramref name="tab"/>, re-planning once.</summary>
+    internal void SetAllSections(CleanupTabViewModel tab, bool isEnabled)
+    {
+        _togglingSections = true;
+        try
+        {
+            foreach (CleanupSectionViewModel section in tab.Sections)
+            {
+                section.IsEnabled = isEnabled;
+            }
+        }
+        finally
+        {
+            _togglingSections = false;
+        }
+
+        Replan();
+    }
 
     internal void OnItemToggled(CleanupItemViewModel item)
     {
@@ -205,6 +231,8 @@ public sealed partial class CleanupTabViewModel : ObservableObject
         }
 
         CleanCommand = new RelayCommand(() => owner.Clean(this), () => HasChanges);
+        EnableAllCommand = new RelayCommand(() => owner.SetAllSections(this, true));
+        DisableAllCommand = new RelayCommand(() => owner.SetAllSections(this, false));
     }
 
     /// <summary>The tab header.</summary>
@@ -218,6 +246,15 @@ public sealed partial class CleanupTabViewModel : ObservableObject
 
     /// <summary>Applies <see cref="Plan"/> to the book ("Clean").</summary>
     public IRelayCommand CleanCommand { get; }
+
+    /// <summary>Checks every section (step) of the tab.</summary>
+    public IRelayCommand EnableAllCommand { get; }
+
+    /// <summary>Unchecks every section (step) of the tab.</summary>
+    public IRelayCommand DisableAllCommand { get; }
+
+    /// <summary>Whether the tab has more than one step — only then the "check/uncheck all" buttons are shown.</summary>
+    public bool HasSeveralSections => Sections.Count > 1;
 
     partial void OnHasChangesChanged(bool value) => CleanCommand.NotifyCanExecuteChanged();
 
