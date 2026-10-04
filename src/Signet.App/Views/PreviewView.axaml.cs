@@ -1,6 +1,7 @@
 using System.Threading;
 using System;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Threading;
 using Avalonia;
 using Avalonia.Styling;
@@ -106,10 +107,17 @@ public partial class PreviewView : UserControl
         StartWebViewInitialization();
     }
 
-    /// <inheritdoc/>
-    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    // The view is NOT torn down when it leaves the visual tree: Dock detaches and re-attaches the same
+    // view whenever an auto-hidden (pinned) Preview flyout is hidden and shown again, or the tool is moved
+    // between docks/windows — NativeWebView handles re-parenting itself. Disposing it on detach left a
+    // dead control behind ("Cannot access a disposed object: NativeWebViewController" on the next show).
+    // The native resources are released when the application exits.
+    private void OnApplicationExit(object? sender, ControlledApplicationLifetimeExitEventArgs e)
     {
-        base.OnDetachedFromVisualTree(e);
+        if (sender is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            desktop.Exit -= OnApplicationExit;
+        }
 
         try
         {
@@ -122,7 +130,7 @@ public partial class PreviewView : UserControl
         }
         catch (Exception)
         {
-            // Releasing native resources on close — errors are irrelevant.
+            // Releasing native resources on exit — errors are irrelevant.
         }
     }
 
@@ -134,6 +142,10 @@ public partial class PreviewView : UserControl
         }
 
         _initStarted = true;
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            desktop.Exit += OnApplicationExit;
+        }
 
         try
         {
