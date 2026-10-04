@@ -33,6 +33,29 @@ public sealed class SoftHyphenInserterTests
     }
 
     [Fact]
+    public void InsertSoftHyphens_uses_a_numeric_reference_so_the_file_stays_well_formed()
+    {
+        string html = Wrap("niesamowicie");
+
+        string result = SoftHyphenInserter.InsertSoftHyphens(html);
+
+        SoftHyphenInserter.SoftHyphenEntity.Should().Be("&#173;");
+        result.Should().NotContain("&shy;");
+        WellFormedChecker.IsWellFormed(result).Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData("nie&shy;samowicie")]
+    [InlineData("nie&#xAD;samowicie")]
+    [InlineData("nie­samowicie")]
+    public void InsertSoftHyphens_does_not_split_a_word_that_already_has_a_soft_hyphen_in_another_form(string word)
+    {
+        string html = Wrap(word);
+
+        SoftHyphenInserter.InsertSoftHyphens(html).Should().Be(html);
+    }
+
+    [Fact]
     public void InsertSoftHyphens_is_idempotent()
     {
         string html = Wrap("niesamowicie");

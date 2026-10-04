@@ -6,7 +6,8 @@ using System.Text.RegularExpressions;
 namespace Signet.Core.BookManipulation;
 
 /// <summary>
-/// "Add soft hyphens". Inserts the <c>&amp;shy;</c> entity (U+00AD, a soft hyphen) into sufficiently long words of the
+/// "Add soft hyphens". Inserts the numeric character reference <c>&amp;#173;</c> (U+00AD, a soft hyphen) into
+/// sufficiently long words of the
 /// XHTML content, so that readers without support for automatic CSS hyphenation can justify
 /// text better. Works on the raw source text (like <see cref="TagLister"/>), NOT on a
 /// parsed/re-serialized DOM — so the change is minimal (only the inserted
@@ -25,14 +26,23 @@ namespace Signet.Core.BookManipulation;
 /// </remarks>
 public static class SoftHyphenInserter
 {
-    /// <summary>The entity inserted at possible line-break points.</summary>
-    public const string SoftHyphenEntity = "&shy;";
+    /// <summary>
+    /// The character reference inserted at possible line-break points. Numeric, not the named <c>&amp;shy;</c>:
+    /// XHTML is parsed as XML without its DTD, where only the five predefined entities exist — a named
+    /// <c>&amp;shy;</c> makes the file not well-formed (and is invalid in EPUB 3 regardless of the DOCTYPE).
+    /// </summary>
+    public const string SoftHyphenEntity = "&#173;";
 
     /// <summary>The literal soft hyphen character (U+00AD), in case it occurs outside an entity.</summary>
     public const char SoftHyphenChar = '­';
 
     private static readonly Regex SoftHyphenEntityRegex = new(
         "&shy;|&#0*173;|&#[xX]0*[aA][dD];",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+    // Any form of a soft hyphen (named/decimal/hex reference or the literal character) exactly at a position.
+    private static readonly Regex SoftHyphenAtPosition = new(
+        "\\G(?:&shy;|&#0*173;|&#[xX]0*[aA][dD];|\u00AD)",
         RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
     private const int DefaultMinWordLength = 8;
@@ -48,8 +58,8 @@ public static class SoftHyphenInserter
     /// <summary>
     /// Returns a copy of <paramref name="htmlSource"/> with soft hyphens inserted in the content
     /// (outside tags, attributes, comments and elements from <see cref="SkippedTags"/>).
-    /// Idempotent — a word that already contains <see cref="SoftHyphenEntity"/> is not split
-    /// again.
+    /// Idempotent — a word that already contains a soft hyphen (in any form: <see cref="SoftHyphenEntity"/>,
+    /// <c>&amp;shy;</c>, <c>&amp;#xAD;</c> or the literal character) is not split again.
     /// </summary>
     public static string InsertSoftHyphens(
         string htmlSource,
@@ -142,7 +152,7 @@ public static class SoftHyphenInserter
         int minSegmentLength,
         List<(int Pos, string Text)> insertions)
     {
-        // The "&"/";" characters inside an already inserted &shy; entity do NOT end a "word" run — so
+        // The "&"/";" characters inside an already present soft hyphen reference do NOT end a "word" run — so
         // a previously split word is seen as a single run on a re-run
         // (idempotence, see the SoftHyphenEntity check in CollectInsertionsForWord) instead of
         // falling apart into short fragments between entities that could be split further.
@@ -150,14 +160,15 @@ public static class SoftHyphenInserter
         int i = 0;
         while (i <= gap.Length)
         {
-            if (i < gap.Length && IsSoftHyphenEntityAt(gap, i))
+            int softHyphenLength = i < gap.Length ? SoftHyphenLengthAt(gap, i) : 0;
+            if (softHyphenLength > 0)
             {
                 if (wordStart < 0)
                 {
                     wordStart = i;
                 }
 
-                i += SoftHyphenEntity.Length;
+                i += softHyphenLength;
                 continue;
             }
 
@@ -183,9 +194,11 @@ public static class SoftHyphenInserter
         }
     }
 
-    private static bool IsSoftHyphenEntityAt(string gap, int index) =>
-        index + SoftHyphenEntity.Length <= gap.Length
-        && string.Compare(gap, index, SoftHyphenEntity, 0, SoftHyphenEntity.Length, StringComparison.OrdinalIgnoreCase) == 0;
+    private static int SoftHyphenLengthAt(string gap, int index)
+    {
+        Match match = SoftHyphenAtPosition.Match(gap, index);
+        return match.Success ? match.Length : 0;
+    }
 
     private static void CollectInsertionsForWord(
         string gap,
@@ -202,7 +215,7 @@ public static class SoftHyphenInserter
         }
 
         string word = gap.Substring(wordStart, wordLength);
-        if (word.Contains(SoftHyphenEntity, StringComparison.OrdinalIgnoreCase))
+        if (SoftHyphenEntityRegex.IsMatch(word) || word.Contains(SoftHyphenChar, StringComparison.Ordinal))
         {
             return;
         }
