@@ -621,4 +621,106 @@ public sealed class CleanupAnalysisTests
         CleanupItem merge = Step(plan, CleanupStep.MergeSameProperties).Items.Single();
         merge.Offset.Should().Be(original.IndexOf(".p1", StringComparison.Ordinal));
     }
+
+    private const string NestedChain = "<div class=\"w\">\n  <div class=\"w\">\n    <p>Hello, world.</p>\n  </div>\n</div>";
+
+    private static Book LoadNested(TempDir temp, string css, string chain = NestedChain) => LoadMinimal(temp, tree =>
+    {
+        if (css.Length > 0)
+        {
+            AppendCss(tree, css);
+        }
+
+        ReplaceInChapter1(tree, "  <p>Hello, world.</p>", chain);
+    });
+
+    private static string Chapter1(Book book) =>
+        book.GetHtmlResources().Single(h => h.BookPath.EndsWith("chapter1.xhtml", StringComparison.Ordinal)).GetText();
+
+    [Fact]
+    public void NestedDivs_lists_the_safe_chains_of_a_file_as_one_item_and_apply_collapses_them()
+    {
+        using TempDir temp = new();
+        using Book book = LoadNested(temp, ".w { color: red; margin: 0; }");
+
+        CleanupPlan plan = Plan(book, CleanupStep.NestedDivs);
+
+        CleanupItem item = Step(plan, CleanupStep.NestedDivs).Items.Should().ContainSingle().Subject;
+        item.IsRisky.Should().BeFalse();
+        item.IsApplied.Should().BeTrue();
+        item.RuleCount.Should().Be(1);
+        item.BookPath.Should().EndWith("chapter1.xhtml");
+        item.Offset.Should().Be(Chapter1(book).IndexOf("<div", StringComparison.Ordinal));
+        Step(plan, CleanupStep.NestedDivs).AppliedRuleCount.Should().Be(1);
+
+        book.ApplyCleanup(plan).Should().BeTrue();
+        Chapter1(book).Should().Contain("<div class=\"w\">\n  <p>Hello, world.</p>\n</div>");
+    }
+
+    [Fact]
+    public void NestedDivs_a_chain_with_a_comment_is_risky_and_applied_only_when_accepted()
+    {
+        using TempDir temp = new();
+        using Book book = LoadNested(temp, string.Empty, "<div class=\"w\">\n  <div class=\"w\">\n    <p>Hello, world.</p>\n  </div>\n  <!-- note -->\n</div>");
+        CleanupAnalysis analysis = Analyse(book);
+        HashSet<CleanupStep> steps = new() { CleanupStep.NestedDivs };
+
+        CleanupItem chain = analysis.Plan(steps, NoExclusions).GetStep(CleanupStep.NestedDivs)!.Items.Single();
+
+        chain.IsRisky.Should().BeTrue();
+        chain.IsApplied.Should().BeFalse();
+        chain.Consequences.Should().ContainSingle().Which.Text.Should().Contain("<!-- note -->");
+
+        CleanupPlan accepted = analysis.Plan(steps, NoExclusions, new HashSet<string> { chain.Key });
+        book.ApplyCleanup(accepted).Should().BeTrue();
+        Chapter1(book).Should().Contain("<div class=\"w\">\n  <p>Hello, world.</p>\n<!-- note -->\n</div>");
+    }
+
+    [Theory]
+    [InlineData(".w { margin-left: 1em; }", "margin-left")]
+    [InlineData(".w { padding: 2px 0; }", "padding")]
+    [InlineData(".w { font-size: 1.2em; }", "font-size")]
+    [InlineData(".w .w { color: red; }", "color")]
+    [InlineData(".w .w p { color: blue; }", "blue")]
+    [InlineData(".w > .w { border: 1px solid; }", "border")]
+    public void NestedDivs_a_chain_whose_collapse_changes_the_styling_is_risky(string css, string expected)
+    {
+        using TempDir temp = new();
+        using Book book = LoadNested(temp, css);
+
+        CleanupItem chain = Step(Plan(book, CleanupStep.NestedDivs), CleanupStep.NestedDivs).Items.Single();
+
+        chain.IsRisky.Should().BeTrue();
+        chain.IsApplied.Should().BeFalse();
+        chain.Consequences.Should().Contain(c => c.Text.Contains(expected, StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData(".w { color: red; font-family: serif; }")]
+    [InlineData(".w { margin: 0; padding: 0 0; border: none; background: transparent; display: block; }")]
+    [InlineData(".w p { color: blue; }")]
+    public void NestedDivs_a_chain_whose_collapse_keeps_the_styling_is_safe(string css)
+    {
+        using TempDir temp = new();
+        using Book book = LoadNested(temp, css);
+
+        CleanupItem item = Step(Plan(book, CleanupStep.NestedDivs), CleanupStep.NestedDivs).Items.Single();
+
+        item.IsRisky.Should().BeFalse();
+    }
+
+    [Fact]
+    public void NestedDivs_an_excluded_file_item_is_not_applied()
+    {
+        using TempDir temp = new();
+        using Book book = LoadNested(temp, string.Empty);
+        CleanupAnalysis analysis = Analyse(book);
+        HashSet<CleanupStep> steps = new() { CleanupStep.NestedDivs };
+        string key = analysis.Plan(steps, NoExclusions).GetStep(CleanupStep.NestedDivs)!.Items.Single().Key;
+
+        CleanupPlan plan = analysis.Plan(steps, new HashSet<string> { key });
+
+        plan.HasChanges.Should().BeFalse();
+        plan.GetStep(CleanupStep.NestedDivs)!.Items.Single().IsApplied.Should().BeFalse();
+    }
 }

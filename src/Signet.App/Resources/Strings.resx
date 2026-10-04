@@ -3545,6 +3545,18 @@ Wstawić mimo to?</value>
   <data name="Cleanup_MergeSameProperties_Summary" xml:space="preserve">
     <value>Grupy do scalenia: {0} z {1} (reguł w scalanych grupach: {2}).</value>
   </data>
+  <data name="Cleanup_NestedDivs_Title" xml:space="preserve">
+    <value>Usuń niepotrzebne zagnieżdżenia &lt;div&gt;</value>
+  </data>
+  <data name="Cleanup_NestedDivs_Description" xml:space="preserve">
+    <value>Scala bezpośrednio zagnieżdżone znaczniki &lt;div&gt; o identycznych atrybutach (np. &lt;div class="a"&gt;&lt;div class="a"&gt;…&lt;/div&gt;&lt;/div&gt;) w jeden &lt;div&gt;. Między znacznikami mogą być tylko białe znaki, komentarze i sekcje CDATA; cokolwiek innego wyklucza scalenie. Treść jest przesuwana w lewo o wcięcie usuniętych poziomów (poza &lt;pre&gt; i &lt;textarea&gt;).</value>
+  </data>
+  <data name="Cleanup_NestedDivs_Summary" xml:space="preserve">
+    <value>Pozycje do wykonania: {0} z {1} (usuniętych znaczników &lt;div&gt;: {2}).</value>
+  </data>
+  <data name="Cleanup_NestedDivsWarning" xml:space="preserve">
+    <value>Zagnieżdżenia z komentarzami lub CDATA między znacznikami albo takie, których usunięcie zmieniłoby wygląd (np. sumujące się marginesy), są oznaczone ⚠ i domyślnie odznaczone. Pod każdym widać, co dokładnie się zmieni — zaznacz je tylko świadomie.</value>
+  </data>
   <data name="Cleanup_UnusedMedia_Title" xml:space="preserve">
     <value>Usuń nieużywane pliki multimedialne</value>
   </data>

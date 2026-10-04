@@ -53,7 +53,7 @@ public sealed partial class CleanupViewModel : ViewModelBase
 
         HashSet<CleanupStep> enabled = enabledSteps.ToHashSet();
         Tabs.Add(new CleanupTabViewModel(this, Strings.Get("CleanupWindow_Tab_Css"), CssSteps, enabled));
-        Tabs.Add(new CleanupTabViewModel(this, Strings.Get("CleanupWindow_Tab_Html"), Array.Empty<CleanupStep>(), enabled));
+        Tabs.Add(new CleanupTabViewModel(this, Strings.Get("CleanupWindow_Tab_Html"), HtmlSteps, enabled));
         Tabs.Add(new CleanupTabViewModel(this, Strings.Get("CleanupWindow_Tab_Files"), FilesSteps, enabled));
 
         Replan();
@@ -70,6 +70,9 @@ public sealed partial class CleanupViewModel : ViewModelBase
         CleanupStep.MergeSameSelectors,
         CleanupStep.MergeSameProperties,
     };
+
+    /// <summary>The steps of the HTML tab, in execution order.</summary>
+    public static IReadOnlyList<CleanupStep> HtmlSteps { get; } = new[] { CleanupStep.NestedDivs };
 
     /// <summary>The steps of the Files tab, in execution order.</summary>
     public static IReadOnlyList<CleanupStep> FilesSteps { get; } = new[] { CleanupStep.UnusedMedia };
@@ -254,9 +257,12 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
         _isEnabled = isEnabled;
         Title = Strings.Get($"Cleanup_{step}_Title");
         Description = Strings.Get($"Cleanup_{step}_Description");
-        Warning = step is CleanupStep.MergeSameSelectors or CleanupStep.MergeSameProperties
-            ? Strings.Get("Cleanup_MergeWarning")
-            : string.Empty;
+        Warning = step switch
+        {
+            CleanupStep.MergeSameSelectors or CleanupStep.MergeSameProperties => Strings.Get("Cleanup_MergeWarning"),
+            CleanupStep.NestedDivs => Strings.Get("Cleanup_NestedDivsWarning"),
+            _ => string.Empty,
+        };
         SelectAllCommand = new RelayCommand(() => _owner.SetAllItems(this, true));
         SelectNoneCommand = new RelayCommand(() => _owner.SetAllItems(this, false));
     }
@@ -322,7 +328,7 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
             return Strings.Get("Cleanup_NothingFound");
         }
 
-        string summary = Step is CleanupStep.MergeSameSelectors or CleanupStep.MergeSameProperties
+        string summary = Step is CleanupStep.MergeSameSelectors or CleanupStep.MergeSameProperties or CleanupStep.NestedDivs
             ? Strings.Format($"Cleanup_{Step}_Summary", result.AppliedCount, result.Items.Count, result.AppliedRuleCount)
             : Strings.Format($"Cleanup_{Step}_Summary", result.AppliedCount, result.Items.Count);
         return result.RiskyCount > 0 ? summary + Strings.Format("Cleanup_RiskySummary", result.RiskyCount) : summary;

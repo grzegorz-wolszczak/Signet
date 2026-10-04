@@ -77,9 +77,8 @@ public sealed class CleanupViewModelTests : IDisposable
 
         vm.Tabs.Should().HaveCount(3);
         vm.Tabs[0].Sections.Select(s => s.Step).Should().Equal(CleanupViewModel.CssSteps);
-        vm.Tabs[1].Sections.Should().BeEmpty();
+        vm.Tabs[1].Sections.Select(s => s.Step).Should().Equal(CleanupViewModel.HtmlSteps);
         vm.Tabs[2].Sections.Select(s => s.Step).Should().Equal(CleanupViewModel.FilesSteps);
-        vm.Tabs[1].CleanCommand.CanExecute(null).Should().BeFalse();
     }
 
     [Fact]

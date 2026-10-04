@@ -30,6 +30,12 @@ public enum CleanupStep
     MergeSameProperties,
 
     /// <summary>
+    /// Collapse chains of directly nested <c>&lt;div&gt;</c>s with identical attributes into one
+    /// (<see cref="NestedDivCollapser"/>).
+    /// </summary>
+    NestedDivs,
+
+    /// <summary>
     /// Remove media files (images, SVG, audio, video) referenced from nowhere — no XHTML attribute (src, href,
     /// data, poster, srcset, style), no CSS and no SVG file.
     /// </summary>
@@ -116,9 +122,9 @@ public sealed record CleanupPreparation(CleanupAnalysis? Analysis, HtmlResource?
 /// </summary>
 /// <remarks>
 /// <b>Execution order</b> (<see cref="CleanupStep"/>): unreferenced stylesheets → unused selectors → merging
-/// identical selectors → merging identical properties → unused media. Unused selectors are always computed on the
-/// original texts (only whole stylesheets can disappear before them), merges on the texts left by the previous
-/// steps, and media references on the CSS that remains at the end.
+/// identical selectors → merging identical properties → nested divs → unused media. Unused selectors are always
+/// computed on the original texts (only whole stylesheets can disappear before them), merges and nested divs on the
+/// texts left by the previous steps, and media references on the CSS that remains at the end.
 /// </remarks>
 public sealed class CleanupAnalysis
 {
@@ -127,6 +133,8 @@ public sealed class CleanupAnalysis
     private const string MergeSelectorKeyPrefix = "mergesel|";
     private const string MergePropertiesKeyPrefix = "mergeprop|";
     private const string MediaKeyPrefix = "media|";
+    private const string NestedDivsKeyPrefix = "divnest|";
+    private const int MaxOpenTagLength = 80;
 
     // Attributes that reference a file: src (img, audio, video, source, track, embed, script…), href (link, a,
     // and SVG <image>/<use> incl. xlink:href), data (object), poster (video); srcset is a list.
@@ -145,6 +153,13 @@ public sealed class CleanupAnalysis
     private readonly IReadOnlyList<Resource> _media;
     private readonly string _coverImagePath;
     private readonly Lazy<CssMergeRiskAnalyzer> _mergeRisks;
+    private readonly Dictionary<string, IReadOnlyList<string>> _visibleSheets = new(StringComparer.Ordinal);
+
+    // The nested-div chains of each XHTML file with their consequences, for the texts (the file and the stylesheets it
+    // sees) they were found in — finding the consequences means computing the cascade, so it is not repeated after
+    // every toggle.
+    private readonly Dictionary<string, (string Stamp, List<(NestedDivChain Chain, IReadOnlyList<CleanupConsequence> Consequences)> Chains)> _divChains =
+        new(StringComparer.Ordinal);
 
     private CleanupAnalysis(Book book)
     {
@@ -186,6 +201,10 @@ public sealed class CleanupAnalysis
             .Select(html => (html.BookPath, html.GetText(), book.GetVisibleStylesheets(html)))
             .ToList();
         _mergeRisks = new Lazy<CssMergeRiskAnalyzer>(() => new CssMergeRiskAnalyzer(documents));
+        foreach ((string htmlBookPath, _, IReadOnlyList<string> sheets) in documents)
+        {
+            _visibleSheets[htmlBookPath] = sheets;
+        }
 
         _unreferencedSheets = book.FindUnusedStylesheets();
         _unusedSelectors = CssSelectorUsageAnalyzer.GetUnusedSelectors(book);
@@ -267,6 +286,11 @@ public sealed class CleanupAnalysis
         if (enabledSteps.Contains(CleanupStep.MergeSameProperties))
         {
             steps.Add(PlanMerges(CleanupStep.MergeSameProperties, CssMergeKind.SameProperties, cssTexts, ruleOrigins, excludedKeys, acceptedRiskyKeys));
+        }
+
+        if (enabledSteps.Contains(CleanupStep.NestedDivs))
+        {
+            steps.Add(PlanNestedDivs(cssTexts, htmlTexts, excludedKeys, acceptedRiskyKeys));
         }
 
         if (enabledSteps.Contains(CleanupStep.UnusedMedia))
@@ -417,6 +441,107 @@ public sealed class CleanupAnalysis
         }
 
         return Result(step, items);
+    }
+
+    /// <summary>
+    /// Plans the nested-div step: per XHTML file, one item for all its safe chains (they are applied together) and
+    /// one item for every risky chain (<see cref="NestedDivRiskAnalyzer"/>), applied only when accepted. The
+    /// <see cref="CleanupItem.RuleCount"/> of an item is the number of <c>&lt;div&gt;</c>s it removes.
+    /// </summary>
+    private CleanupStepResult PlanNestedDivs(
+        Dictionary<string, string> cssTexts,
+        Dictionary<string, string> htmlTexts,
+        IReadOnlySet<string> excludedKeys,
+        IReadOnlySet<string> acceptedRiskyKeys)
+    {
+        List<CleanupItem> items = new();
+        foreach (string path in htmlTexts.Keys.ToList())
+        {
+            string text = htmlTexts[path];
+            var chains = NestedDivChains(path, text, cssTexts);
+            if (chains.Count == 0)
+            {
+                continue;
+            }
+
+            List<int> toCollapse = new();
+            List<NestedDivChain> safe = chains.Where(c => c.Consequences.Count == 0).Select(c => c.Chain).ToList();
+            if (safe.Count > 0)
+            {
+                string key = NestedDivsKeyPrefix + path;
+                int removed = safe.Sum(c => c.Depth - 1);
+                bool isApplied = !excludedKeys.Contains(key);
+                items.Add(new CleanupItem(
+                    CleanupStep.NestedDivs, key, CoreStrings.Format("Cleanup_NestedDivs_File", removed, safe.Count), path, safe[0].OuterPos, removed)
+                {
+                    IsApplied = isApplied,
+                });
+                if (isApplied)
+                {
+                    toCollapse.AddRange(safe.Select(c => c.OuterPos));
+                }
+            }
+
+            for (int i = 0; i < chains.Count; i++)
+            {
+                (NestedDivChain chain, IReadOnlyList<CleanupConsequence> consequences) = chains[i];
+                if (consequences.Count == 0)
+                {
+                    continue;
+                }
+
+                string key = $"{NestedDivsKeyPrefix}{path}|{i}";
+                bool isApplied = !excludedKeys.Contains(key) && acceptedRiskyKeys.Contains(key);
+                items.Add(new CleanupItem(
+                    CleanupStep.NestedDivs, key, CoreStrings.Format("Cleanup_NestedDivs_Chain", DescribeOpenTag(chain.OpenTag), chain.Depth, chain.Depth - 1),
+                    path, chain.OuterPos, chain.Depth - 1)
+                {
+                    Consequences = consequences,
+                    IsApplied = isApplied,
+                });
+                if (isApplied)
+                {
+                    toCollapse.Add(chain.OuterPos);
+                }
+            }
+
+            // From the end of the file: a collapse only changes the text after the chain's opening tag, so the
+            // opening tags of the chains before it stay where they were.
+            foreach (int outerPos in toCollapse.OrderByDescending(p => p))
+            {
+                text = NestedDivCollapser.Collapse(text, outerPos) ?? text;
+            }
+
+            htmlTexts[path] = text;
+        }
+
+        return Result(CleanupStep.NestedDivs, items);
+    }
+
+    private List<(NestedDivChain Chain, IReadOnlyList<CleanupConsequence> Consequences)> NestedDivChains(
+        string path, string text, Dictionary<string, string> cssTexts)
+    {
+        IReadOnlyList<string> sheetPaths = _visibleSheets.TryGetValue(path, out IReadOnlyList<string>? visible) ? visible : Array.Empty<string>();
+        List<string> sheetTexts = sheetPaths.Where(cssTexts.ContainsKey).Select(p => cssTexts[p]).ToList();
+        string stamp = string.Join("\u0001", sheetTexts.Prepend(text));
+        if (_divChains.TryGetValue(path, out var cached) && string.Equals(cached.Stamp, stamp, StringComparison.Ordinal))
+        {
+            return cached.Chains;
+        }
+
+        IReadOnlyList<NestedDivChain> chains = NestedDivCollapser.FindChains(text);
+        List<CssInfo> sheets = chains.Count == 0 ? new List<CssInfo>() : sheetTexts.Select(t => new CssInfo(t)).ToList();
+        var result = chains
+            .Select(chain => (chain, NestedDivRiskAnalyzer.Analyse(path, text, chain, sheets)))
+            .ToList();
+        _divChains[path] = (stamp, result);
+        return result;
+    }
+
+    private static string DescribeOpenTag(string openTag)
+    {
+        string single = Regex.Replace(openTag, @"\s+", " ");
+        return single.Length <= MaxOpenTagLength ? single : single[..MaxOpenTagLength] + "…";
     }
 
     private List<Resource> FindUnusedMedia(Dictionary<string, string> cssTexts, Dictionary<string, string> htmlTexts)

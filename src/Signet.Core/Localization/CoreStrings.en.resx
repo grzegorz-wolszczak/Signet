@@ -6056,6 +6056,24 @@
   <data name="Cleanup_Risk_Unverifiable" xml:space="preserve">
     <value>Cannot check the consequences: the parser does not understand the selector "{0}".</value>
   </data>
+  <data name="Cleanup_Risk_DivComment" xml:space="preserve">
+    <value>There is a comment between the &lt;div&gt; tags — it will be kept inside the remaining &lt;div&gt;: {0}</value>
+  </data>
+  <data name="Cleanup_Risk_DivCData" xml:space="preserve">
+    <value>There is a CDATA section between the &lt;div&gt; tags — it will be kept inside the remaining &lt;div&gt;: {0}</value>
+  </data>
+  <data name="Cleanup_Risk_DivRepeated" xml:space="preserve">
+    <value>{0}: &lt;{1}&gt; — "{2}: {3}" (from "{4}") applies on {5} nested levels; after collapsing it applies only once</value>
+  </data>
+  <data name="Cleanup_Risk_DivInherited" xml:space="preserve">
+    <value>{0}: &lt;{1}&gt; — the content inherits "{2}: {3}" (from "{4}") only from an inner level; after collapsing: "{5}"</value>
+  </data>
+  <data name="Cleanup_NestedDivs_File" xml:space="preserve">
+    <value>Unnecessary &lt;div&gt; tags to remove: {0} (nestings: {1})</value>
+  </data>
+  <data name="Cleanup_NestedDivs_Chain" xml:space="preserve">
+    <value>{0} ×{1} — to remove: {2}</value>
+  </data>
   <data name="Css_MergeAtRule" xml:space="preserve">
     <value> — at the place of rule {0} of {1}</value>
   </data>
