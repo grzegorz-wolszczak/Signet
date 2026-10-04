@@ -135,6 +135,42 @@ public sealed class MainDockFactoryTests
         after.IsToolPinned(DockableIds.Preview).Should().BeFalse();
     }
 
+    [Fact]
+    public void Slid_out_size_of_an_auto_hidden_panel_is_restored_on_next_start()
+    {
+        (MainDockFactory before, IRootDock beforeRoot) = NewWithRoot();
+        IDockable preview = Tool(before, beforeRoot, DockableIds.Preview);
+        before.PinDockable(preview);
+        preview.SetPinnedBounds(0, 0, 640.5, 900);
+        IReadOnlyDictionary<string, string> saved = before.CapturePinnedSizes();
+
+        (MainDockFactory after, IRootDock afterRoot) = NewWithRoot();
+        IDockable restored = Tool(after, afterRoot, DockableIds.Preview);
+        after.ApplyToolVisibility(before.CaptureToolVisibility());
+        after.ApplyPinnedSizes(saved);
+
+        after.IsToolPinned(DockableIds.Preview).Should().BeTrue();
+        restored.GetPinnedBounds(out _, out _, out double width, out double height);
+        (width, height).Should().Be((640.5, 900));
+        saved.Should().ContainSingle("only panels with a known slid-out size are saved");
+    }
+
+    [Theory]
+    [InlineData("abc")]
+    [InlineData("10;900")]
+    [InlineData("640;NaN")]
+    [InlineData("640")]
+    public void Unusable_saved_slid_out_sizes_are_ignored(string stored)
+    {
+        (MainDockFactory sut, IRootDock root) = NewWithRoot();
+
+        sut.ApplyPinnedSizes(new Dictionary<string, string> { [DockableIds.Preview] = stored });
+
+        sut.CapturePinnedSizes().Should().BeEmpty();
+        Tool(sut, root, DockableIds.Preview).GetPinnedBounds(out _, out _, out double width, out _);
+        (double.IsFinite(width) && width >= 50).Should().BeFalse();
+    }
+
     [Theory]
     [InlineData("1")]
     [InlineData(MainDockFactory.PinnedState)]

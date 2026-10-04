@@ -58,6 +58,9 @@ public sealed partial class MainWindowViewModel
     /// <summary>Settings group holding panel visibility.</summary>
     public const string DockPanelsGroup = "dock_panels";
 
+    /// <summary>Settings group holding the slid-out sizes of "Auto Hide" panels.</summary>
+    public const string DockPinnedSizesGroup = "dock_pinned_sizes";
+
     private readonly ThemeManager _themeManager;
     private readonly ILogger<MainWindowViewModel> _logger;
     private readonly AppActionRegistry _actions;
@@ -1283,6 +1286,7 @@ public sealed partial class MainWindowViewModel
     public void PersistState()
     {
         _settings.SetStringMap(DockPanelsGroup, _dockFactory.CaptureToolVisibility());
+        _settings.SetStringMap(DockPinnedSizesGroup, _dockFactory.CapturePinnedSizes());
         _settings.MainWindowDockLayout = JsonSerializer.Serialize(_dockFactory.CaptureLayoutState());
         _tabManager.CaptureSession(_settings);
         _findReplace.PersistState(IsFindReplaceVisible);
@@ -2637,6 +2641,8 @@ public sealed partial class MainWindowViewModel
         {
             _dockFactory.ApplyToolVisibility(stored);
         }
+
+        _dockFactory.ApplyPinnedSizes(_settings.GetStringMap(DockPinnedSizesGroup));
     }
 
     private void WirePanelActions()

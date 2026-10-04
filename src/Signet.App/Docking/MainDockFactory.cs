@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using System.Globalization;
 using Dock.Model.Controls;
 using Dock.Model.Core;
 using Dock.Model.Mvvm.Controls;
@@ -291,6 +292,53 @@ public sealed class MainDockFactory : Factory
             }
         }
     }
+
+    /// <summary>
+    /// Snapshot of the slid-out sizes of "Auto Hide" panels (id → <c>"width;height"</c> in DIP, invariant
+    /// culture) — only the panels whose slid-out size is known (Dock records it in
+    /// <see cref="IDockable.PinnedBounds"/> when the user resizes the slid-out panel). For persistence.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> CapturePinnedSizes()
+    {
+        Dictionary<string, string> result = new(StringComparer.Ordinal);
+        foreach (KeyValuePair<string, Tool> pair in _tools)
+        {
+            pair.Value.GetPinnedBounds(out _, out _, out double width, out double height);
+            if (IsUsablePinnedSize(width) && IsUsablePinnedSize(height))
+            {
+                result[pair.Key] = string.Create(CultureInfo.InvariantCulture, $"{width};{height}");
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Restores the slid-out sizes of "Auto Hide" panels saved by <see cref="CapturePinnedSizes"/>.
+    /// Without it a slid-out panel opens at Dock's minimum width (50 px) after every restart.
+    /// Unreadable or degenerate entries are skipped.
+    /// </summary>
+    public void ApplyPinnedSizes(IReadOnlyDictionary<string, string> stored)
+    {
+        ArgumentNullException.ThrowIfNull(stored);
+        foreach (KeyValuePair<string, string> pair in stored)
+        {
+            string[] parts = pair.Value.Split(';');
+            if (_tools.TryGetValue(pair.Key, out Tool? tool)
+                && parts.Length == 2
+                && double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out double width)
+                && double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out double height)
+                && IsUsablePinnedSize(width)
+                && IsUsablePinnedSize(height))
+            {
+                tool.SetPinnedBounds(0, 0, width, height);
+            }
+        }
+    }
+
+    // Dock's own minimum of a slid-out panel is 50 px; anything above a sane screen size is garbage.
+    private static bool IsUsablePinnedSize(double size) =>
+        double.IsFinite(size) && size >= 50 && size <= 10_000;
 
     /// <summary>Toggles the panel's visibility; returns the new visibility state.</summary>
     public bool ToggleTool(string id)
