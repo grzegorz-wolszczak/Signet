@@ -16,8 +16,9 @@ namespace Signet.Core.BookManipulation;
 /// <item>comments and CDATA sections between the chain's tags (kept, but moved inside the remaining
 /// <c>&lt;div&gt;</c>);</item>
 /// <item>styles of the removed <c>&lt;div&gt;</c>s that add up with nesting — a non-inherited property such as
-/// <c>margin</c> or <c>padding</c> applied to every level, or an inherited one with a relative value
-/// (<c>font-size: 1.2em</c>) — and inherited styles the content gets from an inner <c>&lt;div&gt;</c> only
+/// <c>margin</c> or <c>padding</c> applied to every level (a border whose style is <c>none</c> or width is 0 does
+/// not count), or a relative font size (<c>font-size: 1.2em</c> — other inherited values do not add up) — and
+/// inherited styles the content gets from an inner <c>&lt;div&gt;</c> only
 /// (e.g. from <c>.a .a { color: red }</c>);</item>
 /// <item>changes of the winning value of any property on the remaining <c>&lt;div&gt;</c> or on its content,
 /// because a selector depends on the nesting (<c>.a &gt; .a</c>, <c>.a .a p</c>, <c>:only-child</c>…) — found by
@@ -37,6 +38,11 @@ internal static class NestedDivRiskAnalyzer
     private static readonly HashSet<string> NeutralKeywords = new(StringComparer.OrdinalIgnoreCase)
     {
         "none", "transparent", "auto", "normal", "initial", "unset", "static", "visible",
+    };
+
+    private static readonly HashSet<string> BorderShorthands = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "border", "border-top", "border-right", "border-bottom", "border-left", "outline",
     };
 
     /// <summary>
@@ -93,7 +99,7 @@ internal static class NestedDivRiskAnalyzer
                 }
 
                 bool inherited = CssInheritedProperties.IsInherited(property);
-                if (!inherited ? !IsNeutral(property, winner.Value) : RelativeValueRegex.IsMatch(winner.Value))
+                if (!inherited ? !IsNeutral(property, winner.Value) : AddsUpWhenInherited(property, winner.Value))
                 {
                     int count = levelWinners.Count(w => w.TryGetValue(property, out Winner? other) && other.Value == winner.Value);
                     found.Add(CoreStrings.Format(
@@ -269,8 +275,30 @@ internal static class NestedDivRiskAnalyzer
         }
 
         string[] tokens = v.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
-        return tokens.Length > 0 && tokens.All(t => ZeroLengthRegex.IsMatch(t) || NeutralKeywords.Contains(t));
+        if (tokens.Length == 0)
+        {
+            return false;
+        }
+
+        // A one-sided border/outline shorthand draws nothing when its style is none/hidden or its width is 0,
+        // whatever its color ("border-top: currentColor none 0").
+        if (BorderShorthands.Contains(property)
+            && tokens.Any(t => t.Equals("none", StringComparison.OrdinalIgnoreCase)
+                || t.Equals("hidden", StringComparison.OrdinalIgnoreCase)
+                || ZeroLengthRegex.IsMatch(t)))
+        {
+            return true;
+        }
+
+        return tokens.All(t => ZeroLengthRegex.IsMatch(t) || NeutralKeywords.Contains(t));
     }
+
+    // An inherited value that adds up with nesting: only the font size is relative to the parent's value
+    // (em/%/larger/smaller); other inherited lengths in em (text-indent, letter-spacing…) use the element's own
+    // font size, so the same value on every level gives the same result.
+    private static bool AddsUpWhenInherited(string property, string value) =>
+        (property.Equals("font-size", StringComparison.OrdinalIgnoreCase) || property.Equals("font", StringComparison.OrdinalIgnoreCase))
+        && RelativeValueRegex.IsMatch(value);
 
     private static string Shorten(string text)
     {

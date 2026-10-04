@@ -699,6 +699,8 @@ public sealed class CleanupAnalysisTests
     [InlineData(".w { color: red; font-family: serif; }")]
     [InlineData(".w { margin: 0; padding: 0 0; border: none; background: transparent; display: block; }")]
     [InlineData(".w p { color: blue; }")]
+    [InlineData(".w { text-indent: 1.5em; border-top: currentColor none 0; border-bottom: currentColor none 0; }")]
+    [InlineData(".w { border-left: 0 solid red; outline: hidden; letter-spacing: 0.1em; line-height: 120%; }")]
     public void NestedDivs_a_chain_whose_collapse_keeps_the_styling_is_safe(string css)
     {
         using TempDir temp = new();
