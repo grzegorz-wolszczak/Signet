@@ -142,7 +142,7 @@ public sealed class IconThemeManager(SettingsStore settings, ILogger<IconThemeMa
     /// Keys of the icons that are not part of the theme sets — colored PNGs
     /// (<c>Assets/Icons/Calibre</c>), shared by all themes.
     /// </summary>
-    public static readonly IReadOnlyList<string> ColoredIconKeys = new[] { "beautify", "html-fix" };
+    public static readonly IReadOnlyList<string> ColoredIconKeys = new[] { "beautify", "html-fix", "polish" };
 
     /// <summary>Dictionary of the bitmaps for <see cref="ColoredIconKeys"/> (key = file name without <c>.png</c>).</summary>
     public static ResourceDictionary LoadColoredIcons()

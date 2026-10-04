@@ -72,8 +72,9 @@ public sealed class WindowRenderTests
             "the default \"main\" set consists of colour DrawingImages resolved by IconKeyToImageConverter");
 
         // Beautify / Fix code on the Tools toolbar use colour PNGs (beautify / html-fix).
+        // (Cleanup's "polish" icon is a menu item only, not on a toolbar by default.)
         icons.Where(IsColourPng).Select(i => ((ToolbarItemViewModel)i.DataContext!).IconKey)
-            .Should().BeEquivalentTo(IconThemeManager.ColoredIconKeys);
+            .Should().Contain("beautify").And.Contain("html-fix").And.OnlyContain(k => IconThemeManager.ColoredIconKeys.Contains(k!));
         icons.Where(IsColourPng).Should().OnlyContain(i => i.Source is Bitmap);
     }
 

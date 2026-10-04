@@ -8,6 +8,7 @@ The files in this directory are unmodified copies from the **calibre** project
 |---|---|---|
 | `beautify.png` | `beautify` | Beautify code (current file / all HTML files) |
 | `html-fix.png` | `html-fix` | Fix code (current file / all HTML files) |
+| `polish.png` | `polish` | Cleanup (calibre's "Polish books" icon; copied from commit `665ef7bdccc772f8d8d7de13d7b8e753a7cbcf5b`) |
 
 Copyright (C) 2008-2026 Kovid Goyal &lt;kovid@kovidgoyal.net&gt;, licensed under the GNU GPL v3
 (the `Files: *` section of calibre's `COPYRIGHT` file), which is compatible with Signet's license (GPL-3.0-or-later).

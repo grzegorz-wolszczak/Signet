@@ -172,7 +172,7 @@ public static class AppActionCatalog
         // See the comment on AppActionIds.SelectClip.
         new("MainWindow.SelectClip", "&Insert Clip From Library...", "", null, "Tools"),
         new("MainWindow.SearchEditor", "&Saved Searches...", "Ctrl+Alt+F", "saved-search", "Tools"),
-        new("MainWindow.Cleanup", "&Cleanup...", "", null, "Tools"),
+        new("MainWindow.Cleanup", "&Cleanup...", "", "polish", "Tools"),
         new("MainWindow.LiveCssPanel", "&Live CSS Panel", "Ctrl+Alt+J", null, "Tools"),
         new("MainWindow.AddSoftHyphens", "Add &Soft Hyphens", "", null, "Tools"),
         new("MainWindow.RemoveSoftHyphens", "&Remove Soft Hyphens", "", null, "Tools"),
