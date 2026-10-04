@@ -2,6 +2,13 @@
 
 A desktop editor for EPUB 2 and EPUB 3 ebooks, written in C# with [Avalonia](https://avaloniaui.net/).
 
+## Project status: use at your own risk
+
+Signet is still under heavy, active development. New features (and new bugs) are added all the
+time, so there is **no guarantee that any part of it works correctly**. Everyone who uses it does
+so entirely at their own risk. If Signet ruins your book, you have only yourself to blame, so
+always keep a backup copy of the original.
+
 ## Where this project comes from
 
 Signet is a sandbox experiment: porting an existing C++ application to .NET with the help of AI.
@@ -19,6 +26,56 @@ Along the way the project picked up features from other sources:
 The code is now a hybrid of these approaches and has drifted away from upstream Sigil, although
 the UI still looks very similar. This is **not** Sigil and is not affiliated with the Sigil or
 calibre projects.
+
+## Features unique to Signet
+
+These features were designed for Signet. As far as I know, neither Sigil nor calibre (nor any other
+EPUB editor I know of) has them:
+
+- **Highlighting the clicked element in Preview**: clicking in Code View does more than scroll the
+  Preview to the matching place (as Sigil does). It also highlights that element, so it is easy to
+  spot on a long page. The style can be set in Preferences → Preview: background or outline, colours
+  for light and dark themes, opacity, and whether the highlight fades after a delay.
+- **Merge Content**: joins adjacent sibling elements of the same kind into one. One use is
+  paragraphs that an import split apart (`<p>Ala</p> <p>ma kota</p>` → `<p>Ala ma kota</p>`).
+  The selection only has to start inside the first element and end inside the last one.
+- **Cascade-aware CSS class rename**: the class can be renamed from two places:
+  - from Code View of an XHTML file, with the caret on a name in `class="…"`. The rename covers
+    either the whole book or only the elements with the same nesting in the document structure.
+    In the second case the style definitions are copied under the new name.
+  - from a stylesheet or a `<style>` block, with the caret on the class in a selector. Only the
+    elements that actually use the rules of that stylesheet change. Each source that defines the
+    class is handled on its own: renamed in place, copied, or left unchanged.
+
+  Sigil's "Rename Selected Class" and calibre's "Rename the class" change the class everywhere,
+  without looking at the cascade.
+- **Cleanup (Tools → Cleanup)**: a single dialog with independent **CSS**, **HTML** and **Files**
+  tabs. Each tab is planned and applied separately. You see a full preview of every change before
+  anything is modified, can tick or untick single items, and can double-click an item to jump to
+  it in the code. How it works:
+  - **Risk analysis based on the CSS cascade**: every step simulates the cascade for each affected
+    element before and after the change. If a change would alter how the book looks, it is
+    marked ⚠, left unticked, and lists its consequences. You have to accept it explicitly.
+  - **CSS**: rules with the same selector or the same properties are merged. The merged rule goes to
+    the first place where the styling stays the same. Selector lists that are risky to merge
+    (vendor-prefixed, Selectors 4, unparsable) are flagged. `@import` is followed everywhere.
+  - **HTML cleanup**: this is **not** Prettify or Mend, which only fix or reformat the markup. It
+    removes structure that adds nothing:
+    - nested `<div>`s with identical attributes are collapsed into one;
+    - empty `<p>`, `<span>` and `<div>` elements (whitespace only) are removed;
+    - bare `<span>`s without attributes are unwrapped.
+
+    Elements with an `id` are never removed.
+- **Remove span** (Code View context menu): unwraps the `<span>` at the caret. It can also unwrap
+  every identical span (same attributes) in the file or in the whole book. Risky removals go through
+  the same ⚠ confirmation as in Cleanup.
+- **Live CSS Panel with the element hierarchy**: shows the matching rules of every element from
+  `<body>` down to the element at the caret. Inherited properties that a closer element overrides
+  are struck through, with the winning rule (selector, file and line) shown next to them. The panel
+  sometimes shows more than needed, so this may still change.
+- **Notifications panel**: a history of all status bar messages of the session. Warnings about
+  blocked or failed operations are highlighted and counted on the bell icon in the status bar.
+- **Switching the UI language (Polish / English) on the fly**, without restarting the application.
 
 ## Sigil features that are not implemented
 
@@ -65,6 +122,11 @@ dotnet run --project src/Signet.App
 | `src/Signet.App` | Avalonia desktop application (MVVM, CommunityToolkit.Mvvm) |
 | `src/Signet.Cli` | headless command-line tool (round-trip checks) |
 | `tests/` | unit tests, Avalonia headless view tests and a test EPUB corpus |
+
+## Icons
+
+The icons used in the application come from Sigil and calibre. Some of them were generated with
+AI.
 
 ## License
 
