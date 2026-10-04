@@ -19,7 +19,7 @@ namespace Signet.Core.SourceUpdates;
 /// so minor, cosmetic formatting differences outside the attributes that actually changed are
 /// possible (normalization of quotes / empty elements by <see cref="XhtmlMarkupFormatter"/>).
 /// The XML prolog and DOCTYPE are recreated with the same logic as <see cref="CleanSource.Mend"/>
-/// (<see cref="CleanSource.BuildDoctype"/>).
+/// (<see cref="CleanSource.BuildDoctype"/>); a document without a DOCTYPE stays without one.
 /// </remarks>
 public static class PerformHtmlUpdates
 {

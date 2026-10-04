@@ -70,6 +70,7 @@ public sealed partial class MainWindowViewModel
     private readonly PreviewViewModel _preview;
     private readonly SpellChecker _spellChecker;
     private readonly ClipboardHistoryService _clipboardHistory;
+    private readonly MissingDoctypeGuard _doctypeGuard;
 
     private Book? _currentBook;
     private string _windowTitle = ApplicationInfo.Name;
@@ -117,7 +118,7 @@ public sealed partial class MainWindowViewModel
     private MainWindowViewModel(DesignTimeBundle b, ILogger<MainWindowViewModel> logger)
         : this(b.Theme, logger, b.Actions, b.Shortcuts,
             b.Toolbars, b.DockFactory, b.StatusBar, b.Settings, b.BookBrowser, b.Tabs, b.Preview, b.SpellChecker,
-            b.ClipboardHistory)
+            b.ClipboardHistory, b.DoctypeGuard)
     {
     }
 
@@ -135,7 +136,8 @@ public sealed partial class MainWindowViewModel
         TabManager tabManager,
         PreviewViewModel preview,
         SpellChecker spellChecker,
-        ClipboardHistoryService clipboardHistory)
+        ClipboardHistoryService clipboardHistory,
+        MissingDoctypeGuard doctypeGuard)
     {
         _themeManager = themeManager;
         _logger = logger;
@@ -149,6 +151,7 @@ public sealed partial class MainWindowViewModel
         _preview = preview;
         _spellChecker = spellChecker;
         _clipboardHistory = clipboardHistory;
+        _doctypeGuard = doctypeGuard;
         BookBrowser = bookBrowser;
         _currentTheme = themeManager.Current;
 
@@ -339,14 +342,14 @@ public sealed partial class MainWindowViewModel
 
         // Reformat HTML / Restructure Epub to Signet Norm / Use Standard File Extensions /
         // Rebase Manifest IDs.
-        _actions.SetHandler(AppActionIds.MendPrettifyHtml, MendPrettifyHtml);
+        _actions.SetHandler(AppActionIds.MendPrettifyHtml, () => RunAsyncAction(MendPrettifyHtmlAsync));
         _actions.SetHandler(AppActionIds.MendHtml, MendHtml);
-        _actions.SetHandler(AppActionIds.PrettifyCurrentHtml, () => ActiveCodeTab?.ReformatHtml(toValid: false));
-        _actions.SetHandler(AppActionIds.MendCurrentHtml, () => ActiveCodeTab?.ReformatHtml(toValid: true));
-        _actions.SetHandler(AppActionIds.AddSoftHyphens, AddSoftHyphens);
-        _actions.SetHandler(AppActionIds.RemoveSoftHyphens, RemoveSoftHyphens);
+        _actions.SetHandler(AppActionIds.PrettifyCurrentHtml, () => RunAsyncAction(() => ActiveCodeTab?.ReformatHtmlAsync(toValid: false) ?? Task.CompletedTask));
+        _actions.SetHandler(AppActionIds.MendCurrentHtml, () => RunAsyncAction(() => ActiveCodeTab?.ReformatHtmlAsync(toValid: true) ?? Task.CompletedTask));
+        _actions.SetHandler(AppActionIds.AddSoftHyphens, () => RunAsyncAction(AddSoftHyphensAsync));
+        _actions.SetHandler(AppActionIds.RemoveSoftHyphens, () => RunAsyncAction(RemoveSoftHyphensAsync));
         _actions.SetHandler(AppActionIds.StandardizeEpub, () => StandardizeEpubRequested?.Invoke(this, EventArgs.Empty));
-        _actions.SetHandler(AppActionIds.UseStandardFileExtensions, UseStandardFileExtensions);
+        _actions.SetHandler(AppActionIds.UseStandardFileExtensions, () => RunAsyncAction(UseStandardFileExtensionsAsync));
         _actions.SetHandler(AppActionIds.RebaseManifestIds, RebaseManifestIds);
 
         // Spellcheck in Code View: Highlight toggle, Next Misspelled Word (F4), Add/Ignore,
@@ -605,7 +608,7 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>
     /// Raised by the "Delete Unused Media Files" action — the view asks
-    /// <see cref="GetUnusedMediaCandidates"/> for the candidates, shows a modal dialog with the list and,
+    /// <see cref="GetUnusedMediaCandidatesAsync"/> for the candidates, shows a modal dialog with the list and,
     /// once accepted, calls <see cref="ApplyDeleteUnusedMedia"/>.
     /// </summary>
     public event EventHandler? DeleteUnusedMediaRequested;
@@ -638,7 +641,7 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>
     /// Raised by the "Restructure Epub to Signet Norm" action — the view asks for
-    /// confirmation (the operation is irreversible) and, once confirmed, calls <see cref="ApplyStandardizeEpub"/>.
+    /// confirmation (the operation is irreversible) and, once confirmed, calls <see cref="ApplyStandardizeEpubAsync"/>.
     /// </summary>
     public event EventHandler? StandardizeEpubRequested;
 
@@ -1226,6 +1229,21 @@ public sealed partial class MainWindowViewModel
         }
     }
 
+    // Runs an asynchronous action handler (e.g. one that may show the missing DOCTYPE dialog) from a
+    // synchronous action callback, logging errors instead of losing them.
+    private async void RunAsyncAction(System.Func<Task> op)
+    {
+        try
+        {
+            await op().ConfigureAwait(true);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Action error");
+            _statusBar.ShowMessage(Strings.Format("Status_FileOperationError", ex.Message), TimeSpan.FromSeconds(6), NotificationLevel.Warning);
+        }
+    }
+
     private async void RunFileAction(System.Func<FileWorkflow, Task> op)
     {
         if (_fileWorkflow is null)
@@ -1553,9 +1571,9 @@ public sealed partial class MainWindowViewModel
     /// checks the well-formed guard and returns the list of unused media resources to show in
     /// the dialog. Returns <c>null</c> when no book is open, the well-formed guard failed,
     /// or the list is empty (in the last two cases a message goes to the status bar and the
-    /// dialog is not shown).
+    /// dialog is not shown), and also when the user cancelled the missing DOCTYPE warning.
     /// </summary>
-    public IReadOnlyList<Resource>? GetUnusedMediaCandidates()
+    public async Task<IReadOnlyList<Resource>?> GetUnusedMediaCandidatesAsync()
     {
         if (_currentBook is null)
         {
@@ -1563,6 +1581,11 @@ public sealed partial class MainWindowViewModel
         }
 
         _tabManager.SaveAllTabs();
+        if (!await ConfirmMissingDoctypeAsync("Operation_DeleteUnusedMedia").ConfigureAwait(true))
+        {
+            return null;
+        }
+
         UnusedMediaResult result = _currentBook.FindUnusedMediaResources();
         if (!result.Applied)
         {
@@ -1598,9 +1621,9 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>
     /// Computes the candidates for "Delete Unused Stylesheet Selectors" — analogous to
-    /// <see cref="GetUnusedMediaCandidates"/>.
+    /// <see cref="GetUnusedMediaCandidatesAsync"/>.
     /// </summary>
-    public IReadOnlyList<CssSelectorUsage>? GetUnusedStyleSelectorCandidates()
+    public async Task<IReadOnlyList<CssSelectorUsage>?> GetUnusedStyleSelectorCandidatesAsync()
     {
         if (_currentBook is null)
         {
@@ -1608,6 +1631,11 @@ public sealed partial class MainWindowViewModel
         }
 
         _tabManager.SaveAllTabs();
+        if (!await ConfirmMissingDoctypeAsync("Operation_DeleteUnusedStyles").ConfigureAwait(true))
+        {
+            return null;
+        }
+
         UnusedStyleSelectorsResult result = _currentBook.FindUnusedStyleSelectors();
         if (!result.Applied)
         {
@@ -1655,9 +1683,9 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>
     /// Computes the candidates for "Merge/Remove Unused CSS Rules" — analogous to
-    /// <see cref="GetUnusedStyleSelectorCandidates"/>.
+    /// <see cref="GetUnusedStyleSelectorCandidatesAsync"/>.
     /// </summary>
-    public Signet.Core.BookManipulation.CssCleanupResult? GetCssCleanupCandidates()
+    public async Task<Signet.Core.BookManipulation.CssCleanupResult?> GetCssCleanupCandidatesAsync()
     {
         if (_currentBook is null)
         {
@@ -1665,6 +1693,11 @@ public sealed partial class MainWindowViewModel
         }
 
         _tabManager.SaveAllTabs();
+        if (!await ConfirmMissingDoctypeAsync("Operation_CssCleanup").ConfigureAwait(true))
+        {
+            return null;
+        }
+
         Signet.Core.BookManipulation.CssCleanupResult result = _currentBook.FindCssCleanupCandidates();
         if (!result.Applied)
         {
@@ -1758,7 +1791,7 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <inheritdoc/>
-    string? ICodeTabHost.ReformatHtmlText(Resource resource, string text, bool toValid)
+    async Task<string?> ICodeTabHost.ReformatHtmlTextAsync(Resource resource, string text, bool toValid)
     {
         if (_currentBook is null || resource is not HtmlResource html)
         {
@@ -1767,10 +1800,18 @@ public sealed partial class MainWindowViewModel
 
         if (toValid)
         {
-            return _currentBook.MendHtmlText(html, text, BuildEntityOverrides());
+            return _currentBook.MendHtmlText(html, text, BuildEntityOverrides(), _settings.MendAddMissingDoctype);
         }
 
-        string? formatted = _currentBook.SafePrettyPrintHtmlText(html, text, BuildEntityOverrides());
+        // The editor text (possibly unsaved) is what gets pretty-printed, so it is what is checked.
+        if (WellFormedChecker.IsMissingDoctype(text, html.EpubVersion)
+            && !await _doctypeGuard.ConfirmAsync(Strings.Get("Operation_PrettyPrint"), new[] { html.BookPath }).ConfigureAwait(true))
+        {
+            return null;
+        }
+
+        string? formatted = _currentBook.SafePrettyPrintHtmlText(
+            html, text, BuildEntityOverrides(), _settings.PrettifyAddMissingDoctype);
         if (formatted is null)
         {
             _statusBar.ShowMessage(
@@ -1781,7 +1822,7 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <inheritdoc/>
-    ClassRenamer? ICodeTabHost.PrepareClassRename()
+    async Task<ClassRenamer?> ICodeTabHost.PrepareClassRenameAsync()
     {
         if (_currentBook is null)
         {
@@ -1789,6 +1830,11 @@ public sealed partial class MainWindowViewModel
         }
 
         _tabManager.SaveAllTabs();
+        if (!await ConfirmMissingDoctypeAsync("Operation_RenameClass").ConfigureAwait(true))
+        {
+            return null;
+        }
+
         ClassRenamePreparation preparation = _currentBook.PrepareClassRename();
         if (preparation.Renamer is null)
         {
@@ -1838,7 +1884,7 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <summary>"Mend &amp; Prettify All HTML Files".</summary>
-    private void MendPrettifyHtml()
+    private async Task MendPrettifyHtmlAsync()
     {
         if (_currentBook is null)
         {
@@ -1846,8 +1892,13 @@ public sealed partial class MainWindowViewModel
         }
 
         _tabManager.SaveAllTabs();
+        if (!await ConfirmMissingDoctypeAsync("Operation_MendPrettifyAll").ConfigureAwait(true))
+        {
+            return;
+        }
+
         bool checkpoint = CheckpointBeforeAction(AppActionIds.MendPrettifyHtml);
-        MaintenanceOperationResult result = _currentBook.PrettyPrintAllHtml(BuildEntityOverrides());
+        MaintenanceOperationResult result = _currentBook.PrettyPrintAllHtml(BuildEntityOverrides(), _settings.PrettifyAddMissingDoctype);
         if (!result.Applied)
         {
             if (checkpoint)
@@ -1875,13 +1926,13 @@ public sealed partial class MainWindowViewModel
 
         _tabManager.SaveAllTabs();
         CheckpointBeforeAction(AppActionIds.MendHtml);
-        _currentBook.MendAllHtml(BuildEntityOverrides());
+        _currentBook.MendAllHtml(BuildEntityOverrides(), _settings.MendAddMissingDoctype);
         RefreshAfterMaintenanceOperation();
         _statusBar.ShowMessage(Strings.Get("Status_MendAllDone"), TimeSpan.FromSeconds(4));
     }
 
     /// <summary>"Add Soft Hyphens".</summary>
-    private void AddSoftHyphens()
+    private async Task AddSoftHyphensAsync()
     {
         if (_currentBook is null)
         {
@@ -1889,6 +1940,11 @@ public sealed partial class MainWindowViewModel
         }
 
         _tabManager.SaveAllTabs();
+        if (!await ConfirmMissingDoctypeAsync("Operation_AddSoftHyphens").ConfigureAwait(true))
+        {
+            return;
+        }
+
         Signet.Core.BookManipulation.MaintenanceOperationResult result = _currentBook.AddSoftHyphens();
         if (!result.Applied)
         {
@@ -1902,8 +1958,8 @@ public sealed partial class MainWindowViewModel
         _statusBar.ShowMessage(Strings.Get("Status_SoftHyphensAdded"), TimeSpan.FromSeconds(4));
     }
 
-    /// <summary>"Remove Soft Hyphens" — the inverse of <see cref="AddSoftHyphens"/>.</summary>
-    private void RemoveSoftHyphens()
+    /// <summary>"Remove Soft Hyphens" — the inverse of <see cref="AddSoftHyphensAsync"/>.</summary>
+    private async Task RemoveSoftHyphensAsync()
     {
         if (_currentBook is null)
         {
@@ -1911,6 +1967,11 @@ public sealed partial class MainWindowViewModel
         }
 
         _tabManager.SaveAllTabs();
+        if (!await ConfirmMissingDoctypeAsync("Operation_RemoveSoftHyphens").ConfigureAwait(true))
+        {
+            return;
+        }
+
         Signet.Core.BookManipulation.MaintenanceOperationResult result = _currentBook.RemoveSoftHyphens();
         if (!result.Applied)
         {
@@ -1964,6 +2025,24 @@ public sealed partial class MainWindowViewModel
     public void JumpToCssLocation(string bookPath, int offset) => _tabManager.OpenResourceAtOffset(bookPath, offset);
 
     /// <summary>
+    /// Warns about (X)HTML files without a DOCTYPE before an operation that rewrites them
+    /// (<see cref="MissingDoctypeGuard"/>). Call after <c>SaveAllTabs</c>, so the open tabs' texts are checked.
+    /// Returns <c>false</c> when the user cancelled.
+    /// </summary>
+    /// <param name="operationKey">Resource key of the operation name shown in the dialog.</param>
+    private Task<bool> ConfirmMissingDoctypeAsync(string operationKey) =>
+        _currentBook is null
+            ? Task.FromResult(true)
+            : _doctypeGuard.ConfirmAsync(Strings.Get(operationKey), _currentBook.FindHtmlMissingDoctype());
+
+    /// <summary>
+    /// Connects the "missing DOCTYPE" warning dialog (implemented by the main window). Until then
+    /// operations run without asking.
+    /// </summary>
+    public void AttachMissingDoctypePrompt(IMissingDoctypePrompt prompt) =>
+        _doctypeGuard.Prompt = prompt ?? throw new ArgumentNullException(nameof(prompt));
+
+    /// <summary>
     /// Builds the character → entity text map from the "Preserve Entities" panel (Preferences) to be
     /// passed to <see cref="CleanSource.Mend"/>/<see cref="CleanSource.PrettyPrint"/>.
     /// Deliberately limited: wired only into the two "Mend" actions invoked directly from the menu — the
@@ -1977,7 +2056,7 @@ public sealed partial class MainWindowViewModel
     /// Completes "Restructure Epub to Signet Norm" after the user's confirmation
     /// in the view (see <see cref="StandardizeEpubRequested"/>).
     /// </summary>
-    public void ApplyStandardizeEpub()
+    public async Task ApplyStandardizeEpubAsync()
     {
         if (_currentBook is null)
         {
@@ -1985,6 +2064,11 @@ public sealed partial class MainWindowViewModel
         }
 
         _tabManager.SaveAllTabs();
+        if (!await ConfirmMissingDoctypeAsync("Operation_Restructure").ConfigureAwait(true))
+        {
+            return;
+        }
+
         bool checkpoint = CheckpointBeforeAction(AppActionIds.StandardizeEpub);
         MaintenanceOperationResult result = _currentBook.RestructureToSignetNorm();
         if (!result.Applied)
@@ -2005,7 +2089,7 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <summary>"Use Standard File Extensions".</summary>
-    private void UseStandardFileExtensions()
+    private async Task UseStandardFileExtensionsAsync()
     {
         if (_currentBook is null)
         {
@@ -2013,6 +2097,11 @@ public sealed partial class MainWindowViewModel
         }
 
         _tabManager.SaveAllTabs();
+        if (!await ConfirmMissingDoctypeAsync("Operation_BulkRename").ConfigureAwait(true))
+        {
+            return;
+        }
+
         MaintenanceOperationResult result = _currentBook.UseStandardFileExtensions();
         if (!result.Applied)
         {
@@ -3235,7 +3324,8 @@ public sealed partial class MainWindowViewModel
         TabManager Tabs,
         PreviewViewModel Preview,
         SpellChecker SpellChecker,
-        ClipboardHistoryService ClipboardHistory)
+        ClipboardHistoryService ClipboardHistory,
+        MissingDoctypeGuard DoctypeGuard)
     {
         public static DesignTimeBundle Create(ThemeManager? theme = null)
         {
@@ -3247,7 +3337,8 @@ public sealed partial class MainWindowViewModel
             ToolbarManager toolbars = new(settings);
             StatusBarService statusBar = new();
             AppActionRegistry actions = new(shortcuts, statusBar, NullLogger<AppActionRegistry>.Instance);
-            BookBrowserViewModel bookBrowser = new(settings, statusBar);
+            MissingDoctypeGuard doctypeGuard = new(settings);
+            BookBrowserViewModel bookBrowser = new(settings, statusBar, doctypeGuard);
             PreviewViewModel preview = new(statusBar);
             MainDockFactory dockFactory = new(bookBrowser, preview);
             SpellChecker spellChecker = new(settings);
@@ -3255,7 +3346,7 @@ public sealed partial class MainWindowViewModel
             ClipboardHistoryService clipboardHistory = new(settings);
             return new DesignTimeBundle(
                 theme, actions, shortcuts, toolbars,
-                dockFactory, statusBar, settings, bookBrowser, tabs, preview, spellChecker, clipboardHistory);
+                dockFactory, statusBar, settings, bookBrowser, tabs, preview, spellChecker, clipboardHistory, doctypeGuard);
         }
     }
 }

@@ -375,7 +375,8 @@ public partial class BookBrowserView : UserControl
     private async void OnLinkStylesheetsRequested(object? sender, IReadOnlyList<HtmlResource> resources)
     {
         Window? owner = this.FindAncestorOfType<Window>();
-        if (owner is null || _boundViewModel is null || resources.Count == 0)
+        if (owner is null || _boundViewModel is null || resources.Count == 0
+            || !await _boundViewModel.ConfirmMissingDoctypeAsync(resources, Strings.Get("BookBrowserView_LinkStylesheetsTitle")))
         {
             return;
         }
@@ -396,7 +397,8 @@ public partial class BookBrowserView : UserControl
     private async void OnLinkJavascriptsRequested(object? sender, IReadOnlyList<HtmlResource> resources)
     {
         Window? owner = this.FindAncestorOfType<Window>();
-        if (owner is null || _boundViewModel is null || resources.Count == 0)
+        if (owner is null || _boundViewModel is null || resources.Count == 0
+            || !await _boundViewModel.ConfirmMissingDoctypeAsync(resources, Strings.Get("BookBrowserView_LinkJavascriptsTitle")))
         {
             return;
         }

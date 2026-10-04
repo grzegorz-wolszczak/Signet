@@ -16,7 +16,30 @@ public sealed record WellFormedResult(bool IsWellFormed, int Line, int Column, s
 {
     /// <summary>The "valid" result — no error position.</summary>
     public static WellFormedResult Ok { get; } = new(true, -1, -1, "well-formed");
+
+    /// <summary>
+    /// A non-blocking structural warning found in an otherwise well-formed document (currently only a
+    /// missing DOCTYPE), or <c>null</c> when there is none. Set only when <see cref="IsWellFormed"/>
+    /// is <c>true</c>.
+    /// </summary>
+    public WellFormedWarning? Warning { get; init; }
 }
+
+/// <summary>The kind of a non-blocking structural warning.</summary>
+public enum WellFormedWarningKind
+{
+    /// <summary>The XHTML document has no <c>&lt;!DOCTYPE&gt;</c> declaration.</summary>
+    MissingDoctype,
+}
+
+/// <summary>
+/// A non-blocking structural warning of an XHTML document (see <see cref="WellFormedResult.Warning"/>).
+/// </summary>
+/// <param name="Kind">The kind of the warning.</param>
+/// <param name="Offset">Start (0-based character offset) of the text range the warning points at.</param>
+/// <param name="Length">Length of that range (at least 1 for a non-empty document).</param>
+/// <param name="Message">A translated, user-facing description.</param>
+public sealed record WellFormedWarning(WellFormedWarningKind Kind, int Offset, int Length, string Message);
 
 /// <summary>
 /// Well-formedness checking of XML/XHTML with the position of the first error: pure XML
@@ -32,8 +55,10 @@ public sealed record WellFormedResult(bool IsWellFormed, int Line, int Column, s
 /// more readable description (e.g. "Tag &lt;p&gt; was not closed"); the position remains the one
 /// reported by <see cref="XmlReader"/>.</para>
 /// <para><see cref="CheckXhtmlStructure"/> first runs <see cref="Check"/> and then requires the
-/// <c>DOCTYPE</c> and the <c>html</c>, <c>head</c> and <c>body</c> tags to occur exactly
-/// once each.</para>
+/// <c>html</c>, <c>head</c> and <c>body</c> tags to occur exactly once each and allows at most one
+/// <c>DOCTYPE</c>. A missing <c>DOCTYPE</c> is only a warning (<see cref="WellFormedResult.Warning"/>):
+/// files without it (typical calibre output) are accepted by reading systems and are safe for every
+/// operation.</para>
 /// </remarks>
 public static class WellFormedChecker
 {
@@ -80,8 +105,9 @@ public static class WellFormedChecker
     }
 
     /// <summary>
-    /// <see cref="Check"/> plus XHTML structural rules: exactly one <c>DOCTYPE</c> and exactly one
-    /// each of the <c>html</c>, <c>head</c> and <c>body</c> tags.
+    /// <see cref="Check"/> plus XHTML structural rules: at most one <c>DOCTYPE</c> and exactly one
+    /// each of the <c>html</c>, <c>head</c> and <c>body</c> tags. A missing <c>DOCTYPE</c> does not
+    /// fail the check — it is reported in <see cref="WellFormedResult.Warning"/>.
     /// </summary>
     /// <param name="text">XHTML document content.</param>
     /// <param name="version">
@@ -103,6 +129,8 @@ public static class WellFormedChecker
         int htmlTags = 0;
         int headTags = 0;
         int bodyTags = 0;
+        TagLister.TagInfo? xmlHeader = null;
+        TagLister.TagInfo? htmlTag = null;
 
         TagLister lister = new(text);
         foreach (TagLister.TagInfo ti in lister.Tags)
@@ -116,12 +144,17 @@ public static class WellFormedChecker
             {
                 doctypes++;
             }
+            else if (ti.Kind == TagKind.XmlHeader)
+            {
+                xmlHeader ??= ti;
+            }
             else if (ti.Kind == TagKind.Begin)
             {
                 switch (ti.TagName)
                 {
                     case "html":
                         htmlTags++;
+                        htmlTag ??= ti;
                         break;
                     case "head":
                         headTags++;
@@ -133,9 +166,9 @@ public static class WellFormedChecker
             }
         }
 
-        if (doctypes != 1)
+        if (doctypes > 1)
         {
-            return new WellFormedResult(false, 1, 1, CoreStrings.Get("WellFormed_DoctypeMissing"));
+            return new WellFormedResult(false, 1, 1, CoreStrings.Get("WellFormed_DoctypeDuplicate"));
         }
 
         if (htmlTags != 1)
@@ -153,8 +186,29 @@ public static class WellFormedChecker
             return new WellFormedResult(false, 1, 1, CoreStrings.Get("WellFormed_BodyMissing"));
         }
 
+        if (doctypes == 0)
+        {
+            // Point at the XML declaration (the DOCTYPE belongs right after it), or at <html> without one.
+            TagLister.TagInfo anchor = xmlHeader ?? htmlTag!;
+            return WellFormedResult.Ok with
+            {
+                Warning = new WellFormedWarning(
+                    WellFormedWarningKind.MissingDoctype,
+                    anchor.Pos,
+                    Math.Max(1, anchor.Len),
+                    CoreStrings.Get("WellFormed_DoctypeMissing")),
+            };
+        }
+
         return WellFormedResult.Ok;
     }
+
+    /// <summary>
+    /// Whether the XHTML document is well-formed and passes <see cref="CheckXhtmlStructure"/> but has
+    /// no <c>DOCTYPE</c> (the only non-blocking structural warning).
+    /// </summary>
+    public static bool IsMissingDoctype(string text, string version = "2.0") =>
+        CheckXhtmlStructure(text, version).Warning?.Kind == WellFormedWarningKind.MissingDoctype;
 
     /// <summary>Shortcut: whether the document is well-formed (without the error position).</summary>
     public static bool IsWellFormed(string text, string mediaType = "") => Check(text, mediaType).IsWellFormed;

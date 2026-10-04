@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Signet.Core.BookManipulation;
 using Signet.Core.MiscEditors;
 using Signet.Core.Resources;
@@ -25,16 +26,18 @@ public interface ICodeTabHost
 
     /// <summary>
     /// Formats the text of an (X)HTML file editor: <paramref name="toValid"/> = Mend Code, otherwise
-    /// Mend and Prettify Code. <c>null</c> when the operation was cancelled (e.g. the file is not well-formed).
+    /// Mend and Prettify Code. <c>null</c> when the operation was cancelled (e.g. the file is not
+    /// well-formed, or the user cancelled the missing DOCTYPE warning).
     /// </summary>
-    string? ReformatHtmlText(Resource resource, string text, bool toValid);
+    Task<string?> ReformatHtmlTextAsync(Resource resource, string text, bool toValid);
 
     /// <summary>
     /// "Rename Class" from an XHTML file: saves the tabs and returns a
     /// <see cref="ClassRenamer"/> over the texts of the whole book. <c>null</c> (with a message on the
-    /// status bar) when there is no book or any XHTML file is not well-formed.
+    /// status bar) when there is no book or any XHTML file is not well-formed, and also when the user
+    /// cancelled the missing DOCTYPE warning.
     /// </summary>
-    ClassRenamer? PrepareClassRename();
+    Task<ClassRenamer?> PrepareClassRenameAsync();
 
     /// <summary>Writes the result of "Rename Class" into the book files and refreshes the tabs, Book Browser and Preview.</summary>
     void ApplyClassRename(ClassRenameResult result);

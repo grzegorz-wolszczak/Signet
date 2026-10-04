@@ -23,9 +23,10 @@ namespace Signet.App.Views;
 
 /// <summary>
 /// The main application window. Registers the global keyboard shortcuts from the view model's actions,
-/// provides the File menu dialogs (<see cref="IFileWorkflowPrompts"/>) and guards unsaved changes.
+/// provides the File menu dialogs (<see cref="IFileWorkflowPrompts"/>), the missing DOCTYPE warning
+/// (<see cref="IMissingDoctypePrompt"/>) and guards unsaved changes.
 /// </summary>
-public partial class MainWindow : Window, IFileWorkflowPrompts
+public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypePrompt
 {
     private MainWindowViewModel? _boundViewModel;
     private bool _forceClose;
@@ -208,6 +209,8 @@ public partial class MainWindow : Window, IFileWorkflowPrompts
                 vm.AttachClipboard(clipboard);
             }
 
+            vm.AttachMissingDoctypePrompt(this);
+
             _ = vm.RunStartupAsync();
         }
     }
@@ -307,6 +310,12 @@ public partial class MainWindow : Window, IFileWorkflowPrompts
     /// <inheritdoc />
     public Task<IReadOnlyList<string>?> DesignCustomLayoutAsync(string version) =>
         EmptyLayoutWindow.DesignAsync(this, version, Signet.Core.Misc.EmptyEpubLayout.ReadDefault() is { Count: > 0 } d ? d : null);
+
+    // ----------------------------------------------- IMissingDoctypePrompt --- //
+
+    /// <inheritdoc />
+    public Task<MissingDoctypeAnswer> AskAsync(string operationName, IReadOnlyList<string> fileNames) =>
+        MissingDoctypeDialog.AskAsync(this, operationName, fileNames);
 
     // --------------------------------------------------------------- misc --- //
 
@@ -949,7 +958,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts
             return;
         }
 
-        IReadOnlyList<Signet.Core.Resources.Resource>? candidates = vm.GetUnusedMediaCandidates();
+        IReadOnlyList<Signet.Core.Resources.Resource>? candidates = await vm.GetUnusedMediaCandidatesAsync();
         if (candidates is null)
         {
             return;
@@ -975,7 +984,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts
             return;
         }
 
-        IReadOnlyList<Signet.Core.Parsers.CssSelectorUsage>? candidates = vm.GetUnusedStyleSelectorCandidates();
+        IReadOnlyList<Signet.Core.Parsers.CssSelectorUsage>? candidates = await vm.GetUnusedStyleSelectorCandidatesAsync();
         if (candidates is null)
         {
             return;
@@ -1000,7 +1009,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts
             return;
         }
 
-        Signet.Core.BookManipulation.CssCleanupResult? candidates = vm.GetCssCleanupCandidates();
+        Signet.Core.BookManipulation.CssCleanupResult? candidates = await vm.GetCssCleanupCandidatesAsync();
         if (candidates is null)
         {
             return;
@@ -1015,7 +1024,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts
 
     /// <summary>
     /// Handles the "Restructure Epub to Signet Norm" action: asks for confirmation (the operation
-    /// is irreversible) and, once confirmed, calls <see cref="MainWindowViewModel.ApplyStandardizeEpub"/>.
+    /// is irreversible) and, once confirmed, calls <see cref="MainWindowViewModel.ApplyStandardizeEpubAsync"/>.
     /// </summary>
     private async void OnStandardizeEpubRequested(object? sender, EventArgs e)
     {
@@ -1034,7 +1043,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts
             return;
         }
 
-        vm.ApplyStandardizeEpub();
+        await vm.ApplyStandardizeEpubAsync();
     }
 
     private void OnCustomizeToolbarsRequested(object? sender, EventArgs e)

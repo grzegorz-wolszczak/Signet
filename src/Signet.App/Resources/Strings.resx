@@ -3431,4 +3431,41 @@ Do tego stanu książki możesz później wrócić przez pozycje „Przywróć d
   <data name="MainWindow_StatusMessageTooltip" xml:space="preserve">
     <value>Kliknij, aby otworzyć panel Powiadomienia (historia komunikatów).</value>
   </data>
+  <data name="MissingDoctypeDialog_Title" xml:space="preserve">
+    <value>Brak DOCTYPE</value>
+  </data>
+  <data name="MissingDoctypeDialog_Header" xml:space="preserve">
+    <value>Operacja „{0}”: liczba plików HTML bez deklaracji DOCTYPE: {1}.
+To nie jest błąd krytyczny — czytniki akceptują takie pliki. Czy kontynuować?</value>
+  </data>
+  <data name="MissingDoctypeDialog_DontAskAgain" xml:space="preserve">
+    <value>Nie pytaj więcej (zawsze kontynuuj mimo braku DOCTYPE)</value>
+  </data>
+  <data name="MissingDoctypeDialog_DontAskAgainHint" xml:space="preserve">
+    <value>Zapamiętywane tylko po wybraniu „Tak”. Można to zmienić w Preferencjach → Mend i Prettify.</value>
+  </data>
+  <data name="CodeView_WellFormedWithWarning" xml:space="preserve">
+    <value>Dokument jest poprawny składniowo (well-formed), ale: {0}</value>
+  </data>
+  <data name="PreferencesWindow_MendPrettify" xml:space="preserve">
+    <value>Mend i Prettify</value>
+  </data>
+  <data name="PreferencesWindow_PrettifySection" xml:space="preserve">
+    <value>Prettify (upiększanie kodu)</value>
+  </data>
+  <data name="PreferencesWindow_MendSection" xml:space="preserve">
+    <value>Mend (naprawa kodu)</value>
+  </data>
+  <data name="PreferencesWindow_DoctypeWarningsSection" xml:space="preserve">
+    <value>Ostrzeżenia</value>
+  </data>
+  <data name="PreferencesWindow_PrettifyAddMissingDoctype" xml:space="preserve">
+    <value>Dodawaj DOCTYPE, jeśli brakuje</value>
+  </data>
+  <data name="PreferencesWindow_MendAddMissingDoctype" xml:space="preserve">
+    <value>Dodawaj DOCTYPE, jeśli brakuje</value>
+  </data>
+  <data name="PreferencesWindow_WarnMissingDoctype" xml:space="preserve">
+    <value>Ostrzegaj o braku DOCTYPE przed operacjami na plikach HTML</value>
+  </data>
 </root>

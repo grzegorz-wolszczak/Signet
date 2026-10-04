@@ -112,7 +112,7 @@ public sealed class PreferencesWindowRenderTests
         Dispatcher.UIThread.RunJobs();
 
         TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
-        tabs.SelectedIndex = 5; // Keyboard Shortcuts
+        tabs.SelectedIndex = 6; // Keyboard Shortcuts
         ShortcutRow save = vm.Shortcuts.Single(r => r.Id == AppActionIds.Save);
         vm.ShortcutGroups.Single(g => g.Rows.Contains(save)).IsExpanded = true;
         save.ToggleEditorCommand.Execute(null);
@@ -150,7 +150,7 @@ public sealed class PreferencesWindowRenderTests
         window.Show();
         Dispatcher.UIThread.RunJobs();
         TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
-        tabs.SelectedIndex = 4; // Spellcheck
+        tabs.SelectedIndex = 5; // Spellcheck
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
@@ -226,6 +226,44 @@ public sealed class PreferencesWindowRenderTests
         (label / (label + control)).Should().BeInRange(0.6, 0.7, "about 2/3 for the label");
         grid.Children.OfType<TextBlock>().Should().OnlyContain(t => t.TextWrapping == TextWrapping.Wrap);
     }
+
+    /// <summary>
+    /// The "Mend &amp; Prettify" tab: separate boxes for Prettify, Mend and the warnings; the
+    /// DOCTYPE checkboxes reflect and change the view model (adding is off, warning is on by default).
+    /// </summary>
+    [AvaloniaFact]
+    public void Mend_prettify_tab_has_separate_doctype_options()
+    {
+        PreferencesWindow window = BuildWindow();
+        var vm = (PreferencesViewModel)window.DataContext!;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
+        tabs.SelectedIndex = 4; // Mend & Prettify
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        ((TabItem)tabs.SelectedItem!).Header.Should().Be(Strings.Get("PreferencesWindow_MendPrettify"));
+        window.GetVisualDescendants().OfType<Border>().Count(b => b.Classes.Contains("section") && b.IsEffectivelyVisible)
+            .Should().Be(3);
+        CheckBox prettify = CheckBoxWith(window, "PreferencesWindow_PrettifyAddMissingDoctype", 0);
+        CheckBox mend = CheckBoxWith(window, "PreferencesWindow_MendAddMissingDoctype", 1);
+        CheckBox warn = CheckBoxWith(window, "PreferencesWindow_WarnMissingDoctype", 0);
+        (prettify.IsChecked, mend.IsChecked, warn.IsChecked).Should().Be((false, false, true));
+
+        mend.IsChecked = true;
+        warn.IsChecked = false;
+        Dispatcher.UIThread.RunJobs();
+
+        (vm.PrettifyAddMissingDoctype, vm.MendAddMissingDoctype, vm.WarnMissingDoctype).Should().Be((false, true, false));
+    }
+
+    // The Prettify and Mend checkboxes share the caption text, hence the index among equal captions.
+    private static CheckBox CheckBoxWith(Window window, string key, int index) =>
+        window.GetVisualDescendants().OfType<CheckBox>()
+            .Where(c => c.IsEffectivelyVisible && c.Content as string == Strings.Get(key))
+            .ElementAt(index);
 
     /// <summary>The font fields in Preferences show the name rendered in that font.</summary>
     [AvaloniaFact]

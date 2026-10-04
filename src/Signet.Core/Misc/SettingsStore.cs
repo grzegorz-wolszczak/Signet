@@ -232,6 +232,30 @@ public sealed class SettingsStore
         set => Write("clean_on", (int)value);
     }
 
+    /// <summary>
+    /// Whether operations that rewrite (X)HTML files ask for confirmation when some of them have no
+    /// DOCTYPE (enabled by default). Turned off by "Don't ask again" in that dialog.
+    /// </summary>
+    public bool WarnMissingDoctype
+    {
+        get => ReadBool("warn_missing_doctype", true);
+        set => Write("warn_missing_doctype", value);
+    }
+
+    /// <summary>Whether Prettify adds a DOCTYPE to files that have none (disabled by default).</summary>
+    public bool PrettifyAddMissingDoctype
+    {
+        get => ReadBool("prettify_add_missing_doctype", false);
+        set => Write("prettify_add_missing_doctype", value);
+    }
+
+    /// <summary>Whether Mend adds a DOCTYPE to files that have none (disabled by default).</summary>
+    public bool MendAddMissingDoctype
+    {
+        get => ReadBool("mend_add_missing_doctype", false);
+        set => Write("mend_add_missing_doctype", value);
+    }
+
     // ------------------------------------------------------------- Zoom --- //
 
     /// <summary>Image zoom factor.</summary>

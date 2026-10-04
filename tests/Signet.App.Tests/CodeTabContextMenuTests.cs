@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Threading.Tasks;
 using AwesomeAssertions;
 using Moq;
 using Signet.App.Services;
@@ -156,17 +157,17 @@ public sealed class CodeTabContextMenuTests
     }
 
     [Fact]
-    public void Reformat_html_replaces_the_text_with_the_host_result_as_one_undo_step()
+    public async Task Reformat_html_replaces_the_text_with_the_host_result_as_one_undo_step()
     {
         using TempDir temp = new();
         using Book book = Load(temp);
         var host = new Mock<ICodeTabHost>();
-        host.Setup(h => h.ReformatHtmlText(It.IsAny<Resource>(), "<p>a</p>", true)).Returns("<p>mended</p>");
+        host.Setup(h => h.ReformatHtmlTextAsync(It.IsAny<Resource>(), "<p>a</p>", true)).ReturnsAsync("<p>mended</p>");
         CodeTabViewModel sut = NewTab(book.GetAllResources().OfType<HtmlResource>().First(), host.Object);
         sut.Document.Text = "<p>a</p>";
         sut.Document.UndoStack.ClearAll();
 
-        sut.ReformatHtml(toValid: true);
+        await sut.ReformatHtmlAsync(toValid: true);
 
         sut.Document.Text.Should().Be("<p>mended</p>");
         sut.Undo();

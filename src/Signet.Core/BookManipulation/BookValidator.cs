@@ -50,9 +50,17 @@ public static class BookValidator
         List<ValidationResult> results = new();
         foreach (HtmlResource html in book.GetHtmlResources())
         {
-            WellFormedResult check = WellFormedChecker.CheckXhtmlStructure(html.GetText(), html.EpubVersion);
+            string text = html.GetText();
+            WellFormedResult check = WellFormedChecker.CheckXhtmlStructure(text, html.EpubVersion);
             if (check.IsWellFormed)
             {
+                // A missing DOCTYPE does not make the file invalid — reported as a warning only.
+                if (check.Warning is { } warning)
+                {
+                    results.Add(new ValidationResult(
+                        ValidationSeverity.Warning, html.BookPath, LineOfOffset(text, warning.Offset), -1, warning.Message));
+                }
+
                 continue;
             }
 
@@ -77,5 +85,19 @@ public static class BookValidator
         results.AddRange(ContentTypeValidator.Validate(book));
 
         return results;
+    }
+
+    private static int LineOfOffset(string text, int offset)
+    {
+        int line = 1;
+        for (int i = 0; i < Math.Min(offset, text.Length); i++)
+        {
+            if (text[i] == '\n')
+            {
+                line++;
+            }
+        }
+
+        return line;
     }
 }

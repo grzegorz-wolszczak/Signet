@@ -21,6 +21,7 @@ public sealed class ImportHtml : IImporter
     private readonly string _fullFilePath;
     private readonly string _epubVersion;
     private readonly bool _mendOnOpen;
+    private readonly bool _mendAddMissingDoctype;
     private string? _cachedSource;
 
     /// <summary>Creates an HTML file importer.</summary>
@@ -33,6 +34,7 @@ public sealed class ImportHtml : IImporter
         string version = options.DefaultVersion;
         _epubVersion = string.IsNullOrWhiteSpace(version) ? "2.0" : version;
         _mendOnOpen = options.MendOnOpen;
+        _mendAddMissingDoctype = options.MendAddMissingDoctype;
     }
 
     /// <inheritdoc />
@@ -101,7 +103,7 @@ public sealed class ImportHtml : IImporter
         source = CleanSource.CharToEntity(source, _epubVersion);
         if (_mendOnOpen)
         {
-            source = CleanSource.Mend(source, _epubVersion);
+            source = CleanSource.Mend(source, _epubVersion, addMissingDoctype: _mendAddMissingDoctype);
         }
 
         _cachedSource = source;

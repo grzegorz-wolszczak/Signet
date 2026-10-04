@@ -234,7 +234,10 @@
     <value>{0}.  near column {1}</value>
   </data>
   <data name="WellFormed_DoctypeMissing" xml:space="preserve">
-    <value>The DOCTYPE declaration is missing or occurs more than once</value>
+    <value>The DOCTYPE declaration is missing. This is only a warning — the file is well-formed and reading systems accept it</value>
+  </data>
+  <data name="WellFormed_DoctypeDuplicate" xml:space="preserve">
+    <value>The DOCTYPE declaration occurs more than once</value>
   </data>
   <data name="WellFormed_HtmlMissing" xml:space="preserve">
     <value>The &lt;html&gt; tag is missing or occurs more than once</value>

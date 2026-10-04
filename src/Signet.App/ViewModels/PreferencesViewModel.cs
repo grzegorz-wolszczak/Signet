@@ -113,6 +113,9 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _reopenLastFileOnStartup = _settings.ReopenLastFileOnStartup;
         _fileDropZoneEnabled = _settings.FileDropZoneEnabled;
         _autoCloseTags = _settings.CodeViewAutoCloseTags;
+        _warnMissingDoctype = _settings.WarnMissingDoctype;
+        _prettifyAddMissingDoctype = _settings.PrettifyAddMissingDoctype;
+        _mendAddMissingDoctype = _settings.MendAddMissingDoctype;
         _clipboardHistoryLimit = _settings.ClipboardHistoryLimit;
         _recentFilesLimit = _settings.RecentFilesLimit;
         _previewRefreshDelay = _settings.UiPreviewTimeout;
@@ -586,6 +589,24 @@ public sealed partial class PreferencesViewModel : ObservableObject
     private bool _autoCloseTags;
 
     partial void OnAutoCloseTagsChanged(bool value) => _settings.CodeViewAutoCloseTags = value;
+
+    /// <summary>Whether operations ask for confirmation when some (X)HTML files have no DOCTYPE.</summary>
+    [ObservableProperty]
+    private bool _warnMissingDoctype;
+
+    partial void OnWarnMissingDoctypeChanged(bool value) => _settings.WarnMissingDoctype = value;
+
+    /// <summary>Whether Prettify adds a DOCTYPE to files that have none.</summary>
+    [ObservableProperty]
+    private bool _prettifyAddMissingDoctype;
+
+    partial void OnPrettifyAddMissingDoctypeChanged(bool value) => _settings.PrettifyAddMissingDoctype = value;
+
+    /// <summary>Whether Mend adds a DOCTYPE to files that have none.</summary>
+    [ObservableProperty]
+    private bool _mendAddMissingDoctype;
+
+    partial void OnMendAddMissingDoctypeChanged(bool value) => _settings.MendAddMissingDoctype = value;
 
     /// <summary>Whether automatic spell checking is enabled.</summary>
     [ObservableProperty]

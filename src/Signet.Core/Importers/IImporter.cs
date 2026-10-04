@@ -27,7 +27,8 @@ public interface IImporter
 /// </summary>
 /// <param name="DefaultVersion">Default EPUB version for newly created publications (<c>2.0</c> / <c>3.0</c>).</param>
 /// <param name="MendOnOpen">Whether to repair (Mend) the HTML source on import.</param>
-public readonly record struct ImporterOptions(string DefaultVersion, bool MendOnOpen)
+/// <param name="MendAddMissingDoctype">Whether that repair adds a DOCTYPE when the source has none.</param>
+public readonly record struct ImporterOptions(string DefaultVersion, bool MendOnOpen, bool MendAddMissingDoctype = false)
 {
     /// <summary>Default settings: EPUB 2, no repair on open.</summary>
     public static ImporterOptions Default { get; } = new("2.0", false);

@@ -234,7 +234,10 @@
     <value>{0}.  W pobliżu kolumny {1}</value>
   </data>
   <data name="WellFormed_DoctypeMissing" xml:space="preserve">
-    <value>Brak deklaracji DOCTYPE lub występuje ona wielokrotnie</value>
+    <value>Brak deklaracji DOCTYPE. To tylko ostrzeżenie — plik jest poprawny składniowo, a czytniki go akceptują</value>
+  </data>
+  <data name="WellFormed_DoctypeDuplicate" xml:space="preserve">
+    <value>Deklaracja DOCTYPE występuje więcej niż raz</value>
   </data>
   <data name="WellFormed_HtmlMissing" xml:space="preserve">
     <value>Brak znacznika &lt;html&gt; lub występuje on wielokrotnie</value>

@@ -384,6 +384,35 @@
         </ScrollViewer>
       </TabItem>
 
+      <!-- ============================= Mend & Prettify ============================= -->
+      <!-- Mend and Prettify are separate operations, so each has its own box of options. -->
+      <TabItem Header="{loc:Loc PreferencesWindow_MendPrettify}">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="8">
+            <Border Classes="section">
+              <StackPanel Spacing="6">
+                <TextBlock Text="{loc:Loc PreferencesWindow_PrettifySection}" FontWeight="Bold" />
+                <CheckBox Content="{loc:Loc PreferencesWindow_PrettifyAddMissingDoctype}" IsChecked="{Binding PrettifyAddMissingDoctype}" />
+              </StackPanel>
+            </Border>
+
+            <Border Classes="section">
+              <StackPanel Spacing="6">
+                <TextBlock Text="{loc:Loc PreferencesWindow_MendSection}" FontWeight="Bold" />
+                <CheckBox Content="{loc:Loc PreferencesWindow_MendAddMissingDoctype}" IsChecked="{Binding MendAddMissingDoctype}" />
+              </StackPanel>
+            </Border>
+
+            <Border Classes="section">
+              <StackPanel Spacing="6">
+                <TextBlock Text="{loc:Loc PreferencesWindow_DoctypeWarningsSection}" FontWeight="Bold" />
+                <CheckBox Content="{loc:Loc PreferencesWindow_WarnMissingDoctype}" IsChecked="{Binding WarnMissingDoctype}" />
+              </StackPanel>
+            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
       <!-- =============================== Spellcheck =============================== -->
       <!-- Layout: Hunspell dictionaries and options at the top, below them the tabs
            "user dictionaries" (Add/Rename/Copy/Delete + a list with an enable toggle)

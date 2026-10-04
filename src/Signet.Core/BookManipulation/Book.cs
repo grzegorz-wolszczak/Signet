@@ -1085,15 +1085,16 @@ public sealed class Book : IDisposable
     /// <param name="entityOverrides">
     /// An optional character → entity text map — "Preserve Entities" from Preferences.
     /// </param>
+    /// <param name="addMissingDoctype">Whether to add a DOCTYPE to files that have none.</param>
     /// <returns><c>true</c> when at least one file was changed.</returns>
-    public bool MendAllHtml(IReadOnlyDictionary<char, string>? entityOverrides = null)
+    public bool MendAllHtml(IReadOnlyDictionary<char, string>? entityOverrides = null, bool addMissingDoctype = false)
     {
         bool modified = false;
         foreach (HtmlResource html in GetHtmlResources())
         {
             string source = html.GetText();
             string version = html.EpubVersion.Length > 0 ? html.EpubVersion : EpubVersion;
-            string newSource = CleanSource.Mend(source, version, entityOverrides);
+            string newSource = CleanSource.Mend(source, version, entityOverrides, addMissingDoctype);
             if (!string.Equals(newSource, source, StringComparison.Ordinal))
             {
                 html.SetText(newSource);
@@ -1113,18 +1114,26 @@ public sealed class Book : IDisposable
     /// "Mend Code" for a single file from the Code View context menu — repairs the editor text
     /// <paramref name="text"/> of the resource <paramref name="html"/>.
     /// </summary>
-    public string MendHtmlText(HtmlResource html, string text, IReadOnlyDictionary<char, string>? entityOverrides = null)
+    public string MendHtmlText(
+        HtmlResource html,
+        string text,
+        IReadOnlyDictionary<char, string>? entityOverrides = null,
+        bool addMissingDoctype = false)
     {
         ArgumentNullException.ThrowIfNull(html);
         ArgumentNullException.ThrowIfNull(text);
-        return CleanSource.Mend(text, VersionOf(html), entityOverrides);
+        return CleanSource.Mend(text, VersionOf(html), entityOverrides, addMissingDoctype);
     }
 
     /// <summary>
     /// "Mend and Prettify Code" for a single file — pretty-prints the editor text with a
     /// well-formed guard. Returns <c>null</c> when the text is not well-formed (operation cancelled).
     /// </summary>
-    public string? SafePrettyPrintHtmlText(HtmlResource html, string text, IReadOnlyDictionary<char, string>? entityOverrides = null)
+    public string? SafePrettyPrintHtmlText(
+        HtmlResource html,
+        string text,
+        IReadOnlyDictionary<char, string>? entityOverrides = null,
+        bool addMissingDoctype = false)
     {
         ArgumentNullException.ThrowIfNull(html);
         ArgumentNullException.ThrowIfNull(text);
@@ -1137,7 +1146,13 @@ public sealed class Book : IDisposable
         bool keepWhitespace = XhtmlUsesStyleProperty(html, "white-space")
             || XhtmlUsesStyleProperty(html, "white-space-collapse");
         return CleanSource.PrettyPrint(
-            text, keepWhitespace, version, options: null, entityOverrides: entityOverrides, props: PrettyPrintProps.LoadUserPrefs());
+            text,
+            keepWhitespace,
+            version,
+            options: null,
+            entityOverrides: entityOverrides,
+            props: PrettyPrintProps.LoadUserPrefs(),
+            addMissingDoctype: addMissingDoctype);
     }
 
     /// <summary>
@@ -1194,7 +1209,10 @@ public sealed class Book : IDisposable
     /// <param name="entityOverrides">
     /// An optional character → entity text map — "Preserve Entities" from Preferences.
     /// </param>
-    public MaintenanceOperationResult PrettyPrintAllHtml(IReadOnlyDictionary<char, string>? entityOverrides = null)
+    /// <param name="addMissingDoctype">Whether to add a DOCTYPE to files that have none.</param>
+    public MaintenanceOperationResult PrettyPrintAllHtml(
+        IReadOnlyDictionary<char, string>? entityOverrides = null,
+        bool addMissingDoctype = false)
     {
         if (FindFirstNotWellFormed(GetHtmlResources()) is { } bad)
         {
@@ -1214,7 +1232,13 @@ public sealed class Book : IDisposable
                 || XhtmlUsesStyleProperty(html, "white-space-collapse");
             string version = html.EpubVersion.Length > 0 ? html.EpubVersion : EpubVersion;
             string newSource = CleanSource.PrettyPrint(
-                original, keepWhitespace, version, options: null, entityOverrides: entityOverrides, props: props);
+                original,
+                keepWhitespace,
+                version,
+                options: null,
+                entityOverrides: entityOverrides,
+                props: props,
+                addMissingDoctype: addMissingDoctype);
             if (!string.Equals(newSource, original, StringComparison.Ordinal))
             {
                 html.SetText(newSource);
@@ -1577,6 +1601,36 @@ public sealed class Book : IDisposable
     {
         "application/javascript", "application/ecmascript", "text/javascript",
     };
+
+    /// <summary>
+    /// The (X)HTML files without a DOCTYPE — the only non-blocking structural warning of
+    /// <see cref="WellFormedChecker.CheckXhtmlStructure"/>. Operations guarded against files that are not
+    /// well-formed still run on such files; the UI uses this list to warn the user first.
+    /// </summary>
+    /// <param name="resources">The files the operation works on; <c>null</c> = all (X)HTML files of the book.</param>
+    /// <returns>
+    /// The files without a DOCTYPE, in the order given. Empty when any of the files is not well-formed —
+    /// the operation then refuses on its own, so a DOCTYPE warning would be pointless.
+    /// </returns>
+    public IReadOnlyList<HtmlResource> FindHtmlMissingDoctype(IEnumerable<HtmlResource>? resources = null)
+    {
+        List<HtmlResource> missing = new();
+        foreach (HtmlResource html in resources ?? GetHtmlResources())
+        {
+            WellFormedResult check = WellFormedChecker.CheckXhtmlStructure(html.GetText(), html.EpubVersion);
+            if (!check.IsWellFormed)
+            {
+                return Array.Empty<HtmlResource>();
+            }
+
+            if (check.Warning?.Kind == WellFormedWarningKind.MissingDoctype)
+            {
+                missing.Add(html);
+            }
+        }
+
+        return missing;
+    }
 
     private static HtmlResource? FindFirstNotWellFormed(IEnumerable<HtmlResource> resources)
     {

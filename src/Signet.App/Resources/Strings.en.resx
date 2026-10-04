@@ -3431,4 +3431,41 @@ You can later restore the book to this checkpoint via the "Revert to..." entries
   <data name="MainWindow_StatusMessageTooltip" xml:space="preserve">
     <value>Click to open the Notifications panel (message history).</value>
   </data>
+  <data name="MissingDoctypeDialog_Title" xml:space="preserve">
+    <value>Missing DOCTYPE</value>
+  </data>
+  <data name="MissingDoctypeDialog_Header" xml:space="preserve">
+    <value>{0}: number of HTML files without a DOCTYPE declaration: {1}.
+This is not a critical error — reading systems accept such files. Continue?</value>
+  </data>
+  <data name="MissingDoctypeDialog_DontAskAgain" xml:space="preserve">
+    <value>Don't ask again (always continue despite a missing DOCTYPE)</value>
+  </data>
+  <data name="MissingDoctypeDialog_DontAskAgainHint" xml:space="preserve">
+    <value>Remembered only when you choose "Yes". You can change it in Preferences → Mend &amp; Prettify.</value>
+  </data>
+  <data name="CodeView_WellFormedWithWarning" xml:space="preserve">
+    <value>The document is well-formed, but: {0}</value>
+  </data>
+  <data name="PreferencesWindow_MendPrettify" xml:space="preserve">
+    <value>Mend &amp; Prettify</value>
+  </data>
+  <data name="PreferencesWindow_PrettifySection" xml:space="preserve">
+    <value>Prettify</value>
+  </data>
+  <data name="PreferencesWindow_MendSection" xml:space="preserve">
+    <value>Mend</value>
+  </data>
+  <data name="PreferencesWindow_DoctypeWarningsSection" xml:space="preserve">
+    <value>Warnings</value>
+  </data>
+  <data name="PreferencesWindow_PrettifyAddMissingDoctype" xml:space="preserve">
+    <value>Add a DOCTYPE when it is missing</value>
+  </data>
+  <data name="PreferencesWindow_MendAddMissingDoctype" xml:space="preserve">
+    <value>Add a DOCTYPE when it is missing</value>
+  </data>
+  <data name="PreferencesWindow_WarnMissingDoctype" xml:space="preserve">
+    <value>Warn about a missing DOCTYPE before operations on HTML files</value>
+  </data>
 </root>

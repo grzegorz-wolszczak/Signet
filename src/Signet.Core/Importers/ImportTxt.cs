@@ -75,7 +75,8 @@ public sealed class ImportTxt : IImporter
     {
         string source = Utility.ReadUnicodeTextFile(_fullFilePath);
         source = CreateParagraphs(source.Split('\n'));
-        return CleanSource.Mend(source, _epubVersion);
+        // A brand-new document generated from plain text, not a user's file — it gets a complete header.
+        return CleanSource.Mend(source, _epubVersion, addMissingDoctype: true);
     }
 
     private static HtmlResource CreateHtmlResource(FolderKeeper folderKeeper, string source)

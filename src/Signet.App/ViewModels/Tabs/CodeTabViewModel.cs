@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using System.Threading.Tasks;
 using AvaloniaEdit.Document;
 using Signet.App.Resources;
 using Signet.App.Services;
@@ -28,6 +29,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
 
     private bool? _isWellFormed;
     private WellFormedResult? _wellFormedError;
+    private WellFormedWarning? _wellFormedWarning;
     private TagPairHighlight? _tagHighlight;
     private int _caretLine = 1;
     private int _caretColumn = 1;
@@ -228,6 +230,12 @@ public sealed class CodeTabViewModel : ContentTabViewModel
 
     /// <summary>Result of the last well-formedness check with a non-zero error position, or <c>null</c>.</summary>
     public WellFormedResult? WellFormedError => _wellFormedError;
+
+    /// <summary>
+    /// Non-blocking structural warning of the last well-formedness check (e.g. a missing DOCTYPE), or
+    /// <c>null</c>. Shown as a yellow squiggle with a tooltip.
+    /// </summary>
+    public WellFormedWarning? WellFormedWarning => _wellFormedWarning;
 
     /// <summary>
     /// The opening/closing tag pair to highlight for the current caret position, or <c>null</c>.
@@ -590,7 +598,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     /// "Reformat HTML" for this file: <paramref name="toValid"/> = "Mend Code", otherwise
     /// "Mend and Prettify Code". A single Undo step.
     /// </summary>
-    public void ReformatHtml(bool toValid)
+    public async Task ReformatHtmlAsync(bool toValid)
     {
         if (Host is null)
         {
@@ -599,7 +607,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
 
         SyncModelFromDocument();
         string original = Document.Text;
-        if (Host.ReformatHtmlText(Resource, original, toValid) is { } formatted
+        if (await Host.ReformatHtmlTextAsync(Resource, original, toValid).ConfigureAwait(true) is { } formatted
             && !string.Equals(formatted, original, StringComparison.Ordinal))
         {
             int caret = Math.Min(_caretOffset, formatted.Length);
@@ -871,11 +879,21 @@ public sealed class CodeTabViewModel : ContentTabViewModel
             return null;
         }
 
-        _statusBar.ShowMessage(
-            result.IsWellFormed
-                ? Strings.Get("CodeView_WellFormed")
-                : Strings.Format("CodeView_NotWellFormed", result.Line, result.Column, result.Message),
-            TimeSpan.FromSeconds(result.IsWellFormed ? 3 : 8));
+        if (result.Warning is { } warning)
+        {
+            _statusBar.ShowMessage(
+                Strings.Format("CodeView_WellFormedWithWarning", warning.Message),
+                TimeSpan.FromSeconds(8),
+                NotificationLevel.Warning);
+        }
+        else
+        {
+            _statusBar.ShowMessage(
+                result.IsWellFormed
+                    ? Strings.Get("CodeView_WellFormed")
+                    : Strings.Format("CodeView_NotWellFormed", result.Line, result.Column, result.Message),
+                TimeSpan.FromSeconds(result.IsWellFormed ? 3 : 8));
+        }
 
         return result.IsWellFormed;
     }
@@ -1492,6 +1510,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     {
         WellFormedResult? result = _model.CheckWellFormed();
         _wellFormedError = result is { IsWellFormed: false } ? result : null;
+        _wellFormedWarning = result?.Warning;
 
         bool? verdict = result?.IsWellFormed;
         if (verdict != _isWellFormed)
@@ -1500,6 +1519,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
             OnPropertyChanged(nameof(IsWellFormed));
         }
 
+        OnPropertyChanged(nameof(WellFormedWarning));
         OnPropertyChanged(nameof(WellFormedError));
         return result;
     }

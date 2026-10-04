@@ -459,9 +459,11 @@ public sealed class CodeTabViewRenderTests
         {
         }
 
-        public string? ReformatHtmlText(Resource resource, string text, bool toValid) => null;
+        public System.Threading.Tasks.Task<string?> ReformatHtmlTextAsync(Resource resource, string text, bool toValid) =>
+            System.Threading.Tasks.Task.FromResult<string?>(null);
 
-        public Signet.Core.BookManipulation.ClassRenamer? PrepareClassRename() => null;
+        public System.Threading.Tasks.Task<Signet.Core.BookManipulation.ClassRenamer?> PrepareClassRenameAsync() =>
+            System.Threading.Tasks.Task.FromResult<Signet.Core.BookManipulation.ClassRenamer?>(null);
 
         public void ApplyClassRename(Signet.Core.BookManipulation.ClassRenameResult result)
         {

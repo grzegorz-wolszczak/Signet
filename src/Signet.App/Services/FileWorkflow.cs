@@ -239,7 +239,8 @@ public sealed class FileWorkflow
 
         ImporterOptions options = new(
             _settings.DefaultVersion,
-            (_settings.CleanOn & CleanOn.Open) != 0);
+            (_settings.CleanOn & CleanOn.Open) != 0,
+            _settings.MendAddMissingDoctype);
 
         IImporter? importer = ImporterFactory.GetImporter(path, options);
         if (importer is null)

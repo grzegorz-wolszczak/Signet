@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Signet.App.Actions;
@@ -26,6 +27,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
 {
     private readonly SettingsStore _settings;
     private readonly IStatusBarService _statusBar;
+    private readonly MissingDoctypeGuard _doctypeGuard;
     private readonly bool _showFullPath;
 
     private Book? _book;
@@ -44,11 +46,12 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     public IReadOnlyList<AppAction> ShortcutActions { get; set; } = Array.Empty<AppAction>();
 
     /// <summary>Creates an empty view model (no book loaded).</summary>
-    public BookBrowserViewModel(SettingsStore settings, IStatusBarService statusBar)
+    public BookBrowserViewModel(SettingsStore settings, IStatusBarService statusBar, MissingDoctypeGuard? doctypeGuard = null)
     {
         ArgumentNullException.ThrowIfNull(settings);
         _settings = settings;
         _statusBar = statusBar ?? throw new ArgumentNullException(nameof(statusBar));
+        _doctypeGuard = doctypeGuard ?? new MissingDoctypeGuard(settings);
         _showFullPath = settings.ShowFullPathOn != 0;
     }
 
@@ -907,6 +910,15 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     private void ValidateSelectedWithW3C() =>
         ValidateWithW3CRequested?.Invoke(
             this, _selection.Select(n => (CssResource)n.Entry!.Resource).ToArray());
+
+    /// <summary>
+    /// Warns about the selected (X)HTML files without a DOCTYPE before "Link Stylesheets" /
+    /// "Link Javascripts" rewrites them. Returns <c>false</c> when the user cancelled.
+    /// </summary>
+    public Task<bool> ConfirmMissingDoctypeAsync(IReadOnlyList<HtmlResource> resources, string operationName) =>
+        _book is null
+            ? Task.FromResult(true)
+            : _doctypeGuard.ConfirmAsync(operationName, _book.FindHtmlMissingDoctype(resources));
 
     /// <summary>Builds the "Link Stylesheets" map for the selected (X)HTML files (for the dialog).</summary>
     public IReadOnlyList<LinkableResourceEntry> GetStylesheetsMap(IReadOnlyList<HtmlResource> resources) =>

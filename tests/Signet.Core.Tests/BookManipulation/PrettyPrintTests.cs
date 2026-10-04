@@ -45,7 +45,8 @@ public sealed class PrettyPrintTests
     [Fact]
     public void PrettyPrint_Epub2WithEpubType_MatchesGolden_AndKeepsNamespacedAttributes()
     {
-        string result = CleanSource.PrettyPrint(ReadFixture("epubtype-in.xhtml"), keepWhitespace: false, "2.0");
+        string result = CleanSource.PrettyPrint(
+            ReadFixture("epubtype-in.xhtml"), keepWhitespace: false, "2.0", null, null, null, addMissingDoctype: true);
 
         result.Should().Be(ReadFixture("epubtype-out.xhtml"));
         result.Should().Contain("epub:type=\"chapter\"").And.Contain("role=\"doc-chapter\"");

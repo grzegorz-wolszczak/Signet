@@ -89,7 +89,7 @@ public sealed class CleanSourceTests
     [Fact]
     public void Mend_Epub2_UsesXhtml11Doctype()
     {
-        string mended = CleanSource.Mend("<html><head><title>t</title></head><body><p>x</p></body></html>", "2.0");
+        string mended = CleanSource.Mend("<html><head><title>t</title></head><body><p>x</p></body></html>", "2.0", addMissingDoctype: true);
 
         mended.Should().Contain("<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\"");
         mended.Should().Contain("xhtml11.dtd");
@@ -98,7 +98,7 @@ public sealed class CleanSourceTests
     [Fact]
     public void Mend_Epub3_UsesHtml5Doctype()
     {
-        string mended = CleanSource.Mend("<html><head><title>t</title></head><body><p>x</p></body></html>", "3.0");
+        string mended = CleanSource.Mend("<html><head><title>t</title></head><body><p>x</p></body></html>", "3.0", addMissingDoctype: true);
 
         mended.Should().Contain("<!DOCTYPE html>\n");
         mended.Should().NotContain("PUBLIC");

@@ -143,6 +143,23 @@ public sealed class CodeTabViewModelTests
     }
 
     [Fact]
+    public void Missing_doctype_is_a_warning_not_an_error()
+    {
+        using TempDir temp = new();
+        using Book book = Load(temp);
+        CodeTabViewModel sut = NewCodeTab(book, out _);
+        sut.WellFormedWarning.Should().BeNull();
+
+        sut.Document.Text = System.Text.RegularExpressions.Regex.Replace(sut.Document.Text, "<!DOCTYPE[^>]*>", string.Empty);
+
+        sut.IsWellFormed.Should().BeTrue();
+        sut.WellFormedError.Should().BeNull();
+        sut.WellFormedWarning.Should().NotBeNull();
+        sut.WellFormedWarning!.Kind.Should().Be(WellFormedWarningKind.MissingDoctype);
+        sut.RunWellFormedCheck().Should().BeTrue();
+    }
+
+    [Fact]
     public void RunWellFormedCheck_returns_the_verdict()
     {
         using TempDir temp = new();

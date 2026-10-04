@@ -45,6 +45,7 @@ internal static class AppServices
         services.AddSingleton<MainDockFactory>();
         services.AddSingleton<TabManager>();
         services.AddSingleton<ClipboardHistoryService>();
+        services.AddSingleton<MissingDoctypeGuard>();
         services.AddTransient<ToolbarCustomizeViewModel>();
         services.AddTransient<PreferencesViewModel>();
 

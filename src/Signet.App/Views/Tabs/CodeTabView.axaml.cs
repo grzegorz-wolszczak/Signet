@@ -174,6 +174,7 @@ public partial class CodeTabView : UserControl
         switch (e.PropertyName)
         {
             case nameof(CodeTabViewModel.WellFormedError):
+            case nameof(CodeTabViewModel.WellFormedWarning):
                 UpdateErrorRenderer();
                 break;
             case nameof(CodeTabViewModel.TagHighlight):
@@ -512,10 +513,10 @@ public partial class CodeTabView : UserControl
             if (vm.IsHtmlFlow)
             {
                 MenuItem reformat = new() { Header = Strings.Get("CodeViewMenu_ReformatHtml") };
-                reformat.Items.Add(Item(Strings.Get("CodeViewMenu_Prettify"), () => vm.ReformatHtml(toValid: false), "beautify"));
+                reformat.Items.Add(Item(Strings.Get("CodeViewMenu_Prettify"), () => _ = vm.ReformatHtmlAsync(toValid: false), "beautify"));
                 reformat.Items.Add(Item(Strings.Get("CodeViewMenu_PrettifyAll"), () => host.ExecuteAction(AppActionIds.MendPrettifyHtml), "beautify"));
                 reformat.Items.Add(new Separator());
-                reformat.Items.Add(Item(Strings.Get("CodeViewMenu_Mend"), () => vm.ReformatHtml(toValid: true), "html-fix"));
+                reformat.Items.Add(Item(Strings.Get("CodeViewMenu_Mend"), () => _ = vm.ReformatHtmlAsync(toValid: true), "html-fix"));
                 reformat.Items.Add(Item(Strings.Get("CodeViewMenu_MendAll"), () => host.ExecuteAction(AppActionIds.MendHtml), "html-fix"));
                 items.Add(reformat);
                 items.Add(new Separator());
@@ -575,7 +576,7 @@ public partial class CodeTabView : UserControl
     private async void RenameClass(Func<ClassRenamer, RenameClassViewModel> createViewModel)
     {
         if (_boundViewModel?.Host is not { } host || TopLevel.GetTopLevel(this) is not Window owner
-            || host.PrepareClassRename() is not { } renamer)
+            || await host.PrepareClassRenameAsync().ConfigureAwait(true) is not { } renamer)
         {
             return;
         }
@@ -816,8 +817,22 @@ public partial class CodeTabView : UserControl
     private void OnTextViewPointerHover(object? sender, PointerEventArgs e)
     {
         TextView textView = Editor.TextArea.TextView;
-        if (_lineColorizer is null || textView.Document is not { } document ||
+        if (textView.Document is not { } document ||
             textView.GetPosition(e.GetPosition(textView) + textView.ScrollOffset) is not { } position)
+        {
+            return;
+        }
+
+        // Yellow squiggle of a non-blocking well-formedness warning (e.g. a missing DOCTYPE).
+        if (_boundViewModel?.WellFormedWarning is { } warning && _errorRenderer.IsInWarning(document.GetOffset(position.Location)))
+        {
+            ToolTip.SetTip(textView, warning.Message);
+            ToolTip.SetIsOpen(textView, true);
+            e.Handled = true;
+            return;
+        }
+
+        if (_lineColorizer is null)
         {
             return;
         }
@@ -904,6 +919,15 @@ public partial class CodeTabView : UserControl
 
     private void UpdateErrorRenderer()
     {
+        if (Editor.Document is { } doc && _boundViewModel?.WellFormedWarning is { } warning && warning.Offset < doc.TextLength)
+        {
+            _errorRenderer.SetWarning(warning.Offset, Math.Min(warning.Length, doc.TextLength - warning.Offset));
+        }
+        else
+        {
+            _errorRenderer.ClearWarning();
+        }
+
         WellFormedResult? error = _boundViewModel?.WellFormedError;
         if (Editor.Document is not { } document
             || error is null || error.Line < 1 || error.Line > document.LineCount)

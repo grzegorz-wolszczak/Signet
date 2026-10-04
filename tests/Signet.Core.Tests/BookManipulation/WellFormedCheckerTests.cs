@@ -135,9 +135,6 @@ public sealed class WellFormedCheckerTests
 
     [Theory]
     [InlineData(
-        "<html xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>t</title></head><body><p>x</p></body></html>",
-        "DOCTYPE")]
-    [InlineData(
         "<!DOCTYPE html>\n<html xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>t</title></head></html>",
         "<body>")]
     [InlineData(

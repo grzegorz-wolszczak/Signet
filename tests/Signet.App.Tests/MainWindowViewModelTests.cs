@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using AwesomeAssertions;
 using Signet.App.Actions;
 using Signet.App.Docking;
@@ -242,21 +243,21 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public void GetUnusedMediaCandidates_ReturnsNullAndReportsWhenNothingToDelete()
+    public async Task GetUnusedMediaCandidates_ReturnsNullAndReportsWhenNothingToDelete()
     {
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
         sut.LoadBook(new ImportEpub(epub).GetBook(), epub);
 
-        IReadOnlyList<Resource>? candidates = sut.GetUnusedMediaCandidates();
+        IReadOnlyList<Resource>? candidates = await sut.GetUnusedMediaCandidatesAsync();
 
         candidates.Should().BeNull();
         sut.StatusMessage.Should().Be(Strings.Get("Status_NoUnusedMedia"));
     }
 
     [Fact]
-    public void GetUnusedMediaCandidates_and_ApplyDeleteUnusedMedia_RemoveOrphanResource()
+    public async Task GetUnusedMediaCandidates_and_ApplyDeleteUnusedMedia_RemoveOrphanResource()
     {
         using UiCultureScope culture = new("en");
         using TempDir temp = new();
@@ -276,7 +277,7 @@ public sealed class MainWindowViewModelTests
         Book book = new ImportEpub(epub).GetBook();
         sut.LoadBook(book, epub);
 
-        IReadOnlyList<Resource>? candidates = sut.GetUnusedMediaCandidates();
+        IReadOnlyList<Resource>? candidates = await sut.GetUnusedMediaCandidatesAsync();
         candidates.Should().ContainSingle(r => r.BookPath.EndsWith("orphan.png"));
 
         sut.ApplyDeleteUnusedMedia(candidates!);
@@ -286,21 +287,21 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public void GetUnusedStyleSelectorCandidates_ReturnsNullAndReportsWhenNothingToDelete()
+    public async Task GetUnusedStyleSelectorCandidates_ReturnsNullAndReportsWhenNothingToDelete()
     {
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, temp);
         MainWindowViewModel sut = New();
         sut.LoadBook(new ImportEpub(epub).GetBook(), epub);
 
-        IReadOnlyList<CssSelectorUsage>? candidates = sut.GetUnusedStyleSelectorCandidates();
+        IReadOnlyList<CssSelectorUsage>? candidates = await sut.GetUnusedStyleSelectorCandidatesAsync();
 
         candidates.Should().BeNull();
         sut.StatusMessage.Should().Be(Strings.Get("Status_NoUnusedSelectors"));
     }
 
     [Fact]
-    public void GetUnusedStyleSelectorCandidates_and_ApplyDeleteUnusedStyles_RemoveSelectorFromCss()
+    public async Task GetUnusedStyleSelectorCandidates_and_ApplyDeleteUnusedStyles_RemoveSelectorFromCss()
     {
         using UiCultureScope culture = new("en");
         using TempDir temp = new();
@@ -314,7 +315,7 @@ public sealed class MainWindowViewModelTests
         Book book = new ImportEpub(epub).GetBook();
         sut.LoadBook(book, epub);
 
-        IReadOnlyList<CssSelectorUsage>? candidates = sut.GetUnusedStyleSelectorCandidates();
+        IReadOnlyList<CssSelectorUsage>? candidates = await sut.GetUnusedStyleSelectorCandidatesAsync();
         candidates.Should().ContainSingle(s => s.SelectorText == ".ghost");
 
         sut.ApplyDeleteUnusedStyles(candidates!);
@@ -883,7 +884,7 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public void ApplyStandardizeEpub_moves_every_resource_to_its_standard_folder()
+    public async Task ApplyStandardizeEpub_moves_every_resource_to_its_standard_folder()
     {
         using UiCultureScope culture = new("en");
         using TempDir temp = new();
@@ -892,7 +893,7 @@ public sealed class MainWindowViewModelTests
         Book book = new ImportEpub(epub).GetBook();
         sut.LoadBook(book, epub);
 
-        sut.ApplyStandardizeEpub();
+        await sut.ApplyStandardizeEpubAsync();
 
         book.GetOpf().BookPath.Should().Be("OEBPS/content.opf");
         book.GetAllResources().OfType<HtmlResource>().Should().OnlyContain(r => r.BookPath.StartsWith("OEBPS/Text/", System.StringComparison.Ordinal));

@@ -21,6 +21,11 @@ namespace Signet.Core.BookManipulation;
 /// The <c>&lt;?xml?&gt;</c> declaration and the DOCTYPE are rebuilt explicitly,
 /// because AngleSharp in HTML mode does not emit the XML prolog.
 /// </para>
+/// <para>
+/// A DOCTYPE is never added silently: a document without one stays without one unless the caller
+/// explicitly asks for it (<c>addMissingDoctype</c> — the user's Mend / Prettify preference). An existing
+/// DOCTYPE is normalized to the one of the EPUB version.
+/// </para>
 /// </remarks>
 public static class CleanSource
 {
@@ -71,20 +76,28 @@ public static class CleanSource
     /// An optional character → entity text map for <see cref="CharToEntity"/> — "Preserve Entities" from
     /// Preferences. <see langword="null"/> = the default behavior.
     /// </param>
+    /// <param name="addMissingDoctype">
+    /// Whether to add a DOCTYPE when the source has none. An existing DOCTYPE is always normalized to the
+    /// one of <paramref name="version"/>.
+    /// </param>
     /// <remarks>
     /// Pipeline: <see cref="PreprocessSpecialCases"/> → <see cref="RemoveMetaCharset"/> → structure
     /// repair with the HTML5 parser (closing tags, fixing nesting, adding missing
     /// <c>html/head/body</c>, XML prolog + DOCTYPE per version) → <see cref="CharToEntity"/> →
     /// <see cref="PrettifyDOCTYPEHeader"/>.
     /// </remarks>
-    public static string Mend(string source, string version, IReadOnlyDictionary<char, string>? entityOverrides = null)
+    public static string Mend(
+        string source,
+        string version,
+        IReadOnlyDictionary<char, string>? entityOverrides = null,
+        bool addMissingDoctype = false)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(version);
 
         string newsource = PreprocessSpecialCases(source);
         newsource = RemoveMetaCharset(newsource);
-        newsource = Repair(newsource, version);
+        newsource = Repair(newsource, version, addMissingDoctype);
         newsource = CharToEntity(newsource, version, entityOverrides);
         newsource = PrettifyDOCTYPEHeader(newsource);
         return newsource;
@@ -129,6 +142,10 @@ public static class CleanSource
     /// when given, it takes precedence over <paramref name="options"/> (which then only provides
     /// signature compatibility; its values are ignored).
     /// </param>
+    /// <param name="addMissingDoctype">
+    /// Whether to add a DOCTYPE when the source has none. An existing DOCTYPE is always normalized to the
+    /// one of <paramref name="version"/>.
+    /// </param>
     /// <remarks>
     /// The same pipeline as <see cref="Mend"/>, but instead of repairing the structure a formatting
     /// recursion is run (<see cref="XhtmlPrettyPrinter"/>):
@@ -141,7 +158,8 @@ public static class CleanSource
         string version,
         PrettyPrintOptions? options,
         IReadOnlyDictionary<char, string>? entityOverrides,
-        PrettyPrintProps? props)
+        PrettyPrintProps? props,
+        bool addMissingDoctype = false)
     {
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(version);
@@ -155,7 +173,7 @@ public static class CleanSource
         newsource = RemoveMetaCharset(newsource);
         newsource = Prettyprint(newsource, keepWhitespace, version, props ?? new PrettyPrintProps(
             (options ?? PrettyPrintOptions.Default).IndentString,
-            (options ?? PrettyPrintOptions.Default).SingleSpace));
+            (options ?? PrettyPrintOptions.Default).SingleSpace), addMissingDoctype);
         newsource = CharToEntity(newsource, version, entityOverrides);
         newsource = PrettifyDOCTYPEHeader(newsource);
         return newsource;
@@ -329,7 +347,7 @@ public static class CleanSource
     //  Structure repair
     // =====================================================================
 
-    private static string Repair(string source, string version)
+    private static string Repair(string source, string version, bool addMissingDoctype)
     {
         if (source.Length == 0)
         {
@@ -354,14 +372,15 @@ public static class CleanSource
         }
 
         string serialized = body.ToString().TrimEnd();
-        return XmlDeclaration + BuildDoctype(document, version) + serialized;
+        return XmlDeclaration + BuildDoctype(document, version, addMissingDoctype) + serialized;
     }
 
     /// <summary>
     /// Structure formatting: parsing with the
     /// tolerant HTML5 parser, the <see cref="XhtmlPrettyPrinter"/> recursion, XML prolog + DOCTYPE.
     /// </summary>
-    private static string Prettyprint(string source, bool keepWhitespace, string version, PrettyPrintProps props)
+    private static string Prettyprint(
+        string source, bool keepWhitespace, string version, PrettyPrintProps props, bool addMissingDoctype)
     {
         string stripped = StripXmlDeclaration(source);
 
@@ -370,7 +389,7 @@ public static class CleanSource
 
         XhtmlPrettyPrinter printer = new(props, keepWhitespace);
 
-        string contents = (BuildDoctype(document, version) + printer.PrintDocumentContents(document)).TrimEnd();
+        string contents = (BuildDoctype(document, version, addMissingDoctype) + printer.PrintDocumentContents(document)).TrimEnd();
         return XmlDeclaration + contents;
     }
 
@@ -400,9 +419,17 @@ public static class CleanSource
         return source[next..];
     }
 
-    /// <summary>Builds the XML prolog and DOCTYPE for the given EPUB version.</summary>
-    internal static string BuildDoctype(IDocument document, string version)
+    /// <summary>
+    /// Builds the DOCTYPE for the given EPUB version. When the document has no DOCTYPE and
+    /// <paramref name="addMissingDoctype"/> is <c>false</c>, returns <c>""</c> (the document stays without one).
+    /// </summary>
+    internal static string BuildDoctype(IDocument document, string version, bool addMissingDoctype = false)
     {
+        if (!addMissingDoctype && document.Doctype is null)
+        {
+            return string.Empty;
+        }
+
         if (version.StartsWith('2'))
         {
             return DoctypeXhtml11;
@@ -428,7 +455,8 @@ public static class CleanSource
 
     /// <summary>
     /// Serializes the document (after in-place DOM modification) back to source: XML prolog +
-    /// DOCTYPE per version + content via <see cref="XhtmlMarkupFormatter"/> + <see cref="CharToEntity"/>.
+    /// DOCTYPE per version (only when the document has one) + content via <see cref="XhtmlMarkupFormatter"/> +
+    /// <see cref="CharToEntity"/>.
     /// The shared tail used by <see cref="SourceUpdates.PerformHtmlUpdates"/> and
     /// <see cref="SourceUpdates.AnchorUpdates"/> after changes are applied to the parsed document.
     /// </summary>
