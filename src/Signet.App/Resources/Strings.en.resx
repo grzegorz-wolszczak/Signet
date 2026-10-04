@@ -1506,6 +1506,12 @@ Do you want to save the changes?</value>
   <data name="Action_MainWindow_SplitOnSGFSectionMarkers" xml:space="preserve">
     <value>Split At &amp;Markers</value>
   </data>
+  <data name="Status_NoSplitMarkersInFile" xml:space="preserve">
+    <value>There are no split markers in the current file.</value>
+  </data>
+  <data name="Status_FileSplitAtMarkers" xml:space="preserve">
+    <value>File split at the markers — new files: {0}.</value>
+  </data>
   <data name="Action_MainWindow_Preferences" xml:space="preserve">
     <value>&amp;Preferences...</value>
   </data>

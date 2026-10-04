@@ -1506,6 +1506,12 @@ Czy chcesz zapisać zmiany?</value>
   <data name="Action_MainWindow_SplitOnSGFSectionMarkers" xml:space="preserve">
     <value>Podziel w miejscach &amp;znaczników</value>
   </data>
+  <data name="Status_NoSplitMarkersInFile" xml:space="preserve">
+    <value>Brak znaczników podziału w bieżącym pliku.</value>
+  </data>
+  <data name="Status_FileSplitAtMarkers" xml:space="preserve">
+    <value>Podzielono plik w miejscach znaczników — nowe pliki: {0}.</value>
+  </data>
   <data name="Action_MainWindow_Preferences" xml:space="preserve">
     <value>&amp;Preferencje...</value>
   </data>

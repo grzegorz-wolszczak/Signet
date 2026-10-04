@@ -262,6 +262,7 @@ public sealed partial class MainWindowViewModel
         _actions.SetHandler(AppActionIds.ZoomReset, ResetActiveZoom);
         _actions.SetHandler(AppActionIds.InsertSgfSectionMarker, () => ActiveCodeTab?.InsertSectionMarkerAtCaret());
         _actions.SetHandler(AppActionIds.SplitSection, SplitFileAtCaret);
+        _actions.SetHandler(AppActionIds.SplitOnSgfSectionMarkers, SplitCurrentFileAtMarkers);
         _actions.SetHandler(
             AppActionIds.PasteClipboardHistory,
             () => PasteClipboardHistoryRequested?.Invoke(this, EventArgs.Empty));
@@ -1662,6 +1663,47 @@ public sealed partial class MainWindowViewModel
         _statusBar.ShowMessage(Strings.Format("Status_FileSplit", created.Filename), TimeSpan.FromSeconds(4));
     }
 
+    /// <summary>
+    /// "Split At Markers" (Edit menu): splits the (X)HTML file of the active Code View tab at its split markers
+    /// (<see cref="Book.SplitOnSectionMarkers"/>) — the first section stays in the file, the others go to new files
+    /// right after it. The Book Browser has the same operation for the selected files.
+    /// </summary>
+    public void SplitCurrentFileAtMarkers()
+    {
+        if (_currentBook is null || ActiveCodeTab is not { IsHtmlFlow: true, Resource: HtmlResource html } tab)
+        {
+            return;
+        }
+
+        if (ReferenceEquals(_currentBook.GetNavResource(), html))
+        {
+            _statusBar.ShowMessage(Strings.Get("Status_CannotSplitNav"), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
+            return;
+        }
+
+        if (tab.RunWellFormedCheck() == false)
+        {
+            return;
+        }
+
+        _tabManager.SaveAllTabs();
+        bool checkpoint = CheckpointBeforeAction(AppActionIds.SplitOnSgfSectionMarkers);
+        IReadOnlyList<HtmlResource> created = _currentBook.SplitOnSectionMarkers(html);
+        if (created.Count == 0)
+        {
+            if (checkpoint)
+            {
+                RewindCheckpoint();
+            }
+
+            _statusBar.ShowMessage(Strings.Get("Status_NoSplitMarkersInFile"), TimeSpan.FromSeconds(4));
+            return;
+        }
+
+        RefreshAfterMaintenanceOperation();
+        _statusBar.ShowMessage(Strings.Format("Status_FileSplitAtMarkers", created.Count), TimeSpan.FromSeconds(4));
+    }
+
     // The offset of the first non-whitespace character after the <body> opening tag (0 without a body).
     private static int BodyContentStart(string text)
     {
@@ -2716,7 +2758,8 @@ public sealed partial class MainWindowViewModel
         _actions.SetEnabled(isHtml && (tab?.RemoveTagPairEnabled ?? false), AppActionIds.RemoveTagPair);
         _actions.SetEnabled(tab?.SupportsCommentToggle ?? false, AppActionIds.ToggleComment);
         _actions.SetEnabled(
-            tab?.IsHtmlFlow ?? false, AppActionIds.PrettifyCurrentHtml, AppActionIds.MendCurrentHtml, AppActionIds.SplitSection);
+            tab?.IsHtmlFlow ?? false, AppActionIds.PrettifyCurrentHtml, AppActionIds.MendCurrentHtml, AppActionIds.SplitSection,
+            AppActionIds.SplitOnSgfSectionMarkers);
         _actions.SetEnabled(
             tab?.SupportsTagStructure ?? false,
             AppActionIds.JumpToOpeningTag, AppActionIds.JumpToClosingTag, AppActionIds.SelectTagContents,

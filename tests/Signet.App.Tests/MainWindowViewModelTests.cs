@@ -731,6 +731,35 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public void SplitOnSgfSectionMarkers_splits_the_current_file_at_its_markers()
+    {
+        using UiCultureScope culture = new("en");
+        using TempDir temp = new();
+        (MainWindowViewModel sut, Book book, HtmlResource chapter) = OpenMinimalChapter(temp);
+        sut.ActiveCodeTab!.InsertSectionMarker(sut.ActiveCodeTab.DocumentText.IndexOf("<p>Hello", StringComparison.Ordinal));
+
+        sut.Actions.Require(AppActionIds.SplitOnSgfSectionMarkers).Execute(null);
+
+        book.GetHtmlResources().Should().Contain(h => h.Filename == "chapter1_0001.xhtml");
+        chapter.GetText().Should().NotContain("Hello, world.").And.NotContain("signet_split_marker");
+        sut.StatusMessage.Should().Be(Strings.Format("Status_FileSplitAtMarkers", 1));
+    }
+
+    [Fact]
+    public void SplitOnSgfSectionMarkers_without_markers_reports_it()
+    {
+        using UiCultureScope culture = new("en");
+        using TempDir temp = new();
+        (MainWindowViewModel sut, Book book, HtmlResource _) = OpenMinimalChapter(temp);
+        int before = book.GetHtmlResources().Count;
+
+        sut.Actions.Require(AppActionIds.SplitOnSgfSectionMarkers).Execute(null);
+
+        book.GetHtmlResources().Should().HaveCount(before);
+        sut.StatusMessage.Should().Be(Strings.Get("Status_NoSplitMarkersInFile"));
+    }
+
+    [Fact]
     public void ClipEditor_action_raises_ClipEditorRequested()
     {
         MainWindowViewModel sut = New();
