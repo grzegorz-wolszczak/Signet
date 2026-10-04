@@ -634,6 +634,13 @@ public sealed partial class MainWindowViewModel
     public event EventHandler? LiveCssPanelRequested;
 
     /// <summary>
+    /// Raised whenever the input of the Live CSS Panel may have changed — the caret moved or the content
+    /// was edited in the active Code View tab, or another tab became active. The view refreshes an open
+    /// panel (debounced) by calling <see cref="TryResolveLiveCssPanel"/> with <c>reportFailure: false</c>.
+    /// </summary>
+    public event EventHandler? LiveCssContextChanged;
+
+    /// <summary>
     /// Raised by the "Saved Searches" action — the view opens (or activates) the non-modal window
     /// of the saved searches editor.
     /// </summary>
@@ -1991,12 +1998,13 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>
     /// "Live CSS Panel": computes the CSS cascade (<see cref="CssCascadeResolver"/>) for the element
-    /// under the caret of the active Code View tab. The trigger is an action/shortcut (not a live hover
+    /// under the caret of the active Code View tab. The trigger is an action/shortcut or a caret move (not a hover
     /// in Preview), so it works only when the active tab is editing an (X)HTML file.
     /// <c>null</c> when there is no active HTML tab or the caret is not inside any element —
-    /// the caller then shows a message in the status bar.
+    /// a message is then shown in the status bar, unless <paramref name="reportFailure"/> is <c>false</c>
+    /// (the automatic refresh of an already open panel, which silently keeps its previous content).
     /// </summary>
-    public CssCascadeResult? TryResolveLiveCssPanel()
+    public CssCascadeResult? TryResolveLiveCssPanel(bool reportFailure = true)
     {
         if (_currentBook is not { } book || ActiveCodeTab is not { } tab || tab.Resource is not HtmlResource html)
         {
@@ -2011,7 +2019,7 @@ public sealed partial class MainWindowViewModel
                 ? new CssInfo(css.GetText())
                 : null);
 
-        if (result is null)
+        if (result is null && reportFailure)
         {
             _statusBar.ShowMessage(Strings.Get("Status_CaretNotInElement"), TimeSpan.FromSeconds(4));
         }
@@ -2530,6 +2538,7 @@ public sealed partial class MainWindowViewModel
         RefreshSpellcheckActionState();
 
         _preview.ShowResource(ActiveTab?.Resource);
+        LiveCssContextChanged?.Invoke(this, EventArgs.Empty);
     }
 
     // Only the caret of the file shown in the preview — an offset in a CSS/JS tab does not correspond
@@ -2540,9 +2549,15 @@ public sealed partial class MainWindowViewModel
         {
             _preview.SyncCaretToPreview(offset);
         }
+
+        LiveCssContextChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    private void OnActiveContentChanged(object? sender, EventArgs e) => _preview.NotifyContentChanged();
+    private void OnActiveContentChanged(object? sender, EventArgs e)
+    {
+        _preview.NotifyContentChanged();
+        LiveCssContextChanged?.Invoke(this, EventArgs.Empty);
+    }
 
     // A click in the preview always refers to the file shown in the preview. When another tab is
     // active (a CSS file, a different HTML file, an image…), the previewed file's tab is activated

@@ -158,6 +158,12 @@
   <data name="LiveCssPanelWindow_Specificity" xml:space="preserve">
     <value>specificity</value>
   </data>
+  <data name="LiveCssPanelWindow_OverriddenBy" xml:space="preserve">
+    <value>(overridden by {0})</value>
+  </data>
+  <data name="LiveCssPanelWindow_InspectedElement" xml:space="preserve">
+    <value>(element at caret)</value>
+  </data>
   <data name="LiveCssPanelWindow_Inline" xml:space="preserve">
     <value>(inline style)</value>
   </data>

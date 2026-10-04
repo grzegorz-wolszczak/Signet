@@ -158,6 +158,12 @@
   <data name="LiveCssPanelWindow_Specificity" xml:space="preserve">
     <value>specyficzność</value>
   </data>
+  <data name="LiveCssPanelWindow_OverriddenBy" xml:space="preserve">
+    <value>(nadpisane przez {0})</value>
+  </data>
+  <data name="LiveCssPanelWindow_InspectedElement" xml:space="preserve">
+    <value>(element pod kursorem)</value>
+  </data>
   <data name="LiveCssPanelWindow_Inline" xml:space="preserve">
     <value>(styl inline)</value>
   </data>

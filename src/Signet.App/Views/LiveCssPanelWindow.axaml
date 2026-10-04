@@ -16,37 +16,49 @@
                TextTrimming="CharacterEllipsis" />
 
     <ScrollViewer Grid.Row="1">
-      <StackPanel Spacing="10">
+      <ItemsControl ItemsSource="{Binding Levels}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:LiveCssLevelViewModel">
+            <!-- One hierarchy level: body at the top, the element under the caret at the bottom. -->
+            <StackPanel Spacing="6" Margin="0,0,0,12">
+              <TextBlock Text="{Binding Header}" FontWeight="Bold"
+                         FontFamily="Consolas,Cascadia Mono,monospace" />
 
-        <TextBlock Text="{loc:Loc LiveCssPanelWindow_NoRules}" IsVisible="{Binding !HasRules}"
-                   Foreground="Gray" />
+              <TextBlock Text="{loc:Loc LiveCssPanelWindow_NoRules}" IsVisible="{Binding ShowNoRules}"
+                         Foreground="Gray" Margin="12,0,0,0" />
 
-        <ItemsControl ItemsSource="{Binding Rules}">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="vm:LiveCssRuleViewModel">
-              <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                      BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,4">
-                <StackPanel Spacing="4">
-                  <Button Content="{Binding Header}" Command="{Binding JumpCommand}"
-                          HorizontalAlignment="Left" Padding="0" Background="Transparent"
-                          BorderThickness="0" FontFamily="Consolas,Cascadia Mono,monospace"
-                          HorizontalContentAlignment="Left" />
-                  <ItemsControl ItemsSource="{Binding Declarations}" Margin="12,0,0,0">
-                    <ItemsControl.ItemTemplate>
-                      <DataTemplate x:DataType="vm:LiveCssDeclarationViewModel">
-                        <TextBlock Text="{Binding Text}" FontFamily="Consolas,Cascadia Mono,monospace"
-                                   Opacity="{Binding IsOverridden, Converter={x:Static infra:OverriddenDeclarationConverters.Opacity}}"
-                                   TextDecorations="{Binding IsOverridden, Converter={x:Static infra:OverriddenDeclarationConverters.Strikethrough}}" />
-                      </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                  </ItemsControl>
-                </StackPanel>
-              </Border>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-
-      </StackPanel>
+              <ItemsControl ItemsSource="{Binding Rules}" Margin="12,0,0,0">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="vm:LiveCssRuleViewModel">
+                    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                            BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,4">
+                      <StackPanel Spacing="4">
+                        <Button Content="{Binding Header}" Command="{Binding JumpCommand}"
+                                HorizontalAlignment="Left" Padding="0" Background="Transparent"
+                                BorderThickness="0" FontFamily="Consolas,Cascadia Mono,monospace"
+                                HorizontalContentAlignment="Left" />
+                        <ItemsControl ItemsSource="{Binding Declarations}" Margin="12,0,0,0">
+                          <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:LiveCssDeclarationViewModel">
+                              <WrapPanel Opacity="{Binding IsDimmed, Converter={x:Static infra:OverriddenDeclarationConverters.Opacity}}">
+                                <TextBlock Text="{Binding Text}" FontFamily="Consolas,Cascadia Mono,monospace"
+                                           TextDecorations="{Binding IsOverridden, Converter={x:Static infra:OverriddenDeclarationConverters.Strikethrough}}" />
+                                <TextBlock Text="{Binding OverriddenByText}" IsVisible="{Binding HasOverriddenBy}"
+                                           FontFamily="Consolas,Cascadia Mono,monospace" FontStyle="Italic"
+                                           Margin="8,0,0,0" />
+                              </WrapPanel>
+                            </DataTemplate>
+                          </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                      </StackPanel>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
     </ScrollViewer>
   </Grid>
 </Window>

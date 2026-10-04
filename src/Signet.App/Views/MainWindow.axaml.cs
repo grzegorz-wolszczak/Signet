@@ -8,6 +8,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Microsoft.Extensions.DependencyInjection;
 using Signet.App.Actions;
@@ -113,6 +114,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             _boundViewModel.DeleteUnusedStylesRequested -= OnDeleteUnusedStylesRequested;
             _boundViewModel.CssCleanupRequested -= OnCssCleanupRequested;
             _boundViewModel.LiveCssPanelRequested -= OnLiveCssPanelRequested;
+            _boundViewModel.LiveCssContextChanged -= OnLiveCssContextChanged;
             _boundViewModel.SearchEditorRequested -= OnSearchEditorRequested;
             _boundViewModel.StandardizeEpubRequested -= OnStandardizeEpubRequested;
             _boundViewModel.CloseWindowRequested -= OnCloseWindowRequested;
@@ -160,6 +162,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         _boundViewModel.DeleteUnusedStylesRequested += OnDeleteUnusedStylesRequested;
         _boundViewModel.CssCleanupRequested += OnCssCleanupRequested;
         _boundViewModel.LiveCssPanelRequested += OnLiveCssPanelRequested;
+        _boundViewModel.LiveCssContextChanged += OnLiveCssContextChanged;
         _boundViewModel.SearchEditorRequested += OnSearchEditorRequested;
         _boundViewModel.StandardizeEpubRequested += OnStandardizeEpubRequested;
         _boundViewModel.CloseWindowRequested += OnCloseWindowRequested;
@@ -708,11 +711,12 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
 
     private LiveCssPanelWindow? _liveCssPanelWindow;
     private LiveCssPanelViewModel? _liveCssPanelViewModel;
+    private DispatcherTimer? _liveCssRefreshTimer;
 
     /// <summary>
     /// Opens (or activates) the non-modal "Live CSS Panel" window — a single persistent instance
-    /// (the same pattern as <see cref="OnClipEditorRequested"/>) whose content is refreshed for the element
-    /// under the caret of the active Code View tab on every subsequent invocation of the action.
+    /// (the same pattern as <see cref="OnClipEditorRequested"/>) whose content follows the element
+    /// under the caret of the active Code View tab (see <see cref="OnLiveCssContextChanged"/>).
     /// </summary>
     private void OnLiveCssPanelRequested(object? sender, EventArgs e)
     {
@@ -739,6 +743,44 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         else
         {
             _liveCssPanelWindow.Activate();
+        }
+    }
+
+    /// <summary>
+    /// Automatic refresh of an open Live CSS Panel after the caret moves or the content changes —
+    /// debounced, so typing or holding an arrow key does not recompute the cascade on every keystroke.
+    /// </summary>
+    private void OnLiveCssContextChanged(object? sender, EventArgs e)
+    {
+        if (_liveCssPanelWindow is not { IsVisible: true })
+        {
+            return;
+        }
+
+        if (_liveCssRefreshTimer is null)
+        {
+            _liveCssRefreshTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
+            _liveCssRefreshTimer.Tick += OnLiveCssRefreshTimerTick;
+        }
+
+        _liveCssRefreshTimer.Stop();
+        _liveCssRefreshTimer.Start();
+    }
+
+    private void OnLiveCssRefreshTimerTick(object? sender, EventArgs e)
+    {
+        _liveCssRefreshTimer?.Stop();
+        MainWindowViewModel? vm = _boundViewModel;
+        if (vm is null || _liveCssPanelViewModel is null || _liveCssPanelWindow is not { IsVisible: true })
+        {
+            return;
+        }
+
+        // No active HTML tab (e.g. after jumping to a rule in a CSS file) or the caret outside an element:
+        // keep the previous content instead of clearing the panel.
+        if (vm.TryResolveLiveCssPanel(reportFailure: false) is { } result)
+        {
+            _liveCssPanelViewModel.Update(result, vm.GetResourceTextForLiveCssPanel, vm.JumpToCssLocation);
         }
     }
 

@@ -4,9 +4,9 @@ using Avalonia.Media;
 namespace Signet.App.Infrastructure;
 
 /// <summary>
-/// Converters from <c>LiveCssDeclarationViewModel.IsOverridden</c> to the row appearance in the "Live CSS Panel"
-/// — strikethrough + dimming of declarations overridden by a rule with a higher cascade
-/// priority.
+/// Converters from <c>LiveCssDeclarationViewModel.IsOverridden</c>/<c>IsDimmed</c> to the row appearance in the
+/// "Live CSS Panel" — strikethrough of overridden declarations and dimming of declarations that do not take
+/// effect on the inspected element.
 /// </summary>
 public static class OverriddenDeclarationConverters
 {
