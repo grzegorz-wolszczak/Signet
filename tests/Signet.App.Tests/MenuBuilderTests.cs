@@ -139,6 +139,23 @@ public sealed class MenuBuilderTests
     }
 
     [Fact]
+    public void A_long_recent_file_name_is_shortened_with_an_ellipsis_and_keeps_its_extension()
+    {
+        using UiCultureScope culture = new("en");
+        using TestHost host = new();
+        FakeRecentFiles recent = new()
+        {
+            Files = new[] { "/books/Kroki w nieznane 3 (Iskry) (1972) - Rozni.epub", "/books/exactly_forty_characters_long_names.epub" },
+        };
+
+        MenuItemViewModel file = BuildWith(host, recent).Single(m => m.Header == "_File");
+        List<string> headers = file.Items!.Select(i => i.Header).ToList();
+
+        headers.Should().Contain("_1 Kroki w nieznane 3 (Iskry) (1972)….epub");
+        headers.Should().Contain("_2 exactly__forty__characters__long__names.epub");
+    }
+
+    [Fact]
     public void Recent_files_list_is_rebuilt_in_place_and_disappears_when_empty()
     {
         using UiCultureScope culture = new("en");

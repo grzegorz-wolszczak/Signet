@@ -50,6 +50,9 @@ public interface IBookmarksMenu
 /// </summary>
 public sealed class MenuBuilder
 {
+    /// <summary>The longest file name shown in full in the recent files list (see <see cref="ShortenFileName"/>).</summary>
+    internal const int MaxRecentFileNameLength = 40;
+
     private readonly AppActionRegistry _actions;
     private readonly ToolbarManager _toolbars;
     private readonly ICommand _customizeToolbarsCommand;
@@ -185,7 +188,7 @@ public sealed class MenuBuilder
                 string captured = path;
                 // "&N name"; accelerators only for 1–9. Underscores in the file name
                 // are doubled so that Avalonia does not take them for an access key.
-                string name = Path.GetFileName(path).Replace("_", "__", StringComparison.Ordinal);
+                string name = ShortenFileName(Path.GetFileName(path)).Replace("_", "__", StringComparison.Ordinal);
                 string label = index <= 9 ? $"_{index} {name}" : $"{index} {name}";
                 entries.Add(MenuItemViewModel.ForCommand(label, new RelayCommand(() => _recentFiles!.Open(captured))));
                 index++;
@@ -202,6 +205,31 @@ public sealed class MenuBuilder
         }
 
         segment.Count = entries.Count;
+    }
+
+    /// <summary>
+    /// Shortens a file name longer than <see cref="MaxRecentFileNameLength"/> characters for the menu: the end of the
+    /// name before the extension is replaced with "…" and the extension is always kept
+    /// (<c>"A very long title of the book.epub"</c> → <c>"A very long tit….epub"</c>). The menu popup has a
+    /// limited width (the theme's <c>FlyoutThemeMaxWidth</c>), so a longer header would be cut off, extension included.
+    /// </summary>
+    internal static string ShortenFileName(string fileName)
+    {
+        ArgumentNullException.ThrowIfNull(fileName);
+        if (fileName.Length <= MaxRecentFileNameLength)
+        {
+            return fileName;
+        }
+
+        string extension = Path.GetExtension(fileName);
+        if (extension.Length >= MaxRecentFileNameLength / 2)
+        {
+            // Not a real extension (e.g. "name.with a long dotted tail") — shorten from the end.
+            return string.Concat(fileName.AsSpan(0, MaxRecentFileNameLength - 1), "…");
+        }
+
+        int keep = MaxRecentFileNameLength - extension.Length - 1;
+        return string.Concat(fileName.AsSpan(0, keep).TrimEnd(), "…", extension);
     }
 
     /// <summary>The fragment with recent files inserted into the menu: after <see cref="Anchor"/>, <see cref="Count"/> items.</summary>
