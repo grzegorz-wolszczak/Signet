@@ -1138,7 +1138,7 @@ Czy chcesz zapisać zmiany?</value>
     <value>np. arrow, U+2192, mdash</value>
   </data>
   <data name="SpecialCharacterWindow_Insert" xml:space="preserve">
-    <value>Wstaw</value>
+    <value>Wstaw znak</value>
   </data>
   <data name="SpecialCharacterWindow_AddFavorite" xml:space="preserve">
     <value>Dodaj do ulubionych</value>
@@ -1146,17 +1146,14 @@ Czy chcesz zapisać zmiany?</value>
   <data name="SpecialCharacterWindow_RemoveFavorite" xml:space="preserve">
     <value>Usuń z ulubionych</value>
   </data>
-  <data name="SpecialCharacterWindow_AllCategories" xml:space="preserve">
-    <value>Wszystkie</value>
+  <data name="SpecialCharacterWindow_PopularCategory" xml:space="preserve">
+    <value>Popularne</value>
   </data>
   <data name="SpecialCharacterWindow_FavoritesCategory" xml:space="preserve">
     <value>Ulubione</value>
   </data>
-  <data name="SpecialCharacterWindow_RecentlyUsed" xml:space="preserve">
-    <value>ostatnio użyte</value>
-  </data>
-  <data name="SpecialCharacterWindow_FavoriteNote" xml:space="preserve">
-    <value>ulubione</value>
+  <data name="SpecialCharacterWindow_RecentCategory" xml:space="preserve">
+    <value>Ostatnio używane</value>
   </data>
   <data name="SpellcheckEditorWindow_Title" xml:space="preserve">
     <value>Edytor pisowni</value>
@@ -3467,5 +3464,67 @@ To nie jest błąd krytyczny — czytniki akceptują takie pliki. Czy kontynuowa
   </data>
   <data name="PreferencesWindow_WarnMissingDoctype" xml:space="preserve">
     <value>Ostrzegaj o braku DOCTYPE przed operacjami na plikach HTML</value>
+  </data>
+  <data name="SpecialCharacterWindow_ColumnCharacter" xml:space="preserve">
+    <value>Znak</value>
+  </data>
+  <data name="SpecialCharacterWindow_ColumnCode" xml:space="preserve">
+    <value>Kod</value>
+  </data>
+  <data name="SpecialCharacterWindow_ColumnEntity" xml:space="preserve">
+    <value>Encja</value>
+  </data>
+  <data name="SpecialCharacterWindow_ColumnName" xml:space="preserve">
+    <value>Nazwa</value>
+  </data>
+  <data name="SpecialCharacterWindow_ColumnFavorite" xml:space="preserve">
+    <value>Ulubione</value>
+  </data>
+  <data name="SpecialCharacterWindow_SearchAll" xml:space="preserve">
+    <value>Szukaj we wszystkich znakach</value>
+  </data>
+  <data name="SpecialCharacterWindow_InsertCode" xml:space="preserve">
+    <value>Wstaw kod…</value>
+  </data>
+  <data name="SpecialCharacterWindow_InsertEntity" xml:space="preserve">
+    <value>Wstaw encję</value>
+  </data>
+  <data name="SpecialCharacterWindow_FavoriteToggleTip" xml:space="preserve">
+    <value>Kliknij dwukrotnie, aby dodać do ulubionych lub z nich usunąć</value>
+  </data>
+  <data name="SpecialCharacterWindow_EntityWarningTitle" xml:space="preserve">
+    <value>Niezdefiniowana encja</value>
+  </data>
+  <data name="SpecialCharacterWindow_EntityWarning" xml:space="preserve">
+    <value>Encja {0} nie jest zdefiniowana w tym dokumencie: nazwane encje HTML definiuje tylko DOCTYPE XHTML 1.x, a ten plik go nie ma. Po wstawieniu plik przestanie być poprawny składniowo (well-formed).
+
+Wstawić mimo to?</value>
+  </data>
+  <data name="SpecialCharacterWindow_InsertAnyway" xml:space="preserve">
+    <value>Wstaw mimo to</value>
+  </data>
+  <data name="InsertCodeWindow_Title" xml:space="preserve">
+    <value>Wstaw kod znaku</value>
+  </data>
+  <data name="InsertCodeWindow_Prompt" xml:space="preserve">
+    <value>W jakiej postaci wstawić kod znaku {0}?</value>
+  </data>
+  <data name="InsertCodeWindow_Hex" xml:space="preserve">
+    <value>Szesnastkowo: {0}</value>
+  </data>
+  <data name="InsertCodeWindow_Decimal" xml:space="preserve">
+    <value>Dziesiętnie: {0}</value>
+  </data>
+  <data name="InsertCodeWindow_Text" xml:space="preserve">
+    <value>Jako tekst: {0}</value>
+  </data>
+  <data name="SpecialCharacterWindow_ColumnHex" xml:space="preserve">
+    <value>Hex</value>
+  </data>
+  <data name="SpecialCharacterWindow_ColumnDecimal" xml:space="preserve">
+    <value>Dec</value>
+  </data>
+  <data name="SpecialCharacterWindow_DoubleClickInsertsCell" xml:space="preserve">
+    <value>Dwuklik wstawia zawartość komórki</value>
   </data>
 </root>

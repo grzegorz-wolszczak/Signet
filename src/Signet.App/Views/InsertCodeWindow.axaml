@@ -1,0 +1,19 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.InsertCodeWindow"
+        Width="360" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Title="{loc:Loc InsertCodeWindow_Title}">
+
+  <StackPanel Margin="16" Spacing="8">
+    <TextBlock x:Name="PromptText" TextWrapping="Wrap" Margin="0,0,0,4" />
+    <Button x:Name="HexButton" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" IsDefault="True" />
+    <Button x:Name="DecimalButton" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" />
+    <Button x:Name="TextButton" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" />
+    <Button x:Name="CancelButton" Content="{loc:Loc Common_Cancel}" IsCancel="True" HorizontalAlignment="Right"
+            MinWidth="80" Margin="0,8,0,0" />
+  </StackPanel>
+</Window>

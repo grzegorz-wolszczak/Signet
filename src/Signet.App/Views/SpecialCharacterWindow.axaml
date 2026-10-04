@@ -3,7 +3,7 @@
         xmlns:v="using:Signet.App.Views"
         xmlns:loc="using:Signet.App.Resources"
         x:Class="Signet.App.Views.SpecialCharacterWindow"
-        Width="460" Height="560"
+        Width="960" Height="600" MinWidth="700" MinHeight="360"
         WindowStartupLocation="CenterOwner"
         Title="{loc:Loc SpecialCharacterWindow_Title}">
 
@@ -11,26 +11,62 @@
     <TextBlock DockPanel.Dock="Top" Margin="0,0,0,8"
                Text="{loc:Loc SpecialCharacterWindow_Prompt}" TextWrapping="Wrap" />
 
-    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,140" Margin="0,0,0,8">
-      <TextBox x:Name="Filter" Grid.Column="0" PlaceholderText="{loc:Loc SpecialCharacterWindow_FilterPlaceholder}" Margin="0,0,8,0" />
-      <ComboBox x:Name="Category" Grid.Column="1" HorizontalAlignment="Stretch" />
+    <!-- The category list gets the width of its longest name (set in code), the filter takes the rest;
+         the option check boxes sit under the filter. -->
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="4"
+          Margin="0,0,0,8">
+      <TextBox x:Name="Filter" Grid.Row="0" Grid.Column="0" PlaceholderText="{loc:Loc SpecialCharacterWindow_FilterPlaceholder}" />
+      <ComboBox x:Name="Category" Grid.Row="0" Grid.Column="1" VerticalAlignment="Center" />
+      <StackPanel Grid.Row="1" Grid.Column="0" Orientation="Horizontal" Spacing="24">
+        <CheckBox x:Name="SearchAll" Content="{loc:Loc SpecialCharacterWindow_SearchAll}" />
+        <CheckBox x:Name="DoubleClickInsertsCell" Content="{loc:Loc SpecialCharacterWindow_DoubleClickInsertsCell}" />
+      </StackPanel>
     </Grid>
 
-    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,10,0,0">
-      <Button x:Name="FavoriteButton" Content="{loc:Loc SpecialCharacterWindow_AddFavorite}" MinWidth="140" />
-      <Button x:Name="OkButton" Content="{loc:Loc SpecialCharacterWindow_Insert}" IsDefault="True" MinWidth="80" />
-      <Button x:Name="CancelButton" Content="{loc:Loc Common_Close}" IsCancel="True" MinWidth="80" />
-    </StackPanel>
+    <Grid DockPanel.Dock="Bottom" ColumnDefinitions="Auto,*,Auto" Margin="0,10,0,0">
+      <Button x:Name="FavoriteButton" Grid.Column="0" Content="{loc:Loc SpecialCharacterWindow_AddFavorite}" MinWidth="140" />
+      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+        <Button x:Name="OkButton" Content="{loc:Loc SpecialCharacterWindow_Insert}" IsDefault="True" MinWidth="80" />
+        <Button x:Name="InsertCodeButton" Content="{loc:Loc SpecialCharacterWindow_InsertCode}" MinWidth="80" />
+        <Button x:Name="InsertEntityButton" Content="{loc:Loc SpecialCharacterWindow_InsertEntity}" MinWidth="80" />
+        <Button x:Name="CancelButton" Content="{loc:Loc Common_Close}" IsCancel="True" MinWidth="80" />
+      </StackPanel>
+    </Grid>
 
-    <ListBox x:Name="Results" SelectionMode="Single">
-      <ListBox.ItemTemplate>
-        <DataTemplate x:DataType="v:CharRow">
-          <Grid ColumnDefinitions="44,*">
-            <TextBlock Grid.Column="0" Text="{Binding Display}" FontSize="18" VerticalAlignment="Center" />
-            <TextBlock Grid.Column="1" Text="{Binding Detail}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-          </Grid>
-        </DataTemplate>
-      </ListBox.ItemTemplate>
-    </ListBox>
+    <!-- The "Character" column uses the Preferences font (TextBlock.symbol style, added in code).
+         A double-click in the last ("Favorite") column toggles the favorite mark (handled in code).
+         The column order is relied on by SpecialCharacterWindow.DoubleClickForm. -->
+    <DataGrid x:Name="Results" IsReadOnly="True" SelectionMode="Single" AutoGenerateColumns="False"
+              GridLinesVisibility="Horizontal" CanUserResizeColumns="True" CanUserSortColumns="True">
+      <DataGrid.Columns>
+        <DataGridTemplateColumn Header="{loc:Loc SpecialCharacterWindow_ColumnCharacter}" Width="Auto" MinWidth="70"
+                                SortMemberPath="CodePoint">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate x:DataType="v:CharRow">
+              <TextBlock Classes="symbol" Text="{Binding Display}" HorizontalAlignment="Center"
+                         VerticalAlignment="Center" Margin="8,2" />
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+        <DataGridTextColumn x:DataType="v:CharRow" Header="{loc:Loc SpecialCharacterWindow_ColumnEntity}" Binding="{Binding Entity}" Width="110" />
+        <DataGridTextColumn x:DataType="v:CharRow" Header="{loc:Loc SpecialCharacterWindow_ColumnCode}" Binding="{Binding Code}"
+                            SortMemberPath="CodePoint" Width="90" />
+        <DataGridTextColumn x:DataType="v:CharRow" Header="{loc:Loc SpecialCharacterWindow_ColumnHex}" Binding="{Binding Hex}"
+                            SortMemberPath="CodePoint" Width="100" />
+        <DataGridTextColumn x:DataType="v:CharRow" Header="{loc:Loc SpecialCharacterWindow_ColumnDecimal}" Binding="{Binding Dec}"
+                            SortMemberPath="CodePoint" Width="100" />
+        <DataGridTextColumn x:DataType="v:CharRow" Header="{loc:Loc SpecialCharacterWindow_ColumnName}" Binding="{Binding Name}" Width="*" />
+        <DataGridTemplateColumn Header="{loc:Loc SpecialCharacterWindow_ColumnFavorite}" Width="Auto" SortMemberPath="FavoriteMark">
+          <DataGridTemplateColumn.CellTemplate>
+            <DataTemplate x:DataType="v:CharRow">
+              <Border Background="Transparent" Cursor="Hand"
+                      ToolTip.Tip="{loc:Loc SpecialCharacterWindow_FavoriteToggleTip}">
+                <TextBlock Text="{Binding FavoriteMark}" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" />
+              </Border>
+            </DataTemplate>
+          </DataGridTemplateColumn.CellTemplate>
+        </DataGridTemplateColumn>
+      </DataGrid.Columns>
+    </DataGrid>
   </DockPanel>
 </Window>

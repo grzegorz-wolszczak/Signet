@@ -147,7 +147,7 @@ public readonly record struct PreviewHighlight(
 public readonly record struct SpecialCharacterAppearance(string FontFamily, int FontSize)
 {
     /// <summary>Default values.</summary>
-    public static SpecialCharacterAppearance Default => new("Arial", 14);
+    public static SpecialCharacterAppearance Default => new("Arial", 24);
 }
 
 /// <summary>

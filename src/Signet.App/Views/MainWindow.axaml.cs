@@ -491,16 +491,22 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             return;
         }
 
-        string? chosen = await SpecialCharacterWindow.AskAsync(
+        await SpecialCharacterWindow.ShowAsync(
             this,
-            vm.RecentSpecialCharacters,
-            vm.FavoriteSpecialCharacters,
-            vm.AddFavoriteSpecialCharacter,
-            vm.RemoveFavoriteSpecialCharacter);
-        if (!string.IsNullOrEmpty(chosen))
-        {
-            vm.InsertSpecialCharacter(chosen);
-        }
+            new SpecialCharacterDialogContext(
+                vm.SpecialCharacterAppearance,
+                vm.RecentSpecialCharacters,
+                vm.FavoriteSpecialCharacters,
+                vm.SpecialCharacterSearchAll,
+                vm.ActiveDocumentDefinesHtmlEntities)
+            {
+                DoubleClickInsertsCell = vm.SpecialCharacterDoubleClickInsertsCell,
+                OnAddFavorite = vm.AddFavoriteSpecialCharacter,
+                OnRemoveFavorite = vm.RemoveFavoriteSpecialCharacter,
+                OnSearchAllChanged = value => vm.SpecialCharacterSearchAll = value,
+                OnDoubleClickInsertsCellChanged = value => vm.SpecialCharacterDoubleClickInsertsCell = value,
+                OnInsert = chosen => vm.InsertSpecialCharacter(chosen.Text, chosen.Character),
+            });
     }
 
     private async void OnPasteClipboardHistoryRequested(object? sender, EventArgs e)

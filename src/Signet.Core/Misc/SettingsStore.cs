@@ -630,6 +630,26 @@ public sealed class SettingsStore
     }
 
     /// <summary>
+    /// Whether the search box of the "Insert Special Character" window searches all characters (default)
+    /// or only the rows of the selected category.
+    /// </summary>
+    public bool SpecialCharacterSearchAll
+    {
+        get => ReadBool("special_character_search_all", true);
+        set => Write("special_character_search_all", value);
+    }
+
+    /// <summary>
+    /// Whether a double-click in the "Insert Special Character" table inserts the content of the clicked cell
+    /// (character, entity, code, hexadecimal or decimal reference) instead of always the character (default).
+    /// </summary>
+    public bool SpecialCharacterDoubleClickInsertsCell
+    {
+        get => ReadBool("special_character_double_click_inserts_cell", false);
+        set => Write("special_character_double_click_inserts_cell", value);
+    }
+
+    /// <summary>
     /// Resets all appearance settings (Preview / Code View / Special Characters)
     /// to their default values.
     /// </summary>

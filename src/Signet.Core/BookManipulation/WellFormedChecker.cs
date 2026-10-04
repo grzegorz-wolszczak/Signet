@@ -46,11 +46,12 @@ public sealed record WellFormedWarning(WellFormedWarningKind Kind, int Offset, i
 /// well-formedness plus additional XHTML structural rules.
 /// </summary>
 /// <remarks>
-/// <para><see cref="Check"/> uses an <see cref="XmlReader"/> with DTD resolution disabled
-/// (<see cref="DtdProcessing.Ignore"/>, <c>XmlResolver = null</c>) — it is the source of truth for
-/// the pass/fail verdict and the line and column numbers. Consequence: named HTML entities
-/// (<c>&amp;nbsp;</c> etc.) are treated as undefined and cause an error — consistent with the EPUB
-/// corpus rule (we use numeric entities).</para>
+/// <para><see cref="Check"/> uses an <see cref="XmlReader"/> without network access — it is the source of
+/// truth for the pass/fail verdict and the line and column numbers. The DTD is ignored, except for
+/// documents with an XHTML 1.x DOCTYPE: there the DTD request is answered locally with the XHTML entity
+/// declarations (<see cref="XhtmlEntities"/>), so named HTML entities (<c>&amp;nbsp;</c>, <c>&amp;mdash;</c>, …)
+/// are valid exactly where the DOCTYPE defines them. Elsewhere (EPUB 3, no DOCTYPE) they are undefined
+/// and cause an error.</para>
 /// <para>When the error is a tag nesting error, <see cref="TagLister"/> replaces the message with a
 /// more readable description (e.g. "Tag &lt;p&gt; was not closed"); the position remains the one
 /// reported by <see cref="XmlReader"/>.</para>
@@ -75,10 +76,12 @@ public static class WellFormedChecker
         ArgumentNullException.ThrowIfNull(text);
         _ = mediaType;
 
+        bool xhtml1 = XhtmlEntities.HasXhtml1Doctype(text);
         XmlReaderSettings settings = new()
         {
-            DtdProcessing = DtdProcessing.Ignore,
-            XmlResolver = null,
+            DtdProcessing = xhtml1 ? DtdProcessing.Parse : DtdProcessing.Ignore,
+            XmlResolver = xhtml1 ? new XhtmlEntities.EntityDtdResolver() : null,
+            MaxCharactersFromEntities = 10_000_000,
             CheckCharacters = true,
         };
 

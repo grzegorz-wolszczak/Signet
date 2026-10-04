@@ -1138,7 +1138,7 @@ Do you want to save the changes?</value>
     <value>e.g. arrow, U+2192, mdash</value>
   </data>
   <data name="SpecialCharacterWindow_Insert" xml:space="preserve">
-    <value>Insert</value>
+    <value>Insert Character</value>
   </data>
   <data name="SpecialCharacterWindow_AddFavorite" xml:space="preserve">
     <value>Add to Favorites</value>
@@ -1146,17 +1146,14 @@ Do you want to save the changes?</value>
   <data name="SpecialCharacterWindow_RemoveFavorite" xml:space="preserve">
     <value>Remove from Favorites</value>
   </data>
-  <data name="SpecialCharacterWindow_AllCategories" xml:space="preserve">
-    <value>All</value>
+  <data name="SpecialCharacterWindow_PopularCategory" xml:space="preserve">
+    <value>Popular</value>
   </data>
   <data name="SpecialCharacterWindow_FavoritesCategory" xml:space="preserve">
     <value>Favorites</value>
   </data>
-  <data name="SpecialCharacterWindow_RecentlyUsed" xml:space="preserve">
-    <value>recently used</value>
-  </data>
-  <data name="SpecialCharacterWindow_FavoriteNote" xml:space="preserve">
-    <value>favorite</value>
+  <data name="SpecialCharacterWindow_RecentCategory" xml:space="preserve">
+    <value>Recently used</value>
   </data>
   <data name="SpellcheckEditorWindow_Title" xml:space="preserve">
     <value>Spellcheck Editor</value>
@@ -3467,5 +3464,67 @@ This is not a critical error — reading systems accept such files. Continue?</v
   </data>
   <data name="PreferencesWindow_WarnMissingDoctype" xml:space="preserve">
     <value>Warn about a missing DOCTYPE before operations on HTML files</value>
+  </data>
+  <data name="SpecialCharacterWindow_ColumnCharacter" xml:space="preserve">
+    <value>Character</value>
+  </data>
+  <data name="SpecialCharacterWindow_ColumnCode" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="SpecialCharacterWindow_ColumnEntity" xml:space="preserve">
+    <value>Entity</value>
+  </data>
+  <data name="SpecialCharacterWindow_ColumnName" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="SpecialCharacterWindow_ColumnFavorite" xml:space="preserve">
+    <value>Favorite</value>
+  </data>
+  <data name="SpecialCharacterWindow_SearchAll" xml:space="preserve">
+    <value>Search all characters</value>
+  </data>
+  <data name="SpecialCharacterWindow_InsertCode" xml:space="preserve">
+    <value>Insert Code…</value>
+  </data>
+  <data name="SpecialCharacterWindow_InsertEntity" xml:space="preserve">
+    <value>Insert Entity</value>
+  </data>
+  <data name="SpecialCharacterWindow_FavoriteToggleTip" xml:space="preserve">
+    <value>Double-click to add to or remove from favorites</value>
+  </data>
+  <data name="SpecialCharacterWindow_EntityWarningTitle" xml:space="preserve">
+    <value>Undefined entity</value>
+  </data>
+  <data name="SpecialCharacterWindow_EntityWarning" xml:space="preserve">
+    <value>The entity {0} is not defined in this document: named HTML entities are defined only by an XHTML 1.x DOCTYPE, which this file does not have. After inserting it the file will no longer be well-formed.
+
+Insert anyway?</value>
+  </data>
+  <data name="SpecialCharacterWindow_InsertAnyway" xml:space="preserve">
+    <value>Insert Anyway</value>
+  </data>
+  <data name="InsertCodeWindow_Title" xml:space="preserve">
+    <value>Insert Character Code</value>
+  </data>
+  <data name="InsertCodeWindow_Prompt" xml:space="preserve">
+    <value>In which form should the code of {0} be inserted?</value>
+  </data>
+  <data name="InsertCodeWindow_Hex" xml:space="preserve">
+    <value>Hexadecimal: {0}</value>
+  </data>
+  <data name="InsertCodeWindow_Decimal" xml:space="preserve">
+    <value>Decimal: {0}</value>
+  </data>
+  <data name="InsertCodeWindow_Text" xml:space="preserve">
+    <value>As text: {0}</value>
+  </data>
+  <data name="SpecialCharacterWindow_ColumnHex" xml:space="preserve">
+    <value>Hex</value>
+  </data>
+  <data name="SpecialCharacterWindow_ColumnDecimal" xml:space="preserve">
+    <value>Dec</value>
+  </data>
+  <data name="SpecialCharacterWindow_DoubleClickInsertsCell" xml:space="preserve">
+    <value>Double-click inserts the cell content</value>
   </data>
 </root>

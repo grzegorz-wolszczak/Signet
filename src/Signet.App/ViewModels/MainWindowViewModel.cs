@@ -3088,19 +3088,53 @@ public sealed partial class MainWindowViewModel
     /// <summary>Recently inserted special characters (newest first) — for the "Insert Special Character" dialog.</summary>
     public IReadOnlyList<string> RecentSpecialCharacters => _settings.RecentSpecialCharacters;
 
-    /// <summary>
-    /// Inserts a special character in the active code editor and puts it at the top of the "recently used" list
-    /// (limit 20).
-    /// </summary>
-    public void InsertSpecialCharacter(string value)
+    /// <summary>Font of the character column in the "Insert Special Character" window (Preferences).</summary>
+    public SpecialCharacterAppearance SpecialCharacterAppearance => _settings.SpecialCharacterAppearance;
+
+    /// <summary>"Search all characters" in the "Insert Special Character" window (remembered).</summary>
+    public bool SpecialCharacterSearchAll
     {
-        ArgumentException.ThrowIfNullOrEmpty(value);
+        get => _settings.SpecialCharacterSearchAll;
+        set
+        {
+            _settings.SpecialCharacterSearchAll = value;
+            _settings.Save();
+        }
+    }
+
+    /// <summary>"Double-click inserts the cell content" in the "Insert Special Character" window (remembered).</summary>
+    public bool SpecialCharacterDoubleClickInsertsCell
+    {
+        get => _settings.SpecialCharacterDoubleClickInsertsCell;
+        set
+        {
+            _settings.SpecialCharacterDoubleClickInsertsCell = value;
+            _settings.Save();
+        }
+    }
+
+    /// <summary>
+    /// Whether the document of the active code editor has an XHTML 1.x DOCTYPE, i.e. defines the named HTML
+    /// entities (<see cref="XhtmlEntities.HasXhtml1Doctype"/>).
+    /// </summary>
+    public bool ActiveDocumentDefinesHtmlEntities =>
+        ActiveCodeTab is { } tab && XhtmlEntities.HasXhtml1Doctype(tab.Document.Text);
+
+    /// <summary>
+    /// Inserts a special character (the character itself, its code or its entity — <paramref name="text"/>) in
+    /// the active code editor and puts the character (<paramref name="character"/>, by default <paramref name="text"/>)
+    /// at the top of the "recently used" list (limit 20).
+    /// </summary>
+    public void InsertSpecialCharacter(string text, string? character = null)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(text);
         if (ActiveCodeTab is not { SupportsFormatting: true } tab)
         {
             return;
         }
 
-        tab.InsertRawText(value);
+        tab.InsertRawText(text);
+        string value = string.IsNullOrEmpty(character) ? text : character;
 
         List<string> recent = new() { value };
         recent.AddRange(_settings.RecentSpecialCharacters.Where(s => !string.Equals(s, value, StringComparison.Ordinal)));
