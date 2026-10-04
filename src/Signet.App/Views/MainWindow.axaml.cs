@@ -16,6 +16,7 @@ using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.App.ViewModels;
 using Signet.Core.MainUI;
+using Signet.Core.Misc;
 using Signet.Core.Parsers;
 using Signet.Core.Resources;
 
@@ -880,6 +881,8 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         }
     }
 
+    private const string PreferencesWindowGeometryKey = "PreferencesWindow";
+
     private async void OnPreferencesRequested(object? sender, EventArgs e)
     {
         IServiceProvider? services = App.Services;
@@ -888,10 +891,26 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             return;
         }
 
+        SettingsStore settings = services.GetRequiredService<SettingsStore>();
         PreferencesWindow window = new()
         {
             DataContext = services.GetRequiredService<PreferencesViewModel>(),
         };
+
+        // Only the size is remembered — the dialog still opens centered over the main window.
+        if (settings.GetWindowGeometry(PreferencesWindowGeometryKey) is { Width: > 0, Height: > 0 } geometry)
+        {
+            window.Width = Math.Max(geometry.Width, window.MinWidth);
+            window.Height = Math.Max(geometry.Height, window.MinHeight);
+        }
+
+        window.Closing += (_, _) =>
+        {
+            settings.SetWindowGeometry(PreferencesWindowGeometryKey, new WindowGeometry(
+                0, 0, (int)window.Width, (int)window.Height, Maximized: false, FullScreen: false));
+            settings.Save();
+        };
+
         await window.ShowDialog(this);
         _boundViewModel?.ApplyPreferencesChanges();
 
