@@ -3572,6 +3572,18 @@ Insert anyway?</value>
   <data name="Cleanup_MergeSameProperties_Summary" xml:space="preserve">
     <value>Groups to merge: {0} of {1} (rules in the merged groups: {2}).</value>
   </data>
+  <data name="Cleanup_EmptyElements_Title" xml:space="preserve">
+    <value>Remove empty &lt;p&gt;, &lt;span&gt; and &lt;div&gt; tags</value>
+  </data>
+  <data name="Cleanup_EmptyElements_Description" xml:space="preserve">
+    <value>Removes &lt;p&gt;, &lt;span&gt; and &lt;div&gt; elements with no content or only whitespace (e.g. &lt;p class="calibre8"&gt;&lt;/p&gt;). &amp;nbsp; and comments count as content. Elements with an id attribute are always kept (they can be a link target). From an empty &lt;span&gt; only the tags go, the space stays.</value>
+  </data>
+  <data name="Cleanup_EmptyElements_Summary" xml:space="preserve">
+    <value>Items to apply: {0} of {1} (tags removed: {2}).</value>
+  </data>
+  <data name="Cleanup_EmptyElementsWarning" xml:space="preserve">
+    <value>Empty elements that CSS still gives an effect (e.g. space from margin/padding/height, a page break, clear, content from ::before/::after) are marked ⚠ and unchecked by default. Each one lists which rule does what.</value>
+  </data>
   <data name="Cleanup_NestedDivs_Title" xml:space="preserve">
     <value>Remove unnecessary &lt;div&gt; nesting</value>
   </data>

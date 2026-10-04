@@ -30,6 +30,12 @@ public enum CleanupStep
     MergeSameProperties,
 
     /// <summary>
+    /// Remove empty <c>&lt;p&gt;</c>, <c>&lt;span&gt;</c> and <c>&lt;div&gt;</c> elements without an <c>id</c>
+    /// (<see cref="EmptyElementCleaner"/>). Before the nested divs, which removing an empty element can reveal.
+    /// </summary>
+    EmptyElements,
+
+    /// <summary>
     /// Collapse chains of directly nested <c>&lt;div&gt;</c>s with identical attributes into one
     /// (<see cref="NestedDivCollapser"/>).
     /// </summary>
@@ -122,9 +128,10 @@ public sealed record CleanupPreparation(CleanupAnalysis? Analysis, HtmlResource?
 /// </summary>
 /// <remarks>
 /// <b>Execution order</b> (<see cref="CleanupStep"/>): unreferenced stylesheets → unused selectors → merging
-/// identical selectors → merging identical properties → nested divs → unused media. Unused selectors are always
-/// computed on the original texts (only whole stylesheets can disappear before them), merges and nested divs on the
-/// texts left by the previous steps, and media references on the CSS that remains at the end.
+/// identical selectors → merging identical properties → empty elements → nested divs → unused media. Unused
+/// selectors are always computed on the original texts (only whole stylesheets can disappear before them), merges,
+/// empty elements and nested divs on the texts left by the previous steps, and media references on the CSS that
+/// remains at the end.
 /// </remarks>
 public sealed class CleanupAnalysis
 {
@@ -134,6 +141,7 @@ public sealed class CleanupAnalysis
     private const string MergePropertiesKeyPrefix = "mergeprop|";
     private const string MediaKeyPrefix = "media|";
     private const string NestedDivsKeyPrefix = "divnest|";
+    private const string EmptyElementsKeyPrefix = "empty|";
     private const int MaxOpenTagLength = 80;
 
     // Attributes that reference a file: src (img, audio, video, source, track, embed, script…), href (link, a,
@@ -159,6 +167,10 @@ public sealed class CleanupAnalysis
     // sees) they were found in — finding the consequences means computing the cascade, so it is not repeated after
     // every toggle.
     private readonly Dictionary<string, (string Stamp, List<(NestedDivChain Chain, IReadOnlyList<CleanupConsequence> Consequences)> Chains)> _divChains =
+        new(StringComparer.Ordinal);
+
+    // The same for the empty elements of each XHTML file.
+    private readonly Dictionary<string, (string Stamp, List<(EmptyElement Element, IReadOnlyList<CleanupConsequence> Consequences)> Elements)> _emptyElements =
         new(StringComparer.Ordinal);
 
     private CleanupAnalysis(Book book)
@@ -286,6 +298,11 @@ public sealed class CleanupAnalysis
         if (enabledSteps.Contains(CleanupStep.MergeSameProperties))
         {
             steps.Add(PlanMerges(CleanupStep.MergeSameProperties, CssMergeKind.SameProperties, cssTexts, ruleOrigins, excludedKeys, acceptedRiskyKeys));
+        }
+
+        if (enabledSteps.Contains(CleanupStep.EmptyElements))
+        {
+            steps.Add(PlanEmptyElements(cssTexts, htmlTexts, excludedKeys, acceptedRiskyKeys));
         }
 
         if (enabledSteps.Contains(CleanupStep.NestedDivs))
@@ -521,9 +538,7 @@ public sealed class CleanupAnalysis
     private List<(NestedDivChain Chain, IReadOnlyList<CleanupConsequence> Consequences)> NestedDivChains(
         string path, string text, Dictionary<string, string> cssTexts)
     {
-        IReadOnlyList<string> sheetPaths = _visibleSheets.TryGetValue(path, out IReadOnlyList<string>? visible) ? visible : Array.Empty<string>();
-        List<string> sheetTexts = sheetPaths.Where(cssTexts.ContainsKey).Select(p => cssTexts[p]).ToList();
-        string stamp = string.Join("\u0001", sheetTexts.Prepend(text));
+        (List<string> sheetTexts, string stamp) = SheetsAndStamp(path, text, cssTexts);
         if (_divChains.TryGetValue(path, out var cached) && string.Equals(cached.Stamp, stamp, StringComparison.Ordinal))
         {
             return cached.Chains;
@@ -536,6 +551,106 @@ public sealed class CleanupAnalysis
             .ToList();
         _divChains[path] = (stamp, result);
         return result;
+    }
+
+    /// <summary>
+    /// Plans the empty-element step: per XHTML file, one item for all its safe empty elements and one item for every
+    /// risky one (<see cref="EmptyElementRiskAnalyzer"/>), applied only when accepted. The
+    /// <see cref="CleanupItem.RuleCount"/> of an item is the number of elements it removes.
+    /// </summary>
+    private CleanupStepResult PlanEmptyElements(
+        Dictionary<string, string> cssTexts,
+        Dictionary<string, string> htmlTexts,
+        IReadOnlySet<string> excludedKeys,
+        IReadOnlySet<string> acceptedRiskyKeys)
+    {
+        List<CleanupItem> items = new();
+        foreach (string path in htmlTexts.Keys.ToList())
+        {
+            string text = htmlTexts[path];
+            var elements = EmptyElementsOf(path, text, cssTexts);
+            if (elements.Count == 0)
+            {
+                continue;
+            }
+
+            List<int> toRemove = new();
+            List<EmptyElement> safe = elements.Where(e => e.Consequences.Count == 0).Select(e => e.Element).ToList();
+            if (safe.Count > 0)
+            {
+                string key = EmptyElementsKeyPrefix + path;
+                bool isApplied = !excludedKeys.Contains(key);
+                string counts = string.Join(", ", safe
+                    .GroupBy(e => e.TagName, StringComparer.Ordinal)
+                    .OrderBy(g => g.Key, StringComparer.Ordinal)
+                    .Select(g => $"<{g.Key}>: {g.Count()}"));
+                items.Add(new CleanupItem(
+                    CleanupStep.EmptyElements, key, CoreStrings.Format("Cleanup_EmptyElements_File", safe.Count, counts),
+                    path, safe[0].Pos, safe.Count)
+                {
+                    IsApplied = isApplied,
+                });
+                if (isApplied)
+                {
+                    toRemove.AddRange(safe.Select(e => e.Pos));
+                }
+            }
+
+            for (int i = 0; i < elements.Count; i++)
+            {
+                (EmptyElement element, IReadOnlyList<CleanupConsequence> consequences) = elements[i];
+                if (consequences.Count == 0)
+                {
+                    continue;
+                }
+
+                string key = $"{EmptyElementsKeyPrefix}{path}|{i}";
+                bool isApplied = !excludedKeys.Contains(key) && acceptedRiskyKeys.Contains(key);
+                items.Add(new CleanupItem(
+                    CleanupStep.EmptyElements, key, CoreStrings.Format("Cleanup_EmptyElements_Element", DescribeOpenTag(element.OpenTag)),
+                    path, element.Pos, 1)
+                {
+                    Consequences = consequences,
+                    IsApplied = isApplied,
+                });
+                if (isApplied)
+                {
+                    toRemove.Add(element.Pos);
+                }
+            }
+
+            if (toRemove.Count > 0)
+            {
+                htmlTexts[path] = EmptyElementCleaner.Remove(text, toRemove);
+            }
+        }
+
+        return Result(CleanupStep.EmptyElements, items);
+    }
+
+    private List<(EmptyElement Element, IReadOnlyList<CleanupConsequence> Consequences)> EmptyElementsOf(
+        string path, string text, Dictionary<string, string> cssTexts)
+    {
+        (List<string> sheetTexts, string stamp) = SheetsAndStamp(path, text, cssTexts);
+        if (_emptyElements.TryGetValue(path, out var cached) && string.Equals(cached.Stamp, stamp, StringComparison.Ordinal))
+        {
+            return cached.Elements;
+        }
+
+        IReadOnlyList<EmptyElement> found = EmptyElementCleaner.Find(text);
+        List<CssInfo> sheets = found.Count == 0 ? new List<CssInfo>() : sheetTexts.Select(t => new CssInfo(t)).ToList();
+        IReadOnlyList<IReadOnlyList<CleanupConsequence>> consequences = EmptyElementRiskAnalyzer.Analyse(path, text, found, sheets);
+        var result = found.Select((element, i) => (element, consequences[i])).ToList();
+        _emptyElements[path] = (stamp, result);
+        return result;
+    }
+
+    // The texts of the stylesheets the file sees, and a stamp of them together with the file's text (cache key).
+    private (List<string> SheetTexts, string Stamp) SheetsAndStamp(string path, string text, Dictionary<string, string> cssTexts)
+    {
+        IReadOnlyList<string> sheetPaths = _visibleSheets.TryGetValue(path, out IReadOnlyList<string>? visible) ? visible : Array.Empty<string>();
+        List<string> sheetTexts = sheetPaths.Where(cssTexts.ContainsKey).Select(p => cssTexts[p]).ToList();
+        return (sheetTexts, string.Join("\u0001", sheetTexts.Prepend(text)));
     }
 
     private static string DescribeOpenTag(string openTag)

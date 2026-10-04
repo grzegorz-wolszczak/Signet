@@ -6074,6 +6074,15 @@
   <data name="Cleanup_NestedDivs_Chain" xml:space="preserve">
     <value>{0} ×{1} — do usunięcia: {2}</value>
   </data>
+  <data name="Cleanup_EmptyElements_File" xml:space="preserve">
+    <value>Puste znaczniki do usunięcia: {0} ({1})</value>
+  </data>
+  <data name="Cleanup_EmptyElements_Element" xml:space="preserve">
+    <value>{0} — pusty</value>
+  </data>
+  <data name="Cleanup_Risk_EmptyStyle" xml:space="preserve">
+    <value>{0}: &lt;{1}&gt; — „{2}: {3}” (z „{4}”) działa także na pustym elemencie{5}</value>
+  </data>
   <data name="Css_MergeAtRule" xml:space="preserve">
     <value> — w miejscu reguły {0} z {1}</value>
   </data>

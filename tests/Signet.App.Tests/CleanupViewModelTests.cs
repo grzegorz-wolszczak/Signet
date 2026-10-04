@@ -68,6 +68,7 @@ public sealed class CleanupViewModelTests : IDisposable
         vm.EnabledSteps.Should().Equal(CleanupStep.UnusedMedia);
         Section(vm, CleanupStep.MergeSameSelectors).HasWarning.Should().BeTrue();
         Section(vm, CleanupStep.UnusedMedia).HasWarning.Should().BeFalse();
+        vm.Tabs[1].Sections.Should().OnlyContain(s => s.HasWarning, "every HTML step can have risky (⚠) items");
     }
 
     [Fact]

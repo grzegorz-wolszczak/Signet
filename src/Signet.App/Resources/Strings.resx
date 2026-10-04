@@ -3572,6 +3572,18 @@ Wstawić mimo to?</value>
   <data name="Cleanup_MergeSameProperties_Summary" xml:space="preserve">
     <value>Grupy do scalenia: {0} z {1} (reguł w scalanych grupach: {2}).</value>
   </data>
+  <data name="Cleanup_EmptyElements_Title" xml:space="preserve">
+    <value>Usuń puste znaczniki &lt;p&gt;, &lt;span&gt; i &lt;div&gt;</value>
+  </data>
+  <data name="Cleanup_EmptyElements_Description" xml:space="preserve">
+    <value>Usuwa elementy &lt;p&gt;, &lt;span&gt; i &lt;div&gt; bez treści albo z samymi białymi znakami (np. &lt;p class="calibre8"&gt;&lt;/p&gt;). &amp;nbsp; i komentarze to treść. Elementy z atrybutem id zostają zawsze (mogą być celem linku). Z pustego &lt;span&gt; znikają tylko znaczniki, spacja zostaje.</value>
+  </data>
+  <data name="Cleanup_EmptyElements_Summary" xml:space="preserve">
+    <value>Pozycje do wykonania: {0} z {1} (usuwanych znaczników: {2}).</value>
+  </data>
+  <data name="Cleanup_EmptyElementsWarning" xml:space="preserve">
+    <value>Puste elementy, które dzięki CSS i tak coś robią (np. odstęp z margin/padding/height, łamanie strony, clear, treść z ::before/::after), są oznaczone ⚠ i domyślnie odznaczone. Pod każdym widać, która reguła i co robi.</value>
+  </data>
   <data name="Cleanup_NestedDivs_Title" xml:space="preserve">
     <value>Usuń niepotrzebne zagnieżdżenia &lt;div&gt;</value>
   </data>

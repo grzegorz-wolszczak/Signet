@@ -725,4 +725,70 @@ public sealed class CleanupAnalysisTests
         plan.HasChanges.Should().BeFalse();
         plan.GetStep(CleanupStep.NestedDivs)!.Items.Single().IsApplied.Should().BeFalse();
     }
+
+    private static Book LoadEmpty(TempDir temp, string css, string body) => LoadMinimal(temp, tree =>
+    {
+        if (css.Length > 0)
+        {
+            AppendCss(tree, css);
+        }
+
+        ReplaceInChapter1(tree, "  <p>Hello, world.</p>", "  <p>Hello, world.</p>\n" + body);
+    });
+
+    [Fact]
+    public void EmptyElements_lists_the_safe_ones_of_a_file_as_one_item_and_apply_removes_them()
+    {
+        using TempDir temp = new();
+        using Book book = LoadEmpty(temp, ".calibre8 { text-indent: 1.5em; margin: 0; color: red; }",
+            "  <p class=\"calibre8\"></p>\n  <div class=\"calibre8\"> </div>\n  <p id=\"keep\"></p>");
+
+        CleanupPlan plan = Plan(book, CleanupStep.EmptyElements);
+
+        CleanupItem item = Step(plan, CleanupStep.EmptyElements).Items.Should().ContainSingle().Subject;
+        item.IsRisky.Should().BeFalse();
+        item.RuleCount.Should().Be(2);
+        item.Text.Should().Contain("<div>: 1").And.Contain("<p>: 1");
+
+        book.ApplyCleanup(plan).Should().BeTrue();
+        Chapter1(book).Should().NotContain("calibre8").And.Contain("<p id=\"keep\"></p>").And.Contain("<p>Hello, world.</p>");
+    }
+
+    [Theory]
+    [InlineData(".e { margin-top: 1em; }", "margin-top")]
+    [InlineData(".e { height: 2em; }", "height")]
+    [InlineData(".e { page-break-before: always; }", "page-break-before")]
+    [InlineData(".e { clear: both; }", "clear")]
+    [InlineData(".e::after { content: \"*\"; }", "content")]
+    [InlineData(".e { border-bottom: 1px solid black; }", "border-bottom")]
+    public void EmptyElements_an_empty_element_that_css_still_gives_an_effect_is_risky(string css, string expected)
+    {
+        using TempDir temp = new();
+        using Book book = LoadEmpty(temp, css, "  <p class=\"e\"></p>");
+        CleanupAnalysis analysis = Analyse(book);
+        HashSet<CleanupStep> steps = new() { CleanupStep.EmptyElements };
+
+        CleanupItem item = analysis.Plan(steps, NoExclusions).GetStep(CleanupStep.EmptyElements)!.Items.Single();
+
+        item.IsRisky.Should().BeTrue();
+        item.IsApplied.Should().BeFalse();
+        item.Consequences.Should().Contain(c => c.Text.Contains(expected, StringComparison.Ordinal));
+
+        CleanupPlan accepted = analysis.Plan(steps, NoExclusions, new HashSet<string> { item.Key });
+        book.ApplyCleanup(accepted).Should().BeTrue();
+        Chapter1(book).Should().NotContain("class=\"e\"");
+    }
+
+    [Fact]
+    public void EmptyElements_run_before_nested_divs_so_a_removed_empty_element_reveals_a_chain()
+    {
+        using TempDir temp = new();
+        using Book book = LoadEmpty(temp, string.Empty, "  <div class=\"w\">\n    <p></p>\n    <div class=\"w\"><p>x</p></div>\n  </div>");
+
+        CleanupPlan plan = Plan(book, CleanupStep.EmptyElements, CleanupStep.NestedDivs);
+
+        Step(plan, CleanupStep.NestedDivs).AppliedRuleCount.Should().Be(1);
+        book.ApplyCleanup(plan).Should().BeTrue();
+        Chapter1(book).Split("class=\"w\"").Length.Should().Be(2);
+    }
 }

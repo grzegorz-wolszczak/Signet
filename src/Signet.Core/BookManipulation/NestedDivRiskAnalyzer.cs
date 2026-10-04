@@ -75,12 +75,7 @@ internal static class NestedDivRiskAnalyzer
             return consequences;
         }
 
-        List<(CssRule Rule, int Sequence)> rules = stylesheets
-            .Concat(new HtmlStyleInfo(text).Styles)
-            .SelectMany(info => info.Rules)
-            .Where(r => !string.IsNullOrWhiteSpace(r.SelectorText))
-            .Select((rule, i) => (rule, i))
-            .ToList();
+        List<(CssRule Rule, int Sequence)> rules = CascadeRules(text, stylesheets);
 
         string file = htmlBookPath[(htmlBookPath.LastIndexOf('/') + 1)..];
         List<string> found = new();
@@ -167,9 +162,21 @@ internal static class NestedDivRiskAnalyzer
         return consequences;
     }
 
-    private sealed record Winner(string Value, string Selector, string? Condition, bool Important, CssSpecificity Specificity, int Sequence);
+    /// <summary>
+    /// The selector rules that apply to the elements of a file, in cascade order with their sequence numbers: the
+    /// <paramref name="stylesheets"/> it sees, then its <c>&lt;style&gt;</c> blocks.
+    /// </summary>
+    internal static List<(CssRule Rule, int Sequence)> CascadeRules(string text, IReadOnlyList<CssInfo> stylesheets) =>
+        stylesheets
+            .Concat(new HtmlStyleInfo(text).Styles)
+            .SelectMany(info => info.Rules)
+            .Where(r => !string.IsNullOrWhiteSpace(r.SelectorText))
+            .Select((rule, i) => (rule, i))
+            .ToList();
 
-    private static string ConditionText(Winner? winner) =>
+    internal sealed record Winner(string Value, string Selector, string? Condition, bool Important, CssSpecificity Specificity, int Sequence);
+
+    internal static string ConditionText(Winner? winner) =>
         winner?.Condition is { } prelude ? CoreStrings.Format("Cleanup_Risk_Condition", prelude) : string.Empty;
 
     // The divs of the chain: the outermost one and its only element child, level by level.
@@ -186,12 +193,12 @@ internal static class NestedDivRiskAnalyzer
         return divs;
     }
 
-    private static IElement? ElementAt(IHtmlDocument document, int offset) =>
+    internal static IElement? ElementAt(IHtmlDocument document, int offset) =>
         document.All.FirstOrDefault(e => XhtmlDoc.OffsetFromNode(e) == offset);
 
     // The winning declaration of each property on the element: !important first, then specificity, then source
     // order; the style attribute beats selector rules within the same importance.
-    private static Dictionary<string, Winner> Winners(List<(CssRule Rule, int Sequence)> rules, IElement element)
+    internal static Dictionary<string, Winner> Winners(List<(CssRule Rule, int Sequence)> rules, IElement element)
     {
         Dictionary<string, Winner> winners = new(StringComparer.OrdinalIgnoreCase);
 
@@ -265,7 +272,7 @@ internal static class NestedDivRiskAnalyzer
     }
 
     // A value of a non-inherited property that does nothing on a div, so repeating it does not add up.
-    private static bool IsNeutral(string property, string value)
+    internal static bool IsNeutral(string property, string value)
     {
         string v = value.Replace("!important", string.Empty, StringComparison.OrdinalIgnoreCase).Trim();
         if (NeutralKeywords.Contains(v)

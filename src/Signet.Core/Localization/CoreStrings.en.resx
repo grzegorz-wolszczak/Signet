@@ -6074,6 +6074,15 @@
   <data name="Cleanup_NestedDivs_Chain" xml:space="preserve">
     <value>{0} ×{1} — to remove: {2}</value>
   </data>
+  <data name="Cleanup_EmptyElements_File" xml:space="preserve">
+    <value>Empty tags to remove: {0} ({1})</value>
+  </data>
+  <data name="Cleanup_EmptyElements_Element" xml:space="preserve">
+    <value>{0} — empty</value>
+  </data>
+  <data name="Cleanup_Risk_EmptyStyle" xml:space="preserve">
+    <value>{0}: &lt;{1}&gt; — "{2}: {3}" (from "{4}") still has an effect on the empty element{5}</value>
+  </data>
   <data name="Css_MergeAtRule" xml:space="preserve">
     <value> — at the place of rule {0} of {1}</value>
   </data>
