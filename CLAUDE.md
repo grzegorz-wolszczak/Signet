@@ -36,6 +36,8 @@ When there are several doubts, collect them and ask all at once, not one by one.
 
 - C# `nullable enable`, `TreatWarningsAsErrors`, `ImplicitUsings disable`.
 - Code comments and XML docs are written in **English**.
+- Examples (in docs, README, comments, tests, commit messages) are always written in **English**,
+  even when the conversation with the user is in Polish.
 - Central Package Management (`Directory.Packages.props`) — all package versions pinned.
 - Domain names in the code (Resource, FolderKeeper, OpfResource, BookPath, …) are established —
   reuse them, do not introduce synonyms.

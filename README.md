@@ -37,7 +37,8 @@ EPUB editor I know of) has them:
   spot on a long page. The style can be set in Preferences → Preview: background or outline, colours
   for light and dark themes, opacity, and whether the highlight fades after a delay.
 - **Merge Content**: joins adjacent sibling elements of the same kind into one. One use is
-  paragraphs that an import split apart (`<p>Ala</p> <p>ma kota</p>` → `<p>Ala ma kota</p>`).
+  paragraphs that an import split apart
+  (`<p>The cat</p> <p>sat on the mat</p>` → `<p>The cat sat on the mat</p>`).
   The selection only has to start inside the first element and end inside the last one.
 - **Cascade-aware CSS class rename**: the class can be renamed from two places:
   - from Code View of an XHTML file, with the caret on a name in `class="…"`. The rename covers
