@@ -3503,6 +3503,9 @@ Insert anyway?</value>
   <data name="CleanupWindow_SelectNone" xml:space="preserve">
     <value>Select none</value>
   </data>
+  <data name="CleanupWindow_SelectRisky" xml:space="preserve">
+    <value>Also check risky ⚠</value>
+  </data>
   <data name="CleanupWindow_DoubleClickHint" xml:space="preserve">
     <value>Double-click opens the file at that place.</value>
   </data>

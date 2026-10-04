@@ -3503,6 +3503,9 @@ Wstawić mimo to?</value>
   <data name="CleanupWindow_SelectNone" xml:space="preserve">
     <value>Odznacz wszystkie</value>
   </data>
+  <data name="CleanupWindow_SelectRisky" xml:space="preserve">
+    <value>Zaznacz też ryzykowne ⚠</value>
+  </data>
   <data name="CleanupWindow_DoubleClickHint" xml:space="preserve">
     <value>Dwuklik otwiera plik w tym miejscu.</value>
   </data>

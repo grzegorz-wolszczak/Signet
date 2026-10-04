@@ -177,6 +177,22 @@ public sealed class CleanupViewModelTests : IDisposable
         Tab(vm, CleanupStep.MergeSameSelectors).HasChanges.Should().BeFalse();
     }
 
+    [Fact]
+    public void Select_risky_accepts_risky_merges_and_is_offered_only_when_there_are_some()
+    {
+        using TempDir temp = new();
+        using Book book = RiskyMergeBook(temp);
+        CleanupViewModel vm = new(CleanupAnalysis.Prepare(book).Analysis!, new[] { CleanupStep.MergeSameSelectors }, (_, _) => { }, NoApply);
+        CleanupSectionViewModel section = Section(vm, CleanupStep.MergeSameSelectors);
+        section.HasRiskyItems.Should().BeTrue();
+        Section(vm, CleanupStep.UnusedSelectors).HasRiskyItems.Should().BeFalse();
+
+        section.SelectRiskyCommand.Execute(null);
+
+        section.Items.Single().IsChecked.Should().BeTrue();
+        Tab(vm, CleanupStep.MergeSameSelectors).HasChanges.Should().BeTrue();
+    }
+
     private static Book RiskyMergeBook(TempDir temp)
     {
         string tree = temp.Combine("risky");

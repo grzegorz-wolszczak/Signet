@@ -114,13 +114,13 @@ public sealed partial class CleanupViewModel : ViewModelBase
         Replan();
     }
 
-    internal void SetAllItems(CleanupSectionViewModel section, bool isChecked)
+    internal void SetAllItems(CleanupSectionViewModel section, bool isChecked, bool includeRisky = false)
     {
         _updating = true;
         try
         {
-            // "Select all" never accepts a risky item — that stays a deliberate, per-item decision.
-            foreach (CleanupItemViewModel item in section.Items.Where(i => !isChecked || !i.IsRisky))
+            // "Select all" does not accept risky items — that takes the separate "Also check risky" button.
+            foreach (CleanupItemViewModel item in section.Items.Where(i => !isChecked || includeRisky || !i.IsRisky))
             {
                 Remember(item, isChecked);
             }
@@ -250,6 +250,9 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasItems;
 
+    [ObservableProperty]
+    private bool _hasRiskyItems;
+
     internal CleanupSectionViewModel(CleanupViewModel owner, CleanupStep step, bool isEnabled)
     {
         _owner = owner;
@@ -265,6 +268,7 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
         };
         SelectAllCommand = new RelayCommand(() => _owner.SetAllItems(this, true));
         SelectNoneCommand = new RelayCommand(() => _owner.SetAllItems(this, false));
+        SelectRiskyCommand = new RelayCommand(() => _owner.SetAllItems(this, true, includeRisky: true));
     }
 
     /// <summary>The step of this section.</summary>
@@ -285,11 +289,14 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
     /// <summary>The changes the step will make (in the context of the steps before it).</summary>
     public ObservableCollection<CleanupItemViewModel> Items { get; } = new();
 
-    /// <summary>Checks every item of the section.</summary>
+    /// <summary>Checks every item of the section except the risky ones (they need <see cref="SelectRiskyCommand"/>).</summary>
     public IRelayCommand SelectAllCommand { get; }
 
     /// <summary>Unchecks every item of the section.</summary>
     public IRelayCommand SelectNoneCommand { get; }
+
+    /// <summary>Checks every item of the section, the risky ones (⚠) included — accepting all of them at once.</summary>
+    public IRelayCommand SelectRiskyCommand { get; }
 
     partial void OnIsEnabledChanged(bool value) => _owner.OnSectionToggled();
 
@@ -318,6 +325,7 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
         }
 
         HasItems = Items.Count > 0;
+        HasRiskyItems = Items.Any(i => i.IsRisky);
         Summary = result is null ? string.Empty : FormatSummary(result);
     }
 
