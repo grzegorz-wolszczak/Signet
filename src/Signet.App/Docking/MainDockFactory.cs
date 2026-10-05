@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System;
 using System.Globalization;
+using Dock.Avalonia.Controls;
 using Dock.Model.Controls;
 using Dock.Model.Core;
 using Dock.Model.Mvvm.Controls;
@@ -22,7 +23,8 @@ public sealed record DockRegionState(string DockId, double Proportion, IReadOnly
 /// assignment of panels to regions, their order, the region's active tab and the proportions
 /// (of the regions and of the document area). It does not cover document tabs (handled separately by
 /// <c>TabManager.CaptureSession</c>), panel visibility (handled separately by
-/// <see cref="MainDockFactory.CaptureToolVisibility"/>) or floating windows (the factory does not create them).
+/// <see cref="MainDockFactory.CaptureToolVisibility"/>) or floating windows (a floating panel is saved in the region it
+/// was taken from, so after a restart it is docked there again).
 /// </summary>
 public sealed record DockLayoutState(IReadOnlyList<DockRegionState> Regions, double DocumentsProportion);
 
@@ -44,6 +46,10 @@ public sealed class MainDockFactory : Factory
     private readonly HashSet<string> _hidden = new(StringComparer.Ordinal);
     private readonly Dictionary<string, int> _attentionCounts = new(StringComparer.Ordinal);
     private readonly Dictionary<string, IToolDock> _regionDocks = new(StringComparer.Ordinal);
+
+    // The region a panel belongs to while it floats in its own window: where closing the window (or hiding the
+    // panel) docks it back. Filled with the default layout and updated whenever a panel is floated.
+    private readonly Dictionary<string, IToolDock> _homeDocks = new(StringComparer.Ordinal);
     private readonly BookBrowserViewModel? _bookBrowser;
     private readonly PreviewViewModel? _preview;
     private IRootDock? _root;
@@ -53,6 +59,10 @@ public sealed class MainDockFactory : Factory
     {
         _bookBrowser = bookBrowser;
         _preview = preview;
+
+        // "Float" (and dragging a tab out of the window) needs a host window; without a locator the panel moved into
+        // a window model that was never shown, and so it vanished.
+        DefaultHostWindowLocator = () => new HostWindow();
     }
 
     /// <summary>
@@ -85,6 +95,12 @@ public sealed class MainDockFactory : Factory
     /// </summary>
     public NotificationsViewModel? Notifications { get; set; }
 
+    /// <summary>
+    /// View model of the "Find Usages" panel. Set by the main window BEFORE
+    /// <see cref="CreateLayout"/>.
+    /// </summary>
+    public FindUsagesViewModel? FindUsages { get; set; }
+
     /// <summary>Document tab area.</summary>
     public IDocumentDock? DocumentDock { get; private set; }
 
@@ -98,6 +114,7 @@ public sealed class MainDockFactory : Factory
         DockableIds.ValidationResults,
         DockableIds.Checkpoints,
         DockableIds.Notifications,
+        DockableIds.FindUsages,
     };
 
     /// <summary>
@@ -108,6 +125,7 @@ public sealed class MainDockFactory : Factory
     private static readonly HashSet<string> AlwaysHiddenOnStart = new(StringComparer.Ordinal)
     {
         DockableIds.ValidationResults,
+        DockableIds.FindUsages,
     };
 
     /// <summary>Value in the visibility snapshot for a panel collapsed by "Auto Hide" (pinned to the edge).</summary>
@@ -123,10 +141,11 @@ public sealed class MainDockFactory : Factory
         ValidationResultsTool validation = new() { ViewModel = ValidationResults };
         CheckpointsTool checkpoints = new() { ViewModel = Checkpoints };
         NotificationsTool notifications = new() { ViewModel = Notifications };
+        FindUsagesTool findUsages = new() { ViewModel = FindUsages };
 
         foreach (Tool tool in new Tool[]
                  {
-                     bookBrowser, clips, preview, toc, validation, checkpoints, notifications,
+                     bookBrowser, clips, preview, toc, validation, checkpoints, notifications, findUsages,
                  })
         {
             _tools[tool.Id] = tool;
@@ -150,12 +169,19 @@ public sealed class MainDockFactory : Factory
         bottomDock.Id = "BottomDock";
         bottomDock.Alignment = Alignment.Bottom;
         bottomDock.Proportion = 0.28;
-        bottomDock.VisibleDockables = CreateList<IDockable>(validation, notifications);
+        bottomDock.VisibleDockables = CreateList<IDockable>(validation, notifications, findUsages);
         bottomDock.ActiveDockable = validation;
 
         _regionDocks["LeftDock"] = leftDock;
         _regionDocks["RightDock"] = rightDock;
         _regionDocks["BottomDock"] = bottomDock;
+        foreach (IToolDock region in _regionDocks.Values)
+        {
+            foreach (Tool tool in region.VisibleDockables!.OfType<Tool>())
+            {
+                _homeDocks[tool.Id] = region;
+            }
+        }
 
         IDocumentDock documentDock = CreateDocumentDock();
         documentDock.Id = DockableIds.Documents;
@@ -356,6 +382,8 @@ public sealed class MainDockFactory : Factory
             return true;
         }
 
+        // A floating panel is docked back first (its window closes), so showing it again docks it in its region.
+        DockBackIfFloating(tool);
         HideDockable(tool);
         _hidden.Add(id);
         return false;
@@ -374,6 +402,10 @@ public sealed class MainDockFactory : Factory
             List<string> toolIds = pair.Value.VisibleDockables is null
                 ? new List<string>()
                 : pair.Value.VisibleDockables.OfType<Tool>().Select(t => t.Id).ToList();
+            // Floating panels belong to the region they were taken from.
+            toolIds.AddRange(_tools.Values
+                .Where(t => IsFloating(t) && ReferenceEquals(_homeDocks.GetValueOrDefault(t.Id), pair.Value))
+                .Select(t => t.Id));
             string? activeId = (pair.Value.ActiveDockable as IDockable)?.Id;
             regions.Add(new DockRegionState(pair.Key, pair.Value.Proportion, toolIds, activeId));
         }
@@ -481,6 +513,164 @@ public sealed class MainDockFactory : Factory
         }
 
         return Math.Clamp(region.Proportion, MinRestoredProportion, MaxRestoredSideProportion);
+    }
+
+    /// <inheritdoc />
+    public override void FloatDockable(IDockable dockable)
+    {
+        RememberHomes(dockable);
+        base.FloatDockable(dockable);
+    }
+
+    /// <inheritdoc />
+    public override void FloatDockable(IDockable dockable, DockWindowOptions? options)
+    {
+        RememberHomes(dockable);
+        base.FloatDockable(dockable, options);
+    }
+
+    /// <inheritdoc />
+    public override void FloatAllDockables(IDockable dockable)
+    {
+        RememberHomes(dockable.Owner ?? dockable);
+        base.FloatAllDockables(dockable);
+    }
+
+    /// <inheritdoc />
+    public override void SplitToWindow(IDock dock, IDockable dockable, double x, double y, double width, double height)
+    {
+        RememberHomes(dockable);
+        base.SplitToWindow(dock, dockable, x, y, width, height);
+    }
+
+    /// <inheritdoc />
+    public override void SplitToWindow(IDock dock, IDockable dockable, double x, double y, double width, double height, DockWindowOptions? options)
+    {
+        RememberHomes(dockable);
+        base.SplitToWindow(dock, dockable, x, y, width, height, options);
+    }
+
+    /// <summary>
+    /// "Dock" in a panel's menu: Dock only uses it to undo "Auto Hide", so for a floating panel it did nothing; here it
+    /// docks the panel back into the region it was taken from (and closes the emptied window).
+    /// </summary>
+    public override void PinDockable(IDockable dockable)
+    {
+        if (dockable is Tool tool && IsFloating(tool))
+        {
+            DockBackIfFloating(tool);
+            return;
+        }
+
+        base.PinDockable(dockable);
+    }
+
+    /// <summary>
+    /// Closing a floating window docks its panels back into the regions they were taken from; otherwise they would
+    /// be closed together with the window and vanish.
+    /// </summary>
+    public override bool OnWindowClosing(IDockWindow? window)
+    {
+        bool close = base.OnWindowClosing(window);
+        if (close && window?.Layout is { } layout)
+        {
+            foreach (Tool tool in ToolsIn(layout).ToList())
+            {
+                DockHome(tool);
+            }
+        }
+
+        return close;
+    }
+
+    /// <summary>
+    /// The three regions (left, right, bottom) are never collapsed out of the layout: when their last panel is floated
+    /// Dock would remove the emptied region, and the panel could not be docked back into it. An empty region stays in
+    /// the layout like one whose panels are all hidden.
+    /// </summary>
+    public override void CollapseDock(IDock dock)
+    {
+        if (dock is IToolDock toolDock && _regionDocks.ContainsValue(toolDock))
+        {
+            return;
+        }
+
+        base.CollapseDock(dock);
+    }
+
+    /// <summary>
+    /// Closes every floating window (their panels dock back into their regions). Called when the main window closes:
+    /// a floating window is not owned by it, so it would stay open and keep the application running.
+    /// </summary>
+    public void CloseFloatingWindows()
+    {
+        foreach (IDockWindow window in _root?.Windows?.ToList() ?? new List<IDockWindow>())
+        {
+            window.Exit();
+        }
+    }
+
+    /// <summary>Whether the panel floats in its own window (neither docked in a region, collapsed, nor hidden).</summary>
+    public bool IsToolFloating(string id) => _tools.TryGetValue(id, out Tool? tool) && IsFloating(tool);
+
+    private bool IsFloating(Tool tool) =>
+        !_hidden.Contains(tool.Id) && FindOwnerDock(tool) is null && !IsToolPinned(tool.Id) && tool.Owner is not null;
+
+    // Remembers the current region of every panel in the dockable (a panel or a dock) before it leaves for a window.
+    private void RememberHomes(IDockable dockable)
+    {
+        foreach (Tool tool in ToolsIn(dockable))
+        {
+            if (FindOwnerDock(tool) is { } region)
+            {
+                _homeDocks[tool.Id] = region;
+            }
+        }
+    }
+
+    // Docks a floating panel back and closes its window when it is left empty.
+    private void DockBackIfFloating(Tool tool)
+    {
+        if (!IsFloating(tool))
+        {
+            return;
+        }
+
+        IDockWindow? window = _root?.Windows?.FirstOrDefault(w => w.Layout is { } layout && ToolsIn(layout).Contains(tool));
+        DockHome(tool);
+        if (window?.Layout is { } emptied && !ToolsIn(emptied).Any())
+        {
+            CloseWindow(window);
+        }
+    }
+
+    private void DockHome(Tool tool)
+    {
+        if (tool.Owner is not IDock source || !_homeDocks.TryGetValue(tool.Id, out IToolDock? home))
+        {
+            return;
+        }
+
+        MoveDockable(source, home, tool, null);
+        SetActiveDockable(tool);
+    }
+
+    private static IEnumerable<Tool> ToolsIn(IDockable dockable)
+    {
+        if (dockable is Tool tool)
+        {
+            yield return tool;
+        }
+        else if (dockable is IDock dock && dock.VisibleDockables is { } children)
+        {
+            foreach (IDockable child in children)
+            {
+                foreach (Tool nested in ToolsIn(child))
+                {
+                    yield return nested;
+                }
+            }
+        }
     }
 
     private IToolDock? FindOwnerDock(Tool tool)

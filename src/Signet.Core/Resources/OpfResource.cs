@@ -462,46 +462,7 @@ public sealed class OpfResource : XmlResource
         }
 
         OpfDocument document = GetOpfDocument();
-        string oldHref = HrefForBookPath(FullPathToBookPath(oldFullPath));
-        string oldId = string.Empty;
-        string newId = string.Empty;
-
-        for (int i = 0; i < document.Manifest.Count; i++)
-        {
-            ManifestEntry entry = document.Manifest[i];
-            if (!string.Equals(entry.Href, oldHref, StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            oldId = entry.Id;
-            entry.Href = HrefForResource(resource);
-            document.RebuildManifestIndex();
-            newId = GetUniqueId(document, GetValidId(resource.Filename), oldId);
-            entry.Id = newId;
-            document.RebuildManifestIndex();
-            break;
-        }
-
-        if (oldId.Length > 0)
-        {
-            foreach (SpineEntry itemref in document.Spine.Where(s => string.Equals(s.IdRef, oldId, StringComparison.Ordinal)))
-            {
-                itemref.IdRef = newId;
-            }
-
-            if (resource.Type == ResourceType.Ncx
-                && document.SpineAttributes.Attributes.Value("toc") == oldId)
-            {
-                document.SpineAttributes.Attributes.Set("toc", newId);
-            }
-
-            if (resource.Type == ResourceType.Image && IsCoverImageId(document, oldId))
-            {
-                AddCoverMetaForImage(document, resource);
-            }
-        }
-
+        RenameInDocument(document, BookPath, FullPathToBookPath(oldFullPath), resource.BookPath, resource.Type);
         UpdateText(document);
     }
 
@@ -519,14 +480,108 @@ public sealed class OpfResource : XmlResource
         }
 
         OpfDocument document = GetOpfDocument();
-        string oldHref = HrefForBookPath(FullPathToBookPath(oldFullPath));
-        foreach (ManifestEntry entry in document.Manifest.Where(e => string.Equals(e.Href, oldHref, StringComparison.Ordinal)))
+        MoveInDocument(document, BookPath, FullPathToBookPath(oldFullPath), resource.BookPath);
+        UpdateText(document);
+    }
+
+    /// <summary>
+    /// Reacts to a move of the OPF itself: the manifest <c>href</c>s are relative to the OPF, so they are rebased onto
+    /// its new folder (the files they point to stay where they are). The <c>&lt;guide&gt;</c> is rebased by
+    /// <see cref="SourceUpdates.UniversalUpdates"/>.
+    /// </summary>
+    /// <param name="oldBookPath">The bookpath of the OPF before the move.</param>
+    public void OpfMoved(string oldBookPath)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(oldBookPath);
+        OpfDocument document = GetOpfDocument();
+        RebaseManifestHrefs(document, oldBookPath, BookPath);
+        UpdateText(document);
+    }
+
+    /// <summary>
+    /// The manifest part of <see cref="ResourceRenamed"/> on a document: the entry of <paramref name="oldBookPath"/> gets
+    /// the <c>href</c> of <paramref name="newBookPath"/> and an identifier derived from the new file name, and the
+    /// references to the old identifier (spine, <c>toc</c>, cover meta) follow. Shared with the planning of the
+    /// "Standardize EPUB" dialog, which runs it on a simulated document.
+    /// </summary>
+    /// <returns>The old and the new identifier, or <c>null</c> when the manifest has no entry for the file.</returns>
+    internal static (string OldId, string NewId)? RenameInDocument(
+        OpfDocument document,
+        string opfBookPath,
+        string oldBookPath,
+        string newBookPath,
+        ResourceType type)
+    {
+        string oldHref = HrefFor(opfBookPath, oldBookPath);
+        ManifestEntry? entry = document.Manifest.FirstOrDefault(e => string.Equals(e.Href, oldHref, StringComparison.Ordinal));
+        if (entry is null)
         {
-            entry.Href = HrefForResource(resource);
-            break;
+            return null;
         }
 
-        UpdateText(document);
+        string oldId = entry.Id;
+        entry.Href = HrefFor(opfBookPath, newBookPath);
+        document.RebuildManifestIndex();
+        string newId = GetUniqueId(document, GetValidId(SysPath.GetFileName(newBookPath)), oldId);
+        entry.Id = newId;
+        document.RebuildManifestIndex();
+        if (oldId.Length == 0)
+        {
+            return (oldId, newId);
+        }
+
+        foreach (SpineEntry itemref in document.Spine.Where(s => string.Equals(s.IdRef, oldId, StringComparison.Ordinal)))
+        {
+            itemref.IdRef = newId;
+        }
+
+        if (type == ResourceType.Ncx && document.SpineAttributes.Attributes.Value("toc") == oldId)
+        {
+            document.SpineAttributes.Attributes.Set("toc", newId);
+        }
+
+        if (type == ResourceType.Image && IsCoverImageId(document, oldId))
+        {
+            document.Metadata[GetCoverMetaIndex(document)].Attributes.Set("content", newId);
+        }
+
+        return (oldId, newId);
+    }
+
+    /// <summary>The manifest part of <see cref="ResourceMoved"/> on a document (see <see cref="RenameInDocument"/>).</summary>
+    internal static void MoveInDocument(OpfDocument document, string opfBookPath, string oldBookPath, string newBookPath)
+    {
+        string oldHref = HrefFor(opfBookPath, oldBookPath);
+        ManifestEntry? entry = document.Manifest.FirstOrDefault(e => string.Equals(e.Href, oldHref, StringComparison.Ordinal));
+        if (entry is not null)
+        {
+            entry.Href = HrefFor(opfBookPath, newBookPath);
+            document.RebuildManifestIndex();
+        }
+    }
+
+    /// <summary>The manifest part of <see cref="OpfMoved"/> on a document (see <see cref="RenameInDocument"/>).</summary>
+    internal static void RebaseManifestHrefs(OpfDocument document, string oldOpfBookPath, string newOpfBookPath)
+    {
+        string oldFolder = Core.BookPath.StartingDir(oldOpfBookPath);
+        if (string.Equals(oldFolder, Core.BookPath.StartingDir(newOpfBookPath), StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        foreach (ManifestEntry entry in document.Manifest)
+        {
+            if (entry.Href.Length == 0 || entry.Href.Contains(':', StringComparison.Ordinal))
+            {
+                // Remote resources (EPUB 3) keep their absolute URL.
+                continue;
+            }
+
+            string bookPath = Core.BookPath.BuildBookPath(Utility.UrlDecodePath(entry.Href), oldFolder);
+            entry.Href = HrefFor(newOpfBookPath, bookPath);
+        }
+
+        document.RebuildManifestIndex();
     }
 
     /// <summary>Updates the <c>href</c> of manifest entries after a bulk rename.</summary>
@@ -542,20 +597,48 @@ public sealed class OpfResource : XmlResource
     {
         ArgumentNullException.ThrowIfNull(resources);
         OpfDocument document = GetOpfDocument();
+        foreach ((int pos, ManifestMediaTypeChange change) in ComputeManifestMediaTypeChanges(document, BookPath, resources, r => r.BookPath))
+        {
+            document.Manifest[pos].MediaType = change.NewMediaType;
+        }
+
+        UpdateText(document);
+    }
+
+    /// <summary>Plans <see cref="UpdateManifestMediaTypes"/> without changing anything: the entries whose type differs.</summary>
+    public IReadOnlyList<ManifestMediaTypeChange> PlanManifestMediaTypes(IEnumerable<Resource> resources)
+    {
+        ArgumentNullException.ThrowIfNull(resources);
+        return ComputeManifestMediaTypeChanges(GetOpfDocument(), BookPath, resources, r => r.BookPath).Select(c => c.Change).ToList();
+    }
+
+    /// <summary>
+    /// The shared core of <see cref="UpdateManifestMediaTypes"/> and <see cref="PlanManifestMediaTypes"/>: the manifest
+    /// positions whose <c>media-type</c> differs from the resource's type. The OPF and resource bookpaths are passed in,
+    /// so the "Standardize EPUB" planning can run it on a simulated state.
+    /// </summary>
+    internal static List<(int Position, ManifestMediaTypeChange Change)> ComputeManifestMediaTypeChanges(
+        OpfDocument document,
+        string opfBookPath,
+        IEnumerable<Resource> resources,
+        Func<Resource, string> bookPathOf)
+    {
+        List<(int, ManifestMediaTypeChange)> changes = new();
         foreach (Resource resource in resources)
         {
-            string href = HrefForResource(resource);
+            string href = HrefFor(opfBookPath, bookPathOf(resource));
             if (document.HrefToManifestPosition.TryGetValue(href, out int pos))
             {
                 string mimeType = GetResourceMimetype(resource);
-                if (!string.Equals(document.Manifest[pos].MediaType, mimeType, StringComparison.Ordinal))
+                string current = document.Manifest[pos].MediaType;
+                if (!string.Equals(current, mimeType, StringComparison.Ordinal))
                 {
-                    document.Manifest[pos].MediaType = mimeType;
+                    changes.Add((pos, new ManifestMediaTypeChange(resource, current, mimeType)));
                 }
             }
         }
 
-        UpdateText(document);
+        return changes;
     }
 
     /// <summary>
@@ -677,19 +760,38 @@ public sealed class OpfResource : XmlResource
     }
 
     /// <summary>
-    /// Renumbers the manifest identifiers based on file names (asciify + validation +
-    /// uniqueness), updating all references (spine, <c>toc</c>, bindings, <c>refines</c>,
-    /// <c>media-overlay</c>, <c>fallback</c>, cover meta).
+    /// Plans <see cref="RebaseManifestIds"/> without changing anything: the manifest identifiers that would change,
+    /// in manifest order.
     /// </summary>
-    public void RebaseManifestIds()
-    {
-        OpfDocument document = GetOpfDocument();
-        HashSet<string> usedIds = CollectUsedIds(document);
-        Dictionary<string, string> changed = new(StringComparer.Ordinal);
+    public IReadOnlyList<ManifestIdChange> PlanManifestIdRebase() => PlanManifestIdRebase(GetOpfDocument(), BookPath);
 
+    /// <summary>
+    /// <see cref="PlanManifestIdRebase()"/> on a given document — the "Standardize EPUB" planning runs it on a simulated
+    /// document (files renamed or moved by an earlier step) with the simulated bookpath of the OPF.
+    /// </summary>
+    internal static IReadOnlyList<ManifestIdChange> PlanManifestIdRebase(OpfDocument document, string opfBookPath)
+    {
+        string opfFolder = Core.BookPath.StartingDir(opfBookPath);
+        return ComputeManifestIdRebase(document, opfFolder, new Dictionary<string, string>(StringComparer.Ordinal))
+            .Select(change => new ManifestIdChange(change.Entry.Id, change.NewId, EntryBookPath(change.Entry, opfFolder)))
+            .ToList();
+    }
+
+    /// <summary>
+    /// The shared core of <see cref="RebaseManifestIds"/> and <see cref="PlanManifestIdRebase()"/>: the new identifier of
+    /// every manifest entry whose identifier changes (the entries themselves are not modified). Fills
+    /// <paramref name="changed"/> with the old -&gt; new identifier map used to update the references.
+    /// </summary>
+    private static List<(ManifestEntry Entry, string NewId)> ComputeManifestIdRebase(
+        OpfDocument document,
+        string opfFolder,
+        Dictionary<string, string> changed)
+    {
+        HashSet<string> usedIds = CollectUsedIds(document);
+        List<(ManifestEntry, string)> result = new();
         foreach (ManifestEntry entry in document.Manifest)
         {
-            string filename = SysPath.GetFileName(Utility.UrlDecodePath(entry.Href));
+            string filename = SysPath.GetFileName(EntryBookPath(entry, opfFolder));
             string newId = GetValidId(GenerateBaseIdFromFilename(filename));
             if (string.Equals(newId, entry.Id, StringComparison.Ordinal))
             {
@@ -708,6 +810,26 @@ public sealed class OpfResource : XmlResource
             }
 
             usedIds.Add(newId);
+            result.Add((entry, newId));
+        }
+
+        return result;
+    }
+
+    private static string EntryBookPath(ManifestEntry entry, string opfFolder) =>
+        Core.BookPath.BuildBookPath(Utility.UrlDecodePath(entry.Href), opfFolder);
+
+    /// <summary>
+    /// Renumbers the manifest identifiers based on file names (asciify + validation +
+    /// uniqueness), updating all references (spine, <c>toc</c>, bindings, <c>refines</c>,
+    /// <c>media-overlay</c>, <c>fallback</c>, cover meta).
+    /// </summary>
+    public void RebaseManifestIds()
+    {
+        OpfDocument document = GetOpfDocument();
+        Dictionary<string, string> changed = new(StringComparer.Ordinal);
+        foreach ((ManifestEntry entry, string newId) in ComputeManifestIdRebase(document, Folder, changed))
+        {
             entry.Id = newId;
         }
 
@@ -1314,8 +1436,10 @@ public sealed class OpfResource : XmlResource
 
     private string HrefForResource(Resource resource) => HrefForBookPath(resource.BookPath);
 
-    private string HrefForBookPath(string resourceBookPath) =>
-        Utility.UrlEncodePath(Core.BookPath.Relative(BookPath, resourceBookPath));
+    private string HrefForBookPath(string resourceBookPath) => HrefFor(BookPath, resourceBookPath);
+
+    private static string HrefFor(string opfBookPath, string resourceBookPath) =>
+        Utility.UrlEncodePath(Core.BookPath.Relative(opfBookPath, resourceBookPath));
 
     private string FullPathToBookPath(string fullPath)
     {
@@ -1732,3 +1856,15 @@ public sealed class OpfResource : XmlResource
 /// <param name="Type">The semantic code (<c>reference/@type</c>).</param>
 /// <param name="Title">The title (<c>reference/@title</c>).</param>
 public readonly record struct GuideInfo(string BookPath, string Fragment, string Type, string Title);
+
+/// <summary>A manifest identifier that <see cref="OpfResource.RebaseManifestIds"/> would change.</summary>
+/// <param name="OldId">The current identifier.</param>
+/// <param name="NewId">The identifier based on the file name.</param>
+/// <param name="BookPath">The bookpath of the entry's file (the simulated one when planned on a simulated state).</param>
+public sealed record ManifestIdChange(string OldId, string NewId, string BookPath);
+
+/// <summary>A manifest <c>media-type</c> that <see cref="OpfResource.UpdateManifestMediaTypes"/> would change.</summary>
+/// <param name="Resource">The resource of the manifest entry.</param>
+/// <param name="OldMediaType">The <c>media-type</c> in the manifest.</param>
+/// <param name="NewMediaType">The media type of the resource.</param>
+public sealed record ManifestMediaTypeChange(Resource Resource, string OldMediaType, string NewMediaType);

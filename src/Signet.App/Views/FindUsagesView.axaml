@@ -1,0 +1,79 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Signet.App.ViewModels"
+             xmlns:loc="using:Signet.App.Resources"
+             x:Class="Signet.App.Views.FindUsagesView"
+             x:DataType="vm:FindUsagesViewModel">
+
+  <UserControl.Styles>
+    <!-- The buttons of the left toolbar: small, flat, with a vector icon. -->
+    <Style Selector="Button.panelTool">
+      <Setter Property="Width" Value="28" />
+      <Setter Property="Height" Value="28" />
+      <Setter Property="Padding" Value="5" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="Button.panelTool Path">
+      <Setter Property="Fill" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+      <Setter Property="Stretch" Value="Uniform" />
+    </Style>
+    <Style Selector="Button.panelTool:disabled Path">
+      <Setter Property="Opacity" Value="0.4" />
+    </Style>
+  </UserControl.Styles>
+
+  <DockPanel>
+    <!-- Left toolbar, like the Find tool window of the JetBrains IDEs. -->
+    <Border DockPanel.Dock="Left" BorderThickness="0,0,1,0" Padding="2"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <StackPanel Spacing="4">
+        <Button x:Name="RefreshButton" Classes="panelTool" Command="{Binding RefreshCommand}"
+                ToolTip.Tip="{loc:Loc FindUsages_Refresh}">
+          <!-- Material Design "sync" icon (Apache License 2.0): two arrows turning around. -->
+          <Path Data="M12,18A6,6 0 0,1 6,12C6,11 6.25,10.03 6.7,9.2L5.24,7.74C4.46,8.97 4,10.43 4,12A8,8 0 0,0 12,20V23L16,19L12,15M12,4V1L8,5L12,9V6A6,6 0 0,1 18,12C18,13 17.75,13.97 17.3,14.8L18.76,16.26C19.54,15.03 20,13.57 20,12A8,8 0 0,0 12,4Z" />
+        </Button>
+        <Button x:Name="GroupByButton" Classes="panelTool" ToolTip.Tip="{loc:Loc FindUsages_GroupBy}">
+          <!-- Material Design "file-tree" icon (Apache License 2.0). -->
+          <Path Data="M3,3H9V7H3V3M15,10H21V14H15V10M15,17H21V21H15V17M13,13H7V18H13V20H7L5,20V9H7V11H13V13Z" />
+          <Button.Flyout>
+            <MenuFlyout Placement="RightEdgeAlignedTop">
+              <MenuItem x:Name="GroupByHeader" Header="{loc:Loc FindUsages_GroupBy}" IsEnabled="False" />
+              <MenuItem x:Name="GroupByFileItem" Header="{loc:Loc FindUsages_GroupByFile}" ToggleType="CheckBox"
+                        IsChecked="{Binding GroupByFile, Mode=TwoWay}" />
+            </MenuFlyout>
+          </Button.Flyout>
+        </Button>
+        <Button x:Name="ExpandAllButton" Classes="panelTool" Command="{Binding ExpandAllCommand}"
+                ToolTip.Tip="{loc:Loc FindUsages_ExpandAll}">
+          <!-- Material Design "unfold-more-horizontal" icon (Apache License 2.0): two chevrons pointing apart. -->
+          <Path Data="M12,18.17L8.83,15L7.42,16.41L12,21L16.59,16.41L15.17,15M12,5.83L15.17,9L16.58,7.59L12,3L7.41,7.59L8.83,9L12,5.83Z" />
+        </Button>
+        <Button x:Name="CollapseAllButton" Classes="panelTool" Command="{Binding CollapseAllCommand}"
+                ToolTip.Tip="{loc:Loc FindUsages_CollapseAll}">
+          <!-- Material Design "unfold-less-horizontal" icon (Apache License 2.0): two chevrons pointing together. -->
+          <Path Data="M16.59,5.59L18,7L12,13L6,7L7.41,5.59L12,10.17L16.59,5.59M16.59,18.41L12,13.83L7.41,18.41L6,17L12,11L18,17L16.59,18.41Z" />
+        </Button>
+      </StackPanel>
+    </Border>
+
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Header}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="8,4" />
+
+    <TreeView x:Name="Tree" ItemsSource="{Binding Roots}" IsVisible="{Binding HasSearch}"
+              DoubleTapped="OnTreeDoubleTapped" KeyDown="OnTreeKeyDown">
+      <TreeView.Styles>
+        <Style Selector="TreeViewItem" x:DataType="vm:FindUsagesNode">
+          <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+        </Style>
+      </TreeView.Styles>
+      <TreeView.ItemTemplate>
+        <TreeDataTemplate x:DataType="vm:FindUsagesNode" ItemsSource="{Binding Children}">
+          <StackPanel Orientation="Horizontal" Spacing="8" Background="Transparent" ToolTip.Tip="{Binding ToolTip}">
+            <TextBlock Text="{Binding Text}" />
+            <TextBlock Text="{Binding CountText}" Opacity="0.6" />
+          </StackPanel>
+        </TreeDataTemplate>
+      </TreeView.ItemTemplate>
+    </TreeView>
+  </DockPanel>
+</UserControl>

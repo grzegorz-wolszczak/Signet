@@ -112,6 +112,24 @@ public sealed class MenuBuilderTests
         }
     }
 
+    private static readonly string[] StandardizedTidyingActions =
+    {
+        "Restructure Epub to Signet Norm", "Use Standard File Extensions",
+        "Rebase OPF Manifest IDs on Current Filenames", "Update OPF Manifest Media Types",
+    };
+
+    [Fact]
+    public void Tools_menu_has_one_Standardize_entry_instead_of_the_four_tidying_actions()
+    {
+        using UiCultureScope culture = new("en");
+        using TestHost host = new();
+
+        List<string> tools = Build(host).Single(m => m.Header == "_Tools").Items!.Select(i => i.Header).ToList();
+
+        tools.Should().Contain("Standardize EPUB...");
+        tools.Should().NotContain(StandardizedTidyingActions);
+    }
+
     [Fact]
     public void Help_menu_contains_only_about()
     {

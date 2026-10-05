@@ -3653,4 +3653,233 @@ Wstawić mimo to?</value>
   <data name="Cleanup_RiskySummary" xml:space="preserve">
     <value> Ryzykowne (⚠, domyślnie odznaczone): {0}.</value>
   </data>
+  <data name="Action_MainWindow_Standardize" xml:space="preserve">
+    <value>Standaryzacja EPUB...</value>
+  </data>
+  <data name="Operation_Standardize" xml:space="preserve">
+    <value>Standaryzacja EPUB</value>
+  </data>
+  <data name="Status_StandardizeDone" xml:space="preserve">
+    <value>Standaryzacja EPUB zakończona.</value>
+  </data>
+  <data name="Status_StandardizeNothing" xml:space="preserve">
+    <value>Standaryzacja EPUB: nic do zrobienia.</value>
+  </data>
+  <data name="StandardizeWindow_Title" xml:space="preserve">
+    <value>Standaryzacja EPUB</value>
+  </data>
+  <data name="StandardizeWindow_Intro" xml:space="preserve">
+    <value>Zaznacz operacje do wykonania. Podgląd pokazuje, co się zmieni, zanim cokolwiek zostanie zmienione. Operacje są wykonywane od góry, a każda widzi wynik poprzednich. Najedź na ⓘ, aby zobaczyć dokładny opis operacji.</value>
+  </data>
+  <data name="StandardizeWindow_Apply" xml:space="preserve">
+    <value>Zastosuj</value>
+  </data>
+  <data name="StandardizeWindow_Details" xml:space="preserve">
+    <value>Szczegóły</value>
+  </data>
+  <data name="StandardizeWindow_SelectAll" xml:space="preserve">
+    <value>Zaznacz wszystkie</value>
+  </data>
+  <data name="StandardizeWindow_SelectNone" xml:space="preserve">
+    <value>Odznacz wszystkie</value>
+  </data>
+  <data name="StandardizeWindow_NothingToDo" xml:space="preserve">
+    <value>Nic do zrobienia.</value>
+  </data>
+  <data name="StandardizeWindow_Row_Id" xml:space="preserve">
+    <value>ID: {0} → {1}</value>
+  </data>
+  <data name="StandardizeWindow_Summary_SideIds" xml:space="preserve">
+    <value> Zmiana nazwy zmieni też ID w manifeście: {0}.</value>
+  </data>
+  <data name="StandardizeStep_StandardFolders_Title" xml:space="preserve">
+    <value>Przenieś pliki do standardowych folderów (OEBPS/Text, Styles, Images…)</value>
+  </data>
+  <data name="StandardizeStep_StandardFolders_Description" xml:space="preserve">
+    <value>Każdy plik trafia do folderu dla swojego typu, a wszystkie odwołania do niego są poprawiane.</value>
+  </data>
+  <data name="StandardizeStep_StandardFolders_Summary" xml:space="preserve">
+    <value>Pliki do przeniesienia lub zmiany nazwy: {0}.</value>
+  </data>
+  <data name="StandardizeStep_StandardFolders_Info" xml:space="preserve">
+    <value>Co robi:
+• Przenosi każdy plik do standardowego folderu według jego typu:
+   – HTML/XHTML → OEBPS/Text
+   – CSS → OEBPS/Styles
+   – obrazy → OEBPS/Images
+   – fonty → OEBPS/Fonts
+   – audio → OEBPS/Audio, wideo → OEBPS/Video
+   – pozostałe (np. JS, XML) → OEBPS/Misc
+   – plik OPF i NCX → OEBPS
+• Zmienia nazwę pliku OPF na content.opf, a NCX na toc.ncx.
+• Gdy dwa pliki z różnych folderów mają tę samą nazwę (wielkość liter nie ma znaczenia), drugi dostaje unikalną nazwę z numerem, np. main.css → main0001.css.
+• Poprawia wszystkie odwołania do przeniesionych plików: href/src w HTML, url(…) w CSS, wpisy w OPF i NCX oraz META-INF/container.xml.
+
+Przykład: text/part0001.html → OEBPS/Text/part0001.html, stylesheet.css → OEBPS/Styles/stylesheet.css.
+
+Nie zmienia zawartości plików (poza odwołaniami) ani rozszerzeń. Zmiana nazwy pliku (OPF, NCX, kolizje nazw) zmienia też jego ID w manifeście.</value>
+  </data>
+  <data name="StandardizeStep_StandardFileExtensions_Title" xml:space="preserve">
+    <value>Użyj standardowych rozszerzeń plików</value>
+  </data>
+  <data name="StandardizeStep_StandardFileExtensions_Description" xml:space="preserve">
+    <value>Rozszerzenie każdego pliku zgadza się z jego typem, np. rozdział XHTML zapisany jako .html dostaje .xhtml.</value>
+  </data>
+  <data name="StandardizeStep_StandardFileExtensions_Summary" xml:space="preserve">
+    <value>Pliki do zmiany rozszerzenia: {0}.</value>
+  </data>
+  <data name="StandardizeStep_StandardFileExtensions_Info" xml:space="preserve">
+    <value>Co robi:
+• Każdy plik, którego rozszerzenie nie pasuje do jego typu MIME, dostaje rozszerzenie standardowe dla tego typu. Folder się nie zmienia.
+   – XHTML (także text/html) → .xhtml, np. part0001.html → part0001.xhtml
+   – JPEG → .jpg, np. cover.jpeg → cover.jpg
+   – CSS → .css, np. style.txt → style.css
+• Gdy nowa nazwa jest już zajęta w tym samym folderze, plik dostaje unikalną nazwę z numerem — nic nie zostaje nadpisane.
+• Poprawia wszystkie odwołania do zmienionych plików (HTML, CSS, OPF, NCX).
+• Zmiana nazwy pliku zmienia też jego ID w manifeście (np. ch01 → ch01.xhtml).
+
+Nie zmienia zawartości plików (poza odwołaniami) ani folderów.</value>
+  </data>
+  <data name="StandardizeStep_RebaseManifestIds_Title" xml:space="preserve">
+    <value>Ustaw ID manifestu OPF według nazw plików</value>
+  </data>
+  <data name="StandardizeStep_RebaseManifestIds_Description" xml:space="preserve">
+    <value>Każdy wpis w manifeście dostaje ID utworzone z nazwy pliku, np. id12 → part0001_xhtml.</value>
+  </data>
+  <data name="StandardizeStep_RebaseManifestIds_Summary" xml:space="preserve">
+    <value>Identyfikatory do zmiany: {0}.</value>
+  </data>
+  <data name="StandardizeStep_RebaseManifestIds_Info" xml:space="preserve">
+    <value>Co robi:
+• Nadaje każdemu wpisowi w manifeście OPF identyfikator utworzony z nazwy pliku:
+   – kropka przed rozszerzeniem zamienia się w podkreślenie: part0001.xhtml → part0001_xhtml
+   – znaki narodowe są zamieniane na ASCII: rozdział.xhtml → rozdzial_xhtml
+   – ID zaczynające się od cyfry dostaje przedrostek „x”: 00008.jpeg → x00008_jpeg
+• Gdy takie ID jest już zajęte, dodaje numer, np. part0001_xhtml0001.
+• Poprawia wszystkie odwołania do zmienionych ID w OPF: spine (itemref idref), atrybut toc, meta okładki, refines, media-overlay i fallback.
+
+Przykład: &lt;item id="id12" href="Text/part0001.xhtml"&gt; → &lt;item id="part0001_xhtml" …&gt;.
+
+Nie zmienia plików ani ich nazw. ID są liczone z nazw plików po wcześniejszych operacjach.</value>
+  </data>
+  <data name="StandardizeStep_ManifestMediaTypes_Title" xml:space="preserve">
+    <value>Zaktualizuj typy mediów w manifeście OPF</value>
+  </data>
+  <data name="StandardizeStep_ManifestMediaTypes_Description" xml:space="preserve">
+    <value>Wpisy manifestu z pustym lub nieznanym typem MIME dostają typ rozpoznany przez Signet.</value>
+  </data>
+  <data name="StandardizeStep_ManifestMediaTypes_Summary" xml:space="preserve">
+    <value>Typy mediów do poprawienia: {0}.</value>
+  </data>
+  <data name="StandardizeStep_ManifestMediaTypes_Info" xml:space="preserve">
+    <value>Co robi:
+• Porównuje atrybut media-type każdego wpisu w manifeście OPF z typem pliku, z jakim Signet wczytał książkę, i poprawia niezgodne wpisy.
+• Dotyczy to wpisów z pustym albo nieznanym typem MIME — przy wczytywaniu Signet rozpoznał ich typ po rozszerzeniu pliku.
+
+Przykład: &lt;item href="Styles/style.css" media-type="application/octet-stream"&gt; → media-type="text/css".
+
+Nie zmienia plików, ich nazw ani ID.</value>
+  </data>
+  <data name="PreferencesWindow_Warnings" xml:space="preserve">
+    <value>Ostrzeżenia</value>
+  </data>
+  <data name="PreferencesWindow_WarningFontSize" xml:space="preserve">
+    <value>Rozmiar czcionki ostrzeżeń w oknach (px; 0 = jak tekst interfejsu)</value>
+  </data>
+  <data name="PreferencesWindow_WarningColorLight" xml:space="preserve">
+    <value>Kolor — jasny motyw</value>
+  </data>
+  <data name="PreferencesWindow_WarningColorDark" xml:space="preserve">
+    <value>Kolor — ciemny motyw</value>
+  </data>
+  <data name="PreferencesWindow_WarningsNote" xml:space="preserve">
+    <value>Kolor dotyczy też ostrzeżeń na pasku stanu, w panelu powiadomień i wyróżnionych zakładek.</value>
+  </data>
+  <data name="PreferencesWindow_WarningSample" xml:space="preserve">
+    <value>⚠ Przykład: „font-style: italic” (z „.none1”) działa na tym spanie</value>
+  </data>
+  <data name="CodeView_OpenTagHintLine" xml:space="preserve">
+    <value>linia {0}</value>
+  </data>
+  <data name="PreferencesWindow_OpenTagHint" xml:space="preserve">
+    <value>Code View: po najechaniu na tag zamykający pokazuj jego tag otwierający</value>
+  </data>
+  <data name="PreferencesWindow_OpenTagHintDelay" xml:space="preserve">
+    <value>Opóźnienie podpowiedzi (ms)</value>
+  </data>
+  <data name="PreferencesWindow_OpenTagHintFont" xml:space="preserve">
+    <value>Czcionka podpowiedzi</value>
+  </data>
+  <data name="PreferencesWindow_OpenTagHintFontDefault" xml:space="preserve">
+    <value>Domyślna (jak w edytorze)</value>
+  </data>
+  <data name="PreferencesWindow_OpenTagHintFontEditor" xml:space="preserve">
+    <value>jak w edytorze</value>
+  </data>
+  <data name="PreferencesWindow_OpenTagHintLightBackground" xml:space="preserve">
+    <value>Tło — jasny motyw</value>
+  </data>
+  <data name="PreferencesWindow_OpenTagHintLightForeground" xml:space="preserve">
+    <value>Tekst — jasny motyw</value>
+  </data>
+  <data name="PreferencesWindow_OpenTagHintDarkBackground" xml:space="preserve">
+    <value>Tło — ciemny motyw</value>
+  </data>
+  <data name="PreferencesWindow_OpenTagHintDarkForeground" xml:space="preserve">
+    <value>Tekst — ciemny motyw</value>
+  </data>
+  <data name="Action_MainWindow_FindUsages" xml:space="preserve">
+    <value>Znajdź użycia</value>
+  </data>
+  <data name="Action_MainWindow_FindUsagesWindow" xml:space="preserve">
+    <value>Panel znalezionych użyć</value>
+  </data>
+  <data name="Panel_FindUsages" xml:space="preserve">
+    <value>Znalezione użycia</value>
+  </data>
+  <data name="CodeViewMenu_FindUsages" xml:space="preserve">
+    <value>Znajdź użycia</value>
+  </data>
+  <data name="FindUsages_Header" xml:space="preserve">
+    <value>Użycia klasy „{0}”</value>
+  </data>
+  <data name="FindUsages_Empty" xml:space="preserve">
+    <value>Kliknij prawym przyciskiem nazwę klasy w kodzie (w atrybucie class lub w selektorze CSS) i wybierz „Znajdź użycia” (Alt+F7).</value>
+  </data>
+  <data name="FindUsages_Found" xml:space="preserve">
+    <value>Znalezione użycia</value>
+  </data>
+  <data name="FindUsages_Results_One" xml:space="preserve">
+    <value>{0} wynik</value>
+  </data>
+  <data name="FindUsages_Results_Few" xml:space="preserve">
+    <value>{0} wyniki</value>
+  </data>
+  <data name="FindUsages_Results_Many" xml:space="preserve">
+    <value>{0} wyników</value>
+  </data>
+  <data name="FindUsages_LineColumn" xml:space="preserve">
+    <value>linia {0}, kol. {1}</value>
+  </data>
+  <data name="FindUsages_Refresh" xml:space="preserve">
+    <value>Odśwież</value>
+  </data>
+  <data name="FindUsages_GroupBy" xml:space="preserve">
+    <value>Grupuj według</value>
+  </data>
+  <data name="FindUsages_GroupByFile" xml:space="preserve">
+    <value>Plik</value>
+  </data>
+  <data name="FindUsages_ExpandAll" xml:space="preserve">
+    <value>Rozwiń wszystko (Ctrl+NumPad +)</value>
+  </data>
+  <data name="FindUsages_CollapseAll" xml:space="preserve">
+    <value>Zwiń wszystko (Ctrl+NumPad -)</value>
+  </data>
+  <data name="Status_FindUsages" xml:space="preserve">
+    <value>Użycia klasy „{0}”: {1}.</value>
+  </data>
+  <data name="Status_FindUsagesNoClass" xml:space="preserve">
+    <value>Kursor nie stoi na nazwie klasy (w atrybucie class ani w selektorze CSS).</value>
+  </data>
 </root>

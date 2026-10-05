@@ -2,6 +2,7 @@ using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Avalonia.Styling;
 using Avalonia.Themes.Fluent;
 using Microsoft.Extensions.Logging;
 using Signet.Core.Misc;
@@ -18,6 +19,8 @@ namespace Signet.App.Infrastructure;
 /// <item>tighter main and context menus (items, separators, icon margin).</item>
 /// </list>
 /// The code editor has its own font from the Code View settings and is not affected.
+/// <para>The manager also applies the warning appearance (Preferences → Appearance → Warnings,
+/// <see cref="ApplyWarningAppearance()"/>): its default font size follows the UI font, so both live here.</para>
 /// </summary>
 /// <param name="settings">Application settings.</param>
 /// <param name="iconTheme">Recomputes the toolbar icon size after the font changes.</param>
@@ -93,6 +96,45 @@ public sealed class UiDensityManager(
         }
 
         ApplyFont(app, _settings.UiFont, _settings.UiFontSize);
+        ApplyWarning(app, _settings.WarningAppearance, EffectiveFontSize);
+    }
+
+    /// <summary>The UI font size in use: the one chosen in Preferences, otherwise the mode default.</summary>
+    public double EffectiveFontSize => _settings.UiFontSize > 0 ? _settings.UiFontSize : DefaultFontSize;
+
+    /// <summary>
+    /// Applies the saved warning appearance live (Preferences → Appearance → Warnings): the font size of the warning
+    /// texts (<c>SignetWarningFontSize</c>) and the warning color of both themes (<c>SignetWarningBrush</c>).
+    /// </summary>
+    public void ApplyWarningAppearance()
+    {
+        if (Application.Current is { } app)
+        {
+            ApplyWarning(app, _settings.WarningAppearance, EffectiveFontSize);
+        }
+    }
+
+    /// <summary>
+    /// Sets the warning resources of the application: the font size (<paramref name="uiFontSize"/> when
+    /// <see cref="WarningAppearance.FontSize"/> is 0) and the <c>SignetWarningBrush</c> of the light and dark theme
+    /// dictionaries — controls pick them up via <c>DynamicResource</c>.
+    /// </summary>
+    public static void ApplyWarning(Application app, WarningAppearance appearance, double uiFontSize)
+    {
+        System.ArgumentNullException.ThrowIfNull(app);
+        app.Resources["SignetWarningFontSize"] = appearance.FontSize > 0 ? appearance.FontSize : uiFontSize;
+        SetThemeBrush(app, ThemeVariant.Light, appearance.LightColor);
+        SetThemeBrush(app, ThemeVariant.Dark, appearance.DarkColor);
+    }
+
+    private static void SetThemeBrush(Application app, ThemeVariant variant, string color)
+    {
+        if (app.Resources.ThemeDictionaries.TryGetValue(variant, out IThemeVariantProvider? provider)
+            && provider is IResourceDictionary dictionary
+            && Color.TryParse(color, out Color parsed))
+        {
+            dictionary["SignetWarningBrush"] = new SolidColorBrush(parsed);
+        }
     }
 
     /// <summary>
@@ -108,6 +150,7 @@ public sealed class UiDensityManager(
         }
 
         ApplyFont(app, family, size);
+        ApplyWarning(app, _settings.WarningAppearance, EffectiveFontSize);
         _iconTheme.RefreshToolbarIconSize();
     }
 

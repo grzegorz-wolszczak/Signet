@@ -916,6 +916,53 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public void Standardize_action_raises_StandardizeRequested()
+    {
+        MainWindowViewModel sut = New();
+        bool raised = false;
+        sut.StandardizeRequested += (_, _) => raised = true;
+
+        sut.Actions.Require(AppActionIds.Standardize).Execute(null);
+
+        raised.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task PrepareStandardization_returns_null_without_a_book()
+    {
+        MainWindowViewModel sut = New();
+
+        StandardizationViewModel? standardization = await sut.PrepareStandardizationAsync();
+
+        standardization.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Applying_the_Standardize_dialog_standardizes_the_book_and_remembers_the_checked_steps()
+    {
+        using UiCultureScope culture = new("en");
+        using TempDir temp = new();
+        string epub = EpubBuilder.BuildInto(CorpusPaths.EdgeDeepFolders, temp);
+        MainWindowViewModel sut = New();
+        Book book = new ImportEpub(epub).GetBook();
+        sut.LoadBook(book, epub);
+
+        StandardizationViewModel? standardization = await sut.PrepareStandardizationAsync();
+        standardization.Should().NotBeNull();
+        standardization!.EnabledSteps.Should().Equal(EpubStandardization.AllSteps, "every step is checked the first time");
+        standardization.Sections.Single(s => s.Step == StandardizationStep.RebaseManifestIds).IsEnabled = false;
+
+        standardization.ApplyCommand.Execute(null);
+
+        book.GetOpf().BookPath.Should().Be("OEBPS/content.opf");
+        book.GetAllResources().OfType<HtmlResource>().Should().OnlyContain(r => r.BookPath.StartsWith("OEBPS/Text/", StringComparison.Ordinal));
+        book.Modified.Should().BeTrue();
+        sut.StatusMessage.Should().Be(Strings.Get("Status_StandardizeDone"));
+        (await sut.PrepareStandardizationAsync())!.EnabledSteps.Should().Equal(
+            StandardizationStep.StandardFolders, StandardizationStep.StandardFileExtensions, StandardizationStep.ManifestMediaTypes);
+    }
+
+    [Fact]
     public void StandardizeEpub_action_raises_StandardizeEpubRequested()
     {
         MainWindowViewModel sut = New();

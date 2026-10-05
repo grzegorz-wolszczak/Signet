@@ -572,10 +572,16 @@ public sealed class FolderKeeper : IDisposable
     /// Returns a version of the file name that is unique across the whole book: if the name is free — unchanged,
     /// otherwise a numeric suffix is appended.
     /// </summary>
-    public string GetUniqueFilenameVersion(string filename)
+    public string GetUniqueFilenameVersion(string filename) => UniqueFilenameVersion(filename, GetAllFilenames());
+
+    /// <summary>
+    /// <see cref="GetUniqueFilenameVersion(string)"/> against an explicit list of the file names in use
+    /// (case-insensitive) — lets callers plan renames on a simulated state of the book.
+    /// </summary>
+    public static string UniqueFilenameVersion(string filename, IReadOnlyCollection<string> existing)
     {
         ArgumentException.ThrowIfNullOrEmpty(filename);
-        IReadOnlyList<string> existing = GetAllFilenames();
+        ArgumentNullException.ThrowIfNull(existing);
         if (!existing.Contains(filename, StringComparer.OrdinalIgnoreCase))
         {
             return filename;
@@ -1253,8 +1259,13 @@ public sealed class FolderKeeper : IDisposable
         }
         else
         {
-            // Moving / renaming the OPF itself requires rewriting META-INF/container.xml.
+            // Moving / renaming the OPF itself requires rewriting META-INF/container.xml — and, for a move, rebasing
+            // the manifest hrefs, which are relative to the OPF.
             UpdateContainerXml(MainFolderPath, resource.BookPath);
+            if (!renamed)
+            {
+                _opf?.OpfMoved(oldBookPath);
+            }
         }
 
         UpdateShortPathNames();

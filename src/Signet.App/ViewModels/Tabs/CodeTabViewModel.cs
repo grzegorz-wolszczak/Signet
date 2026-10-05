@@ -553,6 +553,23 @@ public sealed class CodeTabViewModel : ContentTabViewModel
         IsCss || IsHtmlFlow ? ClassRenamer.FindStyleClassAtCaret(Document.Text, _caretOffset, ResourceBookPath, IsCss) : null;
 
     /// <summary>
+    /// The class under the caret for "Find Usages": in a <c>class</c> attribute of any markup file ((X)HTML, SVG, XML)
+    /// or in a selector of a stylesheet or a <c>&lt;style&gt;</c> block; <c>null</c> when the caret is not on a class.
+    /// </summary>
+    public string? ClassNameAtCaretForUsages()
+    {
+        string text = Document.Text;
+        if (SupportsTagStructure && ClassRenamer.FindClassAtCaret(text, _caretOffset) is { } inAttribute)
+        {
+            return inAttribute.Name;
+        }
+
+        return IsCss || SupportsTagStructure
+            ? ClassRenamer.FindStyleClassAtCaret(text, _caretOffset, ResourceBookPath, IsCss)?.Name
+            : null;
+    }
+
+    /// <summary>
     /// Image reference under the caret (<c>src</c>/<c>xlink:href</c> of an <c>img</c>/<c>image</c> tag)
     /// or <c>null</c> — the condition of the "View Image" / "Open Tab For Image" items.
     /// </summary>
@@ -1148,6 +1165,24 @@ public sealed class CodeTabViewModel : ContentTabViewModel
 
     /// <summary>Whether tag structure operations apply — (X)HTML and XML.</summary>
     public bool SupportsTagStructure => Syntax is CodeViewSyntax.Html or CodeViewSyntax.Xml;
+
+    /// <summary>
+    /// Whether resting the mouse on a closing tag shows its opening tag (Preferences → Appearance; markup files only).
+    /// Read live, so a change in Preferences applies to the open tabs at once.
+    /// </summary>
+    public bool OpenTagHintEnabled => SupportsTagStructure && _settings.CodeViewOpenTagHint;
+
+    /// <summary>The delay (ms) before the opening tag tooltip appears.</summary>
+    public int OpenTagHintDelayMs => _settings.CodeViewOpenTagHintDelayMs;
+
+    /// <summary>The font and colors of the opening tag tooltip (read live).</summary>
+    public OpenTagHintAppearance OpenTagHintAppearance => _settings.OpenTagHintAppearance;
+
+    /// <summary>The closing tag containing the character at <paramref name="offset"/> (see <see cref="CodeViewModel.GetCloseTagAt"/>).</summary>
+    public (int Offset, int Length)? GetCloseTagAt(int offset) => _model.GetCloseTagAt(offset);
+
+    /// <summary>The opening tag of the closing tag at <paramref name="closeTagOffset"/> (see <see cref="CodeViewModel.GetOpenTagOfCloseTag"/>).</summary>
+    public (int Offset, int Length)? GetOpenTagOfCloseTag(int closeTagOffset) => _model.GetOpenTagOfCloseTag(closeTagOffset);
 
     /// <summary>Name of the element enclosing the caret (as a hint in "Rename Tag"), or <c>null</c>.</summary>
     public string? EnclosingTagName

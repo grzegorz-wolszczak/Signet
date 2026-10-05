@@ -2,6 +2,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:dockFluent="using:Dock.Avalonia.Themes.Fluent"
              xmlns:dock="using:Dock.Avalonia.Controls"
+             xmlns:dockCore="using:Dock.Model.Core"
+             xmlns:dockControls="using:Dock.Model.Controls"
+             xmlns:dockConverters="using:Dock.Avalonia.Converters"
              xmlns:docking="using:Signet.App.Docking"
              xmlns:views="using:Signet.App.Views"
              xmlns:tabViews="using:Signet.App.Views.Tabs"
@@ -39,6 +42,10 @@
 
     <DataTemplate DataType="docking:CheckpointsTool">
       <views:CheckpointsPanelView DataContext="{Binding ViewModel}" />
+    </DataTemplate>
+
+    <DataTemplate DataType="docking:FindUsagesTool">
+      <views:FindUsagesView DataContext="{Binding ViewModel}" />
     </DataTemplate>
 
     <DataTemplate DataType="tabVm:PlaceholderContentTabViewModel">
@@ -89,6 +96,107 @@
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
 
+      <!-- Menus and flyouts: Fluent caps their popup width at FlyoutThemeMaxWidth (456), which
+           clipped longer menu labels (no ellipsis). Lift the cap so popups size to their content. -->
+      <x:Double x:Key="FlyoutThemeMaxWidth">Infinity</x:Double>
+
+      <!-- The menu of a panel's title bar (▾), replacing the Dock theme's one (same key, same items). Dock only enables
+           "Dock" to undo "Auto Hide" and keeps "Float" enabled in a floating window; here a floating panel has "Float"
+           disabled and "Dock" enabled, which docks it back into its region (MainDockFactory.PinDockable). -->
+      <MenuFlyout x:Key="ToolChromeControlContextMenu" x:DataType="dockControls:IToolDock">
+        <MenuItem Header="{DynamicResource ToolChromeControlFloatString}"
+                  Command="{Binding Owner.Factory.FloatDockable}"
+                  CommandParameter="{Binding ActiveDockable}"
+                  IsEnabled="{Binding $parent[dock:ToolChromeControl].IsFloating, Converter={x:Static BoolConverters.Not}, FallbackValue=True}">
+          <MenuItem.IsVisible>
+            <MultiBinding Converter="{x:Static BoolConverters.And}">
+              <MultiBinding Converter="{x:Static dockConverters:DockCapabilityConverters.CanFloatMultiConverter}">
+                <Binding Path="ActiveDockable" />
+                <Binding Path="ActiveDockable.CanFloat" />
+                <Binding Path="ActiveDockable.DockCapabilityOverrides.CanFloat" />
+                <Binding Path="(dockCore:IDock).DockCapabilityPolicy.CanFloat" />
+              </MultiBinding>
+              <MultiBinding Converter="{x:Static dockConverters:CanRemoveDockableConverter.Instance}">
+                <Binding Path="(dockCore:IDock).CanCloseLastDockable" FallbackValue="{x:True}" />
+                <Binding Path="(dockCore:IDock).VisibleDockables.Count" FallbackValue="0" />
+              </MultiBinding>
+            </MultiBinding>
+          </MenuItem.IsVisible>
+        </MenuItem>
+        <MenuItem Header="{DynamicResource ToolChromeControlDockString}"
+                  Command="{Binding Owner.Factory.PinDockable}"
+                  CommandParameter="{Binding ActiveDockable}">
+          <MenuItem.IsEnabled>
+            <MultiBinding Converter="{x:Static BoolConverters.Or}">
+              <Binding Path="ActiveDockable.OriginalOwner" Converter="{x:Static ObjectConverters.IsNotNull}" FallbackValue="False" />
+              <Binding Path="$parent[dock:ToolChromeControl].IsFloating" FallbackValue="False" />
+            </MultiBinding>
+          </MenuItem.IsEnabled>
+          <MenuItem.IsVisible>
+            <MultiBinding Converter="{x:Static dockConverters:DockCapabilityConverters.CanPinMultiConverter}">
+              <Binding Path="ActiveDockable" />
+              <Binding Path="ActiveDockable.CanPin" />
+              <Binding Path="ActiveDockable.DockCapabilityOverrides.CanPin" />
+              <Binding Path="(dockCore:IDock).DockCapabilityPolicy.CanPin" />
+            </MultiBinding>
+          </MenuItem.IsVisible>
+        </MenuItem>
+        <MenuItem Header="{DynamicResource ToolChromeControlDockAsDocumentString}"
+                  Command="{Binding Owner.Factory.DockAsDocument}"
+                  CommandParameter="{Binding ActiveDockable}">
+          <MenuItem.IsVisible>
+            <MultiBinding Converter="{x:Static BoolConverters.And}">
+              <MultiBinding Converter="{x:Static dockConverters:DockCapabilityConverters.CanDockAsDocumentMultiConverter}">
+                <Binding Path="ActiveDockable" />
+                <Binding Path="ActiveDockable.CanDockAsDocument" />
+                <Binding Path="ActiveDockable.DockCapabilityOverrides.CanDockAsDocument" />
+                <Binding Path="(dockCore:IDock).DockCapabilityPolicy.CanDockAsDocument" />
+              </MultiBinding>
+              <Binding Path="ActiveDockable.Owner" Converter="{x:Static dockConverters:OwnerIsToolDockConverter.Instance}" />
+            </MultiBinding>
+          </MenuItem.IsVisible>
+        </MenuItem>
+        <MenuItem Header="{DynamicResource ToolChromeControlAutoHideString}"
+                  Command="{Binding Owner.Factory.PinDockable}"
+                  CommandParameter="{Binding ActiveDockable}"
+                  IsEnabled="{Binding ActiveDockable.OriginalOwner, Converter={x:Static ObjectConverters.IsNull}, FallbackValue=False}">
+          <MenuItem.IsVisible>
+            <MultiBinding Converter="{x:Static BoolConverters.And}">
+              <MultiBinding Converter="{x:Static dockConverters:DockCapabilityConverters.CanPinMultiConverter}">
+                <Binding Path="ActiveDockable" />
+                <Binding Path="ActiveDockable.CanPin" />
+                <Binding Path="ActiveDockable.DockCapabilityOverrides.CanPin" />
+                <Binding Path="(dockCore:IDock).DockCapabilityPolicy.CanPin" />
+              </MultiBinding>
+              <Binding Path="$parent[dock:ToolChromeControl].IsFloating" Converter="{x:Static BoolConverters.Not}" />
+            </MultiBinding>
+          </MenuItem.IsVisible>
+        </MenuItem>
+        <MenuItem Header="{DynamicResource ToolChromeControlCloseString}"
+                  Command="{Binding Owner.Factory.CloseDockable}"
+                  CommandParameter="{Binding ActiveDockable}">
+          <MenuItem.IsVisible>
+            <MultiBinding Converter="{x:Static BoolConverters.And}">
+              <MultiBinding Converter="{x:Static dockConverters:DockCapabilityConverters.CanCloseMultiConverter}">
+                <Binding Path="ActiveDockable" />
+                <Binding Path="ActiveDockable.CanClose" />
+                <Binding Path="ActiveDockable.DockCapabilityOverrides.CanClose" />
+                <Binding Path="(dockCore:IDock).DockCapabilityPolicy.CanClose" />
+              </MultiBinding>
+              <MultiBinding Converter="{x:Static dockConverters:CanRemoveDockableConverter.Instance}">
+                <Binding Path="(dockCore:IDock).CanCloseLastDockable" FallbackValue="{x:True}" />
+                <Binding Path="(dockCore:IDock).VisibleDockables.Count" FallbackValue="0" />
+              </MultiBinding>
+            </MultiBinding>
+          </MenuItem.IsVisible>
+        </MenuItem>
+      </MenuFlyout>
+
+      <!-- Font size of the warning texts in dialogs (TextBlock.warning / .warningNote). The real value — the
+           interface text size or the size chosen in Preferences → Appearance → Warnings — is set by
+           UiDensityManager; this is the Fluent default for design time and headless tests. -->
+      <x:Double x:Key="SignetWarningFontSize">14</x:Double>
+
       <!-- Notification icons (16×16, drawn for Signet). -->
       <StreamGeometry x:Key="SignetBellGeometry">M8,1.5 C5.5,1.5 4,3.5 4,6 L4,9.5 L2.5,11.5 L13.5,11.5 L12,9.5 L12,6 C12,3.5 10.5,1.5 8,1.5 Z M6.3,12.5 C6.5,13.5 7.2,14.3 8,14.3 C8.8,14.3 9.5,13.5 9.7,12.5 Z</StreamGeometry>
       <StreamGeometry x:Key="SignetWarningGeometry">F1 M8,1 L15.5,14.5 L0.5,14.5 Z M7.2,5.5 L8.8,5.5 L8.5,10 L7.5,10 Z M7.2,11.2 L8.8,11.2 L8.8,12.8 L7.2,12.8 Z</StreamGeometry>
@@ -113,6 +221,21 @@
          windows show the default Avalonia icon. -->
     <Style Selector=":is(Window)">
       <Setter Property="Icon" Value="/Assets/AppIcon/app.ico" />
+    </Style>
+
+    <!-- Warning texts in dialogs (e.g. what a risky change would alter): size and color from
+         Preferences → Appearance → Warnings (UiDensityManager.ApplyWarningAppearance). -->
+    <Style Selector="TextBlock.warning">
+      <Setter Property="Foreground" Value="{DynamicResource SignetWarningBrush}" />
+      <Setter Property="FontSize" Value="{DynamicResource SignetWarningFontSize}" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <!-- Cautions of a dialog section: the warning size, with the muted look of a note. -->
+    <Style Selector="TextBlock.warningNote">
+      <Setter Property="FontSize" Value="{DynamicResource SignetWarningFontSize}" />
+      <Setter Property="FontStyle" Value="Italic" />
+      <Setter Property="Opacity" Value="0.75" />
+      <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
 
     <Style Selector="TextBox">

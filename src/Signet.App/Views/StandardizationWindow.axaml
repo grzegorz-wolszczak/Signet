@@ -1,0 +1,110 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Signet.App.ViewModels"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.StandardizationWindow"
+        x:DataType="vm:StandardizationViewModel"
+        Width="760" Height="700" MinWidth="520" MinHeight="400"
+        WindowStartupLocation="CenterOwner"
+        Title="{loc:Loc StandardizeWindow_Title}">
+
+  <Window.Styles>
+    <!-- Each step as a card, like the sections of the Cleanup dialog. -->
+    <Style Selector="Border.section">
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="Padding" Value="10" />
+    </Style>
+    <Style Selector="TextBlock.note">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Opacity" Value="0.75" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <!-- The ⓘ icon: hovering shows the detailed description of the step. -->
+    <Style Selector="Border.info">
+      <Setter Property="Width" Value="18" />
+      <Setter Property="Height" Value="18" />
+      <Setter Property="CornerRadius" Value="9" />
+      <Setter Property="BorderThickness" Value="1.5" />
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Cursor" Value="Help" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="Margin" Value="8,1,0,0" />
+      <Setter Property="ToolTip.ShowDelay" Value="200" />
+    </Style>
+    <Style Selector="Border.info:pointerover">
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlHighlightAccentBrush}" />
+    </Style>
+    <!-- The descriptions are long — a wider tooltip than the Fluent default. -->
+    <Style Selector="ToolTip">
+      <Setter Property="MaxWidth" Value="600" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel Margin="16">
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right"
+                Spacing="8" Margin="0,12,0,0">
+      <Button x:Name="ApplyButton" Content="{loc:Loc StandardizeWindow_Apply}" Command="{Binding ApplyCommand}"
+              Classes="accent" MinWidth="80" />
+      <Button x:Name="CloseButton" Content="{loc:Loc Common_Close}" IsCancel="True" MinWidth="80" />
+    </StackPanel>
+
+    <TextBlock DockPanel.Dock="Top" Text="{loc:Loc StandardizeWindow_Intro}" TextWrapping="Wrap" Margin="0,0,0,12" />
+
+    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+      <Button Content="{loc:Loc StandardizeWindow_SelectAll}" Command="{Binding SelectAllCommand}" />
+      <Button Content="{loc:Loc StandardizeWindow_SelectNone}" Command="{Binding SelectNoneCommand}" />
+    </StackPanel>
+
+    <ScrollViewer>
+      <ItemsControl ItemsSource="{Binding Sections}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:StandardizationSectionViewModel">
+            <Border Classes="section" Margin="0,0,0,10">
+              <StackPanel Spacing="4">
+                <Grid ColumnDefinitions="*,Auto">
+                  <CheckBox Grid.Column="0" IsChecked="{Binding IsEnabled, Mode=TwoWay}" FontWeight="SemiBold">
+                    <TextBlock Text="{Binding Title}" TextWrapping="Wrap" />
+                  </CheckBox>
+                  <Border Grid.Column="1" Classes="info">
+                    <ToolTip.Tip>
+                      <TextBlock Text="{Binding Info}" TextWrapping="Wrap" MaxWidth="560" />
+                    </ToolTip.Tip>
+                    <!-- The letter "i" drawn as a dot and a stem. -->
+                    <Path Data="M2,0 H4.2 V2.2 H2 Z M2,3.6 H4.2 V10 H2 Z" Width="6" Height="10"
+                          Fill="{DynamicResource SystemControlForegroundBaseHighBrush}"
+                          HorizontalAlignment="Center" VerticalAlignment="Center" />
+                  </Border>
+                </Grid>
+                <TextBlock Classes="note" Text="{Binding Description}" Margin="28,0,0,0" />
+
+                <StackPanel IsVisible="{Binding IsEnabled}" Margin="28,6,0,0" Spacing="4">
+                  <TextBlock Text="{Binding Summary}" FontWeight="SemiBold" TextWrapping="Wrap" />
+
+                  <Expander IsVisible="{Binding HasItems}" IsExpanded="{Binding IsExpanded, Mode=TwoWay}"
+                            Header="{loc:Loc StandardizeWindow_Details}" HorizontalAlignment="Stretch">
+                    <ListBox ItemsSource="{Binding Items}" MaxHeight="320">
+                      <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:StandardizationItemViewModel">
+                          <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0" Text="{Binding Text}" Margin="4,0"
+                                       VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                       ToolTip.Tip="{Binding Text}" />
+                            <TextBlock Grid.Column="1" Text="{Binding FileText}" Classes="note" Margin="8,0,4,0"
+                                       VerticalAlignment="Center" />
+                          </Grid>
+                        </DataTemplate>
+                      </ListBox.ItemTemplate>
+                    </ListBox>
+                  </Expander>
+                </StackPanel>
+              </StackPanel>
+            </Border>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+  </DockPanel>
+</Window>

@@ -57,6 +57,9 @@ public sealed class SettingsStoreTests
         writer.ClipboardHistory = new[] { "newest", "older" };
         writer.FavoriteSpecialCharacters = new[] { "—", "§" };
         writer.CleanupEnabledSteps = new[] { CleanupStep.UnusedSelectors, CleanupStep.UnusedMedia };
+        writer.StandardizationEnabledSteps = new[] { StandardizationStep.RebaseManifestIds };
+        writer.WarningAppearance = new WarningAppearance(16, "#102030", "#405060");
+        writer.OpenTagHintAppearance = new OpenTagHintAppearance("Consolas", 15, "#111111", "#222222", "#333333", "#444444");
         writer.Save();
 
         File.Exists(path).Should().BeTrue();
@@ -71,6 +74,9 @@ public sealed class SettingsStoreTests
         reader.ClipboardHistory.Should().Equal("newest", "older");
         reader.FavoriteSpecialCharacters.Should().Equal("—", "§");
         reader.CleanupEnabledSteps.Should().Equal(CleanupStep.UnusedSelectors, CleanupStep.UnusedMedia);
+        reader.StandardizationEnabledSteps.Should().Equal(StandardizationStep.RebaseManifestIds);
+        reader.WarningAppearance.Should().Be(new WarningAppearance(16, "#102030", "#405060"));
+        reader.OpenTagHintAppearance.Should().Be(new OpenTagHintAppearance("Consolas", 15, "#111111", "#222222", "#333333", "#444444"));
     }
 
     [Fact]
@@ -85,6 +91,55 @@ public sealed class SettingsStoreTests
         sut.DefaultVersion.Should().Be("3.0");
         sut.CodeViewWordWrap.Should().BeTrue("Code View wraps lines by default");
         sut.CleanupEnabledSteps.Should().BeEmpty("no Cleanup step is checked until the user confirms one");
+        sut.StandardizationEnabledSteps.Should().Equal(EpubStandardization.AllSteps, "every step is checked until the dialog is applied");
+        sut.WarningAppearance.Should().Be(WarningAppearance.Default, "warnings are as large as the interface text by default");
+        sut.CodeViewOpenTagHint.Should().BeTrue("the opening tag hint is on by default");
+        sut.CodeViewOpenTagHintDelayMs.Should().Be(500);
+        sut.OpenTagHintAppearance.Should().Be(OpenTagHintAppearance.Default, "the hint uses the editor font and the theme tooltip colors");
+    }
+
+    [Fact]
+    public void Open_tag_hint_appearance_is_normalized()
+    {
+        using TempDir dir = new();
+        SettingsStore sut = new(dir.Combine("settings.json"));
+
+        sut.OpenTagHintAppearance = new OpenTagHintAppearance(" Consolas ", 500, "nope", "#010203", "#040506", "");
+
+        OpenTagHintAppearance d = OpenTagHintAppearance.Default;
+        sut.OpenTagHintAppearance.Should().Be(
+            new OpenTagHintAppearance("Consolas", OpenTagHintAppearance.FontSizeMax, d.LightBackground, "#010203", "#040506", d.DarkForeground));
+    }
+
+    [Theory]
+    [InlineData(-1, 0)]
+    [InlineData(0, 0)]
+    [InlineData(750, 750)]
+    [InlineData(99999, SettingsStore.OpenTagHintDelayMaxMs)]
+    public void Open_tag_hint_delay_is_clamped(int stored, int expected)
+    {
+        using TempDir dir = new();
+        SettingsStore sut = new(dir.Combine("settings.json"));
+
+        sut.CodeViewOpenTagHintDelayMs = stored;
+
+        sut.CodeViewOpenTagHintDelayMs.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(-3, 0)]
+    [InlineData(3, WarningAppearance.FontSizeMin)]
+    [InlineData(99, WarningAppearance.FontSizeMax)]
+    [InlineData(18, 18)]
+    public void Warning_font_size_is_normalized_and_0_means_the_interface_text_size(int stored, int expected)
+    {
+        using TempDir dir = new();
+        SettingsStore sut = new(dir.Combine("settings.json"));
+
+        sut.WarningAppearance = new WarningAppearance(stored, "not a color", "#abcdef");
+
+        sut.WarningAppearance.Should().Be(new WarningAppearance(expected, WarningAppearance.Default.LightColor, "#abcdef"));
     }
 
     [Fact]

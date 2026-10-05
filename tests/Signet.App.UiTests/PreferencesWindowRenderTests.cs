@@ -94,9 +94,12 @@ public sealed class PreferencesWindowRenderTests
             .Where(b => b.Classes.Contains("section"))
             .ToArray();
 
-        sections.Should().HaveCount(3);
+        // Special character font, Warnings, Code View light, Code View dark.
+        sections.Should().HaveCount(4);
         sections.Should().OnlyContain(b => b.BorderBrush != null);
         sections.Should().OnlyContain(b => b.BorderThickness == new Avalonia.Thickness(1));
+        window.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Name == "WarningSample")
+            .Classes.Should().Contain("warning", "the sample shows the warning look live");
     }
 
     /// <summary>
@@ -279,7 +282,8 @@ public sealed class PreferencesWindowRenderTests
         Dispatcher.UIThread.RunJobs();
 
         TextBlock[] fields = window.GetVisualDescendants().OfType<Border>()
-            .Where(b => b.Classes.Contains("fontField") && !b.Classes.Contains("uiFont"))
+            // The UI font and the opening tag hint font fields show a description, not a name in its own font.
+            .Where(b => b.Classes.Contains("fontField") && !b.Classes.Contains("uiFont") && !b.Classes.Contains("description"))
             .Select(b => (TextBlock)b.Child!)
             .ToArray();
 

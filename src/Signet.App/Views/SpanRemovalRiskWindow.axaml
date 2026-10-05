@@ -7,14 +7,6 @@
         WindowStartupLocation="CenterOwner"
         Title="{loc:Loc SpanRemovalRiskWindow_Title}">
 
-  <Window.Styles>
-    <!-- The same look as the consequences of a risky item in the Cleanup dialog. -->
-    <Style Selector="TextBlock.note">
-      <Setter Property="FontSize" Value="12" />
-      <Setter Property="TextWrapping" Value="Wrap" />
-    </Style>
-  </Window.Styles>
-
   <DockPanel Margin="16">
     <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right"
                 Spacing="8" Margin="0,12,0,0">
@@ -30,10 +22,12 @@
         <ItemsControl x:Name="Consequences">
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="core:CleanupConsequence">
-              <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2">
-                <TextBlock Text="⚠" FontWeight="Bold" Foreground="{DynamicResource SignetWarningBrush}" />
-                <TextBlock Text="{Binding Text}" Classes="note" Foreground="{DynamicResource SignetWarningBrush}" />
-              </StackPanel>
+              <!-- The same look as the consequences of a risky item in the Cleanup dialog; a Grid (not a horizontal
+                   StackPanel), so long texts wrap. -->
+              <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6" Margin="0,2">
+                <TextBlock Grid.Column="0" Text="⚠" FontWeight="Bold" Classes="warning" />
+                <TextBlock Grid.Column="1" Text="{Binding Text}" Classes="warning" />
+              </Grid>
             </DataTemplate>
           </ItemsControl.ItemTemplate>
         </ItemsControl>

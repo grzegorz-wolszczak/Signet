@@ -134,6 +134,12 @@ public static class AppActionIds
     public const string GenerateToc = "MainWindow.GenerateTOC";
     public const string EditToc = "MainWindow.EditTOC";
     public const string CreateHtmlToc = "MainWindow.CreateHTMLTOC";
+
+    /// <summary>
+    /// Standardize EPUB — one dialog with a preview for the four tidying steps below (standard folders, standard
+    /// extensions, manifest IDs, manifest media types); those keep their own actions for keyboard shortcuts.
+    /// </summary>
+    public const string Standardize = "MainWindow.Standardize";
     public const string StandardizeEpub = "MainWindow.StandardizeEpub";
     public const string UseStandardFileExtensions = "MainWindow.UseStandardFileExtensions";
     public const string RebaseManifestIds = "MainWindow.RebaseManifestIDs";
@@ -168,6 +174,12 @@ public static class AppActionIds
 
     /// <summary>Cleanup — removing unused stylesheets/selectors/media and merging CSS rules in one dialog.</summary>
     public const string Cleanup = "MainWindow.Cleanup";
+
+    /// <summary>Find Usages — the usages of the CSS class under the caret, in the "Find Usages" panel.</summary>
+    public const string FindUsages = "MainWindow.FindUsages";
+
+    /// <summary>Shows/hides the "Find Usages" panel.</summary>
+    public const string ToggleFindUsages = "MainWindow.FindUsagesWindow";
 
     /// <summary>Live CSS Panel.</summary>
     public const string LiveCssPanel = "MainWindow.LiveCssPanel";

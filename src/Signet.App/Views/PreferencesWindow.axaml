@@ -163,7 +163,99 @@
               </StackPanel>
             </Border>
 
+            <!-- Warnings in dialogs: font size (0 = as the interface text) and the warning color of both themes;
+                 applied live, the sample below shows the result. -->
+            <Border Classes="section">
+              <StackPanel Spacing="6">
+                <TextBlock Text="{loc:Loc PreferencesWindow_Warnings}" FontWeight="Bold" />
+                <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                  <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_WarningFontSize}" />
+                  <TextBox Grid.Row="0" Grid.Column="1" x:Name="WarningFontSizeBox" Text="{Binding WarningFontSize}"
+                           Width="80" HorizontalAlignment="Left" />
+
+                  <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding WarningLightColor.Label}" />
+                  <DockPanel Grid.Row="1" Grid.Column="1" DataContext="{Binding WarningLightColor}">
+                    <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
+                            ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
+                    <TextBox Classes="colorValue" Text="{Binding Value}"
+                             Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
+                             Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
+                  </DockPanel>
+
+                  <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding WarningDarkColor.Label}" />
+                  <DockPanel Grid.Row="2" Grid.Column="1" DataContext="{Binding WarningDarkColor}">
+                    <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
+                            ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
+                    <TextBox Classes="colorValue" Text="{Binding Value}"
+                             Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
+                             Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
+                  </DockPanel>
+                </Grid>
+                <TextBlock x:Name="WarningSample" Classes="warning" Text="{loc:Loc PreferencesWindow_WarningSample}" />
+                <TextBlock Text="{loc:Loc PreferencesWindow_WarningsNote}" Opacity="0.7" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+
             <CheckBox Content="{loc:Loc PreferencesWindow_ExtendedHighlighting}" IsChecked="{Binding ExtendedHighlighting}" />
+
+            <!-- Code View: the opening tag tooltip over a closing tag, with its delay. -->
+            <CheckBox Content="{loc:Loc PreferencesWindow_OpenTagHint}" IsChecked="{Binding OpenTagHint}" />
+            <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8" Margin="28,0,0,0">
+              <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_OpenTagHintDelay}" IsEnabled="{Binding OpenTagHint}" />
+              <TextBox Grid.Column="1" Text="{Binding OpenTagHintDelay}" Width="80" HorizontalAlignment="Left"
+                       IsEnabled="{Binding OpenTagHint}" />
+            </Grid>
+            <!-- The look of the hint: font (default = the editor font) and colors for both themes. -->
+            <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6"
+                  Margin="28,0,0,0" IsEnabled="{Binding OpenTagHint}">
+              <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_OpenTagHintFont}" />
+              <StackPanel Grid.Row="0" Grid.Column="1" Spacing="4">
+                <!-- A description ("Default (as in the editor)" / "Consolas, 14 px"), not a name in its own font. -->
+                <Border Classes="fontField description">
+                  <TextBlock Text="{Binding OpenTagHintFontDescription}" TextTrimming="CharacterEllipsis" />
+                </Border>
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <Button Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChooseOpenTagHintFontCommand}" />
+                  <Button Content="{loc:Loc PreferencesWindow_UiFontReset}" Command="{Binding ResetOpenTagHintFontCommand}" />
+                </StackPanel>
+              </StackPanel>
+
+              <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding OpenTagHintLightBackground.Label}" />
+              <DockPanel Grid.Row="1" Grid.Column="1" DataContext="{Binding OpenTagHintLightBackground}">
+                <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
+                        ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
+                <TextBox Classes="colorValue" Text="{Binding Value}"
+                         Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
+                         Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
+              </DockPanel>
+
+              <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding OpenTagHintLightForeground.Label}" />
+              <DockPanel Grid.Row="2" Grid.Column="1" DataContext="{Binding OpenTagHintLightForeground}">
+                <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
+                        ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
+                <TextBox Classes="colorValue" Text="{Binding Value}"
+                         Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
+                         Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
+              </DockPanel>
+
+              <TextBlock Grid.Row="3" Grid.Column="0" Text="{Binding OpenTagHintDarkBackground.Label}" />
+              <DockPanel Grid.Row="3" Grid.Column="1" DataContext="{Binding OpenTagHintDarkBackground}">
+                <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
+                        ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
+                <TextBox Classes="colorValue" Text="{Binding Value}"
+                         Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
+                         Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
+              </DockPanel>
+
+              <TextBlock Grid.Row="4" Grid.Column="0" Text="{Binding OpenTagHintDarkForeground.Label}" />
+              <DockPanel Grid.Row="4" Grid.Column="1" DataContext="{Binding OpenTagHintDarkForeground}">
+                <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
+                        ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
+                <TextBox Classes="colorValue" Text="{Binding Value}"
+                         Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
+                         Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
+              </DockPanel>
+            </Grid>
 
             <Border Classes="section">
               <StackPanel Spacing="6">

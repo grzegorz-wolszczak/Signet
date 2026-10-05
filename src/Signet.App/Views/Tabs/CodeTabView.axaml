@@ -8,13 +8,33 @@
   <!-- FontFamily and FontSize below are fallback values (designer preview); in the running
        application CodeTabView.ApplyFont overrides the typeface and size with values from
        CodeViewAppearance (Preferences → Appearance → Code View). -->
-  <ae:TextEditor x:Name="Editor"
-                 Document="{Binding Document}"
-                 ShowLineNumbers="True"
-                 WordWrap="{Binding WordWrap}"
-                 FontFamily="Cascadia Code,Cascadia Mono,Consolas,Menlo,Monospace"
-                 FontSize="13"
-                 HorizontalScrollBarVisibility="Auto"
-                 VerticalScrollBarVisibility="Auto" />
+  <Panel>
+    <ae:TextEditor x:Name="Editor"
+                   Document="{Binding Document}"
+                   ShowLineNumbers="True"
+                   WordWrap="{Binding WordWrap}"
+                   FontFamily="Cascadia Code,Cascadia Mono,Consolas,Menlo,Monospace"
+                   FontSize="13"
+                   HorizontalScrollBarVisibility="Auto"
+                   VerticalScrollBarVisibility="Auto" />
+
+    <!-- The opening tag of the closing tag under the mouse (CodeTabView.OpenTagHint.cs): a popup with the tooltip
+         look rather than a ToolTip, so it does not interfere with the error tooltips of the text view. -->
+    <Popup x:Name="OpenTagHintPopup" PlacementTarget="{Binding #Editor}" Placement="Pointer"
+           HorizontalOffset="12" VerticalOffset="18" IsLightDismissEnabled="False">
+      <!-- Background, text color and font come from Preferences (OpenTagHintAppearance) when the hint opens. -->
+      <Border x:Name="OpenTagHintBorder"
+              BorderBrush="{DynamicResource ToolTipBorderBrush}"
+              BorderThickness="{DynamicResource ToolTipBorderThemeThickness}"
+              CornerRadius="{DynamicResource OverlayCornerRadius}"
+              Padding="{DynamicResource ToolTipBorderThemePadding}"
+              MaxWidth="720">
+        <StackPanel Spacing="2">
+          <TextBlock x:Name="OpenTagHintTag" TextWrapping="Wrap" />
+          <TextBlock x:Name="OpenTagHintLine" Opacity="0.7" FontSize="{DynamicResource ToolTipContentThemeFontSize}" />
+        </StackPanel>
+      </Border>
+    </Popup>
+  </Panel>
 
 </UserControl>

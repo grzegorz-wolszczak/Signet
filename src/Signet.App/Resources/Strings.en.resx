@@ -3653,4 +3653,233 @@ Insert anyway?</value>
   <data name="Cleanup_RiskySummary" xml:space="preserve">
     <value> Risky (⚠, unchecked by default): {0}.</value>
   </data>
+  <data name="Action_MainWindow_Standardize" xml:space="preserve">
+    <value>Standardize EPUB...</value>
+  </data>
+  <data name="Operation_Standardize" xml:space="preserve">
+    <value>Standardize EPUB</value>
+  </data>
+  <data name="Status_StandardizeDone" xml:space="preserve">
+    <value>EPUB standardization finished.</value>
+  </data>
+  <data name="Status_StandardizeNothing" xml:space="preserve">
+    <value>Standardize EPUB: nothing to do.</value>
+  </data>
+  <data name="StandardizeWindow_Title" xml:space="preserve">
+    <value>Standardize EPUB</value>
+  </data>
+  <data name="StandardizeWindow_Intro" xml:space="preserve">
+    <value>Check the operations to perform. The preview shows what will change before anything is changed. The operations run from top to bottom, and each one sees the result of the previous ones. Hover over ⓘ to see exactly what an operation does.</value>
+  </data>
+  <data name="StandardizeWindow_Apply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
+  <data name="StandardizeWindow_Details" xml:space="preserve">
+    <value>Details</value>
+  </data>
+  <data name="StandardizeWindow_SelectAll" xml:space="preserve">
+    <value>Select all</value>
+  </data>
+  <data name="StandardizeWindow_SelectNone" xml:space="preserve">
+    <value>Select none</value>
+  </data>
+  <data name="StandardizeWindow_NothingToDo" xml:space="preserve">
+    <value>Nothing to do.</value>
+  </data>
+  <data name="StandardizeWindow_Row_Id" xml:space="preserve">
+    <value>ID: {0} → {1}</value>
+  </data>
+  <data name="StandardizeWindow_Summary_SideIds" xml:space="preserve">
+    <value> Renaming will also change manifest IDs: {0}.</value>
+  </data>
+  <data name="StandardizeStep_StandardFolders_Title" xml:space="preserve">
+    <value>Move files to the standard folders (OEBPS/Text, Styles, Images…)</value>
+  </data>
+  <data name="StandardizeStep_StandardFolders_Description" xml:space="preserve">
+    <value>Every file goes to the folder for its type, and all references to it are updated.</value>
+  </data>
+  <data name="StandardizeStep_StandardFolders_Summary" xml:space="preserve">
+    <value>Files to move or rename: {0}.</value>
+  </data>
+  <data name="StandardizeStep_StandardFolders_Info" xml:space="preserve">
+    <value>What it does:
+• Moves every file to the standard folder for its type:
+   – HTML/XHTML → OEBPS/Text
+   – CSS → OEBPS/Styles
+   – images → OEBPS/Images
+   – fonts → OEBPS/Fonts
+   – audio → OEBPS/Audio, video → OEBPS/Video
+   – everything else (e.g. JS, XML) → OEBPS/Misc
+   – the OPF and the NCX → OEBPS
+• Renames the OPF to content.opf and the NCX to toc.ncx.
+• When two files in different folders have the same name (ignoring case), the second one gets a unique numbered name, e.g. main.css → main0001.css.
+• Updates every reference to the moved files: href/src in HTML, url(…) in CSS, the OPF and NCX entries and META-INF/container.xml.
+
+Example: text/part0001.html → OEBPS/Text/part0001.html, stylesheet.css → OEBPS/Styles/stylesheet.css.
+
+It does not change the file contents (apart from references) or the extensions. Renaming a file (the OPF, the NCX, name collisions) also changes its manifest ID.</value>
+  </data>
+  <data name="StandardizeStep_StandardFileExtensions_Title" xml:space="preserve">
+    <value>Use standard file extensions</value>
+  </data>
+  <data name="StandardizeStep_StandardFileExtensions_Description" xml:space="preserve">
+    <value>Every file gets the extension of its type, e.g. an XHTML chapter saved as .html becomes .xhtml.</value>
+  </data>
+  <data name="StandardizeStep_StandardFileExtensions_Summary" xml:space="preserve">
+    <value>Files to get a new extension: {0}.</value>
+  </data>
+  <data name="StandardizeStep_StandardFileExtensions_Info" xml:space="preserve">
+    <value>What it does:
+• Every file whose extension does not match its MIME type gets the standard extension for that type. The folder stays the same.
+   – XHTML (also text/html) → .xhtml, e.g. part0001.html → part0001.xhtml
+   – JPEG → .jpg, e.g. cover.jpeg → cover.jpg
+   – CSS → .css, e.g. style.txt → style.css
+• When the new name is already taken in the same folder, the file gets a unique numbered name instead — nothing is overwritten.
+• Updates every reference to the renamed files (HTML, CSS, OPF, NCX).
+• Renaming a file also changes its manifest ID (e.g. ch01 → ch01.xhtml).
+
+It does not change the file contents (apart from references) or the folders.</value>
+  </data>
+  <data name="StandardizeStep_RebaseManifestIds_Title" xml:space="preserve">
+    <value>Base OPF manifest IDs on file names</value>
+  </data>
+  <data name="StandardizeStep_RebaseManifestIds_Description" xml:space="preserve">
+    <value>Every manifest entry gets an ID made from its file name, e.g. id12 → part0001_xhtml.</value>
+  </data>
+  <data name="StandardizeStep_RebaseManifestIds_Summary" xml:space="preserve">
+    <value>IDs to change: {0}.</value>
+  </data>
+  <data name="StandardizeStep_RebaseManifestIds_Info" xml:space="preserve">
+    <value>What it does:
+• Gives every OPF manifest entry an ID made from its file name:
+   – the dot before the extension becomes an underscore: part0001.xhtml → part0001_xhtml
+   – accented letters become plain ASCII: chapitré.xhtml → chapitre_xhtml
+   – an ID starting with a digit gets an "x" prefix: 00008.jpeg → x00008_jpeg
+• When that ID is already taken, a number is appended, e.g. part0001_xhtml0001.
+• Updates every reference to the changed IDs in the OPF: the spine (itemref idref), the toc attribute, the cover meta, refines, media-overlay and fallback.
+
+Example: &lt;item id="id12" href="Text/part0001.xhtml"&gt; → &lt;item id="part0001_xhtml" …&gt;.
+
+It does not change the files or their names. The IDs are based on the file names after the operations above.</value>
+  </data>
+  <data name="StandardizeStep_ManifestMediaTypes_Title" xml:space="preserve">
+    <value>Update OPF manifest media types</value>
+  </data>
+  <data name="StandardizeStep_ManifestMediaTypes_Description" xml:space="preserve">
+    <value>Manifest entries with an empty or unknown MIME type get the type Signet recognised.</value>
+  </data>
+  <data name="StandardizeStep_ManifestMediaTypes_Summary" xml:space="preserve">
+    <value>Media types to fix: {0}.</value>
+  </data>
+  <data name="StandardizeStep_ManifestMediaTypes_Info" xml:space="preserve">
+    <value>What it does:
+• Compares the media-type of every OPF manifest entry with the type Signet loaded the file with, and fixes the entries that differ.
+• This affects entries with an empty or unknown MIME type — when loading the book, Signet recognised their type from the file extension.
+
+Example: &lt;item href="Styles/style.css" media-type="application/octet-stream"&gt; → media-type="text/css".
+
+It does not change the files, their names or their IDs.</value>
+  </data>
+  <data name="PreferencesWindow_Warnings" xml:space="preserve">
+    <value>Warnings</value>
+  </data>
+  <data name="PreferencesWindow_WarningFontSize" xml:space="preserve">
+    <value>Font size of warnings in dialogs (px; 0 = as the interface text)</value>
+  </data>
+  <data name="PreferencesWindow_WarningColorLight" xml:space="preserve">
+    <value>Color — light theme</value>
+  </data>
+  <data name="PreferencesWindow_WarningColorDark" xml:space="preserve">
+    <value>Color — dark theme</value>
+  </data>
+  <data name="PreferencesWindow_WarningsNote" xml:space="preserve">
+    <value>The color also applies to the warnings in the status bar, the Notifications panel and highlighted tabs.</value>
+  </data>
+  <data name="PreferencesWindow_WarningSample" xml:space="preserve">
+    <value>⚠ Example: “font-style: italic” (from “.none1”) applies to this span</value>
+  </data>
+  <data name="CodeView_OpenTagHintLine" xml:space="preserve">
+    <value>line {0}</value>
+  </data>
+  <data name="PreferencesWindow_OpenTagHint" xml:space="preserve">
+    <value>Code View: show the opening tag when hovering over a closing tag</value>
+  </data>
+  <data name="PreferencesWindow_OpenTagHintDelay" xml:space="preserve">
+    <value>Hint delay (ms)</value>
+  </data>
+  <data name="PreferencesWindow_OpenTagHintFont" xml:space="preserve">
+    <value>Hint font</value>
+  </data>
+  <data name="PreferencesWindow_OpenTagHintFontDefault" xml:space="preserve">
+    <value>Default (as in the editor)</value>
+  </data>
+  <data name="PreferencesWindow_OpenTagHintFontEditor" xml:space="preserve">
+    <value>as in the editor</value>
+  </data>
+  <data name="PreferencesWindow_OpenTagHintLightBackground" xml:space="preserve">
+    <value>Background — light theme</value>
+  </data>
+  <data name="PreferencesWindow_OpenTagHintLightForeground" xml:space="preserve">
+    <value>Text — light theme</value>
+  </data>
+  <data name="PreferencesWindow_OpenTagHintDarkBackground" xml:space="preserve">
+    <value>Background — dark theme</value>
+  </data>
+  <data name="PreferencesWindow_OpenTagHintDarkForeground" xml:space="preserve">
+    <value>Text — dark theme</value>
+  </data>
+  <data name="Action_MainWindow_FindUsages" xml:space="preserve">
+    <value>Find Usages</value>
+  </data>
+  <data name="Action_MainWindow_FindUsagesWindow" xml:space="preserve">
+    <value>Find Usages Panel</value>
+  </data>
+  <data name="Panel_FindUsages" xml:space="preserve">
+    <value>Find Usages</value>
+  </data>
+  <data name="CodeViewMenu_FindUsages" xml:space="preserve">
+    <value>Find Usages</value>
+  </data>
+  <data name="FindUsages_Header" xml:space="preserve">
+    <value>Usages of class “{0}”</value>
+  </data>
+  <data name="FindUsages_Empty" xml:space="preserve">
+    <value>Right-click a class name in the code (in a class attribute or a CSS selector) and choose “Find Usages” (Alt+F7).</value>
+  </data>
+  <data name="FindUsages_Found" xml:space="preserve">
+    <value>Found usages</value>
+  </data>
+  <data name="FindUsages_Results_One" xml:space="preserve">
+    <value>{0} result</value>
+  </data>
+  <data name="FindUsages_Results_Few" xml:space="preserve">
+    <value>{0} results</value>
+  </data>
+  <data name="FindUsages_Results_Many" xml:space="preserve">
+    <value>{0} results</value>
+  </data>
+  <data name="FindUsages_LineColumn" xml:space="preserve">
+    <value>line {0}, col. {1}</value>
+  </data>
+  <data name="FindUsages_Refresh" xml:space="preserve">
+    <value>Refresh</value>
+  </data>
+  <data name="FindUsages_GroupBy" xml:space="preserve">
+    <value>Group By</value>
+  </data>
+  <data name="FindUsages_GroupByFile" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="FindUsages_ExpandAll" xml:space="preserve">
+    <value>Expand All (Ctrl+NumPad +)</value>
+  </data>
+  <data name="FindUsages_CollapseAll" xml:space="preserve">
+    <value>Collapse All (Ctrl+NumPad -)</value>
+  </data>
+  <data name="Status_FindUsages" xml:space="preserve">
+    <value>Usages of class “{0}”: {1}.</value>
+  </data>
+  <data name="Status_FindUsagesNoClass" xml:space="preserve">
+    <value>The caret is not on a class name (in a class attribute or a CSS selector).</value>
+  </data>
 </root>

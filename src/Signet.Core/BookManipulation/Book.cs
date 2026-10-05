@@ -956,6 +956,35 @@ public sealed class Book : IDisposable
         return new ClassRenamePreparation(renamer, null);
     }
 
+    /// <summary>
+    /// "Find Usages" of a CSS class (<see cref="ClassUsageFinder"/>) in the stylesheets and the markup files ((X)HTML,
+    /// SVG, XML), in the order of the Book Browser. The lenient tag scanner needs no well-formed guard.
+    /// </summary>
+    public IReadOnlyList<ClassUsage> FindClassUsages(string className)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(className);
+        using MainUI.OpfModel browserOrder = new(this);
+        List<ClassUsageSource> sources = new();
+        foreach (MainUI.OpfModelEntry entry in browserOrder.AllEntries())
+        {
+            if (entry.Resource is not TextResource text)
+            {
+                continue;
+            }
+
+            if (text.Type == ResourceType.Css)
+            {
+                sources.Add(new ClassUsageSource(text.BookPath, text.GetText(), IsStyleSheet: true));
+            }
+            else if (text.Type is ResourceType.Html or ResourceType.Svg or ResourceType.Xml)
+            {
+                sources.Add(new ClassUsageSource(text.BookPath, text.GetText(), IsStyleSheet: false));
+            }
+        }
+
+        return ClassUsageFinder.Find(className, sources);
+    }
+
     /// <summary>Stores the file texts computed by <see cref="ClassRenamer.Rename"/>. Returns whether anything changed.</summary>
     public bool ApplyClassRename(ClassRenameResult result)
     {
@@ -1121,35 +1150,7 @@ public sealed class Book : IDisposable
             return new MaintenanceOperationResult(false, bad);
         }
 
-        OpfResource opf = GetOpf();
-        NcxResource? ncx = GetNcx();
-
-        List<Resource> namesToFix = new();
-        List<string> newNames = new();
-        if (!string.Equals(opf.Filename, "content.opf", StringComparison.Ordinal))
-        {
-            namesToFix.Add(opf);
-            newNames.Add("content.opf");
-        }
-
-        if (ncx is not null && !string.Equals(ncx.Filename, "toc.ncx", StringComparison.Ordinal))
-        {
-            namesToFix.Add(ncx);
-            newNames.Add("toc.ncx");
-        }
-
-        if (namesToFix.Count > 0)
-        {
-            RenameResourcesWithUpdates(namesToFix, newNames);
-        }
-
-        FixDuplicateFilenames();
-        MoveContentFilesToStdFolders();
-
-        List<string> bookPaths = _folderKeeper.GetResourceList().Select(r => r.BookPath).ToList();
-        List<string> mediaTypes = _folderKeeper.GetResourceList().Select(r => r.MediaType).ToList();
-        _folderKeeper.SetGroupFolders(bookPaths, mediaTypes);
-
+        EpubStandardization.ApplyStandardFolders(this);
         Modified = true;
         return MaintenanceOperationResult.Ok;
     }
@@ -1157,7 +1158,8 @@ public sealed class Book : IDisposable
     /// <summary>
     /// "Use Standard File Extensions" — renames every resource (including the OPF and NCX) whose
     /// extension does not match its MIME type (<see cref="MediaTypes.GetExtensionFromMediaType"/>),
-    /// keeping the folder. References are updated via <see cref="UniversalUpdates"/>. A
+    /// keeping the folder; a name already taken in that folder gets a unique version instead of overwriting the file
+    /// (<see cref="EpubStandardization"/>). References are updated via <see cref="UniversalUpdates"/>. A
     /// well-formed guard runs on the HTML files and the OPF.
     /// </summary>
     public MaintenanceOperationResult UseStandardFileExtensions()
@@ -1173,33 +1175,8 @@ public sealed class Book : IDisposable
             return new MaintenanceOperationResult(false, opf);
         }
 
-        List<Resource> toRename = new();
-        List<string> newNames = new();
-        foreach (Resource resource in _folderKeeper.GetResourceList())
+        if (EpubStandardization.ApplyStandardFileExtensions(this))
         {
-            string ext = MediaTypes.GetExtensionFromMediaType(resource.MediaType);
-            if (ext.Length == 0)
-            {
-                continue;
-            }
-
-            string suffix = "." + ext;
-            if (resource.Filename.EndsWith(suffix, StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            string[] parts = resource.Filename.Split('.');
-            string newName = parts.Length > 1
-                ? string.Join('.', parts[..^1].Append(ext))
-                : resource.Filename + suffix;
-            toRename.Add(resource);
-            newNames.Add(newName);
-        }
-
-        if (toRename.Count > 0)
-        {
-            RenameResourcesWithUpdates(toRename, newNames);
             Modified = true;
         }
 
@@ -1257,89 +1234,39 @@ public sealed class Book : IDisposable
     }
 
     /// <summary>
-    /// Resolves file name collisions (case-insensitive) across the whole book — the first
-    /// occurrence keeps its name, the following ones get a unique version
-    /// (<see cref="BookManipulation.FolderKeeper.GetUniqueFilenameVersion"/>). Used by
-    /// <see cref="RestructureToSignetNorm"/> before flattening into the standard folders.
+    /// Gives resources new bookpaths — a new file name (<see cref="BookManipulation.FolderKeeper.BulkRenameResources"/>)
+    /// and/or a new folder (<see cref="BookManipulation.FolderKeeper.BulkMoveResources"/>), in the order of
+    /// <see cref="EpubStandardization.SplitRelocation"/> — and updates the references to them across the whole book in
+    /// one <see cref="UniversalUpdates"/> pass. The shared tail of the standardization
+    /// steps (<see cref="EpubStandardization"/>); without a well-formed guard, which the caller has already run.
     /// </summary>
-    private void FixDuplicateFilenames()
+    internal void RelocateResources(IReadOnlyList<(Resource Resource, string NewBookPath)> changes)
     {
-        HashSet<string> seen = new(StringComparer.Ordinal);
-        List<Resource> problems = new();
-        foreach (Resource resource in _folderKeeper.GetResourceList())
+        ArgumentNullException.ThrowIfNull(changes);
+        if (changes.Count == 0)
         {
-            string lower = resource.Filename.ToLowerInvariant();
-            if (!seen.Add(lower))
-            {
-                problems.Add(resource);
-            }
+            return;
         }
 
-        foreach (Resource resource in problems)
-        {
-            string newName = _folderKeeper.GetUniqueFilenameVersion(resource.Filename.ToLowerInvariant());
-            RenameResourcesWithUpdates(new[] { resource }, new[] { newName });
-        }
-    }
-
-    /// <summary>
-    /// Moves every resource (skipping the "other"/empty group) to its standard folder
-    /// if it is not there yet. Used by <see cref="RestructureToSignetNorm"/>.
-    /// </summary>
-    private void MoveContentFilesToStdFolders()
-    {
-        List<Resource> toMove = new();
-        List<string> newBookPaths = new();
-        foreach (Resource resource in _folderKeeper.GetResourceList())
-        {
-            string group = MediaTypes.GetGroupFromMediaType(resource.MediaType, "other");
-            if (group.Length == 0 || string.Equals(group, "other", StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            string stdFolder = _folderKeeper.GetStdFolderForGroup(group);
-            string filename = resource.Filename;
-            string newBookPath = stdFolder.Length == 0 ? filename : stdFolder + "/" + filename;
-            if (!string.Equals(newBookPath, resource.BookPath, StringComparison.Ordinal))
-            {
-                toMove.Add(resource);
-                newBookPaths.Add(newBookPath);
-            }
-        }
-
-        if (toMove.Count > 0)
-        {
-            MoveResourcesWithUpdates(toMove, newBookPaths);
-        }
-    }
-
-    /// <summary>
-    /// Renames resources (<see cref="BookManipulation.FolderKeeper.BulkRenameResources"/>) and
-    /// updates the references to them across the whole book (<see cref="UniversalUpdates"/>). The shared tail
-    /// of the tidy-up operations (without an additional simulation safeguard — the well-formed guard has already been
-    /// run by the caller for the whole book at once).
-    /// </summary>
-    private void RenameResourcesWithUpdates(IReadOnlyList<Resource> resources, IReadOnlyList<string> newFilenames)
-    {
+        List<Resource> resources = changes.Select(c => c.Resource).ToList();
         List<string> oldBookPaths = resources.Select(r => r.BookPath).ToList();
-        _folderKeeper.BulkRenameResources(resources, newFilenames);
+
+        (List<(Resource Resource, string NewFilename)> renames, List<(Resource Resource, string NewBookPath)> moves) =
+            EpubStandardization.SplitRelocation(changes, r => r.BookPath);
+        if (renames.Count > 0)
+        {
+            _folderKeeper.BulkRenameResources(renames.Select(c => c.Resource).ToList(), renames.Select(c => c.NewFilename).ToList());
+        }
+
+        if (moves.Count > 0)
+        {
+            _folderKeeper.BulkMoveResources(moves.Select(c => c.Resource).ToList(), moves.Select(c => c.NewBookPath).ToList());
+        }
+
         ApplyUniversalUpdates(resources, oldBookPaths);
     }
 
-    /// <summary>
-    /// Moves resources (<see cref="BookManipulation.FolderKeeper.BulkMoveResources"/>) and updates
-    /// the references to them across the whole book (<see cref="UniversalUpdates"/>). The shared tail of
-    /// <see cref="MoveContentFilesToStdFolders"/>.
-    /// </summary>
-    private void MoveResourcesWithUpdates(IReadOnlyList<Resource> resources, IReadOnlyList<string> newBookPaths)
-    {
-        List<string> oldBookPaths = resources.Select(r => r.BookPath).ToList();
-        _folderKeeper.BulkMoveResources(resources, newBookPaths);
-        ApplyUniversalUpdates(resources, oldBookPaths);
-    }
-
-    private void ApplyUniversalUpdates(IReadOnlyList<Resource> resources, List<string> oldBookPaths)
+    private void ApplyUniversalUpdates(List<Resource> resources, List<string> oldBookPaths)
     {
         Dictionary<string, string> updates = new(StringComparer.Ordinal);
         for (int i = 0; i < resources.Count; i++)
@@ -1355,7 +1282,7 @@ public sealed class Book : IDisposable
     }
 
     /// <summary>The well-formed guard for whole-book operations: all HTML files, the OPF and (if present) the NCX.</summary>
-    private Resource? FindFirstNotWellFormedForBook()
+    internal Resource? FindFirstNotWellFormedForBook()
     {
         if (FindFirstNotWellFormed(GetHtmlResources()) is { } badHtml)
         {

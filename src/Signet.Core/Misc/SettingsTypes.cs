@@ -137,8 +137,77 @@ public readonly record struct PreviewHighlight(
         AutoHide,
         Math.Clamp(AutoHideDelayMs, AutoHideDelayMin, AutoHideDelayMax));
 
-    private static bool IsHexColor(string? value) =>
+    /// <summary>Whether the value is a <c>#rrggbb</c> color.</summary>
+    internal static bool IsHexColor(string? value) =>
         value is { Length: 7 } && value[0] == '#' && value.AsSpan(1).IndexOfAnyExcept(HexDigits) < 0;
+}
+
+/// <summary>
+/// Appearance of the warning texts in dialogs (e.g. the consequences of a risky span removal or Cleanup item) and of
+/// the warning color used across the application (status bar, Notifications panel, attention tabs).
+/// </summary>
+/// <param name="FontSize">Font size (px) of the warning texts; 0 = the size of the interface text.</param>
+/// <param name="LightColor">Warning color (<c>#rrggbb</c>) for the light application theme.</param>
+/// <param name="DarkColor">Warning color (<c>#rrggbb</c>) for the dark application theme.</param>
+public readonly record struct WarningAppearance(int FontSize, string LightColor, string DarkColor)
+{
+    /// <summary>Lower bound of an explicit <see cref="FontSize"/>.</summary>
+    public const int FontSizeMin = 8;
+
+    /// <summary>Upper bound of an explicit <see cref="FontSize"/>.</summary>
+    public const int FontSizeMax = 40;
+
+    /// <summary>Default values: the interface text size, dark orange (light theme) and amber (dark theme).</summary>
+    public static WarningAppearance Default => new(0, "#b35c00", "#ffb900");
+
+    /// <summary>A copy with the size clamped (0 stays "as the interface text") and valid colors (invalid → default).</summary>
+    public WarningAppearance Normalized() => new(
+        FontSize <= 0 ? 0 : Math.Clamp(FontSize, FontSizeMin, FontSizeMax),
+        PreviewHighlight.IsHexColor(LightColor) ? LightColor : Default.LightColor,
+        PreviewHighlight.IsHexColor(DarkColor) ? DarkColor : Default.DarkColor);
+}
+
+/// <summary>
+/// Look of the Code View opening tag hint (the tooltip shown over a closing tag): font and colors for the light and
+/// dark application themes.
+/// </summary>
+/// <param name="FontFamily">Font family; empty = the Code View editor font.</param>
+/// <param name="FontSize">Font size (px); 0 = the Code View editor size (with its zoom).</param>
+/// <param name="LightBackground">Background color (<c>#rrggbb</c>) for the light theme.</param>
+/// <param name="LightForeground">Text color (<c>#rrggbb</c>) for the light theme.</param>
+/// <param name="DarkBackground">Background color (<c>#rrggbb</c>) for the dark theme.</param>
+/// <param name="DarkForeground">Text color (<c>#rrggbb</c>) for the dark theme.</param>
+public readonly record struct OpenTagHintAppearance(
+    string FontFamily,
+    int FontSize,
+    string LightBackground,
+    string LightForeground,
+    string DarkBackground,
+    string DarkForeground)
+{
+    /// <summary>Lower bound of an explicit <see cref="FontSize"/>.</summary>
+    public const int FontSizeMin = 6;
+
+    /// <summary>Upper bound of an explicit <see cref="FontSize"/>.</summary>
+    public const int FontSizeMax = 72;
+
+    /// <summary>Default values: the editor font and the tooltip colors of the Fluent theme.</summary>
+    public static OpenTagHintAppearance Default => new(string.Empty, 0, "#f2f2f2", "#000000", "#2b2b2b", "#ffffff");
+
+    /// <summary>Background color for the application theme.</summary>
+    public string BackgroundFor(bool dark) => dark ? DarkBackground : LightBackground;
+
+    /// <summary>Text color for the application theme.</summary>
+    public string ForegroundFor(bool dark) => dark ? DarkForeground : LightForeground;
+
+    /// <summary>A copy with the size clamped (0 stays "as the editor") and valid colors (invalid → default).</summary>
+    public OpenTagHintAppearance Normalized() => new(
+        FontFamily?.Trim() ?? string.Empty,
+        FontSize <= 0 ? 0 : Math.Clamp(FontSize, FontSizeMin, FontSizeMax),
+        PreviewHighlight.IsHexColor(LightBackground) ? LightBackground : Default.LightBackground,
+        PreviewHighlight.IsHexColor(LightForeground) ? LightForeground : Default.LightForeground,
+        PreviewHighlight.IsHexColor(DarkBackground) ? DarkBackground : Default.DarkBackground,
+        PreviewHighlight.IsHexColor(DarkForeground) ? DarkForeground : Default.DarkForeground);
 }
 
 /// <summary>Font settings of the "Insert Special Character" window.</summary>

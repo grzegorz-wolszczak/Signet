@@ -29,6 +29,9 @@ public static class DockableIds
     /// <summary>Notifications panel (the status bar message history).</summary>
     public const string Notifications = "Notifications";
 
+    /// <summary>"Find Usages" panel (the usages of a CSS class).</summary>
+    public const string FindUsages = "FindUsages";
+
     /// <summary>Document area (tabs).</summary>
     public const string Documents = "Documents";
 }
@@ -154,6 +157,21 @@ public sealed class CheckpointsTool : SignetTool
 
     /// <summary>Checkpoint list view model (embedded by <see cref="MainDockFactory"/>).</summary>
     public CheckpointsViewModel? ViewModel { get; init; }
+}
+
+/// <summary>"Find Usages" panel — the usages of a CSS class in the whole book.</summary>
+public sealed class FindUsagesTool : SignetTool
+{
+    /// <summary>Initializes the panel.</summary>
+    public FindUsagesTool()
+    {
+        Id = DockableIds.FindUsages;
+        Title = Strings.Get("Panel_FindUsages");
+        CanClose = false;
+    }
+
+    /// <summary>Panel view model (embedded by <see cref="MainDockFactory"/>).</summary>
+    public FindUsagesViewModel? ViewModel { get; init; }
 }
 
 /// <summary>Notifications panel — the history of the status bar messages.</summary>

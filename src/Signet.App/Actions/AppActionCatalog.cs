@@ -129,6 +129,7 @@ public static class AppActionCatalog
         new("MainWindow.BookmarkLocation", "Book&mark Location", "Ctrl+Alt+B", "bookmark", "Search"),
         new("MainWindow.GoToLinkOrStyle", "&Go To Link Or Style", "F3", null, "Search"),
         new("MainWindow.GoBackFromLinkOrStyle", "&Back", "Ctrl+\\", "back-to-link-style", "Search"),
+        new("MainWindow.FindUsages", "Find Usages", "Alt+F7", null, "Search"),
         new("MainWindow.MarkSelection", "Mar&k Selected Text", "Ctrl+Shift+M", null, "Search"),
         new("MainWindow.GoToLine", "Go To &Line...", "Ctrl+/", null, "Search"),
 
@@ -149,6 +150,7 @@ public static class AppActionCatalog
         new("MainWindow.GenerateTOC", "&Generate Table Of Contents...", "Ctrl+T", "generate-toc", "Tools"),
         new("MainWindow.EditTOC", "&Edit Table Of Contents...", "", "edit-toc", "Tools"),
         new("MainWindow.CreateHTMLTOC", "&Create HTML from Table Of Contents", "", null, "Tools"),
+        new("MainWindow.Standardize", "Standardize EPUB...", "", "polish", "Tools"),
         new("MainWindow.StandardizeEpub", "Restructure Epub to Signet Norm", "", null, "Tools"),
         new("MainWindow.UseStandardFileExtensions", "Use Standard File Extensions", "", null, "Tools"),
         new("MainWindow.RebaseManifestIDs", "Rebase OPF Manifest IDs on Current Filenames", "", null, "Tools"),
@@ -194,6 +196,7 @@ public static class AppActionCatalog
         new("MainWindow.CheckpointsWindow", "C&heckpoints", "", null, "View"),
         new("MainWindow.FindReplaceWindow", "&Find && Replace Panel", "", null, "View"),
         new("MainWindow.NotificationsWindow", "&Notifications Panel", "", null, "View"),
+        new("MainWindow.FindUsagesWindow", "Find Usages Panel", "", null, "View"),
         new("MainWindow.FocusOnBookBrowser", "Focus on Book Browser", "", null, "View"),
         new("MainWindow.FocusOnCodeView", "Focus on Code View", "", null, "View"),
         new("MainWindow.FocusOnPreview", "Focus on Preview", "", null, "View"),

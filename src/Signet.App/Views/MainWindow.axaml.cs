@@ -111,6 +111,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             _boundViewModel.ReportsRequested -= OnReportsRequested;
             _boundViewModel.SpellcheckEditorRequested -= OnSpellcheckEditorRequested;
             _boundViewModel.CleanupRequested -= OnCleanupRequested;
+            _boundViewModel.StandardizeRequested -= OnStandardizeRequested;
             _boundViewModel.LiveCssPanelRequested -= OnLiveCssPanelRequested;
             _boundViewModel.LiveCssContextChanged -= OnLiveCssContextChanged;
             _boundViewModel.SearchEditorRequested -= OnSearchEditorRequested;
@@ -157,6 +158,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         _boundViewModel.ReportsRequested += OnReportsRequested;
         _boundViewModel.SpellcheckEditorRequested += OnSpellcheckEditorRequested;
         _boundViewModel.CleanupRequested += OnCleanupRequested;
+        _boundViewModel.StandardizeRequested += OnStandardizeRequested;
         _boundViewModel.LiveCssPanelRequested += OnLiveCssPanelRequested;
         _boundViewModel.LiveCssContextChanged += OnLiveCssContextChanged;
         _boundViewModel.SearchEditorRequested += OnSearchEditorRequested;
@@ -227,6 +229,14 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
 
         _boundViewModel?.PersistState();
         base.OnClosing(e);
+    }
+
+    /// <inheritdoc />
+    protected override void OnClosed(EventArgs e)
+    {
+        // The layout (with floating panels saved in their regions) was persisted in OnClosing.
+        _boundViewModel?.CloseFloatingPanels();
+        base.OnClosed(e);
     }
 
     private void OnCloseWindowRequested(object? sender, EventArgs e) => Close();
@@ -1025,6 +1035,25 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         if (cleanup is not null)
         {
             await CleanupWindow.ShowAsync(this, cleanup);
+        }
+    }
+
+    /// <summary>
+    /// Handles the "Standardize EPUB" action: checks the book and shows the modal dialog with the preview of the
+    /// changes; its "Apply" runs the checked steps and closes it.
+    /// </summary>
+    private async void OnStandardizeRequested(object? sender, EventArgs e)
+    {
+        MainWindowViewModel? vm = _boundViewModel;
+        if (vm is null)
+        {
+            return;
+        }
+
+        StandardizationViewModel? standardization = await vm.PrepareStandardizationAsync();
+        if (standardization is not null)
+        {
+            await StandardizationWindow.ShowAsync(this, standardization);
         }
     }
 

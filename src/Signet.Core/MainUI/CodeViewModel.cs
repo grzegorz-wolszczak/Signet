@@ -185,6 +185,55 @@ public sealed partial class CodeViewModel
     }
 
     /// <summary>
+    /// The closing tag (<c>&lt;/name&gt;</c>, from <c>&lt;</c> to <c>&gt;</c> inclusive) containing the character at
+    /// <paramref name="offset"/>, found textually — cheap enough to run on every mouse move. Returns <c>null</c> when the
+    /// character is not in a closing tag or the syntax is not markup. The opening tag is matched separately
+    /// (<see cref="GetOpenTagOfCloseTag"/>).
+    /// </summary>
+    public (int Offset, int Length)? GetCloseTagAt(int offset)
+    {
+        if (Syntax is not (CodeViewSyntax.Html or CodeViewSyntax.Xml) || offset < 0 || offset >= _text.Length)
+        {
+            return null;
+        }
+
+        string text = _text;
+        int start = text.LastIndexOf('<', offset);
+        if (start < 0 || start + 1 >= text.Length || text[start + 1] != '/')
+        {
+            return null;
+        }
+
+        int end = text.IndexOf('>', start);
+        int nextOpen = text.IndexOf('<', start + 1);
+        if (end < offset || (nextOpen >= 0 && nextOpen < end))
+        {
+            return null;
+        }
+
+        return (start, end - start + 1);
+    }
+
+    /// <summary>
+    /// The opening tag (offset and length in <see cref="Text"/>) that the closing tag starting at
+    /// <paramref name="closeTagOffset"/> closes — matched with <see cref="TagLister"/>, like the tag pair highlight.
+    /// Returns <c>null</c> when there is no closing tag at that offset or it has no matching opening tag.
+    /// </summary>
+    public (int Offset, int Length)? GetOpenTagOfCloseTag(int closeTagOffset)
+    {
+        if (Syntax is not (CodeViewSyntax.Html or CodeViewSyntax.Xml) || closeTagOffset < 0 || closeTagOffset >= _text.Length)
+        {
+            return null;
+        }
+
+        var lister = new TagLister(_text);
+        TagLister.TagInfo ti = lister.At(lister.FindLastTagOnOrBefore(closeTagOffset));
+        return ti.Kind == TagKind.End && ti.Pos == closeTagOffset && ti.OpenLen > 0
+            ? (ti.OpenPos, ti.OpenLen)
+            : null;
+    }
+
+    /// <summary>
     /// For a caret position inside the value of the <c>class="..."</c> attribute of an opening /
     /// empty tag, returns the single class name the caret is on (one of several separated by
     /// spaces) — the logic behind "Jump to CSS class definition" (Ctrl+click). Returns <c>null</c> when the syntax

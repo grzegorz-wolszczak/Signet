@@ -61,8 +61,8 @@
                           <TextBlock Text="{Binding Title}" TextWrapping="Wrap" />
                         </CheckBox>
                         <TextBlock Classes="note" Text="{Binding Description}" Margin="28,0,0,0" />
-                        <TextBlock Classes="note" Text="{Binding Warning}" IsVisible="{Binding HasWarning}"
-                                   FontStyle="Italic" Margin="28,0,0,0" />
+                        <TextBlock Classes="warningNote" Text="{Binding Warning}" IsVisible="{Binding HasWarning}"
+                                   Margin="28,0,0,0" />
 
                         <StackPanel IsVisible="{Binding IsEnabled}" Margin="28,6,0,0" Spacing="4">
                           <TextBlock Text="{Binding Summary}" FontWeight="SemiBold" TextWrapping="Wrap" />
@@ -99,8 +99,7 @@
                                                     Margin="48,2,4,4">
                                         <ItemsControl.ItemTemplate>
                                           <DataTemplate x:DataType="core:CleanupConsequence">
-                                            <TextBlock Text="{Binding Text}" Classes="note" TextWrapping="Wrap"
-                                                       Foreground="{DynamicResource SignetWarningBrush}"
+                                            <TextBlock Text="{Binding Text}" Classes="warning"
                                                        Background="Transparent"
                                                        DoubleTapped="OnConsequenceDoubleTapped" />
                                           </DataTemplate>

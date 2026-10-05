@@ -60,6 +60,10 @@ public partial class CodeTabView : UserControl
     // A Find Next match that still has to be brought into view after subsequent layout passes
     // (see ScrollPendingMatch); Attempts limits the number of corrections.
     private (int Start, int End, int Attempts)? _pendingMatchScroll;
+
+    // The caret after Ctrl+End / Ctrl+Shift+End — the end of the document that still has to be scrolled to (see
+    // ScrollPendingCaret).
+    private (int Offset, int Attempts, double LastHeight)? _pendingCaretScroll;
     private const int MaxMatchScrollAttempts = 8;
 
     /// <summary>Initializes the view.</summary>
@@ -80,6 +84,7 @@ public partial class CodeTabView : UserControl
         Editor.TextArea.TextView.BackgroundRenderers.Add(_issueRenderer);
         Editor.TextArea.TextView.AddHandler(TextView.PointerHoverEvent, OnTextViewPointerHover);
         Editor.TextArea.TextView.AddHandler(TextView.PointerHoverStoppedEvent, OnTextViewPointerHoverStopped);
+        InitializeOpenTagHint();
         Editor.TextArea.Caret.PositionChanged += OnCaretPositionChanged;
         Editor.TextArea.TextView.VisualLinesChanged += (_, _) =>
         {
@@ -87,7 +92,14 @@ public partial class CodeTabView : UserControl
             {
                 Dispatcher.UIThread.Post(ScrollPendingMatch, DispatcherPriority.Loaded);
             }
+
+            if (_pendingCaretScroll is not null)
+            {
+                Dispatcher.UIThread.Post(ScrollPendingCaret, DispatcherPriority.Loaded);
+            }
         };
+        // After AvaloniaEdit has moved the caret (handledEventsToo: its command handler marks the key handled).
+        Editor.TextArea.AddHandler(KeyDownEvent, OnTextAreaKeyDownAfterEditor, RoutingStrategies.Bubble, handledEventsToo: true);
         Editor.TextArea.SelectionChanged += OnSelectionChanged;
         Editor.TextArea.TextEntered += OnTextEntered;
         Editor.TextArea.AddHandler(KeyUpEvent, OnTextAreaKeyUp, RoutingStrategies.Bubble);
@@ -284,6 +296,71 @@ public partial class CodeTabView : UserControl
 
         _pendingMatchScroll = (clampedStart, clampedEnd, 0);
         ScrollPendingMatch();
+    }
+
+    /// <summary>
+    /// Ctrl+End (also with Shift) jumps to the end of the document, but AvaloniaEdit scrolls using the estimated
+    /// height of the lines it has not built yet (one line per paragraph), so with long wrapped paragraphs a single
+    /// press stopped well above the end. The view is scrolled to the end again after the following line rebuilds,
+    /// like a Find Next match is (<see cref="ScrollPendingCaret"/>).
+    /// </summary>
+    private void OnTextAreaKeyDownAfterEditor(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.End && e.KeyModifiers.HasFlag(KeyModifiers.Control) && Editor.Document is { } document
+            && Editor.CaretOffset == document.TextLength)
+        {
+            _pendingCaretScroll = (Editor.CaretOffset, 0, -1);
+            ScrollPendingCaret();
+        }
+    }
+
+    /// <summary>
+    /// Scrolls to the very end of the document for the pending Ctrl+End (<see cref="_pendingCaretScroll"/>), again after
+    /// every line rebuild: each rebuild replaces estimated line heights with real ones, so the document height (and
+    /// the bottom scroll offset) grows until the last lines are built. Stops when the offset no longer changes with
+    /// valid lines, after the attempt limit, or when the caret moves (e.g. by the user).
+    /// </summary>
+    private void ScrollPendingCaret()
+    {
+        TextView textView = Editor.TextArea.TextView;
+        if (_pendingCaretScroll is not { } pending)
+        {
+            return;
+        }
+
+        if (Editor.CaretOffset != pending.Offset || pending.Attempts >= MaxMatchScrollAttempts || textView.Bounds.Height <= 0)
+        {
+            _pendingCaretScroll = null;
+            return;
+        }
+
+        textView.EnsureVisualLines();
+        // Build the last lines filling (twice) the viewport, so their real wrapped heights replace the estimates and
+        // the bottom offset below is right at once, instead of growing by one paragraph per layout pass.
+        double filled = 0;
+        for (DocumentLine? line = Editor.Document?.Lines[^1]; line is not null && filled < 2 * textView.Bounds.Height; line = line.PreviousLine)
+        {
+            filled += textView.GetOrConstructVisualLine(line).Height;
+        }
+
+        double height = textView.DocumentHeight;
+        double bottom = Math.Max(0, height - textView.Bounds.Height);
+        bool atBottom = Math.Abs(textView.VerticalOffset - bottom) < 1;
+        // Done only when the height did not change since the previous pass: right after the jump the height is still
+        // the estimate, and the view may already sit at that (too high) bottom.
+        if (atBottom && textView.VisualLinesValid && Math.Abs(height - pending.LastHeight) < 1)
+        {
+            _pendingCaretScroll = null;
+            return;
+        }
+
+        if (!atBottom)
+        {
+            // A viewport-high rectangle sets exactly this offset (see ScrollMatchIntoView).
+            textView.MakeVisible(new Rect(textView.HorizontalOffset, bottom, 1, textView.Bounds.Height));
+        }
+
+        _pendingCaretScroll = pending with { Attempts = pending.Attempts + 1, LastHeight = height };
     }
 
     /// <summary>
@@ -507,16 +584,28 @@ public partial class CodeTabView : UserControl
             items.Add(Item(Strings.Get("CodeViewMenu_GoToLinkOrStyle"), () => host.ExecuteAction(AppActionIds.GoToLinkOrStyle)));
             items.Add(new Separator());
 
-            // ---- Rename Class — the class under the caret in a class attribute or in a
+            // ---- Rename Class / Find Usages — the class under the caret in a class attribute or in a
             // stylesheet / <style> block selector ----
+            bool classItems = false;
             if (vm.ClassAtCaretForRename() is { } classAtCaret)
             {
                 items.Add(Item(Strings.Get("CodeViewMenu_RenameClass"), () => RenameClass(r => new RenameClassViewModel(r, classAtCaret))));
-                items.Add(new Separator());
+                classItems = true;
             }
             else if (vm.StyleClassAtCaretForRename() is { } styleClassAtCaret)
             {
                 items.Add(Item(Strings.Get("CodeViewMenu_RenameClass"), () => RenameClass(r => new RenameClassViewModel(r, styleClassAtCaret))));
+                classItems = true;
+            }
+
+            if (vm.ClassNameAtCaretForUsages() is not null)
+            {
+                items.Add(Item(Strings.Get("CodeViewMenu_FindUsages"), () => host.ExecuteAction(AppActionIds.FindUsages)));
+                classItems = true;
+            }
+
+            if (classItems)
+            {
                 items.Add(new Separator());
             }
 
@@ -858,39 +947,40 @@ public partial class CodeTabView : UserControl
     {
         TextView textView = Editor.TextArea.TextView;
         if (textView.Document is not { } document ||
-            textView.GetPosition(e.GetPosition(textView) + textView.ScrollOffset) is not { } position)
+            textView.GetPosition(e.GetPosition(textView) + textView.ScrollOffset) is not { } position ||
+            IssueTooltipAt(document, document.GetOffset(position.Location)) is not { } tip)
         {
             return;
         }
 
-        // Yellow squiggle of a non-blocking well-formedness warning (e.g. a missing DOCTYPE).
-        if (_boundViewModel?.WellFormedWarning is { } warning && _errorRenderer.IsInWarning(document.GetOffset(position.Location)))
+        ToolTip.SetTip(textView, tip);
+        ToolTip.SetIsOpen(textView, true);
+        e.Handled = true;
+    }
+
+    /// <summary>
+    /// The text of the issue tooltip at <paramref name="offset"/> — the yellow squiggle of a non-blocking well-formedness
+    /// warning (e.g. a missing DOCTYPE) or a span flagged by extended highlighting — or <c>null</c> when there is none.
+    /// </summary>
+    private string? IssueTooltipAt(TextDocument document, int offset)
+    {
+        if (_boundViewModel?.WellFormedWarning is { } warning && _errorRenderer.IsInWarning(offset))
         {
-            ToolTip.SetTip(textView, warning.Message);
-            ToolTip.SetIsOpen(textView, true);
-            e.Handled = true;
-            return;
+            return warning.Message;
         }
 
-        if (_lineColorizer is null)
+        if (_lineColorizer is null || offset < 0 || offset > document.TextLength)
         {
-            return;
+            return null;
         }
 
-        DocumentLine line = document.GetLineByNumber(position.Line);
-        int column = document.GetOffset(position.Location) - line.Offset;
+        DocumentLine line = document.GetLineByOffset(offset);
+        int column = offset - line.Offset;
         SyntaxSpan? hit = _lineColorizer.IssuesOf(line)
             .Where(s => column >= s.Start && column < s.Start + s.Length)
             .Select(s => (SyntaxSpan?)s)
             .LastOrDefault();
-        if (hit is not { } span)
-        {
-            return;
-        }
-
-        ToolTip.SetTip(textView, Strings.Get("CodeView_Issue_" + span.Issue));
-        ToolTip.SetIsOpen(textView, true);
-        e.Handled = true;
+        return hit is { } span ? Strings.Get("CodeView_Issue_" + span.Issue) : null;
     }
 
     private void OnTextViewPointerHoverStopped(object? sender, PointerEventArgs e)

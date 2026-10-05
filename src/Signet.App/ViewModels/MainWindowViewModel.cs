@@ -49,6 +49,7 @@ public sealed partial class MainWindowViewModel
     private readonly ClipsViewModel _clips;
     private readonly SpellcheckEditorViewModel _spellcheckEditor;
     private readonly ValidationResultsViewModel _validationResults = new();
+    private readonly FindUsagesViewModel _findUsages;
     private readonly List<Bookmark> _bookmarks = new();
     private bool _previewHasZoomFocus;
     private bool _isFindReplaceVisible;
@@ -184,6 +185,17 @@ public sealed partial class MainWindowViewModel
 
         _dockFactory.ValidationResults = _validationResults;
         _validationResults.EntryActivated += (_, result) => NavigateToValidationResult(result);
+
+        _findUsages = new FindUsagesViewModel(_settings);
+        _dockFactory.FindUsages = _findUsages;
+        _findUsages.UsageActivated += (_, usage) => NavigateToBookPathAtOffset(usage.BookPath, usage.Offset);
+        _findUsages.RefreshRequested += (_, _) =>
+        {
+            if (_findUsages.ClassName is { } className)
+            {
+                FindClassUsages(className);
+            }
+        };
 
         _spellcheckEditor = new SpellcheckEditorViewModel(_spellChecker, _settings);
         _spellcheckEditor.NavigationRequested += NavigateToBookPathAtOffset;
@@ -340,6 +352,7 @@ public sealed partial class MainWindowViewModel
 
         // Delete Unused Media Files / Delete Unused Stylesheet Selectors.
         _actions.SetHandler(AppActionIds.Cleanup, () => CleanupRequested?.Invoke(this, EventArgs.Empty));
+        _actions.SetHandler(AppActionIds.Standardize, () => StandardizeRequested?.Invoke(this, EventArgs.Empty));
         _actions.SetHandler(AppActionIds.LiveCssPanel, () => LiveCssPanelRequested?.Invoke(this, EventArgs.Empty));
 
         // Reformat HTML / Restructure Epub to Signet Norm / Use Standard File Extensions /
@@ -613,6 +626,12 @@ public sealed partial class MainWindowViewModel
     /// dialog and, once confirmed, calls <see cref="ApplyCleanup"/>.
     /// </summary>
     public event EventHandler? CleanupRequested;
+
+    /// <summary>
+    /// Raised by the "Standardize EPUB" action — the view calls <see cref="PrepareStandardizationAsync"/> and shows the
+    /// modal dialog, whose "Apply" calls <see cref="ApplyStandardization"/>.
+    /// </summary>
+    public event EventHandler? StandardizeRequested;
 
     /// <summary>
     /// Raised by the "Live CSS Panel" action — the view calls <see cref="TryResolveLiveCssPanel"/> for the
@@ -962,6 +981,7 @@ public sealed partial class MainWindowViewModel
         // preview already knows the book.
         _tabManager.SetBook(book);
         _preview.SetBook(book);
+        _findUsages.Clear();
         BookBrowser.SetBook(book);
         _toc.SetBook(book);
         _tabManager.RestoreSession(_settings);
@@ -1275,6 +1295,9 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>Raised when the user chooses "Customize Toolbars…" (the window is handled in the view).</summary>
     public event EventHandler? CustomizeToolbarsRequested;
+
+    /// <summary>Closes the floating panel windows together with the main window (otherwise the application keeps running).</summary>
+    public void CloseFloatingPanels() => _dockFactory.CloseFloatingWindows();
 
     /// <summary>Saves panel visibility to the settings (called when the window closes).</summary>
     public void PersistState()
@@ -1616,6 +1639,78 @@ public sealed partial class MainWindowViewModel
         }
 
         return CleanupAnalysis.Prepare(_currentBook).Analysis;
+    }
+
+    /// <summary>
+    /// Prepares the "Standardize EPUB" dialog: flushes the open tabs, asks about files without a DOCTYPE and checks
+    /// that the HTML files, the OPF and the NCX are well-formed (their references are rewritten). Returns the dialog's
+    /// view model, or <c>null</c> when no book is open, the user cancelled, or a file is not well-formed (then a message
+    /// goes to the status bar).
+    /// </summary>
+    public async Task<StandardizationViewModel?> PrepareStandardizationAsync()
+    {
+        if (_currentBook is not { } book)
+        {
+            return null;
+        }
+
+        _tabManager.SaveAllTabs();
+        if (!await ConfirmMissingDoctypeAsync("Operation_Standardize").ConfigureAwait(true))
+        {
+            return null;
+        }
+
+        if (EpubStandardization.FindNotWellFormed(book) is { } bad)
+        {
+            _statusBar.ShowMessage(
+                Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_Standardize"), bad.Filename),
+                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
+            return null;
+        }
+
+        return new StandardizationViewModel(
+            _settings.StandardizationEnabledSteps,
+            steps => EpubStandardization.Plan(book, steps),
+            ApplyStandardization);
+    }
+
+    /// <summary>
+    /// Runs the checked steps of the "Standardize EPUB" dialog ("Apply") behind one automatic checkpoint, remembers the
+    /// checked steps for the next time and refreshes the open tabs and panels.
+    /// </summary>
+    public void ApplyStandardization(IReadOnlyList<StandardizationStep> enabledSteps)
+    {
+        ArgumentNullException.ThrowIfNull(enabledSteps);
+        _settings.StandardizationEnabledSteps = enabledSteps;
+        if (_currentBook is not { } book)
+        {
+            return;
+        }
+
+        _tabManager.SaveAllTabs();
+        if (!EpubStandardization.Plan(book, enabledSteps).HasChanges)
+        {
+            _statusBar.ShowMessage(Strings.Get("Status_StandardizeNothing"), TimeSpan.FromSeconds(4));
+            return;
+        }
+
+        bool checkpoint = CheckpointBeforeAction(AppActionIds.Standardize);
+        MaintenanceOperationResult result = EpubStandardization.Apply(book, enabledSteps);
+        if (!result.Applied)
+        {
+            if (checkpoint)
+            {
+                RewindCheckpoint();
+            }
+
+            _statusBar.ShowMessage(
+                Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_Standardize"), result.NotWellFormed?.Filename),
+                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
+            return;
+        }
+
+        RefreshAfterMaintenanceOperation();
+        _statusBar.ShowMessage(Strings.Get("Status_StandardizeDone"), TimeSpan.FromSeconds(4));
     }
 
     /// <summary>
@@ -2186,6 +2281,55 @@ public sealed partial class MainWindowViewModel
         }
     }
 
+    /// <summary>The "Find Usages" panel view model.</summary>
+    public FindUsagesViewModel FindUsages => _findUsages;
+
+    /// <summary>
+    /// "Find Usages" (Alt+F7, Code View context menu): the usages of the CSS class under the caret of the active
+    /// Code View tab — in a <c>class</c> attribute or in a selector. Without a class under the caret only a status bar
+    /// message.
+    /// </summary>
+    private void FindUsagesAtCaret()
+    {
+        if (_currentBook is null)
+        {
+            return;
+        }
+
+        if (ActiveCodeTab?.ClassNameAtCaretForUsages() is not { } className)
+        {
+            _statusBar.ShowMessage(Strings.Get("Status_FindUsagesNoClass"), TimeSpan.FromSeconds(4), NotificationLevel.Warning);
+            return;
+        }
+
+        FindClassUsages(className);
+    }
+
+    /// <summary>
+    /// Searches the whole book (the open tabs flushed first) for the usages of <paramref name="className"/>, shows them
+    /// in the "Find Usages" panel (shown and focused) and reports the count on the status bar.
+    /// </summary>
+    public void FindClassUsages(string className)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(className);
+        if (_currentBook is null)
+        {
+            return;
+        }
+
+        _tabManager.SaveAllTabs();
+        IReadOnlyList<ClassUsage> usages = _currentBook.FindClassUsages(className);
+        _findUsages.Load(className, usages);
+        if (!_dockFactory.IsToolVisible(DockableIds.FindUsages))
+        {
+            _dockFactory.ToggleTool(DockableIds.FindUsages);
+        }
+
+        _dockFactory.FocusTool(DockableIds.FindUsages);
+        _statusBar.ShowMessage(
+            Strings.Format("Status_FindUsages", className, FindUsagesViewModel.ResultsText(usages.Count)), TimeSpan.FromSeconds(4));
+    }
+
     /// <summary>
     /// Navigation from the "Validation Results" panel (double-clicking a row) — opens the
     /// resource and scrolls to the reported line (line-based only — the only validation, the
@@ -2677,6 +2821,8 @@ public sealed partial class MainWindowViewModel
         WireToggle(AppActionIds.TogglePreview, DockableIds.Preview);
         WireToggle(AppActionIds.ToggleToc, DockableIds.TableOfContents);
         WireToggle(AppActionIds.ToggleValidationResults, DockableIds.ValidationResults);
+        WireToggle(AppActionIds.ToggleFindUsages, DockableIds.FindUsages);
+        _actions.SetHandler(AppActionIds.FindUsages, FindUsagesAtCaret);
         _actions.SetHandler(AppActionIds.ToggleFindReplace, () =>
         {
             if (IsFindReplaceVisible)
@@ -3031,6 +3177,7 @@ public sealed partial class MainWindowViewModel
 
         _dockFactory.RefreshTitles();
         _findReplace.RefreshLocalizedTexts();
+        _findUsages.OnLanguageChanged();
         BookBrowser.Refresh();
     }
 

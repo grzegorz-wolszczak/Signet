@@ -102,7 +102,33 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _specialCharacterFontFamily = specialChar.FontFamily;
         _specialCharacterFontSize = specialChar.FontSize;
 
+        WarningAppearance warnings = _settings.WarningAppearance;
+        _warningFontSize = warnings.FontSize;
+        WarningLightColor = new ColorSettingRow(
+            "WarningLight", Strings.Get("PreferencesWindow_WarningColorLight"), warnings.LightColor,
+            _ => PersistWarningAppearance(), PickColorAsync);
+        WarningDarkColor = new ColorSettingRow(
+            "WarningDark", Strings.Get("PreferencesWindow_WarningColorDark"), warnings.DarkColor,
+            _ => PersistWarningAppearance(), PickColorAsync);
+
         _extendedHighlighting = _settings.CodeViewExtendedHighlighting;
+        _openTagHint = _settings.CodeViewOpenTagHint;
+        _openTagHintDelay = _settings.CodeViewOpenTagHintDelayMs;
+        OpenTagHintAppearance hintLook = _settings.OpenTagHintAppearance;
+        _openTagHintFontFamily = hintLook.FontFamily;
+        _openTagHintFontSize = hintLook.FontSize;
+        OpenTagHintLightBackground = new ColorSettingRow(
+            "OpenTagHintLightBackground", Strings.Get("PreferencesWindow_OpenTagHintLightBackground"), hintLook.LightBackground,
+            _ => PersistOpenTagHintAppearance(), PickColorAsync);
+        OpenTagHintLightForeground = new ColorSettingRow(
+            "OpenTagHintLightForeground", Strings.Get("PreferencesWindow_OpenTagHintLightForeground"), hintLook.LightForeground,
+            _ => PersistOpenTagHintAppearance(), PickColorAsync);
+        OpenTagHintDarkBackground = new ColorSettingRow(
+            "OpenTagHintDarkBackground", Strings.Get("PreferencesWindow_OpenTagHintDarkBackground"), hintLook.DarkBackground,
+            _ => PersistOpenTagHintAppearance(), PickColorAsync);
+        OpenTagHintDarkForeground = new ColorSettingRow(
+            "OpenTagHintDarkForeground", Strings.Get("PreferencesWindow_OpenTagHintDarkForeground"), hintLook.DarkForeground,
+            _ => PersistOpenTagHintAppearance(), PickColorAsync);
         CodeViewLight = new CodeViewAppearanceEditor(_settings.CodeViewAppearance, a => _settings.CodeViewAppearance = a, PickFontAsync, PickColorAsync);
         CodeViewDark = new CodeViewAppearanceEditor(_settings.CodeViewDarkAppearance, a => _settings.CodeViewDarkAppearance = a, PickFontAsync, PickColorAsync);
 
@@ -393,6 +419,27 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _settings.SpecialCharacterAppearance = new SpecialCharacterAppearance(SpecialCharacterFontFamily, SpecialCharacterFontSize);
 
     /// <summary>
+    /// Font size (px) of the warning texts in dialogs; 0 = the interface text size. Applied live
+    /// (<see cref="UiDensityManager.ApplyWarningAppearance()"/>).
+    /// </summary>
+    [ObservableProperty]
+    private int _warningFontSize;
+
+    /// <summary>Warning color for the application's light theme (applied live).</summary>
+    public ColorSettingRow WarningLightColor { get; }
+
+    /// <summary>Warning color for the application's dark theme (applied live).</summary>
+    public ColorSettingRow WarningDarkColor { get; }
+
+    partial void OnWarningFontSizeChanged(int value) => PersistWarningAppearance();
+
+    private void PersistWarningAppearance()
+    {
+        _settings.WarningAppearance = new WarningAppearance(WarningFontSize, WarningLightColor.Value, WarningDarkColor.Value);
+        _uiDensity.ApplyWarningAppearance();
+    }
+
+    /// <summary>
     /// Font picker window — attached by the view (<c>PreferencesWindow</c>). <see langword="null"/>
     /// (e.g. in tests without a UI) = the "Choose…" commands do nothing.
     /// </summary>
@@ -460,6 +507,84 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
     partial void OnExtendedHighlightingChanged(bool value) => _settings.CodeViewExtendedHighlighting = value;
 
+    /// <summary>
+    /// Code View: resting the mouse on a closing tag shows its opening tag (applied live to the open tabs).
+    /// </summary>
+    [ObservableProperty]
+    private bool _openTagHint;
+
+    /// <summary>The delay (ms) of the opening tag hint, 0–<see cref="SettingsStore.OpenTagHintDelayMaxMs"/>; clamped on save.</summary>
+    [ObservableProperty]
+    private int _openTagHintDelay;
+
+    partial void OnOpenTagHintChanged(bool value) => _settings.CodeViewOpenTagHint = value;
+
+    partial void OnOpenTagHintDelayChanged(int value) => _settings.CodeViewOpenTagHintDelayMs = value;
+
+    /// <summary>Font of the opening tag hint; empty = the Code View editor font.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(OpenTagHintFontDescription))]
+    private string _openTagHintFontFamily;
+
+    /// <summary>Font size (px) of the opening tag hint; 0 = the Code View editor size.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(OpenTagHintFontDescription))]
+    private int _openTagHintFontSize;
+
+    /// <summary>The hint font for the Preferences field: "Consolas, 14 px" or "Default (as the editor)".</summary>
+    public string OpenTagHintFontDescription =>
+        OpenTagHintFontFamily.Length == 0 && OpenTagHintFontSize == 0
+            ? Strings.Get("PreferencesWindow_OpenTagHintFontDefault")
+            : $"{(OpenTagHintFontFamily.Length > 0 ? OpenTagHintFontFamily : Strings.Get("PreferencesWindow_OpenTagHintFontEditor"))}, "
+              + (OpenTagHintFontSize > 0 ? $"{OpenTagHintFontSize} px" : Strings.Get("PreferencesWindow_OpenTagHintFontEditor"));
+
+    /// <summary>Background of the opening tag hint — light theme.</summary>
+    public ColorSettingRow OpenTagHintLightBackground { get; }
+
+    /// <summary>Text color of the opening tag hint — light theme.</summary>
+    public ColorSettingRow OpenTagHintLightForeground { get; }
+
+    /// <summary>Background of the opening tag hint — dark theme.</summary>
+    public ColorSettingRow OpenTagHintDarkBackground { get; }
+
+    /// <summary>Text color of the opening tag hint — dark theme.</summary>
+    public ColorSettingRow OpenTagHintDarkForeground { get; }
+
+    partial void OnOpenTagHintFontFamilyChanged(string value) => PersistOpenTagHintAppearance();
+
+    partial void OnOpenTagHintFontSizeChanged(int value) => PersistOpenTagHintAppearance();
+
+    /// <summary>"Choose…" — the font picker, starting from the hint font (or the light-theme editor font).</summary>
+    [RelayCommand]
+    private async Task ChooseOpenTagHintFont()
+    {
+        CodeViewAppearance editor = _settings.CodeViewAppearance;
+        string family = OpenTagHintFontFamily.Length > 0 ? OpenTagHintFontFamily : editor.FontFamily;
+        int size = OpenTagHintFontSize > 0 ? OpenTagHintFontSize : editor.FontSize;
+        if (await PickFontAsync(new FontPickRequest(family, size, false)) is { } result)
+        {
+            OpenTagHintFontFamily = result.Family;
+            OpenTagHintFontSize = result.Size;
+        }
+    }
+
+    /// <summary>"Default" — the hint uses the editor font and size again.</summary>
+    [RelayCommand]
+    private void ResetOpenTagHintFont()
+    {
+        OpenTagHintFontFamily = string.Empty;
+        OpenTagHintFontSize = 0;
+    }
+
+    private void PersistOpenTagHintAppearance() =>
+        _settings.OpenTagHintAppearance = new OpenTagHintAppearance(
+            OpenTagHintFontFamily,
+            OpenTagHintFontSize,
+            OpenTagHintLightBackground.Value,
+            OpenTagHintLightForeground.Value,
+            OpenTagHintDarkBackground.Value,
+            OpenTagHintDarkForeground.Value);
+
     /// <summary>Code View appearance editor — light theme.</summary>
     public CodeViewAppearanceEditor CodeViewLight { get; }
 
@@ -491,6 +616,20 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
         CodeViewLight.ResetTo(CodeViewAppearance.LightDefault);
         CodeViewDark.ResetTo(CodeViewAppearance.DarkDefault);
+
+        OpenTagHintAppearance hintLook = OpenTagHintAppearance.Default;
+        OpenTagHintLightBackground.SetValueSilently(hintLook.LightBackground);
+        OpenTagHintLightForeground.SetValueSilently(hintLook.LightForeground);
+        OpenTagHintDarkBackground.SetValueSilently(hintLook.DarkBackground);
+        OpenTagHintDarkForeground.SetValueSilently(hintLook.DarkForeground);
+        OpenTagHintFontFamily = hintLook.FontFamily;
+        OpenTagHintFontSize = hintLook.FontSize;
+
+        WarningAppearance warnings = WarningAppearance.Default;
+        WarningLightColor.SetValueSilently(warnings.LightColor);
+        WarningDarkColor.SetValueSilently(warnings.DarkColor);
+        WarningFontSize = warnings.FontSize;
+        _uiDensity.ApplyWarningAppearance();
     }
 
     // =====================================================================

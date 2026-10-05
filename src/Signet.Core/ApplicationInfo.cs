@@ -19,7 +19,7 @@ public static class ApplicationInfo
     public static string Version { get; } = ResolveVersion();
 
     /// <summary>
-    /// "Name + version" label, e.g. <c>Signet 0.2.0</c> - the form used in the generator
+    /// "Name + version" label, e.g. <c>Signet 0.3.0</c> - the form used in the generator
     /// metadata and in the About dialog.
     /// </summary>
     public static string NameWithVersion => $"{Name} {Version}";
@@ -34,7 +34,7 @@ public static class ApplicationInfo
 
         if (!string.IsNullOrWhiteSpace(informational))
         {
-            // Strip the build metadata suffix (e.g. "0.2.0+abc123") - irrelevant to the user.
+            // Strip the build metadata suffix (e.g. "0.3.0+abc123") - irrelevant to the user.
             int plusIndex = informational.IndexOf('+');
             return plusIndex >= 0 ? informational[..plusIndex] : informational;
         }

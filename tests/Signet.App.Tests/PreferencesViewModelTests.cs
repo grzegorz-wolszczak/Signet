@@ -61,6 +61,81 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
+    public void Warning_fields_start_from_settings_and_changes_persist_immediately()
+    {
+        using TestHost host = new();
+        host.Settings.WarningAppearance = new WarningAppearance(16, "#102030", "#405060");
+        PreferencesViewModel sut = NewOn(host);
+
+        sut.WarningFontSize.Should().Be(16);
+        sut.WarningLightColor.Value.Should().Be("#102030");
+        sut.WarningDarkColor.Value.Should().Be("#405060");
+
+        sut.WarningFontSize = 0;
+        sut.WarningLightColor.Value = "#00ff00";
+        sut.WarningDarkColor.Value = "#0000ff";
+
+        host.Settings.WarningAppearance.Should().Be(new WarningAppearance(0, "#00ff00", "#0000ff"));
+    }
+
+    [Fact]
+    public void Open_tag_hint_fields_start_from_settings_and_changes_persist_immediately()
+    {
+        using TestHost host = new();
+        host.Settings.CodeViewOpenTagHint = false;
+        host.Settings.CodeViewOpenTagHintDelayMs = 800;
+        PreferencesViewModel sut = NewOn(host);
+
+        sut.OpenTagHint.Should().BeFalse();
+        sut.OpenTagHintDelay.Should().Be(800);
+
+        sut.OpenTagHint = true;
+        sut.OpenTagHintDelay = 250;
+
+        host.Settings.CodeViewOpenTagHint.Should().BeTrue();
+        host.Settings.CodeViewOpenTagHintDelayMs.Should().Be(250);
+    }
+
+    [Fact]
+    public void Open_tag_hint_look_starts_from_settings_persists_and_resets()
+    {
+        using UiCultureScope culture = new("en");
+        using TestHost host = new();
+        host.Settings.OpenTagHintAppearance = new OpenTagHintAppearance("Consolas", 15, "#111111", "#222222", "#333333", "#444444");
+        PreferencesViewModel sut = NewOn(host);
+
+        sut.OpenTagHintFontDescription.Should().Be("Consolas, 15 px");
+        sut.OpenTagHintLightBackground.Value.Should().Be("#111111");
+        sut.OpenTagHintDarkForeground.Value.Should().Be("#444444");
+
+        sut.OpenTagHintDarkBackground.Value = "#abcdef";
+        sut.ResetOpenTagHintFontCommand.Execute(null);
+
+        host.Settings.OpenTagHintAppearance.Should().Be(new OpenTagHintAppearance(string.Empty, 0, "#111111", "#222222", "#abcdef", "#444444"));
+        sut.OpenTagHintFontDescription.Should().Be(Strings.Get("PreferencesWindow_OpenTagHintFontDefault"));
+
+        sut.RestoreAppearanceDefaultsCommand.Execute(null);
+
+        host.Settings.OpenTagHintAppearance.Should().Be(OpenTagHintAppearance.Default);
+        sut.OpenTagHintLightBackground.Value.Should().Be(OpenTagHintAppearance.Default.LightBackground);
+    }
+
+    [Fact]
+    public void Restoring_the_appearance_defaults_resets_the_warnings()
+    {
+        using TestHost host = new();
+        host.Settings.WarningAppearance = new WarningAppearance(16, "#102030", "#405060");
+        PreferencesViewModel sut = NewOn(host);
+
+        sut.RestoreAppearanceDefaultsCommand.Execute(null);
+
+        sut.WarningFontSize.Should().Be(0);
+        sut.WarningLightColor.Value.Should().Be(WarningAppearance.Default.LightColor);
+        sut.WarningDarkColor.Value.Should().Be(WarningAppearance.Default.DarkColor);
+        host.Settings.WarningAppearance.Should().Be(WarningAppearance.Default);
+    }
+
+    [Fact]
     public void Preview_highlight_changes_persist_immediately_and_clamped()
     {
         (TestHost host, PreferencesViewModel vm) = New();

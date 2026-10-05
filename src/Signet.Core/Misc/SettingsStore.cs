@@ -354,6 +354,70 @@ public sealed class SettingsStore
         set => Write("code_view_auto_close_tags", value);
     }
 
+    /// <summary>
+    /// Whether the "Find Usages" panel groups the usages by file (otherwise a flat list); remembered between
+    /// sessions, off by default.
+    /// </summary>
+    public bool FindUsagesGroupByFile
+    {
+        get => ReadBool("find_usages_group_by_file", false);
+        set => Write("find_usages_group_by_file", value);
+    }
+
+    /// <summary>Upper bound of <see cref="CodeViewOpenTagHintDelayMs"/>.</summary>
+    public const int OpenTagHintDelayMaxMs = 5000;
+
+    /// <summary>
+    /// Whether Code View shows the matching opening tag (as in the source, with its line number) in a tooltip when the
+    /// mouse rests on a closing tag. On by default.
+    /// </summary>
+    public bool CodeViewOpenTagHint
+    {
+        get => ReadBool("code_view_open_tag_hint", true);
+        set => Write("code_view_open_tag_hint", value);
+    }
+
+    /// <summary>
+    /// Look of the opening tag tooltip (<see cref="CodeViewOpenTagHint"/>): font and colors for both themes. Always
+    /// read normalized (<see cref="OpenTagHintAppearance.Normalized"/>).
+    /// </summary>
+    public OpenTagHintAppearance OpenTagHintAppearance
+    {
+        get
+        {
+            OpenTagHintAppearance d = OpenTagHintAppearance.Default;
+            return new OpenTagHintAppearance(
+                ReadString("open_tag_hint_font_family", d.FontFamily),
+                ReadInt("open_tag_hint_font_size", d.FontSize),
+                ReadString("open_tag_hint_light_background", d.LightBackground),
+                ReadString("open_tag_hint_light_foreground", d.LightForeground),
+                ReadString("open_tag_hint_dark_background", d.DarkBackground),
+                ReadString("open_tag_hint_dark_foreground", d.DarkForeground)).Normalized();
+        }
+
+        set
+        {
+            OpenTagHintAppearance v = value.Normalized();
+            WriteSilent("open_tag_hint_font_family", v.FontFamily);
+            WriteSilent("open_tag_hint_font_size", v.FontSize);
+            WriteSilent("open_tag_hint_light_background", v.LightBackground);
+            WriteSilent("open_tag_hint_light_foreground", v.LightForeground);
+            WriteSilent("open_tag_hint_dark_background", v.DarkBackground);
+            WriteSilent("open_tag_hint_dark_foreground", v.DarkForeground);
+            RaiseChanged("open_tag_hint_appearance");
+        }
+    }
+
+    /// <summary>
+    /// After how many milliseconds of resting on a closing tag the opening tag tooltip appears
+    /// (<see cref="CodeViewOpenTagHint"/>); 0–<see cref="OpenTagHintDelayMaxMs"/>, 500 by default.
+    /// </summary>
+    public int CodeViewOpenTagHintDelayMs
+    {
+        get => Math.Clamp(ReadInt("code_view_open_tag_hint_delay_ms", 500), 0, OpenTagHintDelayMaxMs);
+        set => Write("code_view_open_tag_hint_delay_ms", Math.Clamp(value, 0, OpenTagHintDelayMaxMs));
+    }
+
     /// <summary>Whether automatic spell checking is enabled.</summary>
     public bool SpellCheck
     {
@@ -590,6 +654,31 @@ public sealed class SettingsStore
             _file.SetRaw(Group, "preview_highlight_auto_hide", v.AutoHide);
             WriteSilent("preview_highlight_auto_hide_ms", v.AutoHideDelayMs);
             RaiseChanged("preview_highlight");
+        }
+    }
+
+    /// <summary>
+    /// Appearance of the warnings (font size of the warning texts in dialogs, warning color for the light and dark
+    /// themes). Always read normalized (<see cref="WarningAppearance.Normalized"/>).
+    /// </summary>
+    public WarningAppearance WarningAppearance
+    {
+        get
+        {
+            WarningAppearance d = WarningAppearance.Default;
+            return new WarningAppearance(
+                ReadInt("warning_font_size", d.FontSize),
+                ReadString("warning_color_light", d.LightColor),
+                ReadString("warning_color_dark", d.DarkColor)).Normalized();
+        }
+
+        set
+        {
+            WarningAppearance v = value.Normalized();
+            WriteSilent("warning_font_size", v.FontSize);
+            WriteSilent("warning_color_light", v.LightColor);
+            WriteSilent("warning_color_dark", v.DarkColor);
+            RaiseChanged("warning_appearance");
         }
     }
 
@@ -838,6 +927,29 @@ public sealed class SettingsStore
             ArgumentNullException.ThrowIfNull(value);
             _file.SetRaw(Group, "cleanupsteps", new JsonArray(value.Select(step => JsonValue.Create(step.ToString())).ToArray<JsonNode?>()));
             RaiseChangedQualified($"{Group}/cleanupsteps");
+        }
+    }
+
+    /// <summary>
+    /// The steps checked in the "Standardize EPUB" dialog the last time it was applied (remembered between sessions);
+    /// unknown names are skipped. All steps until the dialog is applied for the first time.
+    /// </summary>
+    public IReadOnlyList<StandardizationStep> StandardizationEnabledSteps
+    {
+        get => _file.GetRaw(Group, "standardizationsteps") is JsonArray array
+            ? array
+                .Select(n => Enum.TryParse(n?.GetValue<string>(), out StandardizationStep step) ? (StandardizationStep?)step : null)
+                .Where(step => step is not null)
+                .Select(step => step!.Value)
+                .Distinct()
+                .ToList()
+            : EpubStandardization.AllSteps;
+
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            _file.SetRaw(Group, "standardizationsteps", new JsonArray(value.Select(step => JsonValue.Create(step.ToString())).ToArray<JsonNode?>()));
+            RaiseChangedQualified($"{Group}/standardizationsteps");
         }
     }
 
@@ -1185,6 +1297,15 @@ public sealed class SettingsStore
         yield return "preview_font_size";
         yield return "special_character_font_family";
         yield return "special_character_font_size";
+        yield return "warning_font_size";
+        yield return "warning_color_light";
+        yield return "warning_color_dark";
+        yield return "open_tag_hint_font_family";
+        yield return "open_tag_hint_font_size";
+        yield return "open_tag_hint_light_background";
+        yield return "open_tag_hint_light_foreground";
+        yield return "open_tag_hint_dark_background";
+        yield return "open_tag_hint_dark_foreground";
 
         string[] suffixes =
         {
