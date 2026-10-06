@@ -3897,4 +3897,7 @@ It does not change the files, their names or their IDs.</value>
   <data name="MetadataEditorWindow_ColumnValue" xml:space="preserve">
     <value>Value</value>
   </data>
+  <data name="SearchEditorView_ColumnFind" xml:space="preserve">
+    <value>Find</value>
+  </data>
 </root>

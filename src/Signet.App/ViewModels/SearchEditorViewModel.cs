@@ -205,6 +205,9 @@ public sealed class SearchEditorViewModel : ViewModelBase
         set => SetProperty(ref _selectedNode, value);
     }
 
+    /// <summary>The selected nodes (several can be selected in the tree).</summary>
+    public IReadOnlyList<SearchEntryNodeViewModel> SelectedNodes => _selectedNodes;
+
     /// <summary>Sets the selected nodes (from the view).</summary>
     public void SetSelectedNodes(IEnumerable<SearchEntryNodeViewModel> nodes)
     {

@@ -5,6 +5,25 @@
              x:Class="Signet.App.Views.SearchEditorView"
              x:DataType="vm:SearchEditorViewModel">
 
+  <UserControl.Resources>
+    <!-- Cell templates of the saved searches tree (looked up by key from the code-behind); a group has only a name. -->
+    <DataTemplate x:Key="NameCellTemplate" x:DataType="vm:SearchEntryNodeViewModel">
+      <TextBox Text="{Binding Name, Mode=TwoWay}" BorderThickness="0" Background="Transparent" MinHeight="26" />
+    </DataTemplate>
+    <DataTemplate x:Key="FindCellTemplate" x:DataType="vm:SearchEntryNodeViewModel">
+      <TextBox Text="{Binding Find, Mode=TwoWay}" IsVisible="{Binding !IsGroup}"
+               PlaceholderText="{loc:Loc FindReplaceView_FindNext}" />
+    </DataTemplate>
+    <DataTemplate x:Key="ReplaceCellTemplate" x:DataType="vm:SearchEntryNodeViewModel">
+      <TextBox Text="{Binding Replace, Mode=TwoWay}" IsVisible="{Binding !IsGroup}"
+               PlaceholderText="{loc:Loc FindReplaceView_ReplaceButton}" />
+    </DataTemplate>
+    <DataTemplate x:Key="ControlsCellTemplate" x:DataType="vm:SearchEntryNodeViewModel">
+      <TextBox Text="{Binding Controls, Mode=TwoWay}" IsVisible="{Binding !IsGroup}" ToolTip.Tip="{Binding ControlsToolTip}"
+               PlaceholderText="{loc:Loc SearchEditorView_Controls}" />
+    </DataTemplate>
+  </UserControl.Resources>
+
   <Grid Margin="8" RowDefinitions="Auto,*,Auto,Auto" RowSpacing="6">
 
     <!-- Filter -->
@@ -18,32 +37,10 @@
 
     <!-- Tree + button panel -->
     <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="8">
-      <TreeView x:Name="Tree" Grid.Column="0"
-                ItemsSource="{Binding Nodes}"
-                SelectionMode="Multiple"
-                BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
-        <TreeView.Styles>
-          <Style Selector="TreeViewItem" x:DataType="vm:SearchEntryNodeViewModel">
-            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
-            <Setter Property="IsVisible" Value="{Binding IsVisible}" />
-          </Style>
-        </TreeView.Styles>
-        <TreeView.ItemTemplate>
-          <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:SearchEntryNodeViewModel">
-            <Grid ColumnDefinitions="200,*,*,110" ColumnSpacing="4" MinHeight="26">
-              <TextBox Grid.Column="0" Text="{Binding Name, Mode=TwoWay}"
-                       BorderThickness="0" Background="Transparent" />
-              <TextBox Grid.Column="1" Text="{Binding Find, Mode=TwoWay}"
-                       IsVisible="{Binding !IsGroup}" PlaceholderText="{loc:Loc FindReplaceView_FindNext}" />
-              <TextBox Grid.Column="2" Text="{Binding Replace, Mode=TwoWay}"
-                       IsVisible="{Binding !IsGroup}" PlaceholderText="{loc:Loc FindReplaceView_ReplaceButton}" />
-              <TextBox Grid.Column="3" Text="{Binding Controls, Mode=TwoWay}"
-                       IsVisible="{Binding !IsGroup}" ToolTip.Tip="{Binding ControlsToolTip}"
-                       PlaceholderText="{loc:Loc SearchEditorView_Controls}" />
-            </Grid>
-          </TreeDataTemplate>
-        </TreeView.ItemTemplate>
-      </TreeView>
+      <!-- The saved searches tree (Name, Find, Replace, Controls - edited in place): source built in the code-behind;
+           the filter hides nodes through VisibleItemsView, several nodes can be selected. -->
+      <TreeDataGrid x:Name="Tree" Grid.Column="0" CanUserSortColumns="False"
+                    BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
 
       <StackPanel Grid.Column="1" Spacing="4" Width="130">
         <!-- Core search actions, grouped. -->
