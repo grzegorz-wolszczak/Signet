@@ -27,7 +27,11 @@ public sealed record ClassUsageSource(string BookPath, string Text, bool IsStyle
 /// <param name="Line">The line of <paramref name="Offset"/> (1-based).</param>
 /// <param name="Column">The column of <paramref name="Offset"/> (1-based).</param>
 /// <param name="Kind">Attribute or selector.</param>
-public sealed record ClassUsage(string BookPath, int Offset, int Line, int Column, ClassUsageKind Kind);
+/// <param name="Context">
+/// The text of the line of the usage, without the leading whitespace, at most <see cref="ClassUsageFinder.MaxContextLength"/>
+/// characters (longer lines are cut around the usage) — empty when not known.
+/// </param>
+public sealed record ClassUsage(string BookPath, int Offset, int Line, int Column, ClassUsageKind Kind, string Context = "");
 
 /// <summary>
 /// "Find Usages" of a CSS class in the whole book: every token of a <c>class</c> attribute equal to the name
@@ -41,6 +45,9 @@ public sealed record ClassUsage(string BookPath, int Offset, int Line, int Colum
 /// </remarks>
 public static class ClassUsageFinder
 {
+    /// <summary>The longest <see cref="ClassUsage.Context"/> (a longer line is cut around the usage, with "…").</summary>
+    public const int MaxContextLength = 200;
+
     /// <summary>
     /// The usages of <paramref name="className"/>, in the order of <paramref name="sources"/> and, within a file, in
     /// text order.
@@ -88,7 +95,7 @@ public static class ClassUsageFinder
         foreach ((int offset, ClassUsageKind kind) in found)
         {
             (int line, int column) = lines.LocationOf(offset);
-            usages.Add(new ClassUsage(source.BookPath, offset, line, column, kind));
+            usages.Add(new ClassUsage(source.BookPath, offset, line, column, kind, Context(source.Text, offset, column)));
         }
 
         return usages;
@@ -150,6 +157,39 @@ public static class ClassUsageFinder
                 }
             }
         }
+    }
+
+    // The line of the usage at offset (whose column is 1-based): without the line break and the leading whitespace, cut
+    // to MaxContextLength around the usage.
+    private static string Context(string text, int offset, int column)
+    {
+        int lineStart = offset - (column - 1);
+        int lineEnd = text.IndexOf('\n', offset);
+        if (lineEnd < 0)
+        {
+            lineEnd = text.Length;
+        }
+
+        if (lineEnd > lineStart && text[lineEnd - 1] == '\r')
+        {
+            lineEnd--;
+        }
+
+        int start = lineStart;
+        while (start < offset && char.IsWhiteSpace(text[start]))
+        {
+            start++;
+        }
+
+        if (lineEnd - start <= MaxContextLength)
+        {
+            return text[start..lineEnd];
+        }
+
+        // Keep the usage in view: a window from a little before it.
+        int from = Math.Max(start, offset - (MaxContextLength / 4));
+        int to = Math.Min(lineEnd, from + MaxContextLength);
+        return (from > start ? "…" : string.Empty) + text[from..to] + (to < lineEnd ? "…" : string.Empty);
     }
 
     /// <summary>Line starts of a text, for offset → (line, column).</summary>

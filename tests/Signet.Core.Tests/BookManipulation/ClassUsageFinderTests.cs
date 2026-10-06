@@ -107,4 +107,25 @@ public sealed class ClassUsageFinderTests
         ClassUsageFinder.Find("note", new[] { new ClassUsageSource("OEBPS/Text/a.xhtml", text, IsStyleSheet: false) })
             .Should().BeEmpty();
     }
+
+    [Fact]
+    public void Every_usage_carries_the_text_of_its_line_without_the_indentation()
+    {
+        IReadOnlyList<ClassUsage> usages = Find("note");
+
+        usages[1].Context.Should().Be("<p class=\"note\">a</p><p class=\"lead  note\">b</p>");
+        usages[2].Context.Should().Be(usages[1].Context, "both usages are on the same line");
+        usages[4].Context.Should().Be(".note:hover { color: black }", "the indentation is left out");
+    }
+
+    [Fact]
+    public void A_long_line_is_cut_around_the_usage()
+    {
+        string text = "<p>" + new string('x', 500) + "</p><p class=\"note\">" + new string('y', 500) + "</p>\r\n";
+
+        ClassUsage usage = ClassUsageFinder.Find("note", new[] { new ClassUsageSource("a.xhtml", text, IsStyleSheet: false) }).Single();
+
+        usage.Context.Should().StartWith("…").And.EndWith("…").And.Contain("class=\"note\"");
+        usage.Context.Length.Should().BeLessThanOrEqualTo(ClassUsageFinder.MaxContextLength + 2);
+    }
 }
