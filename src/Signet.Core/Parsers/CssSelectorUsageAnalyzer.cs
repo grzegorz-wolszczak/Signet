@@ -24,7 +24,7 @@ file static class Markers
 /// The bookpath of the first XHTML file in which the selector matched something (or <c>"*** Selector Parse Error ***"</c>),
 /// or <c>null</c> when the selector is unused.
 /// </param>
-public readonly record struct CssSelectorUsage(string CssBookPath, string SelectorText, int Position, string? UsedInHtmlBookPath)
+public sealed record CssSelectorUsage(string CssBookPath, string SelectorText, int Position, string? UsedInHtmlBookPath)
 {
     /// <summary>Whether the selector is used (it matched something in some XHTML or its parsing failed).</summary>
     public bool IsUsed => UsedInHtmlBookPath is not null;

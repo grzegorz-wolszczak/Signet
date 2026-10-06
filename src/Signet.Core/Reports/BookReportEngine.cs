@@ -12,17 +12,17 @@ using Signet.Core.Resources;
 namespace Signet.Core.Reports;
 
 /// <summary>A row of the "All Files" report.</summary>
-public readonly record struct AllFilesRow(string BookPath, string Name, string TypeName, long SizeBytes, bool InSpine);
+public sealed record AllFilesRow(string BookPath, string Name, string TypeName, long SizeBytes, bool InSpine);
 
 /// <summary>A row of the "HTML Files" report.</summary>
-public readonly record struct HtmlFilesRow(string BookPath, string Name, long SizeBytes, int WordCount, bool WellFormed);
+public sealed record HtmlFilesRow(string BookPath, string Name, long SizeBytes, int WordCount, bool WellFormed);
 
 /// <summary>A row of the "Image Files" report.</summary>
 public readonly record struct ImageFilesRow(
     string BookPath, string Name, string Format, long SizeBytes, int Width, int Height, IReadOnlyList<string> UsedIn);
 
 /// <summary>A row of the "CSS Files" report.</summary>
-public readonly record struct CssFilesRow(string BookPath, string Name, long SizeBytes, int SelectorCount);
+public sealed record CssFilesRow(string BookPath, string Name, long SizeBytes, int SelectorCount);
 
 /// <summary>
 /// A row of the "Classes in HTML" report — the usage of a single element.class pair in an (X)HTML file.
@@ -36,7 +36,7 @@ public readonly record struct CssFilesRow(string BookPath, string Name, long Siz
 /// The 0-based offset of the first occurrence of this element.class pair in <paramref name="HtmlBookPath"/>
 /// (for "go to") — not the position of the CSS selector.
 /// </param>
-public readonly record struct HtmlClassUsageRow(
+public sealed record HtmlClassUsageRow(
     string HtmlBookPath, string ElementName, string ClassName, string? CssBookPath, string? SelectorText, int Position)
 {
     /// <summary>Whether the element.class pair matched any CSS selector ("unused in CSS" when <c>false</c>).</summary>
@@ -55,7 +55,7 @@ public readonly record struct HtmlClassUsageRow(
 /// <c>true</c>/<c>false</c> for internal links; <c>null</c> ("n/a") for external links
 /// and empty <c>href</c>s.
 /// </param>
-public readonly record struct LinkRow(
+public sealed record LinkRow(
     string HtmlBookPath, int Position, string Text, string TargetHref, bool IsInternal, bool? TargetExists);
 
 /// <summary>
@@ -64,7 +64,7 @@ public readonly record struct LinkRow(
 public readonly record struct CharacterUsageRow(int CodePoint, int Count, IReadOnlyList<string> FoundIn);
 
 /// <summary>The word/character count of a single (X)HTML file — a row of the "Word &amp; Character Counts" report.</summary>
-public readonly record struct FileWordCountRow(string BookPath, int Words, int Characters);
+public sealed record FileWordCountRow(string BookPath, int Words, int Characters);
 
 /// <summary>
 /// The "Word &amp; Character Counts" report — words/characters per
