@@ -14,7 +14,7 @@ namespace Signet.App.Infrastructure;
 /// <see cref="TreeDataGridHeaderSizing"/>, so its minimum width can be fitted to its header.
 /// </summary>
 /// <remarks>The owner (a view model) must keep the instance alive: language listeners are held weakly.</remarks>
-/// <typeparam name="TModel">The row model.</typeparam>
+/// <typeparam name="TModel">The row model (a reference type, as the TreeDataGrid columns require).</typeparam>
 public sealed class LocalizedColumns<TModel> : ILanguageAware
     where TModel : class
 {
@@ -77,6 +77,16 @@ public sealed class LocalizedColumns<TModel> : ILanguageAware
         CheckBoxColumnOptions<TModel>? options = null)
     {
         return Track(new CheckBoxColumn<TModel>(Strings.Get(headerKey), getter, setter, width, options), headerKey);
+    }
+
+    /// <summary>A read-only three-state check box column (<c>null</c> shows the indeterminate state).</summary>
+    public CheckBoxColumn<TModel> ThreeStateCheckBox(
+        string headerKey,
+        Expression<Func<TModel, bool?>> getter,
+        GridLength? width = null,
+        CheckBoxColumnOptions<TModel>? options = null)
+    {
+        return Track(new CheckBoxColumn<TModel>(Strings.Get(headerKey), getter, null, width, options), headerKey);
     }
 
     /// <summary>
