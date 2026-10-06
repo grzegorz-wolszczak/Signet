@@ -228,6 +228,13 @@
     <Style Selector=":is(Window)">
       <Setter Property="Icon" Value="/Assets/AppIcon/app.ico" />
     </Style>
+    <!-- Floating panels (Dock's HostWindow) use the UI font like the main window: Fluent's Window theme sets it, the
+         HostWindow theme does not, so a floated panel fell back to Avalonia's default 12 px. Dynamic, so the UI font
+         from Preferences (UiDensityManager) applies to them too. -->
+    <Style Selector="dock|HostWindow">
+      <Setter Property="FontSize" Value="{DynamicResource ControlContentThemeFontSize}" />
+      <Setter Property="FontFamily" Value="{DynamicResource ContentControlThemeFontFamily}" />
+    </Style>
 
     <!-- Warning texts in dialogs (e.g. what a risky change would alter): size and color from
          Preferences → Appearance → Warnings (UiDensityManager.ApplyWarningAppearance). -->

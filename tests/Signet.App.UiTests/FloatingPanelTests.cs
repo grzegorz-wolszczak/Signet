@@ -10,6 +10,7 @@ using Dock.Avalonia.Controls;
 using Dock.Model.Controls;
 using Dock.Model.Core;
 using Signet.App.Docking;
+using Signet.App.Infrastructure;
 using Signet.App.ViewModels;
 using Signet.App.Views;
 
@@ -188,6 +189,34 @@ public sealed class FloatingPanelTests
         host.Factory.IsToolPinned(DockableIds.TableOfContents).Should().BeFalse("\"Dock\" must not switch the panel to Auto Hide");
         host.Root.Windows.Should().BeNullOrEmpty("the emptied floating window is closed");
         host.Window.Close();
+    }
+
+    [AvaloniaFact]
+    public void A_floating_panel_uses_the_UI_font_of_the_main_window()
+    {
+        Host host = Show();
+        host.Factory.FloatDockable(Panel(host, DockableIds.TableOfContents));
+        Settle(host.Window);
+        HostWindow floating = FloatingWindow(host);
+
+        floating.FontSize.Should().Be(host.Window.FontSize, "a floated panel must not fall back to Avalonia's 12 px");
+        floating.FontFamily.Should().Be(host.Window.FontFamily);
+
+        // The UI font chosen in Preferences applies to the floating window too.
+        ResourceDictionary uiFont = UiDensityManager.CreateFontResources("", 17)!;
+        Application.Current!.Resources.MergedDictionaries.Add(uiFont);
+        try
+        {
+            Settle(host.Window);
+            floating.FontSize.Should().Be(17);
+            host.Window.FontSize.Should().Be(17);
+        }
+        finally
+        {
+            Application.Current.Resources.MergedDictionaries.Remove(uiFont);
+            floating.Close();
+            host.Window.Close();
+        }
     }
 
     [AvaloniaFact]
