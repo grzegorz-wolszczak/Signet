@@ -3882,4 +3882,13 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="Status_FindUsagesNoClass" xml:space="preserve">
     <value>Kursor nie stoi na nazwie klasy (w atrybucie class ani w selektorze CSS).</value>
   </data>
+  <data name="EmptyLayoutWindow_KindFolder" xml:space="preserve">
+    <value>Folder</value>
+  </data>
+  <data name="EmptyLayoutWindow_KindFile" xml:space="preserve">
+    <value>Plik</value>
+  </data>
+  <data name="EmptyLayoutWindow_KindMarker" xml:space="preserve">
+    <value>Znacznik</value>
+  </data>
 </root>

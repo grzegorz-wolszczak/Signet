@@ -35,14 +35,8 @@
       </StackPanel>
     </StackPanel>
 
-    <TreeView x:Name="Tree" ItemsSource="{Binding RootNodes}"
-              SelectedItem="{Binding SelectedNode, Mode=TwoWay}">
-      <TreeView.ItemTemplate>
-        <TreeDataTemplate x:DataType="vm:LayoutNode" ItemsSource="{Binding Children}">
-          <TextBlock Text="{Binding Name}" />
-        </TreeDataTemplate>
-      </TreeView.ItemTemplate>
-    </TreeView>
+    <!-- The layout tree (Name, Type); source built in the code-behind, the selection follows SelectedNode. -->
+    <TreeDataGrid x:Name="Tree" />
 
   </DockPanel>
 </Window>

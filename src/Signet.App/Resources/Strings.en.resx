@@ -3882,4 +3882,13 @@ It does not change the files, their names or their IDs.</value>
   <data name="Status_FindUsagesNoClass" xml:space="preserve">
     <value>The caret is not on a class name (in a class attribute or a CSS selector).</value>
   </data>
+  <data name="EmptyLayoutWindow_KindFolder" xml:space="preserve">
+    <value>Folder</value>
+  </data>
+  <data name="EmptyLayoutWindow_KindFile" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="EmptyLayoutWindow_KindMarker" xml:space="preserve">
+    <value>Marker</value>
+  </data>
 </root>

@@ -26,7 +26,13 @@ public sealed partial class LayoutNode : ObservableObject
 
     /// <summary>File or folder name.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsMarker))]
+    [NotifyPropertyChangedFor(nameof(KindDisplay))]
     private string _name;
+
+    /// <summary>Whether the node is expanded in the designer's tree (all are at first, so new items are visible).</summary>
+    [ObservableProperty]
+    private bool _isExpanded = true;
 
     /// <summary>Whether this is a folder (it can have children).</summary>
     public bool IsFolder { get; }
@@ -42,6 +48,10 @@ public sealed partial class LayoutNode : ObservableObject
 
     /// <summary>Whether this is the root (<c>EpubRoot</c>).</summary>
     public bool IsRoot => Parent is null;
+
+    /// <summary>The "Type" column: folder, file or marker.</summary>
+    public string KindDisplay => Strings.Get(
+        IsFolder ? "EmptyLayoutWindow_KindFolder" : IsMarker ? "EmptyLayoutWindow_KindMarker" : "EmptyLayoutWindow_KindFile");
 }
 
 /// <summary>
