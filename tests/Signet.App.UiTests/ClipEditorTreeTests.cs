@@ -13,13 +13,14 @@ using AwesomeAssertions;
 using Signet.App.Services;
 using Signet.App.ViewModels;
 using Signet.App.Views;
+using Signet.Controls.TreeDataGrid.Primitives;
 using Signet.Core.MiscEditors;
 
 namespace Signet.App.UiTests;
 
 /// <summary>
-/// The Clip Editor tree: a name is edited only after a double click / F2 (not a single click), and
-/// groups are bold with their own expand chevron, even an empty group.
+/// The Clip Editor tree (a TreeDataGrid): a name is edited only after a double click / F2 (not a single click), and
+/// groups are bold with an expand chevron, even an empty group.
 /// </summary>
 public sealed class ClipEditorTreeTests
 {
@@ -125,19 +126,35 @@ public sealed class ClipEditorTreeTests
         NameLabel(window, group).FontWeight.Should().Be(FontWeight.Bold);
         NameLabel(window, entry).FontWeight.Should().Be(FontWeight.Normal);
 
-        ToggleButton[] chevrons = window.GetVisualDescendants().OfType<ToggleButton>()
-            .Where(b => b.Classes.Contains("groupChevron")).ToArray();
-        chevrons.Single(b => b.DataContext == group).IsVisible.Should().BeTrue();
-        chevrons.Single(b => b.DataContext == entry).IsVisible.Should().BeFalse();
+        // The tree's expander cells: every group has a chevron (even an empty one), an entry has none.
+        TreeDataGridExpanderCell ExpanderOf(ClipNodeViewModel node) =>
+            window.GetVisualDescendants().OfType<TreeDataGridExpanderCell>()
+                .Single(c => ReferenceEquals(c.FindAncestorOfType<TreeDataGridRow>()?.Model, node));
+        ToggleButton Chevron(ClipNodeViewModel node) =>
+            ExpanderOf(node).GetVisualDescendants().OfType<ToggleButton>().Single();
+        ExpanderOf(group).ShowExpander.Should().BeTrue("a group has a chevron even when it is empty");
+        ExpanderOf(entry).ShowExpander.Should().BeFalse();
 
-        Click(window, CenterOf(window, chevrons.Single(b => b.DataContext == group)));
+        Click(window, CenterOf(window, Chevron(group)));
         Render(window);
-        group.IsExpanded.Should().BeTrue();
+        vm.EditingNode.Should().BeNull("a click on a chevron never renames");
+
+        // With a clip inside (the nodes are rebuilt after every change), the chevron expands and collapses the group.
+        vm.SetSelectedNodes(new[] { group });
+        vm.AddEntryCommand.Execute(null);
+        Render(window);
+        ClipNodeViewModel filled = vm.Nodes[0];
+        filled.Children.Should().ContainSingle();
+        bool expanded = filled.IsExpanded;
+
+        Click(window, CenterOf(window, Chevron(filled)));
+        Render(window);
+        filled.IsExpanded.Should().Be(!expanded);
         vm.EditingNode.Should().BeNull();
 
-        Click(window, CenterOf(window, chevrons.Single(b => b.DataContext == group)));
+        Click(window, CenterOf(window, Chevron(filled)));
         Render(window);
-        group.IsExpanded.Should().BeFalse();
+        filled.IsExpanded.Should().Be(expanded);
         window.Close();
     }
 }

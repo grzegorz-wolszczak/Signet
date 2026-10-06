@@ -99,4 +99,45 @@ public sealed class TreeDataGridInfrastructureTests
         rows.Should().HaveCount(2).And.OnlyContain(r => r.BorderThickness == new Thickness(0, 0, 0, 1) && r.BorderBrush is ISolidColorBrush);
         window.Close();
     }
+
+    private sealed class Node : CommunityToolkit.Mvvm.ComponentModel.ObservableObject
+    {
+        private bool _isVisible = true;
+
+        public Node(string name) => Name = name;
+
+        public string Name { get; }
+
+        public bool IsVisible
+        {
+            get => _isVisible;
+            set => SetProperty(ref _isVisible, value);
+        }
+    }
+
+    [AvaloniaFact]
+    public void VisibleItemsView_shows_the_visible_items_and_resets_once_per_change_batch()
+    {
+        ObservableCollection<Node> nodes = new() { new("a"), new("b"), new("c") };
+        VisibleItemsView<Node> view = VisibleItems.For(nodes, n => n.IsVisible, nameof(Node.IsVisible));
+        int resets = 0;
+        view.CollectionChanged += (_, e) => resets += e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset ? 1 : 0;
+        view.Select(n => n.Name).Should().Equal("a", "b", "c");
+        VisibleItems.For(nodes, n => n.IsVisible, nameof(Node.IsVisible)).Should().BeSameAs(view, "one view per collection");
+
+        nodes[0].IsVisible = false;
+        nodes[2].IsVisible = false;
+        nodes.Add(new("d"));
+        Dispatcher.UIThread.RunJobs();
+
+        view.Select(n => n.Name).Should().Equal("b", "d");
+        resets.Should().Be(1, "the changes of one batch give one reset");
+        ((System.Collections.IList)view).IsReadOnly.Should().BeTrue();
+        ((System.Collections.IList)view).IndexOf(nodes[3]).Should().Be(1);
+
+        nodes[1].IsVisible = true;
+        Dispatcher.UIThread.RunJobs();
+
+        resets.Should().Be(1, "nothing changed in the view");
+    }
 }

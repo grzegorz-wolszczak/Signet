@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -11,9 +12,12 @@ using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.App.ViewModels;
+using Signet.Controls.TreeDataGrid;
+using Signet.Controls.TreeDataGrid.Primitives;
 
 namespace Signet.App.Views;
 
@@ -22,12 +26,23 @@ namespace Signet.App.Views;
 /// kept by <c>MainWindow</c> (Show/Activate, like <c>SpellcheckEditorWindow</c>)
 /// and is bound to the same <see cref="ClipsViewModel"/> as the docked "Clips" panel.
 /// </summary>
+[SuppressMessage(
+    "Reliability",
+    "CA1001:Types that own disposable fields should be disposable",
+    Justification = "The tree source is disposed when the data context changes; the current one lives as long as the "
+        + "window and the view model's nodes it observes.")]
 public partial class ClipEditorWindow : Window
 {
     private static FilePickerFileType JsonType => new(Strings.Get("ClipEditor_JsonFileType")) { Patterns = new[] { "*.json" } };
 
     private ClipsViewModel? _bound;
     private ClipNodeViewModel? _editingNode;
+
+    // The clips tree (Name, Text) over the visible nodes, built here (a TreeDataGrid source is bound to the UI thread);
+    // its multi-selection and the view model's selected nodes follow each other.
+    private LocalizedColumns<ClipNodeViewModel>? _columns;
+    private HierarchicalTreeDataGridSource<ClipNodeViewModel>? _source;
+    private TreeMultiSelectionSync<ClipNodeViewModel>? _selection;
     private bool _forceClose;
 
     /// <summary>Initializes the window.</summary>
@@ -35,7 +50,6 @@ public partial class ClipEditorWindow : Window
     {
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
-        Tree.SelectionChanged += OnSelectionChanged;
 
         Tree.AddHandler(KeyDownEvent, OnTreeKeyDown, RoutingStrategies.Tunnel);
         Tree.AddHandler(LostFocusEvent, OnRenameEditorLostFocus, RoutingStrategies.Bubble);
@@ -50,6 +64,9 @@ public partial class ClipEditorWindow : Window
             _bound.PropertyChanged -= OnViewModelPropertyChanged;
         }
 
+        _source?.Dispose();
+        _source = null;
+        _selection = null;
         _bound = DataContext as ClipsViewModel;
 
         if (_bound is not null)
@@ -57,7 +74,28 @@ public partial class ClipEditorWindow : Window
             _bound.ImportRequested += OnImportRequested;
             _bound.ExportRequested += OnExportRequested;
             _bound.PropertyChanged += OnViewModelPropertyChanged;
+            ClipsViewModel vm = _bound;
+            _columns = new LocalizedColumns<ClipNodeViewModel>();
+            VisibleItemsView<ClipNodeViewModel> roots = ClipsPanelView.Visible(vm.Nodes);
+            _source = new HierarchicalTreeDataGridSource<ClipNodeViewModel>(roots)
+            {
+                Columns =
+                {
+                    _columns.Expander(
+                        _columns.Template("ReportsWindow_Name", "NameCellTemplate", new GridLength(1, GridUnitType.Star)),
+                        n => ClipsPanelView.Visible(n.Children),
+                        n => n.IsGroup,
+                        n => n.IsExpanded),
+                    _columns.Text("ReportsWindow_Text", n => n.TextPreview, new GridLength(1, GridUnitType.Star)),
+                },
+            };
+            _selection = new TreeMultiSelectionSync<ClipNodeViewModel>(
+                _source, roots, n => ClipsPanelView.Visible(n.Children), () => vm.SelectedNodes, vm.SetSelectedNodes,
+                n => ClipsPanelView.Contains(vm.Nodes, n));
         }
+
+        Tree.Source = _source;
+        _selection?.SelectFromViewModel();
     }
 
     // --- in-place rename: double click / F2 ---------------------------------------- //
@@ -127,6 +165,12 @@ public partial class ClipEditorWindow : Window
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        if (e.PropertyName == nameof(ClipsViewModel.SelectedNode))
+        {
+            _selection?.SelectFromViewModel();
+            return;
+        }
+
         if (e.PropertyName != nameof(ClipsViewModel.EditingNode) || _bound is null)
         {
             return;
@@ -142,9 +186,10 @@ public partial class ClipEditorWindow : Window
         else if (finished is not null && IsInRenameEditor(FocusManager?.GetFocusedElement()))
         {
             // The focus returns to the node row so that the arrows / F2 keep working in the tree.
-            if (Tree.TreeContainerFromItem(finished) is { } row)
+            // (In a TreeDataGrid the cells take the focus, not the rows.)
+            if (RowOf(finished)?.TryGetCell(0) is { } cell)
             {
-                row.Focus();
+                cell.Focus();
             }
             else
             {
@@ -172,23 +217,38 @@ public partial class ClipEditorWindow : Window
         source is Visual visual &&
         (visual as TextBox ?? visual.FindAncestorOfType<TextBox>())?.Classes.Contains(RenameEditorClass) == true;
 
+    // The expander toggle of a group row (the only toggle button in the tree's cells).
     private static bool IsOnGroupChevron(object? source) =>
         source is Visual visual &&
-        (visual as ToggleButton ?? visual.FindAncestorOfType<ToggleButton>())?.Classes.Contains("groupChevron") == true;
+        (visual as ToggleButton ?? visual.FindAncestorOfType<ToggleButton>()) is { } toggle &&
+        toggle.FindAncestorOfType<TreeDataGridExpanderCell>() is not null;
 
-    private void OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        IEnumerable<ClipNodeViewModel> selected =
-            Tree.SelectedItems?.OfType<ClipNodeViewModel>() ?? Enumerable.Empty<ClipNodeViewModel>();
-        _bound?.SetSelectedNodes(selected);
-    }
+    // The realized row of a node, if it is shown.
+    private TreeDataGridRow? RowOf(ClipNodeViewModel node) =>
+        _selection?.FindPath(node) is { } path && Tree.Rows?.ModelIndexToRowIndex(new IndexPath(path)) is >= 0 and var index
+            ? Tree.TryGetRow(index)
+            : null;
 
     /// <summary>Selects a node in the tree (e.g. a clip added through "Add To Clips..." from Code View).</summary>
     public void SelectNode(ClipNodeViewModel node)
     {
         ArgumentNullException.ThrowIfNull(node);
-        Tree.SelectedItem = node;
-        Tree.ScrollIntoView(node);
+        if (_bound is null || _source is null || _selection?.FindPath(node) is not { } path)
+        {
+            return;
+        }
+
+        // Expand the groups above the node, select it and scroll it into view.
+        for (int depth = 1; depth < path.Count; depth++)
+        {
+            _source.Expand(new IndexPath(path.Take(depth)));
+        }
+
+        _bound.SetSelectedNodes(new[] { node });
+        if (Tree.Rows?.ModelIndexToRowIndex(new IndexPath(path)) is >= 0 and var index)
+        {
+            Tree.RowsPresenter?.BringIntoView(index);
+        }
     }
 
     private void OnCloseClicked(object? sender, RoutedEventArgs e) => Close();

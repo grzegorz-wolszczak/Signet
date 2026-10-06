@@ -181,6 +181,9 @@ public sealed class ClipsViewModel : ViewModelBase
         set => SetProperty(ref _selectedNode, value);
     }
 
+    /// <summary>The selected nodes (several in the trees with multi-selection).</summary>
+    public IReadOnlyList<ClipNodeViewModel> SelectedNodes => _selectedNodes;
+
     /// <summary>Sets the set of selected nodes (from the view).</summary>
     public void SetSelectedNodes(IEnumerable<ClipNodeViewModel> nodes)
     {

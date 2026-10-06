@@ -9,30 +9,18 @@
     <TextBlock DockPanel.Dock="Bottom" Text="{Binding Message}" Margin="0,6,0,0"
                Foreground="{DynamicResource SystemAccentColor}" TextWrapping="Wrap" />
 
-    <TreeView x:Name="Tree"
-              ItemsSource="{Binding Nodes}"
-              SelectionMode="Multiple"
-              BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
-      <TreeView.Styles>
-        <Style Selector="TreeViewItem" x:DataType="vm:ClipNodeViewModel">
-          <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
-          <Setter Property="IsVisible" Value="{Binding IsVisible}" />
-        </Style>
-      </TreeView.Styles>
-      <TreeView.ContextMenu>
+    <!-- The clips tree (Name, Text): source built in the code-behind; the filter hides nodes through
+         VisibleItemsView, several nodes can be selected. -->
+    <TreeDataGrid x:Name="Tree"
+                  BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+      <TreeDataGrid.ContextMenu>
         <ContextMenu>
           <MenuItem Header="{loc:Loc ClipEditorWindow_Paste}" Command="{Binding PasteCommand}" />
           <Separator />
           <MenuItem Header="{loc:Loc ClipsPanelView_CollapseAll}" Command="{Binding CollapseAllCommand}" />
           <MenuItem Header="{loc:Loc ClipsPanelView_ExpandAll}" Command="{Binding ExpandAllCommand}" />
         </ContextMenu>
-      </TreeView.ContextMenu>
-      <TreeView.ItemTemplate>
-        <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:ClipNodeViewModel">
-          <TextBlock Text="{Binding Name}" ToolTip.Tip="{Binding TextPreview}"
-                     VerticalAlignment="Center" MinHeight="22" />
-        </TreeDataTemplate>
-      </TreeView.ItemTemplate>
-    </TreeView>
+      </TreeDataGrid.ContextMenu>
+    </TreeDataGrid>
   </DockPanel>
 </UserControl>

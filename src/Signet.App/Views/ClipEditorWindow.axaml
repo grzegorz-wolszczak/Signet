@@ -7,6 +7,20 @@
         Width="820" Height="560"
         WindowStartupLocation="CenterOwner">
 
+  <Window.Resources>
+    <!-- The name cell of the clips tree (looked up by key from the code-behind): the name as text; editing only after
+         a double click or F2 (handled in ClipEditorWindow): Enter and focus loss commit, Esc cancels. -->
+    <DataTemplate x:Key="NameCellTemplate" x:DataType="vm:ClipNodeViewModel">
+      <Grid Background="Transparent" MinHeight="24" DoubleTapped="OnNodeDoubleTapped">
+        <TextBlock Text="{Binding Name}" Classes.group="{Binding IsGroup}"
+                   VerticalAlignment="Center" IsVisible="{Binding !IsEditing}" />
+        <TextBox Classes="inPlaceRename" Text="{Binding EditText, Mode=TwoWay}"
+                 IsVisible="{Binding IsEditing}" MinWidth="140"
+                 MinHeight="0" Padding="2,0" VerticalAlignment="Center" VerticalContentAlignment="Center" />
+      </Grid>
+    </DataTemplate>
+  </Window.Resources>
+
   <!-- "*" in the title for unsaved changes (like the main window title). -->
   <Window.Title>
     <MultiBinding StringFormat="{}{0}{1}">
@@ -28,60 +42,17 @@
 
     <!-- Tree + details + button panel -->
     <Grid Grid.Row="1" ColumnDefinitions="2*,3*,Auto" ColumnSpacing="8">
-      <TreeView x:Name="Tree" Grid.Column="0"
-                ItemsSource="{Binding Nodes}"
-                SelectionMode="Multiple"
-                BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
-        <TreeView.Styles>
-          <Style Selector="TreeViewItem" x:DataType="vm:ClipNodeViewModel">
-            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
-            <Setter Property="IsVisible" Value="{Binding IsVisible}" />
-          </Style>
-          <!-- The built-in TreeView chevron appears only for a group with children — we replace it
-               with our own (in the template below), visible for every group, even an empty one. -->
-          <Style Selector="TreeViewItem /template/ Panel#PART_ExpandCollapseChevronContainer">
-            <Setter Property="IsVisible" Value="False" />
-          </Style>
-          <Style Selector="ToggleButton.groupChevron">
-            <Setter Property="Width" Value="16" />
-            <Setter Property="Height" Value="16" />
-            <Setter Property="Padding" Value="0" />
-            <Setter Property="Focusable" Value="False" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Template">
-              <ControlTemplate>
-                <Border Background="Transparent">
-                  <Path x:Name="Chevron" Data="M 5,3 L 10,8 L 5,13"
-                        Stroke="{DynamicResource TreeViewItemForeground}" StrokeThickness="1.5"
-                        HorizontalAlignment="Center" VerticalAlignment="Center" />
-                </Border>
-              </ControlTemplate>
-            </Setter>
-          </Style>
-          <Style Selector="ToggleButton.groupChevron:checked /template/ Path#Chevron">
-            <Setter Property="RenderTransform" Value="rotate(90deg)" />
-          </Style>
+      <!-- The clips tree (Name, Text): source built in the code-behind; the filter hides nodes through
+           VisibleItemsView, several nodes can be selected. Every group has an expander, even an empty one
+           (hasChildren = IsGroup). -->
+      <TreeDataGrid x:Name="Tree" Grid.Column="0"
+                    BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+        <TreeDataGrid.Styles>
           <Style Selector="TextBlock.group">
             <Setter Property="FontWeight" Value="Bold" />
           </Style>
-        </TreeView.Styles>
-        <TreeView.ItemTemplate>
-          <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:ClipNodeViewModel">
-            <!-- The name as text; editing only after a double click or F2 (handled in ClipEditorWindow):
-                 Enter and focus loss commit, Esc cancels. -->
-            <Grid ColumnDefinitions="18,*" Background="Transparent" MinHeight="24"
-                  DoubleTapped="OnNodeDoubleTapped">
-              <ToggleButton Grid.Column="0" Classes="groupChevron"
-                            IsVisible="{Binding IsGroup}" IsChecked="{Binding IsExpanded, Mode=TwoWay}" />
-              <TextBlock Grid.Column="1" Text="{Binding Name}" Classes.group="{Binding IsGroup}"
-                         VerticalAlignment="Center" IsVisible="{Binding !IsEditing}" />
-              <TextBox Grid.Column="1" Classes="inPlaceRename" Text="{Binding EditText, Mode=TwoWay}"
-                       IsVisible="{Binding IsEditing}" MinWidth="140"
-                       MinHeight="0" Padding="2,0" VerticalAlignment="Center" VerticalContentAlignment="Center" />
-            </Grid>
-          </TreeDataTemplate>
-        </TreeView.ItemTemplate>
-      </TreeView>
+        </TreeDataGrid.Styles>
+      </TreeDataGrid>
 
       <Grid Grid.Column="1" RowDefinitions="Auto,*" RowSpacing="4"
             IsEnabled="{Binding SelectedNode.IsGroup, Converter={x:Static BoolConverters.Not}, FallbackValue=False}">
