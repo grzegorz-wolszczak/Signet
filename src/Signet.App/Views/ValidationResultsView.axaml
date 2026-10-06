@@ -11,19 +11,11 @@
                FontSize="16" Opacity="0.6"
                HorizontalAlignment="Center" VerticalAlignment="Center" />
 
-    <DataGrid x:Name="Grid"
-              IsVisible="{Binding HasResults}"
-              ItemsSource="{Binding Rows}"
-              IsReadOnly="True"
-              AutoGenerateColumns="False"
-              GridLinesVisibility="Horizontal"
-              DoubleTapped="OnDoubleTapped">
-      <DataGrid.Columns>
-        <DataGridTextColumn Header="{loc:Loc ReportsWindow_File}" Binding="{Binding FileName}" Width="220" />
-        <DataGridTextColumn Header="{loc:Loc ValidationResultsView_Line}" Binding="{Binding LineText}" Width="70" />
-        <DataGridTextColumn Header="{loc:Loc DryRunReplaceWindow_OffsetColumn}" Binding="{Binding OffsetText}" Width="70" />
-        <DataGridTextColumn Header="{loc:Loc ValidationResultsView_Message}" Binding="{Binding Message}" Width="*" />
-      </DataGrid.Columns>
-    </DataGrid>
+    <!-- Columns (File, Line, Offset, Message) are defined by ValidationResultsViewModel.Source. -->
+    <TreeDataGrid x:Name="Grid"
+                  Classes="gridLines"
+                  IsVisible="{Binding HasResults}"
+                  Source="{Binding Source}"
+                  DoubleTapped="OnDoubleTapped" />
   </Panel>
 </UserControl>

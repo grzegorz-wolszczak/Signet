@@ -18,7 +18,7 @@ public partial class ValidationResultsView : UserControl
 
     private void OnDoubleTapped(object? sender, TappedEventArgs e)
     {
-        if (DataContext is ValidationResultsViewModel vm && Grid.SelectedItem is ValidationResultRow row)
+        if (DataContext is ValidationResultsViewModel vm && vm.Source.RowSelection?.SelectedItem is { } row)
         {
             vm.Activate(row);
         }
