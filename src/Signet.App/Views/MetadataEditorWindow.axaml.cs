@@ -1,11 +1,15 @@
+using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.ViewModels;
+using Signet.Controls.TreeDataGrid;
 using Signet.Core.Metadata;
 using Signet.Core.Semantics;
 
@@ -16,6 +20,11 @@ namespace Signet.App.Views;
 /// recognized OPF metadata elements; the "Add Metadata Element"/"Add Property to Element" logic
 /// (default values, language/role picker dialogs, custom name) lives here.
 /// </summary>
+[SuppressMessage(
+    "Reliability",
+    "CA1001:Types that own disposable fields should be disposable",
+    Justification = "The tree source is disposed when the data context changes; the current one lives as long as the "
+        + "dialog and the view model's Nodes it observes.")]
 public partial class MetadataEditorWindow : Window
 {
     private static readonly Regex ValidXmlName = new(
@@ -23,12 +32,17 @@ public partial class MetadataEditorWindow : Window
 
     private MetadataEditorViewModel? _bound;
 
+    // The metadata tree (Name, Value) over the view model's Nodes, built here (a TreeDataGrid source is bound to the UI
+    // thread); its selection and MetadataEditorViewModel.SelectedNode follow each other.
+    private LocalizedColumns<MetadataNodeViewModel>? _columns;
+    private HierarchicalTreeDataGridSource<MetadataNodeViewModel>? _source;
+    private TreeSelectionSync<MetadataNodeViewModel>? _selection;
+
     /// <summary>Initializes the window.</summary>
     public MetadataEditorWindow()
     {
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
-        Tree.SelectionChanged += (_, _) => SyncSelectionToViewModel();
         AddElementButton.Click += async (_, _) => await AddElementAsync();
         AddPropertyButton.Click += async (_, _) => await AddPropertyAsync();
         AddElementMenuItem.Click += async (_, _) => await AddElementAsync();
@@ -49,25 +63,49 @@ public partial class MetadataEditorWindow : Window
         if (_bound is not null)
         {
             _bound.CloseRequested -= OnCloseRequested;
+            _bound.PropertyChanged -= OnViewModelPropertyChanged;
         }
 
+        _source?.Dispose();
+        _source = null;
+        _selection = null;
         _bound = DataContext as MetadataEditorViewModel;
 
         if (_bound is not null)
         {
             _bound.CloseRequested += OnCloseRequested;
+            _bound.PropertyChanged += OnViewModelPropertyChanged;
+            MetadataEditorViewModel vm = _bound;
+            _columns = new LocalizedColumns<MetadataNodeViewModel>();
+            _source = new HierarchicalTreeDataGridSource<MetadataNodeViewModel>(vm.Nodes)
+            {
+                Columns =
+                {
+                    _columns.Expander(
+                        _columns.Text("ReportsWindow_Name", n => n.NameDisplay, new GridLength(1, GridUnitType.Star)),
+                        n => n.Children,
+                        n => n.Children.Count > 0,
+                        n => n.IsExpanded),
+                    _columns.Template("MetadataEditorWindow_ColumnValue", "ValueCellTemplate", new GridLength(2, GridUnitType.Star)),
+                },
+            };
+            _selection = new TreeSelectionSync<MetadataNodeViewModel>(
+                _source, vm.Nodes, n => n.Children, () => vm.SelectedNode, n => vm.SelectedNode = n);
+        }
+
+        Tree.Source = _source;
+        _selection?.SelectFromViewModel();
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MetadataEditorViewModel.SelectedNode))
+        {
+            _selection?.SelectFromViewModel();
         }
     }
 
     private void OnCloseRequested(object? sender, EventArgs e) => Close();
-
-    private void SyncSelectionToViewModel()
-    {
-        if (_bound is not null)
-        {
-            _bound.SelectedNode = Tree.SelectedItem as MetadataNodeViewModel;
-        }
-    }
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
@@ -89,9 +127,9 @@ public partial class MetadataEditorWindow : Window
 
     private void Select(MetadataNodeViewModel? node)
     {
-        if (node is not null)
+        if (node is not null && _bound is not null)
         {
-            Tree.SelectedItem = node;
+            _bound.SelectedNode = node;
         }
     }
 

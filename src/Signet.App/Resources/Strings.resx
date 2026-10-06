@@ -3894,4 +3894,7 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="HeadingSelectorWindow_ColumnInToc" xml:space="preserve">
     <value>W spisie treści</value>
   </data>
+  <data name="MetadataEditorWindow_ColumnValue" xml:space="preserve">
+    <value>Wartość</value>
+  </data>
 </root>

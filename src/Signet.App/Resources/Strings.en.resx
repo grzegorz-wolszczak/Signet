@@ -3894,4 +3894,7 @@ It does not change the files, their names or their IDs.</value>
   <data name="HeadingSelectorWindow_ColumnInToc" xml:space="preserve">
     <value>In TOC</value>
   </data>
+  <data name="MetadataEditorWindow_ColumnValue" xml:space="preserve">
+    <value>Value</value>
+  </data>
 </root>

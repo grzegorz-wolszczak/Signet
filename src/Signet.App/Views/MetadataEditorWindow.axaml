@@ -8,6 +8,14 @@
         WindowStartupLocation="CenterOwner"
         Title="{loc:Loc MetadataEditorWindow_Title}">
 
+  <Window.Resources>
+    <!-- The value is edited in place as raw text (cell template looked up by key from the code-behind). -->
+    <DataTemplate x:Key="ValueCellTemplate" x:DataType="vm:MetadataNodeViewModel">
+      <TextBox Text="{Binding Content, Mode=TwoWay}" BorderThickness="0" Background="Transparent" Padding="2,1"
+               MinHeight="26" />
+    </DataTemplate>
+  </Window.Resources>
+
   <DockPanel Margin="12">
 
     <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right"
@@ -34,15 +42,10 @@
     </StackPanel>
 
     <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1">
-      <TreeView x:Name="Tree"
-                ItemsSource="{Binding Nodes}"
-                SelectionMode="Single">
-        <TreeView.Styles>
-          <Style Selector="TreeViewItem" x:DataType="vm:MetadataNodeViewModel">
-            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
-          </Style>
-        </TreeView.Styles>
-        <TreeView.ContextMenu>
+      <!-- The metadata tree (Name, Value); source built in the code-behind, the selection follows SelectedNode.
+           Not sortable: the order of the elements is the order in the OPF. -->
+      <TreeDataGrid x:Name="Tree" CanUserSortColumns="False">
+        <TreeDataGrid.ContextMenu>
           <ContextMenu>
             <MenuItem x:Name="AddElementMenuItem" Header="{loc:Loc MetadataEditorWindow_AddElementMenu}" />
             <MenuItem x:Name="AddPropertyMenuItem" Header="{loc:Loc MetadataEditorWindow_AddPropertyMenu}" />
@@ -50,17 +53,8 @@
             <MenuItem Header="{loc:Loc MetadataEditorWindow_MoveRowUp}" Command="{Binding MoveUpCommand}" />
             <MenuItem Header="{loc:Loc MetadataEditorWindow_MoveRowDown}" Command="{Binding MoveDownCommand}" />
           </ContextMenu>
-        </TreeView.ContextMenu>
-        <TreeView.ItemTemplate>
-          <TreeDataTemplate x:DataType="vm:MetadataNodeViewModel" ItemsSource="{Binding Children}">
-            <Grid ColumnDefinitions="*,2*" ColumnSpacing="6" Margin="0,1" MinHeight="26">
-              <TextBlock Grid.Column="0" Text="{Binding NameDisplay}" VerticalAlignment="Center" />
-              <TextBox Grid.Column="1" Text="{Binding Content, Mode=TwoWay}"
-                       BorderThickness="0" Background="Transparent" Padding="2,1" />
-            </Grid>
-          </TreeDataTemplate>
-        </TreeView.ItemTemplate>
-      </TreeView>
+        </TreeDataGrid.ContextMenu>
+      </TreeDataGrid>
     </Border>
   </DockPanel>
 </Window>
