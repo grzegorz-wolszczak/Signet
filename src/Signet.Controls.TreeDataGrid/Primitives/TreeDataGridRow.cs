@@ -4,8 +4,11 @@ using Avalonia.Controls.Metadata;
 using Signet.Controls.TreeDataGrid.Models;
 using Avalonia.Controls.Selection;
 using Signet.Controls.TreeDataGrid.Selection;
+using Avalonia.Controls.Presenters;
 using Avalonia.Input;
 using Avalonia.LogicalTree;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
 
 namespace Signet.Controls.TreeDataGrid.Primitives
 {
@@ -43,6 +46,13 @@ namespace Signet.Controls.TreeDataGrid.Primitives
         private Point _mouseDownPosition = s_InvalidPoint;
         private PointerPressedEventArgs? _pressedEvent;
         private TreeDataGrid? _treeDataGrid;
+        private bool _keepHorizontalScroll;
+
+        static TreeDataGridRow()
+        {
+            GotFocusEvent.AddClassHandler<TreeDataGridRow>((x, e) => x.OnCellGotFocus(e));
+            RequestBringIntoViewEvent.AddClassHandler<TreeDataGridRow>((x, e) => x.OnRequestBringIntoView(e));
+        }
 
         public IColumns? Columns
         {
@@ -209,6 +219,33 @@ namespace Signet.Controls.TreeDataGrid.Primitives
         {
             IsSelected = selection?.IsRowSelected(RowIndex) ?? false;
             CellsPresenter?.UpdateSelection(selection);
+        }
+
+        // Signet: in row selection mode, bringing a row or one of its cells into view (selection moved with the
+        // keyboard, a cell focused by a click or by the selection model) scrolls only vertically: the horizontal scroll
+        // offset stays where the user put it. Upstream, the ScrollViewer brought the focused cell into view, so arrow
+        // keys in a horizontally scrolled grid jumped back to the first column. Tab still brings a cell into view.
+        private void OnCellGotFocus(FocusChangedEventArgs e)
+        {
+            _keepHorizontalScroll = e.NavigationMethod != NavigationMethod.Tab && e.Source is TreeDataGridCell;
+            if (_keepHorizontalScroll)
+                Dispatcher.UIThread.Post(() => _keepHorizontalScroll = false);
+        }
+
+        private void OnRequestBringIntoView(RequestBringIntoViewEventArgs e)
+        {
+            if (_treeDataGrid?.RowSelection is null ||
+                e.TargetObject is not Visual target ||
+                (!ReferenceEquals(target, this) &&
+                 !(_keepHorizontalScroll && target is TreeDataGridCell && target.FindAncestorOfType<TreeDataGridRow>() == this)) ||
+                this.FindAncestorOfType<ScrollContentPresenter>() is not { } viewport ||
+                viewport.TranslatePoint(default, this) is not { } viewportOrigin ||
+                target.TransformToVisual(this) is not { } toRow)
+                return;
+
+            var targetInRow = e.TargetRect.TransformToAABB(toRow);
+            e.TargetObject = this;
+            e.TargetRect = new Rect(viewportOrigin.X, targetInRow.Y, viewport.Bounds.Width, targetInRow.Height);
         }
 
         public void UnrealizeOnItemRemoved()

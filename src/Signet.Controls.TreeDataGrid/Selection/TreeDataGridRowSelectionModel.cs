@@ -96,12 +96,18 @@ namespace Signet.Controls.TreeDataGrid.Selection
                         e.Handled = MoveSelection(sender, direction.Value, shift, anchor);
                     }
 
+                    // Signet: moving to the parent / the first child marks the key as handled (upstream left it unhandled,
+                    // so it went on to the ancestors of the grid) and the focus follows the selection to the child too.
                     if (!e.Handled && direction == NavigationDirection.Left
                         && anchor?.Rows is HierarchicalRows<TModel> hierarchicalRows && anchorRowIndex > 0)
                     {
                         var newIndex = hierarchicalRows.GetParentRowIndex(AnchorIndex);
-                        UpdateSelection(sender, newIndex, true);
-                        FocusRow(sender, sender.RowsPresenter.BringIntoView(newIndex));
+                        if (newIndex >= 0)
+                        {
+                            UpdateSelection(sender, newIndex, true);
+                            FocusRow(sender, sender.RowsPresenter.BringIntoView(newIndex));
+                            e.Handled = true;
+                        }
                     }
 
                     if (!e.Handled && direction == NavigationDirection.Right
@@ -109,7 +115,8 @@ namespace Signet.Controls.TreeDataGrid.Selection
                     {
                         var newIndex = anchorRowIndex + 1;
                         UpdateSelection(sender, newIndex, true);
-                        sender.RowsPresenter.BringIntoView(newIndex);
+                        FocusRow(sender, sender.RowsPresenter.BringIntoView(newIndex));
+                        e.Handled = true;
                     }
                 }
             }
@@ -197,8 +204,11 @@ namespace Signet.Controls.TreeDataGrid.Selection
                     var transform = row.TransformToVisual(scrollContentPresenter);
                     if (transform != null)
                     {
+                        // Signet: only the vertical extent counts - a row wider than the viewport (columns scrolled
+                        // horizontally) is never fully visible otherwise, and PageUp then jumped to the first row.
                         var transformedBounds = new Rect(row.Bounds.Size).TransformToAABB((Matrix)transform);
-                        if (scrollContentPresenter.Bounds.Contains(transformedBounds.TopLeft) && scrollContentPresenter.Bounds.Contains(transformedBounds.BottomRight))
+                        var viewportHeight = scrollContentPresenter.Bounds.Height;
+                        if (transformedBounds.Top >= 0 && transformedBounds.Bottom <= viewportHeight)
                         {
                             return true;
                         }
@@ -283,13 +293,9 @@ namespace Signet.Controls.TreeDataGrid.Selection
                             UpdateSelectionAndBringIntoView(newIndex);
                             return;
                         }
-                        else if (isIndexSet && selectedIndex - childrenCount + 2 > 0)
-                        {
-                            newIndex = selectedIndex - childrenCount + 2;
-                        }
                         else
                         {
-                            newIndex = 0;
+                            newIndex = Math.Max(0, selectedIndex - childrenCount + 2);
                         }
                     }
                     UpdateSelectionAndBringIntoView(newIndex);
@@ -353,8 +359,10 @@ namespace Signet.Controls.TreeDataGrid.Selection
                 e.Source is Control source &&
                 sender.TryGetRow(source, out var row))
             {
+                // Signet: a click only when the pointer stayed within 3 px in both directions (upstream: in either
+                // one, so a vertical drag over a multiple selection collapsed it to the pressed row).
                 var p = e.GetPosition(sender);
-                if (Math.Abs(p.X - _pressedPoint.X) <= 3 || Math.Abs(p.Y - _pressedPoint.Y) <= 3)
+                if (Math.Abs(p.X - _pressedPoint.X) <= 3 && Math.Abs(p.Y - _pressedPoint.Y) <= 3)
                     PointerSelect(sender, row, e);
             }
         }

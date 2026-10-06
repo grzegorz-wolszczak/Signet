@@ -49,6 +49,24 @@ history.
 - **Fixes:**
   - `TreeDataGridExpanderCell`: when the row refuses to expand (its children are empty), the expander toggle
     (bound two-way) is put back in step with the row; upstream left it checked, inverting later clicks.
+- **Bugs that later versions list as fixed.** Their public release notes (NuGet, 11.2-12.3; their code was not looked
+  at) were checked against this fork with tests (`Port/UpstreamReleaseNotesTests.cs`, which also keeps the
+  regression tests of the notes this fork never had). Fixed here:
+  - `TreeDataGridRow`: in row selection mode, bringing a row or a cell into view (keyboard navigation, a focused cell)
+    keeps the horizontal scroll offset; upstream the focused cell was brought into view, so arrow keys in a
+    horizontally scrolled grid jumped back to the first column (12.2.0). Tab still scrolls to the focused cell.
+  - `TreeDataGridRowSelectionModel`:
+    - PageUp / PageDown look only at the vertical extent of the rows: with rows wider than the viewport no row was
+      "fully visible" and PageUp jumped to the first row (11.3.2);
+    - Left to the parent / Right to the first child mark the key as handled, and Right moves the focus to the child
+      too (12.0.3);
+    - a press-move-release selects the row only if the pointer stayed within 3 px in both directions (upstream: in
+      either one, so a vertical drag over a multiple selection collapsed it) (12.0.3).
+  - `TreeDataGridCell.CancelEdit` shows the model's value again: a text cell kept the cancelled text (12.1.0).
+  - `TreeSelectionNode`: replacing an item drops the selection inside it (its selected descendants stayed selected)
+    (12.0.3).
+  - `RealizedStackElements.ItemsReplaced`: a replaced range that starts above the first realized row and reaches into
+    the realized ones recycles those rows (upstream skipped the range, leaving stale rows) (12.3.1).
 - **Build.** Signet's stricter analyzer rules (`EnableNETAnalyzers`, `EnforceCodeStyleInBuild`, `AnalysisLevel`,
   XML documentation file) are off for this project and its tests; compiler warnings are still errors.
 - **Tests.** The upstream tests run on Signet's test stack (xUnit.v3 `mtp-off`, `Avalonia.Headless.XUnit`).

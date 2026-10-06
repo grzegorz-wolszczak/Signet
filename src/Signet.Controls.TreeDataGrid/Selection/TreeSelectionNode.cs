@@ -151,6 +151,21 @@ namespace Signet.Controls.TreeDataGrid.Selection
                     shiftDelta = removeChange.ShiftDelta + addChange.ShiftDelta;
                     indexesChanged = shiftDelta != 0;
                     removed = removeChange.RemovedItems;
+
+                    // Signet: the selection inside a replaced item belongs to the old item - drop it (upstream kept
+                    // the child selection node, so the old item's selected descendants stayed selected).
+                    if (_children is not null)
+                    {
+                        var end = Math.Min(e.OldStartingIndex + e.OldItems!.Count, _children.Count);
+                        for (var i = e.OldStartingIndex; i < end; ++i)
+                        {
+                            if (_children[i] is { } replacedChild)
+                            {
+                                replacedChild.AncestorRemoved(ref removed);
+                                _children[i] = null;
+                            }
+                        }
+                    }
                     break;
                 case NotifyCollectionChangedAction.Move:
                     shiftStartIndex = Math.Min(e.OldStartingIndex, e.NewStartingIndex);

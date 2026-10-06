@@ -89,7 +89,12 @@ namespace Signet.Controls.TreeDataGrid.Primitives
         protected internal void CancelEdit()
         {
             if (EndEditCore() && Model is IEditableObject editable)
+            {
                 editable.CancelEdit();
+
+                // Signet: show the model's value again (as EndEdit does) - a text cell kept the cancelled text.
+                UpdateValue();
+            }
         }
 
         protected internal void EndEdit()

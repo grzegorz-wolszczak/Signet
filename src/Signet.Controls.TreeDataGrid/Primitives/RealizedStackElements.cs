@@ -397,9 +397,11 @@ namespace Signet.Controls.TreeDataGrid.Primitives
             if (_elements is null || _elements.Count == 0)
                 return;
 
-            // Get the index within the realized _elements collection.
-            var startIndex = index - FirstIndex;
-            var endIndex = Math.Min(startIndex + count, Count);
+            // Get the index within the realized _elements collection. Signet: a replaced range may start above the
+            // first realized element and reach into the realized ones - clamp it (upstream skipped the whole range, so
+            // the realized rows kept showing the old items).
+            var startIndex = Math.Max(0, index - FirstIndex);
+            var endIndex = Math.Min(index - FirstIndex + count, Count);
 
             if (startIndex >= 0 && endIndex > startIndex)
             {
