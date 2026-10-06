@@ -14,9 +14,6 @@
     <PackageVersion Include="Avalonia.Desktop" Version="12.1.3" />
     <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.3" />
     <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.1.3" />
-    <!-- Sortable report tables. Released separately from Avalonia; 12.1.2 is the latest
-         (requires Avalonia >= 12.1.0). -->
-    <PackageVersion Include="Avalonia.Controls.DataGrid" Version="12.1.2" />
     <!-- Color picker in Preferences (ColorView: spectrum, sliders, #hex). -->
     <PackageVersion Include="Avalonia.Controls.ColorPicker" Version="12.1.3" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />

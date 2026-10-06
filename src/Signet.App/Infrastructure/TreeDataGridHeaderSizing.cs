@@ -13,8 +13,8 @@ using Signet.Controls.TreeDataGrid.Primitives;
 namespace Signet.App.Infrastructure;
 
 /// <summary>
-/// Makes the header text of every <see cref="TreeDataGrid"/> column fully visible — the counterpart of
-/// <see cref="DataGridHeaderSizing"/>: once the grid is shown (and again when a header changes, e.g. after a language
+/// Makes the header text of every <see cref="TreeDataGrid"/> column fully visible (as Signet's former DataGrid tables
+/// did): once the grid is shown (and again when a header changes, e.g. after a language
 /// switch) each column gets a minimum width equal to the width its header needs, so the header is not cut off and a
 /// column cannot be made narrower than its header. Enabled for all grids by a style in <c>App.axaml</c>; applies to
 /// the columns created by <see cref="LocalizedColumns{TModel}"/> (they register their minimum width here).

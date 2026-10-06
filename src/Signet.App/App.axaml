@@ -207,13 +207,6 @@
     <FluentTheme />
     <dockFluent:DockFluentTheme />
     <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml" />
-    <!-- Theme for Avalonia.Controls.DataGrid (tables). -->
-    <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml" />
-    <!-- Every table: resizable columns, each at least as wide as its header (DataGridHeaderSizing). -->
-    <Style Selector="DataGrid">
-      <Setter Property="CanUserResizeColumns" Value="True" />
-      <Setter Property="infra:DataGridHeaderSizing.FitHeaders" Value="True" />
-    </Style>
     <!-- Theme of Signet.Controls.TreeDataGrid (virtualized trees and tables). After FluentTheme: it resolves the Fluent
          palette colours with StaticResource when loaded. -->
     <StyleInclude Source="avares://Signet.Controls.TreeDataGrid/Themes/Fluent.axaml" />
