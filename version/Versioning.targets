@@ -1,7 +1,7 @@
 <Project>
 
   <!--
-    Signet versioning: <VersionPrefix>-<yyyyMMddHHmm UTC>, e.g. 0.3.0-202610021432.
+    Signet versioning: <VersionPrefix>-<yyyyMMddHHmm UTC>, e.g. 0.4.0-202610021432.
 
     VersionPrefix comes from Directory.Build.props; the timestamp is the build time (UTC).
     The full version goes into AssemblyInformationalVersionAttribute and is read at runtime

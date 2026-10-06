@@ -129,6 +129,6 @@ Rules:
   documentation is enforced by review.
 - `Directory.Packages.props` — Central Package Management. A package version change = a separate
   `build` commit.
-- **Versioning:** `<VersionPrefix>-<yyyyMMddHHmm UTC>`, e.g. `0.3.0-202610021432`
+- **Versioning:** `<VersionPrefix>-<yyyyMMddHHmm UTC>`, e.g. `0.4.0-202610021432`
   (`version/Versioning.targets`, imported only by `Signet.App.csproj`; `VersionPrefix` in
   `Directory.Build.props`). At runtime: `Signet.App.Infrastructure.AppVersion.Text`.
