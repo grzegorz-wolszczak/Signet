@@ -43,6 +43,9 @@ history.
     `DragEventArgs.DataTransfer`; `DragInfo.DataFormat` is a typed in-process `DataFormat<DragInfo>`;
     `DoDragDropAsync` needs the pointer-pressed event, so `TreeDataGridRow` keeps it until the drag starts.
   - `NullableAttributes.cs` (a polyfill for old target frameworks) removed.
+- **Signet additions** (small API changes for Signet's views):
+  - `TreeDataGridCell.BeginEdit()` is public (upstream: `protected internal`), so a command can start editing a
+    cell, not only an edit gesture.
 - **Build.** Signet's stricter analyzer rules (`EnableNETAnalyzers`, `EnforceCodeStyleInBuild`, `AnalysisLevel`,
   XML documentation file) are off for this project and its tests; compiler warnings are still errors.
 - **Tests.** The upstream tests run on Signet's test stack (xUnit.v3 `mtp-off`, `Avalonia.Headless.XUnit`).

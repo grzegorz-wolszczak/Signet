@@ -74,7 +74,9 @@ namespace Signet.Controls.TreeDataGrid.Primitives
             Model = null;
         }
 
-        protected internal void BeginEdit()
+        // Signet: public (upstream: protected internal), so that an application can start editing a cell from a
+        // command (e.g. "Rename" in a context menu), not only through the edit gestures.
+        public void BeginEdit()
         {
             if (!IsEditing)
             {

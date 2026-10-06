@@ -200,6 +200,25 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
             items[1].Title.Should().Be("Changed");
         }
 
+        [AvaloniaFact(Timeout = 10000)]
+        public void BeginEdit_is_public_so_a_command_can_start_editing_a_cell()
+        {
+            var items = FlatItems(3);
+            var source = new FlatTreeDataGridSource<Model>(items)
+            {
+                Columns = { new TextColumn<Model, string?>("Title", x => x.Title, (m, v) => m.Title = v) },
+            };
+            var target = new TreeDataGrid { Source = source };
+            var window = ThemedWindow(target, new Size(300, 300));
+            var cell = target.TryGetCell(0, 1).Should().BeOfType<TreeDataGridTextCell>().Subject;
+
+            cell.BeginEdit();
+            Settle(window);
+
+            cell.IsEditing.Should().BeTrue();
+            cell.GetVisualDescendants().OfType<TextBox>().Should().ContainSingle();
+        }
+
         [AvaloniaTheory(Timeout = 10000)]
         [InlineData(1.0, 1.0, true)]
         [InlineData(0.1 + 0.2, 0.3, true)]
