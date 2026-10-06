@@ -15,6 +15,7 @@ using Signet.Controls.TreeDataGrid.Primitives;
 using Signet.Core.BookManipulation;
 using Signet.Core.Misc;
 using Signet.Core.Tests.TestSupport;
+using Xunit;
 
 namespace Signet.App.UiTests;
 
@@ -92,6 +93,45 @@ public sealed class FindUsagesViewTests
             .Should().Contain("3").And.Contain("14")
             .And.Contain(Strings.Get("FindUsages_KindAttribute")).And.Contain(Strings.Get("FindUsages_KindSelector"))
             .And.Contain("<p class=\"note\">x</p>").And.Contain(".note { color: red }");
+        window.Close();
+    }
+
+    // Clicks a column header (sorts by that column; a second click reverses the order).
+    private static void ClickHeader(Window window, TreeDataGrid tree, string headerKey)
+    {
+        TreeDataGridColumnHeader header = tree.GetVisualDescendants().OfType<TreeDataGridColumnHeader>()
+            .Single(h => Equals(h.Header, Strings.Get(headerKey)));
+        Point center = header.TranslatePoint(new Point(header.Bounds.Width / 2, header.Bounds.Height / 2), window)!.Value;
+        window.MouseDown(center, MouseButton.Left);
+        window.MouseUp(center, MouseButton.Left);
+        Settle(window);
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void The_Usage_column_sorts_by_file_then_by_line_and_column_as_numbers(bool groupByFile)
+    {
+        using TempDir temp = new();
+        ClassUsage line100 = new("OEBPS/Text/a.xhtml", 900, 100, 3, ClassUsageKind.ClassAttribute);
+        ClassUsage line20Col9 = new("OEBPS/Text/a.xhtml", 300, 20, 9, ClassUsageKind.ClassAttribute);
+        ClassUsage line20Col2 = new("OEBPS/Text/a.xhtml", 290, 20, 2, ClassUsageKind.ClassAttribute);
+        ClassUsage css = new("OEBPS/Styles/s.css", 0, 1, 2, ClassUsageKind.Selector);
+        (Window window, _, TreeDataGrid tree) = ShowPanel(temp, groupByFile, line100, line20Col9, css, line20Col2);
+
+        ClickHeader(window, tree, "FindUsages_ColumnUsage");
+
+        ClassUsage?[] ascending = RealizedRows(window).Select(n => n.Usage).Where(u => u is not null).ToArray();
+        ascending.Should().Equal(css, line20Col2, line20Col9, line100);
+        if (groupByFile)
+        {
+            RealizedRows(window).Where(n => n.Usage is null).Select(n => n.Text)
+                .Should().Equal(Strings.Get("FindUsages_Found"), "OEBPS/Styles/s.css", "OEBPS/Text/a.xhtml");
+        }
+
+        ClickHeader(window, tree, "FindUsages_ColumnUsage");
+
+        RealizedRows(window).Select(n => n.Usage).Where(u => u is not null).Should().Equal(ascending.Reverse());
         window.Close();
     }
 

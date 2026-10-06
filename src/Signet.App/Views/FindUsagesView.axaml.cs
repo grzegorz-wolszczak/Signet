@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 using Signet.App.Infrastructure;
 using Signet.App.ViewModels;
 using Signet.Controls.TreeDataGrid;
+using Signet.Controls.TreeDataGrid.Models;
 
 namespace Signet.App.Views;
 
@@ -60,7 +61,15 @@ public partial class FindUsagesView : UserControl
                 Columns =
                 {
                     _columns.Expander(
-                        _columns.Template("FindUsages_ColumnUsage", "UsageCellTemplate", new GridLength(2, GridUnitType.Star)),
+                        _columns.Template(
+                            "FindUsages_ColumnUsage",
+                            "UsageCellTemplate",
+                            new GridLength(2, GridUnitType.Star),
+                            new TemplateColumnOptions<FindUsagesNode>
+                            {
+                                CompareAscending = FindUsagesNode.CompareByLocation,
+                                CompareDescending = (a, b) => FindUsagesNode.CompareByLocation(b, a),
+                            }),
                         n => n.Children,
                         n => n.HasChildren,
                         n => n.IsExpanded),

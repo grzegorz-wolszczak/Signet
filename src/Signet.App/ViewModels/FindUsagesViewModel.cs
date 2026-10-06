@@ -285,4 +285,31 @@ public sealed partial class FindUsagesNode : ObservableObject
 
     /// <summary>The child nodes.</summary>
     public IReadOnlyList<FindUsagesNode> Children => _children;
+
+    /// <summary>
+    /// The sort order of the "Usage" column: by file (bookpath), then by line and column, compared as numbers — the
+    /// labels ("12:5", "Text/ch1.xhtml:100:3") would put line 100 before line 20 as text. The root and the files have
+    /// no line, so a file sorts before its usages.
+    /// </summary>
+    public static int CompareByLocation(FindUsagesNode? x, FindUsagesNode? y)
+    {
+        if (ReferenceEquals(x, y))
+        {
+            return 0;
+        }
+
+        if (x is null || y is null)
+        {
+            return x is null ? -1 : 1;
+        }
+
+        int byFile = string.CompareOrdinal(x.Usage?.BookPath ?? x.ToolTip, y.Usage?.BookPath ?? y.ToolTip);
+        if (byFile != 0)
+        {
+            return byFile;
+        }
+
+        int byLine = (x.Line ?? 0).CompareTo(y.Line ?? 0);
+        return byLine != 0 ? byLine : (x.Column ?? 0).CompareTo(y.Column ?? 0);
+    }
 }
