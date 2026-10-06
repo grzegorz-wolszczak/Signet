@@ -11,11 +11,10 @@
                FontSize="16" Opacity="0.6"
                HorizontalAlignment="Center" VerticalAlignment="Center" />
 
-    <!-- Columns (File, Line, Offset, Message) are defined by ValidationResultsViewModel.Source. -->
+    <!-- Source and columns (File, Line, Offset, Message) are built in the code-behind. -->
     <TreeDataGrid x:Name="Grid"
                   Classes="gridLines"
                   IsVisible="{Binding HasResults}"
-                  Source="{Binding Source}"
                   DoubleTapped="OnDoubleTapped" />
   </Panel>
 </UserControl>
