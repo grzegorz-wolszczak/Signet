@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using Avalonia.Collections;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
@@ -217,6 +218,34 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
 
             cell.IsEditing.Should().BeTrue();
             cell.GetVisualDescendants().OfType<TextBox>().Should().ContainSingle();
+        }
+
+        [AvaloniaFact(Timeout = 10000)]
+        public void The_expander_of_a_row_that_cannot_expand_goes_back_to_collapsed()
+        {
+            // A "group" with a chevron (hasChildren: true) but no children yet.
+            var empty = new Model { Id = 0, Title = "Empty group" };
+            var source = new HierarchicalTreeDataGridSource<Model>(new[] { empty })
+            {
+                Columns =
+                {
+                    new HierarchicalExpanderColumn<Model>(
+                        new TextColumn<Model, string?>("Title", x => x.Title), x => x.Children, x => true),
+                },
+            };
+            var target = new TreeDataGrid { Source = source };
+            var window = ThemedWindow(target, new Size(300, 200));
+            var cell = target.GetVisualDescendants().OfType<TreeDataGridExpanderCell>().Single();
+            var toggle = cell.GetVisualDescendants().OfType<ToggleButton>().Single();
+            cell.ShowExpander.Should().BeTrue();
+
+            var point = CenterOf(toggle, window);
+            window.MouseDown(point, MouseButton.Left);
+            window.MouseUp(point, MouseButton.Left);
+            Settle(window);
+
+            cell.IsExpanded.Should().BeFalse("a row without children does not expand");
+            toggle.IsChecked.Should().BeFalse("the chevron must not stay in the expanded state");
         }
 
         [AvaloniaTheory(Timeout = 10000)]

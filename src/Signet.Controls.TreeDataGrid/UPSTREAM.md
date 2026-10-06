@@ -46,6 +46,9 @@ history.
 - **Signet additions** (small API changes for Signet's views):
   - `TreeDataGridCell.BeginEdit()` is public (upstream: `protected internal`), so a command can start editing a
     cell, not only an edit gesture.
+- **Fixes:**
+  - `TreeDataGridExpanderCell`: when the row refuses to expand (its children are empty), the expander toggle
+    (bound two-way) is put back in step with the row; upstream left it checked, inverting later clicks.
 - **Build.** Signet's stricter analyzer rules (`EnableNETAnalyzers`, `EnforceCodeStyleInBuild`, `AnalysisLevel`,
   XML documentation file) are off for this project and its tests; compiler warnings are still errors.
 - **Tests.** The upstream tests run on Signet's test stack (xUnit.v3 `mtp-off`, `Avalonia.Headless.XUnit`).

@@ -1,8 +1,10 @@
 using System;
 using System.ComponentModel;
+using System.Linq;
 using Signet.Controls.TreeDataGrid.Models;
 using Avalonia.Controls.Selection;
 using Signet.Controls.TreeDataGrid.Selection;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 
 namespace Signet.Controls.TreeDataGrid.Primitives
@@ -42,7 +44,30 @@ namespace Signet.Controls.TreeDataGrid.Primitives
         public bool IsExpanded
         {
             get => _isExpanded;
-            set { if (_model is object) _model.IsExpanded = value; }
+            set
+            {
+                if (_model is object)
+                {
+                    _model.IsExpanded = value;
+
+                    // Signet: the row can refuse the change (expanding a row whose children turn out to be empty). The
+                    // expander toggle already shows the new state (its click set it) and the template binding does not
+                    // push the unchanged state back, so the toggle would stay out of step and invert later clicks:
+                    // put it back once the binding update is over.
+                    if (_model.IsExpanded != value)
+                        Dispatcher.UIThread.Post(SyncExpanderToggle);
+                }
+            }
+        }
+
+        // The expander toggle of the template (not a toggle button in the cell's content, e.g. a check box).
+        private void SyncExpanderToggle()
+        {
+            foreach (var toggle in this.GetVisualDescendants().OfType<ToggleButton>())
+            {
+                if (ReferenceEquals(toggle.TemplatedParent, this))
+                    toggle.SetCurrentValue(ToggleButton.IsCheckedProperty, _isExpanded);
+            }
         }
 
         public bool ShowExpander
