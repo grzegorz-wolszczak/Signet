@@ -18,20 +18,8 @@
                  IsVisible="{Binding !HasEntries}"
                  Margin="16" Opacity="0.6" TextWrapping="Wrap" VerticalAlignment="Top" />
 
-      <TreeView x:Name="Tree"
-                IsVisible="{Binding HasEntries}"
-                ItemsSource="{Binding Nodes}">
-        <TreeView.Styles>
-          <Style Selector="TreeViewItem" x:DataType="vm:TocEntryViewModel">
-            <Setter Property="IsExpanded" Value="True" />
-          </Style>
-        </TreeView.Styles>
-        <TreeView.ItemTemplate>
-          <TreeDataTemplate x:DataType="vm:TocEntryViewModel" ItemsSource="{Binding Children}">
-            <TextBlock Text="{Binding Title}" />
-          </TreeDataTemplate>
-        </TreeView.ItemTemplate>
-      </TreeView>
+      <!-- The TOC tree with the Title (expandable) and Target columns; source built in the code-behind. -->
+      <TreeDataGrid x:Name="Tree" IsVisible="{Binding HasEntries}" />
     </Panel>
   </DockPanel>
 </UserControl>

@@ -90,6 +90,12 @@ public sealed class TocEntryViewModel
     /// <summary>Entry text.</summary>
     public string Title => Entry.Title.Length > 0 ? Entry.Title : Strings.Get("Toc_Untitled");
 
+    /// <summary>The target as <c>bookpath#fragment</c> (only the bookpath without a fragment; empty without a link).</summary>
+    public string TargetDisplay => Entry.Fragment.Length > 0 ? Entry.TargetBookPath + "#" + Entry.Fragment : Entry.TargetBookPath;
+
+    /// <summary>Whether the node is expanded in the panel (all are at first).</summary>
+    public bool IsExpanded { get; set; } = true;
+
     /// <summary>Child nodes.</summary>
     public IReadOnlyList<TocEntryViewModel> Children { get; }
 }
