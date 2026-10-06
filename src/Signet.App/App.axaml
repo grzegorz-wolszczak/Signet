@@ -214,6 +214,9 @@
       <Setter Property="CanUserResizeColumns" Value="True" />
       <Setter Property="infra:DataGridHeaderSizing.FitHeaders" Value="True" />
     </Style>
+    <!-- Theme of Signet.Controls.TreeDataGrid (virtualized trees and tables). After FluentTheme: it resolves the Fluent
+         palette colours with StaticResource when loaded. -->
+    <StyleInclude Source="avares://Signet.Controls.TreeDataGrid/Themes/Fluent.axaml" />
     <!-- ColorView theme (color picker in Preferences). -->
     <StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml" />
 

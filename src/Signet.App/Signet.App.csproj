@@ -53,6 +53,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Signet.Core\Signet.Core.csproj" />
+    <!-- Virtualized trees and tables: Signet's fork of the MIT TreeDataGrid control (see its UPSTREAM.md). -->
+    <ProjectReference Include="..\Signet.Controls.TreeDataGrid\Signet.Controls.TreeDataGrid.csproj" />
   </ItemGroup>
 
   <!-- Version 0.1-<timestamp>-<build number>; the number is bumped on every App build. -->
