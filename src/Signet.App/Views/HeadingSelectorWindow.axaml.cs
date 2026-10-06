@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
@@ -32,7 +30,7 @@ public partial class HeadingSelectorWindow : Window
     // Keeps the column headers in the current UI language (held weakly by Strings).
     private LocalizedColumns<HeadingNodeViewModel>? _columns;
     private HierarchicalTreeDataGridSource<HeadingNodeViewModel>? _source;
-    private bool _syncingSelection;
+    private TreeSelectionSync<HeadingNodeViewModel>? _selection;
 
     /// <summary>Initializes the window.</summary>
     public HeadingSelectorWindow()
@@ -62,17 +60,21 @@ public partial class HeadingSelectorWindow : Window
 
         _source?.Dispose();
         _source = null;
+        _selection = null;
         _bound = DataContext as HeadingSelectorViewModel;
 
         if (_bound is not null)
         {
             _bound.CloseRequested += OnCloseRequested;
             _bound.PropertyChanged += OnViewModelPropertyChanged;
-            _source = BuildSource(_bound);
+            HeadingSelectorViewModel vm = _bound;
+            _source = BuildSource(vm);
+            _selection = new TreeSelectionSync<HeadingNodeViewModel>(
+                _source, vm.Nodes, n => n.Children, () => vm.SelectedNode, n => vm.SelectedNode = n);
         }
 
         Tree.Source = _source;
-        SelectInTree(_bound?.SelectedNode);
+        _selection?.SelectFromViewModel();
     }
 
     private HierarchicalTreeDataGridSource<HeadingNodeViewModel> BuildSource(HeadingSelectorViewModel vm)
@@ -91,13 +93,6 @@ public partial class HeadingSelectorWindow : Window
                 _columns.Template("HeadingSelectorWindow_ColumnInToc", "IncludeCellTemplate", new GridLength(110)),
             },
         };
-        source.RowSelection!.SelectionChanged += (_, _) =>
-        {
-            if (!_syncingSelection && _bound is not null)
-            {
-                _bound.SelectedNode = source.RowSelection.SelectedItem;
-            }
-        };
         return source;
     }
 
@@ -105,53 +100,8 @@ public partial class HeadingSelectorWindow : Window
     {
         if (e.PropertyName == nameof(HeadingSelectorViewModel.SelectedNode))
         {
-            SelectInTree(_bound?.SelectedNode);
+            _selection?.SelectFromViewModel();
         }
-    }
-
-    // Selects the row of a node (found by its index path in the tree), or nothing.
-    private void SelectInTree(HeadingNodeViewModel? node)
-    {
-        if (_bound is null || _source?.RowSelection is not { } selection || ReferenceEquals(selection.SelectedItem, node))
-        {
-            return;
-        }
-
-        _syncingSelection = true;
-        try
-        {
-            if (node is not null && FindPath(_bound.Nodes, node, new List<int>()) is { } path)
-            {
-                selection.SelectedIndex = new IndexPath(path);
-            }
-            else
-            {
-                selection.Clear();
-            }
-        }
-        finally
-        {
-            _syncingSelection = false;
-        }
-    }
-
-    private static List<int>? FindPath(ObservableCollection<HeadingNodeViewModel> nodes, HeadingNodeViewModel target, List<int> prefix)
-    {
-        for (int i = 0; i < nodes.Count; i++)
-        {
-            List<int> path = new(prefix) { i };
-            if (ReferenceEquals(nodes[i], target))
-            {
-                return path;
-            }
-
-            if (FindPath(nodes[i].Children, target, path) is { } found)
-            {
-                return found;
-            }
-        }
-
-        return null;
     }
 
     private void OnCloseRequested(object? sender, EventArgs e) => Close();
