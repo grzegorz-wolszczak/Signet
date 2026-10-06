@@ -277,6 +277,9 @@ public sealed class HeadingNodeViewModel : ObservableObject
     /// <summary>Level label, e.g. <c>h2</c>.</summary>
     public string LevelLabel => "h" + Heading.Level;
 
+    /// <summary>Whether the node is expanded in the dialog's tree (all are).</summary>
+    public bool IsExpanded { get; set; } = true;
+
     /// <summary>TOC entry text (editable — saved as the <c>title</c> attribute).</summary>
     public string TitleText
     {

@@ -3891,4 +3891,7 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="EmptyLayoutWindow_KindMarker" xml:space="preserve">
     <value>Znacznik</value>
   </data>
+  <data name="HeadingSelectorWindow_ColumnInToc" xml:space="preserve">
+    <value>W spisie treści</value>
+  </data>
 </root>

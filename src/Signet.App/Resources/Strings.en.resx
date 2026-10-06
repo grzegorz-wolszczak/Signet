@@ -3891,4 +3891,7 @@ It does not change the files, their names or their IDs.</value>
   <data name="EmptyLayoutWindow_KindMarker" xml:space="preserve">
     <value>Marker</value>
   </data>
+  <data name="HeadingSelectorWindow_ColumnInToc" xml:space="preserve">
+    <value>In TOC</value>
+  </data>
 </root>
