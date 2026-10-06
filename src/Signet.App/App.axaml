@@ -217,6 +217,16 @@
     <!-- Theme of Signet.Controls.TreeDataGrid (virtualized trees and tables). After FluentTheme: it resolves the Fluent
          palette colours with StaticResource when loaded. -->
     <StyleInclude Source="avares://Signet.Controls.TreeDataGrid/Themes/Fluent.axaml" />
+    <!-- Every TreeDataGrid: resizable columns, each at least as wide as its header (TreeDataGridHeaderSizing). -->
+    <Style Selector="TreeDataGrid">
+      <Setter Property="CanUserResizeColumns" Value="True" />
+      <Setter Property="infra:TreeDataGridHeaderSizing.FitHeaders" Value="True" />
+    </Style>
+    <!-- Horizontal grid lines between the rows (the counterpart of DataGrid GridLinesVisibility="Horizontal"). -->
+    <Style Selector="TreeDataGrid.gridLines TreeDataGridRow">
+      <Setter Property="BorderThickness" Value="0,0,0,1" />
+      <Setter Property="BorderBrush" Value="{DynamicResource TreeDataGridGridLinesBrush}" />
+    </Style>
     <!-- ColorView theme (color picker in Preferences). -->
     <StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml" />
 
