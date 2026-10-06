@@ -12,6 +12,7 @@ using Avalonia.VisualTree;
 using AwesomeAssertions;
 using Signet.App.Resources;
 using Signet.App.Views;
+using Signet.Controls.TreeDataGrid;
 using Signet.Core.MainUI;
 using Signet.Core.Misc;
 using Signet.Core.Semantics;
@@ -56,13 +57,19 @@ public sealed class SpecialCharacterWindowTests
 
     private static CheckBox SearchAllBox(Window window) => window.GetVisualDescendants().OfType<CheckBox>().Single(c => c.Name == "SearchAll");
 
+    private static TreeDataGrid Grid(Window window) => window.GetVisualDescendants().OfType<TreeDataGrid>().Single();
+
+    // Selects a row of the table (by its index in the unsorted rows), like a click on it.
+    private static void Select(SpecialCharacterWindow window, CharRow row) =>
+        Grid(window).RowSelection!.SelectedIndex = new IndexPath(window.Rows.ToList().IndexOf(row));
+
     [AvaloniaFact]
     public void Results_are_a_table_with_entity_code_hex_decimal_name_and_favorite_columns()
     {
         SpecialCharacterWindow window = Show(Context());
 
-        DataGrid grid = window.GetVisualDescendants().OfType<DataGrid>().Single();
-        grid.Columns.Select(c => c.Header as string).Should().Equal(
+        TreeDataGrid grid = Grid(window);
+        grid.Columns!.Select(c => c.Header as string).Should().Equal(
             Strings.Get("SpecialCharacterWindow_ColumnCharacter"),
             Strings.Get("SpecialCharacterWindow_ColumnEntity"),
             Strings.Get("SpecialCharacterWindow_ColumnCode"),
@@ -230,15 +237,14 @@ public sealed class SpecialCharacterWindowTests
         SpecialCharacterWindow window = Show(Context());
         Button code = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "InsertCodeButton");
         Button entity = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "InsertEntityButton");
-        DataGrid grid = window.GetVisualDescendants().OfType<DataGrid>().Single();
 
-        grid.SelectedItem = window.Rows.First(r => r.Insert == "—");
+        Select(window, window.Rows.First(r => r.Insert == "—"));
         Dispatcher.UIThread.RunJobs();
         (code.IsEnabled, entity.IsEnabled).Should().Be((true, true));
 
         CategoryBox(window).SelectedItem = UnicodeBlocks.Blocks.Single(b => b.Name == "Arrows").DisplayName;
         Dispatcher.UIThread.RunJobs();
-        grid.SelectedItem = window.Rows.First(r => r.Entity.Length == 0);
+        Select(window, window.Rows.First(r => r.Entity.Length == 0));
         Dispatcher.UIThread.RunJobs();
         (code.IsEnabled, entity.IsEnabled).Should().Be((true, false));
     }
@@ -248,7 +254,7 @@ public sealed class SpecialCharacterWindowTests
     {
         List<bool> remembered = new();
         SpecialCharacterWindow window = Show(Context() with { OnDoubleClickInsertsCellChanged = remembered.Add });
-        var columns =window.GetVisualDescendants().OfType<DataGrid>().Single().Columns;
+        var columns = Grid(window).Columns!;
         CheckBox option = window.GetVisualDescendants().OfType<CheckBox>().Single(c => c.Name == "DoubleClickInsertsCell");
 
         option.IsChecked.Should().BeFalse();
@@ -297,7 +303,7 @@ public sealed class SpecialCharacterWindowTests
         removed.Should().BeEmpty();
         window.Rows[0].FavoriteMark.Should().Be("✓");
         inserted.Should().BeEmpty("a double-click on the favorite column does not insert");
-        window.DoubleClickForm(window.GetVisualDescendants().OfType<DataGrid>().Single().Columns[^1]).Should().BeNull();
+        window.DoubleClickForm(Grid(window).Columns![^1]).Should().BeNull();
     }
 
     [AvaloniaFact]
@@ -307,8 +313,7 @@ public sealed class SpecialCharacterWindowTests
         SpecialCharacterWindow window = Show(Context() with { OnInsert = inserted.Add });
         bool closed = false;
         window.Closed += (_, _) => closed = true;
-        DataGrid grid = window.GetVisualDescendants().OfType<DataGrid>().Single();
-        grid.SelectedItem = window.Rows.First(r => r.Insert == "—");
+        Select(window, window.Rows.First(r => r.Insert == "—"));
         Dispatcher.UIThread.RunJobs();
 
         window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "OkButton")
@@ -363,5 +368,36 @@ public sealed class SpecialCharacterWindowTests
             Strings.Format("InsertCodeWindow_Text", "U+2014"),
             Strings.Get("Common_Cancel"),
         });
+    }
+
+    [AvaloniaFact]
+    public void Every_column_is_shown_including_the_favorite_column_after_the_name()
+    {
+        SpecialCharacterWindow window = Show(Context());
+
+        Grid(window).GetVisualDescendants().OfType<Signet.Controls.TreeDataGrid.Primitives.TreeDataGridColumnHeader>()
+            .Select(h => h.Header as string).Should().Contain(Strings.Get("SpecialCharacterWindow_ColumnFavorite"));
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_decimal_column_sorts_by_code_point_not_by_text()
+    {
+        SpecialCharacterWindow window = Show(Context());
+        CategoryBox(window).SelectedItem = Strings.Get("SpecialCharacterWindow_PopularCategory");
+        Render(window);
+        TreeDataGrid grid = Grid(window);
+        // As text "&#169;" (©) would come before "&#38;" (&).
+        window.Rows.Should().Contain(r => r.Dec == "&#38;").And.Contain(r => r.Dec == "&#169;");
+        Signet.Controls.TreeDataGrid.Models.IColumn dec = grid.Columns![4];
+
+        grid.Source!.SortBy(dec, System.ComponentModel.ListSortDirection.Ascending).Should().BeTrue();
+        Render(window);
+
+        int[] sorted = Enumerable.Range(0, grid.Rows!.Count)
+            .Select(i => ((CharRow)grid.Rows[i].Model!).CodePoint)
+            .ToArray();
+        sorted.Should().BeInAscendingOrder().And.HaveCount(window.Rows.Count);
+        window.Close();
     }
 }

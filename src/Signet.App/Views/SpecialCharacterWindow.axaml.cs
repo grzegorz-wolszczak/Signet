@@ -6,7 +6,6 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Avalonia;
-using Avalonia.Collections;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -14,7 +13,11 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Signet.App.Infrastructure;
 using Signet.App.Resources;
+using Signet.Controls.TreeDataGrid;
+using Signet.Controls.TreeDataGrid.Models;
+using Signet.Controls.TreeDataGrid.Primitives;
 using Signet.Core.BookManipulation;
 using Signet.Core.MainUI;
 using Signet.Core.Misc;
@@ -99,6 +102,15 @@ public sealed record SpecialCharacterChoice(string Text, string Character);
 /// Inserting does not close the window (<see cref="SpecialCharacterDialogContext.OnInsert"/>); the recently
 /// used list shown in it is the one from when it was opened.
 /// </summary>
+/// <remarks>
+/// The table is a <see cref="TreeDataGrid"/>; its source (whose items are replaced by every search / category change)
+/// and columns are built here. The character, code, hexadecimal and decimal columns sort by the code point, the
+/// favorite column by the mark.
+/// </remarks>
+[System.Diagnostics.CodeAnalysis.SuppressMessage(
+    "Reliability",
+    "CA1001:Types that own disposable fields should be disposable",
+    Justification = "The table source lives as long as the window and observes only the window's own row lists.")]
 public partial class SpecialCharacterWindow : Window
 {
     // Room for the drop-down arrow and the inner padding next to the longest category name.
@@ -126,22 +138,25 @@ public partial class SpecialCharacterWindow : Window
     private List<string> _favorites = new();
     private List<CharRow> _rows = new();
     private Style? _symbolStyle;
-    private DataGridColumn? _pressedColumn;
-    private CharRow? _pressedRow;
     private bool _initializing = true;
+
+    // Keeps the column headers in the current UI language (held weakly by Strings).
+    private readonly LocalizedColumns<CharRow> _columns = new();
+    private readonly FlatTreeDataGridSource<CharRow> _source;
 
     /// <summary>Initializes the window.</summary>
     public SpecialCharacterWindow()
     {
         InitializeComponent();
+        _source = BuildSource();
+        Results.Source = _source;
         Filter.TextChanged += (_, _) => Populate();
         Category.SelectionChanged += (_, _) => Populate();
         SearchAll.IsCheckedChanged += (_, _) => OnSearchAllChanged();
         DoubleClickInsertsCell.IsCheckedChanged += (_, _) => OnDoubleClickInsertsCellChanged();
         Results.DoubleTapped += OnResultsDoubleTapped;
-        Results.SelectionChanged += (_, _) => UpdateButtons();
-        Results.CellPointerPressed += OnCellPointerPressed;
-        // The grid uses Enter to move to the next row — here Enter inserts, like the default button.
+        _source.RowSelection!.SelectionChanged += (_, _) => UpdateButtons();
+        // Enter in the table inserts, like the default button (handled before the grid's own key handling).
         Results.AddHandler(KeyDownEvent, OnResultsKeyDown, RoutingStrategies.Tunnel);
         OkButton.Click += (_, _) => Insert(SpecialCharacterInsertForm.Character);
         InsertCodeButton.Click += (_, _) => InsertCodeFromDialog();
@@ -149,7 +164,7 @@ public partial class SpecialCharacterWindow : Window
         CancelButton.Click += (_, _) => Close();
         FavoriteButton.Click += (_, _) =>
         {
-            if (Results.SelectedItem is CharRow row)
+            if (SelectedRow is { } row)
             {
                 ToggleFavorite(row);
             }
@@ -167,7 +182,10 @@ public partial class SpecialCharacterWindow : Window
     public IReadOnlyList<CharRow> Rows => _rows;
 
     /// <summary>The "Favorite" column (a double-click on its cell toggles the mark).</summary>
-    private DataGridColumn FavoriteColumn => Results.Columns[^1];
+    private IColumn FavoriteColumn => _source.Columns[^1];
+
+    /// <summary>The selected row of the table, if any.</summary>
+    private CharRow? SelectedRow => _source.RowSelection?.SelectedItem;
 
     /// <summary>
     /// Shows the window until it is closed; every insertion goes through
@@ -235,8 +253,10 @@ public partial class SpecialCharacterWindow : Window
     /// "Double-click inserts the cell content" — the content of the character, entity, code, hexadecimal
     /// and decimal columns and nothing for the name column. The favorite column never inserts (<c>null</c>).
     /// </summary>
-    public SpecialCharacterInsertForm? DoubleClickForm(DataGridColumn column)
+    public SpecialCharacterInsertForm? DoubleClickForm(IColumn column)
     {
+        ArgumentNullException.ThrowIfNull(column);
+
         // A double-click on the favorite column toggles the mark — it never inserts.
         if (ReferenceEquals(column, FavoriteColumn))
         {
@@ -248,7 +268,13 @@ public partial class SpecialCharacterWindow : Window
             return SpecialCharacterInsertForm.Character;
         }
 
-        return Results.Columns.IndexOf(column) switch
+        int index = 0;
+        while (index < _source.Columns.Count && !ReferenceEquals(_source.Columns[index], column))
+        {
+            index++;
+        }
+
+        return index switch
         {
             0 => SpecialCharacterInsertForm.Character,
             1 => SpecialCharacterInsertForm.Entity,
@@ -338,31 +364,64 @@ public partial class SpecialCharacterWindow : Window
         }
     }
 
-    private void OnCellPointerPressed(object? sender, DataGridCellPointerPressedEventArgs e)
+    // The columns of the table, in the order DoubleClickForm relies on.
+    private FlatTreeDataGridSource<CharRow> BuildSource()
     {
-        _pressedColumn = e.Column;
-        _pressedRow = e.Row.DataContext as CharRow;
+        static TOptions ByCodePoint<TOptions>(TOptions options)
+            where TOptions : ColumnOptions<CharRow>
+        {
+            options.CompareAscending = (a, b) => (a?.CodePoint ?? -1).CompareTo(b?.CodePoint ?? -1);
+            options.CompareDescending = (a, b) => (b?.CodePoint ?? -1).CompareTo(a?.CodePoint ?? -1);
+            return options;
+        }
+
+        return new FlatTreeDataGridSource<CharRow>(Array.Empty<CharRow>())
+        {
+            Columns =
+            {
+                _columns.Template("SpecialCharacterWindow_ColumnCharacter", "CharacterCellTemplate", GridLength.Auto,
+                    ByCodePoint(new TemplateColumnOptions<CharRow> { MinWidth = new GridLength(70) })),
+                _columns.Text("SpecialCharacterWindow_ColumnEntity", r => r.Entity, new GridLength(110)),
+                _columns.Text("SpecialCharacterWindow_ColumnCode", r => r.Code, new GridLength(90),
+                    ByCodePoint(new TextColumnOptions<CharRow>())),
+                _columns.Text("SpecialCharacterWindow_ColumnHex", r => r.Hex, new GridLength(100),
+                    ByCodePoint(new TextColumnOptions<CharRow>())),
+                _columns.Text("SpecialCharacterWindow_ColumnDecimal", r => r.Dec, new GridLength(100),
+                    ByCodePoint(new TextColumnOptions<CharRow>())),
+                _columns.Text("SpecialCharacterWindow_ColumnName", r => r.Name, new GridLength(1, GridUnitType.Star)),
+                // A fixed width, not Auto: TreeDataGrid virtualizes columns too, and an Auto column after a star
+                // column never gets realized (its width is unknown, so the star column takes all the room). The
+                // header sizing still widens it to its header.
+                _columns.Template("SpecialCharacterWindow_ColumnFavorite", "FavoriteCellTemplate", new GridLength(80),
+                    new TemplateColumnOptions<CharRow>
+                    {
+                        CompareAscending = (a, b) => string.CompareOrdinal(a?.FavoriteMark, b?.FavoriteMark),
+                        CompareDescending = (a, b) => string.CompareOrdinal(b?.FavoriteMark, a?.FavoriteMark),
+                    }),
+            },
+        };
     }
 
     // Only a double-click on a cell acts (not one on a column header): in the favorite column it toggles
-    // the mark, elsewhere it inserts. The cell is the one of the last CellPointerPressed, which the second
-    // click of the double-click raises.
+    // the mark, elsewhere it inserts. The pressed cell tells the column; its row is the double-clicked one.
     private void OnResultsDoubleTapped(object? sender, TappedEventArgs e)
     {
-        if (e.Source is not Visual source || source.FindAncestorOfType<DataGridCell>(includeSelf: true) is null
-            || _pressedColumn is null)
+        if (e.Source is not Visual source
+            || source.FindAncestorOfType<TreeDataGridCell>(includeSelf: true) is not { ColumnIndex: >= 0 } cell
+            || cell.ColumnIndex >= _source.Columns.Count)
         {
             return;
         }
 
-        if (ReferenceEquals(_pressedColumn, FavoriteColumn))
+        IColumn column = _source.Columns[cell.ColumnIndex];
+        if (ReferenceEquals(column, FavoriteColumn))
         {
-            if (_pressedRow is not null)
+            if (cell.FindAncestorOfType<TreeDataGridRow>()?.Model is CharRow row)
             {
-                ToggleFavorite(_pressedRow);
+                ToggleFavorite(row);
             }
         }
-        else if (DoubleClickForm(_pressedColumn) is { } form)
+        else if (DoubleClickForm(column) is { } form)
         {
             Insert(form);
         }
@@ -379,7 +438,7 @@ public partial class SpecialCharacterWindow : Window
 
     private async void Insert(SpecialCharacterInsertForm form)
     {
-        if (Results.SelectedItem is not CharRow row || FormText(row, form) is not { } text)
+        if (SelectedRow is not { } row || FormText(row, form) is not { } text)
         {
             return;
         }
@@ -394,7 +453,7 @@ public partial class SpecialCharacterWindow : Window
 
     private async void InsertCodeFromDialog()
     {
-        if (Results.SelectedItem is not CharRow { CodePoint: >= 0 } row)
+        if (SelectedRow is not { CodePoint: >= 0 } row)
         {
             return;
         }
@@ -415,7 +474,7 @@ public partial class SpecialCharacterWindow : Window
 
     private void UpdateButtons()
     {
-        CharRow? row = Results.SelectedItem as CharRow;
+        CharRow? row = SelectedRow;
         FavoriteButton.Content = Strings.Get(row is { IsFavorite: true } ? "SpecialCharacterWindow_RemoveFavorite" : "SpecialCharacterWindow_AddFavorite");
         FavoriteButton.IsEnabled = row is not null;
         OkButton.IsEnabled = row is not null;
@@ -457,10 +516,10 @@ public partial class SpecialCharacterWindow : Window
         }
 
         _rows = rows;
-        Results.ItemsSource = new DataGridCollectionView(rows);
+        _source.Items = rows;
         if (rows.Count > 0)
         {
-            Results.SelectedIndex = 0;
+            _source.RowSelection!.SelectedIndex = new IndexPath(0);
         }
 
         UpdateButtons();

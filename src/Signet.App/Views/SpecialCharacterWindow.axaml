@@ -7,6 +7,20 @@
         WindowStartupLocation="CenterOwner"
         Title="{loc:Loc SpecialCharacterWindow_Title}">
 
+  <Window.Resources>
+    <!-- Cell templates of the TemplateColumns of the results table (looked up by key from the code-behind). -->
+    <DataTemplate x:Key="CharacterCellTemplate" x:DataType="v:CharRow">
+      <TextBlock Classes="symbol" Text="{Binding Display}" HorizontalAlignment="Center"
+                 VerticalAlignment="Center" Margin="8,2" />
+    </DataTemplate>
+    <DataTemplate x:Key="FavoriteCellTemplate" x:DataType="v:CharRow">
+      <Border Background="Transparent" Cursor="Hand"
+              ToolTip.Tip="{loc:Loc SpecialCharacterWindow_FavoriteToggleTip}">
+        <TextBlock Text="{Binding FavoriteMark}" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" />
+      </Border>
+    </DataTemplate>
+  </Window.Resources>
+
   <DockPanel Margin="16">
     <TextBlock DockPanel.Dock="Top" Margin="0,0,0,8"
                Text="{loc:Loc SpecialCharacterWindow_Prompt}" TextWrapping="Wrap" />
@@ -33,40 +47,10 @@
       </StackPanel>
     </Grid>
 
-    <!-- The "Character" column uses the Preferences font (TextBlock.symbol style, added in code).
-         A double-click in the last ("Favorite") column toggles the favorite mark (handled in code).
-         The column order is relied on by SpecialCharacterWindow.DoubleClickForm. -->
-    <DataGrid x:Name="Results" IsReadOnly="True" SelectionMode="Single" AutoGenerateColumns="False"
-              GridLinesVisibility="Horizontal" CanUserResizeColumns="True" CanUserSortColumns="True">
-      <DataGrid.Columns>
-        <DataGridTemplateColumn Header="{loc:Loc SpecialCharacterWindow_ColumnCharacter}" Width="Auto" MinWidth="70"
-                                SortMemberPath="CodePoint">
-          <DataGridTemplateColumn.CellTemplate>
-            <DataTemplate x:DataType="v:CharRow">
-              <TextBlock Classes="symbol" Text="{Binding Display}" HorizontalAlignment="Center"
-                         VerticalAlignment="Center" Margin="8,2" />
-            </DataTemplate>
-          </DataGridTemplateColumn.CellTemplate>
-        </DataGridTemplateColumn>
-        <DataGridTextColumn x:DataType="v:CharRow" Header="{loc:Loc SpecialCharacterWindow_ColumnEntity}" Binding="{Binding Entity}" Width="110" />
-        <DataGridTextColumn x:DataType="v:CharRow" Header="{loc:Loc SpecialCharacterWindow_ColumnCode}" Binding="{Binding Code}"
-                            SortMemberPath="CodePoint" Width="90" />
-        <DataGridTextColumn x:DataType="v:CharRow" Header="{loc:Loc SpecialCharacterWindow_ColumnHex}" Binding="{Binding Hex}"
-                            SortMemberPath="CodePoint" Width="100" />
-        <DataGridTextColumn x:DataType="v:CharRow" Header="{loc:Loc SpecialCharacterWindow_ColumnDecimal}" Binding="{Binding Dec}"
-                            SortMemberPath="CodePoint" Width="100" />
-        <DataGridTextColumn x:DataType="v:CharRow" Header="{loc:Loc SpecialCharacterWindow_ColumnName}" Binding="{Binding Name}" Width="*" />
-        <DataGridTemplateColumn Header="{loc:Loc SpecialCharacterWindow_ColumnFavorite}" Width="Auto" SortMemberPath="FavoriteMark">
-          <DataGridTemplateColumn.CellTemplate>
-            <DataTemplate x:DataType="v:CharRow">
-              <Border Background="Transparent" Cursor="Hand"
-                      ToolTip.Tip="{loc:Loc SpecialCharacterWindow_FavoriteToggleTip}">
-                <TextBlock Text="{Binding FavoriteMark}" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" />
-              </Border>
-            </DataTemplate>
-          </DataGridTemplateColumn.CellTemplate>
-        </DataGridTemplateColumn>
-      </DataGrid.Columns>
-    </DataGrid>
+    <!-- The table: source and columns are built in the code-behind (column order: character, entity, code, hex,
+         decimal, name, favorite - relied on by SpecialCharacterWindow.DoubleClickForm). The "Character" column uses
+         the Preferences font (TextBlock.symbol style, added in code); a double-click in the last ("Favorite") column
+         toggles the favorite mark (handled in code). -->
+    <TreeDataGrid x:Name="Results" Classes="gridLines" />
   </DockPanel>
 </Window>
