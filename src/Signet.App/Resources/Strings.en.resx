@@ -3918,4 +3918,16 @@ It does not change the files, their names or their IDs.</value>
   <data name="FindUsages_KindSelector" xml:space="preserve">
     <value>CSS selector</value>
   </data>
+  <data name="BookBrowserView_ColumnOrderHeader" xml:space="preserve">
+    <value>#</value>
+  </data>
+  <data name="BookBrowserView_ColumnReadingOrder" xml:space="preserve">
+    <value>Reading order</value>
+  </data>
+  <data name="BookBrowserView_ColumnSemantics" xml:space="preserve">
+    <value>Semantics</value>
+  </data>
+  <data name="BookBrowserView_ColumnProperties" xml:space="preserve">
+    <value>Properties</value>
+  </data>
 </root>

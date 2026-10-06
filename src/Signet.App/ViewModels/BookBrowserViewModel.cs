@@ -152,6 +152,16 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     /// <summary>Whether a book is loaded.</summary>
     public bool HasBook => _book is not null;
 
+    /// <summary>
+    /// The optional columns shown next to the name (comma-separated ids: "ReadingOrder", "Semantics", "Properties"),
+    /// remembered in the settings.
+    /// </summary>
+    public string OptionalColumns
+    {
+        get => _settings.BookBrowserColumns;
+        set => _settings.BookBrowserColumns = value ?? string.Empty;
+    }
+
     /// <summary>Node whose name is currently being edited in the tree (or <c>null</c>).</summary>
     [ObservableProperty]
     private BookBrowserNode? _editingNode;
@@ -1147,6 +1157,15 @@ public sealed partial class BookBrowserNode : ObservableObject
 
     /// <summary>Whether the (X)HTML file is not well-formed.</summary>
     public bool IsMalformed => Entry?.IsWellFormed == false;
+
+    /// <summary>The "#" column: the 1-based position in the reading order (spine), or <c>null</c> outside it.</summary>
+    public int? ReadingOrderNumber => Entry is { ReadingOrder: >= 0 } entry ? entry.ReadingOrder + 1 : null;
+
+    /// <summary>The "Semantics" column: the landmark / guide types of the file.</summary>
+    public string SemanticsText => Entry is null ? string.Empty : string.Join(", ", Entry.SemanticTypes);
+
+    /// <summary>The "Properties" column: the manifest properties of the file (nav, cover-image, …).</summary>
+    public string PropertiesText => Entry?.ManifestProperties ?? string.Empty;
 
     /// <summary>Creates a group folder node.</summary>
     public static BookBrowserNode Folder(OpfModelGroupKind kind, string name, string toolTip) =>

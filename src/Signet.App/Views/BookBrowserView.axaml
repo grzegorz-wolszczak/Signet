@@ -7,9 +7,6 @@
              x:Name="Root">
 
   <UserControl.Resources>
-    <!-- A compact tree (uniform row height, indentation 10). -->
-    <x:Double x:Key="TreeViewItemMinHeight">22</x:Double>
-    <x:Double x:Key="TreeViewItemIndent">10</x:Double>
 
     <!-- Folder and file icons: custom vector drawings in one style, identical on every system. -->
     <DrawingImage x:Key="BookBrowserFolderIcon">
@@ -38,6 +35,29 @@
         </DrawingGroup>
       </DrawingImage.Drawing>
     </DrawingImage>
+
+    <!-- The name cell (looked up by key from the code-behind): icon, name trimmed in the middle, ⚠ for a file that
+         is not well-formed, and the in-place rename editor. -->
+    <DataTemplate x:Key="NameCellTemplate" x:DataType="vm:BookBrowserNode">
+      <!-- The cover/nav have no markers (the information is in the tooltip); the ⚠ for a
+           file that is not well-formed is a deliberate addition. -->
+      <DockPanel ToolTip.Tip="{Binding ToolTip}" Background="Transparent">
+        <Image DockPanel.Dock="Left" Width="16" Height="16" Margin="0,0,5,0"
+               Source="{StaticResource BookBrowserFolderIcon}" IsVisible="{Binding IsFolder}" />
+        <Image DockPanel.Dock="Left" Width="16" Height="16" Margin="0,0,5,0"
+               Source="{StaticResource BookBrowserFileIcon}" IsVisible="{Binding !IsFolder}" />
+        <TextBlock DockPanel.Dock="Right" Text="⚠" Foreground="#C0392B" Margin="4,0,0,0"
+                   IsVisible="{Binding IsMalformed}" ToolTip.Tip="{loc:Loc BookBrowserView_MalformedTip}" />
+        <!-- Trimming in the middle of the name. -->
+        <TextBlock Text="{Binding Header}" TextTrimming="PrefixCharacterEllipsis" VerticalAlignment="Center"
+                   IsVisible="{Binding !IsEditing}" />
+        <!-- In-place rename: Enter confirms, Esc and focus loss cancel —
+             handled in BookBrowserView. -->
+        <TextBox Classes="inPlaceRename" Text="{Binding EditText, Mode=TwoWay}"
+                 IsVisible="{Binding IsEditing}"
+                 MinHeight="0" Padding="2,0" VerticalAlignment="Center" VerticalContentAlignment="Center" />
+      </DockPanel>
+    </DataTemplate>
   </UserControl.Resources>
 
   <Panel>
@@ -45,22 +65,19 @@
                IsVisible="{Binding !HasBook}"
                Margin="16" Opacity="0.6" TextWrapping="Wrap" VerticalAlignment="Top" />
 
-    <TreeView x:Name="Tree"
-              IsVisible="{Binding HasBook}"
-              ItemsSource="{Binding Nodes}"
-              SelectionMode="Multiple"
-              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-
-      <TreeView.Styles>
-        <!-- Only Text is expanded at startup; the expansion state is kept by the VM,
-             so it survives rebuilding the tree. -->
-        <Style Selector="TreeViewItem" x:DataType="vm:BookBrowserNode">
-          <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
-          <Setter Property="Padding" Value="2,0" />
+    <!-- The files tree: Name (expandable) and the optional columns # / Semantics / Properties, chosen from the
+         context menu of the column headers (remembered in the settings). Source and columns are built in the
+         code-behind. Not sortable: the order of the files is the book's (Move Up / Down). -->
+    <TreeDataGrid x:Name="Tree"
+                  IsVisible="{Binding HasBook}"
+                  CanUserSortColumns="False">
+      <TreeDataGrid.Styles>
+        <!-- A compact tree (uniform row height), as before. -->
+        <Style Selector=":is(TreeDataGridCell)">
+          <Setter Property="MinHeight" Value="22" />
         </Style>
-      </TreeView.Styles>
-
-      <TreeView.ContextMenu>
+      </TreeDataGrid.Styles>
+      <TreeDataGrid.ContextMenu>
         <ContextMenu x:DataType="vm:BookBrowserViewModel">
           <MenuItem Header="{loc:Loc BookBrowserView_Open}" Command="{Binding OpenSelectedCommand}" />
           <MenuItem Header="{loc:Loc Common_RenameEllipsis}" Command="{Binding RenameSelectedCommand}" />
@@ -94,30 +111,7 @@
           <MenuItem Header="{loc:Loc BookBrowserView_SelectAll}" Command="{Binding SelectAllInFolderCommand}" />
           <MenuItem Header="{loc:Loc BookBrowserView_GetInfo}" Command="{Binding GetInfoSelectedCommand}" />
         </ContextMenu>
-      </TreeView.ContextMenu>
-
-      <TreeView.ItemTemplate>
-        <TreeDataTemplate DataType="vm:BookBrowserNode" ItemsSource="{Binding Children}">
-          <!-- The cover/nav have no markers (the information is in the tooltip); the ⚠ for a
-               file that is not well-formed is a deliberate addition. -->
-          <DockPanel ToolTip.Tip="{Binding ToolTip}" Background="Transparent">
-            <Image DockPanel.Dock="Left" Width="16" Height="16" Margin="0,0,5,0"
-                   Source="{StaticResource BookBrowserFolderIcon}" IsVisible="{Binding IsFolder}" />
-            <Image DockPanel.Dock="Left" Width="16" Height="16" Margin="0,0,5,0"
-                   Source="{StaticResource BookBrowserFileIcon}" IsVisible="{Binding !IsFolder}" />
-            <TextBlock DockPanel.Dock="Right" Text="⚠" Foreground="#C0392B" Margin="4,0,0,0"
-                       IsVisible="{Binding IsMalformed}" ToolTip.Tip="{loc:Loc BookBrowserView_MalformedTip}" />
-            <!-- Trimming in the middle of the name. -->
-            <TextBlock Text="{Binding Header}" TextTrimming="PrefixCharacterEllipsis" VerticalAlignment="Center"
-                       IsVisible="{Binding !IsEditing}" />
-            <!-- In-place rename: Enter confirms, Esc and focus loss cancel —
-                 handled in BookBrowserView. -->
-            <TextBox Classes="inPlaceRename" Text="{Binding EditText, Mode=TwoWay}"
-                     IsVisible="{Binding IsEditing}"
-                     MinHeight="0" Padding="2,0" VerticalAlignment="Center" VerticalContentAlignment="Center" />
-          </DockPanel>
-        </TreeDataTemplate>
-      </TreeView.ItemTemplate>
-    </TreeView>
+      </TreeDataGrid.ContextMenu>
+    </TreeDataGrid>
   </Panel>
 </UserControl>

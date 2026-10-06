@@ -364,6 +364,16 @@ public sealed class SettingsStore
         set => Write("find_usages_group_by_file", value);
     }
 
+    /// <summary>
+    /// The optional columns shown in the Book Browser next to the name, comma-separated ids ("ReadingOrder",
+    /// "Semantics", "Properties"); empty (only the name) by default.
+    /// </summary>
+    public string BookBrowserColumns
+    {
+        get => ReadString("book_browser_columns", string.Empty);
+        set => Write("book_browser_columns", value);
+    }
+
     /// <summary>Upper bound of <see cref="CodeViewOpenTagHintDelayMs"/>.</summary>
     public const int OpenTagHintDelayMaxMs = 5000;
 

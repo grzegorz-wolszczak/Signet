@@ -11,6 +11,7 @@ using AwesomeAssertions;
 using Signet.App.Services;
 using Signet.App.ViewModels;
 using Signet.App.Views;
+using Signet.Controls.TreeDataGrid;
 using Signet.Core.BookManipulation;
 using Signet.Core.Misc;
 using Signet.Core.Tests.TestSupport;
@@ -41,8 +42,10 @@ public sealed class BookBrowserInPlaceRenameTests
         window.Show();
         Render(window);
 
-        BookBrowserNode file = vm.Nodes.Single(n => n.Header == "Text").Children[0];
-        window.GetVisualDescendants().OfType<TreeView>().Single().SelectedItems.Add(file);
+        BookBrowserNode text = vm.Nodes.Single(n => n.Header == "Text");
+        BookBrowserNode file = text.Children[0];
+        window.GetVisualDescendants().OfType<TreeDataGrid>().Single().RowSelection!.SelectedIndex =
+            new IndexPath(vm.Nodes.IndexOf(text), 0);
         Render(window);
         return (window, vm, file);
     }
