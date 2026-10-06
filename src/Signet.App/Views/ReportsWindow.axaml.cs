@@ -132,7 +132,9 @@ public partial class ReportsWindow : Window
         Table(CharactersGrid, vm?.Characters, (c, cols) =>
         {
             cols.Add(c.Text("ReportsWindow_Character", r => r.Character, new GridLength(80)));
-            cols.Add(c.Text("ReportsWindow_Decimal", r => r.DecimalValue, new GridLength(80)));
+            // The decimal code is shown as text but sorted by its value.
+            cols.Add(c.Text("ReportsWindow_Decimal", r => r.DecimalValue, new GridLength(80),
+                new TextColumnOptions<CharacterDisplayRow>().SortedBy(r => r.CodePoint)));
             cols.Add(c.Text("ReportsWindow_Hexadecimal", r => r.Hexadecimal, new GridLength(90)));
             cols.Add(c.Text("ReportsWindow_Name", r => r.EntityName, star));
             cols.Add(c.Text("ReportsWindow_Count", r => r.Count, new GridLength(80)));

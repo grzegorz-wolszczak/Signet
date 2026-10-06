@@ -7,6 +7,8 @@ using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AwesomeAssertions;
+using System.ComponentModel;
+using System;
 using Signet.App.Resources;
 using Signet.App.ViewModels;
 using Signet.App.Views;
@@ -92,6 +94,31 @@ public sealed class ReportsWindowTests
         Settle(window);
 
         navigatedTo.Should().Be(vm.AllFiles[0].BookPath);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_decimal_column_of_the_characters_report_sorts_by_code_point()
+    {
+        using Book book = BookCreator.CreateNewBook("3.0");
+        Signet.Core.Resources.HtmlResource html = book.GetHtmlResourcesExcludingNav().First();
+        string text = html.GetText();
+        int start = text.IndexOf("<body", StringComparison.Ordinal);
+        int end = text.IndexOf("</body>", StringComparison.Ordinal) + "</body>".Length;
+        // No-break space (160), Greek Ϩ (1000), em dash (8212): as text "1000" would come before "160".
+        html.SetText(text[..start] + "<body><p>a&#160;b&#1000;c&#8212;d</p></body>" + text[end..]);
+        ReportsViewModel vm = new(book);
+        ReportsWindow window = new() { DataContext = vm, Width = 2400, Height = 500 };
+        window.Show();
+        window.GetVisualDescendants().OfType<TabControl>().First().SelectedIndex = 7;
+        Settle(window);
+        TreeDataGrid grid = window.GetVisualDescendants().OfType<TreeDataGrid>().First(g => g.IsEffectivelyVisible);
+
+        grid.Source!.SortBy(grid.Columns![1], ListSortDirection.Ascending).Should().BeTrue();
+
+        int[] codes = Enumerable.Range(0, grid.Rows!.Count).Select(i => ((CharacterDisplayRow)grid.Rows[i].Model!).CodePoint).ToArray();
+        codes.Where(c => c is 160 or 1000 or 8212).Should().Equal(160, 1000, 8212);
+        codes.Should().BeInAscendingOrder();
         window.Close();
     }
 }

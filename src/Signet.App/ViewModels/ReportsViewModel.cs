@@ -200,6 +200,9 @@ public sealed record CharacterDisplayRow(string Character, string DecimalValue, 
     /// <summary>Book paths of the files containing this character, joined into a single column text.</summary>
     public string FoundInDisplay => string.Join("; ", FoundIn);
 
+    /// <summary>The code point of <see cref="Character"/> (the sort key of the decimal column).</summary>
+    public int CodePoint => char.ConvertToUtf32(Character, 0);
+
     /// <summary>Builds the display row from the raw <see cref="CharacterUsageRow"/>.</summary>
     public static CharacterDisplayRow From(CharacterUsageRow row)
     {

@@ -7,6 +7,7 @@ using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AwesomeAssertions;
+using System.ComponentModel;
 using Signet.App.Resources;
 using Signet.App.ViewModels;
 using Signet.App.Views;
@@ -86,6 +87,30 @@ public sealed class ValidationResultsViewTests
         Settle(window);
 
         activated.Should().Be(second);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Line_and_offset_sort_as_numbers_with_unknown_values_last()
+    {
+        ValidationResultsViewModel vm = new();
+        vm.LoadResults(new[]
+        {
+            new ValidationResult(ValidationSeverity.Error, "a.xhtml", 10, 5, "ten"),
+            new ValidationResult(ValidationSeverity.Error, "a.xhtml", 0, -1, "unknown"),
+            new ValidationResult(ValidationSeverity.Error, "a.xhtml", 2, 40, "two"),
+        });
+        Window window = new() { Width = 700, Height = 300, Content = new ValidationResultsView { DataContext = vm } };
+        window.Show();
+        Settle(window);
+        TreeDataGrid grid = window.GetVisualDescendants().OfType<TreeDataGrid>().Single();
+        string[] Messages() => Enumerable.Range(0, grid.Rows!.Count).Select(i => ((ValidationResultRow)grid.Rows[i].Model!).Message).ToArray();
+
+        grid.Source!.SortBy(grid.Columns![1], ListSortDirection.Ascending);
+        Messages().Should().Equal("two", "ten", "unknown");
+
+        grid.Source.SortBy(grid.Columns[2], ListSortDirection.Ascending);
+        Messages().Should().Equal("ten", "two", "unknown");
         window.Close();
     }
 }
