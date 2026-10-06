@@ -16,7 +16,7 @@ public static class ColumnSorting
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(key);
         Comparer<TKey> comparer = Comparer<TKey>.Default;
-        options.CompareAscending = (a, b) => Compare(a, b);
+        options.CompareAscending = Compare;
         options.CompareDescending = (a, b) => Compare(b, a);
         return options;
 
