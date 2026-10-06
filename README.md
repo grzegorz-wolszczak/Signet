@@ -123,6 +123,7 @@ dotnet run --project src/Signet.App
 | `src/Signet.Core` | domain model (EPUB/OCF/OPF, resources, import/export), no UI dependencies |
 | `src/Signet.App` | Avalonia desktop application (MVVM, CommunityToolkit.Mvvm) |
 | `src/Signet.Cli` | headless command-line tool (round-trip checks) |
+| `src/Signet.Controls.TreeDataGrid` | fork of the MIT Avalonia TreeDataGrid control (virtualized trees and tables) |
 | `tests/` | unit tests, Avalonia headless view tests and a test EPUB corpus |
 
 ## Icons
@@ -136,3 +137,8 @@ AI.
 
 Signet is a derivative work of Sigil (GPLv3) and includes code adapted from calibre (GPLv3) and
 some of its icons, so it is distributed under the same license.
+
+`src/Signet.Controls.TreeDataGrid` is a fork of the open-source
+[Avalonia TreeDataGrid](https://github.com/AvaloniaUI/Avalonia.Controls.TreeDataGrid) (MIT, Copyright (c)
+.NET Foundation and Contributors); its files keep the MIT license (see the `LICENSE.md` and `UPSTREAM.md`
+files in that folder).

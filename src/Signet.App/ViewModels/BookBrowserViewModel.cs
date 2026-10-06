@@ -1134,7 +1134,7 @@ public sealed partial class BookBrowserNode : ObservableObject
     /// <summary>Group kind for a folder (or <c>null</c> for a file).</summary>
     public OpfModelGroupKind? FolderKind { get; }
 
-    /// <summary>Whether the folder is expanded in the tree (two-way bound to <c>TreeViewItem</c>).</summary>
+    /// <summary>Whether the folder is expanded in the tree (two-way bound to the tree's expander column).</summary>
     [ObservableProperty]
     private bool _isExpanded;
 

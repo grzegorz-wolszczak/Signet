@@ -12,10 +12,13 @@ validation, checkpoints (snapshot + diff).
 - **Stack:** `net10.0`, Avalonia 12.x, `CommunityToolkit.Mvvm`, Dock.Avalonia (docking layout).
 - **Libraries:** `AngleSharp` (HTML5/CSS parsing), `AvaloniaEdit` + `TextMateSharp` (code editor),
   `WeCantSpell.Hunspell` (spelling), `PCRE.NET` (regex in Find & Replace), `NativeWebView`
-  (Preview), `SkiaSharp` (images/fonts), `DiffPlex` (diffs), Serilog (logging).
+  (Preview), `SkiaSharp` (images/fonts), `DiffPlex` (diffs), Serilog (logging). Trees and tables use
+  `Signet.Controls.TreeDataGrid` — Signet's fork of the MIT Avalonia TreeDataGrid (see its `UPSTREAM.md`);
+  there is no `TreeView` / `DataGrid` in the app.
 - **Naming:** solution `Signet.slnx`; projects `Signet.Core` (domain model, no UI dependencies),
-  `Signet.App` (Avalonia app), `Signet.Cli` (headless CLI); tests `Signet.Core.Tests`,
-  `Signet.App.Tests`, `Signet.App.UiTests`; namespaces `Signet.*`.
+  `Signet.App` (Avalonia app), `Signet.Cli` (headless CLI), `Signet.Controls.TreeDataGrid` (the
+  TreeDataGrid fork); tests `Signet.Core.Tests`, `Signet.App.Tests`, `Signet.App.UiTests`,
+  `Signet.Controls.TreeDataGrid.Tests`; namespaces `Signet.*`.
 - **License:** GNU GPL v3 or later (see `LICENSE`). Source files carry **no** license header.
 - **UI localization:** `.resx` resources — `Strings.resx` / `CoreStrings.resx` hold Polish (default),
   `*.en.resx` hold English. Every user-visible string goes through resources, in both languages.
@@ -56,6 +59,17 @@ When there are several doubts, collect them and ask all at once, not one by one.
   tools derive from `SignetTool : Tool, IDeferredContentPresentation`
   (`src/Signet.App/Docking/DockTools.cs`) and document tabs from `ContentTabViewModel`. Any new
   tool/tab type must keep that inheritance chain (covered by `DeferredContentOptOutTests`).
+- **TreeDataGrid sources belong to the views.** A `FlatTreeDataGridSource` / `HierarchicalTreeDataGridSource`
+  is bound to the UI thread (its selection and items views call `Dispatcher.VerifyAccess`), while view models
+  are unit-tested off the UI thread. Views build the source and its columns in code-behind when the
+  `DataContext` changes (`LocalizedColumns<T>` for headers that follow the UI language, cell templates as
+  XAML resources by key), and dispose the previous one. Selection helpers: `TreeSelectionSync<T>` /
+  `TreeMultiSelectionSync<T>`; filtered trees use `VisibleItems.For` (rows cannot be hidden). Columns are
+  virtualized horizontally too: do not put an `Auto` column after a star column (it never gets realized).
+- **The TreeDataGrid fork stays close to upstream.** It keeps its upstream style (analyzers off for the
+  project); every change against upstream is listed in `src/Signet.Controls.TreeDataGrid/UPSTREAM.md`.
+  The fork's `Fluent.axaml` must come after `FluentTheme` in `App.axaml` (it resolves Fluent colours with
+  `StaticResource`).
 
 ## Running the GUI
 

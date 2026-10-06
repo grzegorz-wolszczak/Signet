@@ -102,8 +102,8 @@ public partial class ClipEditorWindow : Window
 
     private const string RenameEditorClass = "inPlaceRename";
 
-    // Attached in the node template: the double click reaches here before the TreeViewItem header, which
-    // would otherwise collapse/expand the group instead of entering rename.
+    // Attached in the name cell template: a double click on a name enters rename (and is handled, so it does not
+    // reach the tree).
     private void OnNodeDoubleTapped(object? sender, TappedEventArgs e)
     {
         // A double click in the editor selects a word, and on a group chevron only toggles it.
