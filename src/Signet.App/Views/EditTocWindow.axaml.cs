@@ -1,10 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Signet.App.Infrastructure;
 using Signet.App.ViewModels;
+using Signet.Controls.TreeDataGrid;
+using Signet.Controls.TreeDataGrid.Models;
 
 namespace Signet.App.Views;
 
@@ -13,16 +17,29 @@ namespace Signet.App.Views;
 /// An editable table of contents as a table (title / level / target, resizable columns) with multi-selection, moving of contiguous ranges,
 /// a context menu and the "Select Target" dialog.
 /// </summary>
+/// <remarks>
+/// The table is a <see cref="TreeDataGrid"/> over <see cref="EditTocViewModel.Rows"/>, built here (a TreeDataGrid source
+/// is bound to the UI thread). The title is edited with F2 or a click on an already selected entry (as in the former
+/// DataGrid), or from "Rename".
+/// </remarks>
+[SuppressMessage(
+    "Reliability",
+    "CA1001:Types that own disposable fields should be disposable",
+    Justification = "The table source is disposed when the data context changes; the current one lives as long as the "
+        + "dialog and the view model's Rows it observes.")]
 public partial class EditTocWindow : Window
 {
     private EditTocViewModel? _bound;
+
+    // Keeps the column headers in the current UI language (held weakly by Strings).
+    private LocalizedColumns<EditTocNodeViewModel>? _columns;
+    private FlatTreeDataGridSource<EditTocNodeViewModel>? _source;
 
     /// <summary>Initializes the window.</summary>
     public EditTocWindow()
     {
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
-        Grid.SelectionChanged += OnSelectionChanged;
         AddHandler(KeyDownEvent, OnKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
     }
 
@@ -44,6 +61,13 @@ public partial class EditTocWindow : Window
             _bound.SelectionChangeRequested -= OnSelectionChangeRequested;
         }
 
+        if (_source is not null)
+        {
+            _source.RowSelection!.SelectionChanged -= OnSelectionChanged;
+            _source.Dispose();
+            _source = null;
+        }
+
         _bound = DataContext as EditTocViewModel;
 
         if (_bound is not null)
@@ -52,27 +76,89 @@ public partial class EditTocWindow : Window
             _bound.SelectTargetRequested += OnSelectTargetRequested;
             _bound.RenameRequested += OnRenameRequested;
             _bound.SelectionChangeRequested += OnSelectionChangeRequested;
+            _source = BuildSource(_bound);
+            _source.RowSelection!.SelectionChanged += OnSelectionChanged;
         }
+
+        Grid.Source = _source;
+    }
+
+    // Title (editable, indented by the level), Level, Target — not sortable: the row order is the TOC order.
+    private FlatTreeDataGridSource<EditTocNodeViewModel> BuildSource(EditTocViewModel vm)
+    {
+        _columns = new LocalizedColumns<EditTocNodeViewModel>();
+        FlatTreeDataGridSource<EditTocNodeViewModel> source = new(vm.Rows)
+        {
+            Columns =
+            {
+                _columns.Template(
+                    "EditTocWindow_ColumnTitle",
+                    "TitleCellTemplate",
+                    new GridLength(2, GridUnitType.Star),
+                    new TemplateColumnOptions<EditTocNodeViewModel>
+                    {
+                        MinWidth = new GridLength(80),
+                        CanUserSortColumn = false,
+                        BeginEditGestures = BeginEditGestures.F2 | BeginEditGestures.Tap | BeginEditGestures.WhenSelected,
+                    },
+                    cellEditingTemplateResourceKey: "TitleEditingTemplate"),
+                _columns.Text(
+                    "EditTocWindow_ColumnLevel",
+                    r => r.Level,
+                    GridLength.Auto,
+                    new TextColumnOptions<EditTocNodeViewModel> { CanUserSortColumn = false }),
+                _columns.Template(
+                    "EditTocWindow_ColumnTarget",
+                    "TargetCellTemplate",
+                    new GridLength(3, GridUnitType.Star),
+                    new TemplateColumnOptions<EditTocNodeViewModel>
+                    {
+                        MinWidth = new GridLength(80),
+                        CanUserSortColumn = false,
+                    }),
+            },
+        };
+        source.RowSelection!.SingleSelect = false;
+        return source;
     }
 
     private void OnCloseRequested(object? sender, EventArgs e) => Close();
 
-    private void OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    private void OnSelectionChanged(object? sender, EventArgs e)
     {
-        _bound?.SetSelectedNodes(Grid.SelectedItems.OfType<EditTocNodeViewModel>());
+        if (_source is not null)
+        {
+            _bound?.SetSelectedNodes(_source.RowSelection!.SelectedItems.OfType<EditTocNodeViewModel>());
+        }
     }
 
     private void OnSelectionChangeRequested(object? sender, IReadOnlyList<EditTocNodeViewModel> nodes)
     {
-        Grid.SelectedItems.Clear();
-        foreach (EditTocNodeViewModel node in nodes)
+        if (_bound is null || _source?.RowSelection is not { } selection)
         {
-            Grid.SelectedItems.Add(node);
+            return;
         }
 
-        if (nodes.Count > 0)
+        selection.BeginBatchUpdate();
+        try
         {
-            Grid.ScrollIntoView(nodes[0], TitleColumn());
+            selection.Clear();
+            foreach (EditTocNodeViewModel node in nodes)
+            {
+                if (_bound.Rows.IndexOf(node) is var index and >= 0)
+                {
+                    selection.Select(new IndexPath(index));
+                }
+            }
+        }
+        finally
+        {
+            selection.EndBatchUpdate();
+        }
+
+        if (nodes.Count > 0 && _bound.Rows.IndexOf(nodes[0]) is var first and >= 0)
+        {
+            Grid.RowsPresenter?.BringIntoView(first);
         }
     }
 
@@ -94,14 +180,18 @@ public partial class EditTocWindow : Window
 
     private void OnRenameRequested(object? sender, EventArgs e)
     {
-        if (Grid.SelectedItem is not EditTocNodeViewModel node)
+        if (_bound is null || _source?.RowSelection?.SelectedItem is not { } node
+            || _bound.Rows.IndexOf(node) is not (var index and >= 0))
         {
             return;
         }
 
-        Grid.ScrollIntoView(node, TitleColumn());
-        Grid.CurrentColumn = TitleColumn();
-        Grid.BeginEdit();
+        // The title cell of the row: realized by scrolling it into view, then put in edit mode.
+        Grid.RowsPresenter?.BringIntoView(index);
+        if (Grid.TryGetCell(0, index) is Signet.Controls.TreeDataGrid.Primitives.TreeDataGridCell cell)
+        {
+            cell.BeginEdit();
+        }
     }
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
@@ -134,9 +224,6 @@ public partial class EditTocWindow : Window
             e.Handled = true;
         }
     }
-
-    // The editable "Title" column (DataGrid columns are not named elements of the window).
-    private DataGridColumn TitleColumn() => Grid.Columns[0];
 
     private static void Execute(CommunityToolkit.Mvvm.Input.RelayCommand command)
     {

@@ -52,16 +52,20 @@ public sealed class LocalizedColumns<TModel> : ILanguageAware
 
     /// <summary>
     /// A column whose cells are built from the data template found under <paramref name="cellTemplateResourceKey"/>
-    /// (looked up from the cell, e.g. in the window's resources — so the template can stay in XAML).
+    /// (looked up from the cell, e.g. in the window's resources — so the template can stay in XAML); with
+    /// <paramref name="cellEditingTemplateResourceKey"/> the cells are editable with that template.
     /// </summary>
     public TemplateColumn<TModel> Template(
         string headerKey,
         object cellTemplateResourceKey,
         GridLength? width = null,
-        TemplateColumnOptions<TModel>? options = null)
+        TemplateColumnOptions<TModel>? options = null,
+        object? cellEditingTemplateResourceKey = null)
     {
         return Track(
-            new TemplateColumn<TModel>(Strings.Get(headerKey), cellTemplateResourceKey, null, width, options), headerKey);
+            new TemplateColumn<TModel>(
+                Strings.Get(headerKey), cellTemplateResourceKey, cellEditingTemplateResourceKey, width, options),
+            headerKey);
     }
 
     /// <summary>A check box column (editable when <paramref name="setter"/> is given).</summary>

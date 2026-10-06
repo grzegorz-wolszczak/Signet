@@ -8,6 +8,22 @@
         WindowStartupLocation="CenterOwner"
         Title="{loc:Loc EditTocWindow_Title}">
 
+  <Window.Resources>
+    <!-- Cell templates of the entries table (looked up by key from the code-behind). -->
+    <DataTemplate x:Key="TitleCellTemplate" x:DataType="vm:EditTocNodeViewModel">
+      <TextBlock Text="{Binding Text}" Margin="{Binding Indent}" Padding="6,0" VerticalAlignment="Center"
+                 TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Text}" />
+    </DataTemplate>
+    <DataTemplate x:Key="TitleEditingTemplate" x:DataType="vm:EditTocNodeViewModel">
+      <TextBox Text="{Binding Text, Mode=TwoWay}" Margin="{Binding Indent}"
+               PlaceholderText="{loc:Loc EditTocWindow_EntryTextPlaceholder}" />
+    </DataTemplate>
+    <DataTemplate x:Key="TargetCellTemplate" x:DataType="vm:EditTocNodeViewModel">
+      <TextBlock Text="{Binding TargetDisplay}" Padding="6,0" VerticalAlignment="Center" Opacity="0.7"
+                 TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding TargetDisplay}" />
+    </DataTemplate>
+  </Window.Resources>
+
   <DockPanel Margin="12">
 
     <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right"
@@ -40,48 +56,19 @@
     </StackPanel>
 
     <!-- A flat table in reading order: the level is shown as the indentation of the title and in its own column;
-         ← → change it. Sorting is off — the order of the rows is the order of the table of contents. -->
-    <DataGrid x:Name="Grid"
-              ItemsSource="{Binding Rows}"
-              SelectionMode="Extended"
-              CanUserResizeColumns="True"
-              CanUserSortColumns="False"
-              CanUserReorderColumns="False"
-              GridLinesVisibility="Horizontal"
-              BorderThickness="1"
-              BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
-      <DataGrid.ContextMenu>
+         ← → change it. Sorting is off — the order of the rows is the order of the table of contents. The source and the
+         columns (Title, Level, Target) are built in the code-behind from the cell templates below. -->
+    <TreeDataGrid x:Name="Grid"
+                  Classes="gridLines"
+                  CanUserSortColumns="False"
+                  BorderThickness="1"
+                  BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+      <TreeDataGrid.ContextMenu>
         <ContextMenu>
           <MenuItem Header="{loc:Loc Common_Rename}" Command="{Binding RenameCommand}" />
           <MenuItem Header="{loc:Loc Common_Delete}" Command="{Binding DeleteCommand}" />
         </ContextMenu>
-      </DataGrid.ContextMenu>
-      <DataGrid.Columns>
-        <DataGridTemplateColumn Header="{loc:Loc EditTocWindow_ColumnTitle}" Width="2*" MinWidth="80">
-          <DataGridTemplateColumn.CellTemplate>
-            <DataTemplate x:DataType="vm:EditTocNodeViewModel">
-              <TextBlock Text="{Binding Text}" Margin="{Binding Indent}" Padding="6,0" VerticalAlignment="Center"
-                         TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Text}" />
-            </DataTemplate>
-          </DataGridTemplateColumn.CellTemplate>
-          <DataGridTemplateColumn.CellEditingTemplate>
-            <DataTemplate x:DataType="vm:EditTocNodeViewModel">
-              <TextBox Text="{Binding Text, Mode=TwoWay}" Margin="{Binding Indent}"
-                       PlaceholderText="{loc:Loc EditTocWindow_EntryTextPlaceholder}" />
-            </DataTemplate>
-          </DataGridTemplateColumn.CellEditingTemplate>
-        </DataGridTemplateColumn>
-        <DataGridTextColumn Header="{loc:Loc EditTocWindow_ColumnLevel}" Binding="{Binding Level}"
-                            IsReadOnly="True" Width="Auto" />
-        <DataGridTemplateColumn Header="{loc:Loc EditTocWindow_ColumnTarget}" Width="3*" MinWidth="80" IsReadOnly="True">
-          <DataGridTemplateColumn.CellTemplate>
-            <DataTemplate x:DataType="vm:EditTocNodeViewModel">
-              <TextBlock Text="{Binding TargetDisplay}" Padding="6,0" VerticalAlignment="Center" Opacity="0.7"
-                         TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding TargetDisplay}" />
-            </DataTemplate>
-          </DataGridTemplateColumn.CellTemplate>
-        </DataGridTemplateColumn>
-      </DataGrid.Columns>
-    </DataGrid>
+      </TreeDataGrid.ContextMenu>
+    </TreeDataGrid>
   </DockPanel>
 </Window>
