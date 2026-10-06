@@ -197,4 +197,33 @@ public sealed class TagListerTests
         lister.FindBodyOpenTag().Should().BeGreaterThanOrEqualTo(0);
         lister.FindFirstNestingError().Should().BeNull();
     }
+
+    [Fact]
+    public void EnumerateOpeningTags_ListsTheBeginAndSelfClosingTagsOfTags()
+    {
+        const string source =
+            "<?xml version=\"1.0\"?>\n<!DOCTYPE html>\n<html><body>\n"
+            + "<!-- <p class=\"in-comment\"> -->\n<![CDATA[ <p> ]]>\n"
+            + "< p class=\"a\">x</p><br/><img src=\"y\" / ><broken <i>z</i>\n"
+            + "</body></html>";
+
+        TagLister.EnumerateOpeningTags(source).Should().Equal(
+            new TagLister(source).Tags
+                .Where(t => t.Kind is TagKind.Begin or TagKind.SelfClosing)
+                .Select(t => (t.Pos, t.Len)));
+        TagLister.EnumerateOpeningTags(source).Select(t => source.Substring(t.Pos, t.Len))
+            .Should().Equal("<html>", "<body>", "< p class=\"a\">", "<br/>", "<img src=\"y\" / >", "<i>");
+    }
+
+    [Theory]
+    [MemberData(nameof(AllCorpusXhtml))]
+    public void EnumerateOpeningTags_MatchesTheTagListOnEveryCorpusXhtml(string xhtmlPath)
+    {
+        string source = File.ReadAllText(xhtmlPath);
+
+        TagLister.EnumerateOpeningTags(source).Should().Equal(
+            new TagLister(source).Tags
+                .Where(t => t.Kind is TagKind.Begin or TagKind.SelfClosing)
+                .Select(t => (t.Pos, t.Len)));
+    }
 }

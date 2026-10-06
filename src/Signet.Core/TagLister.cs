@@ -636,33 +636,72 @@ public sealed class TagLister
             return null;
         }
 
-        if (_source[p] != '<')
-        {
-            _next = FindTarget("<", p + 1);
-            return Slice(_source, _pos, _next);
-        }
-
-        string tstart = Slice(_source, p, p + 9);
-        if (tstart.StartsWith("<!--", StringComparison.Ordinal))
-        {
-            _next = FindTarget("-->", p + 4, after: true);
-            return Slice(_source, _pos, _next);
-        }
-
-        if (tstart.StartsWith("<![CDATA[", StringComparison.OrdinalIgnoreCase))
-        {
-            _next = FindTarget("]]>", p + 9, after: true);
-            return Slice(_source, _pos, _next);
-        }
-
-        _next = FindTarget(">", p + 1, after: true);
-        int nextTagStart = FindTarget("<", p + 1);
-        if (nextTagStart < _next)
-        {
-            _next = nextTagStart;
-        }
-
+        _next = MarkupEnd(_source, p);
         return Slice(_source, _pos, _next);
+    }
+
+    /// <summary>
+    /// The opening and empty tags (<see cref="TagKind.Begin"/>, <see cref="TagKind.SelfClosing"/>) of
+    /// <paramref name="source"/> as (position, length) — the same tags as in <see cref="Tags"/>, found with the same
+    /// rules, but without building the tag list, the tag paths or any strings. For callers that only look into the
+    /// attributes of the tags.
+    /// </summary>
+    public static IEnumerable<(int Pos, int Len)> EnumerateOpeningTags(string source)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        int p = 0;
+        while (p < source.Length)
+        {
+            int next = MarkupEnd(source, p);
+            if (IsOpeningTag(source.AsSpan(p, next - p)))
+            {
+                yield return (p, next - p);
+            }
+
+            p = next;
+        }
+    }
+
+    // Mirrors the Begin / SelfClosing classification of GetNext + ParseTag: markup "<…>" that is not "<?…", "<!…"
+    // or a closing tag "</…" (blanks allowed after "<").
+    private static bool IsOpeningTag(ReadOnlySpan<char> markup)
+    {
+        if (markup.Length < 2 || markup[0] != '<' || markup[^1] != '>' || markup[1] is '?' or '!')
+        {
+            return false;
+        }
+
+        int p = 1;
+        while (p < markup.Length && WhitespaceChars.Contains(markup[p], StringComparison.Ordinal))
+        {
+            p++;
+        }
+
+        return p >= markup.Length || markup[p] != '/';
+    }
+
+    // The end (exclusive) of the markup chunk — text, comment, CDATA section or tag — starting at p.
+    private static int MarkupEnd(string source, int p)
+    {
+        if (source[p] != '<')
+        {
+            return FindTarget(source, "<", p + 1);
+        }
+
+        ReadOnlySpan<char> rest = source.AsSpan(p);
+        if (rest.StartsWith("<!--", StringComparison.Ordinal))
+        {
+            return FindTarget(source, "-->", p + 4, after: true);
+        }
+
+        if (rest.StartsWith("<![CDATA[", StringComparison.OrdinalIgnoreCase))
+        {
+            return FindTarget(source, "]]>", p + 9, after: true);
+        }
+
+        int next = FindTarget(source, ">", p + 1, after: true);
+        int nextTagStart = FindTarget(source, "<", p + 1);
+        return Math.Min(next, nextTagStart);
     }
 
     private static void ParseTag(string tagString, TagInfo mi)
@@ -727,12 +766,12 @@ public sealed class TagLister
         }
     }
 
-    private int FindTarget(string target, int start, bool after = false)
+    private static int FindTarget(string source, string target, int start, bool after = false)
     {
-        int found = _source.IndexOf(target, Math.Min(Math.Max(start, 0), _source.Length), StringComparison.Ordinal);
+        int found = source.IndexOf(target, Math.Min(Math.Max(start, 0), source.Length), StringComparison.Ordinal);
         if (found == -1)
         {
-            return _source.Length;
+            return source.Length;
         }
 
         found += target.Length - 1;

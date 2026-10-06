@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Signet.Core.Parsers;
 
 namespace Signet.Core.BookManipulation;
@@ -33,6 +34,11 @@ public sealed record ClassUsage(string BookPath, int Offset, int Line, int Colum
 /// (case-sensitive) in the markup files, and every <c>.name</c> in the selectors of the stylesheets and of the
 /// <c>&lt;style&gt;</c> blocks (also inside <c>@media</c> and <c>:not(…)</c>).
 /// </summary>
+/// <remarks>
+/// Matching is literal (no entity or CSS escape decoding), so a usage is always a verbatim occurrence of the name in
+/// the text: files and tags that do not contain the name are skipped without parsing. The files are searched in
+/// parallel.
+/// </remarks>
 public static class ClassUsageFinder
 {
     /// <summary>
@@ -44,34 +50,45 @@ public static class ClassUsageFinder
         ArgumentException.ThrowIfNullOrEmpty(className);
         ArgumentNullException.ThrowIfNull(sources);
 
+        return sources
+            .AsParallel()
+            .AsOrdered()
+            .SelectMany(source => FindInSource(className, source))
+            .ToList();
+    }
+
+    private static List<ClassUsage> FindInSource(string className, ClassUsageSource source)
+    {
         List<ClassUsage> usages = new();
-        foreach (ClassUsageSource source in sources)
+        if (!source.Text.Contains(className, StringComparison.Ordinal))
         {
-            SortedDictionary<int, ClassUsageKind> found = new();
-            if (source.IsStyleSheet)
-            {
-                AddSelectorUsages(found, source.Text, new CssInfo(source.Text).Rules, className);
-            }
-            else
-            {
-                AddAttributeUsages(found, source.Text, className);
-                foreach (CssInfo block in new HtmlStyleInfo(source.Text).Styles)
-                {
-                    AddSelectorUsages(found, source.Text, block.Rules, className);
-                }
-            }
+            return usages;
+        }
 
-            if (found.Count == 0)
+        SortedDictionary<int, ClassUsageKind> found = new();
+        if (source.IsStyleSheet)
+        {
+            AddSelectorUsages(found, source.Text, new CssInfo(source.Text).Rules, className);
+        }
+        else
+        {
+            AddAttributeUsages(found, source.Text, className);
+            foreach (CssInfo block in new HtmlStyleInfo(source.Text).Styles)
             {
-                continue;
+                AddSelectorUsages(found, source.Text, block.Rules, className);
             }
+        }
 
-            LineIndex lines = new(source.Text);
-            foreach ((int offset, ClassUsageKind kind) in found)
-            {
-                (int line, int column) = lines.LocationOf(offset);
-                usages.Add(new ClassUsage(source.BookPath, offset, line, column, kind));
-            }
+        if (found.Count == 0)
+        {
+            return usages;
+        }
+
+        LineIndex lines = new(source.Text);
+        foreach ((int offset, ClassUsageKind kind) in found)
+        {
+            (int line, int column) = lines.LocationOf(offset);
+            usages.Add(new ClassUsage(source.BookPath, offset, line, column, kind));
         }
 
         return usages;
@@ -79,15 +96,14 @@ public static class ClassUsageFinder
 
     private static void AddAttributeUsages(SortedDictionary<int, ClassUsageKind> found, string text, string className)
     {
-        TagLister lister = new(text);
-        foreach (TagLister.TagInfo tag in lister.Tags)
+        foreach ((int pos, int len) in TagLister.EnumerateOpeningTags(text))
         {
-            if (tag.Pos < 0 || tag.Kind is not (TagKind.Begin or TagKind.SelfClosing))
+            if (!text.AsSpan(pos, len).Contains(className, StringComparison.Ordinal))
             {
                 continue;
             }
 
-            TagLister.AttInfo attribute = TagLister.ParseAttribute(text.Substring(tag.Pos, tag.Len), "class");
+            TagLister.AttInfo attribute = TagLister.ParseAttribute(text.Substring(pos, len), "class");
             if (attribute.Pos == -1 || attribute.VLen <= 0)
             {
                 continue;
@@ -110,7 +126,7 @@ public static class ClassUsageFinder
 
                 if (i - start == className.Length && string.CompareOrdinal(value, start, className, 0, className.Length) == 0)
                 {
-                    found.TryAdd(tag.Pos + attribute.VPos + start, ClassUsageKind.ClassAttribute);
+                    found.TryAdd(pos + attribute.VPos + start, ClassUsageKind.ClassAttribute);
                 }
             }
         }

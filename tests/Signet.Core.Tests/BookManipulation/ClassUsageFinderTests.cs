@@ -81,4 +81,30 @@ public sealed class ClassUsageFinderTests
         Find("not").Should().BeEmpty();
         Find("missing").Should().BeEmpty();
     }
+
+    [Fact]
+    public void Usages_of_many_files_keep_the_order_of_the_sources()
+    {
+        ClassUsageSource[] sources = Enumerable.Range(0, 200)
+            .Select(i => i % 3 == 0
+                ? new ClassUsageSource($"OEBPS/Text/ch{i:D3}.xhtml", "<p>no usage here</p>", IsStyleSheet: false)
+                : new ClassUsageSource($"OEBPS/Text/ch{i:D3}.xhtml", Chapter, IsStyleSheet: false))
+            .ToArray();
+
+        IReadOnlyList<ClassUsage> usages = ClassUsageFinder.Find("note", sources);
+
+        usages.Select(u => u.BookPath).Distinct().Should().Equal(
+            sources.Where((_, i) => i % 3 != 0).Select(s => s.BookPath));
+        usages.GroupBy(u => u.BookPath).Should().OnlyContain(file => file.Select(u => u.Offset).SequenceEqual(file.Select(u => u.Offset).Order()))
+            .And.OnlyContain(file => file.Count() == 3);
+    }
+
+    [Fact]
+    public void A_name_inside_tags_without_a_class_attribute_or_in_text_is_not_a_usage()
+    {
+        const string text = "<html><body><p title=\"note\">note</p><p data-note=\"x\" class=\"x\">y</p></body></html>";
+
+        ClassUsageFinder.Find("note", new[] { new ClassUsageSource("OEBPS/Text/a.xhtml", text, IsStyleSheet: false) })
+            .Should().BeEmpty();
+    }
 }
