@@ -184,4 +184,69 @@ public sealed class FindUsagesTests : IDisposable
         root.IsExpanded.Should().BeTrue();
         root.Children.Should().OnlyContain(file => file.IsExpanded);
     }
+
+    [Fact]
+    public void The_rows_are_the_visible_nodes_and_follow_expanding_and_collapsing()
+    {
+        _sut.FindClassUsages("note");
+        _sut.FindUsages.GroupByFile = true;
+        FindUsagesViewModel panel = _sut.FindUsages;
+        FindUsagesNode root = panel.Roots.Single();
+        FindUsagesNode chapter = root.Children[0];
+        FindUsagesNode styles = root.Children[1];
+        panel.Rows.Should().Equal(root, chapter, chapter.Children[0], chapter.Children[1], styles, styles.Children[0]);
+        (root.Depth, chapter.Depth, chapter.Children[0].Depth).Should().Be((0, 1, 2));
+        chapter.Children[0].Parent.Should().BeSameAs(chapter);
+
+        chapter.IsExpanded = false;
+
+        panel.Rows.Should().Equal(root, chapter, styles, styles.Children[0]);
+
+        root.IsExpanded = false;
+        chapter.IsExpanded = true;
+
+        panel.Rows.Should().Equal(new[] { root }, "the chapter is expanded under a collapsed root");
+
+        root.IsExpanded = true;
+
+        panel.Rows.Should().Equal(root, chapter, chapter.Children[0], chapter.Children[1], styles, styles.Children[0]);
+    }
+
+    [Fact]
+    public void Collapse_All_leaves_only_the_root_row_and_Expand_All_shows_every_node()
+    {
+        _sut.FindClassUsages("note");
+        _sut.FindUsages.GroupByFile = true;
+
+        _sut.FindUsages.CollapseAllCommand.Execute(null);
+
+        _sut.FindUsages.Rows.Should().Equal(_sut.FindUsages.Roots.Single());
+
+        _sut.FindUsages.ExpandAllCommand.Execute(null);
+
+        _sut.FindUsages.Rows.Should().HaveCount(6);
+    }
+
+    [Fact]
+    public void Refresh_keeps_the_collapsed_nodes_collapsed_and_a_new_class_starts_expanded()
+    {
+        _sut.FindClassUsages("note");
+        _sut.FindUsages.GroupByFile = true;
+        _sut.FindUsages.Roots.Single().Children.Single(f => f.Text == ChapterPath).IsExpanded = false;
+
+        _sut.FindUsages.RefreshCommand.Execute(null);
+
+        FindUsagesNode root = _sut.FindUsages.Roots.Single();
+        root.Children.Select(f => (f.Text, f.IsExpanded)).Should().Equal((ChapterPath, false), (StylesPath, true));
+        _sut.FindUsages.Rows.Should().Equal(root, root.Children[0], root.Children[1], root.Children[1].Children[0]);
+
+        root.IsExpanded = false;
+        _sut.FindUsages.GroupByFile = false;
+
+        _sut.FindUsages.Roots.Single().IsExpanded.Should().BeFalse("switching the grouping keeps the root collapsed");
+
+        _sut.FindClassUsages("lead");
+
+        _sut.FindUsages.Roots.Single().IsExpanded.Should().BeTrue("another class starts fully expanded");
+    }
 }

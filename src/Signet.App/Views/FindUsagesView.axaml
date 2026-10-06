@@ -59,21 +59,39 @@
 
     <TextBlock DockPanel.Dock="Top" Text="{Binding Header}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="8,4" />
 
-    <TreeView x:Name="Tree" ItemsSource="{Binding Roots}" IsVisible="{Binding HasSearch}"
-              DoubleTapped="OnTreeDoubleTapped" KeyDown="OnTreeKeyDown">
-      <TreeView.Styles>
-        <Style Selector="TreeViewItem" x:DataType="vm:FindUsagesNode">
-          <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+    <!-- The tree flattened into a virtualizing list (FindUsagesViewModel.Rows): only the rows on screen get controls,
+         so tens of thousands of usages show at once. A TreeView would create a control for every node. -->
+    <ListBox x:Name="UsageList" ItemsSource="{Binding Rows}" IsVisible="{Binding HasSearch}"
+             SelectionMode="Single" DoubleTapped="OnListDoubleTapped">
+      <ListBox.ItemsPanel>
+        <ItemsPanelTemplate>
+          <VirtualizingStackPanel />
+        </ItemsPanelTemplate>
+      </ListBox.ItemsPanel>
+      <ListBox.Styles>
+        <!-- Rows as compact as the TreeViewItems of the theme. -->
+        <Style Selector="ListBoxItem">
+          <Setter Property="Padding" Value="0" />
+          <Setter Property="MinHeight" Value="{DynamicResource TreeViewItemMinHeight}" />
+          <Setter Property="VerticalContentAlignment" Value="Center" />
         </Style>
-      </TreeView.Styles>
-      <TreeView.ItemTemplate>
-        <TreeDataTemplate x:DataType="vm:FindUsagesNode" ItemsSource="{Binding Children}">
-          <StackPanel Orientation="Horizontal" Spacing="8" Background="Transparent" ToolTip.Tip="{Binding ToolTip}">
-            <TextBlock Text="{Binding Text}" />
-            <TextBlock Text="{Binding CountText}" Opacity="0.6" />
-          </StackPanel>
-        </TreeDataTemplate>
-      </TreeView.ItemTemplate>
-    </TreeView>
+      </ListBox.Styles>
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="vm:FindUsagesNode">
+          <Grid ColumnDefinitions="Auto,*" Margin="{Binding Indent}" Background="Transparent" ToolTip.Tip="{Binding ToolTip}">
+            <!-- The expander of the theme's TreeViewItem; a placeholder of the same width keeps leaves aligned. -->
+            <Panel Width="36">
+              <ToggleButton Theme="{StaticResource FluentTreeViewExpandCollapseChevron}" Focusable="False"
+                            HorizontalAlignment="Center" VerticalAlignment="Center"
+                            IsVisible="{Binding HasChildren}" IsChecked="{Binding IsExpanded, Mode=TwoWay}" />
+            </Panel>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+              <TextBlock Text="{Binding Text}" />
+              <TextBlock Text="{Binding CountText}" Opacity="0.6" />
+            </StackPanel>
+          </Grid>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
   </DockPanel>
 </UserControl>
