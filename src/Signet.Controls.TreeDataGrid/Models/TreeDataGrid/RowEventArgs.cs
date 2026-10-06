@@ -1,6 +1,6 @@
-﻿using System;
+using System;
 
-namespace Avalonia.Controls.Models.TreeDataGrid
+namespace Signet.Controls.TreeDataGrid.Models
 {
     public abstract class RowEventArgs : EventArgs
     {

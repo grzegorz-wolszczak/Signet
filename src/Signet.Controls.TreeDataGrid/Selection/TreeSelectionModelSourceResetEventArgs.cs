@@ -1,6 +1,6 @@
-﻿using System;
+using System;
 
-namespace Avalonia.Controls.Selection
+namespace Signet.Controls.TreeDataGrid.Selection
 {
     public class TreeSelectionModelSourceResetEventArgs : EventArgs
     {

@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 
-namespace Avalonia.Experimental.Data.Core
+namespace Signet.Controls.TreeDataGrid.Experimental.Data.Core
 {
     /// <summary>
     /// Provides a set of static methods for creating <see cref="IDisposable"/> objects.

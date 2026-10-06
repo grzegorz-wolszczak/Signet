@@ -1,12 +1,13 @@
-﻿using System;
+using System;
 using System.Linq.Expressions;
 using System.Reflection;
 using Avalonia.Data;
 using Avalonia.Data.Core.Parsers;
+using Signet.Controls.TreeDataGrid.Experimental.Data.Core.Parsers;
 
 #nullable enable
 
-namespace Avalonia.Experimental.Data
+namespace Signet.Controls.TreeDataGrid.Experimental.Data
 {
     /// <summary>
     /// Provides factory methods for creating <see cref="TypedBinding{TIn, TOut}"/> objects from

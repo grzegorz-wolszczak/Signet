@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using Avalonia.Controls.Templates;
 
-namespace Avalonia.Controls.Models.TreeDataGrid
+namespace Signet.Controls.TreeDataGrid.Models
 {
     /// <summary>
     /// A column in an <see cref="ITreeDataGridSource"/> which displays its values using a data

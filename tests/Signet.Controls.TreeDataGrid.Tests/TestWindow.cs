@@ -1,8 +1,8 @@
-﻿using Avalonia.Controls.Presenters;
+using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Templates;
 using Avalonia.Threading;
 
-namespace Avalonia.Controls.TreeDataGridTests
+namespace Signet.Controls.TreeDataGrid.Tests
 {
     public class TestWindow : Window
     {

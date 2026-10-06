@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 using System.ComponentModel;
-using Avalonia.Controls.Models.TreeDataGrid;
+using Signet.Controls.TreeDataGrid.Models;
 using Avalonia.Controls.Selection;
+using Signet.Controls.TreeDataGrid.Selection;
 using Avalonia.Input;
 
-namespace Avalonia.Controls.Primitives
+namespace Signet.Controls.TreeDataGrid.Primitives
 {
     public class TreeDataGridCheckBoxCell : TreeDataGridCell
     {

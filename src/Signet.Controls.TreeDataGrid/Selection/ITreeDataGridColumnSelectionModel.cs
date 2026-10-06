@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
-using Avalonia.Controls.Models.TreeDataGrid;
+using System.Collections.Generic;
+using Signet.Controls.TreeDataGrid.Models;
 
-namespace Avalonia.Controls.Selection
+namespace Signet.Controls.TreeDataGrid.Selection
 {
     public interface ITreeDataGridColumnSelectionModel : ISelectionModel
     {

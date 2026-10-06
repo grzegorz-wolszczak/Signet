@@ -1,7 +1,8 @@
-﻿using Avalonia.Controls.Models.TreeDataGrid;
+using Signet.Controls.TreeDataGrid.Models;
 using Avalonia.Controls.Selection;
+using Signet.Controls.TreeDataGrid.Selection;
 
-namespace Avalonia.Controls.Primitives
+namespace Signet.Controls.TreeDataGrid.Primitives
 {
     internal interface ITreeDataGridCell
     {

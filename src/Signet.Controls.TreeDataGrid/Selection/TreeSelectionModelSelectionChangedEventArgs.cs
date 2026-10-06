@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Avalonia.Controls.Selection
+namespace Signet.Controls.TreeDataGrid.Selection
 {
     public abstract class TreeSelectionModelSelectionChangedEventArgs : EventArgs
     {

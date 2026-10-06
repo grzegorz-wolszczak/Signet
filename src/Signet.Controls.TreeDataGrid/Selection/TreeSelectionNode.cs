@@ -1,12 +1,12 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using Avalonia.Controls.Models.TreeDataGrid;
+using Signet.Controls.TreeDataGrid.Models;
 
 #nullable enable
 
-namespace Avalonia.Controls.Selection
+namespace Signet.Controls.TreeDataGrid.Selection
 {
 #pragma warning disable CS0436 // Type conflicts with imported type
     internal class TreeSelectionNode<T> : SelectionNodeBase<T>

@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 
-namespace Avalonia.Experimental.Data.Core
+namespace Signet.Controls.TreeDataGrid.Experimental.Data.Core
 {
     /// <summary>
     /// Lightweight base class for observable implementations.

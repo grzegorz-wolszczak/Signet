@@ -1,8 +1,8 @@
-﻿using System;
-using Avalonia.Controls.Models.TreeDataGrid;
+using System;
+using Signet.Controls.TreeDataGrid.Models;
 using Avalonia.Input;
 
-namespace Avalonia.Controls.Selection
+namespace Signet.Controls.TreeDataGrid.Selection
 {
     /// <summary>
     /// Defines the interaction between a <see cref="TreeDataGrid"/> and an

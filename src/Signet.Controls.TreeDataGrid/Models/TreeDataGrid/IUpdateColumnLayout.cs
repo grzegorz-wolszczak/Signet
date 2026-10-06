@@ -1,4 +1,4 @@
-﻿namespace Avalonia.Controls.Models.TreeDataGrid
+namespace Signet.Controls.TreeDataGrid.Models
 {
     /// <summary>
     /// Internal low-level interface for layout interactions between <see cref="IColumns"/> and

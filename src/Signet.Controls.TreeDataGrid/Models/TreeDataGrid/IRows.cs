@@ -1,8 +1,8 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 
-namespace Avalonia.Controls.Models.TreeDataGrid
+namespace Signet.Controls.TreeDataGrid.Models
 {
     /// <summary>
     /// Represents a collection of rows in an <see cref="ITreeDataGridSource"/>.

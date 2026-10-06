@@ -1,6 +1,6 @@
-﻿using System.Collections.Specialized;
+using System.Collections.Specialized;
 
-namespace Avalonia.Controls.Models.TreeDataGrid
+namespace Signet.Controls.TreeDataGrid.Models
 {
     /// <summary>
     /// Represents a controller which receives notifications about an

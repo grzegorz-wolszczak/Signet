@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using Avalonia.Controls.Primitives;
+using Signet.Controls.TreeDataGrid.Primitives;
 
-namespace Avalonia.Controls
+namespace Signet.Controls.TreeDataGrid
 {
     public class TreeDataGridRowEventArgs
     {

@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Specialized;
 using Avalonia.Collections;
 
-namespace Avalonia.Controls.TreeDataGridTests
+namespace Signet.Controls.TreeDataGrid.Tests
 {
     internal class AvaloniaListDebug<T> : AvaloniaList<T>, INotifyCollectionChanged
     {

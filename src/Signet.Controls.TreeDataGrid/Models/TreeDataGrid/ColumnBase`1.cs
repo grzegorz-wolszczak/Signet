@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using Avalonia.Utilities;
 
-namespace Avalonia.Controls.Models.TreeDataGrid
+namespace Signet.Controls.TreeDataGrid.Models
 {
     /// <summary>
     /// Base class for columns which select cell values from a model.

@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Avalonia.Controls.Models.TreeDataGrid
+namespace Signet.Controls.TreeDataGrid.Models
 {
     /// <summary>
     /// A row that can be reused for situations where creating a separate object for each row is

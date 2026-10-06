@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using System.Collections;
 
-namespace Avalonia.Controls.Models.TreeDataGrid
+namespace Signet.Controls.TreeDataGrid.Models
 {
     internal class ListSpan : IList
     {

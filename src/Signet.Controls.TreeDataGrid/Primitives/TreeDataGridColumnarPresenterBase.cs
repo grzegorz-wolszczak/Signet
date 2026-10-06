@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using Avalonia.Controls.Models.TreeDataGrid;
+using Signet.Controls.TreeDataGrid.Models;
 using Avalonia.Layout;
 
-namespace Avalonia.Controls.Primitives
+namespace Signet.Controls.TreeDataGrid.Primitives
 {
     /// <summary>
     /// Base class for presenters which display data in virtualized columns.

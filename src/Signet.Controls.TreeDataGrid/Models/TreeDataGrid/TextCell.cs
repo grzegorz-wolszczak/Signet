@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Globalization;
 using System.Reactive.Subjects;
 using Avalonia.Data;
 using Avalonia.Media;
 
-namespace Avalonia.Controls.Models.TreeDataGrid
+namespace Signet.Controls.TreeDataGrid.Models
 {
     public class TextCell<T> : NotifyingBase, ITextCell, IDisposable, IEditableObject
     {

@@ -1,8 +1,8 @@
-﻿using System.Globalization;
+using System.Globalization;
 
 using Avalonia.Media;
 
-namespace Avalonia.Controls.Models.TreeDataGrid
+namespace Signet.Controls.TreeDataGrid.Models
 {
     /// <summary>
     /// Represents a text cell in an <see cref="ITreeDataGridSource"/>.

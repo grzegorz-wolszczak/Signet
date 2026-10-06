@@ -26,8 +26,23 @@ history.
 
 ## Changes against upstream
 
-- Ported to Avalonia 12 / .NET 10.
-- Namespaces renamed from `Avalonia.Controls.*` to `Signet.Controls.TreeDataGrid.*` (and the assembly to
-  `Signet.Controls.TreeDataGrid`), so the fork cannot be confused with or collide with the official package.
-- Signet's stricter analyzer rules are relaxed for this project only (the code keeps its upstream style).
-- Tests ported to Signet's test stack (xUnit.v3, AwesomeAssertions).
+- **Names.** Namespaces renamed from `Avalonia.Controls.*` / `Avalonia.Experimental.Data.*` /
+  `Avalonia.Data.Core.Parsers` to `Signet.Controls.TreeDataGrid.*` (`Models.TreeDataGrid` and `Models` merged into
+  `Models`; the parser and the typed bindings under `Experimental.Data.*`), the assembly to
+  `Signet.Controls.TreeDataGrid`. `GlobalUsings.cs` imports the Avalonia namespaces the code used to see implicitly.
+  Like upstream, the control is registered in the default Avalonia XAML namespace (`XmlnsDefinition`), so XAML uses
+  `<TreeDataGrid>` without a prefix; the theme is `avares://Signet.Controls.TreeDataGrid/Themes/Fluent.axaml`.
+- **Avalonia 12 / .NET 10:**
+  - `OnLostFocus` takes `FocusChangedEventArgs` (cells).
+  - `InputElement.OnDoubleTapped` is now a virtual class handler: `TreeDataGridCell.OnDoubleTapped` overrides it
+    instead of registering its own class handler for a method of the same name.
+  - `Avalonia.Utilities.MathUtilities` is internal: a local copy of the three comparisons used
+    (`Utils/MathUtilities.cs`).
+  - `TopLevel.PlatformSettings` → `VisualExtensions.GetPlatformSettings` (tap size, command modifier).
+  - Drag & drop: `DataObject` / `DoDragDrop` / `DragEventArgs.Data` → `DataTransfer` / `DoDragDropAsync` /
+    `DragEventArgs.DataTransfer`; `DragInfo.DataFormat` is a typed in-process `DataFormat<DragInfo>`;
+    `DoDragDropAsync` needs the pointer-pressed event, so `TreeDataGridRow` keeps it until the drag starts.
+  - `NullableAttributes.cs` (a polyfill for old target frameworks) removed.
+- **Build.** Signet's stricter analyzer rules (`EnableNETAnalyzers`, `EnforceCodeStyleInBuild`, `AnalysisLevel`,
+  XML documentation file) are off for this project and its tests; compiler warnings are still errors.
+- **Tests.** The upstream tests run on Signet's test stack (xUnit.v3 `mtp-off`, `Avalonia.Headless.XUnit`).

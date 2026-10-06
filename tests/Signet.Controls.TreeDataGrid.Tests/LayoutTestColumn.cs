@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.ComponentModel;
-using Avalonia.Controls.Models.TreeDataGrid;
+using Signet.Controls.TreeDataGrid.Models;
 
-namespace Avalonia.Controls.TreeDataGridTests
+namespace Signet.Controls.TreeDataGrid.Tests
 {
     internal class LayoutTestColumn<TModel> : ColumnBase<TModel>
     {

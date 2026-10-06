@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Linq.Expressions;
-using Avalonia.Experimental.Data;
+using Signet.Controls.TreeDataGrid.Experimental.Data;
 
-namespace Avalonia.Controls.Models.TreeDataGrid
+namespace Signet.Controls.TreeDataGrid.Models
 {
     /// <summary>
     /// A column in an <see cref="ITreeDataGridSource"/> which displays a check box.

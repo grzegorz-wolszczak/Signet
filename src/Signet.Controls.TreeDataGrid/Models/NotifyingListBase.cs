@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using Avalonia.Controls.Models.TreeDataGrid;
+using Signet.Controls.TreeDataGrid.Models;
 
-namespace Avalonia.Controls.Models
+namespace Signet.Controls.TreeDataGrid.Models
 {
     public class NotifyingListBase<T> : Collection<T>, INotifyCollectionChanged, INotifyPropertyChanged
     {
@@ -106,7 +106,7 @@ namespace Avalonia.Controls.Models
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Count)));
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(IndexerName));
             using var monitor = BlockReentrancy();
-            CollectionChanged?.Invoke(this, TreeDataGrid.CollectionExtensions.ResetEvent);
+            CollectionChanged?.Invoke(this, Signet.Controls.TreeDataGrid.Models.CollectionExtensions.ResetEvent);
         }
 
         protected override void ClearItems()
@@ -119,7 +119,7 @@ namespace Avalonia.Controls.Models
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Count)));
                 PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(IndexerName));
                 using var monitor = BlockReentrancy();
-                CollectionChanged?.Invoke(this, TreeDataGrid.CollectionExtensions.ResetEvent);
+                CollectionChanged?.Invoke(this, Signet.Controls.TreeDataGrid.Models.CollectionExtensions.ResetEvent);
             }
             else if (_batchUpdate != BatchUpdateType.Reset)
             {

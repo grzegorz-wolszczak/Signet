@@ -1,11 +1,13 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using Avalonia.Collections;
-using Avalonia.Controls.Models.TreeDataGrid;
+using Signet.Controls.TreeDataGrid.Models;
 using Avalonia.Controls.Primitives;
+using Signet.Controls.TreeDataGrid.Primitives;
 using Avalonia.Controls.Selection;
+using Signet.Controls.TreeDataGrid.Selection;
 using Avalonia.Headless.XUnit;
 using Avalonia.Styling;
 using Avalonia.Threading;
@@ -13,7 +15,7 @@ using Avalonia.VisualTree;
 using Xunit;
 using Enumerable = System.Linq.Enumerable;
 
-namespace Avalonia.Controls.TreeDataGridTests
+namespace Signet.Controls.TreeDataGrid.Tests
 {
     public class TreeDataGridTests_Flat
     {
@@ -401,7 +403,7 @@ namespace Avalonia.Controls.TreeDataGridTests
 
             source.Columns.Add(movedColumn);
 
-            var root = (TestWindow)target.GetVisualRoot()!;
+            var root = (TestWindow)TopLevel.GetTopLevel(target)!;
             root.UpdateLayout();
             Dispatcher.UIThread.RunJobs();
 

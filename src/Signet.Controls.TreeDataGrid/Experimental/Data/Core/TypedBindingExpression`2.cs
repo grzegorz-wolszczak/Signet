@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Reactive.Subjects;
@@ -7,7 +7,7 @@ using Avalonia.Utilities;
 
 #nullable enable
 
-namespace Avalonia.Experimental.Data.Core
+namespace Signet.Controls.TreeDataGrid.Experimental.Data.Core
 {
     /// <summary>
     /// A binding expression which uses delegates to read and write a bound value.

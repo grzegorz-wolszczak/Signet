@@ -1,14 +1,15 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using Avalonia.Controls.Models.TreeDataGrid;
+using Signet.Controls.TreeDataGrid.Models;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
+using Signet.Controls.TreeDataGrid.Primitives;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.VisualTree;
 
-namespace Avalonia.Controls.Selection
+namespace Signet.Controls.TreeDataGrid.Selection
 {
     public class TreeDataGridRowSelectionModel<TModel> : TreeSelectionModelBase<TModel>,
         ITreeDataGridRowSelectionModel<TModel>,
@@ -386,7 +387,7 @@ namespace Avalonia.Controls.Selection
         {
             var point = e.GetCurrentPoint(sender);
 
-            var commandModifiers = TopLevel.GetTopLevel(sender)?.PlatformSettings?.HotkeyConfiguration.CommandModifiers;
+            var commandModifiers = Avalonia.VisualTree.VisualExtensions.GetPlatformSettings(sender)?.HotkeyConfiguration.CommandModifiers;
             var toggleModifier = commandModifiers is not null && e.KeyModifiers.HasFlag(commandModifiers);
             var isRightButton = point.Properties.PointerUpdateKind is PointerUpdateKind.RightButtonPressed or
                 PointerUpdateKind.RightButtonReleased;

@@ -1,10 +1,10 @@
-﻿using Avalonia.Controls.TreeDataGridTests;
+using Signet.Controls.TreeDataGrid.Tests;
 using Avalonia.Headless;
 using Avalonia.Markup.Xaml;
 
 [assembly: AvaloniaTestApplication(typeof(TestApplication))]
 
-namespace Avalonia.Controls.TreeDataGridTests
+namespace Signet.Controls.TreeDataGrid.Tests
 {
     public class TestApplication : Application
     {

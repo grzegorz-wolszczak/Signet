@@ -1,4 +1,4 @@
-﻿// This source file is adapted from the WinUI project.
+// This source file is adapted from the WinUI project.
 // (https://github.com/microsoft/microsoft-ui-xaml)
 //
 // Licensed to The Avalonia Project under MIT License, courtesy of The .NET Foundation.
@@ -9,10 +9,11 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using Avalonia.Controls.Utils;
+using Signet.Controls.TreeDataGrid.Utils;
 
 #nullable enable
 
-namespace Avalonia.Controls
+namespace Signet.Controls.TreeDataGrid
 {
     /// <summary>
     /// Represents a standardized view of the supported interactions between a given ItemsSource

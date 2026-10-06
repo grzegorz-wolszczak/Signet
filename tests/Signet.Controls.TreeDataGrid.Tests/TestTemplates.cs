@@ -1,10 +1,11 @@
-﻿using Avalonia.Controls.Presenters;
+using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Primitives;
+using Signet.Controls.TreeDataGrid.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Layout;
 using Avalonia.Styling;
 
-namespace Avalonia.Controls.TreeDataGridTests
+namespace Signet.Controls.TreeDataGrid.Tests
 {
     internal static class TestTemplates
     {

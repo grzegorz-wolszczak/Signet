@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using System.Reactive.Disposables;
 using Avalonia.Data;
-using Avalonia.Experimental.Data.Core;
+using Signet.Controls.TreeDataGrid.Experimental.Data.Core;
 
-namespace Avalonia.Controls.Models.TreeDataGrid
+namespace Signet.Controls.TreeDataGrid.Models
 {
     public class ExpanderCell<TModel> : NotifyingBase,
         IExpanderCell,

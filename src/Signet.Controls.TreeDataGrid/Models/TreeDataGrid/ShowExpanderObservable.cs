@@ -1,13 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
-using Avalonia.Controls.Experimental.Data.Core;
+using Signet.Controls.TreeDataGrid.Experimental.Data.Core;
 using Avalonia.Data;
-using Avalonia.Experimental.Data;
-using Avalonia.Experimental.Data.Core;
+using Signet.Controls.TreeDataGrid.Experimental.Data;
 
-namespace Avalonia.Controls.Models.TreeDataGrid
+namespace Signet.Controls.TreeDataGrid.Models
 {
     internal class ShowExpanderObservable<TModel> : SingleSubscriberObservableBase<bool>,
         IObserver<BindingValue<bool>>,

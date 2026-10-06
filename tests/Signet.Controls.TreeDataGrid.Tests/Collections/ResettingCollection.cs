@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 
-namespace Avalonia.Controls.TreeDataGridTests.Collections
+namespace Signet.Controls.TreeDataGrid.Tests.Collections
 {
     internal class ResettingCollection<T> : List<T>, INotifyCollectionChanged
     {

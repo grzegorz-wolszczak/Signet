@@ -1,6 +1,6 @@
-﻿using System.Collections;
+using System.Collections;
 
-namespace Avalonia.Controls.Selection
+namespace Signet.Controls.TreeDataGrid.Selection
 {
     public interface ITreeDataGridSelection
     {

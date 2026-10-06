@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Globalization;
 using Avalonia.Data.Converters;
 
-namespace Avalonia.Controls.Converters
+namespace Signet.Controls.TreeDataGrid.Converters
 {
     public class IndentConverter : IValueConverter
     {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Data;
@@ -11,9 +11,9 @@ using Avalonia.LogicalTree;
 using Avalonia.Rendering;
 using Avalonia.Utilities;
 using Avalonia.VisualTree;
-using CollectionExtensions = Avalonia.Controls.Models.TreeDataGrid.CollectionExtensions;
+using CollectionExtensions = Signet.Controls.TreeDataGrid.Models.CollectionExtensions;
 
-namespace Avalonia.Controls.Primitives
+namespace Signet.Controls.TreeDataGrid.Primitives
 {
     public abstract class TreeDataGridPresenterBase<TItem> : Border
     {

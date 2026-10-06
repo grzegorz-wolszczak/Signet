@@ -1,16 +1,16 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Subjects;
 using System.Text;
 using System.Threading.Tasks;
-using Avalonia.Controls.Models.TreeDataGrid;
+using Signet.Controls.TreeDataGrid.Models;
 using Avalonia.Data;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Xunit;
 
-namespace Avalonia.Controls.TreeDataGridTests.Models
+namespace Signet.Controls.TreeDataGrid.Tests.Models
 {
     public class TextCellTests
     {

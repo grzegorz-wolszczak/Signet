@@ -1,6 +1,7 @@
-﻿using Avalonia.Controls.Primitives;
+using Avalonia.Controls.Primitives;
+using Signet.Controls.TreeDataGrid.Primitives;
 
-namespace Avalonia.Controls.TreeDataGridTests
+namespace Signet.Controls.TreeDataGrid.Tests
 {
     internal class TestElementFactory : TreeDataGridElementFactory
     {

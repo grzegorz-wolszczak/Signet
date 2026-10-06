@@ -1,13 +1,13 @@
-﻿using System;
+using System;
 using System.Reactive.Disposables;
 using Avalonia.Data;
-using Avalonia.Experimental.Data.Core;
+using Signet.Controls.TreeDataGrid.Experimental.Data.Core;
 using Avalonia.Reactive;
 using Avalonia.VisualTree;
 
 #nullable enable
 
-namespace Avalonia.Experimental.Data
+namespace Signet.Controls.TreeDataGrid.Experimental.Data
 {
     /// <summary>
     /// A binding whose input and output are strongly-typed.

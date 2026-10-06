@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 
 #nullable enable
 
-namespace Avalonia.Data.Core.Parsers
+namespace Signet.Controls.TreeDataGrid.Experimental.Data.Core.Parsers
 {
     public class ExpressionChainVisitor<TIn> : ExpressionVisitor
     {

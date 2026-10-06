@@ -1,6 +1,6 @@
-﻿using System;
+using System;
 
-namespace Avalonia.Controls.Selection
+namespace Signet.Controls.TreeDataGrid.Selection
 {
     /// <summary>
     /// Holds data for the <see cref="ITreeSelectionModel.IndexesChanged"/> event.

@@ -1,6 +1,6 @@
-﻿using System;
+using System;
 
-namespace Avalonia.Controls.Selection
+namespace Signet.Controls.TreeDataGrid.Selection
 {
     /// <summary>
     /// Provides data for the <see cref="ITreeDataGridCellSelectionModel.SelectionChanged"/> event.

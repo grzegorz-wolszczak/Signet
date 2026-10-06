@@ -1,9 +1,9 @@
-﻿
+
 using System;
 using System.ComponentModel;
 using Avalonia.Controls.Templates;
 
-namespace Avalonia.Controls.Models.TreeDataGrid
+namespace Signet.Controls.TreeDataGrid.Models
 {
     public class TemplateCell : ICell, IEditableObject
     {

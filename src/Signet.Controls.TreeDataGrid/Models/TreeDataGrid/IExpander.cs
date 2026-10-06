@@ -1,4 +1,4 @@
-﻿namespace Avalonia.Controls.Models.TreeDataGrid
+namespace Signet.Controls.TreeDataGrid.Models
 {
     /// <summary>
     /// Represents an element which may expand.

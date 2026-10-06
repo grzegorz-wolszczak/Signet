@@ -1,4 +1,4 @@
-﻿namespace Avalonia.Controls
+namespace Signet.Controls.TreeDataGrid
 {
     /// <summary>
     /// Represents a cell in a <see cref="TreeDataGrid"/>.

@@ -1,6 +1,6 @@
-﻿using System;
+using System;
 
-namespace Avalonia.Controls.Models.TreeDataGrid
+namespace Signet.Controls.TreeDataGrid.Models
 {
     /// <summary>
     /// Holds less commonly-used options for a <see cref="CheckBoxColumn{TModel}"/>.

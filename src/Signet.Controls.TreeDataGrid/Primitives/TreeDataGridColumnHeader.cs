@@ -1,10 +1,10 @@
-﻿using System;
+using System;
 using System.ComponentModel;
-using Avalonia.Controls.Models.TreeDataGrid;
+using Signet.Controls.TreeDataGrid.Models;
 using Avalonia.Input;
 using Avalonia.Utilities;
 
-namespace Avalonia.Controls.Primitives
+namespace Signet.Controls.TreeDataGrid.Primitives
 {
     public class TreeDataGridColumnHeader : Button
     {
@@ -94,7 +94,7 @@ namespace Avalonia.Controls.Primitives
             }
         }
 
-        private void ResizerDoubleTapped(object? sender, Interactivity.RoutedEventArgs e)
+        private void ResizerDoubleTapped(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
         {
             _columns?.SetColumnWidth(ColumnIndex, GridLength.Auto);
         }

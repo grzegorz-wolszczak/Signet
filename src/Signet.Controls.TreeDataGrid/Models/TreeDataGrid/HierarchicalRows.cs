@@ -1,11 +1,12 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using Avalonia.Controls.Utils;
+using Signet.Controls.TreeDataGrid.Utils;
 using Avalonia.Utilities;
 
-namespace Avalonia.Controls.Models.TreeDataGrid
+namespace Signet.Controls.TreeDataGrid.Models
 {
     public class HierarchicalRows<TModel> : ReadOnlyListBase<HierarchicalRow<TModel>>,
         IRows,

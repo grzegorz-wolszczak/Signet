@@ -1,9 +1,9 @@
-﻿using System;
-using Avalonia.Controls.Models.TreeDataGrid;
+using System;
+using Signet.Controls.TreeDataGrid.Models;
 using Avalonia.Headless.XUnit;
 using Xunit;
 
-namespace Avalonia.Controls.TreeDataGridTests.Models
+namespace Signet.Controls.TreeDataGrid.Tests.Models
 {
     public class ColumnListTests
     {

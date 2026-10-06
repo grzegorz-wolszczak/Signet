@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using Avalonia.Media;
 
-namespace Avalonia.Controls.Models.TreeDataGrid
+namespace Signet.Controls.TreeDataGrid.Models
 {
     /// <summary>
     /// Holds less commonly-used options for a <see cref="TemplateColumn{TModel}"/>.

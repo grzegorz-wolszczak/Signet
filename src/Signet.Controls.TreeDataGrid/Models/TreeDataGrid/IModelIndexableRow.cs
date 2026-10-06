@@ -1,4 +1,4 @@
-﻿namespace Avalonia.Controls.Models.TreeDataGrid
+namespace Signet.Controls.TreeDataGrid.Models
 {
     /// <summary>
     /// Represents a row from an integer indexed data source.

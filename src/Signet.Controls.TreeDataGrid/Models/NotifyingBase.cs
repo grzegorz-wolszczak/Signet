@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace Avalonia.Controls.Models
+namespace Signet.Controls.TreeDataGrid.Models
 {
     public class NotifyingBase : INotifyPropertyChanged
     {

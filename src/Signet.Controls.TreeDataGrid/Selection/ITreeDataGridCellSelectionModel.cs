@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
-namespace Avalonia.Controls.Selection
+namespace Signet.Controls.TreeDataGrid.Selection
 {
     /// <summary>
     /// Maintains the cell selection state for an <see cref="ITreeDataGridSource"/>.

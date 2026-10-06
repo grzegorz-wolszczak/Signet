@@ -1,12 +1,12 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq.Expressions;
-using Avalonia.Experimental.Data;
-using Avalonia.Experimental.Data.Core;
+using Signet.Controls.TreeDataGrid.Experimental.Data;
+using Signet.Controls.TreeDataGrid.Experimental.Data.Core;
 using Avalonia.Reactive;
 
-namespace Avalonia.Controls.Models.TreeDataGrid
+namespace Signet.Controls.TreeDataGrid.Models
 {
     /// <summary>
     /// Base class for columns which select cell values from a model.

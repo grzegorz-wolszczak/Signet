@@ -1,12 +1,13 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using Avalonia.Controls.Utils;
+using Signet.Controls.TreeDataGrid.Utils;
 
 #nullable enable
 
-namespace Avalonia.Controls.Selection
+namespace Signet.Controls.TreeDataGrid.Selection
 {
     /// <summary>
     /// Base class for selection models.

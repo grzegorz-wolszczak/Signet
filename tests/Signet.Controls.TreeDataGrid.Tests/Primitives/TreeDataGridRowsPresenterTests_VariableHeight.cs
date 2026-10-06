@@ -1,10 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using Avalonia.Collections;
-using Avalonia.Controls.Models.TreeDataGrid;
+using Signet.Controls.TreeDataGrid.Models;
 using Avalonia.Controls.Primitives;
+using Signet.Controls.TreeDataGrid.Primitives;
 using Avalonia.Data;
 using Avalonia.Headless.XUnit;
 using Avalonia.Layout;
@@ -14,7 +15,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Xunit;
 
-namespace Avalonia.Controls.TreeDataGridTests.Primitives
+namespace Signet.Controls.TreeDataGrid.Tests.Primitives
 {
     public class TreeDataGridRowsPresenterTests_VariableHeight
     {

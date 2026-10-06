@@ -1,9 +1,9 @@
-﻿using System;
+using System;
 using System.Reactive.Subjects;
 using System.Reflection;
 using Avalonia.Data;
 
-namespace Avalonia.Controls.Models.TreeDataGrid
+namespace Signet.Controls.TreeDataGrid.Models
 {
     public class CheckBoxCell : NotifyingBase, ICell, IDisposable
     {

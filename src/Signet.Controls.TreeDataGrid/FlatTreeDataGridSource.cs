@@ -1,13 +1,13 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using Avalonia.Controls.Models;
-using Avalonia.Controls.Models.TreeDataGrid;
+using Signet.Controls.TreeDataGrid.Models;
 using Avalonia.Controls.Selection;
+using Signet.Controls.TreeDataGrid.Selection;
 using Avalonia.Input;
 
-namespace Avalonia.Controls
+namespace Signet.Controls.TreeDataGrid
 {
     /// <summary>
     /// A data source for a <see cref="TreeDataGrid"/> which displays a flat grid.

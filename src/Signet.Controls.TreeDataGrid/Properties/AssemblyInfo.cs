@@ -1,6 +1,8 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using Avalonia.Metadata;
 
-[assembly: XmlnsDefinition("https://github.com/avaloniaui", "Avalonia.Controls")]
-[assembly: XmlnsDefinition("https://github.com/avaloniaui", "Avalonia.Controls.Primitives")]
-[assembly: InternalsVisibleTo("Avalonia.Controls.TreeDataGrid.Tests")]
+// Like upstream, the control is registered in the default Avalonia XAML namespace, so the themes and the views use
+// <TreeDataGrid> without a prefix. Signet does not reference the official TreeDataGrid package, so nothing collides.
+[assembly: XmlnsDefinition("https://github.com/avaloniaui", "Signet.Controls.TreeDataGrid")]
+[assembly: XmlnsDefinition("https://github.com/avaloniaui", "Signet.Controls.TreeDataGrid.Primitives")]
+[assembly: InternalsVisibleTo("Signet.Controls.TreeDataGrid.Tests")]

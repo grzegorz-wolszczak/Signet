@@ -1,9 +1,8 @@
-﻿using Avalonia.Controls.Experimental.Data.Core;
-using Avalonia.Experimental.Data.Core;
+using Signet.Controls.TreeDataGrid.Experimental.Data.Core;
 
 #nullable enable
 
-namespace Avalonia.Experimental.Data
+namespace Signet.Controls.TreeDataGrid.Experimental.Data
 {
     internal class DataContextRoot<T> : SingleSubscriberObservableBase<T?>
         where T : class

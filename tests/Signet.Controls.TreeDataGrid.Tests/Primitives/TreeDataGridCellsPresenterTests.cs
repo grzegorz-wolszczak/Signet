@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
-using Avalonia.Controls.Models.TreeDataGrid;
+using Signet.Controls.TreeDataGrid.Models;
 using Avalonia.Controls.Primitives;
+using Signet.Controls.TreeDataGrid.Primitives;
 using Avalonia.Headless.XUnit;
 using Avalonia.Layout;
 using Avalonia.LogicalTree;
@@ -13,7 +14,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Xunit;
 
-namespace Avalonia.Controls.TreeDataGridTests.Primitives
+namespace Signet.Controls.TreeDataGrid.Tests.Primitives
 {
     public class TreeDataGridCellsPresenterTests
     {

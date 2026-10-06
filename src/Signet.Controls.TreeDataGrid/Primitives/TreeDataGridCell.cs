@@ -1,14 +1,15 @@
-﻿using System;
+using System;
 using System.ComponentModel;
 using Avalonia.Controls.Metadata;
-using Avalonia.Controls.Models.TreeDataGrid;
+using Signet.Controls.TreeDataGrid.Models;
 using Avalonia.Controls.Selection;
+using Signet.Controls.TreeDataGrid.Selection;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.VisualTree;
 
-namespace Avalonia.Controls.Primitives
+namespace Signet.Controls.TreeDataGrid.Primitives
 {
     [PseudoClasses(":editing")]
     public abstract class TreeDataGridCell : TemplatedControl, ITreeDataGridCell
@@ -26,7 +27,6 @@ namespace Avalonia.Controls.Primitives
         static TreeDataGridCell()
         {
             FocusableProperty.OverrideDefaultValue<TreeDataGridCell>(true);
-            DoubleTappedEvent.AddClassHandler<TreeDataGridCell>((x, e) => x.OnDoubleTapped(e));
         }
 
         public int ColumnIndex { get; private set; } = -1;
@@ -143,7 +143,7 @@ namespace Avalonia.Controls.Primitives
                 _treeDataGrid.RaiseCellPrepared(this, ColumnIndex, RowIndex);
         }
 
-        protected override void OnLostFocus(RoutedEventArgs e)
+        protected override void OnLostFocus(Avalonia.Input.FocusChangedEventArgs e)
         {
             base.OnLostFocus(e);
 
@@ -163,8 +163,11 @@ namespace Avalonia.Controls.Primitives
             return result;
         }
 
-        protected virtual void OnDoubleTapped(TappedEventArgs e)
+        // Avalonia 12: InputElement calls OnDoubleTapped as the class handler of DoubleTappedEvent (upstream registered
+        // its own class handler for a method of the same name).
+        protected override void OnDoubleTapped(TappedEventArgs e)
         {
+            base.OnDoubleTapped(e);
             if (Model is not null &&
                 !e.Handled &&
                 !IsEditing &&
@@ -238,7 +241,7 @@ namespace Avalonia.Controls.Primitives
                 IsEnabledEditGesture(BeginEditGestures.Tap, Model.EditGestures))
             {
                 var point = e.GetCurrentPoint(this);
-                var settings = TopLevel.GetTopLevel(this)?.PlatformSettings;
+                var settings = Avalonia.VisualTree.VisualExtensions.GetPlatformSettings(this);
                 var tapSize = settings?.GetTapSize(point.Pointer.Type) ?? new Size(4, 4);
                 var tapRect = new Rect(_pressedPoint, new Size())
                        .Inflate(new Thickness(tapSize.Width, tapSize.Height));

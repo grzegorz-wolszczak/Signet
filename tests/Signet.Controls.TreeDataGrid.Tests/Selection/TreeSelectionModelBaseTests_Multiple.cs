@@ -1,15 +1,17 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using Avalonia.Collections;
 using Avalonia.Controls.Selection;
-using Avalonia.Controls.TreeDataGridTests.Collections;
+using Signet.Controls.TreeDataGrid.Selection;
+using Signet.Controls.TreeDataGrid.Tests.Collections;
 using Avalonia.Controls.Utils;
+using Signet.Controls.TreeDataGrid.Utils;
 using Avalonia.Diagnostics;
 using Avalonia.Headless.XUnit;
 using Xunit;
 
-namespace Avalonia.Controls.TreeDataGridTests.Selection
+namespace Signet.Controls.TreeDataGrid.Tests.Selection
 {
     public class TreeSelectionModelBaseTests_Multiple
     {
@@ -1503,7 +1505,7 @@ namespace Avalonia.Controls.TreeDataGridTests.Selection
                 target.Select(new IndexPath(1, 1));
 
                 var debug = (AvaloniaListDebug<Node>)data[1].Children!;
-                Assert.Single(debug.GetCollectionChangedSubscribers());
+                Assert.Single(debug.GetCollectionChangedSubscribers()!);
 
                 target.Deselect(new IndexPath(1, 1));
 

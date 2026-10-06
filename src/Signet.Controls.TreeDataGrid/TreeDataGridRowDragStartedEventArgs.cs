@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 
-namespace Avalonia.Controls
+namespace Signet.Controls.TreeDataGrid
 {
     /// <summary>
     /// Provides data for the <see cref="TreeDataGrid.RowDragStarted"/> event.

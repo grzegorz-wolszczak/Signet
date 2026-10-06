@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Fork of the MIT-licensed Avalonia TreeDataGrid control (see UPSTREAM.md and LICENSE.md).
+    The code keeps its upstream style, so Signet's stricter rules from Directory.Build.props are relaxed for this
+    project only: no .NET analyzers / code-style enforcement and no XML documentation file. Compiler warnings are
+    still errors.
+  -->
+  <PropertyGroup>
+    <RootNamespace>Signet.Controls.TreeDataGrid</RootNamespace>
+    <AssemblyName>Signet.Controls.TreeDataGrid</AssemblyName>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <AnalysisLevel>none</AnalysisLevel>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="System.Reactive" />
+  </ItemGroup>
+
+</Project>

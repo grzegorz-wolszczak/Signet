@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Runtime.CompilerServices;
@@ -7,7 +7,7 @@ using Avalonia.Utilities;
 
 #nullable enable
 
-namespace Avalonia.Controls.Utils
+namespace Signet.Controls.TreeDataGrid.Utils
 {
     internal interface ICollectionChangedListener
     {

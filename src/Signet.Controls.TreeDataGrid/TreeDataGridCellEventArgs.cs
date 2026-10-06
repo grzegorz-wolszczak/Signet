@@ -1,6 +1,6 @@
-﻿using System;
+using System;
 
-namespace Avalonia.Controls
+namespace Signet.Controls.TreeDataGrid
 {
     public class TreeDataGridCellEventArgs
     {

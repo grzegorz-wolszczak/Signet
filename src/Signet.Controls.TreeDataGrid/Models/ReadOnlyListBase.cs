@@ -1,8 +1,8 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 
-namespace Avalonia.Controls.Models
+namespace Signet.Controls.TreeDataGrid.Models
 {
     public abstract class ReadOnlyListBase<T> : IReadOnlyList<T>, IList
     {

@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Linq.Expressions;
-using Avalonia.Experimental.Data;
+using Signet.Controls.TreeDataGrid.Experimental.Data;
 
-namespace Avalonia.Controls.Models.TreeDataGrid
+namespace Signet.Controls.TreeDataGrid.Models
 {
     /// <summary>
     /// A column in an <see cref="HierarchicalTreeDataGridSource{TModel}"/> whose cells show an

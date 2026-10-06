@@ -1,4 +1,4 @@
-﻿namespace Avalonia.Controls.Models.TreeDataGrid
+namespace Signet.Controls.TreeDataGrid.Models
 {
     /// <summary>
     /// Represents a row which can be indented to represent nested data.

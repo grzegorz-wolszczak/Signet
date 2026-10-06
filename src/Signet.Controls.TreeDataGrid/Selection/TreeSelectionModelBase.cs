@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -6,7 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 
 #nullable enable
 
-namespace Avalonia.Controls.Selection
+namespace Signet.Controls.TreeDataGrid.Selection
 {
     public abstract class TreeSelectionModelBase<T> : ITreeSelectionModel, INotifyPropertyChanged
     {

@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Collections;
-using Avalonia.Controls.Models.TreeDataGrid;
+using Signet.Controls.TreeDataGrid.Models;
 using Avalonia.Controls.Primitives;
+using Signet.Controls.TreeDataGrid.Primitives;
 using Avalonia.Headless.XUnit;
 using Avalonia.LogicalTree;
 using Avalonia.Media;
@@ -12,7 +13,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Xunit;
 
-namespace Avalonia.Controls.TreeDataGridTests.Primitives
+namespace Signet.Controls.TreeDataGrid.Tests.Primitives
 {
     public class TreeDataGridRowsPresenterTests
     {
@@ -227,7 +228,7 @@ namespace Avalonia.Controls.TreeDataGridTests.Primitives
             Assert.Equal(100, items.Count);
             items.RemoveRange(1, 99);
             Layout(target);
-            Assert.Single(target.Items);
+            Assert.Single(target.Items!);
             Assert.Single(target.GetVisualChildren());
 
             target.Items = new AnonymousSortableRows<Model>(TreeDataGridItemsSourceView<Model>.Empty, null);

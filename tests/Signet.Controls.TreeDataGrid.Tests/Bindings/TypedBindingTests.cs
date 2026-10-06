@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Avalonia.Data;
-using Avalonia.Experimental.Data;
+using Signet.Controls.TreeDataGrid.Experimental.Data;
 using Avalonia.Headless.XUnit;
 using Xunit;
 
-namespace Avalonia.Controls.TreeDataGridTests.Bindings;
+namespace Signet.Controls.TreeDataGrid.Tests.Bindings;
 
 public class TypedBindingTests
 {

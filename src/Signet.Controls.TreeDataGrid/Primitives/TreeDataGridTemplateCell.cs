@@ -1,15 +1,16 @@
-﻿using System;
+using System;
 using System.Linq;
-using Avalonia.Controls.Models.TreeDataGrid;
+using Signet.Controls.TreeDataGrid.Models;
 using Avalonia.Controls.Presenters;
 using Avalonia.Controls.Selection;
+using Signet.Controls.TreeDataGrid.Selection;
 using Avalonia.Controls.Templates;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.VisualTree;
 
-namespace Avalonia.Controls.Primitives
+namespace Signet.Controls.TreeDataGrid.Primitives
 {
     public class TreeDataGridTemplateCell : TreeDataGridCell
     {
@@ -128,7 +129,7 @@ namespace Avalonia.Controls.Primitives
             }
         }
 
-        protected override void OnLostFocus(RoutedEventArgs e)
+        protected override void OnLostFocus(Avalonia.Input.FocusChangedEventArgs e)
         {
             if (EndEditIfFocusLost())
             {

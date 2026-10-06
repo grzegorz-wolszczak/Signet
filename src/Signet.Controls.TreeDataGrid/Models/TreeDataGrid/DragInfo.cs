@@ -1,6 +1,6 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
-namespace Avalonia.Controls.Models.TreeDataGrid
+namespace Signet.Controls.TreeDataGrid.Models
 {
     /// <summary>
     /// Holds information about an automatic row drag/drop operation carried out
@@ -9,9 +9,11 @@ namespace Avalonia.Controls.Models.TreeDataGrid
     public class DragInfo
     {
         /// <summary>
-        /// Defines the data format in an <see cref="Avalonia.Input.IDataObject"/>.
+        /// Defines the (in-process) data format in an <see cref="Avalonia.Input.IDataTransfer"/>.
         /// </summary>
-        public const string DataFormat = "TreeDataGridDragInfo";
+        /// <remarks>Avalonia 12: a typed <see cref="Avalonia.Input.DataFormat{T}"/> instead of a format name.</remarks>
+        public static readonly Avalonia.Input.DataFormat<DragInfo> DataFormat =
+            Avalonia.Input.DataFormat.CreateInProcessFormat<DragInfo>("TreeDataGridDragInfo");
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DragInfo"/> class.

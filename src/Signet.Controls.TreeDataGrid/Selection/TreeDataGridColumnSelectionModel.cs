@@ -1,6 +1,6 @@
-﻿using Avalonia.Controls.Models.TreeDataGrid;
+using Signet.Controls.TreeDataGrid.Models;
 
-namespace Avalonia.Controls.Selection
+namespace Signet.Controls.TreeDataGrid.Selection
 {
     public class TreeDataGridColumnSelectionModel : SelectionModel<IColumn>,
         ITreeDataGridColumnSelectionModel

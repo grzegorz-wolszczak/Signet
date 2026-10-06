@@ -1,6 +1,6 @@
-﻿using Avalonia.Media;
+using Avalonia.Media;
 
-namespace Avalonia.Controls.Models.TreeDataGrid
+namespace Signet.Controls.TreeDataGrid.Models
 {
     public interface ICellOptions
     {

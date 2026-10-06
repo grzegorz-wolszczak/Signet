@@ -1,4 +1,4 @@
-﻿// This source file is adapted from the dotnet runtime project.
+// This source file is adapted from the dotnet runtime project.
 // (https://github.com/dotnet/runtime)
 //
 // Licensed to The Avalonia Project under MIT License, courtesy of The .NET Foundation.
@@ -9,7 +9,7 @@ using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
-namespace Avalonia.Controls.Utils
+namespace Signet.Controls.TreeDataGrid.Utils
 {
     internal static class SortHelper<T>
     {

@@ -1,7 +1,7 @@
 using System;
 using System.Reactive.Disposables;
 
-namespace Avalonia.Experimental.Data
+namespace Signet.Controls.TreeDataGrid.Experimental.Data
 {
     internal class ObservableEx
     {
