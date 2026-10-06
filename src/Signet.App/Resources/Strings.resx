@@ -3900,4 +3900,22 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="SearchEditorView_ColumnFind" xml:space="preserve">
     <value>Znajdź</value>
   </data>
+  <data name="FindUsages_ColumnUsage" xml:space="preserve">
+    <value>Użycie</value>
+  </data>
+  <data name="FindUsages_ColumnColumn" xml:space="preserve">
+    <value>Kol.</value>
+  </data>
+  <data name="FindUsages_ColumnKind" xml:space="preserve">
+    <value>Rodzaj</value>
+  </data>
+  <data name="FindUsages_ColumnContext" xml:space="preserve">
+    <value>Kontekst</value>
+  </data>
+  <data name="FindUsages_KindAttribute" xml:space="preserve">
+    <value>atrybut class</value>
+  </data>
+  <data name="FindUsages_KindSelector" xml:space="preserve">
+    <value>selektor CSS</value>
+  </data>
 </root>

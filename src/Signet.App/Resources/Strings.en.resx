@@ -3900,4 +3900,22 @@ It does not change the files, their names or their IDs.</value>
   <data name="SearchEditorView_ColumnFind" xml:space="preserve">
     <value>Find</value>
   </data>
+  <data name="FindUsages_ColumnUsage" xml:space="preserve">
+    <value>Usage</value>
+  </data>
+  <data name="FindUsages_ColumnColumn" xml:space="preserve">
+    <value>Col.</value>
+  </data>
+  <data name="FindUsages_ColumnKind" xml:space="preserve">
+    <value>Kind</value>
+  </data>
+  <data name="FindUsages_ColumnContext" xml:space="preserve">
+    <value>Context</value>
+  </data>
+  <data name="FindUsages_KindAttribute" xml:space="preserve">
+    <value>class attribute</value>
+  </data>
+  <data name="FindUsages_KindSelector" xml:space="preserve">
+    <value>CSS selector</value>
+  </data>
 </root>

@@ -10,13 +10,18 @@ using AwesomeAssertions;
 using Signet.App.Resources;
 using Signet.App.ViewModels;
 using Signet.App.Views;
+using Signet.Controls.TreeDataGrid;
+using Signet.Controls.TreeDataGrid.Primitives;
 using Signet.Core.BookManipulation;
 using Signet.Core.Misc;
 using Signet.Core.Tests.TestSupport;
 
 namespace Signet.App.UiTests;
 
-/// <summary>Rendering of the "Find Usages" panel: the tree and the "Group By" menu of the left toolbar.</summary>
+/// <summary>
+/// Rendering of the "Find Usages" panel: the usages tree (a TreeDataGrid with Usage, Line, Col., Kind, Context), its
+/// keyboard handling and the "Group By" menu of the left toolbar.
+/// </summary>
 public sealed class FindUsagesViewTests
 {
     private static void Settle(Window window)
@@ -26,32 +31,68 @@ public sealed class FindUsagesViewTests
         Dispatcher.UIThread.RunJobs();
     }
 
-    // The realized, visible rows of the usage list, in display order (recycled containers are hidden).
-    private static FindUsagesNode[] RealizedRows(Window window)
-    {
-        ListBox list = window.GetVisualDescendants().OfType<ListBox>().Single(l => l.Name == "UsageList");
-        return window.GetVisualDescendants().OfType<ListBoxItem>()
-            .Where(i => i.IsVisible && list.IndexFromContainer(i) >= 0)
-            .OrderBy(list.IndexFromContainer)
-            .Select(i => (FindUsagesNode)i.DataContext!)
+    private static TreeDataGrid Tree(Window window) =>
+        window.GetVisualDescendants().OfType<TreeDataGrid>().Single(t => t.Name == "UsageList");
+
+    // The realized, visible rows of the tree, in display order (recycled rows are hidden).
+    private static FindUsagesNode[] RealizedRows(Window window) =>
+        Tree(window).GetVisualDescendants().OfType<TreeDataGridRow>()
+            .Where(r => r.IsVisible && r.RowIndex >= 0)
+            .OrderBy(r => r.RowIndex)
+            .Select(r => (FindUsagesNode)r.Model!)
             .ToArray();
-    }
 
-    // Like a click on the row: selects it and focuses its container (the list box itself is not focusable).
-    private static void SelectAndFocus(ListBox list, FindUsagesNode node)
+    // The row index of a node (by its index path from the root).
+    private static int RowIndexOf(TreeDataGrid tree, FindUsagesNode node)
     {
-        list.SelectedItem = node;
-        list.ContainerFromItem(node)!.Focus();
+        System.Collections.Generic.List<int> path = new();
+        for (FindUsagesNode current = node; current.Parent is { } parent; current = parent)
+        {
+            path.Insert(0, parent.Children.ToList().IndexOf(current));
+        }
+
+        path.Insert(0, 0);
+        return tree.Rows!.ModelIndexToRowIndex(new IndexPath(path));
     }
 
-    private static (Window Window, FindUsagesViewModel Vm, ListBox List) ShowPanel(TempDir temp, bool groupByFile, params ClassUsage[] usages)
+    // The first cell of a node's row (in a TreeDataGrid the cells take the keyboard focus).
+    private static Control FirstCell(TreeDataGrid tree, FindUsagesNode node) => tree.TryGetCell(0, RowIndexOf(tree, node))!;
+
+    // Like a click on the row: selects it and focuses its first cell.
+    private static void SelectAndFocus(TreeDataGrid tree, FindUsagesNode node)
+    {
+        tree.RowSelection!.SelectedIndex = tree.Rows!.RowIndexToModelIndex(RowIndexOf(tree, node));
+        FirstCell(tree, node).Focus();
+    }
+
+    private static (Window Window, FindUsagesViewModel Vm, TreeDataGrid Tree) ShowPanel(TempDir temp, bool groupByFile, params ClassUsage[] usages)
     {
         FindUsagesViewModel vm = new(new SettingsStore(temp.Combine("settings.json"))) { GroupByFile = groupByFile };
         vm.Load("note", usages);
-        Window window = new() { Width = 700, Height = 400, Content = new FindUsagesView { DataContext = vm } };
+        Window window = new() { Width = 900, Height = 400, Content = new FindUsagesView { DataContext = vm } };
         window.Show();
         Settle(window);
-        return (window, vm, window.GetVisualDescendants().OfType<ListBox>().Single(l => l.Name == "UsageList"));
+        return (window, vm, Tree(window));
+    }
+
+    [AvaloniaFact]
+    public void The_columns_show_the_line_column_kind_and_context_of_every_usage()
+    {
+        using TempDir temp = new();
+        (Window window, _, TreeDataGrid tree) = ShowPanel(
+            temp,
+            groupByFile: false,
+            new ClassUsage("OEBPS/Text/a.xhtml", 10, 3, 14, ClassUsageKind.ClassAttribute, "<p class=\"note\">x</p>"),
+            new ClassUsage("OEBPS/Styles/s.css", 0, 1, 2, ClassUsageKind.Selector, ".note { color: red }"));
+
+        tree.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().Select(h => h.Header).Should().Equal(
+            Strings.Get("FindUsages_ColumnUsage"), Strings.Get("ValidationResultsView_Line"), Strings.Get("FindUsages_ColumnColumn"),
+            Strings.Get("FindUsages_ColumnKind"), Strings.Get("FindUsages_ColumnContext"));
+        tree.GetVisualDescendants().OfType<TreeDataGridTextCell>().Select(c => c.Value?.ToString())
+            .Should().Contain("3").And.Contain("14")
+            .And.Contain(Strings.Get("FindUsages_KindAttribute")).And.Contain(Strings.Get("FindUsages_KindSelector"))
+            .And.Contain("<p class=\"note\">x</p>").And.Contain(".note { color: red }");
+        window.Close();
     }
 
     [AvaloniaFact]
@@ -66,7 +107,7 @@ public sealed class FindUsagesViewTests
             new ClassUsage("OEBPS/Text/a.xhtml", 40, 5, 9, ClassUsageKind.ClassAttribute),
             new ClassUsage("OEBPS/Styles/s.css", 0, 1, 2, ClassUsageKind.Selector),
         });
-        Window window = new() { Width = 700, Height = 400, Content = new FindUsagesView { DataContext = vm } };
+        Window window = new() { Width = 900, Height = 400, Content = new FindUsagesView { DataContext = vm } };
         window.Show();
         Settle(window);
 
@@ -104,7 +145,7 @@ public sealed class FindUsagesViewTests
             new ClassUsage("OEBPS/Text/a.xhtml", 10, 3, 14, ClassUsageKind.ClassAttribute),
             new ClassUsage("OEBPS/Styles/s.css", 0, 1, 2, ClassUsageKind.Selector),
         });
-        Window window = new() { Width = 700, Height = 400, Content = new FindUsagesView { DataContext = vm } };
+        Window window = new() { Width = 900, Height = 400, Content = new FindUsagesView { DataContext = vm } };
         window.Show();
         Settle(window);
         string[] VisibleRows() => RealizedRows(window).Select(n => n.Text).ToArray();
@@ -118,8 +159,7 @@ public sealed class FindUsagesViewTests
 
         VisibleRows().Should().Equal(Strings.Get("FindUsages_Found"));
 
-        ListBox list = window.GetVisualDescendants().OfType<ListBox>().Single(l => l.Name == "UsageList");
-        SelectAndFocus(list, vm.Roots.Single());
+        SelectAndFocus(Tree(window), vm.Roots.Single());
         window.KeyPressQwerty(PhysicalKey.NumPadAdd, RawInputModifiers.Control);
         Settle(window);
 
@@ -134,16 +174,16 @@ public sealed class FindUsagesViewTests
         ClassUsage[] usages = Enumerable.Range(0, count)
             .Select(i => new ClassUsage($"OEBPS/Text/ch{i / 400:D3}.xhtml", i * 10, i % 400 + 1, 5, ClassUsageKind.ClassAttribute))
             .ToArray();
-        (Window window, FindUsagesViewModel vm, ListBox list) = ShowPanel(temp, groupByFile: false, usages);
+        (Window window, FindUsagesViewModel vm, TreeDataGrid tree) = ShowPanel(temp, groupByFile: false, usages);
 
-        vm.Rows.Should().HaveCount(count + 1);
+        tree.Rows!.Count.Should().Be(count + 1);
         RealizedRows(window).Should().HaveCountLessThan(100, "a 400 px panel shows a few dozen rows at most")
             .And.HaveElementAt(0, vm.Roots.Single());
 
-        list.ScrollIntoView(vm.Rows[^1]);
+        tree.RowsPresenter!.BringIntoView(count);
         Settle(window);
 
-        RealizedRows(window).Should().HaveCountLessThan(100).And.Contain(vm.Rows[^1]);
+        RealizedRows(window).Should().HaveCountLessThan(100).And.Contain(vm.Roots.Single().Children[^1]);
         window.Close();
     }
 
@@ -151,7 +191,7 @@ public sealed class FindUsagesViewTests
     public void Left_and_Right_collapse_and_expand_the_selected_node_and_move_to_the_parent_and_the_first_child()
     {
         using TempDir temp = new();
-        (Window window, FindUsagesViewModel vm, ListBox list) = ShowPanel(
+        (Window window, FindUsagesViewModel vm, TreeDataGrid tree) = ShowPanel(
             temp,
             groupByFile: true,
             new ClassUsage("OEBPS/Text/a.xhtml", 10, 3, 14, ClassUsageKind.ClassAttribute),
@@ -159,7 +199,7 @@ public sealed class FindUsagesViewTests
             new ClassUsage("OEBPS/Styles/s.css", 0, 1, 2, ClassUsageKind.Selector));
         FindUsagesNode root = vm.Roots.Single();
         FindUsagesNode file = root.Children[0];
-        SelectAndFocus(list, file);
+        SelectAndFocus(tree, file);
 
         window.KeyPressQwerty(PhysicalKey.ArrowLeft, RawInputModifiers.None);
         Settle(window);
@@ -174,11 +214,11 @@ public sealed class FindUsagesViewTests
         RealizedRows(window).Should().HaveCount(6);
 
         window.KeyPressQwerty(PhysicalKey.ArrowRight, RawInputModifiers.None);
-        list.SelectedItem.Should().BeSameAs(file.Children[0], "Right on an expanded node goes to its first child");
-        list.ContainerFromItem(file.Children[0])!.IsFocused.Should().BeTrue("the keyboard focus follows the selection");
+        tree.RowSelection!.SelectedItem.Should().BeSameAs(file.Children[0], "Right on an expanded node goes to its first child");
+        FirstCell(tree, file.Children[0]).IsFocused.Should().BeTrue("the keyboard focus follows the selection");
 
         window.KeyPressQwerty(PhysicalKey.ArrowLeft, RawInputModifiers.None);
-        list.SelectedItem.Should().BeSameAs(file, "Left on a usage goes to its file");
+        tree.RowSelection.SelectedItem.Should().BeSameAs(file, "Left on a usage goes to its file");
         window.Close();
     }
 
@@ -187,10 +227,10 @@ public sealed class FindUsagesViewTests
     {
         using TempDir temp = new();
         ClassUsage usage = new("OEBPS/Text/a.xhtml", 10, 3, 14, ClassUsageKind.ClassAttribute);
-        (Window window, FindUsagesViewModel vm, ListBox list) = ShowPanel(temp, groupByFile: false, usage);
+        (Window window, FindUsagesViewModel vm, TreeDataGrid tree) = ShowPanel(temp, groupByFile: false, usage);
         ClassUsage? activated = null;
         vm.UsageActivated += (_, u) => activated = u;
-        SelectAndFocus(list, vm.Rows[1]);
+        SelectAndFocus(tree, vm.Roots.Single().Children[0]);
 
         window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
 

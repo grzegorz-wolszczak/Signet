@@ -2,10 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using Avalonia;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.Core.BookManipulation;
 using Signet.Core.Misc;
@@ -20,16 +18,14 @@ namespace Signet.App.ViewModels;
 /// <see cref="RefreshRequested"/> to search for the same class again.
 /// </summary>
 /// <remarks>
-/// The view shows the tree flattened: <see cref="Rows"/> holds the visible nodes (those under expanded ancestors) in
-/// display order, for a virtualizing list — a <c>TreeView</c> creates a control for every node, which takes minutes
-/// for tens of thousands of usages. Expanding / collapsing a node inserts / removes its visible descendants as one
-/// range.
+/// The view shows the tree in a virtualizing <c>TreeDataGrid</c> (a <c>TreeView</c> creates a control for every node,
+/// which takes minutes for tens of thousands of usages) with the columns Usage, Line, Column, Kind and Context of
+/// <see cref="FindUsagesNode"/>.
 /// </remarks>
 public sealed partial class FindUsagesViewModel : ViewModelBase, ILanguageAware
 {
     private readonly SettingsStore _settings;
     private IReadOnlyList<ClassUsage> _usages = Array.Empty<ClassUsage>();
-    private bool _suppressRowUpdates;
 
     [ObservableProperty]
     private bool _groupByFile;
@@ -61,9 +57,6 @@ public sealed partial class FindUsagesViewModel : ViewModelBase, ILanguageAware
 
     /// <summary>The tree: a single root "Found usages".</summary>
     public ObservableCollection<FindUsagesNode> Roots { get; } = new();
-
-    /// <summary>The visible nodes of the tree (every ancestor expanded), in display order — the rows of the view.</summary>
-    public RangeObservableCollection<FindUsagesNode> Rows { get; } = new();
 
     /// <summary>Searches for the same class again.</summary>
     public IRelayCommand RefreshCommand { get; }
@@ -98,7 +91,6 @@ public sealed partial class FindUsagesViewModel : ViewModelBase, ILanguageAware
         ClassName = null;
         _usages = Array.Empty<ClassUsage>();
         Roots.Clear();
-        Rows.ResetTo(Array.Empty<FindUsagesNode>());
         OnPropertyChanged(nameof(ClassName));
         OnPropertyChanged(nameof(HasSearch));
         OnPropertyChanged(nameof(Header));
@@ -152,85 +144,23 @@ public sealed partial class FindUsagesViewModel : ViewModelBase, ILanguageAware
         CollapseAllCommand.NotifyCanExecuteChanged();
     }
 
-    // Only the nodes with children (the root and the files): a usage has nothing to expand. The rows are rebuilt
-    // once at the end instead of node by node.
+    // Only the nodes with children (the root and the files): a usage has nothing to expand.
     private void SetExpanded(bool expanded)
     {
-        _suppressRowUpdates = true;
-        try
-        {
-            Stack<FindUsagesNode> pending = new(Roots);
-            while (pending.TryPop(out FindUsagesNode? node))
-            {
-                if (!node.HasChildren)
-                {
-                    continue;
-                }
-
-                node.IsExpanded = expanded;
-                foreach (FindUsagesNode child in node.Children)
-                {
-                    pending.Push(child);
-                }
-            }
-        }
-        finally
-        {
-            _suppressRowUpdates = false;
-        }
-
-        Rows.ResetTo(VisibleNodes(Roots));
-    }
-
-    /// <summary>Keeps <see cref="Rows"/> in step with an expanded / collapsed node.</summary>
-    internal void OnNodeExpandedChanged(FindUsagesNode node)
-    {
-        if (_suppressRowUpdates || !node.HasChildren)
-        {
-            return;
-        }
-
-        int index = Rows.IndexOf(node);
-        if (index < 0)
-        {
-            // Under a collapsed ancestor: its rows appear when the ancestor is expanded.
-            return;
-        }
-
-        if (node.IsExpanded)
-        {
-            Rows.InsertRange(index + 1, VisibleNodes(node.Children));
-        }
-        else
-        {
-            int end = index + 1;
-            while (end < Rows.Count && Rows[end].Depth > node.Depth)
-            {
-                end++;
-            }
-
-            Rows.RemoveRange(index + 1, end - index - 1);
-        }
-    }
-
-    // The nodes and their descendants under expanded nodes, in display (depth-first) order.
-    private static List<FindUsagesNode> VisibleNodes(IEnumerable<FindUsagesNode> nodes)
-    {
-        List<FindUsagesNode> visible = new();
-        Stack<FindUsagesNode> pending = new(nodes.Reverse());
+        Stack<FindUsagesNode> pending = new(Roots);
         while (pending.TryPop(out FindUsagesNode? node))
         {
-            visible.Add(node);
-            if (node.IsExpanded)
+            if (!node.HasChildren)
             {
-                for (int i = node.Children.Count - 1; i >= 0; i--)
-                {
-                    pending.Push(node.Children[i]);
-                }
+                continue;
+            }
+
+            node.IsExpanded = expanded;
+            foreach (FindUsagesNode child in node.Children)
+            {
+                pending.Push(child);
             }
         }
-
-        return visible;
     }
 
     // Identifies a node with children across rebuilds: the root, or a file node by its bookpath.
@@ -262,16 +192,16 @@ public sealed partial class FindUsagesViewModel : ViewModelBase, ILanguageAware
             }
         }
 
-        FindUsagesNode root = new(this, null, Strings.Get("FindUsages_Found"), ResultsText(_usages.Count), null, null);
+        FindUsagesNode root = new(null, Strings.Get("FindUsages_Found"), ResultsText(_usages.Count), null, null);
         if (GroupByFile)
         {
             foreach (IGrouping<string, ClassUsage> file in _usages.GroupBy(u => u.BookPath, StringComparer.Ordinal))
             {
-                FindUsagesNode fileNode = new(this, root, file.Key, ResultsText(file.Count()), null, file.Key);
+                FindUsagesNode fileNode = new(root, file.Key, ResultsText(file.Count()), null, file.Key);
                 foreach (ClassUsage usage in file)
                 {
                     _ = new FindUsagesNode(
-                        this, fileNode, Strings.Format("FindUsages_LineColumn", usage.Line, usage.Column), string.Empty, usage, usage.BookPath);
+                        fileNode, Strings.Format("FindUsages_LineColumn", usage.Line, usage.Column), string.Empty, usage, usage.BookPath);
                 }
             }
         }
@@ -279,53 +209,38 @@ public sealed partial class FindUsagesViewModel : ViewModelBase, ILanguageAware
         {
             foreach (ClassUsage usage in _usages)
             {
-                _ = new FindUsagesNode(this, root, $"{usage.BookPath}:{usage.Line}:{usage.Column}", string.Empty, usage, usage.BookPath);
+                _ = new FindUsagesNode(root, $"{usage.BookPath}:{usage.Line}:{usage.Column}", string.Empty, usage, usage.BookPath);
             }
         }
 
-        if (collapsed.Count > 0)
+        foreach (FindUsagesNode node in root.Children.Prepend(root))
         {
-            _suppressRowUpdates = true;
-            try
+            if (node.HasChildren && collapsed.Contains(ExpansionKey(node)))
             {
-                foreach (FindUsagesNode node in root.Children.Prepend(root))
-                {
-                    if (node.HasChildren && collapsed.Contains(ExpansionKey(node)))
-                    {
-                        node.IsExpanded = false;
-                    }
-                }
-            }
-            finally
-            {
-                _suppressRowUpdates = false;
+                node.IsExpanded = false;
             }
         }
 
         Roots.Clear();
         Roots.Add(root);
-        Rows.ResetTo(VisibleNodes(Roots));
     }
 }
 
-/// <summary>A node of the "Find Usages" tree: the root, a file or a usage (a location to open).</summary>
+/// <summary>
+/// A node of the "Find Usages" tree: the root, a file or a usage (a location to open). The usage columns (line, column,
+/// kind, context) are empty for the root and a file.
+/// </summary>
 public sealed partial class FindUsagesNode : ObservableObject
 {
-    private const double IndentPerLevel = 16;
-
-    private readonly FindUsagesViewModel _owner;
     private readonly List<FindUsagesNode> _children = new();
 
     [ObservableProperty]
     private bool _isExpanded = true;
 
     /// <summary>Creates the node and appends it to the children of <paramref name="parent"/>.</summary>
-    internal FindUsagesNode(
-        FindUsagesViewModel owner, FindUsagesNode? parent, string text, string countText, ClassUsage? usage, string? toolTip)
+    internal FindUsagesNode(FindUsagesNode? parent, string text, string countText, ClassUsage? usage, string? toolTip)
     {
-        _owner = owner;
         Parent = parent;
-        Depth = parent is null ? 0 : parent.Depth + 1;
         Text = text;
         CountText = countText;
         Usage = usage;
@@ -335,12 +250,6 @@ public sealed partial class FindUsagesNode : ObservableObject
 
     /// <summary>The parent node, or <c>null</c> for the root.</summary>
     public FindUsagesNode? Parent { get; }
-
-    /// <summary>The depth in the tree (0 = the root).</summary>
-    public int Depth { get; }
-
-    /// <summary>The indentation of the row — 16 px per level.</summary>
-    public Thickness Indent => new(Depth * IndentPerLevel, 0, 0, 0);
 
     /// <summary>Whether the node has children (and so an expander).</summary>
     public bool HasChildren => _children.Count > 0;
@@ -357,8 +266,23 @@ public sealed partial class FindUsagesNode : ObservableObject
     /// <summary>The tooltip (the bookpath of the file).</summary>
     public string? ToolTip { get; }
 
+    /// <summary>The "Line" column (1-based).</summary>
+    public int? Line => Usage?.Line;
+
+    /// <summary>The "Col." column (1-based).</summary>
+    public int? Column => Usage?.Column;
+
+    /// <summary>The "Kind" column: a class attribute or a CSS selector.</summary>
+    public string KindText => Usage?.Kind switch
+    {
+        ClassUsageKind.ClassAttribute => Strings.Get("FindUsages_KindAttribute"),
+        ClassUsageKind.Selector => Strings.Get("FindUsages_KindSelector"),
+        _ => string.Empty,
+    };
+
+    /// <summary>The "Context" column: the text of the usage's line.</summary>
+    public string Context => Usage?.Context ?? string.Empty;
+
     /// <summary>The child nodes.</summary>
     public IReadOnlyList<FindUsagesNode> Children => _children;
-
-    partial void OnIsExpandedChanged(bool value) => _owner.OnNodeExpandedChanged(this);
 }
