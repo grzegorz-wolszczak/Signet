@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,8 +21,8 @@ namespace Signet.Controls.TreeDataGrid.Tests.Models
             var binding = new BehaviorSubject<BindingValue<string>>("initial");
             var target = new TextCell<string>(binding, true);
 
-            Assert.Equal("initial", target.Text);
-            Assert.Equal("initial", target.Value);
+            target.Text.Should().Be("initial");
+            target.Value.Should().Be("initial");
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -34,7 +35,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Models
             binding.Subscribe(x => result.Add(x.Value));
             target.Value = "new";
 
-            Assert.Equal(new[] { "initial", "new" }, result);
+            result.Should().Equal(new[] { "initial", "new" });
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -47,7 +48,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Models
             binding.Subscribe(x => result.Add(x.Value));
             target.Text = "new";
 
-            Assert.Equal(new[] { "initial", "new" }, result);
+            result.Should().Equal(new[] { "initial", "new" });
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -62,15 +63,15 @@ namespace Signet.Controls.TreeDataGrid.Tests.Models
             target.BeginEdit();
             target.Text = "new";
 
-            Assert.Equal("new", target.Text);
-            Assert.Equal("initial", target.Value);
-            Assert.Equal(new[] { "initial"}, result);
+            target.Text.Should().Be("new");
+            target.Value.Should().Be("initial");
+            result.Should().Equal(new[] { "initial"});
 
             target.EndEdit();
 
-            Assert.Equal("new", target.Text);
-            Assert.Equal("new", target.Value);
-            Assert.Equal(new[] { "initial", "new" }, result);
+            target.Text.Should().Be("new");
+            target.Value.Should().Be("new");
+            result.Should().Equal(new[] { "initial", "new" });
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -85,15 +86,15 @@ namespace Signet.Controls.TreeDataGrid.Tests.Models
             target.BeginEdit();
             target.Text = "new";
 
-            Assert.Equal("new", target.Text);
-            Assert.Equal("initial", target.Value);
-            Assert.Equal(new[] { "initial" }, result);
+            target.Text.Should().Be("new");
+            target.Value.Should().Be("initial");
+            result.Should().Equal(new[] { "initial" });
 
             target.CancelEdit();
 
-            Assert.Equal("initial", target.Text);
-            Assert.Equal("initial", target.Value);
-            Assert.Equal(new[] { "initial" }, result);
+            target.Text.Should().Be("initial");
+            target.Value.Should().Be("initial");
+            result.Should().Equal(new[] { "initial" });
         }
 
         public class StringFormat
@@ -104,8 +105,8 @@ namespace Signet.Controls.TreeDataGrid.Tests.Models
                 var binding = new BehaviorSubject<BindingValue<int>>(42);
                 var target = new TextCell<int>(binding, true, GetOptions());
 
-                Assert.Equal("42.00", target.Text);
-                Assert.Equal(42, target.Value);
+                target.Text.Should().Be("42.00");
+                target.Value.Should().Be(42);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -120,15 +121,15 @@ namespace Signet.Controls.TreeDataGrid.Tests.Models
                 target.BeginEdit();
                 target.Text = "43";
 
-                Assert.Equal("43", target.Text);
-                Assert.Equal(42, target.Value);
-                Assert.Equal(new[] { 42 }, result);
+                target.Text.Should().Be("43");
+                target.Value.Should().Be(42);
+                result.Should().Equal(new[] { 42 });
 
                 target.EndEdit();
 
-                Assert.Equal("43.00", target.Text);
-                Assert.Equal(43, target.Value);
-                Assert.Equal(new[] { 42, 43 }, result);
+                target.Text.Should().Be("43.00");
+                target.Value.Should().Be(43);
+                result.Should().Equal(new[] { 42, 43 });
             }
 
             private ITextCellOptions? GetOptions(string format = "{0:n2}")

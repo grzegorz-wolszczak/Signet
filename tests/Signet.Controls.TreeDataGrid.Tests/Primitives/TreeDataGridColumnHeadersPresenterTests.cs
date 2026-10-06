@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -51,7 +52,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
             for (var i = 0; i < target.Items!.Count; ++i)
             {
                 var column = target.Items[i];
-                Assert.Equal(i < 10 ? 10 : double.NaN, column.ActualWidth);
+                column.ActualWidth.Should().Be(i < 10 ? 10 : double.NaN);
             }
         }
 
@@ -100,14 +101,14 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
             var (target, _) = CreateTarget();
 
             foreach (var child in target.GetVisualChildren())
-                Assert.Equal(10, child.Bounds.Width);
+                child.Bounds.Width.Should().Be(10);
 
             ((IColumns)target.Items!).SetColumnWidth(1, new GridLength(12, GridUnitType.Pixel));
             Layout(target);
 
             foreach (TreeDataGridColumnHeader column in target.GetVisualChildren())
             {
-                Assert.Equal(column.ColumnIndex == 1 ? 12 : 10, column.Bounds.Width);
+                column.Bounds.Width.Should().Be(column.ColumnIndex == 1 ? 12 : 10);
             }
         }
 
@@ -134,7 +135,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
                     .Where(x => x is SolidColorBrush brush && brush.Color == Colors.Red).Count();
             }
 
-            Assert.Equal(5, CountEvenRedRows(target));
+            CountEvenRedRows(target).Should().Be(5);
         }
 
         private static void AssertColumnIndexes(
@@ -142,7 +143,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
             int firstColumnIndex,
             int columnCount)
         {
-            Assert.NotNull(target);
+            target.Should().NotBeNull();
 
             var rowIndexes = target!.GetVisualChildren()
                 .Cast<TreeDataGridColumnHeader>()
@@ -151,20 +152,18 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
                 .OrderBy(x => x)
                 .ToList();
 
-            Assert.Equal(
-                Enumerable.Range(firstColumnIndex, columnCount),
-                rowIndexes);
+            rowIndexes.Should().Equal(Enumerable.Range(firstColumnIndex, columnCount));
         }
 
         private static void AssertRecyclable(TreeDataGridColumnHeadersPresenter? target, int count)
         {
-            Assert.NotNull(target);
+            target.Should().NotBeNull();
 
             var recyclableRows = target!.GetVisualChildren()
                 .Cast<TreeDataGridColumnHeader>()
                 .Where(x => !x.IsVisible)
                 .ToList();
-            Assert.Equal(count, recyclableRows.Count);
+            recyclableRows.Count.Should().Be(count);
         }
 
         private static (TreeDataGridColumnHeadersPresenter, ScrollViewer) CreateTarget(

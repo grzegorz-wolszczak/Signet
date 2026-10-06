@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -24,14 +25,14 @@ namespace Signet.Controls.TreeDataGrid.Tests
         {
             var (target, _) = CreateTarget();
 
-            Assert.NotNull(target.RowsPresenter);
+            target.RowsPresenter.Should().NotBeNull();
 
             var rows = target.RowsPresenter!
                 .GetVisualChildren()
                 .Cast<TreeDataGridRow>()
                 .ToList();
 
-            Assert.Equal(10, rows.Count);
+            rows.Count.Should().Be(10);
 
             foreach (var row in rows)
             {
@@ -39,7 +40,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                     .GetVisualChildren()
                     .Cast<TreeDataGridCell>()
                     .ToList();
-                Assert.Equal(2, cells.Count);
+                cells.Count.Should().Be(2);
             }
         }
 
@@ -95,7 +96,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             for (var i = 0; i < items.Count; ++i)
             {
                 var expected = i < 10 ? 2 : 0;
-                Assert.Equal(expected, items[i].PropertyChangedSubscriberCount());
+                items[i].PropertyChangedSubscriberCount().Should().Be(expected);
             }
         }
 
@@ -110,7 +111,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             for (var i = 0; i < items.Count; ++i)
             {
                 var expected = i > 0 && i <= 10 ? 2 : 0;
-                Assert.Equal(expected, items[i].PropertyChangedSubscriberCount());
+                items[i].PropertyChangedSubscriberCount().Should().Be(expected);
             }
         }
 
@@ -125,7 +126,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             for (var i = 0; i < items.Count; ++i)
             {
                 var expected = i >= 10 && i < 20 ? 2 : 0;
-                Assert.Equal(expected, items[i].PropertyChangedSubscriberCount());
+                items[i].PropertyChangedSubscriberCount().Should().Be(expected);
             }
         }
 
@@ -138,7 +139,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
             for (var i = 0; i < items.Count; ++i)
             {
-                Assert.Equal(0, items[i].PropertyChangedSubscriberCount());
+                items[i].PropertyChangedSubscriberCount().Should().Be(0);
             }
         }
 
@@ -153,7 +154,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 }
             );
 
-            Assert.Equal(24, target.DesiredSize.Width);
+            target.DesiredSize.Width.Should().Be(24);
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -172,7 +173,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 .Cast<TreeDataGridRow>()
                 .ToList();
 
-            Assert.Equal(10, rows.Count);
+            rows.Count.Should().Be(10);
 
             foreach (var row in rows)
             {
@@ -180,9 +181,9 @@ namespace Signet.Controls.TreeDataGrid.Tests
                     .GetVisualChildren()
                     .Cast<TreeDataGridCell>()
                     .ToList();
-                Assert.Equal(2, cells.Count);
-                Assert.Equal(25, cells[0].Bounds.Width);
-                Assert.Equal(75, cells[1].Bounds.Width);
+                cells.Count.Should().Be(2);
+                cells[0].Bounds.Width.Should().Be(25);
+                cells[1].Bounds.Width.Should().Be(75);
             }
         }
 
@@ -202,7 +203,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 .Cast<TreeDataGridRow>()
                 .ToList();
 
-            Assert.Equal(10, rows.Count);
+            rows.Count.Should().Be(10);
 
             foreach (var row in rows)
             {
@@ -210,9 +211,9 @@ namespace Signet.Controls.TreeDataGrid.Tests
                     .GetVisualChildren()
                     .Cast<TreeDataGridCell>()
                     .ToList();
-                Assert.Equal(2, cells.Count);
-                Assert.Equal(50, cells[0].Bounds.Width);
-                Assert.Equal(50, cells[1].Bounds.Width);
+                cells.Count.Should().Be(2);
+                cells[0].Bounds.Width.Should().Be(50);
+                cells[1].Bounds.Width.Should().Be(50);
             }
         }
 
@@ -232,7 +233,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 .Cast<TreeDataGridRow>()
                 .ToList();
 
-            Assert.Equal(10, rows.Count);
+            rows.Count.Should().Be(10);
 
             foreach (var row in rows)
             {
@@ -240,9 +241,9 @@ namespace Signet.Controls.TreeDataGrid.Tests
                     .GetVisualChildren()
                     .Cast<TreeDataGridCell>()
                     .ToList();
-                Assert.Equal(2, cells!.Count);
-                Assert.Equal(75, cells[0].Bounds.Width);
-                Assert.Equal(25, cells[1].Bounds.Width);
+                cells!.Count.Should().Be(2);
+                cells[0].Bounds.Width.Should().Be(75);
+                cells[1].Bounds.Width.Should().Be(25);
             }
         }
 
@@ -259,7 +260,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
             target.UpdateLayout();
 
-            Assert.Equal(20, raised);
+            raised.Should().Be(20);
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -271,23 +272,23 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
             target.CellClearing += (s, e) =>
             {
-                Assert.Equal(clearingRaised % 2, e.ColumnIndex);
-                Assert.Equal(0, e.RowIndex);
+                e.ColumnIndex.Should().Be(clearingRaised % 2);
+                e.RowIndex.Should().Be(0);
                 ++clearingRaised;
             };
 
             target.CellPrepared += (s, e) =>
             {
-                Assert.Equal(preparedRaised % 2, e.ColumnIndex);
-                Assert.Equal(10, e.RowIndex);
+                e.ColumnIndex.Should().Be(preparedRaised % 2);
+                e.RowIndex.Should().Be(10);
                 ++preparedRaised;
             };
 
             target.Scroll!.Offset = new Vector(0, 10);
             Layout(target);
 
-            Assert.Equal(2, clearingRaised);
-            Assert.Equal(2, preparedRaised);
+            clearingRaised.Should().Be(2);
+            preparedRaised.Should().Be(2);
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -298,14 +299,14 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
             target.CellValueChanged += (s, e) =>
             {
-                Assert.Equal(1, e.ColumnIndex);
-                Assert.Equal(1, e.RowIndex);
+                e.ColumnIndex.Should().Be(1);
+                e.RowIndex.Should().Be(1);
                 ++raised;
             };
 
             items[1].Title = "Changed";
 
-            Assert.Equal(1, raised);
+            raised.Should().Be(1);
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -316,22 +317,22 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
             target.CellValueChanged += (s, e) =>
             {
-                Assert.Equal(1, e.ColumnIndex);
-                Assert.Equal(1, e.RowIndex);
+                e.ColumnIndex.Should().Be(1);
+                e.RowIndex.Should().Be(1);
                 ++raised;
             };
 
-            var cell = Assert.IsType<TreeDataGridTextCell>(target.TryGetRow(1)?.TryGetCell(1));
+            var cell = (target.TryGetRow(1)?.TryGetCell(1)).Should().BeOfType<TreeDataGridTextCell>().Subject;
             cell.BeginEdit();
             cell.Value = "Changed";
 
-            Assert.Equal(0, raised);
-            Assert.Equal("Item 1", items[1].Title);
+            raised.Should().Be(0);
+            items[1].Title.Should().Be("Item 1");
 
             cell.EndEdit();
 
-            Assert.Equal("Changed", items[1].Title);
-            Assert.Equal(1, raised);
+            items[1].Title.Should().Be("Changed");
+            raised.Should().Be(1);
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -344,7 +345,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
             target.UpdateLayout();
 
-            Assert.Equal(0, raised);
+            raised.Should().Be(0);
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -358,7 +359,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             target.Scroll!.Offset = new Vector(0, 10);
             Layout(target);
 
-            Assert.Equal(0, raised);
+            raised.Should().Be(0);
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -375,10 +376,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
             AssertColumnIndexes(target, 0, 3);
 
             var columns = (ColumnList<Model>)target.Columns!;
-            Assert.Equal(30, columns[0].ActualWidth);
-            Assert.Equal(50, columns[1].ActualWidth);
-            Assert.Equal(50, columns[2].ActualWidth);
-            Assert.True(double.IsNaN(columns[3].ActualWidth));
+            columns[0].ActualWidth.Should().Be(30);
+            columns[1].ActualWidth.Should().Be(50);
+            columns[2].ActualWidth.Should().Be(50);
+            double.IsNaN(columns[3].ActualWidth).Should().BeTrue();
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -436,18 +437,18 @@ namespace Signet.Controls.TreeDataGrid.Tests
             target.Source = newSource;
 
             // The columns should not have an ActualWidth yet.
-            Assert.True(double.IsNaN(newSource.Columns[0].ActualWidth));
-            Assert.True(double.IsNaN(newSource.Columns[1].ActualWidth));
-            Assert.True(double.IsNaN(newSource.Columns[2].ActualWidth));
+            double.IsNaN(newSource.Columns[0].ActualWidth).Should().BeTrue();
+            double.IsNaN(newSource.Columns[1].ActualWidth).Should().BeTrue();
+            double.IsNaN(newSource.Columns[2].ActualWidth).Should().BeTrue();
 
             // Do a layout pass and check that the columns have been correctly sized.
             target.UpdateLayout();
             AssertColumnIndexes(target, 0, 3);
 
             var columns = (ColumnList<Model>)target.Columns!;
-            Assert.Equal(60, columns[0].ActualWidth);
-            Assert.Equal(20, columns[1].ActualWidth);
-            Assert.Equal(20, columns[2].ActualWidth);
+            columns[0].ActualWidth.Should().Be(60);
+            columns[1].ActualWidth.Should().Be(20);
+            columns[2].ActualWidth.Should().Be(20);
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -465,11 +466,11 @@ namespace Signet.Controls.TreeDataGrid.Tests
                         .OrderBy(x => x.ColumnIndex)
                         .ToList();
 
-                    Assert.Equal(3, cells.Count);
-                    Assert.Equal(1, cells[0].ColumnIndex);
-                    Assert.Equal(100, cells[0].Bounds.Left);
-                    Assert.Equal(150, cells[1].Bounds.Left);
-                    Assert.Equal(200, cells[2].Bounds.Left);
+                    cells.Count.Should().Be(3);
+                    cells[0].ColumnIndex.Should().Be(1);
+                    cells[0].Bounds.Left.Should().Be(100);
+                    cells[1].Bounds.Left.Should().Be(150);
+                    cells[2].Bounds.Left.Should().Be(200);
                 }
             }
 
@@ -513,13 +514,12 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 .Cast<TreeDataGridRow>()
                 .ToList();
 
-            Assert.Equal(10, rows.Count);
+            rows.Count.Should().Be(10);
 
             for (var i = 0; i < rows.Count; i++)
             {
-                var cell = Assert.IsType<TreeDataGridTextCell>(
-                    Assert.Single(rows[i].CellsPresenter!.GetVisualChildren().Cast<TreeDataGridCell>()));
-                Assert.Equal($"Hello Item {i}", cell.Value);
+                var cell = rows[i].CellsPresenter!.GetVisualChildren().Cast<TreeDataGridCell>().Should().ContainSingle().Subject.Should().BeOfType<TreeDataGridTextCell>().Subject;
+                cell.Value.Should().Be($"Hello Item {i}");
             }
         }
 
@@ -539,11 +539,11 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 .Cast<TreeDataGridRow>()
                 .ToList();
 
-            Assert.Equal(10, rows.Count);
+            rows.Count.Should().Be(10);
             items[1].Title = "World";
-            var cell = Assert.IsType<TreeDataGridTextCell>(target.TryGetCell(0, 1));
+            var cell = target.TryGetCell(0, 1).Should().BeOfType<TreeDataGridTextCell>().Subject;
 
-            Assert.Equal("Hello World", cell.Value);
+            cell.Value.Should().Be("Hello World");
         }
 
         public class RemoveItems
@@ -562,7 +562,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 Layout(target);
 
                 AssertRowIndexes(target, 10, 10);
-                Assert.Equal(new Vector(0, 100), target.Scroll.Offset);
+                target.Scroll.Offset.Should().Be(new Vector(0, 100));
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -579,7 +579,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 Layout(target);
 
                 AssertRowIndexes(target, 6, 10);
-                Assert.Equal(new Vector(0, 60), target.Scroll.Offset);
+                target.Scroll.Offset.Should().Be(new Vector(0, 60));
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -596,7 +596,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 Layout(target);
 
                 AssertRowIndexes(target, 10, 10);
-                Assert.Equal(new Vector(0, 100), target.Scroll.Offset);
+                target.Scroll.Offset.Should().Be(new Vector(0, 100));
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -613,7 +613,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 Layout(target);
 
                 AssertRowIndexes(target, 0, 10);
-                Assert.Equal(new Vector(0, 0), target.Scroll.Offset);
+                target.Scroll.Offset.Should().Be(new Vector(0, 0));
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -630,7 +630,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 Layout(target);
 
                 AssertRowIndexes(target, 0, 10);
-                Assert.Equal(new Vector(0, 0), target.Scroll.Offset);
+                target.Scroll.Offset.Should().Be(new Vector(0, 0));
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -647,7 +647,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 Layout(target);
 
                 AssertRowIndexes(target, 10, 10);
-                Assert.Equal(new Vector(0, 100), target.Scroll.Offset);
+                target.Scroll.Offset.Should().Be(new Vector(0, 100));
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -658,11 +658,11 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 Layout(target);
                 target.RowSelection!.Select(3);
 
-                Assert.Equal(3, target.RowSelection.SelectedIndex);
+                target.RowSelection.SelectedIndex.Should().Be(3);
 
                 items.RemoveAt(3);
 
-                Assert.Equal(-1, target.RowSelection.SelectedIndex);
+                target.RowSelection.SelectedIndex.Should().Be(-1);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -674,11 +674,11 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 Layout(target);
                 target.RowSelection!.Select(3);
 
-                Assert.Equal(3, target.RowSelection.SelectedIndex);
+                target.RowSelection.SelectedIndex.Should().Be(3);
 
                 items.RemoveAt(3);
 
-                Assert.Equal(-1, target.RowSelection.SelectedIndex);
+                target.RowSelection.SelectedIndex.Should().Be(-1);
             }
         }
 
@@ -690,14 +690,13 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 new TextColumn<Model, int>("ID", x => x.Id, width: new GridLength(100, GridUnitType.Pixel)),
                 new TextColumn<Model, string?>("Title1", x => x.Title,  width: new GridLength(100, GridUnitType.Pixel)),
             ]);
-            var scroll = Assert.IsType<ScrollViewer>(target.Scroll);
-            var headerScroll = Assert.IsType<ScrollViewer>(
-                target.GetVisualDescendants().Single(x => x.Name == "PART_HeaderScrollViewer"));
+            var scroll = target.Scroll.Should().BeOfType<ScrollViewer>().Subject;
+            var headerScroll = (target.GetVisualDescendants().Single(x => x.Name == "PART_HeaderScrollViewer")).Should().BeOfType<ScrollViewer>().Subject;
 
-            Assert.Equal(new(100, 100), scroll.Viewport);
-            Assert.Equal(new(200, 1000), scroll.Extent);
-            Assert.Equal(new(100, 0), headerScroll.Viewport);
-            Assert.Equal(new(200, 0), headerScroll.Extent);
+            scroll.Viewport.Should().Be(new Size(100, 100));
+            scroll.Extent.Should().Be(new Size(200, 1000));
+            headerScroll.Viewport.Should().Be(new Size(100, 0));
+            headerScroll.Extent.Should().Be(new Size(200, 0));
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -708,14 +707,13 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 new TextColumn<Model, int>("ID", x => x.Id, width: new GridLength(100, GridUnitType.Pixel)),
                 new TextColumn<Model, string?>("Title1", x => x.Title,  width: new GridLength(100, GridUnitType.Pixel)),
             ], itemCount: 0);
-            var scroll = Assert.IsType<ScrollViewer>(target.Scroll);
-            var headerScroll = Assert.IsType<ScrollViewer>(
-                target.GetVisualDescendants().Single(x => x.Name == "PART_HeaderScrollViewer"));
+            var scroll = target.Scroll.Should().BeOfType<ScrollViewer>().Subject;
+            var headerScroll = (target.GetVisualDescendants().Single(x => x.Name == "PART_HeaderScrollViewer")).Should().BeOfType<ScrollViewer>().Subject;
 
-            Assert.Equal(new(100, 100), scroll.Viewport);
-            Assert.Equal(new(200, 100), scroll.Extent);
-            Assert.Equal(new(100, 0), headerScroll.Viewport);
-            Assert.Equal(new(200, 0), headerScroll.Extent);
+            scroll.Viewport.Should().Be(new Size(100, 100));
+            scroll.Extent.Should().Be(new Size(200, 100));
+            headerScroll.Viewport.Should().Be(new Size(100, 0));
+            headerScroll.Extent.Should().Be(new Size(200, 0));
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -726,9 +724,8 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 new TextColumn<Model, int>("ID", x => x.Id, width: new GridLength(100, GridUnitType.Pixel)),
                 new TextColumn<Model, string?>("Title1", x => x.Title,  width: new GridLength(100, GridUnitType.Pixel)),
             ]);
-            var scroll = Assert.IsType<ScrollViewer>(target.Scroll);
-            var headerScroll = Assert.IsType<ScrollViewer>(
-                target.GetVisualDescendants().Single(x => x.Name == "PART_HeaderScrollViewer"));
+            var scroll = target.Scroll.Should().BeOfType<ScrollViewer>().Subject;
+            var headerScroll = (target.GetVisualDescendants().Single(x => x.Name == "PART_HeaderScrollViewer")).Should().BeOfType<ScrollViewer>().Subject;
 
             scroll.PropertyChanged += (s, e) => 
             { 
@@ -739,17 +736,17 @@ namespace Signet.Controls.TreeDataGrid.Tests
             items.Clear();
             target.UpdateLayout();
 
-            Assert.Equal(new(100, 100), scroll.Viewport);
-            Assert.Equal(new(200, 100), scroll.Extent);
-            Assert.Equal(new(100, 0), headerScroll.Viewport);
-            Assert.Equal(new(200, 0), headerScroll.Extent);
+            scroll.Viewport.Should().Be(new Size(100, 100));
+            scroll.Extent.Should().Be(new Size(200, 100));
+            headerScroll.Viewport.Should().Be(new Size(100, 0));
+            headerScroll.Extent.Should().Be(new Size(200, 0));
         }
 
         private static void AssertRowIndexes(TreeDataGrid target, int firstRowIndex, int rowCount)
         {
             var presenter = target.RowsPresenter;
 
-            Assert.NotNull(presenter);
+            presenter.Should().NotBeNull();
 
             var rowIndexes = presenter?.GetVisualChildren()
                 .Cast<TreeDataGridRow>()
@@ -758,9 +755,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 .OrderBy(x => x)
                 .ToList();
 
-            Assert.Equal(
-                Enumerable.Range(firstRowIndex, rowCount),
-                rowIndexes);
+            rowIndexes.Should().Equal(Enumerable.Range(firstRowIndex, rowCount));
 
             rowIndexes = presenter!.RealizedElements
                 .Cast<TreeDataGridRow>()
@@ -769,16 +764,14 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 .OrderBy(x => x)
                 .ToList();
 
-            Assert.Equal(
-                Enumerable.Range(firstRowIndex, rowCount),
-                rowIndexes);
+            rowIndexes.Should().Equal(Enumerable.Range(firstRowIndex, rowCount));
         }
 
         private static void AssertColumnIndexes(TreeDataGrid target, int firstColumnIndex, int columnCount)
         {
             var presenter = target.ColumnHeadersPresenter;
 
-            Assert.NotNull(presenter);
+            presenter.Should().NotBeNull();
 
             var columnIndexes = presenter?.GetVisualChildren()
                 .Cast<TreeDataGridColumnHeader>()
@@ -787,9 +780,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 .OrderBy(x => x)
                 .ToList();
 
-            Assert.Equal(
-                Enumerable.Range(firstColumnIndex, columnCount),
-                columnIndexes);
+            columnIndexes.Should().Equal(Enumerable.Range(firstColumnIndex, columnCount));
 
             columnIndexes = presenter!.RealizedElements
                 .Cast<TreeDataGridColumnHeader>()
@@ -798,9 +789,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 .OrderBy(x => x)
                 .ToList();
 
-            Assert.Equal(
-                Enumerable.Range(firstColumnIndex, columnCount),
-                columnIndexes);
+            columnIndexes.Should().Equal(Enumerable.Range(firstColumnIndex, columnCount));
         }
 
         private static void AssertInteractionSelection(TreeDataGrid target, params int[] selected)
@@ -809,7 +798,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
             for (var i = 0; i < target.Rows!.Count; ++i)
             {
-                Assert.Equal(selected.Contains(i), selection.IsRowSelected(i));
+                selection.IsRowSelected(i).Should().Be(selected.Contains(i));
             }
         }
 

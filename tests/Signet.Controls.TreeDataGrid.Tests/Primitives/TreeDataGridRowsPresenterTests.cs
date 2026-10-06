@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,26 +41,26 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
                     .Where(x => x is SolidColorBrush brush && brush.Color == Colors.Red).Count();
             }
 
-            Assert.True(CountEvenRedRows(target) == 5);
+            (CountEvenRedRows(target) == 5).Should().BeTrue();
 
-            Assert.True(items.Count == 100);
+            (items.Count == 100).Should().BeTrue();
 
             items.RemoveAt(0);
             items.RemoveAt(0);
 
-            Assert.True(items.Count == 98);
+            (items.Count == 98).Should().BeTrue();
 
             Layout(target);
 
-            Assert.True(CountEvenRedRows(target) == 5);
+            (CountEvenRedRows(target) == 5).Should().BeTrue();
 
             items.Add(new Model() { Id = 101, Title = "Item 101" });
 
-            Assert.True(items.Count == 99);
+            (items.Count == 99).Should().BeTrue();
 
             Layout(target); 
 
-            Assert.True(CountEvenRedRows(target) == 5);
+            (CountEvenRedRows(target) == 5).Should().BeTrue();
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -67,7 +68,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
         {
             var (target, scroll, _) = CreateTarget();
 
-            Assert.Equal(new Size(100, 1000), scroll.Extent);
+            scroll.Extent.Should().Be(new Size(100, 1000));
             AssertRowIndexes(target, 0, 10);
             AssertRecyclable(target, 0);
         }
@@ -116,16 +117,16 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
         {
             var (target, _, items) = CreateTarget();
 
-            Assert.Equal(10, target.RealizedElements.Count);
+            target.RealizedElements.Count.Should().Be(10);
 
             items.Insert(2, new Model { Id = 100, Title = "New" });
 
-            Assert.Equal(11, target.RealizedElements.Count);
+            target.RealizedElements.Count.Should().Be(11);
 
             var indexes = GetRealizedRowIndexes(target);
 
             // Blank space inserted in realized elements and subsequent row indexes updated.
-            Assert.Equal(new[] { 0, 1, -1, 3, 4, 5, 6, 7, 8, 9, 10 }, indexes);
+            indexes.Should().Equal(new[] { 0, 1, -1, 3, 4, 5, 6, 7, 8, 9, 10 });
 
             var elements = target.RealizedElements.ToList();
             Layout(target);
@@ -133,12 +134,12 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
             indexes = GetRealizedRowIndexes(target);
 
             // After layout an element for the new row is created.
-            Assert.Equal(Enumerable.Range(0, 10), indexes);
+            indexes.Should().Equal(Enumerable.Range(0, 10));
 
             // But apart from the new row and the removed last row, all existing elements should be the same.
             elements[2] = target.RealizedElements.ElementAt(2);
             elements.RemoveAt(elements.Count - 1);
-            Assert.Equal(elements, target.RealizedElements);
+            target.RealizedElements.Should().Equal(elements);
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -146,7 +147,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
         {
             var (target, _, items) = CreateTarget();
 
-            Assert.Equal(10, target.RealizedElements.Count);
+            target.RealizedElements.Count.Should().Be(10);
 
             var toRecycle = target.RealizedElements.ElementAt(2);
             items.RemoveAt(2);
@@ -154,7 +155,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
             var indexes = GetRealizedRowIndexes(target);
 
             // Item removed from realized elements and subsequent row indexes updated.
-            Assert.Equal(Enumerable.Range(0, 9), indexes);
+            indexes.Should().Equal(Enumerable.Range(0, 9));
 
             var elements = target.RealizedElements.ToList();
             Layout(target);
@@ -162,11 +163,11 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
             indexes = GetRealizedRowIndexes(target);
 
             // After layout an element for the newly visible last row is created and indexes updated.
-            Assert.Equal(Enumerable.Range(0, 10), indexes);
+            indexes.Should().Equal(Enumerable.Range(0, 10));
 
             // And the removed row should now have been recycled as the last row.
             elements.Add(toRecycle);
-            Assert.Equal(elements, target.RealizedElements);
+            target.RealizedElements.Should().Equal(elements);
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -174,7 +175,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
         {
             var (target, scroll, items) = CreateTarget();
 
-            Assert.Equal(new Size(100, 1000), scroll.Extent);
+            scroll.Extent.Should().Be(new Size(100, 1000));
             AssertRowIndexes(target, 0, 10);
             AssertRecyclable(target, 0);
 
@@ -189,7 +190,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
         {
             var (target, scroll, items) = CreateTarget();
 
-            Assert.Equal(new Size(100, 1000), scroll.Extent);
+            scroll.Extent.Should().Be(new Size(100, 1000));
             scroll.Offset = new Vector(0, 900);
             Layout(target);
 
@@ -207,8 +208,8 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
         {
             var (target, _, items) = CreateTarget();
 
-            Assert.Equal(100, target!.Items!.Count);
-            Assert.Equal(10, target.RealizedElements.Count);
+            target!.Items!.Count.Should().Be(100);
+            target.RealizedElements.Count.Should().Be(10);
 
             items.RemoveRange(7, 93);
             Layout(target);
@@ -216,7 +217,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
 
             for (var i = 0; i < children.Count(); i++)
             {
-                Assert.Equal(children.ElementAt(i), target.RealizedElements[i]);
+                target.RealizedElements[i].Should().Be(children.ElementAt(i));
             }
         }
 
@@ -225,25 +226,25 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
         {
             var (target, _, items) = CreateTarget();
             Layout(target);
-            Assert.Equal(100, items.Count);
+            items.Count.Should().Be(100);
             items.RemoveRange(1, 99);
             Layout(target);
-            Assert.Single(target.Items!);
-            Assert.Single(target.GetVisualChildren());
+            target.Items!.Should().ContainSingle();
+            target.GetVisualChildren().Should().ContainSingle();
 
             target.Items = new AnonymousSortableRows<Model>(TreeDataGridItemsSourceView<Model>.Empty, null);
             Layout(target);
-            Assert.Empty(target.Items);
+            target.Items.Should().BeEmpty();
 
-            Assert.Empty(target.GetVisualChildren());
-            Assert.Empty(target.GetLogicalChildren());
+            target.GetVisualChildren().Should().BeEmpty();
+            target.GetLogicalChildren().Should().BeEmpty();
 
             target.Items = new AnonymousSortableRows<Model>(new TreeDataGridItemsSourceView<Model>(Enumerable.Range(0, 5)
                 .Select(x => new Model { Id = x, Title = "Item " + x, })), null);
             Layout(target);
-            Assert.Equal(5, target.Items.Count);
+            target.Items.Count.Should().Be(5);
 
-            Assert.Equal(5, target.GetVisualChildren().Count());
+            target.GetVisualChildren().Count().Should().Be(5);
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -251,7 +252,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
         {
             var (target, _, items) = CreateTarget();
 
-            Assert.Equal(10, target.RealizedElements.Count);
+            target.RealizedElements.Count.Should().Be(10);
 
             var toRecycle = target.RealizedElements.ElementAt(0);
             var item = items[0];
@@ -260,15 +261,15 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
             var indexes = GetRealizedRowIndexes(target);
 
             // Item removed from realized elements and subsequent row indexes updated.
-            Assert.DoesNotContain(toRecycle, target.RealizedElements);
-            Assert.Equal(Enumerable.Range(0, 9), indexes);
+            target.RealizedElements.Should().NotContain(toRecycle);
+            indexes.Should().Equal(Enumerable.Range(0, 9));
 
             items.Insert(0, item);
 
             // Row indexes updated.
             indexes = GetRealizedRowIndexes(target);
 
-            Assert.Equal(new[] { -1, 1, 2, 3, 4, 5, 6, 7, 8, 9 }, indexes);
+            indexes.Should().Equal(new[] { -1, 1, 2, 3, 4, 5, 6, 7, 8, 9 });
 
             var elements = target.RealizedElements.ToList();
             Layout(target);
@@ -276,11 +277,11 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
             indexes = GetRealizedRowIndexes(target);
 
             // After layout an element for the newly visible last row is created and indexes updated.
-            Assert.Equal(Enumerable.Range(0, 10), indexes);
+            indexes.Should().Equal(Enumerable.Range(0, 10));
 
             // And the removed row should now have been recycled as the first row.
             elements[0] = toRecycle;
-            Assert.Equal(elements, target.RealizedElements);
+            target.RealizedElements.Should().Equal(elements);
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -292,7 +293,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
             scroll.Offset = new Vector(0, 10);
             Layout(target);
 
-            Assert.Equal(10, target.RealizedElements.Count);
+            target.RealizedElements.Count.Should().Be(10);
 
             var toRecycle = target.RealizedElements.Skip(4).Take(6).ToList();
             items.RemoveRange(5, 10);
@@ -300,7 +301,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
             var indexes = GetRealizedRowIndexes(target);
 
             // Item removed from realized elements and subsequent row indexes updated.
-            Assert.Equal(Enumerable.Range(1, 4), indexes);
+            indexes.Should().Equal(Enumerable.Range(1, 4));
 
             var elements = target.RealizedElements.ToList();
             Layout(target);
@@ -308,11 +309,11 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
             indexes = GetRealizedRowIndexes(target);
 
             // After layout an element for the newly visible last row is created and indexes updated.
-            Assert.Equal(Enumerable.Range(1, 10), indexes);
+            indexes.Should().Equal(Enumerable.Range(1, 10));
 
             // And the removed row should now have been recycled as the last row.
             elements.AddRange(toRecycle);
-            Assert.Equal(elements, target.RealizedElements);
+            target.RealizedElements.Should().Equal(elements);
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -324,13 +325,13 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
             scroll.Offset = new Vector(0, 10);
             Layout(target);
 
-            Assert.Equal(10, target.RealizedElements.Count);
+            target.RealizedElements.Count.Should().Be(10);
 
             // Remove all items using RemoveRange.
             items.RemoveRange(0, items.Count);
 
             // All items removed
-            Assert.Empty(target.RealizedElements);
+            target.RealizedElements.Should().BeEmpty();
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -342,7 +343,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
             scroll.Offset = new Vector(0, 100);
             Layout(target);
 
-            Assert.Equal(10, target.RealizedElements.Count);
+            target.RealizedElements.Count.Should().Be(10);
 
             // Remove all but the first five items.
             items.RemoveRange(5, 95);
@@ -350,7 +351,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
             Layout(target);
 
             // The target bounds should be updated, which will cause the scrollviewer to scroll back up.
-            Assert.Equal(new Size(100, 100), target.Bounds.Size);
+            target.Bounds.Size.Should().Be(new Size(100, 100));
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -374,7 +375,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
             Layout(target);
 
             // The correct element should be shown.
-            Assert.Same(items[0], target.RealizedElements.ElementAt(0)!.DataContext);
+            target.RealizedElements.ElementAt(0)!.DataContext.Should().BeSameAs(items[0]);
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -398,7 +399,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
             Layout(target);
 
             // The correct element should be shown.
-            Assert.Same(items[0], target.RealizedElements.ElementAt(0)!.DataContext);
+            target.RealizedElements.ElementAt(0)!.DataContext.Should().BeSameAs(items[0]);
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -422,7 +423,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
             Layout(target);
 
             // The correct element should be shown.
-            Assert.Same(items[0], target.RealizedElements.ElementAt(0)!.DataContext);
+            target.RealizedElements.ElementAt(0)!.DataContext.Should().BeSameAs(items[0]);
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -438,7 +439,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
 
             foreach (var column in columns)
             {
-                Assert.Equal(50, column.ActualWidth);
+                column.ActualWidth.Should().Be(50);
             }
         }
 
@@ -497,19 +498,19 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
 
             for (var i = 0; i < 10; ++i)
             {
-                Assert.Same(items[i], target.RealizedElements[i]!.DataContext);
+                target.RealizedElements[i]!.DataContext.Should().BeSameAs(items[i]);
             }
 
             items.RemoveRange(0, 99);
             Layout(target);
 
-            Assert.Equal(-1, lastRow.RowIndex);
-            Assert.Null(lastRow.DataContext);
+            lastRow.RowIndex.Should().Be(-1);
+            lastRow.DataContext.Should().BeNull();
         }
 
         private static void AssertRowIndexes(TreeDataGridRowsPresenter? target, int firstRowIndex, int rowCount)
         {
-            Assert.NotNull(target);
+            target.Should().NotBeNull();
 
             var rowIndexes = target!.GetVisualChildren()
                 .Cast<TreeDataGridRow>()
@@ -518,9 +519,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
                 .OrderBy(x => x)
                 .ToList();
 
-            Assert.Equal(
-                Enumerable.Range(firstRowIndex, rowCount),
-                rowIndexes);
+            rowIndexes.Should().Equal(Enumerable.Range(firstRowIndex, rowCount));
 
             rowIndexes = target!.RealizedElements
                 .Cast<TreeDataGridRow>()
@@ -529,25 +528,23 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
                 .OrderBy(x => x)
                 .ToList();
 
-            Assert.Equal(
-                Enumerable.Range(firstRowIndex, rowCount),
-                rowIndexes);
+            rowIndexes.Should().Equal(Enumerable.Range(firstRowIndex, rowCount));
         }
 
         private static void AssertRecyclable(TreeDataGridRowsPresenter? target, int count)
         {
-            Assert.NotNull(target);
+            target.Should().NotBeNull();
 
             var recyclableRows = target!.GetLogicalChildren()
                 .Cast<TreeDataGridRow>()
                 .Where(x => !x.IsVisible)
                 .ToList();
-            Assert.Equal(count, recyclableRows.Count);
+            recyclableRows.Count.Should().Be(count);
         }
 
         private static List<int> GetRealizedRowIndexes(TreeDataGridRowsPresenter? target)
         {
-            Assert.NotNull(target);
+            target.Should().NotBeNull();
 
             return target!.RealizedElements
                 .Cast<TreeDataGridRow?>()

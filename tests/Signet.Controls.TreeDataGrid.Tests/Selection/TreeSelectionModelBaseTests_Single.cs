@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -26,22 +27,22 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.SelectionChanged += (s, e) =>
                 {
-                    Assert.Equal(new[] { new IndexPath(0, 2) }, e.DeselectedIndexes);
-                    Assert.Equal("Node 0-2", e.DeselectedItems.Single()!.Caption);
-                    Assert.Empty(e.SelectedIndexes);
-                    Assert.Empty(e.SelectedItems);
-                    Assert.Equal(0, target.Count);
+                    e.DeselectedIndexes.Should().Equal(new[] { new IndexPath(0, 2) });
+                    e.DeselectedItems.Single()!.Caption.Should().Be("Node 0-2");
+                    e.SelectedIndexes.Should().BeEmpty();
+                    e.SelectedItems.Should().BeEmpty();
+                    target.Count.Should().Be(0);
                     ++raised;
                 };
 
                 target.Source = CreateData(depth: 1);
 
-                Assert.Equal(0, target.Count);
-                Assert.Equal(-1, target.SelectedIndex);
-                Assert.Empty(target.SelectedIndexes);
-                Assert.Null(target.SelectedItem);
-                Assert.Empty(target.SelectedItems);
-                Assert.Equal(1, raised);
+                target.Count.Should().Be(0);
+                target.SelectedIndex.Should().Be(-1);
+                target.SelectedIndexes.Should().BeEmpty();
+                target.SelectedItem.Should().BeNull();
+                target.SelectedItems.Should().BeEmpty();
+                raised.Should().Be(1);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -63,22 +64,22 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.SelectionChanged += (s, e) =>
                 {
-                    Assert.Empty(e.DeselectedIndexes);
-                    Assert.Empty(e.DeselectedItems);
-                    Assert.Equal(new IndexPath(0, 2), e.SelectedIndexes.Single());
-                    Assert.Equal("Node 0-2", e.SelectedItems.Single()!.Caption);
-                    Assert.Equal(1, target.Count);
+                    e.DeselectedIndexes.Should().BeEmpty();
+                    e.DeselectedItems.Should().BeEmpty();
+                    e.SelectedIndexes.Single().Should().Be(new IndexPath(0, 2));
+                    e.SelectedItems.Single()!.Caption.Should().Be("Node 0-2");
+                    target.Count.Should().Be(1);
                     ++raised;
                 };
 
                 target.SelectedIndex = new IndexPath(0, 2);
 
-                Assert.Equal(1, raised);
-                Assert.Equal(1, target.Count);
-                Assert.Equal(new IndexPath(0, 2), target.SelectedIndex);
-                Assert.Equal(new IndexPath(0, 2), target.SelectedIndexes.Single());
-                Assert.Equal("Node 0-2", target.SelectedItem!.Caption);
-                Assert.Equal("Node 0-2", target.SelectedItems.Single()!.Caption);
+                raised.Should().Be(1);
+                target.Count.Should().Be(1);
+                target.SelectedIndex.Should().Be(new IndexPath(0, 2));
+                target.SelectedIndexes.Single().Should().Be(new IndexPath(0, 2));
+                target.SelectedItem!.Caption.Should().Be("Node 0-2");
+                target.SelectedItems.Single()!.Caption.Should().Be("Node 0-2");
             }
             
             [AvaloniaFact(Timeout = 10000)]
@@ -90,21 +91,21 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.SelectionChanged += (s, e) =>
                 {
-                    Assert.Empty(e.DeselectedIndexes);
-                    Assert.Empty(e.DeselectedItems);
-                    Assert.Equal(new IndexPath(0, 0, 2), e.SelectedIndexes.Single());
-                    Assert.Equal("Node 0-0-2", e.SelectedItems.Single()!.Caption);
+                    e.DeselectedIndexes.Should().BeEmpty();
+                    e.DeselectedItems.Should().BeEmpty();
+                    e.SelectedIndexes.Single().Should().Be(new IndexPath(0, 0, 2));
+                    e.SelectedItems.Single()!.Caption.Should().Be("Node 0-0-2");
                     ++raised;
                 };
 
                 target.SelectedIndex = new IndexPath(0, 0, 2);
 
-                Assert.Equal(1, raised);
-                Assert.Equal(1, target.Count);
-                Assert.Equal(new IndexPath(0, 0, 2), target.SelectedIndex);
-                Assert.Equal(new IndexPath(0, 0, 2), target.SelectedIndexes.Single());
-                Assert.Equal("Node 0-0-2", target.SelectedItem!.Caption);
-                Assert.Equal("Node 0-0-2", target.SelectedItems.Single()!.Caption);
+                raised.Should().Be(1);
+                target.Count.Should().Be(1);
+                target.SelectedIndex.Should().Be(new IndexPath(0, 0, 2));
+                target.SelectedIndexes.Single().Should().Be(new IndexPath(0, 0, 2));
+                target.SelectedItem!.Caption.Should().Be("Node 0-0-2");
+                target.SelectedItems.Single()!.Caption.Should().Be("Node 0-0-2");
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -116,21 +117,21 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 target.SelectedIndex = new IndexPath(0, 1);
                 target.SelectionChanged += (s, e) =>
                 {
-                    Assert.Equal(new IndexPath(0, 1), e.DeselectedIndexes.Single());
-                    Assert.Equal("Node 0-1", e.DeselectedItems.Single()!.Caption);
-                    Assert.Equal(new IndexPath(0, 2), e.SelectedIndexes.Single());
-                    Assert.Equal("Node 0-2", e.SelectedItems.Single()!.Caption);
+                    e.DeselectedIndexes.Single().Should().Be(new IndexPath(0, 1));
+                    e.DeselectedItems.Single()!.Caption.Should().Be("Node 0-1");
+                    e.SelectedIndexes.Single().Should().Be(new IndexPath(0, 2));
+                    e.SelectedItems.Single()!.Caption.Should().Be("Node 0-2");
                     ++raised;
                 };
 
                 target.SelectedIndex = new IndexPath(0, 2);
 
-                Assert.Equal(1, raised);
-                Assert.Equal(1, target.Count);
-                Assert.Equal(new IndexPath(0, 2), target.SelectedIndex);
-                Assert.Equal(new IndexPath(0, 2), target.SelectedIndexes.Single());
-                Assert.Equal("Node 0-2", target.SelectedItem!.Caption);
-                Assert.Equal("Node 0-2", target.SelectedItems.Single()!.Caption);
+                raised.Should().Be(1);
+                target.Count.Should().Be(1);
+                target.SelectedIndex.Should().Be(new IndexPath(0, 2));
+                target.SelectedIndexes.Single().Should().Be(new IndexPath(0, 2));
+                target.SelectedItem!.Caption.Should().Be("Node 0-2");
+                target.SelectedItems.Single()!.Caption.Should().Be("Node 0-2");
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -142,21 +143,21 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 target.SelectedIndex = new IndexPath(0, 2);
                 target.SelectionChanged += (s, e) =>
                 {
-                    Assert.Equal(new IndexPath(0, 2), e.DeselectedIndexes.Single());
-                    Assert.Equal("Node 0-2", e.DeselectedItems.Single()!.Caption);
-                    Assert.Empty(e.SelectedIndexes);
-                    Assert.Empty(e.SelectedItems);
+                    e.DeselectedIndexes.Single().Should().Be(new IndexPath(0, 2));
+                    e.DeselectedItems.Single()!.Caption.Should().Be("Node 0-2");
+                    e.SelectedIndexes.Should().BeEmpty();
+                    e.SelectedItems.Should().BeEmpty();
                     ++raised;
                 };
 
                 target.SelectedIndex = default;
 
-                Assert.Equal(1, raised);
-                Assert.Equal(0, target.Count);
-                Assert.Equal(default, target.SelectedIndex);
-                Assert.Empty(target.SelectedIndexes);
-                Assert.Null(target.SelectedItem);
-                Assert.Empty(target.SelectedItems);
+                raised.Should().Be(1);
+                target.Count.Should().Be(0);
+                target.SelectedIndex.Should().Be(default);
+                target.SelectedIndexes.Should().BeEmpty();
+                target.SelectedItem.Should().BeNull();
+                target.SelectedItems.Should().BeEmpty();
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -168,21 +169,21 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 target.SelectedIndex = new IndexPath(0, 2);
                 target.SelectionChanged += (s, e) =>
                 {
-                    Assert.Equal(new IndexPath(0, 2), e.DeselectedIndexes.Single());
-                    Assert.Equal("Node 0-2", e.DeselectedItems.Single()!.Caption);
-                    Assert.Empty(e.SelectedIndexes);
-                    Assert.Empty(e.SelectedItems);
+                    e.DeselectedIndexes.Single().Should().Be(new IndexPath(0, 2));
+                    e.DeselectedItems.Single()!.Caption.Should().Be("Node 0-2");
+                    e.SelectedIndexes.Should().BeEmpty();
+                    e.SelectedItems.Should().BeEmpty();
                     ++raised;
                 };
 
                 target.SelectedIndex = new IndexPath(5, 10, 250);
 
-                Assert.Equal(1, raised);
-                Assert.Equal(0, target.Count);
-                Assert.Equal(default, target.SelectedIndex);
-                Assert.Empty(target.SelectedIndexes);
-                Assert.Null(target.SelectedItem);
-                Assert.Empty(target.SelectedItems);
+                raised.Should().Be(1);
+                target.Count.Should().Be(0);
+                target.SelectedIndex.Should().Be(default);
+                target.SelectedIndexes.Should().BeEmpty();
+                target.SelectedItem.Should().BeNull();
+                target.SelectedItems.Should().BeEmpty();
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -193,21 +194,21 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.SelectionChanged += (s, e) =>
                 {
-                    Assert.Empty(e.DeselectedIndexes);
-                    Assert.Empty(e.DeselectedItems);
-                    Assert.Equal(new IndexPath(1, 2), e.SelectedIndexes.Single());
-                    Assert.Equal("Node 1-2", e.SelectedItems.Single()!.Caption);
+                    e.DeselectedIndexes.Should().BeEmpty();
+                    e.DeselectedItems.Should().BeEmpty();
+                    e.SelectedIndexes.Single().Should().Be(new IndexPath(1, 2));
+                    e.SelectedItems.Single()!.Caption.Should().Be("Node 1-2");
                     ++raised;
                 };
 
                 target.SelectedIndex = new IndexPath(1, 2);
 
-                Assert.Equal(1, raised);
-                Assert.Equal(1, target.Count);
-                Assert.Equal(new IndexPath(1, 2), target.SelectedIndex);
-                Assert.Equal(new IndexPath(1, 2), target.SelectedIndexes.Single());
-                Assert.Equal("Node 1-2", target.SelectedItem!.Caption);
-                Assert.Equal("Node 1-2", target.SelectedItems.Single()!.Caption);
+                raised.Should().Be(1);
+                target.Count.Should().Be(1);
+                target.SelectedIndex.Should().Be(new IndexPath(1, 2));
+                target.SelectedIndexes.Single().Should().Be(new IndexPath(1, 2));
+                target.SelectedItem!.Caption.Should().Be("Node 1-2");
+                target.SelectedItems.Single()!.Caption.Should().Be("Node 1-2");
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -219,7 +220,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 data.Add(new Node());
 
-                Assert.Equal(new IndexPath(0), target.SelectedIndex);
+                target.SelectedIndex.Should().Be(new IndexPath(0));
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -238,7 +239,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.SelectedIndex = new IndexPath(0, 2);
 
-                Assert.Equal(1, raised);
+                raised.Should().Be(1);
             }
 
             private class MockBinding : ICollectionChangedListener
@@ -284,7 +285,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.SelectedIndex = new IndexPath(1);
 
-                Assert.Equal(1, raised);
+                raised.Should().Be(1);
             }
         }
 
@@ -306,7 +307,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.SelectedIndex = new IndexPath(1);
 
-                Assert.Equal(1, raised);
+                raised.Should().Be(1);
             }
         }
 
@@ -328,7 +329,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.SelectedIndex = new IndexPath(1);
 
-                Assert.Equal(1, raised);
+                raised.Should().Be(1);
             }
         }
         
@@ -342,21 +343,21 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.SelectionChanged += (s, e) =>
                 {
-                    Assert.Empty(e.DeselectedIndexes);
-                    Assert.Empty(e.DeselectedItems);
-                    Assert.Equal(new IndexPath(0, 2), e.SelectedIndexes.Single());
-                    Assert.Equal("Node 0-2", e.SelectedItems.Single()!.Caption);
+                    e.DeselectedIndexes.Should().BeEmpty();
+                    e.DeselectedItems.Should().BeEmpty();
+                    e.SelectedIndexes.Single().Should().Be(new IndexPath(0, 2));
+                    e.SelectedItems.Single()!.Caption.Should().Be("Node 0-2");
                     ++raised;
                 };
 
                 target.Select(new IndexPath(0, 2));
 
-                Assert.Equal(1, raised);
-                Assert.Equal(1, target.Count);
-                Assert.Equal(new IndexPath(0, 2), target.SelectedIndex);
-                Assert.Equal(new IndexPath(0, 2), target.SelectedIndexes.Single());
-                Assert.Equal("Node 0-2", target.SelectedItem!.Caption);
-                Assert.Equal("Node 0-2", target.SelectedItems.Single()!.Caption);
+                raised.Should().Be(1);
+                target.Count.Should().Be(1);
+                target.SelectedIndex.Should().Be(new IndexPath(0, 2));
+                target.SelectedIndexes.Single().Should().Be(new IndexPath(0, 2));
+                target.SelectedItem!.Caption.Should().Be("Node 0-2");
+                target.SelectedItems.Single()!.Caption.Should().Be("Node 0-2");
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -369,21 +370,21 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.SelectionChanged += (s, e) =>
                 {
-                    Assert.Equal(new IndexPath(0, 1), e.DeselectedIndexes.Single());
-                    Assert.Equal("Node 0-1", e.DeselectedItems.Single()!.Caption);
-                    Assert.Equal(new IndexPath(0, 2), e.SelectedIndexes.Single());
-                    Assert.Equal("Node 0-2", e.SelectedItems.Single()!.Caption);
+                    e.DeselectedIndexes.Single().Should().Be(new IndexPath(0, 1));
+                    e.DeselectedItems.Single()!.Caption.Should().Be("Node 0-1");
+                    e.SelectedIndexes.Single().Should().Be(new IndexPath(0, 2));
+                    e.SelectedItems.Single()!.Caption.Should().Be("Node 0-2");
                     ++raised;
                 };
 
                 target.Select(new IndexPath(0, 2));
 
-                Assert.Equal(1, raised);
-                Assert.Equal(1, target.Count);
-                Assert.Equal(new IndexPath(0, 2), target.SelectedIndex);
-                Assert.Equal(new IndexPath(0, 2), target.SelectedIndexes.Single());
-                Assert.Equal("Node 0-2", target.SelectedItem!.Caption);
-                Assert.Equal("Node 0-2", target.SelectedItems.Single()!.Caption);
+                raised.Should().Be(1);
+                target.Count.Should().Be(1);
+                target.SelectedIndex.Should().Be(new IndexPath(0, 2));
+                target.SelectedIndexes.Single().Should().Be(new IndexPath(0, 2));
+                target.SelectedItem!.Caption.Should().Be("Node 0-2");
+                target.SelectedItems.Single()!.Caption.Should().Be("Node 0-2");
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -397,12 +398,12 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.Select(new IndexPath(5, 10, 250));
 
-                Assert.Equal(0, raised);
-                Assert.Equal(1, target.Count);
-                Assert.Equal(new IndexPath(0, 2), target.SelectedIndex);
-                Assert.Equal(new IndexPath(0, 2), target.SelectedIndexes.Single());
-                Assert.Equal("Node 0-2", target.SelectedItem!.Caption);
-                Assert.Equal("Node 0-2", target.SelectedItems.Single()!.Caption);
+                raised.Should().Be(0);
+                target.Count.Should().Be(1);
+                target.SelectedIndex.Should().Be(new IndexPath(0, 2));
+                target.SelectedIndexes.Single().Should().Be(new IndexPath(0, 2));
+                target.SelectedItem!.Caption.Should().Be("Node 0-2");
+                target.SelectedItems.Single()!.Caption.Should().Be("Node 0-2");
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -416,7 +417,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.Select(new IndexPath(0, 2));
 
-                Assert.Equal(0, raised);
+                raised.Should().Be(0);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -430,7 +431,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                     target.Select(new IndexPath(1));
                 }
 
-                Assert.Equal(1, target.Count);
+                target.Count.Should().Be(1);
             }
         }
 
@@ -446,21 +447,21 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.SelectionChanged += (s, e) =>
                 {
-                    Assert.Equal(new[] { new IndexPath(0, 1) }, e.DeselectedIndexes);
-                    Assert.Equal(new[] { "Node 0-1" }, e.DeselectedItems.Select(x => x!.Caption));
-                    Assert.Empty(e.SelectedIndexes);
-                    Assert.Empty(e.SelectedItems);
+                    e.DeselectedIndexes.Should().Equal(new[] { new IndexPath(0, 1) });
+                    (e.DeselectedItems.Select(x => x!.Caption)).Should().Equal(new[] { "Node 0-1" });
+                    e.SelectedIndexes.Should().BeEmpty();
+                    e.SelectedItems.Should().BeEmpty();
                     ++raised;
                 };
 
                 target.Deselect(new IndexPath(0, 1));
 
-                Assert.Equal(0, target.Count);
-                Assert.Equal(default, target.SelectedIndex);
-                Assert.Empty(target.SelectedIndexes);
-                Assert.Null(target.SelectedItem);
-                Assert.Empty(target.SelectedItems);
-                Assert.Equal(1, raised);
+                target.Count.Should().Be(0);
+                target.SelectedIndex.Should().Be(default);
+                target.SelectedIndexes.Should().BeEmpty();
+                target.SelectedItem.Should().BeNull();
+                target.SelectedItems.Should().BeEmpty();
+                raised.Should().Be(1);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -473,12 +474,12 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 target.SelectionChanged += (s, e) => ++raised;
                 target.Deselect(new IndexPath(0, 0));
 
-                Assert.Equal(1, target.Count);
-                Assert.Equal(new IndexPath(0, 1), target.SelectedIndex);
-                Assert.Equal(new[] { new IndexPath(0, 1) }, target.SelectedIndexes);
-                Assert.Equal("Node 0-1", target.SelectedItem!.Caption);
-                Assert.Equal(new[] { "Node 0-1" }, target.SelectedItems.Select(x => x!.Caption));
-                Assert.Equal(0, raised);
+                target.Count.Should().Be(1);
+                target.SelectedIndex.Should().Be(new IndexPath(0, 1));
+                target.SelectedIndexes.Should().Equal(new[] { new IndexPath(0, 1) });
+                target.SelectedItem!.Caption.Should().Be("Node 0-1");
+                (target.SelectedItems.Select(x => x!.Caption)).Should().Equal(new[] { "Node 0-1" });
+                raised.Should().Be(0);
             }
         }
 
@@ -494,16 +495,16 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.SelectionChanged += (s, e) =>
                 {
-                    Assert.Equal(new[] { new IndexPath(0, 1) }, e.DeselectedIndexes);
-                    Assert.Equal(new[] { "Node 0-1" }, e.DeselectedItems.Select(x => x!.Caption));
-                    Assert.Empty(e.SelectedIndexes);
-                    Assert.Empty(e.SelectedItems);
+                    e.DeselectedIndexes.Should().Equal(new[] { new IndexPath(0, 1) });
+                    (e.DeselectedItems.Select(x => x!.Caption)).Should().Equal(new[] { "Node 0-1" });
+                    e.SelectedIndexes.Should().BeEmpty();
+                    e.SelectedItems.Should().BeEmpty();
                     ++raised;
                 };
 
                 target.Clear();
 
-                Assert.Equal(1, raised);
+                raised.Should().Be(1);
             }
         }
 
@@ -525,8 +526,8 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.SelectedIndex = new IndexPath(0, 1);
 
-                Assert.Equal(new IndexPath(0, 1), target.AnchorIndex);
-                Assert.Equal(1, raised);
+                target.AnchorIndex.Should().Be(new IndexPath(0, 1));
+                raised.Should().Be(1);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -547,8 +548,8 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.SelectedIndex = default;
 
-                Assert.Equal(new IndexPath(0, 1), target.AnchorIndex);
-                Assert.Equal(0, raised);
+                target.AnchorIndex.Should().Be(new IndexPath(0, 1));
+                raised.Should().Be(0);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -567,8 +568,8 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.Select(new IndexPath(0, 1));
 
-                Assert.Equal(new IndexPath(0, 1), target.AnchorIndex);
-                Assert.Equal(1, raised);
+                target.AnchorIndex.Should().Be(new IndexPath(0, 1));
+                raised.Should().Be(1);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -589,8 +590,8 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.Deselect(new IndexPath(0, 1));
 
-                Assert.Equal(new IndexPath(0, 1), target.AnchorIndex);
-                Assert.Equal(0, raised);
+                target.AnchorIndex.Should().Be(new IndexPath(0, 1));
+                raised.Should().Be(0);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -609,7 +610,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.SelectedIndex = new IndexPath(0, 1);
 
-                Assert.Equal(1, raised);
+                raised.Should().Be(1);
             }
         }
 
@@ -627,12 +628,12 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.SingleSelect = false;
 
-                Assert.Equal(1, target.Count);
-                Assert.Equal(new IndexPath(0, 1), target.SelectedIndex);
-                Assert.Equal(new[] { new IndexPath(0, 1) }, target.SelectedIndexes);
-                Assert.Equal("Node 0-1", target.SelectedItem!.Caption);
-                Assert.Equal(new[] { "Node 0-1" }, target.SelectedItems.Select(x => x!.Caption));
-                Assert.Equal(0, raised);
+                target.Count.Should().Be(1);
+                target.SelectedIndex.Should().Be(new IndexPath(0, 1));
+                target.SelectedIndexes.Should().Equal(new[] { new IndexPath(0, 1) });
+                target.SelectedItem!.Caption.Should().Be("Node 0-1");
+                (target.SelectedItems.Select(x => x!.Caption)).Should().Equal(new[] { "Node 0-1" });
+                raised.Should().Be(0);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -651,7 +652,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.SingleSelect = false;
 
-                Assert.Equal(1, raised);
+                raised.Should().Be(1);
             }
         }
 
@@ -680,23 +681,23 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.IndexesChanged += (s, e) =>
                 {
-                    Assert.Equal(default, e.ParentIndex);
-                    Assert.Equal(0, e.StartIndex);
-                    Assert.Equal(1, e.Delta);
+                    e.ParentIndex.Should().Be(default);
+                    e.StartIndex.Should().Be(0);
+                    e.Delta.Should().Be(1);
                     ++indexesChangedRaised;
                 };
 
                 data.Insert(0, new Node { Caption = "new" });
 
-                Assert.Equal(1, target.Count);
-                Assert.Equal(new IndexPath(2), target.SelectedIndex);
-                Assert.Equal(new[] { new IndexPath(2) }, target.SelectedIndexes);
-                Assert.Equal("Node 1", target.SelectedItem!.Caption);
-                Assert.Equal(new[] { "Node 1" }, target.SelectedItems.Select(x => x!.Caption));
-                Assert.Equal(new IndexPath(2), target.AnchorIndex);
-                Assert.Equal(1, indexesChangedRaised);
-                Assert.Equal(1, selectedIndexRaised);
-                Assert.Equal(0, selectionChangedRaised);
+                target.Count.Should().Be(1);
+                target.SelectedIndex.Should().Be(new IndexPath(2));
+                target.SelectedIndexes.Should().Equal(new[] { new IndexPath(2) });
+                target.SelectedItem!.Caption.Should().Be("Node 1");
+                (target.SelectedItems.Select(x => x!.Caption)).Should().Equal(new[] { "Node 1" });
+                target.AnchorIndex.Should().Be(new IndexPath(2));
+                indexesChangedRaised.Should().Be(1);
+                selectedIndexRaised.Should().Be(1);
+                selectionChangedRaised.Should().Be(0);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -722,23 +723,23 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.IndexesChanged += (s, e) =>
                 {
-                    Assert.Equal(new IndexPath(0), e.ParentIndex);
-                    Assert.Equal(0, e.StartIndex);
-                    Assert.Equal(1, e.Delta);
+                    e.ParentIndex.Should().Be(new IndexPath(0));
+                    e.StartIndex.Should().Be(0);
+                    e.Delta.Should().Be(1);
                     ++indexesChangedRaised;
                 };
 
                 data[0].Children!.Insert(0, new Node { Caption = "new" });
 
-                Assert.Equal(1, target.Count);
-                Assert.Equal(new IndexPath(0, 2), target.SelectedIndex);
-                Assert.Equal(new[] { new IndexPath(0, 2) }, target.SelectedIndexes);
-                Assert.Equal("Node 0-1", target.SelectedItem!.Caption);
-                Assert.Equal(new[] { "Node 0-1" }, target.SelectedItems.Select(x => x!.Caption));
-                Assert.Equal(new IndexPath(0, 2), target.AnchorIndex);
-                Assert.Equal(1, indexesChangedRaised);
-                Assert.Equal(1, selectedIndexRaised);
-                Assert.Equal(0, selectionChangedRaised);
+                target.Count.Should().Be(1);
+                target.SelectedIndex.Should().Be(new IndexPath(0, 2));
+                target.SelectedIndexes.Should().Equal(new[] { new IndexPath(0, 2) });
+                target.SelectedItem!.Caption.Should().Be("Node 0-1");
+                (target.SelectedItems.Select(x => x!.Caption)).Should().Equal(new[] { "Node 0-1" });
+                target.AnchorIndex.Should().Be(new IndexPath(0, 2));
+                indexesChangedRaised.Should().Be(1);
+                selectedIndexRaised.Should().Be(1);
+                selectionChangedRaised.Should().Be(0);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -764,23 +765,23 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.IndexesChanged += (s, e) =>
                 {
-                    Assert.Equal(default, e.ParentIndex);
-                    Assert.Equal(0, e.StartIndex);
-                    Assert.Equal(1, e.Delta);
+                    e.ParentIndex.Should().Be(default);
+                    e.StartIndex.Should().Be(0);
+                    e.Delta.Should().Be(1);
                     ++indexesChangedRaised;
                 };
 
                 data.Insert(0, new Node { Caption = "new" });
 
-                Assert.Equal(1, target.Count);
-                Assert.Equal(new IndexPath(1, 1), target.SelectedIndex);
-                Assert.Equal(new[] { new IndexPath(1, 1) }, target.SelectedIndexes);
-                Assert.Equal("Node 0-1", target.SelectedItem!.Caption);
-                Assert.Equal(new[] { "Node 0-1" }, target.SelectedItems.Select(x => x!.Caption));
-                Assert.Equal(new IndexPath(1, 1), target.AnchorIndex);
-                Assert.Equal(1, indexesChangedRaised);
-                Assert.Equal(1, selectedIndexRaised);
-                Assert.Equal(0, selectionChangedRaised);
+                target.Count.Should().Be(1);
+                target.SelectedIndex.Should().Be(new IndexPath(1, 1));
+                target.SelectedIndexes.Should().Equal(new[] { new IndexPath(1, 1) });
+                target.SelectedItem!.Caption.Should().Be("Node 0-1");
+                (target.SelectedItems.Select(x => x!.Caption)).Should().Equal(new[] { "Node 0-1" });
+                target.AnchorIndex.Should().Be(new IndexPath(1, 1));
+                indexesChangedRaised.Should().Be(1);
+                selectedIndexRaised.Should().Be(1);
+                selectionChangedRaised.Should().Be(0);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -806,23 +807,23 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.IndexesChanged += (s, e) =>
                 {
-                    Assert.Equal(default, e.ParentIndex);
-                    Assert.Equal(0, e.StartIndex);
-                    Assert.Equal(1, e.Delta);
+                    e.ParentIndex.Should().Be(default);
+                    e.StartIndex.Should().Be(0);
+                    e.Delta.Should().Be(1);
                     ++indexesChangedRaised;
                 };
 
                 data.Insert(0, new Node { Caption = "new" });
 
-                Assert.Equal(1, target.Count);
-                Assert.Equal(new IndexPath(1, 0, 1), target.SelectedIndex);
-                Assert.Equal(new[] { new IndexPath(1, 0, 1) }, target.SelectedIndexes);
-                Assert.Equal("Node 0-0-1", target.SelectedItem!.Caption);
-                Assert.Equal(new[] { "Node 0-0-1" }, target.SelectedItems.Select(x => x!.Caption));
-                Assert.Equal(new IndexPath(1, 0, 1), target.AnchorIndex);
-                Assert.Equal(1, indexesChangedRaised);
-                Assert.Equal(1, selectedIndexRaised);
-                Assert.Equal(0, selectionChangedRaised);
+                target.Count.Should().Be(1);
+                target.SelectedIndex.Should().Be(new IndexPath(1, 0, 1));
+                target.SelectedIndexes.Should().Equal(new[] { new IndexPath(1, 0, 1) });
+                target.SelectedItem!.Caption.Should().Be("Node 0-0-1");
+                (target.SelectedItems.Select(x => x!.Caption)).Should().Equal(new[] { "Node 0-0-1" });
+                target.AnchorIndex.Should().Be(new IndexPath(1, 0, 1));
+                indexesChangedRaised.Should().Be(1);
+                selectedIndexRaised.Should().Be(1);
+                selectionChangedRaised.Should().Be(0);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -840,13 +841,13 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 data.Insert(2, new Node { Caption = "new" });
 
-                Assert.Equal(1, target.Count);
-                Assert.Equal(new IndexPath(1), target.SelectedIndex);
-                Assert.Equal(new[] { new IndexPath(1) }, target.SelectedIndexes);
-                Assert.Equal("Node 1", target.SelectedItem!.Caption);
-                Assert.Equal(new[] { "Node 1" }, target.SelectedItems.Select(x => x!.Caption));
-                Assert.Equal(new IndexPath(1), target.AnchorIndex);
-                Assert.Equal(0, raised);
+                target.Count.Should().Be(1);
+                target.SelectedIndex.Should().Be(new IndexPath(1));
+                target.SelectedIndexes.Should().Equal(new[] { new IndexPath(1) });
+                target.SelectedItem!.Caption.Should().Be("Node 1");
+                (target.SelectedItems.Select(x => x!.Caption)).Should().Equal(new[] { "Node 1" });
+                target.AnchorIndex.Should().Be(new IndexPath(1));
+                raised.Should().Be(0);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -869,23 +870,23 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.SelectionChanged += (s, e) =>
                 {
-                    Assert.Empty(e.DeselectedIndexes);
-                    Assert.Equal(new[] { "Node 1" }, e.DeselectedItems.Select(x => x!.Caption));
-                    Assert.Empty(e.SelectedIndexes);
-                    Assert.Empty(e.SelectedItems);
+                    e.DeselectedIndexes.Should().BeEmpty();
+                    (e.DeselectedItems.Select(x => x!.Caption)).Should().Equal(new[] { "Node 1" });
+                    e.SelectedIndexes.Should().BeEmpty();
+                    e.SelectedItems.Should().BeEmpty();
                     ++selectionChangedRaised;
                 };
 
                 data.RemoveAt(1);
 
-                Assert.Equal(0, target.Count);
-                Assert.Equal(default, target.SelectedIndex);
-                Assert.Empty(target.SelectedIndexes);
-                Assert.Null(target.SelectedItem);
-                Assert.Empty(target.SelectedItems);
-                Assert.Equal(default, target.AnchorIndex);
-                Assert.Equal(1, selectionChangedRaised);
-                Assert.Equal(1, selectedIndexRaised);
+                target.Count.Should().Be(0);
+                target.SelectedIndex.Should().Be(default);
+                target.SelectedIndexes.Should().BeEmpty();
+                target.SelectedItem.Should().BeNull();
+                target.SelectedItems.Should().BeEmpty();
+                target.AnchorIndex.Should().Be(default);
+                selectionChangedRaised.Should().Be(1);
+                selectedIndexRaised.Should().Be(1);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -908,23 +909,23 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.SelectionChanged += (s, e) =>
                 {
-                    Assert.Empty(e.DeselectedIndexes);
-                    Assert.Equal(new[] { "Node 0-1" }, e.DeselectedItems.Select(x => x!.Caption));
-                    Assert.Empty(e.SelectedIndexes);
-                    Assert.Empty(e.SelectedItems);
+                    e.DeselectedIndexes.Should().BeEmpty();
+                    (e.DeselectedItems.Select(x => x!.Caption)).Should().Equal(new[] { "Node 0-1" });
+                    e.SelectedIndexes.Should().BeEmpty();
+                    e.SelectedItems.Should().BeEmpty();
                     ++selectionChangedRaised;
                 };
 
                 data[0].Children!.RemoveAt(1);
 
-                Assert.Equal(0, target.Count);
-                Assert.Equal(default, target.SelectedIndex);
-                Assert.Empty(target.SelectedIndexes);
-                Assert.Null(target.SelectedItem);
-                Assert.Empty(target.SelectedItems);
-                Assert.Equal(default, target.AnchorIndex);
-                Assert.Equal(1, selectionChangedRaised);
-                Assert.Equal(1, selectedIndexRaised);
+                target.Count.Should().Be(0);
+                target.SelectedIndex.Should().Be(default);
+                target.SelectedIndexes.Should().BeEmpty();
+                target.SelectedItem.Should().BeNull();
+                target.SelectedItems.Should().BeEmpty();
+                target.AnchorIndex.Should().Be(default);
+                selectionChangedRaised.Should().Be(1);
+                selectedIndexRaised.Should().Be(1);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -947,23 +948,23 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.SelectionChanged += (s, e) =>
                 {
-                    Assert.Empty(e.DeselectedIndexes);
-                    Assert.Equal(new[] { "Node 0-1" }, e.DeselectedItems.Select(x => x!.Caption));
-                    Assert.Empty(e.SelectedIndexes);
-                    Assert.Empty(e.SelectedItems);
+                    e.DeselectedIndexes.Should().BeEmpty();
+                    (e.DeselectedItems.Select(x => x!.Caption)).Should().Equal(new[] { "Node 0-1" });
+                    e.SelectedIndexes.Should().BeEmpty();
+                    e.SelectedItems.Should().BeEmpty();
                     ++selectionChangedRaised;
                 };
 
                 data.RemoveAt(0);
 
-                Assert.Equal(0, target.Count);
-                Assert.Equal(default, target.SelectedIndex);
-                Assert.Empty(target.SelectedIndexes);
-                Assert.Null(target.SelectedItem);
-                Assert.Empty(target.SelectedItems);
-                Assert.Equal(default, target.AnchorIndex);
-                Assert.Equal(1, selectionChangedRaised);
-                Assert.Equal(1, selectedIndexRaised);
+                target.Count.Should().Be(0);
+                target.SelectedIndex.Should().Be(default);
+                target.SelectedIndexes.Should().BeEmpty();
+                target.SelectedItem.Should().BeNull();
+                target.SelectedItems.Should().BeEmpty();
+                target.AnchorIndex.Should().Be(default);
+                selectionChangedRaised.Should().Be(1);
+                selectedIndexRaised.Should().Be(1);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -980,21 +981,21 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.IndexesChanged += (s, e) =>
                 {
-                    Assert.Equal(0, e.StartIndex);
-                    Assert.Equal(-1, e.Delta);
+                    e.StartIndex.Should().Be(0);
+                    e.Delta.Should().Be(-1);
                     ++indexesChangedraised;
                 };
 
                 data.RemoveAt(0);
 
-                Assert.Equal(1, target.Count);
-                Assert.Equal(new IndexPath(0), target.SelectedIndex);
-                Assert.Equal(new[] { new IndexPath(0) }, target.SelectedIndexes);
-                Assert.Equal("Node 1", target.SelectedItem!.Caption);
-                Assert.Equal(new[] { "Node 1" }, target.SelectedItems.Select(x => x!.Caption));
-                Assert.Equal(new IndexPath(0), target.AnchorIndex);
-                Assert.Equal(1, indexesChangedraised);
-                Assert.Equal(0, selectionChangedRaised);
+                target.Count.Should().Be(1);
+                target.SelectedIndex.Should().Be(new IndexPath(0));
+                target.SelectedIndexes.Should().Equal(new[] { new IndexPath(0) });
+                target.SelectedItem!.Caption.Should().Be("Node 1");
+                (target.SelectedItems.Select(x => x!.Caption)).Should().Equal(new[] { "Node 1" });
+                target.AnchorIndex.Should().Be(new IndexPath(0));
+                indexesChangedraised.Should().Be(1);
+                selectionChangedRaised.Should().Be(0);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -1011,21 +1012,21 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.IndexesChanged += (s, e) =>
                 {
-                    Assert.Equal(0, e.StartIndex);
-                    Assert.Equal(-1, e.Delta);
+                    e.StartIndex.Should().Be(0);
+                    e.Delta.Should().Be(-1);
                     ++indexesChangedraised;
                 };
 
                 data.RemoveAt(0);
 
-                Assert.Equal(1, target.Count);
-                Assert.Equal(new IndexPath(0, 1), target.SelectedIndex);
-                Assert.Equal(new[] { new IndexPath(0, 1) }, target.SelectedIndexes);
-                Assert.Equal("Node 1-1", target.SelectedItem!.Caption);
-                Assert.Equal(new[] { "Node 1-1" }, target.SelectedItems.Select(x => x!.Caption));
-                Assert.Equal(new IndexPath(0, 1), target.AnchorIndex);
-                Assert.Equal(1, indexesChangedraised);
-                Assert.Equal(0, selectionChangedRaised);
+                target.Count.Should().Be(1);
+                target.SelectedIndex.Should().Be(new IndexPath(0, 1));
+                target.SelectedIndexes.Should().Equal(new[] { new IndexPath(0, 1) });
+                target.SelectedItem!.Caption.Should().Be("Node 1-1");
+                (target.SelectedItems.Select(x => x!.Caption)).Should().Equal(new[] { "Node 1-1" });
+                target.AnchorIndex.Should().Be(new IndexPath(0, 1));
+                indexesChangedraised.Should().Be(1);
+                selectionChangedRaised.Should().Be(0);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -1042,21 +1043,21 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.IndexesChanged += (s, e) =>
                 {
-                    Assert.Equal(0, e.StartIndex);
-                    Assert.Equal(-1, e.Delta);
+                    e.StartIndex.Should().Be(0);
+                    e.Delta.Should().Be(-1);
                     ++indexesChangedraised;
                 };
 
                 data[1].Children!.RemoveAt(0);
 
-                Assert.Equal(1, target.Count);
-                Assert.Equal(new IndexPath(1, 0, 2), target.SelectedIndex);
-                Assert.Equal(new[] { new IndexPath(1, 0, 2) }, target.SelectedIndexes);
-                Assert.Equal("Node 1-1-2", target.SelectedItem!.Caption);
-                Assert.Equal(new[] { "Node 1-1-2" }, target.SelectedItems.Select(x => x!.Caption));
-                Assert.Equal(new IndexPath(1, 0, 2), target.AnchorIndex);
-                Assert.Equal(1, indexesChangedraised);
-                Assert.Equal(0, selectionChangedRaised);
+                target.Count.Should().Be(1);
+                target.SelectedIndex.Should().Be(new IndexPath(1, 0, 2));
+                target.SelectedIndexes.Should().Equal(new[] { new IndexPath(1, 0, 2) });
+                target.SelectedItem!.Caption.Should().Be("Node 1-1-2");
+                (target.SelectedItems.Select(x => x!.Caption)).Should().Equal(new[] { "Node 1-1-2" });
+                target.AnchorIndex.Should().Be(new IndexPath(1, 0, 2));
+                indexesChangedraised.Should().Be(1);
+                selectionChangedRaised.Should().Be(0);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -1074,13 +1075,13 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 data.RemoveAt(2);
 
-                Assert.Equal(1, target.Count);
-                Assert.Equal(new IndexPath(1), target.SelectedIndex);
-                Assert.Equal(new[] { new IndexPath(1) }, target.SelectedIndexes);
-                Assert.Equal("Node 1", target.SelectedItem!.Caption);
-                Assert.Equal(new[] { "Node 1" }, target.SelectedItems.Select(x => x!.Caption));
-                Assert.Equal(new IndexPath(1), target.AnchorIndex);
-                Assert.Equal(0, raised);
+                target.Count.Should().Be(1);
+                target.SelectedIndex.Should().Be(new IndexPath(1));
+                target.SelectedIndexes.Should().Equal(new[] { new IndexPath(1) });
+                target.SelectedItem!.Caption.Should().Be("Node 1");
+                (target.SelectedItems.Select(x => x!.Caption)).Should().Equal(new[] { "Node 1" });
+                target.AnchorIndex.Should().Be(new IndexPath(1));
+                raised.Should().Be(0);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -1109,23 +1110,23 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.SelectionChanged += (s, e) =>
                 {
-                    Assert.Empty(e.DeselectedIndexes);
-                    Assert.Equal(new[] { "Node 1" }, e.DeselectedItems.Select(x => x!.Caption));
-                    Assert.Empty(e.SelectedIndexes);
-                    Assert.Empty(e.SelectedItems);
+                    e.DeselectedIndexes.Should().BeEmpty();
+                    (e.DeselectedItems.Select(x => x!.Caption)).Should().Equal(new[] { "Node 1" });
+                    e.SelectedIndexes.Should().BeEmpty();
+                    e.SelectedItems.Should().BeEmpty();
                     ++selectionChangedRaised;
                 };
 
                 data[1] = new Node { Caption = "new" };
 
-                Assert.Equal(0, target.Count);
-                Assert.Equal(default, target.SelectedIndex);
-                Assert.Empty(target.SelectedIndexes);
-                Assert.Null(target.SelectedItem);
-                Assert.Empty(target.SelectedItems);
-                Assert.Equal(1, selectionChangedRaised);
-                Assert.Equal(1, selectedIndexRaised);
-                Assert.Equal(1, selectedItemRaised);
+                target.Count.Should().Be(0);
+                target.SelectedIndex.Should().Be(default);
+                target.SelectedIndexes.Should().BeEmpty();
+                target.SelectedItem.Should().BeNull();
+                target.SelectedItems.Should().BeEmpty();
+                selectionChangedRaised.Should().Be(1);
+                selectedIndexRaised.Should().Be(1);
+                selectedItemRaised.Should().Be(1);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -1154,23 +1155,23 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.SelectionChanged += (s, e) =>
                 {
-                    Assert.Empty(e.DeselectedIndexes);
-                    Assert.Equal(new[] { "Node 1-1" }, e.DeselectedItems.Select(x => x!.Caption));
-                    Assert.Empty(e.SelectedIndexes);
-                    Assert.Empty(e.SelectedItems);
+                    e.DeselectedIndexes.Should().BeEmpty();
+                    (e.DeselectedItems.Select(x => x!.Caption)).Should().Equal(new[] { "Node 1-1" });
+                    e.SelectedIndexes.Should().BeEmpty();
+                    e.SelectedItems.Should().BeEmpty();
                     ++selectionChangedRaised;
                 };
 
                 data[1].Children![1] = new Node { Caption = "new" };
 
-                Assert.Equal(0, target.Count);
-                Assert.Equal(default, target.SelectedIndex);
-                Assert.Empty(target.SelectedIndexes);
-                Assert.Null(target.SelectedItem);
-                Assert.Empty(target.SelectedItems);
-                Assert.Equal(1, selectionChangedRaised);
-                Assert.Equal(1, selectedIndexRaised);
-                Assert.Equal(1, selectedItemRaised);
+                target.Count.Should().Be(0);
+                target.SelectedIndex.Should().Be(default);
+                target.SelectedIndexes.Should().BeEmpty();
+                target.SelectedItem.Should().BeNull();
+                target.SelectedItems.Should().BeEmpty();
+                selectionChangedRaised.Should().Be(1);
+                selectedIndexRaised.Should().Be(1);
+                selectedItemRaised.Should().Be(1);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -1210,15 +1211,15 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 data.Move(1, 3);
 
-                Assert.Equal(0, target.Count);
-                Assert.Equal(default, target.SelectedIndex);
-                Assert.Empty(target.SelectedIndexes);
-                Assert.Null(target.SelectedItem);
-                Assert.Empty(target.SelectedItems);
-                Assert.Equal(1, indexesChangedRaised);
-                Assert.Equal(1, selectionChangedRaised);
-                Assert.Equal(1, selectedIndexRaised);
-                Assert.Equal(1, selectedItemRaised);
+                target.Count.Should().Be(0);
+                target.SelectedIndex.Should().Be(default);
+                target.SelectedIndexes.Should().BeEmpty();
+                target.SelectedItem.Should().BeNull();
+                target.SelectedItems.Should().BeEmpty();
+                indexesChangedRaised.Should().Be(1);
+                selectionChangedRaised.Should().Be(1);
+                selectedIndexRaised.Should().Be(1);
+                selectedItemRaised.Should().Be(1);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -1258,15 +1259,15 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 data[1].Children!.Move(1, 2);
 
-                Assert.Equal(0, target.Count);
-                Assert.Equal(default, target.SelectedIndex);
-                Assert.Empty(target.SelectedIndexes);
-                Assert.Null(target.SelectedItem);
-                Assert.Empty(target.SelectedItems);
-                Assert.Equal(1, indexesChangedRaised);
-                Assert.Equal(1, selectionChangedRaised);
-                Assert.Equal(1, selectedIndexRaised);
-                Assert.Equal(1, selectedItemRaised);
+                target.Count.Should().Be(0);
+                target.SelectedIndex.Should().Be(default);
+                target.SelectedIndexes.Should().BeEmpty();
+                target.SelectedItem.Should().BeNull();
+                target.SelectedItems.Should().BeEmpty();
+                indexesChangedRaised.Should().Be(1);
+                selectionChangedRaised.Should().Be(1);
+                selectedIndexRaised.Should().Be(1);
+                selectedItemRaised.Should().Be(1);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -1283,10 +1284,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.IndexesChanged += (s, e) =>
                 {
-                    Assert.Equal(new(1), e.ParentIndex);
-                    Assert.Equal(0, e.StartIndex);
-                    Assert.Equal(2, e.EndIndex);
-                    Assert.Equal(-1, e.Delta);
+                    e.ParentIndex.Should().Be(new IndexPath(1));
+                    e.StartIndex.Should().Be(0);
+                    e.EndIndex.Should().Be(2);
+                    e.Delta.Should().Be(-1);
                     ++indexesChangedRaised;
                 };
 
@@ -1310,15 +1311,15 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 data[1].Children!.Move(0, 2);
 
-                Assert.Equal(1, target.Count);
-                Assert.Equal(new(1, 0), target.SelectedIndex);
-                Assert.Equal([new(1, 0)], target.SelectedIndexes);
-                Assert.Equal("Node 1-1", target.SelectedItem?.Caption);
-                Assert.Equal(["Node 1-1"], target.SelectedItems.Select(x => x?.Caption));
-                Assert.Equal(1, indexesChangedRaised);
-                Assert.Equal(0, selectionChangedRaised);
-                Assert.Equal(1, selectedIndexRaised);
-                Assert.Equal(0, selectedItemRaised);
+                target.Count.Should().Be(1);
+                target.SelectedIndex.Should().Be(new IndexPath(1, 0));
+                target.SelectedIndexes.Should().Equal([new(1, 0)]);
+                (target.SelectedItem?.Caption).Should().Be("Node 1-1");
+                (target.SelectedItems.Select(x => x?.Caption)).Should().Equal(["Node 1-1"]);
+                indexesChangedRaised.Should().Be(1);
+                selectionChangedRaised.Should().Be(0);
+                selectedIndexRaised.Should().Be(1);
+                selectedItemRaised.Should().Be(0);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -1335,10 +1336,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.IndexesChanged += (s, e) =>
                 {
-                    Assert.Equal(new(1), e.ParentIndex);
-                    Assert.Equal(0, e.StartIndex);
-                    Assert.Equal(2, e.EndIndex);
-                    Assert.Equal(1, e.Delta);
+                    e.ParentIndex.Should().Be(new IndexPath(1));
+                    e.StartIndex.Should().Be(0);
+                    e.EndIndex.Should().Be(2);
+                    e.Delta.Should().Be(1);
                     ++indexesChangedRaised;
                 };
 
@@ -1362,15 +1363,15 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 data[1].Children!.Move(2, 0);
 
-                Assert.Equal(1, target.Count);
-                Assert.Equal(new(1, 2), target.SelectedIndex);
-                Assert.Equal([new(1, 2)], target.SelectedIndexes);
-                Assert.Equal("Node 1-1", target.SelectedItem?.Caption);
-                Assert.Equal(["Node 1-1"], target.SelectedItems.Select(x => x?.Caption));
-                Assert.Equal(1, indexesChangedRaised);
-                Assert.Equal(0, selectionChangedRaised);
-                Assert.Equal(1, selectedIndexRaised);
-                Assert.Equal(0, selectedItemRaised);
+                target.Count.Should().Be(1);
+                target.SelectedIndex.Should().Be(new IndexPath(1, 2));
+                target.SelectedIndexes.Should().Equal([new(1, 2)]);
+                (target.SelectedItem?.Caption).Should().Be("Node 1-1");
+                (target.SelectedItems.Select(x => x?.Caption)).Should().Equal(["Node 1-1"]);
+                indexesChangedRaised.Should().Be(1);
+                selectionChangedRaised.Should().Be(0);
+                selectedIndexRaised.Should().Be(1);
+                selectedItemRaised.Should().Be(0);
             }
 
 
@@ -1396,13 +1397,13 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 data.Clear();
 
-                Assert.Equal(default, target.SelectedIndex);
-                Assert.Empty(target.SelectedIndexes);
-                Assert.Null(target.SelectedItem);
-                Assert.Empty(target.SelectedItems);
-                Assert.Equal(default, target.AnchorIndex);
-                Assert.Equal(0, selectionChangedRaised);
-                Assert.Equal(1, selectedIndexRaised);
+                target.SelectedIndex.Should().Be(default);
+                target.SelectedIndexes.Should().BeEmpty();
+                target.SelectedItem.Should().BeNull();
+                target.SelectedItems.Should().BeEmpty();
+                target.AnchorIndex.Should().Be(default);
+                selectionChangedRaised.Should().Be(0);
+                selectedIndexRaised.Should().Be(1);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -1428,11 +1429,11 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 data.Add(new Node { Caption = "foo" });
 
-                Assert.Equal(new IndexPath(0), target.SelectedIndex);
-                Assert.Equal(new[] { new IndexPath(0) }, target.SelectedIndexes);
-                Assert.Equal("foo", target.SelectedItem!.Caption);
-                Assert.Equal(new[] { "foo" }, target.SelectedItems.Select(x => x!.Caption));
-                Assert.Equal(new IndexPath(0), target.AnchorIndex);
+                target.SelectedIndex.Should().Be(new IndexPath(0));
+                target.SelectedIndexes.Should().Equal(new[] { new IndexPath(0) });
+                target.SelectedItem!.Caption.Should().Be("foo");
+                (target.SelectedItems.Select(x => x!.Caption)).Should().Equal(new[] { "foo" });
+                target.AnchorIndex.Should().Be(new IndexPath(0));
             }
         }
 

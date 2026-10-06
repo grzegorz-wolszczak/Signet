@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -28,20 +29,20 @@ namespace Signet.Controls.TreeDataGrid.Tests
             var data = CreateData();
             var target = CreateTarget(data);
 
-            Assert.Equal(10, target.Rows.Count);
+            target.Rows.Count.Should().Be(10);
 
             var raised = 0;
             target.Rows.CollectionChanged += (s, e) =>
             {
-                Assert.Equal(NotifyCollectionChangedAction.Add, e.Action);
-                Assert.Equal(10, e.NewStartingIndex);
+                e.Action.Should().Be(NotifyCollectionChangedAction.Add);
+                e.NewStartingIndex.Should().Be(10);
                 ++raised;
             };
 
             data.Add(new Row { Id = 10, Caption = "New Row 10" });
 
-            Assert.Equal(11, target.Rows.Count);
-            Assert.Equal(1, raised);
+            target.Rows.Count.Should().Be(11);
+            raised.Should().Be(1);
 
             AssertRows(target.Rows, data);
         }
@@ -52,19 +53,19 @@ namespace Signet.Controls.TreeDataGrid.Tests
             var data = CreateData();
             var target = CreateTarget(data);
 
-            Assert.Equal(10, target.Rows.Count);
+            target.Rows.Count.Should().Be(10);
 
             var raised = 0;
             target.Rows.CollectionChanged += (s, e) =>
             {
-                Assert.Equal(NotifyCollectionChangedAction.Remove, e.Action);
-                Assert.Equal(5, e.OldStartingIndex);
+                e.Action.Should().Be(NotifyCollectionChangedAction.Remove);
+                e.OldStartingIndex.Should().Be(5);
                 ++raised;
             };
 
             data.RemoveAt(5);
 
-            Assert.Equal(1, raised);
+            raised.Should().Be(1);
             AssertRows(target.Rows, data);
         }
 
@@ -74,20 +75,20 @@ namespace Signet.Controls.TreeDataGrid.Tests
             var data = CreateData();
             var target = CreateTarget(data);
 
-            Assert.Equal(10, target.Rows.Count);
+            target.Rows.Count.Should().Be(10);
 
             var raised = 0;
             target.Rows.CollectionChanged += (s, e) =>
             {
-                Assert.Equal(NotifyCollectionChangedAction.Replace, e.Action);
-                Assert.Equal(5, e.NewStartingIndex);
-                Assert.Equal(5, e.OldStartingIndex);
+                e.Action.Should().Be(NotifyCollectionChangedAction.Replace);
+                e.NewStartingIndex.Should().Be(5);
+                e.OldStartingIndex.Should().Be(5);
                 ++raised;
             };
 
             data[5] = new Row { Id = 10, Caption = "New Row 10" };
 
-            Assert.Equal(1, raised);
+            raised.Should().Be(1);
             AssertRows(target.Rows, data);
         }
 
@@ -97,20 +98,20 @@ namespace Signet.Controls.TreeDataGrid.Tests
             var data = CreateData();
             var target = CreateTarget(data);
 
-            Assert.Equal(10, target.Rows.Count);
+            target.Rows.Count.Should().Be(10);
 
             var raised = 0;
             target.Rows.CollectionChanged += (s, e) =>
             {
-                Assert.Equal(NotifyCollectionChangedAction.Move, e.Action);
-                Assert.Equal(8, e.NewStartingIndex);
-                Assert.Equal(5, e.OldStartingIndex);
+                e.Action.Should().Be(NotifyCollectionChangedAction.Move);
+                e.NewStartingIndex.Should().Be(8);
+                e.OldStartingIndex.Should().Be(5);
                 ++raised;
             };
 
             data.Move(5, 8);
 
-            Assert.Equal(1, raised);
+            raised.Should().Be(1);
             AssertRows(target.Rows, data);
         }
 
@@ -120,18 +121,18 @@ namespace Signet.Controls.TreeDataGrid.Tests
             var data = CreateData();
             var target = CreateTarget(data);
 
-            Assert.Equal(10, target.Rows.Count);
+            target.Rows.Count.Should().Be(10);
 
             var raised = 0;
             target.Rows.CollectionChanged += (s, e) =>
             {
-                Assert.Equal(NotifyCollectionChangedAction.Reset, e.Action);
+                e.Action.Should().Be(NotifyCollectionChangedAction.Reset);
                 ++raised;
             };
 
             data.Clear();
 
-            Assert.Equal(1, raised);
+            raised.Should().Be(1);
             AssertRows(target.Rows, data);
         }
 
@@ -146,13 +147,13 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
             target.Rows.CollectionChanged += (s, e) =>
             {
-                Assert.Equal(NotifyCollectionChangedAction.Reset, e.Action);
+                e.Action.Should().Be(NotifyCollectionChangedAction.Reset);
                 ++raised;
             };
 
             target.Items = data = CreateData(20);
 
-            Assert.Equal(1, raised);
+            raised.Should().Be(1);
             AssertRows(target.Rows, data);
         }
 
@@ -171,7 +172,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
             target.Items = CreateData();
 
-            Assert.Equal(1, raised);
+            raised.Should().Be(1);
         }
 
         public class Sorted
@@ -182,7 +183,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var data = CreateData();
                 var target = CreateTarget(data);
 
-                Assert.Equal(10, target.Rows.Count);
+                target.Rows.Count.Should().Be(10);
 
                 AssertRows(target.Rows, data);
             }
@@ -198,17 +199,17 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var raised = 0;
                 target.Rows.CollectionChanged += (s, e) =>
                 {
-                    Assert.Equal(NotifyCollectionChangedAction.Add, e.Action);
-                    Assert.Equal(0, e.NewStartingIndex);
-                    Assert.Single(e.NewItems!);
-                    Assert.Equal(10, ((IModelIndexableRow)e.NewItems![0]!).ModelIndex);
+                    e.Action.Should().Be(NotifyCollectionChangedAction.Add);
+                    e.NewStartingIndex.Should().Be(0);
+                    e.NewItems!.Cast<object>().Should().ContainSingle();
+                    (((IModelIndexableRow)e.NewItems![0]!).ModelIndex).Should().Be(10);
                     ++raised;
                 };
 
                 data.Add(new Row { Id = 10, Caption = "New Row 10" });
 
-                Assert.Equal(11, target.Rows.Count);
-                Assert.Equal(1, raised);
+                target.Rows.Count.Should().Be(11);
+                raised.Should().Be(1);
 
                 AssertRows(target.Rows, data);
             }
@@ -224,16 +225,16 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var raised = 0;
                 target.Rows.CollectionChanged += (s, e) =>
                 {
-                    Assert.Equal(NotifyCollectionChangedAction.Remove, e.Action);
-                    Assert.Equal(4, e.OldStartingIndex);
-                    Assert.Single(e.OldItems!);
-                    Assert.Equal(5, ((IModelIndexableRow)e.OldItems![0]!).ModelIndex);
+                    e.Action.Should().Be(NotifyCollectionChangedAction.Remove);
+                    e.OldStartingIndex.Should().Be(4);
+                    e.OldItems!.Cast<object>().Should().ContainSingle();
+                    (((IModelIndexableRow)e.OldItems![0]!).ModelIndex).Should().Be(5);
                     ++raised;
                 };
 
                 data.RemoveAt(5);
 
-                Assert.Equal(1, raised);
+                raised.Should().Be(1);
                 AssertRows(target.Rows, data);
             }
 
@@ -249,9 +250,9 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 target.Rows.CollectionChanged += (s, e) =>
                 {
                     if (e.Action == NotifyCollectionChangedAction.Remove)
-                        Assert.Equal(4, e.OldStartingIndex);
+                        e.OldStartingIndex.Should().Be(4);
                     else if (e.Action == NotifyCollectionChangedAction.Add)
-                        Assert.Equal(0, e.NewStartingIndex);
+                        e.NewStartingIndex.Should().Be(0);
                     else
                         Assert.Fail("Unexpected collection change");
                     ++raised;
@@ -259,7 +260,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 data[5] = new Row { Id = 10, Caption = "New Row 10" };
 
-                Assert.Equal(2, raised);
+                raised.Should().Be(2);
                 AssertRows(target.Rows, data);
             }
 
@@ -275,9 +276,9 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 target.Rows.CollectionChanged += (s, e) =>
                 {
                     if (e.Action == NotifyCollectionChangedAction.Remove)
-                        Assert.Equal(4, e.OldStartingIndex);
+                        e.OldStartingIndex.Should().Be(4);
                     else if (e.Action == NotifyCollectionChangedAction.Add)
-                        Assert.Equal(4, e.NewStartingIndex);
+                        e.NewStartingIndex.Should().Be(4);
                     else
                         Assert.Fail("Unexpected collection change");
                     ++raised;
@@ -285,7 +286,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 data.Move(5, 8);
 
-                Assert.Equal(2, raised);
+                raised.Should().Be(2);
                 AssertRows(target.Rows, data);
             }
 
@@ -300,13 +301,13 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var raised = 0;
                 target.Rows.CollectionChanged += (s, e) =>
                 {
-                    Assert.Equal(NotifyCollectionChangedAction.Reset, e.Action);
+                    e.Action.Should().Be(NotifyCollectionChangedAction.Reset);
                     ++raised;
                 };
 
                 data.Clear();
 
-                Assert.Equal(1, raised);
+                raised.Should().Be(1);
                 AssertRows(target.Rows, data);
             }
 
@@ -321,13 +322,13 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.Rows.CollectionChanged += (s, e) =>
                 {
-                    Assert.Equal(NotifyCollectionChangedAction.Reset, e.Action);
+                    e.Action.Should().Be(NotifyCollectionChangedAction.Reset);
                     ++raised;
                 };
 
                 target.Items = data = CreateData(20);
 
-                Assert.Equal(1, raised);
+                raised.Should().Be(1);
                 AssertRows(target.Rows, data);
             }
 
@@ -346,7 +347,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.Items = CreateData();
 
-                Assert.Equal(1, raised);
+                raised.Should().Be(1);
             }
 
             private static FlatTreeDataGridSource<Row> CreateTarget(IEnumerable<Row> rows)
@@ -359,7 +360,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
             private static void AssertRows(IRows rows, IList<Row> data)
             {
-                Assert.Equal(data.Count, rows.Count);
+                rows.Count.Should().Be(data.Count);
 
                 var sortedData = data.OrderByDescending(x => x.Id).ToList();
 
@@ -367,8 +368,8 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 {
                     var row = (IRow<Row>)rows[i];
                     var indexable = (IModelIndexableRow)row;
-                    Assert.Same(sortedData[i], row.Model);
-                    Assert.Equal(data.IndexOf(row.Model), indexable.ModelIndex);
+                    row.Model.Should().BeSameAs(sortedData[i]);
+                    indexable.ModelIndex.Should().Be(data.IndexOf(row.Model));
                 }
             }
         }
@@ -383,11 +384,11 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var target = CreateTarget(data1);
 
                 // Ensure selection model is created.
-                Assert.Same(data1, ((ITreeDataGridSelection?)target.RowSelection)!.Source);
+                (((ITreeDataGridSelection?)target.RowSelection)!.Source).Should().BeSameAs(data1);
 
                 target.Items = data2;
 
-                Assert.Same(data2, ((ITreeDataGridSelection?)target.RowSelection)!.Source);
+                (((ITreeDataGridSelection?)target.RowSelection)!.Source).Should().BeSameAs(data2);
             }
         }
 
@@ -411,14 +412,14 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
         private static void AssertRows(IRows rows, IList<Row> data)
         {
-            Assert.Equal(data.Count, rows.Count);
+            rows.Count.Should().Be(data.Count);
 
             for (var i = 0; i < data.Count; ++i)
             {
                 var row = (IRow<Row>)rows[i];
                 var indexable = (IModelIndexableRow)row;
-                Assert.Same(row.Model, data[i]);
-                Assert.Equal(i, indexable.ModelIndex);
+                data[i].Should().BeSameAs(row.Model);
+                indexable.ModelIndex.Should().Be(i);
             }
         }
 

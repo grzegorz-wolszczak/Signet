@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -30,7 +31,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
             Layout(target);
 
             var index = GetFirstRowIndex(target);
-            Assert.Equal(0, index);
+            index.Should().Be(0);
 
             while (scroll.Offset.Y < scroll.Extent.Height - scroll.Viewport.Height)
             {
@@ -39,7 +40,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
                 Layout(target);
 
                 var newIndex = GetFirstRowIndex(target);
-                Assert.True(newIndex >= index, $"{newIndex} > {index} failed");
+                (newIndex >= index).Should().BeTrue($"{newIndex} > {index} failed");
                 index = newIndex;
             }
         }
@@ -54,13 +55,13 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
             Layout(target);
 
             var index = GetFirstRowIndex(target);
-            Assert.Equal(0, index);
+            index.Should().Be(0);
 
             scroll.Offset = new Vector(0, scroll.Extent.Height - scroll.Viewport.Height);
             Layout(target);
 
             var lastIndex = GetLastRowIndex(target);
-            Assert.Equal(items.Count - 1, lastIndex);
+            lastIndex.Should().Be(items.Count - 1);
         }
 
         private static int GetFirstRowIndex(TreeDataGridRowsPresenter target)

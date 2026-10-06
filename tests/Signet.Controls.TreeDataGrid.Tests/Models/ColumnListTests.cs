@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using System;
 using Signet.Controls.TreeDataGrid.Models;
 using Avalonia.Headless.XUnit;
@@ -30,10 +31,10 @@ namespace Signet.Controls.TreeDataGrid.Tests.Models
 
             target.CommitActualWidths();
 
-            Assert.Equal(100, target[0].ActualWidth);
-            Assert.Equal(60, target[1].ActualWidth);
-            Assert.Equal(85, target[2].ActualWidth);
-            Assert.Equal(255, target[3].ActualWidth);
+            target[0].ActualWidth.Should().Be(100);
+            target[1].ActualWidth.Should().Be(60);
+            target[2].ActualWidth.Should().Be(85);
+            target[3].ActualWidth.Should().Be(255);
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -65,7 +66,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Models
 
             target.CommitActualWidths();
 
-            Assert.Equal(1, raised);
+            raised.Should().Be(1);
         }
 
         private class Model

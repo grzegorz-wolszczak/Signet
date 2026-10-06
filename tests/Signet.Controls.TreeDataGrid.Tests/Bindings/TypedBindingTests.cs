@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -26,7 +27,7 @@ public class TypedBindingTests
         target.Bind(TestTarget.TextProperty, expression);
 
         // Assert
-        Assert.Equal("Test", target.Text);
+        target.Text.Should().Be("Test");
     }
 
     [AvaloniaFact]
@@ -45,7 +46,7 @@ public class TypedBindingTests
         source.Name = "Updated";
 
         // Assert
-        Assert.Equal("Updated", target.Text);
+        target.Text.Should().Be("Updated");
     }
 
     [AvaloniaFact]
@@ -66,14 +67,14 @@ public class TypedBindingTests
         source.Name = "Updated";
 
         // Assert
-        Assert.Equal("Updated", target.Text);
+        target.Text.Should().Be("Updated");
 
         // Act - change target
         target.Text = "UpdatedFromTarget";
         binding.Write!.Invoke(source, target.Text);
 
         // Assert
-        Assert.Equal("UpdatedFromTarget", source.Name);
+        source.Name.Should().Be("UpdatedFromTarget");
     }
 
     [AvaloniaFact]
@@ -92,7 +93,7 @@ public class TypedBindingTests
         target.Bind(TestTarget.TextProperty, expression);
 
         // Assert
-        Assert.Equal("Child", target.Text);
+        target.Text.Should().Be("Child");
     }
 
     [AvaloniaFact]
@@ -114,14 +115,14 @@ public class TypedBindingTests
         child.Name = "UpdatedChild";
 
         // Assert
-        Assert.Equal("UpdatedChild", target.Text);
+        target.Text.Should().Be("UpdatedChild");
 
         // Act - update intermediate property
         var newChild = new TestViewModel { Name = "NewChild" };
         source.Child = newChild;
 
         // Assert
-        Assert.Equal("NewChild", target.Text);
+        target.Text.Should().Be("NewChild");
     }
 
     [AvaloniaFact]
@@ -143,28 +144,28 @@ public class TypedBindingTests
         child.Name = "UpdatedChild";
 
         // Assert
-        Assert.Equal("UpdatedChild", target.Text);
+        target.Text.Should().Be("UpdatedChild");
 
         // Act - update from target
         target.Text = "UpdatedFromTarget";
         binding.Write!.Invoke(source, target.Text);
 
         // Assert
-        Assert.Equal("UpdatedFromTarget", child.Name);
+        child.Name.Should().Be("UpdatedFromTarget");
 
         // Act - change intermediate link
         var newChild = new TestViewModel { Name = "NewChild" };
         source.Child = newChild;
 
         // Assert
-        Assert.Equal("NewChild", target.Text);
+        target.Text.Should().Be("NewChild");
 
         // Act - update from target after changing intermediate
         target.Text = "FinalUpdate";
         binding.Write!.Invoke(source, target.Text);
 
         // Assert
-        Assert.Equal("FinalUpdate", newChild.Name);
+        newChild.Name.Should().Be("FinalUpdate");
     }
 
     [AvaloniaFact]
@@ -184,7 +185,7 @@ public class TypedBindingTests
         target.Bind(TestTarget.TextProperty, expression);
 
         // Assert
-        Assert.Equal("GrandChild", target.Text);
+        target.Text.Should().Be("GrandChild");
     }
 
     [AvaloniaFact]
@@ -207,14 +208,14 @@ public class TypedBindingTests
         grandChild.Name = "UpdatedGrandChild";
 
         // Assert
-        Assert.Equal("UpdatedGrandChild", target.Text);
+        target.Text.Should().Be("UpdatedGrandChild");
 
         // Act - update middle property
         var newGrandChild = new TestViewModel { Name = "NewGrandChild" };
         child.Child = newGrandChild;
 
         // Assert
-        Assert.Equal("NewGrandChild", target.Text);
+        target.Text.Should().Be("NewGrandChild");
 
         // Act - update root property
         var newChildWithGrandChild = new TestViewModel
@@ -225,7 +226,7 @@ public class TypedBindingTests
         source.Child = newChildWithGrandChild;
 
         // Assert
-        Assert.Equal("NewestGrandChild", target.Text);
+        target.Text.Should().Be("NewestGrandChild");
     }
 
     [AvaloniaFact]
@@ -250,21 +251,21 @@ public class TypedBindingTests
 
 
         // Assert
-        Assert.Equal("UpdatedFromTarget", grandChild.Name);
+        grandChild.Name.Should().Be("UpdatedFromTarget");
 
         // Act - change intermediate node and update from target
         var newGrandChild = new TestViewModel { Name = "NewGrandChild" };
         child.Child = newGrandChild;
 
         // Assert initial update
-        Assert.Equal("NewGrandChild", target.Text);
+        target.Text.Should().Be("NewGrandChild");
 
         // Act - update again from target
         target.Text = "AfterIntermediateChange";
         binding.Write!.Invoke(source, target.Text);
 
         // Assert
-        Assert.Equal("AfterIntermediateChange", newGrandChild.Name);
+        newGrandChild.Name.Should().Be("AfterIntermediateChange");
     }
 
     [AvaloniaFact]
@@ -285,7 +286,7 @@ public class TypedBindingTests
         target.Bind(TestTarget.TextProperty, expression);
 
         // Assert
-        Assert.Equal("GreatGrandChild", target.Text);
+        target.Text.Should().Be("GreatGrandChild");
     }
 
     [AvaloniaFact]
@@ -309,14 +310,14 @@ public class TypedBindingTests
         greatGrandChild.Name = "UpdatedGreatGrandChild";
 
         // Assert
-        Assert.Equal("UpdatedGreatGrandChild", target.Text);
+        target.Text.Should().Be("UpdatedGreatGrandChild");
 
         // Act - update middle node
         var newGreatGrandChild = new TestViewModel { Name = "NewGreatGrandChild" };
         grandChild.Child = newGreatGrandChild;
 
         // Assert
-        Assert.Equal("NewGreatGrandChild", target.Text);
+        target.Text.Should().Be("NewGreatGrandChild");
 
         // Act - update higher node
         var newGrandChildWithChild = new TestViewModel
@@ -327,7 +328,7 @@ public class TypedBindingTests
         child.Child = newGrandChildWithChild;
 
         // Assert
-        Assert.Equal("BrandNewGreatGrandChild", target.Text);
+        target.Text.Should().Be("BrandNewGreatGrandChild");
     }
 
     [AvaloniaFact]
@@ -352,21 +353,21 @@ public class TypedBindingTests
         binding.Write!.Invoke(source, target.Text);
 
         // Assert
-        Assert.Equal("UpdatedFromTarget", greatGrandChild.Name);
+        greatGrandChild.Name.Should().Be("UpdatedFromTarget");
 
         // Act - change leaf node
         var newGreatGrandChild = new TestViewModel { Name = "NewGreatGrandChild" };
         grandChild.Child = newGreatGrandChild;
 
         // Assert
-        Assert.Equal("NewGreatGrandChild", target.Text);
+        target.Text.Should().Be("NewGreatGrandChild");
 
         // Act - update from target
         target.Text = "AfterLeafChange";
         binding.Write!.Invoke(source, target.Text);
 
         // Assert
-        Assert.Equal("AfterLeafChange", newGreatGrandChild.Name);
+        newGreatGrandChild.Name.Should().Be("AfterLeafChange");
 
         // Act - update middle node
         var newGrandChildWithChild = new TestViewModel
@@ -377,14 +378,14 @@ public class TypedBindingTests
         child.Child = newGrandChildWithChild;
 
         // Assert
-        Assert.Equal("BrandNewGreatGrandChild", target.Text);
+        target.Text.Should().Be("BrandNewGreatGrandChild");
 
         // Act - update from target
         target.Text = "AfterMiddleChange";
         binding.Write!.Invoke(source, target.Text);
 
         // Assert
-        Assert.Equal("AfterMiddleChange", newGrandChildWithChild.Child.Name);
+        newGrandChildWithChild.Child.Name.Should().Be("AfterMiddleChange");
     }
 
     [AvaloniaFact]
@@ -402,14 +403,14 @@ public class TypedBindingTests
         target.Bind(TestTarget.TextProperty, expression);
 
         // Assert - binding should have error state due to null reference
-        Assert.Null(target.Text); // Default value since binding path fails
+        target.Text.Should().BeNull(); // Default value since binding path fails
 
         // Act - fix the null reference
         var newChild = new TestViewModel { Name = "NewChild" };
         source.Child = newChild;
 
         // Assert - binding should work now
-        Assert.Equal("NewChild", target.Text);
+        target.Text.Should().Be("NewChild");
     }
 
     [AvaloniaFact]
@@ -430,8 +431,8 @@ public class TypedBindingTests
         expression.OnNext("UpdatedViaOnNext");
 
         // Assert
-        Assert.Equal("UpdatedViaOnNext", source.Name);
-        Assert.Equal("UpdatedViaOnNext", target.Text);
+        source.Name.Should().Be("UpdatedViaOnNext");
+        target.Text.Should().Be("UpdatedViaOnNext");
     }
 
     [AvaloniaFact]
@@ -453,21 +454,21 @@ public class TypedBindingTests
         expression.OnNext("UpdatedViaOnNext");
 
         // Assert
-        Assert.Equal("UpdatedViaOnNext", child.Name);
-        Assert.Equal("UpdatedViaOnNext", target.Text);
+        child.Name.Should().Be("UpdatedViaOnNext");
+        target.Text.Should().Be("UpdatedViaOnNext");
 
         // Act - change intermediate link
         var newChild = new TestViewModel { Name = "NewChild" };
         source.Child = newChild;
 
         // Assert
-        Assert.Equal("NewChild", target.Text);
+        target.Text.Should().Be("NewChild");
 
         // Act - update via OnNext after changing intermediate
         expression.OnNext("AfterIntermediateChange");
 
         // Assert
-        Assert.Equal("AfterIntermediateChange", newChild.Name);
+        newChild.Name.Should().Be("AfterIntermediateChange");
     }
 
     [AvaloniaFact]
@@ -490,20 +491,20 @@ public class TypedBindingTests
         expression.OnNext("UpdatedViaOnNext");
 
         // Assert
-        Assert.Equal("UpdatedViaOnNext", grandChild.Name);
+        grandChild.Name.Should().Be("UpdatedViaOnNext");
 
         // Act - change intermediate node
         var newGrandChild = new TestViewModel { Name = "NewGrandChild" };
         child.Child = newGrandChild;
 
         // Assert initial update
-        Assert.Equal("NewGrandChild", target.Text);
+        target.Text.Should().Be("NewGrandChild");
 
         // Act - update via OnNext after changing intermediate
         expression.OnNext("AfterIntermediateChange");
 
         // Assert
-        Assert.Equal("AfterIntermediateChange", newGrandChild.Name);
+        newGrandChild.Name.Should().Be("AfterIntermediateChange");
     }
 
     [AvaloniaFact]
@@ -521,37 +522,37 @@ public class TypedBindingTests
         target.Bind(TestExpandableTarget.IsExpandedProperty, expression, binding, node);
 
         // Assert initial state
-        Assert.False(target.IsExpanded);
-        Assert.False(node.IsExpanded);
-        Assert.Equal(0, node.ExpandCallCount);
-        Assert.Equal(0, node.CollapseCallCount);
+        target.IsExpanded.Should().BeFalse();
+        node.IsExpanded.Should().BeFalse();
+        node.ExpandCallCount.Should().Be(0);
+        node.CollapseCallCount.Should().Be(0);
 
         // Act - simulate ToggleExpandedCommand by directly toggling the property
         node.IsExpanded = true;
 
         // Assert expanded state propagated to target
-        Assert.True(target.IsExpanded);
-        Assert.True(node.IsExpanded);
-        Assert.Equal(1, node.ExpandCallCount);
-        Assert.Equal(0, node.CollapseCallCount);
+        target.IsExpanded.Should().BeTrue();
+        node.IsExpanded.Should().BeTrue();
+        node.ExpandCallCount.Should().Be(1);
+        node.CollapseCallCount.Should().Be(0);
 
         // Act - toggle back to collapsed
         node.IsExpanded = false;
 
         // Assert collapsed state propagated to target
-        Assert.False(target.IsExpanded);
-        Assert.False(node.IsExpanded);
-        Assert.Equal(1, node.ExpandCallCount);
-        Assert.Equal(1, node.CollapseCallCount);
+        target.IsExpanded.Should().BeFalse();
+        node.IsExpanded.Should().BeFalse();
+        node.ExpandCallCount.Should().Be(1);
+        node.CollapseCallCount.Should().Be(1);
 
         // Act - toggle via target property, which should invoke Write
         node.IsExpanded = true;
 
         // Assert expanded state propagated to target
-        Assert.True(target.IsExpanded);
-        Assert.True(node.IsExpanded);
-        Assert.Equal(2, node.ExpandCallCount);
-        Assert.Equal(1, node.CollapseCallCount);
+        target.IsExpanded.Should().BeTrue();
+        node.IsExpanded.Should().BeTrue();
+        node.ExpandCallCount.Should().Be(2);
+        node.CollapseCallCount.Should().Be(1);
     }
 
     [AvaloniaFact]
@@ -577,15 +578,15 @@ public class TypedBindingTests
         node.IsExpanded = true;
 
         // Assert both targets updated
-        Assert.True(target1.IsExpanded);
-        Assert.True(target2.IsExpanded);
+        target1.IsExpanded.Should().BeTrue();
+        target2.IsExpanded.Should().BeTrue();
 
         // Act - change from one target
         target1.IsExpanded = false;
 
         // Assert all synchronized
-        Assert.False(node.IsExpanded);
-        Assert.False(target2.IsExpanded);
+        node.IsExpanded.Should().BeFalse();
+        target2.IsExpanded.Should().BeFalse();
     }
 
     [AvaloniaFact]
@@ -615,15 +616,15 @@ public class TypedBindingTests
         target2.Bind(TestTarget.TextProperty, expression2);
 
         // Assert initial binding
-        Assert.Equal("Level5", target1.Text);
-        Assert.Equal("Level5", target2.Text);
+        target1.Text.Should().Be("Level5");
+        target2.Text.Should().Be("Level5");
 
         // Act - change leaf node property
         level5.Name = "Updated Level5";
 
         // Assert both targets updated
-        Assert.Equal("Updated Level5", target1.Text);
-        Assert.Equal("Updated Level5", target2.Text);
+        target1.Text.Should().Be("Updated Level5");
+        target2.Text.Should().Be("Updated Level5");
 
         // Act - replace a middle node in the chain
         var newLevel4 = new TestViewModel
@@ -634,23 +635,23 @@ public class TypedBindingTests
         level3.Child = newLevel4;
 
         // Assert both targets updated to the new path
-        Assert.Equal("New Level5", target1.Text);
-        Assert.Equal("New Level5", target2.Text);
+        target1.Text.Should().Be("New Level5");
+        target2.Text.Should().Be("New Level5");
 
         // Act - change leaf node property on the old path
         level5.Name = "Changed from Old Path";
 
         // Assert both targets still point to the new path
-        Assert.Equal("New Level5", target1.Text);
-        Assert.Equal("New Level5", target2.Text);
+        target1.Text.Should().Be("New Level5");
+        target2.Text.Should().Be("New Level5");
 
         // Act - update from target after chain replacement
         target1.Text = "Changed from Target1";
         binding.Write!.Invoke(root, target1.Text);
 
         // Assert the new leaf node and other target got updated
-        Assert.Equal("Changed from Target1", newLevel4.Child!.Name);
-        Assert.Equal("Changed from Target1", target2.Text);
+        newLevel4.Child!.Name.Should().Be("Changed from Target1");
+        target2.Text.Should().Be("Changed from Target1");
 
         // Act - replace another node higher in the chain
         var newLevel2 = new TestViewModel
@@ -672,16 +673,16 @@ public class TypedBindingTests
         level1.Child = newLevel2;
 
         // Assert both targets updated to the new deeply nested chain
-        Assert.Equal("Newest Level5", target1.Text);
-        Assert.Equal("Newest Level5", target2.Text);
+        target1.Text.Should().Be("Newest Level5");
+        target2.Text.Should().Be("Newest Level5");
 
         // Act - update from target after major chain replacement
         target2.Text = "Final value";
         binding.Write!.Invoke(root, target2.Text);
 
         // Assert the new deep leaf node and other target got updated
-        Assert.Equal("Final value", newLevel2.Child!.Child!.Child!.Name);
-        Assert.Equal("Final value", target1.Text);
+        newLevel2.Child!.Child!.Child!.Name.Should().Be("Final value");
+        target1.Text.Should().Be("Final value");
     }
 
 

@@ -1,3 +1,4 @@
+using AwesomeAssertions;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
@@ -49,7 +50,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.Expand(new IndexPath(0));
 
-                Assert.Equal(10, target.Rows.Count);
+                target.Rows.Count.Should().Be(10);
 
                 target.Collapse(new IndexPath(0));
 
@@ -64,7 +65,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var data = CreateData();
                 var target = CreateTarget(data, sorted);
 
-                Assert.Equal(5, target.Rows.Count);
+                target.Rows.Count.Should().Be(5);
 
                 var raised = 0;
                 target.Rows.CollectionChanged += (s, e) => ++raised;
@@ -82,7 +83,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var data = CreateData();
                 var target = CreateTarget(data, sorted);
 
-                Assert.Equal(5, target.Rows.Count);
+                target.Rows.Count.Should().Be(5);
 
                 var raised = 0;
                 target.Rows.CollectionChanged += (s, e) => ++raised;
@@ -100,7 +101,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var data = CreateData();
                 var target = CreateTarget(data, sorted);
 
-                Assert.Equal(5, target.Rows.Count);
+                target.Rows.Count.Should().Be(5);
 
                 var raised = 0;
                 target.Rows.CollectionChanged += (s, e) => ++raised;
@@ -130,7 +131,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 target.Expand(new IndexPath(0));
                 target.Expand(new IndexPath(0, 0));
 
-                Assert.Equal(11, target.Rows.Count);
+                target.Rows.Count.Should().Be(11);
 
                 var raised = 0;
                 target.Rows.CollectionChanged += (s, e) => ++raised;
@@ -151,7 +152,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.Expand(new IndexPath(4));
 
-                Assert.Equal(10, target.Rows.Count);
+                target.Rows.Count.Should().Be(10);
 
                 var raised = 0;
                 target.Rows.CollectionChanged += (s, e) => ++raised;
@@ -171,10 +172,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var toRemove = data[1];
 
                 target.Expand(1);
-                Assert.Equal(1, toRemove.Children!.CollectionChangedSubscriberCount());
+                toRemove.Children!.CollectionChangedSubscriberCount().Should().Be(1);
 
                 data.RemoveAt(1);
-                Assert.Equal(0, toRemove.Children!.CollectionChangedSubscriberCount());
+                toRemove.Children!.CollectionChangedSubscriberCount().Should().Be(0);
             }
 
             [AvaloniaTheory(Timeout = 10000)]
@@ -189,10 +190,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 toRemove.Children = new AvaloniaListDebug<Node> { new Node() };
 
                 target.Expand(new IndexPath(1, 1));
-                Assert.Equal(1, toRemove.Children!.CollectionChangedSubscriberCount());
+                toRemove.Children!.CollectionChangedSubscriberCount().Should().Be(1);
 
                 data.RemoveAt(1);
-                Assert.Equal(0, toRemove.Children!.CollectionChangedSubscriberCount());
+                toRemove.Children!.CollectionChangedSubscriberCount().Should().Be(0);
             }
 
             [AvaloniaTheory(Timeout = 10000)]
@@ -205,7 +206,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.Expand(new IndexPath(0));
 
-                Assert.Equal(10, target.Rows.Count);
+                target.Rows.Count.Should().Be(10);
 
                 var raised = 0;
                 target.Rows.CollectionChanged += (s, e) => ++raised;
@@ -241,7 +242,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.Expand(new IndexPath(0));
 
-                Assert.Equal(10, target.Rows.Count);
+                target.Rows.Count.Should().Be(10);
 
                 var raised = 0;
                 target.Rows.CollectionChanged += (s, e) => ++raised;
@@ -260,7 +261,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var target = CreateTarget(data, sorted);
 
                 target.Expand(new IndexPath(0));
-                Assert.Equal(10, target.Rows.Count);
+                target.Rows.Count.Should().Be(10);
 
                 var raised = 0;
                 target.Rows.CollectionChanged += (s, e) => ++raised;
@@ -279,7 +280,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var target = CreateTarget(data, sorted);
 
                 target.Expand(new IndexPath(0));
-                Assert.Equal(10, target.Rows.Count);
+                target.Rows.Count.Should().Be(10);
 
                 var raised = 0;
                 target.Rows.CollectionChanged += (s, e) => ++raised;
@@ -297,7 +298,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var data = CreateData();
                 var target = CreateTarget(data, sorted);
 
-                Assert.Equal(5, target.Rows.Count);
+                target.Rows.Count.Should().Be(5);
 
                 var raised = 0;
                 target.Rows.CollectionChanged += (s, e) => ++raised;
@@ -315,7 +316,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var data = CreateData();
                 var target = CreateTarget(data, sorted);
 
-                Assert.Equal(5, target.Rows.Count);
+                target.Rows.Count.Should().Be(5);
 
                 var raised = 0;
                 target.Rows.CollectionChanged += (s, e) => ++raised;
@@ -333,7 +334,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.Expand(new IndexPath(0));
 
-                Assert.Equal(10, target.Rows.Count);
+                target.Rows.Count.Should().Be(10);
 
                 target.Sort((x, y) => y.Id - x.Id);
 
@@ -348,7 +349,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.Expand(new IndexPath(0));
 
-                Assert.Equal(10, target.Rows.Count);
+                target.Rows.Count.Should().Be(10);
 
                 target.Sort(null);
 
@@ -374,8 +375,8 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.Expand(new IndexPath(0));
 
-                Assert.True(expander.IsExpanded);
-                Assert.Equal(1, raised);
+                expander.IsExpanded.Should().BeTrue();
+                raised.Should().Be(1);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -416,7 +417,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var target = CreateTarget(data, false);
                 var expander = (ExpanderCell<Node>)target.Rows.RealizeCell(target.Columns[0], 0, 0);
 
-                Assert.True(expander.ShowExpander);
+                expander.ShowExpander.Should().BeTrue();
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -426,7 +427,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var target = CreateTarget(data, false);
                 var expander = (ExpanderCell<Node>)target.Rows.RealizeCell(target.Columns[0], 0, 0);
 
-                Assert.False(expander.ShowExpander);
+                expander.ShowExpander.Should().BeFalse();
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -452,8 +453,8 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.Expand(new IndexPath(0));
 
-                Assert.False(expander.ShowExpander);
-                Assert.False(expander.IsExpanded);
+                expander.ShowExpander.Should().BeFalse();
+                expander.IsExpanded.Should().BeFalse();
             }
 
             [AvaloniaTheory(Timeout = 10000)]
@@ -466,7 +467,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.ExpandAll();
 
-                Assert.Equal(65, target.Rows.Count);
+                target.Rows.Count.Should().Be(65);
             }
 
             [AvaloniaTheory(Timeout = 10000)]
@@ -479,16 +480,16 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 // We need to expand before we can collapse.
                 target.ExpandAll();
-                Assert.Equal(65, target.Rows.Count);
+                target.Rows.Count.Should().Be(65);
 
                 // Now we can test collapsing.
                 target.CollapseAll();
-                Assert.Equal(5, target.Rows.Count);
+                target.Rows.Count.Should().Be(5);
 
                 // Ensure that nested rows were collapsed, i.e. only the first level of rows is
                 // visible after expanding now.
                 target.Expand(0);
-                Assert.Equal(8, target.Rows.Count);
+                target.Rows.Count.Should().Be(8);
             }
         }
 
@@ -498,14 +499,14 @@ namespace Signet.Controls.TreeDataGrid.Tests
             var data = CreateData();
             var target = CreateTarget(data, false);
 
-            Assert.Throws<InvalidOperationException>(() =>
+            FluentActions.Invoking(() =>
             {
                 target.Columns.Add(new HierarchicalExpanderColumn<Node>(
                     new TextColumn<Node, int>("ID", x => x.Id),
                     x => x.Children,
                     null,
                     x => x.IsExpanded));
-            });
+            }).Should().Throw<InvalidOperationException>();
         }
 
         [AvaloniaFact(Timeout = 10000)]
@@ -516,10 +517,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
             var expander = target.Columns.OfType<IExpanderColumn<Node>>().First();
 
-            Assert.Throws<InvalidOperationException>(() =>
+            FluentActions.Invoking(() =>
             {
                 target.Columns.Remove(expander);
-            });
+            }).Should().Throw<InvalidOperationException>();
         }
 
         public class ExpansionBinding
@@ -653,7 +654,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 {
                     var node = data[i];
                     var nodeIndex = parentIndex.Append(i);
-                    Assert.Equal(expanded.Contains(nodeIndex), node.IsExpanded);
+                    node.IsExpanded.Should().Be(expanded.Contains(nodeIndex));
 
                     if (node.Children is not null)
                         AssertDataState(nodeIndex, node.Children, expanded);
@@ -676,7 +677,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             {
                 var rowIndex = target.Rows.ModelIndexToRowIndex(modelIndex);
 
-                Assert.NotEqual(-1, rowIndex);
+                rowIndex.Should().NotBe(-1);
 
                 for (var c = 0; c < target.Columns.Count; c++)
                 {
@@ -695,7 +696,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var target = CreateTarget(data, false);
                 var expander = (ExpanderCell<Node>)target.Rows.RealizeCell(target.Columns[0], 0, 0);
 
-                Assert.False(expander.ShowExpander);
+                expander.ShowExpander.Should().BeFalse();
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -705,7 +706,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var target = CreateTarget(data, false);
                 var expander = (ExpanderCell<Node>)target.Rows.RealizeCell(target.Columns[0], 0, 0);
 
-                Assert.True(expander.ShowExpander);
+                expander.ShowExpander.Should().BeTrue();
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -718,14 +719,14 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 expander.PropertyChanged += (s, e) =>
                 {
-                    Assert.Equal("ShowExpander", e.PropertyName);
+                    e.PropertyName.Should().Be("ShowExpander");
                     ++raised;
                 };
 
                 data[0].Children!.Add(new Node());
 
-                Assert.True(expander.ShowExpander);
-                Assert.Equal(1, raised);
+                expander.ShowExpander.Should().BeTrue();
+                raised.Should().Be(1);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -738,14 +739,14 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 expander.PropertyChanged += (s, e) =>
                 {
-                    Assert.Equal("ShowExpander", e.PropertyName);
+                    e.PropertyName.Should().Be("ShowExpander");
                     ++raised;
                 };
 
                 data[0].Children!.RemoveAt(0);
 
-                Assert.False(expander.ShowExpander);
-                Assert.Equal(1, raised);
+                expander.ShowExpander.Should().BeFalse();
+                raised.Should().Be(1);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -756,13 +757,13 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var row = (HierarchicalRow<Node>)target.Rows[0];
                 var expander = (ExpanderCell<Node>)target.Rows.RealizeCell(target.Columns[0], 0, 0);
 
-                Assert.True(expander.ShowExpander);
-                Assert.True(row.ShowExpander);
+                expander.ShowExpander.Should().BeTrue();
+                row.ShowExpander.Should().BeTrue();
 
                 data[0].Children!.RemoveAt(0);
 
-                Assert.False(expander.ShowExpander);
-                Assert.False(row.ShowExpander);
+                expander.ShowExpander.Should().BeFalse();
+                row.ShowExpander.Should().BeFalse();
             }
         }
 
@@ -776,11 +777,11 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var target = CreateTarget(data1, false);
 
                 // Ensure selection model is created.
-                Assert.Same(data1, ((ITreeDataGridSelection?)target.RowSelection)!.Source);
+                (((ITreeDataGridSelection?)target.RowSelection)!.Source).Should().BeSameAs(data1);
 
                 target.Items = data2;
 
-                Assert.Same(data2, ((ITreeDataGridSelection?)target.RowSelection)!.Source);
+                (((ITreeDataGridSelection?)target.RowSelection)!.Source).Should().BeSameAs(data2);
             }
         }
 
@@ -795,18 +796,18 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var target = CreateTarget(data, sorted);
                 var raised = 0;
 
-                Assert.Equal(5, target.Rows.Count);
+                target.Rows.Count.Should().Be(5);
 
                 target.Rows.CollectionChanged += (s, e) =>
                 {
-                    Assert.Equal(NotifyCollectionChangedAction.Reset, e.Action);
+                    e.Action.Should().Be(NotifyCollectionChangedAction.Reset);
                     ++raised;
                 };
 
                 target.Items = CreateData(10);
 
-                Assert.Equal(10, target.Rows.Count);
-                Assert.Equal(1, raised);
+                target.Rows.Count.Should().Be(10);
+                raised.Should().Be(1);
             }
 
             [AvaloniaTheory(Timeout = 10000)]
@@ -819,18 +820,18 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var raised = 0;
 
                 target.Expand(0);
-                Assert.Equal(10, target.Rows.Count);
+                target.Rows.Count.Should().Be(10);
 
                 target.Rows.CollectionChanged += (s, e) =>
                 {
-                    Assert.Equal(NotifyCollectionChangedAction.Reset, e.Action);
+                    e.Action.Should().Be(NotifyCollectionChangedAction.Reset);
                     ++raised;
                 };
 
                 target.Items = CreateData(12);
 
-                Assert.Equal(12, target.Rows.Count);
-                Assert.Equal(1, raised);
+                target.Rows.Count.Should().Be(12);
+                raised.Should().Be(1);
             }
 
             [AvaloniaTheory(Timeout = 10000)]
@@ -843,11 +844,11 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var toRemove = data[1];
 
                 target.Expand(1);
-                Assert.Equal(1, toRemove.Children!.CollectionChangedSubscriberCount());
+                toRemove.Children!.CollectionChangedSubscriberCount().Should().Be(1);
 
                 target.Items = CreateData(12);
 
-                Assert.Equal(0, toRemove.Children!.CollectionChangedSubscriberCount());
+                toRemove.Children!.CollectionChangedSubscriberCount().Should().Be(0);
             }
 
             [AvaloniaTheory(Timeout = 10000)]
@@ -862,11 +863,11 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 toRemove.Children = new AvaloniaListDebug<Node> { new Node() };
 
                 target.Expand(new IndexPath(1, 1));
-                Assert.Equal(1, toRemove.Children!.CollectionChangedSubscriberCount());
+                toRemove.Children!.CollectionChangedSubscriberCount().Should().Be(1);
 
                 target.Items = CreateData(12);
 
-                Assert.Equal(0, toRemove.Children!.CollectionChangedSubscriberCount());
+                toRemove.Children!.CollectionChangedSubscriberCount().Should().Be(0);
             }
 
             [AvaloniaFact(Timeout = 10000)]
@@ -884,14 +885,14 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.RowSelection!.SelectionChanged += (s, e) =>
                 {
-                    Assert.Equal(new IndexPath(1, 0), e.SelectedIndexes.Single());
-                    Assert.Equal("New Selection", e.SelectedItems.Single()!.Caption);
+                    e.SelectedIndexes.Single().Should().Be(new IndexPath(1, 0));
+                    e.SelectedItems.Single()!.Caption.Should().Be("New Selection");
                     ++raised;
                 };
 
                 target.RowSelection!.Select(new IndexPath(1, 0));
 
-                Assert.Equal(1, raised);
+                raised.Should().Be(1);
             }
         }
 
@@ -985,8 +986,8 @@ namespace Signet.Controls.TreeDataGrid.Tests
             bool sorted,
             params IndexPath[] expanded)
         {
-            Assert.Equal(2, target.Columns.Count);
-            Assert.Equal(expectedRows, target.Rows.Count);
+            target.Columns.Count.Should().Be(2);
+            target.Rows.Count.Should().Be(expectedRows);
 
             var rowIndex = 0;
 
@@ -1005,19 +1006,17 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 {
                     var modelIndex = parent.Append(levelData.IndexOf(sortedData[i]));
                     var model = GetModel(data, modelIndex);
-                    var row = Assert.IsType<HierarchicalRow<Node>>(target.Rows[rowIndex]);
+                    var row = target.Rows[rowIndex].Should().BeOfType<HierarchicalRow<Node>>().Subject;
                     var shouldBeExpanded = expanded.Contains(modelIndex);
 
-                    Assert.Equal(modelIndex, row.ModelIndexPath);
-                    Assert.True(
-                        row.IsExpanded == shouldBeExpanded,
-                        $"Expected index {modelIndex} IsExpanded == {shouldBeExpanded}");
+                    row.ModelIndexPath.Should().Be(modelIndex);
+                    (row.IsExpanded == shouldBeExpanded).Should().BeTrue($"Expected index {modelIndex} IsExpanded == {shouldBeExpanded}");
 
                     ++rowIndex;
 
                     if (row.IsExpanded)
                     {
-                        Assert.NotNull(model.Children);
+                        model.Children.Should().NotBeNull();
                         AssertLevel(modelIndex, model.Children!);
                     }
                 }
