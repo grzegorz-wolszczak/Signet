@@ -1,9 +1,12 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Signet.App.Infrastructure;
 using Signet.App.ViewModels;
+using Signet.Controls.TreeDataGrid;
 
 namespace Signet.App.Views;
 
@@ -13,9 +16,24 @@ namespace Signet.App.Views;
 /// rebuilt on every open — see the remarks in that class), so this window's <c>DataContext</c>
 /// does not change.
 /// </summary>
+/// <remarks>
+/// The words table is a <see cref="TreeDataGrid"/> whose source and columns are built here, over the view model's
+/// <see cref="SpellcheckEditorViewModel.Words"/> (a TreeDataGrid source is bound to the UI thread, so it does not
+/// belong in the view model). Several rows can be selected; the selection is passed to
+/// <see cref="SpellcheckEditorViewModel.SetSelectedWords"/>.
+/// </remarks>
+[SuppressMessage(
+    "Reliability",
+    "CA1001:Types that own disposable fields should be disposable",
+    Justification = "The table source is disposed when the data context changes; the current one lives as long as the "
+        + "window and the view model's Words it observes.")]
 public partial class SpellcheckEditorWindow : Window
 {
     private SpellcheckEditorViewModel? _bound;
+
+    // Keeps the column headers in the current UI language (held weakly by Strings).
+    private LocalizedColumns<SpellcheckWordRow>? _columns;
+    private FlatTreeDataGridSource<SpellcheckWordRow>? _source;
 
     /// <summary>Initializes the window.</summary>
     public SpellcheckEditorWindow()
@@ -23,26 +41,53 @@ public partial class SpellcheckEditorWindow : Window
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
         WordsGrid.DoubleTapped += OnWordDoubleTapped;
-        WordsGrid.SelectionChanged += OnSelectionChanged;
     }
 
     private void OnDataContextChanged(object? sender, EventArgs e)
     {
+        if (_source is not null)
+        {
+            _source.RowSelection!.SelectionChanged -= OnSelectionChanged;
+            _source.Dispose();
+            _source = null;
+        }
+
         _bound = DataContext as SpellcheckEditorViewModel;
+        if (_bound is not null)
+        {
+            _columns = new LocalizedColumns<SpellcheckWordRow>();
+            _source = new FlatTreeDataGridSource<SpellcheckWordRow>(_bound.Words)
+            {
+                Columns =
+                {
+                    _columns.Text("SpellcheckEditorWindow_Word", r => r.Word, new GridLength(1, GridUnitType.Star)),
+                    _columns.Text("ReportsWindow_Count", r => r.Count, new GridLength(70)),
+                    _columns.Text("SpellcheckEditorWindow_Language", r => r.LanguageName, new GridLength(110)),
+                    _columns.Text("SpellcheckEditorWindow_Misspelled", r => r.MisspelledDisplay, new GridLength(90)),
+                },
+            };
+            _source.RowSelection!.SingleSelect = false;
+            _source.RowSelection.SelectionChanged += OnSelectionChanged;
+        }
+
+        WordsGrid.Source = _source;
     }
 
     private void OnCloseClicked(object? sender, RoutedEventArgs e) => Close();
 
     private void OnWordDoubleTapped(object? sender, TappedEventArgs e)
     {
-        if (_bound is not null && WordsGrid.SelectedItem is SpellcheckWordRow row)
+        if (_bound is not null && _source?.RowSelection?.SelectedItem is { } row)
         {
             _bound.RequestNavigation(row);
         }
     }
 
-    private void OnSelectionChanged(object? sender, SelectionChangedEventArgs e)
+    private void OnSelectionChanged(object? sender, EventArgs e)
     {
-        _bound?.SetSelectedWords(WordsGrid.SelectedItems.OfType<SpellcheckWordRow>());
+        if (_source is not null)
+        {
+            _bound?.SetSelectedWords(_source.RowSelection!.SelectedItems.OfType<SpellcheckWordRow>());
+        }
     }
 }

@@ -22,16 +22,8 @@
 
     <Grid Grid.Row="1" ColumnDefinitions="*,220" ColumnSpacing="10">
 
-      <DataGrid Grid.Column="0" x:Name="WordsGrid" ItemsSource="{Binding Words}"
-                IsReadOnly="True" AutoGenerateColumns="False" GridLinesVisibility="Horizontal"
-                CanUserSortColumns="True" SelectionMode="Extended">
-        <DataGrid.Columns>
-          <DataGridTextColumn Header="{loc:Loc SpellcheckEditorWindow_Word}" Binding="{Binding Word}" Width="*" />
-          <DataGridTextColumn Header="{loc:Loc ReportsWindow_Count}" Binding="{Binding Count}" Width="70" />
-          <DataGridTextColumn Header="{loc:Loc SpellcheckEditorWindow_Language}" Binding="{Binding LanguageName}" Width="110" />
-          <DataGridTextColumn Header="{loc:Loc SpellcheckEditorWindow_Misspelled}" Binding="{Binding MisspelledDisplay}" Width="90" />
-        </DataGrid.Columns>
-      </DataGrid>
+      <!-- Source and columns (Word, Count, Language, Misspelled?) are built in the code-behind. -->
+      <TreeDataGrid Grid.Column="0" x:Name="WordsGrid" Classes="gridLines" />
 
       <StackPanel Grid.Column="1" Spacing="8">
         <Button Content="{loc:Loc SpellcheckEditorWindow_Ignore}" Command="{Binding IgnoreCommand}" HorizontalAlignment="Stretch" />

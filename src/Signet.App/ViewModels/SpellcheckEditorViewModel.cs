@@ -43,8 +43,7 @@ public sealed record SpellcheckWordRow(
 /// view model instance (not rebuilt on every opening — it keeps the filter and the selected
 /// dictionary between openings without saving them to <c>SettingsStore</c>). Double-click always
 /// navigates to the FIRST occurrence of the word in the book (consistent with "go to" in the
-/// Reports dialog). The "Word" column is always sorted ordinally (native <c>DataGrid</c>
-/// sorting). The default user dictionary is always listed under "Dictionaries", even before its
+/// Reports dialog). The table is sorted by clicking a column header (in the view). The default user dictionary is always listed under "Dictionaries", even before its
 /// file exists, so that "Add to Dictionary" works without creating the dictionary first
 /// (consistent with "Add To Default Dictionary" in the Code View context menu).
 /// </remarks>
