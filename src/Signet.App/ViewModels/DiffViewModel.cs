@@ -46,6 +46,8 @@ public sealed partial class DiffViewModel : ViewModelBase
     private string _searchText = string.Empty;
     private bool _searchInRight = true;
     private string _status = string.Empty;
+    private Func<bool>? _revert;
+    private bool _reverted;
 
     /// <summary>Creates the model for the list of differences between states.</summary>
     /// <param name="files">Changed files (from <see cref="BookComparer.Compare"/>).</param>
@@ -253,6 +255,43 @@ public sealed partial class DiffViewModel : ViewModelBase
 
     [RelayCommand]
     private void PreviousChange() => GoToChange(forward: false);
+
+    /// <summary>Whether the window offers "Undo the change" (<see cref="EnableRevert"/>).</summary>
+    public bool CanRevert => _revert is not null;
+
+    /// <summary>
+    /// Offers "Undo the change": <paramref name="revert"/> restores the left state and returns <c>false</c> when it no
+    /// longer can (e.g. the file was edited since). Used once.
+    /// </summary>
+    public void EnableRevert(Func<bool> revert)
+    {
+        _revert = revert ?? throw new ArgumentNullException(nameof(revert));
+        OnPropertyChanged(nameof(CanRevert));
+        RevertCommand.NotifyCanExecuteChanged();
+    }
+
+    /// <summary>"Undo the change" — restores the left state.</summary>
+    [RelayCommand(CanExecute = nameof(CanRunRevert))]
+    private void Revert()
+    {
+        if (_revert is null || _reverted)
+        {
+            return;
+        }
+
+        if (_revert())
+        {
+            _reverted = true;
+            Status = Strings.Get("Diff_Reverted");
+            RevertCommand.NotifyCanExecuteChanged();
+        }
+        else
+        {
+            Status = Strings.Get("Diff_RevertNotPossible");
+        }
+    }
+
+    private bool CanRunRevert() => _revert is not null && !_reverted;
 
     [RelayCommand]
     private void FindNext() => Find(forward: true);

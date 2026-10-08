@@ -726,6 +726,228 @@ public sealed class CleanupAnalysisTests
         plan.GetStep(CleanupStep.NestedDivs)!.Items.Single().IsApplied.Should().BeFalse();
     }
 
+    private static readonly int[] LevelOne = { 1 };
+
+    private const string SiblingDivs =
+        "<div class=\"w\">\n    <p>Hello, world.</p>\n  </div>\n  <div class=\"w\">\n    <p>Bye.</p>\n  </div>";
+
+    private static Book LoadSiblings(TempDir temp, string css, string body = SiblingDivs) => LoadMinimal(temp, tree =>
+    {
+        if (css.Length > 0)
+        {
+            AppendCss(tree, css);
+        }
+
+        ReplaceInChapter1(tree, "  <p>Hello, world.</p>", "  " + body);
+    });
+
+    private static string Chapter1Path(Book book) =>
+        book.GetHtmlResources().Single(h => h.BookPath.EndsWith("chapter1.xhtml", StringComparison.Ordinal)).BookPath;
+
+    [Fact]
+    public void MergeDivs_a_safe_run_is_listed_with_its_level_and_apply_merges_it()
+    {
+        using TempDir temp = new();
+        using Book book = LoadSiblings(temp, ".w { color: red; margin: 0; }");
+
+        CleanupPlan plan = Plan(book, CleanupStep.MergeDivs);
+
+        CleanupItem item = Step(plan, CleanupStep.MergeDivs).Items.Should().ContainSingle().Subject;
+        item.IsRisky.Should().BeFalse();
+        item.IsApplied.Should().BeTrue();
+        item.RuleCount.Should().Be(1);
+        item.Text.Should().Contain("<div class=\"w\">");
+        item.Offset.Should().Be(Chapter1(book).IndexOf("<div", StringComparison.Ordinal));
+        Step(plan, CleanupStep.MergeDivs).Levels.Should().ContainSingle()
+            .Which.Should().BeEquivalentTo(new CleanupLevelFile(Chapter1Path(book), LevelOne));
+
+        book.ApplyCleanup(plan).Should().BeTrue();
+        Chapter1(book).Should().Contain("<div class=\"w\">\n    <p>Hello, world.</p>\n    <p>Bye.</p>\n  </div>");
+    }
+
+    [Theory]
+    [InlineData(".w { margin-bottom: 1em; }", "margin-bottom")]
+    [InlineData(".w { border: 1px solid; }", "border")]
+    [InlineData(".w + .w { color: blue; }", "blue")]
+    [InlineData(".w:last-child p { color: green; }", "green")]
+    public void MergeDivs_a_run_whose_merge_changes_the_styling_is_risky(string css, string expected)
+    {
+        using TempDir temp = new();
+        using Book book = LoadSiblings(temp, css);
+
+        CleanupItem item = Step(Plan(book, CleanupStep.MergeDivs), CleanupStep.MergeDivs).Items.Single();
+
+        item.IsRisky.Should().BeTrue();
+        item.IsApplied.Should().BeFalse();
+        item.Consequences.Should().Contain(c => c.Text.Contains(expected, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void MergeDivs_text_that_would_run_together_makes_a_run_risky()
+    {
+        using TempDir temp = new();
+        using Book book = LoadSiblings(temp, string.Empty, "<div class=\"w\">Hello,</div> <div class=\"w\">world.</div>");
+
+        CleanupItem item = Step(Plan(book, CleanupStep.MergeDivs), CleanupStep.MergeDivs).Items.Single();
+
+        item.IsRisky.Should().BeTrue();
+        item.Consequences.Should().ContainSingle();
+    }
+
+    private const string DivsWithId = "<div id=\"x\"><p>Hello,</p></div><div id=\"x\"><p>world.</p></div>";
+
+    [Theory]
+    [InlineData("<p><a href=\"#x\">go</a></p>" + DivsWithId, "id=\"x\"")]
+    [InlineData("<p><label for=\"x\">go</label></p>" + DivsWithId, "id=\"x\"")]
+    [InlineData("<p aria-describedby=\"y x\">go</p>" + DivsWithId, "id=\"x\"")]
+    [InlineData("<script type=\"text/javascript\">document.getElementById('x');</script>" + DivsWithId, "id=\"x\"")]
+    [InlineData("<div><p>Hello,</p></div><![CDATA[ some text ]]><div><p>world.</p></div>", "some text")]
+    public void MergeDivs_a_referenced_id_or_cdata_text_make_a_run_risky(string body, string expected)
+    {
+        using TempDir temp = new();
+        using Book book = LoadSiblings(temp, string.Empty, body);
+
+        CleanupItem item = Step(Plan(book, CleanupStep.MergeDivs), CleanupStep.MergeDivs).Items.Single();
+
+        item.IsRisky.Should().BeTrue();
+        item.Consequences.Should().Contain(c => c.Text.Contains(expected, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void MergeDivs_an_id_linked_from_another_file_makes_a_run_risky()
+    {
+        using TempDir temp = new();
+        using Book book = LoadMinimal(temp, tree =>
+        {
+            ReplaceInChapter1(tree, "  <p>Hello, world.</p>", "  " + DivsWithId);
+            string nav = Path.Combine(tree, "EPUB", "nav.xhtml");
+            File.WriteAllText(nav, File.ReadAllText(nav).Replace("text/chapter1.xhtml\"", "text/chapter1.xhtml#x\"", StringComparison.Ordinal));
+        });
+
+        CleanupItem item = Step(Plan(book, CleanupStep.MergeDivs), CleanupStep.MergeDivs).Items.Single();
+
+        item.IsRisky.Should().BeTrue();
+        item.Consequences.Should().ContainSingle().Which.Text.Should().Contain("id=\"x\"");
+    }
+
+    [Theory]
+    [InlineData("", DivsWithId)]
+    [InlineData("", "<p><a href=\"#y\">go</a></p>" + DivsWithId)]
+    [InlineData("", "<div><p>Hello,</p></div><!-- note --><div><p>world.</p></div>")]
+    [InlineData("", "<div><p>Hello,</p></div><![CDATA[ ]]><div><p>world.</p></div>")]
+    [InlineData(".w { margin: 0 auto; padding: 0 1em; border-left: 2px solid; width: 80%; background-color: #eee; }", SiblingDivs)]
+    [InlineData(".w { margin-top: 2em; } .w + .w { margin-top: 0; }", SiblingDivs)]
+    public void MergeDivs_what_looks_the_same_after_merging_is_not_risky(string css, string body)
+    {
+        using TempDir temp = new();
+        using Book book = LoadSiblings(temp, css, body);
+
+        CleanupItem item = Step(Plan(book, CleanupStep.MergeDivs), CleanupStep.MergeDivs).Items.Single();
+
+        item.IsRisky.Should().BeFalse();
+    }
+
+    [Fact]
+    public void MergeDivs_an_accepted_risky_run_is_merged()
+    {
+        using TempDir temp = new();
+        using Book book = LoadSiblings(temp, ".w { margin-bottom: 1em; }");
+        CleanupAnalysis analysis = Analyse(book);
+        HashSet<CleanupStep> steps = new() { CleanupStep.MergeDivs };
+        string key = analysis.Plan(steps, NoExclusions).GetStep(CleanupStep.MergeDivs)!.Items.Single().Key;
+
+        CleanupPlan accepted = analysis.Plan(steps, NoExclusions, new HashSet<string> { key });
+
+        book.ApplyCleanup(accepted).Should().BeTrue();
+        Chapter1(book).Should().Contain("<p>Hello, world.</p>\n    <p>Bye.</p>");
+    }
+
+    private const string TwoLevels =
+        "<div class=\"w\"><p>a</p></div><div class=\"w\"><p>b</p></div>"
+        + "<section><div class=\"v\"><p>c</p></div><div class=\"v\"><p>d</p></div></section>";
+
+    [Fact]
+    public void MergeDivs_levels_switched_off_in_a_file_are_reported_but_not_listed_or_merged()
+    {
+        using TempDir temp = new();
+        using Book book = LoadSiblings(temp, string.Empty, TwoLevels);
+        CleanupAnalysis analysis = Analyse(book);
+        HashSet<CleanupStep> steps = new() { CleanupStep.MergeDivs };
+        string path = Chapter1Path(book);
+
+        CleanupStepResult all = analysis.Plan(steps, NoExclusions).GetStep(CleanupStep.MergeDivs)!;
+        all.Items.Should().HaveCount(2);
+        all.Levels.Single().Levels.Should().Equal(1, 2);
+
+        DivMergeOptions chosen = new(false, true, new HashSet<string> { DivMergeOptions.LevelKey(path, 2) });
+        CleanupPlan plan = analysis.Plan(steps, NoExclusions, null, chosen);
+
+        plan.GetStep(CleanupStep.MergeDivs)!.Items.Should().ContainSingle().Which.Text.Should().Contain("class=\"w\"");
+        plan.GetStep(CleanupStep.MergeDivs)!.Levels.Single().Levels.Should().Equal(1, 2);
+        book.ApplyCleanup(plan).Should().BeTrue();
+        Chapter1(book).Should().Contain("<div class=\"w\"><p>a</p><p>b</p></div>")
+            .And.Contain("<div class=\"v\"><p>c</p></div><div class=\"v\"><p>d</p></div>");
+    }
+
+    [Fact]
+    public void MergeDivs_in_all_levels_mode_the_switched_off_levels_are_ignored()
+    {
+        using TempDir temp = new();
+        using Book book = LoadSiblings(temp, string.Empty, TwoLevels);
+        string path = Chapter1Path(book);
+
+        DivMergeOptions allLevels = new(true, true, new HashSet<string> { DivMergeOptions.LevelKey(path, 2) });
+        CleanupPlan plan = Analyse(book).Plan(new HashSet<CleanupStep> { CleanupStep.MergeDivs }, NoExclusions, null, allLevels);
+
+        plan.GetStep(CleanupStep.MergeDivs)!.Items.Should().HaveCount(2);
+    }
+
+    private const string Cascading =
+        "<div class=\"o\"><div class=\"i\"><p>a</p></div></div><div class=\"o\"><div class=\"i\"><p>b</p></div></div>";
+
+    [Fact]
+    public void MergeDivs_repeat_merges_the_runs_that_a_merge_creates()
+    {
+        using TempDir temp = new();
+        using Book book = LoadSiblings(temp, string.Empty, Cascading);
+
+        CleanupPlan plan = Plan(book, CleanupStep.MergeDivs);
+
+        plan.GetStep(CleanupStep.MergeDivs)!.Items.Select(i => i.Text).Should().HaveCount(2)
+            .And.Contain(t => t.Contains("class=\"o\"", StringComparison.Ordinal))
+            .And.Contain(t => t.Contains("class=\"i\"", StringComparison.Ordinal));
+        plan.GetStep(CleanupStep.MergeDivs)!.Levels.Single().Levels.Should().Equal(1, 2);
+        book.ApplyCleanup(plan).Should().BeTrue();
+        Chapter1(book).Should().Contain("<div class=\"o\"><div class=\"i\"><p>a</p><p>b</p></div></div>");
+    }
+
+    [Fact]
+    public void MergeDivs_without_repeat_only_the_runs_found_in_the_original_text_are_merged()
+    {
+        using TempDir temp = new();
+        using Book book = LoadSiblings(temp, string.Empty, Cascading);
+
+        DivMergeOptions once = new(true, false, new HashSet<string>());
+        CleanupPlan plan = Analyse(book).Plan(new HashSet<CleanupStep> { CleanupStep.MergeDivs }, NoExclusions, null, once);
+
+        plan.GetStep(CleanupStep.MergeDivs)!.Items.Should().ContainSingle();
+        book.ApplyCleanup(plan).Should().BeTrue();
+        Chapter1(book).Should().Contain("<div class=\"o\"><div class=\"i\"><p>a</p></div><div class=\"i\"><p>b</p></div></div>");
+    }
+
+    [Fact]
+    public void MergeDivs_runs_before_nested_divs_so_the_nesting_a_merge_leaves_is_collapsed()
+    {
+        using TempDir temp = new();
+        using Book book = LoadSiblings(
+            temp, string.Empty, "<div class=\"w\"><div class=\"w\"><p>a</p></div></div><div class=\"w\"><div class=\"w\"><p>b</p></div></div>");
+
+        CleanupPlan plan = Plan(book, CleanupStep.MergeDivs, CleanupStep.NestedDivs);
+
+        book.ApplyCleanup(plan).Should().BeTrue();
+        Chapter1(book).Should().Contain("<div class=\"w\"><p>a</p><p>b</p></div>");
+    }
+
     private static Book LoadEmpty(TempDir temp, string css, string body) => LoadMinimal(temp, tree =>
     {
         if (css.Length > 0)

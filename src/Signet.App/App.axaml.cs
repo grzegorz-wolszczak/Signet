@@ -39,6 +39,8 @@ public partial class App : Application
             services.GetRequiredService<IconThemeManager>().ApplySaved();
 
             SettingsStore settings = services.GetRequiredService<SettingsStore>();
+            DebugLog.IsEnabled = settings.DebugLogging;
+            UiEventLogger.Register();
             MainWindowViewModel viewModel = services.GetRequiredService<MainWindowViewModel>();
             viewModel.StartupFilePath = StartupArguments.FileToOpen(desktop.Args, Environment.CurrentDirectory);
             MainWindow window = new()
@@ -57,37 +59,16 @@ public partial class App : Application
 
     private static void RestoreGeometry(Window window, SettingsStore settings)
     {
-        WindowGeometry? geometry = settings.GetWindowGeometry(MainWindowGeometryKey);
-        if (geometry is not { } g || g.Width <= 0 || g.Height <= 0)
+        // Corrected (centered on the primary monitor) when the remembered place is no longer fully on screen.
+        if (settings.GetWindowGeometry(MainWindowGeometryKey) is { } geometry)
         {
-            return;
+            WindowPlacement.Restore(window, geometry);
         }
-
-        window.WindowStartupLocation = WindowStartupLocation.Manual;
-        window.Position = new PixelPoint(g.X, g.Y);
-        window.Width = Math.Max(g.Width, window.MinWidth);
-        window.Height = Math.Max(g.Height, window.MinHeight);
-        window.WindowState = g switch
-        {
-            { FullScreen: true } => WindowState.FullScreen,
-            { Maximized: true } => WindowState.Maximized,
-            _ => WindowState.Normal,
-        };
     }
 
     private static void SaveGeometry(Window window, SettingsStore settings)
     {
-        // Width/Height are logical units (DIP) — the same ones RestoreGeometry assigns back
-        // to window.Width/window.Height. Position is in physical pixels (PixelPoint),
-        // matching how RestoreGeometry reads it.
-        settings.SetWindowGeometry(MainWindowGeometryKey, new WindowGeometry(
-            window.Position.X,
-            window.Position.Y,
-            (int)window.Width,
-            (int)window.Height,
-            Maximized: window.WindowState == WindowState.Maximized,
-            FullScreen: window.WindowState == WindowState.FullScreen));
-
+        settings.SetWindowGeometry(MainWindowGeometryKey, WindowPlacement.Capture(window));
         settings.Save();
     }
 }

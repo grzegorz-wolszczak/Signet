@@ -341,7 +341,9 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
 
     /// <summary>
     /// Handles a message from the preview page script. Recognizes <c>signet-loc:{offset}</c>
-    /// (an element click) → <see cref="CodeCaretJumpRequested"/>.
+    /// (an element click) → <see cref="CodeCaretJumpRequested"/>, and <c>signet-zoom:in</c> / <c>out</c> /
+    /// <c>reset</c> (Ctrl+wheel, Ctrl+Plus/Minus/0 in the page, whose native zoom the script suppresses) → the
+    /// preview's own zoom.
     /// </summary>
     /// <param name="message">The message content from <c>WebMessageReceived</c>.</param>
     public void HandlePreviewMessage(string? message)
@@ -349,6 +351,19 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         if (_disposed || string.IsNullOrEmpty(message))
         {
             return;
+        }
+
+        switch (message)
+        {
+            case "signet-zoom:in":
+                ZoomIn();
+                return;
+            case "signet-zoom:out":
+                ZoomOut();
+                return;
+            case "signet-zoom:reset":
+                ZoomReset();
+                return;
         }
 
         const string prefix = "signet-loc:";
@@ -543,6 +558,9 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
 
     /// <summary>Restores the zoom to 100% (View → Zoom Reset menu when Preview has focus).</summary>
     public void ResetZoom() => ZoomFactor = 1.0;
+
+    /// <summary>Sets the zoom (clamped to <see cref="MinZoom"/>…<see cref="MaxZoom"/>) — the remembered zoom at startup.</summary>
+    public void SetZoom(double factor) => ZoomFactor = factor;
 
     private void SyncAndNavigate()
     {

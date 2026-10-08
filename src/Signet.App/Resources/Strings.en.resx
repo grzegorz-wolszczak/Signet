@@ -269,8 +269,38 @@
   <data name="FindReplaceView_Restart" xml:space="preserve">
     <value>Restart</value>
   </data>
+  <data name="FindReplaceView_FindNextTooltip" xml:space="preserve">
+    <value>Finds the next match from the cursor in the chosen direction. In several files it goes on to the next file of the scope; with "Wrap" it continues from the other end of the scope.</value>
+  </data>
+  <data name="FindReplaceView_ReplaceTooltip" xml:space="preserve">
+    <value>Replaces the selected match (the one found last) with the replacement text.</value>
+  </data>
+  <data name="FindReplaceView_ReplaceFindTooltip" xml:space="preserve">
+    <value>Replaces the selected match and finds the next one.</value>
+  </data>
+  <data name="FindReplaceView_ReplaceAllTooltip" xml:space="preserve">
+    <value>Replaces every match in the "Look in" scope (or in the selection). A checkpoint is created first, so it can be undone.</value>
+  </data>
+  <data name="FindReplaceView_CountAllTooltip" xml:space="preserve">
+    <value>Counts the matches in the "Look in" scope; for several files it lists how many each file has.</value>
+  </data>
+  <data name="FindReplaceView_ModeTooltip" xml:space="preserve">
+    <value>Normal: text, case ignored. Case sensitive: text, case matters. Regex: a regular expression (PCRE).</value>
+  </data>
+  <data name="FindReplaceView_DirectionTooltip" xml:space="preserve">
+    <value>Down searches towards the end of the file (and the following files), Up towards the beginning.</value>
+  </data>
+  <data name="FindReplaceView_LookInTooltip" xml:space="preserve">
+    <value>Where to search: the current file, or several files of the book (all HTML, selected, open tabs, CSS…).</value>
+  </data>
+  <data name="FindReplaceView_WrapTooltip" xml:space="preserve">
+    <value>On: after the last match the search continues from the beginning — of the file, or of the first file of the scope (from the end when searching up) — and never ends while there is a match. Off: the search stops at the end ("Not found — end of search").</value>
+  </data>
+  <data name="FindReplaceView_RestrictToSelectionTooltip" xml:space="preserve">
+    <value>Searches and replaces only inside the text selected in the editor (it is marked when you tick this).</value>
+  </data>
   <data name="FindReplaceView_RestartTooltip" xml:space="preserve">
-    <value>The next search starts over (from the current file)</value>
+    <value>The next Find starts again from the beginning: of the first file in the "Look in" scope (from the end of the last one when searching up), or of the current file — not from the cursor.</value>
   </data>
   <data name="FindReplace_SearchWillRestart" xml:space="preserve">
     <value>Search will restart</value>
@@ -1362,15 +1392,6 @@ Do you want to save the changes?</value>
   <data name="PreviewView_RefreshPreview" xml:space="preserve">
     <value>Refresh preview</value>
   </data>
-  <data name="PreviewView_ZoomOut" xml:space="preserve">
-    <value>Zoom out</value>
-  </data>
-  <data name="PreviewView_ZoomIn" xml:space="preserve">
-    <value>Zoom in</value>
-  </data>
-  <data name="PreviewView_ZoomReset" xml:space="preserve">
-    <value>Reset zoom</value>
-  </data>
   <data name="PreviewView_SelectAll" xml:space="preserve">
     <value>Select All</value>
   </data>
@@ -1382,6 +1403,15 @@ Do you want to save the changes?</value>
   </data>
   <data name="PreviewView_Print" xml:space="preserve">
     <value>Print Preview View</value>
+  </data>
+  <data name="PreviewView_ZoomOut" xml:space="preserve">
+    <value>Zoom the preview out (Ctrl+mouse wheel in the preview)</value>
+  </data>
+  <data name="PreviewView_ZoomReset" xml:space="preserve">
+    <value>Reset to 100%</value>
+  </data>
+  <data name="PreviewView_ZoomIn" xml:space="preserve">
+    <value>Zoom the preview in (Ctrl+mouse wheel in the preview)</value>
   </data>
   <data name="PreviewView_OpenFileToPreview" xml:space="preserve">
     <value>Open an (X)HTML file in the editor to see a preview.</value>
@@ -1995,6 +2025,12 @@ Do you want to save the changes?</value>
   <data name="ActionCategory_BookBrowser" xml:space="preserve">
     <value>Book Browser</value>
   </data>
+  <data name="ActionCategory_ClipEditor" xml:space="preserve">
+    <value>Clip Editor</value>
+  </data>
+  <data name="Action_MainWindow_ClipEditor_Rename" xml:space="preserve">
+    <value>&amp;Rename</value>
+  </data>
   <data name="ActionCategory_Clip" xml:space="preserve">
     <value>Clip</value>
   </data>
@@ -2474,6 +2510,9 @@ Do you want to save the changes?</value>
   </data>
   <data name="FindReplace_NotWellFormedReason" xml:space="preserve">
     <value>not well-formed: {0}</value>
+  </data>
+  <data name="FindReplace_WrappedScope" xml:space="preserve">
+    <value>The search wrapped to the other end of the scope.</value>
   </data>
   <data name="FindReplace_Wrapped" xml:space="preserve">
     <value>The search wrapped to the start/end of the file.</value>
@@ -3628,6 +3667,66 @@ Insert anyway?</value>
   </data>
   <data name="Cleanup_BareSpansWarning" xml:space="preserve">
     <value>CSS can reach a bare &lt;span&gt; by its name (span { }, p span) or through the structure (p &gt; em, :first-child, +, ~). Such spans are marked ⚠ and unchecked by default; each one lists what would change.</value>
+  </data>
+  <data name="Cleanup_MergeDivs_Title" xml:space="preserve">
+    <value>Merge adjacent &lt;div&gt; tags with identical attributes</value>
+  </data>
+  <data name="Cleanup_MergeDivs_Description" xml:space="preserve">
+    <value>Merges consecutive sibling &lt;div&gt; tags with identical attributes (e.g. &lt;div class="a"&gt;…&lt;/div&gt;&lt;div class="a"&gt;…&lt;/div&gt;) into one &lt;div&gt;, like "Merge Content" in Code View. Only whitespace, comments and CDATA sections may lie between them; text or another element prevents merging. The contents keep their own lines and indentation.</value>
+  </data>
+  <data name="Cleanup_MergeDivs_Summary" xml:space="preserve">
+    <value>Items to apply: {0} of {1} (&lt;div&gt; tags removed: {2}).</value>
+  </data>
+  <data name="Cleanup_MergeDivsWarning" xml:space="preserve">
+    <value>Merges that would really change the book are marked ⚠ and unchecked by default: vertical margins, paddings or borders between the &lt;div&gt; tags, other styles of each &lt;div&gt; (e.g. height, background image, page break), text running together, selectors such as :first-child or +, CDATA text between the tags, or an id the book links to. Each one lists exactly what will change — check them only deliberately.</value>
+  </data>
+  <data name="Cleanup_MergeDivs_AllLevels" xml:space="preserve">
+    <value>All levels</value>
+  </data>
+  <data name="Cleanup_MergeDivs_ChosenLevels" xml:space="preserve">
+    <value>Chosen levels in each file</value>
+  </data>
+  <data name="Cleanup_MergeDivs_LevelsHint" xml:space="preserve">
+    <value>Level 1 = a &lt;div&gt; directly in &lt;body&gt;, level 2 = one element deeper (e.g. body &gt; section &gt; div), and so on. Merges on an unchecked level are not listed.</value>
+  </data>
+  <data name="Cleanup_MergeDivs_Repeat" xml:space="preserve">
+    <value>Repeat until nothing more can be merged (within the chosen levels)</value>
+  </data>
+  <data name="PreferencesWindow_FindUsagesRefreshOnSave" xml:space="preserve">
+    <value>Refresh "Find Usages" after saving the book</value>
+  </data>
+  <data name="PreferencesWindow_MendShowDiff" xml:space="preserve">
+    <value>Show the changes of "Mend Code" (current file) in a diff window</value>
+  </data>
+  <data name="Diff_BeforeMend" xml:space="preserve">
+    <value>Before "Mend Code"</value>
+  </data>
+  <data name="Diff_AfterMend" xml:space="preserve">
+    <value>After "Mend Code"</value>
+  </data>
+  <data name="Diff_Revert" xml:space="preserve">
+    <value>Undo the change</value>
+  </data>
+  <data name="Diff_Reverted" xml:space="preserve">
+    <value>The change was undone.</value>
+  </data>
+  <data name="Diff_RevertNotPossible" xml:space="preserve">
+    <value>Cannot undo: the file was closed or edited since.</value>
+  </data>
+  <data name="PreferencesWindow_Debug" xml:space="preserve">
+    <value>Debug</value>
+  </data>
+  <data name="PreferencesWindow_LogsDirectory" xml:space="preserve">
+    <value>Log files are in:</value>
+  </data>
+  <data name="PreferencesWindow_LogsDirectoryTip" xml:space="preserve">
+    <value>Open the folder in the file manager</value>
+  </data>
+  <data name="PreferencesWindow_DebugLogging" xml:space="preserve">
+    <value>Enable debug logging</value>
+  </data>
+  <data name="PreferencesWindow_DebugLoggingNote" xml:space="preserve">
+    <value>From now on the log file also records what you do in Signet — menu choices, buttons clicked (in which window), settings changed (before and after), window and panel operations, files opened and saved, tabs, bulk operations — so a problem can be traced back to the steps that led to it. Text you type is not recorded; only the Find &amp; Replace texts are, when one of its operations runs. Paths in your profile folder are shortened to ~.</value>
   </data>
   <data name="Cleanup_NestedDivs_Title" xml:space="preserve">
     <value>Remove unnecessary &lt;div&gt; nesting</value>

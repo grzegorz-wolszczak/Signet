@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using Avalonia;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -20,6 +22,12 @@ internal static class Program
         using ILoggerFactory loggerFactory = AppLogging.CreateLoggerFactory();
         ILogger log = loggerFactory.CreateLogger("Signet.App");
 
+        // An error that reaches the top is logged with what the user did just before it (debug log enabled).
+        AppDomain.CurrentDomain.UnhandledException += (_, e) =>
+            log.LogCritical(e.ExceptionObject as Exception, "Unhandled exception{RecentEvents}", RecentEventsText());
+        TaskScheduler.UnobservedTaskException += (_, e) =>
+            log.LogError(e.Exception, "Unobserved task exception{RecentEvents}", RecentEventsText());
+
         int exitCode = 0;
         try
         {
@@ -34,7 +42,7 @@ internal static class Program
         }
         catch (Exception ex)
         {
-            log.LogCritical(ex, "Unhandled exception at the Main level");
+            log.LogCritical(ex, "Unhandled exception at the Main level{RecentEvents}", RecentEventsText());
             exitCode = 1;
         }
         finally
@@ -43,6 +51,15 @@ internal static class Program
         }
 
         return exitCode;
+    }
+
+    // The last debug-log events, as an addition to an error message (empty when the debug log is off).
+    private static string RecentEventsText()
+    {
+        IReadOnlyList<string> events = DebugLog.RecentEvents();
+        return events.Count == 0
+            ? string.Empty
+            : Environment.NewLine + "Last user actions:" + Environment.NewLine + "  " + string.Join(Environment.NewLine + "  ", events);
     }
 
     /// <summary>Avalonia configuration — also used by design-time tools (previewer).</summary>

@@ -33,6 +33,21 @@ public sealed class KeyboardShortcutManagerTests
     }
 
     [Fact]
+    public void Panel_scoped_shortcuts_collide_only_within_their_own_panel_or_with_window_wide_ones()
+    {
+        using TestHost host = new();
+        host.Shortcuts.RegisterAction("PanelA", "F2", "a", scope: "A");
+        host.Shortcuts.RegisterAction("PanelB", "F3", "b", scope: "B");
+        host.Shortcuts.RegisterAction("Window", "Ctrl+K", "w");
+
+        // Another panel may reuse the shortcut; a window-wide action may not.
+        host.Shortcuts.SetKeyGesture("PanelB", new KeyGesture(Key.F2)).Should().BeTrue();
+        host.Shortcuts.SetKeyGesture("PanelB", new KeyGesture(Key.K, KeyModifiers.Control)).Should().BeFalse();
+        host.Shortcuts.SetKeyGesture("Window", new KeyGesture(Key.F2)).Should().BeFalse();
+        host.Shortcuts.FindConflicts().Should().NotContain(c => c.First == "PanelA" || c.Second == "PanelA");
+    }
+
+    [Fact]
     public void Override_persists_and_survives_reopen_then_resets()
     {
         using TestHost host = new();

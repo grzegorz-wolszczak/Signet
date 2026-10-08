@@ -234,6 +234,9 @@ public static class AppActionCatalog
         new(AppActionIds.BookBrowserSaveAs, "Save As...", "", null, AppActionIds.BookBrowserCategory),
         new(AppActionIds.BookBrowserSelectAll, "Select All In Folder", "", null, AppActionIds.BookBrowserCategory),
         new(AppActionIds.BookBrowserGetInfo, "Get Info", "", null, AppActionIds.BookBrowserCategory),
+
+        // Clip Editor window / Clips panel: panel-scoped like the Book Browser actions above.
+        new(AppActionIds.ClipEditorRename, "&Rename", "F2", null, AppActionIds.ClipEditorCategory),
         };
 
         // Clip Bar / Cli&p / Cli&p2 menu slots. The default text is "Clip N" — the slot name stays

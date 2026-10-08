@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using System.IO;
 using Microsoft.Extensions.Logging;
@@ -9,7 +10,8 @@ namespace Signet.App.Infrastructure;
 
 /// <summary>
 /// Application logging configuration: Serilog writing to a file in the data directory
-/// (<c>&lt;prefs&gt;/logs/signet-.log</c>, daily rotation) and to the console in Debug builds.
+/// (<c>&lt;prefs&gt;/logs/signet-.log</c>, daily rotation, 30 days, a new file after 30 MB) and to the console in Debug
+/// builds.
 /// Exposed to the rest of the application through <see cref="Microsoft.Extensions.Logging"/>.
 /// </summary>
 internal static class AppLogging
@@ -31,7 +33,10 @@ internal static class AppLogging
             .WriteTo.File(
                 logPathTemplate,
                 rollingInterval: RollingInterval.Day,
-                retainedFileCountLimit: 14,
+                retainedFileCountLimit: null,
+                retainedFileTimeLimit: TimeSpan.FromDays(30),
+                fileSizeLimitBytes: 30L * 1024 * 1024,
+                rollOnFileSizeLimit: true,
                 formatProvider: CultureInfo.InvariantCulture,
                 outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}");
 

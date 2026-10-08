@@ -111,37 +111,54 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Restart_ShowsMessageAndStartsAMultiFileSearchOverFromTheCurrentFile(bool restart)
+    public void Restart_StartsTheNextFindAtTheBeginningOfTheScope(bool restart)
     {
         HtmlResource a = Html("<p>cat</p>");
         HtmlResource b = Html("<p>cat</p>");
-        CodeTabViewModel tabA = OpenTab(a);
         CodeTabViewModel tabB = OpenTab(b);
-        CodeTabViewModel active = tabA;
         var host = new FakeMultiFileSearchHost
         {
             BookLoaded = true,
             Resolver = _ => new TextResource[] { a, b },
         };
-        FindReplaceViewModel panel = NewPanel(host, () => active, out _);
+        FindReplaceViewModel panel = NewPanel(host, () => tabB, out _);
         panel.LookWhereIndex = (int)LookWhere.AllHtmlFiles;
         panel.FindText = "cat";
+        panel.OptionWrap = false;
 
-        panel.FindNext().Should().BeTrue();
-        host.Jumps[^1].BookPath.Should().Be(a.BookPath);
-
-        // The user switches to file b with the caret after the match. The search started in a
-        // reaches the end of its cycle here; "Restart" begins a new one from the current file b.
-        active = tabB;
-        tabB.UpdateSelection(tabB.Document.TextLength, tabB.Document.TextLength);
-        tabB.UpdateCaret(1, 1, tabB.Document.TextLength, -1);
+        // The caret at the start of file b: without "Restart" the match in b is next, with it the one in a.
+        tabB.UpdateSelection(0, 0);
+        tabB.UpdateCaret(1, 1, 0, -1);
         if (restart)
         {
             panel.RestartCommand.Execute(null);
             panel.Message.Should().Be(Strings.Get("FindReplace_SearchWillRestart"));
         }
 
-        panel.FindNext().Should().Be(restart);
+        panel.FindNext().Should().BeTrue();
+        host.Jumps[^1].BookPath.Should().Be(restart ? a.BookPath : b.BookPath);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Wrap_decides_whether_the_search_goes_on_past_the_end_of_the_scope(bool wrap)
+    {
+        HtmlResource a = Html("<p>cat</p>");
+        HtmlResource b = Html("<p>dog</p>");
+        CodeTabViewModel tabB = OpenTab(b);
+        var host = new FakeMultiFileSearchHost
+        {
+            BookLoaded = true,
+            Resolver = _ => new TextResource[] { a, b },
+        };
+        FindReplaceViewModel panel = NewPanel(host, () => tabB, out _);
+        panel.LookWhereIndex = (int)LookWhere.AllHtmlFiles;
+        panel.FindText = "cat";
+        panel.OptionWrap = wrap;
+
+        panel.FindNext().Should().Be(wrap);
+        panel.Message.Should().Be(wrap ? Strings.Get("FindReplace_WrappedScope") : Strings.Get("FindReplace_NotFoundEnd"));
     }
 
     [Fact]

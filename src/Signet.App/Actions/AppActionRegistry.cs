@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using Signet.App.Infrastructure;
 using Signet.App.Input;
 using Signet.App.Resources;
 using Signet.App.Services;
@@ -34,7 +35,8 @@ public sealed class AppActionRegistry
         {
             AppAction action = new(descriptor);
             KeyboardShortcut shortcut = _shortcuts.RegisterAction(
-                descriptor.Id, descriptor.DefaultShortcut, StripMnemonics(descriptor.Text));
+                descriptor.Id, descriptor.DefaultShortcut, StripMnemonics(descriptor.Text),
+                AppActionIds.IsPanelCategory(descriptor.Category) ? descriptor.Category : null);
 
             ApplyShortcut(action, shortcut);
             action.Invoked += OnActionInvoked;
@@ -45,7 +47,9 @@ public sealed class AppActionRegistry
         {
             if (_actions.TryGetValue(id, out AppAction? action) && _shortcuts.Get(id) is { } sc)
             {
+                string before = action.InputGestureText;
                 ApplyShortcut(action, sc);
+                DebugLog.Write("Shortcut", $"{id}: {DebugLog.Describe(before)} → {DebugLog.Describe(action.InputGestureText)}");
             }
         };
     }
@@ -93,6 +97,9 @@ public sealed class AppActionRegistry
         {
             return;
         }
+
+        // From a menu, a toolbar or a shortcut — the same action id either way.
+        DebugLog.Write("Action", action.Id);
 
         if (_handlers.TryGetValue(action.Id, out Action? handler))
         {

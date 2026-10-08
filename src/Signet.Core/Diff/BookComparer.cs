@@ -54,11 +54,25 @@ public sealed record BookFileDiff(
     /// <summary>Bookpath to display (the right one, or the left one for removed files).</summary>
     public string DisplayPath => RightPath ?? LeftPath ?? string.Empty;
 
+    /// <summary>The left text when it is not read from a file (a comparison of two texts in memory), otherwise <c>null</c>.</summary>
+    public string? LeftText { get; init; }
+
+    /// <summary>The right text when it is not read from a file (a comparison of two texts in memory), otherwise <c>null</c>.</summary>
+    public string? RightText { get; init; }
+
     /// <summary>Content of the left file as text (empty when it does not exist).</summary>
-    public string ReadLeftText() => LeftFullPath is null ? string.Empty : Utility.ReadUnicodeTextFile(LeftFullPath);
+    public string ReadLeftText() => LeftText ?? (LeftFullPath is null ? string.Empty : Utility.ReadUnicodeTextFile(LeftFullPath));
 
     /// <summary>Content of the right file as text (empty when it does not exist).</summary>
-    public string ReadRightText() => RightFullPath is null ? string.Empty : Utility.ReadUnicodeTextFile(RightFullPath);
+    public string ReadRightText() => RightText ?? (RightFullPath is null ? string.Empty : Utility.ReadUnicodeTextFile(RightFullPath));
+
+    /// <summary>A comparison of two versions of one text file held in memory (e.g. before and after "Mend").</summary>
+    public static BookFileDiff FromTexts(string bookPath, string leftText, string rightText) =>
+        new(BookFileChange.Modified, bookPath, bookPath, null, null, BookFileContentKind.Text)
+        {
+            LeftText = leftText,
+            RightText = rightText,
+        };
 }
 
 /// <summary>

@@ -49,6 +49,9 @@
       <ComboBox ItemsSource="{Binding ViewOptions}" SelectedIndex="{Binding ViewIndex}" Margin="0,0,12,4" />
       <TextBlock Text="{loc:Loc Diff_ContextLabel}" VerticalAlignment="Center" Margin="0,0,4,4" />
       <ComboBox ItemsSource="{Binding ContextOptions}" SelectedIndex="{Binding ContextIndex}" Margin="0,0,0,4" />
+      <!-- Only for a diff shown after "Mend Code": restores the text from before the change. -->
+      <Button Content="{loc:Loc Diff_Revert}" Command="{Binding RevertCommand}" IsVisible="{Binding CanRevert}"
+              Margin="16,0,0,4" />
     </WrapPanel>
 
     <DockPanel DockPanel.Dock="Bottom" Margin="0,6,0,0">

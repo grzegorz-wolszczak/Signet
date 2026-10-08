@@ -8,9 +8,10 @@ namespace Signet.App.Input;
 /// </summary>
 public sealed class KeyboardShortcut
 {
-    internal KeyboardShortcut(string id, string description, KeyGesture? current, KeyGesture? @default)
+    internal KeyboardShortcut(string id, string description, KeyGesture? current, KeyGesture? @default, string? scope = null)
     {
         Id = id;
+        Scope = scope;
         Description = description;
         KeyGesture = current;
         DefaultKeyGesture = @default;
@@ -18,6 +19,12 @@ public sealed class KeyboardShortcut
 
     /// <summary>Action identifier (see <see cref="Signet.App.Actions.AppActionIds"/>).</summary>
     public string Id { get; }
+
+    /// <summary>
+    /// Name of the panel the shortcut works in (it is handled only while the focus is in that panel), or
+    /// <see langword="null"/> for a window-wide shortcut. Shortcuts of two different panels never collide.
+    /// </summary>
+    public string? Scope { get; }
 
     /// <summary>Human-readable action description.</summary>
     public string Description { get; internal set; }

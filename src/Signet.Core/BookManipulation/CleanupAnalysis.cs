@@ -42,6 +42,13 @@ public enum CleanupStep
     BareSpans,
 
     /// <summary>
+    /// Merge runs of consecutive sibling <c>&lt;div&gt;</c>s with identical attributes into one
+    /// (<see cref="AdjacentDivMerger"/>), on all nesting levels or on the levels chosen per file
+    /// (<see cref="DivMergeOptions"/>). Before the nested divs: merging often leaves nestings to collapse.
+    /// </summary>
+    MergeDivs,
+
+    /// <summary>
     /// Collapse chains of directly nested <c>&lt;div&gt;</c>s with identical attributes into one
     /// (<see cref="NestedDivCollapser"/>).
     /// </summary>
@@ -84,7 +91,39 @@ public sealed record CleanupItem(CleanupStep Step, string Key, string Text, stri
 /// <param name="AppliedCount">How many of <paramref name="Items"/> will be applied (not excluded).</param>
 /// <param name="AppliedRuleCount">For merge steps: the number of rules in the applied groups; otherwise 0.</param>
 /// <param name="RiskyCount">How many of <paramref name="Items"/> are risky (<see cref="CleanupItem.IsRisky"/>).</param>
-public sealed record CleanupStepResult(CleanupStep Step, IReadOnlyList<CleanupItem> Items, int AppliedCount, int AppliedRuleCount, int RiskyCount);
+public sealed record CleanupStepResult(CleanupStep Step, IReadOnlyList<CleanupItem> Items, int AppliedCount, int AppliedRuleCount, int RiskyCount)
+{
+    /// <summary>
+    /// For <see cref="CleanupStep.MergeDivs"/>: every file with mergeable <c>&lt;div&gt;</c>s and the nesting levels
+    /// they were found on (also the levels the user switched off); empty for the other steps.
+    /// </summary>
+    public IReadOnlyList<CleanupLevelFile> Levels { get; init; } = Array.Empty<CleanupLevelFile>();
+}
+
+/// <summary>A file with mergeable <c>&lt;div&gt;</c>s and the nesting levels they were found on (ascending).</summary>
+/// <param name="BookPath">The XHTML file.</param>
+/// <param name="Levels">The levels (1 = directly in <c>&lt;body&gt;</c>).</param>
+public sealed record CleanupLevelFile(string BookPath, IReadOnlyList<int> Levels);
+
+/// <summary>The options of <see cref="CleanupStep.MergeDivs"/>.</summary>
+/// <param name="AllLevels">Merge on every nesting level (<paramref name="ExcludedLevels"/> are ignored).</param>
+/// <param name="Repeat">
+/// Merge again after merging, until nothing more can be merged (within the chosen levels) — merging two
+/// <c>&lt;div&gt;</c>s can make their children new neighbours.
+/// </param>
+/// <param name="ExcludedLevels">The levels switched off per file (<see cref="LevelKey"/>), used unless <paramref name="AllLevels"/>.</param>
+public sealed record DivMergeOptions(bool AllLevels, bool Repeat, IReadOnlySet<string> ExcludedLevels)
+{
+    /// <summary>All levels, repeated until nothing more can be merged.</summary>
+    public static DivMergeOptions Default { get; } = new(true, true, new HashSet<string>(StringComparer.Ordinal));
+
+    /// <summary>The key of a level of a file in <see cref="ExcludedLevels"/>.</summary>
+    public static string LevelKey(string bookPath, int level) =>
+        string.Concat(bookPath, "|", level.ToString(System.Globalization.CultureInfo.InvariantCulture));
+
+    /// <summary>Whether the plan merges on <paramref name="level"/> of <paramref name="bookPath"/>.</summary>
+    public bool Includes(string bookPath, int level) => AllLevels || !ExcludedLevels.Contains(LevelKey(bookPath, level));
+}
 
 /// <summary>
 /// The simulated result of a Cleanup: what each enabled step finds and the final file contents — the book itself
@@ -134,7 +173,8 @@ public sealed record CleanupPreparation(CleanupAnalysis? Analysis, HtmlResource?
 /// </summary>
 /// <remarks>
 /// <b>Execution order</b> (<see cref="CleanupStep"/>): unreferenced stylesheets → unused selectors → merging
-/// identical selectors → merging identical properties → empty elements → bare spans → nested divs → unused media.
+/// identical selectors → merging identical properties → empty elements → bare spans → merging adjacent divs → nested
+/// divs → unused media.
 /// Unused selectors are always computed on the original texts (only whole stylesheets can disappear before them),
 /// merges and the HTML steps on the texts left by the previous steps, and media references on the CSS that remains
 /// at the end.
@@ -149,6 +189,10 @@ public sealed class CleanupAnalysis
     private const string NestedDivsKeyPrefix = "divnest|";
     private const string EmptyElementsKeyPrefix = "empty|";
     private const string BareSpansKeyPrefix = "barespan|";
+    private const string MergeDivsKeyPrefix = "divmerge|";
+
+    // Rounds of "repeat until nothing more can be merged" — a safety limit; every round removes at least one div.
+    private const int MaxMergeDivRounds = 100;
     private const int MaxSpanContentLength = 40;
     private const int MaxOpenTagLength = 80;
 
@@ -169,6 +213,9 @@ public sealed class CleanupAnalysis
     private readonly IReadOnlyList<Resource> _media;
     private readonly string _coverImagePath;
     private readonly Lazy<CssMergeRiskAnalyzer> _mergeRisks;
+
+    // Where the book refers to element ids (links, ID references, scripts) — built when a merged div has an id.
+    private readonly Lazy<IdReferenceIndex> _idReferences;
     private readonly Dictionary<string, IReadOnlyList<string>> _visibleSheets = new(StringComparer.Ordinal);
 
     // The nested-div chains of each XHTML file with their consequences, for the texts (the file and the stylesheets it
@@ -179,6 +226,10 @@ public sealed class CleanupAnalysis
 
     // The same for the bare spans of each XHTML file.
     private readonly Dictionary<string, (string Stamp, List<(SpanTags Span, IReadOnlyList<CleanupConsequence> Consequences)> Spans)> _bareSpans =
+        new(StringComparer.Ordinal);
+
+    // The same for the mergeable div runs of each XHTML file, per merge round (key: path|round).
+    private readonly Dictionary<string, (string Stamp, List<(AdjacentDivGroup Group, IReadOnlyList<CleanupConsequence> Consequences)> Groups)> _divGroups =
         new(StringComparer.Ordinal);
 
     // The same for the empty elements of each XHTML file.
@@ -225,6 +276,7 @@ public sealed class CleanupAnalysis
             .Select(html => (html.BookPath, html.GetText(), book.GetVisibleStylesheets(html)))
             .ToList();
         _mergeRisks = new Lazy<CssMergeRiskAnalyzer>(() => new CssMergeRiskAnalyzer(documents));
+        _idReferences = new Lazy<IdReferenceIndex>(() => new IdReferenceIndex(book));
         foreach ((string htmlBookPath, _, IReadOnlyList<string> sheets) in documents)
         {
             _visibleSheets[htmlBookPath] = sheets;
@@ -255,12 +307,14 @@ public sealed class CleanupAnalysis
     /// Simulates the <paramref name="enabledSteps"/> in execution order. Items whose
     /// <see cref="CleanupItem.Key"/> is in <paramref name="excludedKeys"/> are listed but not applied, so the
     /// following steps see the book without that change. A risky item (<see cref="CleanupItem.IsRisky"/>) is applied
-    /// only when its key is in <paramref name="acceptedRiskyKeys"/> (and not excluded).
+    /// only when its key is in <paramref name="acceptedRiskyKeys"/> (and not excluded). <paramref name="divMerge"/> are
+    /// the options of <see cref="CleanupStep.MergeDivs"/> (<see cref="DivMergeOptions.Default"/> when omitted).
     /// </summary>
     public CleanupPlan Plan(
         IReadOnlySet<CleanupStep> enabledSteps,
         IReadOnlySet<string> excludedKeys,
-        IReadOnlySet<string>? acceptedRiskyKeys = null)
+        IReadOnlySet<string>? acceptedRiskyKeys = null,
+        DivMergeOptions? divMerge = null)
     {
         ArgumentNullException.ThrowIfNull(enabledSteps);
         ArgumentNullException.ThrowIfNull(excludedKeys);
@@ -320,6 +374,11 @@ public sealed class CleanupAnalysis
         if (enabledSteps.Contains(CleanupStep.BareSpans))
         {
             steps.Add(PlanBareSpans(cssTexts, htmlTexts, excludedKeys, acceptedRiskyKeys));
+        }
+
+        if (enabledSteps.Contains(CleanupStep.MergeDivs))
+        {
+            steps.Add(PlanMergeDivs(cssTexts, htmlTexts, excludedKeys, acceptedRiskyKeys, divMerge ?? DivMergeOptions.Default));
         }
 
         if (enabledSteps.Contains(CleanupStep.NestedDivs))
@@ -475,6 +534,99 @@ public sealed class CleanupAnalysis
         }
 
         return Result(step, items);
+    }
+
+    /// <summary>
+    /// Plans the adjacent-div step: per XHTML file, one item for every run of identical sibling <c>&lt;div&gt;</c>s on a
+    /// chosen level; a risky run (<see cref="AdjacentDivRiskAnalyzer"/>) is applied only when accepted. With
+    /// <see cref="DivMergeOptions.Repeat"/> the file is searched again after merging (round by round) until no run on a
+    /// chosen level is applied. Runs on levels switched off are not listed, but their levels are reported in
+    /// <see cref="CleanupStepResult.Levels"/>. The <see cref="CleanupItem.RuleCount"/> of an item is the number of
+    /// <c>&lt;div&gt;</c>s it removes.
+    /// </summary>
+    private CleanupStepResult PlanMergeDivs(
+        Dictionary<string, string> cssTexts,
+        Dictionary<string, string> htmlTexts,
+        IReadOnlySet<string> excludedKeys,
+        IReadOnlySet<string> acceptedRiskyKeys,
+        DivMergeOptions options)
+    {
+        List<CleanupItem> items = new();
+        List<CleanupLevelFile> levels = new();
+        foreach (string path in htmlTexts.Keys.ToList())
+        {
+            string text = htmlTexts[path];
+            SortedSet<int> found = new();
+            for (int round = 0; round < MaxMergeDivRounds; round++)
+            {
+                var groups = MergeDivGroups(path, round, text, cssTexts);
+                List<int> toMerge = new();
+                for (int i = 0; i < groups.Count; i++)
+                {
+                    (AdjacentDivGroup group, IReadOnlyList<CleanupConsequence> consequences) = groups[i];
+                    found.Add(group.Level);
+                    if (!options.Includes(path, group.Level))
+                    {
+                        continue;
+                    }
+
+                    string key = string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{MergeDivsKeyPrefix}{path}|{round}|{i}");
+                    bool isApplied = !excludedKeys.Contains(key) && (consequences.Count == 0 || acceptedRiskyKeys.Contains(key));
+                    items.Add(new CleanupItem(
+                        CleanupStep.MergeDivs, key,
+                        CoreStrings.Format("Cleanup_MergeDivs_Group", DescribeOpenTag(group.OpenTag), group.Count, group.Level),
+                        path, group.FirstPos, group.Count - 1)
+                    {
+                        Consequences = consequences,
+                        IsApplied = isApplied,
+                    });
+                    if (isApplied)
+                    {
+                        toMerge.Add(group.FirstPos);
+                    }
+                }
+
+                // From the end of the file: a merge only changes the text after the run's first opening tag, so the
+                // opening tags of the runs before it (and of the runs around it) stay where they were.
+                string before = text;
+                foreach (int firstPos in toMerge.OrderByDescending(p => p))
+                {
+                    text = AdjacentDivMerger.Merge(text, firstPos) ?? text;
+                }
+
+                if (!options.Repeat || string.Equals(before, text, StringComparison.Ordinal))
+                {
+                    break;
+                }
+            }
+
+            htmlTexts[path] = text;
+            if (found.Count > 0)
+            {
+                levels.Add(new CleanupLevelFile(path, found.ToList()));
+            }
+        }
+
+        return Result(CleanupStep.MergeDivs, items) with { Levels = levels };
+    }
+
+    private List<(AdjacentDivGroup Group, IReadOnlyList<CleanupConsequence> Consequences)> MergeDivGroups(
+        string path, int round, string text, Dictionary<string, string> cssTexts)
+    {
+        string cacheKey = string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{path}|{round}");
+        (List<string> sheetTexts, string stamp) = SheetsAndStamp(path, text, cssTexts);
+        if (_divGroups.TryGetValue(cacheKey, out var cached) && string.Equals(cached.Stamp, stamp, StringComparison.Ordinal))
+        {
+            return cached.Groups;
+        }
+
+        IReadOnlyList<AdjacentDivGroup> groups = AdjacentDivMerger.FindGroups(text);
+        List<CssInfo> sheets = groups.Count == 0 ? new List<CssInfo>() : sheetTexts.Select(t => new CssInfo(t)).ToList();
+        var result = groups
+            .Select(group => (group, AdjacentDivRiskAnalyzer.Analyse(path, text, group, sheets, id => _idReferences.Value.IsReferenced(path, id))))
+            .ToList();
+        _divGroups[cacheKey] = (stamp, result);
+        return result;
     }
 
     /// <summary>

@@ -25,6 +25,9 @@ public sealed partial class CleanupViewModel : ViewModelBase
     private readonly Func<CleanupPlan, IReadOnlyList<CleanupStep>, CleanupAnalysis?> _apply;
     private readonly HashSet<string> _excludedKeys = new(StringComparer.Ordinal);
     private readonly HashSet<string> _acceptedRiskyKeys = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _excludedLevels = new(StringComparer.Ordinal);
+    private bool _divMergeAllLevels = true;
+    private bool _divMergeRepeat = true;
     private CleanupAnalysis _analysis;
     private bool _updating;
     private bool _togglingSections;
@@ -73,7 +76,10 @@ public sealed partial class CleanupViewModel : ViewModelBase
     };
 
     /// <summary>The steps of the HTML tab, in execution order.</summary>
-    public static IReadOnlyList<CleanupStep> HtmlSteps { get; } = new[] { CleanupStep.EmptyElements, CleanupStep.BareSpans, CleanupStep.NestedDivs };
+    public static IReadOnlyList<CleanupStep> HtmlSteps { get; } = new[]
+    {
+        CleanupStep.EmptyElements, CleanupStep.BareSpans, CleanupStep.MergeDivs, CleanupStep.NestedDivs,
+    };
 
     /// <summary>The steps of the Files tab, in execution order.</summary>
     public static IReadOnlyList<CleanupStep> FilesSteps { get; } = new[] { CleanupStep.UnusedMedia };
@@ -128,6 +134,44 @@ public sealed partial class CleanupViewModel : ViewModelBase
 
         Replan();
     }
+
+    /// <summary>"All levels" / "Chosen levels in each file" and "Repeat" of <see cref="CleanupStep.MergeDivs"/>.</summary>
+    internal void SetDivMergeOptions(bool allLevels, bool repeat)
+    {
+        if (_updating || (allLevels == _divMergeAllLevels && repeat == _divMergeRepeat))
+        {
+            return;
+        }
+
+        _divMergeAllLevels = allLevels;
+        _divMergeRepeat = repeat;
+        Replan();
+    }
+
+    /// <summary>A level of a file checked or unchecked in <see cref="CleanupStep.MergeDivs"/>.</summary>
+    internal void OnLevelToggled(CleanupLevelViewModel level)
+    {
+        if (_updating)
+        {
+            return;
+        }
+
+        string key = DivMergeOptions.LevelKey(level.BookPath, level.Level);
+        if (level.IsChecked)
+        {
+            _excludedLevels.Remove(key);
+        }
+        else
+        {
+            _excludedLevels.Add(key);
+        }
+
+        Replan();
+    }
+
+    /// <summary>Whether <paramref name="level"/> of <paramref name="bookPath"/> is checked (merged in "chosen levels" mode).</summary>
+    internal bool IsLevelChecked(string bookPath, int level) =>
+        !_excludedLevels.Contains(DivMergeOptions.LevelKey(bookPath, level));
 
     internal void OnItemToggled(CleanupItemViewModel item)
     {
@@ -201,10 +245,11 @@ public sealed partial class CleanupViewModel : ViewModelBase
         _updating = true;
         try
         {
+            DivMergeOptions divMerge = new(_divMergeAllLevels, _divMergeRepeat, new HashSet<string>(_excludedLevels, StringComparer.Ordinal));
             foreach (CleanupTabViewModel tab in Tabs)
             {
                 HashSet<CleanupStep> enabled = tab.Sections.Where(s => s.IsEnabled).Select(s => s.Step).ToHashSet();
-                tab.Update(_analysis.Plan(enabled, _excludedKeys, _acceptedRiskyKeys));
+                tab.Update(_analysis.Plan(enabled, _excludedKeys, _acceptedRiskyKeys, divMerge));
             }
         }
         finally
@@ -290,6 +335,12 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
     [ObservableProperty]
     private bool _hasRiskyItems;
 
+    [ObservableProperty]
+    private bool _allLevels = true;
+
+    [ObservableProperty]
+    private bool _repeat = true;
+
     internal CleanupSectionViewModel(CleanupViewModel owner, CleanupStep step, bool isEnabled)
     {
         _owner = owner;
@@ -302,6 +353,7 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
             CleanupStep.MergeSameSelectors or CleanupStep.MergeSameProperties => Strings.Get("Cleanup_MergeWarning"),
             CleanupStep.EmptyElements => Strings.Get("Cleanup_EmptyElementsWarning"),
             CleanupStep.BareSpans => Strings.Get("Cleanup_BareSpansWarning"),
+            CleanupStep.MergeDivs => Strings.Get("Cleanup_MergeDivsWarning"),
             CleanupStep.NestedDivs => Strings.Get("Cleanup_NestedDivsWarning"),
             _ => string.Empty,
         };
@@ -325,6 +377,22 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
     /// <summary>Whether <see cref="Warning"/> is shown.</summary>
     public bool HasWarning => Warning.Length > 0;
 
+    /// <summary>Whether the section has the level options (<see cref="CleanupStep.MergeDivs"/>).</summary>
+    public bool HasLevelOptions => Step == CleanupStep.MergeDivs;
+
+    /// <summary>The "Chosen levels in each file" radio button — the opposite of <see cref="AllLevels"/>.</summary>
+    public bool ChosenLevels
+    {
+        get => !AllLevels;
+        set => AllLevels = !value;
+    }
+
+    /// <summary>The files with mergeable <c>&lt;div&gt;</c>s and their levels (<see cref="CleanupStep.MergeDivs"/>).</summary>
+    public ObservableCollection<CleanupLevelFileViewModel> LevelFiles { get; } = new();
+
+    /// <summary>Whether there are levels to choose from.</summary>
+    public bool HasLevelFiles => LevelFiles.Count > 0;
+
     /// <summary>The changes the step will make (in the context of the steps before it).</summary>
     public ObservableCollection<CleanupItemViewModel> Items { get; } = new();
 
@@ -338,6 +406,14 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
     public IRelayCommand SelectRiskyCommand { get; }
 
     partial void OnIsEnabledChanged(bool value) => _owner.OnSectionToggled();
+
+    partial void OnAllLevelsChanged(bool value)
+    {
+        OnPropertyChanged(nameof(ChosenLevels));
+        _owner.SetDivMergeOptions(value, Repeat);
+    }
+
+    partial void OnRepeatChanged(bool value) => _owner.SetDivMergeOptions(AllLevels, value);
 
     /// <summary>
     /// Synchronizes <see cref="Items"/> with the new result, keeping the row objects of items that are still there
@@ -365,7 +441,30 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
 
         HasItems = Items.Count > 0;
         HasRiskyItems = Items.Any(i => i.IsRisky);
+        UpdateLevels(result?.Levels ?? Array.Empty<CleanupLevelFile>());
         Summary = result is null ? string.Empty : FormatSummary(result);
+    }
+
+    // Rebuilt only when the files or their levels change, so the checkboxes do not flicker on every toggle.
+    private void UpdateLevels(IReadOnlyList<CleanupLevelFile> files)
+    {
+        bool same = files.Count == LevelFiles.Count
+            && files.Zip(LevelFiles).All(x => string.Equals(x.First.BookPath, x.Second.BookPath, StringComparison.Ordinal)
+                && x.First.Levels.SequenceEqual(x.Second.Levels.Select(l => l.Level)));
+        if (same)
+        {
+            return;
+        }
+
+        LevelFiles.Clear();
+        foreach (CleanupLevelFile file in files)
+        {
+            LevelFiles.Add(new CleanupLevelFileViewModel(
+                file.BookPath,
+                file.Levels.Select(level => new CleanupLevelViewModel(_owner, file.BookPath, level, _owner.IsLevelChecked(file.BookPath, level))).ToList()));
+        }
+
+        OnPropertyChanged(nameof(HasLevelFiles));
     }
 
     private string FormatSummary(CleanupStepResult result)
@@ -375,7 +474,8 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
             return Strings.Get("Cleanup_NothingFound");
         }
 
-        string summary = Step is CleanupStep.MergeSameSelectors or CleanupStep.MergeSameProperties or CleanupStep.EmptyElements or CleanupStep.BareSpans or CleanupStep.NestedDivs
+        string summary = Step is CleanupStep.MergeSameSelectors or CleanupStep.MergeSameProperties or CleanupStep.EmptyElements or CleanupStep.BareSpans
+            or CleanupStep.MergeDivs or CleanupStep.NestedDivs
             ? Strings.Format($"Cleanup_{Step}_Summary", result.AppliedCount, result.Items.Count, result.AppliedRuleCount)
             : Strings.Format($"Cleanup_{Step}_Summary", result.AppliedCount, result.Items.Count);
         return result.RiskyCount > 0 ? summary + Strings.Format("Cleanup_RiskySummary", result.RiskyCount) : summary;
@@ -440,4 +540,45 @@ public sealed partial class CleanupItemViewModel : ObservableObject
         Consequences = item.Consequences;
         IsChecked = item.IsApplied;
     }
+}
+
+/// <summary>A file with mergeable <c>&lt;div&gt;</c>s and a checkbox for every nesting level they were found on.</summary>
+public sealed class CleanupLevelFileViewModel
+{
+    internal CleanupLevelFileViewModel(string bookPath, IReadOnlyList<CleanupLevelViewModel> levels)
+    {
+        BookPath = bookPath;
+        Levels = levels;
+    }
+
+    /// <summary>The XHTML file.</summary>
+    public string BookPath { get; }
+
+    /// <summary>The levels, ascending.</summary>
+    public IReadOnlyList<CleanupLevelViewModel> Levels { get; }
+}
+
+/// <summary>One nesting level of a file (1 = directly in <c>&lt;body&gt;</c>): merged only while checked.</summary>
+public sealed partial class CleanupLevelViewModel : ObservableObject
+{
+    private readonly CleanupViewModel _owner;
+
+    [ObservableProperty]
+    private bool _isChecked;
+
+    internal CleanupLevelViewModel(CleanupViewModel owner, string bookPath, int level, bool isChecked)
+    {
+        _owner = owner;
+        BookPath = bookPath;
+        Level = level;
+        _isChecked = isChecked;
+    }
+
+    /// <summary>The file.</summary>
+    public string BookPath { get; }
+
+    /// <summary>The level.</summary>
+    public int Level { get; }
+
+    partial void OnIsCheckedChanged(bool value) => _owner.OnLevelToggled(this);
 }

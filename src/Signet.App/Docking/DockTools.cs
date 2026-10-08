@@ -42,10 +42,18 @@ public static class DockableIds
 /// <c>DeferredContentControl</c> materialized the content through the dispatcher queue, which
 /// caused re-entrancy in the views' <c>DataContextChanged</c> handlers. Signet's panels
 /// are lightweight, so synchronous materialization costs nothing.
+/// Panels can be closed (the panel menu / ×): <see cref="MainDockFactory.CloseDockable"/> only hides them, so the
+/// View menu shows them again.
 /// </summary>
 public abstract class SignetTool : Tool, IDeferredContentPresentation
 {
     private bool _needsAttention;
+
+    /// <summary>Initializes the panel — closable (closing only hides it, see <see cref="MainDockFactory.CloseDockable"/>).</summary>
+    protected SignetTool()
+    {
+        CanClose = true;
+    }
 
     bool IDeferredContentPresentation.DeferContentPresentation => false;
 
@@ -77,7 +85,6 @@ public sealed class BookBrowserTool : PlaceholderTool
     {
         Id = DockableIds.BookBrowser;
         Title = Strings.Get("Panel_BookBrowser");
-        CanClose = false;
     }
 
     /// <summary>Resource tree view model (embedded by <see cref="MainDockFactory"/>).</summary>
@@ -92,7 +99,6 @@ public sealed class ClipsTool : SignetTool
     {
         Id = DockableIds.Clips;
         Title = Strings.Get("Panel_Clips");
-        CanClose = false;
     }
 
     /// <summary>Clip library view model (embedded by <see cref="MainDockFactory"/>).</summary>
@@ -107,7 +113,6 @@ public sealed class PreviewTool : SignetTool
     {
         Id = DockableIds.Preview;
         Title = Strings.Get("Panel_Preview");
-        CanClose = false;
     }
 
     /// <summary>Preview view model (embedded by <see cref="MainDockFactory"/>).</summary>
@@ -122,7 +127,6 @@ public sealed class TableOfContentsTool : SignetTool
     {
         Id = DockableIds.TableOfContents;
         Title = Strings.Get("Panel_TableOfContents");
-        CanClose = false;
     }
 
     /// <summary>Table of contents view model (embedded by <see cref="MainDockFactory"/>).</summary>
@@ -137,7 +141,6 @@ public sealed class ValidationResultsTool : SignetTool
     {
         Id = DockableIds.ValidationResults;
         Title = Strings.Get("Panel_ValidationResults");
-        CanClose = false;
     }
 
     /// <summary>Panel view model (embedded by <see cref="MainDockFactory"/>).</summary>
@@ -152,7 +155,6 @@ public sealed class CheckpointsTool : SignetTool
     {
         Id = DockableIds.Checkpoints;
         Title = Strings.Get("Panel_Checkpoints");
-        CanClose = false;
     }
 
     /// <summary>Checkpoint list view model (embedded by <see cref="MainDockFactory"/>).</summary>
@@ -167,7 +169,6 @@ public sealed class FindUsagesTool : SignetTool
     {
         Id = DockableIds.FindUsages;
         Title = Strings.Get("Panel_FindUsages");
-        CanClose = false;
     }
 
     /// <summary>Panel view model (embedded by <see cref="MainDockFactory"/>).</summary>
@@ -182,7 +183,6 @@ public sealed class NotificationsTool : SignetTool
     {
         Id = DockableIds.Notifications;
         Title = Strings.Get("Panel_Notifications");
-        CanClose = false;
     }
 
     /// <summary>Panel view model (embedded by <see cref="MainDockFactory"/>).</summary>

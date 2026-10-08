@@ -20,6 +20,7 @@ using Signet.App.Tabs;
 using Signet.App.Toolbars;
 using Signet.App.ViewModels.Tabs;
 using Signet.Core.BookManipulation;
+using Signet.Core.Diff;
 using Signet.Core.MainUI;
 using Signet.Core.Misc;
 using Signet.Core.MiscEditors;
@@ -61,6 +62,9 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>Settings group holding the slid-out sizes of "Auto Hide" panels.</summary>
     public const string DockPinnedSizesGroup = "dock_pinned_sizes";
+
+    /// <summary>Settings group of the floating panel windows (<see cref="MainDockFactory.CaptureFloatingPanels"/>).</summary>
+    public const string DockFloatingGroup = "dock_floating";
 
     private readonly ThemeManager _themeManager;
     private readonly ILogger<MainWindowViewModel> _logger;
@@ -245,16 +249,19 @@ public sealed partial class MainWindowViewModel
         // the panel itself, so that they work only while the file tree has focus (see BookBrowserView).
         // No filter on Gesture: an action without a default shortcut may get one in Preferences.
         ShortcutActions = _actions.Actions
-            .Where(x => !IsBookBrowserAction(x))
+            .Where(x => !AppActionIds.IsPanelCategory(x.Category))
             .ToList();
         BookBrowser.ShortcutActions = _actions.Actions.Where(IsBookBrowserAction).ToList();
+        _clips.ShortcutActions = _actions.Actions
+            .Where(x => string.Equals(x.Category, AppActionIds.ClipEditorCategory, StringComparison.Ordinal))
+            .ToList();
 
         _actions.SetHandler(AppActionIds.NewDefault, () => RunFileAction(f => f.NewAsync(null)));
         _actions.SetHandler(AppActionIds.NewEpub2, () => RunFileAction(f => f.NewAsync("2.0")));
         _actions.SetHandler(AppActionIds.NewEpub3, () => RunFileAction(f => f.NewAsync("3.0")));
         _actions.SetHandler(AppActionIds.Open, () => RunFileAction(f => f.OpenAsync()));
-        _actions.SetHandler(AppActionIds.Save, () => RunFileAction(f => f.SaveAsync()));
-        _actions.SetHandler(AppActionIds.SaveAs, () => RunFileAction(f => f.SaveAsAsync()));
+        _actions.SetHandler(AppActionIds.Save, () => RunFileAction(async f => RefreshFindUsagesAfterSave(await f.SaveAsync().ConfigureAwait(true))));
+        _actions.SetHandler(AppActionIds.SaveAs, () => RunFileAction(async f => RefreshFindUsagesAfterSave(await f.SaveAsAsync().ConfigureAwait(true))));
         _actions.SetHandler(AppActionIds.SaveACopy, () => RunFileAction(f => f.SaveACopyAsync()));
         _actions.SetHandler(AppActionIds.CustomLayout, () => RunFileAction(f => f.NewWithCustomLayoutAsync(null)));
         _actions.SetHandler(AppActionIds.NextTab, _tabManager.NextTab);
@@ -283,6 +290,13 @@ public sealed partial class MainWindowViewModel
         WireInsertActions();
         WireClipActions();
         WireBookBrowserActions();
+        _actions.SetHandler(AppActionIds.ClipEditorRename, () =>
+        {
+            if (_clips.RenameSelectedCommand.CanExecute(null))
+            {
+                _clips.RenameSelectedCommand.Execute(null);
+            }
+        });
         WireCheckpointActions();
 
         // Navigation: bookmarks.
@@ -360,7 +374,7 @@ public sealed partial class MainWindowViewModel
         _actions.SetHandler(AppActionIds.MendPrettifyHtml, () => RunAsyncAction(MendPrettifyHtmlAsync));
         _actions.SetHandler(AppActionIds.MendHtml, MendHtml);
         _actions.SetHandler(AppActionIds.PrettifyCurrentHtml, () => RunAsyncAction(() => ActiveCodeTab?.ReformatHtmlAsync(toValid: false) ?? Task.CompletedTask));
-        _actions.SetHandler(AppActionIds.MendCurrentHtml, () => RunAsyncAction(() => ActiveCodeTab?.ReformatHtmlAsync(toValid: true) ?? Task.CompletedTask));
+        _actions.SetHandler(AppActionIds.MendCurrentHtml, () => RunAsyncAction(MendCurrentFileAsync));
         _actions.SetHandler(AppActionIds.AddSoftHyphens, () => RunAsyncAction(AddSoftHyphensAsync));
         _actions.SetHandler(AppActionIds.RemoveSoftHyphens, () => RunAsyncAction(RemoveSoftHyphensAsync));
         _actions.SetHandler(AppActionIds.StandardizeEpub, () => StandardizeEpubRequested?.Invoke(this, EventArgs.Empty));
@@ -402,6 +416,8 @@ public sealed partial class MainWindowViewModel
         // The same goes for highlighting the caret position in the preview (PreviewHighlight).
         _preview.DebounceInterval = TimeSpan.FromMilliseconds(_settings.UiPreviewTimeout);
         _preview.Highlight = _settings.PreviewHighlight;
+        // The preview's own zoom, remembered across restarts (saved with the rest of the settings on exit).
+        _preview.SetZoom(_settings.ZoomPreview);
         _settings.SettingChanged += (_, e) =>
         {
             if (e.QualifiedKey.EndsWith("/ui_preview_timeout", StringComparison.Ordinal))
@@ -464,37 +480,34 @@ public sealed partial class MainWindowViewModel
     public string TabStatus => _activeCaretTab?.SecondaryStatus ?? string.Empty;
 
     /// <summary>
-    /// Zoom of the view that Zoom In/Out/Reset act on (Code View or Preview depending on focus),
-    /// as "NNN%" — for the status bar.
+    /// Zoom of the active document tab (Code View) as "NNN%" — for the status bar. The preview has its own zoom
+    /// bar in its panel (<see cref="PreviewViewModel.ZoomPercentText"/>).
     /// </summary>
-    public string ZoomPercentText
+    public string ZoomPercentText => $"{Math.Round((ActiveTab?.ZoomFactor ?? 1.0) * 100)}%";
+
+    /// <summary>Zoom In of the active document tab (the "+" button in the status bar).</summary>
+    [RelayCommand]
+    private void ZoomIn() => AdjustTabZoom(1.1);
+
+    /// <summary>Zoom Out of the active document tab (the "−" button in the status bar).</summary>
+    [RelayCommand]
+    private void ZoomOut() => AdjustTabZoom(1 / 1.1);
+
+    /// <summary>Zoom Reset of the active document tab (the button with the percentage in the status bar).</summary>
+    [RelayCommand]
+    private void ZoomReset()
     {
-        get
+        if (ActiveTab is { } tab)
         {
-            double factor = _previewHasZoomFocus && _preview.HasContent
-                ? _preview.ZoomFactor
-                : ActiveTab?.ZoomFactor ?? 1.0;
-            return $"{Math.Round(factor * 100)}%";
+            tab.ZoomFactor = 1.0;
         }
     }
 
-    /// <summary>Zoom In for the focused view (the "+" button in the status bar).</summary>
-    [RelayCommand]
-    private void ZoomIn() => AdjustActiveZoom(1.1);
-
-    /// <summary>Zoom Out for the focused view (the "−" button in the status bar).</summary>
-    [RelayCommand]
-    private void ZoomOut() => AdjustActiveZoom(1 / 1.1);
-
-    /// <summary>Zoom Reset for the focused view (the button with the percentage in the status bar).</summary>
-    [RelayCommand]
-    private void ZoomReset() => ResetActiveZoom();
-
     private void OnPreviewPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(PreviewViewModel.ZoomFactor) or nameof(PreviewViewModel.HasContent))
+        if (e.PropertyName == nameof(PreviewViewModel.ZoomFactor))
         {
-            OnPropertyChanged(nameof(ZoomPercentText));
+            _settings.ZoomPreview = (float)_preview.ZoomFactor;
         }
     }
 
@@ -1299,11 +1312,15 @@ public sealed partial class MainWindowViewModel
     /// <summary>Closes the floating panel windows together with the main window (otherwise the application keeps running).</summary>
     public void CloseFloatingPanels() => _dockFactory.CloseFloatingWindows();
 
+    /// <summary>Floats the panels that floated when the application was closed (called once the main window is shown).</summary>
+    public void RestoreFloatingPanels() => _dockFactory.ApplyFloatingPanels(_settings.GetStringMap(DockFloatingGroup));
+
     /// <summary>Saves panel visibility to the settings (called when the window closes).</summary>
     public void PersistState()
     {
         _settings.SetStringMap(DockPanelsGroup, _dockFactory.CaptureToolVisibility());
         _settings.SetStringMap(DockPinnedSizesGroup, _dockFactory.CapturePinnedSizes());
+        _settings.SetStringMap(DockFloatingGroup, _dockFactory.CaptureFloatingPanels());
         _settings.MainWindowDockLayout = JsonSerializer.Serialize(_dockFactory.CaptureLayoutState());
         _tabManager.CaptureSession(_settings);
         _findReplace.PersistState(IsFindReplaceVisible);
@@ -1632,6 +1649,10 @@ public sealed partial class MainWindowViewModel
             return null;
         }
 
+        DebugLog.Write(
+            "Cleanup",
+            "apply: " + string.Join("; ", plan.Steps.Select(st => $"{st.Step} {st.AppliedCount}/{st.Items.Count} items")) +
+            $"; files changed {plan.NewTexts.Count}, files removed {plan.ResourcesToDelete.Count}");
         if (_currentBook.ApplyCleanup(plan))
         {
             RefreshAfterMaintenanceOperation();
@@ -2330,6 +2351,67 @@ public sealed partial class MainWindowViewModel
             Strings.Format("Status_FindUsages", className, FindUsagesViewModel.ResultsText(usages.Count)), TimeSpan.FromSeconds(4));
     }
 
+    /// <summary>Raised after "Mend Code" changed the current file when Preferences ask to see the changes — the view shows the diff window.</summary>
+    public event EventHandler<DiffViewModel>? MendDiffRequested;
+
+    /// <summary>
+    /// "Mend Code" of the current file. When it changed the file and Preferences → Mend &amp; Prettify enable it
+    /// (<see cref="SettingsStore.MendShowDiff"/>), the changes are shown in a diff window (before → after) whose
+    /// "Undo the change" restores the text from before — as one undo step, and only while the tab is open and its
+    /// text has not been edited since.
+    /// </summary>
+    public async Task MendCurrentFileAsync()
+    {
+        if (ActiveCodeTab is not { } tab)
+        {
+            return;
+        }
+
+        string before = tab.DocumentText;
+        await tab.ReformatHtmlAsync(toValid: true).ConfigureAwait(true);
+        string after = tab.DocumentText;
+        if (!_settings.MendShowDiff || string.Equals(before, after, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        DiffViewModel diff = new(
+            new[] { BookFileDiff.FromTexts(tab.ResourceBookPath, before, after) },
+            Strings.Get("Diff_BeforeMend"),
+            Strings.Get("Diff_AfterMend"));
+        diff.OpenInEditorRequested += (_, target) => OpenBookPathAtLine(target.BookPath, target.Line);
+        diff.EnableRevert(() =>
+        {
+            if (!_tabManager.OpenTabViews.Contains(tab) || !string.Equals(tab.DocumentText, after, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            tab.SetDocumentTextSingleUndo(before);
+            DebugLog.Write("Mend", $"change undone from the diff window: {tab.ResourceBookPath}");
+            return true;
+        });
+        MendDiffRequested?.Invoke(this, diff);
+    }
+
+    /// <summary>
+    /// After File → Save / Save As (<paramref name="saved"/>): refreshes the "Find Usages" panel as its "Refresh" button
+    /// would — when Preferences → General enables it, the panel is shown (docked, floating or collapsed by Auto Hide)
+    /// and it holds a search. Unlike "Refresh" it does not take the focus or write to the status bar.
+    /// </summary>
+    public void RefreshFindUsagesAfterSave(bool saved = true)
+    {
+        if (!saved || !_settings.FindUsagesRefreshOnSave || _currentBook is null
+            || _findUsages.ClassName is not { } className || !_dockFactory.IsToolVisible(DockableIds.FindUsages))
+        {
+            return;
+        }
+
+        _tabManager.SaveAllTabs();
+        _findUsages.Load(className, _currentBook.FindClassUsages(className));
+        DebugLog.Write("FindUsages", $"refreshed after save: {className}");
+    }
+
     /// <summary>
     /// Navigation from the "Validation Results" panel (double-clicking a row) — opens the
     /// resource and scrolls to the reported line (line-based only — the only validation, the
@@ -2642,7 +2724,15 @@ public sealed partial class MainWindowViewModel
         {
             _preview.ApplyZoom(factor);
         }
-        else if (ActiveTab is { } tab)
+        else
+        {
+            AdjustTabZoom(factor);
+        }
+    }
+
+    private void AdjustTabZoom(double factor)
+    {
+        if (ActiveTab is { } tab)
         {
             tab.ZoomFactor = Math.Clamp(tab.ZoomFactor * factor, 0.5, 4.0);
         }
@@ -2654,9 +2744,9 @@ public sealed partial class MainWindowViewModel
         {
             _preview.ResetZoom();
         }
-        else if (ActiveTab is { } tab)
+        else
         {
-            tab.ZoomFactor = 1.0;
+            ZoomReset();
         }
     }
 
@@ -2854,7 +2944,6 @@ public sealed partial class MainWindowViewModel
         {
             _dockFactory.FocusTool(dockableId);
             _previewHasZoomFocus = dockableId == DockableIds.Preview;
-            OnPropertyChanged(nameof(ZoomPercentText));
 
             if (dockableId == DockableIds.Documents)
             {

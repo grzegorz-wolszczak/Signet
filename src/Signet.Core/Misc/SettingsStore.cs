@@ -219,6 +219,16 @@ public sealed class SettingsStore
         set => Write("main_window_dock_layout", value);
     }
 
+    /// <summary>
+    /// Whether File → Save / Save As refreshes the "Find Usages" panel (when it is shown with a search), as if its
+    /// "Refresh" button was pressed. Defaults to <c>true</c>.
+    /// </summary>
+    public bool FindUsagesRefreshOnSave
+    {
+        get => ReadBool("find_usages_refresh_on_save", true);
+        set => Write("find_usages_refresh_on_save", value);
+    }
+
     /// <summary>Whether the file drop zone is enabled.</summary>
     public bool FileDropZoneEnabled
     {
@@ -248,6 +258,16 @@ public sealed class SettingsStore
     {
         get => ReadBool("prettify_add_missing_doctype", false);
         set => Write("prettify_add_missing_doctype", value);
+    }
+
+    /// <summary>
+    /// Whether "Mend Code" of the current file shows the changes it made in a diff window (with "Undo the change")
+    /// when it changed the file. Disabled by default.
+    /// </summary>
+    public bool MendShowDiff
+    {
+        get => ReadBool("mend_show_diff", false);
+        set => Write("mend_show_diff", value);
     }
 
     /// <summary>Whether Mend adds a DOCTYPE to files that have none (disabled by default).</summary>
@@ -322,6 +342,16 @@ public sealed class SettingsStore
     {
         get => ReadStringList("enabled_user_dictionaries") ?? new List<string> { DefaultUserDictionary };
         set => Write("enabled_user_dictionaries", value);
+    }
+
+    /// <summary>
+    /// Whether the debug log is written (Preferences → Debug): what the user does — clicks, menu choices, settings
+    /// changed, window and panel operations — goes to the log file. Defaults to <c>false</c>.
+    /// </summary>
+    public bool DebugLogging
+    {
+        get => ReadBool("debug_logging", false);
+        set => Write("debug_logging", value);
     }
 
     /// <summary>

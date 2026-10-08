@@ -85,6 +85,7 @@ public partial class CodeTabView : UserControl
         Editor.TextArea.TextView.AddHandler(TextView.PointerHoverEvent, OnTextViewPointerHover);
         Editor.TextArea.TextView.AddHandler(TextView.PointerHoverStoppedEvent, OnTextViewPointerHoverStopped);
         InitializeOpenTagHint();
+        InitializeFolding();
         Editor.TextArea.Caret.PositionChanged += OnCaretPositionChanged;
         Editor.TextArea.TextView.VisualLinesChanged += (_, _) =>
         {
@@ -120,6 +121,7 @@ public partial class CodeTabView : UserControl
 
     private void OnDataContextChanged(object? sender, EventArgs e)
     {
+        SaveFoldedRegions(_boundViewModel);
         if (_boundViewModel is not null)
         {
             _boundViewModel.ScrollToLineRequested -= OnScrollToLineRequested;
@@ -137,6 +139,7 @@ public partial class CodeTabView : UserControl
         _boundViewModel = DataContext as CodeTabViewModel;
         if (_boundViewModel is null)
         {
+            InstallFolding();
             return;
         }
 
@@ -159,6 +162,7 @@ public partial class CodeTabView : UserControl
         UpdateTagRenderer();
         UpdateSearchRenderer();
         UpdateSpellRenderer();
+        InstallFolding();
     }
 
     /// <summary>
@@ -179,6 +183,7 @@ public partial class CodeTabView : UserControl
         UpdateTagRenderer();
         UpdateSearchRenderer();
         UpdateSpellRenderer();
+        InstallFolding();
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)

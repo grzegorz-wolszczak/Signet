@@ -449,6 +449,7 @@
             <CheckBox Content="{loc:Loc PreferencesWindow_ReopenLastFile}" IsChecked="{Binding ReopenLastFileOnStartup}" />
             <CheckBox Content="{loc:Loc PreferencesWindow_EnableFileDropZone}" IsChecked="{Binding FileDropZoneEnabled}" />
             <CheckBox Content="{loc:Loc PreferencesWindow_AutoCloseTags}" IsChecked="{Binding AutoCloseTags}" />
+            <CheckBox Content="{loc:Loc PreferencesWindow_FindUsagesRefreshOnSave}" IsChecked="{Binding FindUsagesRefreshOnSave}" />
 
             <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8" Margin="0,6,0,0">
               <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_ClipboardHistoryLimit}" VerticalAlignment="Center" />
@@ -492,6 +493,7 @@
               <StackPanel Spacing="6">
                 <TextBlock Text="{loc:Loc PreferencesWindow_MendSection}" FontWeight="Bold" />
                 <CheckBox Content="{loc:Loc PreferencesWindow_MendAddMissingDoctype}" IsChecked="{Binding MendAddMissingDoctype}" />
+                <CheckBox Content="{loc:Loc PreferencesWindow_MendShowDiff}" IsChecked="{Binding MendShowDiff}" />
               </StackPanel>
             </Border>
 
@@ -710,6 +712,22 @@
             </ItemsControl>
           </ScrollViewer>
         </DockPanel>
+      </TabItem>
+
+      <!-- ================================= Debug ================================== -->
+      <TabItem Header="{loc:Loc PreferencesWindow_Debug}">
+        <StackPanel Spacing="8" Margin="8">
+          <!-- Where the log files are; a click opens the folder in the system file manager. -->
+          <StackPanel Spacing="2" Margin="0,0,0,6">
+            <TextBlock Text="{loc:Loc PreferencesWindow_LogsDirectory}" />
+            <HyperlinkButton Content="{Binding LogsDirectory}" Command="{Binding OpenLogsDirectoryCommand}"
+                             ToolTip.Tip="{loc:Loc PreferencesWindow_LogsDirectoryTip}" Padding="0" />
+            <TextBlock Text="{Binding LogsDirectoryError}" Classes="warning" TextWrapping="Wrap"
+                       IsVisible="{Binding LogsDirectoryError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          </StackPanel>
+          <CheckBox Content="{loc:Loc PreferencesWindow_DebugLogging}" IsChecked="{Binding DebugLogging}" />
+          <TextBlock Text="{loc:Loc PreferencesWindow_DebugLoggingNote}" TextWrapping="Wrap" Opacity="0.75" Margin="28,0,0,0" />
+        </StackPanel>
       </TabItem>
 
     </TabControl>

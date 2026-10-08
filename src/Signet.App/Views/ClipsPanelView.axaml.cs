@@ -1,8 +1,12 @@
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
 using Signet.App.Infrastructure;
 using Signet.App.ViewModels;
 using Signet.Controls.TreeDataGrid;
@@ -18,7 +22,8 @@ namespace Signet.App.Views;
 /// <remarks>
 /// The tree is a <see cref="TreeDataGrid"/> built here (a TreeDataGrid source is bound to the UI thread) over the
 /// visible nodes (<see cref="VisibleItemsView{T}"/> — the filter sets <see cref="ClipNodeViewModel.IsVisible"/>);
-/// its multi-selection and the view model's selected nodes follow each other.
+/// its multi-selection and the view model's selected nodes follow each other. A name is renamed in place with the
+/// "Clip Editor → Rename" action (F2 by default, configurable in Preferences), only while this tree has the focus.
 /// </remarks>
 [SuppressMessage(
     "Reliability",
@@ -27,7 +32,11 @@ namespace Signet.App.Views;
         + "view and the view model's nodes it observes. The view is not disposed on detach: Dock re-parents panels.")]
 public partial class ClipsPanelView : UserControl
 {
+    private const string RenameEditorClass = "inPlaceRename";
+
     private ClipsViewModel? _bound;
+    private ClipNodeViewModel? _editingNode;
+    private readonly PanelKeyBindings _keys;
 
     // Keeps the column headers in the current UI language (held weakly by Strings).
     private LocalizedColumns<ClipNodeViewModel>? _columns;
@@ -38,8 +47,11 @@ public partial class ClipsPanelView : UserControl
     public ClipsPanelView()
     {
         InitializeComponent();
+        _keys = new PanelKeyBindings(this);
         DataContextChanged += (_, _) => BuildTree();
         Tree.DoubleTapped += OnDoubleTapped;
+        Tree.AddHandler(KeyDownEvent, OnTreeKeyDown, RoutingStrategies.Tunnel);
+        Tree.AddHandler(LostFocusEvent, OnRenameEditorLostFocus, RoutingStrategies.Bubble);
     }
 
     /// <summary>The visible children of a node (the filter's result).</summary>
@@ -55,6 +67,7 @@ public partial class ClipsPanelView : UserControl
         if (_bound is not null)
         {
             _bound.PropertyChanged -= OnViewModelPropertyChanged;
+            _keys.Detach();
         }
 
         _source?.Dispose();
@@ -71,7 +84,7 @@ public partial class ClipsPanelView : UserControl
                 Columns =
                 {
                     _columns.Expander(
-                        _columns.Text("ReportsWindow_Name", n => n.Name, new GridLength(1, GridUnitType.Star)),
+                        _columns.Template("ReportsWindow_Name", "NameCellTemplate", new GridLength(1, GridUnitType.Star)),
                         n => Visible(n.Children),
                         n => n.IsGroup,
                         n => n.IsExpanded),
@@ -82,6 +95,7 @@ public partial class ClipsPanelView : UserControl
                 _source, roots, n => Visible(n.Children), () => vm.SelectedNodes, vm.SetSelectedNodes,
                 n => ClipsPanelView.Contains(vm.Nodes, n));
             vm.PropertyChanged += OnViewModelPropertyChanged;
+            _keys.Attach(vm.ShortcutActions);
         }
 
         Tree.Source = _source;
@@ -93,11 +107,95 @@ public partial class ClipsPanelView : UserControl
         if (e.PropertyName == nameof(ClipsViewModel.SelectedNode))
         {
             _selection?.SelectFromViewModel();
+            return;
+        }
+
+        if (e.PropertyName != nameof(ClipsViewModel.EditingNode) || _bound is null)
+        {
+            return;
+        }
+
+        ClipNodeViewModel? finished = _editingNode;
+        _editingNode = _bound.EditingNode;
+
+        // Panel shortcuts must not act on the tree while a name is being typed.
+        _keys.SetSuspended(_editingNode is not null);
+        if (_editingNode is not null)
+        {
+            // The view model is shared with the Clip Editor window: only the tree with the focus (where the rename was
+            // started) shows the editor — the other one must not cancel the rename.
+            if (Tree.IsKeyboardFocusWithin)
+            {
+                // The editor becomes visible only after a layout pass — the focus is set afterwards.
+                Dispatcher.UIThread.Post(FocusRenameEditor, DispatcherPriority.Loaded);
+            }
+        }
+        else if (finished is not null && IsInRenameEditor(TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement()))
+        {
+            // The focus returns to the node row so that the arrows / the shortcut keep working in the tree.
+            Tree.Focus();
         }
     }
 
+    private void FocusRenameEditor()
+    {
+        TextBox? editor = Tree.GetVisualDescendants()
+            .OfType<TextBox>()
+            .FirstOrDefault(t => t.Classes.Contains(RenameEditorClass) && t.DataContext is ClipNodeViewModel { IsEditing: true });
+        if (editor is null)
+        {
+            _bound?.CancelRename();
+            return;
+        }
+
+        editor.Focus();
+        editor.SelectAll();
+    }
+
+    private void OnTreeKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (_bound is null || !IsInRenameEditor(e.Source))
+        {
+            return;
+        }
+
+        switch (e.Key)
+        {
+            case Key.Enter:
+                e.Handled = true;
+                _bound.CommitRename();
+                break;
+            case Key.Escape:
+                e.Handled = true;
+                _bound.CancelRename();
+                break;
+            case Key.Up or Key.Down or Key.PageUp or Key.PageDown:
+                // Without this the tree would move the selection under the editor.
+                e.Handled = true;
+                break;
+        }
+    }
+
+    private void OnRenameEditorLostFocus(object? sender, RoutedEventArgs e)
+    {
+        if (IsInRenameEditor(e.Source))
+        {
+            _bound?.CommitRename();
+        }
+    }
+
+    private static bool IsInRenameEditor(object? source) =>
+        source is Visual visual &&
+        (visual as TextBox ?? visual.FindAncestorOfType<TextBox>())?.Classes.Contains(RenameEditorClass) == true;
+
     private void OnDoubleTapped(object? sender, TappedEventArgs e)
     {
+        // A double click in the name editor selects a word — it does not paste.
+        if (IsInRenameEditor(e.Source))
+        {
+            return;
+        }
+
         if (DataContext is ClipsViewModel vm && vm.PasteCommand.CanExecute(null))
         {
             vm.PasteCommand.Execute(null);

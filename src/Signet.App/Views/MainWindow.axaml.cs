@@ -91,6 +91,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             _boundViewModel.MergeContentConfirmationRequested -= OnMergeContentConfirmationRequested;
             _boundViewModel.CreateCheckpointRequested -= OnCreateCheckpointRequested;
             _boundViewModel.CompareCheckpointRequested -= OnCompareCheckpointRequested;
+            _boundViewModel.MendDiffRequested -= OnCompareCheckpointRequested;
             _boundViewModel.FindPanelFocusRequested -= OnFindPanelFocusRequested;
             _boundViewModel.AddCoverRequested -= OnAddCoverRequested;
             _boundViewModel.InsertSpecialCharacterRequested -= OnInsertSpecialCharacterRequested;
@@ -138,6 +139,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         _boundViewModel.MergeContentConfirmationRequested += OnMergeContentConfirmationRequested;
         _boundViewModel.CreateCheckpointRequested += OnCreateCheckpointRequested;
         _boundViewModel.CompareCheckpointRequested += OnCompareCheckpointRequested;
+        _boundViewModel.MendDiffRequested += OnCompareCheckpointRequested;
         _boundViewModel.FindPanelFocusRequested += OnFindPanelFocusRequested;
         _boundViewModel.AddCoverRequested += OnAddCoverRequested;
         _boundViewModel.InsertSpecialCharacterRequested += OnInsertSpecialCharacterRequested;
@@ -212,8 +214,33 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             }
 
             vm.AttachMissingDoctypePrompt(this);
+            LogStartupEnvironment();
+            vm.RestoreFloatingPanels();
 
             _ = vm.RunStartupAsync();
+        }
+    }
+
+    // The debug log starts with what a window problem needs: version, system, monitors and their scaling, language.
+    private void LogStartupEnvironment()
+    {
+        if (!DebugLog.IsEnabled)
+        {
+            return;
+        }
+
+        DebugLog.Write(
+            "Startup",
+            $"{AppVersion.Text}; {System.Runtime.InteropServices.RuntimeInformation.OSDescription}; UI language {CultureInfo.CurrentUICulture.Name}");
+        if (Screens is { } screens)
+        {
+            foreach (Avalonia.Platform.Screen screen in screens.All)
+            {
+                DebugLog.Write(
+                    "Startup",
+                    FormattableString.Invariant(
+                        $"monitor{(screen.IsPrimary ? " (primary)" : string.Empty)}: bounds {screen.Bounds}, working area {screen.WorkingArea}, scaling {screen.Scaling:0.##}"));
+            }
         }
     }
 
@@ -398,8 +425,8 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         }
     }
 
-    // "Compare" in the checkpoints panel — a non-modal diff window; a double click in it
-    // jumps to the editor in this window.
+    // "Compare" in the checkpoints panel, and the changes of "Mend Code" — a non-modal diff window; a double click
+    // in it jumps to the editor in this window.
     private void OnCompareCheckpointRequested(object? sender, DiffViewModel diff)
     {
         diff.OpenInEditorRequested += (_, _) => Activate();
@@ -664,6 +691,18 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
     private ClipEditorWindow? _clipEditorWindow;
 
     /// <summary>
+    /// A non-modal window opens where it was the last time (by its type; corrected when that place is no longer
+    /// fully on screen) and remembers its place when it closes. Dialogs keep opening centered over the main window.
+    /// </summary>
+    internal static void RememberPlacement(Window window)
+    {
+        if (App.Services?.GetService<SettingsStore>() is { } settings)
+        {
+            WindowPlacement.Remember(window, window.GetType().Name, settings);
+        }
+    }
+
+    /// <summary>
     /// Opens (or activates) the non-modal "Clip Editor" window — a single persistent instance,
     /// the same pattern as <see cref="OnSpellcheckEditorRequested"/>; unlike Spellcheck, the
     /// <c>DataContext</c> (<see cref="MainWindowViewModel.Clips"/>) is always the same, shared
@@ -680,6 +719,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         if (_clipEditorWindow is null || !_clipEditorWindow.IsVisible)
         {
             _clipEditorWindow = new ClipEditorWindow { DataContext = vm.Clips };
+            RememberPlacement(_clipEditorWindow);
             _clipEditorWindow.Show(this);
         }
         else
@@ -705,6 +745,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         if (_viewImageWindow is null || !_viewImageWindow.IsVisible)
         {
             _viewImageWindow = new ViewImageWindow();
+            RememberPlacement(_viewImageWindow);
             _viewImageWindow.Show(this);
         }
         else
@@ -744,6 +785,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         if (_liveCssPanelWindow is null || !_liveCssPanelWindow.IsVisible)
         {
             _liveCssPanelWindow = new LiveCssPanelWindow { DataContext = _liveCssPanelViewModel };
+            RememberPlacement(_liveCssPanelWindow);
             _liveCssPanelWindow.Show(this);
         }
         else
@@ -802,6 +844,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         if (_searchEditorWindow is null || !_searchEditorWindow.IsVisible)
         {
             _searchEditorWindow = new SearchEditorWindow { DataContext = vm.SearchEditor };
+            RememberPlacement(_searchEditorWindow);
             _searchEditorWindow.Show(this);
         }
         else
@@ -832,6 +875,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
                 request.ReplaceText,
                 vm.FindReplace.OpenAtOffset),
         };
+        RememberPlacement(window);
         window.Show(this);
     }
 
@@ -940,9 +984,10 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         }
 
         SettingsStore settings = services.GetRequiredService<SettingsStore>();
+        PreferencesViewModel preferences = services.GetRequiredService<PreferencesViewModel>();
         PreferencesWindow window = new()
         {
-            DataContext = services.GetRequiredService<PreferencesViewModel>(),
+            DataContext = preferences,
         };
 
         // Only the size is remembered — the dialog still opens centered over the main window.
@@ -959,7 +1004,12 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             settings.Save();
         };
 
-        await window.ShowDialog(this);
+        // Every setting changed while the dialog is open goes to the debug log as "before → after".
+        using (DebugLog.TrackChanges(preferences, "Preferences"))
+        {
+            await window.ShowDialog(this);
+        }
+
         _boundViewModel?.ApplyPreferencesChanges();
 
         // The language chosen in Preferences switches the interface live after the window closes.
@@ -984,6 +1034,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         if (_reportsWindow is null || !_reportsWindow.IsVisible)
         {
             _reportsWindow = new ReportsWindow { DataContext = report };
+            RememberPlacement(_reportsWindow);
             _reportsWindow.Show(this);
         }
         else
@@ -1011,6 +1062,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         if (_spellcheckEditorWindow is null || !_spellcheckEditorWindow.IsVisible)
         {
             _spellcheckEditorWindow = new SpellcheckEditorWindow { DataContext = editor };
+            RememberPlacement(_spellcheckEditorWindow);
             _spellcheckEditorWindow.Show(this);
         }
         else

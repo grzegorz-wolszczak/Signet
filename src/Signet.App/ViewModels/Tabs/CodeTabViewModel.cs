@@ -216,6 +216,12 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     /// <summary>The AvaloniaEdit document with the resource content (bound to <c>TextEditor.Document</c>).</summary>
     public TextDocument Document { get; }
 
+    /// <summary>
+    /// The regions folded in Code View (start and end offset), kept while the tab is open: the view is reused for other
+    /// tabs, so it stores them here when it leaves the tab and folds them again when it comes back.
+    /// </summary>
+    public IReadOnlyList<(int Start, int End)> FoldedRegions { get; set; } = Array.Empty<(int Start, int End)>();
+
     /// <summary>Syntax kind (selects the highlighting grammar).</summary>
     public CodeViewSyntax Syntax => _model.Syntax;
 
@@ -365,10 +371,13 @@ public sealed class CodeTabViewModel : ContentTabViewModel
         _misspelledWords.Select(w => (w.Offset, w.Offset + w.Length)).ToList();
 
     /// <summary>Performs Find Next / Find Previous on this tab.</summary>
-    public FindResult FindNextMatch(string pattern, SearchDirection direction, bool wrap)
+    public FindResult FindNextMatch(string pattern, SearchDirection direction, bool wrap, bool fromStart = false)
     {
-        FindResult result = Search.FindNext(
-            Document.Text, _selectionStart, _selectionEnd, _caretOffset, pattern, direction, wrap);
+        // "Restart": from the start of the file (its end when searching up) instead of the caret.
+        int edge = direction == SearchDirection.Up ? Document.TextLength : 0;
+        FindResult result = fromStart
+            ? Search.FindNext(Document.Text, edge, edge, edge, pattern, direction, wrap, ignoreSelectionOffset: true)
+            : Search.FindNext(Document.Text, _selectionStart, _selectionEnd, _caretOffset, pattern, direction, wrap);
 
         if (result.Found)
         {

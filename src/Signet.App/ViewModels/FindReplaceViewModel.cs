@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System;
 using CommunityToolkit.Mvvm.Input;
+using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.App.ViewModels.Tabs;
@@ -55,7 +56,9 @@ public sealed class FindReplaceViewModel : ViewModelBase
     private readonly IStatusBarService _statusBar;
     private readonly Func<CodeTabViewModel?> _activeCodeTab;
     private readonly IMultiFileSearchHost _host;
-    private readonly MultiFileFindEngine _multiFile = new();
+
+    // "Restart": the next Find starts at the beginning of the scope (or of the current file), not at the caret.
+    private bool _restartPending;
 
     private CodeTabViewModel? _attachedTab;
 
@@ -74,6 +77,9 @@ public sealed class FindReplaceViewModel : ViewModelBase
     private bool _regexAutoTokenise;
     private bool _highlightAllMatches;
     private bool _restrictToSelection;
+
+    // The Find & Replace settings last written to the debug log (written again only after a change).
+    private string _loggedSettings = string.Empty;
     private string _message = string.Empty;
     private string _regexError = string.Empty;
 
@@ -111,12 +117,12 @@ public sealed class FindReplaceViewModel : ViewModelBase
         _regexAutoTokenise = stored.RegexAutoTokenise;
         _highlightAllMatches = stored.HighlightAllMatches;
 
-        FindNextCommand = new RelayCommand(() => FindNext());
-        FindPreviousCommand = new RelayCommand(() => FindPrevious());
-        ReplaceCommand = new RelayCommand(() => Replace());
-        ReplaceFindCommand = new RelayCommand(() => ReplaceFind());
-        ReplaceAllCommand = new RelayCommand(() => ReplaceAll());
-        CountCommand = new RelayCommand(() => Count());
+        FindNextCommand = new RelayCommand(() => Logged("Find Next", FindNext));
+        FindPreviousCommand = new RelayCommand(() => Logged("Find Previous", FindPrevious));
+        ReplaceCommand = new RelayCommand(() => Logged("Replace", Replace));
+        ReplaceFindCommand = new RelayCommand(() => Logged("Replace/Find", ReplaceFind));
+        ReplaceAllCommand = new RelayCommand(() => Logged("Replace All", ReplaceAll));
+        CountCommand = new RelayCommand(() => Logged("Count", Count));
         CloseReportCommand = new RelayCommand(ClearReport);
         RestartCommand = new RelayCommand(Restart);
 
@@ -234,7 +240,6 @@ public sealed class FindReplaceViewModel : ViewModelBase
         {
             if (SetProperty(ref _lookWhere, (LookWhere)value, nameof(LookWhereIndex)))
             {
-                _multiFile.Reset();
                 ClearReport();
                 OnPropertyChanged(nameof(IsMultiFileScope));
                 PersistOptions();
@@ -388,6 +393,38 @@ public sealed class FindReplaceViewModel : ViewModelBase
 
     private static bool IsPatternValid(string pattern) => PcreCache.Instance.GetObject(pattern).IsValid;
 
+    // One of the six operations of the panel, for the debug log: the panel's settings (only when they changed since
+    // they were last written), the operation and its result.
+    private void Logged<T>(string operation, Func<T> run)
+    {
+        if (DebugLog.IsEnabled)
+        {
+            string settings = string.Join(
+                ", ",
+                $"find {DebugLog.Describe(_findText)}",
+                $"replace {DebugLog.Describe(_replaceText)}",
+                $"mode {_mode}",
+                $"direction {_direction}",
+                $"where {_lookWhere}",
+                $"wrap {_optionWrap}",
+                $"dot-all {_regexDotAll}",
+                $"minimal {_regexMinimalMatch}",
+                $"unicode {_regexUnicodeProperty}",
+                $"text only {_regexTextOnly}",
+                $"auto-tokenise {_regexAutoTokenise}",
+                $"highlight all {_highlightAllMatches}",
+                $"in selection {_restrictToSelection}");
+            if (!string.Equals(settings, _loggedSettings, StringComparison.Ordinal))
+            {
+                _loggedSettings = settings;
+                DebugLog.Write("Find&Replace", "settings: " + settings);
+            }
+        }
+
+        T result = run();
+        DebugLog.Write("Find&Replace", $"{operation} → {DebugLog.Describe(result)}");
+    }
+
     /// <summary>
     /// "Restrict to selection" — restricts the search to the selected fragment by
     /// marking it as "marked text" on the active tab.
@@ -471,12 +508,13 @@ public sealed class FindReplaceViewModel : ViewModelBase
     public IRelayCommand RestartCommand { get; }
 
     /// <summary>
-    /// Forgets the previous search — the next Find is a "new search" (in multi-file mode
-    /// with a new start file = the current file). Shows the "Search will restart" message.
+    /// "Restart": the next Find Next / Previous starts at the beginning of the scope instead of the caret — the start
+    /// of the first file in scope (the end of the last one when searching up), or of the current file in current-file
+    /// mode. Shows the "Search will restart" message.
     /// </summary>
     public void Restart()
     {
-        _multiFile.Reset();
+        _restartPending = true;
         SetMessage(Strings.Get("FindReplace_SearchWillRestart"));
     }
 
@@ -505,8 +543,6 @@ public sealed class FindReplaceViewModel : ViewModelBase
             }
         }
 
-        // Changing the active file = a new start file at the next multi-file Find Next.
-        _multiFile.Reset();
         SyncRestrictFromTab();
         UpdateRegexValidity();
     }
@@ -694,7 +730,6 @@ public sealed class FindReplaceViewModel : ViewModelBase
         _regexUnicodeProperty = c.UnicodeProperty;
         _regexTextOnly = c.TextOnly;
         _regexAutoTokenise = c.AutoTokenise;
-        _multiFile.Reset();
 
         OnPropertyChanged(nameof(ModeIndex));
         OnPropertyChanged(nameof(IsRegexMode));
@@ -981,7 +1016,8 @@ public sealed class FindReplaceViewModel : ViewModelBase
         }
 
         ClearReport();
-        FindResult result = tab.FindNextMatch(pattern, direction, _optionWrap);
+        FindResult result = tab.FindNextMatch(pattern, direction, _optionWrap, fromStart: _restartPending);
+        _restartPending = false;
         RememberFind();
         RefreshHighlights(tab, pattern);
         SetMessage(ResultMessage(result));
@@ -1035,10 +1071,12 @@ public sealed class FindReplaceViewModel : ViewModelBase
             CurrentSelectionEnd = active?.SelectionEnd ?? 0,
             Pattern = pattern,
             Direction = direction,
-            Signature = BuildSignature(direction),
+            Wrap = _optionWrap,
+            FromStart = _restartPending,
         };
 
-        MultiFileFindResult result = _multiFile.FindNext(request);
+        MultiFileFindResult result = MultiFileFindEngine.FindNext(request);
+        _restartPending = false;
         RememberFind();
 
         if (result.Found)
@@ -1051,11 +1089,12 @@ public sealed class FindReplaceViewModel : ViewModelBase
                 found.RememberSearchMatch(LastActivePattern(), result.Start, result.End);
             }
 
-            SetMessage(string.Empty);
+            SetMessage(result.Wrapped ? Strings.Get("FindReplace_WrappedScope") : string.Empty);
             return true;
         }
 
-        SetMessage(Strings.Get("FindReplace_NotFoundEnd"));
+        // With wrapping the whole scope was searched; without it the search reached the end of the scope.
+        SetMessage(Strings.Get(_optionWrap ? "FindReplace_NotFoundInScope" : "FindReplace_NotFoundEnd"));
         return false;
     }
 
@@ -1220,20 +1259,6 @@ public sealed class FindReplaceViewModel : ViewModelBase
         reason = Strings.Format("FindReplace_NotWellFormedReason", result.Message);
         return false;
     }
-
-    private string BuildSignature(SearchDirection direction) => string.Join(
-        " ",
-        _findText,
-        ((int)_lookWhere).ToString(CultureInfo.InvariantCulture),
-        ((int)direction).ToString(CultureInfo.InvariantCulture),
-        ((int)_mode).ToString(CultureInfo.InvariantCulture),
-        OptionsToken());
-
-    private string OptionsToken() => string.Concat(
-        _regexDotAll ? "s" : "-",
-        _regexMinimalMatch ? "u" : "-",
-        _regexUnicodeProperty ? "p" : "-",
-        _regexTextOnly ? "t" : "-");
 
     private string LastActivePattern()
     {

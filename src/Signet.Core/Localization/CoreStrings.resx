@@ -6077,6 +6077,18 @@
   <data name="Cleanup_NestedDivs_Chain" xml:space="preserve">
     <value>{0} ×{1} — do usunięcia: {2}</value>
   </data>
+  <data name="Cleanup_MergeDivs_Group" xml:space="preserve">
+    <value>{0} ×{1} — poziom {2}</value>
+  </data>
+  <data name="Cleanup_Risk_MergeDivId" xml:space="preserve">
+    <value>{0}: książka odwołuje się do id="{1}" znaczników &lt;div&gt; (link, odwołanie do ID albo skrypt); po scaleniu zostanie tylko jeden element</value>
+  </data>
+  <data name="Cleanup_Risk_MergeDivBox" xml:space="preserve">
+    <value>{0}: &lt;{1}&gt; — „{2}: {3}” (z „{4}”) robi z każdego z {5} znaczników &lt;div&gt; osobne pudełko; po scaleniu zadziała raz na całość</value>
+  </data>
+  <data name="Cleanup_Risk_MergeDivInline" xml:space="preserve">
+    <value>{0}: koniec &lt;div&gt; nr {1} i początek &lt;div&gt; nr {2} to tekst lub elementy liniowe — zleją się w jedną linię zamiast zaczynać się od nowej</value>
+  </data>
   <data name="Cleanup_EmptyElements_File" xml:space="preserve">
     <value>Puste znaczniki do usunięcia: {0} ({1})</value>
   </data>

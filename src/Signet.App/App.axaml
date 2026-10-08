@@ -172,24 +172,13 @@
             </MultiBinding>
           </MenuItem.IsVisible>
         </MenuItem>
+        <!-- "Close" hides the panel (MainDockFactory.CloseDockable; the View menu shows it again). It is always listed and
+             only greyed out when the panel cannot be closed — also for the last panel of a dock, e.g. alone in a
+             floating window, where Dock's own condition (CanCloseLastDockable of a dock Dock created itself) hid it. -->
         <MenuItem Header="{DynamicResource ToolChromeControlCloseString}"
                   Command="{Binding Owner.Factory.CloseDockable}"
-                  CommandParameter="{Binding ActiveDockable}">
-          <MenuItem.IsVisible>
-            <MultiBinding Converter="{x:Static BoolConverters.And}">
-              <MultiBinding Converter="{x:Static dockConverters:DockCapabilityConverters.CanCloseMultiConverter}">
-                <Binding Path="ActiveDockable" />
-                <Binding Path="ActiveDockable.CanClose" />
-                <Binding Path="ActiveDockable.DockCapabilityOverrides.CanClose" />
-                <Binding Path="(dockCore:IDock).DockCapabilityPolicy.CanClose" />
-              </MultiBinding>
-              <MultiBinding Converter="{x:Static dockConverters:CanRemoveDockableConverter.Instance}">
-                <Binding Path="(dockCore:IDock).CanCloseLastDockable" FallbackValue="{x:True}" />
-                <Binding Path="(dockCore:IDock).VisibleDockables.Count" FallbackValue="0" />
-              </MultiBinding>
-            </MultiBinding>
-          </MenuItem.IsVisible>
-        </MenuItem>
+                  CommandParameter="{Binding ActiveDockable}"
+                  IsEnabled="{Binding ActiveDockable.CanClose, FallbackValue=False}" />
       </MenuFlyout>
 
       <!-- Font size of the warning texts in dialogs (TextBlock.warning / .warningNote). The real value — the

@@ -26,9 +26,31 @@ public static class ExternalOpen
             return false;
         }
 
+        return TryStart(fullPath, out error);
+    }
+
+    /// <summary>
+    /// Tries to open the folder <paramref name="folderPath"/> in the system file manager (Explorer on Windows).
+    /// Returns <c>false</c> (and fills <paramref name="error"/>) when the folder does not exist or the shell refused.
+    /// </summary>
+    public static bool TryOpenFolder(string folderPath, out string? error)
+    {
+        ArgumentNullException.ThrowIfNull(folderPath);
+
+        if (!Directory.Exists(folderPath))
+        {
+            error = Strings.Get("ExternalOpen_FileMissing");
+            return false;
+        }
+
+        return TryStart(folderPath, out error);
+    }
+
+    private static bool TryStart(string path, out string? error)
+    {
         try
         {
-            using Process? process = Process.Start(new ProcessStartInfo(fullPath) { UseShellExecute = true });
+            using Process? process = Process.Start(new ProcessStartInfo(path) { UseShellExecute = true });
             error = null;
             return true;
         }

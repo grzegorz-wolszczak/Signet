@@ -175,4 +175,38 @@ public sealed class DiffViewModelTests
         vm.LeftImagePath.Should().Be(a);
         vm.RightImagePath.Should().Be(b);
     }
+
+    [Fact]
+    public void Two_texts_in_memory_are_compared_like_two_files()
+    {
+        DiffViewModel vm = New(BookFileDiff.FromTexts("EPUB/text/ch.xhtml", Lines("a", "b"), Lines("a", "c")));
+
+        vm.SideBySideRows.Should().Contain(r => r.Row.IsChange && r.Row.Right.Text == "c");
+        vm.CanRevert.Should().BeFalse("only a diff shown after Mend Code offers undoing");
+        vm.RevertCommand.CanExecute(null).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Undo_the_change_restores_once_and_reports_when_it_cannot()
+    {
+        DiffViewModel vm = New(BookFileDiff.FromTexts("EPUB/text/ch.xhtml", "a", "b"));
+        bool possible = false;
+        int calls = 0;
+        vm.EnableRevert(() =>
+        {
+            calls++;
+            return possible;
+        });
+
+        vm.CanRevert.Should().BeTrue();
+        vm.RevertCommand.Execute(null);
+        vm.Status.Should().Be(Strings.Get("Diff_RevertNotPossible"));
+        vm.RevertCommand.CanExecute(null).Should().BeTrue("it may be possible again after the edit is undone");
+
+        possible = true;
+        vm.RevertCommand.Execute(null);
+        vm.Status.Should().Be(Strings.Get("Diff_Reverted"));
+        vm.RevertCommand.CanExecute(null).Should().BeFalse();
+        calls.Should().Be(2);
+    }
 }

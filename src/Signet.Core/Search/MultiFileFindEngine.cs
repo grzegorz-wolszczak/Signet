@@ -33,10 +33,16 @@ public sealed record MultiFileSearchRequest
     public SearchDirection Direction { get; init; } = SearchDirection.Down;
 
     /// <summary>
-    /// Search signature (Find text + scope + direction) — a change means a "new search"
-    /// and a new starting file is chosen.
+    /// Whether the search wraps: after the end of the scope (the last file for Down, the first one for Up) it goes on
+    /// from the other end, up to and including the current file. Without it the search ends at the end of the scope.
     /// </summary>
-    public string Signature { get; init; } = string.Empty;
+    public bool Wrap { get; init; } = true;
+
+    /// <summary>
+    /// Whether the search starts at the beginning of the scope (the start of the first file for Down, the end of the
+    /// last one for Up) instead of the caret — "Restart".
+    /// </summary>
+    public bool FromStart { get; init; }
 }
 
 /// <summary>Result of a multi-file "Find Next".</summary>
@@ -46,291 +52,83 @@ public sealed record MultiFileSearchRequest
 /// <param name="End">End of the match.</param>
 public sealed record MultiFileFindResult(bool Found, string BookPath, int Start, int End)
 {
+    /// <summary>Whether the match was found after wrapping past the end of the scope.</summary>
+    public bool Wrapped { get; init; }
+
     /// <summary>The "not found" result.</summary>
     public static MultiFileFindResult NotFound { get; } = new(false, string.Empty, -1, -1);
 }
 
 /// <summary>
-/// View-independent multi-file "Find Next" engine. One instance per Find &amp; Replace panel; it keeps
-/// state between successive <see cref="FindNext"/> calls (starting file, starting position, "remainder").
+/// View-independent multi-file "Find Next": searches the current file from the caret, then the following files of the
+/// scope (in Book Browser order, backwards for Up) from their edge; with <see cref="MultiFileSearchRequest.Wrap"/> it
+/// goes on from the other end of the scope up to and including the current file, as "Find Next" wraps in a single
+/// file. <see cref="MultiFileSearchRequest.FromStart"/> ("Restart") searches the whole scope from its beginning instead
+/// of the caret. The engine keeps no state between calls.
 /// </summary>
-/// <remarks>
-/// File traversal uses the full <see cref="MultiFileSearchRequest.Files"/> list (not only the trimmed
-/// list of files still to search), which simplifies the termination condition; whether a file belongs
-/// to the scope is decided purely by its membership in that list. Wrapping across files is always
-/// active (the wrap option does not apply to multi-file Find Next).
-/// </remarks>
-public sealed class MultiFileFindEngine
+public static class MultiFileFindEngine
 {
-    private string? _startingBookPath;
-    private int _startingPos = -1;
-    private bool _inRemainder;
-    private string? _previousSignature;
-
-    /// <summary>Clears the state (forces a "new search" on the next <see cref="FindNext"/>).</summary>
-    public void Reset()
-    {
-        _startingBookPath = null;
-        _startingPos = -1;
-        _inRemainder = false;
-        _previousSignature = null;
-    }
-
     /// <summary>Finds the next match among the files in scope.</summary>
-    public MultiFileFindResult FindNext(MultiFileSearchRequest request)
+    public static MultiFileFindResult FindNext(MultiFileSearchRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
-
-        if (request.Files.Count == 0)
-        {
-            return MultiFileFindResult.NotFound;
-        }
-
-        if (!PcreCache.Instance.GetObject(request.Pattern).IsValid)
-        {
-            return MultiFileFindResult.NotFound;
-        }
-
-        if (_previousSignature is null || !string.Equals(_previousSignature, request.Signature, StringComparison.Ordinal))
-        {
-            SetStartingResource(request);
-            _previousSignature = request.Signature;
-        }
-
-        return FindInAllFiles(request);
-    }
-
-    private void SetStartingResource(MultiFileSearchRequest request)
-    {
-        _startingBookPath = null;
-        _startingPos = -1;
-        _inRemainder = false;
-
         IReadOnlyList<MultiFileSearchFile> files = request.Files;
-        if (files.Count == 0)
+        if (files.Count == 0 || !PcreCache.Instance.GetObject(request.Pattern).IsValid)
         {
-            return;
+            return MultiFileFindResult.NotFound;
         }
 
-        _startingBookPath = ContainsPath(files, request.CurrentBookPath)
-            ? request.CurrentBookPath
-            : request.Direction == SearchDirection.Down ? files[0].BookPath : files[^1].BookPath;
+        bool down = request.Direction != SearchDirection.Up;
+        int step = down ? 1 : -1;
 
-        if (string.Equals(_startingBookPath, request.CurrentBookPath, StringComparison.Ordinal))
-        {
-            _startingPos = request.CurrentCaret;
-        }
-    }
-
-    private MultiFileFindResult FindInAllFiles(MultiFileSearchRequest request)
-    {
-        string current = request.CurrentBookPath;
-
-        if (string.Equals(current, _startingBookPath, StringComparison.Ordinal) &&
-            TryGetFile(request.Files, current, out MultiFileSearchFile startFile))
-        {
-            if (!_inRemainder)
-            {
-                MultiFileFindResult inStart = FindWithinFile(
-                    startFile, request,
-                    request.CurrentSelectionStart, request.CurrentSelectionEnd, request.CurrentCaret,
-                    ignoreSelectionOffset: false, splitAt: -1);
-                if (inStart.Found)
-                {
-                    return inStart;
-                }
-
-                _inRemainder = true;
-            }
-
-            if (_inRemainder && _startingPos != -1)
-            {
-                // Remainder of the starting file before the starting position — searched from the actual
-                // selection/caret (not from the edge), so successive Find Next calls keep advancing.
-                MultiFileFindResult remainder = FindWithinFile(
-                    startFile, request,
-                    request.CurrentSelectionStart, request.CurrentSelectionEnd, request.CurrentCaret,
-                    ignoreSelectionOffset: false, splitAt: _startingPos);
-                if (remainder.Found)
-                {
-                    return remainder;
-                }
-            }
-        }
-        else if (ContainsPath(request.Files, current) &&
-                 TryGetFile(request.Files, current, out MultiFileSearchFile curFile))
+        // The current file from the caret — unless the search restarts or the file is not in scope.
+        int current = request.FromStart ? -1 : IndexOfPath(files, request.CurrentBookPath);
+        if (current >= 0)
         {
             MultiFileFindResult inCurrent = FindWithinFile(
-                curFile, request,
-                request.CurrentSelectionStart, request.CurrentSelectionEnd, request.CurrentCaret,
-                ignoreSelectionOffset: false, splitAt: -1);
+                files[current], request,
+                request.CurrentSelectionStart, request.CurrentSelectionEnd, request.CurrentCaret, ignoreSelectionOffset: false);
             if (inCurrent.Found)
             {
                 return inCurrent;
             }
         }
 
-        string? containing = GetNextContainingResource(request);
-        if (containing is not null && TryGetFile(request.Files, containing, out MultiFileSearchFile next))
+        // The following files, up to the end of the scope.
+        int from = current >= 0 ? current + step : (down ? 0 : files.Count - 1);
+        for (int i = from; i >= 0 && i < files.Count; i += step)
         {
-            int edge = request.Direction == SearchDirection.Up ? next.Text.Length : 0;
-            return FindWithinFile(next, request, edge, edge, edge, ignoreSelectionOffset: true, splitAt: -1);
+            MultiFileFindResult found = FindFromEdge(files[i], request);
+            if (found.Found)
+            {
+                return found;
+            }
+        }
+
+        // Wrapping: from the other end of the scope up to and including the current file (the part before the caret).
+        if (!request.Wrap || current < 0)
+        {
+            return MultiFileFindResult.NotFound;
+        }
+
+        for (int i = down ? 0 : files.Count - 1; down ? i <= current : i >= current; i += step)
+        {
+            MultiFileFindResult found = FindFromEdge(files[i], request);
+            if (found.Found)
+            {
+                return found with { Wrapped = true };
+            }
         }
 
         return MultiFileFindResult.NotFound;
     }
 
-    // Scans the trimmed range of "files not yet searched" (with wrapping) from the scan's starting
-    // file until it finds a file with a match or returns to the start.
-    private string? GetNextContainingResource(MultiFileSearchRequest request)
+    // The first match of a file from its start (Down) or its end (Up).
+    private static MultiFileFindResult FindFromEdge(MultiFileSearchFile file, MultiFileSearchRequest request)
     {
-        IReadOnlyList<MultiFileSearchFile> files = GetFilesToSearch(request, forceAll: false);
-        if (files.Count == 0)
-        {
-            return null;
-        }
-
-        string current = request.CurrentBookPath;
-        bool currentInList = ContainsPath(files, current);
-
-        string scanStart;
-        bool checkScanStartItself;
-        if (currentInList)
-        {
-            scanStart = current;
-            checkScanStartItself = false;
-        }
-        else
-        {
-            scanStart = request.Direction == SearchDirection.Down ? files[0].BookPath : files[^1].BookPath;
-            checkScanStartItself = true;
-        }
-
-        if (checkScanStartItself)
-        {
-            if (ResourceContainsPattern(request.Files, scanStart, request.Pattern))
-            {
-                return scanStart;
-            }
-
-            if (files.Count == 1)
-            {
-                return null;
-            }
-        }
-
-        string cursor = scanStart;
-        for (int guard = 0; guard <= files.Count; guard++)
-        {
-            string? nextCursor = GetNextResource(files, cursor, request.Direction);
-            if (nextCursor is null || string.Equals(nextCursor, scanStart, StringComparison.Ordinal))
-            {
-                return null;
-            }
-
-            cursor = nextCursor;
-            if (ResourceContainsPattern(request.Files, cursor, request.Pattern))
-            {
-                return cursor;
-            }
-        }
-
-        return null;
+        int edge = request.Direction == SearchDirection.Up ? file.Text.Length : 0;
+        return FindWithinFile(file, request, edge, edge, edge, ignoreSelectionOffset: true);
     }
-
-    // The list of "files still to search", computed relative to the starting and current files
-    // (taking wrapping and direction into account).
-    private IReadOnlyList<MultiFileSearchFile> GetFilesToSearch(MultiFileSearchRequest request, bool forceAll)
-    {
-        IReadOnlyList<MultiFileSearchFile> all = request.Files;
-        string current = request.CurrentBookPath;
-
-        if (forceAll ||
-            all.Count == 0 ||
-            _startingBookPath is null ||
-            !ContainsPath(all, current) ||
-            !ContainsPath(all, _startingBookPath) ||
-            string.Equals(_startingBookPath, current, StringComparison.Ordinal))
-        {
-            return all;
-        }
-
-        int c = IndexOfPath(all, current);
-        int s = IndexOfPath(all, _startingBookPath);
-        var result = new List<MultiFileSearchFile>();
-
-        if (request.Direction == SearchDirection.Down)
-        {
-            bool skip = c < s;
-            foreach (MultiFileSearchFile file in all)
-            {
-                if (string.Equals(file.BookPath, _startingBookPath, StringComparison.Ordinal))
-                {
-                    skip = true;
-                }
-
-                if (string.Equals(file.BookPath, current, StringComparison.Ordinal))
-                {
-                    skip = false;
-                }
-
-                if (!skip)
-                {
-                    result.Add(file);
-                }
-            }
-        }
-        else
-        {
-            bool skip = s < c;
-            foreach (MultiFileSearchFile file in all)
-            {
-                if (!skip)
-                {
-                    result.Add(file);
-                }
-
-                if (string.Equals(file.BookPath, _startingBookPath, StringComparison.Ordinal))
-                {
-                    skip = false;
-                }
-
-                if (string.Equals(file.BookPath, current, StringComparison.Ordinal))
-                {
-                    skip = true;
-                }
-            }
-        }
-
-        return result;
-    }
-
-    private static string? GetNextResource(
-        IReadOnlyList<MultiFileSearchFile> files, string fromBookPath, SearchDirection direction)
-    {
-        if (files.Count == 0)
-        {
-            return null;
-        }
-
-        int cur = IndexOfPath(files, fromBookPath);
-        if (cur < 0)
-        {
-            cur = 0;
-        }
-
-        int max = files.Count - 1;
-        int next = direction == SearchDirection.Up
-            ? (cur - 1 >= 0 ? cur - 1 : max)
-            : (cur + 1 <= max ? cur + 1 : 0);
-
-        return files[next].BookPath;
-    }
-
-    private static bool ResourceContainsPattern(
-        IReadOnlyList<MultiFileSearchFile> files, string bookPath, string pattern) =>
-        TryGetFile(files, bookPath, out MultiFileSearchFile file) &&
-        SearchOperations.CountInText(pattern, file.Text) > 0;
 
     private static MultiFileFindResult FindWithinFile(
         MultiFileSearchFile file,
@@ -338,21 +136,17 @@ public sealed class MultiFileFindEngine
         int selectionStart,
         int selectionEnd,
         int caret,
-        bool ignoreSelectionOffset,
-        int splitAt)
+        bool ignoreSelectionOffset)
     {
         var search = new CodeViewSearch();
         FindResult result = search.FindNext(
             file.Text, selectionStart, selectionEnd, caret,
-            request.Pattern, request.Direction, wrap: false, ignoreSelectionOffset, splitAt);
+            request.Pattern, request.Direction, wrap: false, ignoreSelectionOffset);
 
         return result.Found
             ? new MultiFileFindResult(true, file.BookPath, result.Start, result.End)
             : MultiFileFindResult.NotFound;
     }
-
-    private static bool ContainsPath(IReadOnlyList<MultiFileSearchFile> files, string bookPath) =>
-        IndexOfPath(files, bookPath) >= 0;
 
     private static int IndexOfPath(IReadOnlyList<MultiFileSearchFile> files, string bookPath)
     {
@@ -365,19 +159,5 @@ public sealed class MultiFileFindEngine
         }
 
         return -1;
-    }
-
-    private static bool TryGetFile(
-        IReadOnlyList<MultiFileSearchFile> files, string bookPath, out MultiFileSearchFile file)
-    {
-        int index = IndexOfPath(files, bookPath);
-        if (index >= 0)
-        {
-            file = files[index];
-            return true;
-        }
-
-        file = null!;
-        return false;
     }
 }

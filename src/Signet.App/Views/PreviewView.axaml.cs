@@ -31,6 +31,19 @@ public partial class PreviewView : UserControl
         + "window.chrome.webview.postMessage('signet-loc:'+el.getAttribute('data-signet-loc'));}catch(x){}}"
         + "},true);})();";
 
+    // A script injected when each document is created: Ctrl+wheel and Ctrl+Plus/Minus/0 in the page do not change
+    // the engine's own zoom (which the host knows nothing about, so the next SetZoomFactor or reload would undo it)
+    // but send the host "signet-zoom:in" / "out" / "reset" — the preview's own zoom (PreviewViewModel.ZoomFactor).
+    private const string ZoomBridgeScript =
+        "(function(){if(window.__signetZoomBridge)return;window.__signetZoomBridge=true;"
+        + "function post(m){try{window.chrome.webview.postMessage('signet-zoom:'+m);}catch(x){}}"
+        + "window.addEventListener('wheel',function(e){if(!e.ctrlKey||e.deltaY===0)return;"
+        + "e.preventDefault();post(e.deltaY<0?'in':'out');},{passive:false,capture:true});"
+        + "window.addEventListener('keydown',function(e){if(!(e.ctrlKey||e.metaKey)||e.altKey)return;"
+        + "var m=(e.key==='+'||e.key==='='||e.code==='NumpadAdd')?'in'"
+        + ":(e.key==='-'||e.code==='NumpadSubtract')?'out':(e.key==='0'||e.code==='Numpad0')?'reset':null;"
+        + "if(m){e.preventDefault();post(m);}},true);})();";
+
     // After this time without a real frame the preview is revealed anyway (e.g. when the backend
     // never delivers non-synthetic frames) — better to show something than an empty panel.
     private static readonly TimeSpan RevealFallbackDelay = TimeSpan.FromSeconds(3);
@@ -54,10 +67,13 @@ public partial class PreviewView : UserControl
         {
             WebView.InstanceConfiguration.DocumentStartScripts.Add(
                 new Nwv.NativeWebViewDocumentStartScript(ClickBridgeScript));
+            WebView.InstanceConfiguration.DocumentStartScripts.Add(
+                new Nwv.NativeWebViewDocumentStartScript(ZoomBridgeScript));
         }
         catch (Exception)
         {
-            // A backend without startup script support — Preview → Code View sync is inactive.
+            // A backend without startup script support — Preview → Code View sync is inactive, and Ctrl+wheel
+            // zooms natively (the zoom bar and the View menu still work).
         }
     }
 
@@ -247,7 +263,9 @@ public partial class PreviewView : UserControl
         }
     }
 
-    private void OnZoomChanged(object? sender, double factor)
+    private void OnZoomChanged(object? sender, double factor) => ApplyZoom(factor);
+
+    private void ApplyZoom(double factor)
     {
         if (_initialized && !_initFailed)
         {
@@ -403,6 +421,13 @@ public partial class PreviewView : UserControl
     private void OnNavigationCompleted(object? sender, Nwv.NativeWebViewNavigationCompletedEventArgs e)
     {
         ApplyCustomCss();
+
+        // A new page may come with the engine's default zoom: keep the preview's own.
+        if (_boundViewModel is not null)
+        {
+            ApplyZoom(_boundViewModel.ZoomFactor);
+        }
+
         _boundViewModel?.NotifyPageLoaded();
     }
 

@@ -6,6 +6,7 @@ using System;
 using Dock.Model.Controls;
 using Dock.Model.Core.Events;
 using Signet.App.Docking;
+using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.App.ViewModels.Tabs;
@@ -519,6 +520,7 @@ public sealed class TabManager : IDisposable
 
     private void OnModelTabOpened(object? sender, TabEventArgs e)
     {
+        DebugLog.Write("Tab", $"opened {e.Tab.Resource.BookPath} ({e.Tab.Kind})");
         ContentTabViewModel view = CreateTab(e.Tab);
         _views[e.Tab] = view;
         view.PropertyChanged += OnViewPropertyChanged;
@@ -555,6 +557,7 @@ public sealed class TabManager : IDisposable
 
         if (!ReferenceEquals(outgoing, incoming))
         {
+            DebugLog.Write("Tab", $"activated {e.Tab.Resource.BookPath}");
             outgoing?.Save();
             ActiveTabChanged?.Invoke(this, EventArgs.Empty);
         }
@@ -577,6 +580,7 @@ public sealed class TabManager : IDisposable
 
     private void OnModelTabClosed(object? sender, TabEventArgs e)
     {
+        DebugLog.Write("Tab", $"closed {e.Tab.Resource.BookPath}");
         if (!_views.Remove(e.Tab, out ContentTabViewModel? view))
         {
             return;

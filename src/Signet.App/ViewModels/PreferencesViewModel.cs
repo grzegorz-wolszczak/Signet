@@ -12,6 +12,7 @@ using Signet.App.Actions;
 using Signet.App.Infrastructure;
 using Signet.App.Input;
 using Signet.App.Resources;
+using Signet.App.Services;
 using Signet.Core.Misc;
 using Signet.Core.Spellcheck;
 
@@ -138,10 +139,12 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _mendOnSave = (_settings.CleanOn & CleanOn.Save) != 0;
         _reopenLastFileOnStartup = _settings.ReopenLastFileOnStartup;
         _fileDropZoneEnabled = _settings.FileDropZoneEnabled;
+        _findUsagesRefreshOnSave = _settings.FindUsagesRefreshOnSave;
         _autoCloseTags = _settings.CodeViewAutoCloseTags;
         _warnMissingDoctype = _settings.WarnMissingDoctype;
         _prettifyAddMissingDoctype = _settings.PrettifyAddMissingDoctype;
         _mendAddMissingDoctype = _settings.MendAddMissingDoctype;
+        _mendShowDiff = _settings.MendShowDiff;
         _clipboardHistoryLimit = _settings.ClipboardHistoryLimit;
         _recentFilesLimit = _settings.RecentFilesLimit;
         _previewRefreshDelay = _settings.UiPreviewTimeout;
@@ -153,6 +156,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         // ---- Spellcheck ----
         _spellCheckEnabled = _settings.SpellCheck;
         _spellCheckNumbers = _settings.SpellCheckNumbers;
+        _debugLogging = _settings.DebugLogging;
         AvailableDictionaries = _spellChecker.Dictionaries()
             .Select(name => new DictionaryOption(name, SpellChecker.DisplayName(name)))
             .ToList();
@@ -669,6 +673,12 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
     partial void OnFileDropZoneEnabledChanged(bool value) => _settings.FileDropZoneEnabled = value;
 
+    /// <summary>Whether File → Save / Save As refreshes the "Find Usages" panel (when it shows a search).</summary>
+    [ObservableProperty]
+    private bool _findUsagesRefreshOnSave;
+
+    partial void OnFindUsagesRefreshOnSaveChanged(bool value) => _settings.FindUsagesRefreshOnSave = value;
+
     /// <summary>Clipboard history limit (0–20).</summary>
     [ObservableProperty]
     private int _clipboardHistoryLimit;
@@ -747,6 +757,12 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
     partial void OnMendAddMissingDoctypeChanged(bool value) => _settings.MendAddMissingDoctype = value;
 
+    /// <summary>Whether "Mend Code" of the current file shows its changes in a diff window.</summary>
+    [ObservableProperty]
+    private bool _mendShowDiff;
+
+    partial void OnMendShowDiffChanged(bool value) => _settings.MendShowDiff = value;
+
     /// <summary>Whether automatic spell checking is enabled.</summary>
     [ObservableProperty]
     private bool _spellCheckEnabled;
@@ -758,6 +774,32 @@ public sealed partial class PreferencesViewModel : ObservableObject
     private bool _spellCheckNumbers;
 
     partial void OnSpellCheckNumbersChanged(bool value) => _settings.SpellCheckNumbers = value;
+
+    /// <summary>Whether the debug log is written (what the user does goes to the log file) — takes effect at once.</summary>
+    [ObservableProperty]
+    private bool _debugLogging;
+
+    /// <summary>The folder with the log files (shown in the Debug tab; a click opens it in the file manager).</summary>
+    public string LogsDirectory => AppDirectories.LogsDirectory;
+
+    /// <summary>Why the logs folder could not be opened; empty when there is no error.</summary>
+    [ObservableProperty]
+    private string _logsDirectoryError = string.Empty;
+
+    /// <summary>Opens <see cref="LogsDirectory"/> in the system file manager (Explorer on Windows).</summary>
+    [RelayCommand]
+    private void OpenLogsDirectory()
+    {
+        LogsDirectoryError = ExternalOpen.TryOpenFolder(AppDirectories.EnsureLogsDirectory(), out string? error)
+            ? string.Empty
+            : error ?? string.Empty;
+    }
+
+    partial void OnDebugLoggingChanged(bool value)
+    {
+        _settings.DebugLogging = value;
+        DebugLog.IsEnabled = value;
+    }
 
     /// <summary>Available dictionaries (built-in + installed) with readable language names.</summary>
     public IReadOnlyList<DictionaryOption> AvailableDictionaries { get; }

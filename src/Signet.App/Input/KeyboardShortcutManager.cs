@@ -41,7 +41,7 @@ public sealed class KeyboardShortcutManager
     /// Registers an action with its default sequence. Registering the same id again is
     /// ignored. If a saved override exists, it is applied.
     /// </summary>
-    public KeyboardShortcut RegisterAction(string id, string defaultShortcut, string description)
+    public KeyboardShortcut RegisterAction(string id, string defaultShortcut, string description, string? scope = null)
     {
         if (_shortcuts.TryGetValue(id, out KeyboardShortcut? existing))
         {
@@ -57,7 +57,7 @@ public sealed class KeyboardShortcutManager
                 : KeyGestureConversion.TryParse(stored, out KeyGesture? g) ? g : defaultGesture;
         }
 
-        KeyboardShortcut shortcut = new(id, description, current, defaultGesture);
+        KeyboardShortcut shortcut = new(id, description, current, defaultGesture, scope);
         _shortcuts[id] = shortcut;
         return shortcut;
     }
@@ -79,9 +79,11 @@ public sealed class KeyboardShortcutManager
     {
         ArgumentNullException.ThrowIfNull(gesture);
         string key = gesture.ToString();
+        string? scope = _shortcuts.TryGetValue(exceptId, out KeyboardShortcut? except) ? except.Scope : null;
         foreach (KeyValuePair<string, KeyboardShortcut> kv in _shortcuts)
         {
             if (!string.Equals(kv.Key, exceptId, StringComparison.Ordinal)
+                && ScopesOverlap(scope, kv.Value.Scope)
                 && kv.Value.KeyGesture is { } cur
                 && string.Equals(cur.ToString(), key, StringComparison.Ordinal))
             {
@@ -156,7 +158,8 @@ public sealed class KeyboardShortcutManager
         {
             for (int j = i + 1; j < withGesture.Count; j++)
             {
-                if (string.Equals(withGesture[i].KeyGesture!.ToString(), withGesture[j].KeyGesture!.ToString(), StringComparison.Ordinal))
+                if (ScopesOverlap(withGesture[i].Scope, withGesture[j].Scope)
+                    && string.Equals(withGesture[i].KeyGesture!.ToString(), withGesture[j].KeyGesture!.ToString(), StringComparison.Ordinal))
                 {
                     // The shortcut is shown in the portable syntax ("Ctrl+0"), as in the shortcut edit fields —
                     // Avalonia's KeyGesture.ToString() would give the raw key name ("Ctrl+D0").
@@ -170,6 +173,10 @@ public sealed class KeyboardShortcutManager
 
         return conflicts;
     }
+
+    // A window-wide shortcut (no scope) overlaps with everything; two panel shortcuts only within the same panel.
+    private static bool ScopesOverlap(string? first, string? second) =>
+        first is null || second is null || string.Equals(first, second, StringComparison.Ordinal);
 
     private void SyncOverride(KeyboardShortcut shortcut)
     {

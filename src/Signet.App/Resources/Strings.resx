@@ -269,8 +269,38 @@
   <data name="FindReplaceView_Restart" xml:space="preserve">
     <value>Od nowa</value>
   </data>
+  <data name="FindReplaceView_FindNextTooltip" xml:space="preserve">
+    <value>Znajduje następne trafienie od kursora w wybranym kierunku. W kilku plikach przechodzi do kolejnego pliku z zakresu; z „Zawijaj” wraca na drugi koniec zakresu i szuka dalej.</value>
+  </data>
+  <data name="FindReplaceView_ReplaceTooltip" xml:space="preserve">
+    <value>Zamienia zaznaczone trafienie (ostatnio znalezione) na tekst zamiany.</value>
+  </data>
+  <data name="FindReplaceView_ReplaceFindTooltip" xml:space="preserve">
+    <value>Zamienia zaznaczone trafienie i znajduje następne.</value>
+  </data>
+  <data name="FindReplaceView_ReplaceAllTooltip" xml:space="preserve">
+    <value>Zamienia wszystkie trafienia w zakresie „Szukaj w” (albo w zaznaczeniu). Najpierw tworzony jest checkpoint, więc można to cofnąć.</value>
+  </data>
+  <data name="FindReplaceView_CountAllTooltip" xml:space="preserve">
+    <value>Liczy trafienia w zakresie „Szukaj w”; dla kilku plików pokazuje, ile jest w każdym.</value>
+  </data>
+  <data name="FindReplaceView_ModeTooltip" xml:space="preserve">
+    <value>Zwykły: tekst, bez rozróżniania wielkości liter. Uwzględniaj wielkość liter: tekst, wielkość liter ma znaczenie. Regex: wyrażenie regularne (PCRE).</value>
+  </data>
+  <data name="FindReplaceView_DirectionTooltip" xml:space="preserve">
+    <value>W dół szuka w stronę końca pliku (i kolejnych plików), w górę — w stronę początku.</value>
+  </data>
+  <data name="FindReplaceView_LookInTooltip" xml:space="preserve">
+    <value>Gdzie szukać: w bieżącym pliku albo w kilku plikach książki (wszystkie HTML, zaznaczone, otwarte karty, CSS…).</value>
+  </data>
+  <data name="FindReplaceView_WrapTooltip" xml:space="preserve">
+    <value>Włączone: po ostatnim trafieniu wyszukiwanie wraca na początek — pliku albo pierwszego pliku z zakresu (przy szukaniu w górę na koniec) — i nie kończy się, dopóki jest jakieś trafienie. Wyłączone: wyszukiwanie zatrzymuje się na końcu („Nie znaleziono — koniec wyszukiwania”).</value>
+  </data>
+  <data name="FindReplaceView_RestrictToSelectionTooltip" xml:space="preserve">
+    <value>Szuka i zamienia tylko w tekście zaznaczonym w edytorze (po zaznaczeniu pola jest on oznaczany).</value>
+  </data>
   <data name="FindReplaceView_RestartTooltip" xml:space="preserve">
-    <value>Kolejne wyszukiwanie zacznie się od nowa (od bieżącego pliku)</value>
+    <value>Następne „Znajdź” zacznie od początku: pierwszego pliku z zakresu „Szukaj w” (przy szukaniu w górę — od końca ostatniego) albo bieżącego pliku — a nie od kursora.</value>
   </data>
   <data name="FindReplace_SearchWillRestart" xml:space="preserve">
     <value>Wyszukiwanie zacznie się od nowa</value>
@@ -1362,15 +1392,6 @@ Czy chcesz zapisać zmiany?</value>
   <data name="PreviewView_RefreshPreview" xml:space="preserve">
     <value>Odśwież podgląd</value>
   </data>
-  <data name="PreviewView_ZoomOut" xml:space="preserve">
-    <value>Pomniejsz</value>
-  </data>
-  <data name="PreviewView_ZoomIn" xml:space="preserve">
-    <value>Powiększ</value>
-  </data>
-  <data name="PreviewView_ZoomReset" xml:space="preserve">
-    <value>Reset powiększenia</value>
-  </data>
   <data name="PreviewView_SelectAll" xml:space="preserve">
     <value>Zaznacz wszystko</value>
   </data>
@@ -1382,6 +1403,15 @@ Czy chcesz zapisać zmiany?</value>
   </data>
   <data name="PreviewView_Print" xml:space="preserve">
     <value>Drukuj podgląd</value>
+  </data>
+  <data name="PreviewView_ZoomOut" xml:space="preserve">
+    <value>Pomniejsz podgląd (Ctrl+kółko myszy w podglądzie)</value>
+  </data>
+  <data name="PreviewView_ZoomReset" xml:space="preserve">
+    <value>Przywróć 100%</value>
+  </data>
+  <data name="PreviewView_ZoomIn" xml:space="preserve">
+    <value>Powiększ podgląd (Ctrl+kółko myszy w podglądzie)</value>
   </data>
   <data name="PreviewView_OpenFileToPreview" xml:space="preserve">
     <value>Otwórz plik (X)HTML w edytorze, aby zobaczyć podgląd.</value>
@@ -1995,6 +2025,12 @@ Czy chcesz zapisać zmiany?</value>
   <data name="ActionCategory_BookBrowser" xml:space="preserve">
     <value>Przeglądarka książki</value>
   </data>
+  <data name="ActionCategory_ClipEditor" xml:space="preserve">
+    <value>Edytor wycinków</value>
+  </data>
+  <data name="Action_MainWindow_ClipEditor_Rename" xml:space="preserve">
+    <value>&amp;Zmień nazwę</value>
+  </data>
   <data name="ActionCategory_Clip" xml:space="preserve">
     <value>Wycinki</value>
   </data>
@@ -2474,6 +2510,9 @@ Czy chcesz zapisać zmiany?</value>
   </data>
   <data name="FindReplace_NotWellFormedReason" xml:space="preserve">
     <value>niepoprawny składniowo: {0}</value>
+  </data>
+  <data name="FindReplace_WrappedScope" xml:space="preserve">
+    <value>Wyszukiwanie zawinęło się na drugi koniec zakresu.</value>
   </data>
   <data name="FindReplace_Wrapped" xml:space="preserve">
     <value>Wyszukiwanie zawinęło się do początku/końca pliku.</value>
@@ -3628,6 +3667,66 @@ Wstawić mimo to?</value>
   </data>
   <data name="Cleanup_BareSpansWarning" xml:space="preserve">
     <value>CSS może trafić w goły &lt;span&gt; po samej nazwie (span { }, p span) albo przez strukturę (p &gt; em, :first-child, +, ~). Takie spany są oznaczone ⚠ i domyślnie odznaczone; pod każdym widać, co by się zmieniło.</value>
+  </data>
+  <data name="Cleanup_MergeDivs_Title" xml:space="preserve">
+    <value>Scal sąsiednie znaczniki &lt;div&gt; o identycznych atrybutach</value>
+  </data>
+  <data name="Cleanup_MergeDivs_Description" xml:space="preserve">
+    <value>Scala kolejne, sąsiadujące ze sobą znaczniki &lt;div&gt; o identycznych atrybutach (np. &lt;div class="a"&gt;…&lt;/div&gt;&lt;div class="a"&gt;…&lt;/div&gt;) w jeden &lt;div&gt;, tak jak „Scal treść” w widoku kodu. Między nimi mogą być tylko białe znaki, komentarze i sekcje CDATA; tekst lub inny element wyklucza scalenie. Zawartość zachowuje swoje linie i wcięcia.</value>
+  </data>
+  <data name="Cleanup_MergeDivs_Summary" xml:space="preserve">
+    <value>Pozycje do wykonania: {0} z {1} (usuniętych znaczników &lt;div&gt;: {2}).</value>
+  </data>
+  <data name="Cleanup_MergeDivsWarning" xml:space="preserve">
+    <value>Scalenia, które naprawdę zmieniłyby książkę, są oznaczone ⚠ i domyślnie odznaczone: pionowe marginesy, dopełnienia lub ramki między znacznikami &lt;div&gt;, inne style każdego &lt;div&gt; (np. wysokość, obraz tła, podział strony), zlewający się tekst, selektory typu :first-child albo +, tekst w CDATA między znacznikami lub id, do którego prowadzi link w książce. Pod każdym widać, co dokładnie się zmieni — zaznacz je tylko świadomie.</value>
+  </data>
+  <data name="Cleanup_MergeDivs_AllLevels" xml:space="preserve">
+    <value>Wszystkie poziomy</value>
+  </data>
+  <data name="Cleanup_MergeDivs_ChosenLevels" xml:space="preserve">
+    <value>Wybrane poziomy w każdym pliku</value>
+  </data>
+  <data name="Cleanup_MergeDivs_LevelsHint" xml:space="preserve">
+    <value>Poziom 1 = &lt;div&gt; bezpośrednio w &lt;body&gt;, poziom 2 = o jeden element głębiej (np. body &gt; section &gt; div) itd. Scalenia na odznaczonym poziomie nie są pokazywane.</value>
+  </data>
+  <data name="Cleanup_MergeDivs_Repeat" xml:space="preserve">
+    <value>Powtarzaj, aż nie będzie już czego scalać (w obrębie wybranych poziomów)</value>
+  </data>
+  <data name="PreferencesWindow_FindUsagesRefreshOnSave" xml:space="preserve">
+    <value>Odświeżaj „Znalezione użycia” po zapisaniu książki</value>
+  </data>
+  <data name="PreferencesWindow_MendShowDiff" xml:space="preserve">
+    <value>Pokazuj zmiany „Popraw kod” (bieżący plik) w oknie różnic</value>
+  </data>
+  <data name="Diff_BeforeMend" xml:space="preserve">
+    <value>Przed „Popraw kod”</value>
+  </data>
+  <data name="Diff_AfterMend" xml:space="preserve">
+    <value>Po „Popraw kod”</value>
+  </data>
+  <data name="Diff_Revert" xml:space="preserve">
+    <value>Cofnij zmianę</value>
+  </data>
+  <data name="Diff_Reverted" xml:space="preserve">
+    <value>Zmiana została cofnięta.</value>
+  </data>
+  <data name="Diff_RevertNotPossible" xml:space="preserve">
+    <value>Nie można cofnąć: plik został zamknięty albo zmieniony od tego czasu.</value>
+  </data>
+  <data name="PreferencesWindow_Debug" xml:space="preserve">
+    <value>Debugowanie</value>
+  </data>
+  <data name="PreferencesWindow_LogsDirectory" xml:space="preserve">
+    <value>Pliki logu są w:</value>
+  </data>
+  <data name="PreferencesWindow_LogsDirectoryTip" xml:space="preserve">
+    <value>Otwórz folder w menedżerze plików</value>
+  </data>
+  <data name="PreferencesWindow_DebugLogging" xml:space="preserve">
+    <value>Włącz logi debugowania</value>
+  </data>
+  <data name="PreferencesWindow_DebugLoggingNote" xml:space="preserve">
+    <value>Od tej chwili plik logu zapisuje też, co robisz w Signecie — wybory z menu, kliknięte przyciski (w którym oknie), zmienione ustawienia (przed i po), operacje na oknach i panelach, otwierane i zapisywane pliki, zakładki, operacje masowe — żeby problem dało się prześledzić do kroków, które do niego doprowadziły. Wpisywany tekst nie jest zapisywany; wyjątkiem są teksty Znajdź i zamień, gdy uruchomisz jedną z jego operacji. Ścieżki w folderze profilu są skracane do ~.</value>
   </data>
   <data name="Cleanup_NestedDivs_Title" xml:space="preserve">
     <value>Usuń niepotrzebne zagnieżdżenia &lt;div&gt;</value>

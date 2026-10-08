@@ -40,21 +40,28 @@
                 VerticalAlignment="Center" />
     </StackPanel>
 
-    <!-- Tree + details + button panel -->
-    <Grid Grid.Row="1" ColumnDefinitions="2*,3*,Auto" ColumnSpacing="8">
+    <!-- Tree + details + button panel; the splitter between the tree and the details is remembered
+         (ClipEditorWindow). -->
+    <Grid x:Name="Body" Grid.Row="1" ColumnDefinitions="2*,Auto,3*,Auto" ColumnSpacing="4">
       <!-- The clips tree (Name, Text): source built in the code-behind; the filter hides nodes through
            VisibleItemsView, several nodes can be selected. Every group has an expander, even an empty one
            (hasChildren = IsGroup). -->
-      <TreeDataGrid x:Name="Tree" Grid.Column="0"
-                    BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
-        <TreeDataGrid.Styles>
-          <Style Selector="TextBlock.group">
-            <Setter Property="FontWeight" Value="Bold" />
-          </Style>
-        </TreeDataGrid.Styles>
-      </TreeDataGrid>
+      <!-- TreeHost carries the key bindings of the panel-scoped actions (Rename): they fire only while the focus is
+           in the tree, not in the clip text box. -->
+      <Panel x:Name="TreeHost" Grid.Column="0">
+        <TreeDataGrid x:Name="Tree"
+                      BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+          <TreeDataGrid.Styles>
+            <Style Selector="TextBlock.group">
+              <Setter Property="FontWeight" Value="Bold" />
+            </Style>
+          </TreeDataGrid.Styles>
+        </TreeDataGrid>
+      </Panel>
 
-      <Grid Grid.Column="1" RowDefinitions="Auto,*" RowSpacing="4"
+      <GridSplitter Grid.Column="1" Width="4" ResizeDirection="Columns" Background="Transparent" />
+
+      <Grid Grid.Column="2" RowDefinitions="Auto,*" RowSpacing="4"
             IsEnabled="{Binding SelectedNode.IsGroup, Converter={x:Static BoolConverters.Not}, FallbackValue=False}">
         <TextBlock Grid.Row="0" Text="{loc:Loc ClipEditorWindow_ClipTextLabel}" Opacity="0.8" />
         <TextBox Grid.Row="1" Text="{Binding SelectedNode.Text, Mode=TwoWay}"
@@ -62,7 +69,7 @@
                  VerticalContentAlignment="Top" FontFamily="Cascadia Code,Consolas,monospace" />
       </Grid>
 
-      <StackPanel Grid.Column="2" Spacing="4" Width="130">
+      <StackPanel Grid.Column="3" Spacing="4" Width="130" Margin="4,0,0,0">
         <Button Content="{loc:Loc ClipEditorWindow_Paste}" Command="{Binding PasteCommand}" HorizontalAlignment="Stretch" />
         <Separator />
         <Button Content="{loc:Loc ClipEditorWindow_AddEntry}" Command="{Binding AddEntryCommand}" HorizontalAlignment="Stretch" />

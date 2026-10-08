@@ -1305,6 +1305,25 @@ public sealed class MainWindowViewModelTests
         sut.BookBrowser.ShortcutActions.Should().Contain(a => a.Id == AppActionIds.BookBrowserRename);
     }
 
+    [Fact]
+    public void Clip_editor_rename_is_a_panel_scoped_action_bound_to_F2_that_renames_the_selected_clip()
+    {
+        MainWindowViewModel sut = New();
+
+        AppAction rename = sut.Actions.Require(AppActionIds.ClipEditorRename);
+        rename.InputGestureText.Should().Be("F2");
+        rename.IsEnabled.Should().BeTrue("it has a handler attached");
+        sut.ShortcutActions.Should().NotContain(a => a.Category == AppActionIds.ClipEditorCategory);
+        sut.Clips.ShortcutActions.Should().ContainSingle().Which.Id.Should().Be(AppActionIds.ClipEditorRename);
+
+        sut.Clips.AddGroupCommand.Execute(null);
+        ClipNodeViewModel group = sut.Clips.Nodes.First();
+        sut.Clips.SetSelectedNodes(new[] { group });
+        rename.Execute(null);
+
+        sut.Clips.EditingNode.Should().BeSameAs(group);
+    }
+
     /// <summary>
     /// Actions without a default shortcut are also on the window shortcut list; otherwise a shortcut
     /// assigned to them in Preferences would only work after restarting the application.

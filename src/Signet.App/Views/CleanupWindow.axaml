@@ -65,6 +65,41 @@
                                    Margin="28,0,0,0" />
 
                         <StackPanel IsVisible="{Binding IsEnabled}" Margin="28,6,0,0" Spacing="4">
+                          <!-- MergeDivs only: merge on all nesting levels or on the levels chosen per file, and
+                               whether to merge again until nothing more can be merged. -->
+                          <StackPanel IsVisible="{Binding HasLevelOptions}" Spacing="2" Margin="0,0,0,4">
+                            <RadioButton GroupName="CleanupMergeDivsLevels" Content="{loc:Loc Cleanup_MergeDivs_AllLevels}"
+                                         IsChecked="{Binding AllLevels, Mode=TwoWay}" />
+                            <RadioButton GroupName="CleanupMergeDivsLevels" Content="{loc:Loc Cleanup_MergeDivs_ChosenLevels}"
+                                         IsChecked="{Binding ChosenLevels, Mode=TwoWay}" />
+                            <ScrollViewer MaxHeight="180" Margin="28,0,0,0" IsVisible="{Binding HasLevelFiles}"
+                                          IsEnabled="{Binding ChosenLevels}">
+                              <ItemsControl ItemsSource="{Binding LevelFiles}">
+                                <ItemsControl.ItemTemplate>
+                                  <DataTemplate x:DataType="vm:CleanupLevelFileViewModel">
+                                    <StackPanel Orientation="Horizontal" Spacing="12">
+                                      <TextBlock Text="{Binding BookPath}" MinWidth="180" VerticalAlignment="Center" />
+                                      <ItemsControl ItemsSource="{Binding Levels}">
+                                        <ItemsControl.ItemsPanel>
+                                          <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" Spacing="8" />
+                                          </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                          <DataTemplate x:DataType="vm:CleanupLevelViewModel">
+                                            <CheckBox Content="{Binding Level}" IsChecked="{Binding IsChecked, Mode=TwoWay}" />
+                                          </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                      </ItemsControl>
+                                    </StackPanel>
+                                  </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                              </ItemsControl>
+                            </ScrollViewer>
+                            <TextBlock Classes="note" Text="{loc:Loc Cleanup_MergeDivs_LevelsHint}" Margin="28,0,0,0"
+                                       IsVisible="{Binding HasLevelFiles}" />
+                            <CheckBox Content="{loc:Loc Cleanup_MergeDivs_Repeat}" IsChecked="{Binding Repeat, Mode=TwoWay}" />
+                          </StackPanel>
                           <TextBlock Text="{Binding Summary}" FontWeight="SemiBold" TextWrapping="Wrap" />
 
                           <Expander IsVisible="{Binding HasItems}" IsExpanded="{Binding IsExpanded, Mode=TwoWay}"

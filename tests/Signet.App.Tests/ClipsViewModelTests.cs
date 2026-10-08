@@ -164,6 +164,22 @@ public sealed class ClipsViewModelTests : IDisposable
     }
 
     [Fact]
+    public void RenameSelectedCommand_starts_renaming_the_selected_node_and_needs_a_selection()
+    {
+        var clips = new ClipsViewModel(Store(), () => null, () => null, new StatusBarService());
+        clips.AddGroupCommand.Execute(null);
+        ClipNodeViewModel group = clips.Nodes.Single();
+        clips.SetSelectedNodes(Array.Empty<ClipNodeViewModel>());
+        clips.RenameSelectedCommand.CanExecute(null).Should().BeFalse();
+
+        clips.SetSelectedNodes(new[] { group });
+        clips.RenameSelectedCommand.CanExecute(null).Should().BeTrue();
+        clips.RenameSelectedCommand.Execute(null);
+
+        clips.EditingNode.Should().BeSameAs(group);
+    }
+
+    [Fact]
     public void CommitRename_applies_the_typed_name_and_leaves_edit_mode()
     {
         var clips = new ClipsViewModel(Store(), () => null, () => null, new StatusBarService());

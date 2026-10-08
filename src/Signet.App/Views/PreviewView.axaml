@@ -23,7 +23,7 @@
   </UserControl.Styles>
 
   <!-- Layout: the page on top, a row of buttons (Inspect, Select-All,
-       Copy, Reload, Cycle CSS, Print) at the bottom. Zoom is in the main window's status bar. -->
+       Copy, Reload, Cycle CSS, Print) and the preview's own zoom bar (− NN% +) at the bottom. -->
   <Grid RowDefinitions="*,Auto">
 
     <Panel Grid.Row="0">
@@ -111,6 +111,15 @@
                       IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
           </Panel>
         </Button>
+        <Separator Width="1" Height="16" Margin="4,0" VerticalAlignment="Center"
+                   Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+        <Button Classes="previewTool" Content="−" Command="{Binding ZoomOutCommand}" Padding="6,0"
+                VerticalAlignment="Center" ToolTip.Tip="{loc:Loc PreviewView_ZoomOut}" />
+        <Button Classes="previewTool" Content="{Binding ZoomPercentText}" Command="{Binding ZoomResetCommand}"
+                Padding="4,0" MinWidth="44" FontSize="11" VerticalAlignment="Center"
+                HorizontalContentAlignment="Center" ToolTip.Tip="{loc:Loc PreviewView_ZoomReset}" />
+        <Button Classes="previewTool" Content="+" Command="{Binding ZoomInCommand}" Padding="6,0"
+                VerticalAlignment="Center" ToolTip.Tip="{loc:Loc PreviewView_ZoomIn}" />
       </StackPanel>
     </Border>
   </Grid>

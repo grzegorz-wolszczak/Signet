@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System;
 using CommunityToolkit.Mvvm.Input;
+using Signet.App.Actions;
 using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.App.ViewModels.Tabs;
@@ -42,6 +43,7 @@ public sealed class ClipsViewModel : ViewModelBase
         _statusBar = statusBar ?? throw new ArgumentNullException(nameof(statusBar));
 
         PasteCommand = new RelayCommand(PasteSelected);
+        RenameSelectedCommand = new RelayCommand(RenameSelected, () => _selectedNode is not null);
         AddEntryCommand = new RelayCommand(AddEntry);
         AddGroupCommand = new RelayCommand(AddGroup);
         DeleteCommand = new RelayCommand(DeleteSelected);
@@ -79,6 +81,15 @@ public sealed class ClipsViewModel : ViewModelBase
 
     /// <summary>Pastes the selected clip's text into the active document.</summary>
     public IRelayCommand PasteCommand { get; }
+
+    /// <summary>Starts renaming the selected node in the tree (the "Clip Editor → Rename" action, F2 by default).</summary>
+    public IRelayCommand RenameSelectedCommand { get; }
+
+    /// <summary>
+    /// The panel-scoped Clip Editor actions (<see cref="AppActionIds.ClipEditorCategory"/>) — the views create their own
+    /// key bindings from them, so that the shortcuts work only while a clips tree has the focus.
+    /// </summary>
+    public IReadOnlyList<AppAction> ShortcutActions { get; set; } = Array.Empty<AppAction>();
 
     /// <summary>Adds a new empty clip (after the selected item).</summary>
     public IRelayCommand AddEntryCommand { get; }
@@ -178,7 +189,13 @@ public sealed class ClipsViewModel : ViewModelBase
     public ClipNodeViewModel? SelectedNode
     {
         get => _selectedNode;
-        set => SetProperty(ref _selectedNode, value);
+        set
+        {
+            if (SetProperty(ref _selectedNode, value))
+            {
+                RenameSelectedCommand.NotifyCanExecuteChanged();
+            }
+        }
     }
 
     /// <summary>The selected nodes (several in the trees with multi-selection).</summary>
@@ -190,6 +207,7 @@ public sealed class ClipsViewModel : ViewModelBase
         _selectedNodes = nodes?.ToList() ?? new List<ClipNodeViewModel>();
         _selectedNode = _selectedNodes.Count > 0 ? _selectedNodes[^1] : null;
         OnPropertyChanged(nameof(SelectedNode));
+        RenameSelectedCommand.NotifyCanExecuteChanged();
     }
 
     /// <summary>Node whose name is being edited in the Clip Editor tree (null = no edit in progress).</summary>
@@ -217,7 +235,15 @@ public sealed class ClipsViewModel : ViewModelBase
         }
     }
 
-    /// <summary>Starts renaming a node in the tree (double click or F2 in the Clip Editor).</summary>
+    private void RenameSelected()
+    {
+        if (_selectedNode is { } node)
+        {
+            BeginRename(node);
+        }
+    }
+
+    /// <summary>Starts renaming a node in the tree (double click or the Rename action, F2 by default).</summary>
     public void BeginRename(ClipNodeViewModel node)
     {
         ArgumentNullException.ThrowIfNull(node);

@@ -168,7 +168,7 @@ internal static class NestedDivCollapser
 
     // The index of the first tag after tag "index" that is not a comment/CDATA, provided only whitespace, comments
     // and CDATA sections lie in between (those are added to "separators"); -1 otherwise.
-    private static int NextSignificant(TagLister lister, int index, List<int> separators)
+    internal static int NextSignificant(TagLister lister, int index, List<int> separators)
     {
         IReadOnlyList<TagLister.TagInfo> tags = lister.Tags;
         string text = lister.Source;
@@ -195,7 +195,7 @@ internal static class NestedDivCollapser
         return -1;
     }
 
-    private static bool IsDivOpen(TagLister.TagInfo tag) =>
+    internal static bool IsDivOpen(TagLister.TagInfo tag) =>
         tag.Kind == TagKind.Begin && string.Equals(tag.TagName, "div", StringComparison.OrdinalIgnoreCase);
 
     private static bool IsWhitespace(string text, int start, int end)
@@ -214,7 +214,7 @@ internal static class NestedDivCollapser
     private static bool IsWhitespaceChar(char c) => c is ' ' or '\t' or '\r' or '\n' or '\f';
 
     // The start of the whitespace run that ends at "pos" (not before "limit").
-    private static int WhitespaceStart(string text, int pos, int limit)
+    internal static int WhitespaceStart(string text, int pos, int limit)
     {
         while (pos > limit && IsWhitespaceChar(text[pos - 1]))
         {
@@ -225,7 +225,7 @@ internal static class NestedDivCollapser
     }
 
     // The comments/CDATA sections inside [start, end), each with the whitespace in front of it.
-    private static string KeptSeparators(string text, IEnumerable<TagLister.TagInfo> separators, int start, int end)
+    internal static string KeptSeparators(string text, IEnumerable<TagLister.TagInfo> separators, int start, int end)
     {
         StringBuilder kept = new();
         foreach (TagLister.TagInfo tag in separators.Where(t => t.Pos >= start && t.Pos + t.Len <= end).OrderBy(t => t.Pos))

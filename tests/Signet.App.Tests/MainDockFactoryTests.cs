@@ -120,6 +120,30 @@ public sealed class MainDockFactoryTests
     }
 
     [Fact]
+    public void Closing_a_panel_hides_it_and_the_view_menu_toggle_shows_it_again()
+    {
+        (MainDockFactory sut, IRootDock root) = NewWithRoot();
+        IDockable toc = Tool(sut, root, DockableIds.TableOfContents);
+
+        sut.CloseDockable(toc);
+
+        sut.IsToolVisible(DockableIds.TableOfContents).Should().BeFalse();
+        sut.CaptureToolVisibility()[DockableIds.TableOfContents].Should().Be("0");
+        sut.ToggleTool(DockableIds.TableOfContents).Should().BeTrue();
+        sut.IsToolVisible(DockableIds.TableOfContents).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Panels_can_be_closed()
+    {
+        (MainDockFactory sut, IRootDock root) = NewWithRoot();
+
+        sut.ToolIds.Where(sut.IsToolVisible)
+            .Select(id => Tool(sut, root, id))
+            .Should().OnlyContain(t => t.CanClose);
+    }
+
+    [Fact]
     public void Pinned_state_is_restored_on_next_start()
     {
         (MainDockFactory before, IRootDock beforeRoot) = NewWithRoot();

@@ -3,6 +3,7 @@ using System.Linq;
 using System;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
@@ -12,12 +13,14 @@ using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Microsoft.Extensions.DependencyInjection;
 using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.App.ViewModels;
 using Signet.Controls.TreeDataGrid;
 using Signet.Controls.TreeDataGrid.Primitives;
+using Signet.Core.Misc;
 
 namespace Signet.App.Views;
 
@@ -33,10 +36,17 @@ namespace Signet.App.Views;
         + "window and the view model's nodes it observes.")]
 public partial class ClipEditorWindow : Window
 {
+    // The remembered layout: the share of the tree in the width of tree + details, and the widths of the columns the
+    // user resized (a column never resized keeps its proportional width).
+    private const string LayoutGroup = "clip_editor_layout";
+    private const string TreeShareKey = "tree";
+    private static readonly string[] ColumnKeys = { "name_column", "text_column" };
+
     private static FilePickerFileType JsonType => new(Strings.Get("ClipEditor_JsonFileType")) { Patterns = new[] { "*.json" } };
 
     private ClipsViewModel? _bound;
     private ClipNodeViewModel? _editingNode;
+    private readonly PanelKeyBindings _keys;
 
     // The clips tree (Name, Text) over the visible nodes, built here (a TreeDataGrid source is bound to the UI thread);
     // its multi-selection and the view model's selected nodes follow each other.
@@ -49,10 +59,87 @@ public partial class ClipEditorWindow : Window
     public ClipEditorWindow()
     {
         InitializeComponent();
+        _keys = new PanelKeyBindings(TreeHost);
         DataContextChanged += OnDataContextChanged;
 
         Tree.AddHandler(KeyDownEvent, OnTreeKeyDown, RoutingStrategies.Tunnel);
         Tree.AddHandler(LostFocusEvent, OnRenameEditorLostFocus, RoutingStrategies.Bubble);
+    }
+
+    /// <inheritdoc />
+    protected override void OnOpened(EventArgs e)
+    {
+        base.OnOpened(e);
+        RestoreLayout();
+    }
+
+    /// <inheritdoc />
+    protected override void OnClosed(EventArgs e)
+    {
+        SaveLayout();
+
+        // MainWindow creates a new window per opening while the view model is shared: a closed window must stop
+        // reacting to it (otherwise its rename handler cancels the rename started in the new window).
+        DataContext = null;
+        base.OnClosed(e);
+    }
+
+    private void RestoreLayout()
+    {
+        if (App.Services?.GetService<SettingsStore>() is not { } settings)
+        {
+            return;
+        }
+
+        IReadOnlyDictionary<string, string> stored = settings.GetStringMap(LayoutGroup);
+        if (TryRead(stored, TreeShareKey, out double share) && share is > 0.05 and < 0.95)
+        {
+            Body.ColumnDefinitions[0].Width = new GridLength(share, GridUnitType.Star);
+            Body.ColumnDefinitions[2].Width = new GridLength(1 - share, GridUnitType.Star);
+        }
+
+        for (int i = 0; _source is not null && i < ColumnKeys.Length && i < _source.Columns.Count; i++)
+        {
+            if (TryRead(stored, ColumnKeys[i], out double width) && width is >= 20 and <= 5000)
+            {
+                _source.Columns.SetColumnWidth(i, new GridLength(width, GridUnitType.Pixel));
+            }
+        }
+    }
+
+    private void SaveLayout()
+    {
+        if (App.Services?.GetService<SettingsStore>() is not { } settings)
+        {
+            return;
+        }
+
+        Dictionary<string, string> values = new(StringComparer.Ordinal);
+        double tree = Body.ColumnDefinitions[0].ActualWidth;
+        double details = Body.ColumnDefinitions[2].ActualWidth;
+        if (tree > 0 && details > 0)
+        {
+            values[TreeShareKey] = (tree / (tree + details)).ToString("R", CultureInfo.InvariantCulture);
+        }
+
+        for (int i = 0; _source is not null && i < ColumnKeys.Length && i < _source.Columns.Count; i++)
+        {
+            if (_source.Columns[i].Width is { IsAbsolute: true } width)
+            {
+                values[ColumnKeys[i]] = width.Value.ToString("R", CultureInfo.InvariantCulture);
+            }
+        }
+
+        settings.SetStringMap(LayoutGroup, values);
+        settings.Save();
+    }
+
+    private static bool TryRead(IReadOnlyDictionary<string, string> stored, string key, out double value)
+    {
+        value = 0;
+        return stored.TryGetValue(key, out string? text)
+            && double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value)
+            && double.IsFinite(value);
     }
 
     private void OnDataContextChanged(object? sender, EventArgs e)
@@ -62,6 +149,7 @@ public partial class ClipEditorWindow : Window
             _bound.ImportRequested -= OnImportRequested;
             _bound.ExportRequested -= OnExportRequested;
             _bound.PropertyChanged -= OnViewModelPropertyChanged;
+            _keys.Detach();
         }
 
         _source?.Dispose();
@@ -74,6 +162,7 @@ public partial class ClipEditorWindow : Window
             _bound.ImportRequested += OnImportRequested;
             _bound.ExportRequested += OnExportRequested;
             _bound.PropertyChanged += OnViewModelPropertyChanged;
+            _keys.Attach(_bound.ShortcutActions);
             ClipsViewModel vm = _bound;
             _columns = new LocalizedColumns<ClipNodeViewModel>();
             VisibleItemsView<ClipNodeViewModel> roots = ClipsPanelView.Visible(vm.Nodes);
@@ -98,7 +187,7 @@ public partial class ClipEditorWindow : Window
         _selection?.SelectFromViewModel();
     }
 
-    // --- in-place rename: double click / F2 ---------------------------------------- //
+    // --- in-place rename: double click / the Rename action (F2 by default, set in Preferences) ---- //
 
     private const string RenameEditorClass = "inPlaceRename";
 
@@ -147,12 +236,6 @@ public partial class ClipEditorWindow : Window
 
             return;
         }
-
-        if (e.Key == Key.F2 && e.KeyModifiers == KeyModifiers.None && _bound.SelectedNode is { } selected)
-        {
-            e.Handled = true;
-            _bound.BeginRename(selected);
-        }
     }
 
     private void OnRenameEditorLostFocus(object? sender, RoutedEventArgs e)
@@ -178,10 +261,18 @@ public partial class ClipEditorWindow : Window
 
         ClipNodeViewModel? finished = _editingNode;
         _editingNode = _bound.EditingNode;
+
+        // Panel shortcuts must not act on the tree while a name is being typed.
+        _keys.SetSuspended(_editingNode is not null);
         if (_editingNode is not null)
         {
-            // The editor becomes visible only after a layout pass — the focus is set afterwards.
-            Dispatcher.UIThread.Post(FocusRenameEditor, DispatcherPriority.Loaded);
+            // The view model is shared with the docked Clips panel: only the tree the rename was started in (the one
+            // with the focus) shows the editor and takes the focus — the other one must not cancel the rename.
+            if (Tree.IsKeyboardFocusWithin)
+            {
+                // The editor becomes visible only after a layout pass — the focus is set afterwards.
+                Dispatcher.UIThread.Post(FocusRenameEditor, DispatcherPriority.Loaded);
+            }
         }
         else if (finished is not null && IsInRenameEditor(FocusManager?.GetFocusedElement()))
         {

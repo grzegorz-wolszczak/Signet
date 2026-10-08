@@ -140,6 +140,35 @@ public sealed class FindUsagesTests : IDisposable
     }
 
     [Fact]
+    public void Saving_refreshes_the_shown_panel_without_taking_the_focus_or_the_status_bar()
+    {
+        _sut.FindClassUsages("note");
+        string status = _sut.StatusMessage;
+        CssResource css = _book.GetCssResources().Single();
+        css.SetText(css.GetText() + "\np.note { margin: 0 }\n");
+
+        _sut.RefreshFindUsagesAfterSave();
+
+        _sut.FindUsages.Roots.Single().CountText.Should().Be("4 results");
+        _sut.StatusMessage.Should().Be(status);
+    }
+
+    [Fact]
+    public void Saving_does_not_refresh_a_hidden_panel_nor_after_a_failed_save()
+    {
+        _sut.FindClassUsages("note");
+        CssResource css = _book.GetCssResources().Single();
+        css.SetText(css.GetText() + "\np.note { margin: 0 }\n");
+
+        _sut.RefreshFindUsagesAfterSave(saved: false);
+        _sut.FindUsages.Roots.Single().CountText.Should().Be("3 results");
+
+        _sut.Actions.Require(AppActionIds.ToggleFindUsages).Execute(null);
+        _sut.RefreshFindUsagesAfterSave();
+        _sut.FindUsages.Roots.Single().CountText.Should().Be("3 results");
+    }
+
+    [Fact]
     public void The_grouping_is_remembered_in_the_settings()
     {
         using TempDir dir = new();

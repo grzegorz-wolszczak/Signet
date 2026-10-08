@@ -29,6 +29,7 @@ public partial class DiffWindow : Window
     {
         ArgumentNullException.ThrowIfNull(owner);
         DiffWindow window = new() { DataContext = viewModel };
+        MainWindow.RememberPlacement(window);
         window.Show(owner);
     }
 

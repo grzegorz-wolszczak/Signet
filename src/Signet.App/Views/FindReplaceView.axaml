@@ -53,18 +53,23 @@
             RowDefinitions="Auto,Auto" ColumnDefinitions="Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="4"
             VerticalAlignment="Center">
         <Button Grid.Row="0" Grid.Column="0" Classes="findAction" Tag="find"
-                Content="{loc:Loc FindReplaceView_FindNext}" Command="{Binding FindNextCommand}" />
+                Content="{loc:Loc FindReplaceView_FindNext}" Command="{Binding FindNextCommand}"
+                ToolTip.Tip="{loc:Loc FindReplaceView_FindNextTooltip}" />
         <Button Grid.Row="0" Grid.Column="1" Classes="findAction" Tag="replace"
-                Content="{loc:Loc FindReplaceView_ReplaceButton}" Command="{Binding ReplaceCommand}" />
+                Content="{loc:Loc FindReplaceView_ReplaceButton}" Command="{Binding ReplaceCommand}"
+                ToolTip.Tip="{loc:Loc FindReplaceView_ReplaceTooltip}" />
         <Button Grid.Row="0" Grid.Column="2" Classes="findAction" Tag="restart"
                 Content="{loc:Loc FindReplaceView_Restart}" Command="{Binding RestartCommand}"
                 ToolTip.Tip="{loc:Loc FindReplaceView_RestartTooltip}" />
         <Button Grid.Row="1" Grid.Column="0" Classes="findAction" Tag="replace-find"
-                Content="{loc:Loc FindReplaceView_ReplaceFind}" Command="{Binding ReplaceFindCommand}" />
+                Content="{loc:Loc FindReplaceView_ReplaceFind}" Command="{Binding ReplaceFindCommand}"
+                ToolTip.Tip="{loc:Loc FindReplaceView_ReplaceFindTooltip}" />
         <Button Grid.Row="1" Grid.Column="1" Classes="findAction" Tag="replace-all"
-                Content="{loc:Loc FindReplaceView_ReplaceAll}" Command="{Binding ReplaceAllCommand}" />
+                Content="{loc:Loc FindReplaceView_ReplaceAll}" Command="{Binding ReplaceAllCommand}"
+                ToolTip.Tip="{loc:Loc FindReplaceView_ReplaceAllTooltip}" />
         <Button Grid.Row="1" Grid.Column="2" Classes="findAction" Tag="count-all"
-                Content="{loc:Loc FindReplaceView_CountAll}" Command="{Binding CountCommand}" />
+                Content="{loc:Loc FindReplaceView_CountAll}" Command="{Binding CountCommand}"
+                ToolTip.Tip="{loc:Loc FindReplaceView_CountAllTooltip}" />
       </Grid>
 
       <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc FindReplaceView_Replace}" VerticalAlignment="Center" />
@@ -87,7 +92,8 @@
       <WrapPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal">
         <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,12,0">
           <TextBlock Text="{loc:Loc FindReplaceView_Mode}" VerticalAlignment="Center" />
-          <ComboBox SelectedIndex="{Binding ModeIndex, Mode=TwoWay}" MinWidth="130">
+          <ComboBox SelectedIndex="{Binding ModeIndex, Mode=TwoWay}" MinWidth="130"
+                    ToolTip.Tip="{loc:Loc FindReplaceView_ModeTooltip}">
             <ComboBoxItem Content="{loc:Loc FindReplaceView_ModeNormal}" />
             <ComboBoxItem Content="{loc:Loc FindReplaceView_ModeCaseSensitive}" />
             <ComboBoxItem Content="{loc:Loc FindReplaceView_ModeRegex}" />
@@ -95,7 +101,8 @@
         </StackPanel>
         <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,12,0">
           <TextBlock Text="{loc:Loc FindReplaceView_Direction}" VerticalAlignment="Center" />
-          <ComboBox SelectedIndex="{Binding DirectionIndex, Mode=TwoWay}" MinWidth="80">
+          <ComboBox SelectedIndex="{Binding DirectionIndex, Mode=TwoWay}" MinWidth="80"
+                    ToolTip.Tip="{loc:Loc FindReplaceView_DirectionTooltip}">
             <ComboBoxItem Content="{loc:Loc FindReplaceView_DirectionDown}" />
             <ComboBoxItem Content="{loc:Loc FindReplaceView_DirectionUp}" />
           </ComboBox>
@@ -103,7 +110,8 @@
         <StackPanel Orientation="Horizontal" Spacing="4" Margin="0,0,12,0">
           <TextBlock Text="{loc:Loc FindReplaceView_LookIn}" VerticalAlignment="Center" />
           <ComboBox ItemsSource="{Binding LookWhereOptions}"
-                    SelectedIndex="{Binding LookWhereIndex, Mode=TwoWay}" MinWidth="180" />
+                    SelectedIndex="{Binding LookWhereIndex, Mode=TwoWay}" MinWidth="180"
+                    ToolTip.Tip="{loc:Loc FindReplaceView_LookInTooltip}" />
         </StackPanel>
       </WrapPanel>
 
@@ -129,11 +137,13 @@
             </MenuFlyout>
           </DropDownButton.Flyout>
         </DropDownButton>
-        <CheckBox Content="{loc:Loc FindReplaceView_Wrap}" IsChecked="{Binding OptionWrap, Mode=TwoWay}" Margin="0,0,12,0" />
+        <CheckBox Content="{loc:Loc FindReplaceView_Wrap}" IsChecked="{Binding OptionWrap, Mode=TwoWay}" Margin="0,0,12,0"
+                  ToolTip.Tip="{loc:Loc FindReplaceView_WrapTooltip}" />
         <CheckBox x:Name="TextOnlyCheckBox"
                   Content="{loc:Loc FindReplaceView_TextOnly}" IsChecked="{Binding RegexTextOnly, Mode=TwoWay}"
                   ToolTip.Tip="{loc:Loc FindReplaceView_SearchTextNotTags}" Margin="0,0,12,0" />
-        <CheckBox Content="{loc:Loc FindReplaceView_RestrictToSelection}" IsChecked="{Binding RestrictToSelection, Mode=TwoWay}" Margin="0,0,12,0" />
+        <CheckBox Content="{loc:Loc FindReplaceView_RestrictToSelection}" IsChecked="{Binding RestrictToSelection, Mode=TwoWay}" Margin="0,0,12,0"
+                  ToolTip.Tip="{loc:Loc FindReplaceView_RestrictToSelectionTooltip}" />
         <CheckBox x:Name="HighlightAllMatchesCheckBox"
                   Content="{loc:Loc FindReplaceView_HighlightAllMatches}"
                   IsChecked="{Binding HighlightAllMatches, Mode=TwoWay}"

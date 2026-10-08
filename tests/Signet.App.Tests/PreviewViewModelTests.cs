@@ -126,6 +126,46 @@ public sealed class PreviewViewModelTests
         sut.ZoomFactor.Should().Be(PreviewViewModel.MinZoom);
     }
 
+    [Theory]
+    [InlineData("signet-zoom:in", 1.1)]
+    [InlineData("signet-zoom:out", 1 / 1.1)]
+    public void Zoom_MessagesFromThePage_ChangeThePreviewsOwnZoom(string message, double expected)
+    {
+        using PreviewViewModel sut = New();
+        double lastZoom = 0;
+        sut.ZoomChanged += (_, z) => lastZoom = z;
+
+        sut.HandlePreviewMessage(message);
+
+        sut.ZoomFactor.Should().BeApproximately(expected, 1e-9);
+        lastZoom.Should().BeApproximately(expected, 1e-9, "the view applies the new zoom to the engine");
+    }
+
+    [Fact]
+    public void Zoom_ResetMessage_RestoresHundredPercent()
+    {
+        using PreviewViewModel sut = New();
+        sut.SetZoom(2.0);
+
+        sut.HandlePreviewMessage("signet-zoom:reset");
+
+        sut.ZoomFactor.Should().Be(1.0);
+    }
+
+    [Theory]
+    [InlineData(1.5, 1.5)]
+    [InlineData(100.0, PreviewViewModel.MaxZoom)]
+    [InlineData(0.01, PreviewViewModel.MinZoom)]
+    [InlineData(0.0, 1.0)]
+    public void SetZoom_ClampsTheRememberedZoom(double remembered, double expected)
+    {
+        using PreviewViewModel sut = New();
+
+        sut.SetZoom(remembered);
+
+        sut.ZoomFactor.Should().Be(expected);
+    }
+
     [Fact]
     public void SetBook_Null_ClearsContent()
     {

@@ -5,6 +5,19 @@
              x:Class="Signet.App.Views.ClipsPanelView"
              x:DataType="vm:ClipsViewModel">
 
+  <UserControl.Resources>
+    <!-- The name cell of the clips tree (looked up by key from the code-behind): the name as text; editing only after
+         the Rename action (F2 by default, handled in ClipsPanelView): Enter and focus loss commit, Esc cancels. -->
+    <DataTemplate x:Key="NameCellTemplate" x:DataType="vm:ClipNodeViewModel">
+      <Grid Background="Transparent" MinHeight="24">
+        <TextBlock Text="{Binding Name}" VerticalAlignment="Center" IsVisible="{Binding !IsEditing}" />
+        <TextBox Classes="inPlaceRename" Text="{Binding EditText, Mode=TwoWay}"
+                 IsVisible="{Binding IsEditing}" MinWidth="140"
+                 MinHeight="0" Padding="2,0" VerticalAlignment="Center" VerticalContentAlignment="Center" />
+      </Grid>
+    </DataTemplate>
+  </UserControl.Resources>
+
   <DockPanel Margin="8">
     <TextBlock DockPanel.Dock="Bottom" Text="{Binding Message}" Margin="0,6,0,0"
                Foreground="{DynamicResource SystemAccentColor}" TextWrapping="Wrap" />

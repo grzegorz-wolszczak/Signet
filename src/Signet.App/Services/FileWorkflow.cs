@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System;
 using Microsoft.Extensions.Logging;
+using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.Core.BookManipulation;
 using Signet.Core.Importers;
@@ -230,7 +231,14 @@ public sealed class FileWorkflow
     public async Task<bool> LoadFileAsync(string path)
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
+        long start = System.Diagnostics.Stopwatch.GetTimestamp();
+        bool loaded = await LoadFileCoreAsync(path).ConfigureAwait(true);
+        DebugLog.Write("File", $"open {DebugLog.MaskPath(path)} → {(loaded ? "ok" : "failed")} ({DebugLog.Elapsed(start)})");
+        return loaded;
+    }
 
+    private async Task<bool> LoadFileCoreAsync(string path)
+    {
         if (!File.Exists(path))
         {
             await _prompts.ShowErrorAsync("Signet", Strings.Format("File_DoesNotExist", path)).ConfigureAwait(true);
@@ -409,6 +417,16 @@ public sealed class FileWorkflow
 
     private bool SaveFile(string fullFilePath, bool updateCurrentFilename)
     {
+        long start = System.Diagnostics.Stopwatch.GetTimestamp();
+        bool saved = SaveFileCore(fullFilePath, updateCurrentFilename);
+        DebugLog.Write(
+            "File",
+            $"{(updateCurrentFilename ? "save" : "save a copy")} {DebugLog.MaskPath(fullFilePath)} → {(saved ? "ok" : "failed")} ({DebugLog.Elapsed(start)})");
+        return saved;
+    }
+
+    private bool SaveFileCore(string fullFilePath, bool updateCurrentFilename)
+    {
         Book? book = _workspace.CurrentBook;
         if (book is null)
         {
@@ -448,6 +466,7 @@ public sealed class FileWorkflow
 
     private void LoadFreshBook(Book book)
     {
+        DebugLog.Write("File", "new book");
         _workspace.ApplyBook(book, null);
         _currentFilePath = string.Empty;
         _saveACopyFilename = string.Empty;

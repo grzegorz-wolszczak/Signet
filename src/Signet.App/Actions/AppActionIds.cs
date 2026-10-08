@@ -221,6 +221,20 @@ public static class AppActionIds
     /// </summary>
     public const string BookBrowserCategory = "Book Browser";
 
+    /// <summary>
+    /// Category of the Clip Editor actions (the "Clip Editor" window and the docked "Clips" panel). Like
+    /// <see cref="BookBrowserCategory"/>, their shortcuts work only while the focus is in the clips tree.
+    /// </summary>
+    public const string ClipEditorCategory = "Clip Editor";
+
+    /// <summary>Renames the selected clip or group in the clips tree.</summary>
+    public const string ClipEditorRename = "MainWindow.ClipEditor.Rename";
+
+    /// <summary>Whether the category holds panel-scoped actions (handled only while the panel has focus).</summary>
+    public static bool IsPanelCategory(string category) =>
+        string.Equals(category, BookBrowserCategory, System.StringComparison.Ordinal)
+        || string.Equals(category, ClipEditorCategory, System.StringComparison.Ordinal);
+
 /// <summary>Opens the selected files.</summary>
     public const string BookBrowserOpen = "MainWindow.BookBrowser.Open";
 

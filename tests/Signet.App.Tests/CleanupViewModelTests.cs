@@ -237,4 +237,52 @@ public sealed class CleanupViewModelTests : IDisposable
         section.Items.Should().OnlyContain(i => !i.IsChecked);
         Tab(vm, CleanupStep.UnusedSelectors).HasChanges.Should().BeFalse();
     }
+
+    private static Book TwoLevelDivsBook(TempDir temp)
+    {
+        string tree = temp.Combine("divs");
+        TestFs.CopyDirectory(CorpusPaths.Epub3Minimal, tree);
+        string chapter = Path.Combine(tree, "EPUB", "text", "chapter1.xhtml");
+        File.WriteAllText(chapter, File.ReadAllText(chapter).Replace(
+            "<p>Hello, world.</p>",
+            "<div class=\"w\"><p>a</p></div><div class=\"w\"><p>b</p></div>"
+            + "<section><div class=\"v\"><p>c</p></div><div class=\"v\"><p>d</p></div></section>",
+            StringComparison.Ordinal));
+        return new ImportEpub(EpubBuilder.BuildInto(tree, temp, "divs.epub")).GetBook();
+    }
+
+    [Fact]
+    public void Merge_divs_lists_the_levels_per_file_and_an_unchecked_level_is_not_merged_in_chosen_levels_mode()
+    {
+        using TempDir temp = new();
+        using Book book = TwoLevelDivsBook(temp);
+        CleanupViewModel vm = new(CleanupAnalysis.Prepare(book).Analysis!, new[] { CleanupStep.MergeDivs }, (_, _) => { }, NoApply);
+        CleanupSectionViewModel section = Section(vm, CleanupStep.MergeDivs);
+
+        section.HasLevelOptions.Should().BeTrue();
+        section.AllLevels.Should().BeTrue();
+        section.Repeat.Should().BeTrue();
+        CleanupLevelFileViewModel file = section.LevelFiles.Should().ContainSingle().Subject;
+        file.Levels.Select(l => (l.Level, l.IsChecked)).Should().Equal((1, true), (2, true));
+        section.Items.Should().HaveCount(2);
+
+        file.Levels.Single(l => l.Level == 2).IsChecked = false;
+        section.Items.Should().HaveCount(2, "in \"all levels\" mode the level checkboxes do not matter");
+
+        section.ChosenLevels = true;
+        section.AllLevels.Should().BeFalse();
+        section.Items.Should().ContainSingle().Which.Text.Should().Contain("class=\"w\"");
+        section.LevelFiles.Single().Levels.Select(l => (l.Level, l.IsChecked)).Should().Equal((1, true), (2, false));
+
+        section.AllLevels = true;
+        section.Items.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void Merge_divs_is_the_html_step_between_bare_spans_and_nested_divs()
+    {
+        CleanupViewModel.HtmlSteps.Should().Equal(CleanupStep.EmptyElements, CleanupStep.BareSpans, CleanupStep.MergeDivs, CleanupStep.NestedDivs);
+        Section(New(), CleanupStep.MergeDivs).HasWarning.Should().BeTrue();
+        Section(New(), CleanupStep.NestedDivs).HasLevelOptions.Should().BeFalse();
+    }
 }

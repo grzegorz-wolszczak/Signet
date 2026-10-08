@@ -6077,6 +6077,18 @@
   <data name="Cleanup_NestedDivs_Chain" xml:space="preserve">
     <value>{0} ×{1} — to remove: {2}</value>
   </data>
+  <data name="Cleanup_MergeDivs_Group" xml:space="preserve">
+    <value>{0} ×{1} — level {2}</value>
+  </data>
+  <data name="Cleanup_Risk_MergeDivId" xml:space="preserve">
+    <value>{0}: the book refers to id="{1}" of the &lt;div&gt; tags (a link, an ID reference or a script); after merging only one element is left</value>
+  </data>
+  <data name="Cleanup_Risk_MergeDivBox" xml:space="preserve">
+    <value>{0}: &lt;{1}&gt; — "{2}: {3}" (from "{4}") makes each of the {5} &lt;div&gt; tags a box of its own; after merging it applies once to the whole</value>
+  </data>
+  <data name="Cleanup_Risk_MergeDivInline" xml:space="preserve">
+    <value>{0}: the end of &lt;div&gt; {1} and the start of &lt;div&gt; {2} are text or inline elements — they will run together instead of starting on a new line</value>
+  </data>
   <data name="Cleanup_EmptyElements_File" xml:space="preserve">
     <value>Empty tags to remove: {0} ({1})</value>
   </data>
