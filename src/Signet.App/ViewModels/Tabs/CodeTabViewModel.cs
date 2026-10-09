@@ -207,6 +207,9 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     /// </summary>
     public event Action<string>? CssClassJumpRequested;
 
+    /// <summary>Raised after <see cref="Save"/> wrote edited text to the resource.</summary>
+    public event Action? SavedToResource;
+
     /// <summary>Raised to jump to a link target inside the book (a relative reference, may have a <c>#fragment</c>).</summary>
     public event Action<string>? LinkJumpRequested;
 
@@ -778,6 +781,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
         if (_model.SaveToResource())
         {
             SetModified(false);
+            SavedToResource?.Invoke();
         }
 
         RefreshWellFormed();

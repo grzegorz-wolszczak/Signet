@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using SysPath = System.IO.Path;
+using Signet.Core.Diff;
 using Signet.Core.Localization;
 
 namespace Signet.Core.BookManipulation;
@@ -33,6 +35,10 @@ public sealed class CheckpointState
 
     // The previous description, restored by CheckpointHistory.Rewind.
     internal string? RewindMessage { get; set; }
+
+    // Bookpaths of the files edited in the editors between the previous state and this one (for the live state:
+    // since the previous state) — the edits that moving back to the previous state discards.
+    internal HashSet<string> EditedBookPaths { get; } = new(StringComparer.Ordinal);
 }
 
 /// <summary>
@@ -61,6 +67,10 @@ public sealed class CheckpointHistory : IDisposable
 
     private readonly List<CheckpointState> _states = new();
     private readonly int _maxStates;
+
+    // Bookpaths of the files edited in the editors since the current state was reached by a move — the edits
+    // that moving forward (Redo) discards.
+    private readonly HashSet<string> _editedSinceMove = new(StringComparer.Ordinal);
     private bool _canRewind;
     private bool _disposed;
 
@@ -114,8 +124,26 @@ public sealed class CheckpointHistory : IDisposable
         _states.Clear();
         _states.Add(new CheckpointState(folder));
         Position = 0;
+        _editedSinceMove.Clear();
         _canRewind = false;
         OnChanged();
+    }
+
+    /// <summary>
+    /// Records that the file <paramref name="bookPath"/> was edited in an editor (the text of a tab written to the
+    /// resource) — used by <see cref="UndoImpact"/> / <see cref="RedoImpact"/> to tell which disappearing files
+    /// carry edits that would be lost. Does nothing when the history is not open.
+    /// </summary>
+    public void MarkEdited(string bookPath)
+    {
+        ArgumentNullException.ThrowIfNull(bookPath);
+        if (!IsOpen)
+        {
+            return;
+        }
+
+        Current.EditedBookPaths.Add(bookPath);
+        _editedSinceMove.Add(bookPath);
     }
 
     /// <summary>
@@ -146,7 +174,10 @@ public sealed class CheckpointHistory : IDisposable
 
         live.RewindMessage = live.Message;
         live.Message = null;
-        _states.Insert(Position, new CheckpointState(snapshot) { Message = message });
+        CheckpointState frozen = new(snapshot) { Message = message };
+        frozen.EditedBookPaths.UnionWith(live.EditedBookPaths);
+        live.EditedBookPaths.Clear();
+        _states.Insert(Position, frozen);
         Position++;
 
         if (_states.Count > _maxStates)
@@ -186,6 +217,7 @@ public sealed class CheckpointHistory : IDisposable
         CheckpointState live = _states[Position];
         live.Message = live.RewindMessage;
         live.RewindMessage = null;
+        live.EditedBookPaths.UnionWith(frozen.EditedBookPaths);
         _canRewind = false;
         OnChanged();
         return true;
@@ -219,6 +251,23 @@ public sealed class CheckpointHistory : IDisposable
     }
 
     /// <summary>
+    /// The files that <see cref="Undo"/> would remove, bring back or rename (files whose content only changes are
+    /// not listed). A removed file is flagged when it was edited in an editor since the previous state — those
+    /// edits are lost. Saves the current book to its folder first (as <see cref="Undo"/> does).
+    /// </summary>
+    /// <returns>The affected files sorted by path; empty when <see cref="CanUndo"/> is <c>false</c>.</returns>
+    public IReadOnlyList<CheckpointFileImpact> UndoImpact(Book liveBook) =>
+        CanUndo ? ImpactOfMoveTo(liveBook, Position - 1, Current.EditedBookPaths) : Array.Empty<CheckpointFileImpact>();
+
+    /// <summary>
+    /// The files that <see cref="Redo"/> would remove, bring back or rename; like <see cref="UndoImpact"/>, but a
+    /// removed file is flagged when it was edited since the current state was reached.
+    /// </summary>
+    /// <returns>The affected files sorted by path; empty when <see cref="CanRedo"/> is <c>false</c>.</returns>
+    public IReadOnlyList<CheckpointFileImpact> RedoImpact(Book liveBook) =>
+        CanRedo ? ImpactOfMoveTo(liveBook, Position + 1, _editedSinceMove) : Array.Empty<CheckpointFileImpact>();
+
+    /// <summary>
     /// Saves the book to its working folder in full (resources + <see cref="BookStateFile"/>)
     /// — so that the folder is enough to load the book again.
     /// </summary>
@@ -240,6 +289,7 @@ public sealed class CheckpointHistory : IDisposable
         DisposeStates(_states);
         _states.Clear();
         Position = 0;
+        _editedSinceMove.Clear();
         _canRewind = false;
         OnChanged();
     }
@@ -265,9 +315,28 @@ public sealed class CheckpointHistory : IDisposable
 
         Book loaded = ImportEpub.LoadWorkingFolder(_states[index].Folder);
         Position = index;
+        _editedSinceMove.Clear();
         _canRewind = false;
         OnChanged();
         return loaded;
+    }
+
+    // The current state is on the right side of the comparison: its added files disappear after the move, its removed
+    // ones come back, and a rename is undone.
+    private List<CheckpointFileImpact> ImpactOfMoveTo(Book liveBook, int index, HashSet<string> edited)
+    {
+        RequireLive(liveBook);
+        Freeze(liveBook);
+
+        return BookComparer.CompareFileSets(_states[index].FolderPath, Current.FolderPath)
+            .Select(diff => diff.Change switch
+            {
+                BookFileChange.Added => new CheckpointFileImpact(
+                    CheckpointFileChange.Removed, diff.RightPath!, null, edited.Contains(diff.RightPath!)),
+                BookFileChange.Removed => new CheckpointFileImpact(CheckpointFileChange.Restored, diff.LeftPath!, null, false),
+                _ => new CheckpointFileImpact(CheckpointFileChange.Renamed, diff.RightPath!, diff.LeftPath, false),
+            })
+            .ToList();
     }
 
     private CheckpointState RequireLive(Book liveBook)

@@ -75,6 +75,9 @@ public sealed class TabManager : IDisposable
     /// <summary>Raised after the active tab changes (for the status bar, Undo/Redo actions, etc.).</summary>
     public event EventHandler? ActiveTabChanged;
 
+    /// <summary>Raised after a code tab wrote edited text to its resource (the argument).</summary>
+    public event EventHandler<Resource>? ResourceSavedFromTab;
+
     /// <summary>The view-less tab model (for higher layers and tests).</summary>
     public TabManagerModel Model => _model;
 
@@ -331,6 +334,7 @@ public sealed class TabManager : IDisposable
             };
             codeTab.CssClassJumpRequested += className => OnCssClassJumpRequested(codeTab, className);
             codeTab.LinkJumpRequested += reference => OnLinkJumpRequested(codeTab, reference);
+            codeTab.SavedToResource += () => ResourceSavedFromTab?.Invoke(this, codeTab.Resource);
             codeTab.ZoomFactor = Math.Clamp(_settings.ZoomText, CodeZoomMin, CodeZoomMax);
             codeTab.PropertyChanged += OnCodeTabPropertyChanged;
             return codeTab;

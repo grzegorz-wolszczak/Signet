@@ -116,6 +116,28 @@ public static class BookComparer
             }
         }
 
+        AddFileSetChanges(left, right, result);
+        return result.OrderBy(d => d.DisplayPath, StringComparer.Ordinal).ToList();
+    }
+
+    /// <summary>
+    /// Like <see cref="Compare"/>, but lists only the files present in one state (<see cref="BookFileChange.Added"/>,
+    /// <see cref="BookFileChange.Removed"/>, <see cref="BookFileChange.Renamed"/>) — without reading the files that
+    /// exist in both states.
+    /// </summary>
+    public static IReadOnlyList<BookFileDiff> CompareFileSets(string leftRoot, string rightRoot)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(leftRoot);
+        ArgumentException.ThrowIfNullOrWhiteSpace(rightRoot);
+
+        List<BookFileDiff> result = new();
+        AddFileSetChanges(ListFiles(leftRoot), ListFiles(rightRoot), result);
+        return result.OrderBy(d => d.DisplayPath, StringComparer.Ordinal).ToList();
+    }
+
+    // The files present in only one of the states; a removed and an added file with identical content count as a rename.
+    private static void AddFileSetChanges(Dictionary<string, string> left, Dictionary<string, string> right, List<BookFileDiff> result)
+    {
         List<string> removed = left.Keys.Where(p => !right.ContainsKey(p)).OrderBy(p => p, StringComparer.Ordinal).ToList();
         List<string> added = right.Keys.Where(p => !left.ContainsKey(p)).OrderBy(p => p, StringComparer.Ordinal).ToList();
 
@@ -139,8 +161,6 @@ public static class BookComparer
         {
             result.Add(new BookFileDiff(BookFileChange.Added, null, addedPath, null, right[addedPath], ContentKindOf(addedPath)));
         }
-
-        return result.OrderBy(d => d.DisplayPath, StringComparer.Ordinal).ToList();
     }
 
     /// <summary>Content kind of a file based on the bookpath's extension.</summary>

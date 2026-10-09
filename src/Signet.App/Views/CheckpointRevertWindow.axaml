@@ -1,0 +1,36 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="using:Signet.App.Resources"
+        xmlns:vm="using:Signet.App.ViewModels"
+        x:Class="Signet.App.Views.CheckpointRevertWindow"
+        Width="640" Height="380" MinWidth="380" MinHeight="220"
+        WindowStartupLocation="CenterOwner">
+
+  <DockPanel Margin="16">
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right"
+                Spacing="8" Margin="0,12,0,0">
+      <Button x:Name="RevertButton" Content="{loc:Loc CheckpointRevertWindow_Revert}" MinWidth="80" />
+      <Button x:Name="CancelButton" Content="{loc:Loc Common_Cancel}" IsCancel="True" IsDefault="True" MinWidth="80" />
+    </StackPanel>
+
+    <TextBlock DockPanel.Dock="Top" Text="{loc:Loc CheckpointRevertWindow_Intro}" TextWrapping="Wrap" Margin="0,0,0,10" />
+
+    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1"
+            CornerRadius="4" Padding="10">
+      <ScrollViewer>
+        <ItemsControl x:Name="Files">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:CheckpointRevertRow">
+              <!-- A file that disappears together with edits made in it looks like the warnings of the other risk
+                   dialogs; a Grid (not a horizontal StackPanel), so long texts wrap. -->
+              <Grid ColumnDefinitions="16,*" ColumnSpacing="6" Margin="0,2">
+                <TextBlock Grid.Column="0" Text="⚠" FontWeight="Bold" Classes="warning" IsVisible="{Binding LosesEdits}" />
+                <TextBlock Grid.Column="1" Text="{Binding Text}" TextWrapping="Wrap" Classes.warning="{Binding LosesEdits}" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </Border>
+  </DockPanel>
+</Window>

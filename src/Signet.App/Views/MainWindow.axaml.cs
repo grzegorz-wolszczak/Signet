@@ -89,6 +89,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             _boundViewModel.AboutRequested -= OnAboutRequested;
             _boundViewModel.RenameTagRequested -= OnRenameTagRequested;
             _boundViewModel.MergeContentConfirmationRequested -= OnMergeContentConfirmationRequested;
+            _boundViewModel.RevertConfirmationRequested -= OnRevertConfirmationRequested;
             _boundViewModel.CreateCheckpointRequested -= OnCreateCheckpointRequested;
             _boundViewModel.CompareCheckpointRequested -= OnCompareCheckpointRequested;
             _boundViewModel.MendDiffRequested -= OnCompareCheckpointRequested;
@@ -137,6 +138,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         _boundViewModel.AboutRequested += OnAboutRequested;
         _boundViewModel.RenameTagRequested += OnRenameTagRequested;
         _boundViewModel.MergeContentConfirmationRequested += OnMergeContentConfirmationRequested;
+        _boundViewModel.RevertConfirmationRequested += OnRevertConfirmationRequested;
         _boundViewModel.CreateCheckpointRequested += OnCreateCheckpointRequested;
         _boundViewModel.CompareCheckpointRequested += OnCompareCheckpointRequested;
         _boundViewModel.MendDiffRequested += OnCompareCheckpointRequested;
@@ -405,6 +407,25 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         if (await ConfirmWindow.AskAsync(this, Strings.Get("MergeContent_Title"), message, Strings.Get("MergeContent_Merge")))
         {
             vm.ConfirmMergeContent();
+        }
+    }
+
+    // "Revert to before / after …" that removes, brings back or renames files — the list of those files first.
+    private async void OnRevertConfirmationRequested(object? sender, CheckpointRevertRequest request)
+    {
+        MainWindowViewModel? vm = _boundViewModel;
+        if (vm is null || !await CheckpointRevertWindow.AskAsync(this, request))
+        {
+            return;
+        }
+
+        if (request.Forward)
+        {
+            vm.RevertToAfterCheckpoint();
+        }
+        else
+        {
+            vm.RevertToBeforeCheckpoint();
         }
     }
 

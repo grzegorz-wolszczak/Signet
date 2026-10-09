@@ -3290,6 +3290,24 @@ Do tego stanu książki możesz później wrócić przez pozycje „Przywróć d
   <data name="Checkpoint_RevertTooltip" xml:space="preserve">
     <value>Przywróć książkę do zaznaczonego punktu kontrolnego</value>
   </data>
+  <data name="CheckpointRevertWindow_Intro" xml:space="preserve">
+    <value>Ta operacja zmieni zestaw plików w książce:</value>
+  </data>
+  <data name="CheckpointRevertWindow_Revert" xml:space="preserve">
+    <value>Przywróć</value>
+  </data>
+  <data name="CheckpointRevert_Removed" xml:space="preserve">
+    <value>{0} — zostanie usunięty</value>
+  </data>
+  <data name="CheckpointRevert_RemovedWithEdits" xml:space="preserve">
+    <value>{0} — zostanie usunięty, a zmiany wprowadzone w nim od tamtej pory zostaną utracone</value>
+  </data>
+  <data name="CheckpointRevert_Restored" xml:space="preserve">
+    <value>{0} — zostanie przywrócony</value>
+  </data>
+  <data name="CheckpointRevert_Renamed" xml:space="preserve">
+    <value>{0} → {1} (zmiana nazwy)</value>
+  </data>
   <data name="Checkpoint_Compare" xml:space="preserve">
     <value>Porównaj</value>
   </data>

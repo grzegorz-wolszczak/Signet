@@ -291,4 +291,87 @@ public sealed class CheckpointsTests
             .Should().Be(Strings.Format("Checkpoint_RevertToBeforeNamed", "…"));
         s.Vm.CheckpointsPanel.Items[1].Label.Should().Be(Strings.Get("Checkpoint_Unnamed"));
     }
+
+    [Theory]
+    [AutoData]
+    public void Revert_to_before_that_keeps_the_set_of_files_reverts_without_asking(string name, string edit)
+    {
+        using TempDir temp = new();
+        using Session s = new(temp);
+        CodeTabViewModel tab = s.OpenFirstHtml();
+        s.Vm.CreateCheckpoint(name);
+        AppendParagraph(tab, edit);
+        CheckpointRevertRequest? asked = null;
+        s.Vm.RevertConfirmationRequested += (_, request) => asked = request;
+
+        s.Vm.Actions.Require(AppActionIds.RevertToBefore).Execute(null);
+
+        asked.Should().BeNull();
+        s.Vm.CheckpointHistory.CanRedo.Should().BeTrue("the book was reverted right away");
+    }
+
+    [Theory]
+    [InlineAutoData(false)]
+    [InlineAutoData(true)]
+    public void Revert_to_before_a_split_lists_the_new_file_first_and_flags_edits_made_in_it(bool editNewFile, string secondPart, string edit)
+    {
+        using TempDir temp = new();
+        using Session s = new(temp);
+        HtmlResource created = SplitFirstHtml(s, secondPart);
+        if (editNewFile)
+        {
+            s.Vm.Tabs.OpenResources(new Resource[] { created });
+            AppendParagraph(s.Vm.ActiveCodeTab!, edit);
+        }
+
+        CheckpointRevertRequest? asked = null;
+        s.Vm.RevertConfirmationRequested += (_, request) => asked = request;
+
+        s.Vm.Actions.Require(AppActionIds.RevertToBefore).Execute(null);
+
+        asked.Should().NotBeNull();
+        asked!.Forward.Should().BeFalse();
+        asked.Rows.Should().Equal(new CheckpointRevertRow(
+            Strings.Format(editNewFile ? "CheckpointRevert_RemovedWithEdits" : "CheckpointRevert_Removed", created.BookPath),
+            editNewFile));
+        s.Book.GetFolderKeeper().GetResourceByBookPathNoThrow(created.BookPath)
+            .Should().NotBeNull("nothing is reverted before the user confirms");
+
+        s.Vm.RevertToBeforeCheckpoint();
+
+        s.Book.GetFolderKeeper().GetResourceByBookPathNoThrow(created.BookPath).Should().BeNull();
+    }
+
+    [Theory]
+    [AutoData]
+    public void Revert_to_after_a_split_lists_the_file_that_comes_back(string secondPart)
+    {
+        using TempDir temp = new();
+        using Session s = new(temp);
+        string createdPath = SplitFirstHtml(s, secondPart).BookPath;
+        s.Vm.RevertToBeforeCheckpoint();
+        CheckpointRevertRequest? asked = null;
+        s.Vm.RevertConfirmationRequested += (_, request) => asked = request;
+
+        s.Vm.Actions.Require(AppActionIds.RevertToAfter).Execute(null);
+
+        asked.Should().NotBeNull();
+        asked!.Forward.Should().BeTrue();
+        asked.Rows.Should().Equal(new CheckpointRevertRow(Strings.Format("CheckpointRevert_Restored", createdPath), false));
+    }
+
+    // Splits the first HTML file at a split marker from the Book Browser (which creates the "Before: …" checkpoint)
+    // and returns the new file.
+    private static HtmlResource SplitFirstHtml(Session s, string secondPart)
+    {
+        CodeTabViewModel tab = s.OpenFirstHtml();
+        tab.Document.Text = tab.Document.Text.Replace(
+            "</body>", $"{CodeViewModel.SectionMarker}<p>{secondPart}</p></body>", StringComparison.Ordinal);
+        BookBrowserNode text = s.Vm.BookBrowser.Nodes.Single(n => n.Header == "Text").Children
+            .Single(n => ReferenceEquals(n.Entry?.Resource, tab.Resource));
+        s.Vm.BookBrowser.UpdateSelection(new object?[] { text });
+        s.Vm.BookBrowser.SplitSelectedCommand.Execute(null);
+        return s.Book.GetAllResources().OfType<HtmlResource>()
+            .Single(r => r.BookPath.EndsWith("_0001.xhtml", StringComparison.Ordinal));
+    }
 }

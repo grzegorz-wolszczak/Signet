@@ -3290,6 +3290,24 @@ You can later restore the book to this checkpoint via the "Revert to..." entries
   <data name="Checkpoint_RevertTooltip" xml:space="preserve">
     <value>Revert the book to the selected checkpoint</value>
   </data>
+  <data name="CheckpointRevertWindow_Intro" xml:space="preserve">
+    <value>This changes the set of files in the book:</value>
+  </data>
+  <data name="CheckpointRevertWindow_Revert" xml:space="preserve">
+    <value>Revert</value>
+  </data>
+  <data name="CheckpointRevert_Removed" xml:space="preserve">
+    <value>{0} — will be removed</value>
+  </data>
+  <data name="CheckpointRevert_RemovedWithEdits" xml:space="preserve">
+    <value>{0} — will be removed, and the changes you made to it since then will be lost</value>
+  </data>
+  <data name="CheckpointRevert_Restored" xml:space="preserve">
+    <value>{0} — will be restored</value>
+  </data>
+  <data name="CheckpointRevert_Renamed" xml:space="preserve">
+    <value>{0} → {1} (renamed)</value>
+  </data>
   <data name="Checkpoint_Compare" xml:space="preserve">
     <value>Compare</value>
   </data>

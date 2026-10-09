@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using Signet.App.Actions;
 using Signet.App.Docking;
@@ -36,6 +37,13 @@ public sealed partial class MainWindowViewModel
     /// Raised after "Compare" in the checkpoints panel — the view shows the diff window.
     /// </summary>
     public event EventHandler<DiffViewModel>? CompareCheckpointRequested;
+
+    /// <summary>
+    /// Raised by "Revert to before / after …" when the move would remove, bring back or rename files — the view
+    /// lists them and, once confirmed, calls <see cref="RevertToBeforeCheckpoint"/> /
+    /// <see cref="RevertToAfterCheckpoint"/>.
+    /// </summary>
+    public event EventHandler<CheckpointRevertRequest>? RevertConfirmationRequested;
 
     /// <summary>Checkpoint history of the current book.</summary>
     public CheckpointHistory CheckpointHistory => _checkpoints;
@@ -80,6 +88,28 @@ public sealed partial class MainWindowViewModel
     /// changed nothing.
     /// </summary>
     public void RewindCheckpoint() => _checkpoints.Rewind();
+
+    /// <summary>
+    /// "Revert to before …": restores the state before the current one right away, or — when that would remove,
+    /// bring back or rename files — first asks for confirmation (<see cref="RevertConfirmationRequested"/>).
+    /// </summary>
+    public void RequestRevertToBefore() => RequestRevert(forward: false);
+
+    /// <summary>"Revert to after …": like <see cref="RequestRevertToBefore"/>, towards the state after the current one.</summary>
+    public void RequestRevertToAfter() => RequestRevert(forward: true);
+
+    /// <summary>The text of one row of the revert confirmation (what happens to the file).</summary>
+    public static string RevertImpactText(CheckpointFileImpact file)
+    {
+        ArgumentNullException.ThrowIfNull(file);
+        return file.Change switch
+        {
+            CheckpointFileChange.Removed => Strings.Format(
+                file.LosesEdits ? "CheckpointRevert_RemovedWithEdits" : "CheckpointRevert_Removed", file.BookPath),
+            CheckpointFileChange.Restored => Strings.Format("CheckpointRevert_Restored", file.BookPath),
+            _ => Strings.Format("CheckpointRevert_Renamed", file.BookPath, file.NewBookPath),
+        };
+    }
 
     /// <summary>Restores the state before the current one.</summary>
     public void RevertToBeforeCheckpoint() => MoveToCheckpoint(_checkpoints.Undo);
@@ -168,6 +198,7 @@ public sealed partial class MainWindowViewModel
         _checkpointsPanel.CompareRequested += (_, state) => CompareWithCheckpoint(state);
         _dockFactory.Checkpoints = _checkpointsPanel;
         _checkpoints.Changed += (_, _) => RefreshCheckpointActions();
+        _tabManager.ResourceSavedFromTab += (_, resource) => _checkpoints.MarkEdited(resource.BookPath);
     }
 
     private void WireCheckpointActions()
@@ -179,8 +210,8 @@ public sealed partial class MainWindowViewModel
                 CreateCheckpointRequested?.Invoke(this, EventArgs.Empty);
             }
         });
-        _actions.SetHandler(AppActionIds.RevertToBefore, RevertToBeforeCheckpoint);
-        _actions.SetHandler(AppActionIds.RevertToAfter, RevertToAfterCheckpoint);
+        _actions.SetHandler(AppActionIds.RevertToBefore, RequestRevertToBefore);
+        _actions.SetHandler(AppActionIds.RevertToAfter, RequestRevertToAfter);
         _actions.SetHandler(AppActionIds.ToggleCheckpoints, () => _dockFactory.ToggleTool(DockableIds.Checkpoints));
         RefreshCheckpointActions();
     }
@@ -223,6 +254,53 @@ public sealed partial class MainWindowViewModel
             return false;
         }
     }
+
+    private void RequestRevert(bool forward)
+    {
+        if (_currentBook is not { } live || !_checkpoints.IsOpen || !(forward ? _checkpoints.CanRedo : _checkpoints.CanUndo))
+        {
+            return;
+        }
+
+        // Commit all editors first: their unsaved text counts as edits that the move may discard.
+        _tabManager.SaveAllTabs();
+        IReadOnlyList<CheckpointFileImpact> files;
+        try
+        {
+            files = forward ? _checkpoints.RedoImpact(live) : _checkpoints.UndoImpact(live);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _logger.LogError(ex, "Failed to compare the checkpoint");
+            _statusBar.ShowMessage(Strings.Format("Status_CheckpointError", ex.Message), TimeSpan.FromSeconds(6), NotificationLevel.Warning);
+            return;
+        }
+
+        if (files.Count > 0)
+        {
+            RevertConfirmationRequested?.Invoke(this, new CheckpointRevertRequest(
+                forward,
+                RevertLabel(forward),
+                files.Select(f => new CheckpointRevertRow(RevertImpactText(f), f.LosesEdits)).ToList()));
+        }
+        else if (forward)
+        {
+            RevertToAfterCheckpoint();
+        }
+        else
+        {
+            RevertToBeforeCheckpoint();
+        }
+    }
+
+    // "Revert to before "…"" / "Revert to after "…"" with the name of the target state (without mnemonic escaping).
+    private string RevertLabel(bool forward) => forward
+        ? Strings.Format(
+            "Checkpoint_RevertToAfterNamed",
+            string.IsNullOrEmpty(_checkpoints.RedoMessage) ? Strings.Get("Checkpoint_Unnamed") : _checkpoints.RedoMessage)
+        : Strings.Format(
+            "Checkpoint_RevertToBeforeNamed",
+            string.IsNullOrEmpty(_checkpoints.UndoMessage) ? "…" : _checkpoints.UndoMessage);
 
     private void MoveToCheckpoint(Func<Book, Book?> move)
     {
@@ -301,18 +379,14 @@ public sealed partial class MainWindowViewModel
         if (_actions.Get(AppActionIds.RevertToBefore) is { } before)
         {
             before.Text = hasBook && _checkpoints.CanUndo
-                ? EscapeMnemonics(Strings.Format(
-                    "Checkpoint_RevertToBeforeNamed",
-                    string.IsNullOrEmpty(_checkpoints.UndoMessage) ? "…" : _checkpoints.UndoMessage))
+                ? EscapeMnemonics(RevertLabel(forward: false))
                 : AppAction.ConvertMnemonics(before.DefaultText);
         }
 
         if (_actions.Get(AppActionIds.RevertToAfter) is { } after)
         {
             after.Text = hasBook && _checkpoints.CanRedo
-                ? EscapeMnemonics(Strings.Format(
-                    "Checkpoint_RevertToAfterNamed",
-                    string.IsNullOrEmpty(_checkpoints.RedoMessage) ? Strings.Get("Checkpoint_Unnamed") : _checkpoints.RedoMessage))
+                ? EscapeMnemonics(RevertLabel(forward: true))
                 : AppAction.ConvertMnemonics(after.DefaultText);
         }
     }
