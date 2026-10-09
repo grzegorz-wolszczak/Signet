@@ -434,6 +434,7 @@ public sealed partial class MainWindowViewModel
         _preview.CodeCaretJumpRequested += OnPreviewCodeCaretJumpRequested;
         _preview.PropertyChanged += OnPreviewPropertyChanged;
         BookBrowser.OpenResourceRequested += OnOpenResourceRequested;
+        BookBrowser.ReloadOpenTabs = ReloadOpenTabsAndPreview;
         BookBrowser.ValidateWithW3CRequested += OnValidateSelectedCssWithW3C;
     }
 
@@ -1843,12 +1844,18 @@ public sealed partial class MainWindowViewModel
     /// <summary>Refreshes the open tabs, the Book Browser panel and Preview after a whole-book maintenance operation.</summary>
     private void RefreshAfterMaintenanceOperation()
     {
+        ReloadOpenTabsAndPreview();
+        BookBrowser.Refresh();
+    }
+
+    // Reloads every open tab from its resource (discarding the editors' undo history) and refreshes Preview.
+    private void ReloadOpenTabsAndPreview()
+    {
         foreach (ContentTabViewModel view in _tabManager.OpenTabViews)
         {
             view.Reload();
         }
 
-        BookBrowser.Refresh();
         _preview.Refresh();
     }
 

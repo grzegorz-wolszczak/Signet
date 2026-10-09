@@ -71,6 +71,13 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     public Action? RewindCheckpoint { get; set; }
 
     /// <summary>
+    /// Reloads the open tabs and Preview after an operation that rewrote file contents behind the editors
+    /// (Merge, Split At Markers) — otherwise a tab keeps showing the old text and writes it back on the next edit.
+    /// Set by the main window.
+    /// </summary>
+    public Action? ReloadOpenTabs { get; set; }
+
+    /// <summary>
     /// Request: in-place rename of an entry has started (<see cref="EditingNode"/> is already
     /// set) — the view moves focus to the editor in the tree. Committed by
     /// <see cref="CommitInPlaceRename"/>.
@@ -871,6 +878,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         }
 
         _model?.Refresh();
+        ReloadOpenTabs?.Invoke();
     }
 
     [RelayCommand(CanExecute = nameof(CanSplitText))]
@@ -893,6 +901,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         if (created.Count > 0)
         {
             _model?.Refresh();
+            ReloadOpenTabs?.Invoke();
         }
         else
         {
