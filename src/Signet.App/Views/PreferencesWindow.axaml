@@ -191,6 +191,39 @@
               </StackPanel>
             </Border>
 
+            <!-- Error notifications (a blocked or failed operation): their color in both themes; applied live,
+                 the sample below shows the result. -->
+            <Border Classes="section">
+              <StackPanel Spacing="6">
+                <TextBlock Text="{loc:Loc PreferencesWindow_Errors}" FontWeight="Bold" />
+                <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                  <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding ErrorLightColor.Label}" />
+                  <DockPanel Grid.Row="0" Grid.Column="1" DataContext="{Binding ErrorLightColor}">
+                    <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
+                            ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
+                    <TextBox Classes="colorValue" Text="{Binding Value}"
+                             Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
+                             Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
+                  </DockPanel>
+
+                  <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding ErrorDarkColor.Label}" />
+                  <DockPanel Grid.Row="1" Grid.Column="1" DataContext="{Binding ErrorDarkColor}">
+                    <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
+                            ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
+                    <TextBox Classes="colorValue" Text="{Binding Value}"
+                             Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
+                             Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
+                  </DockPanel>
+                </Grid>
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <views:NotificationBell UnreadCount="2" VerticalAlignment="Center" />
+                  <TextBlock x:Name="ErrorSample" Text="{loc:Loc PreferencesWindow_ErrorSample}"
+                             Foreground="{DynamicResource SignetErrorBrush}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Text="{loc:Loc PreferencesWindow_ErrorsNote}" Opacity="0.7" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+
             <CheckBox Content="{loc:Loc PreferencesWindow_ExtendedHighlighting}" IsChecked="{Binding ExtendedHighlighting}" />
 
             <!-- Code View: the opening tag tooltip over a closing tag, with its delay. -->

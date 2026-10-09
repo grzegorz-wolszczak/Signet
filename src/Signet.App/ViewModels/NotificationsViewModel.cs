@@ -54,7 +54,7 @@ public sealed partial class NotificationsViewModel : ViewModelBase
         }
     }
 
-    /// <summary>Whether there are unread warnings (drives the status bar indicator and the tab title).</summary>
+    /// <summary>Whether there are unread warnings (drives the status bar indicator and the bell on the tab).</summary>
     public bool HasUnreadWarnings => _unreadWarnings > 0;
 
     /// <summary>Marks all warnings as read (the user opened or clicked the panel).</summary>
@@ -121,6 +121,6 @@ public sealed class NotificationEntry
     /// <summary>The message text.</summary>
     public string Message => Notification.Message;
 
-    /// <summary>Whether the message is a warning (drawn with the warning icon and color).</summary>
+    /// <summary>Whether the message is a warning — a blocked or failed operation (drawn with the error icon color).</summary>
     public bool IsWarning => Notification.Level == NotificationLevel.Warning;
 }

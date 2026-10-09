@@ -3493,7 +3493,7 @@ You can later restore the book to this checkpoint via the "Revert to..." entries
     <value>Clear</value>
   </data>
   <data name="MainWindow_UnreadWarningsTooltip" xml:space="preserve">
-    <value>Unread warnings: {0}. Click to open the Notifications panel.</value>
+    <value>Unread errors: {0}. Click to open the Notifications panel.</value>
   </data>
   <data name="MainWindow_StatusMessageTooltip" xml:space="preserve">
     <value>Click to open the Notifications panel (message history).</value>
@@ -3935,10 +3935,25 @@ It does not change the files, their names or their IDs.</value>
     <value>Color — dark theme</value>
   </data>
   <data name="PreferencesWindow_WarningsNote" xml:space="preserve">
-    <value>The color also applies to the warnings in the status bar, the Notifications panel and highlighted tabs.</value>
+    <value>The color of the warnings in dialogs (e.g. the consequences of a risky Cleanup change).</value>
   </data>
   <data name="PreferencesWindow_WarningSample" xml:space="preserve">
     <value>⚠ Example: “font-style: italic” (from “.none1”) applies to this span</value>
+  </data>
+  <data name="PreferencesWindow_Errors" xml:space="preserve">
+    <value>Errors in notifications</value>
+  </data>
+  <data name="PreferencesWindow_ErrorColorLight" xml:space="preserve">
+    <value>Color — light theme</value>
+  </data>
+  <data name="PreferencesWindow_ErrorColorDark" xml:space="preserve">
+    <value>Color — dark theme</value>
+  </data>
+  <data name="PreferencesWindow_ErrorSample" xml:space="preserve">
+    <value>Example: Add Nav to Reading Order is not available for EPUB 2.</value>
+  </data>
+  <data name="PreferencesWindow_ErrorsNote" xml:space="preserve">
+    <value>Messages about blocked or failed operations: the status bar, the rows of the Notifications panel and the dot on the bell.</value>
   </data>
   <data name="CodeView_OpenTagHintLine" xml:space="preserve">
     <value>line {0}</value>

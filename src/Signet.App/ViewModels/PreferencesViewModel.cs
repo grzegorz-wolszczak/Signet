@@ -117,6 +117,14 @@ public sealed partial class PreferencesViewModel : ObservableObject
             "WarningDark", Strings.Get("PreferencesWindow_WarningColorDark"), warnings.DarkColor,
             _ => PersistWarningAppearance(), PickColorAsync);
 
+        ErrorAppearance errors = _settings.ErrorAppearance;
+        ErrorLightColor = new ColorSettingRow(
+            "ErrorLight", Strings.Get("PreferencesWindow_ErrorColorLight"), errors.LightColor,
+            _ => PersistErrorAppearance(), PickColorAsync);
+        ErrorDarkColor = new ColorSettingRow(
+            "ErrorDark", Strings.Get("PreferencesWindow_ErrorColorDark"), errors.DarkColor,
+            _ => PersistErrorAppearance(), PickColorAsync);
+
         _extendedHighlighting = _settings.CodeViewExtendedHighlighting;
         _openTagHint = _settings.CodeViewOpenTagHint;
         _openTagHintDelay = _settings.CodeViewOpenTagHintDelayMs;
@@ -231,6 +239,11 @@ public sealed partial class PreferencesViewModel : ObservableObject
         if (Changed("warning_appearance"))
         {
             _uiDensity.ApplyWarningAppearance();
+        }
+
+        if (Changed("error_appearance"))
+        {
+            _uiDensity.ApplyErrorAppearance();
         }
 
         if (Changed("debug_logging"))
@@ -497,6 +510,17 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _settings.WarningAppearance = new WarningAppearance(WarningFontSize, WarningLightColor.Value, WarningDarkColor.Value);
     }
 
+    /// <summary>Color of the error notifications for the application's light theme (applied live).</summary>
+    public ColorSettingRow ErrorLightColor { get; }
+
+    /// <summary>Color of the error notifications for the application's dark theme (applied live).</summary>
+    public ColorSettingRow ErrorDarkColor { get; }
+
+    private void PersistErrorAppearance()
+    {
+        _settings.ErrorAppearance = new ErrorAppearance(ErrorLightColor.Value, ErrorDarkColor.Value);
+    }
+
     /// <summary>
     /// Font picker window — attached by the view (<c>PreferencesWindow</c>). <see langword="null"/>
     /// (e.g. in tests without a UI) = the "Choose…" commands do nothing.
@@ -688,6 +712,11 @@ public sealed partial class PreferencesViewModel : ObservableObject
         WarningDarkColor.SetValueSilently(warnings.DarkColor);
         WarningFontSize = warnings.FontSize;
         PersistWarningAppearance();
+
+        ErrorAppearance errors = ErrorAppearance.Default;
+        ErrorLightColor.SetValueSilently(errors.LightColor);
+        ErrorDarkColor.SetValueSilently(errors.DarkColor);
+        PersistErrorAppearance();
     }
 
     // =====================================================================

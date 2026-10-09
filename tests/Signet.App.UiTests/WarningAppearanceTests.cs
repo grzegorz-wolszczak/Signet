@@ -85,4 +85,29 @@ public sealed class WarningAppearanceTests
             owner.Close();
         }
     }
+
+    [AvaloniaFact]
+    public void The_error_color_changes_live()
+    {
+        Application app = Application.Current!;
+        Window window = new() { Content = new NotificationBell { UnreadCount = 1 } };
+        window.Show();
+        try
+        {
+            UiDensityManager.ApplyError(app, new ErrorAppearance("#123456", "#654321"));
+            Dispatcher.UIThread.RunJobs();
+            window.CaptureRenderedFrame();
+
+            Avalonia.Controls.Shapes.Ellipse dot = window.GetVisualDescendants().OfType<Avalonia.Controls.Shapes.Ellipse>().Single();
+            dot.Fill.Should().BeOfType<SolidColorBrush>()
+                .Which.Color.Should().Be(window.ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark
+                    ? Color.Parse("#654321")
+                    : Color.Parse("#123456"));
+        }
+        finally
+        {
+            UiDensityManager.ApplyError(app, ErrorAppearance.Default);
+            window.Close();
+        }
+    }
 }

@@ -47,7 +47,7 @@ public static class DockableIds
 /// </summary>
 public abstract class SignetTool : Tool, IDeferredContentPresentation
 {
-    private bool _needsAttention;
+    private int _attentionCount;
 
     /// <summary>Initializes the panel — closable (closing only hides it, see <see cref="MainDockFactory.CloseDockable"/>).</summary>
     protected SignetTool()
@@ -58,13 +58,19 @@ public abstract class SignetTool : Tool, IDeferredContentPresentation
     bool IDeferredContentPresentation.DeferContentPresentation => false;
 
     /// <summary>
-    /// Whether the panel's tab should draw attention (warning color) — e.g. the Notifications
-    /// panel with unread warnings. Applied to the tab by a style in <c>App.axaml</c>.
+    /// Whether the panel's tab title is followed by the notification bell (<c>Views.NotificationBell</c>, set up by
+    /// the tab header templates in <c>App.axaml</c>).
     /// </summary>
-    public bool NeedsAttention
+    public bool ShowsNotificationBell { get; init; }
+
+    /// <summary>
+    /// The number of unread items that need attention (e.g. the unread errors of the Notifications panel) — the bell
+    /// gets a red dot and "[n]" while it is above 0.
+    /// </summary>
+    public int AttentionCount
     {
-        get => _needsAttention;
-        set => SetProperty(ref _needsAttention, value);
+        get => _attentionCount;
+        set => SetProperty(ref _attentionCount, value);
     }
 }
 
@@ -183,6 +189,7 @@ public sealed class NotificationsTool : SignetTool
     {
         Id = DockableIds.Notifications;
         Title = Strings.Get("Panel_Notifications");
+        ShowsNotificationBell = true;
     }
 
     /// <summary>Panel view model (embedded by <see cref="MainDockFactory"/>).</summary>

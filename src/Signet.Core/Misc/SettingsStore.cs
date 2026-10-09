@@ -854,6 +854,29 @@ public sealed class SettingsStore
         }
     }
 
+    /// <summary>
+    /// Color of the error notifications for the light and dark themes. Always read normalized
+    /// (<see cref="ErrorAppearance.Normalized"/>).
+    /// </summary>
+    public ErrorAppearance ErrorAppearance
+    {
+        get
+        {
+            ErrorAppearance d = ErrorAppearance.Default;
+            return new ErrorAppearance(
+                ReadString("error_color_light", d.LightColor),
+                ReadString("error_color_dark", d.DarkColor)).Normalized();
+        }
+
+        set
+        {
+            ErrorAppearance v = value.Normalized();
+            WriteSilent("error_color_light", v.LightColor);
+            WriteSilent("error_color_dark", v.DarkColor);
+            RaiseChanged("error_appearance");
+        }
+    }
+
     /// <summary>Code editor appearance settings — light theme.</summary>
     public CodeViewAppearance CodeViewAppearance
     {

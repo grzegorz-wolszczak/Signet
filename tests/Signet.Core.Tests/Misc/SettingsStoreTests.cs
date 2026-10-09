@@ -60,6 +60,7 @@ public sealed class SettingsStoreTests
         writer.CleanupEnabledSteps = new[] { CleanupStep.UnusedSelectors, CleanupStep.UnusedMedia };
         writer.StandardizationEnabledSteps = new[] { StandardizationStep.RebaseManifestIds };
         writer.WarningAppearance = new WarningAppearance(16, "#102030", "#405060");
+        writer.ErrorAppearance = new ErrorAppearance("#a01010", "#ff8080");
         writer.OpenTagHintAppearance = new OpenTagHintAppearance("Consolas", 15, "#111111", "#222222", "#333333", "#444444");
         writer.Save();
 
@@ -77,6 +78,7 @@ public sealed class SettingsStoreTests
         reader.CleanupEnabledSteps.Should().Equal(CleanupStep.UnusedSelectors, CleanupStep.UnusedMedia);
         reader.StandardizationEnabledSteps.Should().Equal(StandardizationStep.RebaseManifestIds);
         reader.WarningAppearance.Should().Be(new WarningAppearance(16, "#102030", "#405060"));
+        reader.ErrorAppearance.Should().Be(new ErrorAppearance("#a01010", "#ff8080"));
         reader.OpenTagHintAppearance.Should().Be(new OpenTagHintAppearance("Consolas", 15, "#111111", "#222222", "#333333", "#444444"));
     }
 
@@ -94,6 +96,7 @@ public sealed class SettingsStoreTests
         sut.CleanupEnabledSteps.Should().BeEmpty("no Cleanup step is checked until the user confirms one");
         sut.StandardizationEnabledSteps.Should().Equal(EpubStandardization.AllSteps, "every step is checked until the dialog is applied");
         sut.WarningAppearance.Should().Be(WarningAppearance.Default, "warnings are as large as the interface text by default");
+        sut.ErrorAppearance.Should().Be(ErrorAppearance.Default);
         sut.CodeViewOpenTagHint.Should().BeTrue("the opening tag hint is on by default");
         sut.CodeViewOpenTagHintDelayMs.Should().Be(500);
         sut.OpenTagHintAppearance.Should().Be(OpenTagHintAppearance.Default, "the hint uses the editor font and the theme tooltip colors");
@@ -141,6 +144,17 @@ public sealed class SettingsStoreTests
         sut.WarningAppearance = new WarningAppearance(stored, "not a color", "#abcdef");
 
         sut.WarningAppearance.Should().Be(new WarningAppearance(expected, WarningAppearance.Default.LightColor, "#abcdef"));
+    }
+
+    [Fact]
+    public void Invalid_error_colors_fall_back_to_the_defaults()
+    {
+        using TempDir dir = new();
+        SettingsStore sut = new(dir.Combine("settings.json"));
+
+        sut.ErrorAppearance = new ErrorAppearance("red", "#abcdef");
+
+        sut.ErrorAppearance.Should().Be(new ErrorAppearance(ErrorAppearance.Default.LightColor, "#abcdef"));
     }
 
     [Fact]

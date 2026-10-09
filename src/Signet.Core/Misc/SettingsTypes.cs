@@ -143,8 +143,8 @@ public readonly record struct PreviewHighlight(
 }
 
 /// <summary>
-/// Appearance of the warning texts in dialogs (e.g. the consequences of a risky span removal or Cleanup item) and of
-/// the warning color used across the application (status bar, Notifications panel, attention tabs).
+/// Appearance of the warning texts in dialogs (e.g. the consequences of a risky span removal or Cleanup item). The error
+/// notifications have their own color (<see cref="ErrorAppearance"/>).
 /// </summary>
 /// <param name="FontSize">Font size (px) of the warning texts; 0 = the size of the interface text.</param>
 /// <param name="LightColor">Warning color (<c>#rrggbb</c>) for the light application theme.</param>
@@ -163,6 +163,23 @@ public readonly record struct WarningAppearance(int FontSize, string LightColor,
     /// <summary>A copy with the size clamped (0 stays "as the interface text") and valid colors (invalid → default).</summary>
     public WarningAppearance Normalized() => new(
         FontSize <= 0 ? 0 : Math.Clamp(FontSize, FontSizeMin, FontSizeMax),
+        PreviewHighlight.IsHexColor(LightColor) ? LightColor : Default.LightColor,
+        PreviewHighlight.IsHexColor(DarkColor) ? DarkColor : Default.DarkColor);
+}
+
+/// <summary>
+/// Color of the error notifications — a blocked or failed operation: its status bar message, its row in the
+/// Notifications panel and the dot on the notification bell (the Notifications tab and the status bar indicator).
+/// </summary>
+/// <param name="LightColor">Error color (<c>#rrggbb</c>) for the light application theme.</param>
+/// <param name="DarkColor">Error color (<c>#rrggbb</c>) for the dark application theme.</param>
+public readonly record struct ErrorAppearance(string LightColor, string DarkColor)
+{
+    /// <summary>Default values: red for both themes (lighter for the dark one).</summary>
+    public static ErrorAppearance Default => new("#d93030", "#f14c4c");
+
+    /// <summary>A copy with valid colors (invalid → default).</summary>
+    public ErrorAppearance Normalized() => new(
         PreviewHighlight.IsHexColor(LightColor) ? LightColor : Default.LightColor,
         PreviewHighlight.IsHexColor(DarkColor) ? DarkColor : Default.DarkColor);
 }

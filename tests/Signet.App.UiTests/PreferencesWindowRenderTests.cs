@@ -151,12 +151,14 @@ public sealed class PreferencesWindowRenderTests
             .Where(b => b.Classes.Contains("section"))
             .ToArray();
 
-        // Special character font, Warnings, Code View light, Code View dark.
-        sections.Should().HaveCount(4);
+        // Special character font, Warnings, Errors, Code View light, Code View dark.
+        sections.Should().HaveCount(5);
         sections.Should().OnlyContain(b => b.BorderBrush != null);
         sections.Should().OnlyContain(b => b.BorderThickness == new Avalonia.Thickness(1));
         window.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Name == "WarningSample")
             .Classes.Should().Contain("warning", "the sample shows the warning look live");
+        window.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Name == "ErrorSample")
+            .Foreground.Should().NotBeNull("the sample shows the error color live");
     }
 
     /// <summary>

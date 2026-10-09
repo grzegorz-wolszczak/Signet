@@ -3493,7 +3493,7 @@ Do tego stanu książki możesz później wrócić przez pozycje „Przywróć d
     <value>Wyczyść</value>
   </data>
   <data name="MainWindow_UnreadWarningsTooltip" xml:space="preserve">
-    <value>Nieprzeczytane ostrzeżenia: {0}. Kliknij, aby otworzyć panel Powiadomienia.</value>
+    <value>Nieprzeczytane błędy: {0}. Kliknij, aby otworzyć panel Powiadomienia.</value>
   </data>
   <data name="MainWindow_StatusMessageTooltip" xml:space="preserve">
     <value>Kliknij, aby otworzyć panel Powiadomienia (historia komunikatów).</value>
@@ -3935,10 +3935,25 @@ Nie zmienia plików, ich nazw ani ID.</value>
     <value>Kolor — ciemny motyw</value>
   </data>
   <data name="PreferencesWindow_WarningsNote" xml:space="preserve">
-    <value>Kolor dotyczy też ostrzeżeń na pasku stanu, w panelu powiadomień i wyróżnionych zakładek.</value>
+    <value>Kolor ostrzeżeń w oknach (np. skutki ryzykownej zmiany w Cleanup).</value>
   </data>
   <data name="PreferencesWindow_WarningSample" xml:space="preserve">
     <value>⚠ Przykład: „font-style: italic” (z „.none1”) działa na tym spanie</value>
+  </data>
+  <data name="PreferencesWindow_Errors" xml:space="preserve">
+    <value>Błędy w powiadomieniach</value>
+  </data>
+  <data name="PreferencesWindow_ErrorColorLight" xml:space="preserve">
+    <value>Kolor — jasny motyw</value>
+  </data>
+  <data name="PreferencesWindow_ErrorColorDark" xml:space="preserve">
+    <value>Kolor — ciemny motyw</value>
+  </data>
+  <data name="PreferencesWindow_ErrorSample" xml:space="preserve">
+    <value>Przykład: Add Nav to Reading Order is not available for EPUB 2.</value>
+  </data>
+  <data name="PreferencesWindow_ErrorsNote" xml:space="preserve">
+    <value>Komunikaty o zablokowanych lub nieudanych operacjach: pasek stanu, wiersze panelu Powiadomienia i kropka na dzwonku.</value>
   </data>
   <data name="CodeView_OpenTagHintLine" xml:space="preserve">
     <value>linia {0}</value>
