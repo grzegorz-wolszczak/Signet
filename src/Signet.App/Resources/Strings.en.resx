@@ -2576,6 +2576,25 @@ EPUB version: {5}</value>
   <data name="BookBrowser_CannotMergeNav" xml:space="preserve">
     <value>The navigation document (nav) cannot be merged.</value>
   </data>
+  <data name="BookBrowser_MergeErrorTitle" xml:space="preserve">
+    <value>Cannot merge files</value>
+  </data>
+  <data name="BookBrowser_MergeMixedTypes" xml:space="preserve">
+    <value>Cannot merge the files:
+{0}
+
+with the HTML files:
+{1}
+
+Only HTML files can be merged.</value>
+  </data>
+  <data name="BookBrowser_MergeOnlyHtml" xml:space="preserve">
+    <value>Only HTML files can be merged. Selected files:
+{0}</value>
+  </data>
+  <data name="BookBrowser_MergeNav" xml:space="preserve">
+    <value>The navigation document ({0}) cannot be merged.</value>
+  </data>
   <data name="BookBrowser_NoSplitMarkers" xml:space="preserve">
     <value>No split markers in the selected files.</value>
   </data>

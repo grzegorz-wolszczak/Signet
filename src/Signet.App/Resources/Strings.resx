@@ -2576,6 +2576,25 @@ Wersja EPUB: {5}</value>
   <data name="BookBrowser_CannotMergeNav" xml:space="preserve">
     <value>Nie można scalić dokumentu nawigacji (nav).</value>
   </data>
+  <data name="BookBrowser_MergeErrorTitle" xml:space="preserve">
+    <value>Nie można scalić plików</value>
+  </data>
+  <data name="BookBrowser_MergeMixedTypes" xml:space="preserve">
+    <value>Nie można łączyć plików:
+{0}
+
+z plikami HTML:
+{1}
+
+Scalać można tylko pliki HTML.</value>
+  </data>
+  <data name="BookBrowser_MergeOnlyHtml" xml:space="preserve">
+    <value>Scalać można tylko pliki HTML. Zaznaczone pliki:
+{0}</value>
+  </data>
+  <data name="BookBrowser_MergeNav" xml:space="preserve">
+    <value>Nie można scalić dokumentu nawigacji ({0}).</value>
+  </data>
   <data name="BookBrowser_NoSplitMarkers" xml:space="preserve">
     <value>Brak znaczników podziału w zaznaczonych plikach.</value>
   </data>

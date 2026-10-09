@@ -59,6 +59,12 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     public event EventHandler<IReadOnlyList<Resource>>? OpenResourceRequested;
 
     /// <summary>
+    /// Request: Merge cannot be carried out for the selection (files other than HTML, the navigation document) — the
+    /// argument is the message; the view shows it in an error window.
+    /// </summary>
+    public event EventHandler<string>? MergeErrorRequested;
+
+    /// <summary>
     /// Creates an automatic "Before: …" checkpoint right before an operation that changes the
     /// book; returns whether one was created. Set by the main window.
     /// </summary>
@@ -867,6 +873,12 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
             return;
         }
 
+        if (MergeError() is { } error)
+        {
+            MergeErrorRequested?.Invoke(this, error);
+            return;
+        }
+
         List<HtmlResource> resources = _selection.Select(n => (HtmlResource)n.Entry!.Resource).ToList();
         bool checkpoint = Checkpoint(Strings.Format("CheckpointOp_MergeFiles", resources[0].Filename));
         HtmlResource? rejected = _book.MergeResources(resources);
@@ -1040,11 +1052,34 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
 
     private bool CanSortText => _selection.Length >= 2 && _selection.All(n => IsText(n.Entry!));
 
-    private bool CanMergeText => _selection.Length >= 2 && _selection.All(n => IsText(n.Entry!));
+    // Any two or more files: a selection that cannot be merged gets an error window (MergeError) instead of a
+    // silently disabled command.
+    private bool CanMergeText => _selection.Length >= 2;
 
     private bool CanSplitText => _selection.Length >= 1 && _selection.All(n => IsText(n.Entry!));
 
     private static bool IsText(OpfModelEntry entry) => entry.ResourceType == ResourceType.Html;
+
+    // Why the selected files cannot be merged (only HTML files other than the navigation document can), or null.
+    private string? MergeError()
+    {
+        List<OpfModelEntry> entries = _selection.Select(n => n.Entry!).ToList();
+        List<OpfModelEntry> others = entries.Where(e => !IsText(e)).ToList();
+        if (others.Count > 0)
+        {
+            List<OpfModelEntry> html = entries.Where(IsText).ToList();
+            return html.Count > 0
+                ? Strings.Format("BookBrowser_MergeMixedTypes", FileList(others), FileList(html))
+                : Strings.Format("BookBrowser_MergeOnlyHtml", FileList(others));
+        }
+
+        return entries.FirstOrDefault(e => e.IsNav) is { } nav
+            ? Strings.Format("BookBrowser_MergeNav", System.IO.Path.GetFileName(nav.BookPath))
+            : null;
+    }
+
+    private static string FileList(IEnumerable<OpfModelEntry> entries) =>
+        string.Join("\n", entries.Select(e => "  • " + System.IO.Path.GetFileName(e.BookPath)));
 
     private void MoveSelectedText(int delta)
     {

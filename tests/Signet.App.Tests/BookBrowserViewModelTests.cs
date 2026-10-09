@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using AwesomeAssertions;
+using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.App.ViewModels;
 using Signet.Core;
@@ -507,19 +509,63 @@ public sealed class BookBrowserViewModelTests
         text.Children.Where(n => !n.Entry!.IsNav).Cast<object?>().ToList();
 
     [Fact]
-    public void MergeSelectedCommand_requires_at_least_two_html_files()
+    public void MergeSelectedCommand_requires_at_least_two_files_of_any_type()
     {
         using TempDir temp = new();
-        using Book book = Load(CorpusPaths.Epub3WithNcx, temp);
+        using Book book = Load(CorpusPaths.Epub3Media, temp);
         BookBrowserViewModel sut = NewViewModel(out _);
         sut.SetBook(book);
 
         BookBrowserNode text = sut.Nodes.Single(n => n.Header == "Text");
+        BookBrowserNode style = sut.Nodes.Single(n => n.Header == "Styles").Children[0];
         sut.UpdateSelection(new object?[] { text.Children[0] });
         sut.MergeSelectedCommand.CanExecute(null).Should().BeFalse();
 
-        sut.UpdateSelection(NonNavTextChildren(text));
-        sut.MergeSelectedCommand.CanExecute(null).Should().BeTrue();
+        sut.UpdateSelection(new object?[] { text.Children[0], style });
+        sut.MergeSelectedCommand.CanExecute(null).Should().BeTrue("a selection that cannot be merged gets an error window");
+    }
+
+    [Fact]
+    public void MergeSelected_with_html_and_other_files_reports_both_groups_and_changes_nothing()
+    {
+        using TempDir temp = new();
+        using Book book = Load(CorpusPaths.Epub3Media, temp);
+        BookBrowserViewModel sut = NewViewModel(out _);
+        sut.SetBook(book);
+        int resourceCount = book.GetAllResources().Count;
+        BookBrowserNode chapter = sut.Nodes.Single(n => n.Header == "Text").Children.First(n => !n.Entry!.IsNav);
+        BookBrowserNode style = sut.Nodes.Single(n => n.Header == "Styles").Children[0];
+        BookBrowserNode image = sut.Nodes.Single(n => n.Header == "Images").Children[0];
+        string? error = null;
+        sut.MergeErrorRequested += (_, message) => error = message;
+
+        sut.UpdateSelection(new object?[] { chapter, style, image });
+        sut.MergeSelectedCommand.Execute(null);
+
+        error.Should().Be(Strings.Format(
+            "BookBrowser_MergeMixedTypes",
+            $"  • {Path.GetFileName(style.Entry!.BookPath)}\n  • {Path.GetFileName(image.Entry!.BookPath)}",
+            $"  • {Path.GetFileName(chapter.Entry!.BookPath)}"));
+        book.GetAllResources().Should().HaveCount(resourceCount);
+    }
+
+    [Fact]
+    public void MergeSelected_without_html_files_reports_that_only_html_can_be_merged()
+    {
+        using TempDir temp = new();
+        using Book book = Load(CorpusPaths.Epub3Media, temp);
+        BookBrowserViewModel sut = NewViewModel(out _);
+        sut.SetBook(book);
+        List<BookBrowserNode> images = sut.Nodes.Single(n => n.Header == "Images").Children.Take(2).ToList();
+        string? error = null;
+        sut.MergeErrorRequested += (_, message) => error = message;
+
+        sut.UpdateSelection(images.Cast<object?>());
+        sut.MergeSelectedCommand.Execute(null);
+
+        error.Should().Be(Strings.Format(
+            "BookBrowser_MergeOnlyHtml",
+            string.Join("\n", images.Select(n => "  • " + Path.GetFileName(n.Entry!.BookPath)))));
     }
 
     [Fact]
@@ -549,10 +595,14 @@ public sealed class BookBrowserViewModelTests
         int htmlCountBefore = book.GetHtmlResources().Count;
 
         BookBrowserNode text = sut.Nodes.Single(n => n.Header == "Text");
+        string? error = null;
+        sut.MergeErrorRequested += (_, message) => error = message;
         sut.UpdateSelection(text.Children.Cast<object?>());
         sut.MergeSelectedCommand.Execute(null);
 
         book.GetHtmlResources().Should().HaveCount(htmlCountBefore);
+        error.Should().Be(Strings.Format(
+            "BookBrowser_MergeNav", Path.GetFileName(text.Children.Single(n => n.Entry!.IsNav).Entry!.BookPath)));
     }
 
     [Fact]

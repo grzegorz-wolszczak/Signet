@@ -75,6 +75,7 @@ public partial class BookBrowserView : UserControl
             _boundViewModel.RenameRequested -= OnRenameRequested;
             _boundViewModel.PropertyChanged -= OnViewModelPropertyChanged;
             _boundViewModel.DeleteRequested -= OnDeleteRequested;
+            _boundViewModel.MergeErrorRequested -= OnMergeErrorRequested;
             _boundViewModel.AddExistingFilesRequested -= OnAddExistingFilesRequested;
             _boundViewModel.RenameWithTemplateRequested -= OnRenameWithTemplateRequested;
             _boundViewModel.BulkRegexRenameRequested -= OnBulkRegexRenameRequested;
@@ -100,6 +101,7 @@ public partial class BookBrowserView : UserControl
             _boundViewModel.RenameRequested += OnRenameRequested;
             _boundViewModel.PropertyChanged += OnViewModelPropertyChanged;
             _boundViewModel.DeleteRequested += OnDeleteRequested;
+            _boundViewModel.MergeErrorRequested += OnMergeErrorRequested;
             _boundViewModel.AddExistingFilesRequested += OnAddExistingFilesRequested;
             _boundViewModel.RenameWithTemplateRequested += OnRenameWithTemplateRequested;
             _boundViewModel.BulkRegexRenameRequested += OnBulkRegexRenameRequested;
@@ -420,6 +422,14 @@ public partial class BookBrowserView : UserControl
         if (confirmed)
         {
             _boundViewModel?.ApplyDelete(entries);
+        }
+    }
+
+    private async void OnMergeErrorRequested(object? sender, string message)
+    {
+        if (this.FindAncestorOfType<Window>() is { } owner)
+        {
+            await MessageDialog.ShowAsync(owner, Strings.Get("BookBrowser_MergeErrorTitle"), message);
         }
     }
 
