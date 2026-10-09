@@ -1761,8 +1761,11 @@ Do you want to save the changes?</value>
   <data name="Action_MainWindow_GoToLinkOrStyle" xml:space="preserve">
     <value>&amp;Go To Link Or Style</value>
   </data>
-  <data name="Action_MainWindow_GoBackFromLinkOrStyle" xml:space="preserve">
-    <value>&amp;Back</value>
+  <data name="Action_MainWindow_NavigateBack" xml:space="preserve">
+    <value>Navigate &amp;Back</value>
+  </data>
+  <data name="Action_MainWindow_NavigateForward" xml:space="preserve">
+    <value>Navigate For&amp;ward</value>
   </data>
   <data name="Action_MainWindow_MarkSelection" xml:space="preserve">
     <value>Mar&amp;k Selected Text</value>
@@ -2228,9 +2231,6 @@ Do you want to save the changes?</value>
   </data>
   <data name="Status_CaretNotOnLinkOrClass" xml:space="preserve">
     <value>The caret is not on a link or a class name.</value>
-  </data>
-  <data name="Status_NoBookmarks" xml:space="preserve">
-    <value>No bookmarks.</value>
   </data>
   <data name="Status_NavigationFileGone" xml:space="preserve">
     <value>Navigation cancelled — the file no longer exists.</value>
@@ -3066,7 +3066,7 @@ This file type cannot be edited in Signet yet.</value>
     <value>Insert</value>
   </data>
   <data name="Toolbar_Back" xml:space="preserve">
-    <value>Back</value>
+    <value>Bookmarks</value>
   </data>
   <data name="Toolbar_Tools" xml:space="preserve">
     <value>Tools</value>
@@ -3731,6 +3731,12 @@ Insert anyway?</value>
   </data>
   <data name="PreferencesWindow_FindUsagesRefreshOnSave" xml:space="preserve">
     <value>Refresh "Find Usages" after saving the book</value>
+  </data>
+  <data name="PreferencesWindow_NavigationHistoryRemember" xml:space="preserve">
+    <value>Remember the navigation history (Navigate Back / Forward) of saved books between sessions</value>
+  </data>
+  <data name="PreferencesWindow_NavigationHistoryDays" xml:space="preserve">
+    <value>Keep the history for (days, 1–14):</value>
   </data>
   <data name="PreferencesWindow_MendShowDiff" xml:space="preserve">
     <value>Show the changes of "Mend Code" (current file) in a diff window</value>

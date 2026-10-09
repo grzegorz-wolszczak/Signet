@@ -621,6 +621,31 @@ public sealed class SettingsStore
         set => Write("recent_files_limit", value);
     }
 
+    /// <summary>
+    /// Whether the Navigate Back / Forward history of a saved book is kept between sessions
+    /// (<see cref="MainUI.NavigationHistoryStore"/>). Defaults to <c>false</c> — the history lasts one session.
+    /// </summary>
+    public bool NavigationHistoryRemember
+    {
+        get => ReadBool("navigation_history_remember", false);
+        set => Write("navigation_history_remember", value);
+    }
+
+    /// <summary>
+    /// How many days a kept navigation place lives (<see cref="NavigationHistoryRemember"/>); a value outside
+    /// <c>1..<see cref="MainUI.NavigationHistoryStore.MaxDays"/></c> → the maximum.
+    /// </summary>
+    public int NavigationHistoryDays
+    {
+        get
+        {
+            int days = ReadInt("navigation_history_days", MainUI.NavigationHistoryStore.MaxDays);
+            return days is >= 1 and <= MainUI.NavigationHistoryStore.MaxDays ? days : MainUI.NavigationHistoryStore.MaxDays;
+        }
+
+        set => Write("navigation_history_days", value);
+    }
+
     /// <summary>Whether to handle the AltGr key separately.</summary>
     public bool EnableAltGr
     {

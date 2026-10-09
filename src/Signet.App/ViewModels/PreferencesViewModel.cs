@@ -13,6 +13,7 @@ using Signet.App.Infrastructure;
 using Signet.App.Input;
 using Signet.App.Resources;
 using Signet.App.Services;
+using Signet.Core.MainUI;
 using Signet.Core.Misc;
 using Signet.Core.Spellcheck;
 
@@ -140,6 +141,8 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _reopenLastFileOnStartup = _settings.ReopenLastFileOnStartup;
         _fileDropZoneEnabled = _settings.FileDropZoneEnabled;
         _findUsagesRefreshOnSave = _settings.FindUsagesRefreshOnSave;
+        _navigationHistoryRemember = _settings.NavigationHistoryRemember;
+        _navigationHistoryDays = _settings.NavigationHistoryDays;
         _autoCloseTags = _settings.CodeViewAutoCloseTags;
         _warnMissingDoctype = _settings.WarnMissingDoctype;
         _prettifyAddMissingDoctype = _settings.PrettifyAddMissingDoctype;
@@ -678,6 +681,19 @@ public sealed partial class PreferencesViewModel : ObservableObject
     private bool _findUsagesRefreshOnSave;
 
     partial void OnFindUsagesRefreshOnSaveChanged(bool value) => _settings.FindUsagesRefreshOnSave = value;
+
+    /// <summary>Whether the Navigate Back / Forward history of a saved book is kept between sessions.</summary>
+    [ObservableProperty]
+    private bool _navigationHistoryRemember;
+
+    partial void OnNavigationHistoryRememberChanged(bool value) => _settings.NavigationHistoryRemember = value;
+
+    /// <summary>How many days a kept navigation place lives (1–14; out of range — clamped).</summary>
+    [ObservableProperty]
+    private int _navigationHistoryDays;
+
+    partial void OnNavigationHistoryDaysChanged(int value) =>
+        _settings.NavigationHistoryDays = Math.Clamp(value, 1, NavigationHistoryStore.MaxDays);
 
     /// <summary>Clipboard history limit (0–20).</summary>
     [ObservableProperty]

@@ -115,6 +115,9 @@ public sealed class FolderKeeper : IDisposable
     /// <summary>Raised when a watched file changed on disk outside the application.</summary>
     public event EventHandler<ResourceEventArgs>? ResourceFileChangedOnDisk;
 
+    /// <summary>Raised after a resource was renamed or moved (the registry and the OPF are already updated).</summary>
+    public event EventHandler<ResourceBookPathChangedEventArgs>? ResourceBookPathChanged;
+
     /// <summary>The full path of the publication's root folder (never ends with a separator).</summary>
     public string MainFolderPath { get; }
 
@@ -1269,6 +1272,7 @@ public sealed class FolderKeeper : IDisposable
         }
 
         UpdateShortPathNames();
+        ResourceBookPathChanged?.Invoke(this, new ResourceBookPathChangedEventArgs(resource, oldBookPath));
     }
 
     private void RefreshWatcherState()

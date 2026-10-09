@@ -450,6 +450,11 @@
             <CheckBox Content="{loc:Loc PreferencesWindow_EnableFileDropZone}" IsChecked="{Binding FileDropZoneEnabled}" />
             <CheckBox Content="{loc:Loc PreferencesWindow_AutoCloseTags}" IsChecked="{Binding AutoCloseTags}" />
             <CheckBox Content="{loc:Loc PreferencesWindow_FindUsagesRefreshOnSave}" IsChecked="{Binding FindUsagesRefreshOnSave}" />
+            <CheckBox Content="{loc:Loc PreferencesWindow_NavigationHistoryRemember}" IsChecked="{Binding NavigationHistoryRemember}" />
+            <StackPanel Orientation="Horizontal" Spacing="8" Margin="28,0,0,0" IsEnabled="{Binding NavigationHistoryRemember}">
+              <TextBlock Text="{loc:Loc PreferencesWindow_NavigationHistoryDays}" VerticalAlignment="Center" />
+              <TextBox Text="{Binding NavigationHistoryDays}" Width="80" />
+            </StackPanel>
 
             <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8" Margin="0,6,0,0">
               <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_ClipboardHistoryLimit}" VerticalAlignment="Center" />

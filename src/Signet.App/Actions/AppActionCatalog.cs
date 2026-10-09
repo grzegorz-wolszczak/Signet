@@ -128,7 +128,9 @@ public static class AppActionCatalog
         new("MainWindow.CountInFile", "&Count All In File", "", null, "Search"),
         new("MainWindow.BookmarkLocation", "Book&mark Location", "Ctrl+Alt+B", "bookmark", "Search"),
         new("MainWindow.GoToLinkOrStyle", "&Go To Link Or Style", "F3", null, "Search"),
-        new("MainWindow.GoBackFromLinkOrStyle", "&Back", "Ctrl+\\", "back-to-link-style", "Search"),
+        // Navigate Back / Forward (IntelliJ-style navigation history) — no default shortcut, set in Preferences.
+        new("MainWindow.NavigateBack", "Navigate &Back", "", null, "Search"),
+        new("MainWindow.NavigateForward", "Navigate For&ward", "", null, "Search"),
         new("MainWindow.FindUsages", "Find Usages", "Alt+F7", null, "Search"),
         new("MainWindow.MarkSelection", "Mar&k Selected Text", "Ctrl+Shift+M", null, "Search"),
         new("MainWindow.GoToLine", "Go To &Line...", "Ctrl+/", null, "Search"),

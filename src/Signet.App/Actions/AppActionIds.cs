@@ -108,7 +108,8 @@ public static class AppActionIds
     public const string CountInFile = "MainWindow.CountInFile";
     public const string BookmarkLocation = "MainWindow.BookmarkLocation";
     public const string GoToLinkOrStyle = "MainWindow.GoToLinkOrStyle";
-    public const string GoBackFromLinkOrStyle = "MainWindow.GoBackFromLinkOrStyle";
+    public const string NavigateBack = "MainWindow.NavigateBack";
+    public const string NavigateForward = "MainWindow.NavigateForward";
     public const string MarkSelection = "MainWindow.MarkSelection";
     public const string GoToLine = "MainWindow.GoToLine";
 

@@ -78,6 +78,12 @@ public sealed class TabManager : IDisposable
     /// <summary>Raised after a code tab wrote edited text to its resource (the argument).</summary>
     public event EventHandler<Resource>? ResourceSavedFromTab;
 
+    /// <summary>Raised right before a jump in a code tab moves its caret (<see cref="CodeTabViewModel.NavigationStarting"/>).</summary>
+    public event EventHandler? NavigationStarting;
+
+    /// <summary>Raised after an edit of a code tab's document (<see cref="CodeTabViewModel.DocumentEdited"/>).</summary>
+    public event EventHandler<TabDocumentEdit>? DocumentEdited;
+
     /// <summary>The view-less tab model (for higher layers and tests).</summary>
     public TabManagerModel Model => _model;
 
@@ -335,6 +341,9 @@ public sealed class TabManager : IDisposable
             codeTab.CssClassJumpRequested += className => OnCssClassJumpRequested(codeTab, className);
             codeTab.LinkJumpRequested += reference => OnLinkJumpRequested(codeTab, reference);
             codeTab.SavedToResource += () => ResourceSavedFromTab?.Invoke(this, codeTab.Resource);
+            codeTab.NavigationStarting += () => NavigationStarting?.Invoke(this, EventArgs.Empty);
+            codeTab.DocumentEdited += (offset, line, removed, inserted) =>
+                DocumentEdited?.Invoke(this, new TabDocumentEdit(codeTab.Resource, offset, line, removed, inserted));
             codeTab.ZoomFactor = Math.Clamp(_settings.ZoomText, CodeZoomMin, CodeZoomMax);
             codeTab.PropertyChanged += OnCodeTabPropertyChanged;
             return codeTab;
@@ -667,3 +676,11 @@ public sealed class TabManager : IDisposable
 /// <param name="Session">Open book paths in order and the active tab.</param>
 /// <param name="CaretOffsets">Caret positions of Code View tabs (book path -&gt; offset).</param>
 public sealed record TabSnapshot(TabSession Session, IReadOnlyDictionary<string, int> CaretOffsets);
+
+/// <summary>An edit of a code tab's document (<see cref="TabManager.DocumentEdited"/>).</summary>
+/// <param name="Resource">The edited file.</param>
+/// <param name="Offset">Where the edit starts.</param>
+/// <param name="Line">The line (1-based) of <paramref name="Offset"/>.</param>
+/// <param name="RemovedText">The removed text.</param>
+/// <param name="InsertedText">The inserted text.</param>
+public sealed record TabDocumentEdit(Resource Resource, int Offset, int Line, string RemovedText, string InsertedText);

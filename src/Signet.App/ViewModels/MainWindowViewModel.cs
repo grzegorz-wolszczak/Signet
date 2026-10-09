@@ -299,10 +299,10 @@ public sealed partial class MainWindowViewModel
         });
         WireCheckpointActions();
 
-        // Navigation: bookmarks.
+        // Navigation: bookmarks, Navigate Back / Forward.
         _actions.SetHandler(AppActionIds.BookmarkLocation, AddBookmark);
-        _actions.SetHandler(AppActionIds.GoBackFromLinkOrStyle, GoToLastBookmark);
         _actions.SetHandler(AppActionIds.GoToLinkOrStyle, GoToLinkOrStyle);
+        WireNavigationActions();
         _actions.SetHandler(AppActionIds.JumpToOpeningTag, () => ActiveCodeTab?.JumpToOpeningTag());
         _actions.SetHandler(AppActionIds.JumpToClosingTag, () => ActiveCodeTab?.JumpToClosingTag());
         _actions.SetHandler(AppActionIds.SelectTagContents, () => ActiveCodeTab?.SelectTagContents());
@@ -979,6 +979,9 @@ public sealed partial class MainWindowViewModel
     {
         ArgumentNullException.ThrowIfNull(book);
 
+        // The previous book's history is kept (Preferences) before the switch; closing and opening tabs is no jump.
+        SaveNavigationHistory();
+        using IDisposable navigationSuspended = Tracker.Suspend();
         _tabManager.SetBook(null);
 
         if (_currentBook is not null)
@@ -1000,6 +1003,7 @@ public sealed partial class MainWindowViewModel
         _toc.SetBook(book);
         _tabManager.RestoreSession(_settings);
         StartCheckpointHistory(book);
+        LoadNavigationHistory(sourcePath);
         RefreshTitle();
 
         _statusBar.ShowMessage(
@@ -1091,40 +1095,15 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <summary>
-    /// "Go To Link Or Style" (F3) — on a link opens its target, on a class name — the CSS rule.
-    /// It first remembers the current position (as a bookmark) so that "Back" can return.
+    /// "Go To Link Or Style" (F3) — on a link opens its target, on a class name — the CSS rule. The jump enters the
+    /// Navigate Back / Forward history like any other.
     /// </summary>
     private void GoToLinkOrStyle()
     {
-        if (ActiveCodeTab is not { } tab)
+        if (ActiveCodeTab is { } tab && !tab.GoToLinkOrStyleAtCaret())
         {
-            return;
-        }
-
-        int bookmarks = _bookmarks.Count;
-        AddBookmark();
-        if (!tab.GoToLinkOrStyleAtCaret())
-        {
-            if (_bookmarks.Count > bookmarks)
-            {
-                _bookmarks.RemoveAt(_bookmarks.Count - 1);
-                BookmarksChangedInternal?.Invoke(this, EventArgs.Empty);
-            }
-
             _statusBar.ShowMessage(Strings.Get("Status_CaretNotOnLinkOrClass"), TimeSpan.FromSeconds(4));
         }
-    }
-
-    /// <summary>"Back" (Ctrl+\) — jumps to the most recently added bookmark.</summary>
-    private void GoToLastBookmark()
-    {
-        if (_bookmarks.Count == 0)
-        {
-            _statusBar.ShowMessage(Strings.Get("Status_NoBookmarks"), TimeSpan.FromSeconds(3));
-            return;
-        }
-
-        GoToBookmark(_bookmarks[^1]);
     }
 
     private void GoToBookmark(Bookmark bookmark)
@@ -1319,6 +1298,7 @@ public sealed partial class MainWindowViewModel
     /// <summary>Saves panel visibility to the settings (called when the window closes).</summary>
     public void PersistState()
     {
+        SaveNavigationHistory();
         _settings.SetStringMap(DockPanelsGroup, _dockFactory.CaptureToolVisibility());
         _settings.SetStringMap(DockPinnedSizesGroup, _dockFactory.CapturePinnedSizes());
         _settings.SetStringMap(DockFloatingGroup, _dockFactory.CaptureFloatingPanels());
@@ -2759,6 +2739,7 @@ public sealed partial class MainWindowViewModel
 
     private void OnActiveTabChanged(object? sender, EventArgs e)
     {
+        NoteNavigationTabSwitch();
         if (_activeCaretTab is not null)
         {
             _activeCaretTab.PropertyChanged -= OnActiveTabPropertyChanged;
@@ -2790,12 +2771,14 @@ public sealed partial class MainWindowViewModel
 
         _preview.ShowResource(ActiveTab?.Resource);
         LiveCssContextChanged?.Invoke(this, EventArgs.Empty);
+        UpdateNavigationPlace();
     }
 
     // Only the caret of the file shown in the preview — an offset in a CSS/JS tab does not correspond
     // to any place on the page (the preview stays on the previous HTML).
     private void OnActiveCaretOffsetChanged(int offset)
     {
+        UpdateNavigationPlace();
         if (string.Equals(ActiveCodeTab?.ResourceBookPath, _preview.CurrentBookPath, StringComparison.Ordinal))
         {
             _preview.SyncCaretToPreview(offset);

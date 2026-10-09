@@ -58,14 +58,6 @@
       </DrawingGroup>
     </DrawingImage.Drawing>
   </DrawingImage>
-  <DrawingImage x:Key="back-to-link-style">
-    <DrawingImage.Drawing>
-      <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">
-        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 24 V 24 H 0 Z" />
-        <GeometryDrawing Brush="#1abc9c" Geometry="F1 M 21 11 H 6.83 l 3.58 -3.59 L 9 6 l -6 6 6 6 1.41 -1.41 L 6.83 13 H 21 z" />
-      </DrawingGroup>
-    </DrawingImage.Drawing>
-  </DrawingImage>
   <DrawingImage x:Key="back">
     <DrawingImage.Drawing>
       <DrawingGroup ClipGeometry="M 0 0 H 24 V 24 H 0 Z">

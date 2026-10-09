@@ -1761,8 +1761,11 @@ Czy chcesz zapisać zmiany?</value>
   <data name="Action_MainWindow_GoToLinkOrStyle" xml:space="preserve">
     <value>&amp;Przejdź do linku lub stylu</value>
   </data>
-  <data name="Action_MainWindow_GoBackFromLinkOrStyle" xml:space="preserve">
-    <value>&amp;Wstecz</value>
+  <data name="Action_MainWindow_NavigateBack" xml:space="preserve">
+    <value>Przejdź &amp;wstecz</value>
+  </data>
+  <data name="Action_MainWindow_NavigateForward" xml:space="preserve">
+    <value>Przejdź &amp;naprzód</value>
   </data>
   <data name="Action_MainWindow_MarkSelection" xml:space="preserve">
     <value>O&amp;znacz zaznaczony tekst</value>
@@ -2228,9 +2231,6 @@ Czy chcesz zapisać zmiany?</value>
   </data>
   <data name="Status_CaretNotOnLinkOrClass" xml:space="preserve">
     <value>Karetka nie stoi na linku ani na nazwie klasy.</value>
-  </data>
-  <data name="Status_NoBookmarks" xml:space="preserve">
-    <value>Brak zakładek.</value>
   </data>
   <data name="Status_NavigationFileGone" xml:space="preserve">
     <value>Nawigacja anulowana — plik już nie istnieje.</value>
@@ -3066,7 +3066,7 @@ Tego typu pliku nie można jeszcze edytować w Signet.</value>
     <value>Wstaw</value>
   </data>
   <data name="Toolbar_Back" xml:space="preserve">
-    <value>Wstecz</value>
+    <value>Zakładki</value>
   </data>
   <data name="Toolbar_Tools" xml:space="preserve">
     <value>Narzędzia</value>
@@ -3731,6 +3731,12 @@ Wstawić mimo to?</value>
   </data>
   <data name="PreferencesWindow_FindUsagesRefreshOnSave" xml:space="preserve">
     <value>Odświeżaj „Znalezione użycia” po zapisaniu książki</value>
+  </data>
+  <data name="PreferencesWindow_NavigationHistoryRemember" xml:space="preserve">
+    <value>Pamiętaj historię nawigacji (Przejdź wstecz / naprzód) zapisanych książek między sesjami</value>
+  </data>
+  <data name="PreferencesWindow_NavigationHistoryDays" xml:space="preserve">
+    <value>Przechowuj historię przez (dni, 1–14):</value>
   </data>
   <data name="PreferencesWindow_MendShowDiff" xml:space="preserve">
     <value>Pokazuj zmiany „Popraw kod” (bieżący plik) w oknie różnic</value>

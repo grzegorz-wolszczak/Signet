@@ -342,6 +342,8 @@ public sealed partial class MainWindowViewModel
     // state does not have disappear) and marking the book as changed.
     private void SwapToCheckpointBook(Book book, TabSnapshot tabs)
     {
+        // The history stays (bookpaths); reopening the tabs of the other state is no jump.
+        using IDisposable navigationSuspended = Tracker.Suspend();
         _tabManager.SetBook(null);
         if (_currentBook is not null)
         {
@@ -366,6 +368,8 @@ public sealed partial class MainWindowViewModel
 
         book.Modified = true;
         RefreshTitle();
+        WatchNavigationFolderKeeper();
+        UpdateNavigationPlace();
     }
 
     // Updates the "Revert to before/after "…"" actions with the name of the target state.

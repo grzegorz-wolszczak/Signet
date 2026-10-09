@@ -106,6 +106,7 @@ public partial class CodeTabView : UserControl
         Editor.TextArea.AddHandler(KeyUpEvent, OnTextAreaKeyUp, RoutingStrategies.Bubble);
         Editor.AddHandler(PointerWheelChangedEvent, OnPointerWheelChanged, RoutingStrategies.Tunnel);
         Editor.AddHandler(PointerPressedEvent, OnEditorPointerPressed, RoutingStrategies.Tunnel);
+        Editor.TextArea.AddHandler(KeyDownEvent, OnTextAreaKeyDownNavigation, RoutingStrategies.Tunnel);
         Editor.DocumentChanged += OnEditorDocumentChanged;
 
         _contextMenu.Opening += OnContextMenuOpening;
@@ -859,6 +860,13 @@ public partial class CodeTabView : UserControl
     /// </summary>
     private void OnEditorPointerPressed(object? sender, PointerPressedEventArgs e)
     {
+        // A left click moves the caret — the start of a Navigate Back / Forward step (as in IntelliJ). Notified before
+        // AvaloniaEdit moves the caret (tunneling), so the place being left is still the current one.
+        if (e.GetCurrentPoint(Editor.TextArea.TextView).Properties.IsLeftButtonPressed)
+        {
+            _boundViewModel?.NotifyNavigation();
+        }
+
         if (e.GetCurrentPoint(Editor.TextArea.TextView).Properties.IsRightButtonPressed)
         {
             MoveCaretForContextMenu(e);
@@ -888,6 +896,16 @@ public partial class CodeTabView : UserControl
         if (_boundViewModel.RequestLinkOrClassJumpAt(offset))
         {
             e.Handled = true;
+        }
+    }
+
+    // Ctrl+Home / Ctrl+End jump to the start / end of the document — navigation steps, notified before the editor
+    // moves the caret.
+    private void OnTextAreaKeyDownNavigation(object? sender, KeyEventArgs e)
+    {
+        if (e.KeyModifiers.HasFlag(KeyModifiers.Control) && e.Key is Key.Home or Key.End)
+        {
+            _boundViewModel?.NotifyNavigation();
         }
     }
 

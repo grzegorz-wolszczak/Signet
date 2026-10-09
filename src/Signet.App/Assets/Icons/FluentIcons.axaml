@@ -101,19 +101,6 @@
       </DrawingGroup>
     </DrawingImage.Drawing>
   </DrawingImage>
-  <DrawingImage x:Key="back-to-link-style">
-    <DrawingImage.Drawing>
-      <DrawingGroup ClipGeometry="M 0 0 H 16 V 16 H 0 Z">
-        <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
-        <DrawingGroup>
-          <DrawingGroup.Transform>
-            <MatrixTransform Matrix="1,0,0,1,-1.99708,-2.50264" />
-          </DrawingGroup.Transform>
-          <GeometryDrawing Brush="#1abc9c" Geometry="F1 m 9.16 16.869 c 0.204 0.186 0.52 0.172 0.706 -0.032 0.187 -0.204 0.172 -0.52 -0.032 -0.706 l -6.168 -5.631 h 13.831 c 0.276 0 0.5 -0.224 0.5 -0.5 s -0.224 -0.5 -0.5 -0.5 h -13.828 l 6.165 -5.628 c 0.204 -0.186 0.219 -0.503 0.032 -0.706 -0.186 -0.204 -0.502 -0.219 -0.706 -0.033 l -6.916 6.314 c -0.14 0.128 -0.22 0.296 -0.24 0.469 -0.005 0.027 -0.007 0.055 -0.007 0.084 0 0.027 0.002 0.053 0.006 0.079 0.018 0.176 0.099 0.347 0.241 0.476 z" />
-        </DrawingGroup>
-      </DrawingGroup>
-    </DrawingImage.Drawing>
-  </DrawingImage>
   <DrawingImage x:Key="back">
     <DrawingImage.Drawing>
       <DrawingGroup ClipGeometry="M 0 0 H 48 V 48 H 0 Z">

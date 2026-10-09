@@ -1,6 +1,7 @@
 using System.Linq;
 using AwesomeAssertions;
 using Signet.App.Actions;
+using Signet.App.Menu;
 using Signet.App.ViewModels;
 using Signet.App.ViewModels.Tabs;
 using Signet.Core.BookManipulation;
@@ -44,7 +45,7 @@ public sealed class NavigationTests
     }
 
     [Fact]
-    public void Bookmark_survives_a_tab_switch_and_back_returns_to_it()
+    public void Bookmark_survives_a_tab_switch_and_the_bookmarks_menu_returns_to_it()
     {
         using TempDir temp = new();
         (MainWindowViewModel sut, Book book) = Loaded(temp, CorpusPaths.Epub3WithNcx);
@@ -62,7 +63,7 @@ public sealed class NavigationTests
         sut.Tabs.OpenResources(new Resource[] { chapter2 });
         sut.Tabs.ActiveTab!.Resource.BookPath.Should().Be(chapter2.BookPath);
 
-        sut.Actions.Require(AppActionIds.GoBackFromLinkOrStyle).Execute(null);
+        ((IBookmarksMenu)sut).GoToBookmark(sut.Bookmarks[0]);
 
         sut.Tabs.ActiveTab!.Resource.BookPath.Should().Be(chapter1.BookPath);
     }

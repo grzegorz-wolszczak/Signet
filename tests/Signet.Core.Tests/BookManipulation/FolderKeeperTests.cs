@@ -228,6 +228,22 @@ public sealed class FolderKeeperTests
     }
 
     [Fact]
+    public void Renaming_a_resource_reports_its_old_bookpath()
+    {
+        using TempDir root = new();
+        using FolderKeeper keeper = NewKeeper(root);
+        keeper.AddOpfToFolder("2.0");
+        Resource resource = keeper.AddContentFileToFolder(MakeSourceFile(root, "old.xhtml"), updateOpf: true);
+        List<ResourceBookPathChangedEventArgs> changes = new();
+        keeper.ResourceBookPathChanged += (_, e) => changes.Add(e);
+
+        resource.RenameTo("new.xhtml");
+
+        changes.Should().ContainSingle().Which.Should().Match<ResourceBookPathChangedEventArgs>(e =>
+            e.OldBookPath == "OEBPS/Text/old.xhtml" && e.Resource == resource && resource.BookPath == "OEBPS/Text/new.xhtml");
+    }
+
+    [Fact]
     public void Deleting_a_resource_removes_it_from_registry_and_manifest()
     {
         using TempDir root = new();

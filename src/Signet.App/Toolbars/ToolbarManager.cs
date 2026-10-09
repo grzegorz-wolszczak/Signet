@@ -51,7 +51,7 @@ public sealed class ToolbarManager
             AppActionIds.InsertFile, AppActionIds.InsertSpecialCharacter, AppActionIds.InsertId,
             AppActionIds.InsertClip, AppActionIds.InsertRole, AppActionIds.InsertHyperlink,
         },
-        [ToolbarId.Back] = new[] { AppActionIds.BookmarkLocation, AppActionIds.GoBackFromLinkOrStyle },
+        [ToolbarId.Back] = new[] { AppActionIds.BookmarkLocation },
         [ToolbarId.Tools] = new[]
         {
             AppActionIds.MetaEditor, AppActionIds.GenerateToc, AppActionIds.EditToc, AppActionIds.SpellcheckEditor,

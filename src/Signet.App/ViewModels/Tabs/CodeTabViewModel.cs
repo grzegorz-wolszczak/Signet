@@ -69,6 +69,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
         Document = new TextDocument(_model.Text);
         Document.UndoStack.ClearAll();
         Document.TextChanged += OnDocumentTextChanged;
+        Document.Changed += OnDocumentChanged;
 
         _wordWrap = settings.CodeViewWordWrap;
 
@@ -209,6 +210,19 @@ public sealed class CodeTabViewModel : ContentTabViewModel
 
     /// <summary>Raised after <see cref="Save"/> wrote edited text to the resource.</summary>
     public event Action? SavedToResource;
+
+    /// <summary>
+    /// Raised right before a jump moves the caret (Go To Line / offset, a Find match, a click in the editor…) — the
+    /// start of a Navigate Back / Forward step.
+    /// </summary>
+    public event Action? NavigationStarting;
+
+    /// <summary>
+    /// Raised after an edit of the document: the offset and line (1-based) where it starts, the removed and the
+    /// inserted text. Not raised when the whole text is replaced (Reload, reformatting) — positions cannot be
+    /// mapped across such a change.
+    /// </summary>
+    public event Action<int, int, string, string>? DocumentEdited;
 
     /// <summary>Raised to jump to a link target inside the book (a relative reference, may have a <c>#fragment</c>).</summary>
     public event Action<string>? LinkJumpRequested;
@@ -384,6 +398,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
 
         if (result.Found)
         {
+            NotifyNavigation();
             SearchResultRequested?.Invoke(result.Start, result.End, result.Wrapped);
         }
 
@@ -465,7 +480,11 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     /// Selects <c>[start, end)</c> and scrolls it into view — after the multi-file Find Next "jump"
     /// to a newly opened tab.
     /// </summary>
-    public void SelectMatch(int start, int end) => SearchResultRequested?.Invoke(start, end, false);
+    public void SelectMatch(int start, int end)
+    {
+        NotifyNavigation();
+        SearchResultRequested?.Invoke(start, end, false);
+    }
 
     /// <summary>
     /// Remembers the match <c>[start, end)</c> selected by the multi-file Find Next, so that
@@ -828,6 +847,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     public void GoToLine(int line)
     {
         int target = Math.Clamp(line, 1, Math.Max(1, Document.LineCount));
+        NotifyNavigation();
         ScrollToLineRequested?.Invoke(target);
     }
 
@@ -835,7 +855,26 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     public void GoToOffset(int offset)
     {
         int target = Math.Clamp(offset, 0, Document.TextLength);
+        NotifyNavigation();
         ScrollToOffsetRequested?.Invoke(target);
+    }
+
+    /// <summary>
+    /// A jump is about to move the caret (<see cref="NavigationStarting"/>) — called by the view before a click in
+    /// the editor or Ctrl+Home / Ctrl+End moves it.
+    /// </summary>
+    public void NotifyNavigation() => NavigationStarting?.Invoke();
+
+    private void OnDocumentChanged(object? sender, DocumentChangeEventArgs e)
+    {
+        int lengthBefore = Document.TextLength - e.InsertionLength + e.RemovalLength;
+        if (DocumentEdited is null || (e.Offset == 0 && e.RemovalLength == lengthBefore && lengthBefore > 0))
+        {
+            return;
+        }
+
+        int line = Document.GetLineByOffset(Math.Min(e.Offset, Document.TextLength)).LineNumber;
+        DocumentEdited.Invoke(e.Offset, line, e.RemovedText.Text, e.InsertedText.Text);
     }
 
     /// <summary>
@@ -1098,6 +1137,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
             }
         }
 
+        NotifyNavigation();
         SearchResultRequested?.Invoke(word.Offset, word.Offset + word.Length, wrapped);
     }
 
