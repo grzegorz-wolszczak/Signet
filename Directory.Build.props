@@ -11,7 +11,7 @@
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest-recommended</AnalysisLevel>
     <Deterministic>true</Deterministic>
-    <VersionPrefix>0.6.0</VersionPrefix>
+    <VersionPrefix>0.7.0</VersionPrefix>
     <AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 
