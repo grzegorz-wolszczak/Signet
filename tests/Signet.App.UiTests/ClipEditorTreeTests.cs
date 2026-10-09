@@ -10,10 +10,14 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AwesomeAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
+using Signet.App.Actions;
+using Signet.App.Input;
 using Signet.App.Services;
 using Signet.App.ViewModels;
 using Signet.App.Views;
 using Signet.Controls.TreeDataGrid.Primitives;
+using Signet.Core.Misc;
 using Signet.Core.MiscEditors;
 
 namespace Signet.App.UiTests;
@@ -37,6 +41,13 @@ public sealed class ClipEditorTreeTests
         ClipsViewModel vm = new(store, () => null, () => null, new StatusBarService());
         vm.AddGroupCommand.Execute(null);
         vm.AddEntryCommand.Execute(null);
+
+        // As MainWindowViewModel does: the panel-scoped "Clip Editor → Rename" action (F2 by default), from which
+        // the window builds its key bindings.
+        SettingsStore settings = new(Path.Combine(Path.GetTempPath(), $"signet-clipui-{System.Guid.NewGuid():N}-settings.json"));
+        AppActionRegistry actions = new(new KeyboardShortcutManager(settings), new StatusBarService(), NullLogger<AppActionRegistry>.Instance);
+        actions.SetHandler(AppActionIds.ClipEditorRename, () => vm.RenameSelectedCommand.Execute(null));
+        vm.ShortcutActions = new[] { actions.Require(AppActionIds.ClipEditorRename) };
 
         ClipEditorWindow window = new() { DataContext = vm };
         window.Show();

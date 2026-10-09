@@ -217,6 +217,7 @@ public sealed class FindReplaceHistoryButtonTests
         FindReplaceViewModel vm = new(settings, new StatusBarService(), () => tab, host.Object)
         {
             LookWhereIndex = (int)LookWhere.AllHtmlFiles,
+            OptionWrap = false,
         };
         vm.FindHistory.Add("w pociąg");
         vm.FindHistory.Add("inne");
@@ -229,8 +230,8 @@ public sealed class FindReplaceHistoryButtonTests
         window.KeyTextInput(typed);
         Dispatcher.UIThread.RunJobs();
 
-        // Two occurrences in the only file: two matches, then the search ends (multi-file Find Next
-        // does not wrap a second time); the field must not be cleared in any of these cases.
+        // Two occurrences in the only file: two matches, then the search ends (Wrap is off, so multi-file
+        // Find Next stops at the end of the scope); the field must not be cleared in any of these cases.
         for (int i = 0; i < 3; i++)
         {
             bool expectFound = i < 2;
