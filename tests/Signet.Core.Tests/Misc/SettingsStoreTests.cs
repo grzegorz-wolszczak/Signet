@@ -154,6 +154,22 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
+    public void The_last_preferences_page_survives_a_restart_and_is_never_negative()
+    {
+        using TempDir dir = new();
+        string path = dir.Combine("settings.json");
+        SettingsStore writer = new(path);
+        writer.PreferencesPageIndex.Should().Be(0);
+
+        writer.PreferencesPageIndex = 5;
+        writer.Save();
+        new SettingsStore(path).PreferencesPageIndex.Should().Be(5);
+
+        writer.PreferencesPageIndex = -3;
+        writer.PreferencesPageIndex.Should().Be(0);
+    }
+
+    [Fact]
     public void Invalid_error_colors_fall_back_to_the_defaults()
     {
         using TempDir dir = new();

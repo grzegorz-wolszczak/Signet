@@ -84,7 +84,7 @@
       </StackPanel>
     </Grid>
 
-    <TabControl TabStripPlacement="Left" Classes="preferences">
+    <TabControl x:Name="Pages" TabStripPlacement="Left" Classes="preferences">
 
       <!-- ================================ Language ================================ -->
       <TabItem Header="{loc:Loc PreferencesWindow_Language}">

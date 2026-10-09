@@ -1003,10 +1003,14 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             window.Height = Math.Max(geometry.Height, window.MinHeight);
         }
 
+        // The window opens on the page it was closed on.
+        window.SelectedPageIndex = settings.PreferencesPageIndex;
+
         window.Closing += (_, _) =>
         {
             settings.SetWindowGeometry(PreferencesWindowGeometryKey, new WindowGeometry(
                 0, 0, (int)window.Width, (int)window.Height, Maximized: false, FullScreen: false));
+            settings.PreferencesPageIndex = window.SelectedPageIndex;
             settings.Save();
         };
 

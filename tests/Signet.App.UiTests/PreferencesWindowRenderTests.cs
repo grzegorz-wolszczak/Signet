@@ -52,6 +52,22 @@ public sealed class PreferencesWindowRenderTests
         return new PreferencesWindow { DataContext = vm };
     }
 
+    /// <summary>The selected page can be set from outside (the main window restores the last one); a page that no longer exists falls back to the first.</summary>
+    [AvaloniaFact]
+    public void Selected_page_index_selects_the_page_and_ignores_a_page_that_does_not_exist()
+    {
+        PreferencesWindow window = BuildWindow();
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        window.SelectedPageIndex = 2;
+        window.SelectedPageIndex.Should().Be(2);
+
+        window.SelectedPageIndex = 999;
+        window.SelectedPageIndex.Should().Be(0);
+        window.Close();
+    }
+
     /// <summary>
     /// The "Edition page" tab: the remove button is disabled without a book, the options follow the main check box and
     /// "Add" puts a new editable row into the field list.

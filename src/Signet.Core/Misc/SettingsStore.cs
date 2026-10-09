@@ -1004,6 +1004,16 @@ public sealed class SettingsStore
 
     // --------------------------------------------------- Window / recent - //
 
+    /// <summary>
+    /// The page of the Preferences window that was open when it was last closed (its index), so the window opens on it
+    /// again. Window state, not a preference — written outside the Save / Apply draft.
+    /// </summary>
+    public int PreferencesPageIndex
+    {
+        get => Math.Max(0, ReadIntFrom(MainWindowGroup, "preferences_page", 0));
+        set => _file.SetRaw(MainWindowGroup, "preferences_page", Math.Max(0, value));
+    }
+
     /// <summary>Remembered geometry of the window with the given name (<see langword="null"/> when none).</summary>
     public WindowGeometry? GetWindowGeometry(string windowName)
     {

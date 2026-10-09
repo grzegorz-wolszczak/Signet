@@ -21,6 +21,13 @@ public partial class PreferencesWindow : Window
         InitializeComponent();
     }
 
+    /// <summary>The index of the selected page (the main window remembers it between openings).</summary>
+    public int SelectedPageIndex
+    {
+        get => Pages.SelectedIndex;
+        set => Pages.SelectedIndex = value >= 0 && value < Pages.ItemCount ? value : 0;
+    }
+
     /// <inheritdoc />
     protected override void OnDataContextChanged(System.EventArgs e)
     {
