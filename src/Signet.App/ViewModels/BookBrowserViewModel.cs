@@ -59,6 +59,12 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     public event EventHandler<IReadOnlyList<Resource>>? OpenResourceRequested;
 
     /// <summary>
+    /// Raised after deleting files also removed their entries from the table of contents (NAV / NCX) — the main window
+    /// refreshes the open tabs and the table of contents panel.
+    /// </summary>
+    public event EventHandler? TocChanged;
+
+    /// <summary>
     /// Request: Merge cannot be carried out for the selection (files other than HTML, the navigation document) — the
     /// argument is the message; the view shows it in an error window.
     /// </summary>
@@ -69,6 +75,12 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     /// book; returns whether one was created. Set by the main window.
     /// </summary>
     public Func<string, bool>? CheckpointBefore { get; set; }
+
+    /// <summary>
+    /// Commits the content of the open tabs into the resources — called before an operation that edits files the tabs
+    /// may show (deleting files also edits the table of contents). Set by the main window.
+    /// </summary>
+    public Action? SaveOpenTabs { get; set; }
 
     /// <summary>
     /// Rolls back the checkpoint created before an operation that changed nothing or failed.
@@ -392,8 +404,12 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         }
 
         bool checkpoint = Checkpoint(Strings.Get("CheckpointOp_DeleteFiles"));
+        SaveOpenTabs?.Invoke();
+        bool tocChanged = false;
         try
         {
+            // Entries of the table of contents pointing to the deleted files would be dead links.
+            tocChanged = TocFileEntries.RemoveEntriesForFiles(_book, removable.OfType<HtmlResource>().Select(r => r.BookPath));
             _book.GetFolderKeeper().BulkRemoveResources(removable);
             _book.Modified = true;
         }
@@ -401,9 +417,14 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         {
             Rewind(checkpoint);
             _statusBar.ShowMessage(Strings.Format("BookBrowser_DeleteFailed", ex.Message), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
+            tocChanged = false;
         }
 
         _model?.Refresh();
+        if (tocChanged)
+        {
+            TocChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     /// <summary>

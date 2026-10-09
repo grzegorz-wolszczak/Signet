@@ -194,6 +194,7 @@ public sealed partial class MainWindowViewModel
         _checkpointsPanel = new CheckpointsViewModel(_checkpoints);
         BookBrowser.CheckpointBefore = AddCheckpointBefore;
         BookBrowser.RewindCheckpoint = RewindCheckpoint;
+        BookBrowser.SaveOpenTabs = _tabManager.SaveAllTabs;
         _checkpointsPanel.RevertRequested += (_, state) => RevertToCheckpoint(state);
         _checkpointsPanel.CompareRequested += (_, state) => CompareWithCheckpoint(state);
         _dockFactory.Checkpoints = _checkpointsPanel;

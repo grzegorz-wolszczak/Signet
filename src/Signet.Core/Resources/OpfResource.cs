@@ -370,6 +370,57 @@ public sealed class OpfResource : XmlResource
         UpdateText(document);
     }
 
+    /// <summary>
+    /// The <c>content</c> of the first <c>&lt;meta name="…" content="…"/&gt;</c> with the given name; <c>null</c>
+    /// when there is none.
+    /// </summary>
+    public string? GetNamedMeta(string name)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(name);
+        MetaEntry? meta = GetOpfDocument().Metadata.FirstOrDefault(m => IsNamedMeta(m, name));
+        return meta?.Attributes.Value("content");
+    }
+
+    /// <summary>
+    /// Sets the <c>content</c> of the <c>&lt;meta name="…"/&gt;</c> with the given name (adding it when missing);
+    /// <c>null</c> removes every such meta. The OPF text is updated only when something changes.
+    /// </summary>
+    public void SetNamedMeta(string name, string? content)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(name);
+        OpfDocument document = GetOpfDocument();
+        if (content is null)
+        {
+            if (document.Metadata.RemoveAll(m => IsNamedMeta(m, name)) > 0)
+            {
+                UpdateText(document);
+            }
+
+            return;
+        }
+
+        MetaEntry? meta = document.Metadata.FirstOrDefault(m => IsNamedMeta(m, name));
+        if (meta is not null)
+        {
+            if (meta.Attributes.Value("content") != content)
+            {
+                meta.Attributes.Set("content", content);
+                UpdateText(document);
+            }
+
+            return;
+        }
+
+        MetaEntry created = new() { Name = "meta" };
+        created.Attributes.Set("name", name);
+        created.Attributes.Set("content", content);
+        document.Metadata.Add(created);
+        UpdateText(document);
+    }
+
+    private static bool IsNamedMeta(MetaEntry meta, string name) =>
+        string.Equals(meta.Name, "meta", StringComparison.Ordinal) && meta.Attributes.Value("name") == name;
+
     // =====================================================================
     //  Manifest
     // =====================================================================

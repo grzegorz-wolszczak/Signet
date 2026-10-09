@@ -190,6 +190,19 @@ public sealed partial class PreferencesViewModel : ObservableObject
         PreserveEntities = new ObservableCollection<PreserveEntityRow>(
             _settings.PreserveEntityCodeNames.Select(p => CreatePreserveEntityRow(p.Code, p.Name)));
 
+        // ---- Edition page ----
+        EditionPageSettings edition = _settings.EditionPage;
+        _editionPageEnabled = edition.Enabled;
+        _editionPagePosition = edition.Position;
+        _editionPageTitle = edition.Title;
+        _editionPageHeadingLevel = EditionPageHeadingLevels.First(l => l.Level == edition.HeadingLevel);
+        _editionPageAddToToc = edition.AddToToc;
+        _editionPageShowProgram = edition.ShowProgram;
+        _editionPageShowVersion = edition.ShowVersion;
+        _editionPageShowRevision = edition.ShowRevision;
+        _editionPageShowDate = edition.ShowDate;
+        EditionPageFields = new ObservableCollection<EditionPageFieldRow>(edition.Fields.Select(CreateEditionPageFieldRow));
+
         // Loading the pages writes some initial values to the draft (e.g. the default user dictionary): not changes.
         _settings.RebaseDraft();
         _settings.SettingChanged += (_, _) =>
@@ -1226,6 +1239,141 @@ public sealed partial class PreferencesViewModel : ObservableObject
     }
 
     // =====================================================================
+    //  Edition page
+    // =====================================================================
+
+    private IEditionPageHost? _editionPageHost;
+
+    /// <summary>The places in the spine the edition page can go to.</summary>
+    public static IReadOnlyList<EditionPagePosition> AvailableEditionPagePositions { get; } = Enum.GetValues<EditionPagePosition>();
+
+    /// <summary>The heading levels of the edition page title (h1–h6).</summary>
+    public static IReadOnlyList<HeadingLevelOption> EditionPageHeadingLevels { get; } =
+        Enumerable.Range(1, 6).Select(l => new HeadingLevelOption(l, "h" + l.ToString(System.Globalization.CultureInfo.InvariantCulture))).ToList();
+
+    /// <summary>Whether the edition page is added/updated on every save (enables the other options).</summary>
+    [ObservableProperty]
+    private bool _editionPageEnabled;
+
+    /// <summary>Where in the spine the edition page goes.</summary>
+    [ObservableProperty]
+    private EditionPagePosition _editionPagePosition;
+
+    /// <summary>The page heading (and TOC entry text); empty = by the book's language.</summary>
+    [ObservableProperty]
+    private string _editionPageTitle;
+
+    /// <summary>The level of the page heading.</summary>
+    [ObservableProperty]
+    private HeadingLevelOption _editionPageHeadingLevel;
+
+    /// <summary>Whether the page gets an entry in the book's table of contents.</summary>
+    [ObservableProperty]
+    private bool _editionPageAddToToc;
+
+    /// <summary>Whether the program row ("Signet") is written.</summary>
+    [ObservableProperty]
+    private bool _editionPageShowProgram;
+
+    /// <summary>Whether the version row (the Signet version that wrote the page) is written.</summary>
+    [ObservableProperty]
+    private bool _editionPageShowVersion;
+
+    /// <summary>Whether the revision row is written.</summary>
+    [ObservableProperty]
+    private bool _editionPageShowRevision;
+
+    /// <summary>Whether the save date row is written.</summary>
+    [ObservableProperty]
+    private bool _editionPageShowDate;
+
+    /// <summary>The user fields of the page table (key, value, shown).</summary>
+    public ObservableCollection<EditionPageFieldRow> EditionPageFields { get; }
+
+    /// <summary>The version of this Signet (the value of the version row, shown in the field list).</summary>
+    public static string EditionPageProgramVersion => AppVersion.Text;
+
+    /// <summary>What the open book holds: no book / no edition page / the page's bookpath.</summary>
+    public string EditionPageStatus =>
+        _editionPageHost is not { HasOpenBook: true }
+            ? Strings.Get("PreferencesWindow_EditionPageNoBook")
+            : _editionPageHost.EditionPageBookPath is { } path
+                ? Strings.Format("PreferencesWindow_EditionPageFound", path)
+                : Strings.Get("PreferencesWindow_EditionPageNotFound");
+
+    /// <summary>
+    /// Connects the "Remove the edition page" button with the open book (called when the window opens); <c>null</c> =
+    /// no book, the button stays disabled.
+    /// </summary>
+    public void AttachEditionPageHost(IEditionPageHost? host)
+    {
+        _editionPageHost = host;
+        OnPropertyChanged(nameof(EditionPageStatus));
+        RemoveEditionPageCommand.NotifyCanExecuteChanged();
+    }
+
+    private bool CanRemoveEditionPage() => _editionPageHost?.EditionPageBookPath is not null;
+
+    /// <summary>Removes the edition page from the open book right away (not part of Save / Apply).</summary>
+    [RelayCommand(CanExecute = nameof(CanRemoveEditionPage))]
+    private void RemoveEditionPage()
+    {
+        _editionPageHost?.RemoveEditionPage();
+        OnPropertyChanged(nameof(EditionPageStatus));
+        RemoveEditionPageCommand.NotifyCanExecuteChanged();
+    }
+
+    /// <summary>Adds a new (empty, shown) field row.</summary>
+    [RelayCommand]
+    private void AddEditionPageField()
+    {
+        EditionPageFields.Add(CreateEditionPageFieldRow(new EditionPageField(string.Empty, string.Empty, true)));
+        PersistEditionPage();
+    }
+
+    private EditionPageFieldRow CreateEditionPageFieldRow(EditionPageField field) =>
+        new(field, PersistEditionPage, RemoveEditionPageField);
+
+    private void RemoveEditionPageField(EditionPageFieldRow row)
+    {
+        EditionPageFields.Remove(row);
+        PersistEditionPage();
+    }
+
+    partial void OnEditionPageEnabledChanged(bool value) => PersistEditionPage();
+
+    partial void OnEditionPagePositionChanged(EditionPagePosition value) => PersistEditionPage();
+
+    partial void OnEditionPageTitleChanged(string value) => PersistEditionPage();
+
+    partial void OnEditionPageHeadingLevelChanged(HeadingLevelOption value) => PersistEditionPage();
+
+    partial void OnEditionPageAddToTocChanged(bool value) => PersistEditionPage();
+
+    partial void OnEditionPageShowProgramChanged(bool value) => PersistEditionPage();
+
+    partial void OnEditionPageShowVersionChanged(bool value) => PersistEditionPage();
+
+    partial void OnEditionPageShowRevisionChanged(bool value) => PersistEditionPage();
+
+    partial void OnEditionPageShowDateChanged(bool value) => PersistEditionPage();
+
+    private void PersistEditionPage()
+    {
+        _settings.EditionPage = new EditionPageSettings(
+            EditionPageEnabled,
+            EditionPagePosition,
+            EditionPageFields.Select(r => r.ToField()).ToList(),
+            EditionPageShowProgram,
+            EditionPageShowVersion,
+            EditionPageShowRevision,
+            EditionPageShowDate,
+            EditionPageAddToToc,
+            EditionPageTitle ?? string.Empty,
+            EditionPageHeadingLevel?.Level ?? 1);
+    }
+
+    // =====================================================================
     //  Keyboard Shortcuts
     // =====================================================================
 
@@ -1492,6 +1640,50 @@ public sealed partial class PreserveEntityRow : ObservableObject
     /// <summary>Character code as a number (<c>0</c> when the text is invalid).</summary>
     public ushort Code => ushort.TryParse(CodeText, out ushort value) ? value : (ushort)0;
 }
+
+/// <summary>A single row of the edition page fields (Preferences → Edition page): a label, a value and "shown".</summary>
+public sealed partial class EditionPageFieldRow : ObservableObject
+{
+    private readonly Action? _onChanged;
+    private readonly Action<EditionPageFieldRow>? _removeSelf;
+
+    internal EditionPageFieldRow(EditionPageField field, Action? onChanged, Action<EditionPageFieldRow>? removeSelf)
+    {
+        _key = field.Key;
+        _value = field.Value;
+        _show = field.Show;
+        _onChanged = onChanged;
+        _removeSelf = removeSelf;
+    }
+
+    /// <summary>The label (first column of the page table).</summary>
+    [ObservableProperty]
+    private string _key;
+
+    /// <summary>The value (second column of the page table).</summary>
+    [ObservableProperty]
+    private string _value;
+
+    /// <summary>Whether the row is written to the page.</summary>
+    [ObservableProperty]
+    private bool _show;
+
+    /// <summary>"Remove" — removes this row from the list.</summary>
+    [RelayCommand]
+    private void Remove() => _removeSelf?.Invoke(this);
+
+    partial void OnKeyChanged(string value) => _onChanged?.Invoke();
+
+    partial void OnValueChanged(string value) => _onChanged?.Invoke();
+
+    partial void OnShowChanged(bool value) => _onChanged?.Invoke();
+
+    /// <summary>The row as a settings value.</summary>
+    public EditionPageField ToField() => new(Key ?? string.Empty, Value ?? string.Empty, Show);
+}
+
+/// <summary>A heading level choice (1–6) with its display text (<c>h1</c>…).</summary>
+public sealed record HeadingLevelOption(int Level, string DisplayName);
 
 /// <summary>A single item of the UI language list in the "Language" panel (culture code + native name).</summary>
 public sealed record LanguageOption(string Code, string DisplayName);

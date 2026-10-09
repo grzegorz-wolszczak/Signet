@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -67,6 +68,12 @@ public interface IBookWorkspace
 
     /// <summary>Hands a freshly built publication over to the views.</summary>
     void ApplyBook(Book book, string? sourcePath);
+
+    /// <summary>
+    /// Refreshes the views after the book was changed outside of them (the edition page written on save): reloads the
+    /// open tabs, the Book Browser, the table of contents and the preview.
+    /// </summary>
+    void RefreshAfterBookEdit();
 }
 
 /// <summary>
@@ -444,7 +451,12 @@ public sealed class FileWorkflow
         try
         {
             _workspace.SaveOpenTabs();
+            bool stamped = StampEditionPage(book);
             new ExportEpub(book).WriteBook(fullFilePath);
+            if (stamped)
+            {
+                _workspace.RefreshAfterBookEdit();
+            }
 
             if (updateCurrentFilename)
             {
@@ -460,6 +472,31 @@ public sealed class FileWorkflow
         {
             _ = _prompts.ShowErrorAsync("Signet", Strings.Format("File_CannotSave", fullFilePath, ex.Message));
             _logger.LogError(ex, "Error saving EPUB {Path}", fullFilePath);
+            return false;
+        }
+    }
+
+    // Preferences → Edition page: the page is created or refreshed right before every save (also "Save a Copy").
+    // A failure does not stop the save — the book is saved without the refreshed page.
+    private bool StampEditionPage(Book book)
+    {
+        EditionPageSettings settings = _settings.EditionPage;
+        if (!settings.Enabled)
+        {
+            return false;
+        }
+
+        try
+        {
+            EditionStampResult result = EditionPage.Stamp(
+                book, settings, DateTime.UtcNow, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName, AppVersion.Text);
+            DebugLog.Write("File", $"edition page {(result.Created ? "created" : "updated")}, revision {result.Revision}");
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or ArgumentException or UnauthorizedAccessException)
+        {
+            _logger.LogError(ex, "Error writing the edition page");
+            _ = _prompts.ShowErrorAsync("Signet", Strings.Format("File_EditionPageFailed", ex.Message));
             return false;
         }
     }

@@ -877,6 +877,60 @@ public sealed class SettingsStore
         }
     }
 
+    /// <summary>The edition page settings (Preferences → Edition page). Unknown values fall back to the defaults.</summary>
+    public EditionPageSettings EditionPage
+    {
+        get
+        {
+            EditionPageSettings d = EditionPageSettings.Default;
+            List<EditionPageField> fields = new();
+            if (_file.GetRaw(Group, "edition_page_fields") is JsonArray array)
+            {
+                foreach (JsonNode? node in array)
+                {
+                    if (node is JsonObject obj)
+                    {
+                        fields.Add(new EditionPageField(
+                            obj["key"] is JsonValue k && k.TryGetValue(out string? key) ? key : string.Empty,
+                            obj["value"] is JsonValue v && v.TryGetValue(out string? value) ? value : string.Empty,
+                            obj["show"] is not JsonValue show || !show.TryGetValue(out bool shown) || shown));
+                    }
+                }
+            }
+
+            return new EditionPageSettings(
+                ReadBool("edition_page_enabled", d.Enabled),
+                Enum.TryParse(ReadString("edition_page_position", d.Position.ToString()), out EditionPagePosition position)
+                    && Enum.IsDefined(position) ? position : d.Position,
+                fields,
+                ReadBool("edition_page_show_program", d.ShowProgram),
+                ReadBool("edition_page_show_version", d.ShowVersion),
+                ReadBool("edition_page_show_revision", d.ShowRevision),
+                ReadBool("edition_page_show_date", d.ShowDate),
+                ReadBool("edition_page_add_to_toc", d.AddToToc),
+                ReadString("edition_page_title", d.Title),
+                Math.Clamp(ReadInt("edition_page_heading_level", d.HeadingLevel), 1, 6));
+        }
+
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            _file.SetRaw(Group, "edition_page_enabled", value.Enabled);
+            WriteSilent("edition_page_position", value.Position.ToString());
+            _file.SetRaw(Group, "edition_page_fields", new JsonArray(value.Fields
+                .Select(f => (JsonNode?)new JsonObject { ["key"] = f.Key, ["value"] = f.Value, ["show"] = f.Show })
+                .ToArray()));
+            _file.SetRaw(Group, "edition_page_show_program", value.ShowProgram);
+            _file.SetRaw(Group, "edition_page_show_version", value.ShowVersion);
+            _file.SetRaw(Group, "edition_page_show_revision", value.ShowRevision);
+            _file.SetRaw(Group, "edition_page_show_date", value.ShowDate);
+            _file.SetRaw(Group, "edition_page_add_to_toc", value.AddToToc);
+            WriteSilent("edition_page_title", value.Title);
+            WriteSilent("edition_page_heading_level", Math.Clamp(value.HeadingLevel, 1, 6));
+            RaiseChanged("edition_page");
+        }
+    }
+
     /// <summary>Code editor appearance settings — light theme.</summary>
     public CodeViewAppearance CodeViewAppearance
     {

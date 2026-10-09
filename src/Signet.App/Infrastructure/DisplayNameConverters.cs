@@ -15,4 +15,9 @@ public static class DisplayNameConverters
     public static readonly IValueConverter PreviewHighlightStyle =
         new FuncValueConverter<Core.Misc.PreviewHighlightStyle, string>(
             value => Strings.TryGet("PreviewHighlightStyle_" + value) ?? value.ToString());
+
+    /// <summary><see cref="Core.Misc.EditionPagePosition"/> → "Last" / "Second (after the cover)"… (keys <c>EditionPagePosition_*</c>).</summary>
+    public static readonly IValueConverter EditionPagePosition =
+        new FuncValueConverter<Core.Misc.EditionPagePosition, string>(
+            value => Strings.TryGet("EditionPagePosition_" + value) ?? value.ToString());
 }

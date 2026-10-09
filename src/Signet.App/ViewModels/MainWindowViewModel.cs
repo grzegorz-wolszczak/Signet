@@ -40,7 +40,7 @@ namespace Signet.App.ViewModels;
 /// An action without a handler shows a message on the status bar when executed.
 /// </summary>
 public sealed partial class MainWindowViewModel
-    : ViewModelBase, IBookWorkspace, IRecentFilesMenu, IBookmarksMenu, IMultiFileSearchHost, ICodeTabHost, ILanguageAware
+    : ViewModelBase, IBookWorkspace, IEditionPageHost, IRecentFilesMenu, IBookmarksMenu, IMultiFileSearchHost, ICodeTabHost, ILanguageAware
 {
     private readonly MenuBuilder _menuBuilder;
 
@@ -434,6 +434,7 @@ public sealed partial class MainWindowViewModel
         _preview.CodeCaretJumpRequested += OnPreviewCodeCaretJumpRequested;
         _preview.PropertyChanged += OnPreviewPropertyChanged;
         BookBrowser.OpenResourceRequested += OnOpenResourceRequested;
+        BookBrowser.TocChanged += (_, _) => ((IBookWorkspace)this).RefreshAfterBookEdit();
         BookBrowser.ReloadOpenTabs = ReloadOpenTabsAndPreview;
         BookBrowser.ValidateWithW3CRequested += OnValidateSelectedCssWithW3C;
     }
@@ -969,6 +970,53 @@ public sealed partial class MainWindowViewModel
     void IBookWorkspace.SaveOpenTabs()
     {
         _tabManager.SaveAllTabs();
+        _preview.Refresh();
+        _toc.Refresh();
+    }
+
+    // ----------------------------------------------------- IEditionPageHost --- //
+
+    /// <inheritdoc />
+    bool IEditionPageHost.HasOpenBook => _currentBook is not null;
+
+    /// <inheritdoc />
+    string? IEditionPageHost.EditionPageBookPath =>
+        _currentBook is null ? null : EditionPage.Find(_currentBook)?.BookPath;
+
+    /// <inheritdoc />
+    bool IEditionPageHost.RemoveEditionPage()
+    {
+        if (_currentBook is null)
+        {
+            return false;
+        }
+
+        _tabManager.SaveAllTabs();
+        bool checkpoint = AddCheckpointBefore(Strings.Get("CheckpointOp_RemoveEditionPage"));
+        if (!EditionPage.Remove(_currentBook))
+        {
+            if (checkpoint)
+            {
+                RewindCheckpoint();
+            }
+
+            return false;
+        }
+
+        ((IBookWorkspace)this).RefreshAfterBookEdit();
+        _statusBar.ShowMessage(Strings.Get("Status_EditionPageRemoved"), TimeSpan.FromSeconds(4));
+        return true;
+    }
+
+    /// <inheritdoc />
+    void IBookWorkspace.RefreshAfterBookEdit()
+    {
+        foreach (ContentTabViewModel view in _tabManager.OpenTabViews)
+        {
+            view.Reload();
+        }
+
+        BookBrowser.Refresh();
         _preview.Refresh();
         _toc.Refresh();
     }

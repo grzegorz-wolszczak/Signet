@@ -1,5 +1,7 @@
 using System;
 using System.Buffers;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Signet.Core.Misc;
 
@@ -362,4 +364,75 @@ public sealed record CodeViewAppearance
         SearchMatchBackgroundColor = "#695A2E",
         SelectionBackgroundColor = "#264F78",
     };
+}
+
+/// <summary>Where in the reading order (spine) the edition page goes.</summary>
+public enum EditionPagePosition
+{
+    /// <summary>The first file of the spine.</summary>
+    First,
+
+    /// <summary>The second file of the spine (after the cover, if the book has one).</summary>
+    Second,
+
+    /// <summary>The last-but-one file of the spine.</summary>
+    Penultimate,
+
+    /// <summary>The last file of the spine.</summary>
+    Last,
+}
+
+/// <summary>A user field of the edition page table (e.g. "Edited by" — "GreatWorksPublishing").</summary>
+/// <param name="Key">The label in the first column.</param>
+/// <param name="Value">The value in the second column.</param>
+/// <param name="Show">Whether the row is written to the page.</param>
+public readonly record struct EditionPageField(string Key, string Value, bool Show);
+
+/// <summary>
+/// The edition page (Preferences → Edition page): a page with a table of fields that Signet adds to the book and
+/// updates on every save, so the copy on a reader can be told apart from an older one. Global — not per book.
+/// </summary>
+/// <param name="Enabled">Whether the page is added/updated on every save.</param>
+/// <param name="Position">Where in the spine the page goes.</param>
+/// <param name="Fields">The user fields, in table order (before the fixed rows).</param>
+/// <param name="ShowProgram">Whether the program row ("Signet") is written.</param>
+/// <param name="ShowVersion">Whether the version row (the version of Signet that wrote the page) is written.</param>
+/// <param name="ShowRevision">Whether the revision row (a counter kept in the book) is written.</param>
+/// <param name="ShowDate">Whether the save date row (UTC) is written.</param>
+/// <param name="AddToToc">Whether the page gets an entry in the book's table of contents (NAV / NCX).</param>
+/// <param name="Title">The page heading (and the TOC entry text); empty = by the book's language.</param>
+/// <param name="HeadingLevel">The level of the page heading (1–6).</param>
+public sealed record EditionPageSettings(
+    bool Enabled,
+    EditionPagePosition Position,
+    IReadOnlyList<EditionPageField> Fields,
+    bool ShowProgram,
+    bool ShowVersion,
+    bool ShowRevision,
+    bool ShowDate,
+    bool AddToToc,
+    string Title,
+    int HeadingLevel)
+{
+    /// <summary>Default values: disabled, the last page, no user fields, all fixed rows shown, in the TOC, h1.</summary>
+    public static EditionPageSettings Default { get; } =
+        new(false, EditionPagePosition.Last, Array.Empty<EditionPageField>(), true, true, true, true, true, string.Empty, 1);
+
+    /// <inheritdoc />
+    public bool Equals(EditionPageSettings? other) =>
+        other is not null
+        && Enabled == other.Enabled
+        && Position == other.Position
+        && Fields.SequenceEqual(other.Fields)
+        && ShowProgram == other.ShowProgram
+        && ShowVersion == other.ShowVersion
+        && ShowRevision == other.ShowRevision
+        && ShowDate == other.ShowDate
+        && AddToToc == other.AddToToc
+        && string.Equals(Title, other.Title, StringComparison.Ordinal)
+        && HeadingLevel == other.HeadingLevel;
+
+    /// <inheritdoc />
+    public override int GetHashCode() =>
+        HashCode.Combine(Enabled, Position, Fields.Count, HashCode.Combine(ShowProgram, ShowVersion, ShowRevision, ShowDate), AddToToc, Title, HeadingLevel);
 }

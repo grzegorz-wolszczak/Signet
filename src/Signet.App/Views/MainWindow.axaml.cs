@@ -990,6 +990,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
 
         SettingsStore settings = services.GetRequiredService<SettingsStore>();
         PreferencesViewModel preferences = services.GetRequiredService<PreferencesViewModel>();
+        preferences.AttachEditionPageHost(_boundViewModel);
         PreferencesWindow window = new()
         {
             DataContext = preferences,

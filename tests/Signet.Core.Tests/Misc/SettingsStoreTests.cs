@@ -61,6 +61,9 @@ public sealed class SettingsStoreTests
         writer.StandardizationEnabledSteps = new[] { StandardizationStep.RebaseManifestIds };
         writer.WarningAppearance = new WarningAppearance(16, "#102030", "#405060");
         writer.ErrorAppearance = new ErrorAppearance("#a01010", "#ff8080");
+        writer.EditionPage = new EditionPageSettings(
+            true, EditionPagePosition.Second, new[] { new EditionPageField("Edited by", "GreatWorksPublishing", true), new EditionPageField("Note", "x", false) },
+            false, true, false, true, false, "Colophon", 3);
         writer.OpenTagHintAppearance = new OpenTagHintAppearance("Consolas", 15, "#111111", "#222222", "#333333", "#444444");
         writer.Save();
 
@@ -79,6 +82,9 @@ public sealed class SettingsStoreTests
         reader.StandardizationEnabledSteps.Should().Equal(StandardizationStep.RebaseManifestIds);
         reader.WarningAppearance.Should().Be(new WarningAppearance(16, "#102030", "#405060"));
         reader.ErrorAppearance.Should().Be(new ErrorAppearance("#a01010", "#ff8080"));
+        reader.EditionPage.Should().Be(new EditionPageSettings(
+            true, EditionPagePosition.Second, new[] { new EditionPageField("Edited by", "GreatWorksPublishing", true), new EditionPageField("Note", "x", false) },
+            false, true, false, true, false, "Colophon", 3));
         reader.OpenTagHintAppearance.Should().Be(new OpenTagHintAppearance("Consolas", 15, "#111111", "#222222", "#333333", "#444444"));
     }
 
@@ -97,6 +103,7 @@ public sealed class SettingsStoreTests
         sut.StandardizationEnabledSteps.Should().Equal(EpubStandardization.AllSteps, "every step is checked until the dialog is applied");
         sut.WarningAppearance.Should().Be(WarningAppearance.Default, "warnings are as large as the interface text by default");
         sut.ErrorAppearance.Should().Be(ErrorAppearance.Default);
+        sut.EditionPage.Should().Be(EditionPageSettings.Default, "the edition page is off until the user turns it on");
         sut.CodeViewOpenTagHint.Should().BeTrue("the opening tag hint is on by default");
         sut.CodeViewOpenTagHintDelayMs.Should().Be(500);
         sut.OpenTagHintAppearance.Should().Be(OpenTagHintAppearance.Default, "the hint uses the editor font and the theme tooltip colors");

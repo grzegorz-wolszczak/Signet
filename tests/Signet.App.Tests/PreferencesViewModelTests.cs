@@ -11,6 +11,7 @@ using Signet.App.Input;
 using Microsoft.Extensions.Logging.Abstractions;
 using Signet.App.Infrastructure;
 using Signet.App.Resources;
+using Signet.App.Services;
 using Signet.App.ViewModels;
 using Signet.Core.Misc;
 using Signet.Core.Spellcheck;
@@ -166,6 +167,82 @@ public sealed class PreferencesViewModelTests
         sut.ApplyCommand.Execute(null);
         host.Settings.ErrorAppearance.Should().Be(ErrorAppearance.Default);
         sut.ErrorDarkColor.Value.Should().Be(ErrorAppearance.Default.DarkColor);
+    }
+
+    private sealed class FakeEditionPageHost : IEditionPageHost
+    {
+        public bool HasOpenBook { get; set; } = true;
+
+        public string? EditionPageBookPath { get; set; }
+
+        public int RemoveCalls { get; private set; }
+
+        public bool RemoveEditionPage()
+        {
+            RemoveCalls++;
+            EditionPageBookPath = null;
+            return true;
+        }
+    }
+
+    [Fact]
+    public void Edition_page_fields_start_from_settings_and_changes_persist_on_apply()
+    {
+        using TestHost host = new();
+        string value = new Fixture().Create<string>();
+        host.Settings.EditionPage = EditionPageSettings.Default with
+        {
+            Enabled = true,
+            Position = EditionPagePosition.Second,
+            Fields = new[] { new EditionPageField("Edited by", value, true) },
+            HeadingLevel = 2,
+        };
+        PreferencesViewModel sut = NewOn(host);
+
+        sut.EditionPageEnabled.Should().BeTrue();
+        sut.EditionPagePosition.Should().Be(EditionPagePosition.Second);
+        sut.EditionPageHeadingLevel.Level.Should().Be(2);
+        sut.EditionPageFields.Should().ContainSingle().Which.Value.Should().Be(value);
+
+        sut.EditionPageFields[0].Show = false;
+        sut.AddEditionPageFieldCommand.Execute(null);
+        sut.EditionPageFields[1].Key = "Source";
+        sut.EditionPageShowDate = false;
+        sut.EditionPageShowVersion = false;
+        sut.EditionPagePosition = EditionPagePosition.Last;
+        host.Settings.EditionPage.Position.Should().Be(EditionPagePosition.Second, "nothing is written before Apply");
+        sut.ApplyCommand.Execute(null);
+
+        EditionPageSettings saved = host.Settings.EditionPage;
+        saved.Position.Should().Be(EditionPagePosition.Last);
+        saved.ShowDate.Should().BeFalse();
+        (saved.ShowProgram, saved.ShowVersion).Should().Be((true, false));
+        saved.Fields.Should().Equal(new EditionPageField("Edited by", value, false), new EditionPageField("Source", string.Empty, true));
+
+        sut.EditionPageFields[0].RemoveCommand.Execute(null);
+        sut.ApplyCommand.Execute(null);
+        host.Settings.EditionPage.Fields.Select(f => f.Key).Should().Equal("Source");
+    }
+
+    [Fact]
+    public void Removing_the_edition_page_is_possible_only_when_the_open_book_has_one()
+    {
+        using TestHost host = new();
+        PreferencesViewModel sut = NewOn(host);
+        sut.RemoveEditionPageCommand.CanExecute(null).Should().BeFalse("no book is attached");
+        sut.EditionPageStatus.Should().Be(Strings.Get("PreferencesWindow_EditionPageNoBook"));
+
+        FakeEditionPageHost book = new() { EditionPageBookPath = "OEBPS/Text/signet_edition.xhtml" };
+        sut.AttachEditionPageHost(book);
+
+        sut.RemoveEditionPageCommand.CanExecute(null).Should().BeTrue();
+        sut.EditionPageStatus.Should().Contain("signet_edition.xhtml");
+
+        sut.RemoveEditionPageCommand.Execute(null);
+
+        book.RemoveCalls.Should().Be(1);
+        sut.RemoveEditionPageCommand.CanExecute(null).Should().BeFalse();
+        sut.EditionPageStatus.Should().Be(Strings.Get("PreferencesWindow_EditionPageNotFound"));
     }
 
     [Fact]

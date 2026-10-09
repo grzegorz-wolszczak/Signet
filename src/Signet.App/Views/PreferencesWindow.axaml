@@ -513,6 +513,103 @@
         </ScrollViewer>
       </TabItem>
 
+      <!-- =============================== Edition page =============================== -->
+      <!-- The page Signet adds to the book on every save (EditionPage): removing it from the open book right away,
+           then the settings (shared by all books), enabled only while the page is switched on. -->
+      <TabItem Header="{loc:Loc PreferencesWindow_EditionPage}">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="8">
+            <TextBlock Text="{loc:Loc PreferencesWindow_EditionPageIntro}" TextWrapping="Wrap" Opacity="0.75" />
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Button x:Name="RemoveEditionPageButton" Content="{loc:Loc PreferencesWindow_EditionPageRemove}"
+                      Command="{Binding RemoveEditionPageCommand}" />
+              <TextBlock Text="{Binding EditionPageStatus}" VerticalAlignment="Center" Opacity="0.75" />
+            </StackPanel>
+
+            <CheckBox x:Name="EditionPageEnabledBox" Content="{loc:Loc PreferencesWindow_EditionPageEnabled}"
+                      IsChecked="{Binding EditionPageEnabled}" />
+
+            <StackPanel x:Name="EditionPageOptions" Spacing="10" Margin="28,0,0,0" IsEnabled="{Binding EditionPageEnabled}">
+              <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_EditionPagePosition}" VerticalAlignment="Center" />
+                <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding AvailableEditionPagePositions}"
+                          SelectedItem="{Binding EditionPagePosition}">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                      <TextBlock Text="{Binding Converter={x:Static infra:DisplayNameConverters.EditionPagePosition}}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_EditionPageTitle}" VerticalAlignment="Center" />
+                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding EditionPageTitle}"
+                         PlaceholderText="{loc:Loc PreferencesWindow_EditionPageTitlePlaceholder}" />
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc PreferencesWindow_EditionPageHeadingLevel}" VerticalAlignment="Center" />
+                <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding EditionPageHeadingLevels}"
+                          SelectedItem="{Binding EditionPageHeadingLevel}">
+                  <ComboBox.ItemTemplate>
+                    <DataTemplate DataType="vm:HeadingLevelOption">
+                      <TextBlock Text="{Binding DisplayName}" />
+                    </DataTemplate>
+                  </ComboBox.ItemTemplate>
+                </ComboBox>
+              </Grid>
+
+              <CheckBox Content="{loc:Loc PreferencesWindow_EditionPageAddToToc}" IsChecked="{Binding EditionPageAddToToc}" />
+
+              <!-- The table fields: the user's rows (editable, removable), then the two fixed rows — revision and save
+                   date — which can only be shown or hidden. -->
+              <Border Classes="section">
+                <StackPanel Spacing="4">
+                  <TextBlock Text="{loc:Loc PreferencesWindow_EditionPageFields}" FontWeight="Bold" />
+                  <Grid ColumnDefinitions="60,*,2*,80" ColumnSpacing="6" Opacity="0.75">
+                    <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_EditionPageShow}" />
+                    <TextBlock Grid.Column="1" Text="{loc:Loc PreferencesWindow_EditionPageKey}" />
+                    <TextBlock Grid.Column="2" Text="{loc:Loc PreferencesWindow_EditionPageValue}" />
+                  </Grid>
+                  <ItemsControl x:Name="EditionPageFieldList" ItemsSource="{Binding EditionPageFields}">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate DataType="vm:EditionPageFieldRow">
+                        <Grid ColumnDefinitions="60,*,2*,80" Margin="0,2" ColumnSpacing="6">
+                          <CheckBox Grid.Column="0" IsChecked="{Binding Show}" HorizontalAlignment="Center" />
+                          <TextBox Grid.Column="1" Text="{Binding Key}" />
+                          <TextBox Grid.Column="2" Text="{Binding Value}" />
+                          <Button Grid.Column="3" Content="{loc:Loc Common_Remove}" Command="{Binding RemoveCommand}" />
+                        </Grid>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                  <Grid ColumnDefinitions="60,*,2*,80" Margin="0,2" ColumnSpacing="6">
+                    <CheckBox Grid.Column="0" IsChecked="{Binding EditionPageShowProgram}" HorizontalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="{loc:Loc PreferencesWindow_EditionPageProgram}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Text="Signet" VerticalAlignment="Center" Opacity="0.75" />
+                  </Grid>
+                  <Grid ColumnDefinitions="60,*,2*,80" Margin="0,2" ColumnSpacing="6">
+                    <CheckBox Grid.Column="0" IsChecked="{Binding EditionPageShowVersion}" HorizontalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="{loc:Loc PreferencesWindow_EditionPageVersion}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Text="{Binding EditionPageProgramVersion}" VerticalAlignment="Center" Opacity="0.75" />
+                  </Grid>
+                  <Grid ColumnDefinitions="60,*,2*,80" Margin="0,2" ColumnSpacing="6">
+                    <CheckBox Grid.Column="0" IsChecked="{Binding EditionPageShowRevision}" HorizontalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="{loc:Loc PreferencesWindow_EditionPageRevision}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Text="{loc:Loc PreferencesWindow_EditionPageRevisionValue}" VerticalAlignment="Center" Opacity="0.75" />
+                  </Grid>
+                  <Grid ColumnDefinitions="60,*,2*,80" Margin="0,2" ColumnSpacing="6">
+                    <CheckBox Grid.Column="0" IsChecked="{Binding EditionPageShowDate}" HorizontalAlignment="Center" />
+                    <TextBlock Grid.Column="1" Text="{loc:Loc PreferencesWindow_EditionPageDate}" VerticalAlignment="Center" />
+                    <TextBlock Grid.Column="2" Text="{loc:Loc PreferencesWindow_EditionPageDateValue}" VerticalAlignment="Center" Opacity="0.75" />
+                  </Grid>
+                  <Button Content="{loc:Loc Common_Add}" Command="{Binding AddEditionPageFieldCommand}" HorizontalAlignment="Left" Margin="0,4,0,0" />
+                  <TextBlock Text="{loc:Loc PreferencesWindow_EditionPageFixedNote}" TextWrapping="Wrap" Opacity="0.7" />
+                </StackPanel>
+              </Border>
+            </StackPanel>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
       <!-- ============================= Mend & Prettify ============================= -->
       <!-- Mend and Prettify are separate operations, so each has its own box of options. -->
       <TabItem Header="{loc:Loc PreferencesWindow_MendPrettify}">

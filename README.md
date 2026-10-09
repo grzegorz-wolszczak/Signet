@@ -79,6 +79,11 @@ EPUB editor I know of) has them:
   failed operations) are shown in red (the color is set in Preferences). The panel tab has a bell icon.
   Unread errors put a red dot on the bell with the count next to it (`[4]`), both on the tab and in
   the status bar.
+- **Edition page** (Preferences → Edition page): on every save Signet adds or refreshes a page with a
+  table about the edition: your own fields (e.g. "Edited by: GreatWorksPublishing"), the Signet version
+  that wrote it, a revision number that grows with every save and the save date (UTC). It shows on a
+  reader whether the file there is the latest version. You choose where the page goes (first, second, last but one or last) and whether it
+  gets a table of contents entry. Signet finds the page by a marker, so it can also be removed later.
 - **Switching the UI language (Polish / English) on the fly**, without restarting the application.
 
 ## Sigil features that are not implemented

@@ -4207,4 +4207,95 @@ Czy usunąć pozostałe przypisania?</value>
   <data name="KeymapMouseDialog_Reserved" xml:space="preserve">
     <value>Zwykły klik lewym lub prawym przyciskiem nie może być skrótem.</value>
   </data>
+  <data name="File_EditionPageFailed" xml:space="preserve">
+    <value>Nie udało się zapisać strony wydania (książka zostanie zapisana bez jej aktualizacji):
+{0}</value>
+  </data>
+  <data name="CheckpointOp_RemoveEditionPage" xml:space="preserve">
+    <value>Usuń stronę wydania</value>
+  </data>
+  <data name="Status_EditionPageRemoved" xml:space="preserve">
+    <value>Usunięto stronę wydania.</value>
+  </data>
+  <data name="PreferencesWindow_EditionPage" xml:space="preserve">
+    <value>Strona wydania</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageIntro" xml:space="preserve">
+    <value>Strona z tabelą informacji o wydaniu (np. rewizja i data zapisu), którą Signet dodaje do książki i aktualizuje przy każdym zapisie. Pozwala sprawdzić na czytniku, czy to najnowsza wersja pliku. Ustawienia są wspólne dla wszystkich książek.</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageRemove" xml:space="preserve">
+    <value>Usuń stronę wydania z otwartej książki</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageNoBook" xml:space="preserve">
+    <value>Nie otwarto żadnej książki.</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageNotFound" xml:space="preserve">
+    <value>Otwarta książka nie ma strony wydania.</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageFound" xml:space="preserve">
+    <value>Strona wydania w otwartej książce: {0}</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageEnabled" xml:space="preserve">
+    <value>Dodawaj i aktualizuj stronę wydania przy każdym zapisie</value>
+  </data>
+  <data name="PreferencesWindow_EditionPagePosition" xml:space="preserve">
+    <value>Położenie strony</value>
+  </data>
+  <data name="EditionPagePosition_First" xml:space="preserve">
+    <value>Pierwsza</value>
+  </data>
+  <data name="EditionPagePosition_Second" xml:space="preserve">
+    <value>Druga (po okładce)</value>
+  </data>
+  <data name="EditionPagePosition_Penultimate" xml:space="preserve">
+    <value>Przedostatnia</value>
+  </data>
+  <data name="EditionPagePosition_Last" xml:space="preserve">
+    <value>Ostatnia</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageTitle" xml:space="preserve">
+    <value>Tytuł strony</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageTitlePlaceholder" xml:space="preserve">
+    <value>automatycznie wg języka książki</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageHeadingLevel" xml:space="preserve">
+    <value>Poziom nagłówka tytułu</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageAddToToc" xml:space="preserve">
+    <value>Dodaj stronę do spisu treści książki (NAV / NCX)</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageFields" xml:space="preserve">
+    <value>Pola tabeli</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageShow" xml:space="preserve">
+    <value>Pokaż</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageKey" xml:space="preserve">
+    <value>Pole</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageValue" xml:space="preserve">
+    <value>Wartość</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageRevision" xml:space="preserve">
+    <value>Rewizja</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageRevisionValue" xml:space="preserve">
+    <value>(licznik zapisów, pamiętany w książce)</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageDate" xml:space="preserve">
+    <value>Data zapisu</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageDateValue" xml:space="preserve">
+    <value>(data i godzina zapisu, UTC)</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageFixedNote" xml:space="preserve">
+    <value>Etykiety stałych wierszy zależą od języka książki. Możesz je zmienić bezpośrednio na stronie wydania w książce, a Signet zapamięta zmianę w tej książce.</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageProgram" xml:space="preserve">
+    <value>Program</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageVersion" xml:space="preserve">
+    <value>Wersja</value>
+  </data>
 </root>

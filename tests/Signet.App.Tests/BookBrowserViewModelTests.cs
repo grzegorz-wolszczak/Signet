@@ -296,6 +296,36 @@ public sealed class BookBrowserViewModelTests
     }
 
     [Fact]
+    public void ApplyDelete_removes_the_toc_entries_of_deleted_files_and_reports_it()
+    {
+        using Book book = BookCreator.CreateNewBook("3.0");
+        HtmlResource chapter = book.CreateEmptyHtmlFile();
+        HtmlResource kept = book.GetHtmlResourcesExcludingNav()[0];
+        TocEditModel.Save(book, new TocEntry
+        {
+            IsRoot = true,
+            Children =
+            {
+                new TocEntry { Text = "Kept", Target = kept.BookPath },
+                new TocEntry { Text = "Deleted", Target = chapter.BookPath },
+            },
+        });
+        BookBrowserViewModel sut = NewViewModel(out _);
+        sut.SetBook(book);
+        int tabsSaved = 0;
+        int tocChanged = 0;
+        sut.SaveOpenTabs = () => tabsSaved++;
+        sut.TocChanged += (_, _) => tocChanged++;
+        BookBrowserNode node = Flatten(sut.Nodes.Single(n => n.Header == "Text")).Single(n => n.Entry?.Resource == chapter);
+
+        sut.ApplyDelete(new[] { node.Entry! });
+
+        TocEditModel.GetRootTocEntry(book).Children.Select(e => e.Text).Should().Equal("Kept");
+        tabsSaved.Should().Be(1, "the open tabs are committed before the TOC is edited");
+        tocChanged.Should().Be(1);
+    }
+
+    [Fact]
     public void AddBlankHtml_addsResourceAndRaisesOpenRequest()
     {
         using TempDir temp = new();

@@ -29,6 +29,10 @@ namespace Signet.App.UiTests;
 /// </summary>
 public sealed class PreferencesWindowRenderTests
 {
+    // Selects a page by its header (resource key), so the tests do not depend on the order of the pages.
+    private static void SelectTab(TabControl tabs, string headerKey) =>
+        tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(t => Equals(t.Header, Strings.Get(headerKey)));
+
     private static PreferencesWindow BuildWindow() => BuildWindow(out _);
 
     private static PreferencesWindow BuildWindow(out SettingsStore settings)
@@ -46,6 +50,36 @@ public sealed class PreferencesWindowRenderTests
         UiDensityManager uiDensity = new(settings, iconTheme, NullLogger<UiDensityManager>.Instance);
         PreferencesViewModel vm = new(settings, spellChecker, theme, localization, iconTheme, shortcuts, registry, uiDensity);
         return new PreferencesWindow { DataContext = vm };
+    }
+
+    /// <summary>
+    /// The "Edition page" tab: the remove button is disabled without a book, the options follow the main check box and
+    /// "Add" puts a new editable row into the field list.
+    /// </summary>
+    [AvaloniaFact]
+    public void Edition_page_tab_enables_its_options_with_the_check_box()
+    {
+        PreferencesWindow window = BuildWindow();
+        var vm = (PreferencesViewModel)window.DataContext!;
+        window.Show();
+        TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
+        SelectTab(tabs, "PreferencesWindow_EditionPage");
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+
+        Control Find(string name) => window.GetVisualDescendants().OfType<Control>().Single(c => c.Name == name);
+        Find("RemoveEditionPageButton").IsEffectivelyEnabled.Should().BeFalse("no book is open");
+        Find("EditionPageOptions").IsEffectivelyEnabled.Should().BeFalse("the edition page is off by default");
+
+        ((CheckBox)Find("EditionPageEnabledBox")).IsChecked = true;
+        vm.AddEditionPageFieldCommand.Execute(null);
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+
+        vm.EditionPageEnabled.Should().BeTrue();
+        Find("EditionPageOptions").IsEffectivelyEnabled.Should().BeTrue();
+        Find("EditionPageFieldList").GetVisualDescendants().OfType<TextBox>().Should().HaveCount(2, "a new row has a key and a value box");
+        window.Close();
     }
 
     /// <summary>
@@ -174,7 +208,7 @@ public sealed class PreferencesWindowRenderTests
         Dispatcher.UIThread.RunJobs();
 
         TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
-        tabs.SelectedIndex = 6; // Keyboard Shortcuts
+        SelectTab(tabs, "PreferencesWindow_KeyboardShortcuts");
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
@@ -203,7 +237,7 @@ public sealed class PreferencesWindowRenderTests
         window.Show();
         Dispatcher.UIThread.RunJobs();
         TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
-        tabs.SelectedIndex = 6; // Keyboard Shortcuts
+        SelectTab(tabs, "PreferencesWindow_KeyboardShortcuts");
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
@@ -256,7 +290,7 @@ public sealed class PreferencesWindowRenderTests
         window.Show();
         Dispatcher.UIThread.RunJobs();
         TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
-        tabs.SelectedIndex = 5; // Spellcheck
+        SelectTab(tabs, "PreferencesWindow_Spellcheck");
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
@@ -320,7 +354,7 @@ public sealed class PreferencesWindowRenderTests
         window.Show();
         Dispatcher.UIThread.RunJobs();
         TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
-        tabs.SelectedIndex = 3; // General
+        SelectTab(tabs, "PreferencesWindow_General");
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
@@ -345,7 +379,7 @@ public sealed class PreferencesWindowRenderTests
         window.Show();
         Dispatcher.UIThread.RunJobs();
         TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
-        tabs.SelectedIndex = 4; // Mend & Prettify
+        SelectTab(tabs, "PreferencesWindow_MendPrettify");
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
@@ -406,7 +440,7 @@ public sealed class PreferencesWindowRenderTests
         window.Show();
         Dispatcher.UIThread.RunJobs();
         TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
-        tabs.SelectedIndex = 2; // Preview
+        SelectTab(tabs, "PreferencesWindow_Preview");
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();

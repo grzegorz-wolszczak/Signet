@@ -7,6 +7,7 @@ using Signet.App.Services;
 using Signet.Core.BookManipulation;
 using Signet.Core.Localization;
 using Signet.Core.Misc;
+using Signet.Core.Resources;
 using Signet.Core.Tests.TestSupport;
 using Xunit;
 
@@ -27,7 +28,11 @@ public sealed class FileWorkflowTests
 
         public string? LastAppliedPath { get; private set; }
 
+        public int RefreshAfterBookEditCalls { get; private set; }
+
         public void SaveOpenTabs() => SaveOpenTabsCalls++;
+
+        public void RefreshAfterBookEdit() => RefreshAfterBookEditCalls++;
 
         public void ApplyBook(Book book, string? sourcePath)
         {
@@ -144,6 +149,60 @@ public sealed class FileWorkflowTests
         await h.Workflow.SaveAsAsync();
 
         h.Settings.RecentFiles.Should().ContainSingle().Which.Should().Be(Path.GetFullPath(target));
+    }
+
+    [Fact]
+    public async Task Saving_with_the_edition_page_on_writes_the_page_into_the_saved_file()
+    {
+        using Harness h = new();
+        h.Settings.EditionPage = EditionPageSettings.Default with
+        {
+            Enabled = true,
+            Fields = new[] { new EditionPageField("Edited by", "GreatWorksPublishing", true) },
+        };
+        string target = h.PathIn("edition.epub");
+        h.Prompts.SavePath = target;
+
+        await h.Workflow.NewAsync("3.0");
+        await h.Workflow.SaveAsAsync();
+        await h.Workflow.SaveAsync();
+
+        h.Workspace.RefreshAfterBookEditCalls.Should().Be(2, "the views show the refreshed page after every save");
+        using Book reopened = new ImportEpub(target).GetBook();
+        HtmlResource page = EditionPage.Find(reopened)!;
+        page.Should().NotBeNull();
+        page.GetText().Should().Contain("GreatWorksPublishing").And.Contain("<td>2</td>");
+    }
+
+    [Fact]
+    public async Task Save_a_copy_also_refreshes_the_edition_page()
+    {
+        using Harness h = new();
+        h.Settings.EditionPage = EditionPageSettings.Default with { Enabled = true };
+        string target = h.PathIn("copy.epub");
+        h.Prompts.SavePath = target;
+
+        await h.Workflow.NewAsync("2.0");
+        await h.Workflow.SaveACopyAsync();
+
+        using Book reopened = new ImportEpub(target).GetBook();
+        EditionPage.Find(reopened).Should().NotBeNull();
+        h.Workspace.CurrentBook!.Modified.Should().BeTrue("the revision changed in the open book, which still has no file of its own");
+    }
+
+    [Fact]
+    public async Task Saving_with_the_edition_page_off_adds_no_page()
+    {
+        using Harness h = new();
+        string target = h.PathIn("plain.epub");
+        h.Prompts.SavePath = target;
+
+        await h.Workflow.NewAsync("3.0");
+        await h.Workflow.SaveAsAsync();
+
+        h.Workspace.RefreshAfterBookEditCalls.Should().Be(0);
+        using Book reopened = new ImportEpub(target).GetBook();
+        EditionPage.Find(reopened).Should().BeNull();
     }
 
     [Fact]

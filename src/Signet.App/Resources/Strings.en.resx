@@ -4207,4 +4207,95 @@ Do you want to remove the other assignments?</value>
   <data name="KeymapMouseDialog_Reserved" xml:space="preserve">
     <value>A plain left or right click cannot be a shortcut.</value>
   </data>
+  <data name="File_EditionPageFailed" xml:space="preserve">
+    <value>Could not write the edition page (the book is saved without updating it):
+{0}</value>
+  </data>
+  <data name="CheckpointOp_RemoveEditionPage" xml:space="preserve">
+    <value>Remove edition page</value>
+  </data>
+  <data name="Status_EditionPageRemoved" xml:space="preserve">
+    <value>Edition page removed.</value>
+  </data>
+  <data name="PreferencesWindow_EditionPage" xml:space="preserve">
+    <value>Edition page</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageIntro" xml:space="preserve">
+    <value>A page with a table about the edition (e.g. the revision and the save date) that Signet adds to the book and updates on every save. It lets you check on a reader that the file is the latest version. The settings are shared by all books.</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageRemove" xml:space="preserve">
+    <value>Remove the edition page from the open book</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageNoBook" xml:space="preserve">
+    <value>No book is open.</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageNotFound" xml:space="preserve">
+    <value>The open book has no edition page.</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageFound" xml:space="preserve">
+    <value>Edition page in the open book: {0}</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageEnabled" xml:space="preserve">
+    <value>Add and update the edition page on every save</value>
+  </data>
+  <data name="PreferencesWindow_EditionPagePosition" xml:space="preserve">
+    <value>Page position</value>
+  </data>
+  <data name="EditionPagePosition_First" xml:space="preserve">
+    <value>First</value>
+  </data>
+  <data name="EditionPagePosition_Second" xml:space="preserve">
+    <value>Second (after the cover)</value>
+  </data>
+  <data name="EditionPagePosition_Penultimate" xml:space="preserve">
+    <value>Last but one</value>
+  </data>
+  <data name="EditionPagePosition_Last" xml:space="preserve">
+    <value>Last</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageTitle" xml:space="preserve">
+    <value>Page title</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageTitlePlaceholder" xml:space="preserve">
+    <value>automatic, by the book's language</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageHeadingLevel" xml:space="preserve">
+    <value>Title heading level</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageAddToToc" xml:space="preserve">
+    <value>Add the page to the book's table of contents (NAV / NCX)</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageFields" xml:space="preserve">
+    <value>Table fields</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageShow" xml:space="preserve">
+    <value>Show</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageKey" xml:space="preserve">
+    <value>Field</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageValue" xml:space="preserve">
+    <value>Value</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageRevision" xml:space="preserve">
+    <value>Revision</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageRevisionValue" xml:space="preserve">
+    <value>(save counter, kept in the book)</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageDate" xml:space="preserve">
+    <value>Save date</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageDateValue" xml:space="preserve">
+    <value>(date and time of the save, UTC)</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageFixedNote" xml:space="preserve">
+    <value>The labels of the fixed rows follow the book's language. You can change them directly on the edition page in the book, and Signet remembers the change in that book.</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageProgram" xml:space="preserve">
+    <value>Program</value>
+  </data>
+  <data name="PreferencesWindow_EditionPageVersion" xml:space="preserve">
+    <value>Version</value>
+  </data>
 </root>
