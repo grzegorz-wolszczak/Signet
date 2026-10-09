@@ -135,6 +135,7 @@ public partial class CodeTabView : UserControl
             _boundViewModel.MisspelledWordsChanged -= OnMisspelledWordsChanged;
             _boundViewModel.PropertyChanged -= OnViewModelPropertyChanged;
             _boundViewModel.ExternalLinkRequested -= OnExternalLinkRequested;
+            _boundViewModel.RenameClassRequested -= OnRenameClassRequested;
         }
 
         _boundViewModel = DataContext as CodeTabViewModel;
@@ -154,6 +155,7 @@ public partial class CodeTabView : UserControl
         _boundViewModel.MisspelledWordsChanged += OnMisspelledWordsChanged;
         _boundViewModel.PropertyChanged += OnViewModelPropertyChanged;
         _boundViewModel.ExternalLinkRequested += OnExternalLinkRequested;
+        _boundViewModel.RenameClassRequested += OnRenameClassRequested;
         _boundViewModel.UpdateSelection(Editor.SelectionStart, Editor.SelectionStart + Editor.SelectionLength);
 
         ApplyGrammar(_boundViewModel.Syntax);
@@ -587,26 +589,30 @@ public partial class CodeTabView : UserControl
         if (host is not null)
         {
             // ---- Go To Link Or Style ----
-            items.Add(Item(Strings.Get("CodeViewMenu_GoToLinkOrStyle"), () => host.ExecuteAction(AppActionIds.GoToLinkOrStyle)));
+            items.Add(Item(
+                Strings.Get("CodeViewMenu_GoToLinkOrStyle"),
+                () => host.ExecuteAction(AppActionIds.GoToLinkOrStyle),
+                gesture: host.GetActionGesture(AppActionIds.GoToLinkOrStyle)));
             items.Add(new Separator());
 
             // ---- Rename Class / Find Usages — the class under the caret in a class attribute or in a
             // stylesheet / <style> block selector ----
             bool classItems = false;
-            if (vm.ClassAtCaretForRename() is { } classAtCaret)
+            if (vm.ClassAtCaretForRename() is not null || vm.StyleClassAtCaretForRename() is not null)
             {
-                items.Add(Item(Strings.Get("CodeViewMenu_RenameClass"), () => RenameClass(r => new RenameClassViewModel(r, classAtCaret))));
-                classItems = true;
-            }
-            else if (vm.StyleClassAtCaretForRename() is { } styleClassAtCaret)
-            {
-                items.Add(Item(Strings.Get("CodeViewMenu_RenameClass"), () => RenameClass(r => new RenameClassViewModel(r, styleClassAtCaret))));
+                items.Add(Item(
+                    Strings.Get("CodeViewMenu_RenameClass"),
+                    () => RenameClassAtCaret(vm),
+                    gesture: host.GetActionGesture(AppActionIds.RenameClass)));
                 classItems = true;
             }
 
             if (vm.ClassNameAtCaretForUsages() is not null)
             {
-                items.Add(Item(Strings.Get("CodeViewMenu_FindUsages"), () => host.ExecuteAction(AppActionIds.FindUsages)));
+                items.Add(Item(
+                    Strings.Get("CodeViewMenu_FindUsages"),
+                    () => host.ExecuteAction(AppActionIds.FindUsages),
+                    gesture: host.GetActionGesture(AppActionIds.FindUsages)));
                 classItems = true;
             }
 
@@ -621,13 +627,15 @@ public partial class CodeTabView : UserControl
                 vm.MergeContentText,
                 () => host.ExecuteAction(AppActionIds.MergeContent),
                 enabled: vm.MergeCandidate is not null,
+                gesture: host.GetActionGesture(AppActionIds.MergeContent),
                 literal: true));
             items.Add(new Separator());
 
             // ---- Mark Selected Text / Unmark Marked Text ----
             items.Add(Item(
                 Strings.Get(vm.OffersUnmark ? "CodeViewMenu_UnmarkMarkedText" : "CodeViewMenu_MarkSelectedText"),
-                () => host.ExecuteAction(AppActionIds.MarkSelection)));
+                () => host.ExecuteAction(AppActionIds.MarkSelection),
+                gesture: host.GetActionGesture(AppActionIds.MarkSelection)));
             items.Add(new Separator());
 
             // ---- Reformat HTML ----
@@ -694,6 +702,28 @@ public partial class CodeTabView : UserControl
     }
 
     // "Rename Class…" — dialog with the rename scope; the renamer works on the book's saved texts.
+    // The "Rename Class" action (keyboard shortcut / main window) for the class under the caret.
+    private void OnRenameClassRequested()
+    {
+        if (_boundViewModel is { } vm)
+        {
+            RenameClassAtCaret(vm);
+        }
+    }
+
+    // The class under the caret: in a class attribute (cascade of the element) or in a selector (cascade of that source).
+    private void RenameClassAtCaret(CodeTabViewModel vm)
+    {
+        if (vm.ClassAtCaretForRename() is { } classAtCaret)
+        {
+            RenameClass(r => new RenameClassViewModel(r, classAtCaret));
+        }
+        else if (vm.StyleClassAtCaretForRename() is { } styleClassAtCaret)
+        {
+            RenameClass(r => new RenameClassViewModel(r, styleClassAtCaret));
+        }
+    }
+
     private async void RenameClass(Func<ClassRenamer, RenameClassViewModel> createViewModel)
     {
         if (_boundViewModel?.Host is not { } host || TopLevel.GetTopLevel(this) is not Window owner

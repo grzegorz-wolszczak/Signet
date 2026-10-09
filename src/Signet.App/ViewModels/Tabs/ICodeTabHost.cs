@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Avalonia.Input;
 using Signet.Core.BookManipulation;
 using Signet.Core.MiscEditors;
 using Signet.Core.Resources;
@@ -23,6 +24,9 @@ public interface ICodeTabHost
 
     /// <summary>Runs the application action with the given id (e.g. Go To Link Or Style, Mark Selection).</summary>
     void ExecuteAction(string actionId);
+
+    /// <summary>The current keyboard shortcut of the action (shown next to its context menu item); <c>null</c> = none.</summary>
+    KeyGesture? GetActionGesture(string actionId);
 
     /// <summary>
     /// Formats the text of an (X)HTML file editor: <paramref name="toValid"/> = Mend Code, otherwise

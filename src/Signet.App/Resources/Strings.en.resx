@@ -4292,6 +4292,12 @@ Do you want to remove the other assignments?</value>
   <data name="PreferencesWindow_EditionPageFixedNote" xml:space="preserve">
     <value>The labels of the fixed rows follow the book's language. You can change them directly on the edition page in the book, and Signet remembers the change in that book.</value>
   </data>
+  <data name="Action_MainWindow_RenameClass" xml:space="preserve">
+    <value>Rename C&amp;lass...</value>
+  </data>
+  <data name="Status_RenameClassNoClass" xml:space="preserve">
+    <value>The caret is not on a CSS class name (in a class attribute or a selector).</value>
+  </data>
   <data name="PreferencesWindow_EditionPageProgram" xml:space="preserve">
     <value>Program</value>
   </data>

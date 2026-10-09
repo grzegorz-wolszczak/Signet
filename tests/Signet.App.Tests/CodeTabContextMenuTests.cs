@@ -66,6 +66,29 @@ public sealed class CodeTabContextMenuTests
         css.ClassAtCaretForRename().Should().BeNull();
     }
 
+    /// <summary>
+    /// The "Rename Class" action (keymap shortcut) asks the view for the dialog only when the caret is on a class name.
+    /// </summary>
+    [Fact]
+    public void Rename_class_action_requests_the_dialog_only_on_a_class_name()
+    {
+        using TempDir temp = new();
+        using Book book = Load(temp);
+        CodeTabViewModel html = NewTab(book.GetAllResources().OfType<HtmlResource>().First());
+        html.Document.Text = "<html><body><p class=\"c1\">c1</p></body></html>";
+        const string beforeName = "<html><body><p class=\"c";
+        int requests = 0;
+        html.RenameClassRequested += () => requests++;
+
+        html.UpdateCaret(1, 30, 29, -1); // element content
+        html.RequestRenameClassAtCaret().Should().BeFalse();
+        requests.Should().Be(0);
+
+        html.UpdateCaret(1, beforeName.Length + 1, beforeName.Length, -1);
+        html.RequestRenameClassAtCaret().Should().BeTrue();
+        requests.Should().Be(1);
+    }
+
     /// <summary>"Rename Class…" from a selector: in a CSS stylesheet and in a &lt;style&gt; block of an XHTML file.</summary>
     [Fact]
     public void Style_class_at_caret_for_rename_is_offered_in_stylesheets_and_style_blocks()

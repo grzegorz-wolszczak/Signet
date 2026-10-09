@@ -67,6 +67,7 @@ public static class AppActionCatalog
         new("MainWindow.SplitOnSGFSectionMarkers", "Split At &Markers", "F6", null, "Edit"),
         new("MainWindow.Preferences", "&Preferences...", "F5", null, "Edit"),
         new("MainWindow.MergeContent", "Merge C&ontent", "", null, "Edit"),
+        new("MainWindow.RenameClass", "Rename C&lass...", "", null, "Edit"),
 
         new("MainWindow.InsertSGFSectionMarker", "Split &Marker", "Ctrl+Shift+Return", null, "Insert"),
         new("MainWindow.InsertFile", "&File...", "Ctrl+Shift+I", "insert-image", "Insert"),

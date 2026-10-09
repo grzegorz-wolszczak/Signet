@@ -180,6 +180,9 @@ public static class AppActionIds
     /// <summary>Find Usages — the usages of the CSS class under the caret, in the "Find Usages" panel.</summary>
     public const string FindUsages = "MainWindow.FindUsages";
 
+    /// <summary>Rename Class — renames the CSS class under the caret (a <c>class</c> attribute or a selector).</summary>
+    public const string RenameClass = "MainWindow.RenameClass";
+
     /// <summary>Shows/hides the "Find Usages" panel.</summary>
     public const string ToggleFindUsages = "MainWindow.FindUsagesWindow";
 

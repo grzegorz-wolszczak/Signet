@@ -208,6 +208,12 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     /// </summary>
     public event Action<string>? CssClassJumpRequested;
 
+    /// <summary>
+    /// Raised by <see cref="RequestRenameClassAtCaret"/> — the view opens the "Rename Class" dialog for the class under
+    /// the caret (the dialog needs a window).
+    /// </summary>
+    public event Action? RenameClassRequested;
+
     /// <summary>Raised after <see cref="Save"/> wrote edited text to the resource.</summary>
     public event Action? SavedToResource;
 
@@ -568,6 +574,21 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     /// existing "marked text" area.
     /// </summary>
     public bool OffersUnmark => !HasSelection && Search.Marked.IsMarked;
+
+    /// <summary>
+    /// The "Rename Class" action: asks the view to open the dialog for the class under the caret. Returns <c>false</c>
+    /// (and asks nothing) when the caret is not on a class name.
+    /// </summary>
+    public bool RequestRenameClassAtCaret()
+    {
+        if (ClassAtCaretForRename() is null && StyleClassAtCaretForRename() is null)
+        {
+            return false;
+        }
+
+        RenameClassRequested?.Invoke();
+        return true;
+    }
 
     /// <summary>
     /// The class under the caret in the <c>class</c> attribute of an XHTML file (with the chain of tags from the root)

@@ -8,6 +8,7 @@ using Avalonia.VisualTree;
 using AvaloniaEdit;
 using AvaloniaEdit.Rendering;
 using AwesomeAssertions;
+using Signet.App.Actions;
 using Signet.App.Services;
 using Signet.App.ViewModels.Tabs;
 using Signet.App.Views.Tabs;
@@ -362,6 +363,43 @@ public sealed class CodeTabViewRenderTests
     }
 
     /// <summary>
+    /// The class items run application actions, so they show the actions' current shortcuts (like the main menu);
+    /// an action without a shortcut shows none.
+    /// </summary>
+    [AvaloniaFact]
+    public void Class_items_of_the_context_menu_show_the_shortcuts_of_their_actions()
+    {
+        using TempDir temp = new();
+        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
+        html.InitialLoad();
+
+        OpenTab tab = new TabManagerModel().OpenResource(html);
+        (SettingsStore settings, SpellChecker spellChecker) = NewSpellChecker();
+        FakeHost host = new();
+        host.Gestures[AppActionIds.FindUsages] = new Avalonia.Input.KeyGesture(Avalonia.Input.Key.F7, Avalonia.Input.KeyModifiers.Alt);
+        var vm = new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker) { Host = host };
+
+        var window = new Window { Width = 600, Height = 400, Content = new CodeTabView { DataContext = vm } };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
+        editor.Document.Text = "<html><body><p class=\"c1\">x</p></body></html>";
+        editor.CaretOffset = "<html><body><p class=\"c1".Length;
+        Dispatcher.UIThread.RunJobs();
+        editor.TextArea.RaiseEvent(new Avalonia.Input.ContextRequestedEventArgs());
+        Dispatcher.UIThread.RunJobs();
+
+        ContextMenu menu = editor.ContextMenu!;
+        MenuItem Item(string key) =>
+            menu.Items.OfType<MenuItem>().Single(i => (string?)i.Header == Signet.App.Resources.Strings.Get(key));
+        Item("CodeViewMenu_FindUsages").InputGesture.Should().Be(host.Gestures[AppActionIds.FindUsages]);
+        Item("CodeViewMenu_RenameClass").InputGesture.Should().BeNull("Rename Class has no shortcut by default");
+        menu.Close();
+    }
+
+    /// <summary>
     /// "Rename Class…" in a CSS stylesheet: the caret is on a class in a selector, with no selection
     /// needed.
     /// </summary>
@@ -455,9 +493,13 @@ public sealed class CodeTabViewRenderTests
         {
         }
 
+        public System.Collections.Generic.Dictionary<string, Avalonia.Input.KeyGesture> Gestures { get; } = new();
+
         public void ExecuteAction(string actionId)
         {
         }
+
+        public Avalonia.Input.KeyGesture? GetActionGesture(string actionId) => Gestures.TryGetValue(actionId, out Avalonia.Input.KeyGesture? gesture) ? gesture : null;
 
         public System.Threading.Tasks.Task<string?> ReformatHtmlTextAsync(Resource resource, string text, bool toValid) =>
             System.Threading.Tasks.Task.FromResult<string?>(null);

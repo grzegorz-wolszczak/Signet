@@ -1910,6 +1910,9 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <inheritdoc/>
+    Avalonia.Input.KeyGesture? ICodeTabHost.GetActionGesture(string actionId) => _actions.Get(actionId)?.Gesture;
+
+    /// <inheritdoc/>
     void ICodeTabHost.ExecuteAction(string actionId)
     {
         if (_actions.Get(actionId) is { } action && action.CanExecute(null))
@@ -2344,6 +2347,19 @@ public sealed partial class MainWindowViewModel
     /// Code View tab — in a <c>class</c> attribute or in a selector. Without a class under the caret only a status bar
     /// message.
     /// </summary>
+    private void RenameClassAtCaret()
+    {
+        if (_currentBook is null)
+        {
+            return;
+        }
+
+        if (ActiveCodeTab?.RequestRenameClassAtCaret() != true)
+        {
+            _statusBar.ShowMessage(Strings.Get("Status_RenameClassNoClass"), TimeSpan.FromSeconds(4), NotificationLevel.Warning);
+        }
+    }
+
     private void FindUsagesAtCaret()
     {
         if (_currentBook is null)
@@ -2950,6 +2966,7 @@ public sealed partial class MainWindowViewModel
         WireToggle(AppActionIds.ToggleValidationResults, DockableIds.ValidationResults);
         WireToggle(AppActionIds.ToggleFindUsages, DockableIds.FindUsages);
         _actions.SetHandler(AppActionIds.FindUsages, FindUsagesAtCaret);
+        _actions.SetHandler(AppActionIds.RenameClass, RenameClassAtCaret);
         _actions.SetHandler(AppActionIds.ToggleFindReplace, () =>
         {
             if (IsFindReplaceVisible)

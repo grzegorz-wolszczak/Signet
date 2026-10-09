@@ -4292,6 +4292,12 @@ Czy usunąć pozostałe przypisania?</value>
   <data name="PreferencesWindow_EditionPageFixedNote" xml:space="preserve">
     <value>Etykiety stałych wierszy zależą od języka książki. Możesz je zmienić bezpośrednio na stronie wydania w książce, a Signet zapamięta zmianę w tej książce.</value>
   </data>
+  <data name="Action_MainWindow_RenameClass" xml:space="preserve">
+    <value>Zmień nazwę k&amp;lasy...</value>
+  </data>
+  <data name="Status_RenameClassNoClass" xml:space="preserve">
+    <value>Kursor nie stoi na nazwie klasy CSS (w atrybucie class ani w selektorze).</value>
+  </data>
   <data name="PreferencesWindow_EditionPageProgram" xml:space="preserve">
     <value>Program</value>
   </data>
