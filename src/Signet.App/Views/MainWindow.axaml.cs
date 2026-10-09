@@ -90,6 +90,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             _boundViewModel.RenameTagRequested -= OnRenameTagRequested;
             _boundViewModel.MergeContentConfirmationRequested -= OnMergeContentConfirmationRequested;
             _boundViewModel.RevertConfirmationRequested -= OnRevertConfirmationRequested;
+            _boundViewModel.RecentLocationsRequested -= OnRecentLocationsRequested;
             _boundViewModel.CreateCheckpointRequested -= OnCreateCheckpointRequested;
             _boundViewModel.CompareCheckpointRequested -= OnCompareCheckpointRequested;
             _boundViewModel.MendDiffRequested -= OnCompareCheckpointRequested;
@@ -139,6 +140,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         _boundViewModel.RenameTagRequested += OnRenameTagRequested;
         _boundViewModel.MergeContentConfirmationRequested += OnMergeContentConfirmationRequested;
         _boundViewModel.RevertConfirmationRequested += OnRevertConfirmationRequested;
+        _boundViewModel.RecentLocationsRequested += OnRecentLocationsRequested;
         _boundViewModel.CreateCheckpointRequested += OnCreateCheckpointRequested;
         _boundViewModel.CompareCheckpointRequested += OnCompareCheckpointRequested;
         _boundViewModel.MendDiffRequested += OnCompareCheckpointRequested;
@@ -427,6 +429,14 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         {
             vm.RevertToBeforeCheckpoint();
         }
+    }
+
+    // Recent Locations — a popup that closes when it loses focus; its size and place are remembered.
+    private void OnRecentLocationsRequested(object? sender, RecentLocationsViewModel model)
+    {
+        RecentLocationsWindow window = new(_boundViewModel?.Actions.Require(AppActionIds.RecentLocations).Gesture) { DataContext = model };
+        RememberPlacement(window);
+        window.Show(this);
     }
 
     // "Create Checkpoint…" — a prompt asking for a name.

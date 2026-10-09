@@ -131,6 +131,7 @@ public static class AppActionCatalog
         // Navigate Back / Forward (IntelliJ-style navigation history) — no default shortcut, set in Preferences.
         new("MainWindow.NavigateBack", "Navigate &Back", "", null, "Search"),
         new("MainWindow.NavigateForward", "Navigate For&ward", "", null, "Search"),
+        new("MainWindow.RecentLocations", "Recent &Locations...", "", null, "Search"),
         new("MainWindow.FindUsages", "Find Usages", "Alt+F7", null, "Search"),
         new("MainWindow.MarkSelection", "Mar&k Selected Text", "Ctrl+Shift+M", null, "Search"),
         new("MainWindow.GoToLine", "Go To &Line...", "Ctrl+/", null, "Search"),

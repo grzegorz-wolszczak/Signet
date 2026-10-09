@@ -163,11 +163,61 @@ public sealed class NavigationHistoryTests
         source.Push(At(a, 1));
         source.Push(At(b, 1));
         source.Back(At(a, 60), AllExist);
+        source.RecordEdit(At(b, 30));
 
         NavigationHistory restored = new();
         restored.Restore(source.Capture());
 
         restored.BackPlaces.Should().Equal(source.BackPlaces);
         restored.ForwardPlaces.Should().Equal(source.ForwardPlaces);
+        restored.EditedPlaces.Should().Equal(source.EditedPlaces);
+    }
+
+    [Theory]
+    [AutoData]
+    public void RecordEdit_merges_edits_close_to_the_previous_one_and_keeps_the_stacks(string file)
+    {
+        NavigationHistory history = new();
+
+        history.RecordEdit(At(file, 10));
+        history.RecordEdit(At(file, 11));
+        history.RecordEdit(At(file, 40));
+
+        history.EditedPlaces.Select(p => p.Line).Should().Equal(11, 40);
+        history.CanGoBack.Should().BeFalse("an edit is not a jump");
+    }
+
+    [Theory]
+    [AutoData]
+    public void Remove_forgets_the_same_places_in_the_chosen_list(string a, string b)
+    {
+        NavigationHistory history = new();
+        history.Push(At(a, 10));
+        history.Push(At(b, 1));
+        history.Push(At(a, 11));
+        history.RecordEdit(At(a, 10));
+
+        history.Remove(At(a, 12), edited: false);
+
+        history.BackPlaces.Should().Equal(At(b, 1));
+        history.EditedPlaces.Should().ContainSingle("the edited places are a separate list");
+
+        history.Remove(At(a, 12), edited: true);
+        history.EditedPlaces.Should().BeEmpty();
+    }
+
+    [Theory]
+    [AutoData]
+    public void RemoveMissing_drops_places_of_deleted_files_from_all_lists(string kept, string deleted)
+    {
+        NavigationHistory history = new();
+        history.Push(At(kept, 1));
+        history.Push(At(deleted, 1));
+        history.RecordEdit(At(deleted, 5));
+
+        history.RemoveMissing(p => p != deleted);
+
+        history.BackPlaces.Should().Equal(At(kept, 1));
+        history.EditedPlaces.Should().BeEmpty();
     }
 }

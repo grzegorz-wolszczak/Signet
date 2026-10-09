@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using Avalonia.Threading;
 using Microsoft.Extensions.Logging;
 using Signet.App.Actions;
@@ -39,6 +40,30 @@ public sealed partial class MainWindowViewModel
     /// </summary>
     public Func<Action, bool>? NavigationCommandScheduler { get; set; }
 
+    /// <summary>
+    /// Raised by the Recent Locations action — the view shows the popup for the given model.
+    /// </summary>
+    public event EventHandler<RecentLocationsViewModel>? RecentLocationsRequested;
+
+    /// <summary>Recent Locations: the recently visited / edited places in a popup (<see cref="RecentLocationsRequested"/>).</summary>
+    public void ShowRecentLocations()
+    {
+        if (_currentBook is not { } book)
+        {
+            return;
+        }
+
+        Tracker.Flush();
+        _navigation.RemoveMissing(NavigationFileExists);
+        RecentLocationsRequested?.Invoke(this, new RecentLocationsViewModel(
+            _navigation,
+            bookPath => book.GetFolderKeeper().GetResourceByBookPathNoThrow(bookPath),
+            _tabManager.DocumentTextOf,
+            GoToRecentLocation,
+            _settings.RecentLocationsLimit,
+            _actions.Require(AppActionIds.RecentLocations).InputGestureText));
+    }
+
     /// <summary>Navigate Back: returns to the previous place in the history.</summary>
     public void NavigateBack() => Navigate(forward: false);
 
@@ -54,6 +79,7 @@ public sealed partial class MainWindowViewModel
             Path.GetDirectoryName(_settings.FilePath) ?? AppDirectories.PrefsDirectory, NavigationHistoryFileName));
         _actions.SetHandler(AppActionIds.NavigateBack, NavigateBack);
         _actions.SetHandler(AppActionIds.NavigateForward, NavigateForward);
+        _actions.SetHandler(AppActionIds.RecentLocations, ShowRecentLocations);
         _navigation.Changed += (_, _) => RefreshNavigationActions();
         _tabManager.NavigationStarting += (_, _) => Tracker.NoteNavigation();
         _tabManager.DocumentEdited += OnTabDocumentEdited;
@@ -135,8 +161,24 @@ public sealed partial class MainWindowViewModel
 
     private void UpdateNavigationPlace() => Tracker.UpdateCurrentPlace(CurrentNavigationPlace());
 
-    private void OnTabDocumentEdited(object? sender, TabDocumentEdit e) =>
+    // Keeps the places on their text and, for an edit in the active tab, records the edited place (where the edit ends).
+    private void OnTabDocumentEdited(object? sender, TabDocumentEdit e)
+    {
         _navigation.ApplyTextChange(e.Resource.BookPath, e.Offset, e.Line, e.RemovedText, e.InsertedText);
+        if (ReferenceEquals(e.Resource, ActiveTab?.Resource))
+        {
+            int lineBreaks = e.InsertedText.Count(c => c == '\n');
+            _navigation.RecordEdit(new NavigationPlace(
+                e.Resource.BookPath, e.Offset + e.InsertedText.Length, e.Line + lineBreaks, DateTimeOffset.Now));
+        }
+    }
+
+    // A chosen Recent Locations entry is a jump like any other.
+    private void GoToRecentLocation(NavigationPlace place)
+    {
+        Tracker.NoteNavigation();
+        _tabManager.OpenResourceAtOffset(place.BookPath, place.Offset);
+    }
 
     private void OnNavigationResourcePathChanged(object? sender, ResourceBookPathChangedEventArgs e)
     {

@@ -445,9 +445,11 @@ public sealed class TabManager : IDisposable
         return texts;
     }
 
-    // Document text for anchor completion: from the open tab (unsaved changes),
-    // otherwise from the resource.
-    private string? DocumentTextOf(string bookPath)
+    /// <summary>
+    /// The current text of a file: from its open tab (with unsaved changes), otherwise from the resource;
+    /// <c>null</c> for a missing or non-text file. Used by anchor completion and Recent Locations.
+    /// </summary>
+    public string? DocumentTextOf(string bookPath)
     {
         foreach (ContentTabViewModel view in _views.Values)
         {

@@ -1,0 +1,75 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="using:Signet.App.Resources"
+        xmlns:vm="using:Signet.App.ViewModels"
+        xmlns:cv="using:Signet.App.CodeView"
+        x:Class="Signet.App.Views.RecentLocationsWindow"
+        x:DataType="vm:RecentLocationsViewModel"
+        Width="800" Height="600" MinWidth="400" MinHeight="250"
+        WindowStartupLocation="CenterOwner"
+        WindowDecorations="BorderOnly"
+        ShowInTaskbar="False"
+        Title="{Binding Title}">
+
+  <!-- A popup like IntelliJ's Recent Locations: closes when it loses focus (click outside), on Esc and after
+       choosing an entry; its size and place are remembered (MainWindow.RememberPlacement). -->
+  <Window.Resources>
+    <DrawingImage x:Key="RecentLocationFileIcon">
+      <DrawingImage.Drawing>
+        <DrawingGroup>
+          <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
+          <GeometryDrawing Brush="#ffffff" Geometry="M 3 1.5 H 9.5 L 13 5 V 14.5 H 3 Z">
+            <GeometryDrawing.Pen>
+              <Pen Brush="#8a8a8a" Thickness="1" LineJoin="Miter" />
+            </GeometryDrawing.Pen>
+          </GeometryDrawing>
+          <GeometryDrawing Brush="#d8d8d8" Geometry="M 9.5 1.5 V 5 H 13 Z">
+            <GeometryDrawing.Pen>
+              <Pen Brush="#8a8a8a" Thickness="1" LineJoin="Miter" />
+            </GeometryDrawing.Pen>
+          </GeometryDrawing>
+        </DrawingGroup>
+      </DrawingImage.Drawing>
+    </DrawingImage>
+  </Window.Resources>
+
+  <DockPanel>
+    <Border DockPanel.Dock="Top" Padding="10,6"
+            Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
+      <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+        <TextBlock Grid.Column="0" Text="{Binding Title}" FontWeight="Bold" VerticalAlignment="Center" />
+        <TextBlock Grid.Column="1" Text="{Binding CountText}" Opacity="0.6" Margin="6,0,0,0" VerticalAlignment="Center" />
+        <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="6">
+          <CheckBox Content="{loc:Loc RecentLocations_ShowEditedOnly}" IsChecked="{Binding ShowEditedOnly}"
+                    Focusable="False" />
+          <TextBlock Text="{Binding ToggleShortcutText}" Opacity="0.6" VerticalAlignment="Center" />
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <TextBox x:Name="FilterBox" DockPanel.Dock="Top" Margin="6" Text="{Binding Filter}"
+             PlaceholderText="{loc:Loc RecentLocations_FilterPlaceholder}" />
+
+    <Panel>
+      <ListBox x:Name="Locations" ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}"
+               ScrollViewer.HorizontalScrollBarVisibility="Disabled" Focusable="False">
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:RecentLocationItem">
+            <StackPanel Spacing="2" Margin="0,2">
+              <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="6">
+                <Image Grid.Column="0" Width="16" Height="16" Source="{StaticResource RecentLocationFileIcon}" />
+                <TextBlock Grid.Column="1" Text="{Binding FileName}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <TextBlock Grid.Column="2" Text="{Binding Breadcrumb}" Opacity="0.6" VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis" />
+                <TextBlock Grid.Column="3" Text="{Binding TimeText}" Opacity="0.6" FontSize="11" VerticalAlignment="Center" />
+              </Grid>
+              <cv:LocationSnippetEditor />
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+      <TextBlock Text="{loc:Loc RecentLocations_Empty}" Opacity="0.6" HorizontalAlignment="Center"
+                 VerticalAlignment="Center" IsVisible="{Binding !Items.Count}" />
+    </Panel>
+  </DockPanel>
+</Window>

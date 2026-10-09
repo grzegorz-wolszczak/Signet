@@ -143,6 +143,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _findUsagesRefreshOnSave = _settings.FindUsagesRefreshOnSave;
         _navigationHistoryRemember = _settings.NavigationHistoryRemember;
         _navigationHistoryDays = _settings.NavigationHistoryDays;
+        _recentLocationsLimit = _settings.RecentLocationsLimit;
         _autoCloseTags = _settings.CodeViewAutoCloseTags;
         _warnMissingDoctype = _settings.WarnMissingDoctype;
         _prettifyAddMissingDoctype = _settings.PrettifyAddMissingDoctype;
@@ -694,6 +695,13 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
     partial void OnNavigationHistoryDaysChanged(int value) =>
         _settings.NavigationHistoryDays = Math.Clamp(value, 1, NavigationHistoryStore.MaxDays);
+
+    /// <summary>How many places the Recent Locations popup shows (1–50; out of range — clamped).</summary>
+    [ObservableProperty]
+    private int _recentLocationsLimit;
+
+    partial void OnRecentLocationsLimitChanged(int value) =>
+        _settings.RecentLocationsLimit = Math.Clamp(value, 1, RecentLocations.MaxLimit);
 
     /// <summary>Clipboard history limit (0–20).</summary>
     [ObservableProperty]

@@ -110,6 +110,7 @@ public static class AppActionIds
     public const string GoToLinkOrStyle = "MainWindow.GoToLinkOrStyle";
     public const string NavigateBack = "MainWindow.NavigateBack";
     public const string NavigateForward = "MainWindow.NavigateForward";
+    public const string RecentLocations = "MainWindow.RecentLocations";
     public const string MarkSelection = "MainWindow.MarkSelection";
     public const string GoToLine = "MainWindow.GoToLine";
 

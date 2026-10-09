@@ -18,16 +18,19 @@ public sealed record NavigationPlace(string BookPath, int Offset, int Line, Date
     public bool HasCaret => Offset >= 0;
 }
 
-/// <summary>A saved state of a <see cref="NavigationHistory"/> (both stacks, oldest place first).</summary>
+/// <summary>A saved state of a <see cref="NavigationHistory"/> (oldest place first).</summary>
 /// <param name="Back">The places Navigate Back returns to.</param>
 /// <param name="Forward">The places Navigate Forward returns to.</param>
-public sealed record NavigationHistoryState(IReadOnlyList<NavigationPlace> Back, IReadOnlyList<NavigationPlace> Forward);
+/// <param name="Edited">The places where the text was edited (Recent Locations → Show edited only).</param>
+public sealed record NavigationHistoryState(
+    IReadOnlyList<NavigationPlace> Back, IReadOnlyList<NavigationPlace> Forward, IReadOnlyList<NavigationPlace> Edited);
 
 /// <summary>
 /// The Navigate Back / Forward history (modelled on the IntelliJ platform): the places the caret left by a jump — a
 /// tab switch, a click, Go To Line, Find, a link… Going back moves the current place onto the Forward stack; a new
 /// jump clears it. A place within <see cref="MergeLineDistance"/> lines of the previous one in the same file replaces
 /// it, so small moves do not flood the history. Places in files that no longer exist are dropped when moving.
+/// A separate list keeps the places where the text was edited (IntelliJ's "change places").
 /// </summary>
 public sealed class NavigationHistory
 {
@@ -39,6 +42,7 @@ public sealed class NavigationHistory
 
     private readonly List<NavigationPlace> _back = new();
     private readonly List<NavigationPlace> _forward = new();
+    private readonly List<NavigationPlace> _edited = new();
 
     /// <summary>Raised after any change to the stacks.</summary>
     public event EventHandler? Changed;
@@ -48,6 +52,9 @@ public sealed class NavigationHistory
 
     /// <summary>The places Navigate Forward returns to, oldest first (the next one is the last).</summary>
     public IReadOnlyList<NavigationPlace> ForwardPlaces => _forward;
+
+    /// <summary>The places where the text was edited, oldest first.</summary>
+    public IReadOnlyList<NavigationPlace> EditedPlaces => _edited;
 
     /// <summary>Whether Navigate Back has a place to go to.</summary>
     public bool CanGoBack => _back.Count > 0;
@@ -77,6 +84,32 @@ public sealed class NavigationHistory
         PutLastOrMerge(_back, place);
         _forward.Clear();
         OnChanged();
+    }
+
+    /// <summary>
+    /// Records a place where the text was edited (replacing the previous one when they are the same place).
+    /// </summary>
+    public void RecordEdit(NavigationPlace place)
+    {
+        ArgumentNullException.ThrowIfNull(place);
+        PutLastOrMerge(_edited, place);
+        OnChanged();
+    }
+
+    /// <summary>
+    /// Forgets the places that are the same as <paramref name="place"/> — among the visited places (both stacks) or,
+    /// with <paramref name="edited"/>, among the edited ones (Delete in Recent Locations).
+    /// </summary>
+    public void Remove(NavigationPlace place, bool edited)
+    {
+        ArgumentNullException.ThrowIfNull(place);
+        int removed = edited
+            ? _edited.RemoveAll(p => IsSame(p, place))
+            : _back.RemoveAll(p => IsSame(p, place)) + _forward.RemoveAll(p => IsSame(p, place));
+        if (removed > 0)
+        {
+            OnChanged();
+        }
     }
 
     /// <summary>
@@ -140,20 +173,21 @@ public sealed class NavigationHistory
     /// <summary>Forgets all places.</summary>
     public void Clear()
     {
-        if (_back.Count == 0 && _forward.Count == 0)
+        if (_back.Count == 0 && _forward.Count == 0 && _edited.Count == 0)
         {
             return;
         }
 
         _back.Clear();
         _forward.Clear();
+        _edited.Clear();
         OnChanged();
     }
 
-    /// <summary>The current state of both stacks (for saving).</summary>
-    public NavigationHistoryState Capture() => new(_back.ToList(), _forward.ToList());
+    /// <summary>The current state of the history (for saving).</summary>
+    public NavigationHistoryState Capture() => new(_back.ToList(), _forward.ToList(), _edited.ToList());
 
-    /// <summary>Replaces both stacks with <paramref name="state"/> (the newest places over <see cref="Limit"/>).</summary>
+    /// <summary>Replaces the history with <paramref name="state"/> (the newest places over <see cref="Limit"/>).</summary>
     public void Restore(NavigationHistoryState state)
     {
         ArgumentNullException.ThrowIfNull(state);
@@ -161,7 +195,22 @@ public sealed class NavigationHistory
         _back.AddRange(state.Back.TakeLast(Limit));
         _forward.Clear();
         _forward.AddRange(state.Forward.TakeLast(Limit));
+        _edited.Clear();
+        _edited.AddRange(state.Edited.TakeLast(Limit));
         OnChanged();
+    }
+
+    /// <summary>Drops the places (visited and edited) in files that no longer exist.</summary>
+    public void RemoveMissing(Func<string, bool> exists)
+    {
+        ArgumentNullException.ThrowIfNull(exists);
+        int removed = _back.RemoveAll(p => !exists(p.BookPath))
+            + _forward.RemoveAll(p => !exists(p.BookPath))
+            + _edited.RemoveAll(p => !exists(p.BookPath));
+        if (removed > 0)
+        {
+            OnChanged();
+        }
     }
 
     private NavigationPlace? Move(
@@ -170,6 +219,7 @@ public sealed class NavigationHistory
         ArgumentNullException.ThrowIfNull(exists);
         _back.RemoveAll(p => !exists(p.BookPath));
         _forward.RemoveAll(p => !exists(p.BookPath));
+        _edited.RemoveAll(p => !exists(p.BookPath));
 
         NavigationPlace? target = null;
         while (from.Count > 0 && target is null)
@@ -218,11 +268,11 @@ public sealed class NavigationHistory
         }
     }
 
-    // Applies the mapping to both stacks; returns whether any place changed.
+    // Applies the mapping to all lists; returns whether any place changed.
     private bool Replace(Func<NavigationPlace, NavigationPlace> map)
     {
         bool changed = false;
-        foreach (List<NavigationPlace> places in new[] { _back, _forward })
+        foreach (List<NavigationPlace> places in new[] { _back, _forward, _edited })
         {
             for (int i = 0; i < places.Count; i++)
             {

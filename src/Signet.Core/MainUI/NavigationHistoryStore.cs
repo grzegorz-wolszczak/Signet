@@ -42,7 +42,7 @@ public sealed class NavigationHistoryStore
         ArgumentException.ThrowIfNullOrWhiteSpace(bookFilePath);
         Dictionary<string, BookEntry> books = Prune(Read(), maxAgeDays);
         return books.TryGetValue(Key(bookFilePath), out BookEntry? entry)
-            ? new NavigationHistoryState(ToPlaces(entry.Back), ToPlaces(entry.Forward))
+            ? new NavigationHistoryState(ToPlaces(entry.Back), ToPlaces(entry.Forward), ToPlaces(entry.Edited))
             : null;
     }
 
@@ -57,7 +57,12 @@ public sealed class NavigationHistoryStore
         ArgumentException.ThrowIfNullOrWhiteSpace(bookFilePath);
         ArgumentNullException.ThrowIfNull(state);
         Dictionary<string, BookEntry> books = Read();
-        books[Key(bookFilePath)] = new BookEntry { Back = ToEntries(state.Back), Forward = ToEntries(state.Forward) };
+        books[Key(bookFilePath)] = new BookEntry
+        {
+            Back = ToEntries(state.Back),
+            Forward = ToEntries(state.Forward),
+            Edited = ToEntries(state.Edited),
+        };
         Write(Prune(books, maxAgeDays));
     }
 
@@ -78,8 +83,9 @@ public sealed class NavigationHistoryStore
             {
                 Back = entry.Back.Where(p => p.Time >= oldest).ToList(),
                 Forward = entry.Forward.Where(p => p.Time >= oldest).ToList(),
+                Edited = entry.Edited.Where(p => p.Time >= oldest).ToList(),
             };
-            if (pruned.Back.Count > 0 || pruned.Forward.Count > 0)
+            if (pruned.Back.Count > 0 || pruned.Forward.Count > 0 || pruned.Edited.Count > 0)
             {
                 kept[key] = pruned;
             }
@@ -138,6 +144,8 @@ public sealed class NavigationHistoryStore
         public List<PlaceEntry> Back { get; set; } = new();
 
         public List<PlaceEntry> Forward { get; set; } = new();
+
+        public List<PlaceEntry> Edited { get; set; } = new();
     }
 
     private sealed class PlaceEntry

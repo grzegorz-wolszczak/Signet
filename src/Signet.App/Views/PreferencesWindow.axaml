@@ -456,12 +456,15 @@
               <TextBox Text="{Binding NavigationHistoryDays}" Width="80" />
             </StackPanel>
 
-            <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8" Margin="0,6,0,0">
+            <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8" Margin="0,6,0,0">
               <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_ClipboardHistoryLimit}" VerticalAlignment="Center" />
               <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ClipboardHistoryLimit}" Width="80" HorizontalAlignment="Left" />
 
               <TextBlock Grid.Row="5" Grid.Column="0" Text="{loc:Loc PreferencesWindow_RecentFilesLimit}" VerticalAlignment="Center" TextWrapping="Wrap" />
               <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding RecentFilesLimit}" Width="80" HorizontalAlignment="Left" />
+
+              <TextBlock Grid.Row="6" Grid.Column="0" Text="{loc:Loc PreferencesWindow_RecentLocationsLimit}" VerticalAlignment="Center" TextWrapping="Wrap" />
+              <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding RecentLocationsLimit}" Width="80" HorizontalAlignment="Left" />
 
 
               <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_TempFolder}" VerticalAlignment="Center" />

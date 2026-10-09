@@ -153,7 +153,7 @@ public static class MenuLayout
                 A("MainWindow.CountInFile")),
             Sep,
             A("MainWindow.BookmarkLocation"), A("MainWindow.GoToLinkOrStyle"),
-            A("MainWindow.NavigateBack"), A("MainWindow.NavigateForward"),
+            A("MainWindow.NavigateBack"), A("MainWindow.NavigateForward"), A("MainWindow.RecentLocations"),
             A("MainWindow.FindUsages"),
             Sep,
             A("MainWindow.MarkSelection"), A("MainWindow.GoToLine")),

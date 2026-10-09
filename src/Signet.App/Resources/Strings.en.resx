@@ -1767,6 +1767,48 @@ Do you want to save the changes?</value>
   <data name="Action_MainWindow_NavigateForward" xml:space="preserve">
     <value>Navigate For&amp;ward</value>
   </data>
+  <data name="Action_MainWindow_RecentLocations" xml:space="preserve">
+    <value>Recent &amp;Locations...</value>
+  </data>
+  <data name="RecentLocations_Title" xml:space="preserve">
+    <value>Recent Locations</value>
+  </data>
+  <data name="RecentLocations_TitleEdited" xml:space="preserve">
+    <value>Recently Edited Locations</value>
+  </data>
+  <data name="RecentLocations_ShowEditedOnly" xml:space="preserve">
+    <value>Show edited only</value>
+  </data>
+  <data name="RecentLocations_FilterPlaceholder" xml:space="preserve">
+    <value>Type to filter</value>
+  </data>
+  <data name="RecentLocations_Empty" xml:space="preserve">
+    <value>No recent locations found</value>
+  </data>
+  <data name="RecentLocations_MomentsAgo" xml:space="preserve">
+    <value>Moments ago</value>
+  </data>
+  <data name="RecentLocations_MinuteAgo" xml:space="preserve">
+    <value>A minute ago</value>
+  </data>
+  <data name="RecentLocations_MinutesAgo" xml:space="preserve">
+    <value>{0} minutes ago</value>
+  </data>
+  <data name="RecentLocations_MinutesAgoFew" xml:space="preserve">
+    <value>{0} minutes ago</value>
+  </data>
+  <data name="RecentLocations_HourAgo" xml:space="preserve">
+    <value>1 hour ago</value>
+  </data>
+  <data name="RecentLocations_Today" xml:space="preserve">
+    <value>Today {0}</value>
+  </data>
+  <data name="RecentLocations_Yesterday" xml:space="preserve">
+    <value>Yesterday {0}</value>
+  </data>
+  <data name="PreferencesWindow_RecentLocationsLimit" xml:space="preserve">
+    <value>Places shown in Recent Locations (1–50):</value>
+  </data>
   <data name="Action_MainWindow_MarkSelection" xml:space="preserve">
     <value>Mar&amp;k Selected Text</value>
   </data>

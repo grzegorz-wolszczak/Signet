@@ -1767,6 +1767,48 @@ Czy chcesz zapisać zmiany?</value>
   <data name="Action_MainWindow_NavigateForward" xml:space="preserve">
     <value>Przejdź &amp;naprzód</value>
   </data>
+  <data name="Action_MainWindow_RecentLocations" xml:space="preserve">
+    <value>&amp;Ostatnie miejsca...</value>
+  </data>
+  <data name="RecentLocations_Title" xml:space="preserve">
+    <value>Ostatnie miejsca</value>
+  </data>
+  <data name="RecentLocations_TitleEdited" xml:space="preserve">
+    <value>Ostatnio edytowane miejsca</value>
+  </data>
+  <data name="RecentLocations_ShowEditedOnly" xml:space="preserve">
+    <value>Tylko edytowane</value>
+  </data>
+  <data name="RecentLocations_FilterPlaceholder" xml:space="preserve">
+    <value>Wpisz, aby filtrować</value>
+  </data>
+  <data name="RecentLocations_Empty" xml:space="preserve">
+    <value>Brak ostatnich miejsc</value>
+  </data>
+  <data name="RecentLocations_MomentsAgo" xml:space="preserve">
+    <value>Przed chwilą</value>
+  </data>
+  <data name="RecentLocations_MinuteAgo" xml:space="preserve">
+    <value>Minutę temu</value>
+  </data>
+  <data name="RecentLocations_MinutesAgo" xml:space="preserve">
+    <value>{0} minut temu</value>
+  </data>
+  <data name="RecentLocations_MinutesAgoFew" xml:space="preserve">
+    <value>{0} minuty temu</value>
+  </data>
+  <data name="RecentLocations_HourAgo" xml:space="preserve">
+    <value>Godzinę temu</value>
+  </data>
+  <data name="RecentLocations_Today" xml:space="preserve">
+    <value>Dziś {0}</value>
+  </data>
+  <data name="RecentLocations_Yesterday" xml:space="preserve">
+    <value>Wczoraj {0}</value>
+  </data>
+  <data name="PreferencesWindow_RecentLocationsLimit" xml:space="preserve">
+    <value>Liczba miejsc w oknie „Ostatnie miejsca” (1–50):</value>
+  </data>
   <data name="Action_MainWindow_MarkSelection" xml:space="preserve">
     <value>O&amp;znacz zaznaczony tekst</value>
   </data>

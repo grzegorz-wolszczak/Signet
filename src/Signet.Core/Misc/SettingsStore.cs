@@ -646,6 +646,21 @@ public sealed class SettingsStore
         set => Write("navigation_history_days", value);
     }
 
+    /// <summary>
+    /// How many places the Recent Locations popup shows; a value outside
+    /// <c>1..<see cref="MainUI.RecentLocations.MaxLimit"/></c> → <see cref="MainUI.RecentLocations.DefaultLimit"/>.
+    /// </summary>
+    public int RecentLocationsLimit
+    {
+        get
+        {
+            int limit = ReadInt("recent_locations_limit", MainUI.RecentLocations.DefaultLimit);
+            return limit is >= 1 and <= MainUI.RecentLocations.MaxLimit ? limit : MainUI.RecentLocations.DefaultLimit;
+        }
+
+        set => Write("recent_locations_limit", value);
+    }
+
     /// <summary>Whether to handle the AltGr key separately.</summary>
     public bool EnableAltGr
     {
