@@ -866,51 +866,6 @@ The attributes of these tags will be lost:
   <data name="FontPickerWindow_Sample" xml:space="preserve">
     <value>The quick brown fox jumps over the lazy dog — 0123456789 &lt;p class="x"&gt;</value>
   </data>
-  <data name="PreferencesWindow_ShortcutsHint" xml:space="preserve">
-    <value>Double-click a command to change its keyboard shortcut.</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutsSearch" xml:space="preserve">
-    <value>Search for a shortcut by command name or key combination…</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutsOnlyConflicts" xml:space="preserve">
-    <value>Only conflicts</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutLine" xml:space="preserve">
-    <value>Shortcut: {0}</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutNone" xml:space="preserve">
-    <value>None</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutConflictsWith" xml:space="preserve">
-    <value>Conflicts with: {0}</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutCustomize" xml:space="preserve">
-    <value>Customize:</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutDone" xml:space="preserve">
-    <value>Done</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutDefault" xml:space="preserve">
-    <value>Default: {0}</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutCustom" xml:space="preserve">
-    <value>Custom</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutKey" xml:space="preserve">
-    <value>Shortcut:</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutPressKeys" xml:space="preserve">
-    <value>Press keys…</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutClear" xml:space="preserve">
-    <value>Clear shortcut</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutInUse" xml:space="preserve">
-    <value>{0} is already assigned to: {1}</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutConflictsHeader" xml:space="preserve">
-    <value>Shortcut conflicts:</value>
-  </data>
   <data name="PreferencesWindow_PreserveEntities" xml:space="preserve">
     <value>Preserve Entities</value>
   </data>
@@ -4113,5 +4068,122 @@ It does not change the files, their names or their IDs.</value>
   </data>
   <data name="BookBrowserView_ColumnProperties" xml:space="preserve">
     <value>Properties</value>
+  </data>
+  <data name="Shortcut_MouseClick" xml:space="preserve">
+    <value>Click</value>
+  </data>
+  <data name="Shortcut_MouseDoubleClick" xml:space="preserve">
+    <value>Double Click</value>
+  </data>
+  <data name="Shortcut_MouseMiddleClick" xml:space="preserve">
+    <value>Middle Click</value>
+  </data>
+  <data name="Shortcut_MouseMiddleDoubleClick" xml:space="preserve">
+    <value>Middle Double Click</value>
+  </data>
+  <data name="Shortcut_MouseRightClick" xml:space="preserve">
+    <value>Right Click</value>
+  </data>
+  <data name="Shortcut_MouseRightDoubleClick" xml:space="preserve">
+    <value>Right Double Click</value>
+  </data>
+  <data name="Shortcut_MouseBack" xml:space="preserve">
+    <value>Back Button</value>
+  </data>
+  <data name="Shortcut_MouseForward" xml:space="preserve">
+    <value>Forward Button</value>
+  </data>
+  <data name="Shortcut_MouseWheelUp" xml:space="preserve">
+    <value>Wheel Up</value>
+  </data>
+  <data name="Shortcut_MouseWheelDown" xml:space="preserve">
+    <value>Wheel Down</value>
+  </data>
+  <data name="Status_WaitingForSecondStroke" xml:space="preserve">
+    <value>{0} was pressed. Waiting for the second stroke…</value>
+  </data>
+  <data name="Keymap_MainMenu" xml:space="preserve">
+    <value>Main Menu</value>
+  </data>
+  <data name="Keymap_Other" xml:space="preserve">
+    <value>Other</value>
+  </data>
+  <data name="Keymap_ActionColumn" xml:space="preserve">
+    <value>Action</value>
+  </data>
+  <data name="Keymap_ExpandAll" xml:space="preserve">
+    <value>Expand All</value>
+  </data>
+  <data name="Keymap_CollapseAll" xml:space="preserve">
+    <value>Collapse All</value>
+  </data>
+  <data name="Keymap_EditShortcut" xml:space="preserve">
+    <value>Edit Shortcuts</value>
+  </data>
+  <data name="Keymap_SearchPlaceholder" xml:space="preserve">
+    <value>Search actions or shortcuts</value>
+  </data>
+  <data name="Keymap_FindShortcut" xml:space="preserve">
+    <value>Find Shortcut</value>
+  </data>
+  <data name="Keymap_ClearShortcutFilter" xml:space="preserve">
+    <value>Clear Shortcut Filter</value>
+  </data>
+  <data name="Keymap_MouseShortcutPad" xml:space="preserve">
+    <value>Mouse shortcut (click or scroll here)</value>
+  </data>
+  <data name="Keymap_ResetAllConfirm" xml:space="preserve">
+    <value>Restore the default shortcuts of all actions?</value>
+  </data>
+  <data name="Keymap_AddKeyboardShortcut" xml:space="preserve">
+    <value>Add Keyboard Shortcut</value>
+  </data>
+  <data name="Keymap_AddMouseShortcut" xml:space="preserve">
+    <value>Add Mouse Shortcut</value>
+  </data>
+  <data name="Keymap_RemoveShortcut" xml:space="preserve">
+    <value>Remove {0}</value>
+  </data>
+  <data name="Keymap_RemoveAllShortcuts" xml:space="preserve">
+    <value>Remove All Shortcuts</value>
+  </data>
+  <data name="Keymap_ResetShortcuts" xml:space="preserve">
+    <value>Reset Shortcuts</value>
+  </data>
+  <data name="Keymap_ConflictsHeader" xml:space="preserve">
+    <value>Conflicts:</value>
+  </data>
+  <data name="Keymap_ConflictTitle" xml:space="preserve">
+    <value>Shortcut Conflict</value>
+  </data>
+  <data name="Keymap_ConflictMessage" xml:space="preserve">
+    <value>The shortcut {0} is already assigned to other actions:
+{1}
+
+Do you want to remove the other assignments?</value>
+  </data>
+  <data name="Keymap_ConflictRemove" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="Keymap_ConflictLeave" xml:space="preserve">
+    <value>Leave</value>
+  </data>
+  <data name="KeymapKeyboardDialog_Title" xml:space="preserve">
+    <value>Keyboard Shortcut</value>
+  </data>
+  <data name="KeymapKeyboardDialog_FirstStroke" xml:space="preserve">
+    <value>First stroke:</value>
+  </data>
+  <data name="KeymapKeyboardDialog_SecondStroke" xml:space="preserve">
+    <value>Second stroke</value>
+  </data>
+  <data name="KeymapMouseDialog_Title" xml:space="preserve">
+    <value>Mouse Shortcut</value>
+  </data>
+  <data name="KeymapMouseDialog_Hint" xml:space="preserve">
+    <value>Click or turn the wheel here, holding the modifier keys</value>
+  </data>
+  <data name="KeymapMouseDialog_Reserved" xml:space="preserve">
+    <value>A plain left or right click cannot be a shortcut.</value>
   </data>
 </root>

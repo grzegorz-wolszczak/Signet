@@ -46,7 +46,7 @@ public partial class ClipEditorWindow : Window
 
     private ClipsViewModel? _bound;
     private ClipNodeViewModel? _editingNode;
-    private readonly PanelKeyBindings _keys;
+    private readonly ShortcutKeyBindings _keys;
 
     // The clips tree (Name, Text) over the visible nodes, built here (a TreeDataGrid source is bound to the UI thread);
     // its multi-selection and the view model's selected nodes follow each other.
@@ -59,7 +59,7 @@ public partial class ClipEditorWindow : Window
     public ClipEditorWindow()
     {
         InitializeComponent();
-        _keys = new PanelKeyBindings(TreeHost);
+        _keys = new ShortcutKeyBindings(TreeHost);
         DataContextChanged += OnDataContextChanged;
 
         Tree.AddHandler(KeyDownEvent, OnTreeKeyDown, RoutingStrategies.Tunnel);

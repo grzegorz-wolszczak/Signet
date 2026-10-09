@@ -114,8 +114,9 @@ public sealed class AppActionRegistry
 
     private static void ApplyShortcut(AppAction action, KeyboardShortcut shortcut)
     {
+        action.Shortcuts = shortcut.Shortcuts;
         action.Gesture = shortcut.KeyGesture;
-        action.InputGestureText = KeyGestureConversion.ToPortableString(shortcut.KeyGesture);
+        action.InputGestureText = shortcut.Shortcuts.Count > 0 ? shortcut.Shortcuts[0].DisplayText : string.Empty;
     }
 
     private static string StripMnemonics(string text) =>

@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Windows.Input;
 using Avalonia.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Signet.App.Input;
 
 namespace Signet.App.Actions;
 
@@ -106,9 +108,16 @@ public sealed partial class AppAction : ObservableObject, ICommand
     [ObservableProperty]
     private string _inputGestureText = string.Empty;
 
-    /// <summary>Current keyboard shortcut (from <c>KeyboardShortcutManager</c>) or <see langword="null"/>.</summary>
+    /// <summary>
+    /// The first one-stroke keyboard shortcut (from <c>KeyboardShortcutManager</c>) — what menus and toolbar tooltips
+    /// show — or <see langword="null"/>.
+    /// </summary>
     [ObservableProperty]
     private KeyGesture? _gesture;
+
+    /// <summary>All current shortcuts of the action (keyboard and mouse), in the order they were added.</summary>
+    [ObservableProperty]
+    private IReadOnlyList<Shortcut> _shortcuts = Array.Empty<Shortcut>();
 
     /// <inheritdoc />
     public bool CanExecute(object? parameter) => IsEnabled;

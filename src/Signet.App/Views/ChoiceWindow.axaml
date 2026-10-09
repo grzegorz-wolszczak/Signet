@@ -1,0 +1,17 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Signet.App.Views.ChoiceWindow"
+        Width="460" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Title="Signet">
+
+  <!-- A question with several answers (e.g. Remove / Leave / Cancel) — the buttons are added in code. -->
+  <StackPanel Margin="16" Spacing="14">
+    <ScrollViewer MaxHeight="360" HorizontalScrollBarVisibility="Disabled">
+      <TextBlock x:Name="MessageText" TextWrapping="Wrap" />
+    </ScrollViewer>
+    <StackPanel x:Name="Buttons" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" />
+  </StackPanel>
+</Window>

@@ -866,51 +866,6 @@ Atrybuty tych znaczników zostaną utracone:
   <data name="FontPickerWindow_Sample" xml:space="preserve">
     <value>Zażółć gęślą jaźń — AaBbCc 0123456789 &lt;p class="x"&gt;</value>
   </data>
-  <data name="PreferencesWindow_ShortcutsHint" xml:space="preserve">
-    <value>Kliknij dwukrotnie nazwę polecenia, żeby zmienić przypisany do niego skrót.</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutsSearch" xml:space="preserve">
-    <value>Szukaj skrótu po nazwie polecenia albo kombinacji klawiszy…</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutsOnlyConflicts" xml:space="preserve">
-    <value>Tylko konflikty</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutLine" xml:space="preserve">
-    <value>Skrót: {0}</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutNone" xml:space="preserve">
-    <value>Brak</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutConflictsWith" xml:space="preserve">
-    <value>Koliduje z: {0}</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutCustomize" xml:space="preserve">
-    <value>Dostosuj:</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutDone" xml:space="preserve">
-    <value>Gotowe</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutDefault" xml:space="preserve">
-    <value>Domyślny: {0}</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutCustom" xml:space="preserve">
-    <value>Własny</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutKey" xml:space="preserve">
-    <value>Skrót:</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutPressKeys" xml:space="preserve">
-    <value>Naciśnij klawisze…</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutClear" xml:space="preserve">
-    <value>Usuń skrót</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutInUse" xml:space="preserve">
-    <value>Skrót {0} jest już przypisany do: {1}</value>
-  </data>
-  <data name="PreferencesWindow_ShortcutConflictsHeader" xml:space="preserve">
-    <value>Konflikty skrótów:</value>
-  </data>
   <data name="PreferencesWindow_PreserveEntities" xml:space="preserve">
     <value>Zachowywane encje</value>
   </data>
@@ -4113,5 +4068,122 @@ Nie zmienia plików, ich nazw ani ID.</value>
   </data>
   <data name="BookBrowserView_ColumnProperties" xml:space="preserve">
     <value>Właściwości</value>
+  </data>
+  <data name="Shortcut_MouseClick" xml:space="preserve">
+    <value>Klik</value>
+  </data>
+  <data name="Shortcut_MouseDoubleClick" xml:space="preserve">
+    <value>Podwójny klik</value>
+  </data>
+  <data name="Shortcut_MouseMiddleClick" xml:space="preserve">
+    <value>Klik środkowym</value>
+  </data>
+  <data name="Shortcut_MouseMiddleDoubleClick" xml:space="preserve">
+    <value>Podwójny klik środkowym</value>
+  </data>
+  <data name="Shortcut_MouseRightClick" xml:space="preserve">
+    <value>Klik prawym</value>
+  </data>
+  <data name="Shortcut_MouseRightDoubleClick" xml:space="preserve">
+    <value>Podwójny klik prawym</value>
+  </data>
+  <data name="Shortcut_MouseBack" xml:space="preserve">
+    <value>Przycisk Wstecz</value>
+  </data>
+  <data name="Shortcut_MouseForward" xml:space="preserve">
+    <value>Przycisk Dalej</value>
+  </data>
+  <data name="Shortcut_MouseWheelUp" xml:space="preserve">
+    <value>Kółko w górę</value>
+  </data>
+  <data name="Shortcut_MouseWheelDown" xml:space="preserve">
+    <value>Kółko w dół</value>
+  </data>
+  <data name="Status_WaitingForSecondStroke" xml:space="preserve">
+    <value>Naciśnięto {0}. Czekam na drugi klawisz skrótu…</value>
+  </data>
+  <data name="Keymap_MainMenu" xml:space="preserve">
+    <value>Menu główne</value>
+  </data>
+  <data name="Keymap_Other" xml:space="preserve">
+    <value>Inne</value>
+  </data>
+  <data name="Keymap_ActionColumn" xml:space="preserve">
+    <value>Akcja</value>
+  </data>
+  <data name="Keymap_ExpandAll" xml:space="preserve">
+    <value>Rozwiń wszystko</value>
+  </data>
+  <data name="Keymap_CollapseAll" xml:space="preserve">
+    <value>Zwiń wszystko</value>
+  </data>
+  <data name="Keymap_EditShortcut" xml:space="preserve">
+    <value>Edytuj skróty</value>
+  </data>
+  <data name="Keymap_SearchPlaceholder" xml:space="preserve">
+    <value>Szukaj akcji lub skrótu</value>
+  </data>
+  <data name="Keymap_FindShortcut" xml:space="preserve">
+    <value>Znajdź skrót</value>
+  </data>
+  <data name="Keymap_ClearShortcutFilter" xml:space="preserve">
+    <value>Wyczyść filtr skrótu</value>
+  </data>
+  <data name="Keymap_MouseShortcutPad" xml:space="preserve">
+    <value>Skrót myszy (kliknij lub przewiń tutaj)</value>
+  </data>
+  <data name="Keymap_ResetAllConfirm" xml:space="preserve">
+    <value>Przywrócić domyślne skróty wszystkich akcji?</value>
+  </data>
+  <data name="Keymap_AddKeyboardShortcut" xml:space="preserve">
+    <value>Dodaj skrót klawiszowy</value>
+  </data>
+  <data name="Keymap_AddMouseShortcut" xml:space="preserve">
+    <value>Dodaj skrót myszy</value>
+  </data>
+  <data name="Keymap_RemoveShortcut" xml:space="preserve">
+    <value>Usuń {0}</value>
+  </data>
+  <data name="Keymap_RemoveAllShortcuts" xml:space="preserve">
+    <value>Usuń wszystkie skróty</value>
+  </data>
+  <data name="Keymap_ResetShortcuts" xml:space="preserve">
+    <value>Przywróć domyślne skróty</value>
+  </data>
+  <data name="Keymap_ConflictsHeader" xml:space="preserve">
+    <value>Konflikty:</value>
+  </data>
+  <data name="Keymap_ConflictTitle" xml:space="preserve">
+    <value>Konflikt skrótów</value>
+  </data>
+  <data name="Keymap_ConflictMessage" xml:space="preserve">
+    <value>Skrót {0} jest już przypisany do innych akcji:
+{1}
+
+Czy usunąć pozostałe przypisania?</value>
+  </data>
+  <data name="Keymap_ConflictRemove" xml:space="preserve">
+    <value>Usuń</value>
+  </data>
+  <data name="Keymap_ConflictLeave" xml:space="preserve">
+    <value>Zostaw</value>
+  </data>
+  <data name="KeymapKeyboardDialog_Title" xml:space="preserve">
+    <value>Skrót klawiszowy</value>
+  </data>
+  <data name="KeymapKeyboardDialog_FirstStroke" xml:space="preserve">
+    <value>Pierwszy klawisz:</value>
+  </data>
+  <data name="KeymapKeyboardDialog_SecondStroke" xml:space="preserve">
+    <value>Drugi klawisz</value>
+  </data>
+  <data name="KeymapMouseDialog_Title" xml:space="preserve">
+    <value>Skrót myszy</value>
+  </data>
+  <data name="KeymapMouseDialog_Hint" xml:space="preserve">
+    <value>Kliknij lub obróć kółkiem tutaj, trzymając klawisze modyfikujące</value>
+  </data>
+  <data name="KeymapMouseDialog_Reserved" xml:space="preserve">
+    <value>Zwykły klik lewym lub prawym przyciskiem nie może być skrótem.</value>
   </data>
 </root>

@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -103,11 +104,11 @@ public sealed class PreferencesWindowRenderTests
     }
 
     /// <summary>
-    /// The "Keyboard Shortcuts" tab: sections by category, a row editor after
-    /// expanding, and capturing the combination pressed on the shortcut button.
+    /// The "Keyboard Shortcuts" tab is the keymap: a tree of the actions with their shortcuts, filtered by the search
+    /// box, and "Find Shortcut" records a pressed key combination as the shortcut filter.
     /// </summary>
     [AvaloniaFact]
-    public void Keyboard_shortcut_editor_captures_a_pressed_key_combination()
+    public void Keymap_tab_shows_the_action_tree_and_finds_a_pressed_shortcut()
     {
         PreferencesWindow window = BuildWindow();
         var vm = (PreferencesViewModel)window.DataContext!;
@@ -116,28 +117,20 @@ public sealed class PreferencesWindowRenderTests
 
         TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
         tabs.SelectedIndex = 6; // Keyboard Shortcuts
-        ShortcutRow save = vm.Shortcuts.Single(r => r.Id == AppActionIds.Save);
-        vm.ShortcutGroups.Single(g => g.Rows.Contains(save)).IsExpanded = true;
-        save.ToggleEditorCommand.Execute(null);
-        save.IsCustom = true;
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
 
-        window.GetVisualDescendants().OfType<Expander>().Should().HaveCount(vm.ShortcutGroups.Count);
-        Border editor = window.GetVisualDescendants().OfType<Border>()
-            .Single(b => b.Classes.Contains("shortcutEditor") && b.IsVisible);
-        Button capture = editor.GetVisualDescendants().OfType<Button>()
-            .Single(b => b.Content is string text && text == save.CaptureButtonText);
+        KeymapView keymap = window.GetVisualDescendants().OfType<KeymapView>().Single();
+        window.GetVisualDescendants().OfType<TextBlock>().Should().Contain(t => t.Text == vm.Keymap.Roots[0].Name);
 
-        capture.Focus();
-        save.BeginCapture();
-        window.KeyPress(Avalonia.Input.Key.F9, Avalonia.Input.RawInputModifiers.Shift,
-            Avalonia.Input.PhysicalKey.F9, null);
+        ShortcutCaptureBox find = keymap.FindControl<ShortcutCaptureBox>("FindFirstStroke")!;
+        find.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = Key.S, KeyModifiers = KeyModifiers.Control });
         Dispatcher.UIThread.RunJobs();
 
-        save.IsCapturing.Should().BeFalse();
-        save.GestureText.Should().Be("Shift+F9");
+        vm.Keymap.ShortcutFilter.Should().Be(new KeyStrokeShortcut(new KeyGesture(Key.S, KeyModifiers.Control)));
+        vm.Keymap.ActionNodes.Single(n => n.ActionId == AppActionIds.Save).IsVisible.Should().BeTrue();
+        vm.Keymap.ActionNodes.Single(n => n.ActionId == AppActionIds.Open).IsVisible.Should().BeFalse();
     }
 
     /// <summary>

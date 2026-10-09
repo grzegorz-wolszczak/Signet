@@ -1,20 +1,22 @@
+using System.Collections.Generic;
+using System.Linq;
 using Avalonia.Input;
 
 namespace Signet.App.Input;
 
 /// <summary>
-/// Registration of a single keyboard shortcut.
-/// Holds the current and default key sequence and a description. <see langword="null"/> = no shortcut.
+/// The shortcuts of one action: the current ones (keyboard and mouse, possibly several — as in IntelliJ's keymap) and
+/// the default ones, plus a description.
 /// </summary>
 public sealed class KeyboardShortcut
 {
-    internal KeyboardShortcut(string id, string description, KeyGesture? current, KeyGesture? @default, string? scope = null)
+    internal KeyboardShortcut(string id, string description, IReadOnlyList<Shortcut> current, IReadOnlyList<Shortcut> defaults, string? scope = null)
     {
         Id = id;
         Scope = scope;
         Description = description;
-        KeyGesture = current;
-        DefaultKeyGesture = @default;
+        Shortcuts = current;
+        DefaultShortcuts = defaults;
     }
 
     /// <summary>Action identifier (see <see cref="Signet.App.Actions.AppActionIds"/>).</summary>
@@ -29,13 +31,16 @@ public sealed class KeyboardShortcut
     /// <summary>Human-readable action description.</summary>
     public string Description { get; internal set; }
 
-    /// <summary>Current key sequence (may be overridden by the user).</summary>
-    public KeyGesture? KeyGesture { get; internal set; }
+    /// <summary>The current shortcuts (may be changed by the user), in the order they were added.</summary>
+    public IReadOnlyList<Shortcut> Shortcuts { get; internal set; }
 
-    /// <summary>Default (factory) key sequence.</summary>
-    public KeyGesture? DefaultKeyGesture { get; }
+    /// <summary>The default (factory) shortcuts.</summary>
+    public IReadOnlyList<Shortcut> DefaultShortcuts { get; }
 
-    /// <summary>Whether the current sequence differs from the default.</summary>
-    public bool IsOverridden =>
-        !Equals(KeyGesture?.ToString(), DefaultKeyGesture?.ToString());
+    /// <summary>The first one-stroke keyboard shortcut (what a menu item shows), or <see langword="null"/>.</summary>
+    public KeyGesture? KeyGesture =>
+        Shortcuts.OfType<KeyStrokeShortcut>().FirstOrDefault(s => s.Second is null)?.First;
+
+    /// <summary>Whether the current shortcuts differ from the defaults.</summary>
+    public bool IsOverridden => !Shortcuts.SequenceEqual(DefaultShortcuts);
 }

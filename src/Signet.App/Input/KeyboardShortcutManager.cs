@@ -7,14 +7,11 @@ using Signet.Core.Misc;
 namespace Signet.App.Input;
 
 /// <summary>
-/// Registry of the application's keyboard shortcuts, provided as a DI service. Holds the current and
-/// default sequences, detects conflicts and persists overrides in <see cref="SettingsStore"/>
-/// (group <c>keyboard_shortcuts</c>).
+/// The shortcuts of all actions (one keymap, as in IntelliJ): every action may have several keyboard shortcuts (one or
+/// two strokes) and mouse shortcuts. Defaults come from the action catalog; the actions whose shortcuts differ from
+/// the defaults are saved in the settings. Conflicting assignments are allowed — the keymap editor warns about them
+/// and lets the user take the shortcut away from the other actions.
 /// </summary>
-/// <remarks>
-/// Only entries that differ from the defaults are persisted (an empty string = the shortcut was
-/// deliberately removed). The shortcut editor in Preferences builds on this mechanism.
-/// </remarks>
 public sealed class KeyboardShortcutManager
 {
     /// <summary>Name of the settings group in which overrides are stored.</summary>
@@ -31,15 +28,15 @@ public sealed class KeyboardShortcutManager
         _overrides = new Dictionary<string, string>(_settings.GetStringMap(SettingsGroup), StringComparer.Ordinal);
     }
 
-    /// <summary>Raised after every sequence change (the argument is the action id).</summary>
+    /// <summary>Raised after every change of an action's shortcuts (the argument is the action id).</summary>
     public event EventHandler<string>? ShortcutChanged;
 
-    /// <summary>All registered shortcuts.</summary>
+    /// <summary>All registered actions with their shortcuts.</summary>
     public IReadOnlyCollection<KeyboardShortcut> AllShortcuts => _shortcuts.Values;
 
     /// <summary>
-    /// Registers an action with its default sequence. Registering the same id again is
-    /// ignored. If a saved override exists, it is applied.
+    /// Registers an action with its default shortcuts (the settings syntax of <see cref="ShortcutConversion"/>).
+    /// Registering the same id again is ignored. A saved override replaces the defaults.
     /// </summary>
     public KeyboardShortcut RegisterAction(string id, string defaultShortcut, string description, string? scope = null)
     {
@@ -48,83 +45,95 @@ public sealed class KeyboardShortcutManager
             return existing;
         }
 
-        _ = KeyGestureConversion.TryParse(defaultShortcut, out KeyGesture? defaultGesture);
-        KeyGesture? current = defaultGesture;
+        IReadOnlyList<Shortcut> defaults = ShortcutConversion.ParseList(defaultShortcut);
+        IReadOnlyList<Shortcut> current = _overrides.TryGetValue(id, out string? stored)
+            ? ShortcutConversion.ParseList(stored)
+            : defaults;
 
-        if (_overrides.TryGetValue(id, out string? stored))
-        {
-            current = stored.Length == 0 ? null
-                : KeyGestureConversion.TryParse(stored, out KeyGesture? g) ? g : defaultGesture;
-        }
-
-        KeyboardShortcut shortcut = new(id, description, current, defaultGesture, scope);
+        KeyboardShortcut shortcut = new(id, description, current, defaults, scope);
         _shortcuts[id] = shortcut;
         return shortcut;
     }
 
-    /// <summary>Returns the shortcut for the id or <see langword="null"/>.</summary>
+    /// <summary>Returns the shortcuts of the action or <see langword="null"/>.</summary>
     public KeyboardShortcut? Get(string id) => _shortcuts.GetValueOrDefault(id);
 
     /// <summary>
-    /// Whether the sequence is already used by another action (other than <paramref name="exceptId"/>).
+    /// The actions (other than <paramref name="actionId"/>, in an overlapping scope) whose shortcuts conflict with
+    /// <paramref name="shortcut"/> (<see cref="Conflict"/>).
     /// </summary>
-    public bool IsKeyGestureInUse(KeyGesture gesture, string exceptId = "") =>
-        FindKeyGestureOwner(gesture, exceptId) is not null;
-
-    /// <summary>
-    /// Id of the action that already has the sequence <paramref name="gesture"/> assigned (other than
-    /// <paramref name="exceptId"/>), or <see langword="null"/> when the sequence is free.
-    /// </summary>
-    public string? FindKeyGestureOwner(KeyGesture gesture, string exceptId = "")
+    public IReadOnlyList<string> FindConflicts(string actionId, Shortcut shortcut)
     {
-        ArgumentNullException.ThrowIfNull(gesture);
-        string key = gesture.ToString();
-        string? scope = _shortcuts.TryGetValue(exceptId, out KeyboardShortcut? except) ? except.Scope : null;
-        foreach (KeyValuePair<string, KeyboardShortcut> kv in _shortcuts)
-        {
-            if (!string.Equals(kv.Key, exceptId, StringComparison.Ordinal)
-                && ScopesOverlap(scope, kv.Value.Scope)
-                && kv.Value.KeyGesture is { } cur
-                && string.Equals(cur.ToString(), key, StringComparison.Ordinal))
-            {
-                return kv.Key;
-            }
-        }
-
-        return null;
+        ArgumentNullException.ThrowIfNull(shortcut);
+        string? scope = _shortcuts.TryGetValue(actionId, out KeyboardShortcut? own) ? own.Scope : null;
+        return _shortcuts.Values
+            .Where(s => !string.Equals(s.Id, actionId, StringComparison.Ordinal)
+                && ScopesOverlap(scope, s.Scope)
+                && s.Shortcuts.Any(other => Conflict(shortcut, other)))
+            .Select(s => s.Id)
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToList();
     }
 
     /// <summary>
-    /// Sets the sequence for an action. Returns <see langword="false"/> (no change) if the
-    /// sequence is already taken by another action. <paramref name="gesture"/> =
-    /// <see langword="null"/> removes the shortcut and always succeeds.
+    /// The actions having a shortcut that matches <paramref name="filter"/> — the keymap's "Find Shortcut": a keyboard
+    /// filter matches shortcuts with the same first stroke (and the same second one when the filter has it); a mouse
+    /// filter matches the equal mouse shortcut.
     /// </summary>
-    public bool SetKeyGesture(string id, KeyGesture? gesture)
+    public IReadOnlyList<string> FindActions(Shortcut filter)
     {
-        if (!_shortcuts.TryGetValue(id, out KeyboardShortcut? shortcut))
-        {
-            return false;
-        }
-
-        if (gesture is not null && IsKeyGestureInUse(gesture, id))
-        {
-            return false;
-        }
-
-        shortcut.KeyGesture = gesture;
-        SyncOverride(shortcut);
-        ShortcutChanged?.Invoke(this, id);
-        return true;
+        ArgumentNullException.ThrowIfNull(filter);
+        return _shortcuts.Values.Where(s => s.Shortcuts.Any(own => Matches(filter, own))).Select(s => s.Id).ToList();
     }
 
-    /// <summary>Restores the default sequence for an action.</summary>
+    /// <summary>Adds a shortcut to the action (nothing when it already has it). Conflicts are not checked.</summary>
+    public void AddShortcut(string id, Shortcut shortcut)
+    {
+        ArgumentNullException.ThrowIfNull(shortcut);
+        if (_shortcuts.TryGetValue(id, out KeyboardShortcut? entry) && !entry.Shortcuts.Contains(shortcut))
+        {
+            Set(entry, entry.Shortcuts.Append(shortcut).ToList());
+        }
+    }
+
+    /// <summary>Removes a shortcut from the action.</summary>
+    public void RemoveShortcut(string id, Shortcut shortcut)
+    {
+        ArgumentNullException.ThrowIfNull(shortcut);
+        if (_shortcuts.TryGetValue(id, out KeyboardShortcut? entry) && entry.Shortcuts.Contains(shortcut))
+        {
+            Set(entry, entry.Shortcuts.Where(s => !s.Equals(shortcut)).ToList());
+        }
+    }
+
+    /// <summary>Removes all shortcuts of the action.</summary>
+    public void RemoveAllShortcuts(string id)
+    {
+        if (_shortcuts.TryGetValue(id, out KeyboardShortcut? entry) && entry.Shortcuts.Count > 0)
+        {
+            Set(entry, Array.Empty<Shortcut>());
+        }
+    }
+
+    /// <summary>
+    /// Takes <paramref name="shortcut"/> away from the actions it conflicts with (<see cref="FindConflicts"/>) — the
+    /// "Remove" answer of the conflict question.
+    /// </summary>
+    public void RemoveConflicts(string actionId, Shortcut shortcut)
+    {
+        foreach (string other in FindConflicts(actionId, shortcut))
+        {
+            KeyboardShortcut entry = _shortcuts[other];
+            Set(entry, entry.Shortcuts.Where(s => !Conflict(shortcut, s)).ToList());
+        }
+    }
+
+    /// <summary>Restores the default shortcuts of an action.</summary>
     public void ResetToDefault(string id)
     {
-        if (_shortcuts.TryGetValue(id, out KeyboardShortcut? shortcut))
+        if (_shortcuts.TryGetValue(id, out KeyboardShortcut? entry))
         {
-            shortcut.KeyGesture = shortcut.DefaultKeyGesture;
-            SyncOverride(shortcut);
-            ShortcutChanged?.Invoke(this, id);
+            Set(entry, entry.DefaultShortcuts);
         }
     }
 
@@ -133,7 +142,7 @@ public sealed class KeyboardShortcutManager
     {
         foreach (KeyboardShortcut shortcut in _shortcuts.Values)
         {
-            shortcut.KeyGesture = shortcut.DefaultKeyGesture;
+            shortcut.Shortcuts = shortcut.DefaultShortcuts;
         }
 
         _overrides.Clear();
@@ -145,51 +154,51 @@ public sealed class KeyboardShortcutManager
         }
     }
 
-    /// <summary>Pairs of actions sharing the same sequence (diagnostics; in practice it should be empty).</summary>
-    public IReadOnlyList<(string First, string Second, string Gesture)> FindConflicts()
+    /// <summary>
+    /// Whether two shortcuts conflict (as IntelliJ's <c>Keymap.getConflicts</c>): equal mouse shortcuts, or keyboard
+    /// shortcuts with the same first stroke where one has no second stroke or both have the same one.
+    /// </summary>
+    public static bool Conflict(Shortcut first, Shortcut second)
     {
-        List<(string, string, string)> conflicts = new();
-        List<KeyboardShortcut> withGesture = _shortcuts.Values
-            .Where(s => s.KeyGesture is not null)
-            .OrderBy(s => s.Id, StringComparer.Ordinal)
-            .ToList();
-
-        for (int i = 0; i < withGesture.Count; i++)
+        ArgumentNullException.ThrowIfNull(first);
+        ArgumentNullException.ThrowIfNull(second);
+        return (first, second) switch
         {
-            for (int j = i + 1; j < withGesture.Count; j++)
-            {
-                if (ScopesOverlap(withGesture[i].Scope, withGesture[j].Scope)
-                    && string.Equals(withGesture[i].KeyGesture!.ToString(), withGesture[j].KeyGesture!.ToString(), StringComparison.Ordinal))
-                {
-                    // The shortcut is shown in the portable syntax ("Ctrl+0"), as in the shortcut edit fields —
-                    // Avalonia's KeyGesture.ToString() would give the raw key name ("Ctrl+D0").
-                    conflicts.Add((
-                        withGesture[i].Id,
-                        withGesture[j].Id,
-                        KeyGestureConversion.ToPortableString(withGesture[i].KeyGesture)));
-                }
-            }
-        }
-
-        return conflicts;
+            (KeyStrokeShortcut a, KeyStrokeShortcut b) => SameStroke(a.First, b.First)
+                && (a.Second is null || b.Second is null || SameStroke(a.Second, b.Second)),
+            (MouseShortcut a, MouseShortcut b) => a.Equals(b),
+            _ => false,
+        };
     }
+
+    private static bool Matches(Shortcut filter, Shortcut shortcut) => (filter, shortcut) switch
+    {
+        (KeyStrokeShortcut f, KeyStrokeShortcut s) =>
+            SameStroke(f.First, s.First) && (f.Second is null || (s.Second is not null && SameStroke(f.Second, s.Second))),
+        (MouseShortcut f, MouseShortcut s) => f.Equals(s),
+        _ => false,
+    };
+
+    private static bool SameStroke(KeyGesture a, KeyGesture b) => a.Key == b.Key && a.KeyModifiers == b.KeyModifiers;
 
     // A window-wide shortcut (no scope) overlaps with everything; two panel shortcuts only within the same panel.
     private static bool ScopesOverlap(string? first, string? second) =>
         first is null || second is null || string.Equals(first, second, StringComparison.Ordinal);
 
-    private void SyncOverride(KeyboardShortcut shortcut)
+    private void Set(KeyboardShortcut entry, IReadOnlyList<Shortcut> shortcuts)
     {
-        if (shortcut.IsOverridden)
+        entry.Shortcuts = shortcuts;
+        if (entry.IsOverridden)
         {
-            _overrides[shortcut.Id] = KeyGestureConversion.ToPortableString(shortcut.KeyGesture);
+            _overrides[entry.Id] = ShortcutConversion.ToListString(shortcuts);
         }
         else
         {
-            _overrides.Remove(shortcut.Id);
+            _overrides.Remove(entry.Id);
         }
 
         Persist();
+        ShortcutChanged?.Invoke(this, entry.Id);
     }
 
     private void Persist()

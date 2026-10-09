@@ -1,0 +1,38 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="using:Signet.App.Resources"
+        xmlns:views="using:Signet.App.Views"
+        x:Class="Signet.App.Views.KeyboardShortcutDialog"
+        Width="440" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Title="{loc:Loc KeymapKeyboardDialog_Title}">
+
+  <!-- IntelliJ's KeyboardShortcutDialog: the first stroke, an optional second stroke, the conflicts shown live. -->
+  <StackPanel Margin="16" Spacing="8">
+    <TextBlock x:Name="ActionName" FontWeight="SemiBold" TextWrapping="Wrap" />
+    <TextBlock Text="{loc:Loc KeymapKeyboardDialog_FirstStroke}" />
+    <views:ShortcutCaptureBox x:Name="FirstStroke" />
+    <CheckBox x:Name="SecondEnabled" Content="{loc:Loc KeymapKeyboardDialog_SecondStroke}" />
+    <views:ShortcutCaptureBox x:Name="SecondStroke" IsEnabled="{Binding #SecondEnabled.IsChecked}" />
+
+    <StackPanel x:Name="ConflictsPanel" Spacing="2" IsVisible="False" Margin="0,4,0,0">
+      <TextBlock Text="{loc:Loc Keymap_ConflictsHeader}" Classes="warning" FontWeight="SemiBold" />
+      <ScrollViewer MaxHeight="140">
+        <ItemsControl x:Name="Conflicts">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <TextBlock Text="{Binding}" Classes="warning" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </StackPanel>
+
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,8,0,0">
+      <Button x:Name="OkButton" Content="{loc:Loc Common_Ok}" MinWidth="80" IsEnabled="False" />
+      <Button x:Name="CancelButton" Content="{loc:Loc Common_Cancel}" MinWidth="80" />
+    </StackPanel>
+  </StackPanel>
+</Window>

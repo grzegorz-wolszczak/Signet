@@ -36,7 +36,7 @@ public partial class ClipsPanelView : UserControl
 
     private ClipsViewModel? _bound;
     private ClipNodeViewModel? _editingNode;
-    private readonly PanelKeyBindings _keys;
+    private readonly ShortcutKeyBindings _keys;
 
     // Keeps the column headers in the current UI language (held weakly by Strings).
     private LocalizedColumns<ClipNodeViewModel>? _columns;
@@ -47,7 +47,7 @@ public partial class ClipsPanelView : UserControl
     public ClipsPanelView()
     {
         InitializeComponent();
-        _keys = new PanelKeyBindings(this);
+        _keys = new ShortcutKeyBindings(this);
         DataContextChanged += (_, _) => BuildTree();
         Tree.DoubleTapped += OnDoubleTapped;
         Tree.AddHandler(KeyDownEvent, OnTreeKeyDown, RoutingStrategies.Tunnel);

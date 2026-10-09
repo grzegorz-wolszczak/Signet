@@ -9,7 +9,6 @@ using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using Signet.App.Actions;
 using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.ViewModels;
@@ -47,6 +46,10 @@ public partial class BookBrowserView : UserControl
 
     private BookBrowserViewModel? _boundViewModel;
 
+    // The panel-scoped shortcuts (Rename, Merge, Delete…): bound on THIS view, so they fire only while the panel has
+    // the focus — e.g. F2 in Code View does not rename a file.
+    private readonly ShortcutKeyBindings _shortcutBindings;
+
     // Keeps the column headers in the current UI language (held weakly by Strings).
     private LocalizedColumns<BookBrowserNode>? _columns;
     private HierarchicalTreeDataGridSource<BookBrowserNode>? _source;
@@ -59,6 +62,7 @@ public partial class BookBrowserView : UserControl
     public BookBrowserView()
     {
         InitializeComponent();
+        _shortcutBindings = new ShortcutKeyBindings(this);
         DataContextChanged += OnDataContextChanged;
         Tree.DoubleTapped += OnDoubleTapped;
         Tree.AddHandler(ContextRequestedEvent, OnTreeContextRequested, RoutingStrategies.Tunnel);
@@ -231,59 +235,13 @@ public partial class BookBrowserView : UserControl
     // The remaining actions are window-wide shortcuts.
     private void AttachShortcutActions()
     {
-        if (_boundViewModel is null)
+        if (_boundViewModel is not null)
         {
-            return;
-        }
-
-        foreach (AppAction action in _boundViewModel.ShortcutActions)
-        {
-            action.PropertyChanged += OnShortcutActionPropertyChanged;
-        }
-
-        RebuildShortcutBindings();
-    }
-
-    private void DetachShortcutActions()
-    {
-        if (_boundViewModel is null)
-        {
-            return;
-        }
-
-        foreach (AppAction action in _boundViewModel.ShortcutActions)
-        {
-            action.PropertyChanged -= OnShortcutActionPropertyChanged;
-        }
-
-        KeyBindings.Clear();
-    }
-
-    // A shortcut change in Preferences must take effect immediately, without restarting the application.
-    private void OnShortcutActionPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(AppAction.Gesture))
-        {
-            RebuildShortcutBindings();
+            _shortcutBindings.Attach(_boundViewModel.ShortcutActions);
         }
     }
 
-    private void RebuildShortcutBindings()
-    {
-        KeyBindings.Clear();
-        if (_boundViewModel is null)
-        {
-            return;
-        }
-
-        foreach (AppAction action in _boundViewModel.ShortcutActions)
-        {
-            if (action.Gesture is { } gesture)
-            {
-                KeyBindings.Add(new KeyBinding { Gesture = gesture, Command = action });
-            }
-        }
-    }
+    private void DetachShortcutActions() => _shortcutBindings.Detach();
 
     private void OnDoubleTapped(object? sender, TappedEventArgs e)
     {
@@ -350,11 +308,11 @@ public partial class BookBrowserView : UserControl
         if (_boundViewModel.EditingNode is not null)
         {
             // Panel shortcuts (Del, Ctrl+M…) must not act on files while a name is being typed.
-            KeyBindings.Clear();
+            _shortcutBindings.SetSuspended(true);
             return;
         }
 
-        RebuildShortcutBindings();
+        _shortcutBindings.SetSuspended(false);
         if (IsInRenameEditor(TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement()))
         {
             // Back to the row (in a TreeDataGrid the cells take the focus, not the rows or the grid).

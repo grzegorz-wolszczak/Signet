@@ -43,10 +43,18 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             Patterns = new[] { "*.epub", "*.xhtml", "*.html", "*.htm", "*.txt" },
         };
 
+    // The window-wide keyboard shortcuts (one- and two-stroke) of the actions.
+    private readonly ShortcutKeyBindings _shortcutBindings;
+
+    // The mouse shortcuts of the actions — for now only in Code View (MouseShortcutRouter.IsInCodeView).
+    private readonly MouseShortcutRouter _mouseShortcuts;
+
     /// <summary>Initializes a new window instance and loads its XAML definition.</summary>
     public MainWindow()
     {
         InitializeComponent();
+        _shortcutBindings = new ShortcutKeyBindings(this);
+        _mouseShortcuts = new MouseShortcutRouter(this, () => _boundViewModel?.ShortcutActions ?? Array.Empty<AppAction>(), MouseShortcutRouter.IsInCodeView);
         DataContextChanged += OnDataContextChanged;
 
         // Drag & drop of a file (e.g. an EPUB) onto the window = File → Open. handledEventsToo, because child
@@ -120,14 +128,10 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             _boundViewModel.SearchEditorRequested -= OnSearchEditorRequested;
             _boundViewModel.StandardizeEpubRequested -= OnStandardizeEpubRequested;
             _boundViewModel.CloseWindowRequested -= OnCloseWindowRequested;
-            foreach (AppAction action in _boundViewModel.ShortcutActions)
-            {
-                action.PropertyChanged -= OnShortcutActionPropertyChanged;
-            }
         }
 
         _boundViewModel = DataContext as MainWindowViewModel;
-        KeyBindings.Clear();
+        _shortcutBindings.Detach();
 
         if (_boundViewModel is null)
         {
@@ -172,38 +176,8 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         _boundViewModel.CloseWindowRequested += OnCloseWindowRequested;
         _boundViewModel.AttachFileWorkflowPrompts(this);
 
-        foreach (AppAction action in _boundViewModel.ShortcutActions)
-        {
-            action.PropertyChanged += OnShortcutActionPropertyChanged;
-        }
-
-        RebuildShortcutBindings();
-    }
-
-    // A shortcut change in Preferences must take effect immediately, without restarting the application.
-    private void OnShortcutActionPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(AppAction.Gesture))
-        {
-            RebuildShortcutBindings();
-        }
-    }
-
-    private void RebuildShortcutBindings()
-    {
-        KeyBindings.Clear();
-        if (_boundViewModel is null)
-        {
-            return;
-        }
-
-        foreach (AppAction action in _boundViewModel.ShortcutActions)
-        {
-            if (action.Gesture is { } gesture)
-            {
-                KeyBindings.Add(new KeyBinding { Gesture = gesture, Command = action });
-            }
-        }
+        // A shortcut change in Preferences takes effect immediately, without restarting the application.
+        _shortcutBindings.Attach(_boundViewModel.ShortcutActions);
     }
 
     /// <inheritdoc />

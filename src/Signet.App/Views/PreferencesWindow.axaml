@@ -3,6 +3,7 @@
         xmlns:vm="using:Signet.App.ViewModels"
         xmlns:loc="using:Signet.App.Resources"
         xmlns:infra="using:Signet.App.Infrastructure"
+        xmlns:views="using:Signet.App.Views"
         x:Class="Signet.App.Views.PreferencesWindow"
         x:DataType="vm:PreferencesViewModel"
         Width="820" Height="640"
@@ -31,25 +32,10 @@
       <Setter Property="CornerRadius" Value="4" />
       <Setter Property="Padding" Value="10" />
     </Style>
-    <!-- Shortcut editor: a framed list, rows highlighted under the cursor,
-         an expanded row editor with an accent bar on the left. -->
-    <Style Selector="Border.shortcutList, Border.listFrame">
+    <Style Selector="Border.listFrame">
       <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="CornerRadius" Value="4" />
-    </Style>
-    <Style Selector="Border.shortcutRow">
-      <Setter Property="Background" Value="Transparent" />
-      <Setter Property="Padding" Value="24,4,8,4" />
-    </Style>
-    <Style Selector="Border.shortcutRow:pointerover">
-      <Setter Property="Background" Value="{DynamicResource SystemControlHighlightListLowBrush}" />
-    </Style>
-    <Style Selector="Border.shortcutEditor">
-      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlHighlightAccentBrush}" />
-      <Setter Property="BorderThickness" Value="6,1,1,1" />
-      <Setter Property="Padding" Value="12,8" />
-      <Setter Property="Margin" Value="0,2" />
     </Style>
     <!-- Code View color fields: the background takes the color of the entered value, also on hover and when focused
          (Fluent then replaces the template border's background with its own). -->
@@ -601,104 +587,9 @@
       </TabItem>
 
       <!-- =========================== Keyboard Shortcuts =========================== -->
-      <!-- Layout: collapsible sections by category (menu), two-line rows
-           (name + current shortcut), a double click expands the row editor (Default / Custom with key
-           combination capture), a filter by name or shortcut. Conflicts: in the row and summarized at the bottom. -->
+      <!-- The keymap editor modelled on IntelliJ's Keymap page (KeymapView). -->
       <TabItem Header="{loc:Loc PreferencesWindow_KeyboardShortcuts}">
-        <DockPanel Margin="8">
-          <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_ShortcutsHint}"
-                     TextWrapping="Wrap" Margin="0,0,0,6" />
-
-          <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" ColumnSpacing="10" Margin="0,0,0,6">
-            <TextBox Grid.Column="0" Text="{Binding ShortcutFilter}"
-                     PlaceholderText="{loc:Loc PreferencesWindow_ShortcutsSearch}" />
-            <CheckBox Grid.Column="1" Content="{loc:Loc PreferencesWindow_ShortcutsOnlyConflicts}"
-                      IsChecked="{Binding ShowOnlyShortcutConflicts}" VerticalAlignment="Center" />
-          </Grid>
-
-          <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="0,8,0,0">
-            <StackPanel Spacing="2" IsVisible="{Binding !!Conflicts.Count}">
-              <TextBlock Text="{loc:Loc PreferencesWindow_ShortcutConflictsHeader}" FontWeight="SemiBold"
-                         Foreground="Crimson" />
-              <ItemsControl ItemsSource="{Binding Conflicts}" Foreground="Crimson">
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate x:DataType="x:String">
-                    <TextBlock Text="{Binding}" TextWrapping="Wrap" />
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
-            </StackPanel>
-            <Button Content="{loc:Loc PreferencesWindow_ResetAll}" Command="{Binding ResetAllShortcutsCommand}" HorizontalAlignment="Left" />
-          </StackPanel>
-
-          <Border Classes="shortcutList">
-            <ScrollViewer HorizontalScrollBarVisibility="Disabled">
-              <ItemsControl ItemsSource="{Binding ShortcutGroups}">
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate DataType="vm:ShortcutGroup">
-                    <Expander Header="{Binding Category}" IsExpanded="{Binding IsExpanded}"
-                              IsVisible="{Binding IsVisible}" HorizontalAlignment="Stretch"
-                              HorizontalContentAlignment="Stretch" Padding="0" Margin="0,0,0,2">
-                      <ItemsControl ItemsSource="{Binding Rows}">
-                        <ItemsControl.ItemTemplate>
-                          <DataTemplate DataType="vm:ShortcutRow">
-                            <StackPanel IsVisible="{Binding IsVisible}">
-                              <!-- Collapsed row: name + shortcut (+ conflict). A double click expands the editor. -->
-                              <Border Classes="shortcutRow" IsVisible="{Binding !IsExpanded}"
-                                      DoubleTapped="OnShortcutRowDoubleTapped">
-                                <StackPanel Spacing="1">
-                                  <TextBlock Text="{Binding Label}" FontWeight="SemiBold" />
-                                  <TextBlock Text="{Binding ShortcutLine}" />
-                                  <TextBlock Text="{Binding ConflictText}" Foreground="Crimson"
-                                             IsVisible="{Binding HasConflict}" TextWrapping="Wrap" />
-                                </StackPanel>
-                              </Border>
-
-                              <!-- Row editor. -->
-                              <Border Classes="shortcutEditor" IsVisible="{Binding IsExpanded}">
-                                <StackPanel Spacing="6">
-                                  <DockPanel>
-                                    <Button DockPanel.Dock="Right" Content="{loc:Loc PreferencesWindow_ShortcutDone}"
-                                            Command="{Binding ToggleEditorCommand}" />
-                                    <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" TextWrapping="Wrap">
-                                      <Run Text="{loc:Loc PreferencesWindow_ShortcutCustomize}" />
-                                      <Run Text="{Binding Label}" />
-                                    </TextBlock>
-                                  </DockPanel>
-
-                                  <StackPanel Spacing="4">
-                                    <RadioButton Content="{Binding DefaultOptionText}" IsChecked="{Binding IsDefaultChoice}" />
-                                    <RadioButton Content="{loc:Loc PreferencesWindow_ShortcutCustom}" IsChecked="{Binding IsCustom}" />
-                                  </StackPanel>
-
-                                  <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="6" Margin="24,0,0,0"
-                                        IsEnabled="{Binding IsCustom}">
-                                    <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_ShortcutKey}"
-                                               VerticalAlignment="Center" />
-                                    <Button Grid.Column="2" MinWidth="160" HorizontalContentAlignment="Center"
-                                            Content="{Binding CaptureButtonText}"
-                                            Click="OnCaptureClicked" LostFocus="OnCaptureLostFocus" />
-                                    <Button Grid.Column="3" Content="✕" Command="{Binding ClearGestureCommand}"
-                                            ToolTip.Tip="{loc:Loc PreferencesWindow_ShortcutClear}" />
-                                  </Grid>
-
-                                  <TextBlock Text="{Binding EditorMessage}" Foreground="Crimson"
-                                             IsVisible="{Binding HasEditorMessage}" TextWrapping="Wrap" />
-                                  <TextBlock Text="{Binding ConflictText}" Foreground="Crimson"
-                                             IsVisible="{Binding HasConflict}" TextWrapping="Wrap" />
-                                </StackPanel>
-                              </Border>
-                            </StackPanel>
-                          </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                      </ItemsControl>
-                    </Expander>
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
-            </ScrollViewer>
-          </Border>
-        </DockPanel>
+        <views:KeymapView DataContext="{Binding Keymap}" Margin="8" />
       </TabItem>
 
       <!-- ============================ Preserve Entities ============================ -->
