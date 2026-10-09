@@ -143,9 +143,8 @@ public sealed class MainWindowViewModelTests
         MainWindowViewModel sut = New();
         MainDockFactory factory = (MainDockFactory)sut.DockFactory;
 
-        // Without this, an empty tab area collapsed to zero and the bottom panel took over the whole center.
+        // Without this, an empty tab area collapsed to zero and the other panels took over its space.
         factory.DocumentDock!.IsCollapsable.Should().BeFalse();
-        factory.DocumentDock!.Proportion.Should().BeGreaterThan(0.5);
 
         // Validation Results starts hidden, so it does not dominate the center.
         factory.IsToolVisible(DockableIds.ValidationResults).Should().BeFalse();

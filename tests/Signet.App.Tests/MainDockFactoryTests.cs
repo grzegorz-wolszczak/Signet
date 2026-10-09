@@ -51,6 +51,36 @@ public sealed class MainDockFactoryTests
     }
 
     [Fact]
+    public void Bottom_region_spans_the_whole_width_under_the_side_regions()
+    {
+        // Collapsed ("Auto Hide") bottom panels slide out along the whole window, so the docked bottom region is
+        // as wide too — pinning a panel back does not move it into the middle column.
+        MainDockFactory factory = new();
+        IRootDock root = factory.CreateLayout();
+        factory.InitLayout(root);
+
+        IProportionalDock layout = root.VisibleDockables!.OfType<IProportionalDock>().Single();
+        layout.Orientation.Should().Be(Orientation.Vertical);
+        IDockable[] parts = layout.VisibleDockables!.Where(d => d is not IProportionalDockSplitter).ToArray();
+        parts.Should().HaveCount(2);
+        IProportionalDock row = parts[0].Should().BeAssignableTo<IProportionalDock>().Subject;
+        row.Orientation.Should().Be(Orientation.Horizontal);
+        row.VisibleDockables!.Where(d => d is not IProportionalDockSplitter).Select(d => d.Id)
+            .Should().Equal("LeftDock", DockableIds.Documents, "RightDock");
+        parts[1].Id.Should().Be("BottomDock");
+    }
+
+    [Fact]
+    public void Captured_layout_state_has_no_unset_proportions()
+    {
+        // The document area has no proportion of its own (NaN) — the snapshot must still be valid JSON.
+        DockLayoutState state = NewFactory().CaptureLayoutState();
+
+        double.IsNaN(state.DocumentsProportion).Should().BeFalse();
+        state.Regions.Should().OnlyContain(r => !double.IsNaN(r.Proportion));
+    }
+
+    [Fact]
     public void Vertical_proportions_are_left_at_defaults_even_when_bottom_was_saved_collapsed()
     {
         MainDockFactory sut = NewFactory();
