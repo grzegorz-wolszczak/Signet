@@ -46,7 +46,6 @@ public sealed class MainDockFactory : Factory
 
     private readonly Dictionary<string, Tool> _tools = new(StringComparer.Ordinal);
     private readonly HashSet<string> _hidden = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, int> _attentionCounts = new(StringComparer.Ordinal);
     private readonly Dictionary<string, IToolDock> _regionDocks = new(StringComparer.Ordinal);
 
     // The region a panel belongs to while it floats in its own window: where closing the window (or hiding the
@@ -277,9 +276,7 @@ public sealed class MainDockFactory : Factory
         {
             if (Strings.TryGet("Panel_" + tool.Id) is { } title)
             {
-                tool.Title = _attentionCounts.TryGetValue(tool.Id, out int count) && count > 0
-                    ? $"{title} ({count})"
-                    : title;
+                tool.Title = title;
             }
         }
 
@@ -900,22 +897,14 @@ public sealed class MainDockFactory : Factory
     }
 
     /// <summary>
-    /// Sets the attention state of a panel tab: <paramref name="count"/> &gt; 0 appends "(count)" to
-    /// the title and draws the tab with the warning color (<see cref="SignetTool.NeedsAttention"/>).
+    /// Sets the attention state of a panel tab: <paramref name="count"/> &gt; 0 puts a red dot on the tab's bell
+    /// and "[count]" after it (<see cref="SignetTool.AttentionCount"/>).
     /// </summary>
     public void SetToolAttention(string id, int count)
     {
-        if (!_tools.TryGetValue(id, out Tool? tool))
+        if (_tools.TryGetValue(id, out Tool? tool) && tool is SignetTool signetTool)
         {
-            return;
-        }
-
-        _attentionCounts[id] = count;
-        string title = Strings.TryGet("Panel_" + id) ?? tool.Title ?? id;
-        tool.Title = count > 0 ? $"{title} ({count})" : title;
-        if (tool is SignetTool signetTool)
-        {
-            signetTool.NeedsAttention = count > 0;
+            signetTool.AttentionCount = count;
         }
     }
 }

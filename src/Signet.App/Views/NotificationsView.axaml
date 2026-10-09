@@ -6,8 +6,9 @@
              x:DataType="vm:NotificationsViewModel">
 
   <UserControl.Styles>
-    <Style Selector="TextBlock.warning">
-      <Setter Property="Foreground" Value="{DynamicResource SignetWarningBrush}" />
+    <!-- An error (a blocked or failed operation): the error color. -->
+    <Style Selector="TextBlock.error">
+      <Setter Property="Foreground" Value="{DynamicResource SignetErrorBrush}" />
     </Style>
   </UserControl.Styles>
 
@@ -35,14 +36,14 @@
             <Grid ColumnDefinitions="18,Auto,*" MinHeight="20">
               <Path Grid.Column="0"
                     Data="{StaticResource SignetWarningGeometry}"
-                    Fill="{DynamicResource SignetWarningBrush}"
+                    Fill="{DynamicResource SignetErrorBrush}"
                     Stretch="Uniform" Width="13" Height="13"
                     VerticalAlignment="Center"
                     IsVisible="{Binding IsWarning}" />
               <TextBlock Grid.Column="1" Text="{Binding TimeText}"
                          Opacity="0.7" Margin="0,0,10,0" VerticalAlignment="Center" />
               <TextBlock Grid.Column="2" Text="{Binding Message}"
-                         Classes.warning="{Binding IsWarning}"
+                         Classes.error="{Binding IsWarning}"
                          TextWrapping="Wrap" VerticalAlignment="Center" />
             </Grid>
           </DataTemplate>

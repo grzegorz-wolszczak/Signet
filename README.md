@@ -75,8 +75,10 @@ EPUB editor I know of) has them:
   `<body>` down to the element at the caret. Inherited properties that a closer element overrides
   are struck through, with the winning rule (selector, file and line) shown next to them. The panel
   sometimes shows more than needed, so this may still change.
-- **Notifications panel**: a history of all status bar messages of the session. Warnings about
-  blocked or failed operations are highlighted and counted on the bell icon in the status bar.
+- **Notifications panel**: a history of all status bar messages of the session. Errors (blocked or
+  failed operations) are shown in red (the color is set in Preferences). The panel tab has a bell icon.
+  Unread errors put a red dot on the bell with the count next to it (`[4]`), both on the tab and in
+  the status bar.
 - **Switching the UI language (Polish / English) on the fly**, without restarting the application.
 
 ## Sigil features that are not implemented

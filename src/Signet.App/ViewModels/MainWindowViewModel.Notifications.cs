@@ -16,14 +16,11 @@ public sealed partial class MainWindowViewModel
     /// <summary>The "Notifications" panel view model.</summary>
     public NotificationsViewModel Notifications => _notifications;
 
-    /// <summary>Whether the current status bar message is a warning (drawn with the warning color).</summary>
+    /// <summary>Whether the current status bar message is a warning — an error notification (drawn with the error color).</summary>
     public bool IsStatusMessageWarning => _statusBar.CurrentLevel == NotificationLevel.Warning;
 
     /// <summary>Whether the status bar shows the unread-warnings indicator.</summary>
     public bool HasUnreadWarnings => _notifications.HasUnreadWarnings;
-
-    /// <summary>The number shown next to the indicator icon.</summary>
-    public string UnreadWarningsText => _notifications.UnreadWarnings.ToString(System.Globalization.CultureInfo.CurrentCulture);
 
     /// <summary>The tooltip of the unread-warnings indicator.</summary>
     public string UnreadWarningsTooltip => Strings.Format("MainWindow_UnreadWarningsTooltip", _notifications.UnreadWarnings);
@@ -66,7 +63,6 @@ public sealed partial class MainWindowViewModel
 
         _dockFactory.SetToolAttention(DockableIds.Notifications, _notifications.UnreadWarnings);
         OnPropertyChanged(nameof(HasUnreadWarnings));
-        OnPropertyChanged(nameof(UnreadWarningsText));
         OnPropertyChanged(nameof(UnreadWarningsTooltip));
     }
 }

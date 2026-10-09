@@ -86,13 +86,16 @@
         <ResourceDictionary x:Key="Light">
           <SolidColorBrush x:Key="SignetTextSelectionBrush" Color="#ADD6FF" />
           <SolidColorBrush x:Key="SignetTextSelectionForegroundBrush" Color="#000000" />
-          <!-- Warnings (Notifications panel, status bar indicator, attention tabs). -->
+          <!-- Warnings in dialogs. -->
           <SolidColorBrush x:Key="SignetWarningBrush" Color="#B35C00" />
+          <!-- Error notifications (status bar message, Notifications panel, the dot on the bell). -->
+          <SolidColorBrush x:Key="SignetErrorBrush" Color="#D93030" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
           <SolidColorBrush x:Key="SignetTextSelectionBrush" Color="#264F78" />
           <SolidColorBrush x:Key="SignetTextSelectionForegroundBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="SignetWarningBrush" Color="#FFB900" />
+          <SolidColorBrush x:Key="SignetErrorBrush" Color="#F14C4C" />
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
 
@@ -245,22 +248,62 @@
       <Setter Property="SelectionForegroundBrush" Value="{DynamicResource SignetTextSelectionForegroundBrush}" />
     </Style>
 
-    <!-- Dock tabs of a panel that needs attention (the Notifications panel with unread warnings):
-         SignetTool.NeedsAttention → the "attention" class (DockAttention) → the warning color. -->
-    <Style Selector="dock|ToolTabStripItem" x:DataType="docking:SignetTool">
-      <Setter Property="docking:DockAttention.IsActive" Value="{Binding NeedsAttention, FallbackValue=False}" />
+    <!-- Tool tab titles: the title, followed by the notification bell for the panels that show one
+         (SignetTool.ShowsNotificationBell — the Notifications panel); unread errors (SignetTool.AttentionCount)
+         put a red dot on the bell and "[n]" after it. Dock's default header is just the title. -->
+    <Style Selector="dock|ToolControl">
+      <Setter Property="HeaderTemplate">
+        <DataTemplate DataType="dockCore:IDockable">
+          <StackPanel Orientation="Horizontal" Spacing="5">
+            <TextBlock Text="{Binding Title}" Padding="{DynamicResource DockHeaderContentPadding}" VerticalAlignment="Center" />
+            <views:NotificationBell x:DataType="docking:SignetTool"
+                                    IsVisible="{Binding ShowsNotificationBell, FallbackValue=False}"
+                                    UnreadCount="{Binding AttentionCount, FallbackValue=0}" />
+          </StackPanel>
+        </DataTemplate>
+      </Setter>
     </Style>
-    <Style Selector="dock|ToolPinItemControl" x:DataType="docking:SignetTool">
-      <Setter Property="docking:DockAttention.IsActive" Value="{Binding NeedsAttention, FallbackValue=False}" />
-    </Style>
-    <Style Selector="dock|ToolTabStripItem.attention, dock|ToolPinItemControl.attention">
-      <Setter Property="Foreground" Value="{DynamicResource SignetWarningBrush}" />
-      <Setter Property="FontWeight" Value="SemiBold" />
-    </Style>
-    <!-- A collapsed ("Auto Hide") tab draws its title inside a Button with its own foreground. -->
-    <Style Selector="dock|ToolPinItemControl.attention /template/ Button">
-      <Setter Property="Foreground" Value="{DynamicResource SignetWarningBrush}" />
-      <Setter Property="FontWeight" Value="SemiBold" />
+    <!-- A collapsed ("Auto Hide") tab: the ToolPinItemControl template of Dock.Avalonia.Themes.Fluent (v12.1.0.6)
+         with the notification bell after the title (as in the tool tab header above). -->
+    <Style Selector="dock|ToolPinItemControl" x:DataType="dockCore:IDockable">
+      <Setter Property="Template">
+        <ControlTemplate>
+          <DockableControl TrackingMode="Pinned">
+            <LayoutTransformControl x:Name="PART_LayoutTransformControl">
+              <Border Background="{TemplateBinding Background}"
+                      DockProperties.IsDragArea="True"
+                      DockProperties.IsDropArea="True"
+                      DockProperties.IsDockTarget="True"
+                      DockProperties.ShowDockIndicatorOnly="True"
+                      DockProperties.IndicatorDockOperation="Fill">
+                <Button Background="Transparent"
+                        BorderBrush="Transparent"
+                        BorderThickness="0"
+                        CornerRadius="0"
+                        Command="{Binding Owner.Factory.TogglePreviewPinnedDockable}"
+                        CommandParameter="{Binding}">
+                  <Button.IsVisible>
+                    <MultiBinding Converter="{x:Static dockConverters:DockCapabilityConverters.CanPinMultiConverter}">
+                      <Binding />
+                      <Binding Path="CanPin" />
+                      <Binding Path="DockCapabilityOverrides.CanPin" />
+                      <Binding Path="((dockCore:IDock)Owner).DockCapabilityPolicy.CanPin" />
+                    </MultiBinding>
+                  </Button.IsVisible>
+                  <StackPanel Orientation="Horizontal" Spacing="5" ContextMenu="{TemplateBinding PinContextMenu}">
+                    <TextBlock Text="{Binding Title}"
+                               VerticalAlignment="Center"
+                               HorizontalAlignment="Left" />
+                    <views:NotificationBell x:DataType="docking:SignetTool"
+                                            IsVisible="{Binding ShowsNotificationBell, FallbackValue=False}"
+                                            UnreadCount="{Binding AttentionCount, FallbackValue=0}" />
+                  </StackPanel>
+                </Button>
+              </Border>
+            </LayoutTransformControl>
+          </DockableControl>
+        </ControlTemplate>
+      </Setter>
     </Style>
 
     <!-- Spinner buttons (NumericUpDown, ButtonSpinner): "down" on the left, "up" on the right.

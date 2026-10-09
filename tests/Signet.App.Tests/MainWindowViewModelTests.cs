@@ -492,7 +492,7 @@ public sealed class MainWindowViewModelTests
         factory.IsToolVisible(DockableIds.Notifications).Should().BeTrue();
         factory.IsToolPinned(DockableIds.Notifications).Should().BeTrue("the panel appears collapsed, not over the editor");
         sut.HasUnreadWarnings.Should().BeTrue();
-        sut.UnreadWarningsText.Should().Be("1");
+        sut.Notifications.UnreadWarnings.Should().Be(1);
 
         sut.OpenNotificationsCommand.Execute(null);
 

@@ -1,0 +1,21 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Signet.App.Views.NotificationBell"
+             x:Name="Root"
+             VerticalAlignment="Center">
+  <!-- The bell in the text color; unread errors add a red dot on the bell and "[n]" after it. -->
+  <StackPanel Orientation="Horizontal" Spacing="3">
+    <Panel Width="13" Height="13" VerticalAlignment="Center">
+      <Path Data="{StaticResource SignetBellGeometry}"
+            Fill="{Binding #Root.Foreground}"
+            Stretch="Uniform" Width="12" Height="12"
+            HorizontalAlignment="Left" VerticalAlignment="Bottom" />
+      <Ellipse x:Name="Dot"
+               Width="6" Height="6"
+               HorizontalAlignment="Right" VerticalAlignment="Top"
+               Fill="{DynamicResource SignetErrorBrush}"
+               IsVisible="False" />
+    </Panel>
+    <TextBlock x:Name="Count" VerticalAlignment="Center" IsVisible="False" />
+  </StackPanel>
+</UserControl>

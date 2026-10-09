@@ -149,6 +149,26 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
+    public void Error_colors_start_from_settings_persist_on_apply_and_reset()
+    {
+        using TestHost host = new();
+        host.Settings.ErrorAppearance = new ErrorAppearance("#102030", "#405060");
+        PreferencesViewModel sut = NewOn(host);
+
+        sut.ErrorLightColor.Value.Should().Be("#102030");
+        sut.ErrorDarkColor.Value.Should().Be("#405060");
+
+        sut.ErrorLightColor.Value = "#00ff00";
+        sut.ApplyCommand.Execute(null);
+        host.Settings.ErrorAppearance.Should().Be(new ErrorAppearance("#00ff00", "#405060"));
+
+        sut.RestoreAppearanceDefaultsCommand.Execute(null);
+        sut.ApplyCommand.Execute(null);
+        host.Settings.ErrorAppearance.Should().Be(ErrorAppearance.Default);
+        sut.ErrorDarkColor.Value.Should().Be(ErrorAppearance.Default.DarkColor);
+    }
+
+    [Fact]
     public void Open_tag_hint_fields_start_from_settings_and_changes_persist_on_apply()
     {
         using TestHost host = new();
