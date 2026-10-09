@@ -32,7 +32,8 @@ public sealed record DockLayoutState(IReadOnlyList<DockRegionState> Regions, dou
 
 /// <summary>
 /// Dock layout factory of the main window: BookBrowser and Clips on the left, Preview and TOC
-/// on the right, Validation Results at the bottom, document tabs in the middle.
+/// on the right, document tabs in the middle and Validation Results, Notifications and Find Usages at the bottom
+/// (along the whole window width).
 /// </summary>
 public sealed class MainDockFactory : Factory
 {
@@ -209,28 +210,31 @@ public sealed class MainDockFactory : Factory
         documentDock.Id = DockableIds.Documents;
         documentDock.Title = Strings.Get("Panel_Documents");
         documentDock.CanCreateDocument = false;
-        // The tab area must keep its height even when empty — otherwise it
-        // collapses to zero and the bottom panel (Validation Results) takes the whole middle.
-        documentDock.Proportion = 0.72;
+        // The tab area must keep its size even when empty — otherwise it collapses to zero and the side
+        // panels take the whole row. Its width is what the side regions leave (no proportion of its own).
         documentDock.IsCollapsable = false;
         documentDock.VisibleDockables = CreateList<IDockable>();
         DocumentDock = documentDock;
 
-        IProportionalDock centerColumn = CreateProportionalDock();
-        centerColumn.Orientation = Orientation.Vertical;
-        centerColumn.VisibleDockables = CreateList<IDockable>(
-            documentDock,
-            CreateProportionalDockSplitter(),
-            bottomDock);
-
-        IProportionalDock mainLayout = CreateProportionalDock();
-        mainLayout.Orientation = Orientation.Horizontal;
-        mainLayout.VisibleDockables = CreateList<IDockable>(
+        IProportionalDock mainRow = CreateProportionalDock();
+        mainRow.Orientation = Orientation.Horizontal;
+        mainRow.Proportion = 0.72;
+        mainRow.VisibleDockables = CreateList<IDockable>(
             leftDock,
             CreateProportionalDockSplitter(),
-            centerColumn,
+            documentDock,
             CreateProportionalDockSplitter(),
             rightDock);
+
+        // The bottom region spans the whole window width, under the side regions too — the same place where
+        // its panels slide out when collapsed ("Auto Hide": Dock draws the bottom strip along the whole window),
+        // so pinning or collapsing a panel does not move it between the full width and the middle column.
+        IProportionalDock mainLayout = CreateProportionalDock();
+        mainLayout.Orientation = Orientation.Vertical;
+        mainLayout.VisibleDockables = CreateList<IDockable>(
+            mainRow,
+            CreateProportionalDockSplitter(),
+            bottomDock);
 
         IRootDock root = CreateRootDock();
         root.Id = "Root";
@@ -456,7 +460,9 @@ public sealed class MainDockFactory : Factory
             regions.Add(new DockRegionState(pair.Key, pair.Value.Proportion, toolIds, activeId));
         }
 
-        double documentsProportion = DocumentDock?.Proportion ?? 0;
+        // The document area takes what the side regions leave, so its proportion may be unset (NaN) — which JSON
+        // cannot store; 0 = not saved.
+        double documentsProportion = DocumentDock?.Proportion is double p && !double.IsNaN(p) ? p : 0;
         return new DockLayoutState(regions, documentsProportion);
     }
 
