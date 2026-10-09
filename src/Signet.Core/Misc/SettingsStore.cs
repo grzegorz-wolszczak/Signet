@@ -44,6 +44,13 @@ public sealed class SettingsStore
 
     private readonly SettingsFile _file;
 
+    // The state the draft started from (or was last committed at); null for a store that is not a draft.
+    private SettingsFile? _draftBaseline;
+
+    // The SettingChanged keys a draft raised since its baseline — replayed on commit, because a composite setting
+    // (e.g. "preview_highlight") is stored under several raw keys but announced under its own name.
+    private readonly List<string> _draftRaised = new();
+
     /// <summary>Creates a store on the default file (<see cref="AppDirectories.SettingsFilePath"/>).</summary>
     public SettingsStore()
         : this(AppDirectories.SettingsFilePath)
@@ -54,6 +61,12 @@ public sealed class SettingsStore
     public SettingsStore(string filePath)
     {
         _file = new SettingsFile(filePath);
+    }
+
+    private SettingsStore(SettingsFile draftFile, SettingsFile baseline)
+    {
+        _file = draftFile;
+        _draftBaseline = baseline;
     }
 
     /// <summary>Raised after every setting change (before it is saved to disk).</summary>
@@ -67,6 +80,85 @@ public sealed class SettingsStore
 
     /// <summary>Discards unsaved changes and reloads the file.</summary>
     public void Reload() => _file.Reload();
+
+    /// <summary>Whether this store is a draft made by <see cref="CreateDraft"/>.</summary>
+    public bool IsDraft => _draftBaseline is not null;
+
+    /// <summary>
+    /// Creates a draft: an in-memory copy of the current settings with the same typed API, for an editor with
+    /// Save / Cancel (the Preferences window). Changes made to the draft stay in it (its <see cref="Save"/> writes
+    /// nothing) until <see cref="CommitDraft"/> copies them here; a draft that is just dropped changes nothing.
+    /// </summary>
+    public SettingsStore CreateDraft()
+    {
+        if (IsDraft)
+        {
+            throw new InvalidOperationException("A draft cannot be made from a draft.");
+        }
+
+        return new SettingsStore(_file.CloneDetached(), _file.CloneDetached());
+    }
+
+    /// <summary>
+    /// Makes the draft's current state its starting point: what was written to it so far is no longer a change (for
+    /// an editor that writes its initial values while it loads).
+    /// </summary>
+    public void RebaseDraft()
+    {
+        if (!IsDraft)
+        {
+            throw new InvalidOperationException("Only a draft can be rebased.");
+        }
+
+        _draftBaseline = _file.CloneDetached();
+        _draftRaised.Clear();
+    }
+
+    /// <summary>Whether <paramref name="draft"/> holds changes that <see cref="CommitDraft"/> would copy here.</summary>
+    public bool HasDraftChanges(SettingsStore draft) => DraftChanges(draft).Count > 0;
+
+    /// <summary>
+    /// Copies the entries changed in <paramref name="draft"/> (since it was created or last committed) into this
+    /// store, raises <see cref="SettingChanged"/> for them and returns the raised qualified keys (<c>group/key</c>):
+    /// the raw entries copied and the keys the draft announced its changes under. Entries the draft did not change
+    /// are left alone, so settings written here meanwhile (window geometry, recent files) survive. Nothing changed —
+    /// nothing is raised. The draft stays usable; the caller saves this store.
+    /// </summary>
+    public IReadOnlyList<string> CommitDraft(SettingsStore draft)
+    {
+        List<(string Group, string Key)> changes = DraftChanges(draft);
+        foreach ((string group, string key) in changes)
+        {
+            _file.SetRaw(group, key, draft._file.GetRaw(group, key)?.DeepClone());
+        }
+
+        List<string> keys = changes.Count == 0
+            ? new List<string>()
+            : changes.Select(c => $"{c.Group}/{c.Key}").Concat(draft._draftRaised).Distinct(StringComparer.Ordinal).ToList();
+        draft._draftBaseline = draft._file.CloneDetached();
+        draft._draftRaised.Clear();
+        foreach (string key in keys)
+        {
+            RaiseChangedQualified(key);
+        }
+
+        return keys;
+    }
+
+    // The entries the draft changed since its baseline that also differ from this store.
+    private List<(string Group, string Key)> DraftChanges(SettingsStore draft)
+    {
+        ArgumentNullException.ThrowIfNull(draft);
+        if (draft._draftBaseline is not { } baseline || IsDraft)
+        {
+            throw new ArgumentException("Not a draft of a settings store.", nameof(draft));
+        }
+
+        return draft._file.Entries().Concat(baseline.Entries()).Distinct()
+            .Where(e => !JsonNode.DeepEquals(draft._file.GetRaw(e.Group, e.Key), baseline.GetRaw(e.Group, e.Key))
+                && !JsonNode.DeepEquals(draft._file.GetRaw(e.Group, e.Key), _file.GetRaw(e.Group, e.Key)))
+            .ToList();
+    }
 
     // ---------------------------------------------------------------- UI --- //
 
@@ -1409,6 +1501,13 @@ public sealed class SettingsStore
 
     private void RaiseChanged(string key) => RaiseChangedQualified($"{Group}/{key}");
 
-    private void RaiseChangedQualified(string qualifiedKey) =>
+    private void RaiseChangedQualified(string qualifiedKey)
+    {
+        if (IsDraft && !_draftRaised.Contains(qualifiedKey))
+        {
+            _draftRaised.Add(qualifiedKey);
+        }
+
         SettingChanged?.Invoke(this, new SettingChangedEventArgs(qualifiedKey));
+    }
 }

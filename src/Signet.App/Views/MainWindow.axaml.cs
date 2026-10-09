@@ -1009,16 +1009,17 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             settings.Save();
         };
 
+        // Save / Apply commit the changes (the language, theme etc. switch live then); refresh what depends on them.
+        preferences.Applied += (_, _) => _boundViewModel?.ApplyPreferencesChanges();
+
         // Every setting changed while the dialog is open goes to the debug log as "before → after".
         using (DebugLog.TrackChanges(preferences, "Preferences"))
         {
             await window.ShowDialog(this);
         }
 
+        // User dictionary operations happen at once, even when the window is then cancelled.
         _boundViewModel?.ApplyPreferencesChanges();
-
-        // The language chosen in Preferences switches the interface live after the window closes.
-        services.GetRequiredService<LocalizationManager>().ApplySaved();
     }
 
     private ReportsWindow? _reportsWindow;

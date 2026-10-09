@@ -25,6 +25,7 @@ internal sealed class SettingsFile
     };
 
     private readonly string _path;
+    private readonly bool _detached;
     private JsonObject _root;
 
     public SettingsFile(string path)
@@ -34,8 +35,36 @@ internal sealed class SettingsFile
         _root = Load(path);
     }
 
+    private SettingsFile(string path, JsonObject root)
+    {
+        _path = path;
+        _root = root;
+        _detached = true;
+    }
+
     /// <summary>Path of the settings file.</summary>
     public string Path => _path;
+
+    /// <summary>
+    /// An in-memory copy of the current state. It reads like this file but never writes it: <see cref="Save"/> does
+    /// nothing.
+    /// </summary>
+    public SettingsFile CloneDetached() => new(_path, (JsonObject)_root.DeepClone());
+
+    /// <summary>All <c>(group, key)</c> pairs of the two-level object.</summary>
+    public IEnumerable<(string Group, string Key)> Entries()
+    {
+        foreach (KeyValuePair<string, JsonNode?> group in _root)
+        {
+            if (group.Value is JsonObject groupObj)
+            {
+                foreach (KeyValuePair<string, JsonNode?> entry in groupObj)
+                {
+                    yield return (group.Key, entry.Key);
+                }
+            }
+        }
+    }
 
     /// <summary>Returns the raw node for <paramref name="group"/>/<paramref name="key"/> or <see langword="null"/>.</summary>
     public JsonNode? GetRaw(string group, string key)
@@ -132,9 +161,14 @@ internal sealed class SettingsFile
     /// <summary>Discards in-memory changes and reloads the file.</summary>
     public void Reload() => _root = Load(_path);
 
-    /// <summary>Saves the current state to the file (atomically).</summary>
+    /// <summary>Saves the current state to the file (atomically); a detached copy is never saved.</summary>
     public void Save()
     {
+        if (_detached)
+        {
+            return;
+        }
+
         string? dir = System.IO.Path.GetDirectoryName(_path);
         if (!string.IsNullOrEmpty(dir))
         {

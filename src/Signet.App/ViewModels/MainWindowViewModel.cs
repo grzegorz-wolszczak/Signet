@@ -609,8 +609,7 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>
     /// Raised by the "Preferences" action (F5) — the view opens a modal window with the DI-resolved
-    /// <c>PreferencesViewModel</c> (like "Customize Toolbars" — changes are saved immediately,
-    /// the window has only "Close", no OK/Cancel).
+    /// <c>PreferencesViewModel</c> (Save / Cancel / Apply — changes take effect only when saved or applied).
     /// </summary>
     public event EventHandler? PreferencesRequested;
 
@@ -1565,7 +1564,7 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <summary>
-    /// Applies the changes from the Preferences window after it closes: refreshes spelling underlines in the open
+    /// Applies the changes from the Preferences window after Save / Apply: refreshes spelling underlines in the open
     /// tabs (dictionaries, user words).
     /// </summary>
     public void ApplyPreferencesChanges() => RefreshOpenTabsSpellcheck();

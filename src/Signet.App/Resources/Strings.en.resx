@@ -59,6 +59,9 @@
   <data name="Common_Save" xml:space="preserve">
     <value>Save</value>
   </data>
+  <data name="Common_Apply" xml:space="preserve">
+    <value>Apply</value>
+  </data>
   <data name="Common_Reload" xml:space="preserve">
     <value>Reload</value>
   </data>
@@ -468,7 +471,7 @@
     <value>Language</value>
   </data>
   <data name="PreferencesWindow_LanguageRestartNotice" xml:space="preserve">
-    <value>The language changes when you close the Preferences window.</value>
+    <value>The language changes when you click Save or Apply.</value>
   </data>
   <data name="PreferencesWindow_Appearance" xml:space="preserve">
     <value>Appearance</value>

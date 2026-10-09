@@ -54,7 +54,13 @@ public sealed class UiDensityManager(
     public const double StandardFontSize = 14;
 
     /// <summary>Default font size for the saved appearance mode.</summary>
-    public double DefaultFontSize => IsCompact ? CompactFontSize : StandardFontSize;
+    public double DefaultFontSize => DefaultFontSizeFor(IsCompact);
+
+    /// <summary>Name of the default font for the saved appearance mode (see <see cref="DefaultFontNameFor"/>).</summary>
+    public string DefaultFontName => DefaultFontNameFor(IsCompact);
+
+    /// <summary>Default font size for the given appearance mode.</summary>
+    public static double DefaultFontSizeFor(bool compact) => compact ? CompactFontSize : StandardFontSize;
 
     /// <summary>
     /// Name of the font used when none is selected in Preferences: in compact mode the system
@@ -62,20 +68,17 @@ public sealed class UiDensityManager(
     /// in the font picker list — Inter is built into the application, so when it is not
     /// installed in the system, the system font is returned.
     /// </summary>
-    public string DefaultFontName
+    public string DefaultFontNameFor(bool compact)
     {
-        get
+        string system = (systemFontName ?? (() => FontManager.Current.DefaultFontFamily.Name))();
+        if (compact)
         {
-            string system = (systemFontName ?? (() => FontManager.Current.DefaultFontFamily.Name))();
-            if (IsCompact)
-            {
-                return system;
-            }
-
-            System.Func<string, bool> installed = isFontInstalled ?? (name =>
-                FontCatalog.SystemFonts.Any(f => string.Equals(f.Name, name, System.StringComparison.OrdinalIgnoreCase)));
-            return installed(StandardFontName) ? StandardFontName : system;
+            return system;
         }
+
+        System.Func<string, bool> installed = isFontInstalled ?? (name =>
+            FontCatalog.SystemFonts.Any(f => string.Equals(f.Name, name, System.StringComparison.OrdinalIgnoreCase)));
+        return installed(StandardFontName) ? StandardFontName : system;
     }
 
     /// <summary>

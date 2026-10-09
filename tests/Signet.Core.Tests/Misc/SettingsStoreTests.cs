@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using AutoFixture;
 using AwesomeAssertions;
 using Signet.Core.BookManipulation;
 using Signet.Core.Misc;
@@ -401,5 +402,122 @@ public sealed class SettingsStoreTests
 
         sut.TempFolderHome = dir.Path;
         sut.TempFolderHome.Should().Be(dir.Path);
+    }
+
+    [Fact]
+    public void A_draft_reads_the_current_values_and_keeps_its_changes_to_itself()
+    {
+        using TempDir dir = new();
+        string path = dir.Combine("settings.json");
+        Fixture fixture = new();
+        string original = fixture.Create<string>();
+        string changed = fixture.Create<string>();
+        SettingsStore sut = new(path);
+        sut.DefaultMetadataLang = original;
+        sut.Save();
+
+        SettingsStore draft = sut.CreateDraft();
+        draft.DefaultMetadataLang.Should().Be(original);
+        draft.DefaultMetadataLang = changed;
+        draft.Save();
+
+        draft.IsDraft.Should().BeTrue();
+        sut.DefaultMetadataLang.Should().Be(original);
+        new SettingsStore(path).DefaultMetadataLang.Should().Be(original, "a draft never writes the file");
+        sut.HasDraftChanges(draft).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Committing_a_draft_copies_only_its_changes_and_raises_SettingChanged()
+    {
+        using TempDir dir = new();
+        Fixture fixture = new();
+        string meanwhile = fixture.Create<string>();
+        SettingsStore sut = NewStore(dir);
+        SettingsStore draft = sut.CreateDraft();
+        List<string> raised = new();
+        sut.SettingChanged += (_, e) => raised.Add(e.QualifiedKey);
+
+        draft.SpellCheck = true;
+        draft.ThemePreference = ThemePreference.Dark;
+        sut.DefaultMetadataLang = meanwhile;
+        raised.Clear();
+
+        IReadOnlyList<string> committed = sut.CommitDraft(draft);
+
+        committed.Should().BeEquivalentTo("user_preferences/spell_check", "user_preferences/ui_theme");
+        raised.Should().BeEquivalentTo(committed);
+        sut.SpellCheck.Should().BeTrue();
+        sut.ThemePreference.Should().Be(ThemePreference.Dark);
+        sut.DefaultMetadataLang.Should().Be(meanwhile, "the draft did not change it");
+        sut.HasDraftChanges(draft).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Committing_a_composite_setting_raises_its_own_key_too()
+    {
+        using TempDir dir = new();
+        SettingsStore sut = NewStore(dir);
+        SettingsStore draft = sut.CreateDraft();
+        List<string> raised = new();
+        sut.SettingChanged += (_, e) => raised.Add(e.QualifiedKey);
+
+        draft.PreviewAppearance = draft.PreviewAppearance with { FontSize = draft.PreviewAppearance.FontSize + 1 };
+        sut.CommitDraft(draft);
+
+        raised.Should().Contain("user_preferences/preview_appearance");
+    }
+
+    [Fact]
+    public void A_change_reverted_in_the_draft_is_not_a_change()
+    {
+        using TempDir dir = new();
+        SettingsStore sut = NewStore(dir);
+        sut.ThemePreference = ThemePreference.Light;
+        SettingsStore draft = sut.CreateDraft();
+        ThemePreference original = draft.ThemePreference;
+
+        draft.ThemePreference = ThemePreference.Dark;
+        draft.ThemePreference = original;
+
+        sut.HasDraftChanges(draft).Should().BeFalse();
+        sut.CommitDraft(draft).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void A_draft_can_be_committed_again_with_later_changes_only()
+    {
+        using TempDir dir = new();
+        SettingsStore sut = NewStore(dir);
+        SettingsStore draft = sut.CreateDraft();
+        draft.SpellCheck = true;
+        sut.CommitDraft(draft);
+
+        draft.SpellCheckNumbers = !draft.SpellCheckNumbers;
+
+        sut.CommitDraft(draft).Should().Equal("user_preferences/spell_check_numbers");
+    }
+
+    [Fact]
+    public void After_a_rebase_earlier_draft_writes_are_not_changes()
+    {
+        using TempDir dir = new();
+        SettingsStore sut = NewStore(dir);
+        SettingsStore draft = sut.CreateDraft();
+        draft.SpellCheck = !draft.SpellCheck;
+
+        draft.RebaseDraft();
+
+        sut.HasDraftChanges(draft).Should().BeFalse();
+        sut.CommitDraft(draft).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void A_draft_cannot_make_a_draft()
+    {
+        using TempDir dir = new();
+        SettingsStore draft = NewStore(dir).CreateDraft();
+
+        FluentActions.Invoking(() => draft.CreateDraft()).Should().Throw<System.InvalidOperationException>();
     }
 }

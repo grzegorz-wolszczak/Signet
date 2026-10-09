@@ -29,10 +29,12 @@ namespace Signet.App.UiTests;
 /// </summary>
 public sealed class PreferencesWindowRenderTests
 {
-    private static PreferencesWindow BuildWindow()
+    private static PreferencesWindow BuildWindow() => BuildWindow(out _);
+
+    private static PreferencesWindow BuildWindow(out SettingsStore settings)
     {
         string root = Path.Combine(Path.GetTempPath(), "Signet.Tests", "prefs-ui-" + Guid.NewGuid().ToString("N"));
-        SettingsStore settings = new(Path.Combine(root, "settings.json"));
+        settings = new(Path.Combine(root, "settings.json"));
         SpellChecker spellChecker = new(settings, Path.Combine(root, "hunspell"), Path.Combine(root, "user"));
         ThemeManager theme = new(settings, NullLogger<ThemeManager>.Instance);
         LocalizationManager localization = new(settings, NullLogger<LocalizationManager>.Instance);
@@ -44,6 +46,60 @@ public sealed class PreferencesWindowRenderTests
         UiDensityManager uiDensity = new(settings, iconTheme, NullLogger<UiDensityManager>.Instance);
         PreferencesViewModel vm = new(settings, spellChecker, theme, localization, iconTheme, shortcuts, registry, uiDensity);
         return new PreferencesWindow { DataContext = vm };
+    }
+
+    /// <summary>
+    /// Save / Cancel / Apply: Escape closes the window like Cancel, without a question and without writing the
+    /// changes; Apply writes them and keeps the window open.
+    /// </summary>
+    [AvaloniaFact]
+    public void Escape_closes_the_window_without_saving_and_Apply_saves_without_closing()
+    {
+        PreferencesWindow window = BuildWindow(out SettingsStore settings);
+        var vm = (PreferencesViewModel)window.DataContext!;
+        bool closed = false;
+        window.Closed += (_, _) => closed = true;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        bool before = settings.SpellCheck;
+        Button apply = window.FindControl<Button>("ApplyButton")!;
+        apply.IsEffectivelyEnabled.Should().BeFalse("nothing has changed yet");
+
+        vm.SpellCheckEnabled = !before;
+        Dispatcher.UIThread.RunJobs();
+        apply.IsEffectivelyEnabled.Should().BeTrue();
+
+        apply.Command!.Execute(null);
+        Dispatcher.UIThread.RunJobs();
+        settings.SpellCheck.Should().Be(!before);
+        closed.Should().BeFalse();
+
+        vm.SpellCheckEnabled = before;
+        window.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
+        Dispatcher.UIThread.RunJobs();
+
+        closed.Should().BeTrue();
+        settings.SpellCheck.Should().Be(!before, "Escape drops the change made after Apply");
+    }
+
+    /// <summary>Save writes the changes and closes the window.</summary>
+    [AvaloniaFact]
+    public void Save_writes_the_changes_and_closes_the_window()
+    {
+        PreferencesWindow window = BuildWindow(out SettingsStore settings);
+        var vm = (PreferencesViewModel)window.DataContext!;
+        bool closed = false;
+        window.Closed += (_, _) => closed = true;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        bool before = settings.SpellCheck;
+
+        vm.SpellCheckEnabled = !before;
+        window.FindControl<Button>("SaveButton")!.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+
+        settings.SpellCheck.Should().Be(!before);
+        closed.Should().BeTrue();
     }
 
     /// <summary>

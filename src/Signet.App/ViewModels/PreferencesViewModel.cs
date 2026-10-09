@@ -24,14 +24,15 @@ namespace Signet.App.ViewModels;
 /// Shortcuts, Preserve Entities and Spellcheck panels.
 /// </summary>
 /// <remarks>
-/// <para><b>Settings apply immediately:</b> there are no OK/Cancel buttons. As with the other application
-/// settings (<see cref="ToolbarCustomizeViewModel"/>, the "Auto Spellcheck" toggle,
-/// <see cref="ThemeManager"/>), every change is written to <c>SettingsStore</c> at once and the window
-/// has only a "Close" button. This is simpler and more consistent with the rest of the application than
-/// keeping a separate OK/Cancel state for ~30 fields.</para>
-/// <para><b>"Language" panel</b> — the dropdown saves the choice through
-/// <see cref="LocalizationManager.Set"/> immediately, and the interface switches live after the
-/// window closes (<c>MainWindow</c> calls <see cref="LocalizationManager.ApplySaved"/>).</para>
+/// <para><b>Save / Cancel / Apply, as in IntelliJ:</b> the window edits a draft of the settings
+/// (<see cref="SettingsStore.CreateDraft"/>) and of the keymap (<see cref="KeyboardShortcutManager.CreateDraft"/>);
+/// nothing changes in the application until <see cref="ApplyCommand"/> (the Save and Apply buttons) commits the
+/// draft and applies its effects (theme, UI language, UI font, warnings, spelling dictionaries, shortcuts, debug
+/// logging) — see <see cref="Apply"/>. Closing the window without it (Cancel, Escape, the window's close button)
+/// drops the draft, without a question. The only exception are the user dictionary operations (add / rename / copy
+/// / remove a dictionary, edit its words): they are file operations and happen at once; their effect on the
+/// dictionary settings is mirrored into the draft.</para>
+/// <para><b>"Language" panel</b> — the interface switches live once the choice is applied.</para>
 /// <para><b>The "General" panel has no "Check for updates"</b> — the application has no update
 /// mechanism, so a field with no function behind it is omitted.</para>
 /// <para><b>UI font</b> (<c>UiFont</c>/<c>UiFontSize</c>) is applied live through
@@ -45,6 +46,8 @@ namespace Signet.App.ViewModels;
 /// </remarks>
 public sealed partial class PreferencesViewModel : ObservableObject
 {
+    // The application's settings, and the draft this window edits (committed by Apply).
+    private readonly SettingsStore _appSettings;
     private readonly SettingsStore _settings;
     private readonly SpellChecker _spellChecker;
     private readonly ThemeManager _themeManager;
@@ -64,7 +67,8 @@ public sealed partial class PreferencesViewModel : ObservableObject
         AppActionRegistry actions,
         UiDensityManager uiDensity)
     {
-        _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        _appSettings = settings ?? throw new ArgumentNullException(nameof(settings));
+        _settings = _appSettings.CreateDraft();
         _spellChecker = spellChecker ?? throw new ArgumentNullException(nameof(spellChecker));
         _themeManager = themeManager ?? throw new ArgumentNullException(nameof(themeManager));
         _localizationManager = localizationManager ?? throw new ArgumentNullException(nameof(localizationManager));
@@ -169,14 +173,84 @@ public sealed partial class PreferencesViewModel : ObservableObject
             .ToList();
         _primaryDictionary = _settings.Dictionary;
         _secondaryDictionary = _settings.SecondaryDictionary;
-        RefreshUserDictionaries(_spellChecker.DefaultUserDictionary);
+        RefreshUserDictionaries(_settings.DefaultUserDictionary);
 
         // ---- Keyboard Shortcuts (keymap) ----
-        Keymap = new KeymapViewModel(actions, _shortcuts);
+        Keymap = new KeymapViewModel(actions, _shortcuts.CreateDraft(_settings));
 
         // ---- Preserve Entities ----
         PreserveEntities = new ObservableCollection<PreserveEntityRow>(
             _settings.PreserveEntityCodeNames.Select(p => CreatePreserveEntityRow(p.Code, p.Name)));
+
+        // Loading the pages writes some initial values to the draft (e.g. the default user dictionary): not changes.
+        _settings.RebaseDraft();
+        _settings.SettingChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(HasChanges));
+            ApplyCommand.NotifyCanExecuteChanged();
+        };
+    }
+
+    /// <summary>Raised after <see cref="Apply"/> committed changes (the main window refreshes what depends on them).</summary>
+    public event EventHandler? Applied;
+
+    /// <summary>Whether the window holds changes not applied yet (the Apply button is enabled then).</summary>
+    public bool HasChanges => _appSettings.HasDraftChanges(_settings);
+
+    /// <summary>
+    /// "Save" / "Apply": commits the draft to the application's settings, saves them and applies the effects of the
+    /// changed settings. The window stays open (Save closes it afterwards) and keeps editing the same draft.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(HasChanges))]
+    private void Apply()
+    {
+        IReadOnlyList<string> changed = _appSettings.CommitDraft(_settings);
+        if (changed.Count == 0)
+        {
+            return;
+        }
+
+        _appSettings.Save();
+        bool Changed(params string[] keys) => changed.Any(c => keys.Any(k => c.EndsWith("/" + k, StringComparison.Ordinal)));
+
+        if (Changed("ui_theme"))
+        {
+            _themeManager.ApplySaved();
+        }
+
+        if (Changed("ui_language"))
+        {
+            _localizationManager.ApplySaved();
+        }
+
+        if (Changed("ui_font", "ui_font_size"))
+        {
+            _uiDensity.ApplyUiFont(_appSettings.UiFont, _appSettings.UiFontSize);
+        }
+
+        if (Changed("warning_appearance"))
+        {
+            _uiDensity.ApplyWarningAppearance();
+        }
+
+        if (Changed("debug_logging"))
+        {
+            DebugLog.IsEnabled = _appSettings.DebugLogging;
+        }
+
+        if (Changed("dictionary_name", "secondary_dictionary_name", "enabled_user_dictionaries"))
+        {
+            _spellChecker.Reload();
+        }
+
+        if (changed.Any(c => c.StartsWith(KeyboardShortcutManager.SettingsGroup + "/", StringComparison.Ordinal)))
+        {
+            _shortcuts.ReloadFromSettings();
+        }
+
+        OnPropertyChanged(nameof(HasChanges));
+        ApplyCommand.NotifyCanExecuteChanged();
+        Applied?.Invoke(this, EventArgs.Empty);
     }
 
     // =====================================================================
@@ -187,11 +261,11 @@ public sealed partial class PreferencesViewModel : ObservableObject
     public static IReadOnlyList<LanguageOption> AvailableLanguages { get; } =
         LocalizationManager.SupportedLanguages.Select(l => new LanguageOption(l.Code, l.DisplayName)).ToList();
 
-    /// <summary>Selected UI language — saved immediately, the interface switches after the window closes.</summary>
+    /// <summary>Selected UI language — the interface switches once it is applied.</summary>
     [ObservableProperty]
     private LanguageOption _selectedLanguage;
 
-    partial void OnSelectedLanguageChanged(LanguageOption value) => _localizationManager.Set(value.Code);
+    partial void OnSelectedLanguageChanged(LanguageOption value) => _settings.UiLanguage = value.Code;
 
     // =====================================================================
     //  Appearance
@@ -201,11 +275,11 @@ public sealed partial class PreferencesViewModel : ObservableObject
     public static IReadOnlyList<ThemePreference> AvailableThemes { get; } =
         Enum.GetValues<ThemePreference>();
 
-    /// <summary>Preferred interface theme — saved and applied immediately.</summary>
+    /// <summary>Preferred interface theme — takes effect once applied.</summary>
     [ObservableProperty]
     private ThemePreference _selectedTheme;
 
-    partial void OnSelectedThemeChanged(ThemePreference value) => _themeManager.Set(value);
+    partial void OnSelectedThemeChanged(ThemePreference value) => _settings.ThemePreference = value;
 
     /// <summary>Action icon sets available to choose from.</summary>
     public static IReadOnlyList<IconThemeOption> AvailableIconThemes { get; } =
@@ -213,21 +287,21 @@ public sealed partial class PreferencesViewModel : ObservableObject
             .Select(t => new IconThemeOption(t.Code, Strings.TryGet("IconTheme_" + t.Code) ?? t.DisplayName))
             .ToList();
 
-    /// <summary>Selected icon set — saved immediately, the effect is visible after a restart.</summary>
+    /// <summary>Selected icon set — the effect is visible after a restart.</summary>
     [ObservableProperty]
     private IconThemeOption _selectedIconTheme;
 
-    partial void OnSelectedIconThemeChanged(IconThemeOption value) => _iconThemeManager.Set(value.Code);
+    partial void OnSelectedIconThemeChanged(IconThemeOption value) => _settings.UiIconTheme = value.Code;
 
     /// <summary>
     /// Folder with the custom icon set (the "Custom" variant) — it should
-    /// contain an <c>icons.json</c> file. Saved immediately, the effect is visible after a
-    /// restart together with a change of <see cref="SelectedIconTheme"/>.
+    /// contain an <c>icons.json</c> file. The effect is visible after a restart together with a change of
+    /// <see cref="SelectedIconTheme"/>.
     /// </summary>
     [ObservableProperty]
     private string _customIconFolder;
 
-    partial void OnCustomIconFolderChanged(string value) => _iconThemeManager.CustomFolder = value;
+    partial void OnCustomIconFolderChanged(string value) => _settings.UiCustomIconFolder = value;
 
     /// <summary>
     /// UI font (menus, windows, panels — not the code editor). Empty = the default for the appearance
@@ -239,9 +313,9 @@ public sealed partial class PreferencesViewModel : ObservableObject
     public int UiFontSize => _settings.UiFontSize;
 
     /// <summary>The UI font actually in use (chosen or the mode default) — for the field and the picker window.</summary>
-    public string EffectiveUiFontFamily => UiFontFamily.Length > 0 ? UiFontFamily : _uiDensity.DefaultFontName;
+    public string EffectiveUiFontFamily => UiFontFamily.Length > 0 ? UiFontFamily : _uiDensity.DefaultFontNameFor(CompactUi);
 
-    private int EffectiveUiFontSize => UiFontSize > 0 ? UiFontSize : (int)_uiDensity.DefaultFontSize;
+    private int EffectiveUiFontSize => UiFontSize > 0 ? UiFontSize : (int)UiDensityManager.DefaultFontSizeFor(CompactUi);
 
     /// <summary>UI font description for the Preferences field: "Segoe UI, 12 px" or "Default (Segoe UI, 12 px)".</summary>
     public string UiFontDescription =>
@@ -251,7 +325,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
     /// <summary>
     /// "Choose…" next to the UI font (typeface + size). The window starts with the font actually in use
-    /// selected, so OK is available right away; the choice takes effect immediately.
+    /// selected, so OK is available right away; the choice takes effect once applied.
     /// </summary>
     [RelayCommand]
     private async Task ChooseUiFont()
@@ -260,24 +334,21 @@ public sealed partial class PreferencesViewModel : ObservableObject
         {
             _settings.UiFont = result.Family;
             _settings.UiFontSize = result.Size;
-            _settings.Save();
             NotifyUiFontChanged();
         }
     }
 
-    /// <summary>"Default" — returns (immediately) to the default font for the appearance mode.</summary>
+    /// <summary>"Default" — returns to the default font for the appearance mode.</summary>
     [RelayCommand]
     private void ResetUiFont()
     {
         _settings.UiFont = string.Empty;
         _settings.UiFontSize = 0;
-        _settings.Save();
         NotifyUiFontChanged();
     }
 
     private void NotifyUiFontChanged()
     {
-        _uiDensity.ApplyUiFont(_settings.UiFont, _settings.UiFontSize);
         OnPropertyChanged(nameof(UiFontFamily));
         OnPropertyChanged(nameof(UiFontSize));
         OnPropertyChanged(nameof(EffectiveUiFontFamily));
@@ -285,7 +356,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Compact ("Windows-like") interface look — saved immediately, the effect comes after a restart
+    /// Compact ("Windows-like") interface look — the effect comes after a restart
     /// (see <see cref="UiDensityManager"/>).
     /// </summary>
     public bool CompactUi
@@ -296,8 +367,8 @@ public sealed partial class PreferencesViewModel : ObservableObject
             if (_settings.UiCompactDensity != value)
             {
                 _settings.UiCompactDensity = value;
-                _settings.Save();
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(EffectiveUiFontFamily));
                 OnPropertyChanged(nameof(UiFontDescription));
             }
         }
@@ -407,7 +478,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _settings.SpecialCharacterAppearance = new SpecialCharacterAppearance(SpecialCharacterFontFamily, SpecialCharacterFontSize);
 
     /// <summary>
-    /// Font size (px) of the warning texts in dialogs; 0 = the interface text size. Applied live
+    /// Font size (px) of the warning texts in dialogs; 0 = the interface text size. Applied live once applied
     /// (<see cref="UiDensityManager.ApplyWarningAppearance()"/>).
     /// </summary>
     [ObservableProperty]
@@ -424,7 +495,6 @@ public sealed partial class PreferencesViewModel : ObservableObject
     private void PersistWarningAppearance()
     {
         _settings.WarningAppearance = new WarningAppearance(WarningFontSize, WarningLightColor.Value, WarningDarkColor.Value);
-        _uiDensity.ApplyWarningAppearance();
     }
 
     /// <summary>
@@ -617,7 +687,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         WarningLightColor.SetValueSilently(warnings.LightColor);
         WarningDarkColor.SetValueSilently(warnings.DarkColor);
         WarningFontSize = warnings.FontSize;
-        _uiDensity.ApplyWarningAppearance();
+        PersistWarningAppearance();
     }
 
     // =====================================================================
@@ -802,7 +872,6 @@ public sealed partial class PreferencesViewModel : ObservableObject
     partial void OnDebugLoggingChanged(bool value)
     {
         _settings.DebugLogging = value;
-        DebugLog.IsEnabled = value;
     }
 
     /// <summary>Available dictionaries (built-in + installed) with readable language names.</summary>
@@ -851,11 +920,11 @@ public sealed partial class PreferencesViewModel : ObservableObject
     {
         if (value.Length > 0)
         {
-            _spellChecker.SetPrimaryDictionary(value);
+            _settings.Dictionary = value;
         }
     }
 
-    partial void OnSecondaryDictionaryChanged(string value) => _spellChecker.SetSecondaryDictionary(value);
+    partial void OnSecondaryDictionaryChanged(string value) => _settings.SecondaryDictionary = value;
 
     /// <summary>
     /// A window with a single text field (title, label, initial value) — attached by the view.
@@ -909,7 +978,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
     {
         if (value is not null)
         {
-            _spellChecker.SetDefaultUserDictionary(value.Name);
+            _settings.DefaultUserDictionary = value.Name;
         }
 
         LoadUserWords();
@@ -947,8 +1016,12 @@ public sealed partial class PreferencesViewModel : ObservableObject
     private void PersistEnabledUserDictionaries()
     {
         _settings.EnabledUserDictionaries = UserDictionaries.Where(d => d.IsEnabled).Select(d => d.Name).ToList();
-        _spellChecker.Reload();
     }
+
+    // A dictionary operation has already changed the application's list of enabled dictionaries; the draft gets the
+    // same change, so applying it later neither loses the operation nor brings back the old names.
+    private void MirrorEnabledUserDictionaries(Func<IEnumerable<string>, IEnumerable<string>> change) =>
+        _settings.EnabledUserDictionaries = change(_settings.EnabledUserDictionaries).Distinct(StringComparer.Ordinal).ToList();
 
     private bool HasSelectedUserDictionary() => SelectedUserDictionary is not null;
 
@@ -962,7 +1035,11 @@ public sealed partial class PreferencesViewModel : ObservableObject
             return;
         }
 
-        await RunFileOperationAsync(() => _spellChecker.CreateUserDictionary(name));
+        if (await RunFileOperationAsync(() => _spellChecker.CreateUserDictionary(name)))
+        {
+            MirrorEnabledUserDictionaries(enabled => enabled.Append(name));
+        }
+
         RefreshUserDictionaries(name);
     }
 
@@ -978,6 +1055,15 @@ public sealed partial class PreferencesViewModel : ObservableObject
         }
 
         bool done = await RunFileOperationAsync(() => _spellChecker.RenameUserDictionary(oldName, name));
+        if (done)
+        {
+            MirrorEnabledUserDictionaries(enabled => enabled.Select(d => d == oldName ? name : d));
+            if (_settings.DefaultUserDictionary == oldName)
+            {
+                _settings.DefaultUserDictionary = name;
+            }
+        }
+
         RefreshUserDictionaries(done ? name : oldName);
     }
 
@@ -988,6 +1074,11 @@ public sealed partial class PreferencesViewModel : ObservableObject
         string source = SelectedUserDictionary!.Name;
         string? copy = null;
         await RunFileOperationAsync(() => copy = _spellChecker.CopyUserDictionary(source));
+        if (copy is { } copied)
+        {
+            MirrorEnabledUserDictionaries(enabled => enabled.Append(copied));
+        }
+
         RefreshUserDictionaries(copy ?? source);
     }
 
@@ -1002,8 +1093,16 @@ public sealed partial class PreferencesViewModel : ObservableObject
         }
 
         string name = SelectedUserDictionary!.Name;
-        await RunFileOperationAsync(() => _spellChecker.RemoveUserDictionary(name));
-        RefreshUserDictionaries(_spellChecker.DefaultUserDictionary);
+        if (await RunFileOperationAsync(() => _spellChecker.RemoveUserDictionary(name)))
+        {
+            MirrorEnabledUserDictionaries(enabled => enabled.Where(d => d != name));
+            if (_settings.DefaultUserDictionary == name)
+            {
+                _settings.DefaultUserDictionary = _spellChecker.DefaultUserDictionary;
+            }
+        }
+
+        RefreshUserDictionaries(_settings.DefaultUserDictionary);
     }
 
     /// <summary>"Add" words (separated by a space, comma or newline).</summary>

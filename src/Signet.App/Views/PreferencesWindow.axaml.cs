@@ -9,7 +9,10 @@ using Signet.Core.Misc;
 
 namespace Signet.App.Views;
 
-/// <summary>The modal "Preferences" window — changes are saved immediately, with no OK/Cancel.</summary>
+/// <summary>
+/// The modal "Preferences" window with Save / Cancel / Apply (see <see cref="PreferencesViewModel"/>): Save applies
+/// the changes and closes the window; Cancel, Escape and the window's close button close it without applying them.
+/// </summary>
 public partial class PreferencesWindow : Window
 {
     /// <summary>Initializes the window.</summary>
@@ -32,7 +35,17 @@ public partial class PreferencesWindow : Window
         }
     }
 
-    private void OnCloseClicked(object? sender, RoutedEventArgs e) => Close();
+    private void OnSaveClicked(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is PreferencesViewModel vm && vm.ApplyCommand.CanExecute(null))
+        {
+            vm.ApplyCommand.Execute(null);
+        }
+
+        Close();
+    }
+
+    private void OnCancelClicked(object? sender, RoutedEventArgs e) => Close();
 
     /// <summary>"Open settings folder".</summary>
     private async void OnOpenPreferencesLocationClicked(object? sender, RoutedEventArgs e)

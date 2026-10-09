@@ -69,10 +69,19 @@
 
   <DockPanel Margin="10">
 
+    <!-- Save / Cancel / Apply, as in IntelliJ: changes take effect only on Save or Apply; Cancel, Escape and the
+         window's close button drop them without a question. -->
     <Grid DockPanel.Dock="Bottom" ColumnDefinitions="Auto,*,Auto" Margin="0,8,0,0">
       <Button Grid.Column="0" x:Name="OpenPreferencesLocationButton"
               Content="{loc:Loc PreferencesWindow_OpenPreferencesLocation}" Click="OnOpenPreferencesLocationClicked" />
-      <Button Grid.Column="2" Content="{loc:Loc Common_Close}" Click="OnCloseClicked" IsDefault="True" />
+      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6">
+        <Button x:Name="SaveButton" Content="{loc:Loc Common_Save}" Click="OnSaveClicked" MinWidth="80"
+                HorizontalContentAlignment="Center" />
+        <Button x:Name="CancelButton" Content="{loc:Loc Common_Cancel}" Click="OnCancelClicked" IsCancel="True" MinWidth="80"
+                HorizontalContentAlignment="Center" />
+        <Button x:Name="ApplyButton" Content="{loc:Loc Common_Apply}" Command="{Binding ApplyCommand}" MinWidth="80"
+                HorizontalContentAlignment="Center" />
+      </StackPanel>
     </Grid>
 
     <TabControl TabStripPlacement="Left" Classes="preferences">

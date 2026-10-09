@@ -1,8 +1,13 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using AutoFixture;
 using AwesomeAssertions;
+using Avalonia.Input;
+using Signet.App.Actions;
+using Signet.App.Input;
 using Microsoft.Extensions.Logging.Abstractions;
 using Signet.App.Infrastructure;
 using Signet.App.Resources;
@@ -15,8 +20,8 @@ using Xunit;
 namespace Signet.App.Tests;
 
 /// <summary>
-/// Tests for <see cref="PreferencesViewModel"/>: every change is written to <see cref="SettingsStore"/>
-/// immediately, and the shortcut editor detects conflicts.
+/// Tests for <see cref="PreferencesViewModel"/>: changes are written to <see cref="SettingsStore"/> only when
+/// applied (Save / Apply), and the keyboard shortcuts page is the keymap of all actions.
 /// </summary>
 public sealed class PreferencesViewModelTests
 {
@@ -36,6 +41,72 @@ public sealed class PreferencesViewModelTests
         UiDensityManager uiDensity = new(
             host.Settings, iconTheme, NullLogger<UiDensityManager>.Instance, () => "Segoe UI", _ => false);
         return new PreferencesViewModel(host.Settings, spellChecker, theme, localization, iconTheme, host.Shortcuts, host.Registry, uiDensity);
+    }
+
+    [Fact]
+    public void Changes_stay_in_the_window_until_applied()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        ThemePreference themeBefore = host.Settings.ThemePreference;
+        bool spellCheckBefore = host.Settings.SpellCheck;
+        int applied = 0;
+        vm.Applied += (_, _) => applied++;
+        vm.HasChanges.Should().BeFalse();
+        vm.ApplyCommand.CanExecute(null).Should().BeFalse();
+
+        vm.SelectedTheme = themeBefore == ThemePreference.Dark ? ThemePreference.Light : ThemePreference.Dark;
+        vm.SpellCheckEnabled = !spellCheckBefore;
+
+        host.Settings.ThemePreference.Should().Be(themeBefore, "nothing is written before Save / Apply");
+        host.Settings.SpellCheck.Should().Be(spellCheckBefore);
+        vm.HasChanges.Should().BeTrue();
+        vm.ApplyCommand.CanExecute(null).Should().BeTrue();
+
+        vm.ApplyCommand.Execute(null);
+
+        host.Settings.ThemePreference.Should().Be(vm.SelectedTheme);
+        host.Settings.SpellCheck.Should().Be(!spellCheckBefore);
+        vm.HasChanges.Should().BeFalse();
+        vm.ApplyCommand.CanExecute(null).Should().BeFalse();
+        applied.Should().Be(1);
+    }
+
+    [Fact]
+    public void A_window_closed_without_applying_changes_nothing()
+    {
+        using TestHost host = new();
+        string folderBefore = host.Settings.UiCustomIconFolder;
+        PreferencesViewModel cancelled = NewOn(host);
+
+        cancelled.CustomIconFolder = new Fixture().Create<string>();
+        cancelled.PreviewRefreshDelay = SettingsStore.UiPreviewTimeoutMax;
+
+        host.Settings.UiCustomIconFolder.Should().Be(folderBefore);
+        NewOn(host).CustomIconFolder.Should().Be(folderBefore, "the next window starts from the saved settings");
+    }
+
+    [Fact]
+    public void Keymap_changes_wait_for_apply()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        KeymapNode open = vm.Keymap.ActionNodes.Single(n => n.ActionId == AppActionIds.Open);
+        KeyStrokeShortcut added = new(new KeyGesture(Key.F12, KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift));
+        List<string> changed = new();
+        host.Shortcuts.ShortcutChanged += (_, id) => changed.Add(id);
+
+        vm.Keymap.AddShortcut(open, added, removeConflicts: false);
+
+        open.Shortcuts.Should().Contain(added, "the keymap page shows the change at once");
+        host.Shortcuts.Get(AppActionIds.Open)!.Shortcuts.Should().NotContain(added);
+        changed.Should().BeEmpty();
+        vm.HasChanges.Should().BeTrue();
+
+        vm.ApplyCommand.Execute(null);
+
+        host.Shortcuts.Get(AppActionIds.Open)!.Shortcuts.Should().Contain(added);
+        changed.Should().Equal(AppActionIds.Open);
     }
 
     [Fact]
@@ -59,7 +130,7 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
-    public void Warning_fields_start_from_settings_and_changes_persist_immediately()
+    public void Warning_fields_start_from_settings_and_changes_persist_on_apply()
     {
         using TestHost host = new();
         host.Settings.WarningAppearance = new WarningAppearance(16, "#102030", "#405060");
@@ -72,12 +143,13 @@ public sealed class PreferencesViewModelTests
         sut.WarningFontSize = 0;
         sut.WarningLightColor.Value = "#00ff00";
         sut.WarningDarkColor.Value = "#0000ff";
+        sut.ApplyCommand.Execute(null);
 
         host.Settings.WarningAppearance.Should().Be(new WarningAppearance(0, "#00ff00", "#0000ff"));
     }
 
     [Fact]
-    public void Open_tag_hint_fields_start_from_settings_and_changes_persist_immediately()
+    public void Open_tag_hint_fields_start_from_settings_and_changes_persist_on_apply()
     {
         using TestHost host = new();
         host.Settings.CodeViewOpenTagHint = false;
@@ -89,6 +161,7 @@ public sealed class PreferencesViewModelTests
 
         sut.OpenTagHint = true;
         sut.OpenTagHintDelay = 250;
+        sut.ApplyCommand.Execute(null);
 
         host.Settings.CodeViewOpenTagHint.Should().BeTrue();
         host.Settings.CodeViewOpenTagHintDelayMs.Should().Be(250);
@@ -108,11 +181,13 @@ public sealed class PreferencesViewModelTests
 
         sut.OpenTagHintDarkBackground.Value = "#abcdef";
         sut.ResetOpenTagHintFontCommand.Execute(null);
+        sut.ApplyCommand.Execute(null);
 
         host.Settings.OpenTagHintAppearance.Should().Be(new OpenTagHintAppearance(string.Empty, 0, "#111111", "#222222", "#abcdef", "#444444"));
         sut.OpenTagHintFontDescription.Should().Be(Strings.Get("PreferencesWindow_OpenTagHintFontDefault"));
 
         sut.RestoreAppearanceDefaultsCommand.Execute(null);
+        sut.ApplyCommand.Execute(null);
 
         host.Settings.OpenTagHintAppearance.Should().Be(OpenTagHintAppearance.Default);
         sut.OpenTagHintLightBackground.Value.Should().Be(OpenTagHintAppearance.Default.LightBackground);
@@ -130,11 +205,12 @@ public sealed class PreferencesViewModelTests
         sut.WarningFontSize.Should().Be(0);
         sut.WarningLightColor.Value.Should().Be(WarningAppearance.Default.LightColor);
         sut.WarningDarkColor.Value.Should().Be(WarningAppearance.Default.DarkColor);
+        sut.ApplyCommand.Execute(null);
         host.Settings.WarningAppearance.Should().Be(WarningAppearance.Default);
     }
 
     [Fact]
-    public void Preview_highlight_changes_persist_immediately_and_clamped()
+    public void Preview_highlight_changes_persist_on_apply_and_clamped()
     {
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
@@ -146,6 +222,7 @@ public sealed class PreferencesViewModelTests
         vm.PreviewHighlightAutoHideDelay = 100;
         vm.PreviewHighlightLightColor.Value = "#00ff00";
         vm.PreviewHighlightDarkColor.Value = "#0000ff";
+        vm.ApplyCommand.Execute(null);
 
         host.Settings.PreviewHighlight.Should().Be(new PreviewHighlight(
             PreviewHighlightStyle.Outline, "#00ff00", "#0000ff", 70,
@@ -173,53 +250,58 @@ public sealed class PreferencesViewModelTests
         vm.PreviewRefreshDelay.Should().Be(host.Settings.UiPreviewTimeout);
 
         vm.PreviewRefreshDelay = entered;
+        vm.ApplyCommand.Execute(null);
 
         host.Settings.UiPreviewTimeout.Should().Be(expected);
     }
 
     [Fact]
-    public void SelectedLanguage_change_persists_via_LocalizationManager_but_does_not_apply_live()
+    public void SelectedLanguage_change_persists_on_apply()
     {
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
         string other = vm.SelectedLanguage.Code == "en" ? "pl" : "en";
 
         vm.SelectedLanguage = PreferencesViewModel.AvailableLanguages.Single(l => l.Code == other);
+        vm.ApplyCommand.Execute(null);
 
         host.Settings.UiLanguage.Should().Be(other);
     }
 
     [Fact]
-    public void SelectedIconTheme_change_persists_via_IconThemeManager_but_does_not_apply_live()
+    public void SelectedIconTheme_change_persists_on_apply()
     {
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
         string other = vm.SelectedIconTheme.Code == "material" ? "fluent" : "material";
 
         vm.SelectedIconTheme = PreferencesViewModel.AvailableIconThemes.Single(t => t.Code == other);
+        vm.ApplyCommand.Execute(null);
 
         host.Settings.UiIconTheme.Should().Be(other);
     }
 
     [Fact]
-    public void SelectedTheme_change_applies_immediately_via_ThemeManager()
+    public void SelectedTheme_change_persists_on_apply()
     {
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
 
         vm.SelectedTheme = ThemePreference.Dark;
+        vm.ApplyCommand.Execute(null);
 
         host.Settings.ThemePreference.Should().Be(ThemePreference.Dark);
     }
 
     [Fact]
-    public void Preview_font_changes_persist_immediately()
+    public void Preview_font_changes_persist_on_apply()
     {
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
 
         vm.PreviewFontStandard = "Georgia";
         vm.PreviewFontSize = 20;
+        vm.ApplyCommand.Execute(null);
 
         host.Settings.PreviewAppearance.FontFamilyStandard.Should().Be("Georgia");
         host.Settings.PreviewAppearance.FontSize.Should().Be(20);
@@ -242,6 +324,7 @@ public sealed class PreferencesViewModelTests
 
         asked.Should().Be((row.Label, CodeViewAppearance.DarkDefault.SearchMatchBackgroundColor));
         row.Value.Should().Be("#123456");
+        vm.ApplyCommand.Execute(null);
         host.Settings.CodeViewDarkAppearance.SearchMatchBackgroundColor.Should().Be("#123456");
         host.Settings.CodeViewAppearance.SearchMatchBackgroundColor.Should().Be(CodeViewAppearance.LightDefault.SearchMatchBackgroundColor);
     }
@@ -261,13 +344,14 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
-    public void CodeViewLight_color_edit_persists_immediately()
+    public void CodeViewLight_color_edit_persists_on_apply()
     {
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
 
         ColorSettingRow row = vm.CodeViewLight.Colors.First(c => c.Key == "CSS Comment");
         row.Value = "#123456";
+        vm.ApplyCommand.Execute(null);
 
         host.Settings.CodeViewAppearance.CssCommentColor.Should().Be("#123456");
     }
@@ -294,6 +378,7 @@ public sealed class PreferencesViewModelTests
 
         vm.MendOnOpen = true;
         vm.MendOnSave = false;
+        vm.ApplyCommand.Execute(null);
 
         host.Settings.CleanOn.Should().Be(CleanOn.Open);
     }
@@ -305,25 +390,28 @@ public sealed class PreferencesViewModelTests
         using TestHost _ = host;
 
         vm.DefaultVersionIsEpub3 = true;
+        vm.ApplyCommand.Execute(null);
         host.Settings.DefaultVersion.Should().Be("3.0");
 
         vm.DefaultVersionIsEpub3 = false;
+        vm.ApplyCommand.Execute(null);
         host.Settings.DefaultVersion.Should().Be("2.0");
     }
 
     [Fact]
-    public void SpellCheckEnabled_toggle_persists_immediately()
+    public void SpellCheckEnabled_toggle_persists_on_apply()
     {
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
 
         vm.SpellCheckEnabled = true;
+        vm.ApplyCommand.Execute(null);
 
         host.Settings.SpellCheck.Should().BeTrue();
     }
 
     [Fact]
-    public void PreserveEntities_add_edit_and_remove_persist_immediately()
+    public void PreserveEntities_add_edit_and_remove_persist_on_apply()
     {
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
@@ -333,12 +421,14 @@ public sealed class PreferencesViewModelTests
         PreserveEntityRow row = vm.PreserveEntities.Last();
         row.CodeText = "8212";
         row.Name = "&#8212;";
+        vm.ApplyCommand.Execute(null);
 
         host.Settings.PreserveEntityCodeNames.Should().Contain(p => p.Code == 8212 && p.Name == "&#8212;");
 
         row.RemoveCommand.Execute(null);
 
         vm.PreserveEntities.Should().HaveCount(before);
+        vm.ApplyCommand.Execute(null);
         host.Settings.PreserveEntityCodeNames.Should().NotContain(p => p.Code == 8212);
     }
 
@@ -369,6 +459,7 @@ public sealed class PreferencesViewModelTests
         asked.MonospaceOnly.Should().BeFalse();
         vm.SpecialCharacterFontFamily.Should().Be("Georgia");
         vm.SpecialCharacterFontSize.Should().Be(22);
+        vm.ApplyCommand.Execute(null);
         host.Settings.SpecialCharacterAppearance.Should().Be(new SpecialCharacterAppearance("Georgia", 22));
     }
 
@@ -390,6 +481,7 @@ public sealed class PreferencesViewModelTests
         asked!.Size.Should().BeNull();
         vm.PreviewFontSerif.Should().Be("Georgia");
         vm.PreviewFontSize.Should().Be(sizeBefore);
+        vm.ApplyCommand.Execute(null);
         host.Settings.PreviewAppearance.FontFamilySerif.Should().Be("Georgia");
     }
 
@@ -408,6 +500,7 @@ public sealed class PreferencesViewModelTests
         await vm.CodeViewDark.ChooseFontCommand.ExecuteAsync(null);
 
         asked!.MonospaceOnly.Should().BeTrue();
+        vm.ApplyCommand.Execute(null);
         host.Settings.CodeViewDarkAppearance.FontFamily.Should().Be("Consolas");
         host.Settings.CodeViewDarkAppearance.FontSize.Should().Be(14);
     }
@@ -442,10 +535,12 @@ public sealed class PreferencesViewModelTests
 
         asked!.Size.Should().Be(12, "the default size of the compact mode");
         asked.Family.Should().Be("Segoe UI", "the window starts with the font actually in use, so that OK is enabled");
+        vm.ApplyCommand.Execute(null);
         (host.Settings.UiFont, host.Settings.UiFontSize).Should().Be(("Tahoma", 13));
         vm.UiFontDescription.Should().Be("Tahoma, 13 px");
 
         vm.ResetUiFontCommand.Execute(null);
+        vm.ApplyCommand.Execute(null);
 
         (host.Settings.UiFont, host.Settings.UiFontSize).Should().Be((string.Empty, 0));
         vm.UiFontDescription.Should().Contain("Segoe UI").And.Contain("12");

@@ -68,9 +68,11 @@ public sealed class PreferencesSpellcheckTests : IDisposable
         _vm.AvailableSecondaryDictionaries[^1].Name.Should().BeEmpty();
 
         _vm.SelectedSecondaryDictionary = _vm.AvailableSecondaryDictionaries.Single(d => d.Name == "en_US");
+        _vm.ApplyCommand.Execute(null);
         _host.Settings.SecondaryDictionary.Should().Be("en_US");
 
         _vm.SelectedSecondaryDictionary = _vm.AvailableSecondaryDictionaries[^1];
+        _vm.ApplyCommand.Execute(null);
         _host.Settings.SecondaryDictionary.Should().BeEmpty();
     }
 
@@ -84,8 +86,29 @@ public sealed class PreferencesSpellcheckTests : IDisposable
 
         _vm.UserDictionaries.Should().Contain(d => d.Name == name && d.IsEnabled);
         _vm.SelectedUserDictionary!.Name.Should().Be(name);
+        _vm.ApplyCommand.Execute(null);
         _host.Settings.DefaultUserDictionary.Should().Be(name);
         _host.Settings.EnabledUserDictionaries.Should().Contain(name);
+    }
+
+    [Fact]
+    public async Task Dictionary_operations_happen_at_once_and_applying_later_keeps_them()
+    {
+        _answers.Enqueue("alice");
+        await _vm.AddUserDictionaryCommand.ExecuteAsync(null);
+        _vm.UserDictionaries.Single(d => d.Name == "alice").IsEnabled = false;
+        _host.Settings.EnabledUserDictionaries.Should().Contain("alice", "disabling waits for Save / Apply");
+
+        _answers.Enqueue("bob");
+        await _vm.RenameUserDictionaryCommand.ExecuteAsync(null);
+
+        _spellChecker.UserDictionaries().Should().Contain("bob").And.NotContain("alice");
+        _vm.UserDictionaries.Single(d => d.Name == "bob").IsEnabled.Should().BeFalse();
+
+        _vm.ApplyCommand.Execute(null);
+
+        _host.Settings.EnabledUserDictionaries.Should().NotContain("alice").And.NotContain("bob");
+        _host.Settings.DefaultUserDictionary.Should().Be("bob");
     }
 
     [Fact]
@@ -167,6 +190,7 @@ public sealed class PreferencesSpellcheckTests : IDisposable
         await _vm.AddUserDictionaryCommand.ExecuteAsync(null);
 
         _vm.SelectedUserDictionary = _vm.UserDictionaries.Single(d => d.Name == "alice");
+        _vm.ApplyCommand.Execute(null);
 
         _host.Settings.DefaultUserDictionary.Should().Be("alice");
         _vm.UserWords.Should().Equal("Cheshire");

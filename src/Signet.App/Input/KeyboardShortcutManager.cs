@@ -55,6 +55,49 @@ public sealed class KeyboardShortcutManager
         return shortcut;
     }
 
+    /// <summary>
+    /// A working copy for an editor with Save / Cancel (the keymap in Preferences): the same actions with their current
+    /// shortcuts, storing its changes in <paramref name="draftSettings"/> (a draft of the settings this manager uses,
+    /// see <see cref="SettingsStore.CreateDraft"/>). Once the draft is committed, <see cref="ReloadFromSettings"/>
+    /// brings the changes here.
+    /// </summary>
+    public KeyboardShortcutManager CreateDraft(SettingsStore draftSettings)
+    {
+        ArgumentNullException.ThrowIfNull(draftSettings);
+        KeyboardShortcutManager draft = new(draftSettings);
+        foreach (KeyboardShortcut entry in _shortcuts.Values)
+        {
+            draft._shortcuts[entry.Id] = new KeyboardShortcut(entry.Id, entry.Description, entry.Shortcuts, entry.DefaultShortcuts, entry.Scope);
+        }
+
+        return draft;
+    }
+
+    /// <summary>
+    /// Reloads the saved overrides from the settings (after a committed draft) and raises
+    /// <see cref="ShortcutChanged"/> for every action whose shortcuts changed.
+    /// </summary>
+    public void ReloadFromSettings()
+    {
+        _overrides.Clear();
+        foreach (KeyValuePair<string, string> pair in _settings.GetStringMap(SettingsGroup))
+        {
+            _overrides[pair.Key] = pair.Value;
+        }
+
+        foreach (KeyboardShortcut entry in _shortcuts.Values)
+        {
+            IReadOnlyList<Shortcut> current = _overrides.TryGetValue(entry.Id, out string? stored)
+                ? ShortcutConversion.ParseList(stored)
+                : entry.DefaultShortcuts;
+            if (!current.SequenceEqual(entry.Shortcuts))
+            {
+                entry.Shortcuts = current;
+                ShortcutChanged?.Invoke(this, entry.Id);
+            }
+        }
+    }
+
     /// <summary>Returns the shortcuts of the action or <see langword="null"/>.</summary>
     public KeyboardShortcut? Get(string id) => _shortcuts.GetValueOrDefault(id);
 
