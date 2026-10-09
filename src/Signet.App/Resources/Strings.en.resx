@@ -4126,8 +4126,11 @@ It does not change the files, their names or their IDs.</value>
   <data name="Keymap_FindShortcut" xml:space="preserve">
     <value>Find Shortcut</value>
   </data>
-  <data name="Keymap_ClearShortcutFilter" xml:space="preserve">
-    <value>Clear Shortcut Filter</value>
+  <data name="Keymap_ClearFilters" xml:space="preserve">
+    <value>Clear Filters</value>
+  </data>
+  <data name="Keymap_ClearShortcutField" xml:space="preserve">
+    <value>Clear</value>
   </data>
   <data name="Keymap_MouseShortcutPad" xml:space="preserve">
     <value>Mouse shortcut (click or scroll here)</value>

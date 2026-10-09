@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using AutoFixture;
 using AwesomeAssertions;
 using Avalonia.Input;
 using Signet.App.Actions;
@@ -84,6 +85,54 @@ public sealed class KeymapViewModelTests
 
         All(keymap.Roots).Where(n => !n.IsGroup && n.IsVisible).Select(n => n.ActionId).Should().Equal(AppActionIds.Save);
         keymap.HasShortcutFilter.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Typing_in_the_search_box_drops_the_shortcut_filter()
+    {
+        (TestHost host, KeymapViewModel keymap) = New();
+        using TestHost _ = host;
+        string typed = new Fixture().Create<string>();
+        keymap.ShortcutFilter = new KeyStrokeShortcut(new KeyGesture(Key.S, KeyModifiers.Control));
+
+        keymap.Filter = typed;
+
+        keymap.ShortcutFilter.Should().BeNull();
+        keymap.HasShortcutFilter.Should().BeFalse();
+        keymap.Filter.Should().Be(typed);
+    }
+
+    [Fact]
+    public void Setting_the_shortcut_filter_clears_the_search_box()
+    {
+        (TestHost host, KeymapViewModel keymap) = New();
+        using TestHost _ = host;
+        keymap.Filter = new Fixture().Create<string>();
+
+        keymap.ShortcutFilter = new KeyStrokeShortcut(new KeyGesture(Key.S, KeyModifiers.Control));
+
+        keymap.Filter.Should().BeEmpty();
+        All(keymap.Roots).Where(n => !n.IsGroup && n.IsVisible).Select(n => n.ActionId).Should().Equal(AppActionIds.Save);
+    }
+
+    [Fact]
+    public void ClearFilters_drops_both_filters_and_shows_every_action()
+    {
+        (TestHost host, KeymapViewModel keymap) = New();
+        using TestHost _ = host;
+        keymap.ShortcutFilter = new KeyStrokeShortcut(new KeyGesture(Key.S, KeyModifiers.Control));
+
+        keymap.ClearFilters();
+
+        keymap.Filter.Should().BeEmpty();
+        keymap.ShortcutFilter.Should().BeNull();
+        All(keymap.Roots).Should().OnlyContain(n => n.IsVisible);
+
+        keymap.Filter = new Fixture().Create<string>();
+        keymap.ClearFilters();
+
+        keymap.Filter.Should().BeEmpty();
+        All(keymap.Roots).Should().OnlyContain(n => n.IsVisible);
     }
 
     [Fact]

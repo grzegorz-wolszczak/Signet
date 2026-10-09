@@ -4126,8 +4126,11 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="Keymap_FindShortcut" xml:space="preserve">
     <value>Znajdź skrót</value>
   </data>
-  <data name="Keymap_ClearShortcutFilter" xml:space="preserve">
-    <value>Wyczyść filtr skrótu</value>
+  <data name="Keymap_ClearFilters" xml:space="preserve">
+    <value>Wyczyść filtry</value>
+  </data>
+  <data name="Keymap_ClearShortcutField" xml:space="preserve">
+    <value>Wyczyść</value>
   </data>
   <data name="Keymap_MouseShortcutPad" xml:space="preserve">
     <value>Skrót myszy (kliknij lub przewiń tutaj)</value>

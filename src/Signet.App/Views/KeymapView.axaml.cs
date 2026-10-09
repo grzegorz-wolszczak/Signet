@@ -30,6 +30,9 @@ public partial class KeymapView : UserControl
     private HierarchicalTreeDataGridSource<KeymapNode>? _source;
     private TreeSelectionSync<KeymapNode>? _selection;
 
+    // Set while the "Find Shortcut" fields are changed from code, so their change events do not touch the filter.
+    private bool _syncingFindFields;
+
     /// <summary>Initializes the view.</summary>
     public KeymapView()
     {
@@ -38,14 +41,28 @@ public partial class KeymapView : UserControl
         Tree.AddHandler(KeyDownEvent, OnTreeKeyDown, RoutingStrategies.Tunnel);
         Tree.ContextRequested += OnTreeContextRequested;
         FindFirstStroke.GestureChanged += (_, _) => ApplyKeyboardFilter();
+        FindFirstStroke.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == TextBox.TextProperty)
+            {
+                FindFirstStrokeClear.IsVisible = !string.IsNullOrEmpty(FindFirstStroke.Text);
+            }
+        };
         FindSecondStroke.GestureChanged += (_, _) => ApplyKeyboardFilter();
         FindSecondEnabled.IsCheckedChanged += (_, _) => ApplyKeyboardFilter();
         FindMousePad.Hint = Strings.Get("Keymap_MouseShortcutPad");
+        // As in IntelliJ, a mouse shortcut made in the pad shows up in the first field (cleared by its button) and
+        // the pad keeps its hint.
         FindMousePad.ShortcutChanged += (_, _) =>
         {
-            if (_bound is not null && FindMousePad.Shortcut is { } mouse)
+            if (!_syncingFindFields && _bound is not null && FindMousePad.Shortcut is { } mouse)
             {
-                FindFirstStroke.SetGesture(null);
+                WithoutFilterSync(() =>
+                {
+                    FindFirstStroke.SetGesture(null);
+                    FindMousePad.SetShortcut(null);
+                    FindFirstStroke.Text = mouse.DisplayText;
+                });
                 _bound.ShortcutFilter = mouse;
             }
         };
@@ -96,6 +113,11 @@ public partial class KeymapView : UserControl
         {
             _selection?.SelectFromViewModel();
         }
+        else if (e.PropertyName == nameof(KeymapViewModel.ShortcutFilter) && _bound?.ShortcutFilter is null)
+        {
+            // The filter was dropped (typing in the search box, the clear button): empty the popup's fields too.
+            WithoutFilterSync(ClearFindFields);
+        }
     }
 
     private void OnExpandAllClicked(object? sender, RoutedEventArgs e) => _bound?.ExpandAll();
@@ -116,15 +138,18 @@ public partial class KeymapView : UserControl
         FindFirstStroke.Focus();
     }
 
-    private void OnClearShortcutFilterClicked(object? sender, RoutedEventArgs e)
+    private void OnClearFiltersClicked(object? sender, RoutedEventArgs e) => _bound?.ClearFilters();
+
+    // Clears the first field, whether it shows a keyboard or a mouse shortcut, and drops the filter.
+    private void OnFindFirstStrokeClearClicked(object? sender, RoutedEventArgs e)
     {
-        FindFirstStroke.SetGesture(null);
-        FindSecondStroke.SetGesture(null);
-        FindMousePad.SetShortcut(null);
+        WithoutFilterSync(ClearFindFields);
         if (_bound is not null)
         {
             _bound.ShortcutFilter = null;
         }
+
+        FindFirstStroke.Focus();
     }
 
     private async void OnResetAllClicked(object? sender, RoutedEventArgs e)
@@ -138,14 +163,44 @@ public partial class KeymapView : UserControl
 
     private void ApplyKeyboardFilter()
     {
-        if (_bound is null || FindFirstStroke.Gesture is not { } first)
+        if (_syncingFindFields || _bound is null)
         {
             return;
         }
 
-        FindMousePad.SetShortcut(null);
+        if (FindFirstStroke.Gesture is not { } first)
+        {
+            if (_bound.ShortcutFilter is KeyStrokeShortcut)
+            {
+                _bound.ShortcutFilter = null;
+            }
+
+            return;
+        }
+
+        WithoutFilterSync(() => FindMousePad.SetShortcut(null));
         _bound.ShortcutFilter = new KeyStrokeShortcut(
             first, FindSecondEnabled.IsChecked == true ? FindSecondStroke.Gesture : null);
+    }
+
+    private void ClearFindFields()
+    {
+        FindFirstStroke.SetGesture(null);
+        FindSecondStroke.SetGesture(null);
+        FindMousePad.SetShortcut(null);
+    }
+
+    private void WithoutFilterSync(Action change)
+    {
+        _syncingFindFields = true;
+        try
+        {
+            change();
+        }
+        finally
+        {
+            _syncingFindFields = false;
+        }
     }
 
     // A double click on an action opens "Edit Shortcuts" (on a group it only expands / collapses it).

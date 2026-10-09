@@ -134,6 +134,58 @@ public sealed class PreferencesWindowRenderTests
     }
 
     /// <summary>
+    /// "Find Shortcut" as in IntelliJ: a mouse shortcut made in the pad shows up in the first field, which is then
+    /// cleared by its button; typing in the search box drops the shortcut filter and empties the popup's fields.
+    /// </summary>
+    [AvaloniaFact]
+    public void Keymap_find_shortcut_field_shows_a_mouse_shortcut_and_is_cleared_by_its_button_or_by_typing()
+    {
+        PreferencesWindow window = BuildWindow();
+        var vm = (PreferencesViewModel)window.DataContext!;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
+        tabs.SelectedIndex = 6; // Keyboard Shortcuts
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        KeymapView keymap = window.GetVisualDescendants().OfType<KeymapView>().Single();
+        ShortcutCaptureBox find = keymap.FindControl<ShortcutCaptureBox>("FindFirstStroke")!;
+        Button clear = keymap.FindControl<Button>("FindFirstStrokeClear")!;
+        MouseShortcutPad pad = keymap.FindControl<MouseShortcutPad>("FindMousePad")!;
+        clear.IsVisible.Should().BeFalse();
+
+        MouseShortcut ctrlClick = new(MouseShortcutButton.Left, KeyModifiers.Control);
+        pad.SetShortcut(ctrlClick);
+        Dispatcher.UIThread.RunJobs();
+
+        vm.Keymap.ShortcutFilter.Should().Be(ctrlClick);
+        find.Text.Should().Be(ctrlClick.DisplayText);
+        pad.Shortcut.Should().BeNull();
+        clear.IsVisible.Should().BeTrue();
+
+        clear.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+
+        vm.Keymap.ShortcutFilter.Should().BeNull();
+        find.Text.Should().BeNullOrEmpty();
+        clear.IsVisible.Should().BeFalse();
+
+        find.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = Key.S, KeyModifiers = KeyModifiers.Control });
+        Dispatcher.UIThread.RunJobs();
+        vm.Keymap.HasShortcutFilter.Should().BeTrue();
+
+        vm.Keymap.Filter = vm.Keymap.Roots[0].Name;
+        Dispatcher.UIThread.RunJobs();
+
+        vm.Keymap.HasShortcutFilter.Should().BeFalse();
+        find.Gesture.Should().BeNull();
+        find.Text.Should().BeNullOrEmpty();
+        clear.IsVisible.Should().BeFalse();
+    }
+
+    /// <summary>
     /// The "Spellcheck" tab: dictionaries with language names, the list of user
     /// dictionaries with a toggle, the selected dictionary as the default, the list of its words with actions
     /// available after selecting a word, and a button that opens the settings folder.

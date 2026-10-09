@@ -75,11 +75,17 @@ public sealed partial class KeymapViewModel : ViewModelBase
     [ObservableProperty]
     private KeymapNode? _selected;
 
-    /// <summary>The filter typed in the search box: an action stays when its name or a shortcut contains it.</summary>
+    /// <summary>
+    /// The filter typed in the search box: an action stays when its name or a shortcut contains it. Only one filter
+    /// is active at a time (as in IntelliJ): typing here drops <see cref="ShortcutFilter"/>.
+    /// </summary>
     [ObservableProperty]
     private string _filter = string.Empty;
 
-    /// <summary>"Find Shortcut": only the actions having this shortcut (<c>null</c> — no such filter).</summary>
+    /// <summary>
+    /// "Find Shortcut": only the actions having this shortcut (<c>null</c> — no such filter). Setting it clears
+    /// <see cref="Filter"/>.
+    /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasShortcutFilter))]
     private Shortcut? _shortcutFilter;
@@ -160,15 +166,38 @@ public sealed partial class KeymapViewModel : ViewModelBase
     /// <summary>Restores the default shortcuts of all actions.</summary>
     public void ResetAll() => _shortcuts.ResetAll();
 
+    /// <summary>Clears both the search text and the "Find Shortcut" filter.</summary>
+    public void ClearFilters()
+    {
+        Filter = string.Empty;
+        ShortcutFilter = null;
+    }
+
     /// <summary>The action as "name (group path)" — for conflicts.</summary>
     public string LabelOf(string actionId) =>
         _nodesById.TryGetValue(actionId, out List<KeymapNode>? nodes)
             ? nodes[0].Path is { Length: > 0 } path ? $"{nodes[0].Name} ({path})" : nodes[0].Name
             : actionId;
 
-    partial void OnFilterChanged(string value) => ApplyFilter();
+    partial void OnFilterChanged(string value)
+    {
+        if (value.Length > 0)
+        {
+            ShortcutFilter = null;
+        }
 
-    partial void OnShortcutFilterChanged(Shortcut? value) => ApplyFilter();
+        ApplyFilter();
+    }
+
+    partial void OnShortcutFilterChanged(Shortcut? value)
+    {
+        if (value is not null)
+        {
+            Filter = string.Empty;
+        }
+
+        ApplyFilter();
+    }
 
     private void ApplyFilter()
     {
