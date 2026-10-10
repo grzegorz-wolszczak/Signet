@@ -14,34 +14,37 @@ treści, konwersja do innych formatów, sterowniki urządzeń i funkcje AI.
 Każdą pozycję sprawdziłem z kodem Signeta (stan gałęzi `main`, 2026-10-09). Pozycje, które Signet już
 ma, są w osobnej sekcji na końcu.
 
+**Stan prac (2026-10-10):** pozycje oznaczone ✅ są już zrobione albo sprawdzone na `main` i nie trzeba do nich
+wracać. Szczegóły i różnice względem propozycji są w linii **Status** pod nagłówkiem pozycji.
+
 Oznaczenia: **Rozmiar** S (do 1 dnia), M (kilka dni), L (duża funkcja). **Priorytet**: moja ocena
 przydatności w stosunku do kosztu. Do ustalenia z Tobą.
 
 ## Podsumowanie
 
-| Nr | Funkcja | calibre | Rozmiar | Priorytet |
-|---|---|---|---|---|
-| [CF-01](#cf-01--check-book-sprawdzanie-książki-z-automatycznymi-poprawkami) | Check book: sprawdzanie książki z automatycznymi poprawkami | 6.11–9.16 | L | wysoki |
-| [CF-02](#cf-02--compress-images-kompresja-i-konwersja-obrazów) | Compress images: kompresja i konwersja obrazów (PNG/GIF → JPEG/WebP) | 6.17, 9.10, 9.12 | M | wysoki |
-| [CF-03](#cf-03--upgrade-book-epub-2--epub-3) | Upgrade book: EPUB 2 → EPUB 3 (z zachowaniem landmarks) | 9.15 (poprawka) | M | wysoki |
-| [CF-04](#cf-04--panel-spisu-treści-wpisy-z-bieżącego-pliku) | Panel spisu treści: wyróżnienie wpisów z bieżącego pliku | 9.16 | S | wysoki |
-| [CF-05](#cf-05--edytor-spisu-treści-sortowanie-wpisów) | Edytor spisu treści: sortowanie wpisów wg kolejności w książce | 9.12 | S | średni |
-| [CF-06](#cf-06--przeglądarka-książki-podgląd-obrazu-po-najechaniu) | Przeglądarka książki: podgląd obrazu po najechaniu myszą | 9.14 | S | średni |
-| [CF-07](#cf-07--przeglądarka-książki-przenieś-na-początekkoniec) | Przeglądarka książki: przenieś plik na początek/koniec (Ctrl+Shift+←/→) | 9.6, 6.11 | S | średni |
-| [CF-08](#cf-08--przeglądarka-książki-oznacz-plik-jako-nav) | Przeglądarka książki: „Oznacz jako spis treści (NAV)” dla EPUB 3 | 6.6.1 | S | średni |
-| [CF-09](#cf-09--sprawdzanie-pisowni-wykluczenia-i-eksport-csv) | Pisownia: wykluczanie słów z WIELKICH LITER, camelCase, snake_case; eksport listy do CSV | 7.10, 7.24 | S | średni |
-| [CF-10](#cf-10--zapisane-wyszukiwania-filtr-po-słowach-kluczowych) | Zapisane wyszukiwania: filtr po słowach kluczowych | 9.10 | S | niski |
-| [CF-11](#cf-11--wklejanie-z-normalizacją-unicode-nfc) | Wklejanie z normalizacją Unicode do NFC | 8.9 | S | średni |
-| [CF-12](#cf-12--podgląd-reset-powiększenia-z-menu-kontekstowego) | Podgląd: reset powiększenia do 100% z menu kontekstowego | 9.8 | S | niski |
-| [CF-13](#cf-13--raporty-enter--dwuklik) | Raporty: Enter działa jak dwuklik | 9.0 | S | niski |
-| [CF-14](#cf-14--wstaw-tag-z-konfigurowalną-listą) | „Wstaw tag” (Insert tag) z konfigurowalną listą tagów | 9.4 | M | średni |
-| [CF-15](#cf-15--pobieranie-zasobów-zewnętrznych) | Pobieranie zasobów zewnętrznych (obrazy, CSS z URL-i) do książki | 7.12 | M | średni |
-| [CF-16](#cf-16--osadzanie-i-podzbiór-fontów-embed--subset-fonts) | Osadzanie fontów i podzbiór fontów (embed / subset) | 5.37–7.3 | L | niski |
-| [CF-17](#cf-17--selektory-css-level-4-w-analizie-kaskady) | Selektory CSS Level 4 (`:is`, `:where`, `:has`) w analizie kaskady | 9.10 | M | średni |
-| [CF-18](#cf-18--drobne-usprawnienia-edytora-i-zapisu) | Drobne: pełna ścieżka książki w pasku stanu, „Zapisz kopię” → otwórz kopię, ostrzeżenie przy pliku tylko do odczytu, szerokość kursora | 6.11–7.9 | S | niski |
-| [CF-19](#cf-19--obrazy-avif) | Obrazy AVIF: wyświetlanie w zakładce obrazu i w raportach | 9.16 | S | niski |
-| [CF-20](#cf-20--narracja-tekstu-media-overlays-smil) | Narracja tekstu: media overlays (SMIL) z syntezy mowy | 7.21 | L | niski |
-| [CF-21](#cf-21--poprawki-błędów-z-calibre-do-sprawdzenia-w-signecie) | Poprawki błędów calibre do sprawdzenia w Signecie | różne | S | średni |
+| Nr | Funkcja | calibre | Rozmiar | Priorytet | Status |
+|---|---|---|---|---|---|
+| [CF-01](#cf-01--check-book-sprawdzanie-książki-z-automatycznymi-poprawkami) | Check book: sprawdzanie książki z automatycznymi poprawkami | 6.11–9.16 | L | wysoki | |
+| [CF-02](#cf-02--compress-images-kompresja-i-konwersja-obrazów) | Compress images: kompresja i konwersja obrazów (PNG/GIF → JPEG/WebP) | 6.17, 9.10, 9.12 | M | wysoki | |
+| [CF-03](#cf-03--upgrade-book-epub-2--epub-3) | Upgrade book: EPUB 2 → EPUB 3 (z zachowaniem landmarks) | 9.15 (poprawka) | M | wysoki | |
+| [CF-04](#cf-04--panel-spisu-treści-wpisy-z-bieżącego-pliku) | Panel spisu treści: wyróżnienie wpisów z bieżącego pliku | 9.16 | S | wysoki | ✅ zrobione (`e44d272`) |
+| [CF-05](#cf-05--edytor-spisu-treści-sortowanie-wpisów) | Edytor spisu treści: sortowanie wpisów wg kolejności w książce | 9.12 | S | średni | ✅ zrobione (`e44d272`) |
+| [CF-06](#cf-06--przeglądarka-książki-podgląd-obrazu-po-najechaniu) | Przeglądarka książki: podgląd obrazu po najechaniu myszą | 9.14 | S | średni | |
+| [CF-07](#cf-07--przeglądarka-książki-przenieś-na-początekkoniec) | Przeglądarka książki: przenieś plik na początek/koniec (Ctrl+Shift+←/→) | 9.6, 6.11 | S | średni | ✅ zrobione (`e44d272`) |
+| [CF-08](#cf-08--przeglądarka-książki-oznacz-plik-jako-nav) | Przeglądarka książki: „Oznacz jako spis treści (NAV)” dla EPUB 3 | 6.6.1 | S | średni | ✅ zrobione (`e44d272`) |
+| [CF-09](#cf-09--sprawdzanie-pisowni-wykluczenia-i-eksport-csv) | Pisownia: wykluczanie słów z WIELKICH LITER, camelCase, snake_case; eksport listy do CSV | 7.10, 7.24 | S | średni | ✅ zrobione (`e44d272`) |
+| [CF-10](#cf-10--zapisane-wyszukiwania-filtr-po-słowach-kluczowych) | Zapisane wyszukiwania: filtr po słowach kluczowych | 9.10 | S | niski | ✅ zrobione (`e44d272`) |
+| [CF-11](#cf-11--wklejanie-z-normalizacją-unicode-nfc) | Wklejanie z normalizacją Unicode do NFC | 8.9 | S | średni | ✅ zrobione (`e44d272`) |
+| [CF-12](#cf-12--podgląd-reset-powiększenia-z-menu-kontekstowego) | Podgląd: reset powiększenia do 100% z menu kontekstowego | 9.8 | S | niski | |
+| [CF-13](#cf-13--raporty-enter--dwuklik) | Raporty: Enter działa jak dwuklik | 9.0 | S | niski | ✅ zrobione (`e44d272`) |
+| [CF-14](#cf-14--wstaw-tag-z-konfigurowalną-listą) | „Wstaw tag” (Insert tag) z konfigurowalną listą tagów | 9.4 | M | średni | |
+| [CF-15](#cf-15--pobieranie-zasobów-zewnętrznych) | Pobieranie zasobów zewnętrznych (obrazy, CSS z URL-i) do książki | 7.12 | M | średni | |
+| [CF-16](#cf-16--osadzanie-i-podzbiór-fontów-embed--subset-fonts) | Osadzanie fontów i podzbiór fontów (embed / subset) | 5.37–7.3 | L | niski | |
+| [CF-17](#cf-17--selektory-css-level-4-w-analizie-kaskady) | Selektory CSS Level 4 (`:is`, `:where`, `:has`) w analizie kaskady | 9.10 | M | średni | |
+| [CF-18](#cf-18--drobne-usprawnienia-edytora-i-zapisu) | Drobne: pełna ścieżka książki w pasku stanu, „Zapisz kopię” → otwórz kopię, ostrzeżenie przy pliku tylko do odczytu, szerokość kursora | 6.11–7.9 | S | niski | |
+| [CF-19](#cf-19--obrazy-avif) | Obrazy AVIF: wyświetlanie w zakładce obrazu i w raportach | 9.16 | S | niski | |
+| [CF-20](#cf-20--narracja-tekstu-media-overlays-smil) | Narracja tekstu: media overlays (SMIL) z syntezy mowy | 7.21 | L | niski | |
+| [CF-21](#cf-21--poprawki-błędów-z-calibre-do-sprawdzenia-w-signecie) | Poprawki błędów calibre do sprawdzenia w Signecie | różne | S | średni | ✅ sprawdzone (`bd826c2`) |
 
 ---
 
@@ -122,6 +125,8 @@ dało się cofnąć.
 
 ## CF-04 — Panel spisu treści: wpisy z bieżącego pliku
 
+> **Status: ✅ zrobione** w commicie `e44d272` na `main` (2026-10-10). Pogrubienie, rozwinięcie gałęzi do wszystkich wpisów pliku i przewinięcie do pierwszego; zaznaczenie się nie zmienia.
+
 **calibre (9.16):** panel ToC wyróżnia wpisy, które wskazują na plik otwarty w edytorze.
 
 **Kod calibre:** `gui2/tweak_book/toc.py` (`mark_name_as_current`).
@@ -133,6 +138,8 @@ aktywny.
 wskazuje na ten plik, i rozwinąć gałąź do pierwszego z nich. Opcjonalnie przewinąć do niego.
 
 ## CF-05 — Edytor spisu treści: sortowanie wpisów
+
+> **Status: ✅ zrobione** w commicie `e44d272` na `main` (2026-10-10). Przycisk „Sortuj” w oknie edycji spisu treści. Cofnięcie tylko przez „Anuluj” (bez osobnego cofania).
 
 **calibre (9.12):** przycisk sortujący wpisy ToC według kolejności w książce: indeks pliku w spine,
 a w obrębie pliku pozycja kotwicy. W 8.0.1 doszło przenoszenie wielu zaznaczonych wpisów naraz.
@@ -158,6 +165,8 @@ w `BookBrowserView`. Miniatury cache'owane i unieważniane po zmianie pliku.
 
 ## CF-07 — Przeglądarka książki: przenieś na początek/koniec
 
+> **Status: ✅ zrobione** w commicie `e44d272` na `main` (2026-10-10). Akcje „Przenieś na początek/koniec” w menu kontekstowym, **bez domyślnych skrótów** (jak Move Up/Down; skrót można ustawić w keymapie). Działają na kilku zaznaczonych plikach.
+
 **calibre:** Ctrl+Shift+←/→ przenosi plik na początek lub koniec listy (9.6). Skróty do zmiany
 kolejności spine z klawiatury (6.11).
 
@@ -171,6 +180,8 @@ z domyślnymi skrótami, działające na zaznaczeniu wielu plików.
 
 ## CF-08 — Przeglądarka książki: oznacz plik jako NAV
 
+> **Status: ✅ zrobione** w commicie `e44d272` na `main` (2026-10-10). Akcja „Oznacz jako spis treści (NAV)” w menu kontekstowym (tylko EPUB 3), `Book.SetNavDocument`.
+
 **calibre (6.6.1):** w EPUB 3 menu kontekstowe pliku HTML ma „Oznacz jako spis treści”, czyli
 ustawia `properties="nav"`.
 
@@ -182,6 +193,8 @@ ustawia `properties="nav"`.
 plik i usuwa ją z poprzedniego.
 
 ## CF-09 — Sprawdzanie pisowni: wykluczenia i eksport CSV
+
+> **Status: ✅ zrobione** w commicie `e44d272` na `main` (2026-10-10). Filtry w oknie pisowni (zapamiętywane), licznik widocznych słów, eksport CSV. Dodatkowo tokenizer pisowni traktuje „_” między literami jako część słowa (bez tego filtr snake_case nie miałby czego ukrywać), co zmienia też podkreślenia w Code View.
 
 **calibre:** opcje wykluczania z listy słów: WIELKIE LITERY, słowa z cyframi, camelCase,
 snake_case (7.10). Eksport aktualnie widocznej listy do CSV (7.24). Liczba widocznych słów (7.11).
@@ -196,6 +209,8 @@ widocznych słów i „Eksportuj CSV” (słowo, liczba wystąpień, język, pop
 
 ## CF-10 — Zapisane wyszukiwania: filtr po słowach kluczowych
 
+> **Status: ✅ zrobione** w commicie `e44d272` na `main` (2026-10-10). Każde słowo filtra musi wystąpić (w dowolnej kolejności); z „filtruj wszystko” także w polach Find/Replace/Controls.
+
 **calibre (9.10):** filtr listy zapisanych wyszukiwań dzieli tekst na słowa i dopasowuje wpis,
 gdy każde słowo występuje w nazwie, w dowolnej kolejności.
 
@@ -206,6 +221,8 @@ gdy każde słowo występuje w nazwie, w dowolnej kolejności.
 **Propozycja:** dopasowanie wszystkich słów filtra (np. `quote fix` znajdzie „Fix smart quotes”).
 
 ## CF-11 — Wklejanie z normalizacją Unicode NFC
+
+> **Status: ✅ zrobione** w commicie `e44d272` na `main` (2026-10-10). Opcja w Preferencjach → **Ogólne** (nie ma strony Code View), domyślnie włączona. Dotyczy Ctrl+V / Shift+Insert, „Wklej” z menu kontekstowego i historii schowka.
 
 **calibre (8.9):** tekst wklejany do edytora jest normalizowany do NFC, więc „é” złożone
 z dwóch znaków staje się jednym znakiem.
@@ -227,6 +244,8 @@ Ważne dla wyszukiwania i pisowni, bo tekst z PDF-ów często ma rozłożone zna
 pozwala na własne menu kontekstowe.
 
 ## CF-13 — Raporty: Enter = dwuklik
+
+> **Status: ✅ zrobione** w commicie `e44d272` na `main` (2026-10-10). Enter na zaznaczonym wierszu każdego raportu.
 
 **calibre (9.0):** w raportach Enter wykonuje tę samą akcję co dwuklik.
 
@@ -318,23 +337,25 @@ media overlays (SMIL) z podświetlaniem zdań. Dla postaci można wybrać różn
 
 ## CF-21 — Poprawki błędów z calibre do sprawdzenia w Signecie
 
+> **Status: ✅ sprawdzone** (2026-10-10). Każda pozycja poza 9.5 (nie dotyczy Signeta) ma test; dwa prawdziwe błędy naprawione w `bd826c2`. Wyniki w kolumnie „Wynik”.
+
 Błędy naprawione w calibre, które mogą występować też w Signecie. Każdy do sprawdzenia testem
 (najlepiej najpierw test, który pokaże błąd):
 
-| calibre | Problem | Gdzie sprawdzić w Signecie |
-|---|---|---|
-| 9.14 | Reguła `@charset` przesuwa „skocz do klasy” o jedną pozycję | `GoToLinkOrStyle`, Live CSS, Find Usages |
-| 5.44 | `@namespace` psuje skok do definicji reguły | jak wyżej |
-| 7.17, 6.26, 6.10 | Znaki spoza BMP (np. emoji, `𝔸`) przesuwają zaznaczenie wyników wyszukiwania i wstawianie formatowania | Find & Replace, `CodeFormatOperations` |
-| 5.38 | Słowa za komentarzem HTML nie są sprawdzane pisownią | `HtmlSpellCheck` |
-| 5.38 | Dwuklik na słowie zaznacza też otaczające cudzysłowy typograficzne | Code View (AvaloniaEdit) |
-| 6.6.1 | Komentarze wewnątrz nieznanych reguł `@` w CSS powodują błąd | parsowanie CSS (Cleanup, Live CSS) |
-| 9.0 | Fałszywe „nieużywany plik” dla audio z media overlays SMIL | Cleanup → `UnusedMedia` |
-| 9.5 | Po komunikacie z liczbą wyników wyszukiwania fokus nie wraca do edytora | Find & Replace → Count |
-| 6.12 | Po poprawieniu słowa w oknie pisowni zaznaczenie idzie w górę zamiast w dół | okno pisowni |
+| calibre | Problem | Gdzie sprawdzić w Signecie | Wynik |
+|---|---|---|---|
+| 9.14 | Reguła `@charset` przesuwa „skocz do klasy” o jedną pozycję | `GoToLinkOrStyle`, Live CSS, Find Usages | nie występuje (test regresji) |
+| 5.44 | `@namespace` psuje skok do definicji reguły | jak wyżej | nie występuje (test regresji) |
+| 7.17, 6.26, 6.10 | Znaki spoza BMP (np. emoji, `𝔸`) przesuwają zaznaczenie wyników wyszukiwania i wstawianie formatowania | Find & Replace, `CodeFormatOperations` | nie występuje (test regresji) |
+| 5.38 | Słowa za komentarzem HTML nie są sprawdzane pisownią | `HtmlSpellCheck` | nie występuje (test regresji) |
+| 5.38 | Dwuklik na słowie zaznacza też otaczające cudzysłowy typograficzne | Code View (AvaloniaEdit) | nie występuje (test regresji) |
+| 6.6.1 | Komentarze wewnątrz nieznanych reguł `@` w CSS powodują błąd | parsowanie CSS (Cleanup, Live CSS) | nie występuje (test regresji) |
+| 9.0 | Fałszywe „nieużywany plik” dla audio z media overlays SMIL | Cleanup → `UnusedMedia` | **był błąd, naprawiony** w `bd826c2` (także `fallback` w manifeście) |
+| 9.5 | Po komunikacie z liczbą wyników wyszukiwania fokus nie wraca do edytora | Find & Replace → Count | nie dotyczy: Count nie pokazuje okna |
+| 6.12 | Po poprawieniu słowa w oknie pisowni zaznaczenie idzie w górę zamiast w dół | okno pisowni | **był błąd, naprawiony** w `bd826c2`: zaznaczenie znikało, a w modelu zostawało usunięte słowo |
 
-Najważniejsza wydaje się pozycja **9.0 (SMIL w `UnusedMedia`)**: jeśli Signet nie liczy odwołań
-z plików `.smil`, Cleanup może zaproponować usunięcie audio, którego książka używa.
+Najważniejsza była pozycja **9.0 (SMIL w `UnusedMedia`)**: Signet nie liczył odwołań z plików `.smil`, więc
+Cleanup proponował usunięcie audio, którego książka używa. Naprawione.
 
 ---
 
