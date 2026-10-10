@@ -34,14 +34,21 @@ public sealed partial class AddFootnoteViewModel : ObservableObject
     private static readonly Regex Whitespace = new(@"\s+", RegexOptions.CultureInvariant);
 
     private readonly Func<string, FootnoteError> _validate;
+    private readonly int _localNumber;
+    private readonly int _globalNumber;
 
     /// <summary>Creates the model for a footnote at <paramref name="offset"/> of the XHTML source <paramref name="text"/>.</summary>
     /// <param name="text">The source of the file.</param>
     /// <param name="offset">Where the reference goes.</param>
     /// <param name="placement">The initial placement.</param>
+    /// <param name="localNumber">The number the footnote gets as a local one.</param>
+    /// <param name="globalNumber">The number the footnote gets as a global one.</param>
     /// <param name="validate">Checks the text of the footnote.</param>
-    public AddFootnoteViewModel(string text, int offset, FootnotePlacement placement, Func<string, FootnoteError> validate)
+    public AddFootnoteViewModel(
+        string text, int offset, FootnotePlacement placement, int localNumber, int globalNumber, Func<string, FootnoteError> validate)
     {
+        _localNumber = localNumber;
+        _globalNumber = globalNumber;
         ArgumentNullException.ThrowIfNull(text);
         _validate = validate ?? throw new ArgumentNullException(nameof(validate));
         offset = Math.Clamp(offset, 0, text.Length);
@@ -55,6 +62,9 @@ public sealed partial class AddFootnoteViewModel : ObservableObject
     /// <summary>The text right after the caret (tags left out).</summary>
     public string ContextAfter { get; }
 
+    /// <summary>The marker the reference gets for the chosen placement, e.g. <c>[3]</c> (shown between the context texts).</summary>
+    public string Marker => "[" + (IsGlobal ? _globalNumber : _localNumber).ToString(CultureInfo.InvariantCulture) + "]";
+
     /// <summary>The text of the footnote.</summary>
     [ObservableProperty]
     private string _content = string.Empty;
@@ -62,6 +72,7 @@ public sealed partial class AddFootnoteViewModel : ObservableObject
     /// <summary><c>true</c> — global (the book's notes file); <c>false</c> — local (the end of this file).</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsLocal))]
+    [NotifyPropertyChangedFor(nameof(Marker))]
     private bool _isGlobal;
 
     /// <summary>Inverse of <see cref="IsGlobal"/> (for the "local" radio button).</summary>

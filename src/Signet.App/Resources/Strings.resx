@@ -4184,7 +4184,7 @@ Nie zmienia plików, ich nazw ani ID.</value>
     <value>Dodaj przypis</value>
   </data>
   <data name="AddFootnoteWindow_Where" xml:space="preserve">
-    <value>Odnośnik zostanie wstawiony w miejscu [*]:</value>
+    <value>Miejsce odnośnika w tekście:</value>
   </data>
   <data name="AddFootnoteWindow_Content" xml:space="preserve">
     <value>Treść przypisu:</value>

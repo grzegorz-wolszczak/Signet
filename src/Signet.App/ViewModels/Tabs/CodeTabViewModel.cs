@@ -1427,13 +1427,15 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     /// <summary>"Add Footnote…" — the model of the window for a footnote at the caret; <c>null</c> without a host.</summary>
     public AddFootnoteViewModel? CreateAddFootnoteViewModel()
     {
-        if (Host is not { } host || Resource is not HtmlResource)
+        if (Host is not { } host || Resource is not HtmlResource html)
         {
             return null;
         }
 
         SyncModelFromDocument();
-        return new AddFootnoteViewModel(_model.Text, _caretOffset, host.LastFootnotePlacement, host.ValidateFootnoteContent);
+        (int local, int global) = host.GetFootnoteNumbers(html, _caretOffset);
+        return new AddFootnoteViewModel(
+            _model.Text, _caretOffset, host.LastFootnotePlacement, local, global, host.ValidateFootnoteContent);
     }
 
     /// <summary>Adds the footnote accepted in the "Add Footnote" window at the caret (through the host, with a checkpoint).</summary>

@@ -35,6 +35,13 @@ public sealed partial class MainWindowViewModel
         _settings.FootnoteGlobalPlacement ? FootnotePlacement.Global : FootnotePlacement.Local;
 
     /// <inheritdoc/>
+    (int Local, int Global) ICodeTabHost.GetFootnoteNumbers(HtmlResource html, int offset) =>
+        _currentBook is null
+            ? (1, 1)
+            : (FootnoteEditor.NumberAt(_currentBook, html, offset, FootnotePlacement.Local),
+                FootnoteEditor.NumberAt(_currentBook, html, offset, FootnotePlacement.Global));
+
+    /// <inheritdoc/>
     FootnoteError ICodeTabHost.ValidateFootnoteContent(string content) =>
         FootnoteEditor.ValidateContent(content, _currentBook?.EpubVersion ?? "3.0");
 

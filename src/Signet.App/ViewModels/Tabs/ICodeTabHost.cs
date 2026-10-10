@@ -74,6 +74,12 @@ public interface ICodeTabHost
     /// <summary>The placement chosen the last time a footnote was added (the default of the "Add Footnote" dialog).</summary>
     FootnotePlacement LastFootnotePlacement { get; }
 
+    /// <summary>
+    /// The numbers a footnote added at <paramref name="offset"/> of <paramref name="html"/> gets as a local and as a
+    /// global one (shown in the "Add Footnote" dialog); 1 and 1 without a book.
+    /// </summary>
+    (int Local, int Global) GetFootnoteNumbers(HtmlResource html, int offset);
+
     /// <summary>Whether <paramref name="content"/> can be the text of a footnote of the current book.</summary>
     FootnoteError ValidateFootnoteContent(string content);
 

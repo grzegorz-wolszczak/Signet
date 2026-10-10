@@ -22,7 +22,7 @@ public sealed class AddFootnoteWindowTests
     {
         const string text = "<html><head><title>t</title></head><body><p>Before after</p></body></html>";
         AddFootnoteViewModel vm = new(
-            text, text.IndexOf(" after", System.StringComparison.Ordinal), FootnotePlacement.Global,
+            text, text.IndexOf(" after", System.StringComparison.Ordinal), FootnotePlacement.Global, 2, 7,
             content => FootnoteEditor.ValidateContent(content, "3.0"));
         Window owner = new();
         owner.Show();
@@ -33,7 +33,11 @@ public sealed class AddFootnoteWindowTests
         window.CaptureRenderedFrame();
 
         TextBlock context = window.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Name == "ContextText");
-        context.Inlines!.OfType<Run>().Select(r => r.Text).Should().Equal("Before", "[*]", " after");
+        context.Inlines!.OfType<Run>().Select(r => r.Text).Should().Equal("Before", "[7]", " after");
+        vm.IsLocal = true;
+        Dispatcher.UIThread.RunJobs();
+        context.Inlines!.OfType<Run>().Select(r => r.Text).Should().Equal("Before", "[2]", " after");
+        vm.IsGlobal = true;
         Button ok = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "OkButton");
         ok.IsEnabled.Should().BeFalse("the text is empty");
         ok.IsDefault.Should().BeFalse("Enter makes a new line in the text");

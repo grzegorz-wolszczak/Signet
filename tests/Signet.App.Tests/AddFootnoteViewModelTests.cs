@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using AwesomeAssertions;
 using Signet.App.Tests.TestSupport;
 using Signet.App.ViewModels;
@@ -12,7 +13,7 @@ public sealed class AddFootnoteViewModelTests
         "<html><head><title>Title</title></head><body><p>First.</p><p>Alpha <b>beta</b> &amp; gamma</p></body></html>";
 
     private static AddFootnoteViewModel New(int offset, FootnotePlacement placement = FootnotePlacement.Local) =>
-        new(Text, offset, placement, content => FootnoteEditor.ValidateContent(content, "3.0"));
+        new(Text, offset, placement, 3, 12, content => FootnoteEditor.ValidateContent(content, "3.0"));
 
     [Fact]
     public void The_context_is_the_text_around_the_caret_without_tags_and_head()
@@ -27,10 +28,25 @@ public sealed class AddFootnoteViewModelTests
     public void A_long_context_is_shortened_next_to_the_caret()
     {
         string text = "<html><body><p>" + new string('a', 300) + new string('b', 300) + "</p></body></html>";
-        AddFootnoteViewModel sut = new(text, text.IndexOf("bbb", System.StringComparison.Ordinal), FootnotePlacement.Local, _ => FootnoteError.None);
+        AddFootnoteViewModel sut = new(
+            text, text.IndexOf("bbb", System.StringComparison.Ordinal), FootnotePlacement.Local, 1, 1, _ => FootnoteError.None);
 
         sut.ContextBefore.Should().StartWith("…").And.EndWith("aaa").And.NotContain("b");
         sut.ContextAfter.Should().StartWith("bbb").And.EndWith("…").And.NotContain("a");
+    }
+
+    [Fact]
+    public void The_marker_shows_the_number_of_the_chosen_placement()
+    {
+        AddFootnoteViewModel sut = New(0);
+        List<string?> changed = new();
+        sut.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+        sut.Marker.Should().Be("[3]");
+
+        sut.IsGlobal = true;
+
+        sut.Marker.Should().Be("[12]");
+        changed.Should().Contain(nameof(AddFootnoteViewModel.Marker));
     }
 
     [Fact]

@@ -39,6 +39,7 @@ public sealed class MainWindowFootnotesTests
         int offset = AfterHello(chapter);
 
         host.GetFootnoteState(chapter, offset).Should().Be(new FootnoteMenuState(null, FootnoteError.None, false));
+        host.GetFootnoteNumbers(chapter, offset).Should().Be((1, 1));
         host.AddFootnote(chapter, offset, "A <i>note</i>.", FootnotePlacement.Local);
 
         chapter.GetText().Should().Contain("Hello<a class=\"signet-fn-ref\"").And.Contain("A <i>note</i>.");

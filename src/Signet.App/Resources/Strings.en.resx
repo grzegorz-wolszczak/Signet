@@ -4184,7 +4184,7 @@ It does not change the files, their names or their IDs.</value>
     <value>Add Footnote</value>
   </data>
   <data name="AddFootnoteWindow_Where" xml:space="preserve">
-    <value>The reference goes at [*]:</value>
+    <value>Where the reference goes in the text:</value>
   </data>
   <data name="AddFootnoteWindow_Content" xml:space="preserve">
     <value>Footnote text:</value>

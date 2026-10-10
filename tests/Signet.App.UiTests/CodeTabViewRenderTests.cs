@@ -624,6 +624,8 @@ public sealed class CodeTabViewRenderTests
 
         public Signet.Core.Footnotes.FootnotePlacement LastFootnotePlacement => Signet.Core.Footnotes.FootnotePlacement.Local;
 
+        public (int Local, int Global) GetFootnoteNumbers(HtmlResource html, int offset) => (1, 1);
+
         public Signet.Core.Footnotes.FootnoteError ValidateFootnoteContent(string content) =>
             Signet.Core.Footnotes.FootnoteError.None;
 

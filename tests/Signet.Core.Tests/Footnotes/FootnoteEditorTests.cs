@@ -189,6 +189,33 @@ public sealed class FootnoteEditorTests
     }
 
     [Fact]
+    public void NumberAt_is_the_number_the_renumbering_gives_a_new_footnote()
+    {
+        (Book book, HtmlResource first) = NewBook();
+        using (book)
+        {
+            HtmlResource second = book.CreateEmptyHtmlFile();
+            second.SetText(Xhtml(Body));
+            FootnoteEditor.Add(book, first, After(first, "Second"), "global in the first file", FootnotePlacement.Global);
+            FootnoteEditor.Add(book, first, After(first, "First"), "local", FootnotePlacement.Local);
+            FootnoteEditor.Add(book, second, After(second, "Second"), "global in the second file", FootnotePlacement.Global);
+
+            // Between the two references of the first file: one local and no global footnote before it.
+            int middle = After(first, " sentence.</p>");
+            FootnoteEditor.NumberAt(book, first, middle, FootnotePlacement.Local).Should().Be(2);
+            FootnoteEditor.NumberAt(book, first, middle, FootnotePlacement.Global).Should().Be(1);
+
+            // At the start of the second file: no local footnote of that file, the global one of the first file before it.
+            int start = After(second, "<p>");
+            FootnoteEditor.NumberAt(book, second, start, FootnotePlacement.Local).Should().Be(1);
+            FootnoteEditor.NumberAt(book, second, start, FootnotePlacement.Global).Should().Be(2);
+
+            FootnoteEditor.Add(book, second, start, "new", FootnotePlacement.Global, out Footnote? added);
+            FootnoteEditor.Locate(added!, FootnoteSide.Reference)!.Value.File.GetText().Should().Contain(">[2]</a>First");
+        }
+    }
+
+    [Fact]
     public void Refresh_finds_a_footnote_of_an_earlier_scan_by_its_reference()
     {
         (Book book, HtmlResource html) = NewBook();

@@ -119,6 +119,37 @@ public static class FootnoteEditor
         return null;
     }
 
+    /// <summary>
+    /// The number a footnote added at <paramref name="offset"/> of <paramref name="html"/> gets with
+    /// <paramref name="placement"/> (as <see cref="Renumber"/> counts): one more than the local footnotes of the file
+    /// before it, or than the global footnotes before it in reading order.
+    /// </summary>
+    public static int NumberAt(Book book, HtmlResource html, int offset, FootnotePlacement placement)
+    {
+        ArgumentNullException.ThrowIfNull(book);
+        ArgumentNullException.ThrowIfNull(html);
+        int spine = book.GetHtmlResources().ToList().IndexOf(html);
+        int before = 0;
+        foreach (Footnote footnote in FootnoteScanner.Scan(book).Where(f => f.Placement == placement))
+        {
+            bool sameFile = ReferenceEquals(footnote.ReferenceFile, html);
+            if (placement == FootnotePlacement.Local && !sameFile)
+            {
+                continue;
+            }
+
+            bool precedes = sameFile
+                ? Locate(footnote, FootnoteSide.Reference) is { } place && place.Offset < offset
+                : footnote.SpineIndex < spine;
+            if (precedes)
+            {
+                before++;
+            }
+        }
+
+        return before + 1;
+    }
+
     /// <summary>The file and offset of the reference or the note of <paramref name="footnote"/>; <c>null</c> when gone.</summary>
     public static (HtmlResource File, int Offset)? Locate(Footnote footnote, FootnoteSide side)
     {

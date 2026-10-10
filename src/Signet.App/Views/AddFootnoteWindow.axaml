@@ -15,7 +15,7 @@
             CornerRadius="4" Padding="8,6">
       <!-- The runs are on one line: whitespace between them would show as spaces around the marker. -->
       <TextBlock x:Name="ContextText" TextWrapping="Wrap" Opacity="0.85"><Run Text="{Binding ContextBefore}" /><Run
-          Text="[*]" FontWeight="Bold" Foreground="{DynamicResource SystemControlHighlightAccentBrush}" /><Run
+          Text="{Binding Marker}" FontWeight="Bold" Foreground="{DynamicResource SystemControlHighlightAccentBrush}" /><Run
           Text="{Binding ContextAfter}" /></TextBlock>
     </Border>
 
