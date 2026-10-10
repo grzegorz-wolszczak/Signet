@@ -26,13 +26,13 @@ namespace Signet.Core.Tests.BookManipulation;
 public sealed class FontIntegrityValidatorTests
 {
     [Fact]
-    public void Validate_returns_no_results_when_font_unparsable()
+    public void Validate_reports_only_the_damage_when_font_unparsable()
     {
         using Book book = OpenMutableBook();
 
         var results = FontIntegrityValidator.Validate(book);
 
-        results.Should().BeEmpty();
+        results.Should().ContainSingle().Which.Code.Should().Be("Validation_FontCorrupt");
     }
 
     [Fact]

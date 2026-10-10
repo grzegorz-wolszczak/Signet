@@ -87,7 +87,7 @@ public static class CrossFileStructureValidator
             foreach (string bookPath in paths)
             {
                 IEnumerable<string> otherPaths = paths.Where(p => !string.Equals(p, bookPath, StringComparison.Ordinal));
-                Add(results, ValidationSeverity.Warning, bookPath,
+                Add(results, ValidationSeverity.Warning, bookPath, "Validation_DuplicateIdAcrossFiles",
                     CoreStrings.Format("Validation_DuplicateIdAcrossFiles", id, string.Join(", ", otherPaths)));
             }
         }
@@ -101,7 +101,7 @@ public static class CrossFileStructureValidator
             return;
         }
 
-        Add(results, ValidationSeverity.Warning, html.BookPath,
+        Add(results, ValidationSeverity.Warning, html.BookPath, "Validation_FileTooLarge",
             CoreStrings.Format("Validation_FileTooLarge", byteCount, MaxHtmlFileSizeBytes));
     }
 
@@ -123,8 +123,8 @@ public static class CrossFileStructureValidator
             return;
         }
 
-        Add(results, ValidationSeverity.Warning, html.BookPath,
-            CoreStrings.Get("Validation_BareBodyText"));
+        Add(results, ValidationSeverity.Warning, html.BookPath, "Validation_BareBodyText",
+            CoreStrings.Get("Validation_BareBodyText"), new BareBodyTextFix(html.BookPath));
     }
 
     private static void CheckUtf8Validity(HtmlResource html, List<ValidationResult> results)
@@ -146,10 +146,11 @@ public static class CrossFileStructureValidator
             return;
         }
 
-        Add(results, ValidationSeverity.Warning, html.BookPath,
+        Add(results, ValidationSeverity.Warning, html.BookPath, "Validation_InvalidUtf8",
             CoreStrings.Get("Validation_InvalidUtf8"));
     }
 
-    private static void Add(List<ValidationResult> results, ValidationSeverity severity, string bookPath, string message) =>
-        results.Add(new ValidationResult(severity, bookPath, -1, -1, message));
+    private static void Add(
+        List<ValidationResult> results, ValidationSeverity severity, string bookPath, string code, string message, ValidationFix? fix = null) =>
+        results.Add(new ValidationResult(severity, bookPath, -1, -1, message, code, fix));
 }

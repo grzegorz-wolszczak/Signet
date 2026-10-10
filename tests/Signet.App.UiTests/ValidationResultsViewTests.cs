@@ -20,6 +20,8 @@ namespace Signet.App.UiTests;
 /// <summary>The "Validation Results" panel: the results table (TreeDataGrid) and navigation on double click.</summary>
 public sealed class ValidationResultsViewTests
 {
+    private static readonly string[] SkippedDeadLinks = { "Validation_DeadLink" };
+
     private static void Settle(Window window)
     {
         for (int i = 0; i < 3; i++)
@@ -46,7 +48,8 @@ public sealed class ValidationResultsViewTests
         grid.Classes.Should().Contain("gridLines");
         grid.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().Select(h => h.Header).Should().Equal(
             Strings.Get("ReportsWindow_File"), Strings.Get("ValidationResultsView_Line"),
-            Strings.Get("DryRunReplaceWindow_OffsetColumn"), Strings.Get("ValidationResultsView_Message"));
+            Strings.Get("DryRunReplaceWindow_OffsetColumn"), Strings.Get("ValidationResultsView_Fixable"),
+            Strings.Get("ValidationResultsView_Message"));
         grid.GetVisualDescendants().OfType<TreeDataGridRow>().Should().HaveCount(2);
         grid.GetVisualDescendants().OfType<TreeDataGridTextCell>().Select(c => c.Value?.ToString())
             .Should().Contain("first").And.Contain("second").And.Contain("3").And.Contain("N/A");
@@ -111,6 +114,37 @@ public sealed class ValidationResultsViewTests
 
         grid.Source.SortBy(grid.Columns[2], ListSortDirection.Ascending);
         Messages().Should().Equal("ten", "two", "unknown");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_toolbar_fixes_the_selected_row_and_knows_whether_there_are_skipped_rules()
+    {
+        ValidationResultsViewModel vm = new();
+        ValidationResult fixable = new(ValidationSeverity.Warning, "a.xhtml", 1, -1, "fixable", "Validation_BareBodyText",
+            new BareBodyTextFix("a.xhtml"));
+        vm.LoadResults(new[] { Result("b.xhtml", 2, "plain"), fixable });
+        System.Collections.Generic.IReadOnlyList<ValidationResult>? requested = null;
+        vm.FixRequested += (_, results) => requested = results;
+        Window window = new() { Width = 700, Height = 300, Content = new ValidationResultsView { DataContext = vm } };
+        window.Show();
+        Settle(window);
+        Button fix = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "FixButton");
+        Button skipped = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "SkippedRulesButton");
+        window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "FixAllButton").IsEnabled.Should().BeTrue();
+        fix.IsEnabled.Should().BeFalse("nothing is selected");
+        skipped.IsEnabled.Should().BeFalse();
+
+        TreeDataGrid grid = window.GetVisualDescendants().OfType<TreeDataGrid>().Single();
+        grid.RowSelection!.Select(new IndexPath(1));
+        Settle(window);
+        fix.IsEnabled.Should().BeTrue();
+        fix.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        requested.Should().Equal(fixable);
+
+        vm.SetSkippedRules(SkippedDeadLinks);
+        Settle(window);
+        skipped.IsEnabled.Should().BeTrue();
         window.Close();
     }
 }

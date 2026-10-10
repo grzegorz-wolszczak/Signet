@@ -12,6 +12,9 @@ namespace Signet.Core.Tests.BookManipulation;
 /// </summary>
 public sealed class BookValidatorTests
 {
+    // The corpus font is a dummy, not a real font (see tests/corpus/generate-binaries.sh).
+    private static readonly string[] SkipDummyFont = { "Validation_FontCorrupt" };
+
     [Fact]
     public void ValidateCurrentBook_reports_the_not_wellformed_html_file_with_a_line_number()
     {
@@ -34,7 +37,7 @@ public sealed class BookValidatorTests
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         using Book book = new ImportEpub(epub).GetBook();
 
-        var results = BookValidator.ValidateCurrentBook(book);
+        var results = BookValidator.ValidateCurrentBook(book, SkipDummyFont);
 
         results.Should().BeEmpty();
     }

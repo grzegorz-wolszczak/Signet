@@ -67,7 +67,8 @@ public static class LinkIntegrityValidator
         return results;
     }
 
-    private static HashSet<string> BuildManifestBookPaths(Book book)
+    /// <summary>The bookpaths of all the files listed in the OPF manifest.</summary>
+    internal static HashSet<string> BuildManifestBookPaths(Book book)
     {
         OpfResource opf = book.GetOpf();
         OpfDocument document = opf.GetOpfDocument();
@@ -139,7 +140,7 @@ public static class LinkIntegrityValidator
             // A fragment-only reference (e.g. href="#chapter-2") — the target is the same document.
             if (fragment.Length > 0 && !HasAnchor(ownerDocument, fragment))
             {
-                Add(results, ValidationSeverity.Error, owner.BookPath,
+                Add(results, ValidationSeverity.Error, owner.BookPath, "Validation_BadFragmentSameFile",
                     CoreStrings.Format("Validation_BadFragmentSameFile", fragment));
             }
 
@@ -152,14 +153,15 @@ public static class LinkIntegrityValidator
         {
             if (fragment.Length > 0 && !TargetHasAnchor(book, targetBookPath, fragment))
             {
-                Add(results, ValidationSeverity.Error, owner.BookPath,
+                Add(results, ValidationSeverity.Error, owner.BookPath, "Validation_BadFragment",
                     CoreStrings.Format("Validation_BadFragment", rawReference, fragment, targetBookPath));
             }
 
             if (!manifestBookPaths.Contains(targetBookPath))
             {
-                Add(results, ValidationSeverity.Warning, owner.BookPath,
-                    CoreStrings.Format("Validation_LinkTargetNotInManifest", rawReference, targetBookPath));
+                Add(results, ValidationSeverity.Warning, owner.BookPath, "Validation_LinkTargetNotInManifest",
+                    CoreStrings.Format("Validation_LinkTargetNotInManifest", rawReference, targetBookPath),
+                    new AddToManifestFix(targetBookPath));
             }
 
             return;
@@ -168,12 +170,13 @@ public static class LinkIntegrityValidator
         string lower = targetBookPath.ToLowerInvariant();
         if (lowerToActual.TryGetValue(lower, out string? actual))
         {
-            Add(results, ValidationSeverity.Warning, owner.BookPath,
-                CoreStrings.Format("Validation_LinkCaseMismatch", rawReference, actual));
+            Add(results, ValidationSeverity.Warning, owner.BookPath, "Validation_LinkCaseMismatch",
+                CoreStrings.Format("Validation_LinkCaseMismatch", rawReference, actual),
+                new ReferenceFix(owner.BookPath, rawReference, CorrectedReference(owner, rawReference, pathPart, actual)));
             return;
         }
 
-        Add(results, ValidationSeverity.Error, owner.BookPath,
+        Add(results, ValidationSeverity.Error, owner.BookPath, "Validation_DeadLink",
             CoreStrings.Format("Validation_DeadLink", rawReference));
     }
 
@@ -205,8 +208,9 @@ public static class LinkIntegrityValidator
             {
                 if (!manifestBookPaths.Contains(targetBookPath))
                 {
-                    Add(results, ValidationSeverity.Warning, css.BookPath,
-                        CoreStrings.Format("Validation_CssUrlNotInManifest", rawReference, targetBookPath));
+                    Add(results, ValidationSeverity.Warning, css.BookPath, "Validation_CssUrlNotInManifest",
+                        CoreStrings.Format("Validation_CssUrlNotInManifest", rawReference, targetBookPath),
+                        new AddToManifestFix(targetBookPath));
                 }
 
                 continue;
@@ -215,15 +219,20 @@ public static class LinkIntegrityValidator
             string lower = targetBookPath.ToLowerInvariant();
             if (lowerToActual.TryGetValue(lower, out string? actual))
             {
-                Add(results, ValidationSeverity.Warning, css.BookPath,
-                    CoreStrings.Format("Validation_CssUrlCaseMismatch", rawReference, actual));
+                Add(results, ValidationSeverity.Warning, css.BookPath, "Validation_CssUrlCaseMismatch",
+                    CoreStrings.Format("Validation_CssUrlCaseMismatch", rawReference, actual),
+                    new ReferenceFix(css.BookPath, rawReference, CorrectedReference(css, rawReference, pathPart, actual)));
                 continue;
             }
 
-            Add(results, ValidationSeverity.Error, css.BookPath,
+            Add(results, ValidationSeverity.Error, css.BookPath, "Validation_CssDeadUrl",
                 CoreStrings.Format("Validation_CssDeadUrl", rawReference));
         }
     }
+
+    // The reference with its path replaced by the relative path of the real file (query and fragment kept).
+    private static string CorrectedReference(Resource owner, string rawReference, string pathPart, string actualBookPath) =>
+        Core.Utility.UrlEncodePath(Core.BookPath.Relative(owner.BookPath, actualBookPath)) + rawReference[pathPart.Length..];
 
     private static bool TargetHasAnchor(Book book, string targetBookPath, string fragment)
     {
@@ -264,6 +273,7 @@ public static class LinkIntegrityValidator
         pathPart = query >= 0 ? withoutFragment[..query] : withoutFragment;
     }
 
-    private static void Add(List<ValidationResult> results, ValidationSeverity severity, string bookPath, string message) =>
-        results.Add(new ValidationResult(severity, bookPath, -1, -1, message));
+    private static void Add(
+        List<ValidationResult> results, ValidationSeverity severity, string bookPath, string code, string message, ValidationFix? fix = null) =>
+        results.Add(new ValidationResult(severity, bookPath, -1, -1, message, code, fix));
 }

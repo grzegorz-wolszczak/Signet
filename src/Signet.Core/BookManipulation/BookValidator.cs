@@ -26,12 +26,29 @@ public enum ValidationSeverity
 /// <param name="Line">The line number (1-based) or <c>-1</c> when unknown.</param>
 /// <param name="CharOffset">The character offset within the line or <c>-1</c> when unknown/unused.</param>
 /// <param name="Message">The message.</param>
+/// <param name="Code">
+/// The rule that produced the result: the resource key of its message (e.g. <c>Validation_DeadLink</c>). A whole
+/// rule can be skipped by its code (<see cref="BookValidator.ValidateCurrentBook"/>).
+/// </param>
+/// <param name="Fix">The automatic fix of the problem, or <c>null</c> when it has none.</param>
 public sealed record ValidationResult(
     ValidationSeverity Severity,
     string BookPath,
     int Line,
     int CharOffset,
-    string Message);
+    string Message,
+    string Code = "",
+    ValidationFix? Fix = null);
+
+/// <summary>
+/// An automatic fix of a <see cref="ValidationResult"/> ("Fix" in the Validation Results panel). A fix looks the
+/// problem up again when it is applied, so several fixes can run one after another on the changed book.
+/// </summary>
+public abstract class ValidationFix
+{
+    /// <summary>Applies the fix; <c>false</c> when there was nothing (left) to change.</summary>
+    public abstract bool Apply(Book book);
+}
 
 /// <summary>
 /// Whole-book validation — "Well-Formed Check EPUB" (F7) plus the additional checks listed in
@@ -39,11 +56,16 @@ public sealed record ValidationResult(
 /// </summary>
 public static class BookValidator
 {
+    /// <summary>The rule code of a file that is not well-formed.</summary>
+    public const string NotWellFormedCode = "WellFormed_NotWellFormed";
+
     /// <summary>
     /// Checks the structural correctness (well-formedness) of every XHTML resource of the book (including
     /// the nav). Results are ordered like <see cref="Book.GetHtmlResources"/> (spine order).
     /// </summary>
-    public static IReadOnlyList<ValidationResult> ValidateCurrentBook(Book book)
+    /// <param name="book">The book.</param>
+    /// <param name="skippedCodes">The rule codes (<see cref="ValidationResult.Code"/>) whose results are left out.</param>
+    public static IReadOnlyList<ValidationResult> ValidateCurrentBook(Book book, IReadOnlyCollection<string>? skippedCodes = null)
     {
         ArgumentNullException.ThrowIfNull(book);
 
@@ -58,7 +80,8 @@ public static class BookValidator
                 if (check.Warning is { } warning)
                 {
                     results.Add(new ValidationResult(
-                        ValidationSeverity.Warning, html.BookPath, LineOfOffset(text, warning.Offset), -1, warning.Message));
+                        ValidationSeverity.Warning, html.BookPath, LineOfOffset(text, warning.Offset), -1, warning.Message,
+                        "WellFormed_DoctypeMissing"));
                 }
 
                 continue;
@@ -70,7 +93,7 @@ public static class BookValidator
                 ? CoreStrings.Format("Validation_NearColumn", check.Message, check.Column)
                 : check.Message;
 
-            results.Add(new ValidationResult(ValidationSeverity.Error, html.BookPath, check.Line, -1, message));
+            results.Add(new ValidationResult(ValidationSeverity.Error, html.BookPath, check.Line, -1, message, NotWellFormedCode));
         }
 
         // Additional checks: OPF structure, link/reference integrity, font checks,
@@ -83,6 +106,15 @@ public static class BookValidator
         results.AddRange(CrossFileStructureValidator.Validate(book));
         results.AddRange(FileNamePortabilityValidator.Validate(book));
         results.AddRange(ContentTypeValidator.Validate(book));
+        results.AddRange(IdValidator.Validate(book));
+        results.AddRange(ImageIntegrityValidator.Validate(book));
+        results.AddRange(CssPropertyValidator.Validate(book));
+
+        if (skippedCodes is { Count: > 0 })
+        {
+            HashSet<string> skipped = new(skippedCodes, StringComparer.Ordinal);
+            results.RemoveAll(r => skipped.Contains(r.Code));
+        }
 
         return results;
     }

@@ -189,6 +189,10 @@ public sealed partial class MainWindowViewModel
 
         _dockFactory.ValidationResults = _validationResults;
         _validationResults.EntryActivated += (_, result) => NavigateToValidationResult(result);
+        _validationResults.FixRequested += (_, results) => FixValidationResults(results);
+        _validationResults.SkipRuleRequested += (_, code) => SkipValidationRule(code);
+        _validationResults.RestoreRulesRequested += (_, codes) => RestoreValidationRules(codes);
+        _validationResults.SetSkippedRules(_settings.CheckBookSkippedRules);
 
         _findUsages = new FindUsagesViewModel(_settings);
         _dockFactory.FindUsages = _findUsages;
@@ -2574,8 +2578,7 @@ public sealed partial class MainWindowViewModel
         }
 
         _tabManager.SaveAllTabs();
-        IReadOnlyList<ValidationResult> results = BookValidator.ValidateCurrentBook(_currentBook);
-        _validationResults.LoadResults(results);
+        IReadOnlyList<ValidationResult> results = RunBookCheck(_currentBook);
 
         if (!_dockFactory.IsToolVisible(DockableIds.ValidationResults))
         {
@@ -2586,6 +2589,80 @@ public sealed partial class MainWindowViewModel
         _statusBar.ShowMessage(
             results.Count == 0 ? Strings.Get("ValidationResultsView_NoProblems") : Strings.Format("Status_ProblemsFound", results.Count),
             TimeSpan.FromSeconds(4));
+    }
+
+    // Checks the book without the skipped rules and shows the results in the Validation Results panel.
+    private IReadOnlyList<ValidationResult> RunBookCheck(Book book)
+    {
+        IReadOnlyList<string> skipped = _settings.CheckBookSkippedRules;
+        IReadOnlyList<ValidationResult> results = BookValidator.ValidateCurrentBook(book, skipped);
+        _validationResults.LoadResults(results);
+        _validationResults.SetSkippedRules(skipped);
+        return results;
+    }
+
+    /// <summary>
+    /// "Fix" / "Fix all" in the Validation Results panel: applies the automatic fixes after an automatic checkpoint
+    /// (so the Checkpoints panel can undo them), reloads the open tabs and checks the book again.
+    /// </summary>
+    private void FixValidationResults(IReadOnlyList<ValidationResult> results)
+    {
+        if (_currentBook is not { } book)
+        {
+            return;
+        }
+
+        _tabManager.SaveAllTabs();
+        bool checkpoint = AddCheckpointBefore(Strings.Get("CheckpointOp_FixProblems"));
+        int fixedCount = results.Count(r => r.Fix?.Apply(book) == true);
+        if (fixedCount == 0)
+        {
+            if (checkpoint)
+            {
+                RewindCheckpoint();
+            }
+
+            RunBookCheck(book);
+            _statusBar.ShowMessage(Strings.Get("Status_NothingToFix"), TimeSpan.FromSeconds(4));
+            return;
+        }
+
+        book.Modified = true;
+        RefreshAfterMaintenanceOperation();
+        _toc.Refresh();
+        IReadOnlyList<ValidationResult> remaining = RunBookCheck(book);
+        _statusBar.ShowMessage(Strings.Format("Status_ProblemsFixed", fixedCount, remaining.Count), TimeSpan.FromSeconds(5));
+    }
+
+    // "Skip this type of problem": remembered in the settings, the results are filtered right away.
+    private void SkipValidationRule(string code)
+    {
+        List<string> skipped = _settings.CheckBookSkippedRules.ToList();
+        if (!skipped.Contains(code, StringComparer.Ordinal))
+        {
+            skipped.Add(code);
+            _settings.CheckBookSkippedRules = skipped;
+        }
+
+        _validationResults.LoadResults(_validationResults.Rows.Select(r => r.Result).Where(r => r.Code != code).ToList());
+        _validationResults.SetSkippedRules(skipped);
+        _statusBar.ShowMessage(Strings.Get("Status_ProblemTypeSkipped"), TimeSpan.FromSeconds(5));
+    }
+
+    // "Restore": the rules are checked again (the book is checked again when one is open).
+    private void RestoreValidationRules(IReadOnlyList<string> codes)
+    {
+        List<string> skipped = _settings.CheckBookSkippedRules.Where(c => !codes.Contains(c, StringComparer.Ordinal)).ToList();
+        _settings.CheckBookSkippedRules = skipped;
+        if (_currentBook is { } book)
+        {
+            _tabManager.SaveAllTabs();
+            RunBookCheck(book);
+        }
+        else
+        {
+            _validationResults.SetSkippedRules(skipped);
+        }
     }
 
     /// <summary>

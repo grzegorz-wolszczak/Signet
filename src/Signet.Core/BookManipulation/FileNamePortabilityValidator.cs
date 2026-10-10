@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Signet.Core.Resources;
 using Signet.Core.Localization;
@@ -39,9 +40,9 @@ public static class FileNamePortabilityValidator
         List<ValidationResult> results = new();
         foreach (Resource resource in book.GetAllResources())
         {
-            foreach (string message in CheckFileName(resource.Filename))
+            foreach ((string code, string message) in CheckFileNameWithCodes(resource.Filename))
             {
-                Add(results, resource.BookPath, message);
+                results.Add(new ValidationResult(ValidationSeverity.Warning, resource.BookPath, -1, -1, message, code));
             }
         }
 
@@ -59,11 +60,15 @@ public static class FileNamePortabilityValidator
     /// only on Linux and macOS.
     /// </remarks>
     /// <param name="filename">The file name, i.e. the last bookpath segment (<see cref="Resource.Filename"/>).</param>
-    public static IReadOnlyList<string> CheckFileName(string filename)
+    public static IReadOnlyList<string> CheckFileName(string filename) =>
+        CheckFileNameWithCodes(filename).Select(m => m.Message).ToList();
+
+    // The warnings of CheckFileName with their rule codes (the resource key of the message).
+    private static List<(string Code, string Message)> CheckFileNameWithCodes(string filename)
     {
         ArgumentNullException.ThrowIfNull(filename);
 
-        List<string> messages = new();
+        List<(string Code, string Message)> messages = new();
         CheckForbiddenCharacters(filename, messages);
         CheckReservedName(filename, messages);
         CheckTrailingSpaceOrDot(filename, messages);
@@ -71,7 +76,7 @@ public static class FileNamePortabilityValidator
         return messages;
     }
 
-    private static void CheckForbiddenCharacters(string filename, List<string> messages)
+    private static void CheckForbiddenCharacters(string filename, List<(string Code, string Message)> messages)
     {
         HashSet<char> found = new();
         foreach (char c in filename)
@@ -88,11 +93,10 @@ public static class FileNamePortabilityValidator
         }
 
         string chars = string.Join(", ", found);
-        messages.Add(
-            CoreStrings.Format("Validation_FileNameIllegalChar", filename, chars));
+        messages.Add(("Validation_FileNameIllegalChar", CoreStrings.Format("Validation_FileNameIllegalChar", filename, chars)));
     }
 
-    private static void CheckReservedName(string filename, List<string> messages)
+    private static void CheckReservedName(string filename, List<(string Code, string Message)> messages)
     {
         int dot = filename.IndexOf('.');
         string stem = dot < 0 ? filename : filename[..dot];
@@ -102,11 +106,10 @@ public static class FileNamePortabilityValidator
             return;
         }
 
-        messages.Add(
-            CoreStrings.Format("Validation_FileNameReserved", filename, stem.ToUpperInvariant()));
+        messages.Add(("Validation_FileNameReserved", CoreStrings.Format("Validation_FileNameReserved", filename, stem.ToUpperInvariant())));
     }
 
-    private static void CheckTrailingSpaceOrDot(string filename, List<string> messages)
+    private static void CheckTrailingSpaceOrDot(string filename, List<(string Code, string Message)> messages)
     {
         if (filename.Length == 0)
         {
@@ -119,21 +122,17 @@ public static class FileNamePortabilityValidator
             return;
         }
 
-        messages.Add(
-            CoreStrings.Format(last == ' ' ? "Validation_FileNameTrailingSpace" : "Validation_FileNameTrailingDot", filename));
+        string code = last == ' ' ? "Validation_FileNameTrailingSpace" : "Validation_FileNameTrailingDot";
+        messages.Add((code, CoreStrings.Format(code, filename)));
     }
 
-    private static void CheckUnicodeNormalization(string filename, List<string> messages)
+    private static void CheckUnicodeNormalization(string filename, List<(string Code, string Message)> messages)
     {
         if (filename.IsNormalized(NormalizationForm.FormC))
         {
             return;
         }
 
-        messages.Add(
-            CoreStrings.Format("Validation_FileNameNotNfc", filename));
+        messages.Add(("Validation_FileNameNotNfc", CoreStrings.Format("Validation_FileNameNotNfc", filename)));
     }
-
-    private static void Add(List<ValidationResult> results, string bookPath, string message) =>
-        results.Add(new ValidationResult(ValidationSeverity.Warning, bookPath, -1, -1, message));
 }

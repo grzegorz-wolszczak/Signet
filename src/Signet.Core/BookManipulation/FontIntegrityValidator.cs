@@ -1,5 +1,7 @@
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Signet.Core.Fonts;
 using Signet.Core.Parsers;
@@ -29,10 +31,59 @@ public static class FontIntegrityValidator
 
         List<ValidationResult> results = new();
 
+        CheckCorruptFonts(book, results);
         CheckEmbeddingRestrictions(book, results);
         CheckFamilyAliasing(book, results);
 
         return results;
+    }
+
+    private static void CheckCorruptFonts(Book book, List<ValidationResult> results)
+    {
+        foreach (FontResource font in book.GetAllResources().OfType<FontResource>())
+        {
+            byte[] data;
+            try
+            {
+                data = File.ReadAllBytes(font.FullPath);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                continue;
+            }
+
+            if (!IsIntact(data))
+            {
+                results.Add(new ValidationResult(
+                    ValidationSeverity.Error, font.BookPath, -1, -1,
+                    CoreStrings.Format("Validation_FontCorrupt", font.Filename), "Validation_FontCorrupt"));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Whether the font file looks complete: a WOFF/WOFF2 file is as long as its header says, an OpenType/TrueType
+    /// file has a readable table directory and <c>name</c> table.
+    /// </summary>
+    internal static bool IsIntact(byte[] data)
+    {
+        if (data.Length >= 12)
+        {
+            uint signature = BinaryPrimitives.ReadUInt32BigEndian(data);
+            if (signature is 0x774F4646 /* wOFF */ or 0x774F4632 /* wOF2 */)
+            {
+                return BinaryPrimitives.ReadUInt32BigEndian(data.AsSpan(8, 4)) == (uint)data.Length;
+            }
+        }
+
+        try
+        {
+            return OpenTypeFontInfo.Parse(data) != FontFileInfo.Empty;
+        }
+        catch (ArgumentOutOfRangeException)
+        {
+            return false;
+        }
     }
 
     private static void CheckEmbeddingRestrictions(Book book, List<ValidationResult> results)
@@ -47,7 +98,8 @@ public static class FontIntegrityValidator
                     font.BookPath,
                     -1,
                     -1,
-                    CoreStrings.Format("Validation_FontEmbeddingRestricted", font.BookPath, fsType)));
+                    CoreStrings.Format("Validation_FontEmbeddingRestricted", font.BookPath, fsType),
+                    "Validation_FontEmbeddingRestricted"));
             }
         }
     }
@@ -111,7 +163,8 @@ public static class FontIntegrityValidator
                         css.BookPath,
                         -1,
                         -1,
-                        CoreStrings.Format("Validation_FontFamilyMismatch", declaredFamily, actualFamily, targetBookPath)));
+                        CoreStrings.Format("Validation_FontFamilyMismatch", declaredFamily, actualFamily, targetBookPath),
+                        "Validation_FontFamilyMismatch"));
                 }
             }
         }

@@ -595,6 +595,23 @@ public sealed class SettingsStore
         set => Write("spellcheck_editor_hide_snake_case", value);
     }
 
+    /// <summary>
+    /// Check Book: the rule codes (<c>ValidationResult.Code</c>) whose problems the Validation Results panel leaves out.
+    /// </summary>
+    public IReadOnlyList<string> CheckBookSkippedRules
+    {
+        get => (_file.GetRaw(Group, "check_book_skipped_rules") as JsonArray)?
+            .Select(n => n?.GetValue<string>() ?? string.Empty)
+            .Where(s => s.Length > 0)
+            .ToList() ?? new List<string>();
+
+        set
+        {
+            _file.SetRaw(Group, "check_book_skipped_rules", new JsonArray(value.Select(s => JsonValue.Create(s)).ToArray<JsonNode?>()));
+            RaiseChangedQualified($"{Group}/check_book_skipped_rules");
+        }
+    }
+
     // ------------------------------------------------- Preview / WebEng --- //
 
     /// <summary>Remote resources mode in the preview (0 = off).</summary>

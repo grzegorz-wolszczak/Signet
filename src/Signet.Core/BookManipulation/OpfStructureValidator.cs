@@ -43,6 +43,7 @@ public static class OpfStructureValidator
         CheckManifestMediaTypes(document, opfBookPath, results);
         CheckSpineIdRefs(document, opfBookPath, results);
         CheckCoverImageCount(document, opfBookPath, epub3, results);
+        CheckNavigation(book, opfBookPath, epub3, results);
 
         return results;
     }
@@ -51,17 +52,17 @@ public static class OpfStructureValidator
     {
         if (document.Metadata.Count == 0)
         {
-            Add(results, ValidationSeverity.Error, opfBookPath, CoreStrings.Get("Validation_OpfMetadataEmpty"));
+            Add(results, ValidationSeverity.Error, opfBookPath, "Validation_OpfMetadataEmpty", CoreStrings.Get("Validation_OpfMetadataEmpty"));
         }
 
         if (document.Manifest.Count == 0)
         {
-            Add(results, ValidationSeverity.Error, opfBookPath, CoreStrings.Get("Validation_OpfManifestEmpty"));
+            Add(results, ValidationSeverity.Error, opfBookPath, "Validation_OpfManifestEmpty", CoreStrings.Get("Validation_OpfManifestEmpty"));
         }
 
         if (document.Spine.Count == 0)
         {
-            Add(results, ValidationSeverity.Error, opfBookPath, CoreStrings.Get("Validation_OpfSpineEmpty"));
+            Add(results, ValidationSeverity.Error, opfBookPath, "Validation_OpfSpineEmpty", CoreStrings.Get("Validation_OpfSpineEmpty"));
         }
     }
 
@@ -75,13 +76,21 @@ public static class OpfStructureValidator
 
         if (uniqueId.Length == 0)
         {
-            Add(results, ValidationSeverity.Error, opfBookPath,
-                CoreStrings.Get("Validation_OpfUniqueIdentifierEmpty"));
+            Add(results, ValidationSeverity.Error, opfBookPath, "Validation_OpfUniqueIdentifierEmpty",
+                CoreStrings.Get("Validation_OpfUniqueIdentifierEmpty"), new UniqueIdentifierFix());
         }
         else if (!hasMatchingDcIdentifier)
         {
-            Add(results, ValidationSeverity.Error, opfBookPath,
-                CoreStrings.Format("Validation_OpfNoUniqueIdentifier", uniqueId));
+            Add(results, ValidationSeverity.Error, opfBookPath, "Validation_OpfNoUniqueIdentifier",
+                CoreStrings.Format("Validation_OpfNoUniqueIdentifier", uniqueId), new UniqueIdentifierFix());
+        }
+        else if (document.Metadata.Any(m =>
+            string.Equals(m.Name, "dc:identifier", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(m.Attributes.Value("id"), uniqueId, StringComparison.Ordinal)
+            && m.Content.Trim().Length == 0))
+        {
+            Add(results, ValidationSeverity.Error, opfBookPath, "Validation_OpfUniqueIdentifierValueEmpty",
+                CoreStrings.Format("Validation_OpfUniqueIdentifierValueEmpty", uniqueId), new UniqueIdentifierFix());
         }
     }
 
@@ -92,7 +101,7 @@ public static class OpfStructureValidator
         {
             if (entry.Id.Length == 0)
             {
-                Add(results, ValidationSeverity.Error, opfBookPath,
+                Add(results, ValidationSeverity.Error, opfBookPath, "Validation_OpfManifestItemNoId",
                     CoreStrings.Format("Validation_OpfManifestItemNoId", entry.Href));
                 continue;
             }
@@ -104,7 +113,7 @@ public static class OpfStructureValidator
         {
             if (count > 1)
             {
-                Add(results, ValidationSeverity.Error, opfBookPath,
+                Add(results, ValidationSeverity.Error, opfBookPath, "Validation_OpfDuplicateId",
                     CoreStrings.Format("Validation_OpfDuplicateId", id, count));
             }
         }
@@ -127,7 +136,7 @@ public static class OpfStructureValidator
         {
             if (count > 1)
             {
-                Add(results, ValidationSeverity.Warning, opfBookPath,
+                Add(results, ValidationSeverity.Warning, opfBookPath, "Validation_OpfDuplicateHref",
                     CoreStrings.Format("Validation_OpfDuplicateHref", href, count));
             }
         }
@@ -152,8 +161,9 @@ public static class OpfStructureValidator
 
             if (!string.Equals(expected, entry.MediaType, StringComparison.OrdinalIgnoreCase))
             {
-                Add(results, ValidationSeverity.Warning, opfBookPath,
-                    CoreStrings.Format("Validation_OpfMediaTypeMismatch", entry.Href, entry.MediaType, expected));
+                Add(results, ValidationSeverity.Warning, opfBookPath, "Validation_OpfMediaTypeMismatch",
+                    CoreStrings.Format("Validation_OpfMediaTypeMismatch", entry.Href, entry.MediaType, expected),
+                    new ManifestMediaTypeFix(entry.Href, expected));
             }
         }
     }
@@ -169,13 +179,13 @@ public static class OpfStructureValidator
         {
             if (itemref.IdRef.Length == 0)
             {
-                Add(results, ValidationSeverity.Error, opfBookPath, CoreStrings.Get("Validation_OpfItemrefNoIdref"));
+                Add(results, ValidationSeverity.Error, opfBookPath, "Validation_OpfItemrefNoIdref", CoreStrings.Get("Validation_OpfItemrefNoIdref"));
                 continue;
             }
 
             if (!manifestIds.Contains(itemref.IdRef))
             {
-                Add(results, ValidationSeverity.Error, opfBookPath,
+                Add(results, ValidationSeverity.Error, opfBookPath, "Validation_OpfItemrefUnknownIdref",
                     CoreStrings.Format("Validation_OpfItemrefUnknownIdref", itemref.IdRef));
             }
         }
@@ -199,8 +209,21 @@ public static class OpfStructureValidator
 
         if (coverCount > 1)
         {
-            Add(results, ValidationSeverity.Warning, opfBookPath,
+            Add(results, ValidationSeverity.Warning, opfBookPath, "Validation_OpfMultipleCovers",
                 CoreStrings.Format("Validation_OpfMultipleCovers", coverCount));
+        }
+    }
+
+    // An EPUB 3 book needs a navigation document, an EPUB 2 book an NCX.
+    private static void CheckNavigation(Book book, string opfBookPath, bool epub3, List<ValidationResult> results)
+    {
+        if (epub3 && book.GetNavResource() is null)
+        {
+            Add(results, ValidationSeverity.Error, opfBookPath, "Validation_NoNav", CoreStrings.Get("Validation_NoNav"));
+        }
+        else if (!epub3 && book.GetNcx() is null)
+        {
+            Add(results, ValidationSeverity.Error, opfBookPath, "Validation_NoNcx", CoreStrings.Get("Validation_NoNcx"));
         }
     }
 
@@ -215,6 +238,7 @@ public static class OpfStructureValidator
         return dot >= 0 ? clean[(dot + 1)..] : string.Empty;
     }
 
-    private static void Add(List<ValidationResult> results, ValidationSeverity severity, string bookPath, string message) =>
-        results.Add(new ValidationResult(severity, bookPath, -1, -1, message));
+    private static void Add(
+        List<ValidationResult> results, ValidationSeverity severity, string bookPath, string code, string message, ValidationFix? fix = null) =>
+        results.Add(new ValidationResult(severity, bookPath, -1, -1, message, code, fix));
 }

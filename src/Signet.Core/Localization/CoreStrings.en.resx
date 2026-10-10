@@ -230,6 +230,39 @@
   <data name="Validation_CssDeadUrl" xml:space="preserve">
     <value>Dead link: url("{0}") points to a file that does not exist.</value>
   </data>
+  <data name="WellFormed_NotWellFormed" xml:space="preserve">
+    <value>The file is not well-formed XML.</value>
+  </data>
+  <data name="Validation_DuplicateIdInFile" xml:space="preserve">
+    <value>The id "{0}" occurs {1} times in this file; an id must be unique within its file.</value>
+  </data>
+  <data name="Validation_InvalidId" xml:space="preserve">
+    <value>The id "{0}" is not a valid XML name (for example, it starts with a digit or contains a space or a colon).</value>
+  </data>
+  <data name="Validation_NoNav" xml:space="preserve">
+    <value>The EPUB 3 book has no navigation document (nav).</value>
+  </data>
+  <data name="Validation_NoNcx" xml:space="preserve">
+    <value>The EPUB 2 book has no NCX table of contents.</value>
+  </data>
+  <data name="Validation_OpfUniqueIdentifierValueEmpty" xml:space="preserve">
+    <value>The unique identifier of the book (dc:identifier with id="{0}") is empty.</value>
+  </data>
+  <data name="Validation_ImageCorrupt" xml:space="preserve">
+    <value>The image "{0}" is damaged or incomplete (its header cannot be read or the end of the file is missing).</value>
+  </data>
+  <data name="Validation_ImageCmyk" xml:space="preserve">
+    <value>The JPEG image "{0}" uses CMYK colours; many readers show it in wrong colours or not at all.</value>
+  </data>
+  <data name="Validation_FontCorrupt" xml:space="preserve">
+    <value>The font "{0}" is damaged or incomplete (its tables cannot be read).</value>
+  </data>
+  <data name="Validation_CssUnknownProperty" xml:space="preserve">
+    <value>Unknown CSS property "{0}" in the rule "{1}".</value>
+  </data>
+  <data name="Validation_CssEmptyValue" xml:space="preserve">
+    <value>The CSS property "{0}" in the rule "{1}" has no value.</value>
+  </data>
   <data name="Validation_NearColumn" xml:space="preserve">
     <value>{0}.  near column {1}</value>
   </data>

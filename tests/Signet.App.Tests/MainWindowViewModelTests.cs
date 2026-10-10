@@ -327,7 +327,8 @@ public sealed class MainWindowViewModelTests
 
         sut.Actions.Require(AppActionIds.WellFormedCheckEpub).Execute(null);
 
-        sut.ValidationResults.HasResults.Should().BeFalse();
+        // The corpus font is a dummy, not a real font (see tests/corpus/generate-binaries.sh).
+        sut.ValidationResults.Rows.Should().ContainSingle().Which.Result.Code.Should().Be("Validation_FontCorrupt");
     }
 
     [Fact]

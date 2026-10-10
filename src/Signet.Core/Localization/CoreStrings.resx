@@ -230,6 +230,39 @@
   <data name="Validation_CssDeadUrl" xml:space="preserve">
     <value>Martwy link: url(„{0}”) wskazuje na nieistniejący plik.</value>
   </data>
+  <data name="WellFormed_NotWellFormed" xml:space="preserve">
+    <value>Plik nie jest poprawnym dokumentem XML (well-formed).</value>
+  </data>
+  <data name="Validation_DuplicateIdInFile" xml:space="preserve">
+    <value>Identyfikator „{0}” występuje w tym pliku {1} razy — id musi być unikalne w pliku.</value>
+  </data>
+  <data name="Validation_InvalidId" xml:space="preserve">
+    <value>Identyfikator „{0}” nie jest poprawną nazwą XML (np. zaczyna się od cyfry albo zawiera spację lub dwukropek).</value>
+  </data>
+  <data name="Validation_NoNav" xml:space="preserve">
+    <value>Książka EPUB 3 nie ma dokumentu nawigacji (NAV).</value>
+  </data>
+  <data name="Validation_NoNcx" xml:space="preserve">
+    <value>Książka EPUB 2 nie ma spisu treści NCX.</value>
+  </data>
+  <data name="Validation_OpfUniqueIdentifierValueEmpty" xml:space="preserve">
+    <value>Unikalny identyfikator książki (dc:identifier z id=„{0}”) jest pusty.</value>
+  </data>
+  <data name="Validation_ImageCorrupt" xml:space="preserve">
+    <value>Obraz „{0}” jest uszkodzony albo niekompletny (nie da się odczytać nagłówka albo brakuje końca pliku).</value>
+  </data>
+  <data name="Validation_ImageCmyk" xml:space="preserve">
+    <value>Obraz JPEG „{0}” używa kolorów CMYK — wiele czytników pokazuje go w złych kolorach albo wcale.</value>
+  </data>
+  <data name="Validation_FontCorrupt" xml:space="preserve">
+    <value>Font „{0}” jest uszkodzony albo niekompletny (nie da się odczytać jego tablic).</value>
+  </data>
+  <data name="Validation_CssUnknownProperty" xml:space="preserve">
+    <value>Nieznana właściwość CSS „{0}” w regule „{1}”.</value>
+  </data>
+  <data name="Validation_CssEmptyValue" xml:space="preserve">
+    <value>Właściwość CSS „{0}” w regule „{1}” nie ma wartości.</value>
+  </data>
   <data name="Validation_NearColumn" xml:space="preserve">
     <value>{0}.  W pobliżu kolumny {1}</value>
   </data>

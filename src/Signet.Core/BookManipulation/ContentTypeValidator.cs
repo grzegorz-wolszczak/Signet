@@ -81,7 +81,8 @@ public static class ContentTypeValidator
             resource.BookPath,
             -1,
             -1,
-            CoreStrings.Format("Validation_MediaTypeMismatchSignature", resource.Filename, resource.MediaType, actual)));
+            CoreStrings.Format("Validation_MediaTypeMismatchSignature", resource.Filename, resource.MediaType, actual),
+            "Validation_MediaTypeMismatchSignature"));
     }
 
     /// <summary>Recognizes the media type from the header's byte signature; <c>null</c> when not recognized.</summary>

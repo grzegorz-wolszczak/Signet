@@ -1278,6 +1278,30 @@ Czy chcesz zapisać zmiany?</value>
   <data name="ValidationResultsView_NoProblems" xml:space="preserve">
     <value>Nie znaleziono problemów!</value>
   </data>
+  <data name="ValidationResultsView_Fix" xml:space="preserve">
+    <value>Napraw zaznaczone problemy</value>
+  </data>
+  <data name="ValidationResultsView_FixMenu" xml:space="preserve">
+    <value>Napraw</value>
+  </data>
+  <data name="ValidationResultsView_FixAll" xml:space="preserve">
+    <value>Napraw wszystkie problemy, które mają automatyczną poprawkę</value>
+  </data>
+  <data name="ValidationResultsView_Fixable" xml:space="preserve">
+    <value>Poprawka</value>
+  </data>
+  <data name="ValidationResultsView_SkipRule" xml:space="preserve">
+    <value>Pomiń ten typ problemu</value>
+  </data>
+  <data name="ValidationResultsView_SkippedRules" xml:space="preserve">
+    <value>Pominięte typy problemów</value>
+  </data>
+  <data name="ValidationResultsView_RestoreRule" xml:space="preserve">
+    <value>Przywróć: {0}</value>
+  </data>
+  <data name="ValidationResultsView_RestoreAllRules" xml:space="preserve">
+    <value>Przywróć wszystkie</value>
+  </data>
   <data name="ValidationResultsView_Line" xml:space="preserve">
     <value>Wiersz</value>
   </data>
@@ -2412,6 +2436,15 @@ Czy chcesz zapisać zmiany?</value>
   <data name="Status_AlreadyEpub3" xml:space="preserve">
     <value>Książka jest już w formacie EPUB 3.</value>
   </data>
+  <data name="Status_ProblemsFixed" xml:space="preserve">
+    <value>Naprawiono problemów: {0}. Pozostało: {1}. Poprawki można cofnąć w panelu Checkpoints.</value>
+  </data>
+  <data name="Status_NothingToFix" xml:space="preserve">
+    <value>Nie było czego naprawiać: problem już zniknął.</value>
+  </data>
+  <data name="Status_ProblemTypeSkipped" xml:space="preserve">
+    <value>Ten typ problemu będzie pomijany. Przywrócisz go przyciskiem z okiem w panelu Validation Results.</value>
+  </data>
   <data name="Status_NcxGuideGenerated" xml:space="preserve">
     <value>Wygenerowano NCX i Guide.</value>
   </data>
@@ -3431,6 +3464,9 @@ Do tego stanu książki możesz później wrócić przez pozycje „Przywróć d
   </data>
   <data name="CheckpointOp_ReplaceAll" xml:space="preserve">
     <value>Zamień wszystko</value>
+  </data>
+  <data name="CheckpointOp_FixProblems" xml:space="preserve">
+    <value>Naprawa problemów</value>
   </data>
   <data name="CheckpointOp_SpellCheck" xml:space="preserve">
     <value>Sprawdzanie pisowni</value>

@@ -1278,6 +1278,30 @@ Do you want to save the changes?</value>
   <data name="ValidationResultsView_NoProblems" xml:space="preserve">
     <value>No problems found!</value>
   </data>
+  <data name="ValidationResultsView_Fix" xml:space="preserve">
+    <value>Fix the selected problems</value>
+  </data>
+  <data name="ValidationResultsView_FixMenu" xml:space="preserve">
+    <value>Fix</value>
+  </data>
+  <data name="ValidationResultsView_FixAll" xml:space="preserve">
+    <value>Fix all the problems that have an automatic fix</value>
+  </data>
+  <data name="ValidationResultsView_Fixable" xml:space="preserve">
+    <value>Fix</value>
+  </data>
+  <data name="ValidationResultsView_SkipRule" xml:space="preserve">
+    <value>Skip this type of problem</value>
+  </data>
+  <data name="ValidationResultsView_SkippedRules" xml:space="preserve">
+    <value>Skipped types of problems</value>
+  </data>
+  <data name="ValidationResultsView_RestoreRule" xml:space="preserve">
+    <value>Restore: {0}</value>
+  </data>
+  <data name="ValidationResultsView_RestoreAllRules" xml:space="preserve">
+    <value>Restore all</value>
+  </data>
   <data name="ValidationResultsView_Line" xml:space="preserve">
     <value>Line</value>
   </data>
@@ -2412,6 +2436,15 @@ Do you want to save the changes?</value>
   <data name="Status_AlreadyEpub3" xml:space="preserve">
     <value>The book already is EPUB 3.</value>
   </data>
+  <data name="Status_ProblemsFixed" xml:space="preserve">
+    <value>Fixed {0} problems, {1} left. The Checkpoints panel can undo the fixes.</value>
+  </data>
+  <data name="Status_NothingToFix" xml:space="preserve">
+    <value>There was nothing to fix: the problem is already gone.</value>
+  </data>
+  <data name="Status_ProblemTypeSkipped" xml:space="preserve">
+    <value>This type of problem will be skipped. The eye button of the Validation Results panel brings it back.</value>
+  </data>
   <data name="Status_NcxGuideGenerated" xml:space="preserve">
     <value>NCX and Guide generated.</value>
   </data>
@@ -3431,6 +3464,9 @@ You can later restore the book to this checkpoint via the "Revert to..." entries
   </data>
   <data name="CheckpointOp_ReplaceAll" xml:space="preserve">
     <value>Replace all</value>
+  </data>
+  <data name="CheckpointOp_FixProblems" xml:space="preserve">
+    <value>Fix problems</value>
   </data>
   <data name="CheckpointOp_SpellCheck" xml:space="preserve">
     <value>Spell Check</value>
