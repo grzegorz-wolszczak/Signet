@@ -1305,6 +1305,21 @@ public sealed class MainWindowViewModelTests
         sut.BookBrowser.ShortcutActions.Should().Contain(a => a.Id == AppActionIds.BookBrowserRename);
     }
 
+    /// <summary>
+    /// The code editor actions are not window KeyBindings either: the code tab views bind them, so their shortcuts work
+    /// only in Code View (and the same keys may do something else in a panel).
+    /// </summary>
+    [Fact]
+    public void Code_editor_shortcuts_are_bound_by_the_code_tabs_not_the_window()
+    {
+        MainWindowViewModel sut = New();
+
+        sut.ShortcutActions.Should().NotContain(a => AppActionIds.IsCodeViewAction(a.Id));
+        sut.CodeViewShortcutActions.Should().OnlyContain(a => AppActionIds.IsCodeViewAction(a.Id));
+        sut.CodeViewShortcutActions.Select(a => a.Id).Should().Contain(new[] { AppActionIds.RenameClass, AppActionIds.FindUsages });
+        sut.ShortcutActions.Should().Contain(a => a.Id == AppActionIds.Save);
+    }
+
     [Fact]
     public void Clip_editor_rename_is_a_panel_scoped_action_bound_to_F2_that_renames_the_selected_clip()
     {

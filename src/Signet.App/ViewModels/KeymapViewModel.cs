@@ -115,6 +115,19 @@ public sealed partial class KeymapViewModel : ViewModelBase
             : _shortcuts.FindConflicts(action.ActionId, shortcut).Select(LabelOf).ToList();
     }
 
+    /// <summary>
+    /// The panel actions (as "name (group path)") that take <paramref name="shortcut"/> over in their panel if it is added
+    /// to <paramref name="action"/> — not conflicts (<see cref="KeyboardShortcutManager.FindShadowed"/>).
+    /// </summary>
+    public IReadOnlyList<string> ShadowedFor(KeymapNode action, Shortcut shortcut)
+    {
+        ArgumentNullException.ThrowIfNull(action);
+        ArgumentNullException.ThrowIfNull(shortcut);
+        return action.ActionId is null
+            ? Array.Empty<string>()
+            : _shortcuts.FindShadowed(action.ActionId, shortcut).Select(LabelOf).ToList();
+    }
+
     /// <summary>Adds a shortcut to the action, first taking it away from the conflicting actions when asked to.</summary>
     public void AddShortcut(KeymapNode action, Shortcut shortcut, bool removeConflicts)
     {
@@ -264,7 +277,10 @@ public sealed partial class KeymapViewModel : ViewModelBase
 
     private KeymapNode ActionNode(AppAction action, KeymapNode parent)
     {
-        KeymapNode node = new(NameOf(action), action.Id, parent.Path is null ? parent.Name : $"{parent.Path} | {parent.Name}");
+        KeymapNode node = new(NameOf(action), action.Id, parent.Path is null ? parent.Name : $"{parent.Path} | {parent.Name}")
+        {
+            Context = AppActionIds.IsCodeViewAction(action.Id) ? Strings.Get("Keymap_ContextCodeView") : string.Empty,
+        };
         node.Update(_shortcuts.Get(action.Id));
         if (!_nodesById.TryGetValue(action.Id, out List<KeymapNode>? nodes))
         {
@@ -340,6 +356,9 @@ public sealed partial class KeymapNode : ObservableObject
 
     /// <summary>Whether the node is a group.</summary>
     public bool IsGroup => ActionId is null;
+
+    /// <summary>Where the action's shortcuts work when not window-wide (e.g. "code editor only"), or <c>""</c>.</summary>
+    public string Context { get; init; } = string.Empty;
 
     /// <summary>The children of a group.</summary>
     public ObservableCollection<KeymapNode> Children { get; } = new();

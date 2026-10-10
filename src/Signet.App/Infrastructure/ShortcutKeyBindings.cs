@@ -15,8 +15,8 @@ using Signet.App.Services;
 namespace Signet.App.Infrastructure;
 
 /// <summary>
-/// The keyboard shortcuts of actions on a control (the main window, or a panel for panel-scoped actions — those fire
-/// only while the focus is inside it): every one-stroke shortcut of an action becomes a <see cref="KeyBinding"/>, and
+/// The keyboard shortcuts of actions on a control (the main window, or a panel or a code editor for the actions scoped
+/// to it — those fire only while the focus is inside it): every one-stroke shortcut of an action becomes a <see cref="KeyBinding"/>, and
 /// two-stroke shortcuts (IntelliJ's "second stroke") wait after their first stroke for the second one. The bindings
 /// follow shortcut changes made in Preferences without a restart.
 /// </summary>

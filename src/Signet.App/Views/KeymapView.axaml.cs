@@ -296,9 +296,10 @@ public partial class KeymapView : UserControl
         }
 
         Func<Shortcut, IReadOnlyList<string>> conflicts = s => vm.ConflictsFor(node, s);
+        Func<Shortcut, IReadOnlyList<string>> shadowed = s => vm.ShadowedFor(node, s);
         Shortcut? shortcut = keyboard
-            ? await KeyboardShortcutDialog.AskAsync(owner, node.Name, conflicts)
-            : await MouseShortcutDialog.AskAsync(owner, node.Name, conflicts);
+            ? await KeyboardShortcutDialog.AskAsync(owner, node.Name, conflicts, shadowed)
+            : await MouseShortcutDialog.AskAsync(owner, node.Name, conflicts, shadowed);
         if (shortcut is null)
         {
             return;

@@ -236,6 +236,21 @@ public static class AppActionIds
     /// <summary>Renames the selected clip or group in the clips tree.</summary>
     public const string ClipEditorRename = "MainWindow.ClipEditor.Rename";
 
+    /// <summary>
+    /// The actions that work at the caret or selection of a code editor. Their shortcuts are handled only while the
+    /// focus is in Code View (<c>CodeTabView</c> binds them, not the window), so e.g. F2 can rename a class in the
+    /// code and a file in the Book Browser. They still are in the menus, which run them for the active tab.
+    /// </summary>
+    private static readonly System.Collections.Generic.HashSet<string> CodeViewActionIds = new(System.StringComparer.Ordinal)
+    {
+        DeleteLine, ToggleComment, CasingLowercase, CasingUppercase, CasingTitlecase, CasingCapitalize, MergeContent,
+        RenameClass, InsertClosingTag, RemoveTagPair, JumpToOpeningTag, JumpToClosingTag, SelectTagContents, RenameTag,
+        SplitTag, GoToLinkOrStyle, FindUsages,
+    };
+
+    /// <summary>Whether the action's shortcuts work only in a code editor (see <see cref="CodeViewActionIds"/>).</summary>
+    public static bool IsCodeViewAction(string id) => CodeViewActionIds.Contains(id);
+
     /// <summary>Whether the category holds panel-scoped actions (handled only while the panel has focus).</summary>
     public static bool IsPanelCategory(string category) =>
         string.Equals(category, BookBrowserCategory, System.StringComparison.Ordinal)

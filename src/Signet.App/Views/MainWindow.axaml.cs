@@ -54,7 +54,11 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
     {
         InitializeComponent();
         _shortcutBindings = new ShortcutKeyBindings(this);
-        _mouseShortcuts = new MouseShortcutRouter(this, () => _boundViewModel?.ShortcutActions ?? Array.Empty<AppAction>(), MouseShortcutRouter.IsInCodeView);
+        // Mouse shortcuts work only in Code View, so the code editor actions take part too.
+        _mouseShortcuts = new MouseShortcutRouter(
+            this,
+            () => _boundViewModel is { } vm ? vm.ShortcutActions.Concat(vm.CodeViewShortcutActions) : Array.Empty<AppAction>(),
+            MouseShortcutRouter.IsInCodeView);
         DataContextChanged += OnDataContextChanged;
 
         // Drag & drop of a file (e.g. an EPUB) onto the window = File → Open. handledEventsToo, because child

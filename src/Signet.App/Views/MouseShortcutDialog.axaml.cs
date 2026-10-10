@@ -15,6 +15,7 @@ namespace Signet.App.Views;
 public partial class MouseShortcutDialog : Window
 {
     private Func<Shortcut, IReadOnlyList<string>> _conflicts = _ => Array.Empty<string>();
+    private Func<Shortcut, IReadOnlyList<string>> _shadowed = _ => Array.Empty<string>();
 
     /// <summary>Initializes the window.</summary>
     public MouseShortcutDialog()
@@ -27,10 +28,12 @@ public partial class MouseShortcutDialog : Window
     }
 
     /// <summary>Shows the dialog; the shortcut made, or <c>null</c> when cancelled.</summary>
-    public static Task<Shortcut?> AskAsync(Window owner, string actionName, Func<Shortcut, IReadOnlyList<string>> conflicts)
+    public static Task<Shortcut?> AskAsync(
+        Window owner, string actionName, Func<Shortcut, IReadOnlyList<string>> conflicts,
+        Func<Shortcut, IReadOnlyList<string>>? shadowed = null)
     {
         ArgumentNullException.ThrowIfNull(conflicts);
-        MouseShortcutDialog dialog = new() { _conflicts = conflicts };
+        MouseShortcutDialog dialog = new() { _conflicts = conflicts, _shadowed = shadowed ?? (_ => Array.Empty<string>()) };
         dialog.ActionName.Text = actionName;
         return dialog.ShowDialog<Shortcut?>(owner);
     }
@@ -44,5 +47,8 @@ public partial class MouseShortcutDialog : Window
         IReadOnlyList<string> conflicts = shortcut is null || reserved ? Array.Empty<string>() : _conflicts(shortcut);
         Conflicts.ItemsSource = conflicts;
         ConflictsPanel.IsVisible = conflicts.Count > 0;
+        IReadOnlyList<string> shadowed = shortcut is null || reserved ? Array.Empty<string>() : _shadowed(shortcut);
+        Shadowed.ItemsSource = shadowed;
+        ShadowedPanel.IsVisible = shadowed.Count > 0;
     }
 }

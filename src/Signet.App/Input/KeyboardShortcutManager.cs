@@ -10,12 +10,16 @@ namespace Signet.App.Input;
 /// The shortcuts of all actions (one keymap, as in IntelliJ): every action may have several keyboard shortcuts (one or
 /// two strokes) and mouse shortcuts. Defaults come from the action catalog; the actions whose shortcuts differ from
 /// the defaults are saved in the settings. Conflicting assignments are allowed — the keymap editor warns about them
-/// and lets the user take the shortcut away from the other actions.
+/// and lets the user take the shortcut away from the other actions. Whether two shortcuts collide depends on where
+/// they work (<see cref="Overlap"/>).
 /// </summary>
 public sealed class KeyboardShortcutManager
 {
     /// <summary>Name of the settings group in which overrides are stored.</summary>
     public const string SettingsGroup = "keyboard_shortcuts";
+
+    /// <summary>The scope of the shortcuts handled only while the focus is in a code editor (Code View).</summary>
+    public const string CodeViewScope = "CodeView";
 
     private readonly SettingsStore _settings;
     private readonly Dictionary<string, KeyboardShortcut> _shortcuts = new(StringComparer.Ordinal);
@@ -102,20 +106,36 @@ public sealed class KeyboardShortcutManager
     public KeyboardShortcut? Get(string id) => _shortcuts.GetValueOrDefault(id);
 
     /// <summary>
-    /// The actions (other than <paramref name="actionId"/>, in an overlapping scope) whose shortcuts conflict with
-    /// <paramref name="shortcut"/> (<see cref="Conflict"/>).
+    /// The actions (other than <paramref name="actionId"/>) whose shortcuts conflict with <paramref name="shortcut"/>
+    /// (<see cref="Conflict"/>) where both work at the same time (<see cref="ShortcutOverlap.Conflict"/>).
     /// </summary>
-    public IReadOnlyList<string> FindConflicts(string actionId, Shortcut shortcut)
+    public IReadOnlyList<string> FindConflicts(string actionId, Shortcut shortcut) =>
+        FindOverlapping(actionId, shortcut, ShortcutOverlap.Conflict);
+
+    /// <summary>
+    /// The actions (other than <paramref name="actionId"/>) with the same shortcut that take it over in a part of the
+    /// window (<see cref="ShortcutOverlap.Shadows"/>) — not a conflict, but the shortcut does something else there.
+    /// </summary>
+    public IReadOnlyList<string> FindShadowed(string actionId, Shortcut shortcut) =>
+        FindOverlapping(actionId, shortcut, ShortcutOverlap.Shadows);
+
+    /// <summary>
+    /// How the shortcuts of two actions relate when they are the same keys:
+    /// <list type="bullet">
+    /// <item>the same scope — <see cref="ShortcutOverlap.Conflict"/>;</item>
+    /// <item>a window-wide one and a code editor one — <see cref="ShortcutOverlap.Conflict"/> (the code editor is where
+    /// window-wide shortcuts are mostly used, and its own one wins there);</item>
+    /// <item>a window-wide one and a panel one — <see cref="ShortcutOverlap.Shadows"/> (the panel one wins while the
+    /// panel has the focus, the window-wide one works everywhere else);</item>
+    /// <item>two different scopes (e.g. the code editor and the Book Browser or the clips tree) —
+    /// <see cref="ShortcutOverlap.None"/>: the focus is in one of them at a time.</item>
+    /// </list>
+    /// </summary>
+    public static ShortcutOverlap Overlap(KeyboardShortcut first, KeyboardShortcut second)
     {
-        ArgumentNullException.ThrowIfNull(shortcut);
-        string? scope = _shortcuts.TryGetValue(actionId, out KeyboardShortcut? own) ? own.Scope : null;
-        return _shortcuts.Values
-            .Where(s => !string.Equals(s.Id, actionId, StringComparison.Ordinal)
-                && ScopesOverlap(scope, s.Scope)
-                && s.Shortcuts.Any(other => Conflict(shortcut, other)))
-            .Select(s => s.Id)
-            .OrderBy(id => id, StringComparer.Ordinal)
-            .ToList();
+        ArgumentNullException.ThrowIfNull(first);
+        ArgumentNullException.ThrowIfNull(second);
+        return OverlapOfScopes(first.Scope, second.Scope);
     }
 
     /// <summary>
@@ -224,9 +244,35 @@ public sealed class KeyboardShortcutManager
 
     private static bool SameStroke(KeyGesture a, KeyGesture b) => a.Key == b.Key && a.KeyModifiers == b.KeyModifiers;
 
-    // A window-wide shortcut (no scope) overlaps with everything; two panel shortcuts only within the same panel.
-    private static bool ScopesOverlap(string? first, string? second) =>
-        first is null || second is null || string.Equals(first, second, StringComparison.Ordinal);
+    private static ShortcutOverlap OverlapOfScopes(string? firstScope, string? secondScope)
+    {
+        if (string.Equals(firstScope, secondScope, StringComparison.Ordinal))
+        {
+            return ShortcutOverlap.Conflict;
+        }
+
+        if (firstScope is null || secondScope is null)
+        {
+            return string.Equals(firstScope ?? secondScope, CodeViewScope, StringComparison.Ordinal)
+                ? ShortcutOverlap.Conflict
+                : ShortcutOverlap.Shadows;
+        }
+
+        return ShortcutOverlap.None;
+    }
+
+    private List<string> FindOverlapping(string actionId, Shortcut shortcut, ShortcutOverlap overlap)
+    {
+        ArgumentNullException.ThrowIfNull(shortcut);
+        KeyboardShortcut? own = _shortcuts.GetValueOrDefault(actionId);
+        return _shortcuts.Values
+            .Where(s => !string.Equals(s.Id, actionId, StringComparison.Ordinal)
+                && OverlapOfScopes(own?.Scope, s.Scope) == overlap
+                && s.Shortcuts.Any(other => Conflict(shortcut, other)))
+            .Select(s => s.Id)
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToList();
+    }
 
     private void Set(KeyboardShortcut entry, IReadOnlyList<Shortcut> shortcuts)
     {

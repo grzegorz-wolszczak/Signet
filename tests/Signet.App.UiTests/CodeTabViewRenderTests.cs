@@ -575,8 +575,57 @@ public sealed class CodeTabViewRenderTests
         freeEnabled.Should().Equal(true, true);
     }
 
+    /// <summary>
+    /// The shortcuts of the code editor actions are the view's own bindings: F2 renames a class while the editor has
+    /// the focus, and does nothing for it from another control of the window (a panel may use F2 there).
+    /// </summary>
+    [AvaloniaFact]
+    public void Code_editor_shortcuts_work_only_while_the_editor_has_focus()
+    {
+        (SettingsStore settings, SpellChecker spellChecker) = NewSpellChecker();
+        Signet.App.Input.KeyboardShortcutManager shortcuts = new(settings);
+        AppActionRegistry registry = new(
+            shortcuts, new StatusBarService(), Microsoft.Extensions.Logging.Abstractions.NullLogger<AppActionRegistry>.Instance);
+        shortcuts.AddShortcut(AppActionIds.RenameClass, new Signet.App.Input.KeyStrokeShortcut(new Avalonia.Input.KeyGesture(Avalonia.Input.Key.F2)));
+        int renames = 0;
+        registry.SetHandler(AppActionIds.RenameClass, () => renames++);
+
+        string dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"signet-uitests-{System.Guid.NewGuid():N}");
+        System.IO.Directory.CreateDirectory(dir);
+        string path = System.IO.Path.Combine(dir, "Section0001.xhtml");
+        System.IO.File.WriteAllText(path, "<p class=\"x\">a</p>");
+        HtmlResource html = new(dir, path);
+        html.InitialLoad();
+        var vm = new CodeTabViewModel(new TabManagerModel().OpenResource(html), new StatusBarService(), settings, spellChecker)
+        {
+            Host = new FakeHost { CodeViewShortcutActions = new[] { registry.Require(AppActionIds.RenameClass) } },
+        };
+        TextBox other = new();
+        DockPanel panel = new();
+        DockPanel.SetDock(other, Avalonia.Controls.Dock.Top);
+        panel.Children.Add(other);
+        panel.Children.Add(new CodeTabView { DataContext = vm });
+        var window = new Window { Width = 600, Height = 400, Content = panel };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
+
+        editor.TextArea.Focus();
+        window.KeyPressQwerty(Avalonia.Input.PhysicalKey.F2, Avalonia.Input.RawInputModifiers.None);
+        Dispatcher.UIThread.RunJobs();
+        renames.Should().Be(1);
+
+        other.Focus();
+        window.KeyPressQwerty(Avalonia.Input.PhysicalKey.F2, Avalonia.Input.RawInputModifiers.None);
+        Dispatcher.UIThread.RunJobs();
+        renames.Should().Be(1, "outside the editor the shortcut is not the editor's");
+    }
+
     private sealed class FakeHost : ICodeTabHost
     {
+        public System.Collections.Generic.IReadOnlyList<AppAction> CodeViewShortcutActions { get; set; } =
+            System.Array.Empty<AppAction>();
+
         public Signet.Core.MiscEditors.ClipEditorNode ClipLibraryRoot { get; } = new Signet.Core.MiscEditors.ClipEditorModel().Root;
 
         public void PasteClip(string text)

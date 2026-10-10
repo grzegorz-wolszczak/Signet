@@ -23,8 +23,9 @@ public sealed class KeyboardShortcut
     public string Id { get; }
 
     /// <summary>
-    /// Name of the panel the shortcut works in (it is handled only while the focus is in that panel), or
-    /// <see langword="null"/> for a window-wide shortcut. Shortcuts of two different panels never collide.
+    /// The place in its window the shortcut works in (it is handled only while the focus is there: a panel, or the code
+    /// editor — <see cref="KeyboardShortcutManager.CodeViewScope"/>), or <see langword="null"/> for a window-wide
+    /// shortcut. See <see cref="KeyboardShortcutManager.Overlap"/> for when two shortcuts collide.
     /// </summary>
     public string? Scope { get; }
 

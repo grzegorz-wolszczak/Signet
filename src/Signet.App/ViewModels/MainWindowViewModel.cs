@@ -252,9 +252,11 @@ public sealed partial class MainWindowViewModel
         // Book Browser actions are excluded from the window shortcuts — their KeyBindings are created by
         // the panel itself, so that they work only while the file tree has focus (see BookBrowserView).
         // No filter on Gesture: an action without a default shortcut may get one in Preferences.
+        // Code editor actions too: CodeTabView binds them, so that they work only while a code editor has focus.
         ShortcutActions = _actions.Actions
-            .Where(x => !AppActionIds.IsPanelCategory(x.Category))
+            .Where(x => !AppActionIds.IsPanelCategory(x.Category) && !AppActionIds.IsCodeViewAction(x.Id))
             .ToList();
+        CodeViewShortcutActions = _actions.Actions.Where(x => AppActionIds.IsCodeViewAction(x.Id)).ToList();
         BookBrowser.ShortcutActions = _actions.Actions.Where(IsBookBrowserAction).ToList();
         _clips.ShortcutActions = _actions.Actions
             .Where(x => string.Equals(x.Category, AppActionIds.ClipEditorCategory, StringComparison.Ordinal))
@@ -755,10 +757,13 @@ public sealed partial class MainWindowViewModel
     public IReadOnlyList<ToolbarRowViewModel> ToolbarRows { get; }
 
     /// <summary>
-    /// Actions whose shortcuts are the window's <c>KeyBinding</c>s (all except Book Browser, including
+    /// Actions whose shortcuts are the window's <c>KeyBinding</c>s (all except the panel and code editor ones, including
     /// those without a current shortcut — the window rebuilds the bindings when <see cref="AppAction.Gesture"/> changes).
     /// </summary>
     public IReadOnlyList<AppAction> ShortcutActions { get; }
+
+    /// <inheritdoc/>
+    public IReadOnlyList<AppAction> CodeViewShortcutActions { get; }
 
     /// <summary>Window title: <c>name[*] - epubN - Signet</c>.</summary>
     public string WindowTitle

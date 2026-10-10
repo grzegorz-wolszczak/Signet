@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Avalonia.Input;
+using Signet.App.Actions;
 using Signet.Core.BookManipulation;
 using Signet.Core.Footnotes;
 using Signet.Core.MiscEditors;
@@ -14,6 +16,12 @@ namespace Signet.App.ViewModels.Tabs;
 /// </summary>
 public interface ICodeTabHost
 {
+    /// <summary>
+    /// The actions whose shortcuts work only in a code editor (<see cref="Actions.AppActionIds.IsCodeViewAction"/>):
+    /// every code tab view binds them while it is shown.
+    /// </summary>
+    IReadOnlyList<AppAction> CodeViewShortcutActions { get; }
+
     /// <summary>Root of the clip library (the "Clips" submenu).</summary>
     ClipEditorNode ClipLibraryRoot { get; }
 

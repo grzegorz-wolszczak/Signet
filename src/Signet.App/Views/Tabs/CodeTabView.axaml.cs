@@ -50,6 +50,7 @@ public partial class CodeTabView : UserControl
     private readonly SpellCheckHighlightRenderer _spellRenderer = new();
     private readonly SyntaxIssueRenderer _issueRenderer = new();
     private readonly ContextMenu _contextMenu = new();
+    private readonly ShortcutKeyBindings _codeViewShortcuts;
 
     // Html/Xml/CSS: dedicated line colorizers; JavaScript/JSON: TextMate (created lazily, only
     // when needed). The view may be reused for another tab, so both variants are switched when
@@ -116,12 +117,42 @@ public partial class CodeTabView : UserControl
         _contextMenu.Opening += OnContextMenuOpening;
         Editor.ContextMenu = _contextMenu;
 
+        _codeViewShortcuts = new ShortcutKeyBindings(this);
         DataContextChanged += OnDataContextChanged;
         ActualThemeVariantChanged += (_, _) =>
         {
             ApplyTextMateTheme();
             ApplyFont();
         };
+    }
+
+    /// <inheritdoc />
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        AttachCodeViewShortcuts();
+    }
+
+    /// <inheritdoc />
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        _codeViewShortcuts.Detach();
+    }
+
+    // The shortcuts of the code editor actions (AppActionIds.IsCodeViewAction) are this view's KeyBindings, not the
+    // window's: they work only while the focus is in the editor, so the same keys can do something else in a panel.
+    // Bound only while the view is shown (the actions would otherwise keep a closed tab's view alive).
+    private void AttachCodeViewShortcuts()
+    {
+        if (_boundViewModel?.Host is { } host && TopLevel.GetTopLevel(this) is not null)
+        {
+            _codeViewShortcuts.Attach(host.CodeViewShortcutActions);
+        }
+        else
+        {
+            _codeViewShortcuts.Detach();
+        }
     }
 
     private void OnDataContextChanged(object? sender, EventArgs e)
@@ -143,6 +174,7 @@ public partial class CodeTabView : UserControl
         }
 
         _boundViewModel = DataContext as CodeTabViewModel;
+        AttachCodeViewShortcuts();
         if (_boundViewModel is null)
         {
             InstallFolding();

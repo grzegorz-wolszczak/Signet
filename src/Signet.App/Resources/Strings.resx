@@ -4378,6 +4378,12 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="Keymap_ResetShortcuts" xml:space="preserve">
     <value>Przywróć domyślne skróty</value>
   </data>
+  <data name="Keymap_ContextCodeView" xml:space="preserve">
+    <value>tylko w edytorze kodu</value>
+  </data>
+  <data name="Keymap_ShadowedHeader" xml:space="preserve">
+    <value>Ten sam skrót w panelu (to nie konflikt — gdy fokus jest w panelu, skrót uruchomi tam jego akcję):</value>
+  </data>
   <data name="Keymap_ConflictsHeader" xml:space="preserve">
     <value>Konflikty:</value>
   </data>

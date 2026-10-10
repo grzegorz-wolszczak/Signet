@@ -71,17 +71,40 @@ public sealed class KeyboardShortcutManagerTests
     }
 
     [Fact]
-    public void Panel_scoped_shortcuts_collide_only_within_their_own_panel_or_with_window_wide_ones()
+    public void Shortcuts_collide_only_where_both_work_and_a_panel_only_shadows_a_window_wide_one()
     {
         using TestHost host = new();
         host.Shortcuts.RegisterAction("PanelA", "F2", "a", scope: "A");
+        host.Shortcuts.RegisterAction("PanelA2", "Ctrl+F2", "a2", scope: "A");
         host.Shortcuts.RegisterAction("PanelB", "F3", "b", scope: "B");
+        host.Shortcuts.RegisterAction("Code", "Ctrl+F3", "c", scope: KeyboardShortcutManager.CodeViewScope);
         host.Shortcuts.RegisterAction("Window", "Ctrl+K", "w");
 
         // (TestHost registers the whole catalog too, so only the test actions are checked.)
         host.Shortcuts.FindConflicts("PanelB", Keys(Key.F2)).Should().NotContain("PanelA", "another panel may reuse the shortcut");
-        host.Shortcuts.FindConflicts("PanelB", Keys(Key.K, KeyModifiers.Control)).Should().Contain("Window");
-        host.Shortcuts.FindConflicts("Window", Keys(Key.F2)).Should().Contain("PanelA");
+        host.Shortcuts.FindConflicts("PanelA", Keys(Key.F2, KeyModifiers.Control)).Should().Contain("PanelA2", "the same panel");
+        host.Shortcuts.FindConflicts("Code", Keys(Key.F2)).Should().NotContain("PanelA", "the focus is in the editor or in the panel");
+        host.Shortcuts.FindConflicts("PanelA", Keys(Key.F3, KeyModifiers.Control)).Should().NotContain("Code");
+        host.Shortcuts.FindConflicts("Code", Keys(Key.K, KeyModifiers.Control)).Should().Contain("Window");
+        host.Shortcuts.FindConflicts("Window", Keys(Key.F3, KeyModifiers.Control)).Should().Contain("Code");
+
+        host.Shortcuts.FindConflicts("Window", Keys(Key.F2)).Should().NotContain("PanelA");
+        host.Shortcuts.FindShadowed("Window", Keys(Key.F2)).Should().Contain("PanelA", "the panel takes F2 over while it has focus");
+        host.Shortcuts.FindShadowed("PanelB", Keys(Key.K, KeyModifiers.Control)).Should().Contain("Window");
+        host.Shortcuts.FindShadowed("Code", Keys(Key.F2)).Should().NotContain("PanelA");
+    }
+
+    [Fact]
+    public void F2_for_Rename_Class_collides_with_nothing_although_two_panels_use_it()
+    {
+        using TestHost host = new();
+        KeyStrokeShortcut f2 = Keys(Key.F2);
+        host.Shortcuts.Get(AppActionIds.BookBrowserRename)!.Shortcuts.Should().Contain(f2);
+        host.Shortcuts.Get(AppActionIds.ClipEditorRename)!.Shortcuts.Should().Contain(f2);
+
+        host.Shortcuts.Get(AppActionIds.RenameClass)!.Scope.Should().Be(KeyboardShortcutManager.CodeViewScope);
+        host.Shortcuts.FindConflicts(AppActionIds.RenameClass, f2).Should().BeEmpty();
+        host.Shortcuts.FindShadowed(AppActionIds.RenameClass, f2).Should().BeEmpty();
     }
 
     [Fact]

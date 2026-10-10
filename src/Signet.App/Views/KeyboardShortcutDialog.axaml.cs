@@ -13,6 +13,7 @@ namespace Signet.App.Views;
 public partial class KeyboardShortcutDialog : Window
 {
     private Func<Shortcut, IReadOnlyList<string>> _conflicts = _ => Array.Empty<string>();
+    private Func<Shortcut, IReadOnlyList<string>> _shadowed = _ => Array.Empty<string>();
 
     /// <summary>Initializes the window.</summary>
     public KeyboardShortcutDialog()
@@ -30,10 +31,13 @@ public partial class KeyboardShortcutDialog : Window
     /// <param name="owner">The owner window.</param>
     /// <param name="actionName">The action the shortcut is for.</param>
     /// <param name="conflicts">The actions a shortcut would conflict with.</param>
-    public static Task<Shortcut?> AskAsync(Window owner, string actionName, Func<Shortcut, IReadOnlyList<string>> conflicts)
+    /// <param name="shadowed">The panel actions that take the shortcut over in their panel (not conflicts).</param>
+    public static Task<Shortcut?> AskAsync(
+        Window owner, string actionName, Func<Shortcut, IReadOnlyList<string>> conflicts,
+        Func<Shortcut, IReadOnlyList<string>>? shadowed = null)
     {
         ArgumentNullException.ThrowIfNull(conflicts);
-        KeyboardShortcutDialog dialog = new() { _conflicts = conflicts };
+        KeyboardShortcutDialog dialog = new() { _conflicts = conflicts, _shadowed = shadowed ?? (_ => Array.Empty<string>()) };
         dialog.ActionName.Text = actionName;
         return dialog.ShowDialog<Shortcut?>(owner);
     }
@@ -57,5 +61,8 @@ public partial class KeyboardShortcutDialog : Window
         IReadOnlyList<string> conflicts = shortcut is null ? Array.Empty<string>() : _conflicts(shortcut);
         Conflicts.ItemsSource = conflicts;
         ConflictsPanel.IsVisible = conflicts.Count > 0;
+        IReadOnlyList<string> shadowed = shortcut is null ? Array.Empty<string>() : _shadowed(shortcut);
+        Shadowed.ItemsSource = shadowed;
+        ShadowedPanel.IsVisible = shadowed.Count > 0;
     }
 }

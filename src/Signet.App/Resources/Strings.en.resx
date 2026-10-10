@@ -4378,6 +4378,12 @@ It does not change the files, their names or their IDs.</value>
   <data name="Keymap_ResetShortcuts" xml:space="preserve">
     <value>Reset Shortcuts</value>
   </data>
+  <data name="Keymap_ContextCodeView" xml:space="preserve">
+    <value>code editor only</value>
+  </data>
+  <data name="Keymap_ShadowedHeader" xml:space="preserve">
+    <value>The same shortcut in a panel (not a conflict — while the focus is in the panel, the shortcut runs its action there):</value>
+  </data>
   <data name="Keymap_ConflictsHeader" xml:space="preserve">
     <value>Conflicts:</value>
   </data>

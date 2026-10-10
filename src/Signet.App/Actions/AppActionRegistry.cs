@@ -36,7 +36,9 @@ public sealed class AppActionRegistry
             AppAction action = new(descriptor);
             KeyboardShortcut shortcut = _shortcuts.RegisterAction(
                 descriptor.Id, descriptor.DefaultShortcut, StripMnemonics(descriptor.Text),
-                AppActionIds.IsPanelCategory(descriptor.Category) ? descriptor.Category : null);
+                AppActionIds.IsPanelCategory(descriptor.Category) ? descriptor.Category
+                : AppActionIds.IsCodeViewAction(descriptor.Id) ? KeyboardShortcutManager.CodeViewScope
+                : null);
 
             ApplyShortcut(action, shortcut);
             action.Invoked += OnActionInvoked;
