@@ -312,6 +312,16 @@
     <Style Selector="ButtonSpinner /template/ StackPanel#PART_SpinnerPanel">
       <Setter Property="FlowDirection" Value="RightToLeft" />
     </Style>
+
+    <!-- Scroll bars everywhere: always expanded to their full width (Fluent shows them as thin lines that widen only
+         when the pointer comes near, which made them hard to hit), and beside the content instead of over it (the
+         Fluent ScrollViewer lets the content run under the bars only while they may hide). The attached property is set
+         on every templated control, not only on ScrollViewer: TextBox, ListBox, the code editor and others pass their
+         own value to the ScrollViewer of their template, which a ScrollViewer style could not override. Covered by
+         ScrollBarStyleTests. -->
+    <Style Selector=":is(TemplatedControl)">
+      <Setter Property="ScrollViewer.AllowAutoHide" Value="False" />
+    </Style>
   </Application.Styles>
 
 </Application>

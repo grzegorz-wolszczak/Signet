@@ -22,7 +22,7 @@ namespace Signet.App.Tests;
 
 /// <summary>
 /// Tests for <see cref="PreferencesViewModel"/>: changes are written to <see cref="SettingsStore"/> only when
-/// applied (Save / Apply), and the keyboard shortcuts page is the keymap of all actions.
+/// saved (Save), and the keyboard shortcuts page is the keymap of all actions.
 /// </summary>
 public sealed class PreferencesViewModelTests
 {
@@ -59,7 +59,7 @@ public sealed class PreferencesViewModelTests
         vm.SelectedTheme = themeBefore == ThemePreference.Dark ? ThemePreference.Light : ThemePreference.Dark;
         vm.SpellCheckEnabled = !spellCheckBefore;
 
-        host.Settings.ThemePreference.Should().Be(themeBefore, "nothing is written before Save / Apply");
+        host.Settings.ThemePreference.Should().Be(themeBefore, "nothing is written before Save");
         host.Settings.SpellCheck.Should().Be(spellCheckBefore);
         vm.HasChanges.Should().BeTrue();
         vm.ApplyCommand.CanExecute(null).Should().BeTrue();
@@ -194,10 +194,8 @@ public sealed class PreferencesViewModelTests
         sut.FootnoteNoteStyle.Should().Be("color: red;");
 
         sut.FootnoteSeparatorStyle = "border: none;";
-        sut.FootnoteReferenceStyle = "x: 1; }";
-        sut.FootnoteStylesError.Should().NotBeEmpty();
         sut.FootnoteReferenceStyle = "vertical-align: super;";
-        sut.FootnoteStylesError.Should().BeEmpty();
+        sut.FootnoteReferenceStyleError.Should().BeEmpty();
         sut.ApplyCommand.Execute(null);
 
         host.Settings.FootnoteStyles.Should().Be(Signet.Core.Footnotes.FootnoteStyles.Default with
@@ -210,6 +208,26 @@ public sealed class PreferencesViewModelTests
         sut.ResetFootnoteStylesCommand.Execute(null);
         sut.ApplyCommand.Execute(null);
         host.Settings.FootnoteStyles.Should().Be(Signet.Core.Footnotes.FootnoteStyles.Default);
+    }
+
+    [Fact]
+    public void An_invalid_footnote_style_shows_why_and_keeps_its_last_valid_definition()
+    {
+        using UiCultureScope culture = new("en");
+        using TestHost host = new();
+        PreferencesViewModel sut = NewOn(host);
+
+        sut.FootnoteNoteStyle = "margin: 0;";
+        sut.FootnoteNoteStyle = "fnot-size: 1em;";
+
+        sut.FootnoteNoteStyleError.Should().Be("Invalid style (it will not be saved): unknown property “fnot-size”");
+        sut.FootnoteSeparatorStyleError.Should().BeEmpty();
+        sut.FootnoteSeparatorStyle = "border: none;";
+        sut.ApplyCommand.Execute(null);
+
+        host.Settings.FootnoteStyles.Note.Should().Be("margin: 0;", "the last valid definition is saved");
+        host.Settings.FootnoteStyles.Separator.Should().Be("border: none;", "the other fields are saved as usual");
+        sut.FootnoteNoteStyle.Should().Be("fnot-size: 1em;", "the field keeps what was typed");
     }
 
     [Fact]
@@ -237,7 +255,7 @@ public sealed class PreferencesViewModelTests
         sut.EditionPageShowDate = false;
         sut.EditionPageShowVersion = false;
         sut.EditionPagePosition = EditionPagePosition.Last;
-        host.Settings.EditionPage.Position.Should().Be(EditionPagePosition.Second, "nothing is written before Apply");
+        host.Settings.EditionPage.Position.Should().Be(EditionPagePosition.Second, "nothing is written before Save");
         sut.ApplyCommand.Execute(null);
 
         EditionPageSettings saved = host.Settings.EditionPage;

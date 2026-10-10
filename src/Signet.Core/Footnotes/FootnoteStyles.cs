@@ -2,9 +2,40 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Signet.Core.BookManipulation;
 using Signet.Core.Parsers;
 
 namespace Signet.Core.Footnotes;
+
+/// <summary>What is wrong with a footnote style definition (<see cref="FootnoteStyles.Validate"/>).</summary>
+public enum FootnoteStyleProblem
+{
+    /// <summary>A brace — it would end the rule or open a nested one.</summary>
+    Brace,
+
+    /// <summary>A comment marker.</summary>
+    Comment,
+
+    /// <summary>A declaration without a colon between the property and the value.</summary>
+    MissingColon,
+
+    /// <summary>A declaration running into the next line: a semicolon is missing.</summary>
+    MissingSemicolon,
+
+    /// <summary>Not a property name.</summary>
+    InvalidProperty,
+
+    /// <summary>A property that CSS does not have (the list of Check Book).</summary>
+    UnknownProperty,
+
+    /// <summary>A property without a value.</summary>
+    EmptyValue,
+}
+
+/// <summary>The first problem of a footnote style definition.</summary>
+/// <param name="Problem">What is wrong.</param>
+/// <param name="Detail">Where: the property or the text of the declaration.</param>
+public sealed record FootnoteStyleError(FootnoteStyleProblem Problem, string Detail);
 
 /// <summary>
 /// The CSS of Signet's footnote classes (Preferences → Footnotes): the declarations of each rule, one per line, e.g.
@@ -18,6 +49,8 @@ namespace Signet.Core.Footnotes;
 /// <param name="Separator">The line above the notes at the end of a file (<c>.signet-fn-separator</c>).</param>
 public sealed record FootnoteStyles(string Reference, string Note, string LocalContainer, string GlobalContainer, string Separator)
 {
+    private static readonly Regex PropertyName = new(@"^(?:--|-?[A-Za-z_])[A-Za-z0-9_-]*$", RegexOptions.CultureInvariant);
+
     private static readonly Regex SignetRule = new(
         @"\.signet-(?:fn|footnotes|endnotes)(?![\w-])|\.signet-fn-(?:ref|separator)", RegexOptions.CultureInvariant);
 
@@ -39,16 +72,66 @@ public sealed record FootnoteStyles(string Reference, string Note, string LocalC
         (FootnoteEditor.NoteClass, Note),
     ];
 
+    /// <summary>Whether <paramref name="declarations"/> can be a rule body (<see cref="Validate"/> finds no problem).</summary>
+    public static bool IsValidDeclarations(string declarations) => Validate(declarations) is null;
+
     /// <summary>
-    /// Whether <paramref name="declarations"/> can be a rule body: no braces (they would end the rule or open a
-    /// nested one) and no comment markers.
+    /// The first problem of <paramref name="declarations"/> as a rule body, or <c>null</c> when it is valid (an empty
+    /// one is): declarations <c>property: value</c> separated by semicolons (the last one may lack it), each property a
+    /// known CSS property (a vendor-prefixed or custom one too), no braces and no comments.
     /// </summary>
-    public static bool IsValidDeclarations(string declarations)
+    public static FootnoteStyleError? Validate(string declarations)
     {
         ArgumentNullException.ThrowIfNull(declarations);
-        return declarations.IndexOfAny(['{', '}']) < 0
-            && !declarations.Contains("/*", StringComparison.Ordinal)
-            && !declarations.Contains("*/", StringComparison.Ordinal);
+        if (declarations.IndexOfAny(['{', '}']) is var brace and >= 0)
+        {
+            return new FootnoteStyleError(FootnoteStyleProblem.Brace, declarations[brace].ToString());
+        }
+
+        if (declarations.Contains("/*", StringComparison.Ordinal) || declarations.Contains("*/", StringComparison.Ordinal))
+        {
+            return new FootnoteStyleError(FootnoteStyleProblem.Comment, "/* */");
+        }
+
+        foreach (string chunk in SplitDeclarations(declarations.Replace("\r\n", "\n", StringComparison.Ordinal)))
+        {
+            string declaration = chunk.Trim();
+            if (declaration.Length == 0)
+            {
+                continue;
+            }
+
+            int colon = declaration.IndexOf(':', StringComparison.Ordinal);
+            if (colon < 0)
+            {
+                return new FootnoteStyleError(FootnoteStyleProblem.MissingColon, FirstLine(declaration));
+            }
+
+            string property = declaration[..colon].Trim();
+            string value = declaration[(colon + 1)..].Trim();
+            if (value.Contains('\n', StringComparison.Ordinal))
+            {
+                return new FootnoteStyleError(FootnoteStyleProblem.MissingSemicolon, FirstLine(declaration));
+            }
+
+            if (!PropertyName.IsMatch(property))
+            {
+                return new FootnoteStyleError(FootnoteStyleProblem.InvalidProperty, property);
+            }
+
+            if (!CssPropertyValidator.IsKnownProperty(property.ToLowerInvariant()))
+            {
+                return new FootnoteStyleError(FootnoteStyleProblem.UnknownProperty, property);
+            }
+
+            if (Regex.Replace(value, @"!\s*important\s*$", string.Empty, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)
+                .Trim().Length == 0)
+            {
+                return new FootnoteStyleError(FootnoteStyleProblem.EmptyValue, property);
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -86,6 +169,45 @@ public sealed record FootnoteStyles(string Reference, string Note, string LocalC
 
         return newline == "\n" ? text : text.Replace("\n", newline, StringComparison.Ordinal);
     }
+
+    // The declarations: the text split at the semicolons outside quotes and parentheses (e.g. url("a;b")).
+    private static List<string> SplitDeclarations(string text)
+    {
+        List<string> chunks = new();
+        int start = 0;
+        int depth = 0;
+        char quote = '\0';
+        for (int i = 0; i < text.Length; i++)
+        {
+            char c = text[i];
+            if (quote != '\0')
+            {
+                quote = c == quote ? '\0' : quote;
+            }
+            else if (c is '"' or '\'')
+            {
+                quote = c;
+            }
+            else if (c == '(')
+            {
+                depth++;
+            }
+            else if (c == ')' && depth > 0)
+            {
+                depth--;
+            }
+            else if (c == ';' && depth == 0)
+            {
+                chunks.Add(text[start..i]);
+                start = i + 1;
+            }
+        }
+
+        chunks.Add(text[start..]);
+        return chunks;
+    }
+
+    private static string FirstLine(string text) => text.Split('\n')[0].Trim();
 
     /// <summary>Whether <paramref name="css"/> has a rule for one of Signet's footnote classes.</summary>
     internal static bool HasSignetRule(string css) => SignetRule.IsMatch(css);

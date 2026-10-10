@@ -473,6 +473,48 @@
   <data name="Common_Remove" xml:space="preserve">
     <value>Remove</value>
   </data>
+  <data name="PreferencesWindow_Search" xml:space="preserve">
+    <value>Search settings</value>
+  </data>
+  <data name="PreferencesWindow_UnsavedTitle" xml:space="preserve">
+    <value>Unsaved changes</value>
+  </data>
+  <data name="PreferencesWindow_UnsavedMessage" xml:space="preserve">
+    <value>The settings were changed but not saved. What should happen to the changes?</value>
+  </data>
+  <data name="PreferencesWindow_UnsavedSave" xml:space="preserve">
+    <value>Save and Close</value>
+  </data>
+  <data name="PreferencesWindow_UnsavedDiscard" xml:space="preserve">
+    <value>Discard Changes</value>
+  </data>
+  <data name="PreferencesWindow_UnsavedBack" xml:space="preserve">
+    <value>Back to Editing</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteStyleInvalid" xml:space="preserve">
+    <value>Invalid style (it will not be saved): {0}</value>
+  </data>
+  <data name="FootnoteStyleProblem_Brace" xml:space="preserve">
+    <value>the brace {0} is not allowed</value>
+  </data>
+  <data name="FootnoteStyleProblem_Comment" xml:space="preserve">
+    <value>comments {0} are not allowed</value>
+  </data>
+  <data name="FootnoteStyleProblem_MissingColon" xml:space="preserve">
+    <value>no colon in “{0}”</value>
+  </data>
+  <data name="FootnoteStyleProblem_MissingSemicolon" xml:space="preserve">
+    <value>no semicolon after “{0}”</value>
+  </data>
+  <data name="FootnoteStyleProblem_InvalidProperty" xml:space="preserve">
+    <value>“{0}” is not a property name</value>
+  </data>
+  <data name="FootnoteStyleProblem_UnknownProperty" xml:space="preserve">
+    <value>unknown property “{0}”</value>
+  </data>
+  <data name="FootnoteStyleProblem_EmptyValue" xml:space="preserve">
+    <value>the property “{0}” has no value</value>
+  </data>
   <data name="PreferencesWindow_Title" xml:space="preserve">
     <value>Preferences</value>
   </data>
@@ -480,7 +522,7 @@
     <value>Language</value>
   </data>
   <data name="PreferencesWindow_LanguageRestartNotice" xml:space="preserve">
-    <value>The language changes when you click Save or Apply.</value>
+    <value>The language changes when you click Save.</value>
   </data>
   <data name="PreferencesWindow_Appearance" xml:space="preserve">
     <value>Appearance</value>
@@ -4454,9 +4496,6 @@ Do you want to remove the other assignments?</value>
   <data name="PreferencesWindow_FootnoteStylesReset" xml:space="preserve">
     <value>Restore Defaults</value>
   </data>
-  <data name="PreferencesWindow_FootnoteStylesInvalid" xml:space="preserve">
-    <value>A definition cannot contain braces { } or comments /* */ — such a rule is skipped.</value>
-  </data>
   <data name="PreferencesWindow_EditionPage" xml:space="preserve">
     <value>Edition page</value>
   </data>
@@ -4521,13 +4560,13 @@ Do you want to remove the other assignments?</value>
     <value>Revision</value>
   </data>
   <data name="PreferencesWindow_EditionPageRevisionValue" xml:space="preserve">
-    <value>(save counter, kept in the book)</value>
+    <value>(editing session counter — grows on the first save after opening the book; kept in the book)</value>
   </data>
   <data name="PreferencesWindow_EditionPageDate" xml:space="preserve">
     <value>Save date</value>
   </data>
   <data name="PreferencesWindow_EditionPageDateValue" xml:space="preserve">
-    <value>(date and time of the save, UTC)</value>
+    <value>(date and time of the first save after opening the book, UTC)</value>
   </data>
   <data name="PreferencesWindow_EditionPageFixedNote" xml:space="preserve">
     <value>The labels of the fixed rows follow the book's language. You can change them directly on the edition page in the book, and Signet remembers the change in that book.</value>

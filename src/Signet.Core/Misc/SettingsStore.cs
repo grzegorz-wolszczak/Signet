@@ -1087,12 +1087,48 @@ public sealed class SettingsStore
 
     /// <summary>
     /// The page of the Preferences window that was open when it was last closed (its index), so the window opens on it
-    /// again. Window state, not a preference — written outside the Save / Apply draft.
+    /// again. Window state, not a preference — written outside the Save / Cancel draft.
     /// </summary>
     public int PreferencesPageIndex
     {
         get => Math.Max(0, ReadIntFrom(MainWindowGroup, "preferences_page", 0));
         set => _file.SetRaw(MainWindowGroup, "preferences_page", Math.Max(0, value));
+    }
+
+    /// <summary>
+    /// The heights the user gave the resizable text fields of the Preferences window (field name -&gt; height in
+    /// pixels). Window state, not a preference — written outside the Save / Cancel draft.
+    /// </summary>
+    public IReadOnlyDictionary<string, int> PreferencesFieldHeights
+    {
+        get
+        {
+            Dictionary<string, int> heights = new(StringComparer.Ordinal);
+            if (_file.GetRaw(MainWindowGroup, "preferences_field_heights") is JsonObject map)
+            {
+                foreach ((string name, JsonNode? node) in map)
+                {
+                    if (node is JsonValue value && value.TryGetValue(out int height) && height > 0)
+                    {
+                        heights[name] = height;
+                    }
+                }
+            }
+
+            return heights;
+        }
+
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            JsonObject map = new();
+            foreach ((string name, int height) in value.Where(p => p.Value > 0))
+            {
+                map[name] = height;
+            }
+
+            _file.SetRaw(MainWindowGroup, "preferences_field_heights", map);
+        }
     }
 
     /// <summary>Remembered geometry of the window with the given name (<see langword="null"/> when none).</summary>

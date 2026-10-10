@@ -97,7 +97,7 @@ public sealed class PreferencesSpellcheckTests : IDisposable
         _answers.Enqueue("alice");
         await _vm.AddUserDictionaryCommand.ExecuteAsync(null);
         _vm.UserDictionaries.Single(d => d.Name == "alice").IsEnabled = false;
-        _host.Settings.EnabledUserDictionaries.Should().Contain("alice", "disabling waits for Save / Apply");
+        _host.Settings.EnabledUserDictionaries.Should().Contain("alice", "disabling waits for Save");
 
         _answers.Enqueue("bob");
         await _vm.RenameUserDictionaryCommand.ExecuteAsync(null);

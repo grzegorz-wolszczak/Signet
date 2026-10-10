@@ -11,12 +11,27 @@
         Title="{loc:Loc PreferencesWindow_Title}">
 
   <Window.Styles>
-    <!-- A subtle separation of the tab list (left) from the content (right): the tab strip
-         gets a dimmed background derived from the window background, and the content area gets its own
-         background and a thin border. Without this, in the light theme both parts are white and blend
-         into a single plane. Colors come from DynamicResource, so it also works in the dark theme. -->
-    <Style Selector="TabControl.preferences">
+    <!-- A subtle separation of the section tree (left) from the page (right): the tree panel gets a dimmed
+         background derived from the window background, and the page its own background and a thin border. Without
+         this, in the light theme both parts are white and blend into a single plane. Colors come from
+         DynamicResource, so it also works in the dark theme. -->
+    <Style Selector="Border.sectionPanel">
       <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" />
+      <Setter Property="CornerRadius" Value="4" />
+    </Style>
+    <!-- The pages are the tabs of a TabControl whose tab strip is hidden: the section tree selects them. -->
+    <Style Selector="TabControl.preferences /template/ ItemsPresenter#PART_ItemsPresenter">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <!-- Top-level sections in bold, subsections in the normal weight (as in Rider). -->
+    <Style Selector="TextBlock.topSection">
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+    <!-- Cancel: only a frame, next to the filled (accent) Save button, as in Rider. -->
+    <Style Selector="Button.outline">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
     </Style>
     <Style Selector="TabControl.preferences /template/ ContentPresenter#PART_SelectedContentHost">
       <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}" />
@@ -67,24 +82,54 @@
     </Style>
   </Window.Styles>
 
+  <Window.Resources>
+    <DataTemplate x:Key="PreferencesSectionCellTemplate" x:DataType="vm:PreferencesSectionNode">
+      <TextBlock Text="{Binding Title}" Classes.topSection="{Binding IsTopLevel}" VerticalAlignment="Center" Margin="2,3" />
+    </DataTemplate>
+  </Window.Resources>
+
   <DockPanel Margin="10">
 
-    <!-- Save / Cancel / Apply, as in IntelliJ: changes take effect only on Save or Apply; Cancel, Escape and the
-         window's close button drop them without a question. -->
+    <!-- Save / Cancel, as in Rider: Save (filled, enabled only with changes) writes the changes and keeps the window
+         open; Cancel (a frame) closes it without them. Escape and the window's close button ask what to do with
+         unsaved changes. -->
     <Grid DockPanel.Dock="Bottom" ColumnDefinitions="Auto,*,Auto" Margin="0,8,0,0">
       <Button Grid.Column="0" x:Name="OpenPreferencesLocationButton"
               Content="{loc:Loc PreferencesWindow_OpenPreferencesLocation}" Click="OnOpenPreferencesLocationClicked" />
       <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6">
-        <Button x:Name="SaveButton" Content="{loc:Loc Common_Save}" Click="OnSaveClicked" MinWidth="80"
-                HorizontalContentAlignment="Center" />
-        <Button x:Name="CancelButton" Content="{loc:Loc Common_Cancel}" Click="OnCancelClicked" IsCancel="True" MinWidth="80"
-                HorizontalContentAlignment="Center" />
-        <Button x:Name="ApplyButton" Content="{loc:Loc Common_Apply}" Command="{Binding ApplyCommand}" MinWidth="80"
-                HorizontalContentAlignment="Center" />
+        <Button x:Name="SaveButton" Content="{loc:Loc Common_Save}" Command="{Binding ApplyCommand}" Classes="accent"
+                MinWidth="90" HorizontalContentAlignment="Center" />
+        <Button x:Name="CancelButton" Content="{loc:Loc Common_Cancel}" Click="OnCancelClicked" Classes="outline"
+                MinWidth="90" HorizontalContentAlignment="Center" />
       </StackPanel>
     </Grid>
 
-    <TabControl x:Name="Pages" TabStripPlacement="Left" Classes="preferences">
+    <Grid ColumnDefinitions="230,*" ColumnSpacing="8">
+      <!-- The sections as a tree with a search box: the search keeps the sections whose name or page text
+           matches, and frames the matching controls on the page. -->
+      <Border Grid.Column="0" Classes="sectionPanel">
+        <DockPanel>
+          <TextBox x:Name="SectionSearch" DockPanel.Dock="Top" Margin="6" Watermark="{loc:Loc PreferencesWindow_Search}">
+            <!-- A magnifying glass in front of the text, as in Rider. -->
+            <TextBox.InnerLeftContent>
+              <Path Data="M 6.5,1.5 A 5,5 0 1 1 6.5,11.5 A 5,5 0 1 1 6.5,1.5 M 10.2,10.2 L 14.5,14.5"
+                    Stroke="{DynamicResource SystemControlForegroundBaseMediumBrush}" StrokeThickness="1.5"
+                    Width="16" Height="16" Margin="8,0,0,0" VerticalAlignment="Center" />
+            </TextBox.InnerLeftContent>
+            <TextBox.InnerRightContent>
+              <Button x:Name="ClearSectionSearchButton" Content="✕" Padding="6,2" Background="Transparent"
+                      Focusable="False" Click="OnClearSectionSearchClicked"
+                      IsVisible="{Binding #SectionSearch.Text, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            </TextBox.InnerRightContent>
+          </TextBox>
+          <TreeDataGrid x:Name="SectionTree" ShowColumnHeaders="False" />
+        </DockPanel>
+      </Border>
+
+      <DockPanel Grid.Column="1">
+        <TextBlock x:Name="Breadcrumb" DockPanel.Dock="Top" FontWeight="Bold" FontSize="15" Margin="4,2,0,8" />
+
+    <TabControl x:Name="Pages" Classes="preferences">
 
       <!-- ================================ Language ================================ -->
       <TabItem Header="{loc:Loc PreferencesWindow_Language}">
@@ -522,33 +567,70 @@
           <StackPanel Spacing="10" Margin="8">
             <TextBlock Text="{loc:Loc PreferencesWindow_FootnotesIntro}" TextWrapping="Wrap" Opacity="0.75" />
             <StackPanel Spacing="4">
-              <TextBlock Text="{loc:Loc PreferencesWindow_FootnoteReferenceStyle}" FontWeight="Bold" />
-              <TextBox x:Name="FootnoteReferenceStyleBox" Text="{Binding FootnoteReferenceStyle}" AcceptsReturn="True" TextWrapping="Wrap"
-                       MinHeight="54" FontFamily="Cascadia Code,Consolas,monospace" />
+              <WrapPanel>
+                <TextBlock Text="{loc:Loc PreferencesWindow_FootnoteReferenceStyle}" FontWeight="Bold" Margin="0,0,10,0" />
+                <TextBlock x:Name="FootnoteReferenceStyleError" Text="{Binding FootnoteReferenceStyleError}" Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}" TextWrapping="Wrap"
+                           IsVisible="{Binding FootnoteReferenceStyleError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </WrapPanel>
+              <Grid RowDefinitions="Auto,Auto">
+                <TextBox x:Name="FootnoteReferenceStyleBox" Text="{Binding FootnoteReferenceStyle}" AcceptsReturn="True" TextWrapping="Wrap"
+                         Height="{x:Static views:PreferencesWindow.DefaultFieldHeight}"
+                         FontFamily="Cascadia Code,Consolas,monospace" />
+                <views:HeightResizeGrip Grid.Row="1" Target="{Binding #FootnoteReferenceStyleBox}" />
+              </Grid>
             </StackPanel>
             <StackPanel Spacing="4">
-              <TextBlock Text="{loc:Loc PreferencesWindow_FootnoteNoteStyle}" FontWeight="Bold" />
-              <TextBox x:Name="FootnoteNoteStyleBox" Text="{Binding FootnoteNoteStyle}" AcceptsReturn="True" TextWrapping="Wrap"
-                       MinHeight="54" FontFamily="Cascadia Code,Consolas,monospace" />
+              <WrapPanel>
+                <TextBlock Text="{loc:Loc PreferencesWindow_FootnoteNoteStyle}" FontWeight="Bold" Margin="0,0,10,0" />
+                <TextBlock x:Name="FootnoteNoteStyleError" Text="{Binding FootnoteNoteStyleError}" Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}" TextWrapping="Wrap"
+                           IsVisible="{Binding FootnoteNoteStyleError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </WrapPanel>
+              <Grid RowDefinitions="Auto,Auto">
+                <TextBox x:Name="FootnoteNoteStyleBox" Text="{Binding FootnoteNoteStyle}" AcceptsReturn="True" TextWrapping="Wrap"
+                         Height="{x:Static views:PreferencesWindow.DefaultFieldHeight}"
+                         FontFamily="Cascadia Code,Consolas,monospace" />
+                <views:HeightResizeGrip Grid.Row="1" Target="{Binding #FootnoteNoteStyleBox}" />
+              </Grid>
             </StackPanel>
             <StackPanel Spacing="4">
-              <TextBlock Text="{loc:Loc PreferencesWindow_FootnoteLocalContainerStyle}" FontWeight="Bold" />
-              <TextBox x:Name="FootnoteLocalContainerStyleBox" Text="{Binding FootnoteLocalContainerStyle}" AcceptsReturn="True" TextWrapping="Wrap"
-                       MinHeight="54" FontFamily="Cascadia Code,Consolas,monospace" />
+              <WrapPanel>
+                <TextBlock Text="{loc:Loc PreferencesWindow_FootnoteLocalContainerStyle}" FontWeight="Bold" Margin="0,0,10,0" />
+                <TextBlock x:Name="FootnoteLocalContainerStyleError" Text="{Binding FootnoteLocalContainerStyleError}" Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}" TextWrapping="Wrap"
+                           IsVisible="{Binding FootnoteLocalContainerStyleError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </WrapPanel>
+              <Grid RowDefinitions="Auto,Auto">
+                <TextBox x:Name="FootnoteLocalContainerStyleBox" Text="{Binding FootnoteLocalContainerStyle}" AcceptsReturn="True" TextWrapping="Wrap"
+                         Height="{x:Static views:PreferencesWindow.DefaultFieldHeight}"
+                         FontFamily="Cascadia Code,Consolas,monospace" />
+                <views:HeightResizeGrip Grid.Row="1" Target="{Binding #FootnoteLocalContainerStyleBox}" />
+              </Grid>
             </StackPanel>
             <StackPanel Spacing="4">
-              <TextBlock Text="{loc:Loc PreferencesWindow_FootnoteGlobalContainerStyle}" FontWeight="Bold" />
-              <TextBox x:Name="FootnoteGlobalContainerStyleBox" Text="{Binding FootnoteGlobalContainerStyle}" AcceptsReturn="True" TextWrapping="Wrap"
-                       MinHeight="54" FontFamily="Cascadia Code,Consolas,monospace" />
+              <WrapPanel>
+                <TextBlock Text="{loc:Loc PreferencesWindow_FootnoteGlobalContainerStyle}" FontWeight="Bold" Margin="0,0,10,0" />
+                <TextBlock x:Name="FootnoteGlobalContainerStyleError" Text="{Binding FootnoteGlobalContainerStyleError}" Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}" TextWrapping="Wrap"
+                           IsVisible="{Binding FootnoteGlobalContainerStyleError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </WrapPanel>
+              <Grid RowDefinitions="Auto,Auto">
+                <TextBox x:Name="FootnoteGlobalContainerStyleBox" Text="{Binding FootnoteGlobalContainerStyle}" AcceptsReturn="True" TextWrapping="Wrap"
+                         Height="{x:Static views:PreferencesWindow.DefaultFieldHeight}"
+                         FontFamily="Cascadia Code,Consolas,monospace" />
+                <views:HeightResizeGrip Grid.Row="1" Target="{Binding #FootnoteGlobalContainerStyleBox}" />
+              </Grid>
             </StackPanel>
             <StackPanel Spacing="4">
-              <TextBlock Text="{loc:Loc PreferencesWindow_FootnoteSeparatorStyle}" FontWeight="Bold" />
-              <TextBox x:Name="FootnoteSeparatorStyleBox" Text="{Binding FootnoteSeparatorStyle}" AcceptsReturn="True" TextWrapping="Wrap"
-                       MinHeight="54" FontFamily="Cascadia Code,Consolas,monospace" />
+              <WrapPanel>
+                <TextBlock Text="{loc:Loc PreferencesWindow_FootnoteSeparatorStyle}" FontWeight="Bold" Margin="0,0,10,0" />
+                <TextBlock x:Name="FootnoteSeparatorStyleError" Text="{Binding FootnoteSeparatorStyleError}" Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}" TextWrapping="Wrap"
+                           IsVisible="{Binding FootnoteSeparatorStyleError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </WrapPanel>
+              <Grid RowDefinitions="Auto,Auto">
+                <TextBox x:Name="FootnoteSeparatorStyleBox" Text="{Binding FootnoteSeparatorStyle}" AcceptsReturn="True" TextWrapping="Wrap"
+                         Height="{x:Static views:PreferencesWindow.DefaultFieldHeight}"
+                         FontFamily="Cascadia Code,Consolas,monospace" />
+                <views:HeightResizeGrip Grid.Row="1" Target="{Binding #FootnoteSeparatorStyleBox}" />
+              </Grid>
             </StackPanel>
-            <TextBlock Text="{Binding FootnoteStylesError}"
-                       Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}" TextWrapping="Wrap"
-                       IsVisible="{Binding FootnoteStylesError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
             <Button x:Name="ResetFootnoteStylesButton" Content="{loc:Loc PreferencesWindow_FootnoteStylesReset}"
                     Command="{Binding ResetFootnoteStylesCommand}" />
           </StackPanel>
@@ -811,5 +893,7 @@
       </TabItem>
 
     </TabControl>
+      </DockPanel>
+    </Grid>
   </DockPanel>
 </Window>

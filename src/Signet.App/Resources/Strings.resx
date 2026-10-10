@@ -473,6 +473,48 @@
   <data name="Common_Remove" xml:space="preserve">
     <value>Usuń</value>
   </data>
+  <data name="PreferencesWindow_Search" xml:space="preserve">
+    <value>Szukaj w ustawieniach</value>
+  </data>
+  <data name="PreferencesWindow_UnsavedTitle" xml:space="preserve">
+    <value>Niezapisane zmiany</value>
+  </data>
+  <data name="PreferencesWindow_UnsavedMessage" xml:space="preserve">
+    <value>Ustawienia zostały zmienione, ale nie zapisane. Co z nimi zrobić?</value>
+  </data>
+  <data name="PreferencesWindow_UnsavedSave" xml:space="preserve">
+    <value>Zapisz i zamknij</value>
+  </data>
+  <data name="PreferencesWindow_UnsavedDiscard" xml:space="preserve">
+    <value>Odrzuć zmiany</value>
+  </data>
+  <data name="PreferencesWindow_UnsavedBack" xml:space="preserve">
+    <value>Wróć do edycji</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteStyleInvalid" xml:space="preserve">
+    <value>Niepoprawny styl (nie zostanie zapisany): {0}</value>
+  </data>
+  <data name="FootnoteStyleProblem_Brace" xml:space="preserve">
+    <value>niedozwolony nawias {0}</value>
+  </data>
+  <data name="FootnoteStyleProblem_Comment" xml:space="preserve">
+    <value>komentarze {0} są niedozwolone</value>
+  </data>
+  <data name="FootnoteStyleProblem_MissingColon" xml:space="preserve">
+    <value>brak dwukropka w „{0}”</value>
+  </data>
+  <data name="FootnoteStyleProblem_MissingSemicolon" xml:space="preserve">
+    <value>brak średnika po „{0}”</value>
+  </data>
+  <data name="FootnoteStyleProblem_InvalidProperty" xml:space="preserve">
+    <value>„{0}” nie jest nazwą właściwości</value>
+  </data>
+  <data name="FootnoteStyleProblem_UnknownProperty" xml:space="preserve">
+    <value>nieznana właściwość „{0}”</value>
+  </data>
+  <data name="FootnoteStyleProblem_EmptyValue" xml:space="preserve">
+    <value>brak wartości właściwości „{0}”</value>
+  </data>
   <data name="PreferencesWindow_Title" xml:space="preserve">
     <value>Preferencje</value>
   </data>
@@ -480,7 +522,7 @@
     <value>Język</value>
   </data>
   <data name="PreferencesWindow_LanguageRestartNotice" xml:space="preserve">
-    <value>Język zmieni się po kliknięciu „Zapisz” lub „Zastosuj”.</value>
+    <value>Język zmieni się po kliknięciu „Zapisz”.</value>
   </data>
   <data name="PreferencesWindow_Appearance" xml:space="preserve">
     <value>Wygląd</value>
@@ -4454,9 +4496,6 @@ Czy usunąć pozostałe przypisania?</value>
   <data name="PreferencesWindow_FootnoteStylesReset" xml:space="preserve">
     <value>Przywróć domyślne</value>
   </data>
-  <data name="PreferencesWindow_FootnoteStylesInvalid" xml:space="preserve">
-    <value>Definicja nie może zawierać nawiasów { } ani komentarzy /* */ — taka reguła zostanie pominięta.</value>
-  </data>
   <data name="PreferencesWindow_EditionPage" xml:space="preserve">
     <value>Strona wydania</value>
   </data>
@@ -4521,13 +4560,13 @@ Czy usunąć pozostałe przypisania?</value>
     <value>Rewizja</value>
   </data>
   <data name="PreferencesWindow_EditionPageRevisionValue" xml:space="preserve">
-    <value>(licznik zapisów, pamiętany w książce)</value>
+    <value>(licznik sesji edycji — rośnie przy pierwszym zapisie po otwarciu książki; pamiętany w książce)</value>
   </data>
   <data name="PreferencesWindow_EditionPageDate" xml:space="preserve">
     <value>Data zapisu</value>
   </data>
   <data name="PreferencesWindow_EditionPageDateValue" xml:space="preserve">
-    <value>(data i godzina zapisu, UTC)</value>
+    <value>(data i godzina pierwszego zapisu po otwarciu książki, UTC)</value>
   </data>
   <data name="PreferencesWindow_EditionPageFixedNote" xml:space="preserve">
     <value>Etykiety stałych wierszy zależą od języka książki. Możesz je zmienić bezpośrednio na stronie wydania w książce, a Signet zapamięta zmianę w tej książce.</value>

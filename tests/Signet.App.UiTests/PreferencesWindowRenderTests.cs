@@ -98,12 +98,21 @@ public sealed class PreferencesWindowRenderTests
         window.Close();
     }
 
+    // Clicks the answer of the "unsaved changes" question the window shows over itself.
+    private static void Answer(PreferencesWindow window, string answerKey)
+    {
+        ChoiceWindow prompt = window.OwnedWindows.OfType<ChoiceWindow>().Single();
+        prompt.GetVisualDescendants().OfType<Button>().Single(b => Equals(b.Content, Strings.Get(answerKey)))
+            .RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+    }
+
     /// <summary>
-    /// Save / Cancel / Apply: Escape closes the window like Cancel, without a question and without writing the
-    /// changes; Apply writes them and keeps the window open.
+    /// Save (filled) is enabled only with changes, writes them and keeps the window open; Cancel (a frame) closes it
+    /// without the later changes and without a question. There is no Apply button any more.
     /// </summary>
     [AvaloniaFact]
-    public void Escape_closes_the_window_without_saving_and_Apply_saves_without_closing()
+    public void Save_writes_the_changes_and_keeps_the_window_open_and_Cancel_drops_them()
     {
         PreferencesWindow window = BuildWindow(out SettingsStore settings);
         var vm = (PreferencesViewModel)window.DataContext!;
@@ -112,29 +121,54 @@ public sealed class PreferencesWindowRenderTests
         window.Show();
         Dispatcher.UIThread.RunJobs();
         bool before = settings.SpellCheck;
-        Button apply = window.FindControl<Button>("ApplyButton")!;
-        apply.IsEffectivelyEnabled.Should().BeFalse("nothing has changed yet");
+        Button save = window.FindControl<Button>("SaveButton")!;
+        Button cancel = window.FindControl<Button>("CancelButton")!;
+        window.FindControl<Button>("ApplyButton").Should().BeNull();
+        save.Classes.Should().Contain("accent");
+        cancel.Classes.Should().Contain("outline");
+        save.IsEffectivelyEnabled.Should().BeFalse("nothing has changed yet");
 
         vm.SpellCheckEnabled = !before;
         Dispatcher.UIThread.RunJobs();
-        apply.IsEffectivelyEnabled.Should().BeTrue();
-
-        apply.Command!.Execute(null);
+        save.IsEffectivelyEnabled.Should().BeTrue();
+        save.Command!.Execute(null);
         Dispatcher.UIThread.RunJobs();
+
         settings.SpellCheck.Should().Be(!before);
-        closed.Should().BeFalse();
+        closed.Should().BeFalse("Save keeps the window open");
+        save.IsEffectivelyEnabled.Should().BeFalse("everything is saved");
 
         vm.SpellCheckEnabled = before;
+        cancel.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+
+        closed.Should().BeTrue();
+        window.OwnedWindows.Should().BeEmpty("Cancel does not ask");
+        settings.SpellCheck.Should().Be(!before, "Cancel drops the change made after Save");
+    }
+
+    /// <summary>Escape without changes closes the window right away.</summary>
+    [AvaloniaFact]
+    public void Escape_without_changes_closes_the_window()
+    {
+        PreferencesWindow window = BuildWindow();
+        bool closed = false;
+        window.Closed += (_, _) => closed = true;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
         window.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
         Dispatcher.UIThread.RunJobs();
 
         closed.Should().BeTrue();
-        settings.SpellCheck.Should().Be(!before, "Escape drops the change made after Apply");
     }
 
-    /// <summary>Save writes the changes and closes the window.</summary>
+    /// <summary>
+    /// Escape (or the close button) with unsaved changes asks: "Back to Editing" keeps the window, "Discard" closes it
+    /// without saving, "Save and Close" saves and closes.
+    /// </summary>
     [AvaloniaFact]
-    public void Save_writes_the_changes_and_closes_the_window()
+    public void Closing_with_unsaved_changes_asks_what_to_do_with_them()
     {
         PreferencesWindow window = BuildWindow(out SettingsStore settings);
         var vm = (PreferencesViewModel)window.DataContext!;
@@ -143,22 +177,151 @@ public sealed class PreferencesWindowRenderTests
         window.Show();
         Dispatcher.UIThread.RunJobs();
         bool before = settings.SpellCheck;
-
         vm.SpellCheckEnabled = !before;
-        window.FindControl<Button>("SaveButton")!.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
-        Dispatcher.UIThread.RunJobs();
 
-        settings.SpellCheck.Should().Be(!before);
+        window.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
+        Dispatcher.UIThread.RunJobs();
+        Answer(window, "PreferencesWindow_UnsavedBack");
+        closed.Should().BeFalse();
+        vm.HasChanges.Should().BeTrue();
+
+        window.Close();
+        Dispatcher.UIThread.RunJobs();
+        Answer(window, "PreferencesWindow_UnsavedSave");
+
         closed.Should().BeTrue();
+        settings.SpellCheck.Should().Be(!before, "Save and Close saved the change");
+    }
+
+    /// <summary>"Discard Changes" closes the window without saving.</summary>
+    [AvaloniaFact]
+    public void Discarding_unsaved_changes_closes_the_window_without_saving()
+    {
+        PreferencesWindow window = BuildWindow(out SettingsStore settings);
+        var vm = (PreferencesViewModel)window.DataContext!;
+        bool closed = false;
+        window.Closed += (_, _) => closed = true;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        bool before = settings.SpellCheck;
+        vm.SpellCheckEnabled = !before;
+
+        window.Close();
+        Dispatcher.UIThread.RunJobs();
+        Answer(window, "PreferencesWindow_UnsavedDiscard");
+
+        closed.Should().BeTrue();
+        settings.SpellCheck.Should().Be(before);
     }
 
     /// <summary>
-    /// Regression: the tab content area must have its own background and border, and the tab strip a dimmed
-    /// background from TabControl. The test also guards against a rename of a template part in Avalonia: if
-    /// PART_SelectedContentHost disappeared, the style would silently stop applying.
+    /// The sections are a tree (every page is a top-level section, in bold) and selecting one shows its page and its
+    /// path above it; the TabControl's own tab strip is hidden.
     /// </summary>
     [AvaloniaFact]
-    public void Tab_strip_and_content_area_are_visually_separated()
+    public void The_sections_are_a_tree_that_selects_the_page_and_shows_its_path()
+    {
+        PreferencesWindow window = BuildWindow();
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
+
+        window.Sections.Roots.Select(n => n.Title)
+            .Should().Equal(tabs.Items.OfType<TabItem>().Select(t => (string)t.Header!));
+        window.Sections.Roots.Should().OnlyContain(n => n.IsTopLevel);
+        tabs.GetVisualDescendants().OfType<TabItem>().Should().NotContain(t => t.IsEffectivelyVisible, "the tree replaces the tab strip");
+        window.GetVisualDescendants().OfType<TextBlock>().Where(t => t.Classes.Contains("topSection"))
+            .Should().NotBeEmpty().And.OnlyContain(t => t.FontWeight == FontWeight.Bold);
+
+        PreferencesSectionNode spelling = window.Sections.Roots.Single(n => n.Title == Strings.Get("PreferencesWindow_Spellcheck"));
+        window.Sections.Selected = spelling;
+        Dispatcher.UIThread.RunJobs();
+
+        tabs.SelectedIndex.Should().Be(spelling.PageIndex);
+        window.FindControl<TextBlock>("Breadcrumb")!.Text.Should().Be(spelling.Title);
+        window.Close();
+    }
+
+    /// <summary>
+    /// The search keeps the sections whose page has the text (not only their names) and frames the matching
+    /// controls of the shown page, as Rider does.
+    /// </summary>
+    [AvaloniaFact]
+    public void Searching_filters_the_sections_by_page_text_and_frames_the_matches()
+    {
+        PreferencesWindow window = BuildWindow();
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        string label = Strings.Get("PreferencesWindow_EditionPageAddToToc");
+
+        window.FindControl<TextBox>("SectionSearch")!.Text = label;
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        window.Sections.Roots.Where(n => n.IsVisible).Select(n => n.Title)
+            .Should().Equal(Strings.Get("PreferencesWindow_EditionPage"));
+        window.Sections.Selected!.Title.Should().Be(Strings.Get("PreferencesWindow_EditionPage"));
+        CheckBox match = window.GetVisualDescendants().OfType<CheckBox>().Single(c => Equals(c.Content, label));
+        Control frame = Avalonia.Controls.Primitives.AdornerLayer.GetAdorner(match)!;
+        frame.Should().NotBeNull("the matching control is framed");
+        // Regression: the adorner layer clips an adorner to its control by default, which hid the whole frame.
+        Avalonia.Controls.Primitives.AdornerLayer.GetIsClipEnabled(frame).Should().BeFalse();
+        Avalonia.Controls.Primitives.AdornerLayer.GetAdornerLayer(match)!.Children.Should().Contain(frame, "the frame is shown");
+        ((Border)frame).BorderBrush.Should().NotBeNull();
+
+        window.FindControl<TextBox>("SectionSearch")!.Text = string.Empty;
+        Dispatcher.UIThread.RunJobs();
+        window.Sections.Roots.Should().OnlyContain(n => n.IsVisible);
+        Avalonia.Controls.Primitives.AdornerLayer.GetAdorner(match).Should().BeNull();
+        window.Close();
+    }
+
+    /// <summary>
+    /// Footnote styles: an invalid definition shows its problem next to the label; the fields have a fixed height with a
+    /// grip in the corner that changes it, and the heights can be remembered and restored.
+    /// </summary>
+    [AvaloniaFact]
+    public void Footnote_style_fields_show_their_error_and_resize_with_the_grip()
+    {
+        PreferencesWindow window = BuildWindow();
+        var vm = (PreferencesViewModel)window.DataContext!;
+        window.Show();
+        TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
+        SelectTab(tabs, "PreferencesWindow_Footnotes");
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+
+        TextBlock error = window.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Name == "FootnoteNoteStyleError");
+        error.IsVisible.Should().BeFalse();
+        vm.FootnoteNoteStyle = "fnot-size: 1em;";
+        Dispatcher.UIThread.RunJobs();
+        error.IsVisible.Should().BeTrue();
+        error.Text.Should().Be(vm.FootnoteNoteStyleError).And.NotBeEmpty();
+
+        TextBox box = window.GetVisualDescendants().OfType<TextBox>().Single(t => t.Name == "FootnoteNoteStyleBox");
+        box.Height.Should().Be(PreferencesWindow.DefaultFieldHeight);
+        HeightResizeGrip grip = window.GetVisualDescendants().OfType<HeightResizeGrip>().Single(g => g.Target == box);
+        grip.ResizeBy(40);
+        box.Height.Should().Be(PreferencesWindow.DefaultFieldHeight + 40);
+        grip.ResizeBy(-1000);
+        box.Height.Should().Be(grip.MinTargetHeight, "not below the minimum");
+
+        grip.ResizeBy(60);
+        window.FieldHeights.Should().Contain("FootnoteNoteStyleBox", (int)box.Height);
+        window.FieldHeights = new System.Collections.Generic.Dictionary<string, int> { ["FootnoteNoteStyleBox"] = 200 };
+        box.Height.Should().Be(200);
+        window.Close();
+    }
+
+    /// <summary>
+    /// Regression: the page must have its own background and border, and the section tree panel a dimmed background.
+    /// The test also guards against a rename of a template part in Avalonia: if PART_SelectedContentHost disappeared,
+    /// the style would silently stop applying.
+    /// </summary>
+    [AvaloniaFact]
+    public void Section_tree_and_page_are_visually_separated()
     {
         PreferencesWindow window = BuildWindow();
         window.Show();
@@ -166,17 +329,17 @@ public sealed class PreferencesWindowRenderTests
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
 
-        TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
-        tabs.Background.Should().NotBeNull("the tab strip must differ from the content");
+        Border panel = window.GetVisualDescendants().OfType<Border>().First(b => b.Classes.Contains("sectionPanel"));
+        panel.Background.Should().NotBeNull("the section tree must differ from the page");
 
         ContentPresenter content = window.GetVisualDescendants()
             .OfType<ContentPresenter>()
-            .Single(c => c.Name == "PART_SelectedContentHost");
+            .First(c => c.Name == "PART_SelectedContentHost");
 
         content.BorderThickness.Should().Be(new Avalonia.Thickness(1));
         content.BorderBrush.Should().NotBeNull();
         content.Background.Should().NotBeNull();
-        content.Background.Should().NotBeSameAs(tabs.Background, "the content has a different background than the tab strip");
+        content.Background.Should().NotBeSameAs(panel.Background, "the page has a different background than the tree");
     }
 
     /// <summary>

@@ -1036,18 +1036,20 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             window.Height = Math.Max(geometry.Height, window.MinHeight);
         }
 
-        // The window opens on the page it was closed on.
+        // The window opens on the page it was closed on, with the field heights the user set.
         window.SelectedPageIndex = settings.PreferencesPageIndex;
+        window.FieldHeights = settings.PreferencesFieldHeights;
 
         window.Closing += (_, _) =>
         {
             settings.SetWindowGeometry(PreferencesWindowGeometryKey, new WindowGeometry(
                 0, 0, (int)window.Width, (int)window.Height, Maximized: false, FullScreen: false));
             settings.PreferencesPageIndex = window.SelectedPageIndex;
+            settings.PreferencesFieldHeights = window.FieldHeights;
             settings.Save();
         };
 
-        // Save / Apply commit the changes (the language, theme etc. switch live then); refresh what depends on them.
+        // Save commits the changes (the language, theme etc. switch live then); refresh what depends on them.
         preferences.Applied += (_, _) => _boundViewModel?.ApplyPreferencesChanges();
 
         // Every setting changed while the dialog is open goes to the debug log as "before → after".

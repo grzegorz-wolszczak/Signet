@@ -25,12 +25,12 @@ namespace Signet.App.ViewModels;
 /// Shortcuts, Preserve Entities and Spellcheck panels.
 /// </summary>
 /// <remarks>
-/// <para><b>Save / Cancel / Apply, as in IntelliJ:</b> the window edits a draft of the settings
+/// <para><b>Save / Cancel, as in Rider:</b> the window edits a draft of the settings
 /// (<see cref="SettingsStore.CreateDraft"/>) and of the keymap (<see cref="KeyboardShortcutManager.CreateDraft"/>);
-/// nothing changes in the application until <see cref="ApplyCommand"/> (the Save and Apply buttons) commits the
+/// nothing changes in the application until <see cref="ApplyCommand"/> (the Save button, which keeps the window open) commits the
 /// draft and applies its effects (theme, UI language, UI font, warnings, spelling dictionaries, shortcuts, debug
-/// logging) — see <see cref="Apply"/>. Closing the window without it (Cancel, Escape, the window's close button)
-/// drops the draft, without a question. The only exception are the user dictionary operations (add / rename / copy
+/// logging) — see <see cref="Apply"/>. Cancel closes the window and drops the draft; Escape and the window's close
+/// button first ask whether to save it, drop it or go back. The only exception are the user dictionary operations (add / rename / copy
 /// / remove a dictionary, edit its words): they are file operations and happen at once; their effect on the
 /// dictionary settings is mirrored into the draft.</para>
 /// <para><b>"Language" panel</b> — the interface switches live once the choice is applied.</para>
@@ -212,6 +212,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _footnoteLocalContainerStyle = footnoteStyles.LocalContainer;
         _footnoteGlobalContainerStyle = footnoteStyles.GlobalContainer;
         _footnoteSeparatorStyle = footnoteStyles.Separator;
+        _savedFootnoteStyles = footnoteStyles;
 
         // Loading the pages writes some initial values to the draft (e.g. the default user dictionary): not changes.
         _settings.RebaseDraft();
@@ -225,7 +226,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
     /// <summary>Raised after <see cref="Apply"/> committed changes (the main window refreshes what depends on them).</summary>
     public event EventHandler? Applied;
 
-    /// <summary>Whether the window holds changes not applied yet (the Apply button is enabled then).</summary>
+    /// <summary>Whether the window holds changes not saved yet (the Save button is enabled then).</summary>
     public bool HasChanges => _appSettings.HasDraftChanges(_settings);
 
     /// <summary>
@@ -1330,7 +1331,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
     private bool CanRemoveEditionPage() => _editionPageHost?.EditionPageBookPath is not null;
 
-    /// <summary>Removes the edition page from the open book right away (not part of Save / Apply).</summary>
+    /// <summary>Removes the edition page from the open book right away (not part of Save / Cancel).</summary>
     [RelayCommand(CanExecute = nameof(CanRemoveEditionPage))]
     private void RemoveEditionPage()
     {
@@ -1358,40 +1359,57 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
     // ---------------------------------------------------------------- Footnotes
 
+    // The definitions written to the settings: a field with an invalid definition keeps its last valid one.
+    private FootnoteStyles _savedFootnoteStyles;
+
     /// <summary>The declarations of <c>.signet-fn-ref</c> (the reference in the text).</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(FootnoteStylesError))]
+    [NotifyPropertyChangedFor(nameof(FootnoteReferenceStyleError))]
     private string _footnoteReferenceStyle;
 
     /// <summary>The declarations of <c>.signet-fn</c> (a note).</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(FootnoteStylesError))]
+    [NotifyPropertyChangedFor(nameof(FootnoteNoteStyleError))]
     private string _footnoteNoteStyle;
 
     /// <summary>The declarations of <c>.signet-footnotes</c> (the notes at the end of a file).</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(FootnoteStylesError))]
+    [NotifyPropertyChangedFor(nameof(FootnoteLocalContainerStyleError))]
     private string _footnoteLocalContainerStyle;
 
     /// <summary>The declarations of <c>.signet-endnotes</c> (the notes of the notes file).</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(FootnoteStylesError))]
+    [NotifyPropertyChangedFor(nameof(FootnoteGlobalContainerStyleError))]
     private string _footnoteGlobalContainerStyle;
 
     /// <summary>The declarations of <c>.signet-fn-separator</c> (the line above the notes at the end of a file).</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(FootnoteStylesError))]
+    [NotifyPropertyChangedFor(nameof(FootnoteSeparatorStyleError))]
     private string _footnoteSeparatorStyle;
 
+    /// <summary>Why the reference definition is invalid (shown next to its label), or <c>""</c>.</summary>
+    public string FootnoteReferenceStyleError => FootnoteStyleError(FootnoteReferenceStyle);
+
+    /// <summary>Why the note definition is invalid, or <c>""</c>.</summary>
+    public string FootnoteNoteStyleError => FootnoteStyleError(FootnoteNoteStyle);
+
+    /// <summary>Why the local notes definition is invalid, or <c>""</c>.</summary>
+    public string FootnoteLocalContainerStyleError => FootnoteStyleError(FootnoteLocalContainerStyle);
+
+    /// <summary>Why the global notes definition is invalid, or <c>""</c>.</summary>
+    public string FootnoteGlobalContainerStyleError => FootnoteStyleError(FootnoteGlobalContainerStyle);
+
+    /// <summary>Why the separator definition is invalid, or <c>""</c>.</summary>
+    public string FootnoteSeparatorStyleError => FootnoteStyleError(FootnoteSeparatorStyle);
+
     /// <summary>
-    /// Why some definition cannot be used (braces or comment markers), or an empty string. Such a definition is
-    /// skipped when the rules are written.
+    /// The message for an invalid definition: "Invalid style (it will not be saved): …" with the first problem; <c>""</c>
+    /// for a valid one.
     /// </summary>
-    public string FootnoteStylesError =>
-        new[] { FootnoteReferenceStyle, FootnoteNoteStyle, FootnoteLocalContainerStyle, FootnoteGlobalContainerStyle, FootnoteSeparatorStyle }
-            .All(FootnoteStyles.IsValidDeclarations)
-            ? string.Empty
-            : Strings.Get("PreferencesWindow_FootnoteStylesInvalid");
+    public static string FootnoteStyleError(string declarations) =>
+        FootnoteStyles.Validate(declarations ?? string.Empty) is { } error
+            ? Strings.Format("PreferencesWindow_FootnoteStyleInvalid", Strings.Format("FootnoteStyleProblem_" + error.Problem, error.Detail))
+            : string.Empty;
 
     /// <summary>Restores the default definitions of all footnote classes.</summary>
     [RelayCommand]
@@ -1415,9 +1433,20 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
     partial void OnFootnoteSeparatorStyleChanged(string value) => PersistFootnoteStyles();
 
-    private void PersistFootnoteStyles() =>
-        _settings.FootnoteStyles = new FootnoteStyles(
-            FootnoteReferenceStyle, FootnoteNoteStyle, FootnoteLocalContainerStyle, FootnoteGlobalContainerStyle, FootnoteSeparatorStyle);
+    // Only valid definitions reach the settings; an invalid field keeps its last valid definition there.
+    private void PersistFootnoteStyles()
+    {
+        static string Valid(string typed, string saved) => FootnoteStyles.IsValidDeclarations(typed) ? typed : saved;
+
+        FootnoteStyles saved = _savedFootnoteStyles;
+        _savedFootnoteStyles = new FootnoteStyles(
+            Valid(FootnoteReferenceStyle, saved.Reference),
+            Valid(FootnoteNoteStyle, saved.Note),
+            Valid(FootnoteLocalContainerStyle, saved.LocalContainer),
+            Valid(FootnoteGlobalContainerStyle, saved.GlobalContainer),
+            Valid(FootnoteSeparatorStyle, saved.Separator));
+        _settings.FootnoteStyles = _savedFootnoteStyles;
+    }
 
     partial void OnEditionPageEnabledChanged(bool value) => PersistEditionPage();
 
