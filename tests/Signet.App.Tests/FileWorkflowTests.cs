@@ -167,11 +167,22 @@ public sealed class FileWorkflowTests
         await h.Workflow.SaveAsAsync();
         await h.Workflow.SaveAsync();
 
-        h.Workspace.RefreshAfterBookEditCalls.Should().Be(2, "the views show the refreshed page after every save");
+        h.Workspace.RefreshAfterBookEditCalls.Should().Be(1, "only the first save of the session writes the page");
+        using (Book saved = new ImportEpub(target).GetBook())
+        {
+            HtmlResource page = EditionPage.Find(saved)!;
+            page.Should().NotBeNull();
+            page.GetText().Should().Contain("GreatWorksPublishing").And.Contain("<td>1</td>");
+        }
+
+        // Opening the book again starts a new session: its first save raises the revision, the next one does not.
+        (await h.Workflow.LoadFileAsync(target)).Should().BeTrue();
+        await h.Workflow.SaveAsync();
+        await h.Workflow.SaveAsync();
+
+        h.Workspace.RefreshAfterBookEditCalls.Should().Be(2);
         using Book reopened = new ImportEpub(target).GetBook();
-        HtmlResource page = EditionPage.Find(reopened)!;
-        page.Should().NotBeNull();
-        page.GetText().Should().Contain("GreatWorksPublishing").And.Contain("<td>2</td>");
+        EditionPage.Find(reopened)!.GetText().Should().Contain("<td>2</td>");
     }
 
     [Fact]

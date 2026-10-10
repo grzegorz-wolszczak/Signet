@@ -20,7 +20,8 @@ public sealed record EditionStampResult(HtmlResource Page, bool Created, int Rev
 
 /// <summary>
 /// The edition page: a page with a table of fields (the user's fields from <see cref="EditionPageSettings"/>, the
-/// revision and the save date) that Signet adds to the book and refreshes on every save, so the copy on a reader can
+/// revision and the save date) that Signet adds to the book and refreshes once per editing session (on the first save
+/// after the book was opened), so the copy on a reader can
 /// be told apart from an older one.
 /// </summary>
 /// <remarks>

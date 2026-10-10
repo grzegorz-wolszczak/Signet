@@ -390,9 +390,10 @@ public readonly record struct EditionPageField(string Key, string Value, bool Sh
 
 /// <summary>
 /// The edition page (Preferences → Edition page): a page with a table of fields that Signet adds to the book and
-/// updates on every save, so the copy on a reader can be told apart from an older one. Global — not per book.
+/// updates on the first save after the book was opened, so the copy on a reader can be told apart from an older one.
+/// Global — not per book.
 /// </summary>
-/// <param name="Enabled">Whether the page is added/updated on every save.</param>
+/// <param name="Enabled">Whether the page is added/updated (on the first save after opening the book).</param>
 /// <param name="Position">Where in the spine the page goes.</param>
 /// <param name="Fields">The user fields, in table order (before the fixed rows).</param>
 /// <param name="ShowProgram">Whether the program row ("Signet") is written.</param>

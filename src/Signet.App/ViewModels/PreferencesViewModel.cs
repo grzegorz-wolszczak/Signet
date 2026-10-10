@@ -1258,7 +1258,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
     public static IReadOnlyList<HeadingLevelOption> EditionPageHeadingLevels { get; } =
         Enumerable.Range(1, 6).Select(l => new HeadingLevelOption(l, "h" + l.ToString(System.Globalization.CultureInfo.InvariantCulture))).ToList();
 
-    /// <summary>Whether the edition page is added/updated on every save (enables the other options).</summary>
+    /// <summary>Whether the edition page is added/updated on the first save after opening a book (enables the other options).</summary>
     [ObservableProperty]
     private bool _editionPageEnabled;
 

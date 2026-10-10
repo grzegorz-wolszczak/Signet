@@ -4428,7 +4428,7 @@ Czy usunąć pozostałe przypisania?</value>
     <value>Strona wydania</value>
   </data>
   <data name="PreferencesWindow_EditionPageIntro" xml:space="preserve">
-    <value>Strona z tabelą informacji o wydaniu (np. rewizja i data zapisu), którą Signet dodaje do książki i aktualizuje przy każdym zapisie. Pozwala sprawdzić na czytniku, czy to najnowsza wersja pliku. Ustawienia są wspólne dla wszystkich książek.</value>
+    <value>Strona z tabelą informacji o wydaniu (np. rewizja i data zapisu), którą Signet dodaje do książki i aktualizuje przy pierwszym zapisie po otwarciu książki (kolejne zapisy w tej sesji jej nie zmieniają, więc rewizja liczy sesje edycji). Pozwala sprawdzić na czytniku, czy to najnowsza wersja pliku. Ustawienia są wspólne dla wszystkich książek.</value>
   </data>
   <data name="PreferencesWindow_EditionPageRemove" xml:space="preserve">
     <value>Usuń stronę wydania z otwartej książki</value>
@@ -4443,7 +4443,7 @@ Czy usunąć pozostałe przypisania?</value>
     <value>Strona wydania w otwartej książce: {0}</value>
   </data>
   <data name="PreferencesWindow_EditionPageEnabled" xml:space="preserve">
-    <value>Dodawaj i aktualizuj stronę wydania przy każdym zapisie</value>
+    <value>Dodawaj i aktualizuj stronę wydania przy pierwszym zapisie po otwarciu książki</value>
   </data>
   <data name="PreferencesWindow_EditionPagePosition" xml:space="preserve">
     <value>Położenie strony</value>

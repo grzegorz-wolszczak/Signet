@@ -97,6 +97,9 @@ public sealed class FileWorkflow
     private string _currentFilePath = string.Empty;
     private string _saveACopyFilename = string.Empty;
 
+    // The book whose edition page was already written in this session (null until the first save after opening).
+    private Book? _editionStampedBook;
+
     /// <summary>Creates the workflow.</summary>
     public FileWorkflow(
         SettingsStore settings,
@@ -476,12 +479,14 @@ public sealed class FileWorkflow
         }
     }
 
-    // Preferences → Edition page: the page is created or refreshed right before every save (also "Save a Copy").
-    // A failure does not stop the save — the book is saved without the refreshed page.
+    // Preferences → Edition page: the page is created or refreshed once per session — right before the first save after
+    // the book was opened or created (also "Save a Copy"); later saves leave it as it is, so the revision counts editing
+    // sessions, not saves. A failure does not stop the save — the book is saved without the refreshed page (and the next
+    // save tries again).
     private bool StampEditionPage(Book book)
     {
         EditionPageSettings settings = _settings.EditionPage;
-        if (!settings.Enabled)
+        if (!settings.Enabled || ReferenceEquals(book, _editionStampedBook))
         {
             return false;
         }
@@ -491,6 +496,7 @@ public sealed class FileWorkflow
             EditionStampResult result = EditionPage.Stamp(
                 book, settings, DateTime.UtcNow, CultureInfo.CurrentUICulture.TwoLetterISOLanguageName, AppVersion.Text);
             DebugLog.Write("File", $"edition page {(result.Created ? "created" : "updated")}, revision {result.Revision}");
+            _editionStampedBook = book;
             return true;
         }
         catch (Exception ex) when (ex is IOException or InvalidOperationException or ArgumentException or UnauthorizedAccessException)
