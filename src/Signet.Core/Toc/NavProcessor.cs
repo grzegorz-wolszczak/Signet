@@ -64,11 +64,15 @@ public sealed class NavProcessor
     /// Creates a processor for a nav resource. If the resource is empty, fills it with the default template
     /// (the <c>toc</c> + <c>landmarks</c> sections); otherwise reads the language from <c>&lt;html&gt;</c>.
     /// </summary>
-    public NavProcessor(HtmlResource navResource)
+    /// <param name="navResource">The nav document.</param>
+    /// <param name="templateLanguage">
+    /// The language of the default template written into an empty resource; <c>null</c> = <see cref="DefaultLanguage"/>.
+    /// </param>
+    public NavProcessor(HtmlResource navResource, string? templateLanguage = null)
     {
         ArgumentNullException.ThrowIfNull(navResource);
         _nav = navResource;
-        _language = DefaultLanguage;
+        _language = string.IsNullOrEmpty(templateLanguage) ? DefaultLanguage : templateLanguage;
 
         string source = _nav.GetText();
         if (string.IsNullOrEmpty(source))

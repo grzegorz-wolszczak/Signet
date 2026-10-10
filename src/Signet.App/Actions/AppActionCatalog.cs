@@ -161,6 +161,7 @@ public static class AppActionCatalog
         new("MainWindow.CustomLayout", "Create a Custom Empty Epub", "", null, "Tools"),
         new("MainWindow.UpdateManifestMediaTypes", "Update OPF Manifest Media Types", "", null, "Tools"),
         new("MainWindow.UpdateManifestProperties", "&Update Manifest Properties", "", null, "Tools"),
+        new("MainWindow.UpgradeToEpub3", "Upgrade to EPUB &3", "", null, "Tools"),
         new("MainWindow.NCXGuideFromNav", "Generate &NCX/Guide for epub2 e-readers", "", null, "Tools"),
         new("MainWindow.RemoveNCXGuide", "Remove the NCX and Guide", "", null, "Tools"),
         new("MainWindow.RemoveNavFromGuide", "Remove Nav from Reading Order", "", null, "Tools"),

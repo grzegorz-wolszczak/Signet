@@ -148,6 +148,7 @@ public static class AppActionIds
     public const string UpdateManifestMediaTypes = "MainWindow.UpdateManifestMediaTypes";
     public const string UpdateManifestProperties = "MainWindow.UpdateManifestProperties";
     public const string CustomLayout = "MainWindow.CustomLayout";
+    public const string UpgradeToEpub3 = "MainWindow.UpgradeToEpub3";
     public const string NcxGuideFromNav = "MainWindow.NCXGuideFromNav";
     public const string RemoveNcxGuide = "MainWindow.RemoveNCXGuide";
     public const string RemoveNavFromSpine = "MainWindow.RemoveNavFromGuide";

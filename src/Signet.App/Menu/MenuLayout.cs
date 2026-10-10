@@ -175,6 +175,8 @@ public static class MenuLayout
             MenuNode.Sub("Re&format HTML",
                 A("MainWindow.MendPrettifyHTML"), A("MainWindow.MendHTML")),
             MenuNode.Sub("Epub&3 Tools",
+                A("MainWindow.UpgradeToEpub3"),
+                Sep,
                 A("MainWindow.UpdateManifestProperties"), A("MainWindow.NCXGuideFromNav"),
                 A("MainWindow.RemoveNCXGuide"), A("MainWindow.RemoveNavFromGuide"),
                 A("MainWindow.AddNavToSpine"), A("MainWindow.AddNavToSpineNonLinear")),

@@ -69,6 +69,41 @@ public sealed class CheckpointsTests
     }
 
     [Fact]
+    public void Upgrade_to_epub3_converts_the_book_and_reverting_brings_back_epub2()
+    {
+        using TempDir temp = new();
+        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub2Minimal, temp);
+        MainWindowViewModel vm = new();
+        try
+        {
+            vm.LoadBook(new ImportEpub(epub).GetBook(), epub);
+            IBookWorkspace workspace = vm;
+
+            vm.Actions.Require(AppActionIds.UpgradeToEpub3).Execute(null);
+
+            workspace.CurrentBook!.IsEpub3.Should().BeTrue();
+            workspace.CurrentBook.GetNavResource().Should().NotBeNull();
+            vm.WindowTitle.Should().Contain("epub3.0");
+            vm.CheckpointHistory.UndoMessage.Should().Be(Strings.Format(
+                "Checkpoint_Before", Strings.Get("Action_MainWindow_UpgradeToEpub3").Replace("&", string.Empty, StringComparison.Ordinal)));
+
+            // The revert removes the new nav, so it is confirmed first.
+            CheckpointRevertRequest? confirmation = null;
+            vm.RevertConfirmationRequested += (_, request) => confirmation = request;
+            vm.Actions.Require(AppActionIds.RevertToBefore).Execute(null);
+            confirmation!.Rows.Should().ContainSingle(r => r.Text.Contains("nav.xhtml", StringComparison.Ordinal));
+            vm.RevertToBeforeCheckpoint();
+
+            workspace.CurrentBook!.IsEpub3.Should().BeFalse();
+            workspace.CurrentBook.GetNcx().Should().NotBeNull();
+        }
+        finally
+        {
+            vm.CheckpointHistory.Dispose();
+        }
+    }
+
+    [Fact]
     public void Checkpoint_actions_are_disabled_without_a_book()
     {
         MainWindowViewModel vm = new();

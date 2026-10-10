@@ -1878,6 +1878,9 @@ Czy chcesz zapisać zmiany?</value>
   <data name="Action_MainWindow_UpdateManifestProperties" xml:space="preserve">
     <value>&amp;Zaktualizuj właściwości manifestu</value>
   </data>
+  <data name="Action_MainWindow_UpgradeToEpub3" xml:space="preserve">
+    <value>Konwertuj do EPUB &amp;3</value>
+  </data>
   <data name="Action_MainWindow_NCXGuideFromNav" xml:space="preserve">
     <value>Generuj &amp;NCX/Guide dla czytników EPUB 2</value>
   </data>
@@ -2402,6 +2405,12 @@ Czy chcesz zapisać zmiany?</value>
   </data>
   <data name="Common_Unknown" xml:space="preserve">
     <value>Nieznany</value>
+  </data>
+  <data name="Status_UpgradedToEpub3" xml:space="preserve">
+    <value>Przekonwertowano książkę do EPUB 3. Nowy plik NAV ma {0} wpisów spisu treści i {1} punktów orientacyjnych, DOCTYPE zmieniono w {2} plikach. Konwersję można cofnąć w panelu Checkpoints.</value>
+  </data>
+  <data name="Status_AlreadyEpub3" xml:space="preserve">
+    <value>Książka jest już w formacie EPUB 3.</value>
   </data>
   <data name="Status_NcxGuideGenerated" xml:space="preserve">
     <value>Wygenerowano NCX i Guide.</value>

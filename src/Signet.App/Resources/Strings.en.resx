@@ -1878,6 +1878,9 @@ Do you want to save the changes?</value>
   <data name="Action_MainWindow_UpdateManifestProperties" xml:space="preserve">
     <value>&amp;Update Manifest Properties</value>
   </data>
+  <data name="Action_MainWindow_UpgradeToEpub3" xml:space="preserve">
+    <value>Upgrade to EPUB &amp;3</value>
+  </data>
   <data name="Action_MainWindow_NCXGuideFromNav" xml:space="preserve">
     <value>Generate &amp;NCX/Guide for epub2 e-readers</value>
   </data>
@@ -2402,6 +2405,12 @@ Do you want to save the changes?</value>
   </data>
   <data name="Common_Unknown" xml:space="preserve">
     <value>Unknown</value>
+  </data>
+  <data name="Status_UpgradedToEpub3" xml:space="preserve">
+    <value>Upgraded the book to EPUB 3. The new nav has {0} table of contents entries and {1} landmarks; the DOCTYPE changed in {2} files. The Checkpoints panel can undo the upgrade.</value>
+  </data>
+  <data name="Status_AlreadyEpub3" xml:space="preserve">
+    <value>The book already is EPUB 3.</value>
   </data>
   <data name="Status_NcxGuideGenerated" xml:space="preserve">
     <value>NCX and Guide generated.</value>

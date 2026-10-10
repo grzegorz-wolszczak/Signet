@@ -402,6 +402,7 @@ public sealed partial class MainWindowViewModel
         // Well-Formed Check EPUB, Validate Stylesheets With W3C, Epub3 Tools.
         _actions.SetHandler(AppActionIds.WellFormedCheckEpub, WellFormedCheckEpub);
         _actions.SetHandler(AppActionIds.ValidateStylesheetsWithW3C, ValidateStylesheetsWithW3C);
+        _actions.SetHandler(AppActionIds.UpgradeToEpub3, UpgradeToEpub3);
         _actions.SetHandler(AppActionIds.NcxGuideFromNav, GenerateNcxGuideFromNav);
         _actions.SetHandler(AppActionIds.RemoveNcxGuide, RemoveNcxGuideFromEpub3);
         _actions.SetHandler(AppActionIds.UpdateManifestMediaTypes, UpdateManifestMediaTypes);
@@ -2640,6 +2641,36 @@ public sealed partial class MainWindowViewModel
             System.IO.File.WriteAllText(tempPath, html);
             _externalFileOpener(tempPath);
         }
+    }
+
+    /// <summary>
+    /// "Upgrade to EPUB 3" — converts an EPUB 2 book in place (<see cref="EpubUpgrader"/>): a nav from the NCX and the
+    /// guide, EPUB 3 metadata and manifest properties, HTML5 DOCTYPEs. The NCX and the guide stay. An automatic
+    /// checkpoint before the conversion makes it undoable.
+    /// </summary>
+    private void UpgradeToEpub3()
+    {
+        if (_currentBook is null)
+        {
+            return;
+        }
+
+        if (_currentBook.IsEpub3)
+        {
+            _statusBar.ShowMessage(Strings.Get("Status_AlreadyEpub3"), TimeSpan.FromSeconds(4));
+            return;
+        }
+
+        _tabManager.SaveAllTabs();
+        CheckpointBeforeAction(AppActionIds.UpgradeToEpub3);
+        EpubUpgradeResult result = EpubUpgrader.UpgradeToEpub3(_currentBook)!;
+
+        RefreshAfterMaintenanceOperation();
+        _toc.Refresh();
+        RefreshTitle();
+        _statusBar.ShowMessage(
+            Strings.Format("Status_UpgradedToEpub3", result.TocEntries, result.Landmarks, result.Doctypes),
+            TimeSpan.FromSeconds(6));
     }
 
     /// <summary>
