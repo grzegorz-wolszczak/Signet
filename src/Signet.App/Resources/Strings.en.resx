@@ -4424,6 +4424,33 @@ Do you want to remove the other assignments?</value>
   <data name="Status_EditionPageRemoved" xml:space="preserve">
     <value>Edition page removed.</value>
   </data>
+  <data name="PreferencesWindow_Footnotes" xml:space="preserve">
+    <value>Footnotes</value>
+  </data>
+  <data name="PreferencesWindow_FootnotesIntro" xml:space="preserve">
+    <value>The look of the footnotes Signet adds. On every footnote operation (add, remove, move, renumber) Signet writes these rules to the stylesheet of the file with the footnotes (to a &lt;style&gt; element when the file has none): a missing rule is added, a different one is overwritten. Enter CSS declarations, one per line; an empty box leaves its rule unchanged.</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteReferenceStyle" xml:space="preserve">
+    <value>Reference in the text (.signet-fn-ref)</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteNoteStyle" xml:space="preserve">
+    <value>Footnote text (.signet-fn)</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteLocalContainerStyle" xml:space="preserve">
+    <value>Footnotes at the end of a file, local (.signet-footnotes)</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteGlobalContainerStyle" xml:space="preserve">
+    <value>Footnotes in Przypisy.xhtml, global (.signet-endnotes)</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteSeparatorStyle" xml:space="preserve">
+    <value>Line above the local footnotes (.signet-fn-separator)</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteStylesReset" xml:space="preserve">
+    <value>Restore Defaults</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteStylesInvalid" xml:space="preserve">
+    <value>A definition cannot contain braces { } or comments /* */ — such a rule is skipped.</value>
+  </data>
   <data name="PreferencesWindow_EditionPage" xml:space="preserve">
     <value>Edition page</value>
   </data>

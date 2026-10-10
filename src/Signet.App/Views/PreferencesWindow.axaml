@@ -515,8 +515,48 @@
         </ScrollViewer>
       </TabItem>
 
+      <!-- =============================== Footnotes =============================== -->
+      <!-- The CSS of Signet's footnote classes (FootnoteStyles), written to the book on every footnote operation. -->
+      <TabItem Header="{loc:Loc PreferencesWindow_Footnotes}">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="8">
+            <TextBlock Text="{loc:Loc PreferencesWindow_FootnotesIntro}" TextWrapping="Wrap" Opacity="0.75" />
+            <StackPanel Spacing="4">
+              <TextBlock Text="{loc:Loc PreferencesWindow_FootnoteReferenceStyle}" FontWeight="Bold" />
+              <TextBox x:Name="FootnoteReferenceStyleBox" Text="{Binding FootnoteReferenceStyle}" AcceptsReturn="True" TextWrapping="Wrap"
+                       MinHeight="54" FontFamily="Cascadia Code,Consolas,monospace" />
+            </StackPanel>
+            <StackPanel Spacing="4">
+              <TextBlock Text="{loc:Loc PreferencesWindow_FootnoteNoteStyle}" FontWeight="Bold" />
+              <TextBox x:Name="FootnoteNoteStyleBox" Text="{Binding FootnoteNoteStyle}" AcceptsReturn="True" TextWrapping="Wrap"
+                       MinHeight="54" FontFamily="Cascadia Code,Consolas,monospace" />
+            </StackPanel>
+            <StackPanel Spacing="4">
+              <TextBlock Text="{loc:Loc PreferencesWindow_FootnoteLocalContainerStyle}" FontWeight="Bold" />
+              <TextBox x:Name="FootnoteLocalContainerStyleBox" Text="{Binding FootnoteLocalContainerStyle}" AcceptsReturn="True" TextWrapping="Wrap"
+                       MinHeight="54" FontFamily="Cascadia Code,Consolas,monospace" />
+            </StackPanel>
+            <StackPanel Spacing="4">
+              <TextBlock Text="{loc:Loc PreferencesWindow_FootnoteGlobalContainerStyle}" FontWeight="Bold" />
+              <TextBox x:Name="FootnoteGlobalContainerStyleBox" Text="{Binding FootnoteGlobalContainerStyle}" AcceptsReturn="True" TextWrapping="Wrap"
+                       MinHeight="54" FontFamily="Cascadia Code,Consolas,monospace" />
+            </StackPanel>
+            <StackPanel Spacing="4">
+              <TextBlock Text="{loc:Loc PreferencesWindow_FootnoteSeparatorStyle}" FontWeight="Bold" />
+              <TextBox x:Name="FootnoteSeparatorStyleBox" Text="{Binding FootnoteSeparatorStyle}" AcceptsReturn="True" TextWrapping="Wrap"
+                       MinHeight="54" FontFamily="Cascadia Code,Consolas,monospace" />
+            </StackPanel>
+            <TextBlock Text="{Binding FootnoteStylesError}"
+                       Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}" TextWrapping="Wrap"
+                       IsVisible="{Binding FootnoteStylesError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            <Button x:Name="ResetFootnoteStylesButton" Content="{loc:Loc PreferencesWindow_FootnoteStylesReset}"
+                    Command="{Binding ResetFootnoteStylesCommand}" />
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
       <!-- =============================== Edition page =============================== -->
-      <!-- The page Signet adds to the book on every save (EditionPage): removing it from the open book right away,
+      <!-- The page Signet adds to the book on the first save after opening it (EditionPage): removing it from the open book right away,
            then the settings (shared by all books), enabled only while the page is switched on. -->
       <TabItem Header="{loc:Loc PreferencesWindow_EditionPage}">
         <ScrollViewer>

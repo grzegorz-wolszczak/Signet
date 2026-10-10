@@ -13,6 +13,7 @@ using Signet.App.Infrastructure;
 using Signet.App.Input;
 using Signet.App.Resources;
 using Signet.App.Services;
+using Signet.Core.Footnotes;
 using Signet.Core.MainUI;
 using Signet.Core.Misc;
 using Signet.Core.Spellcheck;
@@ -203,6 +204,14 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _editionPageShowRevision = edition.ShowRevision;
         _editionPageShowDate = edition.ShowDate;
         EditionPageFields = new ObservableCollection<EditionPageFieldRow>(edition.Fields.Select(CreateEditionPageFieldRow));
+
+        // ---- Footnotes ----
+        FootnoteStyles footnoteStyles = _settings.FootnoteStyles;
+        _footnoteReferenceStyle = footnoteStyles.Reference;
+        _footnoteNoteStyle = footnoteStyles.Note;
+        _footnoteLocalContainerStyle = footnoteStyles.LocalContainer;
+        _footnoteGlobalContainerStyle = footnoteStyles.GlobalContainer;
+        _footnoteSeparatorStyle = footnoteStyles.Separator;
 
         // Loading the pages writes some initial values to the draft (e.g. the default user dictionary): not changes.
         _settings.RebaseDraft();
@@ -1346,6 +1355,69 @@ public sealed partial class PreferencesViewModel : ObservableObject
         EditionPageFields.Remove(row);
         PersistEditionPage();
     }
+
+    // ---------------------------------------------------------------- Footnotes
+
+    /// <summary>The declarations of <c>.signet-fn-ref</c> (the reference in the text).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FootnoteStylesError))]
+    private string _footnoteReferenceStyle;
+
+    /// <summary>The declarations of <c>.signet-fn</c> (a note).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FootnoteStylesError))]
+    private string _footnoteNoteStyle;
+
+    /// <summary>The declarations of <c>.signet-footnotes</c> (the notes at the end of a file).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FootnoteStylesError))]
+    private string _footnoteLocalContainerStyle;
+
+    /// <summary>The declarations of <c>.signet-endnotes</c> (the notes of the notes file).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FootnoteStylesError))]
+    private string _footnoteGlobalContainerStyle;
+
+    /// <summary>The declarations of <c>.signet-fn-separator</c> (the line above the notes at the end of a file).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FootnoteStylesError))]
+    private string _footnoteSeparatorStyle;
+
+    /// <summary>
+    /// Why some definition cannot be used (braces or comment markers), or an empty string. Such a definition is
+    /// skipped when the rules are written.
+    /// </summary>
+    public string FootnoteStylesError =>
+        new[] { FootnoteReferenceStyle, FootnoteNoteStyle, FootnoteLocalContainerStyle, FootnoteGlobalContainerStyle, FootnoteSeparatorStyle }
+            .All(FootnoteStyles.IsValidDeclarations)
+            ? string.Empty
+            : Strings.Get("PreferencesWindow_FootnoteStylesInvalid");
+
+    /// <summary>Restores the default definitions of all footnote classes.</summary>
+    [RelayCommand]
+    private void ResetFootnoteStyles()
+    {
+        FootnoteStyles d = FootnoteStyles.Default;
+        FootnoteReferenceStyle = d.Reference;
+        FootnoteNoteStyle = d.Note;
+        FootnoteLocalContainerStyle = d.LocalContainer;
+        FootnoteGlobalContainerStyle = d.GlobalContainer;
+        FootnoteSeparatorStyle = d.Separator;
+    }
+
+    partial void OnFootnoteReferenceStyleChanged(string value) => PersistFootnoteStyles();
+
+    partial void OnFootnoteNoteStyleChanged(string value) => PersistFootnoteStyles();
+
+    partial void OnFootnoteLocalContainerStyleChanged(string value) => PersistFootnoteStyles();
+
+    partial void OnFootnoteGlobalContainerStyleChanged(string value) => PersistFootnoteStyles();
+
+    partial void OnFootnoteSeparatorStyleChanged(string value) => PersistFootnoteStyles();
+
+    private void PersistFootnoteStyles() =>
+        _settings.FootnoteStyles = new FootnoteStyles(
+            FootnoteReferenceStyle, FootnoteNoteStyle, FootnoteLocalContainerStyle, FootnoteGlobalContainerStyle, FootnoteSeparatorStyle);
 
     partial void OnEditionPageEnabledChanged(bool value) => PersistEditionPage();
 

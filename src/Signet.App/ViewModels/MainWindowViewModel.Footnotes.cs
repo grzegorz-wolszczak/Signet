@@ -56,7 +56,8 @@ public sealed partial class MainWindowViewModel
         _settings.FootnoteGlobalPlacement = placement == FootnotePlacement.Global;
         _tabManager.SaveAllTabs();
         bool checkpoint = AddCheckpointBefore(Strings.Get("CheckpointOp_AddFootnote"));
-        FootnoteError error = FootnoteEditor.Add(_currentBook, html, offset, content, placement, out Footnote? added);
+        FootnoteError error = FootnoteEditor.Add(
+            _currentBook, html, offset, content, placement, out Footnote? added, _settings.FootnoteStyles);
         if (error != FootnoteError.None)
         {
             if (checkpoint)
@@ -98,7 +99,7 @@ public sealed partial class MainWindowViewModel
         (HtmlResource File, int Offset)? reference = footnote is null ? null : FootnoteEditor.Locate(footnote, FootnoteSide.Reference);
         (HtmlResource File, int Offset)? place = footnote is null ? null : FootnoteEditor.Locate(footnote, hit.Side);
         bool checkpoint = AddCheckpointBefore(Strings.Get("CheckpointOp_RemoveFootnote"));
-        if (footnote is null || !FootnoteEditor.Remove(_currentBook, footnote))
+        if (footnote is null || !FootnoteEditor.Remove(_currentBook, footnote, _settings.FootnoteStyles))
         {
             if (checkpoint)
             {
@@ -134,7 +135,7 @@ public sealed partial class MainWindowViewModel
         _tabManager.SaveAllTabs();
         Footnote? footnote = FootnoteEditor.Refresh(_currentBook, hit.Footnote);
         bool checkpoint = AddCheckpointBefore(Strings.Get("CheckpointOp_MoveFootnote"));
-        if (footnote is null || !FootnoteEditor.Move(_currentBook, footnote, out Footnote? moved))
+        if (footnote is null || !FootnoteEditor.Move(_currentBook, footnote, out Footnote? moved, _settings.FootnoteStyles))
         {
             if (checkpoint)
             {
@@ -185,7 +186,7 @@ public sealed partial class MainWindowViewModel
         CodeTabViewModel? tab = ActiveCodeTab;
         int caret = tab?.CaretOffset ?? -1;
         bool checkpoint = AddCheckpointBefore(Strings.Get("CheckpointOp_RenumberFootnotes"));
-        if (!FootnoteEditor.Renumber(_currentBook))
+        if (!FootnoteEditor.Renumber(_currentBook, _settings.FootnoteStyles))
         {
             if (checkpoint)
             {

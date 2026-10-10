@@ -26,6 +26,10 @@ public sealed class FootnoteEditorTests
         return (book, html);
     }
 
+    // The markup of the body (the head holds the footnote rules).
+    private static string BodyOf(HtmlResource html) =>
+        html.GetText()[html.GetText().IndexOf("<body>", StringComparison.Ordinal)..];
+
     // The offset right after the given text.
     private static int After(HtmlResource html, string text) =>
         html.GetText().IndexOf(text, StringComparison.Ordinal) + text.Length;
@@ -128,14 +132,12 @@ public sealed class FootnoteEditorTests
         using (book)
         {
             FootnoteEditor.Add(book, html, After(html, "First"), "note", FootnotePlacement.Local);
-            string withStyle = html.GetText();
+            BodyOf(html).Should().Contain("signet-footnotes");
 
             FootnoteEditor.Remove(book, FootnoteScanner.Scan(book).Single()).Should().BeTrue();
 
-            string text = html.GetText();
-            text.Should().NotContain("signet-fn\"").And.NotContain("signet-footnotes").And.NotContain("signet-fn-separator");
-            text.Should().Contain("<body>\n" + Body + "\n</body>");
-            withStyle.Should().Contain("signet-footnotes");
+            BodyOf(html).Should().Be("<body>\n" + Body + "\n</body>\n</html>");
+            html.GetText().Should().Contain(".signet-footnotes {", "the rules stay in the book");
         }
     }
 
@@ -151,7 +153,7 @@ public sealed class FootnoteEditorTests
 
             HtmlResource notes = FootnoteEditor.FindGlobalFile(book)!;
             notes.GetText().Should().Contain("epub:type=\"endnote\" id=\"en-1\"").And.Contain("moving note");
-            html.GetText().Should().NotContain("signet-footnotes").And.Contain("#en-1\" id=\"en-1-ref\">[1]</a>");
+            BodyOf(html).Should().NotContain("signet-footnotes").And.Contain("#en-1\" id=\"en-1-ref\">[1]</a>");
             FootnoteScanner.Scan(book).Single().Placement.Should().Be(FootnotePlacement.Global);
             ShouldBeConsistent(book);
 
@@ -303,8 +305,46 @@ public sealed class FootnoteEditorTests
             FootnoteEditor.Add(book, html, After(html, "First"), "note", FootnotePlacement.Local);
             FootnoteEditor.Add(book, html, After(html, "Second"), "note 2", FootnotePlacement.Local);
 
-            css.GetText().Should().Be("p { margin: 0; }\n\n.signet-fn-ref {\n  vertical-align: super;\n  font-size: smaller;\n}\n");
+            css.GetText().Should().Be("p { margin: 0; }\n\n" + FootnoteStyles.Default.ApplyTo(string.Empty));
+            css.GetText().Should().Contain(".signet-fn-ref {\n  vertical-align: super;\n  font-size: smaller;\n  line-height: normal;\n}\n");
             html.GetText().Should().NotContain("<style");
+        }
+    }
+
+    [Fact]
+    public void Every_footnote_operation_keeps_the_rules_equal_to_the_styles()
+    {
+        (Book book, HtmlResource html) = NewBook();
+        using (book)
+        {
+            CssResource css = book.CreateEmptyCssFile();
+            html.SetText(Xhtml(Body, "\n<link href=\"" + Core.BookPath.Relative(html.BookPath, css.BookPath) + "\" rel=\"stylesheet\" type=\"text/css\"/>"));
+            FootnoteStyles first = FootnoteStyles.Default with { Note = "color: blue;" };
+            FootnoteEditor.Add(book, html, After(html, "First"), "note", FootnotePlacement.Local, out _, first);
+            css.GetText().Should().Contain(".signet-fn {\n  color: blue;\n}");
+
+            FootnoteEditor.Renumber(book, first).Should().BeFalse("everything is up to date");
+            FootnoteEditor.Renumber(book, first with { Note = "color: green;" }).Should().BeTrue();
+
+            css.GetText().Should().Contain(".signet-fn {\n  color: green;\n}").And.NotContain("blue");
+        }
+    }
+
+    [Fact]
+    public void The_notes_file_links_the_stylesheet_of_the_reference()
+    {
+        (Book book, HtmlResource html) = NewBook();
+        using (book)
+        {
+            CssResource css = book.CreateEmptyCssFile();
+            html.SetText(Xhtml(Body, "\n<link href=\"" + Core.BookPath.Relative(html.BookPath, css.BookPath) + "\" rel=\"stylesheet\" type=\"text/css\"/>"));
+
+            FootnoteEditor.Add(book, html, After(html, "First"), "note", FootnotePlacement.Global);
+
+            HtmlResource notes = FootnoteEditor.FindGlobalFile(book)!;
+            notes.GetLinkedStylesheets().Should().Equal(css.BookPath);
+            notes.GetText().Should().NotContain("<style", "the rules are in the linked stylesheet");
+            css.GetText().Should().Contain(".signet-endnotes {");
         }
     }
 

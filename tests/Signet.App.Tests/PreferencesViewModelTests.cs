@@ -186,6 +186,33 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
+    public void Footnote_styles_start_from_settings_and_changes_persist_on_apply()
+    {
+        using TestHost host = new();
+        host.Settings.FootnoteStyles = Signet.Core.Footnotes.FootnoteStyles.Default with { Note = "color: red;" };
+        PreferencesViewModel sut = NewOn(host);
+        sut.FootnoteNoteStyle.Should().Be("color: red;");
+
+        sut.FootnoteSeparatorStyle = "border: none;";
+        sut.FootnoteReferenceStyle = "x: 1; }";
+        sut.FootnoteStylesError.Should().NotBeEmpty();
+        sut.FootnoteReferenceStyle = "vertical-align: super;";
+        sut.FootnoteStylesError.Should().BeEmpty();
+        sut.ApplyCommand.Execute(null);
+
+        host.Settings.FootnoteStyles.Should().Be(Signet.Core.Footnotes.FootnoteStyles.Default with
+        {
+            Note = "color: red;",
+            Separator = "border: none;",
+            Reference = "vertical-align: super;",
+        });
+
+        sut.ResetFootnoteStylesCommand.Execute(null);
+        sut.ApplyCommand.Execute(null);
+        host.Settings.FootnoteStyles.Should().Be(Signet.Core.Footnotes.FootnoteStyles.Default);
+    }
+
+    [Fact]
     public void Edition_page_fields_start_from_settings_and_changes_persist_on_apply()
     {
         using TestHost host = new();

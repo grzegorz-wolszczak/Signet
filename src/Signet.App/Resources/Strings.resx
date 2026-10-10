@@ -4424,6 +4424,33 @@ Czy usunąć pozostałe przypisania?</value>
   <data name="Status_EditionPageRemoved" xml:space="preserve">
     <value>Usunięto stronę wydania.</value>
   </data>
+  <data name="PreferencesWindow_Footnotes" xml:space="preserve">
+    <value>Przypisy</value>
+  </data>
+  <data name="PreferencesWindow_FootnotesIntro" xml:space="preserve">
+    <value>Wygląd przypisów dodawanych przez Signet. Przy każdej operacji na przypisach (dodanie, usunięcie, przeniesienie, przenumerowanie) Signet zapisuje te reguły do arkusza stylów pliku z przypisami (gdy plik nie ma arkusza — do elementu &lt;style&gt;): brakującą regułę dodaje, inną nadpisuje. Wpisz deklaracje CSS, po jednej w wierszu; puste pole = regułę zostawia bez zmian.</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteReferenceStyle" xml:space="preserve">
+    <value>Odnośnik w tekście (.signet-fn-ref)</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteNoteStyle" xml:space="preserve">
+    <value>Treść przypisu (.signet-fn)</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteLocalContainerStyle" xml:space="preserve">
+    <value>Przypisy na końcu pliku, lokalne (.signet-footnotes)</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteGlobalContainerStyle" xml:space="preserve">
+    <value>Przypisy w pliku Przypisy.xhtml, globalne (.signet-endnotes)</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteSeparatorStyle" xml:space="preserve">
+    <value>Linia nad przypisami lokalnymi (.signet-fn-separator)</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteStylesReset" xml:space="preserve">
+    <value>Przywróć domyślne</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteStylesInvalid" xml:space="preserve">
+    <value>Definicja nie może zawierać nawiasów { } ani komentarzy /* */ — taka reguła zostanie pominięta.</value>
+  </data>
   <data name="PreferencesWindow_EditionPage" xml:space="preserve">
     <value>Strona wydania</value>
   </data>

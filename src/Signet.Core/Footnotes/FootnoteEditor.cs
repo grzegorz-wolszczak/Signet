@@ -46,9 +46,9 @@ public sealed record FootnoteHit(Footnote Footnote, FootnoteSide Side);
 /// </summary>
 /// <remarks>
 /// <para>
-/// Signet's footnotes follow one template. The reference is a link styled as a superscript by the
-/// <c>.signet-fn-ref</c> rule (added to the file's first stylesheet, or a <c>&lt;style&gt;</c> element when it has
-/// none): <c>&lt;a class="signet-fn-ref" epub:type="noteref" href="#fn-1" id="fn-1-ref"&gt;[1]&lt;/a&gt;</c>. The note:
+/// Signet's footnotes follow one template, styled by the rules of its classes (<see cref="FootnoteStyles"/>, kept up
+/// to date by <see cref="Renumber"/> in the file's stylesheet or a <c>&lt;style&gt;</c> element). The reference:
+/// <c>&lt;a class="signet-fn-ref" epub:type="noteref" href="#fn-1" id="fn-1-ref"&gt;[1]&lt;/a&gt;</c>. The note:
 /// <c>&lt;aside class="signet-fn" epub:type="footnote" id="fn-1"&gt;&lt;p&gt;&lt;a href="#fn-1-ref"&gt;1.&lt;/a&gt; text&lt;/p&gt;&lt;/aside&gt;</c>.
 /// Local notes go to <c>&lt;hr class="signet-fn-separator"/&gt;</c> + <c>&lt;section class="signet-footnotes"&gt;</c>
 /// at the end of the file's body; global ones (endnotes, ids <c>en-N</c>) to <c>&lt;section class="signet-endnotes"&gt;</c>
@@ -85,7 +85,8 @@ public static class FootnoteEditor
     /// <summary>The class of the line above the local notes.</summary>
     public const string SeparatorClass = "signet-fn-separator";
 
-    private const string ReferenceStyle = ".signet-fn-ref {\n  vertical-align: super;\n  font-size: smaller;\n}\n";
+    private static readonly Regex StyleElement = new(
+        @"(<style\b[^>]*>)(.*?)</style>", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
     private static readonly Regex SignetId = new(@"^(fn|en)-(\d+)$", RegexOptions.CultureInvariant);
 
@@ -232,7 +233,8 @@ public static class FootnoteEditor
     /// <paramref name="added"/> is the new footnote after the renumbering (<c>null</c> when it was not added).
     /// </summary>
     public static FootnoteError Add(
-        Book book, HtmlResource html, int offset, string content, FootnotePlacement placement, out Footnote? added)
+        Book book, HtmlResource html, int offset, string content, FootnotePlacement placement, out Footnote? added,
+        FootnoteStyles? styles = null)
     {
         added = null;
         ArgumentNullException.ThrowIfNull(book);
@@ -250,7 +252,7 @@ public static class FootnoteEditor
         }
 
         bool epub3 = book.IsEpub3;
-        HtmlResource noteFile = placement == FootnotePlacement.Local ? html : GetOrCreateGlobalFile(book);
+        HtmlResource noteFile = placement == FootnotePlacement.Local ? html : GetOrCreateGlobalFile(book, html);
 
         // Temporary ids: the renumbering right after gives the final ones.
         string noteId = "fn-new-" + Ulid.NewUlid().ToString().ToLowerInvariant();
@@ -265,17 +267,16 @@ public static class FootnoteEditor
             + Href(noteFile, html, referenceId) + "\">0.</a> " + content.Trim() + "</p></" + tag + ">";
         InsertNote(noteFile, note, placement, epub3);
 
-        EnsureReferenceStyle(book, html);
         int index = FootnoteScanner.Scan(book).ToList()
             .FindIndex(f => ReferenceEquals(f.ReferenceFile, html) && f.ReferenceId == referenceId);
-        Renumber(book);
+        Renumber(book, styles);
         added = Rescan(book, index);
         book.Modified = true;
         return FootnoteError.None;
     }
 
     /// <summary>Removes the reference and the note of <paramref name="footnote"/> and renumbers the footnotes.</summary>
-    public static bool Remove(Book book, Footnote footnote)
+    public static bool Remove(Book book, Footnote footnote, FootnoteStyles? styles = null)
     {
         ArgumentNullException.ThrowIfNull(book);
         ArgumentNullException.ThrowIfNull(footnote);
@@ -304,7 +305,7 @@ public static class FootnoteEditor
         }
 
         RemoveEmptyContainer(book, footnote.NoteFile);
-        Renumber(book);
+        Renumber(book, styles);
         book.Modified = true;
         return true;
     }
@@ -319,7 +320,7 @@ public static class FootnoteEditor
     /// Moves a footnote like <see cref="Move(Book, Footnote)"/>; <paramref name="moved"/> is the footnote after the
     /// renumbering (<c>null</c> when it was not moved).
     /// </summary>
-    public static bool Move(Book book, Footnote footnote, out Footnote? moved)
+    public static bool Move(Book book, Footnote footnote, out Footnote? moved, FootnoteStyles? styles = null)
     {
         moved = null;
         ArgumentNullException.ThrowIfNull(book);
@@ -335,7 +336,9 @@ public static class FootnoteEditor
         }
 
         FootnotePlacement target = footnote.Placement == FootnotePlacement.Local ? FootnotePlacement.Global : FootnotePlacement.Local;
-        HtmlResource newFile = target == FootnotePlacement.Local ? footnote.ReferenceFile : GetOrCreateGlobalFile(book);
+        HtmlResource newFile = target == FootnotePlacement.Local
+            ? footnote.ReferenceFile
+            : GetOrCreateGlobalFile(book, footnote.ReferenceFile);
         string note = oldText[element.Start..element.End];
         (int start, int end) = WholeLines(oldText, element.Start, element.End);
         oldFile.SetText(oldText.Remove(start, end - start));
@@ -365,7 +368,7 @@ public static class FootnoteEditor
 
         InsertNote(newFile, note, target, book.IsEpub3);
         RemoveEmptyContainer(book, oldFile);
-        Renumber(book);
+        Renumber(book, styles);
         moved = Rescan(book, index);
         book.Modified = true;
         return true;
@@ -373,9 +376,11 @@ public static class FootnoteEditor
 
     /// <summary>
     /// Numbers the footnotes: local ones from 1 in each file, global ones through the book, in reading order of the
-    /// references, and puts the notes of Signet's containers in that order. Returns whether anything changed.
+    /// references, and puts the notes of Signet's containers in that order. The files with Signet's footnotes get the
+    /// rules of <paramref name="styles"/> (<see cref="FootnoteStyles.Default"/> when <c>null</c>). Returns whether
+    /// anything changed.
     /// </summary>
-    public static bool Renumber(Book book)
+    public static bool Renumber(Book book, FootnoteStyles? styles = null)
     {
         ArgumentNullException.ThrowIfNull(book);
         IReadOnlyList<Footnote> footnotes = FootnoteScanner.Scan(book);
@@ -513,6 +518,18 @@ public static class FootnoteEditor
             changed |= SortContainer(file, LocalContainerClass) | SortContainer(file, GlobalContainerClass);
         }
 
+        HashSet<HtmlResource> styled = new(ReferenceEqualityComparer.Instance);
+        foreach (Footnote footnote in footnotes.Where(f => f.IsSignet))
+        {
+            styled.Add(footnote.ReferenceFile);
+            styled.Add(footnote.NoteFile);
+        }
+
+        foreach (HtmlResource file in book.GetHtmlResources().Where(styled.Contains))
+        {
+            changed |= ApplyStyles(book, file, styles ?? FootnoteStyles.Default);
+        }
+
         if (changed)
         {
             book.Modified = true;
@@ -619,7 +636,8 @@ public static class FootnoteEditor
             : string.Concat(marker.AsSpan(0, found), number.ToString(CultureInfo.InvariantCulture), marker.AsSpan(found + length));
     }
 
-    private static HtmlResource GetOrCreateGlobalFile(Book book)
+    // The notes file links the stylesheet with the footnote rules of the file whose footnote it is created for.
+    private static HtmlResource GetOrCreateGlobalFile(Book book, HtmlResource referenceFile)
     {
         if (FindGlobalFile(book) is { } existing)
         {
@@ -629,11 +647,15 @@ public static class FootnoteEditor
         HtmlResource page = book.CreateEmptyHtmlFile();
         page.RenameTo(book.GetFolderKeeper().GetUniqueFilenameVersion(GlobalFileName));
         string language = book.GetMetadataValues("dc:language").FirstOrDefault(l => l.Trim().Length > 0)?.Trim() ?? string.Empty;
-        page.SetText(GlobalXhtml(book.IsEpub3, WebUtility.HtmlEncode(language)));
+        string link = StyleTarget(book, referenceFile) is { } css
+            ? "  <link href=\"" + Encode(Utility.UrlEncodePath(Core.BookPath.Relative(page.BookPath, css.BookPath)))
+                + "\" rel=\"stylesheet\" type=\"text/css\"/>\n"
+            : string.Empty;
+        page.SetText(GlobalXhtml(book.IsEpub3, WebUtility.HtmlEncode(language), link));
         return page;
     }
 
-    private static string GlobalXhtml(bool epub3, string language)
+    private static string GlobalXhtml(bool epub3, string language, string headLinks)
     {
         StringBuilder sb = new("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n");
         if (epub3)
@@ -655,7 +677,7 @@ public static class FootnoteEditor
         }
 
         string section = epub3 ? "section" : "div";
-        sb.Append(">\n<head>\n  <title>").Append(GlobalHeading).Append("</title>\n</head>\n\n<body>\n");
+        sb.Append(">\n<head>\n  <title>").Append(GlobalHeading).Append("</title>\n").Append(headLinks).Append("</head>\n\n<body>\n");
         sb.Append("  <h1>").Append(GlobalHeading).Append("</h1>\n");
         sb.Append("  <").Append(section).Append(" class=\"").Append(GlobalContainerClass).Append('"')
             .Append(epub3 ? " epub:type=\"endnotes\"" : string.Empty).Append(">\n  </").Append(section).Append(">\n");
@@ -801,38 +823,65 @@ public static class FootnoteEditor
         return match.Success && int.TryParse(match.Groups[2].Value, NumberStyles.None, CultureInfo.InvariantCulture, out int n) ? n : null;
     }
 
-    private static void EnsureReferenceStyle(Book book, HtmlResource html)
+    // The footnote rules for `html` (FootnoteStyles.ApplyTo) go to: the linked stylesheet that already has some, or a
+    // <style> element of the file that has some, or the first linked stylesheet, or a new <style> element in <head>.
+    private static bool ApplyStyles(Book book, HtmlResource html, FootnoteStyles styles)
     {
+        List<CssResource> stylesheets = LinkedStylesheets(book, html);
+        CssResource? withRules = stylesheets.FirstOrDefault(css => FootnoteStyles.HasSignetRule(css.GetText()));
         string text = html.GetText();
-        if (text.Contains("." + ReferenceClass + " {", StringComparison.Ordinal))
+        Match? styleElement = withRules is null
+            ? StyleElement.Matches(text).FirstOrDefault(m => FootnoteStyles.HasSignetRule(m.Groups[2].Value))
+            : null;
+        if (styleElement is null && (withRules ?? stylesheets.FirstOrDefault()) is { } sheet)
         {
-            return;
+            string css = sheet.GetText();
+            string updated = styles.ApplyTo(css);
+            if (updated == css)
+            {
+                return false;
+            }
+
+            sheet.SetText(updated);
+            return true;
         }
 
-        List<CssResource> stylesheets = html.GetLinkedStylesheets()
-            .Select(path => book.GetFolderKeeper().GetResourceByBookPathNoThrow(path))
-            .OfType<CssResource>()
-            .ToList();
-        if (stylesheets.Any(css => css.GetText().Contains("." + ReferenceClass + " {", StringComparison.Ordinal)))
+        if (styleElement is not null)
         {
-            return;
-        }
+            Group content = styleElement.Groups[2];
+            string updated = styles.ApplyTo(content.Value);
+            if (updated == content.Value)
+            {
+                return false;
+            }
 
-        if (stylesheets.Count > 0)
-        {
-            string css = stylesheets[0].GetText();
-            string separator = css.Length == 0 ? string.Empty : css.EndsWith('\n') ? "\n" : "\n\n";
-            stylesheets[0].SetText(css + separator + ReferenceStyle);
-            return;
+            html.SetText(text[..content.Index] + updated + text[(content.Index + content.Length)..]);
+            return true;
         }
 
         int head = text.IndexOf("</head>", StringComparison.OrdinalIgnoreCase);
-        if (head >= 0)
+        if (head < 0)
         {
-            int at = LineStartIfBlank(text, head);
-            html.SetText(text.Insert(at, "<style type=\"text/css\">\n" + ReferenceStyle + "</style>\n"));
+            return false;
         }
+
+        int at = LineStartIfBlank(text, head);
+        html.SetText(text.Insert(at, "<style type=\"text/css\">\n" + styles.ApplyTo(string.Empty) + "</style>\n"));
+        return true;
     }
+
+    // The stylesheet the footnote rules of `html` are in or go to (null when they go to a <style> element).
+    private static CssResource? StyleTarget(Book book, HtmlResource html)
+    {
+        List<CssResource> stylesheets = LinkedStylesheets(book, html);
+        return stylesheets.FirstOrDefault(css => FootnoteStyles.HasSignetRule(css.GetText())) ?? stylesheets.FirstOrDefault();
+    }
+
+    private static List<CssResource> LinkedStylesheets(Book book, HtmlResource html) =>
+        html.GetLinkedStylesheets()
+            .Select(path => book.GetFolderKeeper().GetResourceByBookPathNoThrow(path))
+            .OfType<CssResource>()
+            .ToList();
 
     // ---------------------------------------------------------------- text helpers
 

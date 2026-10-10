@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
 using Signet.Core.BookManipulation;
+using Signet.Core.Footnotes;
 using Signet.Core.Search;
 
 namespace Signet.Core.Misc;
@@ -609,6 +610,31 @@ public sealed class SettingsStore
         {
             _file.SetRaw(Group, "check_book_skipped_rules", new JsonArray(value.Select(s => JsonValue.Create(s)).ToArray<JsonNode?>()));
             RaiseChangedQualified($"{Group}/check_book_skipped_rules");
+        }
+    }
+
+    /// <summary>Preferences → Footnotes: the CSS of Signet's footnote classes (the declarations of each rule).</summary>
+    public FootnoteStyles FootnoteStyles
+    {
+        get
+        {
+            FootnoteStyles d = FootnoteStyles.Default;
+            return new FootnoteStyles(
+                ReadString("footnote_style_reference", d.Reference),
+                ReadString("footnote_style_note", d.Note),
+                ReadString("footnote_style_local_container", d.LocalContainer),
+                ReadString("footnote_style_global_container", d.GlobalContainer),
+                ReadString("footnote_style_separator", d.Separator));
+        }
+
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            Write("footnote_style_reference", value.Reference);
+            Write("footnote_style_note", value.Note);
+            Write("footnote_style_local_container", value.LocalContainer);
+            Write("footnote_style_global_container", value.GlobalContainer);
+            Write("footnote_style_separator", value.Separator);
         }
     }
 
