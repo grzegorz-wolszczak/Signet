@@ -70,3 +70,5 @@ history.
 - **Build.** Signet's stricter analyzer rules (`EnableNETAnalyzers`, `EnforceCodeStyleInBuild`, `AnalysisLevel`,
   XML documentation file) are off for this project and its tests; compiler warnings are still errors.
 - **Tests.** The upstream tests run on Signet's test stack (xUnit.v3 `mtp-off`, `Avalonia.Headless.XUnit`).
+  `TextCellTests.StringFormat` sets the culture of the column options explicitly (upstream relied on an English
+  current culture, so the expected `42.00` failed as `42,00` on other systems).

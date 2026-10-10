@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Reactive.Subjects;
 using System.Text;
@@ -132,9 +133,10 @@ namespace Signet.Controls.TreeDataGrid.Tests.Models
                 result.Should().Equal(new[] { 42, 43 });
             }
 
+            // The culture is explicit: the default is the current culture, so "42.00" became "42,00" on a Polish system.
             private ITextCellOptions? GetOptions(string format = "{0:n2}")
             {
-                return new TextColumnOptions<int> { StringFormat = format };
+                return new TextColumnOptions<int> { StringFormat = format, Culture = CultureInfo.InvariantCulture };
             }
         }
     }
