@@ -15,7 +15,8 @@ Każdą pozycję sprawdziłem z kodem Signeta (stan gałęzi `main`, 2026-10-09)
 ma, są w osobnej sekcji na końcu.
 
 **Stan prac (2026-10-10):** pozycje oznaczone ✅ są już zrobione albo sprawdzone na `main` i nie trzeba do nich
-wracać. Szczegóły i różnice względem propozycji są w linii **Status** pod nagłówkiem pozycji.
+wracać. Pozycje oznaczone ⏸ są świadomie odłożone i zostają do zrobienia później. Szczegóły i różnice względem
+propozycji są w linii **Status** pod nagłówkiem pozycji.
 
 Oznaczenia: **Rozmiar** S (do 1 dnia), M (kilka dni), L (duża funkcja). **Priorytet**: moja ocena
 przydatności w stosunku do kosztu. Do ustalenia z Tobą.
@@ -24,9 +25,9 @@ przydatności w stosunku do kosztu. Do ustalenia z Tobą.
 
 | Nr | Funkcja | calibre | Rozmiar | Priorytet | Status |
 |---|---|---|---|---|---|
-| [CF-01](#cf-01--check-book-sprawdzanie-książki-z-automatycznymi-poprawkami) | Check book: sprawdzanie książki z automatycznymi poprawkami | 6.11–9.16 | L | wysoki | |
-| [CF-02](#cf-02--compress-images-kompresja-i-konwersja-obrazów) | Compress images: kompresja i konwersja obrazów (PNG/GIF → JPEG/WebP) | 6.17, 9.10, 9.12 | M | wysoki | |
-| [CF-03](#cf-03--upgrade-book-epub-2--epub-3) | Upgrade book: EPUB 2 → EPUB 3 (z zachowaniem landmarks) | 9.15 (poprawka) | M | wysoki | |
+| [CF-01](#cf-01--check-book-sprawdzanie-książki-z-automatycznymi-poprawkami) | Check book: sprawdzanie książki z automatycznymi poprawkami | 6.11–9.16 | L | wysoki | ✅ zrobione (`a12f98f`) |
+| [CF-02](#cf-02--compress-images-kompresja-i-konwersja-obrazów) | Compress images: kompresja i konwersja obrazów (PNG/GIF → JPEG/WebP) | 6.17, 9.10, 9.12 | M | wysoki | ⏸ odłożone na później |
+| [CF-03](#cf-03--upgrade-book-epub-2--epub-3) | Upgrade book: EPUB 2 → EPUB 3 (z zachowaniem landmarks) | 9.15 (poprawka) | M | wysoki | ✅ zrobione (`032bd6a`) |
 | [CF-04](#cf-04--panel-spisu-treści-wpisy-z-bieżącego-pliku) | Panel spisu treści: wyróżnienie wpisów z bieżącego pliku | 9.16 | S | wysoki | ✅ zrobione (`e44d272`) |
 | [CF-05](#cf-05--edytor-spisu-treści-sortowanie-wpisów) | Edytor spisu treści: sortowanie wpisów wg kolejności w książce | 9.12 | S | średni | ✅ zrobione (`e44d272`) |
 | [CF-06](#cf-06--przeglądarka-książki-podgląd-obrazu-po-najechaniu) | Przeglądarka książki: podgląd obrazu po najechaniu myszą | 9.14 | S | średni | |
@@ -49,6 +50,22 @@ przydatności w stosunku do kosztu. Do ustalenia z Tobą.
 ---
 
 ## CF-01 — Check book: sprawdzanie książki z automatycznymi poprawkami
+
+> **Status: ✅ zrobione** w commicie `a12f98f` na `main` (2026-10-10). Opis „Signet dziś” niżej był nieaktualny:
+> Signet miał już większość kontroli calibre (OPF, linki i kotwice, fonty, id w kilku plikach, kodowanie, nazwy
+> plików, media-type), uruchamianych przez „Well-Formed Check EPUB” (F7). Wyniki zostały w panelu Validation Results.
+> Doszły:
+> - kody reguł i **pomijanie typów problemów**: ustawienie `CheckBookSkippedRules`, przycisk z okiem w panelu
+>   przywraca jeden albo wszystkie typy;
+> - **„Napraw” / „Napraw wszystkie”** (przed poprawkami powstaje checkpoint) dla: złych id (zmiana w pliku, w linkach
+>   i w selektorach CSS), id powtórzonych w pliku, wielkości liter w linkach i `url()`, media-type w manifeście,
+>   brakującego albo pustego unikalnego identyfikatora, pliku spoza manifestu i tekstu luzem w `<body>`;
+> - **nowe kontrole**: brak NAV (EPUB 3) / NCX (EPUB 2), id niezgodne z XML i powtórzone w pliku, uszkodzone obrazy
+>   i JPEG w CMYK, uszkodzone fonty, nieznane właściwości CSS i właściwości bez wartości (własna lista właściwości,
+>   bez stylelinta).
+>
+> Bez poprawki zostają: id wspólne dla kilku plików (to dozwolone, a zmiana wymagałaby kopiowania reguł CSS), błędy
+> CSS, uszkodzone obrazy i fonty oraz brak NAV/NCX.
 
 **calibre:** narzędzie „Check book” istnieje od dawna. W badanym okresie dostało: automatyczne
 poprawki prostych błędów CSS i przejście na stylelint (6.11), poprawkę pustego identyfikatora
@@ -86,6 +103,8 @@ poprawki?
 
 ## CF-02 — Compress images: kompresja i konwersja obrazów
 
+> **Status: ⏸ odłożone** (decyzja z 2026-10-10): na razie tego nie robimy, pozycja zostaje do zrobienia później.
+
 **calibre:** „Compress images”: bezstratna optymalizacja PNG/JPEG/WebP albo kompresja stratna
 z jakością JPEG/WebP (6.17 dodało WebP). Od 9.10 konwersja **PNG → JPEG/WebP**, od 9.12 **GIF →
 JPEG/WebP**, z podmianą nazw i odwołań.
@@ -105,6 +124,11 @@ optipng. Zmiana rozszerzenia przez istniejący mechanizm zmiany nazwy z aktualiz
 (manifest, `src`, `srcset`, CSS `url()`, SVG).
 
 ## CF-03 — Upgrade book: EPUB 2 → EPUB 3
+
+> **Status: ✅ zrobione** w commicie `032bd6a` na `main` (2026-10-10). Akcja Tools → Epub3 Tools → „Konwertuj do
+> EPUB 3”. W odróżnieniu od calibre **NCX i `<guide>` zostają**, DOCTYPE plików HTML zmienia się na HTML5, a przed
+> konwersją powstaje checkpoint. Gdy NCX nie ma wpisów, spis treści w NAV powstaje z nagłówków. Przy okazji naprawiony
+> błąd: „Update Manifest Properties” zdejmował znacznik `nav` z manifestu (`f925422`).
 
 **calibre:** „Upgrade book internals” zamienia EPUB 2 na EPUB 3: tworzy NAV z NCX, przenosi
 landmarks z `<guide>`, ustawia `properties` w manifeście (`nav`, `scripted`, `svg`, `cover-image`,
