@@ -719,7 +719,12 @@ public sealed class OpfResource : XmlResource
                 continue;
             }
 
-            IReadOnlyList<string> properties = htmlResource.GetManifestProperties();
+            // Tokens that do not come from the content (e.g. "nav") stay.
+            List<string> properties = document.Manifest[pos].Attributes.Value("properties")
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Where(token => !HtmlResource.OrderedManifestProperties.Contains(token))
+                .ToList();
+            properties.AddRange(htmlResource.GetManifestProperties());
             document.Manifest[pos].Attributes.Remove("properties");
             if (properties.Count > 0)
             {

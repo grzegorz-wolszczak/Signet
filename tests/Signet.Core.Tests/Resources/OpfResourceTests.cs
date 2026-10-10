@@ -462,4 +462,16 @@ public sealed class OpfResourceTests
 
         opf.GetOpfDocument().Spine.Select(s => s.IdRef).Should().Equal("a", "b");
     }
+
+    [Fact]
+    public void UpdateManifestProperties_keeps_the_nav_property_of_the_nav_document()
+    {
+        using Signet.Core.BookManipulation.Book book = Signet.Core.BookManipulation.BookCreator.CreateNewBook("3.0");
+        string navBookPath = book.GetOpf().GetNavResourceBookPath();
+        navBookPath.Should().NotBeEmpty();
+
+        book.GetOpf().UpdateManifestProperties(book.GetHtmlResources());
+
+        book.GetOpf().GetNavResourceBookPath().Should().Be(navBookPath);
+    }
 }

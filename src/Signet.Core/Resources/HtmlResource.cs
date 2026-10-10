@@ -20,7 +20,8 @@ public class HtmlResource : XmlResource
 
     private static readonly string[] LinkedResourceTags = { "img", "link", "audio", "video", "source" };
 
-    private static readonly string[] OrderedManifestProperties =
+    // The manifest properties GetManifestProperties derives from the content, in a stable order.
+    internal static readonly string[] OrderedManifestProperties =
         { "mathml", "svg", "scripted", "switch", "remote-resources" };
 
     private static readonly Dictionary<string, string> ManifestPropertyMap = new(StringComparer.OrdinalIgnoreCase)
