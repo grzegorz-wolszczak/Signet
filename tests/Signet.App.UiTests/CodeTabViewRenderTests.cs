@@ -285,6 +285,34 @@ public sealed class CodeTabViewRenderTests
     }
 
     /// <summary>
+    /// Regression (crash): the completion list box shows <c>CompletionData</c>, a plain list without change
+    /// notifications. On a typed character AvaloniaEdit first selects the best match of the old list (here the third
+    /// row, "aef"); refilling the list with fewer completions left that index past its end, and selecting the first
+    /// new completion threw <see cref="System.ArgumentOutOfRangeException"/>.
+    /// </summary>
+    [AvaloniaFact]
+    public void A_character_that_leaves_fewer_completions_than_the_best_old_row_does_not_crash()
+    {
+        (Window window, CodeTabViewModel vm) = ShowCodeTab("<p><a href=\"</p>");
+        vm.BookFiles = () => new[]
+        {
+            new LinkCompletionFile("abc.xhtml", "application/xhtml+xml"),
+            new LinkCompletionFile("abd.xhtml", "application/xhtml+xml"),
+            new LinkCompletionFile("aef.xhtml", "application/xhtml+xml"),
+        };
+        TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
+        editor.TextArea.Focus();
+        editor.CaretOffset = "<p><a href=\"".Length;
+
+        window.KeyTextInput("a"); // all three
+        window.KeyTextInput("e"); // only the third one
+        window.KeyPressQwerty(Avalonia.Input.PhysicalKey.Enter, Avalonia.Input.RawInputModifiers.None);
+        Dispatcher.UIThread.RunJobs();
+
+        vm.Document.Text.Should().Be("<p><a href=\"aef.xhtml</p>");
+    }
+
+    /// <summary>
     /// Regression: a right click in Code View showed no menu when there was no misspelled word
     /// under the caret (the only context menu was the spelling menu, cancelled in that case).
     /// The menu now always has the full default layout.

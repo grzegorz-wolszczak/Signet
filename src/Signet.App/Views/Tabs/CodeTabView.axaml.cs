@@ -272,18 +272,33 @@ public partial class CodeTabView : UserControl
         }
     }
 
+    // CompletionList.CompletionData is a plain list (no change notifications) shown by the list box. Refilling it in
+    // place left the list box with its old items and selected index: after the selection was moved down and a typed
+    // character left fewer completions, selecting the best match read past the end of the list and crashed. The
+    // selection is cleared while the old items are still there, and the list box is rebound to the refilled list.
     private void Fill(CompletionWindow window, LinkCompletionResult result)
     {
         window.StartOffset = result.ReplaceStart;
         window.EndOffset = Editor.CaretOffset;
-        IList<ICompletionData> data = window.CompletionList.CompletionData;
+        CompletionList list = window.CompletionList;
+        list.SelectedItem = null;
+        IList<ICompletionData> data = list.CompletionData;
         data.Clear();
         foreach (LinkCompletionItem item in result.Items)
         {
             data.Add(new LinkCompletionData(item));
         }
 
-        window.CompletionList.SelectedItem = data[0];
+        if (list.ListBox is { } listBox)
+        {
+            listBox.ItemsSource = null;
+            listBox.ItemsSource = data;
+        }
+
+        if (data.Count > 0)
+        {
+            list.SelectedItem = data[0];
+        }
     }
 
     private void OnSelectionChanged(object? sender, EventArgs e) =>
