@@ -193,8 +193,17 @@ public static class FootnoteEditor
     /// Adds a footnote with <paramref name="content"/> (an XHTML fragment) at <paramref name="offset"/> of
     /// <paramref name="html"/> and renumbers the footnotes.
     /// </summary>
-    public static FootnoteError Add(Book book, HtmlResource html, int offset, string content, FootnotePlacement placement)
+    public static FootnoteError Add(Book book, HtmlResource html, int offset, string content, FootnotePlacement placement) =>
+        Add(book, html, offset, content, placement, out _);
+
+    /// <summary>
+    /// Adds a footnote like <see cref="Add(Book, HtmlResource, int, string, FootnotePlacement)"/>;
+    /// <paramref name="added"/> is the new footnote after the renumbering (<c>null</c> when it was not added).
+    /// </summary>
+    public static FootnoteError Add(
+        Book book, HtmlResource html, int offset, string content, FootnotePlacement placement, out Footnote? added)
     {
+        added = null;
         ArgumentNullException.ThrowIfNull(book);
         ArgumentNullException.ThrowIfNull(html);
         ArgumentNullException.ThrowIfNull(content);
@@ -226,7 +235,10 @@ public static class FootnoteEditor
         InsertNote(noteFile, note, placement, epub3);
 
         EnsureReferenceStyle(book, html);
+        int index = FootnoteScanner.Scan(book).ToList()
+            .FindIndex(f => ReferenceEquals(f.ReferenceFile, html) && f.ReferenceId == referenceId);
         Renumber(book);
+        added = Rescan(book, index);
         book.Modified = true;
         return FootnoteError.None;
     }
@@ -270,10 +282,18 @@ public static class FootnoteEditor
     /// Moves the note of <paramref name="footnote"/> to the other placement (local to global or back) and renumbers
     /// the footnotes.
     /// </summary>
-    public static bool Move(Book book, Footnote footnote)
+    public static bool Move(Book book, Footnote footnote) => Move(book, footnote, out _);
+
+    /// <summary>
+    /// Moves a footnote like <see cref="Move(Book, Footnote)"/>; <paramref name="moved"/> is the footnote after the
+    /// renumbering (<c>null</c> when it was not moved).
+    /// </summary>
+    public static bool Move(Book book, Footnote footnote, out Footnote? moved)
     {
+        moved = null;
         ArgumentNullException.ThrowIfNull(book);
         ArgumentNullException.ThrowIfNull(footnote);
+        int index = IndexOf(book, footnote);
 
         HtmlResource oldFile = footnote.NoteFile;
         string oldText = oldFile.GetText();
@@ -315,6 +335,7 @@ public static class FootnoteEditor
         InsertNote(newFile, note, target, book.IsEpub3);
         RemoveEmptyContainer(book, oldFile);
         Renumber(book);
+        moved = Rescan(book, index);
         book.Modified = true;
         return true;
     }
@@ -467,6 +488,37 @@ public static class FootnoteEditor
         }
 
         return changed;
+    }
+
+    /// <summary>
+    /// The footnote of the current texts with the same reference as <paramref name="footnote"/> (the same <c>href</c>
+    /// and occurrence in the same file), e.g. one found before the open tabs were saved; <c>null</c> when there is none.
+    /// After a renumbering another footnote may have that reference, so it is meant for a footnote of the same state.
+    /// </summary>
+    public static Footnote? Refresh(Book book, Footnote footnote)
+    {
+        ArgumentNullException.ThrowIfNull(book);
+        ArgumentNullException.ThrowIfNull(footnote);
+        return Rescan(book, IndexOf(book, footnote));
+    }
+
+    // The place of the footnote with the reference of `footnote` in the reading order; -1 when there is none. The
+    // edits keep the references and their order, so the same place finds the footnote again after them.
+    private static int IndexOf(Book book, Footnote footnote) =>
+        FootnoteScanner.Scan(book).ToList().FindIndex(f =>
+            ReferenceEquals(f.ReferenceFile, footnote.ReferenceFile)
+            && f.ReferenceHref == footnote.ReferenceHref
+            && f.ReferenceOccurrence == footnote.ReferenceOccurrence);
+
+    private static Footnote? Rescan(Book book, int index)
+    {
+        if (index < 0)
+        {
+            return null;
+        }
+
+        IReadOnlyList<Footnote> footnotes = FootnoteScanner.Scan(book);
+        return index < footnotes.Count ? footnotes[index] : null;
     }
 
     /// <summary>The file with Signet's global footnotes, or <c>null</c> when the book has none.</summary>

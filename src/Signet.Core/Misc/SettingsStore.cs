@@ -612,6 +612,13 @@ public sealed class SettingsStore
         }
     }
 
+    /// <summary>"Add Footnote": whether the last footnote was added to the global notes (the dialog's default).</summary>
+    public bool FootnoteGlobalPlacement
+    {
+        get => ReadBool("footnote_global_placement", false);
+        set => Write("footnote_global_placement", value);
+    }
+
     // ------------------------------------------------- Preview / WebEng --- //
 
     /// <summary>Remote resources mode in the preview (0 = off).</summary>

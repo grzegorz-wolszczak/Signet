@@ -165,6 +165,46 @@ public sealed class FootnoteEditorTests
     }
 
     [Fact]
+    public void Add_and_Move_return_the_footnote_after_the_renumbering()
+    {
+        (Book book, HtmlResource html) = NewBook();
+        using (book)
+        {
+            FootnoteEditor.Add(book, html, After(html, "Second"), "second note", FootnotePlacement.Local);
+            FootnoteEditor.Add(book, html, After(html, "First"), "first note", FootnotePlacement.Local, out Footnote? added)
+                .Should().Be(FootnoteError.None);
+
+            added!.NoteId.Should().Be("fn-1", "the new footnote comes first in the text");
+            added.ReferenceId.Should().Be("fn-1-ref");
+            FootnoteEditor.Locate(added, FootnoteSide.Reference)!.Value.Offset
+                .Should().Be(html.GetText().IndexOf("<a class=\"signet-fn-ref\"", StringComparison.Ordinal));
+
+            FootnoteEditor.Move(book, added, out Footnote? moved).Should().BeTrue();
+
+            moved!.Placement.Should().Be(FootnotePlacement.Global);
+            moved.NoteId.Should().Be("en-1");
+            moved.NoteFile.Should().BeSameAs(FootnoteEditor.FindGlobalFile(book));
+            ShouldBeConsistent(book);
+        }
+    }
+
+    [Fact]
+    public void Refresh_finds_a_footnote_of_an_earlier_scan_by_its_reference()
+    {
+        (Book book, HtmlResource html) = NewBook();
+        using (book)
+        {
+            FootnoteEditor.Add(book, html, After(html, "First"), "first note", FootnotePlacement.Local, out Footnote? first);
+            FootnoteEditor.Add(book, html, After(html, "Second"), "second note", FootnotePlacement.Local, out Footnote? second);
+
+            FootnoteEditor.Refresh(book, first!)!.NoteId.Should().Be("fn-1");
+            FootnoteEditor.Remove(book, FootnoteEditor.Refresh(book, second!)!).Should().BeTrue();
+
+            FootnoteEditor.Refresh(book, second!).Should().BeNull("its reference is gone");
+        }
+    }
+
+    [Fact]
     public void FindAt_tells_the_reference_from_the_note()
     {
         (Book book, HtmlResource html) = NewBook();

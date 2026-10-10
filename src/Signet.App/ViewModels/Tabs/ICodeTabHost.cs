@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using Avalonia.Input;
 using Signet.Core.BookManipulation;
+using Signet.Core.Footnotes;
 using Signet.Core.MiscEditors;
 using Signet.Core.Resources;
 
@@ -63,4 +64,40 @@ public interface ICodeTabHost
 
     /// <summary>"View Image" — shows the image with the given book path in the preview window.</summary>
     void ViewImage(string bookPath);
+
+    /// <summary>
+    /// "Footnotes" submenu — the footnote under <paramref name="offset"/> of <paramref name="html"/> and whether one can
+    /// be added there. Saves the open tabs first (the footnotes are found in the book's texts). <c>null</c> without a book.
+    /// </summary>
+    FootnoteMenuState? GetFootnoteState(HtmlResource html, int offset);
+
+    /// <summary>The placement chosen the last time a footnote was added (the default of the "Add Footnote" dialog).</summary>
+    FootnotePlacement LastFootnotePlacement { get; }
+
+    /// <summary>Whether <paramref name="content"/> can be the text of a footnote of the current book.</summary>
+    FootnoteError ValidateFootnoteContent(string content);
+
+    /// <summary>
+    /// "Add Footnote" — adds a footnote at <paramref name="offset"/> of <paramref name="html"/> (with a checkpoint),
+    /// refreshes the tabs and panels and puts the caret on the new reference.
+    /// </summary>
+    void AddFootnote(HtmlResource html, int offset, string content, FootnotePlacement placement);
+
+    /// <summary>"Remove Footnote" — removes the reference and the note (with a checkpoint).</summary>
+    void RemoveFootnote(FootnoteHit hit);
+
+    /// <summary>"Move to global/local footnotes" — moves the note to the other placement (with a checkpoint).</summary>
+    void MoveFootnote(FootnoteHit hit);
+
+    /// <summary>"Go to note/reference" — opens the other part of the footnote of <paramref name="hit"/>.</summary>
+    void GoToFootnote(FootnoteHit hit);
+
+    /// <summary>"Renumber Footnotes" — renumbers the footnotes of the book (with a checkpoint).</summary>
+    void RenumberFootnotes();
 }
+
+/// <summary>The footnote state at a position of a file (<see cref="ICodeTabHost.GetFootnoteState"/>).</summary>
+/// <param name="Hit">The footnote whose reference or note contains the position, or <c>null</c>.</param>
+/// <param name="AddError">Why a footnote cannot be added at the position (<see cref="FootnoteError.None"/> when it can).</param>
+/// <param name="HasFootnotes">Whether the book has any footnotes.</param>
+public sealed record FootnoteMenuState(FootnoteHit? Hit, FootnoteError AddError, bool HasFootnotes);

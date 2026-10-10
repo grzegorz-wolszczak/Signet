@@ -24,6 +24,7 @@ using Signet.App.Resources;
 using Signet.App.ViewModels;
 using Signet.App.ViewModels.Tabs;
 using Signet.Core.BookManipulation;
+using Signet.Core.Footnotes;
 using Signet.Core.MainUI;
 using Signet.Core.Misc;
 using Signet.Core.MiscEditors;
@@ -485,7 +486,7 @@ public partial class CodeTabView : UserControl
     /// <summary>
     /// Builds the Code View context menu right before it is shown. Order from the top:
     /// View Image / Open Tab For Image, spelling, Clips / Add To Clips, Toggle Line Wrap Mode,
-    /// Go To Link Or Style, Rename Class, Merge Content, Mark Selected Text, Reformat HTML
+    /// Go To Link Or Style, Rename Class, Footnotes, Merge Content, Mark Selected Text, Reformat HTML
     /// (or Reformat CSS), then the standard Undo … Select All.
     /// </summary>
     private void OnContextMenuOpening(object? sender, CancelEventArgs e)
@@ -624,6 +625,13 @@ public partial class CodeTabView : UserControl
                 items.Add(new Separator());
             }
 
+            // ---- Footnotes (XHTML files of a book) ----
+            if (vm.IsHtmlFlow && vm.FootnoteStateAtCaret() is { } footnotes)
+            {
+                items.Add(FootnotesMenu(vm, host, footnotes));
+                items.Add(new Separator());
+            }
+
             // ---- Merge Content — always visible, disabled when the selection does not span
             // adjacent elements of the same kind ----
             items.Add(Item(
@@ -754,6 +762,53 @@ public partial class CodeTabView : UserControl
         }
 
         vm.ApplySpanRemoval(scope, plan);
+    }
+
+    // "Footnotes": on a footnote (its reference or note) go to the other part, move it and remove it; elsewhere add one
+    // (disabled with the reason when the caret is not in a place for a reference); always renumber.
+    private MenuItem FootnotesMenu(CodeTabViewModel vm, ICodeTabHost host, FootnoteMenuState state)
+    {
+        MenuItem menu = new() { Header = Strings.Get("CodeViewMenu_Footnotes") };
+        if (state.Hit is { } hit)
+        {
+            menu.Items.Add(Item(
+                Strings.Get(hit.Side == FootnoteSide.Reference ? "CodeViewMenu_FootnoteGoToNote" : "CodeViewMenu_FootnoteGoToReference"),
+                () => host.GoToFootnote(hit)));
+            menu.Items.Add(Item(
+                Strings.Get(hit.Footnote.Placement == FootnotePlacement.Local
+                    ? "CodeViewMenu_FootnoteMoveToGlobal"
+                    : "CodeViewMenu_FootnoteMoveToLocal"),
+                () => host.MoveFootnote(hit)));
+            menu.Items.Add(Item(Strings.Get("CodeViewMenu_FootnoteRemove"), () => host.RemoveFootnote(hit)));
+        }
+        else
+        {
+            bool canAdd = state.AddError == FootnoteError.None;
+            menu.Items.Add(Item(
+                canAdd
+                    ? Strings.Get("CodeViewMenu_FootnoteAdd")
+                    : Strings.Format("CodeViewMenu_FootnoteAddBlocked", AddFootnoteViewModel.ErrorText(state.AddError)),
+                () => AddFootnote(vm),
+                enabled: canAdd));
+        }
+
+        menu.Items.Add(new Separator());
+        menu.Items.Add(Item(Strings.Get("CodeViewMenu_FootnotesRenumber"), host.RenumberFootnotes, enabled: state.HasFootnotes));
+        return menu;
+    }
+
+    // "Add Footnote…": the window with the text and the placement, then the footnote is added at the caret.
+    private async void AddFootnote(CodeTabViewModel vm)
+    {
+        if (TopLevel.GetTopLevel(this) is not Window owner || vm.CreateAddFootnoteViewModel() is not { } model)
+        {
+            return;
+        }
+
+        if (await AddFootnoteWindow.AskAsync(owner, model) is { } request)
+        {
+            vm.AddFootnote(request);
+        }
     }
 
     private static MenuItem Item(

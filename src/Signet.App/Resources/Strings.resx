@@ -4093,6 +4093,114 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="Panel_FindUsages" xml:space="preserve">
     <value>Znalezione użycia</value>
   </data>
+  <data name="CodeViewMenu_Footnotes" xml:space="preserve">
+    <value>Przypisy</value>
+  </data>
+  <data name="CodeViewMenu_FootnoteAdd" xml:space="preserve">
+    <value>Dodaj przypis...</value>
+  </data>
+  <data name="CodeViewMenu_FootnoteAddBlocked" xml:space="preserve">
+    <value>Dodaj przypis... ({0})</value>
+  </data>
+  <data name="CodeViewMenu_FootnoteGoToNote" xml:space="preserve">
+    <value>Przejdź do treści przypisu</value>
+  </data>
+  <data name="CodeViewMenu_FootnoteGoToReference" xml:space="preserve">
+    <value>Przejdź do odnośnika</value>
+  </data>
+  <data name="CodeViewMenu_FootnoteMoveToGlobal" xml:space="preserve">
+    <value>Przenieś do przypisów globalnych</value>
+  </data>
+  <data name="CodeViewMenu_FootnoteMoveToLocal" xml:space="preserve">
+    <value>Przenieś do przypisów lokalnych</value>
+  </data>
+  <data name="CodeViewMenu_FootnoteRemove" xml:space="preserve">
+    <value>Usuń przypis</value>
+  </data>
+  <data name="CodeViewMenu_FootnotesRenumber" xml:space="preserve">
+    <value>Przenumeruj przypisy</value>
+  </data>
+  <data name="FootnoteError_None" xml:space="preserve">
+    <value>brak problemu</value>
+  </data>
+  <data name="FootnoteError_NotInBody" xml:space="preserve">
+    <value>kursor poza &lt;body&gt;</value>
+  </data>
+  <data name="FootnoteError_InsideTag" xml:space="preserve">
+    <value>kursor wewnątrz znacznika</value>
+  </data>
+  <data name="FootnoteError_InsideLink" xml:space="preserve">
+    <value>kursor wewnątrz odnośnika &lt;a&gt;</value>
+  </data>
+  <data name="FootnoteError_InsideFootnote" xml:space="preserve">
+    <value>kursor wewnątrz przypisu</value>
+  </data>
+  <data name="FootnoteError_EmptyContent" xml:space="preserve">
+    <value>treść przypisu jest pusta</value>
+  </data>
+  <data name="FootnoteError_InvalidContent" xml:space="preserve">
+    <value>treść przypisu nie jest poprawnym XHTML (sprawdź znaczniki i encje, np. &amp;amp;)</value>
+  </data>
+  <data name="Status_FootnoteNotAdded" xml:space="preserve">
+    <value>Nie dodano przypisu: {0}.</value>
+  </data>
+  <data name="Status_FootnoteAddedLocal" xml:space="preserve">
+    <value>Dodano przypis lokalny.</value>
+  </data>
+  <data name="Status_FootnoteAddedGlobal" xml:space="preserve">
+    <value>Dodano przypis globalny (w pliku Przypisy.xhtml).</value>
+  </data>
+  <data name="Status_FootnoteRemoved" xml:space="preserve">
+    <value>Usunięto przypis.</value>
+  </data>
+  <data name="Status_FootnoteMovedLocal" xml:space="preserve">
+    <value>Przeniesiono przypis do przypisów lokalnych.</value>
+  </data>
+  <data name="Status_FootnoteMovedGlobal" xml:space="preserve">
+    <value>Przeniesiono przypis do przypisów globalnych.</value>
+  </data>
+  <data name="Status_FootnoteGone" xml:space="preserve">
+    <value>Nie znaleziono przypisu — książka zmieniła się od otwarcia menu.</value>
+  </data>
+  <data name="Status_FootnotesUpToDate" xml:space="preserve">
+    <value>Numeracja przypisów jest aktualna.</value>
+  </data>
+  <data name="Status_FootnotesRenumbered" xml:space="preserve">
+    <value>Przenumerowano przypisy.</value>
+  </data>
+  <data name="CheckpointOp_AddFootnote" xml:space="preserve">
+    <value>Dodanie przypisu</value>
+  </data>
+  <data name="CheckpointOp_RemoveFootnote" xml:space="preserve">
+    <value>Usunięcie przypisu</value>
+  </data>
+  <data name="CheckpointOp_MoveFootnote" xml:space="preserve">
+    <value>Przeniesienie przypisu</value>
+  </data>
+  <data name="CheckpointOp_RenumberFootnotes" xml:space="preserve">
+    <value>Przenumerowanie przypisów</value>
+  </data>
+  <data name="AddFootnoteWindow_Title" xml:space="preserve">
+    <value>Dodaj przypis</value>
+  </data>
+  <data name="AddFootnoteWindow_Where" xml:space="preserve">
+    <value>Odnośnik zostanie wstawiony w miejscu [*]:</value>
+  </data>
+  <data name="AddFootnoteWindow_Content" xml:space="preserve">
+    <value>Treść przypisu:</value>
+  </data>
+  <data name="AddFootnoteWindow_ContentHint" xml:space="preserve">
+    <value>Tekst, można użyć prostych znaczników XHTML (np. &lt;i&gt;, &lt;b&gt;, &lt;a href="…"&gt;). Znaki &amp; i &lt; zapisuj jako &amp;amp; i &amp;lt;.</value>
+  </data>
+  <data name="AddFootnoteWindow_Local" xml:space="preserve">
+    <value>Lokalny — na końcu tego pliku</value>
+  </data>
+  <data name="AddFootnoteWindow_Global" xml:space="preserve">
+    <value>Globalny — w pliku Przypisy.xhtml (numeracja w całej książce)</value>
+  </data>
+  <data name="AddFootnoteWindow_AddButton" xml:space="preserve">
+    <value>Dodaj</value>
+  </data>
   <data name="CodeViewMenu_FindUsages" xml:space="preserve">
     <value>Znajdź użycia</value>
   </data>

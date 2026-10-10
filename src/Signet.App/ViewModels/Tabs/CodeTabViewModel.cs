@@ -1409,6 +1409,43 @@ public sealed class CodeTabViewModel : ContentTabViewModel
         UnwrapSpan(all: scope == SpanRemovalScope.File);
     }
 
+    /// <summary>
+    /// "Footnotes" submenu — the footnote under the caret and whether one can be added there (the open tabs are saved
+    /// first). <c>null</c> without a book or outside an XHTML file.
+    /// </summary>
+    public FootnoteMenuState? FootnoteStateAtCaret()
+    {
+        if (Host is null || Resource is not HtmlResource html)
+        {
+            return null;
+        }
+
+        SyncModelFromDocument();
+        return Host.GetFootnoteState(html, _caretOffset);
+    }
+
+    /// <summary>"Add Footnote…" — the model of the window for a footnote at the caret; <c>null</c> without a host.</summary>
+    public AddFootnoteViewModel? CreateAddFootnoteViewModel()
+    {
+        if (Host is not { } host || Resource is not HtmlResource)
+        {
+            return null;
+        }
+
+        SyncModelFromDocument();
+        return new AddFootnoteViewModel(_model.Text, _caretOffset, host.LastFootnotePlacement, host.ValidateFootnoteContent);
+    }
+
+    /// <summary>Adds the footnote accepted in the "Add Footnote" window at the caret (through the host, with a checkpoint).</summary>
+    public void AddFootnote(AddFootnoteRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        if (Host is { } host && Resource is HtmlResource html)
+        {
+            host.AddFootnote(html, _caretOffset, request.Content, request.Placement);
+        }
+    }
+
     /// <summary>"Split Tag" — splits the enclosing element at the caret.</summary>
     public void SplitTag()
     {

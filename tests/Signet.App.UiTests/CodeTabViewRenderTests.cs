@@ -481,6 +481,72 @@ public sealed class CodeTabViewRenderTests
         disabled.IsEnabled.Should().BeFalse();
     }
 
+    /// <summary>
+    /// "Footnotes": on a footnote the submenu offers going to its other part, moving and removing it; elsewhere adding
+    /// one, disabled with the reason when the caret is not in a place for a reference; renumbering always.
+    /// </summary>
+    [AvaloniaFact]
+    public void Context_menu_footnotes_submenu_follows_the_footnote_state_at_the_caret()
+    {
+        using TempDir temp = new();
+        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        HtmlResource html = book.GetHtmlResources().First(h => !ReferenceEquals(h, book.GetNavResource()));
+        html.InitialLoad();
+        string source = html.GetText();
+        int offset = source.IndexOf("</p>", source.IndexOf("<body", System.StringComparison.Ordinal), System.StringComparison.Ordinal);
+        Signet.Core.Footnotes.FootnoteEditor.Add(
+            book, html, offset, "Note.", Signet.Core.Footnotes.FootnotePlacement.Local, out Signet.Core.Footnotes.Footnote? footnote)
+            .Should().Be(Signet.Core.Footnotes.FootnoteError.None);
+
+        OpenTab tab = new TabManagerModel().OpenResource(html);
+        (SettingsStore settings, SpellChecker spellChecker) = NewSpellChecker();
+        FakeHost host = new();
+        var vm = new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker) { Host = host };
+
+        var window = new Window { Width = 600, Height = 400, Content = new CodeTabView { DataContext = vm } };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
+
+        string[] Footnotes(FootnoteMenuState state, out bool[] enabled)
+        {
+            host.FootnoteState = (_, _) => state;
+            Dispatcher.UIThread.RunJobs();
+            editor.TextArea.RaiseEvent(new Avalonia.Input.ContextRequestedEventArgs());
+            Dispatcher.UIThread.RunJobs();
+            ContextMenu menu = editor.ContextMenu!;
+            MenuItem submenu = menu.Items.OfType<MenuItem>()
+                .Single(i => (string)i.Header! == Signet.App.Resources.Strings.Get("CodeViewMenu_Footnotes"));
+            MenuItem[] items = submenu.Items.OfType<MenuItem>().ToArray();
+            menu.Close();
+            enabled = items.Select(i => i.IsEnabled).ToArray();
+            return items.Select(i => (string)i.Header!).ToArray();
+        }
+
+        string[] onFootnote = Footnotes(
+            new FootnoteMenuState(
+                new Signet.Core.Footnotes.FootnoteHit(footnote!, Signet.Core.Footnotes.FootnoteSide.Reference),
+                Signet.Core.Footnotes.FootnoteError.InsideLink, true),
+            out _);
+        onFootnote.Should().Equal(
+            Signet.App.Resources.Strings.Get("CodeViewMenu_FootnoteGoToNote"),
+            Signet.App.Resources.Strings.Get("CodeViewMenu_FootnoteMoveToGlobal"),
+            Signet.App.Resources.Strings.Get("CodeViewMenu_FootnoteRemove"),
+            Signet.App.Resources.Strings.Get("CodeViewMenu_FootnotesRenumber"));
+
+        string[] blocked = Footnotes(new FootnoteMenuState(null, Signet.Core.Footnotes.FootnoteError.InsideTag, false), out bool[] blockedEnabled);
+        blocked.Should().Equal(
+            Signet.App.Resources.Strings.Format(
+                "CodeViewMenu_FootnoteAddBlocked",
+                Signet.App.ViewModels.AddFootnoteViewModel.ErrorText(Signet.Core.Footnotes.FootnoteError.InsideTag)),
+            Signet.App.Resources.Strings.Get("CodeViewMenu_FootnotesRenumber"));
+        blockedEnabled.Should().Equal(false, false);
+
+        string[] free = Footnotes(new FootnoteMenuState(null, Signet.Core.Footnotes.FootnoteError.None, true), out bool[] freeEnabled);
+        free[0].Should().Be(Signet.App.Resources.Strings.Get("CodeViewMenu_FootnoteAdd"));
+        freeEnabled.Should().Equal(true, true);
+    }
+
     private sealed class FakeHost : ICodeTabHost
     {
         public Signet.Core.MiscEditors.ClipEditorNode ClipLibraryRoot { get; } = new Signet.Core.MiscEditors.ClipEditorModel().Root;
@@ -521,6 +587,35 @@ public sealed class CodeTabViewRenderTests
         }
 
         public void ViewImage(string bookPath)
+        {
+        }
+
+        public System.Func<HtmlResource, int, FootnoteMenuState?> FootnoteState { get; set; } = (_, _) => null;
+
+        public FootnoteMenuState? GetFootnoteState(HtmlResource html, int offset) => FootnoteState(html, offset);
+
+        public Signet.Core.Footnotes.FootnotePlacement LastFootnotePlacement => Signet.Core.Footnotes.FootnotePlacement.Local;
+
+        public Signet.Core.Footnotes.FootnoteError ValidateFootnoteContent(string content) =>
+            Signet.Core.Footnotes.FootnoteError.None;
+
+        public void AddFootnote(HtmlResource html, int offset, string content, Signet.Core.Footnotes.FootnotePlacement placement)
+        {
+        }
+
+        public void RemoveFootnote(Signet.Core.Footnotes.FootnoteHit hit)
+        {
+        }
+
+        public void MoveFootnote(Signet.Core.Footnotes.FootnoteHit hit)
+        {
+        }
+
+        public void GoToFootnote(Signet.Core.Footnotes.FootnoteHit hit)
+        {
+        }
+
+        public void RenumberFootnotes()
         {
         }
     }
