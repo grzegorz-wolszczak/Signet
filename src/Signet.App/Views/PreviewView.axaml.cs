@@ -48,6 +48,8 @@ public partial class PreviewView : UserControl
     // never delivers non-synthetic frames) — better to show something than an empty panel.
     private static readonly TimeSpan RevealFallbackDelay = TimeSpan.FromSeconds(3);
 
+    private static readonly Uri BlankPage = new("about:blank");
+
     private PreviewViewModel? _boundViewModel;
     private bool _revealed;
     private bool _initStarted;
@@ -83,6 +85,7 @@ public partial class PreviewView : UserControl
         {
             _boundViewModel.NavigateRequested -= OnNavigateRequested;
             _boundViewModel.ReloadRequested -= OnReloadRequested;
+            _boundViewModel.ClearRequested -= OnClearRequested;
             _boundViewModel.ZoomChanged -= OnZoomChanged;
             _boundViewModel.ScrollToLocRequested -= OnScrollToLocRequested;
             _boundViewModel.PrintRequested -= OnPrintRequested;
@@ -99,6 +102,7 @@ public partial class PreviewView : UserControl
         {
             _boundViewModel.NavigateRequested += OnNavigateRequested;
             _boundViewModel.ReloadRequested += OnReloadRequested;
+            _boundViewModel.ClearRequested += OnClearRequested;
             _boundViewModel.ZoomChanged += OnZoomChanged;
             _boundViewModel.ScrollToLocRequested += OnScrollToLocRequested;
             _boundViewModel.PrintRequested += OnPrintRequested;
@@ -260,6 +264,16 @@ public partial class PreviewView : UserControl
             {
                 // Ignored — the user can try again.
             }
+        }
+    }
+
+    // No tab is open: drop the page (also a URL still waiting for the engine initialization).
+    private void OnClearRequested(object? sender, EventArgs e)
+    {
+        _pendingUrl = null;
+        if (_initialized && !_initFailed)
+        {
+            Navigate(BlankPage);
         }
     }
 

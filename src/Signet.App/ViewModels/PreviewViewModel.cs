@@ -101,6 +101,9 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     /// <summary>The view should reload the current page in the WebView control.</summary>
     public event EventHandler? ReloadRequested;
 
+    /// <summary>The view should drop the shown page and display an empty preview (no tab is open).</summary>
+    public event EventHandler? ClearRequested;
+
     /// <summary>The zoom factor changed — the view should apply it to the control.</summary>
     public event EventHandler<double>? ZoomChanged;
 
@@ -244,6 +247,23 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         OnPropertyChanged(nameof(HasContent));
         OnPropertyChanged(nameof(CurrentBookPath));
         SyncAndNavigate();
+    }
+
+    /// <summary>
+    /// Empties the preview (all tabs were closed): forgets the shown resource and asks the view to
+    /// drop the page. The publication stays attached, so the next <see cref="ShowResource"/> works.
+    /// </summary>
+    public void Clear()
+    {
+        ThrowIfDisposed();
+        _currentBookPath = null;
+        _lastCaretOffset = null;
+        _restoreCaretAfterLoad = false;
+        _instrumentation = null;
+        CurrentUrlText = string.Empty;
+        OnPropertyChanged(nameof(HasContent));
+        OnPropertyChanged(nameof(CurrentBookPath));
+        ClearRequested?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>Re-synchronizes the mirror and reloads the preview (the "Reload" button, tab save).</summary>

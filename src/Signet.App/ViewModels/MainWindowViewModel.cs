@@ -2941,7 +2941,17 @@ public sealed partial class MainWindowViewModel
         RefreshInsertActionState();
         RefreshSpellcheckActionState();
 
-        _preview.ShowResource(ActiveTab?.Resource);
+        // Closing the active tab passes through "no active tab" before its neighbour is activated —
+        // the preview is emptied only once no tab is left (otherwise it would flicker).
+        if (_tabManager.Count == 0)
+        {
+            _preview.Clear();
+        }
+        else
+        {
+            _preview.ShowResource(ActiveTab?.Resource);
+        }
+
         LiveCssContextChanged?.Invoke(this, EventArgs.Empty);
         UpdateNavigationPlace();
     }

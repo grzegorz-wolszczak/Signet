@@ -184,6 +184,47 @@ public sealed class PreviewViewModelTests
     }
 
     [Fact]
+    public void Clear_DropsShownPageAndRaisesClearRequested()
+    {
+        using TempDir temp = new();
+        using Book book = Load(temp);
+        using PreviewViewModel sut = New();
+
+        sut.SetBook(book);
+        sut.ShowResource(book.GetHtmlResources().First());
+        bool cleared = false;
+        sut.ClearRequested += (_, _) => cleared = true;
+
+        sut.Clear();
+
+        cleared.Should().BeTrue();
+        sut.HasContent.Should().BeFalse();
+        sut.CurrentBookPath.Should().BeNull();
+        sut.CurrentUrlText.Should().BeEmpty();
+        sut.CurrentUrlOrNull().Should().BeNull("a view attached later must not restore the dropped page");
+    }
+
+    [Fact]
+    public void Clear_ThenShowResource_ShowsThePageAgain()
+    {
+        using TempDir temp = new();
+        using Book book = Load(temp);
+        using PreviewViewModel sut = New();
+
+        HtmlResource html = book.GetHtmlResources().First();
+        sut.SetBook(book);
+        sut.ShowResource(html);
+        sut.Clear();
+        int navigations = 0;
+        sut.NavigateRequested += (_, _) => navigations++;
+
+        sut.ShowResource(html);
+
+        navigations.Should().Be(1);
+        sut.CurrentBookPath.Should().Be(html.BookPath);
+    }
+
+    [Fact]
     public void NotifyContentChanged_ZeroDebounce_RefreshesAndReflectsEdit()
     {
         using TempDir temp = new();
