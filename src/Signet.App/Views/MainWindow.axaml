@@ -77,7 +77,7 @@
       </Style>
     </DockPanel.Styles>
 
-    <Menu DockPanel.Dock="Top" ItemsSource="{Binding MenuItems}">
+    <Menu x:Name="MainMenu" DockPanel.Dock="Top" ItemsSource="{Binding MenuItems}">
       <Menu.Styles>
         <Style Selector="MenuItem" x:DataType="menu:MenuItemViewModel">
           <Setter Property="Header" Value="{Binding Header}" />

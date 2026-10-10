@@ -1083,6 +1083,16 @@ public sealed partial class MainWindowViewModel
     void IRecentFilesMenu.Open(string path) => RunFileAction(f => f.OpenRecentAsync(path));
 
     /// <inheritdoc />
+    void IRecentFilesMenu.Remove(string path)
+    {
+        _settings.RecentFiles = _settings.RecentFiles
+            .Where(p => !string.Equals(p, path, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        _settings.Save();
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <inheritdoc />
     void IRecentFilesMenu.ClearAll()
     {
         _settings.RecentFiles = System.Array.Empty<string>();

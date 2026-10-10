@@ -62,6 +62,35 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         DragDrop.SetAllowDrop(this, true);
         AddHandler(DragDrop.DragOverEvent, OnFileDragOver, Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
         AddHandler(DragDrop.DropEvent, OnFileDrop, Avalonia.Interactivity.RoutingStrategies.Bubble, handledEventsToo: true);
+
+        // A right click on a main menu item with its own context items (e.g. a "Recent Files" entry). The
+        // event bubbles from the submenu popups to the Menu; Avalonia does not click items with the right button.
+        MainMenu.ContextRequested += OnMainMenuContextRequested;
+    }
+
+    private static void OnMainMenuContextRequested(object? sender, ContextRequestedEventArgs e)
+    {
+        MenuItem? item = (e.Source as Visual)?.FindAncestorOfType<MenuItem>(includeSelf: true);
+        if (item?.DataContext is not Menu.MenuItemViewModel { ContextItems: { Count: > 0 } contextItems })
+        {
+            return;
+        }
+
+        ContextMenu menu = new()
+        {
+            ItemsSource = contextItems
+                .Select(c => new MenuItem
+                {
+                    Header = c.Header,
+                    // Posted: the command may rebuild the list (removing the item this menu is opened on)
+                    // — let the context menu close first.
+                    Command = new CommunityToolkit.Mvvm.Input.RelayCommand(
+                        () => Dispatcher.UIThread.Post(() => c.Command?.Execute(null))),
+                })
+                .ToList(),
+        };
+        menu.Open(item);
+        e.Handled = true;
     }
 
     private static string? FirstDroppedFilePath(DragEventArgs e) =>

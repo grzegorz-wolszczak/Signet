@@ -73,6 +73,12 @@ public sealed partial class MenuItemViewModel : ObservableObject
     /// <summary>Whether this is a separator.</summary>
     public bool IsSeparator { get; }
 
+    /// <summary>
+    /// Items of the context menu shown on a right click on this item (e.g. "Remove from Recent Files"),
+    /// or <see langword="null"/> when the item has none.
+    /// </summary>
+    public IReadOnlyList<MenuItemViewModel>? ContextItems { get; set; }
+
     /// <summary>Whether the item is checkable (rendered as a checkbox).</summary>
     [ObservableProperty]
     private bool _isCheckable;

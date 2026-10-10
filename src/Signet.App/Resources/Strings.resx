@@ -3260,6 +3260,9 @@ Tego typu pliku nie można jeszcze edytować w Signet.</value>
   <data name="Preview_PrepareFailed" xml:space="preserve">
     <value>Podgląd: nie udało się przygotować treści ({0})</value>
   </data>
+  <data name="Menu_RemoveFromRecentFiles" xml:space="preserve">
+    <value>Usuń z listy ostatnich plików</value>
+  </data>
   <data name="Menu_ClearRecentFiles" xml:space="preserve">
     <value>Wyczyść listę</value>
   </data>

@@ -152,7 +152,7 @@ public sealed class MenuBuilderTests
         int print = headers.IndexOf("_Print...");
 
         headers.Skip(print + 1).Take(6).Should().Equal(
-            "-", "_1 a__b.epub", "_2 c.epub", "Clear List", "-", "Close");
+            "-", "_1. a__b.epub", "_2. c.epub", "Clear List", "-", "Close");
         file.Items!.Should().NotContain(i => i.Items != null && i.Header.Contains("Recent"));
     }
 
@@ -169,8 +169,8 @@ public sealed class MenuBuilderTests
         MenuItemViewModel file = BuildWith(host, recent).Single(m => m.Header == "_File");
         List<string> headers = file.Items!.Select(i => i.Header).ToList();
 
-        headers.Should().Contain("_1 Kroki w nieznane 3 (Iskry) (1972)….epub");
-        headers.Should().Contain("_2 exactly__forty__characters__long__names.epub");
+        headers.Should().Contain("_1. Kroki w nieznane 3 (Iskry) (1972)….epub");
+        headers.Should().Contain("_2. exactly__forty__characters__long__names.epub");
     }
 
     [Fact]
@@ -192,6 +192,23 @@ public sealed class MenuBuilderTests
         file.Items!.Select(i => i.Header).Should().NotContain(h => h.EndsWith(".epub"));
     }
 
+    [Fact]
+    public void A_recent_file_has_a_context_item_that_removes_it_from_the_list()
+    {
+        using UiCultureScope culture = new("en");
+        using TestHost host = new();
+        FakeRecentFiles recent = new() { Files = new[] { "/books/a.epub", "/books/b.epub" } };
+        MenuItemViewModel file = BuildWith(host, recent).Single(m => m.Header == "_File");
+
+        MenuItemViewModel second = file.Items!.Single(i => i.Header == "_2. b.epub");
+        MenuItemViewModel remove = second.ContextItems!.Should().ContainSingle().Subject;
+        remove.Header.Should().Be("Remove from Recent Files");
+        remove.Command!.Execute(null);
+
+        recent.Removed.Should().Equal("/books/b.epub");
+        file.Items!.Single(i => i.Header == "Clear List").ContextItems.Should().BeNull();
+    }
+
     private static IReadOnlyList<MenuItemViewModel> BuildWith(TestHost host, IRecentFilesMenu recent) =>
         new MenuBuilder(host.Registry, host.Toolbars, new RelayCommand(() => { }), recent).Build();
 
@@ -205,9 +222,13 @@ public sealed class MenuBuilderTests
 
         public void RaiseChanged() => Changed?.Invoke(this, System.EventArgs.Empty);
 
+        public List<string> Removed { get; } = new();
+
         public void Open(string path)
         {
         }
+
+        public void Remove(string path) => Removed.Add(path);
 
         public void ClearAll()
         {

@@ -23,6 +23,9 @@ public interface IRecentFilesMenu
     /// <summary>Opens a file from the list.</summary>
     void Open(string path);
 
+    /// <summary>Removes a single file from the list (the file itself is not touched).</summary>
+    void Remove(string path);
+
     /// <summary>Clears the whole list.</summary>
     void ClearAll();
 }
@@ -186,11 +189,17 @@ public sealed class MenuBuilder
             foreach (string path in files)
             {
                 string captured = path;
-                // "&N name"; accelerators only for 1–9. Underscores in the file name
+                // "&N. name"; accelerators only for 1–9. Underscores in the file name
                 // are doubled so that Avalonia does not take them for an access key.
                 string name = ShortenFileName(Path.GetFileName(path)).Replace("_", "__", StringComparison.Ordinal);
-                string label = index <= 9 ? $"_{index} {name}" : $"{index} {name}";
-                entries.Add(MenuItemViewModel.ForCommand(label, new RelayCommand(() => _recentFiles!.Open(captured))));
+                string label = index <= 9 ? $"_{index}. {name}" : $"{index}. {name}";
+                MenuItemViewModel entry = MenuItemViewModel.ForCommand(label, new RelayCommand(() => _recentFiles!.Open(captured)));
+                entry.ContextItems = new[]
+                {
+                    MenuItemViewModel.ForCommand(
+                        Strings.Get("Menu_RemoveFromRecentFiles"), new RelayCommand(() => _recentFiles!.Remove(captured))),
+                };
+                entries.Add(entry);
                 index++;
             }
 
