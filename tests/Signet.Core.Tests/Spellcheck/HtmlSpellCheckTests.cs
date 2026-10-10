@@ -48,6 +48,20 @@ public sealed class HtmlSpellCheckTests
         words.Select(w => w.Text).Should().Equal("hello");
     }
 
+    [Fact]
+    public void GetAllWords_keeps_an_underscore_between_word_characters_inside_the_word()
+    {
+        using TempDir dicts = new();
+        using TempDir userDicts = new();
+        DictionaryFixture.Write(dicts.Path, "en_US", "hello", "world");
+        SettingsStore settings = NewSettings(dicts, "en_US");
+        SpellChecker spellChecker = new(settings, dicts.Path, userDicts.Path);
+
+        HtmlWord[] words = HtmlSpellCheck.GetAllWords(spellChecker, settings, "<p>snake_case _lead trail_ a__b</p>").ToArray();
+
+        words.Select(w => w.Text).Should().Equal("snake_case", "lead", "trail", "a", "b");
+    }
+
     [Theory]
     [InlineData("<p>hello <!-- a note --> world</p>")]
     [InlineData("<p><!-- a note -->hello world</p>")]

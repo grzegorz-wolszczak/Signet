@@ -6,6 +6,7 @@ using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Styling;
@@ -13,6 +14,7 @@ using Avalonia.Threading;
 using AvaloniaEdit;
 using AvaloniaEdit.CodeCompletion;
 using AvaloniaEdit.Document;
+using AvaloniaEdit.Editing;
 using AvaloniaEdit.Rendering;
 using AvaloniaEdit.TextMate;
 using Signet.App.Actions;
@@ -107,6 +109,7 @@ public partial class CodeTabView : UserControl
         Editor.AddHandler(PointerWheelChangedEvent, OnPointerWheelChanged, RoutingStrategies.Tunnel);
         Editor.AddHandler(PointerPressedEvent, OnEditorPointerPressed, RoutingStrategies.Tunnel);
         Editor.TextArea.AddHandler(KeyDownEvent, OnTextAreaKeyDownNavigation, RoutingStrategies.Tunnel);
+        Editor.TextArea.AddHandler(KeyDownEvent, OnTextAreaKeyDownPaste, RoutingStrategies.Tunnel);
         Editor.DocumentChanged += OnEditorDocumentChanged;
 
         _contextMenu.Opening += OnContextMenuOpening;
@@ -668,7 +671,7 @@ public partial class CodeTabView : UserControl
         items.Add(new Separator());
         items.Add(Item(Strings.Get("CodeViewMenu_Cut"), Editor.Cut, "edit-cut", vm.HasSelection, new KeyGesture(Key.X, KeyModifiers.Control)));
         items.Add(Item(Strings.Get("CodeViewMenu_Copy"), Editor.Copy, "edit-copy", vm.HasSelection, new KeyGesture(Key.C, KeyModifiers.Control)));
-        items.Add(Item(Strings.Get("CodeViewMenu_Paste"), Editor.Paste, "edit-paste", gesture: new KeyGesture(Key.V, KeyModifiers.Control)));
+        items.Add(Item(Strings.Get("CodeViewMenu_Paste"), Paste, "edit-paste", gesture: new KeyGesture(Key.V, KeyModifiers.Control)));
         items.Add(Item(Strings.Get("CodeViewMenu_Delete"), Editor.Delete, "edit-delete", vm.HasSelection));
         items.Add(new Separator());
         items.Add(Item(
@@ -931,6 +934,53 @@ public partial class CodeTabView : UserControl
 
     // Ctrl+Home / Ctrl+End jump to the start / end of the document — navigation steps, notified before the editor
     // moves the caret.
+    // With NFC normalization on (Preferences), the paste shortcuts go through Paste instead of AvaloniaEdit's own paste.
+    private void OnTextAreaKeyDownPaste(object? sender, KeyEventArgs e)
+    {
+        if (_boundViewModel is { NormalizesPastedText: true }
+            && Application.Current?.PlatformSettings?.HotkeyConfiguration.Paste.Any(g => g.Matches(e)) == true)
+        {
+            e.Handled = true;
+            Paste();
+        }
+    }
+
+    // AvaloniaEdit's paste (newlines of the document, tabs to spaces) with the clipboard text prepared by the view
+    // model (NFC normalization); without normalization it is AvaloniaEdit's paste.
+    private async void Paste()
+    {
+        if (_boundViewModel is not { NormalizesPastedText: true } vm)
+        {
+            Editor.Paste();
+            return;
+        }
+
+        string? text = TopLevel.GetTopLevel(this)?.Clipboard is { } clipboard ? await clipboard.TryGetTextAsync() : null;
+        if (string.IsNullOrEmpty(text) || Editor.Document is not { } document || Editor.IsReadOnly)
+        {
+            return;
+        }
+
+        TextArea area = Editor.TextArea;
+        text = TextUtilities.NormalizeNewLines(vm.PrepareClipboardText(text), TextUtilities.GetNewLineFromDocument(document, area.Caret.Line));
+        if (area.Options.ConvertTabsToSpaces)
+        {
+            text = text.Replace("\t", new string(' ', area.Options.IndentationSize), StringComparison.Ordinal);
+        }
+
+        document.BeginUpdate();
+        try
+        {
+            area.Selection.ReplaceSelectionWithText(text);
+        }
+        finally
+        {
+            document.EndUpdate();
+        }
+
+        area.Caret.BringCaretToView();
+    }
+
     private void OnTextAreaKeyDownNavigation(object? sender, KeyEventArgs e)
     {
         if (e.KeyModifiers.HasFlag(KeyModifiers.Control) && e.Key is Key.Home or Key.End)

@@ -579,20 +579,17 @@ public sealed class SearchEditorViewModel : ViewModelBase
         return anyVisible;
     }
 
+    // Keywords: every word of the filter must occur, in any order ("quote fix" finds "Fix smart quotes") — in the name,
+    // or with "filter all" in any of the name, Find, Replace and Controls fields.
     private bool Matches(SearchEntryNodeViewModel node, string filter)
     {
-        if (node.Name.Contains(filter, StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        if (!_filterAll || node.IsGroup)
-        {
-            return false;
-        }
-
-        return node.Find.Contains(filter, StringComparison.OrdinalIgnoreCase)
-            || node.Replace.Contains(filter, StringComparison.OrdinalIgnoreCase)
-            || node.Controls.Contains(filter, StringComparison.OrdinalIgnoreCase);
+        string[] keywords = filter.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries);
+        bool searchAll = _filterAll && !node.IsGroup;
+        return keywords.All(keyword =>
+            node.Name.Contains(keyword, StringComparison.OrdinalIgnoreCase)
+            || (searchAll
+                && (node.Find.Contains(keyword, StringComparison.OrdinalIgnoreCase)
+                    || node.Replace.Contains(keyword, StringComparison.OrdinalIgnoreCase)
+                    || node.Controls.Contains(keyword, StringComparison.OrdinalIgnoreCase))));
     }
 }

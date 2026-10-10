@@ -1,10 +1,14 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
+using System.Text;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Platform.Storage;
 using Signet.App.Infrastructure;
+using Signet.App.Resources;
 using Signet.App.ViewModels;
 using Signet.Controls.TreeDataGrid;
 
@@ -29,6 +33,8 @@ namespace Signet.App.Views;
         + "window and the view model's Words it observes.")]
 public partial class SpellcheckEditorWindow : Window
 {
+    private static readonly FilePickerFileType CsvType = new("CSV") { Patterns = new[] { "*.csv" } };
+
     private SpellcheckEditorViewModel? _bound;
 
     // Keeps the column headers in the current UI language (held weakly by Strings).
@@ -55,12 +61,14 @@ public partial class SpellcheckEditorWindow : Window
         if (_bound is not null)
         {
             _bound.SelectRowRequested -= OnSelectRowRequested;
+            _bound.ExportCsvRequested -= OnExportCsvRequested;
         }
 
         _bound = DataContext as SpellcheckEditorViewModel;
         if (_bound is not null)
         {
             _bound.SelectRowRequested += OnSelectRowRequested;
+            _bound.ExportCsvRequested += OnExportCsvRequested;
             _columns = new LocalizedColumns<SpellcheckWordRow>();
             _source = new FlatTreeDataGridSource<SpellcheckWordRow>(_bound.Words)
             {
@@ -80,6 +88,28 @@ public partial class SpellcheckEditorWindow : Window
     }
 
     private void OnCloseClicked(object? sender, RoutedEventArgs e) => Close();
+
+    private async void OnExportCsvRequested(object? sender, EventArgs e)
+    {
+        if (_bound is not { } vm)
+        {
+            return;
+        }
+
+        IStorageFile? file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = Strings.Get("SpellcheckEditorWindow_ExportCsvTitle"),
+            DefaultExtension = "csv",
+            SuggestedFileName = "words.csv",
+            FileTypeChoices = new[] { CsvType },
+        });
+
+        string? path = file?.TryGetLocalPath();
+        if (!string.IsNullOrEmpty(path))
+        {
+            File.WriteAllText(path, vm.BuildCsv(), Encoding.UTF8);
+        }
+    }
 
     private void OnWordDoubleTapped(object? sender, TappedEventArgs e)
     {

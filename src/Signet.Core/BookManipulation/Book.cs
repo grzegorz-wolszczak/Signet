@@ -1742,6 +1742,64 @@ public sealed class Book : IDisposable
         }
     }
 
+    /// <summary>
+    /// Makes <paramref name="html"/> the EPUB 3 navigation document: its manifest item gets <c>properties="nav"</c> and
+    /// every other item loses it. Does nothing in an EPUB 2 book.
+    /// </summary>
+    /// <returns><c>true</c> when the manifest changed.</returns>
+    public bool SetNavDocument(HtmlResource html)
+    {
+        ArgumentNullException.ThrowIfNull(html);
+        if (!IsEpub3)
+        {
+            return false;
+        }
+
+        OpfResource opf = GetOpf();
+        OpfDocument document = opf.GetOpfDocument();
+        bool changed = false;
+        foreach (ManifestEntry entry in document.Manifest)
+        {
+            List<string> props = entry.Attributes.Value("properties")
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .ToList();
+            bool isTarget = string.Equals(
+                Core.BookPath.BuildBookPath(Utility.UrlDecodePath(entry.Href), opf.Folder), html.BookPath, StringComparison.Ordinal);
+            if (isTarget == props.Contains("nav"))
+            {
+                continue;
+            }
+
+            if (isTarget)
+            {
+                props.Add("nav");
+            }
+            else
+            {
+                props.RemoveAll(p => p == "nav");
+            }
+
+            if (props.Count == 0)
+            {
+                entry.Attributes.Remove("properties");
+            }
+            else
+            {
+                entry.Attributes.Set("properties", string.Join(' ', props));
+            }
+
+            changed = true;
+        }
+
+        if (changed)
+        {
+            opf.SetOpfDocument(document);
+            Modified = true;
+        }
+
+        return changed;
+    }
+
     /// <summary>Adds <c>properties="nav"</c> to the manifest entry that points at the given resource.</summary>
     private void MarkManifestItemAsNav(HtmlResource nav)
     {

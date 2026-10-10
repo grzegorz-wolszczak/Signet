@@ -10,14 +10,23 @@
 
   <Grid Margin="12" RowDefinitions="Auto,*,Auto" RowSpacing="8">
 
-    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="8">
-      <TextBlock Text="{loc:Loc SpellcheckEditorWindow_Filter}" VerticalAlignment="Center" />
-      <TextBox Text="{Binding FilterText, Mode=TwoWay}" Width="220"
-               PlaceholderText="{loc:Loc SpellcheckEditorWindow_FilterPlaceholder}" />
-      <CheckBox Content="{loc:Loc SpellcheckEditorWindow_ShowAllWords}" IsChecked="{Binding ShowAllWords, Mode=TwoWay}"
-                 VerticalAlignment="Center" Margin="12,0,0,0" />
-      <Button Content="{loc:Loc Common_Refresh}" Command="{Binding RefreshCommand}" />
-      <TextBlock Text="{Binding Message}" VerticalAlignment="Center" Margin="12,0,0,0" />
+    <StackPanel Grid.Row="0" Spacing="4">
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <TextBlock Text="{loc:Loc SpellcheckEditorWindow_Filter}" VerticalAlignment="Center" />
+        <TextBox Text="{Binding FilterText, Mode=TwoWay}" Width="220"
+                 PlaceholderText="{loc:Loc SpellcheckEditorWindow_FilterPlaceholder}" />
+        <CheckBox Content="{loc:Loc SpellcheckEditorWindow_ShowAllWords}" IsChecked="{Binding ShowAllWords, Mode=TwoWay}"
+                   VerticalAlignment="Center" Margin="12,0,0,0" />
+        <Button Content="{loc:Loc Common_Refresh}" Command="{Binding RefreshCommand}" />
+        <TextBlock Text="{Binding Message}" VerticalAlignment="Center" Margin="12,0,0,0" />
+      </StackPanel>
+      <!-- List filters (they do not change what Code View marks as misspelled). -->
+      <StackPanel Orientation="Horizontal" Spacing="16">
+        <TextBlock Text="{loc:Loc SpellcheckEditorWindow_Hide}" VerticalAlignment="Center" />
+        <CheckBox Content="{loc:Loc SpellcheckEditorWindow_HideAllCaps}" IsChecked="{Binding HideAllCaps, Mode=TwoWay}" />
+        <CheckBox Content="{loc:Loc SpellcheckEditorWindow_HideCamelCase}" IsChecked="{Binding HideCamelCase, Mode=TwoWay}" />
+        <CheckBox Content="{loc:Loc SpellcheckEditorWindow_HideSnakeCase}" IsChecked="{Binding HideSnakeCase, Mode=TwoWay}" />
+      </StackPanel>
     </StackPanel>
 
     <Grid Grid.Row="1" ColumnDefinitions="*,220" ColumnSpacing="10">
@@ -41,8 +50,13 @@
       </StackPanel>
     </Grid>
 
-    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-      <Button Content="{loc:Loc Common_Close}" Click="OnCloseClicked" />
-    </StackPanel>
+    <DockPanel Grid.Row="2">
+      <Button DockPanel.Dock="Right" Content="{loc:Loc Common_Close}" Click="OnCloseClicked" />
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <TextBlock Text="{loc:Loc SpellcheckEditorWindow_VisibleWords}" VerticalAlignment="Center" />
+        <TextBlock Text="{Binding VisibleWordCount}" VerticalAlignment="Center" />
+        <Button Content="{loc:Loc ReportsWindow_ExportCsv}" Command="{Binding ExportCsvCommand}" Margin="12,0,0,0" />
+      </StackPanel>
+    </DockPanel>
   </Grid>
 </Window>

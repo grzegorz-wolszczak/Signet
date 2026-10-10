@@ -52,6 +52,8 @@
         <Button Content="↓" Command="{Binding MoveDownCommand}" ToolTip.Tip="{loc:Loc EditTocWindow_MoveDownTip}" />
         <Button Content="→" Command="{Binding MoveRightCommand}" ToolTip.Tip="{loc:Loc EditTocWindow_IncreaseLevelTip}" />
       </UniformGrid>
+      <Button Content="{loc:Loc EditTocWindow_SortByBookOrder}" HorizontalAlignment="Stretch" Command="{Binding SortByBookOrderCommand}"
+              ToolTip.Tip="{loc:Loc EditTocWindow_SortByBookOrderTip}" />
 
     </StackPanel>
 

@@ -157,6 +157,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _navigationHistoryDays = _settings.NavigationHistoryDays;
         _recentLocationsLimit = _settings.RecentLocationsLimit;
         _autoCloseTags = _settings.CodeViewAutoCloseTags;
+        _pasteNormalizeNfc = _settings.CodeViewPasteNormalizeNfc;
         _warnMissingDoctype = _settings.WarnMissingDoctype;
         _prettifyAddMissingDoctype = _settings.PrettifyAddMissingDoctype;
         _mendAddMissingDoctype = _settings.MendAddMissingDoctype;
@@ -854,6 +855,12 @@ public sealed partial class PreferencesViewModel : ObservableObject
     private bool _autoCloseTags;
 
     partial void OnAutoCloseTagsChanged(bool value) => _settings.CodeViewAutoCloseTags = value;
+
+    /// <summary>Normalization of text pasted into Code View to Unicode NFC.</summary>
+    [ObservableProperty]
+    private bool _pasteNormalizeNfc;
+
+    partial void OnPasteNormalizeNfcChanged(bool value) => _settings.CodeViewPasteNormalizeNfc = value;
 
     /// <summary>Whether operations ask for confirmation when some (X)HTML files have no DOCTYPE.</summary>
     [ObservableProperty]

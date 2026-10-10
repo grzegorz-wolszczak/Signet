@@ -2819,6 +2819,7 @@ public sealed partial class MainWindowViewModel
         }
 
         _findReplace.AttachToActiveTab(ActiveCodeTab);
+        _toc.SetCurrentFile(ActiveTab?.Resource.BookPath);
 
         // Clicking a document tab moves the zoom focus to Code View.
         _previewHasZoomFocus = false;
@@ -3256,6 +3257,8 @@ public sealed partial class MainWindowViewModel
         Wire(AppActionIds.BookBrowserMove, BookBrowser.MoveSelectedCommand);
         Wire(AppActionIds.BookBrowserMoveUp, BookBrowser.MoveTextUpCommand);
         Wire(AppActionIds.BookBrowserMoveDown, BookBrowser.MoveTextDownCommand);
+        Wire(AppActionIds.BookBrowserMoveToTop, BookBrowser.MoveTextToTopCommand);
+        Wire(AppActionIds.BookBrowserMoveToBottom, BookBrowser.MoveTextToBottomCommand);
         Wire(AppActionIds.BookBrowserSort, BookBrowser.SortTextCommand);
         Wire(AppActionIds.BookBrowserMerge, BookBrowser.MergeSelectedCommand);
         Wire(AppActionIds.BookBrowserSplit, BookBrowser.SplitSelectedCommand);
@@ -3266,6 +3269,7 @@ public sealed partial class MainWindowViewModel
         Wire(AppActionIds.BookBrowserAddExistingFiles, BookBrowser.AddExistingFilesCommand);
         Wire(AppActionIds.BookBrowserAddSemantics, BookBrowser.AddSemanticsSelectedCommand);
         Wire(AppActionIds.BookBrowserCoverImage, BookBrowser.CoverImageSelectedCommand);
+        Wire(AppActionIds.BookBrowserMarkAsNav, BookBrowser.MarkAsNavSelectedCommand);
         Wire(AppActionIds.BookBrowserLinkStylesheets, BookBrowser.LinkStylesheetsSelectedCommand);
         Wire(AppActionIds.BookBrowserLinkJavascripts, BookBrowser.LinkJavascriptsSelectedCommand);
         Wire(AppActionIds.BookBrowserValidateWithW3C, BookBrowser.ValidateSelectedWithW3CCommand);
@@ -3508,7 +3512,10 @@ public sealed partial class MainWindowViewModel
     public void PasteClipboardHistoryEntry(string text)
     {
         ArgumentException.ThrowIfNullOrEmpty(text);
-        ActiveCodeTab?.InsertRawText(text);
+        if (ActiveCodeTab is { } tab)
+        {
+            tab.InsertRawText(tab.PrepareClipboardText(text));
+        }
     }
 
     /// <summary>All media resources of the book that can be inserted (images/SVG/audio/video). Empty when there is no book.</summary>

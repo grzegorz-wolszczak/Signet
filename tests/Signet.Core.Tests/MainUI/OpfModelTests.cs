@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using AwesomeAssertions;
 using Signet.Core.BookManipulation;
@@ -162,6 +163,49 @@ public sealed class OpfModelTests
         model.MoveText(first, 1).Should().BeTrue();
 
         model.GetFolder(OpfModelGroupKind.Text)!.Entries[1].BookPath.Should().Be(first.BookPath);
+    }
+
+    private static Book BookWithChapters(int count)
+    {
+        Book book = BookCreator.CreateNewBook("2.0");
+        while (book.GetHtmlResources().Count < count)
+        {
+            book.CreateEmptyHtmlFile();
+        }
+
+        return book;
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void MoveTextToEdge_moves_the_selected_documents_keeping_their_order(bool toTop)
+    {
+        using Book book = BookWithChapters(4);
+        using OpfModel model = new(book);
+        List<string> before = model.GetFolder(OpfModelGroupKind.Text)!.Entries.Select(e => e.BookPath).ToList();
+        before.Should().HaveCountGreaterThanOrEqualTo(3);
+        var entries = model.GetFolder(OpfModelGroupKind.Text)!.Entries;
+        var selected = new[] { entries[^1], entries[1] };
+        string[] moved = { before[1], before[^1] };
+
+        model.MoveTextToEdge(selected, toTop).Should().BeTrue();
+
+        List<string> after = model.GetFolder(OpfModelGroupKind.Text)!.Entries.Select(e => e.BookPath).ToList();
+        List<string> rest = before.Except(moved).ToList();
+        after.Should().Equal(toTop ? moved.Concat(rest) : rest.Concat(moved));
+        book.GetOpf().GetSpineOrderBookPaths().Where(after.Contains).Should().Equal(after, "the spine follows the new order");
+    }
+
+    [Fact]
+    public void MoveTextToEdge_reports_no_change_when_the_documents_are_already_there()
+    {
+        using Book book = BookWithChapters(3);
+        using OpfModel model = new(book);
+        var entries = model.GetFolder(OpfModelGroupKind.Text)!.Entries;
+
+        model.MoveTextToEdge(new[] { entries[0] }, toTop: true).Should().BeFalse();
+        model.MoveTextToEdge(new[] { entries[^1] }, toTop: false).Should().BeFalse();
     }
 
     [Fact]

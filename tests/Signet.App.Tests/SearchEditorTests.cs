@@ -115,6 +115,29 @@ public sealed class SearchEditorTests : IDisposable
         panel.Message.Should().Contain("5"); // 3 (alpha) + 1 (beta) + 1 (gamma)
     }
 
+    [Theory]
+    [InlineData("quote fix", false, new[] { "Fix smart quotes" })]
+    [InlineData("QUOTES  smart", false, new[] { "Fix smart quotes" })]
+    [InlineData("fix", false, new[] { "Fix smart quotes", "Fix dashes" })]
+    [InlineData("fix nbsp", false, new string[0])]
+    [InlineData("fix nbsp", true, new[] { "Fix dashes" })]
+    public void Filter_matches_entries_that_contain_every_keyword_in_any_order(string filter, bool filterAll, string[] expected)
+    {
+        SavedSearchStore store = Store();
+        store.Save(new SearchEntry[]
+        {
+            new(false, "Fix smart quotes", "Fix smart quotes", "\"", "“", "NL DN AH"),
+            new(false, "Fix dashes", "Fix dashes", "--", "&nbsp;—", "NL DN AH"),
+            new(false, "Remove spans", "Remove spans", "<span>", "", "NL DN AH"),
+        });
+        var panel = new SearchEditorViewModel(store, NewFindReplace(new FakeMultiFileSearchHost()));
+
+        panel.FilterAll = filterAll;
+        panel.FilterText = filter;
+
+        panel.Nodes.Where(n => n.IsVisible).Select(n => n.Name).Should().Equal(expected);
+    }
+
     [Fact]
     public void CountsReport_ListsPerEntryCounts()
     {

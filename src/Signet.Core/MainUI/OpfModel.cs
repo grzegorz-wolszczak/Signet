@@ -250,6 +250,33 @@ public sealed class OpfModel : IDisposable
     }
 
     /// <summary>
+    /// Moves the given Text files to the start (<paramref name="toTop"/>) or the end of the reading order, keeping
+    /// their relative order.
+    /// </summary>
+    /// <returns><c>true</c> when the order changed.</returns>
+    public bool MoveTextToEdge(IEnumerable<OpfModelEntry> selected, bool toTop)
+    {
+        ArgumentNullException.ThrowIfNull(selected);
+        OpfModelFolder? text = GetFolder(OpfModelGroupKind.Text);
+        if (text is null)
+        {
+            return false;
+        }
+
+        HashSet<string> pick = selected.Select(e => e.Identifier).ToHashSet(StringComparer.Ordinal);
+        List<OpfModelEntry> current = text.Entries.ToList();
+        List<OpfModelEntry> moved = current.Where(e => pick.Contains(e.Identifier)).ToList();
+        List<OpfModelEntry> rest = current.Where(e => !pick.Contains(e.Identifier)).ToList();
+        List<OpfModelEntry> order = toTop ? moved.Concat(rest).ToList() : rest.Concat(moved).ToList();
+        if (moved.Count == 0 || order.Select(e => e.Identifier).SequenceEqual(current.Select(e => e.Identifier)))
+        {
+            return false;
+        }
+
+        return ReorderText(order);
+    }
+
+    /// <summary>
     /// Sorts the given Text files alphanumerically by name and rewrites the spine
     /// (sorts the chosen subset "in place", keeping the positions of the remaining files).
     /// </summary>

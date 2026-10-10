@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Signet.App.Resources;
 using Signet.Core.BookManipulation;
+using Signet.Core.Misc;
 using Signet.Core.Resources;
 using Signet.Core.Toc;
 using Signet.Core;
@@ -59,6 +60,7 @@ public sealed class EditTocViewModel : ViewModelBase
         MoveDownCommand = new RelayCommand(MoveDown);
         MoveLeftCommand = new RelayCommand(MoveLeft);
         MoveRightCommand = new RelayCommand(MoveRight);
+        SortByBookOrderCommand = new RelayCommand(SortByBookOrder);
         SelectTargetCommand = new RelayCommand(() => SelectTargetRequested?.Invoke(this, EventArgs.Empty));
         RenameCommand = new RelayCommand(() => RenameRequested?.Invoke(this, EventArgs.Empty));
         AcceptCommand = new RelayCommand(Accept);
@@ -87,6 +89,13 @@ public sealed class EditTocViewModel : ViewModelBase
     /// <see cref="EditTocNodeViewModel.Level"/>. Rebuilt after every change of the structure.
     /// </summary>
     public ObservableCollection<EditTocNodeViewModel> Rows { get; } = new();
+
+    /// <summary>
+    /// Sorts the entries on every level by their place in the book: the spine position of the target file, then the
+    /// position of the <c>#fragment</c> anchor in it. Entries without a resolvable target keep their place after the
+    /// sorted ones (the sort is stable). "Cancel" discards it like any other change.
+    /// </summary>
+    public RelayCommand SortByBookOrderCommand { get; }
 
     /// <summary>"Add Above" — insert an empty entry above the selected one.</summary>
     public RelayCommand AddAboveCommand { get; }
@@ -271,6 +280,73 @@ public sealed class EditTocViewModel : ViewModelBase
         }
 
         return node;
+    }
+
+    // --- sorting ---
+
+    private void SortByBookOrder()
+    {
+        Dictionary<string, int> spine = new(StringComparer.Ordinal);
+        foreach (string path in _book.GetOpf().GetSpineOrderBookPaths())
+        {
+            spine.TryAdd(path, spine.Count);
+        }
+
+        Dictionary<string, string> texts = new(StringComparer.Ordinal);
+        (int File, int Anchor) Key(EditTocNodeViewModel node)
+        {
+            if (node.Target.Length == 0 || node.Target.Contains(':', StringComparison.Ordinal))
+            {
+                return (int.MaxValue, int.MaxValue);
+            }
+
+            (string basePart, string fragment) = SplitFragment(node.Target);
+            string bookPath = Utility.UrlDecodePath(basePart);
+            if (!spine.TryGetValue(bookPath, out int file))
+            {
+                return (int.MaxValue, int.MaxValue);
+            }
+
+            if (fragment.Length == 0)
+            {
+                return (file, -1);
+            }
+
+            if (!texts.TryGetValue(bookPath, out string? text))
+            {
+                text = _book.GetFolderKeeper().GetResourceByBookPathNoThrow(bookPath) is HtmlResource html ? html.GetText() : string.Empty;
+                texts[bookPath] = text;
+            }
+
+            int anchor = LinkReference.FindAnchorOffset(text, Utility.UrlDecodePath(fragment));
+            return (file, anchor < 0 ? int.MaxValue : anchor);
+        }
+
+        bool changed = false;
+        void Sort(EditTocNodeViewModel parent)
+        {
+            List<EditTocNodeViewModel> sorted = parent.Children.OrderBy(Key).ToList();
+            if (!sorted.SequenceEqual(parent.Children))
+            {
+                changed = true;
+                for (int i = 0; i < sorted.Count; i++)
+                {
+                    parent.Children.Move(parent.Children.IndexOf(sorted[i]), i);
+                }
+            }
+
+            foreach (EditTocNodeViewModel child in parent.Children)
+            {
+                Sort(child);
+            }
+        }
+
+        Sort(_root);
+        Message = changed ? string.Empty : Strings.Get("EditToc_AlreadyInBookOrder");
+        if (changed)
+        {
+            Reselect(_selectedNodes.ToList());
+        }
     }
 
     // --- adding / deleting ---

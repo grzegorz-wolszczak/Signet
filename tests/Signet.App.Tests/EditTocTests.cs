@@ -67,6 +67,33 @@ public sealed class EditTocTests : IDisposable
     }
 
     [Fact]
+    public void Sort_puts_the_entries_of_every_level_back_in_book_order()
+    {
+        EditTocViewModel vm = NewViewModel();
+        vm.SetSelectedNodes(new[] { Find(vm, "Gamma") });
+        vm.MoveUpCommand.Execute(null);
+        vm.MoveUpCommand.Execute(null);
+        vm.Nodes.Select(n => n.Text).Should().Equal("Gamma", "Alpha", "Beta");
+
+        vm.SortByBookOrderCommand.Execute(null);
+
+        vm.Rows.Select(r => (r.Text, r.Level)).Should().Equal(("Alpha", 1), ("Alpha One", 2), ("Beta", 1), ("Gamma", 1));
+        vm.SelectedNode!.Text.Should().Be("Gamma", "the selection stays on the same entry");
+        vm.Message.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Sort_reports_when_the_entries_are_already_in_book_order()
+    {
+        EditTocViewModel vm = NewViewModel();
+
+        vm.SortByBookOrderCommand.Execute(null);
+
+        vm.Nodes.Select(n => n.Text).Should().Equal("Alpha", "Beta", "Gamma");
+        vm.Message.Should().NotBeEmpty();
+    }
+
+    [Fact]
     public void Rows_list_every_entry_in_reading_order_with_its_level()
     {
         EditTocViewModel vm = NewViewModel();

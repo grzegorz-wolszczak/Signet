@@ -264,6 +264,12 @@ public static class AppActionIds
     /// <summary>Moves down in the reading order.</summary>
     public const string BookBrowserMoveDown = "MainWindow.BookBrowser.MoveDown";
 
+    /// <summary>Moves the selected files to the start of the reading order.</summary>
+    public const string BookBrowserMoveToTop = "MainWindow.BookBrowser.MoveToTop";
+
+    /// <summary>Moves the selected files to the end of the reading order.</summary>
+    public const string BookBrowserMoveToBottom = "MainWindow.BookBrowser.MoveToBottom";
+
     /// <summary>Sorts the selected files.</summary>
     public const string BookBrowserSort = "MainWindow.BookBrowser.Sort";
 
@@ -293,6 +299,9 @@ public static class AppActionIds
 
     /// <summary>Marks the image as the cover.</summary>
     public const string BookBrowserCoverImage = "MainWindow.BookBrowser.CoverImage";
+
+    /// <summary>Makes the (X)HTML file the EPUB 3 navigation document (<c>properties="nav"</c>).</summary>
+    public const string BookBrowserMarkAsNav = "MainWindow.BookBrowser.MarkAsNav";
 
     /// <summary>Links stylesheets.</summary>
     public const string BookBrowserLinkStylesheets = "MainWindow.BookBrowser.LinkStylesheets";

@@ -477,6 +477,8 @@
             <CheckBox Content="{loc:Loc PreferencesWindow_ReopenLastFile}" IsChecked="{Binding ReopenLastFileOnStartup}" />
             <CheckBox Content="{loc:Loc PreferencesWindow_EnableFileDropZone}" IsChecked="{Binding FileDropZoneEnabled}" />
             <CheckBox Content="{loc:Loc PreferencesWindow_AutoCloseTags}" IsChecked="{Binding AutoCloseTags}" />
+            <CheckBox Content="{loc:Loc PreferencesWindow_PasteNormalizeNfc}" IsChecked="{Binding PasteNormalizeNfc}"
+                      ToolTip.Tip="{loc:Loc PreferencesWindow_PasteNormalizeNfcTip}" />
             <CheckBox Content="{loc:Loc PreferencesWindow_FindUsagesRefreshOnSave}" IsChecked="{Binding FindUsagesRefreshOnSave}" />
             <CheckBox Content="{loc:Loc PreferencesWindow_NavigationHistoryRemember}" IsChecked="{Binding NavigationHistoryRemember}" />
             <StackPanel Orientation="Horizontal" Spacing="8" Margin="28,0,0,0" IsEnabled="{Binding NavigationHistoryRemember}">

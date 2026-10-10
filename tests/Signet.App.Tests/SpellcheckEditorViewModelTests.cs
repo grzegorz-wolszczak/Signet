@@ -61,6 +61,35 @@ public sealed class SpellcheckEditorViewModelTests
         editor.Words.Select(w => w.Word).Should().Equal("wrold");
     }
 
+    [Theory]
+    [InlineData(nameof(SpellcheckEditorViewModel.HideAllCaps), "WRLDX")]
+    [InlineData(nameof(SpellcheckEditorViewModel.HideCamelCase), "wrldXq")]
+    [InlineData(nameof(SpellcheckEditorViewModel.HideSnakeCase), "wrl_dxq")]
+    public void A_hide_option_removes_its_kind_of_words_from_the_list_and_is_remembered(string option, string word)
+    {
+        (SpellcheckEditorViewModel editor, _, _) = New($"<p>wrold {word}</p>");
+        editor.Words.Select(w => w.Word).Should().Contain(word);
+        int before = editor.VisibleWordCount;
+
+        typeof(SpellcheckEditorViewModel).GetProperty(option)!.SetValue(editor, true);
+
+        editor.Words.Select(w => w.Word).Should().Equal("wrold");
+        editor.VisibleWordCount.Should().Be(before - 1);
+        typeof(SpellcheckEditorViewModel).GetProperty(option)!.GetValue(editor).Should().Be(true);
+    }
+
+    [Fact]
+    public void BuildCsv_lists_the_visible_words_with_a_header()
+    {
+        (SpellcheckEditorViewModel editor, _, _) = New("<p>wrold wrold wrongg</p>");
+        editor.FilterText = "wrold";
+
+        string[] lines = editor.BuildCsv().Split('\n', System.StringSplitOptions.RemoveEmptyEntries);
+
+        lines.Should().HaveCount(2);
+        lines[1].Should().StartWith("wrold,2,");
+    }
+
     [Fact]
     public void Ignore_selects_the_word_that_moves_into_the_row_of_the_ignored_one()
     {

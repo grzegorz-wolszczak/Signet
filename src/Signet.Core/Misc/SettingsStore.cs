@@ -477,6 +477,16 @@ public sealed class SettingsStore
     }
 
     /// <summary>
+    /// Whether text pasted into Code View is normalized to Unicode NFC (a letter followed by a combining accent becomes
+    /// one precomposed character; enabled by default).
+    /// </summary>
+    public bool CodeViewPasteNormalizeNfc
+    {
+        get => ReadBool("code_view_paste_normalize_nfc", true);
+        set => Write("code_view_paste_normalize_nfc", value);
+    }
+
+    /// <summary>
     /// Whether the "Find Usages" panel groups the usages by file (otherwise a flat list); remembered between
     /// sessions, off by default.
     /// </summary>
@@ -562,6 +572,27 @@ public sealed class SettingsStore
     {
         get => ReadBool("spell_check_numbers", false);
         set => Write("spell_check_numbers", value);
+    }
+
+    /// <summary>Spellcheck Editor: hide words written in capitals only (e.g. <c>NASA</c>) from the list.</summary>
+    public bool SpellcheckEditorHideAllCaps
+    {
+        get => ReadBool("spellcheck_editor_hide_all_caps", false);
+        set => Write("spellcheck_editor_hide_all_caps", value);
+    }
+
+    /// <summary>Spellcheck Editor: hide camelCase words (a lowercase letter followed by a capital) from the list.</summary>
+    public bool SpellcheckEditorHideCamelCase
+    {
+        get => ReadBool("spellcheck_editor_hide_camel_case", false);
+        set => Write("spellcheck_editor_hide_camel_case", value);
+    }
+
+    /// <summary>Spellcheck Editor: hide snake_case words (an underscore between word characters) from the list.</summary>
+    public bool SpellcheckEditorHideSnakeCase
+    {
+        get => ReadBool("spellcheck_editor_hide_snake_case", false);
+        set => Write("spellcheck_editor_hide_snake_case", value);
     }
 
     // ------------------------------------------------- Preview / WebEng --- //

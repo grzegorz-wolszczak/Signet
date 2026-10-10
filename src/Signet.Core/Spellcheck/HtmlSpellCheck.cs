@@ -155,7 +155,8 @@ public static class HtmlSpellCheck
             return false;
         }
 
-        bool isPotentialBoundary = c is '-' or '‒' or '\'' or '’' || (wordChars.Length > 0 && wordChars.Contains(c));
+        // '_' joins word characters like a hyphen does ("snake_case" is one word, as in calibre).
+        bool isPotentialBoundary = c is '-' or '‒' or '\'' or '’' or '_' || (wordChars.Length > 0 && wordChars.Contains(c));
 
         if (isPotentialBoundary && (!IsValidChar(prevC, useNums) || !IsValidChar(nextC, useNums)))
         {

@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AwesomeAssertions;
@@ -68,8 +69,42 @@ public sealed class TableOfContentsViewTests
             tree.Rows!.Count.Should().Be(3, "the nested entry is shown expanded");
             TocEntryViewModel alphaOne = vm.Nodes[0].Children[0];
             alphaOne.TargetDisplay.Should().StartWith(alphaOne.Entry.TargetBookPath).And.Contain("#");
+            tree.GetVisualDescendants().OfType<TreeDataGridTemplateCell>().SelectMany(c => c.GetVisualDescendants().OfType<TextBlock>())
+                .Select(t => t.Text).Should().Contain("Alpha").And.Contain("Alpha One").And.Contain("Beta");
             tree.GetVisualDescendants().OfType<TreeDataGridTextCell>().Select(c => c.Value?.ToString())
-                .Should().Contain("Alpha").And.Contain("Alpha One").And.Contain("Beta").And.Contain(alphaOne.TargetDisplay);
+                .Should().Contain(alphaOne.TargetDisplay);
+            window.Close();
+        }
+    }
+
+    private static TextBlock TitleBlock(TreeDataGrid tree, string title) =>
+        tree.GetVisualDescendants().OfType<TreeDataGridTemplateCell>()
+            .SelectMany(c => c.GetVisualDescendants().OfType<TextBlock>())
+            .Single(t => t.Text == title);
+
+    [AvaloniaFact]
+    public void Entries_of_the_active_file_are_bold_and_revealed_after_a_collapse()
+    {
+        (Window window, TableOfContentsViewModel vm, TreeDataGrid tree, Book book) = Show();
+        using (book)
+        {
+            HierarchicalTreeDataGridSource<TocEntryViewModel> source = (HierarchicalTreeDataGridSource<TocEntryViewModel>)tree.Source!;
+            source.Collapse(new IndexPath(0));
+            Settle(window);
+            tree.Rows!.Count.Should().Be(2);
+
+            vm.SetCurrentFile(vm.Nodes[0].Entry.TargetBookPath);
+            Settle(window);
+
+            tree.Rows!.Count.Should().Be(3, "the branch down to the first entry of the file is expanded");
+            TitleBlock(tree, "Alpha").FontWeight.Should().Be(FontWeight.Bold);
+            TitleBlock(tree, "Alpha One").FontWeight.Should().Be(FontWeight.Bold);
+            tree.RowSelection!.SelectedItem.Should().BeNull("revealing does not change the selection");
+
+            vm.SetCurrentFile("OEBPS/Text/other.xhtml");
+            Settle(window);
+
+            TitleBlock(tree, "Alpha").FontWeight.Should().Be(FontWeight.Normal);
             window.Close();
         }
     }

@@ -6,6 +6,20 @@
              x:DataType="vm:TableOfContentsViewModel"
              x:Name="Root">
 
+  <UserControl.Resources>
+    <!-- The title cell: entries that point at the file of the active tab are bold. -->
+    <DataTemplate x:Key="TocTitleCellTemplate" x:DataType="vm:TocEntryViewModel">
+      <TextBlock Text="{Binding Title}" Classes.current="{Binding IsCurrent}" VerticalAlignment="Center"
+                 TextTrimming="CharacterEllipsis" />
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <UserControl.Styles>
+    <Style Selector="TextBlock.current">
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+  </UserControl.Styles>
+
   <DockPanel>
     <Border DockPanel.Dock="Top" Padding="4" BorderThickness="0,0,0,1"
             BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">

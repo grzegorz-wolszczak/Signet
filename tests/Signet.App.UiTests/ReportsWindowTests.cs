@@ -98,6 +98,31 @@ public sealed class ReportsWindowTests
     }
 
     [AvaloniaFact]
+    public void Enter_on_a_selected_row_opens_it_like_a_double_click()
+    {
+        using Book book = BookCreator.CreateNewBook("3.0");
+        ReportsViewModel vm = new(book);
+        string? navigatedTo = null;
+        vm.NavigationRequested += (path, _) => navigatedTo = path;
+        ReportsWindow window = new() { DataContext = vm, Width = 2400, Height = 500 };
+        window.Show();
+        Settle(window);
+        TreeDataGrid grid = window.GetVisualDescendants().OfType<TreeDataGrid>().First(g => g.IsEffectivelyVisible);
+        Control cell = grid.TryGetCell(0, 1)!;
+        Point point = cell.TranslatePoint(new Point(cell.Bounds.Width / 2, cell.Bounds.Height / 2), window)!.Value;
+        window.MouseDown(point, MouseButton.Left);
+        window.MouseUp(point, MouseButton.Left);
+        Settle(window);
+        navigatedTo.Should().BeNull("a single click only selects the row");
+
+        window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+        Settle(window);
+
+        navigatedTo.Should().Be(vm.AllFiles[1].BookPath);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void The_decimal_column_of_the_characters_report_sorts_by_code_point()
     {
         using Book book = BookCreator.CreateNewBook("3.0");

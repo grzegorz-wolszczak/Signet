@@ -185,6 +185,15 @@
   <data name="EditTocWindow_DeleteTip" xml:space="preserve">
     <value>Usuń zaznaczony wpis.</value>
   </data>
+  <data name="EditTocWindow_SortByBookOrder" xml:space="preserve">
+    <value>Sortuj</value>
+  </data>
+  <data name="EditTocWindow_SortByBookOrderTip" xml:space="preserve">
+    <value>Ustaw wpisy na każdym poziomie w kolejności, w jakiej ich cele występują w książce</value>
+  </data>
+  <data name="EditToc_AlreadyInBookOrder" xml:space="preserve">
+    <value>Wpisy są już w kolejności książki.</value>
+  </data>
   <data name="EditTocWindow_SelectTarget" xml:space="preserve">
     <value>Wybierz cel…</value>
   </data>
@@ -1167,6 +1176,24 @@ Czy chcesz zapisać zmiany?</value>
   <data name="SpellcheckEditorWindow_FilterPlaceholder" xml:space="preserve">
     <value>pokaż tylko słowa zawierające…</value>
   </data>
+  <data name="SpellcheckEditorWindow_Hide" xml:space="preserve">
+    <value>Ukryj:</value>
+  </data>
+  <data name="SpellcheckEditorWindow_HideAllCaps" xml:space="preserve">
+    <value>WIELKIE LITERY</value>
+  </data>
+  <data name="SpellcheckEditorWindow_HideCamelCase" xml:space="preserve">
+    <value>camelCase</value>
+  </data>
+  <data name="SpellcheckEditorWindow_HideSnakeCase" xml:space="preserve">
+    <value>snake_case</value>
+  </data>
+  <data name="SpellcheckEditorWindow_VisibleWords" xml:space="preserve">
+    <value>Widocznych słów:</value>
+  </data>
+  <data name="SpellcheckEditorWindow_ExportCsvTitle" xml:space="preserve">
+    <value>Eksportuj listę słów do CSV</value>
+  </data>
   <data name="SpellcheckEditorWindow_ShowAllWords" xml:space="preserve">
     <value>Pokaż wszystkie słowa</value>
   </data>
@@ -1278,6 +1305,12 @@ Czy chcesz zapisać zmiany?</value>
   <data name="BookBrowserView_MoveDown" xml:space="preserve">
     <value>Przesuń w dół</value>
   </data>
+  <data name="BookBrowserView_MoveToTop" xml:space="preserve">
+    <value>Przenieś na początek</value>
+  </data>
+  <data name="BookBrowserView_MoveToBottom" xml:space="preserve">
+    <value>Przenieś na koniec</value>
+  </data>
   <data name="BookBrowserView_SortSelected" xml:space="preserve">
     <value>Sortuj zaznaczone</value>
   </data>
@@ -1304,6 +1337,9 @@ Czy chcesz zapisać zmiany?</value>
   </data>
   <data name="BookBrowserView_AddSemantics" xml:space="preserve">
     <value>Dodaj semantykę…</value>
+  </data>
+  <data name="BookBrowserView_MarkAsNav" xml:space="preserve">
+    <value>Oznacz jako spis treści (NAV)</value>
   </data>
   <data name="BookBrowserView_CoverImage" xml:space="preserve">
     <value>Obraz okładki</value>
@@ -1433,6 +1469,12 @@ Czy chcesz zapisać zmiany?</value>
   </data>
   <data name="RenameTag_Prompt" xml:space="preserve">
     <value>Nowa nazwa elementu otaczającego karetkę:</value>
+  </data>
+  <data name="PreferencesWindow_PasteNormalizeNfc" xml:space="preserve">
+    <value>Normalizuj wklejany tekst do Unicode NFC</value>
+  </data>
+  <data name="PreferencesWindow_PasteNormalizeNfcTip" xml:space="preserve">
+    <value>Litera z osobnym znakiem diakrytycznym (np. z PDF-a) zostaje zamieniona na jeden znak, więc działa wyszukiwanie i pisownia</value>
   </data>
   <data name="PreferencesWindow_AutoCloseTags" xml:space="preserve">
     <value>Automatycznie domykaj znaczniki po wpisaniu „&lt;/”</value>
@@ -1965,6 +2007,12 @@ Czy chcesz zapisać zmiany?</value>
   <data name="Action_MainWindow_BookBrowser_MoveDown" xml:space="preserve">
     <value>Przesuń w &amp;dół</value>
   </data>
+  <data name="Action_MainWindow_BookBrowser_MoveToTop" xml:space="preserve">
+    <value>Przenieś na &amp;początek</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_MoveToBottom" xml:space="preserve">
+    <value>Przenieś na &amp;koniec</value>
+  </data>
   <data name="Action_MainWindow_BookBrowser_Sort" xml:space="preserve">
     <value>&amp;Sortuj</value>
   </data>
@@ -1991,6 +2039,9 @@ Czy chcesz zapisać zmiany?</value>
   </data>
   <data name="Action_MainWindow_BookBrowser_AddSemantics" xml:space="preserve">
     <value>Dodaj semantykę...</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_MarkAsNav" xml:space="preserve">
+    <value>Oznacz jako spis treści (NAV)</value>
   </data>
   <data name="Action_MainWindow_BookBrowser_CoverImage" xml:space="preserve">
     <value>Obraz okładki</value>

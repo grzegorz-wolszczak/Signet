@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.Input;
 using Signet.App.Resources;
 using Signet.Core.BookManipulation;
 using Signet.Core.Misc;
+using Signet.Core.Reports;
 using Signet.Core.Spellcheck;
 
 namespace Signet.App.ViewModels;
@@ -57,6 +58,7 @@ public sealed class SpellcheckEditorViewModel : ViewModelBase
     private IReadOnlyList<SpellcheckWordRow> _selectedRows = Array.Empty<SpellcheckWordRow>();
 
     private bool _showAllWords;
+    private int _visibleWordCount;
     private string _filterText = string.Empty;
     private string _message = string.Empty;
     private string _selectedDictionary = string.Empty;
@@ -76,6 +78,106 @@ public sealed class SpellcheckEditorViewModel : ViewModelBase
         IgnoreCommand = new RelayCommand(Ignore);
         AddCommand = new RelayCommand(Add);
         ChangeAllCommand = new RelayCommand(ChangeAll);
+        ExportCsvCommand = new RelayCommand(() => ExportCsvRequested?.Invoke(this, EventArgs.Empty));
+    }
+
+    /// <summary>Raised by "Export CSV…" — the view asks for the file and writes <see cref="BuildCsv"/> to it.</summary>
+    public event EventHandler? ExportCsvRequested;
+
+    /// <summary>Exports the visible rows to a CSV file.</summary>
+    public IRelayCommand ExportCsvCommand { get; }
+
+    /// <summary>Hides words written in capitals only (remembered in the settings).</summary>
+    public bool HideAllCaps
+    {
+        get => _settings.SpellcheckEditorHideAllCaps;
+        set => SetFilterOption(_settings.SpellcheckEditorHideAllCaps, value, v => _settings.SpellcheckEditorHideAllCaps = v);
+    }
+
+    /// <summary>Hides camelCase words (remembered in the settings).</summary>
+    public bool HideCamelCase
+    {
+        get => _settings.SpellcheckEditorHideCamelCase;
+        set => SetFilterOption(_settings.SpellcheckEditorHideCamelCase, value, v => _settings.SpellcheckEditorHideCamelCase = v);
+    }
+
+    /// <summary>Hides snake_case words (remembered in the settings).</summary>
+    public bool HideSnakeCase
+    {
+        get => _settings.SpellcheckEditorHideSnakeCase;
+        set => SetFilterOption(_settings.SpellcheckEditorHideSnakeCase, value, v => _settings.SpellcheckEditorHideSnakeCase = v);
+    }
+
+    /// <summary>The number of rows the table shows after filtering.</summary>
+    public int VisibleWordCount
+    {
+        get => _visibleWordCount;
+        private set => SetProperty(ref _visibleWordCount, value);
+    }
+
+    private void SetFilterOption(bool current, bool value, Action<bool> store, [System.Runtime.CompilerServices.CallerMemberName] string? name = null)
+    {
+        if (current == value)
+        {
+            return;
+        }
+
+        store(value);
+        _settings.Save();
+        OnPropertyChanged(name);
+        ApplyFilter();
+    }
+
+    /// <summary>The visible rows as CSV: word, count, language, misspelled (headers in the UI language).</summary>
+    public string BuildCsv()
+    {
+        System.Text.StringBuilder sb = new();
+        sb.Append(ReportCsv.WriteLine(new[]
+        {
+            Strings.Get("SpellcheckEditorWindow_Word"), Strings.Get("ReportsWindow_Count"),
+            Strings.Get("SpellcheckEditorWindow_Language"), Strings.Get("SpellcheckEditorWindow_Misspelled"),
+        })).Append('\n');
+        foreach (SpellcheckWordRow row in Words)
+        {
+            sb.Append(ReportCsv.WriteLine(new[]
+            {
+                row.Word, row.Count.ToString(System.Globalization.CultureInfo.InvariantCulture), row.LanguageName, row.MisspelledDisplay,
+            })).Append('\n');
+        }
+
+        return sb.ToString();
+    }
+
+    // "NASA", "HTML5": at least two letters and no lowercase one.
+    private static bool IsAllCaps(string word) =>
+        word.Count(char.IsLetter) >= 2 && !word.Any(char.IsLower);
+
+    // "iPhone", "camelCase": a lowercase letter followed by a capital.
+    private static bool IsCamelCase(string word)
+    {
+        for (int i = 1; i < word.Length; i++)
+        {
+            if (char.IsLower(word[i - 1]) && char.IsUpper(word[i]))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // "snake_case": an underscore between two word characters.
+    private static bool IsSnakeCase(string word)
+    {
+        for (int i = 1; i < word.Length - 1; i++)
+        {
+            if (word[i] == '_' && char.IsLetterOrDigit(word[i - 1]) && char.IsLetterOrDigit(word[i + 1]))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>Raised by "Change All to..." — the actual replacement needs access to the tabs/book from <c>MainWindowViewModel</c>.</summary>
@@ -219,6 +321,11 @@ public sealed class SpellcheckEditorViewModel : ViewModelBase
     private void ApplyFilter()
     {
         IEnumerable<SpellcheckWordRow> visible = _showAllWords ? _allWords : _allWords.Where(w => w.Misspelled);
+        bool hideAllCaps = HideAllCaps;
+        bool hideCamelCase = HideCamelCase;
+        bool hideSnakeCase = HideSnakeCase;
+        visible = visible.Where(w =>
+            !(hideAllCaps && IsAllCaps(w.Word)) && !(hideCamelCase && IsCamelCase(w.Word)) && !(hideSnakeCase && IsSnakeCase(w.Word)));
         string filter = _filterText.Trim();
         if (filter.Length > 0)
         {
@@ -226,6 +333,7 @@ public sealed class SpellcheckEditorViewModel : ViewModelBase
         }
 
         Words.ReplaceWith(visible);
+        VisibleWordCount = Words.Count;
     }
 
     private void UpdateDictionaries()

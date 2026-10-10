@@ -48,7 +48,30 @@ public partial class ReportsWindow : Window
     {
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
+
+        // Enter on the selected row does what a double click does.
+        ActivateOnEnter(AllFilesGrid, OnAllFilesDoubleTapped);
+        ActivateOnEnter(HtmlFilesGrid, OnHtmlFilesDoubleTapped);
+        ActivateOnEnter(ImageFilesGrid, OnImageFilesDoubleTapped);
+        ActivateOnEnter(CssFilesGrid, OnCssFilesDoubleTapped);
+        ActivateOnEnter(ClassesGrid, OnClassesDoubleTapped);
+        ActivateOnEnter(StylesGrid, OnStylesDoubleTapped);
+        ActivateOnEnter(LinksGrid, OnLinksDoubleTapped);
+        ActivateOnEnter(WordCountsGrid, OnWordCountsDoubleTapped);
     }
+
+    private static void ActivateOnEnter(TreeDataGrid grid, EventHandler<RoutedEventArgs> activate) =>
+        grid.AddHandler(
+            KeyDownEvent,
+            (sender, e) =>
+            {
+                if (e.Key == Key.Enter && e.KeyModifiers == KeyModifiers.None)
+                {
+                    activate(sender, e);
+                    e.Handled = true;
+                }
+            },
+            RoutingStrategies.Tunnel);
 
     private void OnDataContextChanged(object? sender, EventArgs e)
     {
@@ -193,7 +216,7 @@ public partial class ReportsWindow : Window
         }
     }
 
-    private void OnAllFilesDoubleTapped(object? sender, TappedEventArgs e)
+    private void OnAllFilesDoubleTapped(object? sender, RoutedEventArgs e)
     {
         if (DataContext is ReportsViewModel vm && AllFilesGrid.RowSelection?.SelectedItem is AllFilesRow row)
         {
@@ -201,7 +224,7 @@ public partial class ReportsWindow : Window
         }
     }
 
-    private void OnHtmlFilesDoubleTapped(object? sender, TappedEventArgs e)
+    private void OnHtmlFilesDoubleTapped(object? sender, RoutedEventArgs e)
     {
         if (DataContext is ReportsViewModel vm && HtmlFilesGrid.RowSelection?.SelectedItem is HtmlFilesRow row)
         {
@@ -209,7 +232,7 @@ public partial class ReportsWindow : Window
         }
     }
 
-    private void OnImageFilesDoubleTapped(object? sender, TappedEventArgs e)
+    private void OnImageFilesDoubleTapped(object? sender, RoutedEventArgs e)
     {
         if (DataContext is ReportsViewModel vm && ImageFilesGrid.RowSelection?.SelectedItem is ImageFilesDisplayRow row)
         {
@@ -217,7 +240,7 @@ public partial class ReportsWindow : Window
         }
     }
 
-    private void OnCssFilesDoubleTapped(object? sender, TappedEventArgs e)
+    private void OnCssFilesDoubleTapped(object? sender, RoutedEventArgs e)
     {
         if (DataContext is ReportsViewModel vm && CssFilesGrid.RowSelection?.SelectedItem is CssFilesRow row)
         {
@@ -225,7 +248,7 @@ public partial class ReportsWindow : Window
         }
     }
 
-    private void OnClassesDoubleTapped(object? sender, TappedEventArgs e)
+    private void OnClassesDoubleTapped(object? sender, RoutedEventArgs e)
     {
         if (DataContext is ReportsViewModel vm && ClassesGrid.RowSelection?.SelectedItem is HtmlClassUsageRow row)
         {
@@ -233,7 +256,7 @@ public partial class ReportsWindow : Window
         }
     }
 
-    private void OnStylesDoubleTapped(object? sender, TappedEventArgs e)
+    private void OnStylesDoubleTapped(object? sender, RoutedEventArgs e)
     {
         if (DataContext is ReportsViewModel vm && StylesGrid.RowSelection?.SelectedItem is CssSelectorUsage row)
         {
@@ -241,7 +264,7 @@ public partial class ReportsWindow : Window
         }
     }
 
-    private void OnLinksDoubleTapped(object? sender, TappedEventArgs e)
+    private void OnLinksDoubleTapped(object? sender, RoutedEventArgs e)
     {
         if (DataContext is ReportsViewModel vm && LinksGrid.RowSelection?.SelectedItem is LinkRow row)
         {
@@ -249,7 +272,7 @@ public partial class ReportsWindow : Window
         }
     }
 
-    private void OnWordCountsDoubleTapped(object? sender, TappedEventArgs e)
+    private void OnWordCountsDoubleTapped(object? sender, RoutedEventArgs e)
     {
         if (DataContext is ReportsViewModel vm && WordCountsGrid.RowSelection?.SelectedItem is FileWordCountRow row)
         {

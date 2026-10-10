@@ -1453,6 +1453,19 @@ public sealed class CodeTabViewModel : ContentTabViewModel
 
     // ---- "Insert" menu — routed from MainWindowViewModel to the active tab ----
 
+    /// <summary>Whether pasted clipboard text is normalized to NFC (Preferences), so the view handles pasting itself.</summary>
+    public bool NormalizesPastedText => _settings.CodeViewPasteNormalizeNfc;
+
+    /// <summary>
+    /// Clipboard text as it is pasted into the document: normalized to Unicode NFC when
+    /// <see cref="NormalizesPastedText"/> is on, unchanged otherwise.
+    /// </summary>
+    public string PrepareClipboardText(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        return NormalizesPastedText ? text.Normalize(System.Text.NormalizationForm.FormC) : text;
+    }
+
     /// <summary>Inserts raw text at the selection (Insert Special Character / Insert Clip).</summary>
     public void InsertRawText(string value)
     {

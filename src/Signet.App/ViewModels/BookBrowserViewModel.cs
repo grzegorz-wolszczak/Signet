@@ -315,11 +315,14 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         MoveSelectedCommand.NotifyCanExecuteChanged();
         MoveTextUpCommand.NotifyCanExecuteChanged();
         MoveTextDownCommand.NotifyCanExecuteChanged();
+        MoveTextToTopCommand.NotifyCanExecuteChanged();
+        MoveTextToBottomCommand.NotifyCanExecuteChanged();
         SortTextCommand.NotifyCanExecuteChanged();
         MergeSelectedCommand.NotifyCanExecuteChanged();
         SplitSelectedCommand.NotifyCanExecuteChanged();
         AddSemanticsSelectedCommand.NotifyCanExecuteChanged();
         CoverImageSelectedCommand.NotifyCanExecuteChanged();
+        MarkAsNavSelectedCommand.NotifyCanExecuteChanged();
         LinkStylesheetsSelectedCommand.NotifyCanExecuteChanged();
         LinkJavascriptsSelectedCommand.NotifyCanExecuteChanged();
         AddCopySelectedCommand.NotifyCanExecuteChanged();
@@ -879,6 +882,18 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     [RelayCommand(CanExecute = nameof(CanMoveText))]
     private void MoveTextDown() => MoveSelectedText(1);
 
+    [RelayCommand(CanExecute = nameof(CanMoveTextToEdge))]
+    private void MoveTextToTop() => MoveSelectedTextToEdge(toTop: true);
+
+    [RelayCommand(CanExecute = nameof(CanMoveTextToEdge))]
+    private void MoveTextToBottom() => MoveSelectedTextToEdge(toTop: false);
+
+    private void MoveSelectedTextToEdge(bool toTop)
+    {
+        Checkpoint(Strings.Get("CheckpointOp_ReorderText"));
+        _model?.MoveTextToEdge(_selection.Select(n => n.Entry!), toTop);
+    }
+
     [RelayCommand(CanExecute = nameof(CanSortText))]
     private void SortText()
     {
@@ -1051,6 +1066,31 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         _model?.Refresh();
     }
 
+    [RelayCommand(CanExecute = nameof(CanMarkAsNav))]
+    private void MarkAsNavSelected()
+    {
+        if (_book is null || _selection[0].Entry!.Resource is not HtmlResource html)
+        {
+            return;
+        }
+
+        bool checkpoint = Checkpoint(Strings.Get("CheckpointOp_SetSemantics"));
+        if (_book.SetNavDocument(html))
+        {
+            _model?.Refresh();
+        }
+        else
+        {
+            Rewind(checkpoint);
+        }
+    }
+
+    // EPUB 3 only: one (X)HTML file that is not the navigation document yet.
+    private bool CanMarkAsNav =>
+        _book is { IsEpub3: true }
+        && _selection.Length == 1
+        && _selection[0].Entry is { Resource: HtmlResource, IsNav: false };
+
     private bool HasFileSelection => _selection.Length > 0;
 
     private bool HasSingleSelection => _selection.Length == 1;
@@ -1070,6 +1110,8 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         _selection.Length == 1 && _selection[0].Entry!.ResourceType == ResourceType.Image;
 
     private bool CanMoveText => _selection.Length == 1 && IsText(_selection[0].Entry!);
+
+    private bool CanMoveTextToEdge => _selection.Length >= 1 && _selection.All(n => IsText(n.Entry!));
 
     private bool CanSortText => _selection.Length >= 2 && _selection.All(n => IsText(n.Entry!));
 

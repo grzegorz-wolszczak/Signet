@@ -405,6 +405,36 @@ public sealed class CodeTabViewModelTests
         newCaret.Should().Be(enabled ? caret + "p>".Length : null);
     }
 
+    // "cafe" + U+0301 (combining acute) and "nai" + U+0308 (combining diaeresis), built from code points so that no
+    // editor can normalize the test data itself.
+    private static readonly string DecomposedSample = "cafe" + (char)0x0301 + " nai" + (char)0x0308 + "ve";
+
+    private static readonly string ComposedSample = "caf" + (char)0x00E9 + " na" + (char)0x00EF + "ve";
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Pasted_text_is_normalized_to_nfc_when_enabled(bool enabled)
+    {
+        using TempDir temp = new();
+        using Book book = Load(temp);
+        HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
+        (SettingsStore settings, SpellChecker spellChecker) = SpellCheckTestFactory.New();
+        settings.CodeViewPasteNormalizeNfc = enabled;
+        var sut = new CodeTabViewModel(new TabManagerModel().OpenResource(html), new StatusBarService(), settings, spellChecker);
+
+        sut.NormalizesPastedText.Should().Be(enabled);
+        sut.PrepareClipboardText(DecomposedSample).Should().Be(enabled ? ComposedSample : DecomposedSample);
+    }
+
+    [Fact]
+    public void Normalizing_pasted_text_is_on_by_default()
+    {
+        (SettingsStore settings, _) = SpellCheckTestFactory.New();
+
+        settings.CodeViewPasteNormalizeNfc.Should().BeTrue();
+    }
+
     [Fact]
     public void Tag_structure_actions_are_not_supported_for_css()
     {

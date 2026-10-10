@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -26,6 +28,7 @@ public partial class TableOfContentsView : UserControl
     // Keeps the column headers in the current UI language (held weakly by Strings).
     private LocalizedColumns<TocEntryViewModel>? _columns;
     private HierarchicalTreeDataGridSource<TocEntryViewModel>? _source;
+    private TableOfContentsViewModel? _bound;
 
     /// <summary>Initializes the view.</summary>
     public TableOfContentsView()
@@ -40,15 +43,22 @@ public partial class TableOfContentsView : UserControl
     {
         _source?.Dispose();
         _source = null;
-        if (DataContext is TableOfContentsViewModel vm)
+        if (_bound is not null)
         {
+            _bound.RevealRequested -= OnRevealRequested;
+        }
+
+        _bound = DataContext as TableOfContentsViewModel;
+        if (_bound is { } vm)
+        {
+            vm.RevealRequested += OnRevealRequested;
             _columns = new LocalizedColumns<TocEntryViewModel>();
             _source = new HierarchicalTreeDataGridSource<TocEntryViewModel>(vm.Nodes)
             {
                 Columns =
                 {
                     _columns.Expander(
-                        _columns.Text("EditTocWindow_ColumnTitle", n => n.Title, new GridLength(2, GridUnitType.Star)),
+                        _columns.Template("EditTocWindow_ColumnTitle", "TocTitleCellTemplate", new GridLength(2, GridUnitType.Star)),
                         n => n.Children,
                         n => n.Children.Count > 0,
                         n => n.IsExpanded),
@@ -58,6 +68,28 @@ public partial class TableOfContentsView : UserControl
         }
 
         Tree.Source = _source;
+    }
+
+    // Expands the branches down to the entries and scrolls to the first one, without changing the selection.
+    private void OnRevealRequested(object? sender, IReadOnlyList<IReadOnlyList<int>> paths)
+    {
+        if (_source is null || paths.Count == 0)
+        {
+            return;
+        }
+
+        foreach (IReadOnlyList<int> path in paths)
+        {
+            for (int depth = 1; depth < path.Count; depth++)
+            {
+                _source.Expand(new IndexPath(path.Take(depth)));
+            }
+        }
+
+        if (Tree.Rows?.ModelIndexToRowIndex(new IndexPath(paths[0])) is >= 0 and var row)
+        {
+            Tree.RowsPresenter?.BringIntoView(row);
+        }
     }
 
     private void OnKeyDown(object? sender, KeyEventArgs e)

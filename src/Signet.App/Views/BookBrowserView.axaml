@@ -88,6 +88,8 @@
           <Separator />
           <MenuItem Header="{loc:Loc BookBrowserView_MoveUp}" Command="{Binding MoveTextUpCommand}" />
           <MenuItem Header="{loc:Loc BookBrowserView_MoveDown}" Command="{Binding MoveTextDownCommand}" />
+          <MenuItem Header="{loc:Loc BookBrowserView_MoveToTop}" Command="{Binding MoveTextToTopCommand}" />
+          <MenuItem Header="{loc:Loc BookBrowserView_MoveToBottom}" Command="{Binding MoveTextToBottomCommand}" />
           <MenuItem Header="{loc:Loc BookBrowserView_SortSelected}" Command="{Binding SortTextCommand}" />
           <MenuItem Header="{loc:Loc BookBrowserView_MergeSelected}" Command="{Binding MergeSelectedCommand}" />
           <MenuItem Header="{loc:Loc BookBrowserView_SplitAtMarkers}" Command="{Binding SplitSelectedCommand}" />
@@ -100,6 +102,7 @@
           <Separator />
           <MenuItem Header="{loc:Loc BookBrowserView_AddSemantics}" Command="{Binding AddSemanticsSelectedCommand}" />
           <MenuItem Header="{loc:Loc BookBrowserView_CoverImage}" Command="{Binding CoverImageSelectedCommand}" />
+          <MenuItem Header="{loc:Loc BookBrowserView_MarkAsNav}" Command="{Binding MarkAsNavSelectedCommand}" />
           <Separator />
           <MenuItem Header="{loc:Loc BookBrowserView_LinkStylesheetsMenu}" Command="{Binding LinkStylesheetsSelectedCommand}" />
           <MenuItem Header="{loc:Loc BookBrowserView_LinkJavascriptsMenu}" Command="{Binding LinkJavascriptsSelectedCommand}" />
