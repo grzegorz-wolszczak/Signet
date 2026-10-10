@@ -318,4 +318,40 @@ public sealed class CssInfoTests
         new CssInfo(Sample).ParseErrors.Should().BeEmpty();
         new CssInfo("body { color: red").ParseErrors.Should().NotBeEmpty();
     }
+
+    // =====================================================================
+    //  Statement at-rules and comments in unknown at-rules (calibre 9.14, 5.44, 6.6.1)
+    // =====================================================================
+
+    [Theory]
+    [InlineData("@charset \"utf-8\";\n")]
+    [InlineData("@namespace epub \"http://www.idpf.org/2007/ops\";\n")]
+    [InlineData("@import url(base.css);\n")]
+    [InlineData("@charset \"utf-8\";\n@namespace svg \"http://www.w3.org/2000/svg\";\n")]
+    public void Statement_at_rules_do_not_shift_the_selector_offsets(string prefix)
+    {
+        string css = prefix + ".a { color: red }\n.b { color: blue }\n";
+
+        CssInfo info = new(css);
+
+        info.GetAllSelectors().Select(s => (s.Text, s.Pos))
+            .Should().Equal((".a", css.IndexOf(".a", StringComparison.Ordinal)), (".b", css.IndexOf(".b", StringComparison.Ordinal)));
+        info.GetCssSelectorForElementClass("", "b")!.Pos.Should().Be(css.IndexOf(".b", StringComparison.Ordinal));
+        info.Rules.Where(r => r.SelectorText.Length > 0).Select(r => r.Declarations.Single().Value)
+            .Should().Equal("red", "blue");
+    }
+
+    [Theory]
+    [InlineData("@unknown-rule { /* comment } */ x: 1; }\n")]
+    [InlineData("@-webkit-keyframes spin { /* from { */ from { opacity: 0 } to { opacity: 1 } }\n")]
+    [InlineData("@page :first { /* margin-top: 0 } */ margin: 1em }\n")]
+    public void Comments_inside_at_rules_do_not_break_parsing_of_the_following_rules(string prefix)
+    {
+        string css = prefix + ".a { color: red }\n";
+
+        CssInfo info = new(css);
+
+        info.GetCssSelectorForElementClass("", "a")!.Pos.Should().Be(css.IndexOf(".a", StringComparison.Ordinal));
+        info.Rules.Single(r => r.SelectorText == ".a").Declarations.Single().Value.Should().Be("red");
+    }
 }

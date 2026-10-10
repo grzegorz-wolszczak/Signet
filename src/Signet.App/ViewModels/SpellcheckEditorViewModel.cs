@@ -63,6 +63,9 @@ public sealed class SpellcheckEditorViewModel : ViewModelBase
     private string _changeAllText = string.Empty;
     private SpellcheckWordRow? _singleSelectedRow;
 
+    // The row index to select after the next Refresh (Ignore / Add / Change All), or -1.
+    private int _reselectIndex = -1;
+
     /// <summary>Creates the view model; the word list is empty until <see cref="Refresh"/> is called.</summary>
     public SpellcheckEditorViewModel(SpellChecker spellChecker, SettingsStore settings)
     {
@@ -83,6 +86,13 @@ public sealed class SpellcheckEditorViewModel : ViewModelBase
 
     /// <summary>Raised after "Ignore"/"Add to Dictionary" — open Code View tabs should refresh their spelling highlighting.</summary>
     public event EventHandler? DictionaryStateChanged;
+
+    /// <summary>
+    /// Raised after the table was rebuilt by "Ignore", "Add to Dictionary" or "Change All": the view should select the
+    /// row at this index (the view model already treats it as selected). Like Sigil, the selection keeps its row index,
+    /// so the next word moves under it (the last row when the table got shorter).
+    /// </summary>
+    public event EventHandler<int>? SelectRowRequested;
 
     /// <summary>Visible (filtered) table rows.</summary>
     public ObservableCollection<SpellcheckWordRow> Words { get; } = new();
@@ -180,7 +190,24 @@ public sealed class SpellcheckEditorViewModel : ViewModelBase
                 .ToList();
 
         ApplyFilter();
+
+        // The rows were rebuilt — the previous selection refers to rows that are gone.
+        int reselect = _reselectIndex;
+        _reselectIndex = -1;
+        if (reselect >= 0 && Words.Count > 0)
+        {
+            int index = Math.Min(reselect, Words.Count - 1);
+            SetSelectedWords(new[] { Words[index] });
+            SelectRowRequested?.Invoke(this, index);
+        }
+        else
+        {
+            SetSelectedWords(Array.Empty<SpellcheckWordRow>());
+        }
     }
+
+    private int FirstSelectedIndex() =>
+        _selectedRows.Count == 0 ? -1 : _selectedRows.Select(Words.IndexOf).Where(i => i >= 0).DefaultIfEmpty(-1).Min();
 
     /// <summary>Row double-click — requests navigation to the first occurrence of the word (see the class remarks).</summary>
     public void RequestNavigation(SpellcheckWordRow row)
@@ -250,6 +277,7 @@ public sealed class SpellcheckEditorViewModel : ViewModelBase
 
         Message = Strings.Get("Spellcheck_WordsIgnored");
         DictionaryStateChanged?.Invoke(this, EventArgs.Empty);
+        _reselectIndex = FirstSelectedIndex();
         Refresh(_book);
     }
 
@@ -272,6 +300,7 @@ public sealed class SpellcheckEditorViewModel : ViewModelBase
             ? Strings.Get("Spellcheck_WordsAdded")
             : Strings.Get("Spellcheck_WordsAddedDictionaryDisabled");
         DictionaryStateChanged?.Invoke(this, EventArgs.Empty);
+        _reselectIndex = FirstSelectedIndex();
         Refresh(_book);
     }
 
@@ -296,6 +325,9 @@ public sealed class SpellcheckEditorViewModel : ViewModelBase
             return;
         }
 
+        // The host replaces the word and refreshes the table synchronously; without a refresh nothing is reselected.
+        _reselectIndex = FirstSelectedIndex();
         ChangeAllRequested?.Invoke(row.Word, row.LangCode, newWord);
+        _reselectIndex = -1;
     }
 }

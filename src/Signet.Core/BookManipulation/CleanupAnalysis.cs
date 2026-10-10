@@ -203,6 +203,10 @@ public sealed class CleanupAnalysis
     private static readonly Regex SvgHrefRegex = new(
         @"(?:xlink:)?href\s*=\s*[""'](?<href>[^""']+)[""']", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
+    // src="…" of the <audio>/<text> elements of a Media Overlays (SMIL) document.
+    private static readonly Regex SmilSrcRegex = new(
+        @"\bsrc\s*=\s*[""'](?<src>[^""']+)[""']", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
     private readonly IReadOnlyList<CssResource> _cssResources;
     private readonly Dictionary<string, string> _cssTexts = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _htmlTexts = new(StringComparer.Ordinal);
@@ -270,6 +274,27 @@ public sealed class CleanupAnalysis
             }
 
             MarkUrlReferences(_mediaReferencedFromHtml, text, svg.Folder);
+        }
+
+        // Media Overlays: the audio of a SMIL file (<audio src>) is used even when no XHTML file refers to it.
+        foreach (TextResource smil in book.GetAllResources().OfType<TextResource>()
+                     .Where(r => string.Equals(r.MediaType, "application/smil+xml", StringComparison.OrdinalIgnoreCase)))
+        {
+            foreach (Match match in SmilSrcRegex.Matches(smil.GetText()))
+            {
+                MarkReference(_mediaReferencedFromHtml, match.Groups["src"].Value, smil.Folder);
+            }
+        }
+
+        // A manifest item named in another item's fallback attribute is used by the reading system.
+        OpfResource opf = book.GetOpf();
+        List<ManifestEntry> manifest = opf.GetOpfDocument().Manifest.ToList();
+        foreach (string fallbackId in manifest.Select(e => e.Attributes.Value("fallback")).Where(id => id.Length > 0))
+        {
+            if (manifest.FirstOrDefault(e => string.Equals(e.Id, fallbackId, StringComparison.Ordinal)) is { } target)
+            {
+                _mediaReferencedFromHtml.Add(BookPath.BuildBookPath(Utility.UrlDecodePath(target.Href), opf.Folder));
+            }
         }
 
         List<(string, string, IReadOnlyList<string>)> documents = book.GetHtmlResources()

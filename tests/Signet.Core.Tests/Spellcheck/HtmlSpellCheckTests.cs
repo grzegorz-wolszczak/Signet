@@ -48,6 +48,30 @@ public sealed class HtmlSpellCheckTests
         words.Select(w => w.Text).Should().Equal("hello");
     }
 
+    [Theory]
+    [InlineData("<p>hello <!-- a note --> world</p>")]
+    [InlineData("<p><!-- a note -->hello world</p>")]
+    [InlineData("<!-- a note --><p>hello</p><p>world</p>")]
+    [InlineData("<p>hello<!---->world</p>")]
+    public void GetAllWords_checks_the_words_after_an_html_comment(string html)
+    {
+        using TempDir dicts = new();
+        using TempDir userDicts = new();
+        DictionaryFixture.Write(dicts.Path, "en_US", "hello", "world");
+        SettingsStore settings = NewSettings(dicts, "en_US");
+        SpellChecker spellChecker = new(settings, dicts.Path, userDicts.Path);
+
+        HtmlWord[] words = HtmlSpellCheck.GetAllWords(spellChecker, settings, html).ToArray();
+
+        // calibre 5.38: the words following a comment were skipped.
+        words.Select(w => w.Text).Should().EndWith("world");
+        words.Select(w => w.Text).Should().NotContain("note", "the comment is not text of the book");
+        foreach (HtmlWord word in words)
+        {
+            html.Substring(word.Offset, word.Length).Should().Be(word.Text);
+        }
+    }
+
     [Fact]
     public void GetMisspelledWords_uses_primary_dictionary_by_default()
     {

@@ -496,6 +496,47 @@ public sealed class CleanupAnalysisTests
             .Should().NotContain(i => i.BookPath.EndsWith("ref.png", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void UnusedMedia_keeps_audio_used_only_by_a_media_overlay()
+    {
+        using TempDir temp = new();
+        using Book book = LoadMedia(temp, tree =>
+        {
+            Directory.CreateDirectory(Path.Combine(tree, "EPUB", "audio"));
+            File.WriteAllBytes(Path.Combine(tree, "EPUB", "audio", "chapter1.mp3"), new byte[] { 0xFF, 0xFB, 0x90, 0x00 });
+            AddManifestItem(tree, "chapter1-audio", "audio/chapter1.mp3", "audio/mpeg");
+            File.WriteAllText(
+                Path.Combine(tree, "EPUB", "chapter1.smil"),
+                "<smil xmlns=\"http://www.w3.org/ns/SMIL\" version=\"3.0\"><body><par id=\"p1\">"
+                + "<audio src=\"audio/chapter1.mp3\" clipBegin=\"0s\" clipEnd=\"5s\"/></par></body></smil>");
+            AddManifestItem(tree, "chapter1-overlay", "chapter1.smil", "application/smil+xml");
+        });
+
+        Step(Plan(book, CleanupStep.UnusedMedia), CleanupStep.UnusedMedia).Items
+            .Should().NotContain(i => i.BookPath.EndsWith("chapter1.mp3", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void UnusedMedia_keeps_an_image_that_is_a_manifest_fallback()
+    {
+        using TempDir temp = new();
+        using Book book = LoadMedia(temp, tree =>
+        {
+            AddOrphanImage(tree, "ref.png");
+            File.WriteAllText(Path.Combine(tree, "EPUB", "images", "figure.xyz"), "custom figure");
+            string opfPath = Path.Combine(tree, "EPUB", "package.opf");
+            File.WriteAllText(
+                opfPath,
+                File.ReadAllText(opfPath).Replace(
+                    "  </manifest>",
+                    "    <item id=\"figure\" href=\"images/figure.xyz\" media-type=\"application/x-figure\" fallback=\"ref\"/>\n  </manifest>",
+                    StringComparison.Ordinal));
+        });
+
+        Step(Plan(book, CleanupStep.UnusedMedia), CleanupStep.UnusedMedia).Items
+            .Should().NotContain(i => i.BookPath.EndsWith("ref.png", StringComparison.Ordinal));
+    }
+
     // -----------------------------------------------------------------
     //  @import
     // -----------------------------------------------------------------

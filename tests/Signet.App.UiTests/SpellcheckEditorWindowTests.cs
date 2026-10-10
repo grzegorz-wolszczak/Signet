@@ -95,6 +95,58 @@ public sealed class SpellcheckEditorWindowTests
         window.Close();
     }
 
+    private static void ClickRow(Window window, TreeDataGrid grid, int row)
+    {
+        Point point = CellCenter(grid, window, 0, row);
+        window.MouseDown(point, MouseButton.Left);
+        window.MouseUp(point, MouseButton.Left);
+        Settle(window);
+    }
+
+    [AvaloniaFact]
+    public void After_ignoring_a_word_the_next_word_is_selected()
+    {
+        using TempDir temp = new();
+        (SpellcheckEditorWindow window, SpellcheckEditorViewModel vm, TreeDataGrid grid) = Show(temp, "<p>wrold wrongg wrongx</p>");
+        string[] before = vm.Words.Select(w => w.Word).ToArray();
+        ClickRow(window, grid, 1);
+
+        vm.IgnoreCommand.Execute(null);
+        Settle(window);
+
+        // Sigil keeps the row index, so the next word moves under the selection (calibre 6.12 fixed it moving up).
+        vm.SingleSelectedRow!.Word.Should().Be(before[2]);
+        grid.RowSelection!.SelectedIndex.ToString().Should().Be(new IndexPath(1).ToString());
+
+        vm.IgnoreCommand.Execute(null);
+        Settle(window);
+
+        vm.SingleSelectedRow!.Word.Should().Be(before[0], "after the last row the selection stays on the new last row");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void After_change_all_the_next_word_is_selected()
+    {
+        using TempDir temp = new();
+        (SpellcheckEditorWindow window, SpellcheckEditorViewModel vm, TreeDataGrid grid) = Show(temp, "<p>wrold wrongg wrongx</p>");
+        string[] before = vm.Words.Select(w => w.Word).ToArray();
+        Book book = BookCreator.CreateNewBook("2.0");
+        vm.ChangeAllRequested += (word, _, replacement) =>
+        {
+            book.GetHtmlResources()[0].SetText("<p>" + string.Join(' ', before.Select(w => w == word ? replacement : w)) + "</p>");
+            vm.Refresh(book);
+        };
+        ClickRow(window, grid, 0);
+        vm.ChangeAllText = "world";
+
+        vm.ChangeAllCommand.Execute(null);
+        Settle(window);
+
+        vm.SingleSelectedRow!.Word.Should().Be(before[1]);
+        window.Close();
+    }
+
     [AvaloniaFact]
     public void Double_clicking_a_word_requests_navigation_to_its_first_occurrence()
     {

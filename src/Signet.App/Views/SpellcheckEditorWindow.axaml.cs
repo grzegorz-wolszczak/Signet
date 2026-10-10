@@ -52,9 +52,15 @@ public partial class SpellcheckEditorWindow : Window
             _source = null;
         }
 
+        if (_bound is not null)
+        {
+            _bound.SelectRowRequested -= OnSelectRowRequested;
+        }
+
         _bound = DataContext as SpellcheckEditorViewModel;
         if (_bound is not null)
         {
+            _bound.SelectRowRequested += OnSelectRowRequested;
             _columns = new LocalizedColumns<SpellcheckWordRow>();
             _source = new FlatTreeDataGridSource<SpellcheckWordRow>(_bound.Words)
             {
@@ -81,6 +87,18 @@ public partial class SpellcheckEditorWindow : Window
         {
             _bound.RequestNavigation(row);
         }
+    }
+
+    private void OnSelectRowRequested(object? sender, int index)
+    {
+        if (_source?.RowSelection is not { } selection)
+        {
+            return;
+        }
+
+        selection.Clear();
+        selection.Select(new IndexPath(index));
+        WordsGrid.RowsPresenter?.BringIntoView(index);
     }
 
     private void OnSelectionChanged(object? sender, EventArgs e)

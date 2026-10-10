@@ -62,6 +62,32 @@ public sealed class SpellcheckEditorViewModelTests
     }
 
     [Fact]
+    public void Ignore_selects_the_word_that_moves_into_the_row_of_the_ignored_one()
+    {
+        (SpellcheckEditorViewModel editor, _, _) = New("<p>wrold wrongg wrongx</p>");
+        string[] before = editor.Words.Select(w => w.Word).ToArray();
+        int? requested = null;
+        editor.SelectRowRequested += (_, index) => requested = index;
+        editor.SetSelectedWords(new[] { editor.Words[1] });
+
+        editor.IgnoreCommand.Execute(null);
+
+        requested.Should().Be(1);
+        editor.SingleSelectedRow!.Word.Should().Be(before[2]);
+    }
+
+    [Fact]
+    public void Refresh_drops_the_selection_of_the_rebuilt_rows()
+    {
+        (SpellcheckEditorViewModel editor, Book book, _) = New("<p>wrold wrongg</p>");
+        editor.SetSelectedWords(new[] { editor.Words[0] });
+
+        editor.Refresh(book);
+
+        editor.SingleSelectedRow.Should().BeNull("a stale row would make Change All act on a word the table no longer shows");
+    }
+
+    [Fact]
     public void Ignore_without_a_selection_sets_a_message_and_changes_nothing()
     {
         (SpellcheckEditorViewModel editor, _, _) = New("<p>wrold</p>");
