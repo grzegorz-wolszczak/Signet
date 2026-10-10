@@ -263,6 +263,18 @@
   <data name="Validation_CssEmptyValue" xml:space="preserve">
     <value>The CSS property "{0}" in the rule "{1}" has no value.</value>
   </data>
+  <data name="Validation_FootnoteOrphan" xml:space="preserve">
+    <value>The footnote "{0}" has no reference: no link in the text of the book leads to it.</value>
+  </data>
+  <data name="Validation_FootnoteNoBacklink" xml:space="preserve">
+    <value>The footnote "#{0}" has no link back to its reference in the text ({1}).</value>
+  </data>
+  <data name="Validation_FootnoteBacklinkMismatch" xml:space="preserve">
+    <value>The link back "{1}" in the footnote "#{0}" does not lead to any reference to this footnote.</value>
+  </data>
+  <data name="Validation_FootnoteManyRefs" xml:space="preserve">
+    <value>{1} references lead to the footnote "#{0}", but a link back can return to only one of them.</value>
+  </data>
   <data name="Validation_NearColumn" xml:space="preserve">
     <value>{0}.  near column {1}</value>
   </data>

@@ -109,6 +109,7 @@ public static class BookValidator
         results.AddRange(IdValidator.Validate(book));
         results.AddRange(ImageIntegrityValidator.Validate(book));
         results.AddRange(CssPropertyValidator.Validate(book));
+        results.AddRange(FootnoteValidator.Validate(book));
 
         if (skippedCodes is { Count: > 0 })
         {

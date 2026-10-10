@@ -263,6 +263,18 @@
   <data name="Validation_CssEmptyValue" xml:space="preserve">
     <value>Właściwość CSS „{0}” w regule „{1}” nie ma wartości.</value>
   </data>
+  <data name="Validation_FootnoteOrphan" xml:space="preserve">
+    <value>Przypis „{0}” nie ma odnośnika: żaden link w tekście książki do niego nie prowadzi.</value>
+  </data>
+  <data name="Validation_FootnoteNoBacklink" xml:space="preserve">
+    <value>Przypis „#{0}” nie ma linku powrotnego do odnośnika w tekście ({1}).</value>
+  </data>
+  <data name="Validation_FootnoteBacklinkMismatch" xml:space="preserve">
+    <value>Link powrotny „{1}” w przypisie „#{0}” nie prowadzi do żadnego odnośnika tego przypisu.</value>
+  </data>
+  <data name="Validation_FootnoteManyRefs" xml:space="preserve">
+    <value>Do przypisu „#{0}” prowadzi {1} odnośników, a link powrotny może wrócić tylko do jednego.</value>
+  </data>
   <data name="Validation_NearColumn" xml:space="preserve">
     <value>{0}.  W pobliżu kolumny {1}</value>
   </data>
