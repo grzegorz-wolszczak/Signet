@@ -72,8 +72,9 @@ public sealed record FootnoteContent(string Text, bool IsWholeNote);
 /// <para>
 /// Numbering (<see cref="Renumber"/>, run after every change): local footnotes from 1 in each file, global ones
 /// continuously through the book, both in reading order of the references. Signet's footnotes get the template's
-/// markers and ids; for other footnotes only a marker that holds exactly one number has it replaced (ids stay).
-/// An emptied container goes away, and so does an emptied notes file.
+/// markers and ids. Other footnotes are counted in that order but left as they are (their markers, links back and ids
+/// stay): Signet changes them only by converting them to its own. An emptied container goes away, and so does an
+/// emptied notes file.
 /// </para>
 /// </remarks>
 public static class FootnoteEditor
@@ -519,10 +520,11 @@ public static class FootnoteEditor
     }
 
     /// <summary>
-    /// Numbers the footnotes: local ones from 1 in each file, global ones through the book, in reading order of the
-    /// references, and puts the notes of Signet's containers in that order. The files with Signet's footnotes get the
-    /// rules of <paramref name="styles"/> (<see cref="FootnoteStyles.Default"/> when <c>null</c>). Returns whether
-    /// anything changed.
+    /// Numbers Signet's footnotes: local ones from 1 in each file, global ones through the book, in reading order of the
+    /// references, and puts the notes of Signet's containers in that order. Other footnotes keep their markers but take
+    /// their places in the count (a Signet footnote after one of them gets the next number). The files with Signet's
+    /// footnotes get the rules of <paramref name="styles"/> (<see cref="FootnoteStyles.Default"/> when <c>null</c>).
+    /// Returns whether anything changed.
     /// </summary>
     public static bool Renumber(Book book, FootnoteStyles? styles = null)
     {
@@ -593,15 +595,15 @@ public static class FootnoteEditor
                 number = ++globalCounter;
             }
 
-            string n = number.ToString(CultureInfo.InvariantCulture);
-            string? noteId = null;
-            string? referenceId = null;
-            if (footnote.IsSignet)
+            if (!footnote.IsSignet)
             {
-                string prefix = footnote.Placement == FootnotePlacement.Local ? "fn-" : "en-";
-                noteId = MarkupEdits.UniqueId(prefix + n, Taken(footnote.NoteFile));
-                referenceId = MarkupEdits.UniqueId(noteId + "-ref", Taken(footnote.ReferenceFile));
+                continue;
             }
+
+            string n = number.ToString(CultureInfo.InvariantCulture);
+            string prefix = footnote.Placement == FootnotePlacement.Local ? "fn-" : "en-";
+            string noteId = MarkupEdits.UniqueId(prefix + n, Taken(footnote.NoteFile));
+            string referenceId = MarkupEdits.UniqueId(noteId + "-ref", Taken(footnote.ReferenceFile));
 
             (string referenceText, TagLister referenceTags) = Snapshot(footnote.ReferenceFile);
             Anchor? anchor = FindAnchor(referenceTags, referenceText, footnote.ReferenceHref, footnote.ReferenceOccurrence);
@@ -613,32 +615,25 @@ public static class FootnoteEditor
             }
 
             string inner = referenceText[anchor.InnerStart..anchor.InnerEnd];
-            string? marker = footnote.IsSignet ? "[" + n + "]" : ReplaceSingleNumber(inner, number);
-            if (marker is not null && marker != inner)
+            string marker = "[" + n + "]";
+            if (marker != inner)
             {
                 AddEdit(footnote.ReferenceFile, new TextEdit(anchor.InnerStart, anchor.InnerEnd - anchor.InnerStart, marker));
             }
 
-            if (noteId is not null && referenceId is not null)
-            {
-                AddAttributeEdit(footnote.ReferenceFile, anchor.Href, Href(footnote.ReferenceFile, footnote.NoteFile, noteId));
-                AddAttributeEdit(footnote.ReferenceFile, anchor.Id, referenceId);
-                AddAttributeEdit(footnote.NoteFile, note.Id, noteId);
-            }
-
+            AddAttributeEdit(footnote.ReferenceFile, anchor.Href, Href(footnote.ReferenceFile, footnote.NoteFile, noteId));
+            AddAttributeEdit(footnote.ReferenceFile, anchor.Id, referenceId);
+            AddAttributeEdit(footnote.NoteFile, note.Id, noteId);
             if (footnote.ReferenceId.Length > 0 && FindBacklink(noteTags, noteText, note, footnote.ReferenceId) is { } backlink)
             {
                 string backInner = noteText[backlink.InnerStart..backlink.InnerEnd];
-                string? backMarker = footnote.IsSignet ? n + "." : ReplaceSingleNumber(backInner, number);
-                if (backMarker is not null && backMarker != backInner)
+                string backMarker = n + ".";
+                if (backMarker != backInner)
                 {
                     AddEdit(footnote.NoteFile, new TextEdit(backlink.InnerStart, backlink.InnerEnd - backlink.InnerStart, backMarker));
                 }
 
-                if (referenceId is not null)
-                {
-                    AddAttributeEdit(footnote.NoteFile, backlink.Href, Href(footnote.NoteFile, footnote.ReferenceFile, referenceId));
-                }
+                AddAttributeEdit(footnote.NoteFile, backlink.Href, Href(footnote.NoteFile, footnote.ReferenceFile, referenceId));
             }
         }
 
@@ -737,47 +732,6 @@ public static class FootnoteEditor
         int colon = path.IndexOf(':', StringComparison.Ordinal);
         int slash = path.IndexOf('/', StringComparison.Ordinal);
         return colon >= 0 && (slash < 0 || colon < slash);
-    }
-
-    /// <summary>
-    /// <paramref name="marker"/> with its only number (outside tags) replaced by <paramref name="number"/>; <c>null</c>
-    /// when it holds no number or several.
-    /// </summary>
-    internal static string? ReplaceSingleNumber(string marker, int number)
-    {
-        int found = -1;
-        int length = 0;
-        bool inTag = false;
-        for (int i = 0; i < marker.Length; i++)
-        {
-            char c = marker[i];
-            if (c == '<')
-            {
-                inTag = true;
-            }
-            else if (c == '>')
-            {
-                inTag = false;
-            }
-            else if (!inTag && char.IsAsciiDigit(c) && (i == 0 || !char.IsAsciiDigit(marker[i - 1])))
-            {
-                if (found >= 0)
-                {
-                    return null;
-                }
-
-                found = i;
-                length = 1;
-                while (found + length < marker.Length && char.IsAsciiDigit(marker[found + length]))
-                {
-                    length++;
-                }
-            }
-        }
-
-        return found < 0
-            ? null
-            : string.Concat(marker.AsSpan(0, found), number.ToString(CultureInfo.InvariantCulture), marker.AsSpan(found + length));
     }
 
     // The notes file links the stylesheet with the footnote rules of the file whose footnote it is created for.

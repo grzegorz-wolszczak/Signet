@@ -813,13 +813,25 @@ public partial class CodeTabView : UserControl
 
     // "Footnotes": on a footnote (its reference or note) edit it (its text, placement, or removing it) and go to the
     // other part; elsewhere add one (disabled with the reason when the caret is not in a place for a reference); always
-    // renumber.
+    // renumber. A footnote of other origin is read-only: editing it only says so.
     private MenuItem FootnotesMenu(CodeTabViewModel vm, ICodeTabHost host, FootnoteMenuState state)
     {
         MenuItem menu = new() { Header = Strings.Get("CodeViewMenu_Footnotes") };
         if (state.Hit is { } hit)
         {
-            menu.Items.Add(Item(Strings.Get("CodeViewMenu_FootnoteEdit"), () => EditFootnote(vm, hit)));
+            menu.Items.Add(Item(
+                Strings.Get("CodeViewMenu_FootnoteEdit"),
+                () =>
+                {
+                    if (hit.Footnote.IsSignet)
+                    {
+                        EditFootnote(vm, hit);
+                    }
+                    else
+                    {
+                        ShowForeignFootnoteNotice(state.ForeignCount);
+                    }
+                }));
             menu.Items.Add(Item(
                 Strings.Get(hit.Side == FootnoteSide.Reference ? "CodeViewMenu_FootnoteGoToNote" : "CodeViewMenu_FootnoteGoToReference"),
                 () => host.GoToFootnote(hit)));
@@ -865,6 +877,16 @@ public partial class CodeTabView : UserControl
         if (await FootnoteWindow.AskAsync(owner, model) is { } request)
         {
             vm.ApplyFootnoteEdit(hit, request);
+        }
+    }
+
+    // "Edit Footnote…" on a footnote of other origin: Signet edits such footnotes only after converting them.
+    private async void ShowForeignFootnoteNotice(int count)
+    {
+        if (TopLevel.GetTopLevel(this) is Window owner)
+        {
+            await MessageDialog.ShowAsync(
+                owner, Strings.Get("FootnoteWindow_EditTitle"), Strings.Format("FootnoteForeign_EditBlocked", count));
         }
     }
 

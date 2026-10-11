@@ -122,7 +122,10 @@ public interface ICodeTabHost
     /// <summary>"Go to note/reference" — opens the other part of the footnote of <paramref name="hit"/>.</summary>
     void GoToFootnote(FootnoteHit hit);
 
-    /// <summary>"Renumber Footnotes" — renumbers the footnotes of the book (with a checkpoint).</summary>
+    /// <summary>
+    /// "Renumber Footnotes" — renumbers Signet's footnotes of the book (with a checkpoint); footnotes of other origin are
+    /// left as they are, with a warning.
+    /// </summary>
     void RenumberFootnotes();
 }
 
@@ -130,7 +133,8 @@ public interface ICodeTabHost
 /// <param name="Hit">The footnote whose reference or note contains the position, or <c>null</c>.</param>
 /// <param name="AddError">Why a footnote cannot be added at the position (<see cref="FootnoteError.None"/> when it can).</param>
 /// <param name="HasFootnotes">Whether the book has any footnotes.</param>
-public sealed record FootnoteMenuState(FootnoteHit? Hit, FootnoteError AddError, bool HasFootnotes);
+/// <param name="ForeignCount">How many footnotes of the book are not Signet's (Signet edits them only after converting them).</param>
+public sealed record FootnoteMenuState(FootnoteHit? Hit, FootnoteError AddError, bool HasFootnotes, int ForeignCount = 0);
 
 /// <summary>The data of the footnote window for editing a footnote (<see cref="ICodeTabHost.GetFootnoteEdit"/>).</summary>
 /// <param name="Footnote">The footnote (of the current texts).</param>

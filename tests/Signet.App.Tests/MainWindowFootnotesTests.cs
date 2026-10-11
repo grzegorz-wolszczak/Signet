@@ -27,6 +27,25 @@ public sealed class MainWindowFootnotesTests
         return (sut, book, chapter);
     }
 
+    // The minimal chapter with a footnote of other origin after "Hello" (marked [7], its note at the end of the body).
+    private static (MainWindowViewModel Sut, HtmlResource Chapter) OpenChapterWithForeignFootnote(TempDir temp)
+    {
+        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, temp);
+        MainWindowViewModel sut = new();
+        Book book = new ImportEpub(epub).GetBook();
+        HtmlResource chapter = book.GetHtmlResources().Single(h => h.Filename == "chapter1.xhtml");
+        string text = chapter.GetText().Replace(
+            "<html xmlns=\"http://www.w3.org/1999/xhtml\"",
+            "<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:epub=\"http://www.idpf.org/2007/ops\"",
+            StringComparison.Ordinal);
+        text = text.Insert(text.IndexOf("Hello", StringComparison.Ordinal) + 5, "<a epub:type=\"noteref\" href=\"#n7\" id=\"n7-back\">[7]</a>");
+        int body = text.LastIndexOf("</body>", StringComparison.Ordinal);
+        chapter.SetText(text.Insert(body, "<aside epub:type=\"footnote\" id=\"n7\"><p><a href=\"#n7-back\">7.</a> Other note.</p></aside>\n"));
+        sut.LoadBook(book, epub);
+        sut.Tabs.OpenResources(new Resource[] { chapter });
+        return (sut, chapter);
+    }
+
     private static int AfterHello(HtmlResource chapter) => chapter.GetText().IndexOf("Hello", StringComparison.Ordinal) + 5;
 
     [Fact]
@@ -168,5 +187,36 @@ public sealed class MainWindowFootnotesTests
 
         host.AddFootnote(chapter, AfterHello(chapter), "Note.", FootnotePlacement.Local);
         host.LastFootnotePlacement.Should().Be(FootnotePlacement.Local);
+    }
+
+    [Fact]
+    public void The_footnote_state_counts_the_footnotes_of_other_origin()
+    {
+        using TempDir temp = new();
+        (MainWindowViewModel sut, HtmlResource chapter) = OpenChapterWithForeignFootnote(temp);
+        ICodeTabHost host = sut;
+
+        FootnoteMenuState state = host.GetFootnoteState(chapter, chapter.GetText().IndexOf("[7]", StringComparison.Ordinal))!;
+
+        state.Hit!.Footnote.IsSignet.Should().BeFalse();
+        state.ForeignCount.Should().Be(1);
+    }
+
+    [Fact]
+    public void Renumbering_leaves_footnotes_of_other_origin_as_they_are_and_warns_about_them()
+    {
+        using UiCultureScope culture = new("en");
+        using TempDir temp = new();
+        (MainWindowViewModel sut, HtmlResource chapter) = OpenChapterWithForeignFootnote(temp);
+        ICodeTabHost host = sut;
+        int afterWorld = chapter.GetText().IndexOf(", world", StringComparison.Ordinal) + ", world".Length;
+        host.AddFootnote(chapter, afterWorld, "Note.", FootnotePlacement.Local);
+
+        host.RenumberFootnotes();
+
+        chapter.GetText().Should().Contain(">[7]</a>").And.Contain(">7.</a> Other note.")
+            .And.Contain("id=\"fn-2-ref\">[2]</a>", "the footnote of other origin before it counts");
+        sut.StatusMessage.Should().Be(Strings.Format("Status_FootnotesUpToDateForeignSkipped", 1));
+        sut.IsStatusMessageWarning.Should().BeTrue();
     }
 }

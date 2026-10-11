@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Signet.App.Resources;
 using Signet.App.Services;
@@ -12,6 +13,7 @@ namespace Signet.App.ViewModels;
 /// Footnotes from the Code View context menu ("Footnotes" submenu): adding, editing (the text and the placement, local
 /// or global), removing, going between a reference and its note, and renumbering. Every change saves the open tabs first,
 /// is a text edit of the book files (<see cref="FootnoteEditor"/>) behind a checkpoint, and reloads the tabs and panels.
+/// Footnotes of other origin are read-only until they are converted: renumbering leaves them as they are.
 /// </summary>
 public sealed partial class MainWindowViewModel
 {
@@ -26,8 +28,9 @@ public sealed partial class MainWindowViewModel
         _tabManager.SaveAllTabs();
         FootnoteError addError = FootnoteEditor.CanAdd(_currentBook, html, offset);
         FootnoteHit? hit = addError == FootnoteError.None ? null : FootnoteEditor.FindAt(_currentBook, html, offset);
-        bool hasFootnotes = hit is not null || FootnoteScanner.Scan(_currentBook).Count > 0;
-        return new FootnoteMenuState(hit, addError, hasFootnotes);
+        IReadOnlyList<Footnote> footnotes = FootnoteScanner.Scan(_currentBook);
+        bool hasFootnotes = hit is not null || footnotes.Count > 0;
+        return new FootnoteMenuState(hit, addError, hasFootnotes, footnotes.Count(f => !f.IsSignet));
     }
 
     /// <inheritdoc/>
@@ -229,6 +232,7 @@ public sealed partial class MainWindowViewModel
         _tabManager.SaveAllTabs();
         CodeTabViewModel? tab = ActiveCodeTab;
         int caret = tab?.CaretOffset ?? -1;
+        int foreign = FootnoteScanner.Scan(_currentBook).Count(f => !f.IsSignet);
         bool checkpoint = AddCheckpointBefore(Strings.Get("CheckpointOp_RenumberFootnotes"));
         if (!FootnoteEditor.Renumber(_currentBook, _settings.FootnoteStyles))
         {
@@ -237,7 +241,7 @@ public sealed partial class MainWindowViewModel
                 RewindCheckpoint();
             }
 
-            _statusBar.ShowMessage(Strings.Get("Status_FootnotesUpToDate"), TimeSpan.FromSeconds(4));
+            ShowRenumberResult("Status_FootnotesUpToDate", foreign);
             return;
         }
 
@@ -247,7 +251,20 @@ public sealed partial class MainWindowViewModel
             tab.GoToOffset(caret);
         }
 
-        _statusBar.ShowMessage(Strings.Get("Status_FootnotesRenumbered"), TimeSpan.FromSeconds(4));
+        ShowRenumberResult("Status_FootnotesRenumbered", foreign);
+    }
+
+    // The result of "Renumber Footnotes"; with footnotes of other origin in the book, a warning that they were skipped.
+    private void ShowRenumberResult(string key, int foreign)
+    {
+        if (foreign == 0)
+        {
+            _statusBar.ShowMessage(Strings.Get(key), TimeSpan.FromSeconds(4));
+            return;
+        }
+
+        _statusBar.ShowMessage(
+            Strings.Format(key + "ForeignSkipped", foreign), TimeSpan.FromSeconds(8), NotificationLevel.Warning);
     }
 
     // Opens the file of the reference or the note of `footnote` with the caret on it; false when it is gone.

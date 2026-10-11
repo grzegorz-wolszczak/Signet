@@ -350,7 +350,7 @@ public sealed class FootnoteEditorTests
     }
 
     [Fact]
-    public void Other_footnotes_get_new_numbers_but_keep_their_ids_and_look()
+    public void Renumbering_leaves_other_footnotes_as_they_are()
     {
         (Book book, HtmlResource html) = NewBook(
             "<p>Text<sup class=\"sup_note\"><a class=\"a_note\" epub:type=\"noteref\" href=\"#footnote-07\" id=\"footnote-07-backlink\">[7]</a></sup>.</p>\n"
@@ -358,10 +358,12 @@ public sealed class FootnoteEditorTests
             + "<p class=\"p_footnote\"><a class=\"p_a_footnote\" href=\"#footnote-07-backlink\">7.</a> B. Lapunow.</p></aside>");
         using (book)
         {
-            FootnoteEditor.Renumber(book).Should().BeTrue();
+            string before = html.GetText();
+
+            FootnoteEditor.Renumber(book).Should().BeFalse("Signet changes other footnotes only by converting them");
 
             string text = html.GetText();
-            text.Should().Contain("id=\"footnote-07-backlink\">[1]</a></sup>").And.Contain("href=\"#footnote-07-backlink\">1.</a>");
+            text.Should().Be(before);
             Footnote footnote = FootnoteScanner.Scan(book).Single();
             footnote.IsSignet.Should().BeFalse();
             FootnoteEditor.FindAt(book, html, text.IndexOf("<sup", StringComparison.Ordinal) + 2)!.Side
@@ -510,17 +512,22 @@ public sealed class FootnoteEditorTests
     }
 
     [Fact]
-    public void Renumbering_also_renumbers_the_links_back_that_lead_to_the_wrapper()
+    public void Signet_footnotes_count_the_other_footnotes_before_them_but_leave_them_as_they_are()
     {
-        (Book book, HtmlResource html) = NewBook(InDesignBody);
+        (Book book, HtmlResource html) = NewBook("<p>First sentence.</p>\n" + InDesignBody);
         using (book)
         {
-            FootnoteEditor.Renumber(book).Should().BeTrue();
+            FootnoteEditor.Add(book, html, After(html, "First"), "before", FootnotePlacement.Local).Should().Be(FootnoteError.None);
+            FootnoteEditor.Add(book, html, After(html, "more."), "after", FootnotePlacement.Local).Should().Be(FootnoteError.None);
 
             string text = html.GetText();
-            text.Should().Contain("<a href=\"#footnote-9\"><sup>[1]</sup></a>").And.Contain("<a href=\"#footnote-8\">2</a>");
-            text.Should().Contain("<a href=\"#footnote-9-backlink\">1</a> First note.")
-                .And.Contain("<a href=\"#footnote-8-backlink\">2</a> Second note.");
+            text.Should().Contain("First<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"#fn-1\" id=\"fn-1-ref\">[1]</a>")
+                .And.Contain("more.<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"#fn-4\" id=\"fn-4-ref\">[4]</a>",
+                    "the two other footnotes between them count");
+            text.Should().Contain("<a href=\"#footnote-9\"><sup>[5]</sup></a>").And.Contain("<a href=\"#footnote-8\">7</a>")
+                .And.Contain("<a href=\"#footnote-9-backlink\">5</a> First note.")
+                .And.Contain("<a href=\"#footnote-8-backlink\">7</a> Second note.", "other footnotes keep their markers");
+            FootnoteValidator.Validate(book).Should().BeEmpty();
         }
     }
 
@@ -552,16 +559,5 @@ public sealed class FootnoteEditorTests
 
             BodyOf(html).Should().Contain("<p>Text<span id=\"n-back\"></span> more.</p>").And.NotContain("Note.");
         }
-    }
-
-    [Theory]
-    [InlineData("[7]", 2, "[2]")]
-    [InlineData("<sup>12</sup>", 3, "<sup>3</sup>")]
-    [InlineData("7.", 1, "1.")]
-    [InlineData("*", 1, null)]
-    [InlineData("1-2", 1, null)]
-    public void Only_a_marker_with_a_single_number_is_renumbered(string marker, int number, string? expected)
-    {
-        FootnoteEditor.ReplaceSingleNumber(marker, number).Should().Be(expected);
     }
 }

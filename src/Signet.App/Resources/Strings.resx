@@ -4628,4 +4628,15 @@ Czy usunąć pozostałe przypisania?</value>
   <data name="Status_BookClosed" xml:space="preserve">
     <value>Zamknięto książkę.</value>
   </data>
+  <data name="Status_FootnotesUpToDateForeignSkipped" xml:space="preserve">
+    <value>Numeracja przypisów Signeta jest aktualna. Obce przypisy ({0}) pominięto — nie zostały przenumerowane.</value>
+  </data>
+  <data name="Status_FootnotesRenumberedForeignSkipped" xml:space="preserve">
+    <value>Przenumerowano przypisy Signeta. Obce przypisy ({0}) pominięto — nie zostały przenumerowane.</value>
+  </data>
+  <data name="FootnoteForeign_EditBlocked" xml:space="preserve">
+    <value>To nie jest przypis Signeta. Obcych przypisów w tej książce: {0}.
+
+Signet może je edytować dopiero po konwersji na przypisy Signeta.</value>
+  </data>
 </root>
