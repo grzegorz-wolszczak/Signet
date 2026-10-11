@@ -197,7 +197,9 @@ public sealed class MenuBuilder
                 // are doubled so that Avalonia does not take them for an access key.
                 string name = ShortenFileName(Path.GetFileName(path)).Replace("_", "__", StringComparison.Ordinal);
                 string label = index <= 9 ? $"_{index}. {name}" : $"{index}. {name}";
+                // The full path in the tooltip: files of the same name from different folders look alike.
                 MenuItemViewModel entry = MenuItemViewModel.ForCommand(label, new RelayCommand(() => _recentFiles!.Open(captured)));
+                entry.ToolTip = path;
                 entry.ContextItems = new[]
                 {
                     MenuItemViewModel.ForCommand(

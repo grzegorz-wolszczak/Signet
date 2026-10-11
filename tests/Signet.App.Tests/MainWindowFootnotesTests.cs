@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using AwesomeAssertions;
+using Signet.App.Actions;
 using Signet.App.Resources;
 using Signet.App.Tests.TestSupport;
 using Signet.App.ViewModels;
@@ -187,6 +188,18 @@ public sealed class MainWindowFootnotesTests
 
         host.AddFootnote(chapter, AfterHello(chapter), "Note.", FootnotePlacement.Local);
         host.LastFootnotePlacement.Should().Be(FootnotePlacement.Local);
+    }
+
+    [Fact]
+    public void Tools_renumber_footnotes_renumbers_like_the_context_menu()
+    {
+        using UiCultureScope culture = new("en");
+        using TempDir temp = new();
+        (MainWindowViewModel sut, HtmlResource _) = OpenChapterWithForeignFootnote(temp);
+
+        sut.Actions.Require(AppActionIds.RenumberFootnotes).Execute(null);
+
+        sut.StatusMessage.Should().Be(Strings.Format("Status_FootnotesUpToDateForeignSkipped", 1));
     }
 
     [Fact]

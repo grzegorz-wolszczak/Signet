@@ -4639,4 +4639,19 @@ Czy usunąć pozostałe przypisania?</value>
 
 Signet może je edytować dopiero po konwersji na przypisy Signeta.</value>
   </data>
+  <data name="Menu_Footnotes" xml:space="preserve">
+    <value>Przyp&amp;isy</value>
+  </data>
+  <data name="Action_MainWindow_RenumberFootnotes" xml:space="preserve">
+    <value>&amp;Przenumeruj przypisy</value>
+  </data>
+  <data name="MainWindow_BookFileNotSaved" xml:space="preserve">
+    <value>Książka nie została jeszcze zapisana.</value>
+  </data>
+  <data name="Status_FileLoaded" xml:space="preserve">
+    <value>Wczytano plik - {0}</value>
+  </data>
+  <data name="Status_FileLoadedWithWarnings" xml:space="preserve">
+    <value>Wczytano plik z ostrzeżeniami ({0}) - {1}</value>
+  </data>
 </root>

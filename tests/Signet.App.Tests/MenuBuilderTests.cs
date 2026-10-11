@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using AwesomeAssertions;
@@ -188,6 +189,20 @@ public sealed class MenuBuilderTests
         headers.Skip(print + 1).Take(6).Should().Equal(
             "-", "_1. a__b.epub", "_2. c.epub", "Clear List", "-", "Close");
         file.Items!.Should().NotContain(i => i.Items != null && i.Header.Contains("Recent"));
+    }
+
+    [Fact]
+    public void A_recent_file_shows_its_full_path_in_the_tooltip()
+    {
+        using UiCultureScope culture = new("en");
+        using TestHost host = new();
+        FakeRecentFiles recent = new() { Files = new[] { "/books/one/a.epub", "/books/two/a.epub" } };
+
+        MenuItemViewModel file = BuildWith(host, recent).Single(m => m.Header == "_File");
+
+        file.Items!.Where(i => i.Header.EndsWith(". a.epub", StringComparison.Ordinal)).Select(i => i.ToolTip)
+            .Should().Equal("/books/one/a.epub", "/books/two/a.epub");
+        file.Items!.Single(i => i.Header == "Close").ToolTip.Should().BeNull();
     }
 
     [Fact]

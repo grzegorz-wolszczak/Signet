@@ -161,6 +161,9 @@ public sealed partial class MenuItemViewModel : ObservableObject
     /// </summary>
     public IReadOnlyList<MenuItemViewModel>? ContextItems { get; set; }
 
+    /// <summary>The tooltip of the item (e.g. the full path of a recent file), or <see langword="null"/> for none.</summary>
+    public string? ToolTip { get; set; }
+
     /// <summary>Whether the item is checkable (rendered as a checkbox).</summary>
     [ObservableProperty]
     private bool _isCheckable;

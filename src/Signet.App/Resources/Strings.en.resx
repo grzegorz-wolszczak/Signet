@@ -4639,4 +4639,19 @@ Do you want to remove the other assignments?</value>
 
 Signet can edit them only after converting them to Signet footnotes.</value>
   </data>
+  <data name="Menu_Footnotes" xml:space="preserve">
+    <value>Foot&amp;notes</value>
+  </data>
+  <data name="Action_MainWindow_RenumberFootnotes" xml:space="preserve">
+    <value>&amp;Renumber Footnotes</value>
+  </data>
+  <data name="MainWindow_BookFileNotSaved" xml:space="preserve">
+    <value>The book has not been saved yet.</value>
+  </data>
+  <data name="Status_FileLoaded" xml:space="preserve">
+    <value>File loaded - {0}</value>
+  </data>
+  <data name="Status_FileLoadedWithWarnings" xml:space="preserve">
+    <value>File loaded with {0} warning(s) - {1}</value>
+  </data>
 </root>

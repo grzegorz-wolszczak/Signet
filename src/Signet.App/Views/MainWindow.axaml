@@ -84,6 +84,7 @@
           <Setter Property="ItemsSource" Value="{Binding Items}" />
           <Setter Property="Command" Value="{Binding Command}" />
           <Setter Property="IsEnabled" Value="{Binding IsEnabled}" />
+          <Setter Property="ToolTip.Tip" Value="{Binding ToolTip}" />
           <Setter Property="InputGesture" Value="{Binding InputGesture}" />
           <Setter Property="ToggleType" Value="{Binding ToggleType}" />
           <Setter Property="IsChecked" Value="{Binding IsChecked, Mode=TwoWay}" />
@@ -162,6 +163,13 @@
           <views:NotificationBell UnreadCount="{Binding Notifications.UnreadWarnings}" />
         </Button>
         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" Margin="8,0,0,0">
+          <!-- The open book: its file name, the full path in the tooltip (books of the same name from other folders). -->
+          <TextBlock x:Name="BookFileText"
+                     Text="{Binding BookFileName}"
+                     VerticalAlignment="Center" MaxWidth="260" TextTrimming="CharacterEllipsis"
+                     Background="Transparent"
+                     ToolTip.Tip="{Binding BookFileTooltip}"
+                     IsVisible="{Binding BookFileName, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
           <TextBlock Text="{Binding TabStatus}"
                      VerticalAlignment="Center"
                      IsVisible="{Binding TabStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />

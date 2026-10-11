@@ -381,6 +381,7 @@ public sealed partial class MainWindowViewModel
         _actions.SetHandler(AppActionIds.Cleanup, () => CleanupRequested?.Invoke(this, EventArgs.Empty));
         _actions.SetHandler(AppActionIds.Standardize, () => StandardizeRequested?.Invoke(this, EventArgs.Empty));
         _actions.SetHandler(AppActionIds.LiveCssPanel, () => LiveCssPanelRequested?.Invoke(this, EventArgs.Empty));
+        _actions.SetHandler(AppActionIds.RenumberFootnotes, () => ((ICodeTabHost)this).RenumberFootnotes());
 
         // Reformat HTML / Restructure Epub to Signet Norm / Use Standard File Extensions /
         // Rebase Manifest IDs.
@@ -1068,10 +1069,16 @@ public sealed partial class MainWindowViewModel
         UpdateBookOpenState();
         RefreshTitle();
 
+        // With the full path of the file: books of the same name may come from different folders.
+        bool fromFile = !string.IsNullOrEmpty(sourcePath);
         _statusBar.ShowMessage(
-            book.LoadWarnings.Count > 0
-                ? Strings.Format("Status_BookLoadedWithWarnings", book.LoadWarnings.Count)
-                : Strings.Get("Status_BookLoaded"),
+            (book.LoadWarnings.Count > 0, fromFile) switch
+            {
+                (true, true) => Strings.Format("Status_FileLoadedWithWarnings", book.LoadWarnings.Count, sourcePath),
+                (true, false) => Strings.Format("Status_BookLoadedWithWarnings", book.LoadWarnings.Count),
+                (false, true) => Strings.Format("Status_FileLoaded", sourcePath),
+                _ => Strings.Get("Status_BookLoaded"),
+            },
             TimeSpan.FromSeconds(book.LoadWarnings.Count > 0 ? 6 : 3),
             book.LoadWarnings.Count > 0 ? NotificationLevel.Warning : NotificationLevel.Info);
     }
@@ -1341,10 +1348,34 @@ public sealed partial class MainWindowViewModel
         _legacyFileName = string.IsNullOrEmpty(sourcePath)
             ? null
             : System.IO.Path.GetFileName(sourcePath);
+        _legacyFilePath = string.IsNullOrEmpty(sourcePath) ? null : sourcePath;
         RefreshTitle();
     }
 
     private string? _legacyFileName;
+
+    private string? _legacyFilePath;
+
+    private string? _bookFileName;
+
+    private string? _bookFileTooltip;
+
+    /// <summary>The file name of the open book for the status bar; <c>null</c> without a book.</summary>
+    public string? BookFileName
+    {
+        get => _bookFileName;
+        private set => SetProperty(ref _bookFileName, value);
+    }
+
+    /// <summary>
+    /// The tooltip of <see cref="BookFileName"/>: the full path of the book file (two books may have the same name), or
+    /// that the book has not been saved yet.
+    /// </summary>
+    public string? BookFileTooltip
+    {
+        get => _bookFileTooltip;
+        private set => SetProperty(ref _bookFileTooltip, value);
+    }
 
     private void OnBookModifiedStateChanged(object? sender, bool modified)
     {
@@ -1365,6 +1396,12 @@ public sealed partial class MainWindowViewModel
         WindowTitle = _currentBook is null
             ? ApplicationInfo.Name
             : $"{name}{(modified ? "*" : string.Empty)}{versionPart} - {ApplicationInfo.Name}";
+
+        string path = _fileWorkflow is not null ? _fileWorkflow.CurrentFilePath : _legacyFilePath ?? string.Empty;
+        BookFileName = _currentBook is null ? null : name;
+        BookFileTooltip = _currentBook is null ? null
+            : path.Length > 0 ? path
+            : Strings.Get("MainWindow_BookFileNotSaved");
 
         // The "Save" floppy disk: gray without changes, red with unsaved changes (the action works
         // in both states).
@@ -3533,6 +3570,7 @@ public sealed partial class MainWindowViewModel
         _findReplace.RefreshLocalizedTexts();
         _findUsages.OnLanguageChanged();
         BookBrowser.Refresh();
+        RefreshTitle();
     }
 
     /// <summary>

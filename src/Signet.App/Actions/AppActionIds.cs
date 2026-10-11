@@ -190,6 +190,9 @@ public static class AppActionIds
     /// <summary>Live CSS Panel.</summary>
     public const string LiveCssPanel = "MainWindow.LiveCssPanel";
 
+    /// <summary>Tools → Footnotes → Renumber Footnotes (as in the Code View context menu).</summary>
+    public const string RenumberFootnotes = "MainWindow.RenumberFootnotes";
+
     /// <summary>Add soft hyphens.</summary>
     public const string AddSoftHyphens = "MainWindow.AddSoftHyphens";
 

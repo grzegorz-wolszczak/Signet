@@ -66,6 +66,9 @@ public sealed class MainWindowViewModelTests
         sut.BookBrowser.HasBook.Should().BeTrue();
         sut.BookBrowser.Nodes.Should().NotBeEmpty();
         sut.WindowTitle.Should().Contain(ApplicationInfo.Name).And.Contain(".epub");
+        sut.BookFileName.Should().Be(System.IO.Path.GetFileName(epub));
+        sut.BookFileTooltip.Should().Be(epub, "the status bar shows the full path of the book in the tooltip");
+        sut.StatusMessage.Should().Be(Strings.Format("Status_FileLoaded", epub), "books of the same name may come from other folders");
     }
 
     [Fact]
@@ -223,6 +226,7 @@ public sealed class MainWindowViewModelTests
         sut.BookBrowser.HasBook.Should().BeFalse();
         sut.Tabs.Count.Should().Be(0);
         sut.WindowTitle.Should().Be(ApplicationInfo.Name);
+        sut.BookFileName.Should().BeNull();
         sut.Actions.Require(AppActionIds.Save).IsEnabled.Should().BeFalse();
         sut.Actions.Require(AppActionIds.Close).IsEnabled.Should().BeFalse();
         sut.Actions.Require(AppActionIds.Open).IsEnabled.Should().BeTrue();
