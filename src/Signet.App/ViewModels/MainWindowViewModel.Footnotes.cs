@@ -60,7 +60,7 @@ public sealed partial class MainWindowViewModel
         _tabManager.SaveAllTabs();
         bool checkpoint = AddCheckpointBefore(Strings.Get("CheckpointOp_AddFootnote"));
         FootnoteError error = FootnoteEditor.Add(
-            _currentBook, html, offset, content, placement, out Footnote? added, _settings.FootnoteStyles);
+            _currentBook, html, offset, content, placement, out Footnote? added, FootnoteOptions);
         if (error != FootnoteError.None)
         {
             if (checkpoint)
@@ -102,7 +102,7 @@ public sealed partial class MainWindowViewModel
         (HtmlResource File, int Offset)? reference = footnote is null ? null : FootnoteEditor.Locate(footnote, FootnoteSide.Reference);
         (HtmlResource File, int Offset)? place = footnote is null ? null : FootnoteEditor.Locate(footnote, hit.Side);
         bool checkpoint = AddCheckpointBefore(Strings.Get("CheckpointOp_RemoveFootnote"));
-        if (footnote is null || !FootnoteEditor.Remove(_currentBook, footnote, _settings.FootnoteStyles))
+        if (footnote is null || !FootnoteEditor.Remove(_currentBook, footnote, FootnoteOptions))
         {
             if (checkpoint)
             {
@@ -171,7 +171,7 @@ public sealed partial class MainWindowViewModel
         Footnote? edited = null;
         FootnoteError error = footnote is null
             ? FootnoteError.NotFound
-            : FootnoteEditor.Edit(_currentBook, footnote, content, placement, out edited, _settings.FootnoteStyles);
+            : FootnoteEditor.Edit(_currentBook, footnote, content, placement, out edited, FootnoteOptions);
         if (error != FootnoteError.None)
         {
             if (checkpoint)
@@ -204,7 +204,7 @@ public sealed partial class MainWindowViewModel
         _currentBook is null
             ? null
             : FootnoteEditor.Preview(
-                _currentBook, html, referenceStart, referenceEnd, content, placement, number, footnote, _settings.FootnoteStyles);
+                _currentBook, html, referenceStart, referenceEnd, content, placement, number, footnote, FootnoteOptions);
 
     /// <inheritdoc/>
     bool ICodeTabHost.ConfirmFootnoteRemoval
@@ -243,7 +243,7 @@ public sealed partial class MainWindowViewModel
         int caret = tab?.CaretOffset ?? -1;
         int foreign = FootnoteScanner.Scan(_currentBook).Count(f => !f.IsSignet);
         bool checkpoint = AddCheckpointBefore(Strings.Get("CheckpointOp_RenumberFootnotes"));
-        if (!FootnoteEditor.Renumber(_currentBook, _settings.FootnoteStyles))
+        if (!FootnoteEditor.Renumber(_currentBook, FootnoteOptions))
         {
             if (checkpoint)
             {
@@ -275,6 +275,9 @@ public sealed partial class MainWindowViewModel
         _statusBar.ShowMessage(
             Strings.Format(key + "ForeignSkipped", foreign), TimeSpan.FromSeconds(8), NotificationLevel.Warning);
     }
+
+    // How Signet writes its footnotes (Preferences → Footnotes).
+    private FootnoteOptions FootnoteOptions => new(_settings.FootnoteStyles, _settings.FootnoteGroupByChapter);
 
     // Opens the file of the reference or the note of `footnote` with the caret on it; false when it is gone.
     private bool GoToFootnoteSide(Footnote footnote, FootnoteSide side)

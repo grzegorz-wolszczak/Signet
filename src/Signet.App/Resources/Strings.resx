@@ -4675,4 +4675,16 @@ Signet może je edytować dopiero po konwersji na przypisy Signeta.</value>
   <data name="PreferencesWindow_FootnoteParagraphStyle" xml:space="preserve">
     <value>Akapit przypisu (.signet-fn-p)</value>
   </data>
+  <data name="PreferencesWindow_FootnoteGroupByChapter" xml:space="preserve">
+    <value>Grupuj przypisy globalne według rozdziałów</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteGroupByChapterHint" xml:space="preserve">
+    <value>W pliku przypisów każdy rozdział (plik z odnośnikami) dostaje swoją grupę z nagłówkiem — tytułem rozdziału. Numeracja zostaje ciągła. Książka pogrupowana w ten sposób zostaje pogrupowana także po wyłączeniu tej opcji.</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteGroupStyle" xml:space="preserve">
+    <value>Grupa przypisów (.signet-fn-group)</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteGroupTitleStyle" xml:space="preserve">
+    <value>Nagłówek grupy przypisów (.signet-fn-group-title)</value>
+  </data>
 </root>

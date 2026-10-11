@@ -48,13 +48,16 @@ public sealed record FootnoteStyleError(FootnoteStyleProblem Problem, string Det
 /// <param name="LocalContainer">The section with the notes at the end of a file (<c>.signet-footnotes</c>).</param>
 /// <param name="GlobalContainer">The section with the notes of the notes file (<c>.signet-endnotes</c>).</param>
 /// <param name="Separator">The line above the notes at the end of a file (<c>.signet-fn-separator</c>).</param>
+/// <param name="Group">A group of global notes (<c>.signet-fn-group</c>).</param>
+/// <param name="GroupTitle">The heading of a group of global notes (<c>.signet-fn-group-title</c>).</param>
 public sealed record FootnoteStyles(
-    string Reference, string Note, string Paragraph, string LocalContainer, string GlobalContainer, string Separator)
+    string Reference, string Note, string Paragraph, string LocalContainer, string GlobalContainer, string Separator,
+    string Group, string GroupTitle)
 {
     private static readonly Regex PropertyName = new(@"^(?:--|-?[A-Za-z_])[A-Za-z0-9_-]*$", RegexOptions.CultureInvariant);
 
     private static readonly Regex SignetRule = new(
-        @"\.signet-(?:fn|footnotes|endnotes)(?![\w-])|\.signet-fn-(?:ref|separator|p(?![\w-]))", RegexOptions.CultureInvariant);
+        @"\.signet-(?:fn|footnotes|endnotes)(?![\w-])|\.signet-fn-(?:ref|separator|p|group|group-title)(?![\w-])", RegexOptions.CultureInvariant);
 
     /// <summary>The default definitions.</summary>
     public static FootnoteStyles Default { get; } = new(
@@ -63,7 +66,9 @@ public sealed record FootnoteStyles(
         "margin: 0;\ntext-indent: 0;",
         "font-size: 0.85em;",
         "font-size: 0.9em;",
-        "width: 30%;\nmargin: 2em auto 0.5em 0;\nborder: none;\nborder-top: 1px solid;");
+        "width: 30%;\nmargin: 2em auto 0.5em 0;\nborder: none;\nborder-top: 1px solid;",
+        "margin: 1.5em 0 0 0;",
+        "font-size: 1.1em;\nmargin: 0 0 0.5em 0;");
 
     /// <summary>The class names with their definitions, in the order the rules are added.</summary>
     public IReadOnlyList<(string ClassName, string Declarations)> Rules =>
@@ -74,6 +79,8 @@ public sealed record FootnoteStyles(
         (FootnoteEditor.GlobalContainerClass, GlobalContainer),
         (FootnoteEditor.NoteClass, Note),
         (FootnoteEditor.ParagraphClass, Paragraph),
+        (FootnoteEditor.GroupClass, Group),
+        (FootnoteEditor.GroupTitleClass, GroupTitle),
     ];
 
     /// <summary>Whether <paramref name="declarations"/> can be a rule body (<see cref="Validate"/> finds no problem).</summary>

@@ -567,6 +567,12 @@
           <StackPanel Spacing="10" Margin="8">
             <CheckBox x:Name="ConfirmFootnoteRemovalBox" Content="{loc:Loc PreferencesWindow_ConfirmFootnoteRemoval}"
                       IsChecked="{Binding ConfirmFootnoteRemoval}" />
+            <StackPanel Spacing="2">
+              <CheckBox x:Name="FootnoteGroupByChapterBox" Content="{loc:Loc PreferencesWindow_FootnoteGroupByChapter}"
+                        IsChecked="{Binding FootnoteGroupByChapter}" />
+              <TextBlock Text="{loc:Loc PreferencesWindow_FootnoteGroupByChapterHint}" TextWrapping="Wrap" Opacity="0.75"
+                         Margin="28,0,0,0" />
+            </StackPanel>
             <TextBlock Text="{loc:Loc PreferencesWindow_FootnotesIntro}" TextWrapping="Wrap" Opacity="0.75" />
             <StackPanel Spacing="4">
               <WrapPanel>
@@ -644,6 +650,32 @@
                          Height="{x:Static views:PreferencesWindow.DefaultFieldHeight}"
                          FontFamily="Cascadia Code,Consolas,monospace" />
                 <views:HeightResizeGrip Grid.Row="1" Target="{Binding #FootnoteSeparatorStyleBox}" />
+              </Grid>
+            </StackPanel>
+            <StackPanel Spacing="4">
+              <WrapPanel>
+                <TextBlock Text="{loc:Loc PreferencesWindow_FootnoteGroupStyle}" FontWeight="Bold" Margin="0,0,10,0" />
+                <TextBlock x:Name="FootnoteGroupStyleError" Text="{Binding FootnoteGroupStyleError}" Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}" TextWrapping="Wrap"
+                           IsVisible="{Binding FootnoteGroupStyleError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </WrapPanel>
+              <Grid RowDefinitions="Auto,Auto">
+                <TextBox x:Name="FootnoteGroupStyleBox" Text="{Binding FootnoteGroupStyle}" AcceptsReturn="True" TextWrapping="Wrap"
+                         Height="{x:Static views:PreferencesWindow.DefaultFieldHeight}"
+                         FontFamily="Cascadia Code,Consolas,monospace" />
+                <views:HeightResizeGrip Grid.Row="1" Target="{Binding #FootnoteGroupStyleBox}" />
+              </Grid>
+            </StackPanel>
+            <StackPanel Spacing="4">
+              <WrapPanel>
+                <TextBlock Text="{loc:Loc PreferencesWindow_FootnoteGroupTitleStyle}" FontWeight="Bold" Margin="0,0,10,0" />
+                <TextBlock x:Name="FootnoteGroupTitleStyleError" Text="{Binding FootnoteGroupTitleStyleError}" Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}" TextWrapping="Wrap"
+                           IsVisible="{Binding FootnoteGroupTitleStyleError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </WrapPanel>
+              <Grid RowDefinitions="Auto,Auto">
+                <TextBox x:Name="FootnoteGroupTitleStyleBox" Text="{Binding FootnoteGroupTitleStyle}" AcceptsReturn="True" TextWrapping="Wrap"
+                         Height="{x:Static views:PreferencesWindow.DefaultFieldHeight}"
+                         FontFamily="Cascadia Code,Consolas,monospace" />
+                <views:HeightResizeGrip Grid.Row="1" Target="{Binding #FootnoteGroupTitleStyleBox}" />
               </Grid>
             </StackPanel>
             <Button x:Name="ResetFootnoteStylesButton" Content="{loc:Loc PreferencesWindow_FootnoteStylesReset}"

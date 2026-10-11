@@ -4675,4 +4675,16 @@ Signet can edit them only after converting them to Signet footnotes.</value>
   <data name="PreferencesWindow_FootnoteParagraphStyle" xml:space="preserve">
     <value>Footnote paragraph (.signet-fn-p)</value>
   </data>
+  <data name="PreferencesWindow_FootnoteGroupByChapter" xml:space="preserve">
+    <value>Group global footnotes by chapter</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteGroupByChapterHint" xml:space="preserve">
+    <value>In the notes file every chapter (a file with references) gets its own group with a heading, the chapter title. The numbering stays continuous. A book grouped this way stays grouped when the option is turned off.</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteGroupStyle" xml:space="preserve">
+    <value>Footnote group (.signet-fn-group)</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteGroupTitleStyle" xml:space="preserve">
+    <value>Footnote group heading (.signet-fn-group-title)</value>
+  </data>
 </root>

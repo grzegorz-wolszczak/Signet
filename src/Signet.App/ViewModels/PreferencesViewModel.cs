@@ -213,6 +213,9 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _footnoteLocalContainerStyle = footnoteStyles.LocalContainer;
         _footnoteGlobalContainerStyle = footnoteStyles.GlobalContainer;
         _footnoteSeparatorStyle = footnoteStyles.Separator;
+        _footnoteGroupStyle = footnoteStyles.Group;
+        _footnoteGroupTitleStyle = footnoteStyles.GroupTitle;
+        _footnoteGroupByChapter = _settings.FootnoteGroupByChapter;
         _savedFootnoteStyles = footnoteStyles;
         _confirmFootnoteRemoval = _settings.ConfirmFootnoteRemoval;
 
@@ -1367,6 +1370,12 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
     partial void OnConfirmFootnoteRemovalChanged(bool value) => _settings.ConfirmFootnoteRemoval = value;
 
+    /// <summary>Whether the global notes are grouped by the chapters of their references.</summary>
+    [ObservableProperty]
+    private bool _footnoteGroupByChapter;
+
+    partial void OnFootnoteGroupByChapterChanged(bool value) => _settings.FootnoteGroupByChapter = value;
+
     // The definitions written to the settings: a field with an invalid definition keeps its last valid one.
     private FootnoteStyles _savedFootnoteStyles;
 
@@ -1399,6 +1408,22 @@ public sealed partial class PreferencesViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(FootnoteSeparatorStyleError))]
     private string _footnoteSeparatorStyle;
+
+    /// <summary>The declarations of <c>.signet-fn-group</c> (a group of global notes).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FootnoteGroupStyleError))]
+    private string _footnoteGroupStyle;
+
+    /// <summary>The declarations of <c>.signet-fn-group-title</c> (the heading of a group of global notes).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FootnoteGroupTitleStyleError))]
+    private string _footnoteGroupTitleStyle;
+
+    /// <summary>Why the group definition is invalid, or <c>""</c>.</summary>
+    public string FootnoteGroupStyleError => FootnoteStyleError(FootnoteGroupStyle);
+
+    /// <summary>Why the group heading definition is invalid, or <c>""</c>.</summary>
+    public string FootnoteGroupTitleStyleError => FootnoteStyleError(FootnoteGroupTitleStyle);
 
     /// <summary>Why the reference definition is invalid (shown next to its label), or <c>""</c>.</summary>
     public string FootnoteReferenceStyleError => FootnoteStyleError(FootnoteReferenceStyle);
@@ -1438,6 +1463,8 @@ public sealed partial class PreferencesViewModel : ObservableObject
         FootnoteLocalContainerStyle = d.LocalContainer;
         FootnoteGlobalContainerStyle = d.GlobalContainer;
         FootnoteSeparatorStyle = d.Separator;
+        FootnoteGroupStyle = d.Group;
+        FootnoteGroupTitleStyle = d.GroupTitle;
     }
 
     partial void OnFootnoteReferenceStyleChanged(string value) => PersistFootnoteStyles();
@@ -1452,6 +1479,10 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
     partial void OnFootnoteSeparatorStyleChanged(string value) => PersistFootnoteStyles();
 
+    partial void OnFootnoteGroupStyleChanged(string value) => PersistFootnoteStyles();
+
+    partial void OnFootnoteGroupTitleStyleChanged(string value) => PersistFootnoteStyles();
+
     // Only valid definitions reach the settings; an invalid field keeps its last valid definition there.
     private void PersistFootnoteStyles()
     {
@@ -1464,7 +1495,9 @@ public sealed partial class PreferencesViewModel : ObservableObject
             Valid(FootnoteParagraphStyle, saved.Paragraph),
             Valid(FootnoteLocalContainerStyle, saved.LocalContainer),
             Valid(FootnoteGlobalContainerStyle, saved.GlobalContainer),
-            Valid(FootnoteSeparatorStyle, saved.Separator));
+            Valid(FootnoteSeparatorStyle, saved.Separator),
+            Valid(FootnoteGroupStyle, saved.Group),
+            Valid(FootnoteGroupTitleStyle, saved.GroupTitle));
         _settings.FootnoteStyles = _savedFootnoteStyles;
     }
 

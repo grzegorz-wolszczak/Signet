@@ -321,11 +321,11 @@ public sealed class FootnoteEditorTests
             CssResource css = book.CreateEmptyCssFile();
             html.SetText(Xhtml(Body, "\n<link href=\"" + Core.BookPath.Relative(html.BookPath, css.BookPath) + "\" rel=\"stylesheet\" type=\"text/css\"/>"));
             FootnoteStyles first = FootnoteStyles.Default with { Note = "color: blue;" };
-            FootnoteEditor.Add(book, html, After(html, "First"), "note", FootnotePlacement.Local, out _, first);
+            FootnoteEditor.Add(book, html, After(html, "First"), "note", FootnotePlacement.Local, out _, new FootnoteOptions(first));
             css.GetText().Should().Contain(".signet-fn {\n  color: blue;\n}");
 
-            FootnoteEditor.Renumber(book, first).Should().BeFalse("everything is up to date");
-            FootnoteEditor.Renumber(book, first with { Note = "color: green;" }).Should().BeTrue();
+            FootnoteEditor.Renumber(book, new FootnoteOptions(first)).Should().BeFalse("everything is up to date");
+            FootnoteEditor.Renumber(book, new FootnoteOptions(first with { Note = "color: green;" })).Should().BeTrue();
 
             css.GetText().Should().Contain(".signet-fn {\n  color: green;\n}").And.NotContain("blue");
         }
@@ -643,6 +643,162 @@ public sealed class FootnoteEditorTests
 
             html.GetText().Should().Contain(
                 "  <div class=\"signet-fn\" id=\"fn-1\">\n    <p class=\"signet-fn-p\"><a href=\"#fn-1-ref\">1.</a> One.</p>\n    <p class=\"signet-fn-p\">Two.</p>\n  </div>\n");
+        }
+    }
+
+    private static readonly FootnoteOptions ByChapter = new(FootnoteStyles.Default, GroupByChapter: true);
+
+    // A book of two chapters with a heading each (the second one with a reference in its heading).
+    private static (Book Book, HtmlResource One, HtmlResource Two) NewChapters()
+    {
+        (Book book, HtmlResource one) = NewBook("<h1>Chapter <i>One</i></h1>\n" + Body);
+        HtmlResource two = book.CreateEmptyHtmlFile();
+        two.SetText(Xhtml("<h2>Chapter Two</h2>\n" + Body));
+        return (book, one, two);
+    }
+
+    // The global notes container of the book.
+    private static string NotesContainer(Book book)
+    {
+        string text = FootnoteEditor.FindGlobalFile(book)!.GetText();
+        int start = text.IndexOf("  <section class=\"signet-endnotes", StringComparison.Ordinal);
+        return text[start..(text.LastIndexOf("</section>", StringComparison.Ordinal) + "</section>".Length)];
+    }
+
+    private static string Endnote(HtmlResource from, int n, string text) =>
+        "<aside class=\"signet-fn\" epub:type=\"endnote\" id=\"en-" + n + "\"><p class=\"signet-fn-p\"><a href=\""
+        + from.Filename + "#en-" + n + "-ref\">" + n + ".</a> " + text + "</p></aside>";
+
+    [Fact]
+    public void Grouped_by_chapter_every_chapter_has_a_group_titled_with_its_first_heading()
+    {
+        (Book book, HtmlResource one, HtmlResource two) = NewChapters();
+        using (book)
+        {
+            FootnoteEditor.Add(book, two, After(two, "First"), "in two", FootnotePlacement.Global, out _, ByChapter);
+            FootnoteEditor.Add(book, one, After(one, "Second"), "second in one", FootnotePlacement.Global, out _, ByChapter);
+            FootnoteEditor.Add(book, one, After(one, "First"), "first in one", FootnotePlacement.Global, out _, ByChapter);
+
+            NotesContainer(book).Should().Be(
+                "  <section class=\"signet-endnotes signet-fn-by-chapter\" epub:type=\"endnotes\">\n"
+                + "    <section class=\"signet-fn-group\">\n"
+                + "      <h2 class=\"signet-fn-group-title\">Chapter One</h2>\n"
+                + "      " + Endnote(one, 1, "first in one") + "\n"
+                + "      " + Endnote(one, 2, "second in one") + "\n"
+                + "    </section>\n"
+                + "    <section class=\"signet-fn-group\">\n"
+                + "      <h2 class=\"signet-fn-group-title\">Chapter Two</h2>\n"
+                + "      " + Endnote(two, 3, "in two") + "\n"
+                + "    </section>\n"
+                + "  </section>");
+            ShouldBeConsistent(book);
+            FootnoteEditor.Renumber(book, ByChapter).Should().BeFalse("the groups are up to date");
+        }
+    }
+
+    [Fact]
+    public void A_group_title_changed_by_hand_stays_and_an_emptied_group_goes_away()
+    {
+        (Book book, HtmlResource one, HtmlResource two) = NewChapters();
+        using (book)
+        {
+            FootnoteEditor.Add(book, one, After(one, "First"), "in one", FootnotePlacement.Global, out _, ByChapter);
+            FootnoteEditor.Add(book, two, After(two, "First"), "in two", FootnotePlacement.Global, out _, ByChapter);
+            HtmlResource notes = FootnoteEditor.FindGlobalFile(book)!;
+            notes.SetText(notes.GetText().Replace(">Chapter One</h2>", ">The first chapter</h2>", StringComparison.Ordinal));
+
+            FootnoteEditor.Add(book, one, After(one, "Second"), "more in one", FootnotePlacement.Global, out _, ByChapter);
+            FootnoteEditor.Remove(book, FootnoteScanner.Scan(book).Single(f => ReferenceEquals(f.ReferenceFile, two)), ByChapter).Should().BeTrue();
+
+            string container = NotesContainer(book);
+            container.Should().Contain("<h2 class=\"signet-fn-group-title\">The first chapter</h2>")
+                .And.Contain("more in one").And.NotContain("Chapter Two").And.NotContain("in two");
+            ShouldBeConsistent(book);
+
+            foreach (Footnote footnote in FootnoteScanner.Scan(book).Reverse())
+            {
+                FootnoteEditor.Remove(book, footnote, ByChapter).Should().BeTrue();
+            }
+
+            FootnoteEditor.FindGlobalFile(book).Should().BeNull("the notes file goes away with its last note");
+        }
+    }
+
+    [Fact]
+    public void A_book_grouped_by_chapter_stays_grouped_without_the_option_and_the_option_groups_older_notes()
+    {
+        (Book book, HtmlResource one, HtmlResource two) = NewChapters();
+        using (book)
+        {
+            FootnoteEditor.Add(book, one, After(one, "First"), "older one", FootnotePlacement.Global);
+            FootnoteEditor.Add(book, two, After(two, "First"), "older two", FootnotePlacement.Global);
+            NotesContainer(book).Should().NotContain("signet-fn-group");
+
+            FootnoteEditor.Renumber(book, ByChapter).Should().BeTrue();
+            NotesContainer(book).Should().Contain("signet-fn-by-chapter")
+                .And.Contain("Chapter One</h2>\n      " + Endnote(one, 1, "older one"))
+                .And.Contain("Chapter Two</h2>\n      " + Endnote(two, 2, "older two"));
+
+            FootnoteEditor.Add(book, two, After(two, "Second"), "newer two", FootnotePlacement.Global).Should().Be(FootnoteError.None);
+
+            NotesContainer(book).Should().Contain(Endnote(two, 2, "older two") + "\n      " + Endnote(two, 3, "newer two") + "\n    </section>");
+            ShouldBeConsistent(book);
+        }
+    }
+
+    [Fact]
+    public void Groups_without_the_chapter_class_stay_and_a_new_note_joins_the_group_of_the_note_before_it()
+    {
+        (Book book, HtmlResource one, HtmlResource two) = NewChapters();
+        using (book)
+        {
+            FootnoteEditor.Add(book, one, After(one, "First"), "a", FootnotePlacement.Global);
+            FootnoteEditor.Add(book, two, After(two, "First"), "b", FootnotePlacement.Global);
+            HtmlResource notes = FootnoteEditor.FindGlobalFile(book)!;
+            string text = notes.GetText();
+            text = text.Replace("  " + Endnote(one, 1, "a") + "\n", "<div class=\"signet-fn-group\"><h3>Part I</h3>\n  " + Endnote(one, 1, "a") + "\n", StringComparison.Ordinal)
+                .Replace("  " + Endnote(two, 2, "b") + "\n", "  " + Endnote(two, 2, "b") + "</div>\n", StringComparison.Ordinal);
+            notes.SetText(text);
+
+            FootnoteEditor.Add(book, two, After(two, "Second"), "c", FootnotePlacement.Global).Should().Be(FootnoteError.None);
+            FootnoteEditor.Add(book, one, After(one, "Second"), "d", FootnotePlacement.Global).Should().Be(FootnoteError.None);
+
+            NotesContainer(book).Should().Be(
+                "  <section class=\"signet-endnotes\" epub:type=\"endnotes\">\n"
+                + "    <div class=\"signet-fn-group\">\n"
+                + "      <h3>Part I</h3>\n"
+                + "      " + Endnote(one, 1, "a") + "\n"
+                + "      " + Endnote(one, 2, "d") + "\n"
+                + "      " + Endnote(two, 3, "b") + "\n"
+                + "      " + Endnote(two, 4, "c") + "\n"
+                + "    </div>\n"
+                + "  </section>");
+            ShouldBeConsistent(book);
+        }
+    }
+
+    [Fact]
+    public void A_group_title_comes_from_the_title_or_the_file_name_without_a_heading()
+    {
+        (Book book, HtmlResource html) = NewBook("<p>No heading<a class=\"signet-fn-ref\" href=\"#x\">[9]</a> here.</p>\n" + Body);
+        using (book)
+        {
+            FootnoteEditor.Add(book, html, After(html, "First"), "note", FootnotePlacement.Global, out _, ByChapter);
+
+            NotesContainer(book).Should().Contain("<h2 class=\"signet-fn-group-title\">t</h2>", "the <title> of the file");
+        }
+    }
+
+    [Fact]
+    public void Signet_references_are_left_out_of_a_group_title()
+    {
+        (Book book, HtmlResource one, HtmlResource _) = NewChapters();
+        using (book)
+        {
+            FootnoteEditor.Add(book, one, After(one, "Chapter <i>One"), "on the heading", FootnotePlacement.Global, out _, ByChapter)
+                .Should().Be(FootnoteError.None);
+
+            NotesContainer(book).Should().Contain("<h2 class=\"signet-fn-group-title\">Chapter One</h2>");
         }
     }
 

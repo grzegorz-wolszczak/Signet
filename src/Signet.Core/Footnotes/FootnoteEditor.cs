@@ -60,6 +60,18 @@ public sealed record FootnoteHit(Footnote Footnote, FootnoteSide Side);
 /// </param>
 public sealed record FootnoteContent(string Text, bool IsWholeNote);
 
+/// <summary>How Signet writes its footnotes (Preferences → Footnotes).</summary>
+/// <param name="Styles">The CSS of the footnote classes.</param>
+/// <param name="GroupByChapter">
+/// Whether the global notes are grouped by the chapter (the file) of their references. A notes file grouped this way
+/// stays grouped when the option is turned off (its container keeps <see cref="FootnoteEditor.ByChapterClass"/>).
+/// </param>
+public sealed record FootnoteOptions(FootnoteStyles Styles, bool GroupByChapter = false)
+{
+    /// <summary>The default styles, without grouping.</summary>
+    public static FootnoteOptions Default { get; } = new(FootnoteStyles.Default);
+}
+
 /// <summary>The markup Signet writes for a footnote (<see cref="FootnoteEditor.Preview"/>).</summary>
 /// <param name="Reference">The reference in the text.</param>
 /// <param name="Note">The note (the whole <c>aside</c>, or <c>div</c> in EPUB 2).</param>
@@ -94,6 +106,14 @@ public sealed record FootnoteMarkup(string Reference, string Note, string Page);
 /// stay): Signet changes them only by converting them to its own. An emptied container goes away, and so does an
 /// emptied notes file.
 /// </para>
+/// <para>
+/// Groups of global notes (<see cref="GroupClass"/>, a heading of <see cref="GroupTitleClass"/> and the notes): with
+/// <see cref="FootnoteOptions.GroupByChapter"/> the container gets <see cref="ByChapterClass"/> and one group per file
+/// of the references, titled with the first heading of that file (a title changed by hand stays). A container with
+/// groups but without that class keeps its groups as they are: a new note joins the group of the note before it. In
+/// both cases the numbering is continuous, groups go in the order of their first notes, the notes of a group by their
+/// numbers, and an emptied group goes away with its heading.
+/// </para>
 /// </remarks>
 public static class FootnoteEditor
 {
@@ -117,6 +137,15 @@ public static class FootnoteEditor
 
     /// <summary>The class of the container of the global notes.</summary>
     public const string GlobalContainerClass = "signet-endnotes";
+
+    /// <summary>The class of a group of global notes (a section with a heading and the notes).</summary>
+    public const string GroupClass = "signet-fn-group";
+
+    /// <summary>The class of the heading of a group of global notes.</summary>
+    public const string GroupTitleClass = "signet-fn-group-title";
+
+    /// <summary>The class of the container of global notes grouped by the chapters of their references.</summary>
+    public const string ByChapterClass = "signet-fn-by-chapter";
 
     /// <summary>The class of the line above the local notes.</summary>
     public const string SeparatorClass = "signet-fn-separator";
@@ -321,7 +350,7 @@ public static class FootnoteEditor
     /// </summary>
     public static FootnoteError Add(
         Book book, HtmlResource html, int offset, string content, FootnotePlacement placement, out Footnote? added,
-        FootnoteStyles? styles = null)
+        FootnoteOptions? options = null)
     {
         added = null;
         ArgumentNullException.ThrowIfNull(book);
@@ -354,7 +383,7 @@ public static class FootnoteEditor
 
         int index = FootnoteScanner.Scan(book).ToList()
             .FindIndex(f => ReferenceEquals(f.ReferenceFile, html) && f.ReferenceId == referenceId);
-        Renumber(book, styles);
+        Renumber(book, options);
         added = Rescan(book, index);
         book.Modified = true;
         return FootnoteError.None;
@@ -365,7 +394,7 @@ public static class FootnoteEditor
     /// go the <c>&lt;span&gt;</c>/<c>&lt;sup&gt;</c> elements that held only it, and the empty element its link back led
     /// to (with the empty <c>&lt;span&gt;</c>/<c>&lt;sup&gt;</c> around it) — unless another link leads to their id.
     /// </summary>
-    public static bool Remove(Book book, Footnote footnote, FootnoteStyles? styles = null)
+    public static bool Remove(Book book, Footnote footnote, FootnoteOptions? options = null)
     {
         ArgumentNullException.ThrowIfNull(book);
         ArgumentNullException.ThrowIfNull(footnote);
@@ -406,8 +435,8 @@ public static class FootnoteEditor
             footnote.NoteFile.SetText(Apply(noteText, new[] { noteEdit }));
         }
 
+        Renumber(book, options);
         RemoveEmptyContainer(book, footnote.NoteFile);
-        Renumber(book, styles);
         book.Modified = true;
         return true;
     }
@@ -422,7 +451,7 @@ public static class FootnoteEditor
     /// Moves a footnote like <see cref="Move(Book, Footnote)"/>; <paramref name="moved"/> is the footnote after the
     /// renumbering (<c>null</c> when it was not moved).
     /// </summary>
-    public static bool Move(Book book, Footnote footnote, out Footnote? moved, FootnoteStyles? styles = null)
+    public static bool Move(Book book, Footnote footnote, out Footnote? moved, FootnoteOptions? options = null)
     {
         moved = null;
         ArgumentNullException.ThrowIfNull(book);
@@ -469,8 +498,8 @@ public static class FootnoteEditor
         }
 
         InsertNote(newFile, note, target, book.IsEpub3);
+        Renumber(book, options);
         RemoveEmptyContainer(book, oldFile);
-        Renumber(book, styles);
         moved = Rescan(book, index);
         book.Modified = true;
         return true;
@@ -541,7 +570,7 @@ public static class FootnoteEditor
     /// </summary>
     public static FootnoteError Edit(
         Book book, Footnote footnote, string content, FootnotePlacement placement, out Footnote? edited,
-        FootnoteStyles? styles = null)
+        FootnoteOptions? options = null)
     {
         edited = null;
         ArgumentNullException.ThrowIfNull(book);
@@ -575,7 +604,7 @@ public static class FootnoteEditor
             return FootnoteError.None;
         }
 
-        return Move(book, changed, out edited, styles) ? FootnoteError.None : FootnoteError.NotFound;
+        return Move(book, changed, out edited, options) ? FootnoteError.None : FootnoteError.NotFound;
     }
 
     /// <summary>
@@ -588,7 +617,7 @@ public static class FootnoteEditor
     /// </summary>
     public static FootnoteMarkup? Preview(
         Book book, HtmlResource html, int start, int end, string content, FootnotePlacement placement, int number,
-        Footnote? footnote = null, FootnoteStyles? styles = null)
+        Footnote? footnote = null, FootnoteOptions? options = null)
     {
         ArgumentNullException.ThrowIfNull(book);
         ArgumentNullException.ThrowIfNull(html);
@@ -618,7 +647,7 @@ public static class FootnoteEditor
             ? NoteOpenTag(epub3, placement, noteId) + content.Trim() + "</" + (epub3 ? "aside" : "div") + ">"
             : NoteMarkup(epub3, placement, noteId, backlink, Paragraphs(content));
         return new FootnoteMarkup(
-            reference, note, PreviewPage(book, html, start, end, reference, note, placement, styles ?? FootnoteStyles.Default));
+            reference, note, PreviewPage(book, html, start, end, reference, note, placement, (options ?? FootnoteOptions.Default).Styles));
     }
 
     /// <summary>
@@ -638,10 +667,11 @@ public static class FootnoteEditor
     /// Numbers Signet's footnotes: local ones from 1 in each file, global ones through the book, in reading order of the
     /// references, and puts the notes of Signet's containers in that order. Other footnotes keep their markers but take
     /// their places in the count (a Signet footnote after one of them gets the next number). The files with Signet's
-    /// footnotes get the rules of <paramref name="styles"/> (<see cref="FootnoteStyles.Default"/> when <c>null</c>).
+    /// footnotes get the rules of the styles of <paramref name="options"/> (<see cref="FootnoteOptions.Default"/> when
+    /// <c>null</c>), and the global notes are grouped as the options and the notes file say.
     /// Returns whether anything changed.
     /// </summary>
-    public static bool Renumber(Book book, FootnoteStyles? styles = null)
+    public static bool Renumber(Book book, FootnoteOptions? options = null)
     {
         ArgumentNullException.ThrowIfNull(book);
         IReadOnlyList<Footnote> footnotes = FootnoteScanner.Scan(book);
@@ -777,8 +807,10 @@ public static class FootnoteEditor
 
         foreach (HtmlResource file in book.GetHtmlResources())
         {
-            changed |= SortContainer(file, LocalContainerClass) | SortContainer(file, GlobalContainerClass);
+            changed |= SortContainer(file, LocalContainerClass);
         }
+
+        changed |= ArrangeGlobalNotes(book, options ?? FootnoteOptions.Default);
 
         HashSet<HtmlResource> styled = new(ReferenceEqualityComparer.Instance);
         foreach (Footnote footnote in footnotes.Where(f => f.IsSignet))
@@ -789,7 +821,7 @@ public static class FootnoteEditor
 
         foreach (HtmlResource file in book.GetHtmlResources().Where(styled.Contains))
         {
-            changed |= ApplyStyles(book, file, styles ?? FootnoteStyles.Default);
+            changed |= ApplyStyles(book, file, (options ?? FootnoteOptions.Default).Styles);
         }
 
         if (changed)
@@ -1055,6 +1087,289 @@ public static class FootnoteEditor
         }
 
         return open + note[end..];
+    }
+
+    // ---------------------------------------------------------------- groups of global notes
+
+    // A child of the global container: a note (Id), a group (its open tag, title markup and notes), or anything else.
+    private sealed record GroupedNote(string Id, string Markup);
+
+    private sealed class NoteGroup
+    {
+        public required string OpenTag { get; init; }
+
+        public required string CloseTag { get; init; }
+
+        public string? Title { get; set; }
+
+        public List<string> Others { get; } = new();
+
+        public List<GroupedNote> Notes { get; } = new();
+    }
+
+    // Puts the global notes in groups (by chapter, or keeping the groups of the file) or, without groups, in the order of
+    // their numbers. Returns whether the notes file changed.
+    private static bool ArrangeGlobalNotes(Book book, FootnoteOptions options)
+    {
+        if (FindGlobalFile(book) is not { } file)
+        {
+            return false;
+        }
+
+        string text = file.GetText();
+        TagLister tags = new(text);
+        if (FindContainer(tags, text, GlobalContainerClass) is not { } container)
+        {
+            return false;
+        }
+
+        TagLister.TagInfo open = tags.At(container.OpenIndex);
+        string openTag = text.Substring(open.Pos, open.Len);
+        List<Element> children = ChildElements(tags, text, container).ToList();
+        bool hasGroups = children.Any(c => HasClass(text.Substring(c.Start, tags.At(c.OpenIndex).Len), GroupClass));
+        bool byChapter = HasClass(openTag, ByChapterClass) || (options.GroupByChapter && !hasGroups);
+        if (!byChapter && !hasGroups)
+        {
+            return SortContainer(file, GlobalContainerClass);
+        }
+
+        Dictionary<string, Footnote> notes = FootnoteScanner.Scan(book)
+            .Where(f => ReferenceEquals(f.NoteFile, file))
+            .GroupBy(f => f.NoteId, StringComparer.Ordinal)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.Ordinal);
+        Dictionary<string, int> numbers = notes.Values
+            .Select((f, i) => (f.NoteId, i))
+            .ToDictionary(x => x.NoteId, x => x.i, StringComparer.Ordinal);
+        int NumberOf(GroupedNote note) => numbers.GetValueOrDefault(note.Id, int.MaxValue);
+
+        // What the container holds now.
+        string groupTag = book.IsEpub3 ? "section" : "div";
+        List<string> others = new();
+        List<NoteGroup> groups = new();
+        List<GroupedNote> loose = new();
+        foreach (Element child in children)
+        {
+            string childOpen = text.Substring(child.Start, tags.At(child.OpenIndex).Len);
+            if (HasClass(childOpen, GroupClass))
+            {
+                NoteGroup group = new()
+                {
+                    OpenTag = childOpen,
+                    CloseTag = "</" + tags.At(child.OpenIndex).TagName + ">",
+                };
+                foreach (Element member in ChildElements(tags, text, child))
+                {
+                    string markup = Unindent(text, member);
+                    if (notes.ContainsKey(member.IdValue))
+                    {
+                        group.Notes.Add(new GroupedNote(member.IdValue, markup));
+                    }
+                    else if (group.Title is null && group.Notes.Count == 0 && IsHeading(tags.At(member.OpenIndex).TagName))
+                    {
+                        group.Title = markup;
+                    }
+                    else
+                    {
+                        group.Others.Add(markup);
+                    }
+                }
+
+                groups.Add(group);
+            }
+            else if (notes.ContainsKey(child.IdValue))
+            {
+                loose.Add(new GroupedNote(child.IdValue, Unindent(text, child)));
+            }
+            else
+            {
+                others.Add(Unindent(text, child));
+            }
+        }
+
+        List<NoteGroup> arranged;
+        if (byChapter)
+        {
+            // One group per file of the references, in the order of their first notes; a file keeps the title (and
+            // the tag) of the group its first note was in.
+            Dictionary<HtmlResource, NoteGroup> byFile = new(ReferenceEqualityComparer.Instance);
+            List<GroupedNote> all = groups.SelectMany(g => g.Notes).Concat(loose).OrderBy(NumberOf).ToList();
+            foreach (NoteGroup group in groups.Where(g => g.Notes.Count > 0))
+            {
+                HtmlResource first = notes[group.Notes.OrderBy(NumberOf).First().Id].ReferenceFile;
+                if (!byFile.ContainsKey(first))
+                {
+                    NoteGroup kept = new() { OpenTag = group.OpenTag, CloseTag = group.CloseTag, Title = group.Title };
+                    kept.Others.AddRange(group.Others);
+                    byFile[first] = kept;
+                }
+            }
+
+            arranged = new List<NoteGroup>();
+            foreach (GroupedNote note in all)
+            {
+                HtmlResource reference = notes[note.Id].ReferenceFile;
+                if (!byFile.TryGetValue(reference, out NoteGroup? group))
+                {
+                    byFile[reference] = group = new NoteGroup
+                    {
+                        OpenTag = "<" + groupTag + " class=\"" + GroupClass + "\">",
+                        CloseTag = "</" + groupTag + ">",
+                        Title = "<h2 class=\"" + GroupTitleClass + "\">" + Encode(ChapterTitle(reference)) + "</h2>",
+                    };
+                }
+
+                if (!arranged.Contains(group))
+                {
+                    arranged.Add(group);
+                }
+
+                group.Notes.Add(note);
+            }
+
+            if (!HasClass(openTag, ByChapterClass))
+            {
+                openTag = AddClass(openTag, ByChapterClass);
+            }
+        }
+        else
+        {
+            // The groups of the file stay; a note outside them joins the group of the note before it (the first group
+            // when none is before it).
+            foreach (GroupedNote note in loose.OrderBy(NumberOf))
+            {
+                NoteGroup target = groups
+                    .Where(g => g.Notes.Any(n => NumberOf(n) < NumberOf(note)))
+                    .OrderByDescending(g => g.Notes.Where(n => NumberOf(n) < NumberOf(note)).Max(NumberOf))
+                    .FirstOrDefault() ?? groups[0];
+                target.Notes.Add(note);
+            }
+
+            arranged = groups.Where(g => g.Notes.Count > 0).OrderBy(g => g.Notes.Min(NumberOf)).ToList();
+        }
+
+        string indent = LineIndent(text, container.Start);
+        string groupIndent = indent + "  ";
+        string memberIndent = groupIndent + "  ";
+        StringBuilder inside = new("\n");
+        foreach (string other in others)
+        {
+            inside.Append(groupIndent).Append(Indent(other, groupIndent)).Append('\n');
+        }
+
+        foreach (NoteGroup group in arranged)
+        {
+            inside.Append(groupIndent).Append(group.OpenTag).Append('\n');
+            if (group.Title is not null)
+            {
+                inside.Append(memberIndent).Append(Indent(group.Title, memberIndent)).Append('\n');
+            }
+
+            foreach (string other in group.Others)
+            {
+                inside.Append(memberIndent).Append(Indent(other, memberIndent)).Append('\n');
+            }
+
+            foreach (GroupedNote note in group.Notes.OrderBy(NumberOf))
+            {
+                inside.Append(memberIndent).Append(Indent(note.Markup, memberIndent)).Append('\n');
+            }
+
+            inside.Append(groupIndent).Append(group.CloseTag).Append('\n');
+        }
+
+        inside.Append(indent);
+        string updated = string.Concat(text.AsSpan(0, open.Pos), openTag, inside.ToString(), text.AsSpan(container.CloseStart));
+        if (updated == text)
+        {
+            return false;
+        }
+
+        file.SetText(updated);
+        return true;
+    }
+
+    // The markup of an element with the indentation of its line taken off its other lines.
+    private static string Unindent(string text, Element element)
+    {
+        string markup = text[element.Start..element.End];
+        string indent = LineIndent(text, element.Start);
+        return indent.Length == 0 ? markup : markup.Replace("\n" + indent, "\n", StringComparison.Ordinal);
+    }
+
+    // Markup put at `indent`: its other lines get the indentation too.
+    private static string Indent(string markup, string indent) => markup.Replace("\n", "\n" + indent, StringComparison.Ordinal);
+
+    private static bool IsHeading(string tagName) =>
+        tagName.Length == 2 && (tagName[0] is 'h' or 'H') && tagName[1] is >= '1' and <= '6';
+
+    private static string AddClass(string openTag, string name)
+    {
+        TagLister.AttInfo info = TagLister.ParseAttribute(openTag, "class");
+        if (info.Pos < 0 || info.VPos < 0)
+        {
+            int end = openTag.EndsWith("/>", StringComparison.Ordinal) ? openTag.Length - 2 : openTag.Length - 1;
+            return openTag[..end] + " class=\"" + name + "\"" + openTag[end..];
+        }
+
+        int at = info.VPos + info.VLen;
+        return string.Concat(openTag.AsSpan(0, at), " ", name, openTag.AsSpan(at));
+    }
+
+    // The title of the group of a chapter: its first h1–h3, its <title>, or its file name (references left out).
+    private static string ChapterTitle(HtmlResource html)
+    {
+        string text = html.GetText();
+        TagLister tags = new(text);
+        int body = text.IndexOf("<body", StringComparison.OrdinalIgnoreCase);
+        string? heading = null;
+        string? title = null;
+        for (int i = 0; i < tags.Count && tags.At(i).Pos >= 0; i++)
+        {
+            TagLister.TagInfo tag = tags.At(i);
+            if (tag.Kind != TagKind.Begin)
+            {
+                continue;
+            }
+
+            bool isTitle = tag.TagName.Equals("title", StringComparison.OrdinalIgnoreCase);
+            bool isHeading = tag.Pos > body && body >= 0 && tag.TagName.Length == 2 && IsHeading(tag.TagName) && tag.TagName[1] <= '3';
+            if ((isTitle && title is null) || (isHeading && heading is null))
+            {
+                int close = tags.FindCloseTagForOpen(i);
+                if (close < 0)
+                {
+                    continue;
+                }
+
+                string inner = PlainText(text[(tag.Pos + tag.Len)..tags.At(close).Pos]);
+                if (inner.Length == 0)
+                {
+                    continue;
+                }
+
+                if (isTitle)
+                {
+                    title = inner;
+                }
+                else
+                {
+                    heading = inner;
+                    break;
+                }
+            }
+        }
+
+        return heading ?? title ?? System.IO.Path.GetFileNameWithoutExtension(html.Filename);
+    }
+
+    // The text of markup: Signet's references and tags left out, entities decoded, whitespace collapsed.
+    private static string PlainText(string markup)
+    {
+        string withoutReferences = Regex.Replace(
+            markup, "<a\\b[^>]*\\bclass=\"[^\"]*\\b" + ReferenceClass + "\\b[^\"]*\"[^>]*>.*?</a>", string.Empty,
+            RegexOptions.CultureInvariant | RegexOptions.Singleline | RegexOptions.IgnoreCase);
+        string plain = WebUtility.HtmlDecode(Tag.Replace(withoutReferences, string.Empty));
+        return Regex.Replace(plain, "\\s+", " ", RegexOptions.CultureInvariant).Trim();
     }
 
     // Puts the notes of Signet's container in the order of their numbers (fn-N / en-N), keeping the whitespace between them.

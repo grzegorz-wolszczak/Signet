@@ -625,7 +625,9 @@ public sealed class SettingsStore
                 ReadString("footnote_style_paragraph", d.Paragraph),
                 ReadString("footnote_style_local_container", d.LocalContainer),
                 ReadString("footnote_style_global_container", d.GlobalContainer),
-                ReadString("footnote_style_separator", d.Separator));
+                ReadString("footnote_style_separator", d.Separator),
+                ReadString("footnote_style_group", d.Group),
+                ReadString("footnote_style_group_title", d.GroupTitle));
         }
 
         set
@@ -637,7 +639,19 @@ public sealed class SettingsStore
             Write("footnote_style_local_container", value.LocalContainer);
             Write("footnote_style_global_container", value.GlobalContainer);
             Write("footnote_style_separator", value.Separator);
+            Write("footnote_style_group", value.Group);
+            Write("footnote_style_group_title", value.GroupTitle);
         }
+    }
+
+    /// <summary>
+    /// Preferences → Footnotes: whether the global notes are grouped by the chapters of their references (off by
+    /// default; a notes file grouped this way stays grouped).
+    /// </summary>
+    public bool FootnoteGroupByChapter
+    {
+        get => ReadBool("footnote_group_by_chapter", false);
+        set => Write("footnote_group_by_chapter", value);
     }
 
     /// <summary>"Add Footnote": whether the last footnote was added to the global notes (the dialog's default).</summary>

@@ -211,6 +211,9 @@ public sealed class PreferencesViewModelTests
         sut.FootnoteSeparatorStyle = "border: none;";
         sut.FootnoteReferenceStyle = "vertical-align: super;";
         sut.FootnoteParagraphStyle = "margin: 0 0 0.3em 0;";
+        sut.FootnoteGroupTitleStyle = "font-weight: bold;";
+        sut.FootnoteGroupByChapter.Should().BeFalse("grouping is off by default");
+        sut.FootnoteGroupByChapter = true;
         sut.FootnoteReferenceStyleError.Should().BeEmpty();
         sut.ApplyCommand.Execute(null);
 
@@ -220,7 +223,9 @@ public sealed class PreferencesViewModelTests
             Separator = "border: none;",
             Reference = "vertical-align: super;",
             Paragraph = "margin: 0 0 0.3em 0;",
+            GroupTitle = "font-weight: bold;",
         });
+        host.Settings.FootnoteGroupByChapter.Should().BeTrue();
 
         sut.ResetFootnoteStylesCommand.Execute(null);
         sut.ApplyCommand.Execute(null);
