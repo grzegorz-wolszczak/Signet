@@ -958,12 +958,17 @@ public static partial class FootnoteEditor
         }
 
         Element containerElement = FindContainer(tags, text, containerClass)!;
-        int close = containerElement.CloseStart;
+        file.SetText(InsertBeforeClose(text, containerElement.CloseStart, note));
+    }
+
+    // The note put as the last child of the element whose closing tag is at `close`, indented one level deeper.
+    private static string InsertBeforeClose(string text, int close, string note)
+    {
         int lineStart = LineStartIfBlank(text, close);
         bool ownLine = lineStart < close || (lineStart == close && (close == 0 || text[close - 1] == '\n'));
         string indent = (ownLine ? text[lineStart..close] : string.Empty) + "  ";
         string insertion = (ownLine ? string.Empty : "\n") + indent + note.Replace("\n", "\n" + indent, StringComparison.Ordinal) + "\n";
-        file.SetText(text.Insert(lineStart, insertion));
+        return text.Insert(lineStart, insertion);
     }
 
     // Removes Signet's container of the file when no note is left in it (the separator line too); a notes file that

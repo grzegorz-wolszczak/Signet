@@ -31,6 +31,9 @@ public static class FootnoteValidator
     private static readonly string[] NoteTypes = { "footnote", "endnote", "rearnote", "note" };
     private static readonly string[] NoteRoles = { "doc-footnote", "doc-endnote" };
 
+    // The text of a link that looks like a footnote marker: "3", "[3]", "(3)", "3.", "*", "†"…
+    private static readonly Regex MarkerText = new(@"^[\[(]?\s*(\d+|[*†‡§¶#]+)\s*[\])]?\.?$", RegexOptions.CultureInvariant);
+
     /// <summary>Runs the footnote checks for the whole book.</summary>
     public static IReadOnlyList<ValidationResult> Validate(Book book)
     {
@@ -165,9 +168,11 @@ public static class FootnoteValidator
             Add(results, html, line, "Validation_FootnoteBacklinkMismatch", id, backlink.Href);
         }
 
-        if (references.Count > 1 && strong)
+        // Only links that look like references count here: a plain link to a note ("see note 2") is not one.
+        int markers = references.Count(l => IsReferenceLike(l.Anchor));
+        if (markers > 1 && strong)
         {
-            Add(results, html, line, "Validation_FootnoteManyRefs", id, references.Count);
+            Add(results, html, line, "Validation_FootnoteManyRefs", id, markers);
         }
     }
 
@@ -247,6 +252,12 @@ public static class FootnoteValidator
 
     private static void Add(List<ValidationResult> results, HtmlResource html, int line, string code, params object[] args) =>
         results.Add(new ValidationResult(ValidationSeverity.Warning, html.BookPath, line, -1, CoreStrings.Format(code, args), code));
+
+    // A link marked as a note reference, or with a footnote marker for its text.
+    private static bool IsReferenceLike(IElement anchor) =>
+        (anchor.GetAttribute("epub:type") ?? string.Empty).Split(' ').Contains("noteref", StringComparer.Ordinal)
+        || (anchor.GetAttribute("role") ?? string.Empty) == "doc-noteref"
+        || MarkerText.IsMatch((anchor.TextContent ?? string.Empty).Trim());
 
     private sealed class Link
     {

@@ -92,6 +92,16 @@ public sealed class FootnoteValidatorTests
     }
 
     [Fact]
+    public void A_plain_link_to_a_note_is_not_a_second_reference()
+    {
+        (Book book, _) = NewBook(Reference + "\n<p><a href=\"#fn-1\">see the first note</a></p>\n" + Note);
+        using (book)
+        {
+            Codes(book).Should().BeEmpty();
+        }
+    }
+
+    [Fact]
     public void A_footnote_with_two_references_is_reported()
     {
         (Book book, _) = NewBook(Reference + "\n<p><a epub:type=\"noteref\" href=\"#fn-1\">[1]</a></p>\n" + Note);
