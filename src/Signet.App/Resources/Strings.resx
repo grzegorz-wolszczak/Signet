@@ -4220,7 +4220,7 @@ Nie zmienia plików, ich nazw ani ID.</value>
     <value>Treść przypisu:</value>
   </data>
   <data name="FootnoteWindow_ContentHint" xml:space="preserve">
-    <value>Tekst, można użyć prostych znaczników XHTML (np. &lt;i&gt;, &lt;b&gt;, &lt;a href="…"&gt;). Znaki &amp; i &lt; zapisuj jako &amp;amp; i &amp;lt;.</value>
+    <value>Pusta linia zaczyna nowy akapit. Można użyć prostych znaczników XHTML (np. &lt;i&gt;, &lt;b&gt;, &lt;a href="…"&gt;). Znaki &amp; i &lt; zapisuj jako &amp;amp; i &amp;lt;.</value>
   </data>
   <data name="FootnoteWindow_Local" xml:space="preserve">
     <value>Lokalny — na końcu tego pliku</value>
@@ -4265,7 +4265,7 @@ Nie zmienia plików, ich nazw ani ID.</value>
     <value>Na pewno chcesz usunąć przypis? Usunięty zostanie odnośnik w tekście i treść przypisu.</value>
   </data>
   <data name="FootnoteWindow_ContentHintWholeNote" xml:space="preserve">
-    <value>Cała zawartość przypisu (nie jest w szablonie Signeta) jako XHTML. Zachowaj link powrotny do odnośnika. Znaki &amp; i &lt; zapisuj jako &amp;amp; i &amp;lt;.</value>
+    <value>Cała zawartość przypisu jako XHTML bloków (akapity, listy, tabele…) — przypis nie pasuje do szablonu Signeta, np. po zmianie w kodzie. Zachowaj link powrotny do odnośnika. Znaki &amp; i &lt; zapisuj jako &amp;amp; i &amp;lt;.</value>
   </data>
   <data name="ConfirmWindow_DontAskAgain" xml:space="preserve">
     <value>Nie pytaj więcej</value>
@@ -4648,10 +4648,31 @@ Signet może je edytować dopiero po konwersji na przypisy Signeta.</value>
   <data name="MainWindow_BookFileNotSaved" xml:space="preserve">
     <value>Książka nie została jeszcze zapisana.</value>
   </data>
+  <data name="FootnoteError_BlockInParagraph" xml:space="preserve">
+    <value>akapit przypisu nie może zawierać bloków (listy, tabeli, cytatu…) — akapity rozdziela pusta linia</value>
+  </data>
+  <data name="FootnoteError_NotBlocks" xml:space="preserve">
+    <value>na najwyższym poziomie mogą być tylko bloki (akapity, listy, tabele…)</value>
+  </data>
+  <data name="FootnoteWindow_Preview" xml:space="preserve">
+    <value>Podgląd:</value>
+  </data>
+  <data name="FootnoteWindow_PreviewCode" xml:space="preserve">
+    <value>Kod</value>
+  </data>
+  <data name="FootnoteWindow_PreviewAppearance" xml:space="preserve">
+    <value>Wygląd</value>
+  </data>
+  <data name="FootnoteWindow_PreviewEmpty" xml:space="preserve">
+    <value>Podgląd pojawi się, gdy treść przypisu będzie poprawna.</value>
+  </data>
   <data name="Status_FileLoaded" xml:space="preserve">
     <value>Wczytano plik - {0}</value>
   </data>
   <data name="Status_FileLoadedWithWarnings" xml:space="preserve">
     <value>Wczytano plik z ostrzeżeniami ({0}) - {1}</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteParagraphStyle" xml:space="preserve">
+    <value>Akapit przypisu (.signet-fn-p)</value>
   </data>
 </root>

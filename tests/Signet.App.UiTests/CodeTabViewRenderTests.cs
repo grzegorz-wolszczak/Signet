@@ -695,6 +695,10 @@ public sealed class CodeTabViewRenderTests
         {
         }
 
+        public Signet.Core.Footnotes.FootnoteMarkup? PreviewFootnote(
+            HtmlResource html, int referenceStart, int referenceEnd, string content, Signet.Core.Footnotes.FootnotePlacement placement, int number,
+            Signet.Core.Footnotes.Footnote? footnote) => null;
+
         public bool ConfirmFootnoteRemoval { get; set; } = true;
 
         public void GoToFootnote(Signet.Core.Footnotes.FootnoteHit hit)

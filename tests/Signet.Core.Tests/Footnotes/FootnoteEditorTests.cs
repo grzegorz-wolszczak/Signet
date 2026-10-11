@@ -52,7 +52,7 @@ public sealed class FootnoteEditorTests
                 "<p>First<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"#fn-1\" id=\"fn-1-ref\">[1]</a> sentence.</p>");
             text.Should().Contain("<p>Second sentence.</p>\n<hr class=\"signet-fn-separator\"/>\n"
                 + "<section class=\"signet-footnotes\" epub:type=\"footnotes\">\n"
-                + "  <aside class=\"signet-fn\" epub:type=\"footnote\" id=\"fn-1\"><p><a href=\"#fn-1-ref\">1.</a> A <i>note</i>.</p></aside>\n"
+                + "  <aside class=\"signet-fn\" epub:type=\"footnote\" id=\"fn-1\"><p class=\"signet-fn-p\"><a href=\"#fn-1-ref\">1.</a> A <i>note</i>.</p></aside>\n"
                 + "</section>\n</body>");
             text.Should().Contain(".signet-fn-ref {", "the reference is styled as a superscript");
             book.Modified.Should().BeTrue();
@@ -73,7 +73,7 @@ public sealed class FootnoteEditorTests
             text.Should().Contain("First<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"#fn-1\" id=\"fn-1-ref\">[1]</a>")
                 .And.Contain("Second<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"#fn-2\" id=\"fn-2-ref\">[2]</a>");
             text.IndexOf("first note", StringComparison.Ordinal).Should().BeLessThan(text.IndexOf("second note", StringComparison.Ordinal));
-            text.Should().Contain("id=\"fn-1\"><p><a href=\"#fn-1-ref\">1.</a> first note");
+            text.Should().Contain("id=\"fn-1\"><p class=\"signet-fn-p\"><a href=\"#fn-1-ref\">1.</a> first note");
             ShouldBeConsistent(book);
         }
     }
@@ -114,7 +114,7 @@ public sealed class FootnoteEditorTests
             notes.Filename.Should().Be(FootnoteEditor.GlobalFileName);
             book.GetHtmlResources()[^1].Should().BeSameAs(notes);
             notes.GetText().Should().Contain("<h1>Przypisy</h1>")
-                .And.Contain("<aside class=\"signet-fn\" epub:type=\"endnote\" id=\"en-1\"><p><a href=\""
+                .And.Contain("<aside class=\"signet-fn\" epub:type=\"endnote\" id=\"en-1\"><p class=\"signet-fn-p\"><a href=\""
                     + Core.BookPath.Relative(notes.BookPath, html.BookPath) + "#en-1-ref\">1.</a> endnote</p></aside>");
             html.GetText().Should().Contain("href=\"" + Core.BookPath.Relative(html.BookPath, notes.BookPath) + "#en-1\"");
             ShouldBeConsistent(book);
@@ -162,7 +162,7 @@ public sealed class FootnoteEditorTests
 
             FootnoteEditor.FindGlobalFile(book).Should().BeNull("the emptied notes file is removed");
             html.GetText().Should().Contain("href=\"#fn-1\" id=\"fn-1-ref\">[1]</a>")
-                .And.Contain("epub:type=\"footnote\" id=\"fn-1\"><p><a href=\"#fn-1-ref\">1.</a> moving note");
+                .And.Contain("epub:type=\"footnote\" id=\"fn-1\"><p class=\"signet-fn-p\"><a href=\"#fn-1-ref\">1.</a> moving note");
             ShouldBeConsistent(book);
         }
     }
@@ -387,7 +387,7 @@ public sealed class FootnoteEditorTests
             FootnoteEditor.Edit(book, footnote!, "  The <b>new</b> text.\n", FootnotePlacement.Local, out Footnote? edited)
                 .Should().Be(FootnoteError.None);
 
-            html.GetText().Should().Contain("id=\"fn-1\"><p><a href=\"#fn-1-ref\">1.</a> The <b>new</b> text.</p></aside>")
+            html.GetText().Should().Contain("id=\"fn-1\"><p class=\"signet-fn-p\"><a href=\"#fn-1-ref\">1.</a> The <b>new</b> text.</p></aside>")
                 .And.NotContain("A <i>note</i>.");
             edited!.NoteId.Should().Be("fn-1");
             FootnoteEditor.GetContent(edited)!.Text.Should().Be("The <b>new</b> text.");
@@ -470,6 +470,179 @@ public sealed class FootnoteEditorTests
 
             file.Should().BeSameAs(html);
             html.GetText()[start..end].Should().Be(reference);
+        }
+    }
+
+    [Theory]
+    [InlineData("One.", new[] { "One." })]
+    [InlineData("  One\nstill one.  ", new[] { "One\nstill one." })]
+    [InlineData("One.\n\nTwo.", new[] { "One.", "Two." })]
+    [InlineData("One.\r\n \t\r\n\r\nTwo.\n\n", new[] { "One.", "Two." })]
+    [InlineData(" \n\n ", new string[0])]
+    public void A_blank_line_separates_the_paragraphs_of_a_note(string content, string[] expected)
+    {
+        FootnoteEditor.Paragraphs(content).Should().Equal(expected);
+    }
+
+    [Theory]
+    [InlineData("One.\n\nTwo <i>parts</i>.", FootnoteError.None)]
+    [InlineData("One.\n\n<ul><li>item</li></ul>", FootnoteError.BlockInParagraph)]
+    [InlineData("Text <br/> with a break", FootnoteError.None)]
+    [InlineData("One.\n\nan <i>unclosed", FootnoteError.InvalidContent)]
+    public void Every_paragraph_of_a_note_is_checked(string content, FootnoteError expected)
+    {
+        FootnoteEditor.ValidateContent(content, "3.0").Should().Be(expected);
+    }
+
+    [Fact]
+    public void A_note_of_several_paragraphs_has_one_paragraph_per_line_with_the_link_back_in_the_first()
+    {
+        (Book book, HtmlResource html) = NewBook();
+        using (book)
+        {
+            FootnoteEditor.Add(book, html, After(html, "First"), "One <i>part</i>.\n\nTwo.", FootnotePlacement.Local, out Footnote? footnote)
+                .Should().Be(FootnoteError.None);
+
+            html.GetText().Should().Contain(
+                "<section class=\"signet-footnotes\" epub:type=\"footnotes\">\n"
+                + "  <aside class=\"signet-fn\" epub:type=\"footnote\" id=\"fn-1\">\n"
+                + "    <p class=\"signet-fn-p\"><a href=\"#fn-1-ref\">1.</a> One <i>part</i>.</p>\n"
+                + "    <p class=\"signet-fn-p\">Two.</p>\n"
+                + "  </aside>\n"
+                + "</section>");
+            FootnoteEditor.GetContent(footnote!).Should().Be(new FootnoteContent("One <i>part</i>.\n\nTwo.", false));
+            ShouldBeConsistent(book);
+        }
+    }
+
+    [Fact]
+    public void Editing_the_paragraphs_rewrites_the_note_and_keeps_its_link_back()
+    {
+        (Book book, HtmlResource html) = NewBook();
+        using (book)
+        {
+            FootnoteEditor.Add(book, html, After(html, "First"), "Only.", FootnotePlacement.Local, out Footnote? footnote);
+
+            FootnoteEditor.Edit(book, footnote!, "One.\n\nTwo.\n\nThree.", FootnotePlacement.Local, out Footnote? edited)
+                .Should().Be(FootnoteError.None);
+            html.GetText().Should().Contain(
+                "  <aside class=\"signet-fn\" epub:type=\"footnote\" id=\"fn-1\">\n"
+                + "    <p class=\"signet-fn-p\"><a href=\"#fn-1-ref\">1.</a> One.</p>\n    <p class=\"signet-fn-p\">Two.</p>\n    <p class=\"signet-fn-p\">Three.</p>\n  </aside>\n");
+
+            FootnoteEditor.Edit(book, edited!, "Back to one.", FootnotePlacement.Local, out Footnote? again)
+                .Should().Be(FootnoteError.None);
+            html.GetText().Should().Contain(
+                "  <aside class=\"signet-fn\" epub:type=\"footnote\" id=\"fn-1\"><p class=\"signet-fn-p\"><a href=\"#fn-1-ref\">1.</a> Back to one.</p></aside>\n");
+            FootnoteEditor.GetContent(again!)!.Text.Should().Be("Back to one.");
+            ShouldBeConsistent(book);
+        }
+    }
+
+    [Fact]
+    public void A_note_written_before_the_paragraph_class_is_in_the_template_and_renumbering_gives_it_the_class()
+    {
+        (Book book, HtmlResource html) = NewBook(
+            "<p>Text<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"#fn-1\" id=\"fn-1-ref\">[1]</a>.</p>\n"
+            + "<section class=\"signet-footnotes\" epub:type=\"footnotes\">\n"
+            + "  <aside class=\"signet-fn\" epub:type=\"footnote\" id=\"fn-1\">\n"
+            + "    <p><a href=\"#fn-1-ref\">1.</a> One.</p>\n    <p>Two.</p>\n  </aside>\n</section>");
+        using (book)
+        {
+            Footnote footnote = FootnoteScanner.Scan(book).Single();
+            FootnoteEditor.GetContent(footnote).Should().Be(new FootnoteContent("One.\n\nTwo.", false));
+
+            FootnoteEditor.Renumber(book).Should().BeTrue();
+
+            html.GetText().Should().Contain(
+                "    <p class=\"signet-fn-p\"><a href=\"#fn-1-ref\">1.</a> One.</p>\n    <p class=\"signet-fn-p\">Two.</p>\n");
+            FootnoteEditor.Renumber(book).Should().BeFalse("the note is up to date now");
+        }
+    }
+
+    [Fact]
+    public void A_signet_note_changed_by_hand_is_edited_as_its_whole_inside_of_blocks()
+    {
+        (Book book, HtmlResource html) = NewBook();
+        using (book)
+        {
+            FootnoteEditor.Add(book, html, After(html, "First"), "Text.", FootnotePlacement.Local, out Footnote? footnote);
+            html.SetText(html.GetText().Replace("<p class=\"signet-fn-p\"><a href=\"#fn-1-ref\">", "<p class=\"x\"><a href=\"#fn-1-ref\">", StringComparison.Ordinal));
+            footnote = FootnoteEditor.Refresh(book, footnote!);
+
+            FootnoteEditor.GetContent(footnote!).Should().Be(new FootnoteContent("<p class=\"x\"><a href=\"#fn-1-ref\">1.</a> Text.</p>", true));
+            FootnoteEditor.ValidateEdit(footnote!, "<a href=\"#fn-1-ref\">1.</a> Text.", "3.0").Should().Be(FootnoteError.NotBlocks);
+            FootnoteEditor.ValidateEdit(footnote!, "<p class=\"signet-fn-p\"><a href=\"#fn-1-ref\">1.</a> Text.</p><ul><li>A list.</li></ul>", "3.0")
+                .Should().Be(FootnoteError.None);
+        }
+    }
+
+    [Fact]
+    public void The_preview_is_the_markup_the_footnote_gets()
+    {
+        (Book book, HtmlResource html) = NewBook();
+        using (book)
+        {
+            int offset = After(html, "Second");
+
+            FootnoteMarkup local = FootnoteEditor.Preview(book, html, offset, offset, "One.\n\nTwo.", FootnotePlacement.Local, 1)!;
+            FootnoteEditor.Add(book, html, offset, "One.\n\nTwo.", FootnotePlacement.Local).Should().Be(FootnoteError.None);
+
+            string text = html.GetText();
+            text.Should().Contain(local.Reference);
+            text.Should().Contain(local.Note.Replace("\n", "\n  ", StringComparison.Ordinal), "the note is indented in its container");
+            local.Page.Should().Contain("<p>Second" + local.Reference + " sentence.</p>")
+                .And.Contain("<hr class=\"signet-fn-separator\"/>")
+                .And.Contain("<section class=\"signet-footnotes\">\n" + local.Note)
+                .And.Contain(".signet-fn-ref {");
+        }
+    }
+
+    [Fact]
+    public void The_preview_of_a_global_footnote_links_to_the_notes_file_to_be_created()
+    {
+        (Book book, HtmlResource html) = NewBook();
+        using (book)
+        {
+            int offset = After(html, "First");
+
+            FootnoteMarkup global = FootnoteEditor.Preview(book, html, offset, offset, "Note.", FootnotePlacement.Global, 1)!;
+
+            global.Reference.Should().Be(
+                "<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"Przypisy.xhtml#en-1\" id=\"en-1-ref\">[1]</a>");
+            global.Note.Should().Be(
+                "<aside class=\"signet-fn\" epub:type=\"endnote\" id=\"en-1\"><p class=\"signet-fn-p\"><a href=\"" + html.Filename + "#en-1-ref\">1.</a> Note.</p></aside>");
+            FootnoteEditor.FindGlobalFile(book).Should().BeNull("the preview changes nothing");
+            FootnoteEditor.Preview(book, html, offset, offset, "a <i>b", FootnotePlacement.Global, 1).Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void The_preview_of_an_edited_footnote_keeps_its_number_and_replaces_its_reference()
+    {
+        (Book book, HtmlResource html) = NewBook();
+        using (book)
+        {
+            FootnoteEditor.Add(book, html, After(html, "First"), "one", FootnotePlacement.Local);
+            FootnoteEditor.Add(book, html, After(html, "Second"), "two", FootnotePlacement.Local, out Footnote? second);
+            (HtmlResource _, int start, int end) = FootnoteEditor.LocateReferenceRange(second!)!.Value;
+
+            FootnoteMarkup preview = FootnoteEditor.Preview(book, html, start, end, "new two", FootnotePlacement.Local, 2, second)!;
+
+            preview.Note.Should().Contain("id=\"fn-2\"><p class=\"signet-fn-p\"><a href=\"#fn-2-ref\">2.</a> new two</p>");
+            preview.Page.Should().Contain("<p>Second" + preview.Reference + " sentence.</p>");
+        }
+    }
+
+    [Fact]
+    public void An_epub2_note_of_several_paragraphs_is_a_div()
+    {
+        (Book book, HtmlResource html) = NewBook(version: "2.0");
+        using (book)
+        {
+            FootnoteEditor.Add(book, html, After(html, "First"), "One.\n\nTwo.", FootnotePlacement.Local).Should().Be(FootnoteError.None);
+
+            html.GetText().Should().Contain(
+                "  <div class=\"signet-fn\" id=\"fn-1\">\n    <p class=\"signet-fn-p\"><a href=\"#fn-1-ref\">1.</a> One.</p>\n    <p class=\"signet-fn-p\">Two.</p>\n  </div>\n");
         }
     }
 

@@ -16,8 +16,9 @@ public sealed record FootnoteRequest(string Content, FootnotePlacement Placement
 
 /// <summary>
 /// Model of the footnote window (Code View context menu), for adding a footnote at the caret or editing the footnote
-/// under it: the text around the reference, the text of the footnote with live validation (well-formed XHTML) and its
-/// placement. An edited footnote can also be removed (after a confirmation, unless it was turned off).
+/// under it: the text around the reference, the text of the footnote (paragraphs separated by a blank line) with live
+/// validation and its placement, and a live preview of the markup Signet writes. An edited footnote can also be removed
+/// (after a confirmation, unless it was turned off).
 /// </summary>
 public sealed partial class FootnoteViewModel : ObservableObject
 {
@@ -41,6 +42,7 @@ public sealed partial class FootnoteViewModel : ObservableObject
     private readonly string _originalContent = string.Empty;
     private readonly bool _originalGlobal;
     private bool _contentValid;
+    private Func<string, FootnotePlacement, int, FootnoteMarkup?>? _preview;
 
     /// <summary>Creates the model for adding a footnote at <paramref name="offset"/> of the XHTML source <paramref name="text"/>.</summary>
     /// <param name="text">The source of the file.</param>
@@ -162,6 +164,32 @@ public sealed partial class FootnoteViewModel : ObservableObject
     [ObservableProperty]
     private bool _canAccept;
 
+    /// <summary>
+    /// Builds the preview from the text, the placement and the number (<c>null</c> — no preview); set once the model is
+    /// created, and run on every change of the text or the placement.
+    /// </summary>
+    public Func<string, FootnotePlacement, int, FootnoteMarkup?>? Preview
+    {
+        get => _preview;
+        set
+        {
+            _preview = value;
+            UpdatePreview();
+        }
+    }
+
+    /// <summary>The markup of the preview: the reference and the note, or an empty string while the text is not valid.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasPreview))]
+    private string _previewCode = string.Empty;
+
+    /// <summary>The page of the "Appearance" preview (<see cref="FootnoteMarkup.Page"/>), or <c>null</c>.</summary>
+    [ObservableProperty]
+    private string? _previewPage;
+
+    /// <summary>Whether there is a preview (the text is valid).</summary>
+    public bool HasPreview => PreviewCode.Length > 0;
+
     /// <summary>The accepted request.</summary>
     public FootnoteRequest Request() =>
         new(Content.Trim(), IsGlobal ? FootnotePlacement.Global : FootnotePlacement.Local);
@@ -180,9 +208,23 @@ public sealed partial class FootnoteViewModel : ObservableObject
         UpdateCanAccept();
         string message = error is FootnoteError.None or FootnoteError.EmptyContent ? string.Empty : ErrorText(error);
         ValidationError = message.Length == 0 ? message : char.ToUpper(message[0], CultureInfo.CurrentCulture) + message[1..];
+        UpdatePreview();
     }
 
-    partial void OnIsGlobalChanged(bool value) => UpdateCanAccept();
+    partial void OnIsGlobalChanged(bool value)
+    {
+        UpdateCanAccept();
+        UpdatePreview();
+    }
+
+    private void UpdatePreview()
+    {
+        FootnoteMarkup? markup = _contentValid && _preview is not null
+            ? _preview(Content, IsGlobal ? FootnotePlacement.Global : FootnotePlacement.Local, IsGlobal ? _globalNumber : _localNumber)
+            : null;
+        PreviewCode = markup is null ? string.Empty : markup.Reference + "\n\n" + markup.Note;
+        PreviewPage = markup?.Page;
+    }
 
     private void UpdateCanAccept() =>
         CanAccept = _contentValid && (!IsEditing || IsGlobal != _originalGlobal || Content.Trim() != _originalContent);

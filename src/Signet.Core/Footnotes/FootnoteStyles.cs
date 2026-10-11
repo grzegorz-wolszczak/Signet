@@ -44,20 +44,23 @@ public sealed record FootnoteStyleError(FootnoteStyleProblem Problem, string Det
 /// </summary>
 /// <param name="Reference">The reference in the text (<c>.signet-fn-ref</c>).</param>
 /// <param name="Note">A note (<c>.signet-fn</c>).</param>
+/// <param name="Paragraph">A paragraph of a note (<c>.signet-fn-p</c>).</param>
 /// <param name="LocalContainer">The section with the notes at the end of a file (<c>.signet-footnotes</c>).</param>
 /// <param name="GlobalContainer">The section with the notes of the notes file (<c>.signet-endnotes</c>).</param>
 /// <param name="Separator">The line above the notes at the end of a file (<c>.signet-fn-separator</c>).</param>
-public sealed record FootnoteStyles(string Reference, string Note, string LocalContainer, string GlobalContainer, string Separator)
+public sealed record FootnoteStyles(
+    string Reference, string Note, string Paragraph, string LocalContainer, string GlobalContainer, string Separator)
 {
     private static readonly Regex PropertyName = new(@"^(?:--|-?[A-Za-z_])[A-Za-z0-9_-]*$", RegexOptions.CultureInvariant);
 
     private static readonly Regex SignetRule = new(
-        @"\.signet-(?:fn|footnotes|endnotes)(?![\w-])|\.signet-fn-(?:ref|separator)", RegexOptions.CultureInvariant);
+        @"\.signet-(?:fn|footnotes|endnotes)(?![\w-])|\.signet-fn-(?:ref|separator|p(?![\w-]))", RegexOptions.CultureInvariant);
 
     /// <summary>The default definitions.</summary>
     public static FootnoteStyles Default { get; } = new(
         "vertical-align: super;\nfont-size: smaller;\nline-height: normal;",
         "margin: 0 0 0.5em 0;",
+        "margin: 0;\ntext-indent: 0;",
         "font-size: 0.85em;",
         "font-size: 0.9em;",
         "width: 30%;\nmargin: 2em auto 0.5em 0;\nborder: none;\nborder-top: 1px solid;");
@@ -70,6 +73,7 @@ public sealed record FootnoteStyles(string Reference, string Note, string LocalC
         (FootnoteEditor.LocalContainerClass, LocalContainer),
         (FootnoteEditor.GlobalContainerClass, GlobalContainer),
         (FootnoteEditor.NoteClass, Note),
+        (FootnoteEditor.ParagraphClass, Paragraph),
     ];
 
     /// <summary>Whether <paramref name="declarations"/> can be a rule body (<see cref="Validate"/> finds no problem).</summary>

@@ -4220,7 +4220,7 @@ It does not change the files, their names or their IDs.</value>
     <value>Footnote text:</value>
   </data>
   <data name="FootnoteWindow_ContentHint" xml:space="preserve">
-    <value>Text; simple XHTML markup is allowed (e.g. &lt;i&gt;, &lt;b&gt;, &lt;a href="…"&gt;). Write &amp; and &lt; as &amp;amp; and &amp;lt;.</value>
+    <value>A blank line starts a new paragraph. Simple XHTML markup is allowed (e.g. &lt;i&gt;, &lt;b&gt;, &lt;a href="…"&gt;). Write &amp; and &lt; as &amp;amp; and &amp;lt;.</value>
   </data>
   <data name="FootnoteWindow_Local" xml:space="preserve">
     <value>Local — at the end of this file</value>
@@ -4265,7 +4265,7 @@ It does not change the files, their names or their IDs.</value>
     <value>Are you sure you want to remove the footnote? Both the reference in the text and the note will be removed.</value>
   </data>
   <data name="FootnoteWindow_ContentHintWholeNote" xml:space="preserve">
-    <value>The whole inside of the footnote (it is not in Signet's template) as XHTML. Keep the link back to the reference. Write &amp; and &lt; as &amp;amp; and &amp;lt;.</value>
+    <value>The whole inside of the footnote as XHTML blocks (paragraphs, lists, tables…): the footnote does not fit Signet's template, e.g. after a change in the code. Keep the link back to the reference. Write &amp; and &lt; as &amp;amp; and &amp;lt;.</value>
   </data>
   <data name="ConfirmWindow_DontAskAgain" xml:space="preserve">
     <value>Don't ask again</value>
@@ -4648,10 +4648,31 @@ Signet can edit them only after converting them to Signet footnotes.</value>
   <data name="MainWindow_BookFileNotSaved" xml:space="preserve">
     <value>The book has not been saved yet.</value>
   </data>
+  <data name="FootnoteError_BlockInParagraph" xml:space="preserve">
+    <value>a paragraph of the footnote cannot hold blocks (a list, a table, a quotation…); a blank line separates paragraphs</value>
+  </data>
+  <data name="FootnoteError_NotBlocks" xml:space="preserve">
+    <value>only blocks (paragraphs, lists, tables…) can be at the top level</value>
+  </data>
+  <data name="FootnoteWindow_Preview" xml:space="preserve">
+    <value>Preview:</value>
+  </data>
+  <data name="FootnoteWindow_PreviewCode" xml:space="preserve">
+    <value>Code</value>
+  </data>
+  <data name="FootnoteWindow_PreviewAppearance" xml:space="preserve">
+    <value>Appearance</value>
+  </data>
+  <data name="FootnoteWindow_PreviewEmpty" xml:space="preserve">
+    <value>The preview appears once the text of the footnote is valid.</value>
+  </data>
   <data name="Status_FileLoaded" xml:space="preserve">
     <value>File loaded - {0}</value>
   </data>
   <data name="Status_FileLoadedWithWarnings" xml:space="preserve">
     <value>File loaded with {0} warning(s) - {1}</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteParagraphStyle" xml:space="preserve">
+    <value>Footnote paragraph (.signet-fn-p)</value>
   </data>
 </root>

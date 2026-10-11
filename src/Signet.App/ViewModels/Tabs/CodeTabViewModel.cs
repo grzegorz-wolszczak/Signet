@@ -1435,8 +1435,12 @@ public sealed class CodeTabViewModel : ContentTabViewModel
 
         SyncModelFromDocument();
         (int local, int global) = host.GetFootnoteNumbers(html, _caretOffset);
+        int offset = _caretOffset;
         return new FootnoteViewModel(
-            _model.Text, _caretOffset, host.LastFootnotePlacement, local, global, host.ValidateFootnoteContent);
+            _model.Text, offset, host.LastFootnotePlacement, local, global, host.ValidateFootnoteContent)
+        {
+            Preview = (content, placement, number) => host.PreviewFootnote(html, offset, offset, content, placement, number, null),
+        };
     }
 
     /// <summary>Adds the footnote accepted in the "Add Footnote" window at the caret (through the host, with a checkpoint).</summary>
@@ -1472,6 +1476,8 @@ public sealed class CodeTabViewModel : ContentTabViewModel
             edit.LocalNumber, edit.GlobalNumber, content => host.ValidateFootnoteEdit(edit.Footnote, content));
         model.ConfirmRemoval = host.ConfirmFootnoteRemoval;
         model.StopConfirmingRemoval = () => host.ConfirmFootnoteRemoval = false;
+        model.Preview = (content, placement, number) => host.PreviewFootnote(
+            edit.Footnote.ReferenceFile, edit.ReferenceStart, edit.ReferenceEnd, content, placement, number, edit.Footnote);
         return model;
     }
 

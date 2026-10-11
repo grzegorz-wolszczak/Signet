@@ -207,8 +207,10 @@ public sealed class PreferencesViewModelTests
         PreferencesViewModel sut = NewOn(host);
         sut.FootnoteNoteStyle.Should().Be("color: red;");
 
+        sut.FootnoteParagraphStyle.Should().Be("margin: 0;\ntext-indent: 0;");
         sut.FootnoteSeparatorStyle = "border: none;";
         sut.FootnoteReferenceStyle = "vertical-align: super;";
+        sut.FootnoteParagraphStyle = "margin: 0 0 0.3em 0;";
         sut.FootnoteReferenceStyleError.Should().BeEmpty();
         sut.ApplyCommand.Execute(null);
 
@@ -217,6 +219,7 @@ public sealed class PreferencesViewModelTests
             Note = "color: red;",
             Separator = "border: none;",
             Reference = "vertical-align: super;",
+            Paragraph = "margin: 0 0 0.3em 0;",
         });
 
         sut.ResetFootnoteStylesCommand.Execute(null);

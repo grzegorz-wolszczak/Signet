@@ -209,6 +209,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         FootnoteStyles footnoteStyles = _settings.FootnoteStyles;
         _footnoteReferenceStyle = footnoteStyles.Reference;
         _footnoteNoteStyle = footnoteStyles.Note;
+        _footnoteParagraphStyle = footnoteStyles.Paragraph;
         _footnoteLocalContainerStyle = footnoteStyles.LocalContainer;
         _footnoteGlobalContainerStyle = footnoteStyles.GlobalContainer;
         _footnoteSeparatorStyle = footnoteStyles.Separator;
@@ -1379,6 +1380,11 @@ public sealed partial class PreferencesViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(FootnoteNoteStyleError))]
     private string _footnoteNoteStyle;
 
+    /// <summary>The declarations of <c>.signet-fn-p</c> (a paragraph of a note).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FootnoteParagraphStyleError))]
+    private string _footnoteParagraphStyle;
+
     /// <summary>The declarations of <c>.signet-footnotes</c> (the notes at the end of a file).</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(FootnoteLocalContainerStyleError))]
@@ -1399,6 +1405,9 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
     /// <summary>Why the note definition is invalid, or <c>""</c>.</summary>
     public string FootnoteNoteStyleError => FootnoteStyleError(FootnoteNoteStyle);
+
+    /// <summary>Why the paragraph definition is invalid, or <c>""</c>.</summary>
+    public string FootnoteParagraphStyleError => FootnoteStyleError(FootnoteParagraphStyle);
 
     /// <summary>Why the local notes definition is invalid, or <c>""</c>.</summary>
     public string FootnoteLocalContainerStyleError => FootnoteStyleError(FootnoteLocalContainerStyle);
@@ -1425,6 +1434,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         FootnoteStyles d = FootnoteStyles.Default;
         FootnoteReferenceStyle = d.Reference;
         FootnoteNoteStyle = d.Note;
+        FootnoteParagraphStyle = d.Paragraph;
         FootnoteLocalContainerStyle = d.LocalContainer;
         FootnoteGlobalContainerStyle = d.GlobalContainer;
         FootnoteSeparatorStyle = d.Separator;
@@ -1433,6 +1443,8 @@ public sealed partial class PreferencesViewModel : ObservableObject
     partial void OnFootnoteReferenceStyleChanged(string value) => PersistFootnoteStyles();
 
     partial void OnFootnoteNoteStyleChanged(string value) => PersistFootnoteStyles();
+
+    partial void OnFootnoteParagraphStyleChanged(string value) => PersistFootnoteStyles();
 
     partial void OnFootnoteLocalContainerStyleChanged(string value) => PersistFootnoteStyles();
 
@@ -1449,6 +1461,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _savedFootnoteStyles = new FootnoteStyles(
             Valid(FootnoteReferenceStyle, saved.Reference),
             Valid(FootnoteNoteStyle, saved.Note),
+            Valid(FootnoteParagraphStyle, saved.Paragraph),
             Valid(FootnoteLocalContainerStyle, saved.LocalContainer),
             Valid(FootnoteGlobalContainerStyle, saved.GlobalContainer),
             Valid(FootnoteSeparatorStyle, saved.Separator));

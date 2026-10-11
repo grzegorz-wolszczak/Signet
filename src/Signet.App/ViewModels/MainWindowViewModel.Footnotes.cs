@@ -198,6 +198,15 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <inheritdoc/>
+    FootnoteMarkup? ICodeTabHost.PreviewFootnote(
+        HtmlResource html, int referenceStart, int referenceEnd, string content, FootnotePlacement placement, int number,
+        Footnote? footnote) =>
+        _currentBook is null
+            ? null
+            : FootnoteEditor.Preview(
+                _currentBook, html, referenceStart, referenceEnd, content, placement, number, footnote, _settings.FootnoteStyles);
+
+    /// <inheritdoc/>
     bool ICodeTabHost.ConfirmFootnoteRemoval
     {
         get => _settings.ConfirmFootnoteRemoval;

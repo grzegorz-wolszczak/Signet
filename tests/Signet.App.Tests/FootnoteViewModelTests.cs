@@ -152,4 +152,30 @@ public sealed class FootnoteViewModelTests
         Edit().ContentHint.Should().Be(Signet.App.Resources.Strings.Get("FootnoteWindow_ContentHint"));
         Edit(wholeNote: true).ContentHint.Should().Be(Signet.App.Resources.Strings.Get("FootnoteWindow_ContentHintWholeNote"));
     }
+
+    [Fact]
+    public void The_preview_follows_the_text_and_the_placement_and_is_empty_while_the_text_is_invalid()
+    {
+        FootnoteViewModel sut = New(0);
+        List<(string Content, FootnotePlacement Placement, int Number)> calls = new();
+        sut.Preview = (content, placement, number) =>
+        {
+            calls.Add((content, placement, number));
+            return new FootnoteMarkup("<a>[" + number + "]</a>", "<aside>" + content + "</aside>", "page " + number);
+        };
+        sut.HasPreview.Should().BeFalse("the text is empty");
+
+        sut.Content = "One.\n\nTwo.";
+        sut.PreviewCode.Should().Be("<a>[3]</a>\n\n<aside>One.\n\nTwo.</aside>");
+        sut.PreviewPage.Should().Be("page 3");
+        sut.HasPreview.Should().BeTrue();
+
+        sut.IsGlobal = true;
+        sut.PreviewPage.Should().Be("page 12");
+
+        sut.Content = "an <i>unclosed";
+        sut.HasPreview.Should().BeFalse();
+        sut.PreviewPage.Should().BeNull();
+        calls.Should().Equal(("One.\n\nTwo.", FootnotePlacement.Local, 3), ("One.\n\nTwo.", FootnotePlacement.Global, 12));
+    }
 }

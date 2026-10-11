@@ -116,6 +116,17 @@ public interface ICodeTabHost
     /// <summary>"Remove" in the footnote window — removes the reference and the note (with a checkpoint).</summary>
     void RemoveFootnote(FootnoteHit hit);
 
+    /// <summary>
+    /// The preview of the footnote window: the markup of a footnote with <paramref name="content"/> as footnote
+    /// <paramref name="number"/> of <paramref name="placement"/> — a new one at <paramref name="referenceStart"/> of
+    /// <paramref name="html"/>, or <paramref name="footnote"/> with its reference at
+    /// <paramref name="referenceStart"/>..<paramref name="referenceEnd"/>; <c>null</c> when the text is not valid. Changes
+    /// nothing (called on every change of the text).
+    /// </summary>
+    FootnoteMarkup? PreviewFootnote(
+        HtmlResource html, int referenceStart, int referenceEnd, string content, FootnotePlacement placement, int number,
+        Footnote? footnote);
+
     /// <summary>Whether removing a footnote asks for a confirmation (Preferences → Footnotes).</summary>
     bool ConfirmFootnoteRemoval { get; set; }
 

@@ -622,6 +622,7 @@ public sealed class SettingsStore
             return new FootnoteStyles(
                 ReadString("footnote_style_reference", d.Reference),
                 ReadString("footnote_style_note", d.Note),
+                ReadString("footnote_style_paragraph", d.Paragraph),
                 ReadString("footnote_style_local_container", d.LocalContainer),
                 ReadString("footnote_style_global_container", d.GlobalContainer),
                 ReadString("footnote_style_separator", d.Separator));
@@ -632,6 +633,7 @@ public sealed class SettingsStore
             ArgumentNullException.ThrowIfNull(value);
             Write("footnote_style_reference", value.Reference);
             Write("footnote_style_note", value.Note);
+            Write("footnote_style_paragraph", value.Paragraph);
             Write("footnote_style_local_container", value.LocalContainer);
             Write("footnote_style_global_container", value.GlobalContainer);
             Write("footnote_style_separator", value.Separator);

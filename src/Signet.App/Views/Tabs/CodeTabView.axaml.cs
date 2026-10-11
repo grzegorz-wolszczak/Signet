@@ -860,7 +860,7 @@ public partial class CodeTabView : UserControl
             return;
         }
 
-        if (await FootnoteWindow.AskAsync(owner, model) is { } request)
+        if (await FootnoteWindow.AskAsync(owner, model, CurrentAppearance()) is { } request)
         {
             vm.AddFootnote(request);
         }
@@ -874,7 +874,7 @@ public partial class CodeTabView : UserControl
             return;
         }
 
-        if (await FootnoteWindow.AskAsync(owner, model) is { } request)
+        if (await FootnoteWindow.AskAsync(owner, model, CurrentAppearance()) is { } request)
         {
             vm.ApplyFootnoteEdit(hit, request);
         }

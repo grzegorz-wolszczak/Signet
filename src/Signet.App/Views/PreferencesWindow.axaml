@@ -596,6 +596,19 @@
             </StackPanel>
             <StackPanel Spacing="4">
               <WrapPanel>
+                <TextBlock Text="{loc:Loc PreferencesWindow_FootnoteParagraphStyle}" FontWeight="Bold" Margin="0,0,10,0" />
+                <TextBlock x:Name="FootnoteParagraphStyleError" Text="{Binding FootnoteParagraphStyleError}" Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}" TextWrapping="Wrap"
+                           IsVisible="{Binding FootnoteParagraphStyleError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </WrapPanel>
+              <Grid RowDefinitions="Auto,Auto">
+                <TextBox x:Name="FootnoteParagraphStyleBox" Text="{Binding FootnoteParagraphStyle}" AcceptsReturn="True" TextWrapping="Wrap"
+                         Height="{x:Static views:PreferencesWindow.DefaultFieldHeight}"
+                         FontFamily="Cascadia Code,Consolas,monospace" />
+                <views:HeightResizeGrip Grid.Row="1" Target="{Binding #FootnoteParagraphStyleBox}" />
+              </Grid>
+            </StackPanel>
+            <StackPanel Spacing="4">
+              <WrapPanel>
                 <TextBlock Text="{loc:Loc PreferencesWindow_FootnoteLocalContainerStyle}" FontWeight="Bold" Margin="0,0,10,0" />
                 <TextBlock x:Name="FootnoteLocalContainerStyleError" Text="{Binding FootnoteLocalContainerStyleError}" Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}" TextWrapping="Wrap"
                            IsVisible="{Binding FootnoteLocalContainerStyleError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />

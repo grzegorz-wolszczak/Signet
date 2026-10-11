@@ -39,6 +39,12 @@ public enum FootnoteError
 
     /// <summary>The footnote (its reference or its note) is no longer in the book.</summary>
     NotFound,
+
+    /// <summary>A paragraph of the text holds a block element (a list, a table, a quotation…).</summary>
+    BlockInParagraph,
+
+    /// <summary>The whole inside of a note holds text or inline elements outside block elements.</summary>
+    NotBlocks,
 }
 
 /// <summary>A footnote and the part of it a position is in (<see cref="FootnoteEditor.FindAt"/>).</summary>
@@ -54,6 +60,15 @@ public sealed record FootnoteHit(Footnote Footnote, FootnoteSide Side);
 /// </param>
 public sealed record FootnoteContent(string Text, bool IsWholeNote);
 
+/// <summary>The markup Signet writes for a footnote (<see cref="FootnoteEditor.Preview"/>).</summary>
+/// <param name="Reference">The reference in the text.</param>
+/// <param name="Note">The note (the whole <c>aside</c>, or <c>div</c> in EPUB 2).</param>
+/// <param name="Page">
+/// An HTML page that shows them with the styles of the file of the reference: the block of the reference and the note in
+/// its container (its relative links resolve against the folder of that file).
+/// </param>
+public sealed record FootnoteMarkup(string Reference, string Note, string Page);
+
 /// <summary>
 /// Adds, edits, removes, moves and renumbers footnotes (see <see cref="FootnoteScanner"/> for what a footnote is). The
 /// changes are text edits of the files involved: the rest of the source keeps its formatting.
@@ -63,7 +78,10 @@ public sealed record FootnoteContent(string Text, bool IsWholeNote);
 /// Signet's footnotes follow one template, styled by the rules of its classes (<see cref="FootnoteStyles"/>, kept up
 /// to date by <see cref="Renumber"/> in the file's stylesheet or a <c>&lt;style&gt;</c> element). The reference:
 /// <c>&lt;a class="signet-fn-ref" epub:type="noteref" href="#fn-1" id="fn-1-ref"&gt;[1]&lt;/a&gt;</c>. The note:
-/// <c>&lt;aside class="signet-fn" epub:type="footnote" id="fn-1"&gt;&lt;p&gt;&lt;a href="#fn-1-ref"&gt;1.&lt;/a&gt; text&lt;/p&gt;&lt;/aside&gt;</c>.
+/// <c>&lt;aside class="signet-fn" epub:type="footnote" id="fn-1"&gt;&lt;p class="signet-fn-p"&gt;&lt;a href="#fn-1-ref"&gt;1.&lt;/a&gt; text&lt;/p&gt;&lt;/aside&gt;</c>;
+/// a note of several paragraphs has one <c>&lt;p class="signet-fn-p"&gt;</c> per line, the link back in the first one.
+/// Its text is written with a blank line between paragraphs (<see cref="ValidateContent"/>). Notes written before the
+/// paragraphs had the class (plain <c>&lt;p&gt;</c>) are still in the template; the renumbering gives them the class.
 /// Local notes go to <c>&lt;hr class="signet-fn-separator"/&gt;</c> + <c>&lt;section class="signet-footnotes"&gt;</c>
 /// at the end of the file's body; global ones (endnotes, ids <c>en-N</c>) to <c>&lt;section class="signet-endnotes"&gt;</c>
 /// of <see cref="GlobalFileName"/>, created at the end of the reading order when needed. EPUB 2 has no
@@ -88,6 +106,9 @@ public static class FootnoteEditor
     /// <summary>The class of Signet's notes.</summary>
     public const string NoteClass = "signet-fn";
 
+    /// <summary>The class of the paragraphs of Signet's notes.</summary>
+    public const string ParagraphClass = "signet-fn-p";
+
     /// <summary>The class of Signet's references.</summary>
     public const string ReferenceClass = "signet-fn-ref";
 
@@ -109,6 +130,23 @@ public static class FootnoteEditor
 
     // The wrappers that go with a removed reference when they hold nothing else.
     private static readonly string[] WrapperNames = { "span", "sup" };
+
+    // A blank line (whitespace only) separates the paragraphs of a note's text.
+    private static readonly Regex BlankLine = new(@"\n[ \t]*\n\s*", RegexOptions.CultureInvariant);
+
+    // Elements that cannot be inside a paragraph; the only ones allowed at the top of the whole inside of a note.
+    private static readonly HashSet<string> BlockNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "address", "article", "aside", "blockquote", "caption", "dd", "details", "div", "dl", "dt", "fieldset",
+        "figcaption", "figure", "footer", "form", "h1", "h2", "h3", "h4", "h5", "h6", "header", "hgroup", "hr", "li",
+        "main", "nav", "ol", "p", "pre", "section", "table", "tbody", "td", "tfoot", "th", "thead", "tr", "ul",
+    };
+
+    // The blocks the reference of the preview page is shown in.
+    private static readonly HashSet<string> ContextBlockNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "p", "div", "li", "dd", "dt", "td", "th", "h1", "h2", "h3", "h4", "h5", "h6", "blockquote", "figcaption", "caption",
+    };
 
     /// <summary>The footnote whose reference or note contains <paramref name="offset"/> of <paramref name="html"/>.</summary>
     public static FootnoteHit? FindAt(Book book, HtmlResource html, int offset)
@@ -224,21 +262,50 @@ public static class FootnoteEditor
         return FindAt(book, html, offset) is null ? FootnoteError.None : FootnoteError.InsideFootnote;
     }
 
-    /// <summary>Whether <paramref name="content"/> can be the text of a footnote (a well-formed XHTML fragment).</summary>
+    /// <summary>
+    /// Whether <paramref name="content"/> can be the text of a footnote: paragraphs separated by a blank line, each a
+    /// well-formed XHTML fragment without block elements.
+    /// </summary>
     public static FootnoteError ValidateContent(string content, string epubVersion)
     {
         ArgumentNullException.ThrowIfNull(content);
-        if (content.Trim().Length == 0)
+        IReadOnlyList<string> paragraphs = Paragraphs(content);
+        if (paragraphs.Count == 0)
         {
             return FootnoteError.EmptyContent;
         }
 
-        string document = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!DOCTYPE html>\n"
-            + "<html xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>t</title></head><body><p>"
-            + content.Trim() + "</p></body></html>";
-        return WellFormedChecker.CheckXhtmlStructure(document, epubVersion).IsWellFormed
-            ? FootnoteError.None
-            : FootnoteError.InvalidContent;
+        foreach (string paragraph in paragraphs)
+        {
+            string document = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!DOCTYPE html>\n"
+                + "<html xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>t</title></head><body><p>"
+                + paragraph + "</p></body></html>";
+            if (!WellFormedChecker.CheckXhtmlStructure(document, epubVersion).IsWellFormed)
+            {
+                return FootnoteError.InvalidContent;
+            }
+
+            TagLister tags = new(paragraph);
+            for (int i = 0; i < tags.Count; i++)
+            {
+                if (IsOpening(tags.At(i)) && BlockNames.Contains(tags.At(i).TagName))
+                {
+                    return FootnoteError.BlockInParagraph;
+                }
+            }
+        }
+
+        return FootnoteError.None;
+    }
+
+    /// <summary>The paragraphs of the text of a footnote: the parts between blank lines, trimmed, without empty ones.</summary>
+    public static IReadOnlyList<string> Paragraphs(string content)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        return BlankLine.Split(content.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n'))
+            .Select(p => p.Trim())
+            .Where(p => p.Length > 0)
+            .ToList();
     }
 
     /// <summary>
@@ -281,10 +348,8 @@ public static class FootnoteEditor
             + " href=\"" + Href(html, noteFile, noteId) + "\" id=\"" + referenceId + "\">[0]</a>";
         html.SetText(html.GetText().Insert(offset, reference));
 
-        string tag = epub3 ? "aside" : "div";
-        string type = !epub3 ? string.Empty : placement == FootnotePlacement.Local ? " epub:type=\"footnote\"" : " epub:type=\"endnote\"";
-        string note = "<" + tag + " class=\"" + NoteClass + "\"" + type + " id=\"" + noteId + "\"><p><a href=\""
-            + Href(noteFile, html, referenceId) + "\">0.</a> " + content.Trim() + "</p></" + tag + ">";
+        string note = NoteMarkup(
+            epub3, placement, noteId, "<a href=\"" + Href(noteFile, html, referenceId) + "\">0.</a>", Paragraphs(content));
         InsertNote(noteFile, note, placement, epub3);
 
         int index = FootnoteScanner.Scan(book).ToList()
@@ -412,16 +477,16 @@ public static class FootnoteEditor
     }
 
     /// <summary>
-    /// The text of the note of <paramref name="footnote"/> as <see cref="Edit"/> replaces it: of Signet's note (one
-    /// <c>&lt;p&gt;</c> that starts with the link back) the text after the link back, of any other note its whole inside
-    /// (the link back included). Trimmed; <c>null</c> when the note is gone.
+    /// The text of the note of <paramref name="footnote"/> as <see cref="Edit"/> replaces it: of Signet's note (plain
+    /// <c>&lt;p&gt;</c> elements, the first one starting with the link back) its paragraphs with a blank line between
+    /// them, the link back left out; of any other note its whole inside (the link back included). Trimmed; <c>null</c>
+    /// when the note is gone.
     /// </summary>
     public static FootnoteContent? GetContent(Footnote footnote)
     {
         ArgumentNullException.ThrowIfNull(footnote);
-        string text = footnote.NoteFile.GetText();
-        return ContentOf(footnote, text) is { } content
-            ? new FootnoteContent(text[content.Start..content.End], !content.AfterBacklink)
+        return ContentOf(footnote, footnote.NoteFile.GetText()) is { } content
+            ? new FootnoteContent(content.Text, content.Backlink is null)
             : null;
     }
 
@@ -439,7 +504,7 @@ public static class FootnoteEditor
             return FootnoteError.NotFound;
         }
 
-        if (current.AfterBacklink)
+        if (current.Backlink is not null)
         {
             return ValidateContent(content, epubVersion);
         }
@@ -455,6 +520,11 @@ public static class FootnoteEditor
         if (!WellFormedChecker.CheckXhtmlStructure(document, epubVersion).IsWellFormed)
         {
             return FootnoteError.InvalidContent;
+        }
+
+        if (!OnlyBlocks(content))
+        {
+            return FootnoteError.NotBlocks;
         }
 
         return footnote.ReferenceId.Length > 0
@@ -485,7 +555,9 @@ public static class FootnoteEditor
 
         string text = footnote.NoteFile.GetText();
         NoteContent current = ContentOf(footnote, text)!;
-        string replacement = content.Trim();
+        string replacement = current.Backlink is { } backlink
+            ? ParagraphsInside(backlink, Paragraphs(content), current.Indent)
+            : content.Trim();
         if (text[current.Start..current.End] != replacement)
         {
             footnote.NoteFile.SetText(string.Concat(text.AsSpan(0, current.Start), replacement, text.AsSpan(current.End)));
@@ -504,6 +576,49 @@ public static class FootnoteEditor
         }
 
         return Move(book, changed, out edited, styles) ? FootnoteError.None : FootnoteError.NotFound;
+    }
+
+    /// <summary>
+    /// The markup Signet writes for a footnote with <paramref name="content"/> and <paramref name="placement"/> (the
+    /// preview of the footnote window) as footnote <paramref name="number"/> (<see cref="NumberAt"/>, which the window
+    /// knows already: the preview runs on every change of the text), with the ids the renumbering gives it: a new one at
+    /// <paramref name="start"/> of <paramref name="html"/> (<paramref name="end"/> = <paramref name="start"/>), or
+    /// <paramref name="footnote"/> with its reference at <paramref name="start"/>..<paramref name="end"/>. <c>null</c>
+    /// when the content is not valid (<see cref="ValidateContent"/>, <see cref="ValidateEdit"/>).
+    /// </summary>
+    public static FootnoteMarkup? Preview(
+        Book book, HtmlResource html, int start, int end, string content, FootnotePlacement placement, int number,
+        Footnote? footnote = null, FootnoteStyles? styles = null)
+    {
+        ArgumentNullException.ThrowIfNull(book);
+        ArgumentNullException.ThrowIfNull(html);
+        ArgumentNullException.ThrowIfNull(content);
+        bool wholeNote = footnote is not null && GetContent(footnote) is { IsWholeNote: true };
+        FootnoteError error = footnote is null
+            ? ValidateContent(content, book.EpubVersion)
+            : ValidateEdit(footnote, content, book.EpubVersion);
+        if (error != FootnoteError.None)
+        {
+            return null;
+        }
+
+        bool epub3 = book.IsEpub3;
+        string n = number.ToString(CultureInfo.InvariantCulture);
+        string noteId = (placement == FootnotePlacement.Local ? "fn-" : "en-") + n;
+        string referenceId = noteId + "-ref";
+        string noteBookPath = placement == FootnotePlacement.Local
+            ? html.BookPath
+            : FindGlobalFile(book)?.BookPath ?? Core.BookPath.BuildBookPath(
+                book.GetFolderKeeper().GetUniqueFilenameVersion(GlobalFileName),
+                book.GetFolderKeeper().GetDefaultFolderForGroup("Text"));
+        string reference = "<a class=\"" + ReferenceClass + "\"" + (epub3 ? " epub:type=\"noteref\"" : string.Empty)
+            + " href=\"" + Encode(Href(html.BookPath, noteBookPath, noteId)) + "\" id=\"" + referenceId + "\">[" + n + "]</a>";
+        string backlink = "<a href=\"" + Encode(Href(noteBookPath, html.BookPath, referenceId)) + "\">" + n + ".</a>";
+        string note = wholeNote
+            ? NoteOpenTag(epub3, placement, noteId) + content.Trim() + "</" + (epub3 ? "aside" : "div") + ">"
+            : NoteMarkup(epub3, placement, noteId, backlink, Paragraphs(content));
+        return new FootnoteMarkup(
+            reference, note, PreviewPage(book, html, start, end, reference, note, placement, styles ?? FootnoteStyles.Default));
     }
 
     /// <summary>
@@ -624,6 +739,14 @@ public static class FootnoteEditor
             AddAttributeEdit(footnote.ReferenceFile, anchor.Href, Href(footnote.ReferenceFile, footnote.NoteFile, noteId));
             AddAttributeEdit(footnote.ReferenceFile, anchor.Id, referenceId);
             AddAttributeEdit(footnote.NoteFile, note.Id, noteId);
+            if (footnote.ReferenceId.Length > 0 && SignetParagraphs(noteTags, noteText, note, footnote.ReferenceId) is { } paragraphs)
+            {
+                foreach (int plain in paragraphs.PlainParagraphs)
+                {
+                    AddEdit(footnote.NoteFile, new TextEdit(plain, "<p>".Length, ParagraphTag));
+                }
+            }
+
             if (footnote.ReferenceId.Length > 0 && FindBacklink(noteTags, noteText, note, footnote.ReferenceId) is { } backlink)
             {
                 string backInner = noteText[backlink.InnerStart..backlink.InnerEnd];
@@ -805,9 +928,9 @@ public static class FootnoteEditor
         Element containerElement = FindContainer(tags, text, containerClass)!;
         int close = containerElement.CloseStart;
         int lineStart = LineStartIfBlank(text, close);
-        string insertion = lineStart < close || (lineStart == close && (close == 0 || text[close - 1] == '\n'))
-            ? text[lineStart..close] + "  " + note + "\n"
-            : "\n  " + note + "\n";
+        bool ownLine = lineStart < close || (lineStart == close && (close == 0 || text[close - 1] == '\n'));
+        string indent = (ownLine ? text[lineStart..close] : string.Empty) + "  ";
+        string insertion = (ownLine ? string.Empty : "\n") + indent + note.Replace("\n", "\n" + indent, StringComparison.Ordinal) + "\n";
         file.SetText(text.Insert(lineStart, insertion));
     }
 
@@ -1053,8 +1176,17 @@ public static class FootnoteEditor
 
     private readonly record struct TextEdit(int Start, int Length, string Text);
 
-    // The editable text of a note (trimmed): after the link back of Signet's note, or the whole inside of any other.
-    private sealed record NoteContent(int Start, int End, bool AfterBacklink);
+    // The editable text of a note and the range it replaces. Signet's note (plain <p> elements, the first one starting
+    // with the link back): its paragraphs with a blank line between them, replacing the whole inside of the note
+    // (Backlink: the markup of the link back, Indent: of the note's line). Any other note: its whole inside, trimmed.
+    // PlainParagraphs: where the <p> tags without the paragraph class are (notes written before it).
+    private sealed record NoteContent(int Start, int End, string Text, string? Backlink, string Indent)
+    {
+        public IReadOnlyList<int> PlainParagraphs { get; init; } = Array.Empty<int>();
+    }
+
+    // The opening tag of a paragraph of Signet's note.
+    private const string ParagraphTag = "<p class=\"" + ParagraphClass + "\">";
 
     private static NoteContent? ContentOf(Footnote footnote, string text)
     {
@@ -1067,26 +1199,13 @@ public static class FootnoteEditor
         TagLister.TagInfo open = tags.At(note.OpenIndex);
         int innerStart = open.Pos + open.Len;
         if (footnote.IsSignet && footnote.ReferenceId.Length > 0
-            && ChildElements(tags, text, note).ToList() is [{ } paragraph]
-            && tags.At(paragraph.OpenIndex) is { Kind: TagKind.Begin } p && p.TagName.Equals("p", StringComparison.OrdinalIgnoreCase)
-            && string.IsNullOrWhiteSpace(text[innerStart..paragraph.Start])
-            && string.IsNullOrWhiteSpace(text[paragraph.End..note.CloseStart])
-            && paragraph.OpenIndex + 1 < tags.Count
-            && tags.At(paragraph.OpenIndex + 1) is { Kind: TagKind.Begin } link && link.TagName.Equals("a", StringComparison.OrdinalIgnoreCase)
-            && string.IsNullOrWhiteSpace(text[(p.Pos + p.Len)..link.Pos])
-            && SplitHref(AttributeValue(text, link, "href")).Fragment == footnote.ReferenceId
-            && tags.FindCloseTagForOpen(paragraph.OpenIndex + 1) is var linkClose and >= 0
-            && tags.At(linkClose).Pos < paragraph.CloseStart)
+            && SignetParagraphs(tags, text, note, footnote.ReferenceId) is { } paragraphs)
         {
-            TagLister.TagInfo linkEnd = tags.At(linkClose);
-            return Trimmed(text, linkEnd.Pos + linkEnd.Len, paragraph.CloseStart, afterBacklink: true);
+            return paragraphs;
         }
 
-        return Trimmed(text, innerStart, note.CloseStart, afterBacklink: false);
-    }
-
-    private static NoteContent Trimmed(string text, int start, int end, bool afterBacklink)
-    {
+        int start = innerStart;
+        int end = note.CloseStart;
         while (start < end && char.IsWhiteSpace(text[start]))
         {
             start++;
@@ -1097,7 +1216,205 @@ public static class FootnoteEditor
             end--;
         }
 
-        return new NoteContent(start, end, afterBacklink);
+        return new NoteContent(start, end, text[start..end], null, string.Empty);
+    }
+
+    // The paragraphs of a note in Signet's template, or null when the note is not in it (a <p> with other attributes than
+    // the paragraph class, another element, text between them, a paragraph with a blank line in it, no link back at the
+    // start).
+    private static NoteContent? SignetParagraphs(TagLister tags, string text, Element note, string referenceId)
+    {
+        int innerStart = tags.At(note.OpenIndex).Pos + tags.At(note.OpenIndex).Len;
+        int position = innerStart;
+        string? backlink = null;
+        List<string> paragraphs = new();
+        List<int> plain = new();
+        foreach (Element child in ChildElements(tags, text, note))
+        {
+            TagLister.TagInfo open = tags.At(child.OpenIndex);
+            string tag = text.Substring(open.Pos, open.Len);
+            bool isPlain = tag.Equals("<p>", StringComparison.OrdinalIgnoreCase);
+            if (open.Kind != TagKind.Begin || !(isPlain || tag == ParagraphTag) || !string.IsNullOrWhiteSpace(text[position..child.Start]))
+            {
+                return null;
+            }
+
+            if (isPlain)
+            {
+                plain.Add(open.Pos);
+            }
+
+            int from = open.Pos + open.Len;
+            if (backlink is null)
+            {
+                if (child.OpenIndex + 1 >= tags.Count
+                    || tags.At(child.OpenIndex + 1) is not { Kind: TagKind.Begin } link
+                    || !link.TagName.Equals("a", StringComparison.OrdinalIgnoreCase)
+                    || !string.IsNullOrWhiteSpace(text[from..link.Pos])
+                    || SplitHref(AttributeValue(text, link, "href")).Fragment != referenceId
+                    || tags.FindCloseTagForOpen(child.OpenIndex + 1) is not (var linkClose and >= 0)
+                    || tags.At(linkClose).Pos >= child.CloseStart)
+                {
+                    return null;
+                }
+
+                from = tags.At(linkClose).Pos + tags.At(linkClose).Len;
+                backlink = text[link.Pos..from];
+            }
+
+            string paragraph = text[from..child.CloseStart].Trim();
+            if (paragraph.Length == 0 || Paragraphs(paragraph).Count != 1)
+            {
+                return null;
+            }
+
+            paragraphs.Add(paragraph);
+            position = child.End;
+        }
+
+        return backlink is null || !string.IsNullOrWhiteSpace(text[position..note.CloseStart])
+            ? null
+            : new NoteContent(innerStart, note.CloseStart, string.Join("\n\n", paragraphs), backlink, LineIndent(text, note.Start))
+            {
+                PlainParagraphs = plain,
+            };
+    }
+
+    // The opening tag of Signet's note.
+    private static string NoteOpenTag(bool epub3, FootnotePlacement placement, string noteId) =>
+        "<" + (epub3 ? "aside" : "div") + " class=\"" + NoteClass + "\""
+        + (!epub3 ? string.Empty : placement == FootnotePlacement.Local ? " epub:type=\"footnote\"" : " epub:type=\"endnote\"")
+        + " id=\"" + noteId + "\">";
+
+    // Signet's note with the paragraphs; several paragraphs go on lines of their own (indented by InsertNote).
+    private static string NoteMarkup(bool epub3, FootnotePlacement placement, string noteId, string backlink, IReadOnlyList<string> paragraphs) =>
+        NoteOpenTag(epub3, placement, noteId) + ParagraphsInside(backlink, paragraphs, string.Empty) + "</" + (epub3 ? "aside" : "div") + ">";
+
+    // The inside of Signet's note: one paragraph right inside it, several on lines of their own (`indent`: of the note).
+    private static string ParagraphsInside(string backlink, IReadOnlyList<string> paragraphs, string indent)
+    {
+        if (paragraphs.Count == 1)
+        {
+            return ParagraphTag + backlink + " " + paragraphs[0] + "</p>";
+        }
+
+        StringBuilder sb = new();
+        for (int i = 0; i < paragraphs.Count; i++)
+        {
+            sb.Append('\n').Append(indent).Append("  ").Append(ParagraphTag).Append(i == 0 ? backlink + " " : string.Empty)
+                .Append(paragraphs[i]).Append("</p>");
+        }
+
+        return sb.Append('\n').Append(indent).ToString();
+    }
+
+    // The whitespace before the offset on its line, when only whitespace precedes it there.
+    private static string LineIndent(string text, int offset)
+    {
+        int start = LineStartIfBlank(text, offset);
+        return start < offset || start == 0 || text[start - 1] == '\n' ? text[start..offset] : string.Empty;
+    }
+
+    // Whether the markup holds only block elements (whitespace and comments between them).
+    private static bool OnlyBlocks(string markup)
+    {
+        TagLister tags = new(markup);
+        int depth = 0;
+        int position = 0;
+        for (int i = 0; i < tags.Count; i++)
+        {
+            TagLister.TagInfo tag = tags.At(i);
+            if (tag.Pos < 0)
+            {
+                break;
+            }
+
+            if (depth == 0 && !string.IsNullOrWhiteSpace(markup[position..tag.Pos]))
+            {
+                return false;
+            }
+
+            if (depth == 0 && IsOpening(tag) && !BlockNames.Contains(tag.TagName))
+            {
+                return false;
+            }
+
+            depth += tag.Kind == TagKind.Begin ? 1 : tag.Kind == TagKind.End ? -1 : 0;
+            position = tag.Pos + tag.Len;
+        }
+
+        return string.IsNullOrWhiteSpace(markup[position..]);
+    }
+
+    // The page of the preview: the block the reference is in (with the new reference), the note in its container, the
+    // file's stylesheets and <style> elements and the footnote rules; relative links resolve against the file's folder.
+    private static string PreviewPage(
+        Book book, HtmlResource html, int start, int end, string reference, string note, FootnotePlacement placement,
+        FootnoteStyles styles)
+    {
+        string text = html.GetText();
+        TagLister tags = new(text);
+        string context = "<p>" + reference + "</p>";
+        if (EnclosingBlock(tags, text, start, end) is { } block)
+        {
+            context = string.Concat(text.AsSpan(block.Start, start - block.Start), reference, text.AsSpan(end, block.End - end));
+        }
+
+        StringBuilder page = new("<!DOCTYPE html>\n<html>\n<head>\n<meta charset=\"utf-8\"/>\n");
+        string folder = System.IO.Path.GetDirectoryName(html.FullPath) ?? string.Empty;
+        if (folder.Length > 0)
+        {
+            page.Append("<base href=\"").Append(Encode(new Uri(folder + System.IO.Path.DirectorySeparatorChar).AbsoluteUri)).Append("\"/>\n");
+        }
+
+        foreach (CssResource css in LinkedStylesheets(book, html))
+        {
+            page.Append("<style>\n").Append(css.GetText()).Append("\n</style>\n");
+        }
+
+        foreach (Match style in StyleElement.Matches(text))
+        {
+            page.Append(style.Value).Append('\n');
+        }
+
+        string containerClass = placement == FootnotePlacement.Local ? LocalContainerClass : GlobalContainerClass;
+        page.Append("<style>\n").Append(styles.ApplyTo(string.Empty)).Append("</style>\n</head>\n<body>\n")
+            .Append(context).Append('\n')
+            .Append(placement == FootnotePlacement.Local ? "<hr class=\"" + SeparatorClass + "\"/>\n" : string.Empty)
+            .Append("<section class=\"").Append(containerClass).Append("\">\n").Append(note).Append("\n</section>\n</body>\n</html>\n");
+        return page.ToString();
+    }
+
+    // The innermost block (ContextBlockNames) that holds start..end, as a range of the text.
+    private static (int Start, int End)? EnclosingBlock(TagLister tags, string text, int start, int end)
+    {
+        List<int> open = new();
+        for (int i = 0; i < tags.Count && tags.At(i).Pos < start; i++)
+        {
+            TagLister.TagInfo tag = tags.At(i);
+            if (tag.Kind == TagKind.Begin)
+            {
+                open.Add(i);
+            }
+            else if (tag.Kind == TagKind.End)
+            {
+                int match = open.FindLastIndex(o => tags.At(o).TagName.Equals(tag.TagName, StringComparison.OrdinalIgnoreCase));
+                if (match >= 0)
+                {
+                    open.RemoveRange(match, open.Count - match);
+                }
+            }
+        }
+
+        for (int k = open.Count - 1; k >= 0; k--)
+        {
+            if (ContextBlockNames.Contains(tags.At(open[k]).TagName) && ToElement(tags, text, open[k]) is { } block && block.End >= end)
+            {
+                return (block.Start, block.End);
+            }
+        }
+
+        return null;
     }
 
     // Whether the markup has a link to the given id (the link back of a note).
@@ -1128,8 +1445,10 @@ public static class FootnoteEditor
         return result.ToString();
     }
 
-    private static string Href(HtmlResource from, HtmlResource to, string id) =>
-        (ReferenceEquals(from, to) ? string.Empty : Utility.UrlEncodePath(Core.BookPath.Relative(from.BookPath, to.BookPath))) + "#" + id;
+    private static string Href(HtmlResource from, HtmlResource to, string id) => Href(from.BookPath, to.BookPath, id);
+
+    private static string Href(string fromBookPath, string toBookPath, string id) =>
+        (fromBookPath == toBookPath ? string.Empty : Utility.UrlEncodePath(Core.BookPath.Relative(fromBookPath, toBookPath))) + "#" + id;
 
     private static string Encode(string value) =>
         value.Replace("&", "&amp;", StringComparison.Ordinal).Replace("<", "&lt;", StringComparison.Ordinal)

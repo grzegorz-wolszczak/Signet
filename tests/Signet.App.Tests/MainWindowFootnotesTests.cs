@@ -232,4 +232,22 @@ public sealed class MainWindowFootnotesTests
         sut.StatusMessage.Should().Be(Strings.Format("Status_FootnotesUpToDateForeignSkipped", 1));
         sut.IsStatusMessageWarning.Should().BeTrue();
     }
+
+    [Fact]
+    public void The_preview_of_a_footnote_changes_nothing()
+    {
+        using TempDir temp = new();
+        (MainWindowViewModel sut, Book _, HtmlResource chapter) = OpenMinimalChapter(temp);
+        ICodeTabHost host = sut;
+        string before = chapter.GetText();
+        int offset = AfterHello(chapter);
+
+        FootnoteMarkup preview = host.PreviewFootnote(chapter, offset, offset, "One.\n\nTwo.", FootnotePlacement.Local, 1, null)!;
+
+        preview.Reference.Should().Contain("href=\"#fn-1\"");
+        preview.Note.Should().Contain("<p class=\"signet-fn-p\">Two.</p>");
+        preview.Page.Should().Contain("<p>Hello" + preview.Reference);
+        chapter.GetText().Should().Be(before);
+        host.PreviewFootnote(chapter, offset, offset, "a < b", FootnotePlacement.Local, 1, null).Should().BeNull();
+    }
 }

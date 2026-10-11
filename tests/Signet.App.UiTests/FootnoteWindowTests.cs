@@ -160,4 +160,37 @@ public sealed class FootnoteWindowTests
         result.Result!.Remove.Should().BeTrue();
         owner.Close();
     }
+
+    [AvaloniaFact]
+    public void The_code_preview_shows_the_markup_of_a_valid_text()
+    {
+        const string text = "<html><head><title>t</title></head><body><p>Before after</p></body></html>";
+        FootnoteViewModel vm = new(
+            text, text.IndexOf(" after", System.StringComparison.Ordinal), FootnotePlacement.Local, 1, 1,
+            content => FootnoteEditor.ValidateContent(content, "3.0"))
+        {
+            Preview = (content, _, number) => new FootnoteMarkup("<a>[" + number + "]</a>", "<aside>" + content + "</aside>", "page"),
+        };
+        Window owner = new();
+        owner.Show();
+
+        Task<FootnoteRequest?> result = FootnoteWindow.AskAsync(owner, vm);
+        Dispatcher.UIThread.RunJobs();
+        FootnoteWindow window = owner.OwnedWindows.OfType<FootnoteWindow>().Single();
+        window.CaptureRenderedFrame();
+        AvaloniaEdit.TextEditor code = window.GetVisualDescendants().OfType<AvaloniaEdit.TextEditor>().Single(e => e.Name == "PreviewCodeEditor");
+        code.IsVisible.Should().BeFalse("the text is empty");
+
+        vm.Content = "One.\n\nTwo.";
+        Dispatcher.UIThread.RunJobs();
+
+        code.IsVisible.Should().BeTrue();
+        code.Text.Should().Be("<a>[1]</a>\n\n<aside>One.\n\nTwo.</aside>");
+        window.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Name == "ContentHintText").Text
+            .Should().Be(vm.ContentHint);
+        window.Close();
+        Dispatcher.UIThread.RunJobs();
+        result.IsCompleted.Should().BeTrue();
+        owner.Close();
+    }
 }

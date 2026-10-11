@@ -7,7 +7,7 @@ namespace Signet.Core.Tests.Footnotes;
 /// <summary>Tests of <see cref="FootnoteStyles"/> — keeping the rules of Signet's footnote classes in a stylesheet.</summary>
 public sealed class FootnoteStylesTests
 {
-    private static readonly FootnoteStyles Styles = new("top: 1px;", "color: red;\n  margin: 0;", "width: 4em;", "height: 5em;", "border: none;");
+    private static readonly FootnoteStyles Styles = new("top: 1px;", "color: red;\n  margin: 0;", "text-indent: 0;", "width: 4em;", "height: 5em;", "border: none;");
 
     [Fact]
     public void Missing_rules_are_appended_one_declaration_per_line()
@@ -17,7 +17,8 @@ public sealed class FootnoteStylesTests
             + "\n.signet-fn-separator {\n  border: none;\n}\n"
             + "\n.signet-footnotes {\n  width: 4em;\n}\n"
             + "\n.signet-endnotes {\n  height: 5em;\n}\n"
-            + "\n.signet-fn {\n  color: red;\n  margin: 0;\n}\n");
+            + "\n.signet-fn {\n  color: red;\n  margin: 0;\n}\n"
+            + "\n.signet-fn-p {\n  text-indent: 0;\n}\n");
     }
 
     [Fact]
@@ -45,7 +46,7 @@ public sealed class FootnoteStylesTests
     [Fact]
     public void Empty_and_invalid_definitions_leave_their_rules_alone()
     {
-        FootnoteStyles styles = new(string.Empty, "color: 1; }", "  \n ", "/* y */", "border: none;");
+        FootnoteStyles styles = new(string.Empty, "color: 1; }", string.Empty, "  \n ", "/* y */", "border: none;");
 
         styles.ApplyTo(".signet-fn { old: 1; }\n").Should().Be(".signet-fn { old: 1; }\n\n.signet-fn-separator {\n  border: none;\n}\n");
         FootnoteStyles.IsValidDeclarations("x: 1;").Should().BeTrue();
@@ -84,14 +85,14 @@ public sealed class FootnoteStylesTests
     [Fact]
     public void An_invalid_definition_is_not_written_to_the_stylesheet()
     {
-        new FootnoteStyles("fnot-size: 1em;", "", "", "", "").ApplyTo(".signet-fn-ref { old: 1; }\n")
+        new FootnoteStyles("fnot-size: 1em;", "", "", "", "", "").ApplyTo(".signet-fn-ref { old: 1; }\n")
             .Should().Be(".signet-fn-ref { old: 1; }\n");
     }
 
     [Fact]
     public void Windows_line_endings_are_kept()
     {
-        new FootnoteStyles("top: 1px;", "", "", "", "").ApplyTo("p { m: 0; }\r\n")
+        new FootnoteStyles("top: 1px;", "", "", "", "", "").ApplyTo("p { m: 0; }\r\n")
             .Should().Be("p { m: 0; }\r\n\r\n.signet-fn-ref {\r\n  top: 1px;\r\n}\r\n");
     }
 }
