@@ -213,6 +213,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _footnoteGlobalContainerStyle = footnoteStyles.GlobalContainer;
         _footnoteSeparatorStyle = footnoteStyles.Separator;
         _savedFootnoteStyles = footnoteStyles;
+        _confirmFootnoteRemoval = _settings.ConfirmFootnoteRemoval;
 
         // Loading the pages writes some initial values to the draft (e.g. the default user dictionary): not changes.
         _settings.RebaseDraft();
@@ -1358,6 +1359,12 @@ public sealed partial class PreferencesViewModel : ObservableObject
     }
 
     // ---------------------------------------------------------------- Footnotes
+
+    /// <summary>Whether "Remove" in the footnote window asks for a confirmation.</summary>
+    [ObservableProperty]
+    private bool _confirmFootnoteRemoval;
+
+    partial void OnConfirmFootnoteRemovalChanged(bool value) => _settings.ConfirmFootnoteRemoval = value;
 
     // The definitions written to the settings: a field with an invalid definition keeps its last valid one.
     private FootnoteStyles _savedFootnoteStyles;

@@ -15,9 +15,10 @@ namespace Signet.Core.Footnotes;
 /// A note is an element marked as one (<c>epub:type</c> <c>footnote</c>/<c>endnote</c>/<c>rearnote</c>/<c>note</c>,
 /// <c>role="doc-footnote"</c>/<c>"doc-endnote"</c>), the target of a link marked as a note reference
 /// (<c>epub:type="noteref"</c>, <c>role="doc-noteref"</c>), or a block element (<c>aside</c>, <c>div</c>, <c>p</c>,
-/// <c>li</c>, <c>section</c>, <c>dd</c>) that holds a link back to the link pointing at it. The reference of a note is the
-/// link its link back returns to, otherwise the first link to it; a note no link leads to is not a footnote here.
-/// Links of the nav document are never references.
+/// <c>li</c>, <c>section</c>, <c>dd</c>) that holds a link back to the link pointing at it. The link back returns to the
+/// link when it leads to the link, an element around it or inside it, or an empty element right before it
+/// (<see cref="FootnoteLinks.LeadsTo"/>). The reference of a note is the link its link back returns to, otherwise the
+/// first link to it; a note no link leads to is not a footnote here. Links of the nav document are never references.
 /// </remarks>
 public static class FootnoteScanner
 {
@@ -107,7 +108,18 @@ public static class FootnoteScanner
 
             HtmlResource noteFile = references[0].TargetHtml!;
             List<Link> backlinks = linksInside.GetValueOrDefault(note, new List<Link>());
-            Link? reference = references.FirstOrDefault(r => backlinks.Any(b => Points(b, r.Anchor)));
+            Link? reference = null;
+            Link? backlink = null;
+            foreach (Link candidate in references)
+            {
+                backlink = backlinks.FirstOrDefault(b => FootnoteLinks.LeadsTo(b.Target!, candidate.Anchor));
+                if (backlink is not null)
+                {
+                    reference = candidate;
+                    break;
+                }
+            }
+
             bool isNote = IsMarkedNote(note)
                 || references.Any(r => IsNoteRef(r.Anchor))
                 || (reference is not null && BlockNames.Contains(note.LocalName, StringComparer.OrdinalIgnoreCase));
@@ -118,8 +130,11 @@ public static class FootnoteScanner
             }
 
             reference ??= references[0];
+
+            // The id the link back returns to (the link's own, or of an element around it or right before it).
+            string referenceId = backlink?.Target!.GetAttribute("id") ?? reference.Anchor.GetAttribute("id") ?? string.Empty;
             footnotes.Add(new Footnote(
-                reference.Owner, reference.Href, reference.Occurrence, reference.Anchor.GetAttribute("id") ?? string.Empty,
+                reference.Owner, reference.Href, reference.Occurrence, referenceId,
                 noteFile, noteId, HasClass(note, FootnoteEditor.NoteClass), reference.Spine, order[reference.Anchor]));
         }
 
@@ -140,9 +155,6 @@ public static class FootnoteScanner
 
     private static string[] Tokens(string? value) =>
         value?.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
-
-    private static bool Points(Link link, IElement anchor) =>
-        link.Target is { } target && (ReferenceEquals(target, anchor) || target.Contains(anchor) || anchor.Contains(target));
 
     private static bool Inside(IElement element, IElement? container) =>
         container is not null && (ReferenceEquals(element, container) || container.Contains(element));

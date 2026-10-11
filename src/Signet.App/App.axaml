@@ -9,31 +9,42 @@
              xmlns:views="using:Signet.App.Views"
              xmlns:tabViews="using:Signet.App.Views.Tabs"
              xmlns:tabVm="using:Signet.App.ViewModels.Tabs"
+             xmlns:vm="using:Signet.App.ViewModels"
              xmlns:infra="using:Signet.App.Infrastructure"
              x:Class="Signet.App.App"
              RequestedThemeVariant="Default">
 
   <Application.DataTemplates>
     <DataTemplate DataType="docking:BookBrowserTool">
-      <views:BookBrowserView DataContext="{Binding ViewModel}" />
+      <Panel IsEnabled="{Binding IsContentEnabled}">
+        <views:BookBrowserView DataContext="{Binding ViewModel}" />
+      </Panel>
     </DataTemplate>
 
     <DataTemplate DataType="docking:PreviewTool">
-      <views:PreviewView DataContext="{Binding ViewModel}" />
+      <Panel IsEnabled="{Binding IsContentEnabled}">
+        <views:PreviewView DataContext="{Binding ViewModel}" />
+      </Panel>
     </DataTemplate>
 
     <DataTemplate DataType="docking:TableOfContentsTool">
-      <views:TableOfContentsView DataContext="{Binding ViewModel}" />
+      <Panel IsEnabled="{Binding IsContentEnabled}">
+        <views:TableOfContentsView DataContext="{Binding ViewModel}" />
+      </Panel>
     </DataTemplate>
 
 
     <DataTemplate DataType="docking:ValidationResultsTool">
-      <views:ValidationResultsView DataContext="{Binding ViewModel}" />
+      <Panel IsEnabled="{Binding IsContentEnabled}">
+        <views:ValidationResultsView DataContext="{Binding ViewModel}" />
+      </Panel>
     </DataTemplate>
 
 
     <DataTemplate DataType="docking:ClipsTool">
-      <views:ClipsPanelView DataContext="{Binding ViewModel}" />
+      <Panel IsEnabled="{Binding IsContentEnabled}">
+        <views:ClipsPanelView DataContext="{Binding ViewModel}" />
+      </Panel>
     </DataTemplate>
 
     <DataTemplate DataType="docking:NotificationsTool">
@@ -41,11 +52,19 @@
     </DataTemplate>
 
     <DataTemplate DataType="docking:CheckpointsTool">
-      <views:CheckpointsPanelView DataContext="{Binding ViewModel}" />
+      <Panel IsEnabled="{Binding IsContentEnabled}">
+        <views:CheckpointsPanelView DataContext="{Binding ViewModel}" />
+      </Panel>
     </DataTemplate>
 
     <DataTemplate DataType="docking:FindUsagesTool">
-      <views:FindUsagesView DataContext="{Binding ViewModel}" />
+      <Panel IsEnabled="{Binding IsContentEnabled}">
+        <views:FindUsagesView DataContext="{Binding ViewModel}" />
+      </Panel>
+    </DataTemplate>
+
+    <DataTemplate DataType="vm:StartScreenViewModel">
+      <views:StartScreenView />
     </DataTemplate>
 
     <DataTemplate DataType="tabVm:PlaceholderContentTabViewModel">
@@ -202,6 +221,20 @@
     <!-- Theme of Signet.Controls.TreeDataGrid (virtualized trees and tables). After FluentTheme: it resolves the Fluent
          palette colours with StaticResource when loaded. -->
     <StyleInclude Source="avares://Signet.Controls.TreeDataGrid/Themes/Fluent.axaml" />
+    <!-- Buttons that remove or delete something are red (Classes="danger", ButtonClasses.Danger); the ones that save
+         use Fluent's "accent" (blue). Disabled, both are gray like any button (Fluent's :disabled template style). -->
+    <Style Selector="Button.danger">
+      <Setter Property="Background" Value="#C42B1C" />
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="Button.danger:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#A82315" />
+      <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="Button.danger:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="#8E1D11" />
+      <Setter Property="Foreground" Value="White" />
+    </Style>
     <!-- Every TreeDataGrid: resizable columns, each at least as wide as its header (TreeDataGridHeaderSizing). -->
     <Style Selector="TreeDataGrid">
       <Setter Property="CanUserResizeColumns" Value="True" />

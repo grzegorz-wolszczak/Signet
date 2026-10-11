@@ -110,8 +110,12 @@ public sealed class MenuBuilder
     }
 
     /// <summary>Builds the full main menu.</summary>
-    public IReadOnlyList<MenuItemViewModel> Build() =>
-        MenuLayout.TopLevel.Select(BuildNode).OfType<MenuItemViewModel>().ToList();
+    public IReadOnlyList<MenuItemViewModel> Build()
+    {
+        List<MenuItemViewModel> menus = MenuLayout.TopLevel.Select(BuildNode).OfType<MenuItemViewModel>().ToList();
+        menus.ForEach(menu => menu.MarkTopLevel());
+        return menus;
+    }
 
     private MenuItemViewModel? BuildNode(MenuNode node)
     {

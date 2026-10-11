@@ -17,11 +17,11 @@
               IsEnabled="{Binding CanAddToSelection}" />
       <Button x:Name="RenameButton" Content="{loc:Loc EmptyLayoutWindow_RenameButton}"
               IsEnabled="{Binding CanRenameSelection}" />
-      <Button x:Name="DeleteButton" Content="{loc:Loc Common_Delete}"
+      <Button Classes="danger" x:Name="DeleteButton" Content="{loc:Loc Common_Delete}"
               IsEnabled="{Binding CanDeleteSelection}" />
       <Border Width="1" Background="{DynamicResource SystemControlForegroundBaseMediumBrush}" Margin="4,2" />
       <Button x:Name="LoadButton" Content="{loc:Loc EmptyLayoutWindow_Load}" />
-      <Button x:Name="SaveButton" Content="{loc:Loc EmptyLayoutWindow_SaveEllipsis}" />
+      <Button Classes="accent" x:Name="SaveButton" Content="{loc:Loc EmptyLayoutWindow_SaveEllipsis}" />
     </StackPanel>
 
     <StackPanel DockPanel.Dock="Bottom" Spacing="8" Margin="0,8,0,0">

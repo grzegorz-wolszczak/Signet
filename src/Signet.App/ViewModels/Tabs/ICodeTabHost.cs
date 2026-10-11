@@ -97,11 +97,27 @@ public interface ICodeTabHost
     /// </summary>
     void AddFootnote(HtmlResource html, int offset, string content, FootnotePlacement placement);
 
-    /// <summary>"Remove Footnote" — removes the reference and the note (with a checkpoint).</summary>
+    /// <summary>
+    /// "Edit Footnote" — the data of the footnote window for the footnote of <paramref name="hit"/> (saves the open tabs
+    /// first); <c>null</c> (with a message) when the footnote is gone.
+    /// </summary>
+    FootnoteEditState? GetFootnoteEdit(FootnoteHit hit);
+
+    /// <summary>Whether <paramref name="content"/> can replace the text of the note of <paramref name="footnote"/>.</summary>
+    FootnoteError ValidateFootnoteEdit(Footnote footnote, string content);
+
+    /// <summary>
+    /// "Edit Footnote" — replaces the text of the note and moves it to <paramref name="placement"/> when it is elsewhere
+    /// (with a checkpoint), refreshes the tabs and panels and puts the caret back on the part of the footnote of
+    /// <paramref name="hit"/>.
+    /// </summary>
+    void EditFootnote(FootnoteHit hit, string content, FootnotePlacement placement);
+
+    /// <summary>"Remove" in the footnote window — removes the reference and the note (with a checkpoint).</summary>
     void RemoveFootnote(FootnoteHit hit);
 
-    /// <summary>"Move to global/local footnotes" — moves the note to the other placement (with a checkpoint).</summary>
-    void MoveFootnote(FootnoteHit hit);
+    /// <summary>Whether removing a footnote asks for a confirmation (Preferences → Footnotes).</summary>
+    bool ConfirmFootnoteRemoval { get; set; }
 
     /// <summary>"Go to note/reference" — opens the other part of the footnote of <paramref name="hit"/>.</summary>
     void GoToFootnote(FootnoteHit hit);
@@ -115,3 +131,15 @@ public interface ICodeTabHost
 /// <param name="AddError">Why a footnote cannot be added at the position (<see cref="FootnoteError.None"/> when it can).</param>
 /// <param name="HasFootnotes">Whether the book has any footnotes.</param>
 public sealed record FootnoteMenuState(FootnoteHit? Hit, FootnoteError AddError, bool HasFootnotes);
+
+/// <summary>The data of the footnote window for editing a footnote (<see cref="ICodeTabHost.GetFootnoteEdit"/>).</summary>
+/// <param name="Footnote">The footnote (of the current texts).</param>
+/// <param name="ReferenceText">The source of the file of the reference.</param>
+/// <param name="ReferenceStart">Where the reference starts in it.</param>
+/// <param name="ReferenceEnd">Where the reference ends in it.</param>
+/// <param name="Content">The text of the note.</param>
+/// <param name="LocalNumber">The number of the footnote as a local one.</param>
+/// <param name="GlobalNumber">The number of the footnote as a global one.</param>
+public sealed record FootnoteEditState(
+    Footnote Footnote, string ReferenceText, int ReferenceStart, int ReferenceEnd, FootnoteContent Content,
+    int LocalNumber, int GlobalNumber);

@@ -30,7 +30,7 @@ public sealed class MainWindowFootnotesTests
     private static int AfterHello(HtmlResource chapter) => chapter.GetText().IndexOf("Hello", StringComparison.Ordinal) + 5;
 
     [Fact]
-    public void A_footnote_is_added_moved_to_the_global_notes_and_removed_with_its_notes_file()
+    public void A_footnote_is_added_edited_into_the_global_notes_and_removed_with_its_notes_file()
     {
         using UiCultureScope culture = new("en");
         using TempDir temp = new();
@@ -49,16 +49,20 @@ public sealed class MainWindowFootnotesTests
         FootnoteMenuState onReference = host.GetFootnoteState(chapter, chapter.GetText().IndexOf("[1]", StringComparison.Ordinal))!;
         onReference.Hit!.Side.Should().Be(FootnoteSide.Reference);
         onReference.HasFootnotes.Should().BeTrue();
-        host.MoveFootnote(onReference.Hit);
+        FootnoteEditState edit = host.GetFootnoteEdit(onReference.Hit)!;
+        edit.Content.Should().Be(new FootnoteContent("A <i>note</i>.", false));
+        (edit.LocalNumber, edit.GlobalNumber).Should().Be((1, 1));
+        edit.ReferenceText[edit.ReferenceStart..edit.ReferenceEnd].Should().StartWith("<a class=\"signet-fn-ref\"").And.EndWith("[1]</a>");
+        host.EditFootnote(onReference.Hit, "A <b>new</b> note.", FootnotePlacement.Global);
 
         HtmlResource notes = FootnoteEditor.FindGlobalFile(book)!;
         notes.Filename.Should().Be(FootnoteEditor.GlobalFileName);
-        notes.GetText().Should().Contain("A <i>note</i>.");
-        chapter.GetText().Should().NotContain("A <i>note</i>.");
+        notes.GetText().Should().Contain("A <b>new</b> note.");
+        chapter.GetText().Should().NotContain("A <i>note</i>.").And.NotContain("A <b>new</b> note.");
         sut.StatusMessage.Should().Be(Strings.Get("Status_FootnoteMovedGlobal"));
         sut.ActiveCodeTab!.Resource.Should().BeSameAs(chapter);
 
-        FootnoteMenuState onNote = host.GetFootnoteState(notes, notes.GetText().IndexOf("A <i>note", StringComparison.Ordinal))!;
+        FootnoteMenuState onNote = host.GetFootnoteState(notes, notes.GetText().IndexOf("A <b>new", StringComparison.Ordinal))!;
         onNote.Hit!.Side.Should().Be(FootnoteSide.Note);
         host.GoToFootnote(onNote.Hit);
         sut.ActiveCodeTab!.Resource.Should().BeSameAs(chapter);
@@ -68,6 +72,46 @@ public sealed class MainWindowFootnotesTests
         book.GetHtmlResources().Should().NotContain(notes);
         chapter.GetText().Should().NotContain("<a class=\"signet-fn-ref\"").And.Contain("Hello, world.");
         sut.StatusMessage.Should().Be(Strings.Get("Status_FootnoteRemoved"));
+    }
+
+    [Fact]
+    public void Editing_only_the_text_keeps_the_footnote_in_place_and_an_invalid_text_changes_nothing()
+    {
+        using UiCultureScope culture = new("en");
+        using TempDir temp = new();
+        (MainWindowViewModel sut, Book book, HtmlResource chapter) = OpenMinimalChapter(temp);
+        ICodeTabHost host = sut;
+        host.AddFootnote(chapter, AfterHello(chapter), "Old text.", FootnotePlacement.Local);
+        FootnoteHit hit = host.GetFootnoteState(chapter, chapter.GetText().IndexOf("Old text.", StringComparison.Ordinal))!.Hit!;
+        hit.Side.Should().Be(FootnoteSide.Note);
+
+        host.ValidateFootnoteEdit(hit.Footnote, "a < b").Should().Be(FootnoteError.InvalidContent);
+        host.EditFootnote(hit, "a < b", FootnotePlacement.Local);
+        chapter.GetText().Should().Contain("Old text.");
+        sut.StatusMessage.Should().Be(
+            Strings.Format("Status_FootnoteNotEdited", FootnoteViewModel.ErrorText(FootnoteError.InvalidContent)));
+
+        int scrolledTo = -1;
+        sut.ActiveCodeTab!.ScrollToOffsetRequested += offset => scrolledTo = offset;
+        host.EditFootnote(hit, "New text.", FootnotePlacement.Local);
+
+        chapter.GetText().Should().Contain("1.</a> New text.</p>").And.NotContain("Old text.");
+        FootnoteEditor.FindGlobalFile(book).Should().BeNull();
+        sut.StatusMessage.Should().Be(Strings.Get("Status_FootnoteEdited"));
+        scrolledTo.Should().Be(chapter.GetText().IndexOf("<aside", StringComparison.Ordinal), "the caret goes back to the note");
+    }
+
+    [Fact]
+    public void The_removal_confirmation_is_a_setting()
+    {
+        using TempDir temp = new();
+        (MainWindowViewModel sut, Book _, HtmlResource _) = OpenMinimalChapter(temp);
+        ICodeTabHost host = sut;
+        host.ConfirmFootnoteRemoval.Should().BeTrue("removing asks by default");
+
+        host.ConfirmFootnoteRemoval = false;
+
+        host.ConfirmFootnoteRemoval.Should().BeFalse();
     }
 
     [Fact]
@@ -84,7 +128,7 @@ public sealed class MainWindowFootnotesTests
 
         chapter.GetText().Should().Be(before);
         sut.StatusMessage.Should().Be(
-            Strings.Format("Status_FootnoteNotAdded", AddFootnoteViewModel.ErrorText(FootnoteError.InvalidContent)));
+            Strings.Format("Status_FootnoteNotAdded", FootnoteViewModel.ErrorText(FootnoteError.InvalidContent)));
     }
 
     [Fact]

@@ -93,6 +93,18 @@ public sealed class AppActionRegistry
         }
     }
 
+    /// <summary>
+    /// Blocks the actions that need a book while none is open, and lifts the block when one is
+    /// (<see cref="AppActionIds.WorksWithoutBook"/>); the actions keep their own enabled state underneath.
+    /// </summary>
+    public void SetBookOpen(bool open)
+    {
+        foreach (AppAction action in _actions.Values)
+        {
+            action.IsBlocked = !open && !AppActionIds.WorksWithoutBook(action.Id, action.Category);
+        }
+    }
+
     private void OnActionInvoked(object? sender, EventArgs e)
     {
         if (sender is not AppAction action)

@@ -645,6 +645,16 @@ public sealed class SettingsStore
         set => Write("footnote_global_placement", value);
     }
 
+    /// <summary>
+    /// Preferences → Footnotes: whether "Remove" in the footnote window asks for a confirmation (enabled by default).
+    /// Turned off by "Don't ask again" in that confirmation.
+    /// </summary>
+    public bool ConfirmFootnoteRemoval
+    {
+        get => ReadBool("confirm_footnote_removal", true);
+        set => Write("confirm_footnote_removal", value);
+    }
+
     // ------------------------------------------------- Preview / WebEng --- //
 
     /// <summary>Remote resources mode in the preview (0 = off).</summary>
@@ -708,6 +718,16 @@ public sealed class SettingsStore
     {
         get => ReadBool("reopen_last_file", false);
         set => Write("reopen_last_file", value);
+    }
+
+    /// <summary>
+    /// Whether a book was open when the application was closed last time. Without one (it was closed after
+    /// File → Close) <see cref="ReopenLastFileOnStartup"/> does not reopen the last book.
+    /// </summary>
+    public bool BookOpenAtExit
+    {
+        get => ReadBool("book_open_at_exit", true);
+        set => Write("book_open_at_exit", value);
     }
 
     // ------------------------------------------------------- Validation --- //

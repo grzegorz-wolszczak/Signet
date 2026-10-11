@@ -30,6 +30,15 @@ public sealed class FileWorkflowTests
 
         public int RefreshAfterBookEditCalls { get; private set; }
 
+        public int CloseBookCalls { get; private set; }
+
+        public void CloseBook()
+        {
+            CloseBookCalls++;
+            CurrentBook?.Dispose();
+            CurrentBook = null;
+        }
+
         public void SaveOpenTabs() => SaveOpenTabsCalls++;
 
         public void RefreshAfterBookEdit() => RefreshAfterBookEditCalls++;
@@ -99,6 +108,53 @@ public sealed class FileWorkflowTests
 
         h.Prompts.AskSaveChangesCalls.Should().Be(1);
         h.Workspace.ApplyBookCalls.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Close_leaves_the_window_without_a_book()
+    {
+        using Harness h = new();
+        h.Prompts.SavePath = h.PathIn("book.epub");
+        await h.Workflow.NewAsync("2.0");
+        await h.Workflow.SaveAsAsync();
+        int titleChanges = 0;
+        h.Workflow.CurrentFileChanged += (_, _) => titleChanges++;
+
+        await h.Workflow.CloseAsync();
+
+        h.Workspace.CloseBookCalls.Should().Be(1);
+        h.Workspace.CurrentBook.Should().BeNull();
+        h.Workflow.CurrentFilePath.Should().BeEmpty();
+        h.Workflow.HasSavedFile.Should().BeFalse();
+        titleChanges.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Close_without_a_book_does_nothing()
+    {
+        using Harness h = new();
+        h.Workspace.HasUnsavedChanges = true;
+
+        await h.Workflow.CloseAsync();
+
+        h.Prompts.AskSaveChangesCalls.Should().Be(0);
+        h.Workspace.CloseBookCalls.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Dirty_guard_cancel_aborts_Close()
+    {
+        using Harness h = new();
+        await h.Workflow.NewAsync("3.0");
+        Book open = h.Workspace.CurrentBook!;
+        h.Workspace.HasUnsavedChanges = true;
+        h.Prompts.SaveChoice = SaveChangesChoice.Cancel;
+
+        await h.Workflow.CloseAsync();
+
+        h.Prompts.AskSaveChangesCalls.Should().Be(1);
+        h.Workspace.CurrentBook.Should().BeSameAs(open);
+        h.Workspace.CloseBookCalls.Should().Be(0);
     }
 
     [Fact]

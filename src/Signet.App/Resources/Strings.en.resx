@@ -4150,15 +4150,6 @@ It does not change the files, their names or their IDs.</value>
   <data name="CodeViewMenu_FootnoteGoToReference" xml:space="preserve">
     <value>Go to Reference</value>
   </data>
-  <data name="CodeViewMenu_FootnoteMoveToGlobal" xml:space="preserve">
-    <value>Move to Global Footnotes</value>
-  </data>
-  <data name="CodeViewMenu_FootnoteMoveToLocal" xml:space="preserve">
-    <value>Move to Local Footnotes</value>
-  </data>
-  <data name="CodeViewMenu_FootnoteRemove" xml:space="preserve">
-    <value>Remove Footnote</value>
-  </data>
   <data name="CodeViewMenu_FootnotesRenumber" xml:space="preserve">
     <value>Renumber Footnotes</value>
   </data>
@@ -4216,32 +4207,71 @@ It does not change the files, their names or their IDs.</value>
   <data name="CheckpointOp_RemoveFootnote" xml:space="preserve">
     <value>Remove footnote</value>
   </data>
-  <data name="CheckpointOp_MoveFootnote" xml:space="preserve">
-    <value>Move footnote</value>
-  </data>
   <data name="CheckpointOp_RenumberFootnotes" xml:space="preserve">
     <value>Renumber footnotes</value>
   </data>
-  <data name="AddFootnoteWindow_Title" xml:space="preserve">
+  <data name="FootnoteWindow_Title" xml:space="preserve">
     <value>Add Footnote</value>
   </data>
-  <data name="AddFootnoteWindow_Where" xml:space="preserve">
+  <data name="FootnoteWindow_Where" xml:space="preserve">
     <value>Where the reference goes in the text:</value>
   </data>
-  <data name="AddFootnoteWindow_Content" xml:space="preserve">
+  <data name="FootnoteWindow_Content" xml:space="preserve">
     <value>Footnote text:</value>
   </data>
-  <data name="AddFootnoteWindow_ContentHint" xml:space="preserve">
+  <data name="FootnoteWindow_ContentHint" xml:space="preserve">
     <value>Text; simple XHTML markup is allowed (e.g. &lt;i&gt;, &lt;b&gt;, &lt;a href="…"&gt;). Write &amp; and &lt; as &amp;amp; and &amp;lt;.</value>
   </data>
-  <data name="AddFootnoteWindow_Local" xml:space="preserve">
+  <data name="FootnoteWindow_Local" xml:space="preserve">
     <value>Local — at the end of this file</value>
   </data>
-  <data name="AddFootnoteWindow_Global" xml:space="preserve">
+  <data name="FootnoteWindow_Global" xml:space="preserve">
     <value>Global — in Przypisy.xhtml (numbered through the book)</value>
   </data>
-  <data name="AddFootnoteWindow_AddButton" xml:space="preserve">
+  <data name="FootnoteWindow_AddButton" xml:space="preserve">
     <value>Add</value>
+  </data>
+  <data name="CodeViewMenu_FootnoteEdit" xml:space="preserve">
+    <value>Edit Footnote...</value>
+  </data>
+  <data name="FootnoteError_MissingBacklink" xml:space="preserve">
+    <value>the text must keep the link back to the reference</value>
+  </data>
+  <data name="FootnoteError_NotFound" xml:space="preserve">
+    <value>the footnote is no longer in the book</value>
+  </data>
+  <data name="Status_FootnoteEdited" xml:space="preserve">
+    <value>Footnote changed.</value>
+  </data>
+  <data name="Status_FootnoteNotEdited" xml:space="preserve">
+    <value>Footnote not changed: {0}.</value>
+  </data>
+  <data name="CheckpointOp_EditFootnote" xml:space="preserve">
+    <value>Edit footnote</value>
+  </data>
+  <data name="FootnoteWindow_EditTitle" xml:space="preserve">
+    <value>Edit Footnote</value>
+  </data>
+  <data name="FootnoteWindow_SaveButton" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="FootnoteWindow_RemoveButton" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="FootnoteWindow_RemoveConfirmTitle" xml:space="preserve">
+    <value>Remove Footnote</value>
+  </data>
+  <data name="FootnoteWindow_RemoveConfirm" xml:space="preserve">
+    <value>Are you sure you want to remove the footnote? Both the reference in the text and the note will be removed.</value>
+  </data>
+  <data name="FootnoteWindow_ContentHintWholeNote" xml:space="preserve">
+    <value>The whole inside of the footnote (it is not in Signet's template) as XHTML. Keep the link back to the reference. Write &amp; and &lt; as &amp;amp; and &amp;lt;.</value>
+  </data>
+  <data name="ConfirmWindow_DontAskAgain" xml:space="preserve">
+    <value>Don't ask again</value>
+  </data>
+  <data name="PreferencesWindow_ConfirmFootnoteRemoval" xml:space="preserve">
+    <value>Ask before removing a footnote (in the footnote edit window)</value>
   </data>
   <data name="CodeViewMenu_FindUsages" xml:space="preserve">
     <value>Find Usages</value>
@@ -4582,5 +4612,20 @@ Do you want to remove the other assignments?</value>
   </data>
   <data name="PreferencesWindow_EditionPageVersion" xml:space="preserve">
     <value>Version</value>
+  </data>
+  <data name="StartScreen_NoBook" xml:space="preserve">
+    <value>No book is open</value>
+  </data>
+  <data name="StartScreen_Open" xml:space="preserve">
+    <value>Open...</value>
+  </data>
+  <data name="StartScreen_New" xml:space="preserve">
+    <value>New Book</value>
+  </data>
+  <data name="StartScreen_RecentFiles" xml:space="preserve">
+    <value>Recent Files</value>
+  </data>
+  <data name="Status_BookClosed" xml:space="preserve">
+    <value>Book closed.</value>
   </data>
 </root>

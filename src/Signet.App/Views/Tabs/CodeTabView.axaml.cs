@@ -811,22 +811,18 @@ public partial class CodeTabView : UserControl
         vm.ApplySpanRemoval(scope, plan);
     }
 
-    // "Footnotes": on a footnote (its reference or note) go to the other part, move it and remove it; elsewhere add one
-    // (disabled with the reason when the caret is not in a place for a reference); always renumber.
+    // "Footnotes": on a footnote (its reference or note) edit it (its text, placement, or removing it) and go to the
+    // other part; elsewhere add one (disabled with the reason when the caret is not in a place for a reference); always
+    // renumber.
     private MenuItem FootnotesMenu(CodeTabViewModel vm, ICodeTabHost host, FootnoteMenuState state)
     {
         MenuItem menu = new() { Header = Strings.Get("CodeViewMenu_Footnotes") };
         if (state.Hit is { } hit)
         {
+            menu.Items.Add(Item(Strings.Get("CodeViewMenu_FootnoteEdit"), () => EditFootnote(vm, hit)));
             menu.Items.Add(Item(
                 Strings.Get(hit.Side == FootnoteSide.Reference ? "CodeViewMenu_FootnoteGoToNote" : "CodeViewMenu_FootnoteGoToReference"),
                 () => host.GoToFootnote(hit)));
-            menu.Items.Add(Item(
-                Strings.Get(hit.Footnote.Placement == FootnotePlacement.Local
-                    ? "CodeViewMenu_FootnoteMoveToGlobal"
-                    : "CodeViewMenu_FootnoteMoveToLocal"),
-                () => host.MoveFootnote(hit)));
-            menu.Items.Add(Item(Strings.Get("CodeViewMenu_FootnoteRemove"), () => host.RemoveFootnote(hit)));
         }
         else
         {
@@ -834,7 +830,7 @@ public partial class CodeTabView : UserControl
             menu.Items.Add(Item(
                 canAdd
                     ? Strings.Get("CodeViewMenu_FootnoteAdd")
-                    : Strings.Format("CodeViewMenu_FootnoteAddBlocked", AddFootnoteViewModel.ErrorText(state.AddError)),
+                    : Strings.Format("CodeViewMenu_FootnoteAddBlocked", FootnoteViewModel.ErrorText(state.AddError)),
                 () => AddFootnote(vm),
                 enabled: canAdd));
         }
@@ -852,9 +848,23 @@ public partial class CodeTabView : UserControl
             return;
         }
 
-        if (await AddFootnoteWindow.AskAsync(owner, model) is { } request)
+        if (await FootnoteWindow.AskAsync(owner, model) is { } request)
         {
             vm.AddFootnote(request);
+        }
+    }
+
+    // "Edit Footnote…": the window with the footnote's text and placement, then the footnote is saved or removed.
+    private async void EditFootnote(CodeTabViewModel vm, FootnoteHit hit)
+    {
+        if (TopLevel.GetTopLevel(this) is not Window owner || vm.CreateEditFootnoteViewModel(hit) is not { } model)
+        {
+            return;
+        }
+
+        if (await FootnoteWindow.AskAsync(owner, model) is { } request)
+        {
+            vm.ApplyFootnoteEdit(hit, request);
         }
     }
 

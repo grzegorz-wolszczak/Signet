@@ -82,9 +82,45 @@ public sealed partial class AppAction : ObservableObject, ICommand
     [ObservableProperty]
     private string _text;
 
-    /// <summary>Whether the action is currently enabled.</summary>
-    [ObservableProperty]
     private bool _isEnabled;
+    private bool _isBlocked;
+
+    /// <summary>
+    /// Whether the action is currently enabled: enabled by its owner (the value set here) and not
+    /// <see cref="IsBlocked"/>. While blocked it reads <see langword="false"/> whatever was set; the set value comes
+    /// back once the block is lifted.
+    /// </summary>
+    public bool IsEnabled
+    {
+        get => _isEnabled && !_isBlocked;
+        set => Update(ref _isEnabled, value);
+    }
+
+    /// <summary>
+    /// Whether the action is unavailable regardless of <see cref="IsEnabled"/> — e.g. it works on a book and no book is
+    /// open (<see cref="AppActionRegistry.SetBookOpen"/>).
+    /// </summary>
+    public bool IsBlocked
+    {
+        get => _isBlocked;
+        set => Update(ref _isBlocked, value);
+    }
+
+    private void Update(ref bool field, bool value)
+    {
+        if (field == value)
+        {
+            return;
+        }
+
+        bool wasEnabled = IsEnabled;
+        field = value;
+        if (wasEnabled != IsEnabled)
+        {
+            OnPropertyChanged(nameof(IsEnabled));
+            RaiseCanExecuteChanged();
+        }
+    }
 
     /// <summary>
     /// Whether the action is checkable (rendered in the menu as an item with a check mark — heading group,
@@ -133,8 +169,6 @@ public sealed partial class AppAction : ObservableObject, ICommand
 
     /// <summary>Manually raises <see cref="ICommand.CanExecuteChanged"/>.</summary>
     public void RaiseCanExecuteChanged() => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
-
-    partial void OnIsEnabledChanged(bool value) => RaiseCanExecuteChanged();
 
     /// <summary>Converts <c>&amp;</c> mnemonics to Avalonia notation (<c>_</c>).</summary>
     internal static string ConvertMnemonics(string text)

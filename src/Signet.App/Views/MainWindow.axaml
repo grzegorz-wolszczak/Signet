@@ -83,6 +83,7 @@
           <Setter Property="Header" Value="{Binding Header}" />
           <Setter Property="ItemsSource" Value="{Binding Items}" />
           <Setter Property="Command" Value="{Binding Command}" />
+          <Setter Property="IsEnabled" Value="{Binding IsEnabled}" />
           <Setter Property="InputGesture" Value="{Binding InputGesture}" />
           <Setter Property="ToggleType" Value="{Binding ToggleType}" />
           <Setter Property="IsChecked" Value="{Binding IsChecked, Mode=TwoWay}" />

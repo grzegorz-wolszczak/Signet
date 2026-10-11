@@ -41,7 +41,7 @@
               ToolTip.Tip="{loc:Loc EditTocWindow_AddAboveTip}" />
       <Button Content="{loc:Loc EditTocWindow_AddBelow}" HorizontalAlignment="Stretch" Command="{Binding AddBelowCommand}"
               ToolTip.Tip="{loc:Loc EditTocWindow_AddBelowTip}" />
-      <Button Content="{loc:Loc Common_Delete}" HorizontalAlignment="Stretch" Command="{Binding DeleteCommand}"
+      <Button Classes="danger" Content="{loc:Loc Common_Delete}" HorizontalAlignment="Stretch" Command="{Binding DeleteCommand}"
               ToolTip.Tip="{loc:Loc EditTocWindow_DeleteTip}" />
       <Button Content="{loc:Loc EditTocWindow_SelectTarget}" HorizontalAlignment="Stretch" Command="{Binding SelectTargetCommand}"
               ToolTip.Tip="{loc:Loc EditTocWindow_SelectTargetTip}" />

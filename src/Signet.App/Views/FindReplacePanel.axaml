@@ -24,7 +24,8 @@
               Margin="4,8,0,0"
               Padding="4,2"
               ToolTip.Tip="{loc:Loc MainWindow_HideFindReplace}" />
-      <views:FindReplaceView Grid.Column="1" DataContext="{Binding FindReplace}" />
+      <views:FindReplaceView Grid.Column="1" DataContext="{Binding FindReplace}"
+                             IsEnabled="{Binding $parent[views:FindReplacePanel].((vm:MainWindowViewModel)DataContext).HasBook, FallbackValue=False}" />
     </Grid>
   </Border>
 </UserControl>

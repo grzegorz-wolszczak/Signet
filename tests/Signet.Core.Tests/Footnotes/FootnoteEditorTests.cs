@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using AwesomeAssertions;
 using Signet.Core.BookManipulation;
@@ -369,6 +370,187 @@ public sealed class FootnoteEditorTests
             FootnoteEditor.Remove(book, footnote).Should().BeTrue();
 
             html.GetText().Should().Contain("<p>Text.</p>").And.NotContain("aside");
+        }
+    }
+
+    [Fact]
+    public void The_content_of_a_signet_note_is_the_text_after_its_link_back_and_edits_keep_the_template()
+    {
+        (Book book, HtmlResource html) = NewBook();
+        using (book)
+        {
+            FootnoteEditor.Add(book, html, After(html, "First"), "A <i>note</i>.", FootnotePlacement.Local, out Footnote? footnote);
+
+            FootnoteEditor.GetContent(footnote!).Should().Be(new FootnoteContent("A <i>note</i>.", false));
+            FootnoteEditor.Edit(book, footnote!, "  The <b>new</b> text.\n", FootnotePlacement.Local, out Footnote? edited)
+                .Should().Be(FootnoteError.None);
+
+            html.GetText().Should().Contain("id=\"fn-1\"><p><a href=\"#fn-1-ref\">1.</a> The <b>new</b> text.</p></aside>")
+                .And.NotContain("A <i>note</i>.");
+            edited!.NoteId.Should().Be("fn-1");
+            FootnoteEditor.GetContent(edited)!.Text.Should().Be("The <b>new</b> text.");
+            ShouldBeConsistent(book);
+        }
+    }
+
+    [Fact]
+    public void An_edit_with_the_other_placement_changes_the_text_and_moves_the_note()
+    {
+        (Book book, HtmlResource html) = NewBook();
+        using (book)
+        {
+            FootnoteEditor.Add(book, html, After(html, "First"), "old text", FootnotePlacement.Local, out Footnote? footnote);
+
+            FootnoteEditor.Edit(book, footnote!, "new text", FootnotePlacement.Global, out Footnote? edited)
+                .Should().Be(FootnoteError.None);
+
+            edited!.Placement.Should().Be(FootnotePlacement.Global);
+            edited.NoteId.Should().Be("en-1");
+            FootnoteEditor.FindGlobalFile(book)!.GetText().Should().Contain("<a href=\"" + html.Filename + "#en-1-ref\">1.</a> new text</p>");
+            BodyOf(html).Should().NotContain("old text").And.NotContain("signet-footnotes");
+            ShouldBeConsistent(book);
+        }
+    }
+
+    [Fact]
+    public void An_invalid_edit_changes_nothing()
+    {
+        (Book book, HtmlResource html) = NewBook();
+        using (book)
+        {
+            FootnoteEditor.Add(book, html, After(html, "First"), "old text", FootnotePlacement.Local, out Footnote? footnote);
+            string before = html.GetText();
+
+            FootnoteEditor.Edit(book, footnote!, "a < b", FootnotePlacement.Global, out Footnote? edited)
+                .Should().Be(FootnoteError.InvalidContent);
+            FootnoteEditor.ValidateEdit(footnote!, " ", "3.0").Should().Be(FootnoteError.EmptyContent);
+
+            edited.Should().BeNull();
+            html.GetText().Should().Be(before);
+            FootnoteEditor.FindGlobalFile(book).Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void The_content_of_another_note_is_its_whole_inside_which_must_keep_the_link_back()
+    {
+        (Book book, HtmlResource html) = NewBook(
+            "<p>Text<sup><a epub:type=\"noteref\" href=\"#note-7\" id=\"note-7-back\">[7]</a></sup>.</p>\n"
+            + "<aside class=\"aside_note\" id=\"note-7\" epub:type=\"footnote\">\n"
+            + "  <p class=\"p_note\"><a href=\"#note-7-back\">7.</a> First part.</p>\n  <p>Second part.</p>\n</aside>");
+        using (book)
+        {
+            Footnote footnote = FootnoteScanner.Scan(book).Single();
+            string inside = "<p class=\"p_note\"><a href=\"#note-7-back\">7.</a> First part.</p>\n  <p>Second part.</p>";
+
+            FootnoteEditor.GetContent(footnote).Should().Be(new FootnoteContent(inside, true));
+            FootnoteEditor.ValidateEdit(footnote, "<p>No way back.</p>", "3.0").Should().Be(FootnoteError.MissingBacklink);
+            FootnoteEditor.Edit(book, footnote, "<p><a href=\"#note-7-back\">7.</a> Only part.</p>", FootnotePlacement.Local, out Footnote? edited)
+                .Should().Be(FootnoteError.None);
+
+            html.GetText().Should().Contain(
+                "epub:type=\"footnote\">\n  <p><a href=\"#note-7-back\">7.</a> Only part.</p>\n</aside>",
+                "only the inside is replaced, the whitespace around it stays");
+            edited!.NoteId.Should().Be("note-7");
+            edited.IsSignet.Should().BeFalse();
+        }
+    }
+
+    [Fact]
+    public void The_reference_range_holds_the_sup_around_the_link()
+    {
+        const string reference = "<sup><a epub:type=\"noteref\" href=\"#n1\" id=\"n1-back\">1</a></sup>";
+        (Book book, HtmlResource html) = NewBook(
+            "<p>Text" + reference + ".</p>\n<aside epub:type=\"footnote\" id=\"n1\"><p><a href=\"#n1-back\">1</a> Note.</p></aside>");
+        using (book)
+        {
+            (HtmlResource file, int start, int end) = FootnoteEditor.LocateReferenceRange(FootnoteScanner.Scan(book).Single())!.Value;
+
+            file.Should().BeSameAs(html);
+            html.GetText()[start..end].Should().Be(reference);
+        }
+    }
+
+    // InDesign's footnotes as exported through calibre: the reference sits in a <span> its note links back to, or (in a
+    // heading) next to an empty <span> the note links back to, inside the link before it.
+    private const string InDesignBody =
+        "<h1 id=\"ch\"><a href=\"#toc\">Chapter<sup><span id=\"footnote-9-backlink\"></span></sup></a>"
+        + "<a href=\"#footnote-9\"><sup>[5]</sup></a></h1>\n"
+        + "<p>Text<span id=\"footnote-8-backlink\"><a href=\"#footnote-8\">7</a></span> more.</p>\n"
+        + "<p id=\"toc\">Contents</p>\n"
+        + "<div id=\"footnote-9\"><p><a href=\"#footnote-9-backlink\">5</a> First note.</p></div>\n"
+        + "<div id=\"footnote-8\"><p><a href=\"#footnote-8-backlink\">7</a> Second note.</p></div>";
+
+    [Fact]
+    public void A_link_back_to_the_wrapper_of_the_reference_or_to_an_empty_element_right_before_it_makes_a_footnote()
+    {
+        (Book book, HtmlResource _) = NewBook(InDesignBody);
+        using (book)
+        {
+            IReadOnlyList<Footnote> footnotes = FootnoteScanner.Scan(book);
+
+            footnotes.Select(f => (f.NoteId, f.ReferenceHref, f.ReferenceId)).Should().Equal(
+                ("footnote-9", "#footnote-9", "footnote-9-backlink"),
+                ("footnote-8", "#footnote-8", "footnote-8-backlink"));
+            footnotes.Should().OnlyContain(f => !f.IsSignet);
+            FootnoteValidator.Validate(book).Should().BeEmpty("the links back return to their references");
+        }
+    }
+
+    [Fact]
+    public void Text_between_the_empty_element_and_the_link_means_no_footnote()
+    {
+        (Book book, HtmlResource _) = NewBook(
+            "<p><span id=\"x-back\"></span>Some words <a href=\"#x\">1</a></p>\n"
+            + "<div id=\"x\"><p><a href=\"#x-back\">1</a> Not a note of that link.</p></div>");
+        using (book)
+        {
+            FootnoteScanner.Scan(book).Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public void Renumbering_also_renumbers_the_links_back_that_lead_to_the_wrapper()
+    {
+        (Book book, HtmlResource html) = NewBook(InDesignBody);
+        using (book)
+        {
+            FootnoteEditor.Renumber(book).Should().BeTrue();
+
+            string text = html.GetText();
+            text.Should().Contain("<a href=\"#footnote-9\"><sup>[1]</sup></a>").And.Contain("<a href=\"#footnote-8\">2</a>");
+            text.Should().Contain("<a href=\"#footnote-9-backlink\">1</a> First note.")
+                .And.Contain("<a href=\"#footnote-8-backlink\">2</a> Second note.");
+        }
+    }
+
+    [Fact]
+    public void Removing_a_footnote_also_removes_the_wrapper_and_the_empty_element_its_link_back_led_to()
+    {
+        (Book book, HtmlResource html) = NewBook(InDesignBody);
+        using (book)
+        {
+            FootnoteEditor.Remove(book, FootnoteScanner.Scan(book).Single(f => f.NoteId == "footnote-8")).Should().BeTrue();
+            FootnoteEditor.Remove(book, FootnoteScanner.Scan(book).Single()).Should().BeTrue();
+
+            BodyOf(html).Should().Contain("<h1 id=\"ch\"><a href=\"#toc\">Chapter</a></h1>")
+                .And.Contain("<p>Text more.</p>")
+                .And.NotContain("backlink").And.NotContain("footnote-");
+        }
+    }
+
+    [Fact]
+    public void A_wrapper_another_link_leads_to_stays()
+    {
+        (Book book, HtmlResource html) = NewBook(
+            "<p>Text<span id=\"n-back\"><a href=\"#n\">1</a></span> more.</p>\n"
+            + "<p><a href=\"#n-back\">see the reference</a></p>\n"
+            + "<div id=\"n\"><p><a href=\"#n-back\">1</a> Note.</p></div>");
+        using (book)
+        {
+            FootnoteEditor.Remove(book, FootnoteScanner.Scan(book).Single()).Should().BeTrue();
+
+            BodyOf(html).Should().Contain("<p>Text<span id=\"n-back\"></span> more.</p>").And.NotContain("Note.");
         }
     }
 

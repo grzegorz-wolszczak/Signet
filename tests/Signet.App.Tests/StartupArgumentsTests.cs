@@ -2,9 +2,17 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using AwesomeAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
+using Signet.App.Actions;
+using Signet.App.Docking;
 using Signet.App.Infrastructure;
+using Signet.App.Input;
 using Signet.App.Services;
+using Signet.App.Tabs;
+using Signet.App.Toolbars;
 using Signet.App.ViewModels;
+using Signet.Core.Misc;
+using Signet.Core.Spellcheck;
 using Signet.Core.Tests.TestSupport;
 using Xunit;
 
@@ -56,7 +64,7 @@ public sealed class StartupArgumentsTests
     }
 
     [Fact]
-    public async Task Missing_file_from_the_command_line_shows_an_error_and_starts_with_a_new_book()
+    public async Task Missing_file_from_the_command_line_shows_an_error_and_starts_without_a_book()
     {
         using TempDir temp = new();
         MainWindowViewModel vm = new();
@@ -67,7 +75,61 @@ public sealed class StartupArgumentsTests
         await vm.RunStartupAsync();
 
         prompts.LastError.Should().NotBeNull();
-        ((IBookWorkspace)vm).CurrentBook.Should().NotBeNull("after the error a new, empty book is created");
+        ((IBookWorkspace)vm).CurrentBook.Should().BeNull("after the error the window starts without a book");
+        vm.HasBook.Should().BeFalse();
+        vm.StartScreen.IsVisible.Should().BeTrue();
         vm.CheckpointHistory.Dispose();
+    }
+
+    // The main window on the given settings (the parameterless constructor uses a settings file of its own).
+    private static MainWindowViewModel NewOn(SettingsStore settings)
+    {
+        StatusBarService statusBar = new();
+        KeyboardShortcutManager shortcuts = new(settings);
+        MissingDoctypeGuard doctypeGuard = new(settings);
+        BookBrowserViewModel bookBrowser = new(settings, statusBar, doctypeGuard);
+        PreviewViewModel preview = new(statusBar);
+        MainDockFactory dockFactory = new(bookBrowser, preview);
+        SpellChecker spellChecker = new(settings);
+        MainWindowViewModel vm = new(
+            new ThemeManager(settings, NullLogger<ThemeManager>.Instance), NullLogger<MainWindowViewModel>.Instance,
+            new AppActionRegistry(shortcuts, statusBar, NullLogger<AppActionRegistry>.Instance), shortcuts,
+            new ToolbarManager(settings), dockFactory, statusBar, settings, bookBrowser,
+            new TabManager(dockFactory, statusBar, settings, spellChecker), preview, spellChecker,
+            new ClipboardHistoryService(settings), doctypeGuard);
+        vm.AttachFileWorkflowPrompts(new FakeFileWorkflowPrompts());
+        return vm;
+    }
+
+    [Fact]
+    public async Task The_last_book_is_reopened_only_when_a_book_was_open_at_exit()
+    {
+        using TempDir temp = new();
+        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp, "last.epub");
+        SettingsStore settings = new(temp.Combine("settings.json"));
+        settings.ReopenLastFileOnStartup = true;
+        settings.RecentFiles = new[] { epub };
+
+        // Opened and left open at exit: the next start reopens it.
+        MainWindowViewModel first = NewOn(settings);
+        await first.RunStartupAsync();
+        first.HasBook.Should().BeTrue();
+        first.PersistState();
+        settings.BookOpenAtExit.Should().BeTrue();
+        first.CheckpointHistory.Dispose();
+
+        // Closed before exit: the next start has no book.
+        MainWindowViewModel second = NewOn(settings);
+        await second.RunStartupAsync();
+        second.HasBook.Should().BeTrue();
+        ((IBookWorkspace)second).CloseBook();
+        second.PersistState();
+        settings.BookOpenAtExit.Should().BeFalse();
+        second.CheckpointHistory.Dispose();
+
+        MainWindowViewModel third = NewOn(settings);
+        await third.RunStartupAsync();
+        third.HasBook.Should().BeFalse("the application was closed without a book");
+        third.CheckpointHistory.Dispose();
     }
 }

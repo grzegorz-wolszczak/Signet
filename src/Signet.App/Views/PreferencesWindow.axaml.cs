@@ -184,9 +184,9 @@ public partial class PreferencesWindow : Window
                 this,
                 Strings.Get("PreferencesWindow_UnsavedTitle"),
                 Strings.Get("PreferencesWindow_UnsavedMessage"),
-                Strings.Get("PreferencesWindow_UnsavedSave"),
-                Strings.Get("PreferencesWindow_UnsavedDiscard"),
-                Strings.Get("PreferencesWindow_UnsavedBack"));
+                new ChoiceAnswer(Strings.Get("PreferencesWindow_UnsavedSave"), ButtonClasses.Accent),
+                new ChoiceAnswer(Strings.Get("PreferencesWindow_UnsavedDiscard")),
+                new ChoiceAnswer(Strings.Get("PreferencesWindow_UnsavedBack")));
             if (answer is 0 or 1)
             {
                 if (answer == 0 && DataContext is PreferencesViewModel vm && vm.ApplyCommand.CanExecute(null))

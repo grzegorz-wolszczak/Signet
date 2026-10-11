@@ -2,15 +2,15 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Signet.App.ViewModels"
         xmlns:loc="using:Signet.App.Resources"
-        x:Class="Signet.App.Views.AddFootnoteWindow"
-        x:DataType="vm:AddFootnoteViewModel"
+        x:Class="Signet.App.Views.FootnoteWindow"
+        x:DataType="vm:FootnoteViewModel"
         Width="600" SizeToContent="Height"
         CanResize="False"
         WindowStartupLocation="CenterOwner"
-        Title="{loc:Loc AddFootnoteWindow_Title}">
+        Title="{Binding Title}">
 
   <StackPanel Margin="16" Spacing="8">
-    <TextBlock Text="{loc:Loc AddFootnoteWindow_Where}" />
+    <TextBlock Text="{loc:Loc FootnoteWindow_Where}" />
     <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1"
             CornerRadius="4" Padding="8,6">
       <!-- The runs are on one line: whitespace between them would show as spaces around the marker. -->
@@ -19,26 +19,30 @@
           Text="{Binding ContextAfter}" /></TextBlock>
     </Border>
 
-    <TextBlock Text="{loc:Loc AddFootnoteWindow_Content}" Margin="0,4,0,0" />
+    <TextBlock Text="{loc:Loc FootnoteWindow_Content}" Margin="0,4,0,0" />
     <TextBox x:Name="ContentBox" Text="{Binding Content, Mode=TwoWay}"
              AcceptsReturn="True" TextWrapping="Wrap" MinHeight="90" MaxHeight="260" />
-    <TextBlock Text="{loc:Loc AddFootnoteWindow_ContentHint}" Opacity="0.7" TextWrapping="Wrap" />
+    <TextBlock Text="{Binding ContentHint}" Opacity="0.7" TextWrapping="Wrap" />
     <TextBlock Text="{Binding ValidationError}"
                Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"
                TextWrapping="Wrap"
                IsVisible="{Binding ValidationError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
     <StackPanel Spacing="8" Margin="0,6,0,0">
-      <RadioButton GroupName="Placement" Content="{loc:Loc AddFootnoteWindow_Local}"
+      <RadioButton GroupName="Placement" Content="{loc:Loc FootnoteWindow_Local}"
                    IsChecked="{Binding IsLocal, Mode=TwoWay}" />
-      <RadioButton GroupName="Placement" Content="{loc:Loc AddFootnoteWindow_Global}"
+      <RadioButton GroupName="Placement" Content="{loc:Loc FootnoteWindow_Global}"
                    IsChecked="{Binding IsGlobal, Mode=TwoWay}" />
     </StackPanel>
 
-    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,8,0,0">
-      <Button x:Name="OkButton" Content="{loc:Loc AddFootnoteWindow_AddButton}" MinWidth="100"
-              IsEnabled="{Binding CanAccept}" />
-      <Button x:Name="CancelButton" Content="{loc:Loc Common_Cancel}" IsCancel="True" MinWidth="80" />
-    </StackPanel>
+    <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,8,0,0">
+      <Button x:Name="RemoveButton" Classes="danger" Content="{loc:Loc FootnoteWindow_RemoveButton}" MinWidth="80"
+              IsVisible="{Binding IsEditing}" />
+      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+        <Button x:Name="OkButton" Content="{Binding AcceptText}" MinWidth="100" Classes.accent="{Binding IsEditing}"
+                IsEnabled="{Binding CanAccept}" />
+        <Button x:Name="CancelButton" Content="{loc:Loc Common_Cancel}" IsCancel="True" MinWidth="80" />
+      </StackPanel>
+    </Grid>
   </StackPanel>
 </Window>

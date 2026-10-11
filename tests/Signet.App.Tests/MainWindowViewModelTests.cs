@@ -8,6 +8,7 @@ using Signet.App.Actions;
 using Signet.App.Docking;
 using Signet.App.Menu;
 using Signet.App.Resources;
+using Signet.App.Services;
 using Signet.App.Toolbars;
 using Signet.App.ViewModels;
 using Signet.Core;
@@ -26,6 +27,14 @@ namespace Signet.App.Tests;
 public sealed class MainWindowViewModelTests
 {
     private static MainWindowViewModel New() => new();
+
+    // The actions that work on a book are blocked until one is open.
+    private static MainWindowViewModel NewWithBook()
+    {
+        MainWindowViewModel sut = new();
+        sut.LoadBook(BookCreator.CreateNewBook("3.0"), string.Empty);
+        return sut;
+    }
 
     [Fact]
     public void WindowTitle_is_the_application_name()
@@ -168,10 +177,63 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public void Without_a_book_only_the_actions_that_need_none_are_enabled()
+    {
+        MainWindowViewModel sut = New();
+
+        sut.HasBook.Should().BeFalse();
+        sut.StartScreen.IsVisible.Should().BeTrue();
+        foreach (string id in new[]
+                 {
+                     AppActionIds.Open, AppActionIds.NewDefault, AppActionIds.NewEpub2, AppActionIds.Preferences,
+                     AppActionIds.Exit, AppActionIds.ClipEditor, AppActionIds.SearchEditor, AppActionIds.CustomLayout,
+                     AppActionIds.ToggleBookBrowser, AppActionIds.ToggleNotifications, AppActionIds.About,
+                 })
+        {
+            sut.Actions.Require(id).IsEnabled.Should().BeTrue(id + " works without a book");
+        }
+
+        foreach (string id in new[]
+                 {
+                     AppActionIds.Close, AppActionIds.Save, AppActionIds.SaveAs, AppActionIds.Find, AppActionIds.MetaEditor,
+                     AppActionIds.Cleanup, AppActionIds.CreateCheckpoint, AppActionIds.ZoomIn, AppActionIds.BookBrowserRename,
+                 })
+        {
+            sut.Actions.Require(id).IsEnabled.Should().BeFalse(id + " needs a book");
+        }
+
+        sut.Actions.Require(AppActionIds.ClipEditorRename).IsEnabled.Should().BeTrue("the clip library is not the book's");
+    }
+
+    [Fact]
+    public void Closing_the_book_leaves_the_window_without_one()
+    {
+        using UiCultureScope culture = new("en");
+        MainWindowViewModel sut = NewWithBook();
+        sut.HasBook.Should().BeTrue();
+        sut.StartScreen.IsVisible.Should().BeFalse();
+        sut.Actions.Require(AppActionIds.Save).IsEnabled.Should().BeTrue();
+        sut.Actions.Require(AppActionIds.Close).IsEnabled.Should().BeTrue();
+
+        ((IBookWorkspace)sut).CloseBook();
+
+        sut.HasBook.Should().BeFalse();
+        ((IBookWorkspace)sut).CurrentBook.Should().BeNull();
+        sut.StartScreen.IsVisible.Should().BeTrue();
+        sut.BookBrowser.HasBook.Should().BeFalse();
+        sut.Tabs.Count.Should().Be(0);
+        sut.WindowTitle.Should().Be(ApplicationInfo.Name);
+        sut.Actions.Require(AppActionIds.Save).IsEnabled.Should().BeFalse();
+        sut.Actions.Require(AppActionIds.Close).IsEnabled.Should().BeFalse();
+        sut.Actions.Require(AppActionIds.Open).IsEnabled.Should().BeTrue();
+        sut.StatusMessage.Should().Be(Strings.Get("Status_BookClosed"));
+    }
+
+    [Fact]
     public void Unimplemented_action_reports_on_the_status_bar()
     {
         // InsertRole (Insert -> Role...) is not wired up.
-        MainWindowViewModel sut = New();
+        MainWindowViewModel sut = NewWithBook();
         AppAction insertRole = sut.Actions.Require(AppActionIds.InsertRole);
         insertRole.IsEnabled = true;
 
@@ -183,7 +245,7 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public void AddCover_action_raises_AddCoverRequested()
     {
-        MainWindowViewModel sut = New();
+        MainWindowViewModel sut = NewWithBook();
         bool raised = false;
         sut.AddCoverRequested += (_, _) => raised = true;
 
@@ -207,7 +269,7 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public void Reports_action_raises_ReportsRequested()
     {
-        MainWindowViewModel sut = New();
+        MainWindowViewModel sut = NewWithBook();
         bool raised = false;
         sut.ReportsRequested += (_, _) => raised = true;
 
@@ -219,7 +281,7 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public void Cleanup_action_raises_CleanupRequested()
     {
-        MainWindowViewModel sut = New();
+        MainWindowViewModel sut = NewWithBook();
         bool raised = false;
         sut.CleanupRequested += (_, _) => raised = true;
 
@@ -821,7 +883,7 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public void Adding_a_top_level_clip_refreshes_the_first_clip_bar_action()
     {
-        MainWindowViewModel sut = New();
+        MainWindowViewModel sut = NewWithBook();
         AppAction clip1 = sut.Actions.Require(AppActionIds.Clip(1));
         clip1.IsEnabled.Should().BeFalse();
 
@@ -871,7 +933,7 @@ public sealed class MainWindowViewModelTests
     public void HeadingPreserveAttributes_action_toggles_and_shows_a_status_message()
     {
         using UiCultureScope culture = new("en");
-        MainWindowViewModel sut = New();
+        MainWindowViewModel sut = NewWithBook();
         AppAction preserve = sut.Actions.Require(AppActionIds.HeadingPreserveAttributes);
 
         preserve.IsCheckable.Should().BeTrue();
@@ -918,7 +980,7 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public void Standardize_action_raises_StandardizeRequested()
     {
-        MainWindowViewModel sut = New();
+        MainWindowViewModel sut = NewWithBook();
         bool raised = false;
         sut.StandardizeRequested += (_, _) => raised = true;
 
@@ -965,7 +1027,7 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public void StandardizeEpub_action_raises_StandardizeEpubRequested()
     {
-        MainWindowViewModel sut = New();
+        MainWindowViewModel sut = NewWithBook();
         bool raised = false;
         sut.StandardizeEpubRequested += (_, _) => raised = true;
 
@@ -1180,7 +1242,7 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public void SpellcheckEditor_action_raises_SpellcheckEditorRequested()
     {
-        MainWindowViewModel sut = New();
+        MainWindowViewModel sut = NewWithBook();
         bool raised = false;
         sut.SpellcheckEditorRequested += (_, _) => raised = true;
 
@@ -1280,7 +1342,7 @@ public sealed class MainWindowViewModelTests
     [Fact]
     public void Book_browser_context_menu_actions_are_available_as_bindable_actions()
     {
-        MainWindowViewModel sut = New();
+        MainWindowViewModel sut = NewWithBook();
 
         AppAction[] bookBrowserActions = sut.Actions.Actions
             .Where(a => a.Category == AppActionIds.BookBrowserCategory)

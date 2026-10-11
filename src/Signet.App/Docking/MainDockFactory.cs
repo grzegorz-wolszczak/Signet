@@ -126,6 +126,28 @@ public sealed class MainDockFactory : Factory
     public IDocumentDock? DocumentDock { get; private set; }
 
     /// <summary>
+    /// What the document area shows while it has no tabs (the start screen). Set by the main window BEFORE
+    /// <see cref="CreateLayout"/>.
+    /// </summary>
+    public object? DocumentsEmptyContent { get; set; }
+
+    // Whether a book is open (SetBookOpen): the content of the book's panels is enabled only then.
+    private bool _bookOpen = true;
+
+    /// <summary>
+    /// Enables the content of the panels that show the book (all but Notifications) when a book is open, and grays it
+    /// out when none is.
+    /// </summary>
+    public void SetBookOpen(bool open)
+    {
+        _bookOpen = open;
+        foreach (SignetTool tool in _tools.Values.OfType<SignetTool>())
+        {
+            tool.IsContentEnabled = open || tool.Id == DockableIds.Notifications;
+        }
+    }
+
+    /// <summary>
     /// Panels that start hidden (shown after toggling them in the View menu) — Clips and
     /// Validation Results only appear on demand.
     /// </summary>
@@ -172,6 +194,8 @@ public sealed class MainDockFactory : Factory
             _tools[tool.Id] = tool;
         }
 
+        SetBookOpen(_bookOpen);
+
         IToolDock leftDock = CreateToolDock();
         leftDock.Id = "LeftDock";
         leftDock.Alignment = Alignment.Left;
@@ -214,6 +238,7 @@ public sealed class MainDockFactory : Factory
         // panels take the whole row. Its width is what the side regions leave (no proportion of its own).
         documentDock.IsCollapsable = false;
         documentDock.VisibleDockables = CreateList<IDockable>();
+        documentDock.EmptyContent = DocumentsEmptyContent;
         DocumentDock = documentDock;
 
         IProportionalDock mainRow = CreateProportionalDock();

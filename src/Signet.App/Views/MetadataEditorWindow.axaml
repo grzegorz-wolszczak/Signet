@@ -33,7 +33,7 @@
               ToolTip.Tip="{loc:Loc MetadataEditorWindow_AddElementTip}" />
       <Button x:Name="AddPropertyButton" Content="{loc:Loc MetadataEditorWindow_AddProperty}" HorizontalAlignment="Stretch"
               ToolTip.Tip="{loc:Loc MetadataEditorWindow_AddPropertyTip}" />
-      <Button Content="{loc:Loc MetadataEditorWindow_RemoveRow}" HorizontalAlignment="Stretch" Command="{Binding RemoveCommand}" />
+      <Button Classes="danger" Content="{loc:Loc MetadataEditorWindow_RemoveRow}" HorizontalAlignment="Stretch" Command="{Binding RemoveCommand}" />
       <Separator />
       <UniformGrid Columns="2">
         <Button Content="↑" Command="{Binding MoveUpCommand}" ToolTip.Tip="{loc:Loc EditTocWindow_MoveUpTip}" />

@@ -10,7 +10,7 @@
   <DockPanel Margin="16">
     <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right"
                 Spacing="8" Margin="0,12,0,0">
-      <Button x:Name="AcceptButton" Content="{loc:Loc SpanRemovalRiskWindow_Accept}" MinWidth="80" />
+      <Button Classes="danger" x:Name="AcceptButton" Content="{loc:Loc SpanRemovalRiskWindow_Accept}" MinWidth="80" />
       <Button x:Name="CancelButton" Content="{loc:Loc Common_Cancel}" IsCancel="True" IsDefault="True" MinWidth="80" />
     </StackPanel>
 

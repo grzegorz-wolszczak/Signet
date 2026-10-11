@@ -9,8 +9,8 @@ using Signet.Core.Resources;
 namespace Signet.App.ViewModels;
 
 /// <summary>
-/// Footnotes from the Code View context menu ("Footnotes" submenu): adding, removing, moving between the local and
-/// the global notes, going between a reference and its note, and renumbering. Every change saves the open tabs first,
+/// Footnotes from the Code View context menu ("Footnotes" submenu): adding, editing (the text and the placement, local
+/// or global), removing, going between a reference and its note, and renumbering. Every change saves the open tabs first,
 /// is a text edit of the book files (<see cref="FootnoteEditor"/>) behind a checkpoint, and reloads the tabs and panels.
 /// </summary>
 public sealed partial class MainWindowViewModel
@@ -66,7 +66,7 @@ public sealed partial class MainWindowViewModel
             }
 
             _statusBar.ShowMessage(
-                Strings.Format("Status_FootnoteNotAdded", AddFootnoteViewModel.ErrorText(error)),
+                Strings.Format("Status_FootnoteNotAdded", FootnoteViewModel.ErrorText(error)),
                 TimeSpan.FromSeconds(5), NotificationLevel.Warning);
             return;
         }
@@ -124,9 +124,39 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <inheritdoc/>
-    void ICodeTabHost.MoveFootnote(FootnoteHit hit)
+    FootnoteEditState? ICodeTabHost.GetFootnoteEdit(FootnoteHit hit)
     {
         ArgumentNullException.ThrowIfNull(hit);
+        if (_currentBook is null)
+        {
+            return null;
+        }
+
+        _tabManager.SaveAllTabs();
+        if (FootnoteEditor.Refresh(_currentBook, hit.Footnote) is { } footnote
+            && FootnoteEditor.GetContent(footnote) is { } content
+            && FootnoteEditor.LocateReferenceRange(footnote) is { } reference
+            && FootnoteEditor.Locate(footnote, FootnoteSide.Reference) is { } at)
+        {
+            return new FootnoteEditState(
+                footnote, reference.File.GetText(), reference.Start, reference.End, content,
+                FootnoteEditor.NumberAt(_currentBook, at.File, at.Offset, FootnotePlacement.Local),
+                FootnoteEditor.NumberAt(_currentBook, at.File, at.Offset, FootnotePlacement.Global));
+        }
+
+        _statusBar.ShowMessage(Strings.Get("Status_FootnoteGone"), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
+        return null;
+    }
+
+    /// <inheritdoc/>
+    FootnoteError ICodeTabHost.ValidateFootnoteEdit(Footnote footnote, string content) =>
+        FootnoteEditor.ValidateEdit(footnote, content, _currentBook?.EpubVersion ?? "3.0");
+
+    /// <inheritdoc/>
+    void ICodeTabHost.EditFootnote(FootnoteHit hit, string content, FootnotePlacement placement)
+    {
+        ArgumentNullException.ThrowIfNull(hit);
+        ArgumentNullException.ThrowIfNull(content);
         if (_currentBook is null)
         {
             return;
@@ -134,27 +164,41 @@ public sealed partial class MainWindowViewModel
 
         _tabManager.SaveAllTabs();
         Footnote? footnote = FootnoteEditor.Refresh(_currentBook, hit.Footnote);
-        bool checkpoint = AddCheckpointBefore(Strings.Get("CheckpointOp_MoveFootnote"));
-        if (footnote is null || !FootnoteEditor.Move(_currentBook, footnote, out Footnote? moved, _settings.FootnoteStyles))
+        bool checkpoint = AddCheckpointBefore(Strings.Get("CheckpointOp_EditFootnote"));
+        Footnote? edited = null;
+        FootnoteError error = footnote is null
+            ? FootnoteError.NotFound
+            : FootnoteEditor.Edit(_currentBook, footnote, content, placement, out edited, _settings.FootnoteStyles);
+        if (error != FootnoteError.None)
         {
             if (checkpoint)
             {
                 RewindCheckpoint();
             }
 
-            _statusBar.ShowMessage(Strings.Get("Status_FootnoteGone"), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
+            _statusBar.ShowMessage(
+                Strings.Format("Status_FootnoteNotEdited", FootnoteViewModel.ErrorText(error)),
+                TimeSpan.FromSeconds(5), NotificationLevel.Warning);
             return;
         }
 
         RefreshAfterMaintenanceOperation();
-        if (moved is not null)
+        if (edited is not null)
         {
-            GoToFootnoteSide(moved, hit.Side);
+            GoToFootnoteSide(edited, hit.Side);
         }
 
-        _statusBar.ShowMessage(
-            Strings.Get(moved?.Placement == FootnotePlacement.Local ? "Status_FootnoteMovedLocal" : "Status_FootnoteMovedGlobal"),
-            TimeSpan.FromSeconds(4));
+        string message = footnote!.Placement == placement ? "Status_FootnoteEdited"
+            : placement == FootnotePlacement.Local ? "Status_FootnoteMovedLocal"
+            : "Status_FootnoteMovedGlobal";
+        _statusBar.ShowMessage(Strings.Get(message), TimeSpan.FromSeconds(4));
+    }
+
+    /// <inheritdoc/>
+    bool ICodeTabHost.ConfirmFootnoteRemoval
+    {
+        get => _settings.ConfirmFootnoteRemoval;
+        set => _settings.ConfirmFootnoteRemoval = value;
     }
 
     /// <inheritdoc/>

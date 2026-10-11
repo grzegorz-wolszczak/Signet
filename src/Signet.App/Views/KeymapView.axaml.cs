@@ -313,9 +313,9 @@ public partial class KeymapView : UserControl
                 owner,
                 Strings.Get("Keymap_ConflictTitle"),
                 Strings.Format("Keymap_ConflictMessage", shortcut.DisplayText, string.Join(Environment.NewLine, found.Select(f => "  • " + f))),
-                Strings.Get("Keymap_ConflictRemove"),
-                Strings.Get("Keymap_ConflictLeave"),
-                Strings.Get("Common_Cancel"));
+                new ChoiceAnswer(Strings.Get("Keymap_ConflictRemove"), ButtonClasses.Danger),
+                new ChoiceAnswer(Strings.Get("Keymap_ConflictLeave")),
+                new ChoiceAnswer(Strings.Get("Common_Cancel")));
             if (answer is < 0 or 2)
             {
                 return;

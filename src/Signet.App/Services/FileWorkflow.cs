@@ -69,6 +69,9 @@ public interface IBookWorkspace
     /// <summary>Hands a freshly built publication over to the views.</summary>
     void ApplyBook(Book book, string? sourcePath);
 
+    /// <summary>Closes the current publication: the window is left without a book (the start screen).</summary>
+    void CloseBook();
+
     /// <summary>
     /// Refreshes the views after the book was changed outside of them (the edition page written on save): reloads the
     /// open tabs, the Book Browser, the table of contents and the preview.
@@ -168,6 +171,23 @@ public sealed class FileWorkflow
 
         Book book = BookCreator.CreateNewBook(epubVersion, bookPaths);
         LoadFreshBook(book);
+    }
+
+    // --------------------------------------------------------------- Close --- //
+
+    /// <summary>File → Close: closes the book (after the unsaved-changes guard); the window is left without a book.</summary>
+    public async Task CloseAsync()
+    {
+        if (_workspace.CurrentBook is null || !await MaybeSaveDialogSaysProceedAsync().ConfigureAwait(true))
+        {
+            return;
+        }
+
+        DebugLog.Write("File", "close book");
+        _workspace.CloseBook();
+        _currentFilePath = string.Empty;
+        _saveACopyFilename = string.Empty;
+        CurrentFileChanged?.Invoke(this, EventArgs.Empty);
     }
 
     // ---------------------------------------------------------------- Open --- //

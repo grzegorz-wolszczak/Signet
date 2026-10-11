@@ -6,6 +6,7 @@ using AvaloniaEdit.Document;
 using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.Core.BookManipulation;
+using Signet.Core.Footnotes;
 using Signet.Core.MainUI;
 using Signet.Core.Misc;
 using Signet.Core.Parsers;
@@ -1425,7 +1426,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     }
 
     /// <summary>"Add Footnote…" — the model of the window for a footnote at the caret; <c>null</c> without a host.</summary>
-    public AddFootnoteViewModel? CreateAddFootnoteViewModel()
+    public FootnoteViewModel? CreateAddFootnoteViewModel()
     {
         if (Host is not { } host || Resource is not HtmlResource html)
         {
@@ -1434,17 +1435,66 @@ public sealed class CodeTabViewModel : ContentTabViewModel
 
         SyncModelFromDocument();
         (int local, int global) = host.GetFootnoteNumbers(html, _caretOffset);
-        return new AddFootnoteViewModel(
+        return new FootnoteViewModel(
             _model.Text, _caretOffset, host.LastFootnotePlacement, local, global, host.ValidateFootnoteContent);
     }
 
     /// <summary>Adds the footnote accepted in the "Add Footnote" window at the caret (through the host, with a checkpoint).</summary>
-    public void AddFootnote(AddFootnoteRequest request)
+    public void AddFootnote(FootnoteRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
         if (Host is { } host && Resource is HtmlResource html)
         {
             host.AddFootnote(html, _caretOffset, request.Content, request.Placement);
+        }
+    }
+
+    /// <summary>
+    /// "Edit Footnote…" — the model of the window for the footnote of <paramref name="hit"/>; <c>null</c> without a host
+    /// or when the footnote is gone.
+    /// </summary>
+    public FootnoteViewModel? CreateEditFootnoteViewModel(FootnoteHit hit)
+    {
+        ArgumentNullException.ThrowIfNull(hit);
+        if (Host is not { } host)
+        {
+            return null;
+        }
+
+        SyncModelFromDocument();
+        if (host.GetFootnoteEdit(hit) is not { } edit)
+        {
+            return null;
+        }
+
+        FootnoteViewModel model = FootnoteViewModel.ForEdit(
+            edit.ReferenceText, edit.ReferenceStart, edit.ReferenceEnd, edit.Content, edit.Footnote.Placement,
+            edit.LocalNumber, edit.GlobalNumber, content => host.ValidateFootnoteEdit(edit.Footnote, content));
+        model.ConfirmRemoval = host.ConfirmFootnoteRemoval;
+        model.StopConfirmingRemoval = () => host.ConfirmFootnoteRemoval = false;
+        return model;
+    }
+
+    /// <summary>
+    /// Applies what the "Edit Footnote" window was closed with to the footnote of <paramref name="hit"/>: saves its text
+    /// and placement, or removes it (through the host, with a checkpoint).
+    /// </summary>
+    public void ApplyFootnoteEdit(FootnoteHit hit, FootnoteRequest request)
+    {
+        ArgumentNullException.ThrowIfNull(hit);
+        ArgumentNullException.ThrowIfNull(request);
+        if (Host is not { } host)
+        {
+            return;
+        }
+
+        if (request.Remove)
+        {
+            host.RemoveFootnote(hit);
+        }
+        else
+        {
+            host.EditFootnote(hit, request.Content, request.Placement);
         }
     }
 

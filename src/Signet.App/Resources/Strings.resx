@@ -4150,15 +4150,6 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="CodeViewMenu_FootnoteGoToReference" xml:space="preserve">
     <value>Przejdź do odnośnika</value>
   </data>
-  <data name="CodeViewMenu_FootnoteMoveToGlobal" xml:space="preserve">
-    <value>Przenieś do przypisów globalnych</value>
-  </data>
-  <data name="CodeViewMenu_FootnoteMoveToLocal" xml:space="preserve">
-    <value>Przenieś do przypisów lokalnych</value>
-  </data>
-  <data name="CodeViewMenu_FootnoteRemove" xml:space="preserve">
-    <value>Usuń przypis</value>
-  </data>
   <data name="CodeViewMenu_FootnotesRenumber" xml:space="preserve">
     <value>Przenumeruj przypisy</value>
   </data>
@@ -4216,32 +4207,71 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="CheckpointOp_RemoveFootnote" xml:space="preserve">
     <value>Usunięcie przypisu</value>
   </data>
-  <data name="CheckpointOp_MoveFootnote" xml:space="preserve">
-    <value>Przeniesienie przypisu</value>
-  </data>
   <data name="CheckpointOp_RenumberFootnotes" xml:space="preserve">
     <value>Przenumerowanie przypisów</value>
   </data>
-  <data name="AddFootnoteWindow_Title" xml:space="preserve">
+  <data name="FootnoteWindow_Title" xml:space="preserve">
     <value>Dodaj przypis</value>
   </data>
-  <data name="AddFootnoteWindow_Where" xml:space="preserve">
+  <data name="FootnoteWindow_Where" xml:space="preserve">
     <value>Miejsce odnośnika w tekście:</value>
   </data>
-  <data name="AddFootnoteWindow_Content" xml:space="preserve">
+  <data name="FootnoteWindow_Content" xml:space="preserve">
     <value>Treść przypisu:</value>
   </data>
-  <data name="AddFootnoteWindow_ContentHint" xml:space="preserve">
+  <data name="FootnoteWindow_ContentHint" xml:space="preserve">
     <value>Tekst, można użyć prostych znaczników XHTML (np. &lt;i&gt;, &lt;b&gt;, &lt;a href="…"&gt;). Znaki &amp; i &lt; zapisuj jako &amp;amp; i &amp;lt;.</value>
   </data>
-  <data name="AddFootnoteWindow_Local" xml:space="preserve">
+  <data name="FootnoteWindow_Local" xml:space="preserve">
     <value>Lokalny — na końcu tego pliku</value>
   </data>
-  <data name="AddFootnoteWindow_Global" xml:space="preserve">
+  <data name="FootnoteWindow_Global" xml:space="preserve">
     <value>Globalny — w pliku Przypisy.xhtml (numeracja w całej książce)</value>
   </data>
-  <data name="AddFootnoteWindow_AddButton" xml:space="preserve">
+  <data name="FootnoteWindow_AddButton" xml:space="preserve">
     <value>Dodaj</value>
+  </data>
+  <data name="CodeViewMenu_FootnoteEdit" xml:space="preserve">
+    <value>Edytuj przypis...</value>
+  </data>
+  <data name="FootnoteError_MissingBacklink" xml:space="preserve">
+    <value>treść musi zawierać link powrotny do odnośnika</value>
+  </data>
+  <data name="FootnoteError_NotFound" xml:space="preserve">
+    <value>przypisu nie ma już w książce</value>
+  </data>
+  <data name="Status_FootnoteEdited" xml:space="preserve">
+    <value>Zmieniono przypis.</value>
+  </data>
+  <data name="Status_FootnoteNotEdited" xml:space="preserve">
+    <value>Nie zmieniono przypisu: {0}.</value>
+  </data>
+  <data name="CheckpointOp_EditFootnote" xml:space="preserve">
+    <value>Edycja przypisu</value>
+  </data>
+  <data name="FootnoteWindow_EditTitle" xml:space="preserve">
+    <value>Edytuj przypis</value>
+  </data>
+  <data name="FootnoteWindow_SaveButton" xml:space="preserve">
+    <value>Zapisz</value>
+  </data>
+  <data name="FootnoteWindow_RemoveButton" xml:space="preserve">
+    <value>Usuń</value>
+  </data>
+  <data name="FootnoteWindow_RemoveConfirmTitle" xml:space="preserve">
+    <value>Usuń przypis</value>
+  </data>
+  <data name="FootnoteWindow_RemoveConfirm" xml:space="preserve">
+    <value>Na pewno chcesz usunąć przypis? Usunięty zostanie odnośnik w tekście i treść przypisu.</value>
+  </data>
+  <data name="FootnoteWindow_ContentHintWholeNote" xml:space="preserve">
+    <value>Cała zawartość przypisu (nie jest w szablonie Signeta) jako XHTML. Zachowaj link powrotny do odnośnika. Znaki &amp; i &lt; zapisuj jako &amp;amp; i &amp;lt;.</value>
+  </data>
+  <data name="ConfirmWindow_DontAskAgain" xml:space="preserve">
+    <value>Nie pytaj więcej</value>
+  </data>
+  <data name="PreferencesWindow_ConfirmFootnoteRemoval" xml:space="preserve">
+    <value>Pytaj przed usunięciem przypisu (w oknie edycji przypisu)</value>
   </data>
   <data name="CodeViewMenu_FindUsages" xml:space="preserve">
     <value>Znajdź użycia</value>
@@ -4582,5 +4612,20 @@ Czy usunąć pozostałe przypisania?</value>
   </data>
   <data name="PreferencesWindow_EditionPageVersion" xml:space="preserve">
     <value>Wersja</value>
+  </data>
+  <data name="StartScreen_NoBook" xml:space="preserve">
+    <value>Brak otwartej książki</value>
+  </data>
+  <data name="StartScreen_Open" xml:space="preserve">
+    <value>Otwórz...</value>
+  </data>
+  <data name="StartScreen_New" xml:space="preserve">
+    <value>Nowa książka</value>
+  </data>
+  <data name="StartScreen_RecentFiles" xml:space="preserve">
+    <value>Ostatnie pliki</value>
+  </data>
+  <data name="Status_BookClosed" xml:space="preserve">
+    <value>Zamknięto książkę.</value>
   </data>
 </root>

@@ -175,9 +175,9 @@ public static class FootnoteValidator
     private static IEnumerable<Link> BacklinksOf(IElement note, Dictionary<IElement, List<Link>> linksInside) =>
         linksInside.GetValueOrDefault(note, new List<Link>()).Where(l => l.Target is not null && !Inside(l.Target, note));
 
-    // Whether the link leads to the anchor: to the anchor itself, to an element around it (e.g. <sup id>) or inside it.
+    // Whether the link leads back to the anchor (the same rule as FootnoteScanner, Footnotes.FootnoteLinks.LeadsTo).
     private static bool Points(Link link, IElement anchor) =>
-        link.Target is { } target && (ReferenceEquals(target, anchor) || target.Contains(anchor) || anchor.Contains(target));
+        link.Target is { } target && Footnotes.FootnoteLinks.LeadsTo(target, anchor);
 
     private static bool Inside(IElement element, IElement container) =>
         ReferenceEquals(element, container) || container.Contains(element);

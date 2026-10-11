@@ -53,7 +53,10 @@ public sealed class Footnote
     /// <summary>How many earlier links of <see cref="ReferenceFile"/> have the same <c>href</c>.</summary>
     public int ReferenceOccurrence { get; }
 
-    /// <summary>The id of the reference link (the target of the note's link back), or <c>""</c>.</summary>
+    /// <summary>
+    /// The id the note's link back leads to: of the reference link, of an element around it or of an empty element
+    /// right before it (<see cref="FootnoteLinks.LeadsTo"/>); without a link back the reference link's id; or <c>""</c>.
+    /// </summary>
     public string ReferenceId { get; }
 
     /// <summary>The file with the note.</summary>

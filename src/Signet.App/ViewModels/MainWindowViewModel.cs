@@ -215,8 +215,15 @@ public sealed partial class MainWindowViewModel
         _notifications = new NotificationsViewModel(statusBar);
         InitNotifications();
 
+        StartScreen = new StartScreenViewModel(
+            _actions.Require(AppActionIds.Open), _actions.Require(AppActionIds.NewDefault),
+            () => ((IRecentFilesMenu)this).RecentFiles, path => ((IRecentFilesMenu)this).Open(path));
+        Changed += (_, _) => StartScreen.Refresh();
+        _dockFactory.DocumentsEmptyContent = StartScreen;
+
         Layout = _dockFactory.CreateLayout();
         _dockFactory.InitLayout(Layout);
+        UpdateBookOpenState();
         // RestoreDockLayout() is disabled: restoring a saved layout could degenerate the
         // assignment/proportions of the regions (e.g. the document area disappears entirely) —
         // so we always start with the default layout from CreateLayout/InitLayout.
@@ -272,7 +279,7 @@ public sealed partial class MainWindowViewModel
         _actions.SetHandler(AppActionIds.CustomLayout, () => RunFileAction(f => f.NewWithCustomLayoutAsync(null)));
         _actions.SetHandler(AppActionIds.NextTab, _tabManager.NextTab);
         _actions.SetHandler(AppActionIds.PreviousTab, _tabManager.PreviousTab);
-        _actions.SetHandler(AppActionIds.Close, _tabManager.CloseActiveTab);
+        _actions.SetHandler(AppActionIds.Close, () => RunFileAction(f => f.CloseAsync()));
         _actions.SetHandler(AppActionIds.CloseTab, _tabManager.CloseActiveTab);
         _actions.SetHandler(AppActionIds.CloseOtherTabs, _tabManager.CloseOtherTabs);
         _actions.SetHandler(AppActionIds.Exit, () => CloseWindowRequested?.Invoke(this, EventArgs.Empty));
@@ -809,8 +816,8 @@ public sealed partial class MainWindowViewModel
     public string? StartupFilePath { get; set; }
 
     /// <summary>
-    /// Runs at startup: opens the file from the command line, restores the last publication,
-    /// or creates a new empty one. Called once from the view.
+    /// Runs at startup: opens the file from the command line or restores the last publication; otherwise the window
+    /// starts without a book (the start screen). Called once from the view.
     /// </summary>
     public async Task RunStartupAsync()
     {
@@ -825,12 +832,13 @@ public sealed partial class MainWindowViewModel
         {
             if (StartupFilePath is { } requested)
             {
-                // A nonexistent or unsupported file: the message from LoadFileAsync, then a new book.
+                // A nonexistent or unsupported file: the message from LoadFileAsync, and no book.
                 await _fileWorkflow.LoadFileAsync(requested).ConfigureAwait(true);
             }
             else
             {
-                string? last = _settings.ReopenLastFileOnStartup
+                // Not when the application was closed without a book (after File → Close).
+                string? last = _settings.ReopenLastFileOnStartup && _settings.BookOpenAtExit
                     ? _settings.RecentFiles.FirstOrDefault(System.IO.File.Exists)
                     : null;
 
@@ -840,10 +848,6 @@ public sealed partial class MainWindowViewModel
                 }
             }
 
-            if (_currentBook is null)
-            {
-                await _fileWorkflow.NewAsync(null).ConfigureAwait(true);
-            }
         }
         catch (Exception ex)
         {
@@ -1061,6 +1065,7 @@ public sealed partial class MainWindowViewModel
         _tabManager.RestoreSession(_settings);
         StartCheckpointHistory(book);
         LoadNavigationHistory(sourcePath);
+        UpdateBookOpenState();
         RefreshTitle();
 
         _statusBar.ShowMessage(
@@ -1069,6 +1074,69 @@ public sealed partial class MainWindowViewModel
                 : Strings.Get("Status_BookLoaded"),
             TimeSpan.FromSeconds(book.LoadWarnings.Count > 0 ? 6 : 3),
             book.LoadWarnings.Count > 0 ? NotificationLevel.Warning : NotificationLevel.Info);
+    }
+
+    /// <inheritdoc />
+    void IBookWorkspace.CloseBook()
+    {
+        if (_currentBook is null)
+        {
+            return;
+        }
+
+        // The session (open tabs) and the navigation history of the closed book are kept for when it is opened again.
+        SaveNavigationHistory();
+        _tabManager.SaveAllTabs();
+        _tabManager.CaptureSession(_settings);
+        using (Tracker.Suspend())
+        {
+            _tabManager.SetBook(null);
+        }
+
+        _currentBook.ModifiedStateChanged -= OnBookModifiedStateChanged;
+        _currentBook.Dispose();
+        _currentBook = null;
+        _legacyFileName = null;
+
+        _preview.Clear();
+        _preview.SetBook(null);
+        _findUsages.Clear();
+        BookBrowser.SetBook(null);
+        _toc.SetBook(null);
+        _validationResults.ClearResults();
+        _checkpoints.Clear();
+        RefreshCheckpointActions();
+        _navigationBookPath = null;
+        _navigation.Clear();
+        WatchNavigationFolderKeeper();
+        UpdateNavigationPlace();
+        _bookmarks.Clear();
+        BookmarksChangedInternal?.Invoke(this, EventArgs.Empty);
+        UpdateBookOpenState();
+        RefreshTitle();
+        _statusBar.ShowMessage(Strings.Get("Status_BookClosed"), TimeSpan.FromSeconds(3));
+    }
+
+    /// <summary>The start screen of the empty document area (shown while no book is open).</summary>
+    public StartScreenViewModel StartScreen { get; }
+
+    /// <summary>Whether a book is open — without one only the actions that make sense then are enabled.</summary>
+    public bool HasBook
+    {
+        get => _hasBook;
+        private set => SetProperty(ref _hasBook, value);
+    }
+
+    private bool _hasBook;
+
+    // The actions, the panels and the start screen follow whether a book is open.
+    private void UpdateBookOpenState()
+    {
+        bool open = _currentBook is not null;
+        HasBook = open;
+        _actions.SetBookOpen(open);
+        _dockFactory.SetBookOpen(open);
+        StartScreen.IsVisible = !open;
     }
 
     // ------------------------------------------------------ IRecentFilesMenu --- //
@@ -1366,11 +1434,17 @@ public sealed partial class MainWindowViewModel
     public void PersistState()
     {
         SaveNavigationHistory();
+        _settings.BookOpenAtExit = _currentBook is not null;
         _settings.SetStringMap(DockPanelsGroup, _dockFactory.CaptureToolVisibility());
         _settings.SetStringMap(DockPinnedSizesGroup, _dockFactory.CapturePinnedSizes());
         _settings.SetStringMap(DockFloatingGroup, _dockFactory.CaptureFloatingPanels());
         _settings.MainWindowDockLayout = JsonSerializer.Serialize(_dockFactory.CaptureLayoutState());
-        _tabManager.CaptureSession(_settings);
+        if (_currentBook is not null)
+        {
+            // Without a book the session of the last closed one stays (CloseBook captured it).
+            _tabManager.CaptureSession(_settings);
+        }
+
         _findReplace.PersistState(IsFindReplaceVisible);
         _searchEditor.PersistIfModified();
         _clips.PersistIfModified();

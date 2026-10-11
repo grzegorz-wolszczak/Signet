@@ -31,6 +31,40 @@ public sealed class MenuBuilderTests
         }
     }
 
+    // The submenu holding the action.
+    private static MenuItemViewModel SubmenuOf(IReadOnlyList<MenuItemViewModel> menus, string actionId) =>
+        menus.SelectMany(Flatten).Single(m => m.Items?.Any(i => i.ActionId == actionId) ?? false);
+
+    [Fact]
+    public void A_submenu_is_enabled_only_while_one_of_its_items_is()
+    {
+        using TestHost host = new();
+        foreach (AppAction action in host.Registry.Actions)
+        {
+            action.IsEnabled = true;
+        }
+
+        IReadOnlyList<MenuItemViewModel> menus = Build(host);
+        MenuItemViewModel[] bookOnly =
+        {
+            SubmenuOf(menus, AppActionIds.AddExistingFile), SubmenuOf(menus, AppActionIds.CasingLowercase),
+            SubmenuOf(menus, AppActionIds.Heading1), SubmenuOf(menus, AppActionIds.FindNextInFile),
+            SubmenuOf(menus, AppActionIds.GenerateToc), SubmenuOf(menus, AppActionIds.SpellcheckEditor),
+            SubmenuOf(menus, AppActionIds.MendHtml), SubmenuOf(menus, AppActionIds.UpgradeToEpub3),
+        };
+        bookOnly.Should().OnlyContain(m => m.IsEnabled);
+
+        host.Registry.SetBookOpen(false);
+
+        bookOnly.Should().OnlyContain(m => !m.IsEnabled, "all their actions need a book");
+        SubmenuOf(menus, AppActionIds.NewDefault).IsEnabled.Should().BeTrue("File → New works without a book");
+        menus.Should().OnlyContain(m => m.IsEnabled, "the top-level menus stay enabled");
+
+        host.Registry.SetBookOpen(true);
+
+        bookOnly.Should().OnlyContain(m => m.IsEnabled);
+    }
+
     [Fact]
     public void Builds_nine_top_level_menus()
     {

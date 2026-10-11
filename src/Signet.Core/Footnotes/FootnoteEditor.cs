@@ -33,6 +33,12 @@ public enum FootnoteError
 
     /// <summary>The text of the footnote is not well-formed XHTML.</summary>
     InvalidContent,
+
+    /// <summary>The new text of a note leaves out its link back to the reference.</summary>
+    MissingBacklink,
+
+    /// <summary>The footnote (its reference or its note) is no longer in the book.</summary>
+    NotFound,
 }
 
 /// <summary>A footnote and the part of it a position is in (<see cref="FootnoteEditor.FindAt"/>).</summary>
@@ -40,8 +46,16 @@ public enum FootnoteError
 /// <param name="Side">The part the position is in.</param>
 public sealed record FootnoteHit(Footnote Footnote, FootnoteSide Side);
 
+/// <summary>The text of a note as <see cref="FootnoteEditor.Edit"/> replaces it (<see cref="FootnoteEditor.GetContent"/>).</summary>
+/// <param name="Text">The text (an XHTML fragment).</param>
+/// <param name="IsWholeNote">
+/// <c>true</c> — the whole inside of the note, its link back included (a note not in Signet's template); <c>false</c> —
+/// the text after the link back of Signet's note.
+/// </param>
+public sealed record FootnoteContent(string Text, bool IsWholeNote);
+
 /// <summary>
-/// Adds, removes, moves and renumbers footnotes (see <see cref="FootnoteScanner"/> for what a footnote is). The
+/// Adds, edits, removes, moves and renumbers footnotes (see <see cref="FootnoteScanner"/> for what a footnote is). The
 /// changes are text edits of the files involved: the rest of the source keeps its formatting.
 /// </summary>
 /// <remarks>
@@ -89,6 +103,11 @@ public static class FootnoteEditor
         @"(<style\b[^>]*>)(.*?)</style>", RegexOptions.CultureInvariant | RegexOptions.IgnoreCase | RegexOptions.Singleline);
 
     private static readonly Regex SignetId = new(@"^(fn|en)-(\d+)$", RegexOptions.CultureInvariant);
+
+    private static readonly Regex Tag = new("<[^>]*>", RegexOptions.CultureInvariant);
+
+    // The wrappers that go with a removed reference when they hold nothing else.
+    private static readonly string[] WrapperNames = { "span", "sup" };
 
     /// <summary>The footnote whose reference or note contains <paramref name="offset"/> of <paramref name="html"/>.</summary>
     public static FootnoteHit? FindAt(Book book, HtmlResource html, int offset)
@@ -275,14 +294,19 @@ public static class FootnoteEditor
         return FootnoteError.None;
     }
 
-    /// <summary>Removes the reference and the note of <paramref name="footnote"/> and renumbers the footnotes.</summary>
+    /// <summary>
+    /// Removes the reference and the note of <paramref name="footnote"/> and renumbers the footnotes. With the reference
+    /// go the <c>&lt;span&gt;</c>/<c>&lt;sup&gt;</c> elements that held only it, and the empty element its link back led
+    /// to (with the empty <c>&lt;span&gt;</c>/<c>&lt;sup&gt;</c> around it) — unless another link leads to their id.
+    /// </summary>
     public static bool Remove(Book book, Footnote footnote, FootnoteStyles? styles = null)
     {
         ArgumentNullException.ThrowIfNull(book);
         ArgumentNullException.ThrowIfNull(footnote);
 
         string referenceText = footnote.ReferenceFile.GetText();
-        Anchor? anchor = FindAnchor(new TagLister(referenceText), referenceText, footnote.ReferenceHref, footnote.ReferenceOccurrence);
+        TagLister referenceTags = new(referenceText);
+        Anchor? anchor = FindAnchor(referenceTags, referenceText, footnote.ReferenceHref, footnote.ReferenceOccurrence);
         string noteText = footnote.NoteFile.GetText();
         Element? note = FindElementById(new TagLister(noteText), noteText, footnote.NoteId);
         if (anchor is null || note is null)
@@ -290,9 +314,21 @@ public static class FootnoteEditor
             return false;
         }
 
-        List<Edit> referenceEdits = new() { new Edit(anchor.OuterStart, anchor.OuterEnd - anchor.OuterStart, string.Empty) };
-        (int start, int end) = WholeLines(noteText, note.Start, note.End);
-        Edit noteEdit = new(start, end - start, string.Empty);
+        // The element the link back leads to goes with the footnote only when nothing else links to it.
+        string? returnId = footnote.ReferenceId.Length > 0 && !IsLinkedOutside(book, footnote, note) ? footnote.ReferenceId : null;
+        (int start, int end) = Unwrap(referenceTags, referenceText, anchor.OuterStart, anchor.OuterEnd, returnId);
+        List<TextEdit> referenceEdits = new() { new TextEdit(start, end - start, string.Empty) };
+        if (returnId is not null
+            && FindElementById(referenceTags, referenceText, returnId) is { } target
+            && (target.End <= start || target.Start >= end)
+            && Tag.Replace(referenceText[target.Start..target.End], string.Empty).Trim().Length == 0)
+        {
+            (int targetStart, int targetEnd) = Unwrap(referenceTags, referenceText, target.Start, target.End, null);
+            referenceEdits.Add(new TextEdit(targetStart, targetEnd - targetStart, string.Empty));
+        }
+
+        (int noteStart, int noteEnd) = WholeLines(noteText, note.Start, note.End);
+        TextEdit noteEdit = new(noteStart, noteEnd - noteStart, string.Empty);
         if (ReferenceEquals(footnote.ReferenceFile, footnote.NoteFile))
         {
             referenceEdits.Add(noteEdit);
@@ -363,7 +399,7 @@ public static class FootnoteEditor
             && anchor.Href is { } href)
         {
             footnote.ReferenceFile.SetText(Apply(
-                referenceText, new[] { new Edit(href.Start, href.Length, Encode(Href(footnote.ReferenceFile, newFile, noteId))) }));
+                referenceText, new[] { new TextEdit(href.Start, href.Length, Encode(Href(footnote.ReferenceFile, newFile, noteId))) }));
         }
 
         InsertNote(newFile, note, target, book.IsEpub3);
@@ -372,6 +408,114 @@ public static class FootnoteEditor
         moved = Rescan(book, index);
         book.Modified = true;
         return true;
+    }
+
+    /// <summary>
+    /// The text of the note of <paramref name="footnote"/> as <see cref="Edit"/> replaces it: of Signet's note (one
+    /// <c>&lt;p&gt;</c> that starts with the link back) the text after the link back, of any other note its whole inside
+    /// (the link back included). Trimmed; <c>null</c> when the note is gone.
+    /// </summary>
+    public static FootnoteContent? GetContent(Footnote footnote)
+    {
+        ArgumentNullException.ThrowIfNull(footnote);
+        string text = footnote.NoteFile.GetText();
+        return ContentOf(footnote, text) is { } content
+            ? new FootnoteContent(text[content.Start..content.End], !content.AfterBacklink)
+            : null;
+    }
+
+    /// <summary>
+    /// Whether <paramref name="content"/> can replace the text of the note of <paramref name="footnote"/>
+    /// (<see cref="GetContent"/>): well-formed XHTML, and the whole inside of a note keeps its link back.
+    /// </summary>
+    public static FootnoteError ValidateEdit(Footnote footnote, string content, string epubVersion)
+    {
+        ArgumentNullException.ThrowIfNull(footnote);
+        ArgumentNullException.ThrowIfNull(content);
+        string text = footnote.NoteFile.GetText();
+        if (ContentOf(footnote, text) is not { } current)
+        {
+            return FootnoteError.NotFound;
+        }
+
+        if (current.AfterBacklink)
+        {
+            return ValidateContent(content, epubVersion);
+        }
+
+        if (content.Trim().Length == 0)
+        {
+            return FootnoteError.EmptyContent;
+        }
+
+        string document = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!DOCTYPE html>\n"
+            + "<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:epub=\"http://www.idpf.org/2007/ops\"><head><title>t</title></head>"
+            + "<body><div>" + content.Trim() + "</div></body></html>";
+        if (!WellFormedChecker.CheckXhtmlStructure(document, epubVersion).IsWellFormed)
+        {
+            return FootnoteError.InvalidContent;
+        }
+
+        return footnote.ReferenceId.Length > 0
+            && HasBacklink(text[current.Start..current.End], footnote.ReferenceId)
+            && !HasBacklink(content, footnote.ReferenceId)
+                ? FootnoteError.MissingBacklink
+                : FootnoteError.None;
+    }
+
+    /// <summary>
+    /// Replaces the text of the note of <paramref name="footnote"/> (<see cref="GetContent"/>) with
+    /// <paramref name="content"/> and moves the note to <paramref name="placement"/> when it is elsewhere (renumbering
+    /// the footnotes then); <paramref name="edited"/> is the footnote afterwards (<c>null</c> when it was not edited).
+    /// </summary>
+    public static FootnoteError Edit(
+        Book book, Footnote footnote, string content, FootnotePlacement placement, out Footnote? edited,
+        FootnoteStyles? styles = null)
+    {
+        edited = null;
+        ArgumentNullException.ThrowIfNull(book);
+        ArgumentNullException.ThrowIfNull(footnote);
+        ArgumentNullException.ThrowIfNull(content);
+        FootnoteError error = ValidateEdit(footnote, content, book.EpubVersion);
+        if (error != FootnoteError.None)
+        {
+            return error;
+        }
+
+        string text = footnote.NoteFile.GetText();
+        NoteContent current = ContentOf(footnote, text)!;
+        string replacement = content.Trim();
+        if (text[current.Start..current.End] != replacement)
+        {
+            footnote.NoteFile.SetText(string.Concat(text.AsSpan(0, current.Start), replacement, text.AsSpan(current.End)));
+            book.Modified = true;
+        }
+
+        if (Refresh(book, footnote) is not { } changed)
+        {
+            return FootnoteError.NotFound;
+        }
+
+        if (changed.Placement == placement)
+        {
+            edited = changed;
+            return FootnoteError.None;
+        }
+
+        return Move(book, changed, out edited, styles) ? FootnoteError.None : FootnoteError.NotFound;
+    }
+
+    /// <summary>
+    /// The file of the reference of <paramref name="footnote"/> and the range of the reference in it (with the
+    /// <c>&lt;sup&gt;</c> around the link); <c>null</c> when it is gone.
+    /// </summary>
+    public static (HtmlResource File, int Start, int End)? LocateReferenceRange(Footnote footnote)
+    {
+        ArgumentNullException.ThrowIfNull(footnote);
+        string text = footnote.ReferenceFile.GetText();
+        return FindAnchor(new TagLister(text), text, footnote.ReferenceHref, footnote.ReferenceOccurrence) is { } anchor
+            ? (footnote.ReferenceFile, anchor.OuterStart, anchor.OuterEnd)
+            : null;
     }
 
     /// <summary>
@@ -385,7 +529,7 @@ public static class FootnoteEditor
         ArgumentNullException.ThrowIfNull(book);
         IReadOnlyList<Footnote> footnotes = FootnoteScanner.Scan(book);
         Dictionary<HtmlResource, (string Text, TagLister Tags)> snapshots = new(ReferenceEqualityComparer.Instance);
-        Dictionary<HtmlResource, List<Edit>> edits = new(ReferenceEqualityComparer.Instance);
+        Dictionary<HtmlResource, List<TextEdit>> edits = new(ReferenceEqualityComparer.Instance);
         Dictionary<HtmlResource, HashSet<string>> takenIds = new(ReferenceEqualityComparer.Instance);
         Dictionary<HtmlResource, int> localCounters = new(ReferenceEqualityComparer.Instance);
         int globalCounter = 0;
@@ -401,11 +545,11 @@ public static class FootnoteEditor
             return snapshot;
         }
 
-        void AddEdit(HtmlResource file, Edit edit)
+        void AddEdit(HtmlResource file, TextEdit edit)
         {
-            if (!edits.TryGetValue(file, out List<Edit>? list))
+            if (!edits.TryGetValue(file, out List<TextEdit>? list))
             {
-                edits[file] = list = new List<Edit>();
+                edits[file] = list = new List<TextEdit>();
             }
 
             list.Add(edit);
@@ -472,7 +616,7 @@ public static class FootnoteEditor
             string? marker = footnote.IsSignet ? "[" + n + "]" : ReplaceSingleNumber(inner, number);
             if (marker is not null && marker != inner)
             {
-                AddEdit(footnote.ReferenceFile, new Edit(anchor.InnerStart, anchor.InnerEnd - anchor.InnerStart, marker));
+                AddEdit(footnote.ReferenceFile, new TextEdit(anchor.InnerStart, anchor.InnerEnd - anchor.InnerStart, marker));
             }
 
             if (noteId is not null && referenceId is not null)
@@ -488,7 +632,7 @@ public static class FootnoteEditor
                 string? backMarker = footnote.IsSignet ? n + "." : ReplaceSingleNumber(backInner, number);
                 if (backMarker is not null && backMarker != backInner)
                 {
-                    AddEdit(footnote.NoteFile, new Edit(backlink.InnerStart, backlink.InnerEnd - backlink.InnerStart, backMarker));
+                    AddEdit(footnote.NoteFile, new TextEdit(backlink.InnerStart, backlink.InnerEnd - backlink.InnerStart, backMarker));
                 }
 
                 if (referenceId is not null)
@@ -502,12 +646,12 @@ public static class FootnoteEditor
         {
             if (value is { } span && WebUtility.HtmlDecode(Snapshot(file).Text.Substring(span.Start, span.Length)) != newValue)
             {
-                AddEdit(file, new Edit(span.Start, span.Length, Encode(newValue)));
+                AddEdit(file, new TextEdit(span.Start, span.Length, Encode(newValue)));
             }
         }
 
         bool changed = false;
-        foreach ((HtmlResource file, List<Edit> list) in edits)
+        foreach ((HtmlResource file, List<TextEdit> list) in edits)
         {
             file.SetText(Apply(snapshots[file].Text, list));
             changed = true;
@@ -751,6 +895,68 @@ public static class FootnoteEditor
         }
     }
 
+    // The range widened to the <span>/<sup> elements that hold only it (whitespace aside), as long as they have no id
+    // or the id `allowedId`.
+    private static (int Start, int End) Unwrap(TagLister tags, string text, int start, int end, string? allowedId)
+    {
+        while (true)
+        {
+            int before = start > 0 ? tags.FindLastTagOnOrBefore(start - 1) : -1;
+            if (before < 0 || tags.At(before) is not { Kind: TagKind.Begin } open
+                || open.Pos + open.Len > start
+                || !WrapperNames.Contains(open.TagName, StringComparer.OrdinalIgnoreCase)
+                || !string.IsNullOrWhiteSpace(text[(open.Pos + open.Len)..start]))
+            {
+                return (start, end);
+            }
+
+            string id = AttributeValue(text, open, "id");
+            int close = tags.FindCloseTagForOpen(before);
+            if ((id.Length > 0 && id != allowedId) || close < 0 || tags.At(close).Pos < end
+                || !string.IsNullOrWhiteSpace(text[end..tags.At(close).Pos]))
+            {
+                return (start, end);
+            }
+
+            start = open.Pos;
+            end = tags.At(close).Pos + tags.At(close).Len;
+        }
+    }
+
+    // Whether a link outside the note leads to the id the note's link back leads to.
+    private static bool IsLinkedOutside(Book book, Footnote footnote, Element note)
+    {
+        foreach (HtmlResource html in book.GetHtmlResources())
+        {
+            string text = html.GetText();
+            if (!text.Contains(footnote.ReferenceId, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            TagLister tags = new(text);
+            for (int i = 0; i < tags.Count; i++)
+            {
+                TagLister.TagInfo tag = tags.At(i);
+                if (tag.Kind != TagKind.Begin || !tag.TagName.Equals("a", StringComparison.OrdinalIgnoreCase)
+                    || (ReferenceEquals(html, footnote.NoteFile) && tag.Pos >= note.Start && tag.Pos < note.End))
+                {
+                    continue;
+                }
+
+                (string path, string fragment) = SplitHref(AttributeValue(text, tag, "href"));
+                if (fragment == footnote.ReferenceId && !IsExternal(path)
+                    && (path.Length == 0 ? html.BookPath : Core.BookPath.BuildBookPath(Utility.UrlDecodePath(path), html.Folder))
+                        == footnote.ReferenceFile.BookPath)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
     // footnote <-> endnote in the note's epub:type, and its id.
     private static string RetypeNote(string note, FootnotePlacement target, string noteId)
     {
@@ -891,12 +1097,76 @@ public static class FootnoteEditor
 
     private sealed record Element(int OpenIndex, int Start, int End, int CloseStart, string IdValue, Span? Id);
 
-    private readonly record struct Edit(int Start, int Length, string Text);
+    private readonly record struct TextEdit(int Start, int Length, string Text);
 
-    private static string Apply(string text, IEnumerable<Edit> edits)
+    // The editable text of a note (trimmed): after the link back of Signet's note, or the whole inside of any other.
+    private sealed record NoteContent(int Start, int End, bool AfterBacklink);
+
+    private static NoteContent? ContentOf(Footnote footnote, string text)
+    {
+        TagLister tags = new(text);
+        if (FindElementById(tags, text, footnote.NoteId) is not { } note || tags.At(note.OpenIndex).Kind != TagKind.Begin)
+        {
+            return null;
+        }
+
+        TagLister.TagInfo open = tags.At(note.OpenIndex);
+        int innerStart = open.Pos + open.Len;
+        if (footnote.IsSignet && footnote.ReferenceId.Length > 0
+            && ChildElements(tags, text, note).ToList() is [{ } paragraph]
+            && tags.At(paragraph.OpenIndex) is { Kind: TagKind.Begin } p && p.TagName.Equals("p", StringComparison.OrdinalIgnoreCase)
+            && string.IsNullOrWhiteSpace(text[innerStart..paragraph.Start])
+            && string.IsNullOrWhiteSpace(text[paragraph.End..note.CloseStart])
+            && paragraph.OpenIndex + 1 < tags.Count
+            && tags.At(paragraph.OpenIndex + 1) is { Kind: TagKind.Begin } link && link.TagName.Equals("a", StringComparison.OrdinalIgnoreCase)
+            && string.IsNullOrWhiteSpace(text[(p.Pos + p.Len)..link.Pos])
+            && SplitHref(AttributeValue(text, link, "href")).Fragment == footnote.ReferenceId
+            && tags.FindCloseTagForOpen(paragraph.OpenIndex + 1) is var linkClose and >= 0
+            && tags.At(linkClose).Pos < paragraph.CloseStart)
+        {
+            TagLister.TagInfo linkEnd = tags.At(linkClose);
+            return Trimmed(text, linkEnd.Pos + linkEnd.Len, paragraph.CloseStart, afterBacklink: true);
+        }
+
+        return Trimmed(text, innerStart, note.CloseStart, afterBacklink: false);
+    }
+
+    private static NoteContent Trimmed(string text, int start, int end, bool afterBacklink)
+    {
+        while (start < end && char.IsWhiteSpace(text[start]))
+        {
+            start++;
+        }
+
+        while (end > start && char.IsWhiteSpace(text[end - 1]))
+        {
+            end--;
+        }
+
+        return new NoteContent(start, end, afterBacklink);
+    }
+
+    // Whether the markup has a link to the given id (the link back of a note).
+    private static bool HasBacklink(string markup, string referenceId)
+    {
+        TagLister tags = new(markup);
+        for (int i = 0; i < tags.Count; i++)
+        {
+            TagLister.TagInfo tag = tags.At(i);
+            if (tag.Kind == TagKind.Begin && tag.TagName.Equals("a", StringComparison.OrdinalIgnoreCase)
+                && SplitHref(AttributeValue(markup, tag, "href")).Fragment == referenceId)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string Apply(string text, IEnumerable<TextEdit> edits)
     {
         StringBuilder result = new(text);
-        foreach (Edit edit in edits.OrderByDescending(e => e.Start))
+        foreach (TextEdit edit in edits.OrderByDescending(e => e.Start))
         {
             result.Remove(edit.Start, edit.Length).Insert(edit.Start, edit.Text);
         }

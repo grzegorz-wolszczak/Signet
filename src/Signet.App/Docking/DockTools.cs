@@ -64,6 +64,18 @@ public abstract class SignetTool : Tool, IDeferredContentPresentation
     public bool ShowsNotificationBell { get; init; }
 
     /// <summary>
+    /// Whether the panel's content can be used — <see langword="false"/> (grayed out) for the panels of the book while
+    /// no book is open (<see cref="MainDockFactory.SetBookOpen"/>).
+    /// </summary>
+    public bool IsContentEnabled
+    {
+        get => _isContentEnabled;
+        set => SetProperty(ref _isContentEnabled, value);
+    }
+
+    private bool _isContentEnabled = true;
+
+    /// <summary>
     /// The number of unread items that need attention (e.g. the unread errors of the Notifications panel) — the bell
     /// gets a red dot and "[n]" while it is above 0.
     /// </summary>

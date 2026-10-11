@@ -1,5 +1,8 @@
+using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Linq;
 using System.Windows.Input;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -12,6 +15,8 @@ namespace Signet.App.Menu;
 /// A node of the main menu tree. Three variants: a separator (<see cref="IsSeparator"/>),
 /// a submenu (non-empty <see cref="Items"/>, no <see cref="Command"/>) or an action item
 /// (bound to an <see cref="AppAction"/>). Avalonia renders a separator when the header is <c>-</c>.
+/// A submenu is enabled only while one of its items is (e.g. without a book "Change Case" is grayed out with all its
+/// actions); the top-level menus stay enabled.
 /// </summary>
 public sealed partial class MenuItemViewModel : ObservableObject
 {
@@ -39,6 +44,83 @@ public sealed partial class MenuItemViewModel : ObservableObject
         {
             _isChecked = action.IsChecked;
             action.PropertyChanged += OnActionPropertyChanged;
+        }
+
+        if (items is not null)
+        {
+            if (items is INotifyCollectionChanged observable)
+            {
+                observable.CollectionChanged += OnItemsChanged;
+            }
+
+            WatchItems();
+        }
+    }
+
+    // The items whose state the submenu follows (re-subscribed when the list changes, e.g. the recent files).
+    private readonly List<MenuItemViewModel> _watched = new();
+    private bool _isTopLevel;
+    private bool _isEnabled = true;
+
+    /// <summary>
+    /// Whether the item can be used: always for a leaf (its <see cref="Command"/> decides), for a submenu while one of
+    /// its items is enabled; a top-level menu always.
+    /// </summary>
+    public bool IsEnabled
+    {
+        get => _isEnabled;
+        private set => SetProperty(ref _isEnabled, value);
+    }
+
+    /// <summary>Marks a top-level menu (File, Edit, …): it stays enabled even when all its items are disabled.</summary>
+    internal void MarkTopLevel()
+    {
+        _isTopLevel = true;
+        UpdateIsEnabled();
+    }
+
+    private void OnItemsChanged(object? sender, NotifyCollectionChangedEventArgs e) => WatchItems();
+
+    private void WatchItems()
+    {
+        foreach (MenuItemViewModel item in _watched)
+        {
+            item.PropertyChanged -= OnItemPropertyChanged;
+            if (item.Command is { } command)
+            {
+                command.CanExecuteChanged -= OnItemCanExecuteChanged;
+            }
+        }
+
+        _watched.Clear();
+        _watched.AddRange(Items!.Where(i => !i.IsSeparator));
+        foreach (MenuItemViewModel item in _watched)
+        {
+            item.PropertyChanged += OnItemPropertyChanged;
+            if (item.Command is { } command)
+            {
+                command.CanExecuteChanged += OnItemCanExecuteChanged;
+            }
+        }
+
+        UpdateIsEnabled();
+    }
+
+    private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(IsEnabled))
+        {
+            UpdateIsEnabled();
+        }
+    }
+
+    private void OnItemCanExecuteChanged(object? sender, EventArgs e) => UpdateIsEnabled();
+
+    private void UpdateIsEnabled()
+    {
+        if (Items is not null)
+        {
+            IsEnabled = _isTopLevel || _watched.Any(item => item.IsEnabled && (item.Command?.CanExecute(null) ?? true));
         }
     }
 

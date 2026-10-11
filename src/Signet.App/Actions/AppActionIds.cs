@@ -251,6 +251,25 @@ public static class AppActionIds
     /// <summary>Whether the action's shortcuts work only in a code editor (see <see cref="CodeViewActionIds"/>).</summary>
     public static bool IsCodeViewAction(string id) => CodeViewActionIds.Contains(id);
 
+    /// <summary>
+    /// The actions that make sense while no book is open: creating and opening a book, quitting, the settings and the
+    /// user's libraries (clips, saved searches), showing the panels and About. Every other action needs a book.
+    /// </summary>
+    private static readonly System.Collections.Generic.HashSet<string> NoBookActionIds = new(System.StringComparer.Ordinal)
+    {
+        NewDefault, NewEpub2, NewEpub3, Open, Exit, Preferences, CustomLayout, ClipEditor, SearchEditor, About,
+        ToggleBookBrowser, ToggleClips, TogglePreview, ToggleToc, ToggleValidationResults, ToggleCheckpoints,
+        ToggleNotifications, ToggleFindReplace, ToggleFindUsages,
+        FocusCodeView, FocusBookBrowser, FocusPreview, FocusToc, FocusClips,
+    };
+
+    /// <summary>
+    /// Whether the action works without an open book (<see cref="NoBookActionIds"/>, and the Clip Editor actions — the
+    /// clip library is the user's, not the book's).
+    /// </summary>
+    public static bool WorksWithoutBook(string id, string category) =>
+        NoBookActionIds.Contains(id) || string.Equals(category, ClipEditorCategory, System.StringComparison.Ordinal);
+
     /// <summary>Whether the category holds panel-scoped actions (handled only while the panel has focus).</summary>
     public static bool IsPanelCategory(string category) =>
         string.Equals(category, BookBrowserCategory, System.StringComparison.Ordinal)

@@ -510,8 +510,8 @@ public sealed class CodeTabViewRenderTests
     }
 
     /// <summary>
-    /// "Footnotes": on a footnote the submenu offers going to its other part, moving and removing it; elsewhere adding
-    /// one, disabled with the reason when the caret is not in a place for a reference; renumbering always.
+    /// "Footnotes": on a footnote the submenu offers editing it and going to its other part; elsewhere adding one,
+    /// disabled with the reason when the caret is not in a place for a reference; renumbering always.
     /// </summary>
     [AvaloniaFact]
     public void Context_menu_footnotes_submenu_follows_the_footnote_state_at_the_caret()
@@ -557,16 +557,15 @@ public sealed class CodeTabViewRenderTests
                 Signet.Core.Footnotes.FootnoteError.InsideLink, true),
             out _);
         onFootnote.Should().Equal(
+            Signet.App.Resources.Strings.Get("CodeViewMenu_FootnoteEdit"),
             Signet.App.Resources.Strings.Get("CodeViewMenu_FootnoteGoToNote"),
-            Signet.App.Resources.Strings.Get("CodeViewMenu_FootnoteMoveToGlobal"),
-            Signet.App.Resources.Strings.Get("CodeViewMenu_FootnoteRemove"),
             Signet.App.Resources.Strings.Get("CodeViewMenu_FootnotesRenumber"));
 
         string[] blocked = Footnotes(new FootnoteMenuState(null, Signet.Core.Footnotes.FootnoteError.InsideTag, false), out bool[] blockedEnabled);
         blocked.Should().Equal(
             Signet.App.Resources.Strings.Format(
                 "CodeViewMenu_FootnoteAddBlocked",
-                Signet.App.ViewModels.AddFootnoteViewModel.ErrorText(Signet.Core.Footnotes.FootnoteError.InsideTag)),
+                Signet.App.ViewModels.FootnoteViewModel.ErrorText(Signet.Core.Footnotes.FootnoteError.InsideTag)),
             Signet.App.Resources.Strings.Get("CodeViewMenu_FootnotesRenumber"));
         blockedEnabled.Should().Equal(false, false);
 
@@ -682,13 +681,21 @@ public sealed class CodeTabViewRenderTests
         {
         }
 
+        public FootnoteEditState? GetFootnoteEdit(Signet.Core.Footnotes.FootnoteHit hit) => null;
+
+        public Signet.Core.Footnotes.FootnoteError ValidateFootnoteEdit(Signet.Core.Footnotes.Footnote footnote, string content) =>
+            Signet.Core.Footnotes.FootnoteError.None;
+
+        public void EditFootnote(
+            Signet.Core.Footnotes.FootnoteHit hit, string content, Signet.Core.Footnotes.FootnotePlacement placement)
+        {
+        }
+
         public void RemoveFootnote(Signet.Core.Footnotes.FootnoteHit hit)
         {
         }
 
-        public void MoveFootnote(Signet.Core.Footnotes.FootnoteHit hit)
-        {
-        }
+        public bool ConfirmFootnoteRemoval { get; set; } = true;
 
         public void GoToFootnote(Signet.Core.Footnotes.FootnoteHit hit)
         {

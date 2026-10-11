@@ -74,7 +74,7 @@
         <Separator />
         <Button Content="{loc:Loc ClipEditorWindow_AddEntry}" Command="{Binding AddEntryCommand}" HorizontalAlignment="Stretch" />
         <Button Content="{loc:Loc ClipEditorWindow_AddGroup}" Command="{Binding AddGroupCommand}" HorizontalAlignment="Stretch" />
-        <Button Content="{loc:Loc Common_Delete}" Command="{Binding DeleteCommand}" HorizontalAlignment="Stretch" />
+        <Button Classes="danger" Content="{loc:Loc Common_Delete}" Command="{Binding DeleteCommand}" HorizontalAlignment="Stretch" />
         <UniformGrid Columns="4">
           <Button Content="↑" Command="{Binding MoveUpCommand}" />
           <Button Content="←" Command="{Binding MoveLeftCommand}" />
@@ -87,7 +87,7 @@
         <Button Content="{loc:Loc Common_Import}" Command="{Binding ImportCommand}" HorizontalAlignment="Stretch" />
         <Button Content="{loc:Loc Common_Export}" Command="{Binding ExportCommand}" HorizontalAlignment="Stretch" />
         <Button Content="{loc:Loc ClipEditorWindow_ExportAll}" Command="{Binding ExportAllCommand}" HorizontalAlignment="Stretch" />
-        <Button Content="{loc:Loc Common_Save}" Command="{Binding SaveCommand}" HorizontalAlignment="Stretch" />
+        <Button Classes="accent" Content="{loc:Loc Common_Save}" Command="{Binding SaveCommand}" HorizontalAlignment="Stretch" />
         <Button Content="{loc:Loc Common_Reload}" Command="{Binding ReloadCommand}" HorizontalAlignment="Stretch" />
         <UniformGrid Columns="2">
           <Button Content="{loc:Loc Common_Expand}" Command="{Binding ExpandAllCommand}" />

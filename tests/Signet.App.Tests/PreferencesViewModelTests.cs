@@ -186,6 +186,20 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
+    public void The_footnote_removal_confirmation_starts_from_settings_and_persists_on_apply()
+    {
+        using TestHost host = new();
+        host.Settings.ConfirmFootnoteRemoval = false;
+        PreferencesViewModel sut = NewOn(host);
+        sut.ConfirmFootnoteRemoval.Should().BeFalse();
+
+        sut.ConfirmFootnoteRemoval = true;
+        sut.ApplyCommand.Execute(null);
+
+        host.Settings.ConfirmFootnoteRemoval.Should().BeTrue();
+    }
+
+    [Fact]
     public void Footnote_styles_start_from_settings_and_changes_persist_on_apply()
     {
         using TestHost host = new();

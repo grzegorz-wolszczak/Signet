@@ -375,7 +375,8 @@ public partial class BookBrowserView : UserControl
 
         string names = string.Join("\n", entries.Select(x => "  • " + System.IO.Path.GetFileName(x.BookPath)));
         bool confirmed = await ConfirmWindow.AskAsync(
-            owner, Strings.Get("Common_Delete"), Strings.Format("BookBrowser_DeleteConfirm", entries.Count, names));
+            owner, Strings.Get("Common_Delete"), Strings.Format("BookBrowser_DeleteConfirm", entries.Count, names),
+            Strings.Get("Common_Delete"), destructive: true);
 
         if (confirmed)
         {

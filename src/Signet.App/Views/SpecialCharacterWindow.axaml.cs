@@ -476,6 +476,7 @@ public partial class SpecialCharacterWindow : Window
     {
         CharRow? row = SelectedRow;
         FavoriteButton.Content = Strings.Get(row is { IsFavorite: true } ? "SpecialCharacterWindow_RemoveFavorite" : "SpecialCharacterWindow_AddFavorite");
+        FavoriteButton.Classes.Set(ButtonClasses.Danger, row is { IsFavorite: true });
         FavoriteButton.IsEnabled = row is not null;
         OkButton.IsEnabled = row is not null;
         InsertCodeButton.IsEnabled = row is { CodePoint: >= 0 };

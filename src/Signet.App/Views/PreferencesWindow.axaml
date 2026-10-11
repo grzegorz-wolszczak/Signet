@@ -565,6 +565,8 @@
       <TabItem Header="{loc:Loc PreferencesWindow_Footnotes}">
         <ScrollViewer>
           <StackPanel Spacing="10" Margin="8">
+            <CheckBox x:Name="ConfirmFootnoteRemovalBox" Content="{loc:Loc PreferencesWindow_ConfirmFootnoteRemoval}"
+                      IsChecked="{Binding ConfirmFootnoteRemoval}" />
             <TextBlock Text="{loc:Loc PreferencesWindow_FootnotesIntro}" TextWrapping="Wrap" Opacity="0.75" />
             <StackPanel Spacing="4">
               <WrapPanel>
@@ -646,7 +648,7 @@
             <TextBlock Text="{loc:Loc PreferencesWindow_EditionPageIntro}" TextWrapping="Wrap" Opacity="0.75" />
 
             <StackPanel Orientation="Horizontal" Spacing="10">
-              <Button x:Name="RemoveEditionPageButton" Content="{loc:Loc PreferencesWindow_EditionPageRemove}"
+              <Button Classes="danger" x:Name="RemoveEditionPageButton" Content="{loc:Loc PreferencesWindow_EditionPageRemove}"
                       Command="{Binding RemoveEditionPageCommand}" />
               <TextBlock Text="{Binding EditionPageStatus}" VerticalAlignment="Center" Opacity="0.75" />
             </StackPanel>
@@ -700,7 +702,7 @@
                           <CheckBox Grid.Column="0" IsChecked="{Binding Show}" HorizontalAlignment="Center" />
                           <TextBox Grid.Column="1" Text="{Binding Key}" />
                           <TextBox Grid.Column="2" Text="{Binding Value}" />
-                          <Button Grid.Column="3" Content="{loc:Loc Common_Remove}" Command="{Binding RemoveCommand}" />
+                          <Button Classes="danger" Grid.Column="3" Content="{loc:Loc Common_Remove}" Command="{Binding RemoveCommand}" />
                         </Grid>
                       </DataTemplate>
                     </ItemsControl.ItemTemplate>
@@ -801,7 +803,7 @@
                           Command="{Binding RenameUserDictionaryCommand}" HorizontalAlignment="Stretch" />
                   <Button x:Name="CopyUserDictionaryButton" Content="{loc:Loc PreferencesWindow_CopyDictionary}"
                           Command="{Binding CopyUserDictionaryCommand}" HorizontalAlignment="Stretch" />
-                  <Button x:Name="RemoveUserDictionaryButton" Content="{loc:Loc Common_Remove}"
+                  <Button Classes="danger" x:Name="RemoveUserDictionaryButton" Content="{loc:Loc Common_Remove}"
                           Command="{Binding RemoveUserDictionaryCommand}" HorizontalAlignment="Stretch" />
                 </StackPanel>
                 <Border Classes="listFrame">
@@ -834,9 +836,9 @@
                           Command="{Binding AddUserWordsCommand}" HorizontalAlignment="Stretch" />
                   <Button x:Name="EditUserWordButton" Content="{loc:Loc PreferencesWindow_EditWord}"
                           Command="{Binding EditUserWordCommand}" HorizontalAlignment="Stretch" />
-                  <Button x:Name="RemoveUserWordsButton" Content="{loc:Loc Common_Remove}"
+                  <Button Classes="danger" x:Name="RemoveUserWordsButton" Content="{loc:Loc Common_Remove}"
                           Command="{Binding RemoveUserWordsCommand}" HorizontalAlignment="Stretch" />
-                  <Button x:Name="RemoveAllUserWordsButton" Content="{loc:Loc PreferencesWindow_RemoveAllWords}"
+                  <Button Classes="danger" x:Name="RemoveAllUserWordsButton" Content="{loc:Loc PreferencesWindow_RemoveAllWords}"
                           Command="{Binding RemoveAllUserWordsCommand}" HorizontalAlignment="Stretch" />
                 </StackPanel>
                 <Border Classes="listFrame">
@@ -867,7 +869,7 @@
                   <Grid ColumnDefinitions="100,*,80" Margin="0,2" ColumnSpacing="6">
                     <TextBox Grid.Column="0" Text="{Binding CodeText}" PlaceholderText="{loc:Loc PreferencesWindow_CodePlaceholder}" />
                     <TextBox Grid.Column="1" Text="{Binding Name}" PlaceholderText="{loc:Loc PreferencesWindow_EntityPlaceholder}" />
-                    <Button Grid.Column="2" Content="{loc:Loc Common_Remove}" Command="{Binding RemoveCommand}" />
+                    <Button Classes="danger" Grid.Column="2" Content="{loc:Loc Common_Remove}" Command="{Binding RemoveCommand}" />
                   </Grid>
                 </DataTemplate>
               </ItemsControl.ItemTemplate>
