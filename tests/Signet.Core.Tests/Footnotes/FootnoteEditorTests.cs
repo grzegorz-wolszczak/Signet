@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using AwesomeAssertions;
 using Signet.Core.BookManipulation;
 using Signet.Core.Footnotes;
@@ -799,6 +800,115 @@ public sealed class FootnoteEditorTests
                 .Should().Be(FootnoteError.None);
 
             NotesContainer(book).Should().Contain("<h2 class=\"signet-fn-group-title\">Chapter One</h2>");
+        }
+    }
+
+    // A chapter with references to notes of other origin in other files: one file for each item of `notes`, which holds
+    // the ids of its notes separated by spaces.
+    private static (Book Book, HtmlResource Chapter, HtmlResource[] NoteFiles) NewForeignGlobals(params string[] notes)
+    {
+        (Book book, HtmlResource chapter) = NewBook();
+        HtmlResource[] files = notes.Select(_ => book.CreateEmptyHtmlFile()).ToArray();
+        StringBuilder references = new("<p>Text");
+        for (int f = 0; f < notes.Length; f++)
+        {
+            StringBuilder body = new();
+            foreach (string id in notes[f].Split(' '))
+            {
+                references.Append("<a href=\"").Append(files[f].Filename).Append('#').Append(id).Append("\" id=\"").Append(id)
+                    .Append("-back\">*</a>");
+                body.Append("<div id=\"").Append(id).Append("\"><p><a href=\"").Append(chapter.Filename).Append('#').Append(id)
+                    .Append("-back\">*</a> Note ").Append(id).Append(".</p></div>\n");
+            }
+
+            files[f].SetText(Xhtml(body.ToString()));
+        }
+
+        chapter.SetText(Xhtml(references.Append(" end.</p>").ToString()));
+        return (book, chapter, files);
+    }
+
+    [Fact]
+    public void The_only_dedicated_file_with_all_the_global_notes_is_taken_without_asking()
+    {
+        (Book book, HtmlResource _, HtmlResource[] files) = NewForeignGlobals("n1 n2");
+        using (book)
+        {
+            files[0].SetText(files[0].GetText().Replace("<body>\n", "<body>\n<h1>Notes</h1>\n<p>A short word on the notes.</p>\n", StringComparison.Ordinal));
+
+            IReadOnlyList<GlobalFileCandidate> candidates = FootnoteEditor.GlobalFileCandidates(book);
+
+            candidates.Should().ContainSingle();
+            candidates[0].Should().BeEquivalentTo(new { File = files[0], NoteCount = 2, IsDedicated = true, HoldsAll = true });
+            candidates[0].Hints.Should().Equal(GlobalFileHint.NotesHeading);
+            FootnoteEditor.AutomaticGlobalFile(candidates).Should().BeSameAs(candidates[0]);
+        }
+    }
+
+    [Fact]
+    public void With_several_candidates_or_a_file_that_is_not_only_notes_the_user_chooses()
+    {
+        (Book book, HtmlResource _, HtmlResource[] files) = NewForeignGlobals("n1", "n2 n3");
+        using (book)
+        {
+            IReadOnlyList<GlobalFileCandidate> candidates = FootnoteEditor.GlobalFileCandidates(book);
+
+            candidates.Select(c => (c.File, c.NoteCount, c.HoldsAll)).Should().Equal((files[0], 1, false), (files[1], 2, false));
+            FootnoteEditor.AutomaticGlobalFile(candidates).Should().BeNull();
+        }
+
+        (Book other, HtmlResource _, HtmlResource[] single) = NewForeignGlobals("n1");
+        using (other)
+        {
+            single[0].SetText(single[0].GetText().Replace("<body>\n", "<body>\n<p>" + new string('x', FootnoteEditor.IntroLimit + 1) + "</p>\n", StringComparison.Ordinal));
+
+            IReadOnlyList<GlobalFileCandidate> candidates = FootnoteEditor.GlobalFileCandidates(other);
+
+            candidates.Single().IsDedicated.Should().BeFalse();
+            FootnoteEditor.AutomaticGlobalFile(candidates).Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void Notes_types_and_roles_hint_at_the_notes_file()
+    {
+        (Book book, HtmlResource _, HtmlResource[] files) = NewForeignGlobals("n1");
+        using (book)
+        {
+            files[0].SetText(files[0].GetText()
+                .Replace("<body>\n", "<body>\n<section epub:type=\"endnotes\" role=\"doc-endnotes\">\n", StringComparison.Ordinal)
+                .Replace("\n</body>", "</section>\n</body>", StringComparison.Ordinal));
+
+            FootnoteEditor.GlobalFileCandidates(book).Single().Hints.Should().Equal(GlobalFileHint.NotesType, GlobalFileHint.NotesRole);
+        }
+    }
+
+    [Fact]
+    public void A_book_without_global_notes_of_other_origin_has_no_candidates()
+    {
+        (Book book, HtmlResource html) = NewBook();
+        using (book)
+        {
+            FootnoteEditor.Add(book, html, After(html, "First"), "Signet's own", FootnotePlacement.Global);
+
+            FootnoteEditor.GlobalFileCandidates(book).Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public void A_notes_file_with_something_else_in_it_stays_when_its_last_note_goes()
+    {
+        (Book book, HtmlResource html) = NewBook();
+        using (book)
+        {
+            FootnoteEditor.Add(book, html, After(html, "First"), "note", FootnotePlacement.Global);
+            HtmlResource notes = FootnoteEditor.FindGlobalFile(book)!;
+            notes.SetText(notes.GetText().Replace("<h1>Przypisy</h1>", "<h1>Przypisy</h1>\n  <p>Written by hand.</p>", StringComparison.Ordinal));
+
+            FootnoteEditor.Remove(book, FootnoteScanner.Scan(book).Single()).Should().BeTrue();
+
+            book.GetHtmlResources().Should().Contain(notes);
+            BodyOf(notes).Should().Contain("<p>Written by hand.</p>").And.NotContain("signet-endnotes");
         }
     }
 

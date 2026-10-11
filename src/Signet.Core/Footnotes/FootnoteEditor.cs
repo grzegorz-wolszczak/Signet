@@ -115,7 +115,7 @@ public sealed record FootnoteMarkup(string Reference, string Note, string Page);
 /// numbers, and an emptied group goes away with its heading.
 /// </para>
 /// </remarks>
-public static class FootnoteEditor
+public static partial class FootnoteEditor
 {
     /// <summary>The name of the file with the global footnotes.</summary>
     public const string GlobalFileName = "Przypisy.xhtml";
@@ -966,8 +966,8 @@ public static class FootnoteEditor
         file.SetText(text.Insert(lineStart, insertion));
     }
 
-    // Removes Signet's container of the file when no note is left in it (the separator line too); a notes file
-    // without notes is removed from the book.
+    // Removes Signet's container of the file when no note is left in it (the separator line too); a notes file that
+    // holds nothing else than that container and Signet's heading is removed from the book.
     private static void RemoveEmptyContainer(Book book, HtmlResource file)
     {
         foreach (string containerClass in new[] { LocalContainerClass, GlobalContainerClass })
@@ -979,7 +979,7 @@ public static class FootnoteEditor
                 continue;
             }
 
-            if (containerClass == GlobalContainerClass)
+            if (containerClass == GlobalContainerClass && HoldsOnlySignetParts(text, tags, container))
             {
                 book.GetFolderKeeper().BulkRemoveResources(new Resource[] { file });
                 return;
