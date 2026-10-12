@@ -6155,4 +6155,25 @@
   <data name="Css_MergeAtRule" xml:space="preserve">
     <value> — w miejscu reguły {0} z {1}</value>
   </data>
+  <data name="Theme_InvalidXml" xml:space="preserve">
+    <value>Plik motywu nie jest poprawnym XML: {0}</value>
+  </data>
+  <data name="Theme_NotATheme" xml:space="preserve">
+    <value>Plik nie jest motywem Signeta.</value>
+  </data>
+  <data name="Theme_UnsupportedVersion" xml:space="preserve">
+    <value>Motyw ma format w wersji {0}, której ta wersja Signeta nie zna.</value>
+  </data>
+  <data name="Theme_MissingAttribute" xml:space="preserve">
+    <value>Wiersz {0}: brak atrybutu „{1}”.</value>
+  </data>
+  <data name="Theme_InvalidValue" xml:space="preserve">
+    <value>Wiersz {0}: nieprawidłowa wartość „{2}” atrybutu „{1}”.</value>
+  </data>
+  <data name="Theme_UnknownKey" xml:space="preserve">
+    <value>Wiersz {0}: nieznany klucz „{1}” pominięto.</value>
+  </data>
+  <data name="Theme_WrongSection" xml:space="preserve">
+    <value>Wiersz {0}: klucz „{1}” jest w sekcji innego rodzaju i został pominięty.</value>
+  </data>
 </root>

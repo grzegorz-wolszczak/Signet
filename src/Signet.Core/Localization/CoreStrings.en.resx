@@ -6155,4 +6155,25 @@
   <data name="Css_MergeAtRule" xml:space="preserve">
     <value> — at the place of rule {0} of {1}</value>
   </data>
+  <data name="Theme_InvalidXml" xml:space="preserve">
+    <value>The theme file is not valid XML: {0}</value>
+  </data>
+  <data name="Theme_NotATheme" xml:space="preserve">
+    <value>The file is not a Signet theme.</value>
+  </data>
+  <data name="Theme_UnsupportedVersion" xml:space="preserve">
+    <value>The theme has format version {0}, which this version of Signet does not know.</value>
+  </data>
+  <data name="Theme_MissingAttribute" xml:space="preserve">
+    <value>Line {0}: the attribute “{1}” is missing.</value>
+  </data>
+  <data name="Theme_InvalidValue" xml:space="preserve">
+    <value>Line {0}: the value “{2}” of the attribute “{1}” is invalid.</value>
+  </data>
+  <data name="Theme_UnknownKey" xml:space="preserve">
+    <value>Line {0}: the unknown key “{1}” was skipped.</value>
+  </data>
+  <data name="Theme_WrongSection" xml:space="preserve">
+    <value>Line {0}: the key “{1}” is in the section of the other kind and was skipped.</value>
+  </data>
 </root>
