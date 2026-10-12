@@ -20,6 +20,7 @@ using Signet.App.ViewModels;
 using Signet.App.Views;
 using Signet.Core.Misc;
 using Signet.Core.Spellcheck;
+using Xunit;
 
 namespace Signet.App.UiTests;
 
@@ -32,6 +33,17 @@ public sealed class PreferencesWindowRenderTests
     // Selects a page by its header (resource key), so the tests do not depend on the order of the pages.
     private static void SelectTab(TabControl tabs, string headerKey) =>
         tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(t => Equals(t.Header, Strings.Get(headerKey)));
+
+    // Selects a page by its x:Name (the subsections share headers such as "Appearance" and "Fonts") and lays it out.
+    private static TabControl ShowPage(PreferencesWindow window, string pageName)
+    {
+        TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
+        tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(t => t.Name == pageName);
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+        return tabs;
+    }
 
     private static PreferencesWindow BuildWindow() => BuildWindow(out _);
 
@@ -226,9 +238,10 @@ public sealed class PreferencesWindowRenderTests
         window.CaptureRenderedFrame();
         TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
 
-        window.Sections.Roots.Select(n => n.Title)
-            .Should().Equal(tabs.Items.OfType<TabItem>().Select(t => (string)t.Header!));
+        window.Sections.Roots.Select(n => n.Title).Should().Equal(
+            tabs.Items.OfType<TabItem>().Where(t => PreferencesPage.GetParent(t) is null).Select(t => (string)t.Header!));
         window.Sections.Roots.Should().OnlyContain(n => n.IsTopLevel);
+        window.Sections.All.Should().HaveCount(tabs.ItemCount, "every page is a section");
         tabs.GetVisualDescendants().OfType<TabItem>().Should().NotContain(t => t.IsEffectivelyVisible, "the tree replaces the tab strip");
         window.GetVisualDescendants().OfType<TextBlock>().Where(t => t.Classes.Contains("topSection"))
             .Should().NotBeEmpty().And.OnlyContain(t => t.FontWeight == FontWeight.Bold);
@@ -239,6 +252,53 @@ public sealed class PreferencesWindowRenderTests
 
         tabs.SelectedIndex.Should().Be(spelling.PageIndex);
         window.FindControl<TextBlock>("Breadcrumb")!.Text.Should().Be(spelling.Title);
+        window.Close();
+    }
+
+    /// <summary>
+    /// The sections that define a look have the subsections Appearance › Fonts; the path of a subsection is shown above
+    /// its page.
+    /// </summary>
+    [AvaloniaFact]
+    public void Sections_with_a_look_have_appearance_and_fonts_subsections()
+    {
+        PreferencesWindow window = BuildWindow();
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        string appearance = Strings.Get("PreferencesWindow_Appearance");
+        string fonts = Strings.Get("PreferencesWindow_Fonts");
+
+        window.Sections.All.Where(n => n.Title == fonts).Select(n => n.Path).Should().BeEquivalentTo(
+            appearance + " › " + fonts,
+            string.Join(" › ", Strings.Get("PreferencesWindow_CodeView"), appearance, fonts),
+            string.Join(" › ", Strings.Get("PreferencesWindow_Preview"), appearance, fonts),
+            string.Join(" › ", Strings.Get("PreferencesWindow_SpecialCharacters"), appearance, fonts));
+
+        PreferencesSectionNode codeViewFonts = window.Sections.All.Single(n => n.Path.StartsWith(Strings.Get("PreferencesWindow_CodeView"), StringComparison.Ordinal) && n.Title == fonts);
+        window.Sections.Selected = codeViewFonts;
+        Dispatcher.UIThread.RunJobs();
+
+        window.FindControl<TextBlock>("Breadcrumb")!.Text.Should().Be(codeViewFonts.Path);
+        window.Close();
+    }
+
+    /// <summary>A section without settings of its own lists links to its subsections; a link opens the subsection.</summary>
+    [AvaloniaFact]
+    public void A_section_without_settings_links_to_its_subsections()
+    {
+        PreferencesWindow window = BuildWindow();
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, "CodeViewPage");
+
+        HyperlinkButton link = window.GetVisualDescendants().OfType<HyperlinkButton>().Should().ContainSingle().Subject;
+        link.Content.Should().Be(Strings.Get("PreferencesWindow_Appearance"));
+
+        link.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+
+        window.Sections.Selected!.Path.Should().Be(
+            Strings.Get("PreferencesWindow_CodeView") + " › " + Strings.Get("PreferencesWindow_Appearance"));
         window.Close();
     }
 
@@ -342,8 +402,8 @@ public sealed class PreferencesWindowRenderTests
     }
 
     /// <summary>
-    /// The sections of the "Appearance" tab (Preview fonts, the special character font, Code View
-    /// light and dark) should be discrete cards with a border, so they do not blend into one list.
+    /// The sections of the "Appearance" page (Warnings, Errors) should be discrete cards with a border, so they do not
+    /// blend into one list.
     /// </summary>
     [AvaloniaFact]
     public void Appearance_sections_are_drawn_as_bordered_cards()
@@ -352,19 +412,15 @@ public sealed class PreferencesWindowRenderTests
         window.Show();
         Dispatcher.UIThread.RunJobs();
 
-        TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
-        tabs.SelectedIndex = 1; // Appearance
-        Dispatcher.UIThread.RunJobs();
-        window.CaptureRenderedFrame();
-        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, "AppearancePage");
 
         Border[] sections = window.GetVisualDescendants()
             .OfType<Border>()
             .Where(b => b.Classes.Contains("section"))
             .ToArray();
 
-        // Special character font, Warnings, Errors, Code View.
-        sections.Should().HaveCount(4);
+        // Warnings, Errors.
+        sections.Should().HaveCount(2);
         sections.Should().OnlyContain(b => b.BorderBrush != null);
         sections.Should().OnlyContain(b => b.BorderThickness == new Avalonia.Thickness(1));
         window.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Name == "WarningSample")
@@ -584,17 +640,16 @@ public sealed class PreferencesWindowRenderTests
             .ElementAt(index);
 
     /// <summary>The font fields in Preferences show the name rendered in that font.</summary>
-    [AvaloniaFact]
-    public void Preferences_font_fields_render_the_name_in_the_font_itself()
+    [AvaloniaTheory]
+    [InlineData("CodeViewFontsPage", 1)]
+    [InlineData("PreviewFontsPage", 3)]
+    [InlineData("SpecialCharactersFontsPage", 1)]
+    public void Preferences_font_fields_render_the_name_in_the_font_itself(string page, int count)
     {
         PreferencesWindow window = BuildWindow();
         window.Show();
         Dispatcher.UIThread.RunJobs();
-        TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
-        tabs.SelectedIndex = 1; // Appearance
-        Dispatcher.UIThread.RunJobs();
-        window.CaptureRenderedFrame();
-        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, page);
 
         TextBlock[] fields = window.GetVisualDescendants().OfType<Border>()
             // The UI font and the opening tag hint font fields show a description, not a name in its own font.
@@ -602,46 +657,40 @@ public sealed class PreferencesWindowRenderTests
             .Select(b => (TextBlock)b.Child!)
             .ToArray();
 
-        fields.Should().HaveCount(2, "special character + Code View; the preview fonts are on the Preview tab");
-
+        fields.Should().HaveCount(count);
         fields.Should().OnlyContain(t => !string.IsNullOrEmpty(t.Text) && t.FontFamily.Name == t.Text);
     }
 
     /// <summary>
-    /// The "Preview" tab (after "Appearance"): the preview fonts, the refresh delay and the highlighting
-    /// of the cursor position — as cards; font fields in their own font, color fields in their own color.
+    /// The "Preview" section: the refresh delay on its page, the highlighting of the cursor position under Appearance
+    /// (its color field in its own color) and the preview fonts under Appearance › Fonts.
     /// </summary>
     [AvaloniaFact]
-    public void Preview_tab_groups_fonts_refresh_and_highlight_settings()
+    public void Preview_section_splits_refresh_highlight_and_fonts()
     {
         PreferencesWindow window = BuildWindow();
         window.Show();
         Dispatcher.UIThread.RunJobs();
-        TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
-        SelectTab(tabs, "PreferencesWindow_Preview");
-        Dispatcher.UIThread.RunJobs();
-        window.CaptureRenderedFrame();
-        Dispatcher.UIThread.RunJobs();
 
-        ((TabItem)tabs.SelectedItem!).Header.Should().Be(Strings.Get("PreferencesWindow_Preview"));
+        ShowPage(window, "PreviewPage");
         window.GetVisualDescendants().OfType<Border>().Where(b => b.Classes.Contains("section"))
-            .Should().HaveCount(3);
+            .Should().ContainSingle();
+        window.GetVisualDescendants().OfType<TextBlock>()
+            .Should().Contain(t => t.Text == Strings.Get("PreferencesWindow_PreviewRefreshDelay"));
 
-        TextBlock[] fonts = window.GetVisualDescendants().OfType<Border>()
-            .Where(b => b.Classes.Contains("fontField"))
-            .Select(b => (TextBlock)b.Child!)
-            .ToArray();
-        fonts.Should().HaveCount(3).And.OnlyContain(t => t.FontFamily.Name == t.Text);
-
+        ShowPage(window, "PreviewAppearancePage");
         TextBox[] colors = window.GetVisualDescendants().OfType<TextBox>()
             .Where(t => t.Classes.Contains("colorValue"))
             .ToArray();
-        colors.Should().HaveCount(1);
-        colors.Should().OnlyContain(t => ((ISolidColorBrush)t.Background!).Color == Color.Parse(PreviewHighlight.Default.Color));
-
+        colors.Should().ContainSingle()
+            .Which.Background.Should().BeAssignableTo<ISolidColorBrush>()
+            .Which.Color.Should().Be(Color.Parse(PreviewHighlight.Default.Color));
         window.GetVisualDescendants().OfType<TextBlock>()
-            .Should().Contain(t => t.Text == Strings.Get("PreferencesWindow_PreviewRefreshDelay"))
-            .And.Contain(t => t.Text == Strings.Get("PreferencesWindow_PreviewHighlightColor"));
+            .Should().Contain(t => t.Text == Strings.Get("PreferencesWindow_PreviewHighlightColor"));
+
+        ShowPage(window, "PreviewFontsPage");
+        window.GetVisualDescendants().OfType<TextBlock>()
+            .Should().Contain(t => t.Text == Strings.Get("PreferencesWindow_PreviewFonts"));
     }
 
     /// <summary>The Code View color fields have a background in the color of the entered value — also when focused — and readable text.</summary>
@@ -651,10 +700,7 @@ public sealed class PreferencesWindowRenderTests
         PreferencesWindow window = BuildWindow();
         window.Show();
         Dispatcher.UIThread.RunJobs();
-        window.GetVisualDescendants().OfType<TabControl>().First().SelectedIndex = 1; // Appearance
-        Dispatcher.UIThread.RunJobs();
-        window.CaptureRenderedFrame();
-        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, "CodeViewAppearancePage");
 
         TextBox[] fields = window.GetVisualDescendants().OfType<TextBox>()
             .Where(t => t.Classes.Contains("colorValue"))

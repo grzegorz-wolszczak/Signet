@@ -26,11 +26,14 @@ namespace Signet.App.Views;
 /// <list type="bullet">
 /// <item>the sections as a tree (top-level ones in bold) with a search box — the search keeps the sections whose name
 /// or page text contains it and frames the matching controls of the shown page;</item>
+/// <item>a section without settings of its own (a page without content in the XAML) lists links to its
+/// subsections;</item>
 /// <item>the path of the section above its page;</item>
 /// <item>Save writes the changes and keeps the window open (enabled only when something changed); Cancel closes it
 /// without them; Escape and the close button ask what to do with unsaved changes.</item>
 /// </list>
-/// The pages are the tabs of a TabControl whose tab strip is hidden; the tree selects them.
+/// The pages are the tabs of a TabControl whose tab strip is hidden; the tree selects them. A page names the page of its
+/// enclosing section with <see cref="PreferencesPage.ParentProperty"/>.
 /// </summary>
 [SuppressMessage(
     "Reliability",
@@ -45,6 +48,7 @@ public partial class PreferencesWindow : Window
     private readonly HierarchicalTreeDataGridSource<PreferencesSectionNode> _source;
     private readonly TreeSelectionSync<PreferencesSectionNode> _selection;
     private readonly List<Control> _framed = new();
+    private readonly HashSet<int> _linkPages = new();
     private bool _closeConfirmed;
     private bool _askingAboutChanges;
 
@@ -53,10 +57,8 @@ public partial class PreferencesWindow : Window
     {
         InitializeComponent();
 
-        // Every page is a top-level section for now; subsections are nodes with a parent.
-        _sections = new PreferencesSectionsViewModel(
-            Pages.Items.OfType<TabItem>().Select((tab, index) => new PreferencesSectionNode(tab.Header as string ?? string.Empty, index)),
-            PageTexts);
+        _sections = new PreferencesSectionsViewModel(BuildSections(), PageTexts);
+        FillLinkPages();
         LocalizedColumns<PreferencesSectionNode> columns = new();
         VisibleItemsView<PreferencesSectionNode> roots = Visible(_sections.Roots);
         _source = new HierarchicalTreeDataGridSource<PreferencesSectionNode>(roots)
@@ -237,6 +239,57 @@ public partial class PreferencesWindow : Window
         QueueFrameRefresh();
     }
 
+    // The section tree from the pages: a page names the page of its enclosing section (PreferencesPage.Parent), and a
+    // subsection follows its parent in the XAML.
+    private List<PreferencesSectionNode> BuildSections()
+    {
+        List<PreferencesSectionNode> roots = new();
+        Dictionary<string, PreferencesSectionNode> byName = new(StringComparer.Ordinal);
+        int index = 0;
+        foreach (TabItem page in Pages.Items.OfType<TabItem>())
+        {
+            PreferencesSectionNode? parent = null;
+            if (PreferencesPage.GetParent(page) is { } parentName && !byName.TryGetValue(parentName, out parent))
+            {
+                throw new InvalidOperationException($"The Preferences page '{page.Name}' names an unknown parent '{parentName}'.");
+            }
+
+            PreferencesSectionNode node = new(page.Header as string ?? string.Empty, index++, parent);
+            if (parent is null)
+            {
+                roots.Add(node);
+            }
+
+            if (page.Name is { Length: > 0 } name)
+            {
+                byName[name] = node;
+            }
+        }
+
+        return roots;
+    }
+
+    // A page without content is a section without settings of its own: it lists links to its subsections, as in Rider.
+    private void FillLinkPages()
+    {
+        foreach (PreferencesSectionNode node in _sections.All)
+        {
+            if (Pages.Items[node.PageIndex] is TabItem { Content: null } page)
+            {
+                StackPanel links = new() { Spacing = 4, Margin = new Thickness(8) };
+                foreach (PreferencesSectionNode child in node.Children)
+                {
+                    HyperlinkButton link = new() { Content = child.Title };
+                    link.Click += (_, _) => _sections.Selected = child;
+                    links.Children.Add(link);
+                }
+
+                page.Content = new ScrollViewer { Content = links };
+                _linkPages.Add(node.PageIndex);
+            }
+        }
+    }
+
     // After the layout pass: the page's controls exist and can be framed.
     private void QueueFrameRefresh() => Dispatcher.UIThread.Post(RefreshFrames, DispatcherPriority.Loaded);
 
@@ -250,7 +303,7 @@ public partial class PreferencesWindow : Window
         }
 
         _framed.Clear();
-        if (!_sections.IsSearching || Pages.SelectedItem is not TabItem { Content: ILogical page })
+        if (!_sections.IsSearching || _linkPages.Contains(Pages.SelectedIndex) || Pages.SelectedItem is not TabItem { Content: ILogical page })
         {
             return;
         }
@@ -285,9 +338,10 @@ public partial class PreferencesWindow : Window
         return frame;
     }
 
-    // The texts of a page the search looks in: labels, check boxes, radio and other buttons, headers of inner tabs.
+    // The texts of a page the search looks in: labels, check boxes, radio and other buttons, headers of inner tabs. The
+    // links of a section without settings are only the names of its subsections, which the search sees anyway.
     private IEnumerable<string> PageTexts(int index) =>
-        index >= 0 && index < Pages.ItemCount && Pages.Items[index] is TabItem { Content: ILogical page }
+        index >= 0 && index < Pages.ItemCount && !_linkPages.Contains(index) && Pages.Items[index] is TabItem { Content: ILogical page }
             ? SelfAndLogicalDescendants(page).Select(OwnText).OfType<string>()
             : Enumerable.Empty<string>();
 

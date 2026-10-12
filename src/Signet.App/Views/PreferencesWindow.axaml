@@ -13,8 +13,7 @@
   <Window.Styles>
     <!-- A subtle separation of the section tree (left) from the page (right): the tree panel gets a dimmed
          background derived from the window background, and the page its own background and a thin border. Without
-         this, in the light theme both parts are white and blend into a single plane. Colors come from
-         DynamicResource, so it also works in the dark theme. -->
+         this both parts are white and blend into a single plane. -->
     <Style Selector="Border.sectionPanel">
       <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" />
       <Setter Property="CornerRadius" Value="4" />
@@ -40,7 +39,7 @@
       <Setter Property="CornerRadius" Value="4" />
     </Style>
 
-    <!-- Sections inside a tab as subtle cards (e.g. "Code View — Light/Dark theme"). -->
+    <!-- Sections inside a page as subtle cards (e.g. "Warnings"). -->
     <Style Selector="Border.section">
       <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
       <Setter Property="BorderThickness" Value="1" />
@@ -145,7 +144,7 @@
       </TabItem>
 
       <!-- ============================== Appearance ============================== -->
-      <TabItem Header="{loc:Loc PreferencesWindow_Appearance}">
+      <TabItem x:Name="AppearancePage" Header="{loc:Loc PreferencesWindow_Appearance}">
         <ScrollViewer>
           <StackPanel Spacing="10" Margin="8">
 
@@ -156,6 +155,70 @@
             </Grid>
 
             <CheckBox Content="{loc:Loc PreferencesWindow_CompactUi}" IsChecked="{Binding CompactUi}" />
+
+            <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+              <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_CustomIconFolder}" />
+              <TextBox Grid.Column="1" Text="{Binding CustomIconFolder}" />
+            </Grid>
+
+            <!-- Warnings in dialogs: the warning color (the font size is on the Fonts page); applied live, the sample
+                 below shows the result. -->
+            <Border Classes="section">
+              <StackPanel Spacing="6">
+                <TextBlock Text="{loc:Loc PreferencesWindow_Warnings}" FontWeight="Bold" />
+                <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+                  <TextBlock Grid.Column="0" Text="{Binding WarningColor.Label}" />
+                  <DockPanel Grid.Column="1" DataContext="{Binding WarningColor}">
+                    <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
+                            ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
+                    <TextBox Classes="colorValue" Text="{Binding Value}"
+                             Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
+                             Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
+                  </DockPanel>
+                </Grid>
+                <TextBlock x:Name="WarningSample" Classes="warning" Text="{loc:Loc PreferencesWindow_WarningSample}" />
+                <TextBlock Text="{loc:Loc PreferencesWindow_WarningsNote}" Opacity="0.7" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+
+            <!-- Error notifications (a blocked or failed operation): their color; applied live, the sample below
+                 shows the result. -->
+            <Border Classes="section">
+              <StackPanel Spacing="6">
+                <TextBlock Text="{loc:Loc PreferencesWindow_Errors}" FontWeight="Bold" />
+                <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+                  <TextBlock Grid.Column="0" Text="{Binding ErrorColor.Label}" />
+                  <DockPanel Grid.Column="1" DataContext="{Binding ErrorColor}">
+                    <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
+                            ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
+                    <TextBox Classes="colorValue" Text="{Binding Value}"
+                             Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
+                             Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
+                  </DockPanel>
+                </Grid>
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <views:NotificationBell UnreadCount="2" VerticalAlignment="Center" />
+                  <TextBlock x:Name="ErrorSample" Text="{loc:Loc PreferencesWindow_ErrorSample}"
+                             Foreground="{DynamicResource SignetErrorBrush}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock Text="{loc:Loc PreferencesWindow_ErrorsNote}" Opacity="0.7" TextWrapping="Wrap" />
+              </StackPanel>
+            </Border>
+
+            <TextBlock Text="{loc:Loc PreferencesWindow_FontColorRestartNotice}"
+                       IsVisible="{Binding RestartNoticeVisible}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
+
+            <Button Content="{loc:Loc PreferencesWindow_RestoreAppearanceDefaults}" Command="{Binding RestoreAppearanceDefaultsCommand}"
+                    HorizontalAlignment="Left" />
+
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- Appearance › Fonts: the interface font and the size of the warnings in dialogs. -->
+      <TabItem x:Name="AppearanceFontsPage" Header="{loc:Loc PreferencesWindow_Fonts}" views:PreferencesPage.Parent="AppearancePage">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="8">
 
             <!-- Interface font: the description rendered in the chosen font (empty = the mode's default). -->
             <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
@@ -173,74 +236,23 @@
             </Grid>
 
             <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
-              <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_CustomIconFolder}" />
-              <TextBox Grid.Column="1" Text="{Binding CustomIconFolder}" />
+              <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_WarningFontSize}" />
+              <TextBox Grid.Column="1" x:Name="WarningFontSizeBox" Text="{Binding WarningFontSize}"
+                       Width="80" HorizontalAlignment="Left" />
             </Grid>
 
-            <Border Classes="section">
-              <StackPanel Spacing="6">
-                <TextBlock Text="{loc:Loc PreferencesWindow_SpecialCharacterFont}" FontWeight="Bold" />
-                <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
-                  <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_Family}" VerticalAlignment="Center" />
-                  <DockPanel Grid.Row="0" Grid.Column="1">
-                    <Button DockPanel.Dock="Right" Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChooseSpecialCharacterFontCommand}" Margin="6,0,0,0" />
-                    <Border Classes="fontField"><TextBlock Text="{Binding SpecialCharacterFontFamily}" FontFamily="{Binding SpecialCharacterFontFamily, Converter={x:Static infra:FontFamilyConverters.FromName}}" /></Border>
-                  </DockPanel>
-                  <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_Size}" VerticalAlignment="Center" />
-                  <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SpecialCharacterFontSize}" Width="80" HorizontalAlignment="Left" />
-                </Grid>
-              </StackPanel>
-            </Border>
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
 
-            <!-- Warnings in dialogs: font size (0 = as the interface text) and the warning color of both themes;
-                 applied live, the sample below shows the result. -->
-            <Border Classes="section">
-              <StackPanel Spacing="6">
-                <TextBlock Text="{loc:Loc PreferencesWindow_Warnings}" FontWeight="Bold" />
-                <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
-                  <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_WarningFontSize}" />
-                  <TextBox Grid.Row="0" Grid.Column="1" x:Name="WarningFontSizeBox" Text="{Binding WarningFontSize}"
-                           Width="80" HorizontalAlignment="Left" />
+      <!-- =============================== Code View =============================== -->
+      <!-- No settings of its own: the window fills the page with links to its subsections. -->
+      <TabItem x:Name="CodeViewPage" Header="{loc:Loc PreferencesWindow_CodeView}" />
 
-                  <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding WarningColor.Label}" />
-                  <DockPanel Grid.Row="1" Grid.Column="1" DataContext="{Binding WarningColor}">
-                    <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
-                            ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
-                    <TextBox Classes="colorValue" Text="{Binding Value}"
-                             Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
-                             Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
-                  </DockPanel>
-
-                </Grid>
-                <TextBlock x:Name="WarningSample" Classes="warning" Text="{loc:Loc PreferencesWindow_WarningSample}" />
-                <TextBlock Text="{loc:Loc PreferencesWindow_WarningsNote}" Opacity="0.7" TextWrapping="Wrap" />
-              </StackPanel>
-            </Border>
-
-            <!-- Error notifications (a blocked or failed operation): their color in both themes; applied live,
-                 the sample below shows the result. -->
-            <Border Classes="section">
-              <StackPanel Spacing="6">
-                <TextBlock Text="{loc:Loc PreferencesWindow_Errors}" FontWeight="Bold" />
-                <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8" RowSpacing="6">
-                  <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding ErrorColor.Label}" />
-                  <DockPanel Grid.Row="0" Grid.Column="1" DataContext="{Binding ErrorColor}">
-                    <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
-                            ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
-                    <TextBox Classes="colorValue" Text="{Binding Value}"
-                             Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
-                             Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
-                  </DockPanel>
-
-                </Grid>
-                <StackPanel Orientation="Horizontal" Spacing="6">
-                  <views:NotificationBell UnreadCount="2" VerticalAlignment="Center" />
-                  <TextBlock x:Name="ErrorSample" Text="{loc:Loc PreferencesWindow_ErrorSample}"
-                             Foreground="{DynamicResource SignetErrorBrush}" TextWrapping="Wrap" VerticalAlignment="Center" />
-                </StackPanel>
-                <TextBlock Text="{loc:Loc PreferencesWindow_ErrorsNote}" Opacity="0.7" TextWrapping="Wrap" />
-              </StackPanel>
-            </Border>
+      <!-- Code View › Appearance: highlighting, the opening tag hint and the editor colors. -->
+      <TabItem x:Name="CodeViewAppearancePage" Header="{loc:Loc PreferencesWindow_Appearance}" views:PreferencesPage.Parent="CodeViewPage">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="8">
 
             <CheckBox Content="{loc:Loc PreferencesWindow_ExtendedHighlighting}" IsChecked="{Binding ExtendedHighlighting}" />
 
@@ -251,23 +263,12 @@
               <TextBox Grid.Column="1" Text="{Binding OpenTagHintDelay}" Width="80" HorizontalAlignment="Left"
                        IsEnabled="{Binding OpenTagHint}" />
             </Grid>
-            <!-- The look of the hint: font (default = the editor font) and colors for both themes. -->
-            <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6"
+
+            <!-- The colors of the hint (its font is on the Fonts page). -->
+            <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6"
                   Margin="28,0,0,0" IsEnabled="{Binding OpenTagHint}">
-              <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_OpenTagHintFont}" />
-              <StackPanel Grid.Row="0" Grid.Column="1" Spacing="4">
-                <!-- A description ("Default (as in the editor)" / "Consolas, 14 px"), not a name in its own font. -->
-                <Border Classes="fontField description">
-                  <TextBlock Text="{Binding OpenTagHintFontDescription}" TextTrimming="CharacterEllipsis" />
-                </Border>
-                <StackPanel Orientation="Horizontal" Spacing="6">
-                  <Button Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChooseOpenTagHintFontCommand}" />
-                  <Button Content="{loc:Loc PreferencesWindow_UiFontReset}" Command="{Binding ResetOpenTagHintFontCommand}" />
-                </StackPanel>
-              </StackPanel>
-
-              <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding OpenTagHintBackground.Label}" />
-              <DockPanel Grid.Row="1" Grid.Column="1" DataContext="{Binding OpenTagHintBackground}">
+              <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding OpenTagHintBackground.Label}" />
+              <DockPanel Grid.Row="0" Grid.Column="1" DataContext="{Binding OpenTagHintBackground}">
                 <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
                         ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
                 <TextBox Classes="colorValue" Text="{Binding Value}"
@@ -275,33 +276,23 @@
                          Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
               </DockPanel>
 
-              <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding OpenTagHintForeground.Label}" />
-              <DockPanel Grid.Row="2" Grid.Column="1" DataContext="{Binding OpenTagHintForeground}">
+              <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding OpenTagHintForeground.Label}" />
+              <DockPanel Grid.Row="1" Grid.Column="1" DataContext="{Binding OpenTagHintForeground}">
                 <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
                         ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
                 <TextBox Classes="colorValue" Text="{Binding Value}"
                          Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
                          Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
               </DockPanel>
-
             </Grid>
 
             <Border Classes="section">
               <StackPanel Spacing="6">
-                <TextBlock Text="{loc:Loc PreferencesWindow_CodeView}" FontWeight="Bold" />
+                <TextBlock Text="{loc:Loc PreferencesWindow_CodeViewColors}" FontWeight="Bold" />
                 <ContentControl Content="{Binding CodeView}">
                   <ContentControl.DataTemplates>
                     <DataTemplate DataType="vm:CodeViewAppearanceEditor">
                       <StackPanel Spacing="6">
-                        <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
-                          <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_FontFamily}" VerticalAlignment="Center" />
-                          <DockPanel Grid.Row="0" Grid.Column="1">
-                            <Button DockPanel.Dock="Right" Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChooseFontCommand}" Margin="6,0,0,0" />
-                            <Border Classes="fontField"><TextBlock Text="{Binding FontFamily}" FontFamily="{Binding FontFamily, Converter={x:Static infra:FontFamilyConverters.FromName}}" /></Border>
-                          </DockPanel>
-                          <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_FontSize}" VerticalAlignment="Center" />
-                          <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding FontSize}" Width="80" HorizontalAlignment="Left" />
-                        </Grid>
                         <ItemsControl ItemsSource="{Binding Colors}">
                           <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="vm:ColorSettingRow">
@@ -328,41 +319,56 @@
             <TextBlock Text="{loc:Loc PreferencesWindow_FontColorRestartNotice}"
                        IsVisible="{Binding RestartNoticeVisible}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
 
-            <Button Content="{loc:Loc PreferencesWindow_RestoreAppearanceDefaults}" Command="{Binding RestoreAppearanceDefaultsCommand}"
-                    HorizontalAlignment="Left" />
           </StackPanel>
         </ScrollViewer>
       </TabItem>
 
-      <!-- ================================ Preview ================================ -->
-      <TabItem Header="{loc:Loc PreferencesWindow_Preview}">
+      <!-- Code View › Appearance › Fonts: the editor font and the opening tag hint font. -->
+      <TabItem x:Name="CodeViewFontsPage" Header="{loc:Loc PreferencesWindow_Fonts}" views:PreferencesPage.Parent="CodeViewAppearancePage">
         <ScrollViewer>
           <StackPanel Spacing="10" Margin="8">
 
             <Border Classes="section">
               <StackPanel Spacing="6">
-                <TextBlock Text="{loc:Loc PreferencesWindow_PreviewFonts}" FontWeight="Bold" />
-                <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
-                  <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_Standard}" VerticalAlignment="Center" />
+                <TextBlock Text="{loc:Loc PreferencesWindow_CodeViewEditorFont}" FontWeight="Bold" />
+                <Grid x:DataType="vm:CodeViewAppearanceEditor" DataContext="{Binding CodeView}" Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                  <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_FontFamily}" VerticalAlignment="Center" />
                   <DockPanel Grid.Row="0" Grid.Column="1">
-                    <Button DockPanel.Dock="Right" Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChoosePreviewFontStandardCommand}" Margin="6,0,0,0" />
-                    <Border Classes="fontField"><TextBlock Text="{Binding PreviewFontStandard}" FontFamily="{Binding PreviewFontStandard, Converter={x:Static infra:FontFamilyConverters.FromName}}" /></Border>
+                    <Button DockPanel.Dock="Right" Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChooseFontCommand}" Margin="6,0,0,0" />
+                    <Border Classes="fontField"><TextBlock Text="{Binding FontFamily}" FontFamily="{Binding FontFamily, Converter={x:Static infra:FontFamilyConverters.FromName}}" /></Border>
                   </DockPanel>
-                  <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_Serif}" VerticalAlignment="Center" />
-                  <DockPanel Grid.Row="1" Grid.Column="1">
-                    <Button DockPanel.Dock="Right" Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChoosePreviewFontSerifCommand}" Margin="6,0,0,0" />
-                    <Border Classes="fontField"><TextBlock Text="{Binding PreviewFontSerif}" FontFamily="{Binding PreviewFontSerif, Converter={x:Static infra:FontFamilyConverters.FromName}}" /></Border>
-                  </DockPanel>
-                  <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc PreferencesWindow_SansSerif}" VerticalAlignment="Center" />
-                  <DockPanel Grid.Row="2" Grid.Column="1">
-                    <Button DockPanel.Dock="Right" Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChoosePreviewFontSansSerifCommand}" Margin="6,0,0,0" />
-                    <Border Classes="fontField"><TextBlock Text="{Binding PreviewFontSansSerif}" FontFamily="{Binding PreviewFontSansSerif, Converter={x:Static infra:FontFamilyConverters.FromName}}" /></Border>
-                  </DockPanel>
-                  <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Loc PreferencesWindow_Size}" VerticalAlignment="Center" />
-                  <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PreviewFontSize}" Width="80" HorizontalAlignment="Left" />
+                  <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_FontSize}" VerticalAlignment="Center" />
+                  <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding FontSize}" Width="80" HorizontalAlignment="Left" />
                 </Grid>
               </StackPanel>
             </Border>
+
+            <!-- The font of the opening tag hint (default = the editor font). -->
+            <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8" IsEnabled="{Binding OpenTagHint}">
+              <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_OpenTagHintFont}" />
+              <StackPanel Grid.Column="1" Spacing="4">
+                <!-- A description ("Default (as in the editor)" / "Consolas, 14 px"), not a name in its own font. -->
+                <Border Classes="fontField description">
+                  <TextBlock Text="{Binding OpenTagHintFontDescription}" TextTrimming="CharacterEllipsis" />
+                </Border>
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <Button Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChooseOpenTagHintFontCommand}" />
+                  <Button Content="{loc:Loc PreferencesWindow_UiFontReset}" Command="{Binding ResetOpenTagHintFontCommand}" />
+                </StackPanel>
+              </StackPanel>
+            </Grid>
+
+            <TextBlock Text="{loc:Loc PreferencesWindow_FontColorRestartNotice}"
+                       IsVisible="{Binding RestartNoticeVisible}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
+
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- ================================ Preview ================================ -->
+      <TabItem x:Name="PreviewPage" Header="{loc:Loc PreferencesWindow_Preview}">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="8">
 
             <Border Classes="section">
               <StackPanel Spacing="6">
@@ -373,6 +379,15 @@
                 </Grid>
               </StackPanel>
             </Border>
+
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- Preview › Appearance: the highlight of the caret location. -->
+      <TabItem x:Name="PreviewAppearancePage" Header="{loc:Loc PreferencesWindow_Appearance}" views:PreferencesPage.Parent="PreviewPage">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="8">
 
             <Border Classes="section">
               <StackPanel Spacing="6">
@@ -416,6 +431,75 @@
                 </Grid>
               </StackPanel>
             </Border>
+
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- Preview › Appearance › Fonts: the fonts of the preview. -->
+      <TabItem x:Name="PreviewFontsPage" Header="{loc:Loc PreferencesWindow_Fonts}" views:PreferencesPage.Parent="PreviewAppearancePage">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="8">
+
+            <Border Classes="section">
+              <StackPanel Spacing="6">
+                <TextBlock Text="{loc:Loc PreferencesWindow_PreviewFonts}" FontWeight="Bold" />
+                <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                  <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_Standard}" VerticalAlignment="Center" />
+                  <DockPanel Grid.Row="0" Grid.Column="1">
+                    <Button DockPanel.Dock="Right" Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChoosePreviewFontStandardCommand}" Margin="6,0,0,0" />
+                    <Border Classes="fontField"><TextBlock Text="{Binding PreviewFontStandard}" FontFamily="{Binding PreviewFontStandard, Converter={x:Static infra:FontFamilyConverters.FromName}}" /></Border>
+                  </DockPanel>
+                  <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_Serif}" VerticalAlignment="Center" />
+                  <DockPanel Grid.Row="1" Grid.Column="1">
+                    <Button DockPanel.Dock="Right" Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChoosePreviewFontSerifCommand}" Margin="6,0,0,0" />
+                    <Border Classes="fontField"><TextBlock Text="{Binding PreviewFontSerif}" FontFamily="{Binding PreviewFontSerif, Converter={x:Static infra:FontFamilyConverters.FromName}}" /></Border>
+                  </DockPanel>
+                  <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc PreferencesWindow_SansSerif}" VerticalAlignment="Center" />
+                  <DockPanel Grid.Row="2" Grid.Column="1">
+                    <Button DockPanel.Dock="Right" Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChoosePreviewFontSansSerifCommand}" Margin="6,0,0,0" />
+                    <Border Classes="fontField"><TextBlock Text="{Binding PreviewFontSansSerif}" FontFamily="{Binding PreviewFontSansSerif, Converter={x:Static infra:FontFamilyConverters.FromName}}" /></Border>
+                  </DockPanel>
+                  <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Loc PreferencesWindow_Size}" VerticalAlignment="Center" />
+                  <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PreviewFontSize}" Width="80" HorizontalAlignment="Left" />
+                </Grid>
+              </StackPanel>
+            </Border>
+
+            <TextBlock Text="{loc:Loc PreferencesWindow_FontColorRestartNotice}"
+                       IsVisible="{Binding RestartNoticeVisible}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
+
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- ========================== Special Characters ========================== -->
+      <!-- No settings of its own: the window fills the page with links to its subsections. -->
+      <TabItem x:Name="SpecialCharactersPage" Header="{loc:Loc PreferencesWindow_SpecialCharacters}" />
+
+      <!-- Special Characters › Appearance: links to its subsections. -->
+      <TabItem x:Name="SpecialCharactersAppearancePage" Header="{loc:Loc PreferencesWindow_Appearance}" views:PreferencesPage.Parent="SpecialCharactersPage" />
+
+      <!-- Special Characters › Appearance › Fonts: the font of the "Insert Special Character" window. -->
+      <TabItem x:Name="SpecialCharactersFontsPage" Header="{loc:Loc PreferencesWindow_Fonts}" views:PreferencesPage.Parent="SpecialCharactersAppearancePage">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="8">
+
+            <Border Classes="section">
+              <StackPanel Spacing="6">
+                <TextBlock Text="{loc:Loc PreferencesWindow_SpecialCharacterFont}" FontWeight="Bold" />
+                <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                  <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_Family}" VerticalAlignment="Center" />
+                  <DockPanel Grid.Row="0" Grid.Column="1">
+                    <Button DockPanel.Dock="Right" Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChooseSpecialCharacterFontCommand}" Margin="6,0,0,0" />
+                    <Border Classes="fontField"><TextBlock Text="{Binding SpecialCharacterFontFamily}" FontFamily="{Binding SpecialCharacterFontFamily, Converter={x:Static infra:FontFamilyConverters.FromName}}" /></Border>
+                  </DockPanel>
+                  <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_Size}" VerticalAlignment="Center" />
+                  <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SpecialCharacterFontSize}" Width="80" HorizontalAlignment="Left" />
+                </Grid>
+              </StackPanel>
+            </Border>
+
           </StackPanel>
         </ScrollViewer>
       </TabItem>

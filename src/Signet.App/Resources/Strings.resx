@@ -4812,4 +4812,16 @@ Konwertować mimo to?</value>
   <data name="FootnoteConversionProblem_NewValidationResult" xml:space="preserve">
     <value>Sprawdzenie linków i przypisów (F7) znajduje nowy problem</value>
   </data>
+  <data name="PreferencesWindow_Fonts" xml:space="preserve">
+    <value>Czcionki</value>
+  </data>
+  <data name="PreferencesWindow_SpecialCharacters" xml:space="preserve">
+    <value>Znaki specjalne</value>
+  </data>
+  <data name="PreferencesWindow_CodeViewColors" xml:space="preserve">
+    <value>Kolory edytora</value>
+  </data>
+  <data name="PreferencesWindow_CodeViewEditorFont" xml:space="preserve">
+    <value>Czcionka edytora</value>
+  </data>
 </root>

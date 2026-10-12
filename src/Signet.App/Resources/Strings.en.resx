@@ -4812,4 +4812,16 @@ Convert anyway?</value>
   <data name="FootnoteConversionProblem_NewValidationResult" xml:space="preserve">
     <value>The links and footnotes check (F7) finds a new problem</value>
   </data>
+  <data name="PreferencesWindow_Fonts" xml:space="preserve">
+    <value>Fonts</value>
+  </data>
+  <data name="PreferencesWindow_SpecialCharacters" xml:space="preserve">
+    <value>Special Characters</value>
+  </data>
+  <data name="PreferencesWindow_CodeViewColors" xml:space="preserve">
+    <value>Editor colors</value>
+  </data>
+  <data name="PreferencesWindow_CodeViewEditorFont" xml:space="preserve">
+    <value>Editor font</value>
+  </data>
 </root>
