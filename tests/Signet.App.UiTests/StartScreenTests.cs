@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Headless;
@@ -15,7 +16,13 @@ namespace Signet.App.UiTests;
 /// <summary>The window without a book: the start screen in the document area and the book's panels grayed out.</summary>
 public sealed class StartScreenTests
 {
-    private static readonly string[] RecentFiles = { @"C:\Books\First.epub", @"C:\Books\Other\Second.epub" };
+    // Paths of the platform the tests run on (a Windows path is not split into folders on Linux).
+    private static readonly string Books = Path.Combine(Path.GetTempPath(), "Books");
+
+    private static readonly string[] RecentFiles =
+    {
+        Path.Combine(Books, "First.epub"), Path.Combine(Books, "Other", "Second.epub"),
+    };
 
     [AvaloniaFact]
     public void Without_a_book_the_document_area_shows_the_start_screen_and_the_book_panels_are_disabled()
@@ -57,7 +64,7 @@ public sealed class StartScreenTests
 
         entries[1].Command!.Execute(entries[1].CommandParameter);
 
-        opened.Should().Equal(@"C:\Books\Other\Second.epub");
+        opened.Should().Equal(RecentFiles[1]);
         window.Close();
     }
 }
