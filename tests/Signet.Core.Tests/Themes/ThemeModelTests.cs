@@ -1,0 +1,205 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using AutoFixture;
+using AwesomeAssertions;
+using Signet.Core.Misc;
+using Signet.Core.Themes;
+using Xunit;
+
+namespace Signet.Core.Tests.Themes;
+
+public sealed class ThemeModelTests
+{
+    private static readonly Fixture Any = new();
+
+    [Theory]
+    [InlineData("#0645ad", 255, 0x06, 0x45, 0xAD, "#0645AD")]
+    [InlineData("#80E53935", 0x80, 0xE5, 0x39, 0x35, "#80E53935")]
+    [InlineData("#FF123456", 255, 0x12, 0x34, 0x56, "#123456")]
+    public void A_color_is_read_from_rgb_or_argb_hex_and_written_back_short_when_opaque(
+        string text, int a, int r, int g, int b, string written)
+    {
+        ThemeColor color = ThemeColor.Parse(text);
+
+        color.Should().Be(new ThemeColor((byte)a, (byte)r, (byte)g, (byte)b));
+        color.ToString().Should().Be(written);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("123456")]
+    [InlineData("#12345")]
+    [InlineData("#GG0000")]
+    [InlineData("#1234567")]
+    [InlineData("red")]
+    public void Anything_else_is_not_a_color(string? text)
+    {
+        ThemeColor.TryParse(text, out _).Should().BeFalse();
+        FluentActions.Invoking(() => ThemeColor.Parse(text!)).Should().Throw<Exception>();
+    }
+
+    [Fact]
+    public void The_registry_lists_every_key_once_grouped_by_page()
+    {
+        ThemeKeys.All.Select(k => k.Id).Should().OnlyHaveUniqueItems();
+        ThemeKeys.All.Select(k => k.Page).Should().BeInAscendingOrder();
+        ThemeKeys.Get("xhtml.tag").Should().BeSameAs(ThemeKeys.XhtmlTag);
+        ThemeKeys.TryGet(Any.Create<string>(), out _).Should().BeFalse();
+        ThemeKeys.On(ThemePage.Diff).Select(k => k.Id).Should().Equal(
+            "diff.deletedLine", "diff.insertedLine", "diff.emptyCell", "diff.deletedWord", "diff.insertedWord");
+    }
+
+    [Fact]
+    public void Every_base_is_a_key_of_the_same_kind()
+    {
+        foreach (ThemeKey key in ThemeKeys.All.Where(k => k.BaseId is not null))
+        {
+            ThemeKeys.Get(key.BaseId!).Kind.Should().Be(key.Kind, key.Id);
+        }
+    }
+
+    [Fact]
+    public void The_defaults_are_the_colors_of_the_settings_before_themes()
+    {
+        CodeViewAppearance code = CodeViewAppearance.Default;
+        Dictionary<ThemeKey, string> foregrounds = new()
+        {
+            [ThemeKeys.XhtmlDoctype] = code.XhtmlDoctypeColor,
+            [ThemeKeys.XhtmlTag] = code.XhtmlHtmlColor,
+            [ThemeKeys.XhtmlNamespacePrefix] = code.XhtmlNamespacePrefixColor,
+            [ThemeKeys.XhtmlAttributeName] = code.XhtmlAttributeNameColor,
+            [ThemeKeys.XhtmlAttributeValue] = code.XhtmlAttributeValueColor,
+            [ThemeKeys.XhtmlEntity] = code.XhtmlEntityColor,
+            [ThemeKeys.XhtmlComment] = code.XhtmlHtmlCommentColor,
+            [ThemeKeys.XhtmlCss] = code.XhtmlCssColor,
+            [ThemeKeys.XhtmlCssComment] = code.XhtmlCssCommentColor,
+            [ThemeKeys.Link] = code.LinkColor,
+            [ThemeKeys.CssSelector] = code.CssSelectorColor,
+            [ThemeKeys.CssSpecialSelector] = code.CssSpecialSelectorColor,
+            [ThemeKeys.CssProperty] = code.CssPropertyColor,
+            [ThemeKeys.CssValue] = code.CssValueColor,
+            [ThemeKeys.CssConstant] = code.CssConstantColor,
+            [ThemeKeys.CssString] = code.CssQuoteColor,
+            [ThemeKeys.CssAtRule] = code.CssAtRuleColor,
+            [ThemeKeys.CssComment] = code.CssCommentColor,
+        };
+
+        foreach ((ThemeKey key, string color) in foregrounds)
+        {
+            key.DefaultAttributes!.Foreground.Should().Be(ThemeColor.Parse(color), key.Id);
+        }
+
+        ThemeKeys.EditorCurrentLine.DefaultColor.Should().Be(ThemeColor.Parse(code.LineHighlightColor));
+        ThemeKeys.EditorSelection.DefaultAttributes!.Background.Should().Be(ThemeColor.Parse(code.SelectionBackgroundColor));
+        ThemeKeys.SearchMatch.DefaultAttributes!.Background.Should().Be(ThemeColor.Parse(code.SearchMatchBackgroundColor));
+        ThemeKeys.ErrorsSyntax.DefaultAttributes!.EffectColor.Should().Be(ThemeColor.Parse(code.ErrorUnderlineColor));
+        ThemeKeys.HintsOpenTag.DefaultAttributes.Should().Be(new TextAttributes
+        {
+            Foreground = ThemeColor.Parse(OpenTagHintAppearance.Default.Foreground),
+            Background = ThemeColor.Parse(OpenTagHintAppearance.Default.Background),
+        });
+        ThemeKeys.PreviewHighlight.DefaultColor.Should().Be(ThemeColor.Parse(PreviewHighlight.Default.Color));
+        ThemeKeys.UiWarningText.DefaultColor.Should().Be(ThemeColor.Parse(WarningAppearance.Default.Color));
+        ThemeKeys.UiErrorNotification.DefaultColor.Should().Be(ThemeColor.Parse(ErrorAppearance.Default.Color));
+    }
+
+    [Fact]
+    public void A_theme_without_entries_has_the_defaults_and_the_light_variant()
+    {
+        Theme theme = new(Any.Create<string>(), Any.Create<string>());
+        ThemeResolver sut = Resolver(theme);
+
+        sut.Attributes(theme, ThemeKeys.XhtmlTag).Should().Be(ThemeKeys.XhtmlTag.DefaultAttributes);
+        sut.Color(theme, ThemeKeys.EditorCurrentLine).Should().Be(ThemeKeys.EditorCurrentLine.DefaultColor);
+        sut.Color(theme, ThemeKeys.UiAccent).Should().BeNull("the system accent");
+        sut.Variant(theme).Should().Be(InterfaceVariant.Light);
+    }
+
+    [Fact]
+    public void A_theme_of_the_user_takes_from_its_parent_what_it_does_not_set()
+    {
+        TextAttributes tag = Fg("#112233");
+        TextAttributes comment = Fg("#445566");
+        Theme parent = new Theme("parent", Any.Create<string>()) { Variant = InterfaceVariant.Dark }
+            .With(ThemeKeys.XhtmlTag.Id, ThemeEntry.Of(tag))
+            .With(ThemeKeys.XhtmlComment.Id, ThemeEntry.Of(comment));
+        TextAttributes ownTag = Fg("#778899");
+        Theme child = new Theme("child", Any.Create<string>()) { ParentId = parent.Id }
+            .With(ThemeKeys.XhtmlTag.Id, ThemeEntry.Of(ownTag));
+        ThemeResolver sut = Resolver(parent, child);
+
+        sut.Attributes(child, ThemeKeys.XhtmlTag).Should().Be(ownTag);
+        sut.Attributes(child, ThemeKeys.XhtmlComment).Should().Be(comment);
+        sut.Owner(child, ThemeKeys.XhtmlComment).Should().BeSameAs(parent);
+        sut.Owner(child, ThemeKeys.XhtmlTag).Should().BeSameAs(child);
+        sut.Owner(child, ThemeKeys.CssValue).Should().BeNull();
+        sut.Variant(child).Should().Be(InterfaceVariant.Dark, "the parent's");
+    }
+
+    [Fact]
+    public void An_inherited_key_takes_its_base_as_resolved_in_the_theme_asked_about()
+    {
+        Theme parent = new Theme("parent", Any.Create<string>())
+            .With(ThemeKeys.CssComment.Id, ThemeEntry.Of(Fg("#111111")))
+            .With(ThemeKeys.XhtmlCssComment.Id, ThemeEntry.Inherited);
+        TextAttributes changedBase = Fg("#222222");
+        Theme child = new Theme("child", Any.Create<string>()) { ParentId = parent.Id }
+            .With(ThemeKeys.CssComment.Id, ThemeEntry.Of(changedBase));
+        ThemeResolver sut = Resolver(parent, child);
+
+        sut.Attributes(parent, ThemeKeys.XhtmlCssComment).Should().Be(Fg("#111111"));
+        sut.Attributes(child, ThemeKeys.XhtmlCssComment).Should().Be(changedBase,
+            "the parent says \"inherit\", and the base is the one the child changed");
+    }
+
+    [Fact]
+    public void A_key_no_theme_sets_takes_its_base_before_its_default()
+    {
+        TextAttributes link = Fg("#123456");
+        Theme theme = new Theme(Any.Create<string>(), Any.Create<string>()).With(ThemeKeys.Link.Id, ThemeEntry.Of(link));
+        ThemeResolver sut = Resolver(theme);
+
+        sut.Attributes(theme, ThemeKeys.LinkBroken).Should().Be(link);
+    }
+
+    [Fact]
+    public void A_cycle_of_parents_or_a_missing_parent_ends_the_lineage()
+    {
+        Theme a = new("a", Any.Create<string>()) { ParentId = "b" };
+        Theme b = new("b", Any.Create<string>()) { ParentId = "a" };
+        Theme orphan = new("orphan", Any.Create<string>()) { ParentId = Any.Create<string>() };
+        ThemeResolver sut = Resolver(a, b, orphan);
+
+        sut.Lineage(a).Select(t => t.Id).Should().Equal("a", "b");
+        sut.Attributes(a, ThemeKeys.XhtmlTag).Should().Be(ThemeKeys.XhtmlTag.DefaultAttributes);
+        sut.Lineage(orphan).Should().ContainSingle();
+    }
+
+    [Fact]
+    public void A_key_is_read_as_its_own_kind_only()
+    {
+        Theme theme = new(Any.Create<string>(), Any.Create<string>());
+        ThemeResolver sut = Resolver(theme);
+
+        FluentActions.Invoking(() => sut.Color(theme, ThemeKeys.XhtmlTag)).Should().Throw<ArgumentException>();
+        FluentActions.Invoking(() => sut.Attributes(theme, ThemeKeys.EditorCurrentLine)).Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void Without_removes_the_own_value_so_the_parent_counts_again()
+    {
+        Theme parent = new Theme("parent", Any.Create<string>()).With(ThemeKeys.XhtmlTag.Id, ThemeEntry.Of(Fg("#010101")));
+        Theme child = new Theme("child", Any.Create<string>()) { ParentId = parent.Id }
+            .With(ThemeKeys.XhtmlTag.Id, ThemeEntry.Of(Fg("#020202")));
+        ThemeResolver sut = Resolver(parent, child);
+
+        sut.Attributes(child.Without(ThemeKeys.XhtmlTag.Id), ThemeKeys.XhtmlTag).Should().Be(Fg("#010101"));
+    }
+
+    private static ThemeResolver Resolver(params Theme[] themes) =>
+        new(id => themes.FirstOrDefault(t => t.Id == id));
+
+    private static TextAttributes Fg(string color) => new() { Foreground = ThemeColor.Parse(color) };
+}
