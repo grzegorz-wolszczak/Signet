@@ -4848,4 +4848,92 @@ Zażółć gęślą jaźń — 0123456789</value>
   <data name="PreferencesWindow_WrapPreview" xml:space="preserve">
     <value>Wrap lines</value>
   </data>
+  <data name="PreferencesWindow_TooltipFont" xml:space="preserve">
+    <value>Tooltips</value>
+  </data>
+  <data name="PreferencesWindow_TooltipFontMainWindow" xml:space="preserve">
+    <value>Tooltips: main window</value>
+  </data>
+  <data name="PreferencesWindow_TooltipFontDocumentTabs" xml:space="preserve">
+    <value>Tooltips: document tabs</value>
+  </data>
+  <data name="PreferencesWindow_TooltipFontPreferencesWindow" xml:space="preserve">
+    <value>Tooltips: Preferences window</value>
+  </data>
+  <data name="PreferencesWindow_TooltipFontOtherWindows" xml:space="preserve">
+    <value>Tooltips: other windows</value>
+  </data>
+  <data name="PreferencesWindow_TooltipFontDefault" xml:space="preserve">
+    <value>Interface font</value>
+  </data>
+  <data name="PreferencesWindow_StartScreen" xml:space="preserve">
+    <value>Start Screen</value>
+  </data>
+  <data name="PreferencesWindow_BookBrowser" xml:space="preserve">
+    <value>Book Browser</value>
+  </data>
+  <data name="PreferencesWindow_TableOfContents" xml:space="preserve">
+    <value>Table of Contents</value>
+  </data>
+  <data name="PreferencesWindow_FindReplace" xml:space="preserve">
+    <value>Find &amp; Replace</value>
+  </data>
+  <data name="PreferencesWindow_Checkpoints" xml:space="preserve">
+    <value>Checkpoints</value>
+  </data>
+  <data name="PreferencesWindow_Validation" xml:space="preserve">
+    <value>Validation</value>
+  </data>
+  <data name="PreferencesWindow_MetadataEditor" xml:space="preserve">
+    <value>Metadata Editor</value>
+  </data>
+  <data name="PreferencesWindow_Cleanup" xml:space="preserve">
+    <value>Cleanup &amp; Standardization</value>
+  </data>
+  <data name="FontPreview_TooltipMainWindow" xml:space="preserve">
+    <value>Save the book (Ctrl+S)</value>
+  </data>
+  <data name="FontPreview_TooltipDocumentTabs" xml:space="preserve">
+    <value>OEBPS/Text/chapter01.xhtml
+Close the tab</value>
+  </data>
+  <data name="FontPreview_TooltipPreferencesWindow" xml:space="preserve">
+    <value>Restores the defaults of this page</value>
+  </data>
+  <data name="FontPreview_TooltipOtherWindows" xml:space="preserve">
+    <value>cover.jpg: 1200 × 1800 px, 245 KB</value>
+  </data>
+  <data name="FontPreview_TooltipStartScreen" xml:space="preserve">
+    <value>D:\Books\The Lighthouse.epub</value>
+  </data>
+  <data name="FontPreview_TooltipBookBrowser" xml:space="preserve">
+    <value>Text/chapter01.xhtml (12 KB)</value>
+  </data>
+  <data name="FontPreview_TooltipTableOfContents" xml:space="preserve">
+    <value>Chapter 1 → Text/chapter01.xhtml#ch1</value>
+  </data>
+  <data name="FontPreview_TooltipPreview" xml:space="preserve">
+    <value>Refresh the preview</value>
+  </data>
+  <data name="FontPreview_TooltipFindReplace" xml:space="preserve">
+    <value>Regular expression (PCRE): \d+(?=px)</value>
+  </data>
+  <data name="FontPreview_TooltipSpecialCharacters" xml:space="preserve">
+    <value>U+00A0 NO-BREAK SPACE  &amp;nbsp;</value>
+  </data>
+  <data name="FontPreview_TooltipCheckpoints" xml:space="preserve">
+    <value>Before the cleanup: 12 Oct 2026, 14:32</value>
+  </data>
+  <data name="FontPreview_TooltipValidation" xml:space="preserve">
+    <value>Text/chapter03.xhtml, line 42: unclosed &lt;p&gt;</value>
+  </data>
+  <data name="FontPreview_TooltipMetadataEditor" xml:space="preserve">
+    <value>dc:creator: the author of the book</value>
+  </data>
+  <data name="FontPreview_TooltipCleanup" xml:space="preserve">
+    <value>⚠ Changes the look of 3 elements</value>
+  </data>
+  <data name="FontPreview_TooltipFootnotes" xml:space="preserve">
+    <value>1. The text of the note, shortened to one line…</value>
+  </data>
 </root>

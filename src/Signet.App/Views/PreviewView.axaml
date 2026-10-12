@@ -5,6 +5,7 @@
              xmlns:loc="using:Signet.App.Resources"
              xmlns:infra="using:Signet.App.Infrastructure"
              x:Class="Signet.App.Views.PreviewView"
+             infra:TooltipFonts.Area="Preview"
              x:DataType="vm:PreviewViewModel">
 
   <UserControl.Styles>

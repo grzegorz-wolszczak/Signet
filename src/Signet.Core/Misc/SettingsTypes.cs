@@ -146,6 +146,78 @@ public readonly record struct WarningAppearance(int FontSize, string Color)
 }
 
 /// <summary>
+/// A part of the application whose tooltips have their own font (Preferences: the "Fonts" page of the part's section,
+/// or Appearance › Fonts for the windows without a section).
+/// </summary>
+public enum TooltipArea
+{
+    /// <summary>The main window: menus, toolbars, the status bar and the panels without an area of their own.</summary>
+    MainWindow,
+
+    /// <summary>The document tabs: their tab strips (e.g. closing a tab) and their contents (e.g. Code View).</summary>
+    DocumentTabs,
+
+    /// <summary>The Preferences window.</summary>
+    PreferencesWindow,
+
+    /// <summary>The windows without an area of their own (e.g. Select Files, View Image) — also the default.</summary>
+    OtherWindows,
+
+    /// <summary>The start screen (e.g. the path of a recent file).</summary>
+    StartScreen,
+
+    /// <summary>The Book Browser.</summary>
+    BookBrowser,
+
+    /// <summary>The Table of Contents panel, Edit Table of Contents and the Heading Selector.</summary>
+    TableOfContents,
+
+    /// <summary>The Preview panel.</summary>
+    Preview,
+
+    /// <summary>Find &amp; Replace: its view, its panel, the Search Editor and Find Usages.</summary>
+    FindReplace,
+
+    /// <summary>The "Insert Special Character" window.</summary>
+    SpecialCharacters,
+
+    /// <summary>The Checkpoints panel and the Diff window.</summary>
+    Checkpoints,
+
+    /// <summary>The validation results.</summary>
+    Validation,
+
+    /// <summary>The Metadata Editor.</summary>
+    MetadataEditor,
+
+    /// <summary>Cleanup and Standardization.</summary>
+    Cleanup,
+
+    /// <summary>The footnote windows (e.g. the footnote conversion).</summary>
+    Footnotes,
+}
+
+/// <summary>The font of the tooltips of a <see cref="TooltipArea"/>.</summary>
+/// <param name="FontFamily">Typeface; empty = the interface font.</param>
+/// <param name="FontSize">Size (px).</param>
+public readonly record struct TooltipFont(string FontFamily, int FontSize)
+{
+    /// <summary>Lower bound of <see cref="FontSize"/>.</summary>
+    public const int FontSizeMin = 8;
+
+    /// <summary>Upper bound of <see cref="FontSize"/>.</summary>
+    public const int FontSizeMax = 40;
+
+    /// <summary>Default values: the interface font at 13 px.</summary>
+    public static TooltipFont Default => new(string.Empty, 13);
+
+    /// <summary>A copy with the size clamped and the typeface trimmed.</summary>
+    public TooltipFont Normalized() => new(
+        (FontFamily ?? string.Empty).Trim(),
+        Math.Clamp(FontSize, FontSizeMin, FontSizeMax));
+}
+
+/// <summary>
 /// Color of the error notifications — a blocked or failed operation: its status bar message, its row in the
 /// Notifications panel and the dot on the notification bell (the Notifications tab and the status bar indicator).
 /// </summary>

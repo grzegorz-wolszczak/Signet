@@ -102,7 +102,14 @@ public sealed class UiDensityManager(
         ApplyFont(app, _settings.UiFont, _settings.UiFontSize);
         ApplyWarning(app, _settings.WarningAppearance, EffectiveFontSize);
         ApplyError(app, _settings.ErrorAppearance);
+        ApplyTooltipFonts();
     }
+
+    /// <summary>
+    /// Applies the saved tooltip fonts live (Preferences → the "Fonts" pages, <see cref="TooltipFonts"/>). Called also
+    /// after the interface font changed: a tooltip font without a typeface uses it.
+    /// </summary>
+    public void ApplyTooltipFonts() => TooltipFonts.Apply(_settings.GetTooltipFont);
 
     /// <summary>The UI font size in use: the one chosen in Preferences, otherwise the mode default.</summary>
     public double EffectiveFontSize => _settings.UiFontSize > 0 ? _settings.UiFontSize : DefaultFontSize;
@@ -174,6 +181,7 @@ public sealed class UiDensityManager(
 
         ApplyFont(app, family, size);
         ApplyWarning(app, _settings.WarningAppearance, EffectiveFontSize);
+        ApplyTooltipFonts();
         _iconTheme.RefreshToolbarIconSize();
     }
 

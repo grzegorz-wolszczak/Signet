@@ -253,6 +253,11 @@ public sealed partial class PreferencesViewModel : ObservableObject
             _uiDensity.ApplyErrorAppearance();
         }
 
+        if (Changed("tooltip_fonts"))
+        {
+            _uiDensity.ApplyTooltipFonts();
+        }
+
         if (Changed("debug_logging"))
         {
             DebugLog.IsEnabled = _appSettings.DebugLogging;
@@ -679,6 +684,9 @@ public sealed partial class PreferencesViewModel : ObservableObject
         ErrorAppearance errors = ErrorAppearance.Default;
         ErrorColor.SetValueSilently(errors.Color);
         PersistErrorAppearance();
+
+        // The tooltip fonts were cleared with the other appearance keys.
+        RefreshFontPages();
     }
 
     // =====================================================================

@@ -1,4 +1,7 @@
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.Input;
 using Signet.App.Resources;
 using Signet.Core.Misc;
 
@@ -14,7 +17,10 @@ public sealed partial class PreferencesViewModel
     private const int FontSizeMin = FontPickerViewModel.MinSize;
     private const int FontSizeMax = FontPickerViewModel.MaxSize;
 
-    /// <summary>Appearance › Fonts: the interface font and the font size of the warnings in dialogs.</summary>
+    /// <summary>
+    /// Appearance › Fonts: the interface font, the font size of the warnings in dialogs and the tooltip fonts of the
+    /// parts without a section of their own (the main window, the document tabs, this window, the other windows).
+    /// </summary>
     public FontPageViewModel AppearanceFonts { get; private set; } = null!;
 
     /// <summary>Code View › Appearance › Fonts: the editor font and the opening tag hint font.</summary>
@@ -25,6 +31,36 @@ public sealed partial class PreferencesViewModel
 
     /// <summary>Special Characters › Appearance › Fonts: the font of the "Insert Special Character" window.</summary>
     public FontPageViewModel SpecialCharacterFonts { get; private set; } = null!;
+
+    /// <summary>Start Screen › Appearance › Fonts: the tooltip font.</summary>
+    public FontPageViewModel StartScreenFonts { get; private set; } = null!;
+
+    /// <summary>Book Browser › Appearance › Fonts: the tooltip font.</summary>
+    public FontPageViewModel BookBrowserFonts { get; private set; } = null!;
+
+    /// <summary>Table of Contents › Appearance › Fonts: the tooltip font.</summary>
+    public FontPageViewModel TableOfContentsFonts { get; private set; } = null!;
+
+    /// <summary>Find &amp; Replace › Appearance › Fonts: the tooltip font.</summary>
+    public FontPageViewModel FindReplaceFonts { get; private set; } = null!;
+
+    /// <summary>Checkpoints › Appearance › Fonts: the tooltip font.</summary>
+    public FontPageViewModel CheckpointsFonts { get; private set; } = null!;
+
+    /// <summary>Validation › Appearance › Fonts: the tooltip font.</summary>
+    public FontPageViewModel ValidationFonts { get; private set; } = null!;
+
+    /// <summary>Metadata Editor › Appearance › Fonts: the tooltip font.</summary>
+    public FontPageViewModel MetadataEditorFonts { get; private set; } = null!;
+
+    /// <summary>Cleanup › Appearance › Fonts: the tooltip font.</summary>
+    public FontPageViewModel CleanupFonts { get; private set; } = null!;
+
+    /// <summary>Footnotes › Appearance › Fonts: the tooltip font.</summary>
+    public FontPageViewModel FootnotesFonts { get; private set; } = null!;
+
+    // Every "Fonts" page, for the refresh after a change made elsewhere.
+    private readonly List<FontPageViewModel> _fontPages = new();
 
     // Called by the constructor once the settings the pages adapt are loaded.
     private void CreateFontPages()
@@ -51,6 +87,10 @@ public sealed partial class PreferencesViewModel
                 () => WarningFontSize = WarningAppearance.Default.FontSize,
                 null,
                 previewForeground: () => WarningColor.Value),
+            TooltipRow(TooltipArea.MainWindow, "PreferencesWindow_TooltipFontMainWindow"),
+            TooltipRow(TooltipArea.DocumentTabs, "PreferencesWindow_TooltipFontDocumentTabs"),
+            TooltipRow(TooltipArea.PreferencesWindow, "PreferencesWindow_TooltipFontPreferencesWindow"),
+            TooltipRow(TooltipArea.OtherWindows, "PreferencesWindow_TooltipFontOtherWindows"),
         });
 
         CodeViewAppearance codeViewDefaults = CodeViewAppearance.Default;
@@ -107,6 +147,7 @@ public sealed partial class PreferencesViewModel
                     (() => PreviewFontStandard, () => PreviewFontSize),
                     () => PreviewFontSize = previewDefaults.FontSize,
                     null),
+                TooltipRow(TooltipArea.Preview),
             },
             Strings.Get("PreferencesWindow_FontColorRestartNotice"));
 
@@ -126,6 +167,23 @@ public sealed partial class PreferencesViewModel
                     SpecialCharacterFontSize = specialDefaults.FontSize;
                 },
                 ChooseSpecialCharacterFontCommand),
+            TooltipRow(TooltipArea.SpecialCharacters),
+        });
+
+        StartScreenFonts = TooltipPage(TooltipArea.StartScreen);
+        BookBrowserFonts = TooltipPage(TooltipArea.BookBrowser);
+        TableOfContentsFonts = TooltipPage(TooltipArea.TableOfContents);
+        FindReplaceFonts = TooltipPage(TooltipArea.FindReplace);
+        CheckpointsFonts = TooltipPage(TooltipArea.Checkpoints);
+        ValidationFonts = TooltipPage(TooltipArea.Validation);
+        MetadataEditorFonts = TooltipPage(TooltipArea.MetadataEditor);
+        CleanupFonts = TooltipPage(TooltipArea.Cleanup);
+        FootnotesFonts = TooltipPage(TooltipArea.Footnotes);
+        _fontPages.AddRange(new[]
+        {
+            AppearanceFonts, StartScreenFonts, BookBrowserFonts, TableOfContentsFonts, CodeViewFonts, PreviewFonts,
+            FindReplaceFonts, SpecialCharacterFonts, CheckpointsFonts, ValidationFonts, MetadataEditorFonts, CleanupFonts,
+            FootnotesFonts,
         });
 
         // The pages show values that change elsewhere too ("Restore Appearance Defaults", the compact mode, the colors
@@ -152,6 +210,39 @@ public sealed partial class PreferencesViewModel
             () => set(defaultFamily),
             choose);
 
+    // The "Fonts" page of a section whose only font is the one of its tooltips.
+    private FontPageViewModel TooltipPage(TooltipArea area) => new(new[] { TooltipRow(area) });
+
+    // The tooltip font of an area: the typeface (empty = the interface font) and the size.
+    private FontSettingViewModel TooltipRow(TooltipArea area, string labelKey = "PreferencesWindow_TooltipFont") =>
+        new(
+            "Tooltip" + area,
+            Strings.Get(labelKey),
+            Strings.Get("FontPreview_Tooltip" + area),
+            (() => _settings.GetTooltipFont(area).FontFamily,
+             v => _settings.SetTooltipFont(area, _settings.GetTooltipFont(area) with { FontFamily = v })),
+            (() => _settings.GetTooltipFont(area).FontSize,
+             v => _settings.SetTooltipFont(area, _settings.GetTooltipFont(area) with { FontSize = v }),
+             TooltipFont.FontSizeMin, TooltipFont.FontSizeMax),
+            (() => TooltipFamily(area), () => _settings.GetTooltipFont(area).FontSize),
+            () => _settings.SetTooltipFont(area, TooltipFont.Default),
+            new AsyncRelayCommand(() => ChooseTooltipFont(area)),
+            placeholder: () => Strings.Get("PreferencesWindow_TooltipFontDefault"));
+
+    private string TooltipFamily(TooltipArea area) =>
+        _settings.GetTooltipFont(area).FontFamily is { Length: > 0 } family ? family : EffectiveUiFontFamily;
+
+    // "Choose…" of a tooltip font: the font picker, starting from the font in use.
+    private async Task ChooseTooltipFont(TooltipArea area)
+    {
+        TooltipFont font = _settings.GetTooltipFont(area);
+        if (await PickFontAsync(new FontPickRequest(TooltipFamily(area), font.FontSize, false)) is { } result)
+        {
+            _settings.SetTooltipFont(area, new TooltipFont(result.Family, result.Size));
+            RefreshFontPages();
+        }
+    }
+
     private void SetUiFont(string family, int size)
     {
         _settings.UiFont = family;
@@ -161,9 +252,9 @@ public sealed partial class PreferencesViewModel
 
     private void RefreshFontPages()
     {
-        foreach (FontPageViewModel page in new[] { AppearanceFonts, CodeViewFonts, PreviewFonts, SpecialCharacterFonts })
+        foreach (FontPageViewModel page in _fontPages)
         {
-            page?.Refresh();
+            page.Refresh();
         }
     }
 }

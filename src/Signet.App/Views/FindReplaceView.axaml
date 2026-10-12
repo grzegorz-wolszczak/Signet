@@ -4,6 +4,7 @@
              xmlns:loc="using:Signet.App.Resources"
              xmlns:infra="using:Signet.App.Infrastructure"
              x:Class="Signet.App.Views.FindReplaceView"
+             infra:TooltipFonts.Area="FindReplace"
              x:DataType="vm:FindReplaceViewModel">
 
   <UserControl.Styles>

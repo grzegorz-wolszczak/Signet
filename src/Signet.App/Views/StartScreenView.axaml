@@ -1,8 +1,10 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:infra="using:Signet.App.Infrastructure"
              xmlns:vm="using:Signet.App.ViewModels"
              xmlns:loc="using:Signet.App.Resources"
              x:Class="Signet.App.Views.StartScreenView"
+             infra:TooltipFonts.Area="StartScreen"
              x:DataType="vm:StartScreenViewModel">
 
   <!-- The empty document area while no book is open (IDocumentDock.EmptyContent): open or create a book, or pick a

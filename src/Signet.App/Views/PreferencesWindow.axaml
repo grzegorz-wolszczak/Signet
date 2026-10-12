@@ -8,6 +8,7 @@
         x:DataType="vm:PreferencesViewModel"
         Width="820" Height="640"
         WindowStartupLocation="CenterOwner"
+        infra:TooltipFonts.Area="PreferencesWindow"
         Title="{loc:Loc PreferencesWindow_Title}">
 
   <Window.Styles>
@@ -204,9 +205,46 @@
         </ScrollViewer>
       </TabItem>
 
-      <!-- Appearance › Fonts: the interface font and the size of the warnings in dialogs. -->
+      <!-- Appearance › Fonts: the interface font, the size of the warnings in dialogs and the tooltip fonts of the parts
+           without a section of their own. -->
       <TabItem x:Name="AppearanceFontsPage" Header="{loc:Loc PreferencesWindow_Fonts}" views:PreferencesPage.Parent="AppearancePage">
         <views:FontsPageView x:Name="AppearanceFontsView" />
+      </TabItem>
+
+      <!-- ============================= Start Screen ============================= -->
+      <!-- No settings of its own: the window fills the page with links to its subsections. -->
+      <TabItem x:Name="StartScreenPage" Header="{loc:Loc PreferencesWindow_StartScreen}" />
+
+      <!-- Start Screen › Appearance: links to its subsections. -->
+      <TabItem x:Name="StartScreenAppearancePage" Header="{loc:Loc PreferencesWindow_Appearance}" views:PreferencesPage.Parent="StartScreenPage" />
+
+      <!-- Start Screen › Appearance › Fonts: the font of its tooltips. -->
+      <TabItem x:Name="StartScreenFontsPage" Header="{loc:Loc PreferencesWindow_Fonts}" views:PreferencesPage.Parent="StartScreenAppearancePage">
+        <views:FontsPageView x:Name="StartScreenFontsView" />
+      </TabItem>
+
+      <!-- ============================= Book Browser ============================= -->
+      <!-- No settings of its own: the window fills the page with links to its subsections. -->
+      <TabItem x:Name="BookBrowserPage" Header="{loc:Loc PreferencesWindow_BookBrowser}" />
+
+      <!-- Book Browser › Appearance: links to its subsections. -->
+      <TabItem x:Name="BookBrowserAppearancePage" Header="{loc:Loc PreferencesWindow_Appearance}" views:PreferencesPage.Parent="BookBrowserPage" />
+
+      <!-- Book Browser › Appearance › Fonts: the font of its tooltips. -->
+      <TabItem x:Name="BookBrowserFontsPage" Header="{loc:Loc PreferencesWindow_Fonts}" views:PreferencesPage.Parent="BookBrowserAppearancePage">
+        <views:FontsPageView x:Name="BookBrowserFontsView" />
+      </TabItem>
+
+      <!-- ========================== Table of Contents =========================== -->
+      <!-- No settings of its own: the window fills the page with links to its subsections. -->
+      <TabItem x:Name="TableOfContentsPage" Header="{loc:Loc PreferencesWindow_TableOfContents}" />
+
+      <!-- Table of Contents › Appearance: links to its subsections. -->
+      <TabItem x:Name="TableOfContentsAppearancePage" Header="{loc:Loc PreferencesWindow_Appearance}" views:PreferencesPage.Parent="TableOfContentsPage" />
+
+      <!-- Table of Contents › Appearance › Fonts: the font of its tooltips (also Edit Table of Contents and the Heading Selector). -->
+      <TabItem x:Name="TableOfContentsFontsPage" Header="{loc:Loc PreferencesWindow_Fonts}" views:PreferencesPage.Parent="TableOfContentsAppearancePage">
+        <views:FontsPageView x:Name="TableOfContentsFontsView" />
       </TabItem>
 
       <!-- =============================== Code View =============================== -->
@@ -368,6 +406,18 @@
         <views:FontsPageView x:Name="PreviewFontsView" />
       </TabItem>
 
+      <!-- =========================== Find & Replace =========================== -->
+      <!-- No settings of its own: the window fills the page with links to its subsections. -->
+      <TabItem x:Name="FindReplacePage" Header="{loc:Loc PreferencesWindow_FindReplace}" />
+
+      <!-- Find & Replace › Appearance: links to its subsections. -->
+      <TabItem x:Name="FindReplaceAppearancePage" Header="{loc:Loc PreferencesWindow_Appearance}" views:PreferencesPage.Parent="FindReplacePage" />
+
+      <!-- Find & Replace › Appearance › Fonts: the font of its tooltips (also the Search Editor and Find Usages). -->
+      <TabItem x:Name="FindReplaceFontsPage" Header="{loc:Loc PreferencesWindow_Fonts}" views:PreferencesPage.Parent="FindReplaceAppearancePage">
+        <views:FontsPageView x:Name="FindReplaceFontsView" />
+      </TabItem>
+
       <!-- ========================== Special Characters ========================== -->
       <!-- No settings of its own: the window fills the page with links to its subsections. -->
       <TabItem x:Name="SpecialCharactersPage" Header="{loc:Loc PreferencesWindow_SpecialCharacters}" />
@@ -380,57 +430,57 @@
         <views:FontsPageView x:Name="SpecialCharacterFontsView" />
       </TabItem>
 
-      <!-- ================================ General ================================ -->
-      <TabItem Header="{loc:Loc PreferencesWindow_General}">
-        <ScrollViewer>
-          <StackPanel Spacing="10" Margin="8">
-            <CheckBox Content="{loc:Loc PreferencesWindow_DefaultEpub3}" IsChecked="{Binding DefaultVersionIsEpub3}" />
-            <CheckBox Content="{loc:Loc PreferencesWindow_MendOnOpen}" IsChecked="{Binding MendOnOpen}" />
-            <CheckBox Content="{loc:Loc PreferencesWindow_MendOnSave}" IsChecked="{Binding MendOnSave}" />
-            <CheckBox Content="{loc:Loc PreferencesWindow_ReopenLastFile}" IsChecked="{Binding ReopenLastFileOnStartup}" />
-            <CheckBox Content="{loc:Loc PreferencesWindow_EnableFileDropZone}" IsChecked="{Binding FileDropZoneEnabled}" />
-            <CheckBox Content="{loc:Loc PreferencesWindow_AutoCloseTags}" IsChecked="{Binding AutoCloseTags}" />
-            <CheckBox Content="{loc:Loc PreferencesWindow_PasteNormalizeNfc}" IsChecked="{Binding PasteNormalizeNfc}"
-                      ToolTip.Tip="{loc:Loc PreferencesWindow_PasteNormalizeNfcTip}" />
-            <CheckBox Content="{loc:Loc PreferencesWindow_FindUsagesRefreshOnSave}" IsChecked="{Binding FindUsagesRefreshOnSave}" />
-            <CheckBox Content="{loc:Loc PreferencesWindow_NavigationHistoryRemember}" IsChecked="{Binding NavigationHistoryRemember}" />
-            <StackPanel Orientation="Horizontal" Spacing="8" Margin="28,0,0,0" IsEnabled="{Binding NavigationHistoryRemember}">
-              <TextBlock Text="{loc:Loc PreferencesWindow_NavigationHistoryDays}" VerticalAlignment="Center" />
-              <TextBox Text="{Binding NavigationHistoryDays}" Width="80" />
-            </StackPanel>
+      <!-- ============================= Checkpoints ============================== -->
+      <!-- No settings of its own: the window fills the page with links to its subsections. -->
+      <TabItem x:Name="CheckpointsPage" Header="{loc:Loc PreferencesWindow_Checkpoints}" />
 
-            <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8" Margin="0,6,0,0">
-              <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_ClipboardHistoryLimit}" VerticalAlignment="Center" />
-              <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ClipboardHistoryLimit}" Width="80" HorizontalAlignment="Left" />
+      <!-- Checkpoints › Appearance: links to its subsections. -->
+      <TabItem x:Name="CheckpointsAppearancePage" Header="{loc:Loc PreferencesWindow_Appearance}" views:PreferencesPage.Parent="CheckpointsPage" />
 
-              <TextBlock Grid.Row="5" Grid.Column="0" Text="{loc:Loc PreferencesWindow_RecentFilesLimit}" VerticalAlignment="Center" TextWrapping="Wrap" />
-              <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding RecentFilesLimit}" Width="80" HorizontalAlignment="Left" />
+      <!-- Checkpoints › Appearance › Fonts: the font of its tooltips (also the Diff window). -->
+      <TabItem x:Name="CheckpointsFontsPage" Header="{loc:Loc PreferencesWindow_Fonts}" views:PreferencesPage.Parent="CheckpointsAppearancePage">
+        <views:FontsPageView x:Name="CheckpointsFontsView" />
+      </TabItem>
 
-              <TextBlock Grid.Row="6" Grid.Column="0" Text="{loc:Loc PreferencesWindow_RecentLocationsLimit}" VerticalAlignment="Center" TextWrapping="Wrap" />
-              <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding RecentLocationsLimit}" Width="80" HorizontalAlignment="Left" />
+      <!-- ============================== Validation ============================== -->
+      <!-- No settings of its own: the window fills the page with links to its subsections. -->
+      <TabItem x:Name="ValidationPage" Header="{loc:Loc PreferencesWindow_Validation}" />
 
+      <!-- Validation › Appearance: links to its subsections. -->
+      <TabItem x:Name="ValidationAppearancePage" Header="{loc:Loc PreferencesWindow_Appearance}" views:PreferencesPage.Parent="ValidationPage" />
 
-              <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_TempFolder}" VerticalAlignment="Center" />
-              <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding TempFolderHome}" />
+      <!-- Validation › Appearance › Fonts: the font of its tooltips. -->
+      <TabItem x:Name="ValidationFontsPage" Header="{loc:Loc PreferencesWindow_Fonts}" views:PreferencesPage.Parent="ValidationAppearancePage">
+        <views:FontsPageView x:Name="ValidationFontsView" />
+      </TabItem>
 
-              <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc PreferencesWindow_ExternalXEditorPath}" VerticalAlignment="Center" />
-              <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding ExternalXEditorPath}" />
+      <!-- =========================== Metadata Editor ============================ -->
+      <!-- No settings of its own: the window fills the page with links to its subsections. -->
+      <TabItem x:Name="MetadataEditorPage" Header="{loc:Loc PreferencesWindow_MetadataEditor}" />
 
-              <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Loc PreferencesWindow_CssEpub2Profile}" VerticalAlignment="Center" />
-              <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding AvailableCssValidationSpecs}"
-                        SelectedItem="{Binding CssEpub2ValidationSpec}" />
+      <!-- Metadata Editor › Appearance: links to its subsections. -->
+      <TabItem x:Name="MetadataEditorAppearancePage" Header="{loc:Loc PreferencesWindow_Appearance}" views:PreferencesPage.Parent="MetadataEditorPage" />
 
-              <TextBlock Grid.Row="4" Grid.Column="0" Text="{loc:Loc PreferencesWindow_CssEpub3Profile}" VerticalAlignment="Center" />
-              <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding AvailableCssValidationSpecs}"
-                        SelectedItem="{Binding CssEpub3ValidationSpec}" />
-            </Grid>
-          </StackPanel>
-        </ScrollViewer>
+      <!-- Metadata Editor › Appearance › Fonts: the font of its tooltips. -->
+      <TabItem x:Name="MetadataEditorFontsPage" Header="{loc:Loc PreferencesWindow_Fonts}" views:PreferencesPage.Parent="MetadataEditorAppearancePage">
+        <views:FontsPageView x:Name="MetadataEditorFontsView" />
+      </TabItem>
+
+      <!-- =============================== Cleanup ================================ -->
+      <!-- No settings of its own: the window fills the page with links to its subsections. -->
+      <TabItem x:Name="CleanupPage" Header="{loc:Loc PreferencesWindow_Cleanup}" />
+
+      <!-- Cleanup › Appearance: links to its subsections. -->
+      <TabItem x:Name="CleanupAppearancePage" Header="{loc:Loc PreferencesWindow_Appearance}" views:PreferencesPage.Parent="CleanupPage" />
+
+      <!-- Cleanup › Appearance › Fonts: the font of its tooltips (Cleanup and Standardization). -->
+      <TabItem x:Name="CleanupFontsPage" Header="{loc:Loc PreferencesWindow_Fonts}" views:PreferencesPage.Parent="CleanupAppearancePage">
+        <views:FontsPageView x:Name="CleanupFontsView" />
       </TabItem>
 
       <!-- =============================== Footnotes =============================== -->
       <!-- The CSS of Signet's footnote classes (FootnoteStyles), written to the book on every footnote operation. -->
-      <TabItem Header="{loc:Loc PreferencesWindow_Footnotes}">
+      <TabItem x:Name="FootnotesPage" Header="{loc:Loc PreferencesWindow_Footnotes}">
         <ScrollViewer>
           <StackPanel Spacing="10" Margin="8">
             <CheckBox x:Name="ConfirmFootnoteRemovalBox" Content="{loc:Loc PreferencesWindow_ConfirmFootnoteRemoval}"
@@ -548,6 +598,62 @@
             </StackPanel>
             <Button x:Name="ResetFootnoteStylesButton" Content="{loc:Loc PreferencesWindow_FootnoteStylesReset}"
                     Command="{Binding ResetFootnoteStylesCommand}" />
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- Footnotes › Appearance: links to its subsections. -->
+      <TabItem x:Name="FootnotesAppearancePage" Header="{loc:Loc PreferencesWindow_Appearance}" views:PreferencesPage.Parent="FootnotesPage" />
+
+      <!-- Footnotes › Appearance › Fonts: the font of the tooltips of the footnote windows. -->
+      <TabItem x:Name="FootnotesFontsPage" Header="{loc:Loc PreferencesWindow_Fonts}" views:PreferencesPage.Parent="FootnotesAppearancePage">
+        <views:FontsPageView x:Name="FootnotesFontsView" />
+      </TabItem>
+
+      <!-- ================================ General ================================ -->
+      <TabItem Header="{loc:Loc PreferencesWindow_General}">
+        <ScrollViewer>
+          <StackPanel Spacing="10" Margin="8">
+            <CheckBox Content="{loc:Loc PreferencesWindow_DefaultEpub3}" IsChecked="{Binding DefaultVersionIsEpub3}" />
+            <CheckBox Content="{loc:Loc PreferencesWindow_MendOnOpen}" IsChecked="{Binding MendOnOpen}" />
+            <CheckBox Content="{loc:Loc PreferencesWindow_MendOnSave}" IsChecked="{Binding MendOnSave}" />
+            <CheckBox Content="{loc:Loc PreferencesWindow_ReopenLastFile}" IsChecked="{Binding ReopenLastFileOnStartup}" />
+            <CheckBox Content="{loc:Loc PreferencesWindow_EnableFileDropZone}" IsChecked="{Binding FileDropZoneEnabled}" />
+            <CheckBox Content="{loc:Loc PreferencesWindow_AutoCloseTags}" IsChecked="{Binding AutoCloseTags}" />
+            <CheckBox Content="{loc:Loc PreferencesWindow_PasteNormalizeNfc}" IsChecked="{Binding PasteNormalizeNfc}"
+                      ToolTip.Tip="{loc:Loc PreferencesWindow_PasteNormalizeNfcTip}" />
+            <CheckBox Content="{loc:Loc PreferencesWindow_FindUsagesRefreshOnSave}" IsChecked="{Binding FindUsagesRefreshOnSave}" />
+            <CheckBox Content="{loc:Loc PreferencesWindow_NavigationHistoryRemember}" IsChecked="{Binding NavigationHistoryRemember}" />
+            <StackPanel Orientation="Horizontal" Spacing="8" Margin="28,0,0,0" IsEnabled="{Binding NavigationHistoryRemember}">
+              <TextBlock Text="{loc:Loc PreferencesWindow_NavigationHistoryDays}" VerticalAlignment="Center" />
+              <TextBox Text="{Binding NavigationHistoryDays}" Width="80" />
+            </StackPanel>
+
+            <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8" Margin="0,6,0,0">
+              <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_ClipboardHistoryLimit}" VerticalAlignment="Center" />
+              <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ClipboardHistoryLimit}" Width="80" HorizontalAlignment="Left" />
+
+              <TextBlock Grid.Row="5" Grid.Column="0" Text="{loc:Loc PreferencesWindow_RecentFilesLimit}" VerticalAlignment="Center" TextWrapping="Wrap" />
+              <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding RecentFilesLimit}" Width="80" HorizontalAlignment="Left" />
+
+              <TextBlock Grid.Row="6" Grid.Column="0" Text="{loc:Loc PreferencesWindow_RecentLocationsLimit}" VerticalAlignment="Center" TextWrapping="Wrap" />
+              <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding RecentLocationsLimit}" Width="80" HorizontalAlignment="Left" />
+
+
+              <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_TempFolder}" VerticalAlignment="Center" />
+              <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding TempFolderHome}" />
+
+              <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc PreferencesWindow_ExternalXEditorPath}" VerticalAlignment="Center" />
+              <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding ExternalXEditorPath}" />
+
+              <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Loc PreferencesWindow_CssEpub2Profile}" VerticalAlignment="Center" />
+              <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding AvailableCssValidationSpecs}"
+                        SelectedItem="{Binding CssEpub2ValidationSpec}" />
+
+              <TextBlock Grid.Row="4" Grid.Column="0" Text="{loc:Loc PreferencesWindow_CssEpub3Profile}" VerticalAlignment="Center" />
+              <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding AvailableCssValidationSpecs}"
+                        SelectedItem="{Binding CssEpub3ValidationSpec}" />
+            </Grid>
           </StackPanel>
         </ScrollViewer>
       </TabItem>

@@ -1,8 +1,10 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:infra="using:Signet.App.Infrastructure"
         xmlns:v="using:Signet.App.Views"
         xmlns:loc="using:Signet.App.Resources"
         x:Class="Signet.App.Views.SpecialCharacterWindow"
+        infra:TooltipFonts.Area="SpecialCharacters"
         Width="960" Height="600" MinWidth="700" MinHeight="360"
         WindowStartupLocation="CenterOwner"
         Title="{loc:Loc SpecialCharacterWindow_Title}">

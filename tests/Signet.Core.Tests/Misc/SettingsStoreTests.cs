@@ -234,6 +234,28 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
+    public void A_tooltip_font_is_stored_per_area_normalized_and_reset_with_the_appearance()
+    {
+        using TempDir dir = new();
+        string path = dir.Combine("settings.json");
+        SettingsStore sut = new(path);
+        string family = new Fixture().Create<string>();
+
+        sut.GetTooltipFont(TooltipArea.FindReplace).Should().Be(new TooltipFont(string.Empty, 13), "the interface font at 13 px");
+
+        sut.SetTooltipFont(TooltipArea.FindReplace, new TooltipFont(" " + family + " ", 99));
+        sut.Save();
+
+        sut.GetTooltipFont(TooltipArea.FindReplace).Should().Be(new TooltipFont(family, TooltipFont.FontSizeMax));
+        sut.GetTooltipFont(TooltipArea.Footnotes).Should().Be(TooltipFont.Default, "another area");
+        File.ReadAllText(path).Should().Contain("tooltip_find_replace_font_family").And.Contain("tooltip_find_replace_font_size");
+
+        sut.ClearAppearanceSettings();
+
+        sut.GetTooltipFont(TooltipArea.FindReplace).Should().Be(TooltipFont.Default);
+    }
+
+    [Fact]
     public void Corrupt_file_is_tolerated_and_yields_defaults()
     {
         using TempDir dir = new();

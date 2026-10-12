@@ -251,6 +251,12 @@
       <Setter Property="FontFamily" Value="{DynamicResource ContentControlThemeFontFamily}" />
     </Style>
 
+    <!-- Tooltips: the typeface of the area they are in (Preferences → the "Fonts" pages); TooltipFonts sets the
+         resource on the application and on the root of every area, together with the Fluent size resource. -->
+    <Style Selector="ToolTip">
+      <Setter Property="FontFamily" Value="{DynamicResource SignetToolTipFontFamily}" />
+    </Style>
+
     <!-- Warning texts in dialogs (e.g. what a risky change would alter): size and color from
          Preferences → Appearance → Warnings (UiDensityManager.ApplyWarningAppearance). -->
     <Style Selector="TextBlock.warning">

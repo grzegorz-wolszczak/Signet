@@ -1,7 +1,9 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:infra="using:Signet.App.Infrastructure"
         xmlns:loc="using:Signet.App.Resources"
         x:Class="Signet.App.Views.ViewImageWindow"
+        infra:TooltipFonts.Area="OtherWindows"
         Width="450" Height="450" MinWidth="200" MinHeight="200"
         WindowStartupLocation="CenterOwner"
         Title="{loc:Loc ViewImageWindow_Title}">

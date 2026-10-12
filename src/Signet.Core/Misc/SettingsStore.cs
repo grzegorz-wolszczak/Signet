@@ -1041,6 +1041,27 @@ public sealed class SettingsStore
         }
     }
 
+    /// <summary>The font of the tooltips of an area of the application. Always read normalized.</summary>
+    public TooltipFont GetTooltipFont(TooltipArea area) => new TooltipFont(
+        ReadString(TooltipFontKey(area, "family"), TooltipFont.Default.FontFamily),
+        ReadInt(TooltipFontKey(area, "size"), TooltipFont.Default.FontSize)).Normalized();
+
+    /// <summary>Sets the font of the tooltips of an area of the application (stored normalized).</summary>
+    public void SetTooltipFont(TooltipArea area, TooltipFont value)
+    {
+        TooltipFont font = value.Normalized();
+        WriteSilent(TooltipFontKey(area, "family"), font.FontFamily);
+        WriteSilent(TooltipFontKey(area, "size"), font.FontSize);
+        RaiseChanged("tooltip_fonts");
+    }
+
+    // E.g. "tooltip_find_replace_font_size".
+    private static string TooltipFontKey(TooltipArea area, string part) =>
+        "tooltip_" + SnakeCase(area.ToString()) + "_font_" + part;
+
+    private static string SnakeCase(string name) =>
+        string.Concat(name.Select((c, i) => i > 0 && char.IsUpper(c) ? "_" + char.ToLowerInvariant(c) : char.ToLowerInvariant(c).ToString()));
+
     /// <summary>
     /// Whether the search box of the "Insert Special Character" window searches all characters (default)
     /// or only the rows of the selected category.
@@ -1665,6 +1686,11 @@ public sealed class SettingsStore
         yield return "open_tag_hint_font_size";
         yield return "open_tag_hint_light_background";
         yield return "open_tag_hint_light_foreground";
+        foreach (TooltipArea area in Enum.GetValues<TooltipArea>())
+        {
+            yield return TooltipFontKey(area, "family");
+            yield return TooltipFontKey(area, "size");
+        }
 
         string[] suffixes =
         {

@@ -719,6 +719,52 @@ public sealed class PreferencesViewModelTests
         hint.CodePreviewAppearance.Should().BeNull();
     }
 
+    // The tooltip fonts of the parts without a section of their own, on Appearance › Fonts.
+    private static readonly string[] AppearanceTooltipRows =
+    {
+        "TooltipMainWindow", "TooltipDocumentTabs", "TooltipPreferencesWindow", "TooltipOtherWindows",
+    };
+
+    [Fact]
+    public void Tooltip_fonts_are_set_per_area_on_the_fonts_pages_and_applied_on_save()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        string family = new Fixture().Create<string>();
+
+        vm.AppearanceFonts.Fonts.Select(f => f.Key).Should().Contain(AppearanceTooltipRows);
+        vm.PreviewFonts.Fonts.Select(f => f.Key).Should().Contain("TooltipPreview");
+        vm.SpecialCharacterFonts.Fonts.Select(f => f.Key).Should().Contain("TooltipSpecialCharacters");
+        FontSettingViewModel footnotes = vm.FootnotesFonts.Fonts.Should().ContainSingle().Subject;
+        footnotes.Key.Should().Be("TooltipFootnotes");
+        footnotes.Family.Should().BeEmpty();
+        footnotes.Placeholder.Should().Be(Strings.Get("PreferencesWindow_TooltipFontDefault"));
+        footnotes.EffectiveFamily.Should().Be(vm.EffectiveUiFontFamily, "an empty typeface is the interface font");
+        footnotes.Size.Should().Be(13);
+        footnotes.PreviewText.Should().Be(Strings.Get("FontPreview_TooltipFootnotes"));
+
+        footnotes.Family = family;
+        footnotes.Size = 18;
+
+        host.Settings.GetTooltipFont(TooltipArea.Footnotes).Should().Be(TooltipFont.Default, "not saved yet");
+        vm.ApplyCommand.Execute(null);
+        host.Settings.GetTooltipFont(TooltipArea.Footnotes).Should().Be(new TooltipFont(family, 18));
+        host.Settings.GetTooltipFont(TooltipArea.Validation).Should().Be(TooltipFont.Default);
+    }
+
+    [Fact]
+    public void Restore_appearance_defaults_resets_the_tooltip_fonts()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        FontSettingViewModel main = vm.AppearanceFonts.Fonts.Single(f => f.Key == "TooltipMainWindow");
+        main.Size = 20;
+
+        vm.RestoreAppearanceDefaultsCommand.Execute(null);
+
+        main.Size.Should().Be(TooltipFont.Default.FontSize);
+    }
+
     [Fact]
     public void Restore_defaults_of_a_font_page_resets_only_its_fonts()
     {

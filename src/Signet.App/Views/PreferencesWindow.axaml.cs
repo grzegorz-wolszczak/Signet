@@ -149,6 +149,15 @@ public partial class PreferencesWindow : Window
             CodeViewFontsView.DataContext = vm.CodeViewFonts;
             PreviewFontsView.DataContext = vm.PreviewFonts;
             SpecialCharacterFontsView.DataContext = vm.SpecialCharacterFonts;
+            StartScreenFontsView.DataContext = vm.StartScreenFonts;
+            BookBrowserFontsView.DataContext = vm.BookBrowserFonts;
+            TableOfContentsFontsView.DataContext = vm.TableOfContentsFonts;
+            FindReplaceFontsView.DataContext = vm.FindReplaceFonts;
+            CheckpointsFontsView.DataContext = vm.CheckpointsFonts;
+            ValidationFontsView.DataContext = vm.ValidationFonts;
+            MetadataEditorFontsView.DataContext = vm.MetadataEditorFonts;
+            CleanupFontsView.DataContext = vm.CleanupFonts;
+            FootnotesFontsView.DataContext = vm.FootnotesFonts;
         }
     }
 

@@ -1,8 +1,10 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:infra="using:Signet.App.Infrastructure"
              xmlns:vm="using:Signet.App.ViewModels"
              xmlns:loc="using:Signet.App.Resources"
              x:Class="Signet.App.Views.FindUsagesView"
+             infra:TooltipFonts.Area="FindReplace"
              x:DataType="vm:FindUsagesViewModel">
 
   <UserControl.Resources>

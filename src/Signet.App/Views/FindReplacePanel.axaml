@@ -1,9 +1,11 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:infra="using:Signet.App.Infrastructure"
              xmlns:vm="using:Signet.App.ViewModels"
              xmlns:loc="using:Signet.App.Resources"
              xmlns:views="using:Signet.App.Views"
              x:Class="Signet.App.Views.FindReplacePanel"
+             infra:TooltipFonts.Area="FindReplace"
              x:DataType="vm:MainWindowViewModel">
 
   <!-- Find & Replace: a non-dockable panel below the document tab area

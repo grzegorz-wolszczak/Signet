@@ -22,7 +22,13 @@ public partial class App : Application
     public static IServiceProvider? Services { get; set; }
 
     /// <inheritdoc />
-    public override void Initialize() => AvaloniaXamlLoader.Load(this);
+    public override void Initialize()
+    {
+        AvaloniaXamlLoader.Load(this);
+
+        // The default tooltip font (the interface font, 13 px) until the saved ones are applied — also in tests.
+        TooltipFonts.Apply(_ => TooltipFont.Default);
+    }
 
     /// <inheritdoc />
     public override void OnFrameworkInitializationCompleted()

@@ -268,11 +268,15 @@ public sealed class PreferencesWindowRenderTests
         string appearance = Strings.Get("PreferencesWindow_Appearance");
         string fonts = Strings.Get("PreferencesWindow_Fonts");
 
-        window.Sections.All.Where(n => n.Title == fonts).Select(n => n.Path).Should().BeEquivalentTo(
-            appearance + " › " + fonts,
-            string.Join(" › ", Strings.Get("PreferencesWindow_CodeView"), appearance, fonts),
-            string.Join(" › ", Strings.Get("PreferencesWindow_Preview"), appearance, fonts),
-            string.Join(" › ", Strings.Get("PreferencesWindow_SpecialCharacters"), appearance, fonts));
+        // The sections follow the work on a book: from the start screen, through editing, to cleaning up.
+        string[] sections =
+        {
+            "StartScreen", "BookBrowser", "TableOfContents", "CodeView", "Preview", "FindReplace", "SpecialCharacters",
+            "Checkpoints", "Validation", "MetadataEditor", "Cleanup", "Footnotes",
+        };
+        window.Sections.All.Where(n => n.Title == fonts).Select(n => n.Path).Should().Equal(
+            new[] { appearance + " › " + fonts }.Concat(
+                sections.Select(s => string.Join(" › ", Strings.Get("PreferencesWindow_" + s), appearance, fonts))));
 
         PreferencesSectionNode codeViewFonts = window.Sections.All.Single(n => n.Path.StartsWith(Strings.Get("PreferencesWindow_CodeView"), StringComparison.Ordinal) && n.Title == fonts);
         window.Sections.Selected = codeViewFonts;
@@ -762,7 +766,7 @@ public sealed class PreferencesWindowRenderTests
 
         ShowPage(window, "PreviewFontsPage");
         window.GetVisualDescendants().OfType<FontSettingView>().Where(r => r.IsEffectivelyVisible).Select(r => r.Name)
-            .Should().Equal("FontPreviewStandard", "FontPreviewSerif", "FontPreviewSansSerif", "FontPreviewSize");
+            .Should().Equal("FontPreviewStandard", "FontPreviewSerif", "FontPreviewSansSerif", "FontPreviewSize", "FontTooltipPreview");
     }
 
     /// <summary>The Code View color fields have a background in the color of the entered value — also when focused — and readable text.</summary>

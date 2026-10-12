@@ -10,6 +10,7 @@
         xmlns:tb="using:Signet.App.Toolbars"
         xmlns:views="using:Signet.App.Views"
         x:Class="Signet.App.Views.MainWindow"
+        infra:TooltipFonts.Area="MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="{Binding WindowTitle}"
         Width="1100" Height="720"
@@ -65,9 +66,9 @@
                 <views:FindReplacePanel DockPanel.Dock="Bottom"
                                         DataContext="{Binding $parent[views:MainWindow].DataContext}" />
                 <Panel>
-                  <dc:DocumentControl IsActive="{Binding IsActive}"
+                  <dc:DocumentControl IsActive="{Binding IsActive}" infra:TooltipFonts.Area="DocumentTabs"
                                       IsVisible="{Binding LayoutMode, Converter={x:Static dconv:DocumentLayoutModeMatchConverter.Instance}, ConverterParameter=Tabbed}" />
-                  <dc:MdiDocumentControl IsActive="{Binding IsActive}"
+                  <dc:MdiDocumentControl IsActive="{Binding IsActive}" infra:TooltipFonts.Area="DocumentTabs"
                                          IsVisible="{Binding LayoutMode, Converter={x:Static dconv:DocumentLayoutModeMatchConverter.Instance}, ConverterParameter=Mdi}" />
                 </Panel>
               </DockPanel>

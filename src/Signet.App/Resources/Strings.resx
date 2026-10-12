@@ -4848,4 +4848,92 @@ Zażółć gęślą jaźń — 0123456789</value>
   <data name="PreferencesWindow_WrapPreview" xml:space="preserve">
     <value>Zawijaj wiersze</value>
   </data>
+  <data name="PreferencesWindow_TooltipFont" xml:space="preserve">
+    <value>Podpowiedzi (tooltipy)</value>
+  </data>
+  <data name="PreferencesWindow_TooltipFontMainWindow" xml:space="preserve">
+    <value>Podpowiedzi (tooltipy): okno główne</value>
+  </data>
+  <data name="PreferencesWindow_TooltipFontDocumentTabs" xml:space="preserve">
+    <value>Podpowiedzi (tooltipy): zakładki dokumentów</value>
+  </data>
+  <data name="PreferencesWindow_TooltipFontPreferencesWindow" xml:space="preserve">
+    <value>Podpowiedzi (tooltipy): okno ustawień</value>
+  </data>
+  <data name="PreferencesWindow_TooltipFontOtherWindows" xml:space="preserve">
+    <value>Podpowiedzi (tooltipy): pozostałe okna</value>
+  </data>
+  <data name="PreferencesWindow_TooltipFontDefault" xml:space="preserve">
+    <value>Czcionka interfejsu</value>
+  </data>
+  <data name="PreferencesWindow_StartScreen" xml:space="preserve">
+    <value>Ekran startowy</value>
+  </data>
+  <data name="PreferencesWindow_BookBrowser" xml:space="preserve">
+    <value>Przeglądarka książki</value>
+  </data>
+  <data name="PreferencesWindow_TableOfContents" xml:space="preserve">
+    <value>Spis treści</value>
+  </data>
+  <data name="PreferencesWindow_FindReplace" xml:space="preserve">
+    <value>Znajdź i zamień</value>
+  </data>
+  <data name="PreferencesWindow_Checkpoints" xml:space="preserve">
+    <value>Punkty kontrolne</value>
+  </data>
+  <data name="PreferencesWindow_Validation" xml:space="preserve">
+    <value>Walidacja</value>
+  </data>
+  <data name="PreferencesWindow_MetadataEditor" xml:space="preserve">
+    <value>Edytor metadanych</value>
+  </data>
+  <data name="PreferencesWindow_Cleanup" xml:space="preserve">
+    <value>Czyszczenie i standaryzacja</value>
+  </data>
+  <data name="FontPreview_TooltipMainWindow" xml:space="preserve">
+    <value>Zapisz książkę (Ctrl+S)</value>
+  </data>
+  <data name="FontPreview_TooltipDocumentTabs" xml:space="preserve">
+    <value>OEBPS/Text/chapter01.xhtml
+Zamknij zakładkę</value>
+  </data>
+  <data name="FontPreview_TooltipPreferencesWindow" xml:space="preserve">
+    <value>Przywraca domyślne ustawienia tej strony</value>
+  </data>
+  <data name="FontPreview_TooltipOtherWindows" xml:space="preserve">
+    <value>cover.jpg: 1200 × 1800 px, 245 KB</value>
+  </data>
+  <data name="FontPreview_TooltipStartScreen" xml:space="preserve">
+    <value>D:\Książki\Latarnia morska.epub</value>
+  </data>
+  <data name="FontPreview_TooltipBookBrowser" xml:space="preserve">
+    <value>Text/chapter01.xhtml (12 KB)</value>
+  </data>
+  <data name="FontPreview_TooltipTableOfContents" xml:space="preserve">
+    <value>Rozdział 1 → Text/chapter01.xhtml#ch1</value>
+  </data>
+  <data name="FontPreview_TooltipPreview" xml:space="preserve">
+    <value>Odśwież podgląd</value>
+  </data>
+  <data name="FontPreview_TooltipFindReplace" xml:space="preserve">
+    <value>Wyrażenie regularne (PCRE): \d+(?=px)</value>
+  </data>
+  <data name="FontPreview_TooltipSpecialCharacters" xml:space="preserve">
+    <value>U+00A0 NO-BREAK SPACE  &amp;nbsp;</value>
+  </data>
+  <data name="FontPreview_TooltipCheckpoints" xml:space="preserve">
+    <value>Przed czyszczeniem: 12.10.2026, 14:32</value>
+  </data>
+  <data name="FontPreview_TooltipValidation" xml:space="preserve">
+    <value>Text/chapter03.xhtml, wiersz 42: niezamknięty &lt;p&gt;</value>
+  </data>
+  <data name="FontPreview_TooltipMetadataEditor" xml:space="preserve">
+    <value>dc:creator: autor książki</value>
+  </data>
+  <data name="FontPreview_TooltipCleanup" xml:space="preserve">
+    <value>⚠ Zmienia wygląd 3 elementów</value>
+  </data>
+  <data name="FontPreview_TooltipFootnotes" xml:space="preserve">
+    <value>1. Treść przypisu skrócona do jednego wiersza…</value>
+  </data>
 </root>
