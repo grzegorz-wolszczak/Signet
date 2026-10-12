@@ -108,7 +108,7 @@
            matches, and frames the matching controls on the page. -->
       <Border Grid.Column="0" Classes="sectionPanel">
         <DockPanel>
-          <TextBox x:Name="SectionSearch" DockPanel.Dock="Top" Margin="6" Watermark="{loc:Loc PreferencesWindow_Search}">
+          <TextBox x:Name="SectionSearch" DockPanel.Dock="Top" Margin="6" PlaceholderText="{loc:Loc PreferencesWindow_Search}">
             <!-- A magnifying glass in front of the text, as in Rider. -->
             <TextBox.InnerLeftContent>
               <Path Data="M 6.5,1.5 A 5,5 0 1 1 6.5,11.5 A 5,5 0 1 1 6.5,1.5 M 10.2,10.2 L 14.5,14.5"
