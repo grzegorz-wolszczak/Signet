@@ -2744,15 +2744,6 @@ Scalać można tylko pliki HTML.</value>
   <data name="CodeViewColor_LineHighlight" xml:space="preserve">
     <value>Podświetlenie bieżącego wiersza</value>
   </data>
-  <data name="CodeViewColor_LineNumberBackground" xml:space="preserve">
-    <value>Tło numerów wierszy</value>
-  </data>
-  <data name="CodeViewColor_LineNumberForeground" xml:space="preserve">
-    <value>Kolor numerów wierszy</value>
-  </data>
-  <data name="CodeViewColor_SpellingUnderline" xml:space="preserve">
-    <value>Podkreślenie błędów pisowni</value>
-  </data>
   <data name="CodeViewColor_XHTMLAttributeName" xml:space="preserve">
     <value>XHTML — nazwa atrybutu</value>
   </data>

@@ -230,15 +230,6 @@ public sealed record CodeViewAppearance
     /// <summary>Current line highlight color.</summary>
     public string LineHighlightColor { get; init; } = "#FFFFBF";
 
-    /// <summary>Background color of the line number column.</summary>
-    public string LineNumberBackgroundColor { get; init; } = "#E1E1E1";
-
-    /// <summary>Digit color in the line number column.</summary>
-    public string LineNumberForegroundColor { get; init; } = "#7D7D7D";
-
-    /// <summary>Color of the spelling error squiggle.</summary>
-    public string SpellingUnderlineColor { get; init; } = "#FF0000";
-
     /// <summary>XHTML attribute name color.</summary>
     public string XhtmlAttributeNameColor { get; init; } = "#800000";
 

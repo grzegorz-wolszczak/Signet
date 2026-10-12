@@ -1604,9 +1604,6 @@ public sealed class SettingsStore
             CssSelectorColor = ReadString(prefix + "css_selector_color", defaults.CssSelectorColor),
             CssValueColor = ReadString(prefix + "css_value_color", defaults.CssValueColor),
             LineHighlightColor = ReadString(prefix + "line_highlight_color", defaults.LineHighlightColor),
-            LineNumberBackgroundColor = ReadString(prefix + "line_number_background_color", defaults.LineNumberBackgroundColor),
-            LineNumberForegroundColor = ReadString(prefix + "line_number_foreground_color", defaults.LineNumberForegroundColor),
-            SpellingUnderlineColor = ReadString(prefix + "spelling_underline_color", defaults.SpellingUnderlineColor),
             XhtmlAttributeNameColor = ReadString(prefix + "xhtml_attribute_name_color", defaults.XhtmlAttributeNameColor),
             XhtmlAttributeValueColor = ReadString(prefix + "xhtml_attribute_value_color", defaults.XhtmlAttributeValueColor),
             XhtmlCssColor = ReadString(prefix + "xhtml_css_color", defaults.XhtmlCssColor),
@@ -1636,9 +1633,6 @@ public sealed class SettingsStore
         WriteSilent(prefix + "css_selector_color", a.CssSelectorColor);
         WriteSilent(prefix + "css_value_color", a.CssValueColor);
         WriteSilent(prefix + "line_highlight_color", a.LineHighlightColor);
-        WriteSilent(prefix + "line_number_background_color", a.LineNumberBackgroundColor);
-        WriteSilent(prefix + "line_number_foreground_color", a.LineNumberForegroundColor);
-        WriteSilent(prefix + "spelling_underline_color", a.SpellingUnderlineColor);
         WriteSilent(prefix + "xhtml_attribute_name_color", a.XhtmlAttributeNameColor);
         WriteSilent(prefix + "xhtml_attribute_value_color", a.XhtmlAttributeValueColor);
         WriteSilent(prefix + "xhtml_css_color", a.XhtmlCssColor);
@@ -1676,7 +1670,6 @@ public sealed class SettingsStore
         {
             "font_family_standard", "font_size", "css_comment_color", "css_property_color",
             "css_quote_color", "css_selector_color", "css_value_color", "line_highlight_color",
-            "line_number_background_color", "line_number_foreground_color", "spelling_underline_color",
             "xhtml_attribute_name_color", "xhtml_attribute_value_color", "xhtml_css_color",
             "xhtml_css_comment_color", "xhtml_doctype_color", "xhtml_entity_color",
             "xhtml_html_color", "xhtml_html_comment_color",
@@ -1691,14 +1684,18 @@ public sealed class SettingsStore
         }
     }
 
-    // The keys of the dark application theme, which was removed (the application has one, light theme until
-    // configurable themes come): dropped on load, so the next save no longer writes them.
+    // The keys of settings that were removed — the dark application theme (the application has one, light theme until
+    // configurable themes come) and Code View colors nothing used: dropped on load, so the next save no longer writes
+    // them.
     private void RemoveObsoleteKeys()
     {
         string[] keys =
         {
             "ui_theme", "ui_custom_signet_dark_theme", "preview_dark_in_dm", "preview_highlight_color_dark",
             "warning_color_dark", "error_color_dark", "open_tag_hint_dark_background", "open_tag_hint_dark_foreground",
+            // Code View colors nothing used: the line numbers and the spelling squiggle had fixed colors.
+            "code_view_line_number_background_color", "code_view_line_number_foreground_color",
+            "code_view_spelling_underline_color",
         };
         foreach (string key in keys)
         {

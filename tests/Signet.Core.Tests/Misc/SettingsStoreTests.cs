@@ -209,6 +209,31 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
+    public void The_unused_code_view_colors_are_dropped_on_load()
+    {
+        using TempDir dir = new();
+        string path = dir.Combine("settings.json");
+        File.WriteAllText(path, """
+            {
+              "user_preferences": {
+                "code_view_css_comment_color": "#102030",
+                "code_view_line_number_background_color": "#405060",
+                "code_view_line_number_foreground_color": "#405060",
+                "code_view_spelling_underline_color": "#405060"
+              }
+            }
+            """);
+
+        SettingsStore sut = new(path);
+        sut.CodeViewAppearance.CssCommentColor.Should().Be("#102030");
+        sut.Save();
+
+        string saved = File.ReadAllText(path);
+        saved.Should().Contain("code_view_css_comment_color")
+            .And.NotContain("line_number").And.NotContain("spelling_underline");
+    }
+
+    [Fact]
     public void Corrupt_file_is_tolerated_and_yields_defaults()
     {
         using TempDir dir = new();
