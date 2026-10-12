@@ -257,8 +257,11 @@ public static class ThemeKeys
     /// <summary>The error notifications: their status bar message, their row in Notifications, the dot on the bell.</summary>
     public static readonly ThemeKey UiErrorNotification = Color("ui.errorNotification", ThemePage.Interface, "Messages", Rgb(0xD93030));
 
-    /// <summary>The errors in dialogs (e.g. an invalid regular expression).</summary>
+    /// <summary>The errors in the dialogs of Find &amp; Replace (e.g. an invalid regular expression, a failed dry run).</summary>
     public static readonly ThemeKey UiErrorText = Color("ui.errorText", ThemePage.Interface, "Messages", Rgb(0xCD5C5C));
+
+    /// <summary>The errors of the rename windows (e.g. an invalid pattern in Regex Rename).</summary>
+    public static readonly ThemeKey UiRenameErrorText = Color("ui.renameErrorText", ThemePage.Interface, "Messages", Rgb(0xC0392B));
 
     /// <summary>The "⚠" mark of a risky item (e.g. in the Book Browser).</summary>
     public static readonly ThemeKey UiRiskMarker = Color("ui.riskMarker", ThemePage.Interface, "Messages", Rgb(0xC0392B));

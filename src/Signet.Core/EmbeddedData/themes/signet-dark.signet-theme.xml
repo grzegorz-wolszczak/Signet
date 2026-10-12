@@ -15,6 +15,7 @@
     <color key="ui.warningText" value="#E8A33D" />
     <color key="ui.errorNotification" value="#F1707B" />
     <color key="ui.errorText" value="#F48771" />
+    <color key="ui.renameErrorText" value="#F14C4C" />
     <color key="ui.riskMarker" value="#F14C4C" />
     <color key="ui.filterActive" value="#6CC07A" />
     <color key="ui.icon.inactive" value="#6E6E6E" />

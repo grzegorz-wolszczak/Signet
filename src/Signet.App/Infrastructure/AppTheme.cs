@@ -80,6 +80,7 @@ public static class AppTheme
         (ThemeKeys.UiFrame, "SignetFrameBrush"),
         (ThemeKeys.UiMutedText, "SignetMutedTextBrush"),
         (ThemeKeys.UiErrorText, "SignetErrorTextBrush"),
+        (ThemeKeys.UiRenameErrorText, "SignetRenameErrorTextBrush"),
         (ThemeKeys.UiRiskMarker, "SignetRiskMarkerBrush"),
         (ThemeKeys.UiFilterActive, "SignetFilterActiveBrush"),
     };
