@@ -1,0 +1,34 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Signet.App.ViewModels"
+             xmlns:infra="using:Signet.App.Infrastructure"
+             xmlns:loc="using:Signet.App.Resources"
+             x:Class="Signet.App.Views.FontSettingView"
+             x:DataType="vm:FontSettingViewModel">
+  <!-- One font setting of a "Fonts" page, as in Rider: the typeface list (each name in its own font), "Choose…" (the
+       font picker window with a search) and the size. -->
+  <StackPanel Spacing="4">
+    <TextBlock Text="{Binding Label}" FontWeight="SemiBold" TextWrapping="Wrap" />
+    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6" IsVisible="{Binding HasFamily}">
+      <ComboBox x:Name="FamilyBox" HorizontalAlignment="Stretch"
+                ItemsSource="{x:Static infra:FontCatalog.SystemFonts}"
+                SelectedValueBinding="{ReflectionBinding Name}"
+                SelectedValue="{Binding Family}"
+                PlaceholderText="{Binding Placeholder}">
+        <ComboBox.ItemTemplate>
+          <DataTemplate x:DataType="infra:FontEntry">
+            <TextBlock Text="{Binding Name}" FontFamily="{Binding Family}" />
+          </DataTemplate>
+        </ComboBox.ItemTemplate>
+      </ComboBox>
+      <Button Grid.Column="1" Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChooseCommand}" />
+    </Grid>
+    <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding HasSize}">
+      <TextBlock Text="{loc:Loc PreferencesWindow_Size}" VerticalAlignment="Center" IsVisible="{Binding HasFamily}" />
+      <NumericUpDown x:Name="SizeBox" Value="{Binding Size}" Minimum="{Binding MinSize}" Maximum="{Binding MaxSize}"
+                     Increment="1" FormatString="0" Width="130" />
+    </StackPanel>
+    <TextBlock Text="{Binding SizeHint}" IsVisible="{Binding SizeHint, Converter={x:Static ObjectConverters.IsNotNull}}"
+               Opacity="0.7" TextWrapping="Wrap" />
+  </StackPanel>
+</UserControl>

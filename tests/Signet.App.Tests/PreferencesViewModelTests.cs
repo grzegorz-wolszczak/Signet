@@ -334,7 +334,8 @@ public sealed class PreferencesViewModelTests
         host.Settings.OpenTagHintAppearance = new OpenTagHintAppearance("Consolas", 15, "#111111", "#222222");
         PreferencesViewModel sut = NewOn(host);
 
-        sut.OpenTagHintFontDescription.Should().Be("Consolas, 15 px");
+        sut.OpenTagHintFontFamily.Should().Be("Consolas");
+        sut.OpenTagHintFontSize.Should().Be(15);
         sut.OpenTagHintBackground.Value.Should().Be("#111111");
         sut.OpenTagHintForeground.Value.Should().Be("#222222");
 
@@ -343,7 +344,7 @@ public sealed class PreferencesViewModelTests
         sut.ApplyCommand.Execute(null);
 
         host.Settings.OpenTagHintAppearance.Should().Be(new OpenTagHintAppearance(string.Empty, 0, "#abcdef", "#222222"));
-        sut.OpenTagHintFontDescription.Should().Be(Strings.Get("PreferencesWindow_OpenTagHintFontDefault"));
+        sut.OpenTagHintFontFamily.Should().BeEmpty("\"Default\" is the editor font again");
 
         sut.RestoreAppearanceDefaultsCommand.Execute(null);
         sut.ApplyCommand.Execute(null);
@@ -659,6 +660,96 @@ public sealed class PreferencesViewModelTests
         await vm.CodeView.ChooseFontCommand.ExecuteAsync(null);
 
         vm.CodeView.FontFamily.Should().Be(before);
+    }
+
+    [Fact]
+    public void A_font_page_edits_the_setting_and_previews_the_one_changed_last()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        FontPageViewModel page = vm.CodeViewFonts;
+        FontSettingViewModel hint = page.Fonts.Single(f => f.Key == "OpenTagHint");
+        page.Active!.Key.Should().Be("CodeViewEditor", "the first setting is previewed at the start");
+
+        hint.Family.Should().BeEmpty();
+        hint.Placeholder.Should().Be(Strings.Get("PreferencesWindow_OpenTagHintFontDefault"));
+        hint.EffectiveFamily.Should().Be(vm.CodeView.FontFamily, "an empty hint font is the editor font");
+        hint.PreviewBackground.Should().Be(vm.OpenTagHintBackground.Value);
+        hint.PreviewForeground.Should().Be(vm.OpenTagHintForeground.Value);
+
+        hint.Size = 19;
+
+        page.Active.Should().BeSameAs(hint);
+        hint.EffectiveSize.Should().Be(19);
+        vm.ApplyCommand.Execute(null);
+        host.Settings.OpenTagHintAppearance.FontSize.Should().Be(19);
+    }
+
+    [Fact]
+    public void A_font_setting_follows_changes_made_elsewhere()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        FontSettingViewModel editor = vm.CodeViewFonts.Fonts.Single(f => f.Key == "CodeViewEditor");
+        string family = new Fixture().Create<string>();
+        List<string?> changed = new();
+        editor.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        vm.CodeView.FontFamily = family;
+
+        editor.Family.Should().Be(family);
+        changed.Should().NotBeEmpty("the row and the preview are refreshed");
+    }
+
+    [Fact]
+    public void Restore_defaults_of_a_font_page_resets_only_its_fonts()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        vm.PreviewFontStandard = new Fixture().Create<string>();
+        vm.PreviewFontSize = 22;
+        vm.SpecialCharacterFontSize = 40;
+
+        vm.PreviewFonts.RestoreDefaultsCommand.Execute(null);
+
+        vm.PreviewFontStandard.Should().Be(PreviewAppearance.Default.FontFamilyStandard);
+        vm.PreviewFontSize.Should().Be(PreviewAppearance.Default.FontSize);
+        vm.SpecialCharacterFontSize.Should().Be(40, "another page");
+    }
+
+    [Fact]
+    public void The_warning_size_0_is_previewed_at_the_interface_size_in_the_warning_color()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        FontSettingViewModel ui = vm.AppearanceFonts.Fonts.Single(f => f.Key == "Interface");
+        FontSettingViewModel warnings = vm.AppearanceFonts.Fonts.Single(f => f.Key == "Warnings");
+
+        warnings.HasFamily.Should().BeFalse();
+        warnings.Size.Should().Be(0);
+        warnings.EffectiveSize.Should().Be(ui.EffectiveSize);
+        warnings.EffectiveFamily.Should().Be(ui.EffectiveFamily);
+
+        vm.WarningColor.Value = "#123456";
+
+        warnings.PreviewForeground.Should().Be("#123456");
+    }
+
+    [Fact]
+    public void The_interface_font_row_describes_the_default_and_stores_a_chosen_family()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        FontSettingViewModel ui = vm.AppearanceFonts.Fonts.Single(f => f.Key == "Interface");
+        string family = new Fixture().Create<string>();
+
+        ui.Family.Should().BeEmpty();
+        ui.Placeholder.Should().Be(vm.UiFontDescription);
+
+        ui.Family = family;
+
+        vm.UiFontFamily.Should().Be(family);
+        ui.EffectiveFamily.Should().Be(family);
     }
 
     [Fact]

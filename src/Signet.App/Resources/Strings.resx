@@ -527,9 +527,6 @@
   <data name="PreferencesWindow_Appearance" xml:space="preserve">
     <value>Wygląd</value>
   </data>
-  <data name="PreferencesWindow_PreviewFonts" xml:space="preserve">
-    <value>Czcionki podglądu</value>
-  </data>
   <data name="PreferencesWindow_Standard" xml:space="preserve">
     <value>Standardowa:</value>
   </data>
@@ -545,17 +542,8 @@
   <data name="PreferencesWindow_SpecialCharacterFont" xml:space="preserve">
     <value>Czcionka okna „Wstaw znak specjalny”</value>
   </data>
-  <data name="PreferencesWindow_Family" xml:space="preserve">
-    <value>Krój:</value>
-  </data>
   <data name="PreferencesWindow_CodeView" xml:space="preserve">
     <value>Code View</value>
-  </data>
-  <data name="PreferencesWindow_FontFamily" xml:space="preserve">
-    <value>Krój czcionki:</value>
-  </data>
-  <data name="PreferencesWindow_FontSize" xml:space="preserve">
-    <value>Rozmiar czcionki:</value>
   </data>
   <data name="PreferencesWindow_FontColorRestartNotice" xml:space="preserve">
     <value>Zmiany czcionek/kolorów Code View, Preview i zestawu ikon są widoczne po ponownym uruchomieniu Signet.</value>
@@ -730,9 +718,6 @@
   </data>
   <data name="PreferencesWindow_UiFontDefault" xml:space="preserve">
     <value>Domyślna ({0}, {1} px)</value>
-  </data>
-  <data name="PreferencesWindow_UiFontReset" xml:space="preserve">
-    <value>Domyślna</value>
   </data>
   <data name="PreferencesWindow_CompactUi" xml:space="preserve">
     <value>Kompaktowy wygląd interfejsu (jak w Windows: czcionka systemowa, mniejsze odstępy)</value>
@@ -4084,9 +4069,6 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="PreferencesWindow_OpenTagHintFontDefault" xml:space="preserve">
     <value>Domyślna (jak w edytorze)</value>
   </data>
-  <data name="PreferencesWindow_OpenTagHintFontEditor" xml:space="preserve">
-    <value>jak w edytorze</value>
-  </data>
   <data name="PreferencesWindow_OpenTagHintBackground" xml:space="preserve">
     <value>Tło</value>
   </data>
@@ -4823,5 +4805,45 @@ Konwertować mimo to?</value>
   </data>
   <data name="PreferencesWindow_CodeViewEditorFont" xml:space="preserve">
     <value>Czcionka edytora</value>
+  </data>
+  <data name="FontPreview_Interface" xml:space="preserve">
+    <value>Plik   Edycja   Widok   Narzędzia   Pomoc
+Pchnąć w tę łódź jeża lub ośm skrzyń fig.
+ABCDEFGHIJKLMNOPQRSTUVWXYZ ĄĆĘŁŃÓŚŹŻ
+abcdefghijklmnopqrstuvwxyz ąćęłńóśźż
+0123456789 ( ) [ ] { } . , ; : ! ? „ ” « » …</value>
+  </data>
+  <data name="FontPreview_Code" xml:space="preserve">
+    <value>&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;html xmlns="http://www.w3.org/1999/xhtml"&gt;
+&lt;body&gt;
+  &lt;h1 id="ch1"&gt;Chapter 1&lt;/h1&gt;
+  &lt;p class="first"&gt;The quick &lt;em&gt;brown&lt;/em&gt; fox &amp;amp; the lazy dog.&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+
+p.first { text-indent: 0; margin: 1em 0 0.5em; }
+0O 1lI| {}[]() == != &lt;= &gt;= -&gt; =&gt;</value>
+  </data>
+  <data name="FontPreview_OpenTagHint" xml:space="preserve">
+    <value>&lt;p class="first" id="p12"&gt;</value>
+  </data>
+  <data name="FontPreview_Book" xml:space="preserve">
+    <value>Rozdział pierwszy
+
+Pchnąć w tę łódź jeża lub ośm skrzyń fig. Mały kot siedział na macie i patrzył przez okno na deszcz, który od rana stukał w parapet.
+
+Zażółć gęślą jaźń — 0123456789</value>
+  </data>
+  <data name="FontPreview_SpecialCharacters" xml:space="preserve">
+    <value>§ ¶ † ‡ • — – … « » „ ” ‘ ’
+© ® ™ € £ ¥ ° ± × ÷ ≠ ≤ ≥ ∞
+½ ¼ ¾ α β γ δ π Ω ← → ↑ ↓</value>
+  </data>
+  <data name="PreferencesWindow_FontSizeZeroAsEditor" xml:space="preserve">
+    <value>Rozmiar 0 = jak w edytorze</value>
+  </data>
+  <data name="PreferencesWindow_RestoreFontDefaults" xml:space="preserve">
+    <value>Przywróć domyślne</value>
   </data>
 </root>

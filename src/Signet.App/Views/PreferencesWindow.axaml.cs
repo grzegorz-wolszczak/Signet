@@ -142,6 +142,13 @@ public partial class PreferencesWindow : Window
             vm.ColorPicker = (title, initial) => ColorPickerWindow.AskAsync(this, title, initial);
             vm.TextPrompt = (title, prompt, initial) => TextPromptWindow.AskAsync(this, title, prompt, initial);
             vm.ErrorMessage = (title, message) => MessageDialog.ShowAsync(this, title, message);
+
+            // Set here, not bound in the XAML: a binding on the content of a page that is not shown does not resolve,
+            // and the search must find the font settings of every page.
+            AppearanceFontsView.DataContext = vm.AppearanceFonts;
+            CodeViewFontsView.DataContext = vm.CodeViewFonts;
+            PreviewFontsView.DataContext = vm.PreviewFonts;
+            SpecialCharacterFontsView.DataContext = vm.SpecialCharacterFonts;
         }
     }
 
@@ -355,8 +362,10 @@ public partial class PreferencesWindow : Window
             .SelectMany(SelfAndLogicalDescendants)
             .OfType<HeightResizeGrip>();
 
+    // A text with the class "noSearch" (e.g. the sample of a font preview) is not a setting: the search skips it.
     private static string? OwnText(ILogical element) => element switch
     {
+        TextBlock text when text.Classes.Contains("noSearch") => null,
         TextBlock text => text.Text,
         HeaderedContentControl { Header: string header } => header,
         ContentControl { Content: string content } => content,

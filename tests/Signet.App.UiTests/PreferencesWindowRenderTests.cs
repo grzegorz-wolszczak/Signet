@@ -20,7 +20,6 @@ using Signet.App.ViewModels;
 using Signet.App.Views;
 using Signet.Core.Misc;
 using Signet.Core.Spellcheck;
-using Xunit;
 
 namespace Signet.App.UiTests;
 
@@ -639,26 +638,66 @@ public sealed class PreferencesWindowRenderTests
             .Where(c => c.IsEffectivelyVisible && c.Content as string == Strings.Get(key))
             .ElementAt(index);
 
-    /// <summary>The font fields in Preferences show the name rendered in that font.</summary>
-    [AvaloniaTheory]
-    [InlineData("CodeViewFontsPage", 1)]
-    [InlineData("PreviewFontsPage", 3)]
-    [InlineData("SpecialCharactersFontsPage", 1)]
-    public void Preferences_font_fields_render_the_name_in_the_font_itself(string page, int count)
+    /// <summary>
+    /// A "Fonts" page, as Rider's Editor › Font: a row per font setting (typeface list, size); the preview on the right
+    /// shows the setting focused last in its font and size, with the colors of the place it is used in.
+    /// </summary>
+    [AvaloniaFact]
+    public void Fonts_page_previews_the_setting_focused_last()
+    {
+        PreferencesWindow window = BuildWindow();
+        PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, "CodeViewFontsPage");
+
+        FontsPageView page = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible);
+        FontSettingView[] rows = page.GetVisualDescendants().OfType<FontSettingView>().ToArray();
+        rows.Select(r => r.Name).Should().Equal("FontCodeViewEditor", "FontOpenTagHint");
+        TextBlock preview = page.FindControl<TextBlock>("PreviewText")!;
+        preview.Text.Should().Be(Strings.Get("FontPreview_Code"));
+        preview.FontFamily.Name.Should().Be(vm.CodeView.FontFamily);
+        preview.FontSize.Should().Be(vm.CodeView.FontSize);
+
+        rows[1].FindControl<ComboBox>("FamilyBox")!.Focus();
+        Dispatcher.UIThread.RunJobs();
+
+        vm.CodeViewFonts.Active!.Key.Should().Be("OpenTagHint");
+        preview.Text.Should().StartWith(Strings.Get("FontPreview_OpenTagHint"));
+        page.FindControl<Border>("PreviewSurface")!.Background.Should().BeAssignableTo<ISolidColorBrush>()
+            .Which.Color.Should().Be(Color.Parse(vm.OpenTagHintBackground.Value));
+
+        rows[1].FindControl<NumericUpDown>("SizeBox")!.Value = 21;
+        Dispatcher.UIThread.RunJobs();
+
+        vm.OpenTagHintFontSize.Should().Be(21);
+        preview.FontSize.Should().Be(21);
+        window.Close();
+    }
+
+    /// <summary>
+    /// The search finds the font settings of a page that was not shown yet (its rows exist before), but not the sample
+    /// texts of the previews.
+    /// </summary>
+    [AvaloniaFact]
+    public void Searching_finds_the_font_settings_but_not_the_preview_samples()
     {
         PreferencesWindow window = BuildWindow();
         window.Show();
         Dispatcher.UIThread.RunJobs();
-        ShowPage(window, page);
+        TextBox search = window.FindControl<TextBox>("SectionSearch")!;
 
-        TextBlock[] fields = window.GetVisualDescendants().OfType<Border>()
-            // The UI font and the opening tag hint font fields show a description, not a name in its own font.
-            .Where(b => b.Classes.Contains("fontField") && !b.Classes.Contains("uiFont") && !b.Classes.Contains("description"))
-            .Select(b => (TextBlock)b.Child!)
-            .ToArray();
+        search.Text = Strings.Get("PreferencesWindow_CodeViewEditorFont");
+        Dispatcher.UIThread.RunJobs();
 
-        fields.Should().HaveCount(count);
-        fields.Should().OnlyContain(t => !string.IsNullOrEmpty(t.Text) && t.FontFamily.Name == t.Text);
+        window.Sections.Selected!.Path.Should().Be(string.Join(
+            " › ", Strings.Get("PreferencesWindow_CodeView"), Strings.Get("PreferencesWindow_Appearance"), Strings.Get("PreferencesWindow_Fonts")));
+
+        search.Text = Strings.Get("FontPreview_SpecialCharacters").Split('\n')[0].Trim();
+        Dispatcher.UIThread.RunJobs();
+
+        window.Sections.All.Should().NotContain(n => n.IsVisible, "the sample of a preview is not a setting");
+        window.Close();
     }
 
     /// <summary>
@@ -689,8 +728,8 @@ public sealed class PreferencesWindowRenderTests
             .Should().Contain(t => t.Text == Strings.Get("PreferencesWindow_PreviewHighlightColor"));
 
         ShowPage(window, "PreviewFontsPage");
-        window.GetVisualDescendants().OfType<TextBlock>()
-            .Should().Contain(t => t.Text == Strings.Get("PreferencesWindow_PreviewFonts"));
+        window.GetVisualDescendants().OfType<FontSettingView>().Where(r => r.IsEffectivelyVisible).Select(r => r.Name)
+            .Should().Equal("FontPreviewStandard", "FontPreviewSerif", "FontPreviewSansSerif", "FontPreviewSize");
     }
 
     /// <summary>The Code View color fields have a background in the color of the entered value — also when focused — and readable text.</summary>

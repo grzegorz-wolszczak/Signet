@@ -527,9 +527,6 @@
   <data name="PreferencesWindow_Appearance" xml:space="preserve">
     <value>Appearance</value>
   </data>
-  <data name="PreferencesWindow_PreviewFonts" xml:space="preserve">
-    <value>Preview fonts</value>
-  </data>
   <data name="PreferencesWindow_Standard" xml:space="preserve">
     <value>Standard:</value>
   </data>
@@ -545,17 +542,8 @@
   <data name="PreferencesWindow_SpecialCharacterFont" xml:space="preserve">
     <value>Insert Special Character font</value>
   </data>
-  <data name="PreferencesWindow_Family" xml:space="preserve">
-    <value>Family:</value>
-  </data>
   <data name="PreferencesWindow_CodeView" xml:space="preserve">
     <value>Code View</value>
-  </data>
-  <data name="PreferencesWindow_FontFamily" xml:space="preserve">
-    <value>Font family:</value>
-  </data>
-  <data name="PreferencesWindow_FontSize" xml:space="preserve">
-    <value>Font size:</value>
   </data>
   <data name="PreferencesWindow_FontColorRestartNotice" xml:space="preserve">
     <value>Code View/Preview font/color changes and the icon theme take effect after restarting Signet.</value>
@@ -730,9 +718,6 @@
   </data>
   <data name="PreferencesWindow_UiFontDefault" xml:space="preserve">
     <value>Default ({0}, {1} px)</value>
-  </data>
-  <data name="PreferencesWindow_UiFontReset" xml:space="preserve">
-    <value>Default</value>
   </data>
   <data name="PreferencesWindow_CompactUi" xml:space="preserve">
     <value>Compact interface (Windows-like: system font, tighter spacing)</value>
@@ -4084,9 +4069,6 @@ It does not change the files, their names or their IDs.</value>
   <data name="PreferencesWindow_OpenTagHintFontDefault" xml:space="preserve">
     <value>Default (as in the editor)</value>
   </data>
-  <data name="PreferencesWindow_OpenTagHintFontEditor" xml:space="preserve">
-    <value>as in the editor</value>
-  </data>
   <data name="PreferencesWindow_OpenTagHintBackground" xml:space="preserve">
     <value>Background</value>
   </data>
@@ -4823,5 +4805,45 @@ Convert anyway?</value>
   </data>
   <data name="PreferencesWindow_CodeViewEditorFont" xml:space="preserve">
     <value>Editor font</value>
+  </data>
+  <data name="FontPreview_Interface" xml:space="preserve">
+    <value>File   Edit   View   Tools   Help
+The quick brown fox jumps over the lazy dog.
+ABCDEFGHIJKLMNOPQRSTUVWXYZ ĄĆĘŁŃÓŚŹŻ
+abcdefghijklmnopqrstuvwxyz ąćęłńóśźż
+0123456789 ( ) [ ] { } . , ; : ! ? „ ” « » …</value>
+  </data>
+  <data name="FontPreview_Code" xml:space="preserve">
+    <value>&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;html xmlns="http://www.w3.org/1999/xhtml"&gt;
+&lt;body&gt;
+  &lt;h1 id="ch1"&gt;Chapter 1&lt;/h1&gt;
+  &lt;p class="first"&gt;The quick &lt;em&gt;brown&lt;/em&gt; fox &amp;amp; the lazy dog.&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+
+p.first { text-indent: 0; margin: 1em 0 0.5em; }
+0O 1lI| {}[]() == != &lt;= &gt;= -&gt; =&gt;</value>
+  </data>
+  <data name="FontPreview_OpenTagHint" xml:space="preserve">
+    <value>&lt;p class="first" id="p12"&gt;</value>
+  </data>
+  <data name="FontPreview_Book" xml:space="preserve">
+    <value>Chapter One
+
+The quick brown fox jumps over the lazy dog. A small cat sat on the mat and watched the rain that had been tapping on the windowsill since morning.
+
+Zażółć gęślą jaźń — 0123456789</value>
+  </data>
+  <data name="FontPreview_SpecialCharacters" xml:space="preserve">
+    <value>§ ¶ † ‡ • — – … « » „ ” ‘ ’
+© ® ™ € £ ¥ ° ± × ÷ ≠ ≤ ≥ ∞
+½ ¼ ¾ α β γ δ π Ω ← → ↑ ↓</value>
+  </data>
+  <data name="PreferencesWindow_FontSizeZeroAsEditor" xml:space="preserve">
+    <value>Size 0 = as in the editor</value>
+  </data>
+  <data name="PreferencesWindow_RestoreFontDefaults" xml:space="preserve">
+    <value>Restore defaults</value>
   </data>
 </root>

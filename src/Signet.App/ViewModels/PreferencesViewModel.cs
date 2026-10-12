@@ -199,6 +199,9 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _savedFootnoteStyles = footnoteStyles;
         _confirmFootnoteRemoval = _settings.ConfirmFootnoteRemoval;
 
+        // ---- Fonts pages (adapters over the font settings above) ----
+        CreateFontPages();
+
         // Loading the pages writes some initial values to the draft (e.g. the default user dictionary): not changes.
         _settings.RebaseDraft();
         _settings.SettingChanged += (_, _) =>
@@ -589,20 +592,11 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
     /// <summary>Font of the opening tag hint; empty = the Code View editor font.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(OpenTagHintFontDescription))]
     private string _openTagHintFontFamily;
 
     /// <summary>Font size (px) of the opening tag hint; 0 = the Code View editor size.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(OpenTagHintFontDescription))]
     private int _openTagHintFontSize;
-
-    /// <summary>The hint font for the Preferences field: "Consolas, 14 px" or "Default (as the editor)".</summary>
-    public string OpenTagHintFontDescription =>
-        OpenTagHintFontFamily.Length == 0 && OpenTagHintFontSize == 0
-            ? Strings.Get("PreferencesWindow_OpenTagHintFontDefault")
-            : $"{(OpenTagHintFontFamily.Length > 0 ? OpenTagHintFontFamily : Strings.Get("PreferencesWindow_OpenTagHintFontEditor"))}, "
-              + (OpenTagHintFontSize > 0 ? $"{OpenTagHintFontSize} px" : Strings.Get("PreferencesWindow_OpenTagHintFontEditor"));
 
     /// <summary>Background of the opening tag hint.</summary>
     public ColorSettingRow OpenTagHintBackground { get; }

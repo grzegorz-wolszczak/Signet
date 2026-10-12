@@ -1,0 +1,39 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Signet.App.ViewModels"
+             xmlns:infra="using:Signet.App.Infrastructure"
+             xmlns:loc="using:Signet.App.Resources"
+             x:Class="Signet.App.Views.FontsPageView"
+             x:DataType="vm:FontPageViewModel">
+  <!-- A "Fonts" page of the Preferences window, as Rider's Editor › Font: the font settings on the left, the preview of
+       the one focused or changed last on the right. -->
+  <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="8">
+    <ScrollViewer Grid.Column="0">
+      <StackPanel Spacing="14">
+        <!-- Filled in code: the rows exist before the page is shown, so the search of the window finds them. -->
+        <StackPanel x:Name="Rows" Spacing="14" />
+        <HyperlinkButton x:Name="RestoreDefaultsLink" Content="{loc:Loc PreferencesWindow_RestoreFontDefaults}"
+                         Command="{Binding RestoreDefaultsCommand}" Padding="0" />
+        <TextBlock Text="{Binding Note}" IsVisible="{Binding HasNote}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
+      </StackPanel>
+    </ScrollViewer>
+
+    <Border Grid.Column="1" Padding="10" CornerRadius="4" BorderThickness="1"
+            Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Top" Classes="noSearch" Text="{Binding Active.Label, FallbackValue={x:Null}}"
+                   Opacity="0.6" TextWrapping="Wrap" Margin="0,0,0,8" />
+        <ScrollViewer HorizontalScrollBarVisibility="Auto">
+          <Border x:Name="PreviewSurface" Padding="6,4" CornerRadius="3" HorizontalAlignment="Left" VerticalAlignment="Top"
+                  Background="{Binding Active.PreviewBackground, Converter={x:Static infra:ColorConverters.ToBrush}, FallbackValue={x:Null}}">
+            <TextBlock x:Name="PreviewText" Classes="noSearch" Text="{Binding Active.PreviewText, FallbackValue={x:Null}}"
+                       FontFamily="{Binding Active.EffectiveFamily, Converter={x:Static infra:FontFamilyConverters.FromName}, FallbackValue={x:Static FontFamily.Default}}"
+                       FontSize="{Binding Active.EffectiveSize, FallbackValue=14}"
+                       Foreground="{Binding Active.PreviewForeground, Converter={x:Static infra:ColorConverters.ToBrush}}" />
+          </Border>
+        </ScrollViewer>
+      </DockPanel>
+    </Border>
+  </Grid>
+</UserControl>

@@ -68,17 +68,6 @@
     <Style Selector="Grid.labeled > ComboBox">
       <Setter Property="HorizontalAlignment" Value="Stretch" />
     </Style>
-    <Style Selector="Border.fontField > TextBlock">
-      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
-    </Style>
-    <!-- Font field: a read-only name rendered in the chosen font; changed via "Choose…". -->
-    <Style Selector="Border.fontField">
-      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
-      <Setter Property="BorderThickness" Value="1" />
-      <Setter Property="CornerRadius" Value="3" />
-      <Setter Property="Padding" Value="8,4" />
-      <Setter Property="VerticalAlignment" Value="Center" />
-    </Style>
   </Window.Styles>
 
   <Window.Resources>
@@ -217,32 +206,7 @@
 
       <!-- Appearance › Fonts: the interface font and the size of the warnings in dialogs. -->
       <TabItem x:Name="AppearanceFontsPage" Header="{loc:Loc PreferencesWindow_Fonts}" views:PreferencesPage.Parent="AppearancePage">
-        <ScrollViewer>
-          <StackPanel Spacing="10" Margin="8">
-
-            <!-- Interface font: the description rendered in the chosen font (empty = the mode's default). -->
-            <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
-              <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_UiFont}" />
-              <StackPanel Grid.Column="1" Spacing="4">
-                <Border Classes="fontField uiFont">
-                  <TextBlock Text="{Binding UiFontDescription}" TextTrimming="CharacterEllipsis"
-                             FontFamily="{Binding EffectiveUiFontFamily, Converter={x:Static infra:FontFamilyConverters.FromName}}" />
-                </Border>
-                <StackPanel Orientation="Horizontal" Spacing="6">
-                  <Button Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChooseUiFontCommand}" />
-                  <Button Content="{loc:Loc PreferencesWindow_UiFontReset}" Command="{Binding ResetUiFontCommand}" />
-                </StackPanel>
-              </StackPanel>
-            </Grid>
-
-            <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
-              <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_WarningFontSize}" />
-              <TextBox Grid.Column="1" x:Name="WarningFontSizeBox" Text="{Binding WarningFontSize}"
-                       Width="80" HorizontalAlignment="Left" />
-            </Grid>
-
-          </StackPanel>
-        </ScrollViewer>
+        <views:FontsPageView x:Name="AppearanceFontsView" />
       </TabItem>
 
       <!-- =============================== Code View =============================== -->
@@ -325,44 +289,7 @@
 
       <!-- Code View › Appearance › Fonts: the editor font and the opening tag hint font. -->
       <TabItem x:Name="CodeViewFontsPage" Header="{loc:Loc PreferencesWindow_Fonts}" views:PreferencesPage.Parent="CodeViewAppearancePage">
-        <ScrollViewer>
-          <StackPanel Spacing="10" Margin="8">
-
-            <Border Classes="section">
-              <StackPanel Spacing="6">
-                <TextBlock Text="{loc:Loc PreferencesWindow_CodeViewEditorFont}" FontWeight="Bold" />
-                <Grid x:DataType="vm:CodeViewAppearanceEditor" DataContext="{Binding CodeView}" Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
-                  <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_FontFamily}" VerticalAlignment="Center" />
-                  <DockPanel Grid.Row="0" Grid.Column="1">
-                    <Button DockPanel.Dock="Right" Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChooseFontCommand}" Margin="6,0,0,0" />
-                    <Border Classes="fontField"><TextBlock Text="{Binding FontFamily}" FontFamily="{Binding FontFamily, Converter={x:Static infra:FontFamilyConverters.FromName}}" /></Border>
-                  </DockPanel>
-                  <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_FontSize}" VerticalAlignment="Center" />
-                  <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding FontSize}" Width="80" HorizontalAlignment="Left" />
-                </Grid>
-              </StackPanel>
-            </Border>
-
-            <!-- The font of the opening tag hint (default = the editor font). -->
-            <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8" IsEnabled="{Binding OpenTagHint}">
-              <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_OpenTagHintFont}" />
-              <StackPanel Grid.Column="1" Spacing="4">
-                <!-- A description ("Default (as in the editor)" / "Consolas, 14 px"), not a name in its own font. -->
-                <Border Classes="fontField description">
-                  <TextBlock Text="{Binding OpenTagHintFontDescription}" TextTrimming="CharacterEllipsis" />
-                </Border>
-                <StackPanel Orientation="Horizontal" Spacing="6">
-                  <Button Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChooseOpenTagHintFontCommand}" />
-                  <Button Content="{loc:Loc PreferencesWindow_UiFontReset}" Command="{Binding ResetOpenTagHintFontCommand}" />
-                </StackPanel>
-              </StackPanel>
-            </Grid>
-
-            <TextBlock Text="{loc:Loc PreferencesWindow_FontColorRestartNotice}"
-                       IsVisible="{Binding RestartNoticeVisible}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
-
-          </StackPanel>
-        </ScrollViewer>
+        <views:FontsPageView x:Name="CodeViewFontsView" />
       </TabItem>
 
       <!-- ================================ Preview ================================ -->
@@ -438,39 +365,7 @@
 
       <!-- Preview › Appearance › Fonts: the fonts of the preview. -->
       <TabItem x:Name="PreviewFontsPage" Header="{loc:Loc PreferencesWindow_Fonts}" views:PreferencesPage.Parent="PreviewAppearancePage">
-        <ScrollViewer>
-          <StackPanel Spacing="10" Margin="8">
-
-            <Border Classes="section">
-              <StackPanel Spacing="6">
-                <TextBlock Text="{loc:Loc PreferencesWindow_PreviewFonts}" FontWeight="Bold" />
-                <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
-                  <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_Standard}" VerticalAlignment="Center" />
-                  <DockPanel Grid.Row="0" Grid.Column="1">
-                    <Button DockPanel.Dock="Right" Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChoosePreviewFontStandardCommand}" Margin="6,0,0,0" />
-                    <Border Classes="fontField"><TextBlock Text="{Binding PreviewFontStandard}" FontFamily="{Binding PreviewFontStandard, Converter={x:Static infra:FontFamilyConverters.FromName}}" /></Border>
-                  </DockPanel>
-                  <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_Serif}" VerticalAlignment="Center" />
-                  <DockPanel Grid.Row="1" Grid.Column="1">
-                    <Button DockPanel.Dock="Right" Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChoosePreviewFontSerifCommand}" Margin="6,0,0,0" />
-                    <Border Classes="fontField"><TextBlock Text="{Binding PreviewFontSerif}" FontFamily="{Binding PreviewFontSerif, Converter={x:Static infra:FontFamilyConverters.FromName}}" /></Border>
-                  </DockPanel>
-                  <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc PreferencesWindow_SansSerif}" VerticalAlignment="Center" />
-                  <DockPanel Grid.Row="2" Grid.Column="1">
-                    <Button DockPanel.Dock="Right" Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChoosePreviewFontSansSerifCommand}" Margin="6,0,0,0" />
-                    <Border Classes="fontField"><TextBlock Text="{Binding PreviewFontSansSerif}" FontFamily="{Binding PreviewFontSansSerif, Converter={x:Static infra:FontFamilyConverters.FromName}}" /></Border>
-                  </DockPanel>
-                  <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Loc PreferencesWindow_Size}" VerticalAlignment="Center" />
-                  <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PreviewFontSize}" Width="80" HorizontalAlignment="Left" />
-                </Grid>
-              </StackPanel>
-            </Border>
-
-            <TextBlock Text="{loc:Loc PreferencesWindow_FontColorRestartNotice}"
-                       IsVisible="{Binding RestartNoticeVisible}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
-
-          </StackPanel>
-        </ScrollViewer>
+        <views:FontsPageView x:Name="PreviewFontsView" />
       </TabItem>
 
       <!-- ========================== Special Characters ========================== -->
@@ -482,26 +377,7 @@
 
       <!-- Special Characters › Appearance › Fonts: the font of the "Insert Special Character" window. -->
       <TabItem x:Name="SpecialCharactersFontsPage" Header="{loc:Loc PreferencesWindow_Fonts}" views:PreferencesPage.Parent="SpecialCharactersAppearancePage">
-        <ScrollViewer>
-          <StackPanel Spacing="10" Margin="8">
-
-            <Border Classes="section">
-              <StackPanel Spacing="6">
-                <TextBlock Text="{loc:Loc PreferencesWindow_SpecialCharacterFont}" FontWeight="Bold" />
-                <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
-                  <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_Family}" VerticalAlignment="Center" />
-                  <DockPanel Grid.Row="0" Grid.Column="1">
-                    <Button DockPanel.Dock="Right" Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChooseSpecialCharacterFontCommand}" Margin="6,0,0,0" />
-                    <Border Classes="fontField"><TextBlock Text="{Binding SpecialCharacterFontFamily}" FontFamily="{Binding SpecialCharacterFontFamily, Converter={x:Static infra:FontFamilyConverters.FromName}}" /></Border>
-                  </DockPanel>
-                  <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_Size}" VerticalAlignment="Center" />
-                  <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SpecialCharacterFontSize}" Width="80" HorizontalAlignment="Left" />
-                </Grid>
-              </StackPanel>
-            </Border>
-
-          </StackPanel>
-        </ScrollViewer>
+        <views:FontsPageView x:Name="SpecialCharacterFontsView" />
       </TabItem>
 
       <!-- ================================ General ================================ -->
