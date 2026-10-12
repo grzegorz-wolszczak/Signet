@@ -66,7 +66,6 @@ public sealed partial class MainWindowViewModel
     /// <summary>Settings group of the floating panel windows (<see cref="MainDockFactory.CaptureFloatingPanels"/>).</summary>
     public const string DockFloatingGroup = "dock_floating";
 
-    private readonly ThemeManager _themeManager;
     private readonly ILogger<MainWindowViewModel> _logger;
     private readonly AppActionRegistry _actions;
     private readonly ToolbarManager _toolbarManager;
@@ -117,14 +116,8 @@ public sealed partial class MainWindowViewModel
     {
     }
 
-    /// <summary>Simplified constructor for tests — auxiliary services on a temporary settings store.</summary>
-    public MainWindowViewModel(ThemeManager themeManager, ILogger<MainWindowViewModel> logger)
-        : this(DesignTimeBundle.Create(themeManager), logger)
-    {
-    }
-
     private MainWindowViewModel(DesignTimeBundle b, ILogger<MainWindowViewModel> logger)
-        : this(b.Theme, logger, b.Actions, b.Shortcuts,
+        : this(logger, b.Actions, b.Shortcuts,
             b.Toolbars, b.DockFactory, b.StatusBar, b.Settings, b.BookBrowser, b.Tabs, b.Preview, b.SpellChecker,
             b.ClipboardHistory, b.DoctypeGuard)
     {
@@ -132,7 +125,6 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>Constructor injected by DI.</summary>
     public MainWindowViewModel(
-        ThemeManager themeManager,
         ILogger<MainWindowViewModel> logger,
         AppActionRegistry actions,
         KeyboardShortcutManager shortcuts,
@@ -147,7 +139,6 @@ public sealed partial class MainWindowViewModel
         ClipboardHistoryService clipboardHistory,
         MissingDoctypeGuard doctypeGuard)
     {
-        _themeManager = themeManager;
         _logger = logger;
         _actions = actions;
         Shortcuts = shortcuts;
@@ -161,7 +152,6 @@ public sealed partial class MainWindowViewModel
         _clipboardHistory = clipboardHistory;
         _doctypeGuard = doctypeGuard;
         BookBrowser = bookBrowser;
-        _currentTheme = themeManager.Current;
 
         _dockFactory.TableOfContents = _toc;
         _toc.EntryActivated += (_, entry) => NavigateToToc(entry);
@@ -1449,15 +1439,6 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>The current status bar message.</summary>
     public string StatusMessage => _statusBar.CurrentMessage;
-
-    /// <summary>The current theme preference (shown on the button).</summary>
-    public ThemePreference CurrentTheme
-    {
-        get => _currentTheme;
-        private set => SetProperty(ref _currentTheme, value);
-    }
-
-    private ThemePreference _currentTheme;
 
     /// <summary>Raised when the user chooses "Customize Toolbars…" (the window is handled in the view).</summary>
     public event EventHandler? CustomizeToolbarsRequested;
@@ -3160,14 +3141,6 @@ public sealed partial class MainWindowViewModel
         }
     }
 
-    /// <summary>Cycles the theme System → Light → Dark.</summary>
-    [RelayCommand]
-    private void CycleTheme()
-    {
-        CurrentTheme = _themeManager.Cycle();
-        _logger.LogDebug("The user switched the theme to {Theme}", CurrentTheme);
-    }
-
     [RelayCommand]
     private void CustomizeToolbars() => CustomizeToolbarsRequested?.Invoke(this, EventArgs.Empty);
 
@@ -3922,7 +3895,6 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>The set of services created for the designer preview (without DI).</summary>
     private sealed record DesignTimeBundle(
-        ThemeManager Theme,
         AppActionRegistry Actions,
         KeyboardShortcutManager Shortcuts,
         ToolbarManager Toolbars,
@@ -3936,12 +3908,11 @@ public sealed partial class MainWindowViewModel
         ClipboardHistoryService ClipboardHistory,
         MissingDoctypeGuard DoctypeGuard)
     {
-        public static DesignTimeBundle Create(ThemeManager? theme = null)
+        public static DesignTimeBundle Create()
         {
             SettingsStore settings = new(System.IO.Path.Combine(
                 System.IO.Path.GetTempPath(),
                 $"signet-designtime-{Guid.NewGuid():N}.json"));
-            theme ??= new ThemeManager(settings, NullLogger<ThemeManager>.Instance);
             KeyboardShortcutManager shortcuts = new(settings);
             ToolbarManager toolbars = new(settings);
             StatusBarService statusBar = new();
@@ -3954,7 +3925,7 @@ public sealed partial class MainWindowViewModel
             TabManager tabs = new(dockFactory, statusBar, settings, spellChecker);
             ClipboardHistoryService clipboardHistory = new(settings);
             return new DesignTimeBundle(
-                theme, actions, shortcuts, toolbars,
+                actions, shortcuts, toolbars,
                 dockFactory, statusBar, settings, bookBrowser, tabs, preview, spellChecker, clipboardHistory, doctypeGuard);
         }
     }

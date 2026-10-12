@@ -63,17 +63,15 @@ public sealed class WarningAppearanceTests
         (SpanRemovalRiskWindow window, Window owner) = ShowSpanRemovalRisk();
         try
         {
-            UiDensityManager.ApplyWarning(app, new WarningAppearance(20, "#123456", "#654321"), HeadlessUiFontSize);
+            UiDensityManager.ApplyWarning(app, new WarningAppearance(20, "#123456"), HeadlessUiFontSize);
             Dispatcher.UIThread.RunJobs();
 
             TextBlock consequence = Consequence(window);
             consequence.FontSize.Should().Be(20);
             consequence.Foreground.Should().BeOfType<SolidColorBrush>()
-                .Which.Color.Should().Be(window.ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark
-                    ? Color.Parse("#654321")
-                    : Color.Parse("#123456"));
+                .Which.Color.Should().Be(Color.Parse("#123456"));
 
-            UiDensityManager.ApplyWarning(app, new WarningAppearance(0, "#123456", "#654321"), 17);
+            UiDensityManager.ApplyWarning(app, new WarningAppearance(0, "#123456"), 17);
             Dispatcher.UIThread.RunJobs();
 
             consequence.FontSize.Should().Be(17, "0 means the interface text size");
@@ -94,15 +92,13 @@ public sealed class WarningAppearanceTests
         window.Show();
         try
         {
-            UiDensityManager.ApplyError(app, new ErrorAppearance("#123456", "#654321"));
+            UiDensityManager.ApplyError(app, new ErrorAppearance("#123456"));
             Dispatcher.UIThread.RunJobs();
             window.CaptureRenderedFrame();
 
             Avalonia.Controls.Shapes.Ellipse dot = window.GetVisualDescendants().OfType<Avalonia.Controls.Shapes.Ellipse>().Single();
             dot.Fill.Should().BeOfType<SolidColorBrush>()
-                .Which.Color.Should().Be(window.ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark
-                    ? Color.Parse("#654321")
-                    : Color.Parse("#123456"));
+                .Which.Color.Should().Be(Color.Parse("#123456"));
         }
         finally
         {

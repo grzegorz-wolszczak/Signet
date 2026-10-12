@@ -31,7 +31,6 @@ public sealed class PreferencesSpellcheckTests : IDisposable
 
     public PreferencesSpellcheckTests()
     {
-        ThemeManager theme = new(_host.Settings, NullLogger<ThemeManager>.Instance);
         LocalizationManager localization = new(_host.Settings, NullLogger<LocalizationManager>.Instance);
         IconThemeManager iconTheme = new(_host.Settings, NullLogger<IconThemeManager>.Instance);
         string root = Path.Combine(Path.GetTempPath(), "Signet.Tests", "prefs-spell-" + Guid.NewGuid().ToString("N"));
@@ -39,7 +38,7 @@ public sealed class PreferencesSpellcheckTests : IDisposable
         UiDensityManager uiDensity = new(
             _host.Settings, iconTheme, NullLogger<UiDensityManager>.Instance, () => "Segoe UI", _ => false);
         _vm = new PreferencesViewModel(
-            _host.Settings, _spellChecker, theme, localization, iconTheme, _host.Shortcuts, _host.Registry, uiDensity)
+            _host.Settings, _spellChecker, localization, iconTheme, _host.Shortcuts, _host.Registry, uiDensity)
         {
             TextPrompt = (_, _, _) => Task.FromResult(_answers.Dequeue()),
             ErrorMessage = (_, message) =>

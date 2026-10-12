@@ -9,7 +9,6 @@ using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Media;
-using Avalonia.Styling;
 using Avalonia.Threading;
 using AvaloniaEdit;
 using AvaloniaEdit.CodeCompletion;
@@ -119,11 +118,6 @@ public partial class CodeTabView : UserControl
 
         _codeViewShortcuts = new ShortcutKeyBindings(this);
         DataContextChanged += OnDataContextChanged;
-        ActualThemeVariantChanged += (_, _) =>
-        {
-            ApplyTextMateTheme();
-            ApplyFont();
-        };
     }
 
     /// <inheritdoc />
@@ -1245,11 +1239,11 @@ public partial class CodeTabView : UserControl
     }
 
     private CodeViewAppearance CurrentAppearance() =>
-        _boundViewModel?.AppearanceFor(ActualThemeVariant == ThemeVariant.Dark) ?? CodeViewAppearance.LightDefault;
+        _boundViewModel?.Appearance ?? CodeViewAppearance.Default;
 
     private void ApplyTextMateTheme()
     {
-        _textMate?.SetTheme(CodeViewTextMate.ThemeFor(ActualThemeVariant));
+        _textMate?.SetTheme(CodeViewTextMate.Theme);
         CodeViewAppearance appearance = CurrentAppearance();
         _lineColorizer?.SetAppearance(appearance);
 
@@ -1258,9 +1252,9 @@ public partial class CodeTabView : UserControl
             new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Avalonia.Media.Color.Parse(appearance.LineHighlightColor));
         Editor.TextArea.TextView.CurrentLineBorder = null;
 
-        // Background of Find matches and of the selection (= current match) — separate for light and dark themes.
-        _searchRenderer.SetMatchBrush(ParseBrush(appearance.SearchMatchBackgroundColor, CodeViewAppearance.LightDefault.SearchMatchBackgroundColor));
-        Editor.TextArea.SelectionBrush = ParseBrush(appearance.SelectionBackgroundColor, CodeViewAppearance.LightDefault.SelectionBackgroundColor);
+        // Background of Find matches and of the selection (= current match).
+        _searchRenderer.SetMatchBrush(ParseBrush(appearance.SearchMatchBackgroundColor, CodeViewAppearance.Default.SearchMatchBackgroundColor));
+        Editor.TextArea.SelectionBrush = ParseBrush(appearance.SelectionBackgroundColor, CodeViewAppearance.Default.SelectionBackgroundColor);
         Editor.TextArea.TextView.InvalidateLayer(KnownLayer.Selection);
     }
 
@@ -1273,10 +1267,9 @@ public partial class CodeTabView : UserControl
     }
 
     /// <summary>
-    /// Sets the editor's typeface and font size from the current theme's <see cref="CodeViewAppearance"/>
+    /// Sets the editor's typeface and font size from <see cref="CodeViewAppearance"/>
     /// (Preferences → Appearance → Code View), scaled by the current zoom. Called when a tab is
-    /// bound, when the zoom changes and when the theme changes (light and dark have separate
-    /// appearance settings).
+    /// bound and when the zoom changes.
     /// </summary>
     private void ApplyFont()
     {

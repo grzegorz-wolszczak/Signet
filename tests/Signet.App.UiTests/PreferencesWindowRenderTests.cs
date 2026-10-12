@@ -40,7 +40,6 @@ public sealed class PreferencesWindowRenderTests
         string root = Path.Combine(Path.GetTempPath(), "Signet.Tests", "prefs-ui-" + Guid.NewGuid().ToString("N"));
         settings = new(Path.Combine(root, "settings.json"));
         SpellChecker spellChecker = new(settings, Path.Combine(root, "hunspell"), Path.Combine(root, "user"));
-        ThemeManager theme = new(settings, NullLogger<ThemeManager>.Instance);
         LocalizationManager localization = new(settings, NullLogger<LocalizationManager>.Instance);
         IconThemeManager iconTheme = new(settings, NullLogger<IconThemeManager>.Instance);
         KeyboardShortcutManager shortcuts = new(settings);
@@ -48,7 +47,7 @@ public sealed class PreferencesWindowRenderTests
         AppActionRegistry registry = new(shortcuts, statusBar, NullLogger<AppActionRegistry>.Instance);
 
         UiDensityManager uiDensity = new(settings, iconTheme, NullLogger<UiDensityManager>.Instance);
-        PreferencesViewModel vm = new(settings, spellChecker, theme, localization, iconTheme, shortcuts, registry, uiDensity);
+        PreferencesViewModel vm = new(settings, spellChecker, localization, iconTheme, shortcuts, registry, uiDensity);
         return new PreferencesWindow { DataContext = vm };
     }
 
@@ -364,8 +363,8 @@ public sealed class PreferencesWindowRenderTests
             .Where(b => b.Classes.Contains("section"))
             .ToArray();
 
-        // Special character font, Warnings, Errors, Code View light, Code View dark.
-        sections.Should().HaveCount(5);
+        // Special character font, Warnings, Errors, Code View.
+        sections.Should().HaveCount(4);
         sections.Should().OnlyContain(b => b.BorderBrush != null);
         sections.Should().OnlyContain(b => b.BorderThickness == new Avalonia.Thickness(1));
         window.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Name == "WarningSample")
@@ -603,7 +602,7 @@ public sealed class PreferencesWindowRenderTests
             .Select(b => (TextBlock)b.Child!)
             .ToArray();
 
-        fields.Should().HaveCount(3, "special character + Code View light and dark; the preview fonts are on the Preview tab");
+        fields.Should().HaveCount(2, "special character + Code View; the preview fonts are on the Preview tab");
 
         fields.Should().OnlyContain(t => !string.IsNullOrEmpty(t.Text) && t.FontFamily.Name == t.Text);
     }
@@ -637,12 +636,12 @@ public sealed class PreferencesWindowRenderTests
         TextBox[] colors = window.GetVisualDescendants().OfType<TextBox>()
             .Where(t => t.Classes.Contains("colorValue"))
             .ToArray();
-        colors.Should().HaveCount(2);
-        colors.Should().OnlyContain(t => ((ISolidColorBrush)t.Background!).Color == Color.Parse(PreviewHighlight.Default.LightColor));
+        colors.Should().HaveCount(1);
+        colors.Should().OnlyContain(t => ((ISolidColorBrush)t.Background!).Color == Color.Parse(PreviewHighlight.Default.Color));
 
         window.GetVisualDescendants().OfType<TextBlock>()
             .Should().Contain(t => t.Text == Strings.Get("PreferencesWindow_PreviewRefreshDelay"))
-            .And.Contain(t => t.Text == Strings.Get("PreferencesWindow_PreviewHighlightColorDark"));
+            .And.Contain(t => t.Text == Strings.Get("PreferencesWindow_PreviewHighlightColor"));
     }
 
     /// <summary>The Code View color fields have a background in the color of the entered value — also when focused — and readable text.</summary>

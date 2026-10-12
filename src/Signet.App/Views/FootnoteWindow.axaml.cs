@@ -41,7 +41,7 @@ public partial class FootnoteWindow : Window
 
     /// <summary>Initializes the window.</summary>
     public FootnoteWindow()
-        : this(CodeViewAppearance.LightDefault)
+        : this(CodeViewAppearance.Default)
     {
     }
 
@@ -72,7 +72,7 @@ public partial class FootnoteWindow : Window
 
     /// <summary>Shows the window; returns what to do once accepted (add, save or remove), or <c>null</c>.</summary>
     public static Task<FootnoteRequest?> AskAsync(Window owner, FootnoteViewModel viewModel) =>
-        AskAsync(owner, viewModel, CodeViewAppearance.LightDefault);
+        AskAsync(owner, viewModel, CodeViewAppearance.Default);
 
     /// <summary>
     /// Shows the window with the Code View colors of <paramref name="appearance"/> in the "Code" preview; returns what to

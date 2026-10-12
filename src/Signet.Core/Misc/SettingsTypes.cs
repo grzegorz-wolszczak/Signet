@@ -22,21 +22,6 @@ public enum CleanOn
 }
 
 /// <summary>
-/// Interface theme preference.
-/// </summary>
-public enum ThemePreference
-{
-    /// <summary>Follow the system setting.</summary>
-    System = 0,
-
-    /// <summary>Always light.</summary>
-    Light = 1,
-
-    /// <summary>Always dark.</summary>
-    Dark = 2,
-}
-
-/// <summary>
 /// Window geometry remembered between runs (position, size and the
 /// <c>maximized</c>/<c>fullscreen</c> flags).
 /// </summary>
@@ -83,16 +68,14 @@ public enum PreviewHighlightStyle
 /// Highlight of the Code View caret location in the preview (Code View → Preview synchronization).
 /// </summary>
 /// <param name="Style">Background or outline.</param>
-/// <param name="LightColor">Color (<c>#rrggbb</c>) for the light application theme.</param>
-/// <param name="DarkColor">Color (<c>#rrggbb</c>) for the dark application theme.</param>
+/// <param name="Color">Color (<c>#rrggbb</c>).</param>
 /// <param name="OpacityPercent">Background opacity in percent (the outline always uses the full color).</param>
 /// <param name="OutlineWidth">Outline width in pixels.</param>
 /// <param name="AutoHide">Whether the highlight disappears on its own (otherwise it stays until the caret moves again).</param>
 /// <param name="AutoHideDelayMs">After how many milliseconds it disappears when <paramref name="AutoHide"/> is set.</param>
 public readonly record struct PreviewHighlight(
     PreviewHighlightStyle Style,
-    string LightColor,
-    string DarkColor,
+    string Color,
     int OpacityPercent,
     int OutlineWidth,
     bool AutoHide,
@@ -119,21 +102,16 @@ public readonly record struct PreviewHighlight(
     public const int AutoHideDelayMax = 30000;
 
     /// <summary>
-    /// Default values: a 45% yellow background (<c>rgba(255,235,59,0.45)</c>) in both themes,
+    /// Default values: a 45% yellow background (<c>rgba(255,235,59,0.45)</c>),
     /// a 3 px outline, a persistent highlight; when auto-hide is enabled — 2 s.
     /// </summary>
     public static PreviewHighlight Default =>
-        new(PreviewHighlightStyle.Background, "#ffeb3b", "#ffeb3b", 45, 3, false, 2000);
-
-    /// <summary>Color for the application theme.</summary>
-    /// <param name="dark">Whether the application uses a dark theme.</param>
-    public string ColorFor(bool dark) => dark ? DarkColor : LightColor;
+        new(PreviewHighlightStyle.Background, "#ffeb3b", 45, 3, false, 2000);
 
     /// <summary>A copy with values clamped to their ranges and valid colors (invalid → default).</summary>
     public PreviewHighlight Normalized() => new(
         Enum.IsDefined(Style) ? Style : Default.Style,
-        IsHexColor(LightColor) ? LightColor : Default.LightColor,
-        IsHexColor(DarkColor) ? DarkColor : Default.DarkColor,
+        IsHexColor(Color) ? Color : Default.Color,
         Math.Clamp(OpacityPercent, OpacityMin, OpacityMax),
         Math.Clamp(OutlineWidth, OutlineWidthMin, OutlineWidthMax),
         AutoHide,
@@ -149,9 +127,8 @@ public readonly record struct PreviewHighlight(
 /// notifications have their own color (<see cref="ErrorAppearance"/>).
 /// </summary>
 /// <param name="FontSize">Font size (px) of the warning texts; 0 = the size of the interface text.</param>
-/// <param name="LightColor">Warning color (<c>#rrggbb</c>) for the light application theme.</param>
-/// <param name="DarkColor">Warning color (<c>#rrggbb</c>) for the dark application theme.</param>
-public readonly record struct WarningAppearance(int FontSize, string LightColor, string DarkColor)
+/// <param name="Color">Warning color (<c>#rrggbb</c>).</param>
+public readonly record struct WarningAppearance(int FontSize, string Color)
 {
     /// <summary>Lower bound of an explicit <see cref="FontSize"/>.</summary>
     public const int FontSizeMin = 8;
@@ -159,50 +136,42 @@ public readonly record struct WarningAppearance(int FontSize, string LightColor,
     /// <summary>Upper bound of an explicit <see cref="FontSize"/>.</summary>
     public const int FontSizeMax = 40;
 
-    /// <summary>Default values: the interface text size, dark orange (light theme) and amber (dark theme).</summary>
-    public static WarningAppearance Default => new(0, "#b35c00", "#ffb900");
+    /// <summary>Default values: the interface text size and dark orange.</summary>
+    public static WarningAppearance Default => new(0, "#b35c00");
 
     /// <summary>A copy with the size clamped (0 stays "as the interface text") and valid colors (invalid → default).</summary>
     public WarningAppearance Normalized() => new(
         FontSize <= 0 ? 0 : Math.Clamp(FontSize, FontSizeMin, FontSizeMax),
-        PreviewHighlight.IsHexColor(LightColor) ? LightColor : Default.LightColor,
-        PreviewHighlight.IsHexColor(DarkColor) ? DarkColor : Default.DarkColor);
+        PreviewHighlight.IsHexColor(Color) ? Color : Default.Color);
 }
 
 /// <summary>
 /// Color of the error notifications — a blocked or failed operation: its status bar message, its row in the
 /// Notifications panel and the dot on the notification bell (the Notifications tab and the status bar indicator).
 /// </summary>
-/// <param name="LightColor">Error color (<c>#rrggbb</c>) for the light application theme.</param>
-/// <param name="DarkColor">Error color (<c>#rrggbb</c>) for the dark application theme.</param>
-public readonly record struct ErrorAppearance(string LightColor, string DarkColor)
+/// <param name="Color">Error color (<c>#rrggbb</c>).</param>
+public readonly record struct ErrorAppearance(string Color)
 {
-    /// <summary>Default values: red for both themes (lighter for the dark one).</summary>
-    public static ErrorAppearance Default => new("#d93030", "#f14c4c");
+    /// <summary>Default values: red.</summary>
+    public static ErrorAppearance Default => new("#d93030");
 
-    /// <summary>A copy with valid colors (invalid → default).</summary>
+    /// <summary>A copy with a valid color (invalid → default).</summary>
     public ErrorAppearance Normalized() => new(
-        PreviewHighlight.IsHexColor(LightColor) ? LightColor : Default.LightColor,
-        PreviewHighlight.IsHexColor(DarkColor) ? DarkColor : Default.DarkColor);
+        PreviewHighlight.IsHexColor(Color) ? Color : Default.Color);
 }
 
 /// <summary>
-/// Look of the Code View opening tag hint (the tooltip shown over a closing tag): font and colors for the light and
-/// dark application themes.
+/// Look of the Code View opening tag hint (the tooltip shown over a closing tag): font and colors.
 /// </summary>
 /// <param name="FontFamily">Font family; empty = the Code View editor font.</param>
 /// <param name="FontSize">Font size (px); 0 = the Code View editor size (with its zoom).</param>
-/// <param name="LightBackground">Background color (<c>#rrggbb</c>) for the light theme.</param>
-/// <param name="LightForeground">Text color (<c>#rrggbb</c>) for the light theme.</param>
-/// <param name="DarkBackground">Background color (<c>#rrggbb</c>) for the dark theme.</param>
-/// <param name="DarkForeground">Text color (<c>#rrggbb</c>) for the dark theme.</param>
+/// <param name="Background">Background color (<c>#rrggbb</c>).</param>
+/// <param name="Foreground">Text color (<c>#rrggbb</c>).</param>
 public readonly record struct OpenTagHintAppearance(
     string FontFamily,
     int FontSize,
-    string LightBackground,
-    string LightForeground,
-    string DarkBackground,
-    string DarkForeground)
+    string Background,
+    string Foreground)
 {
     /// <summary>Lower bound of an explicit <see cref="FontSize"/>.</summary>
     public const int FontSizeMin = 6;
@@ -211,22 +180,14 @@ public readonly record struct OpenTagHintAppearance(
     public const int FontSizeMax = 72;
 
     /// <summary>Default values: the editor font and the tooltip colors of the Fluent theme.</summary>
-    public static OpenTagHintAppearance Default => new(string.Empty, 0, "#f2f2f2", "#000000", "#2b2b2b", "#ffffff");
-
-    /// <summary>Background color for the application theme.</summary>
-    public string BackgroundFor(bool dark) => dark ? DarkBackground : LightBackground;
-
-    /// <summary>Text color for the application theme.</summary>
-    public string ForegroundFor(bool dark) => dark ? DarkForeground : LightForeground;
+    public static OpenTagHintAppearance Default => new(string.Empty, 0, "#f2f2f2", "#000000");
 
     /// <summary>A copy with the size clamped (0 stays "as the editor") and valid colors (invalid → default).</summary>
     public OpenTagHintAppearance Normalized() => new(
         FontFamily?.Trim() ?? string.Empty,
         FontSize <= 0 ? 0 : Math.Clamp(FontSize, FontSizeMin, FontSizeMax),
-        PreviewHighlight.IsHexColor(LightBackground) ? LightBackground : Default.LightBackground,
-        PreviewHighlight.IsHexColor(LightForeground) ? LightForeground : Default.LightForeground,
-        PreviewHighlight.IsHexColor(DarkBackground) ? DarkBackground : Default.DarkBackground,
-        PreviewHighlight.IsHexColor(DarkForeground) ? DarkForeground : Default.DarkForeground);
+        PreviewHighlight.IsHexColor(Background) ? Background : Default.Background,
+        PreviewHighlight.IsHexColor(Foreground) ? Foreground : Default.Foreground);
 }
 
 /// <summary>Font settings of the "Insert Special Character" window.</summary>
@@ -330,40 +291,8 @@ public sealed record CodeViewAppearance
     /// <summary>Selection background in the editor — also of the current Find match, which is selected.</summary>
     public string SelectionBackgroundColor { get; init; } = "#ADD6FF";
 
-    /// <summary>Default colors for the light theme.</summary>
-    public static CodeViewAppearance LightDefault => new();
-
-    /// <summary>Default colors for the dark theme.</summary>
-    public static CodeViewAppearance DarkDefault => new()
-    {
-        FontFamily = "Courier New",
-        FontSize = 10,
-        CssCommentColor = "#706D5B",
-        CssPropertyColor = "#9FC28A",
-        CssQuoteColor = "#EB939A",
-        CssSelectorColor = "#EFEF8F",
-        CssValueColor = "#FCFFE0",
-        LineHighlightColor = "#515151",
-        LineNumberBackgroundColor = "#2D2D2D",
-        LineNumberForegroundColor = "#E5E5E5",
-        SpellingUnderlineColor = "#FF3737",
-        XhtmlAttributeNameColor = "#9FC28A",
-        XhtmlAttributeValueColor = "#E89198",
-        XhtmlCssColor = "#808000",
-        XhtmlCssCommentColor = "#706D5B",
-        XhtmlDoctypeColor = "#7EFCFF",
-        XhtmlEntityColor = "#EBFFC4",
-        XhtmlHtmlColor = "#EFEF8F",
-        XhtmlHtmlCommentColor = "#706D5B",
-        CssSpecialSelectorColor = "#F0C674",
-        CssAtRuleColor = "#C586C0",
-        CssConstantColor = "#B5CEA8",
-        XhtmlNamespacePrefixColor = "#D7BA7D",
-        LinkColor = "#6CB6FF",
-        ErrorUnderlineColor = "#FF5555",
-        SearchMatchBackgroundColor = "#695A2E",
-        SelectionBackgroundColor = "#264F78",
-    };
+    /// <summary>Default font and colors.</summary>
+    public static CodeViewAppearance Default => new();
 }
 
 /// <summary>Where in the reading order (spine) the edition page goes.</summary>

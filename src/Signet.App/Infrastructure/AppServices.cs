@@ -30,7 +30,6 @@ internal static class AppServices
         services.AddSingleton(typeof(ILogger<>), typeof(Logger<>));
 
         services.AddSingleton(_ => new SettingsStore());
-        services.AddSingleton<ThemeManager>();
         services.AddSingleton<LocalizationManager>();
         services.AddSingleton<IconThemeManager>();
         services.AddSingleton<UiDensityManager>();

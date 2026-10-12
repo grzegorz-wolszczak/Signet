@@ -28,7 +28,7 @@ namespace Signet.App.ViewModels;
 /// <para><b>Save / Cancel, as in Rider:</b> the window edits a draft of the settings
 /// (<see cref="SettingsStore.CreateDraft"/>) and of the keymap (<see cref="KeyboardShortcutManager.CreateDraft"/>);
 /// nothing changes in the application until <see cref="ApplyCommand"/> (the Save button, which keeps the window open) commits the
-/// draft and applies its effects (theme, UI language, UI font, warnings, spelling dictionaries, shortcuts, debug
+/// draft and applies its effects (UI language, UI font, warnings, spelling dictionaries, shortcuts, debug
 /// logging) — see <see cref="Apply"/>. Cancel closes the window and drops the draft; Escape and the window's close
 /// button first ask whether to save it, drop it or go back. The only exception are the user dictionary operations (add / rename / copy
 /// / remove a dictionary, edit its words): they are file operations and happen at once; their effect on the
@@ -40,7 +40,7 @@ namespace Signet.App.ViewModels;
 /// <see cref="UiDensityManager.ApplyUiFont"/>; compact mode — at startup. <b>Appearance has no menu icon size choice</b>
 /// (<c>MainMenuIconSize</c>) — the setting exists in <see cref="SettingsStore"/>, but has no consumer
 /// (no menu icon scaling). The Code View typeface, size and colors are wired in (<c>CodeTabView.ApplyFont</c> /
-/// <c>ApplyTextMateTheme</c>), but applied when a tab is opened and when the theme changes, not live
+/// <c>ApplyTextMateTheme</c>), but applied when a tab is opened, not live
 /// after the setting is saved; the Preview fonts have no live consumer yet. For many
 /// appearance settings the effect is visible after a restart (see
 /// <see cref="RestartNoticeVisible"/>).</para>
@@ -51,7 +51,6 @@ public sealed partial class PreferencesViewModel : ObservableObject
     private readonly SettingsStore _appSettings;
     private readonly SettingsStore _settings;
     private readonly SpellChecker _spellChecker;
-    private readonly ThemeManager _themeManager;
     private readonly LocalizationManager _localizationManager;
     private readonly IconThemeManager _iconThemeManager;
     private readonly KeyboardShortcutManager _shortcuts;
@@ -61,7 +60,6 @@ public sealed partial class PreferencesViewModel : ObservableObject
     public PreferencesViewModel(
         SettingsStore settings,
         SpellChecker spellChecker,
-        ThemeManager themeManager,
         LocalizationManager localizationManager,
         IconThemeManager iconThemeManager,
         KeyboardShortcutManager shortcuts,
@@ -71,7 +69,6 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _appSettings = settings ?? throw new ArgumentNullException(nameof(settings));
         _settings = _appSettings.CreateDraft();
         _spellChecker = spellChecker ?? throw new ArgumentNullException(nameof(spellChecker));
-        _themeManager = themeManager ?? throw new ArgumentNullException(nameof(themeManager));
         _localizationManager = localizationManager ?? throw new ArgumentNullException(nameof(localizationManager));
         _iconThemeManager = iconThemeManager ?? throw new ArgumentNullException(nameof(iconThemeManager));
         _shortcuts = shortcuts ?? throw new ArgumentNullException(nameof(shortcuts));
@@ -82,7 +79,6 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _selectedLanguage = AvailableLanguages.First(l => l.Code == _localizationManager.Current);
 
         // ---- Appearance ----
-        _selectedTheme = _themeManager.Current;
         _selectedIconTheme = AvailableIconThemes.First(t => t.Code == _iconThemeManager.Current);
         _customIconFolder = _iconThemeManager.CustomFolder;
         PreviewAppearance previewFonts = _settings.PreviewAppearance;
@@ -98,11 +94,8 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _previewHighlightOutlineWidth = highlight.OutlineWidth;
         _previewHighlightAutoHide = highlight.AutoHide;
         _previewHighlightAutoHideDelay = highlight.AutoHideDelayMs;
-        PreviewHighlightLightColor = new ColorSettingRow(
-            "PreviewHighlightLight", Strings.Get("PreferencesWindow_PreviewHighlightColorLight"), highlight.LightColor,
-            _ => PersistPreviewHighlight(), PickColorAsync);
-        PreviewHighlightDarkColor = new ColorSettingRow(
-            "PreviewHighlightDark", Strings.Get("PreferencesWindow_PreviewHighlightColorDark"), highlight.DarkColor,
+        PreviewHighlightColor = new ColorSettingRow(
+            "PreviewHighlight", Strings.Get("PreferencesWindow_PreviewHighlightColor"), highlight.Color,
             _ => PersistPreviewHighlight(), PickColorAsync);
 
         SpecialCharacterAppearance specialChar = _settings.SpecialCharacterAppearance;
@@ -111,19 +104,13 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
         WarningAppearance warnings = _settings.WarningAppearance;
         _warningFontSize = warnings.FontSize;
-        WarningLightColor = new ColorSettingRow(
-            "WarningLight", Strings.Get("PreferencesWindow_WarningColorLight"), warnings.LightColor,
-            _ => PersistWarningAppearance(), PickColorAsync);
-        WarningDarkColor = new ColorSettingRow(
-            "WarningDark", Strings.Get("PreferencesWindow_WarningColorDark"), warnings.DarkColor,
+        WarningColor = new ColorSettingRow(
+            "Warning", Strings.Get("PreferencesWindow_WarningColor"), warnings.Color,
             _ => PersistWarningAppearance(), PickColorAsync);
 
         ErrorAppearance errors = _settings.ErrorAppearance;
-        ErrorLightColor = new ColorSettingRow(
-            "ErrorLight", Strings.Get("PreferencesWindow_ErrorColorLight"), errors.LightColor,
-            _ => PersistErrorAppearance(), PickColorAsync);
-        ErrorDarkColor = new ColorSettingRow(
-            "ErrorDark", Strings.Get("PreferencesWindow_ErrorColorDark"), errors.DarkColor,
+        ErrorColor = new ColorSettingRow(
+            "Error", Strings.Get("PreferencesWindow_ErrorColor"), errors.Color,
             _ => PersistErrorAppearance(), PickColorAsync);
 
         _extendedHighlighting = _settings.CodeViewExtendedHighlighting;
@@ -132,20 +119,13 @@ public sealed partial class PreferencesViewModel : ObservableObject
         OpenTagHintAppearance hintLook = _settings.OpenTagHintAppearance;
         _openTagHintFontFamily = hintLook.FontFamily;
         _openTagHintFontSize = hintLook.FontSize;
-        OpenTagHintLightBackground = new ColorSettingRow(
-            "OpenTagHintLightBackground", Strings.Get("PreferencesWindow_OpenTagHintLightBackground"), hintLook.LightBackground,
+        OpenTagHintBackground = new ColorSettingRow(
+            "OpenTagHintBackground", Strings.Get("PreferencesWindow_OpenTagHintBackground"), hintLook.Background,
             _ => PersistOpenTagHintAppearance(), PickColorAsync);
-        OpenTagHintLightForeground = new ColorSettingRow(
-            "OpenTagHintLightForeground", Strings.Get("PreferencesWindow_OpenTagHintLightForeground"), hintLook.LightForeground,
+        OpenTagHintForeground = new ColorSettingRow(
+            "OpenTagHintForeground", Strings.Get("PreferencesWindow_OpenTagHintForeground"), hintLook.Foreground,
             _ => PersistOpenTagHintAppearance(), PickColorAsync);
-        OpenTagHintDarkBackground = new ColorSettingRow(
-            "OpenTagHintDarkBackground", Strings.Get("PreferencesWindow_OpenTagHintDarkBackground"), hintLook.DarkBackground,
-            _ => PersistOpenTagHintAppearance(), PickColorAsync);
-        OpenTagHintDarkForeground = new ColorSettingRow(
-            "OpenTagHintDarkForeground", Strings.Get("PreferencesWindow_OpenTagHintDarkForeground"), hintLook.DarkForeground,
-            _ => PersistOpenTagHintAppearance(), PickColorAsync);
-        CodeViewLight = new CodeViewAppearanceEditor(_settings.CodeViewAppearance, a => _settings.CodeViewAppearance = a, PickFontAsync, PickColorAsync);
-        CodeViewDark = new CodeViewAppearanceEditor(_settings.CodeViewDarkAppearance, a => _settings.CodeViewDarkAppearance = a, PickFontAsync, PickColorAsync);
+        CodeView = new CodeViewAppearanceEditor(_settings.CodeViewAppearance, a => _settings.CodeViewAppearance = a, PickFontAsync, PickColorAsync);
 
         // ---- General ----
         _defaultVersionIsEpub3 = _settings.DefaultVersion.StartsWith('3');
@@ -250,11 +230,6 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _appSettings.Save();
         bool Changed(params string[] keys) => changed.Any(c => keys.Any(k => c.EndsWith("/" + k, StringComparison.Ordinal)));
 
-        if (Changed("ui_theme"))
-        {
-            _themeManager.ApplySaved();
-        }
-
         if (Changed("ui_language"))
         {
             _localizationManager.ApplySaved();
@@ -312,16 +287,6 @@ public sealed partial class PreferencesViewModel : ObservableObject
     // =====================================================================
     //  Appearance
     // =====================================================================
-
-    /// <summary>Values to choose from in the theme field.</summary>
-    public static IReadOnlyList<ThemePreference> AvailableThemes { get; } =
-        Enum.GetValues<ThemePreference>();
-
-    /// <summary>Preferred interface theme — takes effect once applied.</summary>
-    [ObservableProperty]
-    private ThemePreference _selectedTheme;
-
-    partial void OnSelectedThemeChanged(ThemePreference value) => _settings.ThemePreference = value;
 
     /// <summary>Action icon sets available to choose from.</summary>
     public static IReadOnlyList<IconThemeOption> AvailableIconThemes { get; } =
@@ -462,11 +427,8 @@ public sealed partial class PreferencesViewModel : ObservableObject
     /// <summary>Whether the border is selected (the thickness field is active).</summary>
     public bool IsPreviewHighlightOutline => PreviewHighlightStyle == PreviewHighlightStyle.Outline;
 
-    /// <summary>Highlight color for the application's light theme.</summary>
-    public ColorSettingRow PreviewHighlightLightColor { get; }
-
-    /// <summary>Highlight color for the application's dark theme.</summary>
-    public ColorSettingRow PreviewHighlightDarkColor { get; }
+    /// <summary>Highlight color.</summary>
+    public ColorSettingRow PreviewHighlightColor { get; }
 
     /// <summary>Background opacity in percent (5–100; out of range — clamped on save).</summary>
     [ObservableProperty]
@@ -497,8 +459,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
     private void PersistPreviewHighlight() =>
         _settings.PreviewHighlight = new PreviewHighlight(
             PreviewHighlightStyle,
-            PreviewHighlightLightColor.Value,
-            PreviewHighlightDarkColor.Value,
+            PreviewHighlightColor.Value,
             PreviewHighlightOpacity,
             PreviewHighlightOutlineWidth,
             PreviewHighlightAutoHide,
@@ -526,28 +487,22 @@ public sealed partial class PreferencesViewModel : ObservableObject
     [ObservableProperty]
     private int _warningFontSize;
 
-    /// <summary>Warning color for the application's light theme (applied live).</summary>
-    public ColorSettingRow WarningLightColor { get; }
-
-    /// <summary>Warning color for the application's dark theme (applied live).</summary>
-    public ColorSettingRow WarningDarkColor { get; }
+    /// <summary>Warning color (applied live).</summary>
+    public ColorSettingRow WarningColor { get; }
 
     partial void OnWarningFontSizeChanged(int value) => PersistWarningAppearance();
 
     private void PersistWarningAppearance()
     {
-        _settings.WarningAppearance = new WarningAppearance(WarningFontSize, WarningLightColor.Value, WarningDarkColor.Value);
+        _settings.WarningAppearance = new WarningAppearance(WarningFontSize, WarningColor.Value);
     }
 
-    /// <summary>Color of the error notifications for the application's light theme (applied live).</summary>
-    public ColorSettingRow ErrorLightColor { get; }
-
-    /// <summary>Color of the error notifications for the application's dark theme (applied live).</summary>
-    public ColorSettingRow ErrorDarkColor { get; }
+    /// <summary>Color of the error notifications (applied live).</summary>
+    public ColorSettingRow ErrorColor { get; }
 
     private void PersistErrorAppearance()
     {
-        _settings.ErrorAppearance = new ErrorAppearance(ErrorLightColor.Value, ErrorDarkColor.Value);
+        _settings.ErrorAppearance = new ErrorAppearance(ErrorColor.Value);
     }
 
     /// <summary>
@@ -649,23 +604,17 @@ public sealed partial class PreferencesViewModel : ObservableObject
             : $"{(OpenTagHintFontFamily.Length > 0 ? OpenTagHintFontFamily : Strings.Get("PreferencesWindow_OpenTagHintFontEditor"))}, "
               + (OpenTagHintFontSize > 0 ? $"{OpenTagHintFontSize} px" : Strings.Get("PreferencesWindow_OpenTagHintFontEditor"));
 
-    /// <summary>Background of the opening tag hint — light theme.</summary>
-    public ColorSettingRow OpenTagHintLightBackground { get; }
+    /// <summary>Background of the opening tag hint.</summary>
+    public ColorSettingRow OpenTagHintBackground { get; }
 
-    /// <summary>Text color of the opening tag hint — light theme.</summary>
-    public ColorSettingRow OpenTagHintLightForeground { get; }
-
-    /// <summary>Background of the opening tag hint — dark theme.</summary>
-    public ColorSettingRow OpenTagHintDarkBackground { get; }
-
-    /// <summary>Text color of the opening tag hint — dark theme.</summary>
-    public ColorSettingRow OpenTagHintDarkForeground { get; }
+    /// <summary>Text color of the opening tag hint.</summary>
+    public ColorSettingRow OpenTagHintForeground { get; }
 
     partial void OnOpenTagHintFontFamilyChanged(string value) => PersistOpenTagHintAppearance();
 
     partial void OnOpenTagHintFontSizeChanged(int value) => PersistOpenTagHintAppearance();
 
-    /// <summary>"Choose…" — the font picker, starting from the hint font (or the light-theme editor font).</summary>
+    /// <summary>"Choose…" — the font picker, starting from the hint font (or the editor font).</summary>
     [RelayCommand]
     private async Task ChooseOpenTagHintFont()
     {
@@ -691,16 +640,11 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _settings.OpenTagHintAppearance = new OpenTagHintAppearance(
             OpenTagHintFontFamily,
             OpenTagHintFontSize,
-            OpenTagHintLightBackground.Value,
-            OpenTagHintLightForeground.Value,
-            OpenTagHintDarkBackground.Value,
-            OpenTagHintDarkForeground.Value);
+            OpenTagHintBackground.Value,
+            OpenTagHintForeground.Value);
 
-    /// <summary>Code View appearance editor — light theme.</summary>
-    public CodeViewAppearanceEditor CodeViewLight { get; }
-
-    /// <summary>Code View appearance editor — dark theme.</summary>
-    public CodeViewAppearanceEditor CodeViewDark { get; }
+    /// <summary>Code View appearance editor (font and colors).</summary>
+    public CodeViewAppearanceEditor CodeView { get; }
 
     /// <summary>
     /// Whether to show the notice that a restart is needed to see changes of the Code View and Preview
@@ -725,26 +669,21 @@ public sealed partial class PreferencesViewModel : ObservableObject
         SpecialCharacterFontFamily = specialChar.FontFamily;
         SpecialCharacterFontSize = specialChar.FontSize;
 
-        CodeViewLight.ResetTo(CodeViewAppearance.LightDefault);
-        CodeViewDark.ResetTo(CodeViewAppearance.DarkDefault);
+        CodeView.ResetTo(CodeViewAppearance.Default);
 
         OpenTagHintAppearance hintLook = OpenTagHintAppearance.Default;
-        OpenTagHintLightBackground.SetValueSilently(hintLook.LightBackground);
-        OpenTagHintLightForeground.SetValueSilently(hintLook.LightForeground);
-        OpenTagHintDarkBackground.SetValueSilently(hintLook.DarkBackground);
-        OpenTagHintDarkForeground.SetValueSilently(hintLook.DarkForeground);
+        OpenTagHintBackground.SetValueSilently(hintLook.Background);
+        OpenTagHintForeground.SetValueSilently(hintLook.Foreground);
         OpenTagHintFontFamily = hintLook.FontFamily;
         OpenTagHintFontSize = hintLook.FontSize;
 
         WarningAppearance warnings = WarningAppearance.Default;
-        WarningLightColor.SetValueSilently(warnings.LightColor);
-        WarningDarkColor.SetValueSilently(warnings.DarkColor);
+        WarningColor.SetValueSilently(warnings.Color);
         WarningFontSize = warnings.FontSize;
         PersistWarningAppearance();
 
         ErrorAppearance errors = ErrorAppearance.Default;
-        ErrorLightColor.SetValueSilently(errors.LightColor);
-        ErrorDarkColor.SetValueSilently(errors.DarkColor);
+        ErrorColor.SetValueSilently(errors.Color);
         PersistErrorAppearance();
     }
 
@@ -1572,7 +1511,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
 }
 
 /// <summary>
-/// Editor of a single <see cref="CodeViewAppearance"/> variant (light/dark) — the font + a list
+/// Editor of the <see cref="CodeViewAppearance"/> — the font + a list
 /// of colors as editable rows (label + <c>#RRGGBB</c> value).
 /// </summary>
 public sealed partial class CodeViewAppearanceEditor : ObservableObject

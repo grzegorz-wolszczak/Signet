@@ -1,5 +1,4 @@
 using System;
-using Avalonia.Styling;
 using Signet.Core.MainUI;
 using Signet.Core.Misc;
 using TextMateSharp.Grammars;
@@ -11,7 +10,7 @@ namespace Signet.App.CodeView;
 /// Selects syntax highlighting for Code View. (X)HTML/XML/SVG and CSS use line-by-line
 /// highlighters (<see cref="CreateColorizer"/>, colors from <c>CodeViewAppearance</c>) —
 /// basic or extended; the remaining syntaxes (JavaScript, JSON) use TextMateSharp with the
-/// "Light+"/"Dark+" themes.
+/// "Light+" theme.
 /// </summary>
 internal static class CodeViewTextMate
 {
@@ -20,9 +19,8 @@ internal static class CodeViewTextMate
     /// <summary>Registry options (grammars + themes) shared by all Code View tabs.</summary>
     public static RegistryOptions Options => SharedOptions;
 
-    /// <summary>TextMate theme matching the application's theme variant.</summary>
-    public static IRawTheme ThemeFor(ThemeVariant variant) =>
-        SharedOptions.LoadTheme(variant == ThemeVariant.Dark ? ThemeName.DarkPlus : ThemeName.LightPlus);
+    /// <summary>The TextMate theme of Code View.</summary>
+    public static IRawTheme Theme => SharedOptions.LoadTheme(ThemeName.LightPlus);
 
     /// <summary>
     /// Line-by-line colorizer for the given syntax, or <c>null</c> when the syntax goes through

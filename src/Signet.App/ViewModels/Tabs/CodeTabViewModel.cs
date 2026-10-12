@@ -83,10 +83,9 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     private bool _wordWrap;
 
     /// <summary>
-    /// Code View colors from the settings for the light or dark theme.
+    /// Code View font and colors from the settings.
     /// </summary>
-    public CodeViewAppearance AppearanceFor(bool dark) =>
-        dark ? _settings.CodeViewDarkAppearance : _settings.CodeViewAppearance;
+    public CodeViewAppearance Appearance => _settings.CodeViewAppearance;
 
     /// <summary>
     /// Whether to use extended highlighting

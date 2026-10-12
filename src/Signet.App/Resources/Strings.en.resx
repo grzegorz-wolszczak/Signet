@@ -527,9 +527,6 @@
   <data name="PreferencesWindow_Appearance" xml:space="preserve">
     <value>Appearance</value>
   </data>
-  <data name="PreferencesWindow_Theme" xml:space="preserve">
-    <value>Theme:</value>
-  </data>
   <data name="PreferencesWindow_PreviewFonts" xml:space="preserve">
     <value>Preview fonts</value>
   </data>
@@ -551,11 +548,8 @@
   <data name="PreferencesWindow_Family" xml:space="preserve">
     <value>Family:</value>
   </data>
-  <data name="PreferencesWindow_CodeViewLight" xml:space="preserve">
-    <value>Code View — Light theme</value>
-  </data>
-  <data name="PreferencesWindow_CodeViewDark" xml:space="preserve">
-    <value>Code View — Dark theme</value>
+  <data name="PreferencesWindow_CodeView" xml:space="preserve">
+    <value>Code View</value>
   </data>
   <data name="PreferencesWindow_FontFamily" xml:space="preserve">
     <value>Font family:</value>
@@ -608,11 +602,8 @@
   <data name="PreferencesWindow_PreviewHighlightStyle" xml:space="preserve">
     <value>Highlight style:</value>
   </data>
-  <data name="PreferencesWindow_PreviewHighlightColorLight" xml:space="preserve">
-    <value>Color — light theme</value>
-  </data>
-  <data name="PreferencesWindow_PreviewHighlightColorDark" xml:space="preserve">
-    <value>Color — dark theme</value>
+  <data name="PreferencesWindow_PreviewHighlightColor" xml:space="preserve">
+    <value>Color</value>
   </data>
   <data name="PreferencesWindow_PreviewHighlightOpacity" xml:space="preserve">
     <value>Background opacity, % (5–100):</value>
@@ -1484,9 +1475,6 @@ Do you want to save the changes?</value>
   </data>
   <data name="SearchEditorWindow_Keep" xml:space="preserve">
     <value>Keep</value>
-  </data>
-  <data name="MainWindow_ThemeLabel" xml:space="preserve">
-    <value>Theme:</value>
   </data>
   <data name="PreferencesWindow_IconTheme" xml:space="preserve">
     <value>Icon theme:</value>
@@ -2834,15 +2822,6 @@ Only HTML files can be merged.</value>
   <data name="IconTheme_custom" xml:space="preserve">
     <value>Custom</value>
   </data>
-  <data name="Theme_System" xml:space="preserve">
-    <value>System</value>
-  </data>
-  <data name="Theme_Light" xml:space="preserve">
-    <value>Light</value>
-  </data>
-  <data name="Theme_Dark" xml:space="preserve">
-    <value>Dark</value>
-  </data>
   <data name="Preview_EngineUnavailable" xml:space="preserve">
     <value>Preview is not available in this environment — the WebView engine could not be started ({0}: {1}).</value>
   </data>
@@ -4069,11 +4048,8 @@ It does not change the files, their names or their IDs.</value>
   <data name="PreferencesWindow_WarningFontSize" xml:space="preserve">
     <value>Font size of warnings in dialogs (px; 0 = as the interface text)</value>
   </data>
-  <data name="PreferencesWindow_WarningColorLight" xml:space="preserve">
-    <value>Color — light theme</value>
-  </data>
-  <data name="PreferencesWindow_WarningColorDark" xml:space="preserve">
-    <value>Color — dark theme</value>
+  <data name="PreferencesWindow_WarningColor" xml:space="preserve">
+    <value>Color</value>
   </data>
   <data name="PreferencesWindow_WarningsNote" xml:space="preserve">
     <value>The color of the warnings in dialogs (e.g. the consequences of a risky Cleanup change).</value>
@@ -4084,11 +4060,8 @@ It does not change the files, their names or their IDs.</value>
   <data name="PreferencesWindow_Errors" xml:space="preserve">
     <value>Errors in notifications</value>
   </data>
-  <data name="PreferencesWindow_ErrorColorLight" xml:space="preserve">
-    <value>Color — light theme</value>
-  </data>
-  <data name="PreferencesWindow_ErrorColorDark" xml:space="preserve">
-    <value>Color — dark theme</value>
+  <data name="PreferencesWindow_ErrorColor" xml:space="preserve">
+    <value>Color</value>
   </data>
   <data name="PreferencesWindow_ErrorSample" xml:space="preserve">
     <value>Example: Add Nav to Reading Order is not available for EPUB 2.</value>
@@ -4114,17 +4087,11 @@ It does not change the files, their names or their IDs.</value>
   <data name="PreferencesWindow_OpenTagHintFontEditor" xml:space="preserve">
     <value>as in the editor</value>
   </data>
-  <data name="PreferencesWindow_OpenTagHintLightBackground" xml:space="preserve">
-    <value>Background — light theme</value>
+  <data name="PreferencesWindow_OpenTagHintBackground" xml:space="preserve">
+    <value>Background</value>
   </data>
-  <data name="PreferencesWindow_OpenTagHintLightForeground" xml:space="preserve">
-    <value>Text — light theme</value>
-  </data>
-  <data name="PreferencesWindow_OpenTagHintDarkBackground" xml:space="preserve">
-    <value>Background — dark theme</value>
-  </data>
-  <data name="PreferencesWindow_OpenTagHintDarkForeground" xml:space="preserve">
-    <value>Text — dark theme</value>
+  <data name="PreferencesWindow_OpenTagHintForeground" xml:space="preserve">
+    <value>Text</value>
   </data>
   <data name="Action_MainWindow_FindUsages" xml:space="preserve">
     <value>Find Usages</value>

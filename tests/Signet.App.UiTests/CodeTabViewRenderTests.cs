@@ -136,7 +136,7 @@ public sealed class CodeTabViewRenderTests
     public void Html_is_coloured_with_the_line_highlighter_and_CodeViewAppearance_colours()
     {
         (Window window, _) = ShowCodeTab("<p class=\"x\">a</p>\n<!-- c -->", extended: false);
-        CodeViewAppearance colours = CodeViewAppearance.LightDefault;
+        CodeViewAppearance colours = CodeViewAppearance.Default;
 
         ForegroundOfFirstElement(window, 1).Should().Be(Color.Parse(colours.XhtmlHtmlColor));
         ForegroundOfFirstElement(window, 2).Should().Be(Color.Parse(colours.XhtmlHtmlCommentColor));
@@ -148,7 +148,7 @@ public sealed class CodeTabViewRenderTests
     public void Opening_a_comment_recolours_the_following_lines_after_the_edit(bool extended)
     {
         (Window window, CodeTabViewModel vm) = ShowCodeTab("<p>a</p>\n<p>b</p>\n<p>c</p>", extended);
-        CodeViewAppearance colours = CodeViewAppearance.LightDefault;
+        CodeViewAppearance colours = CodeViewAppearance.Default;
         ForegroundOfFirstElement(window, 3).Should().Be(Color.Parse(colours.XhtmlHtmlColor));
 
         vm.Document.Insert(0, "<!-- ");
@@ -174,7 +174,7 @@ public sealed class CodeTabViewRenderTests
         const string line1 = "<p><b>bold</b> <i>it</i></p>";
         const string line2 = "<style>p { color: red }</style>";
         (Window window, _) = ShowCodeTab(line1 + "\n" + line2);
-        CodeViewAppearance colours = CodeViewAppearance.LightDefault;
+        CodeViewAppearance colours = CodeViewAppearance.Default;
 
         Typeface bold = ElementAt(window, 1, line1.IndexOf("bold", System.StringComparison.Ordinal)).TextRunProperties.Typeface;
         Typeface italic = ElementAt(window, 1, line1.IndexOf("it<", System.StringComparison.Ordinal)).TextRunProperties.Typeface;
@@ -193,7 +193,7 @@ public sealed class CodeTabViewRenderTests
 
         VisualLineElement red = ElementAt(window, 1, text.IndexOf("red", System.StringComparison.Ordinal));
         ((ISolidColorBrush)red.TextRunProperties.ForegroundBrush!).Color
-            .Should().Be(Color.Parse(CodeViewAppearance.LightDefault.XhtmlCssColor));
+            .Should().Be(Color.Parse(CodeViewAppearance.Default.XhtmlCssColor));
     }
 
     [AvaloniaFact]

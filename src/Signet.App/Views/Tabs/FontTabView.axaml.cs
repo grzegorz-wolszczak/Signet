@@ -1,6 +1,5 @@
 using System;
 using Avalonia.Controls;
-using Avalonia.Styling;
 using Signet.App.Resources;
 using Signet.App.ViewModels.Tabs;
 
@@ -28,7 +27,6 @@ public partial class FontTabView : UserControl
         ObfuscationBox.ItemsSource = ObfuscationLabels;
         ObfuscationBox.SelectionChanged += OnObfuscationChanged;
         DataContextChanged += OnDataContextChanged;
-        ActualThemeVariantChanged += (_, _) => ApplyPreviewTheme();
     }
 
     private void OnDataContextChanged(object? sender, EventArgs e)
@@ -42,8 +40,6 @@ public partial class FontTabView : UserControl
         _syncing = true;
         ObfuscationBox.SelectedIndex = (int)_boundViewModel.ObfuscationMethod;
         _syncing = false;
-
-        ApplyPreviewTheme();
     }
 
     private void OnObfuscationChanged(object? sender, SelectionChangedEventArgs e)
@@ -55,7 +51,4 @@ public partial class FontTabView : UserControl
 
         _boundViewModel.ObfuscationMethod = (FontObfuscationMethod)ObfuscationBox.SelectedIndex;
     }
-
-    private void ApplyPreviewTheme() =>
-        _boundViewModel?.SetPreviewTheme(ActualThemeVariant == ThemeVariant.Dark);
 }

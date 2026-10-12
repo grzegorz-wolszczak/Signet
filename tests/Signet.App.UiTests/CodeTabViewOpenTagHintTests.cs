@@ -101,18 +101,17 @@ public sealed class CodeTabViewOpenTagHintTests
         using Host host = Show(settings =>
         {
             settings.CodeViewOpenTagHintDelayMs = 0;
-            settings.OpenTagHintAppearance = new OpenTagHintAppearance("Courier New", 19, "#112233", "#445566", "#778899", "#aabbcc");
+            settings.OpenTagHintAppearance = new OpenTagHintAppearance("Courier New", 19, "#112233", "#445566");
         });
 
         HoverOffset(host, CloseTagOffset + 3);
 
-        bool dark = host.View.ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark;
         TextBlock tag = host.View.FindControl<TextBlock>("OpenTagHintTag")!;
         tag.FontFamily.Name.Should().Be("Courier New");
         tag.FontSize.Should().Be(19);
-        ((Avalonia.Media.ISolidColorBrush)tag.Foreground!).Color.Should().Be(Avalonia.Media.Color.Parse(dark ? "#aabbcc" : "#445566"));
+        ((Avalonia.Media.ISolidColorBrush)tag.Foreground!).Color.Should().Be(Avalonia.Media.Color.Parse("#445566"));
         ((Avalonia.Media.ISolidColorBrush)host.View.FindControl<Border>("OpenTagHintBorder")!.Background!).Color
-            .Should().Be(Avalonia.Media.Color.Parse(dark ? "#778899" : "#112233"));
+            .Should().Be(Avalonia.Media.Color.Parse("#112233"));
     }
 
     [AvaloniaFact]

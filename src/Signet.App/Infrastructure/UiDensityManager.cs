@@ -109,7 +109,7 @@ public sealed class UiDensityManager(
 
     /// <summary>
     /// Applies the saved warning appearance live (Preferences → Appearance → Warnings): the font size of the warning
-    /// texts (<c>SignetWarningFontSize</c>) and the warning color of both themes (<c>SignetWarningBrush</c>).
+    /// texts (<c>SignetWarningFontSize</c>) and the warning color (<c>SignetWarningBrush</c>).
     /// </summary>
     public void ApplyWarningAppearance()
     {
@@ -121,20 +121,19 @@ public sealed class UiDensityManager(
 
     /// <summary>
     /// Sets the warning resources of the application: the font size (<paramref name="uiFontSize"/> when
-    /// <see cref="WarningAppearance.FontSize"/> is 0) and the <c>SignetWarningBrush</c> of the light and dark theme
-    /// dictionaries — controls pick them up via <c>DynamicResource</c>.
+    /// <see cref="WarningAppearance.FontSize"/> is 0) and the <c>SignetWarningBrush</c> — controls pick them up via
+    /// <c>DynamicResource</c>.
     /// </summary>
     public static void ApplyWarning(Application app, WarningAppearance appearance, double uiFontSize)
     {
         System.ArgumentNullException.ThrowIfNull(app);
         app.Resources["SignetWarningFontSize"] = appearance.FontSize > 0 ? appearance.FontSize : uiFontSize;
-        SetThemeBrush(app, ThemeVariant.Light, "SignetWarningBrush", appearance.LightColor);
-        SetThemeBrush(app, ThemeVariant.Dark, "SignetWarningBrush", appearance.DarkColor);
+        SetBrush(app, "SignetWarningBrush", appearance.Color);
     }
 
     /// <summary>
     /// Applies the saved color of the error notifications live (Preferences → Appearance → Errors):
-    /// <c>SignetErrorBrush</c> of both themes.
+    /// <c>SignetErrorBrush</c>.
     /// </summary>
     public void ApplyErrorAppearance()
     {
@@ -145,23 +144,19 @@ public sealed class UiDensityManager(
     }
 
     /// <summary>
-    /// Sets the <c>SignetErrorBrush</c> of the light and dark theme dictionaries — controls pick it up via
-    /// <c>DynamicResource</c>.
+    /// Sets the <c>SignetErrorBrush</c> — controls pick it up via <c>DynamicResource</c>.
     /// </summary>
     public static void ApplyError(Application app, ErrorAppearance appearance)
     {
         System.ArgumentNullException.ThrowIfNull(app);
-        SetThemeBrush(app, ThemeVariant.Light, "SignetErrorBrush", appearance.LightColor);
-        SetThemeBrush(app, ThemeVariant.Dark, "SignetErrorBrush", appearance.DarkColor);
+        SetBrush(app, "SignetErrorBrush", appearance.Color);
     }
 
-    private static void SetThemeBrush(Application app, ThemeVariant variant, string key, string color)
+    private static void SetBrush(Application app, string key, string color)
     {
-        if (app.Resources.ThemeDictionaries.TryGetValue(variant, out IThemeVariantProvider? provider)
-            && provider is IResourceDictionary dictionary
-            && Color.TryParse(color, out Color parsed))
+        if (Color.TryParse(color, out Color parsed))
         {
-            dictionary[key] = new SolidColorBrush(parsed);
+            app.Resources[key] = new SolidColorBrush(parsed);
         }
     }
 

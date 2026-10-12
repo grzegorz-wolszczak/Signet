@@ -34,14 +34,13 @@ public sealed class PreferencesViewModelTests
 
     private static PreferencesViewModel NewOn(TestHost host)
     {
-        ThemeManager theme = new(host.Settings, NullLogger<ThemeManager>.Instance);
         LocalizationManager localization = new(host.Settings, NullLogger<LocalizationManager>.Instance);
         IconThemeManager iconTheme = new(host.Settings, NullLogger<IconThemeManager>.Instance);
         string root = Path.Combine(Path.GetTempPath(), "Signet.Tests", "prefs-" + Guid.NewGuid().ToString("N"));
         SpellChecker spellChecker = new(host.Settings, Path.Combine(root, "hunspell"), Path.Combine(root, "user"));
         UiDensityManager uiDensity = new(
             host.Settings, iconTheme, NullLogger<UiDensityManager>.Instance, () => "Segoe UI", _ => false);
-        return new PreferencesViewModel(host.Settings, spellChecker, theme, localization, iconTheme, host.Shortcuts, host.Registry, uiDensity);
+        return new PreferencesViewModel(host.Settings, spellChecker, localization, iconTheme, host.Shortcuts, host.Registry, uiDensity);
     }
 
     [Fact]
@@ -49,24 +48,24 @@ public sealed class PreferencesViewModelTests
     {
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
-        ThemePreference themeBefore = host.Settings.ThemePreference;
+        string iconThemeBefore = host.Settings.UiIconTheme;
         bool spellCheckBefore = host.Settings.SpellCheck;
         int applied = 0;
         vm.Applied += (_, _) => applied++;
         vm.HasChanges.Should().BeFalse();
         vm.ApplyCommand.CanExecute(null).Should().BeFalse();
 
-        vm.SelectedTheme = themeBefore == ThemePreference.Dark ? ThemePreference.Light : ThemePreference.Dark;
+        vm.SelectedIconTheme = PreferencesViewModel.AvailableIconThemes.First(t => t.Code != iconThemeBefore);
         vm.SpellCheckEnabled = !spellCheckBefore;
 
-        host.Settings.ThemePreference.Should().Be(themeBefore, "nothing is written before Save");
+        host.Settings.UiIconTheme.Should().Be(iconThemeBefore, "nothing is written before Save");
         host.Settings.SpellCheck.Should().Be(spellCheckBefore);
         vm.HasChanges.Should().BeTrue();
         vm.ApplyCommand.CanExecute(null).Should().BeTrue();
 
         vm.ApplyCommand.Execute(null);
 
-        host.Settings.ThemePreference.Should().Be(vm.SelectedTheme);
+        host.Settings.UiIconTheme.Should().Be(vm.SelectedIconTheme.Code);
         host.Settings.SpellCheck.Should().Be(!spellCheckBefore);
         vm.HasChanges.Should().BeFalse();
         vm.ApplyCommand.CanExecute(null).Should().BeFalse();
@@ -114,7 +113,7 @@ public sealed class PreferencesViewModelTests
     public void Preview_highlight_fields_start_from_settings()
     {
         using TestHost host = new();
-        PreviewHighlight stored = new(PreviewHighlightStyle.Outline, "#102030", "#405060", 30, 4, true, 1500);
+        PreviewHighlight stored = new(PreviewHighlightStyle.Outline, "#102030", 30, 4, true, 1500);
         host.Settings.PreviewHighlight = stored;
 
         PreferencesViewModel sut = NewOn(host);
@@ -122,8 +121,7 @@ public sealed class PreferencesViewModelTests
         sut.PreviewHighlightStyle.Should().Be(PreviewHighlightStyle.Outline);
         sut.IsPreviewHighlightOutline.Should().BeTrue();
         sut.IsPreviewHighlightBackground.Should().BeFalse();
-        sut.PreviewHighlightLightColor.Value.Should().Be("#102030");
-        sut.PreviewHighlightDarkColor.Value.Should().Be("#405060");
+        sut.PreviewHighlightColor.Value.Should().Be("#102030");
         sut.PreviewHighlightOpacity.Should().Be(30);
         sut.PreviewHighlightOutlineWidth.Should().Be(4);
         sut.PreviewHighlightAutoHide.Should().BeTrue();
@@ -134,39 +132,36 @@ public sealed class PreferencesViewModelTests
     public void Warning_fields_start_from_settings_and_changes_persist_on_apply()
     {
         using TestHost host = new();
-        host.Settings.WarningAppearance = new WarningAppearance(16, "#102030", "#405060");
+        host.Settings.WarningAppearance = new WarningAppearance(16, "#102030");
         PreferencesViewModel sut = NewOn(host);
 
         sut.WarningFontSize.Should().Be(16);
-        sut.WarningLightColor.Value.Should().Be("#102030");
-        sut.WarningDarkColor.Value.Should().Be("#405060");
+        sut.WarningColor.Value.Should().Be("#102030");
 
         sut.WarningFontSize = 0;
-        sut.WarningLightColor.Value = "#00ff00";
-        sut.WarningDarkColor.Value = "#0000ff";
+        sut.WarningColor.Value = "#00ff00";
         sut.ApplyCommand.Execute(null);
 
-        host.Settings.WarningAppearance.Should().Be(new WarningAppearance(0, "#00ff00", "#0000ff"));
+        host.Settings.WarningAppearance.Should().Be(new WarningAppearance(0, "#00ff00"));
     }
 
     [Fact]
-    public void Error_colors_start_from_settings_persist_on_apply_and_reset()
+    public void Error_color_starts_from_settings_persists_on_apply_and_resets()
     {
         using TestHost host = new();
-        host.Settings.ErrorAppearance = new ErrorAppearance("#102030", "#405060");
+        host.Settings.ErrorAppearance = new ErrorAppearance("#102030");
         PreferencesViewModel sut = NewOn(host);
 
-        sut.ErrorLightColor.Value.Should().Be("#102030");
-        sut.ErrorDarkColor.Value.Should().Be("#405060");
+        sut.ErrorColor.Value.Should().Be("#102030");
 
-        sut.ErrorLightColor.Value = "#00ff00";
+        sut.ErrorColor.Value = "#00ff00";
         sut.ApplyCommand.Execute(null);
-        host.Settings.ErrorAppearance.Should().Be(new ErrorAppearance("#00ff00", "#405060"));
+        host.Settings.ErrorAppearance.Should().Be(new ErrorAppearance("#00ff00"));
 
         sut.RestoreAppearanceDefaultsCommand.Execute(null);
         sut.ApplyCommand.Execute(null);
         host.Settings.ErrorAppearance.Should().Be(ErrorAppearance.Default);
-        sut.ErrorDarkColor.Value.Should().Be(ErrorAppearance.Default.DarkColor);
+        sut.ErrorColor.Value.Should().Be(ErrorAppearance.Default.Color);
     }
 
     private sealed class FakeEditionPageHost : IEditionPageHost
@@ -336,39 +331,38 @@ public sealed class PreferencesViewModelTests
     {
         using UiCultureScope culture = new("en");
         using TestHost host = new();
-        host.Settings.OpenTagHintAppearance = new OpenTagHintAppearance("Consolas", 15, "#111111", "#222222", "#333333", "#444444");
+        host.Settings.OpenTagHintAppearance = new OpenTagHintAppearance("Consolas", 15, "#111111", "#222222");
         PreferencesViewModel sut = NewOn(host);
 
         sut.OpenTagHintFontDescription.Should().Be("Consolas, 15 px");
-        sut.OpenTagHintLightBackground.Value.Should().Be("#111111");
-        sut.OpenTagHintDarkForeground.Value.Should().Be("#444444");
+        sut.OpenTagHintBackground.Value.Should().Be("#111111");
+        sut.OpenTagHintForeground.Value.Should().Be("#222222");
 
-        sut.OpenTagHintDarkBackground.Value = "#abcdef";
+        sut.OpenTagHintBackground.Value = "#abcdef";
         sut.ResetOpenTagHintFontCommand.Execute(null);
         sut.ApplyCommand.Execute(null);
 
-        host.Settings.OpenTagHintAppearance.Should().Be(new OpenTagHintAppearance(string.Empty, 0, "#111111", "#222222", "#abcdef", "#444444"));
+        host.Settings.OpenTagHintAppearance.Should().Be(new OpenTagHintAppearance(string.Empty, 0, "#abcdef", "#222222"));
         sut.OpenTagHintFontDescription.Should().Be(Strings.Get("PreferencesWindow_OpenTagHintFontDefault"));
 
         sut.RestoreAppearanceDefaultsCommand.Execute(null);
         sut.ApplyCommand.Execute(null);
 
         host.Settings.OpenTagHintAppearance.Should().Be(OpenTagHintAppearance.Default);
-        sut.OpenTagHintLightBackground.Value.Should().Be(OpenTagHintAppearance.Default.LightBackground);
+        sut.OpenTagHintBackground.Value.Should().Be(OpenTagHintAppearance.Default.Background);
     }
 
     [Fact]
     public void Restoring_the_appearance_defaults_resets_the_warnings()
     {
         using TestHost host = new();
-        host.Settings.WarningAppearance = new WarningAppearance(16, "#102030", "#405060");
+        host.Settings.WarningAppearance = new WarningAppearance(16, "#102030");
         PreferencesViewModel sut = NewOn(host);
 
         sut.RestoreAppearanceDefaultsCommand.Execute(null);
 
         sut.WarningFontSize.Should().Be(0);
-        sut.WarningLightColor.Value.Should().Be(WarningAppearance.Default.LightColor);
-        sut.WarningDarkColor.Value.Should().Be(WarningAppearance.Default.DarkColor);
+        sut.WarningColor.Value.Should().Be(WarningAppearance.Default.Color);
         sut.ApplyCommand.Execute(null);
         host.Settings.WarningAppearance.Should().Be(WarningAppearance.Default);
     }
@@ -384,23 +378,21 @@ public sealed class PreferencesViewModelTests
         vm.PreviewHighlightOpacity = 70;
         vm.PreviewHighlightAutoHide = true;
         vm.PreviewHighlightAutoHideDelay = 100;
-        vm.PreviewHighlightLightColor.Value = "#00ff00";
-        vm.PreviewHighlightDarkColor.Value = "#0000ff";
+        vm.PreviewHighlightColor.Value = "#00ff00";
         vm.ApplyCommand.Execute(null);
 
         host.Settings.PreviewHighlight.Should().Be(new PreviewHighlight(
-            PreviewHighlightStyle.Outline, "#00ff00", "#0000ff", 70,
+            PreviewHighlightStyle.Outline, "#00ff00", 70,
             PreviewHighlight.OutlineWidthMax, true, PreviewHighlight.AutoHideDelayMin));
     }
 
     [Fact]
-    public void Preview_highlight_color_rows_have_localized_labels()
+    public void Preview_highlight_color_row_has_a_localized_label()
     {
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
 
-        vm.PreviewHighlightLightColor.Label.Should().Be(Strings.Get("PreferencesWindow_PreviewHighlightColorLight"));
-        vm.PreviewHighlightDarkColor.Label.Should().Be(Strings.Get("PreferencesWindow_PreviewHighlightColorDark"));
+        vm.PreviewHighlightColor.Label.Should().Be(Strings.Get("PreferencesWindow_PreviewHighlightColor"));
     }
 
     [Theory]
@@ -446,18 +438,6 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
-    public void SelectedTheme_change_persists_on_apply()
-    {
-        (TestHost host, PreferencesViewModel vm) = New();
-        using TestHost _ = host;
-
-        vm.SelectedTheme = ThemePreference.Dark;
-        vm.ApplyCommand.Execute(null);
-
-        host.Settings.ThemePreference.Should().Be(ThemePreference.Dark);
-    }
-
-    [Fact]
     public void Preview_font_changes_persist_on_apply()
     {
         (TestHost host, PreferencesViewModel vm) = New();
@@ -472,7 +452,7 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
-    public async Task Choose_color_OK_sets_and_persists_the_picked_color_for_the_right_theme()
+    public async Task Choose_color_OK_sets_and_persists_the_picked_color()
     {
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
@@ -482,15 +462,14 @@ public sealed class PreferencesViewModelTests
             asked = (title, initial);
             return Task.FromResult<string?>("#123456");
         };
-        ColorSettingRow row = vm.CodeViewDark.Colors.First(c => c.Key == "Search Match Background");
+        ColorSettingRow row = vm.CodeView.Colors.First(c => c.Key == "Search Match Background");
 
         await row.ChooseColorCommand.ExecuteAsync(null);
 
-        asked.Should().Be((row.Label, CodeViewAppearance.DarkDefault.SearchMatchBackgroundColor));
+        asked.Should().Be((row.Label, CodeViewAppearance.Default.SearchMatchBackgroundColor));
         row.Value.Should().Be("#123456");
         vm.ApplyCommand.Execute(null);
-        host.Settings.CodeViewDarkAppearance.SearchMatchBackgroundColor.Should().Be("#123456");
-        host.Settings.CodeViewAppearance.SearchMatchBackgroundColor.Should().Be(CodeViewAppearance.LightDefault.SearchMatchBackgroundColor);
+        host.Settings.CodeViewAppearance.SearchMatchBackgroundColor.Should().Be("#123456");
     }
 
     [Fact]
@@ -499,21 +478,21 @@ public sealed class PreferencesViewModelTests
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
         vm.ColorPicker = (_, _) => Task.FromResult<string?>(null);
-        ColorSettingRow row = vm.CodeViewLight.Colors.First(c => c.Key == "Selection Background");
+        ColorSettingRow row = vm.CodeView.Colors.First(c => c.Key == "Selection Background");
 
         await row.ChooseColorCommand.ExecuteAsync(null);
 
-        row.Value.Should().Be(CodeViewAppearance.LightDefault.SelectionBackgroundColor);
-        host.Settings.CodeViewAppearance.SelectionBackgroundColor.Should().Be(CodeViewAppearance.LightDefault.SelectionBackgroundColor);
+        row.Value.Should().Be(CodeViewAppearance.Default.SelectionBackgroundColor);
+        host.Settings.CodeViewAppearance.SelectionBackgroundColor.Should().Be(CodeViewAppearance.Default.SelectionBackgroundColor);
     }
 
     [Fact]
-    public void CodeViewLight_color_edit_persists_on_apply()
+    public void CodeView_color_edit_persists_on_apply()
     {
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
 
-        ColorSettingRow row = vm.CodeViewLight.Colors.First(c => c.Key == "CSS Comment");
+        ColorSettingRow row = vm.CodeView.Colors.First(c => c.Key == "CSS Comment");
         row.Value = "#123456";
         vm.ApplyCommand.Execute(null);
 
@@ -526,12 +505,12 @@ public sealed class PreferencesViewModelTests
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
         vm.PreviewFontStandard = "Georgia";
-        vm.CodeViewDark.Colors.First(c => c.Key == "CSS Comment").Value = "#000000";
+        vm.CodeView.Colors.First(c => c.Key == "CSS Comment").Value = "#000000";
 
         vm.RestoreAppearanceDefaultsCommand.Execute(null);
 
         vm.PreviewFontStandard.Should().Be(PreviewAppearance.Default.FontFamilyStandard);
-        vm.CodeViewDark.Colors.First(c => c.Key == "CSS Comment").Value.Should().Be(CodeViewAppearance.DarkDefault.CssCommentColor);
+        vm.CodeView.Colors.First(c => c.Key == "CSS Comment").Value.Should().Be(CodeViewAppearance.Default.CssCommentColor);
     }
 
     [Fact]
@@ -661,12 +640,12 @@ public sealed class PreferencesViewModelTests
             return Task.FromResult<FontPickResult?>(new FontPickResult("Consolas", 14));
         };
 
-        await vm.CodeViewDark.ChooseFontCommand.ExecuteAsync(null);
+        await vm.CodeView.ChooseFontCommand.ExecuteAsync(null);
 
         asked!.MonospaceOnly.Should().BeTrue();
         vm.ApplyCommand.Execute(null);
-        host.Settings.CodeViewDarkAppearance.FontFamily.Should().Be("Consolas");
-        host.Settings.CodeViewDarkAppearance.FontSize.Should().Be(14);
+        host.Settings.CodeViewAppearance.FontFamily.Should().Be("Consolas");
+        host.Settings.CodeViewAppearance.FontSize.Should().Be(14);
     }
 
     [Fact]
@@ -674,12 +653,12 @@ public sealed class PreferencesViewModelTests
     {
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
-        string before = vm.CodeViewLight.FontFamily;
+        string before = vm.CodeView.FontFamily;
         vm.FontPicker = _ => Task.FromResult<FontPickResult?>(null);
 
-        await vm.CodeViewLight.ChooseFontCommand.ExecuteAsync(null);
+        await vm.CodeView.ChooseFontCommand.ExecuteAsync(null);
 
-        vm.CodeViewLight.FontFamily.Should().Be(before);
+        vm.CodeView.FontFamily.Should().Be(before);
     }
 
     [Fact]

@@ -26,11 +26,10 @@ public static class PreviewHighlightScript
     /// <summary>Builds the script for the element with the given <paramref name="loc"/>.</summary>
     /// <param name="loc">The element's <c>data-signet-loc</c> value.</param>
     /// <param name="highlight">Highlight settings.</param>
-    /// <param name="dark">Whether the application uses a dark theme (color selection).</param>
-    public static string Build(int loc, PreviewHighlight highlight, bool dark)
+    public static string Build(int loc, PreviewHighlight highlight)
     {
         PreviewHighlight h = highlight.Normalized();
-        string color = h.ColorFor(dark);
+        string color = h.Color;
         bool outline = h.Style == PreviewHighlightStyle.Outline;
 
         StringBuilder js = new();

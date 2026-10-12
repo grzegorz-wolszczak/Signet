@@ -15,8 +15,7 @@ namespace Signet.Core.Misc;
 /// </summary>
 /// <remarks>
 /// Colors in the appearance structures are stored as <c>#RRGGBB</c> strings (Core does not
-/// depend on Avalonia). The store also holds <see cref="ThemePreference"/>, window geometry and
-/// the recent files list. The class is not thread-safe.
+/// depend on Avalonia). The store also holds window geometry and the recent files list. The class is not thread-safe.
 /// </remarks>
 public sealed class SettingsStore
 {
@@ -62,6 +61,7 @@ public sealed class SettingsStore
     public SettingsStore(string filePath)
     {
         _file = new SettingsFile(filePath);
+        RemoveObsoleteKeys();
     }
 
     private SettingsStore(SettingsFile draftFile, SettingsFile baseline)
@@ -80,7 +80,11 @@ public sealed class SettingsStore
     public void Save() => _file.Save();
 
     /// <summary>Discards unsaved changes and reloads the file.</summary>
-    public void Reload() => _file.Reload();
+    public void Reload()
+    {
+        _file.Reload();
+        RemoveObsoleteKeys();
+    }
 
     /// <summary>Whether this store is a draft made by <see cref="CreateDraft"/>.</summary>
     public bool IsDraft => _draftBaseline is not null;
@@ -249,25 +253,6 @@ public sealed class SettingsStore
     {
         get => ReadBool("ui_doublewidth_textcursor", false);
         set => Write("ui_doublewidth_textcursor", value);
-    }
-
-    /// <summary>Whether to use the application's own custom dark theme.</summary>
-    public bool UiUseCustomSignetDarkTheme
-    {
-        get => ReadBool("ui_custom_signet_dark_theme", true);
-        set => Write("ui_custom_signet_dark_theme", value);
-    }
-
-    /// <summary>
-    /// Interface theme preference. Defaults to
-    /// <see cref="ThemePreference.System"/>.
-    /// </summary>
-    public ThemePreference ThemePreference
-    {
-        get => Enum.TryParse(ReadString("ui_theme", nameof(ThemePreference.System)), ignoreCase: true, out ThemePreference value)
-            ? value
-            : ThemePreference.System;
-        set => Write("ui_theme", value.ToString());
     }
 
     // ------------------------------------------------------------ Books --- //
@@ -521,7 +506,7 @@ public sealed class SettingsStore
     }
 
     /// <summary>
-    /// Look of the opening tag tooltip (<see cref="CodeViewOpenTagHint"/>): font and colors for both themes. Always
+    /// Look of the opening tag tooltip (<see cref="CodeViewOpenTagHint"/>): font and colors. Always
     /// read normalized (<see cref="OpenTagHintAppearance.Normalized"/>).
     /// </summary>
     public OpenTagHintAppearance OpenTagHintAppearance
@@ -532,10 +517,8 @@ public sealed class SettingsStore
             return new OpenTagHintAppearance(
                 ReadString("open_tag_hint_font_family", d.FontFamily),
                 ReadInt("open_tag_hint_font_size", d.FontSize),
-                ReadString("open_tag_hint_light_background", d.LightBackground),
-                ReadString("open_tag_hint_light_foreground", d.LightForeground),
-                ReadString("open_tag_hint_dark_background", d.DarkBackground),
-                ReadString("open_tag_hint_dark_foreground", d.DarkForeground)).Normalized();
+                ReadString("open_tag_hint_light_background", d.Background),
+                ReadString("open_tag_hint_light_foreground", d.Foreground)).Normalized();
         }
 
         set
@@ -543,10 +526,8 @@ public sealed class SettingsStore
             OpenTagHintAppearance v = value.Normalized();
             WriteSilent("open_tag_hint_font_family", v.FontFamily);
             WriteSilent("open_tag_hint_font_size", v.FontSize);
-            WriteSilent("open_tag_hint_light_background", v.LightBackground);
-            WriteSilent("open_tag_hint_light_foreground", v.LightForeground);
-            WriteSilent("open_tag_hint_dark_background", v.DarkBackground);
-            WriteSilent("open_tag_hint_dark_foreground", v.DarkForeground);
+            WriteSilent("open_tag_hint_light_background", v.Background);
+            WriteSilent("open_tag_hint_light_foreground", v.Foreground);
             RaiseChanged("open_tag_hint_appearance");
         }
     }
@@ -713,13 +694,6 @@ public sealed class SettingsStore
     {
         get => ReadInt("print_dpi", 300);
         set => Write("print_dpi", value);
-    }
-
-    /// <summary>Whether to darken the preview in dark mode (1 = yes).</summary>
-    public int PreviewDark
-    {
-        get => ReadInt("preview_dark_in_dm", 1);
-        set => Write("preview_dark_in_dm", value);
     }
 
     /// <summary>Whether to skip the print preview window.</summary>
@@ -909,8 +883,8 @@ public sealed class SettingsStore
     }
 
     /// <summary>
-    /// Highlight of the Code View caret location in the preview (style, colors for the light and
-    /// dark themes, opacity, outline, auto-hide). Always read normalized
+    /// Highlight of the Code View caret location in the preview (style, color, opacity, outline,
+    /// auto-hide). Always read normalized
     /// (<see cref="PreviewHighlight.Normalized"/>).
     /// </summary>
     public PreviewHighlight PreviewHighlight
@@ -924,8 +898,7 @@ public sealed class SettingsStore
                 : d.Style;
             return new PreviewHighlight(
                 style,
-                ReadString("preview_highlight_color_light", d.LightColor),
-                ReadString("preview_highlight_color_dark", d.DarkColor),
+                ReadString("preview_highlight_color_light", d.Color),
                 ReadInt("preview_highlight_opacity", d.OpacityPercent),
                 ReadInt("preview_highlight_outline_width", d.OutlineWidth),
                 ReadBool("preview_highlight_auto_hide", d.AutoHide),
@@ -936,8 +909,7 @@ public sealed class SettingsStore
         {
             PreviewHighlight v = value.Normalized();
             WriteSilent("preview_highlight_style", v.Style.ToString());
-            WriteSilent("preview_highlight_color_light", v.LightColor);
-            WriteSilent("preview_highlight_color_dark", v.DarkColor);
+            WriteSilent("preview_highlight_color_light", v.Color);
             WriteSilent("preview_highlight_opacity", v.OpacityPercent);
             WriteSilent("preview_highlight_outline_width", v.OutlineWidth);
             _file.SetRaw(Group, "preview_highlight_auto_hide", v.AutoHide);
@@ -947,8 +919,7 @@ public sealed class SettingsStore
     }
 
     /// <summary>
-    /// Appearance of the warnings (font size of the warning texts in dialogs, warning color for the light and dark
-    /// themes). Always read normalized (<see cref="WarningAppearance.Normalized"/>).
+    /// Appearance of the warnings (font size of the warning texts in dialogs, warning color). Always read normalized (<see cref="WarningAppearance.Normalized"/>).
     /// </summary>
     public WarningAppearance WarningAppearance
     {
@@ -957,22 +928,20 @@ public sealed class SettingsStore
             WarningAppearance d = WarningAppearance.Default;
             return new WarningAppearance(
                 ReadInt("warning_font_size", d.FontSize),
-                ReadString("warning_color_light", d.LightColor),
-                ReadString("warning_color_dark", d.DarkColor)).Normalized();
+                ReadString("warning_color_light", d.Color)).Normalized();
         }
 
         set
         {
             WarningAppearance v = value.Normalized();
             WriteSilent("warning_font_size", v.FontSize);
-            WriteSilent("warning_color_light", v.LightColor);
-            WriteSilent("warning_color_dark", v.DarkColor);
+            WriteSilent("warning_color_light", v.Color);
             RaiseChanged("warning_appearance");
         }
     }
 
     /// <summary>
-    /// Color of the error notifications for the light and dark themes. Always read normalized
+    /// Color of the error notifications. Always read normalized
     /// (<see cref="ErrorAppearance.Normalized"/>).
     /// </summary>
     public ErrorAppearance ErrorAppearance
@@ -981,15 +950,13 @@ public sealed class SettingsStore
         {
             ErrorAppearance d = ErrorAppearance.Default;
             return new ErrorAppearance(
-                ReadString("error_color_light", d.LightColor),
-                ReadString("error_color_dark", d.DarkColor)).Normalized();
+                ReadString("error_color_light", d.Color)).Normalized();
         }
 
         set
         {
             ErrorAppearance v = value.Normalized();
-            WriteSilent("error_color_light", v.LightColor);
-            WriteSilent("error_color_dark", v.DarkColor);
+            WriteSilent("error_color_light", v.Color);
             RaiseChanged("error_appearance");
         }
     }
@@ -1048,25 +1015,14 @@ public sealed class SettingsStore
         }
     }
 
-    /// <summary>Code editor appearance settings — light theme.</summary>
+    /// <summary>Code editor appearance settings — font and colors.</summary>
     public CodeViewAppearance CodeViewAppearance
     {
-        get => ReadCodeView("code_view_", CodeViewAppearance.LightDefault);
+        get => ReadCodeView("code_view_", CodeViewAppearance.Default);
         set
         {
             WriteCodeView("code_view_", value);
             RaiseChanged("code_view_appearance");
-        }
-    }
-
-    /// <summary>Code editor appearance settings — dark theme.</summary>
-    public CodeViewAppearance CodeViewDarkAppearance
-    {
-        get => ReadCodeView("cv_dark_", CodeViewAppearance.DarkDefault);
-        set
-        {
-            WriteCodeView("cv_dark_", value);
-            RaiseChanged("cv_dark_appearance");
         }
     }
 
@@ -1711,13 +1667,10 @@ public sealed class SettingsStore
         yield return "special_character_font_size";
         yield return "warning_font_size";
         yield return "warning_color_light";
-        yield return "warning_color_dark";
         yield return "open_tag_hint_font_family";
         yield return "open_tag_hint_font_size";
         yield return "open_tag_hint_light_background";
         yield return "open_tag_hint_light_foreground";
-        yield return "open_tag_hint_dark_background";
-        yield return "open_tag_hint_dark_foreground";
 
         string[] suffixes =
         {
@@ -1735,7 +1688,29 @@ public sealed class SettingsStore
         foreach (string suffix in suffixes)
         {
             yield return "code_view_" + suffix;
-            yield return "cv_dark_" + suffix;
+        }
+    }
+
+    // The keys of the dark application theme, which was removed (the application has one, light theme until
+    // configurable themes come): dropped on load, so the next save no longer writes them.
+    private void RemoveObsoleteKeys()
+    {
+        string[] keys =
+        {
+            "ui_theme", "ui_custom_signet_dark_theme", "preview_dark_in_dm", "preview_highlight_color_dark",
+            "warning_color_dark", "error_color_dark", "open_tag_hint_dark_background", "open_tag_hint_dark_foreground",
+        };
+        foreach (string key in keys)
+        {
+            _file.Remove(Group, key);
+        }
+
+        foreach ((string group, string key) in _file.Entries().ToList())
+        {
+            if (group == Group && key.StartsWith("cv_dark_", StringComparison.Ordinal))
+            {
+                _file.Remove(group, key);
+            }
         }
     }
 

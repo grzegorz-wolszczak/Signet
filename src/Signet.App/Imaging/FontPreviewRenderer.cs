@@ -28,13 +28,12 @@ public static class FontPreviewRenderer
     /// SkiaSharp cannot load the font (e.g. WOFF2).
     /// </summary>
     /// <param name="fontPath">Font file path (TTF / OTF).</param>
-    /// <param name="dark">Whether to render the dark variant (light text on a dark background).</param>
-    public static Bitmap? Render(string fontPath, bool dark)
+    public static Bitmap? Render(string fontPath)
     {
         ArgumentNullException.ThrowIfNull(fontPath);
         try
         {
-            return RenderCore(fontPath, dark);
+            return RenderCore(fontPath);
         }
         catch (Exception)
         {
@@ -44,7 +43,7 @@ public static class FontPreviewRenderer
         }
     }
 
-    private static Bitmap? RenderCore(string fontPath, bool dark)
+    private static Bitmap? RenderCore(string fontPath)
     {
         using SKTypeface? typeface = LoadTypeface(fontPath);
         if (typeface is null)
@@ -53,8 +52,8 @@ public static class FontPreviewRenderer
         }
 
         const int width = 720;
-        SKColor background = dark ? new SKColor(0x1E, 0x1E, 0x1E) : SKColors.White;
-        SKColor foreground = dark ? new SKColor(0xE6, 0xE6, 0xE6) : new SKColor(0x1A, 0x1A, 0x1A);
+        SKColor background = SKColors.White;
+        SKColor foreground = new(0x1A, 0x1A, 0x1A);
 
         List<(string Text, float Size)> rows = new();
         foreach (string line in SampleLines)

@@ -32,7 +32,6 @@ public partial class App : Application
             IServiceProvider services = Services
                 ?? throw new InvalidOperationException("App.Services was not set before Avalonia started.");
 
-            services.GetRequiredService<ThemeManager>().ApplySaved();
             // Before icons: toolbar icon size is computed from the UI font height.
             services.GetRequiredService<UiDensityManager>().ApplySaved();
             services.GetRequiredService<LocalizationManager>().ApplySaved();

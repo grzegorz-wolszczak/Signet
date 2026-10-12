@@ -12,7 +12,7 @@
              xmlns:vm="using:Signet.App.ViewModels"
              xmlns:infra="using:Signet.App.Infrastructure"
              x:Class="Signet.App.App"
-             RequestedThemeVariant="Default">
+             RequestedThemeVariant="Light">
 
   <Application.DataTemplates>
     <DataTemplate DataType="docking:BookBrowserTool">
@@ -101,22 +101,12 @@
     <ResourceDictionary>
       <!-- Text selection in edit boxes: Fluent uses the dark system accent color, on which
            black text is unreadable. Light blue background as in Windows / VS Code. -->
-      <ResourceDictionary.ThemeDictionaries>
-        <ResourceDictionary x:Key="Light">
-          <SolidColorBrush x:Key="SignetTextSelectionBrush" Color="#ADD6FF" />
-          <SolidColorBrush x:Key="SignetTextSelectionForegroundBrush" Color="#000000" />
-          <!-- Warnings in dialogs. -->
-          <SolidColorBrush x:Key="SignetWarningBrush" Color="#B35C00" />
-          <!-- Error notifications (status bar message, Notifications panel, the dot on the bell). -->
-          <SolidColorBrush x:Key="SignetErrorBrush" Color="#D93030" />
-        </ResourceDictionary>
-        <ResourceDictionary x:Key="Dark">
-          <SolidColorBrush x:Key="SignetTextSelectionBrush" Color="#264F78" />
-          <SolidColorBrush x:Key="SignetTextSelectionForegroundBrush" Color="#FFFFFF" />
-          <SolidColorBrush x:Key="SignetWarningBrush" Color="#FFB900" />
-          <SolidColorBrush x:Key="SignetErrorBrush" Color="#F14C4C" />
-        </ResourceDictionary>
-      </ResourceDictionary.ThemeDictionaries>
+      <SolidColorBrush x:Key="SignetTextSelectionBrush" Color="#ADD6FF" />
+      <SolidColorBrush x:Key="SignetTextSelectionForegroundBrush" Color="#000000" />
+      <!-- Warnings in dialogs (the color is set from the settings by UiDensityManager). -->
+      <SolidColorBrush x:Key="SignetWarningBrush" Color="#B35C00" />
+      <!-- Error notifications (status bar message, Notifications panel, the dot on the bell). -->
+      <SolidColorBrush x:Key="SignetErrorBrush" Color="#D93030" />
 
       <!-- Menus and flyouts: Fluent caps their popup width at FlyoutThemeMaxWidth (456), which
            clipped longer menu labels (no ellipsis). Lift the cap so popups size to their content. -->

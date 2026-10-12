@@ -39,7 +39,7 @@ internal abstract class SyntaxColorizer : DocumentColorizingTransformer
     /// <summary>The most recently colorized view (redrawn after a change).</summary>
     protected TextView? TextView { get; set; }
 
-    /// <summary>Changes the colors (e.g. after switching between light/dark theme) and redraws the view.</summary>
+    /// <summary>Changes the colors (e.g. after the settings changed) and redraws the view.</summary>
     public void SetAppearance(CodeViewAppearance appearance)
     {
         ArgumentNullException.ThrowIfNull(appearance);

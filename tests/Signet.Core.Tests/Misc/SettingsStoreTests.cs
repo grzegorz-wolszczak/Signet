@@ -37,7 +37,6 @@ public sealed class SettingsStoreTests
         sut.RecentFilesLimit.Should().Be(9);
         sut.CssEpub3ValidationSpec.Should().Be("css30");
         sut.HighlightOpenCloseTags.Should().BeTrue();
-        sut.ThemePreference.Should().Be(ThemePreference.System);
         sut.PreserveEntityCodeNames.Should().ContainSingle()
             .Which.Should().Be(((ushort)160, "&#160;"));
     }
@@ -53,18 +52,17 @@ public sealed class SettingsStoreTests
         writer.SpellCheck = true;
         writer.CleanOn = CleanOn.Save;
         writer.ZoomPreview = 1.25f;
-        writer.ThemePreference = ThemePreference.Dark;
         writer.RecentFiles = new[] { "a.epub", "b.epub" };
         writer.ClipboardHistory = new[] { "newest", "older" };
         writer.FavoriteSpecialCharacters = new[] { "—", "§" };
         writer.CleanupEnabledSteps = new[] { CleanupStep.UnusedSelectors, CleanupStep.UnusedMedia };
         writer.StandardizationEnabledSteps = new[] { StandardizationStep.RebaseManifestIds };
-        writer.WarningAppearance = new WarningAppearance(16, "#102030", "#405060");
-        writer.ErrorAppearance = new ErrorAppearance("#a01010", "#ff8080");
+        writer.WarningAppearance = new WarningAppearance(16, "#102030");
+        writer.ErrorAppearance = new ErrorAppearance("#a01010");
         writer.EditionPage = new EditionPageSettings(
             true, EditionPagePosition.Second, new[] { new EditionPageField("Edited by", "GreatWorksPublishing", true), new EditionPageField("Note", "x", false) },
             false, true, false, true, false, "Colophon", 3);
-        writer.OpenTagHintAppearance = new OpenTagHintAppearance("Consolas", 15, "#111111", "#222222", "#333333", "#444444");
+        writer.OpenTagHintAppearance = new OpenTagHintAppearance("Consolas", 15, "#111111", "#222222");
         writer.Save();
 
         File.Exists(path).Should().BeTrue();
@@ -74,18 +72,17 @@ public sealed class SettingsStoreTests
         reader.SpellCheck.Should().BeTrue();
         reader.CleanOn.Should().Be(CleanOn.Save);
         reader.ZoomPreview.Should().Be(1.25f);
-        reader.ThemePreference.Should().Be(ThemePreference.Dark);
         reader.RecentFiles.Should().Equal("a.epub", "b.epub");
         reader.ClipboardHistory.Should().Equal("newest", "older");
         reader.FavoriteSpecialCharacters.Should().Equal("—", "§");
         reader.CleanupEnabledSteps.Should().Equal(CleanupStep.UnusedSelectors, CleanupStep.UnusedMedia);
         reader.StandardizationEnabledSteps.Should().Equal(StandardizationStep.RebaseManifestIds);
-        reader.WarningAppearance.Should().Be(new WarningAppearance(16, "#102030", "#405060"));
-        reader.ErrorAppearance.Should().Be(new ErrorAppearance("#a01010", "#ff8080"));
+        reader.WarningAppearance.Should().Be(new WarningAppearance(16, "#102030"));
+        reader.ErrorAppearance.Should().Be(new ErrorAppearance("#a01010"));
         reader.EditionPage.Should().Be(new EditionPageSettings(
             true, EditionPagePosition.Second, new[] { new EditionPageField("Edited by", "GreatWorksPublishing", true), new EditionPageField("Note", "x", false) },
             false, true, false, true, false, "Colophon", 3));
-        reader.OpenTagHintAppearance.Should().Be(new OpenTagHintAppearance("Consolas", 15, "#111111", "#222222", "#333333", "#444444"));
+        reader.OpenTagHintAppearance.Should().Be(new OpenTagHintAppearance("Consolas", 15, "#111111", "#222222"));
     }
 
     [Fact]
@@ -115,11 +112,10 @@ public sealed class SettingsStoreTests
         using TempDir dir = new();
         SettingsStore sut = new(dir.Combine("settings.json"));
 
-        sut.OpenTagHintAppearance = new OpenTagHintAppearance(" Consolas ", 500, "nope", "#010203", "#040506", "");
+        sut.OpenTagHintAppearance = new OpenTagHintAppearance(" Consolas ", 500, "nope", "#010203");
 
-        OpenTagHintAppearance d = OpenTagHintAppearance.Default;
         sut.OpenTagHintAppearance.Should().Be(
-            new OpenTagHintAppearance("Consolas", OpenTagHintAppearance.FontSizeMax, d.LightBackground, "#010203", "#040506", d.DarkForeground));
+            new OpenTagHintAppearance("Consolas", OpenTagHintAppearance.FontSizeMax, OpenTagHintAppearance.Default.Background, "#010203"));
     }
 
     [Theory]
@@ -148,9 +144,9 @@ public sealed class SettingsStoreTests
         using TempDir dir = new();
         SettingsStore sut = new(dir.Combine("settings.json"));
 
-        sut.WarningAppearance = new WarningAppearance(stored, "not a color", "#abcdef");
+        sut.WarningAppearance = new WarningAppearance(stored, "not a color");
 
-        sut.WarningAppearance.Should().Be(new WarningAppearance(expected, WarningAppearance.Default.LightColor, "#abcdef"));
+        sut.WarningAppearance.Should().Be(new WarningAppearance(expected, WarningAppearance.Default.Color));
     }
 
     [Fact]
@@ -170,14 +166,46 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
-    public void Invalid_error_colors_fall_back_to_the_defaults()
+    public void An_invalid_error_color_falls_back_to_the_default()
     {
         using TempDir dir = new();
         SettingsStore sut = new(dir.Combine("settings.json"));
 
-        sut.ErrorAppearance = new ErrorAppearance("red", "#abcdef");
+        sut.ErrorAppearance = new ErrorAppearance("red");
 
-        sut.ErrorAppearance.Should().Be(new ErrorAppearance(ErrorAppearance.Default.LightColor, "#abcdef"));
+        sut.ErrorAppearance.Should().Be(ErrorAppearance.Default);
+    }
+
+    [Fact]
+    public void The_keys_of_the_removed_dark_theme_are_dropped_on_load_and_not_saved_again()
+    {
+        using TempDir dir = new();
+        string path = dir.Combine("settings.json");
+        File.WriteAllText(path, """
+            {
+              "user_preferences": {
+                "ui_theme": "Dark",
+                "ui_custom_signet_dark_theme": true,
+                "preview_dark_in_dm": 1,
+                "warning_color_light": "#102030",
+                "warning_color_dark": "#405060",
+                "error_color_dark": "#405060",
+                "preview_highlight_color_dark": "#405060",
+                "open_tag_hint_dark_background": "#405060",
+                "open_tag_hint_dark_foreground": "#405060",
+                "cv_dark_css_comment_color": "#405060",
+                "cv_dark_font_size": 14
+              }
+            }
+            """);
+
+        SettingsStore sut = new(path);
+        sut.WarningAppearance.Color.Should().Be("#102030", "the light color is the only color now");
+        sut.Save();
+
+        string saved = File.ReadAllText(path);
+        saved.Should().Contain("warning_color_light")
+            .And.NotContain("ui_theme").And.NotContain("dark");
     }
 
     [Fact]
@@ -241,8 +269,7 @@ public sealed class SettingsStoreTests
 
         sut.Should().Be(PreviewHighlight.Default);
         sut.Style.Should().Be(PreviewHighlightStyle.Background);
-        sut.LightColor.Should().Be("#ffeb3b");
-        sut.DarkColor.Should().Be("#ffeb3b");
+        sut.Color.Should().Be("#ffeb3b");
         sut.OpacityPercent.Should().Be(45);
         sut.OutlineWidth.Should().Be(3);
         sut.AutoHide.Should().BeFalse();
@@ -254,7 +281,7 @@ public sealed class SettingsStoreTests
     {
         using TempDir dir = new();
         SettingsStore sut = NewStore(dir);
-        PreviewHighlight value = new(PreviewHighlightStyle.Outline, "#112233", "#AABBCC", 60, 7, true, 4500);
+        PreviewHighlight value = new(PreviewHighlightStyle.Outline, "#112233", 60, 7, true, 4500);
         List<string> changed = new();
         sut.SettingChanged += (_, e) => changed.Add(e.QualifiedKey);
 
@@ -272,10 +299,10 @@ public sealed class SettingsStoreTests
         using TempDir dir = new();
         SettingsStore sut = NewStore(dir);
 
-        sut.PreviewHighlight = new((PreviewHighlightStyle)42, "red", "#12345", 0, 99, true, 10);
+        sut.PreviewHighlight = new((PreviewHighlightStyle)42, "red", 0, 99, true, 10);
 
         sut.PreviewHighlight.Should().Be(new PreviewHighlight(
-            PreviewHighlightStyle.Background, "#ffeb3b", "#ffeb3b",
+            PreviewHighlightStyle.Background, "#ffeb3b",
             PreviewHighlight.OpacityMin, PreviewHighlight.OutlineWidthMax, true, PreviewHighlight.AutoHideDelayMin));
     }
 
@@ -344,8 +371,8 @@ public sealed class SettingsStoreTests
         string path = dir.Combine("settings.json");
 
         SettingsStore writer = new(path);
-        writer.CodeViewAppearance.Should().Be(CodeViewAppearance.LightDefault);
-        writer.CodeViewAppearance = CodeViewAppearance.LightDefault with { FontSize = 14, CssSelectorColor = "#123456" };
+        writer.CodeViewAppearance.Should().Be(CodeViewAppearance.Default);
+        writer.CodeViewAppearance = CodeViewAppearance.Default with { FontSize = 14, CssSelectorColor = "#123456" };
         writer.PreviewAppearance = PreviewAppearance.Default with { FontSize = 20 };
         writer.Save();
 
@@ -353,10 +380,9 @@ public sealed class SettingsStoreTests
         reader.CodeViewAppearance.FontSize.Should().Be(14);
         reader.CodeViewAppearance.CssSelectorColor.Should().Be("#123456");
         reader.PreviewAppearance.FontSize.Should().Be(20);
-        reader.CodeViewDarkAppearance.Should().Be(CodeViewAppearance.DarkDefault);
 
         reader.ClearAppearanceSettings();
-        reader.CodeViewAppearance.Should().Be(CodeViewAppearance.LightDefault);
+        reader.CodeViewAppearance.Should().Be(CodeViewAppearance.Default);
         reader.PreviewAppearance.Should().Be(PreviewAppearance.Default);
     }
 
@@ -369,39 +395,35 @@ public sealed class SettingsStoreTests
         SettingsStore writer = new(path);
         writer.CodeViewExtendedHighlighting.Should().BeTrue();
         writer.CodeViewExtendedHighlighting = false;
-        writer.CodeViewDarkAppearance = CodeViewAppearance.DarkDefault with { LinkColor = "#010203", ErrorUnderlineColor = "#040506" };
+        writer.CodeViewAppearance = CodeViewAppearance.Default with { LinkColor = "#010203", ErrorUnderlineColor = "#040506" };
         writer.Save();
 
         SettingsStore reader = new(path);
         reader.CodeViewExtendedHighlighting.Should().BeFalse();
-        reader.CodeViewDarkAppearance.LinkColor.Should().Be("#010203");
-        reader.CodeViewDarkAppearance.ErrorUnderlineColor.Should().Be("#040506");
-        reader.CodeViewDarkAppearance.CssConstantColor.Should().Be(CodeViewAppearance.DarkDefault.CssConstantColor);
+        reader.CodeViewAppearance.LinkColor.Should().Be("#010203");
+        reader.CodeViewAppearance.ErrorUnderlineColor.Should().Be("#040506");
+        reader.CodeViewAppearance.CssConstantColor.Should().Be(CodeViewAppearance.Default.CssConstantColor);
 
         reader.ClearAppearanceSettings();
-        reader.CodeViewDarkAppearance.Should().Be(CodeViewAppearance.DarkDefault);
+        reader.CodeViewAppearance.Should().Be(CodeViewAppearance.Default);
     }
 
     [Fact]
-    public void Search_match_and_selection_colors_roundtrip_per_theme()
+    public void Search_match_and_selection_colors_roundtrip()
     {
         using TempDir dir = new();
         string path = dir.Combine("settings.json");
 
         SettingsStore writer = new(path);
-        writer.CodeViewAppearance = CodeViewAppearance.LightDefault with { SearchMatchBackgroundColor = "#111111", SelectionBackgroundColor = "#222222" };
-        writer.CodeViewDarkAppearance = CodeViewAppearance.DarkDefault with { SearchMatchBackgroundColor = "#333333", SelectionBackgroundColor = "#444444" };
+        writer.CodeViewAppearance = CodeViewAppearance.Default with { SearchMatchBackgroundColor = "#111111", SelectionBackgroundColor = "#222222" };
         writer.Save();
 
         SettingsStore reader = new(path);
         reader.CodeViewAppearance.SearchMatchBackgroundColor.Should().Be("#111111");
         reader.CodeViewAppearance.SelectionBackgroundColor.Should().Be("#222222");
-        reader.CodeViewDarkAppearance.SearchMatchBackgroundColor.Should().Be("#333333");
-        reader.CodeViewDarkAppearance.SelectionBackgroundColor.Should().Be("#444444");
 
         reader.ClearAppearanceSettings();
-        reader.CodeViewAppearance.Should().Be(CodeViewAppearance.LightDefault);
-        reader.CodeViewDarkAppearance.Should().Be(CodeViewAppearance.DarkDefault);
+        reader.CodeViewAppearance.Should().Be(CodeViewAppearance.Default);
     }
 
     [Fact]
@@ -476,16 +498,16 @@ public sealed class SettingsStoreTests
         sut.SettingChanged += (_, e) => raised.Add(e.QualifiedKey);
 
         draft.SpellCheck = true;
-        draft.ThemePreference = ThemePreference.Dark;
+        draft.UiIconTheme = "fluent";
         sut.DefaultMetadataLang = meanwhile;
         raised.Clear();
 
         IReadOnlyList<string> committed = sut.CommitDraft(draft);
 
-        committed.Should().BeEquivalentTo("user_preferences/spell_check", "user_preferences/ui_theme");
+        committed.Should().BeEquivalentTo("user_preferences/spell_check", "user_preferences/ui_icon_theme");
         raised.Should().BeEquivalentTo(committed);
         sut.SpellCheck.Should().BeTrue();
-        sut.ThemePreference.Should().Be(ThemePreference.Dark);
+        sut.UiIconTheme.Should().Be("fluent");
         sut.DefaultMetadataLang.Should().Be(meanwhile, "the draft did not change it");
         sut.HasDraftChanges(draft).Should().BeFalse();
     }
@@ -510,12 +532,12 @@ public sealed class SettingsStoreTests
     {
         using TempDir dir = new();
         SettingsStore sut = NewStore(dir);
-        sut.ThemePreference = ThemePreference.Light;
+        sut.UiIconTheme = "main";
         SettingsStore draft = sut.CreateDraft();
-        ThemePreference original = draft.ThemePreference;
+        string original = draft.UiIconTheme;
 
-        draft.ThemePreference = ThemePreference.Dark;
-        draft.ThemePreference = original;
+        draft.UiIconTheme = "fluent";
+        draft.UiIconTheme = original;
 
         sut.HasDraftChanges(draft).Should().BeFalse();
         sut.CommitDraft(draft).Should().BeEmpty();

@@ -35,8 +35,8 @@ EPUB editor I know of) has them:
 
 - **Highlighting the clicked element in Preview**: clicking in Code View does more than scroll the
   Preview to the matching place (as Sigil does). It also highlights that element, so it is easy to
-  spot on a long page. The style can be set in Preferences → Preview: background or outline, colours
-  for light and dark themes, opacity, and whether the highlight fades after a delay.
+  spot on a long page. The style can be set in Preferences → Preview: background or outline, colour,
+  opacity, and whether the highlight fades after a delay.
 - **Merge Content**: joins adjacent sibling elements of the same kind into one. One use is
   paragraphs that an import split apart
   (`<p>The cat</p> <p>sat on the mat</p>` → `<p>The cat sat on the mat</p>`).

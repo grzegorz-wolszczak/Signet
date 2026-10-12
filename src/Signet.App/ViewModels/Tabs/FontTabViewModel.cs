@@ -35,7 +35,6 @@ public sealed class FontTabViewModel : ContentTabViewModel
 
     private FontFileInfo _info;
     private Bitmap? _preview;
-    private bool _previewDark;
 
     /// <summary>Creates the typeface preview tab.</summary>
     public FontTabViewModel(OpenTab tab, Book? book)
@@ -129,18 +128,6 @@ public sealed class FontTabViewModel : ContentTabViewModel
         _ => Strings.Format("FontTab_Obfuscation", Strings.Get("FontTab_ObfuscationNone")),
     };
 
-    /// <summary>Switches the preview color variant (light / dark) and re-renders the sample.</summary>
-    public void SetPreviewTheme(bool dark)
-    {
-        if (dark == _previewDark && _preview is not null)
-        {
-            return;
-        }
-
-        _previewDark = dark;
-        RenderPreview();
-    }
-
     /// <inheritdoc />
     public override void Reload() => LoadMetadata();
 
@@ -159,7 +146,7 @@ public sealed class FontTabViewModel : ContentTabViewModel
     private void RenderPreview()
     {
         _preview?.Dispose();
-        _preview = FontPreviewRenderer.Render(_font.FullPath, _previewDark);
+        _preview = FontPreviewRenderer.Render(_font.FullPath);
         OnPropertyChanged(nameof(Preview));
         OnPropertyChanged(nameof(HasPreview));
     }

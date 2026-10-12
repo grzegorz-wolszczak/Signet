@@ -14,7 +14,7 @@ public sealed class PreviewHighlightScriptTests
     [AutoData]
     public void Default_highlights_block_background_with_translucent_yellow_and_stays(int loc)
     {
-        string js = PreviewHighlightScript.Build(loc, PreviewHighlight.Default, dark: false);
+        string js = PreviewHighlightScript.Build(loc, PreviewHighlight.Default);
 
         js.Should().Contain($"[data-signet-loc=\"{loc.ToString(CultureInfo.InvariantCulture)}\"]")
             .And.Contain(".closest('" + PreviewHighlightScript.AncestorSelector + "')")
@@ -25,29 +25,27 @@ public sealed class PreviewHighlightScriptTests
     }
 
     [Fact]
-    public void Outline_style_draws_frame_of_configured_width_in_theme_color()
+    public void Outline_style_draws_frame_of_configured_width_and_color()
     {
         PreviewHighlight h = PreviewHighlight.Default with
         {
-            Style = PreviewHighlightStyle.Outline, LightColor = "#112233", DarkColor = "#abcdef", OutlineWidth = 5,
+            Style = PreviewHighlightStyle.Outline, Color = "#112233", OutlineWidth = 5,
         };
 
-        string light = PreviewHighlightScript.Build(1, h, dark: false);
-        string dark = PreviewHighlightScript.Build(1, h, dark: true);
+        string js = PreviewHighlightScript.Build(1, h);
 
-        light.Should().Contain("el.style.outline='5px solid #112233'").And.NotContain("rgba(");
-        dark.Should().Contain("el.style.outline='5px solid #abcdef'");
+        js.Should().Contain("el.style.outline='5px solid #112233'").And.NotContain("rgba(");
     }
 
     [Fact]
-    public void Background_uses_dark_color_and_opacity_with_invariant_decimal_point()
+    public void Background_uses_color_and_opacity_with_invariant_decimal_point()
     {
-        PreviewHighlight h = PreviewHighlight.Default with { DarkColor = "#0080ff", OpacityPercent = 50 };
+        PreviewHighlight h = PreviewHighlight.Default with { Color = "#0080ff", OpacityPercent = 50 };
         CultureInfo previous = CultureInfo.CurrentCulture;
         CultureInfo.CurrentCulture = new CultureInfo("pl-PL");
         try
         {
-            PreviewHighlightScript.Build(1, h, dark: true).Should().Contain("rgba(0,128,255,0.5)");
+            PreviewHighlightScript.Build(1, h).Should().Contain("rgba(0,128,255,0.5)");
         }
         finally
         {
@@ -62,7 +60,7 @@ public sealed class PreviewHighlightScriptTests
     {
         PreviewHighlight h = PreviewHighlight.Default with { Style = style, AutoHide = true, AutoHideDelayMs = 2500 };
 
-        string js = PreviewHighlightScript.Build(1, h, dark: false);
+        string js = PreviewHighlightScript.Build(1, h);
 
         js.Should().Contain("w.__signetPreviewHighlightTimer=setTimeout(function(){")
             .And.Contain(fade)
@@ -74,7 +72,7 @@ public sealed class PreviewHighlightScriptTests
     {
         PreviewHighlight h = PreviewHighlight.Default with { Style = PreviewHighlightStyle.Outline, OutlineWidth = 500 };
 
-        PreviewHighlightScript.Build(1, h, dark: false)
+        PreviewHighlightScript.Build(1, h)
             .Should().Contain($"'{PreviewHighlight.OutlineWidthMax}px solid ");
     }
 }

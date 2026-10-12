@@ -92,7 +92,7 @@ public sealed class StartupArgumentsTests
         MainDockFactory dockFactory = new(bookBrowser, preview);
         SpellChecker spellChecker = new(settings);
         MainWindowViewModel vm = new(
-            new ThemeManager(settings, NullLogger<ThemeManager>.Instance), NullLogger<MainWindowViewModel>.Instance,
+            NullLogger<MainWindowViewModel>.Instance,
             new AppActionRegistry(shortcuts, statusBar, NullLogger<AppActionRegistry>.Instance), shortcuts,
             new ToolbarManager(settings), dockFactory, statusBar, settings, bookBrowser,
             new TabManager(dockFactory, statusBar, settings, spellChecker), preview, spellChecker,

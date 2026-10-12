@@ -4,7 +4,6 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Threading;
 using Avalonia;
-using Avalonia.Styling;
 using Nwv = NativeWebView.Core;
 using Signet.App.Infrastructure;
 using Signet.App.Resources;
@@ -302,9 +301,9 @@ public partial class PreviewView : UserControl
         }
 
         // The highlight replaces the previous one (kept in window.__signetPreviewHighlightEl); the style,
-        // the color per the application theme and the optional fade-out come from Preferences (PreviewHighlight).
+        // the color and the optional fade-out come from Preferences (PreviewHighlight).
         PreviewHighlight highlight = _boundViewModel?.Highlight ?? PreviewHighlight.Default;
-        string js = PreviewHighlightScript.Build(loc, highlight, ActualThemeVariant == ThemeVariant.Dark);
+        string js = PreviewHighlightScript.Build(loc, highlight);
 
         try
         {

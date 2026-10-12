@@ -3,7 +3,6 @@ using System.Globalization;
 using Avalonia;
 using Avalonia.Controls.Primitives;
 using Avalonia.Media;
-using Avalonia.Styling;
 using AvaloniaEdit;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Editing;
@@ -68,14 +67,9 @@ public sealed class LocationSnippetEditor : TextEditor
         TextArea.TextView.Redraw();
     }
 
-    // The Code View colours of the current theme variant.
-    private CodeViewAppearance Appearance()
-    {
-        bool dark = ActualThemeVariant == ThemeVariant.Dark;
-        return App.Services?.GetService<SettingsStore>() is { } settings
-            ? dark ? settings.CodeViewDarkAppearance : settings.CodeViewAppearance
-            : dark ? CodeViewAppearance.DarkDefault : CodeViewAppearance.LightDefault;
-    }
+    // The Code View colours.
+    private static CodeViewAppearance Appearance() =>
+        App.Services?.GetService<SettingsStore>()?.CodeViewAppearance ?? CodeViewAppearance.Default;
 
     // Line numbers starting at the snippet's first line (AvaloniaEdit's own margin always starts at 1).
     private sealed class SnippetLineNumberMargin(FontFamily fontFamily, double fontSize) : AbstractMargin

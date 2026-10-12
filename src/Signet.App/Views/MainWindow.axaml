@@ -182,10 +182,6 @@
                     Classes="toolbar" Padding="4,0" MinWidth="44" FontSize="11" />
             <Button Content="+" Command="{Binding ZoomInCommand}" Classes="toolbar" Padding="6,0" />
           </StackPanel>
-          <TextBlock Text="{loc:Loc MainWindow_ThemeLabel}" VerticalAlignment="Center" />
-          <Button Content="{Binding CurrentTheme}"
-                  Command="{Binding CycleThemeCommand}"
-                  Padding="6,2" FontSize="11" />
         </StackPanel>
       </Grid>
     </Border>

@@ -527,9 +527,6 @@
   <data name="PreferencesWindow_Appearance" xml:space="preserve">
     <value>Wygląd</value>
   </data>
-  <data name="PreferencesWindow_Theme" xml:space="preserve">
-    <value>Motyw:</value>
-  </data>
   <data name="PreferencesWindow_PreviewFonts" xml:space="preserve">
     <value>Czcionki podglądu</value>
   </data>
@@ -551,11 +548,8 @@
   <data name="PreferencesWindow_Family" xml:space="preserve">
     <value>Krój:</value>
   </data>
-  <data name="PreferencesWindow_CodeViewLight" xml:space="preserve">
-    <value>Code View — motyw jasny</value>
-  </data>
-  <data name="PreferencesWindow_CodeViewDark" xml:space="preserve">
-    <value>Code View — motyw ciemny</value>
+  <data name="PreferencesWindow_CodeView" xml:space="preserve">
+    <value>Code View</value>
   </data>
   <data name="PreferencesWindow_FontFamily" xml:space="preserve">
     <value>Krój czcionki:</value>
@@ -608,11 +602,8 @@
   <data name="PreferencesWindow_PreviewHighlightStyle" xml:space="preserve">
     <value>Sposób podświetlenia:</value>
   </data>
-  <data name="PreferencesWindow_PreviewHighlightColorLight" xml:space="preserve">
-    <value>Kolor — jasny motyw</value>
-  </data>
-  <data name="PreferencesWindow_PreviewHighlightColorDark" xml:space="preserve">
-    <value>Kolor — ciemny motyw</value>
+  <data name="PreferencesWindow_PreviewHighlightColor" xml:space="preserve">
+    <value>Kolor</value>
   </data>
   <data name="PreferencesWindow_PreviewHighlightOpacity" xml:space="preserve">
     <value>Krycie tła, % (5–100):</value>
@@ -1484,9 +1475,6 @@ Czy chcesz zapisać zmiany?</value>
   </data>
   <data name="SearchEditorWindow_Keep" xml:space="preserve">
     <value>Zachowaj</value>
-  </data>
-  <data name="MainWindow_ThemeLabel" xml:space="preserve">
-    <value>Motyw:</value>
   </data>
   <data name="PreferencesWindow_IconTheme" xml:space="preserve">
     <value>Zestaw ikon:</value>
@@ -2834,15 +2822,6 @@ Scalać można tylko pliki HTML.</value>
   <data name="IconTheme_custom" xml:space="preserve">
     <value>Własny</value>
   </data>
-  <data name="Theme_System" xml:space="preserve">
-    <value>Systemowy</value>
-  </data>
-  <data name="Theme_Light" xml:space="preserve">
-    <value>Jasny</value>
-  </data>
-  <data name="Theme_Dark" xml:space="preserve">
-    <value>Ciemny</value>
-  </data>
   <data name="Preview_EngineUnavailable" xml:space="preserve">
     <value>Podgląd niedostępny w tym środowisku — nie udało się uruchomić silnika WebView ({0}: {1}).</value>
   </data>
@@ -4069,11 +4048,8 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="PreferencesWindow_WarningFontSize" xml:space="preserve">
     <value>Rozmiar czcionki ostrzeżeń w oknach (px; 0 = jak tekst interfejsu)</value>
   </data>
-  <data name="PreferencesWindow_WarningColorLight" xml:space="preserve">
-    <value>Kolor — jasny motyw</value>
-  </data>
-  <data name="PreferencesWindow_WarningColorDark" xml:space="preserve">
-    <value>Kolor — ciemny motyw</value>
+  <data name="PreferencesWindow_WarningColor" xml:space="preserve">
+    <value>Kolor</value>
   </data>
   <data name="PreferencesWindow_WarningsNote" xml:space="preserve">
     <value>Kolor ostrzeżeń w oknach (np. skutki ryzykownej zmiany w Cleanup).</value>
@@ -4084,11 +4060,8 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="PreferencesWindow_Errors" xml:space="preserve">
     <value>Błędy w powiadomieniach</value>
   </data>
-  <data name="PreferencesWindow_ErrorColorLight" xml:space="preserve">
-    <value>Kolor — jasny motyw</value>
-  </data>
-  <data name="PreferencesWindow_ErrorColorDark" xml:space="preserve">
-    <value>Kolor — ciemny motyw</value>
+  <data name="PreferencesWindow_ErrorColor" xml:space="preserve">
+    <value>Kolor</value>
   </data>
   <data name="PreferencesWindow_ErrorSample" xml:space="preserve">
     <value>Przykład: Add Nav to Reading Order is not available for EPUB 2.</value>
@@ -4114,17 +4087,11 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="PreferencesWindow_OpenTagHintFontEditor" xml:space="preserve">
     <value>jak w edytorze</value>
   </data>
-  <data name="PreferencesWindow_OpenTagHintLightBackground" xml:space="preserve">
-    <value>Tło — jasny motyw</value>
+  <data name="PreferencesWindow_OpenTagHintBackground" xml:space="preserve">
+    <value>Tło</value>
   </data>
-  <data name="PreferencesWindow_OpenTagHintLightForeground" xml:space="preserve">
-    <value>Tekst — jasny motyw</value>
-  </data>
-  <data name="PreferencesWindow_OpenTagHintDarkBackground" xml:space="preserve">
-    <value>Tło — ciemny motyw</value>
-  </data>
-  <data name="PreferencesWindow_OpenTagHintDarkForeground" xml:space="preserve">
-    <value>Tekst — ciemny motyw</value>
+  <data name="PreferencesWindow_OpenTagHintForeground" xml:space="preserve">
+    <value>Tekst</value>
   </data>
   <data name="Action_MainWindow_FindUsages" xml:space="preserve">
     <value>Znajdź użycia</value>

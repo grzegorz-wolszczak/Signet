@@ -3,7 +3,6 @@ using Avalonia;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
-using Avalonia.Styling;
 using Avalonia.Threading;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Rendering;
@@ -99,9 +98,8 @@ public partial class CodeTabView
         }
 
         OpenTagHintAppearance look = vm.OpenTagHintAppearance;
-        bool dark = ActualThemeVariant == ThemeVariant.Dark;
-        IBrush foreground = new SolidColorBrush(Color.Parse(look.ForegroundFor(dark)));
-        OpenTagHintBorder.Background = new SolidColorBrush(Color.Parse(look.BackgroundFor(dark)));
+        IBrush foreground = new SolidColorBrush(Color.Parse(look.Foreground));
+        OpenTagHintBorder.Background = new SolidColorBrush(Color.Parse(look.Background));
         OpenTagHintTag.Foreground = foreground;
         OpenTagHintLine.Foreground = foreground;
         OpenTagHintTag.Text = document.GetText(open.Offset, open.Length);

@@ -150,17 +150,6 @@
           <StackPanel Spacing="10" Margin="8">
 
             <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
-              <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_Theme}" />
-              <ComboBox Grid.Column="1" ItemsSource="{Binding AvailableThemes}" SelectedItem="{Binding SelectedTheme}">
-                <ComboBox.ItemTemplate>
-                  <DataTemplate>
-                    <TextBlock Text="{Binding Converter={x:Static infra:DisplayNameConverters.ThemePreference}}" />
-                  </DataTemplate>
-                </ComboBox.ItemTemplate>
-              </ComboBox>
-            </Grid>
-
-            <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
               <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_IconTheme}" />
               <ComboBox Grid.Column="1" ItemsSource="{Binding AvailableIconThemes}" SelectedItem="{Binding SelectedIconTheme}"
                         DisplayMemberBinding="{Binding DisplayName}" />
@@ -208,13 +197,13 @@
             <Border Classes="section">
               <StackPanel Spacing="6">
                 <TextBlock Text="{loc:Loc PreferencesWindow_Warnings}" FontWeight="Bold" />
-                <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
                   <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_WarningFontSize}" />
                   <TextBox Grid.Row="0" Grid.Column="1" x:Name="WarningFontSizeBox" Text="{Binding WarningFontSize}"
                            Width="80" HorizontalAlignment="Left" />
 
-                  <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding WarningLightColor.Label}" />
-                  <DockPanel Grid.Row="1" Grid.Column="1" DataContext="{Binding WarningLightColor}">
+                  <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding WarningColor.Label}" />
+                  <DockPanel Grid.Row="1" Grid.Column="1" DataContext="{Binding WarningColor}">
                     <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
                             ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
                     <TextBox Classes="colorValue" Text="{Binding Value}"
@@ -222,14 +211,6 @@
                              Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
                   </DockPanel>
 
-                  <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding WarningDarkColor.Label}" />
-                  <DockPanel Grid.Row="2" Grid.Column="1" DataContext="{Binding WarningDarkColor}">
-                    <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
-                            ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
-                    <TextBox Classes="colorValue" Text="{Binding Value}"
-                             Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
-                             Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
-                  </DockPanel>
                 </Grid>
                 <TextBlock x:Name="WarningSample" Classes="warning" Text="{loc:Loc PreferencesWindow_WarningSample}" />
                 <TextBlock Text="{loc:Loc PreferencesWindow_WarningsNote}" Opacity="0.7" TextWrapping="Wrap" />
@@ -241,9 +222,9 @@
             <Border Classes="section">
               <StackPanel Spacing="6">
                 <TextBlock Text="{loc:Loc PreferencesWindow_Errors}" FontWeight="Bold" />
-                <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
-                  <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding ErrorLightColor.Label}" />
-                  <DockPanel Grid.Row="0" Grid.Column="1" DataContext="{Binding ErrorLightColor}">
+                <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8" RowSpacing="6">
+                  <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding ErrorColor.Label}" />
+                  <DockPanel Grid.Row="0" Grid.Column="1" DataContext="{Binding ErrorColor}">
                     <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
                             ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
                     <TextBox Classes="colorValue" Text="{Binding Value}"
@@ -251,14 +232,6 @@
                              Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
                   </DockPanel>
 
-                  <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding ErrorDarkColor.Label}" />
-                  <DockPanel Grid.Row="1" Grid.Column="1" DataContext="{Binding ErrorDarkColor}">
-                    <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
-                            ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
-                    <TextBox Classes="colorValue" Text="{Binding Value}"
-                             Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
-                             Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
-                  </DockPanel>
                 </Grid>
                 <StackPanel Orientation="Horizontal" Spacing="6">
                   <views:NotificationBell UnreadCount="2" VerticalAlignment="Center" />
@@ -279,7 +252,7 @@
                        IsEnabled="{Binding OpenTagHint}" />
             </Grid>
             <!-- The look of the hint: font (default = the editor font) and colors for both themes. -->
-            <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6"
+            <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6"
                   Margin="28,0,0,0" IsEnabled="{Binding OpenTagHint}">
               <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_OpenTagHintFont}" />
               <StackPanel Grid.Row="0" Grid.Column="1" Spacing="4">
@@ -293,8 +266,8 @@
                 </StackPanel>
               </StackPanel>
 
-              <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding OpenTagHintLightBackground.Label}" />
-              <DockPanel Grid.Row="1" Grid.Column="1" DataContext="{Binding OpenTagHintLightBackground}">
+              <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding OpenTagHintBackground.Label}" />
+              <DockPanel Grid.Row="1" Grid.Column="1" DataContext="{Binding OpenTagHintBackground}">
                 <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
                         ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
                 <TextBox Classes="colorValue" Text="{Binding Value}"
@@ -302,8 +275,8 @@
                          Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
               </DockPanel>
 
-              <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding OpenTagHintLightForeground.Label}" />
-              <DockPanel Grid.Row="2" Grid.Column="1" DataContext="{Binding OpenTagHintLightForeground}">
+              <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding OpenTagHintForeground.Label}" />
+              <DockPanel Grid.Row="2" Grid.Column="1" DataContext="{Binding OpenTagHintForeground}">
                 <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
                         ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
                 <TextBox Classes="colorValue" Text="{Binding Value}"
@@ -311,68 +284,12 @@
                          Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
               </DockPanel>
 
-              <TextBlock Grid.Row="3" Grid.Column="0" Text="{Binding OpenTagHintDarkBackground.Label}" />
-              <DockPanel Grid.Row="3" Grid.Column="1" DataContext="{Binding OpenTagHintDarkBackground}">
-                <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
-                        ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
-                <TextBox Classes="colorValue" Text="{Binding Value}"
-                         Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
-                         Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
-              </DockPanel>
-
-              <TextBlock Grid.Row="4" Grid.Column="0" Text="{Binding OpenTagHintDarkForeground.Label}" />
-              <DockPanel Grid.Row="4" Grid.Column="1" DataContext="{Binding OpenTagHintDarkForeground}">
-                <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
-                        ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
-                <TextBox Classes="colorValue" Text="{Binding Value}"
-                         Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
-                         Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
-              </DockPanel>
             </Grid>
 
             <Border Classes="section">
               <StackPanel Spacing="6">
-                <TextBlock Text="{loc:Loc PreferencesWindow_CodeViewLight}" FontWeight="Bold" />
-                <ContentControl Content="{Binding CodeViewLight}">
-                  <ContentControl.DataTemplates>
-                    <DataTemplate DataType="vm:CodeViewAppearanceEditor">
-                      <StackPanel Spacing="6">
-                        <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
-                          <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_FontFamily}" VerticalAlignment="Center" />
-                          <DockPanel Grid.Row="0" Grid.Column="1">
-                            <Button DockPanel.Dock="Right" Content="{loc:Loc PreferencesWindow_ChooseFont}" Command="{Binding ChooseFontCommand}" Margin="6,0,0,0" />
-                            <Border Classes="fontField"><TextBlock Text="{Binding FontFamily}" FontFamily="{Binding FontFamily, Converter={x:Static infra:FontFamilyConverters.FromName}}" /></Border>
-                          </DockPanel>
-                          <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_FontSize}" VerticalAlignment="Center" />
-                          <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding FontSize}" Width="80" HorizontalAlignment="Left" />
-                        </Grid>
-                        <ItemsControl ItemsSource="{Binding Colors}">
-                          <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="vm:ColorSettingRow">
-                              <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8" Margin="0,2">
-                                <TextBlock Grid.Column="0" Text="{Binding Label}" />
-                                <DockPanel Grid.Column="1">
-                                  <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
-                                          ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
-                                  <TextBox Classes="colorValue" Text="{Binding Value}"
-                                           Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
-                                           Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
-                                </DockPanel>
-                              </Grid>
-                            </DataTemplate>
-                          </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                      </StackPanel>
-                    </DataTemplate>
-                  </ContentControl.DataTemplates>
-                </ContentControl>
-              </StackPanel>
-            </Border>
-
-            <Border Classes="section">
-              <StackPanel Spacing="6">
-                <TextBlock Text="{loc:Loc PreferencesWindow_CodeViewDark}" FontWeight="Bold" />
-                <ContentControl Content="{Binding CodeViewDark}">
+                <TextBlock Text="{loc:Loc PreferencesWindow_CodeView}" FontWeight="Bold" />
+                <ContentControl Content="{Binding CodeView}">
                   <ContentControl.DataTemplates>
                     <DataTemplate DataType="vm:CodeViewAppearanceEditor">
                       <StackPanel Spacing="6">
@@ -460,7 +377,7 @@
             <Border Classes="section">
               <StackPanel Spacing="6">
                 <TextBlock Text="{loc:Loc PreferencesWindow_PreviewHighlight}" FontWeight="Bold" />
-                <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
                   <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightStyle}" VerticalAlignment="Center" />
                   <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding AvailablePreviewHighlightStyles}" SelectedItem="{Binding PreviewHighlightStyle}">
                     <ComboBox.ItemTemplate>
@@ -470,8 +387,8 @@
                     </ComboBox.ItemTemplate>
                   </ComboBox>
 
-                  <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding PreviewHighlightLightColor.Label}" VerticalAlignment="Center" />
-                  <DockPanel Grid.Row="1" Grid.Column="1" DataContext="{Binding PreviewHighlightLightColor}">
+                  <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding PreviewHighlightColor.Label}" VerticalAlignment="Center" />
+                  <DockPanel Grid.Row="1" Grid.Column="1" DataContext="{Binding PreviewHighlightColor}">
                     <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
                             ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
                     <TextBox Classes="colorValue" Text="{Binding Value}"
@@ -479,31 +396,22 @@
                              Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
                   </DockPanel>
 
-                  <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding PreviewHighlightDarkColor.Label}" VerticalAlignment="Center" />
-                  <DockPanel Grid.Row="2" Grid.Column="1" DataContext="{Binding PreviewHighlightDarkColor}">
-                    <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
-                            ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
-                    <TextBox Classes="colorValue" Text="{Binding Value}"
-                             Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
-                             Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
-                  </DockPanel>
-
-                  <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightOpacity}" VerticalAlignment="Center" TextWrapping="Wrap"
+                  <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightOpacity}" VerticalAlignment="Center" TextWrapping="Wrap"
                              IsEnabled="{Binding IsPreviewHighlightBackground}" />
-                  <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PreviewHighlightOpacity}" Width="80" HorizontalAlignment="Left"
+                  <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding PreviewHighlightOpacity}" Width="80" HorizontalAlignment="Left"
                            IsEnabled="{Binding IsPreviewHighlightBackground}" />
 
-                  <TextBlock Grid.Row="4" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightOutlineWidth}" VerticalAlignment="Center" TextWrapping="Wrap"
+                  <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightOutlineWidth}" VerticalAlignment="Center" TextWrapping="Wrap"
                              IsEnabled="{Binding IsPreviewHighlightOutline}" />
-                  <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding PreviewHighlightOutlineWidth}" Width="80" HorizontalAlignment="Left"
+                  <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PreviewHighlightOutlineWidth}" Width="80" HorizontalAlignment="Left"
                            IsEnabled="{Binding IsPreviewHighlightOutline}" />
 
-                  <CheckBox Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Content="{loc:Loc PreferencesWindow_PreviewHighlightAutoHide}"
+                  <CheckBox Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Content="{loc:Loc PreferencesWindow_PreviewHighlightAutoHide}"
                             IsChecked="{Binding PreviewHighlightAutoHide}" />
 
-                  <TextBlock Grid.Row="6" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightAutoHideDelay}" VerticalAlignment="Center" TextWrapping="Wrap"
+                  <TextBlock Grid.Row="5" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightAutoHideDelay}" VerticalAlignment="Center" TextWrapping="Wrap"
                              IsEnabled="{Binding PreviewHighlightAutoHide}" />
-                  <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding PreviewHighlightAutoHideDelay}" Width="80" HorizontalAlignment="Left"
+                  <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding PreviewHighlightAutoHideDelay}" Width="80" HorizontalAlignment="Left"
                            IsEnabled="{Binding PreviewHighlightAutoHide}" />
                 </Grid>
               </StackPanel>
