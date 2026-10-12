@@ -30,6 +30,8 @@
     <EmbeddedResource Include="EmbeddedData\aria-roles.tsv" LogicalName="ReferenceData.aria-roles" />
     <EmbeddedResource Include="EmbeddedData\aria-clips.json" LogicalName="ReferenceData.aria-clips" />
     <EmbeddedResource Include="EmbeddedData\codepoint-names.tsv.gz" LogicalName="ReferenceData.codepoint-names" />
+    <EmbeddedResource Include="EmbeddedData\themes\signet-light.signet-theme.xml" LogicalName="Themes.signet-light" />
+    <EmbeddedResource Include="EmbeddedData\themes\signet-dark.signet-theme.xml" LogicalName="Themes.signet-dark" />
 
     <!-- The built-in en_US spelling dictionary — LibreOffice dictionaries / SCOWL, LGPL
          + BSD-style with an attribution clause; see EmbeddedData\dictionaries\README_en_US.txt

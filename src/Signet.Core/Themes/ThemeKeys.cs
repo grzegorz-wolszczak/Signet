@@ -142,6 +142,55 @@ public static class ThemeKeys
     /// <summary>A comment.</summary>
     public static readonly ThemeKey CssComment = Attributes("css.comment", ThemePage.Css, "Rules", Fg(0x008000));
 
+    // ---- JavaScript and JSON (Light+ colors, the TextMate theme of Code View before themes) ----
+
+    /// <summary>A keyword that declares or operates (<c>var</c>, <c>function</c>, <c>new</c>, <c>typeof</c>).</summary>
+    public static readonly ThemeKey JsKeyword = Attributes("js.keyword", ThemePage.JavaScriptJson, "JavaScript", Fg(0x0000FF));
+
+    /// <summary>A keyword of the control flow (<c>if</c>, <c>return</c>, <c>for</c>).</summary>
+    public static readonly ThemeKey JsControlKeyword = Attributes("js.controlKeyword", ThemePage.JavaScriptJson, "JavaScript",
+        Fg(0xAF00DB), baseId: "js.keyword");
+
+    /// <summary>An operator (<c>+</c>, <c>===</c>, <c>?</c>).</summary>
+    public static readonly ThemeKey JsOperator = Attributes("js.operator", ThemePage.JavaScriptJson, "JavaScript", Fg(0x000000));
+
+    /// <summary>A string.</summary>
+    public static readonly ThemeKey JsString = Attributes("js.string", ThemePage.JavaScriptJson, "JavaScript", Fg(0xA31515));
+
+    /// <summary>A number.</summary>
+    public static readonly ThemeKey JsNumber = Attributes("js.number", ThemePage.JavaScriptJson, "JavaScript", Fg(0x098658));
+
+    /// <summary>A constant of the language (<c>true</c>, <c>null</c>, <c>undefined</c>).</summary>
+    public static readonly ThemeKey JsConstant = Attributes("js.constant", ThemePage.JavaScriptJson, "JavaScript", Fg(0x0000FF));
+
+    /// <summary>A regular expression.</summary>
+    public static readonly ThemeKey JsRegexp = Attributes("js.regexp", ThemePage.JavaScriptJson, "JavaScript", Fg(0x811F3F));
+
+    /// <summary>A comment.</summary>
+    public static readonly ThemeKey JsComment = Attributes("js.comment", ThemePage.JavaScriptJson, "JavaScript", Fg(0x008000));
+
+    /// <summary>The name of a function.</summary>
+    public static readonly ThemeKey JsFunction = Attributes("js.function", ThemePage.JavaScriptJson, "JavaScript", Fg(0x795E26));
+
+    /// <summary>A variable or a parameter.</summary>
+    public static readonly ThemeKey JsVariable = Attributes("js.variable", ThemePage.JavaScriptJson, "JavaScript", Fg(0x001080));
+
+    /// <summary>A class or a type.</summary>
+    public static readonly ThemeKey JsType = Attributes("js.type", ThemePage.JavaScriptJson, "JavaScript", Fg(0x267F99));
+
+    /// <summary>The name of a property of a JSON object.</summary>
+    public static readonly ThemeKey JsonProperty = Attributes("json.property", ThemePage.JavaScriptJson, "JSON", Fg(0x0451A5));
+
+    /// <summary>A JSON string.</summary>
+    public static readonly ThemeKey JsonString = Attributes("json.string", ThemePage.JavaScriptJson, "JSON", Fg(0xA31515), baseId: "js.string");
+
+    /// <summary>A JSON number.</summary>
+    public static readonly ThemeKey JsonNumber = Attributes("json.number", ThemePage.JavaScriptJson, "JSON", Fg(0x098658), baseId: "js.number");
+
+    /// <summary>A JSON constant (<c>true</c>, <c>false</c>, <c>null</c>).</summary>
+    public static readonly ThemeKey JsonConstant = Attributes("json.constant", ThemePage.JavaScriptJson, "JSON",
+        Fg(0x0000FF), baseId: "js.constant");
+
     // ---- Diff ----
 
     /// <summary>A deleted line.</summary>
@@ -168,6 +217,12 @@ public static class ThemeKeys
 
     /// <summary>The highlight of the element clicked in Code View.</summary>
     public static readonly ThemeKey PreviewHighlight = Color("preview.highlight", ThemePage.Preview, string.Empty, Rgb(0xFFEB3B));
+
+    /// <summary>The background the preview forces on the book (e.g. a dark page); unset = the book's own.</summary>
+    public static readonly ThemeKey PreviewBackground = Color("preview.background", ThemePage.Preview, "Book", null);
+
+    /// <summary>The text color the preview forces on the book; unset = the book's own.</summary>
+    public static readonly ThemeKey PreviewText = Color("preview.text", ThemePage.Preview, "Book", null);
 
     // ---- Interface ----
 
@@ -232,6 +287,21 @@ public static class ThemeKeys
     /// <summary>The background of the sample of a font file (the tab of a font).</summary>
     public static readonly ThemeKey UiFontPreviewBackground = Color("ui.fontPreview.background", ThemePage.Interface, "Previews", Rgb(0xFFFFFF));
 
+    // The colors of the Fluent palette (Avalonia's ColorPaletteResources, without the accent: ui.accent), e.g.
+    // fluent.regionColor; unset = the palette of the variant.
+    private static readonly string[] FluentPaletteColors =
+    {
+        "AltHigh", "AltLow", "AltMedium", "AltMediumHigh", "AltMediumLow",
+        "BaseHigh", "BaseLow", "BaseMedium", "BaseMediumHigh", "BaseMediumLow",
+        "ChromeAltLow", "ChromeBlackHigh", "ChromeBlackLow", "ChromeBlackMedium", "ChromeBlackMediumLow",
+        "ChromeDisabledHigh", "ChromeDisabledLow", "ChromeGray", "ChromeHigh", "ChromeLow", "ChromeMedium",
+        "ChromeMediumLow", "ChromeWhite", "ErrorText", "ListLow", "ListMedium", "RegionColor",
+    };
+
+    private static readonly ImmutableArray<ThemeKey> FluentPaletteKeys = FluentPaletteColors
+        .Select(name => Color(FluentPaletteKeyId(name), ThemePage.Interface, "Palette", null))
+        .ToImmutableArray();
+
     private static readonly ImmutableArray<ThemeKey> AllKeys = Collect();
     private static readonly Dictionary<string, ThemeKey> ById = AllKeys.ToDictionary(k => k.Id, StringComparer.Ordinal);
 
@@ -245,6 +315,17 @@ public static class ThemeKeys
 
     /// <summary>The key with the identifier, if there is one.</summary>
     public static bool TryGet(string id, [NotNullWhen(true)] out ThemeKey? key) => ById.TryGetValue(id, out key);
+
+    /// <summary>The keys of the Fluent palette, by the name of its color in <c>ColorPaletteResources</c> (e.g. <c>RegionColor</c>).</summary>
+    public static IEnumerable<(string PaletteColor, ThemeKey Key)> FluentPalette =>
+        FluentPaletteColors.Zip(FluentPaletteKeys, (name, key) => (name, key));
+
+    /// <summary>The identifier of the key of a color of the Fluent palette, e.g. <c>fluent.regionColor</c>.</summary>
+    public static string FluentPaletteKeyId(string paletteColor)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(paletteColor);
+        return "fluent." + char.ToLowerInvariant(paletteColor[0]) + paletteColor[1..];
+    }
 
     /// <summary>The keys of a page, in the order of its tree.</summary>
     public static IEnumerable<ThemeKey> On(ThemePage page) => AllKeys.Where(k => k.Page == page);
@@ -261,7 +342,7 @@ public static class ThemeKeys
 
     private static ThemeColor Argb(uint argb) => new((byte)(argb >> 24), (byte)(argb >> 16), (byte)(argb >> 8), (byte)argb);
 
-    // The public fields above, in the order they are declared in (grouped by page); checks that the identifiers are unique, the bases exist and have the
+    // The public fields above, in the order they are declared in, and the palette (grouped by page); checks that the identifiers are unique, the bases exist and have the
     // same kind, and that following the bases never comes back to a key.
     private static ImmutableArray<ThemeKey> Collect()
     {
@@ -270,6 +351,7 @@ public static class ThemeKeys
             .Where(f => f.FieldType == typeof(ThemeKey))
             .OrderBy(f => f.MetadataToken)
             .Select(f => (ThemeKey)f.GetValue(null)!)
+            .Concat(FluentPaletteKeys)
             .OrderBy(k => k.Page)
             .ToImmutableArray();
         Dictionary<string, ThemeKey> byId = new(StringComparer.Ordinal);

@@ -6176,4 +6176,7 @@
   <data name="Theme_WrongSection" xml:space="preserve">
     <value>Line {0}: the key “{1}” is in the section of the other kind and was skipped.</value>
   </data>
+  <data name="Theme_ParentMissing" xml:space="preserve">
+    <value>The parent theme “{0}” does not exist; Signet Light becomes the parent.</value>
+  </data>
 </root>

@@ -6176,4 +6176,7 @@
   <data name="Theme_WrongSection" xml:space="preserve">
     <value>Wiersz {0}: klucz „{1}” jest w sekcji innego rodzaju i został pominięty.</value>
   </data>
+  <data name="Theme_ParentMissing" xml:space="preserve">
+    <value>Motyw bazowy „{0}” nie istnieje; motywem bazowym zostaje Signet Light.</value>
+  </data>
 </root>

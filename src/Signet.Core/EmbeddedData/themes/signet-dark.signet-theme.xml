@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Signet Dark: dark controls and dark editors, after Visual Studio Code's Dark+ and Rider's Darcula. It sets every
+     key that has a default; the keys without one (the Fluent palette, the accent, the colors forced on the book in
+     the Preview) are left to the dark variant of the controls and to the book. -->
+<signet-theme version="1" id="signet-dark" name="Signet Dark" variant="Dark">
+  <colors>
+    <color key="editor.currentLine" value="#2A2D2E" />
+    <color key="preview.highlight" value="#FFEB3B" />
+    <color key="ui.dangerButton" value="#C42B1C" />
+    <color key="ui.dangerButton.hover" value="#A82315" />
+    <color key="ui.dangerButton.pressed" value="#8E1D11" />
+    <color key="ui.frame" value="#6E6E6E" />
+    <color key="ui.mutedText" value="#9D9D9D" />
+    <color key="ui.warningText" value="#E8A33D" />
+    <color key="ui.errorNotification" value="#F1707B" />
+    <color key="ui.errorText" value="#F48771" />
+    <color key="ui.riskMarker" value="#F14C4C" />
+    <color key="ui.filterActive" value="#6CC07A" />
+    <color key="ui.icon.inactive" value="#6E6E6E" />
+    <color key="ui.icon.attention" value="#F1707B" />
+    <color key="ui.icon.folder" value="#4E94E8" />
+    <color key="ui.icon.folderInner" value="#2B5A8C" />
+    <color key="ui.icon.file" value="#D0D0D0" />
+    <color key="ui.icon.fileOutline" value="#8A8A8A" />
+    <color key="ui.icon.fileFold" value="#A0A0A0" />
+    <color key="ui.fontPreview.background" value="#FFFFFF" />
+  </colors>
+  <attributes>
+    <attribute key="editor.text" foreground="#D4D4D4" background="#1E1E1E" />
+    <attribute key="editor.lineNumbers" foreground="#858585" />
+    <attribute key="editor.selection" background="#264F78" />
+    <attribute key="editor.tagPair" background="#40A0A0A0" />
+    <attribute key="search.match" background="#623315" />
+    <attribute key="search.marked" background="#304D9BFF" effect="box" effect-color="#C04D9BFF" />
+    <attribute key="errors.wellFormed" effect="wave" effect-color="#F14C4C" />
+    <attribute key="errors.wellFormedWarning" effect="wave" effect-color="#CCA700" />
+    <attribute key="errors.syntax" effect="wave" effect-color="#F14C4C" />
+    <attribute key="errors.spelling" effect="wave" effect-color="#F48771" />
+    <attribute key="hints.openTag" foreground="#D4D4D4" background="#252526" />
+    <attribute key="xhtml.doctype" foreground="#569CD6" />
+    <attribute key="xhtml.tag" foreground="#569CD6" />
+    <attribute key="xhtml.namespacePrefix" foreground="#C586C0" />
+    <attribute key="xhtml.attribute.name" foreground="#9CDCFE" />
+    <attribute key="xhtml.attribute.value" foreground="#CE9178" />
+    <attribute key="xhtml.entity" foreground="#D7BA7D" />
+    <attribute key="xhtml.specialSpace" effect="dashedUnderline" effect-color="#D7BA7D" />
+    <attribute key="xhtml.comment" foreground="#6A9955" />
+    <attribute key="link" foreground="#3794FF" />
+    <attribute key="link.broken" inherit="true" />
+    <attribute key="xhtml.text.bold" bold="true" />
+    <attribute key="xhtml.text.italic" italic="true" />
+    <attribute key="xhtml.text.boldItalic" bold="true" italic="true" />
+    <attribute key="xhtml.css" foreground="#DCDCAA" />
+    <attribute key="xhtml.css.comment" foreground="#6A9955" />
+    <attribute key="css.selector" foreground="#D7BA7D" />
+    <attribute key="css.specialSelector" foreground="#E5C07B" />
+    <attribute key="css.property" foreground="#9CDCFE" />
+    <attribute key="css.value" foreground="#CE9178" />
+    <attribute key="css.constant" foreground="#B5CEA8" />
+    <attribute key="css.string" foreground="#CE9178" />
+    <attribute key="css.atRule" foreground="#C586C0" />
+    <attribute key="css.comment" foreground="#6A9955" />
+    <attribute key="js.keyword" foreground="#569CD6" />
+    <attribute key="js.controlKeyword" foreground="#C586C0" />
+    <attribute key="js.operator" foreground="#D4D4D4" />
+    <attribute key="js.string" foreground="#CE9178" />
+    <attribute key="js.number" foreground="#B5CEA8" />
+    <attribute key="js.constant" foreground="#569CD6" />
+    <attribute key="js.regexp" foreground="#D16969" />
+    <attribute key="js.comment" foreground="#6A9955" />
+    <attribute key="js.function" foreground="#DCDCAA" />
+    <attribute key="js.variable" foreground="#9CDCFE" />
+    <attribute key="js.type" foreground="#4EC9B0" />
+    <attribute key="json.property" foreground="#9CDCFE" />
+    <attribute key="json.string" inherit="true" />
+    <attribute key="json.number" inherit="true" />
+    <attribute key="json.constant" inherit="true" />
+    <attribute key="diff.deletedLine" background="#40E53935" />
+    <attribute key="diff.insertedLine" background="#4043A047" />
+    <attribute key="diff.emptyCell" background="#18FFFFFF" />
+    <attribute key="diff.deletedWord" background="#90E53935" />
+    <attribute key="diff.insertedWord" background="#9043A047" />
+    <attribute key="ui.textSelection" foreground="#FFFFFF" background="#264F78" />
+  </attributes>
+</signet-theme>

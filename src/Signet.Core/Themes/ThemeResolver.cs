@@ -52,6 +52,20 @@ public sealed class ThemeResolver
         return InterfaceVariant.Light;
     }
 
+    /// <summary>The icon set of the theme (its own or a parent's); <c>null</c> = the one chosen in Preferences.</summary>
+    public string? IconSet(Theme theme)
+    {
+        foreach (Theme t in Lineage(theme))
+        {
+            if (t.IconSet is { } iconSet)
+            {
+                return iconSet;
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>
     /// The theme the value of the key comes from: the theme asked about or one of its parents — for the editor (whether
     /// the user changed the key in this theme).

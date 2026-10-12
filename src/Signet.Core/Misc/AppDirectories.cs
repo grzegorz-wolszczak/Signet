@@ -40,6 +40,12 @@ public static class AppDirectories
     /// </summary>
     public static string UserDictionariesDirectory => Path.Combine(PrefsDirectory, "user_dictionaries");
 
+    /// <summary>
+    /// The folder of the user's themes and of the changes to the bundled ones (<c>&lt;prefs&gt;/themes</c>,
+    /// <see cref="Themes.ThemeStore"/>).
+    /// </summary>
+    public static string ThemesDirectory => Path.Combine(PrefsDirectory, "themes");
+
     /// <summary>Ensures the preferences folder exists and returns its path.</summary>
     public static string EnsurePrefsDirectory()
     {

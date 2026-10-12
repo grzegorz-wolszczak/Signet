@@ -24,6 +24,9 @@ public enum ThemePage
     /// <summary>The CSS syntax.</summary>
     Css,
 
+    /// <summary>The JavaScript and JSON syntax.</summary>
+    JavaScriptJson,
+
     /// <summary>The comparison of checkpoints.</summary>
     Diff,
 
