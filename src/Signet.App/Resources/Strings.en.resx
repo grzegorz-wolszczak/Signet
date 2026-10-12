@@ -4922,4 +4922,223 @@ Close the tab</value>
   <data name="ColorScheme_FileType" xml:space="preserve">
     <value>Signet theme</value>
   </data>
+  <data name="Action_MainWindow_ManageFonts" xml:space="preserve">
+    <value>Manage &amp;Fonts...</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_AddFontFiles" xml:space="preserve">
+    <value>Add Font Files...</value>
+  </data>
+  <data name="BookBrowserView_AddFontFiles" xml:space="preserve">
+    <value>Add Font Files…</value>
+  </data>
+  <data name="BookBrowserView_ManageFonts" xml:space="preserve">
+    <value>Manage Fonts…</value>
+  </data>
+  <data name="CheckpointOp_AddFontFaces" xml:space="preserve">
+    <value>adding @font-face rules</value>
+  </data>
+  <data name="CheckpointOp_RenameFontFamily" xml:space="preserve">
+    <value>renaming the font family {0}</value>
+  </data>
+  <data name="BookBrowser_FontsCssNotLinked" xml:space="preserve">
+    <value>The stylesheet {0} was not linked to files that are not well-formed: {1}</value>
+  </data>
+  <data name="BookBrowser_FontFacesAdded" xml:space="preserve">
+    <value>Added @font-face rules ({0}) to {1}</value>
+  </data>
+  <data name="BookBrowser_FontFacesFailed" xml:space="preserve">
+    <value>Could not add the @font-face rules: {0}</value>
+  </data>
+  <data name="BookBrowser_FontFamilyRenamed" xml:space="preserve">
+    <value>Renamed the family "{0}" to "{1}" (files: {2})</value>
+  </data>
+  <data name="FontDialogs_PickTitle" xml:space="preserve">
+    <value>Add Font Files</value>
+  </data>
+  <data name="FontDialogs_FontFiles" xml:space="preserve">
+    <value>Fonts (TTF, OTF, WOFF, WOFF2)</value>
+  </data>
+  <data name="FontFaceDialog_Title" xml:space="preserve">
+    <value>@font-face Rules for Fonts</value>
+  </data>
+  <data name="FontFaceDialog_Intro" xml:space="preserve">
+    <value>Signet read the family, weight and style from the font files. Check them (you can change the family name) and choose the stylesheet the @font-face rules go to. "Skip" leaves the files in the book without rules.</value>
+  </data>
+  <data name="FontFaceDialog_File" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="FontFaceDialog_Family" xml:space="preserve">
+    <value>Family (font-family)</value>
+  </data>
+  <data name="FontFaceDialog_Stylesheet" xml:space="preserve">
+    <value>Stylesheet:</value>
+  </data>
+  <data name="FontFaceDialog_NewStylesheet" xml:space="preserve">
+    <value>New stylesheet fonts.css (linked to every HTML file)</value>
+  </data>
+  <data name="FontFaceDialog_SetBody" xml:space="preserve">
+    <value>Set as the font of body:</value>
+  </data>
+  <data name="FontFaceDialog_Summary" xml:space="preserve">
+    <value>Rules to add: {0}, skipped as already defined: {1}</value>
+  </data>
+  <data name="FontFaceDialog_PreviewHint" xml:space="preserve">
+    <value>Preview of the CSS to be written (the rules go after the existing @font-face rules or to the top of the stylesheet):</value>
+  </data>
+  <data name="FontFaceDialog_Add" xml:space="preserve">
+    <value>Add Rules</value>
+  </data>
+  <data name="FontFaceDialog_Skip" xml:space="preserve">
+    <value>Skip</value>
+  </data>
+  <data name="FontFaceDialog_EmbeddingRestricted" xml:space="preserve">
+    <value>⚠ The font vendor restricts embedding it in documents (OS/2 fsType). Make sure the license allows it.</value>
+  </data>
+  <data name="FontFaceDialog_FormatNotInEpub2" xml:space="preserve">
+    <value>⚠ WOFF/WOFF2 is not an EPUB 2 format — some readers will not display it.</value>
+  </data>
+  <data name="FontFaceDialog_FormatWoff2" xml:space="preserve">
+    <value>⚠ WOFF2 is a newer format — older readers do not know it.</value>
+  </data>
+  <data name="FontFaceDialog_Unreadable" xml:space="preserve">
+    <value>⚠ The file could not be read — the family and style are guessed from the file name.</value>
+  </data>
+  <data name="FontFaceDialog_ConflictSameFile" xml:space="preserve">
+    <value>Skipped: the file already has an @font-face rule in {0}</value>
+  </data>
+  <data name="FontFaceDialog_ConflictSameFace" xml:space="preserve">
+    <value>Skipped: this family already has the face {0} (in {1})</value>
+  </data>
+  <data name="FontFaceDialog_ConflictInBatch" xml:space="preserve">
+    <value>Skipped: the same face as {0} above</value>
+  </data>
+  <data name="FontRemovalWindow_Title" xml:space="preserve">
+    <value>Deleting Fonts</value>
+  </data>
+  <data name="FontRemovalWindow_Intro" xml:space="preserve">
+    <value>The files being deleted are used by the book's styles. Below are the changes Signet makes together with the deletion — you can uncheck each of them.</value>
+  </data>
+  <data name="FontRemovalWindow_DoubleClickHint" xml:space="preserve">
+    <value>Double-click opens the place in the code.</value>
+  </data>
+  <data name="FontRemovalWindow_Rules" xml:space="preserve">
+    <value>@font-face rules</value>
+  </data>
+  <data name="FontRemovalWindow_RulesNote" xml:space="preserve">
+    <value>Rules pointing only to the deleted files are removed; rules with other sources only lose the url of the deleted file.</value>
+  </data>
+  <data name="FontRemovalWindow_Usages" xml:space="preserve">
+    <value>Places using the removed families</value>
+  </data>
+  <data name="FontRemovalWindow_UsagesNote" xml:space="preserve">
+    <value>The family name is removed from the font list (the others, e.g. serif, stay). Unchecked places will name a family that no longer exists — the reader uses the next font of the list.</value>
+  </data>
+  <data name="FontRemovalWindow_Notes" xml:space="preserve">
+    <value>Notes</value>
+  </data>
+  <data name="ManageFonts_Title" xml:space="preserve">
+    <value>Manage Fonts</value>
+  </data>
+  <data name="ManageFonts_Summary" xml:space="preserve">
+    <value>Font files: {0}, embedded families: {1}, files without @font-face: {2}, missing faces: {3}</value>
+  </data>
+  <data name="ManageFonts_FilesTab" xml:space="preserve">
+    <value>Font files</value>
+  </data>
+  <data name="ManageFonts_FamiliesTab" xml:space="preserve">
+    <value>Families</value>
+  </data>
+  <data name="ManageFonts_AddFonts" xml:space="preserve">
+    <value>Add Fonts…</value>
+  </data>
+  <data name="ManageFonts_CreateRules" xml:space="preserve">
+    <value>Create @font-face…</value>
+  </data>
+  <data name="ManageFonts_FilesHint" xml:space="preserve">
+    <value>Select files to create rules for them, open or delete them. Double-click opens a file.</value>
+  </data>
+  <data name="ManageFonts_RenameFamily" xml:space="preserve">
+    <value>Rename Family…</value>
+  </data>
+  <data name="ManageFonts_DetailsHint" xml:space="preserve">
+    <value>The rules, usages and missing faces of the selected family — double-click opens the place in the code.</value>
+  </data>
+  <data name="ManageFonts_ColumnFile" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="ManageFonts_ColumnFamily" xml:space="preserve">
+    <value>Family</value>
+  </data>
+  <data name="ManageFonts_ColumnFace" xml:space="preserve">
+    <value>Face</value>
+  </data>
+  <data name="ManageFonts_ColumnFormat" xml:space="preserve">
+    <value>Format</value>
+  </data>
+  <data name="ManageFonts_ColumnSize" xml:space="preserve">
+    <value>Size</value>
+  </data>
+  <data name="ManageFonts_ColumnRules" xml:space="preserve">
+    <value>@font-face</value>
+  </data>
+  <data name="ManageFonts_ColumnStatus" xml:space="preserve">
+    <value>Notes</value>
+  </data>
+  <data name="ManageFonts_ColumnFaces" xml:space="preserve">
+    <value>Faces</value>
+  </data>
+  <data name="ManageFonts_ColumnDeclarations" xml:space="preserve">
+    <value>Declarations</value>
+  </data>
+  <data name="ManageFonts_ColumnElements" xml:space="preserve">
+    <value>Elements</value>
+  </data>
+  <data name="ManageFonts_ColumnKind" xml:space="preserve">
+    <value>Kind</value>
+  </data>
+  <data name="ManageFonts_ColumnPlace" xml:space="preserve">
+    <value>Place</value>
+  </data>
+  <data name="ManageFonts_KindMissing" xml:space="preserve">
+    <value>⚠ missing face</value>
+  </data>
+  <data name="ManageFonts_MissingDetail" xml:space="preserve">
+    <value>{0}: elements with text: {1} (the first one here) — the reader will imitate this face</value>
+  </data>
+  <data name="ManageFonts_StatusNoRule" xml:space="preserve">
+    <value>⚠ no @font-face</value>
+  </data>
+  <data name="ManageFonts_StatusRestricted" xml:space="preserve">
+    <value>⚠ restricted embedding</value>
+  </data>
+  <data name="ManageFonts_StatusNotInEpub2" xml:space="preserve">
+    <value>⚠ not an EPUB 2 format</value>
+  </data>
+  <data name="ManageFonts_StatusWoff2" xml:space="preserve">
+    <value>⚠ WOFF2 (older readers)</value>
+  </data>
+  <data name="ManageFonts_StatusNotEmbedded" xml:space="preserve">
+    <value>not embedded — the reader uses its own font</value>
+  </data>
+  <data name="ManageFonts_StatusUnused" xml:space="preserve">
+    <value>⚠ unused</value>
+  </data>
+  <data name="ManageFonts_StatusMissing" xml:space="preserve">
+    <value>⚠ no {0} ({1} el.)</value>
+  </data>
+  <data name="ManageFonts_RenameTitle" xml:space="preserve">
+    <value>Rename Family</value>
+  </data>
+  <data name="ManageFonts_RenamePrompt" xml:space="preserve">
+    <value>The new name of the family "{0}" (changed in the @font-face rules and in every place that uses it):</value>
+  </data>
+  <data name="ManageFonts_RenameMerge" xml:space="preserve">
+    <value>The family "{1}" already exists. Renaming merges the family "{0}" into it. Continue?</value>
+  </data>
+  <data name="FontFaceDialog_Weight" xml:space="preserve">
+    <value>Weight (font-weight)</value>
+  </data>
+  <data name="FontFaceDialog_Style" xml:space="preserve">
+    <value>Style (font-style)</value>
+  </data>
 </root>

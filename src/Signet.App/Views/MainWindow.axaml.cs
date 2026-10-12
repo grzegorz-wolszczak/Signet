@@ -155,6 +155,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             _boundViewModel.ReportsRequested -= OnReportsRequested;
             _boundViewModel.SpellcheckEditorRequested -= OnSpellcheckEditorRequested;
             _boundViewModel.CleanupRequested -= OnCleanupRequested;
+            _boundViewModel.ManageFontsRequested -= OnManageFontsRequested;
             _boundViewModel.FootnoteConversionRequested -= OnFootnoteConversionRequested;
             _boundViewModel.StandardizeRequested -= OnStandardizeRequested;
             _boundViewModel.LiveCssPanelRequested -= OnLiveCssPanelRequested;
@@ -202,6 +203,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         _boundViewModel.ReportsRequested += OnReportsRequested;
         _boundViewModel.SpellcheckEditorRequested += OnSpellcheckEditorRequested;
         _boundViewModel.CleanupRequested += OnCleanupRequested;
+        _boundViewModel.ManageFontsRequested += OnManageFontsRequested;
         _boundViewModel.FootnoteConversionRequested += OnFootnoteConversionRequested;
         _boundViewModel.StandardizeRequested += OnStandardizeRequested;
         _boundViewModel.LiveCssPanelRequested += OnLiveCssPanelRequested;
@@ -1123,6 +1125,14 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
     /// Handles the "Cleanup" action: analyses the book and shows the modal Cleanup dialog with the preview of the
     /// changes; each of its tabs applies its own changes ("Clean") while the dialog stays open.
     /// </summary>
+    private async void OnManageFontsRequested(object? sender, EventArgs e)
+    {
+        if (_boundViewModel is { } vm && vm.PrepareManageFonts() is { } fonts)
+        {
+            await ManageFontsWindow.ShowAsync(this, fonts, vm.BookBrowser);
+        }
+    }
+
     private async void OnCleanupRequested(object? sender, EventArgs e)
     {
         MainWindowViewModel? vm = _boundViewModel;

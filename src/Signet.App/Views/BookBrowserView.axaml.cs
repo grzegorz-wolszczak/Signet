@@ -81,6 +81,7 @@ public partial class BookBrowserView : UserControl
             _boundViewModel.DeleteRequested -= OnDeleteRequested;
             _boundViewModel.MergeErrorRequested -= OnMergeErrorRequested;
             _boundViewModel.AddExistingFilesRequested -= OnAddExistingFilesRequested;
+            _boundViewModel.AddFontFilesRequested -= OnAddFontFilesRequested;
             _boundViewModel.RenameWithTemplateRequested -= OnRenameWithTemplateRequested;
             _boundViewModel.BulkRegexRenameRequested -= OnBulkRegexRenameRequested;
             _boundViewModel.MoveRequested -= OnMoveRequested;
@@ -107,6 +108,7 @@ public partial class BookBrowserView : UserControl
             _boundViewModel.DeleteRequested += OnDeleteRequested;
             _boundViewModel.MergeErrorRequested += OnMergeErrorRequested;
             _boundViewModel.AddExistingFilesRequested += OnAddExistingFilesRequested;
+            _boundViewModel.AddFontFilesRequested += OnAddFontFilesRequested;
             _boundViewModel.RenameWithTemplateRequested += OnRenameWithTemplateRequested;
             _boundViewModel.BulkRegexRenameRequested += OnBulkRegexRenameRequested;
             _boundViewModel.MoveRequested += OnMoveRequested;
@@ -183,12 +185,24 @@ public partial class BookBrowserView : UserControl
         }
     }
 
-    // A right click on a column header opens the columns menu instead of the files menu.
+    // A right click on a column header opens the columns menu instead of the files menu; on the Fonts folder or on
+    // font files the fonts menu opens (only the actions that make sense for fonts).
     private void OnTreeContextRequested(object? sender, ContextRequestedEventArgs e)
     {
-        if ((e.Source as Visual)?.FindAncestorOfType<TreeDataGridColumnHeader>(includeSelf: true) is not { } header
-            || _boundViewModel is null)
+        if (_boundViewModel is null)
         {
+            return;
+        }
+
+        if ((e.Source as Visual)?.FindAncestorOfType<TreeDataGridColumnHeader>(includeSelf: true) is not { } header)
+        {
+            if (_boundViewModel.IsFontMenu && Resources["FontContextMenu"] is ContextMenu fontMenu)
+            {
+                e.Handled = true;
+                fontMenu.DataContext = _boundViewModel;
+                fontMenu.Open(Tree);
+            }
+
             return;
         }
 
@@ -365,22 +379,23 @@ public partial class BookBrowserView : UserControl
         source is Visual visual &&
         (visual as TextBox ?? visual.FindAncestorOfType<TextBox>())?.Classes.Contains(RenameEditorClass) == true;
 
+    // Deleting fonts used by the stylesheets shows the font removal window instead of the plain confirmation.
     private async void OnDeleteRequested(object? sender, IReadOnlyList<OpfModelEntry> entries)
     {
         Window? owner = this.FindAncestorOfType<Window>();
-        if (owner is null || entries.Count == 0)
+        if (owner is null || entries.Count == 0 || _boundViewModel is null)
         {
             return;
         }
 
-        string names = string.Join("\n", entries.Select(x => "  • " + System.IO.Path.GetFileName(x.BookPath)));
-        bool confirmed = await ConfirmWindow.AskAsync(
-            owner, Strings.Get("Common_Delete"), Strings.Format("BookBrowser_DeleteConfirm", entries.Count, names),
-            Strings.Get("Common_Delete"), destructive: true);
+        await FontDialogs.DeleteAsync(owner, _boundViewModel, entries.Select(x => x.Resource).ToList());
+    }
 
-        if (confirmed)
+    private async void OnAddFontFilesRequested(object? sender, EventArgs e)
+    {
+        if (this.FindAncestorOfType<Window>() is { } owner && _boundViewModel is not null)
         {
-            _boundViewModel?.ApplyDelete(entries);
+            await FontDialogs.PickAndAddFontsAsync(owner, _boundViewModel);
         }
     }
 
@@ -408,9 +423,16 @@ public partial class BookBrowserView : UserControl
             .Where(p => !string.IsNullOrEmpty(p))
             .ToList();
 
-        if (paths.Count > 0)
+        if (paths.Count == 0 || _boundViewModel is null)
         {
-            _boundViewModel?.ApplyAddExistingFiles(paths);
+            return;
+        }
+
+        // Fonts among the added files are offered @font-face rules (skipping leaves them without rules).
+        List<FontResource> fonts = _boundViewModel.ApplyAddExistingFiles(paths).OfType<FontResource>().ToList();
+        if (fonts.Count > 0 && this.FindAncestorOfType<Window>() is { } owner)
+        {
+            await FontDialogs.OfferFontFacesAsync(owner, _boundViewModel, fonts);
         }
     }
 

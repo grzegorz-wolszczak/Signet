@@ -6182,4 +6182,22 @@
   <data name="Theme_MigratedName" xml:space="preserve">
     <value>My colors</value>
   </data>
+  <data name="FontRemoval_RemoveRule" xml:space="preserve">
+    <value>@font-face "{0}" ({1}): remove the rule</value>
+  </data>
+  <data name="FontRemoval_RemoveSources" xml:space="preserve">
+    <value>@font-face "{0}" ({1}): remove from src: {2}</value>
+  </data>
+  <data name="FontRemoval_RemoveFamily" xml:space="preserve">
+    <value>{0} — {1}: {2} → {3}</value>
+  </data>
+  <data name="FontRemoval_RemoveDeclaration" xml:space="preserve">
+    <value>{0} — remove the declaration {1}: {2}</value>
+  </data>
+  <data name="FontRemoval_ManualFix" xml:space="preserve">
+    <value>{0} — font: {1}: the font shorthand names no family other than {2}. Fix it by hand.</value>
+  </data>
+  <data name="FontRemoval_FamilyLosesFaces" xml:space="preserve">
+    <value>The family "{0}" loses the faces: {1} (kept: {2}). The reader will imitate the missing ones.</value>
+  </data>
 </root>

@@ -178,6 +178,9 @@ public static class AppActionIds
     /// <summary>Cleanup — removing unused stylesheets/selectors/media and merging CSS rules in one dialog.</summary>
     public const string Cleanup = "MainWindow.Cleanup";
 
+    /// <summary>Manage Fonts — the font files and families of the book, their rules, usages and missing faces.</summary>
+    public const string ManageFonts = "MainWindow.ManageFonts";
+
     /// <summary>Find Usages — the usages of the CSS class under the caret, in the "Find Usages" panel.</summary>
     public const string FindUsages = "MainWindow.FindUsages";
 
@@ -334,6 +337,9 @@ public static class AppActionIds
 
     /// <summary>Adds existing files from disk.</summary>
     public const string BookBrowserAddExistingFiles = "MainWindow.BookBrowser.AddExistingFiles";
+
+    /// <summary>Adds font files from disk and offers @font-face rules for them.</summary>
+    public const string BookBrowserAddFontFiles = "MainWindow.BookBrowser.AddFontFiles";
 
     /// <summary>Adds semantics to the selected files.</summary>
     public const string BookBrowserAddSemantics = "MainWindow.BookBrowser.AddSemantics";

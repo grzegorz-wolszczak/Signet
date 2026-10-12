@@ -1,0 +1,55 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Signet.App.ViewModels"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.ManageFontsWindow"
+        x:DataType="vm:ManageFontsViewModel"
+        Width="1040" Height="720" MinWidth="700" MinHeight="460"
+        WindowStartupLocation="CenterOwner"
+        Title="{loc:Loc ManageFonts_Title}">
+
+  <Window.Styles>
+    <Style Selector="TextBlock.note">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Opacity" Value="0.75" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel Margin="12">
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,10,0,0">
+      <Button Content="{loc:Loc Common_Refresh}" Command="{Binding ReloadCommand}" MinWidth="80" />
+      <Button x:Name="CloseButton" Content="{loc:Loc Common_Close}" IsCancel="True" MinWidth="80" />
+    </StackPanel>
+
+    <TextBlock DockPanel.Dock="Top" Text="{Binding Summary}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,8" />
+
+    <TabControl>
+      <!-- The font files and the rules that use them. -->
+      <TabItem Header="{loc:Loc ManageFonts_FilesTab}">
+        <DockPanel Margin="0,8,0,0">
+          <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+            <Button Content="{loc:Loc ManageFonts_AddFonts}" Command="{Binding AddFontsCommand}" />
+            <Button Content="{loc:Loc ManageFonts_CreateRules}" Command="{Binding CreateRulesCommand}" />
+            <Button Content="{loc:Loc BookBrowserView_Open}" Command="{Binding OpenFilesCommand}" />
+            <Button Classes="danger" Content="{loc:Loc Common_Delete}" Command="{Binding DeleteFilesCommand}" />
+          </StackPanel>
+          <TextBlock DockPanel.Dock="Bottom" Classes="note" Text="{loc:Loc ManageFonts_FilesHint}" Margin="0,6,0,0" />
+          <TreeDataGrid x:Name="FilesGrid" Classes="gridLines" DoubleTapped="OnFilesDoubleTapped" />
+        </DockPanel>
+      </TabItem>
+
+      <!-- The families: faces, usages, missing faces; the places of the selected one below. -->
+      <TabItem Header="{loc:Loc ManageFonts_FamiliesTab}">
+        <Grid RowDefinitions="*,Auto,Auto,*" Margin="0,8,0,0">
+          <TreeDataGrid Grid.Row="0" x:Name="FamiliesGrid" Classes="gridLines" />
+          <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+            <Button Content="{loc:Loc ManageFonts_RenameFamily}" Command="{Binding RenameFamilyCommand}" />
+          </StackPanel>
+          <TextBlock Grid.Row="2" Classes="note" Text="{loc:Loc ManageFonts_DetailsHint}" Margin="0,8,0,4" />
+          <TreeDataGrid Grid.Row="3" x:Name="DetailsGrid" Classes="gridLines" DoubleTapped="OnDetailsDoubleTapped" />
+        </Grid>
+      </TabItem>
+    </TabControl>
+  </DockPanel>
+</Window>

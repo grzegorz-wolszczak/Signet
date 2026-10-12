@@ -369,6 +369,7 @@ public sealed partial class MainWindowViewModel
 
         // Delete Unused Media Files / Delete Unused Stylesheet Selectors.
         _actions.SetHandler(AppActionIds.Cleanup, () => CleanupRequested?.Invoke(this, EventArgs.Empty));
+        _actions.SetHandler(AppActionIds.ManageFonts, RequestManageFonts);
         _actions.SetHandler(AppActionIds.Standardize, () => StandardizeRequested?.Invoke(this, EventArgs.Empty));
         _actions.SetHandler(AppActionIds.LiveCssPanel, () => LiveCssPanelRequested?.Invoke(this, EventArgs.Empty));
         _actions.SetHandler(AppActionIds.RenumberFootnotes, () => ((ICodeTabHost)this).RenumberFootnotes());
@@ -442,6 +443,8 @@ public sealed partial class MainWindowViewModel
         BookBrowser.OpenResourceRequested += OnOpenResourceRequested;
         BookBrowser.TocChanged += (_, _) => ((IBookWorkspace)this).RefreshAfterBookEdit();
         BookBrowser.ReloadOpenTabs = ReloadOpenTabsAndPreview;
+        BookBrowser.NavigateTo = NavigateToBookPathAtOffset;
+        BookBrowser.ManageFontsRequested += (_, _) => RequestManageFonts();
         BookBrowser.ValidateWithW3CRequested += OnValidateSelectedCssWithW3C;
     }
 
@@ -646,6 +649,24 @@ public sealed partial class MainWindowViewModel
     /// dialog and, once confirmed, calls <see cref="ApplyCleanup"/>.
     /// </summary>
     public event EventHandler? CleanupRequested;
+
+    /// <summary>
+    /// Raised by "Manage Fonts" (the Tools menu or the fonts menu of the Book Browser) — the view shows the dialog for
+    /// <see cref="PrepareManageFonts"/>.
+    /// </summary>
+    public event EventHandler? ManageFontsRequested;
+
+    /// <summary>The "Manage Fonts" dialog for the open book, or <c>null</c> without a book.</summary>
+    public ManageFontsViewModel? PrepareManageFonts() =>
+        _currentBook is null ? null : new ManageFontsViewModel(BookBrowser, NavigateToBookPathAtOffset);
+
+    private void RequestManageFonts()
+    {
+        if (_currentBook is not null)
+        {
+            ManageFontsRequested?.Invoke(this, EventArgs.Empty);
+        }
+    }
 
     /// <summary>
     /// Raised by the "Standardize EPUB" action — the view calls <see cref="PrepareStandardizationAsync"/> and shows the
@@ -3485,6 +3506,7 @@ public sealed partial class MainWindowViewModel
         Wire(AppActionIds.BookBrowserAddBlankSvg, BookBrowser.AddBlankSvgCommand);
         Wire(AppActionIds.BookBrowserAddBlankJs, BookBrowser.AddBlankJsCommand);
         Wire(AppActionIds.BookBrowserAddExistingFiles, BookBrowser.AddExistingFilesCommand);
+        Wire(AppActionIds.BookBrowserAddFontFiles, BookBrowser.AddFontFilesCommand);
         Wire(AppActionIds.BookBrowserAddSemantics, BookBrowser.AddSemanticsSelectedCommand);
         Wire(AppActionIds.BookBrowserCoverImage, BookBrowser.CoverImageSelectedCommand);
         Wire(AppActionIds.BookBrowserMarkAsNav, BookBrowser.MarkAsNavSelectedCommand);

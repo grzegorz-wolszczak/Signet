@@ -6182,4 +6182,22 @@
   <data name="Theme_MigratedName" xml:space="preserve">
     <value>Moje kolory</value>
   </data>
+  <data name="FontRemoval_RemoveRule" xml:space="preserve">
+    <value>@font-face „{0}” ({1}): usuń regułę</value>
+  </data>
+  <data name="FontRemoval_RemoveSources" xml:space="preserve">
+    <value>@font-face „{0}” ({1}): usuń ze src: {2}</value>
+  </data>
+  <data name="FontRemoval_RemoveFamily" xml:space="preserve">
+    <value>{0} — {1}: {2} → {3}</value>
+  </data>
+  <data name="FontRemoval_RemoveDeclaration" xml:space="preserve">
+    <value>{0} — usuń deklarację {1}: {2}</value>
+  </data>
+  <data name="FontRemoval_ManualFix" xml:space="preserve">
+    <value>{0} — font: {1}: skrót font nie wymienia innej rodziny niż {2}. Popraw go ręcznie.</value>
+  </data>
+  <data name="FontRemoval_FamilyLosesFaces" xml:space="preserve">
+    <value>Rodzina „{0}” straci warianty: {1} (zostają: {2}). Czytnik zasymuluje brakujące.</value>
+  </data>
 </root>

@@ -34,6 +34,25 @@
                  MinHeight="0" Padding="2,0" VerticalAlignment="Center" VerticalContentAlignment="Center" />
       </DockPanel>
     </DataTemplate>
+
+    <!-- The menu of the Fonts folder and of font files (opened from the code-behind instead of the files menu): only
+         the actions that make sense for fonts; on the folder itself only the folder actions. -->
+    <ContextMenu x:Key="FontContextMenu" x:DataType="vm:BookBrowserViewModel">
+      <MenuItem Header="{loc:Loc BookBrowserView_Open}" Command="{Binding OpenSelectedCommand}" IsVisible="{Binding !IsFontFolderMenu}" />
+      <MenuItem Header="{loc:Loc Common_RenameEllipsis}" Command="{Binding RenameSelectedCommand}" IsVisible="{Binding !IsFontFolderMenu}" />
+      <MenuItem Header="{loc:Loc BookBrowserView_RenameWithTemplate}" Command="{Binding RenameSelectedWithTemplateCommand}" IsVisible="{Binding !IsFontFolderMenu}" />
+      <MenuItem Header="{loc:Loc RegexRenameWindow_Title}" Command="{Binding BulkRegexRenameSelectedCommand}" IsVisible="{Binding !IsFontFolderMenu}" />
+      <MenuItem Header="{loc:Loc Common_Delete}" Command="{Binding DeleteSelectedCommand}" IsVisible="{Binding !IsFontFolderMenu}" />
+      <MenuItem Header="{loc:Loc BookBrowserView_MoveToFolder}" Command="{Binding MoveSelectedCommand}" IsVisible="{Binding !IsFontFolderMenu}" />
+      <Separator IsVisible="{Binding !IsFontFolderMenu}" />
+      <MenuItem Header="{loc:Loc BookBrowserView_AddCopy}" Command="{Binding AddCopySelectedCommand}" IsVisible="{Binding !IsFontFolderMenu}" />
+      <MenuItem Header="{loc:Loc BookBrowserView_SaveAs}" Command="{Binding SaveAsSelectedCommand}" IsVisible="{Binding !IsFontFolderMenu}" />
+      <MenuItem Header="{loc:Loc BookBrowserView_SelectAll}" Command="{Binding SelectAllInFolderCommand}" />
+      <MenuItem Header="{loc:Loc BookBrowserView_GetInfo}" Command="{Binding GetInfoSelectedCommand}" IsVisible="{Binding !IsFontFolderMenu}" />
+      <Separator />
+      <MenuItem Header="{loc:Loc BookBrowserView_AddFontFiles}" Command="{Binding AddFontFilesCommand}" />
+      <MenuItem Header="{loc:Loc BookBrowserView_ManageFonts}" Command="{Binding ManageFontsCommand}" />
+    </ContextMenu>
   </UserControl.Resources>
 
   <Panel>

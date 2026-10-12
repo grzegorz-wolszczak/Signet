@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using AwesomeAssertions;
 using Signet.Core.Fonts;
+using Signet.Core.Tests.TestSupport;
 using Xunit;
 
 namespace Signet.Core.Tests.Fonts;
@@ -55,6 +56,71 @@ public sealed class OpenTypeFontInfoTests
     public void Read_returns_empty_for_missing_file()
     {
         OpenTypeFontInfo.Read("/no/such/font.ttf").Should().Be(FontFileInfo.Empty);
+    }
+
+    [Fact]
+    public void Parse_reads_weight_style_and_typographic_family_from_os2_and_name()
+    {
+        byte[] font = FontFileBuilder.Ttf("Acme Light", "Italic", 300, italic: true, typographicFamily: "Acme");
+
+        FontFileInfo info = OpenTypeFontInfo.Parse(font);
+
+        info.Format.Should().Be(FontFileFormat.TrueType);
+        info.Family.Should().Be("Acme Light");
+        info.TypographicFamily.Should().Be("Acme");
+        info.PreferredFamily.Should().Be("Acme");
+        info.WeightClass.Should().Be(300);
+        info.IsItalic.Should().BeTrue();
+        info.IsBold.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Parse_reads_the_weight_axis_of_a_variable_font()
+    {
+        byte[] font = FontFileBuilder.Sfnt(new Dictionary<string, byte[]>
+        {
+            ["name"] = FontFileBuilder.NameTable((1, "Acme VF"), (2, "Regular")),
+            ["OS/2"] = FontFileBuilder.Os2Table(400, 0x0040),
+            ["fvar"] = FontFileBuilder.FvarTable(("wdth", 75, 100, 100), ("wght", 100, 400, 900)),
+        });
+
+        FontFileInfo info = OpenTypeFontInfo.Parse(font);
+
+        info.HasWeightAxis.Should().BeTrue();
+        info.WeightAxisMin.Should().Be(100);
+        info.WeightAxisMax.Should().Be(900);
+    }
+
+    [Fact]
+    public void Parse_reads_woff_and_woff2_files()
+    {
+        Dictionary<string, byte[]> tables = new()
+        {
+            ["name"] = FontFileBuilder.NameTable((1, "Acme"), (2, "Bold Italic")),
+            ["OS/2"] = FontFileBuilder.Os2Table(700, 0x0021),
+            ["post"] = new byte[32],
+        };
+
+        FontFileInfo woff = OpenTypeFontInfo.Parse(FontFileBuilder.Woff(tables));
+        FontFileInfo woff2 = OpenTypeFontInfo.Parse(FontFileBuilder.Woff2(tables));
+
+        woff.Format.Should().Be(FontFileFormat.Woff);
+        woff2.Format.Should().Be(FontFileFormat.Woff2);
+        foreach (FontFileInfo info in new[] { woff, woff2 })
+        {
+            info.Family.Should().Be("Acme");
+            info.Subfamily.Should().Be("Bold Italic");
+            info.WeightClass.Should().Be(700);
+            info.IsItalic.Should().BeTrue();
+        }
+    }
+
+    [Fact]
+    public void Parse_returns_empty_for_a_truncated_woff2()
+    {
+        byte[] woff2 = FontFileBuilder.Woff2(new Dictionary<string, byte[]> { ["name"] = FontFileBuilder.NameTable((1, "Acme")) });
+
+        OpenTypeFontInfo.Parse(woff2[..(woff2.Length - 8)]).Should().Be(FontFileInfo.Empty);
     }
 
     // Builds a minimal SFNT file with a single `name` table containing the given records.

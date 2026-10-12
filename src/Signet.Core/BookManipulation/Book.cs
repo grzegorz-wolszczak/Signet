@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using AngleSharp.Dom;
+using Signet.Core.Fonts;
 using Signet.Core.Parsers;
 using Signet.Core.Resources;
 using Signet.Core.SourceUpdates;
@@ -222,10 +223,11 @@ public sealed class Book : IDisposable
     /// to the manifest (user templates from the preferences folder are not supported).
     /// </summary>
     /// <param name="folderPath">The target folder (bookpath); <c>"\\"</c> = the default folder of the <c>Styles</c> group.</param>
+    /// <param name="fileName">The file name (made unique among the existing names).</param>
     /// <returns>The newly created CSS resource.</returns>
-    public CssResource CreateEmptyCssFile(string folderPath = "\\")
+    public CssResource CreateEmptyCssFile(string folderPath = "\\", string fileName = "Style0001.css")
     {
-        Resource resource = AddEmptyTempFile("Style0001.css", "text/css", folderPath);
+        Resource resource = AddEmptyTempFile(fileName, "text/css", folderPath);
         if (resource is not CssResource css)
         {
             throw new InvalidOperationException(CoreStrings.Format("Error_NewResourceWrongType", "CSS"));
@@ -989,8 +991,53 @@ public sealed class Book : IDisposable
     public bool ApplyClassRename(ClassRenameResult result)
     {
         ArgumentNullException.ThrowIfNull(result);
+        return ApplyTexts(result.ChangedTexts);
+    }
+
+    /// <summary>
+    /// Writes <c>@font-face</c> rules for font files of the book into <paramref name="stylesheet"/>
+    /// (<see cref="FontFaceAddition.Apply"/>) and, when <paramref name="bodyFamily"/> is given, sets the font of
+    /// <c>body</c> there. Without a stylesheet a new <c>fonts.css</c> is created in the Styles folder and linked first
+    /// in every (X)HTML file that is well-formed. Returns the stylesheet written to, and the files the new stylesheet
+    /// could not be linked to.
+    /// </summary>
+    public (CssResource Stylesheet, IReadOnlyList<HtmlResource> NotLinked) AddFontFaces(
+        CssResource? stylesheet,
+        IReadOnlyList<FontFaceRequest> requests,
+        string? bodyFamily = null,
+        string bodyGeneric = "serif")
+    {
+        ArgumentNullException.ThrowIfNull(requests);
+        List<HtmlResource> notLinked = new();
+        if (stylesheet is null)
+        {
+            stylesheet = CreateEmptyCssFile(fileName: "fonts.css");
+            foreach (HtmlResource html in GetHtmlResources())
+            {
+                List<string> links = html.GetLinkedStylesheets().Prepend(stylesheet.BookPath).ToList();
+                if (!LinkStylesheetsToResources(new[] { html }, links).Applied)
+                {
+                    notLinked.Add(html);
+                }
+            }
+        }
+
+        string newText = FontFaceAddition.Apply(stylesheet.GetText(), stylesheet.BookPath, requests, bodyFamily, bodyGeneric);
+        if (!string.Equals(newText, stylesheet.GetText(), StringComparison.Ordinal))
+        {
+            stylesheet.SetText(newText);
+            Modified = true;
+        }
+
+        return (stylesheet, notLinked);
+    }
+
+    /// <summary>Stores new texts of text resources (by book path). Returns whether anything changed.</summary>
+    public bool ApplyTexts(IReadOnlyDictionary<string, string> newTexts)
+    {
+        ArgumentNullException.ThrowIfNull(newTexts);
         bool modified = false;
-        foreach ((string bookPath, string text) in result.ChangedTexts)
+        foreach ((string bookPath, string text) in newTexts)
         {
             if (_folderKeeper.GetResourceByBookPathNoThrow(bookPath) is TextResource resource
                 && !string.Equals(resource.GetText(), text, StringComparison.Ordinal))

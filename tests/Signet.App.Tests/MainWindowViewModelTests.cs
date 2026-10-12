@@ -1352,7 +1352,7 @@ public sealed class MainWindowViewModelTests
             .Where(a => a.Category == AppActionIds.BookBrowserCategory)
             .ToArray();
 
-        bookBrowserActions.Should().HaveCount(29);
+        bookBrowserActions.Should().HaveCount(30);
         bookBrowserActions.Should().OnlyContain(a => a.IsEnabled, "each one has a handler attached");
         sut.Actions.Require(AppActionIds.BookBrowserRename).InputGestureText.Should().Be("F2");
     }

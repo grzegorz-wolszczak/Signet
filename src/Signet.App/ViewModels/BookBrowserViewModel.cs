@@ -10,6 +10,7 @@ using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.Core;
 using Signet.Core.BookManipulation;
+using Signet.Core.Fonts;
 using Signet.Core.MainUI;
 using Signet.Core.Misc;
 using Signet.Core.Resources;
@@ -23,7 +24,7 @@ namespace Signet.App.ViewModels;
 /// <see cref="OpfModel"/>, multi-selection, opening on double click (event handled by the
 /// TabManager) and the context menu: Open / Rename / Delete and reordering of Text files.
 /// </summary>
-public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
+public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable, IFontManagementHost
 {
     private readonly SettingsStore _settings;
     private readonly IStatusBarService _statusBar;
@@ -33,6 +34,9 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     private Book? _book;
     private OpfModel? _model;
     private BookBrowserNode[] _selection = Array.Empty<BookBrowserNode>();
+
+    // The group folders selected in the tree (a right click on a folder selects it).
+    private OpfModelGroupKind[] _selectedFolders = Array.Empty<OpfModelGroupKind>();
 
     // Expanded folders — survive tree rebuilds (folder items are stable, a refresh only
     // replaces their children). A new book expands only Text.
@@ -107,6 +111,20 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
 
     /// <summary>Request: show the file picker (the view then calls <see cref="ApplyAddExistingFiles"/>).</summary>
     public event EventHandler? AddExistingFilesRequested;
+
+    /// <summary>
+    /// Request: show the file picker for font files (the view then adds them with <see cref="AddFiles"/> and shows the
+    /// "Add @font-face rules" dialog).
+    /// </summary>
+    public event EventHandler? AddFontFilesRequested;
+
+    /// <summary>Request: open "Manage Fonts" (handled by the main window).</summary>
+    public event EventHandler? ManageFontsRequested;
+
+    /// <summary>
+    /// Opens a file at an offset in the main window (navigation from the font dialogs). Set by the main window.
+    /// </summary>
+    public Action<string, int>? NavigateTo { get; set; }
 
     /// <summary>
     /// Request: show the "Rename with template" dialog for the entries (the view then calls
@@ -264,6 +282,8 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         AddBlankSvgCommand.NotifyCanExecuteChanged();
         AddBlankJsCommand.NotifyCanExecuteChanged();
         AddExistingFilesCommand.NotifyCanExecuteChanged();
+        AddFontFilesCommand.NotifyCanExecuteChanged();
+        ManageFontsCommand.NotifyCanExecuteChanged();
         LinkStylesheetsSelectedCommand.NotifyCanExecuteChanged();
         LinkJavascriptsSelectedCommand.NotifyCanExecuteChanged();
     }
@@ -303,10 +323,26 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     public IReadOnlyList<Resource> SelectedResources =>
         _selection.Select(n => n.Entry!.Resource).ToList();
 
+    /// <summary>
+    /// Whether the context menu is the fonts one: only the Fonts folder and/or font files are selected. The view then
+    /// shows only the actions that make sense for fonts.
+    /// </summary>
+    public bool IsFontMenu =>
+        (_selection.Length > 0 || _selectedFolders.Length > 0)
+        && _selection.All(n => n.Entry!.ResourceType == ResourceType.Font)
+        && _selectedFolders.All(k => k == OpfModelGroupKind.Fonts);
+
+    /// <summary>Whether only the Fonts folder is selected (its menu has no actions on files).</summary>
+    public bool IsFontFolderMenu => IsFontMenu && _selection.Length == 0;
+
     /// <summary>Stores the current selection from the view (in tree order).</summary>
     public void UpdateSelection(IEnumerable<object?> selectedItems)
     {
-        _selection = selectedItems.OfType<BookBrowserNode>().Where(n => !n.IsFolder).ToArray();
+        List<BookBrowserNode> nodes = selectedItems.OfType<BookBrowserNode>().ToList();
+        _selection = nodes.Where(n => !n.IsFolder).ToArray();
+        _selectedFolders = nodes.Where(n => n.FolderKind is not null).Select(n => n.FolderKind!.Value).ToArray();
+        OnPropertyChanged(nameof(IsFontMenu));
+        OnPropertyChanged(nameof(IsFontFolderMenu));
         OpenSelectedCommand.NotifyCanExecuteChanged();
         RenameSelectedCommand.NotifyCanExecuteChanged();
         DeleteSelectedCommand.NotifyCanExecuteChanged();
@@ -370,14 +406,20 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     public void ApplyDelete(IReadOnlyList<OpfModelEntry> entries)
     {
         ArgumentNullException.ThrowIfNull(entries);
-        if (_book is null || entries.Count == 0)
+        DeleteResources(entries.Select(e => e.Resource).ToList());
+    }
+
+    /// <inheritdoc/>
+    public void DeleteResources(IReadOnlyList<Resource> resources, FontRemovalPlan? plan = null, IReadOnlySet<string>? excludedKeys = null)
+    {
+        ArgumentNullException.ThrowIfNull(resources);
+        if (_book is null || resources.Count == 0)
         {
             return;
         }
 
-        List<Resource> removable = entries
-            .Where(e => e.ResourceType != ResourceType.Opf)
-            .Select(e => e.Resource)
+        List<Resource> removable = resources
+            .Where(r => r.Type != ResourceType.Opf)
             .ToList();
         if (removable.Count == 0)
         {
@@ -409,8 +451,15 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         bool checkpoint = Checkpoint(Strings.Get("CheckpointOp_DeleteFiles"));
         SaveOpenTabs?.Invoke();
         bool tocChanged = false;
+        bool stylesChanged = false;
         try
         {
+            // The stylesheets lose the rules and family names of the deleted fonts (as checked in the font window).
+            if (plan is not null)
+            {
+                stylesChanged = _book.ApplyTexts(plan.BuildNewTexts(excludedKeys ?? new HashSet<string>()));
+            }
+
             // Entries of the table of contents pointing to the deleted files would be dead links.
             tocChanged = TocFileEntries.RemoveEntriesForFiles(_book, removable.OfType<HtmlResource>().Select(r => r.BookPath));
             _book.GetFolderKeeper().BulkRemoveResources(removable);
@@ -421,9 +470,15 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
             Rewind(checkpoint);
             _statusBar.ShowMessage(Strings.Format("BookBrowser_DeleteFailed", ex.Message), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
             tocChanged = false;
+            stylesChanged = false;
         }
 
         _model?.Refresh();
+        if (stylesChanged)
+        {
+            ReloadOpenTabs?.Invoke();
+        }
+
         if (tocChanged)
         {
             TocChanged?.Invoke(this, EventArgs.Empty);
@@ -433,14 +488,27 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     /// <summary>
     /// Copies the given files from disk into the book (called by the view after the file picker
     /// closes). There is no duplicate replacement dialog — conflicting names automatically get a
-    /// unique suffix, as with "Add Blank".
+    /// unique suffix, as with "Add Blank". Returns the new resources (the view offers <c>@font-face</c> rules for the
+    /// fonts among them).
     /// </summary>
-    public void ApplyAddExistingFiles(IReadOnlyList<string> filePaths)
+    public IReadOnlyList<Resource> ApplyAddExistingFiles(IReadOnlyList<string> filePaths)
+    {
+        IReadOnlyList<Resource> added = AddFiles(filePaths);
+        if (added.Count > 0)
+        {
+            OpenResourceRequested?.Invoke(this, added);
+        }
+
+        return added;
+    }
+
+    /// <inheritdoc/>
+    public IReadOnlyList<Resource> AddFiles(IReadOnlyList<string> filePaths)
     {
         ArgumentNullException.ThrowIfNull(filePaths);
         if (_book is null || filePaths.Count == 0)
         {
-            return;
+            return Array.Empty<Resource>();
         }
 
         bool checkpoint = Checkpoint(filePaths.Count == 1
@@ -452,19 +520,155 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
             if (added.Count > 0)
             {
                 _model?.Refresh();
-                OpenResourceRequested?.Invoke(this, added);
             }
             else
             {
                 Rewind(checkpoint);
             }
+
+            return added;
         }
         catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or System.IO.IOException)
         {
             Rewind(checkpoint);
             _statusBar.ShowMessage(Strings.Format("BookBrowser_AddFilesFailed", ex.Message), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
+            return Array.Empty<Resource>();
         }
     }
+
+    // =====================================================================
+    //  Fonts (IFontManagementHost)
+    // =====================================================================
+
+    /// <inheritdoc/>
+    public FontManagerReport? BuildFontReport()
+    {
+        if (_book is null)
+        {
+            return null;
+        }
+
+        SaveOpenTabs?.Invoke();
+        return FontManagerReport.Build(_book);
+    }
+
+    /// <inheritdoc/>
+    public FontFaceDialogViewModel? PrepareFontFaces(IReadOnlyList<FontResource> fonts)
+    {
+        ArgumentNullException.ThrowIfNull(fonts);
+        if (_book is null || fonts.Count == 0)
+        {
+            return null;
+        }
+
+        SaveOpenTabs?.Invoke();
+        bool isEpub3 = _book.IsEpub3;
+        return new FontFaceDialogViewModel(
+            BookFontIndex.Build(_book),
+            fonts.Select(f => FontFaceAddition.Describe(f, isEpub3)).ToList(),
+            _book.GetCssResources());
+    }
+
+    /// <inheritdoc/>
+    public CssResource? ApplyFontFaces(FontFaceDialogResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        if (_book is null || (result.Requests.Count == 0 && result.BodyFamily is null))
+        {
+            return null;
+        }
+
+        bool checkpoint = Checkpoint(Strings.Get("CheckpointOp_AddFontFaces"));
+        SaveOpenTabs?.Invoke();
+        try
+        {
+            (CssResource stylesheet, IReadOnlyList<HtmlResource> notLinked) =
+                _book.AddFontFaces(result.Stylesheet, result.Requests, result.BodyFamily, result.BodyGeneric);
+            _model?.Refresh();
+            ReloadOpenTabs?.Invoke();
+            if (notLinked.Count > 0)
+            {
+                _statusBar.ShowMessage(
+                    Strings.Format("BookBrowser_FontsCssNotLinked", stylesheet.Filename, string.Join(", ", notLinked.Select(h => h.Filename))),
+                    TimeSpan.FromSeconds(8),
+                    NotificationLevel.Warning);
+            }
+            else
+            {
+                _statusBar.ShowMessage(Strings.Format("BookBrowser_FontFacesAdded", result.Requests.Count, stylesheet.Filename), TimeSpan.FromSeconds(4));
+            }
+
+            return stylesheet;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or System.IO.IOException)
+        {
+            Rewind(checkpoint);
+            _statusBar.ShowMessage(Strings.Format("BookBrowser_FontFacesFailed", ex.Message), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
+            return null;
+        }
+    }
+
+    /// <inheritdoc/>
+    public FontRemovalViewModel? PrepareFontRemoval(IReadOnlyList<Resource> resources)
+    {
+        ArgumentNullException.ThrowIfNull(resources);
+        List<string> fonts = resources.OfType<FontResource>().Select(f => f.BookPath).ToList();
+        if (_book is null || fonts.Count == 0)
+        {
+            return null;
+        }
+
+        SaveOpenTabs?.Invoke();
+        FontRemovalPlan plan = FontRemovalPlan.Create(BookFontIndex.Build(_book), fonts);
+        return plan.IsEmpty
+            ? null
+            : new FontRemovalViewModel(plan, resources.Select(r => r.Filename).ToList(), NavigateTo);
+    }
+
+    /// <inheritdoc/>
+    public bool RenameFontFamily(string oldFamily, string newFamily)
+    {
+        ArgumentNullException.ThrowIfNull(oldFamily);
+        ArgumentNullException.ThrowIfNull(newFamily);
+        if (_book is null)
+        {
+            return false;
+        }
+
+        SaveOpenTabs?.Invoke();
+        IReadOnlyDictionary<string, string> texts = FontFamilyRename.Rename(BookFontIndex.Build(_book), oldFamily, newFamily);
+        if (texts.Count == 0)
+        {
+            return false;
+        }
+
+        bool checkpoint = Checkpoint(Strings.Format("CheckpointOp_RenameFontFamily", oldFamily));
+        if (!_book.ApplyTexts(texts))
+        {
+            Rewind(checkpoint);
+            return false;
+        }
+
+        ReloadOpenTabs?.Invoke();
+        _statusBar.ShowMessage(Strings.Format("BookBrowser_FontFamilyRenamed", oldFamily, newFamily.Trim(), texts.Count), TimeSpan.FromSeconds(4));
+        return true;
+    }
+
+    /// <inheritdoc/>
+    public void OpenResources(IReadOnlyList<Resource> resources)
+    {
+        ArgumentNullException.ThrowIfNull(resources);
+        if (resources.Count > 0)
+        {
+            OpenResourceRequested?.Invoke(this, resources);
+        }
+    }
+
+    [RelayCommand(CanExecute = nameof(HasBook))]
+    private void AddFontFiles() => AddFontFilesRequested?.Invoke(this, EventArgs.Empty);
+
+    [RelayCommand(CanExecute = nameof(HasBook))]
+    private void ManageFonts() => ManageFontsRequested?.Invoke(this, EventArgs.Empty);
 
     /// <summary>
     /// Applies "Rename with template" to the given entries (called by the view after the dialog
@@ -734,14 +938,15 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         OpenResourceRequested?.Invoke(this, new[] { resource });
     }
 
-    /// <summary>Whether exactly one (X)HTML or CSS file is selected — target of "Add Copy".</summary>
+    /// <summary>Whether exactly one (X)HTML, CSS or font file is selected — target of "Add Copy".</summary>
     private bool CanAddCopy =>
         _selection.Length == 1
-        && _selection[0].Entry!.Resource is HtmlResource or CssResource;
+        && _selection[0].Entry!.Resource is HtmlResource or CssResource or FontResource;
 
     /// <summary>
-    /// Duplicates the selected (X)HTML/CSS file with its current content and opens the copy.
-    /// The new file goes to the end of its group, like the other "Add Blank *" actions.
+    /// Duplicates the selected (X)HTML/CSS file with its current content and opens the copy (a font file is copied
+    /// next to the original under a unique name). The new file goes to the end of its group, like the other
+    /// "Add Blank *" actions.
     /// </summary>
     [RelayCommand(CanExecute = nameof(CanAddCopy))]
     private void AddCopySelected()
@@ -753,6 +958,14 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
 
         switch (_selection[0].Entry!.Resource)
         {
+            case FontResource font:
+                AddBlank(() =>
+                {
+                    Resource copy = _book.GetFolderKeeper().AddContentFileToFolder(font.FullPath, folderPath: font.Folder);
+                    _book.Modified = true;
+                    return copy;
+                });
+                break;
             case HtmlResource source:
                 AddBlank(() =>
                 {
@@ -860,21 +1073,24 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     private void SaveAsSelected() => SaveAsRequested?.Invoke(this, _selection[0].Entry!);
 
     /// <summary>
-    /// Selects all files in the group (folder) containing the current selection. Requires at
-    /// least one selected file in that group (folders have no selection state of their own in
-    /// this model).
+    /// Selects all files in the group (folder) containing the current selection — or in the selected folder itself.
     /// </summary>
-    [RelayCommand(CanExecute = nameof(HasFileSelection))]
+    [RelayCommand(CanExecute = nameof(CanSelectAllInFolder))]
     private void SelectAllInFolder()
     {
-        BookBrowserNode? folder = Nodes.FirstOrDefault(n => n.IsFolder && n.Children.Contains(_selection[0]));
-        if (folder is null)
+        BookBrowserNode? folder = _selection.Length > 0
+            ? Nodes.FirstOrDefault(n => n.IsFolder && n.Children.Contains(_selection[0]))
+            : Nodes.FirstOrDefault(n => n.FolderKind == _selectedFolders[0]);
+        if (folder is null || folder.Children.Count == 0)
         {
             return;
         }
 
+        folder.IsExpanded = true;
         TreeSelectionRequested?.Invoke(this, folder.Children.ToArray());
     }
+
+    private bool CanSelectAllInFolder => _selection.Length > 0 || _selectedFolders.Length == 1;
 
     [RelayCommand(CanExecute = nameof(CanMoveText))]
     private void MoveTextUp() => MoveSelectedText(-1);

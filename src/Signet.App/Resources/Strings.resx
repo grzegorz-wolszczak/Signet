@@ -4922,4 +4922,223 @@ Zamknij zakładkę</value>
   <data name="ColorScheme_FileType" xml:space="preserve">
     <value>Motyw Signet</value>
   </data>
+  <data name="Action_MainWindow_ManageFonts" xml:space="preserve">
+    <value>Zarządzaj &amp;czcionkami...</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_AddFontFiles" xml:space="preserve">
+    <value>Dodaj pliki czcionek...</value>
+  </data>
+  <data name="BookBrowserView_AddFontFiles" xml:space="preserve">
+    <value>Dodaj pliki czcionek…</value>
+  </data>
+  <data name="BookBrowserView_ManageFonts" xml:space="preserve">
+    <value>Zarządzaj czcionkami…</value>
+  </data>
+  <data name="CheckpointOp_AddFontFaces" xml:space="preserve">
+    <value>dodanie reguł @font-face</value>
+  </data>
+  <data name="CheckpointOp_RenameFontFamily" xml:space="preserve">
+    <value>zmiana nazwy rodziny czcionek {0}</value>
+  </data>
+  <data name="BookBrowser_FontsCssNotLinked" xml:space="preserve">
+    <value>Arkusz {0} nie został podłączony do plików, które nie są poprawnym XML: {1}</value>
+  </data>
+  <data name="BookBrowser_FontFacesAdded" xml:space="preserve">
+    <value>Dodano reguły @font-face ({0}) do {1}</value>
+  </data>
+  <data name="BookBrowser_FontFacesFailed" xml:space="preserve">
+    <value>Nie udało się dodać reguł @font-face: {0}</value>
+  </data>
+  <data name="BookBrowser_FontFamilyRenamed" xml:space="preserve">
+    <value>Zmieniono nazwę rodziny „{0}” na „{1}” (pliki: {2})</value>
+  </data>
+  <data name="FontDialogs_PickTitle" xml:space="preserve">
+    <value>Dodaj pliki czcionek</value>
+  </data>
+  <data name="FontDialogs_FontFiles" xml:space="preserve">
+    <value>Czcionki (TTF, OTF, WOFF, WOFF2)</value>
+  </data>
+  <data name="FontFaceDialog_Title" xml:space="preserve">
+    <value>Reguły @font-face dla czcionek</value>
+  </data>
+  <data name="FontFaceDialog_Intro" xml:space="preserve">
+    <value>Signet odczytał z plików czcionek rodzinę, grubość i krój. Sprawdź je (nazwę rodziny możesz zmienić) i wybierz arkusz, do którego trafią reguły @font-face. „Pomiń” zostawia pliki w książce bez reguł.</value>
+  </data>
+  <data name="FontFaceDialog_File" xml:space="preserve">
+    <value>Plik</value>
+  </data>
+  <data name="FontFaceDialog_Family" xml:space="preserve">
+    <value>Rodzina (font-family)</value>
+  </data>
+  <data name="FontFaceDialog_Stylesheet" xml:space="preserve">
+    <value>Arkusz stylów:</value>
+  </data>
+  <data name="FontFaceDialog_NewStylesheet" xml:space="preserve">
+    <value>Nowy arkusz fonts.css (podłączony do wszystkich plików HTML)</value>
+  </data>
+  <data name="FontFaceDialog_SetBody" xml:space="preserve">
+    <value>Ustaw jako czcionkę body:</value>
+  </data>
+  <data name="FontFaceDialog_Summary" xml:space="preserve">
+    <value>Reguły do dodania: {0}, pominięte jako już istniejące: {1}</value>
+  </data>
+  <data name="FontFaceDialog_PreviewHint" xml:space="preserve">
+    <value>Podgląd CSS, który zostanie dopisany (reguły trafią za istniejące @font-face albo na początek arkusza):</value>
+  </data>
+  <data name="FontFaceDialog_Add" xml:space="preserve">
+    <value>Dodaj reguły</value>
+  </data>
+  <data name="FontFaceDialog_Skip" xml:space="preserve">
+    <value>Pomiń</value>
+  </data>
+  <data name="FontFaceDialog_EmbeddingRestricted" xml:space="preserve">
+    <value>⚠ Producent czcionki ograniczył jej osadzanie w dokumentach (OS/2 fsType). Upewnij się, że licencja na to pozwala.</value>
+  </data>
+  <data name="FontFaceDialog_FormatNotInEpub2" xml:space="preserve">
+    <value>⚠ WOFF/WOFF2 nie należy do formatów EPUB 2 — część czytników go nie wyświetli.</value>
+  </data>
+  <data name="FontFaceDialog_FormatWoff2" xml:space="preserve">
+    <value>⚠ WOFF2 to nowszy format — starsze czytniki go nie znają.</value>
+  </data>
+  <data name="FontFaceDialog_Unreadable" xml:space="preserve">
+    <value>⚠ Nie udało się odczytać danych z pliku — rodzina i krój zgadnięte z nazwy pliku.</value>
+  </data>
+  <data name="FontFaceDialog_ConflictSameFile" xml:space="preserve">
+    <value>Pominięty: plik ma już regułę @font-face w {0}</value>
+  </data>
+  <data name="FontFaceDialog_ConflictSameFace" xml:space="preserve">
+    <value>Pominięty: ta rodzina ma już wariant {0} (w {1})</value>
+  </data>
+  <data name="FontFaceDialog_ConflictInBatch" xml:space="preserve">
+    <value>Pominięty: ten sam wariant co {0} wyżej</value>
+  </data>
+  <data name="FontRemovalWindow_Title" xml:space="preserve">
+    <value>Usuwanie czcionek</value>
+  </data>
+  <data name="FontRemovalWindow_Intro" xml:space="preserve">
+    <value>Usuwane pliki są używane w stylach książki. Poniżej zmiany, które Signet wprowadzi razem z usunięciem — każdą możesz odznaczyć.</value>
+  </data>
+  <data name="FontRemovalWindow_DoubleClickHint" xml:space="preserve">
+    <value>Dwuklik otwiera miejsce w kodzie.</value>
+  </data>
+  <data name="FontRemovalWindow_Rules" xml:space="preserve">
+    <value>Reguły @font-face</value>
+  </data>
+  <data name="FontRemovalWindow_RulesNote" xml:space="preserve">
+    <value>Reguły wskazujące tylko na usuwane pliki zostaną usunięte; z reguł z innymi źródłami zniknie tylko url usuwanego pliku.</value>
+  </data>
+  <data name="FontRemovalWindow_Usages" xml:space="preserve">
+    <value>Miejsca używające usuwanych rodzin</value>
+  </data>
+  <data name="FontRemovalWindow_UsagesNote" xml:space="preserve">
+    <value>Nazwa rodziny zostanie usunięta z listy fontów (zostaną pozostałe, np. serif). Odznaczone miejsca będą wskazywać na rodzinę, której już nie ma — czytnik użyje kolejnego fontu z listy.</value>
+  </data>
+  <data name="FontRemovalWindow_Notes" xml:space="preserve">
+    <value>Uwagi</value>
+  </data>
+  <data name="ManageFonts_Title" xml:space="preserve">
+    <value>Zarządzaj czcionkami</value>
+  </data>
+  <data name="ManageFonts_Summary" xml:space="preserve">
+    <value>Pliki czcionek: {0}, osadzone rodziny: {1}, pliki bez @font-face: {2}, brakujące warianty: {3}</value>
+  </data>
+  <data name="ManageFonts_FilesTab" xml:space="preserve">
+    <value>Pliki czcionek</value>
+  </data>
+  <data name="ManageFonts_FamiliesTab" xml:space="preserve">
+    <value>Rodziny</value>
+  </data>
+  <data name="ManageFonts_AddFonts" xml:space="preserve">
+    <value>Dodaj czcionki…</value>
+  </data>
+  <data name="ManageFonts_CreateRules" xml:space="preserve">
+    <value>Utwórz @font-face…</value>
+  </data>
+  <data name="ManageFonts_FilesHint" xml:space="preserve">
+    <value>Zaznacz pliki, aby utworzyć dla nich reguły, otworzyć je lub usunąć. Dwuklik otwiera plik.</value>
+  </data>
+  <data name="ManageFonts_RenameFamily" xml:space="preserve">
+    <value>Zmień nazwę rodziny…</value>
+  </data>
+  <data name="ManageFonts_DetailsHint" xml:space="preserve">
+    <value>Reguły, użycia i brakujące warianty zaznaczonej rodziny — dwuklik otwiera miejsce w kodzie.</value>
+  </data>
+  <data name="ManageFonts_ColumnFile" xml:space="preserve">
+    <value>Plik</value>
+  </data>
+  <data name="ManageFonts_ColumnFamily" xml:space="preserve">
+    <value>Rodzina</value>
+  </data>
+  <data name="ManageFonts_ColumnFace" xml:space="preserve">
+    <value>Wariant</value>
+  </data>
+  <data name="ManageFonts_ColumnFormat" xml:space="preserve">
+    <value>Format</value>
+  </data>
+  <data name="ManageFonts_ColumnSize" xml:space="preserve">
+    <value>Rozmiar</value>
+  </data>
+  <data name="ManageFonts_ColumnRules" xml:space="preserve">
+    <value>@font-face</value>
+  </data>
+  <data name="ManageFonts_ColumnStatus" xml:space="preserve">
+    <value>Uwagi</value>
+  </data>
+  <data name="ManageFonts_ColumnFaces" xml:space="preserve">
+    <value>Warianty</value>
+  </data>
+  <data name="ManageFonts_ColumnDeclarations" xml:space="preserve">
+    <value>Deklaracje</value>
+  </data>
+  <data name="ManageFonts_ColumnElements" xml:space="preserve">
+    <value>Elementy</value>
+  </data>
+  <data name="ManageFonts_ColumnKind" xml:space="preserve">
+    <value>Rodzaj</value>
+  </data>
+  <data name="ManageFonts_ColumnPlace" xml:space="preserve">
+    <value>Miejsce</value>
+  </data>
+  <data name="ManageFonts_KindMissing" xml:space="preserve">
+    <value>⚠ brak wariantu</value>
+  </data>
+  <data name="ManageFonts_MissingDetail" xml:space="preserve">
+    <value>{0}: elementy z tekstem: {1} (tutaj pierwszy) — czytnik zasymuluje ten wariant</value>
+  </data>
+  <data name="ManageFonts_StatusNoRule" xml:space="preserve">
+    <value>⚠ brak @font-face</value>
+  </data>
+  <data name="ManageFonts_StatusRestricted" xml:space="preserve">
+    <value>⚠ osadzanie ograniczone</value>
+  </data>
+  <data name="ManageFonts_StatusNotInEpub2" xml:space="preserve">
+    <value>⚠ format spoza EPUB 2</value>
+  </data>
+  <data name="ManageFonts_StatusWoff2" xml:space="preserve">
+    <value>⚠ WOFF2 (starsze czytniki)</value>
+  </data>
+  <data name="ManageFonts_StatusNotEmbedded" xml:space="preserve">
+    <value>nieosadzona — czytnik użyje własnej czcionki</value>
+  </data>
+  <data name="ManageFonts_StatusUnused" xml:space="preserve">
+    <value>⚠ nieużywana</value>
+  </data>
+  <data name="ManageFonts_StatusMissing" xml:space="preserve">
+    <value>⚠ brak {0} ({1} el.)</value>
+  </data>
+  <data name="ManageFonts_RenameTitle" xml:space="preserve">
+    <value>Zmiana nazwy rodziny</value>
+  </data>
+  <data name="ManageFonts_RenamePrompt" xml:space="preserve">
+    <value>Nowa nazwa rodziny „{0}” (zmieni się w regułach @font-face i we wszystkich miejscach użycia):</value>
+  </data>
+  <data name="ManageFonts_RenameMerge" xml:space="preserve">
+    <value>Rodzina „{1}” już istnieje. Zmiana nazwy połączy z nią rodzinę „{0}”. Kontynuować?</value>
+  </data>
+  <data name="FontFaceDialog_Weight" xml:space="preserve">
+    <value>Grubość (font-weight)</value>
+  </data>
+  <data name="FontFaceDialog_Style" xml:space="preserve">
+    <value>Krój (font-style)</value>
+  </data>
 </root>
