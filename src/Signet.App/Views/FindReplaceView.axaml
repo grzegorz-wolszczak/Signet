@@ -155,7 +155,7 @@
         <TextBlock Text="{Binding Message}" Foreground="{DynamicResource SystemAccentColor}" VerticalAlignment="Center" />
         <TextBlock Text="{Binding RegexError, StringFormat='Regex: {0}'}"
                    IsVisible="{Binding HasRegexError}"
-                   Foreground="IndianRed" VerticalAlignment="Center" TextWrapping="Wrap" />
+                   Foreground="{DynamicResource SignetErrorTextBrush}" VerticalAlignment="Center" TextWrapping="Wrap" />
       </StackPanel>
 
       <Grid Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="3"

@@ -46,7 +46,7 @@
               ToolTip.Tip="{loc:Loc HeadingSelectorWindow_IncreaseLevelTip}" />
     </StackPanel>
 
-    <Border BorderBrush="Gray" BorderThickness="1">
+    <Border BorderBrush="{DynamicResource SignetFrameBrush}" BorderThickness="1">
       <!-- The headings tree (Title, Level, In TOC), not sortable; source built in the code-behind, the selection
            follows SelectedNode. -->
       <TreeDataGrid x:Name="Tree" CanUserSortColumns="False" />

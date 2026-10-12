@@ -17,7 +17,7 @@
       <ComboBox ItemsSource="{Binding ContextOptions}"
                 SelectedItem="{Binding ContextAmount, Mode=TwoWay}" MinWidth="70" />
       <TextBlock Text="{loc:Loc DryRunReplaceWindow_FunctionReplacementUnsupported}"
-                 Foreground="IndianRed" VerticalAlignment="Center"
+                 Foreground="{DynamicResource SignetErrorTextBrush}" VerticalAlignment="Center"
                  IsVisible="{Binding HasFunctionReplacement}" />
     </StackPanel>
 

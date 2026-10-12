@@ -12,7 +12,7 @@
       <TextBox x:Name="PatternBox" PlaceholderText="{loc:Loc RegexRenameWindow_PatternPlaceholder}" />
       <TextBlock Text="{loc:Loc RegexRenameWindow_Replacement}" Margin="0,6,0,0" />
       <TextBox x:Name="ReplacementBox" PlaceholderText="{loc:Loc RegexRenameWindow_ReplacementPlaceholder}" />
-      <TextBlock x:Name="ErrorText" Foreground="#C0392B" TextWrapping="Wrap" IsVisible="False" />
+      <TextBlock x:Name="ErrorText" Foreground="{DynamicResource SignetErrorTextBrush}" TextWrapping="Wrap" IsVisible="False" />
     </StackPanel>
 
     <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,10,0,0">
@@ -20,7 +20,7 @@
       <Button x:Name="CancelButton" Content="{loc:Loc Common_Cancel}" IsCancel="True" MinWidth="80" />
     </StackPanel>
 
-    <Border BorderBrush="Gray" BorderThickness="1">
+    <Border BorderBrush="{DynamicResource SignetFrameBrush}" BorderThickness="1">
       <ScrollViewer>
         <ItemsControl x:Name="PreviewList">
           <ItemsControl.ItemTemplate>

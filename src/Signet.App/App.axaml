@@ -99,10 +99,9 @@
 
   <Application.Resources>
     <ResourceDictionary>
-      <!-- Text selection in edit boxes: Fluent uses the dark system accent color, on which
-           black text is unreadable. Light blue background as in Windows / VS Code. -->
-      <SolidColorBrush x:Key="SignetTextSelectionBrush" Color="#ADD6FF" />
-      <SolidColorBrush x:Key="SignetTextSelectionForegroundBrush" Color="#000000" />
+      <!-- Text selection in edit boxes (Fluent's dark accent made black text unreadable), the danger buttons, the
+           file list icons and the other interface colors (Signet*Brush, SignetFolderIcon, SignetFileIcon) come from
+           the theme: AppTheme sets them in App.Initialize and whenever a theme is applied. -->
       <!-- Warnings in dialogs (the color is set from the settings by UiDensityManager). -->
       <SolidColorBrush x:Key="SignetWarningBrush" Color="#B35C00" />
       <!-- Error notifications (status bar message, Notifications panel, the dot on the bell). -->
@@ -214,16 +213,16 @@
     <!-- Buttons that remove or delete something are red (Classes="danger", ButtonClasses.Danger); the ones that save
          use Fluent's "accent" (blue). Disabled, both are gray like any button (Fluent's :disabled template style). -->
     <Style Selector="Button.danger">
-      <Setter Property="Background" Value="#C42B1C" />
-      <Setter Property="Foreground" Value="White" />
+      <Setter Property="Background" Value="{DynamicResource SignetDangerButtonBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource SignetDangerButtonTextBrush}" />
     </Style>
     <Style Selector="Button.danger:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="#A82315" />
-      <Setter Property="Foreground" Value="White" />
+      <Setter Property="Background" Value="{DynamicResource SignetDangerButtonHoverBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource SignetDangerButtonTextBrush}" />
     </Style>
     <Style Selector="Button.danger:pressed /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="#8E1D11" />
-      <Setter Property="Foreground" Value="White" />
+      <Setter Property="Background" Value="{DynamicResource SignetDangerButtonPressedBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource SignetDangerButtonTextBrush}" />
     </Style>
     <!-- Every TreeDataGrid: resizable columns, each at least as wide as its header (TreeDataGridHeaderSizing). -->
     <Style Selector="TreeDataGrid">

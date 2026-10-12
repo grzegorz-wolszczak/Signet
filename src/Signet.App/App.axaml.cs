@@ -26,8 +26,10 @@ public partial class App : Application
     {
         AvaloniaXamlLoader.Load(this);
 
-        // The default tooltip font (the interface font, 13 px) until the saved ones are applied — also in tests.
+        // The default tooltip font (the interface font, 13 px) and the colors of Signet Light until the saved ones are
+        // applied — also in tests.
         TooltipFonts.Apply(_ => TooltipFont.Default);
+        AppTheme.Apply(this, ResolvedTheme.Defaults);
     }
 
     /// <inheritdoc />
@@ -38,10 +40,11 @@ public partial class App : Application
             IServiceProvider services = Services
                 ?? throw new InvalidOperationException("App.Services was not set before Avalonia started.");
 
-            // Before icons: toolbar icon size is computed from the UI font height.
+            // Before icons: toolbar icon size is computed from the UI font height; the theme may name the icon set.
+            services.GetRequiredService<ThemeManager>().ApplySaved();
             services.GetRequiredService<UiDensityManager>().ApplySaved();
             services.GetRequiredService<LocalizationManager>().ApplySaved();
-            services.GetRequiredService<IconThemeManager>().ApplySaved();
+            services.GetRequiredService<IconThemeManager>().ApplySaved(AppTheme.Current.IconSet);
 
             SettingsStore settings = services.GetRequiredService<SettingsStore>();
             DebugLog.IsEnabled = settings.DebugLogging;

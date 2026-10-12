@@ -242,6 +242,9 @@ public static class ThemeKeys
     /// <summary>A pressed button of a destructive action.</summary>
     public static readonly ThemeKey UiDangerButtonPressed = Color("ui.dangerButton.pressed", ThemePage.Interface, "Controls", Rgb(0x8E1D11));
 
+    /// <summary>The text of a button of a destructive action.</summary>
+    public static readonly ThemeKey UiDangerButtonText = Color("ui.dangerButton.text", ThemePage.Interface, "Controls", Rgb(0xFFFFFF));
+
     /// <summary>A frame around a list or a preview in a dialog.</summary>
     public static readonly ThemeKey UiFrame = Color("ui.frame", ThemePage.Interface, "Controls", Rgb(0x808080));
 
@@ -284,8 +287,9 @@ public static class ThemeKeys
     /// <summary>The folded corner of the file icon.</summary>
     public static readonly ThemeKey UiIconFileFold = Color("ui.icon.fileFold", ThemePage.Interface, "Icons", Rgb(0xD8D8D8));
 
-    /// <summary>The background of the sample of a font file (the tab of a font).</summary>
-    public static readonly ThemeKey UiFontPreviewBackground = Color("ui.fontPreview.background", ThemePage.Interface, "Previews", Rgb(0xFFFFFF));
+    /// <summary>The sample of a font file (the tab of a font): its text and background.</summary>
+    public static readonly ThemeKey UiFontPreview = Attributes("ui.fontPreview", ThemePage.Interface, "Previews",
+        new TextAttributes { Foreground = Rgb(0x1A1A1A), Background = Rgb(0xFFFFFF) });
 
     // The colors of the Fluent palette (Avalonia's ColorPaletteResources, without the accent: ui.accent), e.g.
     // fluent.regionColor; unset = the palette of the variant.

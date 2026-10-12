@@ -1041,6 +1041,20 @@ public sealed class SettingsStore
         }
     }
 
+    /// <summary>
+    /// The identifier of the theme in use (<see cref="Themes.ThemeStore"/>); Signet Light by default. A theme that no
+    /// longer exists is replaced by Signet Light when it is applied.
+    /// </summary>
+    public string UiThemeId
+    {
+        get => ReadString("ui_theme_id", Themes.ThemeStore.LightId);
+        set
+        {
+            WriteSilent("ui_theme_id", string.IsNullOrWhiteSpace(value) ? Themes.ThemeStore.LightId : value);
+            RaiseChanged("ui_theme_id");
+        }
+    }
+
     /// <summary>The font of the tooltips of an area of the application. Always read normalized.</summary>
     public TooltipFont GetTooltipFont(TooltipArea area) => new TooltipFont(
         ReadString(TooltipFontKey(area, "family"), TooltipFont.Default.FontFamily),

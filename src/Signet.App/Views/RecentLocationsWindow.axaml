@@ -13,25 +13,6 @@
 
   <!-- A popup like IntelliJ's Recent Locations: closes when it loses focus (click outside), on Esc and after
        choosing an entry; its size and place are remembered (MainWindow.RememberPlacement). -->
-  <Window.Resources>
-    <DrawingImage x:Key="RecentLocationFileIcon">
-      <DrawingImage.Drawing>
-        <DrawingGroup>
-          <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
-          <GeometryDrawing Brush="#ffffff" Geometry="M 3 1.5 H 9.5 L 13 5 V 14.5 H 3 Z">
-            <GeometryDrawing.Pen>
-              <Pen Brush="#8a8a8a" Thickness="1" LineJoin="Miter" />
-            </GeometryDrawing.Pen>
-          </GeometryDrawing>
-          <GeometryDrawing Brush="#d8d8d8" Geometry="M 9.5 1.5 V 5 H 13 Z">
-            <GeometryDrawing.Pen>
-              <Pen Brush="#8a8a8a" Thickness="1" LineJoin="Miter" />
-            </GeometryDrawing.Pen>
-          </GeometryDrawing>
-        </DrawingGroup>
-      </DrawingImage.Drawing>
-    </DrawingImage>
-  </Window.Resources>
 
   <DockPanel>
     <Border DockPanel.Dock="Top" Padding="10,6"
@@ -57,7 +38,7 @@
           <DataTemplate x:DataType="vm:RecentLocationItem">
             <StackPanel Spacing="2" Margin="0,2">
               <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="6">
-                <Image Grid.Column="0" Width="16" Height="16" Source="{StaticResource RecentLocationFileIcon}" />
+                <Image Grid.Column="0" Width="16" Height="16" Source="{DynamicResource SignetFileIcon}" />
                 <TextBlock Grid.Column="1" Text="{Binding FileName}" FontWeight="SemiBold" VerticalAlignment="Center" />
                 <TextBlock Grid.Column="2" Text="{Binding Breadcrumb}" Opacity="0.6" VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis" />

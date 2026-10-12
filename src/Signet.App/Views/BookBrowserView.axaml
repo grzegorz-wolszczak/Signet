@@ -10,33 +10,7 @@
 
   <UserControl.Resources>
 
-    <!-- Folder and file icons: custom vector drawings in one style, identical on every system. -->
-    <DrawingImage x:Key="BookBrowserFolderIcon">
-      <DrawingImage.Drawing>
-        <DrawingGroup>
-          <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
-          <GeometryDrawing Brush="#3d7fd6" Geometry="M 1 3 H 6 L 7.5 4.5 H 15 V 13.5 H 1 Z" />
-          <GeometryDrawing Brush="#8cc2f5" Geometry="M 1.75 6 H 14.25 V 12.75 H 1.75 Z" />
-        </DrawingGroup>
-      </DrawingImage.Drawing>
-    </DrawingImage>
-    <DrawingImage x:Key="BookBrowserFileIcon">
-      <DrawingImage.Drawing>
-        <DrawingGroup>
-          <GeometryDrawing Brush="Transparent" Geometry="M 0 0 H 16 V 16 H 0 Z" />
-          <GeometryDrawing Brush="#ffffff" Geometry="M 3 1.5 H 9.5 L 13 5 V 14.5 H 3 Z">
-            <GeometryDrawing.Pen>
-              <Pen Brush="#8a8a8a" Thickness="1" LineJoin="Miter" />
-            </GeometryDrawing.Pen>
-          </GeometryDrawing>
-          <GeometryDrawing Brush="#d8d8d8" Geometry="M 9.5 1.5 V 5 H 13 Z">
-            <GeometryDrawing.Pen>
-              <Pen Brush="#8a8a8a" Thickness="1" LineJoin="Miter" />
-            </GeometryDrawing.Pen>
-          </GeometryDrawing>
-        </DrawingGroup>
-      </DrawingImage.Drawing>
-    </DrawingImage>
+    <!-- The folder and file icons are application resources drawn in the colors of the theme (AppTheme). -->
 
     <!-- The name cell (looked up by key from the code-behind): icon, name trimmed in the middle, ⚠ for a file that
          is not well-formed, and the in-place rename editor. -->
@@ -45,10 +19,10 @@
            file that is not well-formed is a deliberate addition. -->
       <DockPanel ToolTip.Tip="{Binding ToolTip}" Background="Transparent">
         <Image DockPanel.Dock="Left" Width="16" Height="16" Margin="0,0,5,0"
-               Source="{StaticResource BookBrowserFolderIcon}" IsVisible="{Binding IsFolder}" />
+               Source="{DynamicResource SignetFolderIcon}" IsVisible="{Binding IsFolder}" />
         <Image DockPanel.Dock="Left" Width="16" Height="16" Margin="0,0,5,0"
-               Source="{StaticResource BookBrowserFileIcon}" IsVisible="{Binding !IsFolder}" />
-        <TextBlock DockPanel.Dock="Right" Text="⚠" Foreground="#C0392B" Margin="4,0,0,0"
+               Source="{DynamicResource SignetFileIcon}" IsVisible="{Binding !IsFolder}" />
+        <TextBlock DockPanel.Dock="Right" Text="⚠" Foreground="{DynamicResource SignetRiskMarkerBrush}" Margin="4,0,0,0"
                    IsVisible="{Binding IsMalformed}" ToolTip.Tip="{loc:Loc BookBrowserView_MalformedTip}" />
         <!-- Trimming in the middle of the name. -->
         <TextBlock Text="{Binding Header}" TextTrimming="PrefixCharacterEllipsis" VerticalAlignment="Center"

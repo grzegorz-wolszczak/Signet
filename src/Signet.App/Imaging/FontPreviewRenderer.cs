@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System;
 using Avalonia.Media.Imaging;
+using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using SkiaSharp;
 
@@ -52,8 +53,10 @@ public static class FontPreviewRenderer
         }
 
         const int width = 720;
-        SKColor background = SKColors.White;
-        SKColor foreground = new(0x1A, 0x1A, 0x1A);
+        // The colors of the theme (ui.fontPreview).
+        Signet.Core.Themes.TextAttributes colors = AppTheme.Current.Attributes(Signet.Core.Themes.ThemeKeys.UiFontPreview);
+        SKColor background = colors.Background is { } bg ? new SKColor(bg.R, bg.G, bg.B, bg.A) : SKColors.White;
+        SKColor foreground = colors.Foreground is { } fg ? new SKColor(fg.R, fg.G, fg.B, fg.A) : SKColors.Black;
 
         List<(string Text, float Size)> rows = new();
         foreach (string line in SampleLines)

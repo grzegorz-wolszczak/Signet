@@ -19,11 +19,37 @@ namespace Signet.App.Infrastructure;
 /// </summary>
 public static class ActionIcons
 {
-    /// <summary>Color of a "Custom" icon in the inactive state.</summary>
-    public static readonly Color InactiveColor = Color.FromRgb(0xA0, 0xA0, 0xA0);
+    /// <summary>The inactive color of Signet Light (theme key <c>ui.icon.inactive</c>).</summary>
+    public static readonly Color DefaultInactiveColor = Color.FromRgb(0xA0, 0xA0, 0xA0);
 
-    /// <summary>Color of a "Custom" icon in the attention state.</summary>
-    public static readonly Color AttentionColor = Color.FromRgb(0xD9, 0x30, 0x30);
+    /// <summary>The attention color of Signet Light (theme key <c>ui.icon.attention</c>).</summary>
+    public static readonly Color DefaultAttentionColor = Color.FromRgb(0xD9, 0x30, 0x30);
+
+    // The gray the inactive drawings are lightened toward, for DefaultInactiveColor; another inactive color moves it in
+    // proportion to its luminance.
+    private const double DefaultInactiveAnchor = 190;
+
+    /// <summary>Color of a "Custom" icon in the inactive state; the drawn icons are grayed toward it.</summary>
+    public static Color InactiveColor { get; private set; } = DefaultInactiveColor;
+
+    /// <summary>Color of a "Custom" icon in the attention state; the drawn icons take its hue.</summary>
+    public static Color AttentionColor { get; private set; } = DefaultAttentionColor;
+
+    /// <summary>
+    /// Sets the colors of the states (from the theme, <see cref="AppTheme"/>). The icons recolored before keep their
+    /// colors until their state changes or the application restarts.
+    /// </summary>
+    public static void SetStateColors(Color inactive, Color attention)
+    {
+        if (inactive == InactiveColor && attention == AttentionColor)
+        {
+            return;
+        }
+
+        InactiveColor = inactive;
+        AttentionColor = attention;
+        Cache.Clear();
+    }
 
     // Recolored variants are held weakly, keyed by the source image — changing the icon set (new
     // DrawingImage) does not leave old copies in memory.
@@ -88,16 +114,17 @@ public static class ActionIcons
         return variant;
     }
 
-    /// <summary>"Inactive" gray: luminance lightened toward light gray (like a disabled icon).</summary>
+    /// <summary>"Inactive" gray: luminance lightened toward light gray (like a disabled icon), set by <see cref="InactiveColor"/>.</summary>
     public static Color ToInactive(Color c)
     {
-        double luminance = (0.299 * c.R) + (0.587 * c.G) + (0.114 * c.B);
-        byte gray = (byte)Math.Round((luminance * 0.45) + (190 * 0.55));
+        double luminance = Luminance(c);
+        double anchor = Math.Min(255, DefaultInactiveAnchor * Luminance(InactiveColor) / Luminance(DefaultInactiveColor));
+        byte gray = (byte)Math.Round((luminance * 0.45) + (anchor * 0.55));
         return Color.FromArgb(c.A, gray, gray, gray);
     }
 
     /// <summary>
-    /// "Attention" red: colored pixels get a red hue while keeping their lightness
+    /// "Attention" red: colored pixels get the hue of <see cref="AttentionColor"/> while keeping their lightness
     /// (shading is kept); nearly white/gray/black elements are unchanged.
     /// </summary>
     public static Color ToAttention(Color c)
@@ -113,8 +140,10 @@ public static class ActionIcons
 
         double lightness = Math.Clamp(hsl.L, 0.32, 0.62);
         double saturation = Math.Max(hsl.S, 0.7);
-        return HslColor.ToRgb(0, saturation, lightness, c.A / 255.0);
+        return HslColor.ToRgb(AttentionColor.ToHsl().H, saturation, lightness, c.A / 255.0);
     }
+
+    private static double Luminance(Color c) => (0.299 * c.R) + (0.587 * c.G) + (0.114 * c.B);
 
     private static Drawing Recolor(Drawing drawing, Func<Color, Color> map)
     {
