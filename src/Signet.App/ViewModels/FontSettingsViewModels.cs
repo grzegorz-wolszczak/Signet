@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Signet.Core.Misc;
 
 namespace Signet.App.ViewModels;
 
@@ -24,6 +25,7 @@ public sealed class FontSettingViewModel : ObservableObject
     private readonly Func<string> _placeholder;
     private readonly Func<string?> _previewForeground;
     private readonly Func<string?> _previewBackground;
+    private readonly Func<(CodeViewAppearance Appearance, bool Extended)>? _codePreview;
     private readonly Action _restoreDefault;
 
     /// <summary>Creates the adapter of one font setting.</summary>
@@ -40,6 +42,8 @@ public sealed class FontSettingViewModel : ObservableObject
     /// <param name="previewForeground">The text color of the preview, when the place has its own.</param>
     /// <param name="previewBackground">The background of the preview, when the place has its own.</param>
     /// <param name="sizeHint">What the size field means besides a size, e.g. "0 = as the interface text".</param>
+    /// <param name="codePreview">For a font of the code editor: the colors and the kind of highlighting the preview shows
+    /// the sample with, as Code View does (with line numbers); <c>null</c> = the sample is plain text.</param>
     internal FontSettingViewModel(
         string key,
         string label,
@@ -52,7 +56,8 @@ public sealed class FontSettingViewModel : ObservableObject
         Func<string>? placeholder = null,
         Func<string?>? previewForeground = null,
         Func<string?>? previewBackground = null,
-        string? sizeHint = null)
+        string? sizeHint = null,
+        Func<(CodeViewAppearance Appearance, bool Extended)>? codePreview = null)
     {
         Key = key ?? throw new ArgumentNullException(nameof(key));
         Label = label ?? throw new ArgumentNullException(nameof(label));
@@ -72,6 +77,7 @@ public sealed class FontSettingViewModel : ObservableObject
         _previewForeground = previewForeground ?? (() => null);
         _previewBackground = previewBackground ?? (() => null);
         SizeHint = sizeHint;
+        _codePreview = codePreview;
     }
 
     /// <summary>Raised when the user changed the typeface or the size here.</summary>
@@ -147,6 +153,15 @@ public sealed class FontSettingViewModel : ObservableObject
     /// <summary>The background of the preview (<c>#rrggbb</c>), when the place the font is used in has its own.</summary>
     public string? PreviewBackground => _previewBackground();
 
+    /// <summary>Whether the preview shows the sample as code: highlighted as in Code View, with line numbers.</summary>
+    public bool IsCodePreview => _codePreview is not null;
+
+    /// <summary>The Code View colors of the code preview; <c>null</c> when the sample is plain text.</summary>
+    public CodeViewAppearance? CodePreviewAppearance => _codePreview?.Invoke().Appearance;
+
+    /// <summary>Whether the code preview uses the extended highlighting of Code View.</summary>
+    public bool CodePreviewExtended => _codePreview?.Invoke().Extended ?? false;
+
     /// <summary>Sets the default typeface and size.</summary>
     public void RestoreDefault()
     {
@@ -198,6 +213,10 @@ public sealed partial class FontPageViewModel : ObservableObject
     /// <summary>The setting shown in the preview: the one focused or changed last (the first one at the start).</summary>
     [ObservableProperty]
     private FontSettingViewModel? _active;
+
+    /// <summary>Whether the preview wraps the lines that do not fit its width (it scrolls sideways otherwise).</summary>
+    [ObservableProperty]
+    private bool _wrapPreview;
 
     /// <summary>"Restore defaults" — every font of the page goes back to its default.</summary>
     [RelayCommand]

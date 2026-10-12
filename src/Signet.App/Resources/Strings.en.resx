@@ -4815,15 +4815,23 @@ abcdefghijklmnopqrstuvwxyz ąćęłńóśźż
   </data>
   <data name="FontPreview_Code" xml:space="preserve">
     <value>&lt;?xml version="1.0" encoding="utf-8"?&gt;
-&lt;html xmlns="http://www.w3.org/1999/xhtml"&gt;
+&lt;!DOCTYPE html&gt;
+&lt;html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops"&gt;
+&lt;head&gt;
+  &lt;title&gt;Chapter 1&lt;/title&gt;
+  &lt;link href="../Styles/style.css" rel="stylesheet" type="text/css"/&gt;
+  &lt;style&gt;
+    /* The first paragraph of a chapter */
+    p.first { text-indent: 0; margin: 1em 0 0.5em; }
+    @media amzn-kf8 { h1 { color: #333 !important; } }
+  &lt;/style&gt;
+&lt;/head&gt;
 &lt;body&gt;
   &lt;h1 id="ch1"&gt;Chapter 1&lt;/h1&gt;
-  &lt;p class="first"&gt;The quick &lt;em&gt;brown&lt;/em&gt; fox &amp;amp; the lazy dog.&lt;/p&gt;
+  &lt;p class="first"&gt;The quick &lt;em&gt;brown&lt;/em&gt; fox &amp;amp; the lazy dog.&lt;a epub:type="noteref" href="#fn1"&gt;1&lt;/a&gt;&lt;/p&gt;
+  &lt;!-- 0O 1lI| {}[]() == != &lt;= &gt;= -&gt; =&gt; --&gt;
 &lt;/body&gt;
-&lt;/html&gt;
-
-p.first { text-indent: 0; margin: 1em 0 0.5em; }
-0O 1lI| {}[]() == != &lt;= &gt;= -&gt; =&gt;</value>
+&lt;/html&gt;</value>
   </data>
   <data name="FontPreview_OpenTagHint" xml:space="preserve">
     <value>&lt;p class="first" id="p12"&gt;</value>
@@ -4845,5 +4853,8 @@ Zażółć gęślą jaźń — 0123456789</value>
   </data>
   <data name="PreferencesWindow_RestoreFontDefaults" xml:space="preserve">
     <value>Restore defaults</value>
+  </data>
+  <data name="PreferencesWindow_WrapPreview" xml:space="preserve">
+    <value>Wrap lines</value>
   </data>
 </root>

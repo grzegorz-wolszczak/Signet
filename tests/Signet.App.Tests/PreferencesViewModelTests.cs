@@ -702,6 +702,24 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
+    public void The_editor_font_is_previewed_as_code_in_the_colors_being_edited()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        FontSettingViewModel editor = vm.CodeViewFonts.Fonts.Single(f => f.Key == "CodeViewEditor");
+        FontSettingViewModel hint = vm.CodeViewFonts.Fonts.Single(f => f.Key == "OpenTagHint");
+
+        vm.CodeView.Colors.Single(c => c.Key == "XHTML HTML").Value = "#123456";
+        vm.ExtendedHighlighting = !vm.ExtendedHighlighting;
+
+        editor.IsCodePreview.Should().BeTrue();
+        editor.CodePreviewAppearance!.XhtmlHtmlColor.Should().Be("#123456", "the preview shows the colors not applied yet");
+        editor.CodePreviewExtended.Should().Be(vm.ExtendedHighlighting);
+        hint.IsCodePreview.Should().BeFalse();
+        hint.CodePreviewAppearance.Should().BeNull();
+    }
+
+    [Fact]
     public void Restore_defaults_of_a_font_page_resets_only_its_fonts()
     {
         (TestHost host, PreferencesViewModel vm) = New();

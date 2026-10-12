@@ -14,6 +14,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Signet.App.Infrastructure;
 using Signet.App.Input;
 using Signet.App.Actions;
+using Signet.App.CodeView;
 using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.App.ViewModels;
@@ -654,15 +655,23 @@ public sealed class PreferencesWindowRenderTests
         FontsPageView page = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible);
         FontSettingView[] rows = page.GetVisualDescendants().OfType<FontSettingView>().ToArray();
         rows.Select(r => r.Name).Should().Equal("FontCodeViewEditor", "FontOpenTagHint");
+        CodePreviewEditor code = page.FindControl<CodePreviewEditor>("CodePreview")!;
         TextBlock preview = page.FindControl<TextBlock>("PreviewText")!;
-        preview.Text.Should().Be(Strings.Get("FontPreview_Code"));
-        preview.FontFamily.Name.Should().Be(vm.CodeView.FontFamily);
-        preview.FontSize.Should().Be(vm.CodeView.FontSize);
+        code.IsVisible.Should().BeTrue("the editor font is previewed as code");
+        page.FindControl<ScrollViewer>("PlainPreview")!.IsVisible.Should().BeFalse();
+        code.Text.Should().Be(Strings.Get("FontPreview_Code"));
+        code.FontFamily.Name.Should().Be(vm.CodeView.FontFamily);
+        code.FontSize.Should().Be(vm.CodeView.FontSize);
+        code.ShowLineNumbers.Should().BeTrue();
+        code.TextArea.TextView.LineTransformers.Should().Contain(t => t.GetType().Name.StartsWith("LineStateSyntaxColorizer"),
+            "the sample is highlighted as in Code View");
 
         rows[1].FindControl<ComboBox>("FamilyBox")!.Focus();
         Dispatcher.UIThread.RunJobs();
 
         vm.CodeViewFonts.Active!.Key.Should().Be("OpenTagHint");
+        page.FindControl<ScrollViewer>("PlainPreview")!.IsVisible.Should().BeTrue();
+        code.IsVisible.Should().BeFalse();
         preview.Text.Should().StartWith(Strings.Get("FontPreview_OpenTagHint"));
         page.FindControl<Border>("PreviewSurface")!.Background.Should().BeAssignableTo<ISolidColorBrush>()
             .Which.Color.Should().Be(Color.Parse(vm.OpenTagHintBackground.Value));
@@ -672,6 +681,30 @@ public sealed class PreferencesWindowRenderTests
 
         vm.OpenTagHintFontSize.Should().Be(21);
         preview.FontSize.Should().Be(21);
+        window.Close();
+    }
+
+    /// <summary>"Wrap lines" over the preview wraps both the code sample and a text sample.</summary>
+    [AvaloniaFact]
+    public void Fonts_page_wraps_the_preview_lines_on_request()
+    {
+        PreferencesWindow window = BuildWindow();
+        PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, "CodeViewFontsPage");
+        FontsPageView page = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible);
+        CodePreviewEditor code = page.FindControl<CodePreviewEditor>("CodePreview")!;
+        TextBlock preview = page.FindControl<TextBlock>("PreviewText")!;
+        code.WordWrap.Should().BeFalse();
+        preview.TextWrapping.Should().Be(TextWrapping.NoWrap);
+
+        page.FindControl<CheckBox>("WrapPreviewBox")!.IsChecked = true;
+        Dispatcher.UIThread.RunJobs();
+
+        vm.CodeViewFonts.WrapPreview.Should().BeTrue();
+        code.WordWrap.Should().BeTrue();
+        preview.TextWrapping.Should().Be(TextWrapping.Wrap);
         window.Close();
     }
 

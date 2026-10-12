@@ -69,7 +69,8 @@ public sealed partial class PreferencesViewModel
                         CodeView.FontFamily = codeViewDefaults.FontFamily;
                         CodeView.FontSize = codeViewDefaults.FontSize;
                     },
-                    CodeView.ChooseFontCommand),
+                    CodeView.ChooseFontCommand,
+                    codePreview: () => (_settings.CodeViewAppearance, ExtendedHighlighting)),
                 new FontSettingViewModel(
                     "OpenTagHint",
                     Strings.Get("PreferencesWindow_OpenTagHintFont"),
