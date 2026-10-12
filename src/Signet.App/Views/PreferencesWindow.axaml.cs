@@ -59,6 +59,7 @@ public partial class PreferencesWindow : Window
 
         _sections = new PreferencesSectionsViewModel(BuildSections(), PageTexts);
         FillLinkPages();
+        WirePageLinks();
         LocalizedColumns<PreferencesSectionNode> columns = new();
         VisibleItemsView<PreferencesSectionNode> roots = Visible(_sections.Roots);
         _source = new HierarchicalTreeDataGridSource<PreferencesSectionNode>(roots)
@@ -296,12 +297,63 @@ public partial class PreferencesWindow : Window
                 foreach (PreferencesSectionNode child in node.Children)
                 {
                     HyperlinkButton link = new() { Content = child.Title };
-                    link.Click += (_, _) => _sections.Selected = child;
+                    link.Click += (_, _) => RevealSection(child);
                     links.Children.Add(link);
                 }
 
                 page.Content = new ScrollViewer { Content = links };
                 _linkPages.Add(node.PageIndex);
+            }
+        }
+    }
+
+    // Opens a section as a click in the tree would: its enclosing sections are expanded (also when the user collapsed
+    // them), and the section is selected and scrolled into view.
+    private void RevealSection(PreferencesSectionNode node)
+    {
+        List<PreferencesSectionNode> ancestors = new();
+        for (PreferencesSectionNode? parent = node.Parent; parent is not null; parent = parent.Parent)
+        {
+            ancestors.Insert(0, parent);
+        }
+
+        foreach (PreferencesSectionNode ancestor in ancestors)
+        {
+            ancestor.IsExpanded = true;
+            if (_selection.FindPath(ancestor) is { } path)
+            {
+                _source.Expand(new IndexPath(path));
+            }
+        }
+
+        _sections.Selected = node;
+        if (_selection.FindPath(node) is { } nodePath)
+        {
+            Dispatcher.UIThread.Post(
+                () => SectionTree.RowsPresenter?.BringIntoView(_source.Rows.ModelIndexToRowIndex(new IndexPath(nodePath))),
+                DispatcherPriority.Loaded);
+        }
+    }
+
+    // The links of the pages to other pages (PreferencesPage.Target): a click selects the target in the tree.
+    private void WirePageLinks()
+    {
+        Dictionary<string, PreferencesSectionNode> byName = _sections.All
+            .Where(n => Pages.Items[n.PageIndex] is TabItem { Name.Length: > 0 })
+            .ToDictionary(n => ((TabItem)Pages.Items[n.PageIndex]!).Name!, StringComparer.Ordinal);
+        foreach (TabItem page in Pages.Items.OfType<TabItem>())
+        {
+            foreach (HyperlinkButton link in page.GetLogicalDescendants().OfType<HyperlinkButton>())
+            {
+                if (PreferencesPage.GetTarget(link) is not { } target)
+                {
+                    continue;
+                }
+
+                PreferencesSectionNode node = byName.TryGetValue(target, out PreferencesSectionNode? found)
+                    ? found
+                    : throw new InvalidOperationException($"A link of the Preferences page '{page.Name}' names an unknown page '{target}'.");
+                link.Click += (_, _) => RevealSection(node);
             }
         }
     }

@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
+using Signet.Controls.TreeDataGrid;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
@@ -22,6 +23,7 @@ using Signet.App.Views;
 using Signet.Core.Misc;
 using Signet.Core.Themes;
 using Signet.Core.Spellcheck;
+using Xunit;
 
 namespace Signet.App.UiTests;
 
@@ -31,9 +33,10 @@ namespace Signet.App.UiTests;
 /// </summary>
 public sealed class PreferencesWindowRenderTests
 {
-    // Selects a page by its header (resource key), so the tests do not depend on the order of the pages.
+    // Selects a top-level page by its header (resource key), so the tests do not depend on the order of the pages.
     private static void SelectTab(TabControl tabs, string headerKey) =>
-        tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(t => Equals(t.Header, Strings.Get(headerKey)));
+        tabs.SelectedItem = tabs.Items.OfType<TabItem>()
+            .Single(t => Equals(t.Header, Strings.Get(headerKey)) && PreferencesPage.GetParent(t) is null);
 
     // Selects a page by its x:Name (the subsections share headers such as "Appearance" and "Fonts") and lays it out.
     private static TabControl ShowPage(PreferencesWindow window, string pageName)
@@ -260,30 +263,64 @@ public sealed class PreferencesWindowRenderTests
     /// The sections that define a look have the subsections Appearance › Fonts; the path of a subsection is shown above
     /// its page.
     /// </summary>
+    // The parts with fonts of their own, in the order of Appearance › Fonts.
+    private static readonly string[] PartsWithFonts =
+    {
+        "StartScreen", "BookBrowser", "TableOfContents", "CodeView", "Preview", "FindReplace", "SpecialCharacters",
+        "Checkpoints", "Validation", "MetadataEditor", "Cleanup", "Footnotes",
+    };
+
     [AvaloniaFact]
-    public void Sections_with_a_look_have_appearance_and_fonts_subsections()
+    public void The_fonts_of_the_parts_are_subsections_of_appearance_fonts()
     {
         PreferencesWindow window = BuildWindow();
         window.Show();
         Dispatcher.UIThread.RunJobs();
         string appearance = Strings.Get("PreferencesWindow_Appearance");
         string fonts = Strings.Get("PreferencesWindow_Fonts");
+        PreferencesSectionNode appearanceFonts = window.Sections.All.Single(n => n.Path == appearance + " › " + fonts);
 
-        // The sections follow the work on a book: from the start screen, through editing, to cleaning up.
-        string[] sections =
-        {
-            "StartScreen", "BookBrowser", "TableOfContents", "CodeView", "Preview", "FindReplace", "SpecialCharacters",
-            "Checkpoints", "Validation", "MetadataEditor", "Cleanup", "Footnotes",
-        };
-        window.Sections.All.Where(n => n.Title == fonts).Select(n => n.Path).Should().Equal(
-            new[] { appearance + " › " + fonts }.Concat(
-                sections.Select(s => string.Join(" › ", Strings.Get("PreferencesWindow_" + s), appearance, fonts))));
+        // The parts follow the work on a book: from the start screen, through editing, to cleaning up.
+        appearanceFonts.Children.Select(n => n.Title).Should().Equal(PartsWithFonts.Select(s => Strings.Get("PreferencesWindow_" + s)));
+        window.Sections.All.Where(n => n.Title == fonts).Should().ContainSingle("a section has no Fonts page of its own");
+        window.Sections.All.Should().NotContain(n => n.Title == Strings.Get("PreferencesWindow_StartScreen") && n.Children.Count > 0,
+            "a part with only fonts is no section");
 
-        PreferencesSectionNode codeViewFonts = window.Sections.All.Single(n => n.Path.StartsWith(Strings.Get("PreferencesWindow_CodeView"), StringComparison.Ordinal) && n.Title == fonts);
+        PreferencesSectionNode codeViewFonts = appearanceFonts.Children.Single(n => n.Title == Strings.Get("PreferencesWindow_CodeView"));
         window.Sections.Selected = codeViewFonts;
         Dispatcher.UIThread.RunJobs();
 
-        window.FindControl<TextBlock>("Breadcrumb")!.Text.Should().Be(codeViewFonts.Path);
+        window.FindControl<TextBlock>("Breadcrumb")!.Text.Should().Be(string.Join(" › ", appearance, fonts, Strings.Get("PreferencesWindow_CodeView")));
+        window.Close();
+    }
+
+    /// <summary>A section with more appearance settings than fonts links to its fonts at the top of its Appearance page.</summary>
+    [AvaloniaTheory]
+    [InlineData("CodeView")]
+    [InlineData("Preview")]
+    public void The_appearance_of_a_section_links_to_its_fonts_at_the_top(string section)
+    {
+        PreferencesWindow window = BuildWindow();
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        PreferencesSectionNode appearance = window.Sections.Roots.Single(n => n.Title == Strings.Get("PreferencesWindow_Appearance"));
+        var source = (HierarchicalTreeDataGridSource<PreferencesSectionNode>)window.FindControl<TreeDataGrid>("SectionTree")!.Source!;
+        int appearanceRow = window.Sections.Roots.IndexOf(appearance);
+        source.Collapse(new IndexPath(appearanceRow));
+        appearance.IsExpanded = false;
+        ShowPage(window, section + "AppearancePage");
+        HyperlinkButton link = window.FindControl<HyperlinkButton>(section + "FontsLink")!;
+        ((StackPanel)link.Parent!).Children[0].Should().BeSameAs(link, "the link is above every other setting");
+
+        link.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+
+        PreferencesSectionNode target = window.Sections.Selected!;
+        target.Path.Should().Be(string.Join(
+            " › ", Strings.Get("PreferencesWindow_Appearance"), Strings.Get("PreferencesWindow_Fonts"), Strings.Get("PreferencesWindow_" + section)));
+        appearance.IsExpanded.Should().BeTrue("the link opens the collapsed branch, as a click in the tree");
+        target.Parent!.IsExpanded.Should().BeTrue();
+        source.RowSelection!.SelectedItem.Should().BeSameAs(target, "the section is selected in the tree itself");
         window.Close();
     }
 
@@ -701,7 +738,7 @@ public sealed class PreferencesWindowRenderTests
         Dispatcher.UIThread.RunJobs();
 
         window.Sections.Selected!.Path.Should().Be(string.Join(
-            " › ", Strings.Get("PreferencesWindow_CodeView"), Strings.Get("PreferencesWindow_Appearance"), Strings.Get("PreferencesWindow_Fonts")));
+            " › ", Strings.Get("PreferencesWindow_Appearance"), Strings.Get("PreferencesWindow_Fonts"), Strings.Get("PreferencesWindow_CodeView")));
 
         search.Text = Strings.Get("FontPreview_SpecialCharacters").Split('\n')[0].Trim();
         Dispatcher.UIThread.RunJobs();

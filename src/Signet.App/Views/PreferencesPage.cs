@@ -19,4 +19,17 @@ public static class PreferencesPage
 
     /// <summary>Sets <see cref="ParentProperty"/>.</summary>
     public static void SetParent(TabItem page, string? value) => page.SetValue(ParentProperty, value);
+
+    /// <summary>
+    /// On a link of a page: the <c>x:Name</c> of the page it opens (e.g. "Fonts" on Code View › Appearance opens
+    /// Appearance › Fonts › Code View).
+    /// </summary>
+    public static readonly AttachedProperty<string?> TargetProperty =
+        AvaloniaProperty.RegisterAttached<HyperlinkButton, string?>("Target", typeof(PreferencesPage));
+
+    /// <summary>Gets <see cref="TargetProperty"/>.</summary>
+    public static string? GetTarget(HyperlinkButton link) => link.GetValue(TargetProperty);
+
+    /// <summary>Sets <see cref="TargetProperty"/>.</summary>
+    public static void SetTarget(HyperlinkButton link, string? value) => link.SetValue(TargetProperty, value);
 }
