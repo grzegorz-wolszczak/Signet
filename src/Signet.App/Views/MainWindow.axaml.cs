@@ -155,6 +155,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             _boundViewModel.ReportsRequested -= OnReportsRequested;
             _boundViewModel.SpellcheckEditorRequested -= OnSpellcheckEditorRequested;
             _boundViewModel.CleanupRequested -= OnCleanupRequested;
+            _boundViewModel.FootnoteConversionRequested -= OnFootnoteConversionRequested;
             _boundViewModel.StandardizeRequested -= OnStandardizeRequested;
             _boundViewModel.LiveCssPanelRequested -= OnLiveCssPanelRequested;
             _boundViewModel.LiveCssContextChanged -= OnLiveCssContextChanged;
@@ -201,6 +202,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         _boundViewModel.ReportsRequested += OnReportsRequested;
         _boundViewModel.SpellcheckEditorRequested += OnSpellcheckEditorRequested;
         _boundViewModel.CleanupRequested += OnCleanupRequested;
+        _boundViewModel.FootnoteConversionRequested += OnFootnoteConversionRequested;
         _boundViewModel.StandardizeRequested += OnStandardizeRequested;
         _boundViewModel.LiveCssPanelRequested += OnLiveCssPanelRequested;
         _boundViewModel.LiveCssContextChanged += OnLiveCssContextChanged;
@@ -1133,6 +1135,29 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         if (cleanup is not null)
         {
             await CleanupWindow.ShowAsync(this, cleanup);
+        }
+    }
+
+    /// <summary>
+    /// Handles "Convert Footnotes of Other Origin…": plans the conversion and shows the modal dialog; it converts the
+    /// checked footnotes and stays open until it is closed. The question about converting without a checkpoint is
+    /// asked over the dialog.
+    /// </summary>
+    private async void OnFootnoteConversionRequested(object? sender, EventArgs e)
+    {
+        MainWindowViewModel? vm = _boundViewModel;
+        if (vm is null)
+        {
+            return;
+        }
+
+        FootnoteConversionWindow? window = null;
+        FootnoteConversionViewModel? conversion = vm.PrepareFootnoteConversion(
+            () => FootnoteConversionWindow.ConfirmWithoutCheckpointAsync(window ?? (Window)this));
+        if (conversion is not null)
+        {
+            window = new FootnoteConversionWindow { DataContext = conversion };
+            await window.ShowDialog(this);
         }
     }
 

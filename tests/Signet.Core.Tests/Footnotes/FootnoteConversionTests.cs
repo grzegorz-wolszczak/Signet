@@ -225,6 +225,20 @@ public sealed class FootnoteConversionTests
     }
 
     [Fact]
+    public void The_plan_has_the_text_of_each_note_without_its_link_back()
+    {
+        (Book book, HtmlResource _) = NewBook(
+            "<p>A<a href=\"#x\" id=\"x-back\">1</a>.</p>\n"
+            + "<div id=\"x\"><p><a href=\"#x-back\">1</a>. First <i>note</i>, &amp;\n  more.</p><p>Second.</p></div>");
+        using (book)
+        {
+            ConversionPlan plan = FootnoteEditor.PlanConversion(book);
+
+            plan.Items.Single().NoteText.Should().Be("First note, & more. Second.");
+        }
+    }
+
+    [Fact]
     public void A_note_that_starts_with_a_list_gets_a_paragraph_for_its_link_back()
     {
         (Book book, HtmlResource html) = NewBook(

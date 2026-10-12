@@ -138,6 +138,9 @@ public interface ICodeTabHost
     /// left as they are, with a warning.
     /// </summary>
     void RenumberFootnotes();
+
+    /// <summary>"Convert Footnotes of Other Origin…" — opens the conversion dialog.</summary>
+    void ShowFootnoteConversion();
 }
 
 /// <summary>The footnote state at a position of a file (<see cref="ICodeTabHost.GetFootnoteState"/>).</summary>

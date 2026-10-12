@@ -4687,4 +4687,162 @@ Signet can edit them only after converting them to Signet footnotes.</value>
   <data name="PreferencesWindow_FootnoteGroupTitleStyle" xml:space="preserve">
     <value>Footnote group heading (.signet-fn-group-title)</value>
   </data>
+  <data name="Action_MainWindow_ConvertFootnotes" xml:space="preserve">
+    <value>&amp;Convert Footnotes of Other Origin...</value>
+  </data>
+  <data name="CodeViewMenu_FootnotesConvert" xml:space="preserve">
+    <value>Convert Footnotes of Other Origin...</value>
+  </data>
+  <data name="CheckpointOp_ConvertFootnotes" xml:space="preserve">
+    <value>Footnote conversion</value>
+  </data>
+  <data name="FootnoteForeign_PreviewConversion" xml:space="preserve">
+    <value>Preview Conversion</value>
+  </data>
+  <data name="Status_NoForeignFootnotes" xml:space="preserve">
+    <value>The book has no footnotes of other origin.</value>
+  </data>
+  <data name="Status_FootnotesConverted" xml:space="preserve">
+    <value>Footnotes converted: {0}.</value>
+  </data>
+  <data name="Status_FootnotesConvertedFilesRemoved" xml:space="preserve">
+    <value>Footnotes converted: {0}. Files removed: {1}.</value>
+  </data>
+  <data name="Status_FootnoteConversionFailedRestored" xml:space="preserve">
+    <value>The check after the footnote conversion found problems — the book was brought back to the state before it.</value>
+  </data>
+  <data name="Status_FootnoteConversionFailedKept" xml:space="preserve">
+    <value>The check after the footnote conversion found problems. The state before it was not brought back (no checkpoint).</value>
+  </data>
+  <data name="FootnoteConversion_NoCheckpoint" xml:space="preserve">
+    <value>The checkpoint before the conversion could not be created. Without it a failed conversion cannot be undone.
+
+Convert anyway?</value>
+  </data>
+  <data name="FootnoteConversion_ConvertAnyway" xml:space="preserve">
+    <value>Convert Anyway</value>
+  </data>
+  <data name="FootnoteConversionWindow_Title" xml:space="preserve">
+    <value>Convert Footnotes of Other Origin</value>
+  </data>
+  <data name="FootnoteConversionWindow_Intro" xml:space="preserve">
+    <value>The checked footnotes get Signet's template: a [n] reference and the note in Signet's container; the text of the note stays. The footnotes are renumbered after the conversion. Items marked ⚠ need a look and are not checked. A checkpoint is created before the change.</value>
+  </data>
+  <data name="FootnoteConversionWindow_None" xml:space="preserve">
+    <value>The book has no footnotes of other origin left.</value>
+  </data>
+  <data name="FootnoteConversionWindow_Summary" xml:space="preserve">
+    <value>{0} of {1} checked.</value>
+  </data>
+  <data name="FootnoteConversionWindow_SelectAll" xml:space="preserve">
+    <value>Check All</value>
+  </data>
+  <data name="FootnoteConversionWindow_SelectNone" xml:space="preserve">
+    <value>Uncheck All</value>
+  </data>
+  <data name="FootnoteConversionWindow_DoubleClickHint" xml:space="preserve">
+    <value>Double-click a reference or a note to open it in the code.</value>
+  </data>
+  <data name="FootnoteConversionWindow_KeepClasses" xml:space="preserve">
+    <value>Keep the classes of other origin</value>
+  </data>
+  <data name="FootnoteConversionWindow_KeepClassesHint" xml:space="preserve">
+    <value>The classes of the references, the notes and their paragraphs stay next to Signet's; both CSS rules apply.</value>
+  </data>
+  <data name="FootnoteConversionWindow_GlobalFile" xml:space="preserve">
+    <value>Notes file of the global footnotes:</value>
+  </data>
+  <data name="FootnoteConversionWindow_GlobalFileHint" xml:space="preserve">
+    <value>Choose the file the checked global footnotes go to. Notes from other files are moved to it.</value>
+  </data>
+  <data name="FootnoteConversionWindow_SignetFile" xml:space="preserve">
+    <value>Signet's notes file ({0})</value>
+  </data>
+  <data name="FootnoteConversionWindow_NewSignetFile" xml:space="preserve">
+    <value>New Signet notes file ({0})</value>
+  </data>
+  <data name="FootnoteConversionWindow_Candidate" xml:space="preserve">
+    <value>{0} — notes: {1}; {2}</value>
+  </data>
+  <data name="FootnoteConversionWindow_CandidateDedicated" xml:space="preserve">
+    <value>notes only</value>
+  </data>
+  <data name="FootnoteConversionWindow_CandidateNotDedicated" xml:space="preserve">
+    <value>other content too</value>
+  </data>
+  <data name="FootnoteConversionWindow_CandidateHoldsAll" xml:space="preserve">
+    <value>all global notes</value>
+  </data>
+  <data name="FootnoteConversionWindow_Hint_NotesType" xml:space="preserve">
+    <value>notes epub:type</value>
+  </data>
+  <data name="FootnoteConversionWindow_Hint_NotesRole" xml:space="preserve">
+    <value>role="doc-endnotes"</value>
+  </data>
+  <data name="FootnoteConversionWindow_Hint_Landmark" xml:space="preserve">
+    <value>in landmarks/guide</value>
+  </data>
+  <data name="FootnoteConversionWindow_Hint_NotesHeading" xml:space="preserve">
+    <value>notes heading</value>
+  </data>
+  <data name="FootnoteConversionWindow_Automatic" xml:space="preserve">
+    <value>(chosen automatically)</value>
+  </data>
+  <data name="FootnoteConversionWindow_Convert" xml:space="preserve">
+    <value>Convert</value>
+  </data>
+  <data name="FootnoteConversionWindow_ItemHeader" xml:space="preserve">
+    <value>“{0}” → {1} ({2})</value>
+  </data>
+  <data name="FootnoteConversionWindow_Local" xml:space="preserve">
+    <value>local</value>
+  </data>
+  <data name="FootnoteConversionWindow_Global" xml:space="preserve">
+    <value>global</value>
+  </data>
+  <data name="FootnoteConversionWindow_Reference" xml:space="preserve">
+    <value>Reference: {0} — {1}</value>
+  </data>
+  <data name="FootnoteConversionWindow_Note" xml:space="preserve">
+    <value>Note: {0} — {1}</value>
+  </data>
+  <data name="FootnoteConversionWindow_CannotConvert" xml:space="preserve">
+    <value>Several references lead to the note — Signet does not convert this footnote (it stays of other origin).</value>
+  </data>
+  <data name="FootnoteConversionWindow_ProblemsRestored" xml:space="preserve">
+    <value>The check after the conversion found problems, so the state before it was brought back:</value>
+  </data>
+  <data name="FootnoteConversionWindow_ProblemsKept" xml:space="preserve">
+    <value>The check after the conversion found problems (the state before it was not brought back — there was no checkpoint):</value>
+  </data>
+  <data name="FootnoteConversionWarning_NonNumericMarker" xml:space="preserve">
+    <value>The marker “{0}” is not a number — it gets the number {1}.</value>
+  </data>
+  <data name="FootnoteConversionWarning_NumberChanges" xml:space="preserve">
+    <value>The number changes from {0} to {1}.</value>
+  </data>
+  <data name="FootnoteConversionWarning_LinkedElsewhere" xml:space="preserve">
+    <value>Other links lead to the footnote too ({0}) — they are rewritten.</value>
+  </data>
+  <data name="FootnoteConversionWarning_BacklinkInText" xml:space="preserve">
+    <value>The link back is inside the text — it is removed from there.</value>
+  </data>
+  <data name="FootnoteConversionWarning_NoBacklink" xml:space="preserve">
+    <value>The note has no link back — Signet adds its own.</value>
+  </data>
+  <data name="FootnoteConversionWarning_FirstBlockNotParagraph" xml:space="preserve">
+    <value>The note starts with a list, a quotation or a table — the link back gets a paragraph of its own before it.</value>
+  </data>
+  <data name="FootnoteConversionProblem_TextChanged" xml:space="preserve">
+    <value>The text of a note changed</value>
+  </data>
+  <data name="FootnoteConversionProblem_NotSignet" xml:space="preserve">
+    <value>A footnote is not recognized as Signet's</value>
+  </data>
+  <data name="FootnoteConversionProblem_CountChanged" xml:space="preserve">
+    <value>The number of footnotes in the book changed</value>
+  </data>
+  <data name="FootnoteConversionProblem_NewValidationResult" xml:space="preserve">
+    <value>The links and footnotes check (F7) finds a new problem</value>
+  </data>
 </root>

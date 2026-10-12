@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using Signet.Core.BookManipulation;
@@ -41,9 +42,10 @@ public enum ConversionWarning
 /// </param>
 /// <param name="Warnings">What needs a look (an item with warnings is not selected by default).</param>
 /// <param name="OtherLinks">The files of the other links that lead to it (<see cref="ConversionWarning.LinkedElsewhere"/>).</param>
+/// <param name="NoteText">The text of its note without the link back (tags left out, whitespace collapsed).</param>
 public sealed record ConversionItem(
     Footnote Footnote, string Marker, int NewNumber, bool CanConvert, IReadOnlyList<ConversionWarning> Warnings,
-    IReadOnlyList<string> OtherLinks);
+    IReadOnlyList<string> OtherLinks, string NoteText);
 
 /// <summary>What converting the footnotes of other origin of a book would do (<see cref="FootnoteEditor.PlanConversion"/>).</summary>
 /// <param name="Items">The footnotes of other origin, in reading order.</param>
@@ -103,6 +105,10 @@ public static partial class FootnoteEditor
 
     // What is left of a marker next to a removed link back: "1</a>. Text" leaves ". Text".
     private const string MarkerResidue = " \t\r\n\u00a0.)]:-–—";
+
+    private static readonly Regex BlockTag = new(
+        @"<(?:/?)(?:p|div|h[1-6]|li|ul|ol|dd|dt|dl|br|hr|section|aside|blockquote|table|tr|td|th)\b[^>]*>",
+        RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
 
     private static readonly HashSet<string> ListNames = new(StringComparer.OrdinalIgnoreCase) { "ol", "ul", "dl" };
 
@@ -192,12 +198,16 @@ public static partial class FootnoteEditor
             warnings.Add(ConversionWarning.BacklinkInText);
         }
 
-        if (note is not null && NoteBlocks(CutContent(noteTags, noteText, note, backlink).Content, false) is [{ IsParagraph: false }, ..])
+        string content = note is null ? string.Empty : CutContent(noteTags, noteText, note, backlink).Content;
+        if (note is not null && NoteBlocks(content, false) is [{ IsParagraph: false }, ..])
         {
             warnings.Add(ConversionWarning.FirstBlockNotParagraph);
         }
 
-        return new ConversionItem(footnote, marker, number, references <= 1, warnings, others);
+        // Block tags separate words (the paragraphs of the note do not run together), inline ones do not.
+        string text = WebUtility.HtmlDecode(Tag.Replace(BlockTag.Replace(content, " "), string.Empty));
+        text = Regex.Replace(text, "\\s+", " ", RegexOptions.CultureInvariant).Trim();
+        return new ConversionItem(footnote, marker, number, references <= 1, warnings, others, text);
     }
 
     /// <summary>

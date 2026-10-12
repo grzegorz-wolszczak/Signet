@@ -224,6 +224,40 @@ public sealed class CheckpointHistory : IDisposable
     }
 
     /// <summary>
+    /// Throws away what an operation that failed did after the checkpoint created just before it: the book of that
+    /// checkpoint is loaded again and the current state is deleted, so the history is as if neither the checkpoint nor
+    /// the operation had happened (unlike <see cref="Undo"/>, which keeps the current state for <see cref="Redo"/>).
+    /// Works only where <see cref="Rewind"/> does; otherwise returns <c>null</c>.
+    /// </summary>
+    /// <remarks>
+    /// The current book is not saved; its folder is deleted, so the caller replaces it with the returned book and
+    /// disposes it.
+    /// </remarks>
+    /// <returns>The book of the checkpoint, or <c>null</c> when there is no checkpoint to go back to.</returns>
+    /// <exception cref="EpubLoadException">The checkpoint could not be loaded; the history is unchanged.</exception>
+    public Book? Abandon(Book liveBook)
+    {
+        RequireLive(liveBook);
+        if (!_canRewind || Position == 0 || Position != _states.Count - 1)
+        {
+            return null;
+        }
+
+        CheckpointState frozen = _states[Position - 1];
+        Book loaded = ImportEpub.LoadWorkingFolder(frozen.Folder);
+        CheckpointState live = _states[Position];
+        _states.RemoveAt(Position);
+        live.Folder.Dispose();
+        Position--;
+
+        frozen.Message = live.RewindMessage;
+        _editedSinceMove.Clear();
+        _canRewind = false;
+        OnChanged();
+        return loaded;
+    }
+
+    /// <summary>
     /// Moves to the state before the current one. The current book is
     /// first saved to its state's folder (which stays available through <see cref="Redo"/>).
     /// </summary>

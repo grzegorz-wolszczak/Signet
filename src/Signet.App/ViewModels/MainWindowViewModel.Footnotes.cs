@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.App.ViewModels.Tabs;
+using Signet.Core.BookManipulation;
 using Signet.Core.Footnotes;
 using Signet.Core.Resources;
 
@@ -13,10 +16,111 @@ namespace Signet.App.ViewModels;
 /// Footnotes from the Code View context menu ("Footnotes" submenu): adding, editing (the text and the placement, local
 /// or global), removing, going between a reference and its note, and renumbering. Every change saves the open tabs first,
 /// is a text edit of the book files (<see cref="FootnoteEditor"/>) behind a checkpoint, and reloads the tabs and panels.
-/// Footnotes of other origin are read-only until they are converted: renumbering leaves them as they are.
+/// Footnotes of other origin are read-only until they are converted (the "Convert Footnotes of Other Origin" dialog):
+/// renumbering leaves them as they are.
 /// </summary>
 public sealed partial class MainWindowViewModel
 {
+    /// <summary>
+    /// Raised by "Convert Footnotes of Other Origin…" (Tools → Footnotes, the Code View menu, the notice on a footnote
+    /// of other origin) — the view calls <see cref="PrepareFootnoteConversion"/> and shows the modal dialog.
+    /// </summary>
+    public event EventHandler? FootnoteConversionRequested;
+
+    /// <inheritdoc/>
+    void ICodeTabHost.ShowFootnoteConversion() => FootnoteConversionRequested?.Invoke(this, EventArgs.Empty);
+
+    /// <summary>
+    /// Prepares the "Convert Footnotes of Other Origin" dialog: saves the open tabs and plans the conversion. Returns the
+    /// dialog's view model, or <c>null</c> when no book is open or the book has no footnotes of other origin (then a
+    /// message goes to the status bar).
+    /// </summary>
+    /// <param name="confirmWithoutCheckpoint">
+    /// Asks whether to convert although the checkpoint before the conversion could not be created.
+    /// </param>
+    public FootnoteConversionViewModel? PrepareFootnoteConversion(Func<Task<bool>> confirmWithoutCheckpoint)
+    {
+        ArgumentNullException.ThrowIfNull(confirmWithoutCheckpoint);
+        if (_currentBook is null)
+        {
+            return null;
+        }
+
+        _tabManager.SaveAllTabs();
+        ConversionPlan plan = FootnoteEditor.PlanConversion(_currentBook);
+        if (plan.Items.Count == 0)
+        {
+            _statusBar.ShowMessage(Strings.Get("Status_NoForeignFootnotes"), TimeSpan.FromSeconds(4));
+            return null;
+        }
+
+        return new FootnoteConversionViewModel(
+            plan, FootnoteEditor.FindGlobalFile(_currentBook)?.Filename, NavigateToBookPathAtOffset,
+            request => ConvertFootnotesAsync(request, confirmWithoutCheckpoint));
+    }
+
+    /// <summary>
+    /// Converts footnotes of other origin ("Convert" in the dialog) behind a checkpoint; without one only after
+    /// <paramref name="confirmWithoutCheckpoint"/>. When the check after the conversion finds problems the book is
+    /// brought back to the checkpoint and the state of the conversion is thrown away. Returns the plan of the book
+    /// afterwards with the problems, or <c>null</c> when no book is open or the user cancelled.
+    /// </summary>
+    public async Task<FootnoteConversionOutcome?> ConvertFootnotesAsync(
+        ConversionRequest request, Func<Task<bool>> confirmWithoutCheckpoint)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(confirmWithoutCheckpoint);
+        if (_currentBook is null)
+        {
+            return null;
+        }
+
+        _tabManager.SaveAllTabs();
+        bool checkpoint = AddCheckpointBefore(Strings.Get("CheckpointOp_ConvertFootnotes"));
+        if (!checkpoint && !await confirmWithoutCheckpoint().ConfigureAwait(true))
+        {
+            return null;
+        }
+
+        ConversionResult result = FootnoteEditor.Convert(_currentBook!, request, FootnoteOptions);
+        bool restored = false;
+        if (!result.Succeeded)
+        {
+            _logger.LogWarning(
+                "Footnote conversion failed the check: {Problems}",
+                string.Join("; ", result.Problems.Select(p => $"{p.Kind} {p.BookPath} {p.Detail}")));
+            restored = checkpoint && AbandonCheckpoint();
+            if (!restored)
+            {
+                RefreshAfterMaintenanceOperation();
+            }
+
+            _statusBar.ShowMessage(
+                Strings.Get(restored ? "Status_FootnoteConversionFailedRestored" : "Status_FootnoteConversionFailedKept"),
+                TimeSpan.FromSeconds(8), NotificationLevel.Warning);
+        }
+        else if (result.Converted == 0)
+        {
+            if (checkpoint)
+            {
+                RewindCheckpoint();
+            }
+        }
+        else
+        {
+            RefreshAfterMaintenanceOperation();
+            _statusBar.ShowMessage(
+                result.RemovedFiles.Count == 0
+                    ? Strings.Format("Status_FootnotesConverted", result.Converted)
+                    : Strings.Format("Status_FootnotesConvertedFilesRemoved", result.Converted, string.Join(", ", result.RemovedFiles)),
+                TimeSpan.FromSeconds(6));
+        }
+
+        Book book = _currentBook!;
+        return new FootnoteConversionOutcome(
+            FootnoteEditor.PlanConversion(book), result.Problems, restored, FootnoteEditor.FindGlobalFile(book)?.Filename);
+    }
+
     /// <inheritdoc/>
     FootnoteMenuState? ICodeTabHost.GetFootnoteState(HtmlResource html, int offset)
     {

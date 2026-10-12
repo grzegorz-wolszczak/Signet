@@ -4687,4 +4687,162 @@ Signet może je edytować dopiero po konwersji na przypisy Signeta.</value>
   <data name="PreferencesWindow_FootnoteGroupTitleStyle" xml:space="preserve">
     <value>Nagłówek grupy przypisów (.signet-fn-group-title)</value>
   </data>
+  <data name="Action_MainWindow_ConvertFootnotes" xml:space="preserve">
+    <value>&amp;Konwertuj obce przypisy...</value>
+  </data>
+  <data name="CodeViewMenu_FootnotesConvert" xml:space="preserve">
+    <value>Konwertuj obce przypisy...</value>
+  </data>
+  <data name="CheckpointOp_ConvertFootnotes" xml:space="preserve">
+    <value>Konwersja przypisów</value>
+  </data>
+  <data name="FootnoteForeign_PreviewConversion" xml:space="preserve">
+    <value>Podgląd konwersji</value>
+  </data>
+  <data name="Status_NoForeignFootnotes" xml:space="preserve">
+    <value>Książka nie ma obcych przypisów.</value>
+  </data>
+  <data name="Status_FootnotesConverted" xml:space="preserve">
+    <value>Przekonwertowano przypisy: {0}.</value>
+  </data>
+  <data name="Status_FootnotesConvertedFilesRemoved" xml:space="preserve">
+    <value>Przekonwertowano przypisy: {0}. Usunięte pliki: {1}.</value>
+  </data>
+  <data name="Status_FootnoteConversionFailedRestored" xml:space="preserve">
+    <value>Sprawdzenie po konwersji przypisów znalazło problemy — przywrócono stan sprzed konwersji.</value>
+  </data>
+  <data name="Status_FootnoteConversionFailedKept" xml:space="preserve">
+    <value>Sprawdzenie po konwersji przypisów znalazło problemy. Stanu sprzed konwersji nie przywrócono (brak checkpointu).</value>
+  </data>
+  <data name="FootnoteConversion_NoCheckpoint" xml:space="preserve">
+    <value>Nie udało się utworzyć checkpointu przed konwersją. Bez niego nieudanej konwersji nie da się cofnąć.
+
+Konwertować mimo to?</value>
+  </data>
+  <data name="FootnoteConversion_ConvertAnyway" xml:space="preserve">
+    <value>Konwertuj mimo to</value>
+  </data>
+  <data name="FootnoteConversionWindow_Title" xml:space="preserve">
+    <value>Konwersja obcych przypisów</value>
+  </data>
+  <data name="FootnoteConversionWindow_Intro" xml:space="preserve">
+    <value>Zaznaczone przypisy dostaną szablon Signeta: odnośnik [n] i treść w kontenerze Signeta; tekst przypisu zostaje. Przypisy po konwersji są przenumerowane. Pozycje oznaczone ⚠ wymagają uwagi i nie są zaznaczone. Przed zmianą powstaje checkpoint.</value>
+  </data>
+  <data name="FootnoteConversionWindow_None" xml:space="preserve">
+    <value>Książka nie ma już obcych przypisów.</value>
+  </data>
+  <data name="FootnoteConversionWindow_Summary" xml:space="preserve">
+    <value>Zaznaczono {0} z {1}.</value>
+  </data>
+  <data name="FootnoteConversionWindow_SelectAll" xml:space="preserve">
+    <value>Zaznacz wszystkie</value>
+  </data>
+  <data name="FootnoteConversionWindow_SelectNone" xml:space="preserve">
+    <value>Odznacz wszystkie</value>
+  </data>
+  <data name="FootnoteConversionWindow_DoubleClickHint" xml:space="preserve">
+    <value>Podwójne kliknięcie odnośnika lub treści otwiera to miejsce w kodzie.</value>
+  </data>
+  <data name="FootnoteConversionWindow_KeepClasses" xml:space="preserve">
+    <value>Zachowaj obce klasy</value>
+  </data>
+  <data name="FootnoteConversionWindow_KeepClassesHint" xml:space="preserve">
+    <value>Klasy odnośników, przypisów i ich akapitów zostaną obok klas Signeta; obie reguły CSS będą działać naraz.</value>
+  </data>
+  <data name="FootnoteConversionWindow_GlobalFile" xml:space="preserve">
+    <value>Plik przypisów globalnych:</value>
+  </data>
+  <data name="FootnoteConversionWindow_GlobalFileHint" xml:space="preserve">
+    <value>Wybierz plik, do którego trafią zaznaczone przypisy globalne. Przypisy z innych plików zostaną do niego przeniesione.</value>
+  </data>
+  <data name="FootnoteConversionWindow_SignetFile" xml:space="preserve">
+    <value>Plik przypisów Signeta ({0})</value>
+  </data>
+  <data name="FootnoteConversionWindow_NewSignetFile" xml:space="preserve">
+    <value>Nowy plik przypisów Signeta ({0})</value>
+  </data>
+  <data name="FootnoteConversionWindow_Candidate" xml:space="preserve">
+    <value>{0} — przypisów: {1}; {2}</value>
+  </data>
+  <data name="FootnoteConversionWindow_CandidateDedicated" xml:space="preserve">
+    <value>tylko przypisy</value>
+  </data>
+  <data name="FootnoteConversionWindow_CandidateNotDedicated" xml:space="preserve">
+    <value>także inna treść</value>
+  </data>
+  <data name="FootnoteConversionWindow_CandidateHoldsAll" xml:space="preserve">
+    <value>wszystkie przypisy globalne</value>
+  </data>
+  <data name="FootnoteConversionWindow_Hint_NotesType" xml:space="preserve">
+    <value>epub:type przypisów</value>
+  </data>
+  <data name="FootnoteConversionWindow_Hint_NotesRole" xml:space="preserve">
+    <value>role="doc-endnotes"</value>
+  </data>
+  <data name="FootnoteConversionWindow_Hint_Landmark" xml:space="preserve">
+    <value>wskazany w landmarks/guide</value>
+  </data>
+  <data name="FootnoteConversionWindow_Hint_NotesHeading" xml:space="preserve">
+    <value>nagłówek przypisów</value>
+  </data>
+  <data name="FootnoteConversionWindow_Automatic" xml:space="preserve">
+    <value>(wybrany automatycznie)</value>
+  </data>
+  <data name="FootnoteConversionWindow_Convert" xml:space="preserve">
+    <value>Konwertuj</value>
+  </data>
+  <data name="FootnoteConversionWindow_ItemHeader" xml:space="preserve">
+    <value>„{0}” → {1} ({2})</value>
+  </data>
+  <data name="FootnoteConversionWindow_Local" xml:space="preserve">
+    <value>lokalny</value>
+  </data>
+  <data name="FootnoteConversionWindow_Global" xml:space="preserve">
+    <value>globalny</value>
+  </data>
+  <data name="FootnoteConversionWindow_Reference" xml:space="preserve">
+    <value>Odnośnik: {0} — {1}</value>
+  </data>
+  <data name="FootnoteConversionWindow_Note" xml:space="preserve">
+    <value>Treść: {0} — {1}</value>
+  </data>
+  <data name="FootnoteConversionWindow_CannotConvert" xml:space="preserve">
+    <value>Do treści prowadzi kilka odnośników — Signet nie przekonwertuje tego przypisu (zostanie obcy).</value>
+  </data>
+  <data name="FootnoteConversionWindow_ProblemsRestored" xml:space="preserve">
+    <value>Sprawdzenie po konwersji znalazło problemy, więc przywrócono stan sprzed konwersji:</value>
+  </data>
+  <data name="FootnoteConversionWindow_ProblemsKept" xml:space="preserve">
+    <value>Sprawdzenie po konwersji znalazło problemy (stanu sprzed konwersji nie przywrócono — nie było checkpointu):</value>
+  </data>
+  <data name="FootnoteConversionWarning_NonNumericMarker" xml:space="preserve">
+    <value>Znacznik „{0}” nie jest liczbą — dostanie numer {1}.</value>
+  </data>
+  <data name="FootnoteConversionWarning_NumberChanges" xml:space="preserve">
+    <value>Numer zmieni się z {0} na {1}.</value>
+  </data>
+  <data name="FootnoteConversionWarning_LinkedElsewhere" xml:space="preserve">
+    <value>Do przypisu prowadzą też inne linki ({0}) — zostaną przepisane.</value>
+  </data>
+  <data name="FootnoteConversionWarning_BacklinkInText" xml:space="preserve">
+    <value>Link powrotny stoi wewnątrz tekstu — zostanie stamtąd usunięty.</value>
+  </data>
+  <data name="FootnoteConversionWarning_NoBacklink" xml:space="preserve">
+    <value>Przypis nie ma linku powrotnego — Signet doda swój.</value>
+  </data>
+  <data name="FootnoteConversionWarning_FirstBlockNotParagraph" xml:space="preserve">
+    <value>Treść zaczyna się od listy, cytatu lub tabeli — link powrotny dostanie osobny akapit przed nią.</value>
+  </data>
+  <data name="FootnoteConversionProblem_TextChanged" xml:space="preserve">
+    <value>Tekst przypisu się zmienił</value>
+  </data>
+  <data name="FootnoteConversionProblem_NotSignet" xml:space="preserve">
+    <value>Przypis nie jest rozpoznawany jako przypis Signeta</value>
+  </data>
+  <data name="FootnoteConversionProblem_CountChanged" xml:space="preserve">
+    <value>Zmieniła się liczba przypisów w książce</value>
+  </data>
+  <data name="FootnoteConversionProblem_NewValidationResult" xml:space="preserve">
+    <value>Sprawdzenie linków i przypisów (F7) znajduje nowy problem</value>
+  </data>
 </root>

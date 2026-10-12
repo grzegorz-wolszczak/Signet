@@ -829,7 +829,7 @@ public partial class CodeTabView : UserControl
                     }
                     else
                     {
-                        ShowForeignFootnoteNotice(state.ForeignCount);
+                        ShowForeignFootnoteNotice(host, state.ForeignCount);
                     }
                 }));
             menu.Items.Add(Item(
@@ -849,6 +849,7 @@ public partial class CodeTabView : UserControl
 
         menu.Items.Add(new Separator());
         menu.Items.Add(Item(Strings.Get("CodeViewMenu_FootnotesRenumber"), host.RenumberFootnotes, enabled: state.HasFootnotes));
+        menu.Items.Add(Item(Strings.Get("CodeViewMenu_FootnotesConvert"), host.ShowFootnoteConversion, enabled: state.ForeignCount > 0));
         return menu;
     }
 
@@ -880,13 +881,19 @@ public partial class CodeTabView : UserControl
         }
     }
 
-    // "Edit Footnote…" on a footnote of other origin: Signet edits such footnotes only after converting them.
-    private async void ShowForeignFootnoteNotice(int count)
+    // "Edit Footnote…" on a footnote of other origin: Signet edits such footnotes only after converting them, so the
+    // notice offers the conversion dialog.
+    private async void ShowForeignFootnoteNotice(ICodeTabHost host, int count)
     {
-        if (TopLevel.GetTopLevel(this) is Window owner)
+        if (TopLevel.GetTopLevel(this) is Window owner
+            && await ChoiceWindow.AskAsync(
+                owner,
+                Strings.Get("FootnoteWindow_EditTitle"),
+                Strings.Format("FootnoteForeign_EditBlocked", count),
+                Strings.Get("FootnoteForeign_PreviewConversion"),
+                Strings.Get("Common_Cancel")) == 0)
         {
-            await MessageDialog.ShowAsync(
-                owner, Strings.Get("FootnoteWindow_EditTitle"), Strings.Format("FootnoteForeign_EditBlocked", count));
+            host.ShowFootnoteConversion();
         }
     }
 

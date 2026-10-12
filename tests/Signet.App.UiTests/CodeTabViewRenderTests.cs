@@ -554,24 +554,27 @@ public sealed class CodeTabViewRenderTests
         string[] onFootnote = Footnotes(
             new FootnoteMenuState(
                 new Signet.Core.Footnotes.FootnoteHit(footnote!, Signet.Core.Footnotes.FootnoteSide.Reference),
-                Signet.Core.Footnotes.FootnoteError.InsideLink, true),
-            out _);
+                Signet.Core.Footnotes.FootnoteError.InsideLink, true, ForeignCount: 2),
+            out bool[] onFootnoteEnabled);
         onFootnote.Should().Equal(
             Signet.App.Resources.Strings.Get("CodeViewMenu_FootnoteEdit"),
             Signet.App.Resources.Strings.Get("CodeViewMenu_FootnoteGoToNote"),
-            Signet.App.Resources.Strings.Get("CodeViewMenu_FootnotesRenumber"));
+            Signet.App.Resources.Strings.Get("CodeViewMenu_FootnotesRenumber"),
+            Signet.App.Resources.Strings.Get("CodeViewMenu_FootnotesConvert"));
+        onFootnoteEnabled.Should().Equal(true, true, true, true);
 
         string[] blocked = Footnotes(new FootnoteMenuState(null, Signet.Core.Footnotes.FootnoteError.InsideTag, false), out bool[] blockedEnabled);
         blocked.Should().Equal(
             Signet.App.Resources.Strings.Format(
                 "CodeViewMenu_FootnoteAddBlocked",
                 Signet.App.ViewModels.FootnoteViewModel.ErrorText(Signet.Core.Footnotes.FootnoteError.InsideTag)),
-            Signet.App.Resources.Strings.Get("CodeViewMenu_FootnotesRenumber"));
-        blockedEnabled.Should().Equal(false, false);
+            Signet.App.Resources.Strings.Get("CodeViewMenu_FootnotesRenumber"),
+            Signet.App.Resources.Strings.Get("CodeViewMenu_FootnotesConvert"));
+        blockedEnabled.Should().Equal(false, false, false);
 
         string[] free = Footnotes(new FootnoteMenuState(null, Signet.Core.Footnotes.FootnoteError.None, true), out bool[] freeEnabled);
         free[0].Should().Be(Signet.App.Resources.Strings.Get("CodeViewMenu_FootnoteAdd"));
-        freeEnabled.Should().Equal(true, true);
+        freeEnabled.Should().Equal(true, true, false);
     }
 
     /// <summary>
@@ -706,6 +709,10 @@ public sealed class CodeTabViewRenderTests
         }
 
         public void RenumberFootnotes()
+        {
+        }
+
+        public void ShowFootnoteConversion()
         {
         }
     }

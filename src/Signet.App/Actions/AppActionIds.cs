@@ -193,6 +193,9 @@ public static class AppActionIds
     /// <summary>Tools → Footnotes → Renumber Footnotes (as in the Code View context menu).</summary>
     public const string RenumberFootnotes = "MainWindow.RenumberFootnotes";
 
+    /// <summary>Tools → Footnotes → Convert Footnotes of Other Origin (the conversion dialog).</summary>
+    public const string ConvertFootnotes = "MainWindow.ConvertFootnotes";
+
     /// <summary>Add soft hyphens.</summary>
     public const string AddSoftHyphens = "MainWindow.AddSoftHyphens";
 

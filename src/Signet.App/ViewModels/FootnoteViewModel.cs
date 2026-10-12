@@ -231,7 +231,7 @@ public sealed partial class FootnoteViewModel : ObservableObject
 
     // The plain text before `offset` and after `end` (the caret, or the range of the reference): tags are left out,
     // entities decoded and whitespace collapsed. The text before does not reach into <head>.
-    private static (string Before, string After) Context(string text, int offset, int end)
+    internal static (string Before, string After) Context(string text, int offset, int end)
     {
         int body = text.Length == 0 ? -1 : text.LastIndexOf("<body", Math.Min(offset, text.Length - 1), StringComparison.OrdinalIgnoreCase);
         int start = Math.Max(Math.Max(0, offset - SourceWindow), body);

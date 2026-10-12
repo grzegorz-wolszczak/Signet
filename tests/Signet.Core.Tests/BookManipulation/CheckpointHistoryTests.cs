@@ -190,6 +190,51 @@ public sealed class CheckpointHistoryTests
         after.Dispose();
     }
 
+    [Theory]
+    [AutoData]
+    public void Abandon_brings_back_the_checkpoint_and_deletes_the_state_after_it(string first, string second, string edit)
+    {
+        using TempDir temp = new();
+        using CheckpointHistory history = new();
+        Book live = Load(temp, CorpusPaths.Epub3Minimal);
+        history.Open(live);
+        history.AddCheckpoint(live, first);
+        Book reverted = history.Undo(live)!;
+        live.Dispose();
+        string original = Chapter(reverted).GetText();
+        history.AddCheckpoint(reverted, second);
+        string failedFolder = history.Current.FolderPath;
+        Chapter(reverted).SetText(original.Replace("</body>", $"<p>{edit}</p></body>", StringComparison.Ordinal));
+
+        using Book restored = history.Abandon(reverted)!;
+        reverted.Dispose();
+
+        Chapter(restored).GetText().Should().Be(original);
+        history.States.Should().ContainSingle("the state of the failed operation is not kept for Redo");
+        history.CanRedo.Should().BeFalse();
+        history.Current.Message.Should().Be(first, "the restored state gets its name back");
+        Directory.Exists(failedFolder).Should().BeFalse();
+        history.Rewind().Should().BeFalse();
+    }
+
+    [Theory]
+    [AutoData]
+    public void Abandon_does_nothing_without_a_checkpoint_just_created(string first, string second)
+    {
+        using TempDir temp = new();
+        using CheckpointHistory history = new();
+        Book live = Load(temp, CorpusPaths.Epub3Minimal);
+        history.Open(live);
+        history.AddCheckpoint(live, first);
+        history.AddCheckpoint(live, second);
+        Book before = history.Undo(live)!;
+        live.Dispose();
+
+        history.Abandon(before).Should().BeNull();
+        history.States.Should().HaveCount(3);
+        before.Dispose();
+    }
+
     [Fact]
     public void Oldest_states_are_dropped_over_the_limit()
     {

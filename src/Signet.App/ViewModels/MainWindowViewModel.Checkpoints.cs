@@ -111,6 +111,41 @@ public sealed partial class MainWindowViewModel
         };
     }
 
+    /// <summary>
+    /// Throws away what an operation that failed did: the book of the checkpoint created just before it comes back
+    /// and the state of the operation is deleted (<see cref="CheckpointHistory.Abandon"/>). Returns <c>false</c>
+    /// when that could not be done (no checkpoint just created, or it could not be loaded).
+    /// </summary>
+    public bool AbandonCheckpoint()
+    {
+        if (_currentBook is not { } live || !_checkpoints.IsOpen)
+        {
+            return false;
+        }
+
+        // The tabs are not saved: what they would write belongs to the state that is thrown away.
+        TabSnapshot tabs = _tabManager.CaptureSnapshot();
+        Book? loaded;
+        try
+        {
+            loaded = _checkpoints.Abandon(live);
+        }
+        catch (Exception ex) when (ex is EpubLoadException or IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            _logger.LogError(ex, "Failed to bring back the checkpoint");
+            _statusBar.ShowMessage(Strings.Format("Status_CheckpointError", ex.Message), TimeSpan.FromSeconds(6), NotificationLevel.Warning);
+            return false;
+        }
+
+        if (loaded is null)
+        {
+            return false;
+        }
+
+        SwapToCheckpointBook(loaded, tabs);
+        return true;
+    }
+
     /// <summary>Restores the state before the current one.</summary>
     public void RevertToBeforeCheckpoint() => MoveToCheckpoint(_checkpoints.Undo);
 
