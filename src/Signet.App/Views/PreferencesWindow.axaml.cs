@@ -159,7 +159,41 @@ public partial class PreferencesWindow : Window
             MetadataEditorFontsView.DataContext = vm.MetadataEditorFonts;
             CleanupFontsView.DataContext = vm.CleanupFonts;
             FootnotesFontsView.DataContext = vm.FootnotesFonts;
+            ColorSchemePanel.DataContext = vm.ColorScheme;
+            vm.ColorScheme.TextPrompt = (title, prompt, initial) => TextPromptWindow.AskAsync(this, title, prompt, initial);
+            vm.ColorScheme.Confirm = (title, message) =>
+                ConfirmWindow.AskAsync(this, title, message, Strings.Get("ColorScheme_Delete"), destructive: true);
+            vm.ColorScheme.Message = (title, message) => MessageDialog.ShowAsync(this, title, message);
+            vm.ColorScheme.PickExportPath = PickThemeExportPathAsync;
+            vm.ColorScheme.PickImportPath = PickThemeImportPathAsync;
         }
+    }
+
+    private static FilePickerFileType ThemeFileType =>
+        new(Strings.Get("ColorScheme_FileType")) { Patterns = new[] { "*" + Signet.Core.Themes.ThemeXml.Extension } };
+
+    // Where to export a theme (Appearance › Color Scheme › Export…).
+    private async Task<string?> PickThemeExportPathAsync(string suggestedName)
+    {
+        IStorageFile? file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = Strings.Get("ColorScheme_ExportTitle"),
+            SuggestedFileName = suggestedName,
+            FileTypeChoices = new[] { ThemeFileType },
+        });
+        return file?.TryGetLocalPath();
+    }
+
+    // A theme file to import (Appearance › Color Scheme › Import…).
+    private async Task<string?> PickThemeImportPathAsync()
+    {
+        IReadOnlyList<IStorageFile> files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = Strings.Get("ColorScheme_ImportTitle"),
+            AllowMultiple = false,
+            FileTypeFilter = new[] { ThemeFileType },
+        });
+        return files.Count > 0 ? files[0].TryGetLocalPath() : null;
     }
 
     /// <summary>Escape closes the window (asking about unsaved changes) unless a control used it.</summary>

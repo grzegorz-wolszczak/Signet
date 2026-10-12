@@ -4837,4 +4837,89 @@ Zamknij zakładkę</value>
   <data name="PreferencesWindow_ColorsInTheme" xml:space="preserve">
     <value>Kolory ustawia się w motywie: Wygląd › Schemat kolorów.</value>
   </data>
+  <data name="PreferencesWindow_ColorScheme" xml:space="preserve">
+    <value>Schemat kolorów</value>
+  </data>
+  <data name="ColorScheme_Theme" xml:space="preserve">
+    <value>Motyw:</value>
+  </data>
+  <data name="ColorScheme_Actions" xml:space="preserve">
+    <value>Akcje motywu</value>
+  </data>
+  <data name="ColorScheme_Duplicate" xml:space="preserve">
+    <value>Duplikuj…</value>
+  </data>
+  <data name="ColorScheme_Rename" xml:space="preserve">
+    <value>Zmień nazwę…</value>
+  </data>
+  <data name="ColorScheme_Delete" xml:space="preserve">
+    <value>Usuń</value>
+  </data>
+  <data name="ColorScheme_RestoreDefaults" xml:space="preserve">
+    <value>Przywróć domyślne</value>
+  </data>
+  <data name="ColorScheme_Export" xml:space="preserve">
+    <value>Eksportuj…</value>
+  </data>
+  <data name="ColorScheme_Import" xml:space="preserve">
+    <value>Importuj…</value>
+  </data>
+  <data name="ColorScheme_Variant" xml:space="preserve">
+    <value>Wariant interfejsu:</value>
+  </data>
+  <data name="ColorScheme_VariantLight" xml:space="preserve">
+    <value>Jasny</value>
+  </data>
+  <data name="ColorScheme_VariantDark" xml:space="preserve">
+    <value>Ciemny</value>
+  </data>
+  <data name="ColorScheme_IconSet" xml:space="preserve">
+    <value>Zestaw ikon:</value>
+  </data>
+  <data name="ColorScheme_IconSetFromAppearance" xml:space="preserve">
+    <value>Jak w ustawieniach Wyglądu</value>
+  </data>
+  <data name="ColorScheme_IconSetNote" xml:space="preserve">
+    <value>Zmiana zestawu ikon działa po ponownym uruchomieniu Signet; kolory i wariant zmieniają się od razu po zapisaniu.</value>
+  </data>
+  <data name="ColorScheme_BundledNote" xml:space="preserve">
+    <value>To motyw wbudowany: zmiany zapisują się obok niego, a „Przywróć domyślne” je usuwa. Nie można zmienić jego nazwy ani go usunąć.</value>
+  </data>
+  <data name="ColorScheme_NamePrompt" xml:space="preserve">
+    <value>Nazwa motywu:</value>
+  </data>
+  <data name="ColorScheme_DuplicateTitle" xml:space="preserve">
+    <value>Duplikuj motyw</value>
+  </data>
+  <data name="ColorScheme_RenameTitle" xml:space="preserve">
+    <value>Zmień nazwę motywu</value>
+  </data>
+  <data name="ColorScheme_NameTaken" xml:space="preserve">
+    <value>Motyw o nazwie „{0}” już istnieje.</value>
+  </data>
+  <data name="ColorScheme_DeleteTitle" xml:space="preserve">
+    <value>Usuń motyw</value>
+  </data>
+  <data name="ColorScheme_DeleteConfirm" xml:space="preserve">
+    <value>Usunąć motyw „{0}”? Tego nie można cofnąć. Motywy na nim oparte zachowają swój wygląd.</value>
+  </data>
+  <data name="ColorScheme_ExportTitle" xml:space="preserve">
+    <value>Eksportuj motyw</value>
+  </data>
+  <data name="ColorScheme_ExportFailed" xml:space="preserve">
+    <value>Nie udało się wyeksportować motywu: {0}</value>
+  </data>
+  <data name="ColorScheme_ImportTitle" xml:space="preserve">
+    <value>Importuj motyw</value>
+  </data>
+  <data name="ColorScheme_ImportFailed" xml:space="preserve">
+    <value>Nie udało się zaimportować motywu: {0}</value>
+  </data>
+  <data name="ColorScheme_ImportWarnings" xml:space="preserve">
+    <value>Motyw „{0}” zaimportowano z uwagami:
+{1}</value>
+  </data>
+  <data name="ColorScheme_FileType" xml:space="preserve">
+    <value>Motyw Signet</value>
+  </data>
 </root>

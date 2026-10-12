@@ -105,9 +105,10 @@ public sealed class ThemeStore
     /// </summary>
     /// <param name="sourceId">The theme to copy.</param>
     /// <param name="name">The name of the copy (made unique).</param>
-    public Theme Duplicate(string sourceId, string name)
+    /// <param name="edited">The source with changes not saved yet (the editor's copy); <c>null</c> = as saved.</param>
+    public Theme Duplicate(string sourceId, string name, Theme? edited = null)
     {
-        Theme source = Get(sourceId);
+        Theme source = edited ?? Get(sourceId);
         Theme copy = IsBundled(sourceId)
             ? Difference(source, _pristine[sourceId]) with { ParentId = sourceId }
             : source;
@@ -204,9 +205,13 @@ public sealed class ThemeStore
     /// "Export…": the theme as a file another Signet can import. A bundled theme is written as a theme of the user with
     /// it as the parent and its changes.
     /// </summary>
-    public void Export(string id, TextWriter writer, string? writtenBy = null)
+    /// <param name="id">The theme.</param>
+    /// <param name="writer">Receives the file.</param>
+    /// <param name="writtenBy">The Signet version written to the file; <c>null</c> = none.</param>
+    /// <param name="edited">The theme with changes not saved yet (the editor's copy); <c>null</c> = as saved.</param>
+    public void Export(string id, TextWriter writer, string? writtenBy = null, Theme? edited = null)
     {
-        Theme theme = Get(id);
+        Theme theme = edited ?? Get(id);
         if (IsBundled(id))
         {
             theme = Difference(theme, _pristine[id]) with { Id = NewId(), ParentId = id };

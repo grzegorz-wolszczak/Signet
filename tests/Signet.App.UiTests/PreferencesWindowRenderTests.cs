@@ -63,7 +63,8 @@ public sealed class PreferencesWindowRenderTests
         AppActionRegistry registry = new(shortcuts, statusBar, NullLogger<AppActionRegistry>.Instance);
 
         UiDensityManager uiDensity = new(settings, iconTheme, NullLogger<UiDensityManager>.Instance);
-        PreferencesViewModel vm = new(settings, spellChecker, localization, iconTheme, shortcuts, registry, uiDensity);
+        ThemeManager themes = new(settings, new ThemeStore(Path.Combine(root, "themes")), NullLogger<ThemeManager>.Instance);
+        PreferencesViewModel vm = new(settings, spellChecker, localization, iconTheme, shortcuts, registry, uiDensity, themes);
         return new PreferencesWindow { DataContext = vm };
     }
 
@@ -291,6 +292,43 @@ public sealed class PreferencesWindowRenderTests
         Dispatcher.UIThread.RunJobs();
 
         window.FindControl<TextBlock>("Breadcrumb")!.Text.Should().Be(string.Join(" › ", appearance, fonts, Strings.Get("PreferencesWindow_CodeView")));
+        window.Close();
+    }
+
+    // The items of the gear menu of Appearance › Color Scheme.
+    private static readonly string[] SchemeActionItems =
+    {
+        "DuplicateThemeItem", "RenameThemeItem", "DeleteThemeItem", "RestoreThemeItem", "ExportThemeItem", "ImportThemeItem",
+    };
+
+    /// <summary>
+    /// Appearance › Color Scheme lists the themes with the one in use selected, offers the scheme actions in the gear
+    /// menu and the settings of the theme as a whole.
+    /// </summary>
+    [AvaloniaFact]
+    public void Color_scheme_page_lists_the_themes_with_their_actions()
+    {
+        PreferencesWindow window = BuildWindow();
+        PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        ShowPage(window, "ColorSchemePage");
+
+        window.Sections.Selected!.Path.Should().Be(
+            Strings.Get("PreferencesWindow_Appearance") + " › " + Strings.Get("PreferencesWindow_ColorScheme"));
+        ComboBox themes = window.FindControl<ComboBox>("ThemeBox")!;
+        themes.ItemCount.Should().Be(2);
+        ((ThemeOption)themes.SelectedItem!).Id.Should().Be(Signet.Core.Themes.ThemeStore.LightId);
+        window.FindControl<ComboBox>("VariantBox")!.SelectedItem.Should().Be(vm.ColorScheme.Variant);
+        SchemeActionItems.Should().OnlyContain(name => window.FindControl<MenuItem>(name) != null, "the gear menu has every scheme action");
+        vm.ColorScheme.RenameCommand.CanExecute(null).Should().BeFalse("a bundled theme keeps its name");
+
+        themes.SelectedItem = vm.ColorScheme.Themes.Single(t => t.Id == Signet.Core.Themes.ThemeStore.DarkId);
+        Dispatcher.UIThread.RunJobs();
+
+        vm.HasChanges.Should().BeTrue();
+        ((VariantOption)window.FindControl<ComboBox>("VariantBox")!.SelectedItem!).Value.Should().Be(Signet.Core.Themes.InterfaceVariant.Dark);
         window.Close();
     }
 

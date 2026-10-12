@@ -4837,4 +4837,89 @@ Close the tab</value>
   <data name="PreferencesWindow_ColorsInTheme" xml:space="preserve">
     <value>The colors are set in the theme: Appearance › Color Scheme.</value>
   </data>
+  <data name="PreferencesWindow_ColorScheme" xml:space="preserve">
+    <value>Color Scheme</value>
+  </data>
+  <data name="ColorScheme_Theme" xml:space="preserve">
+    <value>Theme:</value>
+  </data>
+  <data name="ColorScheme_Actions" xml:space="preserve">
+    <value>Theme actions</value>
+  </data>
+  <data name="ColorScheme_Duplicate" xml:space="preserve">
+    <value>Duplicate…</value>
+  </data>
+  <data name="ColorScheme_Rename" xml:space="preserve">
+    <value>Rename…</value>
+  </data>
+  <data name="ColorScheme_Delete" xml:space="preserve">
+    <value>Delete</value>
+  </data>
+  <data name="ColorScheme_RestoreDefaults" xml:space="preserve">
+    <value>Restore Defaults</value>
+  </data>
+  <data name="ColorScheme_Export" xml:space="preserve">
+    <value>Export…</value>
+  </data>
+  <data name="ColorScheme_Import" xml:space="preserve">
+    <value>Import…</value>
+  </data>
+  <data name="ColorScheme_Variant" xml:space="preserve">
+    <value>Interface variant:</value>
+  </data>
+  <data name="ColorScheme_VariantLight" xml:space="preserve">
+    <value>Light</value>
+  </data>
+  <data name="ColorScheme_VariantDark" xml:space="preserve">
+    <value>Dark</value>
+  </data>
+  <data name="ColorScheme_IconSet" xml:space="preserve">
+    <value>Icon set:</value>
+  </data>
+  <data name="ColorScheme_IconSetFromAppearance" xml:space="preserve">
+    <value>As set in Appearance</value>
+  </data>
+  <data name="ColorScheme_IconSetNote" xml:space="preserve">
+    <value>A change of the icon set takes effect after restarting Signet; the colors and the variant change as soon as you save.</value>
+  </data>
+  <data name="ColorScheme_BundledNote" xml:space="preserve">
+    <value>This is a bundled theme: changes are kept beside it, and Restore Defaults removes them. It cannot be renamed or deleted.</value>
+  </data>
+  <data name="ColorScheme_NamePrompt" xml:space="preserve">
+    <value>Theme name:</value>
+  </data>
+  <data name="ColorScheme_DuplicateTitle" xml:space="preserve">
+    <value>Duplicate Theme</value>
+  </data>
+  <data name="ColorScheme_RenameTitle" xml:space="preserve">
+    <value>Rename Theme</value>
+  </data>
+  <data name="ColorScheme_NameTaken" xml:space="preserve">
+    <value>A theme named “{0}” already exists.</value>
+  </data>
+  <data name="ColorScheme_DeleteTitle" xml:space="preserve">
+    <value>Delete Theme</value>
+  </data>
+  <data name="ColorScheme_DeleteConfirm" xml:space="preserve">
+    <value>Delete the theme “{0}”? This cannot be undone. The themes based on it keep their look.</value>
+  </data>
+  <data name="ColorScheme_ExportTitle" xml:space="preserve">
+    <value>Export Theme</value>
+  </data>
+  <data name="ColorScheme_ExportFailed" xml:space="preserve">
+    <value>The theme could not be exported: {0}</value>
+  </data>
+  <data name="ColorScheme_ImportTitle" xml:space="preserve">
+    <value>Import Theme</value>
+  </data>
+  <data name="ColorScheme_ImportFailed" xml:space="preserve">
+    <value>The theme could not be imported: {0}</value>
+  </data>
+  <data name="ColorScheme_ImportWarnings" xml:space="preserve">
+    <value>The theme “{0}” was imported with remarks:
+{1}</value>
+  </data>
+  <data name="ColorScheme_FileType" xml:space="preserve">
+    <value>Signet theme</value>
+  </data>
 </root>

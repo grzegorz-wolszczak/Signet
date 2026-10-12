@@ -152,7 +152,8 @@
             </Grid>
 
             <!-- The colors of the interface (warnings, error notifications, …) are in the theme. -->
-            <TextBlock Text="{loc:Loc PreferencesWindow_ColorsInTheme}" Opacity="0.7" TextWrapping="Wrap" />
+            <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInTheme}" Padding="0"
+                             views:PreferencesPage.Target="ColorSchemePage" />
 
             <Button Content="{loc:Loc PreferencesWindow_RestoreAppearanceDefaults}" Command="{Binding RestoreAppearanceDefaultsCommand}"
                     HorizontalAlignment="Left" />
@@ -228,6 +229,46 @@
         <views:FontsPageView x:Name="FootnotesFontsView" />
       </TabItem>
 
+      <!-- Appearance › Color Scheme: the theme in use, the actions on themes (the gear, as Rider's scheme actions) and
+           the settings of the theme as a whole. The DataContext is set in code (a binding on the content of a page that
+           is not shown does not resolve). -->
+      <TabItem x:Name="ColorSchemePage" Header="{loc:Loc PreferencesWindow_ColorScheme}" views:PreferencesPage.Parent="AppearancePage">
+        <ScrollViewer>
+          <StackPanel x:Name="ColorSchemePanel" x:DataType="vm:ColorSchemeViewModel" Spacing="10" Margin="8">
+            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+              <TextBlock Grid.Column="0" Text="{loc:Loc ColorScheme_Theme}" VerticalAlignment="Center" />
+              <ComboBox x:Name="ThemeBox" Grid.Column="1" HorizontalAlignment="Stretch"
+                        ItemsSource="{Binding Themes}" SelectedItem="{Binding Selected}" DisplayMemberBinding="{Binding Name}" />
+              <Button x:Name="ThemeActionsButton" Grid.Column="2" Content="⚙" ToolTip.Tip="{loc:Loc ColorScheme_Actions}">
+                <Button.Flyout>
+                  <MenuFlyout Placement="BottomEdgeAlignedRight">
+                    <MenuItem x:Name="DuplicateThemeItem" Header="{loc:Loc ColorScheme_Duplicate}" Command="{Binding DuplicateCommand}" />
+                    <MenuItem x:Name="RenameThemeItem" Header="{loc:Loc ColorScheme_Rename}" Command="{Binding RenameCommand}" />
+                    <MenuItem x:Name="DeleteThemeItem" Header="{loc:Loc ColorScheme_Delete}" Command="{Binding DeleteCommand}" />
+                    <MenuItem x:Name="RestoreThemeItem" Header="{loc:Loc ColorScheme_RestoreDefaults}" Command="{Binding RestoreDefaultsCommand}" />
+                    <Separator />
+                    <MenuItem x:Name="ExportThemeItem" Header="{loc:Loc ColorScheme_Export}" Command="{Binding ExportCommand}" />
+                    <MenuItem x:Name="ImportThemeItem" Header="{loc:Loc ColorScheme_Import}" Command="{Binding ImportCommand}" />
+                  </MenuFlyout>
+                </Button.Flyout>
+              </Button>
+            </Grid>
+
+            <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+              <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc ColorScheme_Variant}" VerticalAlignment="Center" />
+              <ComboBox x:Name="VariantBox" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Stretch"
+                        ItemsSource="{Binding Variants}" SelectedItem="{Binding Variant}" DisplayMemberBinding="{Binding DisplayName}" />
+              <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc ColorScheme_IconSet}" VerticalAlignment="Center" />
+              <ComboBox x:Name="IconSetBox" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch"
+                        ItemsSource="{Binding IconSets}" SelectedItem="{Binding IconSet}" DisplayMemberBinding="{Binding DisplayName}" />
+            </Grid>
+
+            <TextBlock Text="{loc:Loc ColorScheme_BundledNote}" IsVisible="{Binding IsBundled}" Opacity="0.7" TextWrapping="Wrap" />
+            <TextBlock Text="{loc:Loc ColorScheme_IconSetNote}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
       <!-- =============================== Code View =============================== -->
       <!-- No settings of its own: the window fills the page with links to its subsections. -->
       <TabItem x:Name="CodeViewPage" Header="{loc:Loc PreferencesWindow_CodeView}" />
@@ -251,7 +292,8 @@
             </Grid>
 
             <!-- The colors of the editor and of the hint are in the theme, their fonts on the Fonts page. -->
-            <TextBlock Text="{loc:Loc PreferencesWindow_ColorsInTheme}" Opacity="0.7" TextWrapping="Wrap" />
+            <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInTheme}" Padding="0"
+                             views:PreferencesPage.Target="ColorSchemePage" />
 
             <TextBlock Text="{loc:Loc PreferencesWindow_FontColorRestartNotice}"
                        IsVisible="{Binding RestartNoticeVisible}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
@@ -301,8 +343,8 @@
                   </ComboBox>
 
                   <!-- The color of the highlight is in the theme (preview.highlight). -->
-                  <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Text="{loc:Loc PreferencesWindow_ColorsInTheme}"
-                             Opacity="0.7" TextWrapping="Wrap" />
+                  <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInTheme}" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Padding="0"
+                                   views:PreferencesPage.Target="ColorSchemePage" />
 
                   <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightOpacity}" VerticalAlignment="Center" TextWrapping="Wrap"
                              IsEnabled="{Binding IsPreviewHighlightBackground}" />

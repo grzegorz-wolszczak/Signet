@@ -41,7 +41,8 @@ public sealed class PreferencesViewModelTests
         SpellChecker spellChecker = new(host.Settings, Path.Combine(root, "hunspell"), Path.Combine(root, "user"));
         UiDensityManager uiDensity = new(
             host.Settings, iconTheme, NullLogger<UiDensityManager>.Instance, () => "Segoe UI", _ => false);
-        return new PreferencesViewModel(host.Settings, spellChecker, localization, iconTheme, host.Shortcuts, host.Registry, uiDensity);
+        ThemeManager themes = new(host.Settings, new ThemeStore(Path.Combine(root, "themes")), NullLogger<ThemeManager>.Instance);
+        return new PreferencesViewModel(host.Settings, spellChecker, localization, iconTheme, host.Shortcuts, host.Registry, uiDensity, themes);
     }
 
     [Fact]

@@ -54,6 +54,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
     private readonly IconThemeManager _iconThemeManager;
     private readonly KeyboardShortcutManager _shortcuts;
     private readonly UiDensityManager _uiDensity;
+    private readonly ThemeManager _themes;
 
     /// <summary>Creates the view model and loads the current settings.</summary>
     public PreferencesViewModel(
@@ -63,7 +64,8 @@ public sealed partial class PreferencesViewModel : ObservableObject
         IconThemeManager iconThemeManager,
         KeyboardShortcutManager shortcuts,
         AppActionRegistry actions,
-        UiDensityManager uiDensity)
+        UiDensityManager uiDensity,
+        ThemeManager themes)
     {
         _appSettings = settings ?? throw new ArgumentNullException(nameof(settings));
         _settings = _appSettings.CreateDraft();
@@ -72,6 +74,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _iconThemeManager = iconThemeManager ?? throw new ArgumentNullException(nameof(iconThemeManager));
         _shortcuts = shortcuts ?? throw new ArgumentNullException(nameof(shortcuts));
         _uiDensity = uiDensity ?? throw new ArgumentNullException(nameof(uiDensity));
+        _themes = themes ?? throw new ArgumentNullException(nameof(themes));
         ArgumentNullException.ThrowIfNull(actions);
 
         // ---- Language ----
@@ -184,6 +187,14 @@ public sealed partial class PreferencesViewModel : ObservableObject
         // ---- Fonts pages (adapters over the font settings above) ----
         CreateFontPages();
 
+        // ---- Appearance › Color Scheme ----
+        ColorScheme = new ColorSchemeViewModel(_themes.Store, _settings);
+        ColorScheme.Changed += (_, _) =>
+        {
+            OnPropertyChanged(nameof(HasChanges));
+            ApplyCommand.NotifyCanExecuteChanged();
+        };
+
         // Loading the pages writes some initial values to the draft (e.g. the default user dictionary): not changes.
         _settings.RebaseDraft();
         _settings.SettingChanged += (_, _) =>
@@ -197,7 +208,10 @@ public sealed partial class PreferencesViewModel : ObservableObject
     public event EventHandler? Applied;
 
     /// <summary>Whether the window holds changes not saved yet (the Save button is enabled then).</summary>
-    public bool HasChanges => _appSettings.HasDraftChanges(_settings);
+    public bool HasChanges => _appSettings.HasDraftChanges(_settings) || ColorScheme.HasChanges;
+
+    /// <summary>Appearance › Color Scheme: the theme in use and the actions on themes.</summary>
+    public ColorSchemeViewModel ColorScheme { get; }
 
     /// <summary>
     /// "Save" / "Apply": commits the draft to the application's settings, saves them and applies the effects of the
@@ -207,7 +221,8 @@ public sealed partial class PreferencesViewModel : ObservableObject
     private void Apply()
     {
         IReadOnlyList<string> changed = _appSettings.CommitDraft(_settings);
-        if (changed.Count == 0)
+        bool themesChanged = ColorScheme.Apply();
+        if (changed.Count == 0 && !themesChanged)
         {
             return;
         }
@@ -233,6 +248,11 @@ public sealed partial class PreferencesViewModel : ObservableObject
         if (Changed("tooltip_fonts"))
         {
             _uiDensity.ApplyTooltipFonts();
+        }
+
+        if (Changed("ui_theme_id") || themesChanged)
+        {
+            _themes.ApplySaved();
         }
 
         if (Changed("debug_logging"))
