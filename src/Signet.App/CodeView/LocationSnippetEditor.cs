@@ -7,15 +7,15 @@ using AvaloniaEdit;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Editing;
 using AvaloniaEdit.Rendering;
-using Microsoft.Extensions.DependencyInjection;
+using Signet.App.Infrastructure;
 using Signet.App.ViewModels;
-using Signet.Core.Misc;
+using Signet.Core.Themes;
 
 namespace Signet.App.CodeView;
 
 /// <summary>
 /// A read-only editor showing the snippet of a Recent Locations entry (the <see cref="RecentLocationItem"/> in its
-/// <c>DataContext</c>): highlighted like Code View, with the file's own line numbers.
+/// <c>DataContext</c>): highlighted like Code View, in the colors of the theme, with the file's own line numbers.
 /// </summary>
 public sealed class LocationSnippetEditor : TextEditor
 {
@@ -58,7 +58,12 @@ public sealed class LocationSnippetEditor : TextEditor
             TextArea.TextView.LineTransformers.Remove(_colorizer);
         }
 
-        _colorizer = CodeViewTextMate.CreateColorizer(item.Syntax, extended: false, linkExists: null, Appearance());
+        ResolvedTheme theme = AppTheme.Current;
+        EditorTheming.Apply(this, theme);
+        TextAttributes numbers = theme.Attributes(ThemeKeys.EditorLineNumbers);
+        _lineNumbers.Foreground = numbers.Foreground is { } fg ? new SolidColorBrush(ResolvedTheme.ToColor(fg)) : Brushes.Gray;
+        _lineNumbers.Background = numbers.Background is { } bg ? new SolidColorBrush(ResolvedTheme.ToColor(bg)) : null;
+        _colorizer = CodeViewTextMate.CreateColorizer(item.Syntax, extended: false, linkExists: null, theme);
         if (_colorizer is not null)
         {
             TextArea.TextView.LineTransformers.Add(_colorizer);
@@ -67,16 +72,17 @@ public sealed class LocationSnippetEditor : TextEditor
         TextArea.TextView.Redraw();
     }
 
-    // The Code View colours.
-    private static CodeViewAppearance Appearance() =>
-        App.Services?.GetService<SettingsStore>()?.CodeViewAppearance ?? CodeViewAppearance.Default;
-
     // Line numbers starting at the snippet's first line (AvaloniaEdit's own margin always starts at 1).
     private sealed class SnippetLineNumberMargin(FontFamily fontFamily, double fontSize) : AbstractMargin
     {
         private const double Padding = 8;
 
         private int _firstLineNumber = 1;
+
+        // The colors of the line numbers (editor.lineNumbers).
+        public IBrush Foreground { get; set; } = Brushes.Gray;
+
+        public IBrush? Background { get; set; }
 
         public int FirstLineNumber
         {
@@ -100,6 +106,11 @@ public sealed class LocationSnippetEditor : TextEditor
             if (TextView is not { VisualLinesValid: true } view)
             {
                 return;
+            }
+
+            if (Background is { } background)
+            {
+                context.FillRectangle(background, new Rect(Bounds.Size));
             }
 
             foreach (VisualLine line in view.VisualLines)
@@ -128,6 +139,6 @@ public sealed class LocationSnippetEditor : TextEditor
         private void OnVisualLinesChanged(object? sender, EventArgs e) => InvalidateVisual();
 
         private FormattedText Format(string text) =>
-            new(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface(fontFamily), fontSize, Brushes.Gray);
+            new(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface(fontFamily), fontSize, Foreground);
     }
 }

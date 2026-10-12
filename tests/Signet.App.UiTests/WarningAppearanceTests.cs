@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia;
@@ -12,6 +13,7 @@ using Signet.App.Infrastructure;
 using Signet.App.Views;
 using Signet.Core.BookManipulation;
 using Signet.Core.Misc;
+using Signet.Core.Themes;
 
 namespace Signet.App.UiTests;
 
@@ -61,9 +63,12 @@ public sealed class WarningAppearanceTests
     {
         Application app = Application.Current!;
         (SpanRemovalRiskWindow window, Window owner) = ShowSpanRemovalRisk();
+        Theme theme = new Theme(Ulid.NewUlid().ToString(), "Warnings")
+            .With(ThemeKeys.UiWarningText.Id, ThemeEntry.Of(ThemeColor.Parse("#123456")));
         try
         {
-            UiDensityManager.ApplyWarning(app, new WarningAppearance(20, "#123456"), HeadlessUiFontSize);
+            UiDensityManager.ApplyWarning(app, new WarningAppearance(20), HeadlessUiFontSize);
+            AppTheme.Apply(app, new ResolvedTheme(theme, new ThemeResolver(_ => null)));
             Dispatcher.UIThread.RunJobs();
 
             TextBlock consequence = Consequence(window);
@@ -71,7 +76,7 @@ public sealed class WarningAppearanceTests
             consequence.Foreground.Should().BeOfType<SolidColorBrush>()
                 .Which.Color.Should().Be(Color.Parse("#123456"));
 
-            UiDensityManager.ApplyWarning(app, new WarningAppearance(0, "#123456"), 17);
+            UiDensityManager.ApplyWarning(app, new WarningAppearance(0), 17);
             Dispatcher.UIThread.RunJobs();
 
             consequence.FontSize.Should().Be(17, "0 means the interface text size");
@@ -79,6 +84,7 @@ public sealed class WarningAppearanceTests
         finally
         {
             UiDensityManager.ApplyWarning(app, WarningAppearance.Default, HeadlessUiFontSize);
+            AppTheme.Apply(app, ResolvedTheme.Defaults);
             window.Close();
             owner.Close();
         }
@@ -90,9 +96,11 @@ public sealed class WarningAppearanceTests
         Application app = Application.Current!;
         Window window = new() { Content = new NotificationBell { UnreadCount = 1 } };
         window.Show();
+        Theme theme = new Theme(Ulid.NewUlid().ToString(), "Errors")
+            .With(ThemeKeys.UiErrorNotification.Id, ThemeEntry.Of(ThemeColor.Parse("#123456")));
         try
         {
-            UiDensityManager.ApplyError(app, new ErrorAppearance("#123456"));
+            AppTheme.Apply(app, new ResolvedTheme(theme, new ThemeResolver(_ => null)));
             Dispatcher.UIThread.RunJobs();
             window.CaptureRenderedFrame();
 
@@ -102,7 +110,7 @@ public sealed class WarningAppearanceTests
         }
         finally
         {
-            UiDensityManager.ApplyError(app, ErrorAppearance.Default);
+            AppTheme.Apply(app, ResolvedTheme.Defaults);
             window.Close();
         }
     }

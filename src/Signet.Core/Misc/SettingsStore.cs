@@ -516,9 +516,7 @@ public sealed class SettingsStore
             OpenTagHintAppearance d = OpenTagHintAppearance.Default;
             return new OpenTagHintAppearance(
                 ReadString("open_tag_hint_font_family", d.FontFamily),
-                ReadInt("open_tag_hint_font_size", d.FontSize),
-                ReadString("open_tag_hint_light_background", d.Background),
-                ReadString("open_tag_hint_light_foreground", d.Foreground)).Normalized();
+                ReadInt("open_tag_hint_font_size", d.FontSize)).Normalized();
         }
 
         set
@@ -526,8 +524,6 @@ public sealed class SettingsStore
             OpenTagHintAppearance v = value.Normalized();
             WriteSilent("open_tag_hint_font_family", v.FontFamily);
             WriteSilent("open_tag_hint_font_size", v.FontSize);
-            WriteSilent("open_tag_hint_light_background", v.Background);
-            WriteSilent("open_tag_hint_light_foreground", v.Foreground);
             RaiseChanged("open_tag_hint_appearance");
         }
     }
@@ -898,7 +894,6 @@ public sealed class SettingsStore
                 : d.Style;
             return new PreviewHighlight(
                 style,
-                ReadString("preview_highlight_color_light", d.Color),
                 ReadInt("preview_highlight_opacity", d.OpacityPercent),
                 ReadInt("preview_highlight_outline_width", d.OutlineWidth),
                 ReadBool("preview_highlight_auto_hide", d.AutoHide),
@@ -909,7 +904,6 @@ public sealed class SettingsStore
         {
             PreviewHighlight v = value.Normalized();
             WriteSilent("preview_highlight_style", v.Style.ToString());
-            WriteSilent("preview_highlight_color_light", v.Color);
             WriteSilent("preview_highlight_opacity", v.OpacityPercent);
             WriteSilent("preview_highlight_outline_width", v.OutlineWidth);
             _file.SetRaw(Group, "preview_highlight_auto_hide", v.AutoHide);
@@ -926,38 +920,14 @@ public sealed class SettingsStore
         get
         {
             WarningAppearance d = WarningAppearance.Default;
-            return new WarningAppearance(
-                ReadInt("warning_font_size", d.FontSize),
-                ReadString("warning_color_light", d.Color)).Normalized();
+            return new WarningAppearance(ReadInt("warning_font_size", d.FontSize)).Normalized();
         }
 
         set
         {
             WarningAppearance v = value.Normalized();
             WriteSilent("warning_font_size", v.FontSize);
-            WriteSilent("warning_color_light", v.Color);
             RaiseChanged("warning_appearance");
-        }
-    }
-
-    /// <summary>
-    /// Color of the error notifications. Always read normalized
-    /// (<see cref="ErrorAppearance.Normalized"/>).
-    /// </summary>
-    public ErrorAppearance ErrorAppearance
-    {
-        get
-        {
-            ErrorAppearance d = ErrorAppearance.Default;
-            return new ErrorAppearance(
-                ReadString("error_color_light", d.Color)).Normalized();
-        }
-
-        set
-        {
-            ErrorAppearance v = value.Normalized();
-            WriteSilent("error_color_light", v.Color);
-            RaiseChanged("error_appearance");
         }
     }
 
@@ -1054,6 +1024,15 @@ public sealed class SettingsStore
             RaiseChanged("ui_theme_id");
         }
     }
+
+    /// <summary>
+    /// The colors the settings held before the themes (raw values by their old keys), read when the file was loaded and
+    /// no longer written; <see cref="Themes.LegacyColorMigration"/> moves them into a theme. Empty when there were none.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> LegacyColors { get; private set; } = new Dictionary<string, string>();
+
+    /// <summary>Forgets <see cref="LegacyColors"/> once they moved into a theme.</summary>
+    internal void ForgetLegacyColors() => LegacyColors = new Dictionary<string, string>();
 
     /// <summary>The font of the tooltips of an area of the application. Always read normalized.</summary>
     public TooltipFont GetTooltipFont(TooltipArea area) => new TooltipFont(
@@ -1627,63 +1606,16 @@ public sealed class SettingsStore
         RaiseChanged("preserve_entities");
     }
 
-    private CodeViewAppearance ReadCodeView(string prefix, CodeViewAppearance defaults)
+    private CodeViewAppearance ReadCodeView(string prefix, CodeViewAppearance defaults) => new()
     {
-        return new CodeViewAppearance
-        {
-            FontFamily = ReadString(prefix + "font_family_standard", defaults.FontFamily),
-            FontSize = ReadInt(prefix + "font_size", defaults.FontSize),
-            CssCommentColor = ReadString(prefix + "css_comment_color", defaults.CssCommentColor),
-            CssPropertyColor = ReadString(prefix + "css_property_color", defaults.CssPropertyColor),
-            CssQuoteColor = ReadString(prefix + "css_quote_color", defaults.CssQuoteColor),
-            CssSelectorColor = ReadString(prefix + "css_selector_color", defaults.CssSelectorColor),
-            CssValueColor = ReadString(prefix + "css_value_color", defaults.CssValueColor),
-            LineHighlightColor = ReadString(prefix + "line_highlight_color", defaults.LineHighlightColor),
-            XhtmlAttributeNameColor = ReadString(prefix + "xhtml_attribute_name_color", defaults.XhtmlAttributeNameColor),
-            XhtmlAttributeValueColor = ReadString(prefix + "xhtml_attribute_value_color", defaults.XhtmlAttributeValueColor),
-            XhtmlCssColor = ReadString(prefix + "xhtml_css_color", defaults.XhtmlCssColor),
-            XhtmlCssCommentColor = ReadString(prefix + "xhtml_css_comment_color", defaults.XhtmlCssCommentColor),
-            XhtmlDoctypeColor = ReadString(prefix + "xhtml_doctype_color", defaults.XhtmlDoctypeColor),
-            XhtmlEntityColor = ReadString(prefix + "xhtml_entity_color", defaults.XhtmlEntityColor),
-            XhtmlHtmlColor = ReadString(prefix + "xhtml_html_color", defaults.XhtmlHtmlColor),
-            XhtmlHtmlCommentColor = ReadString(prefix + "xhtml_html_comment_color", defaults.XhtmlHtmlCommentColor),
-            CssSpecialSelectorColor = ReadString(prefix + "css_special_selector_color", defaults.CssSpecialSelectorColor),
-            CssAtRuleColor = ReadString(prefix + "css_at_rule_color", defaults.CssAtRuleColor),
-            CssConstantColor = ReadString(prefix + "css_constant_color", defaults.CssConstantColor),
-            XhtmlNamespacePrefixColor = ReadString(prefix + "xhtml_namespace_prefix_color", defaults.XhtmlNamespacePrefixColor),
-            LinkColor = ReadString(prefix + "link_color", defaults.LinkColor),
-            ErrorUnderlineColor = ReadString(prefix + "error_underline_color", defaults.ErrorUnderlineColor),
-            SearchMatchBackgroundColor = ReadString(prefix + "search_match_background_color", defaults.SearchMatchBackgroundColor),
-            SelectionBackgroundColor = ReadString(prefix + "selection_background_color", defaults.SelectionBackgroundColor),
-        };
-    }
+        FontFamily = ReadString(prefix + "font_family_standard", defaults.FontFamily),
+        FontSize = ReadInt(prefix + "font_size", defaults.FontSize),
+    };
 
     private void WriteCodeView(string prefix, CodeViewAppearance a)
     {
         WriteSilent(prefix + "font_family_standard", a.FontFamily);
         WriteSilent(prefix + "font_size", a.FontSize);
-        WriteSilent(prefix + "css_comment_color", a.CssCommentColor);
-        WriteSilent(prefix + "css_property_color", a.CssPropertyColor);
-        WriteSilent(prefix + "css_quote_color", a.CssQuoteColor);
-        WriteSilent(prefix + "css_selector_color", a.CssSelectorColor);
-        WriteSilent(prefix + "css_value_color", a.CssValueColor);
-        WriteSilent(prefix + "line_highlight_color", a.LineHighlightColor);
-        WriteSilent(prefix + "xhtml_attribute_name_color", a.XhtmlAttributeNameColor);
-        WriteSilent(prefix + "xhtml_attribute_value_color", a.XhtmlAttributeValueColor);
-        WriteSilent(prefix + "xhtml_css_color", a.XhtmlCssColor);
-        WriteSilent(prefix + "xhtml_css_comment_color", a.XhtmlCssCommentColor);
-        WriteSilent(prefix + "xhtml_doctype_color", a.XhtmlDoctypeColor);
-        WriteSilent(prefix + "xhtml_entity_color", a.XhtmlEntityColor);
-        WriteSilent(prefix + "xhtml_html_color", a.XhtmlHtmlColor);
-        WriteSilent(prefix + "xhtml_html_comment_color", a.XhtmlHtmlCommentColor);
-        WriteSilent(prefix + "css_special_selector_color", a.CssSpecialSelectorColor);
-        WriteSilent(prefix + "css_at_rule_color", a.CssAtRuleColor);
-        WriteSilent(prefix + "css_constant_color", a.CssConstantColor);
-        WriteSilent(prefix + "xhtml_namespace_prefix_color", a.XhtmlNamespacePrefixColor);
-        WriteSilent(prefix + "link_color", a.LinkColor);
-        WriteSilent(prefix + "error_underline_color", a.ErrorUnderlineColor);
-        WriteSilent(prefix + "search_match_background_color", a.SearchMatchBackgroundColor);
-        WriteSilent(prefix + "selection_background_color", a.SelectionBackgroundColor);
     }
 
     private static IEnumerable<string> AppearanceKeys()
@@ -1695,33 +1627,16 @@ public sealed class SettingsStore
         yield return "special_character_font_family";
         yield return "special_character_font_size";
         yield return "warning_font_size";
-        yield return "warning_color_light";
         yield return "open_tag_hint_font_family";
         yield return "open_tag_hint_font_size";
-        yield return "open_tag_hint_light_background";
-        yield return "open_tag_hint_light_foreground";
         foreach (TooltipArea area in Enum.GetValues<TooltipArea>())
         {
             yield return TooltipFontKey(area, "family");
             yield return TooltipFontKey(area, "size");
         }
 
-        string[] suffixes =
-        {
-            "font_family_standard", "font_size", "css_comment_color", "css_property_color",
-            "css_quote_color", "css_selector_color", "css_value_color", "line_highlight_color",
-            "xhtml_attribute_name_color", "xhtml_attribute_value_color", "xhtml_css_color",
-            "xhtml_css_comment_color", "xhtml_doctype_color", "xhtml_entity_color",
-            "xhtml_html_color", "xhtml_html_comment_color",
-            "css_special_selector_color", "css_at_rule_color", "css_constant_color",
-            "xhtml_namespace_prefix_color", "link_color", "error_underline_color",
-            "search_match_background_color", "selection_background_color",
-        };
-
-        foreach (string suffix in suffixes)
-        {
-            yield return "code_view_" + suffix;
-        }
+        yield return "code_view_font_family_standard";
+        yield return "code_view_font_size";
     }
 
     // The keys of settings that were removed — the dark application theme (the application has one, light theme until
@@ -1729,6 +1644,20 @@ public sealed class SettingsStore
     // them.
     private void RemoveObsoleteKeys()
     {
+        // The colors of before the themes: kept for the migration into a theme (LegacyColorMigration), then dropped.
+        Dictionary<string, string> legacy = new(StringComparer.Ordinal);
+        foreach (string key in Themes.LegacyColorMigration.Keys)
+        {
+            if (_file.GetRaw(Group, key) is JsonValue node && node.TryGetValue(out string? value))
+            {
+                legacy[key] = value;
+            }
+
+            _file.Remove(Group, key);
+        }
+
+        LegacyColors = legacy;
+
         string[] keys =
         {
             "ui_theme", "ui_custom_signet_dark_theme", "preview_dark_in_dm", "preview_highlight_color_dark",

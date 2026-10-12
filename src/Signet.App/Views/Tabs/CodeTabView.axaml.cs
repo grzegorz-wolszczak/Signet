@@ -77,9 +77,10 @@ public partial class CodeTabView : UserControl
         Editor.Options.HighlightCurrentLine = true;
         Editor.Options.ConvertTabsToSpaces = false;
         // Addresses in the code are not turned into clickable links — attribute values use the
-        // CodeViewAppearance color, without AvaloniaEdit's hyperlink generator underline.
+        // color of the theme, without AvaloniaEdit's hyperlink generator underline.
         Editor.Options.EnableHyperlinks = false;
         Editor.Options.EnableEmailHyperlinks = false;
+        EditorTheming.ShowThemedLineNumbers(Editor);
         Editor.TextArea.TextView.BackgroundRenderers.Add(_tagRenderer);
         Editor.TextArea.TextView.BackgroundRenderers.Add(_searchRenderer);
         Editor.TextArea.TextView.BackgroundRenderers.Add(_errorRenderer);
@@ -125,6 +126,8 @@ public partial class CodeTabView : UserControl
     {
         base.OnAttachedToVisualTree(e);
         AttachCodeViewShortcuts();
+        AppTheme.Changed += OnAppThemeChanged;
+        ApplyTheme();
     }
 
     /// <inheritdoc />
@@ -132,7 +135,12 @@ public partial class CodeTabView : UserControl
     {
         base.OnDetachedFromVisualTree(e);
         _codeViewShortcuts.Detach();
+        AppTheme.Changed -= OnAppThemeChanged;
     }
+
+    // Another theme was applied (Preferences): the colors change at once. Subscribed only while the view is shown, so a
+    // closed tab is not kept alive by the static event.
+    private void OnAppThemeChanged(object? sender, EventArgs e) => ApplyTheme();
 
     // The shortcuts of the code editor actions (AppActionIds.IsCodeViewAction) are this view's KeyBindings, not the
     // window's: they work only while the focus is in the editor, so the same keys can do something else in a panel.
@@ -189,7 +197,7 @@ public partial class CodeTabView : UserControl
         _boundViewModel.UpdateSelection(Editor.SelectionStart, Editor.SelectionStart + Editor.SelectionLength);
 
         ApplyGrammar(_boundViewModel.Syntax);
-        ApplyTextMateTheme();
+        ApplyTheme();
         ApplyFont();
         UpdateErrorRenderer();
         UpdateTagRenderer();
@@ -1155,7 +1163,7 @@ public partial class CodeTabView : UserControl
 
         CodeTabViewModel? vm = _boundViewModel;
         _lineColorizer = CodeViewTextMate.CreateColorizer(
-            syntax, vm?.ExtendedHighlighting ?? false, vm is null ? null : vm.LinkTargetExists, CurrentAppearance());
+            syntax, vm?.ExtendedHighlighting ?? false, vm is null ? null : vm.LinkTargetExists, AppTheme.Current);
         _issueRenderer.SetColorizer(_lineColorizer);
         if (_lineColorizer is not null)
         {
@@ -1241,34 +1249,22 @@ public partial class CodeTabView : UserControl
     private CodeViewAppearance CurrentAppearance() =>
         _boundViewModel?.Appearance ?? CodeViewAppearance.Default;
 
-    private void ApplyTextMateTheme()
+    // The colors of the theme in use: the editor, the syntax and the marks of the renderers.
+    private void ApplyTheme()
     {
+        ResolvedTheme theme = AppTheme.Current;
         _textMate?.SetTheme(CodeViewTextMate.Theme);
-        CodeViewAppearance appearance = CurrentAppearance();
-        _lineColorizer?.SetAppearance(appearance);
-
-        // Current line background (line highlight color).
-        Editor.TextArea.TextView.CurrentLineBackground =
-            new Avalonia.Media.Immutable.ImmutableSolidColorBrush(Avalonia.Media.Color.Parse(appearance.LineHighlightColor));
-        Editor.TextArea.TextView.CurrentLineBorder = null;
-
-        // Background of Find matches and of the selection (= current match).
-        _searchRenderer.SetMatchBrush(ParseBrush(appearance.SearchMatchBackgroundColor, CodeViewAppearance.Default.SearchMatchBackgroundColor));
-        Editor.TextArea.SelectionBrush = ParseBrush(appearance.SelectionBackgroundColor, CodeViewAppearance.Default.SelectionBackgroundColor);
-        Editor.TextArea.TextView.InvalidateLayer(KnownLayer.Selection);
-    }
-
-    private static Avalonia.Media.Immutable.ImmutableSolidColorBrush ParseBrush(string value, string fallback)
-    {
-        Avalonia.Media.Color color = Avalonia.Media.Color.TryParse(value, out Avalonia.Media.Color parsed)
-            ? parsed
-            : Avalonia.Media.Color.Parse(fallback);
-        return new Avalonia.Media.Immutable.ImmutableSolidColorBrush(color);
+        _lineColorizer?.SetTheme(theme);
+        _errorRenderer.Theme = theme;
+        _tagRenderer.Theme = theme;
+        _searchRenderer.Theme = theme;
+        _spellRenderer.Theme = theme;
+        EditorTheming.Apply(Editor, theme);
     }
 
     /// <summary>
     /// Sets the editor's typeface and font size from <see cref="CodeViewAppearance"/>
-    /// (Preferences → Appearance → Code View), scaled by the current zoom. Called when a tab is
+    /// (Preferences → Code View › Appearance › Fonts), scaled by the current zoom. Called when a tab is
     /// bound and when the zoom changes.
     /// </summary>
     private void ApplyFont()

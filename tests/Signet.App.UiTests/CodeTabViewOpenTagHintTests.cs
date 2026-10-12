@@ -96,12 +96,12 @@ public sealed class CodeTabViewOpenTagHintTests
     }
 
     [AvaloniaFact]
-    public void The_hint_uses_the_font_and_colors_from_Preferences()
+    public void The_hint_uses_the_font_from_Preferences_and_the_colors_of_the_theme()
     {
         using Host host = Show(settings =>
         {
             settings.CodeViewOpenTagHintDelayMs = 0;
-            settings.OpenTagHintAppearance = new OpenTagHintAppearance("Courier New", 19, "#112233", "#445566");
+            settings.OpenTagHintAppearance = new OpenTagHintAppearance("Courier New", 19);
         });
 
         HoverOffset(host, CloseTagOffset + 3);
@@ -109,9 +109,10 @@ public sealed class CodeTabViewOpenTagHintTests
         TextBlock tag = host.View.FindControl<TextBlock>("OpenTagHintTag")!;
         tag.FontFamily.Name.Should().Be("Courier New");
         tag.FontSize.Should().Be(19);
-        ((Avalonia.Media.ISolidColorBrush)tag.Foreground!).Color.Should().Be(Avalonia.Media.Color.Parse("#445566"));
+        ((Avalonia.Media.ISolidColorBrush)tag.Foreground!).Color
+            .Should().Be(Signet.App.Infrastructure.AppTheme.Current.Foreground(Signet.Core.Themes.ThemeKeys.HintsOpenTag));
         ((Avalonia.Media.ISolidColorBrush)host.View.FindControl<Border>("OpenTagHintBorder")!.Background!).Color
-            .Should().Be(Avalonia.Media.Color.Parse("#112233"));
+            .Should().Be(Signet.App.Infrastructure.AppTheme.Current.Background(Signet.Core.Themes.ThemeKeys.HintsOpenTag));
     }
 
     [AvaloniaFact]

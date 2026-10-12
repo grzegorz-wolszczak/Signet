@@ -1,5 +1,4 @@
 using System;
-using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -67,22 +66,18 @@ public enum PreviewHighlightStyle
 /// <summary>
 /// Highlight of the Code View caret location in the preview (Code View → Preview synchronization).
 /// </summary>
-/// <param name="Style">Background or outline.</param>
-/// <param name="Color">Color (<c>#rrggbb</c>).</param>
+/// <param name="Style">Background or outline (the color comes from the theme: <c>preview.highlight</c>).</param>
 /// <param name="OpacityPercent">Background opacity in percent (the outline always uses the full color).</param>
 /// <param name="OutlineWidth">Outline width in pixels.</param>
 /// <param name="AutoHide">Whether the highlight disappears on its own (otherwise it stays until the caret moves again).</param>
 /// <param name="AutoHideDelayMs">After how many milliseconds it disappears when <paramref name="AutoHide"/> is set.</param>
 public readonly record struct PreviewHighlight(
     PreviewHighlightStyle Style,
-    string Color,
     int OpacityPercent,
     int OutlineWidth,
     bool AutoHide,
     int AutoHideDelayMs)
 {
-    private static readonly SearchValues<char> HexDigits = SearchValues.Create("0123456789abcdefABCDEF");
-
     /// <summary>Lower bound of <see cref="OpacityPercent"/>.</summary>
     public const int OpacityMin = 5;
 
@@ -102,33 +97,26 @@ public readonly record struct PreviewHighlight(
     public const int AutoHideDelayMax = 30000;
 
     /// <summary>
-    /// Default values: a 45% yellow background (<c>rgba(255,235,59,0.45)</c>),
-    /// a 3 px outline, a persistent highlight; when auto-hide is enabled — 2 s.
+    /// Default values: a 45% background, a 3 px outline, a persistent highlight; when auto-hide is enabled — 2 s.
     /// </summary>
     public static PreviewHighlight Default =>
-        new(PreviewHighlightStyle.Background, "#ffeb3b", 45, 3, false, 2000);
+        new(PreviewHighlightStyle.Background, 45, 3, false, 2000);
 
-    /// <summary>A copy with values clamped to their ranges and valid colors (invalid → default).</summary>
+    /// <summary>A copy with values clamped to their ranges.</summary>
     public PreviewHighlight Normalized() => new(
         Enum.IsDefined(Style) ? Style : Default.Style,
-        IsHexColor(Color) ? Color : Default.Color,
         Math.Clamp(OpacityPercent, OpacityMin, OpacityMax),
         Math.Clamp(OutlineWidth, OutlineWidthMin, OutlineWidthMax),
         AutoHide,
         Math.Clamp(AutoHideDelayMs, AutoHideDelayMin, AutoHideDelayMax));
-
-    /// <summary>Whether the value is a <c>#rrggbb</c> color.</summary>
-    internal static bool IsHexColor(string? value) =>
-        value is { Length: 7 } && value[0] == '#' && value.AsSpan(1).IndexOfAnyExcept(HexDigits) < 0;
 }
 
 /// <summary>
-/// Appearance of the warning texts in dialogs (e.g. the consequences of a risky span removal or Cleanup item). The error
-/// notifications have their own color (<see cref="ErrorAppearance"/>).
+/// Appearance of the warning texts in dialogs (e.g. the consequences of a risky span removal or Cleanup item); their
+/// color comes from the theme (<c>ui.warningText</c>).
 /// </summary>
 /// <param name="FontSize">Font size (px) of the warning texts; 0 = the size of the interface text.</param>
-/// <param name="Color">Warning color (<c>#rrggbb</c>).</param>
-public readonly record struct WarningAppearance(int FontSize, string Color)
+public readonly record struct WarningAppearance(int FontSize)
 {
     /// <summary>Lower bound of an explicit <see cref="FontSize"/>.</summary>
     public const int FontSizeMin = 8;
@@ -136,13 +124,11 @@ public readonly record struct WarningAppearance(int FontSize, string Color)
     /// <summary>Upper bound of an explicit <see cref="FontSize"/>.</summary>
     public const int FontSizeMax = 40;
 
-    /// <summary>Default values: the interface text size and dark orange.</summary>
-    public static WarningAppearance Default => new(0, "#b35c00");
+    /// <summary>Default values: the interface text size.</summary>
+    public static WarningAppearance Default => new(0);
 
-    /// <summary>A copy with the size clamped (0 stays "as the interface text") and valid colors (invalid → default).</summary>
-    public WarningAppearance Normalized() => new(
-        FontSize <= 0 ? 0 : Math.Clamp(FontSize, FontSizeMin, FontSizeMax),
-        PreviewHighlight.IsHexColor(Color) ? Color : Default.Color);
+    /// <summary>A copy with the size clamped (0 stays "as the interface text").</summary>
+    public WarningAppearance Normalized() => new(FontSize <= 0 ? 0 : Math.Clamp(FontSize, FontSizeMin, FontSizeMax));
 }
 
 /// <summary>
@@ -218,32 +204,12 @@ public readonly record struct TooltipFont(string FontFamily, int FontSize)
 }
 
 /// <summary>
-/// Color of the error notifications — a blocked or failed operation: its status bar message, its row in the
-/// Notifications panel and the dot on the notification bell (the Notifications tab and the status bar indicator).
-/// </summary>
-/// <param name="Color">Error color (<c>#rrggbb</c>).</param>
-public readonly record struct ErrorAppearance(string Color)
-{
-    /// <summary>Default values: red.</summary>
-    public static ErrorAppearance Default => new("#d93030");
-
-    /// <summary>A copy with a valid color (invalid → default).</summary>
-    public ErrorAppearance Normalized() => new(
-        PreviewHighlight.IsHexColor(Color) ? Color : Default.Color);
-}
-
-/// <summary>
-/// Look of the Code View opening tag hint (the tooltip shown over a closing tag): font and colors.
+/// Font of the Code View opening tag hint (the tooltip shown over a closing tag); its colors come from the theme
+/// (<c>hints.openTag</c>).
 /// </summary>
 /// <param name="FontFamily">Font family; empty = the Code View editor font.</param>
 /// <param name="FontSize">Font size (px); 0 = the Code View editor size (with its zoom).</param>
-/// <param name="Background">Background color (<c>#rrggbb</c>).</param>
-/// <param name="Foreground">Text color (<c>#rrggbb</c>).</param>
-public readonly record struct OpenTagHintAppearance(
-    string FontFamily,
-    int FontSize,
-    string Background,
-    string Foreground)
+public readonly record struct OpenTagHintAppearance(string FontFamily, int FontSize)
 {
     /// <summary>Lower bound of an explicit <see cref="FontSize"/>.</summary>
     public const int FontSizeMin = 6;
@@ -251,15 +217,13 @@ public readonly record struct OpenTagHintAppearance(
     /// <summary>Upper bound of an explicit <see cref="FontSize"/>.</summary>
     public const int FontSizeMax = 72;
 
-    /// <summary>Default values: the editor font and the tooltip colors of the Fluent theme.</summary>
-    public static OpenTagHintAppearance Default => new(string.Empty, 0, "#f2f2f2", "#000000");
+    /// <summary>Default values: the editor font.</summary>
+    public static OpenTagHintAppearance Default => new(string.Empty, 0);
 
-    /// <summary>A copy with the size clamped (0 stays "as the editor") and valid colors (invalid → default).</summary>
+    /// <summary>A copy with the size clamped (0 stays "as the editor").</summary>
     public OpenTagHintAppearance Normalized() => new(
         FontFamily?.Trim() ?? string.Empty,
-        FontSize <= 0 ? 0 : Math.Clamp(FontSize, FontSizeMin, FontSizeMax),
-        PreviewHighlight.IsHexColor(Background) ? Background : Default.Background,
-        PreviewHighlight.IsHexColor(Foreground) ? Foreground : Default.Foreground);
+        FontSize <= 0 ? 0 : Math.Clamp(FontSize, FontSizeMin, FontSizeMax));
 }
 
 /// <summary>Font settings of the "Insert Special Character" window.</summary>
@@ -272,90 +236,18 @@ public readonly record struct SpecialCharacterAppearance(string FontFamily, int 
 }
 
 /// <summary>
-/// Code editor (Code View) appearance settings — font + highlighting colors.
-/// Colors are <c>#RRGGBB</c> strings (the Core layer does not depend on Avalonia; the UI layer
-/// converts them to a color type).
+/// Code editor (Code View) font; the colors come from the theme (<see cref="Themes.ThemeKeys"/>).
 /// </summary>
 public sealed record CodeViewAppearance
 {
+    /// <summary>The default font.</summary>
+    public static CodeViewAppearance Default { get; } = new();
+
     /// <summary>Editor font family.</summary>
     public string FontFamily { get; init; } = "Courier New";
 
     /// <summary>Editor font size (px).</summary>
     public int FontSize { get; init; } = 10;
-
-    /// <summary>CSS comment color.</summary>
-    public string CssCommentColor { get; init; } = "#008000";
-
-    /// <summary>CSS property color.</summary>
-    public string CssPropertyColor { get; init; } = "#000080";
-
-    /// <summary>Color of quoted strings in CSS.</summary>
-    public string CssQuoteColor { get; init; } = "#800080";
-
-    /// <summary>CSS selector color.</summary>
-    public string CssSelectorColor { get; init; } = "#800000";
-
-    /// <summary>CSS value color.</summary>
-    public string CssValueColor { get; init; } = "#000000";
-
-    /// <summary>Current line highlight color.</summary>
-    public string LineHighlightColor { get; init; } = "#FFFFBF";
-
-    /// <summary>XHTML attribute name color.</summary>
-    public string XhtmlAttributeNameColor { get; init; } = "#800000";
-
-    /// <summary>XHTML attribute value color.</summary>
-    public string XhtmlAttributeValueColor { get; init; } = "#008080";
-
-    /// <summary>Color of a CSS block inside XHTML.</summary>
-    public string XhtmlCssColor { get; init; } = "#808000";
-
-    /// <summary>Color of a CSS comment inside XHTML.</summary>
-    public string XhtmlCssCommentColor { get; init; } = "#008000";
-
-    /// <summary>DOCTYPE declaration color.</summary>
-    public string XhtmlDoctypeColor { get; init; } = "#000080";
-
-    /// <summary>XHTML entity color.</summary>
-    public string XhtmlEntityColor { get; init; } = "#800080";
-
-    /// <summary>HTML tag color.</summary>
-    public string XhtmlHtmlColor { get; init; } = "#0000FF";
-
-    /// <summary>HTML comment color.</summary>
-    public string XhtmlHtmlCommentColor { get; init; } = "#008000";
-
-    // ---- Extended highlighting ----
-
-    /// <summary>Color of CSS class / id / pseudo-class selectors.</summary>
-    public string CssSpecialSelectorColor { get; init; } = "#AA5500";
-
-    /// <summary>Color of <c>@</c> rules and <c>!important</c> in CSS.</summary>
-    public string CssAtRuleColor { get; init; } = "#8B008B";
-
-    /// <summary>Color of CSS constants (number, dimension, color).</summary>
-    public string CssConstantColor { get; init; } = "#098658";
-
-    /// <summary>Namespace prefix color (<c>svg:</c>, <c>epub:</c>).</summary>
-    public string XhtmlNamespacePrefixColor { get; init; } = "#7B5694";
-
-    /// <summary>Link target color (<c>href</c>, <c>src</c>, <c>url()</c>).</summary>
-    public string LinkColor { get; init; } = "#0645AD";
-
-    /// <summary>Color of the squiggle for syntax errors and broken links.</summary>
-    public string ErrorUnderlineColor { get; init; } = "#FF0000";
-
-    // ---- Search colors ----
-
-    /// <summary>Background of all Find &amp; Replace matches (opaque, text drawn on top).</summary>
-    public string SearchMatchBackgroundColor { get; init; } = "#FFF0C4";
-
-    /// <summary>Selection background in the editor — also of the current Find match, which is selected.</summary>
-    public string SelectionBackgroundColor { get; init; } = "#ADD6FF";
-
-    /// <summary>Default font and colors.</summary>
-    public static CodeViewAppearance Default => new();
 }
 
 /// <summary>Where in the reading order (spine) the edition page goes.</summary>

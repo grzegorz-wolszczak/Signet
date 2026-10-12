@@ -22,10 +22,16 @@ public sealed class ThemeManager(SettingsStore settings, ThemeStore store, ILogg
 
     /// <summary>
     /// Applies the saved theme (at startup and after Preferences changed it). A theme that no longer exists gives way
-    /// to Signet Light. The files of the theme folder that could not be read are logged.
+    /// to Signet Light. The files of the theme folder that could not be read are logged. The colors the settings held
+    /// before the themes move into the theme "My colors" first (<see cref="LegacyColorMigration"/>).
     /// </summary>
     public void ApplySaved()
     {
+        if (LegacyColorMigration.Run(_settings, Store) is { } migrated)
+        {
+            _logger.LogInformation("The colors of the settings moved into the theme {ThemeName} ({ThemeId})", migrated.Name, migrated.Id);
+        }
+
         foreach (string problem in Store.LoadProblems)
         {
             _logger.LogWarning("Theme file skipped: {Problem}", problem);

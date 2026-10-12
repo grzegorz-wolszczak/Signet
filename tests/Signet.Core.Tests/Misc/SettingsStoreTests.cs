@@ -57,12 +57,11 @@ public sealed class SettingsStoreTests
         writer.FavoriteSpecialCharacters = new[] { "—", "§" };
         writer.CleanupEnabledSteps = new[] { CleanupStep.UnusedSelectors, CleanupStep.UnusedMedia };
         writer.StandardizationEnabledSteps = new[] { StandardizationStep.RebaseManifestIds };
-        writer.WarningAppearance = new WarningAppearance(16, "#102030");
-        writer.ErrorAppearance = new ErrorAppearance("#a01010");
+        writer.WarningAppearance = new WarningAppearance(16);
         writer.EditionPage = new EditionPageSettings(
             true, EditionPagePosition.Second, new[] { new EditionPageField("Edited by", "GreatWorksPublishing", true), new EditionPageField("Note", "x", false) },
             false, true, false, true, false, "Colophon", 3);
-        writer.OpenTagHintAppearance = new OpenTagHintAppearance("Consolas", 15, "#111111", "#222222");
+        writer.OpenTagHintAppearance = new OpenTagHintAppearance("Consolas", 15);
         writer.Save();
 
         File.Exists(path).Should().BeTrue();
@@ -77,12 +76,11 @@ public sealed class SettingsStoreTests
         reader.FavoriteSpecialCharacters.Should().Equal("—", "§");
         reader.CleanupEnabledSteps.Should().Equal(CleanupStep.UnusedSelectors, CleanupStep.UnusedMedia);
         reader.StandardizationEnabledSteps.Should().Equal(StandardizationStep.RebaseManifestIds);
-        reader.WarningAppearance.Should().Be(new WarningAppearance(16, "#102030"));
-        reader.ErrorAppearance.Should().Be(new ErrorAppearance("#a01010"));
+        reader.WarningAppearance.Should().Be(new WarningAppearance(16));
         reader.EditionPage.Should().Be(new EditionPageSettings(
             true, EditionPagePosition.Second, new[] { new EditionPageField("Edited by", "GreatWorksPublishing", true), new EditionPageField("Note", "x", false) },
             false, true, false, true, false, "Colophon", 3));
-        reader.OpenTagHintAppearance.Should().Be(new OpenTagHintAppearance("Consolas", 15, "#111111", "#222222"));
+        reader.OpenTagHintAppearance.Should().Be(new OpenTagHintAppearance("Consolas", 15));
     }
 
     [Fact]
@@ -99,11 +97,10 @@ public sealed class SettingsStoreTests
         sut.CleanupEnabledSteps.Should().BeEmpty("no Cleanup step is checked until the user confirms one");
         sut.StandardizationEnabledSteps.Should().Equal(EpubStandardization.AllSteps, "every step is checked until the dialog is applied");
         sut.WarningAppearance.Should().Be(WarningAppearance.Default, "warnings are as large as the interface text by default");
-        sut.ErrorAppearance.Should().Be(ErrorAppearance.Default);
         sut.EditionPage.Should().Be(EditionPageSettings.Default, "the edition page is off until the user turns it on");
         sut.CodeViewOpenTagHint.Should().BeTrue("the opening tag hint is on by default");
         sut.CodeViewOpenTagHintDelayMs.Should().Be(500);
-        sut.OpenTagHintAppearance.Should().Be(OpenTagHintAppearance.Default, "the hint uses the editor font and the theme tooltip colors");
+        sut.OpenTagHintAppearance.Should().Be(OpenTagHintAppearance.Default, "the hint uses the editor font");
     }
 
     [Fact]
@@ -112,10 +109,9 @@ public sealed class SettingsStoreTests
         using TempDir dir = new();
         SettingsStore sut = new(dir.Combine("settings.json"));
 
-        sut.OpenTagHintAppearance = new OpenTagHintAppearance(" Consolas ", 500, "nope", "#010203");
+        sut.OpenTagHintAppearance = new OpenTagHintAppearance(" Consolas ", 500);
 
-        sut.OpenTagHintAppearance.Should().Be(
-            new OpenTagHintAppearance("Consolas", OpenTagHintAppearance.FontSizeMax, OpenTagHintAppearance.Default.Background, "#010203"));
+        sut.OpenTagHintAppearance.Should().Be(new OpenTagHintAppearance("Consolas", OpenTagHintAppearance.FontSizeMax));
     }
 
     [Theory]
@@ -144,9 +140,9 @@ public sealed class SettingsStoreTests
         using TempDir dir = new();
         SettingsStore sut = new(dir.Combine("settings.json"));
 
-        sut.WarningAppearance = new WarningAppearance(stored, "not a color");
+        sut.WarningAppearance = new WarningAppearance(stored);
 
-        sut.WarningAppearance.Should().Be(new WarningAppearance(expected, WarningAppearance.Default.Color));
+        sut.WarningAppearance.Should().Be(new WarningAppearance(expected));
     }
 
     [Fact]
@@ -163,17 +159,6 @@ public sealed class SettingsStoreTests
 
         writer.PreferencesPageIndex = -3;
         writer.PreferencesPageIndex.Should().Be(0);
-    }
-
-    [Fact]
-    public void An_invalid_error_color_falls_back_to_the_default()
-    {
-        using TempDir dir = new();
-        SettingsStore sut = new(dir.Combine("settings.json"));
-
-        sut.ErrorAppearance = new ErrorAppearance("red");
-
-        sut.ErrorAppearance.Should().Be(ErrorAppearance.Default);
     }
 
     [Fact]
@@ -200,12 +185,11 @@ public sealed class SettingsStoreTests
             """);
 
         SettingsStore sut = new(path);
-        sut.WarningAppearance.Color.Should().Be("#102030", "the light color is the only color now");
+        sut.LegacyColors.Should().ContainKey("warning_color_light", "the light color goes into a theme");
         sut.Save();
 
         string saved = File.ReadAllText(path);
-        saved.Should().Contain("warning_color_light")
-            .And.NotContain("ui_theme").And.NotContain("dark");
+        saved.Should().NotContain("ui_theme").And.NotContain("dark").And.NotContain("warning_color");
     }
 
     [Fact]
@@ -225,12 +209,11 @@ public sealed class SettingsStoreTests
             """);
 
         SettingsStore sut = new(path);
-        sut.CodeViewAppearance.CssCommentColor.Should().Be("#102030");
+        sut.LegacyColors.Keys.Should().Equal("code_view_css_comment_color");
         sut.Save();
 
         string saved = File.ReadAllText(path);
-        saved.Should().Contain("code_view_css_comment_color")
-            .And.NotContain("line_number").And.NotContain("spelling_underline");
+        saved.Should().NotContain("line_number").And.NotContain("spelling_underline").And.NotContain("css_comment");
     }
 
     [Fact]
@@ -308,7 +291,7 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
-    public void PreviewHighlight_defaults_to_yellow_background_45_percent_persistent()
+    public void PreviewHighlight_defaults_to_a_background_45_percent_persistent()
     {
         using TempDir dir = new();
 
@@ -316,7 +299,6 @@ public sealed class SettingsStoreTests
 
         sut.Should().Be(PreviewHighlight.Default);
         sut.Style.Should().Be(PreviewHighlightStyle.Background);
-        sut.Color.Should().Be("#ffeb3b");
         sut.OpacityPercent.Should().Be(45);
         sut.OutlineWidth.Should().Be(3);
         sut.AutoHide.Should().BeFalse();
@@ -328,7 +310,7 @@ public sealed class SettingsStoreTests
     {
         using TempDir dir = new();
         SettingsStore sut = NewStore(dir);
-        PreviewHighlight value = new(PreviewHighlightStyle.Outline, "#112233", 60, 7, true, 4500);
+        PreviewHighlight value = new(PreviewHighlightStyle.Outline, 60, 7, true, 4500);
         List<string> changed = new();
         sut.SettingChanged += (_, e) => changed.Add(e.QualifiedKey);
 
@@ -341,15 +323,15 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
-    public void PreviewHighlight_out_of_range_values_are_clamped_and_bad_colors_fall_back()
+    public void PreviewHighlight_out_of_range_values_are_clamped()
     {
         using TempDir dir = new();
         SettingsStore sut = NewStore(dir);
 
-        sut.PreviewHighlight = new((PreviewHighlightStyle)42, "red", 0, 99, true, 10);
+        sut.PreviewHighlight = new((PreviewHighlightStyle)42, 0, 99, true, 10);
 
         sut.PreviewHighlight.Should().Be(new PreviewHighlight(
-            PreviewHighlightStyle.Background, "#ffeb3b",
+            PreviewHighlightStyle.Background,
             PreviewHighlight.OpacityMin, PreviewHighlight.OutlineWidthMax, true, PreviewHighlight.AutoHideDelayMin));
     }
 
@@ -419,13 +401,13 @@ public sealed class SettingsStoreTests
 
         SettingsStore writer = new(path);
         writer.CodeViewAppearance.Should().Be(CodeViewAppearance.Default);
-        writer.CodeViewAppearance = CodeViewAppearance.Default with { FontSize = 14, CssSelectorColor = "#123456" };
+        writer.CodeViewAppearance = CodeViewAppearance.Default with { FontSize = 14, FontFamily = "Consolas" };
         writer.PreviewAppearance = PreviewAppearance.Default with { FontSize = 20 };
         writer.Save();
 
         SettingsStore reader = new(path);
         reader.CodeViewAppearance.FontSize.Should().Be(14);
-        reader.CodeViewAppearance.CssSelectorColor.Should().Be("#123456");
+        reader.CodeViewAppearance.FontFamily.Should().Be("Consolas");
         reader.PreviewAppearance.FontSize.Should().Be(20);
 
         reader.ClearAppearanceSettings();
@@ -434,7 +416,7 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
-    public void Extended_highlighting_is_on_by_default_and_its_colours_roundtrip()
+    public void Extended_highlighting_is_on_by_default_and_roundtrips()
     {
         using TempDir dir = new();
         string path = dir.Combine("settings.json");
@@ -442,35 +424,10 @@ public sealed class SettingsStoreTests
         SettingsStore writer = new(path);
         writer.CodeViewExtendedHighlighting.Should().BeTrue();
         writer.CodeViewExtendedHighlighting = false;
-        writer.CodeViewAppearance = CodeViewAppearance.Default with { LinkColor = "#010203", ErrorUnderlineColor = "#040506" };
         writer.Save();
 
         SettingsStore reader = new(path);
         reader.CodeViewExtendedHighlighting.Should().BeFalse();
-        reader.CodeViewAppearance.LinkColor.Should().Be("#010203");
-        reader.CodeViewAppearance.ErrorUnderlineColor.Should().Be("#040506");
-        reader.CodeViewAppearance.CssConstantColor.Should().Be(CodeViewAppearance.Default.CssConstantColor);
-
-        reader.ClearAppearanceSettings();
-        reader.CodeViewAppearance.Should().Be(CodeViewAppearance.Default);
-    }
-
-    [Fact]
-    public void Search_match_and_selection_colors_roundtrip()
-    {
-        using TempDir dir = new();
-        string path = dir.Combine("settings.json");
-
-        SettingsStore writer = new(path);
-        writer.CodeViewAppearance = CodeViewAppearance.Default with { SearchMatchBackgroundColor = "#111111", SelectionBackgroundColor = "#222222" };
-        writer.Save();
-
-        SettingsStore reader = new(path);
-        reader.CodeViewAppearance.SearchMatchBackgroundColor.Should().Be("#111111");
-        reader.CodeViewAppearance.SelectionBackgroundColor.Should().Be("#222222");
-
-        reader.ClearAppearanceSettings();
-        reader.CodeViewAppearance.Should().Be(CodeViewAppearance.Default);
     }
 
     [Fact]

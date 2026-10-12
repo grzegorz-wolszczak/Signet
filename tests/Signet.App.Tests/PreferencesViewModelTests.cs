@@ -15,6 +15,7 @@ using Signet.App.Services;
 using Signet.App.ViewModels;
 using Signet.Core.Misc;
 using Signet.Core.Spellcheck;
+using Signet.Core.Themes;
 using Signet.App.Tests.TestSupport;
 using Xunit;
 
@@ -113,7 +114,7 @@ public sealed class PreferencesViewModelTests
     public void Preview_highlight_fields_start_from_settings()
     {
         using TestHost host = new();
-        PreviewHighlight stored = new(PreviewHighlightStyle.Outline, "#102030", 30, 4, true, 1500);
+        PreviewHighlight stored = new(PreviewHighlightStyle.Outline, 30, 4, true, 1500);
         host.Settings.PreviewHighlight = stored;
 
         PreferencesViewModel sut = NewOn(host);
@@ -121,7 +122,6 @@ public sealed class PreferencesViewModelTests
         sut.PreviewHighlightStyle.Should().Be(PreviewHighlightStyle.Outline);
         sut.IsPreviewHighlightOutline.Should().BeTrue();
         sut.IsPreviewHighlightBackground.Should().BeFalse();
-        sut.PreviewHighlightColor.Value.Should().Be("#102030");
         sut.PreviewHighlightOpacity.Should().Be(30);
         sut.PreviewHighlightOutlineWidth.Should().Be(4);
         sut.PreviewHighlightAutoHide.Should().BeTrue();
@@ -132,36 +132,15 @@ public sealed class PreferencesViewModelTests
     public void Warning_fields_start_from_settings_and_changes_persist_on_apply()
     {
         using TestHost host = new();
-        host.Settings.WarningAppearance = new WarningAppearance(16, "#102030");
+        host.Settings.WarningAppearance = new WarningAppearance(16);
         PreferencesViewModel sut = NewOn(host);
 
         sut.WarningFontSize.Should().Be(16);
-        sut.WarningColor.Value.Should().Be("#102030");
 
         sut.WarningFontSize = 0;
-        sut.WarningColor.Value = "#00ff00";
         sut.ApplyCommand.Execute(null);
 
-        host.Settings.WarningAppearance.Should().Be(new WarningAppearance(0, "#00ff00"));
-    }
-
-    [Fact]
-    public void Error_color_starts_from_settings_persists_on_apply_and_resets()
-    {
-        using TestHost host = new();
-        host.Settings.ErrorAppearance = new ErrorAppearance("#102030");
-        PreferencesViewModel sut = NewOn(host);
-
-        sut.ErrorColor.Value.Should().Be("#102030");
-
-        sut.ErrorColor.Value = "#00ff00";
-        sut.ApplyCommand.Execute(null);
-        host.Settings.ErrorAppearance.Should().Be(new ErrorAppearance("#00ff00"));
-
-        sut.RestoreAppearanceDefaultsCommand.Execute(null);
-        sut.ApplyCommand.Execute(null);
-        host.Settings.ErrorAppearance.Should().Be(ErrorAppearance.Default);
-        sut.ErrorColor.Value.Should().Be(ErrorAppearance.Default.Color);
+        host.Settings.WarningAppearance.Should().Be(new WarningAppearance(0));
     }
 
     private sealed class FakeEditionPageHost : IEditionPageHost
@@ -331,39 +310,35 @@ public sealed class PreferencesViewModelTests
     {
         using UiCultureScope culture = new("en");
         using TestHost host = new();
-        host.Settings.OpenTagHintAppearance = new OpenTagHintAppearance("Consolas", 15, "#111111", "#222222");
+        host.Settings.OpenTagHintAppearance = new OpenTagHintAppearance("Consolas", 15);
         PreferencesViewModel sut = NewOn(host);
 
         sut.OpenTagHintFontFamily.Should().Be("Consolas");
         sut.OpenTagHintFontSize.Should().Be(15);
-        sut.OpenTagHintBackground.Value.Should().Be("#111111");
-        sut.OpenTagHintForeground.Value.Should().Be("#222222");
 
-        sut.OpenTagHintBackground.Value = "#abcdef";
         sut.ResetOpenTagHintFontCommand.Execute(null);
         sut.ApplyCommand.Execute(null);
 
-        host.Settings.OpenTagHintAppearance.Should().Be(new OpenTagHintAppearance(string.Empty, 0, "#abcdef", "#222222"));
+        host.Settings.OpenTagHintAppearance.Should().Be(OpenTagHintAppearance.Default);
         sut.OpenTagHintFontFamily.Should().BeEmpty("\"Default\" is the editor font again");
 
+        sut.OpenTagHintFontSize = 20;
         sut.RestoreAppearanceDefaultsCommand.Execute(null);
         sut.ApplyCommand.Execute(null);
 
         host.Settings.OpenTagHintAppearance.Should().Be(OpenTagHintAppearance.Default);
-        sut.OpenTagHintBackground.Value.Should().Be(OpenTagHintAppearance.Default.Background);
     }
 
     [Fact]
     public void Restoring_the_appearance_defaults_resets_the_warnings()
     {
         using TestHost host = new();
-        host.Settings.WarningAppearance = new WarningAppearance(16, "#102030");
+        host.Settings.WarningAppearance = new WarningAppearance(16);
         PreferencesViewModel sut = NewOn(host);
 
         sut.RestoreAppearanceDefaultsCommand.Execute(null);
 
         sut.WarningFontSize.Should().Be(0);
-        sut.WarningColor.Value.Should().Be(WarningAppearance.Default.Color);
         sut.ApplyCommand.Execute(null);
         host.Settings.WarningAppearance.Should().Be(WarningAppearance.Default);
     }
@@ -379,21 +354,11 @@ public sealed class PreferencesViewModelTests
         vm.PreviewHighlightOpacity = 70;
         vm.PreviewHighlightAutoHide = true;
         vm.PreviewHighlightAutoHideDelay = 100;
-        vm.PreviewHighlightColor.Value = "#00ff00";
         vm.ApplyCommand.Execute(null);
 
         host.Settings.PreviewHighlight.Should().Be(new PreviewHighlight(
-            PreviewHighlightStyle.Outline, "#00ff00", 70,
+            PreviewHighlightStyle.Outline, 70,
             PreviewHighlight.OutlineWidthMax, true, PreviewHighlight.AutoHideDelayMin));
-    }
-
-    [Fact]
-    public void Preview_highlight_color_row_has_a_localized_label()
-    {
-        (TestHost host, PreferencesViewModel vm) = New();
-        using TestHost _ = host;
-
-        vm.PreviewHighlightColor.Label.Should().Be(Strings.Get("PreferencesWindow_PreviewHighlightColor"));
     }
 
     [Theory]
@@ -453,65 +418,17 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
-    public async Task Choose_color_OK_sets_and_persists_the_picked_color()
-    {
-        (TestHost host, PreferencesViewModel vm) = New();
-        using TestHost _ = host;
-        (string Title, string Initial)? asked = null;
-        vm.ColorPicker = (title, initial) =>
-        {
-            asked = (title, initial);
-            return Task.FromResult<string?>("#123456");
-        };
-        ColorSettingRow row = vm.CodeView.Colors.First(c => c.Key == "Search Match Background");
-
-        await row.ChooseColorCommand.ExecuteAsync(null);
-
-        asked.Should().Be((row.Label, CodeViewAppearance.Default.SearchMatchBackgroundColor));
-        row.Value.Should().Be("#123456");
-        vm.ApplyCommand.Execute(null);
-        host.Settings.CodeViewAppearance.SearchMatchBackgroundColor.Should().Be("#123456");
-    }
-
-    [Fact]
-    public async Task Choose_color_Cancel_keeps_the_current_color()
-    {
-        (TestHost host, PreferencesViewModel vm) = New();
-        using TestHost _ = host;
-        vm.ColorPicker = (_, _) => Task.FromResult<string?>(null);
-        ColorSettingRow row = vm.CodeView.Colors.First(c => c.Key == "Selection Background");
-
-        await row.ChooseColorCommand.ExecuteAsync(null);
-
-        row.Value.Should().Be(CodeViewAppearance.Default.SelectionBackgroundColor);
-        host.Settings.CodeViewAppearance.SelectionBackgroundColor.Should().Be(CodeViewAppearance.Default.SelectionBackgroundColor);
-    }
-
-    [Fact]
-    public void CodeView_color_edit_persists_on_apply()
-    {
-        (TestHost host, PreferencesViewModel vm) = New();
-        using TestHost _ = host;
-
-        ColorSettingRow row = vm.CodeView.Colors.First(c => c.Key == "CSS Comment");
-        row.Value = "#123456";
-        vm.ApplyCommand.Execute(null);
-
-        host.Settings.CodeViewAppearance.CssCommentColor.Should().Be("#123456");
-    }
-
-    [Fact]
-    public void RestoreAppearanceDefaultsCommand_resets_fonts_and_colors()
+    public void RestoreAppearanceDefaultsCommand_resets_the_fonts()
     {
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
         vm.PreviewFontStandard = "Georgia";
-        vm.CodeView.Colors.First(c => c.Key == "CSS Comment").Value = "#000000";
+        vm.CodeView.FontSize = 31;
 
         vm.RestoreAppearanceDefaultsCommand.Execute(null);
 
         vm.PreviewFontStandard.Should().Be(PreviewAppearance.Default.FontFamilyStandard);
-        vm.CodeView.Colors.First(c => c.Key == "CSS Comment").Value.Should().Be(CodeViewAppearance.Default.CssCommentColor);
+        vm.CodeView.FontSize.Should().Be(CodeViewAppearance.Default.FontSize);
     }
 
     [Fact]
@@ -674,8 +591,8 @@ public sealed class PreferencesViewModelTests
         hint.Family.Should().BeEmpty();
         hint.Placeholder.Should().Be(Strings.Get("PreferencesWindow_OpenTagHintFontDefault"));
         hint.EffectiveFamily.Should().Be(vm.CodeView.FontFamily, "an empty hint font is the editor font");
-        hint.PreviewBackground.Should().Be(vm.OpenTagHintBackground.Value);
-        hint.PreviewForeground.Should().Be(vm.OpenTagHintForeground.Value);
+        hint.PreviewBackground.Should().Be(AppTheme.Current.Background(ThemeKeys.HintsOpenTag).ToString(), "the colors of the theme");
+        hint.PreviewForeground.Should().Be(AppTheme.Current.Foreground(ThemeKeys.HintsOpenTag).ToString());
 
         hint.Size = 19;
 
@@ -702,21 +619,18 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
-    public void The_editor_font_is_previewed_as_code_in_the_colors_being_edited()
+    public void The_editor_font_is_previewed_as_code_with_the_highlighting_being_edited()
     {
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
         FontSettingViewModel editor = vm.CodeViewFonts.Fonts.Single(f => f.Key == "CodeViewEditor");
         FontSettingViewModel hint = vm.CodeViewFonts.Fonts.Single(f => f.Key == "OpenTagHint");
 
-        vm.CodeView.Colors.Single(c => c.Key == "XHTML HTML").Value = "#123456";
         vm.ExtendedHighlighting = !vm.ExtendedHighlighting;
 
         editor.IsCodePreview.Should().BeTrue();
-        editor.CodePreviewAppearance!.XhtmlHtmlColor.Should().Be("#123456", "the preview shows the colors not applied yet");
-        editor.CodePreviewExtended.Should().Be(vm.ExtendedHighlighting);
+        editor.CodePreviewExtended.Should().Be(vm.ExtendedHighlighting, "the preview shows the switch not applied yet");
         hint.IsCodePreview.Should().BeFalse();
-        hint.CodePreviewAppearance.Should().BeNull();
     }
 
     // The tooltip fonts of the parts without a section of their own, on Appearance › Fonts.
@@ -782,7 +696,7 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
-    public void The_warning_size_0_is_previewed_at_the_interface_size_in_the_warning_color()
+    public void The_warning_size_0_is_previewed_at_the_interface_size_in_the_warning_color_of_the_theme()
     {
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
@@ -794,9 +708,7 @@ public sealed class PreferencesViewModelTests
         warnings.EffectiveSize.Should().Be(ui.EffectiveSize);
         warnings.EffectiveFamily.Should().Be(ui.EffectiveFamily);
 
-        vm.WarningColor.Value = "#123456";
-
-        warnings.PreviewForeground.Should().Be("#123456");
+        warnings.PreviewForeground.Should().Be(AppTheme.Current.Color(ThemeKeys.UiWarningText).ToString());
     }
 
     [Fact]

@@ -1,9 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using AutoFixture;
 using AwesomeAssertions;
-using Signet.Core.Misc;
 using Signet.Core.Themes;
 using Xunit;
 
@@ -58,51 +56,6 @@ public sealed class ThemeModelTests
         {
             ThemeKeys.Get(key.BaseId!).Kind.Should().Be(key.Kind, key.Id);
         }
-    }
-
-    [Fact]
-    public void The_defaults_are_the_colors_of_the_settings_before_themes()
-    {
-        CodeViewAppearance code = CodeViewAppearance.Default;
-        Dictionary<ThemeKey, string> foregrounds = new()
-        {
-            [ThemeKeys.XhtmlDoctype] = code.XhtmlDoctypeColor,
-            [ThemeKeys.XhtmlTag] = code.XhtmlHtmlColor,
-            [ThemeKeys.XhtmlNamespacePrefix] = code.XhtmlNamespacePrefixColor,
-            [ThemeKeys.XhtmlAttributeName] = code.XhtmlAttributeNameColor,
-            [ThemeKeys.XhtmlAttributeValue] = code.XhtmlAttributeValueColor,
-            [ThemeKeys.XhtmlEntity] = code.XhtmlEntityColor,
-            [ThemeKeys.XhtmlComment] = code.XhtmlHtmlCommentColor,
-            [ThemeKeys.XhtmlCss] = code.XhtmlCssColor,
-            [ThemeKeys.XhtmlCssComment] = code.XhtmlCssCommentColor,
-            [ThemeKeys.Link] = code.LinkColor,
-            [ThemeKeys.CssSelector] = code.CssSelectorColor,
-            [ThemeKeys.CssSpecialSelector] = code.CssSpecialSelectorColor,
-            [ThemeKeys.CssProperty] = code.CssPropertyColor,
-            [ThemeKeys.CssValue] = code.CssValueColor,
-            [ThemeKeys.CssConstant] = code.CssConstantColor,
-            [ThemeKeys.CssString] = code.CssQuoteColor,
-            [ThemeKeys.CssAtRule] = code.CssAtRuleColor,
-            [ThemeKeys.CssComment] = code.CssCommentColor,
-        };
-
-        foreach ((ThemeKey key, string color) in foregrounds)
-        {
-            key.DefaultAttributes!.Foreground.Should().Be(ThemeColor.Parse(color), key.Id);
-        }
-
-        ThemeKeys.EditorCurrentLine.DefaultColor.Should().Be(ThemeColor.Parse(code.LineHighlightColor));
-        ThemeKeys.EditorSelection.DefaultAttributes!.Background.Should().Be(ThemeColor.Parse(code.SelectionBackgroundColor));
-        ThemeKeys.SearchMatch.DefaultAttributes!.Background.Should().Be(ThemeColor.Parse(code.SearchMatchBackgroundColor));
-        ThemeKeys.ErrorsSyntax.DefaultAttributes!.EffectColor.Should().Be(ThemeColor.Parse(code.ErrorUnderlineColor));
-        ThemeKeys.HintsOpenTag.DefaultAttributes.Should().Be(new TextAttributes
-        {
-            Foreground = ThemeColor.Parse(OpenTagHintAppearance.Default.Foreground),
-            Background = ThemeColor.Parse(OpenTagHintAppearance.Default.Background),
-        });
-        ThemeKeys.PreviewHighlight.DefaultColor.Should().Be(ThemeColor.Parse(PreviewHighlight.Default.Color));
-        ThemeKeys.UiWarningText.DefaultColor.Should().Be(ThemeColor.Parse(WarningAppearance.Default.Color));
-        ThemeKeys.UiErrorNotification.DefaultColor.Should().Be(ThemeColor.Parse(ErrorAppearance.Default.Color));
     }
 
     [Fact]

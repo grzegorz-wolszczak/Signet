@@ -9,60 +9,60 @@ namespace Signet.Core.Misc;
 /// </summary>
 public enum SyntaxFormat
 {
-    /// <summary><c>&lt;!DOCTYPE …&gt;</c> declaration (<c>XhtmlDoctypeColor</c>).</summary>
+    /// <summary><c>&lt;!DOCTYPE …&gt;</c> declaration (theme key <c>xhtml.doctype</c>).</summary>
     XhtmlDoctype,
 
-    /// <summary>Tag name and its closing <c>&gt;</c> (<c>XhtmlHtmlColor</c>).</summary>
+    /// <summary>Tag name and its closing <c>&gt;</c> (theme key <c>xhtml.tag</c>).</summary>
     XhtmlTagName,
 
-    /// <summary>HTML comment (<c>XhtmlHtmlCommentColor</c>).</summary>
+    /// <summary>HTML comment (theme key <c>xhtml.comment</c>).</summary>
     XhtmlComment,
 
-    /// <summary>Content of a <c>&lt;style&gt;</c> block (<c>XhtmlCssColor</c>).</summary>
+    /// <summary>Content of a <c>&lt;style&gt;</c> block (theme key <c>xhtml.css</c>).</summary>
     XhtmlCss,
 
-    /// <summary>Comment inside a <c>&lt;style&gt;</c> block (<c>XhtmlCssCommentColor</c>).</summary>
+    /// <summary>Comment inside a <c>&lt;style&gt;</c> block (theme key <c>xhtml.css.comment</c>).</summary>
     XhtmlCssComment,
 
-    /// <summary>Attribute name (<c>XhtmlAttributeNameColor</c>).</summary>
+    /// <summary>Attribute name (theme key <c>xhtml.attribute.name</c>).</summary>
     XhtmlAttributeName,
 
-    /// <summary>Attribute value (<c>XhtmlAttributeValueColor</c>).</summary>
+    /// <summary>Attribute value (theme key <c>xhtml.attribute.value</c>).</summary>
     XhtmlAttributeValue,
 
-    /// <summary>Entity, e.g. <c>&amp;#160</c> (<c>XhtmlEntityColor</c>).</summary>
+    /// <summary>Entity, e.g. <c>&amp;#160</c> (theme key <c>xhtml.entity</c>).</summary>
     XhtmlEntity,
 
-    /// <summary>Special space (NBSP etc.) — dashed underline in <c>XhtmlEntityColor</c>.</summary>
+    /// <summary>Special space (NBSP etc.) — the look of the theme key <c>xhtml.specialSpace</c> (a dashed line by default).</summary>
     XhtmlSpecialSpace,
 
-    /// <summary>CSS selector, including pseudo-classes (<c>CssSelectorColor</c>).</summary>
+    /// <summary>CSS selector, including pseudo-classes (theme key <c>css.selector</c>).</summary>
     CssSelector,
 
-    /// <summary>CSS property name (<c>CssPropertyColor</c>).</summary>
+    /// <summary>CSS property name (theme key <c>css.property</c>).</summary>
     CssProperty,
 
-    /// <summary>CSS property value (<c>CssValueColor</c>).</summary>
+    /// <summary>CSS property value (theme key <c>css.value</c>).</summary>
     CssValue,
 
-    /// <summary>Quoted string in CSS (<c>CssQuoteColor</c>).</summary>
+    /// <summary>Quoted string in CSS (theme key <c>css.string</c>).</summary>
     CssQuote,
 
-    /// <summary>Comment in a CSS stylesheet (<c>CssCommentColor</c>).</summary>
+    /// <summary>Comment in a CSS stylesheet (theme key <c>css.comment</c>).</summary>
     CssComment,
 
     // ---- Extended highlighting ----
 
-    /// <summary>CSS class / id / pseudo-class selector: <c>.a</c>, <c>#b</c>, <c>:hover</c> (<c>CssSpecialSelectorColor</c>).</summary>
+    /// <summary>CSS class / id / pseudo-class selector: <c>.a</c>, <c>#b</c>, <c>:hover</c> (theme key <c>css.specialSelector</c>).</summary>
     CssSpecialSelector,
 
-    /// <summary><c>@media</c>/<c>@import</c>/… rule and <c>!important</c> (<c>CssAtRuleColor</c>).</summary>
+    /// <summary><c>@media</c>/<c>@import</c>/… rule and <c>!important</c> (theme key <c>css.atRule</c>).</summary>
     CssAtRule,
 
-    /// <summary>CSS constant: number, dimension, <c>#hex</c> color, color name (<c>CssConstantColor</c>).</summary>
+    /// <summary>CSS constant: number, dimension, <c>#hex</c> color, color name (theme key <c>css.constant</c>).</summary>
     CssConstant,
 
-    /// <summary>Namespace prefix, e.g. <c>svg:</c>, <c>epub:</c> (<c>XhtmlNamespacePrefixColor</c>).</summary>
+    /// <summary>Namespace prefix, e.g. <c>svg:</c>, <c>epub:</c> (theme key <c>xhtml.namespacePrefix</c>).</summary>
     XhtmlNamespacePrefix,
 
     /// <summary>Text inside <c>&lt;b&gt;</c>/<c>&lt;strong&gt;</c>/a heading/<c>&lt;title&gt;</c> — bold.</summary>
@@ -74,13 +74,13 @@ public enum SyntaxFormat
     /// <summary>Text that is both bold and italic.</summary>
     XhtmlBoldItalicText,
 
-    /// <summary>Link target (<c>href</c>, <c>src</c>, <c>url()</c>) that exists in the book (<c>LinkColor</c>).</summary>
+    /// <summary>Link target (<c>href</c>, <c>src</c>, <c>url()</c>) that exists in the book (theme key <c>link</c>).</summary>
     Link,
 
     /// <summary>Link target missing from the book — link color + error squiggle.</summary>
     BadLink,
 
-    /// <summary>Syntax error — squiggle in <c>ErrorUnderlineColor</c>; the kind is in <see cref="SyntaxSpan.Issue"/>.</summary>
+    /// <summary>Syntax error — the look of the theme key <c>errors.syntax</c> (a squiggle by default); the kind is in <see cref="SyntaxSpan.Issue"/>.</summary>
     SyntaxError,
 }
 

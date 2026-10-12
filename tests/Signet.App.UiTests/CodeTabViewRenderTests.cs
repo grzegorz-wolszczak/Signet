@@ -9,12 +9,14 @@ using AvaloniaEdit;
 using AvaloniaEdit.Rendering;
 using AwesomeAssertions;
 using Signet.App.Actions;
+using Signet.App.Infrastructure;
 using Signet.App.Services;
 using Signet.App.ViewModels.Tabs;
 using Signet.App.Views.Tabs;
 using Signet.Core.BookManipulation;
 using Signet.Core.MainUI;
 using Signet.Core.Misc;
+using Signet.Core.Themes;
 using Signet.Core.Resources;
 using Signet.Core.Spellcheck;
 using Signet.Core.Tests.TestSupport;
@@ -123,6 +125,9 @@ public sealed class CodeTabViewRenderTests
         return (window, vm);
     }
 
+    // The text color of a key in the theme in use.
+    private static Color Fg(ThemeKey key) => AppTheme.Current.Foreground(key)!.Value;
+
     // Color of the first visible text element of the given line (after colorizing).
     private static Color ForegroundOfFirstElement(Window window, int lineNumber)
     {
@@ -133,13 +138,38 @@ public sealed class CodeTabViewRenderTests
     }
 
     [AvaloniaFact]
-    public void Html_is_coloured_with_the_line_highlighter_and_CodeViewAppearance_colours()
+    public void Html_is_coloured_with_the_line_highlighter_and_the_colours_of_the_theme()
     {
         (Window window, _) = ShowCodeTab("<p class=\"x\">a</p>\n<!-- c -->", extended: false);
-        CodeViewAppearance colours = CodeViewAppearance.Default;
 
-        ForegroundOfFirstElement(window, 1).Should().Be(Color.Parse(colours.XhtmlHtmlColor));
-        ForegroundOfFirstElement(window, 2).Should().Be(Color.Parse(colours.XhtmlHtmlCommentColor));
+        ForegroundOfFirstElement(window, 1).Should().Be(Fg(ThemeKeys.XhtmlTag));
+        ForegroundOfFirstElement(window, 2).Should().Be(Fg(ThemeKeys.XhtmlComment));
+    }
+
+    [AvaloniaFact]
+    public void Another_theme_recolours_an_open_tab_at_once()
+    {
+        (Window window, _) = ShowCodeTab("<p class=\"x\">a</p>", extended: false);
+        TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
+        string folder = System.IO.Directory.CreateTempSubdirectory("signet-theme-").FullName;
+        try
+        {
+            ThemeStore store = new(folder);
+            AppTheme.Apply(Avalonia.Application.Current!, new ResolvedTheme(store.Get(ThemeStore.DarkId), store.Resolver));
+            Dispatcher.UIThread.RunJobs();
+            window.CaptureRenderedFrame();
+
+            ForegroundOfFirstElement(window, 1).Should().Be(Color.Parse("#569CD6"), "the tag color of Signet Dark");
+            ((ISolidColorBrush)editor.Background!).Color.Should().Be(Color.Parse("#1E1E1E"));
+            editor.TextArea.LeftMargins.OfType<Signet.App.CodeView.ThemedLineNumberMargin>().Single()
+                .Background.Should().BeNull("Signet Dark gives the line numbers no background of their own");
+        }
+        finally
+        {
+            AppTheme.Apply(Avalonia.Application.Current!, ResolvedTheme.Defaults);
+            System.IO.Directory.Delete(folder, recursive: true);
+            window.Close();
+        }
     }
 
     [AvaloniaTheory]
@@ -148,15 +178,14 @@ public sealed class CodeTabViewRenderTests
     public void Opening_a_comment_recolours_the_following_lines_after_the_edit(bool extended)
     {
         (Window window, CodeTabViewModel vm) = ShowCodeTab("<p>a</p>\n<p>b</p>\n<p>c</p>", extended);
-        CodeViewAppearance colours = CodeViewAppearance.Default;
-        ForegroundOfFirstElement(window, 3).Should().Be(Color.Parse(colours.XhtmlHtmlColor));
+        ForegroundOfFirstElement(window, 3).Should().Be(Fg(ThemeKeys.XhtmlTag));
 
         vm.Document.Insert(0, "<!-- ");
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
 
-        ForegroundOfFirstElement(window, 3).Should().Be(Color.Parse(colours.XhtmlHtmlCommentColor),
+        ForegroundOfFirstElement(window, 3).Should().Be(Fg(ThemeKeys.XhtmlComment),
             "the comment state from line 1 must carry over to the following lines without scrolling the view");
     }
 
@@ -174,7 +203,6 @@ public sealed class CodeTabViewRenderTests
         const string line1 = "<p><b>bold</b> <i>it</i></p>";
         const string line2 = "<style>p { color: red }</style>";
         (Window window, _) = ShowCodeTab(line1 + "\n" + line2);
-        CodeViewAppearance colours = CodeViewAppearance.Default;
 
         Typeface bold = ElementAt(window, 1, line1.IndexOf("bold", System.StringComparison.Ordinal)).TextRunProperties.Typeface;
         Typeface italic = ElementAt(window, 1, line1.IndexOf("it<", System.StringComparison.Ordinal)).TextRunProperties.Typeface;
@@ -182,7 +210,7 @@ public sealed class CodeTabViewRenderTests
         italic.Style.Should().Be(FontStyle.Italic);
 
         VisualLineElement red = ElementAt(window, 2, line2.IndexOf("red", System.StringComparison.Ordinal));
-        ((ISolidColorBrush)red.TextRunProperties.ForegroundBrush!).Color.Should().Be(Color.Parse(colours.CssConstantColor));
+        ((ISolidColorBrush)red.TextRunProperties.ForegroundBrush!).Color.Should().Be(Fg(ThemeKeys.CssConstant));
     }
 
     [AvaloniaFact]
@@ -193,7 +221,7 @@ public sealed class CodeTabViewRenderTests
 
         VisualLineElement red = ElementAt(window, 1, text.IndexOf("red", System.StringComparison.Ordinal));
         ((ISolidColorBrush)red.TextRunProperties.ForegroundBrush!).Color
-            .Should().Be(Color.Parse(CodeViewAppearance.Default.XhtmlCssColor));
+            .Should().Be(Fg(ThemeKeys.XhtmlCss));
     }
 
     [AvaloniaFact]

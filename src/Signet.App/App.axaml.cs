@@ -40,10 +40,11 @@ public partial class App : Application
             IServiceProvider services = Services
                 ?? throw new InvalidOperationException("App.Services was not set before Avalonia started.");
 
-            // Before icons: toolbar icon size is computed from the UI font height; the theme may name the icon set.
+            // The language first (the theme made from the old color settings gets a name in it); before icons: the toolbar
+            // icon size is computed from the UI font height, and the theme may name the icon set.
+            services.GetRequiredService<LocalizationManager>().ApplySaved();
             services.GetRequiredService<ThemeManager>().ApplySaved();
             services.GetRequiredService<UiDensityManager>().ApplySaved();
-            services.GetRequiredService<LocalizationManager>().ApplySaved();
             services.GetRequiredService<IconThemeManager>().ApplySaved(AppTheme.Current.IconSet);
 
             SettingsStore settings = services.GetRequiredService<SettingsStore>();

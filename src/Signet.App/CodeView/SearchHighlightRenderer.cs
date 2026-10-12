@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using Avalonia;
 using Avalonia.Media;
-using AvaloniaEdit.Document;
 using AvaloniaEdit.Rendering;
+using Signet.App.Infrastructure;
+using Signet.Core.Themes;
 
 namespace Signet.App.CodeView;
 
@@ -13,13 +13,11 @@ namespace Signet.App.CodeView;
 /// </summary>
 internal sealed class SearchHighlightRenderer : IBackgroundRenderer
 {
-    private static readonly IPen MarkedBorder =
-        new Pen(new SolidColorBrush(Color.FromArgb(0x90, 0x4D, 0x9B, 0xFF)), 1);
-    private static readonly IBrush MarkedFill = new SolidColorBrush(Color.FromArgb(0x18, 0x4D, 0x9B, 0xFF));
-
     private readonly List<(int Start, int End)> _matches = new();
     private (int Start, int End)? _marked;
-    private IBrush _matchFill = new SolidColorBrush(Color.Parse("#FFF0C4"));
+
+    /// <summary>The theme the matches (<c>search.match</c>) and the marked area (<c>search.marked</c>) are drawn in.</summary>
+    public ResolvedTheme Theme { get; set; } = AppTheme.Current;
 
     /// <inheritdoc />
     public KnownLayer Layer => KnownLayer.Selection;
@@ -33,12 +31,6 @@ internal sealed class SearchHighlightRenderer : IBackgroundRenderer
             _matches.AddRange(matches);
         }
     }
-
-    /// <summary>
-    /// Match background color (<c>CodeViewAppearance.SearchMatchBackgroundColor</c>). Opaque — the
-    /// Selection layer lies below the text, and the selection of the current match is drawn above it.
-    /// </summary>
-    public void SetMatchBrush(IBrush brush) => _matchFill = brush;
 
     /// <summary>Sets (or clears, for <c>null</c>) the "marked text" area.</summary>
     public void SetMarked((int Start, int End)? marked) => _marked = marked;
@@ -54,46 +46,17 @@ internal sealed class SearchHighlightRenderer : IBackgroundRenderer
             return;
         }
 
+        Color text = Theme.Foreground(ThemeKeys.EditorText) ?? Colors.Black;
         if (_marked is { } marked && marked.End > marked.Start)
         {
-            foreach (Rect rect in RectsFor(textView, marked.Start, marked.End))
-            {
-                drawingContext.DrawRectangle(MarkedFill, MarkedBorder, rect);
-            }
+            ThemePainter.Paint(textView, drawingContext, marked.Start, marked.End - marked.Start, Theme.Attributes(ThemeKeys.SearchMarked), text);
         }
 
+        // Opaque by default: the Selection layer lies below the text, and the selection of the current match is drawn above it.
+        TextAttributes match = Theme.Attributes(ThemeKeys.SearchMatch);
         foreach ((int start, int end) in _matches)
         {
-            if (end <= start)
-            {
-                continue;
-            }
-
-            foreach (Rect rect in RectsFor(textView, start, end))
-            {
-                drawingContext.DrawRectangle(_matchFill, null, rect.Inflate(new Thickness(0.5, 0)), 2, 2);
-            }
+            ThemePainter.Paint(textView, drawingContext, start, end - start, match, text, rounded: true);
         }
-    }
-
-    private static IEnumerable<Rect> RectsFor(TextView textView, int start, int end)
-    {
-        var segment = new HighlightSegment(start, end - start);
-        return BackgroundGeometryBuilder.GetRectsForSegment(textView, segment);
-    }
-
-    private sealed class HighlightSegment : ISegment
-    {
-        public HighlightSegment(int offset, int length)
-        {
-            Offset = offset;
-            Length = length;
-        }
-
-        public int Offset { get; }
-
-        public int Length { get; }
-
-        public int EndOffset => Offset + Length;
     }
 }

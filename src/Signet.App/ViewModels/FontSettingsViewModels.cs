@@ -4,7 +4,6 @@ using System.Collections.ObjectModel;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Signet.Core.Misc;
 
 namespace Signet.App.ViewModels;
 
@@ -25,7 +24,7 @@ public sealed class FontSettingViewModel : ObservableObject
     private readonly Func<string> _placeholder;
     private readonly Func<string?> _previewForeground;
     private readonly Func<string?> _previewBackground;
-    private readonly Func<(CodeViewAppearance Appearance, bool Extended)>? _codePreview;
+    private readonly Func<bool>? _codePreview;
     private readonly Action _restoreDefault;
 
     /// <summary>Creates the adapter of one font setting.</summary>
@@ -42,8 +41,9 @@ public sealed class FontSettingViewModel : ObservableObject
     /// <param name="previewForeground">The text color of the preview, when the place has its own.</param>
     /// <param name="previewBackground">The background of the preview, when the place has its own.</param>
     /// <param name="sizeHint">What the size field means besides a size, e.g. "0 = as the interface text".</param>
-    /// <param name="codePreview">For a font of the code editor: the colors and the kind of highlighting the preview shows
-    /// the sample with, as Code View does (with line numbers); <c>null</c> = the sample is plain text.</param>
+    /// <param name="codePreview">For a font of the code editor: whether the preview highlights the sample with the
+    /// extended highlighting (it shows it as Code View does, in the colors of the theme, with line numbers); <c>null</c>
+    /// = the sample is plain text.</param>
     internal FontSettingViewModel(
         string key,
         string label,
@@ -57,7 +57,7 @@ public sealed class FontSettingViewModel : ObservableObject
         Func<string?>? previewForeground = null,
         Func<string?>? previewBackground = null,
         string? sizeHint = null,
-        Func<(CodeViewAppearance Appearance, bool Extended)>? codePreview = null)
+        Func<bool>? codePreview = null)
     {
         Key = key ?? throw new ArgumentNullException(nameof(key));
         Label = label ?? throw new ArgumentNullException(nameof(label));
@@ -156,11 +156,8 @@ public sealed class FontSettingViewModel : ObservableObject
     /// <summary>Whether the preview shows the sample as code: highlighted as in Code View, with line numbers.</summary>
     public bool IsCodePreview => _codePreview is not null;
 
-    /// <summary>The Code View colors of the code preview; <c>null</c> when the sample is plain text.</summary>
-    public CodeViewAppearance? CodePreviewAppearance => _codePreview?.Invoke().Appearance;
-
     /// <summary>Whether the code preview uses the extended highlighting of Code View.</summary>
-    public bool CodePreviewExtended => _codePreview?.Invoke().Extended ?? false;
+    public bool CodePreviewExtended => _codePreview?.Invoke() ?? false;
 
     /// <summary>Sets the default typeface and size.</summary>
     public void RestoreDefault()

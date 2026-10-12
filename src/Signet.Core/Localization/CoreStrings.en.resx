@@ -6179,4 +6179,7 @@
   <data name="Theme_ParentMissing" xml:space="preserve">
     <value>The parent theme “{0}” does not exist; Signet Light becomes the parent.</value>
   </data>
+  <data name="Theme_MigratedName" xml:space="preserve">
+    <value>My colors</value>
+  </data>
 </root>

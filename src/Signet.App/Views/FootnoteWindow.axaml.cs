@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Threading;
 using Signet.App.CodeView;
+using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.ViewModels;
 using Signet.Core;
@@ -45,14 +46,17 @@ public partial class FootnoteWindow : Window
     {
     }
 
-    /// <summary>Initializes the window with the colors of Code View for the "Code" preview.</summary>
+    /// <summary>Initializes the window with the font of Code View and the colors of the theme for the "Code" preview.</summary>
     public FootnoteWindow(CodeViewAppearance appearance)
     {
         InitializeComponent();
-        if (CodeViewTextMate.CreateColorizer(CodeViewSyntax.Html, extended: false, linkExists: null, appearance) is { } colorizer)
+        ArgumentNullException.ThrowIfNull(appearance);
+        if (CodeViewTextMate.CreateColorizer(CodeViewSyntax.Html, extended: false, linkExists: null, AppTheme.Current) is { } colorizer)
         {
             PreviewCodeEditor.TextArea.TextView.LineTransformers.Add(colorizer);
         }
+
+        EditorTheming.Apply(PreviewCodeEditor, AppTheme.Current);
 
         if (!string.IsNullOrWhiteSpace(appearance.FontFamily))
         {
@@ -75,7 +79,7 @@ public partial class FootnoteWindow : Window
         AskAsync(owner, viewModel, CodeViewAppearance.Default);
 
     /// <summary>
-    /// Shows the window with the Code View colors of <paramref name="appearance"/> in the "Code" preview; returns what to
+    /// Shows the window with the Code View font of <paramref name="appearance"/> in the "Code" preview; returns what to
     /// do once accepted (add, save or remove), or <c>null</c>.
     /// </summary>
     public static Task<FootnoteRequest?> AskAsync(Window owner, FootnoteViewModel viewModel, CodeViewAppearance appearance)

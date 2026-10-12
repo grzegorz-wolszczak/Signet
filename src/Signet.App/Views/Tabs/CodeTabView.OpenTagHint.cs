@@ -6,8 +6,10 @@ using Avalonia.Media;
 using Avalonia.Threading;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Rendering;
+using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.Core.Misc;
+using Signet.Core.Themes;
 
 namespace Signet.App.Views.Tabs;
 
@@ -98,8 +100,9 @@ public partial class CodeTabView
         }
 
         OpenTagHintAppearance look = vm.OpenTagHintAppearance;
-        IBrush foreground = new SolidColorBrush(Color.Parse(look.Foreground));
-        OpenTagHintBorder.Background = new SolidColorBrush(Color.Parse(look.Background));
+        TextAttributes colors = AppTheme.Current.Attributes(ThemeKeys.HintsOpenTag);
+        IBrush foreground = colors.Foreground is { } fg ? new SolidColorBrush(ResolvedTheme.ToColor(fg)) : Editor.Foreground ?? Brushes.Black;
+        OpenTagHintBorder.Background = colors.Background is { } bg ? new SolidColorBrush(ResolvedTheme.ToColor(bg)) : Editor.Background;
         OpenTagHintTag.Foreground = foreground;
         OpenTagHintLine.Foreground = foreground;
         OpenTagHintTag.Text = document.GetText(open.Offset, open.Length);

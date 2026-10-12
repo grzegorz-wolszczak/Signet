@@ -1,19 +1,20 @@
 using System;
-using Avalonia;
 using Avalonia.Media;
-using AvaloniaEdit.Document;
 using AvaloniaEdit.Rendering;
+using Signet.App.Infrastructure;
 using Signet.Core.MainUI;
+using Signet.Core.Themes;
 
 namespace Signet.App.CodeView;
 
 /// <summary>
-/// Highlights the background of the opening and closing tag of the (X)HTML/XML pair at the current
+/// Marks the opening and closing tag of the (X)HTML/XML pair at the current
 /// caret position (setting <c>HighlightOpenCloseTags</c>).
 /// </summary>
 internal sealed class TagPairHighlightRenderer : IBackgroundRenderer
 {
-    private static readonly IBrush Fill = new SolidColorBrush(Color.FromArgb(0x40, 0x80, 0x80, 0x80));
+    /// <summary>The theme the pair is drawn in (<c>editor.tagPair</c>).</summary>
+    public ResolvedTheme Theme { get; set; } = AppTheme.Current;
 
     private TagPairHighlight? _pair;
 
@@ -34,36 +35,14 @@ internal sealed class TagPairHighlightRenderer : IBackgroundRenderer
             return;
         }
 
-        DrawRange(textView, drawingContext, pair.Open);
-        DrawRange(textView, drawingContext, pair.Close);
-    }
-
-    private static void DrawRange(TextView textView, DrawingContext context, (int Offset, int Length)? range)
-    {
-        if (range is not { } r || r.Length <= 0)
+        TextAttributes look = Theme.Attributes(ThemeKeys.EditorTagPair);
+        Color text = Theme.Foreground(ThemeKeys.EditorText) ?? Colors.Black;
+        foreach ((int Offset, int Length)? range in new[] { pair.Open, pair.Close })
         {
-            return;
+            if (range is { } r)
+            {
+                ThemePainter.Paint(textView, drawingContext, r.Offset, r.Length, look, text, rounded: true);
+            }
         }
-
-        var segment = new SimpleSegment(r.Offset, r.Length);
-        foreach (Rect rect in BackgroundGeometryBuilder.GetRectsForSegment(textView, segment))
-        {
-            context.DrawRectangle(Fill, null, rect.Inflate(new Thickness(0.5, 0)), 2, 2);
-        }
-    }
-
-    private sealed class SimpleSegment : ISegment
-    {
-        public SimpleSegment(int offset, int length)
-        {
-            Offset = offset;
-            Length = length;
-        }
-
-        public int Offset { get; }
-
-        public int Length { get; }
-
-        public int EndOffset => Offset + Length;
     }
 }

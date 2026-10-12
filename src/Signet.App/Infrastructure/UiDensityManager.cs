@@ -19,9 +19,9 @@ namespace Signet.App.Infrastructure;
 /// <item>tighter main and context menus (items, separators, icon margin).</item>
 /// </list>
 /// The code editor has its own font from the Code View settings and is not affected.
-/// <para>The manager also applies the warning appearance (Preferences → Appearance → Warnings,
-/// <see cref="ApplyWarningAppearance()"/>): its default font size follows the UI font, so both live here — and, next to it,
-/// the color of the error notifications (<see cref="ApplyErrorAppearance()"/>).</para>
+/// <para>The manager also applies the font size of the warnings (Preferences → Appearance › Fonts,
+/// <see cref="ApplyWarningAppearance()"/>): its default follows the UI font, so both live here. Their color comes from
+/// the theme (<see cref="AppTheme"/>).</para>
 /// </summary>
 /// <param name="settings">Application settings.</param>
 /// <param name="iconTheme">Recomputes the toolbar icon size after the font changes.</param>
@@ -101,7 +101,6 @@ public sealed class UiDensityManager(
 
         ApplyFont(app, _settings.UiFont, _settings.UiFontSize);
         ApplyWarning(app, _settings.WarningAppearance, EffectiveFontSize);
-        ApplyError(app, _settings.ErrorAppearance);
         ApplyTooltipFonts();
     }
 
@@ -115,8 +114,7 @@ public sealed class UiDensityManager(
     public double EffectiveFontSize => _settings.UiFontSize > 0 ? _settings.UiFontSize : DefaultFontSize;
 
     /// <summary>
-    /// Applies the saved warning appearance live (Preferences → Appearance → Warnings): the font size of the warning
-    /// texts (<c>SignetWarningFontSize</c>) and the warning color (<c>SignetWarningBrush</c>).
+    /// Applies the saved font size of the warning texts live (<c>SignetWarningFontSize</c>).
     /// </summary>
     public void ApplyWarningAppearance()
     {
@@ -127,44 +125,13 @@ public sealed class UiDensityManager(
     }
 
     /// <summary>
-    /// Sets the warning resources of the application: the font size (<paramref name="uiFontSize"/> when
-    /// <see cref="WarningAppearance.FontSize"/> is 0) and the <c>SignetWarningBrush</c> — controls pick them up via
-    /// <c>DynamicResource</c>.
+    /// Sets the font size of the warning texts (<paramref name="uiFontSize"/> when <see cref="WarningAppearance.FontSize"/>
+    /// is 0) — controls pick it up via <c>DynamicResource</c>.
     /// </summary>
     public static void ApplyWarning(Application app, WarningAppearance appearance, double uiFontSize)
     {
         System.ArgumentNullException.ThrowIfNull(app);
         app.Resources["SignetWarningFontSize"] = appearance.FontSize > 0 ? appearance.FontSize : uiFontSize;
-        SetBrush(app, "SignetWarningBrush", appearance.Color);
-    }
-
-    /// <summary>
-    /// Applies the saved color of the error notifications live (Preferences → Appearance → Errors):
-    /// <c>SignetErrorBrush</c>.
-    /// </summary>
-    public void ApplyErrorAppearance()
-    {
-        if (Application.Current is { } app)
-        {
-            ApplyError(app, _settings.ErrorAppearance);
-        }
-    }
-
-    /// <summary>
-    /// Sets the <c>SignetErrorBrush</c> — controls pick it up via <c>DynamicResource</c>.
-    /// </summary>
-    public static void ApplyError(Application app, ErrorAppearance appearance)
-    {
-        System.ArgumentNullException.ThrowIfNull(app);
-        SetBrush(app, "SignetErrorBrush", appearance.Color);
-    }
-
-    private static void SetBrush(Application app, string key, string color)
-    {
-        if (Color.TryParse(color, out Color parsed))
-        {
-            app.Resources[key] = new SolidColorBrush(parsed);
-        }
     }
 
     /// <summary>

@@ -151,52 +151,8 @@
               <TextBox Grid.Column="1" Text="{Binding CustomIconFolder}" />
             </Grid>
 
-            <!-- Warnings in dialogs: the warning color (the font size is on the Fonts page); applied live, the sample
-                 below shows the result. -->
-            <Border Classes="section">
-              <StackPanel Spacing="6">
-                <TextBlock Text="{loc:Loc PreferencesWindow_Warnings}" FontWeight="Bold" />
-                <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
-                  <TextBlock Grid.Column="0" Text="{Binding WarningColor.Label}" />
-                  <DockPanel Grid.Column="1" DataContext="{Binding WarningColor}">
-                    <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
-                            ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
-                    <TextBox Classes="colorValue" Text="{Binding Value}"
-                             Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
-                             Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
-                  </DockPanel>
-                </Grid>
-                <TextBlock x:Name="WarningSample" Classes="warning" Text="{loc:Loc PreferencesWindow_WarningSample}" />
-                <TextBlock Text="{loc:Loc PreferencesWindow_WarningsNote}" Opacity="0.7" TextWrapping="Wrap" />
-              </StackPanel>
-            </Border>
-
-            <!-- Error notifications (a blocked or failed operation): their color; applied live, the sample below
-                 shows the result. -->
-            <Border Classes="section">
-              <StackPanel Spacing="6">
-                <TextBlock Text="{loc:Loc PreferencesWindow_Errors}" FontWeight="Bold" />
-                <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
-                  <TextBlock Grid.Column="0" Text="{Binding ErrorColor.Label}" />
-                  <DockPanel Grid.Column="1" DataContext="{Binding ErrorColor}">
-                    <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
-                            ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
-                    <TextBox Classes="colorValue" Text="{Binding Value}"
-                             Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
-                             Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
-                  </DockPanel>
-                </Grid>
-                <StackPanel Orientation="Horizontal" Spacing="6">
-                  <views:NotificationBell UnreadCount="2" VerticalAlignment="Center" />
-                  <TextBlock x:Name="ErrorSample" Text="{loc:Loc PreferencesWindow_ErrorSample}"
-                             Foreground="{DynamicResource SignetErrorBrush}" TextWrapping="Wrap" VerticalAlignment="Center" />
-                </StackPanel>
-                <TextBlock Text="{loc:Loc PreferencesWindow_ErrorsNote}" Opacity="0.7" TextWrapping="Wrap" />
-              </StackPanel>
-            </Border>
-
-            <TextBlock Text="{loc:Loc PreferencesWindow_FontColorRestartNotice}"
-                       IsVisible="{Binding RestartNoticeVisible}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
+            <!-- The colors of the interface (warnings, error notifications, …) are in the theme. -->
+            <TextBlock Text="{loc:Loc PreferencesWindow_ColorsInTheme}" Opacity="0.7" TextWrapping="Wrap" />
 
             <Button Content="{loc:Loc PreferencesWindow_RestoreAppearanceDefaults}" Command="{Binding RestoreAppearanceDefaultsCommand}"
                     HorizontalAlignment="Left" />
@@ -251,7 +207,7 @@
       <!-- No settings of its own: the window fills the page with links to its subsections. -->
       <TabItem x:Name="CodeViewPage" Header="{loc:Loc PreferencesWindow_CodeView}" />
 
-      <!-- Code View › Appearance: highlighting, the opening tag hint and the editor colors. -->
+      <!-- Code View › Appearance: highlighting and the opening tag hint. -->
       <TabItem x:Name="CodeViewAppearancePage" Header="{loc:Loc PreferencesWindow_Appearance}" views:PreferencesPage.Parent="CodeViewPage">
         <ScrollViewer>
           <StackPanel Spacing="10" Margin="8">
@@ -266,57 +222,8 @@
                        IsEnabled="{Binding OpenTagHint}" />
             </Grid>
 
-            <!-- The colors of the hint (its font is on the Fonts page). -->
-            <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6"
-                  Margin="28,0,0,0" IsEnabled="{Binding OpenTagHint}">
-              <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding OpenTagHintBackground.Label}" />
-              <DockPanel Grid.Row="0" Grid.Column="1" DataContext="{Binding OpenTagHintBackground}">
-                <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
-                        ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
-                <TextBox Classes="colorValue" Text="{Binding Value}"
-                         Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
-                         Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
-              </DockPanel>
-
-              <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding OpenTagHintForeground.Label}" />
-              <DockPanel Grid.Row="1" Grid.Column="1" DataContext="{Binding OpenTagHintForeground}">
-                <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
-                        ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
-                <TextBox Classes="colorValue" Text="{Binding Value}"
-                         Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
-                         Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
-              </DockPanel>
-            </Grid>
-
-            <Border Classes="section">
-              <StackPanel Spacing="6">
-                <TextBlock Text="{loc:Loc PreferencesWindow_CodeViewColors}" FontWeight="Bold" />
-                <ContentControl Content="{Binding CodeView}">
-                  <ContentControl.DataTemplates>
-                    <DataTemplate DataType="vm:CodeViewAppearanceEditor">
-                      <StackPanel Spacing="6">
-                        <ItemsControl ItemsSource="{Binding Colors}">
-                          <ItemsControl.ItemTemplate>
-                            <DataTemplate DataType="vm:ColorSettingRow">
-                              <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8" Margin="0,2">
-                                <TextBlock Grid.Column="0" Text="{Binding Label}" />
-                                <DockPanel Grid.Column="1">
-                                  <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
-                                          ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
-                                  <TextBox Classes="colorValue" Text="{Binding Value}"
-                                           Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
-                                           Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
-                                </DockPanel>
-                              </Grid>
-                            </DataTemplate>
-                          </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                      </StackPanel>
-                    </DataTemplate>
-                  </ContentControl.DataTemplates>
-                </ContentControl>
-              </StackPanel>
-            </Border>
+            <!-- The colors of the editor and of the hint are in the theme, their fonts on the Fonts page. -->
+            <TextBlock Text="{loc:Loc PreferencesWindow_ColorsInTheme}" Opacity="0.7" TextWrapping="Wrap" />
 
             <TextBlock Text="{loc:Loc PreferencesWindow_FontColorRestartNotice}"
                        IsVisible="{Binding RestartNoticeVisible}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
@@ -367,14 +274,9 @@
                     </ComboBox.ItemTemplate>
                   </ComboBox>
 
-                  <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding PreviewHighlightColor.Label}" VerticalAlignment="Center" />
-                  <DockPanel Grid.Row="1" Grid.Column="1" DataContext="{Binding PreviewHighlightColor}">
-                    <Button DockPanel.Dock="Right" Content="…" Command="{Binding ChooseColorCommand}"
-                            ToolTip.Tip="{loc:Loc PreferencesWindow_ChooseColor}" Margin="6,0,0,0" />
-                    <TextBox Classes="colorValue" Text="{Binding Value}"
-                             Background="{Binding Value, Converter={x:Static infra:ColorConverters.ToBrush}}"
-                             Foreground="{Binding Value, Converter={x:Static infra:ColorConverters.ToContrastingForeground}}" />
-                  </DockPanel>
+                  <!-- The color of the highlight is in the theme (preview.highlight). -->
+                  <TextBlock Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Text="{loc:Loc PreferencesWindow_ColorsInTheme}"
+                             Opacity="0.7" TextWrapping="Wrap" />
 
                   <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightOpacity}" VerticalAlignment="Center" TextWrapping="Wrap"
                              IsEnabled="{Binding IsPreviewHighlightBackground}" />

@@ -6179,4 +6179,7 @@
   <data name="Theme_ParentMissing" xml:space="preserve">
     <value>Motyw bazowy „{0}” nie istnieje; motywem bazowym zostaje Signet Light.</value>
   </data>
+  <data name="Theme_MigratedName" xml:space="preserve">
+    <value>Moje kolory</value>
+  </data>
 </root>

@@ -20,6 +20,7 @@ using Signet.App.Services;
 using Signet.App.ViewModels;
 using Signet.App.Views;
 using Signet.Core.Misc;
+using Signet.Core.Themes;
 using Signet.Core.Spellcheck;
 
 namespace Signet.App.UiTests;
@@ -406,34 +407,6 @@ public sealed class PreferencesWindowRenderTests
     }
 
     /// <summary>
-    /// The sections of the "Appearance" page (Warnings, Errors) should be discrete cards with a border, so they do not
-    /// blend into one list.
-    /// </summary>
-    [AvaloniaFact]
-    public void Appearance_sections_are_drawn_as_bordered_cards()
-    {
-        PreferencesWindow window = BuildWindow();
-        window.Show();
-        Dispatcher.UIThread.RunJobs();
-
-        ShowPage(window, "AppearancePage");
-
-        Border[] sections = window.GetVisualDescendants()
-            .OfType<Border>()
-            .Where(b => b.Classes.Contains("section"))
-            .ToArray();
-
-        // Warnings, Errors.
-        sections.Should().HaveCount(2);
-        sections.Should().OnlyContain(b => b.BorderBrush != null);
-        sections.Should().OnlyContain(b => b.BorderThickness == new Avalonia.Thickness(1));
-        window.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Name == "WarningSample")
-            .Classes.Should().Contain("warning", "the sample shows the warning look live");
-        window.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Name == "ErrorSample")
-            .Foreground.Should().NotBeNull("the sample shows the error color live");
-    }
-
-    /// <summary>
     /// The "Keyboard Shortcuts" tab is the keymap: a tree of the actions with their shortcuts, filtered by the search
     /// box, and "Find Shortcut" records a pressed key combination as the shortcut filter.
     /// </summary>
@@ -666,7 +639,7 @@ public sealed class PreferencesWindowRenderTests
         code.Text.Should().Be(Strings.Get("FontPreview_Code"));
         code.FontFamily.Name.Should().Be(vm.CodeView.FontFamily);
         code.FontSize.Should().Be(vm.CodeView.FontSize);
-        code.ShowLineNumbers.Should().BeTrue();
+        code.TextArea.LeftMargins.OfType<ThemedLineNumberMargin>().Should().ContainSingle("line numbers in the colors of the theme");
         code.TextArea.TextView.LineTransformers.Should().Contain(t => t.GetType().Name.StartsWith("LineStateSyntaxColorizer"),
             "the sample is highlighted as in Code View");
 
@@ -678,7 +651,7 @@ public sealed class PreferencesWindowRenderTests
         code.IsVisible.Should().BeFalse();
         preview.Text.Should().StartWith(Strings.Get("FontPreview_OpenTagHint"));
         page.FindControl<Border>("PreviewSurface")!.Background.Should().BeAssignableTo<ISolidColorBrush>()
-            .Which.Color.Should().Be(Color.Parse(vm.OpenTagHintBackground.Value));
+            .Which.Color.Should().Be(AppTheme.Current.Background(ThemeKeys.HintsOpenTag));
 
         rows[1].FindControl<NumericUpDown>("SizeBox")!.Value = 21;
         Dispatcher.UIThread.RunJobs();
@@ -755,46 +728,14 @@ public sealed class PreferencesWindowRenderTests
             .Should().Contain(t => t.Text == Strings.Get("PreferencesWindow_PreviewRefreshDelay"));
 
         ShowPage(window, "PreviewAppearancePage");
-        TextBox[] colors = window.GetVisualDescendants().OfType<TextBox>()
-            .Where(t => t.Classes.Contains("colorValue"))
-            .ToArray();
-        colors.Should().ContainSingle()
-            .Which.Background.Should().BeAssignableTo<ISolidColorBrush>()
-            .Which.Color.Should().Be(Color.Parse(PreviewHighlight.Default.Color));
+        window.GetVisualDescendants().OfType<TextBox>().Should().NotContain(t => t.Classes.Contains("colorValue"),
+            "the color of the highlight is in the theme");
         window.GetVisualDescendants().OfType<TextBlock>()
-            .Should().Contain(t => t.Text == Strings.Get("PreferencesWindow_PreviewHighlightColor"));
+            .Should().Contain(t => t.Text == Strings.Get("PreferencesWindow_ColorsInTheme"));
 
         ShowPage(window, "PreviewFontsPage");
         window.GetVisualDescendants().OfType<FontSettingView>().Where(r => r.IsEffectivelyVisible).Select(r => r.Name)
             .Should().Equal("FontPreviewStandard", "FontPreviewSerif", "FontPreviewSansSerif", "FontPreviewSize", "FontTooltipPreview");
-    }
-
-    /// <summary>The Code View color fields have a background in the color of the entered value — also when focused — and readable text.</summary>
-    [AvaloniaFact]
-    public void Code_view_color_fields_are_painted_with_their_own_color()
-    {
-        PreferencesWindow window = BuildWindow();
-        window.Show();
-        Dispatcher.UIThread.RunJobs();
-        ShowPage(window, "CodeViewAppearancePage");
-
-        TextBox[] fields = window.GetVisualDescendants().OfType<TextBox>()
-            .Where(t => t.Classes.Contains("colorValue"))
-            .ToArray();
-        fields.Should().NotBeEmpty();
-
-        TextBox dark = fields.First(t => t.Text == "#000080");
-        ((ISolidColorBrush)dark.Background!).Color.Should().Be(Color.Parse("#000080"));
-        ((ISolidColorBrush)dark.Foreground!).Color.Should().Be(Colors.White);
-
-        TextBox light = fields.First(t => t.Text == "#FFFFBF");
-        ((ISolidColorBrush)light.Foreground!).Color.Should().Be(Colors.Black);
-
-        dark.Focus();
-        Dispatcher.UIThread.RunJobs();
-        window.CaptureRenderedFrame();
-        Border frame = dark.GetVisualDescendants().OfType<Border>().First(b => b.Name == "PART_BorderElement");
-        ((ISolidColorBrush)frame.Background!).Color.Should().Be(Color.Parse("#000080"), "focus must not restore the theme background");
     }
 
     /// <summary>An invalid color value does not paint the field — the theme look returns.</summary>

@@ -1,26 +1,24 @@
 using System;
-using System.Collections.Generic;
-using Avalonia;
 using Avalonia.Media;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Rendering;
+using Signet.App.Infrastructure;
+using Signet.Core.Themes;
 
 namespace Signet.App.CodeView;
 
 /// <summary>
-/// Draws a red squiggle under the text range reported as a well-formedness error, and a yellow one
-/// under the range of a non-blocking structural warning (e.g. a missing DOCTYPE).
-/// At most one error and one warning range at a time.
+/// Marks the text range reported as a well-formedness error (<c>errors.wellFormed</c>, a red squiggle by default) and
+/// the range of a non-blocking structural warning, e.g. a missing DOCTYPE (<c>errors.wellFormedWarning</c>, an amber
+/// one). At most one error and one warning range at a time.
 /// </summary>
 internal sealed class WellFormedErrorRenderer : IBackgroundRenderer
 {
-    private static readonly Pen SquigglePen = new(new SolidColorBrush(Color.FromRgb(0xE0, 0x1B, 0x1B)), 1);
-
-    // Amber rather than pure yellow, so it stays visible on the light theme background too.
-    private static readonly Pen WarningSquigglePen = new(new SolidColorBrush(Color.FromRgb(0xE6, 0xA8, 0x00)), 1);
-
     private ErrorSegment? _segment;
     private ErrorSegment? _warningSegment;
+
+    /// <summary>The theme the marks are drawn in.</summary>
+    public ResolvedTheme Theme { get; set; } = AppTheme.Current;
 
     /// <inheritdoc />
     public KnownLayer Layer => KnownLayer.Selection;
@@ -58,38 +56,15 @@ internal sealed class WellFormedErrorRenderer : IBackgroundRenderer
             return;
         }
 
+        Color text = Theme.Foreground(ThemeKeys.EditorText) ?? Colors.Black;
         if (_warningSegment is { } warning)
         {
-            foreach (Rect rect in BackgroundGeometryBuilder.GetRectsForSegment(textView, warning))
-            {
-                DrawSquiggle(drawingContext, rect, WarningSquigglePen);
-            }
+            ThemePainter.Paint(textView, drawingContext, warning.Offset, warning.Length, Theme.Attributes(ThemeKeys.ErrorsWellFormedWarning), text);
         }
 
         if (_segment is { } segment)
         {
-            foreach (Rect rect in BackgroundGeometryBuilder.GetRectsForSegment(textView, segment))
-            {
-                DrawSquiggle(drawingContext, rect, SquigglePen);
-            }
-        }
-    }
-
-    private static void DrawSquiggle(DrawingContext context, Rect rect, Pen pen)
-    {
-        double baseline = rect.Bottom - 1;
-        const double step = 2.0;
-        var points = new List<Point>();
-        bool up = true;
-        for (double x = rect.Left; x < rect.Right; x += step)
-        {
-            points.Add(new Point(x, baseline + (up ? -2 : 0)));
-            up = !up;
-        }
-
-        for (int i = 0; i < points.Count - 1; i++)
-        {
-            context.DrawLine(pen, points[i], points[i + 1]);
+            ThemePainter.Paint(textView, drawingContext, segment.Offset, segment.Length, Theme.Attributes(ThemeKeys.ErrorsWellFormed), text);
         }
     }
 

@@ -2,12 +2,13 @@ using System;
 using System.Globalization;
 using System.Text;
 using Signet.Core.Misc;
+using Signet.Core.Themes;
 
 namespace Signet.App.Infrastructure;
 
 /// <summary>
 /// Preview page script: scrolls to the <c>[data-signet-loc]</c> element (Code View → Preview
-/// synchronization) and highlights its block according to <see cref="PreviewHighlight"/> — with a background or
+/// synchronization) and highlights its block according to <see cref="PreviewHighlight"/> in the color of the theme — with a background or
 /// an outline, permanently or fading out after a delay.
 /// </summary>
 public static class PreviewHighlightScript
@@ -26,10 +27,11 @@ public static class PreviewHighlightScript
     /// <summary>Builds the script for the element with the given <paramref name="loc"/>.</summary>
     /// <param name="loc">The element's <c>data-signet-loc</c> value.</param>
     /// <param name="highlight">Highlight settings.</param>
-    public static string Build(int loc, PreviewHighlight highlight)
+    /// <param name="highlightColor">The color of the highlight (the theme's <c>preview.highlight</c>; its transparency is not used).</param>
+    public static string Build(int loc, PreviewHighlight highlight, ThemeColor highlightColor)
     {
         PreviewHighlight h = highlight.Normalized();
-        string color = h.Color;
+        string color = ThemeColor.FromRgb(highlightColor.R, highlightColor.G, highlightColor.B).ToString();
         bool outline = h.Style == PreviewHighlightStyle.Outline;
 
         StringBuilder js = new();
@@ -81,4 +83,43 @@ public static class PreviewHighlightScript
         string alpha = (opacityPercent / 100.0).ToString("0.##", CultureInfo.InvariantCulture);
         return string.Create(CultureInfo.InvariantCulture, $"rgba({r},{g},{b},{alpha})");
     }
+}
+
+/// <summary>
+/// Preview page script: forces the background and the text color of the theme (<c>preview.background</c>,
+/// <c>preview.text</c>) on the book — e.g. a dark page for a dark theme — or removes them when the theme sets none.
+/// </summary>
+public static class PreviewThemeScript
+{
+    /// <summary>The id of the <c>&lt;style&gt;</c> element the script adds to the page.</summary>
+    public const string StyleId = "signet-theme-preview-colors";
+
+    /// <summary>Builds the script; with both colors unset it only removes an earlier style.</summary>
+    public static string Build(ThemeColor? background, ThemeColor? text)
+    {
+        StringBuilder css = new();
+        if (background is { } bg)
+        {
+            css.Append("html,body{background:").Append(Css(bg)).Append(" !important;}");
+        }
+
+        if (text is { } fg)
+        {
+            css.Append("body,body *{color:").Append(Css(fg)).Append(" !important;}");
+        }
+
+        StringBuilder js = new();
+        js.Append("(function(){var old=document.getElementById('").Append(StyleId).Append("');if(old)old.remove();");
+        if (css.Length > 0)
+        {
+            js.Append("var s=document.createElement('style');s.id='").Append(StyleId).Append("';s.textContent='")
+                .Append(css).Append("';(document.head||document.documentElement).appendChild(s);");
+        }
+
+        return js.Append("})();").ToString();
+    }
+
+    // "rgba(r,g,b,a)" — keeps the transparency of the theme color.
+    private static string Css(ThemeColor c) => string.Create(
+        CultureInfo.InvariantCulture, $"rgba({c.R},{c.G},{c.B},{(c.A / 255.0).ToString("0.###", CultureInfo.InvariantCulture)})");
 }

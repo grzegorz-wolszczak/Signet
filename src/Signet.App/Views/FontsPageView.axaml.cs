@@ -2,6 +2,7 @@ using System.ComponentModel;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Media;
+using Signet.App.Infrastructure;
 using Signet.App.ViewModels;
 
 namespace Signet.App.Views;
@@ -90,9 +91,9 @@ public partial class FontsPageView : UserControl
         CodePreview.WordWrap = wrap;
         PlainPreview.HorizontalScrollBarVisibility = wrap ? ScrollBarVisibility.Disabled : ScrollBarVisibility.Auto;
         PreviewText.TextWrapping = wrap ? TextWrapping.Wrap : TextWrapping.NoWrap;
-        if (_shown is { IsCodePreview: true, CodePreviewAppearance: { } appearance })
+        if (_shown is { IsCodePreview: true })
         {
-            CodePreview.Show(_shown.PreviewText, _shown.EffectiveFamily, _shown.EffectiveSize, appearance, _shown.CodePreviewExtended);
+            CodePreview.Show(_shown.PreviewText, _shown.EffectiveFamily, _shown.EffectiveSize, AppTheme.Current, _shown.CodePreviewExtended);
         }
     }
 }

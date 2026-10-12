@@ -7,11 +7,10 @@
 
   <!-- FontFamily and FontSize below are fallback values (designer preview); in the running
        application CodeTabView.ApplyFont overrides the typeface and size with values from
-       CodeViewAppearance (Preferences → Appearance → Code View). -->
+       CodeViewAppearance (Preferences → Code View › Appearance › Fonts); the colors come from the theme. -->
   <Panel>
     <ae:TextEditor x:Name="Editor"
                    Document="{Binding Document}"
-                   ShowLineNumbers="True"
                    WordWrap="{Binding WordWrap}"
                    FontFamily="Cascadia Code,Cascadia Mono,Consolas,Menlo,Monospace"
                    FontSize="13"
@@ -22,7 +21,8 @@
          look rather than a ToolTip, so it does not interfere with the error tooltips of the text view. -->
     <Popup x:Name="OpenTagHintPopup" PlacementTarget="{Binding #Editor}" Placement="Pointer"
            HorizontalOffset="12" VerticalOffset="18" IsLightDismissEnabled="False">
-      <!-- Background, text color and font come from Preferences (OpenTagHintAppearance) when the hint opens. -->
+      <!-- Background and text color come from the theme (hints.openTag), the font from Preferences
+           (OpenTagHintAppearance) when the hint opens. -->
       <Border x:Name="OpenTagHintBorder"
               BorderBrush="{DynamicResource ToolTipBorderBrush}"
               BorderThickness="{DynamicResource ToolTipBorderThemeThickness}"

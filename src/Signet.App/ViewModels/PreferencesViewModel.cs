@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Avalonia.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -94,9 +93,6 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _previewHighlightOutlineWidth = highlight.OutlineWidth;
         _previewHighlightAutoHide = highlight.AutoHide;
         _previewHighlightAutoHideDelay = highlight.AutoHideDelayMs;
-        PreviewHighlightColor = new ColorSettingRow(
-            "PreviewHighlight", Strings.Get("PreferencesWindow_PreviewHighlightColor"), highlight.Color,
-            _ => PersistPreviewHighlight(), PickColorAsync);
 
         SpecialCharacterAppearance specialChar = _settings.SpecialCharacterAppearance;
         _specialCharacterFontFamily = specialChar.FontFamily;
@@ -104,14 +100,6 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
         WarningAppearance warnings = _settings.WarningAppearance;
         _warningFontSize = warnings.FontSize;
-        WarningColor = new ColorSettingRow(
-            "Warning", Strings.Get("PreferencesWindow_WarningColor"), warnings.Color,
-            _ => PersistWarningAppearance(), PickColorAsync);
-
-        ErrorAppearance errors = _settings.ErrorAppearance;
-        ErrorColor = new ColorSettingRow(
-            "Error", Strings.Get("PreferencesWindow_ErrorColor"), errors.Color,
-            _ => PersistErrorAppearance(), PickColorAsync);
 
         _extendedHighlighting = _settings.CodeViewExtendedHighlighting;
         _openTagHint = _settings.CodeViewOpenTagHint;
@@ -119,13 +107,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         OpenTagHintAppearance hintLook = _settings.OpenTagHintAppearance;
         _openTagHintFontFamily = hintLook.FontFamily;
         _openTagHintFontSize = hintLook.FontSize;
-        OpenTagHintBackground = new ColorSettingRow(
-            "OpenTagHintBackground", Strings.Get("PreferencesWindow_OpenTagHintBackground"), hintLook.Background,
-            _ => PersistOpenTagHintAppearance(), PickColorAsync);
-        OpenTagHintForeground = new ColorSettingRow(
-            "OpenTagHintForeground", Strings.Get("PreferencesWindow_OpenTagHintForeground"), hintLook.Foreground,
-            _ => PersistOpenTagHintAppearance(), PickColorAsync);
-        CodeView = new CodeViewAppearanceEditor(_settings.CodeViewAppearance, a => _settings.CodeViewAppearance = a, PickFontAsync, PickColorAsync);
+        CodeView = new CodeViewAppearanceEditor(_settings.CodeViewAppearance, a => _settings.CodeViewAppearance = a, PickFontAsync);
 
         // ---- General ----
         _defaultVersionIsEpub3 = _settings.DefaultVersion.StartsWith('3');
@@ -246,11 +228,6 @@ public sealed partial class PreferencesViewModel : ObservableObject
         if (Changed("warning_appearance"))
         {
             _uiDensity.ApplyWarningAppearance();
-        }
-
-        if (Changed("error_appearance"))
-        {
-            _uiDensity.ApplyErrorAppearance();
         }
 
         if (Changed("tooltip_fonts"))
@@ -435,9 +412,6 @@ public sealed partial class PreferencesViewModel : ObservableObject
     /// <summary>Whether the border is selected (the thickness field is active).</summary>
     public bool IsPreviewHighlightOutline => PreviewHighlightStyle == PreviewHighlightStyle.Outline;
 
-    /// <summary>Highlight color.</summary>
-    public ColorSettingRow PreviewHighlightColor { get; }
-
     /// <summary>Background opacity in percent (5–100; out of range — clamped on save).</summary>
     [ObservableProperty]
     private int _previewHighlightOpacity;
@@ -467,7 +441,6 @@ public sealed partial class PreferencesViewModel : ObservableObject
     private void PersistPreviewHighlight() =>
         _settings.PreviewHighlight = new PreviewHighlight(
             PreviewHighlightStyle,
-            PreviewHighlightColor.Value,
             PreviewHighlightOpacity,
             PreviewHighlightOutlineWidth,
             PreviewHighlightAutoHide,
@@ -495,22 +468,11 @@ public sealed partial class PreferencesViewModel : ObservableObject
     [ObservableProperty]
     private int _warningFontSize;
 
-    /// <summary>Warning color (applied live).</summary>
-    public ColorSettingRow WarningColor { get; }
-
     partial void OnWarningFontSizeChanged(int value) => PersistWarningAppearance();
 
     private void PersistWarningAppearance()
     {
-        _settings.WarningAppearance = new WarningAppearance(WarningFontSize, WarningColor.Value);
-    }
-
-    /// <summary>Color of the error notifications (applied live).</summary>
-    public ColorSettingRow ErrorColor { get; }
-
-    private void PersistErrorAppearance()
-    {
-        _settings.ErrorAppearance = new ErrorAppearance(ErrorColor.Value);
+        _settings.WarningAppearance = new WarningAppearance(WarningFontSize);
     }
 
     /// <summary>
@@ -525,12 +487,9 @@ public sealed partial class PreferencesViewModel : ObservableObject
     /// <summary>
     /// Color picker window (title = the field label, initial color <c>#RRGGBB</c>) — attached by the
     /// view. Returns the chosen color, or <see langword="null"/> after Cancel; a <see langword="null"/>
-    /// delegate (tests without a UI) = the pick buttons do nothing.
+    /// delegate (tests without a UI) = the pick buttons do nothing. For the theme editor.
     /// </summary>
     public Func<string, string, Task<string?>>? ColorPicker { get; set; }
-
-    private Task<string?> PickColorAsync(string title, string initial) =>
-        ColorPicker is { } picker ? picker(title, initial) : Task.FromResult<string?>(null);
 
     /// <summary>"Choose…" next to the standard preview font (typeface only — the size is shared).</summary>
     [RelayCommand]
@@ -603,12 +562,6 @@ public sealed partial class PreferencesViewModel : ObservableObject
     [ObservableProperty]
     private int _openTagHintFontSize;
 
-    /// <summary>Background of the opening tag hint.</summary>
-    public ColorSettingRow OpenTagHintBackground { get; }
-
-    /// <summary>Text color of the opening tag hint.</summary>
-    public ColorSettingRow OpenTagHintForeground { get; }
-
     partial void OnOpenTagHintFontFamilyChanged(string value) => PersistOpenTagHintAppearance();
 
     partial void OnOpenTagHintFontSizeChanged(int value) => PersistOpenTagHintAppearance();
@@ -636,13 +589,9 @@ public sealed partial class PreferencesViewModel : ObservableObject
     }
 
     private void PersistOpenTagHintAppearance() =>
-        _settings.OpenTagHintAppearance = new OpenTagHintAppearance(
-            OpenTagHintFontFamily,
-            OpenTagHintFontSize,
-            OpenTagHintBackground.Value,
-            OpenTagHintForeground.Value);
+        _settings.OpenTagHintAppearance = new OpenTagHintAppearance(OpenTagHintFontFamily, OpenTagHintFontSize);
 
-    /// <summary>Code View appearance editor (font and colors).</summary>
+    /// <summary>Code View font editor.</summary>
     public CodeViewAppearanceEditor CodeView { get; }
 
     /// <summary>
@@ -671,19 +620,12 @@ public sealed partial class PreferencesViewModel : ObservableObject
         CodeView.ResetTo(CodeViewAppearance.Default);
 
         OpenTagHintAppearance hintLook = OpenTagHintAppearance.Default;
-        OpenTagHintBackground.SetValueSilently(hintLook.Background);
-        OpenTagHintForeground.SetValueSilently(hintLook.Foreground);
         OpenTagHintFontFamily = hintLook.FontFamily;
         OpenTagHintFontSize = hintLook.FontSize;
 
         WarningAppearance warnings = WarningAppearance.Default;
-        WarningColor.SetValueSilently(warnings.Color);
         WarningFontSize = warnings.FontSize;
         PersistWarningAppearance();
-
-        ErrorAppearance errors = ErrorAppearance.Default;
-        ErrorColor.SetValueSilently(errors.Color);
-        PersistErrorAppearance();
 
         // The tooltip fonts were cleared with the other appearance keys.
         RefreshFontPages();
@@ -1512,41 +1454,9 @@ public sealed partial class PreferencesViewModel : ObservableObject
     }
 }
 
-/// <summary>
-/// Editor of the <see cref="CodeViewAppearance"/> — the font + a list
-/// of colors as editable rows (label + <c>#RRGGBB</c> value).
-/// </summary>
+/// <summary>Editor of the <see cref="CodeViewAppearance"/>: the font of Code View (its colors are in the theme).</summary>
 public sealed partial class CodeViewAppearanceEditor : ObservableObject
 {
-    [GeneratedRegex("[^A-Za-z0-9]")]
-    private static partial Regex NonAlphanumeric();
-
-    private static readonly (string Label, Func<CodeViewAppearance, string> Get, Func<CodeViewAppearance, string, CodeViewAppearance> With)[] ColorFields =
-    {
-        ("CSS Comment", a => a.CssCommentColor, (a, v) => a with { CssCommentColor = v }),
-        ("CSS Property", a => a.CssPropertyColor, (a, v) => a with { CssPropertyColor = v }),
-        ("CSS Quote", a => a.CssQuoteColor, (a, v) => a with { CssQuoteColor = v }),
-        ("CSS Selector", a => a.CssSelectorColor, (a, v) => a with { CssSelectorColor = v }),
-        ("CSS Value", a => a.CssValueColor, (a, v) => a with { CssValueColor = v }),
-        ("Line Highlight", a => a.LineHighlightColor, (a, v) => a with { LineHighlightColor = v }),
-        ("XHTML Attribute Name", a => a.XhtmlAttributeNameColor, (a, v) => a with { XhtmlAttributeNameColor = v }),
-        ("XHTML Attribute Value", a => a.XhtmlAttributeValueColor, (a, v) => a with { XhtmlAttributeValueColor = v }),
-        ("XHTML CSS", a => a.XhtmlCssColor, (a, v) => a with { XhtmlCssColor = v }),
-        ("XHTML CSS Comment", a => a.XhtmlCssCommentColor, (a, v) => a with { XhtmlCssCommentColor = v }),
-        ("XHTML DOCTYPE", a => a.XhtmlDoctypeColor, (a, v) => a with { XhtmlDoctypeColor = v }),
-        ("XHTML Entity", a => a.XhtmlEntityColor, (a, v) => a with { XhtmlEntityColor = v }),
-        ("XHTML HTML", a => a.XhtmlHtmlColor, (a, v) => a with { XhtmlHtmlColor = v }),
-        ("XHTML HTML Comment", a => a.XhtmlHtmlCommentColor, (a, v) => a with { XhtmlHtmlCommentColor = v }),
-        ("CSS Special Selector", a => a.CssSpecialSelectorColor, (a, v) => a with { CssSpecialSelectorColor = v }),
-        ("CSS At-Rule", a => a.CssAtRuleColor, (a, v) => a with { CssAtRuleColor = v }),
-        ("CSS Constant", a => a.CssConstantColor, (a, v) => a with { CssConstantColor = v }),
-        ("XHTML Namespace Prefix", a => a.XhtmlNamespacePrefixColor, (a, v) => a with { XhtmlNamespacePrefixColor = v }),
-        ("Link", a => a.LinkColor, (a, v) => a with { LinkColor = v }),
-        ("Error Underline", a => a.ErrorUnderlineColor, (a, v) => a with { ErrorUnderlineColor = v }),
-        ("Search Match Background", a => a.SearchMatchBackgroundColor, (a, v) => a with { SearchMatchBackgroundColor = v }),
-        ("Selection Background", a => a.SelectionBackgroundColor, (a, v) => a with { SelectionBackgroundColor = v }),
-    };
-
     private readonly Action<CodeViewAppearance> _persist;
     private readonly Func<FontPickRequest, Task<FontPickResult?>> _pickFont;
 
@@ -1554,19 +1464,11 @@ public sealed partial class CodeViewAppearanceEditor : ObservableObject
     internal CodeViewAppearanceEditor(
         CodeViewAppearance initial,
         Action<CodeViewAppearance> persist,
-        Func<FontPickRequest, Task<FontPickResult?>> pickFont,
-        Func<string, string, Task<string?>> pickColor)
+        Func<FontPickRequest, Task<FontPickResult?>> pickFont)
     {
         _pickFont = pickFont;
         _fontFamily = initial.FontFamily;
         _fontSize = initial.FontSize;
-        Colors = new ObservableCollection<ColorSettingRow>(
-            ColorFields.Select(f => new ColorSettingRow(
-                f.Label,
-                Strings.TryGet("CodeViewColor_" + NonAlphanumeric().Replace(f.Label, string.Empty)) ?? f.Label,
-                f.Get(initial),
-                _ => Persist(),
-                pickColor)));
         _persist = persist;
     }
 
@@ -1593,86 +1495,16 @@ public sealed partial class CodeViewAppearanceEditor : ObservableObject
         }
     }
 
-    /// <summary>Highlight color rows (label + hex value).</summary>
-    public ObservableCollection<ColorSettingRow> Colors { get; }
-
-    /// <summary>Restores all fields to the given defaults.</summary>
+    /// <summary>Restores the given defaults.</summary>
     public void ResetTo(CodeViewAppearance defaults)
     {
+        ArgumentNullException.ThrowIfNull(defaults);
         FontFamily = defaults.FontFamily;
         FontSize = defaults.FontSize;
-        foreach (ColorSettingRow row in Colors)
-        {
-            (string _, Func<CodeViewAppearance, string> get, _) = ColorFields.First(f => f.Label == row.Key);
-            row.SetValueSilently(get(defaults));
-        }
-
         Persist();
     }
 
-    private void Persist()
-    {
-        CodeViewAppearance appearance = new() { FontFamily = FontFamily, FontSize = FontSize };
-        foreach (ColorSettingRow row in Colors)
-        {
-            (string _, _, Func<CodeViewAppearance, string, CodeViewAppearance> with) = ColorFields.First(f => f.Label == row.Key);
-            appearance = with(appearance, row.Value);
-        }
-
-        _persist(appearance);
-    }
-}
-
-/// <summary>A single Code View highlight color row — a label + a <c>#RRGGBB</c> value editable in the UI.</summary>
-public sealed partial class ColorSettingRow : ObservableObject
-{
-    private readonly Action<string> _onChanged;
-    private readonly Func<string, string, Task<string?>> _pickColor;
-    private bool _suppressNotify;
-
-    internal ColorSettingRow(string key, string label, string value, Action<string> onChanged, Func<string, string, Task<string?>> pickColor)
-    {
-        Key = key;
-        Label = label;
-        _value = value;
-        _onChanged = onChanged;
-        _pickColor = pickColor;
-    }
-
-    /// <summary>"…" — the color picker window; OK sets the chosen color, Cancel keeps the current one.</summary>
-    [RelayCommand]
-    private async Task ChooseColor()
-    {
-        if (await _pickColor(Label, Value) is { } chosen)
-        {
-            Value = chosen;
-        }
-    }
-
-    /// <summary>Field identifier — an English name (e.g. "CSS Comment").</summary>
-    public string Key { get; }
-
-    /// <summary>Field label in the UI language.</summary>
-    public string Label { get; }
-
-    /// <summary>Color value as <c>#RRGGBB</c>.</summary>
-    [ObservableProperty]
-    private string _value;
-
-    partial void OnValueChanged(string value)
-    {
-        if (!_suppressNotify)
-        {
-            _onChanged(value);
-        }
-    }
-
-    internal void SetValueSilently(string value)
-    {
-        _suppressNotify = true;
-        Value = value;
-        _suppressNotify = false;
-    }
+    private void Persist() => _persist(new CodeViewAppearance { FontFamily = FontFamily, FontSize = FontSize });
 }
 
 /// <summary>A Hunspell dictionary to choose: file name and readable language name (e.g. "English - Great Britain").</summary>

@@ -68,10 +68,11 @@ public static class AppTheme
     /// <summary>The application resource of the file icon of the file lists (a <see cref="DrawingImage"/>).</summary>
     public const string FileIconKey = "SignetFileIcon";
 
-    // The interface colors the views take as brushes. The warning and the error notification colors still come from
-    // their settings (UiDensityManager) until the settings move into the themes.
+    // The interface colors the views take as brushes.
     private static readonly (ThemeKey Key, string Resource)[] ColorBrushes =
     {
+        (ThemeKeys.UiWarningText, "SignetWarningBrush"),
+        (ThemeKeys.UiErrorNotification, "SignetErrorBrush"),
         (ThemeKeys.UiDangerButton, "SignetDangerButtonBrush"),
         (ThemeKeys.UiDangerButtonHover, "SignetDangerButtonHoverBrush"),
         (ThemeKeys.UiDangerButtonPressed, "SignetDangerButtonPressedBrush"),

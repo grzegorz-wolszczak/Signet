@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Avalonia.Threading;
 using AvaloniaEdit.Document;
+using Signet.App.Infrastructure;
 using Signet.Core.Misc;
 
 namespace Signet.App.CodeView;
@@ -28,8 +29,8 @@ internal sealed class LineStateSyntaxColorizer<TState> : SyntaxColorizer
     private TextDocument? _document;
     private bool _redrawPosted;
 
-    public LineStateSyntaxColorizer(ILineSyntaxHighlighter<TState> highlighter, CodeViewAppearance appearance)
-        : base(appearance)
+    public LineStateSyntaxColorizer(ILineSyntaxHighlighter<TState> highlighter, ResolvedTheme theme)
+        : base(theme)
     {
         _highlighter = highlighter ?? throw new ArgumentNullException(nameof(highlighter));
     }

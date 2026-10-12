@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Input;
+using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.Core.Misc;
 
@@ -86,7 +86,7 @@ public sealed partial class PreferencesViewModel
                 (() => EffectiveUiFontFamily, () => WarningFontSize > 0 ? WarningFontSize : EffectiveUiFontSize),
                 () => WarningFontSize = WarningAppearance.Default.FontSize,
                 null,
-                previewForeground: () => WarningColor.Value),
+                previewForeground: () => AppTheme.Current.Color(Signet.Core.Themes.ThemeKeys.UiWarningText)?.ToString()),
             TooltipRow(TooltipArea.MainWindow, "PreferencesWindow_TooltipFontMainWindow"),
             TooltipRow(TooltipArea.DocumentTabs, "PreferencesWindow_TooltipFontDocumentTabs"),
             TooltipRow(TooltipArea.PreferencesWindow, "PreferencesWindow_TooltipFontPreferencesWindow"),
@@ -110,7 +110,7 @@ public sealed partial class PreferencesViewModel
                         CodeView.FontSize = codeViewDefaults.FontSize;
                     },
                     CodeView.ChooseFontCommand,
-                    codePreview: () => (_settings.CodeViewAppearance, ExtendedHighlighting)),
+                    codePreview: () => ExtendedHighlighting),
                 new FontSettingViewModel(
                     "OpenTagHint",
                     Strings.Get("PreferencesWindow_OpenTagHintFont"),
@@ -122,8 +122,8 @@ public sealed partial class PreferencesViewModel
                     ResetOpenTagHintFont,
                     ChooseOpenTagHintFontCommand,
                     placeholder: () => Strings.Get("PreferencesWindow_OpenTagHintFontDefault"),
-                    previewForeground: () => OpenTagHintForeground.Value,
-                    previewBackground: () => OpenTagHintBackground.Value,
+                    previewForeground: () => AppTheme.Current.Foreground(Signet.Core.Themes.ThemeKeys.HintsOpenTag)?.ToString(),
+                    previewBackground: () => AppTheme.Current.Background(Signet.Core.Themes.ThemeKeys.HintsOpenTag)?.ToString(),
                     sizeHint: Strings.Get("PreferencesWindow_FontSizeZeroAsEditor")),
             },
             Strings.Get("PreferencesWindow_FontColorRestartNotice"));
@@ -186,14 +186,10 @@ public sealed partial class PreferencesViewModel
             FootnotesFonts,
         });
 
-        // The pages show values that change elsewhere too ("Restore Appearance Defaults", the compact mode, the colors
-        // of the warning and of the hint): they are refreshed after every change.
+        // The pages show values that change elsewhere too ("Restore Appearance Defaults", the compact mode): they are
+        // refreshed after every change. Their colors are the theme's.
         PropertyChanged += (_, _) => RefreshFontPages();
         CodeView.PropertyChanged += (_, _) => CodeViewFonts.Refresh();
-        foreach (INotifyPropertyChanged color in new INotifyPropertyChanged[] { WarningColor, OpenTagHintBackground, OpenTagHintForeground })
-        {
-            color.PropertyChanged += (_, _) => RefreshFontPages();
-        }
     }
 
     // A typeface of the preview: the size is shared (a row of its own).

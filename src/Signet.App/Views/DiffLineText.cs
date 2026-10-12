@@ -4,7 +4,9 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
 using Avalonia.Media;
+using Signet.App.Infrastructure;
 using Signet.Core.Diff;
+using Signet.Core.Themes;
 
 namespace Signet.App.Views;
 
@@ -29,12 +31,6 @@ public sealed class DiffLineText : TextBlock
     /// </summary>
     public static readonly StyledProperty<bool> IsLeftProperty =
         AvaloniaProperty.Register<DiffLineText, bool>(nameof(IsLeft));
-
-    private static readonly IBrush DeletedLine = new SolidColorBrush(Color.FromArgb(0x38, 0xE5, 0x39, 0x35));
-    private static readonly IBrush InsertedLine = new SolidColorBrush(Color.FromArgb(0x38, 0x43, 0xA0, 0x47));
-    private static readonly IBrush DeletedWord = new SolidColorBrush(Color.FromArgb(0x80, 0xE5, 0x39, 0x35));
-    private static readonly IBrush InsertedWord = new SolidColorBrush(Color.FromArgb(0x80, 0x43, 0xA0, 0x47));
-    private static readonly IBrush EmptyCell = new SolidColorBrush(Color.FromArgb(0x18, 0x80, 0x80, 0x80));
 
     static DiffLineText()
     {
@@ -75,23 +71,39 @@ public sealed class DiffLineText : TextBlock
     /// <inheritdoc />
     protected override Type StyleKeyOverride => typeof(TextBlock);
 
+    // The look of the line and of its changed words comes from the theme (diff.*).
     private void Rebuild()
     {
+        ResolvedTheme theme = AppTheme.Current;
         bool deletedSide = Kind == DiffLineKind.Deleted || (Kind == DiffLineKind.Modified && IsLeft);
-        Background = Kind switch
+        TextAttributes? line = Kind switch
         {
             DiffLineKind.Unchanged => null,
-            DiffLineKind.Empty => EmptyCell,
-            _ => deletedSide ? DeletedLine : InsertedLine,
+            DiffLineKind.Empty => theme.Attributes(ThemeKeys.DiffEmptyCell),
+            _ => theme.Attributes(deletedSide ? ThemeKeys.DiffDeletedLine : ThemeKeys.DiffInsertedLine),
         };
+        Background = Brush(line?.Background);
+        ClearValue(ForegroundProperty);
+        if (Brush(line?.Foreground) is { } lineForeground)
+        {
+            Foreground = lineForeground;
+        }
 
+        TextAttributes word = theme.Attributes(deletedSide ? ThemeKeys.DiffDeletedWord : ThemeKeys.DiffInsertedWord);
         InlineCollection inlines = new();
         foreach (DiffSpan span in Spans ?? Array.Empty<DiffSpan>())
         {
             Run run = new(span.Text);
             if (span.Changed)
             {
-                run.Background = deletedSide ? DeletedWord : InsertedWord;
+                run.Background = Brush(word.Background);
+                if (Brush(word.Foreground) is { } wordForeground)
+                {
+                    run.Foreground = wordForeground;
+                }
+
+                run.FontWeight = word.Bold ? FontWeight.Bold : FontWeight.Normal;
+                run.FontStyle = word.Italic ? FontStyle.Italic : FontStyle.Normal;
             }
 
             inlines.Add(run);
@@ -99,4 +111,6 @@ public sealed class DiffLineText : TextBlock
 
         Inlines = inlines;
     }
+
+    private static SolidColorBrush? Brush(ThemeColor? color) => color is { } c ? new SolidColorBrush(ResolvedTheme.ToColor(c)) : null;
 }

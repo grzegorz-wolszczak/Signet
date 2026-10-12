@@ -102,10 +102,6 @@
       <!-- Text selection in edit boxes (Fluent's dark accent made black text unreadable), the danger buttons, the
            file list icons and the other interface colors (Signet*Brush, SignetFolderIcon, SignetFileIcon) come from
            the theme: AppTheme sets them in App.Initialize and whenever a theme is applied. -->
-      <!-- Warnings in dialogs (the color is set from the settings by UiDensityManager). -->
-      <SolidColorBrush x:Key="SignetWarningBrush" Color="#B35C00" />
-      <!-- Error notifications (status bar message, Notifications panel, the dot on the bell). -->
-      <SolidColorBrush x:Key="SignetErrorBrush" Color="#D93030" />
 
       <!-- Menus and flyouts: Fluent caps their popup width at FlyoutThemeMaxWidth (456), which
            clipped longer menu labels (no ellipsis). Lift the cap so popups size to their content. -->
@@ -193,7 +189,7 @@
       </MenuFlyout>
 
       <!-- Font size of the warning texts in dialogs (TextBlock.warning / .warningNote). The real value — the
-           interface text size or the size chosen in Preferences → Appearance → Warnings — is set by
+           interface text size or the size chosen in Preferences → Appearance › Fonts — is set by
            UiDensityManager; this is the Fluent default for design time and headless tests. -->
       <x:Double x:Key="SignetWarningFontSize">14</x:Double>
 
@@ -257,7 +253,7 @@
     </Style>
 
     <!-- Warning texts in dialogs (e.g. what a risky change would alter): size and color from
-         Preferences → Appearance → Warnings (UiDensityManager.ApplyWarningAppearance). -->
+         the theme (SignetWarningBrush) and Preferences → Appearance › Fonts (UiDensityManager.ApplyWarningAppearance). -->
     <Style Selector="TextBlock.warning">
       <Setter Property="Foreground" Value="{DynamicResource SignetWarningBrush}" />
       <Setter Property="FontSize" Value="{DynamicResource SignetWarningFontSize}" />

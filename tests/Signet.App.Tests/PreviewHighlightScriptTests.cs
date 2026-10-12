@@ -3,6 +3,7 @@ using AutoFixture.Xunit3;
 using AwesomeAssertions;
 using Signet.App.Infrastructure;
 using Signet.Core.Misc;
+using Signet.Core.Themes;
 using Xunit;
 
 namespace Signet.App.Tests;
@@ -10,11 +11,13 @@ namespace Signet.App.Tests;
 /// <summary>The script that highlights the caret location in the preview (<see cref="PreviewHighlightScript"/>).</summary>
 public sealed class PreviewHighlightScriptTests
 {
+    private static readonly ThemeColor Yellow = ThemeColor.Parse("#FFEB3B");
+
     [Theory]
     [AutoData]
     public void Default_highlights_block_background_with_translucent_yellow_and_stays(int loc)
     {
-        string js = PreviewHighlightScript.Build(loc, PreviewHighlight.Default);
+        string js = PreviewHighlightScript.Build(loc, PreviewHighlight.Default, Yellow);
 
         js.Should().Contain($"[data-signet-loc=\"{loc.ToString(CultureInfo.InvariantCulture)}\"]")
             .And.Contain(".closest('" + PreviewHighlightScript.AncestorSelector + "')")
@@ -29,10 +32,10 @@ public sealed class PreviewHighlightScriptTests
     {
         PreviewHighlight h = PreviewHighlight.Default with
         {
-            Style = PreviewHighlightStyle.Outline, Color = "#112233", OutlineWidth = 5,
+            Style = PreviewHighlightStyle.Outline, OutlineWidth = 5,
         };
 
-        string js = PreviewHighlightScript.Build(1, h);
+        string js = PreviewHighlightScript.Build(1, h, ThemeColor.Parse("#112233"));
 
         js.Should().Contain("el.style.outline='5px solid #112233'").And.NotContain("rgba(");
     }
@@ -40,12 +43,13 @@ public sealed class PreviewHighlightScriptTests
     [Fact]
     public void Background_uses_color_and_opacity_with_invariant_decimal_point()
     {
-        PreviewHighlight h = PreviewHighlight.Default with { Color = "#0080ff", OpacityPercent = 50 };
+        PreviewHighlight h = PreviewHighlight.Default with { OpacityPercent = 50 };
         CultureInfo previous = CultureInfo.CurrentCulture;
         CultureInfo.CurrentCulture = new CultureInfo("pl-PL");
         try
         {
-            PreviewHighlightScript.Build(1, h).Should().Contain("rgba(0,128,255,0.5)");
+            PreviewHighlightScript.Build(1, h, ThemeColor.Parse("#800080FF")).Should().Contain("rgba(0,128,255,0.5)",
+                "the opacity is the setting's, not the color's");
         }
         finally
         {
@@ -60,7 +64,7 @@ public sealed class PreviewHighlightScriptTests
     {
         PreviewHighlight h = PreviewHighlight.Default with { Style = style, AutoHide = true, AutoHideDelayMs = 2500 };
 
-        string js = PreviewHighlightScript.Build(1, h);
+        string js = PreviewHighlightScript.Build(1, h, Yellow);
 
         js.Should().Contain("w.__signetPreviewHighlightTimer=setTimeout(function(){")
             .And.Contain(fade)
@@ -72,7 +76,23 @@ public sealed class PreviewHighlightScriptTests
     {
         PreviewHighlight h = PreviewHighlight.Default with { Style = PreviewHighlightStyle.Outline, OutlineWidth = 500 };
 
-        PreviewHighlightScript.Build(1, h)
+        PreviewHighlightScript.Build(1, h, Yellow)
             .Should().Contain($"'{PreviewHighlight.OutlineWidthMax}px solid ");
+    }
+}
+
+/// <summary>The colors a theme forces on the book in the preview (<see cref="PreviewThemeScript"/>).</summary>
+public sealed class PreviewThemeScriptTests
+{
+    [Fact]
+    public void Set_colors_become_an_important_style_and_unset_ones_remove_it()
+    {
+        string dark = PreviewThemeScript.Build(ThemeColor.Parse("#1E1E1E"), ThemeColor.Parse("#80D4D4D4"));
+        string none = PreviewThemeScript.Build(null, null);
+
+        dark.Should().Contain("html,body{background:rgba(30,30,30,1) !important;}")
+            .And.Contain("body,body *{color:rgba(212,212,212,0.502) !important;}")
+            .And.Contain(PreviewThemeScript.StyleId);
+        none.Should().Contain("old.remove()").And.NotContain("createElement");
     }
 }

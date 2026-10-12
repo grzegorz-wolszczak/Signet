@@ -1,17 +1,16 @@
 using System;
-using System.Collections.Generic;
-using Avalonia;
-using Avalonia.Media;
 using AvaloniaEdit.Document;
 using AvaloniaEdit.Rendering;
+using Avalonia.Media;
 using Signet.Core.Misc;
+using Signet.Core.Themes;
 
 namespace Signet.App.CodeView;
 
 /// <summary>
-/// Squiggle under syntax errors and bad links reported by extended highlighting.
-/// Takes the spans from <see cref="SyntaxColorizer.IssuesOf"/> for visible lines; squiggle style as in
-/// <see cref="SpellCheckHighlightRenderer"/>.
+/// What the colorizer cannot put on the text itself, for the visible lines (<see cref="SyntaxColorizer"/>): the look of
+/// <c>errors.syntax</c> (a squiggle by default) under the syntax errors and bad links of the extended highlighting, and
+/// the effects of the syntax keys (e.g. the dashed line under a special space).
 /// </summary>
 internal sealed class SyntaxIssueRenderer : IBackgroundRenderer
 {
@@ -34,7 +33,6 @@ internal sealed class SyntaxIssueRenderer : IBackgroundRenderer
             return;
         }
 
-        var pen = new Pen(colorizer.ErrorBrush, 1);
         foreach (VisualLine visualLine in textView.VisualLines)
         {
             DocumentLine line = visualLine.FirstDocumentLine;
@@ -43,44 +41,25 @@ internal sealed class SyntaxIssueRenderer : IBackgroundRenderer
                 continue;
             }
 
+            foreach ((int start, int length, TextAttributes look) in colorizer.EffectsOf(line))
+            {
+                Paint(textView, drawingContext, line, start, length, look, colorizer);
+            }
+
             foreach (SyntaxSpan span in colorizer.IssuesOf(line))
             {
-                if (span.Format is not (SyntaxFormat.SyntaxError or SyntaxFormat.BadLink))
+                if (span.Format is SyntaxFormat.SyntaxError or SyntaxFormat.BadLink)
                 {
-                    continue;
-                }
-
-                int start = line.Offset + span.Start;
-                int length = Math.Min(span.Length, line.EndOffset - start);
-                if (length <= 0)
-                {
-                    continue;
-                }
-
-                var segment = new TextSegment { StartOffset = start, Length = length };
-                foreach (Rect rect in BackgroundGeometryBuilder.GetRectsForSegment(textView, segment))
-                {
-                    DrawSquiggle(drawingContext, pen, rect);
+                    Paint(textView, drawingContext, line, span.Start, span.Length, colorizer.ErrorLook, colorizer);
                 }
             }
         }
     }
 
-    private static void DrawSquiggle(DrawingContext context, Pen pen, Rect rect)
+    private static void Paint(
+        TextView textView, DrawingContext context, DocumentLine line, int start, int length, TextAttributes look, SyntaxColorizer colorizer)
     {
-        double baseline = rect.Bottom - 1;
-        const double step = 2.0;
-        var points = new List<Point>();
-        bool up = true;
-        for (double x = rect.Left; x <= rect.Right; x += step)
-        {
-            points.Add(new Point(x, baseline + (up ? -2 : 0)));
-            up = !up;
-        }
-
-        for (int i = 0; i < points.Count - 1; i++)
-        {
-            context.DrawLine(pen, points[i], points[i + 1]);
-        }
+        int offset = line.Offset + start;
+        ThemePainter.Paint(textView, context, offset, Math.Min(length, line.EndOffset - offset), look, colorizer.TextColor);
     }
 }

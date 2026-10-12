@@ -546,7 +546,7 @@
     <value>Code View</value>
   </data>
   <data name="PreferencesWindow_FontColorRestartNotice" xml:space="preserve">
-    <value>Zmiany czcionek/kolorów Code View, Preview i zestawu ikon są widoczne po ponownym uruchomieniu Signet.</value>
+    <value>Zmiany czcionek Code View i Preview oraz zestawu ikon są widoczne po ponownym uruchomieniu Signet.</value>
   </data>
   <data name="PreferencesWindow_RestoreAppearanceDefaults" xml:space="preserve">
     <value>Przywróć domyślny wygląd</value>
@@ -589,9 +589,6 @@
   </data>
   <data name="PreferencesWindow_PreviewHighlightStyle" xml:space="preserve">
     <value>Sposób podświetlenia:</value>
-  </data>
-  <data name="PreferencesWindow_PreviewHighlightColor" xml:space="preserve">
-    <value>Kolor</value>
   </data>
   <data name="PreferencesWindow_PreviewHighlightOpacity" xml:space="preserve">
     <value>Krycie tła, % (5–100):</value>
@@ -2726,66 +2723,6 @@ Scalać można tylko pliki HTML.</value>
   <data name="BookBrowser_SaveAsTitle" xml:space="preserve">
     <value>Zapisz plik jako</value>
   </data>
-  <data name="CodeViewColor_CSSComment" xml:space="preserve">
-    <value>CSS — komentarz</value>
-  </data>
-  <data name="CodeViewColor_CSSProperty" xml:space="preserve">
-    <value>CSS — właściwość</value>
-  </data>
-  <data name="CodeViewColor_CSSQuote" xml:space="preserve">
-    <value>CSS — cudzysłów</value>
-  </data>
-  <data name="CodeViewColor_CSSSelector" xml:space="preserve">
-    <value>CSS — selektor</value>
-  </data>
-  <data name="CodeViewColor_CSSValue" xml:space="preserve">
-    <value>CSS — wartość</value>
-  </data>
-  <data name="CodeViewColor_LineHighlight" xml:space="preserve">
-    <value>Podświetlenie bieżącego wiersza</value>
-  </data>
-  <data name="CodeViewColor_XHTMLAttributeName" xml:space="preserve">
-    <value>XHTML — nazwa atrybutu</value>
-  </data>
-  <data name="CodeViewColor_XHTMLAttributeValue" xml:space="preserve">
-    <value>XHTML — wartość atrybutu</value>
-  </data>
-  <data name="CodeViewColor_XHTMLCSS" xml:space="preserve">
-    <value>XHTML — CSS</value>
-  </data>
-  <data name="CodeViewColor_XHTMLCSSComment" xml:space="preserve">
-    <value>XHTML — komentarz CSS</value>
-  </data>
-  <data name="CodeViewColor_XHTMLDOCTYPE" xml:space="preserve">
-    <value>XHTML — DOCTYPE</value>
-  </data>
-  <data name="CodeViewColor_XHTMLEntity" xml:space="preserve">
-    <value>XHTML — encja</value>
-  </data>
-  <data name="CodeViewColor_XHTMLHTML" xml:space="preserve">
-    <value>XHTML — znacznik HTML</value>
-  </data>
-  <data name="CodeViewColor_XHTMLHTMLComment" xml:space="preserve">
-    <value>XHTML — komentarz HTML</value>
-  </data>
-  <data name="CodeViewColor_CSSSpecialSelector" xml:space="preserve">
-    <value>CSS — selektor specjalny</value>
-  </data>
-  <data name="CodeViewColor_CSSAtRule" xml:space="preserve">
-    <value>CSS — reguła @</value>
-  </data>
-  <data name="CodeViewColor_CSSConstant" xml:space="preserve">
-    <value>CSS — stała</value>
-  </data>
-  <data name="CodeViewColor_XHTMLNamespacePrefix" xml:space="preserve">
-    <value>XHTML — prefiks przestrzeni nazw</value>
-  </data>
-  <data name="CodeViewColor_Link" xml:space="preserve">
-    <value>Link</value>
-  </data>
-  <data name="CodeViewColor_ErrorUnderline" xml:space="preserve">
-    <value>Podkreślenie błędów</value>
-  </data>
   <data name="IconTheme_main" xml:space="preserve">
     <value>Domyślny</value>
   </data>
@@ -3341,17 +3278,8 @@ Tego typu pliku nie można jeszcze edytować w Signet.</value>
   <data name="AboutWindow_Version" xml:space="preserve">
     <value>Wersja:</value>
   </data>
-  <data name="CodeViewColor_SearchMatchBackground" xml:space="preserve">
-    <value>Tło trafień wyszukiwania</value>
-  </data>
-  <data name="CodeViewColor_SelectionBackground" xml:space="preserve">
-    <value>Tło zaznaczenia (bieżące trafienie)</value>
-  </data>
   <data name="ColorPickerWindow_Title" xml:space="preserve">
     <value>Wybierz kolor</value>
-  </data>
-  <data name="PreferencesWindow_ChooseColor" xml:space="preserve">
-    <value>Wybierz kolor…</value>
   </data>
   <data name="Action_MainWindow_CreateCheckpoint" xml:space="preserve">
     <value>Utwórz punkt &amp;kontrolny...</value>
@@ -4018,32 +3946,11 @@ Przykład: &lt;item href="Styles/style.css" media-type="application/octet-stream
 
 Nie zmienia plików, ich nazw ani ID.</value>
   </data>
-  <data name="PreferencesWindow_Warnings" xml:space="preserve">
-    <value>Ostrzeżenia</value>
-  </data>
   <data name="PreferencesWindow_WarningFontSize" xml:space="preserve">
     <value>Rozmiar czcionki ostrzeżeń w oknach (px; 0 = jak tekst interfejsu)</value>
   </data>
-  <data name="PreferencesWindow_WarningColor" xml:space="preserve">
-    <value>Kolor</value>
-  </data>
-  <data name="PreferencesWindow_WarningsNote" xml:space="preserve">
-    <value>Kolor ostrzeżeń w oknach (np. skutki ryzykownej zmiany w Cleanup).</value>
-  </data>
   <data name="PreferencesWindow_WarningSample" xml:space="preserve">
     <value>⚠ Przykład: „font-style: italic” (z „.none1”) działa na tym spanie</value>
-  </data>
-  <data name="PreferencesWindow_Errors" xml:space="preserve">
-    <value>Błędy w powiadomieniach</value>
-  </data>
-  <data name="PreferencesWindow_ErrorColor" xml:space="preserve">
-    <value>Kolor</value>
-  </data>
-  <data name="PreferencesWindow_ErrorSample" xml:space="preserve">
-    <value>Przykład: Add Nav to Reading Order is not available for EPUB 2.</value>
-  </data>
-  <data name="PreferencesWindow_ErrorsNote" xml:space="preserve">
-    <value>Komunikaty o zablokowanych lub nieudanych operacjach: pasek stanu, wiersze panelu Powiadomienia i kropka na dzwonku.</value>
   </data>
   <data name="CodeView_OpenTagHintLine" xml:space="preserve">
     <value>linia {0}</value>
@@ -4059,12 +3966,6 @@ Nie zmienia plików, ich nazw ani ID.</value>
   </data>
   <data name="PreferencesWindow_OpenTagHintFontDefault" xml:space="preserve">
     <value>Domyślna (jak w edytorze)</value>
-  </data>
-  <data name="PreferencesWindow_OpenTagHintBackground" xml:space="preserve">
-    <value>Tło</value>
-  </data>
-  <data name="PreferencesWindow_OpenTagHintForeground" xml:space="preserve">
-    <value>Tekst</value>
   </data>
   <data name="Action_MainWindow_FindUsages" xml:space="preserve">
     <value>Znajdź użycia</value>
@@ -4791,9 +4692,6 @@ Konwertować mimo to?</value>
   <data name="PreferencesWindow_SpecialCharacters" xml:space="preserve">
     <value>Znaki specjalne</value>
   </data>
-  <data name="PreferencesWindow_CodeViewColors" xml:space="preserve">
-    <value>Kolory edytora</value>
-  </data>
   <data name="PreferencesWindow_CodeViewEditorFont" xml:space="preserve">
     <value>Czcionka edytora</value>
   </data>
@@ -4935,5 +4833,8 @@ Zamknij zakładkę</value>
   </data>
   <data name="FontPreview_TooltipFootnotes" xml:space="preserve">
     <value>1. Treść przypisu skrócona do jednego wiersza…</value>
+  </data>
+  <data name="PreferencesWindow_ColorsInTheme" xml:space="preserve">
+    <value>Kolory ustawia się w motywie: Wygląd › Schemat kolorów.</value>
   </data>
 </root>

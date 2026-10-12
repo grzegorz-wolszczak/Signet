@@ -9,6 +9,7 @@ using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.ViewModels;
 using Signet.Core.Misc;
+using Signet.Core.Themes;
 
 namespace Signet.App.Views;
 
@@ -138,6 +139,8 @@ public partial class PreviewView : UserControl
             desktop.Exit -= OnApplicationExit;
         }
 
+        AppTheme.Changed -= OnAppThemeChanged;
+
         try
         {
             WebView.RenderFrameCaptured -= OnRenderFrameCaptured;
@@ -165,6 +168,8 @@ public partial class PreviewView : UserControl
         {
             desktop.Exit += OnApplicationExit;
         }
+
+        AppTheme.Changed += OnAppThemeChanged;
 
         try
         {
@@ -303,7 +308,8 @@ public partial class PreviewView : UserControl
         // The highlight replaces the previous one (kept in window.__signetPreviewHighlightEl); the style,
         // the color and the optional fade-out come from Preferences (PreviewHighlight).
         PreviewHighlight highlight = _boundViewModel?.Highlight ?? PreviewHighlight.Default;
-        string js = PreviewHighlightScript.Build(loc, highlight);
+        ThemeColor color = AppTheme.Current.Resolver.Color(AppTheme.Current.Theme, ThemeKeys.PreviewHighlight) ?? ThemeColor.FromRgb(0xFF, 0xEB, 0x3B);
+        string js = PreviewHighlightScript.Build(loc, highlight, color);
 
         try
         {
@@ -434,6 +440,7 @@ public partial class PreviewView : UserControl
     private void OnNavigationCompleted(object? sender, Nwv.NativeWebViewNavigationCompletedEventArgs e)
     {
         ApplyCustomCss();
+        ApplyThemeColors();
 
         // A new page may come with the engine's default zoom: keep the preview's own.
         if (_boundViewModel is not null)
@@ -443,6 +450,30 @@ public partial class PreviewView : UserControl
 
         _boundViewModel?.NotifyPageLoaded();
     }
+
+    // The colors the theme forces on the book (preview.background / preview.text), after every navigation and when
+    // another theme is applied.
+    private void ApplyThemeColors()
+    {
+        if (!_initialized || _initFailed)
+        {
+            return;
+        }
+
+        ResolvedTheme theme = AppTheme.Current;
+        string js = PreviewThemeScript.Build(
+            theme.Resolver.Color(theme.Theme, ThemeKeys.PreviewBackground), theme.Resolver.Color(theme.Theme, ThemeKeys.PreviewText));
+        try
+        {
+            _ = WebView.ExecuteScriptAsync(js);
+        }
+        catch (Exception)
+        {
+            // Like the custom CSS: a convenience, no reaction is acceptable.
+        }
+    }
+
+    private void OnAppThemeChanged(object? sender, EventArgs e) => ApplyThemeColors();
 
     private void ApplyCustomCss()
     {
