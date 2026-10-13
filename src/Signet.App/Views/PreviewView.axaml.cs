@@ -84,6 +84,7 @@ public partial class PreviewView : UserControl
         if (_boundViewModel is not null)
         {
             _boundViewModel.NavigateRequested -= OnNavigateRequested;
+            _boundViewModel.FontsChanged -= OnFontsChanged;
             _boundViewModel.ReloadRequested -= OnReloadRequested;
             _boundViewModel.ClearRequested -= OnClearRequested;
             _boundViewModel.ZoomChanged -= OnZoomChanged;
@@ -101,6 +102,7 @@ public partial class PreviewView : UserControl
         if (_boundViewModel is not null)
         {
             _boundViewModel.NavigateRequested += OnNavigateRequested;
+            _boundViewModel.FontsChanged += OnFontsChanged;
             _boundViewModel.ReloadRequested += OnReloadRequested;
             _boundViewModel.ClearRequested += OnClearRequested;
             _boundViewModel.ZoomChanged += OnZoomChanged;
@@ -441,6 +443,7 @@ public partial class PreviewView : UserControl
     {
         ApplyCustomCss();
         ApplyThemeColors();
+        ApplyFonts();
 
         // A new page may come with the engine's default zoom: keep the preview's own.
         if (_boundViewModel is not null)
@@ -474,6 +477,27 @@ public partial class PreviewView : UserControl
     }
 
     private void OnAppThemeChanged(object? sender, EventArgs e) => ApplyThemeColors();
+
+    // The default fonts of the book (Preferences › Appearance › Fonts › Preview), after every navigation and when they
+    // change.
+    private void ApplyFonts()
+    {
+        if (!_initialized || _initFailed || _boundViewModel is null)
+        {
+            return;
+        }
+
+        try
+        {
+            _ = WebView.ExecuteScriptAsync(PreviewFontsScript.Build(_boundViewModel.Fonts));
+        }
+        catch (Exception)
+        {
+            // Like the theme colors: a convenience, no reaction is acceptable.
+        }
+    }
+
+    private void OnFontsChanged(object? sender, EventArgs e) => ApplyFonts();
 
     private void ApplyCustomCss()
     {

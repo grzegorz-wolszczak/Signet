@@ -53,6 +53,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     private bool _restoreCaretAfterLoad;
     private string _currentUrlText = string.Empty;
     private double _zoomFactor = 1.0;
+    private PreviewAppearance _fonts = PreviewAppearance.Default;
     private bool _disposed;
 
     // "Cycle Custom CSS Files": at most 2 files with fixed names in the prefs directory
@@ -175,6 +176,26 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     /// <see cref="ScrollToLocRequested"/>.
     /// </summary>
     public PreviewHighlight Highlight { get; set; } = PreviewHighlight.Default;
+
+    /// <summary>
+    /// The default fonts of the book (Preferences › Appearance › Fonts › Preview), set by the host; the view applies them
+    /// after every navigation and when they change (<see cref="FontsChanged"/>).
+    /// </summary>
+    public PreviewAppearance Fonts
+    {
+        get => _fonts;
+        set
+        {
+            if (_fonts != value)
+            {
+                _fonts = value;
+                FontsChanged?.Invoke(this, EventArgs.Empty);
+            }
+        }
+    }
+
+    /// <summary>Raised when <see cref="Fonts"/> changes.</summary>
+    public event EventHandler? FontsChanged;
 
     /// <summary>Whether the preview currently has something to show (an (X)HTML resource is selected).</summary>
     public bool HasContent => _currentBookPath is not null;

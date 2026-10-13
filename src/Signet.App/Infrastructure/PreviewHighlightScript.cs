@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.Text;
+using System.Text.Json;
 using Signet.Core.Misc;
 using Signet.Core.Themes;
 
@@ -123,3 +124,56 @@ public static class PreviewThemeScript
     private static string Css(ThemeColor c) => string.Create(
         CultureInfo.InvariantCulture, $"rgba({c.R},{c.G},{c.B},{(c.A / 255.0).ToString("0.###", CultureInfo.InvariantCulture)})");
 }
+
+/// <summary>
+/// Preview page script: the fonts of Preferences › Appearance › Fonts › Preview as the default fonts of the book, as a
+/// browser's font settings work (Sigil sets them on its web engine; the native web views have no such setting):
+/// <list type="bullet">
+/// <item>the standard font and the size go to <c>html</c> in a style element put first in <c>&lt;head&gt;</c>, so any
+/// rule of the book wins over them;</item>
+/// <item>the serif and the sans-serif font are put before the generic <c>serif</c> / <c>sans-serif</c> in the
+/// <c>font-family</c> of the rules and the <c>style</c> attributes of the book (a generic family cannot be mapped to
+/// another font with CSS). Stylesheets that load later are handled when they load; the original lists are kept, so
+/// running the script again with other fonts replaces the earlier ones.</item>
+/// </list>
+/// An empty family or a size of 0 leaves that part to the web view.
+/// </summary>
+public static class PreviewFontsScript
+{
+    /// <summary>The id of the <c>&lt;style&gt;</c> element the script adds to the page.</summary>
+    public const string StyleId = "signet-preview-fonts";
+
+    /// <summary>Builds the script for the fonts.</summary>
+    public static string Build(PreviewAppearance fonts)
+    {
+        StringBuilder js = new();
+        js.Append("(function(){var F={std:").Append(Js(fonts.FontFamilyStandard))
+            .Append(",serif:").Append(Js(fonts.FontFamilySerif))
+            .Append(",sans:").Append(Js(fonts.FontFamilySansSerif))
+            .Append(",size:").Append(Math.Max(0, fonts.FontSize).ToString(CultureInfo.InvariantCulture)).Append("};")
+            .Append("function q(n){return '\"'+n.replace(/[\"\\\\]/g,'')+'\"';}")
+            // The defaults of the page: first in <head>, so that the book overrides them.
+            .Append("var old=document.getElementById('").Append(StyleId).Append("');if(old)old.remove();")
+            .Append("var css='';if(F.std)css+='font-family:'+q(F.std)+';';if(F.size>0)css+='font-size:'+F.size+'px;';")
+            .Append("if(css){var s=document.createElement('style');s.id='").Append(StyleId).Append("';s.textContent='html{'+css+'}';")
+            .Append("var h=document.head||document.documentElement;h.insertBefore(s,h.firstChild);}")
+            // The generic families of the book.
+            .Append("function fix(st){if(!st)return;var o=st.__signetFamily;if(o===undefined){o=st.fontFamily;st.__signetFamily=o;}")
+            .Append("if(!o)return;var p=o.split(','),out=[];for(var i=0;i<p.length;i++){var t=p[i].trim(),l=t.toLowerCase();")
+            .Append("if(l==='serif'&&F.serif)out.push(q(F.serif));else if(l==='sans-serif'&&F.sans)out.push(q(F.sans));out.push(t);}")
+            .Append("var v=out.join(', ');if(v!==st.fontFamily)st.fontFamily=v;}")
+            .Append("function walk(r){for(var i=0;i<r.length;i++){if(r[i].style)fix(r[i].style);if(r[i].cssRules)walk(r[i].cssRules);}}")
+            .Append("function all(){for(var i=0;i<document.styleSheets.length;i++){try{walk(document.styleSheets[i].cssRules);}catch(e){}}")
+            .Append("var els=document.querySelectorAll('[style]');for(var j=0;j<els.length;j++)fix(els[j].style);}")
+            .Append("window.__signetPreviewFonts=all;all();")
+            .Append("var links=document.querySelectorAll('link[rel~=\"stylesheet\"]');for(var k=0;k<links.length;k++){")
+            .Append("if(!links[k].__signetFonts){links[k].__signetFonts=true;links[k].addEventListener('load',function(){")
+            .Append("if(window.__signetPreviewFonts)window.__signetPreviewFonts();});}}")
+            .Append("})();");
+        return js.ToString();
+    }
+
+    // A JavaScript string literal (JSON is valid JavaScript; the HTML-sensitive characters are escaped).
+    private static string Js(string? value) => JsonSerializer.Serialize(value?.Trim() ?? string.Empty);
+}
+

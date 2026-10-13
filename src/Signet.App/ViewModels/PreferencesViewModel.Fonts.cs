@@ -148,8 +148,7 @@ public sealed partial class PreferencesViewModel
                     () => PreviewFontSize = previewDefaults.FontSize,
                     null),
                 TooltipRow(TooltipArea.Preview),
-            },
-            Strings.Get("PreferencesWindow_FontColorRestartNotice"));
+            });
 
         SpecialCharacterAppearance specialDefaults = SpecialCharacterAppearance.Default;
         SpecialCharacterFonts = new FontPageViewModel(new[]
