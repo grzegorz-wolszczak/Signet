@@ -82,4 +82,42 @@ public sealed class ProgressWindowTests
         run.Result.Should().BeNull();
         owner.Close();
     }
+
+    [AvaloniaFact]
+    public void While_the_work_runs_the_window_has_no_cancel_and_cannot_be_closed()
+    {
+        Window owner = Owner();
+        TaskCompletionSource work = new();
+
+        Task run = ProgressWindow.ShowWhileAsync(owner, "Title", "Loading", work.Task, TimeSpan.Zero);
+        RunUntil(() => owner.OwnedWindows.Count == 1);
+        ProgressWindow window = owner.OwnedWindows.OfType<ProgressWindow>().Single();
+        window.FindControl<Button>("CancelButton")!.IsVisible.Should().BeFalse();
+        window.Close();
+        Dispatcher.UIThread.RunJobs();
+        owner.OwnedWindows.Should().ContainSingle("only the end of the work closes it");
+
+        work.SetResult();
+        RunUntil(() => run.IsCompleted);
+
+        run.IsCompletedSuccessfully.Should().BeTrue();
+        owner.OwnedWindows.Should().BeEmpty();
+        owner.Close();
+    }
+
+    [AvaloniaFact]
+    public void An_exception_of_the_work_comes_out_after_the_window()
+    {
+        Window owner = Owner();
+        TaskCompletionSource work = new();
+
+        Task run = ProgressWindow.ShowWhileAsync(owner, "Title", "Loading", work.Task, TimeSpan.Zero);
+        RunUntil(() => owner.OwnedWindows.Count == 1);
+        work.SetException(new InvalidOperationException("broken"));
+        RunUntil(() => run.IsCompleted);
+
+        run.Exception!.InnerException.Should().BeOfType<InvalidOperationException>();
+        owner.OwnedWindows.Should().BeEmpty();
+        owner.Close();
+    }
 }

@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using AwesomeAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
+using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.Core.BookManipulation;
 using Signet.Core.Localization;
@@ -310,6 +311,23 @@ public sealed class FileWorkflowTests
 
         h.Workspace.CurrentBook!.LoadWarnings.Should().BeEmpty();
         h.Prompts.LastLoadWarnings.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task LoadFileAsync_loads_with_a_progress_window_and_shows_an_error_only_after_it()
+    {
+        using Harness h = new();
+        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, h.Dir);
+        string broken = h.PathIn("broken.epub");
+        File.WriteAllText(broken, "not a zip archive");
+
+        (await h.Workflow.LoadFileAsync(epub)).Should().BeTrue();
+        (await h.Workflow.LoadFileAsync(broken)).Should().BeFalse();
+
+        h.Prompts.ProgressMessages.Should().Equal(
+            Strings.Format("File_Loading", Path.GetFileName(epub)), Strings.Format("File_Loading", "broken.epub"));
+        h.Prompts.LastError.Should().NotBeNullOrEmpty();
+        h.Workspace.LastAppliedPath.Should().Be(epub, "the broken file is not applied");
     }
 
     [Fact]

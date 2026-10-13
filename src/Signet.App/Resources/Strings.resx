@@ -2933,6 +2933,9 @@ Scalać można tylko pliki HTML.</value>
   <data name="EmptyLayout_TypeNav" xml:space="preserve">
     <value>Plik Nav</value>
   </data>
+  <data name="File_Loading" xml:space="preserve">
+    <value>Wczytywanie „{0}”…</value>
+  </data>
   <data name="File_DoesNotExist" xml:space="preserve">
     <value>Plik nie istnieje:
 {0}</value>

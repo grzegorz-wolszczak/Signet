@@ -2933,6 +2933,9 @@ Only HTML files can be merged.</value>
   <data name="EmptyLayout_TypeNav" xml:space="preserve">
     <value>Nav File</value>
   </data>
+  <data name="File_Loading" xml:space="preserve">
+    <value>Loading “{0}”…</value>
+  </data>
   <data name="File_DoesNotExist" xml:space="preserve">
     <value>The file does not exist:
 {0}</value>

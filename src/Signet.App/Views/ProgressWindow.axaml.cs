@@ -6,8 +6,9 @@ using Avalonia.Threading;
 namespace Signet.App.Views;
 
 /// <summary>
-/// A modal window shown while work runs in the background (e.g. the analysis of the footnotes of a big book): its
-/// message, an indeterminate progress bar and Cancel. It appears only when the work takes longer than a moment.
+/// A modal window shown while work runs (e.g. loading a big book, the analysis of its footnotes): its message, an
+/// indeterminate progress bar and, when the work can be left, Cancel. It appears only when the work takes longer than a
+/// moment.
 /// </summary>
 public partial class ProgressWindow : Window
 {
@@ -57,5 +58,39 @@ public partial class ProgressWindow : Window
         }
 
         return await work.ConfigureAwait(true);
+    }
+
+    /// <summary>
+    /// Waits for <paramref name="work"/>; when it is not done after <paramref name="delay"/> (<see cref="DefaultDelay"/>
+    /// when <c>null</c>), shows the window over <paramref name="owner"/> — without Cancel, and it cannot be closed —
+    /// until the work is done and the UI has caught up with it (layout and rendering go before the window closes, so
+    /// the result is on screen when it does). An exception of the work is thrown here.
+    /// </summary>
+    public static async Task ShowWhileAsync(Window owner, string title, string message, Task work, TimeSpan? delay = null)
+    {
+        ArgumentNullException.ThrowIfNull(owner);
+        ArgumentNullException.ThrowIfNull(work);
+        await Task.WhenAny(work, Task.Delay(delay ?? DefaultDelay)).ConfigureAwait(true);
+        if (!work.IsCompleted)
+        {
+            ProgressWindow window = new() { Title = title };
+            window.MessageText.Text = message;
+            window.CancelButton.IsVisible = false;
+            window.CancelButton.IsCancel = false;
+            bool done = false;
+            window.Closing += (_, e) => e.Cancel = !done;
+            _ = work.ContinueWith(
+                _ => Dispatcher.UIThread.Post(
+                    () =>
+                    {
+                        done = true;
+                        window.Close();
+                    },
+                    DispatcherPriority.Background),
+                TaskScheduler.Default);
+            await window.ShowDialog(owner).ConfigureAwait(true);
+        }
+
+        await work.ConfigureAwait(true);
     }
 }

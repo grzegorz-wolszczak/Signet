@@ -22,6 +22,16 @@ public sealed class FakeFileWorkflowPrompts : IFileWorkflowPrompts
     /// <summary>Answer to the prompt about removing a missing file from the "Recent" list.</summary>
     public bool RemoveMissingRecent { get; set; } = true;
 
+    /// <summary>The messages of the <see cref="ShowProgressAsync"/> calls.</summary>
+    public List<string> ProgressMessages { get; } = new();
+
+    /// <inheritdoc />
+    public Task<T> ShowProgressAsync<T>(string message, System.Func<Task<T>> work)
+    {
+        ProgressMessages.Add(message);
+        return work();
+    }
+
     /// <summary>Number of <see cref="AskOpenPathAsync"/> calls.</summary>
     public int AskOpenPathCalls { get; private set; }
 

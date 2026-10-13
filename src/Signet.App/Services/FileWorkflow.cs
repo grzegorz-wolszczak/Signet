@@ -52,6 +52,12 @@ public interface IFileWorkflowPrompts
 
     /// <summary>"Custom Epub Layout" wizard. Returns a list of book paths, or <c>null</c> when cancelled.</summary>
     Task<IReadOnlyList<string>?> DesignCustomLayoutAsync(string version);
+
+    /// <summary>
+    /// Runs <paramref name="work"/> (started at once) with a progress window showing <paramref name="message"/> when it
+    /// lasts; the window goes when the work is done and its result is on screen. Returns the result of the work.
+    /// </summary>
+    Task<T> ShowProgressAsync<T>(string message, Func<Task<T>> work);
 }
 
 /// <summary>The main window surface as seen by <see cref="FileWorkflow"/> (swapping the book, change state).</summary>
@@ -289,29 +295,47 @@ public sealed class FileWorkflow
             return false;
         }
 
-        Core.BookManipulation.WellFormedResult? invalid = importer.CheckValidToLoad();
-        if (invalid is { IsWellFormed: false } err)
+        // The check of the file, the import and showing the book take seconds for a big book: they run with a progress
+        // window (when they last), the messages come after it.
+        (Book? book, string? error) = await _prompts.ShowProgressAsync(
+            Strings.Format("File_Loading", Path.GetFileName(path)),
+            () => ImportAndApplyAsync(importer, path)).ConfigureAwait(true);
+        if (book is null)
         {
-            await _prompts.ShowErrorAsync(
-                "Signet",
-                Strings.Format("File_NotWellFormedOnOpen", err.Line, err.Message)).ConfigureAwait(true);
+            await _prompts.ShowErrorAsync("Signet", error ?? string.Empty).ConfigureAwait(true);
             return false;
         }
 
+        if (book.LoadWarnings.Count > 0)
+        {
+            await _prompts.ShowLoadWarningsAsync(Path.GetFileName(path), book.LoadWarnings).ConfigureAwait(true);
+        }
+
+        return true;
+    }
+
+    // Checks and imports the file off the UI thread and makes it the current publication; the book, or why it could not
+    // be loaded.
+    private async Task<(Book? Book, string? Error)> ImportAndApplyAsync(IImporter importer, string path)
+    {
         Book book;
         try
         {
+            Core.BookManipulation.WellFormedResult? invalid = await Task.Run(() => importer.CheckValidToLoad()).ConfigureAwait(true);
+            if (invalid is { IsWellFormed: false } err)
+            {
+                return (null, Strings.Format("File_NotWellFormedOnOpen", err.Line, err.Message));
+            }
+
             book = await Task.Run(() => importer.GetBook()).ConfigureAwait(true);
         }
         catch (EpubLoadException ex)
         {
-            await _prompts.ShowErrorAsync("Signet", Strings.Format("File_CannotLoadEpub", path, ex.Message)).ConfigureAwait(true);
-            return false;
+            return (null, Strings.Format("File_CannotLoadEpub", path, ex.Message));
         }
         catch (IOException ex)
         {
-            await _prompts.ShowErrorAsync("Signet", Strings.Format("File_IoError", ex.Message)).ConfigureAwait(true);
-            return false;
+            return (null, Strings.Format("File_IoError", ex.Message));
         }
 
         _workspace.ApplyBook(book, path);
@@ -321,12 +345,7 @@ public sealed class FileWorkflow
         AddRecentFile(path);
         _settings.Save();
         _logger.LogInformation("Loaded file {Path} ({Warnings} warnings)", path, book.LoadWarnings.Count);
-        if (book.LoadWarnings.Count > 0)
-        {
-            await _prompts.ShowLoadWarningsAsync(Path.GetFileName(path), book.LoadWarnings).ConfigureAwait(true);
-        }
-
-        return true;
+        return (book, null);
     }
 
     // ---------------------------------------------------------------- Save --- //

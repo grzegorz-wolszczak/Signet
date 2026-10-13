@@ -305,6 +305,15 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
     // ------------------------------------------------ IFileWorkflowPrompts --- //
 
     /// <inheritdoc />
+    public async Task<T> ShowProgressAsync<T>(string message, Func<Task<T>> work)
+    {
+        ArgumentNullException.ThrowIfNull(work);
+        Task<T> running = work();
+        await ProgressWindow.ShowWhileAsync(this, "Signet", message, running);
+        return await running;
+    }
+
+    /// <inheritdoc />
     public async Task<string?> AskOpenPathAsync(string startFolder)
     {
         IReadOnlyList<IStorageFile> files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
