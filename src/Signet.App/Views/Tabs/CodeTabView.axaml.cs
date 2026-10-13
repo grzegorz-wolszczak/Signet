@@ -55,6 +55,9 @@ public partial class CodeTabView : UserControl
     // when needed). The view may be reused for another tab, so both variants are switched when
     // the DataContext changes.
     private TextMate.Installation? _textMate;
+
+    // The theme whose TextMate colors _textMate has (set again only when the theme changes).
+    private ResolvedTheme? _textMateTheme;
     private SyntaxColorizer? _lineColorizer;
 
     private CodeTabViewModel? _boundViewModel;
@@ -1182,7 +1185,13 @@ public partial class CodeTabView : UserControl
             return;
         }
 
-        _textMate ??= Editor.InstallTextMate(CodeViewTextMate.Options);
+        if (_textMate is null)
+        {
+            _textMate = Editor.InstallTextMate(CodeViewTextMate.Options);
+            _textMateTheme = null;
+        }
+
+        ApplyTextMateTheme(AppTheme.Current);
         _textMate.SetGrammar(scope);
     }
 
@@ -1253,13 +1262,22 @@ public partial class CodeTabView : UserControl
     private void ApplyTheme()
     {
         ResolvedTheme theme = AppTheme.Current;
-        _textMate?.SetTheme(CodeViewTextMate.Theme);
+        ApplyTextMateTheme(theme);
         _lineColorizer?.SetTheme(theme);
         _errorRenderer.Theme = theme;
         _tagRenderer.Theme = theme;
         _searchRenderer.Theme = theme;
         _spellRenderer.Theme = theme;
         EditorTheming.Apply(Editor, theme);
+    }
+
+    private void ApplyTextMateTheme(ResolvedTheme theme)
+    {
+        if (_textMate is not null && !ReferenceEquals(_textMateTheme, theme))
+        {
+            _textMate.SetTheme(CodeViewTextMate.ThemeFor(theme));
+            _textMateTheme = theme;
+        }
     }
 
     /// <summary>

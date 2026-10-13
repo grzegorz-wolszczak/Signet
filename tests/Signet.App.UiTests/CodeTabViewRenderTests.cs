@@ -172,6 +172,109 @@ public sealed class CodeTabViewRenderTests
         }
     }
 
+    // A script or JSON file in its own tab (highlighted by TextMate).
+    private static Window ShowMiscTab(string fileName, string text)
+    {
+        (SettingsStore settings, SpellChecker spellChecker) = NewSpellChecker();
+        string dir = System.IO.Directory.CreateTempSubdirectory("signet-uitests-").FullName;
+        string path = System.IO.Path.Combine(dir, fileName);
+        System.IO.File.WriteAllText(path, text);
+        MiscTextResource resource = new(dir, path);
+        resource.InitialLoad();
+
+        var vm = new CodeTabViewModel(new TabManagerModel().OpenResource(resource), new StatusBarService(), settings, spellChecker);
+        var window = new Window { Width = 600, Height = 400, Content = new CodeTabView { DataContext = vm } };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        WaitForTokens(window, text.Split('\n').Length);
+        return window;
+    }
+
+    // TextMate tokenizes on a background thread and then invalidates the lines: wait until no line of the document
+    // is drawn in a single color any more (every test text has more than one token kind per line).
+    private static void WaitForTokens(Window window, int lineCount)
+    {
+        TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
+        System.Diagnostics.Stopwatch watch = System.Diagnostics.Stopwatch.StartNew();
+        while (watch.Elapsed < System.TimeSpan.FromSeconds(10))
+        {
+            Dispatcher.UIThread.RunJobs();
+            bool colored = Enumerable.Range(1, lineCount).All(n => editor.TextArea.TextView
+                .GetOrConstructVisualLine(editor.Document.GetLineByNumber(n)).Elements
+                .Select(e => ((ISolidColorBrush)e.TextRunProperties.ForegroundBrush!).Color).Distinct().Count() > 1);
+            if (colored)
+            {
+                return;
+            }
+
+            System.Threading.Thread.Sleep(20);
+        }
+    }
+
+    private static Color ForegroundAt(Window window, int lineNumber, int column) =>
+        ((ISolidColorBrush)ElementAt(window, lineNumber, column).TextRunProperties.ForegroundBrush!).Color;
+
+    [AvaloniaFact]
+    public void JavaScript_tokens_take_the_colours_of_the_js_keys()
+    {
+        const string text = "var s = \"a\"; // note\nif (s) { return 42; }";
+        Window window = ShowMiscTab("script.js", text);
+        try
+        {
+            ForegroundAt(window, 1, 0).Should().Be(Fg(ThemeKeys.JsKeyword));
+            ForegroundAt(window, 1, text.IndexOf("\"a\"", System.StringComparison.Ordinal)).Should().Be(Fg(ThemeKeys.JsString));
+            ForegroundAt(window, 1, text.IndexOf("note", System.StringComparison.Ordinal)).Should().Be(Fg(ThemeKeys.JsComment));
+            ForegroundAt(window, 2, 0).Should().Be(Fg(ThemeKeys.JsControlKeyword));
+            ForegroundAt(window, 2, "if (s) { return ".Length).Should().Be(Fg(ThemeKeys.JsNumber));
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Json_tokens_take_the_colours_of_the_json_keys()
+    {
+        const string text = "{ \"name\": \"x\", \"n\": 1, \"ok\": true }";
+        Window window = ShowMiscTab("data.json", text);
+        try
+        {
+            ForegroundAt(window, 1, text.IndexOf("name", System.StringComparison.Ordinal)).Should().Be(Fg(ThemeKeys.JsonProperty));
+            ForegroundAt(window, 1, text.IndexOf("\"x\"", System.StringComparison.Ordinal) + 1).Should().Be(Fg(ThemeKeys.JsonString));
+            ForegroundAt(window, 1, text.IndexOf('1', System.StringComparison.Ordinal)).Should().Be(Fg(ThemeKeys.JsonNumber));
+            ForegroundAt(window, 1, text.IndexOf("true", System.StringComparison.Ordinal)).Should().Be(Fg(ThemeKeys.JsonConstant));
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Another_theme_recolours_an_open_script_tab_with_its_attributes()
+    {
+        Window window = ShowMiscTab("script.js", "var x = 1;");
+        Theme theme = new Theme(System.Ulid.NewUlid().ToString(), "Script").With(
+            ThemeKeys.JsKeyword.Id, ThemeEntry.Of(new TextAttributes { Foreground = ThemeColor.FromRgb(0x12, 0x34, 0x56), Bold = true }));
+        try
+        {
+            AppTheme.Apply(Avalonia.Application.Current!, new ResolvedTheme(theme, new ThemeResolver(_ => null)));
+            Dispatcher.UIThread.RunJobs();
+            window.CaptureRenderedFrame();
+
+            VisualLineElement keyword = ElementAt(window, 1, 0);
+            ((ISolidColorBrush)keyword.TextRunProperties.ForegroundBrush!).Color.Should().Be(Color.FromRgb(0x12, 0x34, 0x56));
+            keyword.TextRunProperties.Typeface.Weight.Should().Be(FontWeight.Bold);
+        }
+        finally
+        {
+            AppTheme.Apply(Avalonia.Application.Current!, ResolvedTheme.Defaults);
+            window.Close();
+        }
+    }
+
     [AvaloniaTheory]
     [InlineData(false)]
     [InlineData(true)]
