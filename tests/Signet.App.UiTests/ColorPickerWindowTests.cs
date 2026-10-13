@@ -8,7 +8,7 @@ using Signet.App.Views;
 
 namespace Signet.App.UiTests;
 
-/// <summary>The color picker window in Preferences: renders without an alpha channel and returns #RRGGBB.</summary>
+/// <summary>The color picker window in Preferences: without an alpha channel by default, returning #RRGGBB.</summary>
 public sealed class ColorPickerWindowTests
 {
     [AvaloniaFact]
@@ -29,5 +29,12 @@ public sealed class ColorPickerWindowTests
     public void ToHex_formats_rrggbb_without_alpha()
     {
         ColorPickerWindow.ToHex(Color.FromArgb(0x80, 0x0A, 0xBC, 0xFF)).Should().Be("#0ABCFF");
+    }
+
+    [AvaloniaFact]
+    public void ToHexWithAlpha_keeps_the_alpha_of_a_translucent_color_only()
+    {
+        ColorPickerWindow.ToHexWithAlpha(Color.FromArgb(0x80, 0x0A, 0xBC, 0xFF)).Should().Be("#800ABCFF");
+        ColorPickerWindow.ToHexWithAlpha(Color.FromArgb(0xFF, 0x0A, 0xBC, 0xFF)).Should().Be("#0ABCFF");
     }
 }

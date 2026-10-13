@@ -81,6 +81,38 @@ public sealed class ThemeStore
     /// <exception cref="KeyNotFoundException">There is no such theme.</exception>
     public Theme Get(string id) => Find(id) ?? throw new KeyNotFoundException($"No theme '{id}'.");
 
+    /// <summary>
+    /// Whether the theme (possibly with changes not saved yet) changes the key against what it starts from: a theme of
+    /// the user sets the key itself instead of taking its parent's value; a bundled theme gives it another value than
+    /// the one it comes with.
+    /// </summary>
+    public bool ChangesKey(Theme theme, ThemeKey key)
+    {
+        ArgumentNullException.ThrowIfNull(theme);
+        ArgumentNullException.ThrowIfNull(key);
+        if (!_pristine.TryGetValue(theme.Id, out Theme? bundled))
+        {
+            return theme.Entries.ContainsKey(key.Id);
+        }
+
+        return theme.Entries.TryGetValue(key.Id, out ThemeEntry? entry)
+            ? !Equals(entry, Effective(bundled, key))
+            : bundled.Entries.ContainsKey(key.Id);
+    }
+
+    /// <summary>
+    /// The theme with the change of the key undone (see <see cref="ChangesKey"/>): a theme of the user takes the
+    /// parent's value again, a bundled theme the value it comes with.
+    /// </summary>
+    public Theme WithoutChange(Theme theme, ThemeKey key)
+    {
+        ArgumentNullException.ThrowIfNull(theme);
+        ArgumentNullException.ThrowIfNull(key);
+        return _pristine.TryGetValue(theme.Id, out Theme? bundled) && bundled.Entries.TryGetValue(key.Id, out ThemeEntry? entry)
+            ? theme.With(key.Id, entry)
+            : theme.Without(key.Id);
+    }
+
     /// <summary>Whether a theme other than <paramref name="exceptId"/> has the name (ignoring case).</summary>
     public bool IsNameTaken(string name, string? exceptId = null) =>
         Themes.Any(t => t.Id != exceptId && string.Equals(t.Name.Trim(), name.Trim(), StringComparison.OrdinalIgnoreCase));

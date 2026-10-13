@@ -332,6 +332,40 @@ public sealed class PreferencesWindowRenderTests
         window.Close();
     }
 
+    /// <summary>
+    /// A page of the keys of the theme shows the tree of its keys and the panel of the selected one; the link to the
+    /// base of an inheriting key opens the page of the base with it selected.
+    /// </summary>
+    [AvaloniaFact]
+    public void A_color_scheme_page_shows_its_keys_and_links_to_the_base_of_a_key()
+    {
+        PreferencesWindow window = BuildWindow();
+        PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ColorSchemePageViewModel xhtml = vm.ColorScheme.PageFor(Signet.Core.Themes.ThemePage.Xhtml);
+        xhtml.SelectKey(Signet.Core.Themes.ThemeKeys.XhtmlCss);
+
+        ShowPage(window, "ThemeXhtmlPage");
+
+        window.Sections.Selected!.Path.Should().Be(string.Join(" › ",
+            Strings.Get("PreferencesWindow_Appearance"), Strings.Get("PreferencesWindow_ColorScheme"), Strings.Get("PreferencesWindow_ThemeXhtml")));
+        ColorSchemeKeysView view = window.FindControl<ColorSchemeKeysView>("ThemeXhtmlView")!;
+        view.DataContext.Should().BeSameAs(xhtml);
+        var source = (HierarchicalTreeDataGridSource<ThemeKeyNode>)view.FindControl<TreeDataGrid>("Tree")!.Source!;
+        source.RowSelection!.SelectedItem.Should().BeSameAs(xhtml.Selected);
+        view.FindControl<StackPanel>("AttributesPanel")!.IsVisible.Should().BeTrue();
+        view.FindControl<StackPanel>("ColorPanel")!.IsVisible.Should().BeFalse();
+        view.FindControl<CheckBox>("InheritBox")!.IsChecked.Should().BeTrue("Signet Light sets nothing, so xhtml.css takes css.value");
+
+        view.FindControl<HyperlinkButton>("BaseLink")!.Command!.Execute(null);
+        Dispatcher.UIThread.RunJobs();
+
+        window.Sections.Selected!.Title.Should().Be(Strings.Get("PreferencesWindow_ThemeCss"));
+        vm.ColorScheme.PageFor(Signet.Core.Themes.ThemePage.Css).Key.Should().Be(Signet.Core.Themes.ThemeKeys.CssValue);
+        window.Close();
+    }
+
     /// <summary>A section with more appearance settings than fonts links to its fonts at the top of its Appearance page.</summary>
     [AvaloniaTheory]
     [InlineData("CodeView")]

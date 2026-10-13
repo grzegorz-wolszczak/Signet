@@ -1,0 +1,119 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="using:Signet.App.Resources"
+             xmlns:vm="using:Signet.App.ViewModels"
+             xmlns:infra="using:Signet.App.Infrastructure"
+             x:Class="Signet.App.Views.ColorSchemeKeysView"
+             x:DataType="vm:ColorSchemePageViewModel">
+
+  <!-- A page of the keys of Appearance › Color Scheme, as Rider's Color Scheme pages: the tree of the keys of the page
+       on the left (keys the theme changes in bold) and the panel of the selected key on the right. -->
+  <UserControl.Resources>
+    <DataTemplate x:Key="ThemeKeyNameCellTemplate" x:DataType="vm:ThemeKeyNode">
+      <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                 Classes.modified="{Binding IsModified}" />
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <UserControl.Styles>
+    <Style Selector="TextBlock.modified">
+      <Setter Property="FontWeight" Value="Bold" />
+    </Style>
+    <!-- The button next to a color field: a swatch of the color; it opens the color picker. -->
+    <Style Selector="Button.swatch">
+      <Setter Property="Padding" Value="2" />
+      <Setter Property="Width" Value="30" />
+      <Setter Property="Height" Value="26" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.swatch > Border">
+      <Setter Property="BorderBrush" Value="{DynamicResource SignetFrameBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="TextBox.hex">
+      <Setter Property="Width" Value="110" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid ColumnDefinitions="260,6,*" MinHeight="320">
+    <Border Grid.Column="0" BorderBrush="{DynamicResource SignetFrameBrush}" BorderThickness="1">
+      <TreeDataGrid x:Name="Tree" ShowColumnHeaders="False" />
+    </Border>
+    <GridSplitter Grid.Column="1" ResizeDirection="Columns" Background="Transparent" />
+
+    <ScrollViewer Grid.Column="2">
+      <StackPanel Spacing="8" Margin="8,0,0,0">
+        <TextBlock Text="{loc:Loc ColorScheme_NoKey}" IsVisible="{Binding !HasKey}" Opacity="0.7" />
+
+        <StackPanel x:Name="KeyPanel" Spacing="8" IsVisible="{Binding HasKey}">
+          <!-- "Inherit values from <base>", with a link to the base (possibly on another page). -->
+          <StackPanel Orientation="Horizontal" Spacing="2" IsVisible="{Binding CanInherit}">
+            <CheckBox x:Name="InheritBox" Content="{loc:Loc ColorScheme_InheritFrom}" IsChecked="{Binding Inherit}" />
+            <HyperlinkButton x:Name="BaseLink" Content="{Binding BaseName}" Command="{Binding ShowBaseCommand}"
+                             VerticalAlignment="Center" />
+          </StackPanel>
+
+          <!-- The look of text. -->
+          <StackPanel x:Name="AttributesPanel" Spacing="6" IsVisible="{Binding IsAttributesKey}" IsEnabled="{Binding IsEditable}">
+            <CheckBox x:Name="BoldBox" Content="{loc:Loc ColorScheme_Bold}" IsChecked="{Binding Bold}" />
+            <CheckBox x:Name="ItalicBox" Content="{loc:Loc ColorScheme_Italic}" IsChecked="{Binding Italic}" />
+            <Grid ColumnDefinitions="Auto,Auto,Auto" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+              <CheckBox x:Name="ForegroundBox" Grid.Row="0" Grid.Column="0" Content="{loc:Loc ColorScheme_Foreground}"
+                        IsChecked="{Binding HasForeground}" />
+              <TextBox x:Name="ForegroundText" Grid.Row="0" Grid.Column="1" Classes="hex" IsEnabled="{Binding HasForeground}"
+                       Text="{Binding Foreground, UpdateSourceTrigger=LostFocus}" />
+              <Button Grid.Row="0" Grid.Column="2" Classes="swatch" IsEnabled="{Binding HasForeground}"
+                      Command="{Binding PickForegroundCommand}" ToolTip.Tip="{loc:Loc ColorScheme_PickColor}">
+                <Border Background="{Binding Foreground, Converter={x:Static infra:ColorConverters.ToBrush}, FallbackValue={x:Null}}" />
+              </Button>
+
+              <CheckBox x:Name="BackgroundBox" Grid.Row="1" Grid.Column="0" Content="{loc:Loc ColorScheme_Background}"
+                        IsChecked="{Binding HasBackground}" />
+              <TextBox x:Name="BackgroundText" Grid.Row="1" Grid.Column="1" Classes="hex" IsEnabled="{Binding HasBackground}"
+                       Text="{Binding Background, UpdateSourceTrigger=LostFocus}" />
+              <Button Grid.Row="1" Grid.Column="2" Classes="swatch" IsEnabled="{Binding HasBackground}"
+                      Command="{Binding PickBackgroundCommand}" ToolTip.Tip="{loc:Loc ColorScheme_PickColor}">
+                <Border Background="{Binding Background, Converter={x:Static infra:ColorConverters.ToBrush}, FallbackValue={x:Null}}" />
+              </Button>
+
+              <CheckBox x:Name="EffectBox" Grid.Row="2" Grid.Column="0" Content="{loc:Loc ColorScheme_Effects}"
+                        IsChecked="{Binding HasEffect}" />
+              <ComboBox x:Name="EffectTypeBox" Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" HorizontalAlignment="Stretch"
+                        IsEnabled="{Binding HasEffect}" ItemsSource="{Binding Effects}" SelectedItem="{Binding Effect}"
+                        DisplayMemberBinding="{Binding DisplayName}" />
+
+              <CheckBox x:Name="EffectColorBox" Grid.Row="3" Grid.Column="0" Content="{loc:Loc ColorScheme_EffectColor}"
+                        IsEnabled="{Binding HasEffect}" IsChecked="{Binding HasEffectColor}" Margin="20,0,0,0" />
+              <TextBox x:Name="EffectColorText" Grid.Row="3" Grid.Column="1" Classes="hex" IsEnabled="{Binding HasEffectColor}"
+                       Text="{Binding EffectColor, UpdateSourceTrigger=LostFocus}" />
+              <Button Grid.Row="3" Grid.Column="2" Classes="swatch" IsEnabled="{Binding HasEffectColor}"
+                      Command="{Binding PickEffectColorCommand}" ToolTip.Tip="{loc:Loc ColorScheme_PickColor}">
+                <Border Background="{Binding EffectColor, Converter={x:Static infra:ColorConverters.ToBrush}, FallbackValue={x:Null}}" />
+              </Button>
+            </Grid>
+          </StackPanel>
+
+          <!-- A single color. -->
+          <StackPanel x:Name="ColorPanel" Spacing="6" IsVisible="{Binding IsColorKey}">
+            <CheckBox x:Name="OwnColorBox" Content="{loc:Loc ColorScheme_OwnColor}" IsChecked="{Binding HasColor}"
+                      IsVisible="{Binding CanBeEmpty}" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <TextBlock Text="{loc:Loc ColorScheme_Color}" VerticalAlignment="Center" />
+              <TextBox x:Name="ColorText" Classes="hex" IsEnabled="{Binding HasColor}"
+                       Text="{Binding Color, UpdateSourceTrigger=LostFocus}" />
+              <Button Classes="swatch" IsEnabled="{Binding HasColor}" Command="{Binding PickColorCommand}"
+                      ToolTip.Tip="{loc:Loc ColorScheme_PickColor}">
+                <Border Background="{Binding Color, Converter={x:Static infra:ColorConverters.ToBrush}, FallbackValue={x:Null}}" />
+              </Button>
+            </StackPanel>
+            <TextBlock Text="{loc:Loc ColorScheme_OwnColorNote}" IsVisible="{Binding CanBeEmpty}" Opacity="0.7" TextWrapping="Wrap" />
+          </StackPanel>
+
+          <!-- Undoes the change of the key (the key is bold in the tree while it is changed). -->
+          <HyperlinkButton x:Name="RestoreLink" Content="{Binding RestoreText}" Command="{Binding RestoreCommand}"
+                           IsVisible="{Binding IsModified}" />
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

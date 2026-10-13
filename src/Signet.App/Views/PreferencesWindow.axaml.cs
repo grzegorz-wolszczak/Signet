@@ -18,6 +18,7 @@ using Signet.App.Resources;
 using Signet.App.ViewModels;
 using Signet.Controls.TreeDataGrid;
 using Signet.Core.Misc;
+using Signet.Core.Themes;
 
 namespace Signet.App.Views;
 
@@ -166,6 +167,36 @@ public partial class PreferencesWindow : Window
             vm.ColorScheme.Message = (title, message) => MessageDialog.ShowAsync(this, title, message);
             vm.ColorScheme.PickExportPath = PickThemeExportPathAsync;
             vm.ColorScheme.PickImportPath = PickThemeImportPathAsync;
+            vm.ColorScheme.ColorPicker = (title, initial) => ColorPickerWindow.AskAsync(this, title, initial, alpha: true);
+            foreach ((ThemePage page, ColorSchemeKeysView view) in ThemeKeyViews())
+            {
+                view.DataContext = vm.ColorScheme.PageFor(page);
+            }
+
+            vm.ColorScheme.KeyRequested -= OnThemeKeyRequested;
+            vm.ColorScheme.KeyRequested += OnThemeKeyRequested;
+        }
+    }
+
+    // The pages of the keys of the theme (Appearance › Color Scheme › …).
+    private (ThemePage Page, ColorSchemeKeysView View)[] ThemeKeyViews() => new[]
+    {
+        (ThemePage.General, ThemeGeneralView),
+        (ThemePage.Xhtml, ThemeXhtmlView),
+        (ThemePage.Css, ThemeCssView),
+        (ThemePage.JavaScriptJson, ThemeJavaScriptJsonView),
+        (ThemePage.Diff, ThemeDiffView),
+        (ThemePage.Preview, ThemePreviewView),
+        (ThemePage.Interface, ThemeInterfaceView),
+    };
+
+    // A link to a key on another page of the theme (e.g. the base of an inherited key): that page is shown.
+    private void OnThemeKeyRequested(object? sender, ThemeKey key)
+    {
+        ColorSchemeKeysView view = ThemeKeyViews().Single(v => v.Page == key.Page).View;
+        if (view.Parent is TabItem page && _sections.FindByPage(Pages.Items.IndexOf(page)) is { } node)
+        {
+            RevealSection(node);
         }
     }
 

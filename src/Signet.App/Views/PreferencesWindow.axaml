@@ -269,6 +269,30 @@
         </ScrollViewer>
       </TabItem>
 
+      <!-- Appearance › Color Scheme › <area>: the keys of the theme by area (ThemePage), each page with the tree of its
+           keys and the panel of the selected one. The DataContexts are set in code, like the Fonts pages. -->
+      <TabItem x:Name="ThemeGeneralPage" Header="{loc:Loc PreferencesWindow_General}" views:PreferencesPage.Parent="ColorSchemePage">
+        <views:ColorSchemeKeysView x:Name="ThemeGeneralView" Margin="8" />
+      </TabItem>
+      <TabItem x:Name="ThemeXhtmlPage" Header="{loc:Loc PreferencesWindow_ThemeXhtml}" views:PreferencesPage.Parent="ColorSchemePage">
+        <views:ColorSchemeKeysView x:Name="ThemeXhtmlView" Margin="8" />
+      </TabItem>
+      <TabItem x:Name="ThemeCssPage" Header="{loc:Loc PreferencesWindow_ThemeCss}" views:PreferencesPage.Parent="ColorSchemePage">
+        <views:ColorSchemeKeysView x:Name="ThemeCssView" Margin="8" />
+      </TabItem>
+      <TabItem x:Name="ThemeJavaScriptJsonPage" Header="{loc:Loc PreferencesWindow_ThemeJavaScriptJson}" views:PreferencesPage.Parent="ColorSchemePage">
+        <views:ColorSchemeKeysView x:Name="ThemeJavaScriptJsonView" Margin="8" />
+      </TabItem>
+      <TabItem x:Name="ThemeDiffPage" Header="{loc:Loc PreferencesWindow_ThemeDiff}" views:PreferencesPage.Parent="ColorSchemePage">
+        <views:ColorSchemeKeysView x:Name="ThemeDiffView" Margin="8" />
+      </TabItem>
+      <TabItem x:Name="ThemePreviewPage" Header="{loc:Loc PreferencesWindow_Preview}" views:PreferencesPage.Parent="ColorSchemePage">
+        <views:ColorSchemeKeysView x:Name="ThemePreviewView" Margin="8" />
+      </TabItem>
+      <TabItem x:Name="ThemeInterfacePage" Header="{loc:Loc PreferencesWindow_ThemeInterface}" views:PreferencesPage.Parent="ColorSchemePage">
+        <views:ColorSchemeKeysView x:Name="ThemeInterfaceView" Margin="8" />
+      </TabItem>
+
       <!-- =============================== Code View =============================== -->
       <!-- No settings of its own: the window fills the page with links to its subsections. -->
       <TabItem x:Name="CodeViewPage" Header="{loc:Loc PreferencesWindow_CodeView}" />

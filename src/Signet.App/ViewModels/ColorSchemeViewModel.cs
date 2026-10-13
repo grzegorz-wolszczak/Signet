@@ -42,6 +42,9 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
     private readonly SettingsStore _settings;
     private readonly Dictionary<string, Theme> _edited = new(StringComparer.Ordinal);
 
+    // Resolves the keys with the changes not saved yet, also those of the parents.
+    private readonly ThemeResolver _editResolver;
+
     /// <summary>Creates the page.</summary>
     /// <param name="store">The themes.</param>
     /// <param name="settings">The draft of the Preferences window (the theme in use, <see cref="SettingsStore.UiThemeId"/>).</param>
@@ -49,6 +52,8 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        _editResolver = new ThemeResolver(id => _edited.GetValueOrDefault(id) ?? _store.Find(id));
+        Pages = Enum.GetValues<ThemePage>().Select(page => new ColorSchemePageViewModel(this, page)).ToArray();
         Variants = new[]
         {
             new VariantOption(InterfaceVariant.Light, Strings.Get("ColorScheme_VariantLight")),
@@ -62,6 +67,27 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
 
     /// <summary>Raised when the changes not saved yet appear or go (the Save button of the window).</summary>
     public event EventHandler? Changed;
+
+    /// <summary>Raised when the values of the keys may differ: another theme was selected, or a key was changed.</summary>
+    public event EventHandler? ThemeEdited;
+
+    /// <summary>Raised by a link to a key on another page ("Inherit values from …"): the window shows that page.</summary>
+    public event EventHandler<ThemeKey>? KeyRequested;
+
+    /// <summary>
+    /// Picks a color: title, initial color (<c>#RRGGBB</c> / <c>#AARRGGBB</c>) → the color, or <c>null</c> after
+    /// Cancel; <c>null</c> (tests without a UI) = the pick buttons do nothing.
+    /// </summary>
+    public Func<string, string, Task<string?>>? ColorPicker { get; set; }
+
+    /// <summary>The pages of the keys (General, XHTML, CSS, …), in the order of <see cref="ThemePage"/>.</summary>
+    public IReadOnlyList<ColorSchemePageViewModel> Pages { get; }
+
+    /// <summary>The page of the keys of <paramref name="page"/>.</summary>
+    public ColorSchemePageViewModel PageFor(ThemePage page) => Pages[(int)page];
+
+    /// <summary>The selected theme with the changes not saved yet, resolved (also with the changes of its parents).</summary>
+    public ResolvedTheme? Resolved => Current is { } theme ? new ResolvedTheme(theme, _editResolver) : null;
 
     /// <summary>Asks for a name: title, prompt, initial text → the text, or <c>null</c> after Cancel.</summary>
     public Func<string, string, string, Task<string?>>? TextPrompt { get; set; }
@@ -99,6 +125,43 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
         {
             _settings.UiThemeId = value.Id;
         }
+
+        ThemeEdited?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Whether the selected theme changes the key (<see cref="ThemeStore.ChangesKey"/>).</summary>
+    internal bool ChangesKey(ThemeKey key) => Current is { } theme && _store.ChangesKey(theme, key);
+
+    /// <summary>
+    /// Where "restore" takes the value of a changed key from: the name of the parent of a theme of the user;
+    /// <c>null</c> for a bundled theme (its own value).
+    /// </summary>
+    internal string? RestoreSource =>
+        Current is { ParentId: { } parentId } ? (_edited.GetValueOrDefault(parentId) ?? _store.Find(parentId))?.Name : null;
+
+    /// <summary>Gives a key of the selected theme a value (kept until Save).</summary>
+    internal void SetKey(ThemeKey key, ThemeEntry entry)
+    {
+        if (Current is { } theme && !Equals(theme.Entries.GetValueOrDefault(key.Id), entry))
+        {
+            Edit(theme.With(key.Id, entry));
+        }
+    }
+
+    /// <summary>Undoes the change of a key of the selected theme (<see cref="ThemeStore.WithoutChange"/>).</summary>
+    internal void RestoreKey(ThemeKey key)
+    {
+        if (Current is { } theme)
+        {
+            Edit(_store.WithoutChange(theme, key));
+        }
+    }
+
+    /// <summary>Shows the key on its page (a link to a key, e.g. the base of an inherited one).</summary>
+    internal void RequestKey(ThemeKey key)
+    {
+        PageFor(key.Page).SelectKey(key);
+        KeyRequested?.Invoke(this, key);
     }
 
     /// <summary>The selected theme with the changes not saved yet.</summary>
@@ -293,6 +356,7 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
         _edited[theme.Id] = theme;
         OnPropertyChanged(nameof(CanRestoreDefaults));
         RestoreDefaultsCommand.NotifyCanExecuteChanged();
+        ThemeEdited?.Invoke(this, EventArgs.Empty);
         if (first)
         {
             Changed?.Invoke(this, EventArgs.Empty);

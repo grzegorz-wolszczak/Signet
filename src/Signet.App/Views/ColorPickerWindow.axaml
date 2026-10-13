@@ -7,8 +7,9 @@
         CanResize="False"
         Title="{loc:Loc ColorPickerWindow_Title}">
 
-  <!-- #RRGGBB color picker for the color fields in Preferences: spectrum, sliders, palette and a hex field;
-       no alpha channel (all Code View colors are opaque). OK sets the color, Cancel does not. -->
+  <!-- Color picker for the color fields in Preferences: spectrum, sliders, palette and a hex field. The alpha channel is
+       shown only when asked for (the theme editor: e.g. the translucent fills of the diff). OK sets the color, Cancel
+       does not. -->
   <StackPanel Margin="16" Spacing="12">
     <ColorView x:Name="Picker"
                IsAlphaEnabled="False" IsAlphaVisible="False"

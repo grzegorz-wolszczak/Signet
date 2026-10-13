@@ -71,6 +71,46 @@ public sealed class ThemeStoreTests
         Directory.GetFiles(dir.Path).Should().BeEmpty();
     }
 
+    [Theory]
+    [InlineData(ThemeStore.LightId)]
+    [InlineData(ThemeStore.DarkId)]
+    public void A_key_of_a_bundled_theme_is_changed_only_when_its_value_differs_from_the_bundled_one(string id)
+    {
+        using TempDir dir = new();
+        ThemeStore sut = new(dir.Path);
+        Theme bundled = sut.Get(id);
+        ThemeEntry own = bundled.Entries.GetValueOrDefault(ThemeKeys.XhtmlTag.Id) ?? ThemeEntry.Of(ThemeKeys.XhtmlTag.DefaultAttributes!);
+
+        Theme changed = bundled.With(ThemeKeys.XhtmlTag.Id, ThemeEntry.Of(Changed));
+
+        sut.ChangesKey(bundled, ThemeKeys.XhtmlTag).Should().BeFalse();
+        sut.ChangesKey(bundled.With(ThemeKeys.XhtmlTag.Id, own), ThemeKeys.XhtmlTag).Should().BeFalse("it is the bundled value");
+        sut.ChangesKey(changed, ThemeKeys.XhtmlTag).Should().BeTrue();
+        sut.ChangesKey(changed, ThemeKeys.CssValue).Should().BeFalse();
+        Theme restored = sut.WithoutChange(changed, ThemeKeys.XhtmlTag);
+        sut.ChangesKey(restored, ThemeKeys.XhtmlTag).Should().BeFalse();
+        sut.Resolver.Attributes(restored, ThemeKeys.XhtmlTag).Should().Be(sut.Resolver.Attributes(bundled, ThemeKeys.XhtmlTag));
+    }
+
+    [Fact]
+    public void A_key_of_a_theme_of_the_user_is_changed_when_the_theme_sets_it_and_undoing_takes_the_parent_value()
+    {
+        using TempDir dir = new();
+        ThemeStore sut = new(dir.Path);
+        Theme user = sut.Duplicate(ThemeStore.DarkId, Any.Create<string>());
+
+        Theme changed = user.With(ThemeKeys.XhtmlTag.Id, ThemeEntry.Of(Changed));
+
+        sut.ChangesKey(user, ThemeKeys.XhtmlTag).Should().BeFalse();
+        sut.ChangesKey(changed, ThemeKeys.XhtmlTag).Should().BeTrue();
+        sut.ChangesKey(user.With(ThemeKeys.XhtmlCssComment.Id, ThemeEntry.Inherited), ThemeKeys.XhtmlCssComment)
+            .Should().BeTrue("an inherit entry is the theme's own too");
+        Theme restored = sut.WithoutChange(changed, ThemeKeys.XhtmlTag);
+        restored.Entries.Should().NotContainKey(ThemeKeys.XhtmlTag.Id);
+        sut.Resolver.Attributes(restored, ThemeKeys.XhtmlTag)
+            .Should().Be(sut.Resolver.Attributes(sut.Get(ThemeStore.DarkId), ThemeKeys.XhtmlTag));
+    }
+
     [Fact]
     public void A_copy_of_a_bundled_theme_has_it_as_the_parent_and_keeps_its_changes()
     {

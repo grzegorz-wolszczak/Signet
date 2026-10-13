@@ -5141,4 +5141,388 @@ Zamknij zakładkę</value>
   <data name="FontFaceDialog_Style" xml:space="preserve">
     <value>Krój (font-style)</value>
   </data>
+  <data name="PreferencesWindow_ThemeXhtml" xml:space="preserve">
+    <value>XHTML</value>
+  </data>
+  <data name="PreferencesWindow_ThemeCss" xml:space="preserve">
+    <value>CSS</value>
+  </data>
+  <data name="PreferencesWindow_ThemeJavaScriptJson" xml:space="preserve">
+    <value>JavaScript i JSON</value>
+  </data>
+  <data name="PreferencesWindow_ThemeDiff" xml:space="preserve">
+    <value>Porównanie (Diff)</value>
+  </data>
+  <data name="PreferencesWindow_ThemeInterface" xml:space="preserve">
+    <value>Interfejs</value>
+  </data>
+  <data name="ThemeGroup_Editor" xml:space="preserve">
+    <value>Edytor</value>
+  </data>
+  <data name="ThemeGroup_Search" xml:space="preserve">
+    <value>Wyszukiwanie</value>
+  </data>
+  <data name="ThemeGroup_Errors" xml:space="preserve">
+    <value>Błędy</value>
+  </data>
+  <data name="ThemeGroup_Hints" xml:space="preserve">
+    <value>Podpowiedzi</value>
+  </data>
+  <data name="ThemeGroup_Markup" xml:space="preserve">
+    <value>Znaczniki</value>
+  </data>
+  <data name="ThemeGroup_Links" xml:space="preserve">
+    <value>Odnośniki</value>
+  </data>
+  <data name="ThemeGroup_Text" xml:space="preserve">
+    <value>Tekst</value>
+  </data>
+  <data name="ThemeGroup_EmbeddedCSS" xml:space="preserve">
+    <value>Osadzony CSS</value>
+  </data>
+  <data name="ThemeGroup_Selectors" xml:space="preserve">
+    <value>Selektory</value>
+  </data>
+  <data name="ThemeGroup_Declarations" xml:space="preserve">
+    <value>Deklaracje</value>
+  </data>
+  <data name="ThemeGroup_Rules" xml:space="preserve">
+    <value>Reguły</value>
+  </data>
+  <data name="ThemeGroup_JavaScript" xml:space="preserve">
+    <value>JavaScript</value>
+  </data>
+  <data name="ThemeGroup_JSON" xml:space="preserve">
+    <value>JSON</value>
+  </data>
+  <data name="ThemeGroup_Lines" xml:space="preserve">
+    <value>Wiersze</value>
+  </data>
+  <data name="ThemeGroup_Words" xml:space="preserve">
+    <value>Słowa</value>
+  </data>
+  <data name="ThemeGroup_Book" xml:space="preserve">
+    <value>Książka</value>
+  </data>
+  <data name="ThemeGroup_Controls" xml:space="preserve">
+    <value>Kontrolki</value>
+  </data>
+  <data name="ThemeGroup_Messages" xml:space="preserve">
+    <value>Komunikaty</value>
+  </data>
+  <data name="ThemeGroup_Icons" xml:space="preserve">
+    <value>Ikony</value>
+  </data>
+  <data name="ThemeGroup_Previews" xml:space="preserve">
+    <value>Podglądy</value>
+  </data>
+  <data name="ThemeGroup_Palette" xml:space="preserve">
+    <value>Paleta Fluent</value>
+  </data>
+  <data name="ThemeKey_editor_text" xml:space="preserve">
+    <value>Tekst domyślny</value>
+  </data>
+  <data name="ThemeKey_editor_currentLine" xml:space="preserve">
+    <value>Bieżąca linia</value>
+  </data>
+  <data name="ThemeKey_editor_lineNumbers" xml:space="preserve">
+    <value>Numery linii</value>
+  </data>
+  <data name="ThemeKey_editor_selection" xml:space="preserve">
+    <value>Zaznaczenie</value>
+  </data>
+  <data name="ThemeKey_editor_tagPair" xml:space="preserve">
+    <value>Para znaczników</value>
+  </data>
+  <data name="ThemeKey_search_match" xml:space="preserve">
+    <value>Trafienie wyszukiwania</value>
+  </data>
+  <data name="ThemeKey_search_marked" xml:space="preserve">
+    <value>Oznaczone wyniki (Mark)</value>
+  </data>
+  <data name="ThemeKey_errors_wellFormed" xml:space="preserve">
+    <value>Błąd poprawności XML</value>
+  </data>
+  <data name="ThemeKey_errors_wellFormedWarning" xml:space="preserve">
+    <value>Ostrzeżenie o poprawności XML</value>
+  </data>
+  <data name="ThemeKey_errors_syntax" xml:space="preserve">
+    <value>Błąd składni</value>
+  </data>
+  <data name="ThemeKey_errors_spelling" xml:space="preserve">
+    <value>Błąd pisowni</value>
+  </data>
+  <data name="ThemeKey_hints_openTag" xml:space="preserve">
+    <value>Podpowiedź znacznika otwierającego</value>
+  </data>
+  <data name="ThemeKey_xhtml_doctype" xml:space="preserve">
+    <value>DOCTYPE</value>
+  </data>
+  <data name="ThemeKey_xhtml_tag" xml:space="preserve">
+    <value>Znacznik</value>
+  </data>
+  <data name="ThemeKey_xhtml_namespacePrefix" xml:space="preserve">
+    <value>Prefiks przestrzeni nazw</value>
+  </data>
+  <data name="ThemeKey_xhtml_attribute_name" xml:space="preserve">
+    <value>Nazwa atrybutu</value>
+  </data>
+  <data name="ThemeKey_xhtml_attribute_value" xml:space="preserve">
+    <value>Wartość atrybutu</value>
+  </data>
+  <data name="ThemeKey_xhtml_entity" xml:space="preserve">
+    <value>Encja</value>
+  </data>
+  <data name="ThemeKey_xhtml_specialSpace" xml:space="preserve">
+    <value>Spacja specjalna</value>
+  </data>
+  <data name="ThemeKey_xhtml_comment" xml:space="preserve">
+    <value>Komentarz</value>
+  </data>
+  <data name="ThemeKey_link" xml:space="preserve">
+    <value>Odnośnik</value>
+  </data>
+  <data name="ThemeKey_link_broken" xml:space="preserve">
+    <value>Uszkodzony odnośnik</value>
+  </data>
+  <data name="ThemeKey_xhtml_text_bold" xml:space="preserve">
+    <value>Tekst pogrubiony</value>
+  </data>
+  <data name="ThemeKey_xhtml_text_italic" xml:space="preserve">
+    <value>Tekst pochylony</value>
+  </data>
+  <data name="ThemeKey_xhtml_text_boldItalic" xml:space="preserve">
+    <value>Tekst pogrubiony i pochylony</value>
+  </data>
+  <data name="ThemeKey_xhtml_css" xml:space="preserve">
+    <value>Kod CSS</value>
+  </data>
+  <data name="ThemeKey_xhtml_css_comment" xml:space="preserve">
+    <value>Komentarz CSS</value>
+  </data>
+  <data name="ThemeKey_css_selector" xml:space="preserve">
+    <value>Selektor</value>
+  </data>
+  <data name="ThemeKey_css_specialSelector" xml:space="preserve">
+    <value>Selektor specjalny</value>
+  </data>
+  <data name="ThemeKey_css_property" xml:space="preserve">
+    <value>Właściwość</value>
+  </data>
+  <data name="ThemeKey_css_value" xml:space="preserve">
+    <value>Wartość</value>
+  </data>
+  <data name="ThemeKey_css_constant" xml:space="preserve">
+    <value>Stała</value>
+  </data>
+  <data name="ThemeKey_css_string" xml:space="preserve">
+    <value>Napis</value>
+  </data>
+  <data name="ThemeKey_css_atRule" xml:space="preserve">
+    <value>Reguła @</value>
+  </data>
+  <data name="ThemeKey_css_comment" xml:space="preserve">
+    <value>Komentarz</value>
+  </data>
+  <data name="ThemeKey_js_keyword" xml:space="preserve">
+    <value>Słowo kluczowe</value>
+  </data>
+  <data name="ThemeKey_js_controlKeyword" xml:space="preserve">
+    <value>Słowo kluczowe sterujące</value>
+  </data>
+  <data name="ThemeKey_js_operator" xml:space="preserve">
+    <value>Operator</value>
+  </data>
+  <data name="ThemeKey_js_string" xml:space="preserve">
+    <value>Napis</value>
+  </data>
+  <data name="ThemeKey_js_number" xml:space="preserve">
+    <value>Liczba</value>
+  </data>
+  <data name="ThemeKey_js_constant" xml:space="preserve">
+    <value>Stała</value>
+  </data>
+  <data name="ThemeKey_js_regexp" xml:space="preserve">
+    <value>Wyrażenie regularne</value>
+  </data>
+  <data name="ThemeKey_js_comment" xml:space="preserve">
+    <value>Komentarz</value>
+  </data>
+  <data name="ThemeKey_js_function" xml:space="preserve">
+    <value>Funkcja</value>
+  </data>
+  <data name="ThemeKey_js_variable" xml:space="preserve">
+    <value>Zmienna</value>
+  </data>
+  <data name="ThemeKey_js_type" xml:space="preserve">
+    <value>Typ</value>
+  </data>
+  <data name="ThemeKey_json_property" xml:space="preserve">
+    <value>Nazwa właściwości</value>
+  </data>
+  <data name="ThemeKey_json_string" xml:space="preserve">
+    <value>Napis</value>
+  </data>
+  <data name="ThemeKey_json_number" xml:space="preserve">
+    <value>Liczba</value>
+  </data>
+  <data name="ThemeKey_json_constant" xml:space="preserve">
+    <value>Stała (true, false, null)</value>
+  </data>
+  <data name="ThemeKey_diff_deletedLine" xml:space="preserve">
+    <value>Usunięta linia</value>
+  </data>
+  <data name="ThemeKey_diff_insertedLine" xml:space="preserve">
+    <value>Dodana linia</value>
+  </data>
+  <data name="ThemeKey_diff_emptyCell" xml:space="preserve">
+    <value>Pusta komórka</value>
+  </data>
+  <data name="ThemeKey_diff_deletedWord" xml:space="preserve">
+    <value>Usunięte słowo</value>
+  </data>
+  <data name="ThemeKey_diff_insertedWord" xml:space="preserve">
+    <value>Dodane słowo</value>
+  </data>
+  <data name="ThemeKey_preview_highlight" xml:space="preserve">
+    <value>Podświetlenie klikniętego elementu</value>
+  </data>
+  <data name="ThemeKey_preview_background" xml:space="preserve">
+    <value>Tło</value>
+  </data>
+  <data name="ThemeKey_preview_text" xml:space="preserve">
+    <value>Tekst</value>
+  </data>
+  <data name="ThemeKey_ui_accent" xml:space="preserve">
+    <value>Akcent</value>
+  </data>
+  <data name="ThemeKey_ui_textSelection" xml:space="preserve">
+    <value>Zaznaczenie tekstu</value>
+  </data>
+  <data name="ThemeKey_ui_dangerButton" xml:space="preserve">
+    <value>Przycisk niebezpieczny</value>
+  </data>
+  <data name="ThemeKey_ui_dangerButton_hover" xml:space="preserve">
+    <value>Przycisk niebezpieczny (wskazany)</value>
+  </data>
+  <data name="ThemeKey_ui_dangerButton_pressed" xml:space="preserve">
+    <value>Przycisk niebezpieczny (wciśnięty)</value>
+  </data>
+  <data name="ThemeKey_ui_dangerButton_text" xml:space="preserve">
+    <value>Tekst przycisku niebezpiecznego</value>
+  </data>
+  <data name="ThemeKey_ui_frame" xml:space="preserve">
+    <value>Ramka</value>
+  </data>
+  <data name="ThemeKey_ui_mutedText" xml:space="preserve">
+    <value>Tekst przygaszony</value>
+  </data>
+  <data name="ThemeKey_ui_warningText" xml:space="preserve">
+    <value>Ostrzeżenie</value>
+  </data>
+  <data name="ThemeKey_ui_errorNotification" xml:space="preserve">
+    <value>Powiadomienie o błędzie</value>
+  </data>
+  <data name="ThemeKey_ui_errorText" xml:space="preserve">
+    <value>Tekst błędu</value>
+  </data>
+  <data name="ThemeKey_ui_renameErrorText" xml:space="preserve">
+    <value>Błąd Regex Rename</value>
+  </data>
+  <data name="ThemeKey_ui_riskMarker" xml:space="preserve">
+    <value>Znacznik ryzyka (⚠)</value>
+  </data>
+  <data name="ThemeKey_ui_filterActive" xml:space="preserve">
+    <value>Aktywny filtr</value>
+  </data>
+  <data name="ThemeKey_ui_icon_inactive" xml:space="preserve">
+    <value>Ikona nieaktywna</value>
+  </data>
+  <data name="ThemeKey_ui_icon_attention" xml:space="preserve">
+    <value>Ikona ostrzegawcza</value>
+  </data>
+  <data name="ThemeKey_ui_icon_folder" xml:space="preserve">
+    <value>Folder</value>
+  </data>
+  <data name="ThemeKey_ui_icon_folderInner" xml:space="preserve">
+    <value>Wnętrze folderu</value>
+  </data>
+  <data name="ThemeKey_ui_icon_file" xml:space="preserve">
+    <value>Plik</value>
+  </data>
+  <data name="ThemeKey_ui_icon_fileOutline" xml:space="preserve">
+    <value>Obrys pliku</value>
+  </data>
+  <data name="ThemeKey_ui_icon_fileFold" xml:space="preserve">
+    <value>Zagięty róg pliku</value>
+  </data>
+  <data name="ThemeKey_ui_fontPreview" xml:space="preserve">
+    <value>Podgląd czcionki</value>
+  </data>
+  <data name="ColorScheme_KeysColumn" xml:space="preserve">
+    <value>Element</value>
+  </data>
+  <data name="ColorScheme_NoKey" xml:space="preserve">
+    <value>Wybierz element w drzewie.</value>
+  </data>
+  <data name="ColorScheme_Bold" xml:space="preserve">
+    <value>Pogrubienie</value>
+  </data>
+  <data name="ColorScheme_Italic" xml:space="preserve">
+    <value>Kursywa</value>
+  </data>
+  <data name="ColorScheme_Foreground" xml:space="preserve">
+    <value>Kolor tekstu</value>
+  </data>
+  <data name="ColorScheme_Background" xml:space="preserve">
+    <value>Tło</value>
+  </data>
+  <data name="ColorScheme_Effects" xml:space="preserve">
+    <value>Efekt</value>
+  </data>
+  <data name="ColorScheme_EffectColor" xml:space="preserve">
+    <value>Własny kolor efektu</value>
+  </data>
+  <data name="ColorScheme_Color" xml:space="preserve">
+    <value>Kolor</value>
+  </data>
+  <data name="ColorScheme_OwnColor" xml:space="preserve">
+    <value>Własny kolor</value>
+  </data>
+  <data name="ColorScheme_OwnColorNote" xml:space="preserve">
+    <value>Bez własnego koloru: kolor systemu (akcent), palety Fluent albo książki (Preview).</value>
+  </data>
+  <data name="ColorScheme_InheritFrom" xml:space="preserve">
+    <value>Dziedzicz wartości z:</value>
+  </data>
+  <data name="ColorScheme_RestoreFromParent" xml:space="preserve">
+    <value>Przywróć wartość z motywu „{0}”</value>
+  </data>
+  <data name="ColorScheme_RestoreDefault" xml:space="preserve">
+    <value>Przywróć wartość domyślną</value>
+  </data>
+  <data name="ColorScheme_PickColor" xml:space="preserve">
+    <value>Wybierz kolor…</value>
+  </data>
+  <data name="ColorScheme_EffectUnderline" xml:space="preserve">
+    <value>Podkreślenie</value>
+  </data>
+  <data name="ColorScheme_EffectBoldUnderline" xml:space="preserve">
+    <value>Grube podkreślenie</value>
+  </data>
+  <data name="ColorScheme_EffectWave" xml:space="preserve">
+    <value>Falka</value>
+  </data>
+  <data name="ColorScheme_EffectDottedUnderline" xml:space="preserve">
+    <value>Podkreślenie kropkowane</value>
+  </data>
+  <data name="ColorScheme_EffectDashedUnderline" xml:space="preserve">
+    <value>Podkreślenie kreskowane</value>
+  </data>
+  <data name="ColorScheme_EffectBox" xml:space="preserve">
+    <value>Ramka</value>
+  </data>
+  <data name="ColorScheme_EffectStrikeout" xml:space="preserve">
+    <value>Przekreślenie</value>
+  </data>
 </root>
