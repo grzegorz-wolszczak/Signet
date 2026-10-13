@@ -40,6 +40,14 @@ public sealed class ThemeControlsPreview : Border
         _blinkTimer.Tick += (_, _) => OnBlinkTick();
     }
 
+    /// <inheritdoc />
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        // A blink must not outlive the preview (e.g. the Preferences window closed while it runs).
+        _blinkTimer.Stop();
+        base.OnDetachedFromVisualTree(e);
+    }
+
     /// <summary>Raised by a click on an element shown in the look of a key.</summary>
     public event EventHandler<ThemeKey>? KeyClicked;
 

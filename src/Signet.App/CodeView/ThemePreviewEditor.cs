@@ -35,6 +35,9 @@ public sealed class ThemePreviewEditor : TextEditor
     private SyntaxColorizer? _colorizer;
     private TextMate.Installation? _textMate;
     private ThemeKey? _blinkKey;
+
+    // Whether the editor is in a visual tree (TextMate is installed only then).
+    private bool _attached;
     private int _blinkTick;
 
     /// <summary>Creates the editor (read-only, not focusable, with line numbers).</summary>
@@ -60,6 +63,29 @@ public sealed class ThemePreviewEditor : TextEditor
 
     /// <inheritdoc />
     protected override Type StyleKeyOverride => typeof(TextEditor);
+
+    /// <inheritdoc />
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        _attached = true;
+        if (_sample is not null && _textMate is null && _colorizer is null)
+        {
+            InstallSyntax(_sample);
+        }
+    }
+
+    /// <inheritdoc />
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        // Nothing may outlive the shown preview (e.g. a page of the Preferences window left or the window closed): the
+        // blink stops, and TextMate goes with its tokenizer thread (installed again when the preview is shown).
+        _attached = false;
+        _blinkTimer.Stop();
+        _textMate?.Dispose();
+        _textMate = null;
+        base.OnDetachedFromVisualTree(e);
+    }
 
     /// <summary>Shows a sample in the colors of a theme.</summary>
     public void Show(ThemeSample sample, ResolvedTheme theme)
@@ -130,7 +156,7 @@ public sealed class ThemePreviewEditor : TextEditor
             // Before the marks, so that a mark (e.g. the selection) wins over the syntax.
             TextArea.TextView.LineTransformers.Insert(0, _colorizer);
         }
-        else if (CodeViewTextMate.ScopeFor(syntax) is { } scope)
+        else if (CodeViewTextMate.ScopeFor(syntax) is { } scope && _attached)
         {
             // The document is already the final one (see the TextMate note in CodeTabView.ApplyGrammar).
             _textMate = this.InstallTextMate(CodeViewTextMate.Options);
