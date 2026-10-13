@@ -1137,6 +1137,16 @@ public sealed class SettingsStore
         set => WriteSizeMap("preferences_splitter_sizes", value);
     }
 
+    /// <summary>
+    /// The sizes the user gave the split panes of the other windows (pane name -&gt; width or height in pixels), e.g.
+    /// the details of the "Convert Footnotes of Other Origin" dialog. Window state, not a preference.
+    /// </summary>
+    public IReadOnlyDictionary<string, int> PaneSizes
+    {
+        get => ReadSizeMap("pane_sizes");
+        set => WriteSizeMap("pane_sizes", value);
+    }
+
     // A map of the window group of names to sizes in pixels; entries that are not positive numbers are skipped.
     private Dictionary<string, int> ReadSizeMap(string key)
     {

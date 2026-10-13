@@ -4582,7 +4582,7 @@ Convert anyway?</value>
     <value>Uncheck All</value>
   </data>
   <data name="FootnoteConversionWindow_DoubleClickHint" xml:space="preserve">
-    <value>Double-click a reference or a note to open it in the code.</value>
+    <value>Double-click in the Reference or Note column to open that place in the code.</value>
   </data>
   <data name="FootnoteConversionWindow_KeepClasses" xml:space="preserve">
     <value>Keep the classes of other origin</value>
@@ -4641,11 +4641,53 @@ Convert anyway?</value>
   <data name="FootnoteConversionWindow_Global" xml:space="preserve">
     <value>global</value>
   </data>
-  <data name="FootnoteConversionWindow_Reference" xml:space="preserve">
-    <value>Reference: {0} — {1}</value>
+  <data name="FootnoteConversionWindow_ItemTitle" xml:space="preserve">
+    <value>“{0}” → {1}</value>
   </data>
-  <data name="FootnoteConversionWindow_Note" xml:space="preserve">
-    <value>Note: {0} — {1}</value>
+  <data name="FootnoteConversionWindow_ColumnFootnote" xml:space="preserve">
+    <value>Footnote</value>
+  </data>
+  <data name="FootnoteConversionWindow_ColumnKind" xml:space="preserve">
+    <value>Kind</value>
+  </data>
+  <data name="FootnoteConversionWindow_ColumnReference" xml:space="preserve">
+    <value>Reference</value>
+  </data>
+  <data name="FootnoteConversionWindow_ColumnNote" xml:space="preserve">
+    <value>Note</value>
+  </data>
+  <data name="FootnoteConversionWindow_OnlyWarnings" xml:space="preserve">
+    <value>Only those that need a look (⚠ {0})</value>
+  </data>
+  <data name="FootnoteConversionWindow_FileTitle" xml:space="preserve">
+    <value>{0} ({1})</value>
+  </data>
+  <data name="FootnoteConversionWindow_FileTitleWarnings" xml:space="preserve">
+    <value>{0} ({1}, ⚠ {2})</value>
+  </data>
+  <data name="FootnoteConversionWindow_OtherReference" xml:space="preserve">
+    <value>Another reference</value>
+  </data>
+  <data name="FootnoteConversionWindow_OtherLink" xml:space="preserve">
+    <value>Another link</value>
+  </data>
+  <data name="FootnoteConversionWindow_Location" xml:space="preserve">
+    <value>{0}, line {1}</value>
+  </data>
+  <data name="FootnoteConversionWindow_PlaceReference" xml:space="preserve">
+    <value>Reference:</value>
+  </data>
+  <data name="FootnoteConversionWindow_PlaceNote" xml:space="preserve">
+    <value>Note:</value>
+  </data>
+  <data name="FootnoteConversionWindow_PlaceFile" xml:space="preserve">
+    <value>File:</value>
+  </data>
+  <data name="FootnoteConversionWindow_GoTo" xml:space="preserve">
+    <value>Go to</value>
+  </data>
+  <data name="FootnoteConversionWindow_NoSelection" xml:space="preserve">
+    <value>Select a row to see its details.</value>
   </data>
   <data name="FootnoteConversionWindow_CannotConvert" xml:space="preserve">
     <value>Several references lead to the note — Signet does not convert this footnote (it stays of other origin).</value>

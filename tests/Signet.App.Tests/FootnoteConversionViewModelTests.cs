@@ -103,8 +103,123 @@ public sealed class FootnoteConversionViewModelTests
             FootnoteConversionItemViewModel item = NewViewModel(book).Items[0];
 
             item.Header.Should().Be(Strings.Format("FootnoteConversionWindow_ItemHeader", "1", 1, Strings.Get("FootnoteConversionWindow_Local")));
-            item.ReferenceText.Should().StartWith(Strings.Format("FootnoteConversionWindow_Reference", html.BookPath, "A[1]"));
-            item.NoteText.Should().Be(Strings.Format("FootnoteConversionWindow_Note", html.BookPath, "First note."));
+            item.Title.Should().Be(Strings.Format("FootnoteConversionWindow_ItemTitle", "1", 1));
+            item.Kind.Should().Be(Strings.Get("FootnoteConversionWindow_Local"));
+            item.Reference.Should().StartWith("A[1]");
+            item.Note.Should().Be("First note.");
+        }
+    }
+
+    [Fact]
+    public void The_tree_puts_the_footnotes_under_their_file_and_the_other_references_under_their_footnote()
+    {
+        using UiCultureScope culture = new("en");
+        (Book book, HtmlResource html) = BookWithLocalFootnotes();
+        using (book)
+        {
+            FootnoteConversionViewModel sut = NewViewModel(book);
+
+            FootnoteConversionFileNode file = sut.Roots.Should().ContainSingle().Subject;
+            file.File.Should().BeSameAs(html);
+            file.Title.Should().Be(Strings.Format("FootnoteConversionWindow_FileTitleWarnings", html.Filename, "3", "2"));
+            file.DetailTitle.Should().Be(Strings.Format("FootnoteConversionWindow_FileTitleWarnings", html.BookPath, "3", "2"));
+            file.Children.Should().Equal(sut.Items);
+            file.IsExpanded.Should().BeTrue();
+            sut.Items[0].HasChildren.Should().BeFalse();
+            FootnoteConversionNode other = sut.Items[2].Children.Should().ContainSingle().Subject;
+            other.Title.Should().Be(Strings.Get("FootnoteConversionWindow_OtherReference"));
+            other.HasWarnings.Should().BeTrue("another reference is why the footnote cannot be converted");
+            other.Reference.Should().Contain("again[3]");
+            other.HasCheckBox.Should().BeFalse();
+        }
+    }
+
+    [Fact]
+    public void The_check_box_of_a_file_shows_and_sets_its_footnotes_that_can_be_converted()
+    {
+        (Book book, HtmlResource _) = BookWithLocalFootnotes();
+        using (book)
+        {
+            FootnoteConversionViewModel sut = NewViewModel(book);
+            FootnoteConversionFileNode file = sut.Roots[0];
+            System.Collections.Generic.List<string?> changed = new();
+            file.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+            file.Check.Should().BeNull("one of the two footnotes that can be converted is checked");
+            file.Check = true;
+
+            sut.Items.Select(i => i.IsChecked).Should().Equal(true, true, false);
+            file.Check.Should().BeTrue();
+            changed.Should().Contain(nameof(FootnoteConversionNode.Check));
+            sut.Summary.Should().Be(Strings.Format("FootnoteConversionWindow_Summary", 2, 3));
+
+            sut.Items[0].Check = false;
+            file.Check.Should().BeNull();
+            file.Check = false;
+            sut.Items.Should().OnlyContain(i => !i.IsChecked);
+        }
+    }
+
+    [Fact]
+    public void Only_those_that_need_a_look_leaves_the_footnotes_with_warnings_and_check_all_works_on_them()
+    {
+        using UiCultureScope culture = new("en");
+        (Book book, HtmlResource _) = BookWithLocalFootnotes();
+        using (book)
+        {
+            FootnoteConversionViewModel sut = NewViewModel(book);
+            sut.OnlyWarningsText.Should().Be(Strings.Format("FootnoteConversionWindow_OnlyWarnings", "2"));
+            sut.Selected = sut.Items[0];
+
+            sut.OnlyWarnings = true;
+
+            sut.Roots.SelectMany(f => f.Children).Should().Equal(sut.Items[1], sut.Items[2]);
+            sut.Selected.Should().BeNull("the tree was built again");
+            sut.SelectNoneCommand.Execute(null);
+            sut.Items[0].IsChecked.Should().BeTrue("the hidden footnote stays checked");
+            sut.Items[1].IsChecked.Should().BeFalse();
+            sut.SelectAllCommand.Execute(null);
+            sut.Items.Select(i => i.IsChecked).Should().Equal(true, true, false);
+
+            sut.OnlyWarnings = false;
+            sut.Roots.SelectMany(f => f.Children).Should().Equal(sut.Items);
+        }
+    }
+
+    [Fact]
+    public void The_details_of_a_footnote_give_the_places_of_its_reference_and_note_and_go_there()
+    {
+        using UiCultureScope culture = new("en");
+        (Book book, HtmlResource html) = BookWithLocalFootnotes();
+        using (book)
+        {
+            System.Collections.Generic.List<(string Path, int Offset)> went = new();
+            FootnoteConversionViewModel sut = new(
+                FootnoteEditor.PlanConversion(book), null, (path, offset) => went.Add((path, offset)),
+                _ => Task.FromResult<FootnoteConversionOutcome?>(null));
+            string text = html.GetText();
+            int Line(int offset) => text[..offset].Count(c => c == '\n') + 1;
+            int reference = text.IndexOf("<a href=\"#c\" id=", StringComparison.Ordinal);
+            int other = text.IndexOf("<a href=\"#c\">", StringComparison.Ordinal);
+            int note = text.IndexOf("<div id=\"c\">", StringComparison.Ordinal);
+            FootnoteConversionItemViewModel item = sut.Items[2];
+
+            item.DetailWarnings.Should().Equal(Strings.Get("FootnoteConversionWindow_CannotConvert"));
+            item.Places.Select(p => (p.Label, p.Location, p.Text)).Should().Equal(
+                (Strings.Get("FootnoteConversionWindow_PlaceReference"), Strings.Format("FootnoteConversionWindow_Location", html.BookPath, Line(reference)), "A1 B* C[3] again3. 1 First note. * Starred. 3 Shared."),
+                (Strings.Get("FootnoteConversionWindow_PlaceNote"), Strings.Format("FootnoteConversionWindow_Location", html.BookPath, Line(note)), "Shared."),
+                (Strings.Get("FootnoteConversionWindow_OtherReference"), Strings.Format("FootnoteConversionWindow_Location", html.BookPath, Line(other)), "A1 B* C3 again[3]. 1 First note. * Starred. 3 Shared."));
+            FootnoteConversionNode link = item.Children[0];
+            link.Places.Should().Equal(item.Places[2]);
+
+            item.Places[0].GoTo.Execute(null);
+            item.Places[1].GoTo.Execute(null);
+            link.Places[0].GoTo.Execute(null);
+            item.GoToNote();
+            link.GoToNote();
+            sut.Roots[0].GoToReference();
+
+            went.Should().Equal((html.BookPath, reference), (html.BookPath, note), (html.BookPath, other), (html.BookPath, note), (html.BookPath, -1));
         }
     }
 

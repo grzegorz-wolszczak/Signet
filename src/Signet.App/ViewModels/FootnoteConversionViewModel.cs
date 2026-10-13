@@ -29,6 +29,9 @@ public sealed record FootnoteConversionOutcome(
 /// notes file for the global ones. Items with warnings are unchecked until the user checks them; items that cannot be
 /// converted cannot be checked. "Convert" converts the checked items and the dialog stays open with the plan of the
 /// changed book (the footnotes left to convert), like the Cleanup dialog.
+/// <para>The view shows them as a tree (<see cref="Roots"/>): the files, their footnotes and under a footnote its other
+/// links (the other references to its note first of all); "Only those that need a look" leaves the rows with ⚠, and
+/// "Check All" / "Uncheck All" then work on those only. The panel under the tree shows the <see cref="Selected"/> row.</para>
 /// </summary>
 public sealed partial class FootnoteConversionViewModel : ViewModelBase
 {
@@ -47,6 +50,15 @@ public sealed partial class FootnoteConversionViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(ConvertCommand))]
     private bool _isConverting;
+
+    /// <summary>Whether the tree shows only the footnotes that need a look (⚠, also those that cannot be converted).</summary>
+    [ObservableProperty]
+    private bool _onlyWarnings;
+
+    /// <summary>The row whose details the panel under the tree shows.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSelection))]
+    private FootnoteConversionNode? _selected;
 
     /// <summary>Creates the view model.</summary>
     /// <param name="plan">The conversion plan of the book (<see cref="FootnoteEditor.PlanConversion"/>).</param>
@@ -78,6 +90,16 @@ public sealed partial class FootnoteConversionViewModel : ViewModelBase
 
     /// <summary>The footnotes of other origin, in reading order.</summary>
     public ObservableCollection<FootnoteConversionItemViewModel> Items { get; } = new();
+
+    /// <summary>The rows of the tree: the files with their footnotes (after the filter), in reading order.</summary>
+    public IReadOnlyList<FootnoteConversionFileNode> Roots { get; private set; } = Array.Empty<FootnoteConversionFileNode>();
+
+    /// <summary>Whether a row is selected (the panel under the tree shows it).</summary>
+    public bool HasSelection => Selected is not null;
+
+    /// <summary>"Only those that need a look (⚠ 570)".</summary>
+    public string OnlyWarningsText =>
+        Strings.Format("FootnoteConversionWindow_OnlyWarnings", Items.Count(i => i.HasWarnings).ToString(CultureInfo.CurrentCulture));
 
     /// <summary>
     /// The files the global notes can go to: the candidates, then Signet's notes file (existing or new).
@@ -131,6 +153,51 @@ public sealed partial class FootnoteConversionViewModel : ViewModelBase
         }
     }
 
+    /// <summary>Opens <paramref name="file"/> at <paramref name="offset"/> (a negative offset = only the file).</summary>
+    internal void NavigateTo(Resource file, int offset) => _navigate(file.BookPath, offset);
+
+    /// <summary>Checks or unchecks the <paramref name="items"/> that can be converted.</summary>
+    internal void SetChecked(IEnumerable<FootnoteConversionItemViewModel> items, bool isChecked)
+    {
+        _updating = true;
+        try
+        {
+            foreach (FootnoteConversionItemViewModel item in items.Where(i => i.CanConvert))
+            {
+                item.IsChecked = isChecked;
+            }
+        }
+        finally
+        {
+            _updating = false;
+        }
+
+        OnItemToggled();
+    }
+
+    partial void OnOnlyWarningsChanged(bool value) => BuildRoots();
+
+    // The tree: the footnotes left by the filter under their files (of the reference), in reading order.
+    private void BuildRoots()
+    {
+        Selected = null;
+        Roots = Items.Where(i => !OnlyWarnings || i.HasWarnings)
+            .GroupBy(i => i.Item.Footnote.ReferenceFile)
+            .Select(g =>
+            {
+                FootnoteConversionItemViewModel[] items = g.ToArray();
+                FootnoteConversionFileNode file = new(this, g.Key, items);
+                foreach (FootnoteConversionItemViewModel item in items)
+                {
+                    item.Parent = file;
+                }
+
+                return file;
+            })
+            .ToArray();
+        OnPropertyChanged(nameof(Roots));
+    }
+
     internal void OnItemToggled()
     {
         if (_updating)
@@ -143,23 +210,8 @@ public sealed partial class FootnoteConversionViewModel : ViewModelBase
         ConvertCommand.NotifyCanExecuteChanged();
     }
 
-    private void SetAll(bool isChecked)
-    {
-        _updating = true;
-        try
-        {
-            foreach (FootnoteConversionItemViewModel item in Items.Where(i => i.CanConvert))
-            {
-                item.IsChecked = isChecked;
-            }
-        }
-        finally
-        {
-            _updating = false;
-        }
-
-        OnItemToggled();
-    }
+    // "Check All" / "Uncheck All": the footnotes the tree shows.
+    private void SetAll(bool isChecked) => SetChecked(Roots.SelectMany(f => f.Children).Cast<FootnoteConversionItemViewModel>(), isChecked);
 
     private async Task ConvertAsync()
     {
@@ -214,7 +266,9 @@ public sealed partial class FootnoteConversionViewModel : ViewModelBase
             _updating = false;
         }
 
+        BuildRoots();
         OnPropertyChanged(nameof(HasItems));
+        OnPropertyChanged(nameof(OnlyWarningsText));
         OnItemToggled();
     }
 
@@ -260,13 +314,14 @@ public sealed partial class FootnoteConversionViewModel : ViewModelBase
     }
 }
 
-/// <summary>A footnote of other origin in the conversion dialog.</summary>
-public sealed partial class FootnoteConversionItemViewModel : ObservableObject
+/// <summary>A footnote of other origin in the conversion dialog (a row of the tree, under its file).</summary>
+public sealed partial class FootnoteConversionItemViewModel : FootnoteConversionNode
 {
-    // How much of the note the row shows.
-    private const int NoteLength = 120;
+    // How much of the note the row shows (the panel under the tree shows all of it).
+    private const int NoteLength = 200;
 
     private readonly FootnoteConversionViewModel _owner;
+    private readonly string _fullReference;
 
     [ObservableProperty]
     private bool _isChecked;
@@ -277,20 +332,25 @@ public sealed partial class FootnoteConversionItemViewModel : ObservableObject
         Item = item;
         Footnote footnote = item.Footnote;
         IsGlobal = footnote.Placement == FootnotePlacement.Global;
-        Header = Strings.Format(
-            "FootnoteConversionWindow_ItemHeader", item.Marker, item.NewNumber,
-            Strings.Get(IsGlobal ? "FootnoteConversionWindow_Global" : "FootnoteConversionWindow_Local"));
-        ReferenceText = Strings.Format("FootnoteConversionWindow_Reference", footnote.ReferenceFile.BookPath, ReferenceContext(footnote, item.Marker));
-        string note = item.NoteText.Length > NoteLength ? item.NoteText[..NoteLength] + "…" : item.NoteText;
-        NoteText = Strings.Format("FootnoteConversionWindow_Note", footnote.NoteFile.BookPath, note);
+        Kind = Strings.Get(IsGlobal ? "FootnoteConversionWindow_Global" : "FootnoteConversionWindow_Local");
+        Title = Strings.Format("FootnoteConversionWindow_ItemTitle", item.Marker, item.NewNumber);
+        Header = Strings.Format("FootnoteConversionWindow_ItemHeader", item.Marker, item.NewNumber, Kind);
+        (string before, string after) = ReferenceContext(footnote);
+        Reference = ReferenceText(before, item.Marker, after, cell: true);
+        _fullReference = ReferenceText(before, item.Marker, after, cell: false);
+        Note = item.NoteText.Length > NoteLength ? item.NoteText[..NoteLength] + "…" : item.NoteText;
         Warnings = item.CanConvert
             ? item.Warnings.Select(w => WarningText(w, item)).ToList()
             : new[] { Strings.Get("FootnoteConversionWindow_CannotConvert") };
+        Children = item.Links.Select(l => new FootnoteConversionLinkNode(owner, l, footnote.ReferenceFile)).ToArray();
         _isChecked = item.CanConvert && item.Warnings.Count == 0;
     }
 
     /// <summary>The item of the plan.</summary>
     public ConversionItem Item { get; }
+
+    /// <summary>The file row it is under.</summary>
+    internal FootnoteConversionFileNode? Parent { get; set; }
 
     /// <summary>Whether the footnote is global (its note is in another file).</summary>
     public bool IsGlobal { get; }
@@ -298,22 +358,88 @@ public sealed partial class FootnoteConversionItemViewModel : ObservableObject
     /// <summary>Whether it can be converted (only then can it be checked).</summary>
     public bool CanConvert => Item.CanConvert;
 
+    /// <inheritdoc />
+    public override bool CanCheck => CanConvert;
+
+    /// <inheritdoc />
+    public override bool HasCheckBox => true;
+
+    /// <inheritdoc />
+    public override bool? Check
+    {
+        get => IsChecked;
+        set
+        {
+            if (CanConvert)
+            {
+                IsChecked = value == true;
+            }
+        }
+    }
+
     /// <summary>Whether it needs a look (marked ⚠).</summary>
-    public bool HasWarnings => Warnings.Count > 0;
+    public override bool HasWarnings => Warnings.Count > 0;
+
+    /// <summary>"“*” → 1".</summary>
+    public override string Title { get; }
+
+    /// <summary>"local" / "global".</summary>
+    public override string Kind { get; }
 
     /// <summary>"“*” → 1 (global)".</summary>
     public string Header { get; }
 
-    /// <summary>The file of the reference and the text around it.</summary>
-    public string ReferenceText { get; }
+    /// <summary>The text around the reference: "…text before [*] text after…" (shortened before it for the cell).</summary>
+    public override string Reference { get; }
 
-    /// <summary>The file of the note and the start of its text.</summary>
-    public string NoteText { get; }
+    /// <summary>The start of the text of the note.</summary>
+    public override string Note { get; }
+
+    /// <summary>The other links to it: the other references to its note, the links the conversion rewrites.</summary>
+    public override IReadOnlyList<FootnoteConversionNode> Children { get; }
 
     /// <summary>What needs a look, or why it cannot be converted.</summary>
     public IReadOnlyList<string> Warnings { get; }
 
-    partial void OnIsCheckedChanged(bool value) => _owner.OnItemToggled();
+    /// <inheritdoc />
+    public override string DetailTitle => Header;
+
+    /// <inheritdoc />
+    public override IReadOnlyList<string> DetailWarnings => Warnings;
+
+    /// <inheritdoc />
+    public override void GoToReference() => _owner.Navigate(this, FootnoteSide.Reference);
+
+    /// <inheritdoc />
+    public override void GoToNote() => _owner.Navigate(this, FootnoteSide.Note);
+
+    /// <summary>Its reference, its note and its other links.</summary>
+    protected override IReadOnlyList<FootnoteConversionPlace> CreatePlaces()
+    {
+        Footnote footnote = Item.Footnote;
+        return new[]
+        {
+            new FootnoteConversionPlace(
+                Strings.Get("FootnoteConversionWindow_PlaceReference"),
+                FootnoteEditor.Locate(footnote, FootnoteSide.Reference) is { } reference ? Location(reference.File, reference.Offset) : footnote.ReferenceFile.BookPath,
+                _fullReference,
+                new RelayCommand(GoToReference)),
+            new FootnoteConversionPlace(
+                Strings.Get("FootnoteConversionWindow_PlaceNote"),
+                FootnoteEditor.Locate(footnote, FootnoteSide.Note) is { } note ? Location(note.File, note.Offset) : footnote.NoteFile.BookPath,
+                Item.NoteText,
+                new RelayCommand(GoToNote)),
+        }
+        .Concat(Children.SelectMany(c => c.Places))
+        .ToArray();
+    }
+
+    partial void OnIsCheckedChanged(bool value)
+    {
+        OnPropertyChanged(nameof(Check));
+        Parent?.RefreshCheck();
+        _owner.OnItemToggled();
+    }
 
     /// <summary>The description of a warning of <paramref name="item"/>.</summary>
     public static string WarningText(ConversionWarning warning, ConversionItem item)
@@ -328,17 +454,15 @@ public sealed partial class FootnoteConversionItemViewModel : ObservableObject
         };
     }
 
-    // "…text before [*] text after…".
-    private static string ReferenceContext(Footnote footnote, string marker)
+    // The text before and after the reference.
+    private static (string Before, string After) ReferenceContext(Footnote footnote)
     {
         if (FootnoteEditor.LocateReferenceRange(footnote) is not { } range)
         {
-            return string.Empty;
+            return (string.Empty, string.Empty);
         }
 
-        string text = range.File.GetText();
-        (string before, string after) = FootnoteViewModel.Context(text, range.Start, range.End);
-        return before + "[" + marker + "]" + after;
+        return FootnoteViewModel.Context(range.File.GetText(), range.Start, range.End);
     }
 }
 

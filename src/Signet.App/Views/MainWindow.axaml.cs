@@ -1155,6 +1155,9 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
     /// checked footnotes and stays open until it is closed. The question about converting without a checkpoint is
     /// asked over the dialog.
     /// </summary>
+    // The height of the details of the "Convert Footnotes of Other Origin" dialog (SettingsStore.PaneSizes).
+    private const string FootnoteConversionDetailsKey = "FootnoteConversion.details";
+
     private async void OnFootnoteConversionRequested(object? sender, EventArgs e)
     {
         MainWindowViewModel? vm = _boundViewModel;
@@ -1169,6 +1172,24 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         if (conversion is not null)
         {
             window = new FootnoteConversionWindow { DataContext = conversion };
+            SettingsStore? settings = App.Services?.GetService<SettingsStore>();
+            if (settings?.PaneSizes.GetValueOrDefault(FootnoteConversionDetailsKey) is > 0 and var height)
+            {
+                window.DetailsHeight = height;
+            }
+
+            window.Closing += (_, _) =>
+            {
+                if (settings is not null)
+                {
+                    Dictionary<string, int> sizes = new(settings.PaneSizes, StringComparer.Ordinal)
+                    {
+                        [FootnoteConversionDetailsKey] = (int)Math.Round(window.DetailsHeight),
+                    };
+                    settings.PaneSizes = sizes;
+                    settings.Save();
+                }
+            };
             await window.ShowDialog(this);
         }
     }

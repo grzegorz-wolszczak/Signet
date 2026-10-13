@@ -6,7 +6,7 @@
         x:Class="Signet.App.Views.FootnoteConversionWindow"
         infra:TooltipFonts.Area="Footnotes"
         x:DataType="vm:FootnoteConversionViewModel"
-        Width="820" Height="720" MinWidth="560" MinHeight="460"
+        Width="1000" Height="760" MinWidth="640" MinHeight="520"
         WindowStartupLocation="CenterOwner"
         Title="{loc:Loc FootnoteConversionWindow_Title}">
 
@@ -23,6 +23,31 @@
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
   </Window.Styles>
+
+  <!-- The cells of the tree (the columns are built in code; FootnoteConversionNode). A double click in the reference
+       or the note column opens that place in the code. -->
+  <Window.Resources>
+    <DataTemplate x:Key="FootnoteConversionTitleCellTemplate" x:DataType="vm:FootnoteConversionNode">
+      <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+        <CheckBox IsChecked="{Binding Check, Mode=TwoWay}" IsVisible="{Binding HasCheckBox}" IsEnabled="{Binding CanCheck}"
+                  MinWidth="0" Margin="0,0,4,0" />
+        <TextBlock Text="⚠" IsVisible="{Binding HasWarnings}" FontWeight="Bold" Foreground="{DynamicResource SignetWarningBrush}"
+                   Margin="0,0,6,0" VerticalAlignment="Center" />
+        <TextBlock Text="{Binding Title}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding TitleTip}" />
+      </StackPanel>
+    </DataTemplate>
+    <DataTemplate x:Key="FootnoteConversionKindCellTemplate" x:DataType="vm:FootnoteConversionNode">
+      <TextBlock Text="{Binding Kind}" VerticalAlignment="Center" />
+    </DataTemplate>
+    <DataTemplate x:Key="FootnoteConversionReferenceCellTemplate" x:DataType="vm:FootnoteConversionNode">
+      <TextBlock Classes="referenceCell" Text="{Binding Reference}" VerticalAlignment="Stretch" TextTrimming="CharacterEllipsis"
+                 Background="Transparent" ToolTip.Tip="{Binding Reference}" DoubleTapped="OnReferenceDoubleTapped" />
+    </DataTemplate>
+    <DataTemplate x:Key="FootnoteConversionNoteCellTemplate" x:DataType="vm:FootnoteConversionNode">
+      <TextBlock Classes="noteCell" Text="{Binding Note}" VerticalAlignment="Stretch" TextTrimming="CharacterEllipsis"
+                 Background="Transparent" ToolTip.Tip="{Binding Note}" DoubleTapped="OnNoteDoubleTapped" />
+    </DataTemplate>
+  </Window.Resources>
 
   <DockPanel Margin="16">
     <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right"
@@ -76,42 +101,61 @@
     <TextBlock DockPanel.Dock="Top" Text="{loc:Loc FootnoteConversionWindow_None}" IsVisible="{Binding !HasItems}" />
 
     <DockPanel IsVisible="{Binding HasItems}">
-      <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+      <WrapPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8" ItemSpacing="8" LineSpacing="4">
+        <CheckBox x:Name="OnlyWarningsBox" Content="{Binding OnlyWarningsText}" IsChecked="{Binding OnlyWarnings, Mode=TwoWay}"
+                  VerticalAlignment="Center" />
         <Button Content="{loc:Loc FootnoteConversionWindow_SelectAll}" Command="{Binding SelectAllCommand}" />
         <Button Content="{loc:Loc FootnoteConversionWindow_SelectNone}" Command="{Binding SelectNoneCommand}" />
         <TextBlock Text="{Binding Summary}" FontWeight="SemiBold" VerticalAlignment="Center" />
         <TextBlock Classes="note" Text="{loc:Loc FootnoteConversionWindow_DoubleClickHint}" VerticalAlignment="Center" />
-      </StackPanel>
+      </WrapPanel>
 
-      <ListBox x:Name="ItemList" ItemsSource="{Binding Items}">
-        <ListBox.ItemTemplate>
-          <DataTemplate x:DataType="vm:FootnoteConversionItemViewModel">
-            <StackPanel Spacing="1">
-              <StackPanel Orientation="Horizontal">
-                <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}" IsEnabled="{Binding CanConvert}" />
-                <TextBlock Text="⚠" IsVisible="{Binding HasWarnings}" FontWeight="Bold"
-                           Foreground="{DynamicResource SignetWarningBrush}"
-                           Margin="2,0,6,0" VerticalAlignment="Center" />
-                <TextBlock Text="{Binding Header}" FontWeight="SemiBold" VerticalAlignment="Center" />
+      <!-- The tree of the footnotes and, under the splitter (the window's owner remembers its place), the details of
+           the selected row. -->
+      <Grid x:Name="Split">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="*" MinHeight="120" />
+          <RowDefinition Height="8" />
+          <RowDefinition Height="170" MinHeight="60" />
+        </Grid.RowDefinitions>
+        <Border Grid.Row="0" BorderBrush="{DynamicResource SignetFrameBrush}" BorderThickness="1">
+          <TreeDataGrid x:Name="Tree" />
+        </Border>
+        <GridSplitter x:Name="DetailsSplitter" Grid.Row="1" ResizeDirection="Rows" Background="Transparent" />
+        <Border Grid.Row="2" BorderBrush="{DynamicResource SignetFrameBrush}" BorderThickness="1" Padding="8,6">
+          <ScrollViewer>
+            <Panel>
+              <TextBlock Classes="note" Text="{loc:Loc FootnoteConversionWindow_NoSelection}" IsVisible="{Binding !HasSelection}" />
+              <StackPanel x:Name="Details" Spacing="4" DataContext="{Binding Selected}" IsVisible="{Binding Converter={x:Static ObjectConverters.IsNotNull}}"
+                          x:DataType="vm:FootnoteConversionNode">
+                <TextBlock Text="{Binding DetailTitle}" FontWeight="SemiBold" TextWrapping="Wrap" />
+                <ItemsControl ItemsSource="{Binding DetailWarnings}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                      <TextBlock Classes="warning" Text="{Binding}" TextWrapping="Wrap" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <ItemsControl x:Name="PlaceList" ItemsSource="{Binding Places}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:FootnoteConversionPlace">
+                      <StackPanel Spacing="1" Margin="0,4,0,0">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <TextBlock Text="{Binding Label}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                          <TextBlock Text="{Binding Location}" VerticalAlignment="Center" />
+                          <Button Content="{loc:Loc FootnoteConversionWindow_GoTo}" Command="{Binding GoTo}" Padding="8,1" />
+                        </StackPanel>
+                        <SelectableTextBlock Text="{Binding Text}" TextWrapping="Wrap" Margin="16,0,0,0"
+                                             IsVisible="{Binding Text, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                      </StackPanel>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
               </StackPanel>
-              <!-- Double-click: the reference or the note in the code. -->
-              <TextBlock x:Name="ReferenceLine" Text="{Binding ReferenceText}" Margin="32,0,4,0" Background="Transparent"
-                         TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding ReferenceText}"
-                         DoubleTapped="OnReferenceDoubleTapped" />
-              <TextBlock x:Name="NoteLine" Text="{Binding NoteText}" Margin="32,0,4,0" Background="Transparent"
-                         TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding NoteText}"
-                         DoubleTapped="OnNoteDoubleTapped" />
-              <ItemsControl ItemsSource="{Binding Warnings}" IsVisible="{Binding HasWarnings}" Margin="32,2,4,4">
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate x:DataType="x:String">
-                    <TextBlock Classes="warning" Text="{Binding}" TextWrapping="Wrap" />
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
-            </StackPanel>
-          </DataTemplate>
-        </ListBox.ItemTemplate>
-      </ListBox>
+            </Panel>
+          </ScrollViewer>
+        </Border>
+      </Grid>
     </DockPanel>
   </DockPanel>
 </Window>

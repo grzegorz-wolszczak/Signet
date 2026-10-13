@@ -4582,7 +4582,7 @@ Konwertować mimo to?</value>
     <value>Odznacz wszystkie</value>
   </data>
   <data name="FootnoteConversionWindow_DoubleClickHint" xml:space="preserve">
-    <value>Podwójne kliknięcie odnośnika lub treści otwiera to miejsce w kodzie.</value>
+    <value>Podwójne kliknięcie w kolumnie Odnośnik lub Treść otwiera to miejsce w kodzie.</value>
   </data>
   <data name="FootnoteConversionWindow_KeepClasses" xml:space="preserve">
     <value>Zachowaj obce klasy</value>
@@ -4641,11 +4641,53 @@ Konwertować mimo to?</value>
   <data name="FootnoteConversionWindow_Global" xml:space="preserve">
     <value>globalny</value>
   </data>
-  <data name="FootnoteConversionWindow_Reference" xml:space="preserve">
-    <value>Odnośnik: {0} — {1}</value>
+  <data name="FootnoteConversionWindow_ItemTitle" xml:space="preserve">
+    <value>„{0}” → {1}</value>
   </data>
-  <data name="FootnoteConversionWindow_Note" xml:space="preserve">
-    <value>Treść: {0} — {1}</value>
+  <data name="FootnoteConversionWindow_ColumnFootnote" xml:space="preserve">
+    <value>Przypis</value>
+  </data>
+  <data name="FootnoteConversionWindow_ColumnKind" xml:space="preserve">
+    <value>Rodzaj</value>
+  </data>
+  <data name="FootnoteConversionWindow_ColumnReference" xml:space="preserve">
+    <value>Odnośnik</value>
+  </data>
+  <data name="FootnoteConversionWindow_ColumnNote" xml:space="preserve">
+    <value>Treść</value>
+  </data>
+  <data name="FootnoteConversionWindow_OnlyWarnings" xml:space="preserve">
+    <value>Tylko wymagające uwagi (⚠ {0})</value>
+  </data>
+  <data name="FootnoteConversionWindow_FileTitle" xml:space="preserve">
+    <value>{0} ({1})</value>
+  </data>
+  <data name="FootnoteConversionWindow_FileTitleWarnings" xml:space="preserve">
+    <value>{0} ({1}, ⚠ {2})</value>
+  </data>
+  <data name="FootnoteConversionWindow_OtherReference" xml:space="preserve">
+    <value>Inny odnośnik</value>
+  </data>
+  <data name="FootnoteConversionWindow_OtherLink" xml:space="preserve">
+    <value>Inny link</value>
+  </data>
+  <data name="FootnoteConversionWindow_Location" xml:space="preserve">
+    <value>{0}, wiersz {1}</value>
+  </data>
+  <data name="FootnoteConversionWindow_PlaceReference" xml:space="preserve">
+    <value>Odnośnik:</value>
+  </data>
+  <data name="FootnoteConversionWindow_PlaceNote" xml:space="preserve">
+    <value>Treść:</value>
+  </data>
+  <data name="FootnoteConversionWindow_PlaceFile" xml:space="preserve">
+    <value>Plik:</value>
+  </data>
+  <data name="FootnoteConversionWindow_GoTo" xml:space="preserve">
+    <value>Przejdź</value>
+  </data>
+  <data name="FootnoteConversionWindow_NoSelection" xml:space="preserve">
+    <value>Wybierz wiersz, aby zobaczyć szczegóły.</value>
   </data>
   <data name="FootnoteConversionWindow_CannotConvert" xml:space="preserve">
     <value>Do treści prowadzi kilka odnośników — Signet nie przekonwertuje tego przypisu (zostanie obcy).</value>
