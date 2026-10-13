@@ -396,10 +396,10 @@ public sealed partial class ColorSchemePageViewModel : ObservableObject
 
     private TextAttributes EditorText => _owner.Resolved?.Attributes(ThemeKeys.EditorText) ?? TextAttributes.Empty;
 
-    // Whether the key inherits in the theme: the nearest entry of the lineage says so, or no theme of the lineage sets
-    // the key (it then takes its base, see ThemeResolver).
+    // Whether the key inherits in the theme: the nearest entry of the lineage says so (a key no theme sets keeps its
+    // default, see ThemeResolver).
     private bool IsInherited(Theme theme, ThemeKey key) =>
-        _owner.Resolved?.Resolver.Owner(theme, key) is not { } owner || owner.Entries[key.Id].Inherit;
+        _owner.Resolved?.Resolver.Owner(theme, key) is { } owner && owner.Entries[key.Id].Inherit;
 
     private void SetAttributes(TextAttributes attributes)
     {

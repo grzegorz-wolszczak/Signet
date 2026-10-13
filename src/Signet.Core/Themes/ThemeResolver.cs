@@ -9,9 +9,10 @@ namespace Signet.Core.Themes;
 /// <item>the theme's own entry — an "inherit" entry takes the value of the key's base, resolved again from the theme
 /// asked about (so a base the user changed counts);</item>
 /// <item>otherwise the parent's entry, and so on up to the bundled theme;</item>
-/// <item>otherwise the key's base, resolved from the theme asked about;</item>
 /// <item>otherwise the default of the key (<see cref="ThemeKeys"/>).</item>
 /// </list>
+/// The base of a key counts only through an "inherit" entry: a key no theme sets keeps its own default, so Signet
+/// Light (which sets nothing) shows the colors of the registry.
 /// </summary>
 public sealed class ThemeResolver
 {
@@ -106,7 +107,7 @@ public sealed class ThemeResolver
             }
         }
 
-        return Base(theme, key);
+        return Default(key);
     }
 
     // The value of the base of the key in the theme; the default of the key when it has no base. The registry has no

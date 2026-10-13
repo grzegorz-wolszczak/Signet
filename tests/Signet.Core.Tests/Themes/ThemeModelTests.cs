@@ -108,13 +108,25 @@ public sealed class ThemeModelTests
     }
 
     [Fact]
-    public void A_key_no_theme_sets_takes_its_base_before_its_default()
+    public void A_key_no_theme_sets_keeps_its_default_and_takes_its_base_only_when_told_to_inherit()
     {
-        TextAttributes link = Fg("#123456");
-        Theme theme = new Theme(Any.Create<string>(), Any.Create<string>()).With(ThemeKeys.Link.Id, ThemeEntry.Of(link));
+        Theme theme = new Theme(Any.Create<string>(), Any.Create<string>()).With(ThemeKeys.CssValue.Id, ThemeEntry.Of(Fg("#123456")));
         ThemeResolver sut = Resolver(theme);
 
-        sut.Attributes(theme, ThemeKeys.LinkBroken).Should().Be(link);
+        sut.Attributes(theme, ThemeKeys.XhtmlCss).Should().Be(ThemeKeys.XhtmlCss.DefaultAttributes);
+        sut.Attributes(theme.With(ThemeKeys.XhtmlCss.Id, ThemeEntry.Inherited), ThemeKeys.XhtmlCss).Should().Be(Fg("#123456"));
+    }
+
+    [Fact]
+    public void Without_a_theme_every_key_with_a_base_shows_its_own_default()
+    {
+        Theme light = new(Any.Create<string>(), Any.Create<string>());
+        ThemeResolver sut = Resolver(light);
+
+        foreach (ThemeKey key in ThemeKeys.All.Where(k => k.BaseId is not null))
+        {
+            sut.Attributes(light, key).Should().Be(key.DefaultAttributes, key.Id);
+        }
     }
 
     [Fact]

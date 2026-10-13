@@ -162,11 +162,14 @@ public sealed class ColorSchemePageViewModelTests : IDisposable
     }
 
     [Fact]
-    public void A_key_no_theme_sets_inherits_its_base()
+    public void A_key_no_theme_sets_keeps_its_default_and_does_not_inherit()
     {
         ColorSchemeViewModel sut = New();
+        ColorSchemePageViewModel page = Select(sut, ThemeKeys.XhtmlCss);
 
-        Select(sut, ThemeKeys.LinkBroken).Inherit.Should().BeTrue("Signet Light sets nothing, so the key takes its base");
+        page.CanInherit.Should().BeTrue();
+        page.Inherit.Should().BeFalse("Signet Light sets nothing, so the key keeps its default");
+        page.Foreground.Should().Be(ThemeKeys.XhtmlCss.DefaultAttributes!.Foreground.ToString());
         Select(sut, ThemeKeys.XhtmlTag).CanInherit.Should().BeFalse();
     }
 

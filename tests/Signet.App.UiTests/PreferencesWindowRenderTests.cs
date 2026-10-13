@@ -356,7 +356,7 @@ public sealed class PreferencesWindowRenderTests
         source.RowSelection!.SelectedItem.Should().BeSameAs(xhtml.Selected);
         view.FindControl<StackPanel>("AttributesPanel")!.IsVisible.Should().BeTrue();
         view.FindControl<StackPanel>("ColorPanel")!.IsVisible.Should().BeFalse();
-        view.FindControl<CheckBox>("InheritBox")!.IsChecked.Should().BeTrue("Signet Light sets nothing, so xhtml.css takes css.value");
+        view.FindControl<CheckBox>("InheritBox")!.IsChecked.Should().BeFalse("Signet Light sets nothing, so xhtml.css keeps its default");
 
         view.FindControl<HyperlinkButton>("BaseLink")!.Command!.Execute(null);
         Dispatcher.UIThread.RunJobs();
