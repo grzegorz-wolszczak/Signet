@@ -4879,6 +4879,9 @@ Close the tab</value>
   <data name="ColorScheme_IconSetFromAppearance" xml:space="preserve">
     <value>As set in Appearance</value>
   </data>
+  <data name="ColorScheme_PreviewFont" xml:space="preserve">
+    <value>Font of the code previews</value>
+  </data>
   <data name="ColorScheme_IconSetNote" xml:space="preserve">
     <value>A change of the icon set takes effect after restarting Signet; the colors and the variant change as soon as you save.</value>
   </data>

@@ -134,4 +134,37 @@ public sealed class ColorSchemeFontsTests : IDisposable
         saved.Fonts[ThemeFontKeys.Interface].Family.Should().Be("Inter");
         new ThemeFonts(saved, _store.Resolver).Interface("Segoe UI", 12).Should().Be(("Segoe UI", 12));
     }
+
+    [Fact]
+    public async Task The_font_of_the_previews_is_a_monospaced_setting_of_the_program_that_the_pages_follow()
+    {
+        PreferencesViewModel vm = New();
+        string family = Any.Create<string>();
+        int size = Any.Create<int>() % 20 + 8;
+        FontPickRequest? asked = null;
+        vm.FontPicker = r =>
+        {
+            asked = r;
+            return Task.FromResult<FontPickResult?>(new FontPickResult(family, size));
+        };
+        ColorSchemePageViewModel css = vm.ColorScheme.PageFor(ThemePage.Css);
+        List<string?> changed = new();
+        css.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        vm.ColorSchemePreviewFont.Family.Should().Be(ColorSchemePreviewAppearance.Default.FontFamily);
+        await ((CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)vm.ColorSchemePreviewFont.ChooseCommand!).ExecuteAsync(null);
+
+        asked!.MonospaceOnly.Should().BeTrue();
+        css.PreviewFont.Should().Be(new ColorSchemePreviewAppearance(family, size));
+        _host.Settings.ColorSchemePreviewAppearance.Should().Be(ColorSchemePreviewAppearance.Default, "a setting waits for Save");
+        changed.Should().Contain(nameof(ColorSchemePageViewModel.PreviewFont));
+        vm.ColorScheme.UseThemeFonts.Should().BeFalse("the font is not part of the theme");
+        vm.ColorScheme.HasChanges.Should().BeFalse("nor does it change the theme");
+
+        vm.ApplyCommand.Execute(null);
+        _host.Settings.ColorSchemePreviewAppearance.Should().Be(new ColorSchemePreviewAppearance(family, size));
+
+        vm.ColorSchemePreviewFont.RestoreDefault();
+        css.PreviewFont.Should().Be(ColorSchemePreviewAppearance.Default);
+    }
 }

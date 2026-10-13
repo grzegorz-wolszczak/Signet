@@ -236,6 +236,18 @@ public readonly record struct SpecialCharacterAppearance(string FontFamily, int 
 }
 
 /// <summary>
+/// The font of the code previews of the Appearance › Color Scheme pages (the demo text in the colors of the theme) — a
+/// monospaced font, as in an editor.
+/// </summary>
+/// <param name="FontFamily">Font family.</param>
+/// <param name="FontSize">Size (px).</param>
+public readonly record struct ColorSchemePreviewAppearance(string FontFamily, int FontSize)
+{
+    /// <summary>Default values.</summary>
+    public static ColorSchemePreviewAppearance Default => new("Consolas", 13);
+}
+
+/// <summary>
 /// Code editor (Code View) font; the colors come from the theme (<see cref="Themes.ThemeKeys"/>).
 /// </summary>
 public sealed record CodeViewAppearance

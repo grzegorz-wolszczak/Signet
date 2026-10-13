@@ -466,6 +466,30 @@ public sealed class PreferencesWindowRenderTests
         window.Close();
     }
 
+    /// <summary>The code previews of the color scheme pages use the font set on the Color Scheme page, also when it changes.</summary>
+    [AvaloniaFact]
+    public void The_code_previews_use_the_font_of_the_color_scheme_page()
+    {
+        PreferencesWindow window = BuildWindow();
+        PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, "ColorSchemePage");
+        window.FindControl<FontSettingView>("ColorSchemePreviewFontView")!.DataContext.Should().BeSameAs(vm.ColorSchemePreviewFont);
+        ShowPage(window, "ThemeJavaScriptJsonPage");
+        ThemePreviewEditor[] editors = window.FindControl<ColorSchemeKeysView>("ThemeJavaScriptJsonView")!
+            .GetVisualDescendants().OfType<ThemePreviewEditor>().ToArray();
+
+        editors.Should().HaveCount(2).And.OnlyContain(e => e.FontFamily.Name == ColorSchemePreviewAppearance.Default.FontFamily
+            && e.FontSize == ColorSchemePreviewAppearance.Default.FontSize);
+
+        vm.ColorScheme.PreviewFont = new ColorSchemePreviewAppearance("Courier New", 17);
+        Dispatcher.UIThread.RunJobs();
+
+        editors.Should().OnlyContain(e => e.FontFamily.Name == "Courier New" && e.FontSize == 17);
+        window.Close();
+    }
+
     // Drags a splitter by the offset with the mouse.
     private static void Drag(Window window, Control splitter, Avalonia.Vector offset)
     {

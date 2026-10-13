@@ -67,6 +67,9 @@ public sealed partial class PreferencesViewModel
     /// </summary>
     public FontPageViewModel ThemeFonts { get; private set; } = null!;
 
+    /// <summary>The font of the code previews of the Appearance › Color Scheme pages (a row of the Color Scheme page).</summary>
+    public FontSettingViewModel ColorSchemePreviewFont { get; private set; } = null!;
+
     // Every "Fonts" page, for the refresh after a change made elsewhere.
     private readonly List<FontPageViewModel> _fontPages = new();
 
@@ -224,6 +227,32 @@ public sealed partial class PreferencesViewModel
 
         // Its rows show the fonts of the settings where the theme has none: refreshed with the other pages.
         _fontPages.Add(ThemeFonts);
+    }
+
+    // Appearance › Color Scheme: the font of the code previews of its pages — a setting of the program, not of the theme.
+    private void CreateColorSchemePreviewFont()
+    {
+        ColorSchemePreviewAppearance Font() => ColorScheme.PreviewFont;
+        ColorSchemePreviewFont = new FontSettingViewModel(
+            "ColorSchemePreview",
+            Strings.Get("ColorScheme_PreviewFont"),
+            Strings.Get("FontPreview_Code"),
+            (() => Font().FontFamily, v => ColorScheme.PreviewFont = Font() with { FontFamily = v }),
+            (() => Font().FontSize, v => ColorScheme.PreviewFont = Font() with { FontSize = v }, FontSizeMin, FontSizeMax),
+            (() => Font().FontFamily, () => Font().FontSize),
+            () => ColorScheme.PreviewFont = ColorSchemePreviewAppearance.Default,
+            new AsyncRelayCommand(ChooseColorSchemePreviewFont));
+    }
+
+    // "Choose…" of the font of the previews: only monospaced fonts, as for Code View.
+    private async Task ChooseColorSchemePreviewFont()
+    {
+        ColorSchemePreviewAppearance font = ColorScheme.PreviewFont;
+        if (await PickFontAsync(new FontPickRequest(font.FontFamily, font.FontSize, true)) is { } result)
+        {
+            ColorScheme.PreviewFont = new ColorSchemePreviewAppearance(result.Family, result.Size);
+            ColorSchemePreviewFont.Refresh();
+        }
     }
 
     // The row of a font of the theme: the row of the "Fonts" page it mirrors (label, sample, limits, preview), with the

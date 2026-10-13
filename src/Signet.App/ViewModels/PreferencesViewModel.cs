@@ -190,6 +190,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         // ---- Appearance › Color Scheme ----
         ColorScheme = new ColorSchemeViewModel(_themes.Store, _settings);
         CreateThemeFontsPage();
+        CreateColorSchemePreviewFont();
         ColorScheme.Changed += (_, _) =>
         {
             OnPropertyChanged(nameof(HasChanges));

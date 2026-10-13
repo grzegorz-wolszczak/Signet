@@ -162,6 +162,22 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
+    public void The_font_of_the_color_scheme_previews_is_monospaced_by_default_and_survives_a_restart()
+    {
+        using TempDir dir = new();
+        string path = dir.Combine("settings.json");
+        SettingsStore writer = new(path);
+        writer.ColorSchemePreviewAppearance.Should().Be(new ColorSchemePreviewAppearance("Consolas", 13));
+        Fixture any = new();
+        ColorSchemePreviewAppearance font = new(any.Create<string>(), any.Create<int>());
+
+        writer.ColorSchemePreviewAppearance = font;
+        writer.Save();
+
+        new SettingsStore(path).ColorSchemePreviewAppearance.Should().Be(font);
+    }
+
+    [Fact]
     public void The_preferences_splitter_sizes_survive_a_restart_without_the_ones_that_are_not_positive()
     {
         using TempDir dir = new();

@@ -273,6 +273,10 @@
 
             <TextBlock Text="{loc:Loc ColorScheme_BundledNote}" IsVisible="{Binding IsBundled}" Opacity="0.7" TextWrapping="Wrap" />
             <TextBlock Text="{loc:Loc ColorScheme_IconSetNote}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
+
+            <!-- The font of the code previews of the pages below (a setting of the program, not of the theme); the
+                 DataContext is set in code. -->
+            <views:FontSettingView x:Name="ColorSchemePreviewFontView" Margin="0,8,0,0" Width="420" HorizontalAlignment="Left" />
           </StackPanel>
         </ScrollViewer>
       </TabItem>

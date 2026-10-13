@@ -1011,6 +1011,21 @@ public sealed class SettingsStore
         }
     }
 
+    /// <summary>The font of the code previews of the Appearance › Color Scheme pages.</summary>
+    public ColorSchemePreviewAppearance ColorSchemePreviewAppearance
+    {
+        get => new(
+            ReadString("color_scheme_preview_font_family", ColorSchemePreviewAppearance.Default.FontFamily),
+            ReadInt("color_scheme_preview_font_size", ColorSchemePreviewAppearance.Default.FontSize));
+
+        set
+        {
+            WriteSilent("color_scheme_preview_font_family", value.FontFamily);
+            WriteSilent("color_scheme_preview_font_size", value.FontSize);
+            RaiseChanged("color_scheme_preview_appearance");
+        }
+    }
+
     /// <summary>
     /// The identifier of the theme in use (<see cref="Themes.ThemeStore"/>); Signet Light by default. A theme that no
     /// longer exists is replaced by Signet Light when it is applied.

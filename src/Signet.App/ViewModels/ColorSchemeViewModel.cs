@@ -90,6 +90,24 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
     /// <summary>Whether Code View uses the extended highlighting (in the draft of the window) — the previews follow it.</summary>
     public bool ExtendedHighlighting => _settings.CodeViewExtendedHighlighting;
 
+    /// <summary>The font of the code previews of the pages (in the draft of the window, like every setting).</summary>
+    public ColorSchemePreviewAppearance PreviewFont
+    {
+        get => _settings.ColorSchemePreviewAppearance;
+        set
+        {
+            if (value != PreviewFont)
+            {
+                _settings.ColorSchemePreviewAppearance = value;
+                OnPropertyChanged();
+                foreach (ColorSchemePageViewModel page in Pages)
+                {
+                    page.RefreshPreviewFont();
+                }
+            }
+        }
+    }
+
     /// <summary>The selected theme with the changes not saved yet, resolved (also with the changes of its parents).</summary>
     public ResolvedTheme? Resolved => Current is { } theme ? new ResolvedTheme(theme, _editResolver) : null;
 

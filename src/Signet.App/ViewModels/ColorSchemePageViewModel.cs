@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Signet.App.Infrastructure;
 using Signet.App.Resources;
+using Signet.Core.Misc;
 using Signet.Core.Themes;
 
 namespace Signet.App.ViewModels;
@@ -100,6 +101,12 @@ public sealed partial class ColorSchemePageViewModel : ObservableObject
 
     /// <summary>Whether the preview shows the extended highlighting of Code View (the setting in the window).</summary>
     public bool ExtendedHighlighting => _owner.ExtendedHighlighting;
+
+    /// <summary>The font of the code preview of the page.</summary>
+    public ColorSchemePreviewAppearance PreviewFont => _owner.PreviewFont;
+
+    /// <summary>Announces that the font of the preview changed.</summary>
+    internal void RefreshPreviewFont() => OnPropertyChanged(nameof(PreviewFont));
 
     /// <summary>The theme being edited, with the changes not saved yet (the colors of the preview).</summary>
     public ResolvedTheme? Theme => _owner.Resolved;

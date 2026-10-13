@@ -4879,6 +4879,9 @@ Zamknij zakładkę</value>
   <data name="ColorScheme_IconSetFromAppearance" xml:space="preserve">
     <value>Jak w ustawieniach Wyglądu</value>
   </data>
+  <data name="ColorScheme_PreviewFont" xml:space="preserve">
+    <value>Czcionka podglądów kodu</value>
+  </data>
   <data name="ColorScheme_IconSetNote" xml:space="preserve">
     <value>Zmiana zestawu ikon działa po ponownym uruchomieniu Signet; kolory i wariant zmieniają się od razu po zapisaniu.</value>
   </data>

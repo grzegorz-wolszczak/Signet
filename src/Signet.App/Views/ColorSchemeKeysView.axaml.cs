@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using Avalonia.Controls;
+using Avalonia.Media;
 using Signet.App.CodeView;
 using Signet.App.Infrastructure;
 using Signet.App.ViewModels;
@@ -133,10 +134,30 @@ public partial class ColorSchemeKeysView : UserControl
     private ThemePreviewEditor NewEditor(ThemeSample sample, ResolvedTheme theme)
     {
         ThemePreviewEditor editor = new();
+        ApplyFont(editor);
         editor.Show(sample, theme);
         editor.KeyClicked += OnPreviewKeyClicked;
         _editors.Add(editor);
         return editor;
+    }
+
+    // The font of the code previews (Appearance › Color Scheme › preview font); an empty family keeps the editor's.
+    private void ApplyFont(ThemePreviewEditor editor)
+    {
+        if (_bound?.PreviewFont is not { } font)
+        {
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(font.FontFamily))
+        {
+            editor.FontFamily = new FontFamily(font.FontFamily);
+        }
+
+        if (font.FontSize > 0)
+        {
+            editor.FontSize = font.FontSize;
+        }
     }
 
     // A click in the preview selects the key under the mouse (a key of another page, e.g. the text of the editor on
@@ -155,6 +176,13 @@ public partial class ColorSchemeKeysView : UserControl
             }
 
             _controls?.Blink(key);
+        }
+        else if (e.PropertyName == nameof(ColorSchemePageViewModel.PreviewFont))
+        {
+            foreach (ThemePreviewEditor editor in _editors)
+            {
+                ApplyFont(editor);
+            }
         }
         else if (e.PropertyName == nameof(ColorSchemePageViewModel.Theme) && _bound?.Theme is { } theme)
         {

@@ -211,6 +211,7 @@ public partial class PreferencesWindow : Window
             CleanupFontsView.DataContext = vm.CleanupFonts;
             FootnotesFontsView.DataContext = vm.FootnotesFonts;
             ColorSchemePanel.DataContext = vm.ColorScheme;
+            ColorSchemePreviewFontView.DataContext = vm.ColorSchemePreviewFont;
             vm.ColorScheme.TextPrompt = (title, prompt, initial) => TextPromptWindow.AskAsync(this, title, prompt, initial);
             vm.ColorScheme.Confirm = (title, message) =>
                 ConfirmWindow.AskAsync(this, title, message, Strings.Get("ColorScheme_Delete"), destructive: true);
