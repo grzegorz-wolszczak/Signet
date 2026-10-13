@@ -1,0 +1,17 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.ProgressWindow"
+        Width="400" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Title="Signet">
+
+  <!-- Long work in the background: what is going on, an indeterminate bar and Cancel (the result is then dropped). -->
+  <StackPanel Margin="16" Spacing="12">
+    <TextBlock x:Name="MessageText" TextWrapping="Wrap" />
+    <ProgressBar IsIndeterminate="True" />
+    <Button x:Name="CancelButton" Content="{loc:Loc Common_Cancel}" IsCancel="True" MinWidth="90" HorizontalAlignment="Right" />
+  </StackPanel>
+</Window>

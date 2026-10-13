@@ -4689,6 +4689,9 @@ Convert anyway?</value>
   <data name="FootnoteConversionWindow_NoSelection" xml:space="preserve">
     <value>Select a row to see its details.</value>
   </data>
+  <data name="FootnoteConversion_Analyzing" xml:space="preserve">
+    <value>Analyzing the footnotes…</value>
+  </data>
   <data name="FootnoteConversionWindow_CannotConvert" xml:space="preserve">
     <value>Several references lead to the note — Signet does not convert this footnote (it stays of other origin).</value>
   </data>

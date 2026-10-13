@@ -1166,9 +1166,13 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             return;
         }
 
+        // The analysis of a big book takes a while: it runs in the background, with a progress window when it lasts.
         FootnoteConversionWindow? window = null;
-        FootnoteConversionViewModel? conversion = vm.PrepareFootnoteConversion(
-            () => FootnoteConversionWindow.ConfirmWithoutCheckpointAsync(window ?? (Window)this));
+        FootnoteConversionViewModel? conversion = await ProgressWindow.RunAsync(
+            this,
+            Strings.Get("FootnoteConversionWindow_Title"),
+            Strings.Get("FootnoteConversion_Analyzing"),
+            vm.PrepareFootnoteConversionAsync(() => FootnoteConversionWindow.ConfirmWithoutCheckpointAsync(window ?? (Window)this)));
         if (conversion is not null)
         {
             window = new FootnoteConversionWindow { DataContext = conversion };

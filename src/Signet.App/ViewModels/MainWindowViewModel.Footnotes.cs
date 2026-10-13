@@ -23,7 +23,7 @@ public sealed partial class MainWindowViewModel
 {
     /// <summary>
     /// Raised by "Convert Footnotes of Other Origin…" (Tools → Footnotes, the Code View menu, the notice on a footnote
-    /// of other origin) — the view calls <see cref="PrepareFootnoteConversion"/> and shows the modal dialog.
+    /// of other origin) — the view calls <see cref="PrepareFootnoteConversionAsync"/> and shows the modal dialog.
     /// </summary>
     public event EventHandler? FootnoteConversionRequested;
 
@@ -31,23 +31,29 @@ public sealed partial class MainWindowViewModel
     void ICodeTabHost.ShowFootnoteConversion() => FootnoteConversionRequested?.Invoke(this, EventArgs.Empty);
 
     /// <summary>
-    /// Prepares the "Convert Footnotes of Other Origin" dialog: saves the open tabs and plans the conversion. Returns the
-    /// dialog's view model, or <c>null</c> when no book is open or the book has no footnotes of other origin (then a
-    /// message goes to the status bar).
+    /// Prepares the "Convert Footnotes of Other Origin" dialog: saves the open tabs and plans the conversion off the UI
+    /// thread (a book can have thousands of footnotes; the caller shows that it is working, modally, so nothing edits the
+    /// book meanwhile). Returns the dialog's view model, or <c>null</c> when no book is open, the book changed in the
+    /// meantime, or the book has no footnotes of other origin (then a message goes to the status bar).
     /// </summary>
     /// <param name="confirmWithoutCheckpoint">
     /// Asks whether to convert although the checkpoint before the conversion could not be created.
     /// </param>
-    public FootnoteConversionViewModel? PrepareFootnoteConversion(Func<Task<bool>> confirmWithoutCheckpoint)
+    public async Task<FootnoteConversionViewModel?> PrepareFootnoteConversionAsync(Func<Task<bool>> confirmWithoutCheckpoint)
     {
         ArgumentNullException.ThrowIfNull(confirmWithoutCheckpoint);
-        if (_currentBook is null)
+        if (_currentBook is not { } book)
         {
             return null;
         }
 
         _tabManager.SaveAllTabs();
-        ConversionPlan plan = FootnoteEditor.PlanConversion(_currentBook);
+        ConversionPlan plan = await Task.Run(() => FootnoteEditor.PlanConversion(book)).ConfigureAwait(true);
+        if (!ReferenceEquals(book, _currentBook))
+        {
+            return null;
+        }
+
         if (plan.Items.Count == 0)
         {
             _statusBar.ShowMessage(Strings.Get("Status_NoForeignFootnotes"), TimeSpan.FromSeconds(4));

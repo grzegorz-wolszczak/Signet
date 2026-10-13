@@ -321,7 +321,7 @@ public sealed partial class FootnoteConversionItemViewModel : FootnoteConversion
     private const int NoteLength = 200;
 
     private readonly FootnoteConversionViewModel _owner;
-    private readonly string _fullReference;
+    private (string Before, string After)? _context;
 
     [ObservableProperty]
     private bool _isChecked;
@@ -335,9 +335,6 @@ public sealed partial class FootnoteConversionItemViewModel : FootnoteConversion
         Kind = Strings.Get(IsGlobal ? "FootnoteConversionWindow_Global" : "FootnoteConversionWindow_Local");
         Title = Strings.Format("FootnoteConversionWindow_ItemTitle", item.Marker, item.NewNumber);
         Header = Strings.Format("FootnoteConversionWindow_ItemHeader", item.Marker, item.NewNumber, Kind);
-        (string before, string after) = ReferenceContext(footnote);
-        Reference = ReferenceText(before, item.Marker, after, cell: true);
-        _fullReference = ReferenceText(before, item.Marker, after, cell: false);
         Note = item.NoteText.Length > NoteLength ? item.NoteText[..NoteLength] + "…" : item.NoteText;
         Warnings = item.CanConvert
             ? item.Warnings.Select(w => WarningText(w, item)).ToList()
@@ -389,8 +386,11 @@ public sealed partial class FootnoteConversionItemViewModel : FootnoteConversion
     /// <summary>"“*” → 1 (global)".</summary>
     public string Header { get; }
 
-    /// <summary>The text around the reference: "…text before [*] text after…" (shortened before it for the cell).</summary>
-    public override string Reference { get; }
+    /// <summary>
+    /// The text around the reference: "…text before [*] text after…" (shortened before it for the cell); computed when
+    /// the row is first shown — a book can have thousands of footnotes.
+    /// </summary>
+    public override string Reference => ReferenceAround(cell: true);
 
     /// <summary>The start of the text of the note.</summary>
     public override string Note { get; }
@@ -422,7 +422,7 @@ public sealed partial class FootnoteConversionItemViewModel : FootnoteConversion
             new FootnoteConversionPlace(
                 Strings.Get("FootnoteConversionWindow_PlaceReference"),
                 FootnoteEditor.Locate(footnote, FootnoteSide.Reference) is { } reference ? Location(reference.File, reference.Offset) : footnote.ReferenceFile.BookPath,
-                _fullReference,
+                ReferenceAround(cell: false),
                 new RelayCommand(GoToReference)),
             new FootnoteConversionPlace(
                 Strings.Get("FootnoteConversionWindow_PlaceNote"),
@@ -454,16 +454,18 @@ public sealed partial class FootnoteConversionItemViewModel : FootnoteConversion
         };
     }
 
-    // The text before and after the reference.
-    private static (string Before, string After) ReferenceContext(Footnote footnote)
+    private string ReferenceAround(bool cell)
     {
-        if (FootnoteEditor.LocateReferenceRange(footnote) is not { } range)
-        {
-            return (string.Empty, string.Empty);
-        }
-
-        return FootnoteViewModel.Context(range.File.GetText(), range.Start, range.End);
+        (string before, string after) = _context ??= ReferenceContext(Item);
+        return ReferenceText(before, Item.Marker, after, cell);
     }
+
+    // The text before and after the reference (where the plan found it: a book can have thousands of footnotes, so
+    // the files are not parsed again).
+    private static (string Before, string After) ReferenceContext(ConversionItem item) =>
+        item.ReferenceRange is { } range
+            ? FootnoteViewModel.Context(item.Footnote.ReferenceFile.GetText(), range.Start, range.End)
+            : (string.Empty, string.Empty);
 }
 
 /// <summary>A file the global notes can go to in the conversion dialog.</summary>

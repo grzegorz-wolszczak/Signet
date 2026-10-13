@@ -50,6 +50,12 @@ public sealed record ConversionItem(
     Footnote Footnote, string Marker, int NewNumber, bool CanConvert, IReadOnlyList<ConversionWarning> Warnings,
     IReadOnlyList<ConversionLink> Links, string NoteText)
 {
+    /// <summary>
+    /// Where its reference is in <see cref="Footnote.ReferenceFile"/> (with the <c>&lt;sup&gt;</c> around the link, as
+    /// <see cref="FootnoteEditor.LocateReferenceRange"/>), at the time of the plan; <c>null</c> when it was not found.
+    /// </summary>
+    public (int Start, int End)? ReferenceRange { get; init; }
+
     /// <summary>The files of the other links that lead to it, each once.</summary>
     public IReadOnlyList<string> OtherLinks =>
         Links.Select(l => l.File.BookPath).Distinct(StringComparer.Ordinal).ToList();
@@ -139,13 +145,38 @@ public static partial class FootnoteEditor
 
     /// <summary>
     /// What converting the footnotes of other origin would do: each with the number it gets and what needs a look, and
-    /// the candidates for the notes file of the global footnotes.
+    /// the candidates for the notes file of the global footnotes. It only reads the book, so it can run off the UI
+    /// thread while nothing edits the book.
     /// </summary>
     public static ConversionPlan PlanConversion(Book book)
     {
         ArgumentNullException.ThrowIfNull(book);
         IReadOnlyList<Footnote> footnotes = FootnoteScanner.Scan(book);
-        List<BookLink> links = BookLinks(book);
+
+        // Every link by what it leads to, and every file parsed once: a book can have thousands of footnotes.
+        Dictionary<(string Target, string Fragment), List<BookLink>> links = new();
+        foreach (BookLink link in BookLinks(book))
+        {
+            if (!links.TryGetValue((link.Target, link.Fragment), out List<BookLink>? same))
+            {
+                links[(link.Target, link.Fragment)] = same = new List<BookLink>();
+            }
+
+            same.Add(link);
+        }
+
+        Dictionary<HtmlResource, (string Text, TagLister Tags)> parsed = new(ReferenceEqualityComparer.Instance);
+        (string Text, TagLister Tags) Parsed(HtmlResource file)
+        {
+            if (!parsed.TryGetValue(file, out (string Text, TagLister Tags) entry))
+            {
+                string text = file.GetText();
+                parsed[file] = entry = (text, new TagLister(text));
+            }
+
+            return entry;
+        }
+
         Dictionary<HtmlResource, int> local = new(ReferenceEqualityComparer.Instance);
         int global = 0;
         List<ConversionItem> items = new();
@@ -156,7 +187,7 @@ public static partial class FootnoteEditor
                 : ++global;
             if (!footnote.IsSignet)
             {
-                items.Add(PlanItem(footnote, number, links));
+                items.Add(PlanItem(footnote, number, links, Parsed));
             }
         }
 
@@ -164,24 +195,28 @@ public static partial class FootnoteEditor
         return new ConversionPlan(items, candidates, AutomaticGlobalFile(candidates));
     }
 
-    private static ConversionItem PlanItem(Footnote footnote, int number, List<BookLink> links)
+    private static ConversionItem PlanItem(
+        Footnote footnote,
+        int number,
+        Dictionary<(string Target, string Fragment), List<BookLink>> links,
+        Func<HtmlResource, (string Text, TagLister Tags)> parsed)
     {
-        string referenceText = footnote.ReferenceFile.GetText();
-        Anchor? anchor = FindAnchor(new TagLister(referenceText), referenceText, footnote.ReferenceHref, footnote.ReferenceOccurrence);
+        (string referenceText, TagLister referenceTags) = parsed(footnote.ReferenceFile);
+        Anchor? anchor = FindAnchor(referenceTags, referenceText, footnote.ReferenceHref, footnote.ReferenceOccurrence);
         string marker = anchor is null ? string.Empty : PlainText(referenceText[anchor.InnerStart..anchor.InnerEnd]);
-        string noteText = footnote.NoteFile.GetText();
-        TagLister noteTags = new(noteText);
+        (string noteText, TagLister noteTags) = parsed(footnote.NoteFile);
         Element? note = FindElementById(noteTags, noteText, footnote.NoteId);
 
         bool InNote(BookLink link) =>
             note is not null && ReferenceEquals(link.Owner, footnote.NoteFile) && link.Position >= note.Start && link.Position < note.End;
 
-        List<BookLink> toNote = links
-            .Where(l => l.Target == footnote.NoteFile.BookPath && l.Fragment == footnote.NoteId && !InNote(l))
-            .ToList();
+        List<BookLink> LinksTo(string target, string fragment) =>
+            links.TryGetValue((target, fragment), out List<BookLink>? found) ? found.Where(l => !InNote(l)).ToList() : new List<BookLink>();
+
+        List<BookLink> toNote = LinksTo(footnote.NoteFile.BookPath, footnote.NoteId);
         List<BookLink> toReference = footnote.ReferenceId.Length == 0
             ? new List<BookLink>()
-            : links.Where(l => l.Target == footnote.ReferenceFile.BookPath && l.Fragment == footnote.ReferenceId && !InNote(l)).ToList();
+            : LinksTo(footnote.ReferenceFile.BookPath, footnote.ReferenceId);
 
         List<ConversionWarning> warnings = new();
         Match numeric = SingleNumber.Match(marker);
@@ -229,7 +264,10 @@ public static partial class FootnoteEditor
         // Block tags separate words (the paragraphs of the note do not run together), inline ones do not.
         string text = WebUtility.HtmlDecode(Tag.Replace(BlockTag.Replace(content, " "), string.Empty));
         text = Regex.Replace(text, "\\s+", " ", RegexOptions.CultureInvariant).Trim();
-        return new ConversionItem(footnote, marker, number, references <= 1, warnings, others, text);
+        return new ConversionItem(footnote, marker, number, references <= 1, warnings, others, text)
+        {
+            ReferenceRange = anchor is null ? null : (anchor.OuterStart, anchor.OuterEnd),
+        };
     }
 
     /// <summary>

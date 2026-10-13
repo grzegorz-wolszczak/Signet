@@ -4689,6 +4689,9 @@ Konwertować mimo to?</value>
   <data name="FootnoteConversionWindow_NoSelection" xml:space="preserve">
     <value>Wybierz wiersz, aby zobaczyć szczegóły.</value>
   </data>
+  <data name="FootnoteConversion_Analyzing" xml:space="preserve">
+    <value>Analizowanie przypisów…</value>
+  </data>
   <data name="FootnoteConversionWindow_CannotConvert" xml:space="preserve">
     <value>Do treści prowadzi kilka odnośników — Signet nie przekonwertuje tego przypisu (zostanie obcy).</value>
   </data>

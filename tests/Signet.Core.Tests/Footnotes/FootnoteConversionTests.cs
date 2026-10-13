@@ -210,6 +210,24 @@ public sealed class FootnoteConversionTests
     }
 
     [Fact]
+    public void The_plan_gives_the_range_of_each_reference()
+    {
+        (Book book, HtmlResource html) = NewBook(
+            "<p>A<sup><a href=\"#a\" id=\"a-back\">1</a></sup> B<a href=\"#b\" id=\"b-back\">2</a>.</p>\n"
+            + "<div id=\"a\"><p><a href=\"#a-back\">1</a> First.</p></div>\n"
+            + "<div id=\"b\"><p><a href=\"#b-back\">2</a> Second.</p></div>");
+        using (book)
+        {
+            ConversionPlan plan = FootnoteEditor.PlanConversion(book);
+
+            plan.Items.Select(i => i.ReferenceRange).Should().Equal(
+                plan.Items.Select(i => FootnoteEditor.LocateReferenceRange(i.Footnote) is { } r ? (r.Start, r.End) : ((int, int)?)null));
+            html.GetText()[plan.Items[0].ReferenceRange!.Value.Start..plan.Items[0].ReferenceRange!.Value.End]
+                .Should().Be("<sup><a href=\"#a\" id=\"a-back\">1</a></sup>");
+        }
+    }
+
+    [Fact]
     public void The_plan_says_what_needs_a_look()
     {
         (Book book, HtmlResource _) = NewBook(

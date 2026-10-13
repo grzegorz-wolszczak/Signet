@@ -268,13 +268,13 @@ public sealed class MainWindowFootnotesTests
     }
 
     [Fact]
-    public void Without_footnotes_of_other_origin_there_is_no_conversion_dialog()
+    public async Task Without_footnotes_of_other_origin_there_is_no_conversion_dialog()
     {
         using UiCultureScope culture = new("en");
         using TempDir temp = new();
         (MainWindowViewModel sut, Book _, HtmlResource _) = OpenMinimalChapter(temp);
 
-        sut.PrepareFootnoteConversion(() => Task.FromResult(true)).Should().BeNull();
+        (await sut.PrepareFootnoteConversionAsync(() => Task.FromResult(true))).Should().BeNull();
 
         sut.StatusMessage.Should().Be(Strings.Get("Status_NoForeignFootnotes"));
     }
@@ -286,11 +286,11 @@ public sealed class MainWindowFootnotesTests
         using TempDir temp = new();
         (MainWindowViewModel sut, HtmlResource chapter) = OpenChapterWithForeignFootnote(temp);
         bool asked = false;
-        FootnoteConversionViewModel dialog = sut.PrepareFootnoteConversion(() =>
+        FootnoteConversionViewModel dialog = (await sut.PrepareFootnoteConversionAsync(() =>
         {
             asked = true;
             return Task.FromResult(false);
-        })!;
+        }))!;
         FootnoteConversionItemViewModel item = dialog.Items.Single();
         item.Item.Warnings.Should().Equal(ConversionWarning.NumberChanges);
         item.IsChecked.Should().BeFalse("a footnote whose number changes needs a look");
