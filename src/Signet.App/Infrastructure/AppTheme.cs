@@ -36,6 +36,9 @@ public sealed class ResolvedTheme
     public AvaloniaThemeVariant Variant =>
         Resolver.Variant(Theme) == InterfaceVariant.Dark ? AvaloniaThemeVariant.Dark : AvaloniaThemeVariant.Light;
 
+    /// <summary>The fonts of the theme (those of the settings while it does not turn its own on).</summary>
+    public ThemeFonts Fonts => new(Theme, Resolver);
+
     /// <summary>The icon set the theme names; <c>null</c> = the one chosen in Preferences.</summary>
     public string? IconSet => Resolver.IconSet(Theme);
 

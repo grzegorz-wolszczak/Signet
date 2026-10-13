@@ -1287,6 +1287,9 @@ public partial class CodeTabView : UserControl
         _searchRenderer.Theme = theme;
         _spellRenderer.Theme = theme;
         EditorTheming.Apply(Editor, theme);
+
+        // The theme may bring its own editor font (Appearance › Color Scheme › Fonts).
+        ApplyFont();
     }
 
     private void ApplyTextMateTheme(ResolvedTheme theme)

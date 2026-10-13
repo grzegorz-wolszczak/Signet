@@ -1,9 +1,11 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.Input;
 using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.Core.Misc;
+using Signet.Core.Themes;
 
 namespace Signet.App.ViewModels;
 
@@ -58,6 +60,12 @@ public sealed partial class PreferencesViewModel
 
     /// <summary>Footnotes › Appearance › Fonts: the tooltip font.</summary>
     public FontPageViewModel FootnotesFonts { get; private set; } = null!;
+
+    /// <summary>
+    /// Appearance › Color Scheme › Fonts: every font of the "Fonts" pages, grouped by their sections, as the selected
+    /// theme sets them (used while the theme turns its fonts on, <see cref="ColorSchemeViewModel.UseThemeFonts"/>).
+    /// </summary>
+    public FontPageViewModel ThemeFonts { get; private set; } = null!;
 
     // Every "Fonts" page, for the refresh after a change made elsewhere.
     private readonly List<FontPageViewModel> _fontPages = new();
@@ -190,6 +198,90 @@ public sealed partial class PreferencesViewModel
         PropertyChanged += (_, _) => RefreshFontPages();
         CodeView.PropertyChanged += (_, _) => CodeViewFonts.Refresh();
     }
+
+    // Appearance › Color Scheme › Fonts — after the "Fonts" pages (it mirrors their rows) and the Color Scheme page.
+    private void CreateThemeFontsPage()
+    {
+        ThemeFonts = new FontPageViewModel(new (FontPageViewModel Page, string Group)[]
+            {
+                (AppearanceFonts, "PreferencesWindow_General"),
+                (StartScreenFonts, "PreferencesWindow_StartScreen"),
+                (BookBrowserFonts, "PreferencesWindow_BookBrowser"),
+                (TableOfContentsFonts, "PreferencesWindow_TableOfContents"),
+                (CodeViewFonts, "PreferencesWindow_CodeView"),
+                (PreviewFonts, "PreferencesWindow_Preview"),
+                (FindReplaceFonts, "PreferencesWindow_FindReplace"),
+                (SpecialCharacterFonts, "PreferencesWindow_SpecialCharacters"),
+                (CheckpointsFonts, "PreferencesWindow_Checkpoints"),
+                (ValidationFonts, "PreferencesWindow_Validation"),
+                (MetadataEditorFonts, "PreferencesWindow_MetadataEditor"),
+                (CleanupFonts, "PreferencesWindow_Cleanup"),
+                (FootnotesFonts, "PreferencesWindow_Footnotes"),
+            }
+            .SelectMany(p => p.Page.Fonts.Select(f => ThemeFontRow(f, Strings.Get(p.Group))))
+            .ToArray());
+        ColorScheme.ThemeEdited += (_, _) => ThemeFonts.Refresh();
+
+        // Its rows show the fonts of the settings where the theme has none: refreshed with the other pages.
+        _fontPages.Add(ThemeFonts);
+    }
+
+    // The row of a font of the theme: the row of the "Fonts" page it mirrors (label, sample, limits, preview), with the
+    // font kept in the selected theme. An empty typeface or a size of 0 means what it means on the "Fonts" page (the
+    // default of the place), shown in the preview as the place resolves it now.
+    private FontSettingViewModel ThemeFontRow(FontSettingViewModel source, string group)
+    {
+        string key = ThemeFontKey(source.Key);
+        ThemeFont Font() => ColorScheme.FontOf(key);
+        return new FontSettingViewModel(
+            source.Key,
+            source.Label,
+            source.PreviewText,
+            source.HasFamily ? (() => Font().Family, v => ColorScheme.SetFont(key, Font() with { Family = v })) : null,
+            source.HasSize ? (() => Font().Size, v => ColorScheme.SetFont(key, Font() with { Size = v }), source.MinSize, source.MaxSize) : null,
+            (() => Font().Family is { Length: > 0 } family ? family : source.EffectiveFamily,
+             () => Font().Size > 0 ? Font().Size : source.EffectiveSize),
+            () => ColorScheme.RestoreFont(key),
+            source.HasFamily ? new AsyncRelayCommand(() => ChooseThemeFont(key, source)) : null,
+            placeholder: () => Font().Family is { Length: > 0 } family ? family : source.Placeholder,
+            previewForeground: () => source.PreviewForeground,
+            previewBackground: () => source.PreviewBackground,
+            sizeHint: source.SizeHint,
+            codePreview: source.IsCodePreview ? () => source.CodePreviewExtended : null)
+        {
+            Group = group,
+        };
+    }
+
+    // "Choose…" of a font of the theme.
+    private async Task ChooseThemeFont(string key, FontSettingViewModel source)
+    {
+        ThemeFont font = ColorScheme.FontOf(key);
+        string family = font.Family.Length > 0 ? font.Family : source.EffectiveFamily;
+        int? size = source.HasSize ? (font.Size > 0 ? font.Size : (int)source.EffectiveSize) : null;
+        if (await PickFontAsync(new FontPickRequest(family, size, false)) is { } result)
+        {
+            ColorScheme.SetFont(key, new ThemeFont(result.Family, source.HasSize ? result.Size : font.Size));
+            ThemeFonts.Refresh();
+        }
+    }
+
+    // The place of a theme font (ThemeFontKeys) for the key of a row of the "Fonts" pages.
+    private static string ThemeFontKey(string rowKey) => rowKey switch
+    {
+        "Interface" => ThemeFontKeys.Interface,
+        "Warnings" => ThemeFontKeys.Warnings,
+        "CodeViewEditor" => ThemeFontKeys.CodeViewEditor,
+        "OpenTagHint" => ThemeFontKeys.OpenTagHint,
+        "PreviewStandard" => ThemeFontKeys.PreviewStandard,
+        "PreviewSerif" => ThemeFontKeys.PreviewSerif,
+        "PreviewSansSerif" => ThemeFontKeys.PreviewSansSerif,
+        "PreviewSize" => ThemeFontKeys.PreviewSize,
+        "SpecialCharacters" => ThemeFontKeys.SpecialCharacters,
+        _ when rowKey.StartsWith("Tooltip", System.StringComparison.Ordinal)
+            && System.Enum.TryParse(rowKey["Tooltip".Length..], out TooltipArea area) => ThemeFontKeys.Tooltip(area),
+        _ => throw new System.ArgumentOutOfRangeException(nameof(rowKey), rowKey, "A font row without a place in the theme."),
+    };
 
     // A typeface of the preview: the size is shared (a row of its own).
     private FontSettingViewModel PreviewFamily(

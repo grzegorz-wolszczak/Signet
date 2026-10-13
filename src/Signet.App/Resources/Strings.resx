@@ -5558,4 +5558,10 @@ Zamknij zakładkę</value>
   <data name="ColorSchemeSample_BookNote" xml:space="preserve">
     <value>Tło i tekst mają kolory książki, chyba że motyw je ustawia.</value>
   </data>
+  <data name="ColorScheme_UseThemeFonts" xml:space="preserve">
+    <value>Użyj czcionek motywu zamiast domyślnych</value>
+  </data>
+  <data name="ColorScheme_UseThemeFontsNote" xml:space="preserve">
+    <value>Po zaznaczeniu motyw dostaje kopię obecnych czcionek z Wygląd › Czcionki; zmiany na tej stronie dotyczą tylko tego motywu i działają po zapisaniu.</value>
+  </data>
 </root>

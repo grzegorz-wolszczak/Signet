@@ -3661,7 +3661,8 @@ public sealed partial class MainWindowViewModel
     public IReadOnlyList<string> RecentSpecialCharacters => _settings.RecentSpecialCharacters;
 
     /// <summary>Font of the character column in the "Insert Special Character" window (Preferences).</summary>
-    public SpecialCharacterAppearance SpecialCharacterAppearance => _settings.SpecialCharacterAppearance;
+    public SpecialCharacterAppearance SpecialCharacterAppearance =>
+        AppTheme.Current.Fonts.SpecialCharacters(_settings.SpecialCharacterAppearance);
 
     /// <summary>"Search all characters" in the "Insert Special Character" window (remembered).</summary>
     public bool SpecialCharacterSearchAll

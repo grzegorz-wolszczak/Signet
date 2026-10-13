@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -118,7 +119,7 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
 
     /// <summary>The theme in use (in the draft; applied on Save) and edited on the page.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Variant), nameof(IconSet), nameof(IsBundled), nameof(CanRestoreDefaults))]
+    [NotifyPropertyChangedFor(nameof(Variant), nameof(IconSet), nameof(IsBundled), nameof(CanRestoreDefaults), nameof(UseThemeFonts))]
     [NotifyCanExecuteChangedFor(nameof(RenameCommand), nameof(DeleteCommand), nameof(RestoreDefaultsCommand))]
     private ThemeOption? _selected;
 
@@ -141,6 +142,54 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
     /// </summary>
     internal string? RestoreSource =>
         Current is { ParentId: { } parentId } ? (_edited.GetValueOrDefault(parentId) ?? _store.Find(parentId))?.Name : null;
+
+    /// <summary>
+    /// "Use the theme fonts instead of the defaults" (Rider's color scheme font): turned on, the theme gets a copy of the
+    /// fonts of the settings for every place it does not set yet, so nothing changes until a font is edited; turned off,
+    /// the theme keeps its fonts but the settings' are used.
+    /// </summary>
+    public bool UseThemeFonts
+    {
+        get => Current?.UseThemeFonts ?? false;
+        set
+        {
+            if (Current is not { } theme || theme.UseThemeFonts == value)
+            {
+                return;
+            }
+
+            ImmutableDictionary<string, ThemeFont> fonts = theme.Fonts;
+            if (value)
+            {
+                foreach ((string key, ThemeFont font) in ThemeFontKeys.FromSettings(_settings))
+                {
+                    if (_editResolver.Font(theme, key) is null)
+                    {
+                        fonts = fonts.SetItem(key, font);
+                    }
+                }
+            }
+
+            Edit(theme with { UseThemeFonts = value, Fonts = fonts });
+            OnPropertyChanged();
+        }
+    }
+
+    /// <summary>The font of a place in the selected theme (its parents' too), otherwise the one of the settings.</summary>
+    public ThemeFont FontOf(string key) =>
+        (Current is { } theme ? _editResolver.Font(theme, key) : null) ?? ThemeFontKeys.FromSettings(_settings)[key];
+
+    /// <summary>Gives a place of the selected theme a font (kept until Save).</summary>
+    public void SetFont(string key, ThemeFont font)
+    {
+        if (Current is { } theme && FontOf(key) != font)
+        {
+            Edit(theme with { Fonts = theme.Fonts.SetItem(key, font) });
+        }
+    }
+
+    /// <summary>"Restore defaults" of a font of the theme: the font of the settings, copied again.</summary>
+    public void RestoreFont(string key) => SetFont(key, ThemeFontKeys.FromSettings(_settings)[key]);
 
     /// <summary>Gives a key of the selected theme a value (kept until Save).</summary>
     internal void SetKey(ThemeKey key, ThemeEntry entry)

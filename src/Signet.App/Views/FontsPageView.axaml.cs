@@ -37,8 +37,20 @@ public partial class FontsPageView : UserControl
             return;
         }
 
+        string? group = null;
         foreach (FontSettingViewModel font in page.Fonts)
         {
+            if (font.Group is { } heading && heading != group)
+            {
+                Rows.Children.Add(new TextBlock
+                {
+                    Text = heading,
+                    FontWeight = FontWeight.Bold,
+                    Margin = new Avalonia.Thickness(0, Rows.Children.Count == 0 ? 0 : 6, 0, -6),
+                });
+            }
+
+            group = font.Group;
             FontSettingView row = new() { DataContext = font, Name = "Font" + font.Key };
             row.AddHandler(GotFocusEvent, (_, _) => page.Active = font);
             Rows.Children.Add(row);

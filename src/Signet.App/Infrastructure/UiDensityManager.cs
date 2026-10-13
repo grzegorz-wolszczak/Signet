@@ -100,18 +100,25 @@ public sealed class UiDensityManager(
         }
 
         ApplyFont(app, _settings.UiFont, _settings.UiFontSize);
-        ApplyWarning(app, _settings.WarningAppearance, EffectiveFontSize);
+        ApplyWarning(app, Fonts.Warnings(_settings.WarningAppearance), EffectiveFontSize);
         ApplyTooltipFonts();
+
+        // A theme can turn its own fonts on (Appearance › Color Scheme › Fonts): they follow the theme in use.
+        AppTheme.Changed += (_, _) => ApplyUiFont(_settings.UiFont, _settings.UiFontSize);
     }
+
+    // The fonts of the theme in use (those of the settings while the theme does not turn its own on).
+    private static Signet.Core.Themes.ThemeFonts Fonts => AppTheme.Current.Fonts;
 
     /// <summary>
     /// Applies the saved tooltip fonts live (Preferences → the "Fonts" pages, <see cref="TooltipFonts"/>). Called also
     /// after the interface font changed: a tooltip font without a typeface uses it.
     /// </summary>
-    public void ApplyTooltipFonts() => TooltipFonts.Apply(_settings.GetTooltipFont);
+    public void ApplyTooltipFonts() => TooltipFonts.Apply(area => Fonts.Tooltip(area, _settings.GetTooltipFont(area)));
 
-    /// <summary>The UI font size in use: the one chosen in Preferences, otherwise the mode default.</summary>
-    public double EffectiveFontSize => _settings.UiFontSize > 0 ? _settings.UiFontSize : DefaultFontSize;
+    /// <summary>The UI font size in use: the one chosen in Preferences (or the theme), otherwise the mode default.</summary>
+    public double EffectiveFontSize =>
+        Fonts.Interface(_settings.UiFont, _settings.UiFontSize).Size is > 0 and var size ? size : DefaultFontSize;
 
     /// <summary>
     /// Applies the saved font size of the warning texts live (<c>SignetWarningFontSize</c>).
@@ -120,7 +127,7 @@ public sealed class UiDensityManager(
     {
         if (Application.Current is { } app)
         {
-            ApplyWarning(app, _settings.WarningAppearance, EffectiveFontSize);
+            ApplyWarning(app, Fonts.Warnings(_settings.WarningAppearance), EffectiveFontSize);
         }
     }
 
@@ -147,13 +154,15 @@ public sealed class UiDensityManager(
         }
 
         ApplyFont(app, family, size);
-        ApplyWarning(app, _settings.WarningAppearance, EffectiveFontSize);
+        ApplyWarning(app, Fonts.Warnings(_settings.WarningAppearance), EffectiveFontSize);
         ApplyTooltipFonts();
         _iconTheme.RefreshToolbarIconSize();
     }
 
-    private void ApplyFont(Application app, string family, int size)
+    // The interface font: the setting given, or the theme's while it turns its fonts on.
+    private void ApplyFont(Application app, string settingFamily, int settingSize)
     {
+        (string family, int size) = Fonts.Interface(settingFamily, settingSize);
         if (_fontResources is not null)
         {
             app.Resources.MergedDictionaries.Remove(_fontResources);

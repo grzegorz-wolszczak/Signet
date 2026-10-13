@@ -5558,4 +5558,10 @@ Close the tab</value>
   <data name="ColorSchemeSample_BookNote" xml:space="preserve">
     <value>The background and the text keep the colors of the book unless the theme sets them.</value>
   </data>
+  <data name="ColorScheme_UseThemeFonts" xml:space="preserve">
+    <value>Use the theme fonts instead of the default ones</value>
+  </data>
+  <data name="ColorScheme_UseThemeFontsNote" xml:space="preserve">
+    <value>When turned on, the theme gets a copy of the current fonts of Appearance › Fonts; the changes on this page belong to this theme only and take effect after saving.</value>
+  </data>
 </root>

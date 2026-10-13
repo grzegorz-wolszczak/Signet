@@ -293,6 +293,18 @@
         <views:ColorSchemeKeysView x:Name="ThemeInterfaceView" Margin="8" />
       </TabItem>
 
+      <!-- Appearance › Color Scheme › Fonts, as Rider's Color Scheme Font: "Use the theme fonts" and every font of the
+           "Fonts" pages as the theme sets them. The DataContexts are set in code. -->
+      <TabItem x:Name="ThemeFontsPage" Header="{loc:Loc PreferencesWindow_Fonts}" views:PreferencesPage.Parent="ColorSchemePage">
+        <DockPanel>
+          <StackPanel x:Name="ThemeFontsSwitch" x:DataType="vm:ColorSchemeViewModel" DockPanel.Dock="Top" Margin="8,8,8,0" Spacing="4">
+            <CheckBox x:Name="UseThemeFontsBox" Content="{loc:Loc ColorScheme_UseThemeFonts}" IsChecked="{Binding UseThemeFonts}" />
+            <TextBlock Text="{loc:Loc ColorScheme_UseThemeFontsNote}" Opacity="0.7" TextWrapping="Wrap" />
+          </StackPanel>
+          <views:FontsPageView x:Name="ThemeFontsView" IsEnabled="{Binding #UseThemeFontsBox.IsChecked}" />
+        </DockPanel>
+      </TabItem>
+
       <!-- =============================== Code View =============================== -->
       <!-- No settings of its own: the window fills the page with links to its subsections. -->
       <TabItem x:Name="CodeViewPage" Header="{loc:Loc PreferencesWindow_CodeView}" />

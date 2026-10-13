@@ -67,6 +67,21 @@ public sealed class ThemeResolver
         return null;
     }
 
+    /// <summary>The font the theme (or the nearest parent) sets for a place (<see cref="ThemeFontKeys"/>); <c>null</c> = none.</summary>
+    public ThemeFont? Font(Theme theme, string key)
+    {
+        ArgumentNullException.ThrowIfNull(key);
+        foreach (Theme t in Lineage(theme))
+        {
+            if (t.Fonts.TryGetValue(key, out ThemeFont font))
+            {
+                return font;
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>
     /// The theme the value of the key comes from: the theme asked about or one of its parents — for the editor (whether
     /// the user changed the key in this theme).

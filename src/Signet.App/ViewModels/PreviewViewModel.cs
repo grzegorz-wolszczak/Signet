@@ -179,7 +179,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
 
     /// <summary>
     /// The default fonts of the book (Preferences › Appearance › Fonts › Preview), set by the host; the view applies them
-    /// after every navigation and when they change (<see cref="FontsChanged"/>).
+    /// (with the fonts of the theme over them) after every navigation and when they change (<see cref="FontsChanged"/>).
     /// </summary>
     public PreviewAppearance Fonts
     {

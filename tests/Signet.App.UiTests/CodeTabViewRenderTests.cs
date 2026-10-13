@@ -294,6 +294,38 @@ public sealed class CodeTabViewRenderTests
         }
     }
 
+    [AvaloniaFact]
+    public void An_open_tab_takes_the_editor_font_of_a_theme_that_turns_its_fonts_on()
+    {
+        Window window = ShowMiscTab("script.js", "var x = 1;");
+        TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
+        double before = editor.FontSize;
+        Theme theme = new Theme(System.Ulid.NewUlid().ToString(), "Fonts")
+        {
+            UseThemeFonts = true,
+            Fonts = System.Collections.Immutable.ImmutableDictionary<string, ThemeFont>.Empty
+                .Add(ThemeFontKeys.CodeViewEditor, new ThemeFont("DejaVu Sans Mono", 21)),
+        };
+        try
+        {
+            AppTheme.Apply(Avalonia.Application.Current!, new ResolvedTheme(theme, new ThemeResolver(_ => null)));
+            Dispatcher.UIThread.RunJobs();
+
+            editor.FontSize.Should().Be(21);
+            editor.FontFamily.Name.Should().Be("DejaVu Sans Mono");
+
+            AppTheme.Apply(Avalonia.Application.Current!, new ResolvedTheme(theme with { UseThemeFonts = false }, new ThemeResolver(_ => null)));
+            Dispatcher.UIThread.RunJobs();
+
+            editor.FontSize.Should().Be(before, "with the theme fonts off the settings count again");
+        }
+        finally
+        {
+            AppTheme.Apply(Avalonia.Application.Current!, ResolvedTheme.Defaults);
+            window.Close();
+        }
+    }
+
     [AvaloniaTheory]
     [InlineData(false)]
     [InlineData(true)]

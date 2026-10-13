@@ -3,6 +3,7 @@ using System.Linq;
 using System;
 using System.Threading.Tasks;
 using AvaloniaEdit.Document;
+using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.Core.BookManipulation;
@@ -83,9 +84,9 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     private bool _wordWrap;
 
     /// <summary>
-    /// Code View font and colors from the settings.
+    /// The Code View font: the setting, or the theme's while the theme in use turns its fonts on.
     /// </summary>
-    public CodeViewAppearance Appearance => _settings.CodeViewAppearance;
+    public CodeViewAppearance Appearance => AppTheme.Current.Fonts.CodeView(_settings.CodeViewAppearance);
 
     /// <summary>
     /// Whether to use extended highlighting
@@ -1249,8 +1250,8 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     /// <summary>The delay (ms) before the opening tag tooltip appears.</summary>
     public int OpenTagHintDelayMs => _settings.CodeViewOpenTagHintDelayMs;
 
-    /// <summary>The font and colors of the opening tag tooltip (read live).</summary>
-    public OpenTagHintAppearance OpenTagHintAppearance => _settings.OpenTagHintAppearance;
+    /// <summary>The font of the opening tag tooltip (read live; the theme's while the theme turns its fonts on).</summary>
+    public OpenTagHintAppearance OpenTagHintAppearance => AppTheme.Current.Fonts.OpenTagHint(_settings.OpenTagHintAppearance);
 
     /// <summary>The closing tag containing the character at <paramref name="offset"/> (see <see cref="CodeViewModel.GetCloseTagAt"/>).</summary>
     public (int Offset, int Length)? GetCloseTagAt(int offset) => _model.GetCloseTagAt(offset);

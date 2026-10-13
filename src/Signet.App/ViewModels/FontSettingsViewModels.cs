@@ -86,6 +86,9 @@ public sealed class FontSettingViewModel : ObservableObject
     /// <summary>An English identifier of the setting.</summary>
     public string Key { get; }
 
+    /// <summary>The group the row is shown under (a heading above the first row of a group); <c>null</c> = none.</summary>
+    public string? Group { get; init; }
+
     /// <summary>The label in the UI language.</summary>
     public string Label { get; }
 

@@ -476,10 +476,14 @@ public partial class PreviewView : UserControl
         }
     }
 
-    private void OnAppThemeChanged(object? sender, EventArgs e) => ApplyThemeColors();
+    private void OnAppThemeChanged(object? sender, EventArgs e)
+    {
+        ApplyThemeColors();
+        ApplyFonts();
+    }
 
-    // The default fonts of the book (Preferences › Appearance › Fonts › Preview), after every navigation and when they
-    // change.
+    // The default fonts of the book (Preferences › Appearance › Fonts › Preview, or the theme's while the theme turns its
+    // fonts on), after every navigation and when they or the theme change.
     private void ApplyFonts()
     {
         if (!_initialized || _initFailed || _boundViewModel is null)
@@ -489,7 +493,7 @@ public partial class PreviewView : UserControl
 
         try
         {
-            _ = WebView.ExecuteScriptAsync(PreviewFontsScript.Build(_boundViewModel.Fonts));
+            _ = WebView.ExecuteScriptAsync(PreviewFontsScript.Build(AppTheme.Current.Fonts.Preview(_boundViewModel.Fonts)));
         }
         catch (Exception)
         {

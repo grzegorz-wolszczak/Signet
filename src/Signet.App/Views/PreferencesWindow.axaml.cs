@@ -173,6 +173,8 @@ public partial class PreferencesWindow : Window
                 view.DataContext = vm.ColorScheme.PageFor(page);
             }
 
+            ThemeFontsSwitch.DataContext = vm.ColorScheme;
+            ThemeFontsView.DataContext = vm.ThemeFonts;
             vm.ColorScheme.KeyRequested -= OnThemeKeyRequested;
             vm.ColorScheme.KeyRequested += OnThemeKeyRequested;
         }

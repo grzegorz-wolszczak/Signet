@@ -283,7 +283,8 @@ public sealed class PreferencesWindowRenderTests
 
         // The parts follow the work on a book: from the start screen, through editing, to cleaning up.
         appearanceFonts.Children.Select(n => n.Title).Should().Equal(PartsWithFonts.Select(s => Strings.Get("PreferencesWindow_" + s)));
-        window.Sections.All.Where(n => n.Title == fonts).Should().ContainSingle("a section has no Fonts page of its own");
+        window.Sections.All.Where(n => n.Title == fonts && n.Parent?.Title != Strings.Get("PreferencesWindow_ColorScheme"))
+            .Should().ContainSingle("a section has no Fonts page of its own (the fonts of a theme are a page of Color Scheme)");
         window.Sections.All.Should().NotContain(n => n.Title == Strings.Get("PreferencesWindow_StartScreen") && n.Children.Count > 0,
             "a part with only fonts is no section");
 
