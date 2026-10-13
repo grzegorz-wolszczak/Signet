@@ -234,6 +234,25 @@ public sealed class CodeTabViewRenderTests
         }
     }
 
+    // Regression: the Document binding resolves after DataContextChanged, and a grammar set on the placeholder
+    // document left the tokenizer of the real one asleep, so only the first script tab of a session was colored.
+    [AvaloniaFact]
+    public void Every_script_tab_is_colored_not_only_the_first()
+    {
+        foreach (string fileName in new[] { "first.js", "second.js", "third.js" })
+        {
+            Window window = ShowMiscTab(fileName, "var x = 1;");
+            try
+            {
+                ForegroundAt(window, 1, 0).Should().Be(Fg(ThemeKeys.JsKeyword), fileName);
+            }
+            finally
+            {
+                window.Close();
+            }
+        }
+    }
+
     [AvaloniaFact]
     public void Json_tokens_take_the_colours_of_the_json_keys()
     {

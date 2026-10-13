@@ -213,14 +213,20 @@ public partial class CodeTabView : UserControl
     /// The <c>Document="{Binding Document}"</c> binding on the <c>TextEditor</c> may resolve
     /// AFTER the <c>DataContextChanged</c> event — especially when Dock re-materializes the view
     /// through <c>DeferredContentControl</c> on a layout change. Once the document arrives, the
-    /// highlights skipped in the first pass (well-formedness error, tag pair, Find matches) are
-    /// applied again.
+    /// highlights skipped in the first pass (TextMate, well-formedness error, tag pair, Find matches)
+    /// are applied again.
     /// </summary>
     private void OnEditorDocumentChanged(object? sender, EventArgs e)
     {
         if (_boundViewModel is null)
         {
             return;
+        }
+
+        // TextMate skipped in the first pass because the document was not the tab's yet (see ApplyGrammar).
+        if (_textMate is null && _lineColorizer is null)
+        {
+            ApplyGrammar(_boundViewModel.Syntax);
         }
 
         UpdateErrorRenderer();
@@ -1179,6 +1185,18 @@ public partial class CodeTabView : UserControl
 
         string? scope = CodeViewTextMate.ScopeFor(syntax);
         if (scope is null)
+        {
+            _textMate?.Dispose();
+            _textMate = null;
+            return;
+        }
+
+        // TextMate goes only on the tab's own document (the Document binding may resolve after DataContextChanged).
+        // A grammar given to the model of another document starts compiling on that model's tokenizer thread; the
+        // model TextMate builds for the next document then sees the grammar compiling and its thread sleeps for good
+        // (TextMateSharp 2.0.4 signals nothing when a compilation ends), so the tab stays uncolored.
+        // OnEditorDocumentChanged installs it once the document arrives.
+        if (vm is not null && !ReferenceEquals(Editor.Document, vm.Document))
         {
             _textMate?.Dispose();
             _textMate = null;
