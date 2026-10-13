@@ -43,6 +43,43 @@ internal static class CodeViewTextMate
         (ThemeKeys.JsonConstant, new[] { "constant.language.json" }),
     };
 
+    /// <summary>
+    /// The key that colors a token with these scopes (outermost first, as TextMate gives them), matched as a TextMate
+    /// theme matches: the innermost scope with a rule wins, and among the rules of a scope the longest selector (a
+    /// selector matches the scope itself and the scopes below it, e.g. <c>keyword</c> matches
+    /// <c>keyword.control.js</c>); <c>null</c> = plain text.
+    /// </summary>
+    public static ThemeKey? KeyFor(IReadOnlyList<string> scopes)
+    {
+        ArgumentNullException.ThrowIfNull(scopes);
+        for (int i = scopes.Count - 1; i >= 0; i--)
+        {
+            string scope = scopes[i];
+            ThemeKey? best = null;
+            int bestLength = -1;
+            foreach ((ThemeKey key, string[] selectors) in ScopeMap)
+            {
+                foreach (string selector in selectors)
+                {
+                    bool matches = scope == selector
+                        || (scope.StartsWith(selector, StringComparison.Ordinal) && scope[selector.Length] == '.');
+                    if (matches && selector.Length > bestLength)
+                    {
+                        best = key;
+                        bestLength = selector.Length;
+                    }
+                }
+            }
+
+            if (best is not null)
+            {
+                return best;
+            }
+        }
+
+        return null;
+    }
+
     /// <summary>Registry options (grammars + themes) shared by all Code View tabs.</summary>
     public static RegistryOptions Options => SharedOptions;
 

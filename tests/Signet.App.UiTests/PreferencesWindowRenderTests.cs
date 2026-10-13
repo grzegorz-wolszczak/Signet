@@ -366,6 +366,56 @@ public sealed class PreferencesWindowRenderTests
         window.Close();
     }
 
+    /// <summary>
+    /// The preview of a page shows its demo text in the colors of the theme being edited (also the changes not saved
+    /// yet), and a click on a fragment selects its key in the tree.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_preview_of_a_color_scheme_page_follows_the_edits_and_a_click_selects_the_key()
+    {
+        PreferencesWindow window = BuildWindow();
+        PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+        window.Width = 1100;
+        window.Height = 860;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, "ThemeXhtmlPage");
+        ColorSchemePageViewModel xhtml = vm.ColorScheme.PageFor(ThemePage.Xhtml);
+        ThemePreviewEditor preview = window.FindControl<ColorSchemeKeysView>("ThemeXhtmlView")!
+            .GetVisualDescendants().OfType<ThemePreviewEditor>().Single();
+        preview.Document.Text.Should().Be(ThemeSamples.Xhtml.Text);
+        int head = preview.Document.Text.IndexOf("<head>", StringComparison.Ordinal) + 2;
+
+        xhtml.SelectKey(ThemeKeys.XhtmlTag);
+        xhtml.Foreground = "#123456";
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+
+        ForegroundAt(preview, head).Should().Be(Color.Parse("#123456"));
+
+        AvaloniaEdit.Rendering.TextView view = preview.TextArea.TextView;
+        AvaloniaEdit.TextViewPosition position = new(preview.Document.GetLocation(preview.Document.Text.IndexOf("xmlns:epub", StringComparison.Ordinal) + 1));
+        Avalonia.Point point = view.GetVisualPosition(position, AvaloniaEdit.Rendering.VisualYPosition.LineMiddle) - view.ScrollOffset;
+        Avalonia.Point at = Avalonia.VisualExtensions.TranslatePoint(view, point, window)!.Value;
+        window.MouseDown(at, MouseButton.Left);
+        window.MouseUp(at, MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+
+        xhtml.Key!.Id.Should().Be(ThemeKeys.XhtmlNamespacePrefix.Id);
+        window.Close();
+    }
+
+    // The text color the preview draws at a document offset.
+    private static Color ForegroundAt(ThemePreviewEditor editor, int offset)
+    {
+        AvaloniaEdit.Document.DocumentLine line = editor.Document.GetLineByOffset(offset);
+        AvaloniaEdit.Rendering.VisualLine visual = editor.TextArea.TextView.GetOrConstructVisualLine(line);
+        int column = offset - line.Offset;
+        AvaloniaEdit.Rendering.VisualLineElement element = visual.Elements
+            .First(e => column >= e.RelativeTextOffset && column < e.RelativeTextOffset + e.DocumentLength);
+        return ((ISolidColorBrush)element.TextRunProperties.ForegroundBrush!).Color;
+    }
+
     /// <summary>A section with more appearance settings than fonts links to its fonts at the top of its Appearance page.</summary>
     [AvaloniaTheory]
     [InlineData("CodeView")]

@@ -1,15 +1,20 @@
+using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using Avalonia.Controls;
+using Signet.App.CodeView;
 using Signet.App.Infrastructure;
 using Signet.App.ViewModels;
 using Signet.Controls.TreeDataGrid;
+using Signet.Core.Themes;
 
 namespace Signet.App.Views;
 
 /// <summary>
 /// A page of the keys of Appearance › Color Scheme (<see cref="ColorSchemePageViewModel"/>). The tree's source is built
-/// here (TreeDataGrid sources belong to the views).
+/// here (TreeDataGrid sources belong to the views), and so is the preview of the page: an editor with the demo text of
+/// a code page (two for JavaScript and JSON), or the sample controls of Preview and Interface.
 /// </summary>
 [SuppressMessage(
     "Reliability",
@@ -21,6 +26,10 @@ public partial class ColorSchemeKeysView : UserControl
     private LocalizedColumns<ThemeKeyNode>? _columns;
     private HierarchicalTreeDataGridSource<ThemeKeyNode>? _source;
     private TreeSelectionSync<ThemeKeyNode>? _selection;
+
+    // The preview: its editors (code pages) or its sample controls (Preview, Interface).
+    private readonly List<ThemePreviewEditor> _editors = new();
+    private ThemeControlsPreview? _controls;
 
     /// <summary>Initializes the view.</summary>
     public ColorSchemeKeysView()
@@ -61,13 +70,86 @@ public partial class ColorSchemeKeysView : UserControl
 
         Tree.Source = _source;
         _selection?.SelectFromViewModel();
+        BuildPreview();
     }
+
+    private void BuildPreview()
+    {
+        _editors.Clear();
+        _controls = null;
+        PreviewHost.Child = null;
+        if (_bound is not { } vm)
+        {
+            return;
+        }
+
+        ResolvedTheme theme = vm.Theme ?? ResolvedTheme.Defaults;
+        switch (vm.Page)
+        {
+            case ThemePage.Preview or ThemePage.Interface:
+                _controls = new ThemeControlsPreview();
+                _controls.KeyClicked += OnPreviewKeyClicked;
+                _controls.Show(vm.Page, theme);
+                PreviewHost.Child = _controls;
+                return;
+            case ThemePage.JavaScriptJson:
+                Grid columns = new() { ColumnDefinitions = new ColumnDefinitions("*,*") };
+                columns.Children.Add(NewEditor(ThemeSamples.JavaScript, theme));
+                Control json = NewEditor(ThemeSamples.Json, theme);
+                Grid.SetColumn(json, 1);
+                columns.Children.Add(json);
+                PreviewHost.Child = columns;
+                return;
+            default:
+                ThemeSample sample = SampleOf(vm.Page);
+                PreviewHost.Child = NewEditor(vm.ExtendedHighlighting ? sample : sample.Basic, theme);
+                return;
+        }
+    }
+
+    private static ThemeSample SampleOf(ThemePage page) => page switch
+    {
+        ThemePage.General => ThemeSamples.General,
+        ThemePage.Xhtml => ThemeSamples.Xhtml,
+        ThemePage.Css => ThemeSamples.Css,
+        ThemePage.Diff => ThemeSamples.Diff,
+        _ => throw new ArgumentOutOfRangeException(nameof(page), page, null),
+    };
+
+    private ThemePreviewEditor NewEditor(ThemeSample sample, ResolvedTheme theme)
+    {
+        ThemePreviewEditor editor = new();
+        editor.Show(sample, theme);
+        editor.KeyClicked += OnPreviewKeyClicked;
+        _editors.Add(editor);
+        return editor;
+    }
+
+    // A click in the preview selects the key under the mouse (a key of another page, e.g. the text of the editor on
+    // the XHTML page, is ignored).
+    private void OnPreviewKeyClicked(object? sender, ThemeKey key) => _bound?.SelectKey(key);
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(ColorSchemePageViewModel.Selected))
         {
             _selection?.SelectFromViewModel();
+            ThemeKey? key = _bound?.Key;
+            foreach (ThemePreviewEditor editor in _editors)
+            {
+                editor.Blink(key);
+            }
+
+            _controls?.Blink(key);
+        }
+        else if (e.PropertyName == nameof(ColorSchemePageViewModel.Theme) && _bound?.Theme is { } theme)
+        {
+            foreach (ThemePreviewEditor editor in _editors)
+            {
+                editor.SetTheme(theme);
+            }
+
+            _controls?.SetTheme(theme);
         }
     }
 }

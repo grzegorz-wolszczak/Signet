@@ -86,6 +86,9 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
     /// <summary>The page of the keys of <paramref name="page"/>.</summary>
     public ColorSchemePageViewModel PageFor(ThemePage page) => Pages[(int)page];
 
+    /// <summary>Whether Code View uses the extended highlighting (in the draft of the window) — the previews follow it.</summary>
+    public bool ExtendedHighlighting => _settings.CodeViewExtendedHighlighting;
+
     /// <summary>The selected theme with the changes not saved yet, resolved (also with the changes of its parents).</summary>
     public ResolvedTheme? Resolved => Current is { } theme ? new ResolvedTheme(theme, _editResolver) : null;
 

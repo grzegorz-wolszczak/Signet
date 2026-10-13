@@ -5525,4 +5525,37 @@ Close the tab</value>
   <data name="ColorScheme_EffectStrikeout" xml:space="preserve">
     <value>Strikeout</value>
   </data>
+  <data name="ColorSchemeSample_SelectedText" xml:space="preserve">
+    <value>selected text</value>
+  </data>
+  <data name="ColorSchemeSample_Frame" xml:space="preserve">
+    <value>Frame</value>
+  </data>
+  <data name="ColorSchemeSample_MutedText" xml:space="preserve">
+    <value>Muted text</value>
+  </data>
+  <data name="ColorSchemeSample_Warning" xml:space="preserve">
+    <value>A warning</value>
+  </data>
+  <data name="ColorSchemeSample_ErrorNotification" xml:space="preserve">
+    <value>An error notification</value>
+  </data>
+  <data name="ColorSchemeSample_Error" xml:space="preserve">
+    <value>An error</value>
+  </data>
+  <data name="ColorSchemeSample_RenameError" xml:space="preserve">
+    <value>Regex Rename error</value>
+  </data>
+  <data name="ColorSchemeSample_BookTitle" xml:space="preserve">
+    <value>Chapter One</value>
+  </data>
+  <data name="ColorSchemeSample_BookText" xml:space="preserve">
+    <value>It was a bright cold day in April, and the clocks were striking thirteen.</value>
+  </data>
+  <data name="ColorSchemeSample_BookHighlight" xml:space="preserve">
+    <value>The paragraph clicked in Code View is highlighted here.</value>
+  </data>
+  <data name="ColorSchemeSample_BookNote" xml:space="preserve">
+    <value>The background and the text keep the colors of the book unless the theme sets them.</value>
+  </data>
 </root>

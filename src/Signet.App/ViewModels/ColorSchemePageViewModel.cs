@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.Core.Themes;
 
@@ -96,6 +97,12 @@ public sealed partial class ColorSchemePageViewModel : ObservableObject
 
     /// <summary>Which page.</summary>
     public ThemePage Page { get; }
+
+    /// <summary>Whether the preview shows the extended highlighting of Code View (the setting in the window).</summary>
+    public bool ExtendedHighlighting => _owner.ExtendedHighlighting;
+
+    /// <summary>The theme being edited, with the changes not saved yet (the colors of the preview).</summary>
+    public ResolvedTheme? Theme => _owner.Resolved;
 
     /// <summary>The groups and the keys without a group, in the order of the registry.</summary>
     public ObservableCollection<ThemeKeyNode> Roots { get; } = new();
@@ -435,6 +442,7 @@ public sealed partial class ColorSchemePageViewModel : ObservableObject
             group.IsModified = group.Children.Any(c => c.IsModified);
         }
 
+        OnPropertyChanged(nameof(Theme));
         RefreshPanel();
     }
 

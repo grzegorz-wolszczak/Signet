@@ -7,7 +7,7 @@
              x:DataType="vm:ColorSchemePageViewModel">
 
   <!-- A page of the keys of Appearance › Color Scheme, as Rider's Color Scheme pages: the tree of the keys of the page
-       on the left (keys the theme changes in bold) and the panel of the selected key on the right. -->
+       on the left (keys the theme changes in bold), the panel of the selected key on the right and the preview below. -->
   <UserControl.Resources>
     <DataTemplate x:Key="ThemeKeyNameCellTemplate" x:DataType="vm:ThemeKeyNode">
       <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
@@ -35,7 +35,7 @@
     </Style>
   </UserControl.Styles>
 
-  <Grid ColumnDefinitions="260,6,*" MinHeight="320">
+  <Grid ColumnDefinitions="320,6,*" RowDefinitions="*,8,230" MinHeight="520">
     <Border Grid.Column="0" BorderBrush="{DynamicResource SignetFrameBrush}" BorderThickness="1">
       <TreeDataGrid x:Name="Tree" ShowColumnHeaders="False" />
     </Border>
@@ -115,5 +115,10 @@
         </StackPanel>
       </StackPanel>
     </ScrollViewer>
+
+    <!-- The preview in the colors of the theme with the changes not saved yet: a click selects the key under the
+         mouse, and the selected key blinks (built in code for the page). -->
+    <Border x:Name="PreviewHost" Grid.Row="2" Grid.ColumnSpan="3" BorderBrush="{DynamicResource SignetFrameBrush}"
+            BorderThickness="1" ClipToBounds="True" />
   </Grid>
 </UserControl>

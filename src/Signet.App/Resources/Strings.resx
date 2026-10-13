@@ -5525,4 +5525,37 @@ Zamknij zakładkę</value>
   <data name="ColorScheme_EffectStrikeout" xml:space="preserve">
     <value>Przekreślenie</value>
   </data>
+  <data name="ColorSchemeSample_SelectedText" xml:space="preserve">
+    <value>zaznaczony tekst</value>
+  </data>
+  <data name="ColorSchemeSample_Frame" xml:space="preserve">
+    <value>Ramka</value>
+  </data>
+  <data name="ColorSchemeSample_MutedText" xml:space="preserve">
+    <value>Tekst przygaszony</value>
+  </data>
+  <data name="ColorSchemeSample_Warning" xml:space="preserve">
+    <value>Ostrzeżenie</value>
+  </data>
+  <data name="ColorSchemeSample_ErrorNotification" xml:space="preserve">
+    <value>Powiadomienie o błędzie</value>
+  </data>
+  <data name="ColorSchemeSample_Error" xml:space="preserve">
+    <value>Błąd</value>
+  </data>
+  <data name="ColorSchemeSample_RenameError" xml:space="preserve">
+    <value>Błąd Regex Rename</value>
+  </data>
+  <data name="ColorSchemeSample_BookTitle" xml:space="preserve">
+    <value>Rozdział pierwszy</value>
+  </data>
+  <data name="ColorSchemeSample_BookText" xml:space="preserve">
+    <value>Był jasny, zimny dzień kwietniowy i zegary biły trzynastą.</value>
+  </data>
+  <data name="ColorSchemeSample_BookHighlight" xml:space="preserve">
+    <value>Akapit kliknięty w Code View jest tu podświetlony.</value>
+  </data>
+  <data name="ColorSchemeSample_BookNote" xml:space="preserve">
+    <value>Tło i tekst mają kolory książki, chyba że motyw je ustawia.</value>
+  </data>
 </root>
