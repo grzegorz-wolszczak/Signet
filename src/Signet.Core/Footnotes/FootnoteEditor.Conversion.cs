@@ -41,11 +41,30 @@ public enum ConversionWarning
 /// <c>noteref</c>) lead to its note — Signet's footnote has one. Other links to it are rewritten.
 /// </param>
 /// <param name="Warnings">What needs a look (an item with warnings is not selected by default).</param>
-/// <param name="OtherLinks">The files of the other links that lead to it (<see cref="ConversionWarning.LinkedElsewhere"/>).</param>
+/// <param name="Links">
+/// The other links that lead to its note or to its reference, in the order of the book
+/// (<see cref="ConversionWarning.LinkedElsewhere"/>); the other references among them make it impossible to convert.
+/// </param>
 /// <param name="NoteText">The text of its note without the link back (tags left out, whitespace collapsed).</param>
 public sealed record ConversionItem(
     Footnote Footnote, string Marker, int NewNumber, bool CanConvert, IReadOnlyList<ConversionWarning> Warnings,
-    IReadOnlyList<string> OtherLinks, string NoteText);
+    IReadOnlyList<ConversionLink> Links, string NoteText)
+{
+    /// <summary>The files of the other links that lead to it, each once.</summary>
+    public IReadOnlyList<string> OtherLinks =>
+        Links.Select(l => l.File.BookPath).Distinct(StringComparer.Ordinal).ToList();
+}
+
+/// <summary>
+/// A link of the book to a footnote of other origin besides its own reference (<see cref="ConversionItem.Links"/>).
+/// </summary>
+/// <param name="File">The file the link is in.</param>
+/// <param name="Offset">Where its tag starts in the text of the file; -1 for a link with no place in a text (the guide of the OPF).</param>
+/// <param name="IsReference">
+/// Whether it is another reference to the note (a link that looks like a footnote marker, or <c>noteref</c>) — Signet's
+/// footnote has one, so the footnote cannot be converted; otherwise it is a link that the conversion rewrites.
+/// </param>
+public sealed record ConversionLink(Resource File, int Offset, bool IsReference);
 
 /// <summary>What converting the footnotes of other origin of a book would do (<see cref="FootnoteEditor.PlanConversion"/>).</summary>
 /// <param name="Items">The footnotes of other origin, in reading order.</param>
@@ -178,9 +197,12 @@ public static partial class FootnoteEditor
         bool IsTheReference(BookLink link) =>
             anchor is not null && ReferenceEquals(link.Owner, footnote.ReferenceFile) && link.Position == anchor.Start;
 
-        int references = toNote.Count(l => IsTheReference(l) || (l.Position >= 0 && LooksLikeReference(l)));
-        List<string> others = toNote.Where(l => !IsTheReference(l)).Concat(toReference)
-            .Select(l => l.Owner.BookPath).Distinct(StringComparer.Ordinal).ToList();
+        bool IsReference(BookLink link) => link.Position >= 0 && LooksLikeReference(link);
+        int references = toNote.Count(l => IsTheReference(l) || IsReference(l));
+        List<ConversionLink> others = toNote.Where(l => !IsTheReference(l))
+            .Select(l => new ConversionLink(l.Owner, l.Position, IsReference(l)))
+            .Concat(toReference.Select(l => new ConversionLink(l.Owner, l.Position, false)))
+            .ToList();
         if (others.Count > 0)
         {
             warnings.Add(ConversionWarning.LinkedElsewhere);

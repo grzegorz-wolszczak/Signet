@@ -106,6 +106,9 @@ public sealed class FootnoteConversionTests
             plan.AutomaticFile!.File.Should().BeSameAs(notes);
             plan.Items.Should().OnlyContain(i => i.CanConvert);
             plan.Items[1].Warnings.Should().Equal(ConversionWarning.LinkedElsewhere);
+            plan.Items[1].Links.Should().Equal(new ConversionLink(
+                chapter, chapter.GetText().IndexOf("<a href=\"" + notes.Filename + "#footnote-2\">see", StringComparison.Ordinal), IsReference: false));
+            plan.Items[1].OtherLinks.Should().Equal(chapter.BookPath);
 
             ConversionResult result = FootnoteEditor.Convert(book, new ConversionRequest(plan.Items, notes, false));
 
@@ -199,6 +202,8 @@ public sealed class FootnoteConversionTests
             ConversionPlan plan = FootnoteEditor.PlanConversion(book);
 
             plan.Items.Single().CanConvert.Should().BeFalse();
+            plan.Items.Single().Links.Should().Equal(
+                new ConversionLink(html, before.IndexOf("<a href=\"#n\">", StringComparison.Ordinal), IsReference: true));
             FootnoteEditor.Convert(book, new ConversionRequest(plan.Items, null, false)).Converted.Should().Be(0);
             html.GetText().Should().Be(before);
         }
