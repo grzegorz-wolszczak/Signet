@@ -93,7 +93,13 @@
       </StackPanel>
     </Grid>
 
-    <Grid ColumnDefinitions="230,*" ColumnSpacing="8">
+    <!-- The splitter between the sections and the page moves; the window remembers the width (SplitterSizes). -->
+    <Grid x:Name="Body">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="230" MinWidth="150" />
+        <ColumnDefinition Width="8" />
+        <ColumnDefinition Width="*" MinWidth="320" />
+      </Grid.ColumnDefinitions>
       <!-- The sections as a tree with a search box: the search keeps the sections whose name or page text
            matches, and frames the matching controls on the page. -->
       <Border Grid.Column="0" Classes="sectionPanel">
@@ -115,7 +121,9 @@
         </DockPanel>
       </Border>
 
-      <DockPanel Grid.Column="1">
+      <GridSplitter x:Name="SectionsSplitter" Grid.Column="1" ResizeDirection="Columns" Background="Transparent" />
+
+      <DockPanel Grid.Column="2">
         <TextBlock x:Name="Breadcrumb" DockPanel.Dock="Top" FontWeight="Bold" FontSize="15" Margin="4,2,0,8" />
 
     <TabControl x:Name="Pages" Classes="preferences">

@@ -1107,34 +1107,49 @@ public sealed class SettingsStore
     /// </summary>
     public IReadOnlyDictionary<string, int> PreferencesFieldHeights
     {
-        get
+        get => ReadSizeMap("preferences_field_heights");
+        set => WriteSizeMap("preferences_field_heights", value);
+    }
+
+    /// <summary>
+    /// The sizes the user gave the split panes of the Preferences window (pane name -&gt; width or height in pixels),
+    /// e.g. the width of the tree and the height of the preview of each Appearance › Color Scheme page. Window state,
+    /// not a preference — written outside the Save / Cancel draft.
+    /// </summary>
+    public IReadOnlyDictionary<string, int> PreferencesSplitterSizes
+    {
+        get => ReadSizeMap("preferences_splitter_sizes");
+        set => WriteSizeMap("preferences_splitter_sizes", value);
+    }
+
+    // A map of the window group of names to sizes in pixels; entries that are not positive numbers are skipped.
+    private Dictionary<string, int> ReadSizeMap(string key)
+    {
+        Dictionary<string, int> sizes = new(StringComparer.Ordinal);
+        if (_file.GetRaw(MainWindowGroup, key) is JsonObject map)
         {
-            Dictionary<string, int> heights = new(StringComparer.Ordinal);
-            if (_file.GetRaw(MainWindowGroup, "preferences_field_heights") is JsonObject map)
+            foreach ((string name, JsonNode? node) in map)
             {
-                foreach ((string name, JsonNode? node) in map)
+                if (node is JsonValue value && value.TryGetValue(out int size) && size > 0)
                 {
-                    if (node is JsonValue value && value.TryGetValue(out int height) && height > 0)
-                    {
-                        heights[name] = height;
-                    }
+                    sizes[name] = size;
                 }
             }
-
-            return heights;
         }
 
-        set
+        return sizes;
+    }
+
+    private void WriteSizeMap(string key, IReadOnlyDictionary<string, int> sizes)
+    {
+        ArgumentNullException.ThrowIfNull(sizes);
+        JsonObject map = new();
+        foreach ((string name, int size) in sizes.Where(p => p.Value > 0))
         {
-            ArgumentNullException.ThrowIfNull(value);
-            JsonObject map = new();
-            foreach ((string name, int height) in value.Where(p => p.Value > 0))
-            {
-                map[name] = height;
-            }
-
-            _file.SetRaw(MainWindowGroup, "preferences_field_heights", map);
+            map[name] = size;
         }
+
+        _file.SetRaw(MainWindowGroup, key, map);
     }
 
     /// <summary>Remembered geometry of the window with the given name (<see langword="null"/> when none).</summary>

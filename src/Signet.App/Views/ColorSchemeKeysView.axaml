@@ -35,11 +35,23 @@
     </Style>
   </UserControl.Styles>
 
-  <Grid ColumnDefinitions="320,6,*" RowDefinitions="*,8,230" MinHeight="520">
+  <!-- Both splitters move: the width of the tree and the height of the preview (pixels, the rest stretches); the
+       window remembers them for each page (TreeWidth, PreviewHeight). -->
+  <Grid x:Name="Split" MinHeight="520">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="320" MinWidth="160" />
+      <ColumnDefinition Width="6" />
+      <ColumnDefinition Width="*" MinWidth="240" />
+    </Grid.ColumnDefinitions>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="*" MinHeight="160" />
+      <RowDefinition Height="8" />
+      <RowDefinition Height="230" MinHeight="80" />
+    </Grid.RowDefinitions>
     <Border Grid.Column="0" BorderBrush="{DynamicResource SignetFrameBrush}" BorderThickness="1">
       <TreeDataGrid x:Name="Tree" ShowColumnHeaders="False" />
     </Border>
-    <GridSplitter Grid.Column="1" ResizeDirection="Columns" Background="Transparent" />
+    <GridSplitter x:Name="TreeSplitter" Grid.Column="1" ResizeDirection="Columns" Background="Transparent" />
 
     <ScrollViewer Grid.Column="2">
       <StackPanel Spacing="8" Margin="8,0,0,0">
@@ -118,6 +130,8 @@
 
     <!-- The preview in the colors of the theme with the changes not saved yet: a click selects the key under the
          mouse, and the selected key blinks (built in code for the page). -->
+    <GridSplitter x:Name="PreviewSplitter" Grid.Row="1" Grid.ColumnSpan="3" ResizeDirection="Rows" Background="Transparent" />
+
     <Border x:Name="PreviewHost" Grid.Row="2" Grid.ColumnSpan="3" BorderBrush="{DynamicResource SignetFrameBrush}"
             BorderThickness="1" ClipToBounds="True" />
   </Grid>

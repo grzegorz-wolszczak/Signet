@@ -38,6 +38,20 @@ public partial class ColorSchemeKeysView : UserControl
         DataContextChanged += (_, _) => BuildTree();
     }
 
+    /// <summary>The width of the tree of keys (pixels); the left splitter changes it.</summary>
+    public double TreeWidth
+    {
+        get => Split.ColumnDefinitions[0].Width.Value;
+        set => Split.ColumnDefinitions[0].Width = new GridLength(Math.Max(Split.ColumnDefinitions[0].MinWidth, value));
+    }
+
+    /// <summary>The height of the preview (pixels); the splitter above it changes it.</summary>
+    public double PreviewHeight
+    {
+        get => Split.RowDefinitions[2].Height.Value;
+        set => Split.RowDefinitions[2].Height = new GridLength(Math.Max(Split.RowDefinitions[2].MinHeight, value));
+    }
+
     private void BuildTree()
     {
         if (_bound is not null)

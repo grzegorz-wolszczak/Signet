@@ -162,6 +162,21 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
+    public void The_preferences_splitter_sizes_survive_a_restart_without_the_ones_that_are_not_positive()
+    {
+        using TempDir dir = new();
+        string path = dir.Combine("settings.json");
+        SettingsStore writer = new(path);
+        writer.PreferencesSplitterSizes.Should().BeEmpty();
+
+        writer.PreferencesSplitterSizes = new Dictionary<string, int> { ["ThemeCssView.tree"] = 280, ["ThemeCssView.preview"] = 0 };
+        writer.Save();
+
+        new SettingsStore(path).PreferencesSplitterSizes.Should().BeEquivalentTo(new Dictionary<string, int> { ["ThemeCssView.tree"] = 280 });
+        new SettingsStore(path).PreferencesFieldHeights.Should().BeEmpty("the field heights are a separate map");
+    }
+
+    [Fact]
     public void The_keys_of_the_removed_dark_theme_are_dropped_on_load_and_not_saved_again()
     {
         using TempDir dir = new();

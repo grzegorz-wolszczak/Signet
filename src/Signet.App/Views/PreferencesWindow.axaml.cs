@@ -133,6 +133,56 @@ public partial class PreferencesWindow : Window
         }
     }
 
+    /// <summary>
+    /// The sizes the user gave the split panes (pane name -&gt; pixels): the width of the section tree
+    /// (<c>Sections</c>), and the width of the tree and the height of the preview of each Appearance › Color Scheme
+    /// page, e.g. <c>ThemeCssView.tree</c>; the main window remembers them between openings, like the field heights.
+    /// </summary>
+    public IReadOnlyDictionary<string, int> SplitterSizes
+    {
+        get
+        {
+            Dictionary<string, int> sizes = new(StringComparer.Ordinal)
+            {
+                [SectionsSizeKey] = (int)Math.Round(Body.ColumnDefinitions[0].Width.Value),
+            };
+            foreach ((_, ColorSchemeKeysView view) in ThemeKeyViews())
+            {
+                sizes[view.Name + TreeSizeSuffix] = (int)Math.Round(view.TreeWidth);
+                sizes[view.Name + PreviewSizeSuffix] = (int)Math.Round(view.PreviewHeight);
+            }
+
+            return sizes;
+        }
+
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            if (value.TryGetValue(SectionsSizeKey, out int sections) && sections > 0)
+            {
+                ColumnDefinition column = Body.ColumnDefinitions[0];
+                column.Width = new GridLength(Math.Max(column.MinWidth, sections));
+            }
+
+            foreach ((_, ColorSchemeKeysView view) in ThemeKeyViews())
+            {
+                if (value.TryGetValue(view.Name + TreeSizeSuffix, out int width) && width > 0)
+                {
+                    view.TreeWidth = width;
+                }
+
+                if (value.TryGetValue(view.Name + PreviewSizeSuffix, out int height) && height > 0)
+                {
+                    view.PreviewHeight = height;
+                }
+            }
+        }
+    }
+
+    private const string SectionsSizeKey = "Sections";
+    private const string TreeSizeSuffix = ".tree";
+    private const string PreviewSizeSuffix = ".preview";
+
     /// <inheritdoc />
     protected override void OnDataContextChanged(EventArgs e)
     {

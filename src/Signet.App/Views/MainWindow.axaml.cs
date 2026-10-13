@@ -1040,9 +1040,10 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             window.Height = Math.Max(geometry.Height, window.MinHeight);
         }
 
-        // The window opens on the page it was closed on, with the field heights the user set.
+        // The window opens on the page it was closed on, with the field heights and pane sizes the user set.
         window.SelectedPageIndex = settings.PreferencesPageIndex;
         window.FieldHeights = settings.PreferencesFieldHeights;
+        window.SplitterSizes = settings.PreferencesSplitterSizes;
 
         window.Closing += (_, _) =>
         {
@@ -1050,6 +1051,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
                 0, 0, (int)window.Width, (int)window.Height, Maximized: false, FullScreen: false));
             settings.PreferencesPageIndex = window.SelectedPageIndex;
             settings.PreferencesFieldHeights = window.FieldHeights;
+            settings.PreferencesSplitterSizes = window.SplitterSizes;
             settings.Save();
         };
 

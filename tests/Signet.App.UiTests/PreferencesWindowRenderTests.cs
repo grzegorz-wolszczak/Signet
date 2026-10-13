@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Avalonia.Controls;
@@ -404,6 +405,78 @@ public sealed class PreferencesWindowRenderTests
 
         xhtml.Key!.Id.Should().Be(ThemeKeys.XhtmlNamespacePrefix.Id);
         window.Close();
+    }
+
+    /// <summary>
+    /// Both splitters of a color scheme page move (the width of the tree, the height of the preview), and every page
+    /// keeps its own sizes, which the window hands out to be remembered and takes back.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_splitters_of_a_color_scheme_page_resize_it_and_every_page_keeps_its_own_sizes()
+    {
+        PreferencesWindow window = BuildWindow();
+        window.Width = 1100;
+        window.Height = 860;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, "ThemeCssPage");
+        window.CaptureRenderedFrame();
+        ColorSchemeKeysView css = window.FindControl<ColorSchemeKeysView>("ThemeCssView")!;
+        double treeWidth = css.TreeWidth;
+        double previewHeight = css.PreviewHeight;
+
+        Drag(window, css.FindControl<GridSplitter>("TreeSplitter")!, new Avalonia.Vector(60, 0));
+        Drag(window, css.FindControl<GridSplitter>("PreviewSplitter")!, new Avalonia.Vector(0, -50));
+
+        css.TreeWidth.Should().BeApproximately(treeWidth + 60, 1);
+        css.PreviewHeight.Should().BeApproximately(previewHeight + 50, 1);
+        IReadOnlyDictionary<string, int> sizes = window.SplitterSizes;
+        sizes.Should().Contain("ThemeCssView.tree", (int)Math.Round(css.TreeWidth))
+            .And.Contain("ThemeCssView.preview", (int)Math.Round(css.PreviewHeight))
+            .And.Contain("ThemeXhtmlView.tree", (int)treeWidth, "the other pages keep theirs");
+
+        window.SplitterSizes = new Dictionary<string, int> { ["ThemeXhtmlView.tree"] = 250, ["ThemeXhtmlView.preview"] = 20 };
+        ColorSchemeKeysView xhtml = window.FindControl<ColorSchemeKeysView>("ThemeXhtmlView")!;
+        xhtml.TreeWidth.Should().Be(250);
+        xhtml.PreviewHeight.Should().Be(80, "not below the minimum");
+        css.TreeWidth.Should().BeApproximately(treeWidth + 60, 1, "a page missing from the map keeps its size");
+        window.Close();
+    }
+
+    /// <summary>The splitter between the section tree and the page moves, and the window remembers its place.</summary>
+    [AvaloniaFact]
+    public void The_splitter_of_the_section_tree_resizes_it_and_is_remembered()
+    {
+        PreferencesWindow window = BuildWindow();
+        window.Width = 1100;
+        window.Height = 860;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Border panel = window.GetVisualDescendants().OfType<Border>().First(b => b.Classes.Contains("sectionPanel"));
+        double width = panel.Bounds.Width;
+        int remembered = window.SplitterSizes["Sections"];
+
+        Drag(window, window.FindControl<GridSplitter>("SectionsSplitter")!, new Avalonia.Vector(70, 0));
+
+        panel.Bounds.Width.Should().BeApproximately(width + 70, 1);
+        window.SplitterSizes["Sections"].Should().BeCloseTo(remembered + 70, 1);
+        window.SplitterSizes = new Dictionary<string, int> { ["Sections"] = 40 };
+        window.SplitterSizes["Sections"].Should().Be(150, "not below the minimum");
+        window.Close();
+    }
+
+    // Drags a splitter by the offset with the mouse.
+    private static void Drag(Window window, Control splitter, Avalonia.Vector offset)
+    {
+        Avalonia.Point from = Avalonia.VisualExtensions.TranslatePoint(
+            splitter, new Avalonia.Point(splitter.Bounds.Width / 2, splitter.Bounds.Height / 2), window)!.Value;
+        window.MouseDown(from, MouseButton.Left);
+        window.MouseMove(from + offset / 2, RawInputModifiers.LeftMouseButton);
+        window.MouseMove(from + offset, RawInputModifiers.LeftMouseButton);
+        window.MouseUp(from + offset, MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
     }
 
     // The text color the preview draws at a document offset.
