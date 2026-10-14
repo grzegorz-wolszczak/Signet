@@ -51,6 +51,9 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     private TimeSpan _debounceInterval = DefaultDebounce;
     private Book? _book;
     private string? _currentBookPath;
+
+    // The shown resource itself: a rename (Book Browser) changes its book path, which the preview then follows.
+    private HtmlResource? _currentResource;
     private bool _lastSyncWellFormed = true;
     private int? _lastCaretOffset;
 
@@ -252,6 +255,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         ThrowIfDisposed();
         _book = book;
         _currentBookPath = null;
+        _currentResource = null;
         _lastCaretOffset = null;
         _restoreCaretAfterLoad = false;
         _instrumentation = null;
@@ -279,6 +283,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         }
 
         _currentBookPath = html.BookPath;
+        _currentResource = html;
         OnPropertyChanged(nameof(HasContent));
         OnPropertyChanged(nameof(CurrentBookPath));
         SyncAndNavigate();
@@ -292,6 +297,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     {
         ThrowIfDisposed();
         _currentBookPath = null;
+        _currentResource = null;
         _lastCaretOffset = null;
         _restoreCaretAfterLoad = false;
         _instrumentation = null;
@@ -488,6 +494,14 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
             return;
         }
 
+        if (FollowRename())
+        {
+            // A reload would load the old address, which no longer exists in the mirror ("file not found").
+            _restoreCaretAfterLoad = true;
+            SyncAndNavigate();
+            return;
+        }
+
         IReadOnlyDictionary<string, string>? overrides = _workingTexts?.Invoke();
         if (liveEdit && CurrentSourceText(overrides) is { } source && !WellFormedChecker.IsWellFormed(source))
         {
@@ -638,6 +652,20 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
 
     /// <summary>Sets the zoom (clamped to <see cref="MinZoom"/>…<see cref="MaxZoom"/>) — the remembered zoom at startup.</summary>
     public void SetZoom(double factor) => ZoomFactor = factor;
+
+    // The shown file was renamed (it is still in the book, under another book path): the preview follows it.
+    private bool FollowRename()
+    {
+        if (_currentResource is not { } shown || string.Equals(shown.BookPath, _currentBookPath, StringComparison.Ordinal)
+            || !ReferenceEquals(_book?.GetFolderKeeper().GetResourceByBookPathNoThrow(shown.BookPath), shown))
+        {
+            return false;
+        }
+
+        _currentBookPath = shown.BookPath;
+        OnPropertyChanged(nameof(CurrentBookPath));
+        return true;
+    }
 
     private void SyncAndNavigate()
     {

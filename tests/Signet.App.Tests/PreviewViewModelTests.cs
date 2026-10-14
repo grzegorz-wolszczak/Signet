@@ -6,6 +6,7 @@ using AwesomeAssertions;
 using Signet.App.Services;
 using Signet.App.ViewModels;
 using Signet.Core.BookManipulation;
+using Signet.Core.MainUI;
 using Signet.Core.Resources;
 using Signet.Core.Tests.TestSupport;
 using Xunit;
@@ -83,6 +84,43 @@ public sealed class PreviewViewModelTests
         reloaded.Should().BeTrue();
         string mirrored = Path.Combine(sut.MirrorRootPath!, html.BookPath.Replace('/', Path.DirectorySeparatorChar));
         File.ReadAllText(mirrored).Should().Contain(marker);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void After_a_rename_of_the_shown_file_a_refresh_navigates_to_its_new_address(bool liveEdit)
+    {
+        using TempDir temp = new();
+        using Book book = Load(temp);
+        using PreviewViewModel sut = New();
+        HtmlResource html = book.GetHtmlResources().First();
+        sut.SetBook(book);
+        sut.ShowResource(html);
+        List<Uri> navigated = new();
+        bool reloaded = false;
+        sut.NavigateRequested += (_, url) => navigated.Add(url);
+        sut.ReloadRequested += (_, _) => reloaded = true;
+
+        new OpfModel(book).RenameResource(html, "renamed.xhtml", out string? error).Should().BeTrue(error);
+        if (liveEdit)
+        {
+            sut.NotifyContentChanged();
+        }
+        else
+        {
+            sut.Refresh(); // e.g. after Save
+        }
+
+        reloaded.Should().BeFalse("reloading would load the old address, no longer in the mirror");
+        sut.CurrentBookPath.Should().Be(html.BookPath).And.EndWith("renamed.xhtml");
+        Uri url = navigated.Should().ContainSingle().Subject;
+        url.LocalPath.Should().EndWith("renamed.xhtml");
+        File.Exists(url.LocalPath).Should().BeTrue("the mirror holds the renamed file");
+
+        // Further refreshes reload the page as usual.
+        sut.Refresh();
+        reloaded.Should().BeTrue();
     }
 
     [Fact]
