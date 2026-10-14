@@ -3038,8 +3038,8 @@ Tej operacji nie można cofnąć.</value>
 
 Tego typu pliku nie można jeszcze edytować w Signet.</value>
   </data>
-  <data name="SearchEditor_JsonFileType" xml:space="preserve">
-    <value>Zapisane wyszukiwania (*.json)</value>
+  <data name="SearchEditor_XmlFileType" xml:space="preserve">
+    <value>Zapisane wyszukiwania (*.xml)</value>
   </data>
   <data name="SearchEditor_TsvFileType" xml:space="preserve">
     <value>Tekst z tabulatorami (*.txt)</value>

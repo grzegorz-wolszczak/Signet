@@ -7,8 +7,9 @@ namespace Signet.Core.MiscEditors;
 
 /// <summary>
 /// The view-independent tree of saved searches. Holds the hierarchy of groups and entries and supports adding
-/// (with expansion of a <c>Group/Subgroup/Name</c> path), deleting, renaming, moving
-/// and converting to/from a flat list of <see cref="SearchEntry"/> (the save / import / export format).
+/// (with the missing groups of the entry's group path created), deleting, renaming, moving
+/// and converting to/from a flat list of <see cref="SearchEntry"/> (the save / import / export format). Names may
+/// contain any character, also <c>/</c>.
 /// </summary>
 public sealed class SearchEditorModel
 {
@@ -31,42 +32,48 @@ public sealed class SearchEditorModel
         Root.MutableChildren.Clear();
         foreach (SearchEntry entry in entries)
         {
-            AddFullNameEntry(entry);
+            AddPathEntry(entry);
         }
 
         IsDataModified = false;
     }
 
-    /// <summary>A flat list of entries (leaves + empty groups) with computed full names — for saving / exporting.</summary>
+    /// <summary>A flat list of entries (leaves + empty groups) with their group paths — for saving / exporting.</summary>
     public IReadOnlyList<SearchEntry> ToEntries() =>
         GetNonParentItems(Root).Select(ToEntry).ToList();
 
-    /// <summary>The node's full name with the group path (a group ends with <c>/</c>).</summary>
+    /// <summary>The node's full name for display: the group path and the name joined with <c>/</c> (a group ends with <c>/</c>).</summary>
     public string FullNameOf(SearchEditorNode node)
     {
         ArgumentNullException.ThrowIfNull(node);
+        return node.IsRoot ? string.Empty : GroupedXml.FullName(GroupPathOf(node), node.Name, node.IsGroup);
+    }
+
+    /// <summary>The names of the groups enclosing the node, outermost first.</summary>
+    public static IReadOnlyList<string> GroupPathOf(SearchEditorNode node)
+    {
+        ArgumentNullException.ThrowIfNull(node);
         var parts = new List<string>();
-        for (SearchEditorNode? n = node; n is not null && !n.IsRoot; n = n.Parent)
+        for (SearchEditorNode? n = node.Parent; n is not null && !n.IsRoot; n = n.Parent)
         {
             parts.Insert(0, n.Name);
         }
 
-        string full = string.Join('/', parts);
-        return node.IsGroup && full.Length > 0 ? full + "/" : full;
+        return parts;
     }
 
     /// <summary>Returns the <see cref="SearchEntry"/> corresponding to the node.</summary>
     public SearchEntry ToEntry(SearchEditorNode node)
     {
         ArgumentNullException.ThrowIfNull(node);
-        return new SearchEntry(node.IsGroup, FullNameOf(node), node.Name, node.Find, node.Replace, node.Controls);
+        return new SearchEntry(node.IsGroup, GroupPathOf(node), node.Name, node.Find, node.Replace, node.Controls);
     }
 
     /// <summary>
-    /// Adds an entry, expanding the group path contained in <see cref="SearchEntry.Name"/> / <see cref="SearchEntry.FullName"/>.
-    /// Missing intermediate groups are created.
+    /// Adds an entry under its <see cref="SearchEntry.GroupPath"/> (below <paramref name="parent"/>): missing groups
+    /// are created, existing ones shared. A group entry that already exists is returned instead of being added again.
     /// </summary>
-    public SearchEditorNode AddFullNameEntry(SearchEntry entry, SearchEditorNode? parent = null, int row = -1)
+    public SearchEditorNode AddPathEntry(SearchEntry entry, SearchEditorNode? parent = null, int row = -1)
     {
         ArgumentNullException.ThrowIfNull(entry);
         parent ??= Root;
@@ -82,46 +89,22 @@ public sealed class SearchEditorModel
             row = parent.Children.Count;
         }
 
-        string path = NormalizeFullName(string.IsNullOrEmpty(entry.FullName) ? entry.Name : entry.FullName);
-        bool isGroup = entry.IsGroup || path.EndsWith('/');
-        string entryName = path.TrimEnd('/');
-
-        if (entryName.Contains('/', StringComparison.Ordinal))
+        if (entry.GroupPath.Count > 0)
         {
-            var groupNames = entryName.Split('/', StringSplitOptions.RemoveEmptyEntries).ToList();
-            entryName = groupNames[^1];
-            if (!isGroup)
+            foreach (string groupName in entry.GroupPath)
             {
-                groupNames.RemoveAt(groupNames.Count - 1);
-            }
-
-            foreach (string groupName in groupNames)
-            {
-                SearchEditorNode? found = parent.Children.FirstOrDefault(
-                    c => c.IsGroup && string.Equals(c.Name, groupName, StringComparison.Ordinal));
-                parent = found ?? AddEntry(
-                    new SearchEntry(true, string.Empty, groupName, string.Empty, string.Empty, string.Empty),
-                    isGroup: true,
-                    parent,
-                    parent.Children.Count);
+                parent = FindGroup(parent, groupName) ?? AddEntry(Group(groupName), isGroup: true, parent, parent.Children.Count);
             }
 
             row = parent.Children.Count;
         }
 
-        if (isGroup)
+        if (entry.IsGroup)
         {
-            // The intermediate groups were created; add the group explicitly only when it does not exist.
-            SearchEditorNode? existing = parent.Children.FirstOrDefault(
-                c => c.IsGroup && string.Equals(c.Name, entryName, StringComparison.Ordinal));
-            return existing ?? AddEntry(
-                new SearchEntry(true, string.Empty, entryName, string.Empty, string.Empty, string.Empty),
-                isGroup: true,
-                parent,
-                row);
+            return FindGroup(parent, entry.Name) ?? AddEntry(Group(entry.Name), isGroup: true, parent, row);
         }
 
-        return AddEntry(entry with { Name = entryName, IsGroup = false }, isGroup: false, parent, row);
+        return AddEntry(entry, isGroup: false, parent, row);
     }
 
     /// <summary>
@@ -160,7 +143,7 @@ public sealed class SearchEditorModel
     {
         ArgumentNullException.ThrowIfNull(node);
         ArgumentNullException.ThrowIfNull(name);
-        string clean = name.Replace("/", string.Empty, StringComparison.Ordinal).Trim();
+        string clean = name.Trim();
         if (clean.Length == 0 || string.Equals(clean, node.Name, StringComparison.Ordinal))
         {
             return;
@@ -261,13 +244,22 @@ public sealed class SearchEditorModel
         return Reparent(node, destination, destination.Children.Count);
     }
 
-    /// <summary>The node with the given full name or <see langword="null"/>.</summary>
-    public SearchEditorNode? GetNodeFromFullName(string fullName)
+    /// <summary>
+    /// The node reached by the names <paramref name="path"/> (the enclosing groups, then the node itself) or
+    /// <see langword="null"/>.
+    /// </summary>
+    public SearchEditorNode? GetNodeFromPath(params string[] path)
     {
-        ArgumentNullException.ThrowIfNull(fullName);
-        string target = NormalizeFullName(fullName).TrimEnd('/');
-        return Descendants(Root)
-            .FirstOrDefault(n => string.Equals(FullNameOf(n).TrimEnd('/'), target, StringComparison.Ordinal));
+        ArgumentNullException.ThrowIfNull(path);
+        SearchEditorNode? node = path.Length == 0 ? null : Root;
+        for (int i = 0; node is not null && i < path.Length; i++)
+        {
+            string name = path[i];
+            node = node.Children.FirstOrDefault(c => string.Equals(c.Name, name, StringComparison.Ordinal)
+                && (c.IsGroup || i == path.Length - 1));
+        }
+
+        return node;
     }
 
     /// <summary>All leaves (non-groups) in the subtrees of the given nodes, in tree order.</summary>
@@ -316,7 +308,10 @@ public sealed class SearchEditorModel
         IsDataModified = true;
     }
 
-    /// <summary>Normalizes a full name: collapses whitespace around <c>/</c>, removes a leading <c>/</c>.</summary>
+    /// <summary>
+    /// Normalizes a <c>/</c>-separated full name of the delimited (TSV/CSV) formats: collapses whitespace around
+    /// <c>/</c>, removes a leading <c>/</c>.
+    /// </summary>
     public static string NormalizeFullName(string fullName)
     {
         ArgumentNullException.ThrowIfNull(fullName);
@@ -397,6 +392,12 @@ public sealed class SearchEditorModel
         IsDataModified = true;
         return true;
     }
+
+    private static SearchEntry Group(string name) =>
+        new(true, Array.Empty<string>(), name, string.Empty, string.Empty, string.Empty);
+
+    private static SearchEditorNode? FindGroup(SearchEditorNode parent, string name) =>
+        parent.Children.FirstOrDefault(c => c.IsGroup && string.Equals(c.Name, name, StringComparison.Ordinal));
 
     private int IndexOf(SearchEditorNode node) =>
         (node.Parent ?? Root).MutableChildren.IndexOf(node);

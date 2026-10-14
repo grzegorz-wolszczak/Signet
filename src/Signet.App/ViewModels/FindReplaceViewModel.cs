@@ -759,7 +759,7 @@ public sealed class FindReplaceViewModel : ViewModelBase
         var values = new SearchControlValues(
             _mode, _direction, _lookWhere, _optionWrap,
             _regexDotAll, _regexMinimalMatch, _regexAutoTokenise, _regexUnicodeProperty, _regexTextOnly);
-        return new SearchEntry(false, name, name, _findText, _replaceText, SearchControls.Build(values));
+        return new SearchEntry(false, Array.Empty<string>(), name, _findText, _replaceText, SearchControls.Build(values));
     }
 
     /// <summary>Runs Find for the entries in turn; stops at the first match.</summary>

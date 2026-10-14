@@ -1,21 +1,17 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
 using Signet.Core.Misc;
 
 namespace Signet.Core.MiscEditors;
 
 /// <summary>
-/// A persistent store of the saved searches library in a JSON file next to the settings.
-/// Reading is tolerant (a missing/empty/invalid file = an empty list), writing is atomic (a temporary file + <see cref="File.Move(string, string, bool)"/>).
+/// A persistent store of the saved searches library in an XML file next to the settings (<see cref="SavedSearchIo"/>).
+/// Reading is tolerant (a missing/empty/invalid file = an empty list), writing is atomic (<see cref="XmlConfig.Save"/>).
 /// </summary>
 public sealed class SavedSearchStore
 {
     /// <summary>The default file name in the preferences folder.</summary>
-    public const string DefaultFileName = "saved_searches.json";
-
-    private static readonly UTF8Encoding Utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
+    public const string DefaultFileName = "saved_searches.xml";
 
     private readonly string _path;
 
@@ -36,37 +32,8 @@ public sealed class SavedSearchStore
     public string Path => _path;
 
     /// <summary>Loads entries from the file (an empty list when the file does not exist or is invalid).</summary>
-    public IReadOnlyList<SearchEntry> Load()
-    {
-        try
-        {
-            return File.Exists(_path)
-                ? SavedSearchIo.ReadJson(File.ReadAllText(_path))
-                : Array.Empty<SearchEntry>();
-        }
-        catch (IOException)
-        {
-            return Array.Empty<SearchEntry>();
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Array.Empty<SearchEntry>();
-        }
-    }
+    public IReadOnlyList<SearchEntry> Load() => SavedSearchIo.FromDocument(XmlConfig.TryLoad(_path));
 
     /// <summary>Writes entries to the file (atomically).</summary>
-    public void Save(IReadOnlyList<SearchEntry> entries)
-    {
-        ArgumentNullException.ThrowIfNull(entries);
-        string? dir = System.IO.Path.GetDirectoryName(_path);
-        if (!string.IsNullOrEmpty(dir))
-        {
-            Directory.CreateDirectory(dir);
-        }
-
-        string json = SavedSearchIo.WriteJson(entries);
-        string tempPath = _path + ".tmp";
-        File.WriteAllText(tempPath, json, Utf8NoBom);
-        File.Move(tempPath, _path, overwrite: true);
-    }
+    public void Save(IReadOnlyList<SearchEntry> entries) => XmlConfig.Save(_path, SavedSearchIo.ToDocument(entries));
 }
