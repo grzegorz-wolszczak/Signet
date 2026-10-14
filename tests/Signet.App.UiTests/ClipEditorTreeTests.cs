@@ -37,7 +37,7 @@ public sealed class ClipEditorTreeTests
 
     private static (ClipEditorWindow Window, ClipsViewModel ViewModel) ShowEditor()
     {
-        ClipStore store = new(Path.Combine(Path.GetTempPath(), $"signet-clipui-{System.Guid.NewGuid():N}.json"));
+        ClipStore store = new(Path.Combine(Path.GetTempPath(), $"signet-clipui-{System.Guid.NewGuid():N}.xml"));
         ClipsViewModel vm = new(store, () => null, () => null, new StatusBarService());
         vm.AddGroupCommand.Execute(null);
         vm.AddEntryCommand.Execute(null);

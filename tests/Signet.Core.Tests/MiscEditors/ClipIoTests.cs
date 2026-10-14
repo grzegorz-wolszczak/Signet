@@ -1,60 +1,95 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Xml.Linq;
+using AutoFixture;
 using AwesomeAssertions;
 using Signet.Core.MiscEditors;
+using Signet.Core.Tests.TestSupport;
 using Xunit;
 
 namespace Signet.Core.Tests.MiscEditors;
 
-/// <summary>Tests of <see cref="ClipIo"/> and <see cref="ClipStore"/>.</summary>
+/// <summary>Tests of <see cref="ClipIo"/> and <see cref="ClipStore"/> — the XML clip library.</summary>
 public sealed class ClipIoTests
 {
+    private static readonly Fixture Fixture = new();
+
     private static readonly ClipEntry[] Sample =
     {
-        new(IsGroup: true, "Example Clips/", "Example Clips", ""),
-        new(IsGroup: false, "Example Clips/p", "p", "<p>\\1</p>"),
-        new(IsGroup: false, "Prosty, z przecinkiem", "Prosty, z przecinkiem", "<span class=\"x\">\\1</span>"),
+        new(IsGroup: false, new[] { "Example Clips" }, "p", "<p>\\1</p>"),
+        new(IsGroup: false, new[] { "Example Clips", "epub3" }, "section", "<section>\r\n  \\1\r\n</section>"),
+        new(IsGroup: true, new[] { "Example Clips" }, "Empty", ""),
+        new(IsGroup: false, Array.Empty<string>(), "Plain, with a comma", "<span class=\"x\">\\1</span>"),
+        new(IsGroup: false, new[] { "Tags/XHTML" }, "<test/>", "<test/>"),
+        new(IsGroup: true, Array.Empty<string>(), "a/b", ""),
     };
 
     [Fact]
-    public void WriteJson_ThenReadJson_RoundTrips()
+    public void WriteXml_ThenReadXml_RoundTrips()
     {
-        IReadOnlyList<ClipEntry> parsed = ClipIo.ReadJson(ClipIo.WriteJson(Sample));
+        IReadOnlyList<ClipEntry> parsed = ClipIo.ReadXml(ClipIo.WriteXml(Sample));
 
         parsed.Should().BeEquivalentTo(Sample, o => o.WithStrictOrdering());
     }
 
     [Fact]
-    public void ReadJson_InvalidContent_ReturnsEmpty()
+    public void Groups_are_nested_elements_and_names_with_a_slash_stay_one_name()
     {
-        ClipIo.ReadJson("{ not json").Should().BeEmpty();
-        ClipIo.ReadJson("{}").Should().BeEmpty();
-        ClipIo.ReadJson(null).Should().BeEmpty();
+        XElement root = XDocument.Parse(ClipIo.WriteXml(Sample)).Root!;
+
+        root.Name.LocalName.Should().Be("clips");
+        XElement example = root.Elements("group").First();
+        example.Attribute("name")!.Value.Should().Be("Example Clips");
+        example.Elements("clip").Single().Attribute("name")!.Value.Should().Be("p");
+        example.Elements("group").Select(g => g.Attribute("name")!.Value).Should().Equal("epub3", "Empty");
+        root.Elements("group").Select(g => g.Attribute("name")!.Value).Should().Equal("Example Clips", "Tags/XHTML", "a/b");
+        root.Elements("group").Single(g => g.Attribute("name")!.Value == "Tags/XHTML")
+            .Element("clip")!.Attribute("name")!.Value.Should().Be("<test/>");
+    }
+
+    [Theory]
+    [InlineData("<clips")]
+    [InlineData("{ \"clip_entries\": [ { \"Name\": \"x\", \"Text\": \"y\" } ] }")]
+    [InlineData("<other><clip name=\"x\">y</clip></other>")]
+    [InlineData("")]
+    [InlineData(null)]
+    public void ReadXml_of_invalid_or_foreign_content_returns_empty(string? content)
+    {
+        ClipIo.ReadXml(content).Should().BeEmpty();
     }
 
     [Fact]
     public void Store_SaveThenReloadWithNewInstance_PersistsEntries()
     {
-        string path = Path.Combine(Path.GetTempPath(), $"signet-clips-{Guid.NewGuid():N}.json");
-        try
-        {
-            new ClipStore(path).Save(Sample);
+        using TempDir dir = new();
+        string path = dir.Combine("clips.xml");
 
-            new ClipStore(path).Load().Should().BeEquivalentTo(Sample, o => o.WithStrictOrdering());
-        }
-        finally
-        {
-            if (File.Exists(path))
-            {
-                File.Delete(path);
-            }
-        }
+        new ClipStore(path).Save(Sample);
+
+        new ClipStore(path).Load().Should().BeEquivalentTo(Sample, o => o.WithStrictOrdering());
+    }
+
+    [Fact]
+    public void Store_does_not_read_a_json_library()
+    {
+        using TempDir dir = new();
+        string path = dir.Combine("clips.xml");
+        File.WriteAllText(path, "{ \"clip_entries\": [ { \"Name\": \"" + Fixture.Create<string>() + "\" } ] }");
+
+        new ClipStore(path).Load().Should().BeEmpty();
     }
 
     [Fact]
     public void Store_Load_MissingFile_ReturnsEmpty()
     {
-        new ClipStore(Path.Combine("nonexistent-dir", "missing.json")).Load().Should().BeEmpty();
+        new ClipStore(Path.Combine("nonexistent-dir", "missing.xml")).Load().Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Default_file_is_clips_xml()
+    {
+        ClipStore.DefaultFileName.Should().Be("clips.xml");
     }
 }

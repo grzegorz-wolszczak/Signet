@@ -69,7 +69,7 @@ public sealed class ClipAutoFillTests
 
         foreach (ClipEntry entry in ClipAutoFill.BuildAutofillEntries(book))
         {
-            model.AddFullNameEntry(entry);
+            model.AddPathEntry(entry);
         }
 
         model.Root.Children.Should().ContainSingle(n => n.IsGroup && n.Name == "Autofill");

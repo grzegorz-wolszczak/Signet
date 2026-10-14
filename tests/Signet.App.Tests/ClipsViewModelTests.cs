@@ -40,7 +40,7 @@ public sealed class ClipsViewModelTests : IDisposable
         }
     }
 
-    private ClipStore Store() => new(Path.Combine(_dir, "clips.json"));
+    private ClipStore Store() => new(Path.Combine(_dir, "clips.xml"));
 
     private static CodeTabViewModel NewCodeTab(Book book)
     {
@@ -195,6 +195,25 @@ public sealed class ClipsViewModelTests : IDisposable
         group.IsEditing.Should().BeFalse();
         clips.EditingNode.Should().BeNull();
         clips.IsDataModified.Should().BeTrue();
+    }
+
+    [Fact]
+    public void A_name_with_a_slash_is_kept_through_rename_save_and_reload()
+    {
+        ClipStore store = Store();
+        var clips = new ClipsViewModel(store, () => null, () => null, new StatusBarService());
+        clips.AddEntryCommand.Execute(null);
+        ClipNodeViewModel clip = clips.Nodes.Single();
+
+        clips.BeginRename(clip);
+        clip.EditText = "<test/>";
+        clips.CommitRename();
+        clips.SaveCommand.Execute(null);
+
+        clip.Name.Should().Be("<test/>");
+        var reloaded = new ClipsViewModel(store, () => null, () => null, new StatusBarService());
+        reloaded.Nodes.Should().ContainSingle().Which.Name.Should().Be("<test/>");
+        reloaded.GetLeafClips().Single().FullName.Should().Be("<test/>");
     }
 
     [Fact]

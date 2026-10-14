@@ -29,7 +29,7 @@ public sealed class ClipEditorCloseTests
 
     private static (ClipEditorWindow Window, ClipsViewModel ViewModel, ClipStore Store) ShowModifiedEditor()
     {
-        ClipStore store = new(Path.Combine(Path.GetTempPath(), $"signet-clipclose-{System.Guid.NewGuid():N}.json"));
+        ClipStore store = new(Path.Combine(Path.GetTempPath(), $"signet-clipclose-{System.Guid.NewGuid():N}.xml"));
         ClipsViewModel vm = new(store, () => null, () => null, new StatusBarService());
         ClipEditorWindow window = new() { DataContext = vm };
         window.Show();
@@ -110,7 +110,7 @@ public sealed class ClipEditorCloseTests
     [AvaloniaFact]
     public void Closing_without_changes_does_not_ask()
     {
-        ClipStore store = new(Path.Combine(Path.GetTempPath(), $"signet-clipclose-{System.Guid.NewGuid():N}.json"));
+        ClipStore store = new(Path.Combine(Path.GetTempPath(), $"signet-clipclose-{System.Guid.NewGuid():N}.xml"));
         ClipEditorWindow window = new() { DataContext = new ClipsViewModel(store, () => null, () => null, new StatusBarService()) };
         window.Show();
         Render(window);

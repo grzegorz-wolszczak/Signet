@@ -285,7 +285,7 @@ public sealed class ClipsViewModel : ViewModelBase
     {
         ArgumentNullException.ThrowIfNull(text);
         ClipEditorNode node = _model.AddEntry(
-            new ClipEntry(IsGroup: false, FullName: Strings.Get("Clips_UnnamedEntry"), Name: Strings.Get("Clips_UnnamedEntry"), Text: text),
+            new ClipEntry(IsGroup: false, GroupPath: Array.Empty<string>(), Name: Strings.Get("Clips_UnnamedEntry"), Text: text),
             isGroup: false,
             parent: null,
             row: 0);
@@ -347,7 +347,7 @@ public sealed class ClipsViewModel : ViewModelBase
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         try
         {
-            IReadOnlyList<ClipEntry> imported = ClipIo.ReadJson(File.ReadAllText(path));
+            IReadOnlyList<ClipEntry> imported = ClipIo.ReadXml(File.ReadAllText(path));
             if (imported.Count == 0)
             {
                 Message = Strings.Get("Clips_NothingImported");
@@ -355,11 +355,11 @@ public sealed class ClipsViewModel : ViewModelBase
             }
 
             ClipEditorNode group = _model.AddEntry(
-                new ClipEntry(true, string.Empty, Strings.Get("SearchEditor_ImportedGroup"), string.Empty), isGroup: true, parent: null, row: -1);
+                new ClipEntry(true, Array.Empty<string>(), Strings.Get("SearchEditor_ImportedGroup"), string.Empty), isGroup: true, parent: null, row: -1);
 
             foreach (ClipEntry entry in imported)
             {
-                _model.AddFullNameEntry(entry, group);
+                _model.AddPathEntry(entry, group);
             }
 
             RebuildNodes();
@@ -381,7 +381,7 @@ public sealed class ClipsViewModel : ViewModelBase
 
         try
         {
-            File.WriteAllText(path, ClipIo.WriteJson(entries));
+            File.WriteAllText(path, ClipIo.WriteXml(entries));
             Message = Strings.Format("Clips_Exported", entries.Count(e => !e.IsGroup));
         }
         catch (IOException ex)
@@ -445,7 +445,7 @@ public sealed class ClipsViewModel : ViewModelBase
     {
         ClipEditorNode parent = _selectedNode?.Node is { IsGroup: true } g ? g : _model.Root;
         _model.AddEntry(
-            new ClipEntry(true, string.Empty, Strings.Get("SearchEditor_NewGroup"), string.Empty), isGroup: true, parent, row: -1);
+            new ClipEntry(true, Array.Empty<string>(), Strings.Get("SearchEditor_NewGroup"), string.Empty), isGroup: true, parent, row: -1);
         RebuildNodes();
         Message = Strings.Get("SearchEditor_GroupAdded");
     }
@@ -492,7 +492,7 @@ public sealed class ClipsViewModel : ViewModelBase
         IReadOnlyList<ClipEntry> entries = ClipAutoFill.BuildAutofillEntries(book);
         foreach (ClipEntry entry in entries)
         {
-            _model.AddFullNameEntry(entry);
+            _model.AddPathEntry(entry);
         }
 
         RebuildNodes();

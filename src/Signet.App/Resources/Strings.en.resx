@@ -3236,8 +3236,8 @@ This file type cannot be edited in Signet yet.</value>
   <data name="Tabs_FragmentNotFound" xml:space="preserve">
     <value>"#{0}" not found in "{1}".</value>
   </data>
-  <data name="ClipEditor_JsonFileType" xml:space="preserve">
-    <value>Clips (*.json)</value>
+  <data name="ClipEditor_XmlFileType" xml:space="preserve">
+    <value>Clips (*.xml)</value>
   </data>
   <data name="ClipEditor_ImportTitle" xml:space="preserve">
     <value>Import Clips</value>
