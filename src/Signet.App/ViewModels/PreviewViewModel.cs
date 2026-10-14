@@ -35,6 +35,9 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     /// <summary>Upper limit of the preview zoom.</summary>
     public const double MaxZoom = 5.0;
 
+    // How long after a click in the preview a matching caret sync counts as its echo (the caret moves asynchronously).
+    private const int PreviewClickEchoMs = 2000;
+
     private static readonly TimeSpan DefaultDebounce = TimeSpan.FromMilliseconds(350);
 
     private readonly IStatusBarService _statusBar;
@@ -50,6 +53,11 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     private string? _currentBookPath;
     private bool _lastSyncWellFormed = true;
     private int? _lastCaretOffset;
+
+    // The source offset of the last click in the preview (Preview → Code View) and when it came. The caret move it
+    // causes comes back through SyncCaretToPreview, which then only highlights: scrolling would jump the clicked
+    // element to the middle of the preview (also when a text selection made with the mouse ends with a click).
+    private (int Offset, long Tick)? _previewClick;
     private bool _restoreCaretAfterLoad;
     private string _currentUrlText = string.Empty;
     private double _zoomFactor = 1.0;
@@ -112,6 +120,12 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     /// The view should scroll the preview to the element <c>[data-signet-loc="{arg}"]</c> (Code View → Preview).
     /// </summary>
     public event EventHandler<int>? ScrollToLocRequested;
+
+    /// <summary>
+    /// The view should highlight the element <c>[data-signet-loc="{arg}"]</c> without scrolling the preview — the
+    /// Code View caret followed a click in the preview, so the element is where the user is looking.
+    /// </summary>
+    public event EventHandler<int>? HighlightLocRequested;
 
     /// <summary>
     /// An element in the preview was clicked — the host should place the Code View caret at the source offset
@@ -336,6 +350,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         }
 
         _lastCaretOffset = sourceOffset;
+        bool echoOfPreviewClick = IsEchoOfPreviewClick(sourceOffset);
         if (_instrumentation is null)
         {
             return;
@@ -343,6 +358,12 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
 
         if (!_lastSyncWellFormed)
         {
+            if (echoOfPreviewClick)
+            {
+                // Scrolling to the start of the document would throw away the place the user just clicked.
+                return;
+            }
+
             // When the source in Code View is not well-formed, the caret position in the preview's
             // leniently re-parsed (HTML5) DOM is uncertain/misleading — instead of computing the nearest
             // loc, force a scroll to the earliest instrumented element (the start of the document).
@@ -357,8 +378,22 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         int loc = _instrumentation.NearestLocAtOrBefore(sourceOffset);
         if (loc >= 0)
         {
-            ScrollToLocRequested?.Invoke(this, loc);
+            (echoOfPreviewClick ? HighlightLocRequested : ScrollToLocRequested)?.Invoke(this, loc);
         }
+    }
+
+    // Whether the caret offset is the one a click in the preview just asked for (the caret move comes back here
+    // through the host). Consumed by the first matching sync; a stale click (the caret never moved) expires.
+    private bool IsEchoOfPreviewClick(int sourceOffset)
+    {
+        if (_previewClick is not { } click || click.Offset != sourceOffset
+            || Environment.TickCount64 - click.Tick > PreviewClickEchoMs)
+        {
+            return false;
+        }
+
+        _previewClick = null;
+        return true;
     }
 
     /// <summary>
@@ -416,6 +451,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
                 out int offset)
             && offset >= 0)
         {
+            _previewClick = (offset, Environment.TickCount64);
             CodeCaretJumpRequested?.Invoke(this, offset);
         }
     }

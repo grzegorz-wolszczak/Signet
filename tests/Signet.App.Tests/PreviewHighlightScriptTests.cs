@@ -27,6 +27,15 @@ public sealed class PreviewHighlightScriptTests
             .And.NotContain("px solid");
     }
 
+    [Theory]
+    [AutoData]
+    public void Without_scroll_the_element_is_highlighted_where_it_is(int loc)
+    {
+        string js = PreviewHighlightScript.Build(loc, PreviewHighlight.Default, Yellow, scroll: false);
+
+        js.Should().Contain("el.style.backgroundColor=").And.NotContain("scrollIntoView");
+    }
+
     [Fact]
     public void Outline_style_draws_frame_of_configured_width_and_color()
     {
