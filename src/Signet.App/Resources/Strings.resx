@@ -3236,8 +3236,8 @@ Tego typu pliku nie można jeszcze edytować w Signet.</value>
   <data name="Tabs_FragmentNotFound" xml:space="preserve">
     <value>Nie znaleziono „#{0}” w „{1}”.</value>
   </data>
-  <data name="ClipEditor_JsonFileType" xml:space="preserve">
-    <value>Wycinki (*.json)</value>
+  <data name="ClipEditor_XmlFileType" xml:space="preserve">
+    <value>Wycinki (*.xml)</value>
   </data>
   <data name="ClipEditor_ImportTitle" xml:space="preserve">
     <value>Importuj wycinki</value>

@@ -42,7 +42,7 @@ public partial class ClipEditorWindow : Window
     private const string TreeShareKey = "tree";
     private static readonly string[] ColumnKeys = { "name_column", "text_column" };
 
-    private static FilePickerFileType JsonType => new(Strings.Get("ClipEditor_JsonFileType")) { Patterns = new[] { "*.json" } };
+    private static FilePickerFileType XmlType => new(Strings.Get("ClipEditor_XmlFileType")) { Patterns = new[] { "*.xml" } };
 
     private ClipsViewModel? _bound;
     private ClipNodeViewModel? _editingNode;
@@ -409,7 +409,7 @@ public partial class ClipEditorWindow : Window
         }
 
         IReadOnlyList<IStorageFile> files = await topLevel.StorageProvider.OpenFilePickerAsync(
-            new FilePickerOpenOptions { Title = Strings.Get("ClipEditor_ImportTitle"), AllowMultiple = false, FileTypeFilter = new[] { JsonType } });
+            new FilePickerOpenOptions { Title = Strings.Get("ClipEditor_ImportTitle"), AllowMultiple = false, FileTypeFilter = new[] { XmlType } });
 
         string? path = files.Count > 0 ? files[0].TryGetLocalPath() : null;
         if (!string.IsNullOrEmpty(path))
@@ -430,9 +430,9 @@ public partial class ClipEditorWindow : Window
             new FilePickerSaveOptions
             {
                 Title = all ? Strings.Get("ClipEditor_ExportAllTitle") : Strings.Get("ClipEditor_ExportTitle"),
-                DefaultExtension = "json",
-                SuggestedFileName = "clips.json",
-                FileTypeChoices = new[] { JsonType },
+                DefaultExtension = "xml",
+                SuggestedFileName = "clips.xml",
+                FileTypeChoices = new[] { XmlType },
             });
 
         string? path = file?.TryGetLocalPath();

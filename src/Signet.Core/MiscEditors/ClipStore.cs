@@ -1,22 +1,17 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
 using Signet.Core.Misc;
 
 namespace Signet.Core.MiscEditors;
 
 /// <summary>
-/// Persistent clip library store in a JSON file next to the settings. Reading is lenient
-/// (missing/empty/invalid file = empty list), saving is atomic (temporary file +
-/// <see cref="File.Move(string, string, bool)"/>).
+/// Persistent clip library store in an XML file next to the settings (<see cref="ClipIo"/>). Reading is lenient
+/// (missing/empty/invalid file = empty list), saving is atomic (<see cref="XmlConfig.Save"/>).
 /// </summary>
 public sealed class ClipStore
 {
     /// <summary>Default file name in the preferences folder.</summary>
-    public const string DefaultFileName = "clips.json";
-
-    private static readonly UTF8Encoding Utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
+    public const string DefaultFileName = "clips.xml";
 
     private readonly string _path;
 
@@ -37,37 +32,8 @@ public sealed class ClipStore
     public string Path => _path;
 
     /// <summary>Loads entries from the file (an empty list when the file is missing or invalid).</summary>
-    public IReadOnlyList<ClipEntry> Load()
-    {
-        try
-        {
-            return File.Exists(_path)
-                ? ClipIo.ReadJson(File.ReadAllText(_path))
-                : Array.Empty<ClipEntry>();
-        }
-        catch (IOException)
-        {
-            return Array.Empty<ClipEntry>();
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Array.Empty<ClipEntry>();
-        }
-    }
+    public IReadOnlyList<ClipEntry> Load() => ClipIo.FromDocument(XmlConfig.TryLoad(_path));
 
     /// <summary>Saves entries to the file (atomically).</summary>
-    public void Save(IReadOnlyList<ClipEntry> entries)
-    {
-        ArgumentNullException.ThrowIfNull(entries);
-        string? dir = System.IO.Path.GetDirectoryName(_path);
-        if (!string.IsNullOrEmpty(dir))
-        {
-            Directory.CreateDirectory(dir);
-        }
-
-        string json = ClipIo.WriteJson(entries);
-        string tempPath = _path + ".tmp";
-        File.WriteAllText(tempPath, json, Utf8NoBom);
-        File.Move(tempPath, _path, overwrite: true);
-    }
+    public void Save(IReadOnlyList<ClipEntry> entries) => XmlConfig.Save(_path, ClipIo.ToDocument(entries));
 }

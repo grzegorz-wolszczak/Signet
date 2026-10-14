@@ -31,7 +31,7 @@ public sealed class ClipsPanelViewTests
     // A group and a clip "Clip" with a text, in a temporary store; the panel shown on them.
     private static (Window Window, ClipsViewModel Vm, TreeDataGrid Tree) Show()
     {
-        ClipStore store = new(Path.Combine(Path.GetTempPath(), $"signet-clippanel-{System.Guid.NewGuid():N}.json"));
+        ClipStore store = new(Path.Combine(Path.GetTempPath(), $"signet-clippanel-{System.Guid.NewGuid():N}.xml"));
         ClipsViewModel vm = new(store, () => null, () => null, new StatusBarService());
         vm.AddGroupCommand.Execute(null);
         vm.SetSelectedNodes(System.Array.Empty<ClipNodeViewModel>());

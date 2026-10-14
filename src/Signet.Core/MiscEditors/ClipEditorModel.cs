@@ -1,23 +1,19 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace Signet.Core.MiscEditors;
 
 /// <summary>
-/// The view-independent clip tree. Holds the hierarchy of groups and clips and supports adding (with
-/// expansion of a <c>Group/Subgroup/Name</c> path), deleting, renaming, moving,
+/// The view-independent clip tree. Holds the hierarchy of groups and clips and supports adding (with the
+/// missing groups of the entry's group path created), deleting, renaming, moving,
 /// numbering the Clip Bar slots and converting to/from a flat list of
-/// <see cref="ClipEntry"/> (the save / import / export format).
+/// <see cref="ClipEntry"/> (the save / import / export format). Names may contain any character, also <c>/</c>.
 /// </summary>
 public sealed class ClipEditorModel
 {
     /// <summary>The maximum number of top-level clips assignable to Clip Bar slots / shortcuts.</summary>
     public const int MaxSlots = 60;
-
-    private static readonly Regex CollapseSlashes = new(@"\s*/+\s*", RegexOptions.Compiled);
-    private static readonly Regex LeadingSlash = new("^/", RegexOptions.Compiled);
 
     /// <summary>The invisible root of the tree.</summary>
     public ClipEditorNode Root { get; } = new(isGroup: true, name: string.Empty, isRoot: true);
@@ -35,42 +31,48 @@ public sealed class ClipEditorModel
         Root.MutableChildren.Clear();
         foreach (ClipEntry entry in entries)
         {
-            AddFullNameEntry(entry);
+            AddPathEntry(entry);
         }
 
         IsDataModified = false;
     }
 
-    /// <summary>A flat list of entries (leaves + empty groups) with computed full names — for saving / exporting.</summary>
+    /// <summary>A flat list of entries (leaves + empty groups) with their group paths — for saving / exporting.</summary>
     public IReadOnlyList<ClipEntry> ToEntries() =>
         GetNonParentItems(Root).Select(ToEntry).ToList();
 
-    /// <summary>The node's full name with the group path (a group ends with <c>/</c>).</summary>
+    /// <summary>The node's full name for display: the group path and the name joined with <c>/</c> (a group ends with <c>/</c>).</summary>
     public string FullNameOf(ClipEditorNode node)
     {
         ArgumentNullException.ThrowIfNull(node);
+        return node.IsRoot ? string.Empty : GroupedXml.FullName(GroupPathOf(node), node.Name, node.IsGroup);
+    }
+
+    /// <summary>The names of the groups enclosing the node, outermost first.</summary>
+    public static IReadOnlyList<string> GroupPathOf(ClipEditorNode node)
+    {
+        ArgumentNullException.ThrowIfNull(node);
         var parts = new List<string>();
-        for (ClipEditorNode? n = node; n is not null && !n.IsRoot; n = n.Parent)
+        for (ClipEditorNode? n = node.Parent; n is not null && !n.IsRoot; n = n.Parent)
         {
             parts.Insert(0, n.Name);
         }
 
-        string full = string.Join('/', parts);
-        return node.IsGroup && full.Length > 0 ? full + "/" : full;
+        return parts;
     }
 
     /// <summary>Returns the <see cref="ClipEntry"/> corresponding to the node.</summary>
     public ClipEntry ToEntry(ClipEditorNode node)
     {
         ArgumentNullException.ThrowIfNull(node);
-        return new ClipEntry(node.IsGroup, FullNameOf(node), node.Name, node.Text);
+        return new ClipEntry(node.IsGroup, GroupPathOf(node), node.Name, node.Text);
     }
 
     /// <summary>
-    /// Adds an entry, expanding the group path contained in <see cref="ClipEntry.Name"/> / <see cref="ClipEntry.FullName"/>.
-    /// Missing intermediate groups are created.
+    /// Adds an entry under its <see cref="ClipEntry.GroupPath"/> (below <paramref name="parent"/>): missing groups
+    /// are created, existing ones shared. A group entry that already exists is returned instead of being added again.
     /// </summary>
-    public ClipEditorNode AddFullNameEntry(ClipEntry entry, ClipEditorNode? parent = null, int row = -1)
+    public ClipEditorNode AddPathEntry(ClipEntry entry, ClipEditorNode? parent = null, int row = -1)
     {
         ArgumentNullException.ThrowIfNull(entry);
         parent ??= Root;
@@ -86,25 +88,12 @@ public sealed class ClipEditorModel
             row = parent.Children.Count;
         }
 
-        string path = NormalizeFullName(string.IsNullOrEmpty(entry.FullName) ? entry.Name : entry.FullName);
-        bool isGroup = entry.IsGroup || path.EndsWith('/');
-        string entryName = path.TrimEnd('/');
-
-        if (entryName.Contains('/', StringComparison.Ordinal))
+        if (entry.GroupPath.Count > 0)
         {
-            var groupNames = entryName.Split('/', StringSplitOptions.RemoveEmptyEntries).ToList();
-            entryName = groupNames[^1];
-            if (!isGroup)
+            foreach (string groupName in entry.GroupPath)
             {
-                groupNames.RemoveAt(groupNames.Count - 1);
-            }
-
-            foreach (string groupName in groupNames)
-            {
-                ClipEditorNode? found = parent.Children.FirstOrDefault(
-                    c => c.IsGroup && string.Equals(c.Name, groupName, StringComparison.Ordinal));
-                parent = found ?? AddEntry(
-                    new ClipEntry(true, string.Empty, groupName, string.Empty),
+                parent = FindGroup(parent, groupName) ?? AddEntry(
+                    new ClipEntry(true, Array.Empty<string>(), groupName, string.Empty),
                     isGroup: true,
                     parent,
                     parent.Children.Count);
@@ -113,19 +102,16 @@ public sealed class ClipEditorModel
             row = parent.Children.Count;
         }
 
-        if (isGroup)
+        if (entry.IsGroup)
         {
-            // The intermediate groups were created; add the group explicitly only when it does not exist.
-            ClipEditorNode? existing = parent.Children.FirstOrDefault(
-                c => c.IsGroup && string.Equals(c.Name, entryName, StringComparison.Ordinal));
-            return existing ?? AddEntry(
-                new ClipEntry(true, string.Empty, entryName, string.Empty),
+            return FindGroup(parent, entry.Name) ?? AddEntry(
+                new ClipEntry(true, Array.Empty<string>(), entry.Name, string.Empty),
                 isGroup: true,
                 parent,
                 row);
         }
 
-        return AddEntry(entry with { Name = entryName, IsGroup = false }, isGroup: false, parent, row);
+        return AddEntry(entry, isGroup: false, parent, row);
     }
 
     /// <summary>
@@ -157,12 +143,12 @@ public sealed class ClipEditorModel
         return node;
     }
 
-    /// <summary>Renames a node (a path segment). Names cannot contain <c>/</c>.</summary>
+    /// <summary>Renames a node. Any character is allowed (also <c>/</c>); surrounding whitespace is trimmed.</summary>
     public void Rename(ClipEditorNode node, string name)
     {
         ArgumentNullException.ThrowIfNull(node);
         ArgumentNullException.ThrowIfNull(name);
-        string clean = name.Replace("/", string.Empty, StringComparison.Ordinal).Trim();
+        string clean = name.Trim();
         if (clean.Length == 0 || string.Equals(clean, node.Name, StringComparison.Ordinal))
         {
             return;
@@ -255,13 +241,22 @@ public sealed class ClipEditorModel
         return Reparent(node, destination, destination.Children.Count);
     }
 
-    /// <summary>The node with the given full name or <see langword="null"/>.</summary>
-    public ClipEditorNode? GetNodeFromFullName(string fullName)
+    /// <summary>
+    /// The node reached by the names <paramref name="path"/> (the enclosing groups, then the node itself) or
+    /// <see langword="null"/>.
+    /// </summary>
+    public ClipEditorNode? GetNodeFromPath(params string[] path)
     {
-        ArgumentNullException.ThrowIfNull(fullName);
-        string target = NormalizeFullName(fullName).TrimEnd('/');
-        return Descendants(Root)
-            .FirstOrDefault(n => string.Equals(FullNameOf(n).TrimEnd('/'), target, StringComparison.Ordinal));
+        ArgumentNullException.ThrowIfNull(path);
+        ClipEditorNode? node = path.Length == 0 ? null : Root;
+        for (int i = 0; node is not null && i < path.Length; i++)
+        {
+            string name = path[i];
+            node = node.Children.FirstOrDefault(c => string.Equals(c.Name, name, StringComparison.Ordinal)
+                && (c.IsGroup || i == path.Length - 1));
+        }
+
+        return node;
     }
 
     /// <summary>All leaves (non-groups) in the subtrees of the given nodes, in tree order.</summary>
@@ -306,14 +301,6 @@ public sealed class ClipEditorModel
 
         IReadOnlyList<ClipEditorNode> slots = TopLevelSlots();
         return slotNumber <= slots.Count ? slots[slotNumber - 1] : null;
-    }
-
-    /// <summary>Normalizes a full name: collapses whitespace around <c>/</c>, removes a leading <c>/</c>.</summary>
-    public static string NormalizeFullName(string fullName)
-    {
-        ArgumentNullException.ThrowIfNull(fullName);
-        string collapsed = CollapseSlashes.Replace(fullName, "/");
-        return LeadingSlash.Replace(collapsed, string.Empty);
     }
 
     private bool MoveVertical(ClipEditorNode node, bool moveDown)
@@ -389,6 +376,9 @@ public sealed class ClipEditorModel
         IsDataModified = true;
         return true;
     }
+
+    private static ClipEditorNode? FindGroup(ClipEditorNode parent, string name) =>
+        parent.Children.FirstOrDefault(c => c.IsGroup && string.Equals(c.Name, name, StringComparison.Ordinal));
 
     private int IndexOf(ClipEditorNode node) =>
         (node.Parent ?? Root).MutableChildren.IndexOf(node);

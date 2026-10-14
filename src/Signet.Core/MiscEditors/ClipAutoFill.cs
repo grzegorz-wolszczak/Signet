@@ -13,10 +13,13 @@ namespace Signet.Core.MiscEditors;
 /// </summary>
 public static class ClipAutoFill
 {
+    // The group path of the generated clips.
+    private static readonly string[] AutofillGroup = { "Autofill" };
+
     /// <summary>
     /// Builds a list of clips of the form <c>&lt;element class="name"&gt;\1&lt;/element&gt;</c> for
     /// every class selector found in the CSS stylesheets of <paramref name="book"/>, in the
-    /// <c>Autofill</c> group (fullname <c>Autofill/&lt;selector&gt;</c> — <see cref="ClipEditorModel.AddFullNameEntry"/>
+    /// <c>Autofill</c> group (group path <c>Autofill</c> — <see cref="ClipEditorModel.AddPathEntry"/>
     /// creates/merges the group automatically). Repeated calls merge into a single <c>Autofill</c>
     /// group, consistent with the rest of the model, where group paths are always merged.
     /// </summary>
@@ -61,7 +64,7 @@ public static class ClipAutoFill
             string element = values[0];
             string className = values[1];
             string text = "<" + element + " class=\"" + className + "\">" + "\\1" + "</" + element + ">";
-            entries.Add(new ClipEntry(false, "Autofill/" + group, group, text));
+            entries.Add(new ClipEntry(false, AutofillGroup, group, text));
         }
 
         return entries;

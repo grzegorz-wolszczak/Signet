@@ -1,66 +1,60 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text.Json;
+using System.Xml.Linq;
+using Signet.Core.Misc;
 
 namespace Signet.Core.MiscEditors;
 
 /// <summary>
-/// Serialization / deserialization of the clip library. The native format is JSON — the only
-/// supported import/export format.
+/// Serialization / deserialization of the clip library. The format is XML — the store file and the only
+/// import/export format:
+/// <code>
+/// &lt;clips&gt;
+///   &lt;group name="Tags"&gt;
+///     &lt;clip name="&amp;lt;test/&amp;gt;"&gt;&amp;lt;test/&amp;gt;&lt;/clip&gt;
+///   &lt;/group&gt;
+/// &lt;/clips&gt;
+/// </code>
+/// Groups nest (<see cref="GroupedXml"/>), a clip's text is the element's content.
 /// </summary>
 public static class ClipIo
 {
-    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+    private const string RootElement = "clips";
+    private const string ClipElement = "clip";
 
-    /// <summary>Deserializes the content of a native JSON file into a list of entries (leniently — an error yields an empty list).</summary>
-    public static IReadOnlyList<ClipEntry> ReadJson(string? json)
+    /// <summary>Reads the entries of a clips XML text (leniently — an error or another document yields an empty list).</summary>
+    public static IReadOnlyList<ClipEntry> ReadXml(string? xml) => FromDocument(XmlConfig.TryParse(xml));
+
+    /// <summary>Writes entries as a clips XML text.</summary>
+    public static string WriteXml(IReadOnlyList<ClipEntry> entries) => XmlConfig.ToText(ToDocument(entries));
+
+    /// <summary>The entries of a clips XML document (an empty list for <see langword="null"/> or another document).</summary>
+    public static IReadOnlyList<ClipEntry> FromDocument(XDocument? document)
     {
-        if (string.IsNullOrWhiteSpace(json))
+        if (document?.Root is not { } root || root.Name != RootElement)
         {
             return Array.Empty<ClipEntry>();
         }
 
-        try
-        {
-            JsonDocument doc = JsonDocument.Parse(json);
-            if (!doc.RootElement.TryGetProperty("clip_entries", out JsonElement array)
-                || array.ValueKind != JsonValueKind.Array)
-            {
-                return Array.Empty<ClipEntry>();
-            }
-
-            var entries = new List<ClipEntry>();
-            foreach (JsonElement item in array.EnumerateArray())
-            {
-                string name = ClipEditorModel.NormalizeFullName(GetString(item, "Name"));
-                entries.Add(ClipEntry.FromFullName(name, GetString(item, "Text")));
-            }
-
-            return entries;
-        }
-        catch (JsonException)
-        {
-            return Array.Empty<ClipEntry>();
-        }
+        return GroupedXml.Read(
+            root,
+            ClipElement,
+            (path, element) => new ClipEntry(false, path, XmlConfig.Attribute(element, GroupedXml.NameAttribute), element.Value),
+            (path, name) => new ClipEntry(true, path, name, string.Empty));
     }
 
-    /// <summary>Serializes entries to native JSON (key <c>clip_entries</c>, field <c>Name</c> = full name).</summary>
-    public static string WriteJson(IReadOnlyList<ClipEntry> entries)
+    /// <summary>The clips XML document of the entries.</summary>
+    public static XDocument ToDocument(IReadOnlyList<ClipEntry> entries)
     {
         ArgumentNullException.ThrowIfNull(entries);
-        var payload = new Dictionary<string, object>
-        {
-            ["clip_entries"] = entries.Select(e => e.IsGroup
-                ? new Dictionary<string, string> { ["Name"] = e.FullName }
-                : new Dictionary<string, string> { ["Name"] = e.FullName, ["Text"] = e.Text }).ToList(),
-        };
-
-        return JsonSerializer.Serialize(payload, JsonOptions);
+        XElement root = new(RootElement);
+        GroupedXml.Write(
+            root,
+            entries,
+            e => e.GroupPath,
+            e => e.IsGroup,
+            e => e.Name,
+            e => new XElement(ClipElement, new XAttribute(GroupedXml.NameAttribute, e.Name), e.Text));
+        return new XDocument(root);
     }
-
-    private static string GetString(JsonElement element, string property) =>
-        element.TryGetProperty(property, out JsonElement value) && value.ValueKind == JsonValueKind.String
-            ? value.GetString() ?? string.Empty
-            : string.Empty;
 }
