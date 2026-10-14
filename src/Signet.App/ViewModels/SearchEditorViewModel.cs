@@ -237,7 +237,7 @@ public sealed class SearchEditorViewModel : ViewModelBase
             {
                 ".txt" => SavedSearchIo.ReadDelimited(content, '\t', System.IO.Path.GetFileName(path)),
                 ".csv" => SavedSearchIo.ReadDelimited(content, ',', System.IO.Path.GetFileName(path)),
-                _ => SavedSearchIo.ReadJson(content),
+                _ => SavedSearchIo.ReadXml(content),
             };
 
             if (imported.Count == 0)
@@ -247,14 +247,14 @@ public sealed class SearchEditorViewModel : ViewModelBase
             }
 
             SearchEditorNode group = _model.AddEntry(
-                new SearchEntry(true, string.Empty, Strings.Get("SearchEditor_ImportedGroup"), string.Empty, string.Empty, string.Empty),
+                new SearchEntry(true, Array.Empty<string>(), Strings.Get("SearchEditor_ImportedGroup"), string.Empty, string.Empty, string.Empty),
                 isGroup: true,
                 parent: null,
                 row: -1);
 
             foreach (SearchEntry entry in imported)
             {
-                _model.AddFullNameEntry(entry, group);
+                _model.AddPathEntry(entry, group);
             }
 
             RebuildNodes();
@@ -281,7 +281,7 @@ public sealed class SearchEditorViewModel : ViewModelBase
             {
                 ".txt" => SavedSearchIo.WriteDelimited(entries, '\t'),
                 ".csv" => SavedSearchIo.WriteDelimited(entries, ','),
-                _ => SavedSearchIo.WriteJson(entries),
+                _ => SavedSearchIo.WriteXml(entries),
             };
 
             File.WriteAllText(path, content);
@@ -348,7 +348,7 @@ public sealed class SearchEditorViewModel : ViewModelBase
     {
         SearchEditorNode parent = _selectedNode?.Node is { IsGroup: true } g ? g : _model.Root;
         _model.AddEntry(
-            new SearchEntry(true, string.Empty, Strings.Get("SearchEditor_NewGroup"), string.Empty, string.Empty, string.Empty),
+            new SearchEntry(true, Array.Empty<string>(), Strings.Get("SearchEditor_NewGroup"), string.Empty, string.Empty, string.Empty),
             isGroup: true,
             parent,
             row: -1);

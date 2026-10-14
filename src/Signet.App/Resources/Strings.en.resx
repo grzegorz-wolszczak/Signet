@@ -3038,8 +3038,8 @@ This operation cannot be undone.</value>
 
 This file type cannot be edited in Signet yet.</value>
   </data>
-  <data name="SearchEditor_JsonFileType" xml:space="preserve">
-    <value>Saved searches (*.json)</value>
+  <data name="SearchEditor_XmlFileType" xml:space="preserve">
+    <value>Saved searches (*.xml)</value>
   </data>
   <data name="SearchEditor_TsvFileType" xml:space="preserve">
     <value>Tab-separated text (*.txt)</value>

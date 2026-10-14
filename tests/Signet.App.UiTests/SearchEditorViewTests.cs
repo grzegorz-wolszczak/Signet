@@ -37,7 +37,7 @@ public sealed class SearchEditorViewTests
     {
         FindReplaceViewModel findReplace = new(
             new SettingsStore(temp.Combine("settings.json")), new StatusBarService(), () => null, new Mock<IMultiFileSearchHost>().Object);
-        SearchEditorViewModel vm = new(new SavedSearchStore(temp.Combine("searches.json")), findReplace);
+        SearchEditorViewModel vm = new(new SavedSearchStore(temp.Combine("searches.xml")), findReplace);
         vm.AddGroupCommand.Execute(null);
         vm.SetSelectedNodes(System.Array.Empty<SearchEntryNodeViewModel>());
         vm.AddEntryCommand.Execute(null);

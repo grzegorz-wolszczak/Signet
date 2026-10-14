@@ -40,7 +40,9 @@ public sealed class SearchEditorTests : IDisposable
         }
     }
 
-    private SavedSearchStore Store() => new(Path.Combine(_dir, "searches.json"));
+    private static readonly string[] Seq = { "seq" };
+
+    private SavedSearchStore Store() => new(Path.Combine(_dir, "searches.xml"));
 
     private FindReplaceViewModel NewFindReplace(FakeMultiFileSearchHost host) => new(
         new SettingsStore(Path.Combine(_dir, $"settings-{Guid.NewGuid():N}.json")),
@@ -100,9 +102,9 @@ public sealed class SearchEditorTests : IDisposable
         SavedSearchStore store = Store();
         store.Save(new SearchEntry[]
         {
-            new(false, "seq/one", "one", "alpha", "ALPHA", "NL DN AH"),
-            new(false, "seq/two", "two", "beta", "BETA", "NL DN AH"),
-            new(false, "seq/three", "three", "gamma", "GAMMA", "NL DN AH"),
+            new(false, Seq, "one", "alpha", "ALPHA", "NL DN AH"),
+            new(false, Seq, "two", "beta", "BETA", "NL DN AH"),
+            new(false, Seq, "three", "gamma", "GAMMA", "NL DN AH"),
         });
 
         var panel = new SearchEditorViewModel(store, NewFindReplace(host));
@@ -126,9 +128,9 @@ public sealed class SearchEditorTests : IDisposable
         SavedSearchStore store = Store();
         store.Save(new SearchEntry[]
         {
-            new(false, "Fix smart quotes", "Fix smart quotes", "\"", "“", "NL DN AH"),
-            new(false, "Fix dashes", "Fix dashes", "--", "&nbsp;—", "NL DN AH"),
-            new(false, "Remove spans", "Remove spans", "<span>", "", "NL DN AH"),
+            new(false, Array.Empty<string>(), "Fix smart quotes", "\"", "“", "NL DN AH"),
+            new(false, Array.Empty<string>(), "Fix dashes", "--", "&nbsp;—", "NL DN AH"),
+            new(false, Array.Empty<string>(), "Remove spans", "<span>", "", "NL DN AH"),
         });
         var panel = new SearchEditorViewModel(store, NewFindReplace(new FakeMultiFileSearchHost()));
 
@@ -151,8 +153,8 @@ public sealed class SearchEditorTests : IDisposable
         SavedSearchStore store = Store();
         store.Save(new SearchEntry[]
         {
-            new(false, "cats", "cats", "cat", "", "NL DN AH"),
-            new(false, "dogs", "dogs", "dog", "", "NL DN AH"),
+            new(false, Array.Empty<string>(), "cats", "cat", "", "NL DN AH"),
+            new(false, Array.Empty<string>(), "dogs", "dog", "", "NL DN AH"),
         });
 
         var panel = new SearchEditorViewModel(store, NewFindReplace(host));
@@ -173,16 +175,16 @@ public sealed class SearchEditorTests : IDisposable
     }
 
     [Fact]
-    public void ImportFile_Json_AddsEntriesUnderImportedGroup()
+    public void ImportFile_Xml_AddsEntriesUnderImportedGroup()
     {
         using UiCultureScope culture = new("en");
         SavedSearchStore store = Store();
         var panel = new SearchEditorViewModel(store, NewFindReplace(new FakeMultiFileSearchHost()));
 
-        string importPath = Path.Combine(_dir, "external.json");
-        File.WriteAllText(importPath, SavedSearchIo.WriteJson(new SearchEntry[]
+        string importPath = Path.Combine(_dir, "external.xml");
+        File.WriteAllText(importPath, SavedSearchIo.WriteXml(new SearchEntry[]
         {
-            new(false, "Foo", "Foo", "x", "y", "NL DN CF"),
+            new(false, Array.Empty<string>(), "Foo", "x", "y", "NL DN CF"),
         }));
 
         panel.ImportFile(importPath);
@@ -198,7 +200,7 @@ public sealed class SearchEditorTests : IDisposable
         SavedSearchStore store = Store();
         store.Save(new SearchEntry[]
         {
-            new(false, "regexy", "regexy", @"\d+", "N", "RX WR DN AH"),
+            new(false, Array.Empty<string>(), "regexy", @"\d+", "N", "RX WR DN AH"),
         });
 
         var host = new FakeMultiFileSearchHost { BookLoaded = true };
@@ -221,8 +223,8 @@ public sealed class SearchEditorTests : IDisposable
         SavedSearchStore store = Store();
         store.Save(new SearchEntry[]
         {
-            new(true, "G/", "G", "", "", ""),
-            new(false, "loose", "loose", "a", "b", "NL DN CF"),
+            new(true, Array.Empty<string>(), "G", "", "", ""),
+            new(false, Array.Empty<string>(), "loose", "a", "b", "NL DN CF"),
         });
 
         var panel = new SearchEditorViewModel(store, NewFindReplace(new FakeMultiFileSearchHost()));

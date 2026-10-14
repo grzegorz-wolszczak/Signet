@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Xml.Linq;
 using AwesomeAssertions;
 using Signet.Core.MiscEditors;
+using Signet.Core.Tests.TestSupport;
 using Xunit;
 
 namespace Signet.Core.Tests.MiscEditors;
@@ -13,25 +15,48 @@ public sealed class SavedSearchIoTests
 {
     private static readonly SearchEntry[] Sample =
     {
-        new(IsGroup: true, "Grupa/", "Grupa", "", "", ""),
-        new(IsGroup: false, "Grupa/Kot", "Kot", "kot", "pies", "NL DN CF"),
-        new(IsGroup: false, "Prosty, z przecinkiem", "Prosty, z przecinkiem", "a", "b", "RX WR DN AH"),
+        new(IsGroup: false, new[] { "Grupa" }, "Kot", "kot", "pies", "NL DN CF"),
+        new(IsGroup: true, new[] { "Grupa" }, "Pusta", "", "", ""),
+        new(IsGroup: false, Array.Empty<string>(), "Prosty, z przecinkiem", "a", "b", "RX WR DN AH"),
+        new(IsGroup: false, new[] { "a/b" }, "<br/> to <br />", "<br/>", "<br />\r\n", "RX WR DN AH"),
+        new(IsGroup: false, Array.Empty<string>(), "Multi-line", "line1\r\nline2", "  ", "NL DN CF"),
     };
 
+    private static readonly string[] BetaGroup = { "Beta" };
+
     [Fact]
-    public void WriteJson_ThenReadJson_RoundTrips()
+    public void WriteXml_ThenReadXml_RoundTrips()
     {
-        IReadOnlyList<SearchEntry> parsed = SavedSearchIo.ReadJson(SavedSearchIo.WriteJson(Sample));
+        IReadOnlyList<SearchEntry> parsed = SavedSearchIo.ReadXml(SavedSearchIo.WriteXml(Sample));
 
         parsed.Should().BeEquivalentTo(Sample, o => o.WithStrictOrdering());
     }
 
     [Fact]
-    public void ReadJson_InvalidContent_ReturnsEmpty()
+    public void Searches_are_nested_in_group_elements_with_find_replace_and_controls()
     {
-        SavedSearchIo.ReadJson("{ not json").Should().BeEmpty();
-        SavedSearchIo.ReadJson("{}").Should().BeEmpty();
-        SavedSearchIo.ReadJson(null).Should().BeEmpty();
+        XElement root = XDocument.Parse(SavedSearchIo.WriteXml(Sample)).Root!;
+
+        root.Name.LocalName.Should().Be("saved_searches");
+        XElement group = root.Elements("group").First();
+        group.Attribute("name")!.Value.Should().Be("Grupa");
+        XElement search = group.Element("search")!;
+        search.Attribute("name")!.Value.Should().Be("Kot");
+        search.Element("find")!.Value.Should().Be("kot");
+        search.Element("replace")!.Value.Should().Be("pies");
+        search.Element("controls")!.Value.Should().Be("NL DN CF");
+        root.Elements("group").Select(g => g.Attribute("name")!.Value).Should().Equal("Grupa", "a/b");
+    }
+
+    [Theory]
+    [InlineData("{ not json")]
+    [InlineData("{ \"search_entries\": [ { \"Name\": \"x\" } ] }")]
+    [InlineData("<clips><clip name=\"x\">y</clip></clips>")]
+    [InlineData("")]
+    [InlineData(null)]
+    public void ReadXml_of_invalid_or_foreign_content_returns_empty(string? content)
+    {
+        SavedSearchIo.ReadXml(content).Should().BeEmpty();
     }
 
     [Fact]
@@ -39,8 +64,8 @@ public sealed class SavedSearchIoTests
     {
         SearchEntry[] leaves =
         {
-            new(IsGroup: false, "Alfa", "Alfa", "f1", "r1", "NL DN CF"),
-            new(IsGroup: false, "Beta/Gamma", "Gamma", "f2", "r2", "RX WR DN AH"),
+            new(IsGroup: false, Array.Empty<string>(), "Alfa", "f1", "r1", "NL DN CF"),
+            new(IsGroup: false, BetaGroup, "Gamma", "f2", "r2", "RX WR DN AH"),
         };
 
         string text = SavedSearchIo.WriteDelimited(leaves, '\t');
@@ -54,7 +79,7 @@ public sealed class SavedSearchIoTests
     {
         SearchEntry[] leaves =
         {
-            new(IsGroup: false, "Z przecinkiem", "Z przecinkiem", "a,b,c", "x,y", "NL DN CF"),
+            new(IsGroup: false, Array.Empty<string>(), "Z przecinkiem", "a,b,c", "x,y", "NL DN CF"),
         };
 
         string csv = SavedSearchIo.WriteDelimited(leaves, ',');
@@ -75,27 +100,34 @@ public sealed class SavedSearchIoTests
     [Fact]
     public void Store_SaveThenReloadWithNewInstance_PersistsEntries()
     {
-        string path = System.IO.Path.Combine(
-            System.IO.Path.GetTempPath(), $"signet-searches-{Guid.NewGuid():N}.json");
-        try
-        {
-            new SavedSearchStore(path).Save(Sample);
+        using TempDir dir = new();
+        string path = dir.Combine("saved_searches.xml");
 
-            new SavedSearchStore(path).Load().Should().BeEquivalentTo(Sample, o => o.WithStrictOrdering());
-        }
-        finally
-        {
-            if (File.Exists(path))
-            {
-                File.Delete(path);
-            }
-        }
+        new SavedSearchStore(path).Save(Sample);
+
+        new SavedSearchStore(path).Load().Should().BeEquivalentTo(Sample, o => o.WithStrictOrdering());
+    }
+
+    [Fact]
+    public void Store_does_not_read_a_json_library()
+    {
+        using TempDir dir = new();
+        string path = dir.Combine("saved_searches.xml");
+        File.WriteAllText(path, "{ \"search_entries\": [ { \"Name\": \"x\", \"Find\": \"y\" } ] }");
+
+        new SavedSearchStore(path).Load().Should().BeEmpty();
     }
 
     [Fact]
     public void Store_Load_MissingFile_ReturnsEmpty()
     {
-        new SavedSearchStore(System.IO.Path.Combine("nonexistent-dir", "missing.json"))
+        new SavedSearchStore(System.IO.Path.Combine("nonexistent-dir", "missing.xml"))
             .Load().Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Default_file_is_saved_searches_xml()
+    {
+        SavedSearchStore.DefaultFileName.Should().Be("saved_searches.xml");
     }
 }

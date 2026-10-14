@@ -31,9 +31,9 @@ namespace Signet.App.Views;
         + "view and the view model's nodes it observes. The view is not disposed on detach: Dock re-parents panels.")]
 public partial class SearchEditorView : UserControl
 {
-    private static FilePickerFileType JsonType => new(Strings.Get("SearchEditor_JsonFileType"))
+    private static FilePickerFileType XmlType => new(Strings.Get("SearchEditor_XmlFileType"))
     {
-        Patterns = new[] { "*.json" },
+        Patterns = new[] { "*.xml" },
     };
 
     private static FilePickerFileType TsvType => new(Strings.Get("SearchEditor_TsvFileType"))
@@ -143,7 +143,7 @@ public partial class SearchEditorView : UserControl
             {
                 Title = Strings.Get("SearchEditor_ImportTitle"),
                 AllowMultiple = false,
-                FileTypeFilter = new[] { JsonType, TsvType, CsvType },
+                FileTypeFilter = new[] { XmlType, TsvType, CsvType },
             });
 
         string? path = files.Count > 0 ? files[0].TryGetLocalPath() : null;
@@ -165,9 +165,9 @@ public partial class SearchEditorView : UserControl
             new FilePickerSaveOptions
             {
                 Title = all ? Strings.Get("SearchEditor_ExportAllTitle") : Strings.Get("SearchEditor_ExportTitle"),
-                DefaultExtension = "json",
-                SuggestedFileName = "saved_searches.json",
-                FileTypeChoices = new[] { JsonType, TsvType, CsvType },
+                DefaultExtension = "xml",
+                SuggestedFileName = "saved_searches.xml",
+                FileTypeChoices = new[] { XmlType, TsvType, CsvType },
             });
 
         string? path = file?.TryGetLocalPath();

@@ -8,15 +8,19 @@ namespace Signet.Core.Tests.MiscEditors;
 /// <summary>Tests of <see cref="SearchEditorModel"/> — the group/entry tree, CRUD, moving.</summary>
 public sealed class SearchEditorModelTests
 {
-    private static SearchEntry Leaf(string fullName, string find = "f", string replace = "r", string controls = "NL DN CF") =>
-        new(IsGroup: false, fullName, fullName.Split('/').Last(), find, replace, controls);
+    // A search from a "Group/Subgroup/Name" test path (the test names contain no "/" of their own).
+    private static SearchEntry Leaf(string path, string find = "f", string replace = "r", string controls = "NL DN CF")
+    {
+        string[] parts = path.Split('/');
+        return new(IsGroup: false, parts[..^1], parts[^1], find, replace, controls);
+    }
 
     [Fact]
-    public void AddFullNameEntry_CreatesIntermediateGroups()
+    public void AddPathEntry_CreatesIntermediateGroups()
     {
         var model = new SearchEditorModel();
 
-        model.AddFullNameEntry(Leaf("Typografia/Cudzysłowy/Otwierający"));
+        model.AddPathEntry(Leaf("Typografia/Cudzysłowy/Otwierający"));
 
         SearchEditorNode typografia = model.Root.Children.Single();
         typografia.IsGroup.Should().BeTrue();
@@ -27,12 +31,12 @@ public sealed class SearchEditorModelTests
     }
 
     [Fact]
-    public void AddFullNameEntry_SharesExistingGroups()
+    public void AddPathEntry_SharesExistingGroups()
     {
         var model = new SearchEditorModel();
 
-        model.AddFullNameEntry(Leaf("Grupa/Pierwszy"));
-        model.AddFullNameEntry(Leaf("Grupa/Drugi"));
+        model.AddPathEntry(Leaf("Grupa/Pierwszy"));
+        model.AddPathEntry(Leaf("Grupa/Drugi"));
 
         model.Root.Children.Single().Children.Select(c => c.Name).Should().Equal("Pierwszy", "Drugi");
     }
@@ -41,8 +45,8 @@ public sealed class SearchEditorModelTests
     public void ToEntries_FlattensWithComputedFullNames()
     {
         var model = new SearchEditorModel();
-        model.AddFullNameEntry(Leaf("A/B/x"));
-        model.AddFullNameEntry(Leaf("A/y"));
+        model.AddPathEntry(Leaf("A/B/x"));
+        model.AddPathEntry(Leaf("A/y"));
 
         model.ToEntries().Select(e => e.FullName).Should().Equal("A/B/x", "A/y");
     }
@@ -68,22 +72,37 @@ public sealed class SearchEditorModelTests
     public void Rename_ChangesSegmentAndPropagatesToFullName()
     {
         var model = new SearchEditorModel();
-        model.AddFullNameEntry(Leaf("Grupa/Wpis"));
+        model.AddPathEntry(Leaf("Grupa/Wpis"));
         SearchEditorNode group = model.Root.Children.Single();
 
-        model.Rename(group, "Nowa/Nazwa   ");
+        model.Rename(group, "NowaNazwa   ");
 
         group.Name.Should().Be("NowaNazwa");
         model.ToEntries().Single().FullName.Should().Be("NowaNazwa/Wpis");
     }
 
     [Fact]
+    public void Rename_keeps_a_slash_in_the_name_and_does_not_create_groups()
+    {
+        var model = new SearchEditorModel();
+        model.AddPathEntry(Leaf("Grupa/Wpis"));
+        SearchEditorNode leaf = model.Root.Children.Single().Children.Single();
+
+        model.Rename(leaf, "<br/> to <br />");
+
+        leaf.Name.Should().Be("<br/> to <br />");
+        SearchEntry entry = model.ToEntries().Single();
+        entry.GroupPath.Should().Equal("Grupa");
+        entry.Name.Should().Be("<br/> to <br />");
+    }
+
+    [Fact]
     public void Delete_RemovesSubtree()
     {
         var model = new SearchEditorModel();
-        model.AddFullNameEntry(Leaf("Grupa/A"));
-        model.AddFullNameEntry(Leaf("Grupa/B"));
-        SearchEditorNode a = model.GetNodeFromFullName("Grupa/A")!;
+        model.AddPathEntry(Leaf("Grupa/A"));
+        model.AddPathEntry(Leaf("Grupa/B"));
+        SearchEditorNode a = model.GetNodeFromPath("Grupa", "A")!;
 
         model.Delete(a).Should().BeTrue();
 
@@ -94,9 +113,9 @@ public sealed class SearchEditorModelTests
     public void MoveUp_And_MoveDown_SwapSiblings()
     {
         var model = new SearchEditorModel();
-        model.AddFullNameEntry(Leaf("one"));
-        model.AddFullNameEntry(Leaf("two"));
-        model.AddFullNameEntry(Leaf("three"));
+        model.AddPathEntry(Leaf("one"));
+        model.AddPathEntry(Leaf("two"));
+        model.AddPathEntry(Leaf("three"));
 
         model.MoveDown(model.Root.Children[0]).Should().BeTrue();
         model.Root.Children.Select(c => c.Name).Should().Equal("two", "one", "three");
@@ -109,9 +128,9 @@ public sealed class SearchEditorModelTests
     public void MoveDown_LastChildOfGroup_PromotesToParentLevel()
     {
         var model = new SearchEditorModel();
-        model.AddFullNameEntry(Leaf("Grupa/only"));
-        model.AddFullNameEntry(Leaf("after"));
-        SearchEditorNode only = model.GetNodeFromFullName("Grupa/only")!;
+        model.AddPathEntry(Leaf("Grupa/only"));
+        model.AddPathEntry(Leaf("after"));
+        SearchEditorNode only = model.GetNodeFromPath("Grupa", "only")!;
 
         model.MoveDown(only).Should().BeTrue();
 
@@ -122,9 +141,9 @@ public sealed class SearchEditorModelTests
     public void MoveRight_MovesEntryIntoPrecedingGroup()
     {
         var model = new SearchEditorModel();
-        model.AddFullNameEntry(Leaf("Grupa/inside"));
-        model.AddFullNameEntry(Leaf("outside"));
-        SearchEditorNode outside = model.GetNodeFromFullName("outside")!;
+        model.AddPathEntry(Leaf("Grupa/inside"));
+        model.AddPathEntry(Leaf("outside"));
+        SearchEditorNode outside = model.GetNodeFromPath("outside")!;
 
         model.MoveRight(outside).Should().BeTrue();
 
@@ -135,9 +154,9 @@ public sealed class SearchEditorModelTests
     public void MoveLeft_MovesEntryToParentLevel()
     {
         var model = new SearchEditorModel();
-        model.AddFullNameEntry(Leaf("Grupa/inner"));
-        model.AddFullNameEntry(Leaf("Grupa/inner2"));
-        SearchEditorNode inner = model.GetNodeFromFullName("Grupa/inner")!;
+        model.AddPathEntry(Leaf("Grupa/inner"));
+        model.AddPathEntry(Leaf("Grupa/inner2"));
+        SearchEditorNode inner = model.GetNodeFromPath("Grupa", "inner")!;
 
         model.MoveLeft(inner).Should().BeTrue();
 
@@ -148,9 +167,9 @@ public sealed class SearchEditorModelTests
     public void FillControls_CopiesControlsFromFirstNodeToOthers()
     {
         var model = new SearchEditorModel();
-        model.AddFullNameEntry(Leaf("a", controls: "RX WR DN AH"));
-        model.AddFullNameEntry(Leaf("b", controls: "NL DN CF"));
-        model.AddFullNameEntry(Leaf("c", controls: "NL DN CF"));
+        model.AddPathEntry(Leaf("a", controls: "RX WR DN AH"));
+        model.AddPathEntry(Leaf("b", controls: "NL DN CF"));
+        model.AddPathEntry(Leaf("c", controls: "NL DN CF"));
 
         model.FillControls(model.Root.Children.ToList());
 
@@ -161,8 +180,8 @@ public sealed class SearchEditorModelTests
     public void GetNonGroupItems_ReturnsOnlyLeavesRecursively()
     {
         var model = new SearchEditorModel();
-        model.AddFullNameEntry(Leaf("G/H/deep"));
-        model.AddFullNameEntry(Leaf("G/shallow"));
+        model.AddPathEntry(Leaf("G/H/deep"));
+        model.AddPathEntry(Leaf("G/shallow"));
 
         model.GetNonGroupItems(model.Root.Children).Select(n => n.Name)
             .Should().Equal("deep", "shallow");
