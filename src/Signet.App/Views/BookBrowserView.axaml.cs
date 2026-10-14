@@ -327,17 +327,45 @@ public partial class BookBrowserView : UserControl
         }
 
         _shortcutBindings.SetSuspended(false);
-        if (IsInRenameEditor(TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement()))
+
+        // The view model hides the editor (IsEditing = false) before this notification, so the focus it had is usually
+        // already lost (null) here. A rename abandoned by clicking elsewhere leaves the focus on that element instead
+        // (it is set before the editor's LostFocus) — that focus is not taken back.
+        IInputElement? focused = TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement();
+        if (finished is not null && (focused is null || IsInRenameEditor(focused)))
         {
-            // Back to the row (in a TreeDataGrid the cells take the focus, not the rows or the grid).
-            if (finished is not null && RowOf(finished)?.TryGetCell(0) is { } cell)
-            {
-                cell.Focus();
-            }
-            else
-            {
-                Tree.Focus();
-            }
+            FocusRow(finished);
+
+            // A committed rename rebuilds the tree right after this: the cell focused above is recycled and the focus
+            // is lost, so the panel-scoped shortcuts (F2 to rename again) no longer reach this view. After the
+            // rebuild's layout pass the focus goes to the row of the renamed file (selected again by the view model).
+            Dispatcher.UIThread.Post(RestoreFocusAfterRename, DispatcherPriority.Loaded);
+        }
+    }
+
+    private void RestoreFocusAfterRename()
+    {
+        // Only a focus lost with the recycled row is restored — not one the user has moved elsewhere meanwhile.
+        if (TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is Visual { } focused
+            && focused.IsAttachedToVisualTree()
+            && focused.IsEffectivelyVisible)
+        {
+            return;
+        }
+
+        FocusRow(_selectedNodes.Count == 1 ? _selectedNodes[0] : null);
+    }
+
+    // Focuses the row of a node (in a TreeDataGrid the cells take the focus, not the rows or the grid), or the tree.
+    private void FocusRow(BookBrowserNode? node)
+    {
+        if (node is not null && RowOf(node)?.TryGetCell(0) is { } cell)
+        {
+            cell.Focus();
+        }
+        else
+        {
+            Tree.Focus();
         }
     }
 
