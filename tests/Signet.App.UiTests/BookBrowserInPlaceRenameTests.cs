@@ -1,4 +1,5 @@
 using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
@@ -12,6 +13,7 @@ using Signet.App.Services;
 using Signet.App.ViewModels;
 using Signet.App.Views;
 using Signet.Controls.TreeDataGrid;
+using Signet.Controls.TreeDataGrid.Primitives;
 using Signet.Core.BookManipulation;
 using Signet.Core.Misc;
 using Signet.Core.Tests.TestSupport;
@@ -95,6 +97,39 @@ public sealed class BookBrowserInPlaceRenameTests
 
         resource.Filename.Should().Be("committed.xhtml");
         vm.EditingNode.Should().BeNull();
+    }
+
+    [AvaloniaFact]
+    public void After_a_committed_rename_the_focus_stays_on_the_renamed_file_and_it_can_be_renamed_again()
+    {
+        using TempDir temp = new();
+        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3WithNcx, temp)).GetBook();
+        (Window window, BookBrowserViewModel vm, BookBrowserNode file) = ShowBrowser(book);
+        Signet.Core.Resources.Resource resource = file.Entry!.Resource;
+
+        vm.RenameSelectedCommand.Execute(null);
+        Render(window);
+        Editor(window).Text = "first.xhtml";
+        window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+        Render(window);
+
+        // The commit rebuilds the tree; the focus must stay in the panel (its F2 shortcut is panel-scoped) on the row
+        // of the renamed file, not be lost with the recycled row.
+        resource.Filename.Should().Be("first.xhtml");
+        Visual focused = window.FocusManager!.GetFocusedElement().Should().BeAssignableTo<Visual>().Subject;
+        focused.IsEffectivelyVisible.Should().BeTrue();
+        focused.FindAncestorOfType<TreeDataGridRow>(includeSelf: true)!.Model
+            .Should().BeOfType<BookBrowserNode>().Which.Entry!.Resource.Should().BeSameAs(resource);
+
+        vm.RenameSelectedCommand.Execute(null);
+        Render(window);
+        TextBox editor = Editor(window);
+        editor.IsFocused.Should().BeTrue();
+        editor.Text = "second.xhtml";
+        window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+        Render(window);
+
+        resource.Filename.Should().Be("second.xhtml");
     }
 
     [AvaloniaFact]
