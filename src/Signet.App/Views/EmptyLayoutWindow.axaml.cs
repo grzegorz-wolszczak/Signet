@@ -34,7 +34,7 @@ public partial class EmptyLayoutWindow : Window
     private bool _syncingSelection;
 
     private static FilePickerFileType LayoutFileType =>
-        new(Strings.Get("EmptyLayoutWindow_JsonFileType")) { Patterns = new[] { "*.json" } };
+        new(Strings.Get("EmptyLayoutWindow_XmlFileType")) { Patterns = new[] { "*.xml" } };
 
     /// <summary>Initializes the window.</summary>
     public EmptyLayoutWindow()
@@ -213,8 +213,8 @@ public partial class EmptyLayoutWindow : Window
         IStorageFile? file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
             Title = Strings.Get("EmptyLayoutWindow_SaveDialogTitle"),
-            SuggestedFileName = "layout.json",
-            DefaultExtension = "json",
+            SuggestedFileName = "layout.xml",
+            DefaultExtension = "xml",
             FileTypeChoices = new[] { LayoutFileType },
         });
 

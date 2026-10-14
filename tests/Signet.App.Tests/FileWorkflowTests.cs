@@ -58,7 +58,7 @@ public sealed class FileWorkflowTests
         public Harness()
         {
             Dir = new TempDir();
-            Settings = new SettingsStore(Path.Combine(Dir.Path, "settings.json"));
+            Settings = new SettingsStore(Path.Combine(Dir.Path, "settings.xml"));
             Prompts = new FakeFileWorkflowPrompts();
             Workspace = new FakeWorkspace();
             Workflow = new FileWorkflow(Settings, Prompts, Workspace, NullLogger.Instance);

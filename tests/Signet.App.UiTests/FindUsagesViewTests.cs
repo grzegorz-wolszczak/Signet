@@ -68,7 +68,7 @@ public sealed class FindUsagesViewTests
 
     private static (Window Window, FindUsagesViewModel Vm, TreeDataGrid Tree) ShowPanel(TempDir temp, bool groupByFile, params ClassUsage[] usages)
     {
-        FindUsagesViewModel vm = new(new SettingsStore(temp.Combine("settings.json"))) { GroupByFile = groupByFile };
+        FindUsagesViewModel vm = new(new SettingsStore(temp.Combine("settings.xml"))) { GroupByFile = groupByFile };
         vm.Load("note", usages);
         Window window = new() { Width = 900, Height = 400, Content = new FindUsagesView { DataContext = vm } };
         window.Show();
@@ -139,7 +139,7 @@ public sealed class FindUsagesViewTests
     public void The_tree_shows_the_usages_and_Group_By_File_switches_to_one_node_per_file()
     {
         using TempDir temp = new();
-        SettingsStore settings = new(temp.Combine("settings.json"));
+        SettingsStore settings = new(temp.Combine("settings.xml"));
         FindUsagesViewModel vm = new(settings);
         vm.Load("note", new[]
         {
@@ -179,7 +179,7 @@ public sealed class FindUsagesViewTests
     public void Collapse_All_button_and_Ctrl_NumPad_plus_collapse_and_expand_the_tree()
     {
         using TempDir temp = new();
-        FindUsagesViewModel vm = new(new SettingsStore(temp.Combine("settings.json"))) { GroupByFile = true };
+        FindUsagesViewModel vm = new(new SettingsStore(temp.Combine("settings.xml"))) { GroupByFile = true };
         vm.Load("note", new[]
         {
             new ClassUsage("OEBPS/Text/a.xhtml", 10, 3, 14, ClassUsageKind.ClassAttribute),

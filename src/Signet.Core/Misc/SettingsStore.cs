@@ -20,6 +20,7 @@ namespace Signet.Core.Misc;
 public sealed class SettingsStore
 {
     private const string Group = "user_preferences";
+    private const string DockLayoutKey = "main_window_dock_layout";
     private const string GeometryGroup = "geometry";
     private const string MainWindowGroup = "main_window";
     private const string FindReplaceGroup = "find_replace";
@@ -286,15 +287,18 @@ public sealed class SettingsStore
     }
 
     /// <summary>
-    /// Serialized (Dock.Serializer.SystemTextJson) dock layout of the main window — position,
-    /// size and placement of the docked panels, not just their visibility (which is kept
-    /// separately via <see cref="GetStringMap"/> under the docks group). Empty when the layout
-    /// has not been saved yet (first run).
+    /// The dock layout of the main window — the assignment of panels to regions, their order and the proportions, not
+    /// just their visibility (which is kept separately via <see cref="GetStringMap"/> under the docks group).
+    /// <see langword="null"/> when the layout has not been saved yet (first run) or cannot be read.
     /// </summary>
-    public string MainWindowDockLayout
+    public DockLayoutState? MainWindowDockLayout
     {
-        get => ReadString("main_window_dock_layout", string.Empty);
-        set => Write("main_window_dock_layout", value);
+        get => _file.GetRaw(Group, DockLayoutKey) is JsonObject obj ? ReadDockLayout(obj) : null;
+        set
+        {
+            _file.SetRaw(Group, DockLayoutKey, value is null ? null : WriteDockLayout(value));
+            RaiseChanged(DockLayoutKey);
+        }
     }
 
     /// <summary>
@@ -1588,6 +1592,44 @@ public sealed class SettingsStore
         _file.SetRaw(Group, key, new JsonArray(value.Select(s => JsonValue.Create(s)).ToArray<JsonNode?>()));
         RaiseChanged(key);
     }
+
+    private static DockLayoutState? ReadDockLayout(JsonObject obj)
+    {
+        if (obj["regions"] is not JsonArray regions
+            || obj["documents_proportion"] is not JsonValue documents || !documents.TryGetValue(out double documentsProportion))
+        {
+            return null;
+        }
+
+        List<DockRegionState> result = new();
+        foreach (JsonObject region in regions.OfType<JsonObject>())
+        {
+            if (region["dock_id"] is JsonValue id && id.TryGetValue(out string? dockId)
+                && region["proportion"] is JsonValue p && p.TryGetValue(out double proportion))
+            {
+                List<string> tools = (region["tool_ids"] as JsonArray)?
+                    .Select(t => t is JsonValue v && v.TryGetValue(out string? s) ? s : null)
+                    .OfType<string>()
+                    .ToList() ?? new List<string>();
+                string? active = region["active_tool_id"] is JsonValue a && a.TryGetValue(out string? activeId) ? activeId : null;
+                result.Add(new DockRegionState(dockId, proportion, tools, active));
+            }
+        }
+
+        return new DockLayoutState(result, documentsProportion);
+    }
+
+    private static JsonObject WriteDockLayout(DockLayoutState state) => new()
+    {
+        ["regions"] = new JsonArray(state.Regions.Select(r => (JsonNode?)new JsonObject
+        {
+            ["dock_id"] = r.DockId,
+            ["proportion"] = r.Proportion,
+            ["tool_ids"] = new JsonArray(r.ToolIds.Select(t => (JsonNode?)JsonValue.Create(t)).ToArray()),
+            ["active_tool_id"] = r.ActiveToolId,
+        }).ToArray()),
+        ["documents_proportion"] = state.DocumentsProportion,
+    };
 
     private void WriteSilent(string key, string value) => _file.SetRaw(Group, key, value);
 

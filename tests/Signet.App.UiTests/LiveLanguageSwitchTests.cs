@@ -60,7 +60,7 @@ public sealed class LiveLanguageSwitchTests
     {
         CultureInfo previous = CultureInfo.CurrentUICulture;
         string root = Path.Combine(Path.GetTempPath(), "Signet.Tests", "lang-" + Guid.NewGuid().ToString("N"));
-        SettingsStore settings = new(Path.Combine(root, "settings.json"));
+        SettingsStore settings = new(Path.Combine(root, "settings.xml"));
         LocalizationManager manager = new(settings, NullLogger<LocalizationManager>.Instance);
         Listener listener = new();
         Strings.RegisterLanguageAware(listener);

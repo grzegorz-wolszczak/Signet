@@ -106,7 +106,7 @@ public sealed class StartupArgumentsTests
     {
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp, "last.epub");
-        SettingsStore settings = new(temp.Combine("settings.json"));
+        SettingsStore settings = new(temp.Combine("settings.xml"));
         settings.ReopenLastFileOnStartup = true;
         settings.RecentFiles = new[] { epub };
 

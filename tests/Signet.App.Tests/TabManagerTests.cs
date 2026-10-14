@@ -123,7 +123,7 @@ public sealed class TabManagerTests
         using TempDir temp = new();
         using Book book = Load(temp);
         SettingsStore settings = new(System.IO.Path.Combine(
-            System.IO.Path.GetTempPath(), $"signet-tabs-{System.Guid.NewGuid():N}.json"));
+            System.IO.Path.GetTempPath(), $"signet-tabs-{System.Guid.NewGuid():N}.xml"));
         StatusBarService statusBar = new();
         List<Resource> resources = ThreeResources(book);
         SpellChecker spellChecker = new(
@@ -156,7 +156,7 @@ public sealed class TabManagerTests
         using TempDir temp = new();
         using Book book = Load(temp);
         SettingsStore settings = new(System.IO.Path.Combine(
-            System.IO.Path.GetTempPath(), $"signet-tabs-{System.Guid.NewGuid():N}.json"));
+            System.IO.Path.GetTempPath(), $"signet-tabs-{System.Guid.NewGuid():N}.xml"));
         StatusBarService statusBar = new();
         Resource html = book.GetAllResources().First(r => r.Type == ResourceType.Html);
         SpellChecker spellChecker = new(

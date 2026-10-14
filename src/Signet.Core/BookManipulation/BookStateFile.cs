@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text.Json;
+using System.Xml.Linq;
+using Signet.Core.Misc;
 using Signet.Core.Resources;
 using SysPath = System.IO.Path;
 
@@ -23,27 +23,45 @@ namespace Signet.Core.BookManipulation;
 public static class BookStateFile
 {
     /// <summary>The file name in the publication's root folder.</summary>
-    public const string FileName = ".signet-state.json";
+    public const string FileName = ".signet-state.xml";
 
     /// <summary>
-    /// Writes the state of <paramref name="book"/> to <see cref="FileName"/> in its working folder.
+    /// The name of the file in checkpoints made before the state was stored as XML. It is no longer read, but — like
+    /// <see cref="FileName"/> — it is never part of the book.
+    /// </summary>
+    public const string LegacyFileName = ".signet-state.json";
+
+    private const string RootElement = "signet_state";
+    private const string FontElement = "font";
+    private const string BookPathAttribute = "book_path";
+    private const string ObfuscationAttribute = "obfuscation";
+
+    /// <summary>Whether the book path (relative to the publication's root folder) is a state file, not a book file.</summary>
+    public static bool IsStateFile(string bookPath) =>
+        string.Equals(bookPath, FileName, StringComparison.Ordinal)
+        || string.Equals(bookPath, LegacyFileName, StringComparison.Ordinal);
+
+    /// <summary>
+    /// Writes the state of <paramref name="book"/> to <see cref="FileName"/> in its working folder:
+    /// <c>&lt;signet_state&gt;&lt;font book_path="…" obfuscation="…" /&gt;&lt;/signet_state&gt;</c>.
     /// </summary>
     public static void Write(Book book)
     {
         ArgumentNullException.ThrowIfNull(book);
 
-        Dictionary<string, string> fonts = new(StringComparer.Ordinal);
+        XElement root = new(RootElement);
         foreach (FontResource font in book.GetFolderKeeper().GetResourceTypeList<FontResource>())
         {
             if (!string.IsNullOrEmpty(font.ObfuscationAlgorithm))
             {
-                fonts[font.BookPath] = font.ObfuscationAlgorithm;
+                root.Add(new XElement(
+                    FontElement,
+                    new XAttribute(BookPathAttribute, font.BookPath),
+                    new XAttribute(ObfuscationAttribute, font.ObfuscationAlgorithm)));
             }
         }
 
-        State state = new() { FontObfuscation = fonts };
-        string path = SysPath.Combine(book.GetFolderKeeper().MainFolderPath, FileName);
-        File.WriteAllText(path, JsonSerializer.Serialize(state));
+        XmlConfig.Save(SysPath.Combine(book.GetFolderKeeper().MainFolderPath, FileName), new XDocument(root));
     }
 
     /// <summary>
@@ -54,27 +72,22 @@ public static class BookStateFile
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(rootDirectory);
 
-        string path = SysPath.Combine(rootDirectory, FileName);
-        if (!File.Exists(path))
+        Dictionary<string, string> fonts = new(StringComparer.Ordinal);
+        if (XmlConfig.TryLoad(SysPath.Combine(rootDirectory, FileName))?.Root is not { } root || root.Name != RootElement)
         {
-            return new Dictionary<string, string>(StringComparer.Ordinal);
+            return fonts;
         }
 
-        try
+        foreach (XElement font in root.Elements(FontElement))
         {
-            State? state = JsonSerializer.Deserialize<State>(File.ReadAllText(path));
-            return state?.FontObfuscation is { } fonts
-                ? new Dictionary<string, string>(fonts, StringComparer.Ordinal)
-                : new Dictionary<string, string>(StringComparer.Ordinal);
+            string bookPath = XmlConfig.Attribute(font, BookPathAttribute);
+            string algorithm = XmlConfig.Attribute(font, ObfuscationAttribute);
+            if (bookPath.Length > 0 && algorithm.Length > 0)
+            {
+                fonts[bookPath] = algorithm;
+            }
         }
-        catch (JsonException)
-        {
-            return new Dictionary<string, string>(StringComparer.Ordinal);
-        }
-    }
 
-    private sealed class State
-    {
-        public Dictionary<string, string>? FontObfuscation { get; set; }
+        return fonts;
     }
 }

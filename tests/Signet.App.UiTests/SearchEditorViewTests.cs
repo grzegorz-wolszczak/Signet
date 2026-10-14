@@ -36,7 +36,7 @@ public sealed class SearchEditorViewTests
     private static (Window Window, SearchEditorViewModel Vm, FindReplaceViewModel FindReplace, TreeDataGrid Tree) Show(TempDir temp)
     {
         FindReplaceViewModel findReplace = new(
-            new SettingsStore(temp.Combine("settings.json")), new StatusBarService(), () => null, new Mock<IMultiFileSearchHost>().Object);
+            new SettingsStore(temp.Combine("settings.xml")), new StatusBarService(), () => null, new Mock<IMultiFileSearchHost>().Object);
         SearchEditorViewModel vm = new(new SavedSearchStore(temp.Combine("searches.xml")), findReplace);
         vm.AddGroupCommand.Execute(null);
         vm.SetSelectedNodes(System.Array.Empty<SearchEntryNodeViewModel>());

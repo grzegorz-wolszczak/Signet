@@ -20,7 +20,7 @@ namespace Signet.App.Tests;
 public sealed class FindReplaceViewModelTests : IDisposable
 {
     private readonly string _settingsPath =
-        Path.Combine(Path.GetTempPath(), $"signet-fr-{Guid.NewGuid():N}.json");
+        Path.Combine(Path.GetTempPath(), $"signet-fr-{Guid.NewGuid():N}.xml");
 
     private readonly Book _book = BookCreator.CreateNewBook("2.0");
 

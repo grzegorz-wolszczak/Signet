@@ -17,7 +17,7 @@ namespace Signet.Core.Tests.Misc;
 public sealed class SettingsStoreTests
 {
     private static SettingsStore NewStore(TempDir dir) =>
-        new(dir.Combine("settings.json"));
+        new(dir.Combine("settings.xml"));
 
     [Fact]
     public void Defaults_apply_when_file_is_missing()
@@ -45,7 +45,7 @@ public sealed class SettingsStoreTests
     public void Values_survive_save_and_reload()
     {
         using TempDir dir = new();
-        string path = dir.Combine("settings.json");
+        string path = dir.Combine("settings.xml");
 
         SettingsStore writer = new(path);
         writer.DefaultMetadataLang = "pl";
@@ -87,7 +87,7 @@ public sealed class SettingsStoreTests
     public void Empty_file_yields_defaults()
     {
         using TempDir dir = new();
-        string path = dir.Combine("settings.json");
+        string path = dir.Combine("settings.xml");
         File.WriteAllText(path, string.Empty);
 
         SettingsStore sut = new(path);
@@ -107,7 +107,7 @@ public sealed class SettingsStoreTests
     public void Open_tag_hint_appearance_is_normalized()
     {
         using TempDir dir = new();
-        SettingsStore sut = new(dir.Combine("settings.json"));
+        SettingsStore sut = new(dir.Combine("settings.xml"));
 
         sut.OpenTagHintAppearance = new OpenTagHintAppearance(" Consolas ", 500);
 
@@ -122,7 +122,7 @@ public sealed class SettingsStoreTests
     public void Open_tag_hint_delay_is_clamped(int stored, int expected)
     {
         using TempDir dir = new();
-        SettingsStore sut = new(dir.Combine("settings.json"));
+        SettingsStore sut = new(dir.Combine("settings.xml"));
 
         sut.CodeViewOpenTagHintDelayMs = stored;
 
@@ -138,7 +138,7 @@ public sealed class SettingsStoreTests
     public void Warning_font_size_is_normalized_and_0_means_the_interface_text_size(int stored, int expected)
     {
         using TempDir dir = new();
-        SettingsStore sut = new(dir.Combine("settings.json"));
+        SettingsStore sut = new(dir.Combine("settings.xml"));
 
         sut.WarningAppearance = new WarningAppearance(stored);
 
@@ -149,7 +149,7 @@ public sealed class SettingsStoreTests
     public void The_last_preferences_page_survives_a_restart_and_is_never_negative()
     {
         using TempDir dir = new();
-        string path = dir.Combine("settings.json");
+        string path = dir.Combine("settings.xml");
         SettingsStore writer = new(path);
         writer.PreferencesPageIndex.Should().Be(0);
 
@@ -165,7 +165,7 @@ public sealed class SettingsStoreTests
     public void The_font_of_the_color_scheme_previews_is_monospaced_by_default_and_survives_a_restart()
     {
         using TempDir dir = new();
-        string path = dir.Combine("settings.json");
+        string path = dir.Combine("settings.xml");
         SettingsStore writer = new(path);
         writer.ColorSchemePreviewAppearance.Should().Be(new ColorSchemePreviewAppearance("Consolas", 13));
         Fixture any = new();
@@ -181,7 +181,7 @@ public sealed class SettingsStoreTests
     public void The_preferences_splitter_sizes_survive_a_restart_without_the_ones_that_are_not_positive()
     {
         using TempDir dir = new();
-        string path = dir.Combine("settings.json");
+        string path = dir.Combine("settings.xml");
         SettingsStore writer = new(path);
         writer.PreferencesSplitterSizes.Should().BeEmpty();
 
@@ -196,23 +196,23 @@ public sealed class SettingsStoreTests
     public void The_keys_of_the_removed_dark_theme_are_dropped_on_load_and_not_saved_again()
     {
         using TempDir dir = new();
-        string path = dir.Combine("settings.json");
+        string path = dir.Combine("settings.xml");
         File.WriteAllText(path, """
-            {
-              "user_preferences": {
-                "ui_theme": "Dark",
-                "ui_custom_signet_dark_theme": true,
-                "preview_dark_in_dm": 1,
-                "warning_color_light": "#102030",
-                "warning_color_dark": "#405060",
-                "error_color_dark": "#405060",
-                "preview_highlight_color_dark": "#405060",
-                "open_tag_hint_dark_background": "#405060",
-                "open_tag_hint_dark_foreground": "#405060",
-                "cv_dark_css_comment_color": "#405060",
-                "cv_dark_font_size": 14
-              }
-            }
+            <settings>
+              <group name="user_preferences">
+                <string key="ui_theme">Dark</string>
+                <bool key="ui_custom_signet_dark_theme">true</bool>
+                <number key="preview_dark_in_dm">1</number>
+                <string key="warning_color_light">#102030</string>
+                <string key="warning_color_dark">#405060</string>
+                <string key="error_color_dark">#405060</string>
+                <string key="preview_highlight_color_dark">#405060</string>
+                <string key="open_tag_hint_dark_background">#405060</string>
+                <string key="open_tag_hint_dark_foreground">#405060</string>
+                <string key="cv_dark_css_comment_color">#405060</string>
+                <number key="cv_dark_font_size">14</number>
+              </group>
+            </settings>
             """);
 
         SettingsStore sut = new(path);
@@ -227,16 +227,16 @@ public sealed class SettingsStoreTests
     public void The_unused_code_view_colors_are_dropped_on_load()
     {
         using TempDir dir = new();
-        string path = dir.Combine("settings.json");
+        string path = dir.Combine("settings.xml");
         File.WriteAllText(path, """
-            {
-              "user_preferences": {
-                "code_view_css_comment_color": "#102030",
-                "code_view_line_number_background_color": "#405060",
-                "code_view_line_number_foreground_color": "#405060",
-                "code_view_spelling_underline_color": "#405060"
-              }
-            }
+            <settings>
+              <group name="user_preferences">
+                <string key="code_view_css_comment_color">#102030</string>
+                <string key="code_view_line_number_background_color">#405060</string>
+                <string key="code_view_line_number_foreground_color">#405060</string>
+                <string key="code_view_spelling_underline_color">#405060</string>
+              </group>
+            </settings>
             """);
 
         SettingsStore sut = new(path);
@@ -251,7 +251,7 @@ public sealed class SettingsStoreTests
     public void A_tooltip_font_is_stored_per_area_normalized_and_reset_with_the_appearance()
     {
         using TempDir dir = new();
-        string path = dir.Combine("settings.json");
+        string path = dir.Combine("settings.xml");
         SettingsStore sut = new(path);
         string family = new Fixture().Create<string>();
 
@@ -273,8 +273,8 @@ public sealed class SettingsStoreTests
     public void Corrupt_file_is_tolerated_and_yields_defaults()
     {
         using TempDir dir = new();
-        string path = dir.Combine("settings.json");
-        File.WriteAllText(path, "{ this is not valid json ][");
+        string path = dir.Combine("settings.xml");
+        File.WriteAllText(path, "<settings><group name=\"user_preferences\"><string key=");
 
         SettingsStore sut = new(path);
 
@@ -383,7 +383,7 @@ public sealed class SettingsStoreTests
     public void Reload_discards_unsaved_changes()
     {
         using TempDir dir = new();
-        string path = dir.Combine("settings.json");
+        string path = dir.Combine("settings.xml");
 
         SettingsStore sut = new(path);
         sut.DefaultMetadataLang = "fr";
@@ -399,7 +399,7 @@ public sealed class SettingsStoreTests
     public void Window_geometry_roundtrips()
     {
         using TempDir dir = new();
-        string path = dir.Combine("settings.json");
+        string path = dir.Combine("settings.xml");
 
         SettingsStore writer = new(path);
         writer.GetWindowGeometry("MainWindow").Should().BeNull();
@@ -416,7 +416,7 @@ public sealed class SettingsStoreTests
         // Regression: the values set in this session are int JSON nodes; reading them as double threw
         // (opening Preferences a second time crashed the app).
         using TempDir dir = new();
-        SettingsStore store = new(dir.Combine("settings.json"));
+        SettingsStore store = new(dir.Combine("settings.xml"));
         WindowGeometry geometry = new(0, 0, 900, 640, Maximized: false, FullScreen: false);
 
         store.SetWindowGeometry("PreferencesWindow", geometry);
@@ -428,7 +428,7 @@ public sealed class SettingsStoreTests
     public void Appearance_structs_roundtrip_and_reset()
     {
         using TempDir dir = new();
-        string path = dir.Combine("settings.json");
+        string path = dir.Combine("settings.xml");
 
         SettingsStore writer = new(path);
         writer.CodeViewAppearance.Should().Be(CodeViewAppearance.Default);
@@ -450,7 +450,7 @@ public sealed class SettingsStoreTests
     public void Extended_highlighting_is_on_by_default_and_roundtrips()
     {
         using TempDir dir = new();
-        string path = dir.Combine("settings.json");
+        string path = dir.Combine("settings.xml");
 
         SettingsStore writer = new(path);
         writer.CodeViewExtendedHighlighting.Should().BeTrue();
@@ -465,7 +465,7 @@ public sealed class SettingsStoreTests
     public void String_map_group_roundtrips_and_clears()
     {
         using TempDir dir = new();
-        string path = dir.Combine("settings.json");
+        string path = dir.Combine("settings.xml");
 
         SettingsStore writer = new(path);
         writer.GetStringMap("keyboard_shortcuts").Should().BeEmpty();
@@ -502,7 +502,7 @@ public sealed class SettingsStoreTests
     public void A_draft_reads_the_current_values_and_keeps_its_changes_to_itself()
     {
         using TempDir dir = new();
-        string path = dir.Combine("settings.json");
+        string path = dir.Combine("settings.xml");
         Fixture fixture = new();
         string original = fixture.Create<string>();
         string changed = fixture.Create<string>();

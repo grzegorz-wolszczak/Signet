@@ -11,24 +11,9 @@ using Dock.Model.Mvvm;
 using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.ViewModels;
+using Signet.Core.Misc;
 
 namespace Signet.App.Docking;
-
-/// <summary>
-/// Snapshot of a single dock region (Left/Right/Bottom) to persist — order and
-/// assignment of panels plus the region's proportion. Part of <see cref="DockLayoutState"/>.
-/// </summary>
-public sealed record DockRegionState(string DockId, double Proportion, IReadOnlyList<string> ToolIds, string? ActiveToolId);
-
-/// <summary>
-/// Snapshot of the main window's dock layout (dock layout persistence across restarts):
-/// assignment of panels to regions, their order, the region's active tab and the proportions
-/// (of the regions and of the document area). It does not cover document tabs (handled separately by
-/// <c>TabManager.CaptureSession</c>), panel visibility (handled separately by
-/// <see cref="MainDockFactory.CaptureToolVisibility"/>) or floating windows (a floating panel is saved in the region it
-/// was taken from; its window is persisted separately by <see cref="MainDockFactory.CaptureFloatingPanels"/>).
-/// </summary>
-public sealed record DockLayoutState(IReadOnlyList<DockRegionState> Regions, double DocumentsProportion);
 
 /// <summary>
 /// Dock layout factory of the main window: BookBrowser and Clips on the left, Preview and TOC
@@ -520,8 +505,7 @@ public sealed class MainDockFactory : Factory
 
     /// <summary>
     /// Snapshot of the current assignment of panels to regions, their order, the region's active tab
-    /// and the proportions — to be persisted in <c>SettingsStore.MainWindowDockLayout</c>
-    /// via <c>DockSerializer.SystemTextJson</c>.
+    /// and the proportions — to be persisted in <see cref="SettingsStore.MainWindowDockLayout"/>.
     /// </summary>
     public DockLayoutState CaptureLayoutState()
     {

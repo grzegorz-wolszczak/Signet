@@ -44,7 +44,7 @@ public sealed class CodeTabViewPasteTests
         using TempDir temp = new();
         var html = new HtmlResource(temp.Path, temp.Combine("ch.xhtml"));
         html.SetText("<p></p>");
-        SettingsStore settings = new(temp.Combine("settings.json")) { CodeViewPasteNormalizeNfc = enabled };
+        SettingsStore settings = new(temp.Combine("settings.xml")) { CodeViewPasteNormalizeNfc = enabled };
         SpellChecker spellChecker = new(settings, temp.Combine("hunspell"), temp.Combine("user"));
         var vm = new CodeTabViewModel(new TabManagerModel().OpenResource(html), new StatusBarService(), settings, spellChecker);
         var window = new Window { Width = 600, Height = 300, Content = new CodeTabView { DataContext = vm } };

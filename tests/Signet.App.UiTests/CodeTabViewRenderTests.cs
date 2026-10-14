@@ -34,7 +34,7 @@ public sealed class CodeTabViewRenderTests
     private static (SettingsStore Settings, SpellChecker SpellChecker) NewSpellChecker()
     {
         string root = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"signet-uitests-{System.Guid.NewGuid():N}");
-        SettingsStore settings = new(System.IO.Path.Combine(root, "settings.json"));
+        SettingsStore settings = new(System.IO.Path.Combine(root, "settings.xml"));
         SpellChecker spellChecker = new(
             settings,
             System.IO.Path.Combine(root, "hunspell_dictionaries"),

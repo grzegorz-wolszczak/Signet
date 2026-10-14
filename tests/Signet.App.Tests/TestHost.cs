@@ -16,7 +16,7 @@ internal sealed class TestHost : IDisposable
 {
     public TestHost()
     {
-        SettingsPath = Path.Combine(Path.GetTempPath(), "Signet.Tests", $"app-{Guid.NewGuid():N}.json");
+        SettingsPath = Path.Combine(Path.GetTempPath(), "Signet.Tests", $"app-{Guid.NewGuid():N}.xml");
         Settings = new SettingsStore(SettingsPath);
         StatusBar = new StatusBarService();
         Shortcuts = new KeyboardShortcutManager(Settings);

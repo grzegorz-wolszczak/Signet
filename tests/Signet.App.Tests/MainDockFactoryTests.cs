@@ -1,11 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json;
 using AwesomeAssertions;
 using Dock.Model.Controls;
 using Dock.Model.Core;
 using Signet.App.Docking;
+using Signet.Core.Misc;
+using Signet.Core.Tests.TestSupport;
 using Xunit;
 
 namespace Signet.App.Tests;
@@ -37,17 +38,37 @@ public sealed class MainDockFactoryTests
             documents);
 
     [Fact]
-    public void Saved_side_widths_survive_a_json_round_trip_into_a_fresh_layout()
+    public void Saved_side_widths_survive_a_settings_round_trip_into_a_fresh_layout()
     {
+        using TempDir dir = new();
+        string path = dir.Combine("settings.xml");
         MainDockFactory before = NewFactory();
         before.ApplySideRegionWidths(Saved(0.22, 0.33));
-        string json = JsonSerializer.Serialize(before.CaptureLayoutState());
+        SettingsStore settings = new(path);
+        settings.MainWindowDockLayout = before.CaptureLayoutState();
+        settings.Save();
 
         MainDockFactory after = NewFactory();
-        after.ApplySideRegionWidths(JsonSerializer.Deserialize<DockLayoutState>(json)!);
+        after.ApplySideRegionWidths(new SettingsStore(path).MainWindowDockLayout!);
 
         Width(after, "LeftDock").Should().BeApproximately(0.22, 1e-9);
         Width(after, "RightDock").Should().BeApproximately(0.33, 1e-9);
+    }
+
+    [Fact]
+    public void The_dock_layout_is_stored_as_structure_in_the_settings_file()
+    {
+        using TempDir dir = new();
+        string path = dir.Combine("settings.xml");
+        DockLayoutState state = Saved(0.22, 0.33);
+        SettingsStore settings = new(path);
+        settings.MainWindowDockLayout = state;
+        settings.Save();
+
+        DockLayoutState reloaded = new SettingsStore(path).MainWindowDockLayout!;
+
+        reloaded.Should().BeEquivalentTo(state, o => o.WithStrictOrdering());
+        System.IO.File.ReadAllText(path).Should().Contain("<object key=\"main_window_dock_layout\">").And.NotContain("{");
     }
 
     [Fact]

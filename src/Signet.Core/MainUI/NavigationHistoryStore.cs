@@ -1,14 +1,24 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Text.Json;
+using System.Xml.Linq;
+using Signet.Core.Misc;
 
 namespace Signet.Core.MainUI;
 
 /// <summary>
-/// Keeps the <see cref="NavigationHistory"/> of saved books between sessions in one JSON file, per EPUB file path.
+/// Keeps the <see cref="NavigationHistory"/> of saved books between sessions in one XML file, per EPUB file path:
+/// <code>
+/// &lt;navigation_history&gt;
+///   &lt;book file="/books/a.epub"&gt;
+///     &lt;back&gt;&lt;place book_path="OEBPS/Text/c1.xhtml" offset="120" line="7" time="2026-10-14T12:00:00.0000000+02:00" /&gt;&lt;/back&gt;
+///     &lt;forward /&gt;
+///     &lt;edited /&gt;
+///   &lt;/book&gt;
+/// &lt;/navigation_history&gt;
+/// </code>
 /// Places older than the given number of days are dropped on every load and save (a book left without places is
 /// removed from the file), so the file does not grow with every book ever edited.
 /// </summary>
@@ -17,13 +27,18 @@ public sealed class NavigationHistoryStore
     /// <summary>The longest time (days) a place is kept.</summary>
     public const int MaxDays = 14;
 
-    private static readonly Encoding Utf8NoBom = new UTF8Encoding(false);
-    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+    private const string RootElement = "navigation_history";
+    private const string BookElement = "book";
+    private const string FileAttribute = "file";
+    private const string BackElement = "back";
+    private const string ForwardElement = "forward";
+    private const string EditedElement = "edited";
+    private const string PlaceElement = "place";
 
     private readonly string _path;
     private readonly Func<DateTimeOffset> _clock;
 
-    /// <summary>Creates a store on the given JSON file.</summary>
+    /// <summary>Creates a store on the given XML file.</summary>
     /// <param name="filePath">The file holding the histories.</param>
     /// <param name="clock">The current time (for expiry); <see cref="DateTimeOffset.Now"/> by default.</param>
     public NavigationHistoryStore(string filePath, Func<DateTimeOffset>? clock = null)
@@ -96,35 +111,65 @@ public sealed class NavigationHistoryStore
 
     private Dictionary<string, BookEntry> Read()
     {
-        try
+        // An unreadable file only costs the saved history.
+        Dictionary<string, BookEntry> books = new(StringComparer.Ordinal);
+        if (XmlConfig.TryLoad(_path)?.Root is not { } root || root.Name != RootElement)
         {
-            if (!File.Exists(_path))
-            {
-                return new Dictionary<string, BookEntry>(StringComparer.Ordinal);
-            }
+            return books;
+        }
 
-            FileContent? content = JsonSerializer.Deserialize<FileContent>(File.ReadAllText(_path), JsonOptions);
-            return new Dictionary<string, BookEntry>(content?.Books ?? new Dictionary<string, BookEntry>(), StringComparer.Ordinal);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+        foreach (XElement book in root.Elements(BookElement))
         {
-            // An unreadable file only costs the saved history.
-            return new Dictionary<string, BookEntry>(StringComparer.Ordinal);
+            if (book.Attribute(FileAttribute)?.Value is { Length: > 0 } key)
+            {
+                books[key] = new BookEntry
+                {
+                    Back = ReadPlaces(book.Element(BackElement)),
+                    Forward = ReadPlaces(book.Element(ForwardElement)),
+                    Edited = ReadPlaces(book.Element(EditedElement)),
+                };
+            }
         }
+
+        return books;
     }
 
     private void Write(Dictionary<string, BookEntry> books)
     {
-        string? dir = Path.GetDirectoryName(_path);
-        if (!string.IsNullOrEmpty(dir))
+        XElement root = new(
+            RootElement,
+            books.Select(pair => new XElement(
+                BookElement,
+                new XAttribute(FileAttribute, pair.Key),
+                WritePlaces(BackElement, pair.Value.Back),
+                WritePlaces(ForwardElement, pair.Value.Forward),
+                WritePlaces(EditedElement, pair.Value.Edited))));
+        XmlConfig.Save(_path, new XDocument(root));
+    }
+
+    private static List<PlaceEntry> ReadPlaces(XElement? list)
+    {
+        List<PlaceEntry> places = new();
+        foreach (XElement place in list?.Elements(PlaceElement) ?? Enumerable.Empty<XElement>())
         {
-            Directory.CreateDirectory(dir);
+            if (int.TryParse(XmlConfig.Attribute(place, "offset"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int offset)
+                && int.TryParse(XmlConfig.Attribute(place, "line"), NumberStyles.Integer, CultureInfo.InvariantCulture, out int line)
+                && DateTimeOffset.TryParse(XmlConfig.Attribute(place, "time"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTimeOffset time))
+            {
+                places.Add(new PlaceEntry { BookPath = XmlConfig.Attribute(place, "book_path"), Offset = offset, Line = line, Time = time });
+            }
         }
 
-        string tempPath = _path + ".tmp";
-        File.WriteAllText(tempPath, JsonSerializer.Serialize(new FileContent { Books = books }, JsonOptions), Utf8NoBom);
-        File.Move(tempPath, _path, overwrite: true);
+        return places;
     }
+
+    private static XElement WritePlaces(string name, List<PlaceEntry> places) =>
+        new(name, places.Select(p => new XElement(
+            PlaceElement,
+            new XAttribute("book_path", p.BookPath),
+            new XAttribute("offset", p.Offset.ToString(CultureInfo.InvariantCulture)),
+            new XAttribute("line", p.Line.ToString(CultureInfo.InvariantCulture)),
+            new XAttribute("time", p.Time.ToString("O", CultureInfo.InvariantCulture)))));
 
     private static List<NavigationPlace> ToPlaces(List<PlaceEntry> entries) =>
         entries.Where(e => !string.IsNullOrEmpty(e.BookPath))
@@ -133,11 +178,6 @@ public sealed class NavigationHistoryStore
 
     private static List<PlaceEntry> ToEntries(IEnumerable<NavigationPlace> places) =>
         places.Select(p => new PlaceEntry { BookPath = p.BookPath, Offset = p.Offset, Line = p.Line, Time = p.Time }).ToList();
-
-    private sealed class FileContent
-    {
-        public Dictionary<string, BookEntry> Books { get; set; } = new();
-    }
 
     private sealed class BookEntry
     {

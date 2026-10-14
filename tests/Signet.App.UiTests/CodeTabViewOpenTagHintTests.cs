@@ -51,7 +51,7 @@ public sealed class CodeTabViewOpenTagHintTests
         var html = new HtmlResource(temp.Path, temp.Combine("ch.xhtml"));
         html.SetText(Xhtml);
         OpenTab tab = new TabManagerModel().OpenResource(html);
-        SettingsStore settings = new(temp.Combine("settings.json"));
+        SettingsStore settings = new(temp.Combine("settings.xml"));
         configure(settings);
         SpellChecker spellChecker = new(settings, temp.Combine("hunspell"), temp.Combine("user"));
         var vm = new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker);

@@ -53,7 +53,7 @@ public sealed class BookBrowserTreeTests
     {
         using TempDir temp = new();
         using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3WithNcx, temp)).GetBook();
-        SettingsStore settings = new(temp.Combine("settings.json"));
+        SettingsStore settings = new(temp.Combine("settings.xml"));
         (Window window, BookBrowserViewModel vm, BookBrowserView view, TreeDataGrid tree) = Show(settings, book);
         Headers(tree).Should().Equal(Strings.Get("ReportsWindow_Name"));
         tree.CanUserSortColumns.Should().BeFalse("the order of the files is the book's");
@@ -86,7 +86,7 @@ public sealed class BookBrowserTreeTests
     {
         using TempDir temp = new();
         using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3WithNcx, temp)).GetBook();
-        (Window window, _, _, TreeDataGrid tree) = Show(new SettingsStore(temp.Combine("settings.json")), book);
+        (Window window, _, _, TreeDataGrid tree) = Show(new SettingsStore(temp.Combine("settings.xml")), book);
         TreeDataGridColumnHeader header = tree.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().First(h => h.IsVisible);
 
         header.RaiseEvent(new ContextRequestedEventArgs());
@@ -105,7 +105,7 @@ public sealed class BookBrowserTreeTests
     {
         using TempDir temp = new();
         using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3WithNcx, temp)).GetBook();
-        (Window window, BookBrowserViewModel vm, _, TreeDataGrid tree) = Show(new SettingsStore(temp.Combine("settings.json")), book);
+        (Window window, BookBrowserViewModel vm, _, TreeDataGrid tree) = Show(new SettingsStore(temp.Combine("settings.xml")), book);
         BookBrowserNode textFolder = vm.Nodes.Single(n => n.Header == "Text");
         int folder = vm.Nodes.IndexOf(textFolder);
 

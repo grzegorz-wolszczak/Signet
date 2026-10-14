@@ -105,7 +105,7 @@ public sealed class ExportEpub
 
             // Neither the working folder's lock file nor the checkpoint state file may end up in the EPUB.
             if (string.Equals(firstSegment, TempFolder.LockFileName, StringComparison.Ordinal)
-                || string.Equals(firstSegment, BookStateFile.FileName, StringComparison.Ordinal))
+                || BookStateFile.IsStateFile(firstSegment))
             {
                 continue;
             }

@@ -15,4 +15,4 @@ Copyright (C) 2008-2026 Kovid Goyal &lt;kovid@kovidgoyal.net&gt;, licensed under
 
 The icons are colored and are loaded as a `Bitmap` by `IconThemeManager` under all built-in
 icon sets (Default / Fluent / Material). The "Custom" set can override them by providing
-its own SVG path under the same key in `icons.json`.
+its own SVG path under the same key in `icons.xml`.

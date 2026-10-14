@@ -20,7 +20,7 @@ public sealed class ThemeFontsTests
     public void The_fonts_of_the_settings_cover_every_place_with_their_values()
     {
         using TempDir dir = new();
-        SettingsStore settings = new(dir.Combine("settings.json"))
+        SettingsStore settings = new(dir.Combine("settings.xml"))
         {
             UiFont = "Inter",
             UiFontSize = 13,

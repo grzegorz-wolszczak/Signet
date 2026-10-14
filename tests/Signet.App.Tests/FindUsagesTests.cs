@@ -172,7 +172,7 @@ public sealed class FindUsagesTests : IDisposable
     public void The_grouping_is_remembered_in_the_settings()
     {
         using TempDir dir = new();
-        SettingsStore settings = new(dir.Combine("settings.json"));
+        SettingsStore settings = new(dir.Combine("settings.xml"));
         FindUsagesViewModel panel = new(settings) { GroupByFile = true };
 
         settings.FindUsagesGroupByFile.Should().BeTrue();

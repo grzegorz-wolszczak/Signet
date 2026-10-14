@@ -17,7 +17,7 @@ internal static class SpellCheckTestFactory
     public static (SettingsStore Settings, SpellChecker SpellChecker) New()
     {
         string root = Path.Combine(Path.GetTempPath(), "Signet.Tests", "spellcheck-" + Guid.NewGuid().ToString("N"));
-        SettingsStore settings = new(Path.Combine(root, "settings.json"));
+        SettingsStore settings = new(Path.Combine(root, "settings.xml"));
         SpellChecker spellChecker = new(
             settings,
             Path.Combine(root, "hunspell_dictionaries"),

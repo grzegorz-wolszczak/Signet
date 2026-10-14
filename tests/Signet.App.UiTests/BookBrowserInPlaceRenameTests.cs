@@ -36,7 +36,7 @@ public sealed class BookBrowserInPlaceRenameTests
     private static (Window Window, BookBrowserViewModel ViewModel, BookBrowserNode File) ShowBrowser(Book book)
     {
         SettingsStore settings = new(System.IO.Path.Combine(
-            System.IO.Path.GetTempPath(), $"signet-bbui-{System.Guid.NewGuid():N}.json"));
+            System.IO.Path.GetTempPath(), $"signet-bbui-{System.Guid.NewGuid():N}.xml"));
         BookBrowserViewModel vm = new(settings, new StatusBarService());
         vm.SetBook(book);
 

@@ -66,7 +66,8 @@ public sealed class BookComparerTests
     {
         using TempDir temp = new();
         (string left, string right) = TwoCopies(temp);
-        File.WriteAllText(Path.Combine(right, BookStateFile.FileName), "{}");
+        File.WriteAllText(Path.Combine(right, BookStateFile.FileName), "<signet_state />");
+        File.WriteAllText(Path.Combine(right, BookStateFile.LegacyFileName), "{}");
         File.WriteAllText(Path.Combine(right, TempFolder.LockFileName), string.Empty);
 
         BookComparer.Compare(left, right).Should().BeEmpty();

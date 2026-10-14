@@ -56,7 +56,7 @@ public sealed class CodeTabViewCtrlEndTests
         var html = new HtmlResource(temp.Path, temp.Combine("ch.xhtml"));
         html.SetText(LongParagraphs());
         OpenTab tab = new TabManagerModel().OpenResource(html);
-        SettingsStore settings = new(temp.Combine("settings.json"));
+        SettingsStore settings = new(temp.Combine("settings.xml"));
         settings.CodeViewWordWrap = true;
         SpellChecker spellChecker = new(settings, temp.Combine("hunspell"), temp.Combine("user"));
         var vm = new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker);

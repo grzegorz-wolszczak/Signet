@@ -24,7 +24,7 @@ public sealed class BookBrowserViewModelTests
     private static BookBrowserViewModel NewViewModel(out SettingsStore settings)
     {
         settings = new SettingsStore(System.IO.Path.Combine(
-            System.IO.Path.GetTempPath(), $"signet-bb-{System.Guid.NewGuid():N}.json"));
+            System.IO.Path.GetTempPath(), $"signet-bb-{System.Guid.NewGuid():N}.xml"));
         return new BookBrowserViewModel(settings, new StatusBarService());
     }
 
@@ -865,7 +865,7 @@ public sealed class BookBrowserViewModelTests
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
         StatusBarService status = new();
-        SettingsStore settings = new(temp.Combine("s.json"));
+        SettingsStore settings = new(temp.Combine("s.xml"));
         BookBrowserViewModel sut = new(settings, status);
         sut.SetBook(book);
 
@@ -954,7 +954,7 @@ public sealed class BookBrowserViewModelTests
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
         StatusBarService status = new();
-        SettingsStore settings = new(temp.Combine("s.json"));
+        SettingsStore settings = new(temp.Combine("s.xml"));
         BookBrowserViewModel sut = new(settings, status);
         sut.SetBook(book);
         BookBrowserNode images = sut.Nodes.Single(n => n.Header == "Images");

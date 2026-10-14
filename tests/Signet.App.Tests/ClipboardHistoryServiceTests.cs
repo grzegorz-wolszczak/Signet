@@ -12,7 +12,7 @@ namespace Signet.App.Tests;
 /// </summary>
 public sealed class ClipboardHistoryServiceTests
 {
-    private static SettingsStore NewSettings() => new(Path.Combine(Path.GetTempPath(), $"cliphist-{System.Guid.NewGuid():N}.json"));
+    private static SettingsStore NewSettings() => new(Path.Combine(Path.GetTempPath(), $"cliphist-{System.Guid.NewGuid():N}.xml"));
 
     [Fact]
     public void ApplyClipboardText_NewValue_AddsToFrontAndPersists()

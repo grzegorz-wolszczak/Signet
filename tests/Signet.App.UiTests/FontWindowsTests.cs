@@ -25,7 +25,7 @@ public sealed class FontWindowsTests
     {
         Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, temp)).GetBook();
         BookBrowserViewModel host = new(
-            new SettingsStore(Path.Combine(Path.GetTempPath(), $"signet-fontui-{System.Guid.NewGuid():N}.json")), new StatusBarService());
+            new SettingsStore(Path.Combine(Path.GetTempPath(), $"signet-fontui-{System.Guid.NewGuid():N}.xml")), new StatusBarService());
         host.SetBook(book);
         string regular = temp.Combine("Acme-Regular.ttf");
         string bold = temp.Combine("Acme-Bold.ttf");

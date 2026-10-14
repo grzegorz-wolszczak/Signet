@@ -55,7 +55,7 @@ public sealed class PreferencesWindowRenderTests
     private static PreferencesWindow BuildWindow(out SettingsStore settings)
     {
         string root = Path.Combine(Path.GetTempPath(), "Signet.Tests", "prefs-ui-" + Guid.NewGuid().ToString("N"));
-        settings = new(Path.Combine(root, "settings.json"));
+        settings = new(Path.Combine(root, "settings.xml"));
         SpellChecker spellChecker = new(settings, Path.Combine(root, "hunspell"), Path.Combine(root, "user"));
         LocalizationManager localization = new(settings, NullLogger<LocalizationManager>.Instance);
         IconThemeManager iconTheme = new(settings, NullLogger<IconThemeManager>.Instance);
@@ -1008,7 +1008,7 @@ public sealed class PreferencesWindowRenderTests
     public void Ui_font_is_applied_live_and_reset_restores_the_default()
     {
         string root = Path.Combine(Path.GetTempPath(), "Signet.Tests", "uifont-" + Guid.NewGuid().ToString("N"));
-        SettingsStore settings = new(Path.Combine(root, "settings.json"));
+        SettingsStore settings = new(Path.Combine(root, "settings.xml"));
         UiDensityManager manager = new(
             settings, new IconThemeManager(settings, NullLogger<IconThemeManager>.Instance), NullLogger<UiDensityManager>.Instance);
         TextBlock text = new() { Text = "Wycinki" };

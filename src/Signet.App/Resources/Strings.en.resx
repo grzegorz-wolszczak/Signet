@@ -242,8 +242,8 @@
   <data name="EmptyLayoutWindow_SaveEllipsis" xml:space="preserve">
     <value>Save…</value>
   </data>
-  <data name="EmptyLayoutWindow_JsonFileType" xml:space="preserve">
-    <value>EPUB Layout (JSON)</value>
+  <data name="EmptyLayoutWindow_XmlFileType" xml:space="preserve">
+    <value>EPUB Layout (XML)</value>
   </data>
   <data name="EmptyLayoutWindow_NewFolderNamePrompt" xml:space="preserve">
     <value>Name of the new folder:</value>

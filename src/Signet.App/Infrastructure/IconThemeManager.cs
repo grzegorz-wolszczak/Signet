@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
+using System.Xml.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
@@ -27,16 +27,16 @@ namespace Signet.App.Infrastructure;
 /// <see cref="LocalizationManager"/> and the appearance fields in Preferences) — simpler than
 /// switching live resources for all open windows/dialogs at once.
 ///
-/// The <c>custom</c> variant: instead of a built-in set, an <c>icons.json</c> file is loaded at
-/// runtime (a map <c>{"icon-key": "SVG path data"}</c>, keys identical to those in
-/// <c>FluentIcons.axaml</c>/<c>MaterialIcons.axaml</c>, values in the SVG path
+/// The <c>custom</c> variant: instead of a built-in set, an <c>icons.xml</c> file is loaded at
+/// runtime (<c>&lt;icons&gt;&lt;icon key="icon-key"&gt;SVG path data&lt;/icon&gt;&lt;/icons&gt;</c>, keys identical to
+/// those in <c>FluentIcons.axaml</c>/<c>MaterialIcons.axaml</c>, values in the SVG path
 /// mini-language parsed by <see cref="Geometry.Parse(string)"/>) from the folder
-/// selected in Preferences. JSON (not an Avalonia <c>ResourceDictionary</c>) is a deliberate choice —
-/// loading and compiling an arbitrary <c>.axaml</c> at runtime would require the additional
+/// selected in Preferences. A plain key→path list (not an Avalonia <c>ResourceDictionary</c>) is a deliberate
+/// choice — loading and compiling an arbitrary <c>.axaml</c> at runtime would require the additional
 /// dependency <c>Avalonia.Markup.Xaml.Loader</c> (runtime XAML compiler), which is not used anywhere
 /// else; a simple key→SVG path map covers the same use case without it.
 /// The "Custom" set stays single-color (a <see cref="Geometry"/> rendered by
-/// <c>PathIcon</c> in the text color) — the <c>icons.json</c> format does not carry colors.
+/// <c>PathIcon</c> in the text color) — the <c>icons.xml</c> format does not carry colors.
 /// </remarks>
 public sealed class IconThemeManager(SettingsStore settings, ILogger<IconThemeManager> logger)
 {
@@ -177,7 +177,7 @@ public sealed class IconThemeManager(SettingsStore settings, ILogger<IconThemeMa
             return null;
         }
 
-        string path = Path.Combine(customFolder, "icons.json");
+        string path = Path.Combine(customFolder, CustomIconFileName);
         if (!File.Exists(path))
         {
             _logger.LogWarning("Custom icon set: file {Path} not found, using the default set", path);
@@ -186,10 +186,10 @@ public sealed class IconThemeManager(SettingsStore settings, ILogger<IconThemeMa
 
         try
         {
-            string json = File.ReadAllText(path);
-            Dictionary<string, string>? entries = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
-            if (entries is null || entries.Count == 0)
+            IReadOnlyDictionary<string, string> entries = ReadCustomIcons(path);
+            if (entries.Count == 0)
             {
+                _logger.LogWarning("Custom icon set: no icons read from {Path}, using the default set", path);
                 return null;
             }
 
@@ -213,6 +213,31 @@ public sealed class IconThemeManager(SettingsStore settings, ILogger<IconThemeMa
             _logger.LogWarning(ex, "Failed to load the custom icon set from {Path}", path);
             return null;
         }
+    }
+
+    /// <summary>The file of the custom icon set in its folder.</summary>
+    public const string CustomIconFileName = "icons.xml";
+
+    /// <summary>
+    /// Reads a custom icon set file — <c>&lt;icons&gt;&lt;icon key="…"&gt;SVG path data&lt;/icon&gt;&lt;/icons&gt;</c> — into
+    /// a key → path data map; an unreadable file or another document yields an empty map.
+    /// </summary>
+    public static IReadOnlyDictionary<string, string> ReadCustomIcons(string path)
+    {
+        Dictionary<string, string> icons = new(StringComparer.Ordinal);
+        if (XmlConfig.TryLoad(path)?.Root is { Name.LocalName: "icons" } root)
+        {
+            foreach (XElement icon in root.Elements("icon"))
+            {
+                string key = XmlConfig.Attribute(icon, "key");
+                if (key.Length > 0)
+                {
+                    icons[key] = icon.Value.Trim();
+                }
+            }
+        }
+
+        return icons;
     }
 
     private static string Normalize(string code) =>

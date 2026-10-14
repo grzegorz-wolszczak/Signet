@@ -24,7 +24,7 @@ public sealed class FindReplaceLayoutTests
 {
     private static (Window Window, FindReplaceView View, FindReplaceViewModel Vm) Show(TempDir temp)
     {
-        SettingsStore settings = new(Path.Combine(temp.Path, "settings.json"));
+        SettingsStore settings = new(Path.Combine(temp.Path, "settings.xml"));
         new IconThemeManager(settings, NullLogger<IconThemeManager>.Instance).ApplySaved();
         FindReplaceViewModel vm = new(settings, new StatusBarService(), () => (CodeTabViewModel?)null, Mock.Of<IMultiFileSearchHost>());
         FindReplaceView view = new() { DataContext = vm };
