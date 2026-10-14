@@ -333,3 +333,19 @@ public sealed record EditionPageSettings(
     public override int GetHashCode() =>
         HashCode.Combine(Enabled, Position, Fields.Count, HashCode.Combine(ShowProgram, ShowVersion, ShowRevision, ShowDate), AddToToc, Title, HeadingLevel);
 }
+
+/// <summary>
+/// Snapshot of a single dock region (Left/Right/Bottom) to persist — order and
+/// assignment of panels plus the region's proportion. Part of <see cref="DockLayoutState"/>.
+/// </summary>
+public sealed record DockRegionState(string DockId, double Proportion, IReadOnlyList<string> ToolIds, string? ActiveToolId);
+
+/// <summary>
+/// Snapshot of the main window's dock layout (dock layout persistence across restarts):
+/// assignment of panels to regions, their order, the region's active tab and the proportions
+/// (of the regions and of the document area). It does not cover document tabs (handled separately by
+/// <c>TabManager.CaptureSession</c>), panel visibility (handled separately by
+/// <c>MainDockFactory.CaptureToolVisibility</c>) or floating windows (a floating panel is saved in the region it
+/// was taken from; its window is persisted separately by <c>MainDockFactory.CaptureFloatingPanels</c>).
+/// </summary>
+public sealed record DockLayoutState(IReadOnlyList<DockRegionState> Regions, double DocumentsProportion);

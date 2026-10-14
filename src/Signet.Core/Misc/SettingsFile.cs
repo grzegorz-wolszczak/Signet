@@ -1,29 +1,21 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Signet.Core.Misc;
 
 /// <summary>
-/// Low-level layer over the JSON settings file. The file is a two-level object
-/// <c>{ "group": { "key": value } }</c> — settings are organized in groups
-/// (e.g. the <c>user_preferences</c> group).
+/// Low-level layer over the XML settings file. The settings are a two-level object
+/// <c>{ "group": { "key": value } }</c> held in memory as JSON nodes — settings are organized in groups
+/// (e.g. the <c>user_preferences</c> group); <see cref="SettingsXml"/> maps it to and from the file.
 /// </summary>
 /// <remarks>
-/// Reading is lenient: a missing file, an empty file or invalid JSON yield an
-/// empty store (no exception). Saving is atomic (temporary file + <c>File.Move</c>).
+/// Reading is lenient: a missing file, an empty file or invalid XML yield an
+/// empty store (no exception). Saving is atomic (<see cref="XmlConfig.Save"/>).
 /// The class is not thread-safe.
 /// </remarks>
 internal sealed class SettingsFile
 {
-    private static readonly JsonSerializerOptions WriteOptions = new()
-    {
-        WriteIndented = true,
-    };
-
     private readonly string _path;
     private readonly bool _detached;
     private JsonObject _root;
@@ -169,46 +161,8 @@ internal sealed class SettingsFile
             return;
         }
 
-        string? dir = System.IO.Path.GetDirectoryName(_path);
-        if (!string.IsNullOrEmpty(dir))
-        {
-            Directory.CreateDirectory(dir);
-        }
-
-        string json = _root.ToJsonString(WriteOptions);
-        string tempPath = _path + ".tmp";
-        File.WriteAllText(tempPath, json, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-        File.Move(tempPath, _path, overwrite: true);
+        XmlConfig.Save(_path, SettingsXml.ToDocument(_root));
     }
 
-    private static JsonObject Load(string path)
-    {
-        try
-        {
-            if (!File.Exists(path))
-            {
-                return new JsonObject();
-            }
-
-            string text = File.ReadAllText(path);
-            if (string.IsNullOrWhiteSpace(text))
-            {
-                return new JsonObject();
-            }
-
-            return JsonNode.Parse(text) as JsonObject ?? new JsonObject();
-        }
-        catch (JsonException)
-        {
-            return new JsonObject();
-        }
-        catch (IOException)
-        {
-            return new JsonObject();
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return new JsonObject();
-        }
-    }
+    private static JsonObject Load(string path) => SettingsXml.FromDocument(XmlConfig.TryLoad(path));
 }

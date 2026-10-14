@@ -309,7 +309,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
     /// <summary>
     /// Folder with the custom icon set (the "Custom" variant) — it should
-    /// contain an <c>icons.json</c> file. The effect is visible after a restart together with a change of
+    /// contain an <c>icons.xml</c> file. The effect is visible after a restart together with a change of
     /// <see cref="SelectedIconTheme"/>.
     /// </summary>
     [ObservableProperty]

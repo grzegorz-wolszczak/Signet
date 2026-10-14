@@ -20,7 +20,7 @@ namespace Signet.App.ViewModels;
 /// </summary>
 public sealed partial class MainWindowViewModel
 {
-    private const string NavigationHistoryFileName = "navigation-history.json";
+    private const string NavigationHistoryFileName = "navigation-history.xml";
 
     private readonly NavigationHistory _navigation = new();
     private NavigationTracker? _navigationTracker;

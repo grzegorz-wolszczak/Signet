@@ -595,7 +595,7 @@ public sealed class ImportEpub : IImporter
             string bookPath = Path.GetRelativePath(folderKeeper.MainFolderPath, file).Replace(Path.DirectorySeparatorChar, '/');
             if (bookPath == "mimetype"
                 || bookPath == TempFolder.LockFileName
-                || bookPath == BookStateFile.FileName
+                || BookStateFile.IsStateFile(bookPath)
                 || bookPath.StartsWith("META-INF/", StringComparison.Ordinal)
                 || string.Equals(bookPath, opfBookPath, StringComparison.Ordinal))
             {

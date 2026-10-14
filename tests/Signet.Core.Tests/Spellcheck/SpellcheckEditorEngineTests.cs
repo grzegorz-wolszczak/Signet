@@ -27,7 +27,7 @@ public sealed class SpellcheckEditorEngineTests
         TempDir dicts, TempDir userDicts, params string[] correctWords)
     {
         DictionaryFixture.Write(dicts.Path, "en_US", correctWords);
-        SettingsStore settings = new(dicts.Combine("settings.json"));
+        SettingsStore settings = new(dicts.Combine("settings.xml"));
         settings.Dictionary = "en_US";
         SpellChecker spellChecker = new(settings, dicts.Path, userDicts.Path);
         return (settings, spellChecker);

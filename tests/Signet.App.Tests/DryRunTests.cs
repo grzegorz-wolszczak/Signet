@@ -23,7 +23,7 @@ namespace Signet.App.Tests;
 public sealed class DryRunTests : IDisposable
 {
     private readonly string _settingsPath =
-        Path.Combine(Path.GetTempPath(), $"signet-dryrun-{Guid.NewGuid():N}.json");
+        Path.Combine(Path.GetTempPath(), $"signet-dryrun-{Guid.NewGuid():N}.xml");
 
     private readonly Book _book = BookCreator.CreateNewBook("2.0");
     private readonly TabManagerModel _tabModel = new();

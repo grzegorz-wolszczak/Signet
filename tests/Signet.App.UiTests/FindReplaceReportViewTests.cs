@@ -84,7 +84,7 @@ public sealed class FindReplaceReportViewTests
         host.SetupGet(h => h.HasBook).Returns(true);
         host.Setup(h => h.ResolveLookWhere(It.IsAny<LookWhere>())).Returns(files);
         FindReplaceViewModel vm = new(
-            new SettingsStore(Path.Combine(temp.Path, "settings.json")),
+            new SettingsStore(Path.Combine(temp.Path, "settings.xml")),
             new StatusBarService(),
             () => (CodeTabViewModel?)null,
             host.Object)

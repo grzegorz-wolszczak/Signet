@@ -15,14 +15,14 @@ public static class AppDirectories
     public const string PrefsDirEnvVar = "SIGNET_PREFS_DIR";
 
     /// <summary>The settings file name in the preferences folder.</summary>
-    public const string SettingsFileName = "settings.json";
+    public const string SettingsFileName = "settings.xml";
 
     /// <summary>
     /// The user's preferences folder. Created on first read.
     /// </summary>
     public static string PrefsDirectory { get; } = ResolvePrefsDirectory();
 
-    /// <summary>The full path of the settings file (<c>settings.json</c>).</summary>
+    /// <summary>The full path of the settings file (<c>settings.xml</c>).</summary>
     public static string SettingsFilePath => Path.Combine(PrefsDirectory, SettingsFileName);
 
     /// <summary>The folder for log files (<c>&lt;prefs&gt;/logs</c>).</summary>

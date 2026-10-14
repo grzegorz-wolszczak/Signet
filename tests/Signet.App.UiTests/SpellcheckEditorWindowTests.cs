@@ -36,7 +36,7 @@ public sealed class SpellcheckEditorWindowTests
 
     private static (SpellcheckEditorWindow Window, SpellcheckEditorViewModel Vm, TreeDataGrid Grid) Show(TempDir temp, string text)
     {
-        SettingsStore settings = new(temp.Combine("settings.json"));
+        SettingsStore settings = new(temp.Combine("settings.xml"));
         SpellChecker spellChecker = new(settings, temp.Combine("hunspell"), temp.Combine("user"));
         Book book = BookCreator.CreateNewBook("2.0");
         book.GetHtmlResources()[0].SetText(text);

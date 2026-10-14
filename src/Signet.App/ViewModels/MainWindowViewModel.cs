@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
-using System.Text.Json;
 using System.Threading.Tasks;
 using System;
 using CommunityToolkit.Mvvm.Input;
@@ -1483,7 +1482,7 @@ public sealed partial class MainWindowViewModel
         _settings.SetStringMap(DockPanelsGroup, _dockFactory.CaptureToolVisibility());
         _settings.SetStringMap(DockPinnedSizesGroup, _dockFactory.CapturePinnedSizes());
         _settings.SetStringMap(DockFloatingGroup, _dockFactory.CaptureFloatingPanels());
-        _settings.MainWindowDockLayout = JsonSerializer.Serialize(_dockFactory.CaptureLayoutState());
+        _settings.MainWindowDockLayout = _dockFactory.CaptureLayoutState();
         if (_currentBook is not null)
         {
             // Without a book the session of the last closed one stays (CloseBook captured it).
@@ -3172,22 +3171,9 @@ public sealed partial class MainWindowViewModel
 
     private void RestoreSideRegionWidths()
     {
-        string json = _settings.MainWindowDockLayout;
-        if (string.IsNullOrWhiteSpace(json))
+        if (_settings.MainWindowDockLayout is { } state)
         {
-            return;
-        }
-
-        try
-        {
-            if (JsonSerializer.Deserialize<DockLayoutState>(json) is { Regions: not null } state)
-            {
-                _dockFactory.ApplySideRegionWidths(state);
-            }
-        }
-        catch (JsonException ex)
-        {
-            _logger.LogWarning(ex, "Failed to read the saved dock layout — keeping the default one");
+            _dockFactory.ApplySideRegionWidths(state);
         }
     }
 

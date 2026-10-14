@@ -187,7 +187,7 @@ public static class BookComparer
         foreach (string file in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
         {
             string bookPath = SysPath.GetRelativePath(root, file).Replace(SysPath.DirectorySeparatorChar, '/');
-            if (bookPath is TempFolder.LockFileName or BookStateFile.FileName)
+            if (bookPath == TempFolder.LockFileName || BookStateFile.IsStateFile(bookPath))
             {
                 continue;
             }

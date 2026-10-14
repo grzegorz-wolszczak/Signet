@@ -138,7 +138,7 @@ public sealed class HtmlSpellCheckTests
 
     private static SettingsStore NewSettings(TempDir dir, string primaryDictionary)
     {
-        SettingsStore settings = new(dir.Combine("settings.json"));
+        SettingsStore settings = new(dir.Combine("settings.xml"));
         settings.Dictionary = primaryDictionary;
         return settings;
     }

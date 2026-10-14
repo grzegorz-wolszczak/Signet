@@ -24,7 +24,7 @@ namespace Signet.App.Tests;
 public sealed class FindReplaceMultiFileTests : IDisposable
 {
     private readonly string _settingsPath =
-        Path.Combine(Path.GetTempPath(), $"signet-frm-{Guid.NewGuid():N}.json");
+        Path.Combine(Path.GetTempPath(), $"signet-frm-{Guid.NewGuid():N}.xml");
 
     private readonly Book _book = BookCreator.CreateNewBook("2.0");
     private readonly TabManagerModel _tabModel = new();

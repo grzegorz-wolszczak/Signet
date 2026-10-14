@@ -17,7 +17,7 @@ namespace Signet.App.Tests;
 /// </summary>
 public sealed class MissingDoctypeGuardTests
 {
-    private static SettingsStore NewSettings(TempDir temp) => new(Path.Combine(temp.Path, "settings.json"));
+    private static SettingsStore NewSettings(TempDir temp) => new(Path.Combine(temp.Path, "settings.xml"));
 
     private static (MissingDoctypeGuard Guard, Mock<IMissingDoctypePrompt> Prompt) NewGuard(
         SettingsStore settings, MissingDoctypeAnswer answer)

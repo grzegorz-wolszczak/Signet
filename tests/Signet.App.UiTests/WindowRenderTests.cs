@@ -56,7 +56,7 @@ public sealed class WindowRenderTests
     [AvaloniaFact]
     public void Toolbar_buttons_render_colour_icons_from_the_default_icon_theme()
     {
-        string settingsPath = Path.Combine(Path.GetTempPath(), "Signet.Tests", $"uitests-{Guid.NewGuid():N}.json");
+        string settingsPath = Path.Combine(Path.GetTempPath(), "Signet.Tests", $"uitests-{Guid.NewGuid():N}.xml");
         new IconThemeManager(new SettingsStore(settingsPath), NullLogger<IconThemeManager>.Instance).ApplySaved();
 
         MainWindow window = ShowMainWindow();

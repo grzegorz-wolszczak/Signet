@@ -81,7 +81,7 @@ public sealed class AppThemeTests
     public void A_theme_that_no_longer_exists_gives_way_to_signet_light()
     {
         using TempDir dir = new();
-        string settingsPath = System.IO.Path.Combine(dir.Path, "settings.json");
+        string settingsPath = System.IO.Path.Combine(dir.Path, "settings.xml");
         SettingsStore settings = new(settingsPath) { UiThemeId = Ulid.NewUlid().ToString() };
         ThemeManager sut = new(settings, new ThemeStore(System.IO.Path.Combine(dir.Path, "themes")), NullLogger<ThemeManager>.Instance);
         try

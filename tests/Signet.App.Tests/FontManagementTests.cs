@@ -19,7 +19,7 @@ namespace Signet.App.Tests;
 public sealed class FontManagementTests
 {
     private static BookBrowserViewModel NewViewModel() =>
-        new(new SettingsStore(Path.Combine(Path.GetTempPath(), $"signet-fonts-{System.Guid.NewGuid():N}.json")), new StatusBarService());
+        new(new SettingsStore(Path.Combine(Path.GetTempPath(), $"signet-fonts-{System.Guid.NewGuid():N}.xml")), new StatusBarService());
 
     private static Book Load(string corpusDir, TempDir temp) =>
         new ImportEpub(EpubBuilder.BuildInto(corpusDir, temp)).GetBook();

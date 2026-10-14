@@ -1,6 +1,6 @@
 using System.IO;
 using System.Linq;
-using System.Text;
+using System.Xml.Linq;
 using AwesomeAssertions;
 using Signet.Core.Localization;
 using Signet.Core.Misc;
@@ -82,14 +82,15 @@ public sealed class LegacyColorMigrationTests
 
     private static string Settings(TempDir dir, params (string Key, string Value)[] values)
     {
-        StringBuilder json = new("{ \"user_preferences\": { \"spellcheck\": true");
+        XElement group = new("group", new XAttribute("name", "user_preferences"),
+            new XElement("bool", new XAttribute("key", "spellcheck"), "true"));
         foreach ((string key, string value) in values)
         {
-            json.Append(", \"").Append(key).Append("\": \"").Append(value).Append('"');
+            group.Add(new XElement("string", new XAttribute("key", key), value));
         }
 
-        string path = dir.Combine("settings.json");
-        File.WriteAllText(path, json.Append(" } }").ToString());
+        string path = dir.Combine("settings.xml");
+        new XDocument(new XElement("settings", group)).Save(path);
         return path;
     }
 }

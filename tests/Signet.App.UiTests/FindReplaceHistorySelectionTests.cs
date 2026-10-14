@@ -39,7 +39,7 @@ public sealed class FindReplaceHistorySelectionTests
         using TempDir temp = new();
         CodeTabViewModel tab = NewCodeTab(temp.Path, "<p>test foo bar</p>");
         FindReplaceViewModel vm = new(
-            new SettingsStore(Path.Combine(temp.Path, "settings.json")),
+            new SettingsStore(Path.Combine(temp.Path, "settings.xml")),
             new StatusBarService(),
             () => tab,
             Mock.Of<IMultiFileSearchHost>());
@@ -90,7 +90,7 @@ public sealed class FindReplaceHistorySelectionTests
         File.WriteAllText(path, xhtml);
         HtmlResource html = new(dir, path);
         html.InitialLoad();
-        SettingsStore settings = new(Path.Combine(dir, "tab-settings.json"));
+        SettingsStore settings = new(Path.Combine(dir, "tab-settings.xml"));
         SpellChecker spellChecker = new(
             settings,
             Path.Combine(dir, "hunspell_dictionaries"),

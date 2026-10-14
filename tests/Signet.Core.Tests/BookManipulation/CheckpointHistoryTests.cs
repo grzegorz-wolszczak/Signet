@@ -316,12 +316,15 @@ public sealed class CheckpointHistoryTests
         history.Open(live);
         history.AddCheckpoint(live, "x");
         File.Exists(Path.Combine(live.GetFolderKeeper().MainFolderPath, BookStateFile.FileName)).Should().BeTrue();
+        // A checkpoint made before the state was stored as XML still holds the JSON file.
+        File.WriteAllText(Path.Combine(live.GetFolderKeeper().MainFolderPath, BookStateFile.LegacyFileName), "{}");
 
         string exported = temp.Combine("out.epub");
         new ExportEpub(live).WriteBook(exported, stampMetadata: false);
 
         using ZipArchive zip = ZipFile.OpenRead(exported);
-        zip.Entries.Select(e => e.FullName).Should().NotContain(BookStateFile.FileName);
+        zip.Entries.Select(e => e.FullName).Should().NotContain(BookStateFile.FileName)
+            .And.NotContain(BookStateFile.LegacyFileName);
     }
 
     [Fact]

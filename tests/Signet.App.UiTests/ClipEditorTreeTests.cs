@@ -44,7 +44,7 @@ public sealed class ClipEditorTreeTests
 
         // As MainWindowViewModel does: the panel-scoped "Clip Editor → Rename" action (F2 by default), from which
         // the window builds its key bindings.
-        SettingsStore settings = new(Path.Combine(Path.GetTempPath(), $"signet-clipui-{System.Guid.NewGuid():N}-settings.json"));
+        SettingsStore settings = new(Path.Combine(Path.GetTempPath(), $"signet-clipui-{System.Guid.NewGuid():N}-settings.xml"));
         AppActionRegistry actions = new(new KeyboardShortcutManager(settings), new StatusBarService(), NullLogger<AppActionRegistry>.Instance);
         actions.SetHandler(AppActionIds.ClipEditorRename, () => vm.RenameSelectedCommand.Execute(null));
         vm.ShortcutActions = new[] { actions.Require(AppActionIds.ClipEditorRename) };

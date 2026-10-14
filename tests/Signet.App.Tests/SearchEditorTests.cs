@@ -45,7 +45,7 @@ public sealed class SearchEditorTests : IDisposable
     private SavedSearchStore Store() => new(Path.Combine(_dir, "searches.xml"));
 
     private FindReplaceViewModel NewFindReplace(FakeMultiFileSearchHost host) => new(
-        new SettingsStore(Path.Combine(_dir, $"settings-{Guid.NewGuid():N}.json")),
+        new SettingsStore(Path.Combine(_dir, $"settings-{Guid.NewGuid():N}.xml")),
         new StatusBarService(),
         () => null,
         host);

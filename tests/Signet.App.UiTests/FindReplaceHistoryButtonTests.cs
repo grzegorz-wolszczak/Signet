@@ -34,7 +34,7 @@ public sealed class FindReplaceHistoryButtonTests
     {
         using TempDir temp = new();
         FindReplaceViewModel vm = new(
-            new SettingsStore(Path.Combine(temp.Path, "settings.json")),
+            new SettingsStore(Path.Combine(temp.Path, "settings.xml")),
             new StatusBarService(),
             () => (CodeTabViewModel?)null,
             Mock.Of<IMultiFileSearchHost>());
@@ -83,7 +83,7 @@ public sealed class FindReplaceHistoryButtonTests
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
         html.InitialLoad();
         html.SetText("<html><body><p>w pociąg</p><p>że sobowtór</p><p>Dotykałem ich</p><p>w pociąg</p></body></html>");
-        SettingsStore settings = new(Path.Combine(temp.Path, "settings.json"));
+        SettingsStore settings = new(Path.Combine(temp.Path, "settings.xml"));
         SpellChecker spellChecker = new(settings, temp.Combine("dicts"), temp.Combine("user_dicts"));
         CodeTabViewModel tab = new(new TabManagerModel().OpenResource(html), new StatusBarService(), settings, spellChecker);
         tab.Document.Text = html.GetText();
@@ -141,7 +141,7 @@ public sealed class FindReplaceHistoryButtonTests
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
         html.InitialLoad();
         html.SetText("<html><body><p>w pociąg nowy tekst</p><p>Dotykałem ich</p><p>w pociąg nowy tekst Dotykałem ich</p></body></html>");
-        SettingsStore settings = new(Path.Combine(temp.Path, "settings.json"));
+        SettingsStore settings = new(Path.Combine(temp.Path, "settings.xml"));
         SpellChecker spellChecker = new(settings, temp.Combine("dicts"), temp.Combine("user_dicts"));
         CodeTabViewModel tab = new(new TabManagerModel().OpenResource(html), new StatusBarService(), settings, spellChecker);
         tab.Document.Text = html.GetText();
@@ -197,7 +197,7 @@ public sealed class FindReplaceHistoryButtonTests
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
         html.InitialLoad();
         html.SetText("<html><body><p>w pociąg nowy tekst</p><p>w pociąg nowy tekst</p></body></html>");
-        SettingsStore settings = new(Path.Combine(temp.Path, "settings.json"));
+        SettingsStore settings = new(Path.Combine(temp.Path, "settings.xml"));
         SpellChecker spellChecker = new(settings, temp.Combine("dicts"), temp.Combine("user_dicts"));
         CodeTabViewModel tab = new(new TabManagerModel().OpenResource(html), new StatusBarService(), settings, spellChecker);
         tab.Document.Text = html.GetText();

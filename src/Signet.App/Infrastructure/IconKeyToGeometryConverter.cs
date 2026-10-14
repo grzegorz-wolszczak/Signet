@@ -10,7 +10,7 @@ namespace Signet.App.Infrastructure;
 /// <summary>
 /// Converts <c>AppAction.IconKey</c> (e.g. <c>"document-new"</c>) to a <see cref="Geometry"/> from the
 /// merged resource dictionary loaded by <see cref="IconThemeManager"/> —
-/// used only by the "Custom" set (single-color paths from <c>icons.json</c>); the built-in
+/// used only by the "Custom" set (single-color paths from <c>icons.xml</c>); the built-in
 /// sets are colored images handled by <see cref="IconKeyToImageConverter"/>. A missing
 /// key or a resource of another type yields <see langword="null"/>.
 /// </summary>

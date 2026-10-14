@@ -4,6 +4,7 @@ using AwesomeAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Signet.App.Infrastructure;
 using Signet.Core.Misc;
+using Signet.Core.Tests.TestSupport;
 using Xunit;
 
 namespace Signet.App.Tests;
@@ -15,7 +16,7 @@ namespace Signet.App.Tests;
 public sealed class IconThemeManagerTests : IDisposable
 {
     private readonly string _settingsPath =
-        Path.Combine(Path.GetTempPath(), "Signet.Tests", $"icons-{Guid.NewGuid():N}.json");
+        Path.Combine(Path.GetTempPath(), "Signet.Tests", $"icons-{Guid.NewGuid():N}.xml");
 
     [Fact]
     public void Default_icon_theme_is_the_colour_main_set()
@@ -48,6 +49,37 @@ public sealed class IconThemeManagerTests : IDisposable
     public void Toolbar_icon_size_is_line_spacing_times_scale_clamped_to_12_48(
         double lineSpacing, double scale, int expected) =>
         IconThemeManager.ComputeToolbarIconSize(lineSpacing, scale).Should().Be(expected);
+
+    [Fact]
+    public void A_custom_icon_set_is_read_from_icons_xml()
+    {
+        using TempDir dir = new();
+        string path = Path.Combine(dir.Path, IconThemeManager.CustomIconFileName);
+        File.WriteAllText(path, """
+            <icons>
+              <icon key="icon-open"> M0 0 L10 10 Z </icon>
+              <icon key="">M1 1</icon>
+              <icon key="icon-save">M2 2 H4</icon>
+            </icons>
+            """);
+
+        IconThemeManager.ReadCustomIcons(path).Should().BeEquivalentTo(new System.Collections.Generic.Dictionary<string, string>
+        {
+            ["icon-open"] = "M0 0 L10 10 Z",
+            ["icon-save"] = "M2 2 H4",
+        });
+        IconThemeManager.CustomIconFileName.Should().Be("icons.xml");
+    }
+
+    [Fact]
+    public void A_json_icon_map_is_not_read()
+    {
+        using TempDir dir = new();
+        string path = Path.Combine(dir.Path, IconThemeManager.CustomIconFileName);
+        File.WriteAllText(path, "{ \"icon-open\": \"M0 0 L10 10 Z\" }");
+
+        IconThemeManager.ReadCustomIcons(path).Should().BeEmpty();
+    }
 
     public void Dispose()
     {
