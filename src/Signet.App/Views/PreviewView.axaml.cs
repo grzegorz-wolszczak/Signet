@@ -89,6 +89,7 @@ public partial class PreviewView : UserControl
             _boundViewModel.ClearRequested -= OnClearRequested;
             _boundViewModel.ZoomChanged -= OnZoomChanged;
             _boundViewModel.ScrollToLocRequested -= OnScrollToLocRequested;
+            _boundViewModel.HighlightLocRequested -= OnHighlightLocRequested;
             _boundViewModel.PrintRequested -= OnPrintRequested;
             _boundViewModel.PrintToPdfRequested -= OnPrintToPdfRequested;
             _boundViewModel.InspectorRequested -= OnInspectorRequested;
@@ -107,6 +108,7 @@ public partial class PreviewView : UserControl
             _boundViewModel.ClearRequested += OnClearRequested;
             _boundViewModel.ZoomChanged += OnZoomChanged;
             _boundViewModel.ScrollToLocRequested += OnScrollToLocRequested;
+            _boundViewModel.HighlightLocRequested += OnHighlightLocRequested;
             _boundViewModel.PrintRequested += OnPrintRequested;
             _boundViewModel.PrintToPdfRequested += OnPrintToPdfRequested;
             _boundViewModel.InspectorRequested += OnInspectorRequested;
@@ -300,7 +302,12 @@ public partial class PreviewView : UserControl
         }
     }
 
-    private void OnScrollToLocRequested(object? sender, int loc)
+    private void OnScrollToLocRequested(object? sender, int loc) => HighlightLoc(loc, scroll: true);
+
+    // After a click in the preview: the element is highlighted where it is, the page does not move.
+    private void OnHighlightLocRequested(object? sender, int loc) => HighlightLoc(loc, scroll: false);
+
+    private void HighlightLoc(int loc, bool scroll)
     {
         if (!_initialized || _initFailed)
         {
@@ -311,7 +318,7 @@ public partial class PreviewView : UserControl
         // the color and the optional fade-out come from Preferences (PreviewHighlight).
         PreviewHighlight highlight = _boundViewModel?.Highlight ?? PreviewHighlight.Default;
         ThemeColor color = AppTheme.Current.Resolver.Color(AppTheme.Current.Theme, ThemeKeys.PreviewHighlight) ?? ThemeColor.FromRgb(0xFF, 0xEB, 0x3B);
-        string js = PreviewHighlightScript.Build(loc, highlight, color);
+        string js = PreviewHighlightScript.Build(loc, highlight, color, scroll);
 
         try
         {

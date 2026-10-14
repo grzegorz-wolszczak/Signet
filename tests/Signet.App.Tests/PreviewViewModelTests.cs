@@ -334,6 +334,51 @@ public sealed class PreviewViewModelTests
     }
 
     [Fact]
+    public void The_caret_sync_caused_by_a_click_in_the_preview_highlights_without_scrolling()
+    {
+        using TempDir temp = new();
+        using Book book = Load(temp);
+        using PreviewViewModel sut = New();
+        HtmlResource html = book.GetHtmlResources().First();
+        sut.SetBook(book);
+        sut.ShowResource(html);
+        int offset = html.GetText().Length;
+        List<int> scrolled = new();
+        List<int> highlighted = new();
+        sut.ScrollToLocRequested += (_, loc) => scrolled.Add(loc);
+        sut.HighlightLocRequested += (_, loc) => highlighted.Add(loc);
+        sut.CodeCaretJumpRequested += (_, jump) => sut.SyncCaretToPreview(jump); // the host moves the caret
+
+        sut.HandlePreviewMessage("signet-loc:" + offset.ToString(System.Globalization.CultureInfo.InvariantCulture));
+
+        scrolled.Should().BeEmpty("the clicked element is already in view — the preview must not jump it to the middle");
+        highlighted.Should().ContainSingle().Which.Should().BeGreaterThanOrEqualTo(0);
+
+        // A later caret move to the same place (in Code View) scrolls as usual.
+        sut.SyncCaretToPreview(offset);
+        scrolled.Should().ContainSingle();
+    }
+
+    [Fact]
+    public void A_click_in_the_preview_of_a_not_well_formed_file_does_not_scroll_to_the_top()
+    {
+        using TempDir temp = new();
+        using Book book = Load(temp);
+        using PreviewViewModel sut = New();
+        HtmlResource html = book.GetHtmlResources().First();
+        html.SetText("<html><body><p>Tom & Jerry</p><p id=\"target\">druga linia</p></body></html>");
+        sut.SetBook(book);
+        sut.ShowResource(html);
+        bool scrolled = false;
+        sut.ScrollToLocRequested += (_, _) => scrolled = true;
+        sut.CodeCaretJumpRequested += (_, jump) => sut.SyncCaretToPreview(jump);
+
+        sut.HandlePreviewMessage("signet-loc:30");
+
+        scrolled.Should().BeFalse();
+    }
+
+    [Fact]
     public void SyncCaretToPreview_OffsetBeforeAnyElement_DoesNotRaise()
     {
         using TempDir temp = new();

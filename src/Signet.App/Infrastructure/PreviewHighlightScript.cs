@@ -29,7 +29,11 @@ public static class PreviewHighlightScript
     /// <param name="loc">The element's <c>data-signet-loc</c> value.</param>
     /// <param name="highlight">Highlight settings.</param>
     /// <param name="highlightColor">The color of the highlight (the theme's <c>preview.highlight</c>; its transparency is not used).</param>
-    public static string Build(int loc, PreviewHighlight highlight, ThemeColor highlightColor)
+    /// <param name="scroll">
+    /// Whether the element is scrolled to the middle of the preview (Code View → Preview); <see langword="false"/>
+    /// after a click in the preview, where the element already is in view.
+    /// </param>
+    public static string Build(int loc, PreviewHighlight highlight, ThemeColor highlightColor, bool scroll = true)
     {
         PreviewHighlight h = highlight.Normalized();
         string color = ThemeColor.FromRgb(highlightColor.R, highlightColor.G, highlightColor.B).ToString();
@@ -57,7 +61,11 @@ public static class PreviewHighlightScript
             js.Append("el.style.backgroundColor='").Append(Rgba(color, h.OpacityPercent)).Append("';");
         }
 
-        js.Append("w.__signetPreviewHighlightEl=el;el.scrollIntoView({block:'center',inline:'nearest'});");
+        js.Append("w.__signetPreviewHighlightEl=el;");
+        if (scroll)
+        {
+            js.Append("el.scrollIntoView({block:'center',inline:'nearest'});");
+        }
 
         if (h.AutoHide)
         {
