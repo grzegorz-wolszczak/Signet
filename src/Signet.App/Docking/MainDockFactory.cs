@@ -52,9 +52,16 @@ public sealed class MainDockFactory : Factory
     // The region a panel belongs to while it floats in its own window: where closing the window (or hiding the
     // panel) docks it back. Filled with the default layout and updated whenever a panel is floated.
     private readonly Dictionary<string, IToolDock> _homeDocks = new(StringComparer.Ordinal);
+    // The window place of panels hidden while floating (their tab's ×, their window's ×, the View menu): showing such
+    // a panel again floats it there, the way it was closed.
+    private readonly Dictionary<string, FloatingBounds> _floatingWhenHidden = new(StringComparer.Ordinal);
     private readonly BookBrowserViewModel? _bookBrowser;
     private readonly PreviewViewModel? _preview;
     private IRootDock? _root;
+
+    // Set while the main window closes all floating windows: their panels are docked back (the layout and the
+    // floating windows were already persisted), not hidden.
+    private bool _closingAllWindows;
 
     /// <summary>Creates the factory; the optional Book Browser and Preview panel view models are embedded in the panels.</summary>
     public MainDockFactory(BookBrowserViewModel? bookBrowser = null, PreviewViewModel? preview = null)
@@ -352,8 +359,7 @@ public sealed class MainDockFactory : Factory
             bool have = !_hidden.Contains(pair.Key);
             if (want && !have)
             {
-                RestoreDockable(pair.Value);
-                _hidden.Remove(pair.Key);
+                ShowHiddenTool(pair.Value);
             }
             else if (!want && have)
             {
@@ -425,8 +431,7 @@ public sealed class MainDockFactory : Factory
 
         if (_hidden.Contains(id))
         {
-            RestoreDockable(tool);
-            _hidden.Remove(id);
+            ShowHiddenTool(tool);
             SetActiveDockable(tool);
             return true;
         }
@@ -458,10 +463,59 @@ public sealed class MainDockFactory : Factory
 
     private void HideTool(Tool tool)
     {
-        // A floating panel is docked back first (its window closes), so showing it again docks it in its region.
+        // A floating panel remembers its window's place (showing it again floats it there) and is docked back first:
+        // Dock hides and restores a panel within a dock of the main layout, and its emptied window closes.
+        if (IsFloating(tool) && WindowOf(tool) is { } window)
+        {
+            _floatingWhenHidden[tool.Id] = BoundsOf(window);
+        }
+
         DockBackIfFloating(tool);
         HideDockable(tool);
         _hidden.Add(tool.Id);
+    }
+
+    // Makes a hidden panel visible again: in its region, or in its own window at the remembered place when it was
+    // hidden while floating.
+    private void ShowHiddenTool(Tool tool)
+    {
+        RestoreDockable(tool);
+        _hidden.Remove(tool.Id);
+        if (_floatingWhenHidden.Remove(tool.Id, out FloatingBounds bounds))
+        {
+            FloatAt(tool, bounds);
+        }
+    }
+
+    private static FloatingBounds BoundsOf(IDockWindow window)
+    {
+        // The window model takes the host's current place and size.
+        window.Save();
+        return new FloatingBounds(window.X, window.Y, window.Width, window.Height);
+    }
+
+    // Floats a panel in its own window at the given place (corrected when it is no longer fully on screen).
+    private void FloatAt(Tool tool, FloatingBounds bounds)
+    {
+        FloatDockable(tool);
+        if (WindowOf(tool) is { } window)
+        {
+            Place(window, bounds);
+        }
+    }
+
+    private static void Place(IDockWindow window, FloatingBounds bounds)
+    {
+        window.X = bounds.X;
+        window.Y = bounds.Y;
+        window.Width = bounds.Width;
+        window.Height = bounds.Height;
+        window.Host?.SetPosition(bounds.X, bounds.Y);
+        window.Host?.SetSize(bounds.Width, bounds.Height);
+        if (window.Host is Avalonia.Controls.Window host)
+        {
+            Dispatcher.UIThread.Post(() => WindowPlacement.EnsureVisible(host), DispatcherPriority.Background);
+        }
     }
 
     /// <summary>
@@ -644,17 +698,28 @@ public sealed class MainDockFactory : Factory
     }
 
     /// <summary>
-    /// Closing a floating window docks its panels back into the regions they were taken from; otherwise they would
-    /// be closed together with the window and vanish.
+    /// Closing a floating window (its ×) hides its panels like their own × does: showing one again (View menu) floats it
+    /// at the window's place. They are docked back into the regions they were taken from first, otherwise they would be
+    /// closed together with the window and vanish. When the main window closes them all
+    /// (<see cref="CloseFloatingWindows"/>) the panels are only docked back.
     /// </summary>
     public override bool OnWindowClosing(IDockWindow? window)
     {
+        FloatingBounds? bounds = !_closingAllWindows && window is not null ? BoundsOf(window) : null;
         bool close = base.OnWindowClosing(window);
         if (close && window?.Layout is { } layout)
         {
             foreach (Tool tool in ToolsIn(layout).ToList())
             {
                 DockHome(tool);
+                if (bounds is { } place && _tools.TryGetValue(tool.Id, out Tool? known) && ReferenceEquals(known, tool)
+                    && !_hidden.Contains(tool.Id))
+                {
+                    DebugLog.Write("Panel", $"close floating {tool.Id}");
+                    HideDockable(tool);
+                    _hidden.Add(tool.Id);
+                    _floatingWhenHidden[tool.Id] = place;
+                }
             }
         }
 
@@ -682,9 +747,17 @@ public sealed class MainDockFactory : Factory
     /// </summary>
     public void CloseFloatingWindows()
     {
-        foreach (IDockWindow window in _root?.Windows?.ToList() ?? new List<IDockWindow>())
+        _closingAllWindows = true;
+        try
         {
-            window.Exit();
+            foreach (IDockWindow window in _root?.Windows?.ToList() ?? new List<IDockWindow>())
+            {
+                window.Exit();
+            }
+        }
+        finally
+        {
+            _closingAllWindows = false;
         }
     }
 
@@ -716,6 +789,13 @@ public sealed class MainDockFactory : Factory
             index++;
         }
 
+        // Panels hidden while floating keep their window's place: shown again (also after a restart) they float there.
+        foreach (KeyValuePair<string, FloatingBounds> pair in _floatingWhenHidden.Where(p => _hidden.Contains(p.Key)))
+        {
+            FloatingBounds b = pair.Value;
+            result[pair.Key] = string.Create(CultureInfo.InvariantCulture, $"{index++};{b.X};{b.Y};{b.Width};{b.Height}");
+        }
+
         return result;
     }
 
@@ -727,9 +807,20 @@ public sealed class MainDockFactory : Factory
     public void ApplyFloatingPanels(IReadOnlyDictionary<string, string> stored)
     {
         ArgumentNullException.ThrowIfNull(stored);
-        var groups = stored
+        var entries = stored
             .Select(pair => (Tool: _tools.GetValueOrDefault(pair.Key), Bounds: ParseFloatingBounds(pair.Value)))
-            .Where(x => x.Tool is not null && x.Bounds is not null && !_hidden.Contains(x.Tool.Id))
+            .Where(x => x.Tool is not null && x.Bounds is not null)
+            .ToList();
+
+        // A hidden panel that floated is only remembered: showing it floats it at its place.
+        foreach (var (tool, bounds) in entries.Where(x => _hidden.Contains(x.Tool!.Id)))
+        {
+            (_, double hx, double hy, double hw, double hh) = bounds!.Value;
+            _floatingWhenHidden[tool!.Id] = new FloatingBounds(hx, hy, hw, hh);
+        }
+
+        var groups = entries
+            .Where(x => !_hidden.Contains(x.Tool!.Id))
             .GroupBy(x => x.Bounds!.Value.Window);
         foreach (var group in groups)
         {
@@ -751,16 +842,7 @@ public sealed class MainDockFactory : Factory
                 }
             }
 
-            window.X = x;
-            window.Y = y;
-            window.Width = width;
-            window.Height = height;
-            window.Host?.SetPosition(x, y);
-            window.Host?.SetSize(width, height);
-            if (window.Host is Avalonia.Controls.Window host)
-            {
-                Dispatcher.UIThread.Post(() => WindowPlacement.EnsureVisible(host), DispatcherPriority.Background);
-            }
+            Place(window, new FloatingBounds(x, y, width, height));
         }
     }
 
@@ -876,9 +958,9 @@ public sealed class MainDockFactory : Factory
             return;
         }
 
-        if (_hidden.Remove(id))
+        if (_hidden.Contains(id))
         {
-            RestoreDockable(tool);
+            ShowHiddenTool(tool);
         }
 
         SetActiveDockable(tool);
@@ -894,12 +976,20 @@ public sealed class MainDockFactory : Factory
     /// </summary>
     public void ShowToolCollapsed(string id)
     {
-        if (!_tools.TryGetValue(id, out Tool? tool) || !_hidden.Remove(id))
+        if (!_tools.TryGetValue(id, out Tool? tool) || !_hidden.Contains(id))
         {
             return;
         }
 
+        // A panel hidden while floating comes back in its window (it takes no space from the editor either).
+        if (_floatingWhenHidden.ContainsKey(id))
+        {
+            ShowHiddenTool(tool);
+            return;
+        }
+
         RestoreDockable(tool);
+        _hidden.Remove(id);
         if (!IsToolPinned(id))
         {
             PinDockable(tool);
@@ -938,4 +1028,7 @@ public sealed class MainDockFactory : Factory
             signetTool.AttentionCount = count;
         }
     }
+
+    // The place of a floating panel window (Dock's window coordinates).
+    private readonly record struct FloatingBounds(double X, double Y, double Width, double Height);
 }
