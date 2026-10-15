@@ -65,17 +65,40 @@ public sealed class MainDockFactory : Factory
             return host;
         };
 
-        // Panel operations for the debug log (dragging, docking, auto-hide, showing/hiding, floating windows).
-        DockableHidden += (_, e) => DebugLog.Write("Panel", $"hidden {NameOf(e.Dockable)}");
-        DockableRestored += (_, e) => DebugLog.Write("Panel", $"shown {NameOf(e.Dockable)}");
-        DockablePinned += (_, e) => DebugLog.Write("Panel", $"auto-hide {NameOf(e.Dockable)}");
-        DockableUnpinned += (_, e) => DebugLog.Write("Panel", $"docked back from auto-hide {NameOf(e.Dockable)}");
+        // Panel operations for the debug log (dragging, docking, auto-hide, showing/hiding, floating windows); after
+        // every change of place the panels' places follow, so a log shows where each panel was when something went wrong.
+        DockableHidden += (_, e) => LogPlaces($"hidden {NameOf(e.Dockable)}");
+        DockableRestored += (_, e) => LogPlaces($"shown {NameOf(e.Dockable)}");
+        DockablePinned += (_, e) => LogPlaces($"auto-hide {NameOf(e.Dockable)}");
+        DockableUnpinned += (_, e) => LogPlaces($"docked back from auto-hide {NameOf(e.Dockable)}");
         DockableMoved += (_, e) => DebugLog.Write("Panel", $"moved {NameOf(e.Dockable)}");
-        DockableDocked += (_, e) => DebugLog.Write("Panel", $"docked {NameOf(e.Dockable)} ({e.Operation})");
-        DockableUndocked += (_, e) => DebugLog.Write("Panel", $"undocked {NameOf(e.Dockable)} ({e.Operation})");
-        WindowOpened += (_, e) => DebugLog.Write("Panel", $"floating window opened: {PanelsOf(e.Window)}");
-        WindowClosed += (_, e) => DebugLog.Write("Panel", $"floating window closed: {PanelsOf(e.Window)}");
+        DockableDocked += (_, e) => LogPlaces($"docked {NameOf(e.Dockable)} ({e.Operation})");
+        DockableUndocked += (_, e) => LogPlaces($"undocked {NameOf(e.Dockable)} ({e.Operation})");
+        WindowOpened += (_, e) => LogPlaces($"floating window opened: {PanelsOf(e.Window)}");
+        WindowClosed += (_, e) => LogPlaces($"floating window closed: {PanelsOf(e.Window)}");
         WindowMoveDragEnd += (_, e) => DebugLog.Write("Panel", $"floating window moved: {PanelsOf(e.Window)}");
+    }
+
+    // Writes an operation to the debug log with the places of all panels after it.
+    private void LogPlaces(string operation) => DebugLog.Write("Panel", $"{operation}; places: {DescribePlaces()}");
+
+    /// <summary>
+    /// Where every panel is: its region, "floating" (in its own window), "auto-hide" (collapsed at the edge of its
+    /// region or window), "hidden", or "?" when it is nowhere (a defect) — for the debug log and the tests.
+    /// </summary>
+    public string DescribePlaces()
+    {
+        List<string> places = new();
+        foreach ((string id, Tool tool) in _tools.OrderBy(p => p.Key, StringComparer.Ordinal))
+        {
+            string place = _hidden.Contains(id) ? "hidden"
+                : WindowOf(tool) is not null ? (tool.Owner is IToolDock ? "floating" : "floating?")
+                : IsToolPinned(id) ? "auto-hide"
+                : FindOwnerDock(tool)?.Id ?? "?";
+            places.Add($"{id}={place}");
+        }
+
+        return string.Join(", ", places);
     }
 
     /// <summary>
@@ -630,9 +653,28 @@ public sealed class MainDockFactory : Factory
         return Math.Clamp(region.Proportion, MinRestoredProportion, MaxRestoredSideProportion);
     }
 
+    /// <summary>
+    /// The panel a region (the dock of the left, right or bottom panels) stands for when it is dragged out of the window
+    /// by its title bar: Dock then floats the region itself, which must stay in the main layout (the panels in a floating
+    /// region still counted as docked, so "Dock" in their menu collapsed them in the window instead of docking them
+    /// back, and docking back again recursed until the stack overflowed). The panel the region shows floats instead,
+    /// as with the panel's own "Float".
+    /// </summary>
+    private Tool? PanelInsteadOfRegion(IDockable dockable) =>
+        dockable is IToolDock dock && _regionDocks.ContainsValue(dock)
+            ? dock.ActiveDockable as Tool ?? dock.VisibleDockables?.OfType<Tool>().FirstOrDefault()
+            : null;
+
     /// <inheritdoc />
     public override void FloatDockable(IDockable dockable)
     {
+        if (PanelInsteadOfRegion(dockable) is { } panel)
+        {
+            DebugLog.Write("Panel", $"float {NameOf(dockable)} requested (its title bar dragged out): floating the panel {panel.Id} instead");
+            FloatDockable(panel);
+            return;
+        }
+
         DebugLog.Write("Panel", $"float {NameOf(dockable)}");
         RememberHomes(dockable);
         base.FloatDockable(dockable);
@@ -641,6 +683,14 @@ public sealed class MainDockFactory : Factory
     /// <inheritdoc />
     public override void FloatDockable(IDockable dockable, DockWindowOptions? options)
     {
+        if (PanelInsteadOfRegion(dockable) is { } panel)
+        {
+            DebugLog.Write("Panel", $"float {NameOf(dockable)} requested (with options): floating the panel {panel.Id} instead");
+            FloatDockable(panel, options);
+            return;
+        }
+
+        DebugLog.Write("Panel", $"float {NameOf(dockable)} (with options)");
         RememberHomes(dockable);
         base.FloatDockable(dockable, options);
     }
@@ -655,16 +705,24 @@ public sealed class MainDockFactory : Factory
     /// <inheritdoc />
     public override void SplitToWindow(IDock dock, IDockable dockable, double x, double y, double width, double height)
     {
-        RememberHomes(dockable);
-        base.SplitToWindow(dock, dockable, x, y, width, height);
+        IDockable moved = PanelInsteadOfRegion(dockable) ?? dockable;
+        DebugLog.Write("Panel", $"split to window {NameOf(moved)} at {x:0},{y:0} {width:0}×{height:0}");
+        RememberHomes(moved);
+        base.SplitToWindow(dock, moved, x, y, width, height);
     }
 
     /// <inheritdoc />
     public override void SplitToWindow(IDock dock, IDockable dockable, double x, double y, double width, double height, DockWindowOptions? options)
     {
-        RememberHomes(dockable);
-        base.SplitToWindow(dock, dockable, x, y, width, height, options);
+        IDockable moved = PanelInsteadOfRegion(dockable) ?? dockable;
+        DebugLog.Write("Panel", $"split to window {NameOf(moved)} at {x:0},{y:0} {width:0}×{height:0} (with options)");
+        RememberHomes(moved);
+        base.SplitToWindow(dock, moved, x, y, width, height, options);
     }
+
+    // Set while a panel is moved back into its region: Dock's MoveDockable then calls UnpinDockable, which calls
+    // PinDockable again (it toggles auto-hide); that call must reach Dock, not start another round of docking back.
+    private bool _dockingBack;
 
     /// <summary>
     /// "Dock" in a panel's menu: Dock only uses it to undo "Auto Hide", so for a floating panel it did nothing; here it
@@ -672,7 +730,9 @@ public sealed class MainDockFactory : Factory
     /// </summary>
     public override void PinDockable(IDockable dockable)
     {
-        if (dockable is Tool tool && IsFloating(tool))
+        bool floating = dockable is Tool t && IsFloating(t);
+        DebugLog.Write("Panel", $"pin/dock requested for {NameOf(dockable)} (floating: {floating}, docking back already: {_dockingBack}); places: {DescribePlaces()}");
+        if (!_dockingBack && dockable is Tool tool && floating)
         {
             DockBackIfFloating(tool);
             return;
@@ -896,10 +956,22 @@ public sealed class MainDockFactory : Factory
     {
         if (tool.Owner is not IDock source || !_homeDocks.TryGetValue(tool.Id, out IToolDock? home))
         {
+            DebugLog.Write("Panel", $"dock back {tool.Id}: no home region or no owner (owner: {tool.Owner?.Id ?? "none"}), left where it is");
             return;
         }
 
-        MoveDockable(source, home, tool, null);
+        DebugLog.Write("Panel", $"dock back {tool.Id}: {source.Id} → {home.Id}");
+        bool outer = _dockingBack;
+        _dockingBack = true;
+        try
+        {
+            MoveDockable(source, home, tool, null);
+        }
+        finally
+        {
+            _dockingBack = outer;
+        }
+
         SetActiveDockable(tool);
     }
 
