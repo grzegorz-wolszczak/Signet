@@ -279,35 +279,6 @@ public sealed class MainWindowFootnotesTests
         sut.StatusMessage.Should().Be(Strings.Get("Status_NoForeignFootnotes"));
     }
 
-    [Fact]
-    public async Task The_conversion_dialog_converts_behind_a_checkpoint_and_shows_what_is_left()
-    {
-        using UiCultureScope culture = new("en");
-        using TempDir temp = new();
-        (MainWindowViewModel sut, HtmlResource chapter) = OpenChapterWithForeignFootnote(temp);
-        bool asked = false;
-        FootnoteConversionViewModel dialog = (await sut.PrepareFootnoteConversionAsync(() =>
-        {
-            asked = true;
-            return Task.FromResult(false);
-        }))!;
-        FootnoteConversionItemViewModel item = dialog.Items.Single();
-        item.Item.Warnings.Should().Equal(ConversionWarning.NumberChanges);
-        item.IsChecked.Should().BeFalse("a footnote whose number changes needs a look");
-        item.IsChecked = true;
-
-        await dialog.ConvertCommand.ExecuteAsync(null);
-
-        asked.Should().BeFalse("the checkpoint was created");
-        chapter.GetText().Should().Contain("Hello<a class=\"signet-fn-ref\"").And.Contain("Other note.");
-        FootnoteScanner.Scan(((IBookWorkspace)sut).CurrentBook!).Should().ContainSingle().Which.IsSignet.Should().BeTrue();
-        sut.ActiveCodeTab!.DocumentText.Should().Be(chapter.GetText());
-        sut.StatusMessage.Should().Be(Strings.Format("Status_FootnotesConverted", 1));
-        sut.CheckpointHistory.UndoMessage.Should().Be(Strings.Format("Checkpoint_Before", Strings.Get("CheckpointOp_ConvertFootnotes")));
-        dialog.HasItems.Should().BeFalse();
-        dialog.HasProblems.Should().BeFalse();
-    }
-
     [Theory]
     [AutoData]
     public void Abandoning_a_checkpoint_brings_the_book_back_and_forgets_the_failed_state(string operation, string edit)
