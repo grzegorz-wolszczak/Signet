@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using AwesomeAssertions;
 using Signet.Core.MainUI;
 using Xunit;
@@ -118,5 +119,49 @@ public sealed class DivUnwrapperTests
         FormatEdit edit = DivUnwrapper.Unwrap(Nested, caret, caret);
 
         edit.Text.Substring(edit.SelectionStart - 3, 4).Should().Be("<p>2");
+    }
+
+    [Theory]
+    [InlineData("<div>\n  <div class=\"b\">\n    <!-- keep me -->\n    <p a=\"1\">x &amp; y</p>\n    <![CDATA[ raw ]]>\n    <?pi data?>\n  </div>\n</div>", "<p a")]
+    [InlineData("<div>\n\t<div>\n\t\t<pre>\n\t\t\tcode  <b>1</b>\n\t\t</pre>\n\t\t<!-- c -->text\n\n\t</div>\n</div>", "<pre>")]
+    [InlineData("<body><div>a <!-- c --> <i>b</i> &nbsp; <div id=\"in\">z</div></div></body>", "a <!--")]
+    [InlineData("<div>\r\n  <div>\r\n    <p>one</p>\r\n      <p>two</p>\r\n  </div>\r\n</div>\r\n", "<p>one")]
+    public void Nothing_but_the_two_tags_and_one_indentation_level_is_lost(string text, string marker)
+    {
+        int offset = At(text, marker);
+        DivUnwrapCheck check = DivUnwrapper.Check(text, offset);
+        check.Problem.Should().Be(DivUnwrapProblem.None);
+
+        string result = DivUnwrapper.Unwrap(text, offset, offset).Text;
+
+        // Without whitespace the result is the original minus exactly the opening and the closing tag of the div.
+        string Squash(string t) => System.Text.RegularExpressions.Regex.Replace(t, "\\s+", string.Empty);
+        int open = check.Div!.OpenPos;
+        int openEnd = text.IndexOf('>', open) + 1;
+        int close = LastDivClose(text, open);
+        string expected = text.Remove(close, "</div>".Length).Remove(open, openEnd - open);
+        Squash(result).Should().Be(Squash(expected));
+
+        // Line breaks inside the content are not touched either.
+        result.Count(c => c == '\n').Should().BeGreaterThanOrEqualTo(text.Count(c => c == '\n') - 2);
+    }
+
+    // The closing tag matching the div at "open": the first </div> after it that balances the nesting.
+    private static int LastDivClose(string text, int open)
+    {
+        int depth = 0;
+        for (int i = open; i < text.Length; i++)
+        {
+            if (string.CompareOrdinal(text, i, "<div", 0, 4) == 0)
+            {
+                depth++;
+            }
+            else if (string.CompareOrdinal(text, i, "</div>", 0, 6) == 0 && --depth == 0)
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
 }
