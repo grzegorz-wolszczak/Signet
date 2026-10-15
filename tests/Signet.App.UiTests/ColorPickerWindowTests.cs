@@ -7,6 +7,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using AwesomeAssertions;
 using Signet.App.Infrastructure;
 using Signet.App.Views;
@@ -245,6 +246,24 @@ public sealed class ColorPickerWindowTests
 
         ((SolidColorBrush)Find<Border>(window, "NewSwatch").Background!).Color.R.Should().Be(200);
         ((SolidColorBrush)Find<Border>(window, "PreviousSwatch").Background!).Color.Should().Be(Color.FromRgb(0x11, 0x22, 0x33));
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_custom_palette_fills_the_palette_area_without_scrolling()
+    {
+        ColorPickerWindow window = Shown();
+        Find<ComboBox>(window, "PaletteCombo").SelectedIndex = 2;
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+
+        WrapPanel host = Find<WrapPanel>(window, "PaletteHost");
+        ScrollViewer scroll = host.FindAncestorOfType<ScrollViewer>()!;
+
+        host.Children.Should().HaveCount(132);
+        scroll.Extent.Height.Should().BeLessThanOrEqualTo(scroll.Viewport.Height);
+        // One more row would no longer fit: the area is used to the full.
+        (scroll.Extent.Height + 22).Should().BeGreaterThan(scroll.Viewport.Height);
         window.Close();
     }
 }
