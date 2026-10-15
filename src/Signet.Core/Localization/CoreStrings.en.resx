@@ -350,6 +350,9 @@
   <data name="Status_NoTagToSplit" xml:space="preserve">
     <value>No tag found to split.</value>
   </data>
+  <data name="Status_DivUnwrapped" xml:space="preserve">
+    <value>&lt;div&gt; unwrapped (the content stays, indentation shifted).</value>
+  </data>
   <data name="Status_SpansRemoved" xml:space="preserve">
     <value>&lt;span&gt; tags removed: {0} (the content stays).</value>
   </data>

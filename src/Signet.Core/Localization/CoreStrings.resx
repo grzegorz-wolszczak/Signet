@@ -350,6 +350,9 @@
   <data name="Status_NoTagToSplit" xml:space="preserve">
     <value>Nie znaleziono znacznika do podzielenia.</value>
   </data>
+  <data name="Status_DivUnwrapped" xml:space="preserve">
+    <value>Rozpakowano &lt;div&gt; (treść została, wcięcia przesunięte).</value>
+  </data>
   <data name="Status_SpansRemoved" xml:space="preserve">
     <value>Usunięto znaczniki &lt;span&gt;: {0} (treść została).</value>
   </data>
