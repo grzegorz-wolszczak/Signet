@@ -5615,4 +5615,31 @@ Close the tab</value>
   <data name="ColorScheme_UseThemeFontsNote" xml:space="preserve">
     <value>When turned on, the theme gets a copy of the current fonts of Appearance › Fonts; the changes on this page belong to this theme only and take effect after saving.</value>
   </data>
+  <data name="ColorPickerWindow_BasicColors" xml:space="preserve">
+    <value>Basic colors</value>
+  </data>
+  <data name="ColorPickerWindow_CustomColors" xml:space="preserve">
+    <value>Custom colors</value>
+  </data>
+  <data name="ColorPickerWindow_AddCustom" xml:space="preserve">
+    <value>Add to custom colors</value>
+  </data>
+  <data name="ColorPickerWindow_PickScreen" xml:space="preserve">
+    <value>Pick screen color</value>
+  </data>
+  <data name="ColorPickerWindow_PickScreenTip" xml:space="preserve">
+    <value>Freezes the screen and lets you click any pixel of the desktop</value>
+  </data>
+  <data name="ColorPickerWindow_PickFailed" xml:space="preserve">
+    <value>Could not capture the screen.</value>
+  </data>
+  <data name="ColorPickerWindow_Name" xml:space="preserve">
+    <value>Color name (CSS)</value>
+  </data>
+  <data name="ColorPickerWindow_NameHint" xml:space="preserve">
+    <value>e.g. tomato</value>
+  </data>
+  <data name="ScreenPicker_Hint" xml:space="preserve">
+    <value>Click – pick · Esc – cancel · arrows – ±1 px</value>
+  </data>
 </root>
