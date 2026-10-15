@@ -180,6 +180,49 @@ public partial class PreferencesWindow : Window
         }
     }
 
+    /// <summary>
+    /// The sections collapsed in the tree (the names of their pages); the main window remembers them between openings.
+    /// Setting collapses those sections, except the enclosing sections of the selected one (it stays visible).
+    /// </summary>
+    public IReadOnlyList<string> CollapsedSections
+    {
+        get => _sections.All.Where(n => n.HasChildren && !n.IsExpanded && n.Id.Length > 0).Select(n => n.Id).ToList();
+
+        set
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            HashSet<string> collapsed = new(value, StringComparer.Ordinal);
+            HashSet<PreferencesSectionNode> keepOpen = new();
+            for (PreferencesSectionNode? node = _sections.Selected?.Parent; node is not null; node = node.Parent)
+            {
+                keepOpen.Add(node);
+            }
+
+            // The deepest first: collapsing an enclosing section hides the rows of the ones inside it.
+            foreach (PreferencesSectionNode node in _sections.All
+                         .Where(n => n.HasChildren && n.Id.Length > 0 && collapsed.Contains(n.Id) && !keepOpen.Contains(n))
+                         .OrderByDescending(Depth))
+            {
+                node.IsExpanded = false;
+                if (_selection.FindPath(node) is { } path)
+                {
+                    _source.Collapse(new IndexPath(path));
+                }
+            }
+        }
+    }
+
+    private static int Depth(PreferencesSectionNode node)
+    {
+        int depth = 0;
+        for (PreferencesSectionNode? parent = node.Parent; parent is not null; parent = parent.Parent)
+        {
+            depth++;
+        }
+
+        return depth;
+    }
+
     private const string SectionsSizeKey = "Sections";
     private const string TreeSizeSuffix = ".tree";
     private const string PreviewSizeSuffix = ".preview";
@@ -390,7 +433,7 @@ public partial class PreferencesWindow : Window
                 throw new InvalidOperationException($"The Preferences page '{page.Name}' names an unknown parent '{parentName}'.");
             }
 
-            PreferencesSectionNode node = new(page.Header as string ?? string.Empty, index++, parent);
+            PreferencesSectionNode node = new(page.Header as string ?? string.Empty, index++, parent, page.Name ?? string.Empty);
             if (parent is null)
             {
                 roots.Add(node);

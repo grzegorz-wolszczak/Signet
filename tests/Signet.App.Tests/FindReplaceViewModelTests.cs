@@ -65,8 +65,22 @@ public sealed class FindReplaceViewModelTests : IDisposable
         settings = new SettingsStore(_settingsPath);
         SettingsStore captured = settings;
         var vm = new FindReplaceViewModel(captured, new StatusBarService(), () => tab, new FakeMultiFileSearchHost());
+
+        // The tests of this class work on the active tab; a fresh panel looks in all HTML files (see
+        // A_fresh_panel_looks_in_all_html_files).
+        vm.LookWhereIndex = (int)LookWhere.CurrentFile;
         vm.AttachToActiveTab(tab);
         return vm;
+    }
+
+    [Fact]
+    public void A_fresh_panel_looks_in_all_html_files()
+    {
+        var vm = new FindReplaceViewModel(new SettingsStore(_settingsPath), new StatusBarService(), () => null, new FakeMultiFileSearchHost());
+
+        vm.LookWhereIndex.Should().Be((int)LookWhere.AllHtmlFiles);
+        vm.LookWhereOptions[vm.LookWhereIndex].Should().Be(Strings.Get("FindReplace_LookInAllHtml"), "the list shows the selection");
+        vm.IsMultiFileScope.Should().BeTrue();
     }
 
     [Fact]

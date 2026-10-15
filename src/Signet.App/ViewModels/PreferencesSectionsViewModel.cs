@@ -13,11 +13,14 @@ public sealed partial class PreferencesSectionNode : ObservableObject
     /// <param name="title">The name in the tree.</param>
     /// <param name="pageIndex">The page of the window the section shows.</param>
     /// <param name="parent">The enclosing section; <c>null</c> for a top-level one.</param>
-    public PreferencesSectionNode(string title, int pageIndex, PreferencesSectionNode? parent = null)
+    /// <param name="id">A name of the section that does not change with the language or the order of the pages (the
+    /// <c>x:Name</c> of its page); empty when the page has none.</param>
+    public PreferencesSectionNode(string title, int pageIndex, PreferencesSectionNode? parent = null, string id = "")
     {
         Title = title ?? throw new ArgumentNullException(nameof(title));
         PageIndex = pageIndex;
         Parent = parent;
+        Id = id ?? string.Empty;
         parent?.Children.Add(this);
     }
 
@@ -26,6 +29,9 @@ public sealed partial class PreferencesSectionNode : ObservableObject
 
     /// <summary>The page of the window the section shows.</summary>
     public int PageIndex { get; }
+
+    /// <summary>A name that stays the same in every language and when pages are added (empty when unknown).</summary>
+    public string Id { get; }
 
     /// <summary>The enclosing section; <c>null</c> for a top-level one.</summary>
     public PreferencesSectionNode? Parent { get; }

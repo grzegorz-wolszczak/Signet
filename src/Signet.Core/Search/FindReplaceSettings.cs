@@ -23,8 +23,8 @@ public sealed record FindReplaceSettings
     /// <summary>Search direction.</summary>
     public SearchDirection Direction { get; init; } = SearchDirection.Down;
 
-    /// <summary>Search scope (Current File / All HTML / …).</summary>
-    public LookWhere LookWhere { get; init; } = LookWhere.CurrentFile;
+    /// <summary>Search scope (All HTML Files by default, then Current File / Selected HTML / …).</summary>
+    public LookWhere LookWhere { get; init; } = LookWhere.AllHtmlFiles;
 
     /// <summary>Wrap the search (enabled by default).</summary>
     public bool OptionWrap { get; init; } = true;

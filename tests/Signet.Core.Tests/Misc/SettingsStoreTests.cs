@@ -4,6 +4,7 @@ using AutoFixture;
 using AwesomeAssertions;
 using Signet.Core.BookManipulation;
 using Signet.Core.Misc;
+using Signet.Core.Search;
 using Signet.Core.Tests.TestSupport;
 using Xunit;
 
@@ -159,6 +160,36 @@ public sealed class SettingsStoreTests
 
         writer.PreferencesPageIndex = -3;
         writer.PreferencesPageIndex.Should().Be(0);
+    }
+
+    [Fact]
+    public void The_find_scope_is_all_html_files_without_settings_or_with_an_invalid_value_and_survives_a_restart()
+    {
+        using TempDir dir = new();
+        string path = dir.Combine("settings.xml");
+        SettingsStore writer = new(path);
+        writer.GetFindReplaceSettings().LookWhere.Should().Be(LookWhere.AllHtmlFiles, "a fresh installation");
+
+        writer.SaveFindReplaceSettings(writer.GetFindReplaceSettings() with { LookWhere = (LookWhere)99 });
+        writer.GetFindReplaceSettings().LookWhere.Should().Be(LookWhere.AllHtmlFiles, "a value that is no scope would leave the list empty");
+
+        writer.SaveFindReplaceSettings(writer.GetFindReplaceSettings() with { LookWhere = LookWhere.OpfFile });
+        writer.Save();
+        new SettingsStore(path).GetFindReplaceSettings().LookWhere.Should().Be(LookWhere.OpfFile);
+    }
+
+    [Fact]
+    public void The_collapsed_preferences_sections_survive_a_restart_and_start_empty()
+    {
+        using TempDir dir = new();
+        string path = dir.Combine("settings.xml");
+        SettingsStore writer = new(path);
+        writer.PreferencesCollapsedSections.Should().BeEmpty("every section is expanded by default");
+
+        writer.PreferencesCollapsedSections = new[] { "AppearancePage", "ColorSchemePage", "AppearancePage" };
+        writer.Save();
+
+        new SettingsStore(path).PreferencesCollapsedSections.Should().Equal("AppearancePage", "ColorSchemePage");
     }
 
     [Fact]
