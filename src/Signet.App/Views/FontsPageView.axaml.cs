@@ -1,5 +1,7 @@
 using System.ComponentModel;
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Controls.Primitives;
 using Avalonia.Media;
 using Signet.App.Infrastructure;
@@ -13,6 +15,20 @@ namespace Signet.App.Views;
 /// </summary>
 public partial class FontsPageView : UserControl
 {
+    /// <summary>
+    /// Whether the settings can be changed (default: yes). Unlike <see cref="InputElement.IsEnabled"/> on the page it keeps
+    /// the scroll bar and the preview alive, so a page of switched-off settings can still be scrolled and read.
+    /// </summary>
+    public static readonly StyledProperty<bool> IsContentEnabledProperty =
+        AvaloniaProperty.Register<FontsPageView, bool>(nameof(IsContentEnabled), defaultValue: true);
+
+    /// <summary>Gets or sets <see cref="IsContentEnabledProperty"/>.</summary>
+    public bool IsContentEnabled
+    {
+        get => GetValue(IsContentEnabledProperty);
+        set => SetValue(IsContentEnabledProperty, value);
+    }
+
     private FontPageViewModel? _page;
     private FontSettingViewModel? _shown;
 

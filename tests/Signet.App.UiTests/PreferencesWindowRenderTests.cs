@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Signet.Controls.TreeDataGrid;
@@ -137,11 +138,11 @@ public sealed class PreferencesWindowRenderTests
     }
 
     /// <summary>
-    /// Save (filled) is enabled only with changes, writes them and keeps the window open; Cancel (a frame) closes it
-    /// without the later changes and without a question. There is no Apply button any more.
+    /// Save (filled) is enabled only with changes, writes them and keeps the window open; Close (a frame) closes the
+    /// window right away when nothing is unsaved. There is no Apply or Cancel button any more.
     /// </summary>
     [AvaloniaFact]
-    public void Save_writes_the_changes_and_keeps_the_window_open_and_Cancel_drops_them()
+    public void Save_writes_the_changes_and_keeps_the_window_open_and_Close_closes_it()
     {
         PreferencesWindow window = BuildWindow(out SettingsStore settings);
         var vm = (PreferencesViewModel)window.DataContext!;
@@ -151,10 +152,12 @@ public sealed class PreferencesWindowRenderTests
         Dispatcher.UIThread.RunJobs();
         bool before = settings.SpellCheck;
         Button save = window.FindControl<Button>("SaveButton")!;
-        Button cancel = window.FindControl<Button>("CancelButton")!;
+        Button close = window.FindControl<Button>("CloseButton")!;
         window.FindControl<Button>("ApplyButton").Should().BeNull();
+        window.FindControl<Button>("CancelButton").Should().BeNull("the button is Close now");
+        close.Content.Should().Be(Strings.Get("Common_Close"));
         save.Classes.Should().Contain("accent");
-        cancel.Classes.Should().Contain("outline");
+        close.Classes.Should().Contain("outline");
         save.IsEffectivelyEnabled.Should().BeFalse("nothing has changed yet");
 
         vm.SpellCheckEnabled = !before;
@@ -167,13 +170,98 @@ public sealed class PreferencesWindowRenderTests
         closed.Should().BeFalse("Save keeps the window open");
         save.IsEffectivelyEnabled.Should().BeFalse("everything is saved");
 
-        vm.SpellCheckEnabled = before;
-        cancel.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        close.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
 
         closed.Should().BeTrue();
-        window.OwnedWindows.Should().BeEmpty("Cancel does not ask");
-        settings.SpellCheck.Should().Be(!before, "Cancel drops the change made after Save");
+        window.OwnedWindows.Should().BeEmpty("nothing is unsaved: Close does not ask");
+    }
+
+    /// <summary>Close with unsaved changes asks what to do with them, like the window's close button and Escape.</summary>
+    [AvaloniaFact]
+    public void Close_with_unsaved_changes_asks_first()
+    {
+        PreferencesWindow window = BuildWindow(out SettingsStore settings);
+        var vm = (PreferencesViewModel)window.DataContext!;
+        bool closed = false;
+        window.Closed += (_, _) => closed = true;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        bool before = settings.SpellCheck;
+        vm.SpellCheckEnabled = !before;
+        Dispatcher.UIThread.RunJobs();
+
+        window.FindControl<Button>("CloseButton")!.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+
+        closed.Should().BeFalse("the window waits for the answer");
+        window.OwnedWindows.Should().ContainSingle("the question about the unsaved changes");
+        settings.SpellCheck.Should().Be(before, "nothing was saved");
+        window.OwnedWindows[0].Close();
+        window.Close();
+    }
+
+    /// <summary>
+    /// A Fonts page whose settings are switched off (the theme does not use its own fonts) can still be scrolled: only
+    /// the settings are disabled, not the scroll viewer with its scroll bar.
+    /// </summary>
+    [AvaloniaFact]
+    public void A_disabled_fonts_page_can_still_be_scrolled()
+    {
+        PreferencesWindow window = BuildWindow();
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, "ThemeFontsPage");
+        CheckBox useThemeFonts = window.FindControl<CheckBox>("UseThemeFontsBox")!;
+        useThemeFonts.IsChecked = false;
+        Dispatcher.UIThread.RunJobs();
+        FontsPageView page = window.FindControl<FontsPageView>("ThemeFontsView")!;
+
+        page.IsContentEnabled.Should().BeFalse();
+        page.FindControl<StackPanel>("Settings")!.IsEffectivelyEnabled.Should().BeFalse("the settings are switched off");
+        ScrollViewer scroll = page.GetVisualDescendants().OfType<ScrollViewer>().First();
+        scroll.IsEffectivelyEnabled.Should().BeTrue("the scroll viewer keeps working");
+        page.FindControl<CheckBox>("WrapPreviewBox")!.IsEffectivelyEnabled.Should().BeTrue("the preview is not disabled");
+
+        useThemeFonts.IsChecked = true;
+        Dispatcher.UIThread.RunJobs();
+        page.FindControl<StackPanel>("Settings")!.IsEffectivelyEnabled.Should().BeTrue();
+        window.Close();
+    }
+
+    /// <summary>The preview of a Fonts page can be made wider or narrower with the splitter between it and the settings.</summary>
+    [AvaloniaFact]
+    public void The_preview_of_a_fonts_page_is_resized_with_the_splitter()
+    {
+        PreferencesWindow window = BuildWindow();
+        window.Width = 1500; // room for both columns to grow
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowFontsTab(window, "CodeEditor");
+        FontsPageView page = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible);
+        GridSplitter splitter = page.FindControl<GridSplitter>("PreviewSplitter")!;
+        Grid grid = (Grid)splitter.Parent!;
+        double before = grid.ColumnDefinitions[2].ActualWidth;
+        Point center = splitter.TranslatePoint(new Point(splitter.Bounds.Width / 2, splitter.Bounds.Height / 2), window)!.Value;
+
+        window.MouseDown(center, MouseButton.Left);
+        window.MouseMove(center - new Vector(120, 0));
+        window.MouseUp(center - new Vector(120, 0), MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+
+        grid.ColumnDefinitions[2].ActualWidth.Should().BeGreaterThan(before + 60, "dragging the splitter to the left widens the preview");
+
+        Point moved = splitter.TranslatePoint(new Point(splitter.Bounds.Width / 2, splitter.Bounds.Height / 2), window)!.Value;
+        window.MouseDown(moved, MouseButton.Left);
+        window.MouseMove(moved + new Vector(400, 0));
+        window.MouseUp(moved + new Vector(400, 0), MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+
+        grid.ColumnDefinitions[2].ActualWidth.Should().BeGreaterThanOrEqualTo(160, "the preview keeps a minimum width");
+        grid.ColumnDefinitions[2].ActualWidth.Should().BeLessThan(before + 60, "dragging to the right narrows it again");
+        window.Close();
     }
 
     /// <summary>Escape without changes closes the window right away.</summary>
