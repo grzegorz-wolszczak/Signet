@@ -35,7 +35,10 @@ public enum FootnoteStyleProblem
 /// <summary>The first problem of a footnote style definition.</summary>
 /// <param name="Problem">What is wrong.</param>
 /// <param name="Detail">Where: the property or the text of the declaration.</param>
-public sealed record FootnoteStyleError(FootnoteStyleProblem Problem, string Detail);
+/// <param name="Start">The offset in the definition of what is wrong (the brace, the comment marker, the declaration or its
+/// property).</param>
+/// <param name="Length">The length of it; 0 when unknown.</param>
+public sealed record FootnoteStyleError(FootnoteStyleProblem Problem, string Detail, int Start = 0, int Length = 0);
 
 /// <summary>
 /// The CSS of Signet's footnote classes (Preferences → Footnotes): the declarations of each rule, one per line, e.g.
@@ -96,15 +99,21 @@ public sealed record FootnoteStyles(
         ArgumentNullException.ThrowIfNull(declarations);
         if (declarations.IndexOfAny(['{', '}']) is var brace and >= 0)
         {
-            return new FootnoteStyleError(FootnoteStyleProblem.Brace, declarations[brace].ToString());
+            return new FootnoteStyleError(FootnoteStyleProblem.Brace, declarations[brace].ToString(), brace, 1);
         }
 
-        if (declarations.Contains("/*", StringComparison.Ordinal) || declarations.Contains("*/", StringComparison.Ordinal))
+        int comment = declarations.IndexOf("/*", StringComparison.Ordinal);
+        if (comment < 0)
         {
-            return new FootnoteStyleError(FootnoteStyleProblem.Comment, "/* */");
+            comment = declarations.IndexOf("*/", StringComparison.Ordinal);
         }
 
-        foreach (string chunk in SplitDeclarations(declarations.Replace("\r\n", "\n", StringComparison.Ordinal)))
+        if (comment >= 0)
+        {
+            return new FootnoteStyleError(FootnoteStyleProblem.Comment, "/* */", comment, 2);
+        }
+
+        foreach ((string chunk, int chunkOffset) in SplitDeclarations(declarations.Replace("\r\n", "\n", StringComparison.Ordinal)))
         {
             string declaration = chunk.Trim();
             if (declaration.Length == 0)
@@ -112,33 +121,35 @@ public sealed record FootnoteStyles(
                 continue;
             }
 
+            // Where the declaration starts, in the text as it was given (the splitting works on the text with "\n" only).
+            int start = OriginalOffset(declarations, chunkOffset + (chunk.Length - chunk.TrimStart().Length));
             int colon = declaration.IndexOf(':', StringComparison.Ordinal);
             if (colon < 0)
             {
-                return new FootnoteStyleError(FootnoteStyleProblem.MissingColon, FirstLine(declaration));
+                return new FootnoteStyleError(FootnoteStyleProblem.MissingColon, FirstLine(declaration), start, FirstLine(declaration).Length);
             }
 
             string property = declaration[..colon].Trim();
             string value = declaration[(colon + 1)..].Trim();
             if (value.Contains('\n', StringComparison.Ordinal))
             {
-                return new FootnoteStyleError(FootnoteStyleProblem.MissingSemicolon, FirstLine(declaration));
+                return new FootnoteStyleError(FootnoteStyleProblem.MissingSemicolon, FirstLine(declaration), start, FirstLine(declaration).Length);
             }
 
             if (!PropertyName.IsMatch(property))
             {
-                return new FootnoteStyleError(FootnoteStyleProblem.InvalidProperty, property);
+                return new FootnoteStyleError(FootnoteStyleProblem.InvalidProperty, property, start, property.Length);
             }
 
             if (!CssPropertyValidator.IsKnownProperty(property.ToLowerInvariant()))
             {
-                return new FootnoteStyleError(FootnoteStyleProblem.UnknownProperty, property);
+                return new FootnoteStyleError(FootnoteStyleProblem.UnknownProperty, property, start, property.Length);
             }
 
             if (Regex.Replace(value, @"!\s*important\s*$", string.Empty, RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)
                 .Trim().Length == 0)
             {
-                return new FootnoteStyleError(FootnoteStyleProblem.EmptyValue, property);
+                return new FootnoteStyleError(FootnoteStyleProblem.EmptyValue, property, start, property.Length);
             }
         }
 
@@ -182,9 +193,9 @@ public sealed record FootnoteStyles(
     }
 
     // The declarations: the text split at the semicolons outside quotes and parentheses (e.g. url("a;b")).
-    private static List<string> SplitDeclarations(string text)
+    private static List<(string Text, int Offset)> SplitDeclarations(string text)
     {
-        List<string> chunks = new();
+        List<(string, int)> chunks = new();
         int start = 0;
         int depth = 0;
         char quote = '\0';
@@ -209,13 +220,41 @@ public sealed record FootnoteStyles(
             }
             else if (c == ';' && depth == 0)
             {
-                chunks.Add(text[start..i]);
+                chunks.Add((text[start..i], start));
                 start = i + 1;
             }
         }
 
-        chunks.Add(text[start..]);
+        chunks.Add((text[start..], start));
         return chunks;
+    }
+
+    // The offset in <paramref name="original"/> of the character at <paramref name="normalized"/> in the same text with
+    // every "\r\n" replaced by "\n".
+    private static int OriginalOffset(string original, int normalized)
+    {
+        if (!original.Contains('\r', StringComparison.Ordinal))
+        {
+            return normalized;
+        }
+
+        int seen = 0;
+        for (int i = 0; i < original.Length; i++)
+        {
+            if (original[i] == '\r' && i + 1 < original.Length && original[i + 1] == '\n')
+            {
+                continue;
+            }
+
+            if (seen == normalized)
+            {
+                return i;
+            }
+
+            seen++;
+        }
+
+        return original.Length;
     }
 
     private static string FirstLine(string text) => text.Split('\n')[0].Trim();

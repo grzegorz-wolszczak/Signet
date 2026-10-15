@@ -4,6 +4,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Data;
 using Avalonia.Media;
 using AvaloniaEdit;
+using AvaloniaEdit.Rendering;
 using Signet.App.Infrastructure;
 using Signet.Core.MainUI;
 
@@ -21,8 +22,10 @@ public sealed class CssEditor : TextEditor
     public static readonly StyledProperty<string> CssTextProperty =
         AvaloniaProperty.Register<CssEditor, string>(nameof(CssText), string.Empty, defaultBindingMode: BindingMode.TwoWay);
 
+    private readonly ErrorRenderer _errorRenderer = new();
     private SyntaxColorizer? _colorizer;
     private bool _syncing;
+    private Func<string, (int Start, int Length)?>? _errorLocator;
 
     /// <summary>Creates the editor (editable, wrapping, without line numbers).</summary>
     public CssEditor()
@@ -37,9 +40,11 @@ public sealed class CssEditor : TextEditor
         Options.EnableEmailHyperlinks = false;
         Options.HighlightCurrentLine = false;
         EditorZoom.Attach(this);
+        TextArea.TextView.BackgroundRenderers.Add(_errorRenderer);
         ApplyTheme(AppTheme.Current);
         Document.TextChanged += (_, _) =>
         {
+            UpdateError();
             if (!_syncing)
             {
                 _syncing = true;
@@ -53,6 +58,36 @@ public sealed class CssEditor : TextEditor
                 }
             }
         };
+    }
+
+    /// <summary>
+    /// Finds what is wrong in the text: the start and the length of the first problem, or <see langword="null"/> when the
+    /// text is fine. It is asked after every change of the text; the problem is underlined with the look of the theme's
+    /// syntax errors (a squiggle by default), as Code Editor underlines its errors.
+    /// </summary>
+    public Func<string, (int Start, int Length)?>? ErrorLocator
+    {
+        get => _errorLocator;
+        set
+        {
+            _errorLocator = value;
+            UpdateError();
+        }
+    }
+
+    /// <summary>The underlined range (start, length); <see langword="null"/> when nothing is underlined.</summary>
+    public (int Start, int Length)? ErrorRange => _errorRenderer.Range;
+
+    private void UpdateError()
+    {
+        (int Start, int Length)? range = _errorLocator?.Invoke(Document.Text);
+        if (range is { } r && (r.Length <= 0 || r.Start < 0 || r.Start >= Document.TextLength))
+        {
+            range = null;
+        }
+
+        _errorRenderer.Range = range is { } valid ? (valid.Start, Math.Min(valid.Length, Document.TextLength - valid.Start)) : null;
+        TextArea.TextView.InvalidateLayer(KnownLayer.Selection);
     }
 
     /// <summary>Gets or sets <see cref="CssTextProperty"/>.</summary>
@@ -118,5 +153,27 @@ public sealed class CssEditor : TextEditor
         }
 
         EditorTheming.Apply(this, theme);
+        _errorRenderer.Colorizer = _colorizer;
+        TextArea.TextView.InvalidateLayer(KnownLayer.Selection);
+    }
+
+    // Underlines the problem with the look of the theme's syntax errors.
+    private sealed class ErrorRenderer : IBackgroundRenderer
+    {
+        public (int Start, int Length)? Range { get; set; }
+
+        public SyntaxColorizer? Colorizer { get; set; }
+
+        public KnownLayer Layer => KnownLayer.Selection;
+
+        public void Draw(TextView textView, DrawingContext drawingContext)
+        {
+            if (Range is not { } range || Colorizer is not { } colorizer || !textView.VisualLinesValid)
+            {
+                return;
+            }
+
+            ThemePainter.Paint(textView, drawingContext, range.Start, range.Length, colorizer.ErrorLook, colorizer.TextColor);
+        }
     }
 }

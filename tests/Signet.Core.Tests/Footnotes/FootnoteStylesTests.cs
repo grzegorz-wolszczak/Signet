@@ -79,9 +79,25 @@ public sealed class FootnoteStylesTests
         }
         else
         {
-            error.Should().Be(new FootnoteStyleError(problem.Value, detail));
+            error!.Problem.Should().Be(problem.Value);
+            error.Detail.Should().Be(detail);
             FootnoteStyles.IsValidDeclarations(declarations).Should().BeFalse();
         }
+    }
+
+    [Theory]
+    [InlineData("color: red; }", "}")]
+    [InlineData("color: red; /* x */", "/*")]
+    [InlineData("color red;\nmargin: 0;", "color red")]
+    [InlineData("margin: 0;\nfnot-size: 1em;\ncolor: red;", "fnot-size")]
+    [InlineData("margin: 0;\r\n  fnot-size: 1em;\r\ncolor: red;", "fnot-size")]
+    [InlineData("color: red\nmargin: 0;", "color: red")]
+    [InlineData("margin: 0; color: ;", "color")]
+    public void Validate_says_where_the_problem_is(string declarations, string marked)
+    {
+        FootnoteStyleError error = FootnoteStyles.Validate(declarations)!;
+
+        declarations.Substring(error.Start, error.Length).Should().Be(marked);
     }
 
     [Fact]

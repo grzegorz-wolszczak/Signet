@@ -55,6 +55,27 @@ public sealed class CssEditorTests
     }
 
     [AvaloniaFact]
+    public void The_problem_found_by_the_locator_is_underlined_and_follows_the_text()
+    {
+        CssEditor editor = new() { Height = 100 };
+        Window window = Show(editor);
+        editor.ErrorLocator = text => text.IndexOf("oops", System.StringComparison.Ordinal) is var at and >= 0 ? (at, 4) : null;
+
+        editor.CssText = "color: red;";
+        editor.ErrorRange.Should().BeNull("nothing is wrong");
+
+        editor.CssText = "color: red;\noops: 1;";
+        editor.ErrorRange.Should().Be((12, 4));
+
+        editor.Document.Text = "oops";
+        editor.ErrorRange.Should().Be((0, 4), "typing moves the underline");
+
+        editor.Document.Text = "fixed";
+        editor.ErrorRange.Should().BeNull();
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void Ctrl_wheel_zooms_every_editor_by_the_same_amount_and_shows_the_size()
     {
         EditorZoom.Delta = 0;
