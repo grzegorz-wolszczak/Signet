@@ -830,6 +830,29 @@ Atrybuty tych znaczników zostaną utracone:
     <value>Te komentarze i inne węzły między elementami zostaną utracone:
 {0}</value>
   </data>
+  <data name="Action_MainWindow_UnwrapDiv" xml:space="preserve">
+    <value>Rozpakuj &lt;div&gt;</value>
+  </data>
+  <data name="CodeEditorMenu_UnwrapDiv" xml:space="preserve">
+    <value>Rozpakuj &lt;div&gt;</value>
+  </data>
+  <data name="UnwrapDiv_NotInDiv" xml:space="preserve">
+    <value>Kursor nie jest wewnątrz elementu &lt;div&gt; (od znacznika otwierającego do zamykającego).</value>
+  </data>
+  <data name="UnwrapDiv_NoClosingTag" xml:space="preserve">
+    <value>Ten &lt;div&gt; nie ma pasującego znacznika zamykającego, więc nie wiadomo, co rozpakować.</value>
+  </data>
+  <data name="UnwrapDiv_Title" xml:space="preserve">
+    <value>Rozpakuj &lt;div&gt;</value>
+  </data>
+  <data name="UnwrapDiv_Unwrap" xml:space="preserve">
+    <value>Rozpakuj</value>
+  </data>
+  <data name="UnwrapDiv_IdWarning" xml:space="preserve">
+    <value>Ten &lt;div&gt; ma atrybut id="{0}". Po rozpakowaniu id zniknie, więc odnośniki i style, które się do niego odwołują, przestaną działać.
+
+Rozpakować mimo to?</value>
+  </data>
   <data name="CodeEditorMenu_ReformatCss" xml:space="preserve">
     <value>Ponownie formatuj CSS</value>
   </data>

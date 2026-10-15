@@ -310,6 +310,7 @@ public sealed partial class MainWindowViewModel
         _actions.SetHandler(AppActionIds.SelectTagContents, () => ActiveCodeTab?.SelectTagContents());
         _actions.SetHandler(AppActionIds.SplitTag, () => ActiveCodeTab?.SplitTag());
         _actions.SetHandler(AppActionIds.MergeContent, RequestMergeContent);
+        _actions.SetHandler(AppActionIds.UnwrapDiv, RequestUnwrapDiv);
         _actions.SetHandler(AppActionIds.RenameTag, () =>
         {
             if (ActiveCodeTab is { } tab)
@@ -582,6 +583,38 @@ public sealed partial class MainWindowViewModel
         }
 
         return string.Join(Environment.NewLine + Environment.NewLine, sections);
+    }
+
+    /// <summary>
+    /// "Unwrap div" — the div has an <c>id</c> (a link target, perhaps): the view asks for confirmation (the argument
+    /// is the id) and calls <see cref="ConfirmUnwrapDiv"/>.
+    /// </summary>
+    public event EventHandler<string>? UnwrapDivConfirmationRequested;
+
+    /// <summary>Unwraps the div around the caret in the active Code Editor tab (after the warning is confirmed).</summary>
+    public void ConfirmUnwrapDiv() => ActiveCodeTab?.UnwrapDiv();
+
+    private void RequestUnwrapDiv()
+    {
+        if (ActiveCodeTab is not { } tab)
+        {
+            return;
+        }
+
+        DivUnwrapCheck check = tab.CheckUnwrapDiv();
+        if (check.Div is not { } div)
+        {
+            _statusBar.ShowMessage(
+                CodeTabViewModel.UnwrapDivProblemText(check.Problem) ?? string.Empty, TimeSpan.FromSeconds(5), NotificationLevel.Warning);
+        }
+        else if (div.Id is { } id)
+        {
+            UnwrapDivConfirmationRequested?.Invoke(this, id);
+        }
+        else
+        {
+            tab.UnwrapDiv();
+        }
     }
 
     private void RequestMergeContent()
@@ -3331,7 +3364,7 @@ public sealed partial class MainWindowViewModel
         _actions.SetEnabled(
             tab?.SupportsTagStructure ?? false,
             AppActionIds.JumpToOpeningTag, AppActionIds.JumpToClosingTag, AppActionIds.SelectTagContents,
-            AppActionIds.RenameTag, AppActionIds.SplitTag);
+            AppActionIds.RenameTag, AppActionIds.SplitTag, AppActionIds.UnwrapDiv);
 
         // "Merge Content" — a label with the element name and count when merging is possible.
         ElementMergeCandidate? merge = isHtml ? tab?.MergeCandidate : null;

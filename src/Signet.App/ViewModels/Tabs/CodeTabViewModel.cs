@@ -1352,6 +1352,39 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     }
 
     /// <summary>
+    /// Whether "Unwrap div" can be used at the caret — the div that would go, or the reason there is none
+    /// (<see cref="DivUnwrapper.Check"/>).
+    /// </summary>
+    public DivUnwrapCheck CheckUnwrapDiv()
+    {
+        if (Syntax != CodeEditorSyntax.Html)
+        {
+            return new DivUnwrapCheck(null, DivUnwrapProblem.NotInDiv);
+        }
+
+        SyncModelFromDocument();
+        return DivUnwrapper.Check(_model.Text, _caretOffset);
+    }
+
+    /// <summary>Why "Unwrap div" cannot be used (a tooltip / status message); <c>null</c> when it can.</summary>
+    public static string? UnwrapDivProblemText(DivUnwrapProblem problem) => problem switch
+    {
+        DivUnwrapProblem.NotInDiv => Strings.Get("UnwrapDiv_NotInDiv"),
+        DivUnwrapProblem.NoClosingTag => Strings.Get("UnwrapDiv_NoClosingTag"),
+        _ => null,
+    };
+
+    /// <summary>
+    /// "Unwrap div": removes the tags of the innermost div around the caret and keeps its content, shifted back by
+    /// one level of indentation. Undoable in one step.
+    /// </summary>
+    public void UnwrapDiv()
+    {
+        SyncModelFromDocument();
+        ApplyFormat(DivUnwrapper.Unwrap(_model.Text, _caretOffset, _caretOffset));
+    }
+
+    /// <summary>
     /// The <c>&lt;span&gt;</c> whose opening or closing tag is under the caret — for the "Remove span" context menu
     /// (<see cref="SpanUnwrapper.Find"/>); <c>null</c> outside such a tag or in a non-HTML tab.
     /// </summary>

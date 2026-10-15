@@ -530,6 +530,7 @@ public sealed class CodeTabViewRenderTests
             Signet.App.Resources.Strings.Get("CodeEditorMenu_ToggleLineWrapMode"),
             Signet.App.Resources.Strings.Get("CodeEditorMenu_GoToLinkOrStyle"),
             CodeTabViewModel.MergeContentTextFor(null),
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_UnwrapDiv"),
             Signet.App.Resources.Strings.Get("CodeEditorMenu_MarkSelectedText"),
             Signet.App.Resources.Strings.Get("CodeEditorMenu_ReformatHtml"),
             Signet.App.Resources.Strings.Get("CodeEditorMenu_Undo"),
@@ -689,6 +690,48 @@ public sealed class CodeTabViewRenderTests
         MenuItem disabled = MergeItem();
         disabled.Header.Should().Be(CodeTabViewModel.MergeContentTextFor(null));
         disabled.IsEnabled.Should().BeFalse();
+    }
+
+    /// <summary>"Unwrap div": always present; greyed out with a tooltip saying why outside a div.</summary>
+    [AvaloniaFact]
+    public void Context_menu_unwrap_div_is_disabled_with_a_reason_outside_a_div()
+    {
+        using TempDir temp = new();
+        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
+        html.InitialLoad();
+
+        OpenTab tab = new TabManagerModel().OpenResource(html);
+        (SettingsStore settings, SpellChecker spellChecker) = NewSpellChecker();
+        var vm = new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker) { Host = new FakeHost() };
+        var window = new Window { Width = 600, Height = 400, Content = new CodeTabView { DataContext = vm } };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
+        const string text = "<html><body><div><p>a</p></div>\n<p>b</p></body></html>";
+        editor.Document.Text = text;
+
+        MenuItem UnwrapItem(int caret)
+        {
+            editor.CaretOffset = caret;
+            Dispatcher.UIThread.RunJobs();
+            editor.TextArea.RaiseEvent(new Avalonia.Input.ContextRequestedEventArgs());
+            Dispatcher.UIThread.RunJobs();
+            ContextMenu menu = editor.ContextMenu!;
+            MenuItem item = menu.Items.OfType<MenuItem>().Single(
+                i => (string)i.Header! == Signet.App.Resources.Strings.Get("CodeEditorMenu_UnwrapDiv"));
+            menu.Close();
+            return item;
+        }
+
+        MenuItem inside = UnwrapItem(text.IndexOf("<p>a", System.StringComparison.Ordinal));
+        inside.IsEnabled.Should().BeTrue();
+        ToolTip.GetTip(inside).Should().BeNull();
+
+        MenuItem outside = UnwrapItem(text.IndexOf("<p>b", System.StringComparison.Ordinal));
+        outside.IsEnabled.Should().BeFalse();
+        ToolTip.GetTip(outside).Should().Be(Signet.App.Resources.Strings.Get("UnwrapDiv_NotInDiv"));
     }
 
     /// <summary>

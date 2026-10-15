@@ -77,6 +77,7 @@ public static class AppActionIds
     public const string RenameTag = "MainWindow.RenameTag";
     public const string SplitTag = "MainWindow.SplitTag";
     public const string MergeContent = "MainWindow.MergeContent";
+    public const string UnwrapDiv = "MainWindow.UnwrapDiv";
     public const string RevertToBefore = "MainWindow.RevertToBefore";
     public const string RevertToAfter = "MainWindow.RevertToAfter";
     public const string CreateCheckpoint = "MainWindow.CreateCheckpoint";
@@ -252,7 +253,7 @@ public static class AppActionIds
     /// </summary>
     private static readonly System.Collections.Generic.HashSet<string> CodeEditorActionIds = new(System.StringComparer.Ordinal)
     {
-        DeleteLine, ToggleComment, CasingLowercase, CasingUppercase, CasingTitlecase, CasingCapitalize, MergeContent,
+        DeleteLine, ToggleComment, CasingLowercase, CasingUppercase, CasingTitlecase, CasingCapitalize, MergeContent, UnwrapDiv,
         RenameClass, InsertClosingTag, RemoveTagPair, JumpToOpeningTag, JumpToClosingTag, SelectTagContents, RenameTag,
         SplitTag, GoToLinkOrStyle, FindUsages,
     };

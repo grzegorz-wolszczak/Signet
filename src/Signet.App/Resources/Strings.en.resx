@@ -830,6 +830,29 @@ The attributes of these tags will be lost:
     <value>These comments and other nodes between the elements will be lost:
 {0}</value>
   </data>
+  <data name="Action_MainWindow_UnwrapDiv" xml:space="preserve">
+    <value>Unwrap &lt;div&gt;</value>
+  </data>
+  <data name="CodeEditorMenu_UnwrapDiv" xml:space="preserve">
+    <value>Unwrap &lt;div&gt;</value>
+  </data>
+  <data name="UnwrapDiv_NotInDiv" xml:space="preserve">
+    <value>The caret is not inside a &lt;div&gt; (from its opening tag to its closing tag).</value>
+  </data>
+  <data name="UnwrapDiv_NoClosingTag" xml:space="preserve">
+    <value>This &lt;div&gt; has no matching closing tag, so it is unclear what to unwrap.</value>
+  </data>
+  <data name="UnwrapDiv_Title" xml:space="preserve">
+    <value>Unwrap &lt;div&gt;</value>
+  </data>
+  <data name="UnwrapDiv_Unwrap" xml:space="preserve">
+    <value>Unwrap</value>
+  </data>
+  <data name="UnwrapDiv_IdWarning" xml:space="preserve">
+    <value>This &lt;div&gt; has the attribute id="{0}". After unwrapping the id is gone, so links and styles that refer to it will stop working.
+
+Unwrap anyway?</value>
+  </data>
   <data name="CodeEditorMenu_ReformatCss" xml:space="preserve">
     <value>Reformat CSS</value>
   </data>

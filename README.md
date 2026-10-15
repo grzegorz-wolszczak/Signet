@@ -71,6 +71,11 @@ EPUB editor I know of) has them:
 - **Remove span** (Code Editor context menu): unwraps the `<span>` at the caret. It can also unwrap
   every identical span (same attributes) in the file or in the whole book. Risky removals go through
   the same ⚠ confirmation as in Cleanup.
+- **Unwrap `<div>`** (Code Editor context menu and Edit menu): removes the opening and closing tag of the
+  innermost `<div>` around the caret and keeps its content one level up, shifting the indentation back
+  (`<div class="a"><div class="b"><p>1</p></div></div>` → `<div class="a"><p>1</p></div>`). A `<div>` with an `id`
+  asks for confirmation. When it cannot be used the menu item is greyed out, and its tooltip says why. The action
+  has no default shortcut; assign one in Preferences if you want it.
 - **Live CSS Panel with the element hierarchy**: shows the matching rules of every element from
   `<body>` down to the element at the caret. Inherited properties that a closer element overrides
   are struck through, with the winning rule (selector, file and line) shown next to them. The panel

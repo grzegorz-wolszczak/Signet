@@ -131,6 +131,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             _boundViewModel.AboutRequested -= OnAboutRequested;
             _boundViewModel.RenameTagRequested -= OnRenameTagRequested;
             _boundViewModel.MergeContentConfirmationRequested -= OnMergeContentConfirmationRequested;
+            _boundViewModel.UnwrapDivConfirmationRequested -= OnUnwrapDivConfirmationRequested;
             _boundViewModel.RevertConfirmationRequested -= OnRevertConfirmationRequested;
             _boundViewModel.RecentLocationsRequested -= OnRecentLocationsRequested;
             _boundViewModel.CreateCheckpointRequested -= OnCreateCheckpointRequested;
@@ -179,6 +180,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         _boundViewModel.AboutRequested += OnAboutRequested;
         _boundViewModel.RenameTagRequested += OnRenameTagRequested;
         _boundViewModel.MergeContentConfirmationRequested += OnMergeContentConfirmationRequested;
+        _boundViewModel.UnwrapDivConfirmationRequested += OnUnwrapDivConfirmationRequested;
         _boundViewModel.RevertConfirmationRequested += OnRevertConfirmationRequested;
         _boundViewModel.RecentLocationsRequested += OnRecentLocationsRequested;
         _boundViewModel.CreateCheckpointRequested += OnCreateCheckpointRequested;
@@ -413,6 +415,18 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         if (int.TryParse(answer, NumberStyles.Integer, CultureInfo.InvariantCulture, out int line) && line > 0)
         {
             vm.GoToLine(line);
+        }
+    }
+
+    // "Unwrap div": the div has an id — the links to it would break.
+    private async void OnUnwrapDivConfirmationRequested(object? sender, string id)
+    {
+        MainWindowViewModel? vm = _boundViewModel;
+        if (vm is not null
+            && await ConfirmWindow.AskAsync(
+                this, Strings.Get("UnwrapDiv_Title"), Strings.Format("UnwrapDiv_IdWarning", id), Strings.Get("UnwrapDiv_Unwrap")))
+        {
+            vm.ConfirmUnwrapDiv();
         }
     }
 

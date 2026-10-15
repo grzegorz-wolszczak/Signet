@@ -109,7 +109,7 @@ public sealed class MergeContentTests
     }
 
     [Fact]
-    public void Merge_Content_is_the_last_item_of_the_Edit_menu()
+    public void Merge_Content_is_followed_only_by_Unwrap_div_in_the_Edit_menu()
     {
         using UiCultureScope culture = new("en");
         using TestHost host = new();
@@ -117,7 +117,8 @@ public sealed class MergeContentTests
 
         MenuItemViewModel edit = builder.Build().Single(m => m.Header == "_Edit");
 
-        edit.Items!.Last().Command.Should().BeSameAs(host.Registry.Require(AppActionIds.MergeContent));
+        edit.Items![^2].Command.Should().BeSameAs(host.Registry.Require(AppActionIds.MergeContent));
+        edit.Items![^1].Command.Should().BeSameAs(host.Registry.Require(AppActionIds.UnwrapDiv));
     }
     [Fact]
     public void Text_and_a_comment_between_elements_ask_first_and_are_merged_after_confirmation()

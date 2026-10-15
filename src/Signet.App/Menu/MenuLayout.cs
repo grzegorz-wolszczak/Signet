@@ -94,7 +94,8 @@ public static class MenuLayout
             Sep,
             A("MainWindow.Preferences"),
             Sep,
-            A("MainWindow.MergeContent")),
+            A("MainWindow.MergeContent"),
+            A("MainWindow.UnwrapDiv")),
 
         MenuNode.Sub("&Insert",
             A("MainWindow.InsertSGFSectionMarker"),

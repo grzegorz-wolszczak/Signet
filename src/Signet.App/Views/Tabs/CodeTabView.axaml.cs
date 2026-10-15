@@ -698,6 +698,13 @@ public partial class CodeTabView : UserControl
                 enabled: vm.MergeCandidate is not null,
                 gesture: host.GetActionGesture(AppActionIds.MergeContent),
                 literal: true));
+            DivUnwrapCheck divCheck = vm.CheckUnwrapDiv();
+            items.Add(Item(
+                Strings.Get("CodeEditorMenu_UnwrapDiv"),
+                () => host.ExecuteAction(AppActionIds.UnwrapDiv),
+                enabled: divCheck.Div is not null,
+                gesture: host.GetActionGesture(AppActionIds.UnwrapDiv),
+                toolTip: CodeTabViewModel.UnwrapDivProblemText(divCheck.Problem)));
             items.Add(new Separator());
 
             // ---- Mark Selected Text / Unmark Marked Text ----
@@ -914,7 +921,8 @@ public partial class CodeTabView : UserControl
         string? iconKey = null,
         bool enabled = true,
         KeyGesture? gesture = null,
-        bool literal = false)
+        bool literal = false,
+        string? toolTip = null)
     {
         MenuItem item = new()
         {
@@ -923,6 +931,12 @@ public partial class CodeTabView : UserControl
             InputGesture = gesture,
             Icon = IconFor(iconKey),
         };
+        if (toolTip is not null)
+        {
+            ToolTip.SetTip(item, toolTip);
+            ToolTip.SetShowOnDisabled(item, true);
+        }
+
         item.Click += (_, _) => onClick();
         return item;
     }
