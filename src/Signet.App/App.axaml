@@ -189,7 +189,7 @@
       </MenuFlyout>
 
       <!-- Font size of the warning texts in dialogs (TextBlock.warning / .warningNote). The real value — the
-           interface text size or the size chosen in Preferences → Appearance › Fonts — is set by
+           interface text size or the size chosen in Preferences → Appearance › General › Fonts — is set by
            UiDensityManager; this is the Fluent default for design time and headless tests. -->
       <x:Double x:Key="SignetWarningFontSize">14</x:Double>
 
@@ -253,7 +253,7 @@
     </Style>
 
     <!-- Warning texts in dialogs (e.g. what a risky change would alter): size and color from
-         the theme (SignetWarningBrush) and Preferences → Appearance › Fonts (UiDensityManager.ApplyWarningAppearance). -->
+         the theme (SignetWarningBrush) and Preferences → Appearance › General › Fonts (UiDensityManager.ApplyWarningAppearance). -->
     <Style Selector="TextBlock.warning">
       <Setter Property="Foreground" Value="{DynamicResource SignetWarningBrush}" />
       <Setter Property="FontSize" Value="{DynamicResource SignetWarningFontSize}" />

@@ -21,8 +21,8 @@ public static class PreferencesPage
     public static void SetParent(TabItem page, string? value) => page.SetValue(ParentProperty, value);
 
     /// <summary>
-    /// On a link of a page: the <c>x:Name</c> of the page it opens (e.g. "Fonts" on Code View › Appearance opens
-    /// Appearance › Fonts › Code View).
+    /// On a link of a page: the <c>x:Name</c> of the page it opens (e.g. "Appearance" on the Preview section opens
+    /// Appearance › Preview).
     /// </summary>
     public static readonly AttachedProperty<string?> TargetProperty =
         AvaloniaProperty.RegisterAttached<HyperlinkButton, string?>("Target", typeof(PreferencesPage));

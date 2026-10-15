@@ -489,7 +489,7 @@ public partial class PreviewView : UserControl
         ApplyFonts();
     }
 
-    // The default fonts of the book (Preferences › Appearance › Fonts › Preview, or the theme's while the theme turns its
+    // The default fonts of the book (Preferences › Appearance › Preview › Fonts, or the theme's while the theme turns its
     // fonts on), after every navigation and when they or the theme change.
     private void ApplyFonts()
     {
