@@ -88,6 +88,12 @@
     <PackageVersion Include="SkiaSharp" Version="3.119.4" />
   </ItemGroup>
 
+  <ItemGroup Label="Screen color picker">
+    <!-- D-Bus client for the xdg-desktop-portal Screenshot request (screen color picker on Wayland).
+         Version matches the one Avalonia.FreeDesktop 12.1.3 already brings in transitively. -->
+    <PackageVersion Include="Tmds.DBus.Protocol" Version="0.94.1" />
+  </ItemGroup>
+
   <ItemGroup Label="CLI (Signet.Cli)">
     <PackageVersion Include="System.CommandLine" Version="2.0.11" />
   </ItemGroup>

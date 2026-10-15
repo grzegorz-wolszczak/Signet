@@ -47,6 +47,7 @@
     <PackageReference Include="Serilog.Sinks.Console" />
     <!-- Non-text tabs: image scaling + font pangram rendering. -->
     <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="Tmds.DBus.Protocol" />
     <PackageReference Include="System.CommandLine" />
   </ItemGroup>
 
