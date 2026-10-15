@@ -85,6 +85,63 @@ public sealed class FloatingPanelTests
         host.Window.Close();
     }
 
+    private static IEnumerable<IDockable> Flatten(IDockable dockable) =>
+        new[] { dockable }.Concat(dockable is IDock { VisibleDockables: { } children } ? children.SelectMany(Flatten) : Enumerable.Empty<IDockable>());
+
+    // The region (the dock of the left, right or bottom panels) with the given panel.
+    private static IToolDock RegionOf(Host host, string panelId) =>
+        (IToolDock)host.Factory.FindDockable(host.Root, d => d is IToolDock dock && dock.VisibleDockables!.Any(v => v.Id == panelId))!;
+
+    /// <summary>
+    /// Regression: dragging the title bar of a panel out of the window makes Dock float the whole region. The region
+    /// has to stay in the main layout and the panel it shows floats instead (as with "Float"): otherwise the panel still
+    /// counted as docked, "Dock" in its menu collapsed it inside the floating window, and docking back again recursed
+    /// until the stack overflowed — the application died without a word in the log.
+    /// </summary>
+    [AvaloniaFact]
+    public void Dragging_the_title_bar_floats_the_panel_not_its_region_and_Dock_brings_it_back()
+    {
+        Host host = Show();
+        IToolDock region = RegionOf(host, DockableIds.BookBrowser);
+        IDockable bookBrowser = Panel(host, DockableIds.BookBrowser);
+
+        host.Factory.FloatDockable(region); // what the drag of the title bar asks Dock for
+        Settle(host.Window);
+
+        host.Factory.IsToolFloating(DockableIds.BookBrowser).Should().BeTrue("the panel floats");
+        Flatten(host.Root).Should().Contain(region, "the region itself stays in the main layout");
+        host.Root.Windows!.Select(w => w.Layout).OfType<IDockable>().SelectMany(Flatten).Should().NotContain(region,
+            "no floating window holds the region");
+        host.Factory.DescribePlaces().Should().Contain(DockableIds.BookBrowser + "=floating");
+
+        host.Factory.PinDockable(bookBrowser); // "Dock" in the panel's menu
+        Settle(host.Window);
+
+        host.Factory.IsToolFloating(DockableIds.BookBrowser).Should().BeFalse();
+        region.VisibleDockables.Should().Contain(bookBrowser, "it is back in its region");
+        host.Root.Windows.Should().BeNullOrEmpty("the emptied window is closed");
+        host.Factory.DescribePlaces().Should().Contain(DockableIds.BookBrowser + "=" + region.Id);
+        host.Window.Close();
+    }
+
+    /// <summary>"Dock" on a floating panel docks it back; it must not start docking back again from Dock's own unpin call.</summary>
+    [AvaloniaFact]
+    public void Dock_on_a_floating_panel_docks_it_once_without_recursion()
+    {
+        Host host = Show();
+        IDockable toc = Panel(host, DockableIds.TableOfContents);
+        IToolDock region = RegionOf(host, DockableIds.TableOfContents);
+        host.Factory.FloatDockable(toc);
+        Settle(host.Window);
+
+        host.Factory.PinDockable(toc);
+        Settle(host.Window);
+
+        region.VisibleDockables.Should().Contain(toc);
+        host.Factory.IsToolFloating(DockableIds.TableOfContents).Should().BeFalse();
+        host.Window.Close();
+    }
+
     [AvaloniaFact]
     public void Closing_the_floating_window_hides_the_panel_and_showing_it_again_floats_it()
     {
