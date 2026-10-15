@@ -5634,12 +5634,48 @@ Close the tab</value>
     <value>Could not capture the screen.</value>
   </data>
   <data name="ColorPickerWindow_Name" xml:space="preserve">
-    <value>Color name (CSS)</value>
+    <value>Name:</value>
   </data>
   <data name="ColorPickerWindow_NameHint" xml:space="preserve">
-    <value>e.g. tomato</value>
+    <value>CSS color name, e.g. tomato</value>
   </data>
   <data name="ScreenPicker_Hint" xml:space="preserve">
     <value>Click – pick · Esc – cancel · arrows – ±1 px</value>
+  </data>
+  <data name="ColorPickerWindow_New" xml:space="preserve">
+    <value>New</value>
+  </data>
+  <data name="ColorPickerWindow_Previous" xml:space="preserve">
+    <value>Previous</value>
+  </data>
+  <data name="ColorPickerWindow_Hue" xml:space="preserve">
+    <value>Hue:</value>
+  </data>
+  <data name="ColorPickerWindow_Saturation" xml:space="preserve">
+    <value>Saturation:</value>
+  </data>
+  <data name="ColorPickerWindow_Brightness" xml:space="preserve">
+    <value>Brightness:</value>
+  </data>
+  <data name="ColorPickerWindow_Red" xml:space="preserve">
+    <value>Red:</value>
+  </data>
+  <data name="ColorPickerWindow_Green" xml:space="preserve">
+    <value>Green:</value>
+  </data>
+  <data name="ColorPickerWindow_Blue" xml:space="preserve">
+    <value>Blue:</value>
+  </data>
+  <data name="ColorPickerWindow_Alpha" xml:space="preserve">
+    <value>Alpha:</value>
+  </data>
+  <data name="ColorPickerWindow_Html" xml:space="preserve">
+    <value>HTML:</value>
+  </data>
+  <data name="ColorPickerWindow_Unnamed" xml:space="preserve">
+    <value>-unnamed-</value>
+  </data>
+  <data name="ColorPickerWindow_PaletteCss" xml:space="preserve">
+    <value>CSS colors</value>
   </data>
 </root>

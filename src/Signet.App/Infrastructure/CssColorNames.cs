@@ -31,6 +31,16 @@ public static class CssColorNames
     public static string? NameOf(Color color) =>
         s_byRgb.Value.TryGetValue(Key(color), out string? name) ? name : null;
 
+    /// <summary>Every distinct named color (aliases such as grey / gray collapsed), ordered by hue then brightness.</summary>
+    public static IReadOnlyList<(string Name, Color Color)> All => s_all.Value;
+
+    private static readonly Lazy<IReadOnlyList<(string Name, Color Color)>> s_all = new(() =>
+        s_byRgb.Value
+            .Select(pair => (Name: pair.Value, Color: Color.FromRgb((byte)(pair.Key >> 16), (byte)(pair.Key >> 8), (byte)pair.Key)))
+            .OrderBy(entry => entry.Color.ToHsv() is { S: >= 0.1 } hsv ? Math.Floor(hsv.H / 15) : -1)
+            .ThenByDescending(entry => entry.Color.ToHsv().V)
+            .ToList());
+
     private static uint Key(Color color) => ((uint)color.R << 16) | ((uint)color.G << 8) | color.B;
 
     // Alphabetically first name wins for aliases (aqua / cyan, fuchsia / magenta, gray / grey, …).
