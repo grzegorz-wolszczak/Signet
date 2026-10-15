@@ -22,7 +22,8 @@ namespace Signet.App.Views;
 /// </summary>
 public partial class ColorPickerWindow : Window
 {
-    private const int CustomColorSlots = 24;
+    // As many as fit the palette area without scrolling: 12 columns x 11 rows of 22 px cells (asserted by a UI test).
+    private const int CustomColorSlots = 132;
     private const double SwatchSize = 20;
     private const int BasicPalette = 0;
     private const int CssPalette = 1;
