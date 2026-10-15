@@ -38,6 +38,7 @@ public sealed class FindReplaceHistoryButtonTests
             new StatusBarService(),
             () => (CodeTabViewModel?)null,
             Mock.Of<IMultiFileSearchHost>());
+        vm.LookWhereIndex = (int)LookWhere.CurrentFile; // these tests work on the active tab; the default scope is All HTML Files
         string[] history = ["w pociąg", "że sobowtór", "Dotykałem ich"];
         foreach (string item in history)
         {
@@ -89,6 +90,7 @@ public sealed class FindReplaceHistoryButtonTests
         tab.Document.Text = html.GetText();
 
         FindReplaceViewModel vm = new(settings, new StatusBarService(), () => tab, Mock.Of<IMultiFileSearchHost>());
+        vm.LookWhereIndex = (int)LookWhere.CurrentFile; // these tests work on the active tab; the default scope is All HTML Files
         string[] history = ["w pociąg", "że sobowtór", "Dotykałem ich"];
         foreach (string item in history)
         {
@@ -147,6 +149,7 @@ public sealed class FindReplaceHistoryButtonTests
         tab.Document.Text = html.GetText();
 
         FindReplaceViewModel vm = new(settings, new StatusBarService(), () => tab, Mock.Of<IMultiFileSearchHost>());
+        vm.LookWhereIndex = (int)LookWhere.CurrentFile; // these tests work on the active tab; the default scope is All HTML Files
         foreach (string item in new[] { "w pociąg", "że sobowtór", "Dotykałem ich" })
         {
             vm.FindHistory.Add(item);

@@ -66,7 +66,7 @@ public sealed class FindReplaceViewModel : ViewModelBase
     private string _replaceText = string.Empty;
     private SearchMode _mode = SearchMode.Normal;
     private SearchDirection _direction = SearchDirection.Down;
-    private LookWhere _lookWhere = LookWhere.CurrentFile;
+    private LookWhere _lookWhere = LookWhere.AllHtmlFiles;
     private string _reportSummary = string.Empty;
     private bool _forceCurrentFile;
     private bool _optionWrap = true;

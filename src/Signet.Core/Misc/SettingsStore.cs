@@ -1144,6 +1144,16 @@ public sealed class SettingsStore
     }
 
     /// <summary>
+    /// The sections of the Preferences window the user collapsed in the section tree (the <c>x:Name</c> of their pages), so
+    /// the tree opens as it was left. Window state, not a preference — written outside the Save / Cancel draft.
+    /// </summary>
+    public IReadOnlyList<string> PreferencesCollapsedSections
+    {
+        get => ReadStringListFrom(MainWindowGroup, "preferences_collapsed_sections");
+        set => WriteStringListTo(MainWindowGroup, "preferences_collapsed_sections", (value ?? throw new ArgumentNullException(nameof(value))).Distinct(StringComparer.Ordinal));
+    }
+
+    /// <summary>
     /// The sizes the user gave the split panes of the other windows (pane name -&gt; width or height in pixels), e.g.
     /// the details of the "Convert Footnotes of Other Origin" dialog. Window state, not a preference.
     /// </summary>
@@ -1440,7 +1450,7 @@ public sealed class SettingsStore
             ReplaceHistory = ReadStringListFrom(FindReplaceGroup, "replace_strings"),
             Mode = (SearchMode)ReadIntFrom(FindReplaceGroup, "search_mode", (int)SearchMode.Normal),
             Direction = (SearchDirection)ReadIntFrom(FindReplaceGroup, "search_direction", (int)SearchDirection.Down),
-            LookWhere = (LookWhere)ReadIntFrom(FindReplaceGroup, "look_where", (int)LookWhere.CurrentFile),
+            LookWhere = ReadLookWhere(),
             OptionWrap = ReadBoolFrom(FindReplaceGroup, "optionwrap", true),
             RegexDotAll = ReadBoolFrom(FindReplaceGroup, "regexoptiondotall", false),
             RegexMinimalMatch = ReadBoolFrom(FindReplaceGroup, "regexoptionminimalmatch", false),
@@ -1516,6 +1526,14 @@ public sealed class SettingsStore
         }
 
         return v.TryGetValue(out double d) ? (int)d : fallback;
+    }
+
+    // The stored scope; All HTML Files when there is none (a fresh installation) or when the value is not a scope (it
+    // would leave the "Look in" list without a selection).
+    private LookWhere ReadLookWhere()
+    {
+        int stored = ReadIntFrom(FindReplaceGroup, "look_where", (int)LookWhere.AllHtmlFiles);
+        return Enum.IsDefined(typeof(LookWhere), stored) ? (LookWhere)stored : LookWhere.AllHtmlFiles;
     }
 
     private List<string> ReadStringListFrom(string group, string key)

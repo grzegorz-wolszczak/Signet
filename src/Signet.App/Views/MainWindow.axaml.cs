@@ -1053,6 +1053,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         window.SelectedPageIndex = settings.PreferencesPageIndex;
         window.FieldHeights = settings.PreferencesFieldHeights;
         window.SplitterSizes = settings.PreferencesSplitterSizes;
+        window.CollapsedSections = settings.PreferencesCollapsedSections;
 
         window.Closing += (_, _) =>
         {
@@ -1061,6 +1062,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             settings.PreferencesPageIndex = window.SelectedPageIndex;
             settings.PreferencesFieldHeights = window.FieldHeights;
             settings.PreferencesSplitterSizes = window.SplitterSizes;
+            settings.PreferencesCollapsedSections = window.CollapsedSections;
             settings.Save();
         };
 

@@ -568,6 +568,47 @@ public sealed class PreferencesWindowRenderTests
         window.Close();
     }
 
+    /// <summary>
+    /// The sections the user collapsed in the tree are remembered (by the name of their page, so the language does not
+    /// matter) and collapsed again when the window opens; the enclosing sections of the selected one stay open.
+    /// </summary>
+    [AvaloniaFact]
+    public void Collapsed_sections_are_remembered_and_restored()
+    {
+        PreferencesWindow first = BuildWindow();
+        first.Show();
+        Dispatcher.UIThread.RunJobs();
+        var source = (HierarchicalTreeDataGridSource<PreferencesSectionNode>)first.FindControl<TreeDataGrid>("SectionTree")!.Source!;
+        PreferencesSectionNode appearance = first.Sections.Roots.Single(n => n.Title == Strings.Get("PreferencesWindow_Appearance"));
+        PreferencesSectionNode colorScheme = appearance.Children.Single(n => n.Title == Strings.Get("PreferencesWindow_ColorScheme"));
+        first.CollapsedSections.Should().BeEmpty("a fresh tree is fully expanded");
+
+        source.Collapse(new IndexPath(first.Sections.Roots.IndexOf(appearance), appearance.Children.IndexOf(colorScheme)));
+        Dispatcher.UIThread.RunJobs();
+        appearance.IsExpanded.Should().BeTrue();
+        colorScheme.IsExpanded.Should().BeFalse("collapsing a row in the tree updates the section");
+        IReadOnlyList<string> remembered = first.CollapsedSections;
+        remembered.Should().Equal("ColorSchemePage");
+        first.Close();
+
+        PreferencesWindow second = BuildWindow();
+        second.Show();
+        Dispatcher.UIThread.RunJobs();
+        second.CollapsedSections = remembered;
+        Dispatcher.UIThread.RunJobs();
+
+        second.Sections.All.Single(n => n.Id == "ColorSchemePage").IsExpanded.Should().BeFalse();
+        second.Sections.All.Single(n => n.Id == "AppearancePage").IsExpanded.Should().BeTrue();
+        second.CollapsedSections.Should().Equal("ColorSchemePage");
+
+        // A section that contains the selected one is never collapsed: the selection must stay visible.
+        second.Sections.Selected = second.Sections.All.Single(n => n.Id == "ThemeCssPage");
+        second.CollapsedSections = new[] { "ColorSchemePage", "AppearancePage" };
+        second.Sections.All.Single(n => n.Id == "ColorSchemePage").IsExpanded.Should().BeFalse("it was collapsed before, the setter does not reopen it");
+        second.Sections.All.Single(n => n.Id == "AppearancePage").IsExpanded.Should().BeTrue("it contains the selected section");
+        second.Close();
+    }
+
     /// <summary>A section without settings of its own lists links to its subsections; a link opens the subsection.</summary>
     [AvaloniaFact]
     public void A_section_without_settings_links_to_its_subsections()

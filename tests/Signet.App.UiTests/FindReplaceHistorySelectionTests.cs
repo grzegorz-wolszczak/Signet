@@ -18,6 +18,7 @@ using Signet.App.ViewModels.Tabs;
 using Signet.App.Views;
 using Signet.Core.MainUI;
 using Signet.Core.Misc;
+using Signet.Core.Search;
 using Signet.Core.Resources;
 using Signet.Core.Spellcheck;
 using Signet.Core.Tests.TestSupport;
@@ -43,6 +44,7 @@ public sealed class FindReplaceHistorySelectionTests
             new StatusBarService(),
             () => tab,
             Mock.Of<IMultiFileSearchHost>());
+        vm.LookWhereIndex = (int)LookWhere.CurrentFile; // these tests work on the active tab; the default scope is All HTML Files
         vm.AttachToActiveTab(tab);
         string[] history = ["test", "foo", "bar"];
         foreach (string item in history)
