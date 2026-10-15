@@ -7,30 +7,87 @@
         CanResize="False"
         Title="{loc:Loc ColorPickerWindow_Title}">
 
-  <!-- Color picker for the color fields in Preferences, laid out like KColorChooser: basic and custom colors with a
-       screen color picker on the left; spectrum, components, hex and preview on the right. The alpha channel is shown
-       only when asked for (the theme editor: e.g. the translucent fills of the diff). Colors chosen from the palettes,
-       by name or from the screen replace the RGB and keep the current alpha. OK sets the color, Cancel does not. -->
+  <!-- Color picker for the color fields in Preferences, laid out like KColorChooser: a large spectrum with a slider
+       for the third HSV component (the radio buttons choose which one), an alpha slider, a switchable palette with
+       "add to custom colors" and the screen color picker (the eyedropper button), numeric HSV / RGB fields, a preview
+       and the CSS name / HTML code fields. Every numeric field and both text fields are editable. The alpha channel is
+       shown only when asked for (the theme editor: e.g. the translucent fills of the diff). OK sets the color, Cancel
+       does not. -->
   <StackPanel Margin="16" Spacing="12">
-    <Grid ColumnDefinitions="Auto,16,Auto">
-      <StackPanel Grid.Column="0" Spacing="8" Width="264">
-        <TextBlock Text="{loc:Loc ColorPickerWindow_BasicColors}" FontWeight="SemiBold" />
-        <WrapPanel x:Name="BasicHost" />
-        <TextBlock Text="{loc:Loc ColorPickerWindow_CustomColors}" FontWeight="SemiBold" Margin="0,8,0,0" />
-        <WrapPanel x:Name="CustomHost" />
-        <Button x:Name="AddCustomButton" Content="{loc:Loc ColorPickerWindow_AddCustom}" HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Center" />
-        <Button x:Name="PickScreenButton" Content="{loc:Loc ColorPickerWindow_PickScreen}" HorizontalAlignment="Stretch"
-                HorizontalContentAlignment="Center" ToolTip.Tip="{loc:Loc ColorPickerWindow_PickScreenTip}" />
-        <TextBlock x:Name="PickFailedText" Text="{loc:Loc ColorPickerWindow_PickFailed}" IsVisible="False"
-                   Foreground="Red" TextWrapping="Wrap" />
-        <TextBlock Text="{loc:Loc ColorPickerWindow_Name}" Margin="0,8,0,0" />
-        <TextBox x:Name="NameBox" PlaceholderText="{loc:Loc ColorPickerWindow_NameHint}" />
-      </StackPanel>
-      <ColorView Grid.Column="2" x:Name="Picker"
-                 IsAlphaEnabled="False" IsAlphaVisible="False"
-                 IsColorPreviewVisible="True" IsColorModelVisible="True" IsHexInputVisible="True" />
+    <Grid ColumnDefinitions="Auto,8,Auto,24,300" RowDefinitions="Auto,Auto" RowSpacing="10">
+      <ColorSpectrum x:Name="Spectrum" Grid.Row="0" Grid.Column="0" Width="300" Height="300" Components="HueSaturation" Shape="Box" />
+      <ColorSlider x:Name="ThirdSlider" Grid.Row="0" Grid.Column="2" Orientation="Vertical" Width="28" Height="300"
+                   ColorModel="Hsva" ColorComponent="Component3" />
+
+      <Grid x:Name="AlphaRow" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" ColumnDefinitions="Auto,8,*,8,70" IsVisible="False">
+        <TextBlock Text="{loc:Loc ColorPickerWindow_Alpha}" VerticalAlignment="Center" />
+        <ColorSlider x:Name="AlphaSlider" Grid.Column="2" Orientation="Horizontal" Height="28" ColorModel="Hsva" ColorComponent="Alpha" />
+        <NumericUpDown x:Name="AlphaBox" Grid.Column="4" Minimum="0" Maximum="100" Increment="1" FormatString="0" ShowButtonSpinner="False" />
+      </Grid>
+
+      <Grid Grid.Row="0" Grid.RowSpan="2" Grid.Column="4" RowDefinitions="Auto,*,Auto" RowSpacing="8">
+        <ComboBox x:Name="PaletteCombo" HorizontalAlignment="Stretch" SelectedIndex="0">
+          <ComboBoxItem Content="{loc:Loc ColorPickerWindow_BasicColors}" />
+          <ComboBoxItem Content="{loc:Loc ColorPickerWindow_PaletteCss}" />
+          <ComboBoxItem Content="{loc:Loc ColorPickerWindow_CustomColors}" />
+        </ComboBox>
+        <Border Grid.Row="1" BorderBrush="Gray" BorderThickness="1" CornerRadius="3" Padding="4">
+          <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <WrapPanel x:Name="PaletteHost" />
+          </ScrollViewer>
+        </Border>
+        <Grid Grid.Row="2" ColumnDefinitions="*,8,Auto">
+          <Button x:Name="AddCustomButton" Content="{loc:Loc ColorPickerWindow_AddCustom}" HorizontalAlignment="Stretch"
+                  HorizontalContentAlignment="Center" />
+          <Button x:Name="PickScreenButton" Grid.Column="2" Padding="6" ToolTip.Tip="{loc:Loc ColorPickerWindow_PickScreenTip}">
+            <PathIcon Width="20" Height="20"
+                      Data="M20.7 5.6l-2.3-2.3c-.4-.4-1-.4-1.4 0l-3.1 3.1-1.2-1.2-1.4 1.4 1.2 1.2L4 16.9V20h3.1l9.2-9.2 1.2 1.2 1.4-1.4-1.2-1.2 3.1-3.1c.4-.4.4-1 0-1.4zM6.7 18H6v-.7l7.1-7.1.7.7L6.7 18z" />
+          </Button>
+        </Grid>
+      </Grid>
     </Grid>
+
+    <TextBlock x:Name="PickFailedText" Text="{loc:Loc ColorPickerWindow_PickFailed}" IsVisible="False" Foreground="Red" TextWrapping="Wrap" />
+
+    <Grid ColumnDefinitions="Auto,24,Auto,24,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="6" ColumnSpacing="0">
+      <!-- HSV: the radio button selects the component the vertical slider edits. -->
+      <Grid Grid.Row="0" Grid.RowSpan="3" Grid.Column="0" ColumnDefinitions="Auto,Auto,8,124" RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
+        <RadioButton x:Name="HueRadio" Grid.Row="0" GroupName="Axis" MinWidth="0" VerticalAlignment="Center" />
+        <TextBlock Grid.Row="0" Grid.Column="1" Text="{loc:Loc ColorPickerWindow_Hue}" VerticalAlignment="Center" />
+        <NumericUpDown x:Name="HueBox" Grid.Row="0" Grid.Column="3" Minimum="0" Maximum="360" Increment="1" FormatString="0" />
+        <RadioButton x:Name="SaturationRadio" Grid.Row="1" GroupName="Axis" MinWidth="0" VerticalAlignment="Center" />
+        <TextBlock Grid.Row="1" Grid.Column="1" Text="{loc:Loc ColorPickerWindow_Saturation}" VerticalAlignment="Center" />
+        <NumericUpDown x:Name="SaturationBox" Grid.Row="1" Grid.Column="3" Minimum="0" Maximum="100" Increment="1" FormatString="0" />
+        <RadioButton x:Name="BrightnessRadio" Grid.Row="2" GroupName="Axis" MinWidth="0" VerticalAlignment="Center" IsChecked="True" />
+        <TextBlock Grid.Row="2" Grid.Column="1" Text="{loc:Loc ColorPickerWindow_Brightness}" VerticalAlignment="Center" />
+        <NumericUpDown x:Name="BrightnessBox" Grid.Row="2" Grid.Column="3" Minimum="0" Maximum="100" Increment="1" FormatString="0" />
+      </Grid>
+
+      <Grid Grid.Row="0" Grid.RowSpan="3" Grid.Column="2" ColumnDefinitions="Auto,8,124" RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
+        <TextBlock Grid.Row="0" Text="{loc:Loc ColorPickerWindow_Red}" VerticalAlignment="Center" />
+        <NumericUpDown x:Name="RedBox" Grid.Row="0" Grid.Column="2" Minimum="0" Maximum="255" Increment="1" FormatString="0" />
+        <TextBlock Grid.Row="1" Text="{loc:Loc ColorPickerWindow_Green}" VerticalAlignment="Center" />
+        <NumericUpDown x:Name="GreenBox" Grid.Row="1" Grid.Column="2" Minimum="0" Maximum="255" Increment="1" FormatString="0" />
+        <TextBlock Grid.Row="2" Text="{loc:Loc ColorPickerWindow_Blue}" VerticalAlignment="Center" />
+        <NumericUpDown x:Name="BlueBox" Grid.Row="2" Grid.Column="2" Minimum="0" Maximum="255" Increment="1" FormatString="0" />
+      </Grid>
+
+      <!-- Preview (new above, previous below), the CSS name and the HTML code. -->
+      <Grid Grid.Row="0" Grid.RowSpan="3" Grid.Column="4" ColumnDefinitions="76,12,Auto,8,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
+        <StackPanel Grid.Row="0" Grid.RowSpan="3" Grid.Column="0" Spacing="0">
+          <Border x:Name="NewSwatch" Height="56" BorderBrush="Gray" BorderThickness="1,1,1,0" CornerRadius="3,3,0,0"
+                  ToolTip.Tip="{loc:Loc ColorPickerWindow_New}" />
+          <Border x:Name="PreviousSwatch" Height="28" BorderBrush="Gray" BorderThickness="1" CornerRadius="0,0,3,3"
+                  ToolTip.Tip="{loc:Loc ColorPickerWindow_Previous}" />
+        </StackPanel>
+        <TextBlock Grid.Row="0" Grid.Column="2" Text="{loc:Loc ColorPickerWindow_Name}" VerticalAlignment="Center" />
+        <TextBox x:Name="NameBox" Grid.Row="0" Grid.Column="4" PlaceholderText="{loc:Loc ColorPickerWindow_Unnamed}"
+                 ToolTip.Tip="{loc:Loc ColorPickerWindow_NameHint}" />
+        <TextBlock Grid.Row="1" Grid.Column="2" Text="{loc:Loc ColorPickerWindow_Html}" VerticalAlignment="Center" />
+        <TextBox x:Name="HexBox" Grid.Row="1" Grid.Column="4" MaxLength="9" />
+      </Grid>
+    </Grid>
+
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
       <Button x:Name="OkButton" Content="{loc:Loc Common_Ok}" IsDefault="True" MinWidth="80"
               HorizontalContentAlignment="Center" />

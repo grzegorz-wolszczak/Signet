@@ -1,8 +1,10 @@
 using System.Linq;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.Threading;
 using AwesomeAssertions;
@@ -11,20 +13,36 @@ using Signet.App.Views;
 
 namespace Signet.App.UiTests;
 
-/// <summary>The color picker window in Preferences: without an alpha channel by default, returning #RRGGBB.</summary>
+/// <summary>
+/// The color picker window (KColorChooser-style): without an alpha channel by default, returning #RRGGBB; editable
+/// HSV / RGB / alpha / HTML / CSS name fields kept in sync with the spectrum, the sliders, the palettes and the preview.
+/// </summary>
 public sealed class ColorPickerWindowTests
 {
-    [AvaloniaFact]
-    public void Renders_a_color_view_without_alpha()
+    private static ColorPickerWindow Shown(bool alpha = false, string initial = "#FFFFFF")
     {
-        ColorPickerWindow window = new();
+        ColorPickerWindow window = ColorPickerWindow.Create("test", initial, alpha);
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
+        return window;
+    }
 
-        ColorView picker = window.FindControl<ColorView>("Picker")!;
-        picker.IsAlphaEnabled.Should().BeFalse();
-        picker.IsAlphaVisible.Should().BeFalse();
+    private static T Find<T>(ColorPickerWindow window, string name) where T : Control => window.FindControl<T>(name)!;
+
+    private static void PressEnter(TextBox box) =>
+        box.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = Key.Enter });
+
+    private static void Click(Button button) => button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+
+    [AvaloniaFact]
+    public void Renders_without_the_alpha_row_by_default()
+    {
+        ColorPickerWindow window = Shown();
+
+        window.IsAlphaEnabled.Should().BeFalse();
+        Find<Grid>(window, "AlphaRow").IsVisible.Should().BeFalse();
+        Find<ColorSpectrum>(window, "Spectrum").Should().NotBeNull();
         window.Close();
     }
 
@@ -41,22 +59,25 @@ public sealed class ColorPickerWindowTests
         ColorPickerWindow.ToHexWithAlpha(Color.FromArgb(0xFF, 0x0A, 0xBC, 0xFF)).Should().Be("#0ABCFF");
     }
 
-    private static ColorPickerWindow Shown(bool alpha = false, string initial = "#FFFFFF")
+    [AvaloniaFact]
+    public void An_opaque_window_drops_the_alpha_of_the_initial_color()
     {
-        ColorPickerWindow window = ColorPickerWindow.Create("test", initial, alpha);
-        window.Show();
-        Dispatcher.UIThread.RunJobs();
-        window.CaptureRenderedFrame();
-        return window;
+        ColorPickerWindow window = Shown(initial: "#80102030");
+
+        window.Color.Should().Be(Color.FromRgb(0x10, 0x20, 0x30));
+        window.Close();
     }
 
     [AvaloniaFact]
-    public void Offers_the_basic_palette_and_the_screen_picker()
+    public void Offers_the_basic_palette_the_screen_picker_and_the_other_palettes()
     {
         ColorPickerWindow window = Shown();
 
-        window.FindControl<WrapPanel>("BasicHost")!.Children.Should().HaveCount(BasicColorPalette.Colors.Count);
-        window.FindControl<Button>("PickScreenButton")!.Should().NotBeNull();
+        Find<WrapPanel>(window, "PaletteHost").Children.Should().HaveCount(BasicColorPalette.Colors.Count);
+        Find<Button>(window, "PickScreenButton").Should().NotBeNull();
+
+        Find<ComboBox>(window, "PaletteCombo").SelectedIndex = 1;
+        Find<WrapPanel>(window, "PaletteHost").Children.Should().HaveCount(CssColorNames.All.Count);
         window.Close();
     }
 
@@ -64,13 +85,13 @@ public sealed class ColorPickerWindowTests
     public void A_palette_swatch_sets_the_color_and_the_name_follows()
     {
         ColorPickerWindow window = Shown();
-        Button red = window.FindControl<WrapPanel>("BasicHost")!.Children.OfType<Button>()
-            .First(b => ((Border)b.Content!).Background is Avalonia.Media.SolidColorBrush { Color: var c } && c == Colors.Red);
+        Button red = Find<WrapPanel>(window, "PaletteHost").Children.OfType<Button>()
+            .First(b => ((Border)b.Content!).Background is SolidColorBrush { Color: var c } && c == Colors.Red);
 
-        red.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Click(red);
 
-        window.FindControl<ColorView>("Picker")!.Color.Should().Be(Colors.Red);
-        window.FindControl<TextBox>("NameBox")!.Text.Should().Be("red");
+        window.Color.Should().Be(Colors.Red);
+        Find<TextBox>(window, "NameBox").Text.Should().Be("red");
         window.Close();
     }
 
@@ -78,12 +99,12 @@ public sealed class ColorPickerWindowTests
     public void A_typed_css_name_sets_the_color_but_keeps_the_alpha()
     {
         ColorPickerWindow window = Shown(alpha: true, initial: "#80FFFFFF");
-        TextBox name = window.FindControl<TextBox>("NameBox")!;
+        TextBox name = Find<TextBox>(window, "NameBox");
 
         name.Text = "tomato";
-        name.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = Key.Enter });
+        PressEnter(name);
 
-        window.FindControl<ColorView>("Picker")!.Color.Should().Be(Color.FromArgb(0x80, 0xFF, 0x63, 0x47));
+        window.Color.Should().Be(Color.FromArgb(0x80, 0xFF, 0x63, 0x47));
         window.Close();
     }
 
@@ -91,24 +112,139 @@ public sealed class ColorPickerWindowTests
     public void An_unknown_name_is_reverted_to_the_current_color_name()
     {
         ColorPickerWindow window = Shown();
-        TextBox name = window.FindControl<TextBox>("NameBox")!;
+        TextBox name = Find<TextBox>(window, "NameBox");
 
         name.Text = "definitely-not-a-color";
-        name.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = Key.Enter });
+        PressEnter(name);
 
         name.Text.Should().Be("white");
-        window.FindControl<ColorView>("Picker")!.Color.Should().Be(Colors.White);
+        window.Color.Should().Be(Colors.White);
         window.Close();
     }
 
     [AvaloniaFact]
-    public void Adding_a_custom_color_fills_the_first_slot()
+    public void Adding_a_custom_color_fills_the_first_custom_slot()
     {
         ColorPickerWindow window = Shown(initial: "#123456");
 
-        window.FindControl<Button>("AddCustomButton")!.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Click(Find<Button>(window, "AddCustomButton"));
 
-        window.FindControl<WrapPanel>("CustomHost")!.Children[0].Should().BeOfType<Button>();
+        Find<ComboBox>(window, "PaletteCombo").SelectedIndex.Should().Be(2);
+        Find<WrapPanel>(window, "PaletteHost").Children[0].Should().BeOfType<Button>();
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_numeric_fields_show_the_color_in_hsb_rgb_and_html()
+    {
+        ColorPickerWindow window = Shown(initial: "#FAB41C");
+
+        Find<NumericUpDown>(window, "RedBox").Value.Should().Be(250);
+        Find<NumericUpDown>(window, "GreenBox").Value.Should().Be(180);
+        Find<NumericUpDown>(window, "BlueBox").Value.Should().Be(28);
+        Find<NumericUpDown>(window, "HueBox").Value.Should().Be(41);
+        Find<NumericUpDown>(window, "SaturationBox").Value.Should().Be(89);
+        Find<NumericUpDown>(window, "BrightnessBox").Value.Should().Be(98);
+        Find<TextBox>(window, "HexBox").Text.Should().Be("#FAB41C");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Editing_an_rgb_field_changes_the_color_and_the_other_fields()
+    {
+        ColorPickerWindow window = Shown(initial: "#000000");
+
+        Find<NumericUpDown>(window, "RedBox").Value = 255;
+
+        window.Color.Should().Be(Color.FromRgb(255, 0, 0));
+        Find<TextBox>(window, "HexBox").Text.Should().Be("#FF0000");
+        Find<NumericUpDown>(window, "SaturationBox").Value.Should().Be(100);
+        Find<NumericUpDown>(window, "BrightnessBox").Value.Should().Be(100);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Editing_an_hsb_field_changes_the_color_and_the_rgb_fields()
+    {
+        ColorPickerWindow window = Shown(initial: "#FF0000");
+
+        Find<NumericUpDown>(window, "HueBox").Value = 120;
+
+        window.Color.Should().Be(Color.FromRgb(0, 255, 0));
+        Find<NumericUpDown>(window, "GreenBox").Value.Should().Be(255);
+        Find<NumericUpDown>(window, "RedBox").Value.Should().Be(0);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_hue_survives_a_trip_through_black()
+    {
+        ColorPickerWindow window = Shown(initial: "#00FF00");
+
+        Find<NumericUpDown>(window, "BrightnessBox").Value = 0;
+
+        Find<NumericUpDown>(window, "HueBox").Value.Should().Be(120);
+        window.Color.Should().Be(Colors.Black);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void A_typed_html_code_sets_the_color_and_a_bad_one_is_reverted()
+    {
+        ColorPickerWindow window = Shown(initial: "#FFFFFF");
+        TextBox hex = Find<TextBox>(window, "HexBox");
+
+        hex.Text = "#1a2b3c";
+        PressEnter(hex);
+        window.Color.Should().Be(Color.FromRgb(0x1A, 0x2B, 0x3C));
+        hex.Text.Should().Be("#1A2B3C");
+
+        hex.Text = "zzz";
+        PressEnter(hex);
+        hex.Text.Should().Be("#1A2B3C");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_alpha_field_is_shown_only_with_alpha_and_edits_the_alpha()
+    {
+        ColorPickerWindow opaque = Shown();
+        Find<Grid>(opaque, "AlphaRow").IsVisible.Should().BeFalse();
+        opaque.Close();
+
+        ColorPickerWindow window = Shown(alpha: true, initial: "#FFFFFFFF");
+        Find<Grid>(window, "AlphaRow").IsVisible.Should().BeTrue();
+
+        Find<NumericUpDown>(window, "AlphaBox").Value = 50;
+
+        window.Color.A.Should().Be(128);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_radio_buttons_choose_which_component_the_vertical_slider_edits()
+    {
+        ColorPickerWindow window = Shown();
+        ColorSlider slider = Find<ColorSlider>(window, "ThirdSlider");
+
+        slider.ColorComponent.Should().Be(ColorComponent.Component3); // brightness by default
+
+        Find<RadioButton>(window, "HueRadio").IsChecked = true;
+
+        slider.ColorComponent.Should().Be(ColorComponent.Component1);
+        Find<ColorSpectrum>(window, "Spectrum").Components.Should().Be(ColorSpectrumComponents.SaturationValue);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void New_follows_the_edits_and_Previous_keeps_the_initial_color()
+    {
+        ColorPickerWindow window = Shown(initial: "#112233");
+
+        Find<NumericUpDown>(window, "RedBox").Value = 200;
+
+        ((SolidColorBrush)Find<Border>(window, "NewSwatch").Background!).Color.R.Should().Be(200);
+        ((SolidColorBrush)Find<Border>(window, "PreviousSwatch").Background!).Color.Should().Be(Color.FromRgb(0x11, 0x22, 0x33));
         window.Close();
     }
 }

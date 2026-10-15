@@ -5634,12 +5634,48 @@ Zamknij zakładkę</value>
     <value>Nie udało się przechwycić ekranu.</value>
   </data>
   <data name="ColorPickerWindow_Name" xml:space="preserve">
-    <value>Nazwa koloru (CSS)</value>
+    <value>Nazwa:</value>
   </data>
   <data name="ColorPickerWindow_NameHint" xml:space="preserve">
-    <value>np. tomato</value>
+    <value>Nazwa koloru CSS, np. tomato</value>
   </data>
   <data name="ScreenPicker_Hint" xml:space="preserve">
     <value>Klik – wybierz · Esc – anuluj · strzałki – ±1 px</value>
+  </data>
+  <data name="ColorPickerWindow_New" xml:space="preserve">
+    <value>Nowy</value>
+  </data>
+  <data name="ColorPickerWindow_Previous" xml:space="preserve">
+    <value>Poprzedni</value>
+  </data>
+  <data name="ColorPickerWindow_Hue" xml:space="preserve">
+    <value>Odcień:</value>
+  </data>
+  <data name="ColorPickerWindow_Saturation" xml:space="preserve">
+    <value>Nasycenie:</value>
+  </data>
+  <data name="ColorPickerWindow_Brightness" xml:space="preserve">
+    <value>Jasność:</value>
+  </data>
+  <data name="ColorPickerWindow_Red" xml:space="preserve">
+    <value>Czerwony:</value>
+  </data>
+  <data name="ColorPickerWindow_Green" xml:space="preserve">
+    <value>Zielony:</value>
+  </data>
+  <data name="ColorPickerWindow_Blue" xml:space="preserve">
+    <value>Niebieski:</value>
+  </data>
+  <data name="ColorPickerWindow_Alpha" xml:space="preserve">
+    <value>Alfa:</value>
+  </data>
+  <data name="ColorPickerWindow_Html" xml:space="preserve">
+    <value>HTML:</value>
+  </data>
+  <data name="ColorPickerWindow_Unnamed" xml:space="preserve">
+    <value>-nienazwany-</value>
+  </data>
+  <data name="ColorPickerWindow_PaletteCss" xml:space="preserve">
+    <value>Kolory CSS</value>
   </data>
 </root>
