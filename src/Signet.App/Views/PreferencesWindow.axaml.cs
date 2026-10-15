@@ -13,6 +13,7 @@ using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using Signet.App.CodeEditor;
 using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.ViewModels;
@@ -63,6 +64,7 @@ public partial class PreferencesWindow : Window
         FillLinkPages();
         WirePageLinks();
         WireFontsPreviews();
+        WireFootnoteStyleErrors();
         LocalizedColumns<PreferencesSectionNode> columns = new();
         VisibleItemsView<PreferencesSectionNode> roots = Visible(_sections.Roots);
         _source = new HierarchicalTreeDataGridSource<PreferencesSectionNode>(roots)
@@ -242,6 +244,21 @@ public partial class PreferencesWindow : Window
     // page resizes it on all of them, and the window remembers it.
     private IEnumerable<FontsPageView> FontsPages() =>
         Pages.Items.OfType<TabItem>().Select(t => t.Content).OfType<ILogical>().SelectMany(SelfAndLogicalDescendants).OfType<FontsPageView>();
+
+    // The footnote style fields underline what the validation complains about (the message is next to the field's name).
+    private void WireFootnoteStyleErrors()
+    {
+        string[] names =
+        {
+            "FootnoteReferenceStyleBox", "FootnoteNoteStyleBox", "FootnoteParagraphStyleBox", "FootnoteLocalContainerStyleBox",
+            "FootnoteGlobalContainerStyleBox", "FootnoteSeparatorStyleBox", "FootnoteGroupStyleBox", "FootnoteGroupTitleStyleBox",
+        };
+        foreach (string name in names)
+        {
+            this.FindControl<CssEditor>(name)!.ErrorLocator = text =>
+                Signet.Core.Footnotes.FootnoteStyles.Validate(text) is { Length: > 0 } error ? (error.Start, error.Length) : null;
+        }
+    }
 
     private void WireFontsPreviews()
     {
