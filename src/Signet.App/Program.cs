@@ -29,8 +29,10 @@ internal static class Program
             log.LogError(e.Exception, "Unobserved task exception{RecentEvents}", RecentEventsText());
 
         int exitCode = 0;
+        int processId = Environment.ProcessId;
         try
         {
+            ReportAbnormalEnds(log, logDir, processId);
             log.LogInformation("Start {App}; log directory: {LogDir}", ApplicationInfo.NameWithVersion, logDir);
 
             using ServiceProvider provider = AppServices.Build(loggerFactory);
@@ -47,10 +49,34 @@ internal static class Program
         }
         finally
         {
+            // A clean exit: the marker of this run goes (one left behind means the run ended abnormally).
+            CrashSentinel.EndRun(logDir, processId);
             Serilog.Log.CloseAndFlush();
         }
 
         return exitCode;
+    }
+
+    // A stack overflow, a fail-fast or a kill ends the process without a word in the log. Every run leaves a marker while
+    // it runs; one found here belongs to a run that is gone: say so, with the last lines of its log.
+    private static void ReportAbnormalEnds(ILogger log, string logDir, int processId)
+    {
+        try
+        {
+            IReadOnlyList<string> tail = CrashSentinel.LogTail(logDir, 15);
+            IReadOnlyList<string> abnormal = CrashSentinel.StartRun(logDir, processId, ApplicationInfo.NameWithVersion, DateTimeOffset.Now);
+            foreach (string run in abnormal)
+            {
+                log.LogWarning(
+                    "The previous run ended abnormally — {Run} (a crash the runtime cannot log, e.g. a stack overflow, or the process was killed). Its last log lines:{Tail}",
+                    run,
+                    Environment.NewLine + "  " + string.Join(Environment.NewLine + "  ", tail));
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            log.LogWarning(ex, "Could not check whether the previous run ended cleanly");
+        }
     }
 
     // The last debug-log events, as an addition to an error message (empty when the debug log is off).
