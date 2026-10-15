@@ -5678,4 +5678,10 @@ Close the tab</value>
   <data name="ColorPickerWindow_PaletteCss" xml:space="preserve">
     <value>CSS colors</value>
   </data>
+  <data name="PreferencesWindow_ShowZoomHint" xml:space="preserve">
+    <value>Show the font size while zooming with Ctrl + mouse wheel</value>
+  </data>
+  <data name="PreferencesWindow_ShowZoomHintTip" xml:space="preserve">
+    <value>Shows the font size just set in the middle of the editor for a moment.</value>
+  </data>
 </root>

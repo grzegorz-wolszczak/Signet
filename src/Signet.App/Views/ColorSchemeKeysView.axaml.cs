@@ -156,7 +156,7 @@ public partial class ColorSchemeKeysView : UserControl
 
         if (font.FontSize > 0)
         {
-            editor.FontSize = font.FontSize;
+            EditorZoom.SetBaseSize(editor, font.FontSize); // the zoom of Ctrl + wheel comes on top
         }
     }
 

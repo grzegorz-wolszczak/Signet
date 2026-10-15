@@ -697,6 +697,32 @@ public sealed class PreferencesWindowRenderTests
         second.Close();
     }
 
+    /// <summary>
+    /// The Fonts pages share one width of the preview: setting it (what the window does with the remembered size) sets it
+    /// on every page, and it is part of the remembered sizes.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_preview_width_of_the_fonts_pages_is_shared_and_remembered()
+    {
+        PreferencesWindow window = BuildWindow();
+        window.Width = 1500;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        window.SplitterSizes.Should().NotContainKey("FontsPreview", "nothing was resized yet");
+
+        window.SplitterSizes = new System.Collections.Generic.Dictionary<string, int> { ["FontsPreview"] = 420 };
+        Dispatcher.UIThread.RunJobs();
+
+        window.SplitterSizes.Should().Contain("FontsPreview", 420);
+        ShowFontsTab(window, "CodeEditor");
+        FontsPageView shown = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible);
+        shown.PreviewWidth.Should().BeApproximately(420, 2);
+        ShowFontsTab(window, "StartScreen");
+        window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible).PreviewWidth.Should().BeApproximately(420, 2,
+            "another page has the same width");
+        window.Close();
+    }
+
     /// <summary>A section without settings of its own lists links to its subsections; a link opens the subsection.</summary>
     [AvaloniaFact]
     public void A_section_without_settings_links_to_its_subsections()
@@ -775,7 +801,7 @@ public sealed class PreferencesWindowRenderTests
         error.IsVisible.Should().BeTrue();
         error.Text.Should().Be(vm.FootnoteNoteStyleError).And.NotBeEmpty();
 
-        TextBox box = window.GetVisualDescendants().OfType<TextBox>().Single(t => t.Name == "FootnoteNoteStyleBox");
+        CssEditor box = window.GetVisualDescendants().OfType<CssEditor>().Single(t => t.Name == "FootnoteNoteStyleBox");
         box.Height.Should().Be(PreferencesWindow.DefaultFieldHeight);
         HeightResizeGrip grip = window.GetVisualDescendants().OfType<HeightResizeGrip>().Single(g => g.Target == box);
         grip.ResizeBy(40);

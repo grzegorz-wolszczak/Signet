@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Signet.App.ViewModels"
         xmlns:loc="using:Signet.App.Resources"
+        xmlns:cv="using:Signet.App.CodeEditor"
         xmlns:infra="using:Signet.App.Infrastructure"
         xmlns:views="using:Signet.App.Views"
         x:Class="Signet.App.Views.PreferencesWindow"
@@ -183,6 +184,9 @@
                   </Grid>
 
                   <CheckBox Content="{loc:Loc PreferencesWindow_CompactUi}" IsChecked="{Binding CompactUi}" />
+
+            <CheckBox Content="{loc:Loc PreferencesWindow_ShowZoomHint}" IsChecked="{Binding ShowZoomHint}"
+                      ToolTip.Tip="{loc:Loc PreferencesWindow_ShowZoomHintTip}" />
 
                   <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
                     <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_CustomIconFolder}" />
@@ -507,9 +511,9 @@
                            IsVisible="{Binding FootnoteReferenceStyleError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
               </WrapPanel>
               <Grid RowDefinitions="Auto,Auto">
-                <TextBox x:Name="FootnoteReferenceStyleBox" Text="{Binding FootnoteReferenceStyle}" AcceptsReturn="True" TextWrapping="Wrap"
+                <cv:CssEditor x:Name="FootnoteReferenceStyleBox" CssText="{Binding FootnoteReferenceStyle, Mode=TwoWay}"
                          Height="{x:Static views:PreferencesWindow.DefaultFieldHeight}"
-                         FontFamily="Cascadia Code,Consolas,monospace" />
+                         BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
                 <views:HeightResizeGrip Grid.Row="1" Target="{Binding #FootnoteReferenceStyleBox}" />
               </Grid>
             </StackPanel>
@@ -520,9 +524,9 @@
                            IsVisible="{Binding FootnoteNoteStyleError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
               </WrapPanel>
               <Grid RowDefinitions="Auto,Auto">
-                <TextBox x:Name="FootnoteNoteStyleBox" Text="{Binding FootnoteNoteStyle}" AcceptsReturn="True" TextWrapping="Wrap"
+                <cv:CssEditor x:Name="FootnoteNoteStyleBox" CssText="{Binding FootnoteNoteStyle, Mode=TwoWay}"
                          Height="{x:Static views:PreferencesWindow.DefaultFieldHeight}"
-                         FontFamily="Cascadia Code,Consolas,monospace" />
+                         BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
                 <views:HeightResizeGrip Grid.Row="1" Target="{Binding #FootnoteNoteStyleBox}" />
               </Grid>
             </StackPanel>
@@ -533,9 +537,9 @@
                            IsVisible="{Binding FootnoteParagraphStyleError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
               </WrapPanel>
               <Grid RowDefinitions="Auto,Auto">
-                <TextBox x:Name="FootnoteParagraphStyleBox" Text="{Binding FootnoteParagraphStyle}" AcceptsReturn="True" TextWrapping="Wrap"
+                <cv:CssEditor x:Name="FootnoteParagraphStyleBox" CssText="{Binding FootnoteParagraphStyle, Mode=TwoWay}"
                          Height="{x:Static views:PreferencesWindow.DefaultFieldHeight}"
-                         FontFamily="Cascadia Code,Consolas,monospace" />
+                         BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
                 <views:HeightResizeGrip Grid.Row="1" Target="{Binding #FootnoteParagraphStyleBox}" />
               </Grid>
             </StackPanel>
@@ -546,9 +550,9 @@
                            IsVisible="{Binding FootnoteLocalContainerStyleError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
               </WrapPanel>
               <Grid RowDefinitions="Auto,Auto">
-                <TextBox x:Name="FootnoteLocalContainerStyleBox" Text="{Binding FootnoteLocalContainerStyle}" AcceptsReturn="True" TextWrapping="Wrap"
+                <cv:CssEditor x:Name="FootnoteLocalContainerStyleBox" CssText="{Binding FootnoteLocalContainerStyle, Mode=TwoWay}"
                          Height="{x:Static views:PreferencesWindow.DefaultFieldHeight}"
-                         FontFamily="Cascadia Code,Consolas,monospace" />
+                         BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
                 <views:HeightResizeGrip Grid.Row="1" Target="{Binding #FootnoteLocalContainerStyleBox}" />
               </Grid>
             </StackPanel>
@@ -559,9 +563,9 @@
                            IsVisible="{Binding FootnoteGlobalContainerStyleError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
               </WrapPanel>
               <Grid RowDefinitions="Auto,Auto">
-                <TextBox x:Name="FootnoteGlobalContainerStyleBox" Text="{Binding FootnoteGlobalContainerStyle}" AcceptsReturn="True" TextWrapping="Wrap"
+                <cv:CssEditor x:Name="FootnoteGlobalContainerStyleBox" CssText="{Binding FootnoteGlobalContainerStyle, Mode=TwoWay}"
                          Height="{x:Static views:PreferencesWindow.DefaultFieldHeight}"
-                         FontFamily="Cascadia Code,Consolas,monospace" />
+                         BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
                 <views:HeightResizeGrip Grid.Row="1" Target="{Binding #FootnoteGlobalContainerStyleBox}" />
               </Grid>
             </StackPanel>
@@ -572,9 +576,9 @@
                            IsVisible="{Binding FootnoteSeparatorStyleError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
               </WrapPanel>
               <Grid RowDefinitions="Auto,Auto">
-                <TextBox x:Name="FootnoteSeparatorStyleBox" Text="{Binding FootnoteSeparatorStyle}" AcceptsReturn="True" TextWrapping="Wrap"
+                <cv:CssEditor x:Name="FootnoteSeparatorStyleBox" CssText="{Binding FootnoteSeparatorStyle, Mode=TwoWay}"
                          Height="{x:Static views:PreferencesWindow.DefaultFieldHeight}"
-                         FontFamily="Cascadia Code,Consolas,monospace" />
+                         BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
                 <views:HeightResizeGrip Grid.Row="1" Target="{Binding #FootnoteSeparatorStyleBox}" />
               </Grid>
             </StackPanel>
@@ -585,9 +589,9 @@
                            IsVisible="{Binding FootnoteGroupStyleError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
               </WrapPanel>
               <Grid RowDefinitions="Auto,Auto">
-                <TextBox x:Name="FootnoteGroupStyleBox" Text="{Binding FootnoteGroupStyle}" AcceptsReturn="True" TextWrapping="Wrap"
+                <cv:CssEditor x:Name="FootnoteGroupStyleBox" CssText="{Binding FootnoteGroupStyle, Mode=TwoWay}"
                          Height="{x:Static views:PreferencesWindow.DefaultFieldHeight}"
-                         FontFamily="Cascadia Code,Consolas,monospace" />
+                         BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
                 <views:HeightResizeGrip Grid.Row="1" Target="{Binding #FootnoteGroupStyleBox}" />
               </Grid>
             </StackPanel>
@@ -598,9 +602,9 @@
                            IsVisible="{Binding FootnoteGroupTitleStyleError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
               </WrapPanel>
               <Grid RowDefinitions="Auto,Auto">
-                <TextBox x:Name="FootnoteGroupTitleStyleBox" Text="{Binding FootnoteGroupTitleStyle}" AcceptsReturn="True" TextWrapping="Wrap"
+                <cv:CssEditor x:Name="FootnoteGroupTitleStyleBox" CssText="{Binding FootnoteGroupTitleStyle, Mode=TwoWay}"
                          Height="{x:Static views:PreferencesWindow.DefaultFieldHeight}"
-                         FontFamily="Cascadia Code,Consolas,monospace" />
+                         BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
                 <views:HeightResizeGrip Grid.Row="1" Target="{Binding #FootnoteGroupTitleStyleBox}" />
               </Grid>
             </StackPanel>

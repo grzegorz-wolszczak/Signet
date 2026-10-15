@@ -12,6 +12,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Microsoft.Extensions.DependencyInjection;
 using Signet.App.Actions;
+using Signet.App.CodeEditor;
 using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.Services;
@@ -1054,6 +1055,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         window.FieldHeights = settings.PreferencesFieldHeights;
         window.SplitterSizes = settings.PreferencesSplitterSizes;
         window.CollapsedSections = settings.PreferencesCollapsedSections;
+        EditorZoom.Delta = settings.PreferencesEditorZoom;
 
         window.Closing += (_, _) =>
         {
@@ -1063,6 +1065,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             settings.PreferencesFieldHeights = window.FieldHeights;
             settings.PreferencesSplitterSizes = window.SplitterSizes;
             settings.PreferencesCollapsedSections = window.CollapsedSections;
+            settings.PreferencesEditorZoom = EditorZoom.Delta;
             settings.Save();
         };
 

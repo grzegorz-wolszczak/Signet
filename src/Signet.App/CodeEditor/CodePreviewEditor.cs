@@ -26,6 +26,7 @@ public sealed class CodePreviewEditor : TextEditor
         HorizontalScrollBarVisibility = ScrollBarVisibility.Auto;
         VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
         Document = new TextDocument();
+        EditorZoom.Attach(this);
     }
 
     protected override Type StyleKeyOverride => typeof(TextEditor);
@@ -52,7 +53,7 @@ public sealed class CodePreviewEditor : TextEditor
 
         if (size > 0)
         {
-            FontSize = size;
+            EditorZoom.SetBaseSize(this, size); // the font size is the setting's, plus the zoom of Ctrl + wheel
         }
 
         if (_colorizer is not null)

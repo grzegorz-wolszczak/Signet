@@ -10,7 +10,7 @@
   <!-- A "Fonts" page of the Preferences window, as Rider's Editor › Font: the font settings on the left, the preview of
        the one focused or changed last on the right. -->
   <!-- The splitter between the settings and the preview moves: the preview can be made wider or narrower. -->
-  <Grid Margin="8">
+  <Grid x:Name="PreviewGrid" Margin="8">
     <Grid.ColumnDefinitions>
       <ColumnDefinition Width="*" MinWidth="240" />
       <ColumnDefinition Width="10" />
@@ -29,7 +29,7 @@
     </ScrollViewer>
 
     <GridSplitter x:Name="PreviewSplitter" Grid.Column="1" ResizeDirection="Columns" Background="Transparent"
-                  ResizeBehavior="PreviousAndNext" />
+                  ResizeBehavior="PreviousAndNext" DragCompleted="OnSplitterDragCompleted" />
 
     <Border Grid.Column="2" Padding="10" CornerRadius="4" BorderThickness="1"
             Background="{DynamicResource SystemControlBackgroundAltHighBrush}"

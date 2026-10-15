@@ -62,6 +62,7 @@ public partial class PreferencesWindow : Window
         _sections = new PreferencesSectionsViewModel(BuildSections(), PageTexts);
         FillLinkPages();
         WirePageLinks();
+        WireFontsPreviews();
         LocalizedColumns<PreferencesSectionNode> columns = new();
         VisibleItemsView<PreferencesSectionNode> roots = Visible(_sections.Roots);
         _source = new HierarchicalTreeDataGridSource<PreferencesSectionNode>(roots)
@@ -136,8 +137,8 @@ public partial class PreferencesWindow : Window
 
     /// <summary>
     /// The sizes the user gave the split panes (pane name -&gt; pixels): the width of the section tree
-    /// (<c>Sections</c>), and the width of the tree and the height of the preview of each Appearance › Color Scheme
-    /// page, e.g. <c>ThemeCssView.tree</c>; the main window remembers them between openings, like the field heights.
+    /// (<c>Sections</c>), the width of the preview of the Fonts pages (<c>FontsPreview</c>, shared by all of them), and the
+    /// width of the tree and the height of the preview of each Appearance › Color Scheme page, e.g. <c>ThemeCssView.tree</c>; the main window remembers them between openings, like the field heights.
     /// </summary>
     public IReadOnlyDictionary<string, int> SplitterSizes
     {
@@ -147,6 +148,11 @@ public partial class PreferencesWindow : Window
             {
                 [SectionsSizeKey] = (int)Math.Round(Body.ColumnDefinitions[0].Width.Value),
             };
+            if (_fontsPreviewWidth > 0)
+            {
+                sizes[FontsPreviewSizeKey] = _fontsPreviewWidth;
+            }
+
             foreach ((_, ColorSchemeKeysView view) in ThemeKeyViews())
             {
                 sizes[view.Name + TreeSizeSuffix] = (int)Math.Round(view.TreeWidth);
@@ -163,6 +169,11 @@ public partial class PreferencesWindow : Window
             {
                 ColumnDefinition column = Body.ColumnDefinitions[0];
                 column.Width = new GridLength(Math.Max(column.MinWidth, sections));
+            }
+
+            if (value.TryGetValue(FontsPreviewSizeKey, out int preview) && preview > 0)
+            {
+                SetFontsPreviewWidth(preview);
             }
 
             foreach ((_, ColorSchemeKeysView view) in ThemeKeyViews())
@@ -224,6 +235,39 @@ public partial class PreferencesWindow : Window
     }
 
     private const string SectionsSizeKey = "Sections";
+    private const string FontsPreviewSizeKey = "FontsPreview";
+    private int _fontsPreviewWidth;
+
+    // The Fonts pages (every Appearance section and the theme's own) share one width of the preview: resizing it on one
+    // page resizes it on all of them, and the window remembers it.
+    private IEnumerable<FontsPageView> FontsPages() =>
+        Pages.Items.OfType<TabItem>().Select(t => t.Content).OfType<ILogical>().SelectMany(SelfAndLogicalDescendants).OfType<FontsPageView>();
+
+    private void WireFontsPreviews()
+    {
+        foreach (FontsPageView page in FontsPages())
+        {
+            page.PreviewWidthChanged += (sender, _) =>
+            {
+                if (sender is FontsPageView resized)
+                {
+                    SetFontsPreviewWidth((int)Math.Round(resized.PreviewWidth));
+                }
+            };
+        }
+    }
+
+    private void SetFontsPreviewWidth(int width)
+    {
+        _fontsPreviewWidth = width;
+        foreach (FontsPageView page in FontsPages())
+        {
+            if (Math.Abs(page.PreviewWidth - width) > 1)
+            {
+                page.PreviewWidth = width;
+            }
+        }
+    }
     private const string TreeSizeSuffix = ".tree";
     private const string PreviewSizeSuffix = ".preview";
 

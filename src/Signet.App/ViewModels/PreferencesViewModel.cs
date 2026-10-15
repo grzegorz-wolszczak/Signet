@@ -388,6 +388,23 @@ public sealed partial class PreferencesViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Whether the font size is shown for a moment while a code editor is zoomed with Ctrl + mouse wheel; takes effect
+    /// when saved.
+    /// </summary>
+    public bool ShowZoomHint
+    {
+        get => _settings.ShowZoomHint;
+        set
+        {
+            if (_settings.ShowZoomHint != value)
+            {
+                _settings.ShowZoomHint = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     /// <summary>Preview font — standard.</summary>
     [ObservableProperty]
     private string _previewFontStandard;
@@ -628,6 +645,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
     private void RestoreAppearanceDefaults()
     {
         _settings.ClearAppearanceSettings();
+        OnPropertyChanged(nameof(ShowZoomHint));
 
         PreviewAppearance previewFonts = PreviewAppearance.Default;
         PreviewFontStandard = previewFonts.FontFamilyStandard;

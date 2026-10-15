@@ -56,6 +56,7 @@ public sealed class ThemePreviewEditor : TextEditor
         TextArea.TextView.BackgroundRenderers.Add(_renderer);
         TextArea.AddHandler(PointerPressedEvent, OnPointerPressed, Avalonia.Interactivity.RoutingStrategies.Tunnel);
         _blinkTimer.Tick += (_, _) => OnBlinkTick();
+        EditorZoom.Attach(this);
     }
 
     /// <summary>Raised by a click on a fragment shown in the look of a key (on the line numbers: <c>editor.lineNumbers</c>).</summary>

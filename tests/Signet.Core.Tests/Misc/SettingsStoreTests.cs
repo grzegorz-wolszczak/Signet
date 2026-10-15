@@ -179,6 +179,40 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
+    public void The_zoom_hint_is_on_by_default_survives_a_restart_and_is_reset_with_the_appearance()
+    {
+        using TempDir dir = new();
+        string path = dir.Combine("settings.xml");
+        SettingsStore writer = new(path);
+        writer.ShowZoomHint.Should().BeTrue();
+
+        writer.ShowZoomHint = false;
+        writer.Save();
+        new SettingsStore(path).ShowZoomHint.Should().BeFalse();
+
+        writer.ClearAppearanceSettings();
+        writer.ShowZoomHint.Should().BeTrue("Restore Appearance Defaults turns it on again");
+    }
+
+    [Fact]
+    public void The_zoom_of_the_preferences_editors_survives_a_restart_and_stays_in_range()
+    {
+        using TempDir dir = new();
+        string path = dir.Combine("settings.xml");
+        SettingsStore writer = new(path);
+        writer.PreferencesEditorZoom.Should().Be(0);
+
+        writer.PreferencesEditorZoom = 5;
+        writer.Save();
+        new SettingsStore(path).PreferencesEditorZoom.Should().Be(5);
+
+        writer.PreferencesEditorZoom = -500;
+        writer.PreferencesEditorZoom.Should().Be(-12);
+        writer.PreferencesEditorZoom = 500;
+        writer.PreferencesEditorZoom.Should().Be(48);
+    }
+
+    [Fact]
     public void The_collapsed_preferences_sections_survive_a_restart_and_start_empty()
     {
         using TempDir dir = new();

@@ -425,9 +425,14 @@ public sealed partial class MainWindowViewModel
         _preview.Fonts = _settings.PreviewAppearance;
         // The preview's own zoom, remembered across restarts (saved with the rest of the settings on exit).
         _preview.SetZoom(_settings.ZoomPreview);
+        ZoomHint.Enabled = _settings.ShowZoomHint;
         _settings.SettingChanged += (_, e) =>
         {
-            if (e.QualifiedKey.EndsWith("/ui_preview_timeout", StringComparison.Ordinal))
+            if (e.QualifiedKey.EndsWith("/show_zoom_hint", StringComparison.Ordinal))
+            {
+                ZoomHint.Enabled = _settings.ShowZoomHint;
+            }
+            else if (e.QualifiedKey.EndsWith("/ui_preview_timeout", StringComparison.Ordinal))
             {
                 _preview.DebounceInterval = TimeSpan.FromMilliseconds(_settings.UiPreviewTimeout);
             }
