@@ -10,7 +10,7 @@ using Signet.Core.Themes;
 namespace Signet.App.ViewModels;
 
 /// <summary>
-/// The "Fonts" pages of the Preferences window (Appearance › Fonts of the sections), as in Rider's Editor › Font: every
+/// The Fonts tabs of the Preferences window (Appearance › &lt;section&gt; › Fonts), as in Rider's Editor › Font: every
 /// font setting of the section with a typeface list, a size field, "Choose…" and a preview on the right. The settings
 /// stay the properties of this view model; the pages are adapters over them (<see cref="FontSettingViewModel"/>).
 /// </summary>
@@ -20,45 +20,45 @@ public sealed partial class PreferencesViewModel
     private const int FontSizeMax = FontPickerViewModel.MaxSize;
 
     /// <summary>
-    /// Appearance › Fonts: the interface font, the font size of the warnings in dialogs and the tooltip fonts of the
+    /// Appearance › General › Fonts: the interface font, the font size of the warnings in dialogs and the tooltip fonts of the
     /// parts without a section of their own (the main window, the document tabs, this window, the other windows).
     /// </summary>
     public FontPageViewModel AppearanceFonts { get; private set; } = null!;
 
-    /// <summary>Code View › Appearance › Fonts: the editor font and the opening tag hint font.</summary>
+    /// <summary>Appearance › Code View › Fonts: the editor font and the opening tag hint font.</summary>
     public FontPageViewModel CodeViewFonts { get; private set; } = null!;
 
-    /// <summary>Preview › Appearance › Fonts: the standard, serif and sans-serif fonts and their size.</summary>
+    /// <summary>Appearance › Preview › Fonts: the standard, serif and sans-serif fonts and their size.</summary>
     public FontPageViewModel PreviewFonts { get; private set; } = null!;
 
-    /// <summary>Special Characters › Appearance › Fonts: the font of the "Insert Special Character" window.</summary>
+    /// <summary>Appearance › Special Characters › Fonts: the font of the "Insert Special Character" window.</summary>
     public FontPageViewModel SpecialCharacterFonts { get; private set; } = null!;
 
-    /// <summary>Start Screen › Appearance › Fonts: the tooltip font.</summary>
+    /// <summary>Appearance › Start Screen › Fonts: the tooltip font.</summary>
     public FontPageViewModel StartScreenFonts { get; private set; } = null!;
 
-    /// <summary>Book Browser › Appearance › Fonts: the tooltip font.</summary>
+    /// <summary>Appearance › Book Browser › Fonts: the tooltip font.</summary>
     public FontPageViewModel BookBrowserFonts { get; private set; } = null!;
 
-    /// <summary>Table of Contents › Appearance › Fonts: the tooltip font.</summary>
+    /// <summary>Appearance › Table of Contents › Fonts: the tooltip font.</summary>
     public FontPageViewModel TableOfContentsFonts { get; private set; } = null!;
 
-    /// <summary>Find &amp; Replace › Appearance › Fonts: the tooltip font.</summary>
+    /// <summary>Appearance › Find &amp; Replace › Fonts: the tooltip font.</summary>
     public FontPageViewModel FindReplaceFonts { get; private set; } = null!;
 
-    /// <summary>Checkpoints › Appearance › Fonts: the tooltip font.</summary>
+    /// <summary>Appearance › Checkpoints › Fonts: the tooltip font.</summary>
     public FontPageViewModel CheckpointsFonts { get; private set; } = null!;
 
-    /// <summary>Validation › Appearance › Fonts: the tooltip font.</summary>
+    /// <summary>Appearance › Validation › Fonts: the tooltip font.</summary>
     public FontPageViewModel ValidationFonts { get; private set; } = null!;
 
-    /// <summary>Metadata Editor › Appearance › Fonts: the tooltip font.</summary>
+    /// <summary>Appearance › Metadata Editor › Fonts: the tooltip font.</summary>
     public FontPageViewModel MetadataEditorFonts { get; private set; } = null!;
 
-    /// <summary>Cleanup › Appearance › Fonts: the tooltip font.</summary>
+    /// <summary>Appearance › Cleanup › Fonts: the tooltip font.</summary>
     public FontPageViewModel CleanupFonts { get; private set; } = null!;
 
-    /// <summary>Footnotes › Appearance › Fonts: the tooltip font.</summary>
+    /// <summary>Appearance › Footnotes › Fonts: the tooltip font.</summary>
     public FontPageViewModel FootnotesFonts { get; private set; } = null!;
 
     /// <summary>

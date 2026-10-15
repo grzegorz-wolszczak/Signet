@@ -195,7 +195,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     public PreviewHighlight Highlight { get; set; } = PreviewHighlight.Default;
 
     /// <summary>
-    /// The default fonts of the book (Preferences › Appearance › Fonts › Preview), set by the host; the view applies them
+    /// The default fonts of the book (Preferences › Appearance › Preview › Fonts), set by the host; the view applies them
     /// (with the fonts of the theme over them) after every navigation and when they change (<see cref="FontsChanged"/>).
     /// </summary>
     public PreviewAppearance Fonts

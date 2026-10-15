@@ -133,7 +133,7 @@ public readonly record struct WarningAppearance(int FontSize)
 
 /// <summary>
 /// A part of the application whose tooltips have their own font (Preferences: the "Fonts" page of the part's section,
-/// or Appearance › Fonts for the windows without a section).
+/// or Appearance › General › Fonts for the windows without a section).
 /// </summary>
 public enum TooltipArea
 {

@@ -634,7 +634,7 @@ public sealed class PreferencesViewModelTests
         hint.IsCodePreview.Should().BeFalse();
     }
 
-    // The tooltip fonts of the parts without a section of their own, on Appearance › Fonts.
+    // The tooltip fonts of the parts without a section of their own, on Appearance › General › Fonts.
     private static readonly string[] AppearanceTooltipRows =
     {
         "TooltipMainWindow", "TooltipDocumentTabs", "TooltipPreferencesWindow", "TooltipOtherWindows",

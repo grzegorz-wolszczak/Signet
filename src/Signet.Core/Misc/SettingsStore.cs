@@ -1112,12 +1112,14 @@ public sealed class SettingsStore
 
     /// <summary>
     /// The page of the Preferences window that was open when it was last closed (its index), so the window opens on it
-    /// again. Window state, not a preference — written outside the Save / Cancel draft.
+    /// again. Window state, not a preference — written outside the Save / Cancel draft. The key is not
+    /// <c>preferences_page</c> (the index in the old section layout, before the Appearance sections got tab bars): an
+    /// index from that layout would open some other page, so the window opens on its first page once instead.
     /// </summary>
     public int PreferencesPageIndex
     {
-        get => Math.Max(0, ReadIntFrom(MainWindowGroup, "preferences_page", 0));
-        set => _file.SetRaw(MainWindowGroup, "preferences_page", Math.Max(0, value));
+        get => Math.Max(0, ReadIntFrom(MainWindowGroup, "preferences_page_v2", 0));
+        set => _file.SetRaw(MainWindowGroup, "preferences_page_v2", Math.Max(0, value));
     }
 
     /// <summary>

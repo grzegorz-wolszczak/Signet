@@ -23,6 +23,13 @@
     <Style Selector="TabControl.preferences /template/ ItemsPresenter#PART_ItemsPresenter">
       <Setter Property="IsVisible" Value="False" />
     </Style>
+    <!-- The tab bars inside the pages (the Fonts tab of an Appearance section, the tabs of Spellcheck): the Fluent
+         default is a 24 px header, far larger than the settings below it. -->
+    <Style Selector="TabControl:not(.preferences) > TabItem">
+      <Setter Property="FontSize" Value="{DynamicResource ControlContentThemeFontSize}" />
+      <Setter Property="Padding" Value="10,6" />
+      <Setter Property="MinHeight" Value="0" />
+    </Style>
     <!-- Top-level sections in bold, subsections in the normal weight (as in Rider). -->
     <Style Selector="TextBlock.topSection">
       <Setter Property="FontWeight" Value="Bold" />
@@ -141,100 +148,236 @@
         </StackPanel>
       </TabItem>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       <!-- ============================== Appearance ============================== -->
-      <TabItem x:Name="AppearancePage" Header="{loc:Loc PreferencesWindow_Appearance}">
-        <ScrollViewer>
-          <StackPanel Spacing="10" Margin="8">
+      <!-- Appearance has no settings of its own: it lists links to its sections, one per part of the application. Each
+           section is a page with a tab bar: the tab with the look of the part (where it has more than fonts) and
+           "Fonts" with its fonts. Sections that configure behaviour (Preview, Footnotes) stay top-level and link here. -->
+      <TabItem x:Name="AppearancePage" Header="{loc:Loc PreferencesWindow_Appearance}" />
 
-            <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
-              <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_IconTheme}" />
-              <ComboBox Grid.Column="1" ItemsSource="{Binding AvailableIconThemes}" SelectedItem="{Binding SelectedIconTheme}"
-                        DisplayMemberBinding="{Binding DisplayName}" />
-            </Grid>
+      <!-- Appearance › General: the icon theme, the compact interface; Fonts: the interface font, the size of the
+           warnings in dialogs and the tooltip fonts of the parts without a section of their own. -->
+      <TabItem x:Name="AppearanceGeneralPage" Header="{loc:Loc PreferencesWindow_General}" views:PreferencesPage.Parent="AppearancePage">
+        <TabControl x:Name="AppearanceGeneralTabs">
+          <TabItem Header="{loc:Loc PreferencesWindow_General}">
+              <ScrollViewer>
+                <StackPanel Spacing="10" Margin="8">
 
-            <CheckBox Content="{loc:Loc PreferencesWindow_CompactUi}" IsChecked="{Binding CompactUi}" />
+                  <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+                    <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_IconTheme}" />
+                    <ComboBox Grid.Column="1" ItemsSource="{Binding AvailableIconThemes}" SelectedItem="{Binding SelectedIconTheme}"
+                              DisplayMemberBinding="{Binding DisplayName}" />
+                  </Grid>
 
-            <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
-              <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_CustomIconFolder}" />
-              <TextBox Grid.Column="1" Text="{Binding CustomIconFolder}" />
-            </Grid>
+                  <CheckBox Content="{loc:Loc PreferencesWindow_CompactUi}" IsChecked="{Binding CompactUi}" />
 
-            <!-- The colors of the interface (warnings, error notifications, …) are in the theme. -->
-            <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInTheme}" Padding="0"
-                             views:PreferencesPage.Target="ColorSchemePage" />
+                  <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+                    <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_CustomIconFolder}" />
+                    <TextBox Grid.Column="1" Text="{Binding CustomIconFolder}" />
+                  </Grid>
 
-            <Button Content="{loc:Loc PreferencesWindow_RestoreAppearanceDefaults}" Command="{Binding RestoreAppearanceDefaultsCommand}"
-                    HorizontalAlignment="Left" />
+                  <!-- The colors of the interface (warnings, error notifications, …) are in the theme. -->
+                  <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInTheme}" Padding="0"
+                                   views:PreferencesPage.Target="ColorSchemePage" />
 
-          </StackPanel>
-        </ScrollViewer>
+                  <Button Content="{loc:Loc PreferencesWindow_RestoreAppearanceDefaults}" Command="{Binding RestoreAppearanceDefaultsCommand}"
+                          HorizontalAlignment="Left" />
+
+                </StackPanel>
+              </ScrollViewer>
+          </TabItem>
+          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+            <views:FontsPageView x:Name="AppearanceFontsView" />
+          </TabItem>
+        </TabControl>
       </TabItem>
 
-      <!-- Appearance › Fonts: the interface font, the size of the warnings in dialogs and the tooltip fonts of the parts
-           without a section of their own; the fonts of the other parts are its subsections, right below (the sections
-           with other appearance settings, Code View and Preview, link to them). -->
-      <TabItem x:Name="AppearanceFontsPage" Header="{loc:Loc PreferencesWindow_Fonts}" views:PreferencesPage.Parent="AppearancePage">
-        <views:FontsPageView x:Name="AppearanceFontsView" />
+      <!-- Appearance › StartScreen: Fonts only. -->
+      <TabItem x:Name="StartScreenAppearancePage" Header="{loc:Loc PreferencesWindow_StartScreen}" views:PreferencesPage.Parent="AppearancePage">
+        <TabControl x:Name="StartScreenAppearanceTabs">
+          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+            <views:FontsPageView x:Name="StartScreenFontsView" />
+          </TabItem>
+        </TabControl>
       </TabItem>
 
-      <!-- Appearance › Fonts › Start Screen. -->
-      <TabItem x:Name="StartScreenFontsPage" Header="{loc:Loc PreferencesWindow_StartScreen}" views:PreferencesPage.Parent="AppearanceFontsPage">
-        <views:FontsPageView x:Name="StartScreenFontsView" />
+      <!-- Appearance › BookBrowser: Fonts only. -->
+      <TabItem x:Name="BookBrowserAppearancePage" Header="{loc:Loc PreferencesWindow_BookBrowser}" views:PreferencesPage.Parent="AppearancePage">
+        <TabControl x:Name="BookBrowserAppearanceTabs">
+          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+            <views:FontsPageView x:Name="BookBrowserFontsView" />
+          </TabItem>
+        </TabControl>
       </TabItem>
 
-      <!-- Appearance › Fonts › Book Browser. -->
-      <TabItem x:Name="BookBrowserFontsPage" Header="{loc:Loc PreferencesWindow_BookBrowser}" views:PreferencesPage.Parent="AppearanceFontsPage">
-        <views:FontsPageView x:Name="BookBrowserFontsView" />
+      <!-- Appearance › TableOfContents: Fonts only. -->
+      <TabItem x:Name="TableOfContentsAppearancePage" Header="{loc:Loc PreferencesWindow_TableOfContents}" views:PreferencesPage.Parent="AppearancePage">
+        <TabControl x:Name="TableOfContentsAppearanceTabs">
+          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+            <views:FontsPageView x:Name="TableOfContentsFontsView" />
+          </TabItem>
+        </TabControl>
       </TabItem>
 
-      <!-- Appearance › Fonts › Table of Contents. -->
-      <TabItem x:Name="TableOfContentsFontsPage" Header="{loc:Loc PreferencesWindow_TableOfContents}" views:PreferencesPage.Parent="AppearanceFontsPage">
-        <views:FontsPageView x:Name="TableOfContentsFontsView" />
+      <!-- Appearance › CodeView: highlighting and the opening tag hint; Fonts: the editor and hint fonts. -->
+      <TabItem x:Name="CodeViewAppearancePage" Header="{loc:Loc PreferencesWindow_CodeView}" views:PreferencesPage.Parent="AppearancePage">
+        <TabControl x:Name="CodeViewAppearanceTabs">
+          <TabItem Header="{loc:Loc PreferencesWindow_CodeView}">
+              <ScrollViewer>
+                <StackPanel Spacing="10" Margin="8">
+                  <CheckBox Content="{loc:Loc PreferencesWindow_ExtendedHighlighting}" IsChecked="{Binding ExtendedHighlighting}" />
+
+                  <!-- Code View: the opening tag tooltip over a closing tag, with its delay. -->
+                  <CheckBox Content="{loc:Loc PreferencesWindow_OpenTagHint}" IsChecked="{Binding OpenTagHint}" />
+                  <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8" Margin="28,0,0,0">
+                    <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_OpenTagHintDelay}" IsEnabled="{Binding OpenTagHint}" />
+                    <TextBox Grid.Column="1" Text="{Binding OpenTagHintDelay}" Width="80" HorizontalAlignment="Left"
+                             IsEnabled="{Binding OpenTagHint}" />
+                  </Grid>
+
+                  <!-- The colors of the editor and of the hint are in the theme, their fonts on the Fonts tab. -->
+                  <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInTheme}" Padding="0"
+                                   views:PreferencesPage.Target="ColorSchemePage" />
+
+                  <TextBlock Text="{loc:Loc PreferencesWindow_FontColorRestartNotice}"
+                             IsVisible="{Binding RestartNoticeVisible}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
+
+                </StackPanel>
+              </ScrollViewer>
+          </TabItem>
+          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+            <views:FontsPageView x:Name="CodeViewFontsView" />
+          </TabItem>
+        </TabControl>
       </TabItem>
 
-      <!-- Appearance › Fonts › Code View. -->
-      <TabItem x:Name="CodeViewFontsPage" Header="{loc:Loc PreferencesWindow_CodeView}" views:PreferencesPage.Parent="AppearanceFontsPage">
-        <views:FontsPageView x:Name="CodeViewFontsView" />
+      <!-- Appearance › Preview: the highlight of the caret location; Fonts: the preview fonts. -->
+      <TabItem x:Name="PreviewAppearancePage" Header="{loc:Loc PreferencesWindow_Preview}" views:PreferencesPage.Parent="AppearancePage">
+        <TabControl x:Name="PreviewAppearanceTabs">
+          <TabItem Header="{loc:Loc PreferencesWindow_Preview}">
+              <ScrollViewer>
+                <StackPanel Spacing="10" Margin="8">
+                  <Border Classes="section">
+                    <StackPanel Spacing="6">
+                      <TextBlock Text="{loc:Loc PreferencesWindow_PreviewHighlight}" FontWeight="Bold" />
+                      <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightStyle}" VerticalAlignment="Center" />
+                        <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding AvailablePreviewHighlightStyles}" SelectedItem="{Binding PreviewHighlightStyle}">
+                          <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                              <TextBlock Text="{Binding Converter={x:Static infra:DisplayNameConverters.PreviewHighlightStyle}}" />
+                            </DataTemplate>
+                          </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <!-- The color of the highlight is in the theme (preview.highlight). -->
+                        <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInTheme}" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Padding="0"
+                                         views:PreferencesPage.Target="ColorSchemePage" />
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightOpacity}" VerticalAlignment="Center" TextWrapping="Wrap"
+                                   IsEnabled="{Binding IsPreviewHighlightBackground}" />
+                        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding PreviewHighlightOpacity}" Width="80" HorizontalAlignment="Left"
+                                 IsEnabled="{Binding IsPreviewHighlightBackground}" />
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightOutlineWidth}" VerticalAlignment="Center" TextWrapping="Wrap"
+                                   IsEnabled="{Binding IsPreviewHighlightOutline}" />
+                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PreviewHighlightOutlineWidth}" Width="80" HorizontalAlignment="Left"
+                                 IsEnabled="{Binding IsPreviewHighlightOutline}" />
+
+                        <CheckBox Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Content="{loc:Loc PreferencesWindow_PreviewHighlightAutoHide}"
+                                  IsChecked="{Binding PreviewHighlightAutoHide}" />
+
+                        <TextBlock Grid.Row="5" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightAutoHideDelay}" VerticalAlignment="Center" TextWrapping="Wrap"
+                                   IsEnabled="{Binding PreviewHighlightAutoHide}" />
+                        <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding PreviewHighlightAutoHideDelay}" Width="80" HorizontalAlignment="Left"
+                                 IsEnabled="{Binding PreviewHighlightAutoHide}" />
+                      </Grid>
+                    </StackPanel>
+                  </Border>
+
+                </StackPanel>
+              </ScrollViewer>
+          </TabItem>
+          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+            <views:FontsPageView x:Name="PreviewFontsView" />
+          </TabItem>
+        </TabControl>
       </TabItem>
 
-      <!-- Appearance › Fonts › Preview. -->
-      <TabItem x:Name="PreviewFontsPage" Header="{loc:Loc PreferencesWindow_Preview}" views:PreferencesPage.Parent="AppearanceFontsPage">
-        <views:FontsPageView x:Name="PreviewFontsView" />
+      <!-- Appearance › FindReplace: Fonts only. -->
+      <TabItem x:Name="FindReplaceAppearancePage" Header="{loc:Loc PreferencesWindow_FindReplace}" views:PreferencesPage.Parent="AppearancePage">
+        <TabControl x:Name="FindReplaceAppearanceTabs">
+          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+            <views:FontsPageView x:Name="FindReplaceFontsView" />
+          </TabItem>
+        </TabControl>
       </TabItem>
 
-      <!-- Appearance › Fonts › Find & Replace. -->
-      <TabItem x:Name="FindReplaceFontsPage" Header="{loc:Loc PreferencesWindow_FindReplace}" views:PreferencesPage.Parent="AppearanceFontsPage">
-        <views:FontsPageView x:Name="FindReplaceFontsView" />
+      <!-- Appearance › SpecialCharacters: Fonts only. -->
+      <TabItem x:Name="SpecialCharactersAppearancePage" Header="{loc:Loc PreferencesWindow_SpecialCharacters}" views:PreferencesPage.Parent="AppearancePage">
+        <TabControl x:Name="SpecialCharactersAppearanceTabs">
+          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+            <views:FontsPageView x:Name="SpecialCharacterFontsView" />
+          </TabItem>
+        </TabControl>
       </TabItem>
 
-      <!-- Appearance › Fonts › Special Characters. -->
-      <TabItem x:Name="SpecialCharactersFontsPage" Header="{loc:Loc PreferencesWindow_SpecialCharacters}" views:PreferencesPage.Parent="AppearanceFontsPage">
-        <views:FontsPageView x:Name="SpecialCharacterFontsView" />
+      <!-- Appearance › Checkpoints: Fonts only. -->
+      <TabItem x:Name="CheckpointsAppearancePage" Header="{loc:Loc PreferencesWindow_Checkpoints}" views:PreferencesPage.Parent="AppearancePage">
+        <TabControl x:Name="CheckpointsAppearanceTabs">
+          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+            <views:FontsPageView x:Name="CheckpointsFontsView" />
+          </TabItem>
+        </TabControl>
       </TabItem>
 
-      <!-- Appearance › Fonts › Checkpoints. -->
-      <TabItem x:Name="CheckpointsFontsPage" Header="{loc:Loc PreferencesWindow_Checkpoints}" views:PreferencesPage.Parent="AppearanceFontsPage">
-        <views:FontsPageView x:Name="CheckpointsFontsView" />
+      <!-- Appearance › Validation: Fonts only. -->
+      <TabItem x:Name="ValidationAppearancePage" Header="{loc:Loc PreferencesWindow_Validation}" views:PreferencesPage.Parent="AppearancePage">
+        <TabControl x:Name="ValidationAppearanceTabs">
+          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+            <views:FontsPageView x:Name="ValidationFontsView" />
+          </TabItem>
+        </TabControl>
       </TabItem>
 
-      <!-- Appearance › Fonts › Validation. -->
-      <TabItem x:Name="ValidationFontsPage" Header="{loc:Loc PreferencesWindow_Validation}" views:PreferencesPage.Parent="AppearanceFontsPage">
-        <views:FontsPageView x:Name="ValidationFontsView" />
+      <!-- Appearance › MetadataEditor: Fonts only. -->
+      <TabItem x:Name="MetadataEditorAppearancePage" Header="{loc:Loc PreferencesWindow_MetadataEditor}" views:PreferencesPage.Parent="AppearancePage">
+        <TabControl x:Name="MetadataEditorAppearanceTabs">
+          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+            <views:FontsPageView x:Name="MetadataEditorFontsView" />
+          </TabItem>
+        </TabControl>
       </TabItem>
 
-      <!-- Appearance › Fonts › Metadata Editor. -->
-      <TabItem x:Name="MetadataEditorFontsPage" Header="{loc:Loc PreferencesWindow_MetadataEditor}" views:PreferencesPage.Parent="AppearanceFontsPage">
-        <views:FontsPageView x:Name="MetadataEditorFontsView" />
+      <!-- Appearance › Cleanup: Fonts only. -->
+      <TabItem x:Name="CleanupAppearancePage" Header="{loc:Loc PreferencesWindow_Cleanup}" views:PreferencesPage.Parent="AppearancePage">
+        <TabControl x:Name="CleanupAppearanceTabs">
+          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+            <views:FontsPageView x:Name="CleanupFontsView" />
+          </TabItem>
+        </TabControl>
       </TabItem>
 
-      <!-- Appearance › Fonts › Cleanup. -->
-      <TabItem x:Name="CleanupFontsPage" Header="{loc:Loc PreferencesWindow_Cleanup}" views:PreferencesPage.Parent="AppearanceFontsPage">
-        <views:FontsPageView x:Name="CleanupFontsView" />
-      </TabItem>
-
-      <!-- Appearance › Fonts › Footnotes. -->
-      <TabItem x:Name="FootnotesFontsPage" Header="{loc:Loc PreferencesWindow_Footnotes}" views:PreferencesPage.Parent="AppearanceFontsPage">
-        <views:FontsPageView x:Name="FootnotesFontsView" />
+      <!-- Appearance › Footnotes: Fonts only. -->
+      <TabItem x:Name="FootnotesAppearancePage" Header="{loc:Loc PreferencesWindow_Footnotes}" views:PreferencesPage.Parent="AppearancePage">
+        <TabControl x:Name="FootnotesAppearanceTabs">
+          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+            <views:FontsPageView x:Name="FootnotesFontsView" />
+          </TabItem>
+        </TabControl>
       </TabItem>
 
       <!-- Appearance › Color Scheme: the theme in use, the actions on themes (the gear, as Rider's scheme actions) and
@@ -282,7 +425,7 @@
       </TabItem>
 
       <!-- Appearance › Color Scheme › <area>: the keys of the theme by area (ThemePage), each page with the tree of its
-           keys and the panel of the selected one. The DataContexts are set in code, like the Fonts pages. -->
+           keys and the panel of the selected one. The DataContexts are set in code, like the Fonts tabs. -->
       <TabItem x:Name="ThemeGeneralPage" Header="{loc:Loc PreferencesWindow_General}" views:PreferencesPage.Parent="ColorSchemePage">
         <views:ColorSchemeKeysView x:Name="ThemeGeneralView" Margin="8" />
       </TabItem>
@@ -317,43 +460,16 @@
         </DockPanel>
       </TabItem>
 
-      <!-- =============================== Code View =============================== -->
-      <!-- No settings of its own: the window fills the page with links to its subsections. -->
-      <TabItem x:Name="CodeViewPage" Header="{loc:Loc PreferencesWindow_CodeView}" />
 
-      <!-- Code View › Appearance: highlighting and the opening tag hint. -->
-      <TabItem x:Name="CodeViewAppearancePage" Header="{loc:Loc PreferencesWindow_Appearance}" views:PreferencesPage.Parent="CodeViewPage">
-        <ScrollViewer>
-          <StackPanel Spacing="10" Margin="8">
-            <!-- The fonts of the section are under Appearance › Fonts: the link opens them. -->
-            <HyperlinkButton x:Name="CodeViewFontsLink" Content="{loc:Loc PreferencesWindow_Fonts}" Padding="0"
-                             views:PreferencesPage.Target="CodeViewFontsPage" />
-
-            <CheckBox Content="{loc:Loc PreferencesWindow_ExtendedHighlighting}" IsChecked="{Binding ExtendedHighlighting}" />
-
-            <!-- Code View: the opening tag tooltip over a closing tag, with its delay. -->
-            <CheckBox Content="{loc:Loc PreferencesWindow_OpenTagHint}" IsChecked="{Binding OpenTagHint}" />
-            <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8" Margin="28,0,0,0">
-              <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_OpenTagHintDelay}" IsEnabled="{Binding OpenTagHint}" />
-              <TextBox Grid.Column="1" Text="{Binding OpenTagHintDelay}" Width="80" HorizontalAlignment="Left"
-                       IsEnabled="{Binding OpenTagHint}" />
-            </Grid>
-
-            <!-- The colors of the editor and of the hint are in the theme, their fonts on the Fonts page. -->
-            <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInTheme}" Padding="0"
-                             views:PreferencesPage.Target="ColorSchemePage" />
-
-            <TextBlock Text="{loc:Loc PreferencesWindow_FontColorRestartNotice}"
-                       IsVisible="{Binding RestartNoticeVisible}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
-
-          </StackPanel>
-        </ScrollViewer>
-      </TabItem>
 
       <!-- ================================ Preview ================================ -->
       <TabItem x:Name="PreviewPage" Header="{loc:Loc PreferencesWindow_Preview}">
         <ScrollViewer>
           <StackPanel Spacing="10" Margin="8">
+
+            <!-- The look of the preview (the highlight of the caret location, the fonts) is under Appearance. -->
+            <HyperlinkButton x:Name="PreviewAppearanceLink" Content="{loc:Loc PreferencesWindow_Appearance}" Padding="0"
+                             views:PreferencesPage.Target="PreviewAppearancePage" />
 
             <Border Classes="section">
               <StackPanel Spacing="6">
@@ -369,55 +485,6 @@
         </ScrollViewer>
       </TabItem>
 
-      <!-- Preview › Appearance: the highlight of the caret location. -->
-      <TabItem x:Name="PreviewAppearancePage" Header="{loc:Loc PreferencesWindow_Appearance}" views:PreferencesPage.Parent="PreviewPage">
-        <ScrollViewer>
-          <StackPanel Spacing="10" Margin="8">
-            <!-- The fonts of the section are under Appearance › Fonts: the link opens them. -->
-            <HyperlinkButton x:Name="PreviewFontsLink" Content="{loc:Loc PreferencesWindow_Fonts}" Padding="0"
-                             views:PreferencesPage.Target="PreviewFontsPage" />
-
-            <Border Classes="section">
-              <StackPanel Spacing="6">
-                <TextBlock Text="{loc:Loc PreferencesWindow_PreviewHighlight}" FontWeight="Bold" />
-                <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
-                  <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightStyle}" VerticalAlignment="Center" />
-                  <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding AvailablePreviewHighlightStyles}" SelectedItem="{Binding PreviewHighlightStyle}">
-                    <ComboBox.ItemTemplate>
-                      <DataTemplate>
-                        <TextBlock Text="{Binding Converter={x:Static infra:DisplayNameConverters.PreviewHighlightStyle}}" />
-                      </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                  </ComboBox>
-
-                  <!-- The color of the highlight is in the theme (preview.highlight). -->
-                  <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInTheme}" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Padding="0"
-                                   views:PreferencesPage.Target="ColorSchemePage" />
-
-                  <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightOpacity}" VerticalAlignment="Center" TextWrapping="Wrap"
-                             IsEnabled="{Binding IsPreviewHighlightBackground}" />
-                  <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding PreviewHighlightOpacity}" Width="80" HorizontalAlignment="Left"
-                           IsEnabled="{Binding IsPreviewHighlightBackground}" />
-
-                  <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightOutlineWidth}" VerticalAlignment="Center" TextWrapping="Wrap"
-                             IsEnabled="{Binding IsPreviewHighlightOutline}" />
-                  <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PreviewHighlightOutlineWidth}" Width="80" HorizontalAlignment="Left"
-                           IsEnabled="{Binding IsPreviewHighlightOutline}" />
-
-                  <CheckBox Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Content="{loc:Loc PreferencesWindow_PreviewHighlightAutoHide}"
-                            IsChecked="{Binding PreviewHighlightAutoHide}" />
-
-                  <TextBlock Grid.Row="5" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightAutoHideDelay}" VerticalAlignment="Center" TextWrapping="Wrap"
-                             IsEnabled="{Binding PreviewHighlightAutoHide}" />
-                  <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding PreviewHighlightAutoHideDelay}" Width="80" HorizontalAlignment="Left"
-                           IsEnabled="{Binding PreviewHighlightAutoHide}" />
-                </Grid>
-              </StackPanel>
-            </Border>
-
-          </StackPanel>
-        </ScrollViewer>
-      </TabItem>
 
       <!-- =============================== Footnotes =============================== -->
       <!-- The CSS of Signet's footnote classes (FootnoteStyles), written to the book on every footnote operation. -->

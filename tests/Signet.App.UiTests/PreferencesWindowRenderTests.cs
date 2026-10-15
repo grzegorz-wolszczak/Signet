@@ -50,6 +50,18 @@ public sealed class PreferencesWindowRenderTests
         return tabs;
     }
 
+    // Shows the Fonts tab of an Appearance section ("CodeView" = Appearance › Code View › Fonts) and lays it out.
+    private static TabControl ShowFontsTab(PreferencesWindow window, string part)
+    {
+        ShowPage(window, part + "AppearancePage");
+        TabControl tabs = window.FindControl<TabControl>(part + "AppearanceTabs")!;
+        tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(t => Equals(t.Header, Strings.Get("PreferencesWindow_Fonts")));
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+        return tabs;
+    }
+
     private static PreferencesWindow BuildWindow() => BuildWindow(out _);
 
     private static PreferencesWindow BuildWindow(out SettingsStore settings)
@@ -261,39 +273,55 @@ public sealed class PreferencesWindowRenderTests
         window.Close();
     }
 
-    /// <summary>
-    /// The sections that define a look have the subsections Appearance › Fonts; the path of a subsection is shown above
-    /// its page.
-    /// </summary>
-    // The parts with fonts of their own, in the order of Appearance › Fonts.
+    // The parts with a page in Appearance, in its order: they follow the work on a book, from the start screen,
+    // through editing, to cleaning up.
     private static readonly string[] PartsWithFonts =
     {
         "StartScreen", "BookBrowser", "TableOfContents", "CodeView", "Preview", "FindReplace", "SpecialCharacters",
         "Checkpoints", "Validation", "MetadataEditor", "Cleanup", "Footnotes",
     };
 
+    /// <summary>
+    /// Appearance has a section per part of the application (and General, Color Scheme); each page has a tab bar: the
+    /// look of the part where it has more than fonts, and Fonts. The path of a section is shown above its page.
+    /// </summary>
     [AvaloniaFact]
-    public void The_fonts_of_the_parts_are_subsections_of_appearance_fonts()
+    public void The_parts_are_sections_of_appearance_with_a_tab_bar()
     {
         PreferencesWindow window = BuildWindow();
         window.Show();
         Dispatcher.UIThread.RunJobs();
         string appearance = Strings.Get("PreferencesWindow_Appearance");
         string fonts = Strings.Get("PreferencesWindow_Fonts");
-        PreferencesSectionNode appearanceFonts = window.Sections.All.Single(n => n.Path == appearance + " › " + fonts);
+        string general = Strings.Get("PreferencesWindow_General");
+        PreferencesSectionNode root = window.Sections.Roots.Single(n => n.Title == appearance);
 
-        // The parts follow the work on a book: from the start screen, through editing, to cleaning up.
-        appearanceFonts.Children.Select(n => n.Title).Should().Equal(PartsWithFonts.Select(s => Strings.Get("PreferencesWindow_" + s)));
-        window.Sections.All.Where(n => n.Title == fonts && n.Parent?.Title != Strings.Get("PreferencesWindow_ColorScheme"))
-            .Should().ContainSingle("a section has no Fonts page of its own (the fonts of a theme are a page of Color Scheme)");
-        window.Sections.All.Should().NotContain(n => n.Title == Strings.Get("PreferencesWindow_StartScreen") && n.Children.Count > 0,
-            "a part with only fonts is no section");
+        root.Children.Select(n => n.Title).Should().Equal(
+            new[] { general }
+                .Concat(PartsWithFonts.Select(s => Strings.Get("PreferencesWindow_" + s)))
+                .Append(Strings.Get("PreferencesWindow_ColorScheme")));
+        window.Sections.Roots.Should().NotContain(n => n.Title == Strings.Get("PreferencesWindow_CodeView"),
+            "Code View has only a look: it is a section of Appearance");
+        root.Children.Should().OnlyContain(n => n.Title == Strings.Get("PreferencesWindow_ColorScheme") || n.Children.Count == 0,
+            "the parts are no sections with subsections: their tabs are inside the page");
 
-        PreferencesSectionNode codeViewFonts = appearanceFonts.Children.Single(n => n.Title == Strings.Get("PreferencesWindow_CodeView"));
-        window.Sections.Selected = codeViewFonts;
+        string[] bothTabs = { "CodeView", "Preview" };
+        foreach (string part in PartsWithFonts.Prepend("General"))
+        {
+            string pageName = (part == "General" ? "AppearanceGeneral" : part + "Appearance") + "Page";
+            string tabsName = (part == "General" ? "AppearanceGeneral" : part + "Appearance") + "Tabs";
+            ShowPage(window, pageName);
+            string[] headers = window.FindControl<TabControl>(tabsName)!.Items.OfType<TabItem>().Select(t => (string)t.Header!).ToArray();
+            string[] expected = part == "General" || bothTabs.Contains(part)
+                ? new[] { Strings.Get("PreferencesWindow_" + part), fonts }
+                : new[] { fonts };
+            headers.Should().Equal(expected, "the tab bar of {0}", part);
+        }
+
+        PreferencesSectionNode codeView = root.Children.Single(n => n.Title == Strings.Get("PreferencesWindow_CodeView"));
+        window.Sections.Selected = codeView;
         Dispatcher.UIThread.RunJobs();
-
-        window.FindControl<TextBlock>("Breadcrumb")!.Text.Should().Be(string.Join(" › ", appearance, fonts, Strings.Get("PreferencesWindow_CodeView")));
+        window.FindControl<TextBlock>("Breadcrumb")!.Text.Should().Be(string.Join(" › ", appearance, Strings.Get("PreferencesWindow_CodeView")));
         window.Close();
     }
 
@@ -514,32 +542,28 @@ public sealed class PreferencesWindowRenderTests
         return ((ISolidColorBrush)element.TextRunProperties.ForegroundBrush!).Color;
     }
 
-    /// <summary>A section with more appearance settings than fonts links to its fonts at the top of its Appearance page.</summary>
-    [AvaloniaTheory]
-    [InlineData("CodeView")]
-    [InlineData("Preview")]
-    public void The_appearance_of_a_section_links_to_its_fonts_at_the_top(string section)
+    /// <summary>The Preview section (behaviour) links to its Appearance section; a click opens it in the tree.</summary>
+    [AvaloniaFact]
+    public void The_preview_section_links_to_its_appearance()
     {
         PreferencesWindow window = BuildWindow();
         window.Show();
         Dispatcher.UIThread.RunJobs();
         PreferencesSectionNode appearance = window.Sections.Roots.Single(n => n.Title == Strings.Get("PreferencesWindow_Appearance"));
         var source = (HierarchicalTreeDataGridSource<PreferencesSectionNode>)window.FindControl<TreeDataGrid>("SectionTree")!.Source!;
-        int appearanceRow = window.Sections.Roots.IndexOf(appearance);
-        source.Collapse(new IndexPath(appearanceRow));
+        source.Collapse(new IndexPath(window.Sections.Roots.IndexOf(appearance)));
         appearance.IsExpanded = false;
-        ShowPage(window, section + "AppearancePage");
-        HyperlinkButton link = window.FindControl<HyperlinkButton>(section + "FontsLink")!;
+        ShowPage(window, "PreviewPage");
+        HyperlinkButton link = window.FindControl<HyperlinkButton>("PreviewAppearanceLink")!;
+        link.Content.Should().Be(Strings.Get("PreferencesWindow_Appearance"));
         ((StackPanel)link.Parent!).Children[0].Should().BeSameAs(link, "the link is above every other setting");
 
         link.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
 
         PreferencesSectionNode target = window.Sections.Selected!;
-        target.Path.Should().Be(string.Join(
-            " › ", Strings.Get("PreferencesWindow_Appearance"), Strings.Get("PreferencesWindow_Fonts"), Strings.Get("PreferencesWindow_" + section)));
+        target.Path.Should().Be(string.Join(" › ", Strings.Get("PreferencesWindow_Appearance"), Strings.Get("PreferencesWindow_Preview")));
         appearance.IsExpanded.Should().BeTrue("the link opens the collapsed branch, as a click in the tree");
-        target.Parent!.IsExpanded.Should().BeTrue();
         source.RowSelection!.SelectedItem.Should().BeSameAs(target, "the section is selected in the tree itself");
         window.Close();
     }
@@ -551,16 +575,17 @@ public sealed class PreferencesWindowRenderTests
         PreferencesWindow window = BuildWindow();
         window.Show();
         Dispatcher.UIThread.RunJobs();
-        ShowPage(window, "CodeViewPage");
+        ShowPage(window, "AppearancePage");
+        PreferencesSectionNode appearance = window.Sections.Roots.Single(n => n.Title == Strings.Get("PreferencesWindow_Appearance"));
 
-        HyperlinkButton link = window.GetVisualDescendants().OfType<HyperlinkButton>().Should().ContainSingle().Subject;
-        link.Content.Should().Be(Strings.Get("PreferencesWindow_Appearance"));
+        HyperlinkButton[] links = window.GetVisualDescendants().OfType<HyperlinkButton>().Where(l => l.IsEffectivelyVisible).ToArray();
+        links.Select(l => l.Content).Should().Equal(appearance.Children.Select(n => n.Title));
 
-        link.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        links.Single(l => Equals(l.Content, Strings.Get("PreferencesWindow_CodeView"))).RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
 
         window.Sections.Selected!.Path.Should().Be(
-            Strings.Get("PreferencesWindow_CodeView") + " › " + Strings.Get("PreferencesWindow_Appearance"));
+            Strings.Get("PreferencesWindow_Appearance") + " › " + Strings.Get("PreferencesWindow_CodeView"));
         window.Close();
     }
 
@@ -884,7 +909,7 @@ public sealed class PreferencesWindowRenderTests
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
         window.Show();
         Dispatcher.UIThread.RunJobs();
-        ShowPage(window, "CodeViewFontsPage");
+        ShowFontsTab(window, "CodeView");
 
         FontsPageView page = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible);
         FontSettingView[] rows = page.GetVisualDescendants().OfType<FontSettingView>().ToArray();
@@ -926,7 +951,7 @@ public sealed class PreferencesWindowRenderTests
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
         window.Show();
         Dispatcher.UIThread.RunJobs();
-        ShowPage(window, "CodeViewFontsPage");
+        ShowFontsTab(window, "CodeView");
         FontsPageView page = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible);
         CodePreviewEditor code = page.FindControl<CodePreviewEditor>("CodePreview")!;
         TextBlock preview = page.FindControl<TextBlock>("PreviewText")!;
@@ -958,7 +983,9 @@ public sealed class PreferencesWindowRenderTests
         Dispatcher.UIThread.RunJobs();
 
         window.Sections.Selected!.Path.Should().Be(string.Join(
-            " › ", Strings.Get("PreferencesWindow_Appearance"), Strings.Get("PreferencesWindow_Fonts"), Strings.Get("PreferencesWindow_CodeView")));
+            " › ", Strings.Get("PreferencesWindow_Appearance"), Strings.Get("PreferencesWindow_CodeView")));
+        window.FindControl<TabControl>("CodeViewAppearanceTabs")!.SelectedItem.Should().BeAssignableTo<TabItem>()
+            .Which.Header.Should().Be(Strings.Get("PreferencesWindow_Fonts"), "the hit is on the Fonts tab, which the search shows");
 
         search.Text = Strings.Get("FontPreview_SpecialCharacters").Split('\n')[0].Trim();
         Dispatcher.UIThread.RunJobs();
@@ -969,7 +996,7 @@ public sealed class PreferencesWindowRenderTests
 
     /// <summary>
     /// The "Preview" section: the refresh delay on its page, the highlighting of the cursor position under Appearance
-    /// (its color field in its own color) and the preview fonts under Appearance › Fonts.
+    /// (its color field in its own color) and the preview fonts under Appearance › Preview › Fonts.
     /// </summary>
     [AvaloniaFact]
     public void Preview_section_splits_refresh_highlight_and_fonts()
@@ -990,7 +1017,7 @@ public sealed class PreferencesWindowRenderTests
         window.GetVisualDescendants().OfType<TextBlock>()
             .Should().Contain(t => t.Text == Strings.Get("PreferencesWindow_ColorsInTheme"));
 
-        ShowPage(window, "PreviewFontsPage");
+        ShowFontsTab(window, "Preview");
         window.GetVisualDescendants().OfType<FontSettingView>().Where(r => r.IsEffectivelyVisible).Select(r => r.Name)
             .Should().Equal("FontPreviewStandard", "FontPreviewSerif", "FontPreviewSansSerif", "FontPreviewSize", "FontTooltipPreview");
     }

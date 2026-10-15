@@ -34,7 +34,8 @@ namespace Signet.App.Views;
 /// without them; Escape and the close button ask what to do with unsaved changes.</item>
 /// </list>
 /// The pages are the tabs of a TabControl whose tab strip is hidden; the tree selects them. A page names the page of its
-/// enclosing section with <see cref="PreferencesPage.ParentProperty"/>.
+/// enclosing section with <see cref="PreferencesPage.ParentProperty"/>. A page can have a tab bar of its own (its content
+/// is a TabControl), e.g. the sections of Appearance: the look of the part and its Fonts.
 /// </summary>
 [SuppressMessage(
     "Reliability",
@@ -494,6 +495,13 @@ public partial class PreferencesWindow : Window
             return;
         }
 
+        // The hit is on another tab of the page's tab bar (e.g. Fonts): show that tab first, then frame again.
+        if (ShowTabWithMatch(page))
+        {
+            QueueFrameRefresh();
+            return;
+        }
+
         foreach (ILogical element in SelfAndLogicalDescendants(page))
         {
             if (element is Control { IsEffectivelyVisible: true } control
@@ -507,6 +515,27 @@ public partial class PreferencesWindow : Window
 
         _framed.FirstOrDefault()?.BringIntoView();
     }
+
+    // When the page has a tab bar and the selected tab has no match for the search, selects the first tab that has one.
+    private bool ShowTabWithMatch(ILogical page)
+    {
+        if (page is not TabControl tabs || tabs.SelectedItem is not TabItem selected || TabHasMatch(selected))
+        {
+            return false;
+        }
+
+        if (tabs.Items.OfType<TabItem>().FirstOrDefault(TabHasMatch) is not { } other)
+        {
+            return false;
+        }
+
+        tabs.SelectedItem = other;
+        return true;
+    }
+
+    private bool TabHasMatch(TabItem tab) =>
+        _sections.Matches(tab.Header as string)
+        || (tab.Content is ILogical content && SelfAndLogicalDescendants(content).Select(OwnText).OfType<string>().Any(_sections.Matches));
 
     // The frame around a control matching the search: in the accent color, a little outside the control. The adorner
     // layer clips an adorner to the control's bounds by default, which cut the whole frame away: clipping is off.
@@ -531,7 +560,33 @@ public partial class PreferencesWindow : Window
             ? SelfAndLogicalDescendants(page).Select(OwnText).OfType<string>()
             : Enumerable.Empty<string>();
 
-    private static IEnumerable<ILogical> SelfAndLogicalDescendants(ILogical root) => new[] { root }.Concat(root.GetLogicalDescendants());
+    // The element and everything below it, in document order. The content of a tab that is not selected is not in the
+    // logical tree (only the selected one is presented), so a tab's Content is followed explicitly: the search must see
+    // the settings of every tab, and the resize grips of every page must be found.
+    private static IEnumerable<ILogical> SelfAndLogicalDescendants(ILogical root)
+    {
+        yield return root;
+        foreach (ILogical child in LogicalChildrenAndTabContent(root))
+        {
+            foreach (ILogical descendant in SelfAndLogicalDescendants(child))
+            {
+                yield return descendant;
+            }
+        }
+    }
+
+    private static IEnumerable<ILogical> LogicalChildrenAndTabContent(ILogical element)
+    {
+        foreach (ILogical child in element.LogicalChildren)
+        {
+            yield return child;
+        }
+
+        if (element is TabItem { Content: ILogical content } && !element.LogicalChildren.Contains(content))
+        {
+            yield return content;
+        }
+    }
 
     // The grips of the resizable fields of every page (the pages not shown are in the logical tree too).
     private IEnumerable<HeightResizeGrip> ResizeGrips() =>
