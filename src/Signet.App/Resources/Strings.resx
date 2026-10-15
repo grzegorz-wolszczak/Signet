@@ -5615,4 +5615,31 @@ Zamknij zakładkę</value>
   <data name="ColorScheme_UseThemeFontsNote" xml:space="preserve">
     <value>Po zaznaczeniu motyw dostaje kopię obecnych czcionek z Wygląd › Czcionki; zmiany na tej stronie dotyczą tylko tego motywu i działają po zapisaniu.</value>
   </data>
+  <data name="ColorPickerWindow_BasicColors" xml:space="preserve">
+    <value>Kolory podstawowe</value>
+  </data>
+  <data name="ColorPickerWindow_CustomColors" xml:space="preserve">
+    <value>Kolory własne</value>
+  </data>
+  <data name="ColorPickerWindow_AddCustom" xml:space="preserve">
+    <value>Dodaj do kolorów własnych</value>
+  </data>
+  <data name="ColorPickerWindow_PickScreen" xml:space="preserve">
+    <value>Pobierz kolor z ekranu</value>
+  </data>
+  <data name="ColorPickerWindow_PickScreenTip" xml:space="preserve">
+    <value>Zamraża ekran i pozwala wskazać dowolny piksel pulpitu</value>
+  </data>
+  <data name="ColorPickerWindow_PickFailed" xml:space="preserve">
+    <value>Nie udało się przechwycić ekranu.</value>
+  </data>
+  <data name="ColorPickerWindow_Name" xml:space="preserve">
+    <value>Nazwa koloru (CSS)</value>
+  </data>
+  <data name="ColorPickerWindow_NameHint" xml:space="preserve">
+    <value>np. tomato</value>
+  </data>
+  <data name="ScreenPicker_Hint" xml:space="preserve">
+    <value>Klik – wybierz · Esc – anuluj · strzałki – ±1 px</value>
+  </data>
 </root>

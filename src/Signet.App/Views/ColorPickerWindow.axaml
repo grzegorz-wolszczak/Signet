@@ -7,13 +7,30 @@
         CanResize="False"
         Title="{loc:Loc ColorPickerWindow_Title}">
 
-  <!-- Color picker for the color fields in Preferences: spectrum, sliders, palette and a hex field. The alpha channel is
-       shown only when asked for (the theme editor: e.g. the translucent fills of the diff). OK sets the color, Cancel
-       does not. -->
+  <!-- Color picker for the color fields in Preferences, laid out like KColorChooser: basic and custom colors with a
+       screen color picker on the left; spectrum, components, hex and preview on the right. The alpha channel is shown
+       only when asked for (the theme editor: e.g. the translucent fills of the diff). Colors chosen from the palettes,
+       by name or from the screen replace the RGB and keep the current alpha. OK sets the color, Cancel does not. -->
   <StackPanel Margin="16" Spacing="12">
-    <ColorView x:Name="Picker"
-               IsAlphaEnabled="False" IsAlphaVisible="False"
-               IsColorPreviewVisible="True" IsColorModelVisible="True" IsHexInputVisible="True" />
+    <Grid ColumnDefinitions="Auto,16,Auto">
+      <StackPanel Grid.Column="0" Spacing="8" Width="264">
+        <TextBlock Text="{loc:Loc ColorPickerWindow_BasicColors}" FontWeight="SemiBold" />
+        <WrapPanel x:Name="BasicHost" />
+        <TextBlock Text="{loc:Loc ColorPickerWindow_CustomColors}" FontWeight="SemiBold" Margin="0,8,0,0" />
+        <WrapPanel x:Name="CustomHost" />
+        <Button x:Name="AddCustomButton" Content="{loc:Loc ColorPickerWindow_AddCustom}" HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Center" />
+        <Button x:Name="PickScreenButton" Content="{loc:Loc ColorPickerWindow_PickScreen}" HorizontalAlignment="Stretch"
+                HorizontalContentAlignment="Center" ToolTip.Tip="{loc:Loc ColorPickerWindow_PickScreenTip}" />
+        <TextBlock x:Name="PickFailedText" Text="{loc:Loc ColorPickerWindow_PickFailed}" IsVisible="False"
+                   Foreground="Red" TextWrapping="Wrap" />
+        <TextBlock Text="{loc:Loc ColorPickerWindow_Name}" Margin="0,8,0,0" />
+        <TextBox x:Name="NameBox" PlaceholderText="{loc:Loc ColorPickerWindow_NameHint}" />
+      </StackPanel>
+      <ColorView Grid.Column="2" x:Name="Picker"
+                 IsAlphaEnabled="False" IsAlphaVisible="False"
+                 IsColorPreviewVisible="True" IsColorModelVisible="True" IsHexInputVisible="True" />
+    </Grid>
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
       <Button x:Name="OkButton" Content="{loc:Loc Common_Ok}" IsDefault="True" MinWidth="80"
               HorizontalContentAlignment="Center" />
