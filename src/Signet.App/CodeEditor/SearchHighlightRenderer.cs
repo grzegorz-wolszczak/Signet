@@ -5,7 +5,7 @@ using AvaloniaEdit.Rendering;
 using Signet.App.Infrastructure;
 using Signet.Core.Themes;
 
-namespace Signet.App.CodeView;
+namespace Signet.App.CodeEditor;
 
 /// <summary>
 /// Highlights all Find matches and — in a separate style — the "marked text" area

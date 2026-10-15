@@ -180,7 +180,7 @@ public sealed class TabManagerTests
         using TabManager restored = new(dock2, statusBar, settings, spellChecker);
         restored.SetBook(book);
 
-        // Open the tab up front (as a real CodeView would) to capture the caret scroll request
+        // Open the tab up front (as a real CodeEditor would) to capture the caret scroll request
         // raised by RestoreSession. GoToOffset by itself does not set CaretOffset (the editor view
         // does that only after receiving the event).
         restored.OpenResource(html);

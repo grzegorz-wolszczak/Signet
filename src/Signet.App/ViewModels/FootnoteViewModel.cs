@@ -15,7 +15,7 @@ namespace Signet.App.ViewModels;
 public sealed record FootnoteRequest(string Content, FootnotePlacement Placement, bool Remove = false);
 
 /// <summary>
-/// Model of the footnote window (Code View context menu), for adding a footnote at the caret or editing the footnote
+/// Model of the footnote window (Code Editor context menu), for adding a footnote at the caret or editing the footnote
 /// under it: the text around the reference, the text of the footnote (paragraphs separated by a blank line) with live
 /// validation and its placement, and a live preview of the markup Signet writes. An edited footnote can also be removed
 /// (after a confirmation, unless it was turned off).

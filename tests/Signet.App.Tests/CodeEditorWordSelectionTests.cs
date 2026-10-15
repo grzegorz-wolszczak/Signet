@@ -6,12 +6,12 @@ using Xunit;
 namespace Signet.App.Tests;
 
 /// <summary>
-/// The word a double click selects in Code View. AvaloniaEdit's <c>SelectionMouseHandler.GetWordAtMousePosition</c>
+/// The word a double click selects in Code Editor. AvaloniaEdit's <c>SelectionMouseHandler.GetWordAtMousePosition</c>
 /// moves back to <see cref="CaretPositioningMode.WordStartOrSymbol"/> and then forward to
 /// <see cref="CaretPositioningMode.WordBorderOrSymbol"/>; the tests repeat that on the document text. calibre 5.38 fixed
 /// a double click that also selected the typographic quotes around the word.
 /// </summary>
-public sealed class CodeViewWordSelectionTests
+public sealed class CodeEditorWordSelectionTests
 {
     private static string WordAt(string text, int offset)
     {

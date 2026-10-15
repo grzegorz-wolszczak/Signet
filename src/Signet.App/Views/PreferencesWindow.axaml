@@ -59,7 +59,7 @@
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="CornerRadius" Value="4" />
     </Style>
-    <!-- Code View color fields: the background takes the color of the entered value, also on hover and when focused
+    <!-- Code Editor color fields: the background takes the color of the entered value, also on hover and when focused
          (Fluent then replaces the template border's background with its own). -->
     <Style Selector="TextBox.colorValue:pointerover /template/ Border#PART_BorderElement">
       <Setter Property="Background" Value="{Binding $parent[TextBox].Background}" />
@@ -232,15 +232,15 @@
         </TabControl>
       </TabItem>
 
-      <!-- Appearance › CodeView: highlighting and the opening tag hint; Fonts: the editor and hint fonts. -->
-      <TabItem x:Name="CodeViewAppearancePage" Header="{loc:Loc PreferencesWindow_CodeView}" views:PreferencesPage.Parent="AppearancePage">
-        <TabControl x:Name="CodeViewAppearanceTabs">
-          <TabItem Header="{loc:Loc PreferencesWindow_CodeView}">
+      <!-- Appearance › CodeEditor: highlighting and the opening tag hint; Fonts: the editor and hint fonts. -->
+      <TabItem x:Name="CodeEditorAppearancePage" Header="{loc:Loc PreferencesWindow_CodeEditor}" views:PreferencesPage.Parent="AppearancePage">
+        <TabControl x:Name="CodeEditorAppearanceTabs">
+          <TabItem Header="{loc:Loc PreferencesWindow_CodeEditor}">
               <ScrollViewer>
                 <StackPanel Spacing="10" Margin="8">
                   <CheckBox Content="{loc:Loc PreferencesWindow_ExtendedHighlighting}" IsChecked="{Binding ExtendedHighlighting}" />
 
-                  <!-- Code View: the opening tag tooltip over a closing tag, with its delay. -->
+                  <!-- Code Editor: the opening tag tooltip over a closing tag, with its delay. -->
                   <CheckBox Content="{loc:Loc PreferencesWindow_OpenTagHint}" IsChecked="{Binding OpenTagHint}" />
                   <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8" Margin="28,0,0,0">
                     <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_OpenTagHintDelay}" IsEnabled="{Binding OpenTagHint}" />
@@ -259,7 +259,7 @@
               </ScrollViewer>
           </TabItem>
           <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-            <views:FontsPageView x:Name="CodeViewFontsView" />
+            <views:FontsPageView x:Name="CodeEditorFontsView" />
           </TabItem>
         </TabControl>
       </TabItem>

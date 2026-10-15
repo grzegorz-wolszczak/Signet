@@ -8,7 +8,7 @@ using Signet.Core.BookManipulation;
 namespace Signet.App.ViewModels;
 
 /// <summary>
-/// Model of the "Rename Class" window opened from the Code View context menu: the new name with
+/// Model of the "Rename Class" window opened from the Code Editor context menu: the new name with
 /// live validation, the scope choice (only when started from an XHTML element), the change counter
 /// and a description of what happens to the class definitions in each style source.
 /// </summary>

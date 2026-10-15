@@ -12,7 +12,7 @@ namespace Signet.Core.Search;
 /// Each method receives the current editor state (full text, selection, caret position)
 /// and returns a description of the change for the view layer to apply. The "last match" state
 /// (needed by <see cref="ReplaceSelected"/>) and the <see cref="Marked"/> region are kept by the
-/// engine itself — one instance per Code View tab.
+/// engine itself — one instance per Code Editor tab.
 /// </para>
 /// <para>
 /// Not handled here: searching for misspelled words and scrolling/centering the view (view layer).
@@ -20,7 +20,7 @@ namespace Signet.Core.Search;
 /// multi-file mode.
 /// </para>
 /// </remarks>
-public sealed class CodeViewSearch
+public sealed class CodeEditorSearch
 {
     private string? _lastFindPattern;
     private Spcre.MatchInfo? _lastMatch;

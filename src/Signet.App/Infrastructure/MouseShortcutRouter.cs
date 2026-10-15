@@ -16,10 +16,10 @@ namespace Signet.App.Infrastructure;
 /// Runs the actions bound to mouse shortcuts (<see cref="MouseShortcut"/>): a button press with modifiers (single or
 /// double click, the side buttons) or a wheel turn with modifiers, inside the part of the host chosen by a predicate.
 /// The router listens in the tunnelling phase, so a mouse shortcut takes precedence over what the control under the
-/// pointer would do with the same input (e.g. Ctrl+click on a link in Code View).
+/// pointer would do with the same input (e.g. Ctrl+click on a link in Code Editor).
 /// </summary>
 /// <remarks>
-/// Mouse shortcuts work only in Code View for now (<see cref="IsInCodeView"/>); a wider area is a different predicate
+/// Mouse shortcuts work only in Code Editor for now (<see cref="IsInCodeEditor"/>); a wider area is a different predicate
 /// (e.g. <c>_ =&gt; true</c> for the whole window).
 /// </remarks>
 public sealed class MouseShortcutRouter
@@ -40,8 +40,8 @@ public sealed class MouseShortcutRouter
         host.AddHandler(InputElement.PointerWheelChangedEvent, OnPointerWheelChanged, RoutingStrategies.Tunnel);
     }
 
-    /// <summary>The area of mouse shortcuts today: the text of a Code View tab.</summary>
-    public static bool IsInCodeView(object? source) =>
+    /// <summary>The area of mouse shortcuts today: the text of a Code Editor tab.</summary>
+    public static bool IsInCodeEditor(object? source) =>
         source is Visual visual && (visual as CodeTabView ?? visual.FindAncestorOfType<CodeTabView>()) is not null;
 
     /// <summary>The mouse shortcut of a button press (<c>null</c> for a press that cannot be one).</summary>

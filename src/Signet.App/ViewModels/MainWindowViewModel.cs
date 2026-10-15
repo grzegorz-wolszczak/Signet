@@ -85,7 +85,7 @@ public sealed partial class MainWindowViewModel
     private bool _startupHandled;
     private bool _preserveHeadingAttributes;
 
-    // "Format" menu actions — active only for a Code View tab with (X)HTML.
+    // "Format" menu actions — active only for a Code Editor tab with (X)HTML.
     private static readonly string[] FormatActionIds =
     {
         AppActionIds.Bold, AppActionIds.Italic, AppActionIds.Underline, AppActionIds.Strikethrough,
@@ -225,7 +225,7 @@ public sealed partial class MainWindowViewModel
         if (_actions.Get(AppActionIds.WordWrap) is { } wordWrapAction)
         {
             wordWrapAction.IsCheckable = true;
-            wordWrapAction.IsChecked = _settings.CodeViewWordWrap;
+            wordWrapAction.IsChecked = _settings.CodeEditorWordWrap;
         }
 
         _menuBuilder = new(_actions, _toolbarManager, CustomizeToolbarsCommand, this, this);
@@ -250,9 +250,9 @@ public sealed partial class MainWindowViewModel
         // No filter on Gesture: an action without a default shortcut may get one in Preferences.
         // Code editor actions too: CodeTabView binds them, so that they work only while a code editor has focus.
         ShortcutActions = _actions.Actions
-            .Where(x => !AppActionIds.IsPanelCategory(x.Category) && !AppActionIds.IsCodeViewAction(x.Id))
+            .Where(x => !AppActionIds.IsPanelCategory(x.Category) && !AppActionIds.IsCodeEditorAction(x.Id))
             .ToList();
-        CodeViewShortcutActions = _actions.Actions.Where(x => AppActionIds.IsCodeViewAction(x.Id)).ToList();
+        CodeEditorShortcutActions = _actions.Actions.Where(x => AppActionIds.IsCodeEditorAction(x.Id)).ToList();
         BookBrowser.ShortcutActions = _actions.Actions.Where(IsBookBrowserAction).ToList();
         _clips.ShortcutActions = _actions.Actions
             .Where(x => string.Equals(x.Category, AppActionIds.ClipEditorCategory, StringComparison.Ordinal))
@@ -273,7 +273,7 @@ public sealed partial class MainWindowViewModel
         _actions.SetHandler(AppActionIds.CloseOtherTabs, _tabManager.CloseOtherTabs);
         _actions.SetHandler(AppActionIds.Exit, () => CloseWindowRequested?.Invoke(this, EventArgs.Empty));
 
-        // Code View actions — routed to the active tab.
+        // Code Editor actions — routed to the active tab.
         _actions.SetHandler(AppActionIds.Undo, () => ActiveTab?.Undo());
         _actions.SetHandler(AppActionIds.Redo, () => ActiveTab?.Redo());
         _actions.SetHandler(AppActionIds.GoToLine, () => GoToLineRequested?.Invoke(this, EventArgs.Empty));
@@ -386,7 +386,7 @@ public sealed partial class MainWindowViewModel
         _actions.SetHandler(AppActionIds.UseStandardFileExtensions, () => RunAsyncAction(UseStandardFileExtensionsAsync));
         _actions.SetHandler(AppActionIds.RebaseManifestIds, RebaseManifestIds);
 
-        // Spellcheck in Code View: Highlight toggle, Next Misspelled Word (F4), Add/Ignore,
+        // Spellcheck in Code Editor: Highlight toggle, Next Misspelled Word (F4), Add/Ignore,
         // Clear Ignored Words.
         _actions.SetHandler(AppActionIds.AutoSpellCheck, ToggleAutoSpellCheck);
         _actions.SetHandler(AppActionIds.WordWrap, ToggleWordWrap);
@@ -495,7 +495,7 @@ public sealed partial class MainWindowViewModel
     public string TabStatus => _activeCaretTab?.SecondaryStatus ?? string.Empty;
 
     /// <summary>
-    /// Zoom of the active document tab (Code View) as "NNN%" — for the status bar. The preview has its own zoom
+    /// Zoom of the active document tab (Code Editor) as "NNN%" — for the status bar. The preview has its own zoom
     /// bar in its panel (<see cref="PreviewViewModel.ZoomPercentText"/>).
     /// </summary>
     public string ZoomPercentText => $"{Math.Round((ActiveTab?.ZoomFactor ?? 1.0) * 100)}%";
@@ -538,7 +538,7 @@ public sealed partial class MainWindowViewModel
     /// </summary>
     public event EventHandler<string>? RenameTagRequested;
 
-    /// <summary>Renames the element enclosing the caret in the active Code View tab.</summary>
+    /// <summary>Renames the element enclosing the caret in the active Code Editor tab.</summary>
     public void RenameEnclosingTag(string newName) => ActiveCodeTab?.RenameTag(newName);
 
     /// <summary>
@@ -548,7 +548,7 @@ public sealed partial class MainWindowViewModel
     /// </summary>
     public event EventHandler<ElementMergeCandidate>? MergeContentConfirmationRequested;
 
-    /// <summary>Merges the selected elements in the active Code View tab (after the warning is confirmed).</summary>
+    /// <summary>Merges the selected elements in the active Code Editor tab (after the warning is confirmed).</summary>
     public void ConfirmMergeContent() => ActiveCodeTab?.MergeContent();
 
     /// <summary>Text of the "Merge Content" warning — a section for each reason, separated by a blank line.</summary>
@@ -680,13 +680,13 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>
     /// Raised by the "Live CSS Panel" action — the view calls <see cref="TryResolveLiveCssPanel"/> for the
-    /// element under the caret of the active Code View tab and opens/refreshes the non-modal panel window.
+    /// element under the caret of the active Code Editor tab and opens/refreshes the non-modal panel window.
     /// </summary>
     public event EventHandler? LiveCssPanelRequested;
 
     /// <summary>
     /// Raised whenever the input of the Live CSS Panel may have changed — the caret moved or the content
-    /// was edited in the active Code View tab, or another tab became active. The view refreshes an open
+    /// was edited in the active Code Editor tab, or another tab became active. The view refreshes an open
     /// panel (debounced) by calling <see cref="TryResolveLiveCssPanel"/> with <c>reportFailure: false</c>.
     /// </summary>
     public event EventHandler? LiveCssContextChanged;
@@ -787,7 +787,7 @@ public sealed partial class MainWindowViewModel
     public IReadOnlyList<AppAction> ShortcutActions { get; }
 
     /// <inheritdoc/>
-    public IReadOnlyList<AppAction> CodeViewShortcutActions { get; }
+    public IReadOnlyList<AppAction> CodeEditorShortcutActions { get; }
 
     /// <summary>Window title: <c>name[*] - epubN - Signet</c>.</summary>
     public string WindowTitle
@@ -1234,14 +1234,14 @@ public sealed partial class MainWindowViewModel
     public void AttachExternalFileOpener(Func<string, bool> opener) => _externalFileOpener = opener;
 
     /// <summary>
-    /// "Bookmark Location" (Ctrl+Alt+B) — appends the current Code View position as a bookmark
+    /// "Bookmark Location" (Ctrl+Alt+B) — appends the current Code Editor position as a bookmark
     /// at the end of the list in the Window menu.
     /// </summary>
     private void AddBookmark()
     {
         if (ActiveCodeTab is not { } tab)
         {
-            _statusBar.ShowMessage(Strings.Get("Status_BookmarkOnlyInCodeView"), TimeSpan.FromSeconds(4));
+            _statusBar.ShowMessage(Strings.Get("Status_BookmarkOnlyInCodeEditor"), TimeSpan.FromSeconds(4));
             return;
         }
 
@@ -1301,7 +1301,7 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <summary>
-    /// Navigation from the "Table Of Contents" panel: opens the target file in Code View,
+    /// Navigation from the "Table Of Contents" panel: opens the target file in Code Editor,
     /// scrolls to the fragment and synchronizes the Preview panel.
     /// </summary>
     private void NavigateToToc(Signet.Core.Toc.TocDisplayEntry entry)
@@ -1756,7 +1756,7 @@ public sealed partial class MainWindowViewModel
     public void ApplyPreferencesChanges() => RefreshOpenTabsSpellcheck();
 
     /// <summary>
-    /// Refreshes spelling highlighting in all open Code View tabs — after a change of the
+    /// Refreshes spelling highlighting in all open Code Editor tabs — after a change of the
     /// dictionary state (Ignore/Add in the Spellcheck Editor) without changing the file contents.
     /// </summary>
     private void RefreshOpenTabsSpellcheck()
@@ -1901,7 +1901,7 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <summary>
-    /// "Split File At Cursor": splits the (X)HTML file of the active Code View tab at the caret
+    /// "Split File At Cursor": splits the (X)HTML file of the active Code Editor tab at the caret
     /// (<see cref="Book.SplitAtPosition"/>) — the part before the caret stays in the file, the part after it goes to
     /// a new file right after it, which is then opened with the caret at the start of its content (as in Sigil, so
     /// splitting can go on). Refused (status bar message) for the nav file, a file that is not well-formed, or a
@@ -1946,7 +1946,7 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <summary>
-    /// "Split At Markers" (Edit menu): splits the (X)HTML file of the active Code View tab at its split markers
+    /// "Split At Markers" (Edit menu): splits the (X)HTML file of the active Code Editor tab at its split markers
     /// (<see cref="Book.SplitOnSectionMarkers"/>) — the first section stays in the file, the others go to new files
     /// right after it. The Book Browser has the same operation for the selected files.
     /// </summary>
@@ -2025,11 +2025,11 @@ public sealed partial class MainWindowViewModel
     }
 
     // =====================================================================
-    //  ICodeTabHost — services for the Code View context menu
+    //  ICodeTabHost — services for the Code Editor context menu
     // =====================================================================
 
     /// <summary>
-    /// Request to show an image in the "View Image" window (Code View context menu). Argument:
+    /// Request to show an image in the "View Image" window (Code Editor context menu). Argument:
     /// the image resource (raster or SVG).
     /// </summary>
     public event EventHandler<Resource>? ViewImageRequested;
@@ -2135,7 +2135,7 @@ public sealed partial class MainWindowViewModel
         }
 
         RefreshAfterMaintenanceOperation();
-        _statusBar.ShowMessage(Strings.Get("CodeView_ClassRenamed"), TimeSpan.FromSeconds(4));
+        _statusBar.ShowMessage(Strings.Get("CodeEditor_ClassRenamed"), TimeSpan.FromSeconds(4));
     }
 
     /// <inheritdoc/>
@@ -2299,7 +2299,7 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>
     /// "Live CSS Panel": computes the CSS cascade (<see cref="CssCascadeResolver"/>) for the element
-    /// under the caret of the active Code View tab. The trigger is an action/shortcut or a caret move (not a hover
+    /// under the caret of the active Code Editor tab. The trigger is an action/shortcut or a caret move (not a hover
     /// in Preview), so it works only when the active tab is editing an (X)HTML file.
     /// <c>null</c> when there is no active HTML tab or the caret is not inside any element —
     /// a message is then shown in the status bar, unless <paramref name="reportFailure"/> is <c>false</c>
@@ -2450,7 +2450,7 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <summary>
-    /// Opens the resource with the given book path in Code View and scrolls to the character offset —
+    /// Opens the resource with the given book path in Code Editor and scrolls to the character offset —
     /// the "go to" navigation from the Reports dialog. Like <c>NavigateToToc</c> but operating on an
     /// offset instead of a fragment.
     /// </summary>
@@ -2481,8 +2481,8 @@ public sealed partial class MainWindowViewModel
     public FindUsagesViewModel FindUsages => _findUsages;
 
     /// <summary>
-    /// "Find Usages" (Alt+F7, Code View context menu): the usages of the CSS class under the caret of the active
-    /// Code View tab — in a <c>class</c> attribute or in a selector. Without a class under the caret only a status bar
+    /// "Find Usages" (Alt+F7, Code Editor context menu): the usages of the CSS class under the caret of the active
+    /// Code Editor tab — in a <c>class</c> attribute or in a selector. Without a class under the caret only a status bar
     /// message.
     /// </summary>
     private void RenameClassAtCaret()
@@ -3007,7 +3007,7 @@ public sealed partial class MainWindowViewModel
         _statusBar.ShowMessage(Strings.Get("Status_ManifestPropertiesUpdated"), TimeSpan.FromSeconds(4));
     }
 
-    // Zoom In/Out/Reset act on whichever view (Code View / Preview) has focus —
+    // Zoom In/Out/Reset act on whichever view (Code Editor / Preview) has focus —
     // the zoom values are independent.
     private void AdjustActiveZoom(double factor)
     {
@@ -3062,7 +3062,7 @@ public sealed partial class MainWindowViewModel
         _findReplace.AttachToActiveTab(ActiveCodeTab);
         _toc.SetCurrentFile(ActiveTab?.Resource.BookPath);
 
-        // Clicking a document tab moves the zoom focus to Code View.
+        // Clicking a document tab moves the zoom focus to Code Editor.
         _previewHasZoomFocus = false;
 
         OnPropertyChanged(nameof(ZoomPercentText));
@@ -3215,13 +3215,13 @@ public sealed partial class MainWindowViewModel
         WireFocus(AppActionIds.FocusPreview, DockableIds.Preview, Strings.Get("Panel_Preview"));
         WireFocus(AppActionIds.FocusToc, DockableIds.TableOfContents, Strings.Get("Panel_TableOfContents"));
         WireFocus(AppActionIds.FocusClips, DockableIds.Clips, Strings.Get("Panel_Clips"));
-        WireFocus(AppActionIds.FocusCodeView, DockableIds.Documents, Strings.Get("Panel_CodeView"));
+        WireFocus(AppActionIds.FocusCodeEditor, DockableIds.Documents, Strings.Get("Panel_CodeEditor"));
     }
 
     private void WireToggle(string actionId, string dockableId) =>
         _actions.SetHandler(actionId, () => _dockFactory.ToggleTool(dockableId));
 
-    // Activates the panel in the dock + a status bar message; for Code View it additionally
+    // Activates the panel in the dock + a status bar message; for Code Editor it additionally
     // gives real focus to the editor control, and for Preview/Code it switches the target of the zoom actions.
     private void WireFocus(string actionId, string dockableId, string label)
     {
@@ -3352,7 +3352,7 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>
     /// Toggles the global highlighting of misspelled words, saves it in
-    /// <see cref="SettingsStore"/> and refreshes the underlines in all open Code View tabs.
+    /// <see cref="SettingsStore"/> and refreshes the underlines in all open Code Editor tabs.
     /// </summary>
     private void ToggleAutoSpellCheck()
     {
@@ -3374,22 +3374,22 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <summary>
-    /// Toggles word wrap in Code View, saves it in <see cref="SettingsStore"/> and
+    /// Toggles word wrap in Code Editor, saves it in <see cref="SettingsStore"/> and
     /// applies it to all open tabs.
     /// </summary>
     private void ToggleWordWrap()
     {
-        _settings.CodeViewWordWrap = !_settings.CodeViewWordWrap;
+        _settings.CodeEditorWordWrap = !_settings.CodeEditorWordWrap;
         if (_actions.Get(AppActionIds.WordWrap) is { } action)
         {
-            action.IsChecked = _settings.CodeViewWordWrap;
+            action.IsChecked = _settings.CodeEditorWordWrap;
         }
 
         foreach (ContentTabViewModel view in _tabManager.OpenTabViews)
         {
             if (view is CodeTabViewModel codeTab)
             {
-                codeTab.WordWrap = _settings.CodeViewWordWrap;
+                codeTab.WordWrap = _settings.CodeEditorWordWrap;
             }
         }
     }

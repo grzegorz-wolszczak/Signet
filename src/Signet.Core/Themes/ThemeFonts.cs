@@ -20,11 +20,11 @@ public static class ThemeFontKeys
     /// <summary>The size of the warnings in dialogs (size only).</summary>
     public const string Warnings = "warnings";
 
-    /// <summary>The Code View editor (family and size).</summary>
-    public const string CodeViewEditor = "codeView.editor";
+    /// <summary>The Code Editor font (family and size).</summary>
+    public const string CodeEditorText = "codeEditor.editor";
 
-    /// <summary>The opening tag hint of Code View (family and size).</summary>
-    public const string OpenTagHint = "codeView.openTagHint";
+    /// <summary>The opening tag hint of Code Editor (family and size).</summary>
+    public const string OpenTagHint = "codeEditor.openTagHint";
 
     /// <summary>The standard font of the Preview (family only).</summary>
     public const string PreviewStandard = "preview.standard";
@@ -51,7 +51,7 @@ public static class ThemeFontKeys
     /// <summary>Every place, in the order of the "Fonts" pages.</summary>
     public static IReadOnlyList<string> All { get; } = new[]
         {
-            Interface, Warnings, CodeViewEditor, OpenTagHint, PreviewStandard, PreviewSerif, PreviewSansSerif, PreviewSize,
+            Interface, Warnings, CodeEditorText, OpenTagHint, PreviewStandard, PreviewSerif, PreviewSansSerif, PreviewSize,
             SpecialCharacters,
         }
         .Concat(Enum.GetValues<TooltipArea>().Select(Tooltip))
@@ -67,8 +67,8 @@ public static class ThemeFontKeys
         ImmutableDictionary<string, ThemeFont>.Builder fonts = ImmutableDictionary.CreateBuilder<string, ThemeFont>(StringComparer.Ordinal);
         fonts[Interface] = new ThemeFont(settings.UiFont, settings.UiFontSize);
         fonts[Warnings] = new ThemeFont(string.Empty, settings.WarningAppearance.FontSize);
-        CodeViewAppearance code = settings.CodeViewAppearance;
-        fonts[CodeViewEditor] = new ThemeFont(code.FontFamily, code.FontSize);
+        CodeEditorAppearance code = settings.CodeEditorAppearance;
+        fonts[CodeEditorText] = new ThemeFont(code.FontFamily, code.FontSize);
         OpenTagHintAppearance hint = settings.OpenTagHintAppearance;
         fonts[OpenTagHint] = new ThemeFont(hint.FontFamily, hint.FontSize);
         PreviewAppearance preview = settings.PreviewAppearance;
@@ -119,14 +119,14 @@ public sealed class ThemeFonts
     public WarningAppearance Warnings(WarningAppearance setting) =>
         For(ThemeFontKeys.Warnings) is { } f ? new WarningAppearance(f.Size) : setting;
 
-    /// <summary>The Code View editor.</summary>
-    public CodeViewAppearance CodeView(CodeViewAppearance setting)
+    /// <summary>The Code Editor font.</summary>
+    public CodeEditorAppearance CodeEditor(CodeEditorAppearance setting)
     {
         ArgumentNullException.ThrowIfNull(setting);
-        return For(ThemeFontKeys.CodeViewEditor) is { } f ? setting with { FontFamily = f.Family, FontSize = f.Size } : setting;
+        return For(ThemeFontKeys.CodeEditorText) is { } f ? setting with { FontFamily = f.Family, FontSize = f.Size } : setting;
     }
 
-    /// <summary>The opening tag hint of Code View.</summary>
+    /// <summary>The opening tag hint of Code Editor.</summary>
     public OpenTagHintAppearance OpenTagHint(OpenTagHintAppearance setting) =>
         For(ThemeFontKeys.OpenTagHint) is { } f ? new OpenTagHintAppearance(f.Family, f.Size) : setting;
 

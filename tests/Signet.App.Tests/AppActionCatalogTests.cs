@@ -56,7 +56,7 @@ public sealed class AppActionCatalogTests
     /// <summary>
     /// Regression: on Windows AltGr is reported as Ctrl+Alt, so a Ctrl+Alt+&lt;letter&gt; shortcut
     /// intercepts the character typed with AltGr+&lt;letter&gt; and it cannot be
-    /// typed in Code View or in text fields. Ctrl+Alt+A/C/L/N blocked the
+    /// typed in Code Editor or in text fields. Ctrl+Alt+A/C/L/N blocked the
     /// Polish ą ć ł ń (uppercase worked, because AltGr+Shift is a different combination).
     /// </summary>
     [Fact]

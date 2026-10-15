@@ -14,9 +14,9 @@ namespace Signet.Core.Preview;
 /// <remarks>
 /// Every element with an available source position gets a <c>data-signet-loc="{offset}"</c> attribute,
 /// where <c>offset</c> is the 0-based character offset of its opening tag in the original
-/// source (the same one the Code View caret uses). Code View to Preview direction:
+/// source (the same one the Code Editor caret uses). Code Editor to Preview direction:
 /// <see cref="NearestLocAtOrBefore"/> returns the <c>loc</c> of the element to scroll to; Preview →
-/// Code View direction: the page script sends back the <c>loc</c> of the clicked element, and the host sets
+/// Code Editor direction: the page script sends back the <c>loc</c> of the clicked element, and the host sets
 /// the caret at that offset.
 /// </remarks>
 public sealed class PreviewInstrumentation
@@ -83,7 +83,7 @@ public sealed class PreviewInstrumentation
 
     /// <summary>
     /// The largest <c>loc</c> not greater than <paramref name="sourceOffset"/> (the element the
-    /// Code View caret "sits" in), or <c>-1</c> when there is none.
+    /// Code Editor caret "sits" in), or <c>-1</c> when there is none.
     /// </summary>
     /// <param name="sourceOffset">The caret offset in the file source.</param>
     public int NearestLocAtOrBefore(int sourceOffset)

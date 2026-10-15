@@ -119,7 +119,7 @@ public static class AppActionIds
     public const string ZoomOut = "MainWindow.ZoomOut";
     public const string ZoomReset = "MainWindow.ZoomReset";
 
-    /// <summary>Toggles word wrap in Code View.</summary>
+    /// <summary>Toggles word wrap in Code Editor.</summary>
     public const string WordWrap = "MainWindow.WordWrap";
 
     // Window
@@ -157,7 +157,7 @@ public static class AppActionIds
     public const string MendPrettifyHtml = "MainWindow.MendPrettifyHTML";
     public const string MendHtml = "MainWindow.MendHTML";
 
-    // "Beautify code" / "Fix code" for the current file — catalog actions (not only Code View
+    // "Beautify code" / "Fix code" for the current file — catalog actions (not only Code Editor
     // context menu items) so that they can be placed on a toolbar (icons: beautify / html-fix).
     public const string PrettifyCurrentHtml = "MainWindow.PrettifyCurrentHTML";
     public const string MendCurrentHtml = "MainWindow.MendCurrentHTML";
@@ -193,7 +193,7 @@ public static class AppActionIds
     /// <summary>Live CSS Panel.</summary>
     public const string LiveCssPanel = "MainWindow.LiveCssPanel";
 
-    /// <summary>Tools → Footnotes → Renumber Footnotes (as in the Code View context menu).</summary>
+    /// <summary>Tools → Footnotes → Renumber Footnotes (as in the Code Editor context menu).</summary>
     public const string RenumberFootnotes = "MainWindow.RenumberFootnotes";
 
     /// <summary>Tools → Footnotes → Convert Footnotes of Other Origin (the conversion dialog).</summary>
@@ -215,7 +215,7 @@ public static class AppActionIds
     public const string About = "MainWindow.About";
 
     // Panel focus / visibility toggles
-    public const string FocusCodeView = "MainWindow.FocusOnCodeView";
+    public const string FocusCodeEditor = "MainWindow.FocusOnCodeEditor";
     public const string FocusBookBrowser = "MainWindow.FocusOnBookBrowser";
     public const string FocusPreview = "MainWindow.FocusOnPreview";
     public const string FocusToc = "MainWindow.FocusOnTOC";
@@ -247,18 +247,18 @@ public static class AppActionIds
 
     /// <summary>
     /// The actions that work at the caret or selection of a code editor. Their shortcuts are handled only while the
-    /// focus is in Code View (<c>CodeTabView</c> binds them, not the window), so e.g. F2 can rename a class in the
+    /// focus is in Code Editor (<c>CodeTabView</c> binds them, not the window), so e.g. F2 can rename a class in the
     /// code and a file in the Book Browser. They still are in the menus, which run them for the active tab.
     /// </summary>
-    private static readonly System.Collections.Generic.HashSet<string> CodeViewActionIds = new(System.StringComparer.Ordinal)
+    private static readonly System.Collections.Generic.HashSet<string> CodeEditorActionIds = new(System.StringComparer.Ordinal)
     {
         DeleteLine, ToggleComment, CasingLowercase, CasingUppercase, CasingTitlecase, CasingCapitalize, MergeContent,
         RenameClass, InsertClosingTag, RemoveTagPair, JumpToOpeningTag, JumpToClosingTag, SelectTagContents, RenameTag,
         SplitTag, GoToLinkOrStyle, FindUsages,
     };
 
-    /// <summary>Whether the action's shortcuts work only in a code editor (see <see cref="CodeViewActionIds"/>).</summary>
-    public static bool IsCodeViewAction(string id) => CodeViewActionIds.Contains(id);
+    /// <summary>Whether the action's shortcuts work only in a code editor (see <see cref="CodeEditorActionIds"/>).</summary>
+    public static bool IsCodeEditorAction(string id) => CodeEditorActionIds.Contains(id);
 
     /// <summary>
     /// The actions that make sense while no book is open: creating and opening a book, quitting, the settings and the
@@ -269,7 +269,7 @@ public static class AppActionIds
         NewDefault, NewEpub2, NewEpub3, Open, Exit, Preferences, CustomLayout, ClipEditor, SearchEditor, About,
         ToggleBookBrowser, ToggleClips, TogglePreview, ToggleToc, ToggleValidationResults, ToggleCheckpoints,
         ToggleNotifications, ToggleFindReplace, ToggleFindUsages,
-        FocusCodeView, FocusBookBrowser, FocusPreview, FocusToc, FocusClips,
+        FocusCodeEditor, FocusBookBrowser, FocusPreview, FocusToc, FocusClips,
     };
 
     /// <summary>

@@ -5,7 +5,7 @@ using Avalonia.Media;
 using Signet.Core.Misc;
 using Signet.Core.Themes;
 
-namespace Signet.App.CodeView;
+namespace Signet.App.CodeEditor;
 
 /// <summary>
 /// What the colorizer cannot put on the text itself, for the visible lines (<see cref="SyntaxColorizer"/>): the look of

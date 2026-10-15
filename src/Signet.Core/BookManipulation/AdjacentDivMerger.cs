@@ -28,7 +28,7 @@ internal sealed record AdjacentDivGroup(
 /// "Merge adjacent <c>&lt;div&gt;</c> tags with identical attributes": finds runs of sibling <c>&lt;div&gt;</c>s that
 /// follow each other with identical attributes (compared like <see cref="NestedDivCollapser"/>: the same set of
 /// attributes and values, the classes of <c>class</c> as a set) and merges each run into its first
-/// <c>&lt;div&gt;</c> — the counterpart of the Code View's "Merge Content" for the whole book. Works on the source
+/// <c>&lt;div&gt;</c> — the counterpart of the Code Editor's "Merge Content" for the whole book. Works on the source
 /// text (<see cref="TagLister"/>).
 /// </summary>
 /// <remarks>

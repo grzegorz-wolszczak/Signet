@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Signet.Core.Tests.MainUI;
 
-/// <summary>Tests of <see cref="SpanUnwrapper"/> — "Remove span" in the Code View context menu.</summary>
+/// <summary>Tests of <see cref="SpanUnwrapper"/> — "Remove span" in the Code Editor context menu.</summary>
 public sealed class SpanUnwrapperTests
 {
     private const string Text =

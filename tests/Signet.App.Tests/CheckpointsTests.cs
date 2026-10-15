@@ -401,7 +401,7 @@ public sealed class CheckpointsTests
     {
         CodeTabViewModel tab = s.OpenFirstHtml();
         tab.Document.Text = tab.Document.Text.Replace(
-            "</body>", $"{CodeViewModel.SectionMarker}<p>{secondPart}</p></body>", StringComparison.Ordinal);
+            "</body>", $"{CodeEditorModel.SectionMarker}<p>{secondPart}</p></body>", StringComparison.Ordinal);
         BookBrowserNode text = s.Vm.BookBrowser.Nodes.Single(n => n.Header == "Text").Children
             .Single(n => ReferenceEquals(n.Entry?.Resource, tab.Resource));
         s.Vm.BookBrowser.UpdateSelection(new object?[] { text });

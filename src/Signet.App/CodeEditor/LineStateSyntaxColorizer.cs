@@ -5,10 +5,10 @@ using AvaloniaEdit.Document;
 using Signet.App.Infrastructure;
 using Signet.Core.Misc;
 
-namespace Signet.App.CodeView;
+namespace Signet.App.CodeEditor;
 
 /// <summary>
-/// Code View syntax highlighting with line-by-line highlighters (basic —
+/// Code Editor syntax highlighting with line-by-line highlighters (basic —
 /// <see cref="XhtmlHighlighter"/>, <see cref="CssHighlighter"/> — or extended —
 /// <see cref="ExtendedXhtmlHighlighter"/>, <see cref="ExtendedCssHighlighter"/>): the end state
 /// of every line is remembered, and a line is colorized synchronously when it is drawn (only

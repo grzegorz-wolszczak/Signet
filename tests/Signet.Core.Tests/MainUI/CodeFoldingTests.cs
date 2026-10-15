@@ -6,7 +6,7 @@ using Xunit;
 namespace Signet.Core.Tests.MainUI;
 
 /// <summary>
-/// Tests of <see cref="CodeFolding"/> — the foldable regions of Code View: multi-line elements and comments in markup,
+/// Tests of <see cref="CodeFolding"/> — the foldable regions of Code Editor: multi-line elements and comments in markup,
 /// multi-line blocks in CSS; nothing that opens and closes on one line.
 /// </summary>
 public sealed class CodeFoldingTests

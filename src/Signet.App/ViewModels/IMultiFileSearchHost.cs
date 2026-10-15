@@ -27,7 +27,7 @@ public interface IMultiFileSearchHost
     /// </summary>
     IReadOnlyList<TextResource> ResolveLookWhere(LookWhere lookWhere);
 
-    /// <summary>The Code View tab displaying the given resource, or <c>null</c> when it is not open.</summary>
+    /// <summary>The Code Editor tab displaying the given resource, or <c>null</c> when it is not open.</summary>
     CodeTabViewModel? FindOpenTab(TextResource resource);
 
     /// <summary>

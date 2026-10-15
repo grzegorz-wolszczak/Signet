@@ -274,11 +274,11 @@ public sealed class ClipsViewModel : ViewModelBase
     /// <summary>Abandons the rename (Esc).</summary>
     public void CancelRename() => EditingNode = null;
 
-    /// <summary>Root of the clip library — for building the "Clips" submenu in the Code View context menu.</summary>
+    /// <summary>Root of the clip library — for building the "Clips" submenu in the Code Editor context menu.</summary>
     public ClipEditorNode LibraryRoot => _model.Root;
 
     /// <summary>
-    /// "Add To Clips..." from the Code View context menu: adds an "Unnamed Entry" clip with the
+    /// "Add To Clips..." from the Code Editor context menu: adds an "Unnamed Entry" clip with the
     /// given text at the start of the library and selects it (for renaming in the Clip Editor).
     /// </summary>
     public ClipNodeViewModel? AddPendingEntry(string text)

@@ -21,7 +21,7 @@ using Xunit;
 
 namespace Signet.App.UiTests;
 
-/// <summary>Ctrl+V in Code View: the clipboard text is normalized to Unicode NFC when Preferences say so.</summary>
+/// <summary>Ctrl+V in Code Editor: the clipboard text is normalized to Unicode NFC when Preferences say so.</summary>
 public sealed class CodeTabViewPasteTests
 {
     // "cafe" + U+0301 (combining acute), built from code points so that no editor can normalize it.
@@ -44,7 +44,7 @@ public sealed class CodeTabViewPasteTests
         using TempDir temp = new();
         var html = new HtmlResource(temp.Path, temp.Combine("ch.xhtml"));
         html.SetText("<p></p>");
-        SettingsStore settings = new(temp.Combine("settings.xml")) { CodeViewPasteNormalizeNfc = enabled };
+        SettingsStore settings = new(temp.Combine("settings.xml")) { CodeEditorPasteNormalizeNfc = enabled };
         SpellChecker spellChecker = new(settings, temp.Combine("hunspell"), temp.Combine("user"));
         var vm = new CodeTabViewModel(new TabManagerModel().OpenResource(html), new StatusBarService(), settings, spellChecker);
         var window = new Window { Width = 600, Height = 300, Content = new CodeTabView { DataContext = vm } };

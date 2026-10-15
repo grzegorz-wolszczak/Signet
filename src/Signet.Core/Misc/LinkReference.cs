@@ -5,7 +5,7 @@ namespace Signet.Core.Misc;
 
 /// <summary>
 /// Resolves <c>href</c>/<c>src</c>/<c>url()</c> references to book files — used to highlight broken
-/// links and for Ctrl+click navigation in Code View.
+/// links and for Ctrl+click navigation in Code Editor.
 /// </summary>
 public static partial class LinkReference
 {

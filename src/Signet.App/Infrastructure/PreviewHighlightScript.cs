@@ -8,7 +8,7 @@ using Signet.Core.Themes;
 namespace Signet.App.Infrastructure;
 
 /// <summary>
-/// Preview page script: scrolls to the <c>[data-signet-loc]</c> element (Code View → Preview
+/// Preview page script: scrolls to the <c>[data-signet-loc]</c> element (Code Editor → Preview
 /// synchronization) and highlights its block according to <see cref="PreviewHighlight"/> in the color of the theme — with a background or
 /// an outline, permanently or fading out after a delay.
 /// </summary>
@@ -30,7 +30,7 @@ public static class PreviewHighlightScript
     /// <param name="highlight">Highlight settings.</param>
     /// <param name="highlightColor">The color of the highlight (the theme's <c>preview.highlight</c>; its transparency is not used).</param>
     /// <param name="scroll">
-    /// Whether the element is scrolled to the middle of the preview (Code View → Preview); <see langword="false"/>
+    /// Whether the element is scrolled to the middle of the preview (Code Editor → Preview); <see langword="false"/>
     /// after a click in the preview, where the element already is in view.
     /// </param>
     public static string Build(int loc, PreviewHighlight highlight, ThemeColor highlightColor, bool scroll = true)

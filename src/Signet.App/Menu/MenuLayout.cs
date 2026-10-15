@@ -201,7 +201,7 @@ public static class MenuLayout
             A("MainWindow.TableOfContents"), A("MainWindow.ValidationResults"), A("MainWindow.CheckpointsWindow"),
             A("MainWindow.FindReplaceWindow"), A("MainWindow.NotificationsWindow"), A("MainWindow.FindUsagesWindow"),
             Sep,
-            A("MainWindow.FocusOnBookBrowser"), A("MainWindow.FocusOnCodeView"), A("MainWindow.FocusOnPreview"),
+            A("MainWindow.FocusOnBookBrowser"), A("MainWindow.FocusOnCodeEditor"), A("MainWindow.FocusOnPreview"),
             A("MainWindow.FocusOnTOC"), A("MainWindow.FocusOnClips")),
 
         MenuNode.Sub("&Window",

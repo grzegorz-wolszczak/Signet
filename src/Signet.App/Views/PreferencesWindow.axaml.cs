@@ -199,7 +199,7 @@ public partial class PreferencesWindow : Window
             // Set here, not bound in the XAML: a binding on the content of a page that is not shown does not resolve,
             // and the search must find the font settings of every page.
             AppearanceFontsView.DataContext = vm.AppearanceFonts;
-            CodeViewFontsView.DataContext = vm.CodeViewFonts;
+            CodeEditorFontsView.DataContext = vm.CodeEditorFonts;
             PreviewFontsView.DataContext = vm.PreviewFonts;
             SpecialCharacterFontsView.DataContext = vm.SpecialCharacterFonts;
             StartScreenFontsView.DataContext = vm.StartScreenFonts;

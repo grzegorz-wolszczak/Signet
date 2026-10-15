@@ -7,7 +7,7 @@ using Xunit;
 namespace Signet.Core.Tests.MainUI;
 
 /// <summary>
-/// Tests of <see cref="CodeFormatOperations"/> (the Format menu in Code View): one
+/// Tests of <see cref="CodeFormatOperations"/> (the Format menu in Code Editor): one
 /// scenario per operation, asserting the resulting text and well-formedness.
 /// </summary>
 public sealed class CodeFormatOperationsTests
@@ -278,17 +278,17 @@ public sealed class CodeFormatOperationsTests
     }
 
     [Theory]
-    [InlineData(CodeViewSyntax.Html)]
-    [InlineData(CodeViewSyntax.Xml)]
-    [InlineData(CodeViewSyntax.Css)]
-    [InlineData(CodeViewSyntax.JavaScript)]
-    public void IsCommentSyntaxSupported_is_true_for_markup_and_style_syntaxes(CodeViewSyntax syntax) =>
+    [InlineData(CodeEditorSyntax.Html)]
+    [InlineData(CodeEditorSyntax.Xml)]
+    [InlineData(CodeEditorSyntax.Css)]
+    [InlineData(CodeEditorSyntax.JavaScript)]
+    public void IsCommentSyntaxSupported_is_true_for_markup_and_style_syntaxes(CodeEditorSyntax syntax) =>
         CodeFormatOperations.IsCommentSyntaxSupported(syntax).Should().BeTrue();
 
     [Theory]
-    [InlineData(CodeViewSyntax.PlainText)]
-    [InlineData(CodeViewSyntax.Json)]
-    public void IsCommentSyntaxSupported_is_false_for_syntaxes_without_comments(CodeViewSyntax syntax) =>
+    [InlineData(CodeEditorSyntax.PlainText)]
+    [InlineData(CodeEditorSyntax.Json)]
+    public void IsCommentSyntaxSupported_is_false_for_syntaxes_without_comments(CodeEditorSyntax syntax) =>
         CodeFormatOperations.IsCommentSyntaxSupported(syntax).Should().BeFalse();
 
     [Fact]
@@ -296,7 +296,7 @@ public sealed class CodeFormatOperationsTests
     {
         const string text = "hello world";
 
-        FormatEdit result = CodeFormatOperations.ToggleComment(text, 0, 5, CodeViewSyntax.PlainText);
+        FormatEdit result = CodeFormatOperations.ToggleComment(text, 0, 5, CodeEditorSyntax.PlainText);
 
         result.Changed.Should().BeFalse();
     }
@@ -306,7 +306,7 @@ public sealed class CodeFormatOperationsTests
     {
         const string text = "p { color: red; }";
 
-        FormatEdit result = CodeFormatOperations.ToggleComment(text, 0, text.Length, CodeViewSyntax.Css);
+        FormatEdit result = CodeFormatOperations.ToggleComment(text, 0, text.Length, CodeEditorSyntax.Css);
 
         result.Changed.Should().BeTrue();
         result.Text.Should().Be("/*" + text + "*/");
@@ -317,7 +317,7 @@ public sealed class CodeFormatOperationsTests
     {
         const string commented = "/*p { color: red; }*/";
 
-        FormatEdit result = CodeFormatOperations.ToggleComment(commented, 0, commented.Length, CodeViewSyntax.Css);
+        FormatEdit result = CodeFormatOperations.ToggleComment(commented, 0, commented.Length, CodeEditorSyntax.Css);
 
         result.Changed.Should().BeTrue();
         result.Text.Should().Be("p { color: red; }");
@@ -330,7 +330,7 @@ public sealed class CodeFormatOperationsTests
         int lineStart = text.IndexOf("comment", StringComparison.Ordinal);
         int caret = lineStart + 3;
 
-        FormatEdit result = CodeFormatOperations.ToggleComment(text, caret, caret, CodeViewSyntax.Css);
+        FormatEdit result = CodeFormatOperations.ToggleComment(text, caret, caret, CodeEditorSyntax.Css);
 
         result.Changed.Should().BeTrue();
         result.Text.Should().Be("\ncomment text line\n");
@@ -342,7 +342,7 @@ public sealed class CodeFormatOperationsTests
         string text = Doc("<p>keep me</p>");
         int caret = text.IndexOf("<p>keep me</p>", StringComparison.Ordinal) + 3;
 
-        FormatEdit result = CodeFormatOperations.ToggleComment(text, caret, caret, CodeViewSyntax.Html);
+        FormatEdit result = CodeFormatOperations.ToggleComment(text, caret, caret, CodeEditorSyntax.Html);
 
         result.Changed.Should().BeTrue();
         result.Text.Should().Contain("<!--<p>keep me</p>-->");
@@ -353,7 +353,7 @@ public sealed class CodeFormatOperationsTests
     {
         const string text = "<span>hi</span>";
 
-        FormatEdit result = CodeFormatOperations.ToggleComment(text, 0, text.Length, CodeViewSyntax.Html);
+        FormatEdit result = CodeFormatOperations.ToggleComment(text, 0, text.Length, CodeEditorSyntax.Html);
 
         result.Text.Should().Be("<!--" + text + "-->");
     }
@@ -363,7 +363,7 @@ public sealed class CodeFormatOperationsTests
     {
         const string text = "   ";
 
-        FormatEdit result = CodeFormatOperations.ToggleComment(text, 0, text.Length, CodeViewSyntax.Css);
+        FormatEdit result = CodeFormatOperations.ToggleComment(text, 0, text.Length, CodeEditorSyntax.Css);
 
         result.Changed.Should().BeFalse();
     }

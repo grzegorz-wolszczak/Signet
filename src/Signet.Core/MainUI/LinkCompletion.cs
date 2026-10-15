@@ -48,7 +48,7 @@ public sealed record LinkCompletionFile(string BookPath, string MediaType);
 public sealed record LinkCompletionItem(string Text, string Description);
 
 /// <summary>
-/// Suggestions in Code View: the book's file names in <c>href</c>/<c>src</c>
+/// Suggestions in Code Editor: the book's file names in <c>href</c>/<c>src</c>
 /// (filtered by tag) and in CSS <c>url()</c>, <c>#id</c> anchors of the target document,
 /// and fuzzy matching (the best-scoring substring).
 /// </summary>
@@ -61,20 +61,20 @@ public static partial class LinkCompletion
     /// <c>href</c>/<c>src</c> value of an opening tag (the tag started at most 5 lines above);
     /// in CSS (and in <c>&lt;style&gt;</c>) — in the <c>url(</c> argument.
     /// </summary>
-    public static LinkCompletionContext? Detect(string text, int caret, CodeViewSyntax syntax)
+    public static LinkCompletionContext? Detect(string text, int caret, CodeEditorSyntax syntax)
     {
         ArgumentNullException.ThrowIfNull(text);
         int pos = Math.Clamp(caret, 0, text.Length);
         int lineStart = pos == 0 ? 0 : text.LastIndexOf('\n', pos - 1) + 1;
 
-        if (syntax is CodeViewSyntax.Css or CodeViewSyntax.Html &&
+        if (syntax is CodeEditorSyntax.Css or CodeEditorSyntax.Html &&
             CssUrlRegex().Match(text[lineStart..pos]) is { Success: true } url)
         {
             Group q = url.Groups["query"];
             return new LinkCompletionContext(lineStart + q.Index, q.Value, LinkTargetKind.CssResource, null);
         }
 
-        if (syntax is not (CodeViewSyntax.Html or CodeViewSyntax.Xml))
+        if (syntax is not (CodeEditorSyntax.Html or CodeEditorSyntax.Xml))
         {
             return null;
         }

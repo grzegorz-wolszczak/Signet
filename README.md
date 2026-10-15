@@ -33,7 +33,7 @@ calibre projects.
 These features were designed for Signet. As far as I know, neither Sigil nor calibre (nor any other
 EPUB editor I know of) has them:
 
-- **Highlighting the clicked element in Preview**: clicking in Code View does more than scroll the
+- **Highlighting the clicked element in Preview**: clicking in Code Editor does more than scroll the
   Preview to the matching place (as Sigil does). It also highlights that element, so it is easy to
   spot on a long page. The style can be set in Preferences → Preview: background or outline, colour,
   opacity, and whether the highlight fades after a delay.
@@ -42,7 +42,7 @@ EPUB editor I know of) has them:
   (`<p>The cat</p> <p>sat on the mat</p>` → `<p>The cat sat on the mat</p>`).
   The selection only has to start inside the first element and end inside the last one.
 - **Cascade-aware CSS class rename**: the class can be renamed from two places:
-  - from Code View of an XHTML file, with the caret on a name in `class="…"`. The rename covers
+  - from Code Editor of an XHTML file, with the caret on a name in `class="…"`. The rename covers
     either the whole book or only the elements with the same nesting in the document structure.
     In the second case the style definitions are copied under the new name.
   - from a stylesheet or a `<style>` block, with the caret on the class in a selector. Only the
@@ -68,7 +68,7 @@ EPUB editor I know of) has them:
     - bare `<span>`s without attributes are unwrapped.
 
     Elements with an `id` are never removed.
-- **Remove span** (Code View context menu): unwraps the `<span>` at the caret. It can also unwrap
+- **Remove span** (Code Editor context menu): unwraps the `<span>` at the caret. It can also unwrap
   every identical span (same attributes) in the file or in the whole book. Risky removals go through
   the same ⚠ confirmation as in Cleanup.
 - **Live CSS Panel with the element hierarchy**: shows the matching rules of every element from

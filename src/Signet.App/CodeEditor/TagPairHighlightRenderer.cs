@@ -5,7 +5,7 @@ using Signet.App.Infrastructure;
 using Signet.Core.MainUI;
 using Signet.Core.Themes;
 
-namespace Signet.App.CodeView;
+namespace Signet.App.CodeEditor;
 
 /// <summary>
 /// Marks the opening and closing tag of the (X)HTML/XML pair at the current

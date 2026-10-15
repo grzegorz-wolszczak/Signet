@@ -144,7 +144,7 @@ public sealed partial class MainWindowViewModel
     private bool NavigationFileExists(string bookPath) =>
         _currentBook?.GetFolderKeeper().GetResourceByBookPathNoThrow(bookPath) is not null;
 
-    // Where the caret is now: the caret of the active Code View tab, or just the file of another tab.
+    // Where the caret is now: the caret of the active Code Editor tab, or just the file of another tab.
     private NavigationPlace? CurrentNavigationPlace()
     {
         if (ActiveCodeTab is { } code)

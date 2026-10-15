@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 namespace Signet.Core.Misc;
 
 /// <summary>
-/// Code View (X)HTML/XML highlighter — a line-based state machine covering tags,
+/// Code Editor (X)HTML/XML highlighter — a line-based state machine covering tags,
 /// attributes, comments, DOCTYPE, the <c>&lt;style&gt;</c> block with CSS comments, entities and
 /// special spaces. No UI dependencies — the view layer picks the colors.
 /// </summary>

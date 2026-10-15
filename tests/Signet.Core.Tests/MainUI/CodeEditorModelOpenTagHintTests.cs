@@ -8,10 +8,10 @@ using Xunit;
 namespace Signet.Core.Tests.MainUI;
 
 /// <summary>
-/// Tests of the opening tag hint in <see cref="CodeViewModel"/>: <see cref="CodeViewModel.GetCloseTagAt"/> (the closing
-/// tag under the mouse) and <see cref="CodeViewModel.GetOpenTagOfCloseTag"/> (its opening tag).
+/// Tests of the opening tag hint in <see cref="CodeEditorModel"/>: <see cref="CodeEditorModel.GetCloseTagAt"/> (the closing
+/// tag under the mouse) and <see cref="CodeEditorModel.GetOpenTagOfCloseTag"/> (its opening tag).
 /// </summary>
-public sealed class CodeViewModelOpenTagHintTests
+public sealed class CodeEditorModelOpenTagHintTests
 {
     private const string OuterOpen = "<div class=\"chapter\" id=\"ch1\">";
     private const string InnerOpen = "<div\n    class=\"note\">";
@@ -20,11 +20,11 @@ public sealed class CodeViewModelOpenTagHintTests
         "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n<body>\n" + OuterOpen + "\n" + InnerOpen + "<p>text</p></div>\n"
         + "<!-- </div> -->\n</div>\n</span>\n</body>\n</html>\n";
 
-    private static CodeViewModel NewModel(TempDir temp, string text)
+    private static CodeEditorModel NewModel(TempDir temp, string text)
     {
         var resource = new HtmlResource(temp.Path, temp.Combine("ch.xhtml"));
         resource.SetText(text);
-        return new CodeViewModel(resource);
+        return new CodeEditorModel(resource);
     }
 
     private static int NthIndexOf(string text, string value, int n)
@@ -42,7 +42,7 @@ public sealed class CodeViewModelOpenTagHintTests
     public void Every_character_of_a_closing_tag_hits_it_and_the_text_around_does_not()
     {
         using TempDir temp = new();
-        CodeViewModel model = NewModel(temp, Xhtml);
+        CodeEditorModel model = NewModel(temp, Xhtml);
         int close = Xhtml.IndexOf("</div>", StringComparison.Ordinal);
 
         for (int i = close; i < close + "</div>".Length; i++)
@@ -59,7 +59,7 @@ public sealed class CodeViewModelOpenTagHintTests
     public void Nested_closing_tags_get_their_own_opening_tags_even_when_multiline()
     {
         using TempDir temp = new();
-        CodeViewModel model = NewModel(temp, Xhtml);
+        CodeEditorModel model = NewModel(temp, Xhtml);
         int innerClose = NthIndexOf(Xhtml, "</div>", 0);
         int outerClose = NthIndexOf(Xhtml, "</div>", 2);
 
@@ -71,7 +71,7 @@ public sealed class CodeViewModelOpenTagHintTests
     public void A_closing_tag_inside_a_comment_or_without_an_opening_tag_has_no_hint()
     {
         using TempDir temp = new();
-        CodeViewModel model = NewModel(temp, Xhtml);
+        CodeEditorModel model = NewModel(temp, Xhtml);
         int inComment = NthIndexOf(Xhtml, "</div>", 1);
         int stray = Xhtml.IndexOf("</span>", StringComparison.Ordinal);
 
@@ -85,7 +85,7 @@ public sealed class CodeViewModelOpenTagHintTests
         using TempDir temp = new();
         var css = new CssResource(temp.Path, temp.Combine("s.css"));
         css.SetText("/* </div> */ p { color: red }");
-        CodeViewModel model = new(css);
+        CodeEditorModel model = new(css);
 
         model.GetCloseTagAt(4).Should().BeNull();
         model.GetOpenTagOfCloseTag(3).Should().BeNull();

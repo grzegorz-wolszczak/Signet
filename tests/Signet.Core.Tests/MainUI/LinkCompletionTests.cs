@@ -31,7 +31,7 @@ public sealed class LinkCompletionTests
     {
         string text = "<body>" + typed;
 
-        LinkCompletionContext? context = LinkCompletion.Detect(text, text.Length, CodeViewSyntax.Html);
+        LinkCompletionContext? context = LinkCompletion.Detect(text, text.Length, CodeEditorSyntax.Html);
 
         context.Should().NotBeNull();
         context!.Kind.Should().Be(kind);
@@ -45,7 +45,7 @@ public sealed class LinkCompletionTests
     {
         const string text = "<body><a href=\"ch2.xhtml#sec";
 
-        LinkCompletionContext? context = LinkCompletion.Detect(text, text.Length, CodeViewSyntax.Html);
+        LinkCompletionContext? context = LinkCompletion.Detect(text, text.Length, CodeEditorSyntax.Html);
 
         context.Should().Be(new LinkCompletionContext(text.Length - 3, "sec", LinkTargetKind.TextLink, "ch2.xhtml"));
     }
@@ -57,14 +57,14 @@ public sealed class LinkCompletionTests
     [InlineData("<body></a href=\"x")]
     public void No_context_outside_a_link_attribute_value(string text)
     {
-        LinkCompletion.Detect(text, text.Length, CodeViewSyntax.Html).Should().BeNull();
+        LinkCompletion.Detect(text, text.Length, CodeEditorSyntax.Html).Should().BeNull();
     }
 
     [Theory]
-    [InlineData(CodeViewSyntax.Css, "body {\n  background: url(\"../Im", "../Im")]
-    [InlineData(CodeViewSyntax.Css, "@font-face { src: url(", "")]
-    [InlineData(CodeViewSyntax.Html, "<style>p { background: url(../", "../")]
-    public void Detects_css_url_argument(CodeViewSyntax syntax, string text, string query)
+    [InlineData(CodeEditorSyntax.Css, "body {\n  background: url(\"../Im", "../Im")]
+    [InlineData(CodeEditorSyntax.Css, "@font-face { src: url(", "")]
+    [InlineData(CodeEditorSyntax.Html, "<style>p { background: url(../", "../")]
+    public void Detects_css_url_argument(CodeEditorSyntax syntax, string text, string query)
     {
         LinkCompletionContext? context = LinkCompletion.Detect(text, text.Length, syntax);
 

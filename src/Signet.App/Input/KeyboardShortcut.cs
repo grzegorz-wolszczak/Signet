@@ -24,7 +24,7 @@ public sealed class KeyboardShortcut
 
     /// <summary>
     /// The place in its window the shortcut works in (it is handled only while the focus is there: a panel, or the code
-    /// editor — <see cref="KeyboardShortcutManager.CodeViewScope"/>), or <see langword="null"/> for a window-wide
+    /// editor — <see cref="KeyboardShortcutManager.CodeEditorScope"/>), or <see langword="null"/> for a window-wide
     /// shortcut. See <see cref="KeyboardShortcutManager.Overlap"/> for when two shortcuts collide.
     /// </summary>
     public string? Scope { get; }

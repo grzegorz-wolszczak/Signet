@@ -46,7 +46,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
     // The window-wide keyboard shortcuts (one- and two-stroke) of the actions.
     private readonly ShortcutKeyBindings _shortcutBindings;
 
-    // The mouse shortcuts of the actions — for now only in Code View (MouseShortcutRouter.IsInCodeView).
+    // The mouse shortcuts of the actions — for now only in Code Editor (MouseShortcutRouter.IsInCodeEditor).
     private readonly MouseShortcutRouter _mouseShortcuts;
 
     /// <summary>Initializes a new window instance and loads its XAML definition.</summary>
@@ -54,11 +54,11 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
     {
         InitializeComponent();
         _shortcutBindings = new ShortcutKeyBindings(this);
-        // Mouse shortcuts work only in Code View, so the code editor actions take part too.
+        // Mouse shortcuts work only in Code Editor, so the code editor actions take part too.
         _mouseShortcuts = new MouseShortcutRouter(
             this,
-            () => _boundViewModel is { } vm ? vm.ShortcutActions.Concat(vm.CodeViewShortcutActions) : Array.Empty<AppAction>(),
-            MouseShortcutRouter.IsInCodeView);
+            () => _boundViewModel is { } vm ? vm.ShortcutActions.Concat(vm.CodeEditorShortcutActions) : Array.Empty<AppAction>(),
+            MouseShortcutRouter.IsInCodeEditor);
         DataContextChanged += OnDataContextChanged;
 
         // Drag & drop of a file (e.g. an EPUB) onto the window = File → Open. handledEventsToo, because child
@@ -778,7 +778,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             _clipEditorWindow.Activate();
         }
 
-        // "Add To Clips..." from the Code View context menu selects the added clip.
+        // "Add To Clips..." from the Code Editor context menu selects the added clip.
         if (vm.Clips.SelectedNode is { } selected)
         {
             _clipEditorWindow.SelectNode(selected);
@@ -788,7 +788,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
     private ViewImageWindow? _viewImageWindow;
 
     /// <summary>
-    /// "View Image" from the Code View context menu — a non-modal window with a single persistent
+    /// "View Image" from the Code Editor context menu — a non-modal window with a single persistent
     /// instance (shown/activated, then <c>ShowImage</c>).
     /// </summary>
     private void OnViewImageRequested(object? sender, Signet.Core.Resources.Resource resource)
@@ -814,7 +814,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
     /// <summary>
     /// Opens (or activates) the non-modal "Live CSS Panel" window — a single persistent instance
     /// (the same pattern as <see cref="OnClipEditorRequested"/>) whose content follows the element
-    /// under the caret of the active Code View tab (see <see cref="OnLiveCssContextChanged"/>).
+    /// under the caret of the active Code Editor tab (see <see cref="OnLiveCssContextChanged"/>).
     /// </summary>
     private void OnLiveCssPanelRequested(object? sender, EventArgs e)
     {

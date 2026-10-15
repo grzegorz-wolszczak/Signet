@@ -5,7 +5,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Threading;
-using Signet.App.CodeView;
+using Signet.App.CodeEditor;
 using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.ViewModels;
@@ -17,7 +17,7 @@ using Nwv = NativeWebView.Core;
 namespace Signet.App.Views;
 
 /// <summary>
-/// The footnote window from the Code View context menu, for adding a footnote at the caret or editing the footnote
+/// The footnote window from the Code Editor context menu, for adding a footnote at the caret or editing the footnote
 /// under it: the text around the reference, the text of the footnote and its placement (local or global), with a live
 /// preview — the markup Signet writes ("Code") and how it looks with the file's styles ("Appearance", a web view that is
 /// created when the tab is first shown and gets the page a moment after the last change). An edited footnote can be
@@ -42,16 +42,16 @@ public partial class FootnoteWindow : Window
 
     /// <summary>Initializes the window.</summary>
     public FootnoteWindow()
-        : this(CodeViewAppearance.Default)
+        : this(CodeEditorAppearance.Default)
     {
     }
 
-    /// <summary>Initializes the window with the font of Code View and the colors of the theme for the "Code" preview.</summary>
-    public FootnoteWindow(CodeViewAppearance appearance)
+    /// <summary>Initializes the window with the font of Code Editor and the colors of the theme for the "Code" preview.</summary>
+    public FootnoteWindow(CodeEditorAppearance appearance)
     {
         InitializeComponent();
         ArgumentNullException.ThrowIfNull(appearance);
-        if (CodeViewTextMate.CreateColorizer(CodeViewSyntax.Html, extended: false, linkExists: null, AppTheme.Current) is { } colorizer)
+        if (CodeEditorTextMate.CreateColorizer(CodeEditorSyntax.Html, extended: false, linkExists: null, AppTheme.Current) is { } colorizer)
         {
             PreviewCodeEditor.TextArea.TextView.LineTransformers.Add(colorizer);
         }
@@ -76,13 +76,13 @@ public partial class FootnoteWindow : Window
 
     /// <summary>Shows the window; returns what to do once accepted (add, save or remove), or <c>null</c>.</summary>
     public static Task<FootnoteRequest?> AskAsync(Window owner, FootnoteViewModel viewModel) =>
-        AskAsync(owner, viewModel, CodeViewAppearance.Default);
+        AskAsync(owner, viewModel, CodeEditorAppearance.Default);
 
     /// <summary>
-    /// Shows the window with the Code View font of <paramref name="appearance"/> in the "Code" preview; returns what to
+    /// Shows the window with the Code Editor font of <paramref name="appearance"/> in the "Code" preview; returns what to
     /// do once accepted (add, save or remove), or <c>null</c>.
     /// </summary>
-    public static Task<FootnoteRequest?> AskAsync(Window owner, FootnoteViewModel viewModel, CodeViewAppearance appearance)
+    public static Task<FootnoteRequest?> AskAsync(Window owner, FootnoteViewModel viewModel, CodeEditorAppearance appearance)
     {
         FootnoteWindow window = new(appearance) { DataContext = viewModel };
         return window.ShowDialog<FootnoteRequest?>(owner);

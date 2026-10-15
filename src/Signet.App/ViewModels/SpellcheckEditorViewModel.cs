@@ -46,7 +46,7 @@ public sealed record SpellcheckWordRow(
 /// navigates to the FIRST occurrence of the word in the book (consistent with "go to" in the
 /// Reports dialog). The table is sorted by clicking a column header (in the view). The default user dictionary is always listed under "Dictionaries", even before its
 /// file exists, so that "Add to Dictionary" works without creating the dictionary first
-/// (consistent with "Add To Default Dictionary" in the Code View context menu).
+/// (consistent with "Add To Default Dictionary" in the Code Editor context menu).
 /// </remarks>
 public sealed class SpellcheckEditorViewModel : ViewModelBase
 {
@@ -186,7 +186,7 @@ public sealed class SpellcheckEditorViewModel : ViewModelBase
     /// <summary>Raised on a row double-click — navigation to the first occurrence (book path, offset).</summary>
     public event Action<string, int>? NavigationRequested;
 
-    /// <summary>Raised after "Ignore"/"Add to Dictionary" — open Code View tabs should refresh their spelling highlighting.</summary>
+    /// <summary>Raised after "Ignore"/"Add to Dictionary" — open Code Editor tabs should refresh their spelling highlighting.</summary>
     public event EventHandler? DictionaryStateChanged;
 
     /// <summary>

@@ -84,7 +84,7 @@
     <!-- Image scaling and (de)coding for "Image Resize" and font pangram rendering.
          Version matches Avalonia.Skia 12.1.3 (native binaries already present transitively).
          Svg.Controls.Skia.Avalonia was considered and rejected: it pulls SkiaSharp.NativeAssets 4.x,
-         which conflicts with 3.119.4 used by Avalonia 12 -> SVG tabs get a Code View only. -->
+         which conflicts with 3.119.4 used by Avalonia 12 -> SVG tabs get a Code Editor only. -->
     <PackageVersion Include="SkiaSharp" Version="3.119.4" />
   </ItemGroup>
 

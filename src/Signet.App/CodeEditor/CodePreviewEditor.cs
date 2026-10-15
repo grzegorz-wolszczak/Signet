@@ -6,10 +6,10 @@ using AvaloniaEdit.Document;
 using Signet.App.Infrastructure;
 using Signet.Core.MainUI;
 
-namespace Signet.App.CodeView;
+namespace Signet.App.CodeEditor;
 
 /// <summary>
-/// A read-only editor showing a code sample the way Code View shows a file: highlighted in the colors of a theme, with
+/// A read-only editor showing a code sample the way Code Editor shows a file: highlighted in the colors of a theme, with
 /// line numbers and in the given typeface — the preview of the editor font on the
 /// "Fonts" page of the Preferences window.
 /// </summary>
@@ -35,7 +35,7 @@ public sealed class CodePreviewEditor : TextEditor
     /// <param name="family">The typeface; empty = the editor's default.</param>
     /// <param name="size">The size (px).</param>
     /// <param name="theme">The colors.</param>
-    /// <param name="extended">Whether to use the extended highlighting of Code View.</param>
+    /// <param name="extended">Whether to use the extended highlighting of Code Editor.</param>
     public void Show(string text, string family, double size, ResolvedTheme theme, bool extended)
     {
         ArgumentNullException.ThrowIfNull(text);
@@ -60,7 +60,7 @@ public sealed class CodePreviewEditor : TextEditor
             TextArea.TextView.LineTransformers.Remove(_colorizer);
         }
 
-        _colorizer = CodeViewTextMate.CreateColorizer(CodeViewSyntax.Html, extended, linkExists: null, theme);
+        _colorizer = CodeEditorTextMate.CreateColorizer(CodeEditorSyntax.Html, extended, linkExists: null, theme);
         if (_colorizer is not null)
         {
             TextArea.TextView.LineTransformers.Add(_colorizer);

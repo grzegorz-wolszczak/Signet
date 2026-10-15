@@ -4,8 +4,8 @@ using System.Collections.Generic;
 namespace Signet.Core.Misc;
 
 /// <summary>
-/// Kind of formatting applied to a line fragment by the Code View highlighters; the view layer
-/// takes the colors from <see cref="CodeViewAppearance"/>.
+/// Kind of formatting applied to a line fragment by the Code Editor highlighters; the view layer
+/// takes the colors from <see cref="CodeEditorAppearance"/>.
 /// </summary>
 public enum SyntaxFormat
 {

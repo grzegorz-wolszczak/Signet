@@ -93,13 +93,13 @@ public sealed class SettingsStoreTests
         SettingsStore sut = new(path);
 
         sut.DefaultVersion.Should().Be("3.0");
-        sut.CodeViewWordWrap.Should().BeTrue("Code View wraps lines by default");
+        sut.CodeEditorWordWrap.Should().BeTrue("Code Editor wraps lines by default");
         sut.CleanupEnabledSteps.Should().BeEmpty("no Cleanup step is checked until the user confirms one");
         sut.StandardizationEnabledSteps.Should().Equal(EpubStandardization.AllSteps, "every step is checked until the dialog is applied");
         sut.WarningAppearance.Should().Be(WarningAppearance.Default, "warnings are as large as the interface text by default");
         sut.EditionPage.Should().Be(EditionPageSettings.Default, "the edition page is off until the user turns it on");
-        sut.CodeViewOpenTagHint.Should().BeTrue("the opening tag hint is on by default");
-        sut.CodeViewOpenTagHintDelayMs.Should().Be(500);
+        sut.CodeEditorOpenTagHint.Should().BeTrue("the opening tag hint is on by default");
+        sut.CodeEditorOpenTagHintDelayMs.Should().Be(500);
         sut.OpenTagHintAppearance.Should().Be(OpenTagHintAppearance.Default, "the hint uses the editor font");
     }
 
@@ -124,9 +124,9 @@ public sealed class SettingsStoreTests
         using TempDir dir = new();
         SettingsStore sut = new(dir.Combine("settings.xml"));
 
-        sut.CodeViewOpenTagHintDelayMs = stored;
+        sut.CodeEditorOpenTagHintDelayMs = stored;
 
-        sut.CodeViewOpenTagHintDelayMs.Should().Be(expected);
+        sut.CodeEditorOpenTagHintDelayMs.Should().Be(expected);
     }
 
     [Theory]
@@ -224,23 +224,23 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
-    public void The_unused_code_view_colors_are_dropped_on_load()
+    public void The_unused_code_editor_colors_are_dropped_on_load()
     {
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
         File.WriteAllText(path, """
             <settings>
               <group name="user_preferences">
-                <string key="code_view_css_comment_color">#102030</string>
-                <string key="code_view_line_number_background_color">#405060</string>
-                <string key="code_view_line_number_foreground_color">#405060</string>
-                <string key="code_view_spelling_underline_color">#405060</string>
+                <string key="code_editor_css_comment_color">#102030</string>
+                <string key="code_editor_line_number_background_color">#405060</string>
+                <string key="code_editor_line_number_foreground_color">#405060</string>
+                <string key="code_editor_spelling_underline_color">#405060</string>
               </group>
             </settings>
             """);
 
         SettingsStore sut = new(path);
-        sut.LegacyColors.Keys.Should().Equal("code_view_css_comment_color");
+        sut.LegacyColors.Keys.Should().Equal("code_editor_css_comment_color");
         sut.Save();
 
         string saved = File.ReadAllText(path);
@@ -431,18 +431,18 @@ public sealed class SettingsStoreTests
         string path = dir.Combine("settings.xml");
 
         SettingsStore writer = new(path);
-        writer.CodeViewAppearance.Should().Be(CodeViewAppearance.Default);
-        writer.CodeViewAppearance = CodeViewAppearance.Default with { FontSize = 14, FontFamily = "Consolas" };
+        writer.CodeEditorAppearance.Should().Be(CodeEditorAppearance.Default);
+        writer.CodeEditorAppearance = CodeEditorAppearance.Default with { FontSize = 14, FontFamily = "Consolas" };
         writer.PreviewAppearance = PreviewAppearance.Default with { FontSize = 20 };
         writer.Save();
 
         SettingsStore reader = new(path);
-        reader.CodeViewAppearance.FontSize.Should().Be(14);
-        reader.CodeViewAppearance.FontFamily.Should().Be("Consolas");
+        reader.CodeEditorAppearance.FontSize.Should().Be(14);
+        reader.CodeEditorAppearance.FontFamily.Should().Be("Consolas");
         reader.PreviewAppearance.FontSize.Should().Be(20);
 
         reader.ClearAppearanceSettings();
-        reader.CodeViewAppearance.Should().Be(CodeViewAppearance.Default);
+        reader.CodeEditorAppearance.Should().Be(CodeEditorAppearance.Default);
         reader.PreviewAppearance.Should().Be(PreviewAppearance.Default);
     }
 
@@ -453,12 +453,12 @@ public sealed class SettingsStoreTests
         string path = dir.Combine("settings.xml");
 
         SettingsStore writer = new(path);
-        writer.CodeViewExtendedHighlighting.Should().BeTrue();
-        writer.CodeViewExtendedHighlighting = false;
+        writer.CodeEditorExtendedHighlighting.Should().BeTrue();
+        writer.CodeEditorExtendedHighlighting = false;
         writer.Save();
 
         SettingsStore reader = new(path);
-        reader.CodeViewExtendedHighlighting.Should().BeFalse();
+        reader.CodeEditorExtendedHighlighting.Should().BeFalse();
     }
 
     [Fact]

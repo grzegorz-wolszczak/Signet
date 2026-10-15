@@ -1123,7 +1123,7 @@ public sealed class MainWindowViewModelTests
 
         toggle.IsCheckable.Should().BeTrue();
         toggle.IsChecked.Should().BeTrue();
-        tab.WordWrap.Should().BeTrue("Code View wraps lines by default");
+        tab.WordWrap.Should().BeTrue("Code Editor wraps lines by default");
 
         toggle.Execute(null);
 
@@ -1358,7 +1358,7 @@ public sealed class MainWindowViewModelTests
     }
 
     /// <summary>
-    /// Scope: Book Browser shortcuts must not be window KeyBindings, otherwise e.g. F2 in Code View
+    /// Scope: Book Browser shortcuts must not be window KeyBindings, otherwise e.g. F2 in Code Editor
     /// would start a file rename. They go to a separate list that the panel registers itself.
     /// </summary>
     [Fact]
@@ -1373,16 +1373,16 @@ public sealed class MainWindowViewModelTests
 
     /// <summary>
     /// The code editor actions are not window KeyBindings either: the code tab views bind them, so their shortcuts work
-    /// only in Code View (and the same keys may do something else in a panel).
+    /// only in Code Editor (and the same keys may do something else in a panel).
     /// </summary>
     [Fact]
     public void Code_editor_shortcuts_are_bound_by_the_code_tabs_not_the_window()
     {
         MainWindowViewModel sut = New();
 
-        sut.ShortcutActions.Should().NotContain(a => AppActionIds.IsCodeViewAction(a.Id));
-        sut.CodeViewShortcutActions.Should().OnlyContain(a => AppActionIds.IsCodeViewAction(a.Id));
-        sut.CodeViewShortcutActions.Select(a => a.Id).Should().Contain(new[] { AppActionIds.RenameClass, AppActionIds.FindUsages });
+        sut.ShortcutActions.Should().NotContain(a => AppActionIds.IsCodeEditorAction(a.Id));
+        sut.CodeEditorShortcutActions.Should().OnlyContain(a => AppActionIds.IsCodeEditorAction(a.Id));
+        sut.CodeEditorShortcutActions.Select(a => a.Id).Should().Contain(new[] { AppActionIds.RenameClass, AppActionIds.FindUsages });
         sut.ShortcutActions.Should().Contain(a => a.Id == AppActionIds.Save);
     }
 

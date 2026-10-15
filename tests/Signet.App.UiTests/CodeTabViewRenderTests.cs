@@ -25,7 +25,7 @@ using Xunit;
 namespace Signet.App.UiTests;
 
 /// <summary>
-/// Headless render test of the Code View tab: the <c>TextEditor</c> control is hosted on its own
+/// Headless render test of the Code Editor tab: the <c>TextEditor</c> control is hosted on its own
 /// (outside <c>DocumentDock</c>, which hangs tab rendering under headless; see
 /// <see cref="WindowRenderTests"/>).
 /// </summary>
@@ -108,7 +108,7 @@ public sealed class CodeTabViewRenderTests
     private static (Window Window, CodeTabViewModel Vm) ShowCodeTab(string xhtml, bool extended = true)
     {
         (SettingsStore settings, SpellChecker spellChecker) = NewSpellChecker();
-        settings.CodeViewExtendedHighlighting = extended;
+        settings.CodeEditorExtendedHighlighting = extended;
         string dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"signet-uitests-{System.Guid.NewGuid():N}");
         System.IO.Directory.CreateDirectory(dir);
         string path = System.IO.Path.Combine(dir, "Section0001.xhtml");
@@ -161,7 +161,7 @@ public sealed class CodeTabViewRenderTests
 
             ForegroundOfFirstElement(window, 1).Should().Be(Color.Parse("#569CD6"), "the tag color of Signet Dark");
             ((ISolidColorBrush)editor.Background!).Color.Should().Be(Color.Parse("#1E1E1E"));
-            editor.TextArea.LeftMargins.OfType<Signet.App.CodeView.ThemedLineNumberMargin>().Single()
+            editor.TextArea.LeftMargins.OfType<Signet.App.CodeEditor.ThemedLineNumberMargin>().Single()
                 .Background.Should().BeNull("Signet Dark gives the line numbers no background of their own");
         }
         finally
@@ -304,7 +304,7 @@ public sealed class CodeTabViewRenderTests
         {
             UseThemeFonts = true,
             Fonts = System.Collections.Immutable.ImmutableDictionary<string, ThemeFont>.Empty
-                .Add(ThemeFontKeys.CodeViewEditor, new ThemeFont("DejaVu Sans Mono", 21)),
+                .Add(ThemeFontKeys.CodeEditorText, new ThemeFont("DejaVu Sans Mono", 21)),
         };
         try
         {
@@ -407,15 +407,15 @@ public sealed class CodeTabViewRenderTests
     }
 
     /// <summary>
-    /// Regression: the Code View font family and size from Preferences (Appearance → Code View)
+    /// Regression: the Code Editor font family and size from Preferences (Appearance → Code Editor)
     /// must reach the editor. <c>CodeTabView</c> used to hardcode the size and family, so the
     /// setting was saved to the file but had no effect.
     /// </summary>
     [AvaloniaFact]
-    public void Code_view_font_family_and_size_come_from_the_appearance_settings()
+    public void Code_editor_font_family_and_size_come_from_the_appearance_settings()
     {
         (SettingsStore settings, SpellChecker spellChecker) = NewSpellChecker();
-        settings.CodeViewAppearance = settings.CodeViewAppearance with
+        settings.CodeEditorAppearance = settings.CodeEditorAppearance with
         {
             FontFamily = "Consolas",
             FontSize = 21,
@@ -495,7 +495,7 @@ public sealed class CodeTabViewRenderTests
     }
 
     /// <summary>
-    /// Regression: a right click in Code View showed no menu when there was no misspelled word
+    /// Regression: a right click in Code Editor showed no menu when there was no misspelled word
     /// under the caret (the only context menu was the spelling menu, cancelled in that case).
     /// The menu now always has the full default layout.
     /// </summary>
@@ -525,20 +525,20 @@ public sealed class CodeTabViewRenderTests
         menu.IsOpen.Should().BeTrue();
         string[] headers = menu.Items.OfType<MenuItem>().Select(i => (string)i.Header!).ToArray();
         headers.Should().Equal(
-            Signet.App.Resources.Strings.Get("CodeViewMenu_Clips"),
-            Signet.App.Resources.Strings.Get("CodeViewMenu_AddToClips"),
-            Signet.App.Resources.Strings.Get("CodeViewMenu_ToggleLineWrapMode"),
-            Signet.App.Resources.Strings.Get("CodeViewMenu_GoToLinkOrStyle"),
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_Clips"),
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_AddToClips"),
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_ToggleLineWrapMode"),
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_GoToLinkOrStyle"),
             CodeTabViewModel.MergeContentTextFor(null),
-            Signet.App.Resources.Strings.Get("CodeViewMenu_MarkSelectedText"),
-            Signet.App.Resources.Strings.Get("CodeViewMenu_ReformatHtml"),
-            Signet.App.Resources.Strings.Get("CodeViewMenu_Undo"),
-            Signet.App.Resources.Strings.Get("CodeViewMenu_Redo"),
-            Signet.App.Resources.Strings.Get("CodeViewMenu_Cut"),
-            Signet.App.Resources.Strings.Get("CodeViewMenu_Copy"),
-            Signet.App.Resources.Strings.Get("CodeViewMenu_Paste"),
-            Signet.App.Resources.Strings.Get("CodeViewMenu_Delete"),
-            Signet.App.Resources.Strings.Get("CodeViewMenu_SelectAll"));
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_MarkSelectedText"),
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_ReformatHtml"),
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_Undo"),
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_Redo"),
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_Cut"),
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_Copy"),
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_Paste"),
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_Delete"),
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_SelectAll"));
         menu.Close();
     }
 
@@ -568,7 +568,7 @@ public sealed class CodeTabViewRenderTests
 
         ContextMenu menu = editor.ContextMenu!;
         menu.Items.OfType<MenuItem>().Select(i => (string)i.Header!)
-            .Should().Contain(Signet.App.Resources.Strings.Get("CodeViewMenu_RenameClass"));
+            .Should().Contain(Signet.App.Resources.Strings.Get("CodeEditorMenu_RenameClass"));
         menu.Close();
     }
 
@@ -604,8 +604,8 @@ public sealed class CodeTabViewRenderTests
         ContextMenu menu = editor.ContextMenu!;
         MenuItem Item(string key) =>
             menu.Items.OfType<MenuItem>().Single(i => (string?)i.Header == Signet.App.Resources.Strings.Get(key));
-        Item("CodeViewMenu_FindUsages").InputGesture.Should().Be(host.Gestures[AppActionIds.FindUsages]);
-        Item("CodeViewMenu_RenameClass").InputGesture.Should().BeNull("Rename Class has no shortcut by default");
+        Item("CodeEditorMenu_FindUsages").InputGesture.Should().Be(host.Gestures[AppActionIds.FindUsages]);
+        Item("CodeEditorMenu_RenameClass").InputGesture.Should().BeNull("Rename Class has no shortcut by default");
         menu.Close();
     }
 
@@ -638,7 +638,7 @@ public sealed class CodeTabViewRenderTests
 
         ContextMenu menu = editor.ContextMenu!;
         menu.Items.OfType<MenuItem>().Select(i => (string)i.Header!)
-            .Should().Contain(Signet.App.Resources.Strings.Get("CodeViewMenu_RenameClass"));
+            .Should().Contain(Signet.App.Resources.Strings.Get("CodeEditorMenu_RenameClass"));
         menu.Close();
     }
 
@@ -682,7 +682,7 @@ public sealed class CodeTabViewRenderTests
 
         editor.Select(start, end - start);
         MenuItem enabled = MergeItem();
-        enabled.Header.Should().Be(Signet.App.Resources.Strings.Format("CodeViewMenu_MergeContentCount", "p", 2));
+        enabled.Header.Should().Be(Signet.App.Resources.Strings.Format("CodeEditorMenu_MergeContentCount", "p", 2));
         enabled.IsEnabled.Should().BeTrue();
 
         editor.Select(start + 3, 1); // "a": both ends in one paragraph
@@ -726,7 +726,7 @@ public sealed class CodeTabViewRenderTests
             Dispatcher.UIThread.RunJobs();
             ContextMenu menu = editor.ContextMenu!;
             MenuItem submenu = menu.Items.OfType<MenuItem>()
-                .Single(i => (string)i.Header! == Signet.App.Resources.Strings.Get("CodeViewMenu_Footnotes"));
+                .Single(i => (string)i.Header! == Signet.App.Resources.Strings.Get("CodeEditorMenu_Footnotes"));
             MenuItem[] items = submenu.Items.OfType<MenuItem>().ToArray();
             menu.Close();
             enabled = items.Select(i => i.IsEnabled).ToArray();
@@ -739,23 +739,23 @@ public sealed class CodeTabViewRenderTests
                 Signet.Core.Footnotes.FootnoteError.InsideLink, true, ForeignCount: 2),
             out bool[] onFootnoteEnabled);
         onFootnote.Should().Equal(
-            Signet.App.Resources.Strings.Get("CodeViewMenu_FootnoteEdit"),
-            Signet.App.Resources.Strings.Get("CodeViewMenu_FootnoteGoToNote"),
-            Signet.App.Resources.Strings.Get("CodeViewMenu_FootnotesRenumber"),
-            Signet.App.Resources.Strings.Get("CodeViewMenu_FootnotesConvert"));
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnoteEdit"),
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnoteGoToNote"),
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnotesRenumber"),
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnotesConvert"));
         onFootnoteEnabled.Should().Equal(true, true, true, true);
 
         string[] blocked = Footnotes(new FootnoteMenuState(null, Signet.Core.Footnotes.FootnoteError.InsideTag, false), out bool[] blockedEnabled);
         blocked.Should().Equal(
             Signet.App.Resources.Strings.Format(
-                "CodeViewMenu_FootnoteAddBlocked",
+                "CodeEditorMenu_FootnoteAddBlocked",
                 Signet.App.ViewModels.FootnoteViewModel.ErrorText(Signet.Core.Footnotes.FootnoteError.InsideTag)),
-            Signet.App.Resources.Strings.Get("CodeViewMenu_FootnotesRenumber"),
-            Signet.App.Resources.Strings.Get("CodeViewMenu_FootnotesConvert"));
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnotesRenumber"),
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnotesConvert"));
         blockedEnabled.Should().Equal(false, false, false);
 
         string[] free = Footnotes(new FootnoteMenuState(null, Signet.Core.Footnotes.FootnoteError.None, true), out bool[] freeEnabled);
-        free[0].Should().Be(Signet.App.Resources.Strings.Get("CodeViewMenu_FootnoteAdd"));
+        free[0].Should().Be(Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnoteAdd"));
         freeEnabled.Should().Equal(true, true, false);
     }
 
@@ -782,7 +782,7 @@ public sealed class CodeTabViewRenderTests
         html.InitialLoad();
         var vm = new CodeTabViewModel(new TabManagerModel().OpenResource(html), new StatusBarService(), settings, spellChecker)
         {
-            Host = new FakeHost { CodeViewShortcutActions = new[] { registry.Require(AppActionIds.RenameClass) } },
+            Host = new FakeHost { CodeEditorShortcutActions = new[] { registry.Require(AppActionIds.RenameClass) } },
         };
         TextBox other = new();
         DockPanel panel = new();
@@ -807,7 +807,7 @@ public sealed class CodeTabViewRenderTests
 
     private sealed class FakeHost : ICodeTabHost
     {
-        public System.Collections.Generic.IReadOnlyList<AppAction> CodeViewShortcutActions { get; set; } =
+        public System.Collections.Generic.IReadOnlyList<AppAction> CodeEditorShortcutActions { get; set; } =
             System.Array.Empty<AppAction>();
 
         public Signet.Core.MiscEditors.ClipEditorNode ClipLibraryRoot { get; } = new Signet.Core.MiscEditors.ClipEditorModel().Root;

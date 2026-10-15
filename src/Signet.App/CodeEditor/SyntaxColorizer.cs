@@ -10,10 +10,10 @@ using Signet.App.Infrastructure;
 using Signet.Core.Misc;
 using Signet.Core.Themes;
 
-namespace Signet.App.CodeView;
+namespace Signet.App.CodeEditor;
 
 /// <summary>
-/// Common part of Code View colorizing with line-by-line highlighters: gives every <see cref="SyntaxSpan"/> the look its
+/// Common part of Code Editor colorizing with line-by-line highlighters: gives every <see cref="SyntaxSpan"/> the look its
 /// theme key has (<see cref="SyntaxKeys"/>: text color, background, bold, italic) and remembers the spans that need
 /// more than the text can carry — the ones needing attention (<see cref="SyntaxSpan.Issue"/>: errors, links, for the
 /// squiggle and the hover tooltips) and the ones whose key has an effect (a line, a wave, a frame) — for

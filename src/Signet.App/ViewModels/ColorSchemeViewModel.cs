@@ -87,8 +87,8 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
     /// <summary>The page of the keys of <paramref name="page"/>.</summary>
     public ColorSchemePageViewModel PageFor(ThemePage page) => Pages[(int)page];
 
-    /// <summary>Whether Code View uses the extended highlighting (in the draft of the window) — the previews follow it.</summary>
-    public bool ExtendedHighlighting => _settings.CodeViewExtendedHighlighting;
+    /// <summary>Whether Code Editor uses the extended highlighting (in the draft of the window) — the previews follow it.</summary>
+    public bool ExtendedHighlighting => _settings.CodeEditorExtendedHighlighting;
 
     /// <summary>The font of the code previews of the pages (in the draft of the window, like every setting).</summary>
     public ColorSchemePreviewAppearance PreviewFont

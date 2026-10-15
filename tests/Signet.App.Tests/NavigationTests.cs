@@ -94,7 +94,7 @@ public sealed class NavigationTests
     }
 
     [Fact]
-    public void Zoom_targets_the_code_view_by_default_and_not_after_focusing_preview()
+    public void Zoom_targets_the_code_editor_by_default_and_not_after_focusing_preview()
     {
         using TempDir temp = new();
         (MainWindowViewModel sut, Book book) = Loaded(temp, CorpusPaths.Epub3Media);

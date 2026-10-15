@@ -3,7 +3,7 @@
              xmlns:vm="using:Signet.App.ViewModels"
              xmlns:infra="using:Signet.App.Infrastructure"
              xmlns:loc="using:Signet.App.Resources"
-             xmlns:cv="using:Signet.App.CodeView"
+             xmlns:cv="using:Signet.App.CodeEditor"
              x:Class="Signet.App.Views.FontsPageView"
              x:DataType="vm:FontPageViewModel">
   <!-- A "Fonts" page of the Preferences window, as Rider's Editor › Font: the font settings on the left, the preview of
@@ -31,7 +31,7 @@
         </DockPanel>
         <Panel>
           <!-- A sample of text, in the colors of the place the font is used in, or a sample of code, highlighted as in
-               Code View with line numbers: which one shows, the code sample and the wrapping are set in code. -->
+               Code Editor with line numbers: which one shows, the code sample and the wrapping are set in code. -->
           <ScrollViewer x:Name="PlainPreview" HorizontalScrollBarVisibility="Auto">
             <Border x:Name="PreviewSurface" Padding="6,4" CornerRadius="3" HorizontalAlignment="Left" VerticalAlignment="Top"
                     Background="{Binding Active.PreviewBackground, Converter={x:Static infra:ColorConverters.ToBrush}, FallbackValue={x:Null}}">

@@ -5,7 +5,7 @@ using Xunit;
 namespace Signet.Core.Tests.Search;
 
 /// <summary>
-/// Tests for <see cref="CodeViewSearch"/> — Code View search behaviour in "current file" mode.
+/// Tests for <see cref="CodeEditorSearch"/> — Code Editor search behaviour in "current file" mode.
 /// </summary>
 public sealed class FindReplaceCurrentFileTests
 {
@@ -20,7 +20,7 @@ public sealed class FindReplaceCurrentFileTests
     [Fact]
     public void FindNext_Down_SelectsFirstMatchAfterCaret()
     {
-        var search = new CodeViewSearch();
+        var search = new CodeEditorSearch();
         const string text = "one two one two";
 
         FindResult result = search.FindNext(text, 0, 0, 0, Normal("one"), SearchDirection.Down, wrap: false);
@@ -36,7 +36,7 @@ public sealed class FindReplaceCurrentFileTests
     [Fact]
     public void FindNext_Up_SelectsPreviousMatch()
     {
-        var search = new CodeViewSearch();
+        var search = new CodeEditorSearch();
         const string text = "aa bb aa bb aa";
 
         FindResult result = search.FindNext(text, 12, 14, 12, Normal("aa"), SearchDirection.Up, wrap: false);
@@ -47,7 +47,7 @@ public sealed class FindReplaceCurrentFileTests
     [Fact]
     public void FindNext_NoWrap_ReturnsNotFoundAtEnd()
     {
-        var search = new CodeViewSearch();
+        var search = new CodeEditorSearch();
         const string text = "abc abc";
 
         FindResult result = search.FindNext(text, 4, 7, 7, Normal("abc"), SearchDirection.Down, wrap: false);
@@ -58,7 +58,7 @@ public sealed class FindReplaceCurrentFileTests
     [Fact]
     public void FindNext_Wrap_FindsFromStartAndReportsWrapped()
     {
-        var search = new CodeViewSearch();
+        var search = new CodeEditorSearch();
         const string text = "abc abc";
 
         FindResult result = search.FindNext(text, 4, 7, 7, Normal("abc"), SearchDirection.Down, wrap: true);
@@ -71,7 +71,7 @@ public sealed class FindReplaceCurrentFileTests
     [Fact]
     public void FindNext_Normal_IsCaseInsensitive_CaseSensitiveIsNot()
     {
-        var search = new CodeViewSearch();
+        var search = new CodeEditorSearch();
         const string text = "Hello HELLO hello";
 
         search.FindNext(text, 0, 0, 0, Normal("hello"), SearchDirection.Down, false)
@@ -84,7 +84,7 @@ public sealed class FindReplaceCurrentFileTests
     [Fact]
     public void FindNext_Regex_Matches()
     {
-        var search = new CodeViewSearch();
+        var search = new CodeEditorSearch();
         const string text = "id=12, id=345, id=6";
 
         FindResult result = search.FindNext(text, 0, 0, 0, @"id=(\d+)", SearchDirection.Down, false);
@@ -97,14 +97,14 @@ public sealed class FindReplaceCurrentFileTests
     [Fact]
     public void Count_Wrap_CountsAllMatches()
     {
-        var search = new CodeViewSearch();
+        var search = new CodeEditorSearch();
         search.Count("a a a a", 3, Normal("a"), SearchDirection.Down, wrap: true).Should().Be(4);
     }
 
     [Fact]
     public void Count_NoWrap_Down_CountsFromCaret()
     {
-        var search = new CodeViewSearch();
+        var search = new CodeEditorSearch();
         // "a a a a" — caret at offset 3 (after the second 'a'); 2 remain going down.
         search.Count("a a a a", 3, Normal("a"), SearchDirection.Down, wrap: false).Should().Be(2);
     }
@@ -114,7 +114,7 @@ public sealed class FindReplaceCurrentFileTests
     [Fact]
     public void RememberMatch_enables_ReplaceSelected_with_backreferences()
     {
-        var search = new CodeViewSearch();
+        var search = new CodeEditorSearch();
         const string text = "x <b>cat</b> y";
         string pattern = SearchRegexBuilder.BuildSearchRegex(
             "<b>(\\w+)</b>", SearchMode.Regex, SearchOptions.None, false);
@@ -130,7 +130,7 @@ public sealed class FindReplaceCurrentFileTests
     [Fact]
     public void RememberMatch_rejects_a_range_that_is_not_exactly_a_match()
     {
-        var search = new CodeViewSearch();
+        var search = new CodeEditorSearch();
         search.FindNext("cat cat", 0, 0, 0, Normal("cat"), SearchDirection.Down, false);
 
         search.RememberMatch("cat cat", Normal("cat"), 1, 4).Should().BeFalse();
@@ -143,7 +143,7 @@ public sealed class FindReplaceCurrentFileTests
     [Fact]
     public void ReplaceSelected_RequiresPriorFindWithSamePattern()
     {
-        var search = new CodeViewSearch();
+        var search = new CodeEditorSearch();
         const string text = "cat cat";
 
         // Without a prior Find — no replacement.
@@ -162,7 +162,7 @@ public sealed class FindReplaceCurrentFileTests
     [Fact]
     public void ReplaceSelected_Regex_ExpandsBackreferences()
     {
-        var search = new CodeViewSearch();
+        var search = new CodeEditorSearch();
         const string text = "name: Smith, John";
         const string pattern = @"(\w+), (\w+)";
 
@@ -176,7 +176,7 @@ public sealed class FindReplaceCurrentFileTests
     [Fact]
     public void ReplaceSelected_SecondCallWithoutFind_Fails()
     {
-        var search = new CodeViewSearch();
+        var search = new CodeEditorSearch();
         const string text = "x x x";
 
         FindResult found = search.FindNext(text, 0, 0, 0, Normal("x"), SearchDirection.Down, false);
@@ -193,7 +193,7 @@ public sealed class FindReplaceCurrentFileTests
     [Fact]
     public void ReplaceAll_Wrap_ReplacesEveryMatch()
     {
-        var search = new CodeViewSearch();
+        var search = new CodeEditorSearch();
 
         ReplaceAllResult result = search.ReplaceAll(
             "a-a-a-a", 0, Normal("a"), "b", SearchDirection.Down, wrap: true);
@@ -205,7 +205,7 @@ public sealed class FindReplaceCurrentFileTests
     [Fact]
     public void ReplaceAll_Regex_WithBackreferences()
     {
-        var search = new CodeViewSearch();
+        var search = new CodeEditorSearch();
         const string text = "<b>x</b> <b>y</b>";
 
         ReplaceAllResult result = search.ReplaceAll(
@@ -218,7 +218,7 @@ public sealed class FindReplaceCurrentFileTests
     [Fact]
     public void ReplaceAll_NoWrap_Down_OnlyFromCaret()
     {
-        var search = new CodeViewSearch();
+        var search = new CodeEditorSearch();
         const string text = "a a a a";
 
         // Caret at offset 4 — matches ending before it (0-1, 2-3) are skipped.
@@ -233,7 +233,7 @@ public sealed class FindReplaceCurrentFileTests
     [Fact]
     public void MarkSelection_RestrictsFindToRegion()
     {
-        var search = new CodeViewSearch();
+        var search = new CodeEditorSearch();
         const string text = "cat cat cat cat";
 
         search.MarkSelection(4, 11).Should().BeTrue(); // covers the second and third "cat"
@@ -254,7 +254,7 @@ public sealed class FindReplaceCurrentFileTests
     [Fact]
     public void ReplaceAll_RestrictedToMarkedRegion()
     {
-        var search = new CodeViewSearch();
+        var search = new CodeEditorSearch();
         const string text = "cat cat cat cat";
 
         search.MarkSelection(4, 11);
@@ -269,7 +269,7 @@ public sealed class FindReplaceCurrentFileTests
     [Fact]
     public void Count_RestrictedToMarkedRegion()
     {
-        var search = new CodeViewSearch();
+        var search = new CodeEditorSearch();
         const string text = "cat cat cat cat";
 
         search.MarkSelection(4, 11);
@@ -279,7 +279,7 @@ public sealed class FindReplaceCurrentFileTests
     [Fact]
     public void NotifyTextChanged_ClearsMarkedRegionAndLastMatch()
     {
-        var search = new CodeViewSearch();
+        var search = new CodeEditorSearch();
         const string text = "x x x";
 
         search.MarkSelection(0, 3);
@@ -295,7 +295,7 @@ public sealed class FindReplaceCurrentFileTests
     [Fact]
     public void MarkSelection_EmptySelection_ClearsRegion()
     {
-        var search = new CodeViewSearch();
+        var search = new CodeEditorSearch();
         search.MarkSelection(2, 8);
         search.MarkSelection(5, 5).Should().BeFalse();
         search.Marked.IsMarked.Should().BeFalse();
@@ -304,7 +304,7 @@ public sealed class FindReplaceCurrentFileTests
     [Fact]
     public void InvalidRegex_FindReturnsNotFound_CountReturnsZero()
     {
-        var search = new CodeViewSearch();
+        var search = new CodeEditorSearch();
         search.FindNext("abc", 0, 0, 0, "(unclosed", SearchDirection.Down, true).Found.Should().BeFalse();
         search.Count("abc", 0, "(unclosed", SearchDirection.Down, true).Should().Be(0);
     }

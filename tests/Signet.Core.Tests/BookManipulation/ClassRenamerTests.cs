@@ -11,7 +11,7 @@ using Xunit;
 namespace Signet.Core.Tests.BookManipulation;
 
 /// <summary>
-/// Tests of <see cref="ClassRenamer"/> — "Rename Class" from Code View,
+/// Tests of <see cref="ClassRenamer"/> — "Rename Class" from Code Editor,
 /// including the cascade handling: which style sources style which element.
 /// </summary>
 public sealed class ClassRenamerTests

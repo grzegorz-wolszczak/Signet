@@ -6,7 +6,7 @@ using Signet.Core.BookManipulation;
 namespace Signet.App.Views;
 
 /// <summary>
-/// The "Rename Class" window from the Code View context menu: the new
+/// The "Rename Class" window from the Code Editor context menu: the new
 /// class name, the scope (the whole book / the same nesting) and a change counter.
 /// </summary>
 public partial class RenameClassWindow : Window

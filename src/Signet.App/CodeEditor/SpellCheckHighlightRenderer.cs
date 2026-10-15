@@ -5,7 +5,7 @@ using AvaloniaEdit.Rendering;
 using Signet.App.Infrastructure;
 using Signet.Core.Themes;
 
-namespace Signet.App.CodeView;
+namespace Signet.App.CodeEditor;
 
 /// <summary>
 /// Marks every misspelled word (<c>errors.spelling</c>, a red squiggle by default). Many ranges at once (like

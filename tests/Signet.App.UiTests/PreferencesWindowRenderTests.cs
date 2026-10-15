@@ -16,7 +16,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Signet.App.Infrastructure;
 using Signet.App.Input;
 using Signet.App.Actions;
-using Signet.App.CodeView;
+using Signet.App.CodeEditor;
 using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.App.ViewModels;
@@ -50,7 +50,7 @@ public sealed class PreferencesWindowRenderTests
         return tabs;
     }
 
-    // Shows the Fonts tab of an Appearance section ("CodeView" = Appearance › Code View › Fonts) and lays it out.
+    // Shows the Fonts tab of an Appearance section ("CodeEditor" = Appearance › Code Editor › Fonts) and lays it out.
     private static TabControl ShowFontsTab(PreferencesWindow window, string part)
     {
         ShowPage(window, part + "AppearancePage");
@@ -277,7 +277,7 @@ public sealed class PreferencesWindowRenderTests
     // through editing, to cleaning up.
     private static readonly string[] PartsWithFonts =
     {
-        "StartScreen", "BookBrowser", "TableOfContents", "CodeView", "Preview", "FindReplace", "SpecialCharacters",
+        "StartScreen", "BookBrowser", "TableOfContents", "CodeEditor", "Preview", "FindReplace", "SpecialCharacters",
         "Checkpoints", "Validation", "MetadataEditor", "Cleanup", "Footnotes",
     };
 
@@ -300,12 +300,12 @@ public sealed class PreferencesWindowRenderTests
             new[] { general }
                 .Concat(PartsWithFonts.Select(s => Strings.Get("PreferencesWindow_" + s)))
                 .Append(Strings.Get("PreferencesWindow_ColorScheme")));
-        window.Sections.Roots.Should().NotContain(n => n.Title == Strings.Get("PreferencesWindow_CodeView"),
-            "Code View has only a look: it is a section of Appearance");
+        window.Sections.Roots.Should().NotContain(n => n.Title == Strings.Get("PreferencesWindow_CodeEditor"),
+            "Code Editor has only a look: it is a section of Appearance");
         root.Children.Should().OnlyContain(n => n.Title == Strings.Get("PreferencesWindow_ColorScheme") || n.Children.Count == 0,
             "the parts are no sections with subsections: their tabs are inside the page");
 
-        string[] bothTabs = { "CodeView", "Preview" };
+        string[] bothTabs = { "CodeEditor", "Preview" };
         foreach (string part in PartsWithFonts.Prepend("General"))
         {
             string pageName = (part == "General" ? "AppearanceGeneral" : part + "Appearance") + "Page";
@@ -318,10 +318,10 @@ public sealed class PreferencesWindowRenderTests
             headers.Should().Equal(expected, "the tab bar of {0}", part);
         }
 
-        PreferencesSectionNode codeView = root.Children.Single(n => n.Title == Strings.Get("PreferencesWindow_CodeView"));
-        window.Sections.Selected = codeView;
+        PreferencesSectionNode codeEditor = root.Children.Single(n => n.Title == Strings.Get("PreferencesWindow_CodeEditor"));
+        window.Sections.Selected = codeEditor;
         Dispatcher.UIThread.RunJobs();
-        window.FindControl<TextBlock>("Breadcrumb")!.Text.Should().Be(string.Join(" › ", appearance, Strings.Get("PreferencesWindow_CodeView")));
+        window.FindControl<TextBlock>("Breadcrumb")!.Text.Should().Be(string.Join(" › ", appearance, Strings.Get("PreferencesWindow_CodeEditor")));
         window.Close();
     }
 
@@ -581,11 +581,11 @@ public sealed class PreferencesWindowRenderTests
         HyperlinkButton[] links = window.GetVisualDescendants().OfType<HyperlinkButton>().Where(l => l.IsEffectivelyVisible).ToArray();
         links.Select(l => l.Content).Should().Equal(appearance.Children.Select(n => n.Title));
 
-        links.Single(l => Equals(l.Content, Strings.Get("PreferencesWindow_CodeView"))).RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        links.Single(l => Equals(l.Content, Strings.Get("PreferencesWindow_CodeEditor"))).RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
 
         window.Sections.Selected!.Path.Should().Be(
-            Strings.Get("PreferencesWindow_Appearance") + " › " + Strings.Get("PreferencesWindow_CodeView"));
+            Strings.Get("PreferencesWindow_Appearance") + " › " + Strings.Get("PreferencesWindow_CodeEditor"));
         window.Close();
     }
 
@@ -909,26 +909,26 @@ public sealed class PreferencesWindowRenderTests
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
         window.Show();
         Dispatcher.UIThread.RunJobs();
-        ShowFontsTab(window, "CodeView");
+        ShowFontsTab(window, "CodeEditor");
 
         FontsPageView page = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible);
         FontSettingView[] rows = page.GetVisualDescendants().OfType<FontSettingView>().ToArray();
-        rows.Select(r => r.Name).Should().Equal("FontCodeViewEditor", "FontOpenTagHint");
+        rows.Select(r => r.Name).Should().Equal("FontCodeEditorText", "FontOpenTagHint");
         CodePreviewEditor code = page.FindControl<CodePreviewEditor>("CodePreview")!;
         TextBlock preview = page.FindControl<TextBlock>("PreviewText")!;
         code.IsVisible.Should().BeTrue("the editor font is previewed as code");
         page.FindControl<ScrollViewer>("PlainPreview")!.IsVisible.Should().BeFalse();
         code.Text.Should().Be(Strings.Get("FontPreview_Code"));
-        code.FontFamily.Name.Should().Be(vm.CodeView.FontFamily);
-        code.FontSize.Should().Be(vm.CodeView.FontSize);
+        code.FontFamily.Name.Should().Be(vm.CodeEditor.FontFamily);
+        code.FontSize.Should().Be(vm.CodeEditor.FontSize);
         code.TextArea.LeftMargins.OfType<ThemedLineNumberMargin>().Should().ContainSingle("line numbers in the colors of the theme");
         code.TextArea.TextView.LineTransformers.Should().Contain(t => t.GetType().Name.StartsWith("LineStateSyntaxColorizer"),
-            "the sample is highlighted as in Code View");
+            "the sample is highlighted as in Code Editor");
 
         rows[1].FindControl<ComboBox>("FamilyBox")!.Focus();
         Dispatcher.UIThread.RunJobs();
 
-        vm.CodeViewFonts.Active!.Key.Should().Be("OpenTagHint");
+        vm.CodeEditorFonts.Active!.Key.Should().Be("OpenTagHint");
         page.FindControl<ScrollViewer>("PlainPreview")!.IsVisible.Should().BeTrue();
         code.IsVisible.Should().BeFalse();
         preview.Text.Should().StartWith(Strings.Get("FontPreview_OpenTagHint"));
@@ -951,7 +951,7 @@ public sealed class PreferencesWindowRenderTests
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
         window.Show();
         Dispatcher.UIThread.RunJobs();
-        ShowFontsTab(window, "CodeView");
+        ShowFontsTab(window, "CodeEditor");
         FontsPageView page = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible);
         CodePreviewEditor code = page.FindControl<CodePreviewEditor>("CodePreview")!;
         TextBlock preview = page.FindControl<TextBlock>("PreviewText")!;
@@ -961,7 +961,7 @@ public sealed class PreferencesWindowRenderTests
         page.FindControl<CheckBox>("WrapPreviewBox")!.IsChecked = true;
         Dispatcher.UIThread.RunJobs();
 
-        vm.CodeViewFonts.WrapPreview.Should().BeTrue();
+        vm.CodeEditorFonts.WrapPreview.Should().BeTrue();
         code.WordWrap.Should().BeTrue();
         preview.TextWrapping.Should().Be(TextWrapping.Wrap);
         window.Close();
@@ -979,12 +979,12 @@ public sealed class PreferencesWindowRenderTests
         Dispatcher.UIThread.RunJobs();
         TextBox search = window.FindControl<TextBox>("SectionSearch")!;
 
-        search.Text = Strings.Get("PreferencesWindow_CodeViewEditorFont");
+        search.Text = Strings.Get("PreferencesWindow_CodeEditorTextFont");
         Dispatcher.UIThread.RunJobs();
 
         window.Sections.Selected!.Path.Should().Be(string.Join(
-            " › ", Strings.Get("PreferencesWindow_Appearance"), Strings.Get("PreferencesWindow_CodeView")));
-        window.FindControl<TabControl>("CodeViewAppearanceTabs")!.SelectedItem.Should().BeAssignableTo<TabItem>()
+            " › ", Strings.Get("PreferencesWindow_Appearance"), Strings.Get("PreferencesWindow_CodeEditor")));
+        window.FindControl<TabControl>("CodeEditorAppearanceTabs")!.SelectedItem.Should().BeAssignableTo<TabItem>()
             .Which.Header.Should().Be(Strings.Get("PreferencesWindow_Fonts"), "the hit is on the Fonts tab, which the search shows");
 
         search.Text = Strings.Get("FontPreview_SpecialCharacters").Split('\n')[0].Trim();

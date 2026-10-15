@@ -22,7 +22,7 @@ namespace Signet.App.Views;
 public partial class PreviewView : UserControl
 {
     // A script injected when each document is created: on click it sends the host
-    // "signet-loc:{offset}" of the nearest ancestor with a data-signet-loc attribute (Preview → Code View).
+    // "signet-loc:{offset}" of the nearest ancestor with a data-signet-loc attribute (Preview → Code Editor).
     private const string ClickBridgeScript =
         "(function(){if(window.__signetPreviewBridge)return;window.__signetPreviewBridge=true;"
         + "document.addEventListener('click',function(e){var el=e.target;"
@@ -74,7 +74,7 @@ public partial class PreviewView : UserControl
         }
         catch (Exception)
         {
-            // A backend without startup script support — Preview → Code View sync is inactive, and Ctrl+wheel
+            // A backend without startup script support — Preview → Code Editor sync is inactive, and Ctrl+wheel
             // zooms natively (the zoom bar and the View menu still work).
         }
     }

@@ -4,7 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using Avalonia.Controls;
 using Avalonia.Media;
-using Signet.App.CodeView;
+using Signet.App.CodeEditor;
 using Signet.App.Infrastructure;
 using Signet.App.ViewModels;
 using Signet.Controls.TreeDataGrid;

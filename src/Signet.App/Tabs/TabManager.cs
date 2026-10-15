@@ -61,7 +61,7 @@ public sealed class TabManager : IDisposable
     }
 
     /// <summary>
-    /// Main window services for the Code View context menu — passed to every new code
+    /// Main window services for the Code Editor context menu — passed to every new code
     /// tab (set by <c>MainWindowViewModel</c>).
     /// </summary>
     public ICodeTabHost? CodeTabHost { get; set; }
@@ -203,7 +203,7 @@ public sealed class TabManager : IDisposable
     public void Back() => _model.Back();
 
     /// <summary>
-    /// Saves the session of open tabs (including the caret position of every Code View tab)
+    /// Saves the session of open tabs (including the caret position of every Code Editor tab)
     /// to the settings (without persisting to disk).
     /// </summary>
     public void CaptureSession(SettingsStore settings)
@@ -244,7 +244,7 @@ public sealed class TabManager : IDisposable
     }
 
     /// <summary>
-    /// In-memory snapshot of the open tabs (order, active one, caret positions of Code View tabs)
+    /// In-memory snapshot of the open tabs (order, active one, caret positions of Code Editor tabs)
     /// — to be restored after the book is replaced with a checkpoint state.
     /// </summary>
     public TabSnapshot CaptureSnapshot()
@@ -310,14 +310,14 @@ public sealed class TabManager : IDisposable
     private IDocumentDock? DocumentDock => _dockFactory.DocumentDock;
 
     /// <summary>
-    /// Creates the proper tab view model for a resource. Code View is used for
-    /// (X)HTML / XML / NCX / OPF / plain text / JS / JSON / CSS / SVG (Code View in XML mode);
+    /// Creates the proper tab view model for a resource. Code Editor is used for
+    /// (X)HTML / XML / NCX / OPF / plain text / JS / JSON / CSS / SVG (Code Editor in XML mode);
     /// Image, Font and Audio / Video / PDF get their own tabs. A placeholder remains only for
     /// unrecognized resources.
     /// </summary>
     private ContentTabViewModel CreateTab(OpenTab tab)
     {
-        bool codeView = tab.Resource is TextResource && tab.Kind is
+        bool codeEditor = tab.Resource is TextResource && tab.Kind is
             ContentTabKind.Flow or
             ContentTabKind.Css or
             ContentTabKind.MiscText or
@@ -327,7 +327,7 @@ public sealed class TabManager : IDisposable
             ContentTabKind.Xml or
             ContentTabKind.Text;
 
-        if (codeView)
+        if (codeEditor)
         {
             var codeTab = new CodeTabViewModel(tab, _statusBar, _settings, _spellChecker)
             {
@@ -359,7 +359,7 @@ public sealed class TabManager : IDisposable
     }
 
     /// <summary>
-    /// Handles Ctrl+click on a class name in Code View: resolves the first matching CSS rule
+    /// Handles Ctrl+click on a class name in Code Editor: resolves the first matching CSS rule
     /// (linked stylesheets, then inline styles) and opens / scrolls to the file containing it.
     /// No effect when no book is loaded, the source tab is not editing an (X)HTML file, or no
     /// rule matches.
@@ -389,7 +389,7 @@ public sealed class TabManager : IDisposable
         OpenResourceAtOffset(target.BookPath, target.Offset);
     }
 
-    // The Code View zoom is shared by all code tabs and persistent (stored in the settings
+    // The Code Editor zoom is shared by all code tabs and persistent (stored in the settings
     // as zoom_text). A change in one tab propagates to the other open ones, and newly
     // opened tabs start from the saved value.
     private void OnCodeTabPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -508,7 +508,7 @@ public sealed class TabManager : IDisposable
     /// <summary>
     /// Opens (or activates) the tab of the given book path and places the caret at <paramref name="offset"/>
     /// — the shared "jump" mechanism used by Jump to CSS class definition and the Live CSS
-    /// Panel (clicking a rule jumps to its declaration in Code View). No effect when the
+    /// Panel (clicking a rule jumps to its declaration in Code Editor). No effect when the
     /// book is not loaded or the book path does not match any resource.
     /// </summary>
     public void OpenResourceAtOffset(string bookPath, int offset)
@@ -676,7 +676,7 @@ public sealed class TabManager : IDisposable
 
 /// <summary>In-memory snapshot of the open tabs (<see cref="TabManager.CaptureSnapshot"/>).</summary>
 /// <param name="Session">Open book paths in order and the active tab.</param>
-/// <param name="CaretOffsets">Caret positions of Code View tabs (book path -&gt; offset).</param>
+/// <param name="CaretOffsets">Caret positions of Code Editor tabs (book path -&gt; offset).</param>
 public sealed record TabSnapshot(TabSession Session, IReadOnlyDictionary<string, int> CaretOffsets);
 
 /// <summary>An edit of a code tab's document (<see cref="TabManager.DocumentEdited"/>).</summary>

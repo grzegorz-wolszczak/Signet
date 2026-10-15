@@ -38,7 +38,7 @@ public sealed class ThemeXmlTests
             .With(ThemeKeys.XhtmlCssComment.Id, ThemeEntry.Inherited);
         theme = theme with
         {
-            Fonts = theme.Fonts.Add("codeView.editor", new ThemeFont("Cascadia Code", 13)).Add("preview.serif", new ThemeFont("Georgia", 0)),
+            Fonts = theme.Fonts.Add("codeEditor.editor", new ThemeFont("Cascadia Code", 13)).Add("preview.serif", new ThemeFont("Georgia", 0)),
         };
 
         Theme read = ThemeXml.FromXml(ThemeXml.ToXml(theme, "0.8.0-202610121510"));

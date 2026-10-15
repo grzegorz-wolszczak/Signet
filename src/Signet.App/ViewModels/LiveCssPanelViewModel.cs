@@ -147,7 +147,7 @@ internal static class LiveCssFormat
 
 /// <summary>
 /// View model of the "Live CSS Panel" window — for the most recently chosen element
-/// (<see cref="MainWindowViewModel.TryResolveLiveCssPanel"/> for the caret of the active Code View tab)
+/// (<see cref="MainWindowViewModel.TryResolveLiveCssPanel"/> for the caret of the active Code Editor tab)
 /// shows the element hierarchy from <c>body</c> down to that element: per level all matching CSS rules from
 /// <see cref="CssCascadeResolver"/>, their specificity, overridden properties and what overrides them.
 /// </summary>

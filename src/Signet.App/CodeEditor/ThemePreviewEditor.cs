@@ -14,11 +14,11 @@ using Signet.App.Infrastructure;
 using Signet.Core.MainUI;
 using Signet.Core.Themes;
 
-namespace Signet.App.CodeView;
+namespace Signet.App.CodeEditor;
 
 /// <summary>
 /// The preview of a page of the theme editor (IntelliJ's <c>SimpleEditorPreview</c>): a read-only editor showing a
-/// <see cref="ThemeSample"/> in the colors of a theme — the syntax through the highlighting of Code View, the other
+/// <see cref="ThemeSample"/> in the colors of a theme — the syntax through the highlighting of Code Editor, the other
 /// keys (the current line, the selection, the search matches, the errors, the lines of a diff…) painted over it. A
 /// click reports the key under the mouse (<see cref="KeyClicked"/>), and <see cref="Blink"/> makes the fragments of a
 /// key blink.
@@ -106,7 +106,7 @@ public sealed class ThemePreviewEditor : TextEditor
     {
         _theme = theme ?? throw new ArgumentNullException(nameof(theme));
         _colorizer?.SetTheme(theme);
-        _textMate?.SetTheme(CodeViewTextMate.ThemeFor(theme));
+        _textMate?.SetTheme(CodeEditorTextMate.ThemeFor(theme));
         EditorTheming.Apply(this, theme);
         TextArea.TextView.InvalidateLayer(KnownLayer.Background);
         TextArea.TextView.Redraw();
@@ -141,7 +141,7 @@ public sealed class ThemePreviewEditor : TextEditor
 
     private void InstallSyntax(ThemeSample sample)
     {
-        CodeViewSyntax syntax = sample.Syntax;
+        CodeEditorSyntax syntax = sample.Syntax;
         if (_colorizer is not null)
         {
             TextArea.TextView.LineTransformers.Remove(_colorizer);
@@ -150,17 +150,17 @@ public sealed class ThemePreviewEditor : TextEditor
 
         _textMate?.Dispose();
         _textMate = null;
-        _colorizer = CodeViewTextMate.CreateColorizer(syntax, sample.IsExtended, ThemeSample.LinkExists, _theme);
+        _colorizer = CodeEditorTextMate.CreateColorizer(syntax, sample.IsExtended, ThemeSample.LinkExists, _theme);
         if (_colorizer is not null)
         {
             // Before the marks, so that a mark (e.g. the selection) wins over the syntax.
             TextArea.TextView.LineTransformers.Insert(0, _colorizer);
         }
-        else if (CodeViewTextMate.ScopeFor(syntax) is { } scope && _attached)
+        else if (CodeEditorTextMate.ScopeFor(syntax) is { } scope && _attached)
         {
             // The document is already the final one (see the TextMate note in CodeTabView.ApplyGrammar).
-            _textMate = this.InstallTextMate(CodeViewTextMate.Options);
-            _textMate.SetTheme(CodeViewTextMate.ThemeFor(_theme));
+            _textMate = this.InstallTextMate(CodeEditorTextMate.Options);
+            _textMate.SetTheme(CodeEditorTextMate.ThemeFor(_theme));
             _textMate.SetGrammar(scope);
         }
     }

@@ -28,7 +28,7 @@ public sealed class FontSettingViewModel : ObservableObject
     private readonly Action _restoreDefault;
 
     /// <summary>Creates the adapter of one font setting.</summary>
-    /// <param name="key">An English identifier (tests, the view's control names), e.g. <c>"CodeViewEditor"</c>.</param>
+    /// <param name="key">An English identifier (tests, the view's control names), e.g. <c>"CodeEditorText"</c>.</param>
     /// <param name="label">The label in the UI language.</param>
     /// <param name="previewText">The sample shown in the preview, fitting the place the font is used in.</param>
     /// <param name="family">The stored typeface and how to change it; <c>null</c> for a size-only setting.</param>
@@ -42,7 +42,7 @@ public sealed class FontSettingViewModel : ObservableObject
     /// <param name="previewBackground">The background of the preview, when the place has its own.</param>
     /// <param name="sizeHint">What the size field means besides a size, e.g. "0 = as the interface text".</param>
     /// <param name="codePreview">For a font of the code editor: whether the preview highlights the sample with the
-    /// extended highlighting (it shows it as Code View does, in the colors of the theme, with line numbers); <c>null</c>
+    /// extended highlighting (it shows it as Code Editor does, in the colors of the theme, with line numbers); <c>null</c>
     /// = the sample is plain text.</param>
     internal FontSettingViewModel(
         string key,
@@ -156,10 +156,10 @@ public sealed class FontSettingViewModel : ObservableObject
     /// <summary>The background of the preview (<c>#rrggbb</c>), when the place the font is used in has its own.</summary>
     public string? PreviewBackground => _previewBackground();
 
-    /// <summary>Whether the preview shows the sample as code: highlighted as in Code View, with line numbers.</summary>
+    /// <summary>Whether the preview shows the sample as code: highlighted as in Code Editor, with line numbers.</summary>
     public bool IsCodePreview => _codePreview is not null;
 
-    /// <summary>Whether the code preview uses the extended highlighting of Code View.</summary>
+    /// <summary>Whether the code preview uses the extended highlighting of Code Editor.</summary>
     public bool CodePreviewExtended => _codePreview?.Invoke() ?? false;
 
     /// <summary>Sets the default typeface and size.</summary>

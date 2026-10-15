@@ -6,7 +6,7 @@ using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AwesomeAssertions;
-using Signet.App.CodeView;
+using Signet.App.CodeEditor;
 using Signet.App.ViewModels;
 using Signet.App.Views;
 using Signet.Core.BookManipulation;

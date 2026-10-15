@@ -9,7 +9,7 @@ using Signet.Core.Resources;
 namespace Signet.App.Views;
 
 /// <summary>
-/// Modeless "View Image" window opened from the Code View context menu: the image fitted to the
+/// Modeless "View Image" window opened from the Code Editor context menu: the image fitted to the
 /// window, an info line and "Done".
 /// </summary>
 /// <remarks>

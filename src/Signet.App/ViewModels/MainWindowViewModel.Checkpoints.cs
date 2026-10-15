@@ -211,7 +211,7 @@ public sealed partial class MainWindowViewModel
         return diff;
     }
 
-    // Double click in the diff window: the current book's file in Code View at the line.
+    // Double click in the diff window: the current book's file in Code Editor at the line.
     private void OpenBookPathAtLine(string bookPath, int line)
     {
         if (_currentBook?.GetFolderKeeper().GetResourceByBookPathNoThrow(bookPath) is not { } resource)

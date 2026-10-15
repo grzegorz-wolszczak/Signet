@@ -291,8 +291,8 @@ public sealed class PreferencesViewModelTests
     public void Open_tag_hint_fields_start_from_settings_and_changes_persist_on_apply()
     {
         using TestHost host = new();
-        host.Settings.CodeViewOpenTagHint = false;
-        host.Settings.CodeViewOpenTagHintDelayMs = 800;
+        host.Settings.CodeEditorOpenTagHint = false;
+        host.Settings.CodeEditorOpenTagHintDelayMs = 800;
         PreferencesViewModel sut = NewOn(host);
 
         sut.OpenTagHint.Should().BeFalse();
@@ -302,8 +302,8 @@ public sealed class PreferencesViewModelTests
         sut.OpenTagHintDelay = 250;
         sut.ApplyCommand.Execute(null);
 
-        host.Settings.CodeViewOpenTagHint.Should().BeTrue();
-        host.Settings.CodeViewOpenTagHintDelayMs.Should().Be(250);
+        host.Settings.CodeEditorOpenTagHint.Should().BeTrue();
+        host.Settings.CodeEditorOpenTagHintDelayMs.Should().Be(250);
     }
 
     [Fact]
@@ -424,12 +424,12 @@ public sealed class PreferencesViewModelTests
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
         vm.PreviewFontStandard = "Georgia";
-        vm.CodeView.FontSize = 31;
+        vm.CodeEditor.FontSize = 31;
 
         vm.RestoreAppearanceDefaultsCommand.Execute(null);
 
         vm.PreviewFontStandard.Should().Be(PreviewAppearance.Default.FontFamilyStandard);
-        vm.CodeView.FontSize.Should().Be(CodeViewAppearance.Default.FontSize);
+        vm.CodeEditor.FontSize.Should().Be(CodeEditorAppearance.Default.FontSize);
     }
 
     [Fact]
@@ -548,7 +548,7 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
-    public async Task Code_view_font_picker_starts_monospace_only_and_applies_family_and_size()
+    public async Task Code_editor_font_picker_starts_monospace_only_and_applies_family_and_size()
     {
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
@@ -559,12 +559,12 @@ public sealed class PreferencesViewModelTests
             return Task.FromResult<FontPickResult?>(new FontPickResult("Consolas", 14));
         };
 
-        await vm.CodeView.ChooseFontCommand.ExecuteAsync(null);
+        await vm.CodeEditor.ChooseFontCommand.ExecuteAsync(null);
 
         asked!.MonospaceOnly.Should().BeTrue();
         vm.ApplyCommand.Execute(null);
-        host.Settings.CodeViewAppearance.FontFamily.Should().Be("Consolas");
-        host.Settings.CodeViewAppearance.FontSize.Should().Be(14);
+        host.Settings.CodeEditorAppearance.FontFamily.Should().Be("Consolas");
+        host.Settings.CodeEditorAppearance.FontSize.Should().Be(14);
     }
 
     [Fact]
@@ -572,12 +572,12 @@ public sealed class PreferencesViewModelTests
     {
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
-        string before = vm.CodeView.FontFamily;
+        string before = vm.CodeEditor.FontFamily;
         vm.FontPicker = _ => Task.FromResult<FontPickResult?>(null);
 
-        await vm.CodeView.ChooseFontCommand.ExecuteAsync(null);
+        await vm.CodeEditor.ChooseFontCommand.ExecuteAsync(null);
 
-        vm.CodeView.FontFamily.Should().Be(before);
+        vm.CodeEditor.FontFamily.Should().Be(before);
     }
 
     [Fact]
@@ -585,13 +585,13 @@ public sealed class PreferencesViewModelTests
     {
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
-        FontPageViewModel page = vm.CodeViewFonts;
+        FontPageViewModel page = vm.CodeEditorFonts;
         FontSettingViewModel hint = page.Fonts.Single(f => f.Key == "OpenTagHint");
-        page.Active!.Key.Should().Be("CodeViewEditor", "the first setting is previewed at the start");
+        page.Active!.Key.Should().Be("CodeEditorText", "the first setting is previewed at the start");
 
         hint.Family.Should().BeEmpty();
         hint.Placeholder.Should().Be(Strings.Get("PreferencesWindow_OpenTagHintFontDefault"));
-        hint.EffectiveFamily.Should().Be(vm.CodeView.FontFamily, "an empty hint font is the editor font");
+        hint.EffectiveFamily.Should().Be(vm.CodeEditor.FontFamily, "an empty hint font is the editor font");
         hint.PreviewBackground.Should().Be(AppTheme.Current.Background(ThemeKeys.HintsOpenTag).ToString(), "the colors of the theme");
         hint.PreviewForeground.Should().Be(AppTheme.Current.Foreground(ThemeKeys.HintsOpenTag).ToString());
 
@@ -608,12 +608,12 @@ public sealed class PreferencesViewModelTests
     {
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
-        FontSettingViewModel editor = vm.CodeViewFonts.Fonts.Single(f => f.Key == "CodeViewEditor");
+        FontSettingViewModel editor = vm.CodeEditorFonts.Fonts.Single(f => f.Key == "CodeEditorText");
         string family = new Fixture().Create<string>();
         List<string?> changed = new();
         editor.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
 
-        vm.CodeView.FontFamily = family;
+        vm.CodeEditor.FontFamily = family;
 
         editor.Family.Should().Be(family);
         changed.Should().NotBeEmpty("the row and the preview are refreshed");
@@ -624,8 +624,8 @@ public sealed class PreferencesViewModelTests
     {
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
-        FontSettingViewModel editor = vm.CodeViewFonts.Fonts.Single(f => f.Key == "CodeViewEditor");
-        FontSettingViewModel hint = vm.CodeViewFonts.Fonts.Single(f => f.Key == "OpenTagHint");
+        FontSettingViewModel editor = vm.CodeEditorFonts.Fonts.Single(f => f.Key == "CodeEditorText");
+        FontSettingViewModel hint = vm.CodeEditorFonts.Fonts.Single(f => f.Key == "OpenTagHint");
 
         vm.ExtendedHighlighting = !vm.ExtendedHighlighting;
 

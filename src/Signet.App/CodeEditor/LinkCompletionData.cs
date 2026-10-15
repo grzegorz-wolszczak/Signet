@@ -5,7 +5,7 @@ using AvaloniaEdit.Document;
 using AvaloniaEdit.Editing;
 using Signet.Core.MainUI;
 
-namespace Signet.App.CodeView;
+namespace Signet.App.CodeEditor;
 
 /// <summary>
 /// Link completion window item: a file href or an anchor id, with a description

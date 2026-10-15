@@ -138,7 +138,7 @@ public static class MultiFileFindEngine
         int caret,
         bool ignoreSelectionOffset)
     {
-        var search = new CodeViewSearch();
+        var search = new CodeEditorSearch();
         FindResult result = search.FindNext(
             file.Text, selectionStart, selectionEnd, caret,
             request.Pattern, request.Direction, wrap: false, ignoreSelectionOffset);

@@ -279,7 +279,7 @@ public sealed partial class KeymapViewModel : ViewModelBase
     {
         KeymapNode node = new(NameOf(action), action.Id, parent.Path is null ? parent.Name : $"{parent.Path} | {parent.Name}")
         {
-            Context = AppActionIds.IsCodeViewAction(action.Id) ? Strings.Get("Keymap_ContextCodeView") : string.Empty,
+            Context = AppActionIds.IsCodeEditorAction(action.Id) ? Strings.Get("Keymap_ContextCodeEditor") : string.Empty,
         };
         node.Update(_shortcuts.Get(action.Id));
         if (!_nodesById.TryGetValue(action.Id, out List<KeymapNode>? nodes))

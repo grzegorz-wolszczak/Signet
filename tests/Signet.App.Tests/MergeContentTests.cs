@@ -58,7 +58,7 @@ public sealed class MergeContentTests
         Select(tab, "<p class=\"a\">Ala", "ma</p>");
 
         action.IsEnabled.Should().BeTrue();
-        string label = Strings.Format("CodeViewMenu_MergeContentCount", "p", 2);
+        string label = Strings.Format("CodeEditorMenu_MergeContentCount", "p", 2);
         action.Text.Should().Be(label);
         tab.MergeContentText.Should().Be(label);
 
