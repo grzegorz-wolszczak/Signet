@@ -249,6 +249,16 @@ public sealed class SettingsStore
         set => Write("ui_compact_density", value);
     }
 
+    /// <summary>
+    /// Whether the font size is shown for a moment in the middle of a code editor while it is changed with Ctrl + mouse
+    /// wheel (on by default).
+    /// </summary>
+    public bool ShowZoomHint
+    {
+        get => ReadBool("show_zoom_hint", true);
+        set => Write("show_zoom_hint", value);
+    }
+
     /// <summary>Whether to use a double-width text cursor.</summary>
     public bool UiDoubleWidthTextCursor
     {
@@ -1154,6 +1164,17 @@ public sealed class SettingsStore
     }
 
     /// <summary>
+    /// The zoom of the code editors of the Preferences window, in pixels on top of each editor's own font size (Ctrl +
+    /// mouse wheel). Window state, not a preference — written outside the Save / Cancel draft, so it survives a restart
+    /// whether or not the changes were saved.
+    /// </summary>
+    public int PreferencesEditorZoom
+    {
+        get => Math.Clamp(ReadIntFrom(MainWindowGroup, "preferences_editor_zoom", 0), -12, 48);
+        set => _file.SetRaw(MainWindowGroup, "preferences_editor_zoom", Math.Clamp(value, -12, 48));
+    }
+
+    /// <summary>
     /// The sizes the user gave the split panes of the other windows (pane name -&gt; width or height in pixels), e.g.
     /// the details of the "Convert Footnotes of Other Origin" dialog. Window state, not a preference.
     /// </summary>
@@ -1722,6 +1743,7 @@ public sealed class SettingsStore
 
     private static IEnumerable<string> AppearanceKeys()
     {
+        yield return "show_zoom_hint";
         yield return "preview_font_family_standard";
         yield return "preview_font_family_serif";
         yield return "preview_font_family_sans_serif";

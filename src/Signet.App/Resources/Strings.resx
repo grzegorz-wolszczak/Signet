@@ -5678,4 +5678,10 @@ Zamknij zakładkę</value>
   <data name="ColorPickerWindow_PaletteCss" xml:space="preserve">
     <value>Kolory CSS</value>
   </data>
+  <data name="PreferencesWindow_ShowZoomHint" xml:space="preserve">
+    <value>Pokazuj rozmiar czcionki podczas zmiany Ctrl + kółko myszy</value>
+  </data>
+  <data name="PreferencesWindow_ShowZoomHintTip" xml:space="preserve">
+    <value>Na ułamek sekundy pokazuje w środku edytora rozmiar czcionki, który właśnie ustawiono.</value>
+  </data>
 </root>

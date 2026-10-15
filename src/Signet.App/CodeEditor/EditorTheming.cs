@@ -17,7 +17,7 @@ namespace Signet.App.CodeEditor;
 /// (<c>editor.text</c>), the current line, the selection and the line numbers with their background
 /// (<c>editor.lineNumbers</c>, through <see cref="ThemedLineNumberMargin"/>).
 /// </summary>
-internal static class EditorTheming
+public static class EditorTheming
 {
     /// <summary>
     /// Replaces the line numbers of AvaloniaEdit with <see cref="ThemedLineNumberMargin"/> (the stock margin cannot have
@@ -77,11 +77,24 @@ internal static class EditorTheming
     private static SolidColorBrush? Brush(ThemeColor? color) => color is { } c ? new SolidColorBrush(ResolvedTheme.ToColor(c)) : null;
 }
 
-/// <summary>AvaloniaEdit's line numbers on a background of their own (<c>editor.lineNumbers</c>).</summary>
+/// <summary>
+/// AvaloniaEdit's line numbers on a background of their own (<c>editor.lineNumbers</c>), with a little room to the right
+/// of the numbers (the stock margin ends right at the last digit, while the left side has some).
+/// </summary>
 public sealed class ThemedLineNumberMargin : LineNumberMargin
 {
+    /// <summary>The room between the numbers and the right edge of the margin (px).</summary>
+    public const double RightPadding = 4;
+
     /// <summary>The background of the line numbers; <c>null</c> = the editor's.</summary>
     public IBrush? Background { get; set; }
+
+    /// <inheritdoc />
+    protected override Size MeasureOverride(Size availableSize)
+    {
+        Size size = base.MeasureOverride(availableSize);
+        return new Size(size.Width + RightPadding, size.Height);
+    }
 
     /// <inheritdoc />
     public override void Render(DrawingContext drawingContext)
@@ -92,6 +105,10 @@ public sealed class ThemedLineNumberMargin : LineNumberMargin
             drawingContext.FillRectangle(background, new Rect(Bounds.Size));
         }
 
-        base.Render(drawingContext);
+        // The stock margin right-aligns the numbers to its edge: shift them left by the padding.
+        using (drawingContext.PushTransform(Matrix.CreateTranslation(-RightPadding, 0)))
+        {
+            base.Render(drawingContext);
+        }
     }
 }

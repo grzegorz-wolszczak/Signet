@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
@@ -31,6 +32,20 @@ public partial class FontsPageView : UserControl
 
     private FontPageViewModel? _page;
     private FontSettingViewModel? _shown;
+
+    /// <summary>Raised when the user has dragged the splitter: <see cref="PreviewWidth"/> is the new width.</summary>
+    public event EventHandler? PreviewWidthChanged;
+
+    /// <summary>The width of the preview in pixels (setting it fixes the width; the settings take the rest).</summary>
+    public double PreviewWidth
+    {
+        get => PreviewColumn.ActualWidth > 0 ? PreviewColumn.ActualWidth : PreviewColumn.Width.Value;
+        set => PreviewColumn.Width = new GridLength(Math.Max(PreviewColumn.MinWidth, value));
+    }
+
+    private ColumnDefinition PreviewColumn => PreviewGrid.ColumnDefinitions[2];
+
+    private void OnSplitterDragCompleted(object? sender, VectorEventArgs e) => PreviewWidthChanged?.Invoke(this, EventArgs.Empty);
 
     /// <summary>Initializes the view.</summary>
     public FontsPageView()

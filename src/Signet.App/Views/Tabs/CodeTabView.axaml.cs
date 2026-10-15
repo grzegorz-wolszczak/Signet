@@ -1033,6 +1033,7 @@ public partial class CodeTabView : UserControl
 
         double step = e.Delta.Y > 0 ? 1.1 : 1 / 1.1;
         _boundViewModel.ZoomFactor = Math.Clamp(_boundViewModel.ZoomFactor * step, 0.5, 4.0);
+        ZoomHint.Show(Editor, string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{Editor.FontSize:0.#} px  ·  {Math.Round(_boundViewModel.ZoomFactor * 100)}%"));
         e.Handled = true;
     }
 
