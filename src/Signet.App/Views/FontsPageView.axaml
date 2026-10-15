@@ -4,13 +4,22 @@
              xmlns:infra="using:Signet.App.Infrastructure"
              xmlns:loc="using:Signet.App.Resources"
              xmlns:cv="using:Signet.App.CodeEditor"
+             x:Name="Page"
              x:Class="Signet.App.Views.FontsPageView"
              x:DataType="vm:FontPageViewModel">
   <!-- A "Fonts" page of the Preferences window, as Rider's Editor › Font: the font settings on the left, the preview of
        the one focused or changed last on the right. -->
-  <Grid ColumnDefinitions="*,*" ColumnSpacing="10" Margin="8">
+  <!-- The splitter between the settings and the preview moves: the preview can be made wider or narrower. -->
+  <Grid Margin="8">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="*" MinWidth="240" />
+      <ColumnDefinition Width="10" />
+      <ColumnDefinition Width="*" MinWidth="160" />
+    </Grid.ColumnDefinitions>
+    <!-- Only the settings are disabled (IsContentEnabled), not the scroll viewer: a page of settings that are switched
+         off (e.g. while the theme does not use its own fonts) can still be scrolled. -->
     <ScrollViewer Grid.Column="0">
-      <StackPanel Spacing="14">
+      <StackPanel x:Name="Settings" Spacing="14" IsEnabled="{Binding #Page.IsContentEnabled}">
         <!-- Filled in code: the rows exist before the page is shown, so the search of the window finds them. -->
         <StackPanel x:Name="Rows" Spacing="14" />
         <HyperlinkButton x:Name="RestoreDefaultsLink" Content="{loc:Loc PreferencesWindow_RestoreFontDefaults}"
@@ -19,7 +28,10 @@
       </StackPanel>
     </ScrollViewer>
 
-    <Border Grid.Column="1" Padding="10" CornerRadius="4" BorderThickness="1"
+    <GridSplitter x:Name="PreviewSplitter" Grid.Column="1" ResizeDirection="Columns" Background="Transparent"
+                  ResizeBehavior="PreviousAndNext" />
+
+    <Border Grid.Column="2" Padding="10" CornerRadius="4" BorderThickness="1"
             Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
             BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
       <DockPanel>

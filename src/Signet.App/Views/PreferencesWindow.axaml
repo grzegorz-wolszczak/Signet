@@ -34,7 +34,7 @@
     <Style Selector="TextBlock.topSection">
       <Setter Property="FontWeight" Value="Bold" />
     </Style>
-    <!-- Cancel: only a frame, next to the filled (accent) Save button, as in Rider. -->
+    <!-- Close: only a frame, next to the filled (accent) Save button, as in Rider. -->
     <Style Selector="Button.outline">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
@@ -86,16 +86,16 @@
 
   <DockPanel Margin="10">
 
-    <!-- Save / Cancel, as in Rider: Save (filled, enabled only with changes) writes the changes and keeps the window
-         open; Cancel (a frame) closes it without them. Escape and the window's close button ask what to do with
-         unsaved changes. -->
+    <!-- Save / Close: Save (filled, enabled only with changes) writes the changes and keeps the window open; Close (a
+         frame) closes it like the window's close button and Escape do: with unsaved changes it asks what to do with
+         them. -->
     <Grid DockPanel.Dock="Bottom" ColumnDefinitions="Auto,*,Auto" Margin="0,8,0,0">
       <Button Grid.Column="0" x:Name="OpenPreferencesLocationButton"
               Content="{loc:Loc PreferencesWindow_OpenPreferencesLocation}" Click="OnOpenPreferencesLocationClicked" />
       <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6">
         <Button x:Name="SaveButton" Content="{loc:Loc Common_Save}" Command="{Binding ApplyCommand}" Classes="accent"
                 MinWidth="90" HorizontalContentAlignment="Center" />
-        <Button x:Name="CancelButton" Content="{loc:Loc Common_Cancel}" Click="OnCancelClicked" Classes="outline"
+        <Button x:Name="CloseButton" Content="{loc:Loc Common_Close}" Click="OnCloseClicked" Classes="outline"
                 MinWidth="90" HorizontalContentAlignment="Center" />
       </StackPanel>
     </Grid>
@@ -456,7 +456,7 @@
             <CheckBox x:Name="UseThemeFontsBox" Content="{loc:Loc ColorScheme_UseThemeFonts}" IsChecked="{Binding UseThemeFonts}" />
             <TextBlock Text="{loc:Loc ColorScheme_UseThemeFontsNote}" Opacity="0.7" TextWrapping="Wrap" />
           </StackPanel>
-          <views:FontsPageView x:Name="ThemeFontsView" IsEnabled="{Binding #UseThemeFontsBox.IsChecked}" />
+          <views:FontsPageView x:Name="ThemeFontsView" IsContentEnabled="{Binding #UseThemeFontsBox.IsChecked}" />
         </DockPanel>
       </TabItem>
 

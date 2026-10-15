@@ -30,8 +30,8 @@ namespace Signet.App.Views;
 /// <item>a section without settings of its own (a page without content in the XAML) lists links to its
 /// subsections;</item>
 /// <item>the path of the section above its page;</item>
-/// <item>Save writes the changes and keeps the window open (enabled only when something changed); Cancel closes it
-/// without them; Escape and the close button ask what to do with unsaved changes.</item>
+/// <item>Save writes the changes and keeps the window open (enabled only when something changed); Close closes it
+/// like the window's close button (asking about unsaved changes); Escape and the close button ask what to do with unsaved changes.</item>
 /// </list>
 /// The pages are the tabs of a TabControl whose tab strip is hidden; the tree selects them. A page names the page of its
 /// enclosing section with <see cref="PreferencesPage.ParentProperty"/>. A page can have a tab bar of its own (its content
@@ -385,11 +385,8 @@ public partial class PreferencesWindow : Window
         }
     }
 
-    private void OnCancelClicked(object? sender, RoutedEventArgs e)
-    {
-        _closeConfirmed = true;
-        Close();
-    }
+    // Close is the window's close button: with unsaved changes it asks what to do with them (OnClosing).
+    private void OnCloseClicked(object? sender, RoutedEventArgs e) => Close();
 
     private void OnClearSectionSearchClicked(object? sender, RoutedEventArgs e)
     {
