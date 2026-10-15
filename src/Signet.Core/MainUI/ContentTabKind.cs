@@ -8,7 +8,7 @@ namespace Signet.Core.MainUI;
 /// </summary>
 public enum ContentTabKind
 {
-    /// <summary>An (X)HTML document (Code View + Preview).</summary>
+    /// <summary>An (X)HTML document (Code Editor + Preview).</summary>
     Flow,
 
     /// <summary>A CSS stylesheet.</summary>

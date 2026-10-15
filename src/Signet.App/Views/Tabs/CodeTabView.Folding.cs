@@ -108,7 +108,7 @@ public partial class CodeTabView
         }
 
         string text = Editor.Document.Text;
-        IReadOnlyList<FoldRegion> regions = vm.Syntax == CodeViewSyntax.Css ? CodeFolding.ForCss(text) : CodeFolding.ForMarkup(text);
+        IReadOnlyList<FoldRegion> regions = vm.Syntax == CodeEditorSyntax.Css ? CodeFolding.ForCss(text) : CodeFolding.ForMarkup(text);
         _foldingManager.UpdateFoldings(regions.Select(r => new NewFolding(r.StartOffset, r.EndOffset) { Name = r.Title }), -1);
     }
 
@@ -143,5 +143,5 @@ public partial class CodeTabView
         }
     }
 
-    private static bool Foldable(CodeViewSyntax syntax) => syntax is CodeViewSyntax.Html or CodeViewSyntax.Xml or CodeViewSyntax.Css;
+    private static bool Foldable(CodeEditorSyntax syntax) => syntax is CodeEditorSyntax.Html or CodeEditorSyntax.Xml or CodeEditorSyntax.Css;
 }

@@ -19,12 +19,12 @@ using Signet.Core;
 namespace Signet.App.ViewModels.Tabs;
 
 /// <summary>
-/// Code editor tab (Code View). Holds the AvaloniaEdit <see cref="TextDocument"/> and the view-less
-/// <see cref="CodeViewModel"/> (working copy of the content, well-formedness, split marker).
+/// Code editor tab (Code Editor). Holds the AvaloniaEdit <see cref="TextDocument"/> and the view-less
+/// <see cref="CodeEditorModel"/> (working copy of the content, well-formedness, split marker).
 /// </summary>
 public sealed class CodeTabViewModel : ContentTabViewModel
 {
-    private readonly CodeViewModel _model;
+    private readonly CodeEditorModel _model;
     private readonly IStatusBarService _statusBar;
     private readonly SettingsStore _settings;
     private readonly SpellChecker _spellChecker;
@@ -64,16 +64,16 @@ public sealed class CodeTabViewModel : ContentTabViewModel
         if (tab.Resource is not TextResource text)
         {
             throw new ArgumentException(
-                $"Code View requires a text resource, got {tab.Resource.GetType().Name}.", nameof(tab));
+                $"Code Editor requires a text resource, got {tab.Resource.GetType().Name}.", nameof(tab));
         }
 
-        _model = new CodeViewModel(text);
+        _model = new CodeEditorModel(text);
         Document = new TextDocument(_model.Text);
         Document.UndoStack.ClearAll();
         Document.TextChanged += OnDocumentTextChanged;
         Document.Changed += OnDocumentChanged;
 
-        _wordWrap = settings.CodeViewWordWrap;
+        _wordWrap = settings.CodeEditorWordWrap;
 
         RefreshWellFormed();
         RefreshSecondaryStatus();
@@ -84,15 +84,15 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     private bool _wordWrap;
 
     /// <summary>
-    /// The Code View font: the setting, or the theme's while the theme in use turns its fonts on.
+    /// The Code Editor font: the setting, or the theme's while the theme in use turns its fonts on.
     /// </summary>
-    public CodeViewAppearance Appearance => AppTheme.Current.Fonts.CodeView(_settings.CodeViewAppearance);
+    public CodeEditorAppearance Appearance => AppTheme.Current.Fonts.CodeEditor(_settings.CodeEditorAppearance);
 
     /// <summary>
     /// Whether to use extended highlighting
-    /// (<see cref="SettingsStore.CodeViewExtendedHighlighting"/>).
+    /// (<see cref="SettingsStore.CodeEditorExtendedHighlighting"/>).
     /// </summary>
-    public bool ExtendedHighlighting => _settings.CodeViewExtendedHighlighting;
+    public bool ExtendedHighlighting => _settings.CodeEditorExtendedHighlighting;
 
     /// <summary>
     /// Checks whether a book path exists in the book — set by <c>TabManager</c> (the tab
@@ -159,7 +159,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     public bool LinkTargetExists(string reference) =>
         BookPathExists is not { } exists || LinkReference.TargetExists(reference, _model.Resource.Folder, exists);
 
-    /// <summary>Whether the editor wraps long lines (from <see cref="SettingsStore.CodeViewWordWrap"/>).</summary>
+    /// <summary>Whether the editor wraps long lines (from <see cref="SettingsStore.CodeEditorWordWrap"/>).</summary>
     public bool WordWrap
     {
         get => _wordWrap;
@@ -178,7 +178,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     /// <summary>Request: scroll the editor to the given offset (0-based) and place the caret there (sync with Preview).</summary>
     public event Action<int>? ScrollToOffsetRequested;
 
-    /// <summary>Request: give keyboard focus to the editor control (the "Focus on Code View" action).</summary>
+    /// <summary>Request: give keyboard focus to the editor control (the "Focus on Code Editor" action).</summary>
     public event Action? FocusRequested;
 
     /// <summary>The caret moved — the argument is the 0-based offset in the document (sync to Preview).</summary>
@@ -241,13 +241,13 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     public TextDocument Document { get; }
 
     /// <summary>
-    /// The regions folded in Code View (start and end offset), kept while the tab is open: the view is reused for other
+    /// The regions folded in Code Editor (start and end offset), kept while the tab is open: the view is reused for other
     /// tabs, so it stores them here when it leaves the tab and folds them again when it comes back.
     /// </summary>
     public IReadOnlyList<(int Start, int End)> FoldedRegions { get; set; } = Array.Empty<(int Start, int End)>();
 
     /// <summary>Syntax kind (selects the highlighting grammar).</summary>
-    public CodeViewSyntax Syntax => _model.Syntax;
+    public CodeEditorSyntax Syntax => _model.Syntax;
 
     /// <inheritdoc />
     public override bool CanUndo => Document.UndoStack.CanUndo;
@@ -282,7 +282,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     public int CaretOffset => _caretOffset;
 
     /// <summary>Formatted caret position for the status bar.</summary>
-    public string CaretStatus => CodeViewModel.FormatCaretPosition(_caretLine, _caretColumn, _caretCodepoint);
+    public string CaretStatus => CodeEditorModel.FormatCaretPosition(_caretLine, _caretColumn, _caretCodepoint);
 
     /// <summary>
     /// Additional tab status for the status bar — for CSS resources the rule counter,
@@ -294,7 +294,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     /// Whether the "Format" menu operations apply to this tab — only for (X)HTML resources
     /// (the Format menu is active only for such tabs).
     /// </summary>
-    public bool SupportsFormatting => Syntax == CodeViewSyntax.Html;
+    public bool SupportsFormatting => Syntax == CodeEditorSyntax.Html;
 
     /// <summary>
     /// Name of the deepest block element enclosing the caret (<c>h1</c>–<c>h6</c>/<c>p</c>/…)
@@ -321,7 +321,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     public static string MergeContentTextFor(ElementMergeCandidate? candidate) =>
         candidate is null
             ? Strings.Get("Action_MainWindow_MergeContent").Replace("&", string.Empty, StringComparison.Ordinal)
-            : Strings.Format("CodeViewMenu_MergeContentCount", candidate.ElementName, candidate.Count);
+            : Strings.Format("CodeEditorMenu_MergeContentCount", candidate.ElementName, candidate.Count);
 
     /// <summary>Whether "Insert File" is currently allowed.</summary>
     public bool InsertFileEnabled => _insertFileEnabled;
@@ -356,7 +356,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     public string ResourceBookPath => _model.Resource.BookPath;
 
     /// <summary>The "Find &amp; Replace in the current file" engine of this tab.</summary>
-    public CodeViewSearch Search { get; } = new();
+    public CodeEditorSearch Search { get; } = new();
 
     /// <summary>Full content of the editor document.</summary>
     public string DocumentText => Document.Text;
@@ -388,9 +388,9 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     /// <summary>
     /// Whether this resource type is subject to spell checking at all — only (X)HTML.
     /// </summary>
-    public bool SupportsSpellcheck => Syntax == CodeViewSyntax.Html;
+    public bool SupportsSpellcheck => Syntax == CodeEditorSyntax.Html;
 
-    /// <summary>Ranges of misspelled words to underline in Code View.</summary>
+    /// <summary>Ranges of misspelled words to underline in Code Editor.</summary>
     public IReadOnlyList<(int Start, int End)> MisspelledWordHighlights =>
         _misspelledWords.Select(w => (w.Offset, w.Offset + w.Length)).ToList();
 
@@ -541,7 +541,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     public bool GoToLinkOrStyleAtCaret() => RequestLinkOrClassJumpAt(_caretOffset);
 
     // =====================================================================
-    //  Code View context menu
+    //  Code Editor context menu
     // =====================================================================
 
     /// <summary>
@@ -923,7 +923,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
         }
     }
 
-    /// <summary>Gives keyboard focus to the editor control (the "Focus on Code View" action).</summary>
+    /// <summary>Gives keyboard focus to the editor control (the "Focus on Code Editor" action).</summary>
     public void RequestFocus() => FocusRequested?.Invoke();
 
     private static int FindFragmentOffset(string text, string fragment)
@@ -944,13 +944,13 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     }
 
     /// <summary>
-    /// Inserts the section split marker (<see cref="CodeViewModel.SectionMarker"/>) at the given
+    /// Inserts the section split marker (<see cref="CodeEditorModel.SectionMarker"/>) at the given
     /// position (0-based). The change goes through <see cref="Document"/>, so it is undoable.
     /// </summary>
     public void InsertSectionMarker(int offset)
     {
         int clamped = Math.Clamp(offset, 0, Document.TextLength);
-        Document.Insert(clamped, CodeViewModel.SectionMarker);
+        Document.Insert(clamped, CodeEditorModel.SectionMarker);
     }
 
     /// <summary>Inserts the section split marker at the current caret position.</summary>
@@ -973,7 +973,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
         if (result.Warning is { } warning)
         {
             _statusBar.ShowMessage(
-                Strings.Format("CodeView_WellFormedWithWarning", warning.Message),
+                Strings.Format("CodeEditor_WellFormedWithWarning", warning.Message),
                 TimeSpan.FromSeconds(8),
                 NotificationLevel.Warning);
         }
@@ -981,8 +981,8 @@ public sealed class CodeTabViewModel : ContentTabViewModel
         {
             _statusBar.ShowMessage(
                 result.IsWellFormed
-                    ? Strings.Get("CodeView_WellFormed")
-                    : Strings.Format("CodeView_NotWellFormed", result.Line, result.Column, result.Message),
+                    ? Strings.Get("CodeEditor_WellFormed")
+                    : Strings.Format("CodeEditor_NotWellFormed", result.Line, result.Column, result.Message),
                 TimeSpan.FromSeconds(result.IsWellFormed ? 3 : 8));
         }
 
@@ -1023,7 +1023,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
         ContentChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    // ---- Spellcheck in Code View (underlining, add/ignore a misspelled word, current word at the caret) ----
+    // ---- Spellcheck in Code Editor (underlining, add/ignore a misspelled word, current word at the caret) ----
 
     /// <summary>
     /// Refreshes the list of misspelled words after the content/spelling settings change. No effect
@@ -1239,24 +1239,24 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     }
 
     /// <summary>Whether tag structure operations apply — (X)HTML and XML.</summary>
-    public bool SupportsTagStructure => Syntax is CodeViewSyntax.Html or CodeViewSyntax.Xml;
+    public bool SupportsTagStructure => Syntax is CodeEditorSyntax.Html or CodeEditorSyntax.Xml;
 
     /// <summary>
     /// Whether resting the mouse on a closing tag shows its opening tag (Preferences → Appearance; markup files only).
     /// Read live, so a change in Preferences applies to the open tabs at once.
     /// </summary>
-    public bool OpenTagHintEnabled => SupportsTagStructure && _settings.CodeViewOpenTagHint;
+    public bool OpenTagHintEnabled => SupportsTagStructure && _settings.CodeEditorOpenTagHint;
 
     /// <summary>The delay (ms) before the opening tag tooltip appears.</summary>
-    public int OpenTagHintDelayMs => _settings.CodeViewOpenTagHintDelayMs;
+    public int OpenTagHintDelayMs => _settings.CodeEditorOpenTagHintDelayMs;
 
     /// <summary>The font of the opening tag tooltip (read live; the theme's while the theme turns its fonts on).</summary>
     public OpenTagHintAppearance OpenTagHintAppearance => AppTheme.Current.Fonts.OpenTagHint(_settings.OpenTagHintAppearance);
 
-    /// <summary>The closing tag containing the character at <paramref name="offset"/> (see <see cref="CodeViewModel.GetCloseTagAt"/>).</summary>
+    /// <summary>The closing tag containing the character at <paramref name="offset"/> (see <see cref="CodeEditorModel.GetCloseTagAt"/>).</summary>
     public (int Offset, int Length)? GetCloseTagAt(int offset) => _model.GetCloseTagAt(offset);
 
-    /// <summary>The opening tag of the closing tag at <paramref name="closeTagOffset"/> (see <see cref="CodeViewModel.GetOpenTagOfCloseTag"/>).</summary>
+    /// <summary>The opening tag of the closing tag at <paramref name="closeTagOffset"/> (see <see cref="CodeEditorModel.GetOpenTagOfCloseTag"/>).</summary>
     public (int Offset, int Length)? GetOpenTagOfCloseTag(int closeTagOffset) => _model.GetOpenTagOfCloseTag(closeTagOffset);
 
     /// <summary>Name of the element enclosing the caret (as a hint in "Rename Tag"), or <c>null</c>.</summary>
@@ -1277,7 +1277,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     /// </summary>
     public int? TryAutoCloseTag(int caretOffset)
     {
-        if (!SupportsTagStructure || !_settings.CodeViewAutoCloseTags)
+        if (!SupportsTagStructure || !_settings.CodeEditorAutoCloseTags)
         {
             return null;
         }
@@ -1315,7 +1315,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
         }
         else
         {
-            _statusBar.ShowMessage(Strings.Get("CodeView_NoEnclosingElement"), TimeSpan.FromSeconds(4));
+            _statusBar.ShowMessage(Strings.Get("CodeEditor_NoEnclosingElement"), TimeSpan.FromSeconds(4));
         }
     }
 
@@ -1329,7 +1329,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
         }
         else
         {
-            _statusBar.ShowMessage(Strings.Get("CodeView_NoClosedEnclosingElement"), TimeSpan.FromSeconds(4));
+            _statusBar.ShowMessage(Strings.Get("CodeEditor_NoClosedEnclosingElement"), TimeSpan.FromSeconds(4));
         }
     }
 
@@ -1357,7 +1357,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     /// </summary>
     public SpanAtCaret? SpanAtCaret()
     {
-        if (Syntax != CodeViewSyntax.Html)
+        if (Syntax != CodeEditorSyntax.Html)
         {
             return null;
         }
@@ -1549,7 +1549,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     // ---- "Insert" menu — routed from MainWindowViewModel to the active tab ----
 
     /// <summary>Whether pasted clipboard text is normalized to NFC (Preferences), so the view handles pasting itself.</summary>
-    public bool NormalizesPastedText => _settings.CodeViewPasteNormalizeNfc;
+    public bool NormalizesPastedText => _settings.CodeEditorPasteNormalizeNfc;
 
     /// <summary>
     /// Clipboard text as it is pasted into the document: normalized to Unicode NFC when
@@ -1706,7 +1706,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
         bool insertId = false;
         bool insertHyperlink = false;
 
-        if (Syntax == CodeViewSyntax.Html)
+        if (Syntax == CodeEditorSyntax.Html)
         {
             SyncModelFromDocument();
             string text = _model.Text;
@@ -1769,8 +1769,8 @@ public sealed class CodeTabViewModel : ContentTabViewModel
 
     private void RefreshSecondaryStatus()
     {
-        string next = Syntax == CodeViewSyntax.Css
-            ? Strings.Format("CodeView_CssRuleCount", _model.GetCssRuleCount())
+        string next = Syntax == CodeEditorSyntax.Css
+            ? Strings.Format("CodeEditor_CssRuleCount", _model.GetCssRuleCount())
             : string.Empty;
 
         if (!string.Equals(next, _secondaryStatus, StringComparison.Ordinal))

@@ -11,7 +11,7 @@ namespace Signet.Core.BookManipulation;
 
 /// <summary>
 /// The consequences of removing the tags of <c>&lt;span&gt;</c> elements (their content stays) — for the bare-span
-/// Cleanup step (<see cref="BareSpanCleaner"/>) and for "Remove span" in Code View (<see cref="SpanRemoval"/>):
+/// Cleanup step (<see cref="BareSpanCleaner"/>) and for "Remove span" in Code Editor (<see cref="SpanRemoval"/>):
 /// <list type="bullet">
 /// <item>every declaration that wins on a removed span — from its classes, its <c>style</c>, or rules that reach it by
 /// its name (<c>span { }</c>, <c>p span</c>); a value that does nothing on an inline element (a zero margin…) is

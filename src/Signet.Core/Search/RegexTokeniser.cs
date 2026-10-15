@@ -21,7 +21,7 @@ public static class RegexTokeniser
     /// <param name="includeNumerics">
     /// When <see langword="true"/>, digit runs are replaced with <c>\d+</c> (the explicit
     /// "Tokenise" action on the whole Find field). Auto Tokenise, when inserting a selection from
-    /// Code View, uses <see langword="false"/> — numbers usually should stay literal.
+    /// Code Editor, uses <see langword="false"/> — numbers usually should stay literal.
     /// </param>
     public static string TokeniseForRegex(string text, bool includeNumerics)
     {

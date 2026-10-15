@@ -21,7 +21,7 @@ using Signet.Core.Tests.TestSupport;
 namespace Signet.App.UiTests;
 
 /// <summary>
-/// Ctrl+End in Code View must bring the end of the document into view with a single press, also when long
+/// Ctrl+End in Code Editor must bring the end of the document into view with a single press, also when long
 /// paragraphs are wrapped (AvaloniaEdit estimates the height of lines it has not built yet as one line each).
 /// </summary>
 public sealed class CodeTabViewCtrlEndTests
@@ -57,7 +57,7 @@ public sealed class CodeTabViewCtrlEndTests
         html.SetText(LongParagraphs());
         OpenTab tab = new TabManagerModel().OpenResource(html);
         SettingsStore settings = new(temp.Combine("settings.xml"));
-        settings.CodeViewWordWrap = true;
+        settings.CodeEditorWordWrap = true;
         SpellChecker spellChecker = new(settings, temp.Combine("hunspell"), temp.Combine("user"));
         var vm = new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker);
         var window = new Window { Width = 700, Height = 400, Content = new CodeTabView { DataContext = vm } };

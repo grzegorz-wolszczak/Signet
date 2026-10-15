@@ -11,7 +11,7 @@ namespace Signet.App.ViewModels.Tabs;
 /// so it goes straight into the <c>DocumentDock</c> area.
 /// </summary>
 /// <remarks>
-/// The concrete editors/viewers (Code View, CSS, Image/Font/AV/SVG/PDF/XML)
+/// The concrete editors/viewers (Code Editor, CSS, Image/Font/AV/SVG/PDF/XML)
 /// inherit from this class and override <see cref="Save"/>, <see cref="Reload"/>, the undo/redo hooks,
 /// <see cref="ZoomFactor"/> and <see cref="IsWellFormed"/>. The placeholder implementation is
 /// <see cref="PlaceholderContentTabViewModel"/>.

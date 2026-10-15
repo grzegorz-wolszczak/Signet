@@ -7,7 +7,7 @@ using Signet.Core.Resources;
 
 namespace Signet.Core.BookManipulation;
 
-/// <summary>What "Remove span" in Code View removes.</summary>
+/// <summary>What "Remove span" in Code Editor removes.</summary>
 public enum SpanRemovalScope
 {
     /// <summary>The span under the caret.</summary>
@@ -35,7 +35,7 @@ public sealed record SpanRemovalPlan(
     IReadOnlyList<CleanupConsequence> Consequences);
 
 /// <summary>
-/// "Remove span" (Code View context menu) on the level of the book: finds the spans to remove (the one under the
+/// "Remove span" (Code Editor context menu) on the level of the book: finds the spans to remove (the one under the
 /// caret, or every span of the file / the book that is the same as it — <see cref="SpanUnwrapper"/>), removes their
 /// tags and keeps their content, and finds out what that changes in the styling, so the user can accept it first.
 /// </summary>

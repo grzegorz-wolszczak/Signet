@@ -5,7 +5,7 @@ using AvaloniaEdit.Rendering;
 using Signet.App.Infrastructure;
 using Signet.Core.Themes;
 
-namespace Signet.App.CodeView;
+namespace Signet.App.CodeEditor;
 
 /// <summary>
 /// Marks the text range reported as a well-formedness error (<c>errors.wellFormed</c>, a red squiggle by default) and

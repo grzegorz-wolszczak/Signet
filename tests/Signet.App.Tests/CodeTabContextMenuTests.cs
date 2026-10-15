@@ -16,7 +16,7 @@ using Xunit;
 namespace Signet.App.Tests;
 
 /// <summary>
-/// Code View context menu logic in <see cref="CodeTabViewModel"/>, tested without the control
+/// Code Editor context menu logic in <see cref="CodeTabViewModel"/>, tested without the control
 /// and with the host replaced by a mock.
 /// </summary>
 public sealed class CodeTabContextMenuTests

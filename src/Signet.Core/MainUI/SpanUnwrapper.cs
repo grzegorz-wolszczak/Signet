@@ -17,7 +17,7 @@ namespace Signet.Core.MainUI;
 public sealed record SpanAtCaret(int OpenPos, string? ClassValue, bool HasId, int SameCount);
 
 /// <summary>
-/// "Remove span" (Code View context menu): removes the tags of a <c>&lt;span&gt;</c> and keeps its content —
+/// "Remove span" (Code Editor context menu): removes the tags of a <c>&lt;span&gt;</c> and keeps its content —
 /// the opposite of wrapping text in a tag. Either the span under the caret, or every span of the file that is the
 /// same as it (<see cref="SpanAtCaret.SameCount"/>). Works on the source text (<see cref="TagLister"/>).
 /// </summary>

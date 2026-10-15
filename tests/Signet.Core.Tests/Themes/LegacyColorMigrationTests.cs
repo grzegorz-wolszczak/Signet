@@ -33,14 +33,14 @@ public sealed class LegacyColorMigrationTests
     {
         using TempDir dir = new();
         string path = Settings(dir,
-            ("code_view_css_comment_color", "#112233"),
-            ("code_view_xhtml_entity_color", "#445566"),
-            ("code_view_error_underline_color", "#778899"),
+            ("code_editor_css_comment_color", "#112233"),
+            ("code_editor_xhtml_entity_color", "#445566"),
+            ("code_editor_error_underline_color", "#778899"),
             ("warning_color_light", "#aa5500"),
             ("open_tag_hint_light_background", "#101010"),
             ("open_tag_hint_light_foreground", "#efefef"),
             ("preview_highlight_color_light", "not a color"),
-            ("code_view_css_value_color", "#000000"));
+            ("code_editor_css_value_color", "#000000"));
         SettingsStore settings = new(path);
         ThemeStore store = new(dir.Combine("themes"));
 

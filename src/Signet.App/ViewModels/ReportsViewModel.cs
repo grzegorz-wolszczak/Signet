@@ -105,7 +105,7 @@ public sealed class ReportsViewModel : ViewModelBase
     public event EventHandler<int>? ExportCsvRequested;
 
     /// <summary>
-    /// Raised on "go to" (double-click on a row) — open <c>BookPath</c> in Code View and scroll to
+    /// Raised on "go to" (double-click on a row) — open <c>BookPath</c> in Code Editor and scroll to
     /// the character offset.
     /// </summary>
     public event Action<string, int>? NavigationRequested;

@@ -10,7 +10,7 @@ using AvaloniaEdit.Rendering;
 using Signet.App.Infrastructure;
 using Signet.Core.Themes;
 
-namespace Signet.App.CodeView;
+namespace Signet.App.CodeEditor;
 
 /// <summary>
 /// Puts the look of the editors from the theme on an AvaloniaEdit editor: the text and the background

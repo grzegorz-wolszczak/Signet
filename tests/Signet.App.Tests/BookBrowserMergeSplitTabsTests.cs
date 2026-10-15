@@ -54,7 +54,7 @@ public sealed class BookBrowserMergeSplitTabsTests
         public HtmlResource SplitChapter(CodeTabViewModel tab, string secondPart)
         {
             tab.Document.Text = tab.Document.Text.Replace(
-                "</body>", $"{CodeViewModel.SectionMarker}<p>{secondPart}</p></body>", StringComparison.Ordinal);
+                "</body>", $"{CodeEditorModel.SectionMarker}<p>{secondPart}</p></body>", StringComparison.Ordinal);
             Select(Chapter);
             Vm.BookBrowser.SplitSelectedCommand.Execute(null);
             return Book.GetAllResources().OfType<HtmlResource>()

@@ -7,7 +7,7 @@ using Xunit;
 namespace Signet.Core.Tests.MainUI;
 
 /// <summary>
-/// Tests of <see cref="CodeInsertOperations"/> (the Insert menu in Code View): one
+/// Tests of <see cref="CodeInsertOperations"/> (the Insert menu in Code Editor): one
 /// scenario per operation, asserting the resulting text and well-formedness.
 /// </summary>
 public sealed class CodeInsertOperationsTests

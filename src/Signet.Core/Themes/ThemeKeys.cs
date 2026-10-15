@@ -142,7 +142,7 @@ public static class ThemeKeys
     /// <summary>A comment.</summary>
     public static readonly ThemeKey CssComment = Attributes("css.comment", ThemePage.Css, "Rules", Fg(0x008000));
 
-    // ---- JavaScript and JSON (Light+ colors, the TextMate theme of Code View before themes) ----
+    // ---- JavaScript and JSON (Light+ colors, the TextMate theme of Code Editor before themes) ----
 
     /// <summary>A keyword that declares or operates (<c>var</c>, <c>function</c>, <c>new</c>, <c>typeof</c>).</summary>
     public static readonly ThemeKey JsKeyword = Attributes("js.keyword", ThemePage.JavaScriptJson, "JavaScript", Fg(0x0000FF));
@@ -215,7 +215,7 @@ public static class ThemeKeys
 
     // ---- Preview ----
 
-    /// <summary>The highlight of the element clicked in Code View.</summary>
+    /// <summary>The highlight of the element clicked in Code Editor.</summary>
     public static readonly ThemeKey PreviewHighlight = Color("preview.highlight", ThemePage.Preview, string.Empty, Rgb(0xFFEB3B));
 
     /// <summary>The background the preview forces on the book (e.g. a dark page); unset = the book's own.</summary>

@@ -18,8 +18,8 @@ public sealed class KeyboardShortcutManager
     /// <summary>Name of the settings group in which overrides are stored.</summary>
     public const string SettingsGroup = "keyboard_shortcuts";
 
-    /// <summary>The scope of the shortcuts handled only while the focus is in a code editor (Code View).</summary>
-    public const string CodeViewScope = "CodeView";
+    /// <summary>The scope of the shortcuts handled only while the focus is in a code editor (Code Editor).</summary>
+    public const string CodeEditorScope = "CodeEditor";
 
     private readonly SettingsStore _settings;
     private readonly Dictionary<string, KeyboardShortcut> _shortcuts = new(StringComparer.Ordinal);
@@ -253,7 +253,7 @@ public sealed class KeyboardShortcutManager
 
         if (firstScope is null || secondScope is null)
         {
-            return string.Equals(firstScope ?? secondScope, CodeViewScope, StringComparison.Ordinal)
+            return string.Equals(firstScope ?? secondScope, CodeEditorScope, StringComparison.Ordinal)
                 ? ShortcutOverlap.Conflict
                 : ShortcutOverlap.Shadows;
         }

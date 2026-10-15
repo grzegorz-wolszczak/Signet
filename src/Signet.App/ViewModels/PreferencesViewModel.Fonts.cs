@@ -25,8 +25,8 @@ public sealed partial class PreferencesViewModel
     /// </summary>
     public FontPageViewModel AppearanceFonts { get; private set; } = null!;
 
-    /// <summary>Appearance › Code View › Fonts: the editor font and the opening tag hint font.</summary>
-    public FontPageViewModel CodeViewFonts { get; private set; } = null!;
+    /// <summary>Appearance › Code Editor › Fonts: the editor font and the opening tag hint font.</summary>
+    public FontPageViewModel CodeEditorFonts { get; private set; } = null!;
 
     /// <summary>Appearance › Preview › Fonts: the standard, serif and sans-serif fonts and their size.</summary>
     public FontPageViewModel PreviewFonts { get; private set; } = null!;
@@ -104,32 +104,32 @@ public sealed partial class PreferencesViewModel
             TooltipRow(TooltipArea.OtherWindows, "PreferencesWindow_TooltipFontOtherWindows"),
         });
 
-        CodeViewAppearance codeViewDefaults = CodeViewAppearance.Default;
-        CodeViewFonts = new FontPageViewModel(
+        CodeEditorAppearance codeEditorDefaults = CodeEditorAppearance.Default;
+        CodeEditorFonts = new FontPageViewModel(
             new[]
             {
                 new FontSettingViewModel(
-                    "CodeViewEditor",
-                    Strings.Get("PreferencesWindow_CodeViewEditorFont"),
+                    "CodeEditorText",
+                    Strings.Get("PreferencesWindow_CodeEditorTextFont"),
                     Strings.Get("FontPreview_Code"),
-                    (() => CodeView.FontFamily, v => CodeView.FontFamily = v),
-                    (() => CodeView.FontSize, v => CodeView.FontSize = v, FontSizeMin, FontSizeMax),
-                    (() => CodeView.FontFamily, () => CodeView.FontSize),
+                    (() => CodeEditor.FontFamily, v => CodeEditor.FontFamily = v),
+                    (() => CodeEditor.FontSize, v => CodeEditor.FontSize = v, FontSizeMin, FontSizeMax),
+                    (() => CodeEditor.FontFamily, () => CodeEditor.FontSize),
                     () =>
                     {
-                        CodeView.FontFamily = codeViewDefaults.FontFamily;
-                        CodeView.FontSize = codeViewDefaults.FontSize;
+                        CodeEditor.FontFamily = codeEditorDefaults.FontFamily;
+                        CodeEditor.FontSize = codeEditorDefaults.FontSize;
                     },
-                    CodeView.ChooseFontCommand,
+                    CodeEditor.ChooseFontCommand,
                     codePreview: () => ExtendedHighlighting),
                 new FontSettingViewModel(
                     "OpenTagHint",
                     Strings.Get("PreferencesWindow_OpenTagHintFont"),
-                    Strings.Get("FontPreview_OpenTagHint") + "\n" + Strings.Format("CodeView_OpenTagHintLine", 12),
+                    Strings.Get("FontPreview_OpenTagHint") + "\n" + Strings.Format("CodeEditor_OpenTagHintLine", 12),
                     (() => OpenTagHintFontFamily, v => OpenTagHintFontFamily = v),
                     (() => OpenTagHintFontSize, v => OpenTagHintFontSize = v, 0, OpenTagHintAppearance.FontSizeMax),
-                    (() => OpenTagHintFontFamily.Length > 0 ? OpenTagHintFontFamily : CodeView.FontFamily,
-                     () => OpenTagHintFontSize > 0 ? OpenTagHintFontSize : CodeView.FontSize),
+                    (() => OpenTagHintFontFamily.Length > 0 ? OpenTagHintFontFamily : CodeEditor.FontFamily,
+                     () => OpenTagHintFontSize > 0 ? OpenTagHintFontSize : CodeEditor.FontSize),
                     ResetOpenTagHintFont,
                     ChooseOpenTagHintFontCommand,
                     placeholder: () => Strings.Get("PreferencesWindow_OpenTagHintFontDefault"),
@@ -191,7 +191,7 @@ public sealed partial class PreferencesViewModel
         FootnotesFonts = TooltipPage(TooltipArea.Footnotes);
         _fontPages.AddRange(new[]
         {
-            AppearanceFonts, StartScreenFonts, BookBrowserFonts, TableOfContentsFonts, CodeViewFonts, PreviewFonts,
+            AppearanceFonts, StartScreenFonts, BookBrowserFonts, TableOfContentsFonts, CodeEditorFonts, PreviewFonts,
             FindReplaceFonts, SpecialCharacterFonts, CheckpointsFonts, ValidationFonts, MetadataEditorFonts, CleanupFonts,
             FootnotesFonts,
         });
@@ -199,7 +199,7 @@ public sealed partial class PreferencesViewModel
         // The pages show values that change elsewhere too ("Restore Appearance Defaults", the compact mode): they are
         // refreshed after every change. Their colors are the theme's.
         PropertyChanged += (_, _) => RefreshFontPages();
-        CodeView.PropertyChanged += (_, _) => CodeViewFonts.Refresh();
+        CodeEditor.PropertyChanged += (_, _) => CodeEditorFonts.Refresh();
     }
 
     // Appearance › Color Scheme › Fonts — after the "Fonts" pages (it mirrors their rows) and the Color Scheme page.
@@ -211,7 +211,7 @@ public sealed partial class PreferencesViewModel
                 (StartScreenFonts, "PreferencesWindow_StartScreen"),
                 (BookBrowserFonts, "PreferencesWindow_BookBrowser"),
                 (TableOfContentsFonts, "PreferencesWindow_TableOfContents"),
-                (CodeViewFonts, "PreferencesWindow_CodeView"),
+                (CodeEditorFonts, "PreferencesWindow_CodeEditor"),
                 (PreviewFonts, "PreferencesWindow_Preview"),
                 (FindReplaceFonts, "PreferencesWindow_FindReplace"),
                 (SpecialCharacterFonts, "PreferencesWindow_SpecialCharacters"),
@@ -244,7 +244,7 @@ public sealed partial class PreferencesViewModel
             new AsyncRelayCommand(ChooseColorSchemePreviewFont));
     }
 
-    // "Choose…" of the font of the previews: only monospaced fonts, as for Code View.
+    // "Choose…" of the font of the previews: only monospaced fonts, as for Code Editor.
     private async Task ChooseColorSchemePreviewFont()
     {
         ColorSchemePreviewAppearance font = ColorScheme.PreviewFont;
@@ -300,7 +300,7 @@ public sealed partial class PreferencesViewModel
     {
         "Interface" => ThemeFontKeys.Interface,
         "Warnings" => ThemeFontKeys.Warnings,
-        "CodeViewEditor" => ThemeFontKeys.CodeViewEditor,
+        "CodeEditorText" => ThemeFontKeys.CodeEditorText,
         "OpenTagHint" => ThemeFontKeys.OpenTagHint,
         "PreviewStandard" => ThemeFontKeys.PreviewStandard,
         "PreviewSerif" => ThemeFontKeys.PreviewSerif,

@@ -8,7 +8,7 @@ using Signet.Core.Themes;
 using TextMateSharp.Grammars;
 using TextMateSharp.Registry;
 
-namespace Signet.App.CodeView;
+namespace Signet.App.CodeEditor;
 
 /// <summary>A fragment of a sample shown in the look of a key.</summary>
 /// <param name="Key">The key.</param>
@@ -39,7 +39,7 @@ public sealed class ThemeSample
     private IReadOnlyList<KeyRange>? _syntaxRanges;
     private ThemeSample? _basic;
 
-    private ThemeSample(string text, CodeViewSyntax syntax, IReadOnlyList<KeyRange> marks, int caretLine, bool extended)
+    private ThemeSample(string text, CodeEditorSyntax syntax, IReadOnlyList<KeyRange> marks, int caretLine, bool extended)
     {
         Text = text;
         Syntax = syntax;
@@ -49,7 +49,7 @@ public sealed class ThemeSample
     }
 
     /// <summary>
-    /// Whether the syntax goes through the extended highlighting of Code View (the default) or the basic one — they use
+    /// Whether the syntax goes through the extended highlighting of Code Editor (the default) or the basic one — they use
     /// different keys (e.g. a <c>&lt;style&gt;</c> block: <c>css.*</c> or <c>xhtml.css</c>).
     /// </summary>
     public bool IsExtended { get; }
@@ -60,8 +60,8 @@ public sealed class ThemeSample
     /// <summary>The text.</summary>
     public string Text { get; }
 
-    /// <summary>The syntax of the text (<see cref="CodeViewSyntax.PlainText"/> = none).</summary>
-    public CodeViewSyntax Syntax { get; }
+    /// <summary>The syntax of the text (<see cref="CodeEditorSyntax.PlainText"/> = none).</summary>
+    public CodeEditorSyntax Syntax { get; }
 
     /// <summary>The fragments marked in the markup.</summary>
     public IReadOnlyList<KeyRange> Marks { get; }
@@ -80,7 +80,7 @@ public sealed class ThemeSample
 
     /// <summary>Reads the markup: <c>«key.id|text»</c> marks <c>text</c> with the key.</summary>
     /// <exception cref="FormatException">The markup is not balanced or names an unknown key.</exception>
-    public static ThemeSample Parse(string markup, CodeViewSyntax syntax, int caretLine = 0)
+    public static ThemeSample Parse(string markup, CodeEditorSyntax syntax, int caretLine = 0)
     {
         ArgumentNullException.ThrowIfNull(markup);
         StringBuilder text = new();
@@ -145,12 +145,12 @@ public sealed class ThemeSample
 
     private IReadOnlyList<KeyRange> ComputeSyntaxRanges() => (Syntax, IsExtended) switch
     {
-        (CodeViewSyntax.Html, true) => Highlight(new ExtendedXhtmlHighlighter(false, LinkExists)),
-        (CodeViewSyntax.Xml, true) => Highlight(new ExtendedXhtmlHighlighter(true, LinkExists)),
-        (CodeViewSyntax.Css, true) => Highlight(new ExtendedCssHighlighter(LinkExists)),
-        (CodeViewSyntax.Html or CodeViewSyntax.Xml, false) => Highlight(new XhtmlHighlighter()),
-        (CodeViewSyntax.Css, false) => Highlight(new CssHighlighter()),
-        _ when CodeViewTextMate.ScopeFor(Syntax) is { } scope => Tokenize(scope),
+        (CodeEditorSyntax.Html, true) => Highlight(new ExtendedXhtmlHighlighter(false, LinkExists)),
+        (CodeEditorSyntax.Xml, true) => Highlight(new ExtendedXhtmlHighlighter(true, LinkExists)),
+        (CodeEditorSyntax.Css, true) => Highlight(new ExtendedCssHighlighter(LinkExists)),
+        (CodeEditorSyntax.Html or CodeEditorSyntax.Xml, false) => Highlight(new XhtmlHighlighter()),
+        (CodeEditorSyntax.Css, false) => Highlight(new CssHighlighter()),
+        _ when CodeEditorTextMate.ScopeFor(Syntax) is { } scope => Tokenize(scope),
         _ => Array.Empty<KeyRange>(),
     };
 
@@ -186,7 +186,7 @@ public sealed class ThemeSample
     private List<KeyRange> Tokenize(string scope)
     {
         List<KeyRange> ranges = new();
-        IGrammar? grammar = new Registry(CodeViewTextMate.Options).LoadGrammar(scope);
+        IGrammar? grammar = new Registry(CodeEditorTextMate.Options).LoadGrammar(scope);
         if (grammar is null)
         {
             return ranges;
@@ -201,7 +201,7 @@ public sealed class ThemeSample
             foreach (IToken token in result.Tokens)
             {
                 int end = Math.Min(token.EndIndex, line.Length);
-                if (end > token.StartIndex && CodeViewTextMate.KeyFor(token.Scopes) is { } key)
+                if (end > token.StartIndex && CodeEditorTextMate.KeyFor(token.Scopes) is { } key)
                 {
                     ranges.Add(new KeyRange(key, lineStart + token.StartIndex, end - token.StartIndex));
                 }

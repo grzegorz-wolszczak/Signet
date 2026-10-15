@@ -20,7 +20,7 @@
         <Button Content="{loc:Loc Common_Refresh}" Command="{Binding RefreshCommand}" />
         <TextBlock Text="{Binding Message}" VerticalAlignment="Center" Margin="12,0,0,0" />
       </StackPanel>
-      <!-- List filters (they do not change what Code View marks as misspelled). -->
+      <!-- List filters (they do not change what Code Editor marks as misspelled). -->
       <StackPanel Orientation="Horizontal" Spacing="16">
         <TextBlock Text="{loc:Loc SpellcheckEditorWindow_Hide}" VerticalAlignment="Center" />
         <CheckBox Content="{loc:Loc SpellcheckEditorWindow_HideAllCaps}" IsChecked="{Binding HideAllCaps, Mode=TwoWay}" />

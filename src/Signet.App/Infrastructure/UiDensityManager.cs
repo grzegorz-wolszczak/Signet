@@ -18,7 +18,7 @@ namespace Signet.App.Infrastructure;
 /// <item>the UI font is the system one (<see cref="FontFamily.Default"/>, Segoe UI on Windows) at 12 px,</item>
 /// <item>tighter main and context menus (items, separators, icon margin).</item>
 /// </list>
-/// The code editor has its own font from the Code View settings and is not affected.
+/// The code editor has its own font from the Code Editor settings and is not affected.
 /// <para>The manager also applies the font size of the warnings (Preferences → Appearance › General › Fonts,
 /// <see cref="ApplyWarningAppearance()"/>): its default follows the UI font, so both live here. Their color comes from
 /// the theme (<see cref="AppTheme"/>).</para>

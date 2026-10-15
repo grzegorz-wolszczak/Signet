@@ -10,17 +10,17 @@ using Signet.Core.Resources;
 namespace Signet.App.ViewModels.Tabs;
 
 /// <summary>
-/// Main window services needed by the Code View context menu (the editor reaches the
+/// Main window services needed by the Code Editor context menu (the editor reaches the
 /// main window for clips, actions, book operations and the image preview). Implemented by
 /// <c>MainWindowViewModel</c>; <c>TabManager</c> passes it to every new code tab.
 /// </summary>
 public interface ICodeTabHost
 {
     /// <summary>
-    /// The actions whose shortcuts work only in a code editor (<see cref="Actions.AppActionIds.IsCodeViewAction"/>):
+    /// The actions whose shortcuts work only in a code editor (<see cref="Actions.AppActionIds.IsCodeEditorAction"/>):
     /// every code tab view binds them while it is shown.
     /// </summary>
-    IReadOnlyList<AppAction> CodeViewShortcutActions { get; }
+    IReadOnlyList<AppAction> CodeEditorShortcutActions { get; }
 
     /// <summary>Root of the clip library (the "Clips" submenu).</summary>
     ClipEditorNode ClipLibraryRoot { get; }

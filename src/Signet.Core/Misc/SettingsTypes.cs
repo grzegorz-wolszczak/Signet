@@ -53,7 +53,7 @@ public readonly record struct PreviewAppearance(
     public static PreviewAppearance Default => new("Arial", "Times New Roman", "Arial", 16);
 }
 
-/// <summary>How the preview marks the element corresponding to the Code View caret.</summary>
+/// <summary>How the preview marks the element corresponding to the Code Editor caret.</summary>
 public enum PreviewHighlightStyle
 {
     /// <summary>Semi-transparent background of the whole block (paragraph, heading, list item…).</summary>
@@ -64,7 +64,7 @@ public enum PreviewHighlightStyle
 }
 
 /// <summary>
-/// Highlight of the Code View caret location in the preview (Code View → Preview synchronization).
+/// Highlight of the Code Editor caret location in the preview (Code Editor → Preview synchronization).
 /// </summary>
 /// <param name="Style">Background or outline (the color comes from the theme: <c>preview.highlight</c>).</param>
 /// <param name="OpacityPercent">Background opacity in percent (the outline always uses the full color).</param>
@@ -140,7 +140,7 @@ public enum TooltipArea
     /// <summary>The main window: menus, toolbars, the status bar and the panels without an area of their own.</summary>
     MainWindow,
 
-    /// <summary>The document tabs: their tab strips (e.g. closing a tab) and their contents (e.g. Code View).</summary>
+    /// <summary>The document tabs: their tab strips (e.g. closing a tab) and their contents (e.g. Code Editor).</summary>
     DocumentTabs,
 
     /// <summary>The Preferences window.</summary>
@@ -204,11 +204,11 @@ public readonly record struct TooltipFont(string FontFamily, int FontSize)
 }
 
 /// <summary>
-/// Font of the Code View opening tag hint (the tooltip shown over a closing tag); its colors come from the theme
+/// Font of the Code Editor opening tag hint (the tooltip shown over a closing tag); its colors come from the theme
 /// (<c>hints.openTag</c>).
 /// </summary>
-/// <param name="FontFamily">Font family; empty = the Code View editor font.</param>
-/// <param name="FontSize">Font size (px); 0 = the Code View editor size (with its zoom).</param>
+/// <param name="FontFamily">Font family; empty = the Code Editor font.</param>
+/// <param name="FontSize">Font size (px); 0 = the Code Editor size (with its zoom).</param>
 public readonly record struct OpenTagHintAppearance(string FontFamily, int FontSize)
 {
     /// <summary>Lower bound of an explicit <see cref="FontSize"/>.</summary>
@@ -248,12 +248,12 @@ public readonly record struct ColorSchemePreviewAppearance(string FontFamily, in
 }
 
 /// <summary>
-/// Code editor (Code View) font; the colors come from the theme (<see cref="Themes.ThemeKeys"/>).
+/// Code editor (Code Editor) font; the colors come from the theme (<see cref="Themes.ThemeKeys"/>).
 /// </summary>
-public sealed record CodeViewAppearance
+public sealed record CodeEditorAppearance
 {
     /// <summary>The default font.</summary>
-    public static CodeViewAppearance Default { get; } = new();
+    public static CodeEditorAppearance Default { get; } = new();
 
     /// <summary>Editor font family.</summary>
     public string FontFamily { get; init; } = "Courier New";

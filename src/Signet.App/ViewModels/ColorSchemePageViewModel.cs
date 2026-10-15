@@ -99,7 +99,7 @@ public sealed partial class ColorSchemePageViewModel : ObservableObject
     /// <summary>Which page.</summary>
     public ThemePage Page { get; }
 
-    /// <summary>Whether the preview shows the extended highlighting of Code View (the setting in the window).</summary>
+    /// <summary>Whether the preview shows the extended highlighting of Code Editor (the setting in the window).</summary>
     public bool ExtendedHighlighting => _owner.ExtendedHighlighting;
 
     /// <summary>The font of the code preview of the page.</summary>

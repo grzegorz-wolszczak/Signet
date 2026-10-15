@@ -74,7 +74,7 @@ public sealed class PreviewMirror : IDisposable
     /// <summary>
     /// Like <see cref="Sync(Book)"/>, but the resource with bookpath <paramref name="instrumentBookPath"/>
     /// is written in its instrumented version (<c>data-signet-loc</c> attributes for synchronizing
-    /// the position with Code View).
+    /// the position with Code Editor).
     /// </summary>
     /// <param name="book">The publication to mirror.</param>
     /// <param name="instrumentBookPath">The bookpath of the (X)HTML resource to instrument, or <c>null</c>.</param>
@@ -91,7 +91,7 @@ public sealed class PreviewMirror : IDisposable
     /// (also in the instrumented version). The book's resources are not modified.
     /// </summary>
     /// <remarks>
-    /// The "live" preview: the unsaved text of Code View tabs goes to the preview without writing
+    /// The "live" preview: the unsaved text of Code Editor tabs goes to the preview without writing
     /// the tab to the resource — the text is taken straight from the editor.
     /// </remarks>
     /// <param name="book">The publication to mirror.</param>

@@ -43,7 +43,7 @@ public enum TagKind
 /// </summary>
 /// <remarks>
 /// <para>Used for (1) queries such as "is the position inside a tag / in the content / in &lt;body&gt;" (Find&amp;Replace
-/// "in tags / outside tags"), (2) Code View &#8596; Preview synchronization, (3) locating
+/// "in tags / outside tags"), (2) Code Editor &#8596; Preview synchronization, (3) locating
 /// nesting errors as a complement to <see cref="BookManipulation.WellFormedChecker"/>.</para>
 /// <para>The scanner deliberately keeps a few quirks — e.g. matching a closing tag
 /// only checks that the open tag name <em>starts with</em> the closing tag name,

@@ -15,7 +15,7 @@ namespace Signet.App.Tests;
 
 /// <summary>
 /// Tests for <see cref="CodeTabViewModel"/> without the AvaloniaEdit control: just a
-/// <c>TextDocument</c> plus a view-less <see cref="CodeViewModel"/>.
+/// <c>TextDocument</c> plus a view-less <see cref="CodeEditorModel"/>.
 /// </summary>
 public sealed class CodeTabViewModelTests
 {
@@ -88,7 +88,7 @@ public sealed class CodeTabViewModelTests
         html.InitialLoad();
         sut.Document.Text.Should().Be(html.GetText());
         sut.IsModified.Should().BeFalse();
-        sut.Syntax.Should().Be(CodeViewSyntax.Html);
+        sut.Syntax.Should().Be(CodeEditorSyntax.Html);
     }
 
     [Fact]
@@ -178,7 +178,7 @@ public sealed class CodeTabViewModelTests
 
         sut.InsertSectionMarker(0);
 
-        sut.Document.Text.Should().StartWith(CodeViewModel.SectionMarker);
+        sut.Document.Text.Should().StartWith(CodeEditorModel.SectionMarker);
         sut.CanUndo.Should().BeTrue();
     }
 
@@ -394,7 +394,7 @@ public sealed class CodeTabViewModelTests
         using Book book = Load(temp);
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
         (SettingsStore settings, SpellChecker spellChecker) = SpellCheckTestFactory.New();
-        settings.CodeViewAutoCloseTags = enabled;
+        settings.CodeEditorAutoCloseTags = enabled;
         var sut = new CodeTabViewModel(new TabManagerModel().OpenResource(html), new StatusBarService(), settings, spellChecker);
         sut.Document.Text = "<html><body><p>abc</\n</body></html>";
         int caret = "<html><body><p>abc</".Length;
@@ -420,7 +420,7 @@ public sealed class CodeTabViewModelTests
         using Book book = Load(temp);
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
         (SettingsStore settings, SpellChecker spellChecker) = SpellCheckTestFactory.New();
-        settings.CodeViewPasteNormalizeNfc = enabled;
+        settings.CodeEditorPasteNormalizeNfc = enabled;
         var sut = new CodeTabViewModel(new TabManagerModel().OpenResource(html), new StatusBarService(), settings, spellChecker);
 
         sut.NormalizesPastedText.Should().Be(enabled);
@@ -432,7 +432,7 @@ public sealed class CodeTabViewModelTests
     {
         (SettingsStore settings, _) = SpellCheckTestFactory.New();
 
-        settings.CodeViewPasteNormalizeNfc.Should().BeTrue();
+        settings.CodeEditorPasteNormalizeNfc.Should().BeTrue();
     }
 
     [Fact]

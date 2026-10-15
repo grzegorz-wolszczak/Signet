@@ -16,7 +16,7 @@ namespace Signet.Core.MiscEditors;
 /// <param name="MinimalMatch">Regex <c>(?U)</c> (token <c>MM</c>).</param>
 /// <param name="AutoTokenise">
 /// "Auto Tokenise" (token <c>AT</c>) — when selected text from
-/// Code View is inserted into the Find field in Regex mode, metacharacters are escaped automatically
+/// Code Editor is inserted into the Find field in Regex mode, metacharacters are escaped automatically
 /// (<see cref="Search.RegexTokeniser.TokeniseForRegex"/>). It does not affect how the search
 /// pattern itself is built — only what lands in the Find field.
 /// </param>

@@ -8,7 +8,7 @@ using AvaloniaEdit.Rendering;
 using Signet.App.Infrastructure;
 using Signet.Core.Themes;
 
-namespace Signet.App.CodeView;
+namespace Signet.App.CodeEditor;
 
 /// <summary>
 /// Draws a range of text in the look a theme key gives it, behind the text (the renderers' layer): the background and

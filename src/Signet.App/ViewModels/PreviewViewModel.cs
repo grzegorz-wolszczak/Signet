@@ -23,8 +23,8 @@ namespace Signet.App.ViewModels;
 /// It shows the active <see cref="HtmlResource"/>, refreshes on tab switch/save and on request
 /// ("Reload"), supports zoom, and blocks navigation to external addresses. It also refreshes "live"
 /// with a debounce (<see cref="NotifyContentChanged"/>) and synchronizes the position in both
-/// directions (<see cref="SyncCaretToPreview"/> — Code View → Preview,
-/// <see cref="HandlePreviewMessage"/> → <see cref="CodeCaretJumpRequested"/> — Preview → Code View)
+/// directions (<see cref="SyncCaretToPreview"/> — Code Editor → Preview,
+/// <see cref="HandlePreviewMessage"/> → <see cref="CodeCaretJumpRequested"/> — Preview → Code Editor)
 /// through the <c>data-signet-loc</c> instrumentation (<see cref="PreviewInstrumentation"/>).
 /// </remarks>
 public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
@@ -57,7 +57,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     private bool _lastSyncWellFormed = true;
     private int? _lastCaretOffset;
 
-    // The source offset of the last click in the preview (Preview → Code View) and when it came. The caret move it
+    // The source offset of the last click in the preview (Preview → Code Editor) and when it came. The caret move it
     // causes comes back through SyncCaretToPreview, which then only highlights: scrolling would jump the clicked
     // element to the middle of the preview (also when a text selection made with the mouse ends with a click).
     private (int Offset, long Tick)? _previewClick;
@@ -120,19 +120,19 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     public event EventHandler<double>? ZoomChanged;
 
     /// <summary>
-    /// The view should scroll the preview to the element <c>[data-signet-loc="{arg}"]</c> (Code View → Preview).
+    /// The view should scroll the preview to the element <c>[data-signet-loc="{arg}"]</c> (Code Editor → Preview).
     /// </summary>
     public event EventHandler<int>? ScrollToLocRequested;
 
     /// <summary>
     /// The view should highlight the element <c>[data-signet-loc="{arg}"]</c> without scrolling the preview — the
-    /// Code View caret followed a click in the preview, so the element is where the user is looking.
+    /// Code Editor caret followed a click in the preview, so the element is where the user is looking.
     /// </summary>
     public event EventHandler<int>? HighlightLocRequested;
 
     /// <summary>
-    /// An element in the preview was clicked — the host should place the Code View caret at the source offset
-    /// <c>{arg}</c> (Preview → Code View).
+    /// An element in the preview was clicked — the host should place the Code Editor caret at the source offset
+    /// <c>{arg}</c> (Preview → Code Editor).
     /// </summary>
     public event EventHandler<int>? CodeCaretJumpRequested;
 
@@ -315,7 +315,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>
-    /// Reports a content change of the active resource (typing in Code View / editing CSS). The preview
+    /// Reports a content change of the active resource (typing in Code Editor / editing CSS). The preview
     /// refresh is delayed by <see cref="DebounceInterval"/> — further reports within this window
     /// reset the timer.
     /// </summary>
@@ -344,8 +344,8 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>
-    /// The Code View caret is at offset <paramref name="sourceOffset"/> — scroll the preview to the
-    /// corresponding element (Code View → Preview).
+    /// The Code Editor caret is at offset <paramref name="sourceOffset"/> — scroll the preview to the
+    /// corresponding element (Code Editor → Preview).
     /// </summary>
     /// <param name="sourceOffset">Caret offset in the source of the active file.</param>
     public void SyncCaretToPreview(int sourceOffset)
@@ -370,7 +370,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
                 return;
             }
 
-            // When the source in Code View is not well-formed, the caret position in the preview's
+            // When the source in Code Editor is not well-formed, the caret position in the preview's
             // leniently re-parsed (HTML5) DOM is uncertain/misleading — instead of computing the nearest
             // loc, force a scroll to the earliest instrumented element (the start of the document).
             if (_instrumentation.Locs.Count > 0)
@@ -404,7 +404,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
 
     /// <summary>
     /// The view reports the end of page loading in the WebView. After a reload from <see cref="Refresh"/> /
-    /// a "live" refresh, scrolls the preview back to the Code View caret location instead of
+    /// a "live" refresh, scrolls the preview back to the Code Editor caret location instead of
     /// leaving it at the top of the page.
     /// </summary>
     public void NotifyPageLoaded()
@@ -551,7 +551,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
 
     /// <summary>
     /// Attaches the source of unsaved working text of the code tabs (book path → text). Every
-    /// mirror synchronization takes the content from it instead of the resource text, so edits in Code View
+    /// mirror synchronization takes the content from it instead of the resource text, so edits in Code Editor
     /// (HTML, CSS…) are visible in the preview without saving the tab.
     /// </summary>
     /// <param name="provider">The working text provider (e.g. <c>TabManager.ModifiedCodeTexts</c>).</param>

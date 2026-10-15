@@ -342,7 +342,7 @@ public sealed class FindReplaceViewModel : ViewModelBase
     }
 
     /// <summary>
-    /// "Auto Tokenise" — in Regex mode, when the text selected in Code View is put into the
+    /// "Auto Tokenise" — in Regex mode, when the text selected in Code Editor is put into the
     /// Find field (<see cref="SeedFindFromSelection"/>), metacharacters are escaped
     /// automatically so that the selection can be searched for literally without manual
     /// escaping.
@@ -518,7 +518,7 @@ public sealed class FindReplaceViewModel : ViewModelBase
         SetMessage(Strings.Get("FindReplace_SearchWillRestart"));
     }
 
-    /// <summary>Attaches the panel to the new active Code View tab (called from the main window).</summary>
+    /// <summary>Attaches the panel to the new active Code Editor tab (called from the main window).</summary>
     public void AttachToActiveTab(CodeTabViewModel? tab)
     {
         if (ReferenceEquals(_attachedTab, tab))

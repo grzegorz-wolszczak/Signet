@@ -11,11 +11,11 @@ using Signet.App.Infrastructure;
 using Signet.App.ViewModels;
 using Signet.Core.Themes;
 
-namespace Signet.App.CodeView;
+namespace Signet.App.CodeEditor;
 
 /// <summary>
 /// A read-only editor showing the snippet of a Recent Locations entry (the <see cref="RecentLocationItem"/> in its
-/// <c>DataContext</c>): highlighted like Code View, in the colors of the theme, with the file's own line numbers.
+/// <c>DataContext</c>): highlighted like Code Editor, in the colors of the theme, with the file's own line numbers.
 /// </summary>
 public sealed class LocationSnippetEditor : TextEditor
 {
@@ -63,7 +63,7 @@ public sealed class LocationSnippetEditor : TextEditor
         TextAttributes numbers = theme.Attributes(ThemeKeys.EditorLineNumbers);
         _lineNumbers.Foreground = numbers.Foreground is { } fg ? new SolidColorBrush(ResolvedTheme.ToColor(fg)) : Brushes.Gray;
         _lineNumbers.Background = numbers.Background is { } bg ? new SolidColorBrush(ResolvedTheme.ToColor(bg)) : null;
-        _colorizer = CodeViewTextMate.CreateColorizer(item.Syntax, extended: false, linkExists: null, theme);
+        _colorizer = CodeEditorTextMate.CreateColorizer(item.Syntax, extended: false, linkExists: null, theme);
         if (_colorizer is not null)
         {
             TextArea.TextView.LineTransformers.Add(_colorizer);

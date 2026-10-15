@@ -1,6 +1,6 @@
 using Signet.Core.MainUI;
 
-namespace Signet.App.CodeView;
+namespace Signet.App.CodeEditor;
 
 /// <summary>The demo texts of the pages of the theme editor with an editor preview.</summary>
 public static class ThemeSamples
@@ -22,7 +22,7 @@ public static class ThemeSamples
         </body>
         </html>
         """,
-        CodeViewSyntax.Html,
+        CodeEditorSyntax.Html,
         caretLine: 4);
 
     /// <summary>XHTML: the markup, links, emphasized text and an embedded stylesheet.</summary>
@@ -48,7 +48,7 @@ public static class ThemeSamples
         </body>
         </html>
         """.Replace("10 km", "10 km", System.StringComparison.Ordinal),
-        CodeViewSyntax.Html);
+        CodeEditorSyntax.Html);
 
     /// <summary>CSS: selectors, declarations and rules.</summary>
     public static ThemeSample Css { get; } = ThemeSample.Parse(
@@ -63,7 +63,7 @@ public static class ThemeSamples
         p:first-child::first-letter { font-size: 200%; }
         @media screen { .note { display: none; } }
         """,
-        CodeViewSyntax.Css);
+        CodeEditorSyntax.Css);
 
     /// <summary>JavaScript.</summary>
     public static ThemeSample JavaScript { get; } = ThemeSample.Parse(
@@ -78,7 +78,7 @@ public static class ThemeSamples
           return document.getElementById(id) instanceof HTMLElement;
         }
         """,
-        CodeViewSyntax.JavaScript);
+        CodeEditorSyntax.JavaScript);
 
     /// <summary>JSON.</summary>
     public static ThemeSample Json { get; } = ThemeSample.Parse(
@@ -90,7 +90,7 @@ public static class ThemeSamples
           "notes": null
         }
         """,
-        CodeViewSyntax.Json);
+        CodeEditorSyntax.Json);
 
     /// <summary>Diff: a changed line in both versions and a line missing on one side.</summary>
     public static ThemeSample Diff { get; } = ThemeSample.Parse(
@@ -101,5 +101,5 @@ public static class ThemeSamples
         «diff.emptyCell|  (no line in this version)»
           The last line stays the same too.
         """,
-        CodeViewSyntax.PlainText);
+        CodeEditorSyntax.PlainText);
 }

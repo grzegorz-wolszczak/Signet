@@ -3,7 +3,7 @@
 ## What this project is
 
 **Signet** is a desktop editor for EPUB 2 and EPUB 3 ebooks, written in **C# + Avalonia**.
-Main areas: code editing (Code View), live Preview, Find & Replace, Table of Contents
+Main areas: code editing (Code Editor), live Preview, Find & Replace, Table of Contents
 generation/editing, Metadata Editor, Reports, Spellcheck, Reformat/Clean, well-formedness
 validation, checkpoints (snapshot + diff).
 

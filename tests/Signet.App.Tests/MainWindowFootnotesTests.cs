@@ -17,7 +17,7 @@ using Xunit;
 
 namespace Signet.App.Tests;
 
-/// <summary>The footnote services of the main window for the Code View "Footnotes" submenu (<see cref="ICodeTabHost"/>).</summary>
+/// <summary>The footnote services of the main window for the Code Editor "Footnotes" submenu (<see cref="ICodeTabHost"/>).</summary>
 public sealed class MainWindowFootnotesTests
 {
     private static (MainWindowViewModel Sut, Book Book, HtmlResource Chapter) OpenMinimalChapter(TempDir temp)

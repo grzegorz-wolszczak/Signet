@@ -90,7 +90,7 @@ public sealed record CssCascadeResult(
 
 /// <summary>
 /// The CSS cascade/specificity engine behind the "Live CSS Panel":
-/// for the element under the caret in Code View and each of its ancestors up to <c>body</c> it finds all
+/// for the element under the caret in Code Editor and each of its ancestors up to <c>body</c> it finds all
 /// matching CSS rules (linked stylesheets + <c>&lt;style&gt;</c> blocks + the inline <c>style</c> attribute),
 /// computes the specificity and marks the properties overridden by a rule with a higher priority — on the same
 /// element, or (for inherited properties, <see cref="CssInheritedProperties"/>) on an element closer to the
@@ -99,7 +99,7 @@ public sealed record CssCascadeResult(
 /// <remarks>
 /// <b>Deliberate simplifications:</b>
 /// <list type="bullet">
-/// <item>The input is the caret in Code View, NOT a live hover in Preview — the cascade engine
+/// <item>The input is the caret in Code Editor, NOT a live hover in Preview — the cascade engine
 /// itself is independent of that and can be hooked up to Preview in the future without changes in this class.</item>
 /// <item>Shorthands are not expanded (<c>font</c> does not override <c>font-size</c> and vice versa), and the
 /// <c>inherit</c>/<c>initial</c> keywords get no special treatment.</item>

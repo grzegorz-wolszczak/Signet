@@ -161,7 +161,7 @@ public sealed record ClassRenameStats(
 public sealed record ClassRenameResult(ClassRenameStats Stats, IReadOnlyDictionary<string, string> ChangedTexts);
 
 /// <summary>
-/// "Rename Class" from the Code View context menu — renames a class in <c>class</c> attributes and in the
+/// "Rename Class" from the Code Editor context menu — renames a class in <c>class</c> attributes and in the
 /// selectors of CSS stylesheets and <c>&lt;style&gt;</c> blocks across the whole book, taking the
 /// cascade into account: which style sources actually style which element.
 /// </summary>

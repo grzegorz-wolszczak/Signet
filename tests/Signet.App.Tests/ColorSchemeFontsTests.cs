@@ -56,7 +56,7 @@ public sealed class ColorSchemeFontsTests : IDisposable
         vm.ThemeFonts.Fonts.Select(f => f.Key).Should().Equal(
             new[]
             {
-                vm.AppearanceFonts, vm.StartScreenFonts, vm.BookBrowserFonts, vm.TableOfContentsFonts, vm.CodeViewFonts,
+                vm.AppearanceFonts, vm.StartScreenFonts, vm.BookBrowserFonts, vm.TableOfContentsFonts, vm.CodeEditorFonts,
                 vm.PreviewFonts, vm.FindReplaceFonts, vm.SpecialCharacterFonts, vm.CheckpointsFonts, vm.ValidationFonts,
                 vm.MetadataEditorFonts, vm.CleanupFonts, vm.FootnotesFonts,
             }.SelectMany(p => p.Fonts).Select(f => f.Key));
@@ -68,8 +68,8 @@ public sealed class ColorSchemeFontsTests : IDisposable
     public void Turning_the_theme_fonts_on_copies_the_fonts_of_the_settings_into_the_theme()
     {
         PreferencesViewModel vm = New();
-        vm.CodeView.FontFamily = "Consolas";
-        vm.CodeView.FontSize = 14;
+        vm.CodeEditor.FontFamily = "Consolas";
+        vm.CodeEditor.FontSize = 14;
         ColorSchemeViewModel sut = vm.ColorScheme;
         _names.Enqueue(Any.Create<string>());
         sut.DuplicateCommand.Execute(null);
@@ -78,8 +78,8 @@ public sealed class ColorSchemeFontsTests : IDisposable
 
         sut.Current!.UseThemeFonts.Should().BeTrue();
         sut.Current.Fonts.Keys.Should().BeEquivalentTo(ThemeFontKeys.All);
-        sut.Current.Fonts[ThemeFontKeys.CodeViewEditor].Should().Be(new ThemeFont("Consolas", 14));
-        Row(vm, "CodeViewEditor").Family.Should().Be("Consolas");
+        sut.Current.Fonts[ThemeFontKeys.CodeEditorText].Should().Be(new ThemeFont("Consolas", 14));
+        Row(vm, "CodeEditorText").Family.Should().Be("Consolas");
         vm.HasChanges.Should().BeTrue();
     }
 
@@ -88,19 +88,19 @@ public sealed class ColorSchemeFontsTests : IDisposable
     {
         PreferencesViewModel vm = New();
         vm.ColorScheme.UseThemeFonts = true;
-        string family = vm.CodeView.FontFamily;
+        string family = vm.CodeEditor.FontFamily;
 
-        Row(vm, "CodeViewEditor").Family = "DejaVu Sans Mono";
-        Row(vm, "CodeViewEditor").Size = 17;
+        Row(vm, "CodeEditorText").Family = "DejaVu Sans Mono";
+        Row(vm, "CodeEditorText").Size = 17;
         Row(vm, "PreviewSerif").Family = "Garamond";
         Row(vm, "TooltipBookBrowser").Size = 11;
 
         ThemeFonts fonts = vm.ColorScheme.Resolved!.Fonts;
-        fonts.CodeView(CodeViewAppearance.Default).Should().Be(new CodeViewAppearance { FontFamily = "DejaVu Sans Mono", FontSize = 17 });
+        fonts.CodeEditor(CodeEditorAppearance.Default).Should().Be(new CodeEditorAppearance { FontFamily = "DejaVu Sans Mono", FontSize = 17 });
         fonts.Preview(PreviewAppearance.Default).FontFamilySerif.Should().Be("Garamond");
         fonts.Tooltip(TooltipArea.BookBrowser, TooltipFont.Default).FontSize.Should().Be(11);
-        vm.CodeView.FontFamily.Should().Be(family, "the default font of the settings does not change");
-        Row(vm, "CodeViewEditor").EffectiveFamily.Should().Be("DejaVu Sans Mono");
+        vm.CodeEditor.FontFamily.Should().Be(family, "the default font of the settings does not change");
+        Row(vm, "CodeEditorText").EffectiveFamily.Should().Be("DejaVu Sans Mono");
     }
 
     [Fact]

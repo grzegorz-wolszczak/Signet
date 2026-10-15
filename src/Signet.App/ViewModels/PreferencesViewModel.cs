@@ -38,7 +38,7 @@ namespace Signet.App.ViewModels;
 /// <para><b>UI font</b> (<c>UiFont</c>/<c>UiFontSize</c>) is applied live through
 /// <see cref="UiDensityManager.ApplyUiFont"/>; compact mode — at startup. <b>Appearance has no menu icon size choice</b>
 /// (<c>MainMenuIconSize</c>) — the setting exists in <see cref="SettingsStore"/>, but has no consumer
-/// (no menu icon scaling). The Code View typeface, size and colors are wired in (<c>CodeTabView.ApplyFont</c> /
+/// (no menu icon scaling). The Code Editor typeface, size and colors are wired in (<c>CodeTabView.ApplyFont</c> /
 /// <c>ApplyTextMateTheme</c>), but applied when a tab is opened, not live
 /// after the setting is saved; the Preview fonts have no live consumer yet. For many
 /// appearance settings the effect is visible after a restart (see
@@ -104,13 +104,13 @@ public sealed partial class PreferencesViewModel : ObservableObject
         WarningAppearance warnings = _settings.WarningAppearance;
         _warningFontSize = warnings.FontSize;
 
-        _extendedHighlighting = _settings.CodeViewExtendedHighlighting;
-        _openTagHint = _settings.CodeViewOpenTagHint;
-        _openTagHintDelay = _settings.CodeViewOpenTagHintDelayMs;
+        _extendedHighlighting = _settings.CodeEditorExtendedHighlighting;
+        _openTagHint = _settings.CodeEditorOpenTagHint;
+        _openTagHintDelay = _settings.CodeEditorOpenTagHintDelayMs;
         OpenTagHintAppearance hintLook = _settings.OpenTagHintAppearance;
         _openTagHintFontFamily = hintLook.FontFamily;
         _openTagHintFontSize = hintLook.FontSize;
-        CodeView = new CodeViewAppearanceEditor(_settings.CodeViewAppearance, a => _settings.CodeViewAppearance = a, PickFontAsync);
+        CodeEditor = new CodeEditorAppearanceEditor(_settings.CodeEditorAppearance, a => _settings.CodeEditorAppearance = a, PickFontAsync);
 
         // ---- General ----
         _defaultVersionIsEpub3 = _settings.DefaultVersion.StartsWith('3');
@@ -122,8 +122,8 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _navigationHistoryRemember = _settings.NavigationHistoryRemember;
         _navigationHistoryDays = _settings.NavigationHistoryDays;
         _recentLocationsLimit = _settings.RecentLocationsLimit;
-        _autoCloseTags = _settings.CodeViewAutoCloseTags;
-        _pasteNormalizeNfc = _settings.CodeViewPasteNormalizeNfc;
+        _autoCloseTags = _settings.CodeEditorAutoCloseTags;
+        _pasteNormalizeNfc = _settings.CodeEditorPasteNormalizeNfc;
         _warnMissingDoctype = _settings.WarnMissingDoctype;
         _prettifyAddMissingDoctype = _settings.PrettifyAddMissingDoctype;
         _mendAddMissingDoctype = _settings.MendAddMissingDoctype;
@@ -416,7 +416,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _settings.PreviewAppearance = new PreviewAppearance(PreviewFontStandard, PreviewFontSerif, PreviewFontSansSerif, PreviewFontSize);
 
     // =====================================================================
-    //  Preview — caret position highlight (Code View → Preview)
+    //  Preview — caret position highlight (Code Editor → Preview)
     // =====================================================================
 
     /// <summary>Values to choose from in the "Highlight style" field.</summary>
@@ -555,15 +555,15 @@ public sealed partial class PreferencesViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Extended Code View highlighting; when disabled the basic highlighting is used.
+    /// Extended Code Editor highlighting; when disabled the basic highlighting is used.
     /// </summary>
     [ObservableProperty]
     private bool _extendedHighlighting;
 
-    partial void OnExtendedHighlightingChanged(bool value) => _settings.CodeViewExtendedHighlighting = value;
+    partial void OnExtendedHighlightingChanged(bool value) => _settings.CodeEditorExtendedHighlighting = value;
 
     /// <summary>
-    /// Code View: resting the mouse on a closing tag shows its opening tag (applied live to the open tabs).
+    /// Code Editor: resting the mouse on a closing tag shows its opening tag (applied live to the open tabs).
     /// </summary>
     [ObservableProperty]
     private bool _openTagHint;
@@ -572,15 +572,15 @@ public sealed partial class PreferencesViewModel : ObservableObject
     [ObservableProperty]
     private int _openTagHintDelay;
 
-    partial void OnOpenTagHintChanged(bool value) => _settings.CodeViewOpenTagHint = value;
+    partial void OnOpenTagHintChanged(bool value) => _settings.CodeEditorOpenTagHint = value;
 
-    partial void OnOpenTagHintDelayChanged(int value) => _settings.CodeViewOpenTagHintDelayMs = value;
+    partial void OnOpenTagHintDelayChanged(int value) => _settings.CodeEditorOpenTagHintDelayMs = value;
 
-    /// <summary>Font of the opening tag hint; empty = the Code View editor font.</summary>
+    /// <summary>Font of the opening tag hint; empty = the Code Editor font.</summary>
     [ObservableProperty]
     private string _openTagHintFontFamily;
 
-    /// <summary>Font size (px) of the opening tag hint; 0 = the Code View editor size.</summary>
+    /// <summary>Font size (px) of the opening tag hint; 0 = the Code Editor size.</summary>
     [ObservableProperty]
     private int _openTagHintFontSize;
 
@@ -592,7 +592,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
     [RelayCommand]
     private async Task ChooseOpenTagHintFont()
     {
-        CodeViewAppearance editor = _settings.CodeViewAppearance;
+        CodeEditorAppearance editor = _settings.CodeEditorAppearance;
         string family = OpenTagHintFontFamily.Length > 0 ? OpenTagHintFontFamily : editor.FontFamily;
         int size = OpenTagHintFontSize > 0 ? OpenTagHintFontSize : editor.FontSize;
         if (await PickFontAsync(new FontPickRequest(family, size, false)) is { } result)
@@ -613,11 +613,11 @@ public sealed partial class PreferencesViewModel : ObservableObject
     private void PersistOpenTagHintAppearance() =>
         _settings.OpenTagHintAppearance = new OpenTagHintAppearance(OpenTagHintFontFamily, OpenTagHintFontSize);
 
-    /// <summary>Code View font editor.</summary>
-    public CodeViewAppearanceEditor CodeView { get; }
+    /// <summary>Code Editor font editor.</summary>
+    public CodeEditorAppearanceEditor CodeEditor { get; }
 
     /// <summary>
-    /// Whether to show the notice that a restart is needed to see changes of the Code View and Preview
+    /// Whether to show the notice that a restart is needed to see changes of the Code Editor and Preview
     /// fonts/colors (there is no live consumer yet). Always visible on this
     /// tab — informational, independent of whether anything was changed.
     /// </summary>
@@ -639,7 +639,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         SpecialCharacterFontFamily = specialChar.FontFamily;
         SpecialCharacterFontSize = specialChar.FontSize;
 
-        CodeView.ResetTo(CodeViewAppearance.Default);
+        CodeEditor.ResetTo(CodeEditorAppearance.Default);
 
         OpenTagHintAppearance hintLook = OpenTagHintAppearance.Default;
         OpenTagHintFontFamily = hintLook.FontFamily;
@@ -730,7 +730,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _settings.RecentFilesLimit = Math.Clamp(value, 0, SettingsStore.RecentFilesMax);
 
     /// <summary>
-    /// Delay (ms) of the "live" preview refresh after a change in Code View (100–10000; out of
+    /// Delay (ms) of the "live" preview refresh after a change in Code Editor (100–10000; out of
     /// range — clamped).
     /// </summary>
     [ObservableProperty]
@@ -774,13 +774,13 @@ public sealed partial class PreferencesViewModel : ObservableObject
     [ObservableProperty]
     private bool _autoCloseTags;
 
-    partial void OnAutoCloseTagsChanged(bool value) => _settings.CodeViewAutoCloseTags = value;
+    partial void OnAutoCloseTagsChanged(bool value) => _settings.CodeEditorAutoCloseTags = value;
 
-    /// <summary>Normalization of text pasted into Code View to Unicode NFC.</summary>
+    /// <summary>Normalization of text pasted into Code Editor to Unicode NFC.</summary>
     [ObservableProperty]
     private bool _pasteNormalizeNfc;
 
-    partial void OnPasteNormalizeNfcChanged(bool value) => _settings.CodeViewPasteNormalizeNfc = value;
+    partial void OnPasteNormalizeNfcChanged(bool value) => _settings.CodeEditorPasteNormalizeNfc = value;
 
     /// <summary>Whether operations ask for confirmation when some (X)HTML files have no DOCTYPE.</summary>
     [ObservableProperty]
@@ -1476,16 +1476,16 @@ public sealed partial class PreferencesViewModel : ObservableObject
     }
 }
 
-/// <summary>Editor of the <see cref="CodeViewAppearance"/>: the font of Code View (its colors are in the theme).</summary>
-public sealed partial class CodeViewAppearanceEditor : ObservableObject
+/// <summary>Editor of the <see cref="CodeEditorAppearance"/>: the font of Code Editor (its colors are in the theme).</summary>
+public sealed partial class CodeEditorAppearanceEditor : ObservableObject
 {
-    private readonly Action<CodeViewAppearance> _persist;
+    private readonly Action<CodeEditorAppearance> _persist;
     private readonly Func<FontPickRequest, Task<FontPickResult?>> _pickFont;
 
     /// <summary>Creates an editor bound to a specific persistence property in <see cref="SettingsStore"/>.</summary>
-    internal CodeViewAppearanceEditor(
-        CodeViewAppearance initial,
-        Action<CodeViewAppearance> persist,
+    internal CodeEditorAppearanceEditor(
+        CodeEditorAppearance initial,
+        Action<CodeEditorAppearance> persist,
         Func<FontPickRequest, Task<FontPickResult?>> pickFont)
     {
         _pickFont = pickFont;
@@ -1518,7 +1518,7 @@ public sealed partial class CodeViewAppearanceEditor : ObservableObject
     }
 
     /// <summary>Restores the given defaults.</summary>
-    public void ResetTo(CodeViewAppearance defaults)
+    public void ResetTo(CodeEditorAppearance defaults)
     {
         ArgumentNullException.ThrowIfNull(defaults);
         FontFamily = defaults.FontFamily;
@@ -1526,7 +1526,7 @@ public sealed partial class CodeViewAppearanceEditor : ObservableObject
         Persist();
     }
 
-    private void Persist() => _persist(new CodeViewAppearance { FontFamily = FontFamily, FontSize = FontSize });
+    private void Persist() => _persist(new CodeEditorAppearance { FontFamily = FontFamily, FontSize = FontSize });
 }
 
 /// <summary>A Hunspell dictionary to choose: file name and readable language name (e.g. "English - Great Britain").</summary>

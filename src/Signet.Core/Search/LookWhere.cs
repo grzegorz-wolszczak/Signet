@@ -6,7 +6,7 @@ namespace Signet.Core.Search;
 /// </summary>
 public enum LookWhere
 {
-    /// <summary>Only the current file (the active Code View tab).</summary>
+    /// <summary>Only the current file (the active Code Editor tab).</summary>
     CurrentFile = 0,
 
     /// <summary>All (X)HTML files in spine order.</summary>

@@ -15,7 +15,7 @@ using Xunit;
 namespace Signet.App.Tests;
 
 /// <summary>
-/// Live preview: edits in Code View reach the preview mirror from the tabs' working text, without
+/// Live preview: edits in Code Editor reach the preview mirror from the tabs' working text, without
 /// saving the tab to its resource.
 /// </summary>
 public sealed class PreviewLiveRefreshTests

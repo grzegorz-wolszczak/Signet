@@ -21,7 +21,7 @@ namespace Signet.Core.Themes;
 ///     &lt;attribute key="errors.spelling" effect="wave" effect-color="#C0392B" /&gt;
 ///     &lt;attribute key="xhtml.css.comment" inherit="true" /&gt;
 ///   &lt;/attributes&gt;
-///   &lt;fonts use-theme-fonts="true"&gt;&lt;font key="codeView.editor" family="Cascadia Code" size="13" /&gt;&lt;/fonts&gt;
+///   &lt;fonts use-theme-fonts="true"&gt;&lt;font key="codeEditor.editor" family="Cascadia Code" size="13" /&gt;&lt;/fonts&gt;
 /// &lt;/signet-theme&gt;
 /// </code>
 /// A file holds what the theme sets itself (for a theme of the user: what differs from its parent). Keys this version

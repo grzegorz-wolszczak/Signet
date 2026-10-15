@@ -217,7 +217,7 @@ public sealed class SettingsStore
     }
 
     /// <summary>
-    /// Delay (ms) of the live preview refresh after a change in Code View (default 1000 ms; a value
+    /// Delay (ms) of the live preview refresh after a change in Code Editor (default 1000 ms; a value
     /// outside <c><see cref="UiPreviewTimeoutMin"/>..<see cref="UiPreviewTimeoutMax"/></c> → 1000).
     /// </summary>
     public int UiPreviewTimeout
@@ -368,7 +368,7 @@ public sealed class SettingsStore
         set => Write("zoom_image", value);
     }
 
-    /// <summary>Text view (Code View) zoom factor.</summary>
+    /// <summary>Text view (Code Editor) zoom factor.</summary>
     public float ZoomText
     {
         get => ReadFloat("zoom_text", ZoomNormal);
@@ -437,43 +437,43 @@ public sealed class SettingsStore
     }
 
     /// <summary>
-    /// Whether Code View wraps long lines to the window width (View → Word Wrap). Defaults to
+    /// Whether Code Editor wraps long lines to the window width (View → Word Wrap). Defaults to
     /// <c>true</c>.
     /// </summary>
-    public bool CodeViewWordWrap
+    public bool CodeEditorWordWrap
     {
-        get => ReadBool("code_view_word_wrap", true);
-        set => Write("code_view_word_wrap", value);
+        get => ReadBool("code_editor_word_wrap", true);
+        set => Write("code_editor_word_wrap", value);
     }
 
     /// <summary>
-    /// Whether Code View uses extended highlighting (CSS inside <c>&lt;style&gt;</c>, richer CSS,
+    /// Whether Code Editor uses extended highlighting (CSS inside <c>&lt;style&gt;</c>, richer CSS,
     /// errors, links, namespace prefixes, bold/italic). Enabled by default; <c>false</c> uses
     /// the basic highlighting.
     /// </summary>
-    public bool CodeViewExtendedHighlighting
+    public bool CodeEditorExtendedHighlighting
     {
-        get => ReadBool("code_view_extended_highlighting", true);
-        set => Write("code_view_extended_highlighting", value);
+        get => ReadBool("code_editor_extended_highlighting", true);
+        set => Write("code_editor_extended_highlighting", value);
     }
 
     /// <summary>
-    /// Whether Code View closes the open tag after <c>&lt;/</c> is typed (enabled by default).
+    /// Whether Code Editor closes the open tag after <c>&lt;/</c> is typed (enabled by default).
     /// </summary>
-    public bool CodeViewAutoCloseTags
+    public bool CodeEditorAutoCloseTags
     {
-        get => ReadBool("code_view_auto_close_tags", true);
-        set => Write("code_view_auto_close_tags", value);
+        get => ReadBool("code_editor_auto_close_tags", true);
+        set => Write("code_editor_auto_close_tags", value);
     }
 
     /// <summary>
-    /// Whether text pasted into Code View is normalized to Unicode NFC (a letter followed by a combining accent becomes
+    /// Whether text pasted into Code Editor is normalized to Unicode NFC (a letter followed by a combining accent becomes
     /// one precomposed character; enabled by default).
     /// </summary>
-    public bool CodeViewPasteNormalizeNfc
+    public bool CodeEditorPasteNormalizeNfc
     {
-        get => ReadBool("code_view_paste_normalize_nfc", true);
-        set => Write("code_view_paste_normalize_nfc", value);
+        get => ReadBool("code_editor_paste_normalize_nfc", true);
+        set => Write("code_editor_paste_normalize_nfc", value);
     }
 
     /// <summary>
@@ -496,21 +496,21 @@ public sealed class SettingsStore
         set => Write("book_browser_columns", value);
     }
 
-    /// <summary>Upper bound of <see cref="CodeViewOpenTagHintDelayMs"/>.</summary>
+    /// <summary>Upper bound of <see cref="CodeEditorOpenTagHintDelayMs"/>.</summary>
     public const int OpenTagHintDelayMaxMs = 5000;
 
     /// <summary>
-    /// Whether Code View shows the matching opening tag (as in the source, with its line number) in a tooltip when the
+    /// Whether Code Editor shows the matching opening tag (as in the source, with its line number) in a tooltip when the
     /// mouse rests on a closing tag. On by default.
     /// </summary>
-    public bool CodeViewOpenTagHint
+    public bool CodeEditorOpenTagHint
     {
-        get => ReadBool("code_view_open_tag_hint", true);
-        set => Write("code_view_open_tag_hint", value);
+        get => ReadBool("code_editor_open_tag_hint", true);
+        set => Write("code_editor_open_tag_hint", value);
     }
 
     /// <summary>
-    /// Look of the opening tag tooltip (<see cref="CodeViewOpenTagHint"/>): font and colors. Always
+    /// Look of the opening tag tooltip (<see cref="CodeEditorOpenTagHint"/>): font and colors. Always
     /// read normalized (<see cref="OpenTagHintAppearance.Normalized"/>).
     /// </summary>
     public OpenTagHintAppearance OpenTagHintAppearance
@@ -534,12 +534,12 @@ public sealed class SettingsStore
 
     /// <summary>
     /// After how many milliseconds of resting on a closing tag the opening tag tooltip appears
-    /// (<see cref="CodeViewOpenTagHint"/>); 0–<see cref="OpenTagHintDelayMaxMs"/>, 500 by default.
+    /// (<see cref="CodeEditorOpenTagHint"/>); 0–<see cref="OpenTagHintDelayMaxMs"/>, 500 by default.
     /// </summary>
-    public int CodeViewOpenTagHintDelayMs
+    public int CodeEditorOpenTagHintDelayMs
     {
-        get => Math.Clamp(ReadInt("code_view_open_tag_hint_delay_ms", 500), 0, OpenTagHintDelayMaxMs);
-        set => Write("code_view_open_tag_hint_delay_ms", Math.Clamp(value, 0, OpenTagHintDelayMaxMs));
+        get => Math.Clamp(ReadInt("code_editor_open_tag_hint_delay_ms", 500), 0, OpenTagHintDelayMaxMs);
+        set => Write("code_editor_open_tag_hint_delay_ms", Math.Clamp(value, 0, OpenTagHintDelayMaxMs));
     }
 
     /// <summary>Whether automatic spell checking is enabled.</summary>
@@ -763,8 +763,8 @@ public sealed class SettingsStore
     /// <summary>Whether to highlight the open/close tag pair when the caret is inside a tag.</summary>
     public bool HighlightOpenCloseTags
     {
-        get => ReadBool("code_view_highlight_open_close_tags", true);
-        set => Write("code_view_highlight_open_close_tags", value);
+        get => ReadBool("code_editor_highlight_open_close_tags", true);
+        set => Write("code_editor_highlight_open_close_tags", value);
     }
 
     /// <summary>Main menu icon size (multiplier).</summary>
@@ -883,7 +883,7 @@ public sealed class SettingsStore
     }
 
     /// <summary>
-    /// Highlight of the Code View caret location in the preview (style, color, opacity, outline,
+    /// Highlight of the Code Editor caret location in the preview (style, color, opacity, outline,
     /// auto-hide). Always read normalized
     /// (<see cref="PreviewHighlight.Normalized"/>).
     /// </summary>
@@ -990,13 +990,13 @@ public sealed class SettingsStore
     }
 
     /// <summary>Code editor appearance settings — font and colors.</summary>
-    public CodeViewAppearance CodeViewAppearance
+    public CodeEditorAppearance CodeEditorAppearance
     {
-        get => ReadCodeView("code_view_", CodeViewAppearance.Default);
+        get => ReadCodeEditor("code_editor_", CodeEditorAppearance.Default);
         set
         {
-            WriteCodeView("code_view_", value);
-            RaiseChanged("code_view_appearance");
+            WriteCodeEditor("code_editor_", value);
+            RaiseChanged("code_editor_appearance");
         }
     }
 
@@ -1095,7 +1095,7 @@ public sealed class SettingsStore
     }
 
     /// <summary>
-    /// Resets all appearance settings (Preview / Code View / Special Characters)
+    /// Resets all appearance settings (Preview / Code Editor / Special Characters)
     /// to their default values.
     /// </summary>
     public void ClearAppearanceSettings()
@@ -1690,13 +1690,13 @@ public sealed class SettingsStore
         RaiseChanged("preserve_entities");
     }
 
-    private CodeViewAppearance ReadCodeView(string prefix, CodeViewAppearance defaults) => new()
+    private CodeEditorAppearance ReadCodeEditor(string prefix, CodeEditorAppearance defaults) => new()
     {
         FontFamily = ReadString(prefix + "font_family_standard", defaults.FontFamily),
         FontSize = ReadInt(prefix + "font_size", defaults.FontSize),
     };
 
-    private void WriteCodeView(string prefix, CodeViewAppearance a)
+    private void WriteCodeEditor(string prefix, CodeEditorAppearance a)
     {
         WriteSilent(prefix + "font_family_standard", a.FontFamily);
         WriteSilent(prefix + "font_size", a.FontSize);
@@ -1719,12 +1719,12 @@ public sealed class SettingsStore
             yield return TooltipFontKey(area, "size");
         }
 
-        yield return "code_view_font_family_standard";
-        yield return "code_view_font_size";
+        yield return "code_editor_font_family_standard";
+        yield return "code_editor_font_size";
     }
 
     // The keys of settings that were removed — the dark application theme (the application has one, light theme until
-    // configurable themes come) and Code View colors nothing used: dropped on load, so the next save no longer writes
+    // configurable themes come) and Code Editor colors nothing used: dropped on load, so the next save no longer writes
     // them.
     private void RemoveObsoleteKeys()
     {
@@ -1746,9 +1746,9 @@ public sealed class SettingsStore
         {
             "ui_theme", "ui_custom_signet_dark_theme", "preview_dark_in_dm", "preview_highlight_color_dark",
             "warning_color_dark", "error_color_dark", "open_tag_hint_dark_background", "open_tag_hint_dark_foreground",
-            // Code View colors nothing used: the line numbers and the spelling squiggle had fixed colors.
-            "code_view_line_number_background_color", "code_view_line_number_foreground_color",
-            "code_view_spelling_underline_color",
+            // Code Editor colors nothing used: the line numbers and the spelling squiggle had fixed colors.
+            "code_editor_line_number_background_color", "code_editor_line_number_foreground_color",
+            "code_editor_spelling_underline_color",
         };
         foreach (string key in keys)
         {

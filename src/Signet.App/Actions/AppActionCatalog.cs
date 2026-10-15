@@ -49,7 +49,7 @@ public static class AppActionCatalog
         new("MainWindow.Undo", "&Undo", "Ctrl+Z", "edit-undo", "Edit"),
         new("MainWindow.Redo", "&Redo", "Ctrl+Y", "edit-redo", "Edit"),
         // Book checkpoints — no default shortcuts
-        // (Ctrl+Left/Right would clash with word navigation in Code View).
+        // (Ctrl+Left/Right would clash with word navigation in Code Editor).
         new("MainWindow.RevertToBefore", "Revert to &Before", "", null, "Edit"),
         new("MainWindow.RevertToAfter", "Revert to &After", "", null, "Edit"),
         new("MainWindow.CreateCheckpoint", "Create &Checkpoint...", "", null, "Edit"),
@@ -206,7 +206,7 @@ public static class AppActionCatalog
         new("MainWindow.NotificationsWindow", "&Notifications Panel", "", null, "View"),
         new("MainWindow.FindUsagesWindow", "Find Usages Panel", "", null, "View"),
         new("MainWindow.FocusOnBookBrowser", "Focus on Book Browser", "", null, "View"),
-        new("MainWindow.FocusOnCodeView", "Focus on Code View", "", null, "View"),
+        new("MainWindow.FocusOnCodeEditor", "Focus on Code Editor", "", null, "View"),
         new("MainWindow.FocusOnPreview", "Focus on Preview", "", null, "View"),
         new("MainWindow.FocusOnTOC", "Focus on Table Of Contents", "", null, "View"),
         new("MainWindow.FocusOnClips", "Focus on Clips", "", null, "View"),

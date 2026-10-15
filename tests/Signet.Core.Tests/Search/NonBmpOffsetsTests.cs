@@ -26,12 +26,12 @@ public sealed class NonBmpOffsetsTests
     [Fact]
     public void FindNext_down_and_up_select_the_utf16_range_of_the_match()
     {
-        CodeViewSearch search = new();
+        CodeEditorSearch search = new();
         int second = IndexOf("one", IndexOf("one") + 1);
 
         FindResult down = search.FindNext(Text, 0, 0, 0, Normal("one"), SearchDirection.Down, wrap: false);
         FindResult next = search.FindNext(Text, down.Start, down.End, down.End, Normal("one"), SearchDirection.Down, wrap: false);
-        FindResult up = new CodeViewSearch().FindNext(Text, Text.Length, Text.Length, Text.Length, Normal("one"), SearchDirection.Up, wrap: false);
+        FindResult up = new CodeEditorSearch().FindNext(Text, Text.Length, Text.Length, Text.Length, Normal("one"), SearchDirection.Up, wrap: false);
 
         (down.Start, down.End).Should().Be((IndexOf("one"), IndexOf("one") + 3));
         (next.Start, next.End).Should().Be((second, second + 3));
@@ -41,7 +41,7 @@ public sealed class NonBmpOffsetsTests
     [Fact]
     public void A_regex_match_that_spans_non_bmp_characters_covers_whole_surrogate_pairs()
     {
-        FindResult result = new CodeViewSearch().FindNext(Text, 0, 0, 0, Regex("😀 two 😀"), SearchDirection.Down, wrap: false);
+        FindResult result = new CodeEditorSearch().FindNext(Text, 0, 0, 0, Regex("😀 two 😀"), SearchDirection.Down, wrap: false);
 
         (result.Start, result.End).Should().Be((IndexOf("😀"), IndexOf("😀") + "😀 two 😀".Length));
         Text[result.Start..result.End].Should().Be("😀 two 😀");
@@ -50,22 +50,22 @@ public sealed class NonBmpOffsetsTests
     [Fact]
     public void A_dot_matches_a_whole_non_bmp_character()
     {
-        FindResult result = new CodeViewSearch().FindNext(Text, 0, 0, 0, Regex("o. t"), SearchDirection.Down, wrap: false);
+        FindResult result = new CodeEditorSearch().FindNext(Text, 0, 0, 0, Regex("o. t"), SearchDirection.Down, wrap: false);
 
         result.Found.Should().BeFalse("'.' is one character, the emoji between 'one ' and ' two' is two code units only in UTF-16");
-        new CodeViewSearch().FindNext(Text, 0, 0, 0, Regex(" . two"), SearchDirection.Down, wrap: false)
+        new CodeEditorSearch().FindNext(Text, 0, 0, 0, Regex(" . two"), SearchDirection.Down, wrap: false)
             .Start.Should().Be(IndexOf("😀") - 1);
     }
 
     [Fact]
     public void ReplaceAll_and_ReplaceSelected_keep_the_text_around_non_bmp_characters()
     {
-        ReplaceAllResult all = new CodeViewSearch().ReplaceAll(Text, 0, Normal("one"), "1", SearchDirection.Down, wrap: true);
+        ReplaceAllResult all = new CodeEditorSearch().ReplaceAll(Text, 0, Normal("one"), "1", SearchDirection.Down, wrap: true);
         all.Count.Should().Be(2);
         all.NewText.Should().Be("<p>𝔸𝔹 1 😀 two 😀 1</p>");
 
         int two = IndexOf("two");
-        CodeViewSearch search = new();
+        CodeEditorSearch search = new();
         search.FindNext(Text, two, two, two, Normal("two"), SearchDirection.Down, wrap: false);
         ReplaceResult selected = search.ReplaceSelected(Text, two, two + 3, two + 3, Normal("two"), "2", SearchDirection.Down, true);
         selected.NewText.Should().Be("<p>𝔸𝔹 one 😀 2 😀 one</p>");
@@ -74,7 +74,7 @@ public sealed class NonBmpOffsetsTests
     [Fact]
     public void Count_counts_matches_after_non_bmp_characters()
     {
-        new CodeViewSearch().Count(Text, 0, Normal("one"), SearchDirection.Down, wrap: true).Should().Be(2);
+        new CodeEditorSearch().Count(Text, 0, Normal("one"), SearchDirection.Down, wrap: true).Should().Be(2);
     }
 
     [Fact]

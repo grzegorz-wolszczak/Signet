@@ -489,8 +489,8 @@ public static class CodeFormatOperations
     // ---------------------------------------------------------------------
 
     /// <summary>Whether the given syntax has a defined comment delimiter pair (supported: HTML/XML/CSS/JS).</summary>
-    public static bool IsCommentSyntaxSupported(CodeViewSyntax syntax) =>
-        syntax is CodeViewSyntax.Html or CodeViewSyntax.Xml or CodeViewSyntax.Css or CodeViewSyntax.JavaScript;
+    public static bool IsCommentSyntaxSupported(CodeEditorSyntax syntax) =>
+        syntax is CodeEditorSyntax.Html or CodeEditorSyntax.Xml or CodeEditorSyntax.Css or CodeEditorSyntax.JavaScript;
 
     /// <summary>
     /// Toggles a comment for the selection: when the selection (or the fragment
@@ -500,7 +500,7 @@ public static class CodeFormatOperations
     /// For an unsupported syntax (<see cref="IsCommentSyntaxSupported"/> = <c>false</c>) it returns
     /// the result unchanged.
     /// </summary>
-    public static FormatEdit ToggleComment(string text, int selectionStart, int selectionEnd, CodeViewSyntax syntax)
+    public static FormatEdit ToggleComment(string text, int selectionStart, int selectionEnd, CodeEditorSyntax syntax)
     {
         ArgumentNullException.ThrowIfNull(text);
         Normalize(text, ref selectionStart, ref selectionEnd);
@@ -510,7 +510,7 @@ public static class CodeFormatOperations
             return FormatEdit.Unchanged(text, selectionStart, selectionEnd);
         }
 
-        (string open, string close) = syntax is CodeViewSyntax.Css or CodeViewSyntax.JavaScript
+        (string open, string close) = syntax is CodeEditorSyntax.Css or CodeEditorSyntax.JavaScript
             ? ("/*", "*/")
             : ("<!--", "-->");
 

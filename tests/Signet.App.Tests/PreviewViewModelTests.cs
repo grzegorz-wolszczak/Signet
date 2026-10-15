@@ -392,7 +392,7 @@ public sealed class PreviewViewModelTests
         scrolled.Should().BeEmpty("the clicked element is already in view — the preview must not jump it to the middle");
         highlighted.Should().ContainSingle().Which.Should().BeGreaterThanOrEqualTo(0);
 
-        // A later caret move to the same place (in Code View) scrolls as usual.
+        // A later caret move to the same place (in Code Editor) scrolls as usual.
         sut.SyncCaretToPreview(offset);
         scrolled.Should().ContainSingle();
     }

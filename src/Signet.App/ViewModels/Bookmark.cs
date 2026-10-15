@@ -1,7 +1,7 @@
 namespace Signet.App.ViewModels;
 
 /// <summary>
-/// A remembered location in the book — file + caret position in Code View, listed in the
+/// A remembered location in the book — file + caret position in Code Editor, listed in the
 /// Window menu. Session-only: not saved to the EPUB, survives tab switching.
 /// </summary>
 /// <param name="BookPath">Bookpath of the resource.</param>

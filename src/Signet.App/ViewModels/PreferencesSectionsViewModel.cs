@@ -39,7 +39,7 @@ public sealed partial class PreferencesSectionNode : ObservableObject
     /// <summary>Whether the section has subsections (it can be expanded).</summary>
     public bool HasChildren => Children.Count > 0;
 
-    /// <summary>The names from the top-level section down to this one, e.g. <c>Appearance › Code View</c>.</summary>
+    /// <summary>The names from the top-level section down to this one, e.g. <c>Appearance › Code Editor</c>.</summary>
     public string Path => Parent is null ? Title : Parent.Path + " › " + Title;
 
     /// <summary>Whether the subsections are shown.</summary>

@@ -11,15 +11,15 @@ using TextMateSharp.Grammars;
 using TextMateSharp.Internal.Themes.Reader;
 using TextMateSharp.Themes;
 
-namespace Signet.App.CodeView;
+namespace Signet.App.CodeEditor;
 
 /// <summary>
-/// Selects syntax highlighting for Code View. (X)HTML/XML/SVG and CSS use line-by-line
+/// Selects syntax highlighting for Code Editor. (X)HTML/XML/SVG and CSS use line-by-line
 /// highlighters (<see cref="CreateColorizer"/>, colors from the theme) —
 /// basic or extended; the remaining syntaxes (JavaScript, JSON) use TextMateSharp with a TextMate
 /// theme built from the <c>js.*</c> and <c>json.*</c> keys of the theme (<see cref="ThemeFor"/>).
 /// </summary>
-internal static class CodeViewTextMate
+internal static class CodeEditorTextMate
 {
     private static readonly RegistryOptions SharedOptions = new(ThemeName.LightPlus);
 
@@ -80,7 +80,7 @@ internal static class CodeViewTextMate
         return null;
     }
 
-    /// <summary>Registry options (grammars + themes) shared by all Code View tabs.</summary>
+    /// <summary>Registry options (grammars + themes) shared by all Code Editor tabs.</summary>
     public static RegistryOptions Options => SharedOptions;
 
     /// <summary>
@@ -184,14 +184,14 @@ internal static class CodeViewTextMate
     /// <param name="linkExists">Link target check (extended only); <c>null</c> — no checking.</param>
     /// <param name="theme">The colors.</param>
     public static SyntaxColorizer? CreateColorizer(
-        CodeViewSyntax syntax, bool extended, Func<string, bool>? linkExists, ResolvedTheme theme) =>
+        CodeEditorSyntax syntax, bool extended, Func<string, bool>? linkExists, ResolvedTheme theme) =>
         (syntax, extended) switch
         {
-            (CodeViewSyntax.Html, true) => new LineStateSyntaxColorizer<ExtendedXhtmlState>(new ExtendedXhtmlHighlighter(false, linkExists), theme),
-            (CodeViewSyntax.Xml, true) => new LineStateSyntaxColorizer<ExtendedXhtmlState>(new ExtendedXhtmlHighlighter(true, linkExists), theme),
-            (CodeViewSyntax.Css, true) => new LineStateSyntaxColorizer<int>(new ExtendedCssHighlighter(linkExists), theme),
-            (CodeViewSyntax.Html or CodeViewSyntax.Xml, false) => new LineStateSyntaxColorizer<int>(new XhtmlHighlighter(), theme),
-            (CodeViewSyntax.Css, false) => new LineStateSyntaxColorizer<int>(new CssHighlighter(), theme),
+            (CodeEditorSyntax.Html, true) => new LineStateSyntaxColorizer<ExtendedXhtmlState>(new ExtendedXhtmlHighlighter(false, linkExists), theme),
+            (CodeEditorSyntax.Xml, true) => new LineStateSyntaxColorizer<ExtendedXhtmlState>(new ExtendedXhtmlHighlighter(true, linkExists), theme),
+            (CodeEditorSyntax.Css, true) => new LineStateSyntaxColorizer<int>(new ExtendedCssHighlighter(linkExists), theme),
+            (CodeEditorSyntax.Html or CodeEditorSyntax.Xml, false) => new LineStateSyntaxColorizer<int>(new XhtmlHighlighter(), theme),
+            (CodeEditorSyntax.Css, false) => new LineStateSyntaxColorizer<int>(new CssHighlighter(), theme),
             _ => null,
         };
 
@@ -199,9 +199,9 @@ internal static class CodeViewTextMate
     /// TextMate grammar scope for the given syntax (e.g. <c>text.html.basic</c>), or <c>null</c>
     /// when the syntax is not highlighted (plain text) or the grammar is unavailable.
     /// </summary>
-    public static string? ScopeFor(CodeViewSyntax syntax)
+    public static string? ScopeFor(CodeEditorSyntax syntax)
     {
-        string? languageId = CodeViewSyntaxMap.ToTextMateLanguageId(syntax);
+        string? languageId = CodeEditorSyntaxMap.ToTextMateLanguageId(syntax);
         return languageId is null ? null : SharedOptions.GetScopeByLanguageId(languageId);
     }
 }

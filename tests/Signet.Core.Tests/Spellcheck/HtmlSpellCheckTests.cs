@@ -10,7 +10,7 @@ namespace Signet.Core.Tests.Spellcheck;
 /// <summary>
 /// Tests for <see cref="HtmlSpellCheck"/> — extracting words while skipping tags/attributes/
 /// <c>&lt;style&gt;</c>/<c>&lt;script&gt;</c>, choosing the dictionary per fragment by <c>lang</c>/<c>xml:lang</c>,
-/// and integration with <see cref="SpellChecker"/> (Core only — Code View highlighting lives in App).
+/// and integration with <see cref="SpellChecker"/> (Core only — Code Editor highlighting lives in App).
 /// </summary>
 public sealed class HtmlSpellCheckTests
 {

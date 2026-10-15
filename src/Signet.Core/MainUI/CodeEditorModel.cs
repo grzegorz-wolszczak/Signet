@@ -9,7 +9,7 @@ using Signet.Core.Semantics;
 namespace Signet.Core.MainUI;
 
 /// <summary>
-/// The view-independent model of the code editor (Code View), independent of AvaloniaEdit: a working copy of
+/// The view-independent model of the code editor (Code Editor), independent of AvaloniaEdit: a working copy of
 /// the resource text, modification tracking, flushing to the resource, XML validity checking and
 /// inserting the section split marker.
 /// </summary>
@@ -19,7 +19,7 @@ namespace Signet.Core.MainUI;
 /// The App layer synchronizes <see cref="Text"/> with the editor document on every change,
 /// and on save/tab switch calls <see cref="SaveToResource"/>.
 /// </remarks>
-public sealed partial class CodeViewModel
+public sealed partial class CodeEditorModel
 {
     /// <summary>
     /// The section split marker inserted by "Insert Split Marker". The actual
@@ -32,22 +32,22 @@ public sealed partial class CodeViewModel
     private string _savedText;
 
     /// <summary>Creates a model for a text resource, loading its current content.</summary>
-    public CodeViewModel(TextResource resource)
+    public CodeEditorModel(TextResource resource)
     {
         _resource = resource ?? throw new ArgumentNullException(nameof(resource));
         _resource.InitialLoad();
         _text = _savedText = _resource.GetText();
-        Syntax = CodeViewSyntaxMap.ForResource(resource);
+        Syntax = CodeEditorSyntaxMap.ForResource(resource);
     }
 
     /// <summary>The resource edited in this model.</summary>
     public TextResource Resource => _resource;
 
     /// <summary>The syntax kind (selects the highlighting grammar in the App layer).</summary>
-    public CodeViewSyntax Syntax { get; }
+    public CodeEditorSyntax Syntax { get; }
 
     /// <summary>Whether XML validity (well-formedness) is checked for this resource.</summary>
-    public bool SupportsWellFormedCheck => CodeViewSyntaxMap.SupportsWellFormedCheck(Syntax);
+    public bool SupportsWellFormedCheck => CodeEditorSyntaxMap.SupportsWellFormedCheck(Syntax);
 
     /// <summary>The working copy of the content. The App layer synchronizes it with the editor document.</summary>
     public string Text
@@ -98,8 +98,8 @@ public sealed partial class CodeViewModel
 
         return Syntax switch
         {
-            CodeViewSyntax.Html => WellFormedChecker.CheckXhtmlStructure(_text, _resource.EpubVersion),
-            CodeViewSyntax.Css => CssWellFormedChecker.Check(_text),
+            CodeEditorSyntax.Html => WellFormedChecker.CheckXhtmlStructure(_text, _resource.EpubVersion),
+            CodeEditorSyntax.Css => CssWellFormedChecker.Check(_text),
             _ => WellFormedChecker.Check(_text, _resource.MediaType),
         };
     }
@@ -109,7 +109,7 @@ public sealed partial class CodeViewModel
     /// the "rule counter". Returns <c>0</c> for resources other than CSS.
     /// </summary>
     public int GetCssRuleCount() =>
-        Syntax == CodeViewSyntax.Css ? new CssInfo(_text).Rules.Count : 0;
+        Syntax == CodeEditorSyntax.Css ? new CssInfo(_text).Rules.Count : 0;
 
     /// <summary>
     /// Inserts <see cref="SectionMarker"/> at the given (0-based) position of the working copy and returns
@@ -129,7 +129,7 @@ public sealed partial class CodeViewModel
     /// </summary>
     public TagPairHighlight? GetTagPairHighlight(int caretOffset)
     {
-        if (Syntax is not (CodeViewSyntax.Html or CodeViewSyntax.Xml) || _text.Length == 0)
+        if (Syntax is not (CodeEditorSyntax.Html or CodeEditorSyntax.Xml) || _text.Length == 0)
         {
             return null;
         }
@@ -192,7 +192,7 @@ public sealed partial class CodeViewModel
     /// </summary>
     public (int Offset, int Length)? GetCloseTagAt(int offset)
     {
-        if (Syntax is not (CodeViewSyntax.Html or CodeViewSyntax.Xml) || offset < 0 || offset >= _text.Length)
+        if (Syntax is not (CodeEditorSyntax.Html or CodeEditorSyntax.Xml) || offset < 0 || offset >= _text.Length)
         {
             return null;
         }
@@ -221,7 +221,7 @@ public sealed partial class CodeViewModel
     /// </summary>
     public (int Offset, int Length)? GetOpenTagOfCloseTag(int closeTagOffset)
     {
-        if (Syntax is not (CodeViewSyntax.Html or CodeViewSyntax.Xml) || closeTagOffset < 0 || closeTagOffset >= _text.Length)
+        if (Syntax is not (CodeEditorSyntax.Html or CodeEditorSyntax.Xml) || closeTagOffset < 0 || closeTagOffset >= _text.Length)
         {
             return null;
         }
@@ -241,7 +241,7 @@ public sealed partial class CodeViewModel
     /// </summary>
     public string? GetClassNameAtCaret(int caretOffset)
     {
-        if (Syntax is not (CodeViewSyntax.Html or CodeViewSyntax.Xml) || _text.Length == 0)
+        if (Syntax is not (CodeEditorSyntax.Html or CodeEditorSyntax.Xml) || _text.Length == 0)
         {
             return null;
         }
@@ -311,7 +311,7 @@ public sealed partial class CodeViewModel
         string text = _text;
         int pos = Math.Clamp(caretOffset, 0, text.Length);
 
-        if (Syntax is CodeViewSyntax.Html or CodeViewSyntax.Xml)
+        if (Syntax is CodeEditorSyntax.Html or CodeEditorSyntax.Xml)
         {
             var lister = new TagLister(text);
             TagLister.TagInfo ti = lister.At(lister.FindFirstTagOnOrAfter(pos));
@@ -337,7 +337,7 @@ public sealed partial class CodeViewModel
             }
         }
 
-        if (Syntax is CodeViewSyntax.Css or CodeViewSyntax.Html)
+        if (Syntax is CodeEditorSyntax.Css or CodeEditorSyntax.Html)
         {
             int lineStart = pos == 0 ? 0 : text.LastIndexOf('\n', pos - 1) + 1;
             int lineEnd = text.IndexOf('\n', pos);
@@ -365,7 +365,7 @@ public sealed partial class CodeViewModel
     /// </summary>
     public string? GetImageSourceAtCaret(int caretOffset)
     {
-        if (Syntax is not (CodeViewSyntax.Html or CodeViewSyntax.Xml) || _text.Length == 0)
+        if (Syntax is not (CodeEditorSyntax.Html or CodeEditorSyntax.Xml) || _text.Length == 0)
         {
             return null;
         }

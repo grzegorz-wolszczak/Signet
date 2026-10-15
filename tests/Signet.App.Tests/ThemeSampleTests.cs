@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 using AwesomeAssertions;
-using Signet.App.CodeView;
+using Signet.App.CodeEditor;
 using Signet.Core.MainUI;
 using Signet.Core.Themes;
 using Xunit;
@@ -14,7 +14,7 @@ public sealed class ThemeSampleTests
     [Fact]
     public void The_markup_marks_nested_fragments_with_their_keys()
     {
-        ThemeSample sut = ThemeSample.Parse("a «diff.deletedLine|b «diff.deletedWord|c» d» e", CodeViewSyntax.PlainText);
+        ThemeSample sut = ThemeSample.Parse("a «diff.deletedLine|b «diff.deletedWord|c» d» e", CodeEditorSyntax.PlainText);
 
         sut.Text.Should().Be("a b c d e");
         sut.Marks.Should().BeEquivalentTo(new[]
@@ -33,15 +33,15 @@ public sealed class ThemeSampleTests
     [InlineData("«no.such.key|text»")]
     public void A_broken_markup_is_rejected(string markup)
     {
-        Action parse = () => ThemeSample.Parse(markup, CodeViewSyntax.PlainText);
+        Action parse = () => ThemeSample.Parse(markup, CodeEditorSyntax.PlainText);
 
         parse.Should().Throw<Exception>();
     }
 
     [Fact]
-    public void The_keys_of_the_syntax_come_from_the_highlighting_of_code_view()
+    public void The_keys_of_the_syntax_come_from_the_highlighting_of_code_editor()
     {
-        ThemeSample sut = ThemeSample.Parse("<p class=\"a\">x &amp; <a href=\"missing.xhtml\">y</a></p>", CodeViewSyntax.Html);
+        ThemeSample sut = ThemeSample.Parse("<p class=\"a\">x &amp; <a href=\"missing.xhtml\">y</a></p>", CodeEditorSyntax.Html);
 
         sut.KeyAt(1).Should().Be(ThemeKeys.XhtmlTag);
         sut.KeyAt(4).Should().Be(ThemeKeys.XhtmlAttributeName);
@@ -53,7 +53,7 @@ public sealed class ThemeSampleTests
     [Fact]
     public void A_style_block_takes_the_css_keys_in_the_extended_highlighting_and_the_embedded_css_key_in_the_basic_one()
     {
-        ThemeSample sut = ThemeSample.Parse("<style>\np { color: red; }\n</style>", CodeViewSyntax.Html);
+        ThemeSample sut = ThemeSample.Parse("<style>\np { color: red; }\n</style>", CodeEditorSyntax.Html);
         int property = sut.Text.IndexOf("color", StringComparison.Ordinal);
 
         sut.IsExtended.Should().BeTrue();
@@ -65,8 +65,8 @@ public sealed class ThemeSampleTests
     [Fact]
     public void The_keys_of_javascript_and_json_come_from_the_textmate_scopes()
     {
-        ThemeSample js = ThemeSample.Parse("var n = 42; // done\nif (n) { return \"s\"; }", CodeViewSyntax.JavaScript);
-        ThemeSample json = ThemeSample.Parse("{ \"a\": 1, \"b\": true }", CodeViewSyntax.Json);
+        ThemeSample js = ThemeSample.Parse("var n = 42; // done\nif (n) { return \"s\"; }", CodeEditorSyntax.JavaScript);
+        ThemeSample json = ThemeSample.Parse("{ \"a\": 1, \"b\": true }", CodeEditorSyntax.Json);
 
         js.KeyAt(0).Should().Be(ThemeKeys.JsKeyword);
         js.KeyAt(js.Text.IndexOf("42", StringComparison.Ordinal)).Should().Be(ThemeKeys.JsNumber);

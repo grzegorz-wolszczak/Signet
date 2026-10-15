@@ -17,7 +17,7 @@ namespace Signet.App.Infrastructure;
 /// <c>[DBG] Category: message</c> lines, so a problem report can be traced back to the steps that led to it.
 /// </summary>
 /// <remarks>
-/// <para>Nothing typed is logged (Code View, text fields, filters): a text setting is logged as its final value once
+/// <para>Nothing typed is logged (Code Editor, text fields, filters): a text setting is logged as its final value once
 /// the user stops typing, and the only typed texts that are ever logged are the Find &amp; Replace patterns, together
 /// with the dialog's settings when one of its operations runs. Paths on disk are masked (<see cref="MaskPath"/>).</para>
 /// <para>The last events are also kept in memory (<see cref="RecentEvents"/>), so an error can be logged with what

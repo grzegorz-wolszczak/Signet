@@ -4,14 +4,14 @@ using System.Linq;
 
 namespace Signet.Core.MainUI;
 
-/// <summary>A foldable region of a Code View text: what is hidden when folded, and what is shown instead.</summary>
+/// <summary>A foldable region of a Code Editor text: what is hidden when folded, and what is shown instead.</summary>
 /// <param name="StartOffset">The 0-based offset where the hidden text starts.</param>
 /// <param name="EndOffset">The 0-based offset where it ends (exclusive).</param>
 /// <param name="Title">The placeholder shown instead of the hidden text (clicking it unfolds the region).</param>
 public sealed record FoldRegion(int StartOffset, int EndOffset, string Title);
 
 /// <summary>
-/// The foldable regions of a Code View text, in the order of their start offsets (as AvaloniaEdit's folding manager
+/// The foldable regions of a Code Editor text, in the order of their start offsets (as AvaloniaEdit's folding manager
 /// needs them):
 /// <list type="bullet">
 /// <item>markup (XHTML, HTML, XML): every element whose closing tag is on a later line than its opening tag — folded

@@ -24,7 +24,7 @@ using Signet.Core.Tests.TestSupport;
 namespace Signet.App.UiTests;
 
 /// <summary>
-/// The opening tag hint of Code View: resting the mouse on a closing tag shows its opening tag with the line number,
+/// The opening tag hint of Code Editor: resting the mouse on a closing tag shows its opening tag with the line number,
 /// after the delay from Preferences, and not at all when the hint is switched off.
 /// </summary>
 public sealed class CodeTabViewOpenTagHintTests
@@ -81,14 +81,14 @@ public sealed class CodeTabViewOpenTagHintTests
     [AvaloniaFact]
     public void Resting_on_a_closing_tag_shows_its_opening_tag_with_the_line_number()
     {
-        using Host host = Show(settings => settings.CodeViewOpenTagHintDelayMs = 0);
+        using Host host = Show(settings => settings.CodeEditorOpenTagHintDelayMs = 0);
 
         HoverOffset(host, CloseTagOffset + 3);
 
         host.Popup.IsOpen.Should().BeTrue();
         host.View.FindControl<TextBlock>("OpenTagHintTag")!.Text.Should().Be(OpenTag);
         host.View.FindControl<TextBlock>("OpenTagHintTag")!.FontFamily.Should().Be(host.Editor.FontFamily);
-        host.View.FindControl<TextBlock>("OpenTagHintLine")!.Text.Should().Be(Strings.Format("CodeView_OpenTagHintLine", 3));
+        host.View.FindControl<TextBlock>("OpenTagHintLine")!.Text.Should().Be(Strings.Format("CodeEditor_OpenTagHintLine", 3));
 
         HoverOffset(host, Xhtml.IndexOf("text", StringComparison.Ordinal));
 
@@ -100,7 +100,7 @@ public sealed class CodeTabViewOpenTagHintTests
     {
         using Host host = Show(settings =>
         {
-            settings.CodeViewOpenTagHintDelayMs = 0;
+            settings.CodeEditorOpenTagHintDelayMs = 0;
             settings.OpenTagHintAppearance = new OpenTagHintAppearance("Courier New", 19);
         });
 
@@ -118,7 +118,7 @@ public sealed class CodeTabViewOpenTagHintTests
     [AvaloniaFact]
     public void The_hint_waits_for_the_delay()
     {
-        using Host host = Show(settings => settings.CodeViewOpenTagHintDelayMs = 150);
+        using Host host = Show(settings => settings.CodeEditorOpenTagHintDelayMs = 150);
 
         HoverOffset(host, CloseTagOffset + 3);
 
@@ -137,8 +137,8 @@ public sealed class CodeTabViewOpenTagHintTests
     {
         using Host host = Show(settings =>
         {
-            settings.CodeViewOpenTagHint = false;
-            settings.CodeViewOpenTagHintDelayMs = 0;
+            settings.CodeEditorOpenTagHint = false;
+            settings.CodeEditorOpenTagHintDelayMs = 0;
         });
 
         HoverOffset(host, CloseTagOffset + 3);

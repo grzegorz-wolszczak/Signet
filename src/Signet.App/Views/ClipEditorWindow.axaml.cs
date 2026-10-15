@@ -320,7 +320,7 @@ public partial class ClipEditorWindow : Window
             ? Tree.TryGetRow(index)
             : null;
 
-    /// <summary>Selects a node in the tree (e.g. a clip added through "Add To Clips..." from Code View).</summary>
+    /// <summary>Selects a node in the tree (e.g. a clip added through "Add To Clips..." from Code Editor).</summary>
     public void SelectNode(ClipNodeViewModel node)
     {
         ArgumentNullException.ThrowIfNull(node);

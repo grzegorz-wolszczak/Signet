@@ -17,7 +17,7 @@ using AvaloniaEdit.Editing;
 using AvaloniaEdit.Rendering;
 using AvaloniaEdit.TextMate;
 using Signet.App.Actions;
-using Signet.App.CodeView;
+using Signet.App.CodeEditor;
 using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.ViewModels;
@@ -39,7 +39,7 @@ public partial class CodeTabView : UserControl
 {
     /// <summary>
     /// Editor font size used when the settings hold no sensible value — the same value as in
-    /// <c>CodeTabView.axaml</c> (the default Code View font size).
+    /// <c>CodeTabView.axaml</c> (the default Code Editor font size).
     /// </summary>
     private const double FallbackFontSize = 13.0;
 
@@ -49,7 +49,7 @@ public partial class CodeTabView : UserControl
     private readonly SpellCheckHighlightRenderer _spellRenderer = new();
     private readonly SyntaxIssueRenderer _issueRenderer = new();
     private readonly ContextMenu _contextMenu = new();
-    private readonly ShortcutKeyBindings _codeViewShortcuts;
+    private readonly ShortcutKeyBindings _codeEditorShortcuts;
 
     // Html/Xml/CSS: dedicated line colorizers; JavaScript/JSON: TextMate (created lazily, only
     // when needed). The view may be reused for another tab, so both variants are switched when
@@ -120,7 +120,7 @@ public partial class CodeTabView : UserControl
         _contextMenu.Opening += OnContextMenuOpening;
         Editor.ContextMenu = _contextMenu;
 
-        _codeViewShortcuts = new ShortcutKeyBindings(this);
+        _codeEditorShortcuts = new ShortcutKeyBindings(this);
         DataContextChanged += OnDataContextChanged;
     }
 
@@ -128,7 +128,7 @@ public partial class CodeTabView : UserControl
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-        AttachCodeViewShortcuts();
+        AttachCodeEditorShortcuts();
         AppTheme.Changed += OnAppThemeChanged;
         ApplyTheme();
     }
@@ -137,7 +137,7 @@ public partial class CodeTabView : UserControl
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnDetachedFromVisualTree(e);
-        _codeViewShortcuts.Detach();
+        _codeEditorShortcuts.Detach();
         AppTheme.Changed -= OnAppThemeChanged;
     }
 
@@ -145,18 +145,18 @@ public partial class CodeTabView : UserControl
     // closed tab is not kept alive by the static event.
     private void OnAppThemeChanged(object? sender, EventArgs e) => ApplyTheme();
 
-    // The shortcuts of the code editor actions (AppActionIds.IsCodeViewAction) are this view's KeyBindings, not the
+    // The shortcuts of the code editor actions (AppActionIds.IsCodeEditorAction) are this view's KeyBindings, not the
     // window's: they work only while the focus is in the editor, so the same keys can do something else in a panel.
     // Bound only while the view is shown (the actions would otherwise keep a closed tab's view alive).
-    private void AttachCodeViewShortcuts()
+    private void AttachCodeEditorShortcuts()
     {
         if (_boundViewModel?.Host is { } host && TopLevel.GetTopLevel(this) is not null)
         {
-            _codeViewShortcuts.Attach(host.CodeViewShortcutActions);
+            _codeEditorShortcuts.Attach(host.CodeEditorShortcutActions);
         }
         else
         {
-            _codeViewShortcuts.Detach();
+            _codeEditorShortcuts.Detach();
         }
     }
 
@@ -179,7 +179,7 @@ public partial class CodeTabView : UserControl
         }
 
         _boundViewModel = DataContext as CodeTabViewModel;
-        AttachCodeViewShortcuts();
+        AttachCodeEditorShortcuts();
         if (_boundViewModel is null)
         {
             InstallFolding();
@@ -542,7 +542,7 @@ public partial class CodeTabView : UserControl
     }
 
     /// <summary>
-    /// Builds the Code View context menu right before it is shown. Order from the top:
+    /// Builds the Code Editor context menu right before it is shown. Order from the top:
     /// View Image / Open Tab For Image, spelling, Clips / Add To Clips, Toggle Line Wrap Mode,
     /// Go To Link Or Style, Rename Class, Footnotes, Merge Content, Mark Selected Text, Reformat HTML
     /// (or Reformat CSS), then the standard Undo … Select All.
@@ -562,10 +562,10 @@ public partial class CodeTabView : UserControl
         // ---- View Image / Open Tab For Image ----
         if (host is not null && vm.ImageBookPathAtCaret() is not null)
         {
-            items.Add(Item(Strings.Get("CodeViewMenu_ViewImage"), vm.ViewImageAtCaret));
+            items.Add(Item(Strings.Get("CodeEditorMenu_ViewImage"), vm.ViewImageAtCaret));
             if (vm.ImageSourceAtCaret() is not null)
             {
-                items.Add(Item(Strings.Get("CodeViewMenu_OpenTabForImage"), vm.OpenImageTabAtCaret));
+                items.Add(Item(Strings.Get("CodeEditorMenu_OpenTabForImage"), vm.OpenImageTabAtCaret));
             }
 
             items.Add(new Separator());
@@ -576,20 +576,20 @@ public partial class CodeTabView : UserControl
         {
             string label = span.ClassValue is { } classValue
                 ? $"class=\"{classValue}\""
-                : Strings.Get("CodeViewMenu_RemoveSpanNoClass");
-            MenuItem removeSpan = new() { Header = EscapeAccessKeys(Strings.Format("CodeViewMenu_RemoveSpan", label)) };
+                : Strings.Get("CodeEditorMenu_RemoveSpanNoClass");
+            MenuItem removeSpan = new() { Header = EscapeAccessKeys(Strings.Format("CodeEditorMenu_RemoveSpan", label)) };
             if (span.HasId)
             {
-                removeSpan.Items.Add(Item(Strings.Get("CodeViewMenu_RemoveSpanHasId"), () => { }, enabled: false));
+                removeSpan.Items.Add(Item(Strings.Get("CodeEditorMenu_RemoveSpanHasId"), () => { }, enabled: false));
             }
             else
             {
-                removeSpan.Items.Add(Item(Strings.Get("CodeViewMenu_RemoveSpanSingle"), () => RemoveSpan(vm, SpanRemovalScope.This)));
-                removeSpan.Items.Add(Item(Strings.Format("CodeViewMenu_RemoveSpanAll", span.SameCount), () => RemoveSpan(vm, SpanRemovalScope.File)));
+                removeSpan.Items.Add(Item(Strings.Get("CodeEditorMenu_RemoveSpanSingle"), () => RemoveSpan(vm, SpanRemovalScope.This)));
+                removeSpan.Items.Add(Item(Strings.Format("CodeEditorMenu_RemoveSpanAll", span.SameCount), () => RemoveSpan(vm, SpanRemovalScope.File)));
                 if (host is not null)
                 {
                     removeSpan.Items.Add(Item(
-                        Strings.Format("CodeViewMenu_RemoveSpanBook", vm.CountSameSpansInBook()), () => RemoveSpan(vm, SpanRemovalScope.Book)));
+                        Strings.Format("CodeEditorMenu_RemoveSpanBook", vm.CountSameSpansInBook()), () => RemoveSpan(vm, SpanRemovalScope.Book)));
                 }
             }
 
@@ -612,11 +612,11 @@ public partial class CodeTabView : UserControl
                 items.Add(new Separator());
             }
 
-            items.Add(Item(Strings.Get("CodeViewMenu_AddToDefaultDictionary"), vm.AddCurrentMisspelledWordToDictionary));
+            items.Add(Item(Strings.Get("CodeEditorMenu_AddToDefaultDictionary"), vm.AddCurrentMisspelledWordToDictionary));
             IReadOnlyList<string> userDictionaries = vm.UserDictionaryNames();
             if (userDictionaries.Count > 0)
             {
-                MenuItem addToDictionary = new() { Header = Strings.Get("CodeViewMenu_AddToDictionary") };
+                MenuItem addToDictionary = new() { Header = Strings.Get("CodeEditorMenu_AddToDictionary") };
                 foreach (string dictionaryName in userDictionaries)
                 {
                     string captured = dictionaryName;
@@ -626,33 +626,33 @@ public partial class CodeTabView : UserControl
                 items.Add(addToDictionary);
             }
 
-            items.Add(Item(Strings.Get("CodeViewMenu_Ignore"), vm.IgnoreCurrentMisspelledWord));
+            items.Add(Item(Strings.Get("CodeEditorMenu_Ignore"), vm.IgnoreCurrentMisspelledWord));
             items.Add(new Separator());
         }
 
         // ---- Clips / Add To Clips ----
         if (host is not null)
         {
-            MenuItem clips = new() { Header = Strings.Get("CodeViewMenu_Clips") };
+            MenuItem clips = new() { Header = Strings.Get("CodeEditorMenu_Clips") };
             AddClipEntries(clips, host.ClipLibraryRoot, host);
             clips.IsEnabled = clips.Items.Count > 0;
             items.Add(clips);
 
-            MenuItem addToClips = Item(Strings.Get("CodeViewMenu_AddToClips"), () => host.AddToClips(vm.SelectedText));
+            MenuItem addToClips = Item(Strings.Get("CodeEditorMenu_AddToClips"), () => host.AddToClips(vm.SelectedText));
             addToClips.IsEnabled = vm.HasSelection;
             items.Add(addToClips);
             items.Add(new Separator());
         }
 
         // ---- Toggle Line Wrap Mode ----
-        items.Add(Item(Strings.Get("CodeViewMenu_ToggleLineWrapMode"), vm.ToggleLineWrapMode));
+        items.Add(Item(Strings.Get("CodeEditorMenu_ToggleLineWrapMode"), vm.ToggleLineWrapMode));
         items.Add(new Separator());
 
         if (host is not null)
         {
             // ---- Go To Link Or Style ----
             items.Add(Item(
-                Strings.Get("CodeViewMenu_GoToLinkOrStyle"),
+                Strings.Get("CodeEditorMenu_GoToLinkOrStyle"),
                 () => host.ExecuteAction(AppActionIds.GoToLinkOrStyle),
                 gesture: host.GetActionGesture(AppActionIds.GoToLinkOrStyle)));
             items.Add(new Separator());
@@ -663,7 +663,7 @@ public partial class CodeTabView : UserControl
             if (vm.ClassAtCaretForRename() is not null || vm.StyleClassAtCaretForRename() is not null)
             {
                 items.Add(Item(
-                    Strings.Get("CodeViewMenu_RenameClass"),
+                    Strings.Get("CodeEditorMenu_RenameClass"),
                     () => RenameClassAtCaret(vm),
                     gesture: host.GetActionGesture(AppActionIds.RenameClass)));
                 classItems = true;
@@ -672,7 +672,7 @@ public partial class CodeTabView : UserControl
             if (vm.ClassNameAtCaretForUsages() is not null)
             {
                 items.Add(Item(
-                    Strings.Get("CodeViewMenu_FindUsages"),
+                    Strings.Get("CodeEditorMenu_FindUsages"),
                     () => host.ExecuteAction(AppActionIds.FindUsages),
                     gesture: host.GetActionGesture(AppActionIds.FindUsages)));
                 classItems = true;
@@ -702,7 +702,7 @@ public partial class CodeTabView : UserControl
 
             // ---- Mark Selected Text / Unmark Marked Text ----
             items.Add(Item(
-                Strings.Get(vm.OffersUnmark ? "CodeViewMenu_UnmarkMarkedText" : "CodeViewMenu_MarkSelectedText"),
+                Strings.Get(vm.OffersUnmark ? "CodeEditorMenu_UnmarkMarkedText" : "CodeEditorMenu_MarkSelectedText"),
                 () => host.ExecuteAction(AppActionIds.MarkSelection),
                 gesture: host.GetActionGesture(AppActionIds.MarkSelection)));
             items.Add(new Separator());
@@ -710,12 +710,12 @@ public partial class CodeTabView : UserControl
             // ---- Reformat HTML ----
             if (vm.IsHtmlFlow)
             {
-                MenuItem reformat = new() { Header = Strings.Get("CodeViewMenu_ReformatHtml") };
-                reformat.Items.Add(Item(Strings.Get("CodeViewMenu_Prettify"), () => _ = vm.ReformatHtmlAsync(toValid: false), "beautify"));
-                reformat.Items.Add(Item(Strings.Get("CodeViewMenu_PrettifyAll"), () => host.ExecuteAction(AppActionIds.MendPrettifyHtml), "beautify"));
+                MenuItem reformat = new() { Header = Strings.Get("CodeEditorMenu_ReformatHtml") };
+                reformat.Items.Add(Item(Strings.Get("CodeEditorMenu_Prettify"), () => _ = vm.ReformatHtmlAsync(toValid: false), "beautify"));
+                reformat.Items.Add(Item(Strings.Get("CodeEditorMenu_PrettifyAll"), () => host.ExecuteAction(AppActionIds.MendPrettifyHtml), "beautify"));
                 reformat.Items.Add(new Separator());
-                reformat.Items.Add(Item(Strings.Get("CodeViewMenu_Mend"), () => _ = vm.ReformatHtmlAsync(toValid: true), "html-fix"));
-                reformat.Items.Add(Item(Strings.Get("CodeViewMenu_MendAll"), () => host.ExecuteAction(AppActionIds.MendHtml), "html-fix"));
+                reformat.Items.Add(Item(Strings.Get("CodeEditorMenu_Mend"), () => _ = vm.ReformatHtmlAsync(toValid: true), "html-fix"));
+                reformat.Items.Add(Item(Strings.Get("CodeEditorMenu_MendAll"), () => host.ExecuteAction(AppActionIds.MendHtml), "html-fix"));
                 items.Add(reformat);
                 items.Add(new Separator());
             }
@@ -724,24 +724,24 @@ public partial class CodeTabView : UserControl
         // ---- Reformat CSS ----
         if (vm.IsCss)
         {
-            MenuItem reformatCss = new() { Header = Strings.Get("CodeViewMenu_ReformatCss") };
-            reformatCss.Items.Add(Item(Strings.Get("CodeViewMenu_CssMultipleLines"), () => vm.ReformatCss(multipleLineFormat: true)));
-            reformatCss.Items.Add(Item(Strings.Get("CodeViewMenu_CssSingleLine"), () => vm.ReformatCss(multipleLineFormat: false)));
+            MenuItem reformatCss = new() { Header = Strings.Get("CodeEditorMenu_ReformatCss") };
+            reformatCss.Items.Add(Item(Strings.Get("CodeEditorMenu_CssMultipleLines"), () => vm.ReformatCss(multipleLineFormat: true)));
+            reformatCss.Items.Add(Item(Strings.Get("CodeEditorMenu_CssSingleLine"), () => vm.ReformatCss(multipleLineFormat: false)));
             items.Add(reformatCss);
             items.Add(new Separator());
         }
 
         // ---- Standard edit menu ----
-        items.Add(Item(Strings.Get("CodeViewMenu_Undo"), vm.Undo, "edit-undo", enabled: vm.CanUndo));
-        items.Add(Item(Strings.Get("CodeViewMenu_Redo"), vm.Redo, "edit-redo", enabled: vm.CanRedo));
+        items.Add(Item(Strings.Get("CodeEditorMenu_Undo"), vm.Undo, "edit-undo", enabled: vm.CanUndo));
+        items.Add(Item(Strings.Get("CodeEditorMenu_Redo"), vm.Redo, "edit-redo", enabled: vm.CanRedo));
         items.Add(new Separator());
-        items.Add(Item(Strings.Get("CodeViewMenu_Cut"), Editor.Cut, "edit-cut", vm.HasSelection, new KeyGesture(Key.X, KeyModifiers.Control)));
-        items.Add(Item(Strings.Get("CodeViewMenu_Copy"), Editor.Copy, "edit-copy", vm.HasSelection, new KeyGesture(Key.C, KeyModifiers.Control)));
-        items.Add(Item(Strings.Get("CodeViewMenu_Paste"), Paste, "edit-paste", gesture: new KeyGesture(Key.V, KeyModifiers.Control)));
-        items.Add(Item(Strings.Get("CodeViewMenu_Delete"), Editor.Delete, "edit-delete", vm.HasSelection));
+        items.Add(Item(Strings.Get("CodeEditorMenu_Cut"), Editor.Cut, "edit-cut", vm.HasSelection, new KeyGesture(Key.X, KeyModifiers.Control)));
+        items.Add(Item(Strings.Get("CodeEditorMenu_Copy"), Editor.Copy, "edit-copy", vm.HasSelection, new KeyGesture(Key.C, KeyModifiers.Control)));
+        items.Add(Item(Strings.Get("CodeEditorMenu_Paste"), Paste, "edit-paste", gesture: new KeyGesture(Key.V, KeyModifiers.Control)));
+        items.Add(Item(Strings.Get("CodeEditorMenu_Delete"), Editor.Delete, "edit-delete", vm.HasSelection));
         items.Add(new Separator());
         items.Add(Item(
-            Strings.Get("CodeViewMenu_SelectAll"), Editor.SelectAll, "edit-select-all",
+            Strings.Get("CodeEditorMenu_SelectAll"), Editor.SelectAll, "edit-select-all",
             Editor.Document?.TextLength > 0, new KeyGesture(Key.A, KeyModifiers.Control)));
 
         foreach (Control item in items)
@@ -827,11 +827,11 @@ public partial class CodeTabView : UserControl
     // renumber. A footnote of other origin is read-only: editing it only says so.
     private MenuItem FootnotesMenu(CodeTabViewModel vm, ICodeTabHost host, FootnoteMenuState state)
     {
-        MenuItem menu = new() { Header = Strings.Get("CodeViewMenu_Footnotes") };
+        MenuItem menu = new() { Header = Strings.Get("CodeEditorMenu_Footnotes") };
         if (state.Hit is { } hit)
         {
             menu.Items.Add(Item(
-                Strings.Get("CodeViewMenu_FootnoteEdit"),
+                Strings.Get("CodeEditorMenu_FootnoteEdit"),
                 () =>
                 {
                     if (hit.Footnote.IsSignet)
@@ -844,7 +844,7 @@ public partial class CodeTabView : UserControl
                     }
                 }));
             menu.Items.Add(Item(
-                Strings.Get(hit.Side == FootnoteSide.Reference ? "CodeViewMenu_FootnoteGoToNote" : "CodeViewMenu_FootnoteGoToReference"),
+                Strings.Get(hit.Side == FootnoteSide.Reference ? "CodeEditorMenu_FootnoteGoToNote" : "CodeEditorMenu_FootnoteGoToReference"),
                 () => host.GoToFootnote(hit)));
         }
         else
@@ -852,15 +852,15 @@ public partial class CodeTabView : UserControl
             bool canAdd = state.AddError == FootnoteError.None;
             menu.Items.Add(Item(
                 canAdd
-                    ? Strings.Get("CodeViewMenu_FootnoteAdd")
-                    : Strings.Format("CodeViewMenu_FootnoteAddBlocked", FootnoteViewModel.ErrorText(state.AddError)),
+                    ? Strings.Get("CodeEditorMenu_FootnoteAdd")
+                    : Strings.Format("CodeEditorMenu_FootnoteAddBlocked", FootnoteViewModel.ErrorText(state.AddError)),
                 () => AddFootnote(vm),
                 enabled: canAdd));
         }
 
         menu.Items.Add(new Separator());
-        menu.Items.Add(Item(Strings.Get("CodeViewMenu_FootnotesRenumber"), host.RenumberFootnotes, enabled: state.HasFootnotes));
-        menu.Items.Add(Item(Strings.Get("CodeViewMenu_FootnotesConvert"), host.ShowFootnoteConversion, enabled: state.ForeignCount > 0));
+        menu.Items.Add(Item(Strings.Get("CodeEditorMenu_FootnotesRenumber"), host.RenumberFootnotes, enabled: state.HasFootnotes));
+        menu.Items.Add(Item(Strings.Get("CodeEditorMenu_FootnotesConvert"), host.ShowFootnoteConversion, enabled: state.ForeignCount > 0));
         return menu;
     }
 
@@ -1162,7 +1162,7 @@ public partial class CodeTabView : UserControl
         }
     }
 
-    private void ApplyGrammar(CodeViewSyntax syntax)
+    private void ApplyGrammar(CodeEditorSyntax syntax)
     {
         if (_lineColorizer is not null)
         {
@@ -1171,7 +1171,7 @@ public partial class CodeTabView : UserControl
         }
 
         CodeTabViewModel? vm = _boundViewModel;
-        _lineColorizer = CodeViewTextMate.CreateColorizer(
+        _lineColorizer = CodeEditorTextMate.CreateColorizer(
             syntax, vm?.ExtendedHighlighting ?? false, vm is null ? null : vm.LinkTargetExists, AppTheme.Current);
         _issueRenderer.SetColorizer(_lineColorizer);
         if (_lineColorizer is not null)
@@ -1183,7 +1183,7 @@ public partial class CodeTabView : UserControl
             return;
         }
 
-        string? scope = CodeViewTextMate.ScopeFor(syntax);
+        string? scope = CodeEditorTextMate.ScopeFor(syntax);
         if (scope is null)
         {
             _textMate?.Dispose();
@@ -1205,7 +1205,7 @@ public partial class CodeTabView : UserControl
 
         if (_textMate is null)
         {
-            _textMate = Editor.InstallTextMate(CodeViewTextMate.Options);
+            _textMate = Editor.InstallTextMate(CodeEditorTextMate.Options);
             _textMateTheme = null;
         }
 
@@ -1253,7 +1253,7 @@ public partial class CodeTabView : UserControl
             .Where(s => column >= s.Start && column < s.Start + s.Length)
             .Select(s => (SyntaxSpan?)s)
             .LastOrDefault();
-        return hit is { } span ? Strings.Get("CodeView_Issue_" + span.Issue) : null;
+        return hit is { } span ? Strings.Get("CodeEditor_Issue_" + span.Issue) : null;
     }
 
     private void OnTextViewPointerHoverStopped(object? sender, PointerEventArgs e)
@@ -1273,8 +1273,8 @@ public partial class CodeTabView : UserControl
         }
     }
 
-    private CodeViewAppearance CurrentAppearance() =>
-        _boundViewModel?.Appearance ?? CodeViewAppearance.Default;
+    private CodeEditorAppearance CurrentAppearance() =>
+        _boundViewModel?.Appearance ?? CodeEditorAppearance.Default;
 
     // The colors of the theme in use: the editor, the syntax and the marks of the renderers.
     private void ApplyTheme()
@@ -1296,19 +1296,19 @@ public partial class CodeTabView : UserControl
     {
         if (_textMate is not null && !ReferenceEquals(_textMateTheme, theme))
         {
-            _textMate.SetTheme(CodeViewTextMate.ThemeFor(theme));
+            _textMate.SetTheme(CodeEditorTextMate.ThemeFor(theme));
             _textMateTheme = theme;
         }
     }
 
     /// <summary>
-    /// Sets the editor's typeface and font size from <see cref="CodeViewAppearance"/>
-    /// (Preferences → Appearance › Code View › Fonts), scaled by the current zoom. Called when a tab is
+    /// Sets the editor's typeface and font size from <see cref="CodeEditorAppearance"/>
+    /// (Preferences → Appearance › Code Editor › Fonts), scaled by the current zoom. Called when a tab is
     /// bound and when the zoom changes.
     /// </summary>
     private void ApplyFont()
     {
-        CodeViewAppearance appearance = CurrentAppearance();
+        CodeEditorAppearance appearance = CurrentAppearance();
 
         if (!string.IsNullOrWhiteSpace(appearance.FontFamily))
         {

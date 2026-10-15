@@ -896,7 +896,7 @@ public sealed class Book : IDisposable
     }
 
     /// <summary>
-    /// "Mend Code" for a single file from the Code View context menu — repairs the editor text
+    /// "Mend Code" for a single file from the Code Editor context menu — repairs the editor text
     /// <paramref name="text"/> of the resource <paramref name="html"/>.
     /// </summary>
     public string MendHtmlText(
@@ -941,7 +941,7 @@ public sealed class Book : IDisposable
     }
 
     /// <summary>
-    /// Prepares "Rename Class" from Code View: a <see cref="ClassRenamer"/>
+    /// Prepares "Rename Class" from Code Editor: a <see cref="ClassRenamer"/>
     /// over the current texts of all XHTML and CSS files. Like other whole-book operations,
     /// it refuses when any XHTML file is not well-formed.
     /// </summary>

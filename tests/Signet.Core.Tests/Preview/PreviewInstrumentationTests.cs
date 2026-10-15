@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Signet.Core.Tests.Preview;
 
-/// <summary>Tests for <see cref="PreviewInstrumentation"/> — Code View ↔ Preview position mapping.</summary>
+/// <summary>Tests for <see cref="PreviewInstrumentation"/> — Code Editor ↔ Preview position mapping.</summary>
 public sealed class PreviewInstrumentationTests
 {
     private const string Sample =

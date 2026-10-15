@@ -169,11 +169,11 @@ public sealed partial class RecentLocationsViewModel : ViewModelBase
             return null;
         }
 
-        CodeViewSyntax syntax = CodeViewSyntaxMap.ForResource(resource);
+        CodeEditorSyntax syntax = CodeEditorSyntaxMap.ForResource(resource);
         BreadcrumbKind kind = syntax switch
         {
-            CodeViewSyntax.Html or CodeViewSyntax.Xml => BreadcrumbKind.Markup,
-            CodeViewSyntax.Css => BreadcrumbKind.Css,
+            CodeEditorSyntax.Html or CodeEditorSyntax.Xml => BreadcrumbKind.Markup,
+            CodeEditorSyntax.Css => BreadcrumbKind.Css,
             _ => BreadcrumbKind.None,
         };
         return new RecentLocationItem(
@@ -207,7 +207,7 @@ public sealed partial class RecentLocationsViewModel : ViewModelBase
 /// <param name="Snippet">The lines around the place.</param>
 /// <param name="Syntax">The syntax of the file (for highlighting the snippet).</param>
 public sealed record RecentLocationItem(
-    NavigationPlace Place, string FileName, string Breadcrumb, string TimeText, LocationSnippet Snippet, CodeViewSyntax Syntax)
+    NavigationPlace Place, string FileName, string Breadcrumb, string TimeText, LocationSnippet Snippet, CodeEditorSyntax Syntax)
 {
     /// <summary>Whether the entry contains <paramref name="filter"/> (case-insensitive) in its file, breadcrumb or text.</summary>
     public bool Matches(string filter) =>

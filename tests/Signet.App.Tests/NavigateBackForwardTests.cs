@@ -13,7 +13,7 @@ using Xunit;
 namespace Signet.App.Tests;
 
 /// <summary>
-/// Navigate Back / Forward in the application: tab switches and jumps in Code View enter the history, the actions
+/// Navigate Back / Forward in the application: tab switches and jumps in Code Editor enter the history, the actions
 /// walk it, deleted files are skipped and renamed ones followed.
 /// </summary>
 public sealed class NavigateBackForwardTests : IDisposable

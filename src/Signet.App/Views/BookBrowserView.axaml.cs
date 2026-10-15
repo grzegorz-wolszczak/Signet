@@ -47,7 +47,7 @@ public partial class BookBrowserView : UserControl
     private BookBrowserViewModel? _boundViewModel;
 
     // The panel-scoped shortcuts (Rename, Merge, Delete…): bound on THIS view, so they fire only while the panel has
-    // the focus — e.g. F2 in Code View does not rename a file.
+    // the focus — e.g. F2 in Code Editor does not rename a file.
     private readonly ShortcutKeyBindings _shortcutBindings;
 
     // Keeps the column headers in the current UI language (held weakly by Strings).
@@ -245,7 +245,7 @@ public partial class BookBrowserView : UserControl
     // --- context menu shortcuts (only while the panel has focus) ---------------- //
 
     // KeyBindings are set up on THIS view, not on the window: the key event reaches here
-    // only when the focus is in the panel, so e.g. F2 in Code View will not open the file rename.
+    // only when the focus is in the panel, so e.g. F2 in Code Editor will not open the file rename.
     // The remaining actions are window-wide shortcuts.
     private void AttachShortcutActions()
     {

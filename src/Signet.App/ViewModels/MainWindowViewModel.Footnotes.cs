@@ -13,7 +13,7 @@ using Signet.Core.Resources;
 namespace Signet.App.ViewModels;
 
 /// <summary>
-/// Footnotes from the Code View context menu ("Footnotes" submenu): adding, editing (the text and the placement, local
+/// Footnotes from the Code Editor context menu ("Footnotes" submenu): adding, editing (the text and the placement, local
 /// or global), removing, going between a reference and its note, and renumbering. Every change saves the open tabs first,
 /// is a text edit of the book files (<see cref="FootnoteEditor"/>) behind a checkpoint, and reloads the tabs and panels.
 /// Footnotes of other origin are read-only until they are converted (the "Convert Footnotes of Other Origin" dialog):
@@ -22,7 +22,7 @@ namespace Signet.App.ViewModels;
 public sealed partial class MainWindowViewModel
 {
     /// <summary>
-    /// Raised by "Convert Footnotes of Other Origin…" (Tools → Footnotes, the Code View menu, the notice on a footnote
+    /// Raised by "Convert Footnotes of Other Origin…" (Tools → Footnotes, the Code Editor menu, the notice on a footnote
     /// of other origin) — the view calls <see cref="PrepareFootnoteConversionAsync"/> and shows the modal dialog.
     /// </summary>
     public event EventHandler? FootnoteConversionRequested;

@@ -542,11 +542,11 @@
   <data name="PreferencesWindow_SpecialCharacterFont" xml:space="preserve">
     <value>Czcionka okna „Wstaw znak specjalny”</value>
   </data>
-  <data name="PreferencesWindow_CodeView" xml:space="preserve">
-    <value>Code View</value>
+  <data name="PreferencesWindow_CodeEditor" xml:space="preserve">
+    <value>Code Editor</value>
   </data>
   <data name="PreferencesWindow_FontColorRestartNotice" xml:space="preserve">
-    <value>Zmiany czcionek Code View i Preview oraz zestawu ikon są widoczne po ponownym uruchomieniu Signet.</value>
+    <value>Zmiany czcionek Code Editor i Preview oraz zestawu ikon są widoczne po ponownym uruchomieniu Signet.</value>
   </data>
   <data name="PreferencesWindow_RestoreAppearanceDefaults" xml:space="preserve">
     <value>Przywróć domyślny wygląd</value>
@@ -719,22 +719,22 @@
   <data name="PreferencesWindow_CompactUi" xml:space="preserve">
     <value>Kompaktowy wygląd interfejsu (jak w Windows: czcionka systemowa, mniejsze odstępy)</value>
   </data>
-  <data name="CodeViewMenu_ViewImage" xml:space="preserve">
+  <data name="CodeEditorMenu_ViewImage" xml:space="preserve">
     <value>Pokaż obraz</value>
   </data>
-  <data name="CodeViewMenu_RemoveSpan" xml:space="preserve">
+  <data name="CodeEditorMenu_RemoveSpan" xml:space="preserve">
     <value>Usuń span ({0})</value>
   </data>
-  <data name="CodeViewMenu_RemoveSpanNoClass" xml:space="preserve">
+  <data name="CodeEditorMenu_RemoveSpanNoClass" xml:space="preserve">
     <value>bez class</value>
   </data>
-  <data name="CodeViewMenu_RemoveSpanSingle" xml:space="preserve">
+  <data name="CodeEditorMenu_RemoveSpanSingle" xml:space="preserve">
     <value>Usuń ten span</value>
   </data>
-  <data name="CodeViewMenu_RemoveSpanAll" xml:space="preserve">
+  <data name="CodeEditorMenu_RemoveSpanAll" xml:space="preserve">
     <value>Usuń wszystkie takie spany w pliku ({0})</value>
   </data>
-  <data name="CodeViewMenu_RemoveSpanBook" xml:space="preserve">
+  <data name="CodeEditorMenu_RemoveSpanBook" xml:space="preserve">
     <value>Usuń wszystkie takie spany w książce ({0})</value>
   </data>
   <data name="SpanRemovalRiskWindow_Title" xml:space="preserve">
@@ -752,61 +752,61 @@
   <data name="Status_SpansRemovedInBook" xml:space="preserve">
     <value>Usunięto znaczniki &lt;span&gt;: {0} (w plikach: {1}).</value>
   </data>
-  <data name="CodeViewMenu_RemoveSpanHasId" xml:space="preserve">
+  <data name="CodeEditorMenu_RemoveSpanHasId" xml:space="preserve">
     <value>Span ma atrybut id (może być celem linku) — nie jest usuwany</value>
   </data>
-  <data name="CodeViewMenu_OpenTabForImage" xml:space="preserve">
+  <data name="CodeEditorMenu_OpenTabForImage" xml:space="preserve">
     <value>Otwórz kartę z obrazem</value>
   </data>
-  <data name="CodeViewMenu_AddToDefaultDictionary" xml:space="preserve">
+  <data name="CodeEditorMenu_AddToDefaultDictionary" xml:space="preserve">
     <value>Dodaj do domyślnego słownika</value>
   </data>
-  <data name="CodeViewMenu_AddToDictionary" xml:space="preserve">
+  <data name="CodeEditorMenu_AddToDictionary" xml:space="preserve">
     <value>Dodaj do słownika</value>
   </data>
-  <data name="CodeViewMenu_Ignore" xml:space="preserve">
+  <data name="CodeEditorMenu_Ignore" xml:space="preserve">
     <value>Ignoruj</value>
   </data>
-  <data name="CodeViewMenu_Clips" xml:space="preserve">
+  <data name="CodeEditorMenu_Clips" xml:space="preserve">
     <value>Wycinki</value>
   </data>
-  <data name="CodeViewMenu_AddToClips" xml:space="preserve">
+  <data name="CodeEditorMenu_AddToClips" xml:space="preserve">
     <value>Dodaj do wycinków...</value>
   </data>
-  <data name="CodeViewMenu_ToggleLineWrapMode" xml:space="preserve">
+  <data name="CodeEditorMenu_ToggleLineWrapMode" xml:space="preserve">
     <value>Przełącz tryb zawijania linii</value>
   </data>
-  <data name="CodeViewMenu_GoToLinkOrStyle" xml:space="preserve">
+  <data name="CodeEditorMenu_GoToLinkOrStyle" xml:space="preserve">
     <value>Idź do łącza lub stylu</value>
   </data>
-  <data name="CodeViewMenu_MarkSelectedText" xml:space="preserve">
+  <data name="CodeEditorMenu_MarkSelectedText" xml:space="preserve">
     <value>Zaznacz wybrany tekst</value>
   </data>
-  <data name="CodeViewMenu_UnmarkMarkedText" xml:space="preserve">
+  <data name="CodeEditorMenu_UnmarkMarkedText" xml:space="preserve">
     <value>Odznacz zaznaczony tekst</value>
   </data>
-  <data name="CodeViewMenu_ReformatHtml" xml:space="preserve">
+  <data name="CodeEditorMenu_ReformatHtml" xml:space="preserve">
     <value>Ponownie formatuj HTML</value>
   </data>
-  <data name="CodeViewMenu_Prettify" xml:space="preserve">
+  <data name="CodeEditorMenu_Prettify" xml:space="preserve">
     <value>Upiększ kod</value>
   </data>
-  <data name="CodeViewMenu_PrettifyAll" xml:space="preserve">
+  <data name="CodeEditorMenu_PrettifyAll" xml:space="preserve">
     <value>Upiększ kod - wszystkie pliki HTML</value>
   </data>
-  <data name="CodeViewMenu_Mend" xml:space="preserve">
+  <data name="CodeEditorMenu_Mend" xml:space="preserve">
     <value>Popraw kod</value>
   </data>
-  <data name="CodeViewMenu_MendAll" xml:space="preserve">
+  <data name="CodeEditorMenu_MendAll" xml:space="preserve">
     <value>Popraw kod - wszystkie pliki HTML</value>
   </data>
-  <data name="CodeViewMenu_RenameClass" xml:space="preserve">
+  <data name="CodeEditorMenu_RenameClass" xml:space="preserve">
     <value>Zmień nazwę klasy...</value>
   </data>
   <data name="Action_MainWindow_MergeContent" xml:space="preserve">
     <value>Sc&amp;al treść</value>
   </data>
-  <data name="CodeViewMenu_MergeContentCount" xml:space="preserve">
+  <data name="CodeEditorMenu_MergeContentCount" xml:space="preserve">
     <value>Scal treść &lt;{0}&gt; ({1})</value>
   </data>
   <data name="MergeContent_Title" xml:space="preserve">
@@ -830,34 +830,34 @@ Atrybuty tych znaczników zostaną utracone:
     <value>Te komentarze i inne węzły między elementami zostaną utracone:
 {0}</value>
   </data>
-  <data name="CodeViewMenu_ReformatCss" xml:space="preserve">
+  <data name="CodeEditorMenu_ReformatCss" xml:space="preserve">
     <value>Ponownie formatuj CSS</value>
   </data>
-  <data name="CodeViewMenu_CssMultipleLines" xml:space="preserve">
+  <data name="CodeEditorMenu_CssMultipleLines" xml:space="preserve">
     <value>Wiele linii na styl</value>
   </data>
-  <data name="CodeViewMenu_CssSingleLine" xml:space="preserve">
+  <data name="CodeEditorMenu_CssSingleLine" xml:space="preserve">
     <value>Jedna linia na styl</value>
   </data>
-  <data name="CodeViewMenu_Undo" xml:space="preserve">
+  <data name="CodeEditorMenu_Undo" xml:space="preserve">
     <value>_Cofnij</value>
   </data>
-  <data name="CodeViewMenu_Redo" xml:space="preserve">
+  <data name="CodeEditorMenu_Redo" xml:space="preserve">
     <value>_Przywróć</value>
   </data>
-  <data name="CodeViewMenu_Cut" xml:space="preserve">
+  <data name="CodeEditorMenu_Cut" xml:space="preserve">
     <value>Wy_tnij</value>
   </data>
-  <data name="CodeViewMenu_Copy" xml:space="preserve">
+  <data name="CodeEditorMenu_Copy" xml:space="preserve">
     <value>S_kopiuj</value>
   </data>
-  <data name="CodeViewMenu_Paste" xml:space="preserve">
+  <data name="CodeEditorMenu_Paste" xml:space="preserve">
     <value>_Wklej</value>
   </data>
-  <data name="CodeViewMenu_Delete" xml:space="preserve">
+  <data name="CodeEditorMenu_Delete" xml:space="preserve">
     <value>Usuń</value>
   </data>
-  <data name="CodeViewMenu_SelectAll" xml:space="preserve">
+  <data name="CodeEditorMenu_SelectAll" xml:space="preserve">
     <value>Zaznacz wszystko</value>
   </data>
   <data name="ViewImageWindow_Title" xml:space="preserve">
@@ -1467,37 +1467,37 @@ Czy chcesz zapisać zmiany?</value>
   <data name="PreferencesWindow_ExtendedHighlighting" xml:space="preserve">
     <value>Rozszerzone podświetlanie składni (wzorowane na calibre)</value>
   </data>
-  <data name="CodeView_Issue_UnescapedLessThan" xml:space="preserve">
+  <data name="CodeEditor_Issue_UnescapedLessThan" xml:space="preserve">
     <value>Niezakodowany znak &lt; jest niedozwolony. Zamień go na &amp;lt;</value>
   </data>
-  <data name="CodeView_Issue_UnescapedAmpersand" xml:space="preserve">
+  <data name="CodeEditor_Issue_UnescapedAmpersand" xml:space="preserve">
     <value>Niezakodowany znak &amp; jest niedozwolony. Zamień go na &amp;amp;</value>
   </data>
-  <data name="CodeView_Issue_UnescapedGreaterThan" xml:space="preserve">
+  <data name="CodeEditor_Issue_UnescapedGreaterThan" xml:space="preserve">
     <value>Niezakodowany znak &gt; jest niedozwolony. Zamień go na &amp;gt;</value>
   </data>
-  <data name="CodeView_Issue_MisplacedSlash" xml:space="preserve">
+  <data name="CodeEditor_Issue_MisplacedSlash" xml:space="preserve">
     <value>Znak / jest dozwolony tylko na końcu znacznika</value>
   </data>
-  <data name="CodeView_Issue_UnknownCharacter" xml:space="preserve">
+  <data name="CodeEditor_Issue_UnknownCharacter" xml:space="preserve">
     <value>Nieznany znak</value>
   </data>
-  <data name="CodeView_Issue_BadClosingTag" xml:space="preserve">
+  <data name="CodeEditor_Issue_BadClosingTag" xml:space="preserve">
     <value>Znacznik zamykający może zawierać tylko nazwę znacznika</value>
   </data>
-  <data name="CodeView_Issue_MissingAttributeValue" xml:space="preserve">
+  <data name="CodeEditor_Issue_MissingAttributeValue" xml:space="preserve">
     <value>Oczekiwano wartości atrybutu</value>
   </data>
-  <data name="CodeView_Issue_PrefixOnlyTagName" xml:space="preserve">
+  <data name="CodeEditor_Issue_PrefixOnlyTagName" xml:space="preserve">
     <value>Nazwa znacznika nie może kończyć się dwukropkiem</value>
   </data>
-  <data name="CodeView_Issue_UnterminatedString" xml:space="preserve">
+  <data name="CodeEditor_Issue_UnterminatedString" xml:space="preserve">
     <value>Niezamknięty łańcuch</value>
   </data>
-  <data name="CodeView_Issue_Link" xml:space="preserve">
+  <data name="CodeEditor_Issue_Link" xml:space="preserve">
     <value>Przytrzymaj Ctrl i kliknij, aby otworzyć ten link</value>
   </data>
-  <data name="CodeView_Issue_BrokenLink" xml:space="preserve">
+  <data name="CodeEditor_Issue_BrokenLink" xml:space="preserve">
     <value>Ten link wskazuje plik, którego nie ma w książce</value>
   </data>
   <data name="RenameTag_Title" xml:space="preserve">
@@ -2010,8 +2010,8 @@ Czy chcesz zapisać zmiany?</value>
   <data name="Action_MainWindow_FocusOnBookBrowser" xml:space="preserve">
     <value>Przejdź do przeglądarki książki</value>
   </data>
-  <data name="Action_MainWindow_FocusOnCodeView" xml:space="preserve">
-    <value>Przejdź do Code View</value>
+  <data name="Action_MainWindow_FocusOnCodeEditor" xml:space="preserve">
+    <value>Przejdź do Code Editor</value>
   </data>
   <data name="Action_MainWindow_FocusOnPreview" xml:space="preserve">
     <value>Przejdź do podglądu</value>
@@ -2313,8 +2313,8 @@ Czy chcesz zapisać zmiany?</value>
   <data name="Status_BookLoaded" xml:space="preserve">
     <value>Wczytano publikację.</value>
   </data>
-  <data name="Status_BookmarkOnlyInCodeView" xml:space="preserve">
-    <value>Zakładkę można dodać tylko w Code View.</value>
+  <data name="Status_BookmarkOnlyInCodeEditor" xml:space="preserve">
+    <value>Zakładkę można dodać tylko w Code Editor.</value>
   </data>
   <data name="Status_BookmarkAdded" xml:space="preserve">
     <value>Zakładka dodana: {0}</value>
@@ -2484,8 +2484,8 @@ Czy chcesz zapisać zmiany?</value>
   <data name="Panel_Clips" xml:space="preserve">
     <value>Wycinki</value>
   </data>
-  <data name="Panel_CodeView" xml:space="preserve">
-    <value>Code View</value>
+  <data name="Panel_CodeEditor" xml:space="preserve">
+    <value>Code Editor</value>
   </data>
   <data name="Panel_ValidationResults" xml:space="preserve">
     <value>Wyniki walidacji</value>
@@ -2798,7 +2798,7 @@ Scalać można tylko pliki HTML.</value>
   <data name="SearchEditor_CountsSummary" xml:space="preserve">
     <value>Trafień łącznie: {0} (wyszukiwań: {1}).</value>
   </data>
-  <data name="CodeView_ClassRenamed" xml:space="preserve">
+  <data name="CodeEditor_ClassRenamed" xml:space="preserve">
     <value>Zmieniono nazwę klasy.</value>
   </data>
   <data name="RenameClassWindow_Title" xml:space="preserve">
@@ -2867,19 +2867,19 @@ Scalać można tylko pliki HTML.</value>
   <data name="RenameClass_AlreadyExists" xml:space="preserve">
     <value>Klasa „{0}” już istnieje w książce.</value>
   </data>
-  <data name="CodeView_WellFormed" xml:space="preserve">
+  <data name="CodeEditor_WellFormed" xml:space="preserve">
     <value>Dokument jest poprawny składniowo (well-formed).</value>
   </data>
-  <data name="CodeView_NotWellFormed" xml:space="preserve">
+  <data name="CodeEditor_NotWellFormed" xml:space="preserve">
     <value>Błąd składni (well-formed) w wierszu {0}, kol. {1}: {2}</value>
   </data>
-  <data name="CodeView_NoEnclosingElement" xml:space="preserve">
+  <data name="CodeEditor_NoEnclosingElement" xml:space="preserve">
     <value>Nie znaleziono elementu otaczającego karetkę.</value>
   </data>
-  <data name="CodeView_NoClosedEnclosingElement" xml:space="preserve">
+  <data name="CodeEditor_NoClosedEnclosingElement" xml:space="preserve">
     <value>Nie znaleziono domkniętego elementu otaczającego karetkę.</value>
   </data>
-  <data name="CodeView_CssRuleCount" xml:space="preserve">
+  <data name="CodeEditor_CssRuleCount" xml:space="preserve">
     <value>Reguł CSS: {0}</value>
   </data>
   <data name="EmptyLayout_NeedOneOpf" xml:space="preserve">
@@ -3538,7 +3538,7 @@ To nie jest błąd krytyczny — czytniki akceptują takie pliki. Czy kontynuowa
   <data name="MissingDoctypeDialog_DontAskAgainHint" xml:space="preserve">
     <value>Zapamiętywane tylko po wybraniu „Tak”. Można to zmienić w Preferencjach → Mend i Prettify.</value>
   </data>
-  <data name="CodeView_WellFormedWithWarning" xml:space="preserve">
+  <data name="CodeEditor_WellFormedWithWarning" xml:space="preserve">
     <value>Dokument jest poprawny składniowo (well-formed), ale: {0}</value>
   </data>
   <data name="PreferencesWindow_MendPrettify" xml:space="preserve">
@@ -3955,11 +3955,11 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="PreferencesWindow_WarningSample" xml:space="preserve">
     <value>⚠ Przykład: „font-style: italic” (z „.none1”) działa na tym spanie</value>
   </data>
-  <data name="CodeView_OpenTagHintLine" xml:space="preserve">
+  <data name="CodeEditor_OpenTagHintLine" xml:space="preserve">
     <value>linia {0}</value>
   </data>
   <data name="PreferencesWindow_OpenTagHint" xml:space="preserve">
-    <value>Code View: po najechaniu na tag zamykający pokazuj jego tag otwierający</value>
+    <value>Code Editor: po najechaniu na tag zamykający pokazuj jego tag otwierający</value>
   </data>
   <data name="PreferencesWindow_OpenTagHintDelay" xml:space="preserve">
     <value>Opóźnienie podpowiedzi (ms)</value>
@@ -3979,22 +3979,22 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="Panel_FindUsages" xml:space="preserve">
     <value>Znalezione użycia</value>
   </data>
-  <data name="CodeViewMenu_Footnotes" xml:space="preserve">
+  <data name="CodeEditorMenu_Footnotes" xml:space="preserve">
     <value>Przypisy</value>
   </data>
-  <data name="CodeViewMenu_FootnoteAdd" xml:space="preserve">
+  <data name="CodeEditorMenu_FootnoteAdd" xml:space="preserve">
     <value>Dodaj przypis...</value>
   </data>
-  <data name="CodeViewMenu_FootnoteAddBlocked" xml:space="preserve">
+  <data name="CodeEditorMenu_FootnoteAddBlocked" xml:space="preserve">
     <value>Dodaj przypis... ({0})</value>
   </data>
-  <data name="CodeViewMenu_FootnoteGoToNote" xml:space="preserve">
+  <data name="CodeEditorMenu_FootnoteGoToNote" xml:space="preserve">
     <value>Przejdź do treści przypisu</value>
   </data>
-  <data name="CodeViewMenu_FootnoteGoToReference" xml:space="preserve">
+  <data name="CodeEditorMenu_FootnoteGoToReference" xml:space="preserve">
     <value>Przejdź do odnośnika</value>
   </data>
-  <data name="CodeViewMenu_FootnotesRenumber" xml:space="preserve">
+  <data name="CodeEditorMenu_FootnotesRenumber" xml:space="preserve">
     <value>Przenumeruj przypisy</value>
   </data>
   <data name="FootnoteError_None" xml:space="preserve">
@@ -4075,7 +4075,7 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="FootnoteWindow_AddButton" xml:space="preserve">
     <value>Dodaj</value>
   </data>
-  <data name="CodeViewMenu_FootnoteEdit" xml:space="preserve">
+  <data name="CodeEditorMenu_FootnoteEdit" xml:space="preserve">
     <value>Edytuj przypis...</value>
   </data>
   <data name="FootnoteError_MissingBacklink" xml:space="preserve">
@@ -4117,7 +4117,7 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="PreferencesWindow_ConfirmFootnoteRemoval" xml:space="preserve">
     <value>Pytaj przed usunięciem przypisu (w oknie edycji przypisu)</value>
   </data>
-  <data name="CodeViewMenu_FindUsages" xml:space="preserve">
+  <data name="CodeEditorMenu_FindUsages" xml:space="preserve">
     <value>Znajdź użycia</value>
   </data>
   <data name="FindUsages_Header" xml:space="preserve">
@@ -4294,7 +4294,7 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="Keymap_ResetShortcuts" xml:space="preserve">
     <value>Przywróć domyślne skróty</value>
   </data>
-  <data name="Keymap_ContextCodeView" xml:space="preserve">
+  <data name="Keymap_ContextCodeEditor" xml:space="preserve">
     <value>tylko w edytorze kodu</value>
   </data>
   <data name="Keymap_ShadowedHeader" xml:space="preserve">
@@ -4534,7 +4534,7 @@ Signet może je edytować dopiero po konwersji na przypisy Signeta.</value>
   <data name="Action_MainWindow_ConvertFootnotes" xml:space="preserve">
     <value>&amp;Konwertuj obce przypisy...</value>
   </data>
-  <data name="CodeViewMenu_FootnotesConvert" xml:space="preserve">
+  <data name="CodeEditorMenu_FootnotesConvert" xml:space="preserve">
     <value>Konwertuj obce przypisy...</value>
   </data>
   <data name="CheckpointOp_ConvertFootnotes" xml:space="preserve">
@@ -4740,7 +4740,7 @@ Konwertować mimo to?</value>
   <data name="PreferencesWindow_SpecialCharacters" xml:space="preserve">
     <value>Znaki specjalne</value>
   </data>
-  <data name="PreferencesWindow_CodeViewEditorFont" xml:space="preserve">
+  <data name="PreferencesWindow_CodeEditorTextFont" xml:space="preserve">
     <value>Czcionka edytora</value>
   </data>
   <data name="FontPreview_Interface" xml:space="preserve">
@@ -5604,7 +5604,7 @@ Zamknij zakładkę</value>
     <value>Był jasny, zimny dzień kwietniowy i zegary biły trzynastą.</value>
   </data>
   <data name="ColorSchemeSample_BookHighlight" xml:space="preserve">
-    <value>Akapit kliknięty w Code View jest tu podświetlony.</value>
+    <value>Akapit kliknięty w Code Editor jest tu podświetlony.</value>
   </data>
   <data name="ColorSchemeSample_BookNote" xml:space="preserve">
     <value>Tło i tekst mają kolory książki, chyba że motyw je ustawia.</value>

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace Signet.Core.Misc;
 
 /// <summary>
-/// The CSS highlighter of Code View — a state machine recognizing selectors, properties,
+/// The CSS highlighter of Code Editor — a state machine recognizing selectors, properties,
 /// values, strings and comments. The line state is encoded as
 /// <c>state + (save_state &lt;&lt; 16)</c>.
 /// </summary>

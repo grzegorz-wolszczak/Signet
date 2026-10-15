@@ -24,7 +24,7 @@ public sealed class ThemeFontsTests
         {
             UiFont = "Inter",
             UiFontSize = 13,
-            CodeViewAppearance = new CodeViewAppearance { FontFamily = "Consolas", FontSize = 14 },
+            CodeEditorAppearance = new CodeEditorAppearance { FontFamily = "Consolas", FontSize = 14 },
             PreviewAppearance = new PreviewAppearance("Georgia", "Times New Roman", "Verdana", 18),
         };
         settings.SetTooltipFont(TooltipArea.BookBrowser, new TooltipFont("Segoe UI", 11));
@@ -33,7 +33,7 @@ public sealed class ThemeFontsTests
 
         sut.Keys.Should().BeEquivalentTo(ThemeFontKeys.All);
         sut[ThemeFontKeys.Interface].Should().Be(new ThemeFont("Inter", 13));
-        sut[ThemeFontKeys.CodeViewEditor].Should().Be(new ThemeFont("Consolas", 14));
+        sut[ThemeFontKeys.CodeEditorText].Should().Be(new ThemeFont("Consolas", 14));
         sut[ThemeFontKeys.PreviewSerif].Should().Be(new ThemeFont("Times New Roman", 0));
         sut[ThemeFontKeys.PreviewSize].Should().Be(new ThemeFont(string.Empty, 18));
         sut[ThemeFontKeys.Tooltip(TooltipArea.BookBrowser)].Should().Be(new ThemeFont("Segoe UI", 11));
@@ -45,15 +45,15 @@ public sealed class ThemeFontsTests
     {
         Theme theme = NewTheme() with
         {
-            Fonts = NewTheme().Fonts.SetItem(ThemeFontKeys.CodeViewEditor, new ThemeFont("Cascadia Code", 15)),
+            Fonts = NewTheme().Fonts.SetItem(ThemeFontKeys.CodeEditorText, new ThemeFont("Cascadia Code", 15)),
         };
-        CodeViewAppearance setting = new() { FontFamily = "Consolas", FontSize = 14 };
+        CodeEditorAppearance setting = new() { FontFamily = "Consolas", FontSize = 14 };
 
-        new ThemeFonts(theme, Resolver(theme)).CodeView(setting).Should().Be(setting, "the theme does not turn its fonts on");
+        new ThemeFonts(theme, Resolver(theme)).CodeEditor(setting).Should().Be(setting, "the theme does not turn its fonts on");
 
         ThemeFonts sut = new(theme with { UseThemeFonts = true }, Resolver(theme));
 
-        sut.CodeView(setting).Should().Be(new CodeViewAppearance { FontFamily = "Cascadia Code", FontSize = 15 });
+        sut.CodeEditor(setting).Should().Be(new CodeEditorAppearance { FontFamily = "Cascadia Code", FontSize = 15 });
         sut.Interface("Inter", 13).Should().Be(("Inter", 13), "a place the theme does not set keeps the setting");
     }
 

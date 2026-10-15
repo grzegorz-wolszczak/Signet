@@ -77,7 +77,7 @@ public sealed class KeyboardShortcutManagerTests
         host.Shortcuts.RegisterAction("PanelA", "F2", "a", scope: "A");
         host.Shortcuts.RegisterAction("PanelA2", "Ctrl+F2", "a2", scope: "A");
         host.Shortcuts.RegisterAction("PanelB", "F3", "b", scope: "B");
-        host.Shortcuts.RegisterAction("Code", "Ctrl+F3", "c", scope: KeyboardShortcutManager.CodeViewScope);
+        host.Shortcuts.RegisterAction("Code", "Ctrl+F3", "c", scope: KeyboardShortcutManager.CodeEditorScope);
         host.Shortcuts.RegisterAction("Window", "Ctrl+K", "w");
 
         // (TestHost registers the whole catalog too, so only the test actions are checked.)
@@ -102,7 +102,7 @@ public sealed class KeyboardShortcutManagerTests
         host.Shortcuts.Get(AppActionIds.BookBrowserRename)!.Shortcuts.Should().Contain(f2);
         host.Shortcuts.Get(AppActionIds.ClipEditorRename)!.Shortcuts.Should().Contain(f2);
 
-        host.Shortcuts.Get(AppActionIds.RenameClass)!.Scope.Should().Be(KeyboardShortcutManager.CodeViewScope);
+        host.Shortcuts.Get(AppActionIds.RenameClass)!.Scope.Should().Be(KeyboardShortcutManager.CodeEditorScope);
         host.Shortcuts.FindConflicts(AppActionIds.RenameClass, f2).Should().BeEmpty();
         host.Shortcuts.FindShadowed(AppActionIds.RenameClass, f2).Should().BeEmpty();
     }
@@ -171,7 +171,7 @@ public sealed class KeyboardShortcutManagerTests
     {
         using TestHost host = new();
 
-        // Ctrl+Shift+M is intentionally mapped to two context-dependent actions (Decrease Indent in Code View, Mark
+        // Ctrl+Shift+M is intentionally mapped to two context-dependent actions (Decrease Indent in Code Editor, Mark
         // Selected Text elsewhere). The second conflict is a known, deliberately kept one: Clip 60 defaults to
         // "Ctrl+0", the same as Zoom Reset, even though Clip 1..10 use Ctrl+Alt+N.
         List<(string, string)> pairs = host.Shortcuts.AllShortcuts
