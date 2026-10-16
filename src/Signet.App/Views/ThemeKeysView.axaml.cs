@@ -13,7 +13,7 @@ using Signet.Core.Themes;
 namespace Signet.App.Views;
 
 /// <summary>
-/// A page of the keys of Appearance › Color Scheme (<see cref="ColorSchemePageViewModel"/>). The tree's source is built
+/// A page of the keys of Appearance › Color Scheme (<see cref="ThemeKeysPageViewModel"/>). The tree's source is built
 /// here (TreeDataGrid sources belong to the views), and so is the preview of the page: an editor with the demo text of
 /// a code page (two for JavaScript and JSON), or the sample controls of Preview and Interface.
 /// </summary>
@@ -21,9 +21,9 @@ namespace Signet.App.Views;
     "Reliability",
     "CA1001:Types that own disposable fields should be disposable",
     Justification = "The tree source is disposed when the DataContext changes, like in the other TreeDataGrid views.")]
-public partial class ColorSchemeKeysView : UserControl
+public partial class ThemeKeysView : UserControl
 {
-    private ColorSchemePageViewModel? _bound;
+    private ThemeKeysPageViewModel? _bound;
     private LocalizedColumns<ThemeKeyNode>? _columns;
     private HierarchicalTreeDataGridSource<ThemeKeyNode>? _source;
     private TreeSelectionSync<ThemeKeyNode>? _selection;
@@ -33,7 +33,7 @@ public partial class ColorSchemeKeysView : UserControl
     private ThemeControlsPreview? _controls;
 
     /// <summary>Initializes the view.</summary>
-    public ColorSchemeKeysView()
+    public ThemeKeysView()
     {
         InitializeComponent();
         DataContextChanged += (_, _) => BuildTree();
@@ -63,10 +63,10 @@ public partial class ColorSchemeKeysView : UserControl
         _source?.Dispose();
         _source = null;
         _selection = null;
-        _bound = DataContext as ColorSchemePageViewModel;
+        _bound = DataContext as ThemeKeysPageViewModel;
         if (_bound is not null)
         {
-            ColorSchemePageViewModel vm = _bound;
+            ThemeKeysPageViewModel vm = _bound;
             vm.PropertyChanged += OnViewModelPropertyChanged;
             _columns = new LocalizedColumns<ThemeKeyNode>();
             _source = new HierarchicalTreeDataGridSource<ThemeKeyNode>(vm.Roots)
@@ -166,7 +166,7 @@ public partial class ColorSchemeKeysView : UserControl
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(ColorSchemePageViewModel.Selected))
+        if (e.PropertyName == nameof(ThemeKeysPageViewModel.Selected))
         {
             _selection?.SelectFromViewModel();
             ThemeKey? key = _bound?.Key;
@@ -177,14 +177,14 @@ public partial class ColorSchemeKeysView : UserControl
 
             _controls?.Blink(key);
         }
-        else if (e.PropertyName == nameof(ColorSchemePageViewModel.PreviewFont))
+        else if (e.PropertyName == nameof(ThemeKeysPageViewModel.PreviewFont))
         {
             foreach (ThemePreviewEditor editor in _editors)
             {
                 ApplyFont(editor);
             }
         }
-        else if (e.PropertyName == nameof(ColorSchemePageViewModel.Theme) && _bound?.Theme is { } theme)
+        else if (e.PropertyName == nameof(ThemeKeysPageViewModel.Theme) && _bound?.Theme is { } theme)
         {
             foreach (ThemePreviewEditor editor in _editors)
             {

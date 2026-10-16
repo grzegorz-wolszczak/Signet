@@ -3746,7 +3746,7 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>Font of the character column in the "Insert Special Character" window (Preferences).</summary>
     public SpecialCharacterAppearance SpecialCharacterAppearance =>
-        AppTheme.Current.Fonts.SpecialCharacters(_settings.SpecialCharacterAppearance);
+        _settings.SpecialCharacterAppearance;
 
     /// <summary>"Search all characters" in the "Insert Special Character" window (remembered).</summary>
     public bool SpecialCharacterSearchAll

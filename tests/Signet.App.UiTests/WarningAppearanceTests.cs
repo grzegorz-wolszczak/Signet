@@ -68,7 +68,7 @@ public sealed class WarningAppearanceTests
         try
         {
             UiDensityManager.ApplyWarning(app, new WarningAppearance(20), HeadlessUiFontSize);
-            AppTheme.Apply(app, new ResolvedTheme(theme, new ThemeResolver(_ => null)));
+            AppTheme.Apply(app, ResolvedTheme.Of(ThemeDocumentKind.Theme, theme, new ThemeResolver(_ => null)));
             Dispatcher.UIThread.RunJobs();
 
             TextBlock consequence = Consequence(window);
@@ -100,7 +100,7 @@ public sealed class WarningAppearanceTests
             .With(ThemeKeys.UiErrorNotification.Id, ThemeEntry.Of(ThemeColor.Parse("#123456")));
         try
         {
-            AppTheme.Apply(app, new ResolvedTheme(theme, new ThemeResolver(_ => null)));
+            AppTheme.Apply(app, ResolvedTheme.Of(ThemeDocumentKind.Theme, theme, new ThemeResolver(_ => null)));
             Dispatcher.UIThread.RunJobs();
             window.CaptureRenderedFrame();
 

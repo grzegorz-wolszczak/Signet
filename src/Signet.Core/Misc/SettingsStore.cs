@@ -1107,8 +1107,8 @@ public sealed class SettingsStore
     }
 
     /// <summary>
-    /// The identifier of the theme in use (<see cref="Themes.ThemeStore"/>); Signet Light by default. A theme that no
-    /// longer exists is replaced by Signet Light when it is applied.
+    /// The identifier of the theme of the interface in use (<see cref="Themes.ThemeStore"/>); Signet Light by default. A
+    /// theme that no longer exists is replaced by Signet Light when it is applied.
     /// </summary>
     public string UiThemeId
     {
@@ -1121,13 +1121,19 @@ public sealed class SettingsStore
     }
 
     /// <summary>
-    /// The colors the settings held before the themes (raw values by their old keys), read when the file was loaded and
-    /// no longer written; <see cref="Themes.LegacyColorMigration"/> moves them into a theme. Empty when there were none.
+    /// The identifier of the color scheme of the editors in use (<see cref="Themes.ThemeStore"/> of the schemes); Signet
+    /// Light by default. It is chosen independently of the theme of the interface. A scheme that no longer exists is
+    /// replaced by Signet Light when it is applied.
     /// </summary>
-    public IReadOnlyDictionary<string, string> LegacyColors { get; private set; } = new Dictionary<string, string>();
-
-    /// <summary>Forgets <see cref="LegacyColors"/> once they moved into a theme.</summary>
-    internal void ForgetLegacyColors() => LegacyColors = new Dictionary<string, string>();
+    public string EditorSchemeId
+    {
+        get => ReadString("editor_scheme_id", Themes.ThemeStore.LightId);
+        set
+        {
+            WriteSilent("editor_scheme_id", string.IsNullOrWhiteSpace(value) ? Themes.ThemeStore.LightId : value);
+            RaiseChanged("editor_scheme_id");
+        }
+    }
 
     /// <summary>The font of the tooltips of an area of the application. Always read normalized.</summary>
     public TooltipFont GetTooltipFont(TooltipArea area) => new TooltipFont(
@@ -1919,24 +1925,48 @@ public sealed class SettingsStore
         yield return "code_editor_line_numbers_font_size";
     }
 
+    // The colors the settings held before the themes (by their old keys).
+    private static readonly string[] LegacyColorKeys =
+    {
+            "code_editor_css_comment_color",
+            "code_editor_css_property_color",
+            "code_editor_css_quote_color",
+            "code_editor_css_selector_color",
+            "code_editor_css_value_color",
+            "code_editor_css_special_selector_color",
+            "code_editor_css_at_rule_color",
+            "code_editor_css_constant_color",
+            "code_editor_line_highlight_color",
+            "code_editor_xhtml_attribute_name_color",
+            "code_editor_xhtml_attribute_value_color",
+            "code_editor_xhtml_css_color",
+            "code_editor_xhtml_css_comment_color",
+            "code_editor_xhtml_doctype_color",
+            "code_editor_xhtml_entity_color",
+            "code_editor_xhtml_html_color",
+            "code_editor_xhtml_html_comment_color",
+            "code_editor_xhtml_namespace_prefix_color",
+            "code_editor_link_color",
+            "code_editor_error_underline_color",
+            "code_editor_search_match_background_color",
+            "code_editor_selection_background_color",
+            "warning_color_light",
+            "error_color_light",
+            "open_tag_hint_light_background",
+            "open_tag_hint_light_foreground",
+            "preview_highlight_color_light",
+    };
+
     // The keys of settings that were removed — the dark application theme (the application has one, light theme until
     // configurable themes come) and Code Editor colors nothing used: dropped on load, so the next save no longer writes
     // them.
     private void RemoveObsoleteKeys()
     {
-        // The colors of before the themes: kept for the migration into a theme (LegacyColorMigration), then dropped.
-        Dictionary<string, string> legacy = new(StringComparer.Ordinal);
-        foreach (string key in Themes.LegacyColorMigration.Keys)
+        // The colors of before the themes: the themes and the color schemes start from scratch, so they are dropped.
+        foreach (string key in LegacyColorKeys)
         {
-            if (_file.GetRaw(Group, key) is JsonValue node && node.TryGetValue(out string? value))
-            {
-                legacy[key] = value;
-            }
-
             _file.Remove(Group, key);
         }
-
-        LegacyColors = legacy;
 
         string[] keys =
         {

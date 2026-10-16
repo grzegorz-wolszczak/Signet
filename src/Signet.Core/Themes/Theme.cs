@@ -40,14 +40,10 @@ public sealed record ThemeEntry
         new() { Attributes = attributes ?? throw new ArgumentNullException(nameof(attributes)) };
 }
 
-/// <summary>A font a theme sets (Rider's color scheme font).</summary>
-/// <param name="Family">Typeface; empty = the default of the place.</param>
-/// <param name="Size">Size (px); 0 = the default of the place.</param>
-public readonly record struct ThemeFont(string Family, int Size);
-
 /// <summary>
-/// A theme: the colors and the look of text in the interface and in the editors, and optionally fonts. A theme of the
-/// user has a parent and keeps only what differs from it; a bundled theme has no parent and sets every key.
+/// A theme of the interface or a color scheme of the editors (<see cref="ThemeDocumentKind"/>; the two have the same
+/// shape and differ in the keys they hold). A theme of the user has a parent and keeps only what differs from it; a
+/// bundled one has no parent and sets every key.
 /// </summary>
 public sealed record Theme
 {
@@ -71,23 +67,16 @@ public sealed record Theme
     /// <summary>The theme whose values this one takes where it sets none; <c>null</c> for a bundled theme.</summary>
     public string? ParentId { get; init; }
 
-    /// <summary>The variant of the interface; <c>null</c> = the parent's.</summary>
+    /// <summary>The variant of the interface (a theme only); <c>null</c> = the parent's.</summary>
     public InterfaceVariant? Variant { get; init; }
 
-    /// <summary>The icon set the theme uses (e.g. <c>material</c>); <c>null</c> = the parent's, or the one chosen in
-    /// Preferences › Appearance.</summary>
+    /// <summary>The icon set the theme uses (e.g. <c>material</c>; a theme only); <c>null</c> = the parent's, or the one
+    /// chosen in Preferences › Appearance.</summary>
     public string? IconSet { get; init; }
 
     /// <summary>The values of the keys (by <see cref="ThemeKey.Id"/>) the theme sets itself.</summary>
     public ImmutableDictionary<string, ThemeEntry> Entries { get; init; } =
         ImmutableDictionary.Create<string, ThemeEntry>(StringComparer.Ordinal);
-
-    /// <summary>Whether the theme's fonts replace the default ones (Rider: "Use color scheme font instead of the default").</summary>
-    public bool UseThemeFonts { get; init; }
-
-    /// <summary>The fonts the theme sets, by the key of the place they are used in.</summary>
-    public ImmutableDictionary<string, ThemeFont> Fonts { get; init; } =
-        ImmutableDictionary.Create<string, ThemeFont>(StringComparer.Ordinal);
 
     /// <summary>When the theme was created (UTC); <c>null</c> for a bundled theme.</summary>
     public DateTimeOffset? Created { get; init; }

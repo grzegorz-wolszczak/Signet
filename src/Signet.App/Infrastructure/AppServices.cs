@@ -32,7 +32,9 @@ internal static class AppServices
         services.AddSingleton(_ => new SettingsStore());
         services.AddSingleton<LocalizationManager>();
         services.AddSingleton<IconThemeManager>();
-        services.AddSingleton(_ => new Signet.Core.Themes.ThemeStore(AppDirectories.ThemesDirectory));
+        services.AddSingleton(_ => new ThemeStores(
+            new Signet.Core.Themes.ThemeStore(AppDirectories.ThemesDirectory),
+            new Signet.Core.Themes.ThemeStore(AppDirectories.SchemesDirectory, Signet.Core.Themes.ThemeDocumentKind.Scheme)));
         services.AddSingleton<ThemeManager>();
         services.AddSingleton<UiDensityManager>();
         services.AddSingleton<SpellChecker>();

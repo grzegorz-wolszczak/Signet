@@ -54,17 +54,17 @@ public sealed record EffectOption(EffectType Value, string DisplayName);
 /// A page of the keys of Appearance › Color Scheme (General, XHTML, …), as Rider's Color Scheme pages: the tree of the
 /// keys of the page on the left and the panel of the selected key on the right — Bold / Italic, Foreground /
 /// Background, the effect, "Inherit values from …" for a key with a base, or a single color for a color key. The
-/// changes go to <see cref="ColorSchemeViewModel"/>, kept there until Save.
+/// changes go to <see cref="ThemeDocumentViewModel"/>, kept there until Save.
 /// </summary>
-public sealed partial class ColorSchemePageViewModel : ObservableObject
+public sealed partial class ThemeKeysPageViewModel : ObservableObject
 {
-    private readonly ColorSchemeViewModel _owner;
+    private readonly ThemeDocumentViewModel _owner;
     private readonly List<ThemeKeyNode> _keyNodes = new();
 
     /// <summary>Creates the page.</summary>
     /// <param name="owner">The theme being edited.</param>
     /// <param name="page">Which page.</param>
-    internal ColorSchemePageViewModel(ColorSchemeViewModel owner, ThemePage page)
+    internal ThemeKeysPageViewModel(ThemeDocumentViewModel owner, ThemePage page)
     {
         _owner = owner ?? throw new ArgumentNullException(nameof(owner));
         Page = page;
@@ -149,7 +149,7 @@ public sealed partial class ColorSchemePageViewModel : ObservableObject
     /// </summary>
     public bool Inherit
     {
-        get => Key is { BaseId: not null } key && _owner.Resolved is { } theme && IsInherited(theme.Theme, key);
+        get => Key is { BaseId: not null } key && _owner.Current is { } current && IsInherited(current, key);
         set
         {
             if (Key is not { BaseId: not null } key || value == Inherit)
@@ -311,7 +311,7 @@ public sealed partial class ColorSchemePageViewModel : ObservableObject
 
     /// <summary>The restore link: "Restore the value of ‹parent›", or "Restore the default value" in a bundled theme.</summary>
     public string RestoreText => _owner.RestoreSource is { } parent
-        ? Strings.Format("ColorScheme_RestoreFromParent", parent)
+        ? Strings.Format(_owner.Kind == ThemeDocumentKind.Theme ? "Theme_RestoreFromParent" : "Scheme_RestoreFromParent", parent)
         : Strings.Get("ColorScheme_RestoreDefault");
 
     /// <summary>Undoes the change of the selected key.</summary>
@@ -401,7 +401,7 @@ public sealed partial class ColorSchemePageViewModel : ObservableObject
 
     // The resolved color of the selected color key.
     private ThemeColor? ColorValue =>
-        Key is { Kind: ThemeKeyKind.Color } key && _owner.Resolved is { } theme ? theme.Resolver.Color(theme.Theme, key) : null;
+        Key is { Kind: ThemeKeyKind.Color } key && _owner.Resolved is { } theme ? theme.ColorOf(key) : null;
 
     // The colors of the editor: the start of a text color or a background turned on.
     private ThemeColor TextColor => EditorText.Foreground ?? ThemeColor.FromRgb(0, 0, 0);
@@ -413,7 +413,7 @@ public sealed partial class ColorSchemePageViewModel : ObservableObject
     // Whether the key inherits in the theme: the nearest entry of the lineage says so (a key no theme sets keeps its
     // default, see ThemeResolver).
     private bool IsInherited(Theme theme, ThemeKey key) =>
-        _owner.Resolved?.Resolver.Owner(theme, key) is { } owner && owner.Entries[key.Id].Inherit;
+        _owner.EditResolver.Owner(theme, key) is { } owner && owner.Entries[key.Id].Inherit;
 
     private void SetAttributes(TextAttributes attributes)
     {

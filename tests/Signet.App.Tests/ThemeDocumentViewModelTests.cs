@@ -14,8 +14,8 @@ using Xunit;
 
 namespace Signet.App.Tests;
 
-/// <summary>Preferences › Appearance › Color Scheme (<see cref="ColorSchemeViewModel"/>).</summary>
-public sealed class ColorSchemeViewModelTests : IDisposable
+/// <summary>Preferences › Appearance (the themes) and › Code Editor › Color Scheme (<see cref="ThemeDocumentViewModel"/>).</summary>
+public sealed class ThemeDocumentViewModelTests : IDisposable
 {
     private readonly TestHost _host = new();
     private readonly string _root = Path.Combine(Path.GetTempPath(), "Signet.Tests", "scheme-" + Guid.NewGuid().ToString("N"));
@@ -39,15 +39,19 @@ public sealed class ColorSchemeViewModelTests : IDisposable
         IconThemeManager iconTheme = new(_host.Settings, NullLogger<IconThemeManager>.Instance);
         SpellChecker spellChecker = new(_host.Settings, Path.Combine(_root, "hunspell"), Path.Combine(_root, "user"));
         UiDensityManager uiDensity = new(_host.Settings, iconTheme, NullLogger<UiDensityManager>.Instance, () => "Segoe UI", _ => false);
-        ThemeManager themes = new(_host.Settings, new ThemeStore(ThemesFolder), NullLogger<ThemeManager>.Instance);
+        ThemeManager themes = new(_host.Settings, ThemeStores.In(_root), NullLogger<ThemeManager>.Instance);
         PreferencesViewModel vm = new(_host.Settings, spellChecker, localization, iconTheme, _host.Shortcuts, _host.Registry, uiDensity, themes);
-        vm.ColorScheme.TextPrompt = (_, _, _) => Task.FromResult(_names.Dequeue());
-        vm.ColorScheme.Confirm = (_, _) => Task.FromResult(true);
-        vm.ColorScheme.Message = (_, text) =>
+        foreach (ThemeDocumentViewModel document in new[] { vm.Theme, vm.ColorScheme })
         {
-            _messages.Add(text);
-            return Task.CompletedTask;
-        };
+            document.TextPrompt = (_, _, _) => Task.FromResult(_names.Dequeue());
+            document.Confirm = (_, _) => Task.FromResult(true);
+            document.Message = (_, text) =>
+            {
+                _messages.Add(text);
+                return Task.CompletedTask;
+            };
+        }
+
         return vm;
     }
 
@@ -55,7 +59,7 @@ public sealed class ColorSchemeViewModelTests : IDisposable
     public void The_theme_in_use_is_chosen_in_the_window_and_applied_on_save()
     {
         PreferencesViewModel vm = New();
-        ColorSchemeViewModel sut = vm.ColorScheme;
+        ThemeDocumentViewModel sut = vm.Theme;
 
         sut.Themes.Select(t => t.Name).Should().Equal("Signet Light", "Signet Dark");
         sut.Selected!.Id.Should().Be(ThemeStore.LightId);
@@ -72,7 +76,7 @@ public sealed class ColorSchemeViewModelTests : IDisposable
     public void A_change_to_a_bundled_theme_is_saved_on_save_and_restore_defaults_removes_it()
     {
         PreferencesViewModel vm = New();
-        ColorSchemeViewModel sut = vm.ColorScheme;
+        ThemeDocumentViewModel sut = vm.Theme;
         sut.CanRestoreDefaults.Should().BeFalse();
 
         sut.Variant = sut.Variants.Single(v => v.Value == InterfaceVariant.Dark);
@@ -98,7 +102,7 @@ public sealed class ColorSchemeViewModelTests : IDisposable
     public async Task Duplicate_makes_a_theme_of_the_user_with_the_changes_not_saved_yet_and_selects_it()
     {
         PreferencesViewModel vm = New();
-        ColorSchemeViewModel sut = vm.ColorScheme;
+        ThemeDocumentViewModel sut = vm.Theme;
         sut.Variant = sut.Variants.Single(v => v.Value == InterfaceVariant.Dark);
         _names.Enqueue("Sepia");
 
@@ -114,19 +118,19 @@ public sealed class ColorSchemeViewModelTests : IDisposable
     [Fact]
     public async Task A_taken_name_is_refused_with_a_message()
     {
-        ColorSchemeViewModel sut = New().ColorScheme;
+        ThemeDocumentViewModel sut = New().Theme;
         _names.Enqueue("signet dark");
 
         await sut.DuplicateCommand.ExecuteAsync(null);
 
         sut.Themes.Should().HaveCount(2);
-        _messages.Should().Equal(Strings.Format("ColorScheme_NameTaken", "signet dark"));
+        _messages.Should().Equal(Strings.Format("Theme_NameTaken", "signet dark"));
     }
 
     [Fact]
     public async Task Only_a_theme_of_the_user_is_renamed_or_deleted_and_its_parent_is_selected_after_deleting()
     {
-        ColorSchemeViewModel sut = New().ColorScheme;
+        ThemeDocumentViewModel sut = New().Theme;
         sut.Selected = sut.Themes.Single(t => t.Id == ThemeStore.DarkId);
         sut.RenameCommand.CanExecute(null).Should().BeFalse();
         sut.DeleteCommand.CanExecute(null).Should().BeFalse();
@@ -145,7 +149,7 @@ public sealed class ColorSchemeViewModelTests : IDisposable
     [Fact]
     public async Task Export_and_import_carry_a_theme_and_a_broken_file_gives_a_message()
     {
-        ColorSchemeViewModel sut = New().ColorScheme;
+        ThemeDocumentViewModel sut = New().Theme;
         Directory.CreateDirectory(_root);
         string file = Path.Combine(_root, "exported" + ThemeXml.Extension);
         sut.Selected = sut.Themes.Single(t => t.Id == ThemeStore.DarkId);
@@ -163,6 +167,82 @@ public sealed class ColorSchemeViewModelTests : IDisposable
         File.WriteAllText(file, "<scheme name=\"Darcula\" />");
         await sut.ImportCommand.ExecuteAsync(null);
 
-        _messages.Should().ContainSingle().Which.Should().StartWith(Strings.Format("ColorScheme_ImportFailed", string.Empty));
+        _messages.Should().ContainSingle().Which.Should().StartWith(Strings.Format("Theme_ImportFailed", string.Empty));
+    }
+
+    private string SchemesFolder => Path.Combine(_root, "schemes");
+
+    [Fact]
+    public void The_color_scheme_in_use_is_chosen_independently_of_the_theme_and_applied_on_save()
+    {
+        PreferencesViewModel vm = New();
+
+        vm.ColorScheme.Kind.Should().Be(ThemeDocumentKind.Scheme);
+        vm.Theme.Kind.Should().Be(ThemeDocumentKind.Theme);
+        vm.ColorScheme.Selected!.Id.Should().Be(ThemeStore.LightId);
+
+        vm.ColorScheme.Selected = vm.ColorScheme.Themes.Single(t => t.Id == ThemeStore.DarkId);
+
+        vm.HasChanges.Should().BeTrue();
+        vm.Theme.Selected!.Id.Should().Be(ThemeStore.LightId, "the scheme does not change the theme");
+        _host.Settings.EditorSchemeId.Should().Be(ThemeStore.LightId, "not saved yet");
+        vm.ApplyCommand.Execute(null);
+        _host.Settings.EditorSchemeId.Should().Be(ThemeStore.DarkId);
+        _host.Settings.UiThemeId.Should().Be(ThemeStore.LightId);
+    }
+
+    [Fact]
+    public void A_bundled_color_scheme_follows_the_variant_of_the_theme_chosen()
+    {
+        PreferencesViewModel vm = New();
+
+        vm.Theme.Selected = vm.Theme.Themes.Single(t => t.Id == ThemeStore.DarkId);
+
+        vm.ColorScheme.Selected!.Id.Should().Be(ThemeStore.DarkId, "a dark theme brings the dark scheme");
+
+        vm.Theme.Selected = vm.Theme.Themes.Single(t => t.Id == ThemeStore.LightId);
+
+        vm.ColorScheme.Selected!.Id.Should().Be(ThemeStore.LightId);
+    }
+
+    [Fact]
+    public async Task A_color_scheme_of_the_user_stays_when_the_theme_changes()
+    {
+        PreferencesViewModel vm = New();
+        _names.Enqueue("Sepia");
+        await vm.ColorScheme.DuplicateCommand.ExecuteAsync(null);
+        string mine = vm.ColorScheme.Selected!.Id;
+
+        vm.Theme.Selected = vm.Theme.Themes.Single(t => t.Id == ThemeStore.DarkId);
+
+        vm.ColorScheme.Selected!.Id.Should().Be(mine);
+    }
+
+    [Fact]
+    public void A_scheme_picked_on_purpose_survives_saving_while_the_theme_stays_the_same()
+    {
+        PreferencesViewModel vm = New();
+        vm.Theme.Selected = vm.Theme.Themes.Single(t => t.Id == ThemeStore.DarkId);
+        vm.ColorScheme.Selected = vm.ColorScheme.Themes.Single(t => t.Id == ThemeStore.LightId);
+
+        vm.ApplyCommand.Execute(null);
+
+        _host.Settings.UiThemeId.Should().Be(ThemeStore.DarkId);
+        _host.Settings.EditorSchemeId.Should().Be(ThemeStore.LightId, "saving does not switch the scheme again");
+        vm.ColorScheme.Selected!.Id.Should().Be(ThemeStore.LightId);
+    }
+
+    [Fact]
+    public async Task Themes_and_color_schemes_are_listed_and_kept_apart()
+    {
+        PreferencesViewModel vm = New();
+        _names.Enqueue("Sepia");
+
+        await vm.ColorScheme.DuplicateCommand.ExecuteAsync(null);
+
+        vm.ColorScheme.Themes.Select(t => t.Name).Should().Contain("Sepia");
+        vm.Theme.Themes.Select(t => t.Name).Should().Equal("Signet Light", "Signet Dark");
+        Directory.GetFiles(SchemesFolder).Should().ContainSingle().Which.Should().EndWith(ThemeXml.SchemeExtension);
+        Directory.Exists(ThemesFolder).Should().BeFalse("no theme was made");
     }
 }

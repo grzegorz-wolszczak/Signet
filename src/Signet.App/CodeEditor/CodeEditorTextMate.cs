@@ -95,7 +95,7 @@ internal static class CodeEditorTextMate
         using (Utf8JsonWriter writer = new(json))
         {
             writer.WriteStartObject();
-            writer.WriteString("name", theme.Theme.Name);
+            writer.WriteString("name", theme.Scheme.Name);
             writer.WriteStartArray("tokenColors");
 
             TextAttributes text = theme.Attributes(ThemeKeys.EditorText);

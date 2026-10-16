@@ -14,8 +14,8 @@ using Xunit;
 
 namespace Signet.App.Tests;
 
-/// <summary>The pages of the keys of Appearance › Color Scheme (<see cref="ColorSchemePageViewModel"/>).</summary>
-public sealed class ColorSchemePageViewModelTests : IDisposable
+/// <summary>The pages of the keys of Appearance › Color Scheme (<see cref="ThemeKeysPageViewModel"/>).</summary>
+public sealed class ThemeKeysPageViewModelTests : IDisposable
 {
     private static readonly Fixture Any = new();
     private readonly TestHost _host = new();
@@ -31,31 +31,38 @@ public sealed class ColorSchemePageViewModelTests : IDisposable
         }
     }
 
-    private ColorSchemeViewModel New(string themeId = ThemeStore.LightId)
+    // The color scheme of the editors (the keys of the code), with the bundled scheme given selected.
+    private ThemeDocumentViewModel New(string themeId = ThemeStore.LightId) => Create(scheme: true, themeId);
+
+    // The theme of the interface.
+    private ThemeDocumentViewModel NewTheme() => Create(scheme: false, ThemeStore.LightId);
+
+    private ThemeDocumentViewModel Create(bool scheme, string themeId)
     {
         LocalizationManager localization = new(_host.Settings, NullLogger<LocalizationManager>.Instance);
         IconThemeManager iconTheme = new(_host.Settings, NullLogger<IconThemeManager>.Instance);
         SpellChecker spellChecker = new(_host.Settings, Path.Combine(_root, "hunspell"), Path.Combine(_root, "user"));
         UiDensityManager uiDensity = new(_host.Settings, iconTheme, NullLogger<UiDensityManager>.Instance, () => "Segoe UI", _ => false);
-        ThemeManager themes = new(_host.Settings, new ThemeStore(Path.Combine(_root, "themes")), NullLogger<ThemeManager>.Instance);
+        ThemeManager themes = new(_host.Settings, ThemeStores.In(_root), NullLogger<ThemeManager>.Instance);
         PreferencesViewModel vm = new(_host.Settings, spellChecker, localization, iconTheme, _host.Shortcuts, _host.Registry, uiDensity, themes);
-        vm.ColorScheme.TextPrompt = (_, _, _) => Task.FromResult(_names.Dequeue());
-        vm.ColorScheme.Selected = vm.ColorScheme.Themes.Single(t => t.Id == themeId);
-        return vm.ColorScheme;
+        ThemeDocumentViewModel document = scheme ? vm.ColorScheme : vm.Theme;
+        document.TextPrompt = (_, _, _) => Task.FromResult(_names.Dequeue());
+        document.Selected = document.Themes.Single(t => t.Id == themeId);
+        return document;
     }
 
     // A theme of the user with Signet Dark as the parent, selected.
-    private ColorSchemeViewModel NewWithUserTheme()
+    private ThemeDocumentViewModel NewWithUserTheme()
     {
-        ColorSchemeViewModel sut = New(ThemeStore.DarkId);
+        ThemeDocumentViewModel sut = New(ThemeStore.DarkId);
         _names.Enqueue(Any.Create<string>());
         sut.DuplicateCommand.Execute(null);
         return sut;
     }
 
-    private static ColorSchemePageViewModel Select(ColorSchemeViewModel scheme, ThemeKey key)
+    private static ThemeKeysPageViewModel Select(ThemeDocumentViewModel scheme, ThemeKey key)
     {
-        ColorSchemePageViewModel page = scheme.PageFor(key.Page);
+        ThemeKeysPageViewModel page = scheme.PageFor(key.Page);
         page.SelectKey(key);
         return page;
     }
@@ -63,29 +70,33 @@ public sealed class ColorSchemePageViewModelTests : IDisposable
     [Fact]
     public void Every_key_is_in_the_tree_of_its_page_under_its_group()
     {
-        ColorSchemeViewModel sut = New();
+        ThemeDocumentViewModel sut = New();
+        ThemeDocumentViewModel theme = NewTheme();
 
-        foreach (ThemePage page in Enum.GetValues<ThemePage>())
+        // The theme edits the keys of the interface only, the color scheme all the others.
+        theme.Pages.Select(p => p.Page).Should().Equal(new[] { ThemePage.Interface });
+        sut.Pages.Select(p => p.Page).Should().Equal(Enum.GetValues<ThemePage>().Where(p => p != ThemePage.Interface).ToArray());
+        FluentActions.Invoking(() => sut.PageFor(ThemePage.Interface)).Should().Throw<InvalidOperationException>();
+        foreach (ThemeKeysPageViewModel vm in sut.Pages.Concat(theme.Pages))
         {
-            ColorSchemePageViewModel vm = sut.PageFor(page);
-            vm.Page.Should().Be(page);
+            ThemePage page = vm.Page;
             List<ThemeKey> keys = vm.Roots.SelectMany(r => r.IsGroup ? r.Children : new[] { r }.AsEnumerable()).Select(n => n.Key!).ToList();
             keys.Should().Equal(ThemeKeys.On(page));
             vm.Roots.Where(r => r.IsGroup).Should().OnlyContain(g => g.Children.Count > 0 && g.Name.Length > 0);
         }
 
         sut.PageFor(ThemePage.Preview).Roots[0].Key.Should().Be(ThemeKeys.PreviewHighlight, "a key without a group is at the top");
-        sut.PageFor(ThemePage.Interface).Roots.Single(r => r.IsGroup && r.Children[0].Key!.Id.StartsWith("fluent.", StringComparison.Ordinal))
+        theme.PageFor(ThemePage.Interface).Roots.Single(r => r.IsGroup && r.Children[0].Key!.Id.StartsWith("fluent.", StringComparison.Ordinal))
             .Children.Select(n => n.Name).Should().Contain("RegionColor", "the Fluent palette keeps the names of its colors");
     }
 
     [Fact]
     public void A_color_typed_for_a_key_changes_the_theme_until_save_and_marks_the_key_and_its_group()
     {
-        ColorSchemeViewModel sut = New();
+        ThemeDocumentViewModel sut = New();
         int changed = 0;
         sut.Changed += (_, _) => changed++;
-        ColorSchemePageViewModel page = Select(sut, ThemeKeys.XhtmlTag);
+        ThemeKeysPageViewModel page = Select(sut, ThemeKeys.XhtmlTag);
 
         page.Foreground = "not a color";
         sut.HasChanges.Should().BeFalse("a text that is not a color is ignored");
@@ -105,8 +116,8 @@ public sealed class ColorSchemePageViewModelTests : IDisposable
     [Fact]
     public void The_attributes_of_a_key_are_edited_one_by_one()
     {
-        ColorSchemeViewModel sut = New();
-        ColorSchemePageViewModel page = Select(sut, ThemeKeys.CssProperty);
+        ThemeDocumentViewModel sut = New();
+        ThemeKeysPageViewModel page = Select(sut, ThemeKeys.CssProperty);
 
         page.Bold = true;
         page.Italic = true;
@@ -137,8 +148,8 @@ public sealed class ColorSchemePageViewModelTests : IDisposable
     [Fact]
     public void An_inheriting_key_shows_the_values_of_its_base_and_cannot_be_edited_until_inheriting_is_turned_off()
     {
-        ColorSchemeViewModel sut = New(ThemeStore.DarkId);
-        ColorSchemePageViewModel page = Select(sut, ThemeKeys.JsonString);
+        ThemeDocumentViewModel sut = New(ThemeStore.DarkId);
+        ThemeKeysPageViewModel page = Select(sut, ThemeKeys.JsonString);
         TextAttributes jsString = sut.Resolved!.Attributes(ThemeKeys.JsString);
 
         page.CanInherit.Should().BeTrue();
@@ -164,8 +175,8 @@ public sealed class ColorSchemePageViewModelTests : IDisposable
     [Fact]
     public void A_key_no_theme_sets_keeps_its_default_and_does_not_inherit()
     {
-        ColorSchemeViewModel sut = New();
-        ColorSchemePageViewModel page = Select(sut, ThemeKeys.XhtmlCss);
+        ThemeDocumentViewModel sut = New();
+        ThemeKeysPageViewModel page = Select(sut, ThemeKeys.XhtmlCss);
 
         page.CanInherit.Should().BeTrue();
         page.Inherit.Should().BeFalse("Signet Light sets nothing, so the key keeps its default");
@@ -176,10 +187,10 @@ public sealed class ColorSchemePageViewModelTests : IDisposable
     [Fact]
     public void The_link_to_the_base_selects_it_on_its_page()
     {
-        ColorSchemeViewModel sut = New();
+        ThemeDocumentViewModel sut = New();
         List<ThemeKey> requested = new();
         sut.KeyRequested += (_, key) => requested.Add(key);
-        ColorSchemePageViewModel page = Select(sut, ThemeKeys.XhtmlCss);
+        ThemeKeysPageViewModel page = Select(sut, ThemeKeys.XhtmlCss);
 
         page.ShowBaseCommand.Execute(null);
 
@@ -190,8 +201,8 @@ public sealed class ColorSchemePageViewModelTests : IDisposable
     [Fact]
     public void Restore_in_a_bundled_theme_brings_back_its_value()
     {
-        ColorSchemeViewModel sut = New(ThemeStore.DarkId);
-        ColorSchemePageViewModel page = Select(sut, ThemeKeys.XhtmlTag);
+        ThemeDocumentViewModel sut = New(ThemeStore.DarkId);
+        ThemeKeysPageViewModel page = Select(sut, ThemeKeys.XhtmlTag);
         string bundled = page.Foreground;
         page.Foreground = "#123456";
 
@@ -206,8 +217,8 @@ public sealed class ColorSchemePageViewModelTests : IDisposable
     [Fact]
     public void Restore_in_a_theme_of_the_user_takes_the_value_of_the_parent()
     {
-        ColorSchemeViewModel sut = NewWithUserTheme();
-        ColorSchemePageViewModel page = Select(sut, ThemeKeys.XhtmlTag);
+        ThemeDocumentViewModel sut = NewWithUserTheme();
+        ThemeKeysPageViewModel page = Select(sut, ThemeKeys.XhtmlTag);
         string parent = page.Foreground;
         page.Foreground = "#123456";
 
@@ -221,8 +232,8 @@ public sealed class ColorSchemePageViewModelTests : IDisposable
     [Fact]
     public void A_color_key_that_may_be_empty_has_an_own_color_switch()
     {
-        ColorSchemeViewModel sut = New();
-        ColorSchemePageViewModel page = Select(sut, ThemeKeys.UiAccent);
+        ThemeDocumentViewModel sut = NewTheme();
+        ThemeKeysPageViewModel page = Select(sut, ThemeKeys.UiAccent);
 
         page.IsColorKey.Should().BeTrue();
         page.CanBeEmpty.Should().BeTrue();
@@ -231,25 +242,25 @@ public sealed class ColorSchemePageViewModelTests : IDisposable
         page.HasColor = true;
         page.Color = "#3366CC";
 
-        sut.Resolved!.Resolver.Color(sut.Current!, ThemeKeys.UiAccent).Should().Be(ThemeColor.Parse("#3366CC"));
+        sut.Resolved!.ColorOf(ThemeKeys.UiAccent).Should().Be(ThemeColor.Parse("#3366CC"));
 
         page.HasColor = false;
 
-        sut.Resolved!.Resolver.Color(sut.Current!, ThemeKeys.UiAccent).Should().BeNull();
-        Select(sut, ThemeKeys.EditorCurrentLine).CanBeEmpty.Should().BeFalse();
+        sut.Resolved!.ColorOf(ThemeKeys.UiAccent).Should().BeNull();
+        Select(New(), ThemeKeys.EditorCurrentLine).CanBeEmpty.Should().BeFalse();
     }
 
     [Fact]
     public async Task The_color_picker_starts_from_the_color_and_its_choice_is_kept()
     {
-        ColorSchemeViewModel sut = New();
+        ThemeDocumentViewModel sut = New();
         List<string> initial = new();
         sut.ColorPicker = (_, start) =>
         {
             initial.Add(start);
             return Task.FromResult<string?>("#40102030");
         };
-        ColorSchemePageViewModel page = Select(sut, ThemeKeys.DiffDeletedLine);
+        ThemeKeysPageViewModel page = Select(sut, ThemeKeys.DiffDeletedLine);
         string before = page.Background;
 
         await page.PickBackgroundCommand.ExecuteAsync(null);
@@ -261,8 +272,8 @@ public sealed class ColorSchemePageViewModelTests : IDisposable
     [Fact]
     public void Another_theme_shows_its_own_values_and_markers()
     {
-        ColorSchemeViewModel sut = New();
-        ColorSchemePageViewModel page = Select(sut, ThemeKeys.EditorText);
+        ThemeDocumentViewModel sut = New();
+        ThemeKeysPageViewModel page = Select(sut, ThemeKeys.EditorText);
         page.Background = "#FAFAFA";
 
         sut.Selected = sut.Themes.Single(t => t.Id == ThemeStore.DarkId);

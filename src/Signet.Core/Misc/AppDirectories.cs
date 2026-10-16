@@ -46,6 +46,12 @@ public static class AppDirectories
     /// </summary>
     public static string ThemesDirectory => Path.Combine(PrefsDirectory, "themes");
 
+    /// <summary>
+    /// The folder of the user's color schemes of the editors and of the changes to the bundled ones
+    /// (<c>&lt;prefs&gt;/schemes</c>, <see cref="Themes.ThemeStore"/>).
+    /// </summary>
+    public static string SchemesDirectory => Path.Combine(PrefsDirectory, "schemes");
+
     /// <summary>Ensures the preferences folder exists and returns its path.</summary>
     public static string EnsurePrefsDirectory()
     {

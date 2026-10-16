@@ -11,7 +11,8 @@ using Signet.Core.Localization;
 namespace Signet.Core.Themes;
 
 /// <summary>
-/// The XML file of a theme (<c>*.signet-theme.xml</c>), modelled on IntelliJ's <c>.icls</c>:
+/// The XML file of a theme of the interface (<c>*.signet-theme.xml</c>) or of a color scheme (<c>*.signet-scheme.xml</c>,
+/// root <c>signet-scheme</c>), modelled on IntelliJ's <c>.icls</c>:
 /// <code>
 /// &lt;signet-theme version="1" id="…" name="Sepia" parent="signet-light" variant="Light" icon-set="material"&gt;
 ///   &lt;meta created="2026-10-12T14:32:00Z" modified="…" signet="0.8.0-…" /&gt;
@@ -21,11 +22,11 @@ namespace Signet.Core.Themes;
 ///     &lt;attribute key="errors.spelling" effect="wave" effect-color="#C0392B" /&gt;
 ///     &lt;attribute key="xhtml.css.comment" inherit="true" /&gt;
 ///   &lt;/attributes&gt;
-///   &lt;fonts use-theme-fonts="true"&gt;&lt;font key="codeEditor.editor" family="Cascadia Code" size="13" /&gt;&lt;/fonts&gt;
 /// &lt;/signet-theme&gt;
 /// </code>
 /// A file holds what the theme sets itself (for a theme of the user: what differs from its parent). Keys this version
-/// does not know, or written in the section of the other kind, are skipped with a warning; a broken value or a newer
+/// does not know, written in the section of the other kind or belonging to the other document (an editor color in a
+/// theme of the interface, an interface color in a color scheme), are skipped with a warning; a broken value or a newer
 /// format stops the reading with a <see cref="ThemeFormatException"/> naming the line.
 /// </summary>
 public static class ThemeXml
@@ -36,7 +37,13 @@ public static class ThemeXml
     /// <summary>The extension of a theme file.</summary>
     public const string Extension = ".signet-theme.xml";
 
-    private const string RootName = "signet-theme";
+    /// <summary>The extension of a color scheme file.</summary>
+    public const string SchemeExtension = ".signet-scheme.xml";
+
+    /// <summary>The extension of the files of a kind of document.</summary>
+    public static string ExtensionOf(ThemeDocumentKind kind) => kind == ThemeDocumentKind.Theme ? Extension : SchemeExtension;
+
+    private static string RootNameOf(ThemeDocumentKind kind) => kind == ThemeDocumentKind.Theme ? "signet-theme" : "signet-scheme";
 
     private static readonly Dictionary<EffectType, string> EffectNames = new()
     {
@@ -50,11 +57,12 @@ public static class ThemeXml
         [EffectType.Strikeout] = "strikeout",
     };
 
-    /// <summary>Reads a theme.</summary>
+    /// <summary>Reads a theme or a color scheme.</summary>
     /// <param name="reader">The XML text.</param>
+    /// <param name="kind">The kind of document expected: a file of the other kind is not read.</param>
     /// <param name="warnings">Receives what was skipped (unknown keys, keys in the wrong section); <c>null</c> = ignore.</param>
-    /// <exception cref="ThemeFormatException">The text is not a theme this version can read.</exception>
-    public static Theme Read(TextReader reader, ICollection<string>? warnings = null)
+    /// <exception cref="ThemeFormatException">The text is not a document of this kind this version can read.</exception>
+    public static Theme Read(TextReader reader, ThemeDocumentKind kind, ICollection<string>? warnings = null)
     {
         ArgumentNullException.ThrowIfNull(reader);
         XDocument document;
@@ -68,9 +76,10 @@ public static class ThemeXml
         }
 
         XElement root = document.Root!;
-        if (root.Name.LocalName != RootName)
+        if (root.Name.LocalName != RootNameOf(kind))
         {
-            throw new ThemeFormatException(CoreStrings.Get("Theme_NotATheme"), Line(root));
+            throw new ThemeFormatException(
+                CoreStrings.Get(kind == ThemeDocumentKind.Theme ? "Theme_NotATheme" : "Theme_NotAScheme"), Line(root));
         }
 
         int version = Int(root, "version", required: true)!.Value;
@@ -82,8 +91,10 @@ public static class ThemeXml
         Theme theme = new(Required(root, "id"), Required(root, "name"))
         {
             ParentId = Optional(root, "parent"),
-            Variant = Optional(root, "variant") is { } variant ? Enum<InterfaceVariant>(root, "variant", variant) : null,
-            IconSet = Optional(root, "icon-set"),
+            Variant = kind == ThemeDocumentKind.Theme && Optional(root, "variant") is { } variant
+                ? Enum<InterfaceVariant>(root, "variant", variant)
+                : null,
+            IconSet = kind == ThemeDocumentKind.Theme ? Optional(root, "icon-set") : null,
         };
 
         if (root.Element("meta") is { } meta)
@@ -95,7 +106,7 @@ public static class ThemeXml
             ImmutableDictionary.CreateBuilder<string, ThemeEntry>(StringComparer.Ordinal);
         foreach (XElement color in Children(root, "colors", "color"))
         {
-            if (Known(color, ThemeKeyKind.Color, warnings) is { } key)
+            if (Known(color, ThemeKeyKind.Color, kind, warnings) is { } key)
             {
                 entries[key.Id] = Bool(color, "inherit") == true
                     ? ThemeEntry.Inherited
@@ -105,7 +116,7 @@ public static class ThemeXml
 
         foreach (XElement attribute in Children(root, "attributes", "attribute"))
         {
-            if (Known(attribute, ThemeKeyKind.TextAttributes, warnings) is { } key)
+            if (Known(attribute, ThemeKeyKind.TextAttributes, kind, warnings) is { } key)
             {
                 entries[key.Id] = Bool(attribute, "inherit") == true
                     ? ThemeEntry.Inherited
@@ -121,29 +132,19 @@ public static class ThemeXml
             }
         }
 
-        ImmutableDictionary<string, ThemeFont>.Builder fonts = ImmutableDictionary.CreateBuilder<string, ThemeFont>(StringComparer.Ordinal);
-        foreach (XElement font in Children(root, "fonts", "font"))
-        {
-            fonts[Required(font, "key")] = new ThemeFont(Optional(font, "family") ?? string.Empty, Int(font, "size", required: false) ?? 0);
-        }
-
-        return theme with
-        {
-            Entries = entries.ToImmutable(),
-            Fonts = fonts.ToImmutable(),
-            UseThemeFonts = root.Element("fonts") is { } fontsElement && Bool(fontsElement, "use-theme-fonts") == true,
-        };
+        return theme with { Entries = entries.ToImmutable() };
     }
 
-    /// <summary>Writes a theme: the keys in the order of the registry, only what the theme sets itself.</summary>
+    /// <summary>Writes a theme or a color scheme: the keys in the order of the registry, only what it sets itself.</summary>
     /// <param name="theme">The theme.</param>
+    /// <param name="kind">The kind of document written (the name of the root).</param>
     /// <param name="writer">Receives the XML text.</param>
     /// <param name="writtenBy">The Signet version written to <c>meta/@signet</c>; <c>null</c> = none.</param>
-    public static void Write(Theme theme, TextWriter writer, string? writtenBy = null)
+    public static void Write(Theme theme, ThemeDocumentKind kind, TextWriter writer, string? writtenBy = null)
     {
         ArgumentNullException.ThrowIfNull(theme);
         ArgumentNullException.ThrowIfNull(writer);
-        XElement root = new(RootName,
+        XElement root = new(RootNameOf(kind),
             new XAttribute("version", Version),
             new XAttribute("id", theme.Id),
             new XAttribute("name", theme.Name),
@@ -182,16 +183,6 @@ public static class ThemeXml
             root.Add(new XElement("attributes", attributes));
         }
 
-        if (theme.UseThemeFonts || theme.Fonts.Count > 0)
-        {
-            root.Add(new XElement("fonts",
-                new XAttribute("use-theme-fonts", theme.UseThemeFonts ? "true" : "false"),
-                theme.Fonts.OrderBy(f => f.Key, StringComparer.Ordinal).Select(f => new XElement("font",
-                    new XAttribute("key", f.Key),
-                    f.Value.Family.Length > 0 ? new XAttribute("family", f.Value.Family) : null,
-                    f.Value.Size > 0 ? new XAttribute("size", f.Value.Size) : null))));
-        }
-
         using XmlWriter xml = XmlWriter.Create(writer, new XmlWriterSettings
         {
             Indent = true,
@@ -203,19 +194,19 @@ public static class ThemeXml
         new XDocument(new XDeclaration("1.0", "utf-8", null), root).Save(xml);
     }
 
-    /// <summary>The theme as XML text (<see cref="Write"/>).</summary>
-    public static string ToXml(Theme theme, string? writtenBy = null)
+    /// <summary>The theme or color scheme as XML text (<see cref="Write"/>).</summary>
+    public static string ToXml(Theme theme, ThemeDocumentKind kind = ThemeDocumentKind.Theme, string? writtenBy = null)
     {
         using Utf8StringWriter writer = new();
-        Write(theme, writer, writtenBy);
+        Write(theme, kind, writer, writtenBy);
         return writer.ToString();
     }
 
-    /// <summary>Reads a theme from XML text (<see cref="Read"/>).</summary>
-    public static Theme FromXml(string xml, ICollection<string>? warnings = null)
+    /// <summary>Reads a theme or color scheme from XML text (<see cref="Read"/>).</summary>
+    public static Theme FromXml(string xml, ThemeDocumentKind kind = ThemeDocumentKind.Theme, ICollection<string>? warnings = null)
     {
         using StringReader reader = new(xml ?? throw new ArgumentNullException(nameof(xml)));
-        return Read(reader, warnings);
+        return Read(reader, kind, warnings);
     }
 
     private static XElement AttributeElement(string key, ThemeEntry entry)
@@ -251,8 +242,8 @@ public static class ThemeXml
     private static IEnumerable<XElement> Children(XElement root, string section, string item) =>
         root.Elements(section).Elements(item);
 
-    // The key of an entry, when this version knows it and it is in the section of its kind.
-    private static ThemeKey? Known(XElement element, ThemeKeyKind kind, ICollection<string>? warnings)
+    // The key of an entry, when this version knows it, it is in the section of its kind and belongs to the document read.
+    private static ThemeKey? Known(XElement element, ThemeKeyKind kind, ThemeDocumentKind document, ICollection<string>? warnings)
     {
         string id = Required(element, "key");
         if (!ThemeKeys.TryGet(id, out ThemeKey? key))
@@ -264,6 +255,12 @@ public static class ThemeXml
         if (key.Kind != kind)
         {
             warnings?.Add(CoreStrings.Format("Theme_WrongSection", Line(element), id));
+            return null;
+        }
+
+        if (key.Document != document)
+        {
+            warnings?.Add(CoreStrings.Format("Theme_WrongDocument", Line(element), id));
             return null;
         }
 

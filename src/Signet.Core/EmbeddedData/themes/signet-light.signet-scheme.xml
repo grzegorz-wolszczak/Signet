@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Signet Light: the colors of the editors of Signet before themes. They are the defaults of the key registry
+     (ThemeKeys), so the file sets nothing itself; every key resolves to its default. -->
+<signet-scheme version="1" id="signet-light" name="Signet Light" />

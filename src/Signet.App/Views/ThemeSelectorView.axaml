@@ -1,0 +1,28 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Signet.App.ViewModels"
+             xmlns:loc="using:Signet.App.Resources"
+             x:Class="Signet.App.Views.ThemeSelectorView"
+             x:DataType="vm:ThemeDocumentViewModel">
+  <!-- The list of the themes of the interface or of the color schemes of the editors with the gear of its actions
+       (IntelliJ's AbstractSchemeActions): duplicate, rename, delete, restore defaults, export, import. It shows what its
+       DataContext (a ThemeDocumentViewModel) manages. -->
+  <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+    <TextBlock Grid.Column="0" Text="{Binding Label}" VerticalAlignment="Center" />
+    <ComboBox x:Name="Box" Grid.Column="1" HorizontalAlignment="Stretch"
+              ItemsSource="{Binding Themes}" SelectedItem="{Binding Selected}" DisplayMemberBinding="{Binding Name}" />
+    <Button x:Name="ActionsButton" Grid.Column="2" Content="⚙" ToolTip.Tip="{Binding ActionsTip}">
+      <Button.Flyout>
+        <MenuFlyout Placement="BottomEdgeAlignedRight">
+          <MenuItem x:Name="DuplicateItem" Header="{loc:Loc ColorScheme_Duplicate}" Command="{Binding DuplicateCommand}" />
+          <MenuItem x:Name="RenameItem" Header="{loc:Loc ColorScheme_Rename}" Command="{Binding RenameCommand}" />
+          <MenuItem x:Name="DeleteItem" Header="{loc:Loc ColorScheme_Delete}" Command="{Binding DeleteCommand}" />
+          <MenuItem x:Name="RestoreItem" Header="{loc:Loc ColorScheme_RestoreDefaults}" Command="{Binding RestoreDefaultsCommand}" />
+          <Separator />
+          <MenuItem x:Name="ExportItem" Header="{loc:Loc ColorScheme_Export}" Command="{Binding ExportCommand}" />
+          <MenuItem x:Name="ImportItem" Header="{loc:Loc ColorScheme_Import}" Command="{Binding ImportCommand}" />
+        </MenuFlyout>
+      </Button.Flyout>
+    </Button>
+  </Grid>
+</UserControl>

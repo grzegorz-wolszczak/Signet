@@ -156,7 +156,7 @@ public partial class PreferencesWindow : Window
                 sizes[page.Name + FontsPreviewWidthSuffix] = (int)Math.Round(page.PreviewWidth);
             }
 
-            foreach ((_, ColorSchemeKeysView view) in ThemeKeyViews())
+            foreach ((_, ThemeKeysView view) in ThemeKeyViews())
             {
                 sizes[view.Name + TreeSizeSuffix] = (int)Math.Round(view.TreeWidth);
                 sizes[view.Name + PreviewSizeSuffix] = (int)Math.Round(view.PreviewHeight);
@@ -187,7 +187,7 @@ public partial class PreferencesWindow : Window
                 }
             }
 
-            foreach ((_, ColorSchemeKeysView view) in ThemeKeyViews())
+            foreach ((_, ThemeKeysView view) in ThemeKeyViews())
             {
                 if (value.TryGetValue(view.Name + TreeSizeSuffix, out int width) && width > 0)
                 {
@@ -324,29 +324,42 @@ public partial class PreferencesWindow : Window
             MetadataEditorFontsView.DataContext = vm.MetadataEditorFonts;
             CleanupFontsView.DataContext = vm.CleanupFonts;
             FootnotesFontsView.DataContext = vm.FootnotesFonts;
+            ThemePanel.DataContext = vm.Theme;
+            SchemeSelector.DataContext = vm.ColorScheme;
             ColorSchemePanel.DataContext = vm.ColorScheme;
             ColorSchemePreviewFontView.DataContext = vm.ColorSchemePreviewFont;
-            vm.ColorScheme.TextPrompt = (title, prompt, initial) => TextPromptWindow.AskAsync(this, title, prompt, initial);
-            vm.ColorScheme.Confirm = (title, message) =>
-                ConfirmWindow.AskAsync(this, title, message, Strings.Get("ColorScheme_Delete"), destructive: true);
-            vm.ColorScheme.Message = (title, message) => MessageDialog.ShowAsync(this, title, message);
-            vm.ColorScheme.PickExportPath = PickThemeExportPathAsync;
-            vm.ColorScheme.PickImportPath = PickThemeImportPathAsync;
-            vm.ColorScheme.ColorPicker = (title, initial) => ColorPickerWindow.AskAsync(this, title, initial, alpha: true);
-            foreach ((ThemePage page, ColorSchemeKeysView view) in ThemeKeyViews())
+            foreach (ThemeDocumentViewModel document in new[] { vm.Theme, vm.ColorScheme })
             {
-                view.DataContext = vm.ColorScheme.PageFor(page);
+                ConfigureDocument(document);
             }
 
-            ThemeFontsSwitch.DataContext = vm.ColorScheme;
-            ThemeFontsView.DataContext = vm.ThemeFonts;
-            vm.ColorScheme.KeyRequested -= OnThemeKeyRequested;
-            vm.ColorScheme.KeyRequested += OnThemeKeyRequested;
+            foreach ((ThemePage page, ThemeKeysView view) in ThemeKeyViews())
+            {
+                view.DataContext = DocumentOf(vm, page).PageFor(page);
+            }
         }
     }
 
-    // The pages of the keys of the theme (Appearance › Color Scheme › …).
-    private (ThemePage Page, ColorSchemeKeysView View)[] ThemeKeyViews() => new[]
+    // The dialogs of a list of themes or of color schemes, and what it asks of the window.
+    private void ConfigureDocument(ThemeDocumentViewModel document)
+    {
+        document.TextPrompt = (title, prompt, initial) => TextPromptWindow.AskAsync(this, title, prompt, initial);
+        document.Confirm = (title, message) =>
+            ConfirmWindow.AskAsync(this, title, message, Strings.Get("ColorScheme_Delete"), destructive: true);
+        document.Message = (title, message) => MessageDialog.ShowAsync(this, title, message);
+        document.PickExportPath = name => PickThemeExportPathAsync(document, name);
+        document.PickImportPath = () => PickThemeImportPathAsync(document);
+        document.ColorPicker = (title, initial) => ColorPickerWindow.AskAsync(this, title, initial, alpha: true);
+        document.KeyRequested -= OnThemeKeyRequested;
+        document.KeyRequested += OnThemeKeyRequested;
+    }
+
+    // The theme edits the keys of the interface, the color scheme all the others.
+    private static ThemeDocumentViewModel DocumentOf(PreferencesViewModel vm, ThemePage page) =>
+        page == ThemePage.Interface ? vm.Theme : vm.ColorScheme;
+
+    // The pages of the keys: the interface keys in a tab of Appearance, the others under Code Editor › Color Scheme.
+    private (ThemePage Page, ThemeKeysView View)[] ThemeKeyViews() => new[]
     {
         (ThemePage.General, ThemeGeneralView),
         (ThemePage.Xhtml, ThemeXhtmlView),
@@ -357,39 +370,50 @@ public partial class PreferencesWindow : Window
         (ThemePage.Interface, ThemeInterfaceView),
     };
 
-    // A link to a key on another page of the theme (e.g. the base of an inherited key): that page is shown.
+    // A link to a key (e.g. the base of an inherited key, or from the look of a part of the application): its page is shown.
     private void OnThemeKeyRequested(object? sender, ThemeKey key)
     {
-        ColorSchemeKeysView view = ThemeKeyViews().Single(v => v.Page == key.Page).View;
+        if (key.Page == ThemePage.Interface)
+        {
+            if (_sections.All.FirstOrDefault(n => ReferenceEquals(Pages.Items[n.PageIndex], AppearanceGeneralPage)) is { } appearance)
+            {
+                RevealSection(appearance);
+                AppearanceGeneralTabs.SelectedItem = InterfaceColorsTab;
+            }
+
+            return;
+        }
+
+        ThemeKeysView view = ThemeKeyViews().Single(v => v.Page == key.Page).View;
         if (view.Parent is TabItem page && _sections.FindByPage(Pages.Items.IndexOf(page)) is { } node)
         {
             RevealSection(node);
         }
     }
 
-    private static FilePickerFileType ThemeFileType =>
-        new(Strings.Get("ColorScheme_FileType")) { Patterns = new[] { "*" + Signet.Core.Themes.ThemeXml.Extension } };
+    private static FilePickerFileType ThemeFileType(ThemeDocumentViewModel document) =>
+        new(document.FileTypeName) { Patterns = new[] { "*" + Signet.Core.Themes.ThemeXml.ExtensionOf(document.Kind) } };
 
-    // Where to export a theme (Appearance › Color Scheme › Export…).
-    private async Task<string?> PickThemeExportPathAsync(string suggestedName)
+    // Where to export a theme or a color scheme (the gear › Export…).
+    private async Task<string?> PickThemeExportPathAsync(ThemeDocumentViewModel document, string suggestedName)
     {
         IStorageFile? file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
-            Title = Strings.Get("ColorScheme_ExportTitle"),
+            Title = document.ExportTitle,
             SuggestedFileName = suggestedName,
-            FileTypeChoices = new[] { ThemeFileType },
+            FileTypeChoices = new[] { ThemeFileType(document) },
         });
         return file?.TryGetLocalPath();
     }
 
-    // A theme file to import (Appearance › Color Scheme › Import…).
-    private async Task<string?> PickThemeImportPathAsync()
+    // A theme or color scheme file to import (the gear › Import…).
+    private async Task<string?> PickThemeImportPathAsync(ThemeDocumentViewModel document)
     {
         IReadOnlyList<IStorageFile> files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
-            Title = Strings.Get("ColorScheme_ImportTitle"),
+            Title = document.ImportTitle,
             AllowMultiple = false,
-            FileTypeFilter = new[] { ThemeFileType },
+            FileTypeFilter = new[] { ThemeFileType(document) },
         });
         return files.Count > 0 ? files[0].TryGetLocalPath() : null;
     }
@@ -593,10 +617,10 @@ public partial class PreferencesWindow : Window
                 {
                     RevealSection(node);
 
-                    // The key of the color scheme the link is about: shown in its page, with its group expanded.
+                    // The key the link is about: shown in its page, with its group expanded.
                     if (key is not null && DataContext is PreferencesViewModel vm)
                     {
-                        vm.ColorScheme.RequestKey(key);
+                        DocumentOf(vm, key.Page).RequestKey(key);
                     }
                 };
             }

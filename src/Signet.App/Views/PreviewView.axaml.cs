@@ -317,7 +317,7 @@ public partial class PreviewView : UserControl
         // The highlight replaces the previous one (kept in window.__signetPreviewHighlightEl); the style,
         // the color and the optional fade-out come from Preferences (PreviewHighlight).
         PreviewHighlight highlight = _boundViewModel?.Highlight ?? PreviewHighlight.Default;
-        ThemeColor color = AppTheme.Current.Resolver.Color(AppTheme.Current.Theme, ThemeKeys.PreviewHighlight) ?? ThemeColor.FromRgb(0xFF, 0xEB, 0x3B);
+        ThemeColor color = AppTheme.Current.ColorOf(ThemeKeys.PreviewHighlight) ?? ThemeColor.FromRgb(0xFF, 0xEB, 0x3B);
         string js = PreviewHighlightScript.Build(loc, highlight, color, scroll);
 
         try
@@ -472,7 +472,7 @@ public partial class PreviewView : UserControl
 
         ResolvedTheme theme = AppTheme.Current;
         string js = PreviewThemeScript.Build(
-            theme.Resolver.Color(theme.Theme, ThemeKeys.PreviewBackground), theme.Resolver.Color(theme.Theme, ThemeKeys.PreviewText));
+            theme.ColorOf(ThemeKeys.PreviewBackground), theme.ColorOf(ThemeKeys.PreviewText));
         try
         {
             _ = WebView.ExecuteScriptAsync(js);
@@ -500,7 +500,7 @@ public partial class PreviewView : UserControl
 
         try
         {
-            _ = WebView.ExecuteScriptAsync(PreviewFontsScript.Build(AppTheme.Current.Fonts.Preview(_boundViewModel.Fonts)));
+            _ = WebView.ExecuteScriptAsync(PreviewFontsScript.Build(_boundViewModel.Fonts));
         }
         catch (Exception)
         {
