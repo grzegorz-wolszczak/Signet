@@ -221,9 +221,27 @@
         </TabControl>
       </TabItem>
 
-      <!-- Appearance › BookBrowser: Fonts only. -->
+      <!-- Appearance › BookBrowser: which folders are expanded when a book is loaded; Fonts. -->
       <TabItem x:Name="BookBrowserAppearancePage" Header="{loc:Loc PreferencesWindow_BookBrowser}" views:PreferencesPage.Parent="AppearancePage">
         <TabControl x:Name="BookBrowserAppearanceTabs">
+          <TabItem Header="{loc:Loc PreferencesWindow_General}">
+            <ScrollViewer>
+              <StackPanel Spacing="10" Margin="8">
+                <Border Classes="section">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="{loc:Loc PreferencesWindow_BookBrowserExpandOnLoad}" FontWeight="Bold" />
+                    <ItemsControl ItemsSource="{Binding BookBrowserFolders}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:FolderExpandOption">
+                          <CheckBox Content="{Binding Label}" IsChecked="{Binding IsChecked}" />
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
+          </TabItem>
           <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
             <views:FontsPageView x:Name="BookBrowserFontsView" />
           </TabItem>

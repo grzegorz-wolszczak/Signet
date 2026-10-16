@@ -1,3 +1,6 @@
+using Signet.Core.MainUI;
+using System.Linq;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using AutoFixture;
@@ -358,6 +361,23 @@ public sealed class SettingsStoreTests
 
         sut.ClearAppearanceSettings();
         sut.GetTooltipInherit(TooltipArea.FindReplace).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Only_the_Text_folder_of_the_Book_Browser_is_expanded_on_load_by_default()
+    {
+        using TempDir dir = new();
+        SettingsStore sut = new(dir.Combine("settings.xml"));
+
+        Enum.GetValues<OpfModelGroupKind>().Where(sut.GetBookBrowserExpandOnLoad).Should().Equal(OpfModelGroupKind.Text);
+
+        sut.SetBookBrowserExpandOnLoad(OpfModelGroupKind.Fonts, true);
+        sut.SetBookBrowserExpandOnLoad(OpfModelGroupKind.Text, false);
+        sut.GetBookBrowserExpandOnLoad(OpfModelGroupKind.Fonts).Should().BeTrue();
+        sut.GetBookBrowserExpandOnLoad(OpfModelGroupKind.Text).Should().BeFalse();
+
+        sut.ClearAppearanceSettings();
+        Enum.GetValues<OpfModelGroupKind>().Where(sut.GetBookBrowserExpandOnLoad).Should().Equal(OpfModelGroupKind.Text);
     }
 
     [Fact]

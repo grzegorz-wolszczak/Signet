@@ -5902,4 +5902,7 @@ Close the tab</value>
   <data name="PreferencesWindow_ModalTip" xml:space="preserve">
     <value>Takes effect the next time the Preferences window is opened. Off, the main window can be used while the Preferences window is open.</value>
   </data>
+  <data name="PreferencesWindow_BookBrowserExpandOnLoad" xml:space="preserve">
+    <value>Expand book folders on load</value>
+  </data>
 </root>

@@ -403,7 +403,9 @@ public sealed class PreferencesWindowRenderTests
             string[] headers = window.FindControl<TabControl>(tabsName)!.Items.OfType<TabItem>().Select(t => (string)t.Header!).ToArray();
             string[] expected = part == "General" || bothTabs.Contains(part)
                 ? new[] { Strings.Get("PreferencesWindow_" + part), fonts }
-                : new[] { fonts };
+                : part == "BookBrowser"
+                    ? new[] { general, fonts } // which folders are expanded on load, then the fonts
+                    : new[] { fonts };
             headers.Should().Equal(expected, "the tab bar of {0}", part);
         }
 

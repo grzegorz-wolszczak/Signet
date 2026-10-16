@@ -9,6 +9,13 @@ The files in this directory are unmodified copies from the **calibre** project
 | `beautify.png` | `beautify` | Beautify code (current file / all HTML files) |
 | `html-fix.png` | `html-fix` | Fix code (current file / all HTML files) |
 | `polish.png` | `polish` | Cleanup (calibre's "Polish books" icon; copied from commit `665ef7bdccc772f8d8d7de13d7b8e753a7cbcf5b`) |
+| `keyboard-prefs.png` | `keyboard-prefs` | Book Browser folder Text (the icon of calibre's Edit Book file list) |
+| `lookfeel.png` | `lookfeel` | Book Browser folder Styles |
+| `view-image.png` | `view-image` | Book Browser folder Images |
+| `font.png` | `font` | Book Browser folder Fonts |
+| `dir.png` | `dir` | Book Browser folder Misc (calibre's `resources/images/mimetypes/dir.png`) |
+
+The Audio and Video folders have no calibre icon (calibre's file list has no such categories) and keep the plain folder icon of the icon theme.
 
 Copyright (C) 2008-2026 Kovid Goyal &lt;kovid@kovidgoyal.net&gt;, licensed under the GNU GPL v3
 (the `Files: *` section of calibre's `COPYRIGHT` file), which is compatible with Signet's license (GPL-3.0-or-later).

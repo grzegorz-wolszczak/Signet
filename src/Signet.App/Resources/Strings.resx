@@ -5902,4 +5902,7 @@ Zamknij zakładkę</value>
   <data name="PreferencesWindow_ModalTip" xml:space="preserve">
     <value>Działa od następnego otwarcia okna ustawień. Po wyłączeniu można używać okna głównego, gdy okno ustawień jest otwarte.</value>
   </data>
+  <data name="PreferencesWindow_BookBrowserExpandOnLoad" xml:space="preserve">
+    <value>Rozwiń foldery książki przy wczytaniu</value>
+  </data>
 </root>

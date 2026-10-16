@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.Json.Nodes;
 using Signet.Core.BookManipulation;
 using Signet.Core.Footnotes;
+using Signet.Core.MainUI;
 using Signet.Core.Search;
 
 namespace Signet.Core.Misc;
@@ -1101,6 +1102,18 @@ public sealed class SettingsStore
     }
 
     /// <summary>
+    /// Whether a Book Browser folder (Text, Styles, …) is expanded when a book is loaded. Only Text by default.
+    /// </summary>
+    public bool GetBookBrowserExpandOnLoad(OpfModelGroupKind kind) =>
+        ReadBool(BookBrowserExpandKey(kind), kind == OpfModelGroupKind.Text);
+
+    /// <summary>Sets <see cref="GetBookBrowserExpandOnLoad"/> of a Book Browser folder.</summary>
+    public void SetBookBrowserExpandOnLoad(OpfModelGroupKind kind, bool value) => Write(BookBrowserExpandKey(kind), value);
+
+    // E.g. "book_browser_expand_text".
+    private static string BookBrowserExpandKey(OpfModelGroupKind kind) => "book_browser_expand_" + SnakeCase(kind.ToString());
+
+    /// <summary>
     /// Whether the tooltips of an area use the font of <see cref="TooltipArea.OtherWindows"/> instead of their own
     /// (<see cref="GetTooltipFont"/>) — on by default. <see cref="TooltipArea.OtherWindows"/> itself has no parent, so
     /// it never inherits. The own font stays stored while the area inherits, for when the inheritance is turned off.
@@ -1810,6 +1823,10 @@ public sealed class SettingsStore
         }
 
         yield return "preferences_window_modal";
+        foreach (OpfModelGroupKind kind in Enum.GetValues<OpfModelGroupKind>())
+        {
+            yield return BookBrowserExpandKey(kind);
+        }
 
         yield return "code_editor_font_family_standard";
         yield return "code_editor_font_size";

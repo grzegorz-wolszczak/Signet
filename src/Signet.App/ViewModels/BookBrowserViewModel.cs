@@ -39,8 +39,8 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     private OpfModelGroupKind[] _selectedFolders = Array.Empty<OpfModelGroupKind>();
 
     // Expanded folders — survive tree rebuilds (folder items are stable, a refresh only
-    // replaces their children). A new book expands only Text.
-    private readonly HashSet<OpfModelGroupKind> _expandedFolders = new() { OpfModelGroupKind.Text };
+    // replaces their children). A new book expands the folders chosen in Preferences (Text by default).
+    private readonly HashSet<OpfModelGroupKind> _expandedFolders = new();
 
     /// <summary>
     /// Panel context menu actions that can be assigned a shortcut in Preferences. Set by
@@ -273,7 +273,14 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         }
 
         _expandedFolders.Clear();
-        _expandedFolders.Add(OpfModelGroupKind.Text);
+        foreach (OpfModelGroupKind kind in Enum.GetValues<OpfModelGroupKind>())
+        {
+            if (_settings.GetBookBrowserExpandOnLoad(kind))
+            {
+                _expandedFolders.Add(kind);
+            }
+        }
+
         Rebuild();
         OpenFirstHtmlFile();
         OnPropertyChanged(nameof(HasBook));
@@ -1456,6 +1463,26 @@ public sealed partial class BookBrowserNode : ObservableObject
 
     /// <summary>Group kind for a folder (or <c>null</c> for a file).</summary>
     public OpfModelGroupKind? FolderKind { get; }
+
+    /// <summary>
+    /// The icon key of a folder that has a calibre icon (Text, Styles, Images, Fonts, Misc, as in calibre's file list);
+    /// <c>null</c> for the folders without one (Audio, Video) and for files.
+    /// </summary>
+    public string? FolderIconKey => FolderKind switch
+    {
+        OpfModelGroupKind.Text => "keyboard-prefs",
+        OpfModelGroupKind.Styles => "lookfeel",
+        OpfModelGroupKind.Images => "view-image",
+        OpfModelGroupKind.Fonts => "font",
+        OpfModelGroupKind.Misc => "dir",
+        _ => null,
+    };
+
+    /// <summary>Whether the node is a folder with a calibre icon (<see cref="FolderIconKey"/>).</summary>
+    public bool HasFolderIcon => FolderIconKey is not null;
+
+    /// <summary>Whether the node is a folder drawn with the plain folder icon of the theme (no calibre icon).</summary>
+    public bool IsPlainFolder => IsFolder && !HasFolderIcon;
 
     /// <summary>Whether the folder is expanded in the tree (two-way bound to the tree's expander column).</summary>
     [ObservableProperty]
