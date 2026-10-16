@@ -19,6 +19,7 @@ using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.App.ViewModels;
+using Signet.Core.BookManipulation;
 using Signet.Core.MainUI;
 using Signet.Core.Misc;
 using Signet.Core.Parsers;
@@ -392,8 +393,16 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
     public Task ShowErrorAsync(string title, string message) => MessageDialog.ShowAsync(this, title, message);
 
     /// <inheritdoc />
-    public Task ShowLoadWarningsAsync(string fileName, IReadOnlyList<string> warnings) =>
-        LoadWarningsDialog.ShowAsync(this, fileName, warnings);
+    public Task ShowLoadWarningsAsync(string fileName, IReadOnlyList<LoadWarning> warnings)
+    {
+        // Non-modal, so that its files can be opened one after another; a window left from the previous book goes.
+        _loadWarningsWindow?.Close();
+        _loadWarningsWindow = LoadWarningsDialog.Show(
+            this, fileName, warnings, _boundViewModel is { } vm ? vm.NavigateToBookPathAtLocation : null);
+        return Task.CompletedTask;
+    }
+
+    private LoadWarningsDialog? _loadWarningsWindow;
 
     /// <inheritdoc />
     public async Task<bool> ConfirmRemoveMissingRecentAsync(string path) =>

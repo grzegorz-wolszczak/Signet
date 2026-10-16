@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Signet.Core.Importers;
 using Signet.Core.Misc;
 using Signet.Core.Resources;
@@ -22,7 +23,7 @@ namespace Signet.Core.BookManipulation;
 /// does not expand DTDs or named HTML entities and never runs auto-repair (Mend); "Clean on
 /// Open" is handled elsewhere. Files are loaded sequentially.</para>
 /// </remarks>
-public sealed class ImportEpub : IImporter
+public sealed partial class ImportEpub : IImporter
 {
     private const string NcxMimetype = "application/x-dtbncx+xml";
     private const string NcxExtension = "ncx";
@@ -216,8 +217,8 @@ public sealed class ImportEpub : IImporter
 
         if (scan.DuplicateFilePaths.Count > 0)
         {
-            book.AddLoadWarning(
-                CoreStrings.Format("LoadWarning_DuplicateManifestPaths", string.Join(", ", scan.DuplicateFilePaths)));
+            AddFileListWarning(
+                book, "DuplicateManifestPaths", scan.DuplicateFilePaths.Select(p => new LoadWarningItem(p, string.Empty)).ToList());
         }
 
         folderKeeper.UpdateShortPathNames();
@@ -315,8 +316,8 @@ public sealed class ImportEpub : IImporter
             if (type.Length == 0 || MediaTypes.GetGroupFromMediaType(type).Length == 0)
             {
                 string sniffed = MediaTypes.GetMediaTypeFromExtension(extension);
-                book.AddLoadWarning(
-                    CoreStrings.Format("LoadWarning_UnknownMediaType", decoded, type, sniffed));
+                book.AddLoadWarning(new LoadWarning(
+                    CoreStrings.Format("LoadWarning_UnknownMediaType", decoded, type, sniffed)) { BookPath = itemBookPath });
                 if (sniffed.Length > 0)
                 {
                     type = sniffed;
@@ -413,24 +414,20 @@ public sealed class ImportEpub : IImporter
 
     private static void LoadContentFiles(Book book, FolderKeeper folderKeeper, OcfContainer container, ManifestScan scan)
     {
-        List<string> missing = new();
+        List<LoadWarningItem> missing = new();
         foreach ((string bookPath, string mediaType) in scan.ContentToLoad)
         {
             string fullPath = container.ToAbsolutePath(bookPath);
             if (!File.Exists(fullPath))
             {
-                missing.Add(bookPath);
+                missing.Add(new LoadWarningItem(bookPath, string.Empty));
                 continue;
             }
 
             folderKeeper.AddContentFileToFolder(fullPath, updateOpf: false, mimeType: mediaType, bookPath: bookPath);
         }
 
-        if (missing.Count > 0)
-        {
-            book.AddLoadWarning(
-                CoreStrings.Format("LoadWarning_ManifestFilesMissing", string.Join(", ", missing)));
-        }
+        AddFileListWarning(book, "ManifestFilesMissing", missing);
     }
 
     private readonly record struct NcxLocation(string BookPath, string ManifestId, bool NotInManifest);
@@ -511,30 +508,27 @@ public sealed class ImportEpub : IImporter
 
     private static void LoadHtmlAndCheckWellFormed(Book book, FolderKeeper folderKeeper)
     {
-        List<string> problems = new();
+        List<LoadWarningItem> problems = new();
         foreach (HtmlResource html in folderKeeper.GetResourceTypeList<HtmlResource>())
         {
             try
             {
                 html.SetText(HtmlEncodingResolver.ReadHtmlFile(html.FullPath));
             }
-            catch (IOException)
+            catch (IOException ex)
             {
-                problems.Add(html.BookPath);
+                problems.Add(new LoadWarningItem(html.BookPath, CoreStrings.Format("LoadWarning_HtmlUnreadable", ex.Message)));
                 continue;
             }
 
-            if (!IsWellFormedXml(html.GetText(), out _))
+            WellFormedResult result = WellFormedChecker.Check(html.GetText());
+            if (!result.IsWellFormed)
             {
-                problems.Add(html.BookPath);
+                problems.Add(new LoadWarningItem(html.BookPath, WithoutPosition(result.Message), result.Line, result.Column));
             }
         }
 
-        if (problems.Count > 0)
-        {
-            book.AddLoadWarning(
-                CoreStrings.Format("LoadWarning_HtmlNotWellFormed", string.Join(", ", problems)));
-        }
+        AddFileListWarning(book, "HtmlNotWellFormed", problems);
     }
 
     private static void DeobfuscateFonts(
@@ -571,8 +565,8 @@ public sealed class ImportEpub : IImporter
 
             if (identifier.Length == 0)
             {
-                book.AddLoadWarning(
-                    CoreStrings.Format("LoadWarning_FontNoIdentifier", font.BookPath));
+                book.AddLoadWarning(new LoadWarning(
+                    CoreStrings.Format("LoadWarning_FontNoIdentifier", font.BookPath)) { BookPath = font.BookPath });
                 continue;
             }
 
@@ -582,14 +576,15 @@ public sealed class ImportEpub : IImporter
             }
             catch (FontObfuscationException ex)
             {
-                book.AddLoadWarning(CoreStrings.Format("LoadWarning_FontDeobfuscationFailed", font.BookPath, ex.Message));
+                book.AddLoadWarning(new LoadWarning(
+                    CoreStrings.Format("LoadWarning_FontDeobfuscationFailed", font.BookPath, ex.Message)) { BookPath = font.BookPath });
             }
         }
     }
 
     private static void WarnAboutFilesNotInManifest(Book book, FolderKeeper folderKeeper, string opfBookPath)
     {
-        List<string> notInManifest = new();
+        List<LoadWarningItem> notInManifest = new();
         foreach (string file in Directory.EnumerateFiles(folderKeeper.MainFolderPath, "*", SearchOption.AllDirectories))
         {
             string bookPath = Path.GetRelativePath(folderKeeper.MainFolderPath, file).Replace(Path.DirectorySeparatorChar, '/');
@@ -604,16 +599,39 @@ public sealed class ImportEpub : IImporter
 
             if (folderKeeper.GetResourceByBookPathNoThrow(bookPath) is null)
             {
-                notInManifest.Add(bookPath);
+                notInManifest.Add(new LoadWarningItem(bookPath, string.Empty));
             }
         }
 
-        if (notInManifest.Count > 0)
+        notInManifest.Sort((a, b) => string.CompareOrdinal(a.BookPath, b.BookPath));
+        AddFileListWarning(book, "FilesNotInManifest", notInManifest);
+    }
+
+    // The XML parser's message ends with its position ("... Line 18, position 64."); the position has its own column.
+    private static string WithoutPosition(string message) =>
+        PositionSuffix().Replace(message, string.Empty);
+
+    [GeneratedRegex(@"\s*Line \d+, position \d+\.?\s*$", RegexOptions.CultureInvariant)]
+    private static partial Regex PositionSuffix();
+
+    // A warning about many files: the sentence "LoadWarning_<kind>" with the paths joined (what Book.LoadWarnings holds),
+    // plus the files as items with the heading "LoadWarningGroup_<kind>" and — when an item has no reason of its own —
+    // the generic "LoadWarningReason_<kind>" (needed only then). Does nothing for an empty list.
+    private static void AddFileListWarning(Book book, string kind, List<LoadWarningItem> items)
+    {
+        if (items.Count == 0)
         {
-            notInManifest.Sort(StringComparer.Ordinal);
-            book.AddLoadWarning(
-                CoreStrings.Format("LoadWarning_FilesNotInManifest", string.Join(", ", notInManifest)));
+            return;
         }
+
+        string? reason = items.Any(i => i.Reason.Length == 0) ? CoreStrings.Get("LoadWarningReason_" + kind) : null;
+        LoadWarningItem[] withReasons = items
+            .Select(i => i.Reason.Length == 0 ? i with { Reason = reason! } : i)
+            .ToArray();
+        book.AddLoadWarning(new LoadWarning(
+            CoreStrings.Format("LoadWarning_" + kind, string.Join(", ", items.Select(i => i.BookPath))),
+            CoreStrings.Get("LoadWarningGroup_" + kind),
+            withReasons));
     }
 
     /// <summary>

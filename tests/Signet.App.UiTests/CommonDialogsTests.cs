@@ -8,6 +8,8 @@ using AwesomeAssertions;
 using Signet.App.Resources;
 using Signet.App.Views;
 using Signet.Core;
+using Signet.Core.BookManipulation;
+using Signet.Controls.TreeDataGrid;
 
 namespace Signet.App.UiTests;
 
@@ -19,7 +21,11 @@ namespace Signet.App.UiTests;
 /// </summary>
 public sealed class CommonDialogsTests
 {
-    private static readonly string[] TwoWarnings = { "first warning", "second warning" };
+    private static readonly LoadWarning[] TwoWarnings =
+    {
+        new("first warning"),
+        new("second warning", "Group", new[] { new LoadWarningItem("Text/a.xhtml", "bad", 3, 7) }),
+    };
 
     private static void ShowAndRender(Window window)
     {
@@ -30,19 +36,22 @@ public sealed class CommonDialogsTests
     }
 
     [AvaloniaFact]
-    public void LoadWarningsDialog_lists_every_warning_with_a_localized_header()
+    public void LoadWarningsDialog_shows_the_warnings_as_a_tree_with_a_localized_header()
     {
         LoadWarningsDialog window = LoadWarningsDialog.Build("book.epub", TwoWarnings);
         ShowAndRender(window);
 
         string?[] texts = window.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).ToArray();
-        TextBox list = window.GetVisualDescendants().OfType<TextBox>().Single();
+        TreeDataGrid tree = window.GetVisualDescendants().OfType<TreeDataGrid>().Single();
         string?[] buttons = window.GetVisualDescendants().OfType<Button>().Select(b => b.Content as string).ToArray();
 
         window.Title.Should().Be(Strings.Get("LoadWarningsDialog_Title"));
         texts.Should().Contain(Strings.Format("LoadWarningsDialog_Header", "book.epub", 2));
-        list.IsReadOnly.Should().BeTrue();
-        list.Text.Should().Be(LoadWarningsDialog.FormatList(TwoWarnings));
+        tree.Source.Should().NotBeNull();
+        tree.Source!.Columns.Select(c => c.Header).Should().Equal(
+            Strings.Get("LoadWarningsDialog_ColumnFile"),
+            Strings.Get("LoadWarningsDialog_ColumnReason"),
+            Strings.Get("LoadWarningsDialog_ColumnLocation"));
         buttons.Should().Contain(Strings.Get("LoadWarningsDialog_Copy"));
     }
 

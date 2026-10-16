@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using AwesomeAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -297,8 +298,9 @@ public sealed class FileWorkflowTests
         ok.Should().BeTrue();
         h.Prompts.LastLoadWarnings.Should().NotBeNull();
         h.Prompts.LastLoadWarnings!.Value.FileName.Should().Be(Path.GetFileName(epub));
-        h.Prompts.LastLoadWarnings.Value.Warnings.Should().Equal(h.Workspace.CurrentBook!.LoadWarnings)
-            .And.Contain(CoreStrings.Get("LoadWarning_MimetypeMissing"));
+        h.Prompts.LastLoadWarnings.Value.Warnings.Should().Equal(h.Workspace.CurrentBook!.LoadWarningDetails);
+        h.Prompts.LastLoadWarnings.Value.Warnings.Select(w => w.Message)
+            .Should().Contain(CoreStrings.Get("LoadWarning_MimetypeMissing"));
     }
 
     [Fact]

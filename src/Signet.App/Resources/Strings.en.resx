@@ -3530,6 +3530,21 @@ You can later restore the book to this checkpoint via the "Revert to..." entries
   <data name="LoadWarningsDialog_Copy" xml:space="preserve">
     <value>Copy</value>
   </data>
+  <data name="LoadWarningsDialog_ExpandAll" xml:space="preserve">
+    <value>Expand All</value>
+  </data>
+  <data name="LoadWarningsDialog_CollapseAll" xml:space="preserve">
+    <value>Collapse All</value>
+  </data>
+  <data name="LoadWarningsDialog_ColumnFile" xml:space="preserve">
+    <value>Warning / File</value>
+  </data>
+  <data name="LoadWarningsDialog_ColumnReason" xml:space="preserve">
+    <value>Reason</value>
+  </data>
+  <data name="LoadWarningsDialog_ColumnLocation" xml:space="preserve">
+    <value>Location</value>
+  </data>
   <data name="Action_MainWindow_NotificationsWindow" xml:space="preserve">
     <value>&amp;Notifications Panel</value>
   </data>

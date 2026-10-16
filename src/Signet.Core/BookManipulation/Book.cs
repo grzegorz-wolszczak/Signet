@@ -97,6 +97,7 @@ public sealed class Book : IDisposable
 
     private readonly FolderKeeper _folderKeeper;
     private readonly List<string> _loadWarnings = new();
+    private readonly List<LoadWarning> _loadWarningDetails = new();
     private bool _isModified;
     private bool _disposed;
 
@@ -138,6 +139,12 @@ public sealed class Book : IDisposable
 
     /// <summary>Warnings collected while loading the book (to be shown to the user).</summary>
     public IReadOnlyList<string> LoadWarnings => _loadWarnings;
+
+    /// <summary>
+    /// The same warnings as <see cref="LoadWarnings"/> (same order), with the files each of them concerns, for a UI that
+    /// lists them instead of showing the text.
+    /// </summary>
+    public IReadOnlyList<LoadWarning> LoadWarningDetails => _loadWarningDetails;
 
     /// <summary>The book's OPF document.</summary>
     /// <exception cref="InvalidOperationException">The registry has no OPF yet.</exception>
@@ -1785,7 +1792,18 @@ public sealed class Book : IDisposable
     {
         if (!string.IsNullOrEmpty(warning))
         {
-            _loadWarnings.Add(warning);
+            AddLoadWarning(new LoadWarning(warning));
+        }
+    }
+
+    /// <summary>Appends a load warning that lists the files it concerns (used by the import pipeline).</summary>
+    internal void AddLoadWarning(LoadWarning warning)
+    {
+        ArgumentNullException.ThrowIfNull(warning);
+        if (!string.IsNullOrEmpty(warning.Message))
+        {
+            _loadWarnings.Add(warning.Message);
+            _loadWarningDetails.Add(warning);
         }
     }
 

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Signet.App.Services;
+using Signet.Core.BookManipulation;
 
 namespace Signet.App.Tests;
 
@@ -45,10 +46,10 @@ public sealed class FakeFileWorkflowPrompts : IFileWorkflowPrompts
     public string? LastError { get; private set; }
 
     /// <summary>Warnings from the last <see cref="ShowLoadWarningsAsync"/> call (file name, list).</summary>
-    public (string FileName, IReadOnlyList<string> Warnings)? LastLoadWarnings { get; private set; }
+    public (string FileName, IReadOnlyList<LoadWarning> Warnings)? LastLoadWarnings { get; private set; }
 
     /// <inheritdoc />
-    public Task ShowLoadWarningsAsync(string fileName, IReadOnlyList<string> warnings)
+    public Task ShowLoadWarningsAsync(string fileName, IReadOnlyList<LoadWarning> warnings)
     {
         LastLoadWarnings = (fileName, warnings);
         return Task.CompletedTask;
