@@ -32,7 +32,8 @@ public sealed class OpfModel : IDisposable
 {
     private readonly Book _book;
     private readonly FolderKeeper _folderKeeper;
-    private readonly bool _showFullPath;
+    private bool _showFolders;
+    private string _opfDirectory = string.Empty;
     private readonly List<OpfModelFolder> _folders = new();
     private readonly List<OpfModelEntry> _topLevel = new();
     private readonly List<Resource> _watchedResources = new();
@@ -41,18 +42,35 @@ public sealed class OpfModel : IDisposable
 
     /// <summary>Creates a model for the given book and builds the tree right away.</summary>
     /// <param name="book">The book whose resources the model represents.</param>
-    /// <param name="showFullPath">When <c>true</c>, entries show the full bookpath instead of the short name.</param>
-    public OpfModel(Book book, bool showFullPath = false)
+    /// <param name="showFolders">When <c>true</c>, entries show the path from the folder of the OPF instead of the short name.</param>
+    public OpfModel(Book book, bool showFolders = false)
     {
         ArgumentNullException.ThrowIfNull(book);
         _book = book;
         _folderKeeper = book.GetFolderKeeper();
-        _showFullPath = showFullPath;
+        _showFolders = showFolders;
 
         _folderKeeper.ResourceAdded += OnFolderKeeperChanged;
         _folderKeeper.ResourceRemoved += OnFolderKeeperChanged;
 
         Refresh();
+    }
+
+    /// <summary>
+    /// Whether the entries show the folders of the files (<c>text/part0001.html</c>, the path from the folder of the OPF)
+    /// instead of the file name only; setting it rebuilds the tree.
+    /// </summary>
+    public bool ShowFolders
+    {
+        get => _showFolders;
+        set
+        {
+            if (_showFolders != value)
+            {
+                _showFolders = value;
+                Refresh();
+            }
+        }
     }
 
     /// <summary>Raised after every tree rebuild (resource added/removed/renamed, reorder).</summary>
@@ -96,6 +114,7 @@ public sealed class OpfModel : IDisposable
 
         IReadOnlyList<Resource> resources = _folderKeeper.GetResourceList();
         OpfResource opf = _book.GetOpf();
+        _opfDirectory = BookPath.StartingDir(opf.BookPath);
         string version = opf.EpubVersion;
         bool epub3 = version.StartsWith('3');
 
@@ -792,9 +811,12 @@ public sealed class OpfModel : IDisposable
 
     private string DisplayNameFor(Resource resource)
     {
-        if (_showFullPath)
+        if (_showFolders)
         {
-            return resource.BookPath;
+            // The path from the folder of the OPF (a file outside it keeps its whole path).
+            return _opfDirectory.Length > 0 && resource.BookPath.StartsWith(_opfDirectory + "/", StringComparison.Ordinal)
+                ? resource.BookPath[(_opfDirectory.Length + 1)..]
+                : resource.BookPath;
         }
 
         return resource.ShortPathName.Length > 0

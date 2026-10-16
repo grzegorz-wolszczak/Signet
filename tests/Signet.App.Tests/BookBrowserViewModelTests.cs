@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -1066,6 +1067,26 @@ public sealed class BookBrowserViewModelTests
         int before = raised;
         settings.BookBrowserColumns = "Properties";
         raised.Should().Be(before, "the optional columns are not part of the look");
+    }
+
+    [Fact]
+    public void The_names_of_the_files_show_their_folders_when_the_setting_is_on_and_follow_it_live()
+    {
+        using TempDir temp = new();
+        using Book book = Load(CorpusPaths.Epub3Media, temp);
+        SettingsStore settings = new(temp.Combine("s.xml"));
+        BookBrowserViewModel sut = new(settings, new StatusBarService());
+        sut.SetBook(book);
+        IEnumerable<string> Names() => sut.Nodes.SelectMany(Flatten).Where(n => n.Entry is not null).Select(n => n.Header);
+        Names().Should().NotContain(h => h.Contains('/', StringComparison.Ordinal), "only the file names by default");
+
+        settings.BookBrowserAppearance = settings.BookBrowserAppearance with { ShowFolders = true };
+
+        Names().Should().Contain(h => h.Contains('/', StringComparison.Ordinal), "the folders show without reloading the book");
+
+        settings.BookBrowserAppearance = settings.BookBrowserAppearance with { ShowFolders = false };
+
+        Names().Should().NotContain(h => h.Contains('/', StringComparison.Ordinal));
     }
 
     [Fact]

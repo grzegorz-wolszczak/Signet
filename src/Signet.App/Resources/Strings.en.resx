@@ -3713,9 +3713,6 @@ Insert anyway?</value>
   <data name="InsertCodeWindow_Decimal" xml:space="preserve">
     <value>Decimal: {0}</value>
   </data>
-  <data name="InsertCodeWindow_Text" xml:space="preserve">
-    <value>As text: {0}</value>
-  </data>
   <data name="SpecialCharacterWindow_ColumnHex" xml:space="preserve">
     <value>Hex</value>
   </data>
@@ -6100,8 +6097,11 @@ Close the tab</value>
   <data name="PreferencesWindow_BookBrowserIndent" xml:space="preserve">
     <value>Indentation of the files in a folder (px)</value>
   </data>
-  <data name="PreferencesWindow_BookBrowserRowSpacing" xml:space="preserve">
-    <value>Space between the rows of the tree (px)</value>
+  <data name="PreferencesWindow_BookBrowserShowFolders" xml:space="preserve">
+    <value>Show folder names in file names</value>
+  </data>
+  <data name="PreferencesWindow_BookBrowserShowFoldersTip" xml:space="preserve">
+    <value>For example “text/part0001.html” instead of “part0001.html”: the path from the folder of the OPF file, as in calibre.</value>
   </data>
   <data name="PreferencesWindow_BookBrowserCellMinHeight" xml:space="preserve">
     <value>Minimum height of a cell (px)</value>

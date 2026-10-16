@@ -228,12 +228,23 @@ public sealed class OpfModelTests
     }
 
     [Fact]
-    public void ShowFullPath_switches_display_names_to_book_paths()
+    public void ShowFolders_switches_display_names_to_the_path_from_the_opf_folder_and_back()
     {
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
-        using OpfModel model = new(book, showFullPath: true);
+        using OpfModel model = new(book, showFolders: true);
+        string opfDirectory = BookPath.StartingDir(book.GetOpf().BookPath);
+        string FromOpf(string bookPath) =>
+            opfDirectory.Length > 0 && bookPath.StartsWith(opfDirectory + "/", StringComparison.Ordinal) ? bookPath[(opfDirectory.Length + 1)..] : bookPath;
 
-        model.AllEntries().Should().OnlyContain(e => e.DisplayName == e.BookPath);
+        model.AllEntries().ToList().ForEach(e => e.DisplayName.Should().Be(FromOpf(e.BookPath)));
+        model.AllEntries().Should().Contain(e => e.DisplayName.Contains('/', StringComparison.Ordinal), "the files are in folders");
+        int changed = 0;
+        model.Changed += (_, _) => changed++;
+
+        model.ShowFolders = false;
+
+        changed.Should().Be(1, "the tree is rebuilt");
+        model.AllEntries().Should().OnlyContain(e => e.DisplayName == (e.Resource.ShortPathName.Length > 0 ? e.Resource.ShortPathName : e.Resource.Filename));
     }
 }

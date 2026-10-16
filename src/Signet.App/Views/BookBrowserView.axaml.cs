@@ -123,13 +123,10 @@ public partial class BookBrowserView : UserControl
         Style headers = new(x => x.OfType<TreeDataGridColumnHeader>());
         AddFont(headers, look.HeaderFontFamily, look.HeaderFontSize);
 
-        Style rows = new(x => x.OfType<TreeDataGridRow>());
-        rows.Setters.Add(new Setter(MarginProperty, new Thickness(0, 0, 0, look.RowSpacing)));
-
         Style indent = new(x => x.OfType<TreeDataGridExpanderCell>());
         indent.Setters.Add(new Setter(TreeDataGridExpanderCell.IndentSizeProperty, (double)look.Indent));
 
-        _appearanceStyles = new[] { cells, textCells, nameCells, headers, rows, indent };
+        _appearanceStyles = new[] { cells, textCells, nameCells, headers, indent };
         foreach (Style style in _appearanceStyles)
         {
             Tree.Styles.Add(style);
@@ -345,6 +342,15 @@ public partial class BookBrowserView : UserControl
         // A double click in the name editor selects a word — it does not open the file.
         if (IsInRenameEditor(e.Source))
         {
+            return;
+        }
+
+        // A double click on a folder expands or collapses it.
+        if ((e.Source as Visual)?.FindAncestorOfType<TreeDataGridRow>(includeSelf: true) is { Model: BookBrowserNode { IsFolder: true } } row
+            && Tree.Rows is { } rows && row.RowIndex >= 0 && row.RowIndex < rows.Count
+            && rows[row.RowIndex] is IExpander { ShowExpander: true } expander)
+        {
+            expander.IsExpanded = !expander.IsExpanded;
             return;
         }
 

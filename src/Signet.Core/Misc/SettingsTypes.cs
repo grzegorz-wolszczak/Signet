@@ -263,12 +263,15 @@ public readonly record struct LineNumberFontAppearance(string FontFamily, int Fo
 /// <param name="HeaderFontFamily">Typeface of the column headers; empty = the interface font.</param>
 /// <param name="HeaderFontSize">Size (px) of the column headers; 0 = the interface size.</param>
 /// <param name="Indent">Indentation (px) of one level of the tree.</param>
-/// <param name="RowSpacing">Space (px) between two rows.</param>
 /// <param name="CellMinHeight">Minimum height (px) of a cell, so of a row; 0 = a row is as high as its content.</param>
 /// <param name="CellPadding">Vertical padding (px) of a cell: the space above and below its content.</param>
+/// <param name="ShowFolders">
+/// Whether the names of the files show the folders they are in (<c>text/part0001.html</c>, the path from the folder of the
+/// OPF), as in calibre; otherwise only the file name.
+/// </param>
 public readonly record struct BookBrowserAppearance(
-    string ItemsFontFamily, int ItemsFontSize, string HeaderFontFamily, int HeaderFontSize, int Indent, int RowSpacing,
-    int CellMinHeight = BookBrowserAppearance.DefaultCellMinHeight, int CellPadding = 0)
+    string ItemsFontFamily, int ItemsFontSize, string HeaderFontFamily, int HeaderFontSize, int Indent,
+    int CellMinHeight = BookBrowserAppearance.DefaultCellMinHeight, int CellPadding = 0, bool ShowFolders = false)
 {
     /// <summary>The default of <see cref="CellMinHeight"/>: the height of the icons of the tree.</summary>
     public const int DefaultCellMinHeight = 16;
@@ -291,14 +294,10 @@ public readonly record struct BookBrowserAppearance(
     /// <summary>Upper bound of <see cref="Indent"/>.</summary>
     public const int IndentMax = 60;
 
-    /// <summary>Upper bound of <see cref="RowSpacing"/> (the lower bound is 0).</summary>
-    public const int RowSpacingMax = 20;
-
     /// <summary>
-    /// Default values: the interface font, an indentation of 20 px and 3 px between the rows (about the row height of the
-    /// earlier fixed layout). A spacing of 0 means no space at all: a row is as high as its content.
+    /// Default values: the interface font, an indentation of 20 px, rows 16 px high (the icons) and only the file names.
     /// </summary>
-    public static BookBrowserAppearance Default => new(string.Empty, 0, string.Empty, 0, 20, 3);
+    public static BookBrowserAppearance Default => new(string.Empty, 0, string.Empty, 0, 20);
 
     /// <summary>A copy with the sizes and distances clamped (a font size of 0 stays "as the interface").</summary>
     public BookBrowserAppearance Normalized() => new(
@@ -307,9 +306,9 @@ public readonly record struct BookBrowserAppearance(
         HeaderFontFamily?.Trim() ?? string.Empty,
         NormalizedFontSize(HeaderFontSize),
         Math.Clamp(Indent, IndentMin, IndentMax),
-        Math.Clamp(RowSpacing, 0, RowSpacingMax),
         Math.Clamp(CellMinHeight, 0, CellMinHeightMax),
-        Math.Clamp(CellPadding, 0, CellPaddingMax));
+        Math.Clamp(CellPadding, 0, CellPaddingMax),
+        ShowFolders);
 
     private static int NormalizedFontSize(int size) => size <= 0 ? 0 : Math.Clamp(size, FontSizeMin, FontSizeMax);
 }

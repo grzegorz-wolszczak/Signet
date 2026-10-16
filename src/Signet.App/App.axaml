@@ -206,6 +206,17 @@
     <!-- Theme of Signet.Controls.TreeDataGrid (virtualized trees and tables). After FluentTheme: it resolves the Fluent
          palette colours with StaticResource when loaded. -->
     <StyleInclude Source="avares://Signet.Controls.TreeDataGrid/Themes/Fluent.axaml" />
+    <!-- Every dialog has a thin frame close to the edge of its window (the color is the theme's "ui.frame"). The main
+         window, the popup-like windows and the floating tool windows of the docking opt out. -->
+    <Style Selector="Window:not(.noFrame) /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Margin" Value="4" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="BorderBrush" Value="{DynamicResource SignetFrameBrush}" />
+    </Style>
+    <Style Selector="dock|HostWindow /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Margin" Value="0" />
+      <Setter Property="BorderBrush" Value="{x:Null}" />
+    </Style>
     <!-- Buttons that remove or delete something are red (Classes="danger", ButtonClasses.Danger); the ones that save
          use Fluent's "accent" (blue). Disabled, both are gray like any button (Fluent's :disabled template style). -->
     <Style Selector="Button.danger">

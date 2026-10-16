@@ -4,6 +4,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.LogicalTree;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AwesomeAssertions;
@@ -33,6 +34,22 @@ public sealed class FindReplaceLayoutTests
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
         return (window, view, vm);
+    }
+
+    [AvaloniaFact]
+    public void The_close_button_of_the_panel_is_on_the_right_of_the_search_fields()
+    {
+        FindReplacePanel panel = new();
+        Window window = new() { Width = 1400, Height = 400, Content = panel };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        Button close = panel.GetLogicalDescendants().OfType<Button>().Single(b => Equals(b.Content, "✕") && b.GetLogicalParent() is Grid { Name: null } g && g.Children.OfType<FindReplaceView>().Any());
+        FindReplaceView view = panel.GetLogicalDescendants().OfType<FindReplaceView>().Single();
+
+        Grid.GetColumn(close).Should().BeGreaterThan(Grid.GetColumn(view), "the search fields come first, the close button is in the right corner");
+        close.HorizontalAlignment.Should().Be(Avalonia.Layout.HorizontalAlignment.Right);
+        window.Close();
     }
 
     [AvaloniaFact]

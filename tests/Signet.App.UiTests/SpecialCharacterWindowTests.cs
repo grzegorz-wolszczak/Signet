@@ -267,11 +267,38 @@ public sealed class SpecialCharacterWindowTests
         columns.Select(window.DoubleClickForm).Should().Equal(
             SpecialCharacterInsertForm.Character,
             SpecialCharacterInsertForm.Entity,
-            SpecialCharacterInsertForm.Code,
+            null,
             SpecialCharacterInsertForm.Hex,
             SpecialCharacterInsertForm.Dec,
             null,
             null);
+    }
+
+    [AvaloniaFact]
+    public void The_cells_whose_content_is_not_inserted_are_dimmed_while_the_option_is_on()
+    {
+        SpecialCharacterWindow window = Show(Context());
+        CategoryBox(window).SelectedItem = Strings.Get("SpecialCharacterWindow_PopularCategory");
+        Render(window);
+        CheckBox option = window.GetVisualDescendants().OfType<CheckBox>().Single(c => c.Name == "DoubleClickInsertsCell");
+        Signet.Controls.TreeDataGrid.Primitives.TreeDataGridCell[] cells = Grid(window).GetVisualDescendants()
+            .OfType<Signet.Controls.TreeDataGrid.Primitives.TreeDataGridCell>().ToArray();
+        cells.Should().NotBeEmpty();
+
+        cells.Should().OnlyContain(c => !c.Classes.Contains("notInserted"), "nothing is dimmed while a double-click inserts the character");
+
+        option.IsChecked = true;
+        Render(window);
+
+        cells.Where(c => c.ColumnIndex is 2 or 5).Should().NotBeEmpty().And.OnlyContain(c => c.Classes.Contains("notInserted"), "the code and the name");
+        cells.Where(c => c.ColumnIndex is 0 or 1 or 3 or 4 or 6).Should().NotBeEmpty()
+            .And.OnlyContain(c => !c.Classes.Contains("notInserted"), "these insert, and the favorite cell toggles the mark");
+
+        option.IsChecked = false;
+        Render(window);
+
+        cells.Should().OnlyContain(c => !c.Classes.Contains("notInserted"));
+        window.Close();
     }
 
     [AvaloniaFact]
@@ -338,7 +365,6 @@ public sealed class SpecialCharacterWindowTests
 
         SpecialCharacterWindow.FormText(dash, SpecialCharacterInsertForm.Character).Should().Be("—");
         SpecialCharacterWindow.FormText(dash, SpecialCharacterInsertForm.Entity).Should().Be("&mdash;");
-        SpecialCharacterWindow.FormText(dash, SpecialCharacterInsertForm.Code).Should().Be("U+2014");
         SpecialCharacterWindow.FormText(dash, SpecialCharacterInsertForm.Hex).Should().Be("&#x2014;");
         SpecialCharacterWindow.FormText(dash, SpecialCharacterInsertForm.Dec).Should().Be("&#8212;");
         SpecialCharacterWindow.FormText(arrow, SpecialCharacterInsertForm.Entity).Should().BeNull("the row has no entity");
@@ -365,9 +391,10 @@ public sealed class SpecialCharacterWindowTests
         {
             Strings.Format("InsertCodeWindow_Hex", "&#x2014;"),
             Strings.Format("InsertCodeWindow_Decimal", "&#8212;"),
-            Strings.Format("InsertCodeWindow_Text", "U+2014"),
             Strings.Get("Common_Cancel"),
         });
+        window.GetVisualDescendants().OfType<Button>().Select(b => b.Content as string)
+            .Should().NotContain(c => c != null && c.Contains("U+2014", StringComparison.Ordinal), "U+XXXX is a label, never inserted");
     }
 
     [AvaloniaFact]

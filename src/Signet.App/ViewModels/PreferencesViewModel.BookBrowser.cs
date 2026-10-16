@@ -33,16 +33,13 @@ public sealed partial class PreferencesViewModel
     /// <summary>Upper bound of <see cref="BookBrowserIndent"/>.</summary>
     public static decimal BookBrowserIndentMax => BookBrowserAppearance.IndentMax;
 
-    /// <summary>Upper bound of <see cref="BookBrowserRowSpacing"/>.</summary>
-    public static decimal BookBrowserRowSpacingMax => BookBrowserAppearance.RowSpacingMax;
-
     /// <summary>Indentation (px) of one level of the Book Browser tree (the files in a folder).</summary>
     [ObservableProperty]
     private int _bookBrowserIndent;
 
-    /// <summary>Space (px) between two rows of the Book Browser tree.</summary>
+    /// <summary>Whether the names of the files in the Book Browser show their folders (<c>text/part0001.html</c>).</summary>
     [ObservableProperty]
-    private int _bookBrowserRowSpacing;
+    private bool _bookBrowserShowFolders;
 
     /// <summary>Upper bound of <see cref="BookBrowserCellMinHeight"/>.</summary>
     public static decimal BookBrowserCellMinHeightMax => BookBrowserAppearance.CellMinHeightMax;
@@ -76,7 +73,7 @@ public sealed partial class PreferencesViewModel
 
     partial void OnBookBrowserIndentChanged(int value) => PersistBookBrowserAppearance();
 
-    partial void OnBookBrowserRowSpacingChanged(int value) => PersistBookBrowserAppearance();
+    partial void OnBookBrowserShowFoldersChanged(bool value) => PersistBookBrowserAppearance();
 
     partial void OnBookBrowserCellMinHeightChanged(int value) => PersistBookBrowserAppearance();
 
@@ -95,7 +92,7 @@ public sealed partial class PreferencesViewModel
     {
         BookBrowserAppearance look = _settings.BookBrowserAppearance;
         BookBrowserIndent = look.Indent;
-        BookBrowserRowSpacing = look.RowSpacing;
+        BookBrowserShowFolders = look.ShowFolders;
         BookBrowserCellMinHeight = look.CellMinHeight;
         BookBrowserCellPadding = look.CellPadding;
         BookBrowserItemsFontFamily = look.ItemsFontFamily;
@@ -108,7 +105,7 @@ public sealed partial class PreferencesViewModel
         _settings.BookBrowserAppearance = new BookBrowserAppearance(
             BookBrowserItemsFontFamily, BookBrowserItemsFontSize,
             BookBrowserHeaderFontFamily, BookBrowserHeaderFontSize,
-            BookBrowserIndent, BookBrowserRowSpacing, BookBrowserCellMinHeight, BookBrowserCellPadding);
+            BookBrowserIndent, BookBrowserCellMinHeight, BookBrowserCellPadding, BookBrowserShowFolders);
 
     /// <summary>"Choose…" of the font of the names and cells of the Book Browser tree.</summary>
     [RelayCommand]
