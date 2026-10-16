@@ -140,7 +140,7 @@ public sealed partial class MainWindowViewModel
         FootnoteHit? hit = addError == FootnoteError.None ? null : FootnoteEditor.FindAt(_currentBook, html, offset);
         IReadOnlyList<Footnote> footnotes = FootnoteScanner.Scan(_currentBook);
         bool hasFootnotes = hit is not null || footnotes.Count > 0;
-        return new FootnoteMenuState(hit, addError, hasFootnotes, footnotes.Count(f => !f.IsSignet));
+        return new FootnoteMenuState(hit, addError, hasFootnotes, footnotes.Count(f => !f.IsSignet && f.ReferenceIndex == 0));
     }
 
     /// <inheritdoc/>
@@ -351,7 +351,7 @@ public sealed partial class MainWindowViewModel
         _tabManager.SaveAllTabs();
         CodeTabViewModel? tab = ActiveCodeTab;
         int caret = tab?.CaretOffset ?? -1;
-        int foreign = FootnoteScanner.Scan(_currentBook).Count(f => !f.IsSignet);
+        int foreign = FootnoteScanner.Scan(_currentBook).Count(f => !f.IsSignet && f.ReferenceIndex == 0);
         bool checkpoint = AddCheckpointBefore(Strings.Get("CheckpointOp_RenumberFootnotes"));
         if (!FootnoteEditor.Renumber(_currentBook, FootnoteOptions))
         {
@@ -387,7 +387,8 @@ public sealed partial class MainWindowViewModel
     }
 
     // How Signet writes its footnotes (Preferences → Footnotes).
-    private FootnoteOptions FootnoteOptions => new(_settings.FootnoteStyles, _settings.FootnoteGroupByChapter);
+    private FootnoteOptions FootnoteOptions =>
+        new(_settings.FootnoteStyles, _settings.FootnoteGroupByChapter, _settings.FootnoteLetterStyle);
 
     // Opens the file of the reference or the note of `footnote` with the caret on it; false when it is gone.
     private bool GoToFootnoteSide(Footnote footnote, FootnoteSide side)

@@ -41,13 +41,16 @@ public enum FootnoteSide
 /// <summary>
 /// A footnote of the book: a reference in the text and the note it leads to (see <see cref="FootnoteScanner"/>).
 /// The reference is identified by its <c>href</c> and the number of earlier links with the same <c>href</c> in its
-/// file (a reference need not have an id), the note by its id.
+/// file (a reference need not have an id), the note by its id. A note that several references lead to (a shared
+/// note) is a footnote per reference: they have the same note, <see cref="ReferenceCount"/> and the number, and each
+/// its own <see cref="ReferenceIndex"/> (the letter of Signet's marker, <c>[4a]</c>, <c>[4b]</c>).
 /// </summary>
 public sealed class Footnote
 {
     internal Footnote(
         HtmlResource referenceFile, string referenceHref, int referenceOccurrence, string referenceId,
-        HtmlResource noteFile, string noteId, bool isSignet, int spineIndex, int documentIndex)
+        HtmlResource noteFile, string noteId, bool isSignet, int spineIndex, int documentIndex,
+        int referenceIndex = 0, int referenceCount = 1, FootnotePlacement? placement = null)
     {
         ReferenceFile = referenceFile;
         ReferenceHref = referenceHref;
@@ -58,6 +61,9 @@ public sealed class Footnote
         IsSignet = isSignet;
         SpineIndex = spineIndex;
         DocumentIndex = documentIndex;
+        ReferenceIndex = referenceIndex;
+        ReferenceCount = referenceCount;
+        Placement = placement ?? (ReferenceEquals(referenceFile, noteFile) ? FootnotePlacement.Local : FootnotePlacement.Global);
     }
 
     /// <summary>The file with the reference.</summary>
@@ -84,9 +90,17 @@ public sealed class Footnote
     /// <summary>Whether Signet made the footnote (the note has the <c>signet-fn</c> class).</summary>
     public bool IsSignet { get; }
 
-    /// <summary>Local (the note is in the file of the reference) or global.</summary>
-    public FootnotePlacement Placement =>
-        ReferenceEquals(ReferenceFile, NoteFile) ? FootnotePlacement.Local : FootnotePlacement.Global;
+    /// <summary>Local (the note is in the file of its references, all of them) or global.</summary>
+    public FootnotePlacement Placement { get; }
+
+    /// <summary>The place of the reference among the references of its note, in reading order (from 0).</summary>
+    public int ReferenceIndex { get; }
+
+    /// <summary>How many references lead to the note.</summary>
+    public int ReferenceCount { get; }
+
+    /// <summary>Whether several references lead to the note.</summary>
+    public bool IsShared => ReferenceCount > 1;
 
     // The reading order of the reference: its file in the spine, then its place in the file.
     internal int SpineIndex { get; }

@@ -18,7 +18,9 @@ namespace Signet.Core.Footnotes;
 /// <c>li</c>, <c>section</c>, <c>dd</c>) that holds a link back to the link pointing at it. The link back returns to the
 /// link when it leads to the link, an element around it or inside it, or an empty element right before it
 /// (<see cref="FootnoteLinks.LeadsTo"/>). The reference of a note is the link its link back returns to, otherwise the
-/// first link to it; a note no link leads to is not a footnote here. Links of the nav document are never references.
+/// first link to it; a note no link leads to is not a footnote here. The other links to the note that look like
+/// references (<see cref="FootnoteLinks.IsReferenceLike"/>) are references of it too: such a shared note is a footnote
+/// per reference. Links of the nav document are never references.
 /// </remarks>
 public static class FootnoteScanner
 {
@@ -131,11 +133,29 @@ public static class FootnoteScanner
 
             reference ??= references[0];
 
-            // The id the link back returns to (the link's own, or of an element around it or right before it).
-            string referenceId = backlink?.Target!.GetAttribute("id") ?? reference.Anchor.GetAttribute("id") ?? string.Empty;
-            footnotes.Add(new Footnote(
-                reference.Owner, reference.Href, reference.Occurrence, referenceId,
-                noteFile, noteId, HasClass(note, FootnoteEditor.NoteClass), reference.Spine, order[reference.Anchor]));
+            // The references of the note in reading order; it is local when all of them are in its file.
+            Link primary = reference;
+            List<Link> all = references
+                .Where(r => ReferenceEquals(r, primary) || FootnoteLinks.IsReferenceLike(r.Anchor))
+                .OrderBy(r => r.Spine)
+                .ThenBy(r => order[r.Anchor])
+                .ToList();
+            FootnotePlacement placement = all.All(r => ReferenceEquals(r.Owner, noteFile))
+                ? FootnotePlacement.Local
+                : FootnotePlacement.Global;
+            bool isSignet = HasClass(note, FootnoteEditor.NoteClass);
+            for (int i = 0; i < all.Count; i++)
+            {
+                // The id the link back returns to (the link's own, or of an element around it or right before it).
+                Link current = all[i];
+                Link? back = ReferenceEquals(current, primary)
+                    ? backlink
+                    : backlinks.FirstOrDefault(b => FootnoteLinks.LeadsTo(b.Target!, current.Anchor));
+                string referenceId = back?.Target!.GetAttribute("id") ?? current.Anchor.GetAttribute("id") ?? string.Empty;
+                footnotes.Add(new Footnote(
+                    current.Owner, current.Href, current.Occurrence, referenceId, noteFile, noteId, isSignet, current.Spine,
+                    order[current.Anchor], i, all.Count, placement));
+            }
         }
 
         return footnotes.OrderBy(f => f.SpineIndex).ThenBy(f => f.DocumentIndex).ToList();

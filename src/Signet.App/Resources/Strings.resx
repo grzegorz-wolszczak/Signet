@@ -4521,6 +4521,12 @@ Signet może je edytować dopiero po konwersji na przypisy Signeta.</value>
   <data name="FootnoteError_NotBlocks" xml:space="preserve">
     <value>na najwyższym poziomie mogą być tylko bloki (akapity, listy, tabele…)</value>
   </data>
+  <data name="FootnoteError_NotSignet" xml:space="preserve">
+    <value>Ten przypis nie jest przypisem Signeta — najpierw go skonwertuj.</value>
+  </data>
+  <data name="FootnoteError_OtherFile" xml:space="preserve">
+    <value>Do przypisu lokalnego można dodać odnośnik tylko z jego własnego pliku.</value>
+  </data>
   <data name="FootnoteWindow_Preview" xml:space="preserve">
     <value>Podgląd:</value>
   </data>

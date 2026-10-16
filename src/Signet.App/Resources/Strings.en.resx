@@ -4521,6 +4521,12 @@ Signet can edit them only after converting them to Signet footnotes.</value>
   <data name="FootnoteError_NotBlocks" xml:space="preserve">
     <value>only blocks (paragraphs, lists, tables…) can be at the top level</value>
   </data>
+  <data name="FootnoteError_NotSignet" xml:space="preserve">
+    <value>This footnote is not Signet's — convert it first.</value>
+  </data>
+  <data name="FootnoteError_OtherFile" xml:space="preserve">
+    <value>A local footnote can take a reference only from its own file.</value>
+  </data>
   <data name="FootnoteWindow_Preview" xml:space="preserve">
     <value>Preview:</value>
   </data>

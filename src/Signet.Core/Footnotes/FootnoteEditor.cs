@@ -45,6 +45,12 @@ public enum FootnoteError
 
     /// <summary>The whole inside of a note holds text or inline elements outside block elements.</summary>
     NotBlocks,
+
+    /// <summary>The note is not Signet's (a footnote of other origin is converted first).</summary>
+    NotSignet,
+
+    /// <summary>A local note takes references only from its own file.</summary>
+    OtherFile,
 }
 
 /// <summary>A footnote and the part of it a position is in (<see cref="FootnoteEditor.FindAt"/>).</summary>
@@ -66,7 +72,12 @@ public sealed record FootnoteContent(string Text, bool IsWholeNote);
 /// Whether the global notes are grouped by the chapter (the file) of their references. A notes file grouped this way
 /// stays grouped when the option is turned off (its container keeps <see cref="FootnoteEditor.ByChapterClass"/>).
 /// </param>
-public sealed record FootnoteOptions(FootnoteStyles Styles, bool GroupByChapter = false)
+/// <param name="LetterStyle">
+/// The letters of the references of a note that becomes shared (<c>[4a]</c>, <c>[4b]</c>); a shared note keeps the
+/// letters it is written with.
+/// </param>
+public sealed record FootnoteOptions(
+    FootnoteStyles Styles, bool GroupByChapter = false, FootnoteLetterStyle LetterStyle = FootnoteLetterStyle.LowerLatin)
 {
     /// <summary>The default styles, without grouping.</summary>
     public static FootnoteOptions Default { get; } = new(FootnoteStyles.Default);
@@ -155,6 +166,9 @@ public static partial class FootnoteEditor
 
     private static readonly Regex SignetId = new(@"^(fn|en)-(\d+)$", RegexOptions.CultureInvariant);
 
+    // The marker of Signet's reference to a shared note: "[4a]", "[4B]", "[4ii]".
+    private static readonly Regex SharedMarker = new(@"^\[\d+([a-zA-Z]*)\]$", RegexOptions.CultureInvariant);
+
     private static readonly Regex Tag = new("<[^>]*>", RegexOptions.CultureInvariant);
 
     // The wrappers that go with a removed reference when they hold nothing else.
@@ -210,7 +224,7 @@ public static partial class FootnoteEditor
     /// <summary>
     /// The number a footnote added at <paramref name="offset"/> of <paramref name="html"/> gets with
     /// <paramref name="placement"/> (as <see cref="Renumber"/> counts): one more than the local footnotes of the file
-    /// before it, or than the global footnotes before it in reading order.
+    /// before it, or than the global footnotes before it in reading order (a note counts at its first reference).
     /// </summary>
     public static int NumberAt(Book book, HtmlResource html, int offset, FootnotePlacement placement)
     {
@@ -218,7 +232,7 @@ public static partial class FootnoteEditor
         ArgumentNullException.ThrowIfNull(html);
         int spine = book.GetHtmlResources().ToList().IndexOf(html);
         int before = 0;
-        foreach (Footnote footnote in FootnoteScanner.Scan(book).Where(f => f.Placement == placement))
+        foreach (Footnote footnote in FootnoteScanner.Scan(book).Where(f => f.Placement == placement && f.ReferenceIndex == 0))
         {
             bool sameFile = ReferenceEquals(footnote.ReferenceFile, html);
             if (placement == FootnotePlacement.Local && !sameFile)
@@ -381,6 +395,54 @@ public static partial class FootnoteEditor
             epub3, placement, noteId, "<a href=\"" + Href(noteFile, html, referenceId) + "\">0.</a>", Paragraphs(content));
         InsertNote(noteFile, note, placement, epub3);
 
+        int index = FootnoteScanner.Scan(book).ToList()
+            .FindIndex(f => ReferenceEquals(f.ReferenceFile, html) && f.ReferenceId == referenceId);
+        Renumber(book, options);
+        added = Rescan(book, index);
+        book.Modified = true;
+        return FootnoteError.None;
+    }
+
+    /// <summary>
+    /// Adds a reference at <paramref name="offset"/> of <paramref name="html"/> to the note of Signet's
+    /// <paramref name="footnote"/> (any of its references) and renumbers the footnotes: the note becomes shared (or
+    /// gets one more reference), its references get letters (<c>[4a]</c>, <c>[4b]</c>, in reading order) and the note a
+    /// link back to each of them. A local note takes references only from its own file. <paramref name="added"/> is the
+    /// new reference after the renumbering (<c>null</c> when it was not added).
+    /// </summary>
+    public static FootnoteError AddReference(
+        Book book, HtmlResource html, int offset, Footnote footnote, out Footnote? added, FootnoteOptions? options = null)
+    {
+        added = null;
+        ArgumentNullException.ThrowIfNull(book);
+        ArgumentNullException.ThrowIfNull(html);
+        ArgumentNullException.ThrowIfNull(footnote);
+        FootnoteError error = CanAdd(book, html, offset);
+        if (error != FootnoteError.None)
+        {
+            return error;
+        }
+
+        if (Refresh(book, footnote) is not { } current)
+        {
+            return FootnoteError.NotFound;
+        }
+
+        if (!current.IsSignet)
+        {
+            return FootnoteError.NotSignet;
+        }
+
+        if (current.Placement == FootnotePlacement.Local && !ReferenceEquals(html, current.NoteFile))
+        {
+            return FootnoteError.OtherFile;
+        }
+
+        // A temporary id: the renumbering right after gives the final one (and the letters, and the links back).
+        string referenceId = "fn-new-" + Ulid.NewUlid().ToString().ToLowerInvariant() + "-ref";
+        string reference = "<a class=\"" + ReferenceClass + "\"" + (book.IsEpub3 ? " epub:type=\"noteref\"" : string.Empty)
+            + " href=\"" + Encode(Href(html, current.NoteFile, current.NoteId)) + "\" id=\"" + referenceId + "\">[0]</a>";
+        html.SetText(html.GetText().Insert(offset, reference));
         int index = FootnoteScanner.Scan(book).ToList()
             .FindIndex(f => ReferenceEquals(f.ReferenceFile, html) && f.ReferenceId == referenceId);
         Renumber(book, options);
@@ -727,49 +789,88 @@ public static partial class FootnoteEditor
             return taken;
         }
 
+        // A note takes its number at its first reference; its other references (a shared note) have the same one.
+        Dictionary<(string BookPath, string Id), int> numbers = new();
+        Dictionary<(string BookPath, string Id), List<Footnote>> referencesOf = footnotes
+            .GroupBy(f => (f.NoteFile.BookPath, f.NoteId))
+            .ToDictionary(g => g.Key, g => g.ToList());
         foreach (Footnote footnote in footnotes)
         {
-            int number;
-            if (footnote.Placement == FootnotePlacement.Local)
+            if (!numbers.TryGetValue((footnote.NoteFile.BookPath, footnote.NoteId), out int number))
             {
-                number = localCounters.GetValueOrDefault(footnote.ReferenceFile) + 1;
-                localCounters[footnote.ReferenceFile] = number;
-            }
-            else
-            {
-                number = ++globalCounter;
+                if (footnote.Placement == FootnotePlacement.Local)
+                {
+                    number = localCounters.GetValueOrDefault(footnote.ReferenceFile) + 1;
+                    localCounters[footnote.ReferenceFile] = number;
+                }
+                else
+                {
+                    number = ++globalCounter;
+                }
+
+                numbers[(footnote.NoteFile.BookPath, footnote.NoteId)] = number;
             }
 
-            if (!footnote.IsSignet)
+            if (!footnote.IsSignet || footnote.ReferenceIndex > 0)
             {
                 continue;
             }
 
+            List<Footnote> references = referencesOf[(footnote.NoteFile.BookPath, footnote.NoteId)];
             string n = number.ToString(CultureInfo.InvariantCulture);
             string prefix = footnote.Placement == FootnotePlacement.Local ? "fn-" : "en-";
             string noteId = MarkupEdits.UniqueId(prefix + n, Taken(footnote.NoteFile));
-            string referenceId = MarkupEdits.UniqueId(noteId + "-ref", Taken(footnote.ReferenceFile));
-
-            (string referenceText, TagLister referenceTags) = Snapshot(footnote.ReferenceFile);
-            Anchor? anchor = FindAnchor(referenceTags, referenceText, footnote.ReferenceHref, footnote.ReferenceOccurrence);
             (string noteText, TagLister noteTags) = Snapshot(footnote.NoteFile);
             Element? note = FindElementById(noteTags, noteText, footnote.NoteId);
-            if (anchor is null || note is null)
+            if (note is null)
             {
                 continue;
             }
 
-            string inner = referenceText[anchor.InnerStart..anchor.InnerEnd];
-            string marker = "[" + n + "]";
-            if (marker != inner)
+            // The letters of a shared note keep the style they are written in; a note that becomes shared takes the
+            // style of the options.
+            FootnoteLetterStyle? style = null;
+            if (references.Count > 1)
             {
-                AddEdit(footnote.ReferenceFile, new TextEdit(anchor.InnerStart, anchor.InnerEnd - anchor.InnerStart, marker));
+                style = FootnoteLetters.Detect(references.Select(r =>
+                {
+                    (string text, TagLister tags) = Snapshot(r.ReferenceFile);
+                    return FindAnchor(tags, text, r.ReferenceHref, r.ReferenceOccurrence) is { } a
+                        ? MarkerLetters(text[a.InnerStart..a.InnerEnd])
+                        : string.Empty;
+                })) ?? (options ?? FootnoteOptions.Default).LetterStyle;
             }
 
-            AddAttributeEdit(footnote.ReferenceFile, anchor.Href, Href(footnote.ReferenceFile, footnote.NoteFile, noteId));
-            AddAttributeEdit(footnote.ReferenceFile, anchor.Id, referenceId);
+            List<string> backlinks = new();
+            List<string> referenceIds = new();
+            for (int i = 0; i < references.Count; i++)
+            {
+                Footnote reference = references[i];
+                string label = n + (style is { } letters ? FootnoteLetters.Of(letters, i) : string.Empty);
+                string referenceId = MarkupEdits.UniqueId(
+                    style is null ? noteId + "-ref" : noteId + label[n.Length..] + "-ref", Taken(reference.ReferenceFile));
+                (string referenceText, TagLister referenceTags) = Snapshot(reference.ReferenceFile);
+                Anchor? anchor = FindAnchor(referenceTags, referenceText, reference.ReferenceHref, reference.ReferenceOccurrence);
+                if (anchor is null)
+                {
+                    continue;
+                }
+
+                string marker = "[" + label + "]";
+                if (marker != referenceText[anchor.InnerStart..anchor.InnerEnd])
+                {
+                    AddEdit(reference.ReferenceFile, new TextEdit(anchor.InnerStart, anchor.InnerEnd - anchor.InnerStart, marker));
+                }
+
+                AddAttributeEdit(reference.ReferenceFile, anchor.Href, Href(reference.ReferenceFile, footnote.NoteFile, noteId));
+                AddAttributeEdit(reference.ReferenceFile, anchor.Id, referenceId);
+                referenceIds.Add(referenceId);
+                backlinks.Add("<a href=\"" + Encode(Href(footnote.NoteFile, reference.ReferenceFile, referenceId)) + "\">"
+                    + label + (style is null ? "." : string.Empty) + "</a>");
+            }
+
             AddAttributeEdit(footnote.NoteFile, note.Id, noteId);
-            if (footnote.ReferenceId.Length > 0 && SignetParagraphs(noteTags, noteText, note, footnote.ReferenceId) is { } paragraphs)
+            if (SignetParagraphs(noteTags, noteText, note, footnote.ReferenceId) is { } paragraphs)
             {
                 foreach (int plain in paragraphs.PlainParagraphs)
                 {
@@ -777,16 +878,36 @@ public static partial class FootnoteEditor
                 }
             }
 
-            if (footnote.ReferenceId.Length > 0 && FindBacklink(noteTags, noteText, note, footnote.ReferenceId) is { } backlink)
+            // The links back at the start of the note, one per reference ("4." or "4a, 4b."); a note whose link back is
+            // elsewhere keeps it there.
+            if (backlinks.Count != references.Count)
             {
-                string backInner = noteText[backlink.InnerStart..backlink.InnerEnd];
-                string backMarker = n + ".";
-                if (backMarker != backInner)
-                {
-                    AddEdit(footnote.NoteFile, new TextEdit(backlink.InnerStart, backlink.InnerEnd - backlink.InnerStart, backMarker));
-                }
+                continue;
+            }
 
-                AddAttributeEdit(footnote.NoteFile, backlink.Href, Href(footnote.NoteFile, footnote.ReferenceFile, referenceId));
+            (int Start, int End, IReadOnlyList<string> Fragments)? run = BacklinkRun(noteTags, noteText, note);
+            if (style is null && run is not { Fragments.Count: > 1 })
+            {
+                // A note with one reference: its link back gets the number and leads to the reference (its other
+                // attributes stay).
+                if (footnote.ReferenceId.Length > 0 && FindBacklink(noteTags, noteText, note, footnote.ReferenceId) is { } backlink)
+                {
+                    string backMarker = n + ".";
+                    if (backMarker != noteText[backlink.InnerStart..backlink.InnerEnd])
+                    {
+                        AddEdit(footnote.NoteFile, new TextEdit(backlink.InnerStart, backlink.InnerEnd - backlink.InnerStart, backMarker));
+                    }
+
+                    AddAttributeEdit(footnote.NoteFile, backlink.Href, Href(footnote.NoteFile, footnote.ReferenceFile, referenceIds[0]));
+                }
+            }
+            else if (run is { } links)
+            {
+                string group = string.Join(", ", backlinks) + (style is null ? string.Empty : ".");
+                if (noteText[links.Start..links.End] != group)
+                {
+                    AddEdit(footnote.NoteFile, new TextEdit(links.Start, links.End - links.Start, group));
+                }
             }
         }
 
@@ -1567,19 +1688,14 @@ public static partial class FootnoteEditor
             int from = open.Pos + open.Len;
             if (backlink is null)
             {
-                if (child.OpenIndex + 1 >= tags.Count
-                    || tags.At(child.OpenIndex + 1) is not { Kind: TagKind.Begin } link
-                    || !link.TagName.Equals("a", StringComparison.OrdinalIgnoreCase)
-                    || !string.IsNullOrWhiteSpace(text[from..link.Pos])
-                    || SplitHref(AttributeValue(text, link, "href")).Fragment != referenceId
-                    || tags.FindCloseTagForOpen(child.OpenIndex + 1) is not (var linkClose and >= 0)
-                    || tags.At(linkClose).Pos >= child.CloseStart)
+                // The links back start the first paragraph, one of them to the reference ("4a, 4b." of a shared note).
+                if (BacklinkRun(tags, text, note) is not { } run || run.Start >= child.CloseStart || !run.Fragments.Contains(referenceId))
                 {
                     return null;
                 }
 
-                from = tags.At(linkClose).Pos + tags.At(linkClose).Len;
-                backlink = text[link.Pos..from];
+                from = run.End;
+                backlink = text[run.Start..run.End];
             }
 
             string paragraph = text[from..child.CloseStart].Trim();
@@ -1735,6 +1851,59 @@ public static partial class FootnoteEditor
         }
 
         return null;
+    }
+
+    // The letters of the marker of a reference to a shared note ("[4a]" -> "a"); "" for any other marker.
+    private static string MarkerLetters(string marker) =>
+        SharedMarker.Match(PlainText(marker)) is { Success: true } match ? match.Groups[1].Value : string.Empty;
+
+    // The links back at the start of a note in Signet's template: right at the start of its first paragraph, the links
+    // separated by ", " and followed by "." ("<a>4.</a>" or "<a>4a</a>, <a>4b</a>."); null when it does not start
+    // with a link.
+    private static (int Start, int End, IReadOnlyList<string> Fragments)? BacklinkRun(TagLister tags, string text, Element note)
+    {
+        if (ChildElements(tags, text, note).FirstOrDefault() is not { } first
+            || !tags.At(first.OpenIndex).TagName.Equals("p", StringComparison.OrdinalIgnoreCase)
+            || tags.At(first.OpenIndex).Kind != TagKind.Begin)
+        {
+            return null;
+        }
+
+        int position = tags.At(first.OpenIndex).Pos + tags.At(first.OpenIndex).Len;
+        int index = first.OpenIndex + 1;
+        int start = -1;
+        int end = -1;
+        List<string> fragments = new();
+        while (index < tags.Count && tags.At(index) is { Kind: TagKind.Begin } link
+            && link.TagName.Equals("a", StringComparison.OrdinalIgnoreCase)
+            && link.Pos < first.CloseStart
+            && text[position..link.Pos].Trim().Length == (fragments.Count == 0 ? 0 : 1)
+            && (fragments.Count == 0 || text[position..link.Pos].Trim() == ",")
+            && SplitHref(AttributeValue(text, link, "href")).Fragment is { Length: > 0 } fragment)
+        {
+            int close = tags.FindCloseTagForOpen(index);
+            if (close < 0 || tags.At(close).Pos >= first.CloseStart)
+            {
+                break;
+            }
+
+            start = start < 0 ? link.Pos : start;
+            fragments.Add(fragment);
+            position = end = tags.At(close).Pos + tags.At(close).Len;
+            index = close + 1;
+        }
+
+        if (start < 0)
+        {
+            return null;
+        }
+
+        if (fragments.Count > 1 && end < text.Length && text[end] == '.')
+        {
+            end++;
+        }
+
+        return (start, end, fragments);
     }
 
     // Whether the markup has a link to the given id (the link back of a note).
