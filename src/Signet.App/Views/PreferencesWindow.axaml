@@ -258,6 +258,23 @@
                                      Maximum="{x:Static vm:PreferencesViewModel.BookBrowserRowSpacingMax}"
                                      Increment="1" FormatString="0" HorizontalAlignment="Left" Width="130" />
                     </Grid>
+                    <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+                      <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_BookBrowserCellMinHeight}" />
+                      <NumericUpDown x:Name="BookBrowserCellMinHeightBox" Grid.Column="1" Value="{Binding BookBrowserCellMinHeight}"
+                                     Minimum="0"
+                                     Maximum="{x:Static vm:PreferencesViewModel.BookBrowserCellMinHeightMax}"
+                                     Increment="1" FormatString="0" HorizontalAlignment="Left" Width="130" />
+                    </Grid>
+                    <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+                      <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_BookBrowserCellPadding}" />
+                      <NumericUpDown x:Name="BookBrowserCellPaddingBox" Grid.Column="1" Value="{Binding BookBrowserCellPadding}"
+                                     Minimum="0"
+                                     Maximum="{x:Static vm:PreferencesViewModel.BookBrowserCellPaddingMax}"
+                                     Increment="1" FormatString="0" HorizontalAlignment="Left" Width="130" />
+                    </Grid>
+                    <HyperlinkButton Content="{loc:Loc PreferencesWindow_BookBrowserBackgroundInTheme}" Padding="0"
+                                     views:PreferencesPage.Target="ThemeInterfacePage" />
+
                   </StackPanel>
                 </Border>
               </StackPanel>

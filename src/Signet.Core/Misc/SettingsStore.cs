@@ -293,11 +293,30 @@ public sealed class SettingsStore
         set => Write("default_version", value);
     }
 
-    /// <summary>Name template used when renaming the selected files in the Book Browser.</summary>
-    public string RenameTemplate
+    /// <summary>The last values of the "Mass Rename" window of the Book Browser. Always read normalized.</summary>
+    public MassRenameOptions MassRename
     {
-        get => ReadString("rename_template", string.Empty);
-        set => Write("rename_template", value);
+        get
+        {
+            MassRenameOptions d = MassRenameOptions.Default;
+            string padding = ReadString("mass_rename_padding_char", d.PaddingChar.ToString());
+            return new MassRenameOptions(
+                ReadString("mass_rename_prefix", d.Prefix),
+                ReadInt("mass_rename_start_number", d.StartNumber),
+                padding.Length > 0 ? padding[0] : d.PaddingChar,
+                ReadInt("mass_rename_min_length", d.MinLength),
+                ReadBool("mass_rename_book_order", d.BookOrder)).Normalized();
+        }
+
+        set
+        {
+            MassRenameOptions v = value.Normalized();
+            Write("mass_rename_prefix", v.Prefix);
+            Write("mass_rename_start_number", v.StartNumber);
+            Write("mass_rename_padding_char", v.PaddingChar == '\0' ? string.Empty : v.PaddingChar.ToString());
+            Write("mass_rename_min_length", v.MinLength);
+            Write("mass_rename_book_order", v.BookOrder);
+        }
     }
 
     /// <summary>Path of the external XHTML editor.</summary>
@@ -1116,7 +1135,9 @@ public sealed class SettingsStore
                 ReadString("book_browser_header_font_family", d.HeaderFontFamily),
                 ReadInt("book_browser_header_font_size", d.HeaderFontSize),
                 ReadInt("book_browser_indent", d.Indent),
-                ReadInt("book_browser_row_spacing", d.RowSpacing)).Normalized();
+                ReadInt("book_browser_row_spacing", d.RowSpacing),
+                ReadInt("book_browser_cell_min_height", d.CellMinHeight),
+                ReadInt("book_browser_cell_padding", d.CellPadding)).Normalized();
         }
 
         set
@@ -1128,6 +1149,8 @@ public sealed class SettingsStore
             WriteSilent("book_browser_header_font_size", v.HeaderFontSize);
             WriteSilent("book_browser_indent", v.Indent);
             WriteSilent("book_browser_row_spacing", v.RowSpacing);
+            WriteSilent("book_browser_cell_min_height", v.CellMinHeight);
+            WriteSilent("book_browser_cell_padding", v.CellPadding);
             RaiseChanged("book_browser_appearance");
         }
     }
@@ -1852,6 +1875,8 @@ public sealed class SettingsStore
         yield return "book_browser_header_font_size";
         yield return "book_browser_indent";
         yield return "book_browser_row_spacing";
+        yield return "book_browser_cell_min_height";
+        yield return "book_browser_cell_padding";
         foreach (TooltipArea area in Enum.GetValues<TooltipArea>())
         {
             yield return TooltipFontKey(area, "family");

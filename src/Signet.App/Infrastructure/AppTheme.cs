@@ -81,6 +81,7 @@ public static class AppTheme
         (ThemeKeys.UiDangerButtonPressed, "SignetDangerButtonPressedBrush"),
         (ThemeKeys.UiDangerButtonText, "SignetDangerButtonTextBrush"),
         (ThemeKeys.UiFrame, "SignetFrameBrush"),
+        (ThemeKeys.UiBookBrowserBackground, "SignetBookBrowserBackgroundBrush"),
         (ThemeKeys.UiMutedText, "SignetMutedTextBrush"),
         (ThemeKeys.UiErrorText, "SignetErrorTextBrush"),
         (ThemeKeys.UiRenameErrorText, "SignetRenameErrorTextBrush"),

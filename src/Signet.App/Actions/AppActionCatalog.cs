@@ -220,7 +220,7 @@ public static class AppActionCatalog
         // Default shortcuts: Rename = F2 (Windows convention), Merge = Ctrl+M, Delete = Del.
         new(AppActionIds.BookBrowserOpen, "&Open", "", null, AppActionIds.BookBrowserCategory),
         new(AppActionIds.BookBrowserRename, "&Rename...", "F2", null, AppActionIds.BookBrowserCategory),
-        new(AppActionIds.BookBrowserRenameWithTemplate, "Rename With &Template...", "", null, AppActionIds.BookBrowserCategory),
+        new(AppActionIds.BookBrowserRenameWithTemplate, "&Mass Rename...", "", null, AppActionIds.BookBrowserCategory),
         new(AppActionIds.BookBrowserRegexRename, "Regex Rename...", "", null, AppActionIds.BookBrowserCategory),
         new(AppActionIds.BookBrowserDelete, "&Delete", "Del", null, AppActionIds.BookBrowserCategory),
         new(AppActionIds.BookBrowserMove, "&Move To Folder...", "", null, AppActionIds.BookBrowserCategory),

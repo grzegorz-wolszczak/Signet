@@ -1356,7 +1356,7 @@ Do you want to save the changes?</value>
     <value>Rename…</value>
   </data>
   <data name="BookBrowserView_RenameWithTemplate" xml:space="preserve">
-    <value>Rename With Template…</value>
+    <value>Mass Rename…</value>
   </data>
   <data name="BookBrowserView_MoveToFolder" xml:space="preserve">
     <value>Move to Folder…</value>
@@ -1396,6 +1396,21 @@ Do you want to save the changes?</value>
   </data>
   <data name="BookBrowserView_AddExistingFiles" xml:space="preserve">
     <value>Add Existing Files…</value>
+  </data>
+  <data name="BookBrowserView_AddHtmlFiles" xml:space="preserve">
+    <value>Add HTML Files from Files…</value>
+  </data>
+  <data name="BookBrowserView_AddStylesheetFiles" xml:space="preserve">
+    <value>Add Stylesheets from Files…</value>
+  </data>
+  <data name="BookBrowserView_AddImageFiles" xml:space="preserve">
+    <value>Add Images from Files…</value>
+  </data>
+  <data name="BookBrowserView_AddAudioFiles" xml:space="preserve">
+    <value>Add Audio Files…</value>
+  </data>
+  <data name="BookBrowserView_AddVideoFiles" xml:space="preserve">
+    <value>Add Video Files…</value>
   </data>
   <data name="BookBrowserView_AddSemantics" xml:space="preserve">
     <value>Add Semantics…</value>
@@ -2052,7 +2067,7 @@ Do you want to save the changes?</value>
     <value>&amp;Rename...</value>
   </data>
   <data name="Action_MainWindow_BookBrowser_RenameWithTemplate" xml:space="preserve">
-    <value>Rename With &amp;Template...</value>
+    <value>&amp;Mass Rename...</value>
   </data>
   <data name="Action_MainWindow_BookBrowser_RERename" xml:space="preserve">
     <value>Regex Rename...</value>
@@ -2690,11 +2705,38 @@ Do you want to save the changes?</value>
   <data name="BookBrowser_AddFilesFailed" xml:space="preserve">
     <value>Could not add files: {0}</value>
   </data>
-  <data name="BookBrowser_InvalidTemplate" xml:space="preserve">
-    <value>Invalid name template.</value>
-  </data>
   <data name="BookBrowser_NamesFailed" xml:space="preserve">
     <value>Could not generate the names.</value>
+  </data>
+  <data name="MassRenameWindow_Title" xml:space="preserve">
+    <value>Mass Rename</value>
+  </data>
+  <data name="MassRenameWindow_Description" xml:space="preserve">
+    <value>Renames the selected files ({0}) to: prefix + a running number + the existing extension. The number is padded on the left with the padding character to the minimum length, e.g. the character "0" and the length 3 give part002.html, and the character "#" and the length 7 give part#####12.html.</value>
+  </data>
+  <data name="MassRenameWindow_Prefix" xml:space="preserve">
+    <value>Prefix:</value>
+  </data>
+  <data name="MassRenameWindow_StartNumber" xml:space="preserve">
+    <value>Start number:</value>
+  </data>
+  <data name="MassRenameWindow_PaddingChar" xml:space="preserve">
+    <value>Padding character:</value>
+  </data>
+  <data name="MassRenameWindow_MinLength" xml:space="preserve">
+    <value>Min number length:</value>
+  </data>
+  <data name="MassRenameWindow_BookOrder" xml:space="preserve">
+    <value>Rename in the order of the book</value>
+  </data>
+  <data name="MassRenameWindow_BookOrderTip" xml:space="preserve">
+    <value>Available when only HTML files are selected. The numbers then follow the reading order, not the order of the selection; files outside the reading order (e.g. the navigation document) are numbered last.</value>
+  </data>
+  <data name="MassRenameWindow_Example" xml:space="preserve">
+    <value>Example: {0}</value>
+  </data>
+  <data name="MassRenameWindow_RenameButton" xml:space="preserve">
+    <value>Rename</value>
   </data>
   <data name="BookBrowser_RenameRejectedXml" xml:space="preserve">
     <value>Rename rejected — it would cause XML errors in: {0}</value>
@@ -2754,12 +2796,6 @@ Only HTML files can be merged.</value>
   </data>
   <data name="BookBrowser_AddExistingFilesTitle" xml:space="preserve">
     <value>Add Existing Files</value>
-  </data>
-  <data name="BookBrowser_RenameWithTemplateTitle" xml:space="preserve">
-    <value>Rename With Template</value>
-  </data>
-  <data name="BookBrowser_RenameWithTemplatePrompt" xml:space="preserve">
-    <value>Name template for {0} file(s) (e.g. Section0001.xhtml):</value>
   </data>
   <data name="BookBrowser_GetInfoTitle" xml:space="preserve">
     <value>Get Info</value>
@@ -5728,6 +5764,9 @@ Close the tab</value>
   <data name="ThemeKey_ui_filterActive" xml:space="preserve">
     <value>Active filter</value>
   </data>
+  <data name="ThemeKey_ui_bookBrowser_background" xml:space="preserve">
+    <value>Book Browser background</value>
+  </data>
   <data name="ThemeKey_ui_icon_inactive" xml:space="preserve">
     <value>Inactive icon</value>
   </data>
@@ -5994,5 +6033,14 @@ Close the tab</value>
   </data>
   <data name="PreferencesWindow_BookBrowserRowSpacing" xml:space="preserve">
     <value>Space between the rows of the tree (px)</value>
+  </data>
+  <data name="PreferencesWindow_BookBrowserCellMinHeight" xml:space="preserve">
+    <value>Minimum height of a cell (px)</value>
+  </data>
+  <data name="PreferencesWindow_BookBrowserCellPadding" xml:space="preserve">
+    <value>Vertical padding of a cell (px)</value>
+  </data>
+  <data name="PreferencesWindow_BookBrowserBackgroundInTheme" xml:space="preserve">
+    <value>Book Browser background color: Color Scheme › Interface</value>
   </data>
 </root>

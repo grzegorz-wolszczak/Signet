@@ -413,6 +413,9 @@
   <data name="Rename_WouldDuplicate" xml:space="preserve">
     <value>Nie można zmienić nazw — spowodowałoby to duplikaty nazw plików.</value>
   </data>
+  <data name="MassRename_PaddingCharMissing" xml:space="preserve">
+    <value>Podaj znak dopełnienia numeru.</value>
+  </data>
   <data name="Heading_LevelNone" xml:space="preserve">
     <value>Brak</value>
   </data>

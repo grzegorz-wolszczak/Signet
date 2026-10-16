@@ -44,6 +44,20 @@ public sealed partial class PreferencesViewModel
     [ObservableProperty]
     private int _bookBrowserRowSpacing;
 
+    /// <summary>Upper bound of <see cref="BookBrowserCellMinHeight"/>.</summary>
+    public static decimal BookBrowserCellMinHeightMax => BookBrowserAppearance.CellMinHeightMax;
+
+    /// <summary>Upper bound of <see cref="BookBrowserCellPadding"/>.</summary>
+    public static decimal BookBrowserCellPaddingMax => BookBrowserAppearance.CellPaddingMax;
+
+    /// <summary>Minimum height (px) of a cell of the Book Browser tree, so of a row; 0 = as high as the content.</summary>
+    [ObservableProperty]
+    private int _bookBrowserCellMinHeight;
+
+    /// <summary>Vertical padding (px) of a cell of the Book Browser tree.</summary>
+    [ObservableProperty]
+    private int _bookBrowserCellPadding;
+
     /// <summary>Typeface of the names and of the Semantics / Properties cells of the tree; empty = the interface font.</summary>
     [ObservableProperty]
     private string _bookBrowserItemsFontFamily = string.Empty;
@@ -64,6 +78,10 @@ public sealed partial class PreferencesViewModel
 
     partial void OnBookBrowserRowSpacingChanged(int value) => PersistBookBrowserAppearance();
 
+    partial void OnBookBrowserCellMinHeightChanged(int value) => PersistBookBrowserAppearance();
+
+    partial void OnBookBrowserCellPaddingChanged(int value) => PersistBookBrowserAppearance();
+
     partial void OnBookBrowserItemsFontFamilyChanged(string value) => PersistBookBrowserAppearance();
 
     partial void OnBookBrowserItemsFontSizeChanged(int value) => PersistBookBrowserAppearance();
@@ -78,6 +96,8 @@ public sealed partial class PreferencesViewModel
         BookBrowserAppearance look = _settings.BookBrowserAppearance;
         BookBrowserIndent = look.Indent;
         BookBrowserRowSpacing = look.RowSpacing;
+        BookBrowserCellMinHeight = look.CellMinHeight;
+        BookBrowserCellPadding = look.CellPadding;
         BookBrowserItemsFontFamily = look.ItemsFontFamily;
         BookBrowserItemsFontSize = look.ItemsFontSize;
         BookBrowserHeaderFontFamily = look.HeaderFontFamily;
@@ -88,7 +108,7 @@ public sealed partial class PreferencesViewModel
         _settings.BookBrowserAppearance = new BookBrowserAppearance(
             BookBrowserItemsFontFamily, BookBrowserItemsFontSize,
             BookBrowserHeaderFontFamily, BookBrowserHeaderFontSize,
-            BookBrowserIndent, BookBrowserRowSpacing);
+            BookBrowserIndent, BookBrowserRowSpacing, BookBrowserCellMinHeight, BookBrowserCellPadding);
 
     /// <summary>"Choose…" of the font of the names and cells of the Book Browser tree.</summary>
     [RelayCommand]
