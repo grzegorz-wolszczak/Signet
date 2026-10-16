@@ -7,7 +7,7 @@ namespace Signet.App.Views;
 
 /// <summary>
 /// The modal "Standardize EPUB" dialog (<see cref="StandardizationViewModel"/>): the standardization steps as sections
-/// with a ⓘ description and a preview of their changes. "Apply" runs the checked steps and closes the dialog; "Close"
+/// with a ℹ description and a preview of their changes. "Apply" runs the checked steps and closes the dialog; "Close"
 /// closes it without changes.
 /// </summary>
 public partial class StandardizationWindow : Window

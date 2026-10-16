@@ -23,7 +23,7 @@
       <Setter Property="Opacity" Value="0.75" />
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
-    <!-- The ⓘ icon: hovering shows the detailed description of the step. -->
+    <!-- The ℹ icon: hovering shows the detailed description of the step. -->
     <Style Selector="Border.info">
       <Setter Property="Width" Value="18" />
       <Setter Property="Height" Value="18" />
