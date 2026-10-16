@@ -116,8 +116,9 @@ Rules:
   (`MissingMethodException`). Do not bump xUnit without checking that `Signet.App.UiTests` still runs.
 - View render tests (`[AvaloniaFact]`) in `Signet.App.UiTests`: after `window.Show()` force a layout
   pass with `Dispatcher.UIThread.RunJobs()` + `window.CaptureRenderedFrame()`.
-  **Adding a document tab to `DocumentDock` hangs under headless** (Dock.Avalonia) — test tab logic
-  without UI (`TabManagerModelTests` / `TabManagerTests`).
+  A document tab can be opened in the main window's `DocumentDock` under headless
+  (`WindowRenderTests`; this used to hang with earlier versions). Tab logic that needs no UI
+  stays in `TabManagerModelTests` / `TabManagerTests`.
 - `Catastrophic failure: Call from invalid thread` lines printed during a full `dotnet test` run are
   known noise from the headless UI tests; they do not fail the run.
 

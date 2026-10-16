@@ -18,7 +18,7 @@ namespace Signet.App.UiTests;
 /// <summary>
 /// Headless smoke tests of the non-text tabs: every resource type in the corpus
 /// (image, font, audio) opens in the proper view model and renders without an exception.
-/// The controls are mounted standalone — <c>DocumentDock</c> hangs the tab rendering under headless.
+/// The controls are mounted standalone, without the main window.
 /// </summary>
 public sealed class NonTextTabsRenderTests
 {
