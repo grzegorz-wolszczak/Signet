@@ -12,6 +12,7 @@ using Avalonia.VisualTree;
 using AwesomeAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Signet.App.Infrastructure;
+using Signet.App.Services;
 using Signet.App.ViewModels;
 using Signet.App.Views;
 using Signet.Core.BookManipulation;
@@ -101,7 +102,7 @@ public sealed class WindowRenderTests
     public void Opening_a_resource_renders_a_code_editor_tab_in_the_document_dock()
     {
         using TempDir temp = new();
-        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
         MainWindow window = ShowMainWindow();
         MainWindowViewModel vm = (MainWindowViewModel)window.DataContext!;
         vm.LoadBook(book, string.Empty);
@@ -115,5 +116,9 @@ public sealed class WindowRenderTests
         vm.ActiveCodeTab.Should().NotBeNull();
         window.GetVisualDescendants().OfType<AvaloniaEdit.TextEditor>().Should().NotBeEmpty(
             "the tab added to the DocumentDock must be materialized and rendered");
+
+        // Closing the book detaches the view model from it (a view model that stays reachable gets later language-change notifications).
+        ((IBookWorkspace)vm).CloseBook();
+        window.Close();
     }
 }
