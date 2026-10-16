@@ -772,10 +772,10 @@ public sealed class PreferencesViewModelTests
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
         vm.BookBrowserIndent.Should().Be(20);
-        vm.BookBrowserRowSpacing.Should().Be(3);
+        vm.BookBrowserShowFolders.Should().BeFalse();
 
         vm.BookBrowserIndent = 35;
-        vm.BookBrowserRowSpacing = 4;
+        vm.BookBrowserShowFolders = true;
         vm.BookBrowserCellMinHeight.Should().Be(16);
         vm.BookBrowserCellMinHeight = 24;
         vm.BookBrowserCellPadding = 2;
@@ -786,13 +786,13 @@ public sealed class PreferencesViewModelTests
 
         host.Settings.BookBrowserAppearance.Should().Be(BookBrowserAppearance.Default, "not saved yet");
         vm.ApplyCommand.Execute(null);
-        host.Settings.BookBrowserAppearance.Should().Be(new BookBrowserAppearance("Consolas", 14, "Arial", 11, 35, 4, 24, 2));
+        host.Settings.BookBrowserAppearance.Should().Be(new BookBrowserAppearance("Consolas", 14, "Arial", 11, 35, 24, 2, true));
 
         vm.RestoreAppearanceDefaultsCommand.Execute(null);
 
-        (vm.BookBrowserIndent, vm.BookBrowserRowSpacing, vm.BookBrowserItemsFontFamily, vm.BookBrowserHeaderFontSize,
+        (vm.BookBrowserIndent, vm.BookBrowserShowFolders, vm.BookBrowserItemsFontFamily, vm.BookBrowserHeaderFontSize,
                 vm.BookBrowserCellMinHeight, vm.BookBrowserCellPadding)
-            .Should().Be((20, 3, string.Empty, 0, 16, 0));
+            .Should().Be((20, false, string.Empty, 0, 16, 0));
     }
 
     [Fact]

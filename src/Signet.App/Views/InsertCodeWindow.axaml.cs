@@ -7,7 +7,8 @@ namespace Signet.App.Views;
 
 /// <summary>
 /// "Insert Code" — the form in which to insert a character's code: a hexadecimal or decimal numeric
-/// character reference (both valid in XHTML regardless of the DOCTYPE) or the plain text <c>U+XXXX</c>.
+/// character reference (both valid in XHTML regardless of the DOCTYPE). The plain text <c>U+XXXX</c> is only shown, never
+/// inserted: it would put a label in the book instead of a character.
 /// </summary>
 public partial class InsertCodeWindow : Window
 {
@@ -36,10 +37,8 @@ public partial class InsertCodeWindow : Window
         window.PromptText.Text = Strings.Format("InsertCodeWindow_Prompt", text);
         window.HexButton.Content = Strings.Format("InsertCodeWindow_Hex", hex);
         window.DecimalButton.Content = Strings.Format("InsertCodeWindow_Decimal", dec);
-        window.TextButton.Content = Strings.Format("InsertCodeWindow_Text", text);
         window.HexButton.Click += (_, _) => window.Close(hex);
         window.DecimalButton.Click += (_, _) => window.Close(dec);
-        window.TextButton.Click += (_, _) => window.Close(text);
         return window;
     }
 }

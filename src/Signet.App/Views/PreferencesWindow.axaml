@@ -269,7 +269,7 @@
                   </StackPanel>
                 </Border>
 
-                <!-- The look of the tree: the indentation of the files in a folder and the space between the rows. -->
+                <!-- The look of the tree: the indentation of the files in a folder, the height of the rows and whether the file names show their folders. -->
                 <Border Classes="section">
                   <StackPanel Spacing="6">
                     <TextBlock Text="{loc:Loc PreferencesWindow_BookBrowserTreeLook}" FontWeight="Bold" />
@@ -278,13 +278,6 @@
                       <NumericUpDown x:Name="BookBrowserIndentBox" Grid.Column="1" Value="{Binding BookBrowserIndent}"
                                      Minimum="{x:Static vm:PreferencesViewModel.BookBrowserIndentMin}"
                                      Maximum="{x:Static vm:PreferencesViewModel.BookBrowserIndentMax}"
-                                     Increment="1" FormatString="0" HorizontalAlignment="Left" Width="130" />
-                    </Grid>
-                    <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
-                      <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_BookBrowserRowSpacing}" />
-                      <NumericUpDown x:Name="BookBrowserRowSpacingBox" Grid.Column="1" Value="{Binding BookBrowserRowSpacing}"
-                                     Minimum="0"
-                                     Maximum="{x:Static vm:PreferencesViewModel.BookBrowserRowSpacingMax}"
                                      Increment="1" FormatString="0" HorizontalAlignment="Left" Width="130" />
                     </Grid>
                     <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
@@ -301,6 +294,8 @@
                                      Maximum="{x:Static vm:PreferencesViewModel.BookBrowserCellPaddingMax}"
                                      Increment="1" FormatString="0" HorizontalAlignment="Left" Width="130" />
                     </Grid>
+                    <CheckBox x:Name="BookBrowserShowFoldersBox" Content="{loc:Loc PreferencesWindow_BookBrowserShowFolders}"
+                              IsChecked="{Binding BookBrowserShowFolders}" ToolTip.Tip="{loc:Loc PreferencesWindow_BookBrowserShowFoldersTip}" />
                     <HyperlinkButton Content="{loc:Loc PreferencesWindow_BookBrowserBackgroundInTheme}" Padding="0"
                                      views:PreferencesPage.Target="AppearanceGeneralPage"
                                      views:PreferencesPage.TargetKey="ui.bookBrowser.background" />

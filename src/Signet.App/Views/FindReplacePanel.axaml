@@ -17,17 +17,19 @@
     <Border.KeyBindings>
       <KeyBinding Gesture="Escape" Command="{Binding HideFindPanelCommand}" />
     </Border.KeyBindings>
-    <Grid ColumnDefinitions="Auto,*">
-      <Button Grid.Column="0"
+    <Grid ColumnDefinitions="*,Auto">
+      <views:FindReplaceView Grid.Column="0" DataContext="{Binding FindReplace}"
+                             IsEnabled="{Binding $parent[views:FindReplacePanel].((vm:MainWindowViewModel)DataContext).HasBook, FallbackValue=False}" />
+      <!-- The close button is in the top right corner of the panel. -->
+      <Button Grid.Column="1"
               Content="✕"
               Command="{Binding HideFindPanelCommand}"
               Classes="toolbar"
               VerticalAlignment="Top"
-              Margin="4,8,0,0"
+              HorizontalAlignment="Right"
+              Margin="0,8,4,0"
               Padding="4,2"
               ToolTip.Tip="{loc:Loc MainWindow_HideFindReplace}" />
-      <views:FindReplaceView Grid.Column="1" DataContext="{Binding FindReplace}"
-                             IsEnabled="{Binding $parent[views:FindReplacePanel].((vm:MainWindowViewModel)DataContext).HasBook, FallbackValue=False}" />
     </Grid>
   </Border>
 </UserControl>

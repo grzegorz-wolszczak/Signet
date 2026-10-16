@@ -72,9 +72,6 @@ public enum SpecialCharacterInsertForm
     /// <summary>The named entity (confirmed when the document does not define it).</summary>
     Entity,
 
-    /// <summary>The plain text <c>U+XXXX</c>.</summary>
-    Code,
-
     /// <summary>The hexadecimal character reference <c>&amp;#xXXXX;</c>.</summary>
     Hex,
 
@@ -96,7 +93,7 @@ public sealed record SpecialCharacterChoice(string Text, string Character);
 /// off — only the rows of the selected category.
 /// The results are a table (character / entity / code / hex / decimal / name / favorite mark; a double-click
 /// on the mark toggles it); the character column uses the font from Preferences (<see cref="SpecialCharacterAppearance"/>).
-/// The character can be inserted as itself, as a code (<see cref="InsertCodeWindow"/>) or as its entity;
+/// The character can be inserted as itself, as a numeric character reference (<see cref="InsertCodeWindow"/>) or as its entity;
 /// with "Double-click inserts the cell content" a double-click inserts the clicked cell's form directly
 /// (<see cref="DoubleClickForm"/>). An entity the document does not define asks for confirmation first.
 /// Inserting does not close the window (<see cref="SpecialCharacterDialogContext.OnInsert"/>); the recently
@@ -154,6 +151,7 @@ public partial class SpecialCharacterWindow : Window
         Category.SelectionChanged += (_, _) => Populate();
         SearchAll.IsCheckedChanged += (_, _) => OnSearchAllChanged();
         DoubleClickInsertsCell.IsCheckedChanged += (_, _) => OnDoubleClickInsertsCellChanged();
+        Results.CellPrepared += (_, e) => ApplyCellDimming(e.Cell, e.ColumnIndex);
         Results.DoubleTapped += OnResultsDoubleTapped;
         _source.RowSelection!.SelectionChanged += (_, _) => UpdateButtons();
         // Enter in the table inserts, like the default button (handled before the grid's own key handling).
@@ -240,7 +238,6 @@ public partial class SpecialCharacterWindow : Window
         {
             SpecialCharacterInsertForm.Character => CharacterText(row),
             SpecialCharacterInsertForm.Entity => row.Entity,
-            SpecialCharacterInsertForm.Code => row.Code,
             SpecialCharacterInsertForm.Hex => row.Hex,
             SpecialCharacterInsertForm.Dec => row.Dec,
             _ => string.Empty,
@@ -250,8 +247,9 @@ public partial class SpecialCharacterWindow : Window
 
     /// <summary>
     /// What a double-click on a cell of <paramref name="column"/> inserts: the character, or — with
-    /// "Double-click inserts the cell content" — the content of the character, entity, code, hexadecimal
-    /// and decimal columns and nothing for the name column. The favorite column never inserts (<c>null</c>).
+    /// "Double-click inserts the cell content" — the content of the character, entity, hexadecimal and decimal columns
+    /// and nothing for the code (<c>U+XXXX</c> is a label, not something to put in a book) and name columns. The
+    /// favorite column never inserts (<c>null</c>).
     /// </summary>
     public SpecialCharacterInsertForm? DoubleClickForm(IColumn column)
     {
@@ -278,12 +276,22 @@ public partial class SpecialCharacterWindow : Window
         {
             0 => SpecialCharacterInsertForm.Character,
             1 => SpecialCharacterInsertForm.Entity,
-            2 => SpecialCharacterInsertForm.Code,
             3 => SpecialCharacterInsertForm.Hex,
             4 => SpecialCharacterInsertForm.Dec,
             _ => null,
         };
     }
+
+    /// <summary>
+    /// Whether a double-click on a cell of the column inserts its content when "Double-click inserts the cell content" is
+    /// on (the character, entity, hexadecimal and decimal columns): the other cells are shown dimmed then.
+    /// </summary>
+    public static bool InsertsCellContent(int columnIndex) => columnIndex is 0 or 1 or 3 or 4;
+
+    // Dims the cells whose content a double-click does not insert (the code and the name), while that option is on.
+    private void ApplyCellDimming(Control cell, int columnIndex) =>
+        cell.Classes.Set("notInserted", DoubleClickInsertsCell.IsChecked == true && !InsertsCellContent(columnIndex)
+            && !ReferenceEquals(_source.Columns[columnIndex], FavoriteColumn));
 
     /// <summary>Toggles the favorite mark of a row in place (the row stays in the list until the view changes).</summary>
     public void ToggleFavorite(CharRow row)
@@ -358,6 +366,14 @@ public partial class SpecialCharacterWindow : Window
 
     private void OnDoubleClickInsertsCellChanged()
     {
+        foreach (TreeDataGridCell cell in Results.GetVisualDescendants().OfType<TreeDataGridCell>())
+        {
+            if (cell.ColumnIndex >= 0 && cell.ColumnIndex < _source.Columns.Count)
+            {
+                ApplyCellDimming(cell, cell.ColumnIndex);
+            }
+        }
+
         if (!_initializing)
         {
             _context.OnDoubleClickInsertsCellChanged?.Invoke(DoubleClickInsertsCell.IsChecked == true);

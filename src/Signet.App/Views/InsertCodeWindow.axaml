@@ -12,7 +12,6 @@
     <TextBlock x:Name="PromptText" TextWrapping="Wrap" Margin="0,0,0,4" />
     <Button x:Name="HexButton" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" IsDefault="True" />
     <Button x:Name="DecimalButton" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" />
-    <Button x:Name="TextButton" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" />
     <Button x:Name="CancelButton" Content="{loc:Loc Common_Cancel}" IsCancel="True" HorizontalAlignment="Right"
             MinWidth="80" Margin="0,8,0,0" />
   </StackPanel>

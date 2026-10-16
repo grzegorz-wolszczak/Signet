@@ -55,7 +55,7 @@ public sealed class OpfModelEntry
     /// <summary>The resource's bookpath.</summary>
     public string BookPath => Resource.BookPath;
 
-    /// <summary>The text shown in the tree (the short name or the full path — depending on settings).</summary>
+    /// <summary>The text shown in the tree (the short name or the path with the folders — depending on settings).</summary>
     public string DisplayName { get; }
 
     /// <summary>The resource kind.</summary>

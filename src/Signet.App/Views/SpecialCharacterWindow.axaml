@@ -9,6 +9,13 @@
         WindowStartupLocation="CenterOwner"
         Title="{loc:Loc SpecialCharacterWindow_Title}">
 
+  <Window.Styles>
+    <!-- The cells whose content a double-click does not insert (while "Double-click inserts the cell content" is on). -->
+    <Style Selector="TreeDataGridCell.notInserted">
+      <Setter Property="Opacity" Value="0.4" />
+    </Style>
+  </Window.Styles>
+
   <Window.Resources>
     <!-- Cell templates of the TemplateColumns of the results table (looked up by key from the code-behind). -->
     <DataTemplate x:Key="CharacterCellTemplate" x:DataType="v:CharRow">

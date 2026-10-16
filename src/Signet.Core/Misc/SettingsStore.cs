@@ -744,13 +744,6 @@ public sealed class SettingsStore
         set => Write("javascript_on", value);
     }
 
-    /// <summary>Whether the status bar shows the full path (1 = yes).</summary>
-    public int ShowFullPathOn
-    {
-        get => ReadInt("showfullpath_on", 1);
-        set => Write("showfullpath_on", value);
-    }
-
     /// <summary>Whether to disable GPU acceleration in the preview.</summary>
     public bool DisableGpu
     {
@@ -1164,9 +1157,9 @@ public sealed class SettingsStore
                 ReadString("book_browser_header_font_family", d.HeaderFontFamily),
                 ReadInt("book_browser_header_font_size", d.HeaderFontSize),
                 ReadInt("book_browser_indent", d.Indent),
-                ReadInt("book_browser_row_spacing", d.RowSpacing),
                 ReadInt("book_browser_cell_min_height", d.CellMinHeight),
-                ReadInt("book_browser_cell_padding", d.CellPadding)).Normalized();
+                ReadInt("book_browser_cell_padding", d.CellPadding),
+                ReadBool("book_browser_show_folders", d.ShowFolders)).Normalized();
         }
 
         set
@@ -1177,9 +1170,9 @@ public sealed class SettingsStore
             WriteSilent("book_browser_header_font_family", v.HeaderFontFamily);
             WriteSilent("book_browser_header_font_size", v.HeaderFontSize);
             WriteSilent("book_browser_indent", v.Indent);
-            WriteSilent("book_browser_row_spacing", v.RowSpacing);
             WriteSilent("book_browser_cell_min_height", v.CellMinHeight);
             WriteSilent("book_browser_cell_padding", v.CellPadding);
+            WriteSilent("book_browser_show_folders", v.ShowFolders);
             RaiseChanged("book_browser_appearance");
         }
     }
@@ -1903,9 +1896,9 @@ public sealed class SettingsStore
         yield return "book_browser_header_font_family";
         yield return "book_browser_header_font_size";
         yield return "book_browser_indent";
-        yield return "book_browser_row_spacing";
         yield return "book_browser_cell_min_height";
         yield return "book_browser_cell_padding";
+        yield return "book_browser_show_folders";
         foreach (TooltipArea area in Enum.GetValues<TooltipArea>())
         {
             yield return TooltipFontKey(area, "family");
@@ -1970,6 +1963,9 @@ public sealed class SettingsStore
 
         string[] keys =
         {
+            // The row spacing of the Book Browser tree (the minimum height and the padding of a cell do the same) and the
+            // old, never configurable "show full path".
+            "book_browser_row_spacing", "showfullpath_on",
             "ui_theme", "ui_custom_signet_dark_theme", "preview_dark_in_dm", "preview_highlight_color_dark",
             "warning_color_dark", "error_color_dark", "open_tag_hint_dark_background", "open_tag_hint_dark_foreground",
             // Code Editor colors nothing used: the line numbers and the spelling squiggle had fixed colors.

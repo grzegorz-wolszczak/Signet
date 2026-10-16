@@ -29,7 +29,6 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     private readonly SettingsStore _settings;
     private readonly IStatusBarService _statusBar;
     private readonly MissingDoctypeGuard _doctypeGuard;
-    private readonly bool _showFullPath;
 
     private Book? _book;
     private OpfModel? _model;
@@ -56,23 +55,28 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         _settings = settings;
         _statusBar = statusBar ?? throw new ArgumentNullException(nameof(statusBar));
         _doctypeGuard = doctypeGuard ?? new MissingDoctypeGuard(settings);
-        _showFullPath = settings.ShowFullPathOn != 0;
         settings.SettingChanged += (_, e) =>
         {
             if (e.QualifiedKey.Contains("book_browser_items_font", StringComparison.Ordinal)
                 || e.QualifiedKey.Contains("book_browser_header_font", StringComparison.Ordinal)
                 || e.QualifiedKey.Contains("book_browser_indent", StringComparison.Ordinal)
-                || e.QualifiedKey.Contains("book_browser_row_spacing", StringComparison.Ordinal)
                 || e.QualifiedKey.Contains("book_browser_cell_", StringComparison.Ordinal)
+                || e.QualifiedKey.Contains("book_browser_show_folders", StringComparison.Ordinal)
                 || e.QualifiedKey.Contains("book_browser_appearance", StringComparison.Ordinal))
             {
+                // The names of the files may show their folders now (or not any more): the tree is rebuilt.
+                if (_model is not null)
+                {
+                    _model.ShowFolders = _settings.BookBrowserAppearance.ShowFolders;
+                }
+
                 AppearanceChanged?.Invoke(this, EventArgs.Empty);
             }
         };
     }
 
     /// <summary>
-    /// The look of the tree now: the settings (fonts, indentation, row spacing), with the fonts the theme sets while it
+    /// The look of the tree now: the settings (fonts, indentation, the height of the rows), with the fonts the theme sets while it
     /// uses its own fonts.
     /// </summary>
     public BookBrowserAppearance Appearance => _settings.BookBrowserAppearance;
@@ -288,7 +292,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         _book = book;
         if (book is not null)
         {
-            _model = new OpfModel(book, _showFullPath);
+            _model = new OpfModel(book, _settings.BookBrowserAppearance.ShowFolders);
             _model.Changed += OnModelChanged;
         }
 
