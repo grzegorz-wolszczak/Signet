@@ -59,7 +59,7 @@ public sealed class ThemePreviewEditor : TextEditor
         EditorZoom.Attach(this);
     }
 
-    /// <summary>Raised by a click on a fragment shown in the look of a key (on the line numbers: <c>editor.lineNumbers</c>).</summary>
+    /// <summary>Raised by a click on a fragment shown in the look of a key (on the line numbers: <c>editor.lineNumbers</c>, on the one of the current line <c>editor.currentLineNumber</c>).</summary>
     public event EventHandler<ThemeKey>? KeyClicked;
 
     /// <inheritdoc />
@@ -100,6 +100,7 @@ public sealed class ThemePreviewEditor : TextEditor
         }
 
         SetTheme(theme);
+        UpdateNumberFrame();
     }
 
     /// <summary>Changes the colors.</summary>
@@ -119,10 +120,13 @@ public sealed class ThemePreviewEditor : TextEditor
         _blinkKey = key;
         _blinkTick = 0;
         _blinkTimer.Stop();
-        if (key is not null && _sample is not null && (_sample.RangesOf(key).Any() || key == ThemeKeys.EditorCurrentLine))
+        if (key is not null && _sample is not null
+            && (_sample.RangesOf(key).Any() || key == ThemeKeys.EditorCurrentLine || key == ThemeKeys.EditorCurrentLineNumber))
         {
             _blinkTimer.Start();
         }
+
+        UpdateNumberFrame();
 
         TextArea.TextView.InvalidateLayer(KnownLayer.Background);
     }
@@ -130,12 +134,25 @@ public sealed class ThemePreviewEditor : TextEditor
     // The fragments of the key blinking now (every other tick shows them framed).
     private bool IsBlinking(ThemeKey key) => _blinkTimer.IsEnabled && key == _blinkKey && _blinkTick % 2 == 0;
 
+    // The frame round the number of the current line while its key blinks.
+    private void UpdateNumberFrame()
+    {
+        foreach (ThemedLineNumberMargin margin in TextArea.LeftMargins.OfType<ThemedLineNumberMargin>())
+        {
+            margin.CurrentLineOverride = _sample?.CaretLine > 0 ? _sample.CaretLine : null;
+            margin.FrameCurrent = IsBlinking(ThemeKeys.EditorCurrentLineNumber);
+            margin.InvalidateVisual();
+        }
+    }
+
     private void OnBlinkTick()
     {
         if (++_blinkTick >= BlinkTicks)
         {
             _blinkTimer.Stop();
         }
+
+        UpdateNumberFrame();
 
         TextArea.TextView.InvalidateLayer(KnownLayer.Background);
     }
@@ -178,7 +195,11 @@ public sealed class ThemePreviewEditor : TextEditor
         Point point = e.GetPosition(view);
         if (point.X < 0)
         {
-            KeyClicked?.Invoke(this, ThemeKeys.EditorLineNumbers);
+            // The number of the line with the caret has a key of its own.
+            VisualLine? clicked = view.GetVisualLineFromVisualTop(point.Y + view.VerticalOffset);
+            KeyClicked?.Invoke(this, clicked is not null && clicked.FirstDocumentLine.LineNumber == _sample.CaretLine
+                ? ThemeKeys.EditorCurrentLineNumber
+                : ThemeKeys.EditorLineNumbers);
             return;
         }
 

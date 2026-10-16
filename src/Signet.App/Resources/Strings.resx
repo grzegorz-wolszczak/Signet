@@ -4062,6 +4062,9 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="PreferencesWindow_OpenTagHintFont" xml:space="preserve">
     <value>Czcionka podpowiedzi</value>
   </data>
+  <data name="PreferencesWindow_LineNumbersFont" xml:space="preserve">
+    <value>Czcionka numerów linii</value>
+  </data>
   <data name="Action_MainWindow_FindUsages" xml:space="preserve">
     <value>Znajdź użycia</value>
   </data>
@@ -5054,6 +5057,14 @@ abcdefghijklmnopqrstuvwxyz ąćęłńóśźż
   <data name="FontPreview_OpenTagHint" xml:space="preserve">
     <value>&lt;p class="first" id="p12"&gt;</value>
   </data>
+  <data name="FontPreview_LineNumbers" xml:space="preserve">
+    <value>1
+2
+3
+10
+11
+12</value>
+  </data>
   <data name="FontPreview_Book" xml:space="preserve">
     <value>Rozdział pierwszy
 
@@ -5556,6 +5567,9 @@ Zamknij zakładkę</value>
   </data>
   <data name="ThemeKey_editor_lineNumbers" xml:space="preserve">
     <value>Numery linii</value>
+  </data>
+  <data name="ThemeKey_editor_currentLineNumber" xml:space="preserve">
+    <value>Numer bieżącej linii</value>
   </data>
   <data name="ThemeKey_editor_selection" xml:space="preserve">
     <value>Zaznaczenie</value>

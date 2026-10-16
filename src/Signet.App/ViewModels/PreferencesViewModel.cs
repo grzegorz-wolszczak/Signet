@@ -111,6 +111,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _openTagHintFontFamily = hintLook.FontFamily;
         _openTagHintFontSize = hintLook.FontSize;
         LoadBookBrowserAppearance();
+        LoadLineNumbersFont();
         CodeEditor = new CodeEditorAppearanceEditor(_settings.CodeEditorAppearance, a => _settings.CodeEditorAppearance = a, PickFontAsync);
 
         // ---- General ----
@@ -692,6 +693,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         PersistWarningAppearance();
 
         LoadBookBrowserAppearance();
+        LoadLineNumbersFont();
 
         // The tooltip fonts were cleared with the other appearance keys.
         RefreshFontPages();

@@ -26,6 +26,9 @@ public static class ThemeFontKeys
     /// <summary>The opening tag hint of Code Editor (family and size).</summary>
     public const string OpenTagHint = "codeEditor.openTagHint";
 
+    /// <summary>The line numbers of Code Editor (family and size; empty / 0 = the editor font).</summary>
+    public const string CodeEditorLineNumbers = "codeEditor.lineNumbers";
+
     /// <summary>The standard font of the Preview (family only).</summary>
     public const string PreviewStandard = "preview.standard";
 
@@ -57,7 +60,7 @@ public static class ThemeFontKeys
     /// <summary>Every place, in the order of the "Fonts" pages.</summary>
     public static IReadOnlyList<string> All { get; } = new[]
         {
-            Interface, Warnings, CodeEditorText, OpenTagHint, PreviewStandard, PreviewSerif, PreviewSansSerif, PreviewSize,
+            Interface, Warnings, CodeEditorText, CodeEditorLineNumbers, OpenTagHint, PreviewStandard, PreviewSerif, PreviewSansSerif, PreviewSize,
             SpecialCharacters, BookBrowserItems, BookBrowserHeaders,
         }
         .Concat(Enum.GetValues<TooltipArea>().Select(Tooltip))
@@ -75,6 +78,8 @@ public static class ThemeFontKeys
         fonts[Warnings] = new ThemeFont(string.Empty, settings.WarningAppearance.FontSize);
         CodeEditorAppearance code = settings.CodeEditorAppearance;
         fonts[CodeEditorText] = new ThemeFont(code.FontFamily, code.FontSize);
+        LineNumberFontAppearance numbers = settings.LineNumberFontAppearance;
+        fonts[CodeEditorLineNumbers] = new ThemeFont(numbers.FontFamily, numbers.FontSize);
         OpenTagHintAppearance hint = settings.OpenTagHintAppearance;
         fonts[OpenTagHint] = new ThemeFont(hint.FontFamily, hint.FontSize);
         PreviewAppearance preview = settings.PreviewAppearance;
@@ -134,6 +139,10 @@ public sealed class ThemeFonts
         ArgumentNullException.ThrowIfNull(setting);
         return For(ThemeFontKeys.CodeEditorText) is { } f ? setting with { FontFamily = f.Family, FontSize = f.Size } : setting;
     }
+
+    /// <summary>The line numbers of Code Editor.</summary>
+    public LineNumberFontAppearance LineNumbers(LineNumberFontAppearance setting) =>
+        For(ThemeFontKeys.CodeEditorLineNumbers) is { } f ? new LineNumberFontAppearance(f.Family, f.Size) : setting;
 
     /// <summary>The opening tag hint of Code Editor.</summary>
     public OpenTagHintAppearance OpenTagHint(OpenTagHintAppearance setting) =>

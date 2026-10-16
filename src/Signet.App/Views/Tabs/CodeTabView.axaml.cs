@@ -1372,7 +1372,12 @@ public partial class CodeTabView : UserControl
         }
 
         double size = appearance.FontSize > 0 ? appearance.FontSize : FallbackFontSize;
-        Editor.FontSize = size * (_boundViewModel?.ZoomFactor ?? 1.0);
+        double zoom = _boundViewModel?.ZoomFactor ?? 1.0;
+        Editor.FontSize = size * zoom;
+
+        // The line numbers: the editor font unless they have a font of their own.
+        LineNumberFontAppearance numbers = _boundViewModel?.LineNumberFontAppearance ?? LineNumberFontAppearance.Default;
+        EditorTheming.ApplyLineNumberFont(Editor, numbers.FontFamily, numbers.FontSize > 0 ? numbers.FontSize * zoom : 0);
     }
 
     private void UpdateErrorRenderer()

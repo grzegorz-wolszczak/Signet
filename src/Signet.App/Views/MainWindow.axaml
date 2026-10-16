@@ -180,7 +180,7 @@
           <StackPanel Orientation="Horizontal" Spacing="2">
             <Button Content="−" Command="{Binding ZoomOutCommand}" Classes="toolbar" Padding="6,0" />
             <Button Content="{Binding ZoomPercentText}" Command="{Binding ZoomResetCommand}"
-                    Classes="toolbar" Padding="4,0" MinWidth="44" FontSize="11" />
+                    Classes="toolbar" Padding="4,0" MinWidth="44" />
             <Button Content="+" Command="{Binding ZoomInCommand}" Classes="toolbar" Padding="6,0" />
           </StackPanel>
         </StackPanel>

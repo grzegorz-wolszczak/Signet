@@ -573,6 +573,29 @@ public sealed class SettingsStore
     }
 
     /// <summary>
+    /// The font of the line numbers of Code Editor (empty / 0 = the editor font). Always read normalized
+    /// (<see cref="LineNumberFontAppearance.Normalized"/>).
+    /// </summary>
+    public LineNumberFontAppearance LineNumberFontAppearance
+    {
+        get
+        {
+            LineNumberFontAppearance d = LineNumberFontAppearance.Default;
+            return new LineNumberFontAppearance(
+                ReadString("code_editor_line_numbers_font_family", d.FontFamily),
+                ReadInt("code_editor_line_numbers_font_size", d.FontSize)).Normalized();
+        }
+
+        set
+        {
+            LineNumberFontAppearance v = value.Normalized();
+            WriteSilent("code_editor_line_numbers_font_family", v.FontFamily);
+            WriteSilent("code_editor_line_numbers_font_size", v.FontSize);
+            RaiseChanged("code_editor_line_numbers_font");
+        }
+    }
+
+    /// <summary>
     /// After how many milliseconds of resting on a closing tag the opening tag tooltip appears
     /// (<see cref="CodeEditorOpenTagHint"/>); 0–<see cref="OpenTagHintDelayMaxMs"/>, 500 by default.
     /// </summary>
@@ -1892,6 +1915,8 @@ public sealed class SettingsStore
 
         yield return "code_editor_font_family_standard";
         yield return "code_editor_font_size";
+        yield return "code_editor_line_numbers_font_family";
+        yield return "code_editor_line_numbers_font_size";
     }
 
     // The keys of settings that were removed — the dark application theme (the application has one, light theme until

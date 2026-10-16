@@ -122,6 +122,7 @@ public sealed partial class PreferencesViewModel
                     },
                     CodeEditor.ChooseFontCommand,
                     codePreview: () => ExtendedHighlighting),
+                LineNumbersFontRow(),
                 new FontSettingViewModel(
                     "OpenTagHint",
                     Strings.Get("PreferencesWindow_OpenTagHintFont"),
@@ -324,6 +325,7 @@ public sealed partial class PreferencesViewModel
         "Interface" => ThemeFontKeys.Interface,
         "Warnings" => ThemeFontKeys.Warnings,
         "CodeEditorText" => ThemeFontKeys.CodeEditorText,
+        "LineNumbers" => ThemeFontKeys.CodeEditorLineNumbers,
         "OpenTagHint" => ThemeFontKeys.OpenTagHint,
         "PreviewStandard" => ThemeFontKeys.PreviewStandard,
         "PreviewSerif" => ThemeFontKeys.PreviewSerif,

@@ -67,6 +67,34 @@ public sealed class ThemeFontsTests
     }
 
     [Fact]
+    public void The_line_numbers_font_comes_from_the_settings_and_from_the_theme_while_it_uses_its_fonts()
+    {
+        using TempDir dir = new();
+        SettingsStore settings = new(dir.Combine("settings.xml")) { LineNumberFontAppearance = new LineNumberFontAppearance("Consolas", 12) };
+
+        ThemeFontKeys.FromSettings(settings)[ThemeFontKeys.CodeEditorLineNumbers].Should().Be(new ThemeFont("Consolas", 12));
+        ThemeFontKeys.All.Should().Contain(ThemeFontKeys.CodeEditorLineNumbers);
+
+        Theme theme = NewTheme() with
+        {
+            Fonts = NewTheme().Fonts.SetItem(ThemeFontKeys.CodeEditorLineNumbers, new ThemeFont("Arial", 9)),
+        };
+
+        new ThemeFonts(theme, Resolver(theme)).LineNumbers(settings.LineNumberFontAppearance)
+            .Should().Be(settings.LineNumberFontAppearance, "the theme does not turn its fonts on");
+        new ThemeFonts(theme with { UseThemeFonts = true }, Resolver(theme)).LineNumbers(settings.LineNumberFontAppearance)
+            .Should().Be(new LineNumberFontAppearance("Arial", 9));
+    }
+
+    [Fact]
+    public void The_number_of_the_current_line_is_a_key_of_the_general_page_after_the_line_numbers()
+    {
+        ThemeKeys.EditorCurrentLineNumber.Id.Should().Be("editor.currentLineNumber");
+        ThemeKeys.EditorCurrentLineNumber.Kind.Should().Be(ThemeKeyKind.TextAttributes);
+        ThemeKeys.On(ThemePage.General).ToList().Should().ContainInOrder(ThemeKeys.EditorLineNumbers, ThemeKeys.EditorCurrentLineNumber);
+    }
+
+    [Fact]
     public void The_fonts_of_a_theme_count_only_while_it_turns_them_on()
     {
         Theme theme = NewTheme() with

@@ -527,6 +527,55 @@ public sealed class PreferencesWindowRenderTests
     }
 
     /// <summary>
+    /// A click on the number of the line with the caret in the preview selects its own key; a click on another number
+    /// selects the line numbers. The number of the current line is drawn with the look of its key.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_number_of_the_current_line_in_the_preview_has_a_key_of_its_own()
+    {
+        PreferencesWindow window = BuildWindow();
+        PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+        window.Width = 1100;
+        window.Height = 860;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, "ThemeGeneralPage");
+        ColorSchemePageViewModel general = vm.ColorScheme.PageFor(ThemePage.General);
+        ThemePreviewEditor preview = window.FindControl<ColorSchemeKeysView>("ThemeGeneralView")!
+            .GetVisualDescendants().OfType<ThemePreviewEditor>().Single();
+        ThemedLineNumberMargin margin = preview.TextArea.LeftMargins.OfType<ThemedLineNumberMargin>().Single();
+        int caretLine = ThemeSamples.General.CaretLine;
+        AvaloniaEdit.Rendering.TextView view = preview.TextArea.TextView;
+
+        void ClickNumberOf(int line)
+        {
+            AvaloniaEdit.TextViewPosition position = new(line, 1);
+            double y = view.GetVisualPosition(position, AvaloniaEdit.Rendering.VisualYPosition.LineMiddle).Y - view.ScrollOffset.Y;
+            Avalonia.Point at = Avalonia.VisualExtensions.TranslatePoint(view, new Avalonia.Point(-8, y), window)!.Value;
+            window.MouseDown(at, MouseButton.Left);
+            window.MouseUp(at, MouseButton.Left);
+            Dispatcher.UIThread.RunJobs();
+        }
+
+        ClickNumberOf(caretLine);
+        general.Key!.Id.Should().Be(ThemeKeys.EditorCurrentLineNumber.Id);
+
+        ClickNumberOf(caretLine == 1 ? 2 : 1);
+        general.Key!.Id.Should().Be(ThemeKeys.EditorLineNumbers.Id);
+
+        general.SelectKey(ThemeKeys.EditorCurrentLineNumber);
+        general.Foreground = "#112233";
+        general.Bold = true;
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+
+        margin.CurrentLineOverride.Should().Be(caretLine);
+        ((ISolidColorBrush)margin.CurrentForeground!).Color.Should().Be(Color.Parse("#112233"));
+        margin.CurrentBold.Should().BeTrue();
+        window.Close();
+    }
+
+    /// <summary>
     /// Both splitters of a color scheme page move (the width of the tree, the height of the preview), and every page
     /// keeps its own sizes, which the window hands out to be remembered and takes back.
     /// </summary>
@@ -1119,7 +1168,7 @@ public sealed class PreferencesWindowRenderTests
 
         FontsPageView page = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible);
         FontSettingView[] rows = page.GetVisualDescendants().OfType<FontSettingView>().ToArray();
-        rows.Select(r => r.Name).Should().Equal("FontCodeEditorText", "FontOpenTagHint");
+        rows.Select(r => r.Name).Should().Equal("FontCodeEditorText", "FontLineNumbers", "FontOpenTagHint");
         CodePreviewEditor code = page.FindControl<CodePreviewEditor>("CodePreview")!;
         TextBlock preview = page.FindControl<TextBlock>("PreviewText")!;
         code.IsVisible.Should().BeTrue("the editor font is previewed as code");
@@ -1131,7 +1180,7 @@ public sealed class PreferencesWindowRenderTests
         code.TextArea.TextView.LineTransformers.Should().Contain(t => t.GetType().Name.StartsWith("LineStateSyntaxColorizer"),
             "the sample is highlighted as in Code Editor");
 
-        rows[1].FindControl<ComboBox>("FamilyBox")!.Focus();
+        rows[2].FindControl<ComboBox>("FamilyBox")!.Focus();
         Dispatcher.UIThread.RunJobs();
 
         vm.CodeEditorFonts.Active!.Key.Should().Be("OpenTagHint");
@@ -1141,7 +1190,7 @@ public sealed class PreferencesWindowRenderTests
         page.FindControl<Border>("PreviewSurface")!.Background.Should().BeAssignableTo<ISolidColorBrush>()
             .Which.Color.Should().Be(AppTheme.Current.Background(ThemeKeys.HintsOpenTag));
 
-        rows[1].FindControl<NumericUpDown>("SizeBox")!.Value = 21;
+        rows[2].FindControl<NumericUpDown>("SizeBox")!.Value = 21;
         Dispatcher.UIThread.RunJobs();
 
         vm.OpenTagHintFontSize.Should().Be(21);

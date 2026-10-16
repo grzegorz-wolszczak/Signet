@@ -29,6 +29,7 @@
   <attributes>
     <attribute key="editor.text" foreground="#D4D4D4" background="#1E1E1E" />
     <attribute key="editor.lineNumbers" foreground="#858585" />
+    <attribute key="editor.currentLineNumber" foreground="#C6C6C6" />
     <attribute key="editor.selection" background="#264F78" />
     <attribute key="editor.tagPair" background="#40A0A0A0" />
     <attribute key="search.match" background="#623315" />

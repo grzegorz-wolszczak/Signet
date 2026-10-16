@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -32,8 +33,44 @@ public static class EditorTheming
             return;
         }
 
-        editor.TextArea.LeftMargins.Insert(0, new ThemedLineNumberMargin());
+        ThemedLineNumberMargin margin = new();
+        editor.TextArea.LeftMargins.Insert(0, margin);
         editor.TextArea.LeftMargins.Insert(1, DottedLineMargin.Create());
+
+        // The number of the line with the caret has a look of its own (editor.currentLineNumber).
+        editor.TextArea.Caret.PositionChanged += (_, _) => margin.InvalidateVisual();
+    }
+
+    /// <summary>
+    /// Gives the line numbers a typeface and a size of their own; an empty typeface / a size of 0 leave them the editor's
+    /// (they follow it again).
+    /// </summary>
+    public static void ApplyLineNumberFont(TextEditor editor, string family, double size)
+    {
+        ArgumentNullException.ThrowIfNull(editor);
+        foreach (ThemedLineNumberMargin margin in editor.TextArea.LeftMargins.OfType<ThemedLineNumberMargin>())
+        {
+            if (!string.IsNullOrWhiteSpace(family))
+            {
+                margin.SetValue(TextBlock.FontFamilyProperty, new FontFamily(family));
+            }
+            else
+            {
+                margin.ClearValue(TextBlock.FontFamilyProperty);
+            }
+
+            if (size > 0)
+            {
+                margin.SetValue(TextBlock.FontSizeProperty, size);
+            }
+            else
+            {
+                margin.ClearValue(TextBlock.FontSizeProperty);
+            }
+
+            margin.InvalidateMeasure();
+            margin.InvalidateVisual();
+        }
     }
 
     /// <summary>Applies the theme to the editor.</summary>
@@ -63,6 +100,12 @@ public static class EditorTheming
                 case ThemedLineNumberMargin themed:
                     themed.SetValue(TextBlock.ForegroundProperty, numbersForeground);
                     themed.Background = Brush(numbers.Background);
+                    TextAttributes current = theme.Attributes(ThemeKeys.EditorCurrentLineNumber);
+                    themed.CurrentForeground = Brush(current.Foreground);
+                    themed.CurrentBackground = Brush(current.Background);
+                    themed.CurrentBold = current.Bold;
+                    themed.CurrentItalic = current.Italic;
+                    themed.InvalidateVisual();
                     break;
                 case Line dotted:
                     dotted.Stroke = numbersForeground;
@@ -79,7 +122,8 @@ public static class EditorTheming
 
 /// <summary>
 /// AvaloniaEdit's line numbers on a background of their own (<c>editor.lineNumbers</c>), with a little room to the right
-/// of the numbers (the stock margin ends right at the last digit, while the left side has some).
+/// of the numbers (the stock margin ends right at the last digit, while the left side has some), and the number of the
+/// line with the caret in a look of its own (<c>editor.currentLineNumber</c>: color, background, bold, italic).
 /// </summary>
 public sealed class ThemedLineNumberMargin : LineNumberMargin
 {
@@ -88,6 +132,24 @@ public sealed class ThemedLineNumberMargin : LineNumberMargin
 
     /// <summary>The background of the line numbers; <c>null</c> = the editor's.</summary>
     public IBrush? Background { get; set; }
+
+    /// <summary>The color of the number of the current line; <c>null</c> = the color of the other numbers.</summary>
+    public IBrush? CurrentForeground { get; set; }
+
+    /// <summary>The background of the number of the current line; <c>null</c> = the one of the margin.</summary>
+    public IBrush? CurrentBackground { get; set; }
+
+    /// <summary>Whether the number of the current line is bold.</summary>
+    public bool CurrentBold { get; set; }
+
+    /// <summary>Whether the number of the current line is italic.</summary>
+    public bool CurrentItalic { get; set; }
+
+    /// <summary>The number of the current line when it is not the caret's (the preview of a theme); <c>null</c> = the caret's.</summary>
+    public int? CurrentLineOverride { get; set; }
+
+    /// <summary>Draws a frame round the number of the current line (the blink of its key in the theme editor).</summary>
+    public bool FrameCurrent { get; set; }
 
     /// <inheritdoc />
     protected override Size MeasureOverride(Size availableSize)
@@ -100,15 +162,50 @@ public sealed class ThemedLineNumberMargin : LineNumberMargin
     public override void Render(DrawingContext drawingContext)
     {
         ArgumentNullException.ThrowIfNull(drawingContext);
+        Size size = Bounds.Size;
         if (Background is { } background)
         {
-            drawingContext.FillRectangle(background, new Rect(Bounds.Size));
+            drawingContext.FillRectangle(background, new Rect(size));
         }
 
-        // The stock margin right-aligns the numbers to its edge: shift them left by the padding.
-        using (drawingContext.PushTransform(Matrix.CreateTranslation(-RightPadding, 0)))
+        TextView? textView = TextView;
+        if (textView is not { VisualLinesValid: true })
         {
-            base.Render(drawingContext);
+            return;
+        }
+
+        IBrush foreground = GetValue(TextBlock.ForegroundProperty) ?? Brushes.Gray;
+        int currentLine = CurrentLineOverride ?? TextArea?.Caret.Line ?? -1;
+        Typeface typeface = Typeface;
+        foreach (VisualLine line in textView.VisualLines)
+        {
+            int number = line.FirstDocumentLine.LineNumber;
+            bool current = number == currentLine;
+            Typeface face = current && (CurrentBold || CurrentItalic)
+                ? new Typeface(typeface.FontFamily, CurrentItalic ? FontStyle.Italic : FontStyle.Normal,
+                    CurrentBold ? FontWeight.Bold : FontWeight.Normal, typeface.Stretch)
+                : typeface;
+            FormattedText text = new(
+                number.ToString(CultureInfo.CurrentCulture), CultureInfo.CurrentCulture, FlowDirection.LeftToRight, face, EmSize,
+                current ? CurrentForeground ?? foreground : foreground);
+
+            // The numbers are right-aligned to the margin, leaving the padding on the right.
+            double top = line.GetTextLineVisualYPosition(line.TextLines[0], VisualYPosition.TextTop) - textView.VerticalOffset;
+            if (current)
+            {
+                Rect cell = new(0, line.VisualTop - textView.VerticalOffset, size.Width, line.Height);
+                if (CurrentBackground is { } fill)
+                {
+                    drawingContext.FillRectangle(fill, cell);
+                }
+
+                if (FrameCurrent)
+                {
+                    drawingContext.DrawRectangle(null, new Pen(current ? CurrentForeground ?? foreground : foreground, 1.5), cell.Deflate(1));
+                }
+            }
+
+            drawingContext.DrawText(text, new Point(size.Width - text.Width - RightPadding, top));
         }
     }
 }

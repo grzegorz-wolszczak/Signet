@@ -227,6 +227,32 @@ public readonly record struct OpenTagHintAppearance(string FontFamily, int FontS
 }
 
 /// <summary>
+/// Font of the line numbers of Code Editor; the colors come from the theme (<c>editor.lineNumbers</c>,
+/// <c>editor.currentLineNumber</c>).
+/// </summary>
+/// <param name="FontFamily">Font family; empty = the Code Editor font.</param>
+/// <param name="FontSize">Font size (px); 0 = the Code Editor size (with its zoom).</param>
+public readonly record struct LineNumberFontAppearance(string FontFamily, int FontSize)
+{
+    /// <summary>Lower bound of an explicit <see cref="FontSize"/>.</summary>
+    public const int FontSizeMin = 6;
+
+    /// <summary>Upper bound of an explicit <see cref="FontSize"/>.</summary>
+    public const int FontSizeMax = 72;
+
+    /// <summary>Default values: the editor font.</summary>
+    public static LineNumberFontAppearance Default => new(string.Empty, 0);
+
+    /// <summary>Whether the line numbers use the editor font (no typeface and no size of their own).</summary>
+    public bool IsInherited => string.IsNullOrEmpty(FontFamily) && FontSize <= 0;
+
+    /// <summary>A copy with the size clamped (0 stays "as the editor").</summary>
+    public LineNumberFontAppearance Normalized() => new(
+        FontFamily?.Trim() ?? string.Empty,
+        FontSize <= 0 ? 0 : Math.Clamp(FontSize, FontSizeMin, FontSizeMax));
+}
+
+/// <summary>
 /// Look of the Book Browser tree: the fonts of the names and of the column headers, the indentation of the files in a
 /// folder and the space between the rows.
 /// </summary>

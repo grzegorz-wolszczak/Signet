@@ -25,6 +25,10 @@ public static class ThemeKeys
     public static readonly ThemeKey EditorLineNumbers = Attributes("editor.lineNumbers", ThemePage.General, "Editor",
         new TextAttributes { Foreground = Rgb(0x808080) });
 
+    /// <summary>The number of the line with the caret (what it does not set, it takes from the line numbers).</summary>
+    public static readonly ThemeKey EditorCurrentLineNumber = Attributes("editor.currentLineNumber", ThemePage.General, "Editor",
+        new TextAttributes { Foreground = Rgb(0x000000) });
+
     /// <summary>The selected text.</summary>
     public static readonly ThemeKey EditorSelection = Attributes("editor.selection", ThemePage.General, "Editor",
         new TextAttributes { Background = Rgb(0xADD6FF) });
