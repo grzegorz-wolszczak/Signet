@@ -1,0 +1,29 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Signet.App.ViewModels"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.FootnoteReferenceWindow"
+        x:DataType="vm:FootnoteReferenceViewModel"
+        Title="{loc:Loc FootnoteReferenceWindow_Title}"
+        Width="720" Height="460" MinWidth="480" MinHeight="300"
+        WindowStartupLocation="CenterOwner">
+
+  <Grid Margin="12" RowDefinitions="Auto,Auto,*,Auto" RowSpacing="8">
+    <TextBlock Grid.Row="0" Text="{loc:Loc FootnoteReferenceWindow_Intro}" TextWrapping="Wrap" Opacity="0.75" />
+    <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+      <TextBlock Text="{loc:Loc FootnoteReferenceWindow_Filter}" VerticalAlignment="Center" />
+      <TextBox x:Name="FilterBox" Grid.Column="1" Text="{Binding Filter, Mode=TwoWay}"
+               PlaceholderText="{loc:Loc FootnoteReferenceWindow_FilterPlaceholder}" />
+      <TextBlock Grid.Column="2" Text="{Binding Summary}" VerticalAlignment="Center" />
+    </Grid>
+
+    <!-- Source and columns (number, local/global, file, text) are built in the code-behind. -->
+    <TreeDataGrid Grid.Row="2" x:Name="NotesGrid" Classes="gridLines" />
+
+    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+      <Button x:Name="AddButton" Content="{loc:Loc FootnoteReferenceWindow_AddButton}" IsEnabled="{Binding CanAccept}"
+              Classes="accent" Click="OnAddClicked" />
+      <Button x:Name="CancelButton" Content="{loc:Loc Common_Cancel}" IsCancel="True" Click="OnCancelClicked" />
+    </StackPanel>
+  </Grid>
+</Window>
