@@ -4005,9 +4005,6 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="PreferencesWindow_OpenTagHintFont" xml:space="preserve">
     <value>Czcionka podpowiedzi</value>
   </data>
-  <data name="PreferencesWindow_OpenTagHintFontDefault" xml:space="preserve">
-    <value>Domyślna (jak w edytorze)</value>
-  </data>
   <data name="Action_MainWindow_FindUsages" xml:space="preserve">
     <value>Znajdź użycia</value>
   </data>
@@ -5020,9 +5017,6 @@ Zażółć gęślą jaźń — 0123456789</value>
   </data>
   <data name="PreferencesWindow_TooltipFontOtherWindows" xml:space="preserve">
     <value>Podpowiedzi (tooltipy): pozostałe okna</value>
-  </data>
-  <data name="PreferencesWindow_TooltipFontDefault" xml:space="preserve">
-    <value>Czcionka interfejsu</value>
   </data>
   <data name="PreferencesWindow_StartScreen" xml:space="preserve">
     <value>Ekran startowy</value>
