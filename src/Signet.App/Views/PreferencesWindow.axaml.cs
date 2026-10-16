@@ -582,7 +582,23 @@ public partial class PreferencesWindow : Window
                 PreferencesSectionNode node = byName.TryGetValue(target, out PreferencesSectionNode? found)
                     ? found
                     : throw new InvalidOperationException($"A link of the Preferences page '{page.Name}' names an unknown page '{target}'.");
-                link.Click += (_, _) => RevealSection(node);
+                ThemeKey? key = null;
+                if (PreferencesPage.GetTargetKey(link) is { } keyId
+                    && !ThemeKeys.TryGet(keyId, out key))
+                {
+                    throw new InvalidOperationException($"A link of the Preferences page '{page.Name}' names an unknown theme key '{keyId}'.");
+                }
+
+                link.Click += (_, _) =>
+                {
+                    RevealSection(node);
+
+                    // The key of the color scheme the link is about: shown in its page, with its group expanded.
+                    if (key is not null && DataContext is PreferencesViewModel vm)
+                    {
+                        vm.ColorScheme.RequestKey(key);
+                    }
+                };
             }
         }
     }

@@ -407,6 +407,14 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     /// </summary>
     public bool CanAddBlankJsHere => AddTarget == OpfModelGroupKind.Misc && _book is { IsEpub3: true };
 
+    /// <summary>
+    /// Why "Add Blank Javascript" cannot be used now, for its tooltip: scripts are an EPUB 3 feature (the book is EPUB 2), or
+    /// they are kept in the Misc folder; <c>null</c> while it can be used.
+    /// </summary>
+    public string? AddBlankJsTip => _book is null || CanAddBlankJsHere
+        ? null
+        : Strings.Get(_book.IsEpub3 ? "BookBrowserView_AddBlankJsNotHere" : "BookBrowserView_AddBlankJsEpub2");
+
     /// <summary>Whether "Add Existing Files" fits the selected folder (every folder but Fonts, which has its own action).</summary>
     public bool CanAddExistingFilesHere => AddTarget is { } kind && kind != OpfModelGroupKind.Fonts;
 
@@ -455,6 +463,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(CanAddBlankCssHere));
         OnPropertyChanged(nameof(CanAddBlankSvgHere));
         OnPropertyChanged(nameof(CanAddBlankJsHere));
+        OnPropertyChanged(nameof(AddBlankJsTip));
         OnPropertyChanged(nameof(CanAddExistingFilesHere));
         OnPropertyChanged(nameof(AddExistingFilesHeader));
     }

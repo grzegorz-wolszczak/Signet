@@ -27,6 +27,19 @@ public static class PreferencesPage
     public static readonly AttachedProperty<string?> TargetProperty =
         AvaloniaProperty.RegisterAttached<HyperlinkButton, string?>("Target", typeof(PreferencesPage));
 
+    /// <summary>
+    /// On a link of a page that opens a page of the color scheme: the id of the key (e.g. <c>ui.bookBrowser.background</c>)
+    /// to select there, with its group expanded.
+    /// </summary>
+    public static readonly AttachedProperty<string?> TargetKeyProperty =
+        AvaloniaProperty.RegisterAttached<HyperlinkButton, string?>("TargetKey", typeof(PreferencesPage));
+
+    /// <summary>Gets <see cref="TargetKeyProperty"/>.</summary>
+    public static string? GetTargetKey(HyperlinkButton link) => link.GetValue(TargetKeyProperty);
+
+    /// <summary>Sets <see cref="TargetKeyProperty"/>.</summary>
+    public static void SetTargetKey(HyperlinkButton link, string? value) => link.SetValue(TargetKeyProperty, value);
+
     /// <summary>Gets <see cref="TargetProperty"/>.</summary>
     public static string? GetTarget(HyperlinkButton link) => link.GetValue(TargetProperty);
 

@@ -613,6 +613,26 @@ public sealed class BookBrowserViewModelTests
     }
 
     [Fact]
+    public void ContextMenu_BlankJavascriptExplainsWhyItIsOff()
+    {
+        using TempDir temp = new();
+        using Book epub2 = Load(CorpusPaths.Epub2Minimal, temp);
+        using Book epub3 = Load(CorpusPaths.Epub3Media, temp);
+        BookBrowserViewModel sut = NewViewModel(out _);
+
+        sut.SetBook(epub2);
+        sut.UpdateSelection(new object[] { sut.Nodes.Single(n => n.Header == "Misc") });
+        sut.AddBlankJsTip.Should().Be(Strings.Get("BookBrowserView_AddBlankJsEpub2"));
+
+        sut.SetBook(epub3);
+        sut.UpdateSelection(new object[] { sut.Nodes.Single(n => n.Header == "Text") });
+        sut.AddBlankJsTip.Should().Be(Strings.Get("BookBrowserView_AddBlankJsNotHere"));
+
+        sut.UpdateSelection(new object[] { sut.Nodes.Single(n => n.Header == "Misc") });
+        sut.AddBlankJsTip.Should().BeNull("it can be used here");
+    }
+
+    [Fact]
     public void ContextMenu_OnAFileThereAreNoAddActions()
     {
         using TempDir temp = new();

@@ -576,6 +576,33 @@ public sealed class PreferencesWindowRenderTests
     }
 
     /// <summary>
+    /// The link of the Book Browser page to the color of its background opens the Interface page of the color scheme with
+    /// that very key selected (its group expanded).
+    /// </summary>
+    [AvaloniaFact]
+    public void The_link_to_the_book_browser_background_selects_its_key_in_the_color_scheme()
+    {
+        PreferencesWindow window = BuildWindow();
+        PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+        window.Width = 1100;
+        window.Height = 860;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, "BookBrowserAppearancePage");
+        HyperlinkButton link = window.GetVisualDescendants().OfType<HyperlinkButton>()
+            .Single(l => l.IsEffectivelyVisible && Equals(l.Content, Strings.Get("PreferencesWindow_BookBrowserBackgroundInTheme")));
+
+        link.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+
+        window.Sections.Selected!.Title.Should().Be(Strings.Get("PreferencesWindow_ThemeInterface"));
+        ColorSchemePageViewModel page = vm.ColorScheme.PageFor(ThemePage.Interface);
+        page.Key.Should().Be(ThemeKeys.UiBookBrowserBackground);
+        page.Roots.Single(r => r.Children.Any(c => c.Key == ThemeKeys.UiBookBrowserBackground)).IsExpanded.Should().BeTrue();
+        window.Close();
+    }
+
+    /// <summary>
     /// Both splitters of a color scheme page move (the width of the tree, the height of the preview), and every page
     /// keeps its own sizes, which the window hands out to be remembered and takes back.
     /// </summary>
