@@ -135,7 +135,7 @@ public sealed class DivUnwrapperTests
         string result = DivUnwrapper.Unwrap(text, offset, offset).Text;
 
         // Without whitespace the result is the original minus exactly the opening and the closing tag of the div.
-        string Squash(string t) => System.Text.RegularExpressions.Regex.Replace(t, "\\s+", string.Empty);
+        static string Squash(string t) => System.Text.RegularExpressions.Regex.Replace(t, "\\s+", string.Empty);
         int open = check.Div!.OpenPos;
         int openEnd = text.IndexOf('>', open) + 1;
         int close = LastDivClose(text, open);
