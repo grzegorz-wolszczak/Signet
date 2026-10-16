@@ -37,7 +37,7 @@ public sealed partial class PreferencesViewModel
     /// <summary>Appearance › Start Screen › Fonts: the tooltip font.</summary>
     public FontPageViewModel StartScreenFonts { get; private set; } = null!;
 
-    /// <summary>Appearance › Book Browser › Fonts: the tooltip font.</summary>
+    /// <summary>Appearance › Book Browser › Fonts: the font of the names and cells, of the column headers and the tooltip font.</summary>
     public FontPageViewModel BookBrowserFonts { get; private set; } = null!;
 
     /// <summary>Appearance › Table of Contents › Fonts: the tooltip font.</summary>
@@ -181,7 +181,30 @@ public sealed partial class PreferencesViewModel
         });
 
         StartScreenFonts = TooltipPage(TooltipArea.StartScreen);
-        BookBrowserFonts = TooltipPage(TooltipArea.BookBrowser);
+        BookBrowserFonts = new FontPageViewModel(new[]
+        {
+            BookBrowserFontRow(
+                "BookBrowserItems", "PreferencesWindow_BookBrowserItemsFont", "FontPreview_BookBrowserItems",
+                () => BookBrowserItemsFontFamily, v => BookBrowserItemsFontFamily = v,
+                () => BookBrowserItemsFontSize, v => BookBrowserItemsFontSize = v,
+                () =>
+                {
+                    BookBrowserItemsFontFamily = string.Empty;
+                    BookBrowserItemsFontSize = 0;
+                },
+                ChooseBookBrowserItemsFontCommand),
+            BookBrowserFontRow(
+                "BookBrowserHeaders", "PreferencesWindow_BookBrowserHeadersFont", "FontPreview_BookBrowserHeaders",
+                () => BookBrowserHeaderFontFamily, v => BookBrowserHeaderFontFamily = v,
+                () => BookBrowserHeaderFontSize, v => BookBrowserHeaderFontSize = v,
+                () =>
+                {
+                    BookBrowserHeaderFontFamily = string.Empty;
+                    BookBrowserHeaderFontSize = 0;
+                },
+                ChooseBookBrowserHeaderFontCommand),
+            TooltipRow(TooltipArea.BookBrowser),
+        });
         TableOfContentsFonts = TooltipPage(TooltipArea.TableOfContents);
         FindReplaceFonts = TooltipPage(TooltipArea.FindReplace);
         CheckpointsFonts = TooltipPage(TooltipArea.Checkpoints);
@@ -307,6 +330,8 @@ public sealed partial class PreferencesViewModel
         "PreviewSansSerif" => ThemeFontKeys.PreviewSansSerif,
         "PreviewSize" => ThemeFontKeys.PreviewSize,
         "SpecialCharacters" => ThemeFontKeys.SpecialCharacters,
+        "BookBrowserItems" => ThemeFontKeys.BookBrowserItems,
+        "BookBrowserHeaders" => ThemeFontKeys.BookBrowserHeaders,
         _ when rowKey.StartsWith("Tooltip", System.StringComparison.Ordinal)
             && System.Enum.TryParse(rowKey["Tooltip".Length..], out TooltipArea area) => ThemeFontKeys.Tooltip(area),
         _ => throw new System.ArgumentOutOfRangeException(nameof(rowKey), rowKey, "A font row without a place in the theme."),

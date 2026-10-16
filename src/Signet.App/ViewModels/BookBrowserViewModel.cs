@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Signet.App.Actions;
+using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.Core;
@@ -57,7 +58,27 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         _statusBar = statusBar ?? throw new ArgumentNullException(nameof(statusBar));
         _doctypeGuard = doctypeGuard ?? new MissingDoctypeGuard(settings);
         _showFullPath = settings.ShowFullPathOn != 0;
+        settings.SettingChanged += (_, e) =>
+        {
+            if (e.QualifiedKey.Contains("book_browser_items_font", StringComparison.Ordinal)
+                || e.QualifiedKey.Contains("book_browser_header_font", StringComparison.Ordinal)
+                || e.QualifiedKey.Contains("book_browser_indent", StringComparison.Ordinal)
+                || e.QualifiedKey.Contains("book_browser_row_spacing", StringComparison.Ordinal)
+                || e.QualifiedKey.Contains("book_browser_appearance", StringComparison.Ordinal))
+            {
+                AppearanceChanged?.Invoke(this, EventArgs.Empty);
+            }
+        };
     }
+
+    /// <summary>
+    /// The look of the tree now: the settings (fonts, indentation, row spacing), with the fonts the theme sets while it
+    /// uses its own fonts.
+    /// </summary>
+    public BookBrowserAppearance Appearance => AppTheme.Current.Fonts.BookBrowser(_settings.BookBrowserAppearance);
+
+    /// <summary>Raised when a setting of the look of the tree changed (the view applies <see cref="Appearance"/> again).</summary>
+    public event EventHandler? AppearanceChanged;
 
     /// <summary>Request: open the given resources in tabs (handled by the TabManager).</summary>
     public event EventHandler<IReadOnlyList<Resource>>? OpenResourceRequested;

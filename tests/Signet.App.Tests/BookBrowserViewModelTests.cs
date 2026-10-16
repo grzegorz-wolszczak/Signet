@@ -881,6 +881,26 @@ public sealed class BookBrowserViewModelTests
     }
 
     [Fact]
+    public void Changing_the_look_settings_raises_AppearanceChanged_and_the_look_follows_them()
+    {
+        using TempDir temp = new();
+        SettingsStore settings = new(temp.Combine("s.xml"));
+        BookBrowserViewModel sut = new(settings, new StatusBarService());
+        int raised = 0;
+        sut.AppearanceChanged += (_, _) => raised++;
+        sut.Appearance.Should().Be(BookBrowserAppearance.Default);
+
+        settings.BookBrowserAppearance = new BookBrowserAppearance("Consolas", 14, "Arial", 11, 35, 4);
+
+        raised.Should().BeGreaterThan(0);
+        sut.Appearance.Should().Be(new BookBrowserAppearance("Consolas", 14, "Arial", 11, 35, 4));
+
+        int before = raised;
+        settings.BookBrowserColumns = "Properties";
+        raised.Should().Be(before, "the optional columns are not part of the look");
+    }
+
+    [Fact]
     public void ApplyLinkStylesheets_rewrites_head_links_of_selected_files()
     {
         using TempDir temp = new();

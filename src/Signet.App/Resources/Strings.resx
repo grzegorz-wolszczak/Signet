@@ -5971,4 +5971,28 @@ Zamknij zakładkę</value>
   <data name="FileInUseDialog_CloseDescription" xml:space="preserve">
     <value>Zamyka tę instancję Signet; plik zostaje otwarty w drugiej.</value>
   </data>
+  <data name="PreferencesWindow_BookBrowserItemsFont" xml:space="preserve">
+    <value>Nazwy folderów i plików oraz komórki Semantyka i Właściwości</value>
+  </data>
+  <data name="PreferencesWindow_BookBrowserHeadersFont" xml:space="preserve">
+    <value>Nagłówki kolumn (Nazwa, Semantyka, Właściwości)</value>
+  </data>
+  <data name="FontPreview_BookBrowserItems" xml:space="preserve">
+    <value>Text/chapter01.xhtml</value>
+  </data>
+  <data name="FontPreview_BookBrowserHeaders" xml:space="preserve">
+    <value>Nazwa   Semantyka   Właściwości</value>
+  </data>
+  <data name="PreferencesWindow_FontSizeZeroAsInterface" xml:space="preserve">
+    <value>Rozmiar 0 = jak w interfejsie</value>
+  </data>
+  <data name="PreferencesWindow_BookBrowserTreeLook" xml:space="preserve">
+    <value>Wygląd drzewa plików</value>
+  </data>
+  <data name="PreferencesWindow_BookBrowserIndent" xml:space="preserve">
+    <value>Wcięcie plików w folderze (px)</value>
+  </data>
+  <data name="PreferencesWindow_BookBrowserRowSpacing" xml:space="preserve">
+    <value>Odstęp między wierszami drzewa (px)</value>
+  </data>
 </root>

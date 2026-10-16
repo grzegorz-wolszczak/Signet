@@ -41,6 +41,12 @@ public static class ThemeFontKeys
     /// <summary>The font of the "Insert Special Character" window (family and size).</summary>
     public const string SpecialCharacters = "specialCharacters";
 
+    /// <summary>The names and the other cells of the Book Browser tree (family and size).</summary>
+    public const string BookBrowserItems = "bookBrowser.items";
+
+    /// <summary>The column headers of the Book Browser tree (family and size).</summary>
+    public const string BookBrowserHeaders = "bookBrowser.headers";
+
     /// <summary>The tooltips of an area (family and size), e.g. <c>tooltip.bookBrowser</c>.</summary>
     public static string Tooltip(TooltipArea area)
     {
@@ -52,7 +58,7 @@ public static class ThemeFontKeys
     public static IReadOnlyList<string> All { get; } = new[]
         {
             Interface, Warnings, CodeEditorText, OpenTagHint, PreviewStandard, PreviewSerif, PreviewSansSerif, PreviewSize,
-            SpecialCharacters,
+            SpecialCharacters, BookBrowserItems, BookBrowserHeaders,
         }
         .Concat(Enum.GetValues<TooltipArea>().Select(Tooltip))
         .ToArray();
@@ -78,6 +84,9 @@ public static class ThemeFontKeys
         fonts[PreviewSize] = new ThemeFont(string.Empty, preview.FontSize);
         SpecialCharacterAppearance special = settings.SpecialCharacterAppearance;
         fonts[SpecialCharacters] = new ThemeFont(special.FontFamily, special.FontSize);
+        BookBrowserAppearance bookBrowser = settings.BookBrowserAppearance;
+        fonts[BookBrowserItems] = new ThemeFont(bookBrowser.ItemsFontFamily, bookBrowser.ItemsFontSize);
+        fonts[BookBrowserHeaders] = new ThemeFont(bookBrowser.HeaderFontFamily, bookBrowser.HeaderFontSize);
         foreach (TooltipArea area in Enum.GetValues<TooltipArea>())
         {
             TooltipFont tooltip = settings.GetEffectiveTooltipFont(area);
@@ -140,6 +149,20 @@ public sealed class ThemeFonts
     /// <summary>The "Insert Special Character" window.</summary>
     public SpecialCharacterAppearance SpecialCharacters(SpecialCharacterAppearance setting) =>
         For(ThemeFontKeys.SpecialCharacters) is { } f ? new SpecialCharacterAppearance(f.Family, f.Size) : setting;
+
+    /// <summary>The Book Browser tree (the indentation and the row spacing are not fonts: the setting's).</summary>
+    public BookBrowserAppearance BookBrowser(BookBrowserAppearance setting)
+    {
+        ThemeFont? items = For(ThemeFontKeys.BookBrowserItems);
+        ThemeFont? headers = For(ThemeFontKeys.BookBrowserHeaders);
+        return setting with
+        {
+            ItemsFontFamily = items?.Family ?? setting.ItemsFontFamily,
+            ItemsFontSize = items?.Size ?? setting.ItemsFontSize,
+            HeaderFontFamily = headers?.Family ?? setting.HeaderFontFamily,
+            HeaderFontSize = headers?.Size ?? setting.HeaderFontSize,
+        };
+    }
 
     /// <summary>The tooltips of an area.</summary>
     public TooltipFont Tooltip(TooltipArea area, TooltipFont setting) =>

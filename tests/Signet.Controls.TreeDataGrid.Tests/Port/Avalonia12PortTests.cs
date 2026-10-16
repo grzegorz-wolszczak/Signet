@@ -7,6 +7,7 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Input.Raw;
 using Avalonia.Markup.Xaml.Styling;
+using Avalonia.Styling;
 using Avalonia.Themes.Fluent;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -246,6 +247,39 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
 
             cell.IsExpanded.Should().BeFalse("a row without children does not expand");
             toggle.IsChecked.Should().BeFalse("the chevron must not stay in the expanded state");
+        }
+
+        [AvaloniaFact(Timeout = 10000)]
+        public void The_indentation_of_a_level_is_the_IndentSize_of_the_cell()
+        {
+            var child = new Model { Id = 1, Title = "Child" };
+            var parent = new Model { Id = 0, Title = "Parent" };
+            parent.Children.Add(child);
+            var source = new HierarchicalTreeDataGridSource<Model>(new[] { parent })
+            {
+                Columns =
+                {
+                    new HierarchicalExpanderColumn<Model>(
+                        new TextColumn<Model, string?>("Title", x => x.Title), x => x.Children, x => x.Children.Count > 0),
+                },
+            };
+            source.Expand(new IndexPath(0));
+            var target = new TreeDataGrid { Source = source };
+            var window = ThemedWindow(target, new Size(300, 200));
+            var cells = () => target.GetVisualDescendants().OfType<TreeDataGridExpanderCell>().ToList();
+
+            cells().Should().HaveCount(2);
+            cells().Select(c => c.IndentPadding.Left).Should().Equal(0, 20);
+
+            target.Styles.Add(new Style(x => x.OfType<TreeDataGridExpanderCell>())
+            {
+                Setters = { new Setter(TreeDataGridExpanderCell.IndentSizeProperty, 35.0) },
+            });
+            Settle(window);
+
+            cells().Select(c => c.IndentPadding.Left).Should().Equal(0, 35);
+            cells()[1].GetVisualDescendants().OfType<Border>().First(b => b.Name == "CellBorder").Padding.Left
+                .Should().Be(35, "the template pads the cell by the indentation");
         }
 
         [AvaloniaTheory(Timeout = 10000)]

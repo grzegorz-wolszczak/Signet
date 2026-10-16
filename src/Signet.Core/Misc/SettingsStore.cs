@@ -1102,6 +1102,37 @@ public sealed class SettingsStore
     }
 
     /// <summary>
+    /// Look of the Book Browser tree (<see cref="BookBrowserAppearance"/>): fonts, indentation and row spacing. Always
+    /// read normalized.
+    /// </summary>
+    public BookBrowserAppearance BookBrowserAppearance
+    {
+        get
+        {
+            BookBrowserAppearance d = BookBrowserAppearance.Default;
+            return new BookBrowserAppearance(
+                ReadString("book_browser_items_font_family", d.ItemsFontFamily),
+                ReadInt("book_browser_items_font_size", d.ItemsFontSize),
+                ReadString("book_browser_header_font_family", d.HeaderFontFamily),
+                ReadInt("book_browser_header_font_size", d.HeaderFontSize),
+                ReadInt("book_browser_indent", d.Indent),
+                ReadInt("book_browser_row_spacing", d.RowSpacing)).Normalized();
+        }
+
+        set
+        {
+            BookBrowserAppearance v = value.Normalized();
+            WriteSilent("book_browser_items_font_family", v.ItemsFontFamily);
+            WriteSilent("book_browser_items_font_size", v.ItemsFontSize);
+            WriteSilent("book_browser_header_font_family", v.HeaderFontFamily);
+            WriteSilent("book_browser_header_font_size", v.HeaderFontSize);
+            WriteSilent("book_browser_indent", v.Indent);
+            WriteSilent("book_browser_row_spacing", v.RowSpacing);
+            RaiseChanged("book_browser_appearance");
+        }
+    }
+
+    /// <summary>
     /// Whether a Book Browser folder (Text, Styles, …) is expanded when a book is loaded. Only Text by default.
     /// </summary>
     public bool GetBookBrowserExpandOnLoad(OpfModelGroupKind kind) =>
@@ -1815,6 +1846,12 @@ public sealed class SettingsStore
         yield return "warning_font_size";
         yield return "open_tag_hint_font_family";
         yield return "open_tag_hint_font_size";
+        yield return "book_browser_items_font_family";
+        yield return "book_browser_items_font_size";
+        yield return "book_browser_header_font_family";
+        yield return "book_browser_header_font_size";
+        yield return "book_browser_indent";
+        yield return "book_browser_row_spacing";
         foreach (TooltipArea area in Enum.GetValues<TooltipArea>())
         {
             yield return TooltipFontKey(area, "family");

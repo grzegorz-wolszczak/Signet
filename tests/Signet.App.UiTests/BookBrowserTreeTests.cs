@@ -82,6 +82,53 @@ public sealed class BookBrowserTreeTests
     }
 
     [AvaloniaFact]
+    public void The_look_settings_reach_the_tree_the_fonts_the_headers_the_indentation_and_the_row_spacing()
+    {
+        using TempDir temp = new();
+        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3WithNcx, temp)).GetBook();
+        SettingsStore settings = new(temp.Combine("settings.xml"));
+        (Window window, BookBrowserViewModel vm, BookBrowserView view, TreeDataGrid tree) = Show(settings, book);
+        view.ToggleOptionalColumn("Properties");
+        BookBrowserNode text = vm.Nodes.Single(n => n.Header == "Text");
+        text.IsExpanded = true;
+        Render(window);
+        TreeDataGridExpanderCell[] Expanders() => tree.GetVisualDescendants().OfType<TreeDataGridExpanderCell>().ToArray();
+        TreeDataGridColumnHeader[] HeaderControls() => tree.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().Where(h => h.IsVisible).ToArray();
+        double defaultCellSize = Expanders()[0].FontSize;
+        double defaultHeaderSize = HeaderControls()[0].FontSize;
+        double[] defaultGaps = RowGaps(tree);
+
+        Expanders().Where(c => c.Indent == 1).Select(c => c.IndentPadding.Left).Should().OnlyContain(p => p == 20);
+        defaultGaps.Should().OnlyContain(g => g == 0, "there is no space between the rows by default");
+
+        settings.BookBrowserAppearance = new BookBrowserAppearance(string.Empty, 20, string.Empty, 9, 35, 6);
+        Render(window);
+
+        Expanders().Where(c => c.Indent == 1).Select(c => c.IndentPadding.Left).Should().OnlyContain(p => p == 35);
+        Expanders().Should().OnlyContain(c => c.FontSize == 20);
+        tree.GetVisualDescendants().OfType<TreeDataGridTextCell>().Should().OnlyContain(c => c.FontSize == 20, "the other columns follow the names");
+        HeaderControls().Should().OnlyContain(h => h.FontSize == 9, "the headers have a font of their own");
+        RowGaps(tree).Should().OnlyContain(g => g == 6);
+
+        settings.BookBrowserAppearance = BookBrowserAppearance.Default;
+        Render(window);
+
+        Expanders()[0].FontSize.Should().Be(defaultCellSize, "a font left to the interface is not set");
+        HeaderControls()[0].FontSize.Should().Be(defaultHeaderSize);
+        Expanders().Where(c => c.Indent == 1).Select(c => c.IndentPadding.Left).Should().OnlyContain(p => p == 20);
+        RowGaps(tree).Should().OnlyContain(g => g == 0);
+        window.Close();
+    }
+
+    // The distances between a row and the next one (the realized rows, top to bottom).
+    private static double[] RowGaps(TreeDataGrid tree)
+    {
+        TreeDataGridRow[] rows = tree.GetVisualDescendants().OfType<TreeDataGridRow>().Where(r => r.IsVisible)
+            .OrderBy(r => r.Bounds.Y).ToArray();
+        return rows.Zip(rows.Skip(1), (a, b) => b.Bounds.Y - (a.Bounds.Y + a.Bounds.Height)).ToArray();
+    }
+
+    [AvaloniaFact]
     public void A_right_click_on_a_header_opens_the_columns_menu()
     {
         using TempDir temp = new();
