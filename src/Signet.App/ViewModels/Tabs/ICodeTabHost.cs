@@ -113,8 +113,17 @@ public interface ICodeTabHost
     /// </summary>
     void EditFootnote(FootnoteHit hit, string content, FootnotePlacement placement);
 
-    /// <summary>"Remove" in the footnote window — removes the reference and the note (with a checkpoint).</summary>
+    /// <summary>
+    /// "Remove Footnote" (the footnote window, the "Footnotes" submenu) — removes the note with all its references (with a
+    /// checkpoint).
+    /// </summary>
     void RemoveFootnote(FootnoteHit hit);
+
+    /// <summary>
+    /// "Remove Reference" — removes the reference of <paramref name="hit"/> from its shared note; the other references
+    /// get their letters anew (with a checkpoint).
+    /// </summary>
+    void RemoveFootnoteReference(FootnoteHit hit);
 
     /// <summary>
     /// The preview of the footnote window: the markup of a footnote with <paramref name="content"/> as footnote

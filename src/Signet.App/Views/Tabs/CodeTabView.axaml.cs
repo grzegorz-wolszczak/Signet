@@ -853,6 +853,18 @@ public partial class CodeTabView : UserControl
             menu.Items.Add(Item(
                 Strings.Get(hit.Side == FootnoteSide.Reference ? "CodeEditorMenu_FootnoteGoToNote" : "CodeEditorMenu_FootnoteGoToReference"),
                 () => host.GoToFootnote(hit)));
+
+            // Removing: one reference of a shared note, or the whole footnote (the note with all its references).
+            string? foreign = hit.Footnote.IsSignet ? null : Strings.Get("CodeEditorMenu_FootnoteForeignTip");
+            string? referenceBlocked = foreign
+                ?? (hit.Side != FootnoteSide.Reference ? Strings.Get("CodeEditorMenu_FootnoteRemoveReferenceNotOnReference")
+                    : !hit.Footnote.IsShared ? Strings.Get("CodeEditorMenu_FootnoteRemoveReferenceOnlyOne")
+                    : null);
+            menu.Items.Add(Item(
+                Strings.Get("CodeEditorMenu_FootnoteRemoveReference"), () => host.RemoveFootnoteReference(hit),
+                enabled: referenceBlocked is null, toolTip: referenceBlocked));
+            menu.Items.Add(Item(
+                Strings.Get("CodeEditorMenu_FootnoteRemove"), () => RemoveFootnote(host, hit), enabled: foreign is null, toolTip: foreign));
         }
         else
         {
@@ -869,6 +881,17 @@ public partial class CodeTabView : UserControl
         menu.Items.Add(Item(Strings.Get("CodeEditorMenu_FootnotesRenumber"), host.RenumberFootnotes, enabled: state.HasFootnotes));
         menu.Items.Add(Item(Strings.Get("CodeEditorMenu_FootnotesConvert"), host.ShowFootnoteConversion, enabled: state.ForeignCount > 0));
         return menu;
+    }
+
+    // "Remove Footnote…": after the confirmation (always for a shared note), the note goes with all its references.
+    private async void RemoveFootnote(ICodeTabHost host, FootnoteHit hit)
+    {
+        if (TopLevel.GetTopLevel(this) is Window owner
+            && await FootnoteWindow.ConfirmRemovalAsync(
+                owner, hit.Footnote.ReferenceCount, host.ConfirmFootnoteRemoval, () => host.ConfirmFootnoteRemoval = false).ConfigureAwait(true))
+        {
+            host.RemoveFootnote(hit);
+        }
     }
 
     // "Add Footnote…": the window with the text and the placement, then the footnote is added at the caret.

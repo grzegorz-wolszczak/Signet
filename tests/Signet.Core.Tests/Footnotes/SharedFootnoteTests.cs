@@ -201,6 +201,52 @@ public sealed class SharedFootnoteTests
         }
     }
 
+    [Fact]
+    public void Removing_a_reference_of_a_shared_note_letters_the_others_anew_and_the_last_one_makes_it_ordinary()
+    {
+        (Book book, HtmlResource html) = NewBook();
+        using (book)
+        {
+            Footnote second = AddShared(book, html, "note");
+            FootnoteEditor.AddReference(book, html, After(html, "Second"), second, out _).Should().Be(FootnoteError.None);
+            Footnote middle = FootnoteScanner.Scan(book)[1];
+
+            FootnoteEditor.RemoveReference(book, middle).Should().BeTrue();
+
+            html.GetText().Should().Contain("<p>Second sentence.</p>")
+                .And.Contain("Third" + Reference("fn-1b-ref", "#fn-1", "[1b]"))
+                .And.Contain("<a href=\"#fn-1a-ref\">1a</a>, <a href=\"#fn-1b-ref\">1b</a>. note</p>");
+            FootnoteValidator.Validate(book).Should().BeEmpty();
+
+            FootnoteEditor.RemoveReference(book, FootnoteScanner.Scan(book)[0]).Should().BeTrue();
+
+            html.GetText().Should().Contain("<p>First sentence.</p>")
+                .And.Contain("Third" + Reference("fn-1-ref", "#fn-1", "[1]"))
+                .And.Contain("<p class=\"signet-fn-p\"><a href=\"#fn-1-ref\">1.</a> note</p>");
+            Footnote last = FootnoteScanner.Scan(book).Should().ContainSingle().Subject;
+            last.IsShared.Should().BeFalse();
+            FootnoteEditor.RemoveReference(book, last).Should().BeFalse("the only reference goes with the whole footnote");
+            FootnoteValidator.Validate(book).Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public void Removing_a_shared_footnote_removes_the_note_and_all_its_references()
+    {
+        (Book book, HtmlResource html) = NewBook();
+        using (book)
+        {
+            string before = html.GetText();
+            Footnote second = AddShared(book, html, "note");
+
+            FootnoteEditor.Remove(book, second).Should().BeTrue();
+
+            html.GetText()[html.GetText().IndexOf("<body>", StringComparison.Ordinal)..]
+                .Should().Be(before[before.IndexOf("<body>", StringComparison.Ordinal)..]);
+            FootnoteScanner.Scan(book).Should().BeEmpty();
+        }
+    }
+
     [Theory]
     [InlineData(FootnoteLetterStyle.LowerLatin, 0, "a")]
     [InlineData(FootnoteLetterStyle.LowerLatin, 25, "z")]

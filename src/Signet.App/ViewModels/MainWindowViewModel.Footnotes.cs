@@ -237,6 +237,39 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <inheritdoc/>
+    void ICodeTabHost.RemoveFootnoteReference(FootnoteHit hit)
+    {
+        ArgumentNullException.ThrowIfNull(hit);
+        if (_currentBook is null)
+        {
+            return;
+        }
+
+        _tabManager.SaveAllTabs();
+        Footnote? footnote = FootnoteEditor.Refresh(_currentBook, hit.Footnote);
+        (HtmlResource File, int Offset)? place = footnote is null ? null : FootnoteEditor.Locate(footnote, FootnoteSide.Reference);
+        bool checkpoint = AddCheckpointBefore(Strings.Get("CheckpointOp_RemoveFootnoteReference"));
+        if (footnote is null || !FootnoteEditor.RemoveReference(_currentBook, footnote, FootnoteOptions))
+        {
+            if (checkpoint)
+            {
+                RewindCheckpoint();
+            }
+
+            _statusBar.ShowMessage(Strings.Get("Status_FootnoteGone"), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
+            return;
+        }
+
+        RefreshAfterMaintenanceOperation();
+        if (place is { } target)
+        {
+            NavigateToBookPathAtOffset(target.File.BookPath, target.Offset);
+        }
+
+        _statusBar.ShowMessage(Strings.Get("Status_FootnoteReferenceRemoved"), TimeSpan.FromSeconds(4));
+    }
+
+    /// <inheritdoc/>
     FootnoteEditState? ICodeTabHost.GetFootnoteEdit(FootnoteHit hit)
     {
         ArgumentNullException.ThrowIfNull(hit);

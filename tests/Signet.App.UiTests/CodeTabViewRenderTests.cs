@@ -734,6 +734,9 @@ public sealed class CodeTabViewRenderTests
         ToolTip.GetTip(outside).Should().Be(Signet.App.Resources.Strings.Get("UnwrapDiv_NotInDiv"));
     }
 
+    // Which items of the "Footnotes" submenu are enabled on a footnote with one reference.
+    private static readonly bool[] OnSingleFootnoteEnabled = { true, true, false, true, true, true };
+
     /// <summary>
     /// "Footnotes": on a footnote the submenu offers editing it and going to its other part; elsewhere adding one,
     /// disabled with the reason when the caret is not in a place for a reference; renumbering always.
@@ -784,9 +787,11 @@ public sealed class CodeTabViewRenderTests
         onFootnote.Should().Equal(
             Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnoteEdit"),
             Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnoteGoToNote"),
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnoteRemoveReference"),
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnoteRemove"),
             Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnotesRenumber"),
             Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnotesConvert"));
-        onFootnoteEnabled.Should().Equal(true, true, true, true);
+        onFootnoteEnabled.Should().Equal(OnSingleFootnoteEnabled, "the only reference is removed with the whole footnote");
 
         string[] blocked = Footnotes(new FootnoteMenuState(null, Signet.Core.Footnotes.FootnoteError.InsideTag, false), out bool[] blockedEnabled);
         blocked.Should().Equal(
@@ -920,6 +925,10 @@ public sealed class CodeTabViewRenderTests
         }
 
         public void RemoveFootnote(Signet.Core.Footnotes.FootnoteHit hit)
+        {
+        }
+
+        public void RemoveFootnoteReference(Signet.Core.Footnotes.FootnoteHit hit)
         {
         }
 

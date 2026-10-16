@@ -127,6 +127,12 @@ public sealed partial class FootnoteViewModel : ObservableObject
     /// <summary>Called when "Don't ask again" was checked in the confirmation of "Remove".</summary>
     public Action? StopConfirmingRemoval { get; set; }
 
+    /// <summary>
+    /// How many references lead to the edited note: "Remove" removes all of them, and for more than one it always asks,
+    /// naming their number.
+    /// </summary>
+    public int ReferenceCount { get; set; } = 1;
+
     /// <summary>The text right before the reference (tags left out).</summary>
     public string ContextBefore { get; }
 
