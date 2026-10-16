@@ -188,6 +188,9 @@
             <CheckBox Content="{loc:Loc PreferencesWindow_ShowZoomHint}" IsChecked="{Binding ShowZoomHint}"
                       ToolTip.Tip="{loc:Loc PreferencesWindow_ShowZoomHintTip}" />
 
+                  <CheckBox x:Name="PreferencesModalBox" Content="{loc:Loc PreferencesWindow_Modal}" IsChecked="{Binding PreferencesWindowModal}"
+                            ToolTip.Tip="{loc:Loc PreferencesWindow_ModalTip}" />
+
                   <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
                     <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_CustomIconFolder}" />
                     <TextBox Grid.Column="1" Text="{Binding CustomIconFolder}" />

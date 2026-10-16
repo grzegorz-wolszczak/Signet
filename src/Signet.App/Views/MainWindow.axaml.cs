@@ -1081,11 +1081,20 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
 
     private const string PreferencesWindowGeometryKey = "PreferencesWindow";
 
+    // The open Preferences window (only a non-modal one can be asked for again while it is open).
+    private PreferencesWindow? _preferencesWindow;
+
     private async void OnPreferencesRequested(object? sender, EventArgs e)
     {
         IServiceProvider? services = App.Services;
         if (services is null)
         {
+            return;
+        }
+
+        if (_preferencesWindow is { IsVisible: true } open)
+        {
+            open.Activate();
             return;
         }
 
@@ -1132,7 +1141,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         // Every setting changed while the dialog is open goes to the debug log as "before → after".
         using (DebugLog.TrackChanges(preferences, "Preferences"))
         {
-            await window.ShowDialog(this);
+            await ShowPreferencesAsync(window, settings.PreferencesWindowModal);
         }
 
         // User dictionary operations happen at once, even when the window is then cancelled.
@@ -1146,6 +1155,24 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         {
             OnFootnoteLettersRequested(this, EventArgs.Empty);
         }
+    }
+
+    // Shows the Preferences window and waits until it is closed: modal (the main window is blocked meanwhile), or — when
+    // the user turned that off — as a normal window over the main window.
+    private async Task ShowPreferencesAsync(PreferencesWindow window, bool modal)
+    {
+        if (modal)
+        {
+            await window.ShowDialog(this);
+            return;
+        }
+
+        TaskCompletionSource closed = new();
+        window.Closed += (_, _) => closed.TrySetResult();
+        _preferencesWindow = window;
+        window.Show(this);
+        await closed.Task.ConfigureAwait(true);
+        _preferencesWindow = null;
     }
 
     /// <summary>Handles "Unify Letters of Shared Footnotes…": shows the modal dialog (or only a status message).</summary>

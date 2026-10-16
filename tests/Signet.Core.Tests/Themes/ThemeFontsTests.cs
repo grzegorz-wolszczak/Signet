@@ -28,6 +28,7 @@ public sealed class ThemeFontsTests
             PreviewAppearance = new PreviewAppearance("Georgia", "Times New Roman", "Verdana", 18),
         };
         settings.SetTooltipFont(TooltipArea.BookBrowser, new TooltipFont("Segoe UI", 11));
+        settings.SetTooltipInherit(TooltipArea.BookBrowser, false);
 
         var sut = ThemeFontKeys.FromSettings(settings);
 

@@ -8,6 +8,18 @@ using CommunityToolkit.Mvvm.Input;
 namespace Signet.App.ViewModels;
 
 /// <summary>
+/// How a font setting inherits from a parent setting (e.g. the tooltip font of an area from the one of the other windows):
+/// while <see cref="Get"/> is on, the setting's own typeface and size are not used and its controls are switched off.
+/// </summary>
+/// <param name="Get">Whether the setting inherits.</param>
+/// <param name="Set">Turns the inheritance on or off.</param>
+/// <param name="ParentPath">Where the parent is in the Preferences window (e.g. <c>Appearance › General › Fonts › …</c>).</param>
+/// <param name="ParentFont">Describes the font inherited now (typeface and size).</param>
+/// <param name="Parent">The parent setting (to go to).</param>
+internal sealed record FontInheritance(
+    Func<bool> Get, Action<bool> Set, string ParentPath, Func<string> ParentFont, Func<FontSettingViewModel> Parent);
+
+/// <summary>
 /// One font setting on a "Fonts" page of the Preferences window (Rider's Editor › Font): the typeface chosen from a
 /// list, the size, "Choose…" (the font picker window) and a sample for the preview on the right. The setting itself
 /// stays in <see cref="PreferencesViewModel"/>; this is an adapter over its getter and setter, refreshed with
@@ -26,6 +38,7 @@ public sealed class FontSettingViewModel : ObservableObject
     private readonly Func<string?> _previewBackground;
     private readonly Func<bool>? _codePreview;
     private readonly Action _restoreDefault;
+    private readonly FontInheritance? _inheritance;
 
     /// <summary>Creates the adapter of one font setting.</summary>
     /// <param name="key">An English identifier (tests, the view's control names), e.g. <c>"CodeEditorText"</c>.</param>
@@ -44,6 +57,8 @@ public sealed class FontSettingViewModel : ObservableObject
     /// <param name="codePreview">For a font of the code editor: whether the preview highlights the sample with the
     /// extended highlighting (it shows it as Code Editor does, in the colors of the theme, with line numbers); <c>null</c>
     /// = the sample is plain text.</param>
+    /// <param name="inheritance">Lets the setting use the font of a parent setting instead of its own; <c>null</c> = it
+    /// has no parent.</param>
     internal FontSettingViewModel(
         string key,
         string label,
@@ -57,7 +72,8 @@ public sealed class FontSettingViewModel : ObservableObject
         Func<string?>? previewForeground = null,
         Func<string?>? previewBackground = null,
         string? sizeHint = null,
-        Func<bool>? codePreview = null)
+        Func<bool>? codePreview = null,
+        FontInheritance? inheritance = null)
     {
         Key = key ?? throw new ArgumentNullException(nameof(key));
         Label = label ?? throw new ArgumentNullException(nameof(label));
@@ -78,6 +94,7 @@ public sealed class FontSettingViewModel : ObservableObject
         _previewBackground = previewBackground ?? (() => null);
         SizeHint = sizeHint;
         _codePreview = codePreview;
+        _inheritance = inheritance;
     }
 
     /// <summary>Raised when the user changed the typeface or the size here.</summary>
@@ -112,6 +129,35 @@ public sealed class FontSettingViewModel : ObservableObject
 
     /// <summary>"Choose…" — the font picker window; <c>null</c> for a size-only setting.</summary>
     public ICommand? ChooseCommand { get; }
+
+    /// <summary>Whether the setting can use the font of a parent setting.</summary>
+    public bool HasInheritance => _inheritance is not null;
+
+    /// <summary>Whether the setting uses the font of its parent (the typeface and size controls are then switched off).</summary>
+    public bool InheritFromParent
+    {
+        get => _inheritance?.Get() ?? false;
+        set
+        {
+            if (_inheritance is not null && value != _inheritance.Get())
+            {
+                _inheritance.Set(value);
+                Changed();
+            }
+        }
+    }
+
+    /// <summary>Whether the typeface and size of the setting are its own (they can be changed).</summary>
+    public bool IsOwnFont => !InheritFromParent;
+
+    /// <summary>Where the parent setting is in the Preferences window; empty without a parent.</summary>
+    public string ParentPath => _inheritance?.ParentPath ?? string.Empty;
+
+    /// <summary>The typeface and size inherited from the parent now; empty without a parent.</summary>
+    public string ParentFont => _inheritance?.ParentFont() ?? string.Empty;
+
+    /// <summary>The parent setting; <c>null</c> without one.</summary>
+    public FontSettingViewModel? Parent => _inheritance?.Parent();
 
     /// <summary>The stored typeface; empty = the default, described by <see cref="Placeholder"/>.</summary>
     public string Family

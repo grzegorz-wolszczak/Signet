@@ -335,6 +335,45 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
+    public void A_tooltip_area_inherits_the_font_of_the_other_windows_unless_told_otherwise()
+    {
+        using TempDir dir = new();
+        SettingsStore sut = new(dir.Combine("settings.xml"));
+        string own = new Fixture().Create<string>();
+        string other = new Fixture().Create<string>();
+        sut.SetTooltipFont(TooltipArea.FindReplace, new TooltipFont(own, 20));
+        sut.SetTooltipFont(TooltipArea.OtherWindows, new TooltipFont(other, 15));
+
+        sut.GetTooltipInherit(TooltipArea.FindReplace).Should().BeTrue("inheriting is the default, whatever is stored");
+        sut.GetEffectiveTooltipFont(TooltipArea.FindReplace).Should().Be(new TooltipFont(other, 15));
+
+        sut.SetTooltipInherit(TooltipArea.FindReplace, false);
+
+        sut.GetEffectiveTooltipFont(TooltipArea.FindReplace).Should().Be(new TooltipFont(own, 20));
+        sut.GetEffectiveTooltipFont(TooltipArea.Footnotes).Should().Be(new TooltipFont(other, 15), "another area still inherits");
+
+        sut.SetTooltipInherit(TooltipArea.OtherWindows, false);
+        sut.GetTooltipInherit(TooltipArea.OtherWindows).Should().BeFalse("the other windows have no parent");
+        sut.GetEffectiveTooltipFont(TooltipArea.OtherWindows).Should().Be(new TooltipFont(other, 15));
+
+        sut.ClearAppearanceSettings();
+        sut.GetTooltipInherit(TooltipArea.FindReplace).Should().BeTrue();
+    }
+
+    [Fact]
+    public void The_preferences_window_is_modal_by_default()
+    {
+        using TempDir dir = new();
+        SettingsStore sut = new(dir.Combine("settings.xml"));
+
+        sut.PreferencesWindowModal.Should().BeTrue();
+        sut.PreferencesWindowModal = false;
+        sut.PreferencesWindowModal.Should().BeFalse();
+        sut.ClearAppearanceSettings();
+        sut.PreferencesWindowModal.Should().BeTrue();
+    }
+
+    [Fact]
     public void Corrupt_file_is_tolerated_and_yields_defaults()
     {
         using TempDir dir = new();

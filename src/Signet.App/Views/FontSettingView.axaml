@@ -9,6 +9,16 @@
        font picker window with a search) and the size. -->
   <StackPanel Spacing="4">
     <TextBlock Text="{Binding Label}" FontWeight="SemiBold" TextWrapping="Wrap" />
+    <!-- A setting with a parent can use the parent's font instead of its own: "Use: <where the parent is> <its font>"; the
+         link goes to the parent setting. While it is checked the controls below are switched off. -->
+    <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding HasInheritance}">
+      <CheckBox x:Name="InheritBox" Classes="noSearch" Content="{loc:Loc PreferencesWindow_FontInheritUse}"
+                IsChecked="{Binding InheritFromParent}" MinWidth="0" />
+      <HyperlinkButton x:Name="ParentLink" Classes="noSearch" Content="{Binding ParentPath}" Padding="0" VerticalAlignment="Center"
+                       ToolTip.Tip="{loc:Loc PreferencesWindow_FontInheritGoTo}" Click="OnParentLinkClick" />
+      <TextBlock Classes="noSearch" Text="{Binding ParentFont}" Opacity="0.7" VerticalAlignment="Center" />
+    </StackPanel>
+    <StackPanel x:Name="OwnFontControls" Spacing="4" IsEnabled="{Binding IsOwnFont}">
     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6" IsVisible="{Binding HasFamily}">
       <ComboBox x:Name="FamilyBox" HorizontalAlignment="Stretch"
                 ItemsSource="{x:Static infra:FontCatalog.SystemFonts}"
@@ -30,5 +40,6 @@
     </StackPanel>
     <TextBlock Text="{Binding SizeHint}" IsVisible="{Binding SizeHint, Converter={x:Static ObjectConverters.IsNotNull}}"
                Opacity="0.7" TextWrapping="Wrap" />
+    </StackPanel>
   </StackPanel>
 </UserControl>

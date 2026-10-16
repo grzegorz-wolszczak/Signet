@@ -114,7 +114,7 @@ public sealed class UiDensityManager(
     /// Applies the saved tooltip fonts live (Preferences → the "Fonts" pages, <see cref="TooltipFonts"/>). Called also
     /// after the interface font changed: a tooltip font without a typeface uses it.
     /// </summary>
-    public void ApplyTooltipFonts() => TooltipFonts.Apply(area => Fonts.Tooltip(area, _settings.GetTooltipFont(area)));
+    public void ApplyTooltipFonts() => TooltipFonts.Apply(area => Fonts.Tooltip(area, _settings.GetEffectiveTooltipFont(area)));
 
     /// <summary>The UI font size in use: the one chosen in Preferences (or the theme), otherwise the mode default.</summary>
     public double EffectiveFontSize =>

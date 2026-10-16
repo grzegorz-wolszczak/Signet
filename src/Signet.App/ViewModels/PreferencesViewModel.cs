@@ -406,6 +406,23 @@ public sealed partial class PreferencesViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Whether the Preferences window is modal (the main window waits until it is closed); takes effect the next time the
+    /// window is opened.
+    /// </summary>
+    public bool PreferencesWindowModal
+    {
+        get => _settings.PreferencesWindowModal;
+        set
+        {
+            if (_settings.PreferencesWindowModal != value)
+            {
+                _settings.PreferencesWindowModal = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     /// <summary>Preview font — standard.</summary>
     [ObservableProperty]
     private string _previewFontStandard;
@@ -647,6 +664,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
     {
         _settings.ClearAppearanceSettings();
         OnPropertyChanged(nameof(ShowZoomHint));
+        OnPropertyChanged(nameof(PreferencesWindowModal));
 
         PreviewAppearance previewFonts = PreviewAppearance.Default;
         PreviewFontStandard = previewFonts.FontFamilyStandard;
