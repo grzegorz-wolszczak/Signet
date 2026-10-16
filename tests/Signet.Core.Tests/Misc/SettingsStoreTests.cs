@@ -108,13 +108,13 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
-    public void The_book_browser_look_defaults_to_the_interface_font_an_indent_of_20_and_no_row_spacing()
+    public void The_book_browser_look_defaults_to_the_interface_font_an_indent_of_20_and_a_row_spacing_of_3()
     {
         using TempDir dir = new();
         SettingsStore sut = new(dir.Combine("settings.xml"));
 
         sut.BookBrowserAppearance.Should().Be(BookBrowserAppearance.Default);
-        BookBrowserAppearance.Default.Should().Be(new BookBrowserAppearance(string.Empty, 0, string.Empty, 0, 20, 0));
+        BookBrowserAppearance.Default.Should().Be(new BookBrowserAppearance(string.Empty, 0, string.Empty, 0, 20, 3));
     }
 
     [Fact]

@@ -772,7 +772,7 @@ public sealed class PreferencesViewModelTests
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
         vm.BookBrowserIndent.Should().Be(20);
-        vm.BookBrowserRowSpacing.Should().Be(0);
+        vm.BookBrowserRowSpacing.Should().Be(3);
 
         vm.BookBrowserIndent = 35;
         vm.BookBrowserRowSpacing = 4;
@@ -788,7 +788,7 @@ public sealed class PreferencesViewModelTests
         vm.RestoreAppearanceDefaultsCommand.Execute(null);
 
         (vm.BookBrowserIndent, vm.BookBrowserRowSpacing, vm.BookBrowserItemsFontFamily, vm.BookBrowserHeaderFontSize)
-            .Should().Be((20, 0, string.Empty, 0));
+            .Should().Be((20, 3, string.Empty, 0));
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Headless;
@@ -99,7 +100,20 @@ public sealed class BookBrowserTreeTests
         double[] defaultGaps = RowGaps(tree);
 
         Expanders().Where(c => c.Indent == 1).Select(c => c.IndentPadding.Left).Should().OnlyContain(p => p == 20);
-        defaultGaps.Should().OnlyContain(g => g == 0, "there is no space between the rows by default");
+        defaultGaps.Should().OnlyContain(g => g == 3, "the rows are 3 px apart by default");
+
+        // 0 means no space at all: a row is exactly as high as its content (no minimum height, no padding of a cell).
+        settings.BookBrowserAppearance = BookBrowserAppearance.Default with { RowSpacing = 0 };
+        Render(window);
+        RowGaps(tree).Should().OnlyContain(g => g == 0);
+        TreeDataGridRow[] rows = tree.GetVisualDescendants().OfType<TreeDataGridRow>().Where(r => r.IsVisible).ToArray();
+        rows.Should().NotBeEmpty();
+        foreach (TreeDataGridRow row in rows)
+        {
+            double content = row.GetVisualDescendants().OfType<TextBlock>().Where(t => t.IsVisible && t.Bounds.Height > 0)
+                .Select(t => t.Bounds.Height).DefaultIfEmpty(0).Max();
+            row.Bounds.Height.Should().BeLessThanOrEqualTo(Math.Max(content, 16) + 0.5, "nothing but the content makes a row high");
+        }
 
         settings.BookBrowserAppearance = new BookBrowserAppearance(string.Empty, 20, string.Empty, 9, 35, 6);
         Render(window);
@@ -116,7 +130,7 @@ public sealed class BookBrowserTreeTests
         Expanders()[0].FontSize.Should().Be(defaultCellSize, "a font left to the interface is not set");
         HeaderControls()[0].FontSize.Should().Be(defaultHeaderSize);
         Expanders().Where(c => c.Indent == 1).Select(c => c.IndentPadding.Left).Should().OnlyContain(p => p == 20);
-        RowGaps(tree).Should().OnlyContain(g => g == 0);
+        RowGaps(tree).Should().OnlyContain(g => g == 3);
         window.Close();
     }
 

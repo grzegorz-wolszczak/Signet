@@ -256,8 +256,11 @@ public readonly record struct BookBrowserAppearance(
     /// <summary>Upper bound of <see cref="RowSpacing"/> (the lower bound is 0).</summary>
     public const int RowSpacingMax = 20;
 
-    /// <summary>Default values: the interface font, an indentation of 20 px and no space between the rows.</summary>
-    public static BookBrowserAppearance Default => new(string.Empty, 0, string.Empty, 0, 20, 0);
+    /// <summary>
+    /// Default values: the interface font, an indentation of 20 px and 3 px between the rows (about the row height of the
+    /// earlier fixed layout). A spacing of 0 means no space at all: a row is as high as its content.
+    /// </summary>
+    public static BookBrowserAppearance Default => new(string.Empty, 0, string.Empty, 0, 20, 3);
 
     /// <summary>A copy with the sizes and distances clamped (a font size of 0 stays "as the interface").</summary>
     public BookBrowserAppearance Normalized() => new(

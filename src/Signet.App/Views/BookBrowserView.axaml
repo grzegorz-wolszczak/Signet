@@ -71,9 +71,13 @@
                   IsVisible="{Binding HasBook}"
                   CanUserSortColumns="False">
       <TreeDataGrid.Styles>
-        <!-- A compact tree (uniform row height), as before. -->
+        <!-- A row is exactly as high as its content: the space between the rows is the "row spacing" setting
+             (the margin of a row, see ApplyAppearance), not a minimum height or the padding of a cell. -->
         <Style Selector=":is(TreeDataGridCell)">
-          <Setter Property="MinHeight" Value="22" />
+          <Setter Property="MinHeight" Value="0" />
+        </Style>
+        <Style Selector="TreeDataGridTextCell">
+          <Setter Property="Padding" Value="4,0" />
         </Style>
       </TreeDataGrid.Styles>
       <TreeDataGrid.ContextMenu>
