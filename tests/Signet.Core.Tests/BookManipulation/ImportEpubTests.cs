@@ -176,6 +176,38 @@ public sealed class ImportEpubTests
     }
 
     [Fact]
+    public void GetBook_NotWellFormedXhtml_ListsEachFileWithTheReasonAndPosition()
+    {
+        using TempDir temp = new();
+        string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("not-wellformed-xhtml"), temp);
+
+        using Book book = new ImportEpub(epub).GetBook();
+
+        LoadWarning warning = book.LoadWarningDetails.Should()
+            .ContainSingle(w => w.Title == CoreStrings.Get("LoadWarningGroup_HtmlNotWellFormed")).Which;
+        warning.Items.Should().NotBeEmpty().And.OnlyContain(i => !string.IsNullOrEmpty(i.BookPath) && i.Reason.Length > 0);
+        warning.Items.Should().Contain(i => i.Line > 0 && i.Column > 0, "the XML parser reports where the error is");
+        warning.Items.Should().OnlyContain(i => !i.Reason.Contains("position", StringComparison.Ordinal) || i.Line <= 0,
+            "the position is in its own column, not repeated in the reason");
+        book.LoadWarnings.Should().Contain(warning.Message);
+        book.LoadWarnings.Should().HaveSameCount(book.LoadWarningDetails);
+    }
+
+    [Fact]
+    public void GetBook_DeepFolders_ListsTheMissingManifestFileAsAnItem()
+    {
+        using TempDir temp = new();
+        string epub = EpubBuilder.BuildInto(CorpusPaths.EdgeDeepFolders, temp);
+
+        using Book book = new ImportEpub(epub).GetBook();
+
+        LoadWarning warning = book.LoadWarningDetails.Should()
+            .ContainSingle(w => w.Title == CoreStrings.Get("LoadWarningGroup_ManifestFilesMissing")).Which;
+        warning.Items.Should().ContainSingle(i => i.BookPath!.EndsWith("pic.png", StringComparison.Ordinal))
+            .Which.Reason.Should().Be(CoreStrings.Get("LoadWarningReason_ManifestFilesMissing"));
+    }
+
+    [Fact]
     public void GetBook_MissingMimetype_ImportsWithWarning()
     {
         using TempDir temp = new();

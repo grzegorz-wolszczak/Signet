@@ -134,6 +134,30 @@
   <data name="LoadWarning_FilesNotInManifest" xml:space="preserve">
     <value>The EPUB contains files not listed in the manifest — they will be ignored: {0}</value>
   </data>
+  <data name="LoadWarning_HtmlUnreadable" xml:space="preserve">
+    <value>The file could not be read: {0}</value>
+  </data>
+  <data name="LoadWarningGroup_HtmlNotWellFormed" xml:space="preserve">
+    <value>HTML files that are not well-formed</value>
+  </data>
+  <data name="LoadWarningGroup_ManifestFilesMissing" xml:space="preserve">
+    <value>Manifest files missing from the EPUB</value>
+  </data>
+  <data name="LoadWarningGroup_FilesNotInManifest" xml:space="preserve">
+    <value>Files not listed in the manifest</value>
+  </data>
+  <data name="LoadWarningGroup_DuplicateManifestPaths" xml:space="preserve">
+    <value>Duplicate manifest paths</value>
+  </data>
+  <data name="LoadWarningReason_ManifestFilesMissing" xml:space="preserve">
+    <value>Listed in the manifest, but the file does not exist (skipped)</value>
+  </data>
+  <data name="LoadWarningReason_FilesNotInManifest" xml:space="preserve">
+    <value>Not listed in the manifest (ignored)</value>
+  </data>
+  <data name="LoadWarningReason_DuplicateManifestPaths" xml:space="preserve">
+    <value>Listed more than once in the manifest</value>
+  </data>
   <data name="Validation_DuplicateIdAcrossFiles" xml:space="preserve">
     <value>The id "{0}" also occurs in other files of the book: {1}.</value>
   </data>

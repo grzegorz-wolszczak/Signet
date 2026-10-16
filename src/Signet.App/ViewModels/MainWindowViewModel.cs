@@ -2516,6 +2516,23 @@ public sealed partial class MainWindowViewModel
         }
     }
 
+    /// <summary>
+    /// Opens the resource with the given book path in Code Editor with the caret at the 1-based line and column (the
+    /// "go to" of the load warnings window); a line or column that is unknown (<c>&lt;= 0</c>) only opens the file, one
+    /// past the end of the document or the line goes to its end.
+    /// </summary>
+    public void NavigateToBookPathAtLocation(string bookPath, int line, int column)
+    {
+        NavigateToBookPathAtOffset(bookPath, -1);
+        if (line > 0 && ActiveCodeTab is { } tab && string.Equals(tab.ResourceBookPath, bookPath, StringComparison.Ordinal))
+        {
+            AvaloniaEdit.Document.DocumentLine documentLine = tab.Document.GetLineByNumber(Math.Min(line, tab.Document.LineCount));
+            int offset = documentLine.Offset + Math.Clamp(column - 1, 0, documentLine.Length);
+            tab.GoToOffset(offset);
+            _preview.SyncCaretToPreview(tab.CaretOffset);
+        }
+    }
+
     /// <summary>The "Find Usages" panel view model.</summary>
     public FindUsagesViewModel FindUsages => _findUsages;
 

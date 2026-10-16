@@ -45,7 +45,7 @@ public interface IFileWorkflowPrompts
     /// <summary>
     /// Shows the warnings collected while loading a file.
     /// </summary>
-    Task ShowLoadWarningsAsync(string fileName, IReadOnlyList<string> warnings);
+    Task ShowLoadWarningsAsync(string fileName, IReadOnlyList<LoadWarning> warnings);
 
     /// <summary>Asks whether to remove a nonexistent file from the "Recent Files" list (OK = remove).</summary>
     Task<bool> ConfirmRemoveMissingRecentAsync(string path);
@@ -308,7 +308,7 @@ public sealed class FileWorkflow
 
         if (book.LoadWarnings.Count > 0)
         {
-            await _prompts.ShowLoadWarningsAsync(Path.GetFileName(path), book.LoadWarnings).ConfigureAwait(true);
+            await _prompts.ShowLoadWarningsAsync(Path.GetFileName(path), book.LoadWarningDetails).ConfigureAwait(true);
         }
 
         return true;

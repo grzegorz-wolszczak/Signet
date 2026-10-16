@@ -134,6 +134,30 @@
   <data name="LoadWarning_FilesNotInManifest" xml:space="preserve">
     <value>W EPUB są pliki nieujęte w manifeście — zostaną zignorowane: {0}</value>
   </data>
+  <data name="LoadWarning_HtmlUnreadable" xml:space="preserve">
+    <value>Nie udało się odczytać pliku: {0}</value>
+  </data>
+  <data name="LoadWarningGroup_HtmlNotWellFormed" xml:space="preserve">
+    <value>Pliki HTML niepoprawne składniowo (well-formed)</value>
+  </data>
+  <data name="LoadWarningGroup_ManifestFilesMissing" xml:space="preserve">
+    <value>Pliki z manifestu nieobecne w EPUB</value>
+  </data>
+  <data name="LoadWarningGroup_FilesNotInManifest" xml:space="preserve">
+    <value>Pliki nieujęte w manifeście</value>
+  </data>
+  <data name="LoadWarningGroup_DuplicateManifestPaths" xml:space="preserve">
+    <value>Zduplikowane ścieżki w manifeście</value>
+  </data>
+  <data name="LoadWarningReason_ManifestFilesMissing" xml:space="preserve">
+    <value>Wymieniony w manifeście, ale plik nie istnieje (pominięto)</value>
+  </data>
+  <data name="LoadWarningReason_FilesNotInManifest" xml:space="preserve">
+    <value>Nie ma go w manifeście (zostanie zignorowany)</value>
+  </data>
+  <data name="LoadWarningReason_DuplicateManifestPaths" xml:space="preserve">
+    <value>Występuje w manifeście więcej niż raz</value>
+  </data>
   <data name="Validation_DuplicateIdAcrossFiles" xml:space="preserve">
     <value>Identyfikator „{0}” występuje także w innych plikach książki: {1}.</value>
   </data>
