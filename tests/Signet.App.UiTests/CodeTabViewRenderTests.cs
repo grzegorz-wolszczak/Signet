@@ -26,7 +26,7 @@ namespace Signet.App.UiTests;
 
 /// <summary>
 /// Headless render test of the Code Editor tab: the <c>TextEditor</c> control is hosted on its own
-/// (outside <c>DocumentDock</c>, which hangs tab rendering under headless; see
+/// (outside <c>DocumentDock</c>; the tab in the real main window is covered by
 /// <see cref="WindowRenderTests"/>).
 /// </summary>
 public sealed class CodeTabViewRenderTests
