@@ -247,6 +247,31 @@ public sealed class SharedFootnoteTests
         }
     }
 
+    [Fact]
+    public void The_targets_of_a_new_reference_are_the_local_notes_of_the_file_and_the_global_ones_nearest_before_first()
+    {
+        (Book book, HtmlResource html) = NewBook();
+        using (book)
+        {
+            HtmlResource other = book.CreateEmptyHtmlFile();
+            other.SetText(Xhtml(Body));
+            FootnoteEditor.Add(book, other, After(other, "First"), "elsewhere", FootnotePlacement.Local).Should().Be(FootnoteError.None);
+            FootnoteEditor.Add(book, html, After(html, "Third"), "third <i>local</i>", FootnotePlacement.Local).Should().Be(FootnoteError.None);
+            FootnoteEditor.Add(book, html, After(html, "First"), "first local", FootnotePlacement.Local).Should().Be(FootnoteError.None);
+            FootnoteEditor.Add(book, other, After(other, "Second"), "global", FootnotePlacement.Global).Should().Be(FootnoteError.None);
+
+            ReferenceTargetList list = FootnoteEditor.ReferenceTargets(book, html, After(html, "Second"));
+
+            list.Targets.Select(t => (t.Number, t.Text, t.Footnote.Placement)).Should().Equal(
+                (1, "first local", FootnotePlacement.Local),
+                (2, "third local", FootnotePlacement.Local),
+                (1, "global", FootnotePlacement.Global));
+            list.Nearest.Should().Be(0, "the reference of the first local note is the nearest before the position");
+            FootnoteEditor.ReferenceTargets(book, other, After(other, "Third")).Nearest
+                .Should().Be(1, "in the other file the global note's reference is the nearest");
+        }
+    }
+
     [Theory]
     [InlineData(FootnoteLetterStyle.LowerLatin, 0, "a")]
     [InlineData(FootnoteLetterStyle.LowerLatin, 25, "z")]

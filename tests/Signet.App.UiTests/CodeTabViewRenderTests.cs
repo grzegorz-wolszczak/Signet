@@ -737,6 +737,9 @@ public sealed class CodeTabViewRenderTests
     // Which items of the "Footnotes" submenu are enabled on a footnote with one reference.
     private static readonly bool[] OnSingleFootnoteEnabled = { true, true, false, true, true, true };
 
+    // Which items are enabled where a footnote can be added, in a book without notes (and without other footnotes).
+    private static readonly bool[] FreeWithoutNotesEnabled = { true, false, true, false };
+
     /// <summary>
     /// "Footnotes": on a footnote the submenu offers editing it and going to its other part; elsewhere adding one,
     /// disabled with the reason when the caret is not in a place for a reference; renumbering always.
@@ -798,13 +801,17 @@ public sealed class CodeTabViewRenderTests
             Signet.App.Resources.Strings.Format(
                 "CodeEditorMenu_FootnoteAddBlocked",
                 Signet.App.ViewModels.FootnoteViewModel.ErrorText(Signet.Core.Footnotes.FootnoteError.InsideTag)),
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnoteAddReference"),
             Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnotesRenumber"),
             Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnotesConvert"));
-        blockedEnabled.Should().Equal(false, false, false);
+        blockedEnabled.Should().Equal(false, false, false, false);
 
         string[] free = Footnotes(new FootnoteMenuState(null, Signet.Core.Footnotes.FootnoteError.None, true), out bool[] freeEnabled);
         free[0].Should().Be(Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnoteAdd"));
-        freeEnabled.Should().Equal(true, true, false);
+        freeEnabled.Should().Equal(FreeWithoutNotesEnabled, "without notes there is nothing to add a reference to");
+
+        Footnotes(new FootnoteMenuState(null, Signet.Core.Footnotes.FootnoteError.None, true, ReferenceTargetCount: 3), out bool[] withNotes);
+        withNotes[1].Should().BeTrue("a reference can lead to one of the notes");
     }
 
     /// <summary>
@@ -929,6 +936,12 @@ public sealed class CodeTabViewRenderTests
         }
 
         public void RemoveFootnoteReference(Signet.Core.Footnotes.FootnoteHit hit)
+        {
+        }
+
+        public Signet.Core.Footnotes.ReferenceTargetList? GetFootnoteReferenceTargets(HtmlResource html, int offset) => null;
+
+        public void AddFootnoteReference(HtmlResource html, int offset, Signet.Core.Footnotes.Footnote target)
         {
         }
 

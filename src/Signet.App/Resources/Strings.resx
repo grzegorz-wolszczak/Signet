@@ -4131,6 +4131,51 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="FootnoteWindow_RemoveConfirm" xml:space="preserve">
     <value>Na pewno chcesz usunąć przypis? Usunięty zostanie odnośnik w tekście i treść przypisu.</value>
   </data>
+  <data name="CodeEditorMenu_FootnoteAddReference" xml:space="preserve">
+    <value>Dodaj odnośnik do istniejącego przypisu...</value>
+  </data>
+  <data name="CodeEditorMenu_FootnoteAddReferenceNoNotes" xml:space="preserve">
+    <value>W tym pliku nie ma przypisów lokalnych Signeta, a w książce — przypisów globalnych.</value>
+  </data>
+  <data name="FootnoteReferenceWindow_Title" xml:space="preserve">
+    <value>Dodaj odnośnik do przypisu</value>
+  </data>
+  <data name="FootnoteReferenceWindow_Intro" xml:space="preserve">
+    <value>Wybierz przypis, do którego ma prowadzić nowy odnośnik w miejscu kursora. Przypis stanie się wspólny: jego odnośniki dostaną litery ([4a], [4b]), a treść — link powrotny do każdego z nich. Lista zawiera przypisy lokalne tego pliku i przypisy globalne.</value>
+  </data>
+  <data name="FootnoteReferenceWindow_Filter" xml:space="preserve">
+    <value>Filtr:</value>
+  </data>
+  <data name="FootnoteReferenceWindow_FilterPlaceholder" xml:space="preserve">
+    <value>numer, plik lub tekst przypisu</value>
+  </data>
+  <data name="FootnoteReferenceWindow_Summary" xml:space="preserve">
+    <value>{0} z {1}</value>
+  </data>
+  <data name="FootnoteReferenceWindow_Number" xml:space="preserve">
+    <value>Numer</value>
+  </data>
+  <data name="FootnoteReferenceWindow_Kind" xml:space="preserve">
+    <value>Rodzaj</value>
+  </data>
+  <data name="FootnoteReferenceWindow_File" xml:space="preserve">
+    <value>Plik odnośnika</value>
+  </data>
+  <data name="FootnoteReferenceWindow_Text" xml:space="preserve">
+    <value>Treść</value>
+  </data>
+  <data name="FootnoteReferenceWindow_AddButton" xml:space="preserve">
+    <value>Dodaj odnośnik</value>
+  </data>
+  <data name="CheckpointOp_AddFootnoteReference" xml:space="preserve">
+    <value>Dodanie odnośnika do przypisu</value>
+  </data>
+  <data name="Status_FootnoteReferenceAdded" xml:space="preserve">
+    <value>Dodano odnośnik do przypisu.</value>
+  </data>
+  <data name="Status_FootnoteReferenceNotAdded" xml:space="preserve">
+    <value>Nie dodano odnośnika: {0}.</value>
+  </data>
   <data name="FootnoteWindow_RemoveSharedConfirm" xml:space="preserve">
     <value>Do tego przypisu prowadzi {0} odnośników. Usunięcie przypisu usunie jego treść i wszystkie odnośniki, także te w innych miejscach tekstu. Usunąć przypis?</value>
   </data>

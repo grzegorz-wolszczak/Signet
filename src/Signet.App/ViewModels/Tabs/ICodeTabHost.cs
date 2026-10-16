@@ -98,6 +98,18 @@ public interface ICodeTabHost
     void AddFootnote(HtmlResource html, int offset, string content, FootnotePlacement placement);
 
     /// <summary>
+    /// "Add Reference to Footnote…" — the notes a reference at <paramref name="offset"/> of <paramref name="html"/> can
+    /// lead to (saves the open tabs first); <c>null</c> without a book.
+    /// </summary>
+    ReferenceTargetList? GetFootnoteReferenceTargets(HtmlResource html, int offset);
+
+    /// <summary>
+    /// "Add Reference to Footnote…" — adds a reference at <paramref name="offset"/> of <paramref name="html"/> to the note
+    /// of <paramref name="target"/> (with a checkpoint): the note becomes shared.
+    /// </summary>
+    void AddFootnoteReference(HtmlResource html, int offset, Footnote target);
+
+    /// <summary>
     /// "Edit Footnote" — the data of the footnote window for the footnote of <paramref name="hit"/> (saves the open tabs
     /// first); <c>null</c> (with a message) when the footnote is gone.
     /// </summary>
@@ -157,7 +169,11 @@ public interface ICodeTabHost
 /// <param name="AddError">Why a footnote cannot be added at the position (<see cref="FootnoteError.None"/> when it can).</param>
 /// <param name="HasFootnotes">Whether the book has any footnotes.</param>
 /// <param name="ForeignCount">How many footnotes of the book are not Signet's (Signet edits them only after converting them).</param>
-public sealed record FootnoteMenuState(FootnoteHit? Hit, FootnoteError AddError, bool HasFootnotes, int ForeignCount = 0);
+/// <param name="ReferenceTargetCount">
+/// How many Signet notes a reference at the position can lead to (the local notes of the file and the global ones).
+/// </param>
+public sealed record FootnoteMenuState(
+    FootnoteHit? Hit, FootnoteError AddError, bool HasFootnotes, int ForeignCount = 0, int ReferenceTargetCount = 0);
 
 /// <summary>The data of the footnote window for editing a footnote (<see cref="ICodeTabHost.GetFootnoteEdit"/>).</summary>
 /// <param name="Footnote">The footnote (of the current texts).</param>

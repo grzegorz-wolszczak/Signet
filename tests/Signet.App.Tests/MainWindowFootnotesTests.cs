@@ -125,6 +125,36 @@ public sealed class MainWindowFootnotesTests
     }
 
     [Fact]
+    public void A_reference_added_to_a_footnote_makes_it_shared_and_removing_it_makes_it_ordinary_again()
+    {
+        using UiCultureScope culture = new("en");
+        using TempDir temp = new();
+        (MainWindowViewModel sut, Book _, HtmlResource chapter) = OpenMinimalChapter(temp);
+        ICodeTabHost host = sut;
+        host.AddFootnote(chapter, AfterHello(chapter), "Shared note.", FootnotePlacement.Local);
+        int end = chapter.GetText().IndexOf("world", StringComparison.Ordinal) + 5;
+        host.GetFootnoteState(chapter, end)!.ReferenceTargetCount.Should().Be(1);
+
+        ReferenceTargetList targets = host.GetFootnoteReferenceTargets(chapter, end)!;
+        targets.Targets.Should().ContainSingle().Which.Text.Should().Be("Shared note.");
+        host.AddFootnoteReference(chapter, end, targets.Targets[targets.Nearest].Footnote);
+
+        chapter.GetText().Should().Contain("Hello<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"#fn-1\" id=\"fn-1a-ref\">[1a]</a>")
+            .And.Contain("world<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"#fn-1\" id=\"fn-1b-ref\">[1b]</a>")
+            .And.Contain("<a href=\"#fn-1a-ref\">1a</a>, <a href=\"#fn-1b-ref\">1b</a>. Shared note.");
+        sut.StatusMessage.Should().Be(Strings.Get("Status_FootnoteReferenceAdded"));
+        sut.ActiveCodeTab!.DocumentText.Should().Be(chapter.GetText());
+
+        FootnoteMenuState onSecond = host.GetFootnoteState(chapter, chapter.GetText().IndexOf("[1b]", StringComparison.Ordinal))!;
+        onSecond.Hit!.Footnote.IsShared.Should().BeTrue();
+        host.RemoveFootnoteReference(onSecond.Hit);
+
+        chapter.GetText().Should().Contain("Hello<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"#fn-1\" id=\"fn-1-ref\">[1]</a>")
+            .And.NotContain("[1b]").And.Contain("<a href=\"#fn-1-ref\">1.</a> Shared note.");
+        sut.StatusMessage.Should().Be(Strings.Get("Status_FootnoteReferenceRemoved"));
+    }
+
+    [Fact]
     public void The_removal_confirmation_is_a_setting()
     {
         using TempDir temp = new();

@@ -140,7 +140,9 @@ public sealed partial class MainWindowViewModel
         FootnoteHit? hit = addError == FootnoteError.None ? null : FootnoteEditor.FindAt(_currentBook, html, offset);
         IReadOnlyList<Footnote> footnotes = FootnoteScanner.Scan(_currentBook);
         bool hasFootnotes = hit is not null || footnotes.Count > 0;
-        return new FootnoteMenuState(hit, addError, hasFootnotes, footnotes.Count(f => !f.IsSignet && f.ReferenceIndex == 0));
+        int targets = footnotes.Count(f => f.IsSignet && f.ReferenceIndex == 0
+            && (f.Placement == FootnotePlacement.Global || ReferenceEquals(f.NoteFile, html)));
+        return new FootnoteMenuState(hit, addError, hasFootnotes, footnotes.Count(f => !f.IsSignet && f.ReferenceIndex == 0), targets);
     }
 
     /// <inheritdoc/>
@@ -193,6 +195,52 @@ public sealed partial class MainWindowViewModel
         _statusBar.ShowMessage(
             Strings.Get(placement == FootnotePlacement.Local ? "Status_FootnoteAddedLocal" : "Status_FootnoteAddedGlobal"),
             TimeSpan.FromSeconds(4));
+    }
+
+    /// <inheritdoc/>
+    ReferenceTargetList? ICodeTabHost.GetFootnoteReferenceTargets(HtmlResource html, int offset)
+    {
+        if (_currentBook is null)
+        {
+            return null;
+        }
+
+        _tabManager.SaveAllTabs();
+        return FootnoteEditor.ReferenceTargets(_currentBook, html, offset);
+    }
+
+    /// <inheritdoc/>
+    void ICodeTabHost.AddFootnoteReference(HtmlResource html, int offset, Footnote target)
+    {
+        ArgumentNullException.ThrowIfNull(target);
+        if (_currentBook is null)
+        {
+            return;
+        }
+
+        _tabManager.SaveAllTabs();
+        bool checkpoint = AddCheckpointBefore(Strings.Get("CheckpointOp_AddFootnoteReference"));
+        FootnoteError error = FootnoteEditor.AddReference(_currentBook, html, offset, target, out Footnote? added, FootnoteOptions);
+        if (error != FootnoteError.None)
+        {
+            if (checkpoint)
+            {
+                RewindCheckpoint();
+            }
+
+            _statusBar.ShowMessage(
+                Strings.Format("Status_FootnoteReferenceNotAdded", FootnoteViewModel.ErrorText(error)),
+                TimeSpan.FromSeconds(5), NotificationLevel.Warning);
+            return;
+        }
+
+        RefreshAfterMaintenanceOperation();
+        if (added is not null)
+        {
+            GoToFootnoteSide(added, FootnoteSide.Reference);
+        }
+
+        _statusBar.ShowMessage(Strings.Get("Status_FootnoteReferenceAdded"), TimeSpan.FromSeconds(4));
     }
 
     /// <inheritdoc/>

@@ -875,12 +875,29 @@ public partial class CodeTabView : UserControl
                     : Strings.Format("CodeEditorMenu_FootnoteAddBlocked", FootnoteViewModel.ErrorText(state.AddError)),
                 () => AddFootnote(vm),
                 enabled: canAdd));
+            string? referenceBlocked = !canAdd ? FootnoteViewModel.ErrorText(state.AddError)
+                : state.ReferenceTargetCount == 0 ? Strings.Get("CodeEditorMenu_FootnoteAddReferenceNoNotes")
+                : null;
+            menu.Items.Add(Item(
+                Strings.Get("CodeEditorMenu_FootnoteAddReference"), () => AddFootnoteReference(vm),
+                enabled: referenceBlocked is null, toolTip: referenceBlocked));
         }
 
         menu.Items.Add(new Separator());
         menu.Items.Add(Item(Strings.Get("CodeEditorMenu_FootnotesRenumber"), host.RenumberFootnotes, enabled: state.HasFootnotes));
         menu.Items.Add(Item(Strings.Get("CodeEditorMenu_FootnotesConvert"), host.ShowFootnoteConversion, enabled: state.ForeignCount > 0));
         return menu;
+    }
+
+    // "Add Reference to Footnote…": the window with the notes, then a reference to the chosen one is added at the caret.
+    private async void AddFootnoteReference(CodeTabViewModel vm)
+    {
+        if (TopLevel.GetTopLevel(this) is Window owner
+            && vm.CreateFootnoteReferenceViewModel() is { } model
+            && await FootnoteReferenceWindow.AskAsync(owner, model).ConfigureAwait(true) is { } target)
+        {
+            vm.AddFootnoteReference(target);
+        }
     }
 
     // "Remove Footnote…": after the confirmation (always for a shared note), the note goes with all its references.

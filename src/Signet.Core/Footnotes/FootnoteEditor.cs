@@ -83,6 +83,20 @@ public sealed record FootnoteOptions(
     public static FootnoteOptions Default { get; } = new(FootnoteStyles.Default);
 }
 
+/// <summary>A note a reference can be added to (<see cref="FootnoteEditor.ReferenceTargets"/>).</summary>
+/// <param name="Footnote">The first reference of the note.</param>
+/// <param name="Number">The number of the note.</param>
+/// <param name="Text">The text of the note (tags left out, whitespace collapsed).</param>
+public sealed record ReferenceTarget(Footnote Footnote, int Number, string Text);
+
+/// <summary>The notes a reference can be added to at a position (<see cref="FootnoteEditor.ReferenceTargets"/>).</summary>
+/// <param name="Targets">The local notes of the file and the global notes, in the order of their numbers.</param>
+/// <param name="Nearest">
+/// The target with the nearest reference before the position (the default choice): 0 when no reference is before it,
+/// -1 without targets.
+/// </param>
+public sealed record ReferenceTargetList(IReadOnlyList<ReferenceTarget> Targets, int Nearest);
+
 /// <summary>The markup Signet writes for a footnote (<see cref="FootnoteEditor.Preview"/>).</summary>
 /// <param name="Reference">The reference in the text.</param>
 /// <param name="Note">The note (the whole <c>aside</c>, or <c>div</c> in EPUB 2).</param>
@@ -401,6 +415,72 @@ public static partial class FootnoteEditor
         added = Rescan(book, index);
         book.Modified = true;
         return FootnoteError.None;
+    }
+
+    /// <summary>
+    /// The Signet notes a reference at <paramref name="offset"/> of <paramref name="html"/> can be added to
+    /// (<see cref="AddReference"/>): the local notes of the file and the global notes, local ones first, each in the
+    /// order of its numbers; the default is the note with the nearest reference before the position.
+    /// </summary>
+    public static ReferenceTargetList ReferenceTargets(Book book, HtmlResource html, int offset)
+    {
+        ArgumentNullException.ThrowIfNull(book);
+        ArgumentNullException.ThrowIfNull(html);
+        IReadOnlyList<Footnote> footnotes = FootnoteScanner.Scan(book);
+        int spine = book.GetHtmlResources().ToList().IndexOf(html);
+        Dictionary<(string BookPath, string Id), int> numbers = NoteNumbers(footnotes);
+
+        // The place of the nearest reference of each note before the position: (file in the spine, place in the file).
+        Dictionary<(string BookPath, string Id), (int Spine, int Place)> before = new();
+        foreach (Footnote footnote in footnotes.Where(f => f.IsSignet))
+        {
+            (int Spine, int Place)? place = footnote.SpineIndex < spine ? (footnote.SpineIndex, footnote.DocumentIndex)
+                : ReferenceEquals(footnote.ReferenceFile, html) && Locate(footnote, FootnoteSide.Reference) is { } at && at.Offset < offset
+                    ? (spine, at.Offset)
+                    : null;
+            (string, string) key = (footnote.NoteFile.BookPath, footnote.NoteId);
+            if (place is { } found && (!before.TryGetValue(key, out (int Spine, int Place) known) || found.CompareTo(known) > 0))
+            {
+                before[key] = found;
+            }
+        }
+
+        List<ReferenceTarget> targets = footnotes
+            .Where(f => f.IsSignet && f.ReferenceIndex == 0
+                && (f.Placement == FootnotePlacement.Global || ReferenceEquals(f.NoteFile, html)))
+            .OrderBy(f => f.Placement)
+            .ThenBy(f => numbers[(f.NoteFile.BookPath, f.NoteId)])
+            .Select(f => new ReferenceTarget(
+                f, numbers[(f.NoteFile.BookPath, f.NoteId)],
+                GetContent(f) is { } content ? PlainText(content.Text.Replace("\n\n", " ", StringComparison.Ordinal)) : string.Empty))
+            .ToList();
+        int nearest = -1;
+        for (int i = 0; i < targets.Count; i++)
+        {
+            if (before.TryGetValue((targets[i].Footnote.NoteFile.BookPath, targets[i].Footnote.NoteId), out (int Spine, int Place) place)
+                && (nearest < 0 || place.CompareTo(before[(targets[nearest].Footnote.NoteFile.BookPath, targets[nearest].Footnote.NoteId)]) > 0))
+            {
+                nearest = i;
+            }
+        }
+
+        return new ReferenceTargetList(targets, targets.Count == 0 ? -1 : Math.Max(nearest, 0));
+    }
+
+    // The number of every note (as Renumber counts: at its first reference, local ones per file, global ones through the book).
+    private static Dictionary<(string BookPath, string Id), int> NoteNumbers(IReadOnlyList<Footnote> footnotes)
+    {
+        Dictionary<(string BookPath, string Id), int> numbers = new();
+        Dictionary<HtmlResource, int> local = new(ReferenceEqualityComparer.Instance);
+        int global = 0;
+        foreach (Footnote footnote in footnotes.Where(f => f.ReferenceIndex == 0))
+        {
+            numbers[(footnote.NoteFile.BookPath, footnote.NoteId)] = footnote.Placement == FootnotePlacement.Local
+                ? local[footnote.ReferenceFile] = local.GetValueOrDefault(footnote.ReferenceFile) + 1
+                : ++global;
+        }
+
+        return numbers;
     }
 
     /// <summary>

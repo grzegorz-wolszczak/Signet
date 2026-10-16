@@ -1487,6 +1487,31 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     }
 
     /// <summary>
+    /// "Add Reference to Footnote…" — the model of the window with the notes a reference at the caret can lead to;
+    /// <c>null</c> without a host.
+    /// </summary>
+    public FootnoteReferenceViewModel? CreateFootnoteReferenceViewModel()
+    {
+        if (Host is not { } host || Resource is not HtmlResource html)
+        {
+            return null;
+        }
+
+        SyncModelFromDocument();
+        return host.GetFootnoteReferenceTargets(html, _caretOffset) is { } targets ? new FootnoteReferenceViewModel(targets) : null;
+    }
+
+    /// <summary>Adds a reference at the caret to the note of <paramref name="target"/> (through the host, with a checkpoint).</summary>
+    public void AddFootnoteReference(Footnote target)
+    {
+        ArgumentNullException.ThrowIfNull(target);
+        if (Host is { } host && Resource is HtmlResource html)
+        {
+            host.AddFootnoteReference(html, _caretOffset, target);
+        }
+    }
+
+    /// <summary>
     /// "Edit Footnote…" — the model of the window for the footnote of <paramref name="hit"/>; <c>null</c> without a host
     /// or when the footnote is gone.
     /// </summary>

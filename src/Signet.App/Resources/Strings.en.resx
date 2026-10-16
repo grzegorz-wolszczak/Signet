@@ -4131,6 +4131,51 @@ It does not change the files, their names or their IDs.</value>
   <data name="FootnoteWindow_RemoveConfirm" xml:space="preserve">
     <value>Are you sure you want to remove the footnote? Both the reference in the text and the note will be removed.</value>
   </data>
+  <data name="CodeEditorMenu_FootnoteAddReference" xml:space="preserve">
+    <value>Add Reference to Existing Footnote...</value>
+  </data>
+  <data name="CodeEditorMenu_FootnoteAddReferenceNoNotes" xml:space="preserve">
+    <value>This file has no local Signet footnotes and the book has no global ones.</value>
+  </data>
+  <data name="FootnoteReferenceWindow_Title" xml:space="preserve">
+    <value>Add Reference to Footnote</value>
+  </data>
+  <data name="FootnoteReferenceWindow_Intro" xml:space="preserve">
+    <value>Choose the footnote the new reference at the caret leads to. The footnote becomes shared: its references get letters ([4a], [4b]) and its note a link back to each of them. The list holds the local footnotes of this file and the global footnotes.</value>
+  </data>
+  <data name="FootnoteReferenceWindow_Filter" xml:space="preserve">
+    <value>Filter:</value>
+  </data>
+  <data name="FootnoteReferenceWindow_FilterPlaceholder" xml:space="preserve">
+    <value>number, file or text of the footnote</value>
+  </data>
+  <data name="FootnoteReferenceWindow_Summary" xml:space="preserve">
+    <value>{0} of {1}</value>
+  </data>
+  <data name="FootnoteReferenceWindow_Number" xml:space="preserve">
+    <value>Number</value>
+  </data>
+  <data name="FootnoteReferenceWindow_Kind" xml:space="preserve">
+    <value>Kind</value>
+  </data>
+  <data name="FootnoteReferenceWindow_File" xml:space="preserve">
+    <value>Reference file</value>
+  </data>
+  <data name="FootnoteReferenceWindow_Text" xml:space="preserve">
+    <value>Text</value>
+  </data>
+  <data name="FootnoteReferenceWindow_AddButton" xml:space="preserve">
+    <value>Add Reference</value>
+  </data>
+  <data name="CheckpointOp_AddFootnoteReference" xml:space="preserve">
+    <value>Add footnote reference</value>
+  </data>
+  <data name="Status_FootnoteReferenceAdded" xml:space="preserve">
+    <value>Reference to the footnote added.</value>
+  </data>
+  <data name="Status_FootnoteReferenceNotAdded" xml:space="preserve">
+    <value>The reference was not added: {0}.</value>
+  </data>
   <data name="FootnoteWindow_RemoveSharedConfirm" xml:space="preserve">
     <value>{0} references lead to this footnote. Removing the footnote removes its text and all its references, also those elsewhere in the text. Remove the footnote?</value>
   </data>
