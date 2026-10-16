@@ -106,7 +106,8 @@
           <MenuItem Header="{loc:Loc BookBrowserView_AddBlankSvg}" Command="{Binding AddBlankSvgCommand}"
                     IsVisible="{Binding ShowAddItems}" IsEnabled="{Binding CanAddBlankSvgHere}" />
           <MenuItem Header="{loc:Loc BookBrowserView_AddBlankJs}" Command="{Binding AddBlankJsCommand}"
-                    IsVisible="{Binding ShowAddItems}" IsEnabled="{Binding CanAddBlankJsHere}" />
+                    IsVisible="{Binding ShowAddItems}" IsEnabled="{Binding CanAddBlankJsHere}"
+                    ToolTip.Tip="{Binding AddBlankJsTip}" ToolTip.ShowOnDisabled="True" />
           <MenuItem Header="{Binding AddExistingFilesHeader}" Command="{Binding AddExistingFilesCommand}"
                     IsVisible="{Binding ShowAddItems}" IsEnabled="{Binding CanAddExistingFilesHere}" />
           <Separator />

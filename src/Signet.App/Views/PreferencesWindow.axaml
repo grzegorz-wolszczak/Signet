@@ -273,7 +273,8 @@
                                      Increment="1" FormatString="0" HorizontalAlignment="Left" Width="130" />
                     </Grid>
                     <HyperlinkButton Content="{loc:Loc PreferencesWindow_BookBrowserBackgroundInTheme}" Padding="0"
-                                     views:PreferencesPage.Target="ThemeInterfacePage" />
+                                     views:PreferencesPage.Target="ThemeInterfacePage"
+                                     views:PreferencesPage.TargetKey="ui.bookBrowser.background" />
 
                   </StackPanel>
                 </Border>

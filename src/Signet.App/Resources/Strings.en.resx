@@ -1394,6 +1394,12 @@ Do you want to save the changes?</value>
   <data name="BookBrowserView_AddBlankJs" xml:space="preserve">
     <value>Add Blank JavaScript</value>
   </data>
+  <data name="BookBrowserView_AddBlankJsEpub2" xml:space="preserve">
+    <value>Scripts (JavaScript) are available only in EPUB 3 books, and this book is EPUB 2.</value>
+  </data>
+  <data name="BookBrowserView_AddBlankJsNotHere" xml:space="preserve">
+    <value>A blank JavaScript file can be added in the Misc folder.</value>
+  </data>
   <data name="BookBrowserView_AddExistingFiles" xml:space="preserve">
     <value>Add Existing Files…</value>
   </data>

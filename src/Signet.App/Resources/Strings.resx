@@ -1394,6 +1394,12 @@ Czy chcesz zapisać zmiany?</value>
   <data name="BookBrowserView_AddBlankJs" xml:space="preserve">
     <value>Dodaj pusty skrypt JavaScript</value>
   </data>
+  <data name="BookBrowserView_AddBlankJsEpub2" xml:space="preserve">
+    <value>Skrypty (JavaScript) są dostępne tylko w książkach EPUB 3, a ta książka jest EPUB 2.</value>
+  </data>
+  <data name="BookBrowserView_AddBlankJsNotHere" xml:space="preserve">
+    <value>Pusty plik JavaScript dodasz w folderze Misc.</value>
+  </data>
   <data name="BookBrowserView_AddExistingFiles" xml:space="preserve">
     <value>Dodaj istniejące pliki…</value>
   </data>
