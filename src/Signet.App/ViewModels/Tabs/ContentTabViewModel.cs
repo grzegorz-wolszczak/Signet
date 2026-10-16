@@ -36,7 +36,9 @@ public abstract class ContentTabViewModel : Document, IDeferredContentPresentati
         Tab = tab ?? throw new ArgumentNullException(nameof(tab));
         Id = tab.Resource.Identifier;
         Title = tab.Caption;
-        CanFloat = false;
+        // A tab can be dragged out of the tab strip into its own window (its DocumentDock); Dock only lets it dock
+        // back into a DocumentDock, never into a panel region.
+        CanFloat = true;
         CanPin = false;
     }
 
