@@ -62,8 +62,12 @@ public sealed class FileWorkflowTests
             Settings = new SettingsStore(Path.Combine(Dir.Path, "settings.xml"));
             Prompts = new FakeFileWorkflowPrompts();
             Workspace = new FakeWorkspace();
-            Workflow = new FileWorkflow(Settings, Prompts, Workspace, NullLogger.Instance);
+            OtherInstance = new BookFileLocks(Path.Combine(Dir.Path, "locks"));
+            Workflow = new FileWorkflow(Settings, Prompts, Workspace, NullLogger.Instance, OtherInstance);
         }
+
+        // The locks of the same folder: what another instance of the application would hold.
+        public BookFileLocks OtherInstance { get; }
 
         public TempDir Dir { get; }
 
@@ -301,6 +305,157 @@ public sealed class FileWorkflowTests
         h.Prompts.LastLoadWarnings.Value.Warnings.Should().Equal(h.Workspace.CurrentBook!.LoadWarningDetails);
         h.Prompts.LastLoadWarnings.Value.Warnings.Select(w => w.Message)
             .Should().Contain(CoreStrings.Get("LoadWarning_MimetypeMissing"));
+    }
+
+    // A file the "other instance" has open: its lock is held until the returned lock is disposed.
+    private static (string Path, BookFileLock Held) FileOpenElsewhere(Harness h, string name = "in-use.epub")
+    {
+        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, h.Dir, name);
+        return (epub, h.OtherInstance.TryAcquire(epub)!);
+    }
+
+    [Fact]
+    public async Task A_file_open_in_another_instance_is_not_loaded_until_the_user_decides()
+    {
+        using Harness h = new();
+        (string epub, BookFileLock held) = FileOpenElsewhere(h);
+        using BookFileLock _ = held;
+
+        bool loaded = await h.Workflow.LoadFileAsync(epub);
+
+        loaded.Should().BeFalse();
+        h.Prompts.FilesInUse.Should().Equal(Path.GetFileName(epub));
+        h.Workspace.ApplyBookCalls.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Close_closes_the_application_and_loads_nothing()
+    {
+        using Harness h = new();
+        (string epub, BookFileLock held) = FileOpenElsewhere(h);
+        using BookFileLock _ = held;
+        h.Prompts.InUseChoices.Enqueue(FileInUseChoice.Close);
+
+        await h.Workflow.LoadFileAsync(epub);
+
+        h.Prompts.CloseApplicationCalls.Should().Be(1);
+        h.Workspace.ApplyBookCalls.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Open_without_a_book_starts_with_a_new_empty_book()
+    {
+        using Harness h = new();
+        (string epub, BookFileLock held) = FileOpenElsewhere(h);
+        using BookFileLock _ = held;
+        h.Prompts.InUseChoices.Enqueue(FileInUseChoice.OpenEmpty);
+
+        bool loaded = await h.Workflow.LoadFileAsync(epub);
+
+        loaded.Should().BeFalse("the file itself was not loaded");
+        h.Workspace.ApplyBookCalls.Should().Be(1);
+        h.Workspace.LastAppliedPath.Should().BeNull();
+        h.Workflow.CurrentFilePath.Should().BeEmpty();
+        h.Prompts.CloseApplicationCalls.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Open_anyway_loads_the_file_without_taking_its_lock()
+    {
+        using Harness h = new();
+        (string epub, BookFileLock held) = FileOpenElsewhere(h);
+        using BookFileLock _ = held;
+        h.Prompts.InUseChoices.Enqueue(FileInUseChoice.OpenAnyway);
+
+        bool loaded = await h.Workflow.LoadFileAsync(epub);
+
+        loaded.Should().BeTrue();
+        h.Workspace.LastAppliedPath.Should().Be(epub);
+        h.Workflow.CurrentFilePath.Should().Be(Path.GetFullPath(epub));
+    }
+
+    [Fact]
+    public async Task Open_another_file_asks_for_a_file_and_loads_it_instead()
+    {
+        using Harness h = new();
+        (string busy, BookFileLock held) = FileOpenElsewhere(h);
+        using BookFileLock _ = held;
+        string other = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, h.Dir, "free.epub");
+        h.Prompts.InUseChoices.Enqueue(FileInUseChoice.ChooseAnother);
+        h.Prompts.OpenPath = other;
+
+        bool loaded = await h.Workflow.LoadFileAsync(busy);
+
+        loaded.Should().BeTrue();
+        h.Workspace.LastAppliedPath.Should().Be(other);
+        h.Prompts.FilesInUse.Should().ContainSingle();
+    }
+
+    [Fact]
+    public async Task Cancelling_the_file_picker_asks_again()
+    {
+        using Harness h = new();
+        (string busy, BookFileLock held) = FileOpenElsewhere(h);
+        using BookFileLock _ = held;
+        h.Prompts.InUseChoices.Enqueue(FileInUseChoice.ChooseAnother);
+        h.Prompts.InUseChoices.Enqueue(FileInUseChoice.Close);
+        h.Prompts.OpenPath = null;
+
+        await h.Workflow.LoadFileAsync(busy);
+
+        h.Prompts.FilesInUse.Should().HaveCount(2);
+        h.Prompts.CloseApplicationCalls.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task A_file_this_instance_has_open_is_loaded_again_without_asking()
+    {
+        using Harness h = new();
+        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, h.Dir, "mine.epub");
+        await h.Workflow.LoadFileAsync(epub);
+
+        bool again = await h.Workflow.LoadFileAsync(epub);
+
+        again.Should().BeTrue();
+        h.Prompts.FilesInUse.Should().BeEmpty();
+        h.OtherInstance.TryAcquire(epub).Should().BeNull("the lock is still held by this instance");
+    }
+
+    [Fact]
+    public async Task The_lock_follows_the_book_and_is_released_when_it_is_closed_or_replaced()
+    {
+        using Harness h = new();
+        string first = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, h.Dir, "first.epub");
+        string second = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, h.Dir, "second.epub");
+
+        await h.Workflow.LoadFileAsync(first);
+        h.OtherInstance.TryAcquire(first).Should().BeNull("the first book is open here");
+
+        await h.Workflow.LoadFileAsync(second);
+        using (BookFileLock? freed = h.OtherInstance.TryAcquire(first))
+        {
+            freed.Should().NotBeNull("the first book is no longer open here");
+        }
+
+        h.OtherInstance.TryAcquire(second).Should().BeNull();
+        await h.Workflow.CloseAsync();
+        using BookFileLock? afterClose = h.OtherInstance.TryAcquire(second);
+        afterClose.Should().NotBeNull("closing the book releases its file");
+    }
+
+    [Fact]
+    public async Task Save_As_moves_the_lock_to_the_new_file()
+    {
+        using Harness h = new();
+        string first = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, h.Dir, "first.epub");
+        await h.Workflow.LoadFileAsync(first);
+        h.Prompts.SavePath = h.PathIn("renamed.epub");
+
+        await h.Workflow.SaveAsAsync();
+
+        h.OtherInstance.TryAcquire(h.PathIn("renamed.epub")).Should().BeNull("the book now lives in the new file");
+        using BookFileLock? old = h.OtherInstance.TryAcquire(first);
+        old.Should().NotBeNull("the old file is free");
     }
 
     [Fact]

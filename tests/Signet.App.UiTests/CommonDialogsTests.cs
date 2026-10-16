@@ -56,6 +56,28 @@ public sealed class CommonDialogsTests
     }
 
     [AvaloniaFact]
+    public void FileInUseDialog_offers_the_four_choices_and_names_the_file()
+    {
+        FileInUseDialog window = FileInUseDialog.Build("book.epub");
+        ShowAndRender(window);
+
+        string?[] texts = window.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).ToArray();
+
+        window.Title.Should().Be(Strings.Get("FileInUseDialog_Title"));
+        texts.Should().Contain(Strings.Format("FileInUseDialog_Message", "book.epub"));
+        texts.Should().Contain(new[]
+        {
+            Strings.Get("FileInUseDialog_Close"),
+            Strings.Get("FileInUseDialog_OpenEmpty"),
+            Strings.Get("FileInUseDialog_ChooseAnother"),
+            Strings.Get("FileInUseDialog_OpenAnyway"),
+        });
+        texts.Should().Contain("⚠", "the risky choice is marked with a warning");
+        window.GetVisualDescendants().OfType<Button>().Should().HaveCount(4);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void SelectFilesWindow_SingleFileMode_renders_with_thumbnail_list()
     {
         SelectFilesEntry[] entries =

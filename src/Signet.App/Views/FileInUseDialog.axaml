@@ -1,0 +1,52 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.FileInUseDialog"
+        Width="520" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Title="{loc:Loc FileInUseDialog_Title}">
+
+  <Window.Styles>
+    <!-- A choice: a title and, below it, what it does. -->
+    <Style Selector="Button.choice">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="Padding" Value="12,8" />
+    </Style>
+  </Window.Styles>
+
+  <StackPanel Margin="16" Spacing="12">
+    <TextBlock x:Name="MessageText" TextWrapping="Wrap" />
+
+    <Button x:Name="OpenEmptyButton" Classes="choice">
+      <StackPanel Spacing="2">
+        <TextBlock Text="{loc:Loc FileInUseDialog_OpenEmpty}" FontWeight="SemiBold" />
+        <TextBlock Text="{loc:Loc FileInUseDialog_OpenEmptyDescription}" Opacity="0.7" TextWrapping="Wrap" />
+      </StackPanel>
+    </Button>
+    <Button x:Name="ChooseAnotherButton" Classes="choice">
+      <StackPanel Spacing="2">
+        <TextBlock Text="{loc:Loc FileInUseDialog_ChooseAnother}" FontWeight="SemiBold" />
+        <TextBlock Text="{loc:Loc FileInUseDialog_ChooseAnotherDescription}" Opacity="0.7" TextWrapping="Wrap" />
+      </StackPanel>
+    </Button>
+    <!-- Risky: the two instances can overwrite each other's changes, hence the warning mark. -->
+    <Button x:Name="OpenAnywayButton" Classes="choice">
+      <StackPanel Spacing="2">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <TextBlock Text="⚠" Foreground="{DynamicResource SignetRiskMarkerBrush}" />
+          <TextBlock Text="{loc:Loc FileInUseDialog_OpenAnyway}" FontWeight="SemiBold" />
+        </StackPanel>
+        <TextBlock Text="{loc:Loc FileInUseDialog_OpenAnywayDescription}" Opacity="0.7" TextWrapping="Wrap" />
+      </StackPanel>
+    </Button>
+    <Button x:Name="CloseButton" Classes="choice" IsDefault="True" IsCancel="True">
+      <StackPanel Spacing="2">
+        <TextBlock Text="{loc:Loc FileInUseDialog_Close}" FontWeight="SemiBold" />
+        <TextBlock Text="{loc:Loc FileInUseDialog_CloseDescription}" Opacity="0.7" TextWrapping="Wrap" />
+      </StackPanel>
+    </Button>
+  </StackPanel>
+</Window>

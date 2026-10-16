@@ -33,6 +33,25 @@ public sealed class FakeFileWorkflowPrompts : IFileWorkflowPrompts
         return work();
     }
 
+    /// <summary>The answers to <see cref="AskFileInUseAsync"/>, in order (the dialog closed = <see cref="FileInUseChoice.Close"/>).</summary>
+    public System.Collections.Generic.Queue<FileInUseChoice> InUseChoices { get; } = new();
+
+    /// <summary>The file names <see cref="AskFileInUseAsync"/> was asked about.</summary>
+    public List<string> FilesInUse { get; } = new();
+
+    /// <summary>Number of <see cref="CloseApplication"/> calls.</summary>
+    public int CloseApplicationCalls { get; private set; }
+
+    /// <inheritdoc />
+    public Task<FileInUseChoice> AskFileInUseAsync(string fileName)
+    {
+        FilesInUse.Add(fileName);
+        return Task.FromResult(InUseChoices.Count > 0 ? InUseChoices.Dequeue() : FileInUseChoice.Close);
+    }
+
+    /// <inheritdoc />
+    public void CloseApplication() => CloseApplicationCalls++;
+
     /// <summary>Number of <see cref="AskOpenPathAsync"/> calls.</summary>
     public int AskOpenPathCalls { get; private set; }
 

@@ -5905,4 +5905,34 @@ Close the tab</value>
   <data name="PreferencesWindow_BookBrowserExpandOnLoad" xml:space="preserve">
     <value>Expand book folders on load</value>
   </data>
+  <data name="FileInUseDialog_Title" xml:space="preserve">
+    <value>File already open</value>
+  </data>
+  <data name="FileInUseDialog_Message" xml:space="preserve">
+    <value>The file "{0}" is already open in another instance of Signet.</value>
+  </data>
+  <data name="FileInUseDialog_OpenEmpty" xml:space="preserve">
+    <value>Open without a book</value>
+  </data>
+  <data name="FileInUseDialog_OpenEmptyDescription" xml:space="preserve">
+    <value>Starts with a new empty book; the file is not loaded.</value>
+  </data>
+  <data name="FileInUseDialog_ChooseAnother" xml:space="preserve">
+    <value>Open another file…</value>
+  </data>
+  <data name="FileInUseDialog_ChooseAnotherDescription" xml:space="preserve">
+    <value>Pick a different file to load instead.</value>
+  </data>
+  <data name="FileInUseDialog_OpenAnyway" xml:space="preserve">
+    <value>Open anyway</value>
+  </data>
+  <data name="FileInUseDialog_OpenAnywayDescription" xml:space="preserve">
+    <value>Risky: both instances edit the same file, and whichever saves last overwrites the other's changes.</value>
+  </data>
+  <data name="FileInUseDialog_Close" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="FileInUseDialog_CloseDescription" xml:space="preserve">
+    <value>Closes this instance of Signet; the file stays open in the other one.</value>
+  </data>
 </root>
