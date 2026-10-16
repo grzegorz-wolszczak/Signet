@@ -186,7 +186,18 @@ public sealed partial class MainWindowViewModel
 
         _findUsages = new FindUsagesViewModel(_settings);
         _dockFactory.FindUsages = _findUsages;
-        _findUsages.UsageActivated += (_, usage) => NavigateToBookPathAtOffset(usage.BookPath, usage.Offset);
+        _findUsages.UsageActivated += (_, usage) =>
+        {
+            // A match of a text search is selected, as the multi-file Find Next does; a class usage gets the caret.
+            if (usage.Length > 0)
+            {
+                ((IMultiFileSearchHost)this).OpenResourceAtMatch(usage.BookPath, usage.Offset, usage.Offset + usage.Length);
+            }
+            else
+            {
+                NavigateToBookPathAtOffset(usage.BookPath, usage.Offset);
+            }
+        };
         _findUsages.RefreshRequested += (_, _) =>
         {
             if (_findUsages.ClassName is { } className)
@@ -966,6 +977,14 @@ public sealed partial class MainWindowViewModel
         }
 
         return null;
+    }
+
+    /// <inheritdoc />
+    void IMultiFileSearchHost.ShowTextUsages(
+        Func<string> header, IReadOnlyList<ClassUsage> usages, Func<IReadOnlyList<ClassUsage>> rerun)
+    {
+        _findUsages.LoadText(header, usages, rerun);
+        ShowFindUsagesTool();
     }
 
     /// <inheritdoc />
@@ -2594,14 +2613,20 @@ public sealed partial class MainWindowViewModel
         _tabManager.SaveAllTabs();
         IReadOnlyList<ClassUsage> usages = _currentBook.FindClassUsages(className);
         _findUsages.Load(className, usages);
+        ShowFindUsagesTool();
+        _statusBar.ShowMessage(
+            Strings.Format("Status_FindUsages", className, FindUsagesViewModel.ResultsText(usages.Count)), TimeSpan.FromSeconds(4));
+    }
+
+    // Shows the "Find Usages" window (when it is hidden) and focuses it.
+    private void ShowFindUsagesTool()
+    {
         if (!_dockFactory.IsToolVisible(DockableIds.FindUsages))
         {
             _dockFactory.ToggleTool(DockableIds.FindUsages);
         }
 
         _dockFactory.FocusTool(DockableIds.FindUsages);
-        _statusBar.ShowMessage(
-            Strings.Format("Status_FindUsages", className, FindUsagesViewModel.ResultsText(usages.Count)), TimeSpan.FromSeconds(4));
     }
 
     /// <summary>Raised after "Mend Code" changed the current file when Preferences ask to see the changes — the view shows the diff window.</summary>
@@ -2655,14 +2680,22 @@ public sealed partial class MainWindowViewModel
     public void RefreshFindUsagesAfterSave(bool saved = true)
     {
         if (!saved || !_settings.FindUsagesRefreshOnSave || _currentBook is null
-            || _findUsages.ClassName is not { } className || !_dockFactory.IsToolVisible(DockableIds.FindUsages))
+            || !_findUsages.HasSearch || !_dockFactory.IsToolVisible(DockableIds.FindUsages))
         {
             return;
         }
 
         _tabManager.SaveAllTabs();
-        _findUsages.Load(className, _currentBook.FindClassUsages(className));
-        DebugLog.Write("FindUsages", $"refreshed after save: {className}");
+        if (_findUsages.ClassName is { } className)
+        {
+            _findUsages.Load(className, _currentBook.FindClassUsages(className));
+            DebugLog.Write("FindUsages", $"refreshed after save: {className}");
+        }
+        else
+        {
+            _findUsages.Refresh();
+            DebugLog.Write("FindUsages", $"refreshed after save: {_findUsages.Header}");
+        }
     }
 
     /// <summary>

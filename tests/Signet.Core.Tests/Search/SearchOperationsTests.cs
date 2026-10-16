@@ -22,6 +22,18 @@ public sealed class SearchOperationsTests
     }
 
     [Fact]
+    public void FindInText_ListsTheOffsetsOfEveryMatchInOrder()
+    {
+        SearchOperations.FindInText(Normal("ab"), "ab AB xab").Should().Equal((0, 2), (3, 5), (7, 9));
+    }
+
+    [Fact]
+    public void FindInText_InvalidRegex_IsEmpty()
+    {
+        SearchOperations.FindInText("(unclosed", "whatever").Should().BeEmpty();
+    }
+
+    [Fact]
     public void CountInText_InvalidRegex_ReturnsZero()
     {
         SearchOperations.CountInText("(unclosed", "whatever").Should().Be(0);

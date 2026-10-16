@@ -4389,6 +4389,21 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="FindUsages_KindSelector" xml:space="preserve">
     <value>selektor CSS</value>
   </data>
+  <data name="FindUsages_KindText" xml:space="preserve">
+    <value>tekst</value>
+  </data>
+  <data name="FindUsages_InFiles_One" xml:space="preserve">
+    <value>w {0} pliku</value>
+  </data>
+  <data name="FindUsages_InFiles_Many" xml:space="preserve">
+    <value>w {0} plikach</value>
+  </data>
+  <data name="FindUsages_TextHeader" xml:space="preserve">
+    <value>Tekst „{0}” (tryb: „{1}”, zakres: „{2}”{3})</value>
+  </data>
+  <data name="FindUsages_TextHeaderRegexOptions" xml:space="preserve">
+    <value>, Opcje regex: „{0}”</value>
+  </data>
   <data name="BookBrowserView_ColumnOrderHeader" xml:space="preserve">
     <value>#</value>
   </data>

@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using Signet.App.ViewModels.Tabs;
+using Signet.Core.BookManipulation;
 using Signet.Core.Resources;
 using Signet.Core.Search;
 
@@ -35,6 +37,14 @@ public interface IMultiFileSearchHost
     /// <c>[startOffset, endOffset)</c> in it — the multi-file Find Next "jump" to a match.
     /// </summary>
     void OpenResourceAtMatch(string bookPath, int startOffset, int endOffset);
+
+    /// <summary>
+    /// Shows the matches of a "Count All" in the "Find Usages" window (shown and focused).
+    /// </summary>
+    /// <param name="header">The description of the search (built in the current language).</param>
+    /// <param name="usages">The matches.</param>
+    /// <param name="rerun">Runs the search again, for the window's "Refresh".</param>
+    void ShowTextUsages(Func<string> header, IReadOnlyList<ClassUsage> usages, Func<IReadOnlyList<ClassUsage>> rerun);
 
     /// <summary>
     /// Creates an automatic "Before: <paramref name="operation"/>" checkpoint; returns whether one was created.

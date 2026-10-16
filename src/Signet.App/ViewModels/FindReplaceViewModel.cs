@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System;
 using CommunityToolkit.Mvvm.Input;
 using Signet.App.Infrastructure;
@@ -17,7 +18,7 @@ using Signet.Core.Search;
 
 namespace Signet.App.ViewModels;
 
-/// <summary>A single row of the multi-file operation report (Replace All / Count All).</summary>
+/// <summary>A single row of the multi-file operation report (Replace All).</summary>
 /// <param name="BookPath">Book path of the file.</param>
 /// <param name="Count">Number of matches / replacements in the file.</param>
 /// <param name="Skipped">Whether the file was skipped (e.g. it is not well-formed).</param>
@@ -48,7 +49,7 @@ public sealed record ReplacePreviewRequest(
 /// scopes — through <see cref="IMultiFileSearchHost"/> and
 /// <see cref="MultiFileFindEngine"/>).
 /// </summary>
-public sealed class FindReplaceViewModel : ViewModelBase
+public sealed partial class FindReplaceViewModel : ViewModelBase
 {
     private const int MessageSeconds = 20;
 
@@ -250,7 +251,7 @@ public sealed class FindReplaceViewModel : ViewModelBase
     /// <summary>Whether the selected scope covers more than the current file.</summary>
     public bool IsMultiFileScope => _lookWhere != LookWhere.CurrentFile;
 
-    /// <summary>Report rows of the last multi-file operation (Replace All / Count All).</summary>
+    /// <summary>Report rows of the last multi-file operation (Replace All).</summary>
     public ObservableCollection<MultiFileReportRow> ReportRows { get; } = new();
 
     /// <summary>Summary of the last multi-file operation (empty when there is no report).</summary>
@@ -680,12 +681,18 @@ public sealed class FindReplaceViewModel : ViewModelBase
         return count;
     }
 
-    /// <summary>Counts matches — in the current file or in the whole scope.</summary>
-    public int Count()
+    /// <summary>
+    /// Counts matches — in the current file or in the whole scope — and shows them in the "Find Usages" window (not when
+    /// there are none).
+    /// </summary>
+    public int Count() => CountCore(showUsages: true);
+
+    // Count All; the saved searches (Count All of several entries, the Counts Report) only want the number.
+    private int CountCore(bool showUsages)
     {
         if (IsMultiFileMode())
         {
-            return CountMultiFile();
+            return CountMultiFile(showUsages);
         }
 
         if (!TryPreparePattern(out string pattern, out CodeTabViewModel? tab))
@@ -694,14 +701,91 @@ public sealed class FindReplaceViewModel : ViewModelBase
         }
 
         ClearReport();
-        int count = tab.CountMatches(pattern, _direction, _optionWrap);
+        SearchDirection direction = _direction;
+        bool wrap = _optionWrap;
+        IReadOnlyList<(int Start, int End)> matches = tab.FindAllMatches(pattern, direction, wrap);
+        int count = matches.Count;
         RememberFind();
         RefreshHighlights(tab, pattern);
         SetMessage(count == 0
             ? Strings.Get("FindReplace_NotFound")
             : Strings.Format("FindReplace_MatchCount", count));
+
+        if (showUsages && count > 0 && tab.Resource is TextResource resource)
+        {
+            IReadOnlyList<ClassUsage> usages = ClassUsageFinder.FromTextMatches(tab.ResourceBookPath, tab.DocumentText, matches);
+            _host.ShowTextUsages(
+                TextUsagesHeader(selection: tab.Search.Marked.IsMarked),
+                usages,
+                () =>
+                {
+                    // The tab's current text and caret (as the search of a tab uses them); a closed tab's resource whole.
+                    _host.FlushOpenTabs();
+                    return _host.FindOpenTab(resource) is { } open
+                        ? ClassUsageFinder.FromTextMatches(
+                            resource.BookPath, open.DocumentText, open.FindAllMatches(pattern, direction, wrap))
+                        : ClassUsageFinder.FromTextMatches(
+                            resource.BookPath, resource.GetText(), SearchOperations.FindInText(pattern, resource.GetText()));
+                });
+        }
+
         return count;
     }
+
+    /// <summary>
+    /// The description of the search for the header of the "Find Usages" window, from the panel's settings now:
+    /// <c>Text "…" (mode: "…", scope: "…", Regex options: "… | …")</c> — the options only in Regex mode and only the
+    /// ones that are on. The returned function builds the text in the language current at the time it is called.
+    /// </summary>
+    private Func<string> TextUsagesHeader(bool selection)
+    {
+        string findText = _findText;
+        SearchMode mode = _mode;
+        LookWhere lookWhere = IsMultiFileMode() ? _lookWhere : LookWhere.CurrentFile;
+        bool dotAll = _regexDotAll;
+        bool minimal = _regexMinimalMatch;
+        bool unicode = _regexUnicodeProperty;
+        bool autoTokenise = _regexAutoTokenise;
+
+        return () =>
+        {
+            string modeName = Strings.Get(mode switch
+            {
+                SearchMode.Regex => "FindReplaceView_ModeRegex",
+                SearchMode.CaseSensitive => "FindReplaceView_ModeCaseSensitive",
+                _ => "FindReplaceView_ModeNormal",
+            });
+            string scope = selection
+                ? Strings.Get("FindReplaceView_RestrictToSelection")
+                : LookWhereLabels[(int)lookWhere];
+
+            List<string> options = new();
+            if (mode == SearchMode.Regex)
+            {
+                AddOption(options, dotAll, "FindReplaceView_DotMatchesAll");
+                AddOption(options, minimal, "FindReplaceView_MinimalMatch");
+                AddOption(options, unicode, "FindReplaceView_UnicodeProperty");
+                AddOption(options, autoTokenise, "FindReplaceView_AutoTokenise");
+            }
+
+            string optionsPart = options.Count == 0
+                ? string.Empty
+                : Strings.Format("FindUsages_TextHeaderRegexOptions", string.Join(" | ", options));
+            return Strings.Format("FindUsages_TextHeader", findText, modeName, scope, optionsPart);
+        };
+
+        // The label of the option without the regex syntax it ends with: "Dot matches all (?s)" → "Dot matches all".
+        static void AddOption(List<string> options, bool on, string key)
+        {
+            if (on)
+            {
+                options.Add(TrailingRegexSyntax().Replace(Strings.Get(key), string.Empty));
+            }
+        }
+    }
+
+    [GeneratedRegex(@"\s*\([?*][^)]*\)\s*$")]
+    private static partial Regex TrailingRegexSyntax();
 
     // ---------------------------------------- saved searches --- //
 
@@ -838,7 +922,7 @@ public sealed class FindReplaceViewModel : ViewModelBase
         foreach (SearchEntry entry in Leaves(entries))
         {
             LoadSearch(entry);
-            total += Count();
+            total += CountCore(showUsages: false);
         }
 
         SetMessage(total == 0
@@ -852,7 +936,7 @@ public sealed class FindReplaceViewModel : ViewModelBase
     {
         ArgumentNullException.ThrowIfNull(entry);
         LoadSearch(entry);
-        return Count();
+        return CountCore(showUsages: false);
     }
 
     // Checkpoint before Replace All — skipped when replacing in selected text;
@@ -1098,7 +1182,7 @@ public sealed class FindReplaceViewModel : ViewModelBase
         return false;
     }
 
-    private int CountMultiFile()
+    private int CountMultiFile(bool showUsages)
     {
         if (!TryPrepareMultiFile(_direction, out string pattern, out IReadOnlyList<TextResource> files))
         {
@@ -1106,22 +1190,46 @@ public sealed class FindReplaceViewModel : ViewModelBase
         }
 
         _host.FlushOpenTabs();
-        IReadOnlyList<SearchOperations.FileSearchResult> perFile =
-            SearchOperations.CountInFiles(pattern, files);
+        List<ClassUsage> usages = FindMatchesInFiles(pattern, files);
         RememberFind();
 
-        var rows = perFile
-            .Where(r => r.Count > 0)
-            .Select(r => new MultiFileReportRow(r.BookPath, r.Count, Skipped: false, Reason: null))
-            .ToList();
-        int total = rows.Sum(r => r.Count);
-
+        // The list of the matches is in the "Find Usages" window; the panel only says how many.
+        ClearReport();
+        int total = usages.Count;
+        int fileCount = usages.Select(u => u.BookPath).Distinct(StringComparer.Ordinal).Count();
         string summary = total == 0
             ? Strings.Get("FindReplace_NotFoundInScope")
-            : Strings.Format("FindReplace_MatchesInFiles", total, rows.Count);
-        SetReport(summary, rows);
+            : Strings.Format("FindReplace_MatchesInFiles", total, fileCount);
         SetMessage(summary);
+
+        if (showUsages && total > 0)
+        {
+            _host.ShowTextUsages(
+                TextUsagesHeader(selection: false),
+                usages,
+                () =>
+                {
+                    _host.FlushOpenTabs();
+                    return FindMatchesInFiles(pattern, files);
+                });
+        }
+
         return total;
+    }
+
+    // The matches of the pattern in the files, in the order of the files (and the text order within a file).
+    private static List<ClassUsage> FindMatchesInFiles(string pattern, IReadOnlyList<TextResource> files)
+    {
+        List<ClassUsage> usages = new();
+        foreach (TextResource resource in files)
+        {
+            resource.InitialLoad();
+            string text = resource.GetText();
+            usages.AddRange(ClassUsageFinder.FromTextMatches(
+                resource.BookPath, text, SearchOperations.FindInText(pattern, text)));
+        }
+
+        return usages;
     }
 
     private int ReplaceAllMultiFile()

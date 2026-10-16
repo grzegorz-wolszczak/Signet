@@ -128,4 +128,23 @@ public sealed class ClassUsageFinderTests
         usage.Context.Should().StartWith("…").And.EndWith("…").And.Contain("class=\"note\"");
         usage.Context.Length.Should().BeLessThanOrEqualTo(ClassUsageFinder.MaxContextLength + 2);
     }
+
+    [Fact]
+    public void FromTextMatches_gives_line_column_context_and_length_of_each_match()
+    {
+        const string text = "first line\n   second cat here\nthird cat";
+
+        IReadOnlyList<ClassUsage> usages = ClassUsageFinder.FromTextMatches(
+            "Text/a.xhtml", text, new[] { (Start: 21, End: 24), (Start: 36, End: 39) });
+
+        usages.Should().Equal(
+            new ClassUsage("Text/a.xhtml", 21, 2, 11, ClassUsageKind.Text, "second cat here", 3),
+            new ClassUsage("Text/a.xhtml", 36, 3, 7, ClassUsageKind.Text, "third cat", 3));
+    }
+
+    [Fact]
+    public void FromTextMatches_without_matches_is_empty()
+    {
+        ClassUsageFinder.FromTextMatches("a", "text", Array.Empty<(int Start, int End)>()).Should().BeEmpty();
+    }
 }
