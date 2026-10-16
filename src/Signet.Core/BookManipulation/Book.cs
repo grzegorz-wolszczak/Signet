@@ -736,69 +736,56 @@ public sealed class Book : IDisposable
 
     /// <summary>
     /// Re-links the stylesheets in <paramref name="resources"/> to exactly
-    /// <paramref name="stylesheetBookPaths"/> (order preserved). When any of the files is not well-formed,
-    /// nothing is changed and the result points at that file.
+    /// <paramref name="stylesheetBookPaths"/> (order preserved). A file that is not well-formed is skipped
+    /// (left unchanged) and the rest is processed; the skipped files are listed in the result.
     /// </summary>
-    public LinkResourcesResult LinkStylesheetsToResources(
+    public FileBatchResult LinkStylesheetsToResources(
         IReadOnlyList<HtmlResource> resources,
         IReadOnlyList<string> stylesheetBookPaths)
     {
         ArgumentNullException.ThrowIfNull(resources);
         ArgumentNullException.ThrowIfNull(stylesheetBookPaths);
 
-        if (FindFirstNotWellFormed(resources) is { } bad)
-        {
-            return new LinkResourcesResult(false, bad);
-        }
-
-        foreach (HtmlResource html in resources)
+        return ProcessHtmlFiles(resources, requireWellFormed: true, html =>
         {
             string updated = LinkStylesheetsUpdate.Apply(
                 html.GetText(), html.BookPath, stylesheetBookPaths, html.EpubVersion);
             html.SetText(updated);
             html.SaveToDisk();
-        }
-
-        if (resources.Count > 0)
-        {
-            Modified = true;
-        }
-
-        return new LinkResourcesResult(true, null);
+            return true;
+        });
     }
 
     /// <summary>
     /// Re-links the scripts in <paramref name="resources"/> to exactly
-    /// <paramref name="javascriptBookPaths"/>.
-    /// After the change it refreshes the manifest properties (adding <c>scripted</c>).
+    /// <paramref name="javascriptBookPaths"/>. A file that is not well-formed is skipped (left unchanged) and the
+    /// rest is processed; the skipped files are listed in the result.
+    /// After the change it refreshes the manifest properties (adding <c>scripted</c>) of the processed files.
     /// </summary>
-    public LinkResourcesResult LinkJavascriptsToResources(
+    public FileBatchResult LinkJavascriptsToResources(
         IReadOnlyList<HtmlResource> resources,
         IReadOnlyList<string> javascriptBookPaths)
     {
         ArgumentNullException.ThrowIfNull(resources);
         ArgumentNullException.ThrowIfNull(javascriptBookPaths);
 
-        if (FindFirstNotWellFormed(resources) is { } bad)
-        {
-            return new LinkResourcesResult(false, bad);
-        }
-
-        foreach (HtmlResource html in resources)
+        List<HtmlResource> processed = new();
+        FileBatchResult result = ProcessHtmlFiles(resources, requireWellFormed: true, html =>
         {
             string updated = LinkJavascriptsUpdate.Apply(
                 html.GetText(), html.BookPath, javascriptBookPaths, html.EpubVersion);
             html.SetText(updated);
             html.SaveToDisk();
-        }
+            processed.Add(html);
+            return true;
+        });
 
-        if (resources.Count > 0)
+        if (processed.Count > 0)
         {
-            GetOpf().UpdateManifestProperties(resources);
-            Modified = true;
+            GetOpf().UpdateManifestProperties(processed);
         }
 
-        return new LinkResourcesResult(true, null);
+        return result;
     }
 
     /// <summary>
@@ -873,34 +860,26 @@ public sealed class Book : IDisposable
     /// <summary>
     /// "Mend All HTML Files" — repairs the structure of every (X)HTML file via <see cref="CleanSource.Mend"/>,
     /// without formatting. No well-formed guard (repairing files that are not well-formed is exactly what Mend is for).
+    /// A file that cannot be repaired (the repair throws) is skipped and the rest is processed.
     /// </summary>
     /// <param name="entityOverrides">
     /// An optional character → entity text map — "Preserve Entities" from Preferences.
     /// </param>
     /// <param name="addMissingDoctype">Whether to add a DOCTYPE to files that have none.</param>
-    /// <returns><c>true</c> when at least one file was changed.</returns>
-    public bool MendAllHtml(IReadOnlyDictionary<char, string>? entityOverrides = null, bool addMissingDoctype = false)
-    {
-        bool modified = false;
-        foreach (HtmlResource html in GetHtmlResources())
+    /// <returns>How many files were processed, whether any was changed, and the files that were skipped.</returns>
+    public FileBatchResult MendAllHtml(IReadOnlyDictionary<char, string>? entityOverrides = null, bool addMissingDoctype = false) =>
+        ProcessHtmlFiles(GetHtmlResources(), requireWellFormed: false, html =>
         {
             string source = html.GetText();
-            string version = html.EpubVersion.Length > 0 ? html.EpubVersion : EpubVersion;
-            string newSource = CleanSource.Mend(source, version, entityOverrides, addMissingDoctype);
-            if (!string.Equals(newSource, source, StringComparison.Ordinal))
+            string newSource = CleanSource.Mend(source, VersionOf(html), entityOverrides, addMissingDoctype);
+            if (string.Equals(newSource, source, StringComparison.Ordinal))
             {
-                html.SetText(newSource);
-                modified = true;
+                return false;
             }
-        }
 
-        if (modified)
-        {
-            Modified = true;
-        }
-
-        return modified;
-    }
+            html.SetText(newSource);
+            return true;
+        });
 
     /// <summary>
     /// "Mend Code" for a single file from the Code Editor context menu — repairs the editor text
@@ -1022,7 +1001,7 @@ public sealed class Book : IDisposable
             foreach (HtmlResource html in GetHtmlResources())
             {
                 List<string> links = html.GetLinkedStylesheets().Prepend(stylesheet.BookPath).ToList();
-                if (!LinkStylesheetsToResources(new[] { html }, links).Applied)
+                if (LinkStylesheetsToResources(new[] { html }, links).HasSkipped)
                 {
                     notLinked.Add(html);
                 }
@@ -1068,7 +1047,8 @@ public sealed class Book : IDisposable
     /// "Mend &amp; Prettify All HTML Files" — reformats every (X)HTML file via
     /// <see cref="CleanSource.PrettyPrint(string, bool, string, PrettyPrintOptions?, IReadOnlyDictionary{char, string}?)"/> (without a prior Mend — this option
     /// deliberately does <em>not</em> repair the structure, it only pretty-prints).
-    /// A well-formed guard runs on all files before any change. Preserves whitespace
+    /// A file that is not well-formed is skipped (left unchanged) and the rest is processed; the skipped files are
+    /// listed in the result. Preserves whitespace
     /// (<c>keep_whitespace</c>) when the file or any linked CSS stylesheet uses the
     /// <c>white-space</c>/<c>white-space-collapse</c> property.
     /// </summary>
@@ -1076,104 +1056,104 @@ public sealed class Book : IDisposable
     /// An optional character → entity text map — "Preserve Entities" from Preferences.
     /// </param>
     /// <param name="addMissingDoctype">Whether to add a DOCTYPE to files that have none.</param>
-    public MaintenanceOperationResult PrettyPrintAllHtml(
+    public FileBatchResult PrettyPrintAllHtml(
         IReadOnlyDictionary<char, string>? entityOverrides = null,
         bool addMissingDoctype = false)
     {
-        if (FindFirstNotWellFormed(GetHtmlResources()) is { } bad)
-        {
-            return new MaintenanceOperationResult(false, bad);
-        }
-
         // Tag classification and indent_string/singlespace are loaded once per call
         // from prettyprint.xml in the user's prefs folder (if missing — created with the default
         // content and the built-in values are used).
         PrettyPrintProps props = PrettyPrintProps.LoadUserPrefs();
 
-        bool modified = false;
-        foreach (HtmlResource html in GetHtmlResources())
+        return ProcessHtmlFiles(GetHtmlResources(), requireWellFormed: true, html =>
         {
             string original = html.GetText();
             bool keepWhitespace = XhtmlUsesStyleProperty(html, "white-space")
                 || XhtmlUsesStyleProperty(html, "white-space-collapse");
-            string version = html.EpubVersion.Length > 0 ? html.EpubVersion : EpubVersion;
             string newSource = CleanSource.PrettyPrint(
                 original,
                 keepWhitespace,
-                version,
+                VersionOf(html),
                 options: null,
                 entityOverrides: entityOverrides,
                 props: props,
                 addMissingDoctype: addMissingDoctype);
-            if (!string.Equals(newSource, original, StringComparison.Ordinal))
+            if (string.Equals(newSource, original, StringComparison.Ordinal))
             {
-                html.SetText(newSource);
-                modified = true;
+                return false;
             }
-        }
 
-        if (modified)
-        {
-            Modified = true;
-        }
-
-        return MaintenanceOperationResult.Ok;
+            html.SetText(newSource);
+            return true;
+        });
     }
 
     /// <summary>
     /// "Add soft hyphens" — inserts soft hyphens via <see cref="SoftHyphenInserter"/>
-    /// in the content of all the book's HTML resources. A well-formed guard runs on all files before
-    /// any change, like other operations that tidy up the whole book.
+    /// in the content of all the book's HTML resources. A file that is not well-formed is skipped
+    /// (left unchanged) and the rest is processed; the skipped files are listed in the result.
     /// </summary>
-    public MaintenanceOperationResult AddSoftHyphens()
-    {
-        if (FindFirstNotWellFormed(GetHtmlResources()) is { } bad)
-        {
-            return new MaintenanceOperationResult(false, bad);
-        }
-
-        bool modified = false;
-        foreach (HtmlResource html in GetHtmlResources())
-        {
-            string original = html.GetText();
-            string newSource = SoftHyphenInserter.InsertSoftHyphens(original);
-            if (!string.Equals(newSource, original, StringComparison.Ordinal))
-            {
-                html.SetText(newSource);
-                modified = true;
-            }
-        }
-
-        if (modified)
-        {
-            Modified = true;
-        }
-
-        return MaintenanceOperationResult.Ok;
-    }
+    public FileBatchResult AddSoftHyphens() => ReplaceInEachWellFormed(source => SoftHyphenInserter.InsertSoftHyphens(source));
 
     /// <summary>
     /// "Remove soft hyphens" — the inverse of <see cref="AddSoftHyphens"/>,
     /// removes soft hyphens via <see cref="SoftHyphenInserter.RemoveSoftHyphens"/> from all the book's HTML resources.
-    /// A well-formed guard runs on all files before any change, like other operations
-    /// that tidy up the whole book.
+    /// A file that is not well-formed is skipped (left unchanged) and the rest is processed; the skipped files are
+    /// listed in the result.
     /// </summary>
-    public MaintenanceOperationResult RemoveSoftHyphens()
-    {
-        if (FindFirstNotWellFormed(GetHtmlResources()) is { } bad)
-        {
-            return new MaintenanceOperationResult(false, bad);
-        }
+    public FileBatchResult RemoveSoftHyphens() => ReplaceInEachWellFormed(SoftHyphenInserter.RemoveSoftHyphens);
 
-        bool modified = false;
-        foreach (HtmlResource html in GetHtmlResources())
+    private FileBatchResult ReplaceInEachWellFormed(Func<string, string> transform) =>
+        ProcessHtmlFiles(GetHtmlResources(), requireWellFormed: true, html =>
         {
             string original = html.GetText();
-            string newSource = SoftHyphenInserter.RemoveSoftHyphens(original);
-            if (!string.Equals(newSource, original, StringComparison.Ordinal))
+            string newSource = transform(original);
+            if (string.Equals(newSource, original, StringComparison.Ordinal))
             {
-                html.SetText(newSource);
-                modified = true;
+                return false;
+            }
+
+            html.SetText(newSource);
+            return true;
+        });
+
+    /// <summary>
+    /// Runs <paramref name="process"/> (it returns whether it changed the file) over each of
+    /// <paramref name="resources"/>, one file at a time. A file that is not well-formed (when
+    /// <paramref name="requireWellFormed"/>) or for which reading or <paramref name="process"/> throws is skipped, with
+    /// the reason, and the rest goes on — so one broken file does not stop an operation on the whole book. Sets
+    /// <see cref="Modified"/> when any file changed.
+    /// </summary>
+    private FileBatchResult ProcessHtmlFiles(
+        IEnumerable<HtmlResource> resources, bool requireWellFormed, Func<HtmlResource, bool> process)
+    {
+        List<SkippedFile> skipped = new();
+        int processed = 0;
+        bool modified = false;
+        foreach (HtmlResource html in resources)
+        {
+            try
+            {
+                if (requireWellFormed)
+                {
+                    WellFormedResult check = WellFormedChecker.CheckXhtmlStructure(html.GetText(), html.EpubVersion);
+                    if (!check.IsWellFormed)
+                    {
+                        skipped.Add(new SkippedFile(html.BookPath, check.Message, check.Line, check.Column));
+                        continue;
+                    }
+                }
+
+                if (process(html))
+                {
+                    modified = true;
+                }
+
+                processed++;
+            }
+            catch (Exception ex) when (ex is not OutOfMemoryException)
+            {
+                skipped.Add(new SkippedFile(html.BookPath, ex.Message));
             }
         }
 
@@ -1182,7 +1162,7 @@ public sealed class Book : IDisposable
             Modified = true;
         }
 
-        return MaintenanceOperationResult.Ok;
+        return new FileBatchResult(processed, modified, skipped);
     }
 
     /// <summary>

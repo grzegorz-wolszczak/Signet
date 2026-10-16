@@ -6,6 +6,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AwesomeAssertions;
 using Signet.App.Resources;
+using Signet.App.Services;
 using Signet.App.Views;
 using Signet.Core;
 using Signet.Core.BookManipulation;
@@ -53,6 +54,22 @@ public sealed class CommonDialogsTests
             Strings.Get("LoadWarningsDialog_ColumnReason"),
             Strings.Get("LoadWarningsDialog_ColumnLocation"));
         buttons.Should().Contain(Strings.Get("LoadWarningsDialog_Copy"));
+    }
+
+    [AvaloniaFact]
+    public void LoadWarningsDialog_as_a_skipped_files_report_has_its_own_title_and_header()
+    {
+        SkippedFilesReport report = new(
+            "Mend All HTML Files", Processed: 4, new[] { new SkippedFile("Text/a.xhtml", "bad", 3, 7) });
+        LoadWarningsDialog window = LoadWarningsDialog.BuildReport(report);
+        ShowAndRender(window);
+
+        string?[] texts = window.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).ToArray();
+        TreeDataGrid tree = window.GetVisualDescendants().OfType<TreeDataGrid>().Single();
+
+        window.Title.Should().Be(Strings.Get("SkippedFilesDialog_Title"));
+        texts.Should().Contain(report.Header);
+        tree.Source.Should().NotBeNull();
     }
 
     [AvaloniaFact]

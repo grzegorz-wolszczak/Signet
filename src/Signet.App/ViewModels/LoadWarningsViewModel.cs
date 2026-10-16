@@ -20,16 +20,23 @@ public sealed class LoadWarningsViewModel : ViewModelBase
     private readonly string _fileName;
     private readonly IReadOnlyList<LoadWarning> _warnings;
     private readonly Action<string, int, int>? _navigate;
+    private readonly string? _header;
 
     /// <summary>Creates the view model and builds the tree.</summary>
     /// <param name="fileName">Name of the loaded file (for the header).</param>
     /// <param name="warnings">The warnings (already translated).</param>
     /// <param name="navigate">Opens a file at a line and column (<c>bookPath</c>, <c>line</c>, <c>column</c>); may be <c>null</c>.</param>
-    public LoadWarningsViewModel(string fileName, IReadOnlyList<LoadWarning> warnings, Action<string, int, int>? navigate)
+    /// <param name="header">
+    /// A ready header to show instead of the "file loaded with warnings" one — for the report of an operation
+    /// (<see cref="Signet.App.Services.SkippedFilesReport"/>) that reuses this window; <c>null</c> for the load warnings.
+    /// </param>
+    public LoadWarningsViewModel(
+        string fileName, IReadOnlyList<LoadWarning> warnings, Action<string, int, int>? navigate, string? header = null)
     {
         _fileName = fileName ?? throw new ArgumentNullException(nameof(fileName));
         _warnings = warnings ?? throw new ArgumentNullException(nameof(warnings));
         _navigate = navigate;
+        _header = header;
         foreach (LoadWarning warning in warnings)
         {
             Roots.Add(CreateNode(warning));
@@ -37,7 +44,7 @@ public sealed class LoadWarningsViewModel : ViewModelBase
     }
 
     /// <summary>The header: the file name and the number of warnings.</summary>
-    public string Header => Strings.Format("LoadWarningsDialog_Header", _fileName, _warnings.Count);
+    public string Header => _header ?? Strings.Format("LoadWarningsDialog_Header", _fileName, _warnings.Count);
 
     /// <summary>The first level of the tree: one node per warning.</summary>
     public ObservableCollection<LoadWarningNode> Roots { get; } = new();

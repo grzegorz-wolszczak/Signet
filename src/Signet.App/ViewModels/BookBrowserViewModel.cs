@@ -1233,8 +1233,8 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         }
 
         bool checkpoint = Checkpoint(Strings.Get("CheckpointOp_LinkStylesheets"));
-        LinkResourcesResult result = _book.LinkStylesheetsToResources(resources, orderedBookPaths);
-        if (!result.Applied)
+        FileBatchResult result = _book.LinkStylesheetsToResources(resources, orderedBookPaths);
+        if (result.NothingProcessed)
         {
             Rewind(checkpoint);
         }
@@ -1255,21 +1255,33 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
             return;
         }
 
-        LinkResourcesResult result = _book.LinkJavascriptsToResources(resources, orderedBookPaths);
+        FileBatchResult result = _book.LinkJavascriptsToResources(resources, orderedBookPaths);
         ReportLinkResult(result, Strings.Get("BookBrowserView_LinkJavascriptsTitle"));
     }
 
-    private void ReportLinkResult(LinkResourcesResult result, string operationName)
+    /// <summary>
+    /// Raised when "Link Stylesheets" / "Link Javascripts" skipped some files (not well-formed) — the main window
+    /// shows the report window with the skipped files.
+    /// </summary>
+    public event EventHandler<SkippedFilesReport>? SkippedFilesReported;
+
+    private void ReportLinkResult(FileBatchResult result, string operationName)
     {
-        if (!result.Applied)
+        if (!result.NothingProcessed)
         {
-            _statusBar.ShowMessage(
-                Strings.Format("Status_CancelledNotWellFormed", operationName, result.NotWellFormed?.Filename),
-                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
+            _model?.Refresh();
+        }
+
+        // Nothing is announced on success (as before).
+        if (!result.HasSkipped)
+        {
             return;
         }
 
-        _model?.Refresh();
+        if (FileBatchReporter.ShowStatus(_statusBar, operationName, result, string.Empty) is { } report)
+        {
+            SkippedFilesReported?.Invoke(this, report);
+        }
     }
 
     private List<HtmlResource> SelectedHtmlResources() =>

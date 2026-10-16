@@ -6,6 +6,8 @@ using Avalonia.Input;
 using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Signet.App.Infrastructure;
+using Signet.App.Resources;
+using Signet.App.Services;
 using Signet.App.ViewModels;
 using Signet.Controls.TreeDataGrid;
 using Signet.Core.BookManipulation;
@@ -61,13 +63,34 @@ public partial class LoadWarningsDialog : Window
         return dialog;
     }
 
+    /// <summary>
+    /// Shows the report of a file-by-file operation that skipped some files (non-modal, above <paramref name="owner"/>)
+    /// and returns the window. Double-clicking a file opens it at the problem, like for the load warnings.
+    /// </summary>
+    public static LoadWarningsDialog ShowReport(
+        Window owner, SkippedFilesReport report, Action<string, int, int>? navigate)
+    {
+        LoadWarningsDialog dialog = BuildReport(report, navigate);
+        dialog.Show(owner);
+        return dialog;
+    }
+
+    /// <summary>Configures the report window without showing it (for render tests).</summary>
+    public static LoadWarningsDialog BuildReport(SkippedFilesReport report, Action<string, int, int>? navigate = null)
+    {
+        ArgumentNullException.ThrowIfNull(report);
+        LoadWarningsDialog dialog = Build(report.OperationName, report.ToWarnings(), navigate, report.Header);
+        dialog.Title = Strings.Get("SkippedFilesDialog_Title");
+        return dialog;
+    }
+
     /// <summary>Configures the window without showing it (for render tests).</summary>
     public static LoadWarningsDialog Build(
-        string fileName, IReadOnlyList<LoadWarning> warnings, Action<string, int, int>? navigate = null)
+        string fileName, IReadOnlyList<LoadWarning> warnings, Action<string, int, int>? navigate = null, string? header = null)
     {
         ArgumentNullException.ThrowIfNull(warnings);
         LoadWarningsDialog dialog = new();
-        LoadWarningsViewModel vm = new(fileName, warnings, navigate);
+        LoadWarningsViewModel vm = new(fileName, warnings, navigate, header);
         dialog.HeaderText.Text = vm.Header;
         dialog.DataContext = vm;
         return dialog;
