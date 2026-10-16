@@ -169,6 +169,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             _boundViewModel.SearchEditorRequested -= OnSearchEditorRequested;
             _boundViewModel.StandardizeEpubRequested -= OnStandardizeEpubRequested;
             _boundViewModel.CloseWindowRequested -= OnCloseWindowRequested;
+            _boundViewModel.SkippedFilesReportRequested -= OnSkippedFilesReportRequested;
         }
 
         if (_boundViewModel?.DockFactory is MainDockFactory oldFactory)
@@ -224,6 +225,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         _boundViewModel.SearchEditorRequested += OnSearchEditorRequested;
         _boundViewModel.StandardizeEpubRequested += OnStandardizeEpubRequested;
         _boundViewModel.CloseWindowRequested += OnCloseWindowRequested;
+        _boundViewModel.SkippedFilesReportRequested += OnSkippedFilesReportRequested;
         _boundViewModel.AttachFileWorkflowPrompts(this);
 
         // A shortcut change in Preferences takes effect immediately, without restarting the application.
@@ -409,6 +411,19 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
     }
 
     private LoadWarningsDialog? _loadWarningsWindow;
+
+    /// <summary>
+    /// The report of an operation that skipped some files: the same non-modal window as the load warnings, with the
+    /// skipped files; a report left from the previous operation goes.
+    /// </summary>
+    private void OnSkippedFilesReportRequested(object? sender, SkippedFilesReport report)
+    {
+        _skippedFilesWindow?.Close();
+        _skippedFilesWindow = LoadWarningsDialog.ShowReport(
+            this, report, _boundViewModel is { } vm ? vm.NavigateToBookPathAtLocation : null);
+    }
+
+    private LoadWarningsDialog? _skippedFilesWindow;
 
     /// <inheritdoc />
     public async Task<bool> ConfirmRemoveMissingRecentAsync(string path) =>

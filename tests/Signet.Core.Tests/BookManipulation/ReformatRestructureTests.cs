@@ -66,9 +66,10 @@ public sealed class ReformatRestructureTests
         HtmlResource chapter = Html(book, "chapter1.xhtml");
         WellFormedChecker.CheckXhtmlStructure(chapter.GetText(), chapter.EpubVersion).IsWellFormed.Should().BeFalse();
 
-        bool modified = book.MendAllHtml();
+        FileBatchResult result = book.MendAllHtml();
 
-        modified.Should().BeTrue();
+        result.Modified.Should().BeTrue();
+        result.Skipped.Should().BeEmpty();
         book.Modified.Should().BeTrue();
         WellFormedChecker.CheckXhtmlStructure(chapter.GetText(), chapter.EpubVersion).IsWellFormed.Should().BeTrue();
     }
@@ -109,25 +110,59 @@ public sealed class ReformatRestructureTests
         book.MendAllHtml();
         string[] afterFirstPass = book.GetHtmlResources().Select(r => r.GetText()).ToArray();
 
-        bool modifiedOnSecondPass = book.MendAllHtml();
+        FileBatchResult secondPass = book.MendAllHtml();
 
-        modifiedOnSecondPass.Should().BeFalse();
+        secondPass.Modified.Should().BeFalse();
         book.GetHtmlResources().Select(r => r.GetText()).Should().Equal(afterFirstPass);
     }
 
     [Fact]
-    public void PrettyPrintAllHtml_cancels_when_any_html_not_well_formed()
+    public void PrettyPrintAllHtml_skips_a_file_that_is_not_well_formed_and_formats_the_rest()
     {
         using TempDir temp = new();
-        using Book book = LoadMalformed(temp);
-        HtmlResource chapter = Html(book, "chapter1.xhtml");
-        string originalText = chapter.GetText();
+        using Book book = LoadDeepFolders(temp);
+        IReadOnlyList<HtmlResource> chapters = book.GetHtmlResources();
+        chapters.Should().HaveCountGreaterThan(1);
+        HtmlResource broken = chapters[0];
+        HtmlResource compact = chapters[1];
+        broken.SetText("<html><head><body><p>broken");
+        compact.SetText(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE html>"
+            + "<html xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>T</title></head>"
+            + "<body><h1>Title</h1><p>Hello world.</p></body></html>");
+        string compactText = compact.GetText();
 
-        MaintenanceOperationResult result = book.PrettyPrintAllHtml();
+        FileBatchResult result = book.PrettyPrintAllHtml();
 
-        result.Applied.Should().BeFalse();
-        result.NotWellFormed.Should().BeSameAs(chapter);
-        chapter.GetText().Should().Be(originalText);
+        result.Skipped.Should().ContainSingle();
+        result.Skipped[0].BookPath.Should().Be(broken.BookPath);
+        result.Skipped[0].Line.Should().BePositive();
+        result.Processed.Should().Be(chapters.Count - 1);
+        result.Modified.Should().BeTrue();
+        result.NothingProcessed.Should().BeFalse();
+        broken.GetText().Should().Be("<html><head><body><p>broken");
+        compact.GetText().Should().NotBe(compactText);
+    }
+
+    [Fact]
+    public void PrettyPrintAllHtml_reports_nothing_processed_when_every_file_is_not_well_formed()
+    {
+        using TempDir temp = new();
+        using Book book = LoadDeepFolders(temp);
+        foreach (HtmlResource html in book.GetHtmlResources())
+        {
+            html.SetText("<html><head><body><p>broken " + html.Filename);
+        }
+
+        string[] before = book.GetHtmlResources().Select(h => h.GetText()).ToArray();
+
+        FileBatchResult result = book.PrettyPrintAllHtml();
+
+        result.NothingProcessed.Should().BeTrue();
+        result.Processed.Should().Be(0);
+        result.Modified.Should().BeFalse();
+        result.Skipped.Select(s => s.BookPath).Should().BeEquivalentTo(book.GetHtmlResources().Select(h => h.BookPath));
+        book.GetHtmlResources().Select(h => h.GetText()).Should().Equal(before);
     }
 
     [Fact]
@@ -147,11 +182,48 @@ public sealed class ReformatRestructureTests
         string compact = chapter.GetText();
         compact.Should().NotContain("\n  <h1>");
 
-        MaintenanceOperationResult result = book.PrettyPrintAllHtml();
+        FileBatchResult result = book.PrettyPrintAllHtml();
 
-        result.Applied.Should().BeTrue();
+        result.Skipped.Should().BeEmpty();
         chapter.GetText().Should().NotBe(compact);
         chapter.GetText().Should().Contain("<h1>Chapter 1</h1>");
+    }
+
+    [Fact]
+    public void RemoveSoftHyphens_skips_a_file_that_is_not_well_formed_and_processes_the_rest()
+    {
+        using TempDir temp = new();
+        using Book book = LoadDeepFolders(temp);
+        IReadOnlyList<HtmlResource> chapters = book.GetHtmlResources();
+        chapters.Should().HaveCountGreaterThan(1);
+        chapters[0].SetText("<html><head><body><p>bro&#173;ken");
+        chapters[1].SetText(
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?><!DOCTYPE html>"
+            + "<html xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>T</title></head>"
+            + "<body><p>hy&#173;phen</p></body></html>");
+
+        FileBatchResult result = book.RemoveSoftHyphens();
+
+        result.Skipped.Should().ContainSingle().Which.BookPath.Should().Be(chapters[0].BookPath);
+        result.Modified.Should().BeTrue();
+        chapters[0].GetText().Should().Contain("&#173;");
+        chapters[1].GetText().Should().NotContain("&#173;");
+    }
+
+    [Fact]
+    public void AddSoftHyphens_skips_a_file_that_is_not_well_formed_and_processes_the_rest()
+    {
+        using TempDir temp = new();
+        using Book book = LoadDeepFolders(temp);
+        IReadOnlyList<HtmlResource> chapters = book.GetHtmlResources();
+        chapters.Should().HaveCountGreaterThan(1);
+        chapters[0].SetText("<html><head><body><p>broken");
+
+        FileBatchResult result = book.AddSoftHyphens();
+
+        result.Skipped.Should().ContainSingle().Which.BookPath.Should().Be(chapters[0].BookPath);
+        result.Processed.Should().Be(chapters.Count - 1);
+        chapters[0].GetText().Should().Be("<html><head><body><p>broken");
     }
 
     // ----------------------------------------------------------------------- Restructure --- //

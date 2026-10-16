@@ -151,6 +151,7 @@ public sealed partial class MainWindowViewModel
         _clipboardHistory = clipboardHistory;
         _doctypeGuard = doctypeGuard;
         BookBrowser = bookBrowser;
+        BookBrowser.SkippedFilesReported += (_, report) => RaiseSkippedFilesReport(report);
 
         _dockFactory.TableOfContents = _toc;
         _toc.EntryActivated += (_, entry) => NavigateToToc(entry);
@@ -2249,25 +2250,14 @@ public sealed partial class MainWindowViewModel
         }
 
         bool checkpoint = CheckpointBeforeAction(AppActionIds.MendPrettifyHtml);
-        MaintenanceOperationResult result = _currentBook.PrettyPrintAllHtml(BuildEntityOverrides(), _settings.PrettifyAddMissingDoctype);
-        if (!result.Applied)
-        {
-            if (checkpoint)
-            {
-                RewindCheckpoint();
-            }
-
-            _statusBar.ShowMessage(
-                Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_MendPrettifyAll"), result.NotWellFormed?.Filename),
-                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
-            return;
-        }
-
-        RefreshAfterMaintenanceOperation();
-        _statusBar.ShowMessage(Strings.Get("Status_MendPrettifyAllDone"), TimeSpan.FromSeconds(4));
+        FileBatchResult result = _currentBook.PrettyPrintAllHtml(BuildEntityOverrides(), _settings.PrettifyAddMissingDoctype);
+        FinishFileBatch(result, checkpoint, "Operation_MendPrettifyAll", "Status_MendPrettifyAllDone");
     }
 
-    /// <summary>"Mend All HTML Files" — without the well-formed guard, since repairing such files is exactly what Mend does.</summary>
+    /// <summary>
+    /// "Mend All HTML Files" — without the well-formed guard, since repairing such files is exactly what Mend does.
+    /// A file the repair fails on is skipped and the rest goes on.
+    /// </summary>
     private void MendHtml()
     {
         if (_currentBook is null)
@@ -2276,10 +2266,47 @@ public sealed partial class MainWindowViewModel
         }
 
         _tabManager.SaveAllTabs();
-        CheckpointBeforeAction(AppActionIds.MendHtml);
-        _currentBook.MendAllHtml(BuildEntityOverrides(), _settings.MendAddMissingDoctype);
-        RefreshAfterMaintenanceOperation();
-        _statusBar.ShowMessage(Strings.Get("Status_MendAllDone"), TimeSpan.FromSeconds(4));
+        bool checkpoint = CheckpointBeforeAction(AppActionIds.MendHtml);
+        FileBatchResult result = _currentBook.MendAllHtml(BuildEntityOverrides(), _settings.MendAddMissingDoctype);
+        FinishFileBatch(result, checkpoint, "Operation_MendAll", "Status_MendAllDone");
+    }
+
+    /// <summary>
+    /// The end of an operation applied file by file: when no file could be processed the checkpoint taken before it
+    /// is rewound (the book is unchanged), otherwise the views are refreshed. The status bar gets only the numbers
+    /// of processed and skipped files; the skipped files themselves go to the report window
+    /// (<see cref="SkippedFilesReportRequested"/>).
+    /// </summary>
+    private void FinishFileBatch(FileBatchResult result, bool checkpoint, string operationKey, string successMessageKey)
+    {
+        if (result.NothingProcessed)
+        {
+            if (checkpoint)
+            {
+                RewindCheckpoint();
+            }
+        }
+        else
+        {
+            RefreshAfterMaintenanceOperation();
+        }
+
+        RaiseSkippedFilesReport(FileBatchReporter.ShowStatus(
+            _statusBar, Strings.Get(operationKey), result, Strings.Get(successMessageKey)));
+    }
+
+    /// <summary>
+    /// Raised when an operation applied file by file skipped some files — the view shows the report window (the
+    /// skipped files with the reason; double-clicking one opens it at the problem).
+    /// </summary>
+    public event EventHandler<SkippedFilesReport>? SkippedFilesReportRequested;
+
+    private void RaiseSkippedFilesReport(SkippedFilesReport? report)
+    {
+        if (report is not null)
+        {
+            SkippedFilesReportRequested?.Invoke(this, report);
+        }
     }
 
     /// <summary>"Add Soft Hyphens".</summary>
@@ -2296,17 +2323,8 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        Signet.Core.BookManipulation.MaintenanceOperationResult result = _currentBook.AddSoftHyphens();
-        if (!result.Applied)
-        {
-            _statusBar.ShowMessage(
-                Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_AddSoftHyphens"), result.NotWellFormed?.Filename),
-                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
-            return;
-        }
-
-        RefreshAfterMaintenanceOperation();
-        _statusBar.ShowMessage(Strings.Get("Status_SoftHyphensAdded"), TimeSpan.FromSeconds(4));
+        FileBatchResult result = _currentBook.AddSoftHyphens();
+        FinishFileBatch(result, checkpoint: false, "Operation_AddSoftHyphens", "Status_SoftHyphensAdded");
     }
 
     /// <summary>"Remove Soft Hyphens" — the inverse of <see cref="AddSoftHyphensAsync"/>.</summary>
@@ -2323,17 +2341,8 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        Signet.Core.BookManipulation.MaintenanceOperationResult result = _currentBook.RemoveSoftHyphens();
-        if (!result.Applied)
-        {
-            _statusBar.ShowMessage(
-                Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_RemoveSoftHyphens"), result.NotWellFormed?.Filename),
-                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
-            return;
-        }
-
-        RefreshAfterMaintenanceOperation();
-        _statusBar.ShowMessage(Strings.Get("Status_SoftHyphensRemoved"), TimeSpan.FromSeconds(4));
+        FileBatchResult result = _currentBook.RemoveSoftHyphens();
+        FinishFileBatch(result, checkpoint: false, "Operation_RemoveSoftHyphens", "Status_SoftHyphensRemoved");
     }
 
     /// <summary>

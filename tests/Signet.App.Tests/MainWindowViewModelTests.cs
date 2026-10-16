@@ -968,17 +968,40 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
-    public void MendPrettifyHtml_action_cancels_when_html_not_well_formed()
+    public void MendPrettifyHtml_action_skips_html_that_is_not_well_formed_and_reports_it()
     {
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("not-wellformed-xhtml"), temp);
         MainWindowViewModel sut = New();
         Book book = new ImportEpub(epub).GetBook();
         sut.LoadBook(book, epub);
+        SkippedFilesReport? report = null;
+        sut.SkippedFilesReportRequested += (_, r) => report = r;
 
         sut.Actions.Require(AppActionIds.MendPrettifyHtml).Execute(null);
 
-        sut.StatusMessage.Should().Contain("well-formed");
+        report.Should().NotBeNull();
+        report!.Skipped.Select(s => s.BookPath).Should().Contain(p => p.EndsWith("chapter1.xhtml", StringComparison.Ordinal));
+        sut.StatusMessage.Should().Be(Strings.Format(
+            "Status_BatchPartial", Strings.Get("Operation_MendPrettifyAll"), report.Processed, report.Skipped.Count));
+    }
+
+    [Fact]
+    public void MendHtml_action_repairs_html_that_is_not_well_formed_without_a_report()
+    {
+        using TempDir temp = new();
+        string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("not-wellformed-xhtml"), temp);
+        MainWindowViewModel sut = New();
+        Book book = new ImportEpub(epub).GetBook();
+        sut.LoadBook(book, epub);
+        bool reported = false;
+        sut.SkippedFilesReportRequested += (_, _) => reported = true;
+
+        sut.Actions.Require(AppActionIds.MendHtml).Execute(null);
+
+        reported.Should().BeFalse();
+        book.GetHtmlResources().Should().OnlyContain(
+            h => WellFormedChecker.CheckXhtmlStructure(h.GetText(), h.EpubVersion).IsWellFormed);
     }
 
     [Fact]

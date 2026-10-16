@@ -897,7 +897,7 @@ public sealed class BookBrowserViewModelTests
     }
 
     [Fact]
-    public void ApplyLinkStylesheets_reportsNotWellFormedFileOnStatusBar()
+    public void ApplyLinkStylesheets_reportsSkippedNotWellFormedFileOnStatusBarAndInReport()
     {
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
@@ -905,13 +905,19 @@ public sealed class BookBrowserViewModelTests
         SettingsStore settings = new(temp.Combine("s.xml"));
         BookBrowserViewModel sut = new(settings, status);
         sut.SetBook(book);
+        SkippedFilesReport? report = null;
+        sut.SkippedFilesReported += (_, r) => report = r;
 
         var chapter = (HtmlResource)book.GetHtmlResources().Single(h => h.Filename == "chapter1.xhtml");
         chapter.SetText("<html><head><body><p>broken");
 
         sut.ApplyLinkStylesheets(new[] { chapter }, System.Array.Empty<string>());
 
-        status.CurrentMessage.Should().Contain("well-formed");
+        status.CurrentMessage.Should().Be(
+            Strings.Format("Status_BatchNothingProcessed", Strings.Get("BookBrowserView_LinkStylesheetsTitle"), 1));
+        status.CurrentLevel.Should().Be(NotificationLevel.Warning);
+        report.Should().NotBeNull();
+        report!.Skipped.Should().ContainSingle().Which.BookPath.Should().Be(chapter.BookPath);
     }
 
     [Fact]

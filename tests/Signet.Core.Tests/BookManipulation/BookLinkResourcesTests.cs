@@ -44,9 +44,10 @@ public sealed class BookLinkResourcesTests
         using Book book = LoadWithNcx(temp);
         List<HtmlResource> chapters = Chapters(book);
 
-        LinkResourcesResult result = book.LinkStylesheetsToResources(chapters, Array.Empty<string>());
+        FileBatchResult result = book.LinkStylesheetsToResources(chapters, Array.Empty<string>());
 
-        result.Applied.Should().BeTrue();
+        result.Skipped.Should().BeEmpty();
+        result.Processed.Should().Be(chapters.Count);
         foreach (HtmlResource chapter in chapters)
         {
             chapter.GetText().Should().NotContain("stylesheet");
@@ -65,28 +66,80 @@ public sealed class BookLinkResourcesTests
         CssResource extra = book.CreateEmptyCssFile();
         string existing = book.GetCssResources().Single(c => c.Filename == "style.css").BookPath;
 
-        LinkResourcesResult result = book.LinkStylesheetsToResources(
+        FileBatchResult result = book.LinkStylesheetsToResources(
             new[] { chapter1 }, new[] { extra.BookPath, existing });
 
-        result.Applied.Should().BeTrue();
+        result.Skipped.Should().BeEmpty();
         string text = chapter1.GetText();
         text.IndexOf(extra.Filename, StringComparison.Ordinal)
             .Should().BeLessThan(text.IndexOf("style.css", StringComparison.Ordinal));
     }
 
     [Fact]
-    public void LinkStylesheetsToResources_aborts_when_a_file_is_not_well_formed()
+    public void LinkStylesheetsToResources_skips_a_file_that_is_not_well_formed_and_links_the_rest()
     {
         using TempDir temp = new();
         using Book book = LoadWithNcx(temp);
         List<HtmlResource> chapters = Chapters(book);
+        chapters.Should().HaveCountGreaterThan(1);
         chapters[0].SetText("<html><head><body><p>broken");
 
-        LinkResourcesResult result = book.LinkStylesheetsToResources(chapters, Array.Empty<string>());
+        FileBatchResult result = book.LinkStylesheetsToResources(chapters, Array.Empty<string>());
 
-        result.Applied.Should().BeFalse();
-        result.NotWellFormed.Should().BeSameAs(chapters[0]);
-        chapters[1].GetText().Should().Contain("stylesheet");
+        result.Skipped.Should().ContainSingle();
+        result.Skipped[0].BookPath.Should().Be(chapters[0].BookPath);
+        result.Processed.Should().Be(chapters.Count - 1);
+        result.NothingProcessed.Should().BeFalse();
+        chapters[0].GetText().Should().Be("<html><head><body><p>broken");
+        chapters[1].GetText().Should().NotContain("stylesheet");
+    }
+
+    [Fact]
+    public void LinkStylesheetsToResources_skips_a_file_that_fails_while_being_processed()
+    {
+        using TempDir temp = new();
+        using Book book = LoadWithNcx(temp);
+        List<HtmlResource> chapters = Chapters(book);
+        chapters.Should().HaveCountGreaterThan(1);
+        ThrowingHtmlResource failing = new(temp.Path, temp.Combine("failing.xhtml"));
+        List<HtmlResource> resources = new() { failing, chapters[0] };
+
+        FileBatchResult result = book.LinkStylesheetsToResources(resources, Array.Empty<string>());
+
+        result.Skipped.Should().ContainSingle();
+        result.Skipped[0].BookPath.Should().Be(failing.BookPath);
+        result.Skipped[0].Reason.Should().Be(ThrowingHtmlResource.Message);
+        result.Processed.Should().Be(1);
+        chapters[0].GetText().Should().NotContain("stylesheet");
+    }
+
+    [Fact]
+    public void LinkJavascriptsToResources_skips_a_file_that_is_not_well_formed_and_links_the_rest()
+    {
+        using TempDir temp = new();
+        using Book book = LoadWithNcx(temp);
+        List<HtmlResource> chapters = Chapters(book);
+        chapters.Should().HaveCountGreaterThan(1);
+        chapters[0].SetText("<html><head><body><p>broken");
+        MiscTextResource js = book.CreateEmptyJsFile();
+
+        FileBatchResult result = book.LinkJavascriptsToResources(chapters, new[] { js.BookPath });
+
+        result.Skipped.Should().ContainSingle().Which.BookPath.Should().Be(chapters[0].BookPath);
+        chapters[0].GetText().Should().Be("<html><head><body><p>broken");
+        chapters[1].GetText().Should().Contain(js.Filename);
+    }
+
+    private sealed class ThrowingHtmlResource : HtmlResource
+    {
+        public const string Message = "cannot read";
+
+        public ThrowingHtmlResource(string mainFolder, string fullFilePath)
+            : base(mainFolder, fullFilePath)
+        {
+        }
+
+        public override string GetText() => throw new InvalidOperationException(Message);
     }
 
     [Fact]
@@ -97,9 +150,9 @@ public sealed class BookLinkResourcesTests
         HtmlResource chapter1 = Chapters(book).First();
         MiscTextResource js = book.CreateEmptyJsFile();
 
-        LinkResourcesResult result = book.LinkJavascriptsToResources(new[] { chapter1 }, new[] { js.BookPath });
+        FileBatchResult result = book.LinkJavascriptsToResources(new[] { chapter1 }, new[] { js.BookPath });
 
-        result.Applied.Should().BeTrue();
+        result.Skipped.Should().BeEmpty();
         chapter1.GetText().Should().Contain(js.Filename);
         chapter1.GetText().Should().Contain("</script>");
     }

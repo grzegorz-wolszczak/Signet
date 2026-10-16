@@ -2381,6 +2381,27 @@ Czy chcesz zapisać zmiany?</value>
   <data name="Status_CancelledNotWellFormed" xml:space="preserve">
     <value>{0} — anulowano: plik {1} nie jest poprawny składniowo (well-formed).</value>
   </data>
+  <data name="Operation_MendAll" xml:space="preserve">
+    <value>Poprawianie wszystkich plików HTML</value>
+  </data>
+  <data name="Status_BatchPartial" xml:space="preserve">
+    <value>{0} — przetworzono plików: {1}, pominięto: {2} (szczegóły w raporcie).</value>
+  </data>
+  <data name="Status_BatchNothingProcessed" xml:space="preserve">
+    <value>{0} — anulowano: pominięto wszystkie pliki ({1}), szczegóły w raporcie.</value>
+  </data>
+  <data name="SkippedFilesDialog_Title" xml:space="preserve">
+    <value>Raport operacji</value>
+  </data>
+  <data name="SkippedFilesDialog_Header" xml:space="preserve">
+    <value>{0}: przetworzono plików: {1}, pominięto: {2}.</value>
+  </data>
+  <data name="SkippedFilesDialog_Group" xml:space="preserve">
+    <value>Pominięte pliki</value>
+  </data>
+  <data name="SkippedFilesDialog_GroupMessage" xml:space="preserve">
+    <value>Pominięto pliki, których nie dało się przetworzyć: {0}.</value>
+  </data>
   <data name="Operation_RenameClass" xml:space="preserve">
     <value>Zmiana nazwy klasy</value>
   </data>

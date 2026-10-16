@@ -170,9 +170,9 @@ public sealed class MissingDoctypeTests
         using Book book = LoadDeepFolders(temp);
         HtmlResource stripped = RemoveDoctype(book.GetHtmlResources()[0]);
 
-        book.AddSoftHyphens().Applied.Should().BeTrue();
-        book.PrettyPrintAllHtml(addMissingDoctype: false).Applied.Should().BeTrue();
-        book.RemoveSoftHyphens().Applied.Should().BeTrue();
+        book.AddSoftHyphens().Skipped.Should().BeEmpty();
+        book.PrettyPrintAllHtml(addMissingDoctype: false).Skipped.Should().BeEmpty();
+        book.RemoveSoftHyphens().Skipped.Should().BeEmpty();
         book.PrepareClassRename().Renamer.Should().NotBeNull();
         stripped.GetText().Should().NotContain("<!DOCTYPE");
     }
@@ -184,7 +184,7 @@ public sealed class MissingDoctypeTests
         using Book book = LoadDeepFolders(temp);
         HtmlResource stripped = RemoveDoctype(book.GetHtmlResources()[0]);
 
-        book.PrettyPrintAllHtml(addMissingDoctype: true).Applied.Should().BeTrue();
+        book.PrettyPrintAllHtml(addMissingDoctype: true).Skipped.Should().BeEmpty();
 
         stripped.GetText().Should().Contain("<!DOCTYPE");
     }
@@ -210,7 +210,7 @@ public sealed class MissingDoctypeTests
         using Book book = LoadDeepFolders(temp);
         HtmlResource stripped = RemoveDoctype(book.GetHtmlResources()[0]);
 
-        book.LinkStylesheetsToResources(new[] { stripped }, Array.Empty<string>()).Applied.Should().BeTrue();
+        book.LinkStylesheetsToResources(new[] { stripped }, Array.Empty<string>()).Skipped.Should().BeEmpty();
         CleanSource.Mend(stripped.GetText(), "2.0").Should().NotContain("<!DOCTYPE");
 
         stripped.GetText().Should().NotContain("<!DOCTYPE");
