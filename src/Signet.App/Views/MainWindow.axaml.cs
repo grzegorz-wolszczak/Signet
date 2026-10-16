@@ -390,6 +390,12 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
     public Task<SaveChangesChoice> AskSaveChangesAsync() => SaveChangesDialog.AskAsync(this);
 
     /// <inheritdoc />
+    public Task<FileInUseChoice> AskFileInUseAsync(string fileName) => FileInUseDialog.AskAsync(this, fileName);
+
+    /// <inheritdoc />
+    public void CloseApplication() => Dispatcher.UIThread.Post(Close);
+
+    /// <inheritdoc />
     public Task ShowErrorAsync(string title, string message) => MessageDialog.ShowAsync(this, title, message);
 
     /// <inheritdoc />

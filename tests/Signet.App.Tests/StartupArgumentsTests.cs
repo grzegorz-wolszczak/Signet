@@ -117,6 +117,7 @@ public sealed class StartupArgumentsTests
         first.PersistState();
         settings.BookOpenAtExit.Should().BeTrue();
         first.CheckpointHistory.Dispose();
+        first.FileWorkflow!.Dispose(); // the instance ends: its book file is free again
 
         // Closed before exit: the next start has no book.
         MainWindowViewModel second = NewOn(settings);
@@ -126,6 +127,7 @@ public sealed class StartupArgumentsTests
         second.PersistState();
         settings.BookOpenAtExit.Should().BeFalse();
         second.CheckpointHistory.Dispose();
+        second.FileWorkflow!.Dispose();
 
         MainWindowViewModel third = NewOn(settings);
         await third.RunStartupAsync();

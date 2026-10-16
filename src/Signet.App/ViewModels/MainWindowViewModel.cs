@@ -850,7 +850,7 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        _fileWorkflow = new FileWorkflow(_settings, prompts, this, _logger);
+        _fileWorkflow = new FileWorkflow(_settings, prompts, this, _logger, BookFileLocks.BesideSettings(_settings));
         _fileWorkflow.CurrentFileChanged += (_, _) => RefreshTitle();
         _fileWorkflow.RecentFilesChanged += (_, _) => Changed?.Invoke(this, EventArgs.Empty);
         // Changing the limit in Preferences rebuilds the File menu list immediately.

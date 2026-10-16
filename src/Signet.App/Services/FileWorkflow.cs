@@ -27,9 +27,37 @@ public enum SaveChangesChoice
     Discard,
 }
 
+/// <summary>
+/// The user's choice when the file to load is already open in another instance of the application (see
+/// <see cref="IFileWorkflowPrompts.AskFileInUseAsync"/>).
+/// </summary>
+public enum FileInUseChoice
+{
+    /// <summary>Close this instance (also the default when the dialog is closed with the X button).</summary>
+    Close,
+
+    /// <summary>Do not load the file: start with an empty book.</summary>
+    OpenEmpty,
+
+    /// <summary>Load the file anyway — the two instances can overwrite each other's changes.</summary>
+    OpenAnyway,
+
+    /// <summary>Pick another file to load.</summary>
+    ChooseAnother,
+}
+
 /// <summary>UI operations needed by the file workflow (dialogs). Implemented by the main window view.</summary>
 public interface IFileWorkflowPrompts
 {
+    /// <summary>
+    /// The "already open in another instance" dialog: the file to load is open in another instance of the application.
+    /// </summary>
+    /// <param name="fileName">Name of the file.</param>
+    Task<FileInUseChoice> AskFileInUseAsync(string fileName);
+
+    /// <summary>Closes the application (the main window), as the window's close button does.</summary>
+    void CloseApplication();
+
     /// <summary>File-to-open picker dialog. Returns the path, or <c>null</c> when cancelled.</summary>
     Task<string?> AskOpenPathAsync(string startFolder);
 
@@ -89,7 +117,7 @@ public interface IBookWorkspace
 /// The File menu workflow: New / Open / Save / Save As / Save A Copy, the "Recent Files" list,
 /// and the unsaved-changes guard.
 /// </summary>
-public sealed class FileWorkflow
+public sealed class FileWorkflow : IDisposable
 {
     /// <summary>Default file name for a new publication.</summary>
     public const string DefaultFileName = "untitled.epub";
@@ -102,6 +130,11 @@ public sealed class FileWorkflow
     private readonly IFileWorkflowPrompts _prompts;
     private readonly IBookWorkspace _workspace;
     private readonly ILogger _logger;
+    private readonly BookFileLocks? _locks;
+
+    // The lock on the file of the current book, taken so that another instance finds the file in use; null for a book
+    // without a file, a file another instance has open too (loaded anyway) and when there are no locks.
+    private BookFileLock? _bookLock;
 
     private string _currentFilePath = string.Empty;
     private string _saveACopyFilename = string.Empty;
@@ -110,17 +143,30 @@ public sealed class FileWorkflow
     private Book? _editionStampedBook;
 
     /// <summary>Creates the workflow.</summary>
+    /// <param name="settings">The settings.</param>
+    /// <param name="prompts">The dialogs.</param>
+    /// <param name="workspace">The main window surface.</param>
+    /// <param name="logger">The logger.</param>
+    /// <param name="locks">Tells the instances apart that have the same file open; <c>null</c> = not checked.</param>
     public FileWorkflow(
         SettingsStore settings,
         IFileWorkflowPrompts prompts,
         IBookWorkspace workspace,
-        ILogger logger)
+        ILogger logger,
+        BookFileLocks? locks = null)
     {
+        _locks = locks;
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _prompts = prompts ?? throw new ArgumentNullException(nameof(prompts));
         _workspace = workspace ?? throw new ArgumentNullException(nameof(workspace));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
+
+    /// <summary>
+    /// Lets go of the lock on the file of the current book (what the system does anyway when the application ends), so that
+    /// another instance can open the file.
+    /// </summary>
+    public void Dispose() => ReleaseLock();
 
     /// <summary>Raised when the path/name of the current file changes (to refresh the window title).</summary>
     public event EventHandler? CurrentFileChanged;
@@ -152,12 +198,17 @@ public sealed class FileWorkflow
             return;
         }
 
+        LoadFreshBook(CreateDefaultBook(version));
+    }
+
+    // A new book of the given version (empty = the default from the settings) with the default layout.
+    private Book CreateDefaultBook(string? version)
+    {
         string epubVersion = ResolveVersion(version);
         IReadOnlyList<string> defaultLayout = EmptyEpubLayout.ReadDefault();
-        Book book = BookCreator.CreateNewBook(
+        return BookCreator.CreateNewBook(
             epubVersion,
             defaultLayout.Count > 0 ? defaultLayout : null);
-        LoadFreshBook(book);
     }
 
     /// <summary>File → New → the "Custom Epub Layout" wizard.</summary>
@@ -191,6 +242,7 @@ public sealed class FileWorkflow
 
         DebugLog.Write("File", "close book");
         _workspace.CloseBook();
+        ReleaseLock();
         _currentFilePath = string.Empty;
         _saveACopyFilename = string.Empty;
         CurrentFileChanged?.Invoke(this, EventArgs.Empty);
@@ -206,19 +258,22 @@ public sealed class FileWorkflow
             return;
         }
 
-        string startFolder = _settings.LastFolderOpen;
-        if (startFolder.Length == 0 || !Directory.Exists(startFolder))
-        {
-            startFolder = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        }
-
-        string? path = await _prompts.AskOpenPathAsync(startFolder).ConfigureAwait(true);
+        string? path = await _prompts.AskOpenPathAsync(OpenStartFolder()).ConfigureAwait(true);
         if (string.IsNullOrEmpty(path))
         {
             return;
         }
 
         await LoadFileAsync(path).ConfigureAwait(true);
+    }
+
+    // The folder the open dialog starts in: the last one used, or the home folder.
+    private string OpenStartFolder()
+    {
+        string startFolder = _settings.LastFolderOpen;
+        return startFolder.Length == 0 || !Directory.Exists(startFolder)
+            ? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
+            : startFolder;
     }
 
     /// <summary>
@@ -295,6 +350,19 @@ public sealed class FileWorkflow
             return false;
         }
 
+        // Another instance with the same file open: the user decides before anything is loaded. The file of the book that
+        // is open here is no conflict (it is loaded again, the lock stays).
+        BookFileLock? acquired = null;
+        bool ownFile = _bookLock is not null && _bookLock.Key == BookFileLocks.KeyOf(path);
+        if (_locks is not null && !ownFile)
+        {
+            acquired = _locks.TryAcquire(path);
+            if (acquired is null && await HandleFileInUseAsync(path).ConfigureAwait(true) is { } handled)
+            {
+                return handled;
+            }
+        }
+
         // The check of the file, the import and showing the book take seconds for a big book: they run with a progress
         // window (when they last), the messages come after it.
         (Book? book, string? error) = await _prompts.ShowProgressAsync(
@@ -302,8 +370,15 @@ public sealed class FileWorkflow
             () => ImportAndApplyAsync(importer, path)).ConfigureAwait(true);
         if (book is null)
         {
+            acquired?.Dispose();
             await _prompts.ShowErrorAsync("Signet", error ?? string.Empty).ConfigureAwait(true);
             return false;
+        }
+
+        if (!ownFile)
+        {
+            _bookLock?.Dispose();
+            _bookLock = acquired;
         }
 
         if (book.LoadWarnings.Count > 0)
@@ -312,6 +387,36 @@ public sealed class FileWorkflow
         }
 
         return true;
+    }
+
+    // The file to load is open in another instance: asks what to do until the user has chosen something that ends the
+    // question. Returns null to load the file anyway, otherwise the result of the load (false: nothing was loaded from
+    // this file — an empty book, another file, or the application is closing).
+    private async Task<bool?> HandleFileInUseAsync(string path)
+    {
+        DebugLog.Write("File", $"{DebugLog.MaskPath(path)} is open in another instance");
+        while (true)
+        {
+            switch (await _prompts.AskFileInUseAsync(Path.GetFileName(path)).ConfigureAwait(true))
+            {
+                case FileInUseChoice.OpenAnyway:
+                    return null;
+                case FileInUseChoice.OpenEmpty:
+                    LoadFreshBook(CreateDefaultBook(null));
+                    return false;
+                case FileInUseChoice.ChooseAnother:
+                    string? other = await _prompts.AskOpenPathAsync(OpenStartFolder()).ConfigureAwait(true);
+                    if (!string.IsNullOrEmpty(other))
+                    {
+                        return await LoadFileCoreAsync(other).ConfigureAwait(true);
+                    }
+
+                    break;
+                default:
+                    _prompts.CloseApplication();
+                    return false;
+            }
+        }
     }
 
     // Checks and imports the file off the UI thread and makes it the current publication; the book, or why it could not
@@ -504,6 +609,7 @@ public sealed class FileWorkflow
             {
                 book.Modified = false;
                 SetCurrentFile(fullFilePath);
+                MoveLock(fullFilePath);
                 AddRecentFile(fullFilePath);
             }
 
@@ -546,10 +652,31 @@ public sealed class FileWorkflow
         }
     }
 
+    // The book now lives in another file (Save As, or the first save of a new book): the lock follows it. A file another
+    // instance has open too stays without a lock.
+    private void MoveLock(string path)
+    {
+        if (_locks is null || (_bookLock is not null && _bookLock.Key == BookFileLocks.KeyOf(path)))
+        {
+            return;
+        }
+
+        BookFileLock? next = _locks.TryAcquire(path);
+        _bookLock?.Dispose();
+        _bookLock = next;
+    }
+
+    private void ReleaseLock()
+    {
+        _bookLock?.Dispose();
+        _bookLock = null;
+    }
+
     private void LoadFreshBook(Book book)
     {
         DebugLog.Write("File", "new book");
         _workspace.ApplyBook(book, null);
+        ReleaseLock();
         _currentFilePath = string.Empty;
         _saveACopyFilename = string.Empty;
         CurrentFileChanged?.Invoke(this, EventArgs.Empty);

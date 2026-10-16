@@ -5905,4 +5905,34 @@ Zamknij zakładkę</value>
   <data name="PreferencesWindow_BookBrowserExpandOnLoad" xml:space="preserve">
     <value>Rozwiń foldery książki przy wczytaniu</value>
   </data>
+  <data name="FileInUseDialog_Title" xml:space="preserve">
+    <value>Plik jest już otwarty</value>
+  </data>
+  <data name="FileInUseDialog_Message" xml:space="preserve">
+    <value>Plik „{0}” jest już otwarty w innej instancji Signet.</value>
+  </data>
+  <data name="FileInUseDialog_OpenEmpty" xml:space="preserve">
+    <value>Otwórz bez książki</value>
+  </data>
+  <data name="FileInUseDialog_OpenEmptyDescription" xml:space="preserve">
+    <value>Zaczyna z nową, pustą książką; plik nie jest wczytywany.</value>
+  </data>
+  <data name="FileInUseDialog_ChooseAnother" xml:space="preserve">
+    <value>Otwórz inny plik…</value>
+  </data>
+  <data name="FileInUseDialog_ChooseAnotherDescription" xml:space="preserve">
+    <value>Wybierz inny plik do wczytania.</value>
+  </data>
+  <data name="FileInUseDialog_OpenAnyway" xml:space="preserve">
+    <value>Otwórz mimo to</value>
+  </data>
+  <data name="FileInUseDialog_OpenAnywayDescription" xml:space="preserve">
+    <value>Ryzykowne: obie instancje edytują ten sam plik, a ta, która zapisze później, nadpisze zmiany drugiej.</value>
+  </data>
+  <data name="FileInUseDialog_Close" xml:space="preserve">
+    <value>Zamknij</value>
+  </data>
+  <data name="FileInUseDialog_CloseDescription" xml:space="preserve">
+    <value>Zamyka tę instancję Signet; plik zostaje otwarty w drugiej.</value>
+  </data>
 </root>
