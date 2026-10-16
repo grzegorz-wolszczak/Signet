@@ -194,6 +194,28 @@ public sealed class MainDockFactoryTests
             .Should().OnlyContain(t => t.CanClose);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Showing_a_panel_collapsed_in_auto_hide_slides_it_out(bool viaExpand)
+    {
+        (MainDockFactory sut, IRootDock root) = NewWithRoot();
+        sut.PinDockable(Tool(sut, root, DockableIds.TableOfContents));
+        sut.IsToolPinned(DockableIds.TableOfContents).Should().BeTrue();
+        root.PinnedDock.Should().BeNull("a collapsed panel is not slid out");
+
+        if (viaExpand)
+        {
+            sut.ExpandTool(DockableIds.TableOfContents);
+        }
+        else
+        {
+            sut.FocusTool(DockableIds.TableOfContents);
+        }
+
+        root.PinnedDock.Should().NotBeNull("focusing a collapsed panel slides it out");
+    }
+
     [Fact]
     public void Pinned_state_is_restored_on_next_start()
     {
