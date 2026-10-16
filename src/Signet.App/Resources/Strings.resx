@@ -4548,6 +4548,27 @@ Signet może je edytować dopiero po konwersji na przypisy Signeta.</value>
   <data name="PreferencesWindow_FootnoteGroupByChapterHint" xml:space="preserve">
     <value>W pliku przypisów każdy rozdział (plik z odnośnikami) dostaje swoją grupę z nagłówkiem — tytułem rozdziału. Numeracja zostaje ciągła. Książka pogrupowana w ten sposób zostaje pogrupowana także po wyłączeniu tej opcji.</value>
   </data>
+  <data name="PreferencesWindow_FootnotesGeneralTab" xml:space="preserve">
+    <value>Ogólne</value>
+  </data>
+  <data name="PreferencesWindow_FootnotesCssTab" xml:space="preserve">
+    <value>CSS</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteLetterStyle" xml:space="preserve">
+    <value>Litery odnośników do wspólnej notatki:</value>
+  </data>
+  <data name="PreferencesWindow_FootnoteLetterStyleHint" xml:space="preserve">
+    <value>Gdy do jednej notatki prowadzi kilka odnośników, każdy z nich dostaje literę ([4a], [4b]), a notatka — link powrotny do każdego z nich (4a, 4b). Zmiana dotyczy tylko notatek, które staną się wspólne od teraz: notatki wspólne, które już są w książce, zachowują swoje litery.</value>
+  </data>
+  <data name="FootnoteLetterStyle_LowerLatin" xml:space="preserve">
+    <value>a, b, c…</value>
+  </data>
+  <data name="FootnoteLetterStyle_UpperLatin" xml:space="preserve">
+    <value>A, B, C…</value>
+  </data>
+  <data name="FootnoteLetterStyle_LowerRoman" xml:space="preserve">
+    <value>i, ii, iii…</value>
+  </data>
   <data name="PreferencesWindow_FootnoteGroupStyle" xml:space="preserve">
     <value>Grupa przypisów (.signet-fn-group)</value>
   </data>

@@ -9,6 +9,7 @@ using Signet.Controls.TreeDataGrid;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.LogicalTree;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -22,6 +23,7 @@ using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.App.ViewModels;
 using Signet.App.Views;
+using Signet.Core.Footnotes;
 using Signet.Core.Misc;
 using Signet.Core.Themes;
 using Signet.Core.Spellcheck;
@@ -778,6 +780,42 @@ public sealed class PreferencesWindowRenderTests
         window.Close();
     }
 
+    // The settings on the General tab of the Footnotes page.
+    private static readonly string[] FootnotesGeneralControls =
+        { "ConfirmFootnoteRemovalBox", "FootnoteGroupByChapterBox", "FootnoteLetterStyleBox" };
+
+    /// <summary>
+    /// The Footnotes page has two tabs: General first (the behaviour: the removal confirmation, the grouping and the
+    /// letters of shared notes, with its hint), then CSS (the definitions of the footnote classes).
+    /// </summary>
+    [AvaloniaFact]
+    public void The_footnotes_page_has_a_general_tab_and_a_css_tab()
+    {
+        PreferencesWindow window = BuildWindow();
+        var vm = (PreferencesViewModel)window.DataContext!;
+        window.Show();
+        TabControl footnotes = ShowPage(window, "FootnotesPage").SelectedContent.Should().BeOfType<TabControl>().Subject;
+
+        footnotes.Items.OfType<TabItem>().Select(t => t.Name).Should().Equal("FootnotesGeneralTab", "FootnotesCssTab");
+        footnotes.SelectedIndex.Should().Be(0, "General is shown first");
+        TabItem general = (TabItem)footnotes.Items[0]!;
+        TabItem css = (TabItem)footnotes.Items[1]!;
+        general.Header.Should().Be(Strings.Get("PreferencesWindow_FootnotesGeneralTab"));
+        css.Header.Should().Be(Strings.Get("PreferencesWindow_FootnotesCssTab"));
+
+        Control[] inGeneral = general.GetLogicalDescendants().OfType<Control>().ToArray();
+        inGeneral.Select(c => c.Name).Should().Contain(FootnotesGeneralControls);
+        inGeneral.OfType<TextBlock>().Select(t => t.Text).Should().Contain(Strings.Get("PreferencesWindow_FootnoteLetterStyleHint"));
+        css.GetLogicalDescendants().OfType<CssEditor>().Should().NotBeEmpty();
+        inGeneral.OfType<CssEditor>().Should().BeEmpty("the definitions are on the CSS tab");
+
+        ComboBox letters = inGeneral.OfType<ComboBox>().Single(c => c.Name == "FootnoteLetterStyleBox");
+        letters.SelectedItem.Should().Be(vm.FootnoteLetterStyle);
+        letters.SelectedItem = FootnoteLetterStyle.UpperLatin;
+        vm.FootnoteLetterStyle.Should().Be(FootnoteLetterStyle.UpperLatin);
+        window.Close();
+    }
+
     /// <summary>
     /// Footnote styles: an invalid definition shows its problem next to the label; the fields have a fixed height with a
     /// grip in the corner that changes it, and the heights can be remembered and restored.
@@ -788,8 +826,8 @@ public sealed class PreferencesWindowRenderTests
         PreferencesWindow window = BuildWindow();
         var vm = (PreferencesViewModel)window.DataContext!;
         window.Show();
-        TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
-        SelectTab(tabs, "PreferencesWindow_Footnotes");
+        TabControl footnotes = (TabControl)ShowPage(window, "FootnotesPage").SelectedContent!;
+        footnotes.SelectedItem = footnotes.Items.OfType<TabItem>().Single(t => t.Name == "FootnotesCssTab");
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 

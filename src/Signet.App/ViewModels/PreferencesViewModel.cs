@@ -181,6 +181,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _footnoteGroupStyle = footnoteStyles.Group;
         _footnoteGroupTitleStyle = footnoteStyles.GroupTitle;
         _footnoteGroupByChapter = _settings.FootnoteGroupByChapter;
+        _footnoteLetterStyle = _settings.FootnoteLetterStyle;
         _savedFootnoteStyles = footnoteStyles;
         _confirmFootnoteRemoval = _settings.ConfirmFootnoteRemoval;
 
@@ -1298,6 +1299,16 @@ public sealed partial class PreferencesViewModel : ObservableObject
     private bool _footnoteGroupByChapter;
 
     partial void OnFootnoteGroupByChapterChanged(bool value) => _settings.FootnoteGroupByChapter = value;
+
+    /// <summary>Values to choose from in the "Letters of the references to a shared note" field.</summary>
+    public static IReadOnlyList<FootnoteLetterStyle> AvailableFootnoteLetterStyles { get; } =
+        Enum.GetValues<FootnoteLetterStyle>();
+
+    /// <summary>The letters of the references of a note that several references lead to.</summary>
+    [ObservableProperty]
+    private FootnoteLetterStyle _footnoteLetterStyle;
+
+    partial void OnFootnoteLetterStyleChanged(FootnoteLetterStyle value) => _settings.FootnoteLetterStyle = value;
 
     // The definitions written to the settings: a field with an invalid definition keeps its last valid one.
     private FootnoteStyles _savedFootnoteStyles;

@@ -663,13 +663,22 @@ public partial class PreferencesWindow : Window
 
     // The element and everything below it, in document order. The content of a tab that is not selected is not in the
     // logical tree (only the selected one is presented), so a tab's Content is followed explicitly: the search must see
-    // the settings of every tab, and the resize grips of every page must be found.
-    private static IEnumerable<ILogical> SelfAndLogicalDescendants(ILogical root)
+    // the settings of every tab, and the resize grips of every page must be found. The content of the selected tab of a
+    // nested tab bar is reached twice (through its TabControl and its TabItem): each element is given once.
+    private static IEnumerable<ILogical> SelfAndLogicalDescendants(ILogical root) =>
+        SelfAndLogicalDescendants(root, new HashSet<ILogical>(ReferenceEqualityComparer.Instance));
+
+    private static IEnumerable<ILogical> SelfAndLogicalDescendants(ILogical root, HashSet<ILogical> visited)
     {
+        if (!visited.Add(root))
+        {
+            yield break;
+        }
+
         yield return root;
         foreach (ILogical child in LogicalChildrenAndTabContent(root))
         {
-            foreach (ILogical descendant in SelfAndLogicalDescendants(child))
+            foreach (ILogical descendant in SelfAndLogicalDescendants(child, visited))
             {
                 yield return descendant;
             }
