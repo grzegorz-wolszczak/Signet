@@ -64,6 +64,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
                 || e.QualifiedKey.Contains("book_browser_header_font", StringComparison.Ordinal)
                 || e.QualifiedKey.Contains("book_browser_indent", StringComparison.Ordinal)
                 || e.QualifiedKey.Contains("book_browser_row_spacing", StringComparison.Ordinal)
+                || e.QualifiedKey.Contains("book_browser_cell_", StringComparison.Ordinal)
                 || e.QualifiedKey.Contains("book_browser_appearance", StringComparison.Ordinal))
             {
                 AppearanceChanged?.Invoke(this, EventArgs.Empty);
@@ -148,10 +149,9 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     public Action<string, int>? NavigateTo { get; set; }
 
     /// <summary>
-    /// Request: show the "Rename with template" dialog for the entries (the view then calls
-    /// <see cref="ApplyRenameWithTemplate"/>).
+    /// Request: show the "Mass Rename" window for the entries (the view then calls <see cref="ApplyMassRename"/>).
     /// </summary>
-    public event EventHandler<IReadOnlyList<OpfModelEntry>>? RenameWithTemplateRequested;
+    public event EventHandler<IReadOnlyList<OpfModelEntry>>? MassRenameRequested;
 
     /// <summary>
     /// Request: show the "Bulk rename regex" dialog for the entries (the view then calls
@@ -305,6 +305,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         Rebuild();
         OpenFirstHtmlFile();
         OnPropertyChanged(nameof(HasBook));
+        RefreshAddItems();
         AddBlankHtmlCommand.NotifyCanExecuteChanged();
         AddBlankCssCommand.NotifyCanExecuteChanged();
         AddBlankSvgCommand.NotifyCanExecuteChanged();
@@ -328,20 +329,39 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>The values the "Mass Rename" window starts with: the ones used last time.</summary>
+    public MassRenameOptions GetInitialMassRename() => _settings.MassRename;
+
     /// <summary>
-    /// Initial value for the "Rename with template" dialog: the template saved in settings, or —
-    /// when empty — the first free name of the form <c>Section0001</c>.
+    /// Whether the files can be numbered in the order of the book: only when all of them are (X)HTML files. The ones that are
+    /// not in the spine (e.g. the navigation document) come last.
     /// </summary>
-    public string GetInitialRenameTemplate()
+    public static bool CanUseBookOrder(IReadOnlyList<OpfModelEntry> entries)
     {
-        string template = _settings.RenameTemplate;
-        if (string.IsNullOrEmpty(template) && _book is not null)
+        ArgumentNullException.ThrowIfNull(entries);
+        return entries.Count > 0 && entries.All(e => e.ResourceType == ResourceType.Html);
+    }
+
+    /// <summary>
+    /// What "Mass Rename" would do with the entries and the options (the preview of the window, and the plan
+    /// <see cref="ApplyMassRename"/> carries out): the resources in the order they are numbered and their new names, or the
+    /// message why there are none. The option "in the order of the book" counts only when <see cref="CanUseBookOrder"/>.
+    /// </summary>
+    public MassRenamePlan PlanMassRename(IReadOnlyList<OpfModelEntry> entries, MassRenameOptions options)
+    {
+        ArgumentNullException.ThrowIfNull(entries);
+        IEnumerable<OpfModelEntry> ordered = options.BookOrder && CanUseBookOrder(entries)
+            ? entries.OrderBy(e => e.ReadingOrder >= 0 ? e.ReadingOrder : int.MaxValue)
+            : entries;
+        List<Resource> resources = ordered.Select(e => e.Resource).ToList();
+        if (_book is null)
         {
-            template = RenameTemplateNaming.GetFirstAvailableTemplateName(
-                _book.GetFolderKeeper().GetAllFilenames(), "Section", "0001");
+            return new MassRenamePlan(resources, null, null);
         }
 
-        return template;
+        IReadOnlyList<string>? names = MassRenameNaming.BuildFilenames(
+            resources, options.Normalized(), new List<string>(_book.GetFolderKeeper().GetAllFilenames()), out string? error);
+        return new MassRenamePlan(resources, names, error);
     }
 
     /// <summary>
@@ -363,6 +383,82 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     /// <summary>Whether only the Fonts folder is selected (its menu has no actions on files).</summary>
     public bool IsFontFolderMenu => IsFontMenu && _selection.Length == 0;
 
+    /// <summary>
+    /// The folder the "add" actions of the context menu apply to: the one folder selected, when no file is selected;
+    /// <c>null</c> on files (or several folders, or nothing), where the menu has no "add" actions.
+    /// </summary>
+    public OpfModelGroupKind? AddTarget => _selection.Length == 0 && _selectedFolders.Length == 1 ? _selectedFolders[0] : null;
+
+    /// <summary>Whether the "add" actions are in the context menu (a folder is selected).</summary>
+    public bool ShowAddItems => AddTarget is not null;
+
+    /// <summary>Whether "Add Blank HTML File" fits the selected folder (Text).</summary>
+    public bool CanAddBlankHtmlHere => AddTarget == OpfModelGroupKind.Text;
+
+    /// <summary>Whether "Add Blank Stylesheet" fits the selected folder (Styles).</summary>
+    public bool CanAddBlankCssHere => AddTarget == OpfModelGroupKind.Styles;
+
+    /// <summary>Whether "Add Blank SVG Image" fits the selected folder (Images).</summary>
+    public bool CanAddBlankSvgHere => AddTarget == OpfModelGroupKind.Images;
+
+    /// <summary>
+    /// Whether "Add Blank Javascript" fits the selected folder: Misc, where scripts are kept, and only in an EPUB 3 book (an
+    /// EPUB 2 book has no scripts).
+    /// </summary>
+    public bool CanAddBlankJsHere => AddTarget == OpfModelGroupKind.Misc && _book is { IsEpub3: true };
+
+    /// <summary>Whether "Add Existing Files" fits the selected folder (every folder but Fonts, which has its own action).</summary>
+    public bool CanAddExistingFilesHere => AddTarget is { } kind && kind != OpfModelGroupKind.Fonts;
+
+    /// <summary>The text of the "add existing files" action for the selected folder (e.g. "Add Images from Files…").</summary>
+    public string AddExistingFilesHeader => Strings.Get(AddTarget switch
+    {
+        OpfModelGroupKind.Text => "BookBrowserView_AddHtmlFiles",
+        OpfModelGroupKind.Styles => "BookBrowserView_AddStylesheetFiles",
+        OpfModelGroupKind.Images => "BookBrowserView_AddImageFiles",
+        OpfModelGroupKind.Audio => "BookBrowserView_AddAudioFiles",
+        OpfModelGroupKind.Video => "BookBrowserView_AddVideoFiles",
+        _ => "BookBrowserView_AddExistingFiles",
+    });
+
+    /// <summary>
+    /// The file patterns (e.g. <c>*.css</c>) of the files the selected folder takes, for the file picker of "add existing
+    /// files"; empty for Misc (any file).
+    /// </summary>
+    public IReadOnlyList<string> AddExistingFilePatterns
+    {
+        get
+        {
+            if (AddTarget is not { } kind || kind == OpfModelGroupKind.Misc)
+            {
+                return Array.Empty<string>();
+            }
+
+            return MediaTypes.ExtensionToMediaType
+                .Where(p => MediaTypes.MediaTypeToGroup.TryGetValue(p.Value, out string? group)
+                            && string.Equals(group, kind.ToString(), StringComparison.Ordinal))
+                .Select(p => "*." + p.Key)
+                .OrderBy(x => x, StringComparer.Ordinal)
+                .ToList();
+        }
+    }
+
+    /// <summary>
+    /// Announces that the "add" items of the context menu may have changed (the selection, the book or the language
+    /// changed); the view calls it when the menu opens.
+    /// </summary>
+    public void RefreshAddItems()
+    {
+        OnPropertyChanged(nameof(AddTarget));
+        OnPropertyChanged(nameof(ShowAddItems));
+        OnPropertyChanged(nameof(CanAddBlankHtmlHere));
+        OnPropertyChanged(nameof(CanAddBlankCssHere));
+        OnPropertyChanged(nameof(CanAddBlankSvgHere));
+        OnPropertyChanged(nameof(CanAddBlankJsHere));
+        OnPropertyChanged(nameof(CanAddExistingFilesHere));
+        OnPropertyChanged(nameof(AddExistingFilesHeader));
+    }
+
     /// <summary>Stores the current selection from the view (in tree order).</summary>
     public void UpdateSelection(IEnumerable<object?> selectedItems)
     {
@@ -371,6 +467,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         _selectedFolders = nodes.Where(n => n.FolderKind is not null).Select(n => n.FolderKind!.Value).ToArray();
         OnPropertyChanged(nameof(IsFontMenu));
         OnPropertyChanged(nameof(IsFontFolderMenu));
+        RefreshAddItems();
         OpenSelectedCommand.NotifyCanExecuteChanged();
         RenameSelectedCommand.NotifyCanExecuteChanged();
         DeleteSelectedCommand.NotifyCanExecuteChanged();
@@ -699,56 +796,33 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     private void ManageFonts() => ManageFontsRequested?.Invoke(this, EventArgs.Empty);
 
     /// <summary>
-    /// Applies "Rename with template" to the given entries (called by the view after the dialog
-    /// closes with a template entered): validates the template, generates sequential names and
-    /// saves the next template in <c>SettingsStore</c>.
+    /// Applies "Mass Rename" to the given entries (called by the view after the window closes with Rename): remembers the
+    /// options, numbers the files (in the order of the book when asked and possible) and renames them, updating the links.
+    /// Nothing changes (and a warning is shown) when the options are not valid or a name would collide with another file.
     /// </summary>
-    public void ApplyRenameWithTemplate(IReadOnlyList<OpfModelEntry> entries, string templateName)
+    public void ApplyMassRename(IReadOnlyList<OpfModelEntry> entries, MassRenameOptions options)
     {
         ArgumentNullException.ThrowIfNull(entries);
-        ArgumentNullException.ThrowIfNull(templateName);
-        if (_book is null || _model is null || entries.Count == 0 || string.IsNullOrWhiteSpace(templateName))
+        if (_book is null || _model is null || entries.Count == 0)
         {
             return;
         }
 
-        if (!RenameTemplateNaming.IsTemplateNameValid(templateName, out string? templateError))
+        MassRenamePlan plan = PlanMassRename(entries, options);
+        if (plan.NewFilenames is null)
         {
-            _statusBar.ShowMessage(templateError ?? Strings.Get("BookBrowser_InvalidTemplate"), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
+            _statusBar.ShowMessage(plan.Error ?? Strings.Get("BookBrowser_NamesFailed"), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
             return;
         }
 
-        _settings.RenameTemplate = templateName;
-
-        List<Resource> resources = entries.Select(e => e.Resource).ToList();
-        List<string> allFilenames = new(_book.GetFolderKeeper().GetAllFilenames());
-        IReadOnlyList<string>? newFilenames = RenameTemplateNaming.BuildSequentialFilenames(
-            resources, templateName, allFilenames, out string? buildError);
-
-        if (newFilenames is null)
-        {
-            _statusBar.ShowMessage(buildError ?? Strings.Get("BookBrowser_NamesFailed"), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
-            return;
-        }
-
-        ApplyRenameList(resources, newFilenames);
-
-        // Remember the next name in the sequence.
-        (string basePart, string numberString, string extension) = RenameTemplateNaming.ParseTemplate(templateName);
-        if (numberString.Length > 0)
-        {
-            int next = int.Parse(numberString, System.Globalization.CultureInfo.InvariantCulture) + resources.Count;
-            string nextNumberString = next.ToString(System.Globalization.CultureInfo.InvariantCulture).PadLeft(numberString.Length, '0');
-            string nextTemplate = RenameTemplateNaming.GetFirstAvailableTemplateName(
-                _book.GetFolderKeeper().GetAllFilenames(), basePart, nextNumberString);
-            _settings.RenameTemplate = nextTemplate + extension;
-        }
+        _settings.MassRename = options;
+        ApplyRenameList(plan.Resources, plan.NewFilenames);
     }
 
     /// <summary>
     /// Applies "Bulk rename regex" — renames the resources to the already computed and validated
     /// <paramref name="newFilenames"/> (preview built in the dialog). Also used by
-    /// <see cref="ApplyRenameWithTemplate"/>.
+    /// <see cref="ApplyMassRename"/>.
     /// </summary>
     public void ApplyRenameList(IReadOnlyList<Resource> resources, IReadOnlyList<string> newFilenames)
     {
@@ -921,7 +995,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
 
     [RelayCommand(CanExecute = nameof(HasFileSelection))]
     private void RenameSelectedWithTemplate() =>
-        RenameWithTemplateRequested?.Invoke(this, _selection.Select(n => n.Entry!).ToArray());
+        MassRenameRequested?.Invoke(this, _selection.Select(n => n.Entry!).ToArray());
 
     [RelayCommand(CanExecute = nameof(HasFileSelection))]
     private void BulkRegexRenameSelected() =>
@@ -1106,10 +1180,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     [RelayCommand(CanExecute = nameof(CanSelectAllInFolder))]
     private void SelectAllInFolder()
     {
-        BookBrowserNode? folder = _selection.Length > 0
-            ? Nodes.FirstOrDefault(n => n.IsFolder && n.Children.Contains(_selection[0]))
-            : Nodes.FirstOrDefault(n => n.FolderKind == _selectedFolders[0]);
-        if (folder is null || folder.Children.Count == 0)
+        if (SelectAllTarget() is not { } folder)
         {
             return;
         }
@@ -1118,7 +1189,13 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         TreeSelectionRequested?.Invoke(this, folder.Children.ToArray());
     }
 
-    private bool CanSelectAllInFolder => _selection.Length > 0 || _selectedFolders.Length == 1;
+    // The folder "Select All" works on: the one the selected files are in, or the selected folder itself.
+    private BookBrowserNode? SelectAllTarget() => _selection.Length > 0
+        ? Nodes.FirstOrDefault(n => n.IsFolder && n.Children.Contains(_selection[0]))
+        : _selectedFolders.Length == 1 ? Nodes.FirstOrDefault(n => n.FolderKind == _selectedFolders[0]) : null;
+
+    // Only when there is something to select: a folder with no file or with just one has nothing more to select.
+    private bool CanSelectAllInFolder => SelectAllTarget() is { Children.Count: > 1 };
 
     [RelayCommand(CanExecute = nameof(CanMoveText))]
     private void MoveTextUp() => MoveSelectedText(-1);
@@ -1558,3 +1635,13 @@ public sealed partial class BookBrowserNode : ObservableObject
     public static BookBrowserNode File(OpfModelEntry entry) =>
         new(entry.DisplayName, folderKind: null, folderToolTip: null, entry);
 }
+
+/// <summary>
+/// What "Mass Rename" would do (<see cref="BookBrowserViewModel.PlanMassRename"/>): the resources in the order they are
+/// numbered and their new file names; <see cref="NewFilenames"/> is <c>null</c> when it cannot be done, with the reason in
+/// <see cref="Error"/> (no message while there is no book).
+/// </summary>
+/// <param name="Resources">The resources, in the order they are numbered.</param>
+/// <param name="NewFilenames">Their new file names (same order), or <c>null</c>.</param>
+/// <param name="Error">Why there are no names.</param>
+public sealed record MassRenamePlan(IReadOnlyList<Resource> Resources, IReadOnlyList<string>? NewFilenames, string? Error);

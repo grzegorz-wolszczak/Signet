@@ -238,9 +238,21 @@ public readonly record struct OpenTagHintAppearance(string FontFamily, int FontS
 /// <param name="HeaderFontSize">Size (px) of the column headers; 0 = the interface size.</param>
 /// <param name="Indent">Indentation (px) of one level of the tree.</param>
 /// <param name="RowSpacing">Space (px) between two rows.</param>
+/// <param name="CellMinHeight">Minimum height (px) of a cell, so of a row; 0 = a row is as high as its content.</param>
+/// <param name="CellPadding">Vertical padding (px) of a cell: the space above and below its content.</param>
 public readonly record struct BookBrowserAppearance(
-    string ItemsFontFamily, int ItemsFontSize, string HeaderFontFamily, int HeaderFontSize, int Indent, int RowSpacing)
+    string ItemsFontFamily, int ItemsFontSize, string HeaderFontFamily, int HeaderFontSize, int Indent, int RowSpacing,
+    int CellMinHeight = BookBrowserAppearance.DefaultCellMinHeight, int CellPadding = 0)
 {
+    /// <summary>The default of <see cref="CellMinHeight"/>: the height of the icons of the tree.</summary>
+    public const int DefaultCellMinHeight = 16;
+
+    /// <summary>Upper bound of <see cref="CellMinHeight"/> (the lower bound is 0).</summary>
+    public const int CellMinHeightMax = 60;
+
+    /// <summary>Upper bound of <see cref="CellPadding"/> (the lower bound is 0).</summary>
+    public const int CellPaddingMax = 20;
+
     /// <summary>Lower bound of an explicit font size.</summary>
     public const int FontSizeMin = 6;
 
@@ -269,7 +281,9 @@ public readonly record struct BookBrowserAppearance(
         HeaderFontFamily?.Trim() ?? string.Empty,
         NormalizedFontSize(HeaderFontSize),
         Math.Clamp(Indent, IndentMin, IndentMax),
-        Math.Clamp(RowSpacing, 0, RowSpacingMax));
+        Math.Clamp(RowSpacing, 0, RowSpacingMax),
+        Math.Clamp(CellMinHeight, 0, CellMinHeightMax),
+        Math.Clamp(CellPadding, 0, CellPaddingMax));
 
     private static int NormalizedFontSize(int size) => size <= 0 ? 0 : Math.Clamp(size, FontSizeMin, FontSizeMax);
 }

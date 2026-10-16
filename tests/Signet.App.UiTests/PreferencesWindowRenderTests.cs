@@ -701,28 +701,40 @@ public sealed class PreferencesWindowRenderTests
     }
 
     /// <summary>
-    /// The Fonts pages share one width of the preview: setting it (what the window does with the remembered size) sets it
-    /// on every page, and it is part of the remembered sizes.
+    /// Every Fonts page has a width of the preview of its own: setting it (what the window does with the remembered size)
+    /// changes only that page, and it is part of the remembered sizes. The legacy shared width is the start for the pages
+    /// that have none.
     /// </summary>
     [AvaloniaFact]
-    public void The_preview_width_of_the_fonts_pages_is_shared_and_remembered()
+    public void The_preview_width_of_a_fonts_page_is_its_own_and_remembered()
     {
         PreferencesWindow window = BuildWindow();
         window.Width = 1500;
         window.Show();
         Dispatcher.UIThread.RunJobs();
-        window.SplitterSizes.Should().NotContainKey("FontsPreview", "nothing was resized yet");
+        window.SplitterSizes.Keys.Should().NotContain(k => k.EndsWith(".previewWidth"), "nothing was resized yet");
+        ShowFontsTab(window, "StartScreen");
+        double startScreenBefore = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible).PreviewWidth;
 
-        window.SplitterSizes = new System.Collections.Generic.Dictionary<string, int> { ["FontsPreview"] = 420 };
+        window.SplitterSizes = new System.Collections.Generic.Dictionary<string, int> { ["CodeEditorFontsView.previewWidth"] = 420 };
         Dispatcher.UIThread.RunJobs();
 
-        window.SplitterSizes.Should().Contain("FontsPreview", 420);
+        window.SplitterSizes.Should().Contain("CodeEditorFontsView.previewWidth", 420);
         ShowFontsTab(window, "CodeEditor");
-        FontsPageView shown = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible);
-        shown.PreviewWidth.Should().BeApproximately(420, 2);
+        window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible)
+            .PreviewWidth.Should().BeApproximately(420, 2);
         ShowFontsTab(window, "StartScreen");
-        window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible).PreviewWidth.Should().BeApproximately(420, 2,
-            "another page has the same width");
+        window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible).PreviewWidth
+            .Should().BeApproximately(startScreenBefore, 2, "another page is not resized with it");
+
+        // The width of the old settings (one for all the pages) is taken by the pages that have no width of their own.
+        window.SplitterSizes = new System.Collections.Generic.Dictionary<string, int> { ["FontsPreview"] = 380 };
+        Dispatcher.UIThread.RunJobs();
+        window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible).PreviewWidth
+            .Should().BeApproximately(380, 2);
+        ShowFontsTab(window, "CodeEditor");
+        window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible).PreviewWidth
+            .Should().BeApproximately(420, 2, "this page keeps its own");
         window.Close();
     }
 

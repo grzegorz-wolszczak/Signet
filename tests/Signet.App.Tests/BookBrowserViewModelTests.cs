@@ -501,38 +501,186 @@ public sealed class BookBrowserViewModelTests
     }
 
     [Fact]
-    public void ApplyRenameWithTemplate_RenamesSelectedFilesSequentiallyAndUpdatesLinks()
+    public void ApplyMassRename_NumbersTheFilesWithPaddingKeepsTheExtensionsAndRemembersTheOptions()
     {
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
         BookBrowserViewModel sut = NewViewModel(out SettingsStore settings);
         sut.SetBook(book);
-
         List<OpfModelEntry> text = sut.Nodes.Single(n => n.Header == "Text")
             .Children.Select(n => n.Entry!).ToList();
+        List<string> extensions = text.Select(e => System.IO.Path.GetExtension(e.Resource.Filename)).ToList();
+        MassRenameOptions options = new("part", 2, '#', 5, false);
 
-        sut.ApplyRenameWithTemplate(text, "Chapter0001.xhtml");
+        sut.ApplyMassRename(text, options);
 
-        book.GetHtmlResources().Select(r => r.Filename)
-            .Should().Contain(f => f.StartsWith("Chapter", System.StringComparison.Ordinal));
-        settings.RenameTemplate.Should().NotBeNullOrEmpty();
+        text.Select(e => e.Resource.Filename).Should().Equal(
+            extensions.Select((ext, i) => "part" + (2 + i).ToString(System.Globalization.CultureInfo.InvariantCulture).PadLeft(5, '#') + ext));
+        settings.MassRename.Should().Be(options);
+        sut.GetInitialMassRename().Should().Be(options, "the window starts with the last values");
     }
 
     [Fact]
-    public void ApplyRenameWithTemplate_ForbiddenCharacter_ShowsStatusAndDoesNotRename()
+    public void ApplyMassRename_InTheOrderOfTheBookNumbersTheFilesByTheSpineNotBySelection()
+    {
+        using TempDir temp = new();
+        using Book book = Load(CorpusPaths.Epub3Media, temp);
+        BookBrowserViewModel sut = NewViewModel(out _);
+        sut.SetBook(book);
+        List<OpfModelEntry> text = sut.Nodes.Single(n => n.Header == "Text")
+            .Children.Select(n => n.Entry!).ToList();
+        text.Should().HaveCountGreaterThan(1);
+        List<OpfModelEntry> bySpine = text.OrderBy(e => e.ReadingOrder >= 0 ? e.ReadingOrder : int.MaxValue).ToList();
+        List<OpfModelEntry> reversed = Enumerable.Reverse(text).ToList();
+        BookBrowserViewModel.CanUseBookOrder(reversed).Should().BeTrue();
+
+        sut.ApplyMassRename(reversed, new MassRenameOptions("part", 1, '0', 3, true));
+
+        bySpine.Select(e => System.IO.Path.GetFileNameWithoutExtension(e.Resource.Filename))
+            .Should().Equal(Enumerable.Range(1, bySpine.Count).Select(i => "part" + i.ToString("000", System.Globalization.CultureInfo.InvariantCulture)));
+    }
+
+    [Fact]
+    public void MassRename_TheOrderOfTheBookIsOnlyForHtmlFiles()
+    {
+        using TempDir temp = new();
+        using Book book = Load(CorpusPaths.Epub3Media, temp);
+        BookBrowserViewModel sut = NewViewModel(out _);
+        sut.SetBook(book);
+        OpfModelEntry html = sut.Nodes.Single(n => n.Header == "Text").Children.First().Entry!;
+        OpfModelEntry other = sut.Nodes.First(n => n.Header != "Text" && n.Children.Any(c => c.Entry is not null)).Children.First(c => c.Entry is not null).Entry!;
+
+        BookBrowserViewModel.CanUseBookOrder(new[] { html }).Should().BeTrue();
+        BookBrowserViewModel.CanUseBookOrder(new[] { html, other }).Should().BeFalse();
+        BookBrowserViewModel.CanUseBookOrder(System.Array.Empty<OpfModelEntry>()).Should().BeFalse();
+
+        // Not possible, so the selection order counts even when the option is on.
+        sut.PlanMassRename(new[] { other, html }, new MassRenameOptions("p", 1, '0', 1, true)).Resources
+            .Should().Equal(other.Resource, html.Resource);
+    }
+
+    [Fact]
+    public void ApplyMassRename_ForbiddenCharacterShowsStatusAndDoesNotRename()
+    {
+        using TempDir temp = new();
+        using Book book = Load(CorpusPaths.Epub3Media, temp);
+        BookBrowserViewModel sut = NewViewModel(out SettingsStore settings);
+        sut.SetBook(book);
+        List<OpfModelEntry> text = sut.Nodes.Single(n => n.Header == "Text")
+            .Children.Select(n => n.Entry!).ToList();
+        List<string> before = book.GetHtmlResources().Select(r => r.Filename).ToList();
+
+        sut.ApplyMassRename(text, new MassRenameOptions("bad:name", 1, '0', 1, false));
+
+        book.GetHtmlResources().Select(r => r.Filename).Should().BeEquivalentTo(before);
+        settings.MassRename.Should().Be(MassRenameOptions.Default, "a failed rename is not remembered");
+    }
+
+    [Theory]
+    [InlineData("Text", true, false, false, false)]
+    [InlineData("Styles", false, true, false, false)]
+    [InlineData("Images", false, false, true, false)]
+    [InlineData("Audio", false, false, false, false)]
+    [InlineData("Video", false, false, false, false)]
+    [InlineData("Misc", false, false, false, true)]
+    public void ContextMenu_OnAFolderOnlyTheAddActionsThatFitItAreEnabled(
+        string folder, bool html, bool css, bool svg, bool js)
     {
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
         BookBrowserViewModel sut = NewViewModel(out _);
         sut.SetBook(book);
 
-        List<OpfModelEntry> text = sut.Nodes.Single(n => n.Header == "Text")
-            .Children.Select(n => n.Entry!).ToList();
-        List<string> before = book.GetHtmlResources().Select(r => r.Filename).ToList();
+        sut.UpdateSelection(new object[] { sut.Nodes.Single(n => n.Header == folder) });
 
-        sut.ApplyRenameWithTemplate(text, "bad:name.xhtml");
+        sut.ShowAddItems.Should().BeTrue();
+        (sut.CanAddBlankHtmlHere, sut.CanAddBlankCssHere, sut.CanAddBlankSvgHere, sut.CanAddBlankJsHere).Should().Be((html, css, svg, js));
+        sut.CanAddExistingFilesHere.Should().BeTrue();
+    }
 
-        book.GetHtmlResources().Select(r => r.Filename).Should().BeEquivalentTo(before);
+    [Fact]
+    public void ContextMenu_BlankJavascriptNeedsAnEpub3Book()
+    {
+        using TempDir temp = new();
+        using Book epub2 = Load(CorpusPaths.Epub2Minimal, temp);
+        BookBrowserViewModel sut = NewViewModel(out _);
+        sut.SetBook(epub2);
+
+        sut.UpdateSelection(new object[] { sut.Nodes.Single(n => n.Header == "Misc") });
+
+        sut.CanAddBlankJsHere.Should().BeFalse("an EPUB 2 book has no scripts");
+        sut.CanAddExistingFilesHere.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ContextMenu_OnAFileThereAreNoAddActions()
+    {
+        using TempDir temp = new();
+        using Book book = Load(CorpusPaths.Epub3Media, temp);
+        BookBrowserViewModel sut = NewViewModel(out _);
+        sut.SetBook(book);
+
+        sut.UpdateSelection(new object[] { sut.Nodes.Single(n => n.Header == "Text").Children[0] });
+
+        sut.ShowAddItems.Should().BeFalse();
+        sut.AddTarget.Should().BeNull();
+        sut.CanAddExistingFilesHere.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ContextMenu_TheFontsFolderHasItsOwnAddAction()
+    {
+        using TempDir temp = new();
+        using Book book = Load(CorpusPaths.Epub3Media, temp);
+        BookBrowserViewModel sut = NewViewModel(out _);
+        sut.SetBook(book);
+
+        sut.UpdateSelection(new object[] { sut.Nodes.Single(n => n.Header == "Fonts") });
+
+        sut.CanAddExistingFilesHere.Should().BeFalse();
+        sut.CanAddBlankHtmlHere.Should().BeFalse();
+    }
+
+    [Fact]
+    public void ContextMenu_TheAddExistingFilesActionAndItsFilePickerFollowTheFolder()
+    {
+        using TempDir temp = new();
+        using Book book = Load(CorpusPaths.Epub3Media, temp);
+        BookBrowserViewModel sut = NewViewModel(out _);
+        sut.SetBook(book);
+
+        sut.UpdateSelection(new object[] { sut.Nodes.Single(n => n.Header == "Styles") });
+        sut.AddExistingFilesHeader.Should().Be(Strings.Get("BookBrowserView_AddStylesheetFiles"));
+        sut.AddExistingFilePatterns.Should().Equal("*.css");
+
+        sut.UpdateSelection(new object[] { sut.Nodes.Single(n => n.Header == "Images") });
+        sut.AddExistingFilesHeader.Should().Be(Strings.Get("BookBrowserView_AddImageFiles"));
+        sut.AddExistingFilePatterns.Should().Contain("*.png").And.Contain("*.svg").And.NotContain("*.css");
+
+        sut.UpdateSelection(new object[] { sut.Nodes.Single(n => n.Header == "Misc") });
+        sut.AddExistingFilesHeader.Should().Be(Strings.Get("BookBrowserView_AddExistingFiles"));
+        sut.AddExistingFilePatterns.Should().BeEmpty("Misc takes any file");
+    }
+
+    [Fact]
+    public void ContextMenu_SelectAllNeedsAFolderWithMoreThanOneFile()
+    {
+        using TempDir temp = new();
+        using Book book = Load(CorpusPaths.Epub3Media, temp);
+        BookBrowserViewModel sut = NewViewModel(out _);
+        sut.SetBook(book);
+
+        BookBrowserNode empty = sut.Nodes.Single(n => n.Header == "Misc");
+        empty.Children.Should().BeEmpty();
+        sut.UpdateSelection(new object[] { empty });
+        sut.SelectAllInFolderCommand.CanExecute(null).Should().BeFalse("an empty folder has nothing to select");
+
+        BookBrowserNode text = sut.Nodes.Single(n => n.Header == "Text");
+        sut.UpdateSelection(new object[] { text });
+        sut.SelectAllInFolderCommand.CanExecute(null).Should().Be(text.Children.Count > 1);
+
+        sut.UpdateSelection(new object[] { text.Children[0] });
+        sut.SelectAllInFolderCommand.CanExecute(null).Should().Be(text.Children.Count > 1);
     }
 
     [Fact]

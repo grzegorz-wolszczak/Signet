@@ -139,7 +139,8 @@ public partial class PreferencesWindow : Window
 
     /// <summary>
     /// The sizes the user gave the split panes (pane name -&gt; pixels): the width of the section tree
-    /// (<c>Sections</c>), the width of the preview of the Fonts pages (<c>FontsPreview</c>, shared by all of them), and the
+    /// (<c>Sections</c>), the width of the preview of each Fonts page that was resized (e.g. <c>CodeEditorFontsView.previewWidth</c>;
+    /// the legacy <c>FontsPreview</c>, one width for all of them, is only read, for the pages without a width of their own), and the
     /// width of the tree and the height of the preview of each Appearance › Color Scheme page, e.g. <c>ThemeCssView.tree</c>; the main window remembers them between openings, like the field heights.
     /// </summary>
     public IReadOnlyDictionary<string, int> SplitterSizes
@@ -150,9 +151,9 @@ public partial class PreferencesWindow : Window
             {
                 [SectionsSizeKey] = (int)Math.Round(Body.ColumnDefinitions[0].Width.Value),
             };
-            if (_fontsPreviewWidth > 0)
+            foreach (FontsPageView page in _resizedFontsPages)
             {
-                sizes[FontsPreviewSizeKey] = _fontsPreviewWidth;
+                sizes[page.Name + FontsPreviewWidthSuffix] = (int)Math.Round(page.PreviewWidth);
             }
 
             foreach ((_, ColorSchemeKeysView view) in ThemeKeyViews())
@@ -173,9 +174,17 @@ public partial class PreferencesWindow : Window
                 column.Width = new GridLength(Math.Max(column.MinWidth, sections));
             }
 
-            if (value.TryGetValue(FontsPreviewSizeKey, out int preview) && preview > 0)
+            value.TryGetValue(FontsPreviewSizeKey, out int legacyPreview);
+            foreach (FontsPageView page in FontsPages())
             {
-                SetFontsPreviewWidth(preview);
+                if (value.TryGetValue(page.Name + FontsPreviewWidthSuffix, out int preview) && preview > 0)
+                {
+                    SetFontsPreviewWidth(page, preview);
+                }
+                else if (legacyPreview > 0 && !_resizedFontsPages.Contains(page))
+                {
+                    SetFontsPreviewWidth(page, legacyPreview);
+                }
             }
 
             foreach ((_, ColorSchemeKeysView view) in ThemeKeyViews())
@@ -238,10 +247,11 @@ public partial class PreferencesWindow : Window
 
     private const string SectionsSizeKey = "Sections";
     private const string FontsPreviewSizeKey = "FontsPreview";
-    private int _fontsPreviewWidth;
+    private const string FontsPreviewWidthSuffix = ".previewWidth";
+    private readonly List<FontsPageView> _resizedFontsPages = new();
 
-    // The Fonts pages (every Appearance section and the theme's own) share one width of the preview: resizing it on one
-    // page resizes it on all of them, and the window remembers it.
+    // The Fonts pages (every Appearance section and the theme's own) each have a width of the preview of their own: the
+    // splitter of one page does not move the others, and the window remembers the width of every page that was resized.
     private IEnumerable<FontsPageView> FontsPages() =>
         Pages.Items.OfType<TabItem>().Select(t => t.Content).OfType<ILogical>().SelectMany(SelfAndLogicalDescendants).OfType<FontsPageView>();
 
@@ -266,25 +276,24 @@ public partial class PreferencesWindow : Window
         {
             page.PreviewWidthChanged += (sender, _) =>
             {
-                if (sender is FontsPageView resized)
+                if (sender is FontsPageView resized && !_resizedFontsPages.Contains(resized))
                 {
-                    SetFontsPreviewWidth((int)Math.Round(resized.PreviewWidth));
+                    _resizedFontsPages.Add(resized);
                 }
             };
         }
     }
 
-    private void SetFontsPreviewWidth(int width)
+    private void SetFontsPreviewWidth(FontsPageView page, int width)
     {
-        _fontsPreviewWidth = width;
-        foreach (FontsPageView page in FontsPages())
+        if (!_resizedFontsPages.Contains(page))
         {
-            if (Math.Abs(page.PreviewWidth - width) > 1)
-            {
-                page.PreviewWidth = width;
-            }
+            _resizedFontsPages.Add(page);
         }
+
+        page.PreviewWidth = width;
     }
+
     private const string TreeSizeSuffix = ".tree";
     private const string PreviewSizeSuffix = ".preview";
 

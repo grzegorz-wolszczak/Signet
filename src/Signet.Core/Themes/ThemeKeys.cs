@@ -245,6 +245,9 @@ public static class ThemeKeys
     /// <summary>The text of a button of a destructive action.</summary>
     public static readonly ThemeKey UiDangerButtonText = Color("ui.dangerButton.text", ThemePage.Interface, "Controls", Rgb(0xFFFFFF));
 
+    /// <summary>The background of the Book Browser tree; unset = the background of the panel.</summary>
+    public static readonly ThemeKey UiBookBrowserBackground = Color("ui.bookBrowser.background", ThemePage.Interface, "Controls", null);
+
     /// <summary>A frame around a list or a preview in a dialog.</summary>
     public static readonly ThemeKey UiFrame = Color("ui.frame", ThemePage.Interface, "Controls", Rgb(0x808080));
 

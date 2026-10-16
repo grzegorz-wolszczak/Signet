@@ -115,6 +115,30 @@ public sealed class BookBrowserTreeTests
             row.Bounds.Height.Should().BeLessThanOrEqualTo(Math.Max(content, 16) + 0.5, "nothing but the content makes a row high");
         }
 
+        // The minimum height of a cell and its vertical padding (the name cell and the text cells alike).
+        double[] Heights() => tree.GetVisualDescendants().OfType<TreeDataGridRow>().Where(r => r.IsVisible)
+            .Select(r => r.Bounds.Height).ToArray();
+        double contentHeight = Heights().Max();
+        settings.BookBrowserAppearance = BookBrowserAppearance.Default with { RowSpacing = 0, CellMinHeight = 40 };
+        Render(window);
+        Heights().Should().OnlyContain(h => h == 40, "the minimum height of a cell is the height of a row");
+        settings.BookBrowserAppearance = BookBrowserAppearance.Default with { RowSpacing = 0, CellMinHeight = 0, CellPadding = 5 };
+        Render(window);
+        Heights().Should().OnlyContain(h => h >= 10 + 10, "the padding is above and below the content");
+        Heights().Max().Should().BeApproximately(contentHeight + 10, 1.5);
+
+        // The background comes from the theme.
+        Avalonia.Application.Current!.Resources["SignetBookBrowserBackgroundBrush"] = new Avalonia.Media.SolidColorBrush(Avalonia.Media.Colors.Red);
+        try
+        {
+            Render(window);
+            ((Avalonia.Media.ISolidColorBrush)tree.Background!).Color.Should().Be(Avalonia.Media.Colors.Red);
+        }
+        finally
+        {
+            Avalonia.Application.Current.Resources.Remove("SignetBookBrowserBackgroundBrush");
+        }
+
         settings.BookBrowserAppearance = new BookBrowserAppearance(string.Empty, 20, string.Empty, 9, 35, 6);
         Render(window);
 
@@ -140,6 +164,42 @@ public sealed class BookBrowserTreeTests
         TreeDataGridRow[] rows = tree.GetVisualDescendants().OfType<TreeDataGridRow>().Where(r => r.IsVisible)
             .OrderBy(r => r.Bounds.Y).ToArray();
         return rows.Zip(rows.Skip(1), (a, b) => b.Bounds.Y - (a.Bounds.Y + a.Bounds.Height)).ToArray();
+    }
+
+    [AvaloniaFact]
+    public void The_files_menu_has_the_add_actions_only_on_a_folder_and_enables_the_ones_that_fit_it()
+    {
+        using TempDir temp = new();
+        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        (Window window, BookBrowserViewModel vm, _, TreeDataGrid tree) = Show(new SettingsStore(temp.Combine("settings.xml")), book);
+        string[] addHeaders =
+        {
+            Strings.Get("BookBrowserView_AddBlankHtml"), Strings.Get("BookBrowserView_AddBlankCss"),
+            Strings.Get("BookBrowserView_AddBlankSvg"), Strings.Get("BookBrowserView_AddBlankJs"),
+        };
+
+        MenuItem[] Open()
+        {
+            tree.ContextMenu!.Close();
+            tree.ContextMenu.Open(tree);
+            Render(window);
+            return tree.ContextMenu.Items.OfType<MenuItem>().ToArray();
+        }
+
+        vm.UpdateSelection(new object[] { vm.Nodes.Single(n => n.Header == "Styles") });
+        MenuItem[] onFolder = Open();
+        MenuItem Add(string key) => onFolder.Single(i => Equals(i.Header, Strings.Get(key)));
+        onFolder.Where(i => addHeaders.Contains(i.Header as string)).Should().OnlyContain(i => i.IsVisible);
+        Add("BookBrowserView_AddBlankCss").IsEffectivelyEnabled.Should().BeTrue();
+        Add("BookBrowserView_AddBlankHtml").IsEffectivelyEnabled.Should().BeFalse("not for the Styles folder");
+        Add("BookBrowserView_AddBlankSvg").IsEffectivelyEnabled.Should().BeFalse();
+        Add("BookBrowserView_AddBlankJs").IsEffectivelyEnabled.Should().BeFalse();
+        onFolder.Should().Contain(i => Equals(i.Header, Strings.Get("BookBrowserView_AddStylesheetFiles")) && i.IsEffectivelyEnabled);
+
+        vm.UpdateSelection(new object[] { vm.Nodes.Single(n => n.Header == "Text").Children[0] });
+        MenuItem[] onFile = Open();
+        onFile.Where(i => addHeaders.Contains(i.Header as string)).Should().OnlyContain(i => !i.IsVisible, "no add actions on a file");
+        window.Close();
     }
 
     [AvaloniaFact]

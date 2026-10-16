@@ -108,6 +108,20 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
+    public void The_mass_rename_options_default_to_part_from_1_and_survive_a_reload_normalized()
+    {
+        using TempDir dir = new();
+        string path = dir.Combine("settings.xml");
+        SettingsStore writer = new(path);
+        writer.MassRename.Should().Be(MassRenameOptions.Default);
+
+        writer.MassRename = new MassRenameOptions(" page ", -3, '#', 500, false);
+        writer.Save();
+
+        new SettingsStore(path).MassRename.Should().Be(new MassRenameOptions("page", 0, '#', MassRenameOptions.MinLengthMax, false));
+    }
+
+    [Fact]
     public void The_book_browser_look_defaults_to_the_interface_font_an_indent_of_20_and_a_row_spacing_of_3()
     {
         using TempDir dir = new();
@@ -124,14 +138,17 @@ public sealed class SettingsStoreTests
         string path = dir.Combine("settings.xml");
         SettingsStore writer = new(path)
         {
-            BookBrowserAppearance = new BookBrowserAppearance(" Consolas ", 500, "Arial", -3, 999, -5),
+            BookBrowserAppearance = new BookBrowserAppearance(" Consolas ", 500, "Arial", -3, 999, -5, 500, -2),
         };
         writer.Save();
 
         SettingsStore reader = new(path);
 
         reader.BookBrowserAppearance.Should().Be(new BookBrowserAppearance(
-            "Consolas", BookBrowserAppearance.FontSizeMax, "Arial", 0, BookBrowserAppearance.IndentMax, 0));
+            "Consolas", BookBrowserAppearance.FontSizeMax, "Arial", 0, BookBrowserAppearance.IndentMax, 0,
+            BookBrowserAppearance.CellMinHeightMax, 0));
+        BookBrowserAppearance.Default.CellMinHeight.Should().Be(16);
+        BookBrowserAppearance.Default.CellPadding.Should().Be(0);
     }
 
     [Fact]

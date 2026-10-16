@@ -70,13 +70,15 @@ namespace Signet.Controls.TreeDataGrid.Primitives
         protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
         {
             base.OnPropertyChanged(change);
-            if (change.Property == IndentSizeProperty)
+            if (change.Property == IndentSizeProperty || change.Property == PaddingProperty)
                 UpdateIndentPadding();
         }
 
         private void UpdateIndentPadding()
         {
-            var padding = new Thickness(IndentSize * _indent, 0, 0, 0);
+            // The indentation on the left; the padding of the cell only vertically (a left padding would indent the
+            // expander of the first level too).
+            var padding = new Thickness(IndentSize * _indent, Padding.Top, 0, Padding.Bottom);
             SetAndRaise(IndentPaddingProperty, ref _indentPadding, padding);
         }
 

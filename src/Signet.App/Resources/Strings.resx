@@ -1356,7 +1356,7 @@ Czy chcesz zapisać zmiany?</value>
     <value>Zmień nazwę…</value>
   </data>
   <data name="BookBrowserView_RenameWithTemplate" xml:space="preserve">
-    <value>Zmień nazwy według szablonu…</value>
+    <value>Masowa zmiana nazw…</value>
   </data>
   <data name="BookBrowserView_MoveToFolder" xml:space="preserve">
     <value>Przenieś do folderu…</value>
@@ -1396,6 +1396,21 @@ Czy chcesz zapisać zmiany?</value>
   </data>
   <data name="BookBrowserView_AddExistingFiles" xml:space="preserve">
     <value>Dodaj istniejące pliki…</value>
+  </data>
+  <data name="BookBrowserView_AddHtmlFiles" xml:space="preserve">
+    <value>Dodaj pliki HTML z plików…</value>
+  </data>
+  <data name="BookBrowserView_AddStylesheetFiles" xml:space="preserve">
+    <value>Dodaj arkusze stylów z plików…</value>
+  </data>
+  <data name="BookBrowserView_AddImageFiles" xml:space="preserve">
+    <value>Dodaj obrazy z plików…</value>
+  </data>
+  <data name="BookBrowserView_AddAudioFiles" xml:space="preserve">
+    <value>Dodaj pliki audio…</value>
+  </data>
+  <data name="BookBrowserView_AddVideoFiles" xml:space="preserve">
+    <value>Dodaj pliki video…</value>
   </data>
   <data name="BookBrowserView_AddSemantics" xml:space="preserve">
     <value>Dodaj semantykę…</value>
@@ -2052,7 +2067,7 @@ Czy chcesz zapisać zmiany?</value>
     <value>&amp;Zmień nazwę...</value>
   </data>
   <data name="Action_MainWindow_BookBrowser_RenameWithTemplate" xml:space="preserve">
-    <value>Zmień nazwy według &amp;szablonu...</value>
+    <value>Masowa &amp;zmiana nazw...</value>
   </data>
   <data name="Action_MainWindow_BookBrowser_RERename" xml:space="preserve">
     <value>Zmień nazwy wyrażeniem regularnym...</value>
@@ -2690,11 +2705,38 @@ Czy chcesz zapisać zmiany?</value>
   <data name="BookBrowser_AddFilesFailed" xml:space="preserve">
     <value>Nie udało się dodać plików: {0}</value>
   </data>
-  <data name="BookBrowser_InvalidTemplate" xml:space="preserve">
-    <value>Nieprawidłowy szablon nazwy.</value>
-  </data>
   <data name="BookBrowser_NamesFailed" xml:space="preserve">
     <value>Nie udało się wygenerować nazw.</value>
+  </data>
+  <data name="MassRenameWindow_Title" xml:space="preserve">
+    <value>Masowa zmiana nazw</value>
+  </data>
+  <data name="MassRenameWindow_Description" xml:space="preserve">
+    <value>Zmienia nazwy zaznaczonych plików ({0}) na: prefiks + kolejny numer + dotychczasowe rozszerzenie. Numer jest uzupełniany z lewej strony znakiem dopełnienia do minimalnej długości, np. znak „0” i długość 3 dają part002.html, a znak „#” i długość 7 dają part#####12.html.</value>
+  </data>
+  <data name="MassRenameWindow_Prefix" xml:space="preserve">
+    <value>Prefiks:</value>
+  </data>
+  <data name="MassRenameWindow_StartNumber" xml:space="preserve">
+    <value>Numer początkowy:</value>
+  </data>
+  <data name="MassRenameWindow_PaddingChar" xml:space="preserve">
+    <value>Znak dopełnienia:</value>
+  </data>
+  <data name="MassRenameWindow_MinLength" xml:space="preserve">
+    <value>Minimalna długość numeru:</value>
+  </data>
+  <data name="MassRenameWindow_BookOrder" xml:space="preserve">
+    <value>Zmieniaj nazwy zgodnie z kolejnością w książce</value>
+  </data>
+  <data name="MassRenameWindow_BookOrderTip" xml:space="preserve">
+    <value>Dostępne, gdy zaznaczono same pliki HTML. Numery idą wtedy w kolejności czytania, a nie w kolejności zaznaczenia; pliki spoza kolejności czytania (np. nawigacja) dostają numery na końcu.</value>
+  </data>
+  <data name="MassRenameWindow_Example" xml:space="preserve">
+    <value>Przykład: {0}</value>
+  </data>
+  <data name="MassRenameWindow_RenameButton" xml:space="preserve">
+    <value>Zmień nazwy</value>
   </data>
   <data name="BookBrowser_RenameRejectedXml" xml:space="preserve">
     <value>Zmiana nazw odrzucona — spowodowałaby błędy XML w: {0}</value>
@@ -2754,12 +2796,6 @@ Scalać można tylko pliki HTML.</value>
   </data>
   <data name="BookBrowser_AddExistingFilesTitle" xml:space="preserve">
     <value>Dodaj istniejące pliki</value>
-  </data>
-  <data name="BookBrowser_RenameWithTemplateTitle" xml:space="preserve">
-    <value>Zmień nazwy według szablonu</value>
-  </data>
-  <data name="BookBrowser_RenameWithTemplatePrompt" xml:space="preserve">
-    <value>Szablon nazwy dla plików ({0}), np. Section0001.xhtml:</value>
   </data>
   <data name="BookBrowser_GetInfoTitle" xml:space="preserve">
     <value>Informacje</value>
@@ -5728,6 +5764,9 @@ Zamknij zakładkę</value>
   <data name="ThemeKey_ui_filterActive" xml:space="preserve">
     <value>Aktywny filtr</value>
   </data>
+  <data name="ThemeKey_ui_bookBrowser_background" xml:space="preserve">
+    <value>Tło przeglądarki książki</value>
+  </data>
   <data name="ThemeKey_ui_icon_inactive" xml:space="preserve">
     <value>Ikona nieaktywna</value>
   </data>
@@ -5994,5 +6033,14 @@ Zamknij zakładkę</value>
   </data>
   <data name="PreferencesWindow_BookBrowserRowSpacing" xml:space="preserve">
     <value>Odstęp między wierszami drzewa (px)</value>
+  </data>
+  <data name="PreferencesWindow_BookBrowserCellMinHeight" xml:space="preserve">
+    <value>Minimalna wysokość komórki (px)</value>
+  </data>
+  <data name="PreferencesWindow_BookBrowserCellPadding" xml:space="preserve">
+    <value>Pionowy padding komórki (px)</value>
+  </data>
+  <data name="PreferencesWindow_BookBrowserBackgroundInTheme" xml:space="preserve">
+    <value>Kolor tła przeglądarki książki: schemat kolorów › Interfejs</value>
   </data>
 </root>

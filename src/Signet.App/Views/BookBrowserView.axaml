@@ -69,12 +69,13 @@
          code-behind. Not sortable: the order of the files is the book's (Move Up / Down). -->
     <TreeDataGrid x:Name="Tree"
                   IsVisible="{Binding HasBook}"
+                  Background="{DynamicResource SignetBookBrowserBackgroundBrush}"
                   CanUserSortColumns="False">
       <TreeDataGrid.Styles>
-        <!-- A row is exactly as high as its content: the space between the rows is the "row spacing" setting
-             (the margin of a row, see ApplyAppearance), not a minimum height or the padding of a cell. -->
+        <!-- The defaults of the look settings until a view model is bound (ApplyAppearance replaces them): a row is as
+             high as its content, at least 16 px; the space between the rows is the row spacing (the margin of a row). -->
         <Style Selector=":is(TreeDataGridCell)">
-          <Setter Property="MinHeight" Value="0" />
+          <Setter Property="MinHeight" Value="16" />
         </Style>
         <Style Selector="TreeDataGridTextCell">
           <Setter Property="Padding" Value="4,0" />
@@ -96,12 +97,18 @@
           <MenuItem Header="{loc:Loc BookBrowserView_SortSelected}" Command="{Binding SortTextCommand}" />
           <MenuItem Header="{loc:Loc BookBrowserView_MergeSelected}" Command="{Binding MergeSelectedCommand}" />
           <MenuItem Header="{loc:Loc BookBrowserView_SplitAtMarkers}" Command="{Binding SplitSelectedCommand}" />
-          <Separator />
-          <MenuItem Header="{loc:Loc BookBrowserView_AddBlankHtml}" Command="{Binding AddBlankHtmlCommand}" />
-          <MenuItem Header="{loc:Loc BookBrowserView_AddBlankCss}" Command="{Binding AddBlankCssCommand}" />
-          <MenuItem Header="{loc:Loc BookBrowserView_AddBlankSvg}" Command="{Binding AddBlankSvgCommand}" />
-          <MenuItem Header="{loc:Loc BookBrowserView_AddBlankJs}" Command="{Binding AddBlankJsCommand}" />
-          <MenuItem Header="{loc:Loc BookBrowserView_AddExistingFiles}" Command="{Binding AddExistingFilesCommand}" />
+          <!-- The "add" actions only on a folder (none on files), and only the ones that fit that folder are enabled. -->
+          <Separator IsVisible="{Binding ShowAddItems}" />
+          <MenuItem Header="{loc:Loc BookBrowserView_AddBlankHtml}" Command="{Binding AddBlankHtmlCommand}"
+                    IsVisible="{Binding ShowAddItems}" IsEnabled="{Binding CanAddBlankHtmlHere}" />
+          <MenuItem Header="{loc:Loc BookBrowserView_AddBlankCss}" Command="{Binding AddBlankCssCommand}"
+                    IsVisible="{Binding ShowAddItems}" IsEnabled="{Binding CanAddBlankCssHere}" />
+          <MenuItem Header="{loc:Loc BookBrowserView_AddBlankSvg}" Command="{Binding AddBlankSvgCommand}"
+                    IsVisible="{Binding ShowAddItems}" IsEnabled="{Binding CanAddBlankSvgHere}" />
+          <MenuItem Header="{loc:Loc BookBrowserView_AddBlankJs}" Command="{Binding AddBlankJsCommand}"
+                    IsVisible="{Binding ShowAddItems}" IsEnabled="{Binding CanAddBlankJsHere}" />
+          <MenuItem Header="{Binding AddExistingFilesHeader}" Command="{Binding AddExistingFilesCommand}"
+                    IsVisible="{Binding ShowAddItems}" IsEnabled="{Binding CanAddExistingFilesHere}" />
           <Separator />
           <MenuItem Header="{loc:Loc BookBrowserView_AddSemantics}" Command="{Binding AddSemanticsSelectedCommand}" />
           <MenuItem Header="{loc:Loc BookBrowserView_CoverImage}" Command="{Binding CoverImageSelectedCommand}" />

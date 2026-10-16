@@ -110,6 +110,14 @@ public partial class BookBrowserView : UserControl
         // Every cell: the names (the template of the Name column) and the text of the other columns.
         Style cells = new(x => x.Is<TreeDataGridCell>());
         AddFont(cells, look.ItemsFontFamily, look.ItemsFontSize);
+        cells.Setters.Add(new Setter(MinHeightProperty, (double)look.CellMinHeight));
+
+        // The vertical padding of a cell: the text cells (left and right stay 4 px) and the name cell (its padding is
+        // only the vertical part, the indentation is added by the cell).
+        Style textCells = new(x => x.OfType<TreeDataGridTextCell>());
+        textCells.Setters.Add(new Setter(PaddingProperty, new Thickness(4, look.CellPadding)));
+        Style nameCells = new(x => x.OfType<TreeDataGridExpanderCell>());
+        nameCells.Setters.Add(new Setter(PaddingProperty, new Thickness(0, look.CellPadding)));
 
         // Not a descendant of a cell: the headers keep the interface font unless they have a font of their own.
         Style headers = new(x => x.OfType<TreeDataGridColumnHeader>());
@@ -121,7 +129,7 @@ public partial class BookBrowserView : UserControl
         Style indent = new(x => x.OfType<TreeDataGridExpanderCell>());
         indent.Setters.Add(new Setter(TreeDataGridExpanderCell.IndentSizeProperty, (double)look.Indent));
 
-        _appearanceStyles = new[] { cells, headers, rows, indent };
+        _appearanceStyles = new[] { cells, textCells, nameCells, headers, rows, indent };
         foreach (Style style in _appearanceStyles)
         {
             Tree.Styles.Add(style);
@@ -152,7 +160,7 @@ public partial class BookBrowserView : UserControl
             _boundViewModel.MergeErrorRequested -= OnMergeErrorRequested;
             _boundViewModel.AddExistingFilesRequested -= OnAddExistingFilesRequested;
             _boundViewModel.AddFontFilesRequested -= OnAddFontFilesRequested;
-            _boundViewModel.RenameWithTemplateRequested -= OnRenameWithTemplateRequested;
+            _boundViewModel.MassRenameRequested -= OnMassRenameRequested;
             _boundViewModel.BulkRegexRenameRequested -= OnBulkRegexRenameRequested;
             _boundViewModel.MoveRequested -= OnMoveRequested;
             _boundViewModel.AddSemanticsRequested -= OnAddSemanticsRequested;
@@ -180,7 +188,7 @@ public partial class BookBrowserView : UserControl
             _boundViewModel.MergeErrorRequested += OnMergeErrorRequested;
             _boundViewModel.AddExistingFilesRequested += OnAddExistingFilesRequested;
             _boundViewModel.AddFontFilesRequested += OnAddFontFilesRequested;
-            _boundViewModel.RenameWithTemplateRequested += OnRenameWithTemplateRequested;
+            _boundViewModel.MassRenameRequested += OnMassRenameRequested;
             _boundViewModel.BulkRegexRenameRequested += OnBulkRegexRenameRequested;
             _boundViewModel.MoveRequested += OnMoveRequested;
             _boundViewModel.AddSemanticsRequested += OnAddSemanticsRequested;
@@ -270,6 +278,7 @@ public partial class BookBrowserView : UserControl
 
         if ((e.Source as Visual)?.FindAncestorOfType<TreeDataGridColumnHeader>(includeSelf: true) is not { } header)
         {
+            _boundViewModel.RefreshAddItems();
             if (_boundViewModel.IsFontMenu && Resources["FontContextMenu"] is ContextMenu fontMenu)
             {
                 e.Handled = true;
@@ -517,8 +526,19 @@ public partial class BookBrowserView : UserControl
             return;
         }
 
-        IReadOnlyList<IStorageFile> files = await topLevel.StorageProvider.OpenFilePickerAsync(
-            new FilePickerOpenOptions { Title = Strings.Get("BookBrowser_AddExistingFilesTitle"), AllowMultiple = true });
+        // The files the selected folder takes first (Misc: any file), the rest still reachable as "All files".
+        IReadOnlyList<string> patterns = _boundViewModel?.AddExistingFilePatterns ?? Array.Empty<string>();
+        FilePickerOpenOptions options = new() { Title = Strings.Get("BookBrowser_AddExistingFilesTitle"), AllowMultiple = true };
+        if (patterns.Count > 0)
+        {
+            options.FileTypeFilter = new[]
+            {
+                new FilePickerFileType(_boundViewModel!.AddExistingFilesHeader.TrimEnd('\u2026', '.')) { Patterns = patterns },
+                FilePickerFileTypes.All,
+            };
+        }
+
+        IReadOnlyList<IStorageFile> files = await topLevel.StorageProvider.OpenFilePickerAsync(options);
 
         List<string> paths = files
             .Select(f => f.TryGetLocalPath() ?? f.Path.LocalPath)
@@ -538,7 +558,7 @@ public partial class BookBrowserView : UserControl
         }
     }
 
-    private async void OnRenameWithTemplateRequested(object? sender, IReadOnlyList<OpfModelEntry> entries)
+    private async void OnMassRenameRequested(object? sender, IReadOnlyList<OpfModelEntry> entries)
     {
         Window? owner = this.FindAncestorOfType<Window>();
         if (owner is null || entries.Count == 0 || _boundViewModel is null)
@@ -546,16 +566,9 @@ public partial class BookBrowserView : UserControl
             return;
         }
 
-        string initial = _boundViewModel.GetInitialRenameTemplate();
-        string? result = await TextPromptWindow.AskAsync(
-            owner,
-            Strings.Get("BookBrowser_RenameWithTemplateTitle"),
-            Strings.Format("BookBrowser_RenameWithTemplatePrompt", entries.Count),
-            initial);
-
-        if (!string.IsNullOrWhiteSpace(result))
+        if (await MassRenameWindow.AskAsync(owner, _boundViewModel, entries) is { } options)
         {
-            _boundViewModel.ApplyRenameWithTemplate(entries, result.Trim());
+            _boundViewModel.ApplyMassRename(entries, options);
         }
     }
 

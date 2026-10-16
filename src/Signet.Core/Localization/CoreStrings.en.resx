@@ -413,6 +413,9 @@
   <data name="Rename_WouldDuplicate" xml:space="preserve">
     <value>Cannot rename — this would create duplicate file names.</value>
   </data>
+  <data name="MassRename_PaddingCharMissing" xml:space="preserve">
+    <value>Enter the character to pad the number with.</value>
+  </data>
   <data name="Heading_LevelNone" xml:space="preserve">
     <value>None</value>
   </data>
