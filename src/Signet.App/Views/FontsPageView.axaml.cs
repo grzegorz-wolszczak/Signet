@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
@@ -87,6 +88,10 @@ public partial class FontsPageView : UserControl
             Rows.Children.Add(row);
         }
     }
+
+    /// <summary>The row of a font setting of this page; <c>null</c> when it is not on it.</summary>
+    public Control? RowOf(FontSettingViewModel font) =>
+        Rows.Children.OfType<FontSettingView>().FirstOrDefault(r => ReferenceEquals(r.DataContext, font));
 
     // Follows the page and the setting it previews, to update what the bindings cannot: the code sample and wrapping.
     private void Track(FontPageViewModel? page)

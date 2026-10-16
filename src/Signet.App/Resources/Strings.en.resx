@@ -5896,4 +5896,16 @@ Close the tab</value>
   <data name="PreferencesWindow_ShowZoomHintTip" xml:space="preserve">
     <value>Shows the font size just set in the middle of the editor for a moment.</value>
   </data>
+  <data name="PreferencesWindow_FontInheritUse" xml:space="preserve">
+    <value>Use:</value>
+  </data>
+  <data name="PreferencesWindow_FontInheritGoTo" xml:space="preserve">
+    <value>Go to this setting</value>
+  </data>
+  <data name="PreferencesWindow_Modal" xml:space="preserve">
+    <value>The Preferences window is modal (the main window waits until it is closed)</value>
+  </data>
+  <data name="PreferencesWindow_ModalTip" xml:space="preserve">
+    <value>Takes effect the next time the Preferences window is opened. Off, the main window can be used while the Preferences window is open.</value>
+  </data>
 </root>

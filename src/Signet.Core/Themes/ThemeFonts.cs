@@ -80,7 +80,7 @@ public static class ThemeFontKeys
         fonts[SpecialCharacters] = new ThemeFont(special.FontFamily, special.FontSize);
         foreach (TooltipArea area in Enum.GetValues<TooltipArea>())
         {
-            TooltipFont tooltip = settings.GetTooltipFont(area);
+            TooltipFont tooltip = settings.GetEffectiveTooltipFont(area);
             fonts[Tooltip(area)] = new ThemeFont(tooltip.FontFamily, tooltip.FontSize);
         }
 

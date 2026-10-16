@@ -578,6 +578,24 @@ public partial class PreferencesWindow : Window
         }
     }
 
+    /// <summary>
+    /// Goes to a font setting of Appearance › General › Fonts (the link of a setting that inherits from it): opens the
+    /// section and its Fonts tab, shows the setting in the preview and scrolls it into view.
+    /// </summary>
+    internal void RevealFont(FontSettingViewModel font)
+    {
+        if (AppearanceFontsView.DataContext is not FontPageViewModel page
+            || _sections.All.FirstOrDefault(n => ReferenceEquals(Pages.Items[n.PageIndex], AppearanceGeneralPage)) is not { } node)
+        {
+            return;
+        }
+
+        RevealSection(node);
+        AppearanceGeneralTabs.SelectedIndex = 1;
+        page.Active = font;
+        Dispatcher.UIThread.Post(() => AppearanceFontsView.RowOf(font)?.BringIntoView(), DispatcherPriority.Loaded);
+    }
+
     // After the layout pass: the page's controls exist and can be framed.
     private void QueueFrameRefresh() => Dispatcher.UIThread.Post(RefreshFrames, DispatcherPriority.Loaded);
 
@@ -706,10 +724,12 @@ public partial class PreferencesWindow : Window
             .SelectMany(SelfAndLogicalDescendants)
             .OfType<HeightResizeGrip>();
 
-    // A text with the class "noSearch" (e.g. the sample of a font preview) is not a setting: the search skips it.
+    // A text with the class "noSearch" (e.g. the sample of a font preview, or the link to a parent setting) is not a
+    // setting: the search skips it.
     private static string? OwnText(ILogical element) => element switch
     {
         TextBlock text when text.Classes.Contains("noSearch") => null,
+        ContentControl content when content.Classes.Contains("noSearch") => null,
         TextBlock text => text.Text,
         HeaderedContentControl { Header: string header } => header,
         ContentControl { Content: string content } => content,

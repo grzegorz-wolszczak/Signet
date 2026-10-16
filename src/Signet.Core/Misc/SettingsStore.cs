@@ -259,6 +259,16 @@ public sealed class SettingsStore
         set => Write("show_zoom_hint", value);
     }
 
+    /// <summary>
+    /// Whether the Preferences window is modal (on by default): the main window waits until it is closed. Off, it opens
+    /// as a normal window and the main window can be used meanwhile. Read when the window opens.
+    /// </summary>
+    public bool PreferencesWindowModal
+    {
+        get => ReadBool("preferences_window_modal", true);
+        set => Write("preferences_window_modal", value);
+    }
+
     /// <summary>Whether to use a double-width text cursor.</summary>
     public bool UiDoubleWidthTextCursor
     {
@@ -1090,6 +1100,30 @@ public sealed class SettingsStore
         RaiseChanged("tooltip_fonts");
     }
 
+    /// <summary>
+    /// Whether the tooltips of an area use the font of <see cref="TooltipArea.OtherWindows"/> instead of their own
+    /// (<see cref="GetTooltipFont"/>) — on by default. <see cref="TooltipArea.OtherWindows"/> itself has no parent, so
+    /// it never inherits. The own font stays stored while the area inherits, for when the inheritance is turned off.
+    /// </summary>
+    public bool GetTooltipInherit(TooltipArea area) =>
+        area != TooltipArea.OtherWindows && ReadBool(TooltipFontKey(area, "inherit"), true);
+
+    /// <summary>Sets <see cref="GetTooltipInherit"/> of an area (ignored for <see cref="TooltipArea.OtherWindows"/>).</summary>
+    public void SetTooltipInherit(TooltipArea area, bool value)
+    {
+        if (area == TooltipArea.OtherWindows)
+        {
+            return;
+        }
+
+        WriteSilent(TooltipFontKey(area, "inherit"), value);
+        RaiseChanged("tooltip_fonts");
+    }
+
+    /// <summary>The font the tooltips of an area use now: its own, or — while it inherits — that of the other windows.</summary>
+    public TooltipFont GetEffectiveTooltipFont(TooltipArea area) =>
+        GetTooltipFont(GetTooltipInherit(area) ? TooltipArea.OtherWindows : area);
+
     // E.g. "tooltip_find_replace_font_size".
     private static string TooltipFontKey(TooltipArea area, string part) =>
         "tooltip_" + SnakeCase(area.ToString()) + "_font_" + part;
@@ -1689,6 +1723,8 @@ public sealed class SettingsStore
 
     private void WriteSilent(string key, int value) => _file.SetRaw(Group, key, value);
 
+    private void WriteSilent(string key, bool value) => _file.SetRaw(Group, key, value);
+
     private IReadOnlyList<(ushort Code, string Name)> ReadEntityPairs()
     {
         if (_file.GetRaw(Group, "preserve_entities") is JsonArray arr)
@@ -1770,7 +1806,10 @@ public sealed class SettingsStore
         {
             yield return TooltipFontKey(area, "family");
             yield return TooltipFontKey(area, "size");
+            yield return TooltipFontKey(area, "inherit");
         }
+
+        yield return "preferences_window_modal";
 
         yield return "code_editor_font_family_standard";
         yield return "code_editor_font_size";

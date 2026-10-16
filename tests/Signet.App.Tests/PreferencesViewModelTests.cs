@@ -685,6 +685,83 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
+    public void Every_tooltip_area_but_the_other_windows_inherits_their_font_by_default()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        string family = new Fixture().Create<string>();
+        FontSettingViewModel other = vm.AppearanceFonts.Fonts.Single(f => f.Key == "TooltipOtherWindows");
+        other.HasInheritance.Should().BeFalse("the other windows have no parent");
+        other.Family = family;
+        other.Size = 17;
+
+        FontSettingViewModel footnotes = vm.FootnotesFonts.Fonts.Single();
+        FontSettingViewModel main = vm.AppearanceFonts.Fonts.Single(f => f.Key == "TooltipMainWindow");
+
+        foreach (FontSettingViewModel row in new[] { footnotes, main, vm.PreviewFonts.Fonts.Single(f => f.Key == "TooltipPreview") })
+        {
+            row.HasInheritance.Should().BeTrue();
+            row.InheritFromParent.Should().BeTrue("every window inherits by default");
+            row.IsOwnFont.Should().BeFalse();
+            row.Parent.Should().BeSameAs(other);
+            row.ParentFont.Should().Be($"{family}, 17");
+            row.EffectiveFamily.Should().Be(family);
+            row.EffectiveSize.Should().Be(17);
+        }
+
+        footnotes.ParentPath.Should().Be(string.Join(
+            " › ",
+            Strings.Get("PreferencesWindow_Appearance"),
+            Strings.Get("PreferencesWindow_General"),
+            Strings.Get("PreferencesWindow_Fonts"),
+            Strings.Get("PreferencesWindow_TooltipFontOtherWindows")));
+    }
+
+    [Fact]
+    public void Turning_the_inheritance_off_uses_the_own_font_and_restore_defaults_turns_it_on_again()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        string own = new Fixture().Create<string>();
+        vm.AppearanceFonts.Fonts.Single(f => f.Key == "TooltipOtherWindows").Size = 17;
+        FontSettingViewModel footnotes = vm.FootnotesFonts.Fonts.Single();
+        footnotes.Family = own;
+        footnotes.Size = 20;
+        footnotes.EffectiveSize.Should().Be(17, "the own font is stored, but not used while the setting inherits");
+
+        footnotes.InheritFromParent = false;
+
+        footnotes.IsOwnFont.Should().BeTrue();
+        footnotes.EffectiveFamily.Should().Be(own);
+        footnotes.EffectiveSize.Should().Be(20);
+        vm.ApplyCommand.Execute(null);
+        host.Settings.GetTooltipInherit(TooltipArea.Footnotes).Should().BeFalse();
+        host.Settings.GetEffectiveTooltipFont(TooltipArea.Footnotes).Should().Be(new TooltipFont(own, 20));
+
+        footnotes.RestoreDefault();
+
+        footnotes.InheritFromParent.Should().BeTrue();
+        footnotes.Size.Should().Be(TooltipFont.Default.FontSize);
+    }
+
+    [Fact]
+    public void The_preferences_window_is_modal_by_default_and_it_is_a_setting_saved_with_the_others()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        vm.PreferencesWindowModal.Should().BeTrue();
+
+        vm.PreferencesWindowModal = false;
+
+        host.Settings.PreferencesWindowModal.Should().BeTrue("not saved yet");
+        vm.ApplyCommand.Execute(null);
+        host.Settings.PreferencesWindowModal.Should().BeFalse();
+
+        vm.RestoreAppearanceDefaultsCommand.Execute(null);
+        vm.PreferencesWindowModal.Should().BeTrue();
+    }
+
+    [Fact]
     public void Restore_appearance_defaults_resets_the_tooltip_fonts()
     {
         (TestHost host, PreferencesViewModel vm) = New();
