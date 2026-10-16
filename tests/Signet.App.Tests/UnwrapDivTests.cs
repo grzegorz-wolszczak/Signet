@@ -8,7 +8,6 @@ using Signet.Core.BookManipulation;
 using Signet.Core.MainUI;
 using Signet.Core.Resources;
 using Signet.Core.Tests.TestSupport;
-using Signet.App.Tests.TestSupport;
 using Xunit;
 
 namespace Signet.App.Tests;
