@@ -417,6 +417,13 @@ public sealed class CodeTabViewModel : ContentTabViewModel
         Search.Count(Document.Text, _caretOffset, pattern, direction, wrap);
 
     /// <summary>
+    /// The matches <see cref="CountMatches"/> counts, as offsets <c>[Start, End)</c> in the text of this tab (for the
+    /// list of the matches in the "Find Usages" window).
+    /// </summary>
+    public IReadOnlyList<(int Start, int End)> FindAllMatches(string pattern, SearchDirection direction, bool wrap) =>
+        Search.FindAll(Document.Text, _caretOffset, pattern, direction, wrap);
+
+    /// <summary>
     /// Replaces the current selection if it matches the last match.
     /// </summary>
     public bool ReplaceCurrentMatch(string pattern, string replacement, SearchDirection direction, bool replaceCurrent)

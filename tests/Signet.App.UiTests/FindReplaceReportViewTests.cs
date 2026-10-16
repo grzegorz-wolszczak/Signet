@@ -91,8 +91,9 @@ public sealed class FindReplaceReportViewTests
         {
             LookWhereIndex = (int)LookWhere.AllHtmlFiles,
             FindText = "cat",
+            ReplaceText = "cat",
         };
-        vm.Count().Should().Be(2 * FileCount);
+        vm.ReplaceAll().Should().Be(2 * FileCount);
         vm.ReportRows.Should().HaveCount(FileCount);
 
         var view = new FindReplaceView { DataContext = vm };

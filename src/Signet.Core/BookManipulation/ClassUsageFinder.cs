@@ -13,6 +13,9 @@ public enum ClassUsageKind
 
     /// <summary>A <c>.name</c> in a CSS selector (a stylesheet or a <c>&lt;style&gt;</c> block).</summary>
     Selector,
+
+    /// <summary>A match of a Find &amp; Replace search ("Count All"), not a class usage.</summary>
+    Text,
 }
 
 /// <summary>A file searched by <see cref="ClassUsageFinder"/>.</summary>
@@ -31,7 +34,9 @@ public sealed record ClassUsageSource(string BookPath, string Text, bool IsStyle
 /// The text of the line of the usage, without the leading whitespace, at most <see cref="ClassUsageFinder.MaxContextLength"/>
 /// characters (longer lines are cut around the usage) — empty when not known.
 /// </param>
-public sealed record ClassUsage(string BookPath, int Offset, int Line, int Column, ClassUsageKind Kind, string Context = "");
+/// <param name="Length">The length of the usage in characters when it is a range to select (a text match); 0 otherwise.</param>
+public sealed record ClassUsage(
+    string BookPath, int Offset, int Line, int Column, ClassUsageKind Kind, string Context = "", int Length = 0);
 
 /// <summary>
 /// "Find Usages" of a CSS class in the whole book: every token of a <c>class</c> attribute equal to the name
@@ -62,6 +67,38 @@ public static class ClassUsageFinder
             .AsOrdered()
             .SelectMany(source => FindInSource(className, source))
             .ToList();
+    }
+
+    /// <summary>
+    /// The matches of a text search in <paramref name="text"/> as usages of the kind <see cref="ClassUsageKind.Text"/>
+    /// (with the line, the column and the line of the match as context), in the order of <paramref name="matches"/>.
+    /// </summary>
+    /// <param name="bookPath">The bookpath of the file.</param>
+    /// <param name="text">The text that was searched.</param>
+    /// <param name="matches">The matches as offsets <c>[Start, End)</c> in <paramref name="text"/>.</param>
+    public static IReadOnlyList<ClassUsage> FromTextMatches(
+        string bookPath, string text, IReadOnlyList<(int Start, int End)> matches)
+    {
+        ArgumentNullException.ThrowIfNull(bookPath);
+        ArgumentNullException.ThrowIfNull(text);
+        ArgumentNullException.ThrowIfNull(matches);
+
+        if (matches.Count == 0)
+        {
+            return Array.Empty<ClassUsage>();
+        }
+
+        LineIndex lines = new(text);
+        List<ClassUsage> usages = new(matches.Count);
+        foreach ((int start, int end) in matches)
+        {
+            int offset = Math.Clamp(start, 0, text.Length);
+            (int line, int column) = lines.LocationOf(offset);
+            usages.Add(new ClassUsage(
+                bookPath, offset, line, column, ClassUsageKind.Text, Context(text, offset, column), Math.Max(0, end - start)));
+        }
+
+        return usages;
     }
 
     private static List<ClassUsage> FindInSource(string className, ClassUsageSource source)

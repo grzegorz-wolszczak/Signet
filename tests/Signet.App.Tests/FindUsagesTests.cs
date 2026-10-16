@@ -67,7 +67,7 @@ public sealed class FindUsagesTests : IDisposable
         panel.ClassName.Should().Be("note");
         panel.Header.Should().Be(Strings.Format("FindUsages_Header", "note"));
         FindUsagesNode root = panel.Roots.Should().ContainSingle().Subject;
-        (root.Text, root.CountText).Should().Be(("Found usages", "3 results"));
+        (root.Text, root.CountText).Should().Be(("Found usages", "3 results in 2 files"));
         root.Children.Select(c => c.Text).Should().SatisfyRespectively(
             first => first.Should().StartWith(ChapterPath + ":"),
             second => second.Should().StartWith(ChapterPath + ":"),
@@ -86,7 +86,7 @@ public sealed class FindUsagesTests : IDisposable
         _sut.Actions.Require(AppActionIds.FindUsages).Execute(null);
 
         _sut.FindUsages.ClassName.Should().Be("note");
-        _sut.FindUsages.Roots.Single().CountText.Should().Be("3 results");
+        _sut.FindUsages.Roots.Single().CountText.Should().Be("3 results in 2 files");
     }
 
     [Fact]
@@ -136,7 +136,7 @@ public sealed class FindUsagesTests : IDisposable
 
         _sut.FindUsages.RefreshCommand.Execute(null);
 
-        _sut.FindUsages.Roots.Single().CountText.Should().Be("4 results");
+        _sut.FindUsages.Roots.Single().CountText.Should().Be("4 results in 2 files");
     }
 
     [Fact]
@@ -149,7 +149,7 @@ public sealed class FindUsagesTests : IDisposable
 
         _sut.RefreshFindUsagesAfterSave();
 
-        _sut.FindUsages.Roots.Single().CountText.Should().Be("4 results");
+        _sut.FindUsages.Roots.Single().CountText.Should().Be("4 results in 2 files");
         _sut.StatusMessage.Should().Be(status);
     }
 
@@ -161,11 +161,11 @@ public sealed class FindUsagesTests : IDisposable
         css.SetText(css.GetText() + "\np.note { margin: 0 }\n");
 
         _sut.RefreshFindUsagesAfterSave(saved: false);
-        _sut.FindUsages.Roots.Single().CountText.Should().Be("3 results");
+        _sut.FindUsages.Roots.Single().CountText.Should().Be("3 results in 2 files");
 
         _sut.Actions.Require(AppActionIds.ToggleFindUsages).Execute(null);
         _sut.RefreshFindUsagesAfterSave();
-        _sut.FindUsages.Roots.Single().CountText.Should().Be("3 results");
+        _sut.FindUsages.Roots.Single().CountText.Should().Be("3 results in 2 files");
     }
 
     [Fact]
@@ -257,5 +257,116 @@ public sealed class FindUsagesTests : IDisposable
         _sut.FindClassUsages("lead");
 
         _sut.FindUsages.Roots.Single().IsExpanded.Should().BeTrue("another class starts fully expanded");
+    }
+
+    // ------------------------------------------------------ text search ("Count All") --- //
+
+    private int CountAllInAllHtml(string text)
+    {
+        _sut.FindReplace.LookWhereIndex = (int)Signet.Core.Search.LookWhere.AllHtmlFiles;
+        _sut.FindReplace.FindText = text;
+        return _sut.FindReplace.Count();
+    }
+
+    [Fact]
+    public void Count_All_shows_its_matches_in_the_window_with_the_number_of_files()
+    {
+        int count = CountAllInAllHtml("note");
+
+        count.Should().Be(2);
+        _sut.FindUsages.HasTextSearch.Should().BeTrue();
+        _sut.FindUsages.ClassName.Should().BeNull();
+        _sut.FindUsages.Header.Should().Be(Strings.Format(
+            "FindUsages_TextHeader",
+            "note",
+            Strings.Get("FindReplaceView_ModeNormal"),
+            Strings.Get("FindReplace_LookInAllHtml"),
+            string.Empty));
+        FindUsagesNode root = _sut.FindUsages.Roots.Single();
+        root.CountText.Should().Be("2 results in 1 file");
+        root.Children.Should().HaveCount(2);
+        FindUsagesNode match = root.Children[0];
+        match.KindText.Should().Be(Strings.Get("FindUsages_KindText"));
+        match.Context.Should().Contain("class=\"note\"");
+        (match.Line, match.Column).Should().NotBe((null, null));
+    }
+
+    [Fact]
+    public void Count_All_without_matches_leaves_the_window_alone()
+    {
+        _sut.FindClassUsages("note");
+
+        CountAllInAllHtml("no such text anywhere").Should().Be(0);
+
+        _sut.FindUsages.HasTextSearch.Should().BeFalse();
+        _sut.FindUsages.ClassName.Should().Be("note");
+    }
+
+    [Fact]
+    public void Double_clicking_a_match_selects_it_in_the_editor()
+    {
+        CountAllInAllHtml("again");
+        FindUsagesNode match = _sut.FindUsages.Roots.Single().Children.Single();
+        _sut.Tabs.OpenResources(new Resource[] { Chapter });
+        (int Start, int End)? selected = null;
+        _sut.ActiveCodeTab!.SearchResultRequested += (start, end, _) => selected = (start, end);
+
+        _sut.FindUsages.Activate(match);
+
+        _sut.ActiveCodeTab!.Resource.BookPath.Should().Be(ChapterPath);
+        selected.Should().Be((match.Usage!.Offset, match.Usage.Offset + "Again".Length));
+    }
+
+    [Fact]
+    public void Refresh_runs_the_text_search_again_and_the_save_refreshes_it_too()
+    {
+        CountAllInAllHtml("note");
+        _sut.FindUsages.RefreshCommand.CanExecute(null).Should().BeTrue();
+        Chapter.SetText(Chapter.GetText().Replace("Hello", "note Hello", StringComparison.Ordinal));
+
+        _sut.FindUsages.RefreshCommand.Execute(null);
+
+        _sut.FindUsages.Roots.Single().CountText.Should().Be("3 results in 1 file");
+
+        Chapter.SetText(Chapter.GetText().Replace("Hello", "note Hello", StringComparison.Ordinal));
+        _sut.RefreshFindUsagesAfterSave();
+
+        _sut.FindUsages.Roots.Single().CountText.Should().Be("4 results in 1 file");
+    }
+
+    [Fact]
+    public void A_class_search_replaces_the_text_search_and_the_other_way_round()
+    {
+        CountAllInAllHtml("note");
+
+        _sut.FindClassUsages("note");
+
+        _sut.FindUsages.HasTextSearch.Should().BeFalse();
+        _sut.FindUsages.Header.Should().Be(Strings.Format("FindUsages_Header", "note"));
+
+        CountAllInAllHtml("note");
+
+        _sut.FindUsages.ClassName.Should().BeNull();
+        _sut.FindUsages.HasTextSearch.Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData(1, "in 1 file")]
+    [InlineData(2, "in 2 files")]
+    [InlineData(5, "in 5 files")]
+    public void File_counts_are_worded_in_the_current_language(int count, string expected)
+    {
+        FindUsagesViewModel.FilesText(count).Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(1, "w 1 pliku")]
+    [InlineData(2, "w 2 plikach")]
+    [InlineData(34, "w 34 plikach")]
+    public void Polish_file_counts_use_the_locative_forms(int count, string expected)
+    {
+        using UiCultureScope polish = new("pl");
+
+        FindUsagesViewModel.FilesText(count).Should().Be(expected);
     }
 }

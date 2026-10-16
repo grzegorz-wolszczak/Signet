@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Signet.App.ViewModels;
 using Signet.App.ViewModels.Tabs;
+using Signet.Core.BookManipulation;
 using Signet.Core.Resources;
 using Signet.Core.Search;
 
@@ -45,6 +46,12 @@ internal sealed class FakeMultiFileSearchHost : IMultiFileSearchHost
 
     public CodeTabViewModel? FindOpenTab(TextResource resource) =>
         OpenTabs.FirstOrDefault(t => ReferenceEquals(t.Resource, resource));
+
+    /// <summary>The searches shown in the "Find Usages" window (by "Count All"), in order.</summary>
+    public List<(Func<string> Header, IReadOnlyList<ClassUsage> Usages, Func<IReadOnlyList<ClassUsage>> Rerun)> ShownUsages { get; } = new();
+
+    public void ShowTextUsages(Func<string> header, IReadOnlyList<ClassUsage> usages, Func<IReadOnlyList<ClassUsage>> rerun) =>
+        ShownUsages.Add((header, usages, rerun));
 
     /// <summary>Called on a "jump", e.g. to activate the tab of the matched file.</summary>
     public Action<string, int, int>? OnJump { get; set; }

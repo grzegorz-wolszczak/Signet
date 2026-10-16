@@ -12,12 +12,14 @@ namespace Signet.App.ViewModels;
 
 /// <summary>
 /// View model of the "Find Usages" panel: the usages of a CSS class as a tree, like the Find tool window of the
-/// JetBrains IDEs. The root "Found usages — N results" holds either a flat list of usages (<c>path:line:column</c>)
-/// or — grouped by file (<see cref="GroupByFile"/>, remembered in the settings) — one node per file with its usages
-/// (<c>line, column</c>). Double-clicking a usage raises <see cref="UsageActivated"/>; "Refresh" raises
-/// <see cref="RefreshRequested"/> to search for the same class again.
+/// JetBrains IDEs. The root "Found usages — N results in M files" holds either a flat list of usages
+/// (<c>path:line:column</c>) or — grouped by file (<see cref="GroupByFile"/>, remembered in the settings) — one node per
+/// file with its usages (<c>line, column</c>). Double-clicking a usage raises <see cref="UsageActivated"/>; "Refresh"
+/// raises <see cref="RefreshRequested"/> to search for the same class again.
 /// </summary>
 /// <remarks>
+/// Besides the usages of a class the panel shows the matches of a Find &amp; Replace search ("Count All",
+/// <see cref="LoadText"/>): the same tree, with a header that describes the search; "Refresh" runs that search again.
 /// The view shows the tree in a virtualizing <c>TreeDataGrid</c> (a <c>TreeView</c> creates a control for every node,
 /// which takes minutes for tens of thousands of usages) with the columns Usage, Line, Column, Kind and Context of
 /// <see cref="FindUsagesNode"/>.
@@ -27,6 +29,12 @@ public sealed partial class FindUsagesViewModel : ViewModelBase, ILanguageAware
     private readonly SettingsStore _settings;
     private IReadOnlyList<ClassUsage> _usages = Array.Empty<ClassUsage>();
 
+    // The search shown when it is a text search (Find & Replace): the header (built in the current language) and how to
+    // run it again. Both null for a class search and when there is no search.
+    private Func<string>? _textHeader;
+    private Func<IReadOnlyList<ClassUsage>>? _rerunText;
+    private string _textSearchKey = string.Empty;
+
     [ObservableProperty]
     private bool _groupByFile;
 
@@ -35,9 +43,9 @@ public sealed partial class FindUsagesViewModel : ViewModelBase, ILanguageAware
     {
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _groupByFile = settings.FindUsagesGroupByFile;
-        RefreshCommand = new RelayCommand(() => RefreshRequested?.Invoke(this, EventArgs.Empty), () => ClassName is not null);
-        ExpandAllCommand = new RelayCommand(() => SetExpanded(true), () => ClassName is not null);
-        CollapseAllCommand = new RelayCommand(() => SetExpanded(false), () => ClassName is not null);
+        RefreshCommand = new RelayCommand(Refresh, () => HasSearch);
+        ExpandAllCommand = new RelayCommand(() => SetExpanded(true), () => HasSearch);
+        CollapseAllCommand = new RelayCommand(() => SetExpanded(false), () => HasSearch);
     }
 
     /// <summary>Raised by "Refresh" — the host searches for <see cref="ClassName"/> again and calls <see cref="Load"/>.</summary>
@@ -46,14 +54,21 @@ public sealed partial class FindUsagesViewModel : ViewModelBase, ILanguageAware
     /// <summary>Raised when a usage is double-clicked — the host opens the file with the caret on the usage.</summary>
     public event EventHandler<ClassUsage>? UsageActivated;
 
-    /// <summary>The class searched for, or <c>null</c> before the first search.</summary>
+    /// <summary>The class searched for, or <c>null</c> before the first search and for a text search.</summary>
     public string? ClassName { get; private set; }
 
-    /// <summary>Whether there is a search to show (otherwise a hint).</summary>
-    public bool HasSearch => ClassName is not null;
+    /// <summary>Whether the panel shows the matches of a text search (<see cref="LoadText"/>).</summary>
+    public bool HasTextSearch => _textHeader is not null;
 
-    /// <summary>The heading: "Usages of class 'name'" or the hint how to search.</summary>
-    public string Header => ClassName is null ? Strings.Get("FindUsages_Empty") : Strings.Format("FindUsages_Header", ClassName);
+    /// <summary>Whether there is a search to show (otherwise a hint).</summary>
+    public bool HasSearch => ClassName is not null || HasTextSearch;
+
+    /// <summary>
+    /// The heading: "Usages of class 'name'", the description of the text search, or the hint how to search.
+    /// </summary>
+    public string Header => ClassName is not null
+        ? Strings.Format("FindUsages_Header", ClassName)
+        : _textHeader?.Invoke() ?? Strings.Get("FindUsages_Empty");
 
     /// <summary>The tree: a single root "Found usages".</summary>
     public ObservableCollection<FindUsagesNode> Roots { get; } = new();
@@ -77,24 +92,63 @@ public sealed partial class FindUsagesViewModel : ViewModelBase, ILanguageAware
         ArgumentNullException.ThrowIfNull(usages);
         bool sameClass = string.Equals(className, ClassName, StringComparison.Ordinal);
         ClassName = className;
+        _textHeader = null;
+        _rerunText = null;
+        _textSearchKey = string.Empty;
         _usages = usages;
         Rebuild(keepCollapsed: sameClass);
-        OnPropertyChanged(nameof(ClassName));
-        OnPropertyChanged(nameof(HasSearch));
-        OnPropertyChanged(nameof(Header));
-        NotifyCommands();
+        NotifySearchChanged();
+    }
+
+    /// <summary>
+    /// Shows the matches of a text search (Find &amp; Replace "Count All"). For the search already shown (e.g. "Refresh")
+    /// the collapsed nodes stay collapsed; another search starts fully expanded.
+    /// </summary>
+    /// <param name="header">The description of the search (built in the current language).</param>
+    /// <param name="usages">The matches (<see cref="ClassUsageKind.Text"/>).</param>
+    /// <param name="rerun">Runs the search again, for "Refresh".</param>
+    public void LoadText(Func<string> header, IReadOnlyList<ClassUsage> usages, Func<IReadOnlyList<ClassUsage>> rerun)
+    {
+        ArgumentNullException.ThrowIfNull(header);
+        ArgumentNullException.ThrowIfNull(usages);
+        ArgumentNullException.ThrowIfNull(rerun);
+        string key = header();
+        bool sameSearch = HasTextSearch && string.Equals(key, _textSearchKey, StringComparison.Ordinal);
+        ClassName = null;
+        _textHeader = header;
+        _rerunText = rerun;
+        _textSearchKey = key;
+        _usages = usages;
+        Rebuild(keepCollapsed: sameSearch);
+        NotifySearchChanged();
+    }
+
+    /// <summary>
+    /// Runs the shown search again. A text search is run here; a class search is left to the host
+    /// (<see cref="RefreshRequested"/>), which knows the book.
+    /// </summary>
+    public void Refresh()
+    {
+        if (_textHeader is { } header && _rerunText is { } rerun)
+        {
+            LoadText(header, rerun(), rerun);
+        }
+        else
+        {
+            RefreshRequested?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     /// <summary>Forgets the search (e.g. another book was opened).</summary>
     public void Clear()
     {
         ClassName = null;
+        _textHeader = null;
+        _rerunText = null;
+        _textSearchKey = string.Empty;
         _usages = Array.Empty<ClassUsage>();
         Roots.Clear();
-        OnPropertyChanged(nameof(ClassName));
-        OnPropertyChanged(nameof(HasSearch));
-        OnPropertyChanged(nameof(Header));
-        NotifyCommands();
+        NotifySearchChanged();
     }
 
     /// <summary>Opens the usage of <paramref name="node"/>; nodes without a location (root, file) do nothing.</summary>
@@ -109,7 +163,7 @@ public sealed partial class FindUsagesViewModel : ViewModelBase, ILanguageAware
     /// <inheritdoc/>
     public void OnLanguageChanged()
     {
-        if (ClassName is not null)
+        if (HasSearch)
         {
             Rebuild(keepCollapsed: true);
         }
@@ -128,13 +182,26 @@ public sealed partial class FindUsagesViewModel : ViewModelBase, ILanguageAware
         return Strings.Format("FindUsages_Results_" + form, count);
     }
 
+    /// <summary>"in 1 file" / "in 2 files" — with the Polish forms (w 1 pliku, w 2 plikach).</summary>
+    public static string FilesText(int count) =>
+        Strings.Format(count == 1 ? "FindUsages_InFiles_One" : "FindUsages_InFiles_Many", count);
+
     partial void OnGroupByFileChanged(bool value)
     {
         _settings.FindUsagesGroupByFile = value;
-        if (ClassName is not null)
+        if (HasSearch)
         {
             Rebuild(keepCollapsed: true);
         }
+    }
+
+    private void NotifySearchChanged()
+    {
+        OnPropertyChanged(nameof(ClassName));
+        OnPropertyChanged(nameof(HasTextSearch));
+        OnPropertyChanged(nameof(HasSearch));
+        OnPropertyChanged(nameof(Header));
+        NotifyCommands();
     }
 
     private void NotifyCommands()
@@ -192,7 +259,9 @@ public sealed partial class FindUsagesViewModel : ViewModelBase, ILanguageAware
             }
         }
 
-        FindUsagesNode root = new(null, Strings.Get("FindUsages_Found"), ResultsText(_usages.Count), null, null);
+        int fileCount = _usages.Select(u => u.BookPath).Distinct(StringComparer.Ordinal).Count();
+        FindUsagesNode root = new(
+            null, Strings.Get("FindUsages_Found"), $"{ResultsText(_usages.Count)} {FilesText(fileCount)}", null, null);
         if (GroupByFile)
         {
             foreach (IGrouping<string, ClassUsage> file in _usages.GroupBy(u => u.BookPath, StringComparer.Ordinal))
@@ -277,6 +346,7 @@ public sealed partial class FindUsagesNode : ObservableObject
     {
         ClassUsageKind.ClassAttribute => Strings.Get("FindUsages_KindAttribute"),
         ClassUsageKind.Selector => Strings.Get("FindUsages_KindSelector"),
+        ClassUsageKind.Text => Strings.Get("FindUsages_KindText"),
         _ => string.Empty,
     };
 

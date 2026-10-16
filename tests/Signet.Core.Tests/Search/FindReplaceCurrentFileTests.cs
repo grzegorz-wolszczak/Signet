@@ -277,6 +277,51 @@ public sealed class FindReplaceCurrentFileTests
     }
 
     [Fact]
+    public void FindAll_Wrap_ListsEveryMatchWithItsOffsets()
+    {
+        var search = new CodeEditorSearch();
+
+        search.FindAll("a ab a", 3, Normal("a"), SearchDirection.Down, wrap: true)
+            .Should().Equal((0, 1), (2, 3), (5, 6));
+    }
+
+    [Fact]
+    public void FindAll_NoWrap_Down_StartsAtTheCaretButKeepsOffsetsInTheWholeText()
+    {
+        var search = new CodeEditorSearch();
+
+        search.FindAll("a a a a", 3, Normal("a"), SearchDirection.Down, wrap: false)
+            .Should().Equal((4, 5), (6, 7));
+    }
+
+    [Fact]
+    public void FindAll_NoWrap_Up_ListsTheMatchesBeforeTheCaret()
+    {
+        var search = new CodeEditorSearch();
+
+        search.FindAll("a a a a", 4, Normal("a"), SearchDirection.Up, wrap: false)
+            .Should().Equal((0, 1), (2, 3));
+    }
+
+    [Fact]
+    public void FindAll_RestrictedToMarkedRegion_OffsetsAreInTheWholeText()
+    {
+        var search = new CodeEditorSearch();
+        const string text = "cat cat cat cat";
+
+        search.MarkSelection(4, 11);
+
+        search.FindAll(text, 4, Normal("cat"), SearchDirection.Down, wrap: true)
+            .Should().Equal((4, 7), (8, 11));
+    }
+
+    [Fact]
+    public void FindAll_InvalidRegex_IsEmpty()
+    {
+        new CodeEditorSearch().FindAll("whatever", 0, "(unclosed", SearchDirection.Down, wrap: true).Should().BeEmpty();
+    }
+
+    [Fact]
     public void NotifyTextChanged_ClearsMarkedRegionAndLastMatch()
     {
         var search = new CodeEditorSearch();

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using AwesomeAssertions;
@@ -9,6 +10,7 @@ using Signet.App.ViewModels.Tabs;
 using Signet.Core.BookManipulation;
 using Signet.Core.MainUI;
 using Signet.Core.Misc;
+using Signet.Core.MiscEditors;
 using Signet.App.Resources;
 using Signet.Core.Resources;
 using Signet.Core.Search;
@@ -86,12 +88,146 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         panel.FindText = "cat";
 
         panel.Count().Should().Be(3);
-        panel.HasReport.Should().BeTrue();
-        panel.ReportRows.Should().HaveCount(2);
+        panel.HasReport.Should().BeFalse();
+        panel.Message.Should().Be(Strings.Format("FindReplace_MatchesInFiles", 3, 2));
         host.FlushCount.Should().BeGreaterThan(0);
     }
 
-    private FindReplaceViewModel PanelWithCountReport()
+    [Fact]
+    public void CountAll_ShowsTheMatchesInTheFindUsagesWindow()
+    {
+        HtmlResource a = Html("<p>cat cat</p>\n<p>dog</p>");
+        HtmlResource b = Html("<p>cat</p>");
+        var host = new FakeMultiFileSearchHost
+        {
+            BookLoaded = true,
+            Resolver = _ => new TextResource[] { a, b },
+        };
+        FindReplaceViewModel panel = NewPanel(host, () => null, out _);
+        panel.LookWhereIndex = (int)LookWhere.AllHtmlFiles;
+        panel.FindText = "cat";
+
+        panel.Count();
+
+        host.ShownUsages.Should().ContainSingle();
+        IReadOnlyList<ClassUsage> usages = host.ShownUsages[0].Usages;
+        usages.Select(u => (u.BookPath, u.Offset, u.Length, u.Line, u.Column, u.Kind)).Should().Equal(
+            (a.BookPath, 3, 3, 1, 4, ClassUsageKind.Text),
+            (a.BookPath, 7, 3, 1, 8, ClassUsageKind.Text),
+            (b.BookPath, 3, 3, 1, 4, ClassUsageKind.Text));
+        usages[0].Context.Should().Be("<p>cat cat</p>");
+        host.ShownUsages[0].Header().Should().Be(Strings.Format(
+            "FindUsages_TextHeader",
+            "cat",
+            Strings.Get("FindReplaceView_ModeNormal"),
+            Strings.Get("FindReplace_LookInAllHtml"),
+            string.Empty));
+    }
+
+    [Fact]
+    public void CountAll_WithoutMatches_DoesNotOpenTheWindow()
+    {
+        HtmlResource a = Html("<p>dog</p>");
+        var host = new FakeMultiFileSearchHost
+        {
+            BookLoaded = true,
+            Resolver = _ => new TextResource[] { a },
+        };
+        FindReplaceViewModel panel = NewPanel(host, () => null, out _);
+        panel.LookWhereIndex = (int)LookWhere.AllHtmlFiles;
+        panel.FindText = "cat";
+
+        panel.Count().Should().Be(0);
+
+        host.ShownUsages.Should().BeEmpty();
+        panel.Message.Should().Be(Strings.Get("FindReplace_NotFoundInScope"));
+    }
+
+    [Fact]
+    public void CountAll_InASingleFile_ShowsTheWindowAlsoForOneFile()
+    {
+        HtmlResource a = Html("<p>cat</p>");
+        CodeTabViewModel tab = OpenTab(a);
+        var host = new FakeMultiFileSearchHost { BookLoaded = true };
+        host.OpenTabs.Add(tab);
+        FindReplaceViewModel panel = NewPanel(host, () => tab, out _);
+        panel.LookWhereIndex = (int)LookWhere.CurrentFile;
+        panel.FindText = "cat";
+
+        panel.Count().Should().Be(1);
+
+        host.ShownUsages.Should().ContainSingle();
+        host.ShownUsages[0].Usages.Should().ContainSingle().Which.BookPath.Should().Be(a.BookPath);
+        host.ShownUsages[0].Header().Should().Contain(Strings.Get("FindReplace_LookInCurrentFile"));
+    }
+
+    [Fact]
+    public void CountAll_HeaderListsTheRegexOptionsThatAreOnWithoutTheirSyntax()
+    {
+        HtmlResource a = Html("<p>cat</p>");
+        var host = new FakeMultiFileSearchHost
+        {
+            BookLoaded = true,
+            Resolver = _ => new TextResource[] { a },
+        };
+        FindReplaceViewModel panel = NewPanel(host, () => null, out _);
+        panel.LookWhereIndex = (int)LookWhere.AllHtmlFiles;
+        panel.ModeIndex = (int)SearchMode.Regex;
+        panel.FindText = "c.t";
+        panel.RegexDotAll = true;
+        panel.RegexAutoTokenise = true;
+
+        panel.Count();
+
+        string options = Strings.Get("FindReplaceView_DotMatchesAll").Replace(" (?s)", string.Empty, StringComparison.Ordinal)
+            + " | " + Strings.Get("FindReplaceView_AutoTokenise");
+        host.ShownUsages[0].Header().Should().Be(Strings.Format(
+            "FindUsages_TextHeader",
+            "c.t",
+            Strings.Get("FindReplaceView_ModeRegex"),
+            Strings.Get("FindReplace_LookInAllHtml"),
+            Strings.Format("FindUsages_TextHeaderRegexOptions", options)));
+    }
+
+    [Fact]
+    public void CountAll_RerunSearchesTheCurrentTextAgain()
+    {
+        HtmlResource a = Html("<p>cat</p>");
+        var host = new FakeMultiFileSearchHost
+        {
+            BookLoaded = true,
+            Resolver = _ => new TextResource[] { a },
+        };
+        FindReplaceViewModel panel = NewPanel(host, () => null, out _);
+        panel.LookWhereIndex = (int)LookWhere.AllHtmlFiles;
+        panel.FindText = "cat";
+        panel.Count();
+        a.SetText("<p>cat cat cat</p>");
+
+        IReadOnlyList<ClassUsage> again = host.ShownUsages[0].Rerun();
+
+        again.Should().HaveCount(3);
+    }
+
+    [Fact]
+    public void SavedCountAll_DoesNotOpenTheWindow()
+    {
+        HtmlResource a = Html("<p>cat</p>");
+        var host = new FakeMultiFileSearchHost
+        {
+            BookLoaded = true,
+            Resolver = _ => new TextResource[] { a },
+        };
+        FindReplaceViewModel panel = NewPanel(host, () => null, out _);
+        panel.LookWhereIndex = (int)LookWhere.AllHtmlFiles;
+        SearchEntry entry = panel.CurrentAsEntry("cats") with { Find = "cat" };
+
+        panel.CountForEntry(entry).Should().Be(1);
+
+        host.ShownUsages.Should().BeEmpty();
+    }
+
+    private FindReplaceViewModel PanelWithCountReport()  // a report as Replace All leaves it
     {
         HtmlResource a = Html("<p>cat cat</p>");
         HtmlResource b = Html("<p>cat</p>");
@@ -103,7 +239,8 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         FindReplaceViewModel panel = NewPanel(host, () => null, out _);
         panel.LookWhereIndex = (int)LookWhere.AllHtmlFiles;
         panel.FindText = "cat";
-        panel.Count();
+        panel.ReplaceText = "cat";
+        panel.ReplaceAll();
         panel.HasReport.Should().BeTrue();
         return panel;
     }

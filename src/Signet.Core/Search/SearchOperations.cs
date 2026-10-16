@@ -28,6 +28,31 @@ public static class SearchOperations
     }
 
     /// <summary>
+    /// The matches of <paramref name="searchRegex"/> in <paramref name="text"/> as offsets <c>[Start, End)</c>, in text
+    /// order. An invalid pattern has no matches.
+    /// </summary>
+    public static IReadOnlyList<(int Start, int End)> FindInText(string searchRegex, string text)
+    {
+        ArgumentNullException.ThrowIfNull(searchRegex);
+        ArgumentNullException.ThrowIfNull(text);
+
+        Spcre spcre = PcreCache.Instance.GetObject(searchRegex);
+        if (!spcre.IsValid)
+        {
+            return Array.Empty<(int Start, int End)>();
+        }
+
+        IReadOnlyList<Spcre.MatchInfo> matches = spcre.GetEveryMatchInfo(text);
+        List<(int Start, int End)> found = new(matches.Count);
+        foreach (Spcre.MatchInfo match in matches)
+        {
+            found.Add((match.Offset.Start, match.Offset.End));
+        }
+
+        return found;
+    }
+
+    /// <summary>
     /// Replaces all matches of <paramref name="searchRegex"/> in <paramref name="text"/>
     /// with the expanded <paramref name="replacement"/> (iterating from the end so that length
     /// changes do not shift offsets that are still to be processed).

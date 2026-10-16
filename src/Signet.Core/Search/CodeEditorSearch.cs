@@ -156,7 +156,16 @@ public sealed class CodeEditorSearch
     }
 
     /// <summary>Counts the matches of <paramref name="pattern"/>.</summary>
-    public int Count(string text, int caret, string pattern, SearchDirection direction, bool wrap)
+    public int Count(string text, int caret, string pattern, SearchDirection direction, bool wrap) =>
+        FindAll(text, caret, pattern, direction, wrap).Count;
+
+    /// <summary>
+    /// The matches of <paramref name="pattern"/> that <see cref="Count"/> counts — the same part of
+    /// <paramref name="text"/> (the marked text, and without wrapping only the part after / before the caret) — as
+    /// offsets <c>[Start, End)</c> in <paramref name="text"/>, in text order.
+    /// </summary>
+    public IReadOnlyList<(int Start, int End)> FindAll(
+        string text, int caret, string pattern, SearchDirection direction, bool wrap)
     {
         ArgumentNullException.ThrowIfNull(text);
         ArgumentNullException.ThrowIfNull(pattern);
@@ -165,7 +174,7 @@ public sealed class CodeEditorSearch
         Spcre spcre = PcreCache.Instance.GetObject(pattern);
         if (!spcre.IsValid)
         {
-            return 0;
+            return Array.Empty<(int Start, int End)>();
         }
 
         int start = 0;
@@ -177,7 +186,7 @@ public sealed class CodeEditorSearch
             (bool ok, int _, int _, int mc) = MoveToMarkedText(direction, wrap, caret);
             if (!ok)
             {
-                return 0;
+                return Array.Empty<(int Start, int End)>();
             }
 
             caret = mc;
@@ -185,19 +194,30 @@ public sealed class CodeEditorSearch
             end = Marked.End;
         }
 
+        // The part of the text that is searched, and where it starts in the text.
         string haystack = text;
+        int baseOffset = 0;
         if (!wrap)
         {
+            baseOffset = direction == SearchDirection.Up ? start : caret;
             haystack = direction == SearchDirection.Up
                 ? Slice(text, start, caret)
                 : Slice(text, caret, end);
         }
         else if (markedText)
         {
+            baseOffset = start;
             haystack = Slice(text, start, end);
         }
 
-        return spcre.GetEveryMatchInfo(haystack).Count;
+        IReadOnlyList<Spcre.MatchInfo> matches = spcre.GetEveryMatchInfo(haystack);
+        List<(int Start, int End)> found = new(matches.Count);
+        foreach (Spcre.MatchInfo match in matches)
+        {
+            found.Add((baseOffset + match.Offset.Start, baseOffset + match.Offset.End));
+        }
+
+        return found;
     }
 
     /// <summary>
