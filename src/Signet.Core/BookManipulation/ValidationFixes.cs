@@ -430,7 +430,15 @@ internal static class MarkupEdits
     /// Replaces the values of the given attributes in every opening tag: <paramref name="replace"/> gets the decoded
     /// value and returns the new (decoded) one, or <c>null</c> to keep it.
     /// </summary>
-    public static string ReplaceAttributeValues(string text, IReadOnlyList<string> attributes, Func<string, string?> replace)
+    public static string ReplaceAttributeValues(string text, IReadOnlyList<string> attributes, Func<string, string?> replace) =>
+        ReplaceAttributeValues(text, attributes, (_, value) => replace(value));
+
+    /// <summary>
+    /// Replaces the values of the given attributes like
+    /// <see cref="ReplaceAttributeValues(string, IReadOnlyList{string}, Func{string, string})"/>;
+    /// <paramref name="replace"/> also gets where the tag starts in <paramref name="text"/>.
+    /// </summary>
+    public static string ReplaceAttributeValues(string text, IReadOnlyList<string> attributes, Func<int, string, string?> replace)
     {
         List<(int Start, int Length, string Value)> edits = new();
         foreach ((int pos, int len) in TagLister.EnumerateOpeningTags(text))
@@ -444,7 +452,7 @@ internal static class MarkupEdits
                     continue;
                 }
 
-                if (replace(WebUtility.HtmlDecode(info.AValue)) is { } value)
+                if (replace(pos, WebUtility.HtmlDecode(info.AValue)) is { } value)
                 {
                     char quote = info.VPos > 0 ? tag[info.VPos - 1] : '"';
                     edits.Add((pos + info.VPos, info.VLen, EncodeAttribute(value, quote)));

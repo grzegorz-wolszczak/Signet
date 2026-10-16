@@ -164,7 +164,7 @@ public static class MenuLayout
             MenuNode.Sub("&Table Of Contents",
                 A("MainWindow.GenerateTOC"), A("MainWindow.EditTOC"), A("MainWindow.CreateHTMLTOC")),
             MenuNode.Sub("Foot&notes",
-                A("MainWindow.RenumberFootnotes"), A("MainWindow.ConvertFootnotes")),
+                A("MainWindow.RenumberFootnotes"), A("MainWindow.ConvertFootnotes"), A("MainWindow.UnifyFootnoteLetters")),
             A("MainWindow.Standardize"), A("MainWindow.CustomLayout"),
             Sep,
             MenuNode.Sub("Spe&llcheck",

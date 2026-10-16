@@ -155,6 +155,36 @@ public sealed class MainWindowFootnotesTests
     }
 
     [Fact]
+    public void Shared_footnotes_in_another_style_open_the_unifying_dialog_and_unifying_rewrites_them()
+    {
+        using UiCultureScope culture = new("en");
+        using TempDir temp = new();
+        (MainWindowViewModel sut, Book book, HtmlResource chapter) = OpenMinimalChapter(temp);
+        ICodeTabHost host = sut;
+        sut.PrepareFootnoteLetters().Should().BeNull();
+        sut.StatusMessage.Should().Be(Strings.Get("Status_NoSharedFootnotes"));
+
+        host.AddFootnote(chapter, AfterHello(chapter), "Shared note.", FootnotePlacement.Local);
+        int end = chapter.GetText().IndexOf("world", StringComparison.Ordinal) + 5;
+        FootnoteEditor.AddReference(book, chapter, end, FootnoteScanner.Scan(book).Single(), out _,
+            FootnoteOptions.Default with { LetterStyle = FootnoteLetterStyle.UpperLatin }).Should().Be(FootnoteError.None);
+        sut.ActiveCodeTab!.Reload();
+        sut.CountFootnoteLetterMismatches().Should().Be(1, "Preferences say a, b");
+
+        FootnoteLettersViewModel letters = sut.PrepareFootnoteLetters()!;
+        letters.Style.Should().Be(FootnoteLetterStyle.LowerLatin);
+        letters.Notes.Should().ContainSingle();
+        letters.UnifyCommand.Execute(null);
+
+        chapter.GetText().Should().Contain("[1a]</a>").And.Contain("[1b]</a>").And.NotContain("[1A]");
+        sut.StatusMessage.Should().Be(Strings.Format("Status_FootnoteLettersUnified", 1, Strings.Get("FootnoteLetterStyle_LowerLatin")));
+        sut.ActiveCodeTab!.DocumentText.Should().Be(chapter.GetText());
+        sut.CountFootnoteLetterMismatches().Should().Be(0);
+        sut.PrepareFootnoteLetters().Should().BeNull();
+        sut.StatusMessage.Should().Be(Strings.Format("Status_FootnoteLettersAlreadyUnified", Strings.Get("FootnoteLetterStyle_LowerLatin")));
+    }
+
+    [Fact]
     public void The_removal_confirmation_is_a_setting()
     {
         using TempDir temp = new();

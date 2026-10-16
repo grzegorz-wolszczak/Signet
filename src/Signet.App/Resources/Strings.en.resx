@@ -4131,6 +4131,72 @@ It does not change the files, their names or their IDs.</value>
   <data name="FootnoteWindow_RemoveConfirm" xml:space="preserve">
     <value>Are you sure you want to remove the footnote? Both the reference in the text and the note will be removed.</value>
   </data>
+  <data name="Action_MainWindow_UnifyFootnoteLetters" xml:space="preserve">
+    <value>&amp;Unify Letters of Shared Footnotes...</value>
+  </data>
+  <data name="CodeEditorMenu_FootnotesUnifyLetters" xml:space="preserve">
+    <value>Unify Letters of Shared Footnotes...</value>
+  </data>
+  <data name="FootnoteLettersWindow_Title" xml:space="preserve">
+    <value>Unify Letters of Shared Footnotes</value>
+  </data>
+  <data name="FootnoteLettersWindow_Intro" xml:space="preserve">
+    <value>The shared footnotes below have letters in another style than the chosen one. Unifying overwrites in the book: the markers of the references ([4ii] → [4b]), their ids (fn-4ii-ref → fn-4b-ref) and the links back in the note. Links from other places of the book to those ids (ℹ) are redirected. A checkpoint is created before the change.</value>
+  </data>
+  <data name="FootnoteLettersWindow_Style" xml:space="preserve">
+    <value>Letter style:</value>
+  </data>
+  <data name="FootnoteLettersWindow_None" xml:space="preserve">
+    <value>All shared footnotes already have letters in this style.</value>
+  </data>
+  <data name="FootnoteLettersWindow_Summary" xml:space="preserve">
+    <value>{0} of {1} footnotes checked</value>
+  </data>
+  <data name="FootnoteLettersWindow_ColumnFootnote" xml:space="preserve">
+    <value>Footnote</value>
+  </data>
+  <data name="FootnoteLettersWindow_ColumnPlace" xml:space="preserve">
+    <value>Place</value>
+  </data>
+  <data name="FootnoteLettersWindow_FileTitle" xml:space="preserve">
+    <value>{0} ({1})</value>
+  </data>
+  <data name="FootnoteLettersWindow_NoteTitle" xml:space="preserve">
+    <value>[{0}] {1} → {2}</value>
+  </data>
+  <data name="FootnoteLettersWindow_ReferenceTitle" xml:space="preserve">
+    <value>Reference {0} → {1}</value>
+  </data>
+  <data name="FootnoteLettersWindow_LinkTitle" xml:space="preserve">
+    <value>Link in {0} — redirected</value>
+  </data>
+  <data name="FootnoteLettersWindow_Unify" xml:space="preserve">
+    <value>Unify</value>
+  </data>
+  <data name="FootnoteLettersWindow_NoticeMark" xml:space="preserve">
+    <value>ℹ</value>
+  </data>
+  <data name="FootnoteLettersWindow_DoubleClickHint" xml:space="preserve">
+    <value>A double click opens the place in the code.</value>
+  </data>
+  <data name="FootnoteLetters_OfferAfterPreferences" xml:space="preserve">
+    <value>The book has {0} shared footnotes with letters in another style than the one set ({1}). The change in Preferences does not change them by itself. Open the unifying dialog?</value>
+  </data>
+  <data name="FootnoteLetters_OfferOpen" xml:space="preserve">
+    <value>Open</value>
+  </data>
+  <data name="CheckpointOp_UnifyFootnoteLetters" xml:space="preserve">
+    <value>Unify letters of shared footnotes</value>
+  </data>
+  <data name="Status_NoSharedFootnotes" xml:space="preserve">
+    <value>The book has no shared footnotes.</value>
+  </data>
+  <data name="Status_FootnoteLettersAlreadyUnified" xml:space="preserve">
+    <value>All shared footnotes already have letters {0}.</value>
+  </data>
+  <data name="Status_FootnoteLettersUnified" xml:space="preserve">
+    <value>Letters of shared footnotes unified: {0} (style {1}).</value>
+  </data>
   <data name="CodeEditorMenu_FootnoteAddReference" xml:space="preserve">
     <value>Add Reference to Existing Footnote...</value>
   </data>

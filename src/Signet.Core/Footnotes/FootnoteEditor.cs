@@ -930,7 +930,11 @@ public static partial class FootnoteEditor
     /// <c>null</c>), and the global notes are grouped as the options and the notes file say.
     /// Returns whether anything changed.
     /// </summary>
-    public static bool Renumber(Book book, FootnoteOptions? options = null)
+    public static bool Renumber(Book book, FootnoteOptions? options = null) => RenumberWith(book, options, null);
+
+    // Renumber with the letters of some shared notes written in a given style (`styles`: by the note's file and id).
+    private static bool RenumberWith(
+        Book book, FootnoteOptions? options, IReadOnlyDictionary<(string BookPath, string Id), FootnoteLetterStyle>? styles)
     {
         ArgumentNullException.ThrowIfNull(book);
         IReadOnlyList<Footnote> footnotes = FootnoteScanner.Scan(book);
@@ -1029,7 +1033,7 @@ public static partial class FootnoteEditor
             FootnoteLetterStyle? style = null;
             if (references.Count > 1)
             {
-                style = FootnoteLetters.Detect(references.Select(r =>
+                style = styles?.GetValueOrDefault((footnote.NoteFile.BookPath, footnote.NoteId)) ?? FootnoteLetters.Detect(references.Select(r =>
                 {
                     (string text, TagLister tags) = Snapshot(r.ReferenceFile);
                     return FindAnchor(tags, text, r.ReferenceHref, r.ReferenceOccurrence) is { } a

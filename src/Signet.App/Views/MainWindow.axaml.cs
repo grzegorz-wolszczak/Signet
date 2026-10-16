@@ -161,6 +161,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             _boundViewModel.CleanupRequested -= OnCleanupRequested;
             _boundViewModel.ManageFontsRequested -= OnManageFontsRequested;
             _boundViewModel.FootnoteConversionRequested -= OnFootnoteConversionRequested;
+            _boundViewModel.FootnoteLettersRequested -= OnFootnoteLettersRequested;
             _boundViewModel.StandardizeRequested -= OnStandardizeRequested;
             _boundViewModel.LiveCssPanelRequested -= OnLiveCssPanelRequested;
             _boundViewModel.LiveCssContextChanged -= OnLiveCssContextChanged;
@@ -215,6 +216,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         _boundViewModel.CleanupRequested += OnCleanupRequested;
         _boundViewModel.ManageFontsRequested += OnManageFontsRequested;
         _boundViewModel.FootnoteConversionRequested += OnFootnoteConversionRequested;
+        _boundViewModel.FootnoteLettersRequested += OnFootnoteLettersRequested;
         _boundViewModel.StandardizeRequested += OnStandardizeRequested;
         _boundViewModel.LiveCssPanelRequested += OnLiveCssPanelRequested;
         _boundViewModel.LiveCssContextChanged += OnLiveCssContextChanged;
@@ -1112,6 +1114,9 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             settings.Save();
         };
 
+        // A changed letter style offers to rewrite the shared footnotes of the book written in another one.
+        Signet.Core.Footnotes.FootnoteLetterStyle letters = settings.FootnoteLetterStyle;
+
         // Save commits the changes (the language, theme etc. switch live then); refresh what depends on them.
         preferences.Applied += (_, _) => _boundViewModel?.ApplyPreferencesChanges();
 
@@ -1123,6 +1128,24 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
 
         // User dictionary operations happen at once, even when the window is then cancelled.
         _boundViewModel?.ApplyPreferencesChanges();
+        if (settings.FootnoteLetterStyle != letters && _boundViewModel is { } vm && vm.CountFootnoteLetterMismatches() is > 0 and var count
+            && await ConfirmWindow.AskAsync(
+                this,
+                Strings.Get("FootnoteLettersWindow_Title"),
+                Strings.Format("FootnoteLetters_OfferAfterPreferences", count, Strings.Get("FootnoteLetterStyle_" + settings.FootnoteLetterStyle)),
+                Strings.Get("FootnoteLetters_OfferOpen")))
+        {
+            OnFootnoteLettersRequested(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>Handles "Unify Letters of Shared Footnotes…": shows the modal dialog (or only a status message).</summary>
+    private async void OnFootnoteLettersRequested(object? sender, EventArgs e)
+    {
+        if (_boundViewModel?.PrepareFootnoteLetters() is { } letters)
+        {
+            await FootnoteLettersWindow.ShowAsync(this, letters);
+        }
     }
 
     private ReportsWindow? _reportsWindow;

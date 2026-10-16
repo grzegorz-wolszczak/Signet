@@ -322,6 +322,62 @@ public sealed class SharedFootnoteTests
         }
     }
 
+    [Fact]
+    public void The_letters_of_shared_notes_in_another_style_are_written_anew_and_links_to_their_ids_follow()
+    {
+        (Book book, HtmlResource html) = NewBook(Body + "\n<p>See <a href=\"#fn-1ii-ref\">the second place</a>.</p>");
+        using (book)
+        {
+            AddShared(book, html, "roman", FootnoteOptions.Default with { LetterStyle = FootnoteLetterStyle.LowerRoman });
+            html.GetText().Should().Contain("id=\"fn-1ii-ref\">[1ii]</a>");
+
+            FootnoteEditor.PlanLetters(book, FootnoteLetterStyle.LowerRoman).Should().BeEmpty("the note is written in that style");
+            LetterItem item = FootnoteEditor.PlanLetters(book, FootnoteLetterStyle.LowerLatin).Should().ContainSingle().Subject;
+            item.Current.Should().Be(FootnoteLetterStyle.LowerRoman);
+            item.Number.Should().Be(1);
+            item.References.Should().HaveCount(2);
+            item.Links.Should().ContainSingle().Which.File.Should().BeSameAs(html);
+
+            FootnoteEditor.UnifyLetters(book, new[] { item }, FootnoteLetterStyle.LowerLatin).Should().Be(1);
+
+            html.GetText().Should().Contain("First" + Reference("fn-1a-ref", "#fn-1", "[1a]"))
+                .And.Contain("Third" + Reference("fn-1b-ref", "#fn-1", "[1b]"))
+                .And.Contain("<a href=\"#fn-1a-ref\">1a</a>, <a href=\"#fn-1b-ref\">1b</a>. roman")
+                .And.Contain("See <a href=\"#fn-1b-ref\">the second place</a>.");
+            FootnoteEditor.PlanLetters(book, FootnoteLetterStyle.LowerLatin).Should().BeEmpty();
+            FootnoteValidator.Validate(book).Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public void A_new_id_equal_to_the_old_id_of_another_reference_does_not_mislead_the_links()
+    {
+        // Nine references: in latin the ninth is "i", in roman the first one.
+        string body = string.Join("\n", Enumerable.Range(1, 9).Select(i => "<p>Place" + i + ".</p>"))
+            + "\n<p>Back to <a href=\"#fn-1i-ref\">the ninth</a>.</p>";
+        (Book book, HtmlResource html) = NewBook(body);
+        using (book)
+        {
+            FootnoteEditor.Add(book, html, After(html, "Place1"), "note", FootnotePlacement.Local, out Footnote? footnote);
+            for (int i = 2; i <= 9; i++)
+            {
+                FootnoteEditor.AddReference(book, html, After(html, "Place" + i), footnote!, out _).Should().Be(FootnoteError.None);
+            }
+
+            html.GetText().Should().Contain("Place9" + Reference("fn-1i-ref", "#fn-1", "[1i]"));
+            LetterItem item = FootnoteEditor.PlanLetters(book, FootnoteLetterStyle.LowerRoman).Single();
+
+            FootnoteEditor.UnifyLetters(book, new[] { item }, FootnoteLetterStyle.LowerRoman);
+
+            string text = html.GetText();
+            text.Should().Contain("Place1" + Reference("fn-1i-ref", "#fn-1", "[1i]"))
+                .And.Contain("Place9" + Reference("fn-1ix-ref", "#fn-1", "[1ix]"))
+                .And.Contain("Back to <a href=\"#fn-1ix-ref\">the ninth</a>.", "the link follows its reference")
+                .And.Contain("<a href=\"#fn-1i-ref\">1i</a>, <a href=\"#fn-1ii-ref\">1ii</a>", "the links back are the note's own");
+            FootnoteValidator.Validate(book).Should().BeEmpty();
+        }
+    }
+
     [Theory]
     [InlineData(FootnoteLetterStyle.LowerLatin, 0, "a")]
     [InlineData(FootnoteLetterStyle.LowerLatin, 25, "z")]

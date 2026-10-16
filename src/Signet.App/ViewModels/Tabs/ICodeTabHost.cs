@@ -162,6 +162,9 @@ public interface ICodeTabHost
 
     /// <summary>"Convert Footnotes of Other Origin…" — opens the conversion dialog.</summary>
     void ShowFootnoteConversion();
+
+    /// <summary>"Unify Letters of Shared Footnotes…" — opens the dialog with the shared notes in another style.</summary>
+    void ShowFootnoteLetters();
 }
 
 /// <summary>The footnote state at a position of a file (<see cref="ICodeTabHost.GetFootnoteState"/>).</summary>

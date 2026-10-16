@@ -10,7 +10,7 @@ namespace Signet.Core.Footnotes;
 /// The letters of the references of a shared note (<see cref="FootnoteLetterStyle"/>): <c>[4a]</c>, <c>[4b]</c> and the
 /// links back <c>4a, 4b</c> of the note.
 /// </summary>
-internal static class FootnoteLetters
+public static class FootnoteLetters
 {
     private static readonly (int Value, string Numeral)[] Romans =
     {

@@ -886,6 +886,7 @@ public partial class CodeTabView : UserControl
         menu.Items.Add(new Separator());
         menu.Items.Add(Item(Strings.Get("CodeEditorMenu_FootnotesRenumber"), host.RenumberFootnotes, enabled: state.HasFootnotes));
         menu.Items.Add(Item(Strings.Get("CodeEditorMenu_FootnotesConvert"), host.ShowFootnoteConversion, enabled: state.ForeignCount > 0));
+        menu.Items.Add(Item(Strings.Get("CodeEditorMenu_FootnotesUnifyLetters"), host.ShowFootnoteLetters, enabled: state.HasFootnotes));
         return menu;
     }
 

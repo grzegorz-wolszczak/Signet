@@ -735,10 +735,10 @@ public sealed class CodeTabViewRenderTests
     }
 
     // Which items of the "Footnotes" submenu are enabled on a footnote with one reference.
-    private static readonly bool[] OnSingleFootnoteEnabled = { true, true, false, true, true, true };
+    private static readonly bool[] OnSingleFootnoteEnabled = { true, true, false, true, true, true, true };
 
     // Which items are enabled where a footnote can be added, in a book without notes (and without other footnotes).
-    private static readonly bool[] FreeWithoutNotesEnabled = { true, false, true, false };
+    private static readonly bool[] FreeWithoutNotesEnabled = { true, false, true, false, true };
 
     /// <summary>
     /// "Footnotes": on a footnote the submenu offers editing it and going to its other part; elsewhere adding one,
@@ -793,7 +793,8 @@ public sealed class CodeTabViewRenderTests
             Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnoteRemoveReference"),
             Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnoteRemove"),
             Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnotesRenumber"),
-            Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnotesConvert"));
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnotesConvert"),
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnotesUnifyLetters"));
         onFootnoteEnabled.Should().Equal(OnSingleFootnoteEnabled, "the only reference is removed with the whole footnote");
 
         string[] blocked = Footnotes(new FootnoteMenuState(null, Signet.Core.Footnotes.FootnoteError.InsideTag, false), out bool[] blockedEnabled);
@@ -803,8 +804,9 @@ public sealed class CodeTabViewRenderTests
                 Signet.App.ViewModels.FootnoteViewModel.ErrorText(Signet.Core.Footnotes.FootnoteError.InsideTag)),
             Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnoteAddReference"),
             Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnotesRenumber"),
-            Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnotesConvert"));
-        blockedEnabled.Should().Equal(false, false, false, false);
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnotesConvert"),
+            Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnotesUnifyLetters"));
+        blockedEnabled.Should().Equal(false, false, false, false, false);
 
         string[] free = Footnotes(new FootnoteMenuState(null, Signet.Core.Footnotes.FootnoteError.None, true), out bool[] freeEnabled);
         free[0].Should().Be(Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnoteAdd"));
@@ -956,6 +958,10 @@ public sealed class CodeTabViewRenderTests
         }
 
         public void RenumberFootnotes()
+        {
+        }
+
+        public void ShowFootnoteLetters()
         {
         }
 

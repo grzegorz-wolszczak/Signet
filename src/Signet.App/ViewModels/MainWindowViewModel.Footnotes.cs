@@ -31,6 +31,82 @@ public sealed partial class MainWindowViewModel
     void ICodeTabHost.ShowFootnoteConversion() => FootnoteConversionRequested?.Invoke(this, EventArgs.Empty);
 
     /// <summary>
+    /// Raised by "Unify Letters of Shared Footnotes…" (Tools → Footnotes, the Code Editor menu) — the view calls
+    /// <see cref="PrepareFootnoteLetters"/> and shows the modal dialog.
+    /// </summary>
+    public event EventHandler? FootnoteLettersRequested;
+
+    /// <inheritdoc/>
+    void ICodeTabHost.ShowFootnoteLetters() => FootnoteLettersRequested?.Invoke(this, EventArgs.Empty);
+
+    /// <summary>
+    /// Prepares the "Unify Letters of Shared Footnotes" dialog with the style of Preferences: saves the open tabs and
+    /// returns its view model, or <c>null</c> (with a message in the status bar) when no book is open, the book has no
+    /// shared footnotes, or all of them are written in that style.
+    /// </summary>
+    public FootnoteLettersViewModel? PrepareFootnoteLetters()
+    {
+        if (_currentBook is not { } book)
+        {
+            return null;
+        }
+
+        _tabManager.SaveAllTabs();
+        FootnoteLetterStyle style = _settings.FootnoteLetterStyle;
+        if (!FootnoteScanner.Scan(book).Any(f => f.IsSignet && f.IsShared))
+        {
+            _statusBar.ShowMessage(Strings.Get("Status_NoSharedFootnotes"), TimeSpan.FromSeconds(4));
+            return null;
+        }
+
+        if (FootnoteEditor.PlanLetters(book, style).Count == 0)
+        {
+            _statusBar.ShowMessage(
+                Strings.Format("Status_FootnoteLettersAlreadyUnified", Strings.Get("FootnoteLetterStyle_" + style)), TimeSpan.FromSeconds(5));
+            return null;
+        }
+
+        return new FootnoteLettersViewModel(
+            style, s => FootnoteEditor.PlanLetters(book, s), NavigateToBookPathAtOffset, UnifyFootnoteLetters);
+    }
+
+    /// <summary>
+    /// How many shared footnotes of the current book are not written in the style of Preferences (0 without a book): after
+    /// the style changes in Preferences the window offers to unify them.
+    /// </summary>
+    public int CountFootnoteLetterMismatches()
+    {
+        if (_currentBook is not { } book)
+        {
+            return 0;
+        }
+
+        _tabManager.SaveAllTabs();
+        return FootnoteEditor.PlanLetters(book, _settings.FootnoteLetterStyle).Count;
+    }
+
+    /// <summary>
+    /// "Unify" in the dialog: rewrites the letters of <paramref name="items"/> in <paramref name="style"/> behind a
+    /// checkpoint and refreshes the tabs. Returns whether anything changed.
+    /// </summary>
+    public bool UnifyFootnoteLetters(IReadOnlyList<LetterItem> items, FootnoteLetterStyle style)
+    {
+        ArgumentNullException.ThrowIfNull(items);
+        if (_currentBook is null || items.Count == 0)
+        {
+            return false;
+        }
+
+        _tabManager.SaveAllTabs();
+        AddCheckpointBefore(Strings.Get("CheckpointOp_UnifyFootnoteLetters"));
+        int changed = FootnoteEditor.UnifyLetters(_currentBook, items, style, FootnoteOptions);
+        RefreshAfterMaintenanceOperation();
+        _statusBar.ShowMessage(
+            Strings.Format("Status_FootnoteLettersUnified", changed, Strings.Get("FootnoteLetterStyle_" + style)), TimeSpan.FromSeconds(5));
+        return true;
+    }
+
+    /// <summary>
     /// Prepares the "Convert Footnotes of Other Origin" dialog: saves the open tabs and plans the conversion off the UI
     /// thread (a book can have thousands of footnotes; the caller shows that it is working, modally, so nothing edits the
     /// book meanwhile). Returns the dialog's view model, or <c>null</c> when no book is open, the book changed in the
