@@ -5178,15 +5178,73 @@ Zamknij zakładkę</value>
     <value>1. Treść przypisu skrócona do jednego wiersza…</value>
   </data>
   <data name="PreferencesWindow_ColorsInTheme" xml:space="preserve">
-    <value>Kolory ustawia się w motywie: Wygląd › Schemat kolorów.</value>
+    <value>Kolory interfejsu ustawia się w motywie: Wygląd › Kolory interfejsu.</value>
   </data>
   <data name="PreferencesWindow_ColorScheme" xml:space="preserve">
     <value>Schemat kolorów</value>
   </data>
-  <data name="ColorScheme_Theme" xml:space="preserve">
+  <data name="Theme_Label" xml:space="preserve">
     <value>Motyw:</value>
   </data>
-  <data name="ColorScheme_Actions" xml:space="preserve">
+  <data name="Scheme_Label" xml:space="preserve">
+    <value>Schemat kolorów edytora:</value>
+  </data>
+  <data name="Scheme_Actions" xml:space="preserve">
+    <value>Akcje schematu kolorów</value>
+  </data>
+  <data name="Scheme_NamePrompt" xml:space="preserve">
+    <value>Nazwa schematu:</value>
+  </data>
+  <data name="Scheme_DuplicateTitle" xml:space="preserve">
+    <value>Duplikuj schemat kolorów</value>
+  </data>
+  <data name="Scheme_RenameTitle" xml:space="preserve">
+    <value>Zmień nazwę schematu kolorów</value>
+  </data>
+  <data name="Scheme_NameTaken" xml:space="preserve">
+    <value>Schemat o nazwie „{0}” już istnieje.</value>
+  </data>
+  <data name="Scheme_DeleteTitle" xml:space="preserve">
+    <value>Usuń schemat kolorów</value>
+  </data>
+  <data name="Scheme_DeleteConfirm" xml:space="preserve">
+    <value>Usunąć schemat „{0}”? Tego nie można cofnąć. Schematy na nim oparte zachowają swój wygląd.</value>
+  </data>
+  <data name="Scheme_ExportTitle" xml:space="preserve">
+    <value>Eksportuj schemat kolorów</value>
+  </data>
+  <data name="Scheme_ExportFailed" xml:space="preserve">
+    <value>Nie udało się wyeksportować schematu: {0}</value>
+  </data>
+  <data name="Scheme_ImportTitle" xml:space="preserve">
+    <value>Importuj schemat kolorów</value>
+  </data>
+  <data name="Scheme_ImportFailed" xml:space="preserve">
+    <value>Nie udało się zaimportować schematu: {0}</value>
+  </data>
+  <data name="Scheme_ImportWarnings" xml:space="preserve">
+    <value>Schemat „{0}” zaimportowano z uwagami:
+{1}</value>
+  </data>
+  <data name="Scheme_FileType" xml:space="preserve">
+    <value>Schemat kolorów Signet</value>
+  </data>
+  <data name="Scheme_BundledNote" xml:space="preserve">
+    <value>To schemat wbudowany: zmiany zapisują się obok niego, a „Przywróć domyślne” je usuwa. Nie można zmienić jego nazwy ani go usunąć.</value>
+  </data>
+  <data name="Scheme_RestoreFromParent" xml:space="preserve">
+    <value>Przywróć wartość ze schematu „{0}”</value>
+  </data>
+  <data name="PreferencesWindow_AppearanceAndBehavior" xml:space="preserve">
+    <value>Wygląd i zachowanie</value>
+  </data>
+  <data name="PreferencesWindow_InterfaceColors" xml:space="preserve">
+    <value>Kolory interfejsu</value>
+  </data>
+  <data name="PreferencesWindow_ColorsInScheme" xml:space="preserve">
+    <value>Kolory ustawia się w schemacie kolorów: Wygląd i zachowanie › Code Editor › Schemat kolorów.</value>
+  </data>
+  <data name="Theme_Actions" xml:space="preserve">
     <value>Akcje motywu</value>
   </data>
   <data name="ColorScheme_Duplicate" xml:space="preserve">
@@ -5228,44 +5286,44 @@ Zamknij zakładkę</value>
   <data name="ColorScheme_IconSetNote" xml:space="preserve">
     <value>Zmiana zestawu ikon działa po ponownym uruchomieniu Signet; kolory i wariant zmieniają się od razu po zapisaniu.</value>
   </data>
-  <data name="ColorScheme_BundledNote" xml:space="preserve">
+  <data name="Theme_BundledNote" xml:space="preserve">
     <value>To motyw wbudowany: zmiany zapisują się obok niego, a „Przywróć domyślne” je usuwa. Nie można zmienić jego nazwy ani go usunąć.</value>
   </data>
-  <data name="ColorScheme_NamePrompt" xml:space="preserve">
+  <data name="Theme_NamePrompt" xml:space="preserve">
     <value>Nazwa motywu:</value>
   </data>
-  <data name="ColorScheme_DuplicateTitle" xml:space="preserve">
+  <data name="Theme_DuplicateTitle" xml:space="preserve">
     <value>Duplikuj motyw</value>
   </data>
-  <data name="ColorScheme_RenameTitle" xml:space="preserve">
+  <data name="Theme_RenameTitle" xml:space="preserve">
     <value>Zmień nazwę motywu</value>
   </data>
-  <data name="ColorScheme_NameTaken" xml:space="preserve">
+  <data name="Theme_NameTaken" xml:space="preserve">
     <value>Motyw o nazwie „{0}” już istnieje.</value>
   </data>
-  <data name="ColorScheme_DeleteTitle" xml:space="preserve">
+  <data name="Theme_DeleteTitle" xml:space="preserve">
     <value>Usuń motyw</value>
   </data>
-  <data name="ColorScheme_DeleteConfirm" xml:space="preserve">
+  <data name="Theme_DeleteConfirm" xml:space="preserve">
     <value>Usunąć motyw „{0}”? Tego nie można cofnąć. Motywy na nim oparte zachowają swój wygląd.</value>
   </data>
-  <data name="ColorScheme_ExportTitle" xml:space="preserve">
+  <data name="Theme_ExportTitle" xml:space="preserve">
     <value>Eksportuj motyw</value>
   </data>
-  <data name="ColorScheme_ExportFailed" xml:space="preserve">
+  <data name="Theme_ExportFailed" xml:space="preserve">
     <value>Nie udało się wyeksportować motywu: {0}</value>
   </data>
-  <data name="ColorScheme_ImportTitle" xml:space="preserve">
+  <data name="Theme_ImportTitle" xml:space="preserve">
     <value>Importuj motyw</value>
   </data>
-  <data name="ColorScheme_ImportFailed" xml:space="preserve">
+  <data name="Theme_ImportFailed" xml:space="preserve">
     <value>Nie udało się zaimportować motywu: {0}</value>
   </data>
-  <data name="ColorScheme_ImportWarnings" xml:space="preserve">
+  <data name="Theme_ImportWarnings" xml:space="preserve">
     <value>Motyw „{0}” zaimportowano z uwagami:
 {1}</value>
   </data>
-  <data name="ColorScheme_FileType" xml:space="preserve">
+  <data name="Theme_FileType" xml:space="preserve">
     <value>Motyw Signet</value>
   </data>
   <data name="Action_MainWindow_ManageFonts" xml:space="preserve">
@@ -5498,9 +5556,6 @@ Zamknij zakładkę</value>
   </data>
   <data name="PreferencesWindow_ThemeDiff" xml:space="preserve">
     <value>Porównanie (Diff)</value>
-  </data>
-  <data name="PreferencesWindow_ThemeInterface" xml:space="preserve">
-    <value>Interfejs</value>
   </data>
   <data name="ThemeGroup_Editor" xml:space="preserve">
     <value>Edytor</value>
@@ -5847,7 +5902,7 @@ Zamknij zakładkę</value>
   <data name="ColorScheme_InheritFrom" xml:space="preserve">
     <value>Dziedzicz wartości z:</value>
   </data>
-  <data name="ColorScheme_RestoreFromParent" xml:space="preserve">
+  <data name="Theme_RestoreFromParent" xml:space="preserve">
     <value>Przywróć wartość z motywu „{0}”</value>
   </data>
   <data name="ColorScheme_RestoreDefault" xml:space="preserve">
@@ -5909,12 +5964,6 @@ Zamknij zakładkę</value>
   </data>
   <data name="ColorSchemeSample_BookNote" xml:space="preserve">
     <value>Tło i tekst mają kolory książki, chyba że motyw je ustawia.</value>
-  </data>
-  <data name="ColorScheme_UseThemeFonts" xml:space="preserve">
-    <value>Użyj czcionek motywu zamiast domyślnych</value>
-  </data>
-  <data name="ColorScheme_UseThemeFontsNote" xml:space="preserve">
-    <value>Po zaznaczeniu motyw dostaje kopię obecnych czcionek z Wygląd › Czcionki; zmiany na tej stronie dotyczą tylko tego motywu i działają po zapisaniu.</value>
   </data>
   <data name="ColorPickerWindow_BasicColors" xml:space="preserve">
     <value>Kolory podstawowe</value>

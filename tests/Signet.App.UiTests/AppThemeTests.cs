@@ -21,7 +21,7 @@ public sealed class AppThemeTests
     public void Signet_dark_turns_the_controls_dark_and_recolors_the_interface_live()
     {
         using TempDir dir = new();
-        ThemeStore store = new(dir.Path);
+        ThemeStores store = ThemeStores.In(dir.Path);
         TextBlock marker = new() { Text = "⚠" };
         marker.Bind(TextBlock.ForegroundProperty, marker.GetResourceObservable("SignetRiskMarkerBrush"));
         Button danger = new() { Content = "Delete", Classes = { "danger" } };
@@ -35,7 +35,7 @@ public sealed class AppThemeTests
             Dispatcher.UIThread.RunJobs();
             Color lightMarker = ((ISolidColorBrush)marker.Foreground!).Color;
 
-            AppTheme.Apply(Application.Current!, new ResolvedTheme(store.Get(ThemeStore.DarkId), store.Resolver));
+            AppTheme.Apply(Application.Current!, new ResolvedTheme(store.Themes.Get(ThemeStore.DarkId), store.Themes.Resolver, store.Schemes.Get(ThemeStore.DarkId), store.Schemes.Resolver));
             Dispatcher.UIThread.RunJobs();
 
             changed.Should().Be(1);
@@ -64,7 +64,7 @@ public sealed class AppThemeTests
             .With(ThemeKeys.FluentPaletteKeyId("RegionColor"), ThemeEntry.Of(ThemeColor.Parse("#FAF4E8")));
         try
         {
-            AppTheme.Apply(Application.Current!, new ResolvedTheme(theme, new ThemeResolver(_ => null)));
+            AppTheme.Apply(Application.Current!, ResolvedTheme.Of(ThemeDocumentKind.Theme, theme, new ThemeResolver(_ => null)));
 
             ColorPaletteResources palette = Application.Current!.Styles.OfType<FluentTheme>().Single()
                 .Palettes[Avalonia.Styling.ThemeVariant.Light];
@@ -83,7 +83,7 @@ public sealed class AppThemeTests
         using TempDir dir = new();
         string settingsPath = System.IO.Path.Combine(dir.Path, "settings.xml");
         SettingsStore settings = new(settingsPath) { UiThemeId = Ulid.NewUlid().ToString() };
-        ThemeManager sut = new(settings, new ThemeStore(System.IO.Path.Combine(dir.Path, "themes")), NullLogger<ThemeManager>.Instance);
+        ThemeManager sut = new(settings, ThemeStores.In(dir.Path), NullLogger<ThemeManager>.Instance);
         try
         {
             sut.ApplySaved();

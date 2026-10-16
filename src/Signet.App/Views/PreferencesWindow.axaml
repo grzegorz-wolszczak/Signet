@@ -163,19 +163,47 @@
 
 
 
-      <!-- ============================== Appearance ============================== -->
-      <!-- Appearance has no settings of its own: it lists links to its sections, one per part of the application. Each
-           section is a page with a tab bar: the tab with the look of the part (where it has more than fonts) and
-           "Fonts" with its fonts. Sections that configure behaviour (Preview, Footnotes) stay top-level and link here. -->
-      <TabItem x:Name="AppearancePage" Header="{loc:Loc PreferencesWindow_Appearance}" />
+      <!-- ========================= Appearance and Behavior ========================= -->
+      <!-- As in Rider, the section has no settings of its own: it lists its subsections. "Appearance" holds the theme of
+           the interface and, one level down, the look and the fonts of every part of the application. The parts that also
+           have behaviour (Code Editor, Preview, Footnotes) have a section of their own directly under it; the color
+           scheme of the editors is under Code Editor. -->
+      <TabItem x:Name="AppearancePage" Header="{loc:Loc PreferencesWindow_AppearanceAndBehavior}" />
 
-      <!-- Appearance › General: the icon theme, the compact interface; Fonts: the interface font, the size of the
-           warnings in dialogs and the tooltip fonts of the parts without a section of their own. -->
-      <TabItem x:Name="AppearanceGeneralPage" Header="{loc:Loc PreferencesWindow_General}" views:PreferencesPage.Parent="AppearancePage">
+      <!-- Appearance (Rider's page of the same name): the theme of the interface and the color scheme of the editors, each
+           with its own list and gear; General: the icon theme, the compact interface; Fonts: the interface font, the size of
+           the warnings in dialogs and the tooltip fonts of the parts without a section of their own; Interface Colors: the
+           colors of the theme. The DataContexts of the theme and the scheme are set in code. -->
+      <TabItem x:Name="AppearanceGeneralPage" Header="{loc:Loc PreferencesWindow_Appearance}" views:PreferencesPage.Parent="AppearancePage">
         <TabControl x:Name="AppearanceGeneralTabs">
           <TabItem Header="{loc:Loc PreferencesWindow_General}">
               <ScrollViewer>
                 <StackPanel Spacing="10" Margin="8">
+
+                  <Border Classes="section">
+                    <StackPanel x:Name="ThemePanel" x:DataType="vm:ThemeDocumentViewModel" Spacing="10">
+                      <views:ThemeSelectorView x:Name="ThemeSelector" />
+                      <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc ColorScheme_Variant}" VerticalAlignment="Center" />
+                        <ComboBox x:Name="VariantBox" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Stretch"
+                                  ItemsSource="{Binding Variants}" SelectedItem="{Binding Variant}" DisplayMemberBinding="{Binding DisplayName}" />
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc ColorScheme_IconSet}" VerticalAlignment="Center" />
+                        <ComboBox x:Name="IconSetBox" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch"
+                                  ItemsSource="{Binding IconSets}" SelectedItem="{Binding IconSet}" DisplayMemberBinding="{Binding DisplayName}" />
+                      </Grid>
+                      <TextBlock Text="{Binding BundledNote}" IsVisible="{Binding IsBundled}" Opacity="0.7" TextWrapping="Wrap" />
+                      <TextBlock Text="{loc:Loc ColorScheme_IconSetNote}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Border>
+
+                  <!-- The color scheme of the editors is chosen here as in Rider; its colors are edited under Code Editor. -->
+                  <Border Classes="section">
+                    <StackPanel Spacing="6">
+                      <views:ThemeSelectorView x:Name="SchemeSelector" />
+                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInScheme}" Padding="0"
+                                       views:PreferencesPage.Target="ColorSchemePage" />
+                    </StackPanel>
+                  </Border>
 
                   <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
                     <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_IconTheme}" />
@@ -196,10 +224,6 @@
                     <TextBox Grid.Column="1" Text="{Binding CustomIconFolder}" />
                   </Grid>
 
-                  <!-- The colors of the interface (warnings, error notifications, …) are in the theme. -->
-                  <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInTheme}" Padding="0"
-                                   views:PreferencesPage.Target="ColorSchemePage" />
-
                   <Button Content="{loc:Loc PreferencesWindow_RestoreAppearanceDefaults}" Command="{Binding RestoreAppearanceDefaultsCommand}"
                           HorizontalAlignment="Left" />
 
@@ -209,11 +233,16 @@
           <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
             <views:FontsPageView x:Name="AppearanceFontsView" />
           </TabItem>
+          <!-- The colors of the theme (warnings, error notifications, icons, …): the tree of its keys and the panel of the
+               selected one. The DataContext is set in code. -->
+          <TabItem x:Name="InterfaceColorsTab" Header="{loc:Loc PreferencesWindow_InterfaceColors}">
+            <views:ThemeKeysView x:Name="ThemeInterfaceView" Margin="8" />
+          </TabItem>
         </TabControl>
       </TabItem>
 
       <!-- Appearance › StartScreen: Fonts only. -->
-      <TabItem x:Name="StartScreenAppearancePage" Header="{loc:Loc PreferencesWindow_StartScreen}" views:PreferencesPage.Parent="AppearancePage">
+      <TabItem x:Name="StartScreenAppearancePage" Header="{loc:Loc PreferencesWindow_StartScreen}" views:PreferencesPage.Parent="AppearanceGeneralPage">
         <TabControl x:Name="StartScreenAppearanceTabs">
           <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
             <views:FontsPageView x:Name="StartScreenFontsView" />
@@ -222,7 +251,7 @@
       </TabItem>
 
       <!-- Appearance › BookBrowser: which folders are expanded when a book is loaded; Fonts. -->
-      <TabItem x:Name="BookBrowserAppearancePage" Header="{loc:Loc PreferencesWindow_BookBrowser}" views:PreferencesPage.Parent="AppearancePage">
+      <TabItem x:Name="BookBrowserAppearancePage" Header="{loc:Loc PreferencesWindow_BookBrowser}" views:PreferencesPage.Parent="AppearanceGeneralPage">
         <TabControl x:Name="BookBrowserAppearanceTabs">
           <TabItem Header="{loc:Loc PreferencesWindow_General}">
             <ScrollViewer>
@@ -273,7 +302,7 @@
                                      Increment="1" FormatString="0" HorizontalAlignment="Left" Width="130" />
                     </Grid>
                     <HyperlinkButton Content="{loc:Loc PreferencesWindow_BookBrowserBackgroundInTheme}" Padding="0"
-                                     views:PreferencesPage.Target="ThemeInterfacePage"
+                                     views:PreferencesPage.Target="AppearanceGeneralPage"
                                      views:PreferencesPage.TargetKey="ui.bookBrowser.background" />
 
                   </StackPanel>
@@ -288,7 +317,7 @@
       </TabItem>
 
       <!-- Appearance › TableOfContents: Fonts only. -->
-      <TabItem x:Name="TableOfContentsAppearancePage" Header="{loc:Loc PreferencesWindow_TableOfContents}" views:PreferencesPage.Parent="AppearancePage">
+      <TabItem x:Name="TableOfContentsAppearancePage" Header="{loc:Loc PreferencesWindow_TableOfContents}" views:PreferencesPage.Parent="AppearanceGeneralPage">
         <TabControl x:Name="TableOfContentsAppearanceTabs">
           <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
             <views:FontsPageView x:Name="TableOfContentsFontsView" />
@@ -296,32 +325,9 @@
         </TabControl>
       </TabItem>
 
-      <!-- Appearance › CodeEditor: highlighting and the opening tag hint; Fonts: the editor and hint fonts. -->
-      <TabItem x:Name="CodeEditorAppearancePage" Header="{loc:Loc PreferencesWindow_CodeEditor}" views:PreferencesPage.Parent="AppearancePage">
+      <!-- Appearance › CodeEditor: Fonts only (the editor, the line numbers and the hint). -->
+      <TabItem x:Name="CodeEditorAppearancePage" Header="{loc:Loc PreferencesWindow_CodeEditor}" views:PreferencesPage.Parent="AppearanceGeneralPage">
         <TabControl x:Name="CodeEditorAppearanceTabs">
-          <TabItem Header="{loc:Loc PreferencesWindow_CodeEditor}">
-              <ScrollViewer>
-                <StackPanel Spacing="10" Margin="8">
-                  <CheckBox Content="{loc:Loc PreferencesWindow_ExtendedHighlighting}" IsChecked="{Binding ExtendedHighlighting}" />
-
-                  <!-- Code Editor: the opening tag tooltip over a closing tag, with its delay. -->
-                  <CheckBox Content="{loc:Loc PreferencesWindow_OpenTagHint}" IsChecked="{Binding OpenTagHint}" />
-                  <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8" Margin="28,0,0,0">
-                    <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_OpenTagHintDelay}" IsEnabled="{Binding OpenTagHint}" />
-                    <TextBox Grid.Column="1" Text="{Binding OpenTagHintDelay}" Width="80" HorizontalAlignment="Left"
-                             IsEnabled="{Binding OpenTagHint}" />
-                  </Grid>
-
-                  <!-- The colors of the editor and of the hint are in the theme, their fonts on the Fonts tab. -->
-                  <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInTheme}" Padding="0"
-                                   views:PreferencesPage.Target="ColorSchemePage" />
-
-                  <TextBlock Text="{loc:Loc PreferencesWindow_FontColorRestartNotice}"
-                             IsVisible="{Binding RestartNoticeVisible}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
-
-                </StackPanel>
-              </ScrollViewer>
-          </TabItem>
           <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
             <views:FontsPageView x:Name="CodeEditorFontsView" />
           </TabItem>
@@ -329,7 +335,7 @@
       </TabItem>
 
       <!-- Appearance › Preview: the highlight of the caret location; Fonts: the preview fonts. -->
-      <TabItem x:Name="PreviewAppearancePage" Header="{loc:Loc PreferencesWindow_Preview}" views:PreferencesPage.Parent="AppearancePage">
+      <TabItem x:Name="PreviewAppearancePage" Header="{loc:Loc PreferencesWindow_Preview}" views:PreferencesPage.Parent="AppearanceGeneralPage">
         <TabControl x:Name="PreviewAppearanceTabs">
           <TabItem Header="{loc:Loc PreferencesWindow_Preview}">
               <ScrollViewer>
@@ -347,8 +353,8 @@
                           </ComboBox.ItemTemplate>
                         </ComboBox>
 
-                        <!-- The color of the highlight is in the theme (preview.highlight). -->
-                        <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInTheme}" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Padding="0"
+                        <!-- The color of the highlight is in the color scheme (preview.highlight). -->
+                        <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInScheme}" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Padding="0"
                                          views:PreferencesPage.Target="ColorSchemePage" />
 
                         <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightOpacity}" VerticalAlignment="Center" TextWrapping="Wrap"
@@ -382,7 +388,7 @@
       </TabItem>
 
       <!-- Appearance › FindReplace: Fonts only. -->
-      <TabItem x:Name="FindReplaceAppearancePage" Header="{loc:Loc PreferencesWindow_FindReplace}" views:PreferencesPage.Parent="AppearancePage">
+      <TabItem x:Name="FindReplaceAppearancePage" Header="{loc:Loc PreferencesWindow_FindReplace}" views:PreferencesPage.Parent="AppearanceGeneralPage">
         <TabControl x:Name="FindReplaceAppearanceTabs">
           <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
             <views:FontsPageView x:Name="FindReplaceFontsView" />
@@ -391,7 +397,7 @@
       </TabItem>
 
       <!-- Appearance › SpecialCharacters: Fonts only. -->
-      <TabItem x:Name="SpecialCharactersAppearancePage" Header="{loc:Loc PreferencesWindow_SpecialCharacters}" views:PreferencesPage.Parent="AppearancePage">
+      <TabItem x:Name="SpecialCharactersAppearancePage" Header="{loc:Loc PreferencesWindow_SpecialCharacters}" views:PreferencesPage.Parent="AppearanceGeneralPage">
         <TabControl x:Name="SpecialCharactersAppearanceTabs">
           <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
             <views:FontsPageView x:Name="SpecialCharacterFontsView" />
@@ -400,7 +406,7 @@
       </TabItem>
 
       <!-- Appearance › Checkpoints: Fonts only. -->
-      <TabItem x:Name="CheckpointsAppearancePage" Header="{loc:Loc PreferencesWindow_Checkpoints}" views:PreferencesPage.Parent="AppearancePage">
+      <TabItem x:Name="CheckpointsAppearancePage" Header="{loc:Loc PreferencesWindow_Checkpoints}" views:PreferencesPage.Parent="AppearanceGeneralPage">
         <TabControl x:Name="CheckpointsAppearanceTabs">
           <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
             <views:FontsPageView x:Name="CheckpointsFontsView" />
@@ -409,7 +415,7 @@
       </TabItem>
 
       <!-- Appearance › Validation: Fonts only. -->
-      <TabItem x:Name="ValidationAppearancePage" Header="{loc:Loc PreferencesWindow_Validation}" views:PreferencesPage.Parent="AppearancePage">
+      <TabItem x:Name="ValidationAppearancePage" Header="{loc:Loc PreferencesWindow_Validation}" views:PreferencesPage.Parent="AppearanceGeneralPage">
         <TabControl x:Name="ValidationAppearanceTabs">
           <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
             <views:FontsPageView x:Name="ValidationFontsView" />
@@ -418,7 +424,7 @@
       </TabItem>
 
       <!-- Appearance › MetadataEditor: Fonts only. -->
-      <TabItem x:Name="MetadataEditorAppearancePage" Header="{loc:Loc PreferencesWindow_MetadataEditor}" views:PreferencesPage.Parent="AppearancePage">
+      <TabItem x:Name="MetadataEditorAppearancePage" Header="{loc:Loc PreferencesWindow_MetadataEditor}" views:PreferencesPage.Parent="AppearanceGeneralPage">
         <TabControl x:Name="MetadataEditorAppearanceTabs">
           <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
             <views:FontsPageView x:Name="MetadataEditorFontsView" />
@@ -427,7 +433,7 @@
       </TabItem>
 
       <!-- Appearance › Cleanup: Fonts only. -->
-      <TabItem x:Name="CleanupAppearancePage" Header="{loc:Loc PreferencesWindow_Cleanup}" views:PreferencesPage.Parent="AppearancePage">
+      <TabItem x:Name="CleanupAppearancePage" Header="{loc:Loc PreferencesWindow_Cleanup}" views:PreferencesPage.Parent="AppearanceGeneralPage">
         <TabControl x:Name="CleanupAppearanceTabs">
           <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
             <views:FontsPageView x:Name="CleanupFontsView" />
@@ -436,7 +442,7 @@
       </TabItem>
 
       <!-- Appearance › Footnotes: Fonts only. -->
-      <TabItem x:Name="FootnotesAppearancePage" Header="{loc:Loc PreferencesWindow_Footnotes}" views:PreferencesPage.Parent="AppearancePage">
+      <TabItem x:Name="FootnotesAppearancePage" Header="{loc:Loc PreferencesWindow_Footnotes}" views:PreferencesPage.Parent="AppearanceGeneralPage">
         <TabControl x:Name="FootnotesAppearanceTabs">
           <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
             <views:FontsPageView x:Name="FootnotesFontsView" />
@@ -444,94 +450,78 @@
         </TabControl>
       </TabItem>
 
-      <!-- Appearance › Color Scheme: the theme in use, the actions on themes (the gear, as Rider's scheme actions) and
-           the settings of the theme as a whole. The DataContext is set in code (a binding on the content of a page that
-           is not shown does not resolve). -->
-      <TabItem x:Name="ColorSchemePage" Header="{loc:Loc PreferencesWindow_ColorScheme}" views:PreferencesPage.Parent="AppearancePage">
+      <!-- ============================== Code Editor ============================== -->
+      <!-- The behaviour of Code Editor: highlighting and the opening tag hint. Its look is under Appearance; its color
+           scheme is the subsection below. -->
+      <TabItem x:Name="CodeEditorPage" Header="{loc:Loc PreferencesWindow_CodeEditor}" views:PreferencesPage.Parent="AppearancePage">
         <ScrollViewer>
-          <StackPanel x:Name="ColorSchemePanel" x:DataType="vm:ColorSchemeViewModel" Spacing="10" Margin="8">
-            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
-              <TextBlock Grid.Column="0" Text="{loc:Loc ColorScheme_Theme}" VerticalAlignment="Center" />
-              <ComboBox x:Name="ThemeBox" Grid.Column="1" HorizontalAlignment="Stretch"
-                        ItemsSource="{Binding Themes}" SelectedItem="{Binding Selected}" DisplayMemberBinding="{Binding Name}" />
-              <Button x:Name="ThemeActionsButton" Grid.Column="2" Content="⚙" ToolTip.Tip="{loc:Loc ColorScheme_Actions}">
-                <Button.Flyout>
-                  <MenuFlyout Placement="BottomEdgeAlignedRight">
-                    <MenuItem x:Name="DuplicateThemeItem" Header="{loc:Loc ColorScheme_Duplicate}" Command="{Binding DuplicateCommand}" />
-                    <MenuItem x:Name="RenameThemeItem" Header="{loc:Loc ColorScheme_Rename}" Command="{Binding RenameCommand}" />
-                    <MenuItem x:Name="DeleteThemeItem" Header="{loc:Loc ColorScheme_Delete}" Command="{Binding DeleteCommand}" />
-                    <MenuItem x:Name="RestoreThemeItem" Header="{loc:Loc ColorScheme_RestoreDefaults}" Command="{Binding RestoreDefaultsCommand}" />
-                    <Separator />
-                    <MenuItem x:Name="ExportThemeItem" Header="{loc:Loc ColorScheme_Export}" Command="{Binding ExportCommand}" />
-                    <MenuItem x:Name="ImportThemeItem" Header="{loc:Loc ColorScheme_Import}" Command="{Binding ImportCommand}" />
-                  </MenuFlyout>
-                </Button.Flyout>
-              </Button>
+          <StackPanel Spacing="10" Margin="8">
+            <CheckBox Content="{loc:Loc PreferencesWindow_ExtendedHighlighting}" IsChecked="{Binding ExtendedHighlighting}" />
+
+            <!-- Code Editor: the opening tag tooltip over a closing tag, with its delay. -->
+            <CheckBox Content="{loc:Loc PreferencesWindow_OpenTagHint}" IsChecked="{Binding OpenTagHint}" />
+            <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8" Margin="28,0,0,0">
+              <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_OpenTagHintDelay}" IsEnabled="{Binding OpenTagHint}" />
+              <TextBox Grid.Column="1" Text="{Binding OpenTagHintDelay}" Width="80" HorizontalAlignment="Left"
+                       IsEnabled="{Binding OpenTagHint}" />
             </Grid>
 
-            <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
-              <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc ColorScheme_Variant}" VerticalAlignment="Center" />
-              <ComboBox x:Name="VariantBox" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Stretch"
-                        ItemsSource="{Binding Variants}" SelectedItem="{Binding Variant}" DisplayMemberBinding="{Binding DisplayName}" />
-              <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc ColorScheme_IconSet}" VerticalAlignment="Center" />
-              <ComboBox x:Name="IconSetBox" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch"
-                        ItemsSource="{Binding IconSets}" SelectedItem="{Binding IconSet}" DisplayMemberBinding="{Binding DisplayName}" />
-            </Grid>
+            <!-- The colors of the editor and of the hint are in the color scheme (its section is below), their fonts are under Appearance. -->
+            <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInScheme}" Padding="0"
+                             views:PreferencesPage.Target="ColorSchemePage" />
 
-            <TextBlock Text="{loc:Loc ColorScheme_BundledNote}" IsVisible="{Binding IsBundled}" Opacity="0.7" TextWrapping="Wrap" />
-            <TextBlock Text="{loc:Loc ColorScheme_IconSetNote}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
+            <TextBlock Text="{loc:Loc PreferencesWindow_FontColorRestartNotice}"
+                       IsVisible="{Binding RestartNoticeVisible}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
 
-            <!-- The font of the code previews of the pages below (a setting of the program, not of the theme); the
+          </StackPanel>
+        </ScrollViewer>
+      </TabItem>
+
+      <!-- Code Editor › Color Scheme (Rider's Editor › Color Scheme): the color scheme in use and the actions on schemes (the
+           gear, as Rider's scheme actions). The DataContext is set in code (a binding on the content of a page that is
+           not shown does not resolve). -->
+      <TabItem x:Name="ColorSchemePage" Header="{loc:Loc PreferencesWindow_ColorScheme}" views:PreferencesPage.Parent="CodeEditorPage">
+        <ScrollViewer>
+          <StackPanel x:Name="ColorSchemePanel" x:DataType="vm:ThemeDocumentViewModel" Spacing="10" Margin="8">
+            <views:ThemeSelectorView x:Name="ColorSchemeSelector" />
+
+            <TextBlock Text="{Binding BundledNote}" IsVisible="{Binding IsBundled}" Opacity="0.7" TextWrapping="Wrap" />
+
+            <!-- The font of the code previews of the pages below (a setting of the program, not of the scheme); the
                  DataContext is set in code. -->
             <views:FontSettingView x:Name="ColorSchemePreviewFontView" Margin="0,8,0,0" Width="420" HorizontalAlignment="Left" />
           </StackPanel>
         </ScrollViewer>
       </TabItem>
 
-      <!-- Appearance › Color Scheme › <area>: the keys of the theme by area (ThemePage), each page with the tree of its
-           keys and the panel of the selected one. The DataContexts are set in code, like the Fonts tabs. -->
+      <!-- Code Editor › Color Scheme › <area>: the keys of the color scheme by area (ThemePage), each page with the tree of
+           its keys and the panel of the selected one. The DataContexts are set in code, like the Fonts tabs. -->
       <TabItem x:Name="ThemeGeneralPage" Header="{loc:Loc PreferencesWindow_General}" views:PreferencesPage.Parent="ColorSchemePage">
-        <views:ColorSchemeKeysView x:Name="ThemeGeneralView" Margin="8" />
+        <views:ThemeKeysView x:Name="ThemeGeneralView" Margin="8" />
       </TabItem>
       <TabItem x:Name="ThemeXhtmlPage" Header="{loc:Loc PreferencesWindow_ThemeXhtml}" views:PreferencesPage.Parent="ColorSchemePage">
-        <views:ColorSchemeKeysView x:Name="ThemeXhtmlView" Margin="8" />
+        <views:ThemeKeysView x:Name="ThemeXhtmlView" Margin="8" />
       </TabItem>
       <TabItem x:Name="ThemeCssPage" Header="{loc:Loc PreferencesWindow_ThemeCss}" views:PreferencesPage.Parent="ColorSchemePage">
-        <views:ColorSchemeKeysView x:Name="ThemeCssView" Margin="8" />
+        <views:ThemeKeysView x:Name="ThemeCssView" Margin="8" />
       </TabItem>
       <TabItem x:Name="ThemeJavaScriptJsonPage" Header="{loc:Loc PreferencesWindow_ThemeJavaScriptJson}" views:PreferencesPage.Parent="ColorSchemePage">
-        <views:ColorSchemeKeysView x:Name="ThemeJavaScriptJsonView" Margin="8" />
+        <views:ThemeKeysView x:Name="ThemeJavaScriptJsonView" Margin="8" />
       </TabItem>
       <TabItem x:Name="ThemeDiffPage" Header="{loc:Loc PreferencesWindow_ThemeDiff}" views:PreferencesPage.Parent="ColorSchemePage">
-        <views:ColorSchemeKeysView x:Name="ThemeDiffView" Margin="8" />
+        <views:ThemeKeysView x:Name="ThemeDiffView" Margin="8" />
       </TabItem>
       <TabItem x:Name="ThemePreviewPage" Header="{loc:Loc PreferencesWindow_Preview}" views:PreferencesPage.Parent="ColorSchemePage">
-        <views:ColorSchemeKeysView x:Name="ThemePreviewView" Margin="8" />
+        <views:ThemeKeysView x:Name="ThemePreviewView" Margin="8" />
       </TabItem>
-      <TabItem x:Name="ThemeInterfacePage" Header="{loc:Loc PreferencesWindow_ThemeInterface}" views:PreferencesPage.Parent="ColorSchemePage">
-        <views:ColorSchemeKeysView x:Name="ThemeInterfaceView" Margin="8" />
-      </TabItem>
-
-      <!-- Appearance › Color Scheme › Fonts, as Rider's Color Scheme Font: "Use the theme fonts" and every font of the
-           "Fonts" pages as the theme sets them. The DataContexts are set in code. -->
-      <TabItem x:Name="ThemeFontsPage" Header="{loc:Loc PreferencesWindow_Fonts}" views:PreferencesPage.Parent="ColorSchemePage">
-        <DockPanel>
-          <StackPanel x:Name="ThemeFontsSwitch" x:DataType="vm:ColorSchemeViewModel" DockPanel.Dock="Top" Margin="8,8,8,0" Spacing="4">
-            <CheckBox x:Name="UseThemeFontsBox" Content="{loc:Loc ColorScheme_UseThemeFonts}" IsChecked="{Binding UseThemeFonts}" />
-            <TextBlock Text="{loc:Loc ColorScheme_UseThemeFontsNote}" Opacity="0.7" TextWrapping="Wrap" />
-          </StackPanel>
-          <views:FontsPageView x:Name="ThemeFontsView" IsContentEnabled="{Binding #UseThemeFontsBox.IsChecked}" />
-        </DockPanel>
-      </TabItem>
-
 
 
       <!-- ================================ Preview ================================ -->
-      <TabItem x:Name="PreviewPage" Header="{loc:Loc PreferencesWindow_Preview}">
+      <TabItem x:Name="PreviewPage" Header="{loc:Loc PreferencesWindow_Preview}" views:PreferencesPage.Parent="AppearancePage">
         <ScrollViewer>
           <StackPanel Spacing="10" Margin="8">
 
-            <!-- The look of the preview (the highlight of the caret location, the fonts) is under Appearance. -->
+            <!-- The look of the preview (the highlight of the caret location, the fonts) is under Appearance; its colors in the color scheme. -->
             <HyperlinkButton x:Name="PreviewAppearanceLink" Content="{loc:Loc PreferencesWindow_Appearance}" Padding="0"
                              views:PreferencesPage.Target="PreviewAppearancePage" />
 
@@ -553,7 +543,7 @@
       <!-- =============================== Footnotes =============================== -->
       <!-- General: how the footnote operations behave; CSS: the CSS of Signet's footnote classes (FootnoteStyles),
            written to the book on every footnote operation. -->
-      <TabItem x:Name="FootnotesPage" Header="{loc:Loc PreferencesWindow_Footnotes}">
+      <TabItem x:Name="FootnotesPage" Header="{loc:Loc PreferencesWindow_Footnotes}" views:PreferencesPage.Parent="AppearancePage">
         <TabControl x:Name="FootnotesTabs">
           <TabItem x:Name="FootnotesGeneralTab" Header="{loc:Loc PreferencesWindow_FootnotesGeneralTab}">
             <ScrollViewer>

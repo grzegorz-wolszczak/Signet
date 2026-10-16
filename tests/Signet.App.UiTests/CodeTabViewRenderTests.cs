@@ -154,8 +154,9 @@ public sealed class CodeTabViewRenderTests
         string folder = System.IO.Directory.CreateTempSubdirectory("signet-theme-").FullName;
         try
         {
-            ThemeStore store = new(folder);
-            AppTheme.Apply(Avalonia.Application.Current!, new ResolvedTheme(store.Get(ThemeStore.DarkId), store.Resolver));
+            ThemeStores stores = ThemeStores.In(folder);
+            AppTheme.Apply(Avalonia.Application.Current!, new ResolvedTheme(
+                stores.Themes.Get(ThemeStore.DarkId), stores.Themes.Resolver, stores.Schemes.Get(ThemeStore.DarkId), stores.Schemes.Resolver));
             Dispatcher.UIThread.RunJobs();
             window.CaptureRenderedFrame();
 
@@ -279,45 +280,13 @@ public sealed class CodeTabViewRenderTests
             ThemeKeys.JsKeyword.Id, ThemeEntry.Of(new TextAttributes { Foreground = ThemeColor.FromRgb(0x12, 0x34, 0x56), Bold = true }));
         try
         {
-            AppTheme.Apply(Avalonia.Application.Current!, new ResolvedTheme(theme, new ThemeResolver(_ => null)));
+            AppTheme.Apply(Avalonia.Application.Current!, ResolvedTheme.Of(ThemeDocumentKind.Scheme, theme, new ThemeResolver(_ => null)));
             Dispatcher.UIThread.RunJobs();
             window.CaptureRenderedFrame();
 
             VisualLineElement keyword = ElementAt(window, 1, 0);
             ((ISolidColorBrush)keyword.TextRunProperties.ForegroundBrush!).Color.Should().Be(Color.FromRgb(0x12, 0x34, 0x56));
             keyword.TextRunProperties.Typeface.Weight.Should().Be(FontWeight.Bold);
-        }
-        finally
-        {
-            AppTheme.Apply(Avalonia.Application.Current!, ResolvedTheme.Defaults);
-            window.Close();
-        }
-    }
-
-    [AvaloniaFact]
-    public void An_open_tab_takes_the_editor_font_of_a_theme_that_turns_its_fonts_on()
-    {
-        Window window = ShowMiscTab("script.js", "var x = 1;");
-        TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
-        double before = editor.FontSize;
-        Theme theme = new Theme(System.Ulid.NewUlid().ToString(), "Fonts")
-        {
-            UseThemeFonts = true,
-            Fonts = System.Collections.Immutable.ImmutableDictionary<string, ThemeFont>.Empty
-                .Add(ThemeFontKeys.CodeEditorText, new ThemeFont("DejaVu Sans Mono", 21)),
-        };
-        try
-        {
-            AppTheme.Apply(Avalonia.Application.Current!, new ResolvedTheme(theme, new ThemeResolver(_ => null)));
-            Dispatcher.UIThread.RunJobs();
-
-            editor.FontSize.Should().Be(21);
-            editor.FontFamily.Name.Should().Be("DejaVu Sans Mono");
-
-            AppTheme.Apply(Avalonia.Application.Current!, new ResolvedTheme(theme with { UseThemeFonts = false }, new ThemeResolver(_ => null)));
-            Dispatcher.UIThread.RunJobs();
-
-            editor.FontSize.Should().Be(before, "with the theme fonts off the settings count again");
         }
         finally
         {

@@ -78,7 +78,7 @@ public sealed class PreferencesWindowRenderTests
         AppActionRegistry registry = new(shortcuts, statusBar, NullLogger<AppActionRegistry>.Instance);
 
         UiDensityManager uiDensity = new(settings, iconTheme, NullLogger<UiDensityManager>.Instance);
-        ThemeManager themes = new(settings, new ThemeStore(Path.Combine(root, "themes")), NullLogger<ThemeManager>.Instance);
+        ThemeManager themes = new(settings, ThemeStores.In(root), NullLogger<ThemeManager>.Instance);
         PreferencesViewModel vm = new(settings, spellChecker, localization, iconTheme, shortcuts, registry, uiDensity, themes);
         return new PreferencesWindow { DataContext = vm };
     }
@@ -203,8 +203,8 @@ public sealed class PreferencesWindowRenderTests
     }
 
     /// <summary>
-    /// A Fonts page whose settings are switched off (the theme does not use its own fonts) can still be scrolled: only
-    /// the settings are disabled, not the scroll viewer with its scroll bar.
+    /// A Fonts page whose settings are switched off can still be scrolled: only the settings are disabled, not the scroll
+    /// viewer with its scroll bar.
     /// </summary>
     [AvaloniaFact]
     public void A_disabled_fonts_page_can_still_be_scrolled()
@@ -212,19 +212,19 @@ public sealed class PreferencesWindowRenderTests
         PreferencesWindow window = BuildWindow();
         window.Show();
         Dispatcher.UIThread.RunJobs();
-        ShowPage(window, "ThemeFontsPage");
-        CheckBox useThemeFonts = window.FindControl<CheckBox>("UseThemeFontsBox")!;
-        useThemeFonts.IsChecked = false;
+        ShowPage(window, "AppearanceGeneralPage");
+        TabControl tabs = window.FindControl<TabControl>("AppearanceGeneralTabs")!;
+        tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(t => Equals(t.Header, Strings.Get("PreferencesWindow_Fonts")));
+        FontsPageView page = window.FindControl<FontsPageView>("AppearanceFontsView")!;
+        page.IsContentEnabled = false;
         Dispatcher.UIThread.RunJobs();
-        FontsPageView page = window.FindControl<FontsPageView>("ThemeFontsView")!;
 
-        page.IsContentEnabled.Should().BeFalse();
         page.FindControl<StackPanel>("Settings")!.IsEffectivelyEnabled.Should().BeFalse("the settings are switched off");
         ScrollViewer scroll = page.GetVisualDescendants().OfType<ScrollViewer>().First();
         scroll.IsEffectivelyEnabled.Should().BeTrue("the scroll viewer keeps working");
         page.FindControl<CheckBox>("WrapPreviewBox")!.IsEffectivelyEnabled.Should().BeTrue("the preview is not disabled");
 
-        useThemeFonts.IsChecked = true;
+        page.IsContentEnabled = true;
         Dispatcher.UIThread.RunJobs();
         page.FindControl<StackPanel>("Settings")!.IsEffectivelyEnabled.Should().BeTrue();
         window.Close();
@@ -371,8 +371,9 @@ public sealed class PreferencesWindowRenderTests
     };
 
     /// <summary>
-    /// Appearance has a section per part of the application (and General, Color Scheme); each page has a tab bar: the
-    /// look of the part where it has more than fonts, and Fonts. The path of a section is shown above its page.
+    /// Appearance and Behavior holds Appearance (the themes, one section per part of the application below it, each page
+    /// with a tab bar: the look of the part where it has more than fonts, and Fonts), then the sections of the behaviour
+    /// of Code Editor (with its Color Scheme), Preview and Footnotes. The path of a section is shown above its page.
     /// </summary>
     [AvaloniaFact]
     public void The_parts_are_sections_of_appearance_with_a_tab_bar()
@@ -380,54 +381,101 @@ public sealed class PreferencesWindowRenderTests
         PreferencesWindow window = BuildWindow();
         window.Show();
         Dispatcher.UIThread.RunJobs();
+        string appearanceAndBehavior = Strings.Get("PreferencesWindow_AppearanceAndBehavior");
         string appearance = Strings.Get("PreferencesWindow_Appearance");
+        string codeEditor = Strings.Get("PreferencesWindow_CodeEditor");
         string fonts = Strings.Get("PreferencesWindow_Fonts");
         string general = Strings.Get("PreferencesWindow_General");
-        PreferencesSectionNode root = window.Sections.Roots.Single(n => n.Title == appearance);
+        PreferencesSectionNode root = window.Sections.Roots.Single(n => n.Title == appearanceAndBehavior);
 
         root.Children.Select(n => n.Title).Should().Equal(
-            new[] { general }
-                .Concat(PartsWithFonts.Select(s => Strings.Get("PreferencesWindow_" + s)))
-                .Append(Strings.Get("PreferencesWindow_ColorScheme")));
-        window.Sections.Roots.Should().NotContain(n => n.Title == Strings.Get("PreferencesWindow_CodeEditor"),
-            "Code Editor has only a look: it is a section of Appearance");
-        root.Children.Should().OnlyContain(n => n.Title == Strings.Get("PreferencesWindow_ColorScheme") || n.Children.Count == 0,
+            appearance, codeEditor, Strings.Get("PreferencesWindow_Preview"), Strings.Get("PreferencesWindow_Footnotes"));
+        PreferencesSectionNode look = root.Children.Single(n => n.Title == appearance);
+        look.Children.Select(n => n.Title).Should().Equal(PartsWithFonts.Select(s => Strings.Get("PreferencesWindow_" + s)));
+        look.Children.Should().OnlyContain(n => n.Children.Count == 0,
             "the parts are no sections with subsections: their tabs are inside the page");
+        root.Children.Single(n => n.Title == codeEditor).Children.Select(n => n.Title)
+            .Should().Equal(Strings.Get("PreferencesWindow_ColorScheme")); // the color scheme is managed under Code Editor
+        window.Sections.Roots.Should().NotContain(n => n.Title == appearance, "Appearance is a subsection now");
 
-        string[] bothTabs = { "CodeEditor", "Preview" };
+        string[] bothTabs = { "Preview" };
         foreach (string part in PartsWithFonts.Prepend("General"))
         {
             string pageName = (part == "General" ? "AppearanceGeneral" : part + "Appearance") + "Page";
             string tabsName = (part == "General" ? "AppearanceGeneral" : part + "Appearance") + "Tabs";
             ShowPage(window, pageName);
             string[] headers = window.FindControl<TabControl>(tabsName)!.Items.OfType<TabItem>().Select(t => (string)t.Header!).ToArray();
-            string[] expected = part == "General" || bothTabs.Contains(part)
-                ? new[] { Strings.Get("PreferencesWindow_" + part), fonts }
-                : part == "BookBrowser"
-                    ? new[] { general, fonts } // which folders are expanded on load, then the fonts
-                    : new[] { fonts };
+            string[] expected = part == "General"
+                ? new[] { general, fonts, Strings.Get("PreferencesWindow_InterfaceColors") } // the themes, the fonts, the colors of the theme
+                : bothTabs.Contains(part)
+                    ? new[] { Strings.Get("PreferencesWindow_" + part), fonts }
+                    : part == "BookBrowser"
+                        ? new[] { general, fonts } // which folders are expanded on load, then the fonts
+                        : new[] { fonts };
             headers.Should().Equal(expected, "the tab bar of {0}", part);
         }
 
-        PreferencesSectionNode codeEditor = root.Children.Single(n => n.Title == Strings.Get("PreferencesWindow_CodeEditor"));
-        window.Sections.Selected = codeEditor;
+        PreferencesSectionNode codeEditorLook = look.Children.Single(n => n.Title == codeEditor);
+        window.Sections.Selected = codeEditorLook;
         Dispatcher.UIThread.RunJobs();
-        window.FindControl<TextBlock>("Breadcrumb")!.Text.Should().Be(string.Join(" › ", appearance, Strings.Get("PreferencesWindow_CodeEditor")));
+        window.FindControl<TextBlock>("Breadcrumb")!.Text.Should().Be(string.Join(" › ", appearanceAndBehavior, appearance, codeEditor));
         window.Close();
     }
 
-    // The items of the gear menu of Appearance › Color Scheme.
+    // The items of the gear menu of the list of themes / color schemes.
     private static readonly string[] SchemeActionItems =
     {
-        "DuplicateThemeItem", "RenameThemeItem", "DeleteThemeItem", "RestoreThemeItem", "ExportThemeItem", "ImportThemeItem",
+        "DuplicateItem", "RenameItem", "DeleteItem", "RestoreItem", "ExportItem", "ImportItem",
     };
 
     /// <summary>
-    /// Appearance › Color Scheme lists the themes with the one in use selected, offers the scheme actions in the gear
-    /// menu and the settings of the theme as a whole.
+    /// Appearance (Rider's page of the same name) lists the themes and, apart, the color schemes of the editors, each with
+    /// the one in use selected and the actions in a gear menu; the theme has the settings of a theme as a whole. Choosing a
+    /// dark theme brings the dark scheme, as in Rider.
     /// </summary>
     [AvaloniaFact]
-    public void Color_scheme_page_lists_the_themes_with_their_actions()
+    public void Appearance_page_lists_the_themes_and_the_color_schemes_with_their_actions()
+    {
+        PreferencesWindow window = BuildWindow();
+        PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        ShowPage(window, "AppearanceGeneralPage");
+
+        window.Sections.Selected!.Path.Should().Be(
+            Strings.Get("PreferencesWindow_AppearanceAndBehavior") + " › " + Strings.Get("PreferencesWindow_Appearance"));
+        ThemeSelectorView theme = window.FindControl<ThemeSelectorView>("ThemeSelector")!;
+        ThemeSelectorView scheme = window.FindControl<ThemeSelectorView>("SchemeSelector")!;
+        theme.DataContext.Should().BeSameAs(vm.Theme);
+        scheme.DataContext.Should().BeSameAs(vm.ColorScheme);
+        theme.List.ItemCount.Should().Be(2);
+        scheme.List.ItemCount.Should().Be(2);
+        ((ThemeOption)theme.List.SelectedItem!).Id.Should().Be(Signet.Core.Themes.ThemeStore.LightId);
+        ((ThemeOption)scheme.List.SelectedItem!).Id.Should().Be(Signet.Core.Themes.ThemeStore.LightId);
+        window.FindControl<ComboBox>("VariantBox")!.SelectedItem.Should().Be(vm.Theme.Variant);
+        foreach (ThemeSelectorView selector in new[] { theme, scheme })
+        {
+            SchemeActionItems.Should().OnlyContain(name => selector.FindControl<MenuItem>(name) != null, "the gear menu has every action");
+        }
+
+        vm.Theme.RenameCommand.CanExecute(null).Should().BeFalse("a bundled theme keeps its name");
+
+        theme.List.SelectedItem = vm.Theme.Themes.Single(t => t.Id == Signet.Core.Themes.ThemeStore.DarkId);
+        Dispatcher.UIThread.RunJobs();
+
+        vm.HasChanges.Should().BeTrue();
+        ((VariantOption)window.FindControl<ComboBox>("VariantBox")!.SelectedItem!).Value.Should().Be(Signet.Core.Themes.InterfaceVariant.Dark);
+        ((ThemeOption)scheme.List.SelectedItem!).Id.Should().Be(Signet.Core.Themes.ThemeStore.DarkId, "a dark theme brings the dark scheme");
+        window.Close();
+    }
+
+    /// <summary>
+    /// Code Editor › Color Scheme manages the color schemes: the same list as on the Appearance page, without the settings
+    /// of a theme.
+    /// </summary>
+    [AvaloniaFact]
+    public void Color_scheme_page_lists_the_color_schemes_with_their_actions()
     {
         PreferencesWindow window = BuildWindow();
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
@@ -436,20 +484,21 @@ public sealed class PreferencesWindowRenderTests
 
         ShowPage(window, "ColorSchemePage");
 
-        window.Sections.Selected!.Path.Should().Be(
-            Strings.Get("PreferencesWindow_Appearance") + " › " + Strings.Get("PreferencesWindow_ColorScheme"));
-        ComboBox themes = window.FindControl<ComboBox>("ThemeBox")!;
-        themes.ItemCount.Should().Be(2);
-        ((ThemeOption)themes.SelectedItem!).Id.Should().Be(Signet.Core.Themes.ThemeStore.LightId);
-        window.FindControl<ComboBox>("VariantBox")!.SelectedItem.Should().Be(vm.ColorScheme.Variant);
-        SchemeActionItems.Should().OnlyContain(name => window.FindControl<MenuItem>(name) != null, "the gear menu has every scheme action");
-        vm.ColorScheme.RenameCommand.CanExecute(null).Should().BeFalse("a bundled theme keeps its name");
+        window.Sections.Selected!.Path.Should().Be(string.Join(" › ",
+            Strings.Get("PreferencesWindow_AppearanceAndBehavior"), Strings.Get("PreferencesWindow_CodeEditor"),
+            Strings.Get("PreferencesWindow_ColorScheme")));
+        ThemeSelectorView selector = window.FindControl<ThemeSelectorView>("ColorSchemeSelector")!;
+        selector.DataContext.Should().BeSameAs(vm.ColorScheme);
+        selector.List.ItemCount.Should().Be(2);
+        SchemeActionItems.Should().OnlyContain(name => selector.FindControl<MenuItem>(name) != null);
 
-        themes.SelectedItem = vm.ColorScheme.Themes.Single(t => t.Id == Signet.Core.Themes.ThemeStore.DarkId);
+        selector.List.SelectedItem = vm.ColorScheme.Themes.Single(t => t.Id == Signet.Core.Themes.ThemeStore.DarkId);
         Dispatcher.UIThread.RunJobs();
 
         vm.HasChanges.Should().BeTrue();
-        ((VariantOption)window.FindControl<ComboBox>("VariantBox")!.SelectedItem!).Value.Should().Be(Signet.Core.Themes.InterfaceVariant.Dark);
+        ((ThemeOption)window.FindControl<ThemeSelectorView>("SchemeSelector")!.List.SelectedItem!).Id
+            .Should().Be(Signet.Core.Themes.ThemeStore.DarkId, "the Appearance page shows the same scheme");
+        vm.Theme.Selected!.Id.Should().Be(Signet.Core.Themes.ThemeStore.LightId, "a scheme never changes the theme");
         window.Close();
     }
 
@@ -464,14 +513,15 @@ public sealed class PreferencesWindowRenderTests
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
         window.Show();
         Dispatcher.UIThread.RunJobs();
-        ColorSchemePageViewModel xhtml = vm.ColorScheme.PageFor(Signet.Core.Themes.ThemePage.Xhtml);
+        ThemeKeysPageViewModel xhtml = vm.ColorScheme.PageFor(Signet.Core.Themes.ThemePage.Xhtml);
         xhtml.SelectKey(Signet.Core.Themes.ThemeKeys.XhtmlCss);
 
         ShowPage(window, "ThemeXhtmlPage");
 
         window.Sections.Selected!.Path.Should().Be(string.Join(" › ",
-            Strings.Get("PreferencesWindow_Appearance"), Strings.Get("PreferencesWindow_ColorScheme"), Strings.Get("PreferencesWindow_ThemeXhtml")));
-        ColorSchemeKeysView view = window.FindControl<ColorSchemeKeysView>("ThemeXhtmlView")!;
+            Strings.Get("PreferencesWindow_AppearanceAndBehavior"), Strings.Get("PreferencesWindow_CodeEditor"),
+            Strings.Get("PreferencesWindow_ColorScheme"), Strings.Get("PreferencesWindow_ThemeXhtml")));
+        ThemeKeysView view = window.FindControl<ThemeKeysView>("ThemeXhtmlView")!;
         view.DataContext.Should().BeSameAs(xhtml);
         var source = (HierarchicalTreeDataGridSource<ThemeKeyNode>)view.FindControl<TreeDataGrid>("Tree")!.Source!;
         source.RowSelection!.SelectedItem.Should().BeSameAs(xhtml.Selected);
@@ -501,8 +551,8 @@ public sealed class PreferencesWindowRenderTests
         window.Show();
         Dispatcher.UIThread.RunJobs();
         ShowPage(window, "ThemeXhtmlPage");
-        ColorSchemePageViewModel xhtml = vm.ColorScheme.PageFor(ThemePage.Xhtml);
-        ThemePreviewEditor preview = window.FindControl<ColorSchemeKeysView>("ThemeXhtmlView")!
+        ThemeKeysPageViewModel xhtml = vm.ColorScheme.PageFor(ThemePage.Xhtml);
+        ThemePreviewEditor preview = window.FindControl<ThemeKeysView>("ThemeXhtmlView")!
             .GetVisualDescendants().OfType<ThemePreviewEditor>().Single();
         preview.Document.Text.Should().Be(ThemeSamples.Xhtml.Text);
         int head = preview.Document.Text.IndexOf("<head>", StringComparison.Ordinal) + 2;
@@ -540,8 +590,8 @@ public sealed class PreferencesWindowRenderTests
         window.Show();
         Dispatcher.UIThread.RunJobs();
         ShowPage(window, "ThemeGeneralPage");
-        ColorSchemePageViewModel general = vm.ColorScheme.PageFor(ThemePage.General);
-        ThemePreviewEditor preview = window.FindControl<ColorSchemeKeysView>("ThemeGeneralView")!
+        ThemeKeysPageViewModel general = vm.ColorScheme.PageFor(ThemePage.General);
+        ThemePreviewEditor preview = window.FindControl<ThemeKeysView>("ThemeGeneralView")!
             .GetVisualDescendants().OfType<ThemePreviewEditor>().Single();
         ThemedLineNumberMargin margin = preview.TextArea.LeftMargins.OfType<ThemedLineNumberMargin>().Single();
         int caretLine = ThemeSamples.General.CaretLine;
@@ -576,11 +626,11 @@ public sealed class PreferencesWindowRenderTests
     }
 
     /// <summary>
-    /// The link of the Book Browser page to the color of its background opens the Interface page of the color scheme with
+    /// The link of the Book Browser page to the color of its background opens the Interface Colors tab of Appearance with
     /// that very key selected (its group expanded).
     /// </summary>
     [AvaloniaFact]
-    public void The_link_to_the_book_browser_background_selects_its_key_in_the_color_scheme()
+    public void The_link_to_the_book_browser_background_selects_its_key_in_the_theme()
     {
         PreferencesWindow window = BuildWindow();
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
@@ -595,8 +645,10 @@ public sealed class PreferencesWindowRenderTests
         link.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
 
-        window.Sections.Selected!.Title.Should().Be(Strings.Get("PreferencesWindow_ThemeInterface"));
-        ColorSchemePageViewModel page = vm.ColorScheme.PageFor(ThemePage.Interface);
+        window.Sections.Selected!.Title.Should().Be(Strings.Get("PreferencesWindow_Appearance"));
+        window.FindControl<TabControl>("AppearanceGeneralTabs")!.SelectedItem.Should().BeSameAs(window.FindControl<TabItem>("InterfaceColorsTab"));
+        window.FindControl<ThemeKeysView>("ThemeInterfaceView")!.IsEffectivelyVisible.Should().BeTrue();
+        ThemeKeysPageViewModel page = vm.Theme.PageFor(ThemePage.Interface);
         page.Key.Should().Be(ThemeKeys.UiBookBrowserBackground);
         page.Roots.Single(r => r.Children.Any(c => c.Key == ThemeKeys.UiBookBrowserBackground)).IsExpanded.Should().BeTrue();
         window.Close();
@@ -616,7 +668,7 @@ public sealed class PreferencesWindowRenderTests
         Dispatcher.UIThread.RunJobs();
         ShowPage(window, "ThemeCssPage");
         window.CaptureRenderedFrame();
-        ColorSchemeKeysView css = window.FindControl<ColorSchemeKeysView>("ThemeCssView")!;
+        ThemeKeysView css = window.FindControl<ThemeKeysView>("ThemeCssView")!;
         double treeWidth = css.TreeWidth;
         double previewHeight = css.PreviewHeight;
 
@@ -631,7 +683,7 @@ public sealed class PreferencesWindowRenderTests
             .And.Contain("ThemeXhtmlView.tree", (int)treeWidth, "the other pages keep theirs");
 
         window.SplitterSizes = new Dictionary<string, int> { ["ThemeXhtmlView.tree"] = 250, ["ThemeXhtmlView.preview"] = 20 };
-        ColorSchemeKeysView xhtml = window.FindControl<ColorSchemeKeysView>("ThemeXhtmlView")!;
+        ThemeKeysView xhtml = window.FindControl<ThemeKeysView>("ThemeXhtmlView")!;
         xhtml.TreeWidth.Should().Be(250);
         xhtml.PreviewHeight.Should().Be(80, "not below the minimum");
         css.TreeWidth.Should().BeApproximately(treeWidth + 60, 1, "a page missing from the map keeps its size");
@@ -672,7 +724,7 @@ public sealed class PreferencesWindowRenderTests
         ShowPage(window, "ColorSchemePage");
         window.FindControl<FontSettingView>("ColorSchemePreviewFontView")!.DataContext.Should().BeSameAs(vm.ColorSchemePreviewFont);
         ShowPage(window, "ThemeJavaScriptJsonPage");
-        ThemePreviewEditor[] editors = window.FindControl<ColorSchemeKeysView>("ThemeJavaScriptJsonView")!
+        ThemePreviewEditor[] editors = window.FindControl<ThemeKeysView>("ThemeJavaScriptJsonView")!
             .GetVisualDescendants().OfType<ThemePreviewEditor>().ToArray();
 
         editors.Should().HaveCount(2).And.OnlyContain(e => e.FontFamily.Name == ColorSchemePreviewAppearance.Default.FontFamily
@@ -716,9 +768,10 @@ public sealed class PreferencesWindowRenderTests
         PreferencesWindow window = BuildWindow();
         window.Show();
         Dispatcher.UIThread.RunJobs();
-        PreferencesSectionNode appearance = window.Sections.Roots.Single(n => n.Title == Strings.Get("PreferencesWindow_Appearance"));
+        PreferencesSectionNode top = window.Sections.Roots.Single(n => n.Title == Strings.Get("PreferencesWindow_AppearanceAndBehavior"));
+        PreferencesSectionNode appearance = top.Children.Single(n => n.Title == Strings.Get("PreferencesWindow_Appearance"));
         var source = (HierarchicalTreeDataGridSource<PreferencesSectionNode>)window.FindControl<TreeDataGrid>("SectionTree")!.Source!;
-        source.Collapse(new IndexPath(window.Sections.Roots.IndexOf(appearance)));
+        source.Collapse(new IndexPath(window.Sections.Roots.IndexOf(top), top.Children.IndexOf(appearance)));
         appearance.IsExpanded = false;
         ShowPage(window, "PreviewPage");
         HyperlinkButton link = window.FindControl<HyperlinkButton>("PreviewAppearanceLink")!;
@@ -729,7 +782,8 @@ public sealed class PreferencesWindowRenderTests
         Dispatcher.UIThread.RunJobs();
 
         PreferencesSectionNode target = window.Sections.Selected!;
-        target.Path.Should().Be(string.Join(" › ", Strings.Get("PreferencesWindow_Appearance"), Strings.Get("PreferencesWindow_Preview")));
+        target.Path.Should().Be(string.Join(
+            " › ", Strings.Get("PreferencesWindow_AppearanceAndBehavior"), Strings.Get("PreferencesWindow_Appearance"), Strings.Get("PreferencesWindow_Preview")));
         appearance.IsExpanded.Should().BeTrue("the link opens the collapsed branch, as a click in the tree");
         source.RowSelection!.SelectedItem.Should().BeSameAs(target, "the section is selected in the tree itself");
         window.Close();
@@ -746,11 +800,12 @@ public sealed class PreferencesWindowRenderTests
         first.Show();
         Dispatcher.UIThread.RunJobs();
         var source = (HierarchicalTreeDataGridSource<PreferencesSectionNode>)first.FindControl<TreeDataGrid>("SectionTree")!.Source!;
-        PreferencesSectionNode appearance = first.Sections.Roots.Single(n => n.Title == Strings.Get("PreferencesWindow_Appearance"));
-        PreferencesSectionNode colorScheme = appearance.Children.Single(n => n.Title == Strings.Get("PreferencesWindow_ColorScheme"));
+        PreferencesSectionNode appearance = first.Sections.Roots.Single(n => n.Title == Strings.Get("PreferencesWindow_AppearanceAndBehavior"));
+        PreferencesSectionNode codeEditor = appearance.Children.Single(n => n.Title == Strings.Get("PreferencesWindow_CodeEditor"));
+        PreferencesSectionNode colorScheme = codeEditor.Children.Single(n => n.Title == Strings.Get("PreferencesWindow_ColorScheme"));
         first.CollapsedSections.Should().BeEmpty("a fresh tree is fully expanded");
 
-        source.Collapse(new IndexPath(first.Sections.Roots.IndexOf(appearance), appearance.Children.IndexOf(colorScheme)));
+        source.Collapse(new IndexPath(first.Sections.Roots.IndexOf(appearance), appearance.Children.IndexOf(codeEditor), codeEditor.Children.IndexOf(colorScheme)));
         Dispatcher.UIThread.RunJobs();
         appearance.IsExpanded.Should().BeTrue();
         colorScheme.IsExpanded.Should().BeFalse("collapsing a row in the tree updates the section");
@@ -822,7 +877,7 @@ public sealed class PreferencesWindowRenderTests
         window.Show();
         Dispatcher.UIThread.RunJobs();
         ShowPage(window, "AppearancePage");
-        PreferencesSectionNode appearance = window.Sections.Roots.Single(n => n.Title == Strings.Get("PreferencesWindow_Appearance"));
+        PreferencesSectionNode appearance = window.Sections.Roots.Single(n => n.Title == Strings.Get("PreferencesWindow_AppearanceAndBehavior"));
 
         HyperlinkButton[] links = window.GetVisualDescendants().OfType<HyperlinkButton>().Where(l => l.IsEffectivelyVisible).ToArray();
         links.Select(l => l.Content).Should().Equal(appearance.Children.Select(n => n.Title));
@@ -831,7 +886,7 @@ public sealed class PreferencesWindowRenderTests
         Dispatcher.UIThread.RunJobs();
 
         window.Sections.Selected!.Path.Should().Be(
-            Strings.Get("PreferencesWindow_Appearance") + " › " + Strings.Get("PreferencesWindow_CodeEditor"));
+            Strings.Get("PreferencesWindow_AppearanceAndBehavior") + " › " + Strings.Get("PreferencesWindow_CodeEditor"));
         window.Close();
     }
 
@@ -1265,7 +1320,8 @@ public sealed class PreferencesWindowRenderTests
         Dispatcher.UIThread.RunJobs();
 
         window.Sections.Selected!.Path.Should().Be(string.Join(
-            " › ", Strings.Get("PreferencesWindow_Appearance"), Strings.Get("PreferencesWindow_CodeEditor")));
+            " › ", Strings.Get("PreferencesWindow_AppearanceAndBehavior"), Strings.Get("PreferencesWindow_Appearance"),
+            Strings.Get("PreferencesWindow_CodeEditor")));
         window.FindControl<TabControl>("CodeEditorAppearanceTabs")!.SelectedItem.Should().BeAssignableTo<TabItem>()
             .Which.Header.Should().Be(Strings.Get("PreferencesWindow_Fonts"), "the hit is on the Fonts tab, which the search shows");
 
@@ -1295,9 +1351,9 @@ public sealed class PreferencesWindowRenderTests
 
         ShowPage(window, "PreviewAppearancePage");
         window.GetVisualDescendants().OfType<TextBox>().Should().NotContain(t => t.Classes.Contains("colorValue"),
-            "the color of the highlight is in the theme");
+            "the color of the highlight is in the color scheme");
         window.GetVisualDescendants().OfType<TextBlock>()
-            .Should().Contain(t => t.Text == Strings.Get("PreferencesWindow_ColorsInTheme"));
+            .Should().Contain(t => t.Text == Strings.Get("PreferencesWindow_ColorsInScheme"));
 
         ShowFontsTab(window, "Preview");
         window.GetVisualDescendants().OfType<FontSettingView>().Where(r => r.IsEffectivelyVisible).Select(r => r.Name)

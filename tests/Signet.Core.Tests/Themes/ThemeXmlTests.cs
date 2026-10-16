@@ -19,13 +19,32 @@ public sealed class ThemeXmlTests
         {
             ParentId = "signet-light",
             Variant = InterfaceVariant.Dark,
+            IconSet = "material",
             Created = new DateTimeOffset(2026, 10, 12, 14, 32, 0, TimeSpan.Zero),
             Modified = new DateTimeOffset(2026, 10, 12, 15, 10, 5, TimeSpan.Zero),
-            UseThemeFonts = true,
+        }
+            .With(ThemeKeys.UiAccent.Id, ThemeEntry.Of((ThemeColor?)null))
+            .With(ThemeKeys.UiFrame.Id, ThemeEntry.Of(ThemeColor.Parse("#F5ECD7")))
+            .With(ThemeKeys.UiDangerButtonHover.Id, ThemeEntry.Inherited)
+            .With(ThemeKeys.UiTextSelection.Id, ThemeEntry.Of(new TextAttributes { Background = ThemeColor.Parse("#20FFFFFF") }));
+
+        Theme read = ThemeXml.FromXml(ThemeXml.ToXml(theme, ThemeDocumentKind.Theme, "0.8.0-202610121510"));
+
+        (read.Id, read.Name, read.ParentId, read.Variant, read.IconSet, read.Created, read.Modified)
+            .Should().Be((theme.Id, theme.Name, theme.ParentId, theme.Variant, theme.IconSet, theme.Created, theme.Modified));
+        read.Entries.Should().BeEquivalentTo(theme.Entries);
+    }
+
+    [Fact]
+    public void A_color_scheme_survives_writing_and_reading_and_has_no_interface_settings()
+    {
+        Theme scheme = new Theme("01JA2B3C4D5E6F7G8H9J0K1M2N", Any.Create<string>())
+        {
+            ParentId = "signet-light",
+            Variant = InterfaceVariant.Dark,
+            IconSet = "material",
         }
             .With(ThemeKeys.EditorCurrentLine.Id, ThemeEntry.Of(ThemeColor.Parse("#F5ECD7")))
-            .With(ThemeKeys.UiAccent.Id, ThemeEntry.Of((ThemeColor?)null))
-            .With(ThemeKeys.UiDangerButtonHover.Id, ThemeEntry.Inherited)
             .With(ThemeKeys.XhtmlTag.Id, ThemeEntry.Of(new TextAttributes
             {
                 Foreground = ThemeColor.Parse("#8B4513"),
@@ -36,17 +55,13 @@ public sealed class ThemeXmlTests
                 EffectColor = ThemeColor.Parse("#C0392B"),
             }))
             .With(ThemeKeys.XhtmlCssComment.Id, ThemeEntry.Inherited);
-        theme = theme with
-        {
-            Fonts = theme.Fonts.Add("codeEditor.editor", new ThemeFont("Cascadia Code", 13)).Add("preview.serif", new ThemeFont("Georgia", 0)),
-        };
 
-        Theme read = ThemeXml.FromXml(ThemeXml.ToXml(theme, "0.8.0-202610121510"));
+        string xml = ThemeXml.ToXml(scheme, ThemeDocumentKind.Scheme);
+        Theme read = ThemeXml.FromXml(xml, ThemeDocumentKind.Scheme);
 
-        (read.Id, read.Name, read.ParentId, read.Variant, read.Created, read.Modified, read.UseThemeFonts)
-            .Should().Be((theme.Id, theme.Name, theme.ParentId, theme.Variant, theme.Created, theme.Modified, true));
-        read.Entries.Should().BeEquivalentTo(theme.Entries);
-        read.Fonts.Should().BeEquivalentTo(theme.Fonts);
+        xml.Should().Contain("<signet-scheme ").And.NotContain("signet-theme");
+        read.Entries.Should().BeEquivalentTo(scheme.Entries);
+        (read.Variant, read.IconSet).Should().Be(((InterfaceVariant?)null, (string?)null), "the variant and the icons belong to the theme");
     }
 
     [Fact]
@@ -56,23 +71,23 @@ public sealed class ThemeXmlTests
             .With(ThemeKeys.CssComment.Id, ThemeEntry.Of(new TextAttributes { Foreground = ThemeColor.Parse("#00aa00") }))
             .With(ThemeKeys.XhtmlTag.Id, ThemeEntry.Of(new TextAttributes { Bold = true }));
 
-        string xml = ThemeXml.ToXml(theme);
+        string xml = ThemeXml.ToXml(theme, ThemeDocumentKind.Scheme);
 
-        xml.Should().StartWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<signet-theme version=\"1\" id=\"my-theme\" name=\"Sepia\" parent=\"signet-light\">");
+        xml.Should().StartWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<signet-scheme version=\"1\" id=\"my-theme\" name=\"Sepia\" parent=\"signet-light\">");
         xml.Should().Contain("""
               <attributes>
                 <attribute key="xhtml.tag" bold="true" />
                 <attribute key="css.comment" foreground="#00AA00" />
               </attributes>
             """.Replace("\r\n", "\n", StringComparison.Ordinal));
-        xml.Should().NotContain("<colors>").And.NotContain("<fonts").And.NotContain("<meta");
+        xml.Should().NotContain("<colors>").And.NotContain("<meta");
     }
 
     [Fact]
     public void Unknown_keys_and_keys_in_the_wrong_section_are_skipped_with_a_warning()
     {
         string xml = """
-            <signet-theme version="1" id="t" name="T">
+            <signet-scheme version="1" id="t" name="T">
               <colors>
                 <color key="xhtml.tag" value="#000000" />
               </colors>
@@ -80,11 +95,11 @@ public sealed class ThemeXmlTests
                 <attribute key="future.key" foreground="#000000" />
                 <attribute key="css.comment" foreground="#123456" />
               </attributes>
-            </signet-theme>
+            </signet-scheme>
             """;
         List<string> warnings = new();
 
-        Theme theme = ThemeXml.FromXml(xml, warnings);
+        Theme theme = ThemeXml.FromXml(xml, ThemeDocumentKind.Scheme, warnings);
 
         theme.Entries.Keys.Should().Equal("css.comment");
         warnings.Should().Equal(
@@ -92,10 +107,48 @@ public sealed class ThemeXmlTests
             CoreStrings.Format("Theme_UnknownKey", 6, "future.key"));
     }
 
+    [Fact]
+    public void A_key_of_the_other_document_is_skipped_with_a_warning()
+    {
+        string theme = """
+            <signet-theme version="1" id="t" name="T">
+              <colors>
+                <color key="editor.currentLine" value="#000000" />
+                <color key="ui.frame" value="#101010" />
+              </colors>
+            </signet-theme>
+            """;
+        string scheme = """
+            <signet-scheme version="1" id="t" name="T">
+              <colors>
+                <color key="editor.currentLine" value="#000000" />
+                <color key="ui.frame" value="#101010" />
+              </colors>
+            </signet-scheme>
+            """;
+        List<string> themeWarnings = new();
+        List<string> schemeWarnings = new();
+
+        ThemeXml.FromXml(theme, ThemeDocumentKind.Theme, themeWarnings).Entries.Keys.Should().Equal("ui.frame");
+        ThemeXml.FromXml(scheme, ThemeDocumentKind.Scheme, schemeWarnings).Entries.Keys.Should().Equal("editor.currentLine");
+
+        themeWarnings.Should().Equal(CoreStrings.Format("Theme_WrongDocument", 3, "editor.currentLine"));
+        schemeWarnings.Should().Equal(CoreStrings.Format("Theme_WrongDocument", 4, "ui.frame"));
+    }
+
+    [Fact]
+    public void A_file_of_the_other_kind_is_not_read()
+    {
+        FluentActions.Invoking(() => ThemeXml.FromXml("<signet-theme version=\"1\" id=\"t\" name=\"T\" />", ThemeDocumentKind.Scheme))
+            .Should().Throw<ThemeFormatException>().WithMessage(CoreStrings.Get("Theme_NotAScheme"));
+        FluentActions.Invoking(() => ThemeXml.FromXml("<signet-scheme version=\"1\" id=\"t\" name=\"T\" />", ThemeDocumentKind.Theme))
+            .Should().Throw<ThemeFormatException>().WithMessage(CoreStrings.Get("Theme_NotATheme"));
+    }
+
     [Theory]
-    [InlineData("<signet-theme version=\"1\" id=\"t\" name=\"T\">\n<colors>\n<color key=\"editor.currentLine\" value=\"#12345\" />\n</colors>\n</signet-theme>", 3)]
-    [InlineData("<signet-theme version=\"1\" id=\"t\" name=\"T\">\n<attributes>\n<attribute key=\"xhtml.tag\" bold=\"yes\" />\n</attributes>\n</signet-theme>", 3)]
-    [InlineData("<signet-theme version=\"1\" id=\"t\" name=\"T\">\n<attributes>\n<attribute key=\"xhtml.tag\" effect=\"zigzag\" />\n</attributes>\n</signet-theme>", 3)]
+    [InlineData("<signet-theme version=\"1\" id=\"t\" name=\"T\">\n<colors>\n<color key=\"ui.frame\" value=\"#12345\" />\n</colors>\n</signet-theme>", 3)]
+    [InlineData("<signet-theme version=\"1\" id=\"t\" name=\"T\">\n<attributes>\n<attribute key=\"ui.textSelection\" bold=\"yes\" />\n</attributes>\n</signet-theme>", 3)]
+    [InlineData("<signet-theme version=\"1\" id=\"t\" name=\"T\">\n<attributes>\n<attribute key=\"ui.textSelection\" effect=\"zigzag\" />\n</attributes>\n</signet-theme>", 3)]
     [InlineData("<signet-theme version=\"1\" id=\"t\" name=\"T\" variant=\"Sepia\" />", 1)]
     [InlineData("<signet-theme version=\"1\" name=\"T\" />", 1)]
     [InlineData("<signet-theme id=\"t\" name=\"T\" />", 1)]

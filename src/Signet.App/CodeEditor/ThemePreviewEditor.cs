@@ -280,7 +280,7 @@ public sealed class ThemePreviewEditor : TextEditor
             {
                 TextAttributes look = mark.Key.Kind == ThemeKeyKind.TextAttributes
                     ? theme.Attributes(mark.Key)
-                    : new TextAttributes { Background = theme.Resolver.Color(theme.Theme, mark.Key) };
+                    : new TextAttributes { Background = theme.ColorOf(mark.Key) };
                 if (ThemeSample.IsWholeLine(mark.Key))
                 {
                     DocumentLine first = owner.Document.GetLineByOffset(mark.Offset);

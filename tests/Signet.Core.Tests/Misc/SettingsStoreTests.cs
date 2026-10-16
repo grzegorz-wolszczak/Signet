@@ -370,7 +370,6 @@ public sealed class SettingsStoreTests
             """);
 
         SettingsStore sut = new(path);
-        sut.LegacyColors.Should().ContainKey("warning_color_light", "the light color goes into a theme");
         sut.Save();
 
         string saved = File.ReadAllText(path);
@@ -394,7 +393,6 @@ public sealed class SettingsStoreTests
             """);
 
         SettingsStore sut = new(path);
-        sut.LegacyColors.Keys.Should().Equal("code_editor_css_comment_color");
         sut.Save();
 
         string saved = File.ReadAllText(path);

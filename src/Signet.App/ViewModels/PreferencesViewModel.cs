@@ -16,6 +16,7 @@ using Signet.Core.Footnotes;
 using Signet.Core.MainUI;
 using Signet.Core.Misc;
 using Signet.Core.Spellcheck;
+using Signet.Core.Themes;
 
 namespace Signet.App.ViewModels;
 
@@ -190,14 +191,27 @@ public sealed partial class PreferencesViewModel : ObservableObject
         // ---- Fonts pages (adapters over the font settings above) ----
         CreateFontPages();
 
-        // ---- Appearance › Color Scheme ----
-        ColorScheme = new ColorSchemeViewModel(_themes.Store, _settings);
-        CreateThemeFontsPage();
+        // ---- Appearance and Behavior › Appearance (the theme) and › Code Editor › Color Scheme ----
+        Theme = new ThemeDocumentViewModel(_themes.Themes, _settings);
+        ColorScheme = new ThemeDocumentViewModel(_themes.Schemes, _settings);
         CreateColorSchemePreviewFont();
-        ColorScheme.Changed += (_, _) =>
+        foreach (ThemeDocumentViewModel document in new[] { Theme, ColorScheme })
         {
-            OnPropertyChanged(nameof(HasChanges));
-            ApplyCommand.NotifyCanExecuteChanged();
+            document.Changed += (_, _) =>
+            {
+                OnPropertyChanged(nameof(HasChanges));
+                ApplyCommand.NotifyCanExecuteChanged();
+            };
+        }
+
+        // A bundled color scheme follows the variant of the theme chosen (a dark theme, the dark scheme), as in Rider; a
+        // scheme of the user stays as it is, and the scheme never changes the theme.
+        Theme.SelectionChangedByUser += (_, _) =>
+        {
+            if (ColorScheme.Selected is { IsBundled: true })
+            {
+                ColorScheme.SelectBundled(Theme.CurrentVariant == InterfaceVariant.Dark ? ThemeStore.DarkId : ThemeStore.LightId);
+            }
         };
 
         // Loading the pages writes some initial values to the draft (e.g. the default user dictionary): not changes.
@@ -213,10 +227,13 @@ public sealed partial class PreferencesViewModel : ObservableObject
     public event EventHandler? Applied;
 
     /// <summary>Whether the window holds changes not saved yet (the Save button is enabled then).</summary>
-    public bool HasChanges => _appSettings.HasDraftChanges(_settings) || ColorScheme.HasChanges;
+    public bool HasChanges => _appSettings.HasDraftChanges(_settings) || Theme.HasChanges || ColorScheme.HasChanges;
 
-    /// <summary>Appearance › Color Scheme: the theme in use and the actions on themes.</summary>
-    public ColorSchemeViewModel ColorScheme { get; }
+    /// <summary>Appearance and Behavior › Appearance: the theme of the interface in use and the actions on themes.</summary>
+    public ThemeDocumentViewModel Theme { get; }
+
+    /// <summary>Appearance and Behavior › Code Editor › Color Scheme: the color scheme of the editors in use and the actions on schemes.</summary>
+    public ThemeDocumentViewModel ColorScheme { get; }
 
     /// <summary>
     /// "Save" / "Apply": commits the draft to the application's settings, saves them and applies the effects of the
@@ -226,7 +243,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
     private void Apply()
     {
         IReadOnlyList<string> changed = _appSettings.CommitDraft(_settings);
-        bool themesChanged = ColorScheme.Apply();
+        bool themesChanged = Theme.Apply() | ColorScheme.Apply();
         if (changed.Count == 0 && !themesChanged)
         {
             return;
@@ -255,7 +272,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
             _uiDensity.ApplyTooltipFonts();
         }
 
-        if (Changed("ui_theme_id") || themesChanged)
+        if (Changed("ui_theme_id", "editor_scheme_id") || themesChanged)
         {
             _themes.ApplySaved();
         }

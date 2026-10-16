@@ -5178,15 +5178,73 @@ Close the tab</value>
     <value>1. The text of the note, shortened to one line…</value>
   </data>
   <data name="PreferencesWindow_ColorsInTheme" xml:space="preserve">
-    <value>The colors are set in the theme: Appearance › Color Scheme.</value>
+    <value>The colors of the interface are set in the theme: Appearance › Interface Colors.</value>
   </data>
   <data name="PreferencesWindow_ColorScheme" xml:space="preserve">
     <value>Color Scheme</value>
   </data>
-  <data name="ColorScheme_Theme" xml:space="preserve">
+  <data name="Theme_Label" xml:space="preserve">
     <value>Theme:</value>
   </data>
-  <data name="ColorScheme_Actions" xml:space="preserve">
+  <data name="Scheme_Label" xml:space="preserve">
+    <value>Editor color scheme:</value>
+  </data>
+  <data name="Scheme_Actions" xml:space="preserve">
+    <value>Color scheme actions</value>
+  </data>
+  <data name="Scheme_NamePrompt" xml:space="preserve">
+    <value>Color scheme name:</value>
+  </data>
+  <data name="Scheme_DuplicateTitle" xml:space="preserve">
+    <value>Duplicate Color Scheme</value>
+  </data>
+  <data name="Scheme_RenameTitle" xml:space="preserve">
+    <value>Rename Color Scheme</value>
+  </data>
+  <data name="Scheme_NameTaken" xml:space="preserve">
+    <value>A color scheme named “{0}” already exists.</value>
+  </data>
+  <data name="Scheme_DeleteTitle" xml:space="preserve">
+    <value>Delete Color Scheme</value>
+  </data>
+  <data name="Scheme_DeleteConfirm" xml:space="preserve">
+    <value>Delete the color scheme “{0}”? This cannot be undone. The schemes based on it keep their look.</value>
+  </data>
+  <data name="Scheme_ExportTitle" xml:space="preserve">
+    <value>Export Color Scheme</value>
+  </data>
+  <data name="Scheme_ExportFailed" xml:space="preserve">
+    <value>The color scheme could not be exported: {0}</value>
+  </data>
+  <data name="Scheme_ImportTitle" xml:space="preserve">
+    <value>Import Color Scheme</value>
+  </data>
+  <data name="Scheme_ImportFailed" xml:space="preserve">
+    <value>The color scheme could not be imported: {0}</value>
+  </data>
+  <data name="Scheme_ImportWarnings" xml:space="preserve">
+    <value>The color scheme “{0}” was imported with remarks:
+{1}</value>
+  </data>
+  <data name="Scheme_FileType" xml:space="preserve">
+    <value>Signet color scheme</value>
+  </data>
+  <data name="Scheme_BundledNote" xml:space="preserve">
+    <value>This is a bundled color scheme: changes are kept beside it, and Restore Defaults removes them. It cannot be renamed or deleted.</value>
+  </data>
+  <data name="Scheme_RestoreFromParent" xml:space="preserve">
+    <value>Restore the value of “{0}”</value>
+  </data>
+  <data name="PreferencesWindow_AppearanceAndBehavior" xml:space="preserve">
+    <value>Appearance &amp; Behavior</value>
+  </data>
+  <data name="PreferencesWindow_InterfaceColors" xml:space="preserve">
+    <value>Interface Colors</value>
+  </data>
+  <data name="PreferencesWindow_ColorsInScheme" xml:space="preserve">
+    <value>The colors are set in the color scheme: Appearance &amp; Behavior › Code Editor › Color Scheme.</value>
+  </data>
+  <data name="Theme_Actions" xml:space="preserve">
     <value>Theme actions</value>
   </data>
   <data name="ColorScheme_Duplicate" xml:space="preserve">
@@ -5228,44 +5286,44 @@ Close the tab</value>
   <data name="ColorScheme_IconSetNote" xml:space="preserve">
     <value>A change of the icon set takes effect after restarting Signet; the colors and the variant change as soon as you save.</value>
   </data>
-  <data name="ColorScheme_BundledNote" xml:space="preserve">
+  <data name="Theme_BundledNote" xml:space="preserve">
     <value>This is a bundled theme: changes are kept beside it, and Restore Defaults removes them. It cannot be renamed or deleted.</value>
   </data>
-  <data name="ColorScheme_NamePrompt" xml:space="preserve">
+  <data name="Theme_NamePrompt" xml:space="preserve">
     <value>Theme name:</value>
   </data>
-  <data name="ColorScheme_DuplicateTitle" xml:space="preserve">
+  <data name="Theme_DuplicateTitle" xml:space="preserve">
     <value>Duplicate Theme</value>
   </data>
-  <data name="ColorScheme_RenameTitle" xml:space="preserve">
+  <data name="Theme_RenameTitle" xml:space="preserve">
     <value>Rename Theme</value>
   </data>
-  <data name="ColorScheme_NameTaken" xml:space="preserve">
+  <data name="Theme_NameTaken" xml:space="preserve">
     <value>A theme named “{0}” already exists.</value>
   </data>
-  <data name="ColorScheme_DeleteTitle" xml:space="preserve">
+  <data name="Theme_DeleteTitle" xml:space="preserve">
     <value>Delete Theme</value>
   </data>
-  <data name="ColorScheme_DeleteConfirm" xml:space="preserve">
+  <data name="Theme_DeleteConfirm" xml:space="preserve">
     <value>Delete the theme “{0}”? This cannot be undone. The themes based on it keep their look.</value>
   </data>
-  <data name="ColorScheme_ExportTitle" xml:space="preserve">
+  <data name="Theme_ExportTitle" xml:space="preserve">
     <value>Export Theme</value>
   </data>
-  <data name="ColorScheme_ExportFailed" xml:space="preserve">
+  <data name="Theme_ExportFailed" xml:space="preserve">
     <value>The theme could not be exported: {0}</value>
   </data>
-  <data name="ColorScheme_ImportTitle" xml:space="preserve">
+  <data name="Theme_ImportTitle" xml:space="preserve">
     <value>Import Theme</value>
   </data>
-  <data name="ColorScheme_ImportFailed" xml:space="preserve">
+  <data name="Theme_ImportFailed" xml:space="preserve">
     <value>The theme could not be imported: {0}</value>
   </data>
-  <data name="ColorScheme_ImportWarnings" xml:space="preserve">
+  <data name="Theme_ImportWarnings" xml:space="preserve">
     <value>The theme “{0}” was imported with remarks:
 {1}</value>
   </data>
-  <data name="ColorScheme_FileType" xml:space="preserve">
+  <data name="Theme_FileType" xml:space="preserve">
     <value>Signet theme</value>
   </data>
   <data name="Action_MainWindow_ManageFonts" xml:space="preserve">
@@ -5498,9 +5556,6 @@ Close the tab</value>
   </data>
   <data name="PreferencesWindow_ThemeDiff" xml:space="preserve">
     <value>Diff</value>
-  </data>
-  <data name="PreferencesWindow_ThemeInterface" xml:space="preserve">
-    <value>Interface</value>
   </data>
   <data name="ThemeGroup_Editor" xml:space="preserve">
     <value>Editor</value>
@@ -5847,7 +5902,7 @@ Close the tab</value>
   <data name="ColorScheme_InheritFrom" xml:space="preserve">
     <value>Inherit values from:</value>
   </data>
-  <data name="ColorScheme_RestoreFromParent" xml:space="preserve">
+  <data name="Theme_RestoreFromParent" xml:space="preserve">
     <value>Restore the value of “{0}”</value>
   </data>
   <data name="ColorScheme_RestoreDefault" xml:space="preserve">
@@ -5909,12 +5964,6 @@ Close the tab</value>
   </data>
   <data name="ColorSchemeSample_BookNote" xml:space="preserve">
     <value>The background and the text keep the colors of the book unless the theme sets them.</value>
-  </data>
-  <data name="ColorScheme_UseThemeFonts" xml:space="preserve">
-    <value>Use the theme fonts instead of the default ones</value>
-  </data>
-  <data name="ColorScheme_UseThemeFontsNote" xml:space="preserve">
-    <value>When turned on, the theme gets a copy of the current fonts of Appearance › Fonts; the changes on this page belong to this theme only and take effect after saving.</value>
   </data>
   <data name="ColorPickerWindow_BasicColors" xml:space="preserve">
     <value>Basic colors</value>

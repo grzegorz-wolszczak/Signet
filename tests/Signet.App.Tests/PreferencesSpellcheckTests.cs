@@ -10,7 +10,6 @@ using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.ViewModels;
 using Signet.Core.Spellcheck;
-using Signet.Core.Themes;
 using Xunit;
 
 namespace Signet.App.Tests;
@@ -38,7 +37,7 @@ public sealed class PreferencesSpellcheckTests : IDisposable
         _spellChecker = new SpellChecker(_host.Settings, Path.Combine(root, "hunspell"), Path.Combine(root, "user"));
         UiDensityManager uiDensity = new(
             _host.Settings, iconTheme, NullLogger<UiDensityManager>.Instance, () => "Segoe UI", _ => false);
-        ThemeManager themes = new(_host.Settings, new ThemeStore(Path.Combine(root, "themes")), NullLogger<ThemeManager>.Instance);
+        ThemeManager themes = new(_host.Settings, ThemeStores.In(root), NullLogger<ThemeManager>.Instance);
         _vm = new PreferencesViewModel(
             _host.Settings, _spellChecker, localization, iconTheme, _host.Shortcuts, _host.Registry, uiDensity, themes)
         {

@@ -9,20 +9,21 @@ using Signet.Core.Localization;
 namespace Signet.Core.Themes;
 
 /// <summary>
-/// The themes: the bundled ones (Signet Light, Signet Dark) and the user's, which are files
-/// <c>&lt;id&gt;.signet-theme.xml</c> in a folder (<see cref="Misc.AppDirectories.ThemesDirectory"/>). The actions of the
-/// theme list of Preferences (IntelliJ's <c>AbstractSchemeActions</c>): duplicate, rename, delete, restore defaults,
-/// export, import.
+/// The themes of the interface or the color schemes of the editors (<see cref="ThemeDocumentKind"/>; one store each):
+/// the bundled ones (Signet Light, Signet Dark) and the user's, which are files <c>&lt;id&gt;.signet-theme.xml</c> /
+/// <c>&lt;id&gt;.signet-scheme.xml</c> in a folder (<see cref="Misc.AppDirectories.ThemesDirectory"/>,
+/// <see cref="Misc.AppDirectories.SchemesDirectory"/>). The actions of the list of Preferences (IntelliJ's
+/// <c>AbstractSchemeActions</c>): duplicate, rename, delete, restore defaults, export, import.
 /// <para>A bundled theme can be changed as in Rider: the changes are kept in the folder as an overlay — a file with the
 /// bundled theme's id holding only what differs — and <see cref="RestoreDefaults"/> removes it. A theme of the user has
 /// a bundled theme as its parent and keeps what differs from it.</para>
 /// </summary>
 public sealed class ThemeStore
 {
-    /// <summary>The identifier of Signet Light — the default theme.</summary>
+    /// <summary>The identifier of Signet Light — the default theme and the default color scheme.</summary>
     public const string LightId = "signet-light";
 
-    /// <summary>The identifier of Signet Dark.</summary>
+    /// <summary>The identifier of Signet Dark (a theme and a color scheme).</summary>
     public const string DarkId = "signet-dark";
 
     private static readonly string[] BundledIds = { LightId, DarkId };
@@ -37,16 +38,21 @@ public sealed class ThemeStore
 
     /// <summary>Creates the store and reads the folder (a file it cannot read is skipped, see <see cref="LoadProblems"/>).</summary>
     /// <param name="directory">The folder of the user's themes and of the overlays of the bundled ones.</param>
+    /// <param name="kind">Whether the store holds the themes of the interface or the color schemes of the editors.</param>
     /// <param name="now">The clock for the dates of the themes; <c>null</c> = <see cref="DateTimeOffset.UtcNow"/>.</param>
-    public ThemeStore(string directory, Func<DateTimeOffset>? now = null)
+    public ThemeStore(string directory, ThemeDocumentKind kind = ThemeDocumentKind.Theme, Func<DateTimeOffset>? now = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(directory);
         _directory = directory;
+        Kind = kind;
         _now = now ?? (() => DateTimeOffset.UtcNow);
-        _pristine = BundledIds.ToDictionary(id => id, LoadBundled, StringComparer.Ordinal);
+        _pristine = BundledIds.ToDictionary(id => id, id => LoadBundled(id, kind), StringComparer.Ordinal);
         Resolver = new ThemeResolver(Find);
         Load();
     }
+
+    /// <summary>Whether this store holds the themes of the interface or the color schemes of the editors.</summary>
+    public ThemeDocumentKind Kind { get; }
 
     /// <summary>Resolves the keys of the themes of this store (with their parents).</summary>
     public ThemeResolver Resolver { get; }
@@ -188,8 +194,6 @@ public sealed class ThemeStore
                 Variant = child.Variant ?? deleted.Variant,
                 IconSet = child.IconSet ?? deleted.IconSet,
                 Entries = deleted.Entries.SetItems(child.Entries),
-                Fonts = deleted.Fonts.SetItems(child.Fonts),
-                UseThemeFonts = child.UseThemeFonts || deleted.UseThemeFonts,
             };
             _user[child.Id] = adopted;
             Write(adopted);
@@ -249,7 +253,7 @@ public sealed class ThemeStore
             theme = Difference(theme, _pristine[id]) with { Id = NewId(), ParentId = id };
         }
 
-        ThemeXml.Write(theme, writer, writtenBy);
+        ThemeXml.Write(theme, Kind, writer, writtenBy);
     }
 
     /// <summary>
@@ -262,7 +266,7 @@ public sealed class ThemeStore
     public Theme Import(TextReader reader, ICollection<string> warnings)
     {
         ArgumentNullException.ThrowIfNull(warnings);
-        Theme theme = ThemeXml.Read(reader, warnings);
+        Theme theme = ThemeXml.Read(reader, Kind, warnings);
         if (theme.ParentId is { } parent && Find(parent) is null)
         {
             warnings.Add(CoreStrings.Format("Theme_ParentMissing", parent));
@@ -290,16 +294,11 @@ public sealed class ThemeStore
         ImmutableDictionary<string, ThemeEntry> entries = theme.Entries
             .Where(e => !ThemeKeys.TryGet(e.Key, out ThemeKey? key) || !Equals(e.Value, Effective(bundled, key)))
             .ToImmutableDictionary(StringComparer.Ordinal);
-        ImmutableDictionary<string, ThemeFont> fonts = theme.Fonts
-            .Where(f => !bundled.Fonts.TryGetValue(f.Key, out ThemeFont font) || font != f.Value)
-            .ToImmutableDictionary(StringComparer.Ordinal);
         return new Theme(theme.Id, theme.Name)
         {
             Variant = theme.Variant != bundled.Variant ? theme.Variant : null,
             IconSet = theme.IconSet != bundled.IconSet ? theme.IconSet : null,
-            UseThemeFonts = theme.UseThemeFonts && !bundled.UseThemeFonts,
             Entries = entries,
-            Fonts = fonts,
         };
     }
 
@@ -310,16 +309,14 @@ public sealed class ThemeStore
             : key.Kind == ThemeKeyKind.Color ? ThemeEntry.Of(key.DefaultColor) : ThemeEntry.Of(key.DefaultAttributes!);
 
     private static bool IsEmpty(Theme overlay) =>
-        overlay.Entries.IsEmpty && overlay.Fonts.IsEmpty && overlay.Variant is null && overlay.IconSet is null && !overlay.UseThemeFonts;
+        overlay.Entries.IsEmpty && overlay.Variant is null && overlay.IconSet is null;
 
     // A bundled theme with its changes.
     private static Theme Apply(Theme bundled, Theme overlay) => bundled with
     {
         Variant = overlay.Variant ?? bundled.Variant,
         IconSet = overlay.IconSet ?? bundled.IconSet,
-        UseThemeFonts = overlay.UseThemeFonts || bundled.UseThemeFonts,
         Entries = bundled.Entries.SetItems(overlay.Entries),
-        Fonts = bundled.Fonts.SetItems(overlay.Fonts),
     };
 
     private Theme UserTheme(string id) =>
@@ -334,14 +331,14 @@ public sealed class ThemeStore
             return;
         }
 
-        foreach (string path in Directory.EnumerateFiles(_directory, "*" + ThemeXml.Extension).Order(StringComparer.Ordinal))
+        foreach (string path in Directory.EnumerateFiles(_directory, "*" + ThemeXml.ExtensionOf(Kind)).Order(StringComparer.Ordinal))
         {
             try
             {
                 Theme theme;
                 using (StreamReader reader = new(path, Encoding.UTF8))
                 {
-                    theme = ThemeXml.Read(reader);
+                    theme = ThemeXml.Read(reader, Kind);
                 }
 
                 if (IsBundled(theme.Id))
@@ -372,15 +369,15 @@ public sealed class ThemeStore
     }
 
     // Writes the file of the theme (through a temporary file, so a failure leaves the old one); a theme read from a file
-    // named otherwise moves to <id>.signet-theme.xml.
+    // named otherwise moves to <id>.signet-theme.xml (<id>.signet-scheme.xml for a color scheme).
     private void Write(Theme theme)
     {
         Directory.CreateDirectory(_directory);
-        string path = Path.Combine(_directory, theme.Id + ThemeXml.Extension);
+        string path = Path.Combine(_directory, theme.Id + ThemeXml.ExtensionOf(Kind));
         string temporary = path + ".tmp";
         using (StreamWriter writer = new(temporary, false, new UTF8Encoding(false)))
         {
-            ThemeXml.Write(theme, writer);
+            ThemeXml.Write(theme, Kind, writer);
         }
 
         File.Move(temporary, path, overwrite: true);
@@ -393,15 +390,16 @@ public sealed class ThemeStore
     }
 
     private string PathOf(string id) =>
-        _paths.TryGetValue(id, out string? path) ? path : Path.Combine(_directory, id + ThemeXml.Extension);
+        _paths.TryGetValue(id, out string? path) ? path : Path.Combine(_directory, id + ThemeXml.ExtensionOf(Kind));
 
     private static string NewId() => Ulid.NewUlid().ToString();
 
-    private static Theme LoadBundled(string id)
+    private static Theme LoadBundled(string id, ThemeDocumentKind kind)
     {
-        using Stream stream = typeof(ThemeStore).Assembly.GetManifestResourceStream("Themes." + id)
-            ?? throw new InvalidOperationException(CoreStrings.Format("Error_EmbeddedResourceMissing", "Themes." + id));
+        string resource = (kind == ThemeDocumentKind.Theme ? "Themes." : "Schemes.") + id;
+        using Stream stream = typeof(ThemeStore).Assembly.GetManifestResourceStream(resource)
+            ?? throw new InvalidOperationException(CoreStrings.Format("Error_EmbeddedResourceMissing", resource));
         using StreamReader reader = new(stream, Encoding.UTF8);
-        return ThemeXml.Read(reader);
+        return ThemeXml.Read(reader, kind);
     }
 }

@@ -12,7 +12,20 @@ public enum ThemeKeyKind
     TextAttributes,
 }
 
-/// <summary>The page of the theme editor a key is shown on (Preferences › Appearance › Color Scheme › …).</summary>
+/// <summary>
+/// The two kinds of document that hold values of keys (Rider's "theme" and "color scheme"): the theme of the interface
+/// and the color scheme of the editors. Each has its own store, its own files and its own selection.
+/// </summary>
+public enum ThemeDocumentKind
+{
+    /// <summary>The theme of the interface: the variant of the controls, the icon set and the <c>ui.*</c> keys.</summary>
+    Theme,
+
+    /// <summary>The color scheme of the editors: the colors of the code, the search, the errors, the comparison and the Preview.</summary>
+    Scheme,
+}
+
+/// <summary>The page of the editor of a key (the interface keys in Appearance, the others in Code Editor › Color Scheme).</summary>
 public enum ThemePage
 {
     /// <summary>The editor in general: text, current line, selection, search, errors, hints.</summary>
@@ -73,6 +86,9 @@ public sealed record ThemeKey
 
     /// <summary>The identifier, e.g. <c>xhtml.attribute.name</c>.</summary>
     public string Id { get; }
+
+    /// <summary>The document the key belongs to: the interface keys to the theme, all the others to the color scheme.</summary>
+    public ThemeDocumentKind Document => Page == ThemePage.Interface ? ThemeDocumentKind.Theme : ThemeDocumentKind.Scheme;
 
     /// <summary>The page of the theme editor.</summary>
     public ThemePage Page { get; }

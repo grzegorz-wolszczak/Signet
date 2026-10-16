@@ -3,8 +3,8 @@
              xmlns:loc="using:Signet.App.Resources"
              xmlns:vm="using:Signet.App.ViewModels"
              xmlns:infra="using:Signet.App.Infrastructure"
-             x:Class="Signet.App.Views.ColorSchemeKeysView"
-             x:DataType="vm:ColorSchemePageViewModel">
+             x:Class="Signet.App.Views.ThemeKeysView"
+             x:DataType="vm:ThemeKeysPageViewModel">
 
   <!-- A page of the keys of Appearance › Color Scheme, as Rider's Color Scheme pages: the tree of the keys of the page
        on the left (keys the theme changes in bold), the panel of the selected key on the right and the preview below. -->

@@ -10,43 +10,69 @@ using AvaloniaThemeVariant = Avalonia.Styling.ThemeVariant;
 
 namespace Signet.App.Infrastructure;
 
-/// <summary>A theme with its values resolved (<see cref="ThemeResolver"/>), in Avalonia's types.</summary>
+/// <summary>
+/// The look in use with its values resolved (<see cref="ThemeResolver"/>), in Avalonia's types: the theme of the interface
+/// and the color scheme of the editors, each with its own parents. A key is looked up in the document it belongs to
+/// (<see cref="ThemeKey.Document"/>), so the code that draws asks for any key and does not care which of the two holds it.
+/// </summary>
 public sealed class ResolvedTheme
 {
-    /// <summary>Resolves a theme.</summary>
-    /// <param name="theme">The theme.</param>
-    /// <param name="resolver">Resolves its keys (with its parents).</param>
-    public ResolvedTheme(Theme theme, ThemeResolver resolver)
+    /// <summary>Resolves a theme of the interface and a color scheme of the editors.</summary>
+    /// <param name="theme">The theme of the interface.</param>
+    /// <param name="themeResolver">Resolves its keys (with its parents).</param>
+    /// <param name="scheme">The color scheme of the editors.</param>
+    /// <param name="schemeResolver">Resolves its keys (with its parents).</param>
+    public ResolvedTheme(Theme theme, ThemeResolver themeResolver, Theme scheme, ThemeResolver schemeResolver)
     {
         Theme = theme ?? throw new ArgumentNullException(nameof(theme));
-        Resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
+        ThemeResolver = themeResolver ?? throw new ArgumentNullException(nameof(themeResolver));
+        Scheme = scheme ?? throw new ArgumentNullException(nameof(scheme));
+        SchemeResolver = schemeResolver ?? throw new ArgumentNullException(nameof(schemeResolver));
     }
 
-    /// <summary>Signet Light without a theme store: the defaults of the key registry.</summary>
-    public static ResolvedTheme Defaults { get; } =
-        new(new Theme(ThemeStore.LightId, "Signet Light"), new ThemeResolver(_ => null));
+    /// <summary>Signet Light, without stores: the defaults of the key registry.</summary>
+    public static ResolvedTheme Defaults { get; } = new(
+        new Theme(ThemeStore.LightId, "Signet Light"), new ThemeResolver(_ => null),
+        new Theme(ThemeStore.LightId, "Signet Light"), new ThemeResolver(_ => null));
 
-    /// <summary>The theme.</summary>
+    /// <summary>The theme of the interface.</summary>
     public Theme Theme { get; }
 
-    /// <summary>Resolves its keys.</summary>
-    public ThemeResolver Resolver { get; }
+    /// <summary>Resolves the keys of <see cref="Theme"/>.</summary>
+    public ThemeResolver ThemeResolver { get; }
+
+    /// <summary>The color scheme of the editors.</summary>
+    public Theme Scheme { get; }
+
+    /// <summary>Resolves the keys of <see cref="Scheme"/>.</summary>
+    public ThemeResolver SchemeResolver { get; }
+
+    /// <summary>
+    /// A look that has only one of the two documents of its own (the editor of that document previews it): the other one
+    /// is Signet Light.
+    /// </summary>
+    public static ResolvedTheme Of(ThemeDocumentKind kind, Theme document, ThemeResolver resolver) =>
+        kind == ThemeDocumentKind.Theme
+            ? new ResolvedTheme(document, resolver, Defaults.Scheme, Defaults.SchemeResolver)
+            : new ResolvedTheme(Defaults.Theme, Defaults.ThemeResolver, document, resolver);
 
     /// <summary>The variant of the controls.</summary>
     public AvaloniaThemeVariant Variant =>
-        Resolver.Variant(Theme) == InterfaceVariant.Dark ? AvaloniaThemeVariant.Dark : AvaloniaThemeVariant.Light;
-
-    /// <summary>The fonts of the theme (those of the settings while it does not turn its own on).</summary>
-    public ThemeFonts Fonts => new(Theme, Resolver);
+        ThemeResolver.Variant(Theme) == InterfaceVariant.Dark ? AvaloniaThemeVariant.Dark : AvaloniaThemeVariant.Light;
 
     /// <summary>The icon set the theme names; <c>null</c> = the one chosen in Preferences.</summary>
-    public string? IconSet => Resolver.IconSet(Theme);
+    public string? IconSet => ThemeResolver.IconSet(Theme);
+
+    /// <summary>The color of a color key as the theme or the scheme holds it; <c>null</c> = the platform's.</summary>
+    public ThemeColor? ColorOf(ThemeKey key) =>
+        key.Document == ThemeDocumentKind.Theme ? ThemeResolver.Color(Theme, key) : SchemeResolver.Color(Scheme, key);
 
     /// <summary>The color of a color key; <c>null</c> = the platform's.</summary>
-    public Color? Color(ThemeKey key) => Resolver.Color(Theme, key) is { } c ? ToColor(c) : null;
+    public Color? Color(ThemeKey key) => ColorOf(key) is { } c ? ToColor(c) : null;
 
     /// <summary>The attributes of a text attributes key.</summary>
-    public TextAttributes Attributes(ThemeKey key) => Resolver.Attributes(Theme, key);
+    public TextAttributes Attributes(ThemeKey key) =>
+        key.Document == ThemeDocumentKind.Theme ? ThemeResolver.Attributes(Theme, key) : SchemeResolver.Attributes(Scheme, key);
 
     /// <summary>The text color of a text attributes key; <c>null</c> = the color of the text around.</summary>
     public Color? Foreground(ThemeKey key) => Attributes(key).Foreground is { } c ? ToColor(c) : null;
@@ -59,9 +85,10 @@ public sealed class ResolvedTheme
 }
 
 /// <summary>
-/// The theme in use, applied to the application: the variant of the controls, the Fluent palette and the
-/// <c>Signet*Brush</c> resources of the interface keys, which the views use through <c>DynamicResource</c> (a change of
-/// the theme shows at once). Code that draws by itself reads <see cref="Current"/> and follows <see cref="Changed"/>.
+/// The theme and the color scheme in use, applied to the application: the variant of the controls, the Fluent palette
+/// and the <c>Signet*Brush</c> resources of the interface keys, which the views use through <c>DynamicResource</c> (a
+/// change of the theme shows at once). Code that draws by itself reads <see cref="Current"/> and follows
+/// <see cref="Changed"/>.
 /// </summary>
 public static class AppTheme
 {
@@ -89,13 +116,13 @@ public static class AppTheme
         (ThemeKeys.UiFilterActive, "SignetFilterActiveBrush"),
     };
 
-    /// <summary>The theme in use (the defaults until one is applied).</summary>
+    /// <summary>The theme and the color scheme in use (the defaults until they are applied).</summary>
     public static ResolvedTheme Current { get; private set; } = ResolvedTheme.Defaults;
 
-    /// <summary>Raised after a theme was applied.</summary>
+    /// <summary>Raised after a theme or a color scheme was applied.</summary>
     public static event EventHandler? Changed;
 
-    /// <summary>Applies a theme to the application and makes it <see cref="Current"/>.</summary>
+    /// <summary>Applies a theme and a color scheme to the application and makes them <see cref="Current"/>.</summary>
     public static void Apply(Application app, ResolvedTheme theme)
     {
         ArgumentNullException.ThrowIfNull(app);

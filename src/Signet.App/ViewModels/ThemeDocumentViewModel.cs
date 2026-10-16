@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -15,7 +14,7 @@ using Signet.Core.Themes;
 
 namespace Signet.App.ViewModels;
 
-/// <summary>A theme in the list of Appearance › Color Scheme.</summary>
+/// <summary>A theme or a color scheme in the list of its page.</summary>
 /// <param name="Id">The identifier.</param>
 /// <param name="Name">The name.</param>
 /// <param name="IsBundled">Whether the theme comes with Signet.</param>
@@ -31,13 +30,15 @@ public sealed record ThemeOption(string Id, string Name, bool IsBundled)
 public sealed record IconSetOption(string? Code, string DisplayName);
 
 /// <summary>
-/// Preferences › Appearance › Color Scheme, as Rider's Editor › Color Scheme: the theme in use (chosen in the draft of
-/// the window, applied on Save), the actions on themes (IntelliJ's <c>AbstractSchemeActions</c>) and the settings of the
-/// theme as a whole (the variant of the controls, the icon set).
-/// <para>Changes to a theme are kept in a copy until Save (<see cref="Apply"/>); Duplicate, Rename, Delete, Restore
-/// Defaults and Import act on the theme files at once, as file operations.</para>
+/// The management of the themes of the interface (Preferences › Appearance and Behavior › Appearance) or of the color
+/// schemes of the editors (Preferences › Appearance and Behavior › Code Editor › Color Scheme), as Rider's pages of the
+/// same names: the one in use (chosen in the draft of the window, applied on Save), the actions on the list (IntelliJ's
+/// <c>AbstractSchemeActions</c>) and, for a theme, its settings as a whole (the variant of the controls, the icon set).
+/// The two lists are independent: each has its own store, files and selection.
+/// <para>Changes are kept in a copy until Save (<see cref="Apply"/>); Duplicate, Rename, Delete, Restore Defaults and
+/// Import act on the files at once, as file operations.</para>
 /// </summary>
-public sealed partial class ColorSchemeViewModel : ObservableObject
+public sealed partial class ThemeDocumentViewModel : ObservableObject
 {
     private readonly ThemeStore _store;
     private readonly SettingsStore _settings;
@@ -47,14 +48,18 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
     private readonly ThemeResolver _editResolver;
 
     /// <summary>Creates the page.</summary>
-    /// <param name="store">The themes.</param>
-    /// <param name="settings">The draft of the Preferences window (the theme in use, <see cref="SettingsStore.UiThemeId"/>).</param>
-    internal ColorSchemeViewModel(ThemeStore store, SettingsStore settings)
+    /// <param name="store">The themes or the color schemes (<see cref="ThemeStore.Kind"/>).</param>
+    /// <param name="settings">The draft of the Preferences window (the one in use, <see cref="SettingsStore.UiThemeId"/> or
+    /// <see cref="SettingsStore.EditorSchemeId"/>).</param>
+    internal ThemeDocumentViewModel(ThemeStore store, SettingsStore settings)
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _editResolver = new ThemeResolver(id => _edited.GetValueOrDefault(id) ?? _store.Find(id));
-        Pages = Enum.GetValues<ThemePage>().Select(page => new ColorSchemePageViewModel(this, page)).ToArray();
+        Pages = Enum.GetValues<ThemePage>()
+            .Where(page => ThemeKeys.On(page).Any(k => k.Document == Kind))
+            .Select(page => new ThemeKeysPageViewModel(this, page))
+            .ToArray();
         Variants = new[]
         {
             new VariantOption(InterfaceVariant.Light, Strings.Get("ColorScheme_VariantLight")),
@@ -63,14 +68,44 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
         IconSets = new[] { new IconSetOption(null, Strings.Get("ColorScheme_IconSetFromAppearance")) }
             .Concat(IconThemeManager.SupportedThemes.Select(t => new IconSetOption(t.Code, t.DisplayName)))
             .ToArray();
-        RefreshThemes(_settings.UiThemeId);
+        RefreshThemes(Kind == ThemeDocumentKind.Theme ? _settings.UiThemeId : _settings.EditorSchemeId);
     }
+
+    /// <summary>Resolves the keys with the changes not saved yet (also those of the parents).</summary>
+    internal ThemeResolver EditResolver => _editResolver;
+
+    /// <summary>The label of the list: "Theme:" or "Editor color scheme:".</summary>
+    public string Label => Str("Label");
+
+    /// <summary>The tooltip of the gear next to the list.</summary>
+    public string ActionsTip => Str("Actions");
+
+    /// <summary>The note of a bundled theme or scheme: changes are kept beside it, it cannot be renamed or deleted.</summary>
+    public string BundledNote => Str("BundledNote");
+
+    /// <summary>The title of the window that asks where to export to.</summary>
+    public string ExportTitle => Str("ExportTitle");
+
+    /// <summary>The title of the window that asks for a file to import.</summary>
+    public string ImportTitle => Str("ImportTitle");
+
+    /// <summary>The name of the file type in the pickers.</summary>
+    public string FileTypeName => Str("FileType");
+
+    /// <summary>Whether this manages the themes of the interface or the color schemes of the editors.</summary>
+    public ThemeDocumentKind Kind => _store.Kind;
 
     /// <summary>Raised when the changes not saved yet appear or go (the Save button of the window).</summary>
     public event EventHandler? Changed;
 
     /// <summary>Raised when the values of the keys may differ: another theme was selected, or a key was changed.</summary>
     public event EventHandler? ThemeEdited;
+
+    /// <summary>
+    /// Raised when the one in use was changed by the user (not when the list was rebuilt): Preferences switches the color
+    /// scheme with the theme.
+    /// </summary>
+    public event EventHandler? SelectionChangedByUser;
 
     /// <summary>Raised by a link to a key on another page ("Inherit values from …"): the window shows that page.</summary>
     public event EventHandler<ThemeKey>? KeyRequested;
@@ -81,11 +116,17 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
     /// </summary>
     public Func<string, string, Task<string?>>? ColorPicker { get; set; }
 
-    /// <summary>The pages of the keys (General, XHTML, CSS, …), in the order of <see cref="ThemePage"/>.</summary>
-    public IReadOnlyList<ColorSchemePageViewModel> Pages { get; }
+    /// <summary>The pages of the keys (General, XHTML, CSS, …; for a theme only Interface), in the order of <see cref="ThemePage"/>.</summary>
+    public IReadOnlyList<ThemeKeysPageViewModel> Pages { get; }
 
     /// <summary>The page of the keys of <paramref name="page"/>.</summary>
-    public ColorSchemePageViewModel PageFor(ThemePage page) => Pages[(int)page];
+    /// <exception cref="InvalidOperationException">The page belongs to the other document.</exception>
+    public ThemeKeysPageViewModel PageFor(ThemePage page) =>
+        Pages.FirstOrDefault(p => p.Page == page)
+        ?? throw new InvalidOperationException($"The page {page} belongs to the {(Kind == ThemeDocumentKind.Theme ? "color scheme" : "theme")}.");
+
+    /// <summary>Whether the page is edited here (the keys of the interface in the theme, the others in the scheme).</summary>
+    public bool Edits(ThemePage page) => Pages.Any(p => p.Page == page);
 
     /// <summary>Whether Code Editor uses the extended highlighting (in the draft of the window) — the previews follow it.</summary>
     public bool ExtendedHighlighting => _settings.CodeEditorExtendedHighlighting;
@@ -100,7 +141,7 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
             {
                 _settings.ColorSchemePreviewAppearance = value;
                 OnPropertyChanged();
-                foreach (ColorSchemePageViewModel page in Pages)
+                foreach (ThemeKeysPageViewModel page in Pages)
                 {
                     page.RefreshPreviewFont();
                 }
@@ -108,8 +149,11 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
         }
     }
 
-    /// <summary>The selected theme with the changes not saved yet, resolved (also with the changes of its parents).</summary>
-    public ResolvedTheme? Resolved => Current is { } theme ? new ResolvedTheme(theme, _editResolver) : null;
+    /// <summary>
+    /// The selected theme or scheme with the changes not saved yet, resolved (also with the changes of its parents); the
+    /// other document is Signet Light.
+    /// </summary>
+    public ResolvedTheme? Resolved => Current is { } theme ? ResolvedTheme.Of(Kind, theme, _editResolver) : null;
 
     /// <summary>Asks for a name: title, prompt, initial text → the text, or <c>null</c> after Cancel.</summary>
     public Func<string, string, string, Task<string?>>? TextPrompt { get; set; }
@@ -137,20 +181,43 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
 
     /// <summary>The theme in use (in the draft; applied on Save) and edited on the page.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Variant), nameof(IconSet), nameof(IsBundled), nameof(CanRestoreDefaults), nameof(UseThemeFonts))]
+    [NotifyPropertyChangedFor(nameof(Variant), nameof(IconSet), nameof(IsBundled), nameof(CanRestoreDefaults))]
     [NotifyCanExecuteChangedFor(nameof(RenameCommand), nameof(DeleteCommand), nameof(RestoreDefaultsCommand))]
     private ThemeOption? _selected;
+
+    partial void OnSelectedChanged(ThemeOption? oldValue, ThemeOption? newValue)
+    {
+        if (oldValue is not null && newValue is not null)
+        {
+            SelectionChangedByUser?.Invoke(this, EventArgs.Empty);
+        }
+    }
 
     partial void OnSelectedChanged(ThemeOption? value)
     {
         if (value is not null)
         {
-            _settings.UiThemeId = value.Id;
+            if (Kind == ThemeDocumentKind.Theme)
+            {
+                _settings.UiThemeId = value.Id;
+            }
+            else
+            {
+                _settings.EditorSchemeId = value.Id;
+            }
         }
 
         ThemeEdited?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>
+    /// Selects a bundled theme or scheme (by <see cref="ThemeStore.LightId"/> / <see cref="ThemeStore.DarkId"/>) without
+    /// telling that the user did it.
+    /// </summary>
+    internal void SelectBundled(string id) => Selected = Themes.FirstOrDefault(t => t.Id == id) ?? Selected;
+
+    /// <summary>The variant of the controls of the selected theme; light for a scheme.</summary>
+    internal InterfaceVariant CurrentVariant => Current is { } theme ? _store.Resolver.Variant(theme) : InterfaceVariant.Light;
     /// <summary>Whether the selected theme changes the key (<see cref="ThemeStore.ChangesKey"/>).</summary>
     internal bool ChangesKey(ThemeKey key) => Current is { } theme && _store.ChangesKey(theme, key);
 
@@ -160,54 +227,6 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
     /// </summary>
     internal string? RestoreSource =>
         Current is { ParentId: { } parentId } ? (_edited.GetValueOrDefault(parentId) ?? _store.Find(parentId))?.Name : null;
-
-    /// <summary>
-    /// "Use the theme fonts instead of the defaults" (Rider's color scheme font): turned on, the theme gets a copy of the
-    /// fonts of the settings for every place it does not set yet, so nothing changes until a font is edited; turned off,
-    /// the theme keeps its fonts but the settings' are used.
-    /// </summary>
-    public bool UseThemeFonts
-    {
-        get => Current?.UseThemeFonts ?? false;
-        set
-        {
-            if (Current is not { } theme || theme.UseThemeFonts == value)
-            {
-                return;
-            }
-
-            ImmutableDictionary<string, ThemeFont> fonts = theme.Fonts;
-            if (value)
-            {
-                foreach ((string key, ThemeFont font) in ThemeFontKeys.FromSettings(_settings))
-                {
-                    if (_editResolver.Font(theme, key) is null)
-                    {
-                        fonts = fonts.SetItem(key, font);
-                    }
-                }
-            }
-
-            Edit(theme with { UseThemeFonts = value, Fonts = fonts });
-            OnPropertyChanged();
-        }
-    }
-
-    /// <summary>The font of a place in the selected theme (its parents' too), otherwise the one of the settings.</summary>
-    public ThemeFont FontOf(string key) =>
-        (Current is { } theme ? _editResolver.Font(theme, key) : null) ?? ThemeFontKeys.FromSettings(_settings)[key];
-
-    /// <summary>Gives a place of the selected theme a font (kept until Save).</summary>
-    public void SetFont(string key, ThemeFont font)
-    {
-        if (Current is { } theme && FontOf(key) != font)
-        {
-            Edit(theme with { Fonts = theme.Fonts.SetItem(key, font) });
-        }
-    }
-
-    /// <summary>"Restore defaults" of a font of the theme: the font of the settings, copied again.</summary>
-    public void RestoreFont(string key) => SetFont(key, ThemeFontKeys.FromSettings(_settings)[key]);
 
     /// <summary>Gives a key of the selected theme a value (kept until Save).</summary>
     internal void SetKey(ThemeKey key, ThemeEntry entry)
@@ -249,7 +268,7 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
     /// <summary>The variant of the controls of the selected theme.</summary>
     public VariantOption? Variant
     {
-        get => Current is { } theme ? Variants.Single(v => v.Value == _store.Resolver.Variant(theme)) : null;
+        get => Kind == ThemeDocumentKind.Theme && Current is { } theme ? Variants.Single(v => v.Value == _store.Resolver.Variant(theme)) : null;
         set
         {
             if (value is not null && Current is { } theme && _store.Resolver.Variant(theme) != value.Value)
@@ -263,7 +282,9 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
     /// <summary>The icon set of the selected theme (<c>null</c> code = the one chosen in Appearance).</summary>
     public IconSetOption? IconSet
     {
-        get => Current is { } theme ? IconSets.FirstOrDefault(o => o.Code == _store.Resolver.IconSet(theme)) ?? IconSets[0] : null;
+        get => Kind == ThemeDocumentKind.Theme && Current is { } theme
+            ? IconSets.FirstOrDefault(o => o.Code == _store.Resolver.IconSet(theme)) ?? IconSets[0]
+            : null;
         set
         {
             if (value is not null && Current is { } theme && _store.Resolver.IconSet(theme) != value.Code)
@@ -298,7 +319,7 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
     private async Task Duplicate()
     {
         if (Selected is not { } source || Current is not { } current
-            || await AskName("ColorScheme_DuplicateTitle", _store.UniqueName(source.Name)) is not { } name)
+            || await AskName("DuplicateTitle", _store.UniqueName(source.Name)) is not { } name)
         {
             return;
         }
@@ -312,7 +333,7 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
     private async Task Rename()
     {
         if (Selected is not { IsBundled: false } theme
-            || await AskName("ColorScheme_RenameTitle", theme.Name, theme.Id) is not { } name)
+            || await AskName("RenameTitle", theme.Name, theme.Id) is not { } name)
         {
             return;
         }
@@ -332,7 +353,7 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
     {
         if (Selected is not { IsBundled: false } theme || Current is not { } current
             || Confirm is null
-            || !await Confirm(Strings.Get("ColorScheme_DeleteTitle"), Strings.Format("ColorScheme_DeleteConfirm", theme.Name)))
+            || !await Confirm(Str("DeleteTitle"), StrFormat("DeleteConfirm", theme.Name)))
         {
             return;
         }
@@ -370,7 +391,7 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
     private async Task Export()
     {
         if (Selected is not { } theme || PickExportPath is null
-            || await PickExportPath(theme.Name + ThemeXml.Extension) is not { Length: > 0 } path)
+            || await PickExportPath(theme.Name + ThemeXml.ExtensionOf(Kind)) is not { Length: > 0 } path)
         {
             return;
         }
@@ -382,7 +403,7 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
-            await Show(Strings.Get("ColorScheme_ExportTitle"), Strings.Format("ColorScheme_ExportFailed", e.Message));
+            await Show(Str("ExportTitle"), StrFormat("ExportFailed", e.Message));
         }
     }
 
@@ -407,15 +428,21 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
             RefreshThemes(imported.Id);
             if (warnings.Count > 0)
             {
-                await Show(Strings.Get("ColorScheme_ImportTitle"),
-                    Strings.Format("ColorScheme_ImportWarnings", imported.Name, string.Join("\n", warnings)));
+                await Show(Str("ImportTitle"),
+                    StrFormat("ImportWarnings", imported.Name, string.Join("\n", warnings)));
             }
         }
         catch (Exception e) when (e is ThemeFormatException or IOException or UnauthorizedAccessException)
         {
-            await Show(Strings.Get("ColorScheme_ImportTitle"), Strings.Format("ColorScheme_ImportFailed", e.Message));
+            await Show(Str("ImportTitle"), StrFormat("ImportFailed", e.Message));
         }
     }
+
+    // The text of this kind of document: "Theme_<name>" for a theme, "Scheme_<name>" for a color scheme.
+    private string Str(string name) => Strings.Get((Kind == ThemeDocumentKind.Theme ? "Theme_" : "Scheme_") + name);
+
+    private string StrFormat(string name, params object[] args) =>
+        Strings.Format((Kind == ThemeDocumentKind.Theme ? "Theme_" : "Scheme_") + name, args);
 
     private bool IsUserTheme() => Selected is { IsBundled: false };
 
@@ -437,7 +464,7 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
     private async Task<string?> AskName(string titleKey, string initial, string? exceptId = null)
     {
         if (TextPrompt is null
-            || await TextPrompt(Strings.Get(titleKey), Strings.Get("ColorScheme_NamePrompt"), initial) is not { } name
+            || await TextPrompt(Str(titleKey), Str("NamePrompt"), initial) is not { } name
             || string.IsNullOrWhiteSpace(name))
         {
             return null;
@@ -445,7 +472,7 @@ public sealed partial class ColorSchemeViewModel : ObservableObject
 
         if (_store.IsNameTaken(name, exceptId))
         {
-            await Show(Strings.Get(titleKey), Strings.Format("ColorScheme_NameTaken", name.Trim()));
+            await Show(Str(titleKey), StrFormat("NameTaken", name.Trim()));
             return null;
         }
 

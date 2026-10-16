@@ -6191,6 +6191,12 @@
   <data name="Theme_NotATheme" xml:space="preserve">
     <value>Plik nie jest motywem Signeta.</value>
   </data>
+  <data name="Theme_NotAScheme" xml:space="preserve">
+    <value>To nie jest plik schematu kolorów Signet.</value>
+  </data>
+  <data name="Theme_WrongDocument" xml:space="preserve">
+    <value>Wiersz {0}: klucz „{1}” należy do innego dokumentu (motyw interfejsu i schemat kolorów mają osobne klucze) – pominięto.</value>
+  </data>
   <data name="Theme_UnsupportedVersion" xml:space="preserve">
     <value>Motyw ma format w wersji {0}, której ta wersja Signeta nie zna.</value>
   </data>
@@ -6208,9 +6214,6 @@
   </data>
   <data name="Theme_ParentMissing" xml:space="preserve">
     <value>Motyw bazowy „{0}” nie istnieje; motywem bazowym zostaje Signet Light.</value>
-  </data>
-  <data name="Theme_MigratedName" xml:space="preserve">
-    <value>Moje kolory</value>
   </data>
   <data name="FontRemoval_RemoveRule" xml:space="preserve">
     <value>@font-face „{0}” ({1}): usuń regułę</value>
