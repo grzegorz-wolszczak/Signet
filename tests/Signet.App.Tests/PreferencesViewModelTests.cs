@@ -1,3 +1,4 @@
+using Signet.Core.MainUI;
 using System;
 using System.IO;
 using System.Linq;
@@ -742,6 +743,27 @@ public sealed class PreferencesViewModelTests
 
         footnotes.InheritFromParent.Should().BeTrue();
         footnotes.Size.Should().Be(TooltipFont.Default.FontSize);
+    }
+
+    [Fact]
+    public void Book_Browser_has_a_checkbox_per_folder_for_expanding_it_on_load_saved_with_the_others()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+
+        vm.BookBrowserFolders.Select(o => o.Label).Should().Equal("Text", "Styles", "Images", "Fonts", "Audio", "Video", "Misc");
+        vm.BookBrowserFolders.Where(o => o.IsChecked).Select(o => o.Label).Should().Equal("Text");
+
+        vm.BookBrowserFolders.Single(o => o.Label == "Video").IsChecked = true;
+        vm.BookBrowserFolders.Single(o => o.Label == "Text").IsChecked = false;
+
+        host.Settings.GetBookBrowserExpandOnLoad(OpfModelGroupKind.Video).Should().BeFalse("not saved yet");
+        vm.ApplyCommand.Execute(null);
+        host.Settings.GetBookBrowserExpandOnLoad(OpfModelGroupKind.Video).Should().BeTrue();
+        host.Settings.GetBookBrowserExpandOnLoad(OpfModelGroupKind.Text).Should().BeFalse();
+
+        vm.RestoreAppearanceDefaultsCommand.Execute(null);
+        vm.BookBrowserFolders.Where(o => o.IsChecked).Select(o => o.Label).Should().Equal("Text");
     }
 
     [Fact]

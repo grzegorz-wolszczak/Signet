@@ -143,7 +143,13 @@ public sealed class IconThemeManager(SettingsStore settings, ILogger<IconThemeMa
     /// Keys of the icons that are not part of the theme sets — colored PNGs
     /// (<c>Assets/Icons/Calibre</c>), shared by all themes.
     /// </summary>
-    public static readonly IReadOnlyList<string> ColoredIconKeys = new[] { "beautify", "html-fix", "polish" };
+    public static readonly IReadOnlyList<string> ColoredIconKeys = new[]
+    {
+        "beautify", "html-fix", "polish",
+
+        // The icons of the Book Browser folders (calibre's file list): Text, Styles, Images, Fonts, Misc.
+        "keyboard-prefs", "lookfeel", "view-image", "font", "dir",
+    };
 
     /// <summary>Dictionary of the bitmaps for <see cref="ColoredIconKeys"/> (key = file name without <c>.png</c>).</summary>
     public static ResourceDictionary LoadColoredIcons()

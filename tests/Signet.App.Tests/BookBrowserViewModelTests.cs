@@ -110,6 +110,43 @@ public sealed class BookBrowserViewModelTests
     }
 
     [Fact]
+    public void The_folders_chosen_in_the_settings_are_expanded_after_SetBook()
+    {
+        using TempDir temp = new();
+        using Book book = Load(CorpusPaths.Epub3Media, temp);
+        BookBrowserViewModel sut = NewViewModel(out SettingsStore settings);
+        settings.SetBookBrowserExpandOnLoad(OpfModelGroupKind.Text, false);
+        settings.SetBookBrowserExpandOnLoad(OpfModelGroupKind.Images, true);
+        settings.SetBookBrowserExpandOnLoad(OpfModelGroupKind.Misc, true);
+
+        sut.SetBook(book);
+
+        sut.Nodes.Where(n => n.IsFolder && n.IsExpanded).Select(n => n.Header).Should().BeEquivalentTo("Images", "Misc");
+    }
+
+    [Fact]
+    public void Folders_have_the_calibre_icons_except_Audio_and_Video()
+    {
+        using TempDir temp = new();
+        using Book book = Load(CorpusPaths.Epub3Media, temp);
+        BookBrowserViewModel sut = NewViewModel(out _);
+
+        sut.SetBook(book);
+
+        sut.Nodes.Where(n => n.IsFolder).ToDictionary(n => n.Header, n => n.FolderIconKey).Should().Equal(new Dictionary<string, string?>
+        {
+            ["Text"] = "keyboard-prefs",
+            ["Styles"] = "lookfeel",
+            ["Images"] = "view-image",
+            ["Fonts"] = "font",
+            ["Audio"] = null,
+            ["Video"] = null,
+            ["Misc"] = "dir",
+        });
+        sut.Nodes.Where(n => n.IsFolder && n.FolderIconKey is null).Should().OnlyContain(n => n.IsPlainFolder);
+    }
+
+    [Fact]
     public void Folder_expansion_survives_a_tree_rebuild_but_resets_for_a_new_book()
     {
         using TempDir temp = new();

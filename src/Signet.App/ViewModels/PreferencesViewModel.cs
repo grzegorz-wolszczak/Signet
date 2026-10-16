@@ -665,6 +665,10 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _settings.ClearAppearanceSettings();
         OnPropertyChanged(nameof(ShowZoomHint));
         OnPropertyChanged(nameof(PreferencesWindowModal));
+        foreach (FolderExpandOption option in BookBrowserFolders)
+        {
+            option.Refresh();
+        }
 
         PreviewAppearance previewFonts = PreviewAppearance.Default;
         PreviewFontStandard = previewFonts.FontFamilyStandard;
