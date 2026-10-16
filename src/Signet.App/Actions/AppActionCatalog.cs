@@ -185,6 +185,7 @@ public static class AppActionCatalog
         new("MainWindow.LiveCssPanel", "&Live CSS Panel", "Ctrl+Alt+J", null, "Tools"),
         new("MainWindow.RenumberFootnotes", "&Renumber Footnotes", "", null, "Tools"),
         new("MainWindow.ConvertFootnotes", "&Convert Footnotes of Other Origin...", "", null, "Tools"),
+        new("MainWindow.UnifyFootnoteLetters", "&Unify Letters of Shared Footnotes...", "", null, "Tools"),
         new("MainWindow.AddSoftHyphens", "Add &Soft Hyphens", "", null, "Tools"),
         new("MainWindow.RemoveSoftHyphens", "&Remove Soft Hyphens", "", null, "Tools"),
         new("MainWindow.SpellcheckEditor", "&Spellcheck...", "Ctrl+Alt+Q", "document-spellcheck", "Tools"),

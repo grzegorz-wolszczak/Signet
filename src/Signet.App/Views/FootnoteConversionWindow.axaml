@@ -139,7 +139,7 @@
                 <ItemsControl x:Name="NoticeList" ItemsSource="{Binding DetailNotices}">
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="x:String">
-                      <TextBlock Text="{Binding StringFormat='ⓘ {0}'}" TextWrapping="Wrap" />
+                      <TextBlock Text="{Binding StringFormat='ℹ {0}'}" TextWrapping="Wrap" />
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>

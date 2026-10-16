@@ -200,6 +200,9 @@ public static class AppActionIds
     /// <summary>Tools → Footnotes → Convert Footnotes of Other Origin (the conversion dialog).</summary>
     public const string ConvertFootnotes = "MainWindow.ConvertFootnotes";
 
+    /// <summary>Tools → Footnotes → Unify Letters of Shared Footnotes (the dialog with the notes in another style).</summary>
+    public const string UnifyFootnoteLetters = "MainWindow.UnifyFootnoteLetters";
+
     /// <summary>Add soft hyphens.</summary>
     public const string AddSoftHyphens = "MainWindow.AddSoftHyphens";
 

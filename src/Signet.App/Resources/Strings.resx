@@ -4131,6 +4131,72 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="FootnoteWindow_RemoveConfirm" xml:space="preserve">
     <value>Na pewno chcesz usunąć przypis? Usunięty zostanie odnośnik w tekście i treść przypisu.</value>
   </data>
+  <data name="Action_MainWindow_UnifyFootnoteLetters" xml:space="preserve">
+    <value>&amp;Ujednolić litery przypisów wspólnych...</value>
+  </data>
+  <data name="CodeEditorMenu_FootnotesUnifyLetters" xml:space="preserve">
+    <value>Ujednolić litery przypisów wspólnych...</value>
+  </data>
+  <data name="FootnoteLettersWindow_Title" xml:space="preserve">
+    <value>Ujednolić litery przypisów wspólnych</value>
+  </data>
+  <data name="FootnoteLettersWindow_Intro" xml:space="preserve">
+    <value>Przypisy wspólne poniżej mają litery w innym stylu niż wybrany. Ujednolicenie nadpisze w książce: markery odnośników ([4ii] → [4b]), ich identyfikatory (fn-4ii-ref → fn-4b-ref) i linki powrotne w treści przypisu. Linki z innych miejsc książki prowadzące do tych identyfikatorów (ℹ) zostaną przekierowane. Przed zmianą tworzony jest punkt kontrolny.</value>
+  </data>
+  <data name="FootnoteLettersWindow_Style" xml:space="preserve">
+    <value>Styl liter:</value>
+  </data>
+  <data name="FootnoteLettersWindow_None" xml:space="preserve">
+    <value>Wszystkie przypisy wspólne mają już litery w tym stylu.</value>
+  </data>
+  <data name="FootnoteLettersWindow_Summary" xml:space="preserve">
+    <value>Zaznaczono {0} z {1} przypisów</value>
+  </data>
+  <data name="FootnoteLettersWindow_ColumnFootnote" xml:space="preserve">
+    <value>Przypis</value>
+  </data>
+  <data name="FootnoteLettersWindow_ColumnPlace" xml:space="preserve">
+    <value>Miejsce</value>
+  </data>
+  <data name="FootnoteLettersWindow_FileTitle" xml:space="preserve">
+    <value>{0} ({1})</value>
+  </data>
+  <data name="FootnoteLettersWindow_NoteTitle" xml:space="preserve">
+    <value>[{0}] {1} → {2}</value>
+  </data>
+  <data name="FootnoteLettersWindow_ReferenceTitle" xml:space="preserve">
+    <value>Odnośnik {0} → {1}</value>
+  </data>
+  <data name="FootnoteLettersWindow_LinkTitle" xml:space="preserve">
+    <value>Link w {0} — zostanie przekierowany</value>
+  </data>
+  <data name="FootnoteLettersWindow_Unify" xml:space="preserve">
+    <value>Ujednolić</value>
+  </data>
+  <data name="FootnoteLettersWindow_NoticeMark" xml:space="preserve">
+    <value>ℹ</value>
+  </data>
+  <data name="FootnoteLettersWindow_DoubleClickHint" xml:space="preserve">
+    <value>Podwójne kliknięcie otwiera to miejsce w kodzie.</value>
+  </data>
+  <data name="FootnoteLetters_OfferAfterPreferences" xml:space="preserve">
+    <value>W książce jest {0} przypisów wspólnych z literami w innym stylu niż ustawiony ({1}). Zmiana w Preferencjach nie zmienia ich sama. Otworzyć okno ujednolicania?</value>
+  </data>
+  <data name="FootnoteLetters_OfferOpen" xml:space="preserve">
+    <value>Otwórz</value>
+  </data>
+  <data name="CheckpointOp_UnifyFootnoteLetters" xml:space="preserve">
+    <value>Ujednolicenie liter przypisów wspólnych</value>
+  </data>
+  <data name="Status_NoSharedFootnotes" xml:space="preserve">
+    <value>Książka nie ma przypisów wspólnych.</value>
+  </data>
+  <data name="Status_FootnoteLettersAlreadyUnified" xml:space="preserve">
+    <value>Wszystkie przypisy wspólne mają już litery {0}.</value>
+  </data>
+  <data name="Status_FootnoteLettersUnified" xml:space="preserve">
+    <value>Ujednolicono litery przypisów wspólnych: {0} (styl {1}).</value>
+  </data>
   <data name="CodeEditorMenu_FootnoteAddReference" xml:space="preserve">
     <value>Dodaj odnośnik do istniejącego przypisu...</value>
   </data>
