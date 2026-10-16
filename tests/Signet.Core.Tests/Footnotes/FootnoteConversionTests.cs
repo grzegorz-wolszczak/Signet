@@ -191,21 +191,84 @@ public sealed class FootnoteConversionTests
     }
 
     [Fact]
-    public void A_note_with_several_references_stays_as_it_is()
+    public void A_note_with_several_references_becomes_a_shared_note()
     {
         (Book book, HtmlResource html) = NewBook(
             "<p>A<a href=\"#n\" id=\"n-back\">1</a> again<a href=\"#n\">1</a>.</p>\n"
             + "<div id=\"n\"><p><a href=\"#n-back\">1</a> Shared note.</p></div>");
         using (book)
         {
-            string before = html.GetText();
             ConversionPlan plan = FootnoteEditor.PlanConversion(book);
+            ConversionItem item = plan.Items.Single();
+            item.CanConvert.Should().BeTrue();
+            item.Notices.Should().Equal(ConversionNotice.SharedNote);
+            item.Warnings.Should().BeEmpty("a shared note is for information only");
+            item.Links.Should().BeEmpty("the other reference is the note's own");
+            item.References.Select(r => r.ReferenceIndex).Should().Equal(0, 1);
 
-            plan.Items.Single().CanConvert.Should().BeFalse();
-            plan.Items.Single().Links.Should().Equal(
-                new ConversionLink(html, before.IndexOf("<a href=\"#n\">", StringComparison.Ordinal), IsReference: true));
-            FootnoteEditor.Convert(book, new ConversionRequest(plan.Items, null, false)).Converted.Should().Be(0);
-            html.GetText().Should().Be(before);
+            ConversionResult result = FootnoteEditor.Convert(book, new ConversionRequest(plan.Items, null, false));
+
+            result.Problems.Should().BeEmpty();
+            result.Converted.Should().Be(1);
+            BodyOf(html).Should().Be(
+                "<body>\n<p>A<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"#fn-1\" id=\"fn-1a-ref\">[1a]</a>"
+                + " again<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"#fn-1\" id=\"fn-1b-ref\">[1b]</a>.</p>\n"
+                + "<hr class=\"signet-fn-separator\"/>\n"
+                + "<section class=\"signet-footnotes\" epub:type=\"footnotes\">\n"
+                + "  <aside class=\"signet-fn\" epub:type=\"footnote\" id=\"fn-1\"><p class=\"signet-fn-p\">"
+                + "<a href=\"#fn-1a-ref\">1a</a>, <a href=\"#fn-1b-ref\">1b</a>. Shared note.</p></aside>\n"
+                + "</section>\n"
+                + "</body>\n</html>");
+            FootnoteScanner.Scan(book).Should().HaveCount(2).And.OnlyContain(f => f.IsSignet && f.IsShared);
+            FootnoteValidator.Validate(book).Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public void References_that_repeat_the_number_and_the_id_of_the_first_one_become_lettered_references()
+    {
+        (Book book, HtmlResource html) = NewBook(
+            "<p>Balak<sup class=\"fnref\"><a href=\"#fn4\" id=\"ref4\" epub:type=\"noteref\">4</a></sup>, Gilgal"
+            + "<sup class=\"fnref\"><a href=\"#fn4\" id=\"ref4\" epub:type=\"noteref\">4</a></sup>, works"
+            + "<sup class=\"fnref\"><a href=\"#fn4\" id=\"ref4\" epub:type=\"noteref\">4</a></sup>.</p>\n"
+            + "<aside id=\"fn4\" epub:type=\"footnote\" class=\"footnote\">\n  <a href=\"#ref4\" class=\"fn-back\">[4]</a> Three places.\n</aside>");
+        using (book)
+        {
+            ConversionResult result = ConvertAll(book);
+
+            result.Problems.Should().BeEmpty();
+            string body = BodyOf(html);
+            body.Should().Contain("Balak<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"#fn-1\" id=\"fn-1a-ref\">[1a]</a>, Gilgal"
+                + "<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"#fn-1\" id=\"fn-1b-ref\">[1b]</a>, works"
+                + "<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"#fn-1\" id=\"fn-1c-ref\">[1c]</a>.</p>")
+                .And.Contain("<a href=\"#fn-1a-ref\">1a</a>, <a href=\"#fn-1b-ref\">1b</a>, <a href=\"#fn-1c-ref\">1c</a>. Three places.</p>")
+                .And.NotContain("ref4", "the duplicate ids are gone");
+            FootnoteValidator.Validate(book).Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public void A_note_with_references_from_several_files_becomes_global()
+    {
+        (Book book, HtmlResource first) = NewBook(
+            "<p>Here<a epub:type=\"noteref\" href=\"#n\" id=\"n-back\">1</a>.</p>\n"
+            + "<aside epub:type=\"footnote\" id=\"n\"><a href=\"#n-back\">1</a> Note.</aside>");
+        using (book)
+        {
+            HtmlResource second = AddFile(book, "<p>There<a epub:type=\"noteref\" href=\""
+                + first.Filename + "#n\">1</a>.</p>");
+            ConversionPlan plan = FootnoteEditor.PlanConversion(book);
+            ConversionItem item = plan.Items.Single();
+            item.Footnote.Placement.Should().Be(FootnotePlacement.Global);
+            item.Notices.Should().Equal(ConversionNotice.SharedNote, ConversionNotice.BecomesGlobal);
+
+            FootnoteEditor.Convert(book, new ConversionRequest(plan.Items, null, false)).Problems.Should().BeEmpty();
+
+            HtmlResource notes = FootnoteEditor.FindGlobalFile(book)!;
+            notes.GetText().Should().Contain("id=\"en-1\"").And.Contain(">1a</a>, <a href=").And.Contain(">1b</a>. Note.");
+            BodyOf(first).Should().Contain("[1a]</a>").And.NotContain("aside");
+            BodyOf(second).Should().Contain("[1b]</a>");
+            FootnoteValidator.Validate(book).Should().BeEmpty();
         }
     }
 

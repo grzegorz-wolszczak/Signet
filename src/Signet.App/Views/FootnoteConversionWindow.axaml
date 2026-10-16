@@ -136,6 +136,13 @@
                     </DataTemplate>
                   </ItemsControl.ItemTemplate>
                 </ItemsControl>
+                <ItemsControl x:Name="NoticeList" ItemsSource="{Binding DetailNotices}">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                      <TextBlock Text="{Binding StringFormat='ⓘ {0}'}" TextWrapping="Wrap" />
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
                 <ItemsControl x:Name="PlaceList" ItemsSource="{Binding Places}">
                   <ItemsControl.ItemTemplate>
                     <DataTemplate x:DataType="vm:FootnoteConversionPlace">

@@ -4746,7 +4746,16 @@ Convert anyway?</value>
     <value>Analyzing the footnotes…</value>
   </data>
   <data name="FootnoteConversionWindow_CannotConvert" xml:space="preserve">
-    <value>Several references lead to the note — Signet does not convert this footnote (it stays of other origin).</value>
+    <value>Signet cannot convert this footnote automatically (its reference or note was not found, or a link that looks like a reference but is not one leads to it) — it stays of other origin.</value>
+  </data>
+  <data name="FootnoteConversionNotice_SharedNote" xml:space="preserve">
+    <value>{0} references lead to the note — it becomes one shared note, its references get letters ([{1}a], [{1}b]…) and each its own link back.</value>
+  </data>
+  <data name="FootnoteConversionNotice_BecomesGlobal" xml:space="preserve">
+    <value>The note is in the file of one of its references, but references from other files lead to it too — it becomes a global footnote.</value>
+  </data>
+  <data name="FootnoteConversionWindow_PlaceOtherReference" xml:space="preserve">
+    <value>Reference {0}:</value>
   </data>
   <data name="FootnoteConversionWindow_ProblemsRestored" xml:space="preserve">
     <value>The check after the conversion found problems, so the state before it was brought back:</value>
