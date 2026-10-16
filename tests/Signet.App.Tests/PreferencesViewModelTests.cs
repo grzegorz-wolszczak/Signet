@@ -796,6 +796,36 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
+    public void Line_numbers_font_inherits_the_editor_font_until_it_is_unchecked_and_is_saved_with_the_others()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        FontSettingViewModel row = vm.CodeEditorFonts.Fonts.Single(f => f.Key == "LineNumbers");
+
+        vm.CodeEditorFonts.Fonts.Select(f => f.Key).Should().Equal("CodeEditorText", "LineNumbers", "OpenTagHint");
+        row.HasInheritance.Should().BeTrue();
+        row.InheritFromParent.Should().BeTrue("by default the numbers have the font of the editor");
+        row.EffectiveFamily.Should().Be(vm.CodeEditor.FontFamily);
+        row.EffectiveSize.Should().Be(vm.CodeEditor.FontSize);
+        row.Parent.Should().BeSameAs(vm.CodeEditorFonts.Fonts[0]);
+
+        row.InheritFromParent = false;
+
+        row.IsOwnFont.Should().BeTrue();
+        (vm.LineNumbersFontFamily, vm.LineNumbersFontSize).Should().Be((vm.CodeEditor.FontFamily, vm.CodeEditor.FontSize),
+            "unchecking starts from the editor font");
+        vm.LineNumbersFontSize = 17;
+        host.Settings.LineNumberFontAppearance.Should().Be(LineNumberFontAppearance.Default, "not saved yet");
+        vm.ApplyCommand.Execute(null);
+        host.Settings.LineNumberFontAppearance.Should().Be(new LineNumberFontAppearance(vm.CodeEditor.FontFamily, 17));
+
+        vm.RestoreAppearanceDefaultsCommand.Execute(null);
+
+        row.InheritFromParent.Should().BeTrue();
+        (vm.LineNumbersFontFamily, vm.LineNumbersFontSize).Should().Be((string.Empty, 0));
+    }
+
+    [Fact]
     public void Book_Browser_Fonts_page_has_rows_for_the_names_and_for_the_headers_before_the_tooltip()
     {
         (TestHost host, PreferencesViewModel vm) = New();

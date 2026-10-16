@@ -57,6 +57,23 @@ public sealed class WindowRenderTests
     }
 
     [AvaloniaFact]
+    public void The_zoom_in_the_status_bar_has_the_font_size_of_the_rest_of_the_status_bar()
+    {
+        MainWindow window = ShowMainWindow();
+
+        // The buttons of the status bar: the ones in the same panel as the text of the open book.
+        TextBlock bookFile = window.FindControl<TextBlock>("BookFileText")!;
+        Panel? statusPanel = bookFile.GetVisualAncestors().OfType<StackPanel>().First();
+        Button[] buttons = statusPanel.GetVisualDescendants().OfType<Button>().ToArray();
+        Button percent = buttons.Single(b => Equals(b.Content, "100%"));
+        Button zoomOut = buttons.Single(b => Equals(b.Content, "−"));
+        double statusText = bookFile.FontSize;
+
+        percent.FontSize.Should().Be(statusText);
+        zoomOut.FontSize.Should().Be(statusText);
+    }
+
+    [AvaloniaFact]
     public void Toolbar_buttons_render_colour_icons_from_the_default_icon_theme()
     {
         string settingsPath = Path.Combine(Path.GetTempPath(), "Signet.Tests", $"uitests-{Guid.NewGuid():N}.xml");

@@ -1257,6 +1257,9 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     /// <summary>The delay (ms) before the opening tag tooltip appears.</summary>
     public int OpenTagHintDelayMs => _settings.CodeEditorOpenTagHintDelayMs;
 
+    /// <summary>The font of the line numbers (read live; the theme's while the theme turns its fonts on).</summary>
+    public LineNumberFontAppearance LineNumberFontAppearance => AppTheme.Current.Fonts.LineNumbers(_settings.LineNumberFontAppearance);
+
     /// <summary>The font of the opening tag tooltip (read live; the theme's while the theme turns its fonts on).</summary>
     public OpenTagHintAppearance OpenTagHintAppearance => AppTheme.Current.Fonts.OpenTagHint(_settings.OpenTagHintAppearance);
 

@@ -96,7 +96,8 @@ public sealed class ThemeSampleTests
             ThemeKey[] shown = samples.SelectMany(s => new[] { s, s.Basic })
                 .SelectMany(s => s.Marks.Concat(s.SyntaxRanges)).Select(r => r.Key).Distinct().ToArray();
             ThemeKey[] notShown = ThemeKeys.On(page)
-                .Where(k => k != ThemeKeys.EditorText && k != ThemeKeys.EditorCurrentLine && k != ThemeKeys.EditorLineNumbers)
+                .Where(k => k != ThemeKeys.EditorText && k != ThemeKeys.EditorCurrentLine && k != ThemeKeys.EditorLineNumbers
+                            && k != ThemeKeys.EditorCurrentLineNumber)
                 .Except(shown).ToArray();
             notShown.Select(k => k.Id).Should().BeEmpty($"the sample of {page} shows every key of the page");
         }

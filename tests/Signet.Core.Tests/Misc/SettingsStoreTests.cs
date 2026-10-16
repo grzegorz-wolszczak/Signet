@@ -122,6 +122,34 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
+    public void The_line_numbers_font_defaults_to_the_editor_font_is_normalized_and_survives_a_reload()
+    {
+        using TempDir dir = new();
+        string path = dir.Combine("settings.xml");
+        SettingsStore writer = new(path);
+        writer.LineNumberFontAppearance.Should().Be(LineNumberFontAppearance.Default);
+        LineNumberFontAppearance.Default.IsInherited.Should().BeTrue();
+
+        writer.LineNumberFontAppearance = new LineNumberFontAppearance(" Consolas ", 500);
+        writer.Save();
+
+        LineNumberFontAppearance read = new SettingsStore(path).LineNumberFontAppearance;
+        read.Should().Be(new LineNumberFontAppearance("Consolas", LineNumberFontAppearance.FontSizeMax));
+        read.IsInherited.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Restoring_the_appearance_defaults_clears_the_line_numbers_font()
+    {
+        using TempDir dir = new();
+        SettingsStore sut = new(dir.Combine("settings.xml")) { LineNumberFontAppearance = new LineNumberFontAppearance("Arial", 12) };
+
+        sut.ClearAppearanceSettings();
+
+        sut.LineNumberFontAppearance.Should().Be(LineNumberFontAppearance.Default);
+    }
+
+    [Fact]
     public void The_book_browser_look_defaults_to_the_interface_font_an_indent_of_20_and_a_row_spacing_of_3()
     {
         using TempDir dir = new();
