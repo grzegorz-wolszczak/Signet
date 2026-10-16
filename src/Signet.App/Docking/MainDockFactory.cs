@@ -1057,7 +1057,7 @@ public sealed class MainDockFactory : Factory
         return null;
     }
 
-    /// <summary>Makes the panel visible (if hidden) and activates it — for the "Focus on…" actions.</summary>
+    /// <summary>Makes the panel visible (if hidden, slides it out when collapsed) and activates it — for the "Focus on…" actions and for new results shown in a panel.</summary>
     public void FocusTool(string id)
     {
         if (!_tools.TryGetValue(id, out Tool? tool))
@@ -1068,6 +1068,12 @@ public sealed class MainDockFactory : Factory
         if (_hidden.Contains(id))
         {
             ShowHiddenTool(tool);
+        }
+
+        // A panel collapsed by "Auto Hide" (only its tab at the edge) slides out, so showing it is visible.
+        if (IsToolPinned(id))
+        {
+            PreviewPinnedDockable(tool);
         }
 
         SetActiveDockable(tool);
