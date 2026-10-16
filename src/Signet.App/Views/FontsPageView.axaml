@@ -19,7 +19,8 @@
     <!-- Only the settings are disabled (IsContentEnabled), not the scroll viewer: a page of settings that are switched
          off (e.g. while the theme does not use its own fonts) can still be scrolled. -->
     <ScrollViewer Grid.Column="0">
-      <StackPanel x:Name="Settings" Spacing="14" IsEnabled="{Binding #Page.IsContentEnabled}">
+      <!-- The right margin keeps the cards off the scroll bar, as far as they are from the left edge of the page. -->
+      <StackPanel x:Name="Settings" Spacing="14" Margin="0,0,20,0" IsEnabled="{Binding #Page.IsContentEnabled}">
         <!-- Filled in code: the rows exist before the page is shown, so the search of the window finds them. -->
         <StackPanel x:Name="Rows" Spacing="14" />
         <HyperlinkButton x:Name="RestoreDefaultsLink" Content="{loc:Loc PreferencesWindow_RestoreFontDefaults}"
