@@ -11,7 +11,7 @@ namespace Signet.App.ViewModels;
 
 /// <summary>
 /// View model of the "Standardize EPUB" dialog: one section per <see cref="StandardizationStep"/>, in the order the
-/// steps run, each with a checkbox, a detailed description (the ⓘ tooltip) and — when checked — a summary and an
+/// steps run, each with a checkbox, a detailed description (the ℹ tooltip) and — when checked — a summary and an
 /// expandable list of the changes it will make. Every toggle re-plans all steps (<see cref="EpubStandardization.Plan"/>),
 /// because each step sees the result of the steps before it. "Apply" runs the checked steps and closes the dialog.
 /// </summary>
@@ -157,7 +157,7 @@ public sealed partial class StandardizationSectionViewModel : ObservableObject
     /// <summary>What the step does, in one sentence.</summary>
     public string Description { get; }
 
-    /// <summary>What the step does in detail — the ⓘ tooltip.</summary>
+    /// <summary>What the step does in detail — the ℹ tooltip.</summary>
     public string Info { get; }
 
     /// <summary>The changes the step will make (once the steps before it have run).</summary>

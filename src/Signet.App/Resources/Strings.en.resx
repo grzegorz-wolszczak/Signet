@@ -3861,7 +3861,7 @@ Insert anyway?</value>
     <value>Standardize EPUB</value>
   </data>
   <data name="StandardizeWindow_Intro" xml:space="preserve">
-    <value>Check the operations to perform. The preview shows what will change before anything is changed. The operations run from top to bottom, and each one sees the result of the previous ones. Hover over ⓘ to see exactly what an operation does.</value>
+    <value>Check the operations to perform. The preview shows what will change before anything is changed. The operations run from top to bottom, and each one sees the result of the previous ones. Hover over ℹ to see exactly what an operation does.</value>
   </data>
   <data name="StandardizeWindow_Apply" xml:space="preserve">
     <value>Apply</value>
