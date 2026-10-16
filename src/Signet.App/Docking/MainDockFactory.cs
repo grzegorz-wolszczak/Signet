@@ -62,6 +62,7 @@ public sealed class MainDockFactory : Factory
         {
             HostWindow host = new();
             host.Opened += (_, _) => Dispatcher.UIThread.Post(() => WindowPlacement.EnsureVisible(host), DispatcherPriority.Background);
+            HostWindowCreated?.Invoke(this, host);
             return host;
         };
 
@@ -78,6 +79,12 @@ public sealed class MainDockFactory : Factory
         WindowClosed += (_, e) => LogPlaces($"floating window closed: {PanelsOf(e.Window)}");
         WindowMoveDragEnd += (_, e) => DebugLog.Write("Panel", $"floating window moved: {PanelsOf(e.Window)}");
     }
+
+    /// <summary>
+    /// Raised for every window created for floating dockables (panels, or document tabs dragged out of the tab strip),
+    /// before it is shown — the main window adds its keyboard shortcuts to it.
+    /// </summary>
+    public event EventHandler<HostWindow>? HostWindowCreated;
 
     // Writes an operation to the debug log with the places of all panels after it.
     private void LogPlaces(string operation) => DebugLog.Write("Panel", $"{operation}; places: {DescribePlaces()}");
@@ -753,6 +760,13 @@ public sealed class MainDockFactory : Factory
         bool close = base.OnWindowClosing(window);
         if (close && window?.Layout is { } layout)
         {
+            // Document tabs go back to the tab strip of the main window: closing the window only "attaches" them again
+            // (closing a tab is what closes the file).
+            foreach (IDocument document in DocumentsIn(layout).ToList())
+            {
+                DockDocumentBack(document);
+            }
+
             foreach (Tool tool in ToolsIn(layout).ToList())
             {
                 DockHome(tool);
@@ -973,6 +987,43 @@ public sealed class MainDockFactory : Factory
         }
 
         SetActiveDockable(tool);
+    }
+
+    // Moves a document tab from a floating window into the tab strip of the main window and makes it the active one.
+    private void DockDocumentBack(IDocument document)
+    {
+        if (DocumentDock is not { } main || document.Owner is not IDock source || ReferenceEquals(source, main))
+        {
+            return;
+        }
+
+        DebugLog.Write("Panel", $"dock back document {document.Id}: {source.Id} → {main.Id}");
+        MoveDockable(source, main, document, null);
+        SetActiveDockable(document);
+    }
+
+    private static IEnumerable<IDocument> DocumentsIn(IDockable dockable)
+    {
+        // Dock's Tool also implements IDocument: a panel is not a document tab.
+        if (dockable is Tool)
+        {
+            yield break;
+        }
+
+        if (dockable is IDocument document)
+        {
+            yield return document;
+        }
+        else if (dockable is IDock dock && dock.VisibleDockables is { } children)
+        {
+            foreach (IDockable child in children)
+            {
+                foreach (IDocument nested in DocumentsIn(child))
+                {
+                    yield return nested;
+                }
+            }
+        }
     }
 
     private static IEnumerable<Tool> ToolsIn(IDockable dockable)

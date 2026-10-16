@@ -10,9 +10,11 @@ using Avalonia.Input;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using Dock.Avalonia.Controls;
 using Microsoft.Extensions.DependencyInjection;
 using Signet.App.Actions;
 using Signet.App.CodeEditor;
+using Signet.App.Docking;
 using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.Services;
@@ -167,6 +169,11 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             _boundViewModel.CloseWindowRequested -= OnCloseWindowRequested;
         }
 
+        if (_boundViewModel?.DockFactory is MainDockFactory oldFactory)
+        {
+            oldFactory.HostWindowCreated -= OnHostWindowCreated;
+        }
+
         _boundViewModel = DataContext as MainWindowViewModel;
         _shortcutBindings.Detach();
 
@@ -218,6 +225,28 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
 
         // A shortcut change in Preferences takes effect immediately, without restarting the application.
         _shortcutBindings.Attach(_boundViewModel.ShortcutActions);
+
+        if (_boundViewModel.DockFactory is MainDockFactory factory)
+        {
+            factory.HostWindowCreated += OnHostWindowCreated;
+        }
+    }
+
+    // A document tab dragged out of the window works like in the main window: the same keyboard and mouse shortcuts.
+    private void OnHostWindowCreated(object? sender, HostWindow host)
+    {
+        if (_boundViewModel is not { } vm)
+        {
+            return;
+        }
+
+        ShortcutKeyBindings bindings = new(host);
+        bindings.Attach(vm.ShortcutActions);
+        _ = new MouseShortcutRouter(
+            host,
+            () => vm.ShortcutActions.Concat(vm.CodeEditorShortcutActions),
+            MouseShortcutRouter.IsInCodeEditor);
+        host.Closed += (_, _) => bindings.Detach();
     }
 
     /// <inheritdoc />
