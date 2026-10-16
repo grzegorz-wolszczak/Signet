@@ -7,6 +7,8 @@
              x:DataType="vm:FontSettingViewModel">
   <!-- One font setting of a "Fonts" page, as in Rider: the typeface list (each name in its own font), "Choose…" (the
        font picker window with a search) and the size. -->
+  <!-- Every setting is a box of its own (the "section" card style of the Preferences window), so that the settings are told apart. -->
+  <Border Classes="section">
   <StackPanel Spacing="4">
     <TextBlock Text="{Binding Label}" FontWeight="SemiBold" TextWrapping="Wrap" />
     <!-- A setting with a parent can use the parent's font instead of its own: "Use: <where the parent is> <its font>"; the
@@ -42,4 +44,5 @@
                Opacity="0.7" TextWrapping="Wrap" />
     </StackPanel>
   </StackPanel>
+  </Border>
 </UserControl>

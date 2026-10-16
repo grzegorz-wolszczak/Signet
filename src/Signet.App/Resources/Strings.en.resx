@@ -4005,9 +4005,6 @@ It does not change the files, their names or their IDs.</value>
   <data name="PreferencesWindow_OpenTagHintFont" xml:space="preserve">
     <value>Hint font</value>
   </data>
-  <data name="PreferencesWindow_OpenTagHintFontDefault" xml:space="preserve">
-    <value>Default (as in the editor)</value>
-  </data>
   <data name="Action_MainWindow_FindUsages" xml:space="preserve">
     <value>Find Usages</value>
   </data>
@@ -5020,9 +5017,6 @@ Zażółć gęślą jaźń — 0123456789</value>
   </data>
   <data name="PreferencesWindow_TooltipFontOtherWindows" xml:space="preserve">
     <value>Tooltips: other windows</value>
-  </data>
-  <data name="PreferencesWindow_TooltipFontDefault" xml:space="preserve">
-    <value>Interface font</value>
   </data>
   <data name="PreferencesWindow_StartScreen" xml:space="preserve">
     <value>Start Screen</value>

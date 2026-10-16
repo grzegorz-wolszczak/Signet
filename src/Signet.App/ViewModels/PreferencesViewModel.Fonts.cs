@@ -132,7 +132,7 @@ public sealed partial class PreferencesViewModel
                      () => OpenTagHintFontSize > 0 ? OpenTagHintFontSize : CodeEditor.FontSize),
                     ResetOpenTagHintFont,
                     ChooseOpenTagHintFontCommand,
-                    placeholder: () => Strings.Get("PreferencesWindow_OpenTagHintFontDefault"),
+                    placeholder: () => CodeEditor.FontFamily,
                     previewForeground: () => AppTheme.Current.Foreground(Signet.Core.Themes.ThemeKeys.HintsOpenTag)?.ToString(),
                     previewBackground: () => AppTheme.Current.Background(Signet.Core.Themes.ThemeKeys.HintsOpenTag)?.ToString(),
                     sizeHint: Strings.Get("PreferencesWindow_FontSizeZeroAsEditor")),
@@ -348,7 +348,7 @@ public sealed partial class PreferencesViewModel
                 _settings.SetTooltipInherit(area, true);
             },
             new AsyncRelayCommand(() => ChooseTooltipFont(area)),
-            placeholder: () => Strings.Get("PreferencesWindow_TooltipFontDefault"),
+            placeholder: () => EffectiveUiFontFamily,
             inheritance: area == TooltipArea.OtherWindows ? null : TooltipInheritance(area));
 
     // The font the tooltips of an area use now: its own, or the one of the other windows while it inherits.
@@ -368,7 +368,7 @@ public sealed partial class PreferencesViewModel
         () =>
         {
             TooltipFont other = _settings.GetTooltipFont(TooltipArea.OtherWindows);
-            return (other.FontFamily.Length > 0 ? other.FontFamily : Strings.Get("PreferencesWindow_TooltipFontDefault")) + ", " + other.FontSize;
+            return (other.FontFamily.Length > 0 ? other.FontFamily : EffectiveUiFontFamily) + ", " + other.FontSize;
         },
         () => AppearanceFonts.Fonts.Single(f => f.Key == "Tooltip" + TooltipArea.OtherWindows));
 

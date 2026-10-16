@@ -607,7 +607,7 @@ public sealed class PreferencesViewModelTests
         page.Active!.Key.Should().Be("CodeEditorText", "the first setting is previewed at the start");
 
         hint.Family.Should().BeEmpty();
-        hint.Placeholder.Should().Be(Strings.Get("PreferencesWindow_OpenTagHintFontDefault"));
+        hint.Placeholder.Should().Be(vm.CodeEditor.FontFamily, "the real name of the editor font, not a description of the default");
         hint.EffectiveFamily.Should().Be(vm.CodeEditor.FontFamily, "an empty hint font is the editor font");
         hint.PreviewBackground.Should().Be(AppTheme.Current.Background(ThemeKeys.HintsOpenTag).ToString(), "the colors of the theme");
         hint.PreviewForeground.Should().Be(AppTheme.Current.Foreground(ThemeKeys.HintsOpenTag).ToString());
@@ -670,7 +670,7 @@ public sealed class PreferencesViewModelTests
         FontSettingViewModel footnotes = vm.FootnotesFonts.Fonts.Should().ContainSingle().Subject;
         footnotes.Key.Should().Be("TooltipFootnotes");
         footnotes.Family.Should().BeEmpty();
-        footnotes.Placeholder.Should().Be(Strings.Get("PreferencesWindow_TooltipFontDefault"));
+        footnotes.Placeholder.Should().Be(vm.EffectiveUiFontFamily, "the real name of the interface font");
         footnotes.EffectiveFamily.Should().Be(vm.EffectiveUiFontFamily, "an empty typeface is the interface font");
         footnotes.Size.Should().Be(13);
         footnotes.PreviewText.Should().Be(Strings.Get("FontPreview_TooltipFootnotes"));
