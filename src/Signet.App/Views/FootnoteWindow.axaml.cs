@@ -209,22 +209,39 @@ public partial class FootnoteWindow : Window
             return;
         }
 
-        if (vm.ConfirmRemoval)
+        if (await ConfirmRemovalAsync(this, vm.ReferenceCount, vm.ConfirmRemoval, vm.StopConfirmingRemoval).ConfigureAwait(true))
         {
-            (bool confirmed, bool dontAskAgain) = await ConfirmWindow.AskWithDontAskAgainAsync(
-                this, Strings.Get("FootnoteWindow_RemoveConfirmTitle"), Strings.Get("FootnoteWindow_RemoveConfirm"),
-                Strings.Get("FootnoteWindow_RemoveButton"), destructive: true).ConfigureAwait(true);
-            if (!confirmed)
-            {
-                return;
-            }
+            Close(vm.RemoveRequest());
+        }
+    }
 
-            if (dontAskAgain)
-            {
-                vm.StopConfirmingRemoval?.Invoke();
-            }
+    /// <summary>
+    /// Asks before a footnote is removed: a note with several references always (naming their number: they all go,
+    /// also those out of sight), any other when <paramref name="ask"/> (with "Don't ask again", which calls
+    /// <paramref name="stopAsking"/>). Returns whether to remove it.
+    /// </summary>
+    internal static async Task<bool> ConfirmRemovalAsync(Window owner, int referenceCount, bool ask, Action? stopAsking)
+    {
+        string title = Strings.Get("FootnoteWindow_RemoveConfirmTitle");
+        string button = Strings.Get("FootnoteWindow_RemoveButton");
+        if (referenceCount > 1)
+        {
+            return await ConfirmWindow.AskAsync(
+                owner, title, Strings.Format("FootnoteWindow_RemoveSharedConfirm", referenceCount), button, destructive: true).ConfigureAwait(true);
         }
 
-        Close(vm.RemoveRequest());
+        if (!ask)
+        {
+            return true;
+        }
+
+        (bool confirmed, bool dontAskAgain) = await ConfirmWindow.AskWithDontAskAgainAsync(
+            owner, title, Strings.Get("FootnoteWindow_RemoveConfirm"), button, destructive: true).ConfigureAwait(true);
+        if (confirmed && dontAskAgain)
+        {
+            stopAsking?.Invoke();
+        }
+
+        return confirmed;
     }
 }

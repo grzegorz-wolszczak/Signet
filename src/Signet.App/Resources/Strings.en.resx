@@ -4131,6 +4131,30 @@ It does not change the files, their names or their IDs.</value>
   <data name="FootnoteWindow_RemoveConfirm" xml:space="preserve">
     <value>Are you sure you want to remove the footnote? Both the reference in the text and the note will be removed.</value>
   </data>
+  <data name="FootnoteWindow_RemoveSharedConfirm" xml:space="preserve">
+    <value>{0} references lead to this footnote. Removing the footnote removes its text and all its references, also those elsewhere in the text. Remove the footnote?</value>
+  </data>
+  <data name="CodeEditorMenu_FootnoteRemoveReference" xml:space="preserve">
+    <value>Remove Reference</value>
+  </data>
+  <data name="CodeEditorMenu_FootnoteRemove" xml:space="preserve">
+    <value>Remove Footnote...</value>
+  </data>
+  <data name="CodeEditorMenu_FootnoteRemoveReferenceOnlyOne" xml:space="preserve">
+    <value>This is the only reference to the footnote — remove the whole footnote.</value>
+  </data>
+  <data name="CodeEditorMenu_FootnoteRemoveReferenceNotOnReference" xml:space="preserve">
+    <value>Put the caret on a reference in the text (not in the note).</value>
+  </data>
+  <data name="CodeEditorMenu_FootnoteForeignTip" xml:space="preserve">
+    <value>A footnote of other origin — convert it first.</value>
+  </data>
+  <data name="CheckpointOp_RemoveFootnoteReference" xml:space="preserve">
+    <value>Remove footnote reference</value>
+  </data>
+  <data name="Status_FootnoteReferenceRemoved" xml:space="preserve">
+    <value>Footnote reference removed.</value>
+  </data>
   <data name="FootnoteWindow_ContentHintWholeNote" xml:space="preserve">
     <value>The whole inside of the footnote as XHTML blocks (paragraphs, lists, tables…): the footnote does not fit Signet's template, e.g. after a change in the code. Keep the link back to the reference. Write &amp; and &lt; as &amp;amp; and &amp;lt;.</value>
   </data>

@@ -452,56 +452,122 @@ public static partial class FootnoteEditor
     }
 
     /// <summary>
-    /// Removes the reference and the note of <paramref name="footnote"/> and renumbers the footnotes. With the reference
-    /// go the <c>&lt;span&gt;</c>/<c>&lt;sup&gt;</c> elements that held only it, and the empty element its link back led
-    /// to (with the empty <c>&lt;span&gt;</c>/<c>&lt;sup&gt;</c> around it) — unless another link leads to their id.
+    /// Removes the note of <paramref name="footnote"/> with all its references (the references of a shared note too) and
+    /// renumbers the footnotes. With a reference go the <c>&lt;span&gt;</c>/<c>&lt;sup&gt;</c> elements that held only
+    /// it, and the empty element its link back led to (with the empty <c>&lt;span&gt;</c>/<c>&lt;sup&gt;</c> around it) —
+    /// unless another link leads to their id.
     /// </summary>
     public static bool Remove(Book book, Footnote footnote, FootnoteOptions? options = null)
     {
         ArgumentNullException.ThrowIfNull(book);
         ArgumentNullException.ThrowIfNull(footnote);
-
-        string referenceText = footnote.ReferenceFile.GetText();
-        TagLister referenceTags = new(referenceText);
-        Anchor? anchor = FindAnchor(referenceTags, referenceText, footnote.ReferenceHref, footnote.ReferenceOccurrence);
-        string noteText = footnote.NoteFile.GetText();
-        Element? note = FindElementById(new TagLister(noteText), noteText, footnote.NoteId);
-        if (anchor is null || note is null)
+        if (Refresh(book, footnote) is not { } current)
         {
             return false;
         }
 
-        // The element the link back leads to goes with the footnote only when nothing else links to it.
-        string? returnId = footnote.ReferenceId.Length > 0 && !IsLinkedOutside(book, footnote, note) ? footnote.ReferenceId : null;
-        (int start, int end) = Unwrap(referenceTags, referenceText, anchor.OuterStart, anchor.OuterEnd, returnId);
-        List<TextEdit> referenceEdits = new() { new TextEdit(start, end - start, string.Empty) };
-        if (returnId is not null
-            && FindElementById(referenceTags, referenceText, returnId) is { } target
-            && (target.End <= start || target.Start >= end)
-            && Tag.Replace(referenceText[target.Start..target.End], string.Empty).Trim().Length == 0)
+        List<Footnote> references = FootnoteScanner.Scan(book)
+            .Where(f => ReferenceEquals(f.NoteFile, current.NoteFile) && f.NoteId == current.NoteId)
+            .ToList();
+        string noteText = current.NoteFile.GetText();
+        Element? note = FindElementById(new TagLister(noteText), noteText, current.NoteId);
+        if (note is null)
         {
-            (int targetStart, int targetEnd) = Unwrap(referenceTags, referenceText, target.Start, target.End, null);
-            referenceEdits.Add(new TextEdit(targetStart, targetEnd - targetStart, string.Empty));
+            return false;
+        }
+
+        Dictionary<HtmlResource, List<TextEdit>> edits = new(ReferenceEqualityComparer.Instance);
+        foreach (Footnote reference in references)
+        {
+            if (ReferenceEdits(book, reference, note) is not { } referenceEdits)
+            {
+                return false;
+            }
+
+            if (!edits.TryGetValue(reference.ReferenceFile, out List<TextEdit>? list))
+            {
+                edits[reference.ReferenceFile] = list = new List<TextEdit>();
+            }
+
+            // Two references never share their wrappers, but a wrapper removed with one stays out of the other's edits.
+            list.AddRange(referenceEdits.Where(e => !list.Any(o => Overlap(o, e))));
         }
 
         (int noteStart, int noteEnd) = WholeLines(noteText, note.Start, note.End);
-        TextEdit noteEdit = new(noteStart, noteEnd - noteStart, string.Empty);
-        if (ReferenceEquals(footnote.ReferenceFile, footnote.NoteFile))
+        if (!edits.TryGetValue(current.NoteFile, out List<TextEdit>? noteEdits))
         {
-            referenceEdits.Add(noteEdit);
-            footnote.ReferenceFile.SetText(Apply(referenceText, referenceEdits));
+            edits[current.NoteFile] = noteEdits = new List<TextEdit>();
         }
-        else
+
+        noteEdits.Add(new TextEdit(noteStart, noteEnd - noteStart, string.Empty));
+        foreach ((HtmlResource file, List<TextEdit> list) in edits)
         {
-            footnote.ReferenceFile.SetText(Apply(referenceText, referenceEdits));
-            footnote.NoteFile.SetText(Apply(noteText, new[] { noteEdit }));
+            file.SetText(Apply(file.GetText(), list));
         }
 
         Renumber(book, options);
-        RemoveEmptyContainer(book, footnote.NoteFile);
+        RemoveEmptyContainer(book, current.NoteFile);
         book.Modified = true;
         return true;
     }
+
+    /// <summary>
+    /// Removes the reference of <paramref name="footnote"/> from its shared note (the note and its other references
+    /// stay) and renumbers the footnotes: the letters of the other references and the links back of the note are written
+    /// anew, and a note left with one reference becomes an ordinary footnote again (<c>[4]</c>, <c>4.</c>). <c>false</c>
+    /// when the note has only that reference (<see cref="Remove"/> removes it) or the footnote is gone.
+    /// </summary>
+    public static bool RemoveReference(Book book, Footnote footnote, FootnoteOptions? options = null)
+    {
+        ArgumentNullException.ThrowIfNull(book);
+        ArgumentNullException.ThrowIfNull(footnote);
+        if (Refresh(book, footnote) is not { IsShared: true } current)
+        {
+            return false;
+        }
+
+        string noteText = current.NoteFile.GetText();
+        if (FindElementById(new TagLister(noteText), noteText, current.NoteId) is not { } note
+            || ReferenceEdits(book, current, note) is not { } edits)
+        {
+            return false;
+        }
+
+        current.ReferenceFile.SetText(Apply(current.ReferenceFile.GetText(), edits));
+        Renumber(book, options);
+        book.Modified = true;
+        return true;
+    }
+
+    // The edits that remove a reference: the link with the wrappers that held only it, and the empty element its link back
+    // led to (when nothing else links to it); null when the reference is gone.
+    private static List<TextEdit>? ReferenceEdits(Book book, Footnote footnote, Element note)
+    {
+        string text = footnote.ReferenceFile.GetText();
+        TagLister tags = new(text);
+        if (FindAnchor(tags, text, footnote.ReferenceHref, footnote.ReferenceOccurrence) is not { } anchor)
+        {
+            return null;
+        }
+
+        // The element the link back leads to goes with the footnote only when nothing else links to it.
+        string? returnId = footnote.ReferenceId.Length > 0 && !IsLinkedOutside(book, footnote, note) ? footnote.ReferenceId : null;
+        (int start, int end) = Unwrap(tags, text, anchor.OuterStart, anchor.OuterEnd, returnId);
+        List<TextEdit> edits = new() { new TextEdit(start, end - start, string.Empty) };
+        if (returnId is not null
+            && FindElementById(tags, text, returnId) is { } target
+            && (target.End <= start || target.Start >= end)
+            && Tag.Replace(text[target.Start..target.End], string.Empty).Trim().Length == 0)
+        {
+            (int targetStart, int targetEnd) = Unwrap(tags, text, target.Start, target.End, null);
+            edits.Add(new TextEdit(targetStart, targetEnd - targetStart, string.Empty));
+        }
+
+        return edits;
+    }
+
+    private static bool Overlap(TextEdit a, TextEdit b) =>
+        a.Start < b.Start + b.Length && b.Start < a.Start + a.Length;
 
     /// <summary>
     /// Moves the note of <paramref name="footnote"/> to the other placement (local to global or back) and renumbers

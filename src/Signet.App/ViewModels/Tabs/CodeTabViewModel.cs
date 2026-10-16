@@ -1508,6 +1508,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel
             edit.ReferenceText, edit.ReferenceStart, edit.ReferenceEnd, edit.Content, edit.Footnote.Placement,
             edit.LocalNumber, edit.GlobalNumber, content => host.ValidateFootnoteEdit(edit.Footnote, content));
         model.ConfirmRemoval = host.ConfirmFootnoteRemoval;
+        model.ReferenceCount = edit.Footnote.ReferenceCount;
         model.StopConfirmingRemoval = () => host.ConfirmFootnoteRemoval = false;
         model.Preview = (content, placement, number) => host.PreviewFootnote(
             edit.Footnote.ReferenceFile, edit.ReferenceStart, edit.ReferenceEnd, content, placement, number, edit.Footnote);
