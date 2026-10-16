@@ -183,6 +183,10 @@ public sealed record FootnoteMenuState(
 /// <param name="Content">The text of the note.</param>
 /// <param name="LocalNumber">The number of the footnote as a local one.</param>
 /// <param name="GlobalNumber">The number of the footnote as a global one.</param>
+/// <param name="MoveError">
+/// Why the note cannot move to the other placement (<see cref="FootnoteEditor.CanMove"/>), or
+/// <see cref="FootnoteError.None"/>.
+/// </param>
 public sealed record FootnoteEditState(
     Footnote Footnote, string ReferenceText, int ReferenceStart, int ReferenceEnd, FootnoteContent Content,
-    int LocalNumber, int GlobalNumber);
+    int LocalNumber, int GlobalNumber, FootnoteError MoveError = FootnoteError.None);

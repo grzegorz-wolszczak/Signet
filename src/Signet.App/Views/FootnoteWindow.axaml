@@ -35,10 +35,15 @@
                  IsVisible="{Binding ValidationError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
       <StackPanel Grid.Row="6" Spacing="8" Margin="0,12,0,0">
-        <RadioButton GroupName="Placement" Content="{loc:Loc FootnoteWindow_Local}"
-                     IsChecked="{Binding IsLocal, Mode=TwoWay}" />
-        <RadioButton GroupName="Placement" Content="{loc:Loc FootnoteWindow_Global}"
-                     IsChecked="{Binding IsGlobal, Mode=TwoWay}" />
+        <!-- A note that cannot change its placement (references from several files) keeps it; the reason is the tooltip. -->
+        <StackPanel x:Name="PlacementPanel" Spacing="8" IsEnabled="{Binding CanChangePlacement}"
+                    ToolTip.Tip="{Binding PlacementBlocked}" ToolTip.ShowOnDisabled="True"
+                    ToolTip.ServiceEnabled="{Binding !CanChangePlacement}">
+          <RadioButton GroupName="Placement" Content="{loc:Loc FootnoteWindow_Local}"
+                       IsChecked="{Binding IsLocal, Mode=TwoWay}" />
+          <RadioButton GroupName="Placement" Content="{loc:Loc FootnoteWindow_Global}"
+                       IsChecked="{Binding IsGlobal, Mode=TwoWay}" />
+        </StackPanel>
       </StackPanel>
     </Grid>
 

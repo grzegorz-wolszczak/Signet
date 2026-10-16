@@ -99,6 +99,26 @@ public sealed class FootnoteWindowTests
     }
 
     [AvaloniaFact]
+    public void A_footnote_that_cannot_change_its_placement_keeps_it_and_says_why()
+    {
+        FootnoteViewModel vm = Edit();
+        vm.PlacementBlocked = FootnoteViewModel.ErrorSentence(FootnoteError.SeveralFiles);
+        Window owner = new();
+        owner.Show();
+
+        _ = FootnoteWindow.AskAsync(owner, vm);
+        Dispatcher.UIThread.RunJobs();
+        FootnoteWindow window = owner.OwnedWindows.OfType<FootnoteWindow>().Single();
+        window.CaptureRenderedFrame();
+
+        StackPanel placement = window.GetVisualDescendants().OfType<StackPanel>().Single(p => p.Name == "PlacementPanel");
+        placement.IsEnabled.Should().BeFalse();
+        ToolTip.GetTip(placement).Should().Be(vm.PlacementBlocked);
+        vm.CanChangePlacement.Should().BeFalse();
+        owner.Close();
+    }
+
+    [AvaloniaFact]
     public void Remove_asks_first_and_can_stop_asking()
     {
         bool stopped = false;

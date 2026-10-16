@@ -335,7 +335,8 @@ public sealed partial class MainWindowViewModel
             return new FootnoteEditState(
                 footnote, reference.File.GetText(), reference.Start, reference.End, content,
                 FootnoteEditor.NumberAt(_currentBook, at.File, at.Offset, FootnotePlacement.Local),
-                FootnoteEditor.NumberAt(_currentBook, at.File, at.Offset, FootnotePlacement.Global));
+                FootnoteEditor.NumberAt(_currentBook, at.File, at.Offset, FootnotePlacement.Global),
+                FootnoteEditor.CanMove(_currentBook, footnote));
         }
 
         _statusBar.ShowMessage(Strings.Get("Status_FootnoteGone"), TimeSpan.FromSeconds(5), NotificationLevel.Warning);

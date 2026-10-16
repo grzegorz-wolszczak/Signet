@@ -272,6 +272,56 @@ public sealed class SharedFootnoteTests
         }
     }
 
+    [Fact]
+    public void A_shared_note_moves_with_all_its_references()
+    {
+        (Book book, HtmlResource html) = NewBook();
+        using (book)
+        {
+            Footnote second = AddShared(book, html, "note");
+
+            FootnoteEditor.Move(book, second, out Footnote? moved).Should().BeTrue();
+
+            HtmlResource notes = FootnoteEditor.FindGlobalFile(book)!;
+            string toNotes = Core.BookPath.Relative(html.BookPath, notes.BookPath);
+            html.GetText().Should().Contain("First" + Reference("en-1a-ref", toNotes + "#en-1", "[1a]"))
+                .And.Contain("Third" + Reference("en-1b-ref", toNotes + "#en-1", "[1b]"))
+                .And.NotContain("<section class=\"signet-footnotes\"");
+            string toChapter = Core.BookPath.Relative(notes.BookPath, html.BookPath);
+            notes.GetText().Should().Contain("<a href=\"" + toChapter + "#en-1a-ref\">1a</a>, <a href=\"" + toChapter + "#en-1b-ref\">1b</a>. note");
+            moved!.ReferenceIndex.Should().Be(1, "the moved footnote is the same reference");
+            FootnoteValidator.Validate(book).Should().BeEmpty();
+
+            FootnoteEditor.Move(book, moved).Should().BeTrue();
+
+            FootnoteEditor.FindGlobalFile(book).Should().BeNull();
+            html.GetText().Should().Contain("<a href=\"#fn-1a-ref\">1a</a>, <a href=\"#fn-1b-ref\">1b</a>. note");
+            FootnoteValidator.Validate(book).Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public void A_global_note_with_references_from_several_files_cannot_become_local()
+    {
+        (Book book, HtmlResource first) = NewBook();
+        using (book)
+        {
+            HtmlResource second = book.CreateEmptyHtmlFile();
+            second.SetText(Xhtml(Body));
+            FootnoteEditor.Add(book, first, After(first, "First"), "endnote", FootnotePlacement.Global, out Footnote? footnote);
+            FootnoteEditor.AddReference(book, second, After(second, "Second"), footnote!, out Footnote? added).Should().Be(FootnoteError.None);
+            string before = first.GetText();
+
+            FootnoteEditor.CanMove(book, added!).Should().Be(FootnoteError.SeveralFiles);
+            FootnoteEditor.Move(book, added!).Should().BeFalse();
+            FootnoteEditor.Edit(book, added!, "changed", FootnotePlacement.Local, out Footnote? edited).Should().Be(FootnoteError.SeveralFiles);
+
+            edited.Should().BeNull();
+            first.GetText().Should().Be(before);
+            FootnoteEditor.GetContent(FootnoteEditor.Refresh(book, added!)!)!.Text.Should().Be("endnote", "nothing changed");
+        }
+    }
+
     [Theory]
     [InlineData(FootnoteLetterStyle.LowerLatin, 0, "a")]
     [InlineData(FootnoteLetterStyle.LowerLatin, 25, "z")]

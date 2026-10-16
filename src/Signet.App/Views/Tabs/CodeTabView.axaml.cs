@@ -875,7 +875,7 @@ public partial class CodeTabView : UserControl
                     : Strings.Format("CodeEditorMenu_FootnoteAddBlocked", FootnoteViewModel.ErrorText(state.AddError)),
                 () => AddFootnote(vm),
                 enabled: canAdd));
-            string? referenceBlocked = !canAdd ? FootnoteViewModel.ErrorText(state.AddError)
+            string? referenceBlocked = !canAdd ? FootnoteViewModel.ErrorSentence(state.AddError)
                 : state.ReferenceTargetCount == 0 ? Strings.Get("CodeEditorMenu_FootnoteAddReferenceNoNotes")
                 : null;
             menu.Items.Add(Item(
