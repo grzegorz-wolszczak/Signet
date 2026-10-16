@@ -12,6 +12,22 @@ public enum FootnotePlacement
     Global,
 }
 
+/// <summary>
+/// The letters that tell apart the references of a note that several references lead to: the references read
+/// <c>[4a]</c>, <c>[4b]</c> and the links back of the note <c>4a, 4b</c> (Preferences → Footnotes).
+/// </summary>
+public enum FootnoteLetterStyle
+{
+    /// <summary>a, b, c… z, aa, ab…</summary>
+    LowerLatin,
+
+    /// <summary>A, B, C… Z, AA, AB…</summary>
+    UpperLatin,
+
+    /// <summary>i, ii, iii, iv…</summary>
+    LowerRoman,
+}
+
 /// <summary>Which part of a footnote a position is in.</summary>
 public enum FootnoteSide
 {

@@ -13,6 +13,7 @@ using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.App.ViewModels;
+using Signet.Core.Footnotes;
 using Signet.Core.Misc;
 using Signet.Core.Spellcheck;
 using Signet.Core.Themes;
@@ -172,6 +173,22 @@ public sealed class PreferencesViewModelTests
         sut.ApplyCommand.Execute(null);
 
         host.Settings.ConfirmFootnoteRemoval.Should().BeTrue();
+    }
+
+    [Fact]
+    public void The_footnote_letter_style_starts_from_settings_and_persists_on_apply()
+    {
+        using TestHost host = new();
+        PreferencesViewModel sut = NewOn(host);
+        sut.FootnoteLetterStyle.Should().Be(FootnoteLetterStyle.LowerLatin, "a, b is the default");
+        PreferencesViewModel.AvailableFootnoteLetterStyles.Should().Equal(
+            FootnoteLetterStyle.LowerLatin, FootnoteLetterStyle.UpperLatin, FootnoteLetterStyle.LowerRoman);
+
+        sut.FootnoteLetterStyle = FootnoteLetterStyle.LowerRoman;
+        sut.ApplyCommand.Execute(null);
+
+        host.Settings.FootnoteLetterStyle.Should().Be(FootnoteLetterStyle.LowerRoman);
+        NewOn(host).FootnoteLetterStyle.Should().Be(FootnoteLetterStyle.LowerRoman);
     }
 
     [Fact]

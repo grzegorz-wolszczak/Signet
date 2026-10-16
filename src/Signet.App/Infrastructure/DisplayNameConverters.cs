@@ -15,4 +15,9 @@ public static class DisplayNameConverters
     public static readonly IValueConverter EditionPagePosition =
         new FuncValueConverter<Core.Misc.EditionPagePosition, string>(
             value => Strings.TryGet("EditionPagePosition_" + value) ?? value.ToString());
+
+    /// <summary><see cref="Core.Footnotes.FootnoteLetterStyle"/> → "a, b, c…" / "A, B, C…"… (keys <c>FootnoteLetterStyle_*</c>).</summary>
+    public static readonly IValueConverter FootnoteLetterStyle =
+        new FuncValueConverter<Core.Footnotes.FootnoteLetterStyle, string>(
+            value => Strings.TryGet("FootnoteLetterStyle_" + value) ?? value.ToString());
 }

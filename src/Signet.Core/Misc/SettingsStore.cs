@@ -645,6 +645,19 @@ public sealed class SettingsStore
         set => Write("footnote_group_by_chapter", value);
     }
 
+    /// <summary>
+    /// Preferences → Footnotes: the letters of the references of a note that several references lead to (a, b by
+    /// default). Only notes that become shared from now on take it; shared notes of a book keep their letters.
+    /// </summary>
+    public FootnoteLetterStyle FootnoteLetterStyle
+    {
+        get => Enum.TryParse(ReadString("footnote_letter_style", nameof(FootnoteLetterStyle.LowerLatin)), ignoreCase: true, out FootnoteLetterStyle parsed)
+            && Enum.IsDefined(parsed)
+            ? parsed
+            : FootnoteLetterStyle.LowerLatin;
+        set => Write("footnote_letter_style", value.ToString());
+    }
+
     /// <summary>"Add Footnote": whether the last footnote was added to the global notes (the dialog's default).</summary>
     public bool FootnoteGlobalPlacement
     {
