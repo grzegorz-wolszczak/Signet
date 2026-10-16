@@ -15,7 +15,8 @@ namespace Signet.App.ViewModels;
 /// A row of the tree of the "Convert Footnotes of Other Origin" dialog: a file with footnotes of other origin, a
 /// footnote (<see cref="FootnoteConversionItemViewModel"/>) or another link to a footnote. The columns show
 /// <see cref="Title"/>, <see cref="Kind"/>, <see cref="Reference"/> and <see cref="Note"/>; the panel under the tree
-/// shows <see cref="DetailTitle"/>, <see cref="DetailWarnings"/> and <see cref="Places"/> of the selected row.
+/// shows <see cref="DetailTitle"/>, <see cref="DetailWarnings"/>, <see cref="DetailNotices"/> and <see cref="Places"/> of the
+/// selected row.
 /// </summary>
 public abstract partial class FootnoteConversionNode : ObservableObject
 {
@@ -66,6 +67,9 @@ public abstract partial class FootnoteConversionNode : ObservableObject
 
     /// <summary>What needs a look, or why it cannot be converted (the panel under the tree).</summary>
     public virtual IReadOnlyList<string> DetailWarnings => Array.Empty<string>();
+
+    /// <summary>What the conversion does besides the usual, for information (the panel under the tree).</summary>
+    public virtual IReadOnlyList<string> DetailNotices => Array.Empty<string>();
 
     /// <summary>The places of the row (file, line, text) with "Go to" — computed when the row is first shown in the panel.</summary>
     public IReadOnlyList<FootnoteConversionPlace> Places => _places ??= CreatePlaces();

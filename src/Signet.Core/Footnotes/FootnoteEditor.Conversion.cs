@@ -32,13 +32,26 @@ public enum ConversionWarning
     FirstBlockNotParagraph,
 }
 
+/// <summary>
+/// What the conversion of a footnote of other origin does besides the usual (<see cref="ConversionItem.Notices"/>): for
+/// information only, an item with notices is selected by default.
+/// </summary>
+public enum ConversionNotice
+{
+    /// <summary>Several references lead to the note: it becomes Signet's shared note, its references <c>[4a]</c>, <c>[4b]</c>.</summary>
+    SharedNote,
+
+    /// <summary>The note is in the file of a reference, but references from other files lead to it too: it becomes global.</summary>
+    BecomesGlobal,
+}
+
 /// <summary>A footnote of other origin in the conversion plan (<see cref="FootnoteEditor.PlanConversion"/>).</summary>
-/// <param name="Footnote">The footnote.</param>
+/// <param name="Footnote">The footnote: the first reference of its note.</param>
 /// <param name="Marker">The text of its reference.</param>
 /// <param name="NewNumber">The number it gets.</param>
 /// <param name="CanConvert">
-/// Whether it can be converted: <c>false</c> when several references (links that look like footnote markers, or
-/// <c>noteref</c>) lead to its note — Signet's footnote has one. Other links to it are rewritten.
+/// Whether it can be converted: <c>false</c> when its reference or its note is not found, or when a link that looks
+/// like a reference but is not one of the note's leads to it. Other links to it are rewritten.
 /// </param>
 /// <param name="Warnings">What needs a look (an item with warnings is not selected by default).</param>
 /// <param name="Links">
@@ -55,6 +68,15 @@ public sealed record ConversionItem(
     /// <see cref="FootnoteEditor.LocateReferenceRange"/>), at the time of the plan; <c>null</c> when it was not found.
     /// </summary>
     public (int Start, int End)? ReferenceRange { get; init; }
+
+    /// <summary>
+    /// All the references of its note in reading order (<see cref="Footnote"/> first); more than one for a shared note,
+    /// whose references are all converted.
+    /// </summary>
+    public IReadOnlyList<Footnote> References { get; init; } = Array.Empty<Footnote>();
+
+    /// <summary>What the conversion does besides the usual (for information; the item stays selected).</summary>
+    public IReadOnlyList<ConversionNotice> Notices { get; init; } = Array.Empty<ConversionNotice>();
 
     /// <summary>The files of the other links that lead to it, each once.</summary>
     public IReadOnlyList<string> OtherLinks =>
@@ -177,6 +199,10 @@ public static partial class FootnoteEditor
         Dictionary<HtmlResource, int> local = new(ReferenceEqualityComparer.Instance);
         int global = 0;
         List<ConversionItem> items = new();
+        Dictionary<(string BookPath, string Id), List<Footnote>> referencesOf = footnotes
+            .GroupBy(f => (f.NoteFile.BookPath, f.NoteId))
+            .ToDictionary(g => g.Key, g => g.ToList());
+
         // A note counts at its first reference and is one item of the plan.
         foreach (Footnote footnote in footnotes.Where(f => f.ReferenceIndex == 0))
         {
@@ -185,7 +211,7 @@ public static partial class FootnoteEditor
                 : ++global;
             if (!footnote.IsSignet)
             {
-                items.Add(PlanItem(footnote, number, links, Parsed));
+                items.Add(PlanItem(referencesOf[(footnote.NoteFile.BookPath, footnote.NoteId)], number, links, Parsed));
             }
         }
 
@@ -194,13 +220,31 @@ public static partial class FootnoteEditor
     }
 
     private static ConversionItem PlanItem(
-        Footnote footnote,
+        List<Footnote> references,
         int number,
         Dictionary<(string Target, string Fragment), List<BookLink>> links,
         Func<HtmlResource, (string Text, TagLister Tags)> parsed)
     {
+        Footnote footnote = references[0];
         (string referenceText, TagLister referenceTags) = parsed(footnote.ReferenceFile);
         Anchor? anchor = FindAnchor(referenceTags, referenceText, footnote.ReferenceHref, footnote.ReferenceOccurrence);
+
+        // Where the tags of all the references of the note start.
+        HashSet<(HtmlResource File, int Position)> referenceTagsAt = new();
+        bool allFound = true;
+        foreach (Footnote reference in references)
+        {
+            (string fileText, TagLister fileTags) = parsed(reference.ReferenceFile);
+            if (FindAnchor(fileTags, fileText, reference.ReferenceHref, reference.ReferenceOccurrence) is { } found)
+            {
+                referenceTagsAt.Add((reference.ReferenceFile, found.Start));
+            }
+            else
+            {
+                allFound = false;
+            }
+        }
+
         string marker = anchor is null ? string.Empty : PlainText(referenceText[anchor.InnerStart..anchor.InnerEnd]);
         (string noteText, TagLister noteTags) = parsed(footnote.NoteFile);
         Element? note = FindElementById(noteTags, noteText, footnote.NoteId);
@@ -212,9 +256,12 @@ public static partial class FootnoteEditor
             links.TryGetValue((target, fragment), out List<BookLink>? found) ? found.Where(l => !InNote(l)).ToList() : new List<BookLink>();
 
         List<BookLink> toNote = LinksTo(footnote.NoteFile.BookPath, footnote.NoteId);
-        List<BookLink> toReference = footnote.ReferenceId.Length == 0
-            ? new List<BookLink>()
-            : LinksTo(footnote.ReferenceFile.BookPath, footnote.ReferenceId);
+        List<BookLink> toReference = references
+            .Where(r => r.ReferenceId.Length > 0)
+            .Select(r => (r.ReferenceFile.BookPath, r.ReferenceId))
+            .Distinct()
+            .SelectMany(r => LinksTo(r.BookPath, r.ReferenceId))
+            .ToList();
 
         List<ConversionWarning> warnings = new();
         Match numeric = SingleNumber.Match(marker);
@@ -228,10 +275,9 @@ public static partial class FootnoteEditor
         }
 
         bool IsTheReference(BookLink link) =>
-            anchor is not null && ReferenceEquals(link.Owner, footnote.ReferenceFile) && link.Position == anchor.Start;
+            link.Owner is HtmlResource html && referenceTagsAt.Contains((html, link.Position));
 
         bool IsReference(BookLink link) => link.Position >= 0 && LooksLikeReference(link);
-        int references = toNote.Count(l => IsTheReference(l) || IsReference(l));
         List<ConversionLink> others = toNote.Where(l => !IsTheReference(l))
             .Select(l => new ConversionLink(l.Owner, l.Position, IsReference(l)))
             .Concat(toReference.Select(l => new ConversionLink(l.Owner, l.Position, false)))
@@ -241,9 +287,7 @@ public static partial class FootnoteEditor
             warnings.Add(ConversionWarning.LinkedElsewhere);
         }
 
-        Anchor? backlink = note is not null && footnote.ReferenceId.Length > 0
-            ? FindBacklink(noteTags, noteText, note, footnote.ReferenceId)
-            : null;
+        Anchor? backlink = note is null ? null : NoteBacklink(noteTags, noteText, note, references).Backlink;
         if (backlink is null)
         {
             warnings.Add(ConversionWarning.NoBacklink);
@@ -262,9 +306,23 @@ public static partial class FootnoteEditor
         // Block tags separate words (the paragraphs of the note do not run together), inline ones do not.
         string text = WebUtility.HtmlDecode(Tag.Replace(BlockTag.Replace(content, " "), string.Empty));
         text = Regex.Replace(text, "\\s+", " ", RegexOptions.CultureInvariant).Trim();
-        return new ConversionItem(footnote, marker, number, references <= 1, warnings, others, text)
+        List<ConversionNotice> notices = new();
+        if (references.Count > 1)
+        {
+            notices.Add(ConversionNotice.SharedNote);
+        }
+
+        if (footnote.Placement == FootnotePlacement.Global && references.Any(r => ReferenceEquals(r.ReferenceFile, footnote.NoteFile)))
+        {
+            notices.Add(ConversionNotice.BecomesGlobal);
+        }
+
+        bool canConvert = anchor is not null && note is not null && allFound && !others.Any(l => l.IsReference);
+        return new ConversionItem(footnote, marker, number, canConvert, warnings, others, text)
         {
             ReferenceRange = anchor is null ? null : (anchor.OuterStart, anchor.OuterEnd),
+            References = references,
+            Notices = notices,
         };
     }
 
@@ -280,7 +338,8 @@ public static partial class FootnoteEditor
     {
         ArgumentNullException.ThrowIfNull(book);
         ArgumentNullException.ThrowIfNull(request);
-        List<Footnote> selected = request.Items.Where(i => i.CanConvert && !i.Footnote.IsSignet).Select(i => i.Footnote).ToList();
+        List<ConversionItem> items = request.Items.Where(i => i.CanConvert && !i.Footnote.IsSignet).ToList();
+        List<Footnote> selected = items.Select(i => i.Footnote).ToList();
         if (selected.Count == 0)
         {
             return new ConversionResult(0, Array.Empty<string>(), Array.Empty<ConversionProblem>());
@@ -308,9 +367,11 @@ public static partial class FootnoteEditor
         Dictionary<(string BookPath, string Id), (string BookPath, string Id)> moves = new();
         HashSet<HtmlResource> touched = new(ReferenceEqualityComparer.Instance);
         List<(string TempId, string Expected)> converted = new();
-        foreach (Footnote footnote in selected)
+        foreach (ConversionItem item in items)
         {
-            converted.Add(ConvertOne(footnote, footnote.Placement == FootnotePlacement.Local ? footnote.ReferenceFile : target!,
+            Footnote footnote = item.Footnote;
+            IReadOnlyList<Footnote> references = item.References.Count > 0 ? item.References : new[] { footnote };
+            converted.Add(ConvertOne(references, footnote.Placement == FootnotePlacement.Local ? footnote.ReferenceFile : target!,
                 groupOf, request.KeepClasses, epub3, linked, moves, touched));
         }
 
@@ -370,15 +431,85 @@ public static partial class FootnoteEditor
         return new ConversionResult(selected.Count, removed, problems);
     }
 
-    // Converts one footnote; returns its temporary note id and the text its note must keep.
+    // Converts one footnote (all the references of its note, the last first: the occurrences of the earlier ones in a
+    // file stay as they are); returns its temporary note id and the text its note must keep.
     private static (string TempId, string Expected) ConvertOne(
-        Footnote footnote, HtmlResource target, Dictionary<string, int> groupOf, bool keepClasses, bool epub3,
+        IReadOnlyList<Footnote> references, HtmlResource target, Dictionary<string, int> groupOf, bool keepClasses, bool epub3,
         HashSet<(string BookPath, string Id)> linked, Dictionary<(string BookPath, string Id), (string BookPath, string Id)> moves,
         HashSet<HtmlResource> touched)
     {
+        Footnote footnote = references[0];
         bool local = footnote.Placement == FootnotePlacement.Local;
         string noteId = "fn-new-" + Ulid.NewUlid().ToString().ToLowerInvariant();
-        string referenceId = noteId + "-ref";
+        List<string> referenceIds = references
+            .Select((_, i) => noteId + "-ref" + (i == 0 ? string.Empty : "-" + i.ToString(CultureInfo.InvariantCulture)))
+            .ToList();
+        for (int i = references.Count - 1; i >= 0; i--)
+        {
+            ConvertReference(references[i], referenceIds[i], target, noteId, keepClasses, epub3, moves, touched);
+        }
+
+        // The note: its text without the link back, in Signet's template.
+        HtmlResource noteFile = footnote.NoteFile;
+        string text = noteFile.GetText();
+        TagLister tags = new(text);
+        Element note = FindElementById(tags, text, footnote.NoteId)!;
+        (Anchor? backlink, int backTo) = NoteBacklink(tags, text, note, references);
+        (string content, _) = CutContent(tags, text, note, backlink);
+        List<string> noteClasses = keepClasses ? Classes(text, tags.At(note.OpenIndex)).ToList() : new List<string>();
+        string tag = epub3 ? "aside" : "div";
+        string open = "<" + tag + " class=\"" + JoinClasses(NoteClass, noteClasses) + "\""
+            + (!epub3 ? string.Empty : local ? " epub:type=\"footnote\"" : " epub:type=\"endnote\"")
+            + " id=\"" + noteId + "\">";
+        string newBacklink = "<a href=\"" + Encode(Href(target.BookPath, references[backTo].ReferenceFile.BookPath, referenceIds[backTo])) + "\">0.</a>";
+        string markup = open + NoteInside(NoteBlocks(content, keepClasses), newBacklink) + "</" + tag + ">";
+
+        // Ids inside the note follow it to another file.
+        if (!ReferenceEquals(noteFile, target))
+        {
+            foreach (string id in MarkupEdits.CollectIds(content))
+            {
+                moves[(noteFile.BookPath, id)] = (target.BookPath, id);
+            }
+        }
+
+        (int noteStart, int noteEnd) = WholeLines(text, note.Start, note.End);
+        text = text.Remove(noteStart, noteEnd - noteStart);
+        noteFile.SetText(RemoveEmptyAncestors(text, noteStart, noteFile.BookPath, linked));
+        touched.Add(noteFile);
+
+        if (!local && groupOf.TryGetValue(footnote.NoteId, out int group))
+        {
+            InsertIntoGroup(target, group, markup);
+        }
+        else
+        {
+            InsertNote(target, markup, local ? FootnotePlacement.Local : FootnotePlacement.Global, epub3);
+        }
+
+        moves[(noteFile.BookPath, footnote.NoteId)] = (target.BookPath, noteId);
+        return (noteId, Compact(PlainText(content)));
+    }
+
+    // The link back of a note of other origin and the reference it returns to (the first reference without one).
+    private static (Anchor? Backlink, int Reference) NoteBacklink(TagLister tags, string text, Element note, IReadOnlyList<Footnote> references)
+    {
+        for (int i = 0; i < references.Count; i++)
+        {
+            if (references[i].ReferenceId.Length > 0 && FindBacklink(tags, text, note, references[i].ReferenceId) is { } backlink)
+            {
+                return (backlink, i);
+            }
+        }
+
+        return (null, 0);
+    }
+
+    // Puts Signet's reference in place of a reference of other origin.
+    private static void ConvertReference(
+        Footnote footnote, string referenceId, HtmlResource target, string noteId, bool keepClasses, bool epub3,
+        Dictionary<(string BookPath, string Id), (string BookPath, string Id)> moves, HashSet<HtmlResource> touched)
+    {
         HtmlResource referenceFile = footnote.ReferenceFile;
 
         // The reference, with the wrappers that held only it and the empty element its link back led to.
@@ -414,52 +545,10 @@ public static partial class FootnoteEditor
 
         referenceFile.SetText(Apply(text, edits));
         touched.Add(referenceFile);
-
-        // The note: its text without the link back, in Signet's template.
-        HtmlResource noteFile = footnote.NoteFile;
-        text = noteFile.GetText();
-        tags = new TagLister(text);
-        Element note = FindElementById(tags, text, footnote.NoteId)!;
-        Anchor? backlink = returnId is null ? null : FindBacklink(tags, text, note, returnId);
-        (string content, _) = CutContent(tags, text, note, backlink);
-        List<string> noteClasses = keepClasses ? Classes(text, tags.At(note.OpenIndex)).ToList() : new List<string>();
-        string tag = epub3 ? "aside" : "div";
-        string open = "<" + tag + " class=\"" + JoinClasses(NoteClass, noteClasses) + "\""
-            + (!epub3 ? string.Empty : local ? " epub:type=\"footnote\"" : " epub:type=\"endnote\"")
-            + " id=\"" + noteId + "\">";
-        string newBacklink = "<a href=\"" + Encode(Href(target.BookPath, referenceFile.BookPath, referenceId)) + "\">0.</a>";
-        string markup = open + NoteInside(NoteBlocks(content, keepClasses), newBacklink) + "</" + tag + ">";
-
-        // Ids inside the note follow it to another file.
-        if (!ReferenceEquals(noteFile, target))
-        {
-            foreach (string id in MarkupEdits.CollectIds(content))
-            {
-                moves[(noteFile.BookPath, id)] = (target.BookPath, id);
-            }
-        }
-
-        (int noteStart, int noteEnd) = WholeLines(text, note.Start, note.End);
-        text = text.Remove(noteStart, noteEnd - noteStart);
-        noteFile.SetText(RemoveEmptyAncestors(text, noteStart, noteFile.BookPath, linked));
-        touched.Add(noteFile);
-
-        if (!local && groupOf.TryGetValue(footnote.NoteId, out int group))
-        {
-            InsertIntoGroup(target, group, markup);
-        }
-        else
-        {
-            InsertNote(target, markup, local ? FootnotePlacement.Local : FootnotePlacement.Global, epub3);
-        }
-
-        moves[(noteFile.BookPath, footnote.NoteId)] = (target.BookPath, noteId);
         if (returnId is not null)
         {
             moves[(referenceFile.BookPath, returnId)] = (referenceFile.BookPath, referenceId);
         }
-
-        return (noteId, Compact(PlainText(content)));
     }
 
     // The inside of a note without its link back (and what is left of its marker next to it), and whether the link back
@@ -1040,7 +1129,7 @@ public static partial class FootnoteEditor
             string text = footnote.NoteFile.GetText();
             TagLister tags = new(text);
             if (FindElementById(tags, text, footnote.NoteId) is not { } note
-                || Compact(PlainText(CutContent(tags, text, note, FindBacklink(tags, text, note, footnote.ReferenceId)).Content)) != converted[i].Expected)
+                || Compact(PlainText(ConvertedContent(tags, text, note, footnote))) != converted[i].Expected)
             {
                 problems.Add(new ConversionProblem(ConversionProblemKind.TextChanged, footnote.NoteFile.BookPath, footnote.NoteId));
             }
@@ -1055,6 +1144,18 @@ public static partial class FootnoteEditor
         }
 
         return problems;
+    }
+
+    // The inside of a converted note without its links back ("1." or "1a, 1b.").
+    private static string ConvertedContent(TagLister tags, string text, Element note, Footnote footnote)
+    {
+        if (BacklinkRun(tags, text, note) is not { } run)
+        {
+            return CutContent(tags, text, note, FindBacklink(tags, text, note, footnote.ReferenceId)).Content;
+        }
+
+        int innerStart = tags.At(note.OpenIndex).Pos + tags.At(note.OpenIndex).Len;
+        return text[innerStart..run.Start] + text[run.End..note.CloseStart];
     }
 
     // Text without any whitespace: the layout of the blocks may change, the words may not.

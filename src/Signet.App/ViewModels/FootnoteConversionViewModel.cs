@@ -147,7 +147,13 @@ public sealed partial class FootnoteConversionViewModel : ViewModelBase
     public void Navigate(FootnoteConversionItemViewModel item, FootnoteSide side)
     {
         ArgumentNullException.ThrowIfNull(item);
-        if (FootnoteEditor.Locate(item.Item.Footnote, side) is { } place)
+        Navigate(item.Item.Footnote, side);
+    }
+
+    /// <summary>Opens the file of the reference (one of a shared note's) or of the note of <paramref name="footnote"/>.</summary>
+    internal void Navigate(Footnote footnote, FootnoteSide side)
+    {
+        if (FootnoteEditor.Locate(footnote, side) is { } place)
         {
             _navigate(place.File.BookPath, place.Offset);
         }
@@ -339,6 +345,7 @@ public sealed partial class FootnoteConversionItemViewModel : FootnoteConversion
         Warnings = item.CanConvert
             ? item.Warnings.Select(w => WarningText(w, item)).ToList()
             : new[] { Strings.Get("FootnoteConversionWindow_CannotConvert") };
+        Notices = item.Notices.Select(n => NoticeText(n, item)).ToList();
         Children = item.Links.Select(l => new FootnoteConversionLinkNode(owner, l, footnote.ReferenceFile)).ToArray();
         _isChecked = item.CanConvert && item.Warnings.Count == 0;
     }
@@ -407,6 +414,12 @@ public sealed partial class FootnoteConversionItemViewModel : FootnoteConversion
     /// <inheritdoc />
     public override IReadOnlyList<string> DetailWarnings => Warnings;
 
+    /// <summary>What the conversion does besides the usual (for information: the item stays checked).</summary>
+    public IReadOnlyList<string> Notices { get; }
+
+    /// <inheritdoc />
+    public override IReadOnlyList<string> DetailNotices => Notices;
+
     /// <inheritdoc />
     public override void GoToReference() => _owner.Navigate(this, FootnoteSide.Reference);
 
@@ -430,6 +443,13 @@ public sealed partial class FootnoteConversionItemViewModel : FootnoteConversion
                 Item.NoteText,
                 new RelayCommand(GoToNote)),
         }
+        .Concat(Item.References.Skip(1).Select((reference, i) => new FootnoteConversionPlace(
+            Strings.Format("FootnoteConversionWindow_PlaceOtherReference", (i + 2).ToString(CultureInfo.CurrentCulture)),
+            FootnoteEditor.Locate(reference, FootnoteSide.Reference) is { } at ? Location(at.File, at.Offset) : reference.ReferenceFile.BookPath,
+            FootnoteEditor.LocateReferenceRange(reference) is { } range
+                ? ReferenceText(FootnoteViewModel.Context(range.File.GetText(), range.Start, range.End), cell: false)
+                : string.Empty,
+            new RelayCommand(() => _owner.Navigate(reference, FootnoteSide.Reference)))))
         .Concat(Children.SelectMany(c => c.Places))
         .ToArray();
     }
@@ -439,6 +459,17 @@ public sealed partial class FootnoteConversionItemViewModel : FootnoteConversion
         OnPropertyChanged(nameof(Check));
         Parent?.RefreshCheck();
         _owner.OnItemToggled();
+    }
+
+    /// <summary>The description of a notice of <paramref name="item"/>.</summary>
+    public static string NoticeText(ConversionNotice notice, ConversionItem item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        return notice == ConversionNotice.SharedNote
+            ? Strings.Format(
+                "FootnoteConversionNotice_SharedNote", item.References.Count.ToString(CultureInfo.CurrentCulture),
+                item.NewNumber.ToString(CultureInfo.CurrentCulture))
+            : Strings.Get("FootnoteConversionNotice_" + notice.ToString());
     }
 
     /// <summary>The description of a warning of <paramref name="item"/>.</summary>
@@ -454,11 +485,10 @@ public sealed partial class FootnoteConversionItemViewModel : FootnoteConversion
         };
     }
 
-    private string ReferenceAround(bool cell)
-    {
-        (string before, string after) = _context ??= ReferenceContext(Item);
-        return ReferenceText(before, Item.Marker, after, cell);
-    }
+    private string ReferenceAround(bool cell) => ReferenceText(_context ??= ReferenceContext(Item), cell);
+
+    private string ReferenceText((string Before, string After) context, bool cell) =>
+        ReferenceText(context.Before, Item.Marker, context.After, cell);
 
     // The text before and after the reference (where the plan found it: a book can have thousands of footnotes, so
     // the files are not parsed again).

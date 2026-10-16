@@ -4746,7 +4746,16 @@ Konwertować mimo to?</value>
     <value>Analizowanie przypisów…</value>
   </data>
   <data name="FootnoteConversionWindow_CannotConvert" xml:space="preserve">
-    <value>Do treści prowadzi kilka odnośników — Signet nie przekonwertuje tego przypisu (zostanie obcy).</value>
+    <value>Signet nie potrafi przekonwertować tego przypisu automatycznie (nie znalazł odnośnika lub notatki albo prowadzi do niej link wyglądający na odnośnik, który nim nie jest) — zostanie obcy.</value>
+  </data>
+  <data name="FootnoteConversionNotice_SharedNote" xml:space="preserve">
+    <value>Do notatki prowadzi {0} odnośników — zostanie jedną notatką wspólną, a jej odnośniki dostaną kolejne litery ([{1}a], [{1}b]…) i każdy swój link powrotny.</value>
+  </data>
+  <data name="FootnoteConversionNotice_BecomesGlobal" xml:space="preserve">
+    <value>Notatka jest w pliku jednego z odnośników, ale prowadzą do niej odnośniki także z innych plików — zostanie przypisem globalnym.</value>
+  </data>
+  <data name="FootnoteConversionWindow_PlaceOtherReference" xml:space="preserve">
+    <value>Odnośnik {0}:</value>
   </data>
   <data name="FootnoteConversionWindow_ProblemsRestored" xml:space="preserve">
     <value>Sprawdzenie po konwersji znalazło problemy, więc przywrócono stan sprzed konwersji:</value>
