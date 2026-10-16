@@ -25,7 +25,6 @@ using Signet.App.Views;
 using Signet.Core.Misc;
 using Signet.Core.Themes;
 using Signet.Core.Spellcheck;
-using Xunit;
 
 namespace Signet.App.UiTests;
 
