@@ -252,6 +252,12 @@
       <Setter Property="FontFamily" Value="{DynamicResource SignetToolTipFontFamily}" />
     </Style>
 
+    <!-- A disabled button (e.g. in a toolbar) still shows its tooltip: it is where the reason for being disabled
+         or the shortcut is written. -->
+    <Style Selector=":is(Button), SplitButton">
+      <Setter Property="ToolTip.ShowOnDisabled" Value="True" />
+    </Style>
+
     <!-- Warning texts in dialogs (e.g. what a risky change would alter): size and color from
          the theme (SignetWarningBrush) and Preferences → Appearance › General › Fonts (UiDensityManager.ApplyWarningAppearance). -->
     <Style Selector="TextBlock.warning">
