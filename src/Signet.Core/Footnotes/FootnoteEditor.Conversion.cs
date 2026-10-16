@@ -137,9 +137,6 @@ public static partial class FootnoteEditor
 
     private static readonly HashSet<string> ListNames = new(StringComparer.OrdinalIgnoreCase) { "ol", "ul", "dl" };
 
-    // The text of a link that looks like a footnote marker: "3", "[3]", "(3)", "3.", "*", "†"…
-    private static readonly Regex MarkerText = new(@"^[\[(]?\s*(\d+|[*†‡§¶#]+)\s*[\])]?\.?$", RegexOptions.CultureInvariant);
-
     // A link of the book: its owner, where its attribute value is, and what it leads to.
     private sealed record BookLink(Resource Owner, int Position, string Target, string Fragment);
 
@@ -180,7 +177,8 @@ public static partial class FootnoteEditor
         Dictionary<HtmlResource, int> local = new(ReferenceEqualityComparer.Instance);
         int global = 0;
         List<ConversionItem> items = new();
-        foreach (Footnote footnote in footnotes)
+        // A note counts at its first reference and is one item of the plan.
+        foreach (Footnote footnote in footnotes.Where(f => f.ReferenceIndex == 0))
         {
             int number = footnote.Placement == FootnotePlacement.Local
                 ? local[footnote.ReferenceFile] = local.GetValueOrDefault(footnote.ReferenceFile) + 1
@@ -924,7 +922,7 @@ public static partial class FootnoteEditor
         }
 
         int close = tags.FindCloseTagForOpen(index);
-        return close >= 0 && MarkerText.IsMatch(PlainText(text[(tag.Pos + tag.Len)..tags.At(close).Pos]));
+        return close >= 0 && FootnoteLinks.IsMarker(PlainText(text[(tag.Pos + tag.Len)..tags.At(close).Pos]));
     }
 
     private static (string BookPath, string Fragment)? Resolve(Resource owner, string href)

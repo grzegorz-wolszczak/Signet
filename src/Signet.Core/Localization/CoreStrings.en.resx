@@ -273,7 +273,7 @@
     <value>The link back "{1}" in the footnote "#{0}" does not lead to any reference to this footnote.</value>
   </data>
   <data name="Validation_FootnoteManyRefs" xml:space="preserve">
-    <value>{1} references lead to the footnote "#{0}", but a link back can return to only one of them.</value>
+    <value>{1} references lead to the footnote "#{0}", but the note has no link back to some of them.</value>
   </data>
   <data name="Validation_NearColumn" xml:space="preserve">
     <value>{0}.  near column {1}</value>

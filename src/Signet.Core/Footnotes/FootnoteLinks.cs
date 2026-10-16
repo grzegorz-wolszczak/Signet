@@ -1,15 +1,22 @@
 using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 using AngleSharp.Dom;
 
 namespace Signet.Core.Footnotes;
 
 /// <summary>
-/// When the link back of a note returns to a reference — the rule shared by <see cref="FootnoteScanner"/> and
-/// <c>FootnoteValidator</c>, so that both see the same pairs.
+/// When the link back of a note returns to a reference, and which links are references — the rules shared by
+/// <see cref="FootnoteScanner"/>, <see cref="FootnoteEditor"/> and <c>FootnoteValidator</c>, so that all of them see
+/// the same pairs.
 /// </summary>
 internal static class FootnoteLinks
 {
+    // The text of a link that looks like a footnote marker: "3", "[3]", "(3)", "3.", "*", "†", and the marker of a
+    // reference to a shared note, "[3a]", "[3B]", "[3ii]".
+    private static readonly Regex MarkerText = new(
+        @"^[\[(]?\s*(\d+(?:[a-z]+|[A-Z]+)?|[*†‡§¶#]+)\s*[\])]?\.?$", RegexOptions.CultureInvariant);
+
     // The elements that end a run of text: an empty element right before a reference must be in the same one.
     private static readonly string[] BlockNames =
     {
@@ -28,6 +35,23 @@ internal static class FootnoteLinks
         || target.Contains(anchor)
         || anchor.Contains(target)
         || (string.IsNullOrWhiteSpace(target.TextContent) && IsRightBefore(target, anchor));
+
+    /// <summary>Whether the text (trimmed) looks like a footnote marker.</summary>
+    public static bool IsMarker(string text) => MarkerText.IsMatch(text.Trim());
+
+    /// <summary>
+    /// Whether the link looks like a footnote reference: marked as one (<c>epub:type="noteref"</c>,
+    /// <c>role="doc-noteref"</c>), Signet's reference (<see cref="FootnoteEditor.ReferenceClass"/>), or a marker for its
+    /// text. A plain link to a note ("see note 2") is not one.
+    /// </summary>
+    public static bool IsReferenceLike(IElement anchor) =>
+        Tokens(anchor.GetAttribute("epub:type")).Contains("noteref", StringComparer.OrdinalIgnoreCase)
+        || Tokens(anchor.GetAttribute("role")).Contains("doc-noteref", StringComparer.OrdinalIgnoreCase)
+        || Tokens(anchor.GetAttribute("class")).Contains(FootnoteEditor.ReferenceClass, StringComparer.Ordinal)
+        || IsMarker(anchor.TextContent ?? string.Empty);
+
+    private static string[] Tokens(string? value) =>
+        value?.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
 
     // Whether only tags and whitespace stand between the end of `target` and `anchor`, both in the same block.
     private static bool IsRightBefore(IElement target, IElement anchor)
