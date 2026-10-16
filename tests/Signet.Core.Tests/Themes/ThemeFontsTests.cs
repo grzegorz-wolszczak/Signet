@@ -42,6 +42,31 @@ public sealed class ThemeFontsTests
     }
 
     [Fact]
+    public void The_book_browser_fonts_come_from_the_settings_and_from_the_theme_while_it_uses_its_fonts()
+    {
+        using TempDir dir = new();
+        SettingsStore settings = new(dir.Combine("settings.xml"))
+        {
+            BookBrowserAppearance = new BookBrowserAppearance("Consolas", 14, string.Empty, 0, 30, 4),
+        };
+
+        var fromSettings = ThemeFontKeys.FromSettings(settings);
+
+        fromSettings[ThemeFontKeys.BookBrowserItems].Should().Be(new ThemeFont("Consolas", 14));
+        fromSettings[ThemeFontKeys.BookBrowserHeaders].Should().Be(new ThemeFont(string.Empty, 0));
+
+        Theme theme = NewTheme() with
+        {
+            Fonts = NewTheme().Fonts.SetItem(ThemeFontKeys.BookBrowserHeaders, new ThemeFont("Arial", 11)),
+        };
+
+        new ThemeFonts(theme, Resolver(theme)).BookBrowser(settings.BookBrowserAppearance)
+            .Should().Be(settings.BookBrowserAppearance, "the theme does not turn its fonts on");
+        new ThemeFonts(theme with { UseThemeFonts = true }, Resolver(theme)).BookBrowser(settings.BookBrowserAppearance)
+            .Should().Be(new BookBrowserAppearance("Consolas", 14, "Arial", 11, 30, 4), "the indent and the spacing stay the setting's");
+    }
+
+    [Fact]
     public void The_fonts_of_a_theme_count_only_while_it_turns_them_on()
     {
         Theme theme = NewTheme() with

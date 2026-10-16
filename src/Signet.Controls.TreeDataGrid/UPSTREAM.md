@@ -46,6 +46,9 @@ history.
 - **Signet additions** (small API changes for Signet's views):
   - `TreeDataGridCell.BeginEdit()` is public (upstream: `protected internal`), so a command can start editing a
     cell, not only an edit gesture.
+  - `TreeDataGridExpanderCell.IndentSize` (default 20): the indentation of one tree level in pixels. Upstream the
+    template multiplies the level by a constant 20 (`IndentConverter`, now unused); the cell computes its padding
+    itself (`IndentPadding`, the template binds to it), so a style can set another size.
 - **Fixes:**
   - `TreeDataGridExpanderCell`: when the row refuses to expand (its children are empty), the expander toggle
     (bound two-way) is put back in step with the row; upstream left it checked, inverting later clicks.

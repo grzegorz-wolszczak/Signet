@@ -767,6 +767,50 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
+    public void Book_Browser_look_is_saved_with_the_others_and_restored_with_the_appearance_defaults()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        vm.BookBrowserIndent.Should().Be(20);
+        vm.BookBrowserRowSpacing.Should().Be(0);
+
+        vm.BookBrowserIndent = 35;
+        vm.BookBrowserRowSpacing = 4;
+        vm.BookBrowserItemsFontFamily = "Consolas";
+        vm.BookBrowserItemsFontSize = 14;
+        vm.BookBrowserHeaderFontFamily = "Arial";
+        vm.BookBrowserHeaderFontSize = 11;
+
+        host.Settings.BookBrowserAppearance.Should().Be(BookBrowserAppearance.Default, "not saved yet");
+        vm.ApplyCommand.Execute(null);
+        host.Settings.BookBrowserAppearance.Should().Be(new BookBrowserAppearance("Consolas", 14, "Arial", 11, 35, 4));
+
+        vm.RestoreAppearanceDefaultsCommand.Execute(null);
+
+        (vm.BookBrowserIndent, vm.BookBrowserRowSpacing, vm.BookBrowserItemsFontFamily, vm.BookBrowserHeaderFontSize)
+            .Should().Be((20, 0, string.Empty, 0));
+    }
+
+    [Fact]
+    public void Book_Browser_Fonts_page_has_rows_for_the_names_and_for_the_headers_before_the_tooltip()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+
+        vm.BookBrowserFonts.Fonts.Select(f => f.Key).Should().Equal(
+            "BookBrowserItems", "BookBrowserHeaders", "Tooltip" + TooltipArea.BookBrowser);
+        FontSettingViewModel items = vm.BookBrowserFonts.Fonts[0];
+        items.Placeholder.Should().Be(vm.EffectiveUiFontFamily, "an empty typeface is the interface font");
+
+        items.Size = 15;
+        items.Family = "Consolas";
+
+        vm.BookBrowserItemsFontSize.Should().Be(15);
+        vm.BookBrowserItemsFontFamily.Should().Be("Consolas");
+        vm.BookBrowserFonts.Fonts[1].Size.Should().Be(0, "the headers have a font of their own");
+    }
+
+    [Fact]
     public void The_preferences_window_is_modal_by_default_and_it_is_a_setting_saved_with_the_others()
     {
         (TestHost host, PreferencesViewModel vm) = New();

@@ -5971,4 +5971,28 @@ Close the tab</value>
   <data name="FileInUseDialog_CloseDescription" xml:space="preserve">
     <value>Closes this instance of Signet; the file stays open in the other one.</value>
   </data>
+  <data name="PreferencesWindow_BookBrowserItemsFont" xml:space="preserve">
+    <value>Folder and file names, Semantics and Properties cells</value>
+  </data>
+  <data name="PreferencesWindow_BookBrowserHeadersFont" xml:space="preserve">
+    <value>Column headers (Name, Semantics, Properties)</value>
+  </data>
+  <data name="FontPreview_BookBrowserItems" xml:space="preserve">
+    <value>Text/chapter01.xhtml</value>
+  </data>
+  <data name="FontPreview_BookBrowserHeaders" xml:space="preserve">
+    <value>Name   Semantics   Properties</value>
+  </data>
+  <data name="PreferencesWindow_FontSizeZeroAsInterface" xml:space="preserve">
+    <value>Size 0 = as in the interface</value>
+  </data>
+  <data name="PreferencesWindow_BookBrowserTreeLook" xml:space="preserve">
+    <value>File tree look</value>
+  </data>
+  <data name="PreferencesWindow_BookBrowserIndent" xml:space="preserve">
+    <value>Indentation of the files in a folder (px)</value>
+  </data>
+  <data name="PreferencesWindow_BookBrowserRowSpacing" xml:space="preserve">
+    <value>Space between the rows of the tree (px)</value>
+  </data>
 </root>

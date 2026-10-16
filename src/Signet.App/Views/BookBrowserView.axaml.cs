@@ -4,9 +4,12 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Platform.Storage;
+using Avalonia.Styling;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using Signet.App.Infrastructure;
@@ -18,6 +21,7 @@ using Signet.Controls.TreeDataGrid.Primitives;
 using Signet.Core;
 using Signet.Core.BookManipulation;
 using Signet.Core.MainUI;
+using Signet.Core.Misc;
 using Signet.Core.Resources;
 using Signet.Core.Semantics;
 
@@ -70,12 +74,78 @@ public partial class BookBrowserView : UserControl
         // Tunnel: in the bubble phase Enter is already consumed before it reaches the tree.
         Tree.AddHandler(KeyDownEvent, OnRenameEditorKeyDown, RoutingStrategies.Tunnel);
         Tree.AddHandler(LostFocusEvent, OnRenameEditorLostFocus, RoutingStrategies.Bubble);
+        AttachedToVisualTree += (_, _) =>
+        {
+            AppTheme.Changed += OnAppThemeChanged;
+            ApplyAppearance();
+        };
+        DetachedFromVisualTree += (_, _) => AppTheme.Changed -= OnAppThemeChanged;
+    }
+
+    private void OnAppThemeChanged(object? sender, EventArgs e) => ApplyAppearance();
+
+    // The styles of the tree that follow the settings of its look (Preferences › Appearance › Book Browser).
+    private Style[] _appearanceStyles = Array.Empty<Style>();
+
+    /// <summary>
+    /// Applies the look of the tree: the font of the names and of the cells of the other columns, the font of the
+    /// column headers, the indentation of a level and the space between the rows. A font left to the interface keeps
+    /// the interface font (nothing is set). The styles of the previous look are replaced.
+    /// </summary>
+    private void ApplyAppearance()
+    {
+        foreach (Style old in _appearanceStyles)
+        {
+            Tree.Styles.Remove(old);
+        }
+
+        if (_boundViewModel is null)
+        {
+            _appearanceStyles = Array.Empty<Style>();
+            return;
+        }
+
+        BookBrowserAppearance look = _boundViewModel.Appearance;
+
+        // Every cell: the names (the template of the Name column) and the text of the other columns.
+        Style cells = new(x => x.Is<TreeDataGridCell>());
+        AddFont(cells, look.ItemsFontFamily, look.ItemsFontSize);
+
+        // Not a descendant of a cell: the headers keep the interface font unless they have a font of their own.
+        Style headers = new(x => x.OfType<TreeDataGridColumnHeader>());
+        AddFont(headers, look.HeaderFontFamily, look.HeaderFontSize);
+
+        Style rows = new(x => x.OfType<TreeDataGridRow>());
+        rows.Setters.Add(new Setter(MarginProperty, new Thickness(0, 0, 0, look.RowSpacing)));
+
+        Style indent = new(x => x.OfType<TreeDataGridExpanderCell>());
+        indent.Setters.Add(new Setter(TreeDataGridExpanderCell.IndentSizeProperty, (double)look.Indent));
+
+        _appearanceStyles = new[] { cells, headers, rows, indent };
+        foreach (Style style in _appearanceStyles)
+        {
+            Tree.Styles.Add(style);
+        }
+    }
+
+    private static void AddFont(Style style, string family, int size)
+    {
+        if (family.Length > 0)
+        {
+            style.Setters.Add(new Setter(TemplatedControl.FontFamilyProperty, new FontFamily(family)));
+        }
+
+        if (size > 0)
+        {
+            style.Setters.Add(new Setter(TemplatedControl.FontSizeProperty, (double)size));
+        }
     }
 
     private void OnDataContextChanged(object? sender, EventArgs e)
     {
         if (_boundViewModel is not null)
         {
+            _boundViewModel.AppearanceChanged -= OnAppearanceChanged;
             _boundViewModel.RenameRequested -= OnRenameRequested;
             _boundViewModel.PropertyChanged -= OnViewModelPropertyChanged;
             _boundViewModel.DeleteRequested -= OnDeleteRequested;
@@ -103,6 +173,7 @@ public partial class BookBrowserView : UserControl
 
         if (_boundViewModel is not null)
         {
+            _boundViewModel.AppearanceChanged += OnAppearanceChanged;
             _boundViewModel.RenameRequested += OnRenameRequested;
             _boundViewModel.PropertyChanged += OnViewModelPropertyChanged;
             _boundViewModel.DeleteRequested += OnDeleteRequested;
@@ -123,7 +194,10 @@ public partial class BookBrowserView : UserControl
         }
 
         Tree.Source = _source;
+        ApplyAppearance();
     }
+
+    private void OnAppearanceChanged(object? sender, EventArgs e) => ApplyAppearance();
 
     private void BuildTree(BookBrowserViewModel vm)
     {

@@ -226,6 +226,51 @@ public readonly record struct OpenTagHintAppearance(string FontFamily, int FontS
         FontSize <= 0 ? 0 : Math.Clamp(FontSize, FontSizeMin, FontSizeMax));
 }
 
+/// <summary>
+/// Look of the Book Browser tree: the fonts of the names and of the column headers, the indentation of the files in a
+/// folder and the space between the rows.
+/// </summary>
+/// <param name="ItemsFontFamily">
+/// Typeface of the names of folders and files and of the cells of the other columns; empty = the interface font.
+/// </param>
+/// <param name="ItemsFontSize">Size (px) of those; 0 = the interface size.</param>
+/// <param name="HeaderFontFamily">Typeface of the column headers; empty = the interface font.</param>
+/// <param name="HeaderFontSize">Size (px) of the column headers; 0 = the interface size.</param>
+/// <param name="Indent">Indentation (px) of one level of the tree.</param>
+/// <param name="RowSpacing">Space (px) between two rows.</param>
+public readonly record struct BookBrowserAppearance(
+    string ItemsFontFamily, int ItemsFontSize, string HeaderFontFamily, int HeaderFontSize, int Indent, int RowSpacing)
+{
+    /// <summary>Lower bound of an explicit font size.</summary>
+    public const int FontSizeMin = 6;
+
+    /// <summary>Upper bound of an explicit font size.</summary>
+    public const int FontSizeMax = 72;
+
+    /// <summary>Lower bound of <see cref="Indent"/>.</summary>
+    public const int IndentMin = 0;
+
+    /// <summary>Upper bound of <see cref="Indent"/>.</summary>
+    public const int IndentMax = 60;
+
+    /// <summary>Upper bound of <see cref="RowSpacing"/> (the lower bound is 0).</summary>
+    public const int RowSpacingMax = 20;
+
+    /// <summary>Default values: the interface font, an indentation of 20 px and no space between the rows.</summary>
+    public static BookBrowserAppearance Default => new(string.Empty, 0, string.Empty, 0, 20, 0);
+
+    /// <summary>A copy with the sizes and distances clamped (a font size of 0 stays "as the interface").</summary>
+    public BookBrowserAppearance Normalized() => new(
+        ItemsFontFamily?.Trim() ?? string.Empty,
+        NormalizedFontSize(ItemsFontSize),
+        HeaderFontFamily?.Trim() ?? string.Empty,
+        NormalizedFontSize(HeaderFontSize),
+        Math.Clamp(Indent, IndentMin, IndentMax),
+        Math.Clamp(RowSpacing, 0, RowSpacingMax));
+
+    private static int NormalizedFontSize(int size) => size <= 0 ? 0 : Math.Clamp(size, FontSizeMin, FontSizeMax);
+}
+
 /// <summary>Font settings of the "Insert Special Character" window.</summary>
 /// <param name="FontFamily">Font family.</param>
 /// <param name="FontSize">Size (px).</param>

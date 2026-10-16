@@ -16,6 +16,19 @@ namespace Signet.Controls.TreeDataGrid.Primitives
                 nameof(Indent),
                 o => o.Indent);
 
+        /// <summary>
+        /// Signet: the indentation (in pixels) of one level of the tree; upstream the template multiplies the level by a
+        /// constant 20.
+        /// </summary>
+        public static readonly StyledProperty<double> IndentSizeProperty =
+            AvaloniaProperty.Register<TreeDataGridExpanderCell, double>(nameof(IndentSize), 20);
+
+        /// <summary>Signet: the left padding of the cell for its <see cref="Indent"/> and <see cref="IndentSize"/>.</summary>
+        public static readonly DirectProperty<TreeDataGridExpanderCell, Thickness> IndentPaddingProperty =
+            AvaloniaProperty.RegisterDirect<TreeDataGridExpanderCell, Thickness>(
+                nameof(IndentPadding),
+                o => o.IndentPadding);
+
         public static readonly DirectProperty<TreeDataGridExpanderCell, bool> IsExpandedProperty =
             AvaloniaProperty.RegisterDirect<TreeDataGridExpanderCell, bool>(
                 nameof(IsExpanded),
@@ -31,6 +44,7 @@ namespace Signet.Controls.TreeDataGrid.Primitives
         private Type? _contentType;
         private TreeDataGridElementFactory? _factory;
         private int _indent;
+        private Thickness _indentPadding;
         private bool _isExpanded;
         private IExpanderCell? _model;
         private bool _showExpander;
@@ -38,7 +52,32 @@ namespace Signet.Controls.TreeDataGrid.Primitives
         public int Indent
         {
             get => _indent;
-            private set => SetAndRaise(IndentProperty, ref _indent, value);
+            private set
+            {
+                if (SetAndRaise(IndentProperty, ref _indent, value))
+                    UpdateIndentPadding();
+            }
+        }
+
+        public double IndentSize
+        {
+            get => GetValue(IndentSizeProperty);
+            set => SetValue(IndentSizeProperty, value);
+        }
+
+        public Thickness IndentPadding => _indentPadding;
+
+        protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+        {
+            base.OnPropertyChanged(change);
+            if (change.Property == IndentSizeProperty)
+                UpdateIndentPadding();
+        }
+
+        private void UpdateIndentPadding()
+        {
+            var padding = new Thickness(IndentSize * _indent, 0, 0, 0);
+            SetAndRaise(IndentPaddingProperty, ref _indentPadding, padding);
         }
 
         public bool IsExpanded

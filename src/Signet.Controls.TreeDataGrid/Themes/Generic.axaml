@@ -229,7 +229,7 @@
                     BorderBrush="{TemplateBinding BorderBrush}"
                     BorderThickness="{TemplateBinding BorderThickness}"
                     CornerRadius="{TemplateBinding CornerRadius}"
-                    Padding="{TemplateBinding Indent, Converter={x:Static conv:IndentConverter.Instance}}">
+                    Padding="{TemplateBinding IndentPadding}">
               <DockPanel>
                 <Border DockPanel.Dock="Left"
                         Margin="4 0"

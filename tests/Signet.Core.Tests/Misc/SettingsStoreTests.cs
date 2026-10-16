@@ -108,6 +108,47 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
+    public void The_book_browser_look_defaults_to_the_interface_font_an_indent_of_20_and_no_row_spacing()
+    {
+        using TempDir dir = new();
+        SettingsStore sut = new(dir.Combine("settings.xml"));
+
+        sut.BookBrowserAppearance.Should().Be(BookBrowserAppearance.Default);
+        BookBrowserAppearance.Default.Should().Be(new BookBrowserAppearance(string.Empty, 0, string.Empty, 0, 20, 0));
+    }
+
+    [Fact]
+    public void The_book_browser_look_is_stored_normalized_and_survives_a_reload()
+    {
+        using TempDir dir = new();
+        string path = dir.Combine("settings.xml");
+        SettingsStore writer = new(path)
+        {
+            BookBrowserAppearance = new BookBrowserAppearance(" Consolas ", 500, "Arial", -3, 999, -5),
+        };
+        writer.Save();
+
+        SettingsStore reader = new(path);
+
+        reader.BookBrowserAppearance.Should().Be(new BookBrowserAppearance(
+            "Consolas", BookBrowserAppearance.FontSizeMax, "Arial", 0, BookBrowserAppearance.IndentMax, 0));
+    }
+
+    [Fact]
+    public void Restoring_the_appearance_defaults_clears_the_book_browser_look()
+    {
+        using TempDir dir = new();
+        SettingsStore sut = new(dir.Combine("settings.xml"))
+        {
+            BookBrowserAppearance = new BookBrowserAppearance("Consolas", 14, "Arial", 12, 35, 6),
+        };
+
+        sut.ClearAppearanceSettings();
+
+        sut.BookBrowserAppearance.Should().Be(BookBrowserAppearance.Default);
+    }
+
+    [Fact]
     public void Open_tag_hint_appearance_is_normalized()
     {
         using TempDir dir = new();
