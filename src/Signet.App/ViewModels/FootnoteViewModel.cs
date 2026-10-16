@@ -128,6 +128,26 @@ public sealed partial class FootnoteViewModel : ObservableObject
     public Action? StopConfirmingRemoval { get; set; }
 
     /// <summary>
+    /// Why the edited note cannot change its placement (a global note that references from several files lead to), or
+    /// an empty string: then the other placement cannot be chosen, and this is its tooltip.
+    /// </summary>
+    public string PlacementBlocked
+    {
+        get => _placementBlocked;
+        set
+        {
+            _placementBlocked = value ?? string.Empty;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(CanChangePlacement));
+        }
+    }
+
+    /// <summary>Whether the placement can be changed (<see cref="PlacementBlocked"/> is empty).</summary>
+    public bool CanChangePlacement => PlacementBlocked.Length == 0;
+
+    private string _placementBlocked = string.Empty;
+
+    /// <summary>
     /// How many references lead to the edited note: "Remove" removes all of them, and for more than one it always asks,
     /// naming their number.
     /// </summary>
@@ -206,6 +226,13 @@ public sealed partial class FootnoteViewModel : ObservableObject
 
     /// <summary>The message for <paramref name="error"/> (also the reason in the context menu).</summary>
     public static string ErrorText(FootnoteError error) => Strings.Get("FootnoteError_" + error);
+
+    /// <summary><see cref="ErrorText"/> as a sentence on its own (a tooltip): starting with a capital letter.</summary>
+    public static string ErrorSentence(FootnoteError error)
+    {
+        string text = ErrorText(error);
+        return text.Length == 0 ? text : char.ToUpper(text[0], CultureInfo.CurrentCulture) + text[1..];
+    }
 
     partial void OnContentChanged(string value)
     {

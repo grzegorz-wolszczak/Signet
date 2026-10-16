@@ -51,6 +51,9 @@ public enum FootnoteError
 
     /// <summary>A local note takes references only from its own file.</summary>
     OtherFile,
+
+    /// <summary>References from several files lead to the note: it can only be global.</summary>
+    SeveralFiles,
 }
 
 /// <summary>A footnote and the part of it a position is in (<see cref="FootnoteEditor.FindAt"/>).</summary>
@@ -650,8 +653,28 @@ public static partial class FootnoteEditor
         a.Start < b.Start + b.Length && b.Start < a.Start + a.Length;
 
     /// <summary>
-    /// Moves the note of <paramref name="footnote"/> to the other placement (local to global or back) and renumbers
-    /// the footnotes.
+    /// Whether the note of <paramref name="footnote"/> can move to the other placement:
+    /// <see cref="FootnoteError.SeveralFiles"/> for a global note that references from several files lead to (a local
+    /// note is in the file of all its references), <see cref="FootnoteError.NotFound"/> when it is gone.
+    /// </summary>
+    public static FootnoteError CanMove(Book book, Footnote footnote)
+    {
+        ArgumentNullException.ThrowIfNull(book);
+        ArgumentNullException.ThrowIfNull(footnote);
+        if (Refresh(book, footnote) is not { } current)
+        {
+            return FootnoteError.NotFound;
+        }
+
+        return current.Placement == FootnotePlacement.Global
+            && ReferencesOf(book, current).Select(r => r.ReferenceFile).Distinct().Skip(1).Any()
+                ? FootnoteError.SeveralFiles
+                : FootnoteError.None;
+    }
+
+    /// <summary>
+    /// Moves the note of <paramref name="footnote"/> to the other placement (local to global or back) with all its
+    /// references and renumbers the footnotes; not when <see cref="CanMove"/> says no.
     /// </summary>
     public static bool Move(Book book, Footnote footnote) => Move(book, footnote, out _);
 
@@ -664,26 +687,31 @@ public static partial class FootnoteEditor
         moved = null;
         ArgumentNullException.ThrowIfNull(book);
         ArgumentNullException.ThrowIfNull(footnote);
-        int index = IndexOf(book, footnote);
+        if (CanMove(book, footnote) != FootnoteError.None || Refresh(book, footnote) is not { } current)
+        {
+            return false;
+        }
 
-        HtmlResource oldFile = footnote.NoteFile;
+        int index = IndexOf(book, current);
+        List<Footnote> references = ReferencesOf(book, current);
+        HtmlResource oldFile = current.NoteFile;
         string oldText = oldFile.GetText();
-        Element? element = FindElementById(new TagLister(oldText), oldText, footnote.NoteId);
+        Element? element = FindElementById(new TagLister(oldText), oldText, current.NoteId);
         if (element is null)
         {
             return false;
         }
 
-        FootnotePlacement target = footnote.Placement == FootnotePlacement.Local ? FootnotePlacement.Global : FootnotePlacement.Local;
+        FootnotePlacement target = current.Placement == FootnotePlacement.Local ? FootnotePlacement.Global : FootnotePlacement.Local;
         HtmlResource newFile = target == FootnotePlacement.Local
-            ? footnote.ReferenceFile
-            : GetOrCreateGlobalFile(book, footnote.ReferenceFile);
+            ? references[0].ReferenceFile
+            : GetOrCreateGlobalFile(book, current.ReferenceFile);
         string note = oldText[element.Start..element.End];
         (int start, int end) = WholeLines(oldText, element.Start, element.End);
         oldFile.SetText(oldText.Remove(start, end - start));
 
-        // The note's link back now starts from its new file; its id must be free there.
-        string noteId = footnote.NoteId;
+        // The note's links back now start from its new file; its id must be free there.
+        string noteId = current.NoteId;
         HashSet<string> ids = MarkupEdits.CollectIds(newFile.GetText());
         if (ids.Contains(noteId))
         {
@@ -691,18 +719,30 @@ public static partial class FootnoteEditor
         }
 
         note = RetypeNote(note, target, noteId);
-        if (footnote.ReferenceId.Length > 0)
+        Dictionary<string, HtmlResource> returnTo = new(StringComparer.Ordinal);
+        foreach (Footnote reference in references.Where(r => r.ReferenceId.Length > 0))
         {
-            note = MarkupEdits.ReplaceAttributeValues(note, MarkupEdits.LinkAttributes, href =>
-                SplitHref(href).Fragment == footnote.ReferenceId ? Href(newFile, footnote.ReferenceFile, footnote.ReferenceId) : null);
+            returnTo.TryAdd(reference.ReferenceId, reference.ReferenceFile);
         }
 
-        string referenceText = footnote.ReferenceFile.GetText();
-        if (FindAnchor(new TagLister(referenceText), referenceText, footnote.ReferenceHref, footnote.ReferenceOccurrence) is { } anchor
-            && anchor.Href is { } href)
+        note = MarkupEdits.ReplaceAttributeValues(note, MarkupEdits.LinkAttributes, href =>
+            returnTo.TryGetValue(SplitHref(href).Fragment, out HtmlResource? file) ? Href(newFile, file, SplitHref(href).Fragment) : null);
+
+        // Every reference leads to the new place of the note.
+        foreach (IGrouping<HtmlResource, Footnote> file in references.GroupBy(r => r.ReferenceFile))
         {
-            footnote.ReferenceFile.SetText(Apply(
-                referenceText, new[] { new TextEdit(href.Start, href.Length, Encode(Href(footnote.ReferenceFile, newFile, noteId))) }));
+            string referenceText = file.Key.GetText();
+            TagLister referenceTags = new(referenceText);
+            List<TextEdit> edits = new();
+            foreach (Footnote reference in file)
+            {
+                if (FindAnchor(referenceTags, referenceText, reference.ReferenceHref, reference.ReferenceOccurrence) is { Href: { } href })
+                {
+                    edits.Add(new TextEdit(href.Start, href.Length, Encode(Href(file.Key, newFile, noteId))));
+                }
+            }
+
+            file.Key.SetText(Apply(referenceText, edits));
         }
 
         InsertNote(newFile, note, target, book.IsEpub3);
@@ -712,6 +752,12 @@ public static partial class FootnoteEditor
         book.Modified = true;
         return true;
     }
+
+    // All the references of the note of `footnote` (one for an ordinary note), in reading order.
+    private static List<Footnote> ReferencesOf(Book book, Footnote footnote) =>
+        FootnoteScanner.Scan(book)
+            .Where(f => ReferenceEquals(f.NoteFile, footnote.NoteFile) && f.NoteId == footnote.NoteId)
+            .ToList();
 
     /// <summary>
     /// The text of the note of <paramref name="footnote"/> as <see cref="Edit"/> replaces it: of Signet's note (plain
@@ -785,6 +831,11 @@ public static partial class FootnoteEditor
         ArgumentNullException.ThrowIfNull(footnote);
         ArgumentNullException.ThrowIfNull(content);
         FootnoteError error = ValidateEdit(footnote, content, book.EpubVersion);
+        if (error == FootnoteError.None && footnote.Placement != placement)
+        {
+            error = CanMove(book, footnote);
+        }
+
         if (error != FootnoteError.None)
         {
             return error;
