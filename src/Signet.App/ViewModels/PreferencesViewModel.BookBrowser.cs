@@ -43,10 +43,8 @@ public sealed partial class PreferencesViewModel : IDisposable
         {
             if (_bookBrowserSample is null)
             {
-                _sampleStatusBar = new StatusBarService();
-                _sampleBook = SampleBook.Create();
-                _bookBrowserSample = new BookBrowserViewModel(_settings, _sampleStatusBar) { IsSample = true };
-                _bookBrowserSample.SetBook(_sampleBook);
+                _bookBrowserSample = new BookBrowserViewModel(_settings, SampleStatusBar) { IsSample = true };
+                _bookBrowserSample.SetBook(SampleBookInMemory);
                 foreach (BookBrowserNode folder in _bookBrowserSample.Nodes.Where(n => n.IsFolder))
                 {
                     folder.IsExpanded = true;
@@ -57,9 +55,18 @@ public sealed partial class PreferencesViewModel : IDisposable
         }
     }
 
+    // The status bar and the book the samples of the previews are made over; made when first needed.
+    private StatusBarService SampleStatusBar => _sampleStatusBar ??= new StatusBarService();
+
+    private Book SampleBookInMemory => _sampleBook ??= SampleBook.Create();
+
     /// <summary>Lets go of the samples of the previews (the window closes).</summary>
     public void Dispose()
     {
+        _codeEditorSample?.Dispose();
+        _codeEditorSample = null;
+        _codeEditorSampleTabs?.Dispose();
+        _codeEditorSampleTabs = null;
         _startScreenSample?.Dispose();
         _startScreenSample = null;
         _bookBrowserSample?.Dispose();

@@ -1,0 +1,50 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Signet.App.ViewModels"
+             xmlns:infra="using:Signet.App.Infrastructure"
+             xmlns:views="using:Signet.App.Views"
+             x:Class="Signet.App.Views.DocumentTabsSample"
+             x:DataType="vm:FontSettingViewModel">
+  <!-- A strip of document tabs for the preview of Preferences: the font of the tabs is the one of the row it has as its
+       DataContext (so it follows the unsaved settings), the colors are the ones of the theme (Interface Colors); several
+       rows or one row that scrolls, as Preferences › Code Editor sets. -->
+  <UserControl.Styles>
+    <Style Selector="Border.sampleTab">
+      <Setter Property="Padding" Value="10,5" />
+      <Setter Property="Margin" Value="0,0,2,2" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="Background" Value="{DynamicResource SampleTabBackground}" />
+    </Style>
+    <Style Selector="Border.sampleTab.selected">
+      <Setter Property="Background" Value="{DynamicResource SampleTabSelectedBackground}" />
+      <Setter Property="BorderThickness" Value="0,0,0,2" />
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlHighlightAccentBrush}" />
+    </Style>
+    <Style Selector="Border.sampleTab > TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource SampleTabForeground}" />
+    </Style>
+    <Style Selector="Border.sampleTab.selected > TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource SampleTabSelectedForeground}" />
+    </Style>
+  </UserControl.Styles>
+
+  <ScrollViewer x:Name="Scroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+    <ItemsControl x:Name="Tabs"
+                  FontFamily="{Binding EffectiveFamily, Converter={x:Static infra:FontFamilyConverters.FromName}}"
+                  FontSize="{Binding EffectiveSize}"
+                  FontWeight="{Binding EffectiveWeight, Converter={x:Static infra:FontWeightOptions.FromNumber}}">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <StackPanel Orientation="Horizontal" />
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="views:DocumentTabSampleItem">
+          <Border Classes="sampleTab" Classes.selected="{Binding IsSelected}">
+            <TextBlock Text="{Binding Caption}" />
+          </Border>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+  </ScrollViewer>
+</UserControl>

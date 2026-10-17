@@ -6256,4 +6256,7 @@ Close the tab</value>
   <data name="PreferencesWindow_FontSizeZeroAsDefault11" xml:space="preserve">
     <value>Size 0 = default (11)</value>
   </data>
+  <data name="PreferencesWindow_CodeEditorLook" xml:space="preserve">
+    <value>Look of the editor</value>
+  </data>
 </root>

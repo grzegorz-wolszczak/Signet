@@ -255,9 +255,12 @@ public partial class CodeTabView : UserControl
             _boundViewModel.PropertyChanged -= OnViewModelPropertyChanged;
             _boundViewModel.ExternalLinkRequested -= OnExternalLinkRequested;
             _boundViewModel.RenameClassRequested -= OnRenameClassRequested;
+            _boundViewModel.AppearanceChanged -= OnSampleAppearanceChanged;
         }
 
         _boundViewModel = DataContext as CodeTabViewModel;
+        // The sample of the Preferences preview shows the look: it is not edited and has no menu.
+        Editor.IsReadOnly = _boundViewModel is { IsSample: true };
         AttachCodeEditorShortcuts();
         if (_boundViewModel is null)
         {
@@ -276,6 +279,7 @@ public partial class CodeTabView : UserControl
         _boundViewModel.PropertyChanged += OnViewModelPropertyChanged;
         _boundViewModel.ExternalLinkRequested += OnExternalLinkRequested;
         _boundViewModel.RenameClassRequested += OnRenameClassRequested;
+        _boundViewModel.AppearanceChanged += OnSampleAppearanceChanged;
         _boundViewModel.UpdateSelection(Editor.SelectionStart, Editor.SelectionStart + Editor.SelectionLength);
 
         ApplyGrammar(_boundViewModel.Syntax);
@@ -629,7 +633,7 @@ public partial class CodeTabView : UserControl
     private void OnContextMenuOpening(object? sender, CancelEventArgs e)
     {
         _contextMenu.Items.Clear();
-        if (_boundViewModel is not { } vm)
+        if (_boundViewModel is not { } vm || vm.IsSample)
         {
             e.Cancel = true;
             return;
@@ -1408,6 +1412,19 @@ public partial class CodeTabView : UserControl
         {
             _ = topLevel.Launcher.LaunchUriAsync(uri);
         }
+    }
+
+    // The settings of the look changed under a sample tab (the draft of Preferences): the font, the line numbers and the
+    // highlighting (extended or not) are applied again.
+    private void OnSampleAppearanceChanged(object? sender, EventArgs e)
+    {
+        if (_boundViewModel is null)
+        {
+            return;
+        }
+
+        ApplyFont();
+        ApplyGrammar(_boundViewModel.Syntax);
     }
 
     private CodeEditorAppearance CurrentAppearance() =>

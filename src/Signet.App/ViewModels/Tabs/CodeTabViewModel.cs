@@ -21,7 +21,7 @@ namespace Signet.App.ViewModels.Tabs;
 /// Code editor tab (Code Editor). Holds the AvaloniaEdit <see cref="TextDocument"/> and the view-less
 /// <see cref="CodeEditorModel"/> (working copy of the content, well-formedness, split marker).
 /// </summary>
-public sealed class CodeTabViewModel : ContentTabViewModel
+public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
 {
     private readonly CodeEditorModel _model;
     private readonly IStatusBarService _statusBar;
@@ -53,9 +53,11 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     private IReadOnlyList<HtmlWord> _misspelledWords = Array.Empty<HtmlWord>();
 
     /// <summary>Creates a code editor tab for an entry of the tab model.</summary>
-    public CodeTabViewModel(OpenTab tab, IStatusBarService statusBar, SettingsStore settings, SpellChecker spellChecker)
+    public CodeTabViewModel(
+        OpenTab tab, IStatusBarService statusBar, SettingsStore settings, SpellChecker spellChecker, bool isSample = false)
         : base(tab)
     {
+        IsSample = isSample;
         _statusBar = statusBar ?? throw new ArgumentNullException(nameof(statusBar));
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _spellChecker = spellChecker ?? throw new ArgumentNullException(nameof(spellChecker));
@@ -73,6 +75,10 @@ public sealed class CodeTabViewModel : ContentTabViewModel
         Document.Changed += OnDocumentChanged;
 
         _wordWrap = settings.CodeEditorWordWrap;
+        if (isSample)
+        {
+            settings.SettingChanged += OnSampleSettingChanged;
+        }
 
         RefreshWellFormed();
         RefreshSecondaryStatus();
@@ -157,6 +163,30 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     /// </summary>
     public bool LinkTargetExists(string reference) =>
         BookPathExists is not { } exists || LinkReference.TargetExists(reference, _model.Resource.Folder, exists);
+
+    /// <summary>
+    /// Whether this is the sample tab of the preview in Preferences: the view is read-only and has no menu, and the tab
+    /// follows the settings it was given (the draft of the window) — see <see cref="AppearanceChanged"/>.
+    /// </summary>
+    public bool IsSample { get; }
+
+    /// <summary>Raised (a sample tab only) when a setting of the look of the editor changed: the view applies it again.</summary>
+    public event EventHandler? AppearanceChanged;
+
+    private void OnSampleSettingChanged(object? sender, SettingChangedEventArgs e)
+    {
+        if (e.QualifiedKey.Contains("code_editor", StringComparison.Ordinal)
+            || e.QualifiedKey.Contains("open_tag_hint", StringComparison.Ordinal))
+        {
+            AppearanceChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>Stops following the settings (a sample tab, when the preview goes away).</summary>
+    public void Dispose()
+    {
+        _settings.SettingChanged -= OnSampleSettingChanged;
+    }
 
     /// <summary>Whether the editor wraps long lines (from <see cref="SettingsStore.CodeEditorWordWrap"/>).</summary>
     public bool WordWrap

@@ -4,6 +4,7 @@
         xmlns:loc="using:Signet.App.Resources"
         xmlns:cv="using:Signet.App.CodeEditor"
         xmlns:infra="using:Signet.App.Infrastructure"
+        xmlns:tabs="using:Signet.App.Views.Tabs"
         xmlns:views="using:Signet.App.Views"
         x:Class="Signet.App.Views.PreferencesWindow"
         x:DataType="vm:PreferencesViewModel"
@@ -421,13 +422,66 @@
         </TabControl>
       </TabItem>
 
-      <!-- Appearance › CodeEditor: Fonts only (the editor, the line numbers and the hint). -->
+      <!-- Appearance › CodeEditor: what the editor looks like (General, Fonts), with one preview panel for both tabs: the
+           document tabs and the editor itself. -->
       <TabItem x:Name="CodeEditorAppearancePage" Header="{loc:Loc PreferencesWindow_CodeEditor}" views:PreferencesPage.Parent="AppearanceGeneralPage">
-        <TabControl x:Name="CodeEditorAppearanceTabs">
-          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-            <views:FontsPageView x:Name="CodeEditorFontsView" />
-          </TabItem>
-        </TabControl>
+        <Grid x:Name="CodeEditorPreviewHost">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" MinWidth="300" />
+            <ColumnDefinition Width="8" />
+            <ColumnDefinition Width="380" MinWidth="240" />
+          </Grid.ColumnDefinitions>
+          <TabControl x:Name="CodeEditorAppearanceTabs">
+            <TabItem Header="{loc:Loc PreferencesWindow_General}">
+              <ScrollViewer>
+                <StackPanel Spacing="10" Margin="8">
+                  <Border Classes="section">
+                    <StackPanel Spacing="6">
+                      <TextBlock Text="{loc:Loc PreferencesWindow_CodeEditorLook}" FontWeight="Bold" />
+                      <CheckBox x:Name="ExtendedHighlightingBox" Content="{loc:Loc PreferencesWindow_ExtendedHighlighting}"
+                                IsChecked="{Binding ExtendedHighlighting}" />
+                      <!-- The document tabs: several rows when they do not fit. -->
+                      <CheckBox x:Name="MultilineTabsBox" Content="{loc:Loc PreferencesWindow_MultilineTabs}" IsChecked="{Binding MultilineTabs}" />
+                      <!-- The colors of the editor and of the hint are in the color scheme, the colors of the tabs in the theme. -->
+                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInScheme}" Padding="0"
+                                       views:PreferencesPage.Target="ColorSchemePage" />
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+              </ScrollViewer>
+            </TabItem>
+            <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+              <views:FontsPageView x:Name="CodeEditorFontsView" HasSharedPreview="True" />
+            </TabItem>
+          </TabControl>
+          <GridSplitter Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Background="Transparent" />
+          <!-- The preview, common to the tabs of the page: the tabs of the documents and the real Code Editor tab over a
+               chapter of the sample book, in the look the settings give them now (the unsaved ones too), and the opening tag
+               hint (which a real one shows only over a closing tag) under it. Not searched: it holds no settings. -->
+          <Border x:Name="CodeEditorPreviewPane" Grid.Column="2" Classes="section noSearchTree" Padding="8">
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
+              <Border Classes="listFrame">
+                <DockPanel>
+                  <views:DocumentTabsSample x:Name="DocumentTabsPreview" DockPanel.Dock="Top" Margin="4,4,4,0" />
+                  <Border x:Name="CodeEditorSampleHintFrame" DockPanel.Dock="Bottom" Margin="8" CornerRadius="3" BorderThickness="1"
+                          HorizontalAlignment="Left" Background="{DynamicResource ToolTipBackground}"
+                          BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+                    <Border x:Name="CodeEditorSampleHint" Padding="8,4" CornerRadius="3" x:DataType="vm:FontSettingViewModel"
+                            Background="{Binding PreviewBackground, Converter={x:Static infra:ColorConverters.ToBrush}}">
+                      <TextBlock Text="{Binding PreviewText}"
+                                 FontFamily="{Binding EffectiveFamily, Converter={x:Static infra:FontFamilyConverters.FromName}}"
+                                 FontSize="{Binding EffectiveSize}"
+                                 FontWeight="{Binding EffectiveWeight, Converter={x:Static infra:FontWeightOptions.FromNumber}}"
+                                 Foreground="{Binding PreviewForeground, Converter={x:Static infra:ColorConverters.ToBrush}}" />
+                    </Border>
+                  </Border>
+                  <tabs:CodeTabView x:Name="CodeEditorPreview" />
+                </DockPanel>
+              </Border>
+            </DockPanel>
+          </Border>
+        </Grid>
       </TabItem>
 
       <!-- Appearance › Preview: the highlight of the caret location; Fonts: the preview fonts. -->
@@ -552,10 +606,7 @@
       <TabItem x:Name="CodeEditorPage" Header="{loc:Loc PreferencesWindow_CodeEditor}" views:PreferencesPage.Parent="AppearancePage">
         <ScrollViewer>
           <StackPanel Spacing="10" Margin="8">
-            <CheckBox Content="{loc:Loc PreferencesWindow_ExtendedHighlighting}" IsChecked="{Binding ExtendedHighlighting}" />
-
-            <!-- The document tabs: several rows when they do not fit; the Book Browser follows the active tab. -->
-            <CheckBox x:Name="MultilineTabsBox" Content="{loc:Loc PreferencesWindow_MultilineTabs}" IsChecked="{Binding MultilineTabs}" />
+            <!-- The Book Browser follows the active document tab (the look of the tabs and of the editor is under Appearance). -->
             <CheckBox x:Name="BookBrowserFollowsTabBox" Content="{loc:Loc PreferencesWindow_BookBrowserFollowsTab}"
                       IsChecked="{Binding BookBrowserFollowsActiveTab}" />
 
