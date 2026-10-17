@@ -6256,4 +6256,7 @@ Zamknij zakładkę</value>
   <data name="PreferencesWindow_FontSizeZeroAsDefault11" xml:space="preserve">
     <value>Rozmiar 0 = domyślny (11)</value>
   </data>
+  <data name="PreferencesWindow_CodeEditorLook" xml:space="preserve">
+    <value>Wygląd edytora</value>
+  </data>
 </root>

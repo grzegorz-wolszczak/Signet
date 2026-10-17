@@ -1097,6 +1097,34 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
+    public void The_sample_Code_Editor_tab_shows_a_chapter_and_follows_the_unsaved_look()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        using PreferencesViewModel __ = vm;
+        Signet.App.ViewModels.Tabs.CodeTabViewModel sample = vm.CodeEditorSample;
+        int changes = 0;
+        sample.AppearanceChanged += (_, _) => changes++;
+
+        sample.IsSample.Should().BeTrue();
+        sample.Document.Text.Should().Contain("<h1 id=\"start\">").And.Contain("Missing.xhtml");
+        sample.LinkTargetExists("Missing.xhtml").Should().BeFalse("the sample has one broken link, so its highlighting shows");
+        sample.LinkTargetExists("Chapter02.xhtml").Should().BeTrue();
+        sample.SearchHighlights.Should().ContainSingle();
+        sample.ViewState.Should().NotBeNull("the caret rests in a tag when the view is shown");
+
+        vm.CodeEditor.FontSize = 19;
+        vm.OpenTagHintFontSize = 14;
+        vm.ExtendedHighlighting = !vm.ExtendedHighlighting;
+
+        sample.Appearance.FontSize.Should().Be(19);
+        sample.OpenTagHintAppearance.FontSize.Should().Be(14);
+        sample.ExtendedHighlighting.Should().Be(vm.ExtendedHighlighting);
+        changes.Should().BeGreaterThan(2);
+        host.Settings.CodeEditorAppearance.Should().Be(CodeEditorAppearance.Default, "the preview shows what is not saved yet");
+    }
+
+    [Fact]
     public void The_sample_Book_Browser_follows_the_unsaved_look_and_leaves_the_saved_one_alone()
     {
         (TestHost host, PreferencesViewModel vm) = New();

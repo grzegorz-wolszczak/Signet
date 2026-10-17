@@ -292,6 +292,7 @@ public partial class PreferencesWindow : Window
     {
         yield return BookBrowserPreviewHost;
         yield return StartScreenPreviewHost;
+        yield return CodeEditorPreviewHost;
     }
 
     // The Fonts pages (every Appearance section and the theme's own) each have a width of the preview of their own: the
@@ -361,6 +362,17 @@ public partial class PreferencesWindow : Window
             SpecialCharacterFontsView.DataContext = vm.SpecialCharacterFonts;
             StartScreenFontsView.DataContext = vm.StartScreenFonts;
             BookBrowserFontsView.DataContext = vm.BookBrowserFonts;
+            CodeEditorPreview.DataContext = vm.CodeEditorSample;
+            DocumentTabsPreview.DataContext = vm.CodeEditorFonts.Fonts.Single(f => f.Key == "DocumentTabs");
+            CodeEditorSampleHint.DataContext = vm.CodeEditorFonts.Fonts.Single(f => f.Key == "OpenTagHint");
+            DocumentTabsPreview.IsMultiline = vm.MultilineTabs;
+            vm.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(PreferencesViewModel.MultilineTabs))
+                {
+                    DocumentTabsPreview.IsMultiline = vm.MultilineTabs;
+                }
+            };
             StartScreenPreview.DataContext = vm.StartScreenSample;
             StartScreenSampleTip.DataContext = vm.StartScreenFonts.Fonts.Single(f => f.Key == "Tooltip" + TooltipArea.StartScreen);
             BookBrowserPreview.DataContext = vm.BookBrowserSample;
@@ -735,7 +747,9 @@ public partial class PreferencesWindow : Window
     // When the page has a tab bar and the selected tab has no match for the search, selects the first tab that has one.
     private bool ShowTabWithMatch(ILogical page)
     {
-        if (page is not TabControl tabs || tabs.SelectedItem is not TabItem selected || TabHasMatch(selected))
+        // The tab bar of a page is the page itself, or (a page with a preview panel next to its tabs) the first one in it.
+        if ((page as TabControl ?? SelfAndLogicalDescendants(page).OfType<TabControl>().FirstOrDefault()) is not { } tabs
+            || tabs.SelectedItem is not TabItem selected || TabHasMatch(selected))
         {
             return false;
         }
