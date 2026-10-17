@@ -45,12 +45,15 @@ public sealed partial class PreferencesViewModel
     {
         string family = LineNumbersFontFamily.Length > 0 ? LineNumbersFontFamily : CodeEditor.FontFamily;
         int size = LineNumbersFontSize > 0 ? LineNumbersFontSize : CodeEditor.FontSize;
-        if (await PickFontAsync(new FontPickRequest(family, size, false, LineNumbersFontWeight > 0 ? LineNumbersFontWeight : CodeEditor.FontWeight)) is { } result)
-        {
-            LineNumbersFontFamily = result.Family;
-            LineNumbersFontSize = result.Size;
-            LineNumbersFontWeight = result.Weight;
-        }
+        await PickFontAsync(
+            new FontPickRequest(family, size, false, LineNumbersFontWeight > 0 ? LineNumbersFontWeight : CodeEditor.FontWeight),
+            new FontPickResult(LineNumbersFontFamily, LineNumbersFontSize, LineNumbersFontWeight),
+            result =>
+            {
+                LineNumbersFontFamily = result.Family;
+                LineNumbersFontSize = result.Size;
+                LineNumbersFontWeight = result.Weight;
+            });
     }
 
     // The row of the Code Editor "Fonts" page: by default the numbers use the editor font (the checkbox); unchecked, the

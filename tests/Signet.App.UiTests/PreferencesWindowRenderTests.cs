@@ -1237,8 +1237,8 @@ public sealed class PreferencesWindowRenderTests
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
         vm.FontPicker = _ => Task.FromResult<FontPickResult?>(new FontPickResult("Consolas", 17, 350));
         FontSettingViewModel row = vm.FindUsagesFonts.Fonts.Single(f => f.Key == "FindUsagesContext");
-        ComboBox box = window.FindControl<FontsPageView>("FindUsagesFontsView")!.GetVisualDescendants().OfType<ComboBox>()
-            .Where(c => c.Name == "WeightBox").ElementAt(1);
+        TextBlock summary = window.FindControl<FontsPageView>("FindUsagesFontsView")!.RowOf(row)!.GetVisualDescendants()
+            .OfType<TextBlock>().Single(c => c.Name == "FontSummary");
 
         row.ChooseCommand!.Execute(null);
         Dispatcher.UIThread.RunJobs();
@@ -1248,13 +1248,16 @@ public sealed class PreferencesWindowRenderTests
         vm.FindUsagesContextFontFamily.Should().Be("Consolas");
         vm.FindUsagesContextFontSize.Should().Be(17);
         vm.FindUsagesContextFontWeight.Should().Be(350);
-        ((FontWeightOption)box.SelectedItem!).Value.Should().Be(350, "the list shows the weight chosen");
+        summary.Text.Should().Be("Consolas, 17, " + FontWeightScale.NameOf(350), "the row shows the font chosen");
         window.Close();
     }
 
-    /// <summary>A font setting with a weight has a list of weights next to its size, which changes the setting.</summary>
+    /// <summary>
+    /// A font setting is one line (typeface, size, weight) with "Choose…" and no lists or size fields; the picker shows its
+    /// changes in the row (and the preview) while it is open, and Cancel puts the font back.
+    /// </summary>
     [AvaloniaFact]
-    public void A_font_row_has_a_weight_list_that_changes_the_setting()
+    public void A_font_row_is_one_line_that_follows_the_picker_and_Cancel_puts_it_back()
     {
         PreferencesWindow window = BuildWindow();
         window.Show();
@@ -1266,26 +1269,32 @@ public sealed class PreferencesWindowRenderTests
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+        FontsPageView page = window.FindControl<FontsPageView>("FindUsagesFontsView")!;
+        FontSettingViewModel row = vm.FindUsagesFonts.Fonts.Single(f => f.Key == "FindUsagesContext");
+        TextBlock summary = page.RowOf(row)!.GetVisualDescendants().OfType<TextBlock>().Single(c => c.Name == "FontSummary");
 
-        ComboBox[] boxes = window.FindControl<FontsPageView>("FindUsagesFontsView")!.GetVisualDescendants().OfType<ComboBox>()
-            .Where(c => c.Name == "WeightBox").ToArray();
-
-        boxes.Should().HaveCount(3, "the headers, the context and the other cells");
-        ((FontSettingViewModel)boxes[1].DataContext!).Key.Should().Be("FindUsagesContext");
-        FontSettingViewModel rowVm = (FontSettingViewModel)boxes[1].DataContext!;
-        rowVm.Weight = 300;
-        rowVm.Weight.Should().Be(300, "the setter itself works");
-        boxes[1].SelectedItem.Should().BeSameAs(boxes[1].Items.OfType<FontWeightOption>().Single(w => w.Value == 300), "the box follows the row");
-        rowVm.Weight = 0;
-        boxes[1].SelectedItem = boxes[1].Items.OfType<FontWeightOption>().Single(w => w.Value == 700);
+        FontSettingView[] rows = page.GetVisualDescendants().OfType<FontSettingView>().ToArray();
+        rows.SelectMany(r => r.GetVisualDescendants().OfType<ComboBox>()).Should().BeEmpty("the picker is the only way to change a font");
+        rows.SelectMany(r => r.GetVisualDescendants().OfType<NumericUpDown>().Where(n => n.IsEffectivelyVisible)).Should().BeEmpty();
+        vm.FindUsagesContextFontFamily = "Arial";
+        vm.FindUsagesContextFontSize = 12;
         Dispatcher.UIThread.RunJobs();
-        ((FontSettingViewModel)boxes[1].DataContext!).Weight.Should().Be(700, "the row got the weight");
+        summary.Text.Should().Be("Arial, 12");
 
-        boxes[1].Items.OfType<FontWeightOption>().Select(w => w.Value).Should().Contain(700);
-        ((FontWeightOption?)boxes[1].SelectedItem)?.Value.Should().Be(700, "the box shows the choice");
-        window.FindControl<FontsPageView>("FindUsagesFontsView")!.IsEffectivelyVisible.Should().BeTrue();
-        vm.FindUsagesContextFontWeight.Should().Be(700);
-        vm.FindUsagesHeaderFontWeight.Should().Be(0);
+        string? whileOpen = null;
+        vm.FontPicker = request =>
+        {
+            request.Changed!(new FontPickResult("Consolas", 18, 700));
+            Dispatcher.UIThread.RunJobs();
+            whileOpen = summary.Text;
+            return Task.FromResult<FontPickResult?>(null);
+        };
+
+        row.ChooseCommand!.Execute(null);
+        Dispatcher.UIThread.RunJobs();
+
+        whileOpen.Should().Be("Consolas, 18, " + FontWeightScale.NameOf(700), "the row follows the window");
+        summary.Text.Should().Be("Arial, 12", "Cancel puts the font back");
         window.Close();
     }
 
@@ -1378,7 +1387,7 @@ public sealed class PreferencesWindowRenderTests
         code.TextArea.TextView.LineTransformers.Should().Contain(t => t.GetType().Name.StartsWith("LineStateSyntaxColorizer"),
             "the sample is highlighted as in Code Editor");
 
-        rows[2].FindControl<ComboBox>("FamilyBox")!.Focus();
+        rows[2].FindControl<Button>("ChooseButton")!.Focus();
         Dispatcher.UIThread.RunJobs();
 
         vm.CodeEditorFonts.Active!.Key.Should().Be("OpenTagHint");
@@ -1388,7 +1397,7 @@ public sealed class PreferencesWindowRenderTests
         page.FindControl<Border>("PreviewSurface")!.Background.Should().BeAssignableTo<ISolidColorBrush>()
             .Which.Color.Should().Be(AppTheme.Current.Background(ThemeKeys.HintsOpenTag));
 
-        rows[2].FindControl<NumericUpDown>("SizeBox")!.Value = 21;
+        vm.OpenTagHintFontSize = 21;
         Dispatcher.UIThread.RunJobs();
 
         vm.OpenTagHintFontSize.Should().Be(21);

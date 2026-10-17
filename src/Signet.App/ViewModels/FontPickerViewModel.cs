@@ -16,7 +16,11 @@ namespace Signet.App.ViewModels;
 /// Current weight (<see cref="FontWeightScale"/>, 0 = not set), or <see langword="null"/> when the font being picked has no
 /// weight — the window then has no list of weights.
 /// </param>
-public sealed record FontPickRequest(string Family, int? Size, bool MonospaceOnly, int? Weight = null);
+/// <param name="Changed">
+/// Called with the font chosen so far each time the user changes it in the window (before OK), so the caller can show the
+/// effect live; the caller restores its previous font when the window is cancelled. <see langword="null"/> = no live effect.
+/// </param>
+public sealed record FontPickRequest(string Family, int? Size, bool MonospaceOnly, int? Weight = null, Action<FontPickResult>? Changed = null);
 
 /// <summary>The result of the font picker window.</summary>
 /// <param name="Family">Selected family.</param>
@@ -64,6 +68,21 @@ public sealed partial class FontPickerViewModel : ObservableObject
         SelectedFont = initial is not null && VisibleFonts.Contains(initial) ? initial : null;
         _initialFont = SelectedFont;
         RebuildWeights();
+
+        // Only from now on a change is the user's.
+        _changed = request.Changed;
+    }
+
+    // Tells the caller about the font chosen so far; not while the list of weights is rebuilt (it is announced once after).
+    private readonly Action<FontPickResult>? _changed;
+    private bool _rebuilding;
+
+    private void NotifyChanged()
+    {
+        if (_changed is not null && !_rebuilding && Result() is { } result)
+        {
+            _changed(result);
+        }
     }
 
     // The font the window started with: the weight stored with it stays selectable even when the font lacks it.
@@ -114,15 +133,22 @@ public sealed partial class FontPickerViewModel : ObservableObject
 
     partial void OnFilterChanged(string value) => ApplyFilter();
 
-    partial void OnSelectedFontChanged(FontEntry? value) => RebuildWeights();
+    partial void OnSelectedFontChanged(FontEntry? value)
+    {
+        RebuildWeights();
+        NotifyChanged();
+    }
 
     partial void OnSelectedWeightChanged(FontWeightOption? value)
     {
         if (value is not null)
         {
             _requestedWeight = value.Value;
+            NotifyChanged();
         }
     }
+
+    partial void OnSizeChanged(decimal value) => NotifyChanged();
 
     partial void OnMonospaceOnlyChanged(bool value) => ApplyFilter();
 
@@ -150,15 +176,23 @@ public sealed partial class FontPickerViewModel : ObservableObject
             weights.Add(wanted);
         }
 
-        Weights.Clear();
-        Weights.Add(FontWeightOptions.Default);
-        foreach (int weight in weights.Order())
+        _rebuilding = true;
+        try
         {
-            Weights.Add(new FontWeightOption(weight, FontWeightScale.NameOf(weight)!));
-        }
+            Weights.Clear();
+            Weights.Add(FontWeightOptions.Default);
+            foreach (int weight in weights.Order())
+            {
+                Weights.Add(new FontWeightOption(weight, FontWeightScale.NameOf(weight)!));
+            }
 
-        SelectedWeight = Weights.FirstOrDefault(w => w.Value == wanted) ?? Weights[0];
-        _requestedWeight = wanted;
+            SelectedWeight = Weights.FirstOrDefault(w => w.Value == wanted) ?? Weights[0];
+            _requestedWeight = wanted;
+        }
+        finally
+        {
+            _rebuilding = false;
+        }
     }
 
     private void ApplyFilter()

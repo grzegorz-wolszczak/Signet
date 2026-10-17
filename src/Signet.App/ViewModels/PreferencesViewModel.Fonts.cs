@@ -293,11 +293,14 @@ public sealed partial class PreferencesViewModel
     private async Task ChooseColorSchemePreviewFont()
     {
         ColorSchemePreviewAppearance font = ColorScheme.PreviewFont;
-        if (await PickFontAsync(new FontPickRequest(font.FontFamily, font.FontSize, true, font.FontWeight)) is { } result)
-        {
-            ColorScheme.PreviewFont = new ColorSchemePreviewAppearance(result.Family, result.Size, result.Weight);
-            ColorSchemePreviewFont.Refresh();
-        }
+        await PickFontAsync(
+            new FontPickRequest(font.FontFamily, font.FontSize, true, font.FontWeight),
+            new FontPickResult(font.FontFamily, font.FontSize, font.FontWeight),
+            result =>
+            {
+                ColorScheme.PreviewFont = new ColorSchemePreviewAppearance(result.Family, result.Size, result.Weight);
+                ColorSchemePreviewFont.Refresh();
+            });
     }
 
     // A typeface of the preview: the size is shared (a row of its own).
@@ -368,11 +371,14 @@ public sealed partial class PreferencesViewModel
     private async Task ChooseTooltipFont(TooltipArea area)
     {
         TooltipFont font = _settings.GetTooltipFont(area);
-        if (await PickFontAsync(new FontPickRequest(TooltipFamily(area), font.FontSize, false, font.FontWeight)) is { } result)
-        {
-            _settings.SetTooltipFont(area, new TooltipFont(result.Family, result.Size, result.Weight));
-            RefreshFontPages();
-        }
+        await PickFontAsync(
+            new FontPickRequest(TooltipFamily(area), font.FontSize, false, font.FontWeight),
+            new FontPickResult(font.FontFamily, font.FontSize, font.FontWeight),
+            result =>
+            {
+                _settings.SetTooltipFont(area, new TooltipFont(result.Family, result.Size, result.Weight));
+                RefreshFontPages();
+            });
     }
 
     private void SetUiFont(string family, int size)

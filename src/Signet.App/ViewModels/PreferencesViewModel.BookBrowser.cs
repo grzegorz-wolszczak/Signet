@@ -136,22 +136,24 @@ public sealed partial class PreferencesViewModel
         string family = headers ? BookBrowserHeaderFontFamily : BookBrowserItemsFontFamily;
         int size = headers ? BookBrowserHeaderFontSize : BookBrowserItemsFontSize;
         int weight = headers ? BookBrowserHeaderFontWeight : BookBrowserItemsFontWeight;
-        if (await PickFontAsync(new FontPickRequest(
-                family.Length > 0 ? family : EffectiveUiFontFamily, size > 0 ? size : EffectiveUiFontSize, false, weight)) is { } result)
-        {
-            if (headers)
+        await PickFontAsync(
+            new FontPickRequest(family.Length > 0 ? family : EffectiveUiFontFamily, size > 0 ? size : EffectiveUiFontSize, false, weight),
+            new FontPickResult(family, size, weight),
+            result =>
             {
-                BookBrowserHeaderFontFamily = result.Family;
-                BookBrowserHeaderFontSize = result.Size;
-                BookBrowserHeaderFontWeight = result.Weight;
-            }
-            else
-            {
-                BookBrowserItemsFontFamily = result.Family;
-                BookBrowserItemsFontSize = result.Size;
-                BookBrowserItemsFontWeight = result.Weight;
-            }
-        }
+                if (headers)
+                {
+                    BookBrowserHeaderFontFamily = result.Family;
+                    BookBrowserHeaderFontSize = result.Size;
+                    BookBrowserHeaderFontWeight = result.Weight;
+                }
+                else
+                {
+                    BookBrowserItemsFontFamily = result.Family;
+                    BookBrowserItemsFontSize = result.Size;
+                    BookBrowserItemsFontWeight = result.Weight;
+                }
+            });
     }
 
     // A font row of a "Fonts" page (Book Browser, Find Usages): typeface (empty = the interface font) and size (0 = the
