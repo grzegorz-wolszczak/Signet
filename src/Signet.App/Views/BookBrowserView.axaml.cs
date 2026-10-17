@@ -52,6 +52,9 @@ public partial class BookBrowserView : UserControl
 
     private BookBrowserViewModel? _boundViewModel;
 
+    // The menu of the files, which the sample Book Browser of the Preferences window does not have.
+    private readonly ContextMenu? _treeMenu;
+
     // The panel-scoped shortcuts (Rename, Merge, Delete…): bound on THIS view, so they fire only while the panel has
     // the focus — e.g. F2 in Code Editor does not rename a file.
     private readonly ShortcutKeyBindings _shortcutBindings;
@@ -68,6 +71,7 @@ public partial class BookBrowserView : UserControl
     public BookBrowserView()
     {
         InitializeComponent();
+        _treeMenu = Tree.ContextMenu;
         _shortcutBindings = new ShortcutKeyBindings(this);
         DataContextChanged += OnDataContextChanged;
         Tree.DoubleTapped += OnDoubleTapped;
@@ -200,6 +204,7 @@ public partial class BookBrowserView : UserControl
         _selectedNodes = Array.Empty<BookBrowserNode>();
 
         _boundViewModel = DataContext as BookBrowserViewModel;
+        Tree.ContextMenu = _boundViewModel is { IsSample: true } ? null : _treeMenu;
 
         if (_boundViewModel is not null)
         {
@@ -293,7 +298,7 @@ public partial class BookBrowserView : UserControl
     // font files the fonts menu opens (only the actions that make sense for fonts).
     private void OnTreeContextRequested(object? sender, ContextRequestedEventArgs e)
     {
-        if (_boundViewModel is null)
+        if (_boundViewModel is null or { IsSample: true })
         {
             return;
         }
@@ -364,6 +369,11 @@ public partial class BookBrowserView : UserControl
 
     private void OnDoubleTapped(object? sender, TappedEventArgs e)
     {
+        if (_boundViewModel is { IsSample: true })
+        {
+            return;
+        }
+
         // A double click in the name editor selects a word — it does not open the file.
         if (IsInRenameEditor(e.Source))
         {

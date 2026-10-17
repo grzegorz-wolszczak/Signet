@@ -993,6 +993,49 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
+    public void The_sample_Book_Browser_of_the_preview_shows_a_whole_small_book_in_every_column()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        using PreferencesViewModel __ = vm;
+
+        BookBrowserViewModel sample = vm.BookBrowserSample;
+
+        sample.IsSample.Should().BeTrue();
+        sample.HasBook.Should().BeTrue();
+        sample.OptionalColumns.Should().Be("ReadingOrder,Semantics,Properties", "the preview shows every column, whatever the user chose");
+        sample.Nodes.Where(n => n.IsFolder).Should().OnlyContain(n => n.IsExpanded, "the folders are open, so the fonts show on many rows");
+        BookBrowserNode[] files = sample.Nodes.SelectMany(n => n.Children).ToArray();
+        files.Select(n => n.Header).Should().Contain("Chapter01.xhtml").And.Contain("Stylesheet.css").And.Contain("cover.png")
+            .And.Contain("Serif-Regular.ttf");
+        files.Should().Contain(n => n.SemanticsText.Length > 0, "the cover has a semantics");
+        files.Select(n => n.PropertiesText).Should().Contain(p => p.Contains("nav")).And.Contain(p => p.Contains("cover-image"));
+        files.Where(n => n.ReadingOrderNumber is not null).Should().HaveCountGreaterThan(3, "the chapters are in the reading order");
+        sample.OptionalColumns = "Semantics";
+        sample.OptionalColumns.Should().Be("ReadingOrder,Semantics,Properties");
+        host.Settings.BookBrowserColumns.Should().NotBe("Semantics", "the columns of the real Book Browser are not touched");
+    }
+
+    [Fact]
+    public void The_sample_Book_Browser_follows_the_unsaved_look_and_leaves_the_saved_one_alone()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        using PreferencesViewModel __ = vm;
+        BookBrowserViewModel sample = vm.BookBrowserSample;
+        int changes = 0;
+        sample.AppearanceChanged += (_, _) => changes++;
+
+        vm.BookBrowserItemsFontSize = 19;
+        vm.BookBrowserIndent = 33;
+
+        sample.Appearance.ItemsFontSize.Should().Be(19);
+        sample.Appearance.Indent.Should().Be(33);
+        changes.Should().BeGreaterThan(0);
+        host.Settings.BookBrowserAppearance.Should().Be(BookBrowserAppearance.Default, "the preview shows what is not saved yet");
+    }
+
+    [Fact]
     public void Line_numbers_font_inherits_the_editor_font_until_it_is_unchecked_and_is_saved_with_the_others()
     {
         (TestHost host, PreferencesViewModel vm) = New();

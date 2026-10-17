@@ -30,6 +30,16 @@ public partial class FontSettingView : UserControl
         };
     }
 
+    /// <summary>
+    /// Whether the row has the preview of its font under it (default: yes). A page with a preview of its own for all the
+    /// fonts (<see cref="FontsPageView.HasSharedPreview"/>) switches it off.
+    /// </summary>
+    public bool ShowPreview
+    {
+        get => PreviewFrame.IsVisible;
+        set => PreviewFrame.IsVisible = value;
+    }
+
     /// <summary>Raised when the user has dragged the grip: <see cref="UserPreviewHeight"/> is the new height.</summary>
     public event EventHandler? PreviewHeightChanged;
 
