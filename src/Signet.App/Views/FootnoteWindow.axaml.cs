@@ -51,25 +51,15 @@ public partial class FootnoteWindow : Window
     {
         InitializeComponent();
         ArgumentNullException.ThrowIfNull(appearance);
-        if (CodeEditorTextMate.CreateColorizer(CodeEditorSyntax.Html, extended: false, linkExists: null, AppTheme.Current) is { } colorizer)
-        {
-            PreviewCodeEditor.TextArea.TextView.LineTransformers.Add(colorizer);
-        }
-
-        EditorTheming.Apply(PreviewCodeEditor, AppTheme.Current);
-
-        if (!string.IsNullOrWhiteSpace(appearance.FontFamily))
-        {
-            PreviewCodeEditor.FontFamily = new Avalonia.Media.FontFamily(appearance.FontFamily);
-        }
+        Body.UseEditorFont(appearance);
 
         _appearanceTimer = new DispatcherTimer { Interval = AppearanceDelay };
         _appearanceTimer.Tick += (_, _) => ShowAppearance();
         OkButton.Click += (_, _) => Accept();
         RemoveButton.Click += async (_, _) => await RemoveAsync().ConfigureAwait(true);
         CancelButton.Click += (_, _) => Close(null);
-        Opened += (_, _) => ContentBox.Focus();
-        PreviewTabs.SelectionChanged += (_, _) => OnPreviewTabChanged();
+        Opened += (_, _) => Body.ContentBox.Focus();
+        Body.PreviewTabs.SelectionChanged += (_, _) => OnPreviewTabChanged();
         DataContextChanged += (_, _) => Bind(DataContext as FootnoteViewModel);
         Closed += (_, _) => Release();
     }
@@ -100,17 +90,11 @@ public partial class FootnoteWindow : Window
         {
             _viewModel.PropertyChanged += OnViewModelPropertyChanged;
         }
-
-        PreviewCodeEditor.Text = _viewModel?.PreviewCode ?? string.Empty;
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(FootnoteViewModel.PreviewCode))
-        {
-            PreviewCodeEditor.Text = _viewModel?.PreviewCode ?? string.Empty;
-        }
-        else if (e.PropertyName == nameof(FootnoteViewModel.PreviewPage) && _webView is not null)
+        if (e.PropertyName == nameof(FootnoteViewModel.PreviewPage) && _webView is not null)
         {
             _appearanceTimer.Stop();
             _appearanceTimer.Start();
@@ -119,7 +103,7 @@ public partial class FootnoteWindow : Window
 
     private void OnPreviewTabChanged()
     {
-        if (PreviewTabs.SelectedItem != AppearanceTab || _webViewFailed)
+        if (Body.PreviewTabs.SelectedItem != Body.AppearanceTab || _webViewFailed)
         {
             return;
         }
@@ -139,7 +123,7 @@ public partial class FootnoteWindow : Window
     private async void StartWebView()
     {
         _webView = new NativeWebView.Controls.NativeWebView();
-        AppearanceHost.Children.Insert(0, _webView);
+        Body.AppearanceHost.Children.Insert(0, _webView);
         try
         {
             Nwv.NativeWebViewRuntime.EnsureCurrentPlatformRegistered();
@@ -150,9 +134,9 @@ public partial class FootnoteWindow : Window
         catch (Exception ex)
         {
             _webViewFailed = true;
-            AppearanceHost.Children.Remove(_webView);
-            AppearanceMessage.Text = Strings.Format("Preview_EngineUnavailable", ex.GetType().Name, ex.Message);
-            AppearanceMessage.IsVisible = true;
+            Body.AppearanceHost.Children.Remove(_webView);
+            Body.AppearanceMessage.Text = Strings.Format("Preview_EngineUnavailable", ex.GetType().Name, ex.Message);
+            Body.AppearanceMessage.IsVisible = true;
         }
     }
 
@@ -173,8 +157,8 @@ public partial class FootnoteWindow : Window
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
         {
-            AppearanceMessage.Text = Strings.Format("Preview_LoadFailed", ex.Message);
-            AppearanceMessage.IsVisible = true;
+            Body.AppearanceMessage.Text = Strings.Format("Preview_LoadFailed", ex.Message);
+            Body.AppearanceMessage.IsVisible = true;
         }
     }
 
