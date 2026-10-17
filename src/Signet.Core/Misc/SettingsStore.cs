@@ -1278,6 +1278,45 @@ public sealed class SettingsStore
         }
     }
 
+    /// <summary>
+    /// Look of the start screen's list of recent files (<see cref="StartScreenAppearance"/>): fonts and indentation. Always read
+    /// normalized.
+    /// </summary>
+    public StartScreenAppearance StartScreenAppearance
+    {
+        get
+        {
+            StartScreenAppearance d = StartScreenAppearance.Default;
+            return new StartScreenAppearance(
+                ReadString("start_screen_title_font_family", d.TitleFontFamily),
+                ReadInt("start_screen_title_font_size", d.TitleFontSize),
+                ReadString("start_screen_location_font_family", d.LocationFontFamily),
+                ReadInt("start_screen_location_font_size", d.LocationFontSize),
+                ReadString("start_screen_section_font_family", d.SectionFontFamily),
+                ReadInt("start_screen_section_font_size", d.SectionFontSize),
+                ReadInt("start_screen_indent", d.Indent),
+                ReadInt("start_screen_title_font_weight", d.TitleFontWeight),
+                ReadInt("start_screen_location_font_weight", d.LocationFontWeight),
+                ReadInt("start_screen_section_font_weight", d.SectionFontWeight)).Normalized();
+        }
+
+        set
+        {
+            StartScreenAppearance v = value.Normalized();
+            WriteSilent("start_screen_title_font_family", v.TitleFontFamily);
+            WriteSilent("start_screen_title_font_size", v.TitleFontSize);
+            WriteSilent("start_screen_location_font_family", v.LocationFontFamily);
+            WriteSilent("start_screen_location_font_size", v.LocationFontSize);
+            WriteSilent("start_screen_section_font_family", v.SectionFontFamily);
+            WriteSilent("start_screen_section_font_size", v.SectionFontSize);
+            WriteSilent("start_screen_indent", v.Indent);
+            WriteSilent("start_screen_title_font_weight", v.TitleFontWeight);
+            WriteSilent("start_screen_location_font_weight", v.LocationFontWeight);
+            WriteSilent("start_screen_section_font_weight", v.SectionFontWeight);
+            RaiseChanged("start_screen_appearance");
+        }
+    }
+
     /// <summary>Upper bound of <see cref="FindUsagesRowSpacing"/> (the lower bound is 0).</summary>
     public const int FindUsagesRowSpacingMax = 20;
 
@@ -2057,6 +2096,16 @@ public sealed class SettingsStore
         yield return "book_browser_cell_min_height";
         yield return "book_browser_cell_padding";
         yield return "book_browser_show_folders";
+        yield return "start_screen_title_font_family";
+        yield return "start_screen_title_font_size";
+        yield return "start_screen_title_font_weight";
+        yield return "start_screen_location_font_family";
+        yield return "start_screen_location_font_size";
+        yield return "start_screen_location_font_weight";
+        yield return "start_screen_section_font_family";
+        yield return "start_screen_section_font_size";
+        yield return "start_screen_section_font_weight";
+        yield return "start_screen_indent";
         yield return "find_usages_fit_usage_column";
         yield return "find_usages_row_spacing";
         yield return "find_usages_font_header_family";

@@ -8,7 +8,9 @@
              x:DataType="vm:StartScreenViewModel">
 
   <!-- The empty document area while no book is open (IDocumentDock.EmptyContent): open or create a book, or pick a
-       recent file. With a book open and no tabs the area stays empty. -->
+       recent file. With a book open and no tabs the area stays empty. The fonts, colors and indentation of the list follow
+       the settings (Preferences › Appearance › Start Screen): the defaults are here, the settings are applied in the
+       code-behind as styles added after these. -->
   <UserControl.Styles>
     <Style Selector="Button.recentFile">
       <Setter Property="Background" Value="Transparent" />
@@ -16,6 +18,21 @@
       <Setter Property="HorizontalAlignment" Value="Stretch" />
       <Setter Property="HorizontalContentAlignment" Value="Left" />
       <Setter Property="Padding" Value="8,4" />
+    </Style>
+    <!-- The sample of the preview draws one entry as if the pointer were on it. -->
+    <Style Selector="Button.recentFile.highlighted /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource ButtonBackgroundPointerOver}" />
+    </Style>
+    <Style Selector="TextBlock.recentTitle">
+      <Setter Property="Foreground" Value="{DynamicResource SystemControlHighlightAccentBrush}" />
+    </Style>
+    <Style Selector="TextBlock.recentLocation">
+      <Setter Property="FontSize" Value="11" />
+      <Setter Property="Opacity" Value="0.6" />
+    </Style>
+    <Style Selector="TextBlock.recentSection">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Opacity" Value="0.8" />
     </Style>
   </UserControl.Styles>
 
@@ -27,14 +44,15 @@
         <Button x:Name="NewButton" Content="{loc:Loc StartScreen_New}" Command="{Binding NewCommand}" MinWidth="120" />
       </StackPanel>
       <StackPanel Spacing="4" IsVisible="{Binding HasRecentFiles}" Margin="0,8,0,0">
-        <TextBlock Text="{loc:Loc StartScreen_RecentFiles}" FontWeight="SemiBold" Opacity="0.8" />
+        <TextBlock x:Name="RecentFilesHeading" Classes="recentSection" Text="{loc:Loc StartScreen_RecentFiles}" />
         <ItemsControl x:Name="RecentFilesList" ItemsSource="{Binding RecentFileItems}">
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="vm:StartScreenRecentFile">
-              <Button Classes="recentFile" Command="{Binding OpenCommand}" ToolTip.Tip="{Binding Path}">
+              <Button Classes="recentFile" Classes.highlighted="{Binding IsHighlighted}" Command="{Binding OpenCommand}"
+                      ToolTip.Tip="{Binding Path}">
                 <StackPanel>
-                  <TextBlock Text="{Binding Name}" Foreground="{DynamicResource SystemControlHighlightAccentBrush}" />
-                  <TextBlock Text="{Binding Folder}" FontSize="11" Opacity="0.6" TextTrimming="CharacterEllipsis" />
+                  <TextBlock Classes="recentTitle" Text="{Binding Name}" />
+                  <TextBlock Classes="recentLocation" Text="{Binding Folder}" TextTrimming="CharacterEllipsis" />
                 </StackPanel>
               </Button>
             </DataTemplate>

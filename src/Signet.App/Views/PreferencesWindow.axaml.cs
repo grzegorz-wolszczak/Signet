@@ -291,6 +291,7 @@ public partial class PreferencesWindow : Window
     private IEnumerable<Grid> PreviewHosts()
     {
         yield return BookBrowserPreviewHost;
+        yield return StartScreenPreviewHost;
     }
 
     // The Fonts pages (every Appearance section and the theme's own) each have a width of the preview of their own: the
@@ -360,6 +361,8 @@ public partial class PreferencesWindow : Window
             SpecialCharacterFontsView.DataContext = vm.SpecialCharacterFonts;
             StartScreenFontsView.DataContext = vm.StartScreenFonts;
             BookBrowserFontsView.DataContext = vm.BookBrowserFonts;
+            StartScreenPreview.DataContext = vm.StartScreenSample;
+            StartScreenSampleTip.DataContext = vm.StartScreenFonts.Fonts.Single(f => f.Key == "Tooltip" + TooltipArea.StartScreen);
             BookBrowserPreview.DataContext = vm.BookBrowserSample;
             BookBrowserSampleTip.DataContext = vm.BookBrowserFonts.Fonts.Single(f => f.Key == "Tooltip" + TooltipArea.BookBrowser);
             TableOfContentsFontsView.DataContext = vm.TableOfContentsFonts;

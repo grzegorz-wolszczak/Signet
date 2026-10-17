@@ -60,6 +60,8 @@ public sealed partial class PreferencesViewModel : IDisposable
     /// <summary>Lets go of the samples of the previews (the window closes).</summary>
     public void Dispose()
     {
+        _startScreenSample?.Dispose();
+        _startScreenSample = null;
         _bookBrowserSample?.Dispose();
         _bookBrowserSample = null;
         _sampleBook?.Dispose();
@@ -202,7 +204,8 @@ public sealed partial class PreferencesViewModel : IDisposable
     private FontSettingViewModel InterfaceFontRow(
         string key, string labelKey, string previewKey,
         Func<string> family, Action<string> setFamily, Func<int> size, Action<int> setSize,
-        Action reset, System.Windows.Input.ICommand choose, Func<int> weight, Action<int> setWeight) =>
+        Action reset, System.Windows.Input.ICommand choose, Func<int> weight, Action<int> setWeight,
+        int? defaultSize = null, string sizeHintKey = "PreferencesWindow_FontSizeZeroAsInterface", int defaultWeight = 0) =>
         new(
             key,
             Strings.Get(labelKey),
@@ -210,12 +213,13 @@ public sealed partial class PreferencesViewModel : IDisposable
             (family, setFamily),
             (size, setSize, 0, BookBrowserAppearance.FontSizeMax),
             (() => family().Length > 0 ? family() : EffectiveUiFontFamily,
-             () => size() > 0 ? size() : EffectiveUiFontSize),
+             () => size() > 0 ? size() : defaultSize ?? EffectiveUiFontSize),
             reset,
             choose,
             placeholder: () => EffectiveUiFontFamily,
-            sizeHint: Strings.Get("PreferencesWindow_FontSizeZeroAsInterface"),
-            weight: (weight, setWeight));
+            sizeHint: Strings.Get(sizeHintKey),
+            weight: (weight, setWeight),
+            effectiveWeight: () => weight() > 0 ? weight() : defaultWeight);
 }
 
 /// <summary>A "expand this folder on load" checkbox of the Book Browser preferences.</summary>

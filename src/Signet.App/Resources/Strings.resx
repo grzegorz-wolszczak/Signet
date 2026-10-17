@@ -5923,6 +5923,15 @@ Zamknij zakładkę</value>
   <data name="PreferencesWindow_FindUsagesBackgroundInTheme" xml:space="preserve">
     <value>Tło kolumn: Wygląd › Kolory interfejsu</value>
   </data>
+  <data name="ThemeKey_ui_startScreen_title" xml:space="preserve">
+    <value>Nazwa ostatniego pliku na ekranie startowym</value>
+  </data>
+  <data name="ThemeKey_ui_startScreen_location" xml:space="preserve">
+    <value>Folder ostatniego pliku na ekranie startowym</value>
+  </data>
+  <data name="ThemeKey_ui_startScreen_highlight" xml:space="preserve">
+    <value>Tło ostatniego pliku pod wskaźnikiem na ekranie startowym</value>
+  </data>
   <data name="ThemeKey_ui_bookBrowser_selection" xml:space="preserve">
     <value>Zaznaczenie w przeglądarce książki</value>
   </data>
@@ -6207,5 +6216,44 @@ Zamknij zakładkę</value>
   </data>
   <data name="PreferencesWindow_BookBrowserBackgroundInTheme" xml:space="preserve">
     <value>Kolor tła przeglądarki książki: Wygląd › Kolory interfejsu</value>
+  </data>
+  <data name="PreferencesWindow_StartScreenTitleFont" xml:space="preserve">
+    <value>Nazwy ostatnich plików</value>
+  </data>
+  <data name="PreferencesWindow_StartScreenLocationFont" xml:space="preserve">
+    <value>Foldery ostatnich plików</value>
+  </data>
+  <data name="PreferencesWindow_StartScreenSectionFont" xml:space="preserve">
+    <value>Nagłówek listy („Ostatnie pliki”)</value>
+  </data>
+  <data name="FontPreview_StartScreenTitle" xml:space="preserve">
+    <value>Latarnia morska.epub</value>
+  </data>
+  <data name="FontPreview_StartScreenLocation" xml:space="preserve">
+    <value>D:\Książki\Beletrystyka</value>
+  </data>
+  <data name="FontPreview_StartScreenSection" xml:space="preserve">
+    <value>Ostatnie pliki</value>
+  </data>
+  <data name="PreferencesWindow_StartScreenRecentList" xml:space="preserve">
+    <value>Lista ostatnich plików</value>
+  </data>
+  <data name="PreferencesWindow_StartScreenRecentFilesLimit" xml:space="preserve">
+    <value>Maksymalna liczba ostatnich plików (także w menu Plik, 0–20)</value>
+  </data>
+  <data name="PreferencesWindow_StartScreenIndent" xml:space="preserve">
+    <value>Wcięcie wpisów względem nagłówka listy (px)</value>
+  </data>
+  <data name="PreferencesWindow_StartScreenTitleColorInTheme" xml:space="preserve">
+    <value>Kolor nazw plików: Wygląd › Kolory interfejsu</value>
+  </data>
+  <data name="PreferencesWindow_StartScreenLocationColorInTheme" xml:space="preserve">
+    <value>Kolor folderów plików: Wygląd › Kolory interfejsu</value>
+  </data>
+  <data name="PreferencesWindow_StartScreenHighlightInTheme" xml:space="preserve">
+    <value>Tło podświetlonego pliku: Wygląd › Kolory interfejsu</value>
+  </data>
+  <data name="PreferencesWindow_FontSizeZeroAsDefault11" xml:space="preserve">
+    <value>Rozmiar 0 = domyślny (11)</value>
   </data>
 </root>

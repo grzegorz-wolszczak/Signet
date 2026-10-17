@@ -5923,6 +5923,15 @@ Close the tab</value>
   <data name="PreferencesWindow_FindUsagesBackgroundInTheme" xml:space="preserve">
     <value>Column backgrounds: Appearance › Interface Colors</value>
   </data>
+  <data name="ThemeKey_ui_startScreen_title" xml:space="preserve">
+    <value>Name of a recent file on the start screen</value>
+  </data>
+  <data name="ThemeKey_ui_startScreen_location" xml:space="preserve">
+    <value>Folder of a recent file on the start screen</value>
+  </data>
+  <data name="ThemeKey_ui_startScreen_highlight" xml:space="preserve">
+    <value>Background of the recent file under the pointer on the start screen</value>
+  </data>
   <data name="ThemeKey_ui_bookBrowser_selection" xml:space="preserve">
     <value>Selection in the Book Browser</value>
   </data>
@@ -6207,5 +6216,44 @@ Close the tab</value>
   </data>
   <data name="PreferencesWindow_BookBrowserBackgroundInTheme" xml:space="preserve">
     <value>Book Browser background color: Appearance › Interface Colors</value>
+  </data>
+  <data name="PreferencesWindow_StartScreenTitleFont" xml:space="preserve">
+    <value>Names of the recent files</value>
+  </data>
+  <data name="PreferencesWindow_StartScreenLocationFont" xml:space="preserve">
+    <value>Folders of the recent files</value>
+  </data>
+  <data name="PreferencesWindow_StartScreenSectionFont" xml:space="preserve">
+    <value>Heading of the list ("Recent files")</value>
+  </data>
+  <data name="FontPreview_StartScreenTitle" xml:space="preserve">
+    <value>The Lighthouse Keeper.epub</value>
+  </data>
+  <data name="FontPreview_StartScreenLocation" xml:space="preserve">
+    <value>D:\Books\Fiction</value>
+  </data>
+  <data name="FontPreview_StartScreenSection" xml:space="preserve">
+    <value>Recent files</value>
+  </data>
+  <data name="PreferencesWindow_StartScreenRecentList" xml:space="preserve">
+    <value>List of recent files</value>
+  </data>
+  <data name="PreferencesWindow_StartScreenRecentFilesLimit" xml:space="preserve">
+    <value>Maximum number of recent files (also in the File menu, 0–20)</value>
+  </data>
+  <data name="PreferencesWindow_StartScreenIndent" xml:space="preserve">
+    <value>Indentation of the entries under the list heading (px)</value>
+  </data>
+  <data name="PreferencesWindow_StartScreenTitleColorInTheme" xml:space="preserve">
+    <value>Color of the file names: Appearance › Interface Colors</value>
+  </data>
+  <data name="PreferencesWindow_StartScreenLocationColorInTheme" xml:space="preserve">
+    <value>Color of the file folders: Appearance › Interface Colors</value>
+  </data>
+  <data name="PreferencesWindow_StartScreenHighlightInTheme" xml:space="preserve">
+    <value>Background of the highlighted file: Appearance › Interface Colors</value>
+  </data>
+  <data name="PreferencesWindow_FontSizeZeroAsDefault11" xml:space="preserve">
+    <value>Size 0 = default (11)</value>
   </data>
 </root>
