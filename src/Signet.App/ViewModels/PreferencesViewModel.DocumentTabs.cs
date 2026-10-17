@@ -66,7 +66,7 @@ public sealed partial class PreferencesViewModel
             Strings.Get("FontPreview_DocumentTabs"),
             (() => DocumentTabFontFamily, v => DocumentTabFontFamily = v),
             (() => DocumentTabFontSize, v => DocumentTabFontSize = v, 0, DocumentTabFontAppearance.FontSizeMax),
-            (() => DocumentTabFontFamily, () => DocumentTabFontSize > 0 ? DocumentTabFontSize : 12),
+            (() => DocumentTabFontFamily.Length > 0 ? DocumentTabFontFamily : EffectiveUiFontFamily, () => DocumentTabFontSize > 0 ? DocumentTabFontSize : 12),
             () =>
             {
                 DocumentTabFontFamily = string.Empty;

@@ -349,16 +349,12 @@ public sealed partial class PreferencesViewModel
     private string TooltipFamily(TooltipArea area) =>
         _settings.GetEffectiveTooltipFont(area).FontFamily is { Length: > 0 } family ? family : EffectiveUiFontFamily;
 
-    // The inheritance of an area from "Appearance › General › Fonts › Tooltips: other windows".
+    // The inheritance of an area from "Fonts › Tooltips: other windows" (the page of Appearance › General that holds them; the
+    // path starts at "Fonts", the window has one place to set a font).
     private FontInheritance TooltipInheritance(TooltipArea area) => new(
         () => _settings.GetTooltipInherit(area),
         v => _settings.SetTooltipInherit(area, v),
-        string.Join(
-            " › ",
-            Strings.Get("PreferencesWindow_Appearance"),
-            Strings.Get("PreferencesWindow_General"),
-            Strings.Get("PreferencesWindow_Fonts"),
-            Strings.Get("PreferencesWindow_TooltipFontOtherWindows")),
+        string.Join(" › ", Strings.Get("PreferencesWindow_Fonts"), Strings.Get("PreferencesWindow_TooltipFontOtherWindows")),
         () =>
         {
             TooltipFont other = _settings.GetTooltipFont(TooltipArea.OtherWindows);

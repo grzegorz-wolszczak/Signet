@@ -223,7 +223,6 @@ public sealed class PreferencesWindowRenderTests
         page.FindControl<StackPanel>("Settings")!.IsEffectivelyEnabled.Should().BeFalse("the settings are switched off");
         ScrollViewer scroll = page.GetVisualDescendants().OfType<ScrollViewer>().First();
         scroll.IsEffectivelyEnabled.Should().BeTrue("the scroll viewer keeps working");
-        page.FindControl<CheckBox>("WrapPreviewBox")!.IsEffectivelyEnabled.Should().BeTrue("the preview is not disabled");
 
         page.IsContentEnabled = true;
         Dispatcher.UIThread.RunJobs();
@@ -1361,11 +1360,11 @@ public sealed class PreferencesWindowRenderTests
             .ElementAt(index);
 
     /// <summary>
-    /// A "Fonts" page, as Rider's Editor › Font: a row per font setting (typeface list, size); the preview on the right
-    /// shows the setting focused last in its font and size, with the colors of the place it is used in.
+    /// A "Fonts" page: a row per font setting, each with the preview of its font under it (one or two lines), in the colors
+    /// of the place the font is used in; a font of the editor is previewed as code.
     /// </summary>
     [AvaloniaFact]
-    public void Fonts_page_previews_the_setting_focused_last()
+    public void Each_font_row_has_a_preview_of_its_own_under_the_font()
     {
         PreferencesWindow window = BuildWindow();
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
@@ -1376,10 +1375,9 @@ public sealed class PreferencesWindowRenderTests
         FontsPageView page = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible);
         FontSettingView[] rows = page.GetVisualDescendants().OfType<FontSettingView>().ToArray();
         rows.Select(r => r.Name).Should().Equal("FontCodeEditorText", "FontLineNumbers", "FontOpenTagHint", "FontDocumentTabs");
-        CodePreviewEditor code = page.FindControl<CodePreviewEditor>("CodePreview")!;
-        TextBlock preview = page.FindControl<TextBlock>("PreviewText")!;
+        CodePreviewEditor code = rows[0].FindControl<CodePreviewEditor>("CodePreview")!;
         code.IsVisible.Should().BeTrue("the editor font is previewed as code");
-        page.FindControl<ScrollViewer>("PlainPreview")!.IsVisible.Should().BeFalse();
+        rows[0].FindControl<ScrollViewer>("PlainPreview")!.IsVisible.Should().BeFalse();
         code.Text.Should().Be(Strings.Get("FontPreview_Code"));
         code.FontFamily.Name.Should().Be(vm.CodeEditor.FontFamily);
         code.FontSize.Should().Be(vm.CodeEditor.FontSize);
@@ -1387,27 +1385,28 @@ public sealed class PreferencesWindowRenderTests
         code.TextArea.TextView.LineTransformers.Should().Contain(t => t.GetType().Name.StartsWith("LineStateSyntaxColorizer"),
             "the sample is highlighted as in Code Editor");
 
-        rows[2].FindControl<Button>("ChooseButton")!.Focus();
-        Dispatcher.UIThread.RunJobs();
-
-        vm.CodeEditorFonts.Active!.Key.Should().Be("OpenTagHint");
-        page.FindControl<ScrollViewer>("PlainPreview")!.IsVisible.Should().BeTrue();
-        code.IsVisible.Should().BeFalse();
+        FontSettingView hint = rows[2];
+        TextBlock preview = hint.FindControl<TextBlock>("PreviewText")!;
+        hint.FindControl<ScrollViewer>("PlainPreview")!.IsVisible.Should().BeTrue();
+        hint.FindControl<CodePreviewEditor>("CodePreview")!.IsVisible.Should().BeFalse();
         preview.Text.Should().StartWith(Strings.Get("FontPreview_OpenTagHint"));
-        page.FindControl<Border>("PreviewSurface")!.Background.Should().BeAssignableTo<ISolidColorBrush>()
+        hint.FindControl<Border>("PreviewSurface")!.Background.Should().BeAssignableTo<ISolidColorBrush>()
             .Which.Color.Should().Be(AppTheme.Current.Background(ThemeKeys.HintsOpenTag));
+        Panel area = rows[0].FindControl<Panel>("PreviewArea")!;
+        window.CaptureRenderedFrame();
+        area.TranslatePoint(default, rows[0])!.Value.Y.Should().BeGreaterThan(
+            rows[0].FindControl<TextBlock>("FontSummary")!.TranslatePoint(default, rows[0])!.Value.Y, "the preview is under the font");
 
         vm.OpenTagHintFontSize = 21;
         Dispatcher.UIThread.RunJobs();
 
-        vm.OpenTagHintFontSize.Should().Be(21);
         preview.FontSize.Should().Be(21);
         window.Close();
     }
 
-    /// <summary>"Wrap lines" over the preview wraps both the code sample and a text sample.</summary>
+    /// <summary>The preview is two lines tall to start with (of its font), not the whole page, and grows with the font.</summary>
     [AvaloniaFact]
-    public void Fonts_page_wraps_the_preview_lines_on_request()
+    public void A_font_preview_is_two_lines_tall_to_start_with_and_the_grip_makes_it_taller_and_is_remembered()
     {
         PreferencesWindow window = BuildWindow();
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
@@ -1415,16 +1414,64 @@ public sealed class PreferencesWindowRenderTests
         Dispatcher.UIThread.RunJobs();
         ShowFontsTab(window, "CodeEditor");
         FontsPageView page = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible);
-        CodePreviewEditor code = page.FindControl<CodePreviewEditor>("CodePreview")!;
-        TextBlock preview = page.FindControl<TextBlock>("PreviewText")!;
+        FontSettingView hint = page.GetVisualDescendants().OfType<FontSettingView>().Single(r => r.Name == "FontOpenTagHint");
+        Panel area = hint.FindControl<Panel>("PreviewArea")!;
+        window.CaptureRenderedFrame();
+        double start = area.Bounds.Height;
+
+        start.Should().BeInRange(20, 90, "a line or two, not a pane");
+        hint.UserPreviewHeight.Should().BeNull();
+
+        vm.OpenTagHintFontSize = 40;
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+
+        area.Bounds.Height.Should().BeGreaterThan(start, "the default height follows the font");
+
+        hint.FindControl<HeightResizeGrip>("PreviewGrip")!.ResizeBy(60);
+        Dispatcher.UIThread.RunJobs();
+
+        hint.UserPreviewHeight.Should().NotBeNull();
+        window.SplitterSizes.Should().ContainKey("CodeEditorFontsView.OpenTagHint.previewHeight");
+
+        // What the window remembers is given back to a window opened later.
+        int remembered = window.SplitterSizes["CodeEditorFontsView.OpenTagHint.previewHeight"];
+        PreferencesWindow again = BuildWindow();
+        again.SplitterSizes = new System.Collections.Generic.Dictionary<string, int> { ["CodeEditorFontsView.OpenTagHint.previewHeight"] = remembered };
+        again.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowFontsTab(again, "CodeEditor");
+        again.GetVisualDescendants().OfType<FontSettingView>().Single(r => r.Name == "FontOpenTagHint" && r.IsEffectivelyVisible)
+            .UserPreviewHeight.Should().Be(remembered);
+        again.Close();
+        window.Close();
+    }
+
+    /// <summary>"Wrap lines" under a preview wraps both the code sample and a text sample, of that row only.</summary>
+    [AvaloniaFact]
+    public void Wrapping_the_lines_of_a_preview_is_a_choice_of_its_row()
+    {
+        PreferencesWindow window = BuildWindow();
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowFontsTab(window, "CodeEditor");
+        FontsPageView page = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible);
+        FontSettingView[] rows = page.GetVisualDescendants().OfType<FontSettingView>().ToArray();
+        CodePreviewEditor code = rows[0].FindControl<CodePreviewEditor>("CodePreview")!;
+        TextBlock preview = rows[2].FindControl<TextBlock>("PreviewText")!;
         code.WordWrap.Should().BeFalse();
         preview.TextWrapping.Should().Be(TextWrapping.NoWrap);
 
-        page.FindControl<CheckBox>("WrapPreviewBox")!.IsChecked = true;
+        rows[0].FindControl<CheckBox>("WrapPreviewBox")!.IsChecked = true;
         Dispatcher.UIThread.RunJobs();
 
-        vm.CodeEditorFonts.WrapPreview.Should().BeTrue();
+        ((FontSettingViewModel)rows[0].DataContext!).WrapPreview.Should().BeTrue();
         code.WordWrap.Should().BeTrue();
+        preview.TextWrapping.Should().Be(TextWrapping.NoWrap, "another row is not wrapped with it");
+
+        rows[2].FindControl<CheckBox>("WrapPreviewBox")!.IsChecked = true;
+        Dispatcher.UIThread.RunJobs();
+
         preview.TextWrapping.Should().Be(TextWrapping.Wrap);
         window.Close();
     }

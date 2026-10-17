@@ -592,7 +592,10 @@ public sealed partial class PreferencesViewModel : ObservableObject
     // OK keeps the choice and Cancel puts back the font the setting had before the window was opened.
     private async Task PickFontAsync(FontPickRequest request, FontPickResult before, Action<FontPickResult> apply)
     {
-        FontPickResult? result = await PickFontAsync(request with { Changed = apply });
+        // A font that is not set is the one in use (the interface font): the window starts with it selected, so OK is
+        // available at once and the changes of the size and the weight can be previewed.
+        FontPickResult? result = await PickFontAsync(
+            request with { Family = request.Family.Length > 0 ? request.Family : EffectiveUiFontFamily, Changed = apply });
         apply(result ?? before);
     }
 

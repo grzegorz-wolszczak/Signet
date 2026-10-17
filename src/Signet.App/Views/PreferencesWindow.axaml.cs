@@ -156,6 +156,14 @@ public partial class PreferencesWindow : Window
                 sizes[page.Name + FontsPreviewWidthSuffix] = (int)Math.Round(page.PreviewWidth);
             }
 
+            foreach (FontsPageView page in FontsPages())
+            {
+                foreach ((string key, int height) in page.PreviewHeights)
+                {
+                    sizes[page.Name + "." + key + PreviewHeightSuffix] = height;
+                }
+            }
+
             foreach ((_, ThemeKeysView view) in ThemeKeyViews())
             {
                 sizes[view.Name + TreeSizeSuffix] = (int)Math.Round(view.TreeWidth);
@@ -177,6 +185,15 @@ public partial class PreferencesWindow : Window
             value.TryGetValue(FontsPreviewSizeKey, out int legacyPreview);
             foreach (FontsPageView page in FontsPages())
             {
+                foreach ((string name, int height) in value)
+                {
+                    if (height > 0 && name.StartsWith(page.Name + ".", StringComparison.Ordinal) && name.EndsWith(PreviewHeightSuffix, StringComparison.Ordinal))
+                    {
+                        string key = name[(page.Name!.Length + 1)..^PreviewHeightSuffix.Length];
+                        page.SetPreviewHeight(key, height);
+                    }
+                }
+
                 if (value.TryGetValue(page.Name + FontsPreviewWidthSuffix, out int preview) && preview > 0)
                 {
                     SetFontsPreviewWidth(page, preview);
@@ -248,6 +265,7 @@ public partial class PreferencesWindow : Window
     private const string SectionsSizeKey = "Sections";
     private const string FontsPreviewSizeKey = "FontsPreview";
     private const string FontsPreviewWidthSuffix = ".previewWidth";
+    private const string PreviewHeightSuffix = ".previewHeight";
     private readonly List<FontsPageView> _resizedFontsPages = new();
 
     // The Fonts pages (every Appearance section and the theme's own) each have a width of the preview of their own: the
@@ -642,7 +660,6 @@ public partial class PreferencesWindow : Window
 
         RevealSection(node);
         AppearanceGeneralTabs.SelectedIndex = 1;
-        page.Active = font;
         Dispatcher.UIThread.Post(() => AppearanceFontsView.RowOf(font)?.BringIntoView(), DispatcherPriority.Loaded);
     }
 
@@ -767,12 +784,14 @@ public partial class PreferencesWindow : Window
     }
 
     // The grips of the resizable fields of every page (the pages not shown are in the logical tree too).
+    // (Not the grips under the font previews: the Fonts pages remember those with the sizes of the panes.)
     private IEnumerable<HeightResizeGrip> ResizeGrips() =>
         Pages.Items.OfType<TabItem>()
             .Select(t => t.Content)
             .OfType<ILogical>()
             .SelectMany(SelfAndLogicalDescendants)
-            .OfType<HeightResizeGrip>();
+            .OfType<HeightResizeGrip>()
+            .Where(g => !g.GetLogicalAncestors().OfType<FontSettingView>().Any());
 
     // A text with the class "noSearch" (e.g. the sample of a font preview, or the link to a parent setting) is not a
     // setting: the search skips it.
