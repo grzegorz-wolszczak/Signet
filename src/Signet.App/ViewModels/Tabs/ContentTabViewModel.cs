@@ -45,6 +45,15 @@ public abstract class ContentTabViewModel : Document, IDeferredContentPresentati
     /// <summary>The tab model entry that this tab represents.</summary>
     public OpenTab Tab { get; }
 
+    /// <summary>
+    /// Raised when the view of the tab got the keyboard focus (a click in its text): a tab in a window of its own is
+    /// the active one of its tab strip already, so Dock says nothing — the tab manager makes it the active tab anyway.
+    /// </summary>
+    public event EventHandler? FocusReceived;
+
+    /// <summary>Tells that the view of the tab got the keyboard focus (<see cref="FocusReceived"/>).</summary>
+    public void NotifyFocusReceived() => FocusReceived?.Invoke(this, EventArgs.Empty);
+
     /// <summary>The resource displayed in the tab.</summary>
     public Resource Resource => Tab.Resource;
 

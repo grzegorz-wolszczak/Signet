@@ -1511,6 +1511,12 @@ Do you want to save the changes?</value>
   <data name="PreferencesWindow_ExtendedHighlighting" xml:space="preserve">
     <value>Extended syntax highlighting (calibre-style)</value>
   </data>
+  <data name="PreferencesWindow_MultilineTabs" xml:space="preserve">
+    <value>Lay out the tabs that do not fit in several rows (instead of scrolling them with arrows)</value>
+  </data>
+  <data name="PreferencesWindow_BookBrowserFollowsTab" xml:space="preserve">
+    <value>Select the file of the active tab in the Book Browser</value>
+  </data>
   <data name="CodeEditor_Issue_UnescapedLessThan" xml:space="preserve">
     <value>An unescaped &lt; is not allowed. Replace it with &amp;lt;</value>
   </data>
@@ -4068,6 +4074,12 @@ It does not change the files, their names or their IDs.</value>
   <data name="PreferencesWindow_LineNumbersFont" xml:space="preserve">
     <value>Line numbers font</value>
   </data>
+  <data name="PreferencesWindow_DocumentTabsFont" xml:space="preserve">
+    <value>Font of the document tabs</value>
+  </data>
+  <data name="FontPreview_DocumentTabs" xml:space="preserve">
+    <value>part0001.html   ×</value>
+  </data>
   <data name="Action_MainWindow_FindUsages" xml:space="preserve">
     <value>Find Usages</value>
   </data>
@@ -5614,6 +5626,9 @@ Close the tab</value>
   <data name="ThemeGroup_Previews" xml:space="preserve">
     <value>Previews</value>
   </data>
+  <data name="ThemeGroup_Tabs" xml:space="preserve">
+    <value>Tabs</value>
+  </data>
   <data name="ThemeGroup_Palette" xml:space="preserve">
     <value>Fluent palette</value>
   </data>
@@ -5839,6 +5854,12 @@ Close the tab</value>
   <data name="ThemeKey_ui_bookBrowser_background" xml:space="preserve">
     <value>Book Browser background</value>
   </data>
+  <data name="ThemeKey_ui_bookBrowser_selection" xml:space="preserve">
+    <value>Selection in the Book Browser</value>
+  </data>
+  <data name="PreferencesWindow_BookBrowserSelectionInTheme" xml:space="preserve">
+    <value>Color of the selected file: Appearance › Interface Colors</value>
+  </data>
   <data name="ThemeKey_ui_icon_inactive" xml:space="preserve">
     <value>Inactive icon</value>
   </data>
@@ -5862,6 +5883,12 @@ Close the tab</value>
   </data>
   <data name="ThemeKey_ui_fontPreview" xml:space="preserve">
     <value>Font preview</value>
+  </data>
+  <data name="ThemeKey_ui_documentTab" xml:space="preserve">
+    <value>Document tabs</value>
+  </data>
+  <data name="ThemeKey_ui_documentTab_selected" xml:space="preserve">
+    <value>Selected document tab</value>
   </data>
   <data name="ColorScheme_KeysColumn" xml:space="preserve">
     <value>Element</value>
@@ -6110,6 +6137,6 @@ Close the tab</value>
     <value>Vertical padding of a cell (px)</value>
   </data>
   <data name="PreferencesWindow_BookBrowserBackgroundInTheme" xml:space="preserve">
-    <value>Book Browser background color: Color Scheme › Interface</value>
+    <value>Book Browser background color: Appearance › Interface Colors</value>
   </data>
 </root>

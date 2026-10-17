@@ -299,6 +299,9 @@
                     <HyperlinkButton Content="{loc:Loc PreferencesWindow_BookBrowserBackgroundInTheme}" Padding="0"
                                      views:PreferencesPage.Target="AppearanceGeneralPage"
                                      views:PreferencesPage.TargetKey="ui.bookBrowser.background" />
+                    <HyperlinkButton Content="{loc:Loc PreferencesWindow_BookBrowserSelectionInTheme}" Padding="0"
+                                     views:PreferencesPage.Target="AppearanceGeneralPage"
+                                     views:PreferencesPage.TargetKey="ui.bookBrowser.selection" />
 
                   </StackPanel>
                 </Border>
@@ -452,6 +455,11 @@
         <ScrollViewer>
           <StackPanel Spacing="10" Margin="8">
             <CheckBox Content="{loc:Loc PreferencesWindow_ExtendedHighlighting}" IsChecked="{Binding ExtendedHighlighting}" />
+
+            <!-- The document tabs: several rows when they do not fit; the Book Browser follows the active tab. -->
+            <CheckBox x:Name="MultilineTabsBox" Content="{loc:Loc PreferencesWindow_MultilineTabs}" IsChecked="{Binding MultilineTabs}" />
+            <CheckBox x:Name="BookBrowserFollowsTabBox" Content="{loc:Loc PreferencesWindow_BookBrowserFollowsTab}"
+                      IsChecked="{Binding BookBrowserFollowsActiveTab}" />
 
             <!-- Code Editor: the opening tag tooltip over a closing tag, with its delay. -->
             <CheckBox Content="{loc:Loc PreferencesWindow_OpenTagHint}" IsChecked="{Binding OpenTagHint}" />

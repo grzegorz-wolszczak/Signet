@@ -11,6 +11,7 @@
         xmlns:views="using:Signet.App.Views"
         x:Class="Signet.App.Views.MainWindow"
         Classes="noFrame"
+        Classes.multilineTabs="{Binding MultilineTabs}"
         infra:TooltipFonts.Area="MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="{Binding WindowTitle}"

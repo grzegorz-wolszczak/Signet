@@ -47,7 +47,8 @@ public sealed class ThemeStoreTests
         light.Entries.Should().BeEmpty();
         sut.Resolver.Variant(light).Should().Be(InterfaceVariant.Light);
         sut.Resolver.Variant(dark).Should().Be(InterfaceVariant.Dark);
-        ThemeKeys.All.Where(k => k.Document == ThemeDocumentKind.Theme && (k.DefaultColor is not null || k.DefaultAttributes is not null))
+        ThemeKeys.All.Where(k => k.Document == ThemeDocumentKind.Theme
+                && (k.DefaultColor is not null || (k.DefaultAttributes is not null && k.DefaultAttributes != TextAttributes.Empty)))
             .Select(k => k.Id).Should().BeSubsetOf(dark.Entries.Keys);
         dark.Entries.Keys.Should().OnlyContain(id => ThemeKeys.Get(id).Document == ThemeDocumentKind.Theme, "the editors are the scheme's");
     }

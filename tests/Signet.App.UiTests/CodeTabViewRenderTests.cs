@@ -138,6 +138,39 @@ public sealed class CodeTabViewRenderTests
     }
 
     [AvaloniaFact]
+    public void A_new_view_of_a_tab_puts_the_user_back_where_they_were_in_the_text()
+    {
+        string text = string.Join('\n', Enumerable.Range(1, 400).Select(i => $"<p>line {i}</p>"));
+        (Window window, CodeTabViewModel vm) = ShowCodeTab(text, extended: false);
+        TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
+        editor.CaretOffset = editor.Document.GetLineByNumber(300).Offset + 3;
+        editor.TextArea.TextView.MakeVisible(new Avalonia.Rect(0, editor.TextArea.TextView.GetVisualPosition(
+            new AvaloniaEdit.TextViewPosition(150, 1), AvaloniaEdit.Rendering.VisualYPosition.LineTop).Y, 1, editor.TextArea.TextView.Bounds.Height));
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        int topLine = editor.TextArea.TextView.GetDocumentLineByVisualTop(editor.TextArea.TextView.VerticalOffset)!.LineNumber;
+        topLine.Should().BeInRange(140, 160, "the view is scrolled to the middle of the file");
+        int caret = editor.CaretOffset;
+
+        // The tab is dragged into a window of its own: its view goes away, a new one is made for the same tab.
+        window.Content = null;
+        Dispatcher.UIThread.RunJobs();
+        vm.ViewState.Should().NotBeNull("the view that went away remembered the place");
+        window.Content = new CodeTabView { DataContext = vm };
+        for (int i = 0; i < 6; i++)
+        {
+            Dispatcher.UIThread.RunJobs();
+            window.CaptureRenderedFrame();
+        }
+
+        TextEditor again = window.GetVisualDescendants().OfType<TextEditor>().Single();
+        again.TextArea.TextView.GetDocumentLineByVisualTop(again.TextArea.TextView.VerticalOffset)!.LineNumber
+            .Should().BeInRange(topLine - 2, topLine + 2, "the first visible line is the same");
+        again.CaretOffset.Should().Be(caret);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void Html_is_coloured_with_the_line_highlighter_and_the_colours_of_the_theme()
     {
         (Window window, _) = ShowCodeTab("<p class=\"x\">a</p>\n<!-- c -->", extended: false);

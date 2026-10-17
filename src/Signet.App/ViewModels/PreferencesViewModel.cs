@@ -106,6 +106,8 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _warningFontSize = warnings.FontSize;
 
         _extendedHighlighting = _settings.CodeEditorExtendedHighlighting;
+        _bookBrowserFollowsActiveTab = _settings.BookBrowserFollowsActiveTab;
+        _multilineTabs = _settings.CodeEditorMultilineTabs;
         _openTagHint = _settings.CodeEditorOpenTagHint;
         _openTagHintDelay = _settings.CodeEditorOpenTagHintDelayMs;
         OpenTagHintAppearance hintLook = _settings.OpenTagHintAppearance;
@@ -113,6 +115,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _openTagHintFontSize = hintLook.FontSize;
         LoadBookBrowserAppearance();
         LoadLineNumbersFont();
+        LoadDocumentTabFont();
         CodeEditor = new CodeEditorAppearanceEditor(_settings.CodeEditorAppearance, a => _settings.CodeEditorAppearance = a, PickFontAsync);
 
         // ---- General ----
@@ -270,6 +273,11 @@ public sealed partial class PreferencesViewModel : ObservableObject
         if (Changed("tooltip_fonts"))
         {
             _uiDensity.ApplyTooltipFonts();
+        }
+
+        if (Changed("document_tab_font"))
+        {
+            _uiDensity.ApplyDocumentTabFont();
         }
 
         if (Changed("ui_theme_id", "editor_scheme_id") || themesChanged)
@@ -616,6 +624,18 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
     partial void OnExtendedHighlightingChanged(bool value) => _settings.CodeEditorExtendedHighlighting = value;
 
+    /// <summary>The Book Browser selects the file of the active tab (also after a tab in a window of its own got the focus).</summary>
+    [ObservableProperty]
+    private bool _bookBrowserFollowsActiveTab;
+
+    partial void OnBookBrowserFollowsActiveTabChanged(bool value) => _settings.BookBrowserFollowsActiveTab = value;
+
+    /// <summary>The document tabs that do not fit in a row go to several rows (instead of arrows to scroll them).</summary>
+    [ObservableProperty]
+    private bool _multilineTabs;
+
+    partial void OnMultilineTabsChanged(bool value) => _settings.CodeEditorMultilineTabs = value;
+
     /// <summary>
     /// Code Editor: resting the mouse on a closing tag shows its opening tag (applied live to the open tabs).
     /// </summary>
@@ -711,6 +731,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
         LoadBookBrowserAppearance();
         LoadLineNumbersFont();
+        LoadDocumentTabFont();
 
         // The tooltip fonts were cleared with the other appearance keys.
         RefreshFontPages();

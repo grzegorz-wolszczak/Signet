@@ -4,6 +4,7 @@ using System.Linq;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using AwesomeAssertions;
 using Dock.Avalonia.Controls;
 using Dock.Model;
@@ -94,6 +95,76 @@ public sealed class FloatingDocumentTests
         s.Windows.Should().ContainSingle();
         TabsOf(s.Windows[0]).Should().Equal(tab);
         s.Tabs.Should().NotContain(tab).And.HaveCount(before - 1);
+    }
+
+    [AvaloniaFact]
+    public void The_tab_floated_out_of_the_tab_strip_stays_the_active_one_so_the_preview_follows_it()
+    {
+        using Scenario s = new();
+        ContentTabViewModel tab = s.Tabs[1];
+        s._vm.ActiveTab.Should().NotBeSameAs(tab, "another tab is active before");
+
+        s.Factory.FloatDockable(tab);
+        s.Settle();
+
+        s._vm.ActiveTab.Should().BeSameAs(tab, "the tab that was taken out is the one being worked on");
+    }
+
+    [AvaloniaFact]
+    public void Focusing_a_floated_tab_makes_it_the_active_one_again()
+    {
+        using Scenario s = new();
+        ContentTabViewModel floated = s.Tabs[1];
+        ContentTabViewModel other = s.Tabs[0];
+        s.Factory.FloatDockable(floated);
+        s.Settle();
+        IDocumentDock windowTabs = (IDocumentDock)((IDock)s.Windows[0].Layout!).VisibleDockables!.Single();
+        s._vm.NavigateToBookPathAtOffset(other.Resource.BookPath, 0);
+        s.Settle();
+        s._vm.ActiveTab.Should().BeSameAs(other);
+
+        s.Factory.SetFocusedDockable(windowTabs, floated);
+        s.Settle();
+
+        s._vm.ActiveTab.Should().BeSameAs(floated, "a click in the floated tab shows its file in the preview");
+    }
+
+    [AvaloniaFact]
+    public void The_book_browser_selects_the_file_of_the_tab_that_became_active_also_a_floated_one()
+    {
+        using Scenario s = new();
+        ContentTabViewModel floated = s.Tabs[1];
+        ContentTabViewModel other = s.Tabs[0];
+        s.Factory.FloatDockable(floated);
+        s.Settle();
+        IDocumentDock windowTabs = (IDocumentDock)((IDock)s.Windows[0].Layout!).VisibleDockables!.Single();
+
+        s._vm.BookBrowser.SelectedResources.Should().ContainSingle().Which.Should().BeSameAs(floated.Resource, "the tab taken out is the active one");
+
+        s._vm.NavigateToBookPathAtOffset(other.Resource.BookPath, 0);
+        s.Settle();
+        s._vm.BookBrowser.SelectedResources.Should().ContainSingle().Which.Should().BeSameAs(other.Resource);
+
+        s.Factory.SetFocusedDockable(windowTabs, floated);
+        s.Settle();
+        s._vm.BookBrowser.SelectedResources.Should().ContainSingle().Which.Should().BeSameAs(floated.Resource, "the focused tab is shown in the Book Browser");
+    }
+
+    [AvaloniaFact]
+    public void The_window_of_a_floated_tab_has_no_dialog_frame()
+    {
+        using Scenario s = new();
+        s.Factory.FloatDockable(s.Tabs[1]);
+        s.Settle();
+        HostWindow host = (HostWindow)s.Windows[0].Host!;
+        host.Show();
+        s.Settle();
+
+        Avalonia.Controls.Presenters.ContentPresenter[] presenters = host.GetVisualDescendants()
+            .OfType<Avalonia.Controls.Presenters.ContentPresenter>().Where(p => p.Name == "PART_ContentPresenter").ToArray();
+
+        presenters.Should().NotBeEmpty();
+        presenters.Take(1).Should().OnlyContain(p => p.BorderBrush == null && p.Margin == default, "only dialogs have the frame");
     }
 
     [AvaloniaFact]

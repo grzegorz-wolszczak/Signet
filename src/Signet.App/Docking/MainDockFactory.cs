@@ -86,6 +86,21 @@ public sealed class MainDockFactory : Factory
     /// </summary>
     public event EventHandler<HostWindow>? HostWindowCreated;
 
+    /// <summary>
+    /// Raised after a document tab was taken out of the tab strip into a window of its own (by its menu or by dragging it
+    /// out): the tab is the one being worked on, so the tab manager makes it the active one — otherwise the tab strip it
+    /// left activates a neighbour and the preview shows that one.
+    /// </summary>
+    public event EventHandler<IDockable>? DocumentFloated;
+
+    private void RaiseDocumentFloated(IDockable dockable)
+    {
+        if (dockable is IDocument)
+        {
+            DocumentFloated?.Invoke(this, dockable);
+        }
+    }
+
     // Writes an operation to the debug log with the places of all panels after it.
     private void LogPlaces(string operation) => DebugLog.Write("Panel", $"{operation}; places: {DescribePlaces()}");
 
@@ -685,6 +700,7 @@ public sealed class MainDockFactory : Factory
         DebugLog.Write("Panel", $"float {NameOf(dockable)}");
         RememberHomes(dockable);
         base.FloatDockable(dockable);
+        RaiseDocumentFloated(dockable);
     }
 
     /// <inheritdoc />
@@ -700,6 +716,7 @@ public sealed class MainDockFactory : Factory
         DebugLog.Write("Panel", $"float {NameOf(dockable)} (with options)");
         RememberHomes(dockable);
         base.FloatDockable(dockable, options);
+        RaiseDocumentFloated(dockable);
     }
 
     /// <inheritdoc />
@@ -716,6 +733,7 @@ public sealed class MainDockFactory : Factory
         DebugLog.Write("Panel", $"split to window {NameOf(moved)} at {x:0},{y:0} {width:0}×{height:0}");
         RememberHomes(moved);
         base.SplitToWindow(dock, moved, x, y, width, height);
+        RaiseDocumentFloated(moved);
     }
 
     /// <inheritdoc />
@@ -725,6 +743,7 @@ public sealed class MainDockFactory : Factory
         DebugLog.Write("Panel", $"split to window {NameOf(moved)} at {x:0},{y:0} {width:0}×{height:0} (with options)");
         RememberHomes(moved);
         base.SplitToWindow(dock, moved, x, y, width, height, options);
+        RaiseDocumentFloated(moved);
     }
 
     // Set while a panel is moved back into its region: Dock's MoveDockable then calls UnpinDockable, which calls

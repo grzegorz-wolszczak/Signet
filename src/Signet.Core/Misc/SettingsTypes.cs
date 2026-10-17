@@ -227,6 +227,29 @@ public readonly record struct OpenTagHintAppearance(string FontFamily, int FontS
 }
 
 /// <summary>
+/// Font of the titles of the document tabs (also in the windows of the tabs dragged out); the colors come from the theme
+/// (<c>ui.documentTab</c>, <c>ui.documentTab.selected</c>).
+/// </summary>
+/// <param name="FontFamily">Font family; empty = the interface font.</param>
+/// <param name="FontSize">Font size (px); 0 = the default size of the tabs.</param>
+public readonly record struct DocumentTabFontAppearance(string FontFamily, int FontSize)
+{
+    /// <summary>Lower bound of an explicit <see cref="FontSize"/>.</summary>
+    public const int FontSizeMin = 6;
+
+    /// <summary>Upper bound of an explicit <see cref="FontSize"/>.</summary>
+    public const int FontSizeMax = 72;
+
+    /// <summary>Default values: the interface font at the default size of the tabs.</summary>
+    public static DocumentTabFontAppearance Default => new(string.Empty, 0);
+
+    /// <summary>A copy with the size clamped (0 stays "the default").</summary>
+    public DocumentTabFontAppearance Normalized() => new(
+        FontFamily?.Trim() ?? string.Empty,
+        FontSize <= 0 ? 0 : Math.Clamp(FontSize, FontSizeMin, FontSizeMax));
+}
+
+/// <summary>
 /// Font of the line numbers of Code Editor; the colors come from the theme (<c>editor.lineNumbers</c>,
 /// <c>editor.currentLineNumber</c>).
 /// </summary>

@@ -1511,6 +1511,12 @@ Czy chcesz zapisać zmiany?</value>
   <data name="PreferencesWindow_ExtendedHighlighting" xml:space="preserve">
     <value>Rozszerzone podświetlanie składni (wzorowane na calibre)</value>
   </data>
+  <data name="PreferencesWindow_MultilineTabs" xml:space="preserve">
+    <value>Karty, które się nie mieszczą, układaj w kilku wierszach (zamiast przewijać je strzałkami)</value>
+  </data>
+  <data name="PreferencesWindow_BookBrowserFollowsTab" xml:space="preserve">
+    <value>Zaznaczaj w przeglądarce książki plik aktywnej karty</value>
+  </data>
   <data name="CodeEditor_Issue_UnescapedLessThan" xml:space="preserve">
     <value>Niezakodowany znak &lt; jest niedozwolony. Zamień go na &amp;lt;</value>
   </data>
@@ -4068,6 +4074,12 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="PreferencesWindow_LineNumbersFont" xml:space="preserve">
     <value>Czcionka numerów linii</value>
   </data>
+  <data name="PreferencesWindow_DocumentTabsFont" xml:space="preserve">
+    <value>Czcionka kart dokumentów</value>
+  </data>
+  <data name="FontPreview_DocumentTabs" xml:space="preserve">
+    <value>part0001.html   ×</value>
+  </data>
   <data name="Action_MainWindow_FindUsages" xml:space="preserve">
     <value>Znajdź użycia</value>
   </data>
@@ -5614,6 +5626,9 @@ Zamknij zakładkę</value>
   <data name="ThemeGroup_Previews" xml:space="preserve">
     <value>Podglądy</value>
   </data>
+  <data name="ThemeGroup_Tabs" xml:space="preserve">
+    <value>Karty</value>
+  </data>
   <data name="ThemeGroup_Palette" xml:space="preserve">
     <value>Paleta Fluent</value>
   </data>
@@ -5839,6 +5854,12 @@ Zamknij zakładkę</value>
   <data name="ThemeKey_ui_bookBrowser_background" xml:space="preserve">
     <value>Tło przeglądarki książki</value>
   </data>
+  <data name="ThemeKey_ui_bookBrowser_selection" xml:space="preserve">
+    <value>Zaznaczenie w przeglądarce książki</value>
+  </data>
+  <data name="PreferencesWindow_BookBrowserSelectionInTheme" xml:space="preserve">
+    <value>Kolor zaznaczonego pliku: Wygląd › Kolory interfejsu</value>
+  </data>
   <data name="ThemeKey_ui_icon_inactive" xml:space="preserve">
     <value>Ikona nieaktywna</value>
   </data>
@@ -5862,6 +5883,12 @@ Zamknij zakładkę</value>
   </data>
   <data name="ThemeKey_ui_fontPreview" xml:space="preserve">
     <value>Podgląd czcionki</value>
+  </data>
+  <data name="ThemeKey_ui_documentTab" xml:space="preserve">
+    <value>Karty dokumentów</value>
+  </data>
+  <data name="ThemeKey_ui_documentTab_selected" xml:space="preserve">
+    <value>Zaznaczona karta dokumentu</value>
   </data>
   <data name="ColorScheme_KeysColumn" xml:space="preserve">
     <value>Element</value>
@@ -6110,6 +6137,6 @@ Zamknij zakładkę</value>
     <value>Pionowy padding komórki (px)</value>
   </data>
   <data name="PreferencesWindow_BookBrowserBackgroundInTheme" xml:space="preserve">
-    <value>Kolor tła przeglądarki książki: schemat kolorów › Interfejs</value>
+    <value>Kolor tła przeglądarki książki: Wygląd › Kolory interfejsu</value>
   </data>
 </root>

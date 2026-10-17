@@ -24,6 +24,7 @@ using Signet.Core.MainUI;
 using Signet.Core.Misc;
 using Signet.Core.Resources;
 using Signet.Core.Semantics;
+using Signet.Core.Themes;
 
 namespace Signet.App.Views;
 
@@ -126,7 +127,26 @@ public partial class BookBrowserView : UserControl
         Style indent = new(x => x.OfType<TreeDataGridExpanderCell>());
         indent.Setters.Add(new Setter(TreeDataGridExpanderCell.IndentSizeProperty, (double)look.Indent));
 
-        _appearanceStyles = new[] { cells, textCells, nameCells, headers, indent };
+        // The colors of the selected row come from the theme, for this tree only: the brush the selected rows take is a
+        // resource of the tree (not of the application), the text color a style of the selected cells.
+        const string selectionBrush = "TreeDataGridSelectedCellBackgroundBrush";
+        ResolvedTheme theme = AppTheme.Current;
+        if (theme.Background(ThemeKeys.UiBookBrowserSelection) is { } selectionColor)
+        {
+            Tree.Resources[selectionBrush] = new SolidColorBrush(selectionColor);
+        }
+        else
+        {
+            Tree.Resources.Remove(selectionBrush);
+        }
+
+        Style selected = new(x => x.Is<TreeDataGridCell>().Class(":selected"));
+        if (theme.Foreground(ThemeKeys.UiBookBrowserSelection) is { } selectionText)
+        {
+            selected.Setters.Add(new Setter(TemplatedControl.ForegroundProperty, new SolidColorBrush(selectionText)));
+        }
+
+        _appearanceStyles = new[] { cells, textCells, nameCells, headers, indent, selected };
         foreach (Style style in _appearanceStyles)
         {
             Tree.Styles.Add(style);
@@ -709,7 +729,25 @@ public partial class BookBrowserView : UserControl
         }
     }
 
-    private void OnTreeSelectionRequested(object? sender, IReadOnlyList<BookBrowserNode> nodes) => SelectNodes(nodes);
+    private void OnTreeSelectionRequested(object? sender, IReadOnlyList<BookBrowserNode> nodes)
+    {
+        SelectNodes(nodes);
+
+        // One file (the Book Browser follows the active tab): it is scrolled into view, once its folder has been expanded.
+        if (nodes.Count == 1)
+        {
+            BookBrowserNode node = nodes[0];
+            Dispatcher.UIThread.Post(
+                () =>
+                {
+                    if (_selection?.FindPath(node) is { } path && Tree.Rows?.ModelIndexToRowIndex(new IndexPath(path)) is >= 0 and var index)
+                    {
+                        Tree.RowsPresenter?.BringIntoView(index);
+                    }
+                },
+                DispatcherPriority.Loaded);
+        }
+    }
 
     // Selects exactly these nodes in the tree and passes them to the view model.
     private void SelectNodes(IReadOnlyList<BookBrowserNode> nodes)

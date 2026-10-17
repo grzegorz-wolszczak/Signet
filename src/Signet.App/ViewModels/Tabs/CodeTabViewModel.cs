@@ -280,6 +280,12 @@ public sealed class CodeTabViewModel : ContentTabViewModel
     /// <summary>Caret offset in the document (0-based) — for inserting a split marker.</summary>
     public int CaretOffset => _caretOffset;
 
+    /// <summary>
+    /// Where the user was in the text when the view of the tab went away (the tab was dragged into a window of its own
+    /// and got a new view): the first visible line, the caret and the selection. <c>null</c> until a view went away.
+    /// </summary>
+    public CodeTabViewState? ViewState { get; set; }
+
     /// <summary>Formatted caret position for the status bar.</summary>
     public string CaretStatus => CodeEditorModel.FormatCaretPosition(_caretLine, _caretColumn, _caretCodepoint);
 
@@ -1889,3 +1895,10 @@ public sealed class CodeTabViewModel : ContentTabViewModel
 /// <param name="ReplaceStart">Start of the replaced text.</param>
 /// <param name="Items">Items, best first.</param>
 public sealed record LinkCompletionResult(int ReplaceStart, IReadOnlyList<LinkCompletionItem> Items);
+
+/// <summary>The place of the user in the text of a tab: what a new view of the tab restores (<see cref="CodeTabViewModel.ViewState"/>).</summary>
+/// <param name="TopLine">The first visible line (1-based).</param>
+/// <param name="CaretOffset">The caret.</param>
+/// <param name="SelectionStart">The start of the selection.</param>
+/// <param name="SelectionLength">The length of the selection; 0 = none.</param>
+public sealed record CodeTabViewState(int TopLine, int CaretOffset, int SelectionStart, int SelectionLength);

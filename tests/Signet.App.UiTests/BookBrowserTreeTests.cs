@@ -14,7 +14,9 @@ using Signet.App.Views;
 using Signet.Controls.TreeDataGrid;
 using Signet.Controls.TreeDataGrid.Primitives;
 using Signet.Core.BookManipulation;
+using Signet.App.Infrastructure;
 using Signet.Core.Misc;
+using Signet.Core.Themes;
 using Signet.Core.Tests.TestSupport;
 
 namespace Signet.App.UiTests;
@@ -153,6 +155,40 @@ public sealed class BookBrowserTreeTests
         Expanders()[0].FontSize.Should().Be(defaultCellSize, "a font left to the interface is not set");
         HeaderControls()[0].FontSize.Should().Be(defaultHeaderSize);
         Expanders().Where(c => c.Indent == 1).Select(c => c.IndentPadding.Left).Should().OnlyContain(p => p == 20);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_selected_file_takes_the_colors_of_the_theme_in_this_tree_only()
+    {
+        using TempDir temp = new();
+        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3WithNcx, temp)).GetBook();
+        (Window window, BookBrowserViewModel vm, _, TreeDataGrid tree) = Show(new SettingsStore(temp.Combine("settings.xml")), book);
+        vm.Nodes.Single(n => n.Header == "Text").IsExpanded = true;
+        Render(window);
+        const string brush = "TreeDataGridSelectedCellBackgroundBrush";
+        tree.Resources.ContainsKey(brush).Should().BeFalse("nothing is set: the controls' selection color");
+        Theme theme = new Theme("t", "T").With(ThemeKeys.UiBookBrowserSelection.Id, ThemeEntry.Of(new TextAttributes
+        {
+            Foreground = ThemeColor.Parse("#00FF00"),
+            Background = ThemeColor.Parse("#FF0000"),
+        }));
+        try
+        {
+            Avalonia.Application.Current!.Resources.Remove(brush);
+            AppTheme.Apply(Avalonia.Application.Current!, ResolvedTheme.Of(ThemeDocumentKind.Theme, theme, new ThemeResolver(_ => null)));
+            Render(window);
+
+            ((Avalonia.Media.ISolidColorBrush)tree.Resources[brush]!).Color.Should().Be(Avalonia.Media.Colors.Red);
+            Avalonia.Application.Current.Resources.ContainsKey(brush).Should().BeFalse("the selection color of the other controls is not touched");
+        }
+        finally
+        {
+            AppTheme.Apply(Avalonia.Application.Current!, ResolvedTheme.Defaults);
+        }
+
+        Render(window);
+        tree.Resources.ContainsKey(brush).Should().BeFalse("the default theme sets nothing again");
         window.Close();
     }
 
