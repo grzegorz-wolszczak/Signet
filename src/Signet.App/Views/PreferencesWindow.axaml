@@ -595,11 +595,31 @@
 
       <!-- Appearance › Cleanup: Fonts only. -->
       <TabItem x:Name="CleanupAppearancePage" Header="{loc:Loc PreferencesWindow_Cleanup}" views:PreferencesPage.Parent="AppearanceGeneralPage">
-        <TabControl x:Name="CleanupAppearanceTabs">
-          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-            <views:FontsPageView x:Name="CleanupFontsView" />
-          </TabItem>
-        </TabControl>
+        <Grid x:Name="CleanupPreviewHost">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" MinWidth="300" />
+            <ColumnDefinition Width="8" />
+            <ColumnDefinition Width="420" MinWidth="200" />
+          </Grid.ColumnDefinitions>
+          <TabControl x:Name="CleanupAppearanceTabs">
+            <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+              <views:FontsPageView x:Name="CleanupFontsView" HasSharedPreview="True" />
+            </TabItem>
+          </TabControl>
+          <GridSplitter Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Background="Transparent" />
+          <!-- The preview: the content of the Cleanup dialog over the sample book (Clean changes nothing), and a sample of its tooltip. Not searched: it holds no settings. -->
+          <Border x:Name="CleanupPreviewPane" Grid.Column="2" Classes="section noSearchTree" Padding="8">
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
+              <Border Classes="listFrame">
+                <Grid RowDefinitions="*,Auto">
+                  <views:CleanupView x:Name="CleanupPreview" />
+                  <views:TooltipSample x:Name="CleanupSampleTip" Grid.Row="1" Margin="8" />
+                </Grid>
+              </Border>
+            </DockPanel>
+          </Border>
+        </Grid>
       </TabItem>
 
       <!-- Appearance › Footnotes: Fonts only. -->

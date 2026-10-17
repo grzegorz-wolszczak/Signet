@@ -1176,6 +1176,21 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
+    public void The_sample_Cleanup_dialog_has_something_to_clean_in_every_tab()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        using PreferencesViewModel __ = vm;
+
+        CleanupViewModel sample = vm.CleanupSample;
+
+        sample.Tabs.Should().NotBeEmpty();
+        sample.Tabs.SelectMany(t => t.Sections).Should().Contain(s => s.HasItems, "the sample book has rules to merge and elements to remove");
+        sample.Tabs.First().CleanCommand.Execute(null);
+        sample.Tabs.SelectMany(t => t.Sections).Should().Contain(s => s.HasItems, "Clean changes nothing in the sample");
+    }
+
+    [Fact]
     public void The_sample_Book_Browser_follows_the_unsaved_look_and_leaves_the_saved_one_alone()
     {
         (TestHost host, PreferencesViewModel vm) = New();

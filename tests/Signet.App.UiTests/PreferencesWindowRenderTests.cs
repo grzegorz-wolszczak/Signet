@@ -948,6 +948,27 @@ public sealed class PreferencesWindowRenderTests
         window.Close();
     }
 
+    /// <summary>The Cleanup page: the preview is at the right of the settings, with the real dialog content and a sample of its tooltip.</summary>
+    [AvaloniaFact]
+    public void The_Cleanup_page_has_a_preview_panel_with_the_dialog_and_the_tooltip_sample()
+    {
+        (PreferencesWindow window, PreferencesViewModel vm, _, TooltipSample tip) = ShowPreviewPage(
+            "Cleanup", "CleanupPreviewHost", "CleanupPreviewPane", "CleanupSampleTip", bottom: false);
+        CleanupView preview = window.FindControl<CleanupView>("CleanupPreview")!;
+
+        preview.DataContext.Should().BeSameAs(vm.CleanupSample);
+        preview.GetVisualDescendants().OfType<TabControl>().Should().NotBeEmpty("the tabs of the cleanup steps are shown");
+
+        FontSettingViewModel tooltipFont = vm.CleanupFonts.Fonts.Single();
+        tooltipFont.InheritFromParent = false;
+        tooltipFont.Size = 20;
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+
+        tip.Text.FontSize.Should().Be(20);
+        window.Close();
+    }
+
     /// <summary>The colors of the theme: the name, the folder and the highlighted entry of the list take them when they are set.</summary>
     [AvaloniaFact]
     public void The_list_of_recent_files_takes_the_colors_of_the_theme_when_they_are_set()
