@@ -1,0 +1,75 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:infra="using:Signet.App.Infrastructure"
+             xmlns:vm="using:Signet.App.ViewModels"
+             xmlns:loc="using:Signet.App.Resources"
+             xmlns:ae="using:AvaloniaEdit"
+             x:Class="Signet.App.Views.FootnoteView"
+             infra:TooltipFonts.Area="Footnotes"
+             x:DataType="vm:FootnoteViewModel">
+
+  <!-- Left: where the reference goes, the text and the placement. Right: the live preview — the markup Signet writes
+       ("Code") and how it looks with the file's styles ("Appearance", a web view created when the tab is first shown). -->
+  <!-- It is a view of its own so that the preview of Preferences can show it; the window adds its buttons and the web view of
+       the "Appearance" tab. -->
+  <Grid ColumnDefinitions="*,16,*">
+    <Grid Grid.Column="0" RowDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto">
+      <TextBlock Grid.Row="0" Text="{loc:Loc FootnoteWindow_Where}" Margin="0,0,0,8" />
+      <Border Grid.Row="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1"
+              CornerRadius="4" Padding="8,6">
+        <!-- The runs are on one line: whitespace between them would show as spaces around the marker. -->
+        <TextBlock x:Name="ContextText" TextWrapping="Wrap" Opacity="0.85"><Run Text="{Binding ContextBefore}" /><Run
+            Text="{Binding Marker}" FontWeight="Bold" Foreground="{DynamicResource SystemControlHighlightAccentBrush}" /><Run
+            Text="{Binding ContextAfter}" /></TextBlock>
+      </Border>
+
+      <TextBlock Grid.Row="2" Text="{loc:Loc FootnoteWindow_Content}" Margin="0,12,0,8" />
+      <TextBox Grid.Row="3" x:Name="ContentBox" Text="{Binding Content, Mode=TwoWay}"
+               AcceptsReturn="True" TextWrapping="Wrap" MinHeight="90" VerticalContentAlignment="Top" />
+      <TextBlock Grid.Row="4" x:Name="ContentHintText" Text="{Binding ContentHint}" Opacity="0.7" TextWrapping="Wrap"
+                 Margin="0,8,0,0" />
+      <TextBlock Grid.Row="5" Text="{Binding ValidationError}"
+                 Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"
+                 TextWrapping="Wrap" Margin="0,8,0,0"
+                 IsVisible="{Binding ValidationError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+      <StackPanel Grid.Row="6" Spacing="8" Margin="0,12,0,0">
+        <!-- A note that cannot change its placement (references from several files) keeps it; the reason is the tooltip. -->
+        <StackPanel x:Name="PlacementPanel" Spacing="8" IsEnabled="{Binding CanChangePlacement}"
+                    ToolTip.Tip="{Binding PlacementBlocked}" ToolTip.ShowOnDisabled="True"
+                    ToolTip.ServiceEnabled="{Binding !CanChangePlacement}">
+          <RadioButton GroupName="Placement" Content="{loc:Loc FootnoteWindow_Local}"
+                       IsChecked="{Binding IsLocal, Mode=TwoWay}" />
+          <RadioButton GroupName="Placement" Content="{loc:Loc FootnoteWindow_Global}"
+                       IsChecked="{Binding IsGlobal, Mode=TwoWay}" />
+        </StackPanel>
+      </StackPanel>
+    </Grid>
+
+    <DockPanel Grid.Column="2">
+      <TextBlock DockPanel.Dock="Top" Text="{loc:Loc FootnoteWindow_Preview}" Margin="0,0,0,4" />
+      <TabControl x:Name="PreviewTabs" Padding="0,4,0,0">
+        <TabItem x:Name="CodeTab" Header="{loc:Loc FootnoteWindow_PreviewCode}">
+          <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1">
+            <Panel>
+              <ae:TextEditor x:Name="PreviewCodeEditor" IsReadOnly="True" WordWrap="True" ShowLineNumbers="False"
+                             FontFamily="Consolas, Menlo, monospace" FontSize="13" Padding="4"
+                             IsVisible="{Binding HasPreview}" />
+              <TextBlock Text="{loc:Loc FootnoteWindow_PreviewEmpty}" IsVisible="{Binding !HasPreview}"
+                         Margin="8" Opacity="0.6" TextWrapping="Wrap" />
+            </Panel>
+          </Border>
+        </TabItem>
+        <TabItem x:Name="AppearanceTab" Header="{loc:Loc FootnoteWindow_PreviewAppearance}">
+          <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1">
+            <Panel x:Name="AppearanceHost">
+              <TextBlock x:Name="AppearanceMessage" Text="{loc:Loc FootnoteWindow_PreviewEmpty}" IsVisible="{Binding !HasPreview}"
+                         Margin="8" Opacity="0.6" TextWrapping="Wrap" />
+            </Panel>
+          </Border>
+        </TabItem>
+      </TabControl>
+    </DockPanel>
+
+  </Grid>
+</UserControl>

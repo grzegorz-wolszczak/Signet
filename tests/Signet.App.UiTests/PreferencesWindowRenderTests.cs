@@ -969,6 +969,28 @@ public sealed class PreferencesWindowRenderTests
         window.Close();
     }
 
+    /// <summary>The Footnotes page: the preview is the footnote window (wide, so under the settings) with a note filled in, and a sample of the tooltip.</summary>
+    [AvaloniaFact]
+    public void The_Footnotes_page_has_a_preview_panel_with_the_footnote_window_and_the_tooltip_sample()
+    {
+        (PreferencesWindow window, PreferencesViewModel vm, _, TooltipSample tip) = ShowPreviewPage(
+            "Footnotes", "FootnotesPreviewHost", "FootnotesPreviewPane", "FootnotesSampleTip", bottom: true);
+        FootnoteView preview = window.FindControl<FootnoteView>("FootnotesPreview")!;
+
+        preview.DataContext.Should().BeSameAs(vm.FootnoteSample);
+        preview.GetVisualDescendants().OfType<TextBox>().Should().Contain(t => t.Text == vm.FootnoteSample.Content, "the note is filled in");
+        preview.GetVisualDescendants().OfType<AvaloniaEdit.TextEditor>().Single().Text.Should().Be(vm.FootnoteSample.PreviewCode);
+
+        FontSettingViewModel tooltipFont = vm.FootnotesFonts.Fonts.Single();
+        tooltipFont.InheritFromParent = false;
+        tooltipFont.Size = 21;
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+
+        tip.Text.FontSize.Should().Be(21);
+        window.Close();
+    }
+
     /// <summary>The colors of the theme: the name, the folder and the highlighted entry of the list take them when they are set.</summary>
     [AvaloniaFact]
     public void The_list_of_recent_files_takes_the_colors_of_the_theme_when_they_are_set()

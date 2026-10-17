@@ -624,11 +624,31 @@
 
       <!-- Appearance › Footnotes: Fonts only. -->
       <TabItem x:Name="FootnotesAppearancePage" Header="{loc:Loc PreferencesWindow_Footnotes}" views:PreferencesPage.Parent="AppearanceGeneralPage">
-        <TabControl x:Name="FootnotesAppearanceTabs">
-          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-            <views:FontsPageView x:Name="FootnotesFontsView" />
-          </TabItem>
-        </TabControl>
+        <Grid x:Name="FootnotesPreviewHost">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="*" MinHeight="150" />
+            <RowDefinition Height="8" />
+            <RowDefinition Height="300" MinHeight="120" />
+          </Grid.RowDefinitions>
+          <TabControl x:Name="FootnotesAppearanceTabs">
+            <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+              <views:FontsPageView x:Name="FootnotesFontsView" HasSharedPreview="True" />
+            </TabItem>
+          </TabControl>
+          <GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Background="Transparent" />
+          <!-- The preview: the footnote window (wide, so it is under the settings) with a note filled in, and a sample of its tooltip. Not searched: it holds no settings. -->
+          <Border x:Name="FootnotesPreviewPane" Grid.Row="2" Classes="section noSearchTree" Padding="8">
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
+              <Border Classes="listFrame">
+                <Grid RowDefinitions="*,Auto">
+                  <views:FootnoteView x:Name="FootnotesPreview" />
+                  <views:TooltipSample x:Name="FootnotesSampleTip" Grid.Row="1" Margin="8" />
+                </Grid>
+              </Border>
+            </DockPanel>
+          </Border>
+        </Grid>
       </TabItem>
 
       <!-- ============================== Code Editor ============================== -->
