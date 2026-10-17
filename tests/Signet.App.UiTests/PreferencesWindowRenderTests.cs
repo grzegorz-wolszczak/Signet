@@ -66,6 +66,17 @@ public sealed class PreferencesWindowRenderTests
         return tabs;
     }
 
+    // Shows the Fonts tab of Appearance › General (the interface font, the warnings, the tooltips) and lays it out.
+    private static void ShowGeneralFontsTab(PreferencesWindow window)
+    {
+        ShowPage(window, "AppearanceGeneralPage");
+        TabControl tabs = window.FindControl<TabControl>("AppearanceGeneralTabs")!;
+        tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(t => Equals(t.Header, Strings.Get("PreferencesWindow_Fonts")));
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+    }
+
     private static PreferencesWindow BuildWindow() => BuildWindow(out _);
 
     private static PreferencesWindow BuildWindow(out SettingsStore settings)
@@ -239,7 +250,7 @@ public sealed class PreferencesWindowRenderTests
         window.Width = 1500; // room for both columns to grow
         window.Show();
         Dispatcher.UIThread.RunJobs();
-        ShowFontsTab(window, "Preview");
+        ShowFontsTab(window, "TableOfContents");
         FontsPageView page = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible);
         GridSplitter splitter = page.FindControl<GridSplitter>("PreviewSplitter")!;
         Grid grid = (Grid)splitter.Parent!;
@@ -891,9 +902,13 @@ public sealed class PreferencesWindowRenderTests
         }
 
         window.SplitterSizes.Should().ContainKey(hostName + (bottom ? ".paneHeight" : ".paneWidth"));
-        FontsPageView fonts = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible);
-        fonts.GetVisualDescendants().OfType<FontSettingView>().Should().OnlyContain(
-            r => !r.FindControl<Border>("PreviewFrame")!.IsVisible, "the panel is the preview of the fonts");
+        // (A page with a General tab shows its fonts only on the other tab.)
+        if (window.GetVisualDescendants().OfType<FontsPageView>().FirstOrDefault(p => p.IsEffectivelyVisible) is { } fonts)
+        {
+            fonts.GetVisualDescendants().OfType<FontSettingView>().Should().OnlyContain(
+                r => !r.FindControl<Border>("PreviewFrame")!.IsVisible, "the panel is the preview of the fonts");
+        }
+
         return (window, vm, pane, window.FindControl<TooltipSample>(tipName)!);
     }
 
@@ -1011,6 +1026,57 @@ public sealed class PreferencesWindowRenderTests
         window.CaptureRenderedFrame();
 
         tip.Text.FontSize.Should().Be(22);
+        window.Close();
+    }
+
+    /// <summary>
+    /// The Preview page: the panel at the right draws a page in the fonts of the settings with the mark of the caret as the real
+    /// preview draws it (the real one is a web view), following both tabs; a click on a paragraph moves the mark.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_Preview_page_has_a_preview_panel_with_a_page_in_the_unsaved_fonts_and_the_mark_of_the_caret()
+    {
+        (PreferencesWindow window, PreferencesViewModel vm, _, TooltipSample tip) = ShowPreviewPage(
+            "Preview", "PreviewPreviewHost", "PreviewPreviewPane", "PreviewSampleTip", bottom: false);
+        PreviewSample sample = window.FindControl<PreviewSample>("PreviewSamplePage")!;
+        TextBlock serif = sample.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Name == "SerifText");
+        Border[] blocks = { sample.FindControl<Border>("Block0")!, sample.FindControl<Border>("Block1")!, sample.FindControl<Border>("Block2")! };
+
+        sample.MarkedBlock.Should().Be(1);
+        blocks[1].Background.Should().BeAssignableTo<ISolidColorBrush>("the marked block has the background of the highlight");
+        ((ISolidColorBrush)blocks[1].Background!).Opacity.Should().BeApproximately(vm.PreviewHighlightOpacity / 100.0, 0.01);
+        blocks[0].Background.Should().Be(Brushes.Transparent);
+
+        vm.PreviewFontSerif = "Georgia";
+        vm.PreviewFontSize = 24;
+        vm.PreviewHighlightStyle = PreviewHighlightStyle.Outline;
+        vm.PreviewHighlightOutlineWidth = 5;
+        Dispatcher.UIThread.RunJobs();
+
+        serif.FontFamily.Name.Should().Be("Georgia");
+        serif.FontSize.Should().Be(24, "the page follows the fonts");
+        blocks[1].BorderThickness.Should().Be(new Thickness(5));
+        blocks[1].BorderBrush.Should().BeAssignableTo<ISolidColorBrush>("the marked block has the outline");
+        blocks[1].Background.Should().Be(Brushes.Transparent);
+
+        blocks[2].RaiseEvent(new PointerPressedEventArgs(
+            blocks[2], new Pointer(0, PointerType.Mouse, true), blocks[2], new Point(2, 2),
+            0, new PointerPointProperties(RawInputModifiers.LeftMouseButton, PointerUpdateKind.LeftButtonPressed), KeyModifiers.None));
+
+        sample.MarkedBlock.Should().Be(2, "a click moves the mark, as the caret does");
+
+        TabControl tabs = window.FindControl<TabControl>("PreviewAppearanceTabs")!;
+        tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(t => Equals(t.Header, Strings.Get("PreferencesWindow_Fonts")));
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        window.FindControl<Border>("PreviewPreviewPane")!.IsEffectivelyVisible.Should().BeTrue("the same panel stays on the Fonts tab");
+
+        FontSettingViewModel tooltipFont = vm.PreviewFonts.Fonts.Single(f => f.Key == "Tooltip" + TooltipArea.Preview);
+        tooltipFont.InheritFromParent = false;
+        tooltipFont.Size = 19;
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        tip.Text.FontSize.Should().Be(19);
         window.Close();
     }
 
@@ -1311,11 +1377,11 @@ public sealed class PreferencesWindowRenderTests
         ShowFontsTab(window, "TableOfContents");
         double tocBefore = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible).PreviewWidth;
 
-        window.SplitterSizes = new System.Collections.Generic.Dictionary<string, int> { ["PreviewFontsView.previewWidth"] = 420 };
+        window.SplitterSizes = new System.Collections.Generic.Dictionary<string, int> { ["CheckpointsFontsView.previewWidth"] = 420 };
         Dispatcher.UIThread.RunJobs();
 
-        window.SplitterSizes.Should().Contain("PreviewFontsView.previewWidth", 420);
-        ShowFontsTab(window, "Preview");
+        window.SplitterSizes.Should().Contain("CheckpointsFontsView.previewWidth", 420);
+        ShowFontsTab(window, "Checkpoints");
         window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible)
             .PreviewWidth.Should().BeApproximately(420, 2);
         ShowFontsTab(window, "TableOfContents");
@@ -1327,7 +1393,7 @@ public sealed class PreferencesWindowRenderTests
         Dispatcher.UIThread.RunJobs();
         window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible).PreviewWidth
             .Should().BeApproximately(380, 2);
-        ShowFontsTab(window, "Preview");
+        ShowFontsTab(window, "Checkpoints");
         window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible).PreviewWidth
             .Should().BeApproximately(420, 2, "this page keeps its own");
         window.Close();
@@ -1823,7 +1889,7 @@ public sealed class PreferencesWindowRenderTests
             .ElementAt(index);
 
     /// <summary>
-    /// A "Fonts" page that has no preview panel of its own (here Appearance › Preview): a row per font setting, each with the
+    /// A "Fonts" page that has no preview panel of its own (here Appearance › General): a row per font setting, each with the
     /// preview of its font under it (one or two lines).
     /// </summary>
     [AvaloniaFact]
@@ -1833,25 +1899,23 @@ public sealed class PreferencesWindowRenderTests
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
         window.Show();
         Dispatcher.UIThread.RunJobs();
-        ShowFontsTab(window, "Preview");
+        ShowGeneralFontsTab(window);
 
         FontsPageView page = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible);
         FontSettingView[] rows = page.GetVisualDescendants().OfType<FontSettingView>().ToArray();
-        rows.Select(r => r.Name).Should().Equal("FontPreviewStandard", "FontPreviewSerif", "FontPreviewSansSerif", "FontPreviewSize", "FontTooltipPreview");
+        rows.Select(r => r.Name).Take(2).Should().Equal("FontInterface", "FontWarnings");
         TextBlock preview = rows[1].FindControl<TextBlock>("PreviewText")!;
         rows[1].FindControl<ScrollViewer>("PlainPreview")!.IsVisible.Should().BeTrue();
         rows[1].FindControl<CodePreviewEditor>("CodePreview")!.IsVisible.Should().BeFalse("only a font of the editor is previewed as code");
         Panel area = rows[1].FindControl<Panel>("PreviewArea")!;
         window.CaptureRenderedFrame();
         area.TranslatePoint(default, rows[1])!.Value.Y.Should().BeGreaterThan(
-            rows[1].FindControl<TextBlock>("FontSummary")!.TranslatePoint(default, rows[1])!.Value.Y, "the preview is under the font");
+            rows[1].FindControl<TextBlock>("FontSummary")?.TranslatePoint(default, rows[1])?.Y ?? 0, "the preview is under the font");
 
-        vm.PreviewFontSize = 21;
-        vm.PreviewFontSerif = "Georgia";
+        vm.WarningFontSize = 21;
         Dispatcher.UIThread.RunJobs();
 
         preview.FontSize.Should().Be(21);
-        preview.FontFamily.Name.Should().Be("Georgia");
         window.Close();
     }
 
@@ -1863,36 +1927,36 @@ public sealed class PreferencesWindowRenderTests
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
         window.Show();
         Dispatcher.UIThread.RunJobs();
-        ShowFontsTab(window, "Preview");
+        ShowGeneralFontsTab(window);
         FontsPageView page = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible);
-        FontSettingView serif = page.GetVisualDescendants().OfType<FontSettingView>().Single(r => r.Name == "FontPreviewSerif");
-        Panel area = serif.FindControl<Panel>("PreviewArea")!;
+        FontSettingView warnings = page.GetVisualDescendants().OfType<FontSettingView>().Single(r => r.Name == "FontWarnings");
+        Panel area = warnings.FindControl<Panel>("PreviewArea")!;
         window.CaptureRenderedFrame();
         double start = area.Bounds.Height;
 
         start.Should().BeInRange(20, 90, "a line or two, not a pane");
-        serif.UserPreviewHeight.Should().BeNull();
+        warnings.UserPreviewHeight.Should().BeNull();
 
-        vm.PreviewFontSize = 40;
+        vm.WarningFontSize = 40;
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
         area.Bounds.Height.Should().BeGreaterThan(start, "the default height follows the font");
 
-        serif.FindControl<HeightResizeGrip>("PreviewGrip")!.ResizeBy(60);
+        warnings.FindControl<HeightResizeGrip>("PreviewGrip")!.ResizeBy(60);
         Dispatcher.UIThread.RunJobs();
 
-        serif.UserPreviewHeight.Should().NotBeNull();
-        window.SplitterSizes.Should().ContainKey("PreviewFontsView.PreviewSerif.previewHeight");
+        warnings.UserPreviewHeight.Should().NotBeNull();
+        window.SplitterSizes.Should().ContainKey("AppearanceFontsView.Warnings.previewHeight");
 
         // What the window remembers is given back to a window opened later.
-        int remembered = window.SplitterSizes["PreviewFontsView.PreviewSerif.previewHeight"];
+        int remembered = window.SplitterSizes["AppearanceFontsView.Warnings.previewHeight"];
         PreferencesWindow again = BuildWindow();
-        again.SplitterSizes = new System.Collections.Generic.Dictionary<string, int> { ["PreviewFontsView.PreviewSerif.previewHeight"] = remembered };
+        again.SplitterSizes = new System.Collections.Generic.Dictionary<string, int> { ["AppearanceFontsView.Warnings.previewHeight"] = remembered };
         again.Show();
         Dispatcher.UIThread.RunJobs();
-        ShowFontsTab(again, "Preview");
-        again.GetVisualDescendants().OfType<FontSettingView>().Single(r => r.Name == "FontPreviewSerif" && r.IsEffectivelyVisible)
+        ShowGeneralFontsTab(again);
+        again.GetVisualDescendants().OfType<FontSettingView>().Single(r => r.Name == "FontWarnings" && r.IsEffectivelyVisible)
             .UserPreviewHeight.Should().Be(remembered);
         again.Close();
         window.Close();
@@ -1905,7 +1969,7 @@ public sealed class PreferencesWindowRenderTests
         PreferencesWindow window = BuildWindow();
         window.Show();
         Dispatcher.UIThread.RunJobs();
-        ShowFontsTab(window, "Preview");
+        ShowGeneralFontsTab(window);
         FontsPageView page = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible);
         FontSettingView[] rows = page.GetVisualDescendants().OfType<FontSettingView>().ToArray();
         TextBlock first = rows[0].FindControl<TextBlock>("PreviewText")!;

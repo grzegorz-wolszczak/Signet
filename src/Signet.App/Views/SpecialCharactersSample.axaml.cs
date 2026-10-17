@@ -1,4 +1,3 @@
-using System;
 using System.ComponentModel;
 using System.Linq;
 using Avalonia.Controls;
@@ -6,10 +5,7 @@ using Avalonia.Media;
 using Avalonia.Styling;
 using Signet.App.Infrastructure;
 using Signet.App.ViewModels;
-using Signet.Controls.TreeDataGrid;
-using Signet.Controls.TreeDataGrid.Models;
 using Signet.Core.MainUI;
-using Signet.Core.Misc;
 
 namespace Signet.App.Views;
 

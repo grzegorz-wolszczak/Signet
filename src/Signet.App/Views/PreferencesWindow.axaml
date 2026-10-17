@@ -457,55 +457,76 @@
 
       <!-- Appearance › Preview: the highlight of the caret location; Fonts: the preview fonts. -->
       <TabItem x:Name="PreviewAppearancePage" Header="{loc:Loc PreferencesWindow_Preview}" views:PreferencesPage.Parent="AppearanceGeneralPage">
-        <TabControl x:Name="PreviewAppearanceTabs">
-          <TabItem Header="{loc:Loc PreferencesWindow_Preview}">
-              <ScrollViewer>
-                <StackPanel Spacing="10" Margin="8">
-                  <Border Classes="section">
-                    <StackPanel Spacing="6">
-                      <TextBlock Text="{loc:Loc PreferencesWindow_PreviewHighlight}" FontWeight="Bold" />
-                      <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightStyle}" VerticalAlignment="Center" />
-                        <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding AvailablePreviewHighlightStyles}" SelectedItem="{Binding PreviewHighlightStyle}">
-                          <ComboBox.ItemTemplate>
-                            <DataTemplate>
-                              <TextBlock Text="{Binding Converter={x:Static infra:DisplayNameConverters.PreviewHighlightStyle}}" />
-                            </DataTemplate>
-                          </ComboBox.ItemTemplate>
-                        </ComboBox>
+        <Grid x:Name="PreviewPreviewHost">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" MinWidth="300" />
+            <ColumnDefinition Width="8" />
+            <ColumnDefinition Width="340" MinWidth="220" />
+          </Grid.ColumnDefinitions>
+          <TabControl x:Name="PreviewAppearanceTabs">
+            <TabItem Header="{loc:Loc PreferencesWindow_Preview}">
+                <ScrollViewer>
+                  <StackPanel Spacing="10" Margin="8">
+                    <Border Classes="section">
+                      <StackPanel Spacing="6">
+                        <TextBlock Text="{loc:Loc PreferencesWindow_PreviewHighlight}" FontWeight="Bold" />
+                        <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                          <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightStyle}" VerticalAlignment="Center" />
+                          <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding AvailablePreviewHighlightStyles}" SelectedItem="{Binding PreviewHighlightStyle}">
+                            <ComboBox.ItemTemplate>
+                              <DataTemplate>
+                                <TextBlock Text="{Binding Converter={x:Static infra:DisplayNameConverters.PreviewHighlightStyle}}" />
+                              </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                          </ComboBox>
 
-                        <!-- The color of the highlight is in the color scheme (preview.highlight). -->
-                        <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInScheme}" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Padding="0"
-                                         views:PreferencesPage.Target="ColorSchemePage" />
+                          <!-- The color of the highlight is in the color scheme (preview.highlight). -->
+                          <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInScheme}" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Padding="0"
+                                           views:PreferencesPage.Target="ColorSchemePage" />
 
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightOpacity}" VerticalAlignment="Center" TextWrapping="Wrap"
+                          <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightOpacity}" VerticalAlignment="Center" TextWrapping="Wrap"
+                                     IsEnabled="{Binding IsPreviewHighlightBackground}" />
+                          <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding PreviewHighlightOpacity}" Width="80" HorizontalAlignment="Left"
                                    IsEnabled="{Binding IsPreviewHighlightBackground}" />
-                        <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding PreviewHighlightOpacity}" Width="80" HorizontalAlignment="Left"
-                                 IsEnabled="{Binding IsPreviewHighlightBackground}" />
 
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightOutlineWidth}" VerticalAlignment="Center" TextWrapping="Wrap"
+                          <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightOutlineWidth}" VerticalAlignment="Center" TextWrapping="Wrap"
+                                     IsEnabled="{Binding IsPreviewHighlightOutline}" />
+                          <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PreviewHighlightOutlineWidth}" Width="80" HorizontalAlignment="Left"
                                    IsEnabled="{Binding IsPreviewHighlightOutline}" />
-                        <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PreviewHighlightOutlineWidth}" Width="80" HorizontalAlignment="Left"
-                                 IsEnabled="{Binding IsPreviewHighlightOutline}" />
 
-                        <CheckBox Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Content="{loc:Loc PreferencesWindow_PreviewHighlightAutoHide}"
-                                  IsChecked="{Binding PreviewHighlightAutoHide}" />
+                          <CheckBox Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Content="{loc:Loc PreferencesWindow_PreviewHighlightAutoHide}"
+                                    IsChecked="{Binding PreviewHighlightAutoHide}" />
 
-                        <TextBlock Grid.Row="5" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightAutoHideDelay}" VerticalAlignment="Center" TextWrapping="Wrap"
+                          <TextBlock Grid.Row="5" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightAutoHideDelay}" VerticalAlignment="Center" TextWrapping="Wrap"
+                                     IsEnabled="{Binding PreviewHighlightAutoHide}" />
+                          <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding PreviewHighlightAutoHideDelay}" Width="80" HorizontalAlignment="Left"
                                    IsEnabled="{Binding PreviewHighlightAutoHide}" />
-                        <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding PreviewHighlightAutoHideDelay}" Width="80" HorizontalAlignment="Left"
-                                 IsEnabled="{Binding PreviewHighlightAutoHide}" />
-                      </Grid>
-                    </StackPanel>
-                  </Border>
+                        </Grid>
+                      </StackPanel>
+                    </Border>
 
-                </StackPanel>
-              </ScrollViewer>
-          </TabItem>
-          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-            <views:FontsPageView x:Name="PreviewFontsView" />
-          </TabItem>
-        </TabControl>
+                  </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+              <views:FontsPageView x:Name="PreviewFontsView" HasSharedPreview="True" />
+            </TabItem>
+          </TabControl>
+          <GridSplitter Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Background="Transparent" />
+          <!-- The preview, common to the tabs of the page: a page drawn in the fonts of the settings with the mark of the caret as the
+               real preview draws it (the real one is a web view), and a sample of its tooltip. Not searched: it holds no settings. -->
+          <Border x:Name="PreviewPreviewPane" Grid.Column="2" Classes="section noSearchTree" Padding="8">
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
+              <Border Classes="listFrame">
+                <Grid RowDefinitions="*,Auto">
+                  <views:PreviewSample x:Name="PreviewSamplePage" />
+                  <views:TooltipSample x:Name="PreviewSampleTip" Grid.Row="1" Margin="8" />
+                </Grid>
+              </Border>
+            </DockPanel>
+          </Border>
+        </Grid>
       </TabItem>
 
       <!-- Appearance › FindReplace: Fonts only. -->

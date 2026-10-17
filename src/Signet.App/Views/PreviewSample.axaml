@@ -1,0 +1,38 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Signet.App.ViewModels"
+             xmlns:infra="using:Signet.App.Infrastructure"
+             xmlns:loc="using:Signet.App.Resources"
+             x:Class="Signet.App.Views.PreviewSample"
+             infra:TooltipFonts.Area="Preview"
+             x:DataType="vm:PreferencesViewModel">
+  <!-- The Preview panel for the preview of Preferences: a page of a book, drawn in the three fonts and the size of Preferences
+       (standard, serif and sans-serif text), with the block of the caret marked as the real preview marks it. The real panel is a web
+       view, which cannot be shown here; this is a drawing of what it shows. Its DataContext is the Preferences view model, so
+       every change of the fonts or of the highlight shows at once; clicking a block moves the highlight, as the caret does. -->
+  <Border Background="White" CornerRadius="2" Margin="8" Padding="10" ClipToBounds="True">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+      <StackPanel Spacing="6" TextElement.Foreground="Black">
+        <TextBlock x:Name="Heading" Text="{loc:Loc PreviewSample_Heading}" FontWeight="Bold"
+                   FontFamily="{Binding PreviewFontStandard, Converter={x:Static infra:FontFamilyConverters.FromName}}"
+                   FontSize="{Binding PreviewFontSize}" />
+        <Border x:Name="Block0" Padding="6,4" CornerRadius="2" Background="Transparent" BorderBrush="Transparent">
+          <TextBlock x:Name="StandardText" Text="{loc:Loc PreviewSample_Text}" TextWrapping="Wrap"
+                     FontFamily="{Binding PreviewFontStandard, Converter={x:Static infra:FontFamilyConverters.FromName}}"
+                     FontSize="{Binding PreviewFontSize}" />
+        </Border>
+        <Border x:Name="Block1" Padding="6,4" CornerRadius="2" Background="Transparent" BorderBrush="Transparent">
+          <TextBlock x:Name="SerifText" Text="{loc:Loc PreviewSample_Text}" TextWrapping="Wrap"
+                     FontFamily="{Binding PreviewFontSerif, Converter={x:Static infra:FontFamilyConverters.FromName}}"
+                     FontSize="{Binding PreviewFontSize}" />
+        </Border>
+        <Border x:Name="Block2" Padding="6,4" CornerRadius="2" Background="Transparent" BorderBrush="Transparent">
+          <TextBlock x:Name="SansSerifText" Text="{loc:Loc PreviewSample_Text}" TextWrapping="Wrap"
+                     FontFamily="{Binding PreviewFontSansSerif, Converter={x:Static infra:FontFamilyConverters.FromName}}"
+                     FontSize="{Binding PreviewFontSize}" />
+        </Border>
+        <TextBlock Text="{loc:Loc PreviewSample_Hint}" Opacity="0.55" FontSize="11" TextWrapping="Wrap" Margin="0,6,0,0" />
+      </StackPanel>
+    </ScrollViewer>
+  </Border>
+</UserControl>

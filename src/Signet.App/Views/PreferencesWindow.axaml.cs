@@ -312,6 +312,7 @@ public partial class PreferencesWindow : Window
         yield return CleanupPreviewHost;
         yield return FootnotesPreviewHost;
         yield return ValidationPreviewHost;
+        yield return PreviewPreviewHost;
     }
 
     // The Fonts pages (every Appearance section and the theme's own) each have a width of the preview of their own: the
@@ -381,6 +382,7 @@ public partial class PreferencesWindow : Window
             SpecialCharacterFontsView.DataContext = vm.SpecialCharacterFonts;
             StartScreenFontsView.DataContext = vm.StartScreenFonts;
             BookBrowserFontsView.DataContext = vm.BookBrowserFonts;
+            PreviewSampleTip.DataContext = vm.PreviewFonts.Fonts.Single(f => f.Key == "Tooltip" + TooltipArea.Preview);
             ValidationPreview.DataContext = vm.ValidationSample;
             ValidationSampleTip.DataContext = vm.ValidationFonts.Fonts.Single(f => f.Key == "Tooltip" + TooltipArea.Validation);
             FootnotesPreview.DataContext = vm.FootnoteSample;
