@@ -39,6 +39,9 @@ public sealed partial class PreferencesViewModel
     /// <summary>Appearance › Book Browser › Fonts: the font of the names and cells, of the column headers and the tooltip font.</summary>
     public FontPageViewModel BookBrowserFonts { get; private set; } = null!;
 
+    /// <summary>Appearance › Find Usages Window › Fonts: the column headers, the "Context" column and the other cells.</summary>
+    public FontPageViewModel FindUsagesFonts { get; private set; } = null!;
+
     /// <summary>Appearance › Table of Contents › Fonts: the tooltip font.</summary>
     public FontPageViewModel TableOfContentsFonts { get; private set; } = null!;
 
@@ -178,7 +181,7 @@ public sealed partial class PreferencesViewModel
         StartScreenFonts = TooltipPage(TooltipArea.StartScreen);
         BookBrowserFonts = new FontPageViewModel(new[]
         {
-            BookBrowserFontRow(
+            InterfaceFontRow(
                 "BookBrowserItems", "PreferencesWindow_BookBrowserItemsFont", "FontPreview_BookBrowserItems",
                 () => BookBrowserItemsFontFamily, v => BookBrowserItemsFontFamily = v,
                 () => BookBrowserItemsFontSize, v => BookBrowserItemsFontSize = v,
@@ -188,7 +191,7 @@ public sealed partial class PreferencesViewModel
                     BookBrowserItemsFontSize = 0;
                 },
                 ChooseBookBrowserItemsFontCommand),
-            BookBrowserFontRow(
+            InterfaceFontRow(
                 "BookBrowserHeaders", "PreferencesWindow_BookBrowserHeadersFont", "FontPreview_BookBrowserHeaders",
                 () => BookBrowserHeaderFontFamily, v => BookBrowserHeaderFontFamily = v,
                 () => BookBrowserHeaderFontSize, v => BookBrowserHeaderFontSize = v,
@@ -200,6 +203,39 @@ public sealed partial class PreferencesViewModel
                 ChooseBookBrowserHeaderFontCommand),
             TooltipRow(TooltipArea.BookBrowser),
         });
+        FindUsagesFonts = new FontPageViewModel(new[]
+        {
+            InterfaceFontRow(
+                "FindUsagesHeaders", "PreferencesWindow_FindUsagesHeadersFont", "FontPreview_FindUsagesHeaders",
+                () => FindUsagesHeaderFontFamily, v => FindUsagesHeaderFontFamily = v,
+                () => FindUsagesHeaderFontSize, v => FindUsagesHeaderFontSize = v,
+                () =>
+                {
+                    FindUsagesHeaderFontFamily = string.Empty;
+                    FindUsagesHeaderFontSize = 0;
+                },
+                ChooseFindUsagesHeaderFontCommand),
+            InterfaceFontRow(
+                "FindUsagesContext", "PreferencesWindow_FindUsagesContextFont", "FontPreview_FindUsagesContext",
+                () => FindUsagesContextFontFamily, v => FindUsagesContextFontFamily = v,
+                () => FindUsagesContextFontSize, v => FindUsagesContextFontSize = v,
+                () =>
+                {
+                    FindUsagesContextFontFamily = string.Empty;
+                    FindUsagesContextFontSize = 0;
+                },
+                ChooseFindUsagesContextFontCommand),
+            InterfaceFontRow(
+                "FindUsagesCells", "PreferencesWindow_FindUsagesCellsFont", "FontPreview_FindUsagesCells",
+                () => FindUsagesCellsFontFamily, v => FindUsagesCellsFontFamily = v,
+                () => FindUsagesCellsFontSize, v => FindUsagesCellsFontSize = v,
+                () =>
+                {
+                    FindUsagesCellsFontFamily = string.Empty;
+                    FindUsagesCellsFontSize = 0;
+                },
+                ChooseFindUsagesCellsFontCommand),
+        });
         TableOfContentsFonts = TooltipPage(TooltipArea.TableOfContents);
         FindReplaceFonts = TooltipPage(TooltipArea.FindReplace);
         CheckpointsFonts = TooltipPage(TooltipArea.Checkpoints);
@@ -210,8 +246,8 @@ public sealed partial class PreferencesViewModel
         _fontPages.AddRange(new[]
         {
             AppearanceFonts, StartScreenFonts, BookBrowserFonts, TableOfContentsFonts, CodeEditorFonts, PreviewFonts,
-            FindReplaceFonts, SpecialCharacterFonts, CheckpointsFonts, ValidationFonts, MetadataEditorFonts, CleanupFonts,
-            FootnotesFonts,
+            FindReplaceFonts, FindUsagesFonts, SpecialCharacterFonts, CheckpointsFonts, ValidationFonts, MetadataEditorFonts,
+            CleanupFonts, FootnotesFonts,
         });
 
         // The pages show values that change elsewhere too ("Restore Appearance Defaults", the compact mode): they are

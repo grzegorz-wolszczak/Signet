@@ -1817,9 +1817,13 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>
     /// Applies the changes from the Preferences window after Save: refreshes spelling underlines in the open
-    /// tabs (dictionaries, user words).
+    /// tabs (dictionaries, user words) and the settings of the "Find Usages" panel.
     /// </summary>
-    public void ApplyPreferencesChanges() => RefreshOpenTabsSpellcheck();
+    public void ApplyPreferencesChanges()
+    {
+        RefreshOpenTabsSpellcheck();
+        _findUsages.ReloadSettings();
+    }
 
     /// <summary>
     /// Refreshes spelling highlighting in all open Code Editor tabs — after a change of the

@@ -136,8 +136,9 @@ public sealed partial class PreferencesViewModel
         }
     }
 
-    // A font row of the Book Browser "Fonts" page: typeface (empty = the interface font) and size (0 = the interface size).
-    private FontSettingViewModel BookBrowserFontRow(
+    // A font row of a "Fonts" page (Book Browser, Find Usages): typeface (empty = the interface font) and size (0 = the
+    // interface size).
+    private FontSettingViewModel InterfaceFontRow(
         string key, string labelKey, string previewKey,
         Func<string> family, Action<string> setFamily, Func<int> size, Action<int> setSize,
         Action reset, System.Windows.Input.ICommand choose) =>

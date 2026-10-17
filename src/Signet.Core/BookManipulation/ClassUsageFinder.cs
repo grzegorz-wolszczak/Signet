@@ -35,8 +35,20 @@ public sealed record ClassUsageSource(string BookPath, string Text, bool IsStyle
 /// characters (longer lines are cut around the usage) — empty when not known.
 /// </param>
 /// <param name="Length">The length of the usage in characters when it is a range to select (a text match); 0 otherwise.</param>
+/// <param name="ContextMatchStart">
+/// Where the usage starts in <paramref name="Context"/> (the name of the class, the text matched); -1 when not known.
+/// </param>
+/// <param name="ContextMatchLength">The length of the usage in <paramref name="Context"/>; 0 when there is nothing to mark.</param>
 public sealed record ClassUsage(
-    string BookPath, int Offset, int Line, int Column, ClassUsageKind Kind, string Context = "", int Length = 0);
+    string BookPath,
+    int Offset,
+    int Line,
+    int Column,
+    ClassUsageKind Kind,
+    string Context = "",
+    int Length = 0,
+    int ContextMatchStart = -1,
+    int ContextMatchLength = 0);
 
 /// <summary>
 /// "Find Usages" of a CSS class in the whole book: every token of a <c>class</c> attribute equal to the name
@@ -94,8 +106,10 @@ public static class ClassUsageFinder
         {
             int offset = Math.Clamp(start, 0, text.Length);
             (int line, int column) = lines.LocationOf(offset);
+            int length = Math.Max(0, end - start);
+            (string context, int matchStart, int matchLength) = Context(text, offset, column, length);
             usages.Add(new ClassUsage(
-                bookPath, offset, line, column, ClassUsageKind.Text, Context(text, offset, column), Math.Max(0, end - start)));
+                bookPath, offset, line, column, ClassUsageKind.Text, context, length, matchStart, matchLength));
         }
 
         return usages;
@@ -132,7 +146,8 @@ public static class ClassUsageFinder
         foreach ((int offset, ClassUsageKind kind) in found)
         {
             (int line, int column) = lines.LocationOf(offset);
-            usages.Add(new ClassUsage(source.BookPath, offset, line, column, kind, Context(source.Text, offset, column)));
+            (string context, int matchStart, int matchLength) = Context(source.Text, offset, column, className.Length);
+            usages.Add(new ClassUsage(source.BookPath, offset, line, column, kind, context, 0, matchStart, matchLength));
         }
 
         return usages;
@@ -197,8 +212,8 @@ public static class ClassUsageFinder
     }
 
     // The line of the usage at offset (whose column is 1-based): without the line break and the leading whitespace, cut
-    // to MaxContextLength around the usage.
-    private static string Context(string text, int offset, int column)
+    // to MaxContextLength around the usage. Also where the usage (matchLength characters) lies in that text.
+    private static (string Text, int MatchStart, int MatchLength) Context(string text, int offset, int column, int matchLength)
     {
         int lineStart = offset - (column - 1);
         int lineEnd = text.IndexOf('\n', offset);
@@ -218,15 +233,20 @@ public static class ClassUsageFinder
             start++;
         }
 
+        // The usage may reach past the end of its line (a match over several lines): only the part in the line is marked.
+        int MarkedLength(int to) => Math.Clamp(matchLength, 0, Math.Max(0, to - offset));
+
         if (lineEnd - start <= MaxContextLength)
         {
-            return text[start..lineEnd];
+            return (text[start..lineEnd], offset - start, MarkedLength(lineEnd));
         }
 
         // Keep the usage in view: a window from a little before it.
         int from = Math.Max(start, offset - (MaxContextLength / 4));
         int to = Math.Min(lineEnd, from + MaxContextLength);
-        return (from > start ? "…" : string.Empty) + text[from..to] + (to < lineEnd ? "…" : string.Empty);
+        string prefix = from > start ? "…" : string.Empty;
+        string cut = prefix + text[from..to] + (to < lineEnd ? "…" : string.Empty);
+        return (cut, prefix.Length + offset - from, MarkedLength(to));
     }
 
     /// <summary>Line starts of a text, for offset → (line, column).</summary>

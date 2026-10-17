@@ -139,6 +139,111 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
+    public void The_find_usages_panel_fits_its_first_column_and_does_not_wrap_rows_by_default()
+    {
+        using TempDir dir = new();
+        SettingsStore sut = new(dir.Combine("settings.xml"));
+
+        sut.FindUsagesFitUsageColumn.Should().BeTrue();
+        sut.FindUsagesWrapRows.Should().BeFalse();
+        sut.FindUsagesUsageColumnWidth.Should().Be(0, "no width was set yet");
+    }
+
+    [Fact]
+    public void The_find_usages_panel_settings_survive_a_reload()
+    {
+        using TempDir dir = new();
+        string path = dir.Combine("settings.xml");
+        SettingsStore writer = new(path)
+        {
+            FindUsagesFitUsageColumn = false,
+            FindUsagesWrapRows = true,
+            FindUsagesUsageColumnWidth = 240,
+        };
+        writer.Save();
+
+        SettingsStore reader = new(path);
+
+        reader.FindUsagesFitUsageColumn.Should().BeFalse();
+        reader.FindUsagesWrapRows.Should().BeTrue();
+        reader.FindUsagesUsageColumnWidth.Should().Be(240);
+    }
+
+    [Fact]
+    public void A_negative_find_usages_column_width_is_stored_as_none()
+    {
+        using TempDir dir = new();
+        SettingsStore sut = new(dir.Combine("settings.xml")) { FindUsagesUsageColumnWidth = -5 };
+
+        sut.FindUsagesUsageColumnWidth.Should().Be(0);
+    }
+
+    [Fact]
+    public void Restoring_the_appearance_defaults_makes_the_find_usages_column_fit_again()
+    {
+        using TempDir dir = new();
+        SettingsStore sut = new(dir.Combine("settings.xml")) { FindUsagesFitUsageColumn = false };
+
+        sut.ClearAppearanceSettings();
+
+        sut.FindUsagesFitUsageColumn.Should().BeTrue();
+    }
+
+    [Fact]
+    public void The_find_usages_fonts_default_to_the_interface_font()
+    {
+        using TempDir dir = new();
+        SettingsStore sut = new(dir.Combine("settings.xml"));
+
+        sut.FindUsagesAppearance.Should().Be(FindUsagesAppearance.Default);
+        FindUsagesAppearance.Default.Should().Be(new FindUsagesAppearance(string.Empty, 0, string.Empty, 0, string.Empty, 0));
+    }
+
+    [Fact]
+    public void The_find_usages_fonts_are_stored_normalized_and_survive_a_reload()
+    {
+        using TempDir dir = new();
+        string path = dir.Combine("settings.xml");
+        SettingsStore writer = new(path)
+        {
+            FindUsagesAppearance = new FindUsagesAppearance(" Arial ", 500, "Consolas", -3, "Segoe UI", 13),
+        };
+        writer.Save();
+
+        SettingsStore reader = new(path);
+
+        reader.FindUsagesAppearance.Should().Be(
+            new FindUsagesAppearance("Arial", FindUsagesAppearance.FontSizeMax, "Consolas", 0, "Segoe UI", 13));
+    }
+
+    [Fact]
+    public void Changing_the_find_usages_fonts_raises_one_setting_changed()
+    {
+        using TempDir dir = new();
+        SettingsStore sut = new(dir.Combine("settings.xml"));
+        List<string> keys = new();
+        sut.SettingChanged += (_, e) => keys.Add(e.QualifiedKey);
+
+        sut.FindUsagesAppearance = new FindUsagesAppearance("Arial", 12, string.Empty, 0, string.Empty, 0);
+
+        keys.Should().ContainSingle().Which.Should().Contain("find_usages_appearance");
+    }
+
+    [Fact]
+    public void Restoring_the_appearance_defaults_clears_the_find_usages_fonts()
+    {
+        using TempDir dir = new();
+        SettingsStore sut = new(dir.Combine("settings.xml"))
+        {
+            FindUsagesAppearance = new FindUsagesAppearance("Arial", 12, "Consolas", 14, "Segoe UI", 13),
+        };
+
+        sut.ClearAppearanceSettings();
+
+        sut.FindUsagesAppearance.Should().Be(FindUsagesAppearance.Default);
+    }
+
+    [Fact]
     public void Restoring_the_appearance_defaults_clears_the_line_numbers_font()
     {
         using TempDir dir = new();

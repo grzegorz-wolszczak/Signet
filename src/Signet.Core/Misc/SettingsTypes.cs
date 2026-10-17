@@ -336,6 +336,41 @@ public readonly record struct BookBrowserAppearance(
     private static int NormalizedFontSize(int size) => size <= 0 ? 0 : Math.Clamp(size, FontSizeMin, FontSizeMax);
 }
 
+/// <summary>
+/// The fonts of the "Find Usages" panel: the column headers, the "Context" column (e.g. a fixed-width font for the code)
+/// and the rest of the panel (the other cells and the heading). An empty typeface and a size of 0 stay "as the interface".
+/// </summary>
+/// <param name="HeaderFontFamily">Typeface of the column headers.</param>
+/// <param name="HeaderFontSize">Size (px) of the column headers.</param>
+/// <param name="ContextFontFamily">Typeface of the "Context" column.</param>
+/// <param name="ContextFontSize">Size (px) of the "Context" column.</param>
+/// <param name="CellsFontFamily">Typeface of the other cells and of the heading above the tree.</param>
+/// <param name="CellsFontSize">Size (px) of the other cells and of the heading.</param>
+public readonly record struct FindUsagesAppearance(
+    string HeaderFontFamily, int HeaderFontSize, string ContextFontFamily, int ContextFontSize,
+    string CellsFontFamily, int CellsFontSize)
+{
+    /// <summary>Lower bound of an explicit font size.</summary>
+    public const int FontSizeMin = 6;
+
+    /// <summary>Upper bound of an explicit font size.</summary>
+    public const int FontSizeMax = 72;
+
+    /// <summary>Default values: the interface font everywhere.</summary>
+    public static FindUsagesAppearance Default => new(string.Empty, 0, string.Empty, 0, string.Empty, 0);
+
+    /// <summary>A copy with the sizes clamped (a font size of 0 stays "as the interface") and the typefaces trimmed.</summary>
+    public FindUsagesAppearance Normalized() => new(
+        HeaderFontFamily?.Trim() ?? string.Empty,
+        NormalizedFontSize(HeaderFontSize),
+        ContextFontFamily?.Trim() ?? string.Empty,
+        NormalizedFontSize(ContextFontSize),
+        CellsFontFamily?.Trim() ?? string.Empty,
+        NormalizedFontSize(CellsFontSize));
+
+    private static int NormalizedFontSize(int size) => size <= 0 ? 0 : Math.Clamp(size, FontSizeMin, FontSizeMax);
+}
+
 /// <summary>Font settings of the "Insert Special Character" window.</summary>
 /// <param name="FontFamily">Font family.</param>
 /// <param name="FontSize">Size (px).</param>

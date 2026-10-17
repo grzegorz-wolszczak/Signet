@@ -319,6 +319,7 @@ public partial class PreferencesWindow : Window
             BookBrowserFontsView.DataContext = vm.BookBrowserFonts;
             TableOfContentsFontsView.DataContext = vm.TableOfContentsFonts;
             FindReplaceFontsView.DataContext = vm.FindReplaceFonts;
+            FindUsagesFontsView.DataContext = vm.FindUsagesFonts;
             CheckpointsFontsView.DataContext = vm.CheckpointsFonts;
             ValidationFontsView.DataContext = vm.ValidationFonts;
             MetadataEditorFontsView.DataContext = vm.MetadataEditorFonts;

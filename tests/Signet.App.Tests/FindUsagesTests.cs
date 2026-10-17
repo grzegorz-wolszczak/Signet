@@ -180,6 +180,80 @@ public sealed class FindUsagesTests : IDisposable
         panel.GroupByFile.Should().BeTrue();
     }
 
+    [Fact]
+    public void Wrapping_rows_is_remembered_in_the_settings()
+    {
+        using TempDir dir = new();
+        SettingsStore settings = new(dir.Combine("settings.xml"));
+        FindUsagesViewModel panel = new(settings);
+        panel.WrapRows.Should().BeFalse("rows are cut with an ellipsis by default");
+
+        panel.WrapRows = true;
+
+        settings.FindUsagesWrapRows.Should().BeTrue();
+        new FindUsagesViewModel(settings).WrapRows.Should().BeTrue();
+    }
+
+    [Fact]
+    public void The_usage_column_fits_its_content_until_Preferences_say_otherwise()
+    {
+        using TempDir dir = new();
+        SettingsStore settings = new(dir.Combine("settings.xml"));
+        FindUsagesViewModel panel = new(settings);
+        panel.FitUsageColumn.Should().BeTrue();
+
+        settings.FindUsagesFitUsageColumn = false;
+        panel.FitUsageColumn.Should().BeTrue("the panel reads the setting when Preferences are saved");
+        panel.ReloadSettings();
+
+        panel.FitUsageColumn.Should().BeFalse();
+    }
+
+    [Fact]
+    public void The_width_the_user_gave_the_usage_column_is_kept_in_the_settings()
+    {
+        using TempDir dir = new();
+        SettingsStore settings = new(dir.Combine("settings.xml"));
+
+        FindUsagesViewModel panel = new(settings) { UsageColumnWidth = 321 };
+
+        settings.FindUsagesUsageColumnWidth.Should().Be(321);
+        panel.UsageColumnWidth.Should().Be(321);
+    }
+
+    [Fact]
+    public void A_change_of_the_fonts_in_the_settings_raises_AppearanceChanged()
+    {
+        using TempDir dir = new();
+        SettingsStore settings = new(dir.Combine("settings.xml"));
+        FindUsagesViewModel panel = new(settings);
+        int raised = 0;
+        panel.AppearanceChanged += (_, _) => raised++;
+
+        settings.FindUsagesWrapRows = true;
+        raised.Should().Be(0, "only the fonts matter");
+        settings.FindUsagesAppearance = new FindUsagesAppearance(string.Empty, 0, "Consolas", 14, string.Empty, 0);
+
+        raised.Should().Be(1);
+        panel.Appearance.ContextFontFamily.Should().Be("Consolas");
+    }
+
+    [Fact]
+    public void A_node_knows_its_level_and_puts_a_gap_before_the_count()
+    {
+        using TempDir dir = new();
+        FindUsagesViewModel panel = new(new SettingsStore(dir.Combine("settings.xml"))) { GroupByFile = true };
+        panel.Load("note", new[] { new ClassUsage("a.xhtml", 10, 3, 14, ClassUsageKind.ClassAttribute) });
+
+        FindUsagesNode root = panel.Roots.Single();
+        FindUsagesNode file = root.Children.Single();
+        FindUsagesNode usage = file.Children.Single();
+
+        new[] { root.Level, file.Level, usage.Level }.Should().Equal(0, 1, 2);
+        root.CountSuffix.Should().Be("  " + root.CountText);
+        usage.CountSuffix.Should().BeEmpty();
+    }
+
     [Theory]
     [InlineData(1, "1 wynik")]
     [InlineData(2, "2 wyniki")]
