@@ -1,19 +1,17 @@
 using System;
-using System.ComponentModel;
+using System.Collections.Generic;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Controls.Primitives;
 using Avalonia.Media;
-using Signet.App.Infrastructure;
 using Signet.App.ViewModels;
 
 namespace Signet.App.Views;
 
 /// <summary>
-/// A "Fonts" page of the Preferences window (<see cref="FontPageViewModel"/>): a row per font setting and the preview of
-/// the setting focused or changed last.
+/// A "Fonts" page of the Preferences window (<see cref="FontPageViewModel"/>): a row per font setting, each with the preview of
+/// its font under it.
 /// </summary>
 public partial class FontsPageView : UserControl
 {
@@ -31,13 +29,13 @@ public partial class FontsPageView : UserControl
         set => SetValue(IsContentEnabledProperty, value);
     }
 
-    private FontPageViewModel? _page;
-    private FontSettingViewModel? _shown;
-
     /// <summary>Raised when the user has dragged the splitter: <see cref="PreviewWidth"/> is the new width.</summary>
     public event EventHandler? PreviewWidthChanged;
 
-    /// <summary>The width of the preview in pixels (setting it fixes the width; the settings take the rest).</summary>
+    /// <summary>
+    /// The width in pixels of the space to the right of the settings (setting it fixes that width; the settings take the
+    /// rest). By default it is as wide as the settings, so they take half of the page.
+    /// </summary>
     public double PreviewWidth
     {
         get => PreviewColumn.ActualWidth > 0 ? PreviewColumn.ActualWidth : PreviewColumn.Width.Value;
@@ -52,11 +50,7 @@ public partial class FontsPageView : UserControl
     public FontsPageView()
     {
         InitializeComponent();
-        DataContextChanged += (_, _) =>
-        {
-            BuildRows();
-            Track(DataContext as FontPageViewModel);
-        };
+        DataContextChanged += (_, _) => BuildRows();
     }
 
     // The rows are created here rather than by an ItemsControl: the controls of a page exist before the page is shown
@@ -84,7 +78,12 @@ public partial class FontsPageView : UserControl
 
             group = font.Group;
             FontSettingView row = new() { DataContext = font, Name = "Font" + font.Key };
-            row.AddHandler(GotFocusEvent, (_, _) => page.Active = font);
+            if (_previewHeights.TryGetValue(font.Key, out int height))
+            {
+                row.SetUserPreviewHeight(height);
+            }
+
+            row.PreviewHeightChanged += (_, _) => _previewHeights[font.Key] = (int)Math.Round(row.UserPreviewHeight ?? 0);
             Rows.Children.Add(row);
         }
     }
@@ -93,57 +92,22 @@ public partial class FontsPageView : UserControl
     public Control? RowOf(FontSettingViewModel font) =>
         Rows.Children.OfType<FontSettingView>().FirstOrDefault(r => ReferenceEquals(r.DataContext, font));
 
-    // Follows the page and the setting it previews, to update what the bindings cannot: the code sample and wrapping.
-    private void Track(FontPageViewModel? page)
+    // The heights the user gave the previews (setting key -> pixels), to remember: the ones loaded and the ones changed.
+    private readonly Dictionary<string, int> _previewHeights = new(StringComparer.Ordinal);
+
+    /// <summary>The heights the user gave the previews of the rows (setting key -&gt; pixels); the other rows have the default.</summary>
+    public IReadOnlyDictionary<string, int> PreviewHeights => _previewHeights;
+
+    /// <summary>Gives the preview of a row the height the user chose (also before the row exists: it is applied when it does).</summary>
+    public void SetPreviewHeight(string key, int height)
     {
-        if (_page is not null)
+        _previewHeights[key] = height;
+        foreach (FontSettingView row in Rows.Children.OfType<FontSettingView>())
         {
-            _page.PropertyChanged -= OnPageChanged;
-        }
-
-        _page = page;
-        if (_page is not null)
-        {
-            _page.PropertyChanged += OnPageChanged;
-        }
-
-        ShowActive();
-    }
-
-    private void OnPageChanged(object? sender, PropertyChangedEventArgs e) => ShowActive();
-
-    private void OnActiveChanged(object? sender, PropertyChangedEventArgs e) => UpdatePreview();
-
-    private void ShowActive()
-    {
-        if (_shown is not null)
-        {
-            _shown.PropertyChanged -= OnActiveChanged;
-        }
-
-        _shown = _page?.Active;
-        if (_shown is not null)
-        {
-            _shown.PropertyChanged += OnActiveChanged;
-        }
-
-        UpdatePreview();
-    }
-
-    private void UpdatePreview()
-    {
-        bool wrap = _page?.WrapPreview ?? false;
-        bool code = _shown?.IsCodePreview ?? false;
-        PlainPreview.IsVisible = !code;
-        CodePreview.IsVisible = code;
-        CodePreview.WordWrap = wrap;
-        PlainPreview.HorizontalScrollBarVisibility = wrap ? ScrollBarVisibility.Disabled : ScrollBarVisibility.Auto;
-        PreviewText.TextWrapping = wrap ? TextWrapping.Wrap : TextWrapping.NoWrap;
-        if (_shown is { IsCodePreview: true })
-        {
-            CodePreview.Show(
-                _shown.PreviewText, _shown.EffectiveFamily, _shown.EffectiveSize, AppTheme.Current, _shown.CodePreviewExtended,
-                _shown.EffectiveWeight);
+            if (row.DataContext is FontSettingViewModel font && font.Key == key)
+            {
+                row.SetUserPreviewHeight(height);
+            }
         }
     }
 }

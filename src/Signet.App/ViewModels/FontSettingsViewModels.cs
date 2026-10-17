@@ -110,9 +110,6 @@ public sealed class FontSettingViewModel : ObservableObject
         _effectiveWeight = effectiveWeight ?? (() => _getWeight());
     }
 
-    /// <summary>Raised when the user changed the typeface or the size here.</summary>
-    internal event EventHandler? Edited;
-
     /// <summary>An English identifier of the setting.</summary>
     public string Key { get; }
 
@@ -219,7 +216,7 @@ public sealed class FontSettingViewModel : ObservableObject
 
     /// <summary>
     /// The font as the row shows it, in one line: "Segoe UI, 16, Light" — the typeface, the size and the weight, each only
-    /// when the setting has it and it is set; "(default)" stands for a typeface that is not set.
+    /// when the setting has it; a typeface or a size that is not set is the one in use, as "Segoe UI (default), 12".
     /// </summary>
     public string Summary
     {
@@ -228,12 +225,15 @@ public sealed class FontSettingViewModel : ObservableObject
             List<string> parts = new();
             if (HasFamily)
             {
-                parts.Add(Family.Length > 0 ? Family : Strings.Get("FontWeight_Default"));
+                string used = EffectiveFamily;
+                string notSet = Strings.Get("FontWeight_Default");
+                parts.Add(Family.Length > 0 ? Family : used.Length > 0 ? used + " " + notSet : notSet);
             }
 
-            if (HasSize && Size > 0)
+            int size = Size > 0 ? Size : (int)Math.Round(EffectiveSize);
+            if (HasSize && size > 0)
             {
-                parts.Add(Size.ToString(System.Globalization.CultureInfo.InvariantCulture));
+                parts.Add(size.ToString(System.Globalization.CultureInfo.InvariantCulture));
             }
 
             if (HasWeight && FontWeightScale.NameOf(Weight) is { } weight)
@@ -282,16 +282,21 @@ public sealed class FontSettingViewModel : ObservableObject
     /// <summary>Announces that the values may have changed (the setting was changed elsewhere).</summary>
     public void Refresh() => OnPropertyChanged(string.Empty);
 
-    private void Changed()
+    private void Changed() => Refresh();
+
+    private bool _wrapPreview;
+
+    /// <summary>Whether the preview of this setting wraps the lines that do not fit its width (it scrolls sideways otherwise).</summary>
+    public bool WrapPreview
     {
-        Refresh();
-        Edited?.Invoke(this, EventArgs.Empty);
+        get => _wrapPreview;
+        set => SetProperty(ref _wrapPreview, value);
     }
 }
 
 /// <summary>
-/// A "Fonts" page of the Preferences window: its font settings, the one shown in the preview (the one focused or
-/// changed last, as in Rider) and "Restore defaults" of the page.
+/// A "Fonts" page of the Preferences window: its font settings (each with a preview of its own) and "Restore defaults"
+/// of the page.
 /// </summary>
 public sealed partial class FontPageViewModel : ObservableObject
 {
@@ -303,12 +308,6 @@ public sealed partial class FontPageViewModel : ObservableObject
         ArgumentNullException.ThrowIfNull(fonts);
         Fonts = new ReadOnlyObservableCollection<FontSettingViewModel>(new ObservableCollection<FontSettingViewModel>(fonts));
         Note = note;
-        foreach (FontSettingViewModel font in Fonts)
-        {
-            font.Edited += (_, _) => Active = font;
-        }
-
-        _active = Fonts.Count > 0 ? Fonts[0] : null;
     }
 
     /// <summary>The font settings of the page.</summary>
@@ -319,14 +318,6 @@ public sealed partial class FontPageViewModel : ObservableObject
 
     /// <summary>Whether there is a note.</summary>
     public bool HasNote => !string.IsNullOrEmpty(Note);
-
-    /// <summary>The setting shown in the preview: the one focused or changed last (the first one at the start).</summary>
-    [ObservableProperty]
-    private FontSettingViewModel? _active;
-
-    /// <summary>Whether the preview wraps the lines that do not fit its width (it scrolls sideways otherwise).</summary>
-    [ObservableProperty]
-    private bool _wrapPreview;
 
     /// <summary>"Restore defaults" — every font of the page goes back to its default.</summary>
     [RelayCommand]

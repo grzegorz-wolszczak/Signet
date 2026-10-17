@@ -3,6 +3,8 @@
              xmlns:vm="using:Signet.App.ViewModels"
              xmlns:infra="using:Signet.App.Infrastructure"
              xmlns:loc="using:Signet.App.Resources"
+             xmlns:cv="using:Signet.App.CodeEditor"
+             xmlns:views="using:Signet.App.Views"
              x:Class="Signet.App.Views.FontSettingView"
              x:DataType="vm:FontSettingViewModel">
   <!-- One font setting of a "Fonts" page: the font as one line (typeface, size, weight) and "Choose…" (the font picker
@@ -32,6 +34,33 @@
                      Increment="1" FormatString="0" Width="130" />
     </StackPanel>
     </StackPanel>
+    <!-- The preview of the font, right under it: one or two lines (the grip at the bottom right makes it taller), a sample of
+         text in the colors of the place the font is used in, or a sample of code, highlighted as in Code Editor with line
+         numbers: which one shows, the wrapping and the height are set in code. It stays on when the setting is inherited. -->
+    <Border x:Name="PreviewFrame" Margin="0,2,0,0" Padding="6,4,6,2" CornerRadius="4" BorderThickness="1"
+            Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+      <Grid RowDefinitions="Auto,Auto">
+        <Panel x:Name="PreviewArea">
+          <ScrollViewer x:Name="PlainPreview" HorizontalScrollBarVisibility="Auto">
+            <Border x:Name="PreviewSurface" Padding="6,4" CornerRadius="3" HorizontalAlignment="Left" VerticalAlignment="Top"
+                    Background="{Binding PreviewBackground, Converter={x:Static infra:ColorConverters.ToBrush}}">
+              <TextBlock x:Name="PreviewText" Classes="noSearch" Text="{Binding PreviewText}"
+                         FontFamily="{Binding EffectiveFamily, Converter={x:Static infra:FontFamilyConverters.FromName}}"
+                         FontSize="{Binding EffectiveSize}"
+                         FontWeight="{Binding EffectiveWeight, Converter={x:Static infra:FontWeightOptions.FromNumber}}"
+                         Foreground="{Binding PreviewForeground, Converter={x:Static infra:ColorConverters.ToBrush}}" />
+            </Border>
+          </ScrollViewer>
+          <cv:CodePreviewEditor x:Name="CodePreview" IsVisible="False" />
+        </Panel>
+        <Grid Grid.Row="1" ColumnDefinitions="*,Auto">
+          <CheckBox x:Name="WrapPreviewBox" Classes="noSearch" Content="{loc:Loc PreferencesWindow_WrapPreview}"
+                    IsChecked="{Binding WrapPreview}" MinHeight="0" Padding="6,0,0,0" />
+          <views:HeightResizeGrip x:Name="PreviewGrip" Grid.Column="1" Target="{Binding #PreviewArea}" MinTargetHeight="28" />
+        </Grid>
+      </Grid>
+    </Border>
   </StackPanel>
   </Border>
 </UserControl>

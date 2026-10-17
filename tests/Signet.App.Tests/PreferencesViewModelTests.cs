@@ -503,10 +503,11 @@ public sealed class PreferencesViewModelTests
         using TestHost _ = host;
         FontSettingViewModel row = vm.FindUsagesFonts.Fonts.Single(f => f.Key == "FindUsagesCells");
 
-        row.Summary.Should().Be(Strings.Get("FontWeight_Default"), "nothing is set");
+        string notSet = Strings.Get("FontWeight_Default");
+        row.Summary.Should().StartWith(vm.EffectiveUiFontFamily + " " + notSet, "nothing is set: the font in use is described");
 
         vm.FindUsagesCellsFontSize = 14;
-        row.Summary.Should().Be(Strings.Get("FontWeight_Default") + ", 14");
+        row.Summary.Should().Be(vm.EffectiveUiFontFamily + " " + notSet + ", 14");
 
         vm.FindUsagesCellsFontFamily = "Segoe UI";
         vm.FindUsagesCellsFontWeight = 300;
@@ -566,6 +567,25 @@ public sealed class PreferencesViewModelTests
         vm.FindUsagesCellsFontFamily.Should().Be("Arial");
         vm.FindUsagesCellsFontSize.Should().Be(11);
         vm.FindUsagesCellsFontWeight.Should().Be(700);
+    }
+
+    [Fact]
+    public async Task The_picker_of_a_font_that_is_not_set_starts_with_the_font_in_use_selected()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        vm.DocumentTabFontFamily = string.Empty;
+        FontPickRequest? asked = null;
+        vm.FontPicker = request =>
+        {
+            asked = request;
+            return Task.FromResult<FontPickResult?>(null);
+        };
+
+        await vm.ChooseDocumentTabFontCommand.ExecuteAsync(null);
+
+        asked!.Family.Should().Be(vm.EffectiveUiFontFamily, "an empty name would leave nothing selected, and OK off");
+        vm.CodeEditorFonts.Fonts.Single(f => f.Key == "DocumentTabs").EffectiveFamily.Should().Be(vm.EffectiveUiFontFamily);
     }
 
     [Fact]
@@ -781,13 +801,12 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
-    public void A_font_page_edits_the_setting_and_previews_the_one_changed_last()
+    public void A_font_page_edits_its_settings_and_describes_their_previews()
     {
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
         FontPageViewModel page = vm.CodeEditorFonts;
         FontSettingViewModel hint = page.Fonts.Single(f => f.Key == "OpenTagHint");
-        page.Active!.Key.Should().Be("CodeEditorText", "the first setting is previewed at the start");
 
         hint.Family.Should().BeEmpty();
         hint.Placeholder.Should().Be(vm.CodeEditor.FontFamily, "the real name of the editor font, not a description of the default");
@@ -797,7 +816,6 @@ public sealed class PreferencesViewModelTests
 
         hint.Size = 19;
 
-        page.Active.Should().BeSameAs(hint);
         hint.EffectiveSize.Should().Be(19);
         vm.ApplyCommand.Execute(null);
         host.Settings.OpenTagHintAppearance.FontSize.Should().Be(19);
@@ -892,12 +910,9 @@ public sealed class PreferencesViewModelTests
             row.EffectiveSize.Should().Be(17);
         }
 
-        footnotes.ParentPath.Should().Be(string.Join(
-            " › ",
-            Strings.Get("PreferencesWindow_Appearance"),
-            Strings.Get("PreferencesWindow_General"),
-            Strings.Get("PreferencesWindow_Fonts"),
-            Strings.Get("PreferencesWindow_TooltipFontOtherWindows")));
+        footnotes.ParentPath.Should().Be(
+            Strings.Get("PreferencesWindow_Fonts") + " › " + Strings.Get("PreferencesWindow_TooltipFontOtherWindows"),
+            "the path starts at the fonts page, the window has one place to set a font");
     }
 
     [Fact]

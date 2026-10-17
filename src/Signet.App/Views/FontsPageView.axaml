@@ -7,9 +7,9 @@
              x:Name="Page"
              x:Class="Signet.App.Views.FontsPageView"
              x:DataType="vm:FontPageViewModel">
-  <!-- A "Fonts" page of the Preferences window, as Rider's Editor › Font: the font settings on the left, the preview of
-       the one focused or changed last on the right. -->
-  <!-- The splitter between the settings and the preview moves: the preview can be made wider or narrower. -->
+  <!-- A "Fonts" page of the Preferences window: the font settings, each with its preview under it. -->
+  <!-- The settings take half of the page at most to start with; the splitter after them moves: they can be made wider or
+       narrower (the space they leave stays free). -->
   <Grid x:Name="PreviewGrid" Margin="8">
     <Grid.ColumnDefinitions>
       <ColumnDefinition Width="*" MinWidth="240" />
@@ -32,32 +32,6 @@
     <GridSplitter x:Name="PreviewSplitter" Grid.Column="1" ResizeDirection="Columns" Background="Transparent"
                   ResizeBehavior="PreviousAndNext" DragCompleted="OnSplitterDragCompleted" />
 
-    <Border Grid.Column="2" Padding="10" CornerRadius="4" BorderThickness="1"
-            Background="{DynamicResource SystemControlBackgroundAltHighBrush}"
-            BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
-      <DockPanel>
-        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
-          <CheckBox x:Name="WrapPreviewBox" DockPanel.Dock="Right" Content="{loc:Loc PreferencesWindow_WrapPreview}"
-                    IsChecked="{Binding WrapPreview}" Margin="8,0,0,0" />
-          <TextBlock Classes="noSearch" Text="{Binding Active.Label, FallbackValue={x:Null}}"
-                     Opacity="0.6" TextWrapping="Wrap" VerticalAlignment="Center" />
-        </DockPanel>
-        <Panel>
-          <!-- A sample of text, in the colors of the place the font is used in, or a sample of code, highlighted as in
-               Code Editor with line numbers: which one shows, the code sample and the wrapping are set in code. -->
-          <ScrollViewer x:Name="PlainPreview" HorizontalScrollBarVisibility="Auto">
-            <Border x:Name="PreviewSurface" Padding="6,4" CornerRadius="3" HorizontalAlignment="Left" VerticalAlignment="Top"
-                    Background="{Binding Active.PreviewBackground, Converter={x:Static infra:ColorConverters.ToBrush}, FallbackValue={x:Null}}">
-              <TextBlock x:Name="PreviewText" Classes="noSearch" Text="{Binding Active.PreviewText, FallbackValue={x:Null}}"
-                         FontFamily="{Binding Active.EffectiveFamily, Converter={x:Static infra:FontFamilyConverters.FromName}, FallbackValue={x:Static FontFamily.Default}}"
-                         FontSize="{Binding Active.EffectiveSize, FallbackValue=14}"
-                         FontWeight="{Binding Active.EffectiveWeight, Converter={x:Static infra:FontWeightOptions.FromNumber}, FallbackValue=Normal}"
-                         Foreground="{Binding Active.PreviewForeground, Converter={x:Static infra:ColorConverters.ToBrush}}" />
-            </Border>
-          </ScrollViewer>
-          <cv:CodePreviewEditor x:Name="CodePreview" IsVisible="False" />
-        </Panel>
-      </DockPanel>
-    </Border>
+    <!-- What the settings do not take stays free: the previews are in the rows, under the fonts. -->
   </Grid>
 </UserControl>
