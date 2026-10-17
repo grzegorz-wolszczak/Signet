@@ -145,7 +145,7 @@ public partial class SpecialCharacterWindow : Window
     public SpecialCharacterWindow()
     {
         InitializeComponent();
-        _source = BuildSource();
+        _source = BuildSource(_columns, Array.Empty<CharRow>());
         Results.Source = _source;
         Filter.TextChanged += (_, _) => Populate();
         Category.SelectionChanged += (_, _) => Populate();
@@ -383,8 +383,8 @@ public partial class SpecialCharacterWindow : Window
         }
     }
 
-    // The columns of the table, in the order DoubleClickForm relies on.
-    private FlatTreeDataGridSource<CharRow> BuildSource()
+    // The columns of the table, in the order DoubleClickForm relies on (the sample of Preferences builds the same table).
+    internal static FlatTreeDataGridSource<CharRow> BuildSource(LocalizedColumns<CharRow> columns, IEnumerable<CharRow> rows)
     {
         static TOptions ByCodePoint<TOptions>(TOptions options)
             where TOptions : ColumnOptions<CharRow>
@@ -394,24 +394,24 @@ public partial class SpecialCharacterWindow : Window
             return options;
         }
 
-        return new FlatTreeDataGridSource<CharRow>(Array.Empty<CharRow>())
+        return new FlatTreeDataGridSource<CharRow>(rows)
         {
             Columns =
             {
-                _columns.Template("SpecialCharacterWindow_ColumnCharacter", "CharacterCellTemplate", GridLength.Auto,
+                columns.Template("SpecialCharacterWindow_ColumnCharacter", "CharacterCellTemplate", GridLength.Auto,
                     ByCodePoint(new TemplateColumnOptions<CharRow> { MinWidth = new GridLength(70) })),
-                _columns.Text("SpecialCharacterWindow_ColumnEntity", r => r.Entity, new GridLength(110)),
-                _columns.Text("SpecialCharacterWindow_ColumnCode", r => r.Code, new GridLength(90),
+                columns.Text("SpecialCharacterWindow_ColumnEntity", r => r.Entity, new GridLength(110)),
+                columns.Text("SpecialCharacterWindow_ColumnCode", r => r.Code, new GridLength(90),
                     ByCodePoint(new TextColumnOptions<CharRow>())),
-                _columns.Text("SpecialCharacterWindow_ColumnHex", r => r.Hex, new GridLength(100),
+                columns.Text("SpecialCharacterWindow_ColumnHex", r => r.Hex, new GridLength(100),
                     ByCodePoint(new TextColumnOptions<CharRow>())),
-                _columns.Text("SpecialCharacterWindow_ColumnDecimal", r => r.Dec, new GridLength(100),
+                columns.Text("SpecialCharacterWindow_ColumnDecimal", r => r.Dec, new GridLength(100),
                     ByCodePoint(new TextColumnOptions<CharRow>())),
-                _columns.Text("SpecialCharacterWindow_ColumnName", r => r.Name, new GridLength(1, GridUnitType.Star)),
+                columns.Text("SpecialCharacterWindow_ColumnName", r => r.Name, new GridLength(1, GridUnitType.Star)),
                 // A fixed width, not Auto: TreeDataGrid virtualizes columns too, and an Auto column after a star
                 // column never gets realized (its width is unknown, so the star column takes all the room). The
                 // header sizing still widens it to its header.
-                _columns.Template("SpecialCharacterWindow_ColumnFavorite", "FavoriteCellTemplate", new GridLength(80),
+                columns.Template("SpecialCharacterWindow_ColumnFavorite", "FavoriteCellTemplate", new GridLength(80),
                     new TemplateColumnOptions<CharRow>
                     {
                         CompareAscending = (a, b) => string.CompareOrdinal(a?.FavoriteMark, b?.FavoriteMark),
@@ -576,7 +576,7 @@ public partial class SpecialCharacterWindow : Window
         || row.Dec.Contains(query, StringComparison.Ordinal)
         || string.Equals(row.Display, query, StringComparison.Ordinal);
 
-    private static CharRow FromEntry(SpecialCharacterEntry e)
+    internal static CharRow FromEntry(SpecialCharacterEntry e)
     {
         int cp = SingleCodepoint(WebUtility.HtmlDecode(e.Insert));
         return new CharRow(e.Insert, e.DisplayText, cp, FormatCode(cp), e.Entity, e.DisplayDescription);
