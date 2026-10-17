@@ -6259,4 +6259,13 @@ Zamknij zakładkę</value>
   <data name="PreferencesWindow_CodeEditorLook" xml:space="preserve">
     <value>Wygląd edytora</value>
   </data>
+  <data name="PreviewSample_Heading" xml:space="preserve">
+    <value>Rozdział pierwszy</value>
+  </data>
+  <data name="PreviewSample_Text" xml:space="preserve">
+    <value>Morze było spokojne tego ranka, a latarnik wspinał się po schodach do swojej lampy.</value>
+  </data>
+  <data name="PreviewSample_Hint" xml:space="preserve">
+    <value>Kliknij akapit, aby przenieść podświetlenie, jak robi to kursor w edytorze.</value>
+  </data>
 </root>

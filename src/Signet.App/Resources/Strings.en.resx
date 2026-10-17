@@ -6259,4 +6259,13 @@ Close the tab</value>
   <data name="PreferencesWindow_CodeEditorLook" xml:space="preserve">
     <value>Look of the editor</value>
   </data>
+  <data name="PreviewSample_Heading" xml:space="preserve">
+    <value>Chapter One</value>
+  </data>
+  <data name="PreviewSample_Text" xml:space="preserve">
+    <value>The sea was calm that morning, and the keeper climbed the stairs to his lamp.</value>
+  </data>
+  <data name="PreviewSample_Hint" xml:space="preserve">
+    <value>Click a paragraph to move the highlight, as the caret does in the editor.</value>
+  </data>
 </root>

@@ -5,12 +5,9 @@ using System.IO;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Threading;
-using Signet.App.CodeEditor;
-using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.ViewModels;
 using Signet.Core;
-using Signet.Core.MainUI;
 using Signet.Core.Misc;
 using Nwv = NativeWebView.Core;
 
