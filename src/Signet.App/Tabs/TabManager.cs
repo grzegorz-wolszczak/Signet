@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System;
 using Dock.Model.Controls;
+using Dock.Model.Core;
 using Dock.Model.Core.Events;
 using Signet.App.Docking;
 using Signet.App.Infrastructure;
@@ -57,6 +58,8 @@ public sealed class TabManager : IDisposable
         _model.TabCaptionChanged += OnModelTabCaptionChanged;
 
         _dockFactory.ActiveDockableChanged += OnDockActiveDockableChanged;
+        _dockFactory.FocusedDockableChanged += OnDockFocusedDockableChanged;
+        _dockFactory.DocumentFloated += OnDocumentFloated;
         _dockFactory.DockableClosed += OnDockableClosed;
     }
 
@@ -300,6 +303,8 @@ public sealed class TabManager : IDisposable
         _model.TabActivated -= OnModelTabActivated;
         _model.TabCaptionChanged -= OnModelTabCaptionChanged;
         _dockFactory.ActiveDockableChanged -= OnDockActiveDockableChanged;
+        _dockFactory.FocusedDockableChanged -= OnDockFocusedDockableChanged;
+        _dockFactory.DocumentFloated -= OnDocumentFloated;
         _dockFactory.DockableClosed -= OnDockableClosed;
 
         _model.Dispose();
@@ -539,6 +544,7 @@ public sealed class TabManager : IDisposable
         ContentTabViewModel view = CreateTab(e.Tab);
         _views[e.Tab] = view;
         view.PropertyChanged += OnViewPropertyChanged;
+        view.FocusReceived += OnViewFocusReceived;
 
         if (DocumentDock is not { } dock)
         {
@@ -603,6 +609,7 @@ public sealed class TabManager : IDisposable
 
         view.PropertyChanged -= OnCodeTabPropertyChanged;
         view.PropertyChanged -= OnViewPropertyChanged;
+        view.FocusReceived -= OnViewFocusReceived;
         AnyTabModifiedChanged?.Invoke(this, EventArgs.Empty);
 
         if (ReferenceEquals(_current, view))
@@ -640,6 +647,34 @@ public sealed class TabManager : IDisposable
     private void OnDockActiveDockableChanged(object? sender, ActiveDockableChangedEventArgs e)
     {
         if (_bridging || e.Dockable is not ContentTabViewModel view)
+        {
+            return;
+        }
+
+        _bridging = true;
+        try
+        {
+            _model.ActivateResource(view.Resource);
+        }
+        finally
+        {
+            _bridging = false;
+        }
+    }
+
+    // A click in a tab of a floating window: that tab is active already in its own tab strip, so no "active dockable"
+    // change is raised, but the focus moves — the file shown in the preview, the status bar etc. follow it.
+    private void OnDockFocusedDockableChanged(object? sender, FocusedDockableChangedEventArgs e) =>
+        ActivateFromDock(e.Dockable);
+
+    private void OnViewFocusReceived(object? sender, EventArgs e) => ActivateFromDock(sender as ContentTabViewModel);
+
+    // A tab taken out of the tab strip is the one being worked on.
+    private void OnDocumentFloated(object? sender, IDockable dockable) => ActivateFromDock(dockable);
+
+    private void ActivateFromDock(IDockable? dockable)
+    {
+        if (_bridging || dockable is not ContentTabViewModel view || !_views.ContainsValue(view))
         {
             return;
         }

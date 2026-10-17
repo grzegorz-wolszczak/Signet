@@ -458,6 +458,10 @@ public sealed partial class MainWindowViewModel
             {
                 _preview.Fonts = _settings.PreviewAppearance;
             }
+            else if (e.QualifiedKey.EndsWith("/code_editor_multiline_tabs", StringComparison.Ordinal))
+            {
+                OnPropertyChanged(nameof(MultilineTabs));
+            }
         };
 
         _tabManager.ActiveTabChanged += OnActiveTabChanged;
@@ -500,6 +504,9 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>The active document tab, or <c>null</c>.</summary>
     public ContentTabViewModel? ActiveTab => _tabManager.ActiveTab;
+
+    /// <summary>Whether the document tabs that do not fit in a row go to several rows (Preferences › Code Editor).</summary>
+    public bool MultilineTabs => _settings.CodeEditorMultilineTabs;
 
     /// <summary>The active tab, if it is a code editor.</summary>
     public CodeTabViewModel? ActiveCodeTab => _tabManager.ActiveTab as CodeTabViewModel;
@@ -3159,6 +3166,10 @@ public sealed partial class MainWindowViewModel
 
         _findReplace.AttachToActiveTab(ActiveCodeTab);
         _toc.SetCurrentFile(ActiveTab?.Resource.BookPath);
+        if (_settings.BookBrowserFollowsActiveTab && ActiveTab is { } shown)
+        {
+            BookBrowser.SelectResource(shown.Resource);
+        }
 
         // Clicking a document tab moves the zoom focus to Code Editor.
         _previewHasZoomFocus = false;

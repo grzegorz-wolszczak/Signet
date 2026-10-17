@@ -130,6 +130,7 @@ public sealed partial class PreferencesViewModel
                     previewForeground: () => AppTheme.Current.Foreground(Signet.Core.Themes.ThemeKeys.HintsOpenTag)?.ToString(),
                     previewBackground: () => AppTheme.Current.Background(Signet.Core.Themes.ThemeKeys.HintsOpenTag)?.ToString(),
                     sizeHint: Strings.Get("PreferencesWindow_FontSizeZeroAsEditor")),
+                DocumentTabFontRow(),
             },
             Strings.Get("PreferencesWindow_FontColorRestartNotice"));
 

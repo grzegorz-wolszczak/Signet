@@ -217,6 +217,33 @@
       <Setter Property="Margin" Value="0" />
       <Setter Property="BorderBrush" Value="{x:Null}" />
     </Style>
+    <!-- The document tabs (also those dragged out into windows of their own): the font from Preferences › Appearance › Code
+         Editor › Fonts and the colors of the theme (Interface Colors). A resource that is not set leaves the tab as the
+         controls have it. -->
+    <Style Selector="dock|DocumentTabStripItem">
+      <Setter Property="FontFamily" Value="{DynamicResource SignetDocumentTabFontFamily}" />
+      <Setter Property="FontSize" Value="{DynamicResource SignetDocumentTabFontSize}" />
+    </Style>
+    <Style Selector="dock|DocumentTabStripItem:not(:selected)">
+      <Setter Property="Foreground" Value="{DynamicResource SignetDocumentTabForegroundBrush}" />
+      <Setter Property="Background" Value="{DynamicResource SignetDocumentTabBackgroundBrush}" />
+    </Style>
+    <Style Selector="dock|DocumentTabStripItem:selected">
+      <Setter Property="Foreground" Value="{DynamicResource SignetDocumentTabSelectedForegroundBrush}" />
+      <Setter Property="Background" Value="{DynamicResource SignetDocumentTabSelectedBackgroundBrush}" />
+    </Style>
+    <!-- Tabs that do not fit in a row go to several rows instead of the scrolling arrows (Preferences › Code Editor; the
+         class is on the windows that hold tabs). -->
+    <Style Selector="Window.multilineTabs dock|DocumentTabStrip">
+      <Setter Property="ItemsPanel">
+        <ItemsPanelTemplate>
+          <WrapPanel />
+        </ItemsPanelTemplate>
+      </Setter>
+    </Style>
+    <Style Selector="Window.multilineTabs dock|DocumentTabStrip /template/ ScrollViewer#PART_ScrollViewer">
+      <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+    </Style>
     <!-- Buttons that remove or delete something are red (Classes="danger", ButtonClasses.Danger); the ones that save
          use Fluent's "accent" (blue). Disabled, both are gray like any button (Fluent's :disabled template style). -->
     <Style Selector="Button.danger">

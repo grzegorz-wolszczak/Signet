@@ -262,6 +262,38 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>
+    /// Selects the file in the tree (and shows it: its folder is expanded) — the Book Browser follows the active tab. A file
+    /// that is part of the selection already leaves it as it is, so opening several selected files keeps the selection.
+    /// </summary>
+    public void SelectResource(Resource resource)
+    {
+        ArgumentNullException.ThrowIfNull(resource);
+        if (_selection.Any(n => ReferenceEquals(n.Entry?.Resource, resource)))
+        {
+            return;
+        }
+
+        foreach (BookBrowserNode root in Nodes)
+        {
+            BookBrowserNode? node = root.IsFolder
+                ? root.Children.FirstOrDefault(n => ReferenceEquals(n.Entry?.Resource, resource))
+                : ReferenceEquals(root.Entry?.Resource, resource) ? root : null;
+            if (node is null)
+            {
+                continue;
+            }
+
+            if (root.IsFolder)
+            {
+                root.IsExpanded = true;
+            }
+
+            TreeSelectionRequested?.Invoke(this, new[] { node });
+            return;
+        }
+    }
+
     /// <summary>Abandons the in-place rename (Esc or focus loss).</summary>
     public void CancelInPlaceRename() => EditingNode = null;
 

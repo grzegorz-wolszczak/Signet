@@ -1250,7 +1250,7 @@ public sealed class PreferencesWindowRenderTests
 
         FontsPageView page = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible);
         FontSettingView[] rows = page.GetVisualDescendants().OfType<FontSettingView>().ToArray();
-        rows.Select(r => r.Name).Should().Equal("FontCodeEditorText", "FontLineNumbers", "FontOpenTagHint");
+        rows.Select(r => r.Name).Should().Equal("FontCodeEditorText", "FontLineNumbers", "FontOpenTagHint", "FontDocumentTabs");
         CodePreviewEditor code = page.FindControl<CodePreviewEditor>("CodePreview")!;
         TextBlock preview = page.FindControl<TextBlock>("PreviewText")!;
         code.IsVisible.Should().BeTrue("the editor font is previewed as code");

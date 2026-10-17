@@ -802,7 +802,7 @@ public sealed class PreferencesViewModelTests
         using TestHost _ = host;
         FontSettingViewModel row = vm.CodeEditorFonts.Fonts.Single(f => f.Key == "LineNumbers");
 
-        vm.CodeEditorFonts.Fonts.Select(f => f.Key).Should().Equal("CodeEditorText", "LineNumbers", "OpenTagHint");
+        vm.CodeEditorFonts.Fonts.Select(f => f.Key).Should().Equal("CodeEditorText", "LineNumbers", "OpenTagHint", "DocumentTabs");
         row.HasInheritance.Should().BeTrue();
         row.InheritFromParent.Should().BeTrue("by default the numbers have the font of the editor");
         row.EffectiveFamily.Should().Be(vm.CodeEditor.FontFamily);

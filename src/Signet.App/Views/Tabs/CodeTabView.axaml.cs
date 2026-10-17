@@ -72,6 +72,10 @@ public partial class CodeTabView : UserControl
     private (int Offset, int Attempts, double LastHeight)? _pendingCaretScroll;
     private const int MaxMatchScrollAttempts = 8;
 
+    // The place of the user in the text of a tab whose view was recreated (see CodeTabViewModel.ViewState): restored after
+    // the layout, a few passes, until the first line is where it was. Any jump (Find, a click in the preview) cancels it.
+    private (CodeTabViewState State, int Attempts)? _pendingViewRestore;
+
     /// <summary>Initializes the view.</summary>
     public CodeTabView()
     {
@@ -105,7 +109,14 @@ public partial class CodeTabView : UserControl
             {
                 Dispatcher.UIThread.Post(ScrollPendingCaret, DispatcherPriority.Loaded);
             }
+
+            if (_pendingViewRestore is not null)
+            {
+                Dispatcher.UIThread.Post(RestoreViewState, DispatcherPriority.Loaded);
+            }
         };
+        // A click in the text: the tab becomes the active one (also in a window of its own, where Dock stays silent).
+        Editor.TextArea.GotFocus += (_, _) => _boundViewModel?.NotifyFocusReceived();
         // After AvaloniaEdit has moved the caret (handledEventsToo: its command handler marks the key handled).
         Editor.TextArea.AddHandler(KeyDownEvent, OnTextAreaKeyDownAfterEditor, RoutingStrategies.Bubble, handledEventsToo: true);
         Editor.TextArea.SelectionChanged += OnSelectionChanged;
@@ -128,6 +139,12 @@ public partial class CodeTabView : UserControl
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
+        if (_boundViewModel?.ViewState is { } state)
+        {
+            _pendingViewRestore = (state, 0);
+            Dispatcher.UIThread.Post(RestoreViewState, DispatcherPriority.Loaded);
+        }
+
         AttachCodeEditorShortcuts();
         AppTheme.Changed += OnAppThemeChanged;
         ApplyTheme();
@@ -137,8 +154,70 @@ public partial class CodeTabView : UserControl
     protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
     {
         base.OnDetachedFromVisualTree(e);
+        RememberViewState();
         _codeEditorShortcuts.Detach();
         AppTheme.Changed -= OnAppThemeChanged;
+    }
+
+    // Remembers where the user is in the text, for the next view of the tab (a tab dragged out into a window of its own
+    // gets a new view). A view that was never laid out keeps what the tab remembered before.
+    private void RememberViewState()
+    {
+        TextView textView = Editor.TextArea.TextView;
+        if (_boundViewModel is null || Editor.Document is null || textView.Bounds.Height <= 0 || _pendingViewRestore is not null)
+        {
+            return;
+        }
+
+        int topLine = textView.GetDocumentLineByVisualTop(textView.VerticalOffset)?.LineNumber ?? 1;
+        _boundViewModel.ViewState = new CodeTabViewState(topLine, Editor.CaretOffset, Editor.SelectionStart, Editor.SelectionLength);
+    }
+
+    // Puts the caret, the selection and the first visible line back (see _pendingViewRestore).
+    private void RestoreViewState()
+    {
+        if (_pendingViewRestore is not { } pending)
+        {
+            return;
+        }
+
+        TextView textView = Editor.TextArea.TextView;
+        if (Editor.Document is not { } document || textView.Bounds.Height <= 0 || pending.Attempts >= MaxMatchScrollAttempts)
+        {
+            if (pending.Attempts >= MaxMatchScrollAttempts)
+            {
+                _pendingViewRestore = null;
+            }
+            else
+            {
+                _pendingViewRestore = pending with { Attempts = pending.Attempts + 1 };
+                Dispatcher.UIThread.Post(RestoreViewState, DispatcherPriority.Loaded);
+            }
+
+            return;
+        }
+
+        CodeTabViewState state = pending.State;
+        if (pending.Attempts == 0)
+        {
+            Editor.CaretOffset = Math.Clamp(state.CaretOffset, 0, document.TextLength);
+            int start = Math.Clamp(state.SelectionStart, 0, document.TextLength);
+            Editor.Select(start, Math.Clamp(state.SelectionLength, 0, document.TextLength - start));
+        }
+
+        textView.EnsureVisualLines();
+        double top = textView.GetVisualPosition(
+            new TextViewPosition(Math.Clamp(state.TopLine, 1, document.LineCount), 1), VisualYPosition.LineTop).Y;
+        if (Math.Abs(textView.VerticalOffset - top) < 1 && textView.VisualLinesValid)
+        {
+            _pendingViewRestore = null;
+            return;
+        }
+
+        // A viewport-high rectangle sets exactly this offset (see ScrollMatchIntoView).
+        textView.MakeVisible(new Rect(textView.HorizontalOffset, Math.Max(0, top), 1, textView.Bounds.Height));
+        _pendingViewRestore = pending with { Attempts = pending.Attempts + 1 };
+        Dispatcher.UIThread.Post(RestoreViewState, DispatcherPriority.Loaded);
     }
 
     // Another theme was applied (Preferences): the colors change at once. Subscribed only while the view is shown, so a
@@ -1045,6 +1124,7 @@ public partial class CodeTabView : UserControl
 
     private void OnScrollToLineRequested(int line)
     {
+        _pendingViewRestore = null;
         if (Editor.Document is not { } document || line < 1 || line > document.LineCount)
         {
             return;
@@ -1059,6 +1139,7 @@ public partial class CodeTabView : UserControl
 
     private void OnScrollToOffsetRequested(int offset)
     {
+        _pendingViewRestore = null;
         if (Editor.Document is not { } document || offset < 0 || offset > document.TextLength)
         {
             return;

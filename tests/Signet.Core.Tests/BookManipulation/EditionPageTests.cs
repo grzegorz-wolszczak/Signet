@@ -217,6 +217,48 @@ public sealed class EditionPageTests
     }
 
     [Fact]
+    public void A_revision_edited_on_the_page_is_counted_on_from_there()
+    {
+        using Book book = NewBook();
+        HtmlResource page = EditionPage.Stamp(book, Settings(), SavedAt, "en", ProgramVersion).Page;
+        EditionPage.Stamp(book, Settings(), SavedAt, "en", ProgramVersion);
+        EditionPage.Stamp(book, Settings(), SavedAt, "en", ProgramVersion);
+        book.GetOpf().GetNamedMeta(EditionPage.RevisionMetaName).Should().Be("3");
+        page.SetText(page.GetText().Replace("<th>Revision</th><td>3</td>", "<th>Revision</th><td>1</td>", StringComparison.Ordinal));
+
+        EditionStampResult next = EditionPage.Stamp(book, Settings(), SavedAt, "en", ProgramVersion);
+
+        next.Revision.Should().Be(2, "the number the user put on the page was the last one");
+        book.GetOpf().GetNamedMeta(EditionPage.RevisionMetaName).Should().Be("2");
+        page.GetText().Should().Contain("<th>Revision</th><td>2</td>");
+    }
+
+    [Fact]
+    public void The_revision_on_the_page_is_used_when_the_book_lost_its_counter()
+    {
+        using Book book = NewBook();
+        HtmlResource page = EditionPage.Stamp(book, Settings(), SavedAt, "en", ProgramVersion).Page;
+        EditionPage.Stamp(book, Settings(), SavedAt, "en", ProgramVersion);
+        book.GetOpf().SetNamedMeta(EditionPage.RevisionMetaName, null);
+
+        EditionStampResult next = EditionPage.Stamp(book, Settings(), SavedAt, "en", ProgramVersion);
+
+        next.Revision.Should().Be(3, "not restarted from 1");
+        page.GetText().Should().Contain("<td>3</td>");
+    }
+
+    [Fact]
+    public void A_revision_that_is_not_a_number_on_the_page_leaves_the_counter_of_the_book()
+    {
+        using Book book = NewBook();
+        HtmlResource page = EditionPage.Stamp(book, Settings(), SavedAt, "en", ProgramVersion).Page;
+        EditionPage.Stamp(book, Settings(), SavedAt, "en", ProgramVersion);
+        page.SetText(page.GetText().Replace("<th>Revision</th><td>2</td>", "<th>Revision</th><td>two</td>", StringComparison.Ordinal));
+
+        EditionPage.Stamp(book, Settings(), SavedAt, "en", ProgramVersion).Revision.Should().Be(3);
+    }
+
+    [Fact]
     public void A_label_edited_on_the_page_is_remembered_by_the_book()
     {
         using Book book = NewBook();

@@ -498,6 +498,26 @@ public sealed class SettingsStore
     }
 
     /// <summary>
+    /// Whether the Book Browser selects the file of the tab that became the active one (also by focusing a tab in a window
+    /// of its own). Enabled by default.
+    /// </summary>
+    public bool BookBrowserFollowsActiveTab
+    {
+        get => ReadBool("book_browser_follows_active_tab", true);
+        set => Write("book_browser_follows_active_tab", value);
+    }
+
+    /// <summary>
+    /// Whether the document tabs that do not fit in a row are laid out in several rows instead of being scrolled with
+    /// arrows. Off by default.
+    /// </summary>
+    public bool CodeEditorMultilineTabs
+    {
+        get => ReadBool("code_editor_multiline_tabs", false);
+        set => Write("code_editor_multiline_tabs", value);
+    }
+
+    /// <summary>
     /// Whether Code Editor closes the open tag after <c>&lt;/</c> is typed (enabled by default).
     /// </summary>
     public bool CodeEditorAutoCloseTags
@@ -592,6 +612,29 @@ public sealed class SettingsStore
             WriteSilent("code_editor_line_numbers_font_family", v.FontFamily);
             WriteSilent("code_editor_line_numbers_font_size", v.FontSize);
             RaiseChanged("code_editor_line_numbers_font");
+        }
+    }
+
+    /// <summary>
+    /// The font of the titles of the document tabs (empty / 0 = the interface font at the default size). Always read
+    /// normalized (<see cref="DocumentTabFontAppearance.Normalized"/>).
+    /// </summary>
+    public DocumentTabFontAppearance DocumentTabFontAppearance
+    {
+        get
+        {
+            DocumentTabFontAppearance d = DocumentTabFontAppearance.Default;
+            return new DocumentTabFontAppearance(
+                ReadString("document_tab_font_family", d.FontFamily),
+                ReadInt("document_tab_font_size", d.FontSize)).Normalized();
+        }
+
+        set
+        {
+            DocumentTabFontAppearance v = value.Normalized();
+            WriteSilent("document_tab_font_family", v.FontFamily);
+            WriteSilent("document_tab_font_size", v.FontSize);
+            RaiseChanged("document_tab_font");
         }
     }
 
@@ -1916,6 +1959,8 @@ public sealed class SettingsStore
         yield return "code_editor_font_size";
         yield return "code_editor_line_numbers_font_family";
         yield return "code_editor_line_numbers_font_size";
+        yield return "document_tab_font_family";
+        yield return "document_tab_font_size";
     }
 
     // The colors the settings held before the themes (by their old keys).

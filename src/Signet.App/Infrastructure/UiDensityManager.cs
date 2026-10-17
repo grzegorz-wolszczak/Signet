@@ -102,6 +102,48 @@ public sealed class UiDensityManager(
         ApplyFont(app, _settings.UiFont, _settings.UiFontSize);
         ApplyWarning(app, _settings.WarningAppearance, EffectiveFontSize);
         ApplyTooltipFonts();
+        ApplyDocumentTabFont();
+    }
+
+    /// <summary>The application resource of the font family of the document tabs (<c>SignetDocumentTabFontFamily</c>).</summary>
+    public const string DocumentTabFontFamilyKey = "SignetDocumentTabFontFamily";
+
+    /// <summary>The application resource of the font size of the document tabs (<c>SignetDocumentTabFontSize</c>).</summary>
+    public const string DocumentTabFontSizeKey = "SignetDocumentTabFontSize";
+
+    /// <summary>Applies the saved font of the document tabs live (Preferences → Appearance › Code Editor › Fonts).</summary>
+    public void ApplyDocumentTabFont()
+    {
+        if (Application.Current is { } app)
+        {
+            ApplyDocumentTab(app, _settings.DocumentTabFontAppearance);
+        }
+    }
+
+    /// <summary>
+    /// Sets the font of the document tabs (the style of the tabs in <c>App.axaml</c> takes it from the resources): what is
+    /// left empty / 0 is no resource, so the tabs keep the font of the controls.
+    /// </summary>
+    public static void ApplyDocumentTab(Application app, DocumentTabFontAppearance font)
+    {
+        System.ArgumentNullException.ThrowIfNull(app);
+        if (font.FontFamily.Length > 0)
+        {
+            app.Resources[DocumentTabFontFamilyKey] = FontFamily.Parse(font.FontFamily);
+        }
+        else
+        {
+            app.Resources.Remove(DocumentTabFontFamilyKey);
+        }
+
+        if (font.FontSize > 0)
+        {
+            app.Resources[DocumentTabFontSizeKey] = (double)font.FontSize;
+        }
+        else
+        {
+            app.Resources.Remove(DocumentTabFontSizeKey);
+        }
     }
 
     /// <summary>

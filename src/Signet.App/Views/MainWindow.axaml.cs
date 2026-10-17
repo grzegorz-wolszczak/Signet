@@ -252,6 +252,19 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             () => vm.ShortcutActions.Concat(vm.CodeEditorShortcutActions),
             MouseShortcutRouter.IsInCodeEditor);
         host.Closed += (_, _) => bindings.Detach();
+
+        // The tabs in the window of a tab dragged out are laid out like those of the main window.
+        void UpdateTabLayout(object? changed, System.ComponentModel.PropertyChangedEventArgs? e)
+        {
+            if (e is null || e.PropertyName == nameof(MainWindowViewModel.MultilineTabs))
+            {
+                host.Classes.Set("multilineTabs", vm.MultilineTabs);
+            }
+        }
+
+        UpdateTabLayout(null, null);
+        vm.PropertyChanged += UpdateTabLayout;
+        host.Closed += (_, _) => vm.PropertyChanged -= UpdateTabLayout;
     }
 
     /// <inheritdoc />

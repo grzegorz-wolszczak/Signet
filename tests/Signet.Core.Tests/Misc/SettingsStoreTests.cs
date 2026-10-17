@@ -195,6 +195,16 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
+    public void The_book_browser_follows_the_active_tab_by_default_and_the_tabs_do_not_wrap()
+    {
+        using TempDir dir = new();
+        SettingsStore sut = new(dir.Combine("settings.xml"));
+
+        sut.BookBrowserFollowsActiveTab.Should().BeTrue();
+        sut.CodeEditorMultilineTabs.Should().BeFalse();
+    }
+
+    [Fact]
     public void Open_tag_hint_appearance_is_normalized()
     {
         using TempDir dir = new();

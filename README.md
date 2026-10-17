@@ -86,7 +86,7 @@ EPUB editor I know of) has them:
   the status bar.
 - **Edition page** (Preferences → Edition page): on the first save after opening a book Signet adds or
   refreshes a page with a table about the edition: your own fields (e.g. "Edited by: GreatWorksPublishing"),
-  the Signet version that wrote it, a revision number that grows once per editing session and the save date
+  the Signet version that wrote it, a revision number that grows once per editing session (a number you type over on the page is where the count continues from) and the save date
   (UTC). Later saves in the same session leave the page alone. It shows on a
   reader whether the file there is the latest version. You choose where the page goes (first, second, last but one or last) and whether it
   gets a table of contents entry. Signet finds the page by a marker, so it can also be removed later.

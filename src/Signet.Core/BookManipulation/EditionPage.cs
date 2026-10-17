@@ -122,8 +122,12 @@ public static partial class EditionPage
         string revisionLabel = Label(RevisionLabelMetaName, RevisionRowClass, t => t.Revision);
         string dateLabel = Label(DateLabelMetaName, DateRowClass, t => t.Date);
 
-        int revision = (int.TryParse(opf.GetNamedMeta(RevisionMetaName), NumberStyles.Integer, CultureInfo.InvariantCulture, out int previous)
-            && previous > 0 ? previous : 0) + 1;
+        // The revision counts on from the number on the page when the user edited it there (like the labels): setting it to 1
+        // starts the count again, and a counter the OPF lost is not restarted from 1. Without a number on the page (no page, the
+        // row hidden, text instead of a number) the counter of the OPF counts on.
+        int previous = RowRevision(existing)
+            ?? (int.TryParse(opf.GetNamedMeta(RevisionMetaName), NumberStyles.Integer, CultureInfo.InvariantCulture, out int stored) && stored > 0 ? stored : 0);
+        int revision = previous + 1;
         opf.SetNamedMeta(RevisionMetaName, revision.ToString(CultureInfo.InvariantCulture));
 
         bool created = page is null;
@@ -221,6 +225,13 @@ public static partial class EditionPage
         }
 
         return string.IsNullOrEmpty(custom) ? defaultLabel : custom;
+    }
+
+    // The revision number shown on the page (the cell of the revision row); null when there is none or it is not a positive number.
+    private static int? RowRevision(IDocument? document)
+    {
+        string? text = document?.QuerySelector($"tr.{RevisionRowClass} > td")?.TextContent.Trim();
+        return int.TryParse(text, NumberStyles.None, CultureInfo.InvariantCulture, out int value) && value > 0 ? value : null;
     }
 
     private static string? RowLabel(IDocument? document, string rowClass)

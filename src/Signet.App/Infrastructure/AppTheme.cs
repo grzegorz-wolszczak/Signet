@@ -136,6 +136,10 @@ public static class AppTheme
             SetBrush(app, resource, theme.Color(key));
         }
 
+        SetBrush(app, "SignetDocumentTabForegroundBrush", theme.Foreground(ThemeKeys.UiDocumentTab));
+        SetBrush(app, "SignetDocumentTabBackgroundBrush", theme.Background(ThemeKeys.UiDocumentTab));
+        SetBrush(app, "SignetDocumentTabSelectedForegroundBrush", theme.Foreground(ThemeKeys.UiDocumentTabSelected));
+        SetBrush(app, "SignetDocumentTabSelectedBackgroundBrush", theme.Background(ThemeKeys.UiDocumentTabSelected));
         SetBrush(app, "SignetTextSelectionBrush", theme.Background(ThemeKeys.UiTextSelection));
         SetBrush(app, "SignetTextSelectionForegroundBrush", theme.Foreground(ThemeKeys.UiTextSelection));
         app.Resources[FolderIconKey] = FolderIcon(theme);

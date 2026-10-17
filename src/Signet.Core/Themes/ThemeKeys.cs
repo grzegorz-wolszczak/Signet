@@ -252,6 +252,9 @@ public static class ThemeKeys
     /// <summary>The background of the Book Browser tree; unset = the background of the panel.</summary>
     public static readonly ThemeKey UiBookBrowserBackground = Color("ui.bookBrowser.background", ThemePage.Interface, "Controls", null);
 
+    /// <summary>The selected row of the Book Browser (only there): its background and text; nothing set = the colors of the controls.</summary>
+    public static readonly ThemeKey UiBookBrowserSelection = Attributes("ui.bookBrowser.selection", ThemePage.Interface, "Controls", TextAttributes.Empty);
+
     /// <summary>A frame around a list or a preview in a dialog.</summary>
     public static readonly ThemeKey UiFrame = Color("ui.frame", ThemePage.Interface, "Controls", Rgb(0x808080));
 
@@ -300,6 +303,13 @@ public static class ThemeKeys
     /// <summary>The sample of a font file (the tab of a font): its text and background.</summary>
     public static readonly ThemeKey UiFontPreview = Attributes("ui.fontPreview", ThemePage.Interface, "Previews",
         new TextAttributes { Foreground = Rgb(0x1A1A1A), Background = Rgb(0xFFFFFF) });
+
+    /// <summary>The document tabs of Code Editor (also in the windows of the tabs dragged out): the text and the background;
+    /// nothing set = the colors of the controls.</summary>
+    public static readonly ThemeKey UiDocumentTab = Attributes("ui.documentTab", ThemePage.Interface, "Tabs", TextAttributes.Empty);
+
+    /// <summary>The selected document tab: the text and the background; nothing set = the colors of the controls.</summary>
+    public static readonly ThemeKey UiDocumentTabSelected = Attributes("ui.documentTab.selected", ThemePage.Interface, "Tabs", TextAttributes.Empty);
 
     // The colors of the Fluent palette (Avalonia's ColorPaletteResources, without the accent: ui.accent), e.g.
     // fluent.regionColor; unset = the palette of the variant.
