@@ -664,7 +664,7 @@ public sealed class PreferencesWindowRenderTests
         fonts.FindControl<GridSplitter>("PreviewSplitter")!.IsVisible.Should().BeFalse();
 
         TextBlock chapter = preview.GetVisualDescendants().OfType<TextBlock>().First(t => t.Text == "Chapter01.xhtml");
-        TextBlock tip = window.FindControl<Border>("BookBrowserSampleTip")!.GetVisualDescendants().OfType<TextBlock>().Single();
+        TextBlock tip = window.FindControl<TooltipSample>("BookBrowserSampleTip")!.Text;
         tip.Text.Should().Be(Strings.Get("FontPreview_TooltipBookBrowser"));
 
         vm.BookBrowserItemsFontSize = 23;
@@ -743,7 +743,7 @@ public sealed class PreferencesWindowRenderTests
         preview.GetVisualDescendants().OfType<TextBlock>().Where(t => t.Classes.Contains("recentTitle")).Should().OnlyContain(t => t.FontSize == 22);
         preview.GetVisualDescendants().OfType<TextBlock>().Where(t => t.Classes.Contains("recentLocation")).Should().OnlyContain(t => t.FontSize == 15);
         preview.FindControl<TextBlock>("RecentFilesHeading")!.FontSize.Should().Be(19);
-        window.FindControl<Border>("StartScreenSampleTip")!.GetVisualDescendants().OfType<TextBlock>().Single().FontSize.Should().Be(17);
+        window.FindControl<TooltipSample>("StartScreenSampleTip")!.Text.FontSize.Should().Be(17);
         window.Close();
     }
 
@@ -802,7 +802,7 @@ public sealed class PreferencesWindowRenderTests
         Dispatcher.UIThread.RunJobs();
 
         editor.FontSize.Should().Be(19, "the editor follows the font");
-        window.FindControl<Border>("CodeEditorSampleHint")!.GetVisualDescendants().OfType<TextBlock>().Single().FontSize.Should().Be(15);
+        window.FindControl<TooltipSample>("CodeEditorSampleHint")!.Text.FontSize.Should().Be(15);
         strip.GetVisualDescendants().OfType<TextBlock>().Should().OnlyContain(t => t.FontSize == 17, "the tabs follow their font");
         window.Close();
     }
@@ -861,6 +861,61 @@ public sealed class PreferencesWindowRenderTests
         window.SplitterSizes.Should().ContainKey("FindUsagesPreviewHost.paneHeight");
         window.SplitterSizes = new Dictionary<string, int> { ["FindUsagesPreviewHost.paneHeight"] = 310 };
         window.SplitterSizes["FindUsagesPreviewHost.paneHeight"].Should().Be(310);
+        window.Close();
+    }
+
+    // A page of Appearance that has only the font of its tooltip (and perhaps others) and a preview panel next to its settings:
+    // the panel is there with the sample of the tooltip, which follows the unsaved font; the rows have no previews of their own.
+    private static (PreferencesWindow Window, PreferencesViewModel Vm, Border Pane, TooltipSample Tip) ShowPreviewPage(
+        string part, string hostName, string paneName, string tipName, bool bottom)
+    {
+        PreferencesWindow window = BuildWindow();
+        PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+        window.Width = 1100;
+        window.Height = 900;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, part + "AppearancePage");
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+        Border pane = window.FindControl<Border>(paneName)!;
+        TabControl tabs = window.FindControl<TabControl>(part + "AppearanceTabs")!;
+        pane.IsEffectivelyVisible.Should().BeTrue("the page has a preview panel");
+        if (bottom)
+        {
+            pane.Bounds.Top.Should().BeGreaterThanOrEqualTo(tabs.Bounds.Bottom, "the panel is under the settings");
+        }
+        else
+        {
+            pane.Bounds.Left.Should().BeGreaterThanOrEqualTo(tabs.Bounds.Right, "the panel is at the right of the settings");
+        }
+
+        window.SplitterSizes.Should().ContainKey(hostName + (bottom ? ".paneHeight" : ".paneWidth"));
+        FontsPageView fonts = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible);
+        fonts.GetVisualDescendants().OfType<FontSettingView>().Should().OnlyContain(
+            r => !r.FindControl<Border>("PreviewFrame")!.IsVisible, "the panel is the preview of the fonts");
+        return (window, vm, pane, window.FindControl<TooltipSample>(tipName)!);
+    }
+
+    /// <summary>The Find and Replace panel is wide, so its preview is under the settings: the real panel with no book behind it.</summary>
+    [AvaloniaFact]
+    public void The_Find_and_Replace_page_has_a_preview_panel_with_the_real_panel_and_the_tooltip_sample()
+    {
+        (PreferencesWindow window, PreferencesViewModel vm, Border pane, TooltipSample tip) =
+            ShowPreviewPage("FindReplace", "FindReplacePreviewHost", "FindReplacePreviewPane", "FindReplaceSampleTip", bottom: true);
+        FindReplaceView preview = window.FindControl<FindReplaceView>("FindReplacePreview")!;
+
+        preview.DataContext.Should().BeSameAs(vm.FindReplaceSample);
+        preview.FindControl<AutoCompleteBox>("FindBox")!.Text.Should().Be(vm.FindReplaceSample.FindText);
+        pane.IsEffectivelyVisible.Should().BeTrue();
+
+        FontSettingViewModel tooltipFont = vm.FindReplaceFonts.Fonts.Single();
+        tooltipFont.InheritFromParent = false;
+        tooltipFont.Size = 19;
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+
+        tip.Text.FontSize.Should().Be(19, "the sample of the tooltip follows the font");
         window.Close();
     }
 
