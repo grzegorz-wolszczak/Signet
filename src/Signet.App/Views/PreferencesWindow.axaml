@@ -539,11 +539,31 @@
 
       <!-- Appearance › SpecialCharacters: Fonts only. -->
       <TabItem x:Name="SpecialCharactersAppearancePage" Header="{loc:Loc PreferencesWindow_SpecialCharacters}" views:PreferencesPage.Parent="AppearanceGeneralPage">
-        <TabControl x:Name="SpecialCharactersAppearanceTabs">
-          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-            <views:FontsPageView x:Name="SpecialCharacterFontsView" />
-          </TabItem>
-        </TabControl>
+        <Grid x:Name="SpecialCharactersPreviewHost">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="*" MinHeight="150" />
+            <RowDefinition Height="8" />
+            <RowDefinition Height="300" MinHeight="120" />
+          </Grid.RowDefinitions>
+          <TabControl x:Name="SpecialCharactersAppearanceTabs">
+            <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+              <views:FontsPageView x:Name="SpecialCharacterFontsView" HasSharedPreview="True" />
+            </TabItem>
+          </TabControl>
+          <GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Background="Transparent" />
+          <!-- The preview: the "Insert Special Character" window (wide, so it is under the settings) with a few characters, and a sample of its tooltip. Not searched: it holds no settings. -->
+          <Border x:Name="SpecialCharactersPreviewPane" Grid.Row="2" Classes="section noSearchTree" Padding="8">
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
+              <Border Classes="listFrame">
+                <Grid RowDefinitions="*,Auto">
+                  <views:SpecialCharactersSample x:Name="SpecialCharactersPreview" />
+                  <views:TooltipSample x:Name="SpecialCharactersSampleTip" Grid.Row="1" Margin="8" />
+                </Grid>
+              </Border>
+            </DockPanel>
+          </Border>
+        </Grid>
       </TabItem>
 
       <!-- Appearance › Checkpoints: Fonts only. -->

@@ -919,6 +919,35 @@ public sealed class PreferencesWindowRenderTests
         window.Close();
     }
 
+    /// <summary>
+    /// The Special Characters page: the preview is the "Insert Special Character" window (wide, so under the settings) with a few
+    /// characters whose column takes the unsaved font, and a sample of the tooltip.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_Special_Characters_page_has_a_preview_panel_with_the_table_in_the_unsaved_font()
+    {
+        (PreferencesWindow window, PreferencesViewModel vm, _, TooltipSample tip) = ShowPreviewPage(
+            "SpecialCharacters", "SpecialCharactersPreviewHost", "SpecialCharactersPreviewPane", "SpecialCharactersSampleTip", bottom: true);
+        SpecialCharactersSample preview = window.FindControl<SpecialCharactersSample>("SpecialCharactersPreview")!;
+        TreeDataGrid grid = preview.GetVisualDescendants().OfType<TreeDataGrid>().Single();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        grid.GetVisualDescendants().OfType<TreeDataGridRow>().Should().NotBeEmpty("the sample characters are shown");
+
+        vm.SpecialCharacterFontSize = 27;
+        vm.SpecialCharacterFonts.Fonts.Single(f => f.Key == "Tooltip" + TooltipArea.SpecialCharacters).InheritFromParent = false;
+        vm.SpecialCharacterFonts.Fonts.Single(f => f.Key == "Tooltip" + TooltipArea.SpecialCharacters).Size = 18;
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        grid.GetVisualDescendants().OfType<TextBlock>().Where(t => t.Classes.Contains("symbol")).Should()
+            .NotBeEmpty().And.OnlyContain(t => t.FontSize == 27, "the characters follow the font");
+        tip.Text.FontSize.Should().Be(18);
+        window.Close();
+    }
+
     /// <summary>The colors of the theme: the name, the folder and the highlighted entry of the list take them when they are set.</summary>
     [AvaloniaFact]
     public void The_list_of_recent_files_takes_the_colors_of_the_theme_when_they_are_set()

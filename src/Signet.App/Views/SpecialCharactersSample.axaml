@@ -1,0 +1,40 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:v="using:Signet.App.Views"
+             xmlns:vm="using:Signet.App.ViewModels"
+             xmlns:loc="using:Signet.App.Resources"
+             x:Class="Signet.App.Views.SpecialCharactersSample"
+             infra:TooltipFonts.Area="SpecialCharacters"
+             xmlns:infra="using:Signet.App.Infrastructure"
+             x:DataType="vm:FontSettingViewModel">
+  <!-- The "Insert Special Character" window for the preview of Preferences: the same table (the same columns and cells) over a
+       few of the curated characters, the filter, the category and the buttons, none of which does anything. Its DataContext is
+       the font setting of the "Character" column, so the characters take the unsaved font at once. -->
+  <UserControl.Resources>
+    <DataTemplate x:Key="CharacterCellTemplate" x:DataType="v:CharRow">
+      <TextBlock Classes="symbol" Text="{Binding Display}" HorizontalAlignment="Center"
+                 VerticalAlignment="Center" Margin="8,2" />
+    </DataTemplate>
+    <DataTemplate x:Key="FavoriteCellTemplate" x:DataType="v:CharRow">
+      <Border Background="Transparent">
+        <TextBlock Text="{Binding FavoriteMark}" FontSize="16" HorizontalAlignment="Center" VerticalAlignment="Center" />
+      </Border>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <DockPanel Margin="8">
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,0,0,6">
+      <TextBox Grid.Column="0" PlaceholderText="{loc:Loc SpecialCharacterWindow_FilterPlaceholder}" />
+      <ComboBox Grid.Column="1" SelectedIndex="0" MinWidth="150" VerticalAlignment="Center">
+        <ComboBoxItem Content="{loc:Loc SpecialCharacterWindow_PopularCategory}" />
+      </ComboBox>
+    </Grid>
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,8,0,0">
+      <Button Content="{loc:Loc SpecialCharacterWindow_Insert}" MinWidth="80" />
+      <Button Content="{loc:Loc SpecialCharacterWindow_InsertCode}" MinWidth="80" />
+      <Button Content="{loc:Loc SpecialCharacterWindow_InsertEntity}" MinWidth="80" />
+      <Button Content="{loc:Loc Common_Close}" MinWidth="80" />
+    </StackPanel>
+    <TreeDataGrid x:Name="Results" Classes="gridLines" />
+  </DockPanel>
+</UserControl>
