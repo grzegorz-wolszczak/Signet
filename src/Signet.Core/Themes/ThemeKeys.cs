@@ -255,6 +255,15 @@ public static class ThemeKeys
     /// <summary>The selected row of the Book Browser (only there): its background and text; nothing set = the colors of the controls.</summary>
     public static readonly ThemeKey UiBookBrowserSelection = Attributes("ui.bookBrowser.selection", ThemePage.Interface, "Controls", TextAttributes.Empty);
 
+    /// <summary>The name of a recent file on the start screen; unset = the accent color.</summary>
+    public static readonly ThemeKey UiStartScreenTitle = Color("ui.startScreen.title", ThemePage.Interface, "Controls", null);
+
+    /// <summary>The folder of a recent file on the start screen; unset = the text color, dimmed.</summary>
+    public static readonly ThemeKey UiStartScreenLocation = Color("ui.startScreen.location", ThemePage.Interface, "Controls", null);
+
+    /// <summary>The background of the recent file under the pointer on the start screen; unset = the colors of the controls.</summary>
+    public static readonly ThemeKey UiStartScreenHighlight = Color("ui.startScreen.highlight", ThemePage.Interface, "Controls", null);
+
     /// <summary>The background of the "Usage" column of the Find Usages window; unset = none.</summary>
     public static readonly ThemeKey UiFindUsagesUsageBackground = Color("ui.findUsages.usage.background", ThemePage.Interface, "Controls", null);
 

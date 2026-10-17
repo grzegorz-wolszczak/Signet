@@ -350,6 +350,59 @@ public readonly record struct BookBrowserAppearance(
 }
 
 /// <summary>
+/// Look of the start screen's list of recent files: the fonts of the name and the folder of a file and of the heading of the
+/// list, and the indentation of the entries under the heading.
+/// </summary>
+/// <param name="TitleFontFamily">Typeface of the name of a recent file; empty = the interface font.</param>
+/// <param name="TitleFontSize">Size (px) of the name of a recent file; 0 = the interface size.</param>
+/// <param name="LocationFontFamily">Typeface of the folder of a recent file; empty = the interface font.</param>
+/// <param name="LocationFontSize">Size (px) of the folder of a recent file; 0 = the default (a little smaller than the interface).</param>
+/// <param name="SectionFontFamily">Typeface of the heading of the list ("Recent files"); empty = the interface font.</param>
+/// <param name="SectionFontSize">Size (px) of the heading; 0 = the interface size.</param>
+/// <param name="Indent">Indentation (px) of the entries relative to the heading of the list.</param>
+/// <param name="TitleFontWeight">Weight of the name of a recent file (<see cref="FontWeightScale"/>); 0 = not set.</param>
+/// <param name="LocationFontWeight">Weight of the folder of a recent file (<see cref="FontWeightScale"/>); 0 = not set.</param>
+/// <param name="SectionFontWeight">Weight of the heading (<see cref="FontWeightScale"/>); 0 = not set (semi-bold).</param>
+public readonly record struct StartScreenAppearance(
+    string TitleFontFamily, int TitleFontSize, string LocationFontFamily, int LocationFontSize,
+    string SectionFontFamily, int SectionFontSize, int Indent = StartScreenAppearance.DefaultIndent,
+    int TitleFontWeight = 0, int LocationFontWeight = 0, int SectionFontWeight = 0)
+{
+    /// <summary>The default of <see cref="Indent"/>: the padding of an entry.</summary>
+    public const int DefaultIndent = 8;
+
+    /// <summary>Lower bound of <see cref="Indent"/>.</summary>
+    public const int IndentMin = 0;
+
+    /// <summary>Upper bound of <see cref="Indent"/>.</summary>
+    public const int IndentMax = 60;
+
+    /// <summary>Lower bound of an explicit font size.</summary>
+    public const int FontSizeMin = 6;
+
+    /// <summary>Upper bound of an explicit font size.</summary>
+    public const int FontSizeMax = 72;
+
+    /// <summary>Default values: the interface font everywhere and an indentation of 8 px.</summary>
+    public static StartScreenAppearance Default => new(string.Empty, 0, string.Empty, 0, string.Empty, 0);
+
+    /// <summary>A copy with the sizes and the indentation clamped (a font size of 0 stays "as the default").</summary>
+    public StartScreenAppearance Normalized() => new(
+        TitleFontFamily?.Trim() ?? string.Empty,
+        NormalizedFontSize(TitleFontSize),
+        LocationFontFamily?.Trim() ?? string.Empty,
+        NormalizedFontSize(LocationFontSize),
+        SectionFontFamily?.Trim() ?? string.Empty,
+        NormalizedFontSize(SectionFontSize),
+        Math.Clamp(Indent, IndentMin, IndentMax),
+        FontWeightScale.Normalize(TitleFontWeight),
+        FontWeightScale.Normalize(LocationFontWeight),
+        FontWeightScale.Normalize(SectionFontWeight));
+
+    private static int NormalizedFontSize(int size) => size <= 0 ? 0 : Math.Clamp(size, FontSizeMin, FontSizeMax);
+}
+
+/// <summary>
 /// The fonts of the "Find Usages" panel: the column headers, the "Context" column (e.g. a fixed-width font for the code)
 /// and the rest of the panel (the other cells and the heading). An empty typeface and a size of 0 stay "as the interface".
 /// </summary>

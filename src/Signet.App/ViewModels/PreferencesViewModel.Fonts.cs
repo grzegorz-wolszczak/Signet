@@ -185,7 +185,7 @@ public sealed partial class PreferencesViewModel
             TooltipRow(TooltipArea.SpecialCharacters),
         });
 
-        StartScreenFonts = TooltipPage(TooltipArea.StartScreen);
+        StartScreenFonts = new FontPageViewModel(StartScreenFontRows().Append(TooltipRow(TooltipArea.StartScreen)).ToArray());
         BookBrowserFonts = new FontPageViewModel(new[]
         {
             InterfaceFontRow(

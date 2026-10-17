@@ -241,13 +241,78 @@
         </TabControl>
       </TabItem>
 
-      <!-- Appearance › StartScreen: Fonts only. -->
+      <!-- Appearance › StartScreen: the list of recent files (General, Fonts), with one preview panel for both tabs. -->
       <TabItem x:Name="StartScreenAppearancePage" Header="{loc:Loc PreferencesWindow_StartScreen}" views:PreferencesPage.Parent="AppearanceGeneralPage">
-        <TabControl x:Name="StartScreenAppearanceTabs">
-          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-            <views:FontsPageView x:Name="StartScreenFontsView" />
-          </TabItem>
-        </TabControl>
+        <Grid x:Name="StartScreenPreviewHost">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" MinWidth="300" />
+            <ColumnDefinition Width="8" />
+            <ColumnDefinition Width="320" MinWidth="200" />
+          </Grid.ColumnDefinitions>
+          <TabControl x:Name="StartScreenAppearanceTabs">
+            <TabItem Header="{loc:Loc PreferencesWindow_General}">
+              <ScrollViewer>
+                <StackPanel Spacing="10" Margin="8">
+                  <Border Classes="section">
+                    <StackPanel Spacing="6">
+                      <TextBlock Text="{loc:Loc PreferencesWindow_StartScreenRecentList}" FontWeight="Bold" />
+                      <!-- The same setting as the number of recent files of the File menu (General › Behavior). -->
+                      <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_StartScreenRecentFilesLimit}" />
+                        <NumericUpDown x:Name="StartScreenRecentFilesLimitBox" Grid.Column="1" Value="{Binding RecentFilesLimit}"
+                                       Minimum="0" Maximum="{x:Static vm:PreferencesViewModel.RecentFilesLimitMax}"
+                                       Increment="1" FormatString="0" HorizontalAlignment="Left" Width="130" />
+                      </Grid>
+                      <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_StartScreenIndent}" />
+                        <NumericUpDown x:Name="StartScreenIndentBox" Grid.Column="1" Value="{Binding StartScreenIndent}"
+                                       Minimum="{x:Static vm:PreferencesViewModel.StartScreenIndentMin}"
+                                       Maximum="{x:Static vm:PreferencesViewModel.StartScreenIndentMax}"
+                                       Increment="1" FormatString="0" HorizontalAlignment="Left" Width="130" />
+                      </Grid>
+                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_StartScreenTitleColorInTheme}" Padding="0"
+                                       views:PreferencesPage.Target="AppearanceGeneralPage"
+                                       views:PreferencesPage.TargetKey="ui.startScreen.title" />
+                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_StartScreenLocationColorInTheme}" Padding="0"
+                                       views:PreferencesPage.Target="AppearanceGeneralPage"
+                                       views:PreferencesPage.TargetKey="ui.startScreen.location" />
+                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_StartScreenHighlightInTheme}" Padding="0"
+                                       views:PreferencesPage.Target="AppearanceGeneralPage"
+                                       views:PreferencesPage.TargetKey="ui.startScreen.highlight" />
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+              </ScrollViewer>
+            </TabItem>
+            <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+              <views:FontsPageView x:Name="StartScreenFontsView" HasSharedPreview="True" />
+            </TabItem>
+          </TabControl>
+          <GridSplitter Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Background="Transparent" />
+          <!-- The preview, common to the tabs of the page: the real start screen with fabricated books, in the look the settings
+               give it now (the unsaved ones too), and the sample of a tooltip under it. Not searched: it holds no settings. -->
+          <Border x:Name="StartScreenPreviewPane" Grid.Column="2" Classes="section noSearchTree" Padding="8"
+                  infra:TooltipFonts.Area="StartScreen">
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
+              <Border Classes="listFrame">
+                <Grid RowDefinitions="*,Auto">
+                  <views:StartScreenView x:Name="StartScreenPreview" />
+                  <Border x:Name="StartScreenSampleTip" Grid.Row="1" Margin="8" Padding="8,4" CornerRadius="3" BorderThickness="1"
+                          HorizontalAlignment="Left" x:DataType="vm:FontSettingViewModel"
+                          BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                          Background="{Binding PreviewBackground, Converter={x:Static infra:ColorConverters.ToBrush}}">
+                    <TextBlock Text="{Binding PreviewText}"
+                               FontFamily="{Binding EffectiveFamily, Converter={x:Static infra:FontFamilyConverters.FromName}}"
+                               FontSize="{Binding EffectiveSize}"
+                               FontWeight="{Binding EffectiveWeight, Converter={x:Static infra:FontWeightOptions.FromNumber}}"
+                               Foreground="{Binding PreviewForeground, Converter={x:Static infra:ColorConverters.ToBrush}}" />
+                  </Border>
+                </Grid>
+              </Border>
+            </DockPanel>
+          </Border>
+        </Grid>
       </TabItem>
 
       <!-- Appearance › BookBrowser: which folders are expanded when a book is loaded; Fonts. -->

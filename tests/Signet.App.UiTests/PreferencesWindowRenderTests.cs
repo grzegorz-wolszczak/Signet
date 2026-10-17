@@ -410,8 +410,8 @@ public sealed class PreferencesWindowRenderTests
                 ? new[] { general, fonts, Strings.Get("PreferencesWindow_InterfaceColors") } // the themes, the fonts, the colors of the theme
                 : bothTabs.Contains(part)
                     ? new[] { Strings.Get("PreferencesWindow_" + part), fonts }
-                    : part == "BookBrowser"
-                        ? new[] { general, fonts } // which folders are expanded on load, then the fonts
+                    : part is "BookBrowser" or "StartScreen"
+                        ? new[] { general, fonts } // the general settings, then the fonts
                         : new[] { fonts };
             headers.Should().Equal(expected, "the tab bar of {0}", part);
         }
@@ -680,6 +680,116 @@ public sealed class PreferencesWindowRenderTests
         window.Close();
     }
 
+    /// <summary>
+    /// The Start Screen page has the same kind of panel: the real start screen with fabricated books, following the settings of
+    /// both tabs, and the sample of a tooltip; the settings fill their tab.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_Start_Screen_page_has_one_preview_panel_with_the_list_of_recent_files_that_follows_the_settings()
+    {
+        PreferencesWindow window = BuildWindow();
+        PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+        window.Width = 1100;
+        window.Height = 860;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, "StartScreenAppearancePage");
+        TabControl tabs = window.FindControl<TabControl>("StartScreenAppearanceTabs")!;
+        Border pane = window.FindControl<Border>("StartScreenPreviewPane")!;
+        StartScreenView preview = window.FindControl<StartScreenView>("StartScreenPreview")!;
+
+        pane.IsEffectivelyVisible.Should().BeTrue("the General tab is selected");
+        preview.DataContext.Should().BeSameAs(vm.StartScreenSample);
+        window.FindControl<NumericUpDown>("StartScreenRecentFilesLimitBox")!.Value.Should().Be(vm.RecentFilesLimit);
+        window.FindControl<NumericUpDown>("StartScreenIndentBox")!.Value = 30;
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        vm.StartScreenIndent.Should().Be(30);
+        Button[] entries = preview.GetVisualDescendants().OfType<Button>().Where(b => b.Classes.Contains("recentFile")).ToArray();
+        entries.Should().HaveCount(vm.RecentFilesLimit);
+        entries.Should().OnlyContain(b => b.Padding.Left == 30, "the indentation of the entries follows the setting");
+        entries.Where(b => b.Classes.Contains("highlighted")).Should().ContainSingle();
+
+        window.FindControl<NumericUpDown>("StartScreenRecentFilesLimitBox")!.Value = 3;
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+        preview.GetVisualDescendants().OfType<Button>().Count(b => b.Classes.Contains("recentFile")).Should().Be(3);
+
+        tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(t => Equals(t.Header, Strings.Get("PreferencesWindow_Fonts")));
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        pane.IsEffectivelyVisible.Should().BeTrue("the same panel stays while the Fonts tab is selected");
+        FontsPageView fonts = window.FindControl<FontsPageView>("StartScreenFontsView")!;
+        FontSettingView[] rows = fonts.GetVisualDescendants().OfType<FontSettingView>().ToArray();
+        rows.Should().HaveCount(4);
+        rows.Should().OnlyContain(r => !r.FindControl<Border>("PreviewFrame")!.IsVisible && r.Bounds.Width > fonts.Bounds.Width - 60);
+
+        vm.StartScreenTitleFontSize = 22;
+        vm.StartScreenLocationFontSize = 15;
+        vm.StartScreenSectionFontSize = 19;
+        FontSettingViewModel tooltipFont = vm.StartScreenFonts.Fonts.Single(f => f.Key == "Tooltip" + Signet.Core.Misc.TooltipArea.StartScreen);
+        tooltipFont.InheritFromParent = false;
+        tooltipFont.Size = 17;
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        preview.GetVisualDescendants().OfType<TextBlock>().Where(t => t.Classes.Contains("recentTitle")).Should().OnlyContain(t => t.FontSize == 22);
+        preview.GetVisualDescendants().OfType<TextBlock>().Where(t => t.Classes.Contains("recentLocation")).Should().OnlyContain(t => t.FontSize == 15);
+        preview.FindControl<TextBlock>("RecentFilesHeading")!.FontSize.Should().Be(19);
+        window.FindControl<Border>("StartScreenSampleTip")!.GetVisualDescendants().OfType<TextBlock>().Single().FontSize.Should().Be(17);
+        window.Close();
+    }
+
+    /// <summary>The colors of the theme: the name, the folder and the highlighted entry of the list take them when they are set.</summary>
+    [AvaloniaFact]
+    public void The_list_of_recent_files_takes_the_colors_of_the_theme_when_they_are_set()
+    {
+        PreferencesWindow window = BuildWindow();
+        window.Width = 1100;
+        window.Height = 860;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, "StartScreenAppearancePage");
+        StartScreenView preview = window.FindControl<StartScreenView>("StartScreenPreview")!;
+        TextBlock Title() => preview.GetVisualDescendants().OfType<TextBlock>().First(t => t.Classes.Contains("recentTitle"));
+        TextBlock Location() => preview.GetVisualDescendants().OfType<TextBlock>().First(t => t.Classes.Contains("recentLocation"));
+        double dimmed = Location().Opacity;
+        dimmed.Should().BeLessThan(1, "nothing is set: the folder is dimmed text");
+
+        Theme theme = new Theme("t", "T")
+            .With(ThemeKeys.UiStartScreenTitle.Id, ThemeEntry.Of(ThemeColor.Parse("#00FF00")))
+            .With(ThemeKeys.UiStartScreenLocation.Id, ThemeEntry.Of(ThemeColor.Parse("#0000FF")))
+            .With(ThemeKeys.UiStartScreenHighlight.Id, ThemeEntry.Of(ThemeColor.Parse("#FF0000")));
+        try
+        {
+            AppTheme.Apply(Avalonia.Application.Current!, ResolvedTheme.Of(ThemeDocumentKind.Theme, theme, new ThemeResolver(_ => null)));
+            Dispatcher.UIThread.RunJobs();
+            window.CaptureRenderedFrame();
+            Dispatcher.UIThread.RunJobs();
+
+            ((ISolidColorBrush)Title().Foreground!).Color.Should().Be(Colors.Lime);
+            ((ISolidColorBrush)Location().Foreground!).Color.Should().Be(Colors.Blue);
+            Location().Opacity.Should().Be(1, "a color of the theme is the color shown");
+            Button highlighted = preview.GetVisualDescendants().OfType<Button>().Single(b => b.Classes.Contains("highlighted"));
+            ((ISolidColorBrush)highlighted.GetVisualDescendants().OfType<ContentPresenter>().First(p => p.Name == "PART_ContentPresenter").Background!)
+                .Color.Should().Be(Colors.Red, "the entry drawn as if the pointer were on it");
+        }
+        finally
+        {
+            AppTheme.Apply(Avalonia.Application.Current!, ResolvedTheme.Defaults);
+        }
+
+        Dispatcher.UIThread.RunJobs();
+        Location().Opacity.Should().Be(dimmed, "the default theme sets nothing again");
+        window.Close();
+    }
+
     /// <summary>The panel of the preview is not searched (it holds samples, not settings), and its width is remembered.</summary>
     [AvaloniaFact]
     public void The_width_of_the_preview_panel_is_remembered_and_its_samples_are_not_searched()
@@ -930,8 +1040,8 @@ public sealed class PreferencesWindowRenderTests
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.SplitterSizes.Keys.Should().NotContain(k => k.EndsWith(".previewWidth"), "nothing was resized yet");
-        ShowFontsTab(window, "StartScreen");
-        double startScreenBefore = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible).PreviewWidth;
+        ShowFontsTab(window, "TableOfContents");
+        double tocBefore = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible).PreviewWidth;
 
         window.SplitterSizes = new System.Collections.Generic.Dictionary<string, int> { ["CodeEditorFontsView.previewWidth"] = 420 };
         Dispatcher.UIThread.RunJobs();
@@ -940,9 +1050,9 @@ public sealed class PreferencesWindowRenderTests
         ShowFontsTab(window, "CodeEditor");
         window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible)
             .PreviewWidth.Should().BeApproximately(420, 2);
-        ShowFontsTab(window, "StartScreen");
+        ShowFontsTab(window, "TableOfContents");
         window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible).PreviewWidth
-            .Should().BeApproximately(startScreenBefore, 2, "another page is not resized with it");
+            .Should().BeApproximately(tocBefore, 2, "another page is not resized with it");
 
         // The width of the old settings (one for all the pages) is taken by the pages that have no width of their own.
         window.SplitterSizes = new System.Collections.Generic.Dictionary<string, int> { ["FontsPreview"] = 380 };

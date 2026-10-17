@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Signet.Core.Misc;
 
 namespace Signet.App.ViewModels;
 
@@ -12,29 +13,114 @@ namespace Signet.App.ViewModels;
 /// <param name="Folder">The folder of the file.</param>
 /// <param name="Path">The full path.</param>
 /// <param name="OpenCommand">Opens the file.</param>
-public sealed record StartScreenRecentFile(string Name, string Folder, string Path, ICommand OpenCommand);
+/// <param name="IsHighlighted">Whether the entry is drawn as if the pointer were on it (the sample in Preferences only).</param>
+public sealed record StartScreenRecentFile(string Name, string Folder, string Path, ICommand OpenCommand, bool IsHighlighted = false);
 
 /// <summary>
 /// The start screen shown in the empty document area while no book is open: "Open…", "New book" and the recent files.
 /// </summary>
-public sealed partial class StartScreenViewModel : ObservableObject
+public sealed partial class StartScreenViewModel : ObservableObject, IDisposable
 {
+    // The fabricated books of the sample start screen (the preview in Preferences): a name and a folder each, the first
+    // longer than the others to show how a long name is cut.
+    private static readonly (string Name, string Folder)[] SampleFiles =
+    {
+        ("The Lighthouse Keeper.epub", @"D:\Books\Fiction"),
+        ("A Short History of Everything (2003) - Bill Bryson.epub", @"D:\Calibre Library\Bryson"),
+        ("Field Notes.epub", @"D:\Books\Drafts"),
+        ("The Long Way Home - Collected Stories.epub", @"D:\Books\Fiction\Stories"),
+        ("Cooking for Two.epub", @"D:\Books\Kitchen"),
+        ("Letters from the North.epub", @"D:\Calibre Library\Archive"),
+        ("Atlas of Forgotten Places.epub", @"D:\Books\Travel"),
+        ("The Clockmaker's Daughter.epub", @"D:\Books\Fiction"),
+        ("Notes on Typography.epub", @"D:\Books\Design"),
+        ("Winter Garden.epub", @"D:\Books\Fiction"),
+        ("Quiet Machines.epub", @"D:\Books\Science"),
+        ("Sketchbook.epub", @"D:\Books\Drafts"),
+    };
+
+    // The entry the sample draws as if the pointer were on it, so its background shows without moving the mouse.
+    private const int SampleHighlightedIndex = 1;
+
     private readonly Func<IReadOnlyList<string>> _recentFiles;
     private readonly Action<string> _openRecent;
+    private readonly SettingsStore? _settings;
 
     /// <summary>Creates the start screen.</summary>
     /// <param name="openCommand">"Open…" (File → Open).</param>
     /// <param name="newCommand">"New book" (File → New with the default version).</param>
     /// <param name="recentFiles">The recent files, newest first.</param>
     /// <param name="openRecent">Opens a recent file.</param>
+    /// <param name="settings">
+    /// The settings the look of the list comes from (<see cref="Appearance"/>); the screen follows their changes. <c>null</c> = the
+    /// default look.
+    /// </param>
     public StartScreenViewModel(
-        ICommand openCommand, ICommand newCommand, Func<IReadOnlyList<string>> recentFiles, Action<string> openRecent)
+        ICommand openCommand, ICommand newCommand, Func<IReadOnlyList<string>> recentFiles, Action<string> openRecent,
+        SettingsStore? settings = null)
     {
         OpenCommand = openCommand ?? throw new ArgumentNullException(nameof(openCommand));
         NewCommand = newCommand ?? throw new ArgumentNullException(nameof(newCommand));
         _recentFiles = recentFiles ?? throw new ArgumentNullException(nameof(recentFiles));
         _openRecent = openRecent ?? throw new ArgumentNullException(nameof(openRecent));
+        _settings = settings;
+        if (_settings is not null)
+        {
+            _settings.SettingChanged += OnSettingChanged;
+        }
+
         Refresh();
+    }
+
+    /// <summary>
+    /// Creates the sample start screen of the preview in Preferences: the real view model with fabricated books (the history of
+    /// the user is not read) that do nothing, one of them drawn as if the pointer were on it. It follows <paramref name="settings"/>
+    /// (the draft of the window), so the number of the files and the look change in it at once.
+    /// </summary>
+    public static StartScreenViewModel CreateSample(SettingsStore settings)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        RelayCommand nothing = new(() => { });
+        StartScreenViewModel sample = new(
+            nothing, nothing,
+            () => SampleFiles.Take(settings.RecentFilesLimit).Select(f => System.IO.Path.Combine(f.Folder, f.Name)).ToList(),
+            _ => { }, settings)
+        {
+            IsSample = true,
+            IsVisible = true,
+        };
+        sample.Refresh();
+        return sample;
+    }
+
+    /// <summary>Whether this is the sample start screen of the Preferences window.</summary>
+    public bool IsSample { get; private init; }
+
+    /// <summary>The look of the list of recent files now (the settings); the default look without settings.</summary>
+    public StartScreenAppearance Appearance => _settings?.StartScreenAppearance ?? StartScreenAppearance.Default;
+
+    /// <summary>Raised when a setting of the look of the list changed (the view applies <see cref="Appearance"/> again).</summary>
+    public event EventHandler? AppearanceChanged;
+
+    private void OnSettingChanged(object? sender, SettingChangedEventArgs e)
+    {
+        if (e.QualifiedKey.Contains("start_screen_", StringComparison.Ordinal))
+        {
+            AppearanceChanged?.Invoke(this, EventArgs.Empty);
+        }
+        else if (e.QualifiedKey.Contains("recent_files_limit", StringComparison.Ordinal))
+        {
+            Refresh();
+        }
+    }
+
+    /// <inheritdoc />
+    public void Dispose()
+    {
+        if (_settings is not null)
+        {
+            _settings.SettingChanged -= OnSettingChanged;
+        }
     }
 
     /// <summary>"Open…".</summary>
@@ -58,10 +144,11 @@ public sealed partial class StartScreenViewModel : ObservableObject
     /// <summary>Reads the recent files again (after the list changed).</summary>
     public void Refresh() =>
         RecentFileItems = _recentFiles()
-            .Select(path => new StartScreenRecentFile(
+            .Select((path, index) => new StartScreenRecentFile(
                 System.IO.Path.GetFileName(path),
                 System.IO.Path.GetDirectoryName(path) ?? string.Empty,
                 path,
-                new RelayCommand(() => _openRecent(path))))
+                new RelayCommand(() => _openRecent(path)),
+                IsSample && index == SampleHighlightedIndex))
             .ToList();
 }

@@ -1017,6 +1017,86 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
+    public void The_look_of_the_start_screen_is_saved_with_the_others_and_restored_with_the_appearance_defaults()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        using PreferencesViewModel __ = vm;
+        vm.StartScreenIndent.Should().Be(StartScreenAppearance.DefaultIndent);
+
+        vm.StartScreenIndent = 24;
+        vm.StartScreenTitleFontFamily = "Georgia";
+        vm.StartScreenTitleFontSize = 16;
+        vm.StartScreenLocationFontSize = 9;
+        vm.StartScreenSectionFontWeight = 700;
+
+        host.Settings.StartScreenAppearance.Should().Be(StartScreenAppearance.Default, "not saved yet");
+        vm.ApplyCommand.Execute(null);
+        host.Settings.StartScreenAppearance.Should().Be(
+            new StartScreenAppearance("Georgia", 16, string.Empty, 9, string.Empty, 0, 24, 0, 0, 700));
+
+        vm.RestoreAppearanceDefaultsCommand.Execute(null);
+
+        (vm.StartScreenIndent, vm.StartScreenTitleFontFamily, vm.StartScreenTitleFontSize, vm.StartScreenLocationFontSize,
+                vm.StartScreenSectionFontWeight)
+            .Should().Be((StartScreenAppearance.DefaultIndent, string.Empty, 0, 0, 0));
+    }
+
+    [Fact]
+    public void The_start_screen_fonts_page_has_the_three_fonts_of_the_list_and_the_tooltip_with_their_defaults()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        using PreferencesViewModel __ = vm;
+
+        vm.StartScreenFonts.Fonts.Select(f => f.Key).Should().Equal(
+            "StartScreenTitles", "StartScreenLocations", "StartScreenSection", "Tooltip" + TooltipArea.StartScreen);
+        FontSettingViewModel titles = vm.StartScreenFonts.Fonts[0];
+        FontSettingViewModel locations = vm.StartScreenFonts.Fonts[1];
+        FontSettingViewModel section = vm.StartScreenFonts.Fonts[2];
+
+        titles.EffectiveSize.Should().Be(vm.AppearanceFonts.Fonts.Single(f => f.Key == "Interface").EffectiveSize, "the names have the interface size");
+        locations.EffectiveSize.Should().Be(11, "the folder is a little smaller while its size is not set");
+        section.EffectiveWeight.Should().Be(600, "the heading is semi-bold while its weight is not set");
+        vm.StartScreenLocationFontSize = 13;
+        locations.EffectiveSize.Should().Be(13);
+        locations.Summary.Should().Contain("13");
+    }
+
+    [Fact]
+    public void The_sample_start_screen_shows_the_number_of_files_of_the_draft_with_one_entry_highlighted()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        using PreferencesViewModel __ = vm;
+        StartScreenViewModel sample = vm.StartScreenSample;
+
+        sample.IsSample.Should().BeTrue();
+        sample.IsVisible.Should().BeTrue();
+        sample.RecentFileItems.Should().HaveCount(vm.RecentFilesLimit);
+        sample.RecentFileItems.Where(f => f.IsHighlighted).Should().ContainSingle();
+
+        vm.RecentFilesLimit = 4;
+
+        sample.RecentFileItems.Should().HaveCount(4, "the preview follows the draft");
+        host.Settings.RecentFilesLimit.Should().NotBe(4, "the draft is not saved yet");
+
+        vm.RecentFilesLimit = 0;
+
+        sample.HasRecentFiles.Should().BeFalse();
+
+        int changes = 0;
+        sample.AppearanceChanged += (_, _) => changes++;
+        vm.StartScreenIndent = 30;
+        vm.StartScreenTitleFontSize = 18;
+
+        sample.Appearance.Indent.Should().Be(30);
+        sample.Appearance.TitleFontSize.Should().Be(18);
+        changes.Should().BeGreaterThan(0);
+        host.Settings.StartScreenAppearance.Should().Be(StartScreenAppearance.Default, "the preview shows what is not saved yet");
+    }
+
+    [Fact]
     public void The_sample_Book_Browser_follows_the_unsaved_look_and_leaves_the_saved_one_alone()
     {
         (TestHost host, PreferencesViewModel vm) = New();
