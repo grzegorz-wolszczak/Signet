@@ -497,22 +497,93 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
-    public void The_weight_list_of_a_font_row_offers_the_default_and_keeps_a_weight_the_font_lacks()
+    public void A_font_row_shows_its_typeface_size_and_weight_as_one_line()
     {
         (TestHost host, PreferencesViewModel vm) = New();
         using TestHost _ = host;
         FontSettingViewModel row = vm.FindUsagesFonts.Fonts.Single(f => f.Key == "FindUsagesCells");
 
-        row.Weights.First().Value.Should().Be(0);
-        row.SelectedWeight!.Value.Should().Be(0);
+        row.Summary.Should().Be(Strings.Get("FontWeight_Default"), "nothing is set");
 
-        row.Weight = 450; // a weight in no font here: it stays listed, so it can be seen and changed
-        row.Weights.Select(w => w.Value).Should().Contain(450);
-        row.SelectedWeight!.Value.Should().Be(450);
+        vm.FindUsagesCellsFontSize = 14;
+        row.Summary.Should().Be(Strings.Get("FontWeight_Default") + ", 14");
 
-        row.SelectedWeight = row.Weights.First();
+        vm.FindUsagesCellsFontFamily = "Segoe UI";
+        vm.FindUsagesCellsFontWeight = 300;
+        row.Summary.Should().Be("Segoe UI, 14, Light");
+    }
 
-        row.Weight.Should().Be(0);
+    [Fact]
+    public void A_font_row_that_is_only_a_size_has_a_size_field_and_no_typeface()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        FontSettingViewModel warnings = vm.AppearanceFonts.Fonts.Single(f => f.Key == "Warnings");
+
+        warnings.IsSizeOnly.Should().BeTrue();
+        vm.AppearanceFonts.Fonts.Single(f => f.Key == "Interface").IsSizeOnly.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task Changes_in_the_font_picker_are_applied_at_once_and_OK_keeps_them()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        vm.FindUsagesCellsFontSize = 11;
+        FontSettingViewModel row = vm.FindUsagesFonts.Fonts.Single(f => f.Key == "FindUsagesCells");
+        string? summaryWhileOpen = null;
+        vm.FontPicker = request =>
+        {
+            request.Changed!(new FontPickResult("Georgia", 20, 300));
+            summaryWhileOpen = row.Summary;
+            return Task.FromResult<FontPickResult?>(new FontPickResult("Georgia", 22, 300));
+        };
+
+        await vm.ChooseFindUsagesCellsFontCommand.ExecuteAsync(null);
+
+        summaryWhileOpen.Should().Be("Georgia, 20, Light", "the row (and so the preview) follows the window");
+        row.Summary.Should().Be("Georgia, 22, Light");
+        vm.FindUsagesCellsFontSize.Should().Be(22);
+    }
+
+    [Fact]
+    public async Task Cancelling_the_font_picker_puts_back_the_font_from_before_it_was_opened()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        vm.FindUsagesCellsFontFamily = "Arial";
+        vm.FindUsagesCellsFontSize = 11;
+        vm.FindUsagesCellsFontWeight = 700;
+        vm.FontPicker = request =>
+        {
+            request.Changed!(new FontPickResult("Georgia", 20, 300));
+            vm.FindUsagesCellsFontFamily.Should().Be("Georgia");
+            return Task.FromResult<FontPickResult?>(null);
+        };
+
+        await vm.ChooseFindUsagesCellsFontCommand.ExecuteAsync(null);
+
+        vm.FindUsagesCellsFontFamily.Should().Be("Arial");
+        vm.FindUsagesCellsFontSize.Should().Be(11);
+        vm.FindUsagesCellsFontWeight.Should().Be(700);
+    }
+
+    [Fact]
+    public async Task Cancelling_the_picker_of_a_font_that_was_not_set_leaves_it_not_set()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        vm.FontPicker = request =>
+        {
+            request.Changed!(new FontPickResult("Georgia", 20, 300));
+            return Task.FromResult<FontPickResult?>(null);
+        };
+
+        await vm.ChooseFindUsagesContextFontCommand.ExecuteAsync(null);
+
+        vm.FindUsagesContextFontFamily.Should().BeEmpty();
+        vm.FindUsagesContextFontSize.Should().Be(0);
+        vm.FindUsagesContextFontWeight.Should().Be(0);
     }
 
     [Fact]

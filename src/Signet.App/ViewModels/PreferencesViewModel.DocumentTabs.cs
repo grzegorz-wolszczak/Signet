@@ -47,12 +47,15 @@ public sealed partial class PreferencesViewModel
     {
         string family = DocumentTabFontFamily.Length > 0 ? DocumentTabFontFamily : string.Empty;
         int size = DocumentTabFontSize > 0 ? DocumentTabFontSize : 12;
-        if (await PickFontAsync(new FontPickRequest(family, size, false, DocumentTabFontWeight)) is { } result)
-        {
-            DocumentTabFontFamily = result.Family;
-            DocumentTabFontSize = result.Size;
-            DocumentTabFontWeight = result.Weight;
-        }
+        await PickFontAsync(
+            new FontPickRequest(family, size, false, DocumentTabFontWeight),
+            new FontPickResult(DocumentTabFontFamily, DocumentTabFontSize, DocumentTabFontWeight),
+            result =>
+            {
+                DocumentTabFontFamily = result.Family;
+                DocumentTabFontSize = result.Size;
+                DocumentTabFontWeight = result.Weight;
+            });
     }
 
     // The row of the Code Editor "Fonts" page; the colors of the tabs are in the theme (Interface Colors).

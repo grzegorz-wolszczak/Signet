@@ -380,13 +380,16 @@ public sealed partial class PreferencesViewModel : ObservableObject
     [RelayCommand]
     private async Task ChooseUiFont()
     {
-        if (await PickFontAsync(new FontPickRequest(EffectiveUiFontFamily, EffectiveUiFontSize, false, UiFontWeight)) is { } result)
-        {
-            _settings.UiFont = result.Family;
-            _settings.UiFontSize = result.Size;
-            _settings.UiFontWeight = result.Weight;
-            NotifyUiFontChanged();
-        }
+        await PickFontAsync(
+            new FontPickRequest(EffectiveUiFontFamily, EffectiveUiFontSize, false, UiFontWeight),
+            new FontPickResult(_settings.UiFont, _settings.UiFontSize, _settings.UiFontWeight),
+            result =>
+            {
+                _settings.UiFont = result.Family;
+                _settings.UiFontSize = result.Size;
+                _settings.UiFontWeight = result.Weight;
+                NotifyUiFontChanged();
+            });
     }
 
     /// <summary>"Default" — returns to the default font for the appearance mode.</summary>
@@ -585,6 +588,14 @@ public sealed partial class PreferencesViewModel : ObservableObject
     private Task<FontPickResult?> PickFontAsync(FontPickRequest request) =>
         FontPicker is { } picker ? picker(request) : Task.FromResult<FontPickResult?>(null);
 
+    // The font picker with a live effect: every change in the window is applied at once (the preview of the page follows),
+    // OK keeps the choice and Cancel puts back the font the setting had before the window was opened.
+    private async Task PickFontAsync(FontPickRequest request, FontPickResult before, Action<FontPickResult> apply)
+    {
+        FontPickResult? result = await PickFontAsync(request with { Changed = apply });
+        apply(result ?? before);
+    }
+
     /// <summary>
     /// Color picker window (title = the field label, initial color <c>#RRGGBB</c>) — attached by the
     /// view. Returns the chosen color, or <see langword="null"/> after Cancel; a <see langword="null"/>
@@ -596,42 +607,42 @@ public sealed partial class PreferencesViewModel : ObservableObject
     [RelayCommand]
     private async Task ChoosePreviewFontStandard()
     {
-        if (await PickFontAsync(new FontPickRequest(PreviewFontStandard, null, false)) is { } result)
-        {
-            PreviewFontStandard = result.Family;
-        }
+        await PickFontAsync(
+            new FontPickRequest(PreviewFontStandard, null, false), new FontPickResult(PreviewFontStandard, 0),
+            result => PreviewFontStandard = result.Family);
     }
 
     /// <summary>"Choose…" next to the serif preview font.</summary>
     [RelayCommand]
     private async Task ChoosePreviewFontSerif()
     {
-        if (await PickFontAsync(new FontPickRequest(PreviewFontSerif, null, false)) is { } result)
-        {
-            PreviewFontSerif = result.Family;
-        }
+        await PickFontAsync(
+            new FontPickRequest(PreviewFontSerif, null, false), new FontPickResult(PreviewFontSerif, 0),
+            result => PreviewFontSerif = result.Family);
     }
 
     /// <summary>"Choose…" next to the sans-serif preview font.</summary>
     [RelayCommand]
     private async Task ChoosePreviewFontSansSerif()
     {
-        if (await PickFontAsync(new FontPickRequest(PreviewFontSansSerif, null, false)) is { } result)
-        {
-            PreviewFontSansSerif = result.Family;
-        }
+        await PickFontAsync(
+            new FontPickRequest(PreviewFontSansSerif, null, false), new FontPickResult(PreviewFontSansSerif, 0),
+            result => PreviewFontSansSerif = result.Family);
     }
 
     /// <summary>"Choose…" next to the "Insert Special Character" window font (typeface + size).</summary>
     [RelayCommand]
     private async Task ChooseSpecialCharacterFont()
     {
-        if (await PickFontAsync(new FontPickRequest(SpecialCharacterFontFamily, SpecialCharacterFontSize, false, SpecialCharacterFontWeight)) is { } result)
-        {
-            SpecialCharacterFontFamily = result.Family;
-            SpecialCharacterFontSize = result.Size;
-            SpecialCharacterFontWeight = result.Weight;
-        }
+        await PickFontAsync(
+            new FontPickRequest(SpecialCharacterFontFamily, SpecialCharacterFontSize, false, SpecialCharacterFontWeight),
+            new FontPickResult(SpecialCharacterFontFamily, SpecialCharacterFontSize, SpecialCharacterFontWeight),
+            result =>
+            {
+                SpecialCharacterFontFamily = result.Family;
+                SpecialCharacterFontSize = result.Size;
+                SpecialCharacterFontWeight = result.Weight;
+            });
     }
 
     /// <summary>
@@ -693,12 +704,15 @@ public sealed partial class PreferencesViewModel : ObservableObject
         CodeEditorAppearance editor = _settings.CodeEditorAppearance;
         string family = OpenTagHintFontFamily.Length > 0 ? OpenTagHintFontFamily : editor.FontFamily;
         int size = OpenTagHintFontSize > 0 ? OpenTagHintFontSize : editor.FontSize;
-        if (await PickFontAsync(new FontPickRequest(family, size, false, OpenTagHintFontWeight > 0 ? OpenTagHintFontWeight : CodeEditor.FontWeight)) is { } result)
-        {
-            OpenTagHintFontFamily = result.Family;
-            OpenTagHintFontSize = result.Size;
-            OpenTagHintFontWeight = result.Weight;
-        }
+        await PickFontAsync(
+            new FontPickRequest(family, size, false, OpenTagHintFontWeight > 0 ? OpenTagHintFontWeight : CodeEditor.FontWeight),
+            new FontPickResult(OpenTagHintFontFamily, OpenTagHintFontSize, OpenTagHintFontWeight),
+            result =>
+            {
+                OpenTagHintFontFamily = result.Family;
+                OpenTagHintFontSize = result.Size;
+                OpenTagHintFontWeight = result.Weight;
+            });
     }
 
     /// <summary>"Default" — the hint uses the editor font and size again.</summary>
@@ -1660,12 +1674,17 @@ public sealed partial class CodeEditorAppearanceEditor : ObservableObject
     [RelayCommand]
     private async Task ChooseFont()
     {
-        if (await _pickFont(new FontPickRequest(FontFamily, FontSize, true, FontWeight)) is { } result)
+        FontPickResult before = new(FontFamily, FontSize, FontWeight);
+        void Apply(FontPickResult result)
         {
             FontFamily = result.Family;
             FontSize = result.Size;
             FontWeight = result.Weight;
         }
+
+        // Live: every change in the window is applied at once; Cancel puts back the font from before.
+        FontPickResult? picked = await _pickFont(new FontPickRequest(FontFamily, FontSize, true, FontWeight, Apply));
+        Apply(picked ?? before);
     }
 
     /// <summary>Restores the given defaults.</summary>

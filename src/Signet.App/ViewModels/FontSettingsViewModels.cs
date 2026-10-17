@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Signet.App.Infrastructure;
+using Signet.App.Resources;
+using Signet.Core.Misc;
 
 namespace Signet.App.ViewModels;
 
@@ -22,8 +22,8 @@ internal sealed record FontInheritance(
     Func<bool> Get, Action<bool> Set, string ParentPath, Func<string> ParentFont, Func<FontSettingViewModel> Parent);
 
 /// <summary>
-/// One font setting on a "Fonts" page of the Preferences window (Rider's Editor › Font): the typeface chosen from a
-/// list, the size, "Choose…" (the font picker window) and a sample for the preview on the right. The setting itself
+/// One font setting on a "Fonts" page of the Preferences window (Rider's Editor › Font): the font as one line (typeface,
+/// size, weight) and "Choose…" (the font picker window, the only way to change it) and a sample for the preview on the right. The setting itself
 /// stays in <see cref="PreferencesViewModel"/>; this is an adapter over its getter and setter, refreshed with
 /// <see cref="Refresh"/> when the setting changes elsewhere (e.g. "Restore defaults").
 /// </summary>
@@ -44,8 +44,6 @@ public sealed class FontSettingViewModel : ObservableObject
     private readonly Func<int> _getWeight;
     private readonly Action<int>? _setWeight;
     private readonly Func<int> _effectiveWeight;
-    private (string Family, int Extra)? _weightsKey;
-    private readonly ObservableCollection<FontWeightOption> _weights = new();
 
     /// <summary>Creates the adapter of one font setting.</summary>
     /// <param name="key">An English identifier (tests, the view's control names), e.g. <c>"CodeEditorText"</c>.</param>
@@ -220,43 +218,35 @@ public sealed class FontSettingViewModel : ObservableObject
     }
 
     /// <summary>
-    /// The weights of the font in use ("(default)", then the ones the family has, and the stored one when the family lacks it):
-    /// what the weight list offers. Always the same collection, changed in place and only when the family (or a weight the
-    /// family lacks) changes — a list swapped for another loses the selection of the box that shows it.
+    /// The font as the row shows it, in one line: "Segoe UI, 16, Light" — the typeface, the size and the weight, each only
+    /// when the setting has it and it is set; "(default)" stands for a typeface that is not set.
     /// </summary>
-    public IReadOnlyList<FontWeightOption> Weights
+    public string Summary
     {
         get
         {
-            string family = EffectiveFamily;
-            int stored = Weight;
-            int extra = stored > 0 && !FontCatalog.WeightsOf(family).Contains(stored) ? stored : 0;
-            if (_weightsKey != (family, extra))
+            List<string> parts = new();
+            if (HasFamily)
             {
-                _weightsKey = (family, extra);
-                _weights.Clear();
-                foreach (FontWeightOption option in FontWeightOptions.For(family, extra))
-                {
-                    _weights.Add(option);
-                }
+                parts.Add(Family.Length > 0 ? Family : Strings.Get("FontWeight_Default"));
             }
 
-            return _weights;
+            if (HasSize && Size > 0)
+            {
+                parts.Add(Size.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            }
+
+            if (HasWeight && FontWeightScale.NameOf(Weight) is { } weight)
+            {
+                parts.Add(weight);
+            }
+
+            return string.Join(", ", parts);
         }
     }
 
-    /// <summary>The selected entry of <see cref="Weights"/> (the stored weight).</summary>
-    public FontWeightOption? SelectedWeight
-    {
-        get => Weights.FirstOrDefault(w => w.Value == Weight);
-        set
-        {
-            if (value is not null)
-            {
-                Weight = value.Value;
-            }
-        }
-    }
+    /// <summary>Whether the setting is only a size (no typeface to choose): it has a size field instead of "Choose…".</summary>
+    public bool IsSizeOnly => HasSize && !HasFamily;
 
     /// <summary>The weight actually used — for the preview (0 = Regular).</summary>
     public int EffectiveWeight => _effectiveWeight();

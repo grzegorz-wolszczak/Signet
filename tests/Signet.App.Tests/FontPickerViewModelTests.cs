@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using AwesomeAssertions;
 using Signet.App.Infrastructure;
@@ -13,6 +14,10 @@ public sealed class FontPickerViewModelTests
     private static readonly FontEntry Consolas = new("Consolas", true);
     private static readonly FontEntry CourierNew = new("Courier New", true);
     private static readonly FontEntry Georgia = new("Georgia", false);
+
+    private static readonly int[] ThreeWeights = { 300, 400, 700 };
+    private static readonly int[] LightAndRegular = { 300, 400 };
+    private static readonly int[] RegularOnly = { 400 };
 
     private static readonly FontEntry[] Fonts = new[] { Arial, Consolas, CourierNew, Georgia };
 
@@ -146,5 +151,35 @@ public sealed class FontPickerViewModelTests
 
         sut.Result()!.Weight.Should().Be(300);
         sut.PreviewWeight.Should().Be(Avalonia.Media.FontWeight.Light);
+    }
+
+    [Fact]
+    public void Each_change_in_the_window_is_reported_to_the_caller_but_not_the_start()
+    {
+        List<FontPickResult> reported = new();
+        FontPickerViewModel sut = new(
+            Fonts, new FontPickRequest("Arial", 12, false, 400, reported.Add), family => ThreeWeights);
+
+        reported.Should().BeEmpty("opening the window changes nothing");
+
+        sut.Size = 15;
+        sut.SelectedWeight = sut.Weights.Single(w => w.Value == 700);
+        sut.SelectedFont = Georgia;
+
+        reported.First().Should().Be(new FontPickResult("Arial", 15, 400));
+        reported.Should().Contain(new FontPickResult("Arial", 15, 700));
+        reported.Last().Should().Be(new FontPickResult("Georgia", 15, 700), "the weight wanted stays while the font has it");
+    }
+
+    [Fact]
+    public void A_change_of_the_font_is_reported_once_with_the_weights_of_the_new_font()
+    {
+        List<FontPickResult> reported = new();
+        FontPickerViewModel sut = new(
+            Fonts, new FontPickRequest("Arial", 12, false, 300, reported.Add), family => family == "Arial" ? LightAndRegular : RegularOnly);
+
+        sut.SelectedFont = Georgia;
+
+        reported.Should().Equal(new FontPickResult("Georgia", 12, 0));
     }
 }

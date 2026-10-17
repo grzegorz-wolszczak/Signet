@@ -117,10 +117,9 @@ public sealed partial class PreferencesViewModel
     // The font picker, starting from the font in use (the interface font while the setting follows it).
     private async Task ChooseFindUsagesFont(string family, int size, int weight, System.Action<string, int, int> apply)
     {
-        if (await PickFontAsync(new FontPickRequest(
-                family.Length > 0 ? family : EffectiveUiFontFamily, size > 0 ? size : EffectiveUiFontSize, false, weight)) is { } result)
-        {
-            apply(result.Family, result.Size, result.Weight);
-        }
+        await PickFontAsync(
+            new FontPickRequest(family.Length > 0 ? family : EffectiveUiFontFamily, size > 0 ? size : EffectiveUiFontSize, false, weight),
+            new FontPickResult(family, size, weight),
+            result => apply(result.Family, result.Size, result.Weight));
     }
 }
