@@ -9,28 +9,6 @@ namespace Signet.App.ViewModels;
 /// <summary>Appearance › Code Editor: the sample tab of the preview.</summary>
 public sealed partial class PreferencesViewModel
 {
-    // What the sample of the editor shows: a chapter with headings, a class, links (one of them broken, so the highlighting of a
-    // broken link shows), an image and a style sheet, written the way a book is.
-    private const string CodeEditorSampleText = """
-        <?xml version="1.0" encoding="utf-8"?>
-        <!DOCTYPE html>
-        <html xmlns="http://www.w3.org/1999/xhtml">
-        <head>
-          <title>The Lighthouse</title>
-          <link rel="stylesheet" type="text/css" href="../Styles/Stylesheet.css"/>
-        </head>
-        <body>
-          <h1 id="start">The Lighthouse</h1>
-          <p class="lead">The sea was <em>calm</em> that morning, and the keeper climbed the stairs.</p>
-          <p>Read <a href="Chapter02.xhtml">the next chapter</a> or <a href="Missing.xhtml">a missing page</a>.</p>
-          <div class="note">
-            <p>A <span class="small">short</span> note under the light.</p>
-          </div>
-          <img src="../Images/Figure01.png" alt="The lighthouse"/>
-        </body>
-        </html>
-        """;
-
     private TabManagerModel? _codeEditorSampleTabs;
     private CodeTabViewModel? _codeEditorSample;
 
@@ -44,7 +22,6 @@ public sealed partial class PreferencesViewModel
     {
         Core.BookManipulation.Book book = SampleBookInMemory;
         HtmlResource chapter = book.GetFolderKeeper().GetResourceTypeList<HtmlResource>().First(h => h.Filename == "Chapter01.xhtml");
-        chapter.SetText(CodeEditorSampleText);
         _codeEditorSampleTabs = new TabManagerModel();
         CodeTabViewModel tab = new(_codeEditorSampleTabs.OpenResource(chapter), SampleStatusBar, _settings, _spellChecker, isSample: true)
         {

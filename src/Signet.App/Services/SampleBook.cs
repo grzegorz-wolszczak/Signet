@@ -19,6 +19,56 @@ public static class SampleBook
 
     private static readonly string[] Chapters = { "Titlepage.xhtml", "Chapter01.xhtml", "Chapter02.xhtml", "Chapter03.xhtml" };
 
+    // What the first chapter shows in the sample of Code Editor: headings, a class, links (one of them broken, so the highlighting
+    // of a broken link shows), an image and a style sheet, written the way a book is.
+    private const string FirstChapterText = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <!DOCTYPE html>
+        <html xmlns="http://www.w3.org/1999/xhtml">
+        <head>
+          <title>The Lighthouse</title>
+          <link rel="stylesheet" type="text/css" href="../Styles/Stylesheet.css"/>
+        </head>
+        <body>
+          <h1 id="start">The Lighthouse</h1>
+          <p class="lead">The sea was <em>calm</em> that morning, and the keeper climbed the stairs.</p>
+          <p>Read <a href="Chapter02.xhtml">the next chapter</a> or <a href="Missing.xhtml">a missing page</a>.</p>
+          <div class="note">
+            <p>A <span class="small">short</span> note under the light.</p>
+          </div>
+          <img src="../Images/Figure01.png" alt="The lighthouse"/>
+        </body>
+        </html>
+        """;
+
+    // What the second chapter holds for the sample of Cleanup: nested divs with the same attributes, empty elements and a bare span.
+    private const string SecondChapterText = """
+        <?xml version="1.0" encoding="utf-8"?>
+        <!DOCTYPE html>
+        <html xmlns="http://www.w3.org/1999/xhtml">
+        <head>
+          <title>The Lamp</title>
+          <link rel="stylesheet" type="text/css" href="../Styles/Stylesheet.css"/>
+        </head>
+        <body>
+          <div class="box"><div class="box"><p>The lamp was lit at dusk.</p></div></div>
+          <p></p>
+          <p>The <span>keeper</span> counted the steps.</p>
+          <span class="small"></span>
+        </body>
+        </html>
+        """;
+
+    // A style sheet with rules to merge: one selector twice, and two selectors with the same properties.
+    private const string StyleSheetText = """
+        p { margin: 0; }
+        .note { margin: 1em 0; }
+        .box { border: 1px solid #888; }
+        .small { font-size: 0.8em; }
+        .lead { font-size: 0.8em; }
+        p { margin: 0; }
+        """;
+
     /// <summary>Creates the sample book; the caller disposes it.</summary>
     public static Book Create()
     {
@@ -40,8 +90,14 @@ public static class SampleBook
                 chapters[i].RenameTo(Chapters[i]);
             }
 
-            book.CreateEmptyCssFile(fileName: "Stylesheet.css");
+            CssResource stylesheet = book.CreateEmptyCssFile(fileName: "Stylesheet.css");
+            stylesheet.SetText(StyleSheetText);
+            stylesheet.SaveToDisk();
             book.CreateEmptyCssFile(fileName: "Fonts.css");
+            chapters[1].SetText(FirstChapterText);
+            chapters[1].SaveToDisk();
+            chapters[2].SetText(SecondChapterText);
+            chapters[2].SaveToDisk();
 
             string folder = Path.Combine(Path.GetTempPath(), "signet-sample-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(folder);
