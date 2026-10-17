@@ -38,14 +38,54 @@ public sealed partial class FindUsagesViewModel : ViewModelBase, ILanguageAware
     [ObservableProperty]
     private bool _groupByFile;
 
-    /// <summary>Creates the view model with the remembered grouping.</summary>
+    /// <summary>
+    /// Whether the text of a cell that does not fit wraps onto more lines (the row grows) instead of being cut with an
+    /// ellipsis; remembered in the settings.
+    /// </summary>
+    [ObservableProperty]
+    private bool _wrapRows;
+
+    /// <summary>
+    /// Whether the "Usage" column is as wide as its widest entry (Preferences › Appearance and Behavior › Find Usages
+    /// Window); re-read from the settings by <see cref="ReloadSettings"/>.
+    /// </summary>
+    [ObservableProperty]
+    private bool _fitUsageColumn;
+
+    /// <summary>Creates the view model with the remembered grouping, wrapping and column width.</summary>
     public FindUsagesViewModel(SettingsStore settings)
     {
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _groupByFile = settings.FindUsagesGroupByFile;
+        _wrapRows = settings.FindUsagesWrapRows;
+        _fitUsageColumn = settings.FindUsagesFitUsageColumn;
         RefreshCommand = new RelayCommand(Refresh, () => HasSearch);
         ExpandAllCommand = new RelayCommand(() => SetExpanded(true), () => HasSearch);
         CollapseAllCommand = new RelayCommand(() => SetExpanded(false), () => HasSearch);
+        settings.SettingChanged += (_, e) =>
+        {
+            if (e.QualifiedKey.Contains("find_usages_font", StringComparison.Ordinal)
+                || e.QualifiedKey.Contains("find_usages_appearance", StringComparison.Ordinal))
+            {
+                AppearanceChanged?.Invoke(this, EventArgs.Empty);
+            }
+        };
+    }
+
+    /// <summary>The fonts of the panel now (Preferences › Appearance and Behavior › Find Usages Window › Fonts).</summary>
+    public FindUsagesAppearance Appearance => _settings.FindUsagesAppearance;
+
+    /// <summary>Raised when a font of the panel changed (the view applies <see cref="Appearance"/> again).</summary>
+    public event EventHandler? AppearanceChanged;
+
+    /// <summary>
+    /// The width (px) the user gave the "Usage" column, remembered between sessions and used while
+    /// <see cref="FitUsageColumn"/> is off; 0 = none yet.
+    /// </summary>
+    public int UsageColumnWidth
+    {
+        get => _settings.FindUsagesUsageColumnWidth;
+        set => _settings.FindUsagesUsageColumnWidth = value;
     }
 
     /// <summary>Raised by "Refresh" — the host searches for <see cref="ClassName"/> again and calls <see cref="Load"/>.</summary>
@@ -160,6 +200,9 @@ public sealed partial class FindUsagesViewModel : ViewModelBase, ILanguageAware
         }
     }
 
+    /// <summary>Reads the settings of Preferences again (after "Save" there): whether the "Usage" column fits its content.</summary>
+    public void ReloadSettings() => FitUsageColumn = _settings.FindUsagesFitUsageColumn;
+
     /// <inheritdoc/>
     public void OnLanguageChanged()
     {
@@ -185,6 +228,8 @@ public sealed partial class FindUsagesViewModel : ViewModelBase, ILanguageAware
     /// <summary>"in 1 file" / "in 2 files" — with the Polish forms (w 1 pliku, w 2 plikach).</summary>
     public static string FilesText(int count) =>
         Strings.Format(count == 1 ? "FindUsages_InFiles_One" : "FindUsages_InFiles_Many", count);
+
+    partial void OnWrapRowsChanged(bool value) => _settings.FindUsagesWrapRows = value;
 
     partial void OnGroupByFileChanged(bool value)
     {
@@ -329,6 +374,9 @@ public sealed partial class FindUsagesNode : ObservableObject
     /// <summary>"N results" after the label of the root and of a file; empty for a usage.</summary>
     public string CountText { get; }
 
+    /// <summary>The dimmed text after the label (<see cref="CountText"/> with a gap); empty for a usage.</summary>
+    public string CountSuffix => CountText.Length == 0 ? string.Empty : "  " + CountText;
+
     /// <summary>The usage (a location to open), or <c>null</c> for the root and a file.</summary>
     public ClassUsage? Usage { get; }
 
@@ -352,6 +400,9 @@ public sealed partial class FindUsagesNode : ObservableObject
 
     /// <summary>The "Context" column: the text of the usage's line.</summary>
     public string Context => Usage?.Context ?? string.Empty;
+
+    /// <summary>The nesting of the node: 0 for the root, 1 for a file (or a usage of a flat list), 2 for a usage in a file.</summary>
+    public int Level => Parent is null ? 0 : Parent.Level + 1;
 
     /// <summary>The child nodes.</summary>
     public IReadOnlyList<FindUsagesNode> Children => _children;

@@ -4401,6 +4401,39 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="FindUsages_CollapseAll" xml:space="preserve">
     <value>Zwiń wszystko (Ctrl+NumPad -)</value>
   </data>
+  <data name="PreferencesWindow_FindUsagesHeadersFont" xml:space="preserve">
+    <value>Nagłówki kolumn</value>
+  </data>
+  <data name="PreferencesWindow_FindUsagesContextFont" xml:space="preserve">
+    <value>Kolumna Kontekst (np. czcionka o stałej szerokości)</value>
+  </data>
+  <data name="PreferencesWindow_FindUsagesCellsFont" xml:space="preserve">
+    <value>Pozostałe elementy (nazwy plików, numery wierszy i kolumn, rodzaj, nagłówek wyników)</value>
+  </data>
+  <data name="FontPreview_FindUsagesHeaders" xml:space="preserve">
+    <value>Użycie   Wiersz   Kol.   Rodzaj   Kontekst</value>
+  </data>
+  <data name="FontPreview_FindUsagesContext" xml:space="preserve">
+    <value>&lt;p class="calibre_20"&gt;&lt;span class="calibre4"&gt;Chapter one&lt;/span&gt;&lt;/p&gt;</value>
+  </data>
+  <data name="FontPreview_FindUsagesCells" xml:space="preserve">
+    <value>Text/index_split_005.html:11:54   11   54   atrybut class</value>
+  </data>
+  <data name="FindUsages_WrapRows" xml:space="preserve">
+    <value>Zawijaj wiersze</value>
+  </data>
+  <data name="PreferencesWindow_FindUsagesWindow" xml:space="preserve">
+    <value>Okno znalezionych użyć</value>
+  </data>
+  <data name="PreferencesWindow_FindUsagesColumns" xml:space="preserve">
+    <value>Kolumny</value>
+  </data>
+  <data name="PreferencesWindow_FindUsagesFitUsageColumn" xml:space="preserve">
+    <value>Dopasuj szerokość kolumny do treści</value>
+  </data>
+  <data name="PreferencesWindow_FindUsagesFitUsageColumnHint" xml:space="preserve">
+    <value>Pierwsza kolumna (pliki) ma szerokość najszerszego wpisu plus niewielki zapas. Gdy opcja jest wyłączona, okno zachowuje szerokość, którą kolumna miała ostatnio (np. ustawioną ręcznie).</value>
+  </data>
   <data name="Status_FindUsages" xml:space="preserve">
     <value>Użycia klasy „{0}”: {1}.</value>
   </data>
@@ -5853,6 +5886,24 @@ Zamknij zakładkę</value>
   </data>
   <data name="ThemeKey_ui_bookBrowser_background" xml:space="preserve">
     <value>Tło przeglądarki książki</value>
+  </data>
+  <data name="ThemeKey_ui_findUsages_usage_background" xml:space="preserve">
+    <value>Tło okna znalezionych użyć: kolumna Użycie</value>
+  </data>
+  <data name="ThemeKey_ui_findUsages_line_background" xml:space="preserve">
+    <value>Tło okna znalezionych użyć: kolumna Wiersz</value>
+  </data>
+  <data name="ThemeKey_ui_findUsages_column_background" xml:space="preserve">
+    <value>Tło okna znalezionych użyć: kolumna Kol.</value>
+  </data>
+  <data name="ThemeKey_ui_findUsages_kind_background" xml:space="preserve">
+    <value>Tło okna znalezionych użyć: kolumna Rodzaj</value>
+  </data>
+  <data name="ThemeKey_ui_findUsages_context_background" xml:space="preserve">
+    <value>Tło okna znalezionych użyć: kolumna Kontekst</value>
+  </data>
+  <data name="PreferencesWindow_FindUsagesBackgroundInTheme" xml:space="preserve">
+    <value>Tło kolumn: Wygląd › Kolory interfejsu</value>
   </data>
   <data name="ThemeKey_ui_bookBrowser_selection" xml:space="preserve">
     <value>Zaznaczenie w przeglądarce książki</value>

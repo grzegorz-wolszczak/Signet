@@ -114,6 +114,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _openTagHintFontFamily = hintLook.FontFamily;
         _openTagHintFontSize = hintLook.FontSize;
         LoadBookBrowserAppearance();
+        LoadFindUsagesFonts();
         LoadLineNumbersFont();
         LoadDocumentTabFont();
         CodeEditor = new CodeEditorAppearanceEditor(_settings.CodeEditorAppearance, a => _settings.CodeEditorAppearance = a, PickFontAsync);
@@ -125,6 +126,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _reopenLastFileOnStartup = _settings.ReopenLastFileOnStartup;
         _fileDropZoneEnabled = _settings.FileDropZoneEnabled;
         _findUsagesRefreshOnSave = _settings.FindUsagesRefreshOnSave;
+        _findUsagesFitUsageColumn = _settings.FindUsagesFitUsageColumn;
         _navigationHistoryRemember = _settings.NavigationHistoryRemember;
         _navigationHistoryDays = _settings.NavigationHistoryDays;
         _recentLocationsLimit = _settings.RecentLocationsLimit;
@@ -729,7 +731,9 @@ public sealed partial class PreferencesViewModel : ObservableObject
         WarningFontSize = warnings.FontSize;
         PersistWarningAppearance();
 
+        FindUsagesFitUsageColumn = _settings.FindUsagesFitUsageColumn;
         LoadBookBrowserAppearance();
+        LoadFindUsagesFonts();
         LoadLineNumbersFont();
         LoadDocumentTabFont();
 
@@ -779,6 +783,15 @@ public sealed partial class PreferencesViewModel : ObservableObject
     private bool _findUsagesRefreshOnSave;
 
     partial void OnFindUsagesRefreshOnSaveChanged(bool value) => _settings.FindUsagesRefreshOnSave = value;
+
+    /// <summary>
+    /// Appearance and Behavior › Find Usages Window: whether the first column of the "Find Usages" panel fits its widest
+    /// entry (otherwise it keeps the width it had last).
+    /// </summary>
+    [ObservableProperty]
+    private bool _findUsagesFitUsageColumn;
+
+    partial void OnFindUsagesFitUsageColumnChanged(bool value) => _settings.FindUsagesFitUsageColumn = value;
 
     /// <summary>Whether the Navigate Back / Forward history of a saved book is kept between sessions.</summary>
     [ObservableProperty]

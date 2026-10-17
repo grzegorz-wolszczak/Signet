@@ -255,6 +255,21 @@ public static class ThemeKeys
     /// <summary>The selected row of the Book Browser (only there): its background and text; nothing set = the colors of the controls.</summary>
     public static readonly ThemeKey UiBookBrowserSelection = Attributes("ui.bookBrowser.selection", ThemePage.Interface, "Controls", TextAttributes.Empty);
 
+    /// <summary>The background of the "Usage" column of the Find Usages window; unset = none.</summary>
+    public static readonly ThemeKey UiFindUsagesUsageBackground = Color("ui.findUsages.usage.background", ThemePage.Interface, "Controls", null);
+
+    /// <summary>The background of the "Line" column of the Find Usages window; unset = none.</summary>
+    public static readonly ThemeKey UiFindUsagesLineBackground = Color("ui.findUsages.line.background", ThemePage.Interface, "Controls", null);
+
+    /// <summary>The background of the "Col." column of the Find Usages window; unset = none.</summary>
+    public static readonly ThemeKey UiFindUsagesColumnBackground = Color("ui.findUsages.column.background", ThemePage.Interface, "Controls", null);
+
+    /// <summary>The background of the "Kind" column of the Find Usages window; unset = none.</summary>
+    public static readonly ThemeKey UiFindUsagesKindBackground = Color("ui.findUsages.kind.background", ThemePage.Interface, "Controls", null);
+
+    /// <summary>The background of the "Context" column of the Find Usages window; unset = none.</summary>
+    public static readonly ThemeKey UiFindUsagesContextBackground = Color("ui.findUsages.context.background", ThemePage.Interface, "Controls", null);
+
     /// <summary>A frame around a list or a preview in a dialog.</summary>
     public static readonly ThemeKey UiFrame = Color("ui.frame", ThemePage.Interface, "Controls", Rgb(0x808080));
 

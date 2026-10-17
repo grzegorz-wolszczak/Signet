@@ -437,6 +437,55 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
+    public void The_found_usages_column_fit_is_a_draft_until_saved_and_a_default_to_restore()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        vm.FindUsagesFitUsageColumn.Should().BeTrue();
+
+        vm.FindUsagesFitUsageColumn = false;
+
+        host.Settings.FindUsagesFitUsageColumn.Should().BeTrue("not saved yet");
+        vm.ApplyCommand.Execute(null);
+        host.Settings.FindUsagesFitUsageColumn.Should().BeFalse();
+
+        vm.RestoreAppearanceDefaultsCommand.Execute(null);
+        vm.FindUsagesFitUsageColumn.Should().BeTrue();
+    }
+
+    [Fact]
+    public void The_found_usages_fonts_page_has_the_headers_the_context_and_the_other_cells()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+
+        vm.FindUsagesFonts.Fonts.Select(f => f.Key).Should().Equal("FindUsagesHeaders", "FindUsagesContext", "FindUsagesCells");
+    }
+
+    [Fact]
+    public void The_found_usages_fonts_are_a_draft_until_saved_and_a_default_to_restore()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+
+        vm.FindUsagesContextFontFamily = "Consolas";
+        vm.FindUsagesContextFontSize = 14;
+        vm.FindUsagesHeaderFontSize = 11;
+        vm.FindUsagesCellsFontFamily = "Arial";
+
+        host.Settings.FindUsagesAppearance.Should().Be(FindUsagesAppearance.Default, "not saved yet");
+        vm.ApplyCommand.Execute(null);
+        host.Settings.FindUsagesAppearance.Should().Be(new FindUsagesAppearance(string.Empty, 11, "Consolas", 14, "Arial", 0));
+
+        vm.RestoreAppearanceDefaultsCommand.Execute(null);
+
+        vm.FindUsagesContextFontFamily.Should().BeEmpty();
+        vm.FindUsagesContextFontSize.Should().Be(0);
+        vm.FindUsagesHeaderFontSize.Should().Be(0);
+        vm.FindUsagesCellsFontFamily.Should().BeEmpty();
+    }
+
+    [Fact]
     public void RestoreAppearanceDefaultsCommand_resets_the_fonts()
     {
         (TestHost host, PreferencesViewModel vm) = New();

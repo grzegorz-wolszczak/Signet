@@ -543,6 +543,39 @@
       </TabItem>
 
 
+      <!-- ============================ Find Usages Window ============================ -->
+      <!-- The "Find Usages" panel (the usages of a class, the matches of "Count All"). The wrapping of the rows and the
+           grouping are buttons of the panel itself. General: the width of the first column; Fonts: the column headers, the
+           "Context" column and the other cells. -->
+      <TabItem x:Name="FindUsagesPage" Header="{loc:Loc PreferencesWindow_FindUsagesWindow}" views:PreferencesPage.Parent="AppearancePage">
+        <TabControl x:Name="FindUsagesTabs">
+          <TabItem Header="{loc:Loc PreferencesWindow_General}">
+            <ScrollViewer>
+              <StackPanel Spacing="10" Margin="8">
+                <Border Classes="section">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="{loc:Loc PreferencesWindow_FindUsagesColumns}" FontWeight="Bold" />
+                    <StackPanel Spacing="2">
+                      <CheckBox x:Name="FindUsagesFitUsageColumnBox" Content="{loc:Loc PreferencesWindow_FindUsagesFitUsageColumn}"
+                                IsChecked="{Binding FindUsagesFitUsageColumn}" />
+                      <TextBlock Text="{loc:Loc PreferencesWindow_FindUsagesFitUsageColumnHint}" TextWrapping="Wrap" Opacity="0.75"
+                                 Margin="28,0,0,0" />
+                    </StackPanel>
+                    <!-- The background of each column is a color of the theme (ui.findUsages.*.background). -->
+                    <HyperlinkButton Content="{loc:Loc PreferencesWindow_FindUsagesBackgroundInTheme}" Padding="0"
+                                     views:PreferencesPage.Target="AppearanceGeneralPage"
+                                     views:PreferencesPage.TargetKey="ui.findUsages.usage.background" />
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
+          </TabItem>
+          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+            <views:FontsPageView x:Name="FindUsagesFontsView" />
+          </TabItem>
+        </TabControl>
+      </TabItem>
+
       <!-- =============================== Footnotes =============================== -->
       <!-- General: how the footnote operations behave; CSS: the CSS of Signet's footnote classes (FootnoteStyles),
            written to the book on every footnote operation. -->

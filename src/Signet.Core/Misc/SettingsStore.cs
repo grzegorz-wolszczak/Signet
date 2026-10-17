@@ -547,6 +547,38 @@ public sealed class SettingsStore
     }
 
     /// <summary>
+    /// Whether the "Find Usages" panel wraps the text of a cell that does not fit in the column onto more lines (the
+    /// row grows) instead of cutting it with an ellipsis; remembered between sessions, off by default.
+    /// </summary>
+    public bool FindUsagesWrapRows
+    {
+        get => ReadBool("find_usages_wrap_rows", false);
+        set => Write("find_usages_wrap_rows", value);
+    }
+
+    /// <summary>
+    /// Whether the first column ("Usage": the files) of the "Find Usages" panel is as wide as its widest entry (plus a
+    /// small margin) every time the panel shows a search. When off, the panel keeps the width the column had last
+    /// (<see cref="FindUsagesUsageColumnWidth"/>). On by default.
+    /// </summary>
+    public bool FindUsagesFitUsageColumn
+    {
+        get => ReadBool("find_usages_fit_usage_column", true);
+        set => Write("find_usages_fit_usage_column", value);
+    }
+
+    /// <summary>
+    /// The width (px) the user gave the "Usage" column of the "Find Usages" panel, used while
+    /// <see cref="FindUsagesFitUsageColumn"/> is off; 0 = none yet. Window state, not a preference — written outside the
+    /// Save / Cancel draft of the Preferences window.
+    /// </summary>
+    public int FindUsagesUsageColumnWidth
+    {
+        get => Math.Max(0, ReadIntFrom(MainWindowGroup, "find_usages_usage_column_width", 0));
+        set => _file.SetRaw(MainWindowGroup, "find_usages_usage_column_width", Math.Max(0, value));
+    }
+
+    /// <summary>
     /// The optional columns shown in the Book Browser next to the name, comma-separated ids ("ReadingOrder",
     /// "Semantics", "Properties"); empty (only the name) by default.
     /// </summary>
@@ -1217,6 +1249,37 @@ public sealed class SettingsStore
             WriteSilent("book_browser_cell_padding", v.CellPadding);
             WriteSilent("book_browser_show_folders", v.ShowFolders);
             RaiseChanged("book_browser_appearance");
+        }
+    }
+
+    /// <summary>
+    /// The fonts of the "Find Usages" panel (<see cref="FindUsagesAppearance"/>): the column headers, the "Context" column
+    /// and the other cells. Always read normalized.
+    /// </summary>
+    public FindUsagesAppearance FindUsagesAppearance
+    {
+        get
+        {
+            FindUsagesAppearance d = FindUsagesAppearance.Default;
+            return new FindUsagesAppearance(
+                ReadString("find_usages_font_header_family", d.HeaderFontFamily),
+                ReadInt("find_usages_font_header_size", d.HeaderFontSize),
+                ReadString("find_usages_font_context_family", d.ContextFontFamily),
+                ReadInt("find_usages_font_context_size", d.ContextFontSize),
+                ReadString("find_usages_font_cells_family", d.CellsFontFamily),
+                ReadInt("find_usages_font_cells_size", d.CellsFontSize)).Normalized();
+        }
+
+        set
+        {
+            FindUsagesAppearance v = value.Normalized();
+            WriteSilent("find_usages_font_header_family", v.HeaderFontFamily);
+            WriteSilent("find_usages_font_header_size", v.HeaderFontSize);
+            WriteSilent("find_usages_font_context_family", v.ContextFontFamily);
+            WriteSilent("find_usages_font_context_size", v.ContextFontSize);
+            WriteSilent("find_usages_font_cells_family", v.CellsFontFamily);
+            WriteSilent("find_usages_font_cells_size", v.CellsFontSize);
+            RaiseChanged("find_usages_appearance");
         }
     }
 
@@ -1942,6 +2005,13 @@ public sealed class SettingsStore
         yield return "book_browser_cell_min_height";
         yield return "book_browser_cell_padding";
         yield return "book_browser_show_folders";
+        yield return "find_usages_fit_usage_column";
+        yield return "find_usages_font_header_family";
+        yield return "find_usages_font_header_size";
+        yield return "find_usages_font_context_family";
+        yield return "find_usages_font_context_size";
+        yield return "find_usages_font_cells_family";
+        yield return "find_usages_font_cells_size";
         foreach (TooltipArea area in Enum.GetValues<TooltipArea>())
         {
             yield return TooltipFontKey(area, "family");

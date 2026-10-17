@@ -138,8 +138,51 @@ public sealed class ClassUsageFinderTests
             "Text/a.xhtml", text, new[] { (Start: 21, End: 24), (Start: 36, End: 39) });
 
         usages.Should().Equal(
-            new ClassUsage("Text/a.xhtml", 21, 2, 11, ClassUsageKind.Text, "second cat here", 3),
-            new ClassUsage("Text/a.xhtml", 36, 3, 7, ClassUsageKind.Text, "third cat", 3));
+            new ClassUsage("Text/a.xhtml", 21, 2, 11, ClassUsageKind.Text, "second cat here", 3, 7, 3),
+            new ClassUsage("Text/a.xhtml", 36, 3, 7, ClassUsageKind.Text, "third cat", 3, 6, 3));
+    }
+
+    [Fact]
+    public void The_context_tells_where_the_class_name_is_in_it()
+    {
+        const string text = "<p>\n    <span class=\"calibre4 bold\">x</span>\n</p>";
+
+        ClassUsage usage = ClassUsageFinder.Find("calibre4", new[] { new ClassUsageSource("a.xhtml", text, IsStyleSheet: false) }).Single();
+
+        usage.Context.Substring(usage.ContextMatchStart, usage.ContextMatchLength).Should().Be("calibre4");
+    }
+
+    [Fact]
+    public void The_context_of_a_selector_marks_the_name_after_the_dot()
+    {
+        const string css = "  p.note, .note > b { color: red }";
+
+        ClassUsage first = ClassUsageFinder.Find("note", new[] { new ClassUsageSource("s.css", css, IsStyleSheet: true) }).First();
+
+        first.Context.Should().StartWith("p.note");
+        first.Context.Substring(first.ContextMatchStart, first.ContextMatchLength).Should().Be("note");
+    }
+
+    [Fact]
+    public void The_mark_stays_on_the_usage_when_a_long_line_is_cut()
+    {
+        string text = "<p>" + new string('x', 500) + "</p><p class=\"note\">" + new string('y', 500) + "</p>\r\n";
+
+        ClassUsage usage = ClassUsageFinder.Find("note", new[] { new ClassUsageSource("a.xhtml", text, IsStyleSheet: false) }).Single();
+
+        usage.Context.Substring(usage.ContextMatchStart, usage.ContextMatchLength).Should().Be("note");
+    }
+
+    [Fact]
+    public void The_mark_of_a_text_match_over_several_lines_ends_with_the_line()
+    {
+        const string text = "alpha beta\ngamma";
+
+        ClassUsage usage = ClassUsageFinder.FromTextMatches("a.xhtml", text, new[] { (Start: 6, End: 16) }).Single();
+
+        usage.Context.Should().Be("alpha beta");
+        usage.Context.Substring(usage.ContextMatchStart, usage.ContextMatchLength).Should().Be("beta");
+        usage.Length.Should().Be(10);
     }
 
     [Fact]

@@ -4401,6 +4401,39 @@ It does not change the files, their names or their IDs.</value>
   <data name="FindUsages_CollapseAll" xml:space="preserve">
     <value>Collapse All (Ctrl+NumPad -)</value>
   </data>
+  <data name="PreferencesWindow_FindUsagesHeadersFont" xml:space="preserve">
+    <value>Column headers</value>
+  </data>
+  <data name="PreferencesWindow_FindUsagesContextFont" xml:space="preserve">
+    <value>Context column (e.g. a fixed-width font)</value>
+  </data>
+  <data name="PreferencesWindow_FindUsagesCellsFont" xml:space="preserve">
+    <value>Other elements (file names, line and column numbers, kind, the results heading)</value>
+  </data>
+  <data name="FontPreview_FindUsagesHeaders" xml:space="preserve">
+    <value>Usage   Line   Col.   Kind   Context</value>
+  </data>
+  <data name="FontPreview_FindUsagesContext" xml:space="preserve">
+    <value>&lt;p class="calibre_20"&gt;&lt;span class="calibre4"&gt;Chapter one&lt;/span&gt;&lt;/p&gt;</value>
+  </data>
+  <data name="FontPreview_FindUsagesCells" xml:space="preserve">
+    <value>Text/index_split_005.html:11:54   11   54   class attribute</value>
+  </data>
+  <data name="FindUsages_WrapRows" xml:space="preserve">
+    <value>Wrap Rows</value>
+  </data>
+  <data name="PreferencesWindow_FindUsagesWindow" xml:space="preserve">
+    <value>Find Usages Window</value>
+  </data>
+  <data name="PreferencesWindow_FindUsagesColumns" xml:space="preserve">
+    <value>Columns</value>
+  </data>
+  <data name="PreferencesWindow_FindUsagesFitUsageColumn" xml:space="preserve">
+    <value>Fit the column width to its content</value>
+  </data>
+  <data name="PreferencesWindow_FindUsagesFitUsageColumnHint" xml:space="preserve">
+    <value>The first column (the files) is as wide as its widest entry plus a small margin. When the option is off, the window keeps the width the column had last (e.g. one set by hand).</value>
+  </data>
   <data name="Status_FindUsages" xml:space="preserve">
     <value>Usages of class “{0}”: {1}.</value>
   </data>
@@ -5853,6 +5886,24 @@ Close the tab</value>
   </data>
   <data name="ThemeKey_ui_bookBrowser_background" xml:space="preserve">
     <value>Book Browser background</value>
+  </data>
+  <data name="ThemeKey_ui_findUsages_usage_background" xml:space="preserve">
+    <value>Find Usages window background: Usage column</value>
+  </data>
+  <data name="ThemeKey_ui_findUsages_line_background" xml:space="preserve">
+    <value>Find Usages window background: Line column</value>
+  </data>
+  <data name="ThemeKey_ui_findUsages_column_background" xml:space="preserve">
+    <value>Find Usages window background: Col. column</value>
+  </data>
+  <data name="ThemeKey_ui_findUsages_kind_background" xml:space="preserve">
+    <value>Find Usages window background: Kind column</value>
+  </data>
+  <data name="ThemeKey_ui_findUsages_context_background" xml:space="preserve">
+    <value>Find Usages window background: Context column</value>
+  </data>
+  <data name="PreferencesWindow_FindUsagesBackgroundInTheme" xml:space="preserve">
+    <value>Column backgrounds: Appearance › Interface Colors</value>
   </data>
   <data name="ThemeKey_ui_bookBrowser_selection" xml:space="preserve">
     <value>Selection in the Book Browser</value>

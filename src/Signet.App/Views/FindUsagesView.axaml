@@ -3,6 +3,7 @@
              xmlns:infra="using:Signet.App.Infrastructure"
              xmlns:vm="using:Signet.App.ViewModels"
              xmlns:loc="using:Signet.App.Resources"
+             xmlns:views="using:Signet.App.Views"
              x:Class="Signet.App.Views.FindUsagesView"
              infra:TooltipFonts.Area="FindReplace"
              x:DataType="vm:FindUsagesViewModel">
@@ -10,29 +11,46 @@
   <UserControl.Resources>
     <!-- The "Usage" cell: the label and, for the root and a file, the dimmed number of results. -->
     <DataTemplate x:Key="UsageCellTemplate" x:DataType="vm:FindUsagesNode">
-      <StackPanel Orientation="Horizontal" Spacing="8" Background="Transparent" VerticalAlignment="Center"
-                  ToolTip.Tip="{Binding ToolTip}">
-        <TextBlock Text="{Binding Text}" />
-        <TextBlock Text="{Binding CountText}" Opacity="0.6" />
-      </StackPanel>
+      <TextBlock Classes="usageCell" Background="Transparent" VerticalAlignment="Center" ToolTip.Tip="{Binding ToolTip}">
+        <Run Text="{Binding Text}" /><Run Text="{Binding CountSuffix}"
+                                          Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+      </TextBlock>
+    </DataTemplate>
+
+    <!-- The "Context" cell: the line colored like Code Editor, the searched text marked like a Find match. -->
+    <DataTemplate x:Key="ContextCellTemplate" x:DataType="vm:FindUsagesNode">
+      <views:UsageContextText Classes="usageCell usageContext" Node="{Binding}" Margin="4,2" VerticalAlignment="Center" />
     </DataTemplate>
   </UserControl.Resources>
 
   <UserControl.Styles>
     <!-- The buttons of the left toolbar: small, flat, with a vector icon. -->
-    <Style Selector="Button.panelTool">
+    <Style Selector=":is(Button).panelTool">
       <Setter Property="Width" Value="28" />
       <Setter Property="Height" Value="28" />
       <Setter Property="Padding" Value="5" />
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
     </Style>
-    <Style Selector="Button.panelTool Path">
+    <Style Selector=":is(Button).panelTool Path">
       <Setter Property="Fill" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
       <Setter Property="Stretch" Value="Uniform" />
     </Style>
-    <Style Selector="Button.panelTool:disabled Path">
+    <Style Selector=":is(Button).panelTool:disabled Path">
       <Setter Property="Opacity" Value="0.4" />
+    </Style>
+    <!-- A pressed toggle (Wrap Rows) keeps the highlight of a selected list item behind its icon. -->
+    <Style Selector="ToggleButton.panelTool:checked /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource SystemControlHighlightListLowBrush}" />
+    </Style>
+
+    <!-- The text of the cells is cut with an ellipsis; with "Wrap Rows" it wraps and the row grows. -->
+    <Style Selector="TextBlock.usageCell">
+      <Setter Property="TextWrapping" Value="NoWrap" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+    <Style Selector="TreeDataGrid.wrapRows TextBlock.usageCell">
+      <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
   </UserControl.Styles>
 
@@ -67,10 +85,15 @@
           <!-- Material Design "unfold-less-horizontal" icon (Apache License 2.0): two chevrons pointing together. -->
           <Path Data="M16.59,5.59L18,7L12,13L6,7L7.41,5.59L12,10.17L16.59,5.59M16.59,18.41L12,13.83L7.41,18.41L6,17L12,11L18,17L16.59,18.41Z" />
         </Button>
+        <ToggleButton x:Name="WrapRowsButton" Classes="panelTool" IsChecked="{Binding WrapRows, Mode=TwoWay}"
+                      ToolTip.Tip="{loc:Loc FindUsages_WrapRows}">
+          <!-- Material Design "wrap" icon (Apache License 2.0): a line that turns back under itself. -->
+          <Path Data="M21,5H3V7H21V5M3,19H10V17H3V19M3,13H18C19,13 20,13.43 20,15C20,16.57 19,17 18,17H16V15L12,18L16,21V19H18C20.95,19 22,17.73 22,15C22,12.27 20.95,11 18,11H3V13Z" />
+        </ToggleButton>
       </StackPanel>
     </Border>
 
-    <TextBlock DockPanel.Dock="Top" Text="{Binding Header}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="8,4" />
+    <TextBlock x:Name="HeadingText" DockPanel.Dock="Top" Text="{Binding Header}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="8,4" />
 
     <!-- The usages tree (Usage, Line, Col., Kind, Context) in a virtualizing TreeDataGrid: only the rows on screen get
          controls, so tens of thousands of usages show at once. Source and columns are built in the code-behind. -->
