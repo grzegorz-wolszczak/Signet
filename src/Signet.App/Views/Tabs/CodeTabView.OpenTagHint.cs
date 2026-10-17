@@ -108,6 +108,7 @@ public partial class CodeTabView
         OpenTagHintTag.Text = document.GetText(open.Offset, open.Length);
         OpenTagHintTag.FontFamily = look.FontFamily.Length > 0 ? new FontFamily(look.FontFamily) : Editor.FontFamily;
         OpenTagHintTag.FontSize = look.FontSize > 0 ? look.FontSize : Editor.FontSize;
+        OpenTagHintTag.FontWeight = look.FontWeight > 0 ? FontWeightOptions.ToAvalonia(look.FontWeight) : Editor.FontWeight;
         OpenTagHintLine.Text = Strings.Format("CodeEditor_OpenTagHintLine", document.GetLineByOffset(open.Offset).LineNumber);
         OpenTagHintPopup.IsOpen = true;
     }

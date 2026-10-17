@@ -37,7 +37,8 @@ public sealed class CodePreviewEditor : TextEditor
     /// <param name="size">The size (px).</param>
     /// <param name="theme">The colors.</param>
     /// <param name="extended">Whether to use the extended highlighting of Code Editor.</param>
-    public void Show(string text, string family, double size, ResolvedTheme theme, bool extended)
+    /// <param name="weight">The weight (<see cref="Signet.Core.Misc.FontWeightScale"/>); 0 = Regular.</param>
+    public void Show(string text, string family, double size, ResolvedTheme theme, bool extended, int weight = 0)
     {
         ArgumentNullException.ThrowIfNull(text);
         ArgumentNullException.ThrowIfNull(theme);
@@ -51,6 +52,7 @@ public sealed class CodePreviewEditor : TextEditor
             FontFamily = new FontFamily(family);
         }
 
+        FontWeight = FontWeightOptions.ToAvalonia(weight);
         if (size > 0)
         {
             EditorZoom.SetBaseSize(this, size); // the font size is the setting's, plus the zoom of Ctrl + wheel

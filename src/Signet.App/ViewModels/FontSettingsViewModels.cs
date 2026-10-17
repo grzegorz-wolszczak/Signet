@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Signet.App.Infrastructure;
 
 namespace Signet.App.ViewModels;
 
@@ -39,6 +41,11 @@ public sealed class FontSettingViewModel : ObservableObject
     private readonly Func<bool>? _codePreview;
     private readonly Action _restoreDefault;
     private readonly FontInheritance? _inheritance;
+    private readonly Func<int> _getWeight;
+    private readonly Action<int>? _setWeight;
+    private readonly Func<int> _effectiveWeight;
+    private (string Family, int Extra)? _weightsKey;
+    private readonly ObservableCollection<FontWeightOption> _weights = new();
 
     /// <summary>Creates the adapter of one font setting.</summary>
     /// <param name="key">An English identifier (tests, the view's control names), e.g. <c>"CodeEditorText"</c>.</param>
@@ -59,6 +66,9 @@ public sealed class FontSettingViewModel : ObservableObject
     /// = the sample is plain text.</param>
     /// <param name="inheritance">Lets the setting use the font of a parent setting instead of its own; <c>null</c> = it
     /// has no parent.</param>
+    /// <param name="weight">The stored weight (<see cref="Signet.Core.Misc.FontWeightScale"/>, 0 = not set) and how to change
+    /// it; <c>null</c> = the setting has no weight (no list of weights).</param>
+    /// <param name="effectiveWeight">The weight actually used — for the preview; by default the stored one.</param>
     internal FontSettingViewModel(
         string key,
         string label,
@@ -73,7 +83,9 @@ public sealed class FontSettingViewModel : ObservableObject
         Func<string?>? previewBackground = null,
         string? sizeHint = null,
         Func<bool>? codePreview = null,
-        FontInheritance? inheritance = null)
+        FontInheritance? inheritance = null,
+        (Func<int> Get, Action<int> Set)? weight = null,
+        Func<int>? effectiveWeight = null)
     {
         Key = key ?? throw new ArgumentNullException(nameof(key));
         Label = label ?? throw new ArgumentNullException(nameof(label));
@@ -95,6 +107,9 @@ public sealed class FontSettingViewModel : ObservableObject
         SizeHint = sizeHint;
         _codePreview = codePreview;
         _inheritance = inheritance;
+        _getWeight = weight?.Get ?? (() => 0);
+        _setWeight = weight?.Set;
+        _effectiveWeight = effectiveWeight ?? (() => _getWeight());
     }
 
     /// <summary>Raised when the user changed the typeface or the size here.</summary>
@@ -117,6 +132,9 @@ public sealed class FontSettingViewModel : ObservableObject
 
     /// <summary>Whether the setting has a size (otherwise only a typeface).</summary>
     public bool HasSize => _setSize is not null;
+
+    /// <summary>Whether the setting has a weight (Light, Regular, SemiBold…).</summary>
+    public bool HasWeight => _setWeight is not null;
 
     /// <summary>The smallest size the size field accepts.</summary>
     public int MinSize { get; }
@@ -186,6 +204,62 @@ public sealed class FontSettingViewModel : ObservableObject
             }
         }
     }
+
+    /// <summary>The stored weight (<see cref="Signet.Core.Misc.FontWeightScale"/>); 0 = not set.</summary>
+    public int Weight
+    {
+        get => _getWeight();
+        set
+        {
+            if (_setWeight is not null && value != _getWeight())
+            {
+                _setWeight(value);
+                Changed();
+            }
+        }
+    }
+
+    /// <summary>
+    /// The weights of the font in use ("(default)", then the ones the family has, and the stored one when the family lacks it):
+    /// what the weight list offers. Always the same collection, changed in place and only when the family (or a weight the
+    /// family lacks) changes — a list swapped for another loses the selection of the box that shows it.
+    /// </summary>
+    public IReadOnlyList<FontWeightOption> Weights
+    {
+        get
+        {
+            string family = EffectiveFamily;
+            int stored = Weight;
+            int extra = stored > 0 && !FontCatalog.WeightsOf(family).Contains(stored) ? stored : 0;
+            if (_weightsKey != (family, extra))
+            {
+                _weightsKey = (family, extra);
+                _weights.Clear();
+                foreach (FontWeightOption option in FontWeightOptions.For(family, extra))
+                {
+                    _weights.Add(option);
+                }
+            }
+
+            return _weights;
+        }
+    }
+
+    /// <summary>The selected entry of <see cref="Weights"/> (the stored weight).</summary>
+    public FontWeightOption? SelectedWeight
+    {
+        get => Weights.FirstOrDefault(w => w.Value == Weight);
+        set
+        {
+            if (value is not null)
+            {
+                Weight = value.Value;
+            }
+        }
+    }
+
+    /// <summary>The weight actually used — for the preview (0 = Regular).</summary>
+    public int EffectiveWeight => _effectiveWeight();
 
     /// <summary>What the typeface list shows while nothing in it is selected (the default, or a font not installed).</summary>
     public string Placeholder => _placeholder();

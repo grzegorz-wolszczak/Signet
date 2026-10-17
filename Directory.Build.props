@@ -22,4 +22,7 @@
     <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
+  <!-- The IDE style rules (IDExxxx) are warnings, not errors. -->
+  <Import Project="$(MSBuildThisFileDirectory)IdeWarnings.props" />
+
 </Project>

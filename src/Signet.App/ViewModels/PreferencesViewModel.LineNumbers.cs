@@ -17,6 +17,12 @@ public sealed partial class PreferencesViewModel
     [ObservableProperty]
     private int _lineNumbersFontSize;
 
+    /// <summary>The weight of the line numbers; 0 = not set (the Code Editor weight).</summary>
+    [ObservableProperty]
+    private int _lineNumbersFontWeight;
+
+    partial void OnLineNumbersFontWeightChanged(int value) => PersistLineNumbersFont();
+
     partial void OnLineNumbersFontFamilyChanged(string value) => PersistLineNumbersFont();
 
     partial void OnLineNumbersFontSizeChanged(int value) => PersistLineNumbersFont();
@@ -27,10 +33,11 @@ public sealed partial class PreferencesViewModel
         LineNumberFontAppearance look = _settings.LineNumberFontAppearance;
         LineNumbersFontFamily = look.FontFamily;
         LineNumbersFontSize = look.FontSize;
+        LineNumbersFontWeight = look.FontWeight;
     }
 
     private void PersistLineNumbersFont() =>
-        _settings.LineNumberFontAppearance = new LineNumberFontAppearance(LineNumbersFontFamily, LineNumbersFontSize);
+        _settings.LineNumberFontAppearance = new LineNumberFontAppearance(LineNumbersFontFamily, LineNumbersFontSize, LineNumbersFontWeight);
 
     /// <summary>"Choose…" — the font picker, starting from the font of the line numbers (or the editor font).</summary>
     [RelayCommand]
@@ -38,10 +45,11 @@ public sealed partial class PreferencesViewModel
     {
         string family = LineNumbersFontFamily.Length > 0 ? LineNumbersFontFamily : CodeEditor.FontFamily;
         int size = LineNumbersFontSize > 0 ? LineNumbersFontSize : CodeEditor.FontSize;
-        if (await PickFontAsync(new FontPickRequest(family, size, false)) is { } result)
+        if (await PickFontAsync(new FontPickRequest(family, size, false, LineNumbersFontWeight > 0 ? LineNumbersFontWeight : CodeEditor.FontWeight)) is { } result)
         {
             LineNumbersFontFamily = result.Family;
             LineNumbersFontSize = result.Size;
+            LineNumbersFontWeight = result.Weight;
         }
     }
 
@@ -60,15 +68,19 @@ public sealed partial class PreferencesViewModel
             {
                 LineNumbersFontFamily = string.Empty;
                 LineNumbersFontSize = 0;
+                LineNumbersFontWeight = 0;
             },
             ChooseLineNumbersFontCommand,
             placeholder: () => CodeEditor.FontFamily,
+            weight: (() => LineNumbersFontWeight, v => LineNumbersFontWeight = v),
+            effectiveWeight: () => LineNumbersFontWeight > 0 ? LineNumbersFontWeight : CodeEditor.FontWeight,
             inheritance: new FontInheritance(
-                () => LineNumbersFontFamily.Length == 0 && LineNumbersFontSize == 0,
+                () => LineNumbersFontFamily.Length == 0 && LineNumbersFontSize == 0 && LineNumbersFontWeight == 0,
                 inherit =>
                 {
                     LineNumbersFontFamily = inherit ? string.Empty : CodeEditor.FontFamily;
                     LineNumbersFontSize = inherit ? 0 : CodeEditor.FontSize;
+                    LineNumbersFontWeight = inherit ? 0 : CodeEditor.FontWeight;
                 },
                 Strings.Get("PreferencesWindow_CodeEditorTextFont"),
                 () => CodeEditor.FontFamily + ", " + CodeEditor.FontSize,

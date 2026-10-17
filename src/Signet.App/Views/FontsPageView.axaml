@@ -51,6 +51,7 @@
               <TextBlock x:Name="PreviewText" Classes="noSearch" Text="{Binding Active.PreviewText, FallbackValue={x:Null}}"
                          FontFamily="{Binding Active.EffectiveFamily, Converter={x:Static infra:FontFamilyConverters.FromName}, FallbackValue={x:Static FontFamily.Default}}"
                          FontSize="{Binding Active.EffectiveSize, FallbackValue=14}"
+                         FontWeight="{Binding Active.EffectiveWeight, Converter={x:Static infra:FontWeightOptions.FromNumber}, FallbackValue=Normal}"
                          Foreground="{Binding Active.PreviewForeground, Converter={x:Static infra:ColorConverters.ToBrush}}" />
             </Border>
           </ScrollViewer>

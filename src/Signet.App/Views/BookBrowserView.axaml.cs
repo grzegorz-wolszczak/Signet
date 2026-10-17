@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Documents;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -110,7 +111,7 @@ public partial class BookBrowserView : UserControl
 
         // Every cell: the names (the template of the Name column) and the text of the other columns.
         Style cells = new(x => x.Is<TreeDataGridCell>());
-        AddFont(cells, look.ItemsFontFamily, look.ItemsFontSize);
+        AddFont(cells, look.ItemsFontFamily, look.ItemsFontSize, look.ItemsFontWeight);
         cells.Setters.Add(new Setter(MinHeightProperty, (double)look.CellMinHeight));
 
         // The vertical padding of a cell: the text cells (left and right stay 4 px) and the name cell (its padding is
@@ -122,7 +123,7 @@ public partial class BookBrowserView : UserControl
 
         // Not a descendant of a cell: the headers keep the interface font unless they have a font of their own.
         Style headers = new(x => x.OfType<TreeDataGridColumnHeader>());
-        AddFont(headers, look.HeaderFontFamily, look.HeaderFontSize);
+        AddFont(headers, look.HeaderFontFamily, look.HeaderFontSize, look.HeaderFontWeight);
 
         Style indent = new(x => x.OfType<TreeDataGridExpanderCell>());
         indent.Setters.Add(new Setter(TreeDataGridExpanderCell.IndentSizeProperty, (double)look.Indent));
@@ -153,8 +154,12 @@ public partial class BookBrowserView : UserControl
         }
     }
 
-    private static void AddFont(Style style, string family, int size)
+    private static void AddFont(Style style, string family, int size, int weight)
     {
+        // Always set (Regular when not set): a style taken away does not give the cells of the grid their weight back, a
+        // style added later wins over it.
+        style.Setters.Add(new Setter(TextElement.FontWeightProperty, FontWeightOptions.ToAvalonia(weight)));
+
         if (family.Length > 0)
         {
             style.Setters.Add(new Setter(TemplatedControl.FontFamilyProperty, new FontFamily(family)));

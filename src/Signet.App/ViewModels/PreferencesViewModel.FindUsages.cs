@@ -32,6 +32,24 @@ public sealed partial class PreferencesViewModel
     [ObservableProperty]
     private int _findUsagesCellsFontSize;
 
+    /// <summary>Weight of the column headers of the panel; 0 = not set.</summary>
+    [ObservableProperty]
+    private int _findUsagesHeaderFontWeight;
+
+    /// <summary>Weight of the "Context" column; 0 = not set.</summary>
+    [ObservableProperty]
+    private int _findUsagesContextFontWeight;
+
+    /// <summary>Weight of the other cells and of the heading; 0 = not set.</summary>
+    [ObservableProperty]
+    private int _findUsagesCellsFontWeight;
+
+    partial void OnFindUsagesHeaderFontWeightChanged(int value) => PersistFindUsagesFonts();
+
+    partial void OnFindUsagesContextFontWeightChanged(int value) => PersistFindUsagesFonts();
+
+    partial void OnFindUsagesCellsFontWeightChanged(int value) => PersistFindUsagesFonts();
+
     partial void OnFindUsagesHeaderFontFamilyChanged(string value) => PersistFindUsagesFonts();
 
     partial void OnFindUsagesHeaderFontSizeChanged(int value) => PersistFindUsagesFonts();
@@ -54,48 +72,55 @@ public sealed partial class PreferencesViewModel
         FindUsagesContextFontSize = look.ContextFontSize;
         FindUsagesCellsFontFamily = look.CellsFontFamily;
         FindUsagesCellsFontSize = look.CellsFontSize;
+        FindUsagesHeaderFontWeight = look.HeaderFontWeight;
+        FindUsagesContextFontWeight = look.ContextFontWeight;
+        FindUsagesCellsFontWeight = look.CellsFontWeight;
     }
 
     private void PersistFindUsagesFonts() =>
         _settings.FindUsagesAppearance = new FindUsagesAppearance(
             FindUsagesHeaderFontFamily, FindUsagesHeaderFontSize,
             FindUsagesContextFontFamily, FindUsagesContextFontSize,
-            FindUsagesCellsFontFamily, FindUsagesCellsFontSize);
+            FindUsagesCellsFontFamily, FindUsagesCellsFontSize,
+            FindUsagesHeaderFontWeight, FindUsagesContextFontWeight, FindUsagesCellsFontWeight);
 
     /// <summary>"Choose…" of the font of the column headers of the panel.</summary>
     [RelayCommand]
     private Task ChooseFindUsagesHeaderFont() =>
-        ChooseFindUsagesFont(FindUsagesHeaderFontFamily, FindUsagesHeaderFontSize, (f, s) =>
+        ChooseFindUsagesFont(FindUsagesHeaderFontFamily, FindUsagesHeaderFontSize, FindUsagesHeaderFontWeight, (f, s, w) =>
         {
             FindUsagesHeaderFontFamily = f;
             FindUsagesHeaderFontSize = s;
+            FindUsagesHeaderFontWeight = w;
         });
 
     /// <summary>"Choose…" of the font of the "Context" column of the panel.</summary>
     [RelayCommand]
     private Task ChooseFindUsagesContextFont() =>
-        ChooseFindUsagesFont(FindUsagesContextFontFamily, FindUsagesContextFontSize, (f, s) =>
+        ChooseFindUsagesFont(FindUsagesContextFontFamily, FindUsagesContextFontSize, FindUsagesContextFontWeight, (f, s, w) =>
         {
             FindUsagesContextFontFamily = f;
             FindUsagesContextFontSize = s;
+            FindUsagesContextFontWeight = w;
         });
 
     /// <summary>"Choose…" of the font of the other cells of the panel.</summary>
     [RelayCommand]
     private Task ChooseFindUsagesCellsFont() =>
-        ChooseFindUsagesFont(FindUsagesCellsFontFamily, FindUsagesCellsFontSize, (f, s) =>
+        ChooseFindUsagesFont(FindUsagesCellsFontFamily, FindUsagesCellsFontSize, FindUsagesCellsFontWeight, (f, s, w) =>
         {
             FindUsagesCellsFontFamily = f;
             FindUsagesCellsFontSize = s;
+            FindUsagesCellsFontWeight = w;
         });
 
     // The font picker, starting from the font in use (the interface font while the setting follows it).
-    private async Task ChooseFindUsagesFont(string family, int size, System.Action<string, int> apply)
+    private async Task ChooseFindUsagesFont(string family, int size, int weight, System.Action<string, int, int> apply)
     {
         if (await PickFontAsync(new FontPickRequest(
-                family.Length > 0 ? family : EffectiveUiFontFamily, size > 0 ? size : EffectiveUiFontSize, false)) is { } result)
+                family.Length > 0 ? family : EffectiveUiFontFamily, size > 0 ? size : EffectiveUiFontSize, false, weight)) is { } result)
         {
-            apply(result.Family, result.Size);
+            apply(result.Family, result.Size, result.Weight);
         }
     }
 }

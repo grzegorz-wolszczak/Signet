@@ -52,6 +52,13 @@ public sealed partial class FindUsagesViewModel : ViewModelBase, ILanguageAware
     [ObservableProperty]
     private bool _fitUsageColumn;
 
+    /// <summary>
+    /// The extra space (px) between the rows, outside the backgrounds of the cells (Preferences › Appearance and Behavior ›
+    /// Find Usages Window); re-read from the settings by <see cref="ReloadSettings"/>.
+    /// </summary>
+    [ObservableProperty]
+    private int _rowSpacing;
+
     /// <summary>Creates the view model with the remembered grouping, wrapping and column width.</summary>
     public FindUsagesViewModel(SettingsStore settings)
     {
@@ -59,6 +66,7 @@ public sealed partial class FindUsagesViewModel : ViewModelBase, ILanguageAware
         _groupByFile = settings.FindUsagesGroupByFile;
         _wrapRows = settings.FindUsagesWrapRows;
         _fitUsageColumn = settings.FindUsagesFitUsageColumn;
+        _rowSpacing = settings.FindUsagesRowSpacing;
         RefreshCommand = new RelayCommand(Refresh, () => HasSearch);
         ExpandAllCommand = new RelayCommand(() => SetExpanded(true), () => HasSearch);
         CollapseAllCommand = new RelayCommand(() => SetExpanded(false), () => HasSearch);
@@ -200,8 +208,15 @@ public sealed partial class FindUsagesViewModel : ViewModelBase, ILanguageAware
         }
     }
 
-    /// <summary>Reads the settings of Preferences again (after "Save" there): whether the "Usage" column fits its content.</summary>
-    public void ReloadSettings() => FitUsageColumn = _settings.FindUsagesFitUsageColumn;
+    /// <summary>
+    /// Reads the settings of Preferences again (after "Save" there): whether the "Usage" column fits its content and the
+    /// space between the rows.
+    /// </summary>
+    public void ReloadSettings()
+    {
+        FitUsageColumn = _settings.FindUsagesFitUsageColumn;
+        RowSpacing = _settings.FindUsagesRowSpacing;
+    }
 
     /// <inheritdoc/>
     public void OnLanguageChanged()

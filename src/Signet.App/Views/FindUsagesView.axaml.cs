@@ -5,12 +5,13 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Documents;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
+using Avalonia.VisualTree;
 using Avalonia.Styling;
 using CommunityToolkit.Mvvm.Input;
 using Signet.App.Infrastructure;
@@ -61,14 +62,22 @@ public partial class FindUsagesView : UserControl
         // changes with the font of the interface).
         UsageList.PropertyChanged += OnListPropertyChanged;
 
-        // The cell of a column gets the class of the column, which the styles of the column backgrounds select.
-        UsageList.CellPrepared += (_, e) => MarkColumn(e.Cell, e.ColumnIndex);
+        // The cell of a column gets the class of the column, which the styles of its background (the XAML) select.
+        UsageList.CellPrepared += (_, e) =>
+        {
+            MarkColumn(e.Cell, e.ColumnIndex);
+            ApplyCellFont(e.Cell, e.ColumnIndex);
+        };
+
+        // The headers are made when the columns come into view: they get their font after every layout (a few controls).
+        UsageList.LayoutUpdated += (_, _) => ApplyHeaderFonts();
         AttachedToVisualTree += (_, _) =>
         {
             AppTheme.Changed += OnThemeChanged;
             ApplyColumnBackgrounds();
         };
         DetachedFromVisualTree += (_, _) => AppTheme.Changed -= OnThemeChanged;
+        UsageList.RowPrepared += (_, e) => e.Row.Margin = RowMargin;
         Loaded += (_, _) => ApplyUsageColumnWidth();
 
         // Tunnel: the tree handles NumPad +/- itself (expanding / collapsing the selected node).
@@ -111,6 +120,7 @@ public partial class FindUsagesView : UserControl
             UpdateWrapRows();
             ApplyAppearance();
             ApplyColumnBackgrounds();
+            ApplyRowSpacing();
             ApplyUsageColumnWidth();
         }
     }
@@ -121,6 +131,9 @@ public partial class FindUsagesView : UserControl
         {
             case nameof(FindUsagesViewModel.WrapRows):
                 UpdateWrapRows();
+                break;
+            case nameof(FindUsagesViewModel.RowSpacing):
+                ApplyRowSpacing();
                 break;
             case nameof(FindUsagesViewModel.FitUsageColumn):
                 if (_viewModel is { FitUsageColumn: false })
@@ -136,70 +149,87 @@ public partial class FindUsagesView : UserControl
         }
     }
 
-    // The styles of the panel that follow the fonts of Preferences › Appearance and Behavior › Find Usages Window.
-    private Style[] _appearanceStyles = Array.Empty<Style>();
-
     private void OnAppearanceChanged(object? sender, EventArgs e)
     {
         ApplyAppearance();
         ApplyUsageColumnWidth(); // another font, another widest entry
     }
 
+    private FindUsagesAppearance _look = FindUsagesAppearance.Default;
+
     /// <summary>
     /// Applies the fonts: the column headers, the cells (the "Usage", "Line", "Col." and "Kind" columns), the "Context"
-    /// column (a style of its own, so it wins over the font of the cells) and the heading above the tree. A font left to the
-    /// interface keeps the interface font (nothing is set). The styles of the previous fonts are replaced.
+    /// column and the heading above the tree. The values are set on the controls themselves (and cleared again for a font left
+    /// to the interface): the cells and the headers are parts of the template of the grid, which neither a style taken away nor
+    /// a resource changed reaches in time.
     /// </summary>
     private void ApplyAppearance()
     {
-        foreach (Style old in _appearanceStyles)
+        _look = _viewModel?.Appearance ?? FindUsagesAppearance.Default;
+        foreach (TreeDataGridCell cell in UsageList.GetVisualDescendants().OfType<TreeDataGridCell>())
         {
-            UsageList.Styles.Remove(old);
+            ApplyCellFont(cell, cell.ColumnIndex);
         }
 
-        _appearanceStyles = Array.Empty<Style>();
-        if (_viewModel is null)
-        {
-            return;
-        }
-
-        FindUsagesAppearance look = _viewModel.Appearance;
-        Style headers = new(x => x.OfType<TreeDataGridColumnHeader>());
-        AddFont(headers, look.HeaderFontFamily, look.HeaderFontSize);
-        Style cells = new(x => x.Is<TreeDataGridCell>());
-        AddFont(cells, look.CellsFontFamily, look.CellsFontSize);
-        Style context = new(x => x.OfType<TextBlock>().Class("usageContext")); // the control keeps the style key of TextBlock
-        AddFont(context, look.ContextFontFamily, look.ContextFontSize);
-        _appearanceStyles = new[] { headers, cells, context };
-        foreach (Style style in _appearanceStyles)
-        {
-            UsageList.Styles.Add(style);
-        }
+        ApplyHeaderFonts();
 
         // The heading is not in the grid: its font is set directly (and cleared to follow the interface again).
-        HeadingText.ClearValue(TextBlock.FontFamilyProperty);
-        HeadingText.ClearValue(TextBlock.FontSizeProperty);
-        if (look.CellsFontFamily.Length > 0)
-        {
-            HeadingText.FontFamily = new FontFamily(look.CellsFontFamily);
-        }
+        SetFont(HeadingText, _look.CellsFontFamily, _look.CellsFontSize, 0);
+        HeadingText.FontWeight = _look.CellsFontWeight > 0 ? FontWeightOptions.ToAvalonia(_look.CellsFontWeight) : FontWeight.SemiBold;
+    }
 
-        if (look.CellsFontSize > 0)
+    // The "Context" column (the last one) has the font of its own, the other cells share one.
+    private void ApplyCellFont(Control cell, int columnIndex)
+    {
+        if (columnIndex == ColumnClasses.Length - 1)
         {
-            HeadingText.FontSize = look.CellsFontSize;
+            SetFont(cell, _look.ContextFontFamily, _look.ContextFontSize, _look.ContextFontWeight);
+        }
+        else
+        {
+            SetFont(cell, _look.CellsFontFamily, _look.CellsFontSize, _look.CellsFontWeight);
         }
     }
 
-    private static void AddFont(Style style, string family, int size)
+    private void ApplyHeaderFonts()
+    {
+        if (UsageList.ColumnHeadersPresenter is { } presenter)
+        {
+            foreach (TreeDataGridColumnHeader header in presenter.GetVisualChildren().OfType<TreeDataGridColumnHeader>())
+            {
+                SetFont(header, _look.HeaderFontFamily, _look.HeaderFontSize, _look.HeaderFontWeight);
+            }
+        }
+    }
+
+    // A font setting that is empty / 0 clears the value, so the control follows the interface font again.
+    private static void SetFont(Control control, string family, int size, int weight)
     {
         if (family.Length > 0)
         {
-            style.Setters.Add(new Setter(TextElement.FontFamilyProperty, new FontFamily(family)));
+            control.SetValue(TemplatedControl.FontFamilyProperty, new FontFamily(family));
+        }
+        else
+        {
+            control.ClearValue(TemplatedControl.FontFamilyProperty);
         }
 
         if (size > 0)
         {
-            style.Setters.Add(new Setter(TextElement.FontSizeProperty, (double)size));
+            control.SetValue(TemplatedControl.FontSizeProperty, (double)size);
+        }
+        else
+        {
+            control.ClearValue(TemplatedControl.FontSizeProperty);
+        }
+
+        if (weight > 0)
+        {
+            control.SetValue(TemplatedControl.FontWeightProperty, FontWeightOptions.ToAvalonia(weight));
+        }
+        else if (control is not TextBlock)
+        {
+            control.ClearValue(TemplatedControl.FontWeightProperty);
         }
     }
 
@@ -213,7 +243,7 @@ public partial class FindUsagesView : UserControl
         ThemeKeys.UiFindUsagesKindBackground, ThemeKeys.UiFindUsagesContextBackground,
     };
 
-    private Style[] _columnStyles = Array.Empty<Style>();
+    private readonly List<Style> _columnStyles = new();
 
     private static void MarkColumn(Control cell, int columnIndex)
     {
@@ -226,8 +256,10 @@ public partial class FindUsagesView : UserControl
     private void OnThemeChanged(object? sender, EventArgs e) => ApplyColumnBackgrounds();
 
     /// <summary>
-    /// Gives every column the background its theme key sets (Preferences › Appearance › Interface Colors); a column without
-    /// one stays transparent. A selected row keeps the color of the selection.
+    /// Gives every column the background its theme key sets (Preferences › Appearance › Interface Colors), not in a selected
+    /// row, whose color is the selection's, drawn behind the cells. The style of a column is replaced by a new one, with a
+    /// transparent background when the theme sets no color: a style taken away does not give the cells their background back
+    /// (they are parts of the template of the grid), a style added later wins over the one before.
     /// </summary>
     private void ApplyColumnBackgrounds()
     {
@@ -236,23 +268,31 @@ public partial class FindUsagesView : UserControl
             UsageList.Styles.Remove(old);
         }
 
-        List<Style> styles = new();
+        _columnStyles.Clear();
         for (int i = 0; i < ColumnClasses.Length; i++)
         {
-            if (AppTheme.Current.Color(ColumnBackgrounds[i]) is not { } color)
-            {
-                continue;
-            }
-
             string columnClass = ColumnClasses[i];
-            // Not in a selected row: its color is the selection's, drawn behind the cells.
+            Color? color = AppTheme.Current.Color(ColumnBackgrounds[i]);
             Style style = new(x => x.OfType<TreeDataGridRow>().Not(n => n.Class(":selected")).Descendant().Is<TreeDataGridCell>().Class(columnClass));
-            style.Setters.Add(new Setter(TemplatedControl.BackgroundProperty, new SolidColorBrush(color)));
-            styles.Add(style);
+            style.Setters.Add(new Setter(TemplatedControl.BackgroundProperty, color is { } c ? new SolidColorBrush(c) : Brushes.Transparent));
+            _columnStyles.Add(style);
             UsageList.Styles.Add(style);
         }
+    }
 
-        _columnStyles = styles.ToArray();
+    // The space between the rows is the bottom margin of a row: it lies outside the cells, so their backgrounds do not
+    // reach it and the background of the panel shows between them. Set on the rows as they are prepared (the rows are
+    // recycled) and on the realized ones when the setting changes.
+    private Thickness RowMargin => new(0, 0, 0, _viewModel?.RowSpacing ?? 0);
+
+    private void ApplyRowSpacing()
+    {
+        foreach (TreeDataGridRow row in UsageList.GetVisualDescendants().OfType<TreeDataGridRow>())
+        {
+            row.Margin = RowMargin;
+        }
+
+        UsageList.RowsPresenter?.InvalidateMeasure();
     }
 
     private void OnListPropertyChanged(object? sender, Avalonia.AvaloniaPropertyChangedEventArgs e)

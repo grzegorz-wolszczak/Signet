@@ -454,6 +454,68 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
+    public void The_found_usages_row_spacing_is_a_draft_until_saved_and_a_default_to_restore()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        vm.FindUsagesRowSpacing.Should().Be(0);
+
+        vm.FindUsagesRowSpacing = 3;
+
+        host.Settings.FindUsagesRowSpacing.Should().Be(0, "not saved yet");
+        vm.ApplyCommand.Execute(null);
+        host.Settings.FindUsagesRowSpacing.Should().Be(3);
+
+        vm.RestoreAppearanceDefaultsCommand.Execute(null);
+        vm.FindUsagesRowSpacing.Should().Be(0);
+    }
+
+    [Fact]
+    public void The_fonts_with_a_weight_are_a_draft_until_saved_and_a_default_to_restore()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        FontSettingViewModel context = vm.FindUsagesFonts.Fonts.Single(f => f.Key == "FindUsagesContext");
+        FontSettingViewModel editor = vm.CodeEditorFonts.Fonts.Single(f => f.Key == "CodeEditorText");
+        FontSettingViewModel interfaceFont = vm.AppearanceFonts.Fonts.Single(f => f.Key == "Interface");
+        context.HasWeight.Should().BeTrue();
+
+        context.Weight = 300;
+        editor.Weight = 600;
+        interfaceFont.Weight = 350;
+
+        host.Settings.FindUsagesAppearance.ContextFontWeight.Should().Be(0, "not saved yet");
+        vm.ApplyCommand.Execute(null);
+        host.Settings.FindUsagesAppearance.ContextFontWeight.Should().Be(300);
+        host.Settings.CodeEditorAppearance.FontWeight.Should().Be(600);
+        host.Settings.UiFontWeight.Should().Be(350);
+
+        vm.RestoreAppearanceDefaultsCommand.Execute(null);
+
+        context.Weight.Should().Be(0);
+        editor.Weight.Should().Be(0);
+    }
+
+    [Fact]
+    public void The_weight_list_of_a_font_row_offers_the_default_and_keeps_a_weight_the_font_lacks()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        FontSettingViewModel row = vm.FindUsagesFonts.Fonts.Single(f => f.Key == "FindUsagesCells");
+
+        row.Weights.First().Value.Should().Be(0);
+        row.SelectedWeight!.Value.Should().Be(0);
+
+        row.Weight = 450; // a weight in no font here: it stays listed, so it can be seen and changed
+        row.Weights.Select(w => w.Value).Should().Contain(450);
+        row.SelectedWeight!.Value.Should().Be(450);
+
+        row.SelectedWeight = row.Weights.First();
+
+        row.Weight.Should().Be(0);
+    }
+
+    [Fact]
     public void The_found_usages_fonts_page_has_the_headers_the_context_and_the_other_cells()
     {
         (TestHost host, PreferencesViewModel vm) = New();

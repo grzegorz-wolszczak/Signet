@@ -71,6 +71,18 @@ public sealed partial class PreferencesViewModel
     [ObservableProperty]
     private int _bookBrowserHeaderFontSize;
 
+    /// <summary>Weight of the names and of the Semantics / Properties cells; 0 = not set.</summary>
+    [ObservableProperty]
+    private int _bookBrowserItemsFontWeight;
+
+    /// <summary>Weight of the column headers of the tree; 0 = not set.</summary>
+    [ObservableProperty]
+    private int _bookBrowserHeaderFontWeight;
+
+    partial void OnBookBrowserItemsFontWeightChanged(int value) => PersistBookBrowserAppearance();
+
+    partial void OnBookBrowserHeaderFontWeightChanged(int value) => PersistBookBrowserAppearance();
+
     partial void OnBookBrowserIndentChanged(int value) => PersistBookBrowserAppearance();
 
     partial void OnBookBrowserShowFoldersChanged(bool value) => PersistBookBrowserAppearance();
@@ -99,13 +111,16 @@ public sealed partial class PreferencesViewModel
         BookBrowserItemsFontSize = look.ItemsFontSize;
         BookBrowserHeaderFontFamily = look.HeaderFontFamily;
         BookBrowserHeaderFontSize = look.HeaderFontSize;
+        BookBrowserItemsFontWeight = look.ItemsFontWeight;
+        BookBrowserHeaderFontWeight = look.HeaderFontWeight;
     }
 
     private void PersistBookBrowserAppearance() =>
         _settings.BookBrowserAppearance = new BookBrowserAppearance(
             BookBrowserItemsFontFamily, BookBrowserItemsFontSize,
             BookBrowserHeaderFontFamily, BookBrowserHeaderFontSize,
-            BookBrowserIndent, BookBrowserCellMinHeight, BookBrowserCellPadding, BookBrowserShowFolders);
+            BookBrowserIndent, BookBrowserCellMinHeight, BookBrowserCellPadding, BookBrowserShowFolders,
+            BookBrowserItemsFontWeight, BookBrowserHeaderFontWeight);
 
     /// <summary>"Choose…" of the font of the names and cells of the Book Browser tree.</summary>
     [RelayCommand]
@@ -120,18 +135,21 @@ public sealed partial class PreferencesViewModel
     {
         string family = headers ? BookBrowserHeaderFontFamily : BookBrowserItemsFontFamily;
         int size = headers ? BookBrowserHeaderFontSize : BookBrowserItemsFontSize;
+        int weight = headers ? BookBrowserHeaderFontWeight : BookBrowserItemsFontWeight;
         if (await PickFontAsync(new FontPickRequest(
-                family.Length > 0 ? family : EffectiveUiFontFamily, size > 0 ? size : EffectiveUiFontSize, false)) is { } result)
+                family.Length > 0 ? family : EffectiveUiFontFamily, size > 0 ? size : EffectiveUiFontSize, false, weight)) is { } result)
         {
             if (headers)
             {
                 BookBrowserHeaderFontFamily = result.Family;
                 BookBrowserHeaderFontSize = result.Size;
+                BookBrowserHeaderFontWeight = result.Weight;
             }
             else
             {
                 BookBrowserItemsFontFamily = result.Family;
                 BookBrowserItemsFontSize = result.Size;
+                BookBrowserItemsFontWeight = result.Weight;
             }
         }
     }
@@ -141,7 +159,7 @@ public sealed partial class PreferencesViewModel
     private FontSettingViewModel InterfaceFontRow(
         string key, string labelKey, string previewKey,
         Func<string> family, Action<string> setFamily, Func<int> size, Action<int> setSize,
-        Action reset, System.Windows.Input.ICommand choose) =>
+        Action reset, System.Windows.Input.ICommand choose, Func<int> weight, Action<int> setWeight) =>
         new(
             key,
             Strings.Get(labelKey),
@@ -153,7 +171,8 @@ public sealed partial class PreferencesViewModel
             reset,
             choose,
             placeholder: () => EffectiveUiFontFamily,
-            sizeHint: Strings.Get("PreferencesWindow_FontSizeZeroAsInterface"));
+            sizeHint: Strings.Get("PreferencesWindow_FontSizeZeroAsInterface"),
+            weight: (weight, setWeight));
 }
 
 /// <summary>A "expand this folder on load" checkbox of the Book Browser preferences.</summary>

@@ -100,9 +100,30 @@ public sealed class UiDensityManager(
         }
 
         ApplyFont(app, _settings.UiFont, _settings.UiFontSize);
+        ApplyUiFontWeight(app, _settings.UiFontWeight);
         ApplyWarning(app, _settings.WarningAppearance, EffectiveFontSize);
         ApplyTooltipFonts();
         ApplyDocumentTabFont();
+    }
+
+    /// <summary>The application resource of the weight of the interface font (<c>SignetUiFontWeight</c>).</summary>
+    public const string UiFontWeightKey = "SignetUiFontWeight";
+
+    /// <summary>
+    /// Sets the weight of the interface text (the style of the windows in <c>App.axaml</c> takes it from the resource and the
+    /// text inherits it): 0 is no resource, so the text keeps the weight of the controls.
+    /// </summary>
+    public static void ApplyUiFontWeight(Application app, int weight)
+    {
+        System.ArgumentNullException.ThrowIfNull(app);
+        if (weight > 0)
+        {
+            app.Resources[UiFontWeightKey] = FontWeightOptions.ToAvalonia(weight);
+        }
+        else
+        {
+            app.Resources.Remove(UiFontWeightKey);
+        }
     }
 
     /// <summary>The application resource of the font family of the document tabs (<c>SignetDocumentTabFontFamily</c>).</summary>
@@ -110,6 +131,9 @@ public sealed class UiDensityManager(
 
     /// <summary>The application resource of the font size of the document tabs (<c>SignetDocumentTabFontSize</c>).</summary>
     public const string DocumentTabFontSizeKey = "SignetDocumentTabFontSize";
+
+    /// <summary>The application resource of the font weight of the document tabs (<c>SignetDocumentTabFontWeight</c>).</summary>
+    public const string DocumentTabFontWeightKey = "SignetDocumentTabFontWeight";
 
     /// <summary>Applies the saved font of the document tabs live (Preferences → Appearance › Code Editor › Fonts).</summary>
     public void ApplyDocumentTabFont()
@@ -143,6 +167,15 @@ public sealed class UiDensityManager(
         else
         {
             app.Resources.Remove(DocumentTabFontSizeKey);
+        }
+
+        if (font.FontWeight > 0)
+        {
+            app.Resources[DocumentTabFontWeightKey] = FontWeightOptions.ToAvalonia(font.FontWeight);
+        }
+        else
+        {
+            app.Resources.Remove(DocumentTabFontWeightKey);
         }
     }
 
@@ -182,7 +215,7 @@ public sealed class UiDensityManager(
     /// font dictionary in the application resources — controls pick it up via <c>DynamicResource</c> —
     /// and recomputes the toolbar icon size, which depends on the font height.
     /// </summary>
-    public void ApplyUiFont(string family, int size)
+    public void ApplyUiFont(string family, int size, int weight = 0)
     {
         if (Application.Current is not { } app)
         {
@@ -190,6 +223,7 @@ public sealed class UiDensityManager(
         }
 
         ApplyFont(app, family, size);
+        ApplyUiFontWeight(app, weight);
         ApplyWarning(app, _settings.WarningAppearance, EffectiveFontSize);
         ApplyTooltipFonts();
         _iconTheme.RefreshToolbarIconSize();

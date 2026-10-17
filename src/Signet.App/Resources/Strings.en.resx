@@ -4419,6 +4419,24 @@ It does not change the files, their names or their IDs.</value>
   <data name="FontPreview_FindUsagesCells" xml:space="preserve">
     <value>Text/index_split_005.html:11:54   11   54   class attribute</value>
   </data>
+  <data name="PreferencesWindow_FindUsagesRows" xml:space="preserve">
+    <value>Rows</value>
+  </data>
+  <data name="PreferencesWindow_FindUsagesRowSpacing" xml:space="preserve">
+    <value>Extra spacing between rows (px)</value>
+  </data>
+  <data name="PreferencesWindow_FindUsagesRowSpacingHint" xml:space="preserve">
+    <value>The spacing lies outside the backgrounds of the cells, so the background of the window shows between the rows (e.g. white stripes between the gray cells of the Context column). 0 = the rows touch.</value>
+  </data>
+  <data name="FontPickerWindow_Weight" xml:space="preserve">
+    <value>Weight:</value>
+  </data>
+  <data name="FontWeight_Default" xml:space="preserve">
+    <value>(default)</value>
+  </data>
+  <data name="PreferencesWindow_FontWeight" xml:space="preserve">
+    <value>Weight:</value>
+  </data>
   <data name="FindUsages_WrapRows" xml:space="preserve">
     <value>Wrap Rows</value>
   </data>

@@ -192,6 +192,69 @@ public sealed class FindUsagesViewTests
     }
 
     [AvaloniaFact]
+    public void The_row_spacing_leaves_a_gap_between_the_rows_that_the_cell_backgrounds_do_not_cover()
+    {
+        using TempDir temp = new();
+        SettingsStore settings = new(temp.Combine("settings.xml"));
+        (Window window, FindUsagesViewModel vm, TreeDataGrid tree) = ShowPanel(
+            settings, 1400,
+            new ClassUsage("a.xhtml", 10, 3, 14, ClassUsageKind.ClassAttribute),
+            new ClassUsage("b.xhtml", 10, 4, 14, ClassUsageKind.ClassAttribute));
+        FindUsagesNode root = vm.Roots.Single();
+        double Gap()
+        {
+            Control first = tree.TryGetRow(RowIndexOf(tree, root.Children[0]))!;
+            Control second = tree.TryGetRow(RowIndexOf(tree, root.Children[1]))!;
+            return second.TranslatePoint(new Point(0, 0), tree)!.Value.Y - first.TranslatePoint(new Point(0, first.Bounds.Height), tree)!.Value.Y;
+        }
+
+        Gap().Should().BeApproximately(0, 0.5, "the rows touch by default");
+
+        settings.FindUsagesRowSpacing = 6;
+        vm.ReloadSettings();
+        Settle(window);
+
+        vm.RowSpacing.Should().Be(6);
+        Gap().Should().BeApproximately(6, 0.5);
+
+        settings.FindUsagesRowSpacing = 0;
+        vm.ReloadSettings();
+        Settle(window);
+
+        Gap().Should().BeApproximately(0, 0.5);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_weights_of_the_headers_the_context_and_the_other_cells_follow_the_settings()
+    {
+        using TempDir temp = new();
+        SettingsStore settings = new(temp.Combine("settings.xml"))
+        {
+            FindUsagesAppearance = new FindUsagesAppearance(string.Empty, 0, string.Empty, 0, string.Empty, 0, 700, 300, 200),
+        };
+        ClassUsage usage = new("OEBPS/Text/a.xhtml", 10, 3, 14, ClassUsageKind.ClassAttribute, "<p class=\"note\">x</p>", 0, 10, 4);
+        (Window window, _, TreeDataGrid tree) = ShowPanel(settings, 1400, usage);
+
+        tree.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().Should().OnlyContain(h => h.FontWeight == FontWeight.Bold);
+        tree.GetVisualDescendants().OfType<UsageContextText>().Should().OnlyContain(c => c.FontWeight == FontWeight.Light);
+        tree.GetVisualDescendants().OfType<TreeDataGridTextCell>().Should().OnlyContain(c => c.FontWeight == FontWeight.ExtraLight);
+        window.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Name == "HeadingText").FontWeight.Should().Be(FontWeight.ExtraLight);
+
+        settings.FindUsagesAppearance = FindUsagesAppearance.Default;
+        Settle(window);
+
+        string weights = string.Join(", ", tree.GetVisualDescendants().OfType<UsageContextText>().Select(c => c.FontWeight)
+            .Concat(tree.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().Select(c => c.FontWeight))
+            .Concat(tree.GetVisualDescendants().OfType<TreeDataGridTextCell>().Select(c => c.FontWeight)));
+        weights.Should().NotContain("Light").And.NotContain("Bold").And.NotContain("ExtraLight");
+        tree.GetVisualDescendants().OfType<UsageContextText>().Should().OnlyContain(c => c.FontWeight == FontWeight.Normal);
+        window.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Name == "HeadingText").FontWeight
+            .Should().Be(FontWeight.SemiBold, "the heading is semi-bold unless the cells have a weight of their own");
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void A_bigger_font_of_the_cells_makes_the_fitted_Usage_column_wider()
     {
         using TempDir temp = new();
@@ -240,6 +303,15 @@ public sealed class FindUsagesViewTests
             Settle(window);
 
             ColorOf(Cell(1)).Should().NotBe(Color.Parse("#223344"), "the selected row keeps the color of the selection");
+
+            tree.RowSelection.Clear();
+            AppTheme.Apply(app, ResolvedTheme.Defaults);
+            Settle(window);
+
+            for (int column = 0; column < expected.Length; column++)
+            {
+                ColorOf(Cell(column)).Should().NotBe(Color.Parse(expected[column]), "a color the theme no longer sets goes away (column {0})", column);
+            }
         }
         finally
         {

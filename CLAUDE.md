@@ -128,6 +128,11 @@ Rules:
   `ImplicitUsings disable`, `TreatWarningsAsErrors true`, `EnforceCodeStyleInBuild true`,
   `AnalysisLevel latest-recommended`. `CS1591` (missing XML doc) is suppressed globally — public API
   documentation is enforced by review.
+- **Warnings are fixed last.** The style rules of the IDE (`IDExxxx`: unused usings, "lambda can be removed",
+  formatting…) are reported as warnings, not errors (`IdeWarnings.props`, imported by the root
+  `Directory.Build.props`; their severity is set in `.editorconfig`). While a feature is being developed do **not**
+  stop to fix them. Fix all warnings (the `IDExxxx` ones and any other) at the very end of the task, right
+  before the final run of all tests — never in the middle of development.
 - `Directory.Packages.props` — Central Package Management. A package version change = a separate
   `build` commit.
 - **Versioning:** `<VersionPrefix>-<yyyyMMddHHmm UTC>`, e.g. `0.8.0-202610021432`

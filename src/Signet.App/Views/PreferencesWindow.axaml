@@ -567,6 +567,19 @@
                                      views:PreferencesPage.TargetKey="ui.findUsages.usage.background" />
                   </StackPanel>
                 </Border>
+
+                <Border Classes="section">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="{loc:Loc PreferencesWindow_FindUsagesRows}" FontWeight="Bold" />
+                    <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+                      <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_FindUsagesRowSpacing}" />
+                      <NumericUpDown x:Name="FindUsagesRowSpacingBox" Grid.Column="1" Value="{Binding FindUsagesRowSpacing}"
+                                     Minimum="0" Maximum="{x:Static vm:PreferencesViewModel.FindUsagesRowSpacingMax}"
+                                     Increment="1" FormatString="0" HorizontalAlignment="Left" Width="130" />
+                    </Grid>
+                    <TextBlock Text="{loc:Loc PreferencesWindow_FindUsagesRowSpacingHint}" TextWrapping="Wrap" Opacity="0.75" />
+                  </StackPanel>
+                </Border>
               </StackPanel>
             </ScrollViewer>
           </TabItem>

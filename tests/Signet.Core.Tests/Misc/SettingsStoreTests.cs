@@ -190,6 +190,104 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
+    public void The_find_usages_row_spacing_is_zero_by_default_clamped_and_reset_with_the_appearance()
+    {
+        using TempDir dir = new();
+        string path = dir.Combine("settings.xml");
+        SettingsStore sut = new(path);
+        sut.FindUsagesRowSpacing.Should().Be(0);
+
+        sut.FindUsagesRowSpacing = 500;
+        sut.Save();
+        new SettingsStore(path).FindUsagesRowSpacing.Should().Be(SettingsStore.FindUsagesRowSpacingMax);
+        sut.FindUsagesRowSpacing = -3;
+        sut.FindUsagesRowSpacing.Should().Be(0);
+
+        sut.FindUsagesRowSpacing = 4;
+        sut.ClearAppearanceSettings();
+        sut.FindUsagesRowSpacing.Should().Be(0);
+    }
+
+    [Fact]
+    public void Font_weights_are_not_set_by_default_and_survive_a_reload()
+    {
+        using TempDir dir = new();
+        string path = dir.Combine("settings.xml");
+        SettingsStore writer = new(path);
+        writer.OpenTagHintAppearance.FontWeight.Should().Be(0);
+        writer.UiFontWeight.Should().Be(0);
+        writer.CodeEditorAppearance.FontWeight.Should().Be(0);
+
+        writer.OpenTagHintAppearance = new OpenTagHintAppearance("Arial", 12, 300);
+        writer.LineNumberFontAppearance = new LineNumberFontAppearance(string.Empty, 0, 200);
+        writer.DocumentTabFontAppearance = new DocumentTabFontAppearance("Arial", 11, 600);
+        writer.BookBrowserAppearance = BookBrowserAppearance.Default with { ItemsFontWeight = 350, HeaderFontWeight = 700 };
+        writer.FindUsagesAppearance = new FindUsagesAppearance(string.Empty, 0, "Consolas", 12, string.Empty, 0, 700, 300, 400);
+        writer.SpecialCharacterAppearance = new SpecialCharacterAppearance("Arial", 24, 500);
+        writer.ColorSchemePreviewAppearance = new ColorSchemePreviewAppearance("Consolas", 13, 300);
+        writer.CodeEditorAppearance = new CodeEditorAppearance { FontWeight = 300 };
+        writer.SetTooltipFont(TooltipArea.BookBrowser, new TooltipFont("Arial", 13, 600));
+        writer.UiFontWeight = 300;
+        writer.Save();
+
+        SettingsStore reader = new(path);
+
+        reader.OpenTagHintAppearance.FontWeight.Should().Be(300);
+        reader.LineNumberFontAppearance.FontWeight.Should().Be(200);
+        reader.LineNumberFontAppearance.IsInherited.Should().BeFalse("a weight of its own is a font of its own");
+        reader.DocumentTabFontAppearance.FontWeight.Should().Be(600);
+        reader.BookBrowserAppearance.ItemsFontWeight.Should().Be(350);
+        reader.BookBrowserAppearance.HeaderFontWeight.Should().Be(700);
+        reader.FindUsagesAppearance.Should().Be(new FindUsagesAppearance(string.Empty, 0, "Consolas", 12, string.Empty, 0, 700, 300, 400));
+        reader.SpecialCharacterAppearance.FontWeight.Should().Be(500);
+        reader.ColorSchemePreviewAppearance.FontWeight.Should().Be(300);
+        reader.CodeEditorAppearance.FontWeight.Should().Be(300);
+        reader.GetTooltipFont(TooltipArea.BookBrowser).FontWeight.Should().Be(600);
+        reader.UiFontWeight.Should().Be(300);
+    }
+
+    [Fact]
+    public void A_stored_font_weight_is_clamped()
+    {
+        using TempDir dir = new();
+        SettingsStore sut = new(dir.Combine("settings.xml"));
+
+        sut.OpenTagHintAppearance = new OpenTagHintAppearance("Arial", 12, 5000);
+        sut.UiFontWeight = -3;
+        sut.SetTooltipFont(TooltipArea.MainWindow, new TooltipFont(string.Empty, 13, 5000));
+
+        sut.OpenTagHintAppearance.FontWeight.Should().Be(FontWeightScale.Max);
+        sut.UiFontWeight.Should().Be(0);
+        sut.GetTooltipFont(TooltipArea.MainWindow).FontWeight.Should().Be(FontWeightScale.Max);
+    }
+
+    [Fact]
+    public void Restoring_the_appearance_defaults_clears_the_font_weights()
+    {
+        using TempDir dir = new();
+        SettingsStore sut = new(dir.Combine("settings.xml"));
+        sut.OpenTagHintAppearance = new OpenTagHintAppearance(string.Empty, 0, 300);
+        sut.LineNumberFontAppearance = new LineNumberFontAppearance(string.Empty, 0, 300);
+        sut.DocumentTabFontAppearance = new DocumentTabFontAppearance(string.Empty, 0, 300);
+        sut.BookBrowserAppearance = BookBrowserAppearance.Default with { ItemsFontWeight = 300, HeaderFontWeight = 300 };
+        sut.FindUsagesAppearance = FindUsagesAppearance.Default with { HeaderFontWeight = 300, ContextFontWeight = 300, CellsFontWeight = 300 };
+        sut.SpecialCharacterAppearance = new SpecialCharacterAppearance("Arial", 24, 300);
+        sut.CodeEditorAppearance = new CodeEditorAppearance { FontWeight = 300 };
+        sut.SetTooltipFont(TooltipArea.Preview, new TooltipFont(string.Empty, 13, 300));
+
+        sut.ClearAppearanceSettings();
+
+        sut.OpenTagHintAppearance.FontWeight.Should().Be(0);
+        sut.LineNumberFontAppearance.IsInherited.Should().BeTrue();
+        sut.DocumentTabFontAppearance.FontWeight.Should().Be(0);
+        sut.BookBrowserAppearance.Should().Be(BookBrowserAppearance.Default);
+        sut.FindUsagesAppearance.Should().Be(FindUsagesAppearance.Default);
+        sut.SpecialCharacterAppearance.FontWeight.Should().Be(0);
+        sut.CodeEditorAppearance.FontWeight.Should().Be(0);
+        sut.GetTooltipFont(TooltipArea.Preview).FontWeight.Should().Be(0);
+    }
+
+    [Fact]
     public void The_find_usages_fonts_default_to_the_interface_font()
     {
         using TempDir dir = new();

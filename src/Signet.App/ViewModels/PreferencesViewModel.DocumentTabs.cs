@@ -19,6 +19,12 @@ public sealed partial class PreferencesViewModel
     [ObservableProperty]
     private int _documentTabFontSize;
 
+    /// <summary>The weight of the titles of the document tabs; 0 = not set.</summary>
+    [ObservableProperty]
+    private int _documentTabFontWeight;
+
+    partial void OnDocumentTabFontWeightChanged(int value) => PersistDocumentTabFont();
+
     partial void OnDocumentTabFontFamilyChanged(string value) => PersistDocumentTabFont();
 
     partial void OnDocumentTabFontSizeChanged(int value) => PersistDocumentTabFont();
@@ -29,10 +35,11 @@ public sealed partial class PreferencesViewModel
         DocumentTabFontAppearance look = _settings.DocumentTabFontAppearance;
         DocumentTabFontFamily = look.FontFamily;
         DocumentTabFontSize = look.FontSize;
+        DocumentTabFontWeight = look.FontWeight;
     }
 
     private void PersistDocumentTabFont() =>
-        _settings.DocumentTabFontAppearance = new DocumentTabFontAppearance(DocumentTabFontFamily, DocumentTabFontSize);
+        _settings.DocumentTabFontAppearance = new DocumentTabFontAppearance(DocumentTabFontFamily, DocumentTabFontSize, DocumentTabFontWeight);
 
     /// <summary>"Choose…" — the font picker, starting from the font of the tabs.</summary>
     [RelayCommand]
@@ -40,10 +47,11 @@ public sealed partial class PreferencesViewModel
     {
         string family = DocumentTabFontFamily.Length > 0 ? DocumentTabFontFamily : string.Empty;
         int size = DocumentTabFontSize > 0 ? DocumentTabFontSize : 12;
-        if (await PickFontAsync(new FontPickRequest(family, size, false)) is { } result)
+        if (await PickFontAsync(new FontPickRequest(family, size, false, DocumentTabFontWeight)) is { } result)
         {
             DocumentTabFontFamily = result.Family;
             DocumentTabFontSize = result.Size;
+            DocumentTabFontWeight = result.Weight;
         }
     }
 
@@ -60,8 +68,10 @@ public sealed partial class PreferencesViewModel
             {
                 DocumentTabFontFamily = string.Empty;
                 DocumentTabFontSize = 0;
+                DocumentTabFontWeight = 0;
             },
             ChooseDocumentTabFontCommand,
+            weight: (() => DocumentTabFontWeight, v => DocumentTabFontWeight = v),
             placeholder: () => string.Empty,
             previewForeground: () => AppTheme.Current.Foreground(ThemeKeys.UiDocumentTab)?.ToString(),
             previewBackground: () => AppTheme.Current.Background(ThemeKeys.UiDocumentTab)?.ToString());

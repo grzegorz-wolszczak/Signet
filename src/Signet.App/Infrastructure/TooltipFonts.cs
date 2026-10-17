@@ -26,6 +26,9 @@ public static class TooltipFonts
     /// <summary>The resource of the tooltip typeface (the <see cref="ToolTip"/> style of <c>App.axaml</c>).</summary>
     public const string FamilyResourceKey = "SignetToolTipFontFamily";
 
+    /// <summary>The resource of the tooltip weight (the <see cref="ToolTip"/> style of <c>App.axaml</c>); always set (0 = Regular).</summary>
+    public const string WeightResourceKey = "SignetToolTipFontWeight";
+
     /// <summary>The area whose tooltip font the control and its descendants use; <c>null</c> = the enclosing one.</summary>
     public static readonly AttachedProperty<TooltipArea?> AreaProperty =
         AvaloniaProperty.RegisterAttached<Control, TooltipArea?>("Area", typeof(TooltipFonts));
@@ -91,6 +94,7 @@ public static class TooltipFonts
         TooltipFont font = _source(TooltipArea.OtherWindows);
         app.Resources[FamilyResourceKey] = FamilyOf(font);
         app.Resources[SizeResourceKey] = (double)font.FontSize;
+        app.Resources[WeightResourceKey] = FontWeightOptions.ToAvalonia(font.FontWeight);
     }
 
     private static void Apply(Control control)
@@ -99,6 +103,7 @@ public static class TooltipFonts
         {
             control.Resources.Remove(FamilyResourceKey);
             control.Resources.Remove(SizeResourceKey);
+            control.Resources.Remove(WeightResourceKey);
             Roots.Remove(control);
             return;
         }
@@ -106,6 +111,7 @@ public static class TooltipFonts
         TooltipFont font = _source(area);
         control.Resources[FamilyResourceKey] = FamilyOf(font);
         control.Resources[SizeResourceKey] = (double)font.FontSize;
+        control.Resources[WeightResourceKey] = FontWeightOptions.ToAvalonia(font.FontWeight);
         Roots.AddOrUpdate(control, area);
     }
 }

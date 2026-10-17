@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Signet.App.Infrastructure;
+using Signet.Core.Misc;
 
 namespace Signet.App.ViewModels;
 
@@ -11,12 +12,17 @@ namespace Signet.App.ViewModels;
 /// <param name="Family">Current family (may be a fallback list "A, B" — the first one counts).</param>
 /// <param name="Size">Current size, or <see langword="null"/> when the window should pick only the typeface.</param>
 /// <param name="MonospaceOnly">Whether the "fixed-width only" filter should start enabled.</param>
-public sealed record FontPickRequest(string Family, int? Size, bool MonospaceOnly);
+/// <param name="Weight">
+/// Current weight (<see cref="FontWeightScale"/>, 0 = not set), or <see langword="null"/> when the font being picked has no
+/// weight — the window then has no list of weights.
+/// </param>
+public sealed record FontPickRequest(string Family, int? Size, bool MonospaceOnly, int? Weight = null);
 
 /// <summary>The result of the font picker window.</summary>
 /// <param name="Family">Selected family.</param>
 /// <param name="Size">Selected size (irrelevant when the request did not include a size).</param>
-public sealed record FontPickResult(string Family, int Size);
+/// <param name="Weight">Selected weight (<see cref="FontWeightScale"/>, 0 = not set; irrelevant when the request had none).</param>
+public sealed record FontPickResult(string Family, int Size, int Weight = 0);
 
 /// <summary>
 /// View model of the font picker window: the list of system fonts filtered by name and (optionally)
@@ -31,15 +37,22 @@ public sealed partial class FontPickerViewModel : ObservableObject
     public const int MaxSize = 72;
 
     private readonly IReadOnlyList<FontEntry> _fonts;
+    private readonly Func<string, IReadOnlyList<int>> _weightsOf;
 
     /// <summary>Creates the model over the given font list (in the application: <see cref="FontCatalog.SystemFonts"/>).</summary>
-    public FontPickerViewModel(IReadOnlyList<FontEntry> fonts, FontPickRequest request)
+    /// <param name="fonts">The fonts to choose from.</param>
+    /// <param name="request">What is picked and where the choice starts.</param>
+    /// <param name="weightsOf">The weights a family has; by default what the font manager finds (<see cref="FontCatalog.WeightsOf"/>).</param>
+    public FontPickerViewModel(IReadOnlyList<FontEntry> fonts, FontPickRequest request, Func<string, IReadOnlyList<int>>? weightsOf = null)
     {
         ArgumentNullException.ThrowIfNull(fonts);
         ArgumentNullException.ThrowIfNull(request);
         _fonts = fonts;
+        _weightsOf = weightsOf ?? FontCatalog.WeightsOf;
 
         ShowSize = request.Size is not null;
+        ShowWeight = request.Weight is not null;
+        _requestedWeight = FontWeightScale.Normalize(request.Weight ?? 0);
         _size = Math.Clamp(request.Size ?? 12, MinSize, MaxSize);
 
         string current = request.Family.Split(',')[0].Trim().Trim('"', '\'');
@@ -49,7 +62,15 @@ public sealed partial class FontPickerViewModel : ObservableObject
         _monospaceOnly = request.MonospaceOnly && (initial is null || initial.IsMonospace);
         ApplyFilter();
         SelectedFont = initial is not null && VisibleFonts.Contains(initial) ? initial : null;
+        _initialFont = SelectedFont;
+        RebuildWeights();
     }
+
+    // The font the window started with: the weight stored with it stays selectable even when the font lacks it.
+    private readonly FontEntry? _initialFont;
+
+    // The weight chosen last: it stays selected while the font changes, as long as the new font has it.
+    private int _requestedWeight;
 
     /// <summary>Fonts matching the filter.</summary>
     public ObservableCollection<FontEntry> VisibleFonts { get; } = new();
@@ -70,6 +91,20 @@ public sealed partial class FontPickerViewModel : ObservableObject
     /// <summary>Whether the window has a size field.</summary>
     public bool ShowSize { get; }
 
+    /// <summary>Whether the window has a list of weights (Light, Regular, SemiBold…).</summary>
+    public bool ShowWeight { get; }
+
+    /// <summary>The weights of the selected font: "(default)" first, then the ones the font has.</summary>
+    public ObservableCollection<FontWeightOption> Weights { get; } = new();
+
+    /// <summary>The selected weight.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PreviewWeight))]
+    private FontWeightOption? _selectedWeight;
+
+    /// <summary>The weight the preview shows the sample in.</summary>
+    public Avalonia.Media.FontWeight PreviewWeight => FontWeightOptions.ToAvalonia(SelectedWeight?.Value ?? 0);
+
     /// <summary>Selected size (as <see cref="decimal"/> for <c>NumericUpDown</c>).</summary>
     [ObservableProperty]
     private decimal _size;
@@ -79,13 +114,52 @@ public sealed partial class FontPickerViewModel : ObservableObject
 
     partial void OnFilterChanged(string value) => ApplyFilter();
 
+    partial void OnSelectedFontChanged(FontEntry? value) => RebuildWeights();
+
+    partial void OnSelectedWeightChanged(FontWeightOption? value)
+    {
+        if (value is not null)
+        {
+            _requestedWeight = value.Value;
+        }
+    }
+
     partial void OnMonospaceOnlyChanged(bool value) => ApplyFilter();
 
     /// <summary>The result to return after OK, or <see langword="null"/> when nothing is selected.</summary>
     public FontPickResult? Result() =>
         SelectedFont is { } font
-            ? new FontPickResult(font.Name, (int)Math.Clamp(Math.Round(Size), MinSize, MaxSize))
+            ? new FontPickResult(font.Name, (int)Math.Clamp(Math.Round(Size), MinSize, MaxSize), SelectedWeight?.Value ?? 0)
             : null;
+
+    // The list of weights follows the selected font; the weight wanted is kept when the font has it (otherwise "(default)").
+    private void RebuildWeights()
+    {
+        if (!ShowWeight)
+        {
+            return;
+        }
+
+        int wanted = _requestedWeight;
+        List<int> weights = _weightsOf(SelectedFont?.Name ?? string.Empty).ToList();
+
+        // A weight stored with the font the window started with and missing in it stays selectable (shown by its name or
+        // number), so it is not lost silently; a font chosen later offers only what it has.
+        if (wanted > 0 && !weights.Contains(wanted) && Equals(SelectedFont, _initialFont))
+        {
+            weights.Add(wanted);
+        }
+
+        Weights.Clear();
+        Weights.Add(FontWeightOptions.Default);
+        foreach (int weight in weights.Order())
+        {
+            Weights.Add(new FontWeightOption(weight, FontWeightScale.NameOf(weight)!));
+        }
+
+        SelectedWeight = Weights.FirstOrDefault(w => w.Value == wanted) ?? Weights[0];
+        _requestedWeight = wanted;
+    }
 
     private void ApplyFilter()
     {

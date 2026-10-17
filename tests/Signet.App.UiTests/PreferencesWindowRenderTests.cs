@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
@@ -1172,6 +1173,120 @@ public sealed class PreferencesWindowRenderTests
             .ToArray();
         names.Should().HaveCount(fonts.Length);
         names.Should().OnlyContain(t => t.FontFamily.Name == t.Text);
+    }
+
+    private static readonly int[] ArialWeights = { 300, 400, 700 };
+
+    private static readonly int[] RegularOnly = { 400 };
+
+    /// <summary>
+    /// The font picker window lists the weights of the selected font under the list of fonts and shows the sample in the
+    /// weight chosen; a request without a weight has no such list.
+    /// </summary>
+    [AvaloniaFact]
+    public void Font_picker_lists_the_weights_of_the_font_and_previews_the_chosen_one()
+    {
+        FontEntry[] fonts = { new("Arial", false), new("Georgia", false) };
+        FontPickerWindow window = new()
+        {
+            DataContext = new FontPickerViewModel(
+                fonts, new FontPickRequest("Arial", 12, false, 300), family => family == "Arial" ? ArialWeights : RegularOnly),
+        };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+        ComboBox weights = window.GetVisualDescendants().OfType<ComboBox>().Single(c => c.Name == "WeightBox");
+        TextBlock sample = window.FindControl<TextBlock>("SampleText")!;
+
+        weights.IsEffectivelyVisible.Should().BeTrue();
+        weights.Items.OfType<FontWeightOption>().Select(w => w.Name).Should().Equal(FontWeightOptions.Default.Name, "Light", "Regular", "Bold");
+        ((FontWeightOption)weights.SelectedItem!).Value.Should().Be(300);
+        sample.FontWeight.Should().Be(FontWeight.Light);
+
+        weights.SelectedItem = weights.Items.OfType<FontWeightOption>().Single(w => w.Value == 700);
+        Dispatcher.UIThread.RunJobs();
+
+        sample.FontWeight.Should().Be(FontWeight.Bold);
+        ((FontPickerViewModel)window.DataContext!).Result()!.Weight.Should().Be(700);
+        window.Close();
+
+        FontPickerWindow withoutWeight = new() { DataContext = new FontPickerViewModel(fonts, new FontPickRequest("Arial", 12, false)) };
+        withoutWeight.Show();
+        Dispatcher.UIThread.RunJobs();
+        withoutWeight.GetVisualDescendants().OfType<ComboBox>().Single(c => c.Name == "WeightBox").IsEffectivelyVisible.Should().BeFalse();
+        withoutWeight.Close();
+    }
+
+    /// <summary>
+    /// The choice of the font picker window ("OK") reaches the row: the typeface, the size and the weight are shown, and the
+    /// weight list does not write the weight it had back over the one just chosen.
+    /// </summary>
+    [AvaloniaFact]
+    public void Choosing_a_font_with_a_weight_in_the_picker_shows_the_weight_in_the_row()
+    {
+        PreferencesWindow window = BuildWindow();
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, "FindUsagesPage");
+        TabControl tabs = window.FindControl<TabControl>("FindUsagesTabs")!;
+        tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(t => Equals(t.Header, Strings.Get("PreferencesWindow_Fonts")));
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+        PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+        vm.FontPicker = _ => Task.FromResult<FontPickResult?>(new FontPickResult("Consolas", 17, 350));
+        FontSettingViewModel row = vm.FindUsagesFonts.Fonts.Single(f => f.Key == "FindUsagesContext");
+        ComboBox box = window.FindControl<FontsPageView>("FindUsagesFontsView")!.GetVisualDescendants().OfType<ComboBox>()
+            .Where(c => c.Name == "WeightBox").ElementAt(1);
+
+        row.ChooseCommand!.Execute(null);
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        vm.FindUsagesContextFontFamily.Should().Be("Consolas");
+        vm.FindUsagesContextFontSize.Should().Be(17);
+        vm.FindUsagesContextFontWeight.Should().Be(350);
+        ((FontWeightOption)box.SelectedItem!).Value.Should().Be(350, "the list shows the weight chosen");
+        window.Close();
+    }
+
+    /// <summary>A font setting with a weight has a list of weights next to its size, which changes the setting.</summary>
+    [AvaloniaFact]
+    public void A_font_row_has_a_weight_list_that_changes_the_setting()
+    {
+        PreferencesWindow window = BuildWindow();
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, "FindUsagesPage");
+        TabControl tabs = window.FindControl<TabControl>("FindUsagesTabs")!;
+        tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(t => Equals(t.Header, Strings.Get("PreferencesWindow_Fonts")));
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+        PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+
+        ComboBox[] boxes = window.FindControl<FontsPageView>("FindUsagesFontsView")!.GetVisualDescendants().OfType<ComboBox>()
+            .Where(c => c.Name == "WeightBox").ToArray();
+
+        boxes.Should().HaveCount(3, "the headers, the context and the other cells");
+        ((FontSettingViewModel)boxes[1].DataContext!).Key.Should().Be("FindUsagesContext");
+        FontSettingViewModel rowVm = (FontSettingViewModel)boxes[1].DataContext!;
+        rowVm.Weight = 300;
+        rowVm.Weight.Should().Be(300, "the setter itself works");
+        boxes[1].SelectedItem.Should().BeSameAs(boxes[1].Items.OfType<FontWeightOption>().Single(w => w.Value == 300), "the box follows the row");
+        rowVm.Weight = 0;
+        boxes[1].SelectedItem = boxes[1].Items.OfType<FontWeightOption>().Single(w => w.Value == 700);
+        Dispatcher.UIThread.RunJobs();
+        ((FontSettingViewModel)boxes[1].DataContext!).Weight.Should().Be(700, "the row got the weight");
+
+        boxes[1].Items.OfType<FontWeightOption>().Select(w => w.Value).Should().Contain(700);
+        ((FontWeightOption?)boxes[1].SelectedItem)?.Value.Should().Be(700, "the box shows the choice");
+        window.FindControl<FontsPageView>("FindUsagesFontsView")!.IsEffectivelyVisible.Should().BeTrue();
+        vm.FindUsagesContextFontWeight.Should().Be(700);
+        vm.FindUsagesHeaderFontWeight.Should().Be(0);
+        window.Close();
     }
 
     /// <summary>

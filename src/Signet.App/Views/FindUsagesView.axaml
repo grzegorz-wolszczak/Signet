@@ -52,6 +52,7 @@
     <Style Selector="TreeDataGrid.wrapRows TextBlock.usageCell">
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
+
   </UserControl.Styles>
 
   <DockPanel>
