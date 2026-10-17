@@ -159,9 +159,10 @@ public partial class PreferencesWindow : Window
 
             foreach (Grid host in PreviewHosts())
             {
-                ColumnDefinition pane = host.ColumnDefinitions[2];
-                // The splitter leaves the width of a column that is not a star as pixels, so it is the width in use.
-                sizes[host.Name + PreviewPaneWidthSuffix] = (int)Math.Round(pane.Width.Value);
+                // The splitter leaves the size of a column or a row that is not a star as pixels, so it is the size in use.
+                sizes[host.Name + PaneSuffix(host)] = (int)Math.Round(host.RowDefinitions.Count > 0
+                    ? host.RowDefinitions[2].Height.Value
+                    : host.ColumnDefinitions[2].Width.Value);
             }
 
             foreach (FontsPageView page in FontsPages())
@@ -192,10 +193,18 @@ public partial class PreferencesWindow : Window
 
             foreach (Grid host in PreviewHosts())
             {
-                if (value.TryGetValue(host.Name + PreviewPaneWidthSuffix, out int paneWidth) && paneWidth > 0)
+                if (value.TryGetValue(host.Name + PaneSuffix(host), out int paneSize) && paneSize > 0)
                 {
-                    ColumnDefinition pane = host.ColumnDefinitions[2];
-                    pane.Width = new GridLength(Math.Max(pane.MinWidth, paneWidth));
+                    if (host.RowDefinitions.Count > 0)
+                    {
+                        RowDefinition row = host.RowDefinitions[2];
+                        row.Height = new GridLength(Math.Max(row.MinHeight, paneSize));
+                    }
+                    else
+                    {
+                        ColumnDefinition pane = host.ColumnDefinitions[2];
+                        pane.Width = new GridLength(Math.Max(pane.MinWidth, paneSize));
+                    }
                 }
             }
 
@@ -284,6 +293,10 @@ public partial class PreferencesWindow : Window
     private const string FontsPreviewWidthSuffix = ".previewWidth";
     private const string PreviewHeightSuffix = ".previewHeight";
     private const string PreviewPaneWidthSuffix = ".paneWidth";
+    private const string PreviewPaneHeightSuffix = ".paneHeight";
+
+    // A preview panel is at the right of the settings (its width is remembered) or, in a wide window, under them (its height).
+    private static string PaneSuffix(Grid host) => host.RowDefinitions.Count > 0 ? PreviewPaneHeightSuffix : PreviewPaneWidthSuffix;
     private readonly List<FontsPageView> _resizedFontsPages = new();
 
     // The grids of the pages that have a preview panel common to their tabs: the settings, a splitter and the panel (column 2),
@@ -293,6 +306,7 @@ public partial class PreferencesWindow : Window
         yield return BookBrowserPreviewHost;
         yield return StartScreenPreviewHost;
         yield return CodeEditorPreviewHost;
+        yield return FindUsagesPreviewHost;
     }
 
     // The Fonts pages (every Appearance section and the theme's own) each have a width of the preview of their own: the
@@ -362,6 +376,7 @@ public partial class PreferencesWindow : Window
             SpecialCharacterFontsView.DataContext = vm.SpecialCharacterFonts;
             StartScreenFontsView.DataContext = vm.StartScreenFonts;
             BookBrowserFontsView.DataContext = vm.BookBrowserFonts;
+            FindUsagesPreview.DataContext = vm.FindUsagesSample;
             CodeEditorPreview.DataContext = vm.CodeEditorSample;
             DocumentTabsPreview.DataContext = vm.CodeEditorFonts.Fonts.Single(f => f.Key == "DocumentTabs");
             CodeEditorSampleHint.DataContext = vm.CodeEditorFonts.Fonts.Single(f => f.Key == "OpenTagHint");

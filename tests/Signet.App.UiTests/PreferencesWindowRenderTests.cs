@@ -7,6 +7,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Signet.Controls.TreeDataGrid;
+using Signet.Controls.TreeDataGrid.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
@@ -803,6 +804,63 @@ public sealed class PreferencesWindowRenderTests
         editor.FontSize.Should().Be(19, "the editor follows the font");
         window.FindControl<Border>("CodeEditorSampleHint")!.GetVisualDescendants().OfType<TextBlock>().Single().FontSize.Should().Be(15);
         strip.GetVisualDescendants().OfType<TextBlock>().Should().OnlyContain(t => t.FontSize == 17, "the tabs follow their font");
+        window.Close();
+    }
+
+    /// <summary>
+    /// The Find Usages page is wide, so its preview panel is under the settings, not at their right: the real Find Usages panel over
+    /// fabricated usages, following the settings of both tabs; its height is remembered.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_Find_Usages_page_has_one_preview_panel_under_the_settings_that_follows_them()
+    {
+        PreferencesWindow window = BuildWindow();
+        PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+        window.Width = 1100;
+        window.Height = 900;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, "FindUsagesPage");
+        TabControl tabs = window.FindControl<TabControl>("FindUsagesTabs")!;
+        Border pane = window.FindControl<Border>("FindUsagesPreviewPane")!;
+        FindUsagesView preview = window.FindControl<FindUsagesView>("FindUsagesPreview")!;
+        window.CaptureRenderedFrame();
+
+        pane.IsEffectivelyVisible.Should().BeTrue("the General tab is selected");
+        preview.DataContext.Should().BeSameAs(vm.FindUsagesSample);
+        pane.Bounds.Top.Should().BeGreaterThanOrEqualTo(tabs.Bounds.Bottom, "the panel is under the tabs, as the window is wide");
+        pane.Bounds.Width.Should().BeGreaterThan(tabs.Bounds.Width - 4);
+        TreeDataGrid grid = preview.GetVisualDescendants().OfType<TreeDataGrid>().Single();
+        grid.GetVisualDescendants().OfType<TreeDataGridRow>().Should().NotBeEmpty("the sample usages are shown");
+
+        window.FindControl<NumericUpDown>("FindUsagesRowSpacingBox")!.Value = 6;
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        grid.GetVisualDescendants().OfType<TreeDataGridRow>().Should().OnlyContain(r => r.Margin.Bottom == 6, "the row spacing follows the setting");
+
+        tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(t => Equals(t.Header, Strings.Get("PreferencesWindow_Fonts")));
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        pane.IsEffectivelyVisible.Should().BeTrue("the same panel stays while the Fonts tab is selected");
+        FontsPageView fonts = window.FindControl<FontsPageView>("FindUsagesFontsView")!;
+        FontSettingView[] rows = fonts.GetVisualDescendants().OfType<FontSettingView>().ToArray();
+        rows.Should().HaveCount(3);
+        rows.Should().OnlyContain(r => !r.FindControl<Border>("PreviewFrame")!.IsVisible && r.Bounds.Width > fonts.Bounds.Width - 60);
+
+        vm.FindUsagesCellsFontSize = 18;
+        vm.FindUsagesHeaderFontSize = 15;
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        grid.GetVisualDescendants().OfType<TreeDataGridTextCell>().Should().Contain(c => c.FontSize == 18, "the cells follow their font");
+        grid.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().Should().OnlyContain(h => h.FontSize == 15, "and so do the headers");
+
+        window.SplitterSizes.Should().ContainKey("FindUsagesPreviewHost.paneHeight");
+        window.SplitterSizes = new Dictionary<string, int> { ["FindUsagesPreviewHost.paneHeight"] = 310 };
+        window.SplitterSizes["FindUsagesPreviewHost.paneHeight"].Should().Be(310);
         window.Close();
     }
 

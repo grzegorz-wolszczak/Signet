@@ -24,8 +24,22 @@ namespace Signet.App.ViewModels;
 /// which takes minutes for tens of thousands of usages) with the columns Usage, Line, Column, Kind and Context of
 /// <see cref="FindUsagesNode"/>.
 /// </remarks>
-public sealed partial class FindUsagesViewModel : ViewModelBase, ILanguageAware
+public sealed partial class FindUsagesViewModel : ViewModelBase, ILanguageAware, IDisposable
 {
+    // The class the sample panel of Preferences shows the usages of, and the usages: attributes and selectors in a few files,
+    // each with the line of its context and the place of the class in it.
+    private const string SampleClass = "note";
+
+    private static readonly ClassUsage[] SampleUsages =
+    {
+        new("Styles/Stylesheet.css", 120, 12, 2, ClassUsageKind.Selector, ".note { margin: 1em 0; }", 0, 1, 4),
+        new("Styles/Stylesheet.css", 410, 31, 3, ClassUsageKind.Selector, "p.note + p.note { text-indent: 0; }", 0, 2, 4),
+        new("Text/Chapter01.xhtml", 520, 14, 15, ClassUsageKind.ClassAttribute, "<div class=\"note\">", 0, 12, 4),
+        new("Text/Chapter01.xhtml", 910, 27, 12, ClassUsageKind.ClassAttribute, "<p class=\"note small\">A short note.</p>", 0, 10, 4),
+        new("Text/Chapter02.xhtml", 330, 9, 15, ClassUsageKind.ClassAttribute, "<div class=\"note\">", 0, 12, 4),
+        new("Text/Chapter03.xhtml", 1280, 44, 12, ClassUsageKind.ClassAttribute, "<p class=\"note\">Back to the beginning.</p>", 0, 10, 4),
+    };
+
     private readonly SettingsStore _settings;
     private IReadOnlyList<ClassUsage> _usages = Array.Empty<ClassUsage>();
 
@@ -60,8 +74,14 @@ public sealed partial class FindUsagesViewModel : ViewModelBase, ILanguageAware
     private int _rowSpacing;
 
     /// <summary>Creates the view model with the remembered grouping, wrapping and column width.</summary>
-    public FindUsagesViewModel(SettingsStore settings)
+    /// <param name="settings">The settings the panel reads and remembers its state in.</param>
+    /// <param name="isSample">
+    /// Whether this is the sample panel of the preview in Preferences (see <see cref="IsSample"/>): what it shows is not
+    /// remembered, and it follows the settings of the look at once.
+    /// </param>
+    public FindUsagesViewModel(SettingsStore settings, bool isSample = false)
     {
+        IsSample = isSample;
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _groupByFile = settings.FindUsagesGroupByFile;
         _wrapRows = settings.FindUsagesWrapRows;
@@ -70,15 +90,45 @@ public sealed partial class FindUsagesViewModel : ViewModelBase, ILanguageAware
         RefreshCommand = new RelayCommand(Refresh, () => HasSearch);
         ExpandAllCommand = new RelayCommand(() => SetExpanded(true), () => HasSearch);
         CollapseAllCommand = new RelayCommand(() => SetExpanded(false), () => HasSearch);
-        settings.SettingChanged += (_, e) =>
-        {
-            if (e.QualifiedKey.Contains("find_usages_font", StringComparison.Ordinal)
-                || e.QualifiedKey.Contains("find_usages_appearance", StringComparison.Ordinal))
-            {
-                AppearanceChanged?.Invoke(this, EventArgs.Empty);
-            }
-        };
+        settings.SettingChanged += OnSettingChanged;
     }
+
+    private void OnSettingChanged(object? sender, SettingChangedEventArgs e)
+    {
+        if (e.QualifiedKey.Contains("find_usages_font", StringComparison.Ordinal)
+            || e.QualifiedKey.Contains("find_usages_appearance", StringComparison.Ordinal))
+        {
+            AppearanceChanged?.Invoke(this, EventArgs.Empty);
+        }
+        else if (IsSample && (e.QualifiedKey.Contains("find_usages_fit_usage_column", StringComparison.Ordinal)
+                              || e.QualifiedKey.Contains("find_usages_row_spacing", StringComparison.Ordinal)))
+        {
+            // The real panel reads these after "Save"; the sample shows them as they are edited.
+            ReloadSettings();
+        }
+    }
+
+    /// <summary>
+    /// Whether this is the sample panel of the preview in Preferences: it shows fabricated usages, what the user does in it
+    /// (grouping, wrapping the rows, the width of the first column) is not written to the settings, and it follows the settings
+    /// of the look as they are edited.
+    /// </summary>
+    public bool IsSample { get; }
+
+    /// <summary>
+    /// Creates the sample panel of the preview in Preferences: the panel over fabricated usages of a class in a few files,
+    /// grouped by file, following <paramref name="settings"/> (the draft of the window).
+    /// </summary>
+    public static FindUsagesViewModel CreateSample(SettingsStore settings)
+    {
+        FindUsagesViewModel sample = new(settings, isSample: true);
+        sample.GroupByFile = true;
+        sample.Load(SampleClass, SampleUsages);
+        return sample;
+    }
+
+    /// <inheritdoc />
+    public void Dispose() => _settings.SettingChanged -= OnSettingChanged;
 
     /// <summary>The fonts of the panel now (Preferences › Appearance and Behavior › Find Usages Window › Fonts).</summary>
     public FindUsagesAppearance Appearance => _settings.FindUsagesAppearance;
@@ -93,7 +143,13 @@ public sealed partial class FindUsagesViewModel : ViewModelBase, ILanguageAware
     public int UsageColumnWidth
     {
         get => _settings.FindUsagesUsageColumnWidth;
-        set => _settings.FindUsagesUsageColumnWidth = value;
+        set
+        {
+            if (!IsSample)
+            {
+                _settings.FindUsagesUsageColumnWidth = value;
+            }
+        }
     }
 
     /// <summary>Raised by "Refresh" — the host searches for <see cref="ClassName"/> again and calls <see cref="Load"/>.</summary>
@@ -244,11 +300,21 @@ public sealed partial class FindUsagesViewModel : ViewModelBase, ILanguageAware
     public static string FilesText(int count) =>
         Strings.Format(count == 1 ? "FindUsages_InFiles_One" : "FindUsages_InFiles_Many", count);
 
-    partial void OnWrapRowsChanged(bool value) => _settings.FindUsagesWrapRows = value;
+    partial void OnWrapRowsChanged(bool value)
+    {
+        if (!IsSample)
+        {
+            _settings.FindUsagesWrapRows = value;
+        }
+    }
 
     partial void OnGroupByFileChanged(bool value)
     {
-        _settings.FindUsagesGroupByFile = value;
+        if (!IsSample)
+        {
+            _settings.FindUsagesGroupByFile = value;
+        }
+
         if (HasSearch)
         {
             Rebuild(keepCollapsed: true);
