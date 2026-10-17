@@ -8,6 +8,14 @@ namespace Signet.App.ViewModels;
 /// <summary>Appearance and Behavior › Find Usages Window › Fonts: the column headers, the "Context" column and the other cells.</summary>
 public sealed partial class PreferencesViewModel
 {
+    private FindUsagesViewModel? _findUsagesSample;
+
+    /// <summary>
+    /// The panel of the preview of the Find Usages pages: the real view model over fabricated usages, reading the look from the
+    /// settings of this window (the draft), so every change shows in it at once. Made when first asked for.
+    /// </summary>
+    public FindUsagesViewModel FindUsagesSample => _findUsagesSample ??= FindUsagesViewModel.CreateSample(_settings);
+
     /// <summary>Typeface of the column headers of the panel; empty = the interface font.</summary>
     [ObservableProperty]
     private string _findUsagesHeaderFontFamily = string.Empty;

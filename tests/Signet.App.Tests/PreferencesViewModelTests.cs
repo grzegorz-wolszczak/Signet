@@ -1125,6 +1125,41 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
+    public void The_sample_Find_Usages_panel_shows_fabricated_usages_and_follows_the_unsaved_look()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        using PreferencesViewModel __ = vm;
+        FindUsagesViewModel sample = vm.FindUsagesSample;
+        int changes = 0;
+        sample.AppearanceChanged += (_, _) => changes++;
+
+        sample.IsSample.Should().BeTrue();
+        sample.HasSearch.Should().BeTrue();
+        sample.GroupByFile.Should().BeTrue("the sample shows the usages under their files");
+        sample.Roots.Should().ContainSingle().Which.Children.Select(c => c.Text)
+            .Should().Equal("Styles/Stylesheet.css", "Text/Chapter01.xhtml", "Text/Chapter02.xhtml", "Text/Chapter03.xhtml");
+
+        vm.FindUsagesCellsFontSize = 17;
+        vm.FindUsagesRowSpacing = 7;
+        vm.FindUsagesFitUsageColumn = !vm.FindUsagesFitUsageColumn;
+
+        sample.Appearance.CellsFontSize.Should().Be(17);
+        changes.Should().BeGreaterThan(0);
+        sample.RowSpacing.Should().Be(7, "the sample shows the spacing as it is edited");
+        sample.FitUsageColumn.Should().Be(vm.FindUsagesFitUsageColumn);
+
+        // What is done in the sample is not written to the settings.
+        sample.WrapRows = !sample.WrapRows;
+        sample.GroupByFile = false;
+        sample.UsageColumnWidth = 321;
+        host.Settings.FindUsagesWrapRows.Should().BeFalse();
+        host.Settings.FindUsagesGroupByFile.Should().Be(new SettingsStore(System.IO.Path.GetTempFileName()).FindUsagesGroupByFile, "the default");
+        host.Settings.FindUsagesUsageColumnWidth.Should().NotBe(321);
+        host.Settings.FindUsagesAppearance.CellsFontSize.Should().Be(0, "the preview shows what is not saved yet");
+    }
+
+    [Fact]
     public void The_sample_Book_Browser_follows_the_unsaved_look_and_leaves_the_saved_one_alone()
     {
         (TestHost host, PreferencesViewModel vm) = New();

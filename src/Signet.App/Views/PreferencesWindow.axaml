@@ -697,45 +697,64 @@
            grouping are buttons of the panel itself. General: the width of the first column; Fonts: the column headers, the
            "Context" column and the other cells. -->
       <TabItem x:Name="FindUsagesPage" Header="{loc:Loc PreferencesWindow_FindUsagesWindow}" views:PreferencesPage.Parent="AppearancePage">
-        <TabControl x:Name="FindUsagesTabs">
-          <TabItem Header="{loc:Loc PreferencesWindow_General}">
-            <ScrollViewer>
-              <StackPanel Spacing="10" Margin="8">
-                <Border Classes="section">
-                  <StackPanel Spacing="6">
-                    <TextBlock Text="{loc:Loc PreferencesWindow_FindUsagesColumns}" FontWeight="Bold" />
-                    <StackPanel Spacing="2">
-                      <CheckBox x:Name="FindUsagesFitUsageColumnBox" Content="{loc:Loc PreferencesWindow_FindUsagesFitUsageColumn}"
-                                IsChecked="{Binding FindUsagesFitUsageColumn}" />
-                      <TextBlock Text="{loc:Loc PreferencesWindow_FindUsagesFitUsageColumnHint}" TextWrapping="Wrap" Opacity="0.75"
-                                 Margin="28,0,0,0" />
+        <Grid x:Name="FindUsagesPreviewHost">
+          <!-- The window of the usages is wide, so its preview is under the settings, not at their right. -->
+          <Grid.RowDefinitions>
+            <RowDefinition Height="*" MinHeight="170" />
+            <RowDefinition Height="8" />
+            <RowDefinition Height="250" MinHeight="140" />
+          </Grid.RowDefinitions>
+          <TabControl x:Name="FindUsagesTabs">
+            <TabItem Header="{loc:Loc PreferencesWindow_General}">
+              <ScrollViewer>
+                <StackPanel Spacing="10" Margin="8">
+                  <Border Classes="section">
+                    <StackPanel Spacing="6">
+                      <TextBlock Text="{loc:Loc PreferencesWindow_FindUsagesColumns}" FontWeight="Bold" />
+                      <StackPanel Spacing="2">
+                        <CheckBox x:Name="FindUsagesFitUsageColumnBox" Content="{loc:Loc PreferencesWindow_FindUsagesFitUsageColumn}"
+                                  IsChecked="{Binding FindUsagesFitUsageColumn}" />
+                        <TextBlock Text="{loc:Loc PreferencesWindow_FindUsagesFitUsageColumnHint}" TextWrapping="Wrap" Opacity="0.75"
+                                   Margin="28,0,0,0" />
+                      </StackPanel>
+                      <!-- The background of each column is a color of the theme (ui.findUsages.*.background). -->
+                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_FindUsagesBackgroundInTheme}" Padding="0"
+                                       views:PreferencesPage.Target="AppearanceGeneralPage"
+                                       views:PreferencesPage.TargetKey="ui.findUsages.usage.background" />
                     </StackPanel>
-                    <!-- The background of each column is a color of the theme (ui.findUsages.*.background). -->
-                    <HyperlinkButton Content="{loc:Loc PreferencesWindow_FindUsagesBackgroundInTheme}" Padding="0"
-                                     views:PreferencesPage.Target="AppearanceGeneralPage"
-                                     views:PreferencesPage.TargetKey="ui.findUsages.usage.background" />
-                  </StackPanel>
-                </Border>
+                  </Border>
 
-                <Border Classes="section">
-                  <StackPanel Spacing="6">
-                    <TextBlock Text="{loc:Loc PreferencesWindow_FindUsagesRows}" FontWeight="Bold" />
-                    <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
-                      <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_FindUsagesRowSpacing}" />
-                      <NumericUpDown x:Name="FindUsagesRowSpacingBox" Grid.Column="1" Value="{Binding FindUsagesRowSpacing}"
-                                     Minimum="0" Maximum="{x:Static vm:PreferencesViewModel.FindUsagesRowSpacingMax}"
-                                     Increment="1" FormatString="0" HorizontalAlignment="Left" Width="130" />
-                    </Grid>
-                    <TextBlock Text="{loc:Loc PreferencesWindow_FindUsagesRowSpacingHint}" TextWrapping="Wrap" Opacity="0.75" />
-                  </StackPanel>
-                </Border>
-              </StackPanel>
-            </ScrollViewer>
-          </TabItem>
-          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-            <views:FontsPageView x:Name="FindUsagesFontsView" />
-          </TabItem>
-        </TabControl>
+                  <Border Classes="section">
+                    <StackPanel Spacing="6">
+                      <TextBlock Text="{loc:Loc PreferencesWindow_FindUsagesRows}" FontWeight="Bold" />
+                      <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_FindUsagesRowSpacing}" />
+                        <NumericUpDown x:Name="FindUsagesRowSpacingBox" Grid.Column="1" Value="{Binding FindUsagesRowSpacing}"
+                                       Minimum="0" Maximum="{x:Static vm:PreferencesViewModel.FindUsagesRowSpacingMax}"
+                                       Increment="1" FormatString="0" HorizontalAlignment="Left" Width="130" />
+                      </Grid>
+                      <TextBlock Text="{loc:Loc PreferencesWindow_FindUsagesRowSpacingHint}" TextWrapping="Wrap" Opacity="0.75" />
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+              </ScrollViewer>
+            </TabItem>
+            <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+              <views:FontsPageView x:Name="FindUsagesFontsView" HasSharedPreview="True" />
+            </TabItem>
+          </TabControl>
+          <GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Background="Transparent" />
+          <!-- The preview, common to the tabs of the page: the real Find Usages panel over fabricated usages, in the look the
+               settings give it now (the unsaved ones too). Not searched: it holds no settings. -->
+          <Border x:Name="FindUsagesPreviewPane" Grid.Row="2" Classes="section noSearchTree" Padding="8">
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
+              <Border Classes="listFrame">
+                <views:FindUsagesView x:Name="FindUsagesPreview" />
+              </Border>
+            </DockPanel>
+          </Border>
+        </Grid>
       </TabItem>
 
       <!-- =============================== Footnotes =============================== -->
