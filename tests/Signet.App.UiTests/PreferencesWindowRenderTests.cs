@@ -991,6 +991,29 @@ public sealed class PreferencesWindowRenderTests
         window.Close();
     }
 
+    /// <summary>The Validation page: the preview is the real Validation Results panel (wide, so under the settings) over fabricated results, and a sample of the tooltip.</summary>
+    [AvaloniaFact]
+    public void The_Validation_page_has_a_preview_panel_with_the_results_panel_and_the_tooltip_sample()
+    {
+        (PreferencesWindow window, PreferencesViewModel vm, _, TooltipSample tip) = ShowPreviewPage(
+            "Validation", "ValidationPreviewHost", "ValidationPreviewPane", "ValidationSampleTip", bottom: true);
+        ValidationResultsView preview = window.FindControl<ValidationResultsView>("ValidationPreview")!;
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        preview.DataContext.Should().BeSameAs(vm.ValidationSample);
+        preview.GetVisualDescendants().OfType<TreeDataGridRow>().Should().NotBeEmpty("the fabricated results are shown");
+
+        FontSettingViewModel tooltipFont = vm.ValidationFonts.Fonts.Single();
+        tooltipFont.InheritFromParent = false;
+        tooltipFont.Size = 22;
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+
+        tip.Text.FontSize.Should().Be(22);
+        window.Close();
+    }
+
     /// <summary>The colors of the theme: the name, the folder and the highlighted entry of the list take them when they are set.</summary>
     [AvaloniaFact]
     public void The_list_of_recent_files_takes_the_colors_of_the_theme_when_they_are_set()

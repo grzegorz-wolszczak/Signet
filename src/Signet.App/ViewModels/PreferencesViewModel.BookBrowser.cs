@@ -63,6 +63,7 @@ public sealed partial class PreferencesViewModel : IDisposable
     /// <summary>Lets go of the samples of the previews (the window closes).</summary>
     public void Dispose()
     {
+        _validationSample = null;
         _footnoteSample = null;
         _cleanupSample = null;
         _findReplaceSample = null;

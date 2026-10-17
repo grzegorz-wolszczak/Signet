@@ -577,11 +577,31 @@
 
       <!-- Appearance › Validation: Fonts only. -->
       <TabItem x:Name="ValidationAppearancePage" Header="{loc:Loc PreferencesWindow_Validation}" views:PreferencesPage.Parent="AppearanceGeneralPage">
-        <TabControl x:Name="ValidationAppearanceTabs">
-          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-            <views:FontsPageView x:Name="ValidationFontsView" />
-          </TabItem>
-        </TabControl>
+        <Grid x:Name="ValidationPreviewHost">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="*" MinHeight="150" />
+            <RowDefinition Height="8" />
+            <RowDefinition Height="250" MinHeight="120" />
+          </Grid.RowDefinitions>
+          <TabControl x:Name="ValidationAppearanceTabs">
+            <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+              <views:FontsPageView x:Name="ValidationFontsView" HasSharedPreview="True" />
+            </TabItem>
+          </TabControl>
+          <GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Background="Transparent" />
+          <!-- The preview: the real Validation Results panel (wide, so it is under the settings) over fabricated results, and a sample of its tooltip. Not searched: it holds no settings. -->
+          <Border x:Name="ValidationPreviewPane" Grid.Row="2" Classes="section noSearchTree" Padding="8">
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
+              <Border Classes="listFrame">
+                <Grid RowDefinitions="*,Auto">
+                  <views:ValidationResultsView x:Name="ValidationPreview" />
+                  <views:TooltipSample x:Name="ValidationSampleTip" Grid.Row="1" Margin="8" />
+                </Grid>
+              </Border>
+            </DockPanel>
+          </Border>
+        </Grid>
       </TabItem>
 
       <!-- Appearance › MetadataEditor: Fonts only. -->
