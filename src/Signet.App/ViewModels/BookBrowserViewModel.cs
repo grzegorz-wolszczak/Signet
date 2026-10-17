@@ -55,25 +55,33 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         _settings = settings;
         _statusBar = statusBar ?? throw new ArgumentNullException(nameof(statusBar));
         _doctypeGuard = doctypeGuard ?? new MissingDoctypeGuard(settings);
-        settings.SettingChanged += (_, e) =>
-        {
-            if (e.QualifiedKey.Contains("book_browser_items_font", StringComparison.Ordinal)
-                || e.QualifiedKey.Contains("book_browser_header_font", StringComparison.Ordinal)
-                || e.QualifiedKey.Contains("book_browser_indent", StringComparison.Ordinal)
-                || e.QualifiedKey.Contains("book_browser_cell_", StringComparison.Ordinal)
-                || e.QualifiedKey.Contains("book_browser_show_folders", StringComparison.Ordinal)
-                || e.QualifiedKey.Contains("book_browser_appearance", StringComparison.Ordinal))
-            {
-                // The names of the files may show their folders now (or not any more): the tree is rebuilt.
-                if (_model is not null)
-                {
-                    _model.ShowFolders = _settings.BookBrowserAppearance.ShowFolders;
-                }
-
-                AppearanceChanged?.Invoke(this, EventArgs.Empty);
-            }
-        };
+        settings.SettingChanged += OnSettingChanged;
     }
+
+    private void OnSettingChanged(object? sender, SettingChangedEventArgs e)
+    {
+        if (e.QualifiedKey.Contains("book_browser_items_font", StringComparison.Ordinal)
+            || e.QualifiedKey.Contains("book_browser_header_font", StringComparison.Ordinal)
+            || e.QualifiedKey.Contains("book_browser_indent", StringComparison.Ordinal)
+            || e.QualifiedKey.Contains("book_browser_cell_", StringComparison.Ordinal)
+            || e.QualifiedKey.Contains("book_browser_show_folders", StringComparison.Ordinal)
+            || e.QualifiedKey.Contains("book_browser_appearance", StringComparison.Ordinal))
+        {
+            // The names of the files may show their folders now (or not any more): the tree is rebuilt.
+            if (_model is not null)
+            {
+                _model.ShowFolders = _settings.BookBrowserAppearance.ShowFolders;
+            }
+
+            AppearanceChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
+
+    /// <summary>
+    /// Whether this is the sample Book Browser of the Preferences window (a preview of the look): it shows all the optional
+    /// columns, leaves the choice of the columns in the settings alone, and its view has no menus.
+    /// </summary>
+    public bool IsSample { get; init; }
 
     /// <summary>
     /// The look of the tree now: the settings (fonts, indentation, the height of the rows), with the fonts the theme sets while it
@@ -225,8 +233,14 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     /// </summary>
     public string OptionalColumns
     {
-        get => _settings.BookBrowserColumns;
-        set => _settings.BookBrowserColumns = value ?? string.Empty;
+        get => IsSample ? "ReadingOrder,Semantics,Properties" : _settings.BookBrowserColumns;
+        set
+        {
+            if (!IsSample)
+            {
+                _settings.BookBrowserColumns = value ?? string.Empty;
+            }
+        }
     }
 
     /// <summary>Node whose name is currently being edited in the tree (or <c>null</c>).</summary>
@@ -1001,6 +1015,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
+        _settings.SettingChanged -= OnSettingChanged;
         if (_model is not null)
         {
             _model.Changed -= OnModelChanged;

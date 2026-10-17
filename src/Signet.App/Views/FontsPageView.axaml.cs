@@ -29,6 +29,20 @@ public partial class FontsPageView : UserControl
         set => SetValue(IsContentEnabledProperty, value);
     }
 
+    /// <summary>
+    /// Whether the fonts are previewed by a panel outside of the page, common to the tabs of the section (the page has no preview
+    /// under each font and no space for one at its right). Default: no, every font has a preview under it.
+    /// </summary>
+    public static readonly StyledProperty<bool> HasSharedPreviewProperty =
+        AvaloniaProperty.Register<FontsPageView, bool>(nameof(HasSharedPreview));
+
+    /// <summary>Gets or sets <see cref="HasSharedPreviewProperty"/>.</summary>
+    public bool HasSharedPreview
+    {
+        get => GetValue(HasSharedPreviewProperty);
+        set => SetValue(HasSharedPreviewProperty, value);
+    }
+
     /// <summary>Raised when the user has dragged the splitter: <see cref="PreviewWidth"/> is the new width.</summary>
     public event EventHandler? PreviewWidthChanged;
 
@@ -39,7 +53,14 @@ public partial class FontsPageView : UserControl
     public double PreviewWidth
     {
         get => PreviewColumn.ActualWidth > 0 ? PreviewColumn.ActualWidth : PreviewColumn.Width.Value;
-        set => PreviewColumn.Width = new GridLength(Math.Max(PreviewColumn.MinWidth, value));
+        set
+        {
+            // A page with a preview panel of its own has no space at the right to give a width to.
+            if (!HasSharedPreview)
+            {
+                PreviewColumn.Width = new GridLength(Math.Max(PreviewColumn.MinWidth, value));
+            }
+        }
     }
 
     private ColumnDefinition PreviewColumn => PreviewGrid.ColumnDefinitions[2];
@@ -51,6 +72,25 @@ public partial class FontsPageView : UserControl
     {
         InitializeComponent();
         DataContextChanged += (_, _) => BuildRows();
+    }
+
+    /// <inheritdoc />
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property == HasSharedPreviewProperty)
+        {
+            // The settings take the whole page: no splitter and no free space at the right.
+            bool shared = HasSharedPreview;
+            PreviewSplitter.IsVisible = !shared;
+            PreviewGrid.ColumnDefinitions[1].Width = shared ? new GridLength(0) : new GridLength(10);
+            PreviewColumn.MinWidth = shared ? 0 : 160;
+            PreviewColumn.Width = shared ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
+            foreach (FontSettingView row in Rows.Children.OfType<FontSettingView>())
+            {
+                row.ShowPreview = !shared;
+            }
+        }
     }
 
     // The rows are created here rather than by an ItemsControl: the controls of a page exist before the page is shown
@@ -77,7 +117,7 @@ public partial class FontsPageView : UserControl
             }
 
             group = font.Group;
-            FontSettingView row = new() { DataContext = font, Name = "Font" + font.Key };
+            FontSettingView row = new() { DataContext = font, Name = "Font" + font.Key, ShowPreview = !HasSharedPreview };
             if (_previewHeights.TryGetValue(font.Key, out int height))
             {
                 row.SetUserPreviewHeight(height);

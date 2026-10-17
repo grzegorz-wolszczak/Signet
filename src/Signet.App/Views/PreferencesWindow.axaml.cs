@@ -99,6 +99,7 @@ public partial class PreferencesWindow : Window
         {
             _sections.PropertyChanged -= OnSectionsPropertyChanged;
             _source.Dispose();
+            (DataContext as PreferencesViewModel)?.Dispose();
         };
 
         ShowSelectedSection();
@@ -156,6 +157,13 @@ public partial class PreferencesWindow : Window
                 sizes[page.Name + FontsPreviewWidthSuffix] = (int)Math.Round(page.PreviewWidth);
             }
 
+            foreach (Grid host in PreviewHosts())
+            {
+                ColumnDefinition pane = host.ColumnDefinitions[2];
+                // The splitter leaves the width of a column that is not a star as pixels, so it is the width in use.
+                sizes[host.Name + PreviewPaneWidthSuffix] = (int)Math.Round(pane.Width.Value);
+            }
+
             foreach (FontsPageView page in FontsPages())
             {
                 foreach ((string key, int height) in page.PreviewHeights)
@@ -180,6 +188,15 @@ public partial class PreferencesWindow : Window
             {
                 ColumnDefinition column = Body.ColumnDefinitions[0];
                 column.Width = new GridLength(Math.Max(column.MinWidth, sections));
+            }
+
+            foreach (Grid host in PreviewHosts())
+            {
+                if (value.TryGetValue(host.Name + PreviewPaneWidthSuffix, out int paneWidth) && paneWidth > 0)
+                {
+                    ColumnDefinition pane = host.ColumnDefinitions[2];
+                    pane.Width = new GridLength(Math.Max(pane.MinWidth, paneWidth));
+                }
             }
 
             value.TryGetValue(FontsPreviewSizeKey, out int legacyPreview);
@@ -266,7 +283,15 @@ public partial class PreferencesWindow : Window
     private const string FontsPreviewSizeKey = "FontsPreview";
     private const string FontsPreviewWidthSuffix = ".previewWidth";
     private const string PreviewHeightSuffix = ".previewHeight";
+    private const string PreviewPaneWidthSuffix = ".paneWidth";
     private readonly List<FontsPageView> _resizedFontsPages = new();
+
+    // The grids of the pages that have a preview panel common to their tabs: the settings, a splitter and the panel (column 2),
+    // whose width the window remembers.
+    private IEnumerable<Grid> PreviewHosts()
+    {
+        yield return BookBrowserPreviewHost;
+    }
 
     // The Fonts pages (every Appearance section and the theme's own) each have a width of the preview of their own: the
     // splitter of one page does not move the others, and the window remembers the width of every page that was resized.
@@ -335,6 +360,8 @@ public partial class PreferencesWindow : Window
             SpecialCharacterFontsView.DataContext = vm.SpecialCharacterFonts;
             StartScreenFontsView.DataContext = vm.StartScreenFonts;
             BookBrowserFontsView.DataContext = vm.BookBrowserFonts;
+            BookBrowserPreview.DataContext = vm.BookBrowserSample;
+            BookBrowserSampleTip.DataContext = vm.BookBrowserFonts.Fonts.Single(f => f.Key == "Tooltip" + TooltipArea.BookBrowser);
             TableOfContentsFontsView.DataContext = vm.TableOfContentsFonts;
             FindReplaceFontsView.DataContext = vm.FindReplaceFonts;
             FindUsagesFontsView.DataContext = vm.FindUsagesFonts;
@@ -772,6 +799,12 @@ public partial class PreferencesWindow : Window
 
     private static IEnumerable<ILogical> LogicalChildrenAndTabContent(ILogical element)
     {
+        // A preview panel holds no settings (only samples): nothing below it is searched.
+        if (element is StyledElement { Classes: var classes } && classes.Contains("noSearchTree"))
+        {
+            yield break;
+        }
+
         foreach (ILogical child in element.LogicalChildren)
         {
             yield return child;

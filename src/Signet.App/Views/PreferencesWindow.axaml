@@ -252,66 +252,99 @@
 
       <!-- Appearance › BookBrowser: which folders are expanded when a book is loaded; Fonts. -->
       <TabItem x:Name="BookBrowserAppearancePage" Header="{loc:Loc PreferencesWindow_BookBrowser}" views:PreferencesPage.Parent="AppearanceGeneralPage">
-        <TabControl x:Name="BookBrowserAppearanceTabs">
-          <TabItem Header="{loc:Loc PreferencesWindow_General}">
-            <ScrollViewer>
-              <StackPanel Spacing="10" Margin="8">
-                <Border Classes="section">
-                  <StackPanel Spacing="6">
-                    <TextBlock Text="{loc:Loc PreferencesWindow_BookBrowserExpandOnLoad}" FontWeight="Bold" />
-                    <ItemsControl ItemsSource="{Binding BookBrowserFolders}">
-                      <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:FolderExpandOption">
-                          <CheckBox Content="{Binding Label}" IsChecked="{Binding IsChecked}" />
-                        </DataTemplate>
-                      </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                  </StackPanel>
-                </Border>
+        <Grid x:Name="BookBrowserPreviewHost">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" MinWidth="300" />
+            <ColumnDefinition Width="8" />
+            <ColumnDefinition Width="320" MinWidth="200" />
+          </Grid.ColumnDefinitions>
+          <TabControl x:Name="BookBrowserAppearanceTabs">
+            <TabItem Header="{loc:Loc PreferencesWindow_General}">
+              <ScrollViewer>
+                <StackPanel Spacing="10" Margin="8">
+                  <Border Classes="section">
+                    <StackPanel Spacing="6">
+                      <TextBlock Text="{loc:Loc PreferencesWindow_BookBrowserExpandOnLoad}" FontWeight="Bold" />
+                      <ItemsControl ItemsSource="{Binding BookBrowserFolders}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="vm:FolderExpandOption">
+                            <CheckBox Content="{Binding Label}" IsChecked="{Binding IsChecked}" />
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+                  </Border>
 
-                <!-- The look of the tree: the indentation of the files in a folder, the height of the rows and whether the file names show their folders. -->
-                <Border Classes="section">
-                  <StackPanel Spacing="6">
-                    <TextBlock Text="{loc:Loc PreferencesWindow_BookBrowserTreeLook}" FontWeight="Bold" />
-                    <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
-                      <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_BookBrowserIndent}" />
-                      <NumericUpDown x:Name="BookBrowserIndentBox" Grid.Column="1" Value="{Binding BookBrowserIndent}"
-                                     Minimum="{x:Static vm:PreferencesViewModel.BookBrowserIndentMin}"
-                                     Maximum="{x:Static vm:PreferencesViewModel.BookBrowserIndentMax}"
-                                     Increment="1" FormatString="0" HorizontalAlignment="Left" Width="130" />
-                    </Grid>
-                    <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
-                      <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_BookBrowserCellMinHeight}" />
-                      <NumericUpDown x:Name="BookBrowserCellMinHeightBox" Grid.Column="1" Value="{Binding BookBrowserCellMinHeight}"
-                                     Minimum="0"
-                                     Maximum="{x:Static vm:PreferencesViewModel.BookBrowserCellMinHeightMax}"
-                                     Increment="1" FormatString="0" HorizontalAlignment="Left" Width="130" />
-                    </Grid>
-                    <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
-                      <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_BookBrowserCellPadding}" />
-                      <NumericUpDown x:Name="BookBrowserCellPaddingBox" Grid.Column="1" Value="{Binding BookBrowserCellPadding}"
-                                     Minimum="0"
-                                     Maximum="{x:Static vm:PreferencesViewModel.BookBrowserCellPaddingMax}"
-                                     Increment="1" FormatString="0" HorizontalAlignment="Left" Width="130" />
-                    </Grid>
-                    <CheckBox x:Name="BookBrowserShowFoldersBox" Content="{loc:Loc PreferencesWindow_BookBrowserShowFolders}"
-                              IsChecked="{Binding BookBrowserShowFolders}" ToolTip.Tip="{loc:Loc PreferencesWindow_BookBrowserShowFoldersTip}" />
-                    <HyperlinkButton Content="{loc:Loc PreferencesWindow_BookBrowserBackgroundInTheme}" Padding="0"
-                                     views:PreferencesPage.Target="AppearanceGeneralPage"
-                                     views:PreferencesPage.TargetKey="ui.bookBrowser.background" />
-                    <HyperlinkButton Content="{loc:Loc PreferencesWindow_BookBrowserSelectionInTheme}" Padding="0"
-                                     views:PreferencesPage.Target="AppearanceGeneralPage"
-                                     views:PreferencesPage.TargetKey="ui.bookBrowser.selection" />
+                  <!-- The look of the tree: the indentation of the files in a folder, the height of the rows and whether the file names show their folders. -->
+                  <Border Classes="section">
+                    <StackPanel Spacing="6">
+                      <TextBlock Text="{loc:Loc PreferencesWindow_BookBrowserTreeLook}" FontWeight="Bold" />
+                      <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_BookBrowserIndent}" />
+                        <NumericUpDown x:Name="BookBrowserIndentBox" Grid.Column="1" Value="{Binding BookBrowserIndent}"
+                                       Minimum="{x:Static vm:PreferencesViewModel.BookBrowserIndentMin}"
+                                       Maximum="{x:Static vm:PreferencesViewModel.BookBrowserIndentMax}"
+                                       Increment="1" FormatString="0" HorizontalAlignment="Left" Width="130" />
+                      </Grid>
+                      <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_BookBrowserCellMinHeight}" />
+                        <NumericUpDown x:Name="BookBrowserCellMinHeightBox" Grid.Column="1" Value="{Binding BookBrowserCellMinHeight}"
+                                       Minimum="0"
+                                       Maximum="{x:Static vm:PreferencesViewModel.BookBrowserCellMinHeightMax}"
+                                       Increment="1" FormatString="0" HorizontalAlignment="Left" Width="130" />
+                      </Grid>
+                      <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_BookBrowserCellPadding}" />
+                        <NumericUpDown x:Name="BookBrowserCellPaddingBox" Grid.Column="1" Value="{Binding BookBrowserCellPadding}"
+                                       Minimum="0"
+                                       Maximum="{x:Static vm:PreferencesViewModel.BookBrowserCellPaddingMax}"
+                                       Increment="1" FormatString="0" HorizontalAlignment="Left" Width="130" />
+                      </Grid>
+                      <CheckBox x:Name="BookBrowserShowFoldersBox" Content="{loc:Loc PreferencesWindow_BookBrowserShowFolders}"
+                                IsChecked="{Binding BookBrowserShowFolders}" ToolTip.Tip="{loc:Loc PreferencesWindow_BookBrowserShowFoldersTip}" />
+                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_BookBrowserBackgroundInTheme}" Padding="0"
+                                       views:PreferencesPage.Target="AppearanceGeneralPage"
+                                       views:PreferencesPage.TargetKey="ui.bookBrowser.background" />
+                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_BookBrowserSelectionInTheme}" Padding="0"
+                                       views:PreferencesPage.Target="AppearanceGeneralPage"
+                                       views:PreferencesPage.TargetKey="ui.bookBrowser.selection" />
 
-                  </StackPanel>
-                </Border>
-              </StackPanel>
-            </ScrollViewer>
-          </TabItem>
-          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-            <views:FontsPageView x:Name="BookBrowserFontsView" />
-          </TabItem>
-        </TabControl>
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+              </ScrollViewer>
+            </TabItem>
+            <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+              <views:FontsPageView x:Name="BookBrowserFontsView" HasSharedPreview="True" />
+            </TabItem>
+          </TabControl>
+          <GridSplitter Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Background="Transparent" />
+          <!-- The preview, common to the tabs of the page: the real Book Browser over a sample book, in the look the settings
+               give it now (the unsaved ones too); the sample of a tooltip is under it. Not searched: it holds no settings. -->
+          <Border x:Name="BookBrowserPreviewPane" Grid.Column="2" Classes="section noSearchTree" Padding="8"
+                  infra:TooltipFonts.Area="BookBrowser">
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
+              <!-- The tooltip of a file, drawn in the empty space under the tree and always there (a real one shows only while the
+                   pointer rests on a file): its font follows the tooltip font setting as it is changed. -->
+              <Border Classes="listFrame">
+                <Grid RowDefinitions="*,Auto">
+                  <views:BookBrowserView x:Name="BookBrowserPreview" />
+                  <Border x:Name="BookBrowserSampleTip" Grid.Row="1" Margin="8" Padding="8,4" CornerRadius="3" BorderThickness="1"
+                          HorizontalAlignment="Left" x:DataType="vm:FontSettingViewModel"
+                          BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                          Background="{Binding PreviewBackground, Converter={x:Static infra:ColorConverters.ToBrush}}">
+                    <TextBlock Text="{Binding PreviewText}"
+                               FontFamily="{Binding EffectiveFamily, Converter={x:Static infra:FontFamilyConverters.FromName}}"
+                               FontSize="{Binding EffectiveSize}"
+                               FontWeight="{Binding EffectiveWeight, Converter={x:Static infra:FontWeightOptions.FromNumber}}"
+                               Foreground="{Binding PreviewForeground, Converter={x:Static infra:ColorConverters.ToBrush}}" />
+                  </Border>
+                </Grid>
+              </Border>
+            </DockPanel>
+          </Border>
+        </Grid>
       </TabItem>
 
       <!-- Appearance › TableOfContents: Fonts only. -->

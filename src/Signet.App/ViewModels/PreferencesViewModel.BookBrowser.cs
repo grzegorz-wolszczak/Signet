@@ -5,13 +5,15 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Signet.App.Resources;
+using Signet.App.Services;
+using Signet.Core.BookManipulation;
 using Signet.Core.Misc;
 using Signet.Core.MainUI;
 
 namespace Signet.App.ViewModels;
 
 /// <summary>Appearance › Book Browser: which folders are expanded when a book is loaded.</summary>
-public sealed partial class PreferencesViewModel
+public sealed partial class PreferencesViewModel : IDisposable
 {
     private IReadOnlyList<FolderExpandOption>? _bookBrowserFolders;
 
@@ -26,6 +28,45 @@ public sealed partial class PreferencesViewModel
                 () => _settings.GetBookBrowserExpandOnLoad(kind),
                 value => _settings.SetBookBrowserExpandOnLoad(kind, value)))
             .ToArray();
+
+    private BookBrowserViewModel? _bookBrowserSample;
+    private Book? _sampleBook;
+    private StatusBarService? _sampleStatusBar;
+
+    /// <summary>
+    /// The Book Browser of the preview of the Book Browser pages: the real view model, over a small book made in memory, reading
+    /// the look from the settings of this window (the draft), so every change shows in it at once. Made when first asked for.
+    /// </summary>
+    public BookBrowserViewModel BookBrowserSample
+    {
+        get
+        {
+            if (_bookBrowserSample is null)
+            {
+                _sampleStatusBar = new StatusBarService();
+                _sampleBook = SampleBook.Create();
+                _bookBrowserSample = new BookBrowserViewModel(_settings, _sampleStatusBar) { IsSample = true };
+                _bookBrowserSample.SetBook(_sampleBook);
+                foreach (BookBrowserNode folder in _bookBrowserSample.Nodes.Where(n => n.IsFolder))
+                {
+                    folder.IsExpanded = true;
+                }
+            }
+
+            return _bookBrowserSample;
+        }
+    }
+
+    /// <summary>Lets go of the samples of the previews (the window closes).</summary>
+    public void Dispose()
+    {
+        _bookBrowserSample?.Dispose();
+        _bookBrowserSample = null;
+        _sampleBook?.Dispose();
+        _sampleBook = null;
+        _sampleStatusBar?.Dispose();
+        _sampleStatusBar = null;
+    }
 
     /// <summary>Lower bound of <see cref="BookBrowserIndent"/>.</summary>
     public static decimal BookBrowserIndentMin => BookBrowserAppearance.IndentMin;

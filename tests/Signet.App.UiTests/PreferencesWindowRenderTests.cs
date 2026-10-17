@@ -627,6 +627,91 @@ public sealed class PreferencesWindowRenderTests
     }
 
     /// <summary>
+    /// The Book Browser page has one "Preview" panel at the right, common to its General and Fonts tabs: the real Book Browser over a
+    /// small sample book, in the look of the settings (the unsaved ones), and the sample of a tooltip. The fonts have no preview
+    /// each under them.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_Book_Browser_page_has_one_preview_panel_for_both_its_tabs_that_follows_the_settings()
+    {
+        PreferencesWindow window = BuildWindow();
+        PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+        window.Width = 1100;
+        window.Height = 860;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, "BookBrowserAppearancePage");
+        TabControl tabs = window.FindControl<TabControl>("BookBrowserAppearanceTabs")!;
+        Border pane = window.FindControl<Border>("BookBrowserPreviewPane")!;
+        BookBrowserView preview = window.FindControl<BookBrowserView>("BookBrowserPreview")!;
+
+        pane.IsEffectivelyVisible.Should().BeTrue("the General tab is selected");
+        pane.GetVisualDescendants().OfType<TextBlock>().Should().Contain(t => t.Text == Strings.Get("PreferencesWindow_Preview"));
+        preview.DataContext.Should().BeSameAs(vm.BookBrowserSample);
+        pane.Bounds.Left.Should().BeGreaterThan(tabs.Bounds.Left + 300, "the panel is at the right of the tabs");
+
+        tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(t => Equals(t.Header, Strings.Get("PreferencesWindow_Fonts")));
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        pane.IsEffectivelyVisible.Should().BeTrue("the same panel stays while the Fonts tab is selected");
+        FontsPageView fonts = window.FindControl<FontsPageView>("BookBrowserFontsView")!;
+        FontSettingView[] rows = fonts.GetVisualDescendants().OfType<FontSettingView>().ToArray();
+        rows.Should().HaveCount(3);
+        rows.Should().OnlyContain(r => !r.FindControl<Border>("PreviewFrame")!.IsVisible, "the panel is the preview of the fonts");
+        fonts.FindControl<GridSplitter>("PreviewSplitter")!.IsVisible.Should().BeFalse();
+
+        TextBlock chapter = preview.GetVisualDescendants().OfType<TextBlock>().First(t => t.Text == "Chapter01.xhtml");
+        TextBlock tip = window.FindControl<Border>("BookBrowserSampleTip")!.GetVisualDescendants().OfType<TextBlock>().Single();
+        tip.Text.Should().Be(Strings.Get("FontPreview_TooltipBookBrowser"));
+
+        vm.BookBrowserItemsFontSize = 23;
+        FontSettingViewModel tooltipFont = vm.BookBrowserFonts.Fonts.Single(f => f.Key == "Tooltip" + Signet.Core.Misc.TooltipArea.BookBrowser);
+        tooltipFont.InheritFromParent = false;
+        tooltipFont.Size = 18;
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        preview.GetVisualDescendants().OfType<TextBlock>().First(t => t.Text == "Chapter01.xhtml").FontSize.Should().Be(23, "the preview follows the font");
+        tip.FontSize.Should().Be(18, "and so does the sample of a tooltip");
+        _ = chapter;
+        window.Close();
+    }
+
+    /// <summary>The panel of the preview is not searched (it holds samples, not settings), and its width is remembered.</summary>
+    [AvaloniaFact]
+    public void The_width_of_the_preview_panel_is_remembered_and_its_samples_are_not_searched()
+    {
+        PreferencesWindow window = BuildWindow();
+        window.Width = 1100;
+        window.Height = 860;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, "BookBrowserAppearancePage");
+
+        window.SplitterSizes = new Dictionary<string, int> { ["FontsPreview"] = 380, ["BookBrowserFontsView.previewWidth"] = 420 };
+        TabControl tabs = window.FindControl<TabControl>("BookBrowserAppearanceTabs")!;
+        tabs.SelectedItem = tabs.Items.OfType<TabItem>().Last();
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+        FontsPageView fonts = window.FindControl<FontsPageView>("BookBrowserFontsView")!;
+        fonts.GetVisualDescendants().OfType<FontSettingView>().Should().OnlyContain(
+            r => r.Bounds.Width > fonts.Bounds.Width - 60, "the settings take the whole tab, whatever width the old pages remembered");
+
+        window.SplitterSizes.Should().ContainKey("BookBrowserPreviewHost.paneWidth");
+        window.SplitterSizes = new Dictionary<string, int> { ["BookBrowserPreviewHost.paneWidth"] = 410 };
+        window.SplitterSizes["BookBrowserPreviewHost.paneWidth"].Should().Be(410);
+
+        window.Sections.Query = "Titlepage";
+
+        window.Sections.All.Where(n => n.IsVisible && n.Id.Length > 0).Should().BeEmpty("a file name of the sample is not a setting");
+        window.Close();
+    }
+
+    /// <summary>
     /// The link of the Book Browser page to the color of its background opens the Interface Colors tab of Appearance with
     /// that very key selected (its group expanded).
     /// </summary>
