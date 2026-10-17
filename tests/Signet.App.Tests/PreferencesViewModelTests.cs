@@ -1160,6 +1160,22 @@ public sealed class PreferencesViewModelTests
     }
 
     [Fact]
+    public void The_sample_Find_and_Replace_panel_has_no_book_and_keeps_what_is_typed_in_it_to_itself()
+    {
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        using PreferencesViewModel __ = vm;
+        FindReplaceViewModel sample = vm.FindReplaceSample;
+
+        sample.FindText.Should().NotBeEmpty("the sample has something to find");
+        sample.FindText = "typed in the preview";
+        sample.FindNextCommand.Execute(null);
+
+        host.Settings.GetFindReplaceSettings().FindHistory.Should().NotContain("typed in the preview");
+        host.Settings.GetFindReplaceSettings().FindHistory.Should().NotContain(sample.FindText);
+    }
+
+    [Fact]
     public void The_sample_Book_Browser_follows_the_unsaved_look_and_leaves_the_saved_one_alone()
     {
         (TestHost host, PreferencesViewModel vm) = New();

@@ -307,6 +307,7 @@ public partial class PreferencesWindow : Window
         yield return StartScreenPreviewHost;
         yield return CodeEditorPreviewHost;
         yield return FindUsagesPreviewHost;
+        yield return FindReplacePreviewHost;
     }
 
     // The Fonts pages (every Appearance section and the theme's own) each have a width of the preview of their own: the
@@ -376,6 +377,8 @@ public partial class PreferencesWindow : Window
             SpecialCharacterFontsView.DataContext = vm.SpecialCharacterFonts;
             StartScreenFontsView.DataContext = vm.StartScreenFonts;
             BookBrowserFontsView.DataContext = vm.BookBrowserFonts;
+            FindReplacePreview.DataContext = vm.FindReplaceSample;
+            FindReplaceSampleTip.DataContext = vm.FindReplaceFonts.Fonts.Single(f => f.Key == "Tooltip" + TooltipArea.FindReplace);
             FindUsagesPreview.DataContext = vm.FindUsagesSample;
             CodeEditorPreview.DataContext = vm.CodeEditorSample;
             DocumentTabsPreview.DataContext = vm.CodeEditorFonts.Fonts.Single(f => f.Key == "DocumentTabs");

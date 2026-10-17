@@ -1,0 +1,22 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Signet.App.ViewModels"
+             xmlns:infra="using:Signet.App.Infrastructure"
+             x:Class="Signet.App.Views.TooltipSample"
+             x:DataType="vm:FontSettingViewModel"
+             HorizontalAlignment="Left">
+  <!-- A tooltip drawn in the preview of Preferences, always there (a real one shows only while the pointer rests on something):
+       its DataContext is the font setting of the tooltip (or of the hint) it stands for, so it follows the unsaved font. The
+       outer border has the look of a tooltip; the colors of the place the font is used in, when it has its own, are inside. -->
+  <Border CornerRadius="3" BorderThickness="1" Background="{DynamicResource ToolTipBackground}"
+          BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+    <Border Padding="8,4" CornerRadius="3"
+            Background="{Binding PreviewBackground, Converter={x:Static infra:ColorConverters.ToBrush}}">
+      <TextBlock x:Name="SampleText" Text="{Binding PreviewText}"
+                 FontFamily="{Binding EffectiveFamily, Converter={x:Static infra:FontFamilyConverters.FromName}}"
+                 FontSize="{Binding EffectiveSize}"
+                 FontWeight="{Binding EffectiveWeight, Converter={x:Static infra:FontWeightOptions.FromNumber}}"
+                 Foreground="{Binding PreviewForeground, Converter={x:Static infra:ColorConverters.ToBrush}}" />
+    </Border>
+  </Border>
+</UserControl>

@@ -299,16 +299,7 @@
               <Border Classes="listFrame">
                 <Grid RowDefinitions="*,Auto">
                   <views:StartScreenView x:Name="StartScreenPreview" />
-                  <Border x:Name="StartScreenSampleTip" Grid.Row="1" Margin="8" Padding="8,4" CornerRadius="3" BorderThickness="1"
-                          HorizontalAlignment="Left" x:DataType="vm:FontSettingViewModel"
-                          BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                          Background="{Binding PreviewBackground, Converter={x:Static infra:ColorConverters.ToBrush}}">
-                    <TextBlock Text="{Binding PreviewText}"
-                               FontFamily="{Binding EffectiveFamily, Converter={x:Static infra:FontFamilyConverters.FromName}}"
-                               FontSize="{Binding EffectiveSize}"
-                               FontWeight="{Binding EffectiveWeight, Converter={x:Static infra:FontWeightOptions.FromNumber}}"
-                               Foreground="{Binding PreviewForeground, Converter={x:Static infra:ColorConverters.ToBrush}}" />
-                  </Border>
+                  <views:TooltipSample x:Name="StartScreenSampleTip" Grid.Row="1" Margin="8" />
                 </Grid>
               </Border>
             </DockPanel>
@@ -396,16 +387,7 @@
               <Border Classes="listFrame">
                 <Grid RowDefinitions="*,Auto">
                   <views:BookBrowserView x:Name="BookBrowserPreview" />
-                  <Border x:Name="BookBrowserSampleTip" Grid.Row="1" Margin="8" Padding="8,4" CornerRadius="3" BorderThickness="1"
-                          HorizontalAlignment="Left" x:DataType="vm:FontSettingViewModel"
-                          BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                          Background="{Binding PreviewBackground, Converter={x:Static infra:ColorConverters.ToBrush}}">
-                    <TextBlock Text="{Binding PreviewText}"
-                               FontFamily="{Binding EffectiveFamily, Converter={x:Static infra:FontFamilyConverters.FromName}}"
-                               FontSize="{Binding EffectiveSize}"
-                               FontWeight="{Binding EffectiveWeight, Converter={x:Static infra:FontWeightOptions.FromNumber}}"
-                               Foreground="{Binding PreviewForeground, Converter={x:Static infra:ColorConverters.ToBrush}}" />
-                  </Border>
+                  <views:TooltipSample x:Name="BookBrowserSampleTip" Grid.Row="1" Margin="8" />
                 </Grid>
               </Border>
             </DockPanel>
@@ -464,18 +446,7 @@
               <Border Classes="listFrame">
                 <DockPanel>
                   <views:DocumentTabsSample x:Name="DocumentTabsPreview" DockPanel.Dock="Top" Margin="4,4,4,0" />
-                  <Border x:Name="CodeEditorSampleHintFrame" DockPanel.Dock="Bottom" Margin="8" CornerRadius="3" BorderThickness="1"
-                          HorizontalAlignment="Left" Background="{DynamicResource ToolTipBackground}"
-                          BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
-                    <Border x:Name="CodeEditorSampleHint" Padding="8,4" CornerRadius="3" x:DataType="vm:FontSettingViewModel"
-                            Background="{Binding PreviewBackground, Converter={x:Static infra:ColorConverters.ToBrush}}">
-                      <TextBlock Text="{Binding PreviewText}"
-                                 FontFamily="{Binding EffectiveFamily, Converter={x:Static infra:FontFamilyConverters.FromName}}"
-                                 FontSize="{Binding EffectiveSize}"
-                                 FontWeight="{Binding EffectiveWeight, Converter={x:Static infra:FontWeightOptions.FromNumber}}"
-                                 Foreground="{Binding PreviewForeground, Converter={x:Static infra:ColorConverters.ToBrush}}" />
-                    </Border>
-                  </Border>
+                  <views:TooltipSample x:Name="CodeEditorSampleHint" DockPanel.Dock="Bottom" Margin="8" />
                   <tabs:CodeTabView x:Name="CodeEditorPreview" />
                 </DockPanel>
               </Border>
@@ -539,11 +510,31 @@
 
       <!-- Appearance › FindReplace: Fonts only. -->
       <TabItem x:Name="FindReplaceAppearancePage" Header="{loc:Loc PreferencesWindow_FindReplace}" views:PreferencesPage.Parent="AppearanceGeneralPage">
-        <TabControl x:Name="FindReplaceAppearanceTabs">
-          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-            <views:FontsPageView x:Name="FindReplaceFontsView" />
-          </TabItem>
-        </TabControl>
+        <Grid x:Name="FindReplacePreviewHost">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="*" MinHeight="150" />
+            <RowDefinition Height="8" />
+            <RowDefinition Height="230" MinHeight="120" />
+          </Grid.RowDefinitions>
+          <TabControl x:Name="FindReplaceAppearanceTabs">
+            <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+              <views:FontsPageView x:Name="FindReplaceFontsView" HasSharedPreview="True" />
+            </TabItem>
+          </TabControl>
+          <GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Background="Transparent" />
+          <!-- The preview: the real Find and Replace panel (wide, so it is under the settings) with no book behind it, and a sample of its tooltip. Not searched: it holds no settings. -->
+          <Border x:Name="FindReplacePreviewPane" Grid.Row="2" Classes="section noSearchTree" Padding="8">
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
+              <Border Classes="listFrame">
+                <Grid RowDefinitions="*,Auto">
+                  <views:FindReplaceView x:Name="FindReplacePreview" />
+                  <views:TooltipSample x:Name="FindReplaceSampleTip" Grid.Row="1" Margin="8" />
+                </Grid>
+              </Border>
+            </DockPanel>
+          </Border>
+        </Grid>
       </TabItem>
 
       <!-- Appearance › SpecialCharacters: Fonts only. -->
