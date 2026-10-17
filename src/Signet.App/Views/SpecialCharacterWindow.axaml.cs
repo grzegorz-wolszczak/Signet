@@ -331,6 +331,9 @@ public partial class SpecialCharacterWindow : Window
             style.Setters.Add(new Setter(TextBlock.FontSizeProperty, (double)appearance.FontSize));
         }
 
+        // Always set (Regular when not set), so a weight taken away is not left on the symbols by the style it replaces.
+        style.Setters.Add(new Setter(TextBlock.FontWeightProperty, FontWeightOptions.ToAvalonia(appearance.FontWeight)));
+
         if (_symbolStyle is not null)
         {
             Styles.Remove(_symbolStyle);

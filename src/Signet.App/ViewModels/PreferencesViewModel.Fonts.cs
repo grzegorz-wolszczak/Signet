@@ -83,7 +83,8 @@ public sealed partial class PreferencesViewModel
                 (() => EffectiveUiFontFamily, () => EffectiveUiFontSize),
                 ResetUiFont,
                 ChooseUiFontCommand,
-                placeholder: () => UiFontDescription),
+                placeholder: () => UiFontDescription,
+                weight: (() => UiFontWeight, SetUiFontWeight)),
             new FontSettingViewModel(
                 "Warnings",
                 Strings.Get("PreferencesWindow_WarningFontSize"),
@@ -115,9 +116,11 @@ public sealed partial class PreferencesViewModel
                     {
                         CodeEditor.FontFamily = codeEditorDefaults.FontFamily;
                         CodeEditor.FontSize = codeEditorDefaults.FontSize;
+                        CodeEditor.FontWeight = codeEditorDefaults.FontWeight;
                     },
                     CodeEditor.ChooseFontCommand,
-                    codePreview: () => ExtendedHighlighting),
+                    codePreview: () => ExtendedHighlighting,
+                    weight: (() => CodeEditor.FontWeight, v => CodeEditor.FontWeight = v)),
                 LineNumbersFontRow(),
                 new FontSettingViewModel(
                     "OpenTagHint",
@@ -129,6 +132,8 @@ public sealed partial class PreferencesViewModel
                      () => OpenTagHintFontSize > 0 ? OpenTagHintFontSize : CodeEditor.FontSize),
                     ResetOpenTagHintFont,
                     ChooseOpenTagHintFontCommand,
+                    weight: (() => OpenTagHintFontWeight, v => OpenTagHintFontWeight = v),
+                    effectiveWeight: () => OpenTagHintFontWeight > 0 ? OpenTagHintFontWeight : CodeEditor.FontWeight,
                     placeholder: () => CodeEditor.FontFamily,
                     previewForeground: () => AppTheme.Current.Foreground(Signet.Core.Themes.ThemeKeys.HintsOpenTag)?.ToString(),
                     previewBackground: () => AppTheme.Current.Background(Signet.Core.Themes.ThemeKeys.HintsOpenTag)?.ToString(),
@@ -173,8 +178,10 @@ public sealed partial class PreferencesViewModel
                 {
                     SpecialCharacterFontFamily = specialDefaults.FontFamily;
                     SpecialCharacterFontSize = specialDefaults.FontSize;
+                    SpecialCharacterFontWeight = specialDefaults.FontWeight;
                 },
-                ChooseSpecialCharacterFontCommand),
+                ChooseSpecialCharacterFontCommand,
+                weight: (() => SpecialCharacterFontWeight, v => SpecialCharacterFontWeight = v)),
             TooltipRow(TooltipArea.SpecialCharacters),
         });
 
@@ -189,8 +196,10 @@ public sealed partial class PreferencesViewModel
                 {
                     BookBrowserItemsFontFamily = string.Empty;
                     BookBrowserItemsFontSize = 0;
+                    BookBrowserItemsFontWeight = 0;
                 },
-                ChooseBookBrowserItemsFontCommand),
+                ChooseBookBrowserItemsFontCommand,
+                () => BookBrowserItemsFontWeight, v => BookBrowserItemsFontWeight = v),
             InterfaceFontRow(
                 "BookBrowserHeaders", "PreferencesWindow_BookBrowserHeadersFont", "FontPreview_BookBrowserHeaders",
                 () => BookBrowserHeaderFontFamily, v => BookBrowserHeaderFontFamily = v,
@@ -199,8 +208,10 @@ public sealed partial class PreferencesViewModel
                 {
                     BookBrowserHeaderFontFamily = string.Empty;
                     BookBrowserHeaderFontSize = 0;
+                    BookBrowserHeaderFontWeight = 0;
                 },
-                ChooseBookBrowserHeaderFontCommand),
+                ChooseBookBrowserHeaderFontCommand,
+                () => BookBrowserHeaderFontWeight, v => BookBrowserHeaderFontWeight = v),
             TooltipRow(TooltipArea.BookBrowser),
         });
         FindUsagesFonts = new FontPageViewModel(new[]
@@ -213,8 +224,10 @@ public sealed partial class PreferencesViewModel
                 {
                     FindUsagesHeaderFontFamily = string.Empty;
                     FindUsagesHeaderFontSize = 0;
+                    FindUsagesHeaderFontWeight = 0;
                 },
-                ChooseFindUsagesHeaderFontCommand),
+                ChooseFindUsagesHeaderFontCommand,
+                () => FindUsagesHeaderFontWeight, v => FindUsagesHeaderFontWeight = v),
             InterfaceFontRow(
                 "FindUsagesContext", "PreferencesWindow_FindUsagesContextFont", "FontPreview_FindUsagesContext",
                 () => FindUsagesContextFontFamily, v => FindUsagesContextFontFamily = v,
@@ -223,8 +236,10 @@ public sealed partial class PreferencesViewModel
                 {
                     FindUsagesContextFontFamily = string.Empty;
                     FindUsagesContextFontSize = 0;
+                    FindUsagesContextFontWeight = 0;
                 },
-                ChooseFindUsagesContextFontCommand),
+                ChooseFindUsagesContextFontCommand,
+                () => FindUsagesContextFontWeight, v => FindUsagesContextFontWeight = v),
             InterfaceFontRow(
                 "FindUsagesCells", "PreferencesWindow_FindUsagesCellsFont", "FontPreview_FindUsagesCells",
                 () => FindUsagesCellsFontFamily, v => FindUsagesCellsFontFamily = v,
@@ -233,8 +248,10 @@ public sealed partial class PreferencesViewModel
                 {
                     FindUsagesCellsFontFamily = string.Empty;
                     FindUsagesCellsFontSize = 0;
+                    FindUsagesCellsFontWeight = 0;
                 },
-                ChooseFindUsagesCellsFontCommand),
+                ChooseFindUsagesCellsFontCommand,
+                () => FindUsagesCellsFontWeight, v => FindUsagesCellsFontWeight = v),
         });
         TableOfContentsFonts = TooltipPage(TooltipArea.TableOfContents);
         FindReplaceFonts = TooltipPage(TooltipArea.FindReplace);
@@ -268,16 +285,17 @@ public sealed partial class PreferencesViewModel
             (() => Font().FontSize, v => ColorScheme.PreviewFont = Font() with { FontSize = v }, FontSizeMin, FontSizeMax),
             (() => Font().FontFamily, () => Font().FontSize),
             () => ColorScheme.PreviewFont = ColorSchemePreviewAppearance.Default,
-            new AsyncRelayCommand(ChooseColorSchemePreviewFont));
+            new AsyncRelayCommand(ChooseColorSchemePreviewFont),
+            weight: (() => Font().FontWeight, v => ColorScheme.PreviewFont = Font() with { FontWeight = v }));
     }
 
     // "Choose…" of the font of the previews: only monospaced fonts, as for Code Editor.
     private async Task ChooseColorSchemePreviewFont()
     {
         ColorSchemePreviewAppearance font = ColorScheme.PreviewFont;
-        if (await PickFontAsync(new FontPickRequest(font.FontFamily, font.FontSize, true)) is { } result)
+        if (await PickFontAsync(new FontPickRequest(font.FontFamily, font.FontSize, true, font.FontWeight)) is { } result)
         {
-            ColorScheme.PreviewFont = new ColorSchemePreviewAppearance(result.Family, result.Size);
+            ColorScheme.PreviewFont = new ColorSchemePreviewAppearance(result.Family, result.Size, result.Weight);
             ColorSchemePreviewFont.Refresh();
         }
     }
@@ -319,7 +337,10 @@ public sealed partial class PreferencesViewModel
             },
             new AsyncRelayCommand(() => ChooseTooltipFont(area)),
             placeholder: () => EffectiveUiFontFamily,
-            inheritance: area == TooltipArea.OtherWindows ? null : TooltipInheritance(area));
+            inheritance: area == TooltipArea.OtherWindows ? null : TooltipInheritance(area),
+            weight: (() => _settings.GetTooltipFont(area).FontWeight,
+                     v => _settings.SetTooltipFont(area, _settings.GetTooltipFont(area) with { FontWeight = v })),
+            effectiveWeight: () => _settings.GetEffectiveTooltipFont(area).FontWeight);
 
     // The font the tooltips of an area use now: its own, or the one of the other windows while it inherits.
     private string TooltipFamily(TooltipArea area) =>
@@ -338,7 +359,8 @@ public sealed partial class PreferencesViewModel
         () =>
         {
             TooltipFont other = _settings.GetTooltipFont(TooltipArea.OtherWindows);
-            return (other.FontFamily.Length > 0 ? other.FontFamily : EffectiveUiFontFamily) + ", " + other.FontSize;
+            return (other.FontFamily.Length > 0 ? other.FontFamily : EffectiveUiFontFamily) + ", " + other.FontSize
+                + (other.FontWeight > 0 ? ", " + FontWeightScale.NameOf(other.FontWeight) : string.Empty);
         },
         () => AppearanceFonts.Fonts.Single(f => f.Key == "Tooltip" + TooltipArea.OtherWindows));
 
@@ -346,9 +368,9 @@ public sealed partial class PreferencesViewModel
     private async Task ChooseTooltipFont(TooltipArea area)
     {
         TooltipFont font = _settings.GetTooltipFont(area);
-        if (await PickFontAsync(new FontPickRequest(TooltipFamily(area), font.FontSize, false)) is { } result)
+        if (await PickFontAsync(new FontPickRequest(TooltipFamily(area), font.FontSize, false, font.FontWeight)) is { } result)
         {
-            _settings.SetTooltipFont(area, new TooltipFont(result.Family, result.Size));
+            _settings.SetTooltipFont(area, new TooltipFont(result.Family, result.Size, result.Weight));
             RefreshFontPages();
         }
     }
@@ -357,6 +379,12 @@ public sealed partial class PreferencesViewModel
     {
         _settings.UiFont = family;
         _settings.UiFontSize = size;
+        NotifyUiFontChanged();
+    }
+
+    private void SetUiFontWeight(int weight)
+    {
+        _settings.UiFontWeight = weight;
         NotifyUiFontChanged();
     }
 

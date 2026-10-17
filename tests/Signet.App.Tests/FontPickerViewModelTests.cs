@@ -1,3 +1,4 @@
+using System.Linq;
 using AwesomeAssertions;
 using Signet.App.Infrastructure;
 using Signet.App.ViewModels;
@@ -74,5 +75,76 @@ public sealed class FontPickerViewModelTests
         sut.Size = 500;
 
         sut.Result().Should().Be(new FontPickResult("Georgia", FontPickerViewModel.MaxSize));
+    }
+
+    // The weights each font has: Arial the full range, Consolas only Regular and Bold, Georgia only Regular.
+    private static int[] WeightsOf(string family) => family switch
+    {
+        "Arial" => new[] { 300, 400, 600, 700 },
+        "Consolas" => new[] { 400, 700 },
+        _ => new[] { 400 },
+    };
+
+    [Fact]
+    public void Without_a_weight_in_the_request_there_is_no_list_of_weights()
+    {
+        FontPickerViewModel sut = new(Fonts, new FontPickRequest("Arial", 12, false), WeightsOf);
+
+        sut.ShowWeight.Should().BeFalse();
+        sut.Weights.Should().BeEmpty();
+        sut.Result()!.Weight.Should().Be(0);
+    }
+
+    [Fact]
+    public void The_weights_of_the_selected_font_are_listed_with_the_default_first_and_the_current_one_selected()
+    {
+        FontPickerViewModel sut = new(Fonts, new FontPickRequest("Arial", 12, false, 600), WeightsOf);
+
+        sut.ShowWeight.Should().BeTrue();
+        sut.Weights.Select(w => w.Name).Should().Equal(FontWeightOptions.Default.Name, "Light", "Regular", "SemiBold", "Bold");
+        sut.SelectedWeight!.Value.Should().Be(600);
+        sut.Result()!.Weight.Should().Be(600);
+    }
+
+    [Fact]
+    public void Changing_the_font_changes_the_list_and_keeps_the_weight_the_new_font_has()
+    {
+        FontPickerViewModel sut = new(Fonts, new FontPickRequest("Arial", 12, false, 700), WeightsOf);
+
+        sut.SelectedFont = Consolas;
+
+        sut.Weights.Select(w => w.Value).Should().Equal(0, 400, 700);
+        sut.SelectedWeight!.Value.Should().Be(700);
+
+        sut.SelectedFont = Georgia;
+
+        sut.Weights.Select(w => w.Value).Should().Equal(0, 400);
+        sut.SelectedWeight!.Value.Should().Be(0, "a font without the weight falls back to the default");
+
+        sut.SelectedFont = Arial;
+
+        sut.SelectedWeight!.Value.Should().Be(700, "the weight wanted comes back when a font has it again");
+    }
+
+    [Fact]
+    public void A_stored_weight_the_font_lacks_stays_selectable()
+    {
+        FontPickerViewModel sut = new(Fonts, new FontPickRequest("Georgia", 12, false, 300), WeightsOf);
+
+        sut.Weights.Select(w => w.Value).Should().Equal(0, 300, 400);
+        sut.SelectedWeight!.Value.Should().Be(300);
+        sut.Result()!.Weight.Should().Be(300);
+    }
+
+    [Fact]
+    public void A_weight_chosen_in_the_list_is_the_result()
+    {
+        FontPickerViewModel sut = new(Fonts, new FontPickRequest("Arial", 12, false, 0), WeightsOf);
+        sut.SelectedWeight!.Value.Should().Be(0);
+
+        sut.SelectedWeight = sut.Weights.Single(w => w.Value == 300);
+
+        sut.Result()!.Weight.Should().Be(300);
+        sut.PreviewWeight.Should().Be(Avalonia.Media.FontWeight.Light);
     }
 }

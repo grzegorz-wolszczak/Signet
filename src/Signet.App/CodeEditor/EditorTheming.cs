@@ -43,9 +43,9 @@ public static class EditorTheming
 
     /// <summary>
     /// Gives the line numbers a typeface and a size of their own; an empty typeface / a size of 0 leave them the editor's
-    /// (they follow it again).
+    /// (they follow it again); so does a weight of 0.
     /// </summary>
-    public static void ApplyLineNumberFont(TextEditor editor, string family, double size)
+    public static void ApplyLineNumberFont(TextEditor editor, string family, double size, int weight = 0)
     {
         ArgumentNullException.ThrowIfNull(editor);
         foreach (ThemedLineNumberMargin margin in editor.TextArea.LeftMargins.OfType<ThemedLineNumberMargin>())
@@ -66,6 +66,15 @@ public static class EditorTheming
             else
             {
                 margin.ClearValue(TextBlock.FontSizeProperty);
+            }
+
+            if (weight > 0)
+            {
+                margin.SetValue(TextBlock.FontWeightProperty, FontWeightOptions.ToAvalonia(weight));
+            }
+            else
+            {
+                margin.ClearValue(TextBlock.FontWeightProperty);
             }
 
             margin.InvalidateMeasure();

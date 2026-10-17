@@ -186,7 +186,8 @@ public enum TooltipArea
 /// <summary>The font of the tooltips of a <see cref="TooltipArea"/>.</summary>
 /// <param name="FontFamily">Typeface; empty = the interface font.</param>
 /// <param name="FontSize">Size (px).</param>
-public readonly record struct TooltipFont(string FontFamily, int FontSize)
+/// <param name="FontWeight">Weight of the font (<see cref="FontWeightScale"/>); 0 = not set.</param>
+public readonly record struct TooltipFont(string FontFamily, int FontSize, int FontWeight = 0)
 {
     /// <summary>Lower bound of <see cref="FontSize"/>.</summary>
     public const int FontSizeMin = 8;
@@ -200,7 +201,8 @@ public readonly record struct TooltipFont(string FontFamily, int FontSize)
     /// <summary>A copy with the size clamped and the typeface trimmed.</summary>
     public TooltipFont Normalized() => new(
         (FontFamily ?? string.Empty).Trim(),
-        Math.Clamp(FontSize, FontSizeMin, FontSizeMax));
+        Math.Clamp(FontSize, FontSizeMin, FontSizeMax),
+        FontWeightScale.Normalize(FontWeight));
 }
 
 /// <summary>
@@ -209,7 +211,8 @@ public readonly record struct TooltipFont(string FontFamily, int FontSize)
 /// </summary>
 /// <param name="FontFamily">Font family; empty = the Code Editor font.</param>
 /// <param name="FontSize">Font size (px); 0 = the Code Editor size (with its zoom).</param>
-public readonly record struct OpenTagHintAppearance(string FontFamily, int FontSize)
+/// <param name="FontWeight">Weight of the font (<see cref="FontWeightScale"/>); 0 = not set.</param>
+public readonly record struct OpenTagHintAppearance(string FontFamily, int FontSize, int FontWeight = 0)
 {
     /// <summary>Lower bound of an explicit <see cref="FontSize"/>.</summary>
     public const int FontSizeMin = 6;
@@ -223,7 +226,8 @@ public readonly record struct OpenTagHintAppearance(string FontFamily, int FontS
     /// <summary>A copy with the size clamped (0 stays "as the editor").</summary>
     public OpenTagHintAppearance Normalized() => new(
         FontFamily?.Trim() ?? string.Empty,
-        FontSize <= 0 ? 0 : Math.Clamp(FontSize, FontSizeMin, FontSizeMax));
+        FontSize <= 0 ? 0 : Math.Clamp(FontSize, FontSizeMin, FontSizeMax),
+        FontWeightScale.Normalize(FontWeight));
 }
 
 /// <summary>
@@ -232,7 +236,8 @@ public readonly record struct OpenTagHintAppearance(string FontFamily, int FontS
 /// </summary>
 /// <param name="FontFamily">Font family; empty = the interface font.</param>
 /// <param name="FontSize">Font size (px); 0 = the default size of the tabs.</param>
-public readonly record struct DocumentTabFontAppearance(string FontFamily, int FontSize)
+/// <param name="FontWeight">Weight of the font (<see cref="FontWeightScale"/>); 0 = not set.</param>
+public readonly record struct DocumentTabFontAppearance(string FontFamily, int FontSize, int FontWeight = 0)
 {
     /// <summary>Lower bound of an explicit <see cref="FontSize"/>.</summary>
     public const int FontSizeMin = 6;
@@ -246,7 +251,8 @@ public readonly record struct DocumentTabFontAppearance(string FontFamily, int F
     /// <summary>A copy with the size clamped (0 stays "the default").</summary>
     public DocumentTabFontAppearance Normalized() => new(
         FontFamily?.Trim() ?? string.Empty,
-        FontSize <= 0 ? 0 : Math.Clamp(FontSize, FontSizeMin, FontSizeMax));
+        FontSize <= 0 ? 0 : Math.Clamp(FontSize, FontSizeMin, FontSizeMax),
+        FontWeightScale.Normalize(FontWeight));
 }
 
 /// <summary>
@@ -255,7 +261,8 @@ public readonly record struct DocumentTabFontAppearance(string FontFamily, int F
 /// </summary>
 /// <param name="FontFamily">Font family; empty = the Code Editor font.</param>
 /// <param name="FontSize">Font size (px); 0 = the Code Editor size (with its zoom).</param>
-public readonly record struct LineNumberFontAppearance(string FontFamily, int FontSize)
+/// <param name="FontWeight">Weight of the font (<see cref="FontWeightScale"/>); 0 = not set.</param>
+public readonly record struct LineNumberFontAppearance(string FontFamily, int FontSize, int FontWeight = 0)
 {
     /// <summary>Lower bound of an explicit <see cref="FontSize"/>.</summary>
     public const int FontSizeMin = 6;
@@ -266,13 +273,14 @@ public readonly record struct LineNumberFontAppearance(string FontFamily, int Fo
     /// <summary>Default values: the editor font.</summary>
     public static LineNumberFontAppearance Default => new(string.Empty, 0);
 
-    /// <summary>Whether the line numbers use the editor font (no typeface and no size of their own).</summary>
-    public bool IsInherited => string.IsNullOrEmpty(FontFamily) && FontSize <= 0;
+    /// <summary>Whether the line numbers use the editor font (no typeface, size and weight of their own).</summary>
+    public bool IsInherited => string.IsNullOrEmpty(FontFamily) && FontSize <= 0 && FontWeight <= 0;
 
     /// <summary>A copy with the size clamped (0 stays "as the editor").</summary>
     public LineNumberFontAppearance Normalized() => new(
         FontFamily?.Trim() ?? string.Empty,
-        FontSize <= 0 ? 0 : Math.Clamp(FontSize, FontSizeMin, FontSizeMax));
+        FontSize <= 0 ? 0 : Math.Clamp(FontSize, FontSizeMin, FontSizeMax),
+        FontWeightScale.Normalize(FontWeight));
 }
 
 /// <summary>
@@ -292,9 +300,12 @@ public readonly record struct LineNumberFontAppearance(string FontFamily, int Fo
 /// Whether the names of the files show the folders they are in (<c>text/part0001.html</c>, the path from the folder of the
 /// OPF), as in calibre; otherwise only the file name.
 /// </param>
+/// <param name="ItemsFontWeight">Weight of the names and of the cells of the other columns (<see cref="FontWeightScale"/>); 0 = not set.</param>
+/// <param name="HeaderFontWeight">Weight of the column headers (<see cref="FontWeightScale"/>); 0 = not set.</param>
 public readonly record struct BookBrowserAppearance(
     string ItemsFontFamily, int ItemsFontSize, string HeaderFontFamily, int HeaderFontSize, int Indent,
-    int CellMinHeight = BookBrowserAppearance.DefaultCellMinHeight, int CellPadding = 0, bool ShowFolders = false)
+    int CellMinHeight = BookBrowserAppearance.DefaultCellMinHeight, int CellPadding = 0, bool ShowFolders = false,
+    int ItemsFontWeight = 0, int HeaderFontWeight = 0)
 {
     /// <summary>The default of <see cref="CellMinHeight"/>: the height of the icons of the tree.</summary>
     public const int DefaultCellMinHeight = 16;
@@ -331,7 +342,9 @@ public readonly record struct BookBrowserAppearance(
         Math.Clamp(Indent, IndentMin, IndentMax),
         Math.Clamp(CellMinHeight, 0, CellMinHeightMax),
         Math.Clamp(CellPadding, 0, CellPaddingMax),
-        ShowFolders);
+        ShowFolders,
+        FontWeightScale.Normalize(ItemsFontWeight),
+        FontWeightScale.Normalize(HeaderFontWeight));
 
     private static int NormalizedFontSize(int size) => size <= 0 ? 0 : Math.Clamp(size, FontSizeMin, FontSizeMax);
 }
@@ -346,9 +359,12 @@ public readonly record struct BookBrowserAppearance(
 /// <param name="ContextFontSize">Size (px) of the "Context" column.</param>
 /// <param name="CellsFontFamily">Typeface of the other cells and of the heading above the tree.</param>
 /// <param name="CellsFontSize">Size (px) of the other cells and of the heading.</param>
+/// <param name="HeaderFontWeight">Weight of the column headers (<see cref="FontWeightScale"/>); 0 = not set.</param>
+/// <param name="ContextFontWeight">Weight of the "Context" column (<see cref="FontWeightScale"/>); 0 = not set.</param>
+/// <param name="CellsFontWeight">Weight of the other cells and of the heading (<see cref="FontWeightScale"/>); 0 = not set.</param>
 public readonly record struct FindUsagesAppearance(
     string HeaderFontFamily, int HeaderFontSize, string ContextFontFamily, int ContextFontSize,
-    string CellsFontFamily, int CellsFontSize)
+    string CellsFontFamily, int CellsFontSize, int HeaderFontWeight = 0, int ContextFontWeight = 0, int CellsFontWeight = 0)
 {
     /// <summary>Lower bound of an explicit font size.</summary>
     public const int FontSizeMin = 6;
@@ -366,7 +382,10 @@ public readonly record struct FindUsagesAppearance(
         ContextFontFamily?.Trim() ?? string.Empty,
         NormalizedFontSize(ContextFontSize),
         CellsFontFamily?.Trim() ?? string.Empty,
-        NormalizedFontSize(CellsFontSize));
+        NormalizedFontSize(CellsFontSize),
+        FontWeightScale.Normalize(HeaderFontWeight),
+        FontWeightScale.Normalize(ContextFontWeight),
+        FontWeightScale.Normalize(CellsFontWeight));
 
     private static int NormalizedFontSize(int size) => size <= 0 ? 0 : Math.Clamp(size, FontSizeMin, FontSizeMax);
 }
@@ -374,7 +393,8 @@ public readonly record struct FindUsagesAppearance(
 /// <summary>Font settings of the "Insert Special Character" window.</summary>
 /// <param name="FontFamily">Font family.</param>
 /// <param name="FontSize">Size (px).</param>
-public readonly record struct SpecialCharacterAppearance(string FontFamily, int FontSize)
+/// <param name="FontWeight">Weight of the font (<see cref="FontWeightScale"/>); 0 = not set.</param>
+public readonly record struct SpecialCharacterAppearance(string FontFamily, int FontSize, int FontWeight = 0)
 {
     /// <summary>Default values.</summary>
     public static SpecialCharacterAppearance Default => new("Arial", 24);
@@ -386,7 +406,8 @@ public readonly record struct SpecialCharacterAppearance(string FontFamily, int 
 /// </summary>
 /// <param name="FontFamily">Font family.</param>
 /// <param name="FontSize">Size (px).</param>
-public readonly record struct ColorSchemePreviewAppearance(string FontFamily, int FontSize)
+/// <param name="FontWeight">Weight of the font (<see cref="FontWeightScale"/>); 0 = not set.</param>
+public readonly record struct ColorSchemePreviewAppearance(string FontFamily, int FontSize, int FontWeight = 0)
 {
     /// <summary>Default values.</summary>
     public static ColorSchemePreviewAppearance Default => new("Consolas", 13);
@@ -405,6 +426,9 @@ public sealed record CodeEditorAppearance
 
     /// <summary>Editor font size (px).</summary>
     public int FontSize { get; init; } = 10;
+
+    /// <summary>Editor font weight (<see cref="FontWeightScale"/>); 0 = not set (Regular).</summary>
+    public int FontWeight { get; init; }
 }
 
 /// <summary>Where in the reading order (spine) the edition page goes.</summary>

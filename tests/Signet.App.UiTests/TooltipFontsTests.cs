@@ -51,6 +51,45 @@ public sealed class TooltipFontsTests
     }
 
     [AvaloniaFact]
+    public void A_tooltip_takes_the_weight_of_its_area()
+    {
+        Button button = Tipped();
+        StackPanel area = new() { Children = { button } };
+        TooltipFonts.SetArea(area, TooltipArea.Checkpoints);
+        Window window = new() { Content = area };
+        try
+        {
+            TooltipFonts.Apply(a => a == TooltipArea.Checkpoints ? new TooltipFont("Arial", 14, 300) : TooltipFont.Default);
+            window.Show();
+            Dispatcher.UIThread.RunJobs();
+
+            TipWeight(button).Should().Be(FontWeight.Light);
+
+            TooltipFonts.Apply(_ => TooltipFont.Default);
+
+            TipWeight(button).Should().Be(FontWeight.Normal, "a weight that is not set is Regular");
+        }
+        finally
+        {
+            TooltipFonts.Apply(_ => TooltipFont.Default);
+            window.Close();
+        }
+    }
+
+    // Opens the tooltip of the control and reads the weight its text is shown in.
+    private static FontWeight TipWeight(Control control)
+    {
+        ToolTip.SetIsOpen(control, true);
+        Dispatcher.UIThread.RunJobs();
+        FieldInfo field = typeof(ToolTip).GetField("ToolTipProperty", BindingFlags.NonPublic | BindingFlags.Static)!;
+        ToolTip tip = (ToolTip)control.GetValue((AvaloniaProperty)field.GetValue(null)!)!;
+        FontWeight weight = tip.GetVisualDescendants().OfType<TextBlock>().First().FontWeight;
+        ToolTip.SetIsOpen(control, false);
+        Dispatcher.UIThread.RunJobs();
+        return weight;
+    }
+
+    [AvaloniaFact]
     public void Outside_every_area_a_tooltip_uses_the_font_of_the_other_windows_in_the_interface_typeface()
     {
         Button button = Tipped();

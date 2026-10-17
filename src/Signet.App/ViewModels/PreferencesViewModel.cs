@@ -101,6 +101,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         SpecialCharacterAppearance specialChar = _settings.SpecialCharacterAppearance;
         _specialCharacterFontFamily = specialChar.FontFamily;
         _specialCharacterFontSize = specialChar.FontSize;
+        _specialCharacterFontWeight = specialChar.FontWeight;
 
         WarningAppearance warnings = _settings.WarningAppearance;
         _warningFontSize = warnings.FontSize;
@@ -113,6 +114,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         OpenTagHintAppearance hintLook = _settings.OpenTagHintAppearance;
         _openTagHintFontFamily = hintLook.FontFamily;
         _openTagHintFontSize = hintLook.FontSize;
+        _openTagHintFontWeight = hintLook.FontWeight;
         LoadBookBrowserAppearance();
         LoadFindUsagesFonts();
         LoadLineNumbersFont();
@@ -127,6 +129,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _fileDropZoneEnabled = _settings.FileDropZoneEnabled;
         _findUsagesRefreshOnSave = _settings.FindUsagesRefreshOnSave;
         _findUsagesFitUsageColumn = _settings.FindUsagesFitUsageColumn;
+        _findUsagesRowSpacing = _settings.FindUsagesRowSpacing;
         _navigationHistoryRemember = _settings.NavigationHistoryRemember;
         _navigationHistoryDays = _settings.NavigationHistoryDays;
         _recentLocationsLimit = _settings.RecentLocationsLimit;
@@ -262,9 +265,9 @@ public sealed partial class PreferencesViewModel : ObservableObject
             _localizationManager.ApplySaved();
         }
 
-        if (Changed("ui_font", "ui_font_size"))
+        if (Changed("ui_font", "ui_font_size", "ui_font_weight"))
         {
-            _uiDensity.ApplyUiFont(_appSettings.UiFont, _appSettings.UiFontSize);
+            _uiDensity.ApplyUiFont(_appSettings.UiFont, _appSettings.UiFontSize, _appSettings.UiFontWeight);
         }
 
         if (Changed("warning_appearance"))
@@ -356,6 +359,9 @@ public sealed partial class PreferencesViewModel : ObservableObject
     /// <summary>UI font size in px (0 = the default for the appearance mode).</summary>
     public int UiFontSize => _settings.UiFontSize;
 
+    /// <summary>UI font weight (<see cref="FontWeightScale"/>); 0 = not set.</summary>
+    public int UiFontWeight => _settings.UiFontWeight;
+
     /// <summary>The UI font actually in use (chosen or the mode default) — for the field and the picker window.</summary>
     public string EffectiveUiFontFamily => UiFontFamily.Length > 0 ? UiFontFamily : _uiDensity.DefaultFontNameFor(CompactUi);
 
@@ -374,10 +380,11 @@ public sealed partial class PreferencesViewModel : ObservableObject
     [RelayCommand]
     private async Task ChooseUiFont()
     {
-        if (await PickFontAsync(new FontPickRequest(EffectiveUiFontFamily, EffectiveUiFontSize, false)) is { } result)
+        if (await PickFontAsync(new FontPickRequest(EffectiveUiFontFamily, EffectiveUiFontSize, false, UiFontWeight)) is { } result)
         {
             _settings.UiFont = result.Family;
             _settings.UiFontSize = result.Size;
+            _settings.UiFontWeight = result.Weight;
             NotifyUiFontChanged();
         }
     }
@@ -388,6 +395,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
     {
         _settings.UiFont = string.Empty;
         _settings.UiFontSize = 0;
+        _settings.UiFontWeight = 0;
         NotifyUiFontChanged();
     }
 
@@ -395,6 +403,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
     {
         OnPropertyChanged(nameof(UiFontFamily));
         OnPropertyChanged(nameof(UiFontSize));
+        OnPropertyChanged(nameof(UiFontWeight));
         OnPropertyChanged(nameof(EffectiveUiFontFamily));
         OnPropertyChanged(nameof(UiFontDescription));
     }
@@ -540,12 +549,18 @@ public sealed partial class PreferencesViewModel : ObservableObject
     [ObservableProperty]
     private int _specialCharacterFontSize;
 
+    /// <summary>Font weight of the "Insert Special Character" window; 0 = Regular.</summary>
+    [ObservableProperty]
+    private int _specialCharacterFontWeight;
+
+    partial void OnSpecialCharacterFontWeightChanged(int value) => PersistSpecialCharacterAppearance();
+
     partial void OnSpecialCharacterFontFamilyChanged(string value) => PersistSpecialCharacterAppearance();
 
     partial void OnSpecialCharacterFontSizeChanged(int value) => PersistSpecialCharacterAppearance();
 
     private void PersistSpecialCharacterAppearance() =>
-        _settings.SpecialCharacterAppearance = new SpecialCharacterAppearance(SpecialCharacterFontFamily, SpecialCharacterFontSize);
+        _settings.SpecialCharacterAppearance = new SpecialCharacterAppearance(SpecialCharacterFontFamily, SpecialCharacterFontSize, SpecialCharacterFontWeight);
 
     /// <summary>
     /// Font size (px) of the warning texts in dialogs; 0 = the interface text size. Applied live once applied
@@ -611,10 +626,11 @@ public sealed partial class PreferencesViewModel : ObservableObject
     [RelayCommand]
     private async Task ChooseSpecialCharacterFont()
     {
-        if (await PickFontAsync(new FontPickRequest(SpecialCharacterFontFamily, SpecialCharacterFontSize, false)) is { } result)
+        if (await PickFontAsync(new FontPickRequest(SpecialCharacterFontFamily, SpecialCharacterFontSize, false, SpecialCharacterFontWeight)) is { } result)
         {
             SpecialCharacterFontFamily = result.Family;
             SpecialCharacterFontSize = result.Size;
+            SpecialCharacterFontWeight = result.Weight;
         }
     }
 
@@ -660,6 +676,12 @@ public sealed partial class PreferencesViewModel : ObservableObject
     [ObservableProperty]
     private int _openTagHintFontSize;
 
+    /// <summary>Font weight of the opening tag hint; 0 = the Code Editor weight.</summary>
+    [ObservableProperty]
+    private int _openTagHintFontWeight;
+
+    partial void OnOpenTagHintFontWeightChanged(int value) => PersistOpenTagHintAppearance();
+
     partial void OnOpenTagHintFontFamilyChanged(string value) => PersistOpenTagHintAppearance();
 
     partial void OnOpenTagHintFontSizeChanged(int value) => PersistOpenTagHintAppearance();
@@ -671,10 +693,11 @@ public sealed partial class PreferencesViewModel : ObservableObject
         CodeEditorAppearance editor = _settings.CodeEditorAppearance;
         string family = OpenTagHintFontFamily.Length > 0 ? OpenTagHintFontFamily : editor.FontFamily;
         int size = OpenTagHintFontSize > 0 ? OpenTagHintFontSize : editor.FontSize;
-        if (await PickFontAsync(new FontPickRequest(family, size, false)) is { } result)
+        if (await PickFontAsync(new FontPickRequest(family, size, false, OpenTagHintFontWeight > 0 ? OpenTagHintFontWeight : CodeEditor.FontWeight)) is { } result)
         {
             OpenTagHintFontFamily = result.Family;
             OpenTagHintFontSize = result.Size;
+            OpenTagHintFontWeight = result.Weight;
         }
     }
 
@@ -684,10 +707,11 @@ public sealed partial class PreferencesViewModel : ObservableObject
     {
         OpenTagHintFontFamily = string.Empty;
         OpenTagHintFontSize = 0;
+        OpenTagHintFontWeight = 0;
     }
 
     private void PersistOpenTagHintAppearance() =>
-        _settings.OpenTagHintAppearance = new OpenTagHintAppearance(OpenTagHintFontFamily, OpenTagHintFontSize);
+        _settings.OpenTagHintAppearance = new OpenTagHintAppearance(OpenTagHintFontFamily, OpenTagHintFontSize, OpenTagHintFontWeight);
 
     /// <summary>Code Editor font editor.</summary>
     public CodeEditorAppearanceEditor CodeEditor { get; }
@@ -720,18 +744,21 @@ public sealed partial class PreferencesViewModel : ObservableObject
         SpecialCharacterAppearance specialChar = SpecialCharacterAppearance.Default;
         SpecialCharacterFontFamily = specialChar.FontFamily;
         SpecialCharacterFontSize = specialChar.FontSize;
+        SpecialCharacterFontWeight = specialChar.FontWeight;
 
         CodeEditor.ResetTo(CodeEditorAppearance.Default);
 
         OpenTagHintAppearance hintLook = OpenTagHintAppearance.Default;
         OpenTagHintFontFamily = hintLook.FontFamily;
         OpenTagHintFontSize = hintLook.FontSize;
+        OpenTagHintFontWeight = hintLook.FontWeight;
 
         WarningAppearance warnings = WarningAppearance.Default;
         WarningFontSize = warnings.FontSize;
         PersistWarningAppearance();
 
         FindUsagesFitUsageColumn = _settings.FindUsagesFitUsageColumn;
+        FindUsagesRowSpacing = _settings.FindUsagesRowSpacing;
         LoadBookBrowserAppearance();
         LoadFindUsagesFonts();
         LoadLineNumbersFont();
@@ -792,6 +819,15 @@ public sealed partial class PreferencesViewModel : ObservableObject
     private bool _findUsagesFitUsageColumn;
 
     partial void OnFindUsagesFitUsageColumnChanged(bool value) => _settings.FindUsagesFitUsageColumn = value;
+
+    /// <summary>Upper bound of <see cref="FindUsagesRowSpacing"/>.</summary>
+    public static decimal FindUsagesRowSpacingMax => SettingsStore.FindUsagesRowSpacingMax;
+
+    /// <summary>Appearance and Behavior › Find Usages Window: the extra space (px) between the rows; 0 = the rows touch.</summary>
+    [ObservableProperty]
+    private int _findUsagesRowSpacing;
+
+    partial void OnFindUsagesRowSpacingChanged(int value) => _settings.FindUsagesRowSpacing = value;
 
     /// <summary>Whether the Navigate Back / Forward history of a saved book is kept between sessions.</summary>
     [ObservableProperty]
@@ -1598,6 +1634,7 @@ public sealed partial class CodeEditorAppearanceEditor : ObservableObject
         _pickFont = pickFont;
         _fontFamily = initial.FontFamily;
         _fontSize = initial.FontSize;
+        _fontWeight = initial.FontWeight;
         _persist = persist;
     }
 
@@ -1609,6 +1646,12 @@ public sealed partial class CodeEditorAppearanceEditor : ObservableObject
     [ObservableProperty]
     private int _fontSize;
 
+    /// <summary>Editor font weight (<see cref="FontWeightScale"/>); 0 = Regular.</summary>
+    [ObservableProperty]
+    private int _fontWeight;
+
+    partial void OnFontWeightChanged(int value) => Persist();
+
     partial void OnFontFamilyChanged(string value) => Persist();
 
     partial void OnFontSizeChanged(int value) => Persist();
@@ -1617,10 +1660,11 @@ public sealed partial class CodeEditorAppearanceEditor : ObservableObject
     [RelayCommand]
     private async Task ChooseFont()
     {
-        if (await _pickFont(new FontPickRequest(FontFamily, FontSize, true)) is { } result)
+        if (await _pickFont(new FontPickRequest(FontFamily, FontSize, true, FontWeight)) is { } result)
         {
             FontFamily = result.Family;
             FontSize = result.Size;
+            FontWeight = result.Weight;
         }
     }
 
@@ -1630,10 +1674,11 @@ public sealed partial class CodeEditorAppearanceEditor : ObservableObject
         ArgumentNullException.ThrowIfNull(defaults);
         FontFamily = defaults.FontFamily;
         FontSize = defaults.FontSize;
+        FontWeight = defaults.FontWeight;
         Persist();
     }
 
-    private void Persist() => _persist(new CodeEditorAppearance { FontFamily = FontFamily, FontSize = FontSize });
+    private void Persist() => _persist(new CodeEditorAppearance { FontFamily = FontFamily, FontSize = FontSize, FontWeight = FontWeight });
 }
 
 /// <summary>A Hunspell dictionary to choose: file name and readable language name (e.g. "English - Great Britain").</summary>

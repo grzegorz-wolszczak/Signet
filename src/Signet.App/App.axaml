@@ -223,6 +223,7 @@
     <Style Selector="dock|DocumentTabStripItem">
       <Setter Property="FontFamily" Value="{DynamicResource SignetDocumentTabFontFamily}" />
       <Setter Property="FontSize" Value="{DynamicResource SignetDocumentTabFontSize}" />
+      <Setter Property="FontWeight" Value="{DynamicResource SignetDocumentTabFontWeight}" />
     </Style>
     <Style Selector="dock|DocumentTabStripItem:not(:selected)">
       <Setter Property="Foreground" Value="{DynamicResource SignetDocumentTabForegroundBrush}" />
@@ -275,6 +276,9 @@
          windows show the default Avalonia icon. -->
     <Style Selector=":is(Window)">
       <Setter Property="Icon" Value="/Assets/AppIcon/app.ico" />
+      <!-- The weight of the interface font (Preferences › Appearance › Fonts): a resource that is not set leaves the
+           text as the controls have it; the text inherits it from the window. -->
+      <Setter Property="FontWeight" Value="{DynamicResource SignetUiFontWeight}" />
     </Style>
     <!-- Floating panels (Dock's HostWindow) use the UI font like the main window: Fluent's Window theme sets it, the
          HostWindow theme does not, so a floated panel fell back to Avalonia's default 12 px. Dynamic, so the UI font
@@ -288,6 +292,7 @@
          resource on the application and on the root of every area, together with the Fluent size resource. -->
     <Style Selector="ToolTip">
       <Setter Property="FontFamily" Value="{DynamicResource SignetToolTipFontFamily}" />
+      <Setter Property="FontWeight" Value="{DynamicResource SignetToolTipFontWeight}" />
     </Style>
 
     <!-- A disabled button (e.g. in a toolbar) still shows its tooltip: it is where the reason for being disabled

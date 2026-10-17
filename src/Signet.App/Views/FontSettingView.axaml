@@ -40,6 +40,10 @@
       <NumericUpDown x:Name="SizeBox" Value="{Binding Size}" Minimum="{Binding MinSize}" Maximum="{Binding MaxSize}"
                      Increment="1" FormatString="0" Width="130" />
     </StackPanel>
+    <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding HasWeight}">
+      <TextBlock Text="{loc:Loc PreferencesWindow_FontWeight}" VerticalAlignment="Center" />
+      <ComboBox x:Name="WeightBox" MinWidth="160" ItemsSource="{Binding Weights}" SelectedItem="{Binding SelectedWeight}" />
+    </StackPanel>
     <TextBlock Text="{Binding SizeHint}" IsVisible="{Binding SizeHint, Converter={x:Static ObjectConverters.IsNotNull}}"
                Opacity="0.7" TextWrapping="Wrap" />
     </StackPanel>

@@ -158,6 +158,8 @@ public partial class ThemeKeysView : UserControl
         {
             EditorZoom.SetBaseSize(editor, font.FontSize); // the zoom of Ctrl + wheel comes on top
         }
+
+        editor.FontWeight = FontWeightOptions.ToAvalonia(font.FontWeight);
     }
 
     // A click in the preview selects the key under the mouse (a key of another page, e.g. the text of the editor on

@@ -141,7 +141,9 @@ public partial class FontsPageView : UserControl
         PreviewText.TextWrapping = wrap ? TextWrapping.Wrap : TextWrapping.NoWrap;
         if (_shown is { IsCodePreview: true })
         {
-            CodePreview.Show(_shown.PreviewText, _shown.EffectiveFamily, _shown.EffectiveSize, AppTheme.Current, _shown.CodePreviewExtended);
+            CodePreview.Show(
+                _shown.PreviewText, _shown.EffectiveFamily, _shown.EffectiveSize, AppTheme.Current, _shown.CodePreviewExtended,
+                _shown.EffectiveWeight);
         }
     }
 }

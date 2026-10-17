@@ -4419,6 +4419,24 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="FontPreview_FindUsagesCells" xml:space="preserve">
     <value>Text/index_split_005.html:11:54   11   54   atrybut class</value>
   </data>
+  <data name="PreferencesWindow_FindUsagesRows" xml:space="preserve">
+    <value>Wiersze</value>
+  </data>
+  <data name="PreferencesWindow_FindUsagesRowSpacing" xml:space="preserve">
+    <value>Dodatkowy odstęp między wierszami (px)</value>
+  </data>
+  <data name="PreferencesWindow_FindUsagesRowSpacingHint" xml:space="preserve">
+    <value>Odstęp leży poza tłem komórek, więc między wierszami widać tło okna (np. białe paski między szarymi komórkami kolumny Kontekst). 0 = wiersze stykają się.</value>
+  </data>
+  <data name="FontPickerWindow_Weight" xml:space="preserve">
+    <value>Grubość:</value>
+  </data>
+  <data name="FontWeight_Default" xml:space="preserve">
+    <value>(domyślna)</value>
+  </data>
+  <data name="PreferencesWindow_FontWeight" xml:space="preserve">
+    <value>Grubość:</value>
+  </data>
   <data name="FindUsages_WrapRows" xml:space="preserve">
     <value>Zawijaj wiersze</value>
   </data>

@@ -1455,10 +1455,11 @@ public partial class CodeTabView : UserControl
         double size = appearance.FontSize > 0 ? appearance.FontSize : FallbackFontSize;
         double zoom = _boundViewModel?.ZoomFactor ?? 1.0;
         Editor.FontSize = size * zoom;
+        Editor.FontWeight = FontWeightOptions.ToAvalonia(appearance.FontWeight);
 
         // The line numbers: the editor font unless they have a font of their own.
         LineNumberFontAppearance numbers = _boundViewModel?.LineNumberFontAppearance ?? LineNumberFontAppearance.Default;
-        EditorTheming.ApplyLineNumberFont(Editor, numbers.FontFamily, numbers.FontSize > 0 ? numbers.FontSize * zoom : 0);
+        EditorTheming.ApplyLineNumberFont(Editor, numbers.FontFamily, numbers.FontSize > 0 ? numbers.FontSize * zoom : 0, numbers.FontWeight);
     }
 
     private void UpdateErrorRenderer()

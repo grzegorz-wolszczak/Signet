@@ -192,6 +192,16 @@ public sealed class SettingsStore
         set => Write("ui_font_size", value);
     }
 
+    /// <summary>
+    /// Interface font weight (<see cref="FontWeightScale"/>); 0 = not set (the weight each control has by itself, Regular for
+    /// the text).
+    /// </summary>
+    public int UiFontWeight
+    {
+        get => FontWeightScale.Normalize(ReadInt("ui_font_weight", 0));
+        set => Write("ui_font_weight", FontWeightScale.Normalize(value));
+    }
+
     /// <summary>Original interface font (remembered before it was overridden).</summary>
     public string OriginalUiFont
     {
@@ -612,7 +622,8 @@ public sealed class SettingsStore
             OpenTagHintAppearance d = OpenTagHintAppearance.Default;
             return new OpenTagHintAppearance(
                 ReadString("open_tag_hint_font_family", d.FontFamily),
-                ReadInt("open_tag_hint_font_size", d.FontSize)).Normalized();
+                ReadInt("open_tag_hint_font_size", d.FontSize),
+                ReadInt("open_tag_hint_font_weight", d.FontWeight)).Normalized();
         }
 
         set
@@ -620,6 +631,7 @@ public sealed class SettingsStore
             OpenTagHintAppearance v = value.Normalized();
             WriteSilent("open_tag_hint_font_family", v.FontFamily);
             WriteSilent("open_tag_hint_font_size", v.FontSize);
+            WriteSilent("open_tag_hint_font_weight", v.FontWeight);
             RaiseChanged("open_tag_hint_appearance");
         }
     }
@@ -635,7 +647,8 @@ public sealed class SettingsStore
             LineNumberFontAppearance d = LineNumberFontAppearance.Default;
             return new LineNumberFontAppearance(
                 ReadString("code_editor_line_numbers_font_family", d.FontFamily),
-                ReadInt("code_editor_line_numbers_font_size", d.FontSize)).Normalized();
+                ReadInt("code_editor_line_numbers_font_size", d.FontSize),
+                ReadInt("code_editor_line_numbers_font_weight", d.FontWeight)).Normalized();
         }
 
         set
@@ -643,6 +656,7 @@ public sealed class SettingsStore
             LineNumberFontAppearance v = value.Normalized();
             WriteSilent("code_editor_line_numbers_font_family", v.FontFamily);
             WriteSilent("code_editor_line_numbers_font_size", v.FontSize);
+            WriteSilent("code_editor_line_numbers_font_weight", v.FontWeight);
             RaiseChanged("code_editor_line_numbers_font");
         }
     }
@@ -658,7 +672,8 @@ public sealed class SettingsStore
             DocumentTabFontAppearance d = DocumentTabFontAppearance.Default;
             return new DocumentTabFontAppearance(
                 ReadString("document_tab_font_family", d.FontFamily),
-                ReadInt("document_tab_font_size", d.FontSize)).Normalized();
+                ReadInt("document_tab_font_size", d.FontSize),
+                ReadInt("document_tab_font_weight", d.FontWeight)).Normalized();
         }
 
         set
@@ -666,6 +681,7 @@ public sealed class SettingsStore
             DocumentTabFontAppearance v = value.Normalized();
             WriteSilent("document_tab_font_family", v.FontFamily);
             WriteSilent("document_tab_font_size", v.FontSize);
+            WriteSilent("document_tab_font_weight", v.FontWeight);
             RaiseChanged("document_tab_font");
         }
     }
@@ -1149,12 +1165,14 @@ public sealed class SettingsStore
     {
         get => new(
             ReadString("special_character_font_family", SpecialCharacterAppearance.Default.FontFamily),
-            ReadInt("special_character_font_size", SpecialCharacterAppearance.Default.FontSize));
+            ReadInt("special_character_font_size", SpecialCharacterAppearance.Default.FontSize),
+            FontWeightScale.Normalize(ReadInt("special_character_font_weight", SpecialCharacterAppearance.Default.FontWeight)));
 
         set
         {
             WriteSilent("special_character_font_family", value.FontFamily);
             WriteSilent("special_character_font_size", value.FontSize);
+            WriteSilent("special_character_font_weight", FontWeightScale.Normalize(value.FontWeight));
             RaiseChanged("special_character_appearance");
         }
     }
@@ -1164,12 +1182,14 @@ public sealed class SettingsStore
     {
         get => new(
             ReadString("color_scheme_preview_font_family", ColorSchemePreviewAppearance.Default.FontFamily),
-            ReadInt("color_scheme_preview_font_size", ColorSchemePreviewAppearance.Default.FontSize));
+            ReadInt("color_scheme_preview_font_size", ColorSchemePreviewAppearance.Default.FontSize),
+            FontWeightScale.Normalize(ReadInt("color_scheme_preview_font_weight", ColorSchemePreviewAppearance.Default.FontWeight)));
 
         set
         {
             WriteSilent("color_scheme_preview_font_family", value.FontFamily);
             WriteSilent("color_scheme_preview_font_size", value.FontSize);
+            WriteSilent("color_scheme_preview_font_weight", FontWeightScale.Normalize(value.FontWeight));
             RaiseChanged("color_scheme_preview_appearance");
         }
     }
@@ -1206,7 +1226,8 @@ public sealed class SettingsStore
     /// <summary>The font of the tooltips of an area of the application. Always read normalized.</summary>
     public TooltipFont GetTooltipFont(TooltipArea area) => new TooltipFont(
         ReadString(TooltipFontKey(area, "family"), TooltipFont.Default.FontFamily),
-        ReadInt(TooltipFontKey(area, "size"), TooltipFont.Default.FontSize)).Normalized();
+        ReadInt(TooltipFontKey(area, "size"), TooltipFont.Default.FontSize),
+        ReadInt(TooltipFontKey(area, "weight"), TooltipFont.Default.FontWeight)).Normalized();
 
     /// <summary>Sets the font of the tooltips of an area of the application (stored normalized).</summary>
     public void SetTooltipFont(TooltipArea area, TooltipFont value)
@@ -1214,6 +1235,7 @@ public sealed class SettingsStore
         TooltipFont font = value.Normalized();
         WriteSilent(TooltipFontKey(area, "family"), font.FontFamily);
         WriteSilent(TooltipFontKey(area, "size"), font.FontSize);
+        WriteSilent(TooltipFontKey(area, "weight"), font.FontWeight);
         RaiseChanged("tooltip_fonts");
     }
 
@@ -1234,7 +1256,9 @@ public sealed class SettingsStore
                 ReadInt("book_browser_indent", d.Indent),
                 ReadInt("book_browser_cell_min_height", d.CellMinHeight),
                 ReadInt("book_browser_cell_padding", d.CellPadding),
-                ReadBool("book_browser_show_folders", d.ShowFolders)).Normalized();
+                ReadBool("book_browser_show_folders", d.ShowFolders),
+                ReadInt("book_browser_items_font_weight", d.ItemsFontWeight),
+                ReadInt("book_browser_header_font_weight", d.HeaderFontWeight)).Normalized();
         }
 
         set
@@ -1248,8 +1272,24 @@ public sealed class SettingsStore
             WriteSilent("book_browser_cell_min_height", v.CellMinHeight);
             WriteSilent("book_browser_cell_padding", v.CellPadding);
             WriteSilent("book_browser_show_folders", v.ShowFolders);
+            WriteSilent("book_browser_items_font_weight", v.ItemsFontWeight);
+            WriteSilent("book_browser_header_font_weight", v.HeaderFontWeight);
             RaiseChanged("book_browser_appearance");
         }
+    }
+
+    /// <summary>Upper bound of <see cref="FindUsagesRowSpacing"/> (the lower bound is 0).</summary>
+    public const int FindUsagesRowSpacingMax = 20;
+
+    /// <summary>
+    /// The extra space (px) between the rows of the "Find Usages" panel, outside the backgrounds of the cells (so the
+    /// background of the panel shows through between them); 0 = the rows touch. Clamped to
+    /// 0–<see cref="FindUsagesRowSpacingMax"/>.
+    /// </summary>
+    public int FindUsagesRowSpacing
+    {
+        get => Math.Clamp(ReadInt("find_usages_row_spacing", 0), 0, FindUsagesRowSpacingMax);
+        set => Write("find_usages_row_spacing", Math.Clamp(value, 0, FindUsagesRowSpacingMax));
     }
 
     /// <summary>
@@ -1267,7 +1307,10 @@ public sealed class SettingsStore
                 ReadString("find_usages_font_context_family", d.ContextFontFamily),
                 ReadInt("find_usages_font_context_size", d.ContextFontSize),
                 ReadString("find_usages_font_cells_family", d.CellsFontFamily),
-                ReadInt("find_usages_font_cells_size", d.CellsFontSize)).Normalized();
+                ReadInt("find_usages_font_cells_size", d.CellsFontSize),
+                ReadInt("find_usages_font_header_weight", d.HeaderFontWeight),
+                ReadInt("find_usages_font_context_weight", d.ContextFontWeight),
+                ReadInt("find_usages_font_cells_weight", d.CellsFontWeight)).Normalized();
         }
 
         set
@@ -1279,6 +1322,9 @@ public sealed class SettingsStore
             WriteSilent("find_usages_font_context_size", v.ContextFontSize);
             WriteSilent("find_usages_font_cells_family", v.CellsFontFamily);
             WriteSilent("find_usages_font_cells_size", v.CellsFontSize);
+            WriteSilent("find_usages_font_header_weight", v.HeaderFontWeight);
+            WriteSilent("find_usages_font_context_weight", v.ContextFontWeight);
+            WriteSilent("find_usages_font_cells_weight", v.CellsFontWeight);
             RaiseChanged("find_usages_appearance");
         }
     }
@@ -1977,12 +2023,14 @@ public sealed class SettingsStore
     {
         FontFamily = ReadString(prefix + "font_family_standard", defaults.FontFamily),
         FontSize = ReadInt(prefix + "font_size", defaults.FontSize),
+        FontWeight = FontWeightScale.Normalize(ReadInt(prefix + "font_weight", defaults.FontWeight)),
     };
 
     private void WriteCodeEditor(string prefix, CodeEditorAppearance a)
     {
         WriteSilent(prefix + "font_family_standard", a.FontFamily);
         WriteSilent(prefix + "font_size", a.FontSize);
+        WriteSilent(prefix + "font_weight", FontWeightScale.Normalize(a.FontWeight));
     }
 
     private static IEnumerable<string> AppearanceKeys()
@@ -1994,28 +2042,37 @@ public sealed class SettingsStore
         yield return "preview_font_size";
         yield return "special_character_font_family";
         yield return "special_character_font_size";
+        yield return "special_character_font_weight";
         yield return "warning_font_size";
         yield return "open_tag_hint_font_family";
         yield return "open_tag_hint_font_size";
+        yield return "open_tag_hint_font_weight";
         yield return "book_browser_items_font_family";
         yield return "book_browser_items_font_size";
+        yield return "book_browser_items_font_weight";
         yield return "book_browser_header_font_family";
         yield return "book_browser_header_font_size";
+        yield return "book_browser_header_font_weight";
         yield return "book_browser_indent";
         yield return "book_browser_cell_min_height";
         yield return "book_browser_cell_padding";
         yield return "book_browser_show_folders";
         yield return "find_usages_fit_usage_column";
+        yield return "find_usages_row_spacing";
         yield return "find_usages_font_header_family";
         yield return "find_usages_font_header_size";
+        yield return "find_usages_font_header_weight";
         yield return "find_usages_font_context_family";
         yield return "find_usages_font_context_size";
+        yield return "find_usages_font_context_weight";
         yield return "find_usages_font_cells_family";
         yield return "find_usages_font_cells_size";
+        yield return "find_usages_font_cells_weight";
         foreach (TooltipArea area in Enum.GetValues<TooltipArea>())
         {
             yield return TooltipFontKey(area, "family");
             yield return TooltipFontKey(area, "size");
+            yield return TooltipFontKey(area, "weight");
             yield return TooltipFontKey(area, "inherit");
         }
 
@@ -2027,10 +2084,13 @@ public sealed class SettingsStore
 
         yield return "code_editor_font_family_standard";
         yield return "code_editor_font_size";
+        yield return "code_editor_font_weight";
         yield return "code_editor_line_numbers_font_family";
         yield return "code_editor_line_numbers_font_size";
+        yield return "code_editor_line_numbers_font_weight";
         yield return "document_tab_font_family";
         yield return "document_tab_font_size";
+        yield return "document_tab_font_weight";
     }
 
     // The colors the settings held before the themes (by their old keys).
