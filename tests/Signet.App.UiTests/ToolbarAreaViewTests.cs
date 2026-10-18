@@ -1,11 +1,14 @@
+using System.Collections.Generic;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AwesomeAssertions;
+using Signet.App.Actions;
 using Signet.App.Toolbars;
 using Signet.App.ViewModels;
 using Signet.App.Views;
@@ -126,5 +129,97 @@ public sealed class ToolbarAreaViewTests
         ToolbarDropTarget last = top.ResolveAt(new Point(20, top.Bounds.Height - 0.5));
         last.NewRow.Should().BeTrue();
         last.RowIndex.Should().BeGreaterThan(0);
+    }
+
+    [AvaloniaFact]
+    public void Right_click_menu_of_a_toolbar_offers_hide_and_edit_bound_to_that_toolbar()
+    {
+        (MainWindow window, MainWindowViewModel vm) = ShowMainWindow();
+        ToolbarStripView format = Strip(Area(window, vm.TopToolbars), ToolbarId.Format);
+
+        ContextMenu menu = format.ContextMenu!;
+        menu.Should().NotBeNull();
+        menu.DataContext = format.DataContext;
+        MenuItem[] items = menu.Items.OfType<MenuItem>().ToArray();
+        items.Should().HaveCount(2);
+
+        ToolbarId? edited = null;
+        vm.CustomizeToolbarRequested += (_, id) => edited = id;
+        items[1].Command!.Execute(null);
+        edited.Should().Be(ToolbarId.Format);
+
+        items[0].Command!.Execute(null);
+        Flush(window);
+        format.IsVisible.Should().BeFalse();
+    }
+
+    [AvaloniaFact]
+    public void Right_click_on_a_disabled_toolbar_button_still_opens_the_toolbar_menu()
+    {
+        // Without a book the book actions are blocked and their toolbar buttons disabled.
+        (MainWindow window, MainWindowViewModel vm) = ShowMainWindow();
+        vm.Actions.Get(AppActionIds.Cut)!.IsBlocked = true;
+        Flush(window);
+        ToolbarStripView strip = Strip(Area(window, vm.TopToolbars), ToolbarId.Edit);
+        Button cut = strip.GetVisualDescendants().OfType<Button>()
+            .First(b => b.DataContext is ToolbarItemViewModel { Action.Id: AppActionIds.Cut });
+        cut.IsEffectivelyEnabled.Should().BeFalse("the premise: the button is disabled");
+
+        // Control: the same gesture on the (always enabled) grip opens the menu, so the simulation itself works.
+        Border grip = strip.FindControl<Border>("Grip")!;
+        Point gripCenter = grip.TranslatePoint(new Point(grip.Bounds.Width / 2, grip.Bounds.Height / 2), window)!.Value;
+        window.MouseDown(gripCenter, MouseButton.Right);
+        window.MouseUp(gripCenter, MouseButton.Right);
+        Dispatcher.UIThread.RunJobs();
+        strip.ContextMenu!.IsOpen.Should().BeTrue();
+        strip.ContextMenu.Close();
+        Dispatcher.UIThread.RunJobs();
+
+        Point center = cut.TranslatePoint(new Point(cut.Bounds.Width / 2, cut.Bounds.Height / 2), window)!.Value;
+        window.MouseDown(center, MouseButton.Right);
+        window.MouseUp(center, MouseButton.Right);
+        Dispatcher.UIThread.RunJobs();
+
+        strip.ContextMenu!.IsOpen.Should().BeTrue();
+        strip.ContextMenu.Close();
+    }
+
+    [AvaloniaFact]
+    public void Right_click_on_any_button_of_any_toolbar_opens_the_toolbar_menu_when_no_book_is_open()
+    {
+        (MainWindow window, MainWindowViewModel vm) = ShowMainWindow();
+        vm.Actions.SetBookOpen(false);
+        Flush(window);
+
+        List<string> failures = new();
+        int disabled = 0;
+        foreach (ToolbarStripView strip in Area(window, vm.TopToolbars).GetVisualDescendants().OfType<ToolbarStripView>().Where(s => s.IsEffectivelyVisible))
+        {
+            foreach (Control button in strip.GetVisualDescendants().OfType<Control>()
+                         .Where(c => c is Button or SplitButton && c.IsEffectivelyVisible && c.Bounds.Width >= 1).ToArray())
+            {
+                if (!button.IsEffectivelyEnabled)
+                {
+                    disabled++;
+                }
+
+                Point center = button.TranslatePoint(new Point(button.Bounds.Width / 2, button.Bounds.Height / 2), window)!.Value;
+                window.MouseDown(center, MouseButton.Right);
+                window.MouseUp(center, MouseButton.Right);
+                Dispatcher.UIThread.RunJobs();
+                if (strip.ContextMenu!.IsOpen)
+                {
+                    strip.ContextMenu.Close();
+                    Dispatcher.UIThread.RunJobs();
+                }
+                else
+                {
+                    failures.Add($"{((ToolbarViewModel)strip.DataContext!).Id}: {button.GetType().Name} {button.DataContext} enabled={button.IsEffectivelyEnabled} at {center}");
+                }
+            }
+        }
+
+        disabled.Should().BeGreaterThan(0, "without a book many toolbar buttons are disabled");
+        failures.Should().BeEmpty();
     }
 }

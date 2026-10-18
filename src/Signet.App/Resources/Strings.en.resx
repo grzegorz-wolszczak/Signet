@@ -1286,6 +1286,12 @@ Do you want to save the changes?</value>
   <data name="ToolbarAreaView_DropHere" xml:space="preserve">
     <value>Drop here to put the toolbar in a new row</value>
   </data>
+  <data name="ToolbarStripView_Hide" xml:space="preserve">
+    <value>Hide toolbar</value>
+  </data>
+  <data name="ToolbarStripView_Edit" xml:space="preserve">
+    <value>Edit toolbar…</value>
+  </data>
   <data name="ToolbarStripView_MoreTip" xml:space="preserve">
     <value>More toolbar buttons</value>
   </data>

@@ -1286,6 +1286,12 @@ Czy chcesz zapisać zmiany?</value>
   <data name="ToolbarAreaView_DropHere" xml:space="preserve">
     <value>Upuść tutaj, aby umieścić pasek w nowym wierszu</value>
   </data>
+  <data name="ToolbarStripView_Hide" xml:space="preserve">
+    <value>Schowaj pasek</value>
+  </data>
+  <data name="ToolbarStripView_Edit" xml:space="preserve">
+    <value>Edytuj pasek…</value>
+  </data>
   <data name="ToolbarStripView_MoreTip" xml:space="preserve">
     <value>Pozostałe przyciski paska</value>
   </data>

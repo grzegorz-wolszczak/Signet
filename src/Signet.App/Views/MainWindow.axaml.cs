@@ -18,6 +18,7 @@ using Signet.App.Docking;
 using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.Services;
+using Signet.App.Toolbars;
 using Signet.App.ViewModels;
 using Signet.Core.BookManipulation;
 using Signet.Core.MainUI;
@@ -130,6 +131,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         if (_boundViewModel is not null)
         {
             _boundViewModel.CustomizeToolbarsRequested -= OnCustomizeToolbarsRequested;
+            _boundViewModel.CustomizeToolbarRequested -= OnCustomizeToolbarRequested;
             _boundViewModel.GoToLineRequested -= OnGoToLineRequested;
             _boundViewModel.AboutRequested -= OnAboutRequested;
             _boundViewModel.RenameTagRequested -= OnRenameTagRequested;
@@ -186,6 +188,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         }
 
         _boundViewModel.CustomizeToolbarsRequested += OnCustomizeToolbarsRequested;
+        _boundViewModel.CustomizeToolbarRequested += OnCustomizeToolbarRequested;
         _boundViewModel.GoToLineRequested += OnGoToLineRequested;
         _boundViewModel.AboutRequested += OnAboutRequested;
         _boundViewModel.RenameTagRequested += OnRenameTagRequested;
@@ -1391,7 +1394,11 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         await vm.ApplyStandardizeEpubAsync();
     }
 
-    private void OnCustomizeToolbarsRequested(object? sender, EventArgs e)
+    private void OnCustomizeToolbarsRequested(object? sender, EventArgs e) => ShowToolbarCustomizeWindow(null);
+
+    private void OnCustomizeToolbarRequested(object? sender, ToolbarId toolbar) => ShowToolbarCustomizeWindow(toolbar);
+
+    private void ShowToolbarCustomizeWindow(ToolbarId? selected)
     {
         IServiceProvider? services = App.Services;
         if (services is null)
@@ -1399,10 +1406,13 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             return;
         }
 
-        ToolbarCustomizeWindow window = new()
+        ToolbarCustomizeViewModel customize = services.GetRequiredService<ToolbarCustomizeViewModel>();
+        if (selected is { } toolbar)
         {
-            DataContext = services.GetRequiredService<ToolbarCustomizeViewModel>(),
-        };
+            customize.SelectedToolbar = toolbar;
+        }
+
+        ToolbarCustomizeWindow window = new() { DataContext = customize };
         _ = window.ShowDialog(this);
     }
 }

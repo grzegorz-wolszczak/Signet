@@ -232,6 +232,17 @@ public sealed partial class ToolbarViewModel : ObservableObject
 
     partial void OnIsVisibleChanged(bool value) => _manager.SetVisible(Id, value);
 
+    /// <summary>Raised when the user chooses "Edit toolbar" in the toolbar's context menu.</summary>
+    public event System.EventHandler? EditRequested;
+
+    /// <summary>Hides the toolbar (as unchecking it in View → Toolbars does).</summary>
+    [RelayCommand]
+    private void Hide() => IsVisible = false;
+
+    /// <summary>Asks for the window that edits the toolbar's buttons (<see cref="EditRequested"/>).</summary>
+    [RelayCommand]
+    private void Edit() => EditRequested?.Invoke(this, System.EventArgs.Empty);
+
     // Actions of the heading and case menu buttons, in display order.
     private static readonly string[] HeadingActionIds =
     {
