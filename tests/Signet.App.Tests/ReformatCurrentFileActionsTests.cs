@@ -101,15 +101,15 @@ public sealed class ReformatCurrentFileActionsTests
     }
 
     [Fact]
-    public void Current_file_and_all_files_actions_use_the_beautify_and_html_fix_icons()
+    public void Current_file_actions_use_the_beautify_and_html_fix_icons_and_all_files_actions_the_multiplied_ones()
     {
         using TempDir temp = new();
         (MainWindowViewModel vm, _) = Open(temp);
 
         vm.Actions.Require(AppActionIds.PrettifyCurrentHtml).IconKey.Should().Be("beautify");
-        vm.Actions.Require(AppActionIds.MendPrettifyHtml).IconKey.Should().Be("beautify");
+        vm.Actions.Require(AppActionIds.MendPrettifyHtml).IconKey.Should().Be("beautify-all");
         vm.Actions.Require(AppActionIds.MendCurrentHtml).IconKey.Should().Be("html-fix");
-        vm.Actions.Require(AppActionIds.MendHtml).IconKey.Should().Be("html-fix");
+        vm.Actions.Require(AppActionIds.MendHtml).IconKey.Should().Be("html-fix-all");
     }
 
     [Fact]
