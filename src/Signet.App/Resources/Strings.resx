@@ -1280,6 +1280,12 @@ Czy chcesz zapisać zmiany?</value>
   <data name="MediaTabView_OpenExternally" xml:space="preserve">
     <value>Otwórz zewnętrznie</value>
   </data>
+  <data name="ToolbarStripView_GripTip" xml:space="preserve">
+    <value>Przeciągnij, aby przenieść pasek narzędzi</value>
+  </data>
+  <data name="ToolbarAreaView_DropHere" xml:space="preserve">
+    <value>Upuść tutaj, aby umieścić pasek w nowym wierszu</value>
+  </data>
   <data name="ToolbarStripView_MoreTip" xml:space="preserve">
     <value>Pozostałe przyciski paska</value>
   </data>

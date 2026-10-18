@@ -1280,6 +1280,12 @@ Do you want to save the changes?</value>
   <data name="MediaTabView_OpenExternally" xml:space="preserve">
     <value>Open externally</value>
   </data>
+  <data name="ToolbarStripView_GripTip" xml:space="preserve">
+    <value>Drag to move the toolbar</value>
+  </data>
+  <data name="ToolbarAreaView_DropHere" xml:space="preserve">
+    <value>Drop here to put the toolbar in a new row</value>
+  </data>
   <data name="ToolbarStripView_MoreTip" xml:space="preserve">
     <value>More toolbar buttons</value>
   </data>

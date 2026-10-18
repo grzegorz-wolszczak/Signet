@@ -116,31 +116,10 @@
       </Menu.Styles>
     </Menu>
 
-    <!-- Toolbar area: rows, with the toolbars side by side in a row;
-         toolbars that do not fit hide their buttons in the "»" menu. -->
-    <ItemsControl DockPanel.Dock="Top"
-                  ItemsSource="{Binding ToolbarRows}"
-                  Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}"
-                  Padding="2,1">
-      <ItemsControl.ItemTemplate>
-        <DataTemplate x:DataType="vm:ToolbarRowViewModel">
-          <ItemsControl ItemsSource="{Binding Toolbars}"
-                        IsVisible="{Binding HasVisibleToolbars}"
-                        Margin="0,1">
-            <ItemsControl.ItemsPanel>
-              <ItemsPanelTemplate>
-                <tb:ToolbarRowPanel />
-              </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="vm:ToolbarViewModel">
-                <views:ToolbarStripView IsVisible="{Binding IsVisible}" />
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
-        </DataTemplate>
-      </ItemsControl.ItemTemplate>
-    </ItemsControl>
+    <!-- Toolbar areas under the menu and above the status bar: rows of toolbars that can be moved by their
+         grips (between rows, into new rows, between the two areas). The bottom one is declared after the status
+         bar so that it sits above it. -->
+    <views:ToolbarAreaView DockPanel.Dock="Top" DataContext="{Binding TopToolbars}" />
 
     <Border DockPanel.Dock="Bottom"
             Padding="8,3"
@@ -188,6 +167,8 @@
         </StackPanel>
       </Grid>
     </Border>
+
+    <views:ToolbarAreaView DockPanel.Dock="Bottom" DataContext="{Binding BottomToolbars}" />
 
     <dc:DockControl Layout="{Binding Layout}"
                     Factory="{Binding DockFactory}"

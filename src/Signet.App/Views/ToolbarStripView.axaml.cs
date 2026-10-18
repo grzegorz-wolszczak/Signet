@@ -1,8 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Signet.App.Actions;
@@ -61,6 +64,74 @@ public partial class ToolbarStripView : UserControl
         if (e.Property == ToolbarOverflowPanel.HasOverflowProperty && _panel is not null)
         {
             Chevron.IsVisible = _panel.HasOverflow;
+        }
+    }
+
+    // ---- the grip: dragging it moves the toolbar (the drop is handled by the ToolbarAreaView under the pointer) ----
+
+    private const double DragThreshold = 4;
+
+    private PointerPressedEventArgs? _gripPress;
+    private Point _gripStart;
+
+    private void OnGripPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (!e.GetCurrentPoint(Grip).Properties.IsLeftButtonPressed)
+        {
+            return;
+        }
+
+        _gripPress = e;
+        _gripStart = e.GetPosition(this);
+        e.Pointer.Capture(Grip);
+        e.Handled = true;
+    }
+
+    private void OnGripMoved(object? sender, PointerEventArgs e)
+    {
+        if (_gripPress is not { } press)
+        {
+            return;
+        }
+
+        Point delta = e.GetPosition(this) - _gripStart;
+        if (Math.Abs(delta.X) < DragThreshold && Math.Abs(delta.Y) < DragThreshold)
+        {
+            return;
+        }
+
+        _gripPress = null;
+        e.Pointer.Capture(null);
+        _ = StartDragAsync(press);
+    }
+
+    private void OnGripReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        _gripPress = null;
+        e.Pointer.Capture(null);
+    }
+
+    private void OnGripCaptureLost(object? sender, PointerCaptureLostEventArgs e) => _gripPress = null;
+
+    private async Task StartDragAsync(PointerPressedEventArgs press)
+    {
+        if (DataContext is not ToolbarViewModel toolbar)
+        {
+            return;
+        }
+
+        DataTransferItem item = DataTransferItem.Create(ToolbarDragState.Format, toolbar.Id.ToString());
+        DataTransfer data = new();
+        data.Add(item);
+
+        ToolbarDragState.Begin(toolbar.Id);
+        try
+        {
+            await DragDrop.DoDragDropAsync(press, data, DragDropEffects.Move);
+        }
+        finally
+        {
+            ToolbarDragState.End();
         }
     }
 

@@ -245,9 +245,8 @@ public sealed partial class MainWindowViewModel
 
         Toolbars = new ObservableCollection<ToolbarViewModel>(
             ToolbarManager.AllToolbars.Select(id => new ToolbarViewModel(id, _toolbarManager, _actions)));
-        ToolbarRows = ToolbarManager.Rows
-            .Select(row => new ToolbarRowViewModel(row.Select(id => Toolbars.First(t => t.Id == id)).ToList()))
-            .ToList();
+        TopToolbars = new ToolbarAreaViewModel(ToolbarArea.Top, _toolbarManager, Toolbars);
+        BottomToolbars = new ToolbarAreaViewModel(ToolbarArea.Bottom, _toolbarManager, Toolbars);
         Strings.RegisterLanguageAware(this);
         _toolbarManager.Changed += (_, id) =>
         {
@@ -835,8 +834,11 @@ public sealed partial class MainWindowViewModel
     /// <summary>Configurable toolbars.</summary>
     public ObservableCollection<ToolbarViewModel> Toolbars { get; }
 
-    /// <summary>Toolbars grouped into rows (<see cref="ToolbarManager.Rows"/>).</summary>
-    public IReadOnlyList<ToolbarRowViewModel> ToolbarRows { get; }
+    /// <summary>The toolbar rows under the menu.</summary>
+    public ToolbarAreaViewModel TopToolbars { get; }
+
+    /// <summary>The toolbar rows above the status bar.</summary>
+    public ToolbarAreaViewModel BottomToolbars { get; }
 
     /// <summary>
     /// Actions whose shortcuts are the window's <c>KeyBinding</c>s (all except the panel and code editor ones, including
