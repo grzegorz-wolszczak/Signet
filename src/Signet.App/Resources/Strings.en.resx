@@ -916,6 +916,12 @@ Unwrap anyway?</value>
   <data name="FontPickerWindow_Sample" xml:space="preserve">
     <value>The quick brown fox jumps over the lazy dog — 0123456789 &lt;p class="x"&gt;</value>
   </data>
+  <data name="PreferencesWindow_EnableAltGr" xml:space="preserve">
+    <value>Enable AltGr on international keyboards</value>
+  </data>
+  <data name="PreferencesWindow_EnableAltGrTip" xml:space="preserve">
+    <value>When checked, Ctrl+Alt+key that types a character (e.g. ł on a Polish keyboard) types it instead of running a shortcut. Such a key press cannot be recorded as a shortcut either.</value>
+  </data>
   <data name="PreferencesWindow_PreserveEntities" xml:space="preserve">
     <value>Preserve Entities</value>
   </data>

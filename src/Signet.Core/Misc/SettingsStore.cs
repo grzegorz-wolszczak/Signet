@@ -1007,7 +1007,10 @@ public sealed class SettingsStore
         set => Write("recent_locations_limit", value);
     }
 
-    /// <summary>Whether to handle the AltGr key separately.</summary>
+    /// <summary>
+    /// Whether a Ctrl+Alt stroke that types a character (AltGr+letter) is left to the focused control instead of running a
+    /// shortcut ("Enable AltGr on international keyboards"; see <c>AltGrKeys</c> in the application).
+    /// </summary>
     public bool EnableAltGr
     {
         get => ReadBool("enable_altgr", false);

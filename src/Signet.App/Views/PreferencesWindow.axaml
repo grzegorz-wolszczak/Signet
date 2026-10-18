@@ -1260,7 +1260,11 @@
       <!-- =========================== Keyboard Shortcuts =========================== -->
       <!-- The keymap editor modelled on IntelliJ's Keymap page (KeymapView). -->
       <TabItem Header="{loc:Loc PreferencesWindow_KeyboardShortcuts}">
-        <views:KeymapView DataContext="{Binding Keymap}" Margin="8" />
+        <DockPanel Margin="8">
+          <CheckBox DockPanel.Dock="Top" Content="{loc:Loc PreferencesWindow_EnableAltGr}" IsChecked="{Binding EnableAltGr}"
+                    ToolTip.Tip="{loc:Loc PreferencesWindow_EnableAltGrTip}" Margin="0,0,0,8" />
+          <views:KeymapView DataContext="{Binding Keymap}" />
+        </DockPanel>
       </TabItem>
 
       <!-- ============================ Preserve Entities ============================ -->
