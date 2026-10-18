@@ -2,11 +2,28 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Signet.App.ViewModels"
         xmlns:loc="using:Signet.App.Resources"
+        xmlns:infra="using:Signet.App.Infrastructure"
         x:Class="Signet.App.Views.ToolbarCustomizeWindow"
         x:DataType="vm:ToolbarCustomizeViewModel"
         Title="{loc:Loc ToolbarCustomizeWindow_Title}"
         Width="640" Height="440"
         WindowStartupLocation="CenterOwner">
+
+  <Window.Resources>
+    <!-- A list entry: a column for the icon (the same width for every entry, empty when the action has no icon), then
+         the text. A built-in set gives a colored DrawingImage, "Custom" a monochrome geometry (as on the toolbars). -->
+    <DataTemplate x:Key="EntryTemplate" x:DataType="vm:ToolbarEntry">
+      <Grid ColumnDefinitions="20,*">
+        <Image Grid.Column="0" Width="16" Height="16" HorizontalAlignment="Left"
+               Source="{Binding IconKey, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+               IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        <PathIcon Grid.Column="0" Width="16" Height="16" HorizontalAlignment="Left"
+                  Data="{Binding IconKey, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                  IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        <TextBlock Grid.Column="1" Text="{Binding Label}" VerticalAlignment="Center" />
+      </Grid>
+    </DataTemplate>
+  </Window.Resources>
 
   <Grid RowDefinitions="Auto,*,Auto" Margin="12" >
 
@@ -27,7 +44,8 @@
       <DockPanel Grid.Column="0">
         <TextBlock DockPanel.Dock="Top" Text="{loc:Loc ToolbarCustomizeWindow_AvailableActions}" FontWeight="Bold" Margin="0,0,0,4" />
         <ListBox ItemsSource="{Binding AvailableActions}"
-                 SelectedItem="{Binding SelectedAvailable}" />
+                 SelectedItem="{Binding SelectedAvailable}"
+                 ItemTemplate="{StaticResource EntryTemplate}" />
       </DockPanel>
 
       <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="6" Margin="8,0">
@@ -41,7 +59,8 @@
       <DockPanel Grid.Column="2">
         <TextBlock DockPanel.Dock="Top" Text="{loc:Loc ToolbarCustomizeWindow_CurrentLayout}" FontWeight="Bold" Margin="0,0,0,4" />
         <ListBox ItemsSource="{Binding CurrentItems}"
-                 SelectedItem="{Binding SelectedCurrent}" />
+                 SelectedItem="{Binding SelectedCurrent}"
+                 ItemTemplate="{StaticResource EntryTemplate}" />
       </DockPanel>
     </Grid>
 

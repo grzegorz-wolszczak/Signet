@@ -15,10 +15,11 @@ namespace Signet.App.ViewModels;
 public sealed class ToolbarEntry
 {
     /// <summary>Creates an item.</summary>
-    public ToolbarEntry(string id, string label)
+    public ToolbarEntry(string id, string label, string? iconKey = null)
     {
         Id = id;
         Label = label;
+        IconKey = iconKey;
     }
 
     /// <summary>Action id or <see cref="ToolbarManager.Separator"/>.</summary>
@@ -26,6 +27,12 @@ public sealed class ToolbarEntry
 
     /// <summary>Label to display.</summary>
     public string Label { get; }
+
+    /// <summary>
+    /// Icon key (see <see cref="Signet.App.Infrastructure.IconThemeManager"/>) — the icon the item has on the toolbar —
+    /// or <see langword="null"/> when it has none (an item without an icon shows its label instead).
+    /// </summary>
+    public string? IconKey { get; }
 
     /// <inheritdoc />
     public override string ToString() => Label;
@@ -38,6 +45,10 @@ public sealed class ToolbarEntry
 /// </summary>
 public sealed partial class ToolbarCustomizeViewModel : ObservableObject
 {
+    // The icons of the menu buttons on a toolbar (ToolbarItemViewModel.ForDropDown).
+    private const string HeadingsMenuIconKey = "heading-all";
+    private const string CaseMenuIconKey = "case-change";
+
     private readonly ToolbarManager _toolbars;
     private readonly IReadOnlyList<ToolbarEntry> _allActions;
 
@@ -50,9 +61,9 @@ public sealed partial class ToolbarCustomizeViewModel : ObservableObject
         _allActions = actions.Actions
             .OrderBy(a => a.CategoryDisplayName, StringComparer.CurrentCulture)
             .ThenBy(a => a.Id, StringComparer.Ordinal)
-            .Select(a => new ToolbarEntry(a.Id, $"{a.CategoryDisplayName}: {AppAction.ConvertMnemonics(a.DefaultText).Replace("_", string.Empty)}"))
-            .Append(new ToolbarEntry(ToolbarManager.HeadingsMenu, Strings.Get("ToolbarCustomizeWindow_HeadingMenuEntry")))
-            .Append(new ToolbarEntry(ToolbarManager.CaseMenu, Strings.Get("ToolbarCustomizeWindow_CaseMenuEntry")))
+            .Select(a => new ToolbarEntry(a.Id, $"{a.CategoryDisplayName}: {AppAction.ConvertMnemonics(a.DefaultText).Replace("_", string.Empty)}", a.IconKey))
+            .Append(new ToolbarEntry(ToolbarManager.HeadingsMenu, Strings.Get("ToolbarCustomizeWindow_HeadingMenuEntry"), HeadingsMenuIconKey))
+            .Append(new ToolbarEntry(ToolbarManager.CaseMenu, Strings.Get("ToolbarCustomizeWindow_CaseMenuEntry"), CaseMenuIconKey))
             .ToList();
 
         AvailableActions = new ObservableCollection<ToolbarEntry>(_allActions);
