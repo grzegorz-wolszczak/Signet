@@ -40,12 +40,12 @@
   <Grid x:Name="Split" MinHeight="520">
     <Grid.ColumnDefinitions>
       <ColumnDefinition Width="320" MinWidth="160" />
-      <ColumnDefinition Width="6" />
+      <ColumnDefinition Width="12" />
       <ColumnDefinition Width="*" MinWidth="240" />
     </Grid.ColumnDefinitions>
     <Grid.RowDefinitions>
       <RowDefinition Height="*" MinHeight="160" />
-      <RowDefinition Height="8" />
+      <RowDefinition Height="12" />
       <RowDefinition Height="230" MinHeight="80" />
     </Grid.RowDefinitions>
     <Border Grid.Column="0" BorderBrush="{DynamicResource SignetFrameBrush}" BorderThickness="1">

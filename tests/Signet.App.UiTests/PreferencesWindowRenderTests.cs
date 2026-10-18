@@ -277,6 +277,68 @@ public sealed class PreferencesWindowRenderTests
         window.Close();
     }
 
+    private static PageWidthHost ShowLanguagePage(PreferencesWindow window)
+    {
+        window.Width = 1900;
+        window.Height = 800;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        SelectTab(window.GetVisualDescendants().OfType<TabControl>().First(), "PreferencesWindow_Language");
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+        return window.GetVisualDescendants().OfType<PageWidthHost>().Single(h => h.IsEffectivelyVisible);
+    }
+
+    /// <summary>The settings of a page do not stretch to the right edge: they take what their content needs and a visible splitter follows.</summary>
+    [AvaloniaFact]
+    public void The_settings_of_a_page_take_the_width_of_their_content_and_a_splitter_follows()
+    {
+        PreferencesWindow window = BuildWindow();
+        PageWidthHost host = ShowLanguagePage(window);
+
+        host.SettingsWidth.Should().BeInRange(PageWidthHost.MinSettingsWidth, PageWidthHost.DefaultMaxWidth);
+        host.SettingsWidth.Should().BeLessThan(host.Bounds.Width / 2, "the page is wide and the content is not");
+        host.GetVisualDescendants().OfType<GridSplitter>().Should().ContainSingle(s => s.IsEffectivelyVisible && s.Bounds.Width > 4);
+        double.IsNaN(host.UserWidth).Should().BeTrue("the user has not moved it");
+        window.Close();
+    }
+
+    /// <summary>The splitter moves the width of the settings, to the right edge of the page and back; the window remembers it per page.</summary>
+    [AvaloniaFact]
+    public void Dragging_the_splitter_sets_the_width_and_the_window_remembers_it()
+    {
+        PreferencesWindow window = BuildWindow();
+        PageWidthHost host = ShowLanguagePage(window);
+        GridSplitter splitter = host.GetVisualDescendants().OfType<GridSplitter>().Single();
+        double before = host.SettingsWidth;
+        Point center = splitter.TranslatePoint(new Point(splitter.Bounds.Width / 2, splitter.Bounds.Height / 2), window)!.Value;
+
+        window.MouseDown(center, MouseButton.Left);
+        window.MouseMove(center + new Vector(300, 0));
+        window.MouseUp(center + new Vector(300, 0), MouseButton.Left);
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+
+        host.SettingsWidth.Should().BeApproximately(before + 300, 2);
+        host.UserWidth.Should().BeApproximately(before + 300, 2);
+        window.SplitterSizes[host.Name + ".settingsWidth"].Should().BeCloseTo((int)(before + 300), 2);
+
+        PreferencesWindow reopened = BuildWindow();
+        reopened.SplitterSizes = window.SplitterSizes;
+        PageWidthHost again = ShowLanguagePage(reopened);
+        again.SettingsWidth.Should().BeApproximately(before + 300, 2, "the width is remembered between openings");
+
+        again.UserWidth = 5000;
+        Dispatcher.UIThread.RunJobs();
+        again.SettingsWidth.Should().BeLessThanOrEqualTo(again.Bounds.Width, "the splitter cannot go past the right edge of the page");
+        again.UserWidth = double.NaN;
+        Dispatcher.UIThread.RunJobs();
+        again.SettingsWidth.Should().BeApproximately(before, 2, "back to the default width");
+        window.Close();
+        reopened.Close();
+    }
+
     /// <summary>Escape without changes closes the window right away.</summary>
     [AvaloniaFact]
     public void Escape_without_changes_closes_the_window()
@@ -1827,8 +1889,8 @@ public sealed class PreferencesWindowRenderTests
     }
 
     /// <summary>
-    /// "Label + field" grids: a wide control (a combo box) sits after a label column of a fixed width and takes about half
-    /// of the page; a narrow input (a number) sits at the right edge of its box and its label does not wrap while the box
+    /// "Label + field" grids: a wide control (a combo box) sits after a label column of a fixed width and takes the rest of
+    /// the settings (the user sets their width with the splitter); a narrow input (a number) sits at the right edge of its box and its label does not wrap while the box
     /// is wide — previously long Polish texts hid under the fields, then the fields floated in the middle of the box.
     /// </summary>
     [AvaloniaFact]
@@ -1846,12 +1908,12 @@ public sealed class PreferencesWindowRenderTests
         Dispatcher.UIThread.RunJobs();
 
         Grid grid = window.GetVisualDescendants().OfType<Grid>().First(g =>
-            g.Classes.Contains("labeled") && g.IsEffectivelyVisible && g.ColumnDefinitions.Count == 3);
+            g.Classes.Contains("labeled") && g.IsEffectivelyVisible && g.ColumnDefinitions.Count == 2 && g.ColumnDefinitions[0].Width.IsAbsolute);
         double label = grid.ColumnDefinitions[0].ActualWidth;
         double control = grid.ColumnDefinitions[1].ActualWidth;
 
         label.Should().BeApproximately(268, 1, "a label column of a fixed width (260 and the column spacing)");
-        (control / grid.Bounds.Width).Should().BeInRange(0.3, 0.55, "the control takes about half of the page");
+        control.Should().BeGreaterThan(150, "the control takes the rest of the settings");
         grid.Children.OfType<TextBlock>().Should().OnlyContain(t => t.TextWrapping == TextWrapping.Wrap);
 
         ShowPage(window, "StartScreenAppearancePage");

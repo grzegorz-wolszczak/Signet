@@ -152,6 +152,11 @@ public partial class PreferencesWindow : Window
             {
                 [SectionsSizeKey] = (int)Math.Round(Body.ColumnDefinitions[0].Width.Value),
             };
+            foreach (PageWidthHost host in WidthHosts().Where(h => !double.IsNaN(h.UserWidth)))
+            {
+                sizes[host.Name + PageWidthSuffix] = (int)Math.Round(host.UserWidth);
+            }
+
             foreach (FontsPageView page in _resizedFontsPages)
             {
                 sizes[page.Name + FontsPreviewWidthSuffix] = (int)Math.Round(page.PreviewWidth);
@@ -189,6 +194,13 @@ public partial class PreferencesWindow : Window
             {
                 ColumnDefinition column = Body.ColumnDefinitions[0];
                 column.Width = new GridLength(Math.Max(column.MinWidth, sections));
+            }
+
+            foreach (PageWidthHost host in WidthHosts())
+            {
+                host.UserWidth = value.TryGetValue(host.Name + PageWidthSuffix, out int settingsWidth) && settingsWidth > 0
+                    ? settingsWidth
+                    : double.NaN;
             }
 
             foreach (Grid host in PreviewHosts())
@@ -296,6 +308,36 @@ public partial class PreferencesWindow : Window
     private const string PreviewPaneHeightSuffix = ".paneHeight";
 
     // A preview panel is at the right of the settings (its width is remembered) or, in a wide window, under them (its height).
+    private const string PageWidthSuffix = ".settingsWidth";
+
+    // The settings of the pages that have a splitter after them (the width of the controls is the user's), whose width the
+    // window remembers.
+    private IEnumerable<PageWidthHost> WidthHosts()
+    {
+        yield return LanguageWidth;
+        yield return AppearanceGeneralWidth;
+        yield return CodeEditorWidth;
+        yield return ColorSchemeWidth;
+        yield return PreviewWidth;
+        yield return FootnotesGeneralWidth;
+        yield return FootnotesCssWidth;
+        yield return GeneralWidth;
+        yield return EditionPageWidth;
+        yield return MendPrettifyWidth;
+        yield return SpellcheckWidth;
+        yield return PreserveEntitiesWidth;
+        yield return StartScreenFontsViewWidth;
+        yield return BookBrowserFontsViewWidth;
+        yield return CodeEditorFontsViewWidth;
+        yield return PreviewFontsViewWidth;
+        yield return FindReplaceFontsViewWidth;
+        yield return SpecialCharacterFontsViewWidth;
+        yield return ValidationFontsViewWidth;
+        yield return CleanupFontsViewWidth;
+        yield return FootnotesFontsViewWidth;
+        yield return FindUsagesFontsViewWidth;
+    }
+
     private static string PaneSuffix(Grid host) => host.RowDefinitions.Count > 0 ? PreviewPaneHeightSuffix : PreviewPaneWidthSuffix;
     private readonly List<FontsPageView> _resizedFontsPages = new();
 
