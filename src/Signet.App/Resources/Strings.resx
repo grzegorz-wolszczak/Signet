@@ -6154,6 +6154,12 @@ Zamknij zakładkę</value>
   <data name="PreferencesWindow_ShowZoomHintTip" xml:space="preserve">
     <value>Na ułamek sekundy pokazuje w środku edytora rozmiar czcionki, który właśnie ustawiono.</value>
   </data>
+  <data name="PreferencesWindow_FullPathInTitle" xml:space="preserve">
+    <value>Dodawaj pełną nazwę otwartego pliku na pasku tytułu</value>
+  </data>
+  <data name="PreferencesWindow_FullPathInTitleTip" xml:space="preserve">
+    <value>Włączone: pasek tytułu pokazuje pełną ścieżkę otwartej książki. Wyłączone: tylko nazwę pliku.</value>
+  </data>
   <data name="PreferencesWindow_FontInheritUse" xml:space="preserve">
     <value>Użyj:</value>
   </data>

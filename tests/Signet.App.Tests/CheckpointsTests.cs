@@ -83,7 +83,6 @@ public sealed class CheckpointsTests
 
             workspace.CurrentBook!.IsEpub3.Should().BeTrue();
             workspace.CurrentBook.GetNavResource().Should().NotBeNull();
-            vm.WindowTitle.Should().Contain("epub3.0");
             vm.CheckpointHistory.UndoMessage.Should().Be(Strings.Format(
                 "Checkpoint_Before", Strings.Get("Action_MainWindow_UpgradeToEpub3").Replace("&", string.Empty, StringComparison.Ordinal)));
 

@@ -6154,6 +6154,12 @@ Close the tab</value>
   <data name="PreferencesWindow_ShowZoomHintTip" xml:space="preserve">
     <value>Shows the font size just set in the middle of the editor for a moment.</value>
   </data>
+  <data name="PreferencesWindow_FullPathInTitle" xml:space="preserve">
+    <value>Show the full name of the open file in the title bar</value>
+  </data>
+  <data name="PreferencesWindow_FullPathInTitleTip" xml:space="preserve">
+    <value>On: the title bar shows the full path of the open book. Off: only the file name.</value>
+  </data>
   <data name="PreferencesWindow_FontInheritUse" xml:space="preserve">
     <value>Use:</value>
   </data>

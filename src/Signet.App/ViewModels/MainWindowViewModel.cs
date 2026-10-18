@@ -450,6 +450,10 @@ public sealed partial class MainWindowViewModel
             {
                 ZoomHint.Enabled = _settings.ShowZoomHint;
             }
+            else if (e.QualifiedKey.EndsWith("/window_title_full_path", StringComparison.Ordinal))
+            {
+                RefreshTitle();
+            }
             else if (e.QualifiedKey.EndsWith("/ui_preview_timeout", StringComparison.Ordinal))
             {
                 _preview.DebounceInterval = TimeSpan.FromMilliseconds(_settings.UiPreviewTimeout);
@@ -1472,6 +1476,21 @@ public sealed partial class MainWindowViewModel
         _toc.Refresh();
     }
 
+    /// <summary>
+    /// The title bar text: the application name alone without a book, otherwise the file name (or, with <paramref name="fullPath"/>,
+    /// the full path; a book that was not saved yet has none) with <c>*</c> when modified, then the application name.
+    /// </summary>
+    public static string FormatWindowTitle(bool hasBook, string fileName, string path, bool modified, bool fullPath)
+    {
+        if (!hasBook)
+        {
+            return ApplicationInfo.Name;
+        }
+
+        string shown = fullPath && path.Length > 0 ? path : fileName;
+        return $"{shown}{(modified ? "*" : string.Empty)} - {ApplicationInfo.Name}";
+    }
+
     private void RefreshTitle()
     {
         string name = _fileWorkflow?.CurrentFileName
@@ -1479,14 +1498,10 @@ public sealed partial class MainWindowViewModel
             ?? FileWorkflow.DefaultFileName;
 
         bool modified = (_currentBook?.Modified ?? false) || _tabManager.AnyTabModified;
-        string version = _currentBook?.EpubVersion ?? string.Empty;
-        string versionPart = version.Length > 0 ? $" - epub{version}" : string.Empty;
-
-        WindowTitle = _currentBook is null
-            ? ApplicationInfo.Name
-            : $"{name}{(modified ? "*" : string.Empty)}{versionPart} - {ApplicationInfo.Name}";
-
         string path = _fileWorkflow is not null ? _fileWorkflow.CurrentFilePath : _legacyFilePath ?? string.Empty;
+
+        WindowTitle = FormatWindowTitle(_currentBook is not null, name, path, modified, _settings.FullPathInTitle);
+
         BookFileName = _currentBook is null ? null : name;
         BookFileTooltip = _currentBook is null ? null
             : path.Length > 0 ? path
