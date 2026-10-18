@@ -63,6 +63,9 @@ public sealed class SettingsStore
     public SettingsStore(string filePath)
     {
         _file = new SettingsFile(filePath);
+
+        // Other instances of the program share the file: their recent files are merged with ours when it is saved.
+        _file.AddRecentList(MainWindowGroup, "recentfiles", RecentFilesMax);
         RemoveObsoleteKeys();
     }
 
