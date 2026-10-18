@@ -5,7 +5,6 @@ ICONS: key -> dict(
              icon that already exists in the sets (shared by all three).
     mb, fb : optional badge glyph (small, bottom-right) in the Material / Fluent family.
 )
-icon_multi(key, of): the icon `of` three times (the commands that work on all files).
 ACTIONS: action id -> icon key (existing keys included).
 """
 
@@ -16,11 +15,6 @@ def icon(key, m=None, f=None, mb=None, fb=None, base=None):
     if base:
         m = f = base
     ICONS[key] = dict(m=m, f=f, mb=mb, fb=fb)
-
-
-def icon_multi(key, of):
-    """The icon `of` (a new or an existing key) three times: the variant for the commands that work on all files."""
-    ICONS[key] = dict(multi_of=of)
 
 
 # ---- File -------------------------------------------------------------------------------------------------------
@@ -66,15 +60,6 @@ icon('recent-locations', m='history', f='history')
 icon('find-usages', m='manage_search', f='line_horizontal_4_search')
 icon('mark-selection', m='highlight', f='highlight')
 icon('go-to-line', m='format_list_numbered', f='text_number_list_ltr')
-
-# The commands that work on every file of the search (the "... In File" commands keep the single icons above). The dry
-# run and the filter are not paired with an "in file" command and stay single: three copies of their badges are unreadable.
-icon_multi('find-next-multi', 'find-next')
-icon_multi('find-previous-multi', 'find-previous')
-icon_multi('replace-multi', 'replace')
-icon_multi('replace-find-multi', 'replace-find')
-icon_multi('replace-all-multi', 'replace-all')
-icon_multi('count-all-multi', 'count-all')
 
 # ---- View / panels ----------------------------------------------------------------------------------------------
 icon('word-wrap', m='wrap_text', f='text_wrap')
@@ -143,9 +128,9 @@ ACTIONS = {
     'RemoveFormatting': 'remove-formatting', 'JumpToOpeningTag': 'tag-jump-opening',
     'JumpToClosingTag': 'tag-jump-closing', 'SelectTagContents': 'tag-select', 'RenameTag': 'tag-rename',
     'SplitTag': 'tag-split', 'HeadingPreserveAttributes': 'preserve-attributes',
-    'HideFind': 'find-hide', 'FindNext': 'find-next-multi', 'FindPrevious': 'find-previous-multi',
-    'ReplaceCurrent': 'replace-multi', 'ReplaceNext': 'replace-find-multi', 'ReplacePrevious': 'replace-find-multi',
-    'ReplaceAll': 'replace-all-multi', 'Count': 'count-all-multi', 'DryRunReplaceAll': 'replace-all-dry-run',
+    'HideFind': 'find-hide', 'FindNext': 'find-next', 'FindPrevious': 'find-previous',
+    'ReplaceCurrent': 'replace', 'ReplaceNext': 'replace-find', 'ReplacePrevious': 'replace-find',
+    'ReplaceAll': 'replace-all', 'Count': 'count-all', 'DryRunReplaceAll': 'replace-all-dry-run',
     'FilterReplaceAll': 'replace-all-filter', 'RestartSearch': 'restart',
     'FindNextInFile': 'find-next', 'ReplaceNextInFile': 'replace-find', 'ReplaceAllInFile': 'replace-all',
     'CountInFile': 'count-all', 'GoToLinkOrStyle': 'go-to-definition', 'NavigateBack': 'back',

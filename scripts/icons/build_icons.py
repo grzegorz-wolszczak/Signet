@@ -8,9 +8,8 @@ What it does (see icons_spec.py for the list of icons):
      the same families the existing sets of Signet were made from (the Fluent set and the Material set are copies
      of those icons, the Default set is the colored set of Sigil);
   2. composes them: a base glyph, optionally with a small badge in the bottom-right corner (the base is cut out around
-     the badge so it stays readable in a single color), or an existing/new icon three times (a bigger
-     one on top, two smaller below it) for the commands that work on more than one file. A base can also be an icon that already
-     exists in the sets ('@key');
+     the badge so it stays readable in a single color). A base can also be an icon that already exists in the sets
+     ('@key');
   3. writes DrawingImage resources between the BEGIN/END markers at the end of
      src/Signet.App/Assets/Icons/{MainIcons,FluentIcons,MaterialIcons}.axaml (everything between the markers is
      replaced on each run, nothing else in those files is touched);
@@ -58,8 +57,6 @@ REMOVE_BADGES = {'remove', 'subtract', 'close', 'dismiss', 'delete', 'block', 'p
 BASE_WITH_BADGE = 0.78      # size of the base when it has a badge
 BADGE_SIZE = 0.50           # size of the badge
 HALO = 0.03                 # the gap cut out of the base around the badge
-MULTI_MIDDLE = 0.74         # the upper copy of a "more than one file" icon
-MULTI_SIDE = 0.50           # the two copies under it, on its sides
 
 
 def q(tag):
@@ -284,9 +281,6 @@ def source_children(key, family):
 def icon_children(key, family):
     """Returns (canvas size, drawing elements) of a spec icon in a family."""
     v = spec.ICONS[key]
-    if 'multi_of' in v:
-        return multi_children(v['multi_of'], family)
-
     mono = family != 'main'
     gfam = 'fluent' if family == 'fluent' else 'material'
     base_name = v['f'] if family == 'fluent' else v['m']
@@ -311,20 +305,6 @@ def icon_children(key, family):
     hole = (bx - halo, by - halo, bsize + halo, bsize + halo)
     base = clipped(place(BASE_WITH_BADGE, 0, 0), s, hole)
     return canvas, [base, badge_group(canvas, badge_name, family, gfam, mono)]
-
-
-def multi_children(of, family):
-    """`of` (a spec icon or an existing one) as a bigger copy on top of two smaller ones side by side, for the commands
-    that work on more than one file."""
-    canvas, children = source_children(of, family)
-
-    def place(scale, x, y):
-        return transformed([copy.deepcopy(c) for c in children], canvas, scale, x, y)
-
-    s = canvas
-    left = place(MULTI_SIDE, 0, 0.5 * s)
-    right = place(MULTI_SIDE, (1 - MULTI_SIDE) * s, 0.5 * s)
-    return canvas, [left, right, place(MULTI_MIDDLE, (1 - MULTI_MIDDLE) / 2 * s, 0)]
 
 
 def badge_group(canvas, badge_name, family, gfam, mono):
