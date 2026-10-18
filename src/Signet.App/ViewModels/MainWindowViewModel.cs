@@ -245,6 +245,11 @@ public sealed partial class MainWindowViewModel
 
         Toolbars = new ObservableCollection<ToolbarViewModel>(
             ToolbarManager.AllToolbars.Select(id => new ToolbarViewModel(id, _toolbarManager, _actions)));
+        foreach (ToolbarViewModel toolbar in Toolbars)
+        {
+            toolbar.EditRequested += (_, _) => CustomizeToolbarRequested?.Invoke(this, toolbar.Id);
+        }
+
         TopToolbars = new ToolbarAreaViewModel(ToolbarArea.Top, _toolbarManager, Toolbars);
         BottomToolbars = new ToolbarAreaViewModel(ToolbarArea.Bottom, _toolbarManager, Toolbars);
         Strings.RegisterLanguageAware(this);
@@ -1535,6 +1540,9 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>Raised when the user chooses "Customize Toolbars…" (the window is handled in the view).</summary>
     public event EventHandler? CustomizeToolbarsRequested;
+
+    /// <summary>Raised when the user chooses "Edit toolbar" for one toolbar (the window opens with that toolbar selected).</summary>
+    public event EventHandler<ToolbarId>? CustomizeToolbarRequested;
 
     /// <summary>Closes the floating panel windows together with the main window (otherwise the application keeps running).</summary>
     public void CloseFloatingPanels() => _dockFactory.CloseFloatingWindows();

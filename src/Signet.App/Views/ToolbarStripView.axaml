@@ -9,9 +9,19 @@
              x:DataType="vm:ToolbarViewModel"
              Margin="0,0,8,0">
 
+  <!-- Right click anywhere on the toolbar: hide it (as View → Toolbars does) or edit its buttons. -->
+  <UserControl.ContextMenu>
+    <ContextMenu x:DataType="vm:ToolbarViewModel">
+      <MenuItem Header="{loc:Loc ToolbarStripView_Hide}" Command="{Binding HideCommand}" />
+      <MenuItem Header="{loc:Loc ToolbarStripView_Edit}" Command="{Binding EditCommand}" />
+    </ContextMenu>
+  </UserControl.ContextMenu>
+
   <!-- A single toolbar: buttons in a ToolbarOverflowPanel and, when they do not fit, a "»"
        button at the end with a menu of the hidden items. -->
-  <DockPanel>
+  <!-- Transparent background: a disabled button is not hit-testable, so without it a right click over one would
+       fall through to the area behind the toolbar and the toolbar menu would not open. -->
+  <DockPanel Background="Transparent">
     <!-- The grip: dragging it moves the whole toolbar (to another place in the row, another row, a new row or
          the other toolbar area). Two columns of dots, always visible. -->
     <Border x:Name="Grip"
