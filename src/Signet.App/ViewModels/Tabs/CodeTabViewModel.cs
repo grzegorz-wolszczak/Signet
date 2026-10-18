@@ -43,6 +43,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
     private string _caretBlockElement = string.Empty;
     private bool _removeFormattingEnabled;
     private bool _removeTagPairEnabled;
+    private bool _unwrapDivEnabled;
     private ElementMergeCandidate? _mergeCandidate;
     private bool _insertFileEnabled;
     private bool _insertIdEnabled;
@@ -342,6 +343,9 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
 
     /// <summary>Whether "Remove Tag Pair" is currently allowed.</summary>
     public bool RemoveTagPairEnabled => _removeTagPairEnabled;
+
+    /// <summary>Whether "Unwrap div" is currently allowed: the caret is inside a div that has a closing tag.</summary>
+    public bool UnwrapDivEnabled => _unwrapDivEnabled;
 
     /// <summary>
     /// Elements in the selection that "Merge Content" can combine,
@@ -1806,6 +1810,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
         string block = string.Empty;
         bool removeFormatting = false;
         bool removeTagPair = false;
+        bool unwrapDiv = false;
         ElementMergeCandidate? mergeCandidate = null;
         bool insertFile = false;
         bool insertId = false;
@@ -1819,6 +1824,7 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
             removeFormatting = CodeFormatOperations.RemoveFormattingAllowed(text, _selectionStart, _selectionEnd);
             removeTagPair = _selectionStart == _selectionEnd &&
                 CodeFormatOperations.RemoveTagPairAllowed(text, _caretOffset);
+            unwrapDiv = DivUnwrapper.Check(text, _caretOffset).Div is not null;
             if (_selectionEnd > _selectionStart)
             {
                 mergeCandidate = ElementMerger.Analyze(text, _selectionStart, _selectionEnd);
@@ -1845,6 +1851,12 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
         {
             _removeTagPairEnabled = removeTagPair;
             OnPropertyChanged(nameof(RemoveTagPairEnabled));
+        }
+
+        if (unwrapDiv != _unwrapDivEnabled)
+        {
+            _unwrapDivEnabled = unwrapDiv;
+            OnPropertyChanged(nameof(UnwrapDivEnabled));
         }
 
         if (!SameMergeCandidate(mergeCandidate, _mergeCandidate))
