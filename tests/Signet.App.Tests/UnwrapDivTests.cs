@@ -82,6 +82,22 @@ public sealed class UnwrapDivTests
     }
 
     [Fact]
+    public void The_action_is_enabled_only_while_the_caret_is_inside_a_div()
+    {
+        using TempDir temp = new();
+        (_, CodeTabViewModel tab, AppAction action) = Open(temp);
+
+        Caret(tab, "<?xml");
+        action.IsEnabled.Should().BeFalse();
+        Caret(tab, "<p>x");
+        action.IsEnabled.Should().BeTrue();
+        Caret(tab, "<p>out");
+        action.IsEnabled.Should().BeFalse();
+        Caret(tab, "<div class=\"b\"");
+        action.IsEnabled.Should().BeTrue();
+    }
+
+    [Fact]
     public void Outside_a_div_nothing_changes_and_the_reason_is_given()
     {
         using TempDir temp = new();
@@ -90,6 +106,7 @@ public sealed class UnwrapDivTests
 
         action.Execute(null);
 
+        action.IsEnabled.Should().BeFalse("the Edit menu item is greyed out when the caret is not in a div");
         tab.Document.Text.Should().Be(Doc);
         tab.CheckUnwrapDiv().Problem.Should().Be(DivUnwrapProblem.NotInDiv);
         CodeTabViewModel.UnwrapDivProblemText(DivUnwrapProblem.NotInDiv).Should().Be(Strings.Get("UnwrapDiv_NotInDiv"));

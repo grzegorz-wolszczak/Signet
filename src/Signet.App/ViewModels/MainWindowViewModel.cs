@@ -3292,6 +3292,7 @@ public sealed partial class MainWindowViewModel
         else if (e.PropertyName is nameof(CodeTabViewModel.CaretBlockElement)
             or nameof(CodeTabViewModel.RemoveFormattingEnabled)
             or nameof(CodeTabViewModel.RemoveTagPairEnabled)
+            or nameof(CodeTabViewModel.UnwrapDivEnabled)
             or nameof(CodeTabViewModel.MergeCandidate))
         {
             RefreshFormatActionState();
@@ -3464,7 +3465,8 @@ public sealed partial class MainWindowViewModel
         _actions.SetEnabled(
             tab?.SupportsTagStructure ?? false,
             AppActionIds.JumpToOpeningTag, AppActionIds.JumpToClosingTag, AppActionIds.SelectTagContents,
-            AppActionIds.RenameTag, AppActionIds.SplitTag, AppActionIds.UnwrapDiv);
+            AppActionIds.RenameTag, AppActionIds.SplitTag);
+        _actions.SetEnabled(tab?.UnwrapDivEnabled ?? false, AppActionIds.UnwrapDiv);
 
         // "Merge Content" — a label with the element name and count when merging is possible.
         ElementMergeCandidate? merge = isHtml ? tab?.MergeCandidate : null;
