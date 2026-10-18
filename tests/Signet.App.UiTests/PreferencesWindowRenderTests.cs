@@ -1827,13 +1827,16 @@ public sealed class PreferencesWindowRenderTests
     }
 
     /// <summary>
-    /// The labels on the "General" tab (and the other "label + field" grids) get 2/3
-    /// of the width and wrap — previously long Polish texts hid under the fields.
+    /// "Label + field" grids: a wide control (a combo box) sits after a label column of a fixed width and takes about half
+    /// of the page; a narrow input (a number) sits at the right edge of its box and its label does not wrap while the box
+    /// is wide — previously long Polish texts hid under the fields, then the fields floated in the middle of the box.
     /// </summary>
     [AvaloniaFact]
-    public void Labeled_grids_give_two_thirds_to_the_wrapping_label()
+    public void Labeled_grids_keep_the_fields_next_to_the_label_or_at_the_edge_of_the_box()
     {
         PreferencesWindow window = BuildWindow();
+        window.Width = 1900;
+        window.Height = 860;
         window.Show();
         Dispatcher.UIThread.RunJobs();
         TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
@@ -1842,12 +1845,24 @@ public sealed class PreferencesWindowRenderTests
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
 
-        Grid grid = window.GetVisualDescendants().OfType<Grid>().First(g => g.Classes.Contains("labeled") && g.IsEffectivelyVisible);
+        Grid grid = window.GetVisualDescendants().OfType<Grid>().First(g =>
+            g.Classes.Contains("labeled") && g.IsEffectivelyVisible && g.ColumnDefinitions.Count == 3);
         double label = grid.ColumnDefinitions[0].ActualWidth;
         double control = grid.ColumnDefinitions[1].ActualWidth;
 
-        (label / (label + control)).Should().BeInRange(0.6, 0.7, "about 2/3 for the label");
+        label.Should().BeApproximately(268, 1, "a label column of a fixed width (260 and the column spacing)");
+        (control / grid.Bounds.Width).Should().BeInRange(0.3, 0.55, "the control takes about half of the page");
         grid.Children.OfType<TextBlock>().Should().OnlyContain(t => t.TextWrapping == TextWrapping.Wrap);
+
+        ShowPage(window, "StartScreenAppearancePage");
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+        NumericUpDown box = window.FindControl<NumericUpDown>("StartScreenRecentFilesLimitBox")!;
+        Grid row = (Grid)box.Parent!;
+        TextBlock text = row.Children.OfType<TextBlock>().Single();
+
+        (row.Bounds.Width - (box.Bounds.Right)).Should().BeLessThan(2, "the field sits at the right edge of the box");
+        text.Bounds.Height.Should().BeLessThan(text.FontSize * 2, "the label of a wide box is on one line");
     }
 
     /// <summary>
