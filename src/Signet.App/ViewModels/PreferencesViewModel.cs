@@ -454,6 +454,20 @@ public sealed partial class PreferencesViewModel : ObservableObject
         }
     }
 
+    /// <summary>Whether the title bar shows the full path of the open book instead of its file name; takes effect when saved.</summary>
+    public bool FullPathInTitle
+    {
+        get => _settings.FullPathInTitle;
+        set
+        {
+            if (_settings.FullPathInTitle != value)
+            {
+                _settings.FullPathInTitle = value;
+                OnPropertyChanged();
+            }
+        }
+    }
+
     /// <summary>
     /// Whether the Preferences window is modal (the main window waits until it is closed); takes effect the next time the
     /// window is opened.
@@ -753,6 +767,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
     {
         _settings.ClearAppearanceSettings();
         OnPropertyChanged(nameof(ShowZoomHint));
+        OnPropertyChanged(nameof(FullPathInTitle));
         OnPropertyChanged(nameof(PreferencesWindowModal));
         foreach (FolderExpandOption option in BookBrowserFolders)
         {

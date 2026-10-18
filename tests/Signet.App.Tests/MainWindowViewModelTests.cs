@@ -37,6 +37,18 @@ public sealed class MainWindowViewModelTests
     }
 
     [Fact]
+    public void The_title_shows_the_file_name_or_the_full_path_and_never_the_epub_version()
+    {
+        MainWindowViewModel.FormatWindowTitle(true, "Book - Part 2.epub", @"C:\Books\Book - Part 2.epub", false, false)
+            .Should().Be($"Book - Part 2.epub - {ApplicationInfo.Name}");
+        MainWindowViewModel.FormatWindowTitle(true, "Book.epub", @"C:\Books\Book.epub", true, true)
+            .Should().Be($@"C:\Books\Book.epub* - {ApplicationInfo.Name}");
+        MainWindowViewModel.FormatWindowTitle(true, "Untitled.epub", string.Empty, false, true)
+            .Should().Be($"Untitled.epub - {ApplicationInfo.Name}", "a book that was not saved has no path yet");
+        MainWindowViewModel.FormatWindowTitle(false, "Book.epub", "x", true, true).Should().Be(ApplicationInfo.Name);
+    }
+
+    [Fact]
     public void WindowTitle_is_the_application_name()
     {
         New().WindowTitle.Should().Be(ApplicationInfo.Name);

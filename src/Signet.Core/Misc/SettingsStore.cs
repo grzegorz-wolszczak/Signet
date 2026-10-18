@@ -274,6 +274,16 @@ public sealed class SettingsStore
     }
 
     /// <summary>
+    /// Whether the title bar of the main window shows the full path of the open book instead of just its file name (off by
+    /// default).
+    /// </summary>
+    public bool FullPathInTitle
+    {
+        get => ReadBool("window_title_full_path", false);
+        set => Write("window_title_full_path", value);
+    }
+
+    /// <summary>
     /// Whether the Preferences window is modal (on by default): the main window waits until it is closed. Off, it opens
     /// as a normal window and the main window can be used meanwhile. Read when the window opens.
     /// </summary>
@@ -2081,6 +2091,7 @@ public sealed class SettingsStore
     private static IEnumerable<string> AppearanceKeys()
     {
         yield return "show_zoom_hint";
+        yield return "window_title_full_path";
         yield return "preview_font_family_standard";
         yield return "preview_font_family_serif";
         yield return "preview_font_family_sans_serif";

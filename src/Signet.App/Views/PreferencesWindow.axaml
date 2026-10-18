@@ -217,6 +217,9 @@
             <CheckBox Content="{loc:Loc PreferencesWindow_ShowZoomHint}" IsChecked="{Binding ShowZoomHint}"
                       ToolTip.Tip="{loc:Loc PreferencesWindow_ShowZoomHintTip}" />
 
+                  <CheckBox Content="{loc:Loc PreferencesWindow_FullPathInTitle}" IsChecked="{Binding FullPathInTitle}"
+                            ToolTip.Tip="{loc:Loc PreferencesWindow_FullPathInTitleTip}" />
+
                   <CheckBox x:Name="PreferencesModalBox" Content="{loc:Loc PreferencesWindow_Modal}" IsChecked="{Binding PreferencesWindowModal}"
                             ToolTip.Tip="{loc:Loc PreferencesWindow_ModalTip}" />
 
