@@ -109,6 +109,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _extendedHighlighting = _settings.CodeEditorExtendedHighlighting;
         _bookBrowserFollowsActiveTab = _settings.BookBrowserFollowsActiveTab;
         _multilineTabs = _settings.CodeEditorMultilineTabs;
+        _enableAltGr = _settings.EnableAltGr;
         _openTagHint = _settings.CodeEditorOpenTagHint;
         _openTagHintDelay = _settings.CodeEditorOpenTagHintDelayMs;
         OpenTagHintAppearance hintLook = _settings.OpenTagHintAppearance;
@@ -294,6 +295,11 @@ public sealed partial class PreferencesViewModel : ObservableObject
         if (Changed("debug_logging"))
         {
             DebugLog.IsEnabled = _appSettings.DebugLogging;
+        }
+
+        if (Changed("enable_altgr"))
+        {
+            AltGrKeys.Enabled = _appSettings.EnableAltGr;
         }
 
         if (Changed("dictionary_name", "secondary_dictionary_name", "enabled_user_dictionaries"))
@@ -1607,6 +1613,15 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
     /// <summary>The keymap editor (the "Keyboard Shortcuts" page).</summary>
     public KeymapViewModel Keymap { get; }
+
+    /// <summary>
+    /// "Enable AltGr on international keyboards": a Ctrl+Alt stroke that types a character (AltGr+letter, e.g. ł) is not a
+    /// shortcut (see <see cref="AltGrKeys"/>). Takes effect when applied.
+    /// </summary>
+    [ObservableProperty]
+    private bool _enableAltGr;
+
+    partial void OnEnableAltGrChanged(bool value) => _settings.EnableAltGr = value;
 
     // =====================================================================
     //  Preserve Entities

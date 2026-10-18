@@ -31,6 +31,10 @@ public sealed class ShortcutKeyBindings
     private IReadOnlyList<(AppAction Action, KeyStrokeShortcut Shortcut)> _pendingChords = Array.Empty<(AppAction, KeyStrokeShortcut)>();
     private bool _suspended;
 
+    // Shortcuts that could clash with AltGr (Ctrl+Alt+<character key>) while "Enable AltGr" is on: not KeyBindings (those
+    // are tried before any key handler and would swallow the character), run from OnKeyDownTunnel instead.
+    private IReadOnlyList<(KeyGesture Gesture, ICommand Command)> _altGrCandidates = Array.Empty<(KeyGesture, ICommand)>();
+
     /// <summary>Creates the bindings for <paramref name="host"/> (nothing is bound until <see cref="Attach"/>).</summary>
     public ShortcutKeyBindings(Control host)
     {
@@ -46,6 +50,7 @@ public sealed class ShortcutKeyBindings
     {
         Detach();
         _actions = actions ?? throw new ArgumentNullException(nameof(actions));
+        AltGrKeys.EnabledChanged += OnAltGrEnabledChanged;
         foreach (AppAction action in _actions)
         {
             action.PropertyChanged += OnActionPropertyChanged;
@@ -62,8 +67,10 @@ public sealed class ShortcutKeyBindings
             action.PropertyChanged -= OnActionPropertyChanged;
         }
 
+        AltGrKeys.EnabledChanged -= OnAltGrEnabledChanged;
         _actions = Array.Empty<AppAction>();
         _pendingChords = Array.Empty<(AppAction, KeyStrokeShortcut)>();
+        _altGrCandidates = Array.Empty<(KeyGesture, ICommand)>();
         _host.KeyBindings.Clear();
     }
 
@@ -77,6 +84,8 @@ public sealed class ShortcutKeyBindings
         Rebuild();
     }
 
+    private void OnAltGrEnabledChanged(object? sender, EventArgs e) => Rebuild();
+
     private void OnActionPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(AppAction.Shortcuts))
@@ -89,6 +98,7 @@ public sealed class ShortcutKeyBindings
     {
         _host.KeyBindings.Clear();
         _pendingChords = Array.Empty<(AppAction, KeyStrokeShortcut)>();
+        _altGrCandidates = Array.Empty<(KeyGesture, ICommand)>();
         if (_suspended)
         {
             return;
@@ -98,10 +108,23 @@ public sealed class ShortcutKeyBindings
             .SelectMany(a => a.Shortcuts.OfType<KeyStrokeShortcut>().Select(s => (a, s)))
             .ToList();
 
+        List<(KeyGesture, ICommand)> altGr = new();
+
+        void Bind(KeyGesture gesture, ICommand command)
+        {
+            if (AltGrKeys.Enabled && AltGrKeys.CanBeTypedCharacter(gesture))
+            {
+                altGr.Add((gesture, command));
+                return;
+            }
+
+            _host.KeyBindings.Add(new KeyBinding { Gesture = gesture, Command = command });
+        }
+
         // One-stroke shortcuts first: KeyBindings fire the first match.
         foreach ((AppAction action, KeyStrokeShortcut shortcut) in keyboard.Where(k => k.Shortcut.Second is null))
         {
-            _host.KeyBindings.Add(new KeyBinding { Gesture = shortcut.First, Command = action });
+            Bind(shortcut.First, action);
         }
 
         foreach (IGrouping<string, (AppAction Action, KeyStrokeShortcut Shortcut)> chords in keyboard
@@ -110,8 +133,10 @@ public sealed class ShortcutKeyBindings
         {
             List<(AppAction, KeyStrokeShortcut)> candidates = chords.ToList();
             KeyGesture first = candidates[0].Item2.First;
-            _host.KeyBindings.Add(new KeyBinding { Gesture = first, Command = new StartChordCommand(this, first, candidates) });
+            Bind(first, new StartChordCommand(this, first, candidates));
         }
+
+        _altGrCandidates = altGr;
     }
 
     // The first stroke of two-stroke shortcuts: wait for the second one (shown on the status bar, as in IntelliJ).
@@ -125,7 +150,13 @@ public sealed class ShortcutKeyBindings
     // The stroke after a first stroke: runs the matching two-stroke shortcut; any other key cancels (and is consumed).
     private void OnKeyDownTunnel(object? sender, KeyEventArgs e)
     {
-        if (_pendingChords.Count == 0 || IsModifierKey(e.Key))
+        if (_pendingChords.Count == 0)
+        {
+            RunAltGrCandidate(e);
+            return;
+        }
+
+        if (IsModifierKey(e.Key))
         {
             return;
         }
@@ -142,6 +173,25 @@ public sealed class ShortcutKeyBindings
                     action.Execute(null);
                 }
 
+                return;
+            }
+        }
+    }
+
+    // A Ctrl+Alt shortcut while "Enable AltGr" is on: what a KeyBinding would do, except when the stroke types a character.
+    private void RunAltGrCandidate(KeyEventArgs e)
+    {
+        if (e.Handled || _altGrCandidates.Count == 0 || AltGrKeys.IsTypedCharacter(e))
+        {
+            return;
+        }
+
+        foreach ((KeyGesture gesture, ICommand command) in _altGrCandidates)
+        {
+            if (gesture.Matches(e) && command.CanExecute(null))
+            {
+                command.Execute(null);
+                e.Handled = true;
                 return;
             }
         }

@@ -47,6 +47,12 @@ public sealed class ShortcutCaptureBox : TextBox
             return;
         }
 
+        // With "Enable AltGr" on, AltGr+<letter> is a character of the layout and not a stroke to record.
+        if (AltGrKeys.IsTypedCharacter(e))
+        {
+            return;
+        }
+
         SetGesture(new KeyGesture(e.Key, e.KeyModifiers));
     }
 }

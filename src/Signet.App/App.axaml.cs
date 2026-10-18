@@ -5,6 +5,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
 using Signet.App.Infrastructure;
+using Signet.App.Input;
 using Signet.App.ViewModels;
 using Signet.App.Views;
 using Signet.Core.Misc;
@@ -49,6 +50,7 @@ public partial class App : Application
 
             SettingsStore settings = services.GetRequiredService<SettingsStore>();
             DebugLog.IsEnabled = settings.DebugLogging;
+            AltGrKeys.Enabled = settings.EnableAltGr;
             UiEventLogger.Register();
             MainWindowViewModel viewModel = services.GetRequiredService<MainWindowViewModel>();
             viewModel.StartupFilePath = StartupArguments.FileToOpen(desktop.Args, Environment.CurrentDirectory);

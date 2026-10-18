@@ -916,6 +916,12 @@ Rozpakować mimo to?</value>
   <data name="FontPickerWindow_Sample" xml:space="preserve">
     <value>Zażółć gęślą jaźń — AaBbCc 0123456789 &lt;p class="x"&gt;</value>
   </data>
+  <data name="PreferencesWindow_EnableAltGr" xml:space="preserve">
+    <value>Włącz AltGr na klawiaturach międzynarodowych</value>
+  </data>
+  <data name="PreferencesWindow_EnableAltGrTip" xml:space="preserve">
+    <value>Gdy zaznaczone, Ctrl+Alt+klawisz, który wpisuje znak (np. ł na klawiaturze polskiej), wpisuje ten znak zamiast uruchamiać skrót. Takiego sposobu naciśnięcia nie da się też nagrać jako skrót.</value>
+  </data>
   <data name="PreferencesWindow_PreserveEntities" xml:space="preserve">
     <value>Zachowywane encje</value>
   </data>
