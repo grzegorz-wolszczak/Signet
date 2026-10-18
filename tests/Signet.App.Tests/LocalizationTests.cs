@@ -31,7 +31,7 @@ public sealed class LocalizationTests
     // Contains at least one Unicode letter: tells text apart from bare symbols/arrows (e.g. "▲", "★").
     private static readonly Regex ContainsLetter = new(@"\p{L}", RegexOptions.Compiled);
 
-    private static string AppSourceRoot { get; } = ResolveAppSourceRoot();
+    internal static string AppSourceRoot { get; } = ResolveAppSourceRoot();
 
     [Fact]
     public void Every_polish_resource_key_has_an_english_translation()

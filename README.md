@@ -142,7 +142,12 @@ dotnet run --project src/Signet.App
 ## Icons
 
 The icons used in the application come from Sigil and calibre. Some of them were generated with
-AI.
+AI. The icons added later for menu commands that had none come from two open-source families: Google's
+[Material Icons](https://github.com/google/material-design-icons) (Apache-2.0) and Microsoft's
+[Fluent UI System Icons](https://github.com/microsoft/fluentui-system-icons) (MIT), the same families the Material and
+Fluent icon sets of Sigil are made from. They are composed (a base glyph with a small badge, or the icon of a
+single-file command repeated for the "all files" one) by `scripts/icons/build_icons.py`; see
+[`scripts/icons/README.md`](scripts/icons/README.md).
 
 ## License
 

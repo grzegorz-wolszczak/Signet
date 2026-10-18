@@ -21,16 +21,20 @@ namespace Signet.App.UiTests;
 /// <summary>The icon column of the lists in the "Customize Toolbars" window.</summary>
 public sealed class ToolbarCustomizeWindowTests
 {
-    private static ToolbarCustomizeWindow Show()
+    private static ToolbarCustomizeWindow Show(bool withEntryWithoutIcon = false)
     {
         string settingsPath = Path.Combine(Path.GetTempPath(), "Signet.Tests", $"uitests-{Guid.NewGuid():N}.xml");
         SettingsStore settings = new(settingsPath);
         new IconThemeManager(settings, NullLogger<IconThemeManager>.Instance).ApplySaved();
 
-        ToolbarCustomizeWindow window = new()
+        ToolbarCustomizeViewModel vm = new(new ToolbarManager(settings), new MainWindowViewModel().Actions);
+        if (withEntryWithoutIcon)
         {
-            DataContext = new ToolbarCustomizeViewModel(new ToolbarManager(settings), new MainWindowViewModel().Actions),
-        };
+            // Every command of the catalog has an icon now; an action added later (or a clip slot) may not.
+            vm.AvailableActions.Insert(0, new ToolbarEntry("test.without-icon", "Without an icon"));
+        }
+
+        ToolbarCustomizeWindow window = new() { DataContext = vm };
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
@@ -54,7 +58,7 @@ public sealed class ToolbarCustomizeWindowTests
     [AvaloniaFact]
     public void The_text_of_every_entry_starts_at_the_same_place_whether_or_not_it_has_an_icon()
     {
-        ToolbarCustomizeWindow window = Show();
+        ToolbarCustomizeWindow window = Show(withEntryWithoutIcon: true);
         ListBox available = window.GetVisualDescendants().OfType<ListBox>().First();
 
         double[] textStarts = available.GetVisualDescendants().OfType<TextBlock>()
