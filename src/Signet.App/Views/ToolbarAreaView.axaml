@@ -1,0 +1,58 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Signet.App.ViewModels"
+             xmlns:tb="using:Signet.App.Toolbars"
+             xmlns:views="using:Signet.App.Views"
+             xmlns:loc="using:Signet.App.Resources"
+             x:Class="Signet.App.Views.ToolbarAreaView"
+             x:DataType="vm:ToolbarAreaViewModel">
+
+  <!-- Toolbar area: rows, with the toolbars side by side in a row; toolbars that do not fit hide their buttons
+       in the "»" menu. A toolbar dragged by its grip can be dropped here (see ToolbarAreaView.axaml.cs). -->
+  <Grid x:Name="Root" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
+    <ItemsControl x:Name="RowsHost"
+                  ItemsSource="{Binding Rows}"
+                  Padding="2,1">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:ToolbarRowViewModel">
+          <ItemsControl ItemsSource="{Binding Toolbars}"
+                        IsVisible="{Binding HasVisibleToolbars}"
+                        Margin="0,1">
+            <ItemsControl.ItemsPanel>
+              <ItemsPanelTemplate>
+                <tb:ToolbarRowPanel />
+              </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+              <DataTemplate x:DataType="vm:ToolbarViewModel">
+                <views:ToolbarStripView IsVisible="{Binding IsVisible}" />
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+
+    <!-- Shown only while a toolbar is dragged and the area has no toolbar to drop next to. -->
+    <Border x:Name="Placeholder"
+            IsVisible="False"
+            Height="22"
+            Margin="4,2"
+            CornerRadius="3"
+            BorderThickness="1"
+            BorderBrush="{DynamicResource SystemControlHighlightAccentBrush}">
+      <TextBlock Text="{loc:Loc ToolbarAreaView_DropHere}"
+                 FontSize="11"
+                 HorizontalAlignment="Center"
+                 VerticalAlignment="Center" />
+    </Border>
+
+    <!-- Where the dragged toolbar would land: a line between rows (new row) or inside a row. -->
+    <Border x:Name="Indicator"
+            IsVisible="False"
+            IsHitTestVisible="False"
+            HorizontalAlignment="Left"
+            VerticalAlignment="Top"
+            Background="{DynamicResource SystemControlHighlightAccentBrush}" />
+  </Grid>
+</UserControl>

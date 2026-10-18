@@ -135,9 +135,11 @@ public sealed class MainWindowViewModelTests
         MainWindowViewModel sut = New();
 
         sut.Toolbars.Should().HaveCount(ToolbarManager.AllToolbars.Count);
-        sut.ToolbarRows.Should().HaveCount(ToolbarManager.Rows.Count);
-        sut.ToolbarRows[0].HasVisibleToolbars.Should().BeTrue();
-        sut.ToolbarRows[2].HasVisibleToolbars.Should().BeFalse("the Clip Bar is hidden by default");
+        sut.TopToolbars.Rows.Should().HaveCount(ToolbarManager.DefaultRows.Count);
+        sut.TopToolbars.Rows[0].HasVisibleToolbars.Should().BeTrue();
+        sut.TopToolbars.Rows[2].HasVisibleToolbars.Should().BeFalse("the Clip Bar is hidden by default");
+        sut.BottomToolbars.Rows.Should().BeEmpty();
+        sut.BottomToolbars.HasVisibleToolbars.Should().BeFalse();
     }
 
     [Fact]

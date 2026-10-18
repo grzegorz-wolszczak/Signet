@@ -11,6 +11,27 @@
 
   <!-- A single toolbar: buttons in a ToolbarOverflowPanel and, when they do not fit, a "»"
        button at the end with a menu of the hidden items. -->
+  <DockPanel>
+    <!-- The grip: dragging it moves the whole toolbar (to another place in the row, another row, a new row or
+         the other toolbar area). Two columns of dots, always visible. -->
+    <Border x:Name="Grip"
+            DockPanel.Dock="Left"
+            Width="10"
+            Background="Transparent"
+            Cursor="SizeAll"
+            ToolTip.Tip="{loc:Loc ToolbarStripView_GripTip}"
+            PointerPressed="OnGripPressed"
+            PointerMoved="OnGripMoved"
+            PointerReleased="OnGripReleased"
+            PointerCaptureLost="OnGripCaptureLost">
+      <Canvas Width="6" Height="17" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <Line StartPoint="1,0" EndPoint="1,17" StrokeThickness="2" StrokeDashArray="1,1.5"
+              Stroke="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+        <Line StartPoint="5,0" EndPoint="5,17" StrokeThickness="2" StrokeDashArray="1,1.5"
+              Stroke="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+      </Canvas>
+    </Border>
+
   <Panel>
     <ItemsControl x:Name="Items" ItemsSource="{Binding Items}">
       <ItemsControl.ItemsPanel>
@@ -87,4 +108,5 @@
             ToolTip.Tip="{loc:Loc ToolbarStripView_MoreTip}"
             Click="OnChevronClick" />
   </Panel>
+  </DockPanel>
 </UserControl>

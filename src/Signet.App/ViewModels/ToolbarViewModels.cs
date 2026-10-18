@@ -253,7 +253,7 @@ public sealed partial class ToolbarViewModel : ObservableObject
 /// A row of toolbars (the area between two toolbar breaks). A row without any visible toolbar
 /// is collapsed.
 /// </summary>
-public sealed class ToolbarRowViewModel : ObservableObject
+public sealed class ToolbarRowViewModel : ObservableObject, System.IDisposable
 {
     /// <summary>Creates a row from the given toolbars (in display order).</summary>
     public ToolbarRowViewModel(IReadOnlyList<ToolbarViewModel> toolbars)
@@ -261,13 +261,7 @@ public sealed class ToolbarRowViewModel : ObservableObject
         Toolbars = toolbars;
         foreach (ToolbarViewModel toolbar in toolbars)
         {
-            toolbar.PropertyChanged += (_, e) =>
-            {
-                if (e.PropertyName == nameof(ToolbarViewModel.IsVisible))
-                {
-                    OnPropertyChanged(nameof(HasVisibleToolbars));
-                }
-            };
+            toolbar.PropertyChanged += OnToolbarPropertyChanged;
         }
     }
 
@@ -276,4 +270,93 @@ public sealed class ToolbarRowViewModel : ObservableObject
 
     /// <summary>Whether the row has at least one visible toolbar.</summary>
     public bool HasVisibleToolbars => Toolbars.Any(t => t.IsVisible);
+
+    /// <summary>Stops listening to the toolbars (the toolbars outlive the rows built over them).</summary>
+    public void Dispose()
+    {
+        foreach (ToolbarViewModel toolbar in Toolbars)
+        {
+            toolbar.PropertyChanged -= OnToolbarPropertyChanged;
+        }
+    }
+
+    private void OnToolbarPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ToolbarViewModel.IsVisible))
+        {
+            OnPropertyChanged(nameof(HasVisibleToolbars));
+        }
+    }
+}
+
+/// <summary>
+/// An area of the main window that holds toolbar rows (<see cref="ToolbarArea"/>). Follows the placement kept by
+/// <see cref="ToolbarManager"/> and applies the moves made by dragging toolbars.
+/// </summary>
+public sealed class ToolbarAreaViewModel : ObservableObject
+{
+    private readonly ToolbarManager _manager;
+    private readonly IReadOnlyList<ToolbarViewModel> _toolbars;
+
+    /// <summary>Creates the area over the shared toolbar view models.</summary>
+    public ToolbarAreaViewModel(ToolbarArea area, ToolbarManager manager, IReadOnlyList<ToolbarViewModel> toolbars)
+    {
+        Area = area;
+        _manager = manager;
+        _toolbars = toolbars;
+        Rebuild();
+        manager.PlacementChanged += (_, _) => Rebuild();
+    }
+
+    /// <summary>Which area this is.</summary>
+    public ToolbarArea Area { get; }
+
+    /// <summary>Rows of the area, top to bottom (their order matches <see cref="ToolbarManager.GetRows"/>).</summary>
+    public ObservableCollection<ToolbarRowViewModel> Rows { get; } = new();
+
+    /// <summary>Whether at least one toolbar of the area is shown.</summary>
+    public bool HasVisibleToolbars => Rows.Any(r => r.HasVisibleToolbars);
+
+    /// <summary>
+    /// Moves a dragged toolbar to the place found by <see cref="ToolbarDropResolver"/>: into a new row, or into an
+    /// existing row before another toolbar.
+    /// </summary>
+    public void Drop(ToolbarId toolbar, ToolbarDropTarget target)
+    {
+        if (target.NewRow)
+        {
+            _manager.MoveToolbarToNewRow(toolbar, Area, target.RowIndex);
+        }
+        else
+        {
+            _manager.MoveToolbar(toolbar, Area, target.RowIndex, target.Before);
+        }
+    }
+
+    private void Rebuild()
+    {
+        foreach (ToolbarRowViewModel row in Rows)
+        {
+            row.PropertyChanged -= OnRowPropertyChanged;
+            row.Dispose();
+        }
+
+        Rows.Clear();
+        foreach (IReadOnlyList<ToolbarId> ids in _manager.GetRows(Area))
+        {
+            ToolbarRowViewModel row = new(ids.Select(id => _toolbars.First(t => t.Id == id)).ToList());
+            row.PropertyChanged += OnRowPropertyChanged;
+            Rows.Add(row);
+        }
+
+        OnPropertyChanged(nameof(HasVisibleToolbars));
+    }
+
+    private void OnRowPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ToolbarRowViewModel.HasVisibleToolbars))
+        {
+            OnPropertyChanged(nameof(HasVisibleToolbars));
+        }
+    }
 }

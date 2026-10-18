@@ -26,6 +26,12 @@ public sealed class ToolbarManager
     public const string VisibilityGroup = "toolbars_visible_v2";
 
     /// <summary>
+    /// Settings group holding where the toolbars sit: area name (<c>Top</c>/<c>Bottom</c>) → rows separated by
+    /// <c>;</c>, toolbar ids of a row separated by <c>,</c>. Absent when the placement is the default one.
+    /// </summary>
+    public const string PlacementGroup = "toolbar_rows_v1";
+
+    /// <summary>
     /// Toolbar item: button with a heading level menu (icon <c>heading-all</c>, actions
     /// Heading 1–6 and Normal).
     /// </summary>
@@ -108,9 +114,10 @@ public sealed class ToolbarManager
     };
 
     /// <summary>
-    /// Toolbars grouped into rows — a new row starts at Heading, Clip Bar and Clip Bar2.
+    /// Default placement of the toolbars: all in the <see cref="ToolbarArea.Top"/> area, grouped into rows — a new
+    /// row starts at Heading, Clip Bar and Clip Bar2.
     /// </summary>
-    public static IReadOnlyList<IReadOnlyList<ToolbarId>> Rows { get; } = BuildRows();
+    public static IReadOnlyList<IReadOnlyList<ToolbarId>> DefaultRows { get; } = BuildRows();
 
     private static List<IReadOnlyList<ToolbarId>> BuildRows()
     {
@@ -137,6 +144,7 @@ public sealed class ToolbarManager
     private readonly SettingsStore _settings;
     private readonly Dictionary<ToolbarId, List<string>> _layout = new();
     private readonly Dictionary<ToolbarId, bool> _visible = new();
+    private readonly Dictionary<ToolbarArea, List<List<ToolbarId>>> _placement = new();
 
     /// <summary>Creates the manager and loads the saved layout (or the default one).</summary>
     public ToolbarManager(SettingsStore settings)
@@ -147,6 +155,56 @@ public sealed class ToolbarManager
 
     /// <summary>Raised after every layout or visibility change (argument = the changed toolbar).</summary>
     public event EventHandler<ToolbarId>? Changed;
+
+    /// <summary>Raised after toolbars were moved between rows or areas (<see cref="GetRows"/> returns the new placement).</summary>
+    public event EventHandler? PlacementChanged;
+
+    /// <summary>
+    /// The rows of toolbars in <paramref name="area"/>, top to bottom, each row left to right. A row can hold only
+    /// hidden toolbars; an area without rows is empty.
+    /// </summary>
+    public IReadOnlyList<IReadOnlyList<ToolbarId>> GetRows(ToolbarArea area) =>
+        _placement[area].Select(row => (IReadOnlyList<ToolbarId>)row.ToList()).ToList();
+
+    /// <summary>
+    /// Moves <paramref name="toolbar"/> into the existing row <paramref name="rowIndex"/> of <paramref name="area"/>,
+    /// before <paramref name="before"/> (<see langword="null"/>, or a toolbar that is not in that row = at the end of
+    /// the row). A row left empty by the move disappears.
+    /// </summary>
+    /// <returns><see langword="true"/> when the placement changed.</returns>
+    public bool MoveToolbar(ToolbarId toolbar, ToolbarArea area, int rowIndex, ToolbarId? before)
+    {
+        List<List<ToolbarId>> rows = _placement[area];
+        ArgumentOutOfRangeException.ThrowIfNegative(rowIndex);
+        ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual(rowIndex, rows.Count);
+        if (before == toolbar)
+        {
+            return false;
+        }
+
+        string snapshot = SerializePlacement();
+        List<ToolbarId> target = rows[rowIndex];
+        RemoveFromRows(toolbar, except: null);
+        int at = before is { } anchor ? target.IndexOf(anchor) : -1;
+        target.Insert(at < 0 ? target.Count : at, toolbar);
+        return CommitPlacement(snapshot);
+    }
+
+    /// <summary>
+    /// Moves <paramref name="toolbar"/> into a new row inserted at <paramref name="rowIndex"/> of
+    /// <paramref name="area"/> (0 = above the first row, the row count = below the last one; larger values are
+    /// treated as the row count). A row left empty by the move disappears.
+    /// </summary>
+    /// <returns><see langword="true"/> when the placement changed.</returns>
+    public bool MoveToolbarToNewRow(ToolbarId toolbar, ToolbarArea area, int rowIndex)
+    {
+        List<List<ToolbarId>> rows = _placement[area];
+        string snapshot = SerializePlacement();
+        List<ToolbarId> row = new() { toolbar };
+        rows.Insert(Math.Clamp(rowIndex, 0, rows.Count), row);
+        RemoveFromRows(toolbar, except: row);
+        return CommitPlacement(snapshot);
+    }
 
     /// <summary>All toolbar identifiers in a fixed order.</summary>
     public static IReadOnlyList<ToolbarId> AllToolbars { get; } =
@@ -194,20 +252,137 @@ public sealed class ToolbarManager
             _visible[toolbar] = DefaultVisibility[toolbar];
         }
 
+        LoadPlacement(new Dictionary<string, string>());
+
         _settings.SetStringMap(LayoutGroup, new Dictionary<string, string>());
         _settings.SetStringMap(VisibilityGroup, new Dictionary<string, string>());
+        _settings.SetStringMap(PlacementGroup, new Dictionary<string, string>());
         _settings.Save();
 
         foreach (ToolbarId toolbar in AllToolbars)
         {
             Changed?.Invoke(this, toolbar);
         }
+
+        PlacementChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private bool CommitPlacement(string before)
+    {
+        foreach (List<List<ToolbarId>> rows in _placement.Values)
+        {
+            rows.RemoveAll(row => row.Count == 0);
+        }
+
+        if (SerializePlacement() == before)
+        {
+            return false;
+        }
+
+        PersistPlacement();
+        PlacementChanged?.Invoke(this, EventArgs.Empty);
+        return true;
+    }
+
+    private void RemoveFromRows(ToolbarId toolbar, List<ToolbarId>? except)
+    {
+        foreach (List<List<ToolbarId>> rows in _placement.Values)
+        {
+            foreach (List<ToolbarId> row in rows)
+            {
+                if (!ReferenceEquals(row, except))
+                {
+                    row.Remove(toolbar);
+                }
+            }
+        }
+    }
+
+    // One line per area: rows separated by ';', toolbars of a row by ','. Also used to compare two placements.
+    private string SerializePlacement() =>
+        string.Join('|', Enum.GetValues<ToolbarArea>().Select(SerializeArea));
+
+    private string SerializeArea(ToolbarArea area) =>
+        string.Join(';', _placement[area].Select(row => string.Join(',', row)));
+
+    private void LoadPlacement(IReadOnlyDictionary<string, string> stored)
+    {
+        foreach (ToolbarArea area in Enum.GetValues<ToolbarArea>())
+        {
+            _placement[area] = new List<List<ToolbarId>>();
+        }
+
+        if (stored.Count == 0)
+        {
+            _placement[ToolbarArea.Top] = DefaultRows.Select(row => row.ToList()).ToList();
+            return;
+        }
+
+        // Unknown and repeated ids are dropped (a stale file must not lose or double a toolbar).
+        HashSet<ToolbarId> placed = new();
+        foreach (ToolbarArea area in Enum.GetValues<ToolbarArea>())
+        {
+            if (!stored.TryGetValue(area.ToString(), out string? raw))
+            {
+                continue;
+            }
+
+            foreach (string rowText in raw.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                List<ToolbarId> row = new();
+                foreach (string name in rowText.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                {
+                    if (Enum.TryParse(name, out ToolbarId id) && Enum.IsDefined(id) && placed.Add(id))
+                    {
+                        row.Add(id);
+                    }
+                }
+
+                if (row.Count > 0)
+                {
+                    _placement[area].Add(row);
+                }
+            }
+        }
+
+        // Toolbars missing from the file (e.g. added by a newer version) go to the end of the last top row.
+        List<ToolbarId> missing = AllToolbars.Where(id => !placed.Contains(id)).ToList();
+        if (missing.Count > 0)
+        {
+            List<List<ToolbarId>> top = _placement[ToolbarArea.Top];
+            if (top.Count == 0)
+            {
+                top.Add(new List<ToolbarId>());
+            }
+
+            top[^1].AddRange(missing);
+        }
+    }
+
+    private void PersistPlacement()
+    {
+        Dictionary<string, string> map = new(StringComparer.Ordinal);
+        string defaults = string.Join(';', DefaultRows.Select(row => string.Join(',', row)));
+        if (SerializeArea(ToolbarArea.Top) != defaults || _placement[ToolbarArea.Bottom].Count > 0)
+        {
+            foreach (ToolbarArea area in Enum.GetValues<ToolbarArea>())
+            {
+                if (_placement[area].Count > 0)
+                {
+                    map[area.ToString()] = SerializeArea(area);
+                }
+            }
+        }
+
+        _settings.SetStringMap(PlacementGroup, map);
+        _settings.Save();
     }
 
     private void Load()
     {
         IReadOnlyDictionary<string, string> storedLayout = _settings.GetStringMap(LayoutGroup);
         IReadOnlyDictionary<string, string> storedVisibility = _settings.GetStringMap(VisibilityGroup);
+        LoadPlacement(_settings.GetStringMap(PlacementGroup));
 
         foreach (ToolbarId toolbar in AllToolbars)
         {
