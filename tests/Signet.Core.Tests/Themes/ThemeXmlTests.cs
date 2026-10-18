@@ -19,7 +19,6 @@ public sealed class ThemeXmlTests
         {
             ParentId = "signet-light",
             Variant = InterfaceVariant.Dark,
-            IconSet = "material",
             Created = new DateTimeOffset(2026, 10, 12, 14, 32, 0, TimeSpan.Zero),
             Modified = new DateTimeOffset(2026, 10, 12, 15, 10, 5, TimeSpan.Zero),
         }
@@ -30,8 +29,8 @@ public sealed class ThemeXmlTests
 
         Theme read = ThemeXml.FromXml(ThemeXml.ToXml(theme, ThemeDocumentKind.Theme, "0.8.0-202610121510"));
 
-        (read.Id, read.Name, read.ParentId, read.Variant, read.IconSet, read.Created, read.Modified)
-            .Should().Be((theme.Id, theme.Name, theme.ParentId, theme.Variant, theme.IconSet, theme.Created, theme.Modified));
+        (read.Id, read.Name, read.ParentId, read.Variant, read.Created, read.Modified)
+            .Should().Be((theme.Id, theme.Name, theme.ParentId, theme.Variant, theme.Created, theme.Modified));
         read.Entries.Should().BeEquivalentTo(theme.Entries);
     }
 
@@ -42,7 +41,6 @@ public sealed class ThemeXmlTests
         {
             ParentId = "signet-light",
             Variant = InterfaceVariant.Dark,
-            IconSet = "material",
         }
             .With(ThemeKeys.EditorCurrentLine.Id, ThemeEntry.Of(ThemeColor.Parse("#F5ECD7")))
             .With(ThemeKeys.XhtmlTag.Id, ThemeEntry.Of(new TextAttributes
@@ -61,7 +59,7 @@ public sealed class ThemeXmlTests
 
         xml.Should().Contain("<signet-scheme ").And.NotContain("signet-theme");
         read.Entries.Should().BeEquivalentTo(scheme.Entries);
-        (read.Variant, read.IconSet).Should().Be(((InterfaceVariant?)null, (string?)null), "the variant and the icons belong to the theme");
+        read.Variant.Should().BeNull("the variant belongs to the theme");
     }
 
     [Fact]

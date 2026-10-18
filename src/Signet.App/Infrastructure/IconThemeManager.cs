@@ -61,11 +61,10 @@ public sealed class IconThemeManager(SettingsStore settings, ILogger<IconThemeMa
         }
     }
 
-    /// <summary>Loads the saved icon set, or the one the theme names, and merges it into the application resources.</summary>
-    /// <param name="themeIconSet">The icon set of the theme in use (<see cref="AppTheme"/>); <c>null</c> = the saved one.</param>
-    public void ApplySaved(string? themeIconSet = null)
+    /// <summary>Loads the saved icon set and merges it into the application resources.</summary>
+    public void ApplySaved()
     {
-        Apply(themeIconSet is not null ? Normalize(themeIconSet) : Current, _settings.UiCustomIconFolder);
+        Apply(Current, _settings.UiCustomIconFolder);
         ApplyToolbarIconSize();
     }
 

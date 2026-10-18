@@ -46,7 +46,7 @@ public partial class App : Application
             services.GetRequiredService<LocalizationManager>().ApplySaved();
             services.GetRequiredService<ThemeManager>().ApplySaved();
             services.GetRequiredService<UiDensityManager>().ApplySaved();
-            services.GetRequiredService<IconThemeManager>().ApplySaved(AppTheme.Current.IconSet);
+            services.GetRequiredService<IconThemeManager>().ApplySaved();
 
             SettingsStore settings = services.GetRequiredService<SettingsStore>();
             DebugLog.IsEnabled = settings.DebugLogging;

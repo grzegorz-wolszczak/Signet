@@ -192,7 +192,6 @@ public sealed class ThemeStore
             {
                 ParentId = deleted.ParentId ?? LightId,
                 Variant = child.Variant ?? deleted.Variant,
-                IconSet = child.IconSet ?? deleted.IconSet,
                 Entries = deleted.Entries.SetItems(child.Entries),
             };
             _user[child.Id] = adopted;
@@ -297,7 +296,6 @@ public sealed class ThemeStore
         return new Theme(theme.Id, theme.Name)
         {
             Variant = theme.Variant != bundled.Variant ? theme.Variant : null,
-            IconSet = theme.IconSet != bundled.IconSet ? theme.IconSet : null,
             Entries = entries,
         };
     }
@@ -309,13 +307,12 @@ public sealed class ThemeStore
             : key.Kind == ThemeKeyKind.Color ? ThemeEntry.Of(key.DefaultColor) : ThemeEntry.Of(key.DefaultAttributes!);
 
     private static bool IsEmpty(Theme overlay) =>
-        overlay.Entries.IsEmpty && overlay.Variant is null && overlay.IconSet is null;
+        overlay.Entries.IsEmpty && overlay.Variant is null;
 
     // A bundled theme with its changes.
     private static Theme Apply(Theme bundled, Theme overlay) => bundled with
     {
         Variant = overlay.Variant ?? bundled.Variant,
-        IconSet = overlay.IconSet ?? bundled.IconSet,
         Entries = bundled.Entries.SetItems(overlay.Entries),
     };
 

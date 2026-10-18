@@ -80,7 +80,6 @@ public sealed class ThemeDocumentViewModelTests : IDisposable
         sut.CanRestoreDefaults.Should().BeFalse();
 
         sut.Variant = sut.Variants.Single(v => v.Value == InterfaceVariant.Dark);
-        sut.IconSet = sut.IconSets.Single(o => o.Code == "material");
 
         vm.HasChanges.Should().BeTrue("the theme changed");
         sut.CanRestoreDefaults.Should().BeTrue();
@@ -89,13 +88,11 @@ public sealed class ThemeDocumentViewModelTests : IDisposable
         vm.HasChanges.Should().BeFalse();
         ThemeStore saved = new(ThemesFolder);
         saved.Resolver.Variant(saved.Get(ThemeStore.LightId)).Should().Be(InterfaceVariant.Dark);
-        saved.Resolver.IconSet(saved.Get(ThemeStore.LightId)).Should().Be("material");
 
         sut.RestoreDefaultsCommand.Execute(null);
 
         new ThemeStore(ThemesFolder).IsModified(ThemeStore.LightId).Should().BeFalse();
         sut.Variant!.Value.Should().Be(InterfaceVariant.Light);
-        sut.IconSet!.Code.Should().BeNull("as set in Appearance");
     }
 
     [Fact]
@@ -153,7 +150,6 @@ public sealed class ThemeDocumentViewModelTests : IDisposable
         Directory.CreateDirectory(_root);
         string file = Path.Combine(_root, "exported" + ThemeXml.Extension);
         sut.Selected = sut.Themes.Single(t => t.Id == ThemeStore.DarkId);
-        sut.IconSet = sut.IconSets.Single(o => o.Code == "fluent");
         sut.PickExportPath = _ => Task.FromResult<string?>(file);
         sut.PickImportPath = () => Task.FromResult<string?>(file);
 
@@ -161,7 +157,6 @@ public sealed class ThemeDocumentViewModelTests : IDisposable
         await sut.ImportCommand.ExecuteAsync(null);
 
         sut.Selected!.Name.Should().Be("Signet Dark (2)");
-        sut.IconSet!.Code.Should().Be("fluent", "the export had the change not saved yet");
         sut.Variant!.Value.Should().Be(InterfaceVariant.Dark);
 
         File.WriteAllText(file, "<scheme name=\"Darcula\" />");

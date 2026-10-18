@@ -24,11 +24,6 @@ public sealed record ThemeOption(string Id, string Name, bool IsBundled)
     public override string ToString() => Name;
 }
 
-/// <summary>A choice of the icon set of a theme: a code, or <c>null</c> for the one chosen in Appearance.</summary>
-/// <param name="Code">The code of the icon set (<see cref="IconThemeManager.SupportedThemes"/>); <c>null</c> = Appearance's.</param>
-/// <param name="DisplayName">The name in the list.</param>
-public sealed record IconSetOption(string? Code, string DisplayName);
-
 /// <summary>
 /// The management of the themes of the interface (Preferences › Appearance and Behavior › Appearance) or of the color
 /// schemes of the editors (Preferences › Appearance and Behavior › Code Editor › Color Scheme), as Rider's pages of the
@@ -65,9 +60,6 @@ public sealed partial class ThemeDocumentViewModel : ObservableObject
             new VariantOption(InterfaceVariant.Light, Strings.Get("ColorScheme_VariantLight")),
             new VariantOption(InterfaceVariant.Dark, Strings.Get("ColorScheme_VariantDark")),
         };
-        IconSets = new[] { new IconSetOption(null, Strings.Get("ColorScheme_IconSetFromAppearance")) }
-            .Concat(IconThemeManager.SupportedThemes.Select(t => new IconSetOption(t.Code, t.DisplayName)))
-            .ToArray();
         RefreshThemes(Kind == ThemeDocumentKind.Theme ? _settings.UiThemeId : _settings.EditorSchemeId);
     }
 
@@ -176,12 +168,9 @@ public sealed partial class ThemeDocumentViewModel : ObservableObject
     /// <summary>The variants of the controls.</summary>
     public IReadOnlyList<VariantOption> Variants { get; }
 
-    /// <summary>The icon sets a theme can name.</summary>
-    public IReadOnlyList<IconSetOption> IconSets { get; }
-
     /// <summary>The theme in use (in the draft; applied on Save) and edited on the page.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Variant), nameof(IconSet), nameof(IsBundled), nameof(CanRestoreDefaults))]
+    [NotifyPropertyChangedFor(nameof(Variant), nameof(IsBundled), nameof(CanRestoreDefaults))]
     [NotifyCanExecuteChangedFor(nameof(RenameCommand), nameof(DeleteCommand), nameof(RestoreDefaultsCommand))]
     private ThemeOption? _selected;
 
@@ -274,22 +263,6 @@ public sealed partial class ThemeDocumentViewModel : ObservableObject
             if (value is not null && Current is { } theme && _store.Resolver.Variant(theme) != value.Value)
             {
                 Edit(theme with { Variant = value.Value });
-                OnPropertyChanged();
-            }
-        }
-    }
-
-    /// <summary>The icon set of the selected theme (<c>null</c> code = the one chosen in Appearance).</summary>
-    public IconSetOption? IconSet
-    {
-        get => Kind == ThemeDocumentKind.Theme && Current is { } theme
-            ? IconSets.FirstOrDefault(o => o.Code == _store.Resolver.IconSet(theme)) ?? IconSets[0]
-            : null;
-        set
-        {
-            if (value is not null && Current is { } theme && _store.Resolver.IconSet(theme) != value.Code)
-            {
-                Edit(theme with { IconSet = value.Code });
                 OnPropertyChanged();
             }
         }

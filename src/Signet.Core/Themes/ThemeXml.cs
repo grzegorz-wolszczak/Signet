@@ -14,7 +14,7 @@ namespace Signet.Core.Themes;
 /// The XML file of a theme of the interface (<c>*.signet-theme.xml</c>) or of a color scheme (<c>*.signet-scheme.xml</c>,
 /// root <c>signet-scheme</c>), modelled on IntelliJ's <c>.icls</c>:
 /// <code>
-/// &lt;signet-theme version="1" id="…" name="Sepia" parent="signet-light" variant="Light" icon-set="material"&gt;
+/// &lt;signet-theme version="1" id="…" name="Sepia" parent="signet-light" variant="Light"&gt;
 ///   &lt;meta created="2026-10-12T14:32:00Z" modified="…" signet="0.8.0-…" /&gt;
 ///   &lt;colors&gt;&lt;color key="editor.currentLine" value="#F5ECD7" /&gt;&lt;/colors&gt;
 ///   &lt;attributes&gt;
@@ -94,7 +94,6 @@ public static class ThemeXml
             Variant = kind == ThemeDocumentKind.Theme && Optional(root, "variant") is { } variant
                 ? Enum<InterfaceVariant>(root, "variant", variant)
                 : null,
-            IconSet = kind == ThemeDocumentKind.Theme ? Optional(root, "icon-set") : null,
         };
 
         if (root.Element("meta") is { } meta)
@@ -149,8 +148,7 @@ public static class ThemeXml
             new XAttribute("id", theme.Id),
             new XAttribute("name", theme.Name),
             theme.ParentId is { } parent ? new XAttribute("parent", parent) : null,
-            theme.Variant is { } variant ? new XAttribute("variant", variant.ToString()) : null,
-            theme.IconSet is { } iconSet ? new XAttribute("icon-set", iconSet) : null);
+            theme.Variant is { } variant ? new XAttribute("variant", variant.ToString()) : null);
 
         if (theme.Created is not null || theme.Modified is not null || writtenBy is not null)
         {

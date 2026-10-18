@@ -184,16 +184,12 @@
                   <Border Classes="section">
                     <StackPanel x:Name="ThemePanel" x:DataType="vm:ThemeDocumentViewModel" Spacing="10">
                       <views:ThemeSelectorView x:Name="ThemeSelector" />
-                      <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="6">
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc ColorScheme_Variant}" VerticalAlignment="Center" />
-                        <ComboBox x:Name="VariantBox" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Stretch"
+                      <Grid Classes="labeled" ColumnDefinitions="260,*,*" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc ColorScheme_Variant}" VerticalAlignment="Center" />
+                        <ComboBox x:Name="VariantBox" Grid.Column="1" HorizontalAlignment="Stretch"
                                   ItemsSource="{Binding Variants}" SelectedItem="{Binding Variant}" DisplayMemberBinding="{Binding DisplayName}" />
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc ColorScheme_IconSet}" VerticalAlignment="Center" />
-                        <ComboBox x:Name="IconSetBox" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch"
-                                  ItemsSource="{Binding IconSets}" SelectedItem="{Binding IconSet}" DisplayMemberBinding="{Binding DisplayName}" />
                       </Grid>
                       <TextBlock Text="{Binding BundledNote}" IsVisible="{Binding IsBundled}" Opacity="0.7" TextWrapping="Wrap" />
-                      <TextBlock Text="{loc:Loc ColorScheme_IconSetNote}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
                     </StackPanel>
                   </Border>
 
@@ -211,6 +207,7 @@
                     <ComboBox Grid.Column="1" ItemsSource="{Binding AvailableIconThemes}" SelectedItem="{Binding SelectedIconTheme}"
                               DisplayMemberBinding="{Binding DisplayName}" />
                   </Grid>
+                  <TextBlock Text="{loc:Loc PreferencesWindow_IconThemeRestartNotice}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
 
                   <CheckBox Content="{loc:Loc PreferencesWindow_CompactUi}" IsChecked="{Binding CompactUi}" />
 
