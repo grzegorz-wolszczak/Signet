@@ -69,8 +69,9 @@
     <Style Selector="TextBox.colorValue:focus /template/ Border#PART_BorderElement">
       <Setter Property="Background" Value="{Binding $parent[TextBox].Background}" />
     </Style>
-    <!-- "Label + control" grids: 2/3 of the width for the (wrapping) label, 1/3 for the control
-         stretched across the whole column — long labels do not hide under the fields. -->
+    <!-- "Label + control" grids: a narrow input (a number) is "*,Auto" — the label takes what is left and the input sits at
+         the right edge of the box; a wide control (a combo box, a text box) is "260,*,*" — a label column of a fixed width
+         and the control in about half of the page. -->
     <Style Selector="Grid.labeled > TextBlock">
       <Setter Property="TextWrapping" Value="Wrap" />
       <Setter Property="VerticalAlignment" Value="Center" />
@@ -140,7 +141,7 @@
       <!-- ================================ Language ================================ -->
       <TabItem Header="{loc:Loc PreferencesWindow_Language}">
         <StackPanel Spacing="10" Margin="8">
-          <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+          <Grid Classes="labeled" ColumnDefinitions="260,*,*" ColumnSpacing="8">
             <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_Language}" />
             <ComboBox Grid.Column="1" ItemsSource="{Binding AvailableLanguages}" SelectedItem="{Binding SelectedLanguage}"
                       DisplayMemberBinding="{Binding DisplayName}" />
@@ -202,7 +203,7 @@
                     </StackPanel>
                   </Border>
 
-                  <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+                  <Grid Classes="labeled" ColumnDefinitions="260,*,*" ColumnSpacing="8">
                     <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_IconTheme}" />
                     <ComboBox Grid.Column="1" ItemsSource="{Binding AvailableIconThemes}" SelectedItem="{Binding SelectedIconTheme}"
                               DisplayMemberBinding="{Binding DisplayName}" />
@@ -220,7 +221,7 @@
                   <CheckBox x:Name="PreferencesModalBox" Content="{loc:Loc PreferencesWindow_Modal}" IsChecked="{Binding PreferencesWindowModal}"
                             ToolTip.Tip="{loc:Loc PreferencesWindow_ModalTip}" />
 
-                  <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+                  <Grid Classes="labeled" ColumnDefinitions="260,*,*" ColumnSpacing="8">
                     <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_CustomIconFolder}" />
                     <TextBox Grid.Column="1" Text="{Binding CustomIconFolder}" />
                   </Grid>
@@ -258,18 +259,18 @@
                     <StackPanel Spacing="6">
                       <TextBlock Text="{loc:Loc PreferencesWindow_StartScreenRecentList}" FontWeight="Bold" />
                       <!-- The same setting as the number of recent files of the File menu (General › Behavior). -->
-                      <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
                         <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_StartScreenRecentFilesLimit}" />
                         <NumericUpDown x:Name="StartScreenRecentFilesLimitBox" Grid.Column="1" Value="{Binding RecentFilesLimit}"
                                        Minimum="0" Maximum="{x:Static vm:PreferencesViewModel.RecentFilesLimitMax}"
-                                       Increment="1" FormatString="0" HorizontalAlignment="Left" Width="130" />
+                                       Increment="1" FormatString="0" HorizontalAlignment="Right" Width="130" />
                       </Grid>
-                      <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
                         <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_StartScreenIndent}" />
                         <NumericUpDown x:Name="StartScreenIndentBox" Grid.Column="1" Value="{Binding StartScreenIndent}"
                                        Minimum="{x:Static vm:PreferencesViewModel.StartScreenIndentMin}"
                                        Maximum="{x:Static vm:PreferencesViewModel.StartScreenIndentMax}"
-                                       Increment="1" FormatString="0" HorizontalAlignment="Left" Width="130" />
+                                       Increment="1" FormatString="0" HorizontalAlignment="Right" Width="130" />
                       </Grid>
                       <HyperlinkButton Content="{loc:Loc PreferencesWindow_StartScreenTitleColorInTheme}" Padding="0"
                                        views:PreferencesPage.Target="AppearanceGeneralPage"
@@ -336,26 +337,26 @@
                   <Border Classes="section">
                     <StackPanel Spacing="6">
                       <TextBlock Text="{loc:Loc PreferencesWindow_BookBrowserTreeLook}" FontWeight="Bold" />
-                      <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
                         <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_BookBrowserIndent}" />
                         <NumericUpDown x:Name="BookBrowserIndentBox" Grid.Column="1" Value="{Binding BookBrowserIndent}"
                                        Minimum="{x:Static vm:PreferencesViewModel.BookBrowserIndentMin}"
                                        Maximum="{x:Static vm:PreferencesViewModel.BookBrowserIndentMax}"
-                                       Increment="1" FormatString="0" HorizontalAlignment="Left" Width="130" />
+                                       Increment="1" FormatString="0" HorizontalAlignment="Right" Width="130" />
                       </Grid>
-                      <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
                         <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_BookBrowserCellMinHeight}" />
                         <NumericUpDown x:Name="BookBrowserCellMinHeightBox" Grid.Column="1" Value="{Binding BookBrowserCellMinHeight}"
                                        Minimum="0"
                                        Maximum="{x:Static vm:PreferencesViewModel.BookBrowserCellMinHeightMax}"
-                                       Increment="1" FormatString="0" HorizontalAlignment="Left" Width="130" />
+                                       Increment="1" FormatString="0" HorizontalAlignment="Right" Width="130" />
                       </Grid>
-                      <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
                         <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_BookBrowserCellPadding}" />
                         <NumericUpDown x:Name="BookBrowserCellPaddingBox" Grid.Column="1" Value="{Binding BookBrowserCellPadding}"
                                        Minimum="0"
                                        Maximum="{x:Static vm:PreferencesViewModel.BookBrowserCellPaddingMax}"
-                                       Increment="1" FormatString="0" HorizontalAlignment="Left" Width="130" />
+                                       Increment="1" FormatString="0" HorizontalAlignment="Right" Width="130" />
                       </Grid>
                       <CheckBox x:Name="BookBrowserShowFoldersBox" Content="{loc:Loc PreferencesWindow_BookBrowserShowFolders}"
                                 IsChecked="{Binding BookBrowserShowFolders}" ToolTip.Tip="{loc:Loc PreferencesWindow_BookBrowserShowFoldersTip}" />
@@ -470,7 +471,7 @@
                     <Border Classes="section">
                       <StackPanel Spacing="6">
                         <TextBlock Text="{loc:Loc PreferencesWindow_PreviewHighlight}" FontWeight="Bold" />
-                        <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                        <Grid Classes="labeled" ColumnDefinitions="260,*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
                           <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightStyle}" VerticalAlignment="Center" />
                           <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding AvailablePreviewHighlightStyles}" SelectedItem="{Binding PreviewHighlightStyle}">
                             <ComboBox.ItemTemplate>
@@ -704,9 +705,9 @@
 
             <!-- Code Editor: the opening tag tooltip over a closing tag, with its delay. -->
             <CheckBox Content="{loc:Loc PreferencesWindow_OpenTagHint}" IsChecked="{Binding OpenTagHint}" />
-            <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8" Margin="28,0,0,0">
+            <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="28,0,0,0">
               <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_OpenTagHintDelay}" IsEnabled="{Binding OpenTagHint}" />
-              <TextBox Grid.Column="1" Text="{Binding OpenTagHintDelay}" Width="80" HorizontalAlignment="Left"
+              <TextBox Grid.Column="1" Text="{Binding OpenTagHintDelay}" Width="80" HorizontalAlignment="Right"
                        IsEnabled="{Binding OpenTagHint}" />
             </Grid>
 
@@ -732,8 +733,10 @@
             <TextBlock Text="{Binding BundledNote}" IsVisible="{Binding IsBundled}" Opacity="0.7" TextWrapping="Wrap" />
 
             <!-- The font of the code previews of the pages below (a setting of the program, not of the scheme); the
-                 DataContext is set in code. -->
-            <views:FontSettingView x:Name="ColorSchemePreviewFontView" Margin="0,8,0,0" Width="420" HorizontalAlignment="Left" />
+                 DataContext is set in code. It takes the left half of the page. -->
+            <Grid ColumnDefinitions="*,*" Margin="0,8,0,0">
+              <views:FontSettingView x:Name="ColorSchemePreviewFontView" HorizontalAlignment="Stretch" />
+            </Grid>
           </StackPanel>
         </ScrollViewer>
       </TabItem>
@@ -769,15 +772,18 @@
             <HyperlinkButton x:Name="PreviewAppearanceLink" Content="{loc:Loc PreferencesWindow_Appearance}" Padding="0"
                              views:PreferencesPage.Target="PreviewAppearancePage" />
 
-            <Border Classes="section">
-              <StackPanel Spacing="6">
-                <TextBlock Text="{loc:Loc PreferencesWindow_PreviewLiveRefresh}" FontWeight="Bold" />
-                <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
-                  <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewRefreshDelay}" VerticalAlignment="Center" TextWrapping="Wrap" />
-                  <TextBox Grid.Column="1" Text="{Binding PreviewRefreshDelay}" Width="80" HorizontalAlignment="Left" />
-                </Grid>
-              </StackPanel>
-            </Border>
+            <!-- The box takes the left half of the page; the field sits right after its label. -->
+            <Grid ColumnDefinitions="*,*">
+              <Border Classes="section">
+                <StackPanel Spacing="6">
+                  <TextBlock Text="{loc:Loc PreferencesWindow_PreviewLiveRefresh}" FontWeight="Bold" />
+                  <Grid Classes="labeled" ColumnDefinitions="Auto,Auto" ColumnSpacing="8">
+                    <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewRefreshDelay}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                    <TextBox Grid.Column="1" Text="{Binding PreviewRefreshDelay}" Width="80" HorizontalAlignment="Left" />
+                  </Grid>
+                </StackPanel>
+              </Border>
+            </Grid>
 
           </StackPanel>
         </ScrollViewer>
@@ -819,11 +825,11 @@
                   <Border Classes="section">
                     <StackPanel Spacing="6">
                       <TextBlock Text="{loc:Loc PreferencesWindow_FindUsagesRows}" FontWeight="Bold" />
-                      <Grid Classes="labeled" ColumnDefinitions="2*,*" ColumnSpacing="8">
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
                         <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_FindUsagesRowSpacing}" />
                         <NumericUpDown x:Name="FindUsagesRowSpacingBox" Grid.Column="1" Value="{Binding FindUsagesRowSpacing}"
                                        Minimum="0" Maximum="{x:Static vm:PreferencesViewModel.FindUsagesRowSpacingMax}"
-                                       Increment="1" FormatString="0" HorizontalAlignment="Left" Width="130" />
+                                       Increment="1" FormatString="0" HorizontalAlignment="Right" Width="130" />
                       </Grid>
                       <TextBlock Text="{loc:Loc PreferencesWindow_FindUsagesRowSpacingHint}" TextWrapping="Wrap" Opacity="0.75" />
                     </StackPanel>
@@ -1017,7 +1023,7 @@
               <TextBox Text="{Binding NavigationHistoryDays}" Width="80" />
             </StackPanel>
 
-            <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8" Margin="0,6,0,0">
+            <Grid Classes="labeled" ColumnDefinitions="260,*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8" Margin="0,6,0,0">
               <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_ClipboardHistoryLimit}" VerticalAlignment="Center" />
               <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ClipboardHistoryLimit}" Width="80" HorizontalAlignment="Left" />
 
@@ -1063,7 +1069,7 @@
                       IsChecked="{Binding EditionPageEnabled}" />
 
             <StackPanel x:Name="EditionPageOptions" Spacing="10" Margin="28,0,0,0" IsEnabled="{Binding EditionPageEnabled}">
-              <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+              <Grid Classes="labeled" ColumnDefinitions="260,*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_EditionPagePosition}" VerticalAlignment="Center" />
                 <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding AvailableEditionPagePositions}"
                           SelectedItem="{Binding EditionPagePosition}">
@@ -1179,7 +1185,7 @@
       <TabItem Header="{loc:Loc PreferencesWindow_Spellcheck}">
         <DockPanel Margin="8">
           <StackPanel DockPanel.Dock="Top" Spacing="10">
-            <Grid Classes="labeled" ColumnDefinitions="2*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8">
+            <Grid Classes="labeled" ColumnDefinitions="260,*,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8">
               <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PrimaryDictionary}" />
               <ComboBox Grid.Row="0" Grid.Column="1" x:Name="PrimaryDictionaryBox"
                         ItemsSource="{Binding AvailableDictionaries}"
