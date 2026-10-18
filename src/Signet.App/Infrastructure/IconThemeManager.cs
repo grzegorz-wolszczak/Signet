@@ -146,10 +146,6 @@ public sealed class IconThemeManager(SettingsStore settings, ILogger<IconThemeMa
     {
         "beautify", "html-fix", "polish",
 
-        // Derived from the two above for the "all files" actions: the icon of the single-file action in the middle and
-        // two smaller copies on its sides (see Assets/Icons/Calibre/README.md).
-        "beautify-all", "html-fix-all",
-
         // The icons of the Book Browser folders (calibre's file list): Text, Styles, Images, Fonts, Misc.
         "keyboard-prefs", "lookfeel", "view-image", "font", "dir",
     };
