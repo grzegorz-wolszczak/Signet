@@ -28,6 +28,5 @@ How an icon is composed:
   remove/close/delete, orange otherwise). The base is cut out around the badge so it stays readable in a single color.
 * **base `@key`**: the base is an icon that already exists in the set (e.g. "Save As" is the existing Save icon with a
   badge), so related commands look related.
-* **multi**: for a command that works on all files, the icon of the single-file command as a bigger copy on top of two
-  smaller ones. (The colored PNGs of "Prettify/Mend all HTML files" are made the same way, see
-  `src/Signet.App/Assets/Icons/Calibre/README.md`.)
+* A command that works on all files (Find Next, Replace All, Count All, ...) has the same icon as its twin in the Find
+  and Replace panel (and the "... In File" command): an icon that is only a smaller copy of another one is not readable.
