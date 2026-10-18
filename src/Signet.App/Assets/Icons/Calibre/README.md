@@ -1,15 +1,13 @@
 # Icons from calibre
 
-The files in this directory, except the two marked "derived" below, are unmodified copies from the **calibre** project
+The files in this directory are unmodified copies from the **calibre** project
 (<https://github.com/kovidgoyal/calibre>, `resources/images/`, commit
 `59bd2bc260bf0601429cb12a8731f91e92aa47d7`).
 
 | File | Icon key | Signet actions |
 |---|---|---|
-| `beautify.png` | `beautify` | Beautify code (current file) |
-| `html-fix.png` | `html-fix` | Fix code (current file) |
-| `beautify-all.png` | `beautify-all` | Beautify all HTML files — derived: `beautify.png` in the middle with two smaller copies on its sides |
-| `html-fix-all.png` | `html-fix-all` | Fix all HTML files — derived: `html-fix.png` in the middle with two smaller copies on its sides |
+| `beautify.png` | `beautify` | Beautify code (current file / all HTML files) |
+| `html-fix.png` | `html-fix` | Fix code (current file / all HTML files) |
 | `polish.png` | `polish` | Cleanup (calibre's "Polish books" icon; copied from commit `665ef7bdccc772f8d8d7de13d7b8e753a7cbcf5b`) |
 | `keyboard-prefs.png` | `keyboard-prefs` | Book Browser folder Text (the icon of calibre's Edit Book file list) |
 | `lookfeel.png` | `lookfeel` | Book Browser folder Styles |

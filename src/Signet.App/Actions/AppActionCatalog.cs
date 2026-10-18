@@ -168,8 +168,8 @@ public static class AppActionCatalog
         new("MainWindow.RemoveNavFromGuide", "Remove Nav from Reading Order", "", "nav-remove", "Tools"),
         new("MainWindow.AddNavToSpine", "Add Nav to Reading Order", "", "nav-add", "Tools"),
         new("MainWindow.AddNavToSpineNonLinear", "Add Nav to Reading Order with linear=\"no\"", "", "nav-add-nonlinear", "Tools"),
-        new("MainWindow.MendPrettifyHTML", "&Prettify All HTML Files", "", "beautify-all", "Tools"),
-        new("MainWindow.MendHTML", "&Mend All HTML Files", "", "html-fix-all", "Tools"),
+        new("MainWindow.MendPrettifyHTML", "&Prettify All HTML Files", "", "beautify", "Tools"),
+        new("MainWindow.MendHTML", "&Mend All HTML Files", "", "html-fix", "Tools"),
         // See the comment on AppActionIds.PrettifyCurrentHtml.
         new("MainWindow.PrettifyCurrentHTML", "Prettify Code", "", "beautify", "Tools"),
         new("MainWindow.MendCurrentHTML", "Mend Code", "", "html-fix", "Tools"),
