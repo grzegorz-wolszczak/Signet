@@ -60,9 +60,6 @@ public sealed class ResolvedTheme
     public AvaloniaThemeVariant Variant =>
         ThemeResolver.Variant(Theme) == InterfaceVariant.Dark ? AvaloniaThemeVariant.Dark : AvaloniaThemeVariant.Light;
 
-    /// <summary>The icon set the theme names; <c>null</c> = the one chosen in Preferences.</summary>
-    public string? IconSet => ThemeResolver.IconSet(Theme);
-
     /// <summary>The color of a color key as the theme or the scheme holds it; <c>null</c> = the platform's.</summary>
     public ThemeColor? ColorOf(ThemeKey key) =>
         key.Document == ThemeDocumentKind.Theme ? ThemeResolver.Color(Theme, key) : SchemeResolver.Color(Scheme, key);

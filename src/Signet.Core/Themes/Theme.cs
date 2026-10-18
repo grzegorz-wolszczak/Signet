@@ -70,10 +70,6 @@ public sealed record Theme
     /// <summary>The variant of the interface (a theme only); <c>null</c> = the parent's.</summary>
     public InterfaceVariant? Variant { get; init; }
 
-    /// <summary>The icon set the theme uses (e.g. <c>material</c>; a theme only); <c>null</c> = the parent's, or the one
-    /// chosen in Preferences › Appearance.</summary>
-    public string? IconSet { get; init; }
-
     /// <summary>The values of the keys (by <see cref="ThemeKey.Id"/>) the theme sets itself.</summary>
     public ImmutableDictionary<string, ThemeEntry> Entries { get; init; } =
         ImmutableDictionary.Create<string, ThemeEntry>(StringComparer.Ordinal);
