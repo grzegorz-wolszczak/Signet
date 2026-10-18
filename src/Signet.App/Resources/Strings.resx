@@ -6142,6 +6142,9 @@ Zamknij zakładkę</value>
   <data name="ColorPickerWindow_PaletteCss" xml:space="preserve">
     <value>Kolory CSS</value>
   </data>
+  <data name="PreferencesWindow_PageWidthSplitterTip" xml:space="preserve">
+    <value>Przeciągnij, aby zmienić szerokość ustawień na tej stronie. Dwukrotne kliknięcie przywraca szerokość domyślną.</value>
+  </data>
   <data name="PreferencesWindow_ShowZoomHint" xml:space="preserve">
     <value>Pokazuj rozmiar czcionki podczas zmiany Ctrl + kółko myszy</value>
   </data>
