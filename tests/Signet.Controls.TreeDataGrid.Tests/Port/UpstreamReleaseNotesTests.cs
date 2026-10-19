@@ -182,6 +182,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [InlineData(900)]
         public void PageUp_and_PageDown_move_by_a_page_also_when_the_columns_are_wider_than_the_viewport(double width)
         {
+            // Arrange
             var source = new FlatTreeDataGridSource<Model>(new AvaloniaList<Model>(Items(300)))
             {
                 Columns = { new TextColumn<Model, string?>("Title", x => x.Title, new GridLength(width)) },
@@ -195,15 +196,20 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
             Click(window, target.TryGetCell(0, 150)!.TranslatePoint(new Point(20, 5), window)!.Value);
             source.RowSelection!.SelectedIndex.Should().Be(new IndexPath(150));
 
+            // Act
             Press(window, PhysicalKey.PageUp);
             Press(window, PhysicalKey.PageUp);
 
             var up = source.RowSelection.SelectedIndex[0];
+
+            // Assert
             up.Should().BeInRange(120, 145, "two pages of about ten rows up, not the first row");
 
+            // Act
             Press(window, PhysicalKey.PageDown);
             Press(window, PhysicalKey.PageDown);
 
+            // Assert
             source.RowSelection.SelectedIndex[0].Should().BeInRange(up + 10, up + 30);
         }
 
@@ -212,6 +218,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [AvaloniaFact(Timeout = 10000)]
         public void Replacing_a_range_that_starts_above_the_first_realized_row_updates_the_realized_rows()
         {
+            // Arrange
             var items = new RangeReplaceList(Items(300));
             var source = new FlatTreeDataGridSource<Model>(items)
             {
@@ -224,9 +231,11 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
             var first = target.RowsPresenter.RealizedElements.OfType<TreeDataGridRow>().Min(r => r.RowIndex);
             first.Should().BeGreaterThan(20);
 
+            // Act
             items.ReplaceRange(first - 10, Enumerable.Range(0, 20).Select(i => new Model { Title = "New" }).ToList());
             Settle(window);
 
+            // Assert
             for (var row = first; row < first + 10; row++)
                 ((TreeDataGridTextCell)target.TryGetCell(0, row)!).Value.Should().Be("New");
         }
@@ -235,14 +244,17 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [AvaloniaFact(Timeout = 10000)]
         public void Left_on_a_collapsed_child_selects_and_focuses_the_parent_and_is_handled()
         {
+            // Arrange
             var (source, target, window, root) = Tree();
             source.Expand(new IndexPath(0));
             Settle(window);
             Click(window, target.TryGetCell(0, 1)!);
             var handled = HandledAtWindow(window, Key.Left);
 
+            // Act
             Press(window, PhysicalKey.ArrowLeft);
 
+            // Assert
             source.RowSelection!.SelectedItem.Should().BeSameAs(root);
             handled().Should().BeTrue();
             (window.FocusManager!.GetFocusedElement() as Visual)!.FindAncestorOfType<TreeDataGridRow>(includeSelf: true)!
@@ -253,14 +265,17 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [AvaloniaFact(Timeout = 10000)]
         public void Right_on_an_expanded_row_selects_and_focuses_its_first_child_and_is_handled()
         {
+            // Arrange
             var (source, target, window, root) = Tree();
             source.Expand(new IndexPath(0));
             Settle(window);
             Click(window, target.TryGetCell(0, 0)!);
             var handled = HandledAtWindow(window, Key.Right);
 
+            // Act
             Press(window, PhysicalKey.ArrowRight);
 
+            // Assert
             source.RowSelection!.SelectedItem.Should().BeSameAs(root.Children[0]);
             handled().Should().BeTrue();
             (window.FocusManager!.GetFocusedElement() as Visual)!.FindAncestorOfType<TreeDataGridRow>(includeSelf: true)!
@@ -271,6 +286,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [AvaloniaFact(Timeout = 10000)]
         public void Cancelling_an_edit_shows_the_models_text_again()
         {
+            // Arrange
             var items = new AvaloniaList<Model>(Items(5));
             var source = new FlatTreeDataGridSource<Model>(items)
             {
@@ -286,15 +302,20 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
             editor.Focus();
             editor.Text = "Changed";
 
+            // Act
             Press(window, PhysicalKey.Escape);
 
+            // Assert
             cell.IsEditing.Should().BeFalse();
             items[1].Title.Should().Be("Item 1");
             cell.Value.Should().Be("Item 1");
             cell.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).Should().Contain("Item 1");
 
+            // Act
             cell.BeginEdit();
             Settle(window);
+
+            // Assert
             cell.GetVisualDescendants().OfType<TextBox>().Single().Text.Should().Be("Item 1", "editing starts from the model");
         }
 
@@ -302,6 +323,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [AvaloniaFact(Timeout = 10000)]
         public void Replacing_a_node_deselects_the_selected_descendants_of_the_old_node()
         {
+            // Arrange
             var (source, _, window, root) = Tree();
             source.Expand(new IndexPath(0));
             source.Expand(new IndexPath(0, 0));
@@ -312,9 +334,11 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
             var deselected = new List<object?>();
             source.RowSelection.SelectionChanged += (_, e) => deselected.AddRange(e.DeselectedItems);
 
+            // Act
             root.Children[0] = new Model { Id = 99, Title = "Replacement" };
             Settle(window);
 
+            // Assert
             source.RowSelection.SelectedItems.Should().BeEmpty();
             source.RowSelection.SelectedItem.Should().BeNull();
             deselected.Should().Contain(oldGrandchild);
@@ -324,15 +348,18 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [AvaloniaFact(Timeout = 10000)]
         public void Replacing_the_selected_node_deselects_it()
         {
+            // Arrange
             var (source, _, window, root) = Tree();
             source.Expand(new IndexPath(0));
             Settle(window);
             var old = root.Children[1];
             source.RowSelection!.Select(new IndexPath(0, 1));
 
+            // Act
             root.Children[1] = new Model { Id = 99, Title = "Replacement" };
             Settle(window);
 
+            // Assert
             source.RowSelection.SelectedItems.Should().NotContain(old);
         }
 
@@ -340,20 +367,25 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [AvaloniaFact(Timeout = 10000)]
         public void Arrow_keys_keep_the_horizontal_scroll_offset_and_still_scroll_vertically()
         {
+            // Arrange
             var (source, target, window) = WideGrid(50);
             Click(window, target.TryGetCell(0, 2)!.TranslatePoint(new Point(20, 5), window)!.Value);
             var scroll = (ScrollViewer)target.Scroll!;
             scroll.Offset = new Vector(300, 0);
             Settle(window);
 
+            // Act
             Press(window, PhysicalKey.ArrowDown);
 
+            // Assert
             source.RowSelection!.SelectedIndex.Should().Be(new IndexPath(3));
             scroll.Offset.X.Should().Be(300);
 
+            // Act
             for (var i = 0; i < 20; i++)
                 Press(window, PhysicalKey.ArrowDown);
 
+            // Assert
             source.RowSelection.SelectedIndex.Should().Be(new IndexPath(23));
             scroll.Offset.X.Should().Be(300);
             scroll.Offset.Y.Should().BeGreaterThan(0, "the selected row is brought into view vertically");
@@ -366,14 +398,17 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [AvaloniaFact(Timeout = 10000)]
         public void Clicking_a_partly_visible_cell_keeps_the_horizontal_scroll_offset()
         {
+            // Arrange
             var (source, target, window) = WideGrid(50);
             var scroll = target.Scroll!;
             scroll.Offset = new Vector(300, 0);
             Settle(window);
 
             // The first column (0..400) is visible from 300 to 400.
+            // Act
             Click(window, target.TryGetCell(0, 3)!.TranslatePoint(new Point(350, 5), window)!.Value);
 
+            // Assert
             source.RowSelection!.SelectedIndex.Should().Be(new IndexPath(3));
             scroll.Offset.X.Should().Be(300);
         }
@@ -383,17 +418,22 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [AvaloniaFact(Timeout = 10000)]
         public void Expanding_and_collapsing_with_the_keyboard_updates_the_chevron()
         {
+            // Arrange
             var (source, target, window, _) = Tree();
             Click(window, target.TryGetCell(0, 0)!);
             var toggle = target.TryGetCell(0, 0)!.GetVisualDescendants().OfType<ToggleButton>().First();
 
+            // Act
             Press(window, PhysicalKey.ArrowRight);
 
+            // Assert
             ((IExpander)source.Rows[0]).IsExpanded.Should().BeTrue();
             toggle.IsChecked.Should().BeTrue();
 
+            // Act
             Press(window, PhysicalKey.ArrowLeft);
 
+            // Assert
             ((IExpander)source.Rows[0]).IsExpanded.Should().BeFalse();
             toggle.IsChecked.Should().BeFalse();
         }
@@ -402,12 +442,15 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [AvaloniaFact(Timeout = 10000)]
         public void Double_clicking_the_chevron_keeps_the_chevron_and_the_row_in_step()
         {
+            // Arrange
             var (source, target, window, _) = Tree();
             var toggle = target.TryGetCell(0, 0)!.GetVisualDescendants().OfType<ToggleButton>().First();
 
+            // Act
             Click(window, toggle);
             Click(window, toggle);
 
+            // Assert
             toggle.IsChecked.Should().Be(((IExpander)source.Rows[0]).IsExpanded);
         }
 
@@ -415,6 +458,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [AvaloniaFact(Timeout = 10000)]
         public void Arrow_down_in_a_cell_editor_does_not_move_the_selection()
         {
+            // Arrange
             var source = new FlatTreeDataGridSource<Model>(new AvaloniaList<Model>(Items(5)))
             {
                 Columns = { new TextColumn<Model, string?>("Title", x => x.Title, (m, v) => m.Title = v) },
@@ -427,8 +471,10 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
             Settle(window);
             cell.GetVisualDescendants().OfType<TextBox>().Single().Focus();
 
+            // Act
             Press(window, PhysicalKey.ArrowDown);
 
+            // Assert
             source.RowSelection!.SelectedIndex.Should().Be(new IndexPath(1));
             cell.IsEditing.Should().BeTrue();
         }
@@ -437,6 +483,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [AvaloniaFact(Timeout = 10000)]
         public void Setting_a_column_width_at_runtime_updates_the_cells_and_the_header()
         {
+            // Arrange
             var source = new FlatTreeDataGridSource<Model>(new AvaloniaList<Model>(Items(5)))
             {
                 Columns =
@@ -448,9 +495,11 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
             var target = new TreeDataGrid { Source = source };
             var window = ThemedWindow(target, new Size(500, 300));
 
+            // Act
             source.Columns.SetColumnWidth(0, new GridLength(200));
             Settle(window);
 
+            // Assert
             target.TryGetCell(0, 0)!.Bounds.Width.Should().BeApproximately(200, 1);
             target.TryGetCell(1, 0)!.Bounds.X.Should().BeApproximately(200, 1);
             target.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().First().Bounds.Width
@@ -461,6 +510,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [AvaloniaFact(Timeout = 10000)]
         public void Raising_the_MinWidth_of_a_star_column_at_runtime_widens_its_cells()
         {
+            // Arrange
             var title = new TextColumn<Model, string?>("Title", x => x.Title, GridLength.Star);
             var source = new FlatTreeDataGridSource<Model>(new AvaloniaList<Model>(Items(5)))
             {
@@ -469,6 +519,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
             var target = new TreeDataGrid { Source = source };
             var window = ThemedWindow(target, new Size(300, 300));
 
+            // Act
             title.Options.MinWidth = new GridLength(400);
             foreach (var presenter in target.GetVisualDescendants().OfType<Control>()
                          .Where(c => c is TreeDataGridColumnHeadersPresenter or TreeDataGridRowsPresenter or TreeDataGridCellsPresenter))
@@ -476,6 +527,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
             target.InvalidateMeasure();
             Settle(window);
 
+            // Assert
             target.TryGetCell(0, 0)!.Bounds.Width.Should().BeGreaterThanOrEqualTo(399);
         }
 
@@ -483,6 +535,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [AvaloniaFact(Timeout = 10000)]
         public void Detaching_and_reattaching_a_grid_with_template_cells_shows_the_current_items()
         {
+            // Arrange
             var items = new AvaloniaList<Model>(Items(50));
             var source = new FlatTreeDataGridSource<Model>(items)
             {
@@ -495,6 +548,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
             var target = new TreeDataGrid { Source = source };
             var window = ThemedWindow(target, new Size(300, 300));
 
+            // Act
             window.Content = null;
             Settle(window);
             items.RemoveRange(0, 10);
@@ -509,6 +563,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
             target.Source = source;
             Settle(window);
 
+            // Assert
             target.TryGetCell(0, 0)!.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).Should().Contain("New");
         }
 
@@ -516,6 +571,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [AvaloniaFact(Timeout = 10000)]
         public void Star_columns_fill_the_viewport_without_overflowing_it()
         {
+            // Arrange
             var source = new FlatTreeDataGridSource<Model>(new AvaloniaList<Model>(Items(500)))
             {
                 Columns =
@@ -525,8 +581,11 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
                 },
             };
             var target = new TreeDataGrid { Source = source };
+
+            // Act
             ThemedWindow(target, new Size(300, 300));
 
+            // Assert
             target.Scroll!.Extent.Width.Should().BeLessThanOrEqualTo(target.Scroll.Viewport.Width + 0.5);
         }
 
@@ -535,6 +594,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [AvaloniaFact(Timeout = 10000)]
         public void Pressing_on_a_multiple_selection_and_moving_vertically_keeps_the_selection()
         {
+            // Arrange
             var source = new FlatTreeDataGridSource<Model>(new AvaloniaList<Model>(Items(20)))
             {
                 Columns = { new TextColumn<Model, string?>("Title", x => x.Title, new GridLength(200)) },
@@ -548,16 +608,20 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
             var from = CenterOf(target.TryGetCell(0, 2)!, window);
             var to = from + new Point(0, 80);
 
+            // Act
             window.MouseDown(from, MouseButton.Left);
             window.MouseMove(to);
             window.MouseUp(to, MouseButton.Left);
             Settle(window);
 
+            // Assert
             source.RowSelection.SelectedIndexes.Should().HaveCount(3);
 
             // A real click on one of them still selects only that row.
+            // Act
             Click(window, target.TryGetCell(0, 2)!);
 
+            // Assert
             source.RowSelection.SelectedIndexes.Should().ContainSingle().Which.Should().Be(new IndexPath(2));
         }
 
@@ -565,6 +629,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [AvaloniaFact(Timeout = 10000)]
         public void Replacing_a_column_reports_its_index()
         {
+            // Arrange
             var source = new FlatTreeDataGridSource<Model>(new AvaloniaList<Model>(Items(3)))
             {
                 Columns =
@@ -577,8 +642,10 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
             NotifyCollectionChangedEventArgs? args = null;
             ((INotifyCollectionChanged)source.Columns).CollectionChanged += (_, e) => args = e;
 
+            // Act
             source.Columns[1] = new TextColumn<Model, string?>("X", x => x.Title);
 
+            // Assert
             args!.Action.Should().Be(NotifyCollectionChangedAction.Replace);
             args.NewStartingIndex.Should().Be(1);
             args.OldStartingIndex.Should().Be(1);
@@ -588,6 +655,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [AvaloniaFact(Timeout = 10000)]
         public void Removing_and_inserting_columns_at_runtime_realizes_the_right_cells_and_headers()
         {
+            // Arrange
             var a = new TextColumn<Model, string?>("A", x => x.Title, new GridLength(100));
             var b = new TextColumn<Model, int>("B", x => x.Id, new GridLength(100));
             var c = new TextColumn<Model, string?>("C", x => "c" + x.Id, new GridLength(100));
@@ -595,14 +663,18 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
             var target = new TreeDataGrid { Source = source };
             var window = ThemedWindow(target, new Size(500, 300));
 
+            // Act
             source.Columns.Remove(b);
             Settle(window);
 
+            // Assert
             ((TreeDataGridTextCell)target.TryGetCell(1, 2)!).Value.Should().Be("c2");
 
+            // Act
             source.Columns.Insert(1, b);
             Settle(window);
 
+            // Assert
             ((TreeDataGridTextCell)target.TryGetCell(1, 2)!).Value.Should().Be("2");
             ((TreeDataGridTextCell)target.TryGetCell(2, 2)!).Value.Should().Be("c2");
             target.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().Where(h => h.ColumnIndex >= 0)

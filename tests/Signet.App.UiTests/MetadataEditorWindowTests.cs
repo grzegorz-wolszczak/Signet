@@ -46,9 +46,11 @@ public sealed class MetadataEditorWindowTests : IDisposable
     [AvaloniaFact]
     public void The_tree_has_name_and_value_columns_and_a_value_is_edited_in_place()
     {
+        // Act
         (MetadataEditorWindow window, MetadataEditorViewModel vm, TreeDataGrid tree, Book book) = Show();
         using (book)
         {
+            // Assert
             tree.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().Select(h => h.Header).Should().Equal(
                 Strings.Get("ReportsWindow_Name"), Strings.Get("MetadataEditorWindow_ColumnValue"));
             tree.CanUserSortColumns.Should().BeFalse();
@@ -56,8 +58,10 @@ public sealed class MetadataEditorWindowTests : IDisposable
             TextBox editor = tree.GetVisualDescendants().OfType<TextBox>().Single(t => ReferenceEquals(t.DataContext, first));
             editor.Text.Should().Be(first.Content);
 
+            // Act
             editor.Text = "Changed value";
 
+            // Assert
             first.Content.Should().Be("Changed value");
             window.Close();
         }
@@ -66,21 +70,30 @@ public sealed class MetadataEditorWindowTests : IDisposable
     [AvaloniaFact]
     public void An_added_element_is_selected_and_moving_it_keeps_it_selected()
     {
+        // Act
         (MetadataEditorWindow window, MetadataEditorViewModel vm, TreeDataGrid tree, Book book) = Show();
         using (book)
         {
             tree.RowSelection!.SelectedIndex = new IndexPath(0);
+
+            // Assert
             vm.SelectedNode.Should().BeSameAs(vm.Nodes[0], "a row selected in the tree selects the node");
 
+            // Act
             MetadataNodeViewModel creator = vm.InsertElement("dc:creator", "Jane Doe");
             vm.SelectedNode = creator;
             Settle(window);
+
+            // Assert
             tree.RowSelection.SelectedItem.Should().BeSameAs(creator);
 
             int index = vm.Nodes.IndexOf(creator);
+
+            // Act
             vm.MoveUpCommand.Execute(null);
             Settle(window);
 
+            // Assert
             vm.Nodes.IndexOf(creator).Should().Be(index - 1);
             tree.RowSelection.SelectedItem.Should().BeSameAs(creator, "the moved element stays selected");
             vm.SelectedNode.Should().BeSameAs(creator);

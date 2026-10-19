@@ -19,6 +19,7 @@ public sealed class UtilityTests
     [InlineData("&amp;amp;", "&amp;")]
     public void DecodeXml_expands_the_five_predefined_entities(string input, string expected)
     {
+        // Act & Assert
         Utility.DecodeXml(input).Should().Be(expected);
     }
 
@@ -28,26 +29,31 @@ public sealed class UtilityTests
     [InlineData("a > b", "a &gt; b")]
     public void EncodeXml_escapes_xml_metacharacters(string input, string expected)
     {
+        // Act & Assert
         Utility.EncodeXml(input).Should().Be(expected);
     }
 
     [Fact]
     public void EncodeXml_does_not_double_encode_existing_entities()
     {
+        // Act & Assert
         Utility.EncodeXml("already &amp; encoded").Should().Be("already &amp; encoded");
     }
 
     [Fact]
     public void EncodeXml_leaves_the_apostrophe_untouched_like_qt()
     {
+        // Act & Assert
         Utility.EncodeXml("it's fine").Should().Be("it's fine");
     }
 
     [Fact]
     public void CreateUuid_returns_a_braceless_lowercase_uuid()
     {
+        // Act
         string uuid = Utility.CreateUuid();
 
+        // Assert
         uuid.Should().NotContain("{").And.NotContain("}");
         uuid.Should().Be(uuid.ToLowerInvariant());
         Guid.TryParse(uuid, out _).Should().BeTrue();
@@ -57,8 +63,10 @@ public sealed class UtilityTests
     [Fact]
     public void GetTemporaryFileName_builds_a_unique_path_without_creating_a_file()
     {
+        // Act
         string path = Utility.GetTemporaryFileName(".xhtml");
 
+        // Assert
         path.Should().StartWith(Path.GetTempPath());
         Path.GetFileName(path).Should().StartWith(Utility.TemporaryFilePrefix).And.EndWith(".xhtml");
         File.Exists(path).Should().BeFalse();
@@ -68,8 +76,10 @@ public sealed class UtilityTests
     [Fact]
     public void GetTemporaryFileName_accepts_an_empty_extension()
     {
+        // Act
         string path = Utility.GetTemporaryFileName(string.Empty);
 
+        // Assert
         Path.GetFileName(path).Should().StartWith(Utility.TemporaryFilePrefix);
         Path.GetExtension(path).Should().BeEmpty();
     }
@@ -79,6 +89,7 @@ public sealed class UtilityTests
     [InlineData("abc", "a9993e364706816aba3e25717850c26c9cd0d89d")]
     public void Sha1Hex_matches_known_vectors(string text, string expected)
     {
+        // Act & Assert
         Utility.Sha1Hex(text).Should().Be(expected);
     }
 
@@ -87,6 +98,7 @@ public sealed class UtilityTests
     [InlineData("abc", "900150983cd24fb0d6963f7d28e17f72")]
     public void Md5Hex_matches_known_vectors(string text, string expected)
     {
+        // Act & Assert
         Utility.Md5Hex(text).Should().Be(expected);
     }
 
@@ -95,19 +107,23 @@ public sealed class UtilityTests
     [InlineData("abc", "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")]
     public void Sha256Hex_matches_known_vectors(string text, string expected)
     {
+        // Act & Assert
         Utility.Sha256Hex(text).Should().Be(expected);
     }
 
     [Fact]
     public void Hash_overloads_agree_across_bytes_stream_and_text()
     {
+        // Arrange
         byte[] bytes = Encoding.UTF8.GetBytes("Signet");
         using MemoryStream stream = new(bytes);
 
+        // Act
         string fromText = Utility.Sha1Hex("Signet");
         string fromBytes = Utility.Sha1Hex(bytes);
         string fromStream = Utility.Sha1Hex(stream);
 
+        // Assert
         fromBytes.Should().Be(fromText);
         fromStream.Should().Be(fromText);
     }
@@ -116,27 +132,38 @@ public sealed class UtilityTests
     [AutoData]
     public void Hashes_are_deterministic_and_correctly_sized(byte[] data)
     {
+        // Act & Assert
         Utility.Sha1Hex(data).Should().Be(Utility.Sha1Hex(data)).And.HaveLength(40);
+
+        // Act & Assert
         Utility.Md5Hex(data).Should().Be(Utility.Md5Hex(data)).And.HaveLength(32);
+
+        // Act & Assert
         Utility.Sha256Hex(data).Should().Be(Utility.Sha256Hex(data)).And.HaveLength(64);
     }
 
     [Fact]
     public void SortByCounts_orders_folders_by_descending_count_stably()
     {
+        // Arrange
         string[] folders = { "OEBPS/A", "OEBPS/B", "OEBPS/C" };
         int[] counts = { 2, 5, 2 };
 
+        // Act & Assert
         Utility.SortByCounts(folders, counts).Should().Equal("OEBPS/B", "OEBPS/A", "OEBPS/C");
     }
 
     [Fact]
     public void SortByCounts_rejects_mismatched_lengths()
     {
+        // Arrange
         string[] folders = { "a" };
         int[] counts = { 1, 2 };
+
+        // Act
         Action act = () => Utility.SortByCounts(folders, counts);
 
+        // Assert
         act.Should().Throw<ArgumentException>();
     }
 }

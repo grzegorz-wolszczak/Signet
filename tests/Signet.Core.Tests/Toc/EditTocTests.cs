@@ -46,11 +46,14 @@ public sealed class EditTocTests
     [Fact]
     public void GetRootTocEntry_epub3_mirrors_the_nav_hierarchy_with_absolute_targets()
     {
+        // Arrange
         using Book book = BookWithGeneratedToc("3.0");
         string chapterBookPath = book.GetHtmlResourcesExcludingNav().First().BookPath;
 
+        // Act
         TocEntry root = TocEditModel.GetRootTocEntry(book);
 
+        // Assert
         root.IsRoot.Should().BeTrue();
         root.Children.Select(e => e.Text).Should().Equal("Alpha", "Beta");
         root.Children[0].Children.Should().ContainSingle().Which.Text.Should().Be("Alpha One");
@@ -61,31 +64,40 @@ public sealed class EditTocTests
     [Fact]
     public void Save_epub3_unchanged_tree_is_a_round_trip()
     {
+        // Arrange
         using Book book = BookWithGeneratedToc("3.0");
         var before = new NavProcessor(book.GetNavResource()!).GetToc()
             .Select(e => (e.Level, e.Title, e.Href)).ToList();
 
+        // Act
         TocEditModel.Save(book, TocEditModel.GetRootTocEntry(book));
 
         var after = new NavProcessor(book.GetNavResource()!).GetToc()
             .Select(e => (e.Level, e.Title, e.Href)).ToList();
+
+        // Assert
         after.Should().Equal(before);
     }
 
     [Fact]
     public void Save_epub3_promoting_a_child_persists_to_the_nav()
     {
+        // Arrange
         using Book book = BookWithGeneratedToc("3.0");
 
         TocEntry root = TocEditModel.GetRootTocEntry(book);
         TocEntry alpha = root.Children[0];
         TocEntry child = alpha.Children[0];
+
+        // Act
         alpha.Children.RemoveAt(0);
         root.Children.Insert(1, child); // promote „Alpha One" to top level, between Alpha and Beta
 
         TocEditModel.Save(book, root);
 
         var flat = new NavProcessor(book.GetNavResource()!).GetToc();
+
+        // Assert
         flat.Select(e => e.Title).Should().Equal("Alpha", "Alpha One", "Beta");
         flat.Select(e => e.Level).Should().AllBeEquivalentTo(1);
     }
@@ -93,13 +105,16 @@ public sealed class EditTocTests
     [Fact]
     public void Save_epub2_writes_the_tree_to_the_ncx_navmap()
     {
+        // Arrange
         using Book book = BookWithGeneratedToc("2.0");
 
         TocEntry root = TocEditModel.GetRootTocEntry(book);
         root.Children[0].Text = "Renamed Alpha";
 
+        // Act
         TocEditModel.Save(book, root);
 
+        // Assert
         NcxDocument ncx = book.GetNcx()!.GetNcxDocument();
         ncx.NavMap.Select(p => p.Label).Should().Equal("Renamed Alpha", "Beta");
         ncx.NavMap[0].Children.Should().ContainSingle().Which.Label.Should().Be("Alpha One");
@@ -110,11 +125,15 @@ public sealed class EditTocTests
     [Fact]
     public void Save_epub2_empty_tree_writes_a_single_fallback_navpoint()
     {
+        // Arrange
         using Book book = BookWithGeneratedToc("2.0");
 
+        // Act
         TocEditModel.Save(book, new TocEntry { IsRoot = true });
 
         NcxDocument ncx = book.GetNcx()!.GetNcxDocument();
+
+        // Assert
         ncx.NavMap.Should().ContainSingle();
         ncx.NavMap[0].Label.Should().Be("Start");
     }
@@ -122,8 +141,10 @@ public sealed class EditTocTests
     [Fact]
     public void Round_trip_through_toc_entries_is_stable_for_epub2()
     {
+        // Arrange
         using Book book = BookWithGeneratedToc("2.0");
 
+        // Act
         TocEditModel.Save(book, TocEditModel.GetRootTocEntry(book));
         var first = book.GetNcx()!.GetNcxDocument().NavMap
             .SelectMany(Flatten).Select(p => (p.Label, p.ContentSrc)).ToList();
@@ -132,6 +153,7 @@ public sealed class EditTocTests
         var second = book.GetNcx()!.GetNcxDocument().NavMap
             .SelectMany(Flatten).Select(p => (p.Label, p.ContentSrc)).ToList();
 
+        // Assert
         second.Should().Equal(first);
     }
 

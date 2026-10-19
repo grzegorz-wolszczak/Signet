@@ -22,9 +22,13 @@ public sealed class LinkStylesheetsUpdateTests
     [Fact]
     public void Apply_replaces_existing_links_with_selected_stylesheets_in_order()
     {
+        // Arrange
         string[] sheets = { "OEBPS/Styles/a.css", "OEBPS/Styles/b.css" };
+
+        // Act
         string result = LinkStylesheetsUpdate.Apply(Source, "OEBPS/Text/ch1.xhtml", sheets, "3.0");
 
+        // Assert
         result.Should().NotContain("old.css");
         result.Should().Contain("href=\"../Styles/a.css\"");
         result.Should().Contain("href=\"../Styles/b.css\"");
@@ -37,9 +41,11 @@ public sealed class LinkStylesheetsUpdateTests
     [Fact]
     public void Apply_with_empty_list_removes_all_head_links()
     {
+        // Act
         string result = LinkStylesheetsUpdate.Apply(
             Source, "OEBPS/Text/ch1.xhtml", Array.Empty<string>(), "3.0");
 
+        // Assert
         result.Should().NotContain("<link");
         result.Should().Contain("<title>Ch</title>");
     }
@@ -47,16 +53,23 @@ public sealed class LinkStylesheetsUpdateTests
     [Fact]
     public void Apply_url_encodes_href()
     {
+        // Arrange
         string[] sheets = { "OEBPS/Styles/my style.css" };
+
+        // Act
         string result = LinkStylesheetsUpdate.Apply(Source, "OEBPS/Text/ch1.xhtml", sheets, "3.0");
 
+        // Assert
         result.Should().Contain("../Styles/my%20style.css");
     }
 
     [Fact]
     public void Apply_returns_empty_source_unchanged()
     {
+        // Arrange
         string[] sheets = { "OEBPS/Styles/a.css" };
+
+        // Act & Assert
         LinkStylesheetsUpdate.Apply(string.Empty, "OEBPS/Text/ch1.xhtml", sheets, "3.0")
             .Should().BeEmpty();
     }

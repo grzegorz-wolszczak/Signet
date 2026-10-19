@@ -23,14 +23,18 @@ public sealed class MassRenameNamingTests
     [Fact]
     public void The_defaults_are_a_prefix_part_from_1_without_padding_in_the_order_of_the_book()
     {
+        // Act & Assert
         MassRenameOptions.Default.Should().Be(new MassRenameOptions("part", 1, '0', 1, true));
     }
 
     [Fact]
     public void Normalizing_trims_the_prefix_and_clamps_the_numbers()
     {
+        // Act & Assert
         new MassRenameOptions("  ab ", -4, '0', 500, false).Normalized()
             .Should().Be(new MassRenameOptions("ab", 0, '0', MassRenameOptions.MinLengthMax, false));
+
+        // Act & Assert
         new MassRenameOptions("x", int.MaxValue, '0', 0, false).Normalized()
             .Should().Be(new MassRenameOptions("x", MassRenameOptions.StartNumberMax, '0', 1, false));
     }
@@ -46,8 +50,10 @@ public sealed class MassRenameNamingTests
     public void The_prefix_and_the_padding_character_may_not_have_characters_a_file_name_cannot_have(
         string prefix, char padding, int minLength, bool valid)
     {
+        // Act
         bool result = MassRenameNaming.IsValid(new MassRenameOptions(prefix, 1, padding, minLength, false), out string? error);
 
+        // Assert
         result.Should().Be(valid);
         (error is null).Should().Be(valid);
     }
@@ -55,13 +61,16 @@ public sealed class MassRenameNamingTests
     [Fact]
     public void Every_file_gets_prefix_number_and_its_own_extension()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         List<Resource> resources = new() { book.CreateEmptyHtmlFile(), book.CreateEmptyCssFile(), book.CreateEmptyHtmlFile() };
         List<string> all = new(book.GetFolderKeeper().GetAllFilenames());
 
+        // Act
         IReadOnlyList<string>? names = MassRenameNaming.BuildFilenames(
             resources, new MassRenameOptions("part", 2, '0', 3, false), all, out string? error);
 
+        // Assert
         error.Should().BeNull();
         names.Should().Equal("part002" + Ext(resources[0]), "part003.css", "part004" + Ext(resources[2]));
     }
@@ -69,19 +78,23 @@ public sealed class MassRenameNamingTests
     [Fact]
     public void A_character_and_a_length_pad_the_number()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         List<Resource> resources = new() { book.CreateEmptyHtmlFile() };
         List<string> all = new(book.GetFolderKeeper().GetAllFilenames());
 
+        // Act
         IReadOnlyList<string>? names = MassRenameNaming.BuildFilenames(
             resources, new MassRenameOptions("part", 12, '#', 7, false), all, out _);
 
+        // Assert
         names.Should().Equal("part#####12" + Ext(resources[0]));
     }
 
     [Fact]
     public void A_name_of_another_file_of_the_book_is_a_collision_and_nothing_is_built()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource first = book.CreateEmptyHtmlFile();
         HtmlResource second = book.CreateEmptyHtmlFile();
@@ -89,9 +102,11 @@ public sealed class MassRenameNamingTests
         second.RenameTo(taken);
         List<string> all = new(book.GetFolderKeeper().GetAllFilenames());
 
+        // Act
         IReadOnlyList<string>? names = MassRenameNaming.BuildFilenames(
             new List<Resource> { first }, new MassRenameOptions("part", 1, '0', 1, false), all, out string? error);
 
+        // Assert
         names.Should().BeNull();
         error.Should().NotBeNullOrEmpty();
     }
@@ -99,14 +114,17 @@ public sealed class MassRenameNamingTests
     [Fact]
     public void The_name_a_file_already_has_is_not_a_collision()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource only = book.CreateEmptyHtmlFile();
         only.RenameTo("part1" + Ext(only));
         List<string> all = new(book.GetFolderKeeper().GetAllFilenames());
 
+        // Act
         IReadOnlyList<string>? names = MassRenameNaming.BuildFilenames(
             new List<Resource> { only }, new MassRenameOptions("part", 1, '0', 1, false), all, out string? error);
 
+        // Assert
         error.Should().BeNull();
         names.Should().Equal("part1" + Ext(only));
     }
@@ -114,11 +132,15 @@ public sealed class MassRenameNamingTests
     [Fact]
     public void A_prefix_with_a_forbidden_character_builds_nothing()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         List<Resource> resources = new() { book.CreateEmptyHtmlFile() };
 
+        // Act
         MassRenameNaming.BuildFilenames(resources, new MassRenameOptions("a/b", 1, '0', 1, false),
             new List<string>(book.GetFolderKeeper().GetAllFilenames()), out string? error).Should().BeNull();
+
+        // Assert
         error.Should().Contain("/");
     }
 

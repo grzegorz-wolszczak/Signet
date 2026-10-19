@@ -28,6 +28,7 @@ public sealed class CheckpointHistoryImpactTests
     [AutoData]
     public void UndoImpact_lists_a_file_created_after_the_checkpoint_as_removed(string message)
     {
+        // Arrange
         using TempDir temp = new();
         using CheckpointHistory history = new();
         using Book book = Load(temp);
@@ -36,6 +37,7 @@ public sealed class CheckpointHistoryImpactTests
 
         HtmlResource created = book.CreateEmptyHtmlFile();
 
+        // Act & Assert
         history.UndoImpact(book).Should().Equal(
             new CheckpointFileImpact(CheckpointFileChange.Removed, created.BookPath, null, LosesEdits: false));
     }
@@ -44,6 +46,7 @@ public sealed class CheckpointHistoryImpactTests
     [AutoData]
     public void UndoImpact_flags_a_removed_file_edited_after_the_checkpoint(string message)
     {
+        // Arrange
         using TempDir temp = new();
         using CheckpointHistory history = new();
         using Book book = Load(temp);
@@ -53,6 +56,7 @@ public sealed class CheckpointHistoryImpactTests
 
         history.MarkEdited(created.BookPath);
 
+        // Act & Assert
         history.UndoImpact(book).Should().ContainSingle().Which.LosesEdits.Should().BeTrue();
     }
 
@@ -60,6 +64,7 @@ public sealed class CheckpointHistoryImpactTests
     [AutoData]
     public void UndoImpact_lists_a_deleted_file_as_restored_and_a_renamed_one_as_renamed(string message, string newName)
     {
+        // Arrange
         using TempDir temp = new();
         using CheckpointHistory history = new();
         using Book book = Load(temp);
@@ -70,9 +75,11 @@ public sealed class CheckpointHistoryImpactTests
         history.Open(book);
         history.AddCheckpoint(book, message);
 
+        // Act
         book.GetFolderKeeper().BulkRemoveResources(new Resource[] { extra });
         book.GetFolderKeeper().BulkRenameResources(new Resource[] { chapter }, new[] { newName + ".xhtml" });
 
+        // Act & Assert
         history.UndoImpact(book).Should().BeEquivalentTo(new[]
         {
             new CheckpointFileImpact(CheckpointFileChange.Restored, extraPath, null, false),
@@ -84,6 +91,7 @@ public sealed class CheckpointHistoryImpactTests
     [AutoData]
     public void Edits_stay_attributed_to_their_span_across_a_later_checkpoint(string operation, string manual)
     {
+        // Arrange
         using TempDir temp = new();
         using CheckpointHistory history = new();
         Book live = Load(temp);
@@ -93,10 +101,14 @@ public sealed class CheckpointHistoryImpactTests
         history.MarkEdited(created.BookPath);
         history.AddCheckpoint(live, manual);
 
+        // Act & Assert
         history.UndoImpact(live).Should().BeEmpty("the manual checkpoint already contains the created file");
+
+        // Act
         Book atManual = history.Undo(live)!;
         live.Dispose();
 
+        // Act & Assert
         history.UndoImpact(atManual).Should().ContainSingle()
             .Which.Should().Be(new CheckpointFileImpact(CheckpointFileChange.Removed, created.BookPath, null, LosesEdits: true));
         atManual.Dispose();
@@ -106,6 +118,7 @@ public sealed class CheckpointHistoryImpactTests
     [AutoData]
     public void RedoImpact_flags_only_edits_made_after_moving_back(string message)
     {
+        // Arrange
         using TempDir temp = new();
         using CheckpointHistory history = new();
         Book live = Load(temp);
@@ -115,14 +128,19 @@ public sealed class CheckpointHistoryImpactTests
         history.MarkEdited(extraPath);
         history.AddCheckpoint(live, message);
         live.GetFolderKeeper().BulkRemoveResources(new Resource[] { extra });
+
+        // Act
         Book before = history.Undo(live)!;
         live.Dispose();
 
+        // Act & Assert
         history.RedoImpact(before).Should().ContainSingle()
             .Which.LosesEdits.Should().BeFalse("the edit was made before the operation that removed the file");
 
+        // Arrange
         history.MarkEdited(extraPath);
 
+        // Act & Assert
         history.RedoImpact(before).Should().ContainSingle()
             .Which.Should().Be(new CheckpointFileImpact(CheckpointFileChange.Removed, extraPath, null, LosesEdits: true));
         before.Dispose();
@@ -132,6 +150,7 @@ public sealed class CheckpointHistoryImpactTests
     [AutoData]
     public void Rewind_keeps_the_edits_made_before_the_withdrawn_checkpoint(string operation, string withdrawn)
     {
+        // Arrange
         using TempDir temp = new();
         using CheckpointHistory history = new();
         using Book book = Load(temp);
@@ -141,20 +160,26 @@ public sealed class CheckpointHistoryImpactTests
         history.MarkEdited(created.BookPath);
         history.AddCheckpoint(book, withdrawn);
 
+        // Act
         history.Rewind();
 
+        // Act & Assert
         history.UndoImpact(book).Should().ContainSingle().Which.LosesEdits.Should().BeTrue();
     }
 
     [Fact]
     public void Impacts_are_empty_when_there_is_nowhere_to_move()
     {
+        // Arrange
         using TempDir temp = new();
         using CheckpointHistory history = new();
         using Book book = Load(temp);
         history.Open(book);
 
+        // Act & Assert
         history.UndoImpact(book).Should().BeEmpty();
+
+        // Act & Assert
         history.RedoImpact(book).Should().BeEmpty();
     }
 
@@ -162,6 +187,7 @@ public sealed class CheckpointHistoryImpactTests
     [AutoData]
     public void CompareFileSets_skips_files_whose_content_only_changed(string message, string edit)
     {
+        // Arrange
         using TempDir temp = new();
         using CheckpointHistory history = new();
         using Book book = Load(temp);
@@ -172,8 +198,11 @@ public sealed class CheckpointHistoryImpactTests
         HtmlResource created = book.CreateEmptyHtmlFile();
         CheckpointHistory.Freeze(book);
 
+        // Act
         BookComparer.CompareFileSets(history.States[0].FolderPath, history.Current.FolderPath)
             .Should().ContainSingle()
+
+            // Assert
             .Which.Should().Match<BookFileDiff>(d => d.Change == BookFileChange.Added && d.RightPath == created.BookPath);
     }
 }

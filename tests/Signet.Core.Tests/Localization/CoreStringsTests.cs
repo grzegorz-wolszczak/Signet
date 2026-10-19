@@ -26,9 +26,11 @@ public sealed class CoreStringsTests
     public void Polish_and_english_resources_have_the_same_non_empty_keys()
     {
         // Neutralny = polski (CultureInfo.InvariantCulture), satelita = angielski.
+        // Act
         Dictionary<string, string> polish = Entries(CultureInfo.InvariantCulture.Name);
         Dictionary<string, string> english = Entries("en");
 
+        // Assert
         polish.Should().NotBeEmpty();
         english.Keys.Should().BeEquivalentTo(polish.Keys);
         polish.Values.Should().OnlyContain(v => v.Trim().Length > 0);
@@ -38,6 +40,7 @@ public sealed class CoreStringsTests
     [Fact]
     public void Translations_use_the_same_format_placeholders()
     {
+        // Act
         Dictionary<string, string> polish = Entries(CultureInfo.InvariantCulture.Name);
         Dictionary<string, string> english = Entries("en");
 
@@ -45,20 +48,24 @@ public sealed class CoreStringsTests
             .Where(k => english.ContainsKey(k) && !Placeholders(polish[k]).SetEquals(Placeholders(english[k])))
             .ToList();
 
+        // Assert
         mismatched.Should().BeEmpty("a translation must use the same format arguments");
     }
 
     [Fact]
     public void Text_follows_the_current_ui_culture()
     {
+        // Arrange
         CultureInfo previous = CultureInfo.CurrentUICulture;
         try
         {
+            // Act
             CultureInfo.CurrentUICulture = new CultureInfo("en");
             string english = CoreStrings.Get("LoadWarning_NcxCreated");
             CultureInfo.CurrentUICulture = new CultureInfo("pl");
             string polish = CoreStrings.Get("LoadWarning_NcxCreated");
 
+            // Assert
             english.Should().Be("The OPF does not contain an NCX file. Signet created a new one.");
             polish.Should().Be("Plik OPF nie zawiera pliku NCX. Signet utworzył nowy.");
         }

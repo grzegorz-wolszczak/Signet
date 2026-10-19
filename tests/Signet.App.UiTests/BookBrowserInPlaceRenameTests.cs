@@ -63,14 +63,18 @@ public sealed class BookBrowserInPlaceRenameTests : IDisposable
     [AvaloniaFact]
     public void Rename_shows_a_focused_editor_in_the_tree_with_the_filename_selected()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3WithNcx, temp)).GetBook());
         (Window window, BookBrowserViewModel vm, BookBrowserNode file) = ShowBrowser(book);
 
+        // Act
         vm.RenameSelectedCommand.Execute(null);
         Render(window);
 
         TextBox editor = Editor(window);
+
+        // Assert
         editor.IsFocused.Should().BeTrue();
         editor.SelectedText.Should().Be(file.Entry!.Resource.Filename);
         window.OwnedWindows.Should().BeEmpty();
@@ -79,27 +83,32 @@ public sealed class BookBrowserInPlaceRenameTests : IDisposable
     [AvaloniaFact]
     public void Enter_commits_and_Escape_cancels_the_in_place_rename()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3WithNcx, temp)).GetBook());
         (Window window, BookBrowserViewModel vm, BookBrowserNode file) = ShowBrowser(book);
         Signet.Core.Resources.Resource resource = file.Entry!.Resource;
         string original = resource.Filename;
 
+        // Act
         vm.RenameSelectedCommand.Execute(null);
         Render(window);
         Editor(window).Text = "cancelled.xhtml";
         window.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
         Render(window);
 
+        // Assert
         resource.Filename.Should().Be(original);
         vm.EditingNode.Should().BeNull();
 
+        // Act
         vm.RenameSelectedCommand.Execute(null);
         Render(window);
         Editor(window).Text = "committed.xhtml";
         window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
         Render(window);
 
+        // Assert
         resource.Filename.Should().Be("committed.xhtml");
         vm.EditingNode.Should().BeNull();
     }
@@ -107,11 +116,13 @@ public sealed class BookBrowserInPlaceRenameTests : IDisposable
     [AvaloniaFact]
     public void After_a_committed_rename_the_focus_stays_on_the_renamed_file_and_it_can_be_renamed_again()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3WithNcx, temp)).GetBook());
         (Window window, BookBrowserViewModel vm, BookBrowserNode file) = ShowBrowser(book);
         Signet.Core.Resources.Resource resource = file.Entry!.Resource;
 
+        // Act
         vm.RenameSelectedCommand.Execute(null);
         Render(window);
         Editor(window).Text = "first.xhtml";
@@ -120,12 +131,14 @@ public sealed class BookBrowserInPlaceRenameTests : IDisposable
 
         // The commit rebuilds the tree; the focus must stay in the panel (its F2 shortcut is panel-scoped) on the row
         // of the renamed file, not be lost with the recycled row.
+        // Assert
         resource.Filename.Should().Be("first.xhtml");
         Visual focused = window.FocusManager!.GetFocusedElement().Should().BeAssignableTo<Visual>().Subject;
         focused.IsEffectivelyVisible.Should().BeTrue();
         focused.FindAncestorOfType<TreeDataGridRow>(includeSelf: true)!.Model
             .Should().BeOfType<BookBrowserNode>().Which.Entry!.Resource.Should().BeSameAs(resource);
 
+        // Act
         vm.RenameSelectedCommand.Execute(null);
         Render(window);
         TextBox editor = Editor(window);
@@ -134,17 +147,22 @@ public sealed class BookBrowserInPlaceRenameTests : IDisposable
         window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
         Render(window);
 
+        // Assert
         resource.Filename.Should().Be("second.xhtml");
     }
 
     [AvaloniaFact]
     public void Text_selection_in_a_TextBox_uses_a_light_brush_in_the_light_theme()
     {
+        // Arrange
         TextBox textBox = new() { Text = "Section0001.xhtml" };
         Window window = new() { RequestedThemeVariant = ThemeVariant.Light, Content = textBox };
+
+        // Act
         window.Show();
         Render(window);
 
+        // Assert
         ((ISolidColorBrush)textBox.SelectionBrush!).Color.Should().Be(Color.Parse("#ADD6FF"));
         ((ISolidColorBrush)textBox.SelectionForegroundBrush!).Color.Should().Be(Colors.Black);
     }

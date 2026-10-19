@@ -43,22 +43,26 @@ public sealed class CodeTabViewModelSpellcheckTests : IDisposable
     [Fact]
     public void No_highlights_when_spellcheck_setting_is_disabled()
     {
+        // Arrange
         (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         settings.SpellCheck = false;
 
         CodeTabViewModel sut = NewTab(Html, settings, spellChecker);
 
+        // Act & Assert
         sut.MisspelledWordHighlights.Should().BeEmpty();
     }
 
     [Fact]
     public void Highlights_the_misspelled_word_when_spellcheck_is_enabled()
     {
+        // Arrange
         (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         settings.SpellCheck = true;
 
         CodeTabViewModel sut = NewTab(Html, settings, spellChecker);
 
+        // Act & Assert
         sut.MisspelledWordHighlights.Should().ContainSingle();
         (int start, int end) = sut.MisspelledWordHighlights.Single();
         sut.Document.GetText(start, end - start).Should().Be("wrold");
@@ -67,29 +71,39 @@ public sealed class CodeTabViewModelSpellcheckTests : IDisposable
     [Fact]
     public void GetMisspelledWordAtCaret_matches_only_strictly_inside_the_word()
     {
+        // Arrange
         (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         settings.SpellCheck = true;
         CodeTabViewModel sut = NewTab(Html, settings, spellChecker);
         int wordStart = Html.IndexOf("wrold", System.StringComparison.Ordinal);
 
+        // Act
         sut.UpdateCaret(1, 1, wordStart, -1);
+
+        // Assert
         sut.GetMisspelledWordAtCaret().Should().BeNull();
 
+        // Act
         sut.UpdateCaret(1, 1, wordStart + 2, -1);
+
+        // Assert
         sut.GetMisspelledWordAtCaret()?.Text.Should().Be("wrold");
     }
 
     [Fact]
     public void AddCurrentMisspelledWordToDictionary_removes_it_from_highlights()
     {
+        // Arrange
         (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         settings.SpellCheck = true;
         CodeTabViewModel sut = NewTab(Html, settings, spellChecker);
         int wordStart = Html.IndexOf("wrold", System.StringComparison.Ordinal);
         sut.UpdateCaret(1, 1, wordStart + 2, -1);
 
+        // Act
         sut.AddCurrentMisspelledWordToDictionary();
 
+        // Assert
         sut.MisspelledWordHighlights.Should().BeEmpty();
         spellChecker.Check("wrold").Should().BeTrue();
     }
@@ -97,14 +111,17 @@ public sealed class CodeTabViewModelSpellcheckTests : IDisposable
     [Fact]
     public void IgnoreCurrentMisspelledWord_removes_it_from_highlights_for_the_session()
     {
+        // Arrange
         (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         settings.SpellCheck = true;
         CodeTabViewModel sut = NewTab(Html, settings, spellChecker);
         int wordStart = Html.IndexOf("wrold", System.StringComparison.Ordinal);
         sut.UpdateCaret(1, 1, wordStart + 2, -1);
 
+        // Act
         sut.IgnoreCurrentMisspelledWord();
 
+        // Assert
         sut.MisspelledWordHighlights.Should().BeEmpty();
         spellChecker.IsIgnored("wrold").Should().BeTrue();
     }
@@ -112,27 +129,35 @@ public sealed class CodeTabViewModelSpellcheckTests : IDisposable
     [Fact]
     public void GoToNextMisspelledWord_raises_SearchResultRequested_for_the_next_word_and_wraps_around()
     {
+        // Arrange
         (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         settings.SpellCheck = true;
         const string html = "<html><body><p>wrold and wrold</p></body></html>";
         CodeTabViewModel sut = NewTab(html, settings, spellChecker);
+
         sut.MisspelledWordHighlights.Should().HaveCount(2);
 
         (int Start, int End, bool Wrapped)? found = null;
         sut.SearchResultRequested += (start, end, wrapped) => found = (start, end, wrapped);
 
+        // Act
         sut.UpdateCaret(1, 1, 0, -1);
         sut.GoToNextMisspelledWord();
 
+        // Assert
         found.Should().NotBeNull();
         found!.Value.Wrapped.Should().BeFalse();
         sut.Document.GetText(found.Value.Start, found.Value.End - found.Value.Start).Should().Be("wrold");
 
         // Caret after both matches -> wraps around to the first one.
+        // Arrange
         sut.UpdateCaret(1, 1, html.Length, -1);
         found = null;
+
+        // Act
         sut.GoToNextMisspelledWord();
 
+        // Assert
         found.Should().NotBeNull();
         found!.Value.Wrapped.Should().BeTrue();
     }
@@ -140,6 +165,7 @@ public sealed class CodeTabViewModelSpellcheckTests : IDisposable
     [Fact]
     public void GetSuggestionsFor_returns_non_empty_suggestions_for_a_misspelled_word()
     {
+        // Arrange
         (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         settings.SpellCheck = true;
         CodeTabViewModel sut = NewTab(Html, settings, spellChecker);
@@ -147,6 +173,8 @@ public sealed class CodeTabViewModelSpellcheckTests : IDisposable
         sut.UpdateCaret(1, 1, wordStart + 2, -1);
 
         HtmlWord word = sut.GetMisspelledWordAtCaret()!.Value;
+
+        // Act & Assert
         sut.GetSuggestionsFor(word).Should().Contain("world");
     }
 }

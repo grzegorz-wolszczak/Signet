@@ -32,6 +32,7 @@ public sealed class FindReplaceHistoryButtonTests
     [InlineData("ReplaceBox")]
     public void History_button_opens_the_whole_history_even_when_the_field_has_text(string boxName)
     {
+        // Arrange
         using TempDir temp = new();
         FindReplaceViewModel vm = new(
             new SettingsStore(Path.Combine(temp.Path, "settings.xml")),
@@ -49,18 +50,24 @@ public sealed class FindReplaceHistoryButtonTests
         vm.FindText = "nic wspólnego";
         vm.ReplaceText = "nic wspólnego";
         Window window = new() { Width = 900, Height = 400, Content = new FindReplaceView { DataContext = vm } };
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
         AutoCompleteBox box = window.GetVisualDescendants().OfType<AutoCompleteBox>().Single(b => b.Name == boxName);
         Button button = box.GetVisualDescendants().OfType<Button>().Single(b => b.Name == boxName + "HistoryButton");
+
+        // Assert
         button.IsEffectivelyVisible.Should().BeTrue();
 
+        // Act
         button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
+        // Assert
         box.IsDropDownOpen.Should().BeTrue();
         Popup popup = box.GetVisualDescendants().OfType<Popup>().Single();
         popup.IsOpen.Should().BeTrue();
@@ -79,6 +86,7 @@ public sealed class FindReplaceHistoryButtonTests
     [InlineData(2)]
     public void Find_next_after_picking_a_history_entry_keeps_the_find_text(int pickedIndex)
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
@@ -98,6 +106,8 @@ public sealed class FindReplaceHistoryButtonTests
         }
 
         Window window = new() { Width = 900, Height = 400, Content = new FindReplaceView { DataContext = vm } };
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         AutoCompleteBox box = window.GetVisualDescendants().OfType<AutoCompleteBox>().Single(b => b.Name == "FindBox");
@@ -113,13 +123,17 @@ public sealed class FindReplaceHistoryButtonTests
         Dispatcher.UIThread.RunJobs();
         box.IsDropDownOpen = false;
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         vm.FindText.Should().Be(history[pickedIndex]);
 
         for (int i = 0; i < 3; i++)
         {
+            // Act
             vm.FindNext().Should().BeTrue(vm.Message);
             Dispatcher.UIThread.RunJobs();
 
+            // Assert
             vm.FindText.Should().Be(history[pickedIndex], $"Find Next #{i + 1} does not clear the field");
             box.Text.Should().Be(history[pickedIndex]);
         }
@@ -138,6 +152,7 @@ public sealed class FindReplaceHistoryButtonTests
     [InlineData("nowy tekst", true)]
     public void Find_next_after_typing_keeps_the_find_text(string typed, bool openHistoryFirst)
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
@@ -160,6 +175,8 @@ public sealed class FindReplaceHistoryButtonTests
         window.Show();
         Dispatcher.UIThread.RunJobs();
         AutoCompleteBox box = window.GetVisualDescendants().OfType<AutoCompleteBox>().Single(b => b.Name == "FindBox");
+
+        // Act
         if (openHistoryFirst)
         {
             box.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "FindBoxHistoryButton")
@@ -173,16 +190,20 @@ public sealed class FindReplaceHistoryButtonTests
         window.KeyTextInput(typed);
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
+
+        // Assert
         vm.FindText.Should().Be(typed);
 
         Button findNext = window.GetVisualDescendants().OfType<Button>().First(b => ReferenceEquals(b.Command, vm.FindNextCommand));
         for (int i = 0; i < 3; i++)
         {
+            // Act
             findNext.Focus();
             findNext.Command!.Execute(null);
             Dispatcher.UIThread.RunJobs();
             window.CaptureRenderedFrame();
 
+            // Assert
             box.Text.Should().Be(typed, $"Find Next #{i + 1} does not clear the field");
             vm.FindText.Should().Be(typed);
         }
@@ -195,6 +216,7 @@ public sealed class FindReplaceHistoryButtonTests
     [InlineData("nowy tekst")]
     public void Multi_file_find_next_keeps_the_find_text(string typed)
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
@@ -226,6 +248,8 @@ public sealed class FindReplaceHistoryButtonTests
         vm.FindHistory.Add("inne");
 
         Window window = new() { Width = 900, Height = 400, Content = new FindReplaceView { DataContext = vm } };
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         AutoCompleteBox box = window.GetVisualDescendants().OfType<AutoCompleteBox>().Single(b => b.Name == "FindBox");
@@ -238,9 +262,13 @@ public sealed class FindReplaceHistoryButtonTests
         for (int i = 0; i < 3; i++)
         {
             bool expectFound = i < 2;
+
+            // Act & Assert
             vm.FindNext().Should().Be(expectFound, vm.Message);
             Dispatcher.UIThread.RunJobs();
             window.CaptureRenderedFrame();
+
+            // Assert
             box.Text.Should().Be(typed, $"Find Next #{i + 1} does not clear the field");
             vm.FindText.Should().Be(typed);
         }

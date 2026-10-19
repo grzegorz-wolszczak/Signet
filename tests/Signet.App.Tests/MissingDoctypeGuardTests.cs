@@ -31,12 +31,15 @@ public sealed class MissingDoctypeGuardTests
     [AutoData]
     public async Task Continue_runs_the_operation_and_keeps_asking(string operation, List<string> files)
     {
+        // Arrange
         using TempDir temp = new();
         SettingsStore settings = NewSettings(temp);
         var (guard, prompt) = NewGuard(settings, MissingDoctypeAnswer.Continue);
 
+        // Act
         bool proceed = await guard.ConfirmAsync(operation, files);
 
+        // Assert
         proceed.Should().BeTrue();
         settings.WarnMissingDoctype.Should().BeTrue();
         prompt.Verify(p => p.AskAsync(operation, files), Times.Once);
@@ -46,12 +49,15 @@ public sealed class MissingDoctypeGuardTests
     [AutoData]
     public async Task Cancel_stops_the_operation_and_keeps_asking(string operation, List<string> files)
     {
+        // Arrange
         using TempDir temp = new();
         SettingsStore settings = NewSettings(temp);
         var (guard, _) = NewGuard(settings, MissingDoctypeAnswer.Cancel);
 
+        // Act
         bool proceed = await guard.ConfirmAsync(operation, files);
 
+        // Assert
         proceed.Should().BeFalse();
         settings.WarnMissingDoctype.Should().BeTrue();
     }
@@ -60,13 +66,16 @@ public sealed class MissingDoctypeGuardTests
     [AutoData]
     public async Task Dont_ask_again_runs_the_operation_and_persists_the_choice(string operation, List<string> files)
     {
+        // Arrange
         using TempDir temp = new();
         SettingsStore settings = NewSettings(temp);
         var (guard, prompt) = NewGuard(settings, MissingDoctypeAnswer.ContinueAndDontAskAgain);
 
+        // Act
         bool first = await guard.ConfirmAsync(operation, files);
         bool second = await guard.ConfirmAsync(operation, files);
 
+        // Assert
         first.Should().BeTrue();
         second.Should().BeTrue();
         prompt.Verify(p => p.AskAsync(It.IsAny<string>(), It.IsAny<IReadOnlyList<string>>()), Times.Once);
@@ -77,11 +86,14 @@ public sealed class MissingDoctypeGuardTests
     [AutoData]
     public async Task No_files_without_doctype_means_no_question(string operation)
     {
+        // Arrange
         using TempDir temp = new();
         var (guard, prompt) = NewGuard(NewSettings(temp), MissingDoctypeAnswer.Cancel);
 
+        // Act
         bool proceed = await guard.ConfirmAsync(operation, new List<string>());
 
+        // Assert
         proceed.Should().BeTrue();
         prompt.VerifyNoOtherCalls();
     }
@@ -90,13 +102,16 @@ public sealed class MissingDoctypeGuardTests
     [AutoData]
     public async Task Disabled_warning_means_no_question(string operation, List<string> files)
     {
+        // Arrange
         using TempDir temp = new();
         SettingsStore settings = NewSettings(temp);
         settings.WarnMissingDoctype = false;
         var (guard, prompt) = NewGuard(settings, MissingDoctypeAnswer.Cancel);
 
+        // Act
         bool proceed = await guard.ConfirmAsync(operation, files);
 
+        // Assert
         proceed.Should().BeTrue();
         prompt.VerifyNoOtherCalls();
     }
@@ -105,11 +120,14 @@ public sealed class MissingDoctypeGuardTests
     [AutoData]
     public async Task Without_a_prompt_the_operation_runs(string operation, List<string> files)
     {
+        // Arrange
         using TempDir temp = new();
         MissingDoctypeGuard guard = new(NewSettings(temp));
 
+        // Act
         bool proceed = await guard.ConfirmAsync(operation, files);
 
+        // Assert
         proceed.Should().BeTrue();
     }
 }

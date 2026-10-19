@@ -23,15 +23,18 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void Should_Display_Initial_Rows_And_Cells()
         {
+            // Arrange
             var (target, _) = CreateTarget();
 
             target.RowsPresenter.Should().NotBeNull();
 
+            // Act
             var rows = target.RowsPresenter!
                 .GetVisualChildren()
                 .Cast<TreeDataGridRow>()
                 .ToList();
 
+            // Assert
             rows.Count.Should().Be(10);
 
             foreach (var row in rows)
@@ -47,6 +50,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void MultiSelection_Should_Work_Correctly_With_Duplicates()
         {
+            // Arrange
             var items = new List<Model>
             {
                 new Model(){ Id=0, Title="Item 0"},
@@ -59,40 +63,51 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
             var (target, aaa) = CreateTarget(items);
 
+            // Act
             target.RowSelection!.Select(3);
             target.RowSelection.Select(4);
             target.RowSelection.Select(5);
 
+            // Assert
             AssertInteractionSelection(target, 3, 4, 5);
 
+            // Act
             target.Source!.SortBy(target.Columns![0], ListSortDirection.Ascending);
 
+            // Assert
             AssertInteractionSelection(target, 1, 2, 3);
         }
 
         [AvaloniaFact(Timeout = 10000)]
         public void Selection_Should_Be_Preserved_After_Sorting()
         {
+            // Arrange
             var (target, aaa) = CreateTarget();
 
+            // Act
             target.RowSelection!.Select(0);
             target.RowSelection.Select(5);
 
+            // Assert
             AssertInteractionSelection(target, 0, 5);
             
+            // Act
             target.Source!.SortBy(target.Columns![0], ListSortDirection.Descending);
 
             ///There are 100 items in the collection.
             ///Their IDs are in range 0..99 so when we order IDs column in Descending order the latest element of the collection would be with
             ///ID 0(index 99 in collection),first with ID 99
+            // Assert
             AssertInteractionSelection(target, 94, 99);
         }
 
         [AvaloniaFact(Timeout = 10000)]
         public void Should_Subscribe_To_Models_For_Initial_Rows()
         {
+            // Arrange
             var (target, items) = CreateTarget();
 
+            // Act & Assert
             for (var i = 0; i < items.Count; ++i)
             {
                 var expected = i < 10 ? 2 : 0;
@@ -103,11 +118,14 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void Should_Subscribe_To_Correct_Models_After_Scrolling_Down_One_Row()
         {
+            // Arrange
             var (target, items) = CreateTarget();
 
+            // Act
             target.Scroll!.Offset = new Vector(0, 10);
             Layout(target);
 
+            // Assert
             for (var i = 0; i < items.Count; ++i)
             {
                 var expected = i > 0 && i <= 10 ? 2 : 0;
@@ -118,11 +136,14 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void Should_Subscribe_To_Correct_Models_After_Scrolling_Down_One_Page()
         {
+            // Arrange
             var (target, items) = CreateTarget();
 
+            // Act
             target.Scroll!.Offset = new Vector(0, 100);
             Layout(target);
 
+            // Assert
             for (var i = 0; i < items.Count; ++i)
             {
                 var expected = i >= 10 && i < 20 ? 2 : 0;
@@ -133,10 +154,13 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void Should_Unsubscribe_From_Models_When_Detached_From_Logical_Tree()
         {
+            // Arrange
             var (target, items) = CreateTarget();
 
+            // Act
             ((Window)target.Parent!).Content = null;
 
+            // Assert
             for (var i = 0; i < items.Count; ++i)
             {
                 items[i].PropertyChangedSubscriberCount().Should().Be(0);
@@ -146,6 +170,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void Desired_Width_Should_Be_Total_Of_Fixed_Width_Columns()
         {
+            // Arrange
             var (target, items) = CreateTarget(
                 columns: new IColumn<Model>[]
                 {
@@ -154,12 +179,14 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 }
             );
 
+            // Act & Assert
             target.DesiredSize.Width.Should().Be(24);
         }
 
         [AvaloniaFact(Timeout = 10000)]
         public void Should_Size_Star_Columns()
         {
+            // Arrange
             var (target, items) = CreateTarget(
                 columns: new IColumn<Model>[]
                 {
@@ -168,11 +195,13 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 }
             );
 
+            // Act
             var rows = target.RowsPresenter!
                 .GetVisualChildren()
                 .Cast<TreeDataGridRow>()
                 .ToList();
 
+            // Assert
             rows.Count.Should().Be(10);
 
             foreach (var row in rows)
@@ -190,6 +219,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void Should_Size_Star_Columns_With_Min_Width()
         {
+            // Arrange
             var (target, items) = CreateTarget(
                 columns: new IColumn<Model>[]
                 {
@@ -198,11 +228,13 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 }
             );
 
+            // Act
             var rows = target.RowsPresenter!
                 .GetVisualChildren()
                 .Cast<TreeDataGridRow>()
                 .ToList();
 
+            // Assert
             rows.Count.Should().Be(10);
 
             foreach (var row in rows)
@@ -220,6 +252,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void Should_Size_Star_Columns_With_Max_Width()
         {
+            // Arrange
             var (target, items) = CreateTarget(
                 columns: new IColumn<Model>[]
                 {
@@ -228,11 +261,13 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 }
             );
 
+            // Act
             var rows = target.RowsPresenter!
                 .GetVisualChildren()
                 .Cast<TreeDataGridRow>()
                 .ToList();
 
+            // Assert
             rows.Count.Should().Be(10);
 
             foreach (var row in rows)
@@ -250,6 +285,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void Raises_CellPrepared_Events_On_Initial_Layout()
         {
+            // Arrange
             var (target, items) = CreateTarget(runLayout: false);
             var raised = 0;
 
@@ -258,14 +294,17 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 ++raised;
             };
 
+            // Act
             target.UpdateLayout();
 
+            // Assert
             raised.Should().Be(20);
         }
 
         [AvaloniaFact(Timeout = 10000)]
         public void Raises_CellClearing_CellPrepared_Events_On_Scroll()
         {
+            // Arrange
             var (target, items) = CreateTarget();
             var clearingRaised = 0;
             var preparedRaised = 0;
@@ -284,9 +323,11 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 ++preparedRaised;
             };
 
+            // Act
             target.Scroll!.Offset = new Vector(0, 10);
             Layout(target);
 
+            // Assert
             clearingRaised.Should().Be(2);
             preparedRaised.Should().Be(2);
         }
@@ -294,6 +335,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void Raises_CellValueChanged_When_Model_Value_Changed()
         {
+            // Arrange
             var (target, items) = CreateTarget();
             var raised = 0;
 
@@ -304,14 +346,17 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 ++raised;
             };
 
+            // Act
             items[1].Title = "Changed";
 
+            // Assert
             raised.Should().Be(1);
         }
 
         [AvaloniaFact(Timeout = 10000)]
         public void Raises_CellValueChanged_After_Cell_Edit()
         {
+            // Arrange
             var (target, items) = CreateTarget();
             var raised = 0;
 
@@ -322,15 +367,19 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 ++raised;
             };
 
+            // Act
             var cell = (target.TryGetRow(1)?.TryGetCell(1)).Should().BeOfType<TreeDataGridTextCell>().Subject;
             cell.BeginEdit();
             cell.Value = "Changed";
 
+            // Assert
             raised.Should().Be(0);
             items[1].Title.Should().Be("Item 1");
 
+            // Act
             cell.EndEdit();
 
+            // Assert
             items[1].Title.Should().Be("Changed");
             raised.Should().Be(1);
         }
@@ -338,33 +387,40 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void Does_Not_Raise_CellValueChanged_Events_On_Initial_Layout()
         {
+            // Arrange
             var (target, items) = CreateTarget(runLayout: false);
             var raised = 0;
 
             target.CellValueChanged += (s, e) => ++raised;
 
+            // Act
             target.UpdateLayout();
 
+            // Assert
             raised.Should().Be(0);
         }
 
         [AvaloniaFact(Timeout = 10000)]
         public void Does_Not_Raise_CellValueChanged_Events_On_Scroll()
         {
+            // Arrange
             var (target, items) = CreateTarget();
             var raised = 0;
 
             target.CellValueChanged += (s, e) => ++raised;
 
+            // Act
             target.Scroll!.Offset = new Vector(0, 10);
             Layout(target);
 
+            // Assert
             raised.Should().Be(0);
         }
 
         [AvaloniaFact(Timeout = 10000)]
         public void Does_Not_Realize_Columns_Outside_Viewport()
         {
+            // Arrange
             var (target, items) = CreateTarget(columns: new IColumn<Model>[]
             {
                 new TextColumn<Model, int>("ID", x => x.Id, width: new GridLength(1, GridUnitType.Star)),
@@ -373,6 +429,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 new TextColumn<Model, string?>("Title3", x => x.Title, options: MinWidth(50)),
             });
 
+            // Act & Assert
             AssertColumnIndexes(target, 0, 3);
 
             var columns = (ColumnList<Model>)target.Columns!;
@@ -385,6 +442,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void Header_Column_Indexes_Are_Updated_When_Columns_Are_Updated()
         {
+            // Arrange
             var (target, items) = CreateTarget(columns: new IColumn<Model>[]
             {
                 new TextColumn<Model, int>("ID", x => x.Id, width: new GridLength(1, GridUnitType.Star)),
@@ -393,21 +451,27 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 new TextColumn<Model, string?>("Title3", x => x.Title,  width: new GridLength(1, GridUnitType.Star)),
             });
 
+            // Act & Assert
             AssertColumnIndexes(target, 0, 4);
 
             var source =(FlatTreeDataGridSource<Model>)target.Source!;
 
             var movedColumn = source.Columns[1];
+
+            // Act
             source.Columns.Remove(movedColumn);
 
+            // Assert
             AssertColumnIndexes(target, 0, 3);
 
+            // Act
             source.Columns.Add(movedColumn);
 
             var root = (TestWindow)TopLevel.GetTopLevel(target)!;
             root.UpdateLayout();
             Dispatcher.UIThread.RunJobs();
 
+            // Assert
             AssertColumnIndexes(target, 0, 4);
         }
 
@@ -415,15 +479,18 @@ namespace Signet.Controls.TreeDataGrid.Tests
         public void Columns_Are_Correctly_Sized_After_Changing_Source()
         {
             // Create the initial target with 2 columns and make sure our preconditions are correct.
+            // Arrange
             var (target, items) = CreateTarget(columns: new IColumn<Model>[]
             {
                 new TextColumn<Model, int>("ID", x => x.Id, width: new GridLength(1, GridUnitType.Star)),
                 new TextColumn<Model, string?>("Title1", x => x.Title, options: MinWidth(50)),
             });
 
+            // Act & Assert
             AssertColumnIndexes(target, 0, 2);
 
             // Create a new source and assign it to the TreeDataGrid.
+            // Act
             var newSource = new FlatTreeDataGridSource<Model>(items)
             {
                 Columns =
@@ -437,15 +504,20 @@ namespace Signet.Controls.TreeDataGrid.Tests
             target.Source = newSource;
 
             // The columns should not have an ActualWidth yet.
+            // Assert
             double.IsNaN(newSource.Columns[0].ActualWidth).Should().BeTrue();
             double.IsNaN(newSource.Columns[1].ActualWidth).Should().BeTrue();
             double.IsNaN(newSource.Columns[2].ActualWidth).Should().BeTrue();
 
             // Do a layout pass and check that the columns have been correctly sized.
+            // Act
             target.UpdateLayout();
+
+            // Assert
             AssertColumnIndexes(target, 0, 3);
 
             var columns = (ColumnList<Model>)target.Columns!;
+
             columns[0].ActualWidth.Should().Be(60);
             columns[1].ActualWidth.Should().Be(20);
             columns[2].ActualWidth.Should().Be(20);
@@ -454,6 +526,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void Should_Correctly_Align_Columns_When_Vertically_Scrolling_With_First_Column_Unrealized()
         {
+            // Arrange
             // Issue #298
             static void AssertRealizedCells(TreeDataGrid target)
             {
@@ -483,24 +556,34 @@ namespace Signet.Controls.TreeDataGrid.Tests
             ]);
 
             // Scroll horizontally and check that the realized cells are positioned correctly.
+            // Act
             target.Scroll!.Offset = new Vector(120, 0);
             target.UpdateLayout();
+
+            // Assert
             AssertRealizedCells(target);
 
             // Scroll down a row and check that the realized cells are positioned correctly.
+            // Act
             target.Scroll!.Offset = new Vector(120, 10);
             target.UpdateLayout();
+
+            // Assert
             AssertRealizedCells(target);
 
             // Now scroll back vertically and check once more.
+            // Act
             target.Scroll!.Offset = new Vector(120, 0);
             target.UpdateLayout();
+
+            // Assert
             AssertRealizedCells(target);
         }
 
         [AvaloniaFact(Timeout = 10000)]
         public void Should_Use_TextCell_StringFormat()
         {
+            // Arrange
             var (target, items) = CreateTarget(columns: new IColumn<Model>[]
             {
                 new TextColumn<Model, string?>("Title", x => x.Title, options: new()
@@ -509,11 +592,13 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 }),
             });
 
+            // Act
             var rows = target.RowsPresenter!
                 .GetVisualChildren()
                 .Cast<TreeDataGridRow>()
                 .ToList();
 
+            // Assert
             rows.Count.Should().Be(10);
 
             for (var i = 0; i < rows.Count; i++)
@@ -526,6 +611,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void Should_Use_TextCell_StringFormat_When_Model_Is_Updated()
         {
+            // Arrange
             var (target, items) = CreateTarget(columns: new IColumn<Model>[]
             {
                 new TextColumn<Model, string?>("Title", x => x.Title, options: new()
@@ -534,15 +620,20 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 }),
             });
 
+            // Act
             var rows = target.RowsPresenter!
                 .GetVisualChildren()
                 .Cast<TreeDataGridRow>()
                 .ToList();
 
+            // Assert
             rows.Count.Should().Be(10);
+
+            // Act
             items[1].Title = "World";
             var cell = target.TryGetCell(0, 1).Should().BeOfType<TreeDataGridTextCell>().Subject;
 
+            // Assert
             cell.Value.Should().Be("Hello World");
         }
 
@@ -551,16 +642,21 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [AvaloniaFact(Timeout = 10000)]
             public void Can_Remove_Range_Within_Realized_Elements()
             {
+                // Arrange
                 var (target, items) = CreateTarget();
 
+                // Act
                 target.Scroll!.Offset = new Vector(0, 100);
                 Layout(target);
 
+                // Assert
                 AssertRowIndexes(target, 10, 10);
 
+                // Act
                 items.RemoveRange(12, 4);
                 Layout(target);
 
+                // Assert
                 AssertRowIndexes(target, 10, 10);
                 target.Scroll.Offset.Should().Be(new Vector(0, 100));
             }
@@ -568,16 +664,21 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [AvaloniaFact(Timeout = 10000)]
             public void Can_Remove_Range_Within_Realized_Elements_When_Scrolled_To_End()
             {
+                // Arrange
                 var (target, items) = CreateTarget(itemCount: 20);
 
+                // Act
                 target.Scroll!.Offset = new Vector(0, 100);
                 Layout(target);
 
+                // Assert
                 AssertRowIndexes(target, 10, 10);
 
+                // Act
                 items.RemoveRange(12, 4);
                 Layout(target);
 
+                // Assert
                 AssertRowIndexes(target, 6, 10);
                 target.Scroll.Offset.Should().Be(new Vector(0, 60));
             }
@@ -585,16 +686,21 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [AvaloniaFact(Timeout = 10000)]
             public void Can_Remove_Range_Of_All_Realized_Elements()
             {
+                // Arrange
                 var (target, items) = CreateTarget();
 
+                // Act
                 target.Scroll!.Offset = new Vector(0, 100);
                 Layout(target);
 
+                // Assert
                 AssertRowIndexes(target, 10, 10);
 
+                // Act
                 items.RemoveRange(10, 10);
                 Layout(target);
 
+                // Assert
                 AssertRowIndexes(target, 10, 10);
                 target.Scroll.Offset.Should().Be(new Vector(0, 100));
             }
@@ -602,16 +708,21 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [AvaloniaFact(Timeout = 10000)]
             public void Can_Remove_Range_Of_All_Realized_Elements_When_Scrolled_To_End()
             {
+                // Arrange
                 var (target, items) = CreateTarget(itemCount: 20);
 
+                // Act
                 target.Scroll!.Offset = new Vector(0, 100);
                 Layout(target);
 
+                // Assert
                 AssertRowIndexes(target, 10, 10);
 
+                // Act
                 items.RemoveRange(10, 10);
                 Layout(target);
 
+                // Assert
                 AssertRowIndexes(target, 0, 10);
                 target.Scroll.Offset.Should().Be(new Vector(0, 0));
             }
@@ -619,16 +730,21 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [AvaloniaFact(Timeout = 10000)]
             public void Can_Remove_Range_Spanning_Beginning_Of_Realized_Elements_When_Scrolled_To_End()
             {
+                // Arrange
                 var (target, items) = CreateTarget(itemCount: 20);
 
+                // Act
                 target.Scroll!.Offset = new Vector(0, 100);
                 Layout(target);
 
+                // Assert
                 AssertRowIndexes(target, 10, 10);
 
+                // Act
                 items.RemoveRange(5, 10);
                 Layout(target);
 
+                // Assert
                 AssertRowIndexes(target, 0, 10);
                 target.Scroll.Offset.Should().Be(new Vector(0, 0));
             }
@@ -636,16 +752,21 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [AvaloniaFact(Timeout = 10000)]
             public void Can_Remove_Range_Spanning_End_Of_Realized_Elements()
             {
+                // Arrange
                 var (target, items) = CreateTarget();
 
+                // Act
                 target.Scroll!.Offset = new Vector(0, 100);
                 Layout(target);
 
+                // Assert
                 AssertRowIndexes(target, 10, 10);
 
+                // Act
                 items.RemoveRange(15, 10);
                 Layout(target);
 
+                // Assert
                 AssertRowIndexes(target, 10, 10);
                 target.Scroll.Offset.Should().Be(new Vector(0, 100));
             }
@@ -653,31 +774,42 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [AvaloniaFact(Timeout = 10000)]
             public void Can_Remove_Selected_Item()
             {
+                // Arrange
                 var (target, items) = CreateTarget();
 
+                // Act
                 Layout(target);
                 target.RowSelection!.Select(3);
 
+                // Assert
                 target.RowSelection.SelectedIndex.Should().Be(3);
 
+                // Act
                 items.RemoveAt(3);
 
+                // Assert
                 target.RowSelection.SelectedIndex.Should().Be(-1);
             }
 
             [AvaloniaFact(Timeout = 10000)]
             public void Can_Remove_Selected_Item_Sorted()
             {
+                // Arrange
                 var (target, items) = CreateTarget();
+
+                // Act
                 target.Source!.SortBy(target.Columns![0], ListSortDirection.Descending);
 
                 Layout(target);
                 target.RowSelection!.Select(3);
 
+                // Assert
                 target.RowSelection.SelectedIndex.Should().Be(3);
 
+                // Act
                 items.RemoveAt(3);
 
+                // Assert
                 target.RowSelection.SelectedIndex.Should().Be(-1);
             }
         }
@@ -685,11 +817,14 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void Should_Show_Horizontal_ScrollBar()
         {
+            // Arrange
             var (target, items) = CreateTarget(columns:
             [
                 new TextColumn<Model, int>("ID", x => x.Id, width: new GridLength(100, GridUnitType.Pixel)),
                 new TextColumn<Model, string?>("Title1", x => x.Title,  width: new GridLength(100, GridUnitType.Pixel)),
             ]);
+
+            // Act & Assert
             var scroll = target.Scroll.Should().BeOfType<ScrollViewer>().Subject;
             var headerScroll = (target.GetVisualDescendants().Single(x => x.Name == "PART_HeaderScrollViewer")).Should().BeOfType<ScrollViewer>().Subject;
 
@@ -702,11 +837,14 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void Should_Show_Horizontal_ScrollBar_With_No_Initial_Rows()
         {
+            // Arrange
             var (target, items) = CreateTarget(columns:
             [
                 new TextColumn<Model, int>("ID", x => x.Id, width: new GridLength(100, GridUnitType.Pixel)),
                 new TextColumn<Model, string?>("Title1", x => x.Title,  width: new GridLength(100, GridUnitType.Pixel)),
             ], itemCount: 0);
+
+            // Act & Assert
             var scroll = target.Scroll.Should().BeOfType<ScrollViewer>().Subject;
             var headerScroll = (target.GetVisualDescendants().Single(x => x.Name == "PART_HeaderScrollViewer")).Should().BeOfType<ScrollViewer>().Subject;
 
@@ -719,6 +857,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void Should_Preserve_Horizontal_ScrollBar_When_Rows_Removed()
         {
+            // Arrange
             var (target, items) = CreateTarget(columns:
             [
                 new TextColumn<Model, int>("ID", x => x.Id, width: new GridLength(100, GridUnitType.Pixel)),
@@ -733,9 +872,12 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 {
                 }
             };
+
+            // Act
             items.Clear();
             target.UpdateLayout();
 
+            // Assert
             scroll.Viewport.Should().Be(new Size(100, 100));
             scroll.Extent.Should().Be(new Size(200, 100));
             headerScroll.Viewport.Should().Be(new Size(100, 0));

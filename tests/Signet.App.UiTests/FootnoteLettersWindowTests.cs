@@ -25,6 +25,7 @@ public sealed class FootnoteLettersWindowTests
     [AvaloniaFact]
     public void The_tree_shows_the_notes_and_unify_rewrites_them_and_closes_the_dialog()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("3.0");
         HtmlResource html = book.GetHtmlResourcesExcludingNav()[0];
         html.SetText("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!DOCTYPE html>\n"
@@ -32,11 +33,15 @@ public sealed class FootnoteLettersWindowTests
             + "<head><title>t</title></head>\n<body>\n<p>One.</p>\n<p>Two.</p>\n</body>\n</html>");
         FootnoteOptions upper = FootnoteOptions.Default with { LetterStyle = FootnoteLetterStyle.UpperLatin };
         FootnoteEditor.Add(book, html, After(html, "One"), "Note.", FootnotePlacement.Local, out Footnote? footnote, upper);
+
+        // Act & Assert
         FootnoteEditor.AddReference(book, html, After(html, "Two"), footnote!, out _, upper).Should().Be(FootnoteError.None);
         FootnoteLettersViewModel vm = new(
             FootnoteLetterStyle.LowerLatin, s => FootnoteEditor.PlanLetters(book, s), (_, _) => { },
             (items, style) => FootnoteEditor.UnifyLetters(book, items, style) > 0);
         Window owner = new();
+
+        // Act
         owner.Show();
 
         Task shown = FootnoteLettersWindow.ShowAsync(owner, vm);
@@ -45,12 +50,17 @@ public sealed class FootnoteLettersWindowTests
         window.CaptureRenderedFrame();
 
         TreeDataGrid tree = window.GetVisualDescendants().OfType<TreeDataGrid>().Single(g => g.Name == "Tree");
+
+        // Assert
         tree.Source!.Rows.Count.Should().Be(2, "the file and its note, expanded");
         Button unify = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "UnifyButton");
         unify.IsEnabled.Should().BeTrue();
+
+        // Act
         unify.Command!.Execute(null);
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         shown.IsCompleted.Should().BeTrue("the dialog closes after unifying");
         html.GetText().Should().Contain("[1a]</a>").And.Contain("[1b]</a>");
         owner.Close();

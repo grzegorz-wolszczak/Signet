@@ -39,12 +39,14 @@ public sealed class MenuBuilderTests
     [Fact]
     public void A_submenu_is_enabled_only_while_one_of_its_items_is()
     {
+        // Arrange
         using TestHost host = new();
         foreach (AppAction action in host.Registry.Actions)
         {
             action.IsEnabled = true;
         }
 
+        // Act
         IReadOnlyList<MenuItemViewModel> menus = Build(host);
         MenuItemViewModel[] bookOnly =
         {
@@ -53,25 +55,33 @@ public sealed class MenuBuilderTests
             SubmenuOf(menus, AppActionIds.GenerateToc), SubmenuOf(menus, AppActionIds.SpellcheckEditor),
             SubmenuOf(menus, AppActionIds.MendHtml), SubmenuOf(menus, AppActionIds.UpgradeToEpub3),
         };
+
+        // Assert
         bookOnly.Should().OnlyContain(m => m.IsEnabled);
 
+        // Act
         host.Registry.SetBookOpen(false);
 
+        // Assert
         bookOnly.Should().OnlyContain(m => !m.IsEnabled, "all their actions need a book");
         SubmenuOf(menus, AppActionIds.NewDefault).IsEnabled.Should().BeTrue("File → New works without a book");
         menus.Should().OnlyContain(m => m.IsEnabled, "the top-level menus stay enabled");
 
+        // Act
         host.Registry.SetBookOpen(true);
 
+        // Assert
         bookOnly.Should().OnlyContain(m => m.IsEnabled);
     }
 
     [Fact]
     public void Builds_nine_top_level_menus()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         using TestHost host = new();
 
+        // Act & Assert
         Build(host).Select(m => m.Header).Should().Equal(
             "_File", "_Edit", "_Insert", "For_mat", "_Search", "_Tools", "_View", "_Window", "_Help");
     }
@@ -79,8 +89,10 @@ public sealed class MenuBuilderTests
     [Fact]
     public void Every_leaf_has_a_command_and_every_separator_is_flagged()
     {
+        // Arrange
         using TestHost host = new();
 
+        // Act & Assert
         foreach (MenuItemViewModel node in Build(host).SelectMany(Flatten))
         {
             if (node.IsSeparator)
@@ -97,11 +109,13 @@ public sealed class MenuBuilderTests
     [Fact]
     public void Toolbars_submenu_lists_toggles_plus_customize()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         using TestHost host = new();
         MenuItemViewModel view = Build(host).Single(m => m.Header == "_View");
         MenuItemViewModel toolbars = view.Items!.Single(m => m.Header == "_Toolbars");
 
+        // Act & Assert
         toolbars.Items!.Count(i => i.IsCheckable).Should().Be(Signet.App.Toolbars.ToolbarManager.AllToolbars.Count);
         toolbars.Items!.Should().Contain(i => i.Header == "_Customize Toolbars...");
     }
@@ -109,25 +123,34 @@ public sealed class MenuBuilderTests
     [Fact]
     public void Toolbars_toggle_menu_item_tracks_manager_visibility()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         using TestHost host = new();
         MenuItemViewModel view = Build(host).Single(m => m.Header == "_View");
         MenuItemViewModel toolbars = view.Items!.Single(m => m.Header == "_Toolbars");
         MenuItemViewModel directionToggle = toolbars.Items!.Single(i => i.Header == "Text Direction");
 
+        // Act & Assert
         directionToggle.IsChecked.Should().BeFalse();
+
+        // Act
         host.Toolbars.SetVisible(Signet.App.Toolbars.ToolbarId.TextDirection, true);
+
+        // Assert
         directionToggle.IsChecked.Should().BeTrue();
     }
 
     [Fact]
     public void Menu_headers_and_action_texts_follow_the_ui_language()
     {
+        // Arrange
         using UiCultureScope culture = new("pl");
         using TestHost host = new();
 
+        // Act
         IReadOnlyList<MenuItemViewModel> menu = Build(host);
 
+        // Assert
         menu.Select(m => m.Header).Should().Equal(
             "_Plik", "_Edycja", "_Wstaw", "_Format", "_Szukaj", "Nar_zędzia", "Wi_dok", "_Okno", "Pomo_c");
         menu[0].Items!.Should().Contain(m => m.Header == "_Zapisz");
@@ -138,9 +161,11 @@ public sealed class MenuBuilderTests
     {
         foreach (string lang in new[] { "pl", "en" })
         {
+            // Arrange
             using UiCultureScope culture = new(lang);
             foreach (AppActionDescriptor descriptor in AppActionCatalog.All.Where(d => !AppActionIds.TryGetClipSlot(d.Id, out _)))
             {
+                // Act & Assert
                 Strings.TryGet("Action_" + descriptor.Id.Replace('.', '_')).Should().NotBeNullOrEmpty(descriptor.Id);
                 Strings.TryGet("ActionCategory_" + descriptor.Category.Replace(" ", string.Empty)).Should().NotBeNullOrEmpty(descriptor.Category);
             }
@@ -156,11 +181,14 @@ public sealed class MenuBuilderTests
     [Fact]
     public void Tools_menu_has_one_Standardize_entry_instead_of_the_four_tidying_actions()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         using TestHost host = new();
 
+        // Act
         List<string> tools = Build(host).Single(m => m.Header == "_Tools").Items!.Select(i => i.Header).ToList();
 
+        // Assert
         tools.Should().Contain("Standardize EPUB...");
         tools.Should().NotContain(StandardizedTidyingActions);
     }
@@ -168,9 +196,11 @@ public sealed class MenuBuilderTests
     [Fact]
     public void Help_menu_contains_only_about()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         using TestHost host = new();
 
+        // Act & Assert
         Build(host).Single(m => m.Header == "_Help").Items!.Select(i => i.Header)
             .Should().Equal("_About...");
     }
@@ -178,14 +208,17 @@ public sealed class MenuBuilderTests
     [Fact]
     public void Recent_files_are_a_flat_list_above_close()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         using TestHost host = new();
         FakeRecentFiles recent = new() { Files = new[] { "/books/a_b.epub", "/books/c.epub" } };
 
+        // Act
         MenuItemViewModel file = BuildWith(host, recent).Single(m => m.Header == "_File");
         List<string> headers = file.Items!.Select(i => i.Header).ToList();
         int print = headers.IndexOf("_Print...");
 
+        // Assert
         headers.Skip(print + 1).Take(6).Should().Equal(
             "-", "_1. a__b.epub", "_2. c.epub", "Clear List", "-", "Close");
         file.Items!.Should().NotContain(i => i.Items != null && i.Header.Contains("Recent"));
@@ -194,12 +227,15 @@ public sealed class MenuBuilderTests
     [Fact]
     public void A_recent_file_shows_its_full_path_in_the_tooltip()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         using TestHost host = new();
         FakeRecentFiles recent = new() { Files = new[] { "/books/one/a.epub", "/books/two/a.epub" } };
 
+        // Act
         MenuItemViewModel file = BuildWith(host, recent).Single(m => m.Header == "_File");
 
+        // Assert
         file.Items!.Where(i => i.Header.EndsWith(". a.epub", StringComparison.Ordinal)).Select(i => i.ToolTip)
             .Should().Equal("/books/one/a.epub", "/books/two/a.epub");
         file.Items!.Single(i => i.Header == "Close").ToolTip.Should().BeNull();
@@ -208,6 +244,7 @@ public sealed class MenuBuilderTests
     [Fact]
     public void A_long_recent_file_name_is_shortened_with_an_ellipsis_and_keeps_its_extension()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         using TestHost host = new();
         FakeRecentFiles recent = new()
@@ -215,9 +252,11 @@ public sealed class MenuBuilderTests
             Files = new[] { "/books/Kroki w nieznane 3 (Iskry) (1972) - Rozni.epub", "/books/exactly_forty_characters_long_names.epub" },
         };
 
+        // Act
         MenuItemViewModel file = BuildWith(host, recent).Single(m => m.Header == "_File");
         List<string> headers = file.Items!.Select(i => i.Header).ToList();
 
+        // Assert
         headers.Should().Contain("_1. Kroki w nieznane 3 (Iskry) (1972)….epub");
         headers.Should().Contain("_2. exactly__forty__characters__long__names.epub");
     }
@@ -225,18 +264,25 @@ public sealed class MenuBuilderTests
     [Fact]
     public void Recent_files_list_is_rebuilt_in_place_and_disappears_when_empty()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         using TestHost host = new();
         FakeRecentFiles recent = new() { Files = new[] { "a.epub" } };
         MenuItemViewModel file = BuildWith(host, recent).Single(m => m.Header == "_File");
         int countWithOne = file.Items!.Count;
 
+        // Act
         recent.Files = new[] { "a.epub", "b.epub", "c.epub" };
         recent.RaiseChanged();
+
+        // Assert
         file.Items!.Count.Should().Be(countWithOne + 2);
 
+        // Act
         recent.Files = System.Array.Empty<string>();
         recent.RaiseChanged();
+
+        // Assert
         file.Items!.Count.Should().Be(countWithOne - 3);
         file.Items!.Select(i => i.Header).Should().NotContain(h => h.EndsWith(".epub"));
     }
@@ -244,6 +290,7 @@ public sealed class MenuBuilderTests
     [Fact]
     public void A_recent_file_has_a_context_item_that_removes_it_from_the_list()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         using TestHost host = new();
         FakeRecentFiles recent = new() { Files = new[] { "/books/a.epub", "/books/b.epub" } };
@@ -252,8 +299,11 @@ public sealed class MenuBuilderTests
         MenuItemViewModel second = file.Items!.Single(i => i.Header == "_2. b.epub");
         MenuItemViewModel remove = second.ContextItems!.Should().ContainSingle().Subject;
         remove.Header.Should().Be("Remove from Recent Files");
+
+        // Act
         remove.Command!.Execute(null);
 
+        // Assert
         recent.Removed.Should().Equal("/books/b.epub");
         file.Items!.Single(i => i.Header == "Clear List").ContextItems.Should().BeNull();
     }

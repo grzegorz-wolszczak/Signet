@@ -91,10 +91,13 @@ public sealed class FileWorkflowTests
     [Fact]
     public async Task NewAsync_builds_a_book_and_has_no_file_path()
     {
+        // Arrange
         using Harness h = new();
 
+        // Act
         await h.Workflow.NewAsync("3.0");
 
+        // Assert
         h.Workspace.ApplyBookCalls.Should().Be(1);
         h.Workspace.CurrentBook!.IsEpub3.Should().BeTrue();
         h.Workspace.CurrentBook.GetHtmlResources().Should().NotBeEmpty();
@@ -106,12 +109,15 @@ public sealed class FileWorkflowTests
     [Fact]
     public async Task Dirty_guard_cancel_aborts_New()
     {
+        // Arrange
         using Harness h = new();
         h.Workspace.HasUnsavedChanges = true;
         h.Prompts.SaveChoice = SaveChangesChoice.Cancel;
 
+        // Act
         await h.Workflow.NewAsync(null);
 
+        // Assert
         h.Prompts.AskSaveChangesCalls.Should().Be(1);
         h.Workspace.ApplyBookCalls.Should().Be(0);
     }
@@ -119,6 +125,7 @@ public sealed class FileWorkflowTests
     [Fact]
     public async Task Close_leaves_the_window_without_a_book()
     {
+        // Arrange
         using Harness h = new();
         h.Prompts.SavePath = h.PathIn("book.epub");
         await h.Workflow.NewAsync("2.0");
@@ -126,8 +133,10 @@ public sealed class FileWorkflowTests
         int titleChanges = 0;
         h.Workflow.CurrentFileChanged += (_, _) => titleChanges++;
 
+        // Act
         await h.Workflow.CloseAsync();
 
+        // Assert
         h.Workspace.CloseBookCalls.Should().Be(1);
         h.Workspace.CurrentBook.Should().BeNull();
         h.Workflow.CurrentFilePath.Should().BeEmpty();
@@ -138,11 +147,14 @@ public sealed class FileWorkflowTests
     [Fact]
     public async Task Close_without_a_book_does_nothing()
     {
+        // Arrange
         using Harness h = new();
         h.Workspace.HasUnsavedChanges = true;
 
+        // Act
         await h.Workflow.CloseAsync();
 
+        // Assert
         h.Prompts.AskSaveChangesCalls.Should().Be(0);
         h.Workspace.CloseBookCalls.Should().Be(0);
     }
@@ -150,14 +162,17 @@ public sealed class FileWorkflowTests
     [Fact]
     public async Task Dirty_guard_cancel_aborts_Close()
     {
+        // Arrange
         using Harness h = new();
         await h.Workflow.NewAsync("3.0");
         Book open = h.Workspace.CurrentBook!;
         h.Workspace.HasUnsavedChanges = true;
         h.Prompts.SaveChoice = SaveChangesChoice.Cancel;
 
+        // Act
         await h.Workflow.CloseAsync();
 
+        // Assert
         h.Prompts.AskSaveChangesCalls.Should().Be(1);
         h.Workspace.CurrentBook.Should().BeSameAs(open);
         h.Workspace.CloseBookCalls.Should().Be(0);
@@ -166,20 +181,27 @@ public sealed class FileWorkflowTests
     [Fact]
     public async Task Save_As_writes_an_epub_that_round_trips()
     {
+        // Arrange
         using Harness h = new();
         string target = h.PathIn("book.epub");
         h.Prompts.SavePath = target;
 
         await h.Workflow.NewAsync("3.0");
+
+        // Act
         bool ok = await h.Workflow.SaveAsAsync();
 
+        // Assert
         ok.Should().BeTrue();
         File.Exists(target).Should().BeTrue();
         h.Workflow.CurrentFilePath.Should().Be(Path.GetFullPath(target));
         h.Workflow.HasSavedFile.Should().BeTrue();
         h.Workspace.SaveOpenTabsCalls.Should().Be(1);
 
+        // Act
         using Book reopened = new ImportEpub(target).GetBook();
+
+        // Assert
         reopened.IsEpub3.Should().BeTrue();
         reopened.GetHtmlResources().Should().NotBeEmpty();
     }
@@ -187,15 +209,22 @@ public sealed class FileWorkflowTests
     [Fact]
     public async Task Save_after_Save_As_reuses_the_path_without_a_dialog()
     {
+        // Arrange
         using Harness h = new();
         h.Prompts.SavePath = h.PathIn("b.epub");
 
         await h.Workflow.NewAsync("2.0");
+
+        // Act
         await h.Workflow.SaveAsAsync();
+
+        // Assert
         h.Prompts.AskSavePathCalls.Should().Be(1);
 
+        // Act
         bool ok = await h.Workflow.SaveAsync();
 
+        // Assert
         ok.Should().BeTrue();
         h.Prompts.AskSavePathCalls.Should().Be(1);
     }
@@ -203,19 +232,24 @@ public sealed class FileWorkflowTests
     [Fact]
     public async Task Saving_adds_the_file_to_recent_files()
     {
+        // Arrange
         using Harness h = new();
         string target = h.PathIn("recent.epub");
         h.Prompts.SavePath = target;
 
         await h.Workflow.NewAsync("2.0");
+
+        // Act
         await h.Workflow.SaveAsAsync();
 
+        // Assert
         h.Settings.RecentFiles.Should().ContainSingle().Which.Should().Be(Path.GetFullPath(target));
     }
 
     [Fact]
     public async Task Saving_with_the_edition_page_on_writes_the_page_into_the_saved_file()
     {
+        // Arrange
         using Harness h = new();
         h.Settings.EditionPage = EditionPageSettings.Default with
         {
@@ -226,9 +260,12 @@ public sealed class FileWorkflowTests
         h.Prompts.SavePath = target;
 
         await h.Workflow.NewAsync("3.0");
+
+        // Act
         await h.Workflow.SaveAsAsync();
         await h.Workflow.SaveAsync();
 
+        // Assert
         h.Workspace.RefreshAfterBookEditCalls.Should().Be(1, "only the first save of the session writes the page");
         using (Book saved = new ImportEpub(target).GetBook())
         {
@@ -238,10 +275,12 @@ public sealed class FileWorkflowTests
         }
 
         // Opening the book again starts a new session: its first save raises the revision, the next one does not.
+        // Act
         (await h.Workflow.LoadFileAsync(target)).Should().BeTrue();
         await h.Workflow.SaveAsync();
         await h.Workflow.SaveAsync();
 
+        // Assert
         h.Workspace.RefreshAfterBookEditCalls.Should().Be(2);
         using Book reopened = new ImportEpub(target).GetBook();
         EditionPage.Find(reopened)!.GetText().Should().Contain("<td>2</td>");
@@ -250,15 +289,20 @@ public sealed class FileWorkflowTests
     [Fact]
     public async Task Save_a_copy_also_refreshes_the_edition_page()
     {
+        // Arrange
         using Harness h = new();
         h.Settings.EditionPage = EditionPageSettings.Default with { Enabled = true };
         string target = h.PathIn("copy.epub");
         h.Prompts.SavePath = target;
 
         await h.Workflow.NewAsync("2.0");
+
+        // Act
         await h.Workflow.SaveACopyAsync();
 
         using Book reopened = new ImportEpub(target).GetBook();
+
+        // Assert
         EditionPage.Find(reopened).Should().NotBeNull();
         h.Workspace.CurrentBook!.Modified.Should().BeTrue("the revision changed in the open book, which still has no file of its own");
     }
@@ -266,39 +310,53 @@ public sealed class FileWorkflowTests
     [Fact]
     public async Task Saving_with_the_edition_page_off_adds_no_page()
     {
+        // Arrange
         using Harness h = new();
         string target = h.PathIn("plain.epub");
         h.Prompts.SavePath = target;
 
         await h.Workflow.NewAsync("3.0");
+
+        // Act
         await h.Workflow.SaveAsAsync();
 
+        // Assert
         h.Workspace.RefreshAfterBookEditCalls.Should().Be(0);
+
+        // Act
         using Book reopened = new ImportEpub(target).GetBook();
+
+        // Assert
         EditionPage.Find(reopened).Should().BeNull();
     }
 
     [Fact]
     public async Task OpenRecent_with_a_missing_file_removes_it_from_the_list()
     {
+        // Arrange
         using Harness h = new();
         string ghost = h.PathIn("gone.epub");
         h.Settings.RecentFiles = new[] { ghost };
         h.Prompts.RemoveMissingRecent = true;
 
+        // Act
         await h.Workflow.OpenRecentAsync(ghost);
 
+        // Assert
         h.Settings.RecentFiles.Should().BeEmpty();
     }
 
     [Fact]
     public async Task LoadFileAsync_shows_load_warnings_in_one_dialog()
     {
+        // Arrange
         using Harness h = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("missing-mimetype"), h.Dir);
 
+        // Act
         bool ok = await h.Workflow.LoadFileAsync(epub);
 
+        // Assert
         ok.Should().BeTrue();
         h.Prompts.LastLoadWarnings.Should().NotBeNull();
         h.Prompts.LastLoadWarnings!.Value.FileName.Should().Be(Path.GetFileName(epub));
@@ -317,12 +375,15 @@ public sealed class FileWorkflowTests
     [Fact]
     public async Task A_file_open_in_another_instance_is_not_loaded_until_the_user_decides()
     {
+        // Arrange
         using Harness h = new();
         (string epub, BookFileLock held) = FileOpenElsewhere(h);
         using BookFileLock _ = held;
 
+        // Act
         bool loaded = await h.Workflow.LoadFileAsync(epub);
 
+        // Assert
         loaded.Should().BeFalse();
         h.Prompts.FilesInUse.Should().Equal(Path.GetFileName(epub));
         h.Workspace.ApplyBookCalls.Should().Be(0);
@@ -331,13 +392,16 @@ public sealed class FileWorkflowTests
     [Fact]
     public async Task Close_closes_the_application_and_loads_nothing()
     {
+        // Arrange
         using Harness h = new();
         (string epub, BookFileLock held) = FileOpenElsewhere(h);
         using BookFileLock _ = held;
         h.Prompts.InUseChoices.Enqueue(FileInUseChoice.Close);
 
+        // Act
         await h.Workflow.LoadFileAsync(epub);
 
+        // Assert
         h.Prompts.CloseApplicationCalls.Should().Be(1);
         h.Workspace.ApplyBookCalls.Should().Be(0);
     }
@@ -345,13 +409,16 @@ public sealed class FileWorkflowTests
     [Fact]
     public async Task Open_without_a_book_starts_with_a_new_empty_book()
     {
+        // Arrange
         using Harness h = new();
         (string epub, BookFileLock held) = FileOpenElsewhere(h);
         using BookFileLock _ = held;
         h.Prompts.InUseChoices.Enqueue(FileInUseChoice.OpenEmpty);
 
+        // Act
         bool loaded = await h.Workflow.LoadFileAsync(epub);
 
+        // Assert
         loaded.Should().BeFalse("the file itself was not loaded");
         h.Workspace.ApplyBookCalls.Should().Be(1);
         h.Workspace.LastAppliedPath.Should().BeNull();
@@ -362,13 +429,16 @@ public sealed class FileWorkflowTests
     [Fact]
     public async Task Open_anyway_loads_the_file_without_taking_its_lock()
     {
+        // Arrange
         using Harness h = new();
         (string epub, BookFileLock held) = FileOpenElsewhere(h);
         using BookFileLock _ = held;
         h.Prompts.InUseChoices.Enqueue(FileInUseChoice.OpenAnyway);
 
+        // Act
         bool loaded = await h.Workflow.LoadFileAsync(epub);
 
+        // Assert
         loaded.Should().BeTrue();
         h.Workspace.LastAppliedPath.Should().Be(epub);
         h.Workflow.CurrentFilePath.Should().Be(Path.GetFullPath(epub));
@@ -377,6 +447,7 @@ public sealed class FileWorkflowTests
     [Fact]
     public async Task Open_another_file_asks_for_a_file_and_loads_it_instead()
     {
+        // Arrange
         using Harness h = new();
         (string busy, BookFileLock held) = FileOpenElsewhere(h);
         using BookFileLock _ = held;
@@ -384,8 +455,10 @@ public sealed class FileWorkflowTests
         h.Prompts.InUseChoices.Enqueue(FileInUseChoice.ChooseAnother);
         h.Prompts.OpenPath = other;
 
+        // Act
         bool loaded = await h.Workflow.LoadFileAsync(busy);
 
+        // Assert
         loaded.Should().BeTrue();
         h.Workspace.LastAppliedPath.Should().Be(other);
         h.Prompts.FilesInUse.Should().ContainSingle();
@@ -394,6 +467,7 @@ public sealed class FileWorkflowTests
     [Fact]
     public async Task Cancelling_the_file_picker_asks_again()
     {
+        // Arrange
         using Harness h = new();
         (string busy, BookFileLock held) = FileOpenElsewhere(h);
         using BookFileLock _ = held;
@@ -401,8 +475,10 @@ public sealed class FileWorkflowTests
         h.Prompts.InUseChoices.Enqueue(FileInUseChoice.Close);
         h.Prompts.OpenPath = null;
 
+        // Act
         await h.Workflow.LoadFileAsync(busy);
 
+        // Assert
         h.Prompts.FilesInUse.Should().HaveCount(2);
         h.Prompts.CloseApplicationCalls.Should().Be(1);
     }
@@ -410,12 +486,15 @@ public sealed class FileWorkflowTests
     [Fact]
     public async Task A_file_this_instance_has_open_is_loaded_again_without_asking()
     {
+        // Arrange
         using Harness h = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, h.Dir, "mine.epub");
         await h.Workflow.LoadFileAsync(epub);
 
+        // Act
         bool again = await h.Workflow.LoadFileAsync(epub);
 
+        // Assert
         again.Should().BeTrue();
         h.Prompts.FilesInUse.Should().BeEmpty();
         h.OtherInstance.TryAcquire(epub).Should().BeNull("the lock is still held by this instance");
@@ -424,35 +503,47 @@ public sealed class FileWorkflowTests
     [Fact]
     public async Task The_lock_follows_the_book_and_is_released_when_it_is_closed_or_replaced()
     {
+        // Arrange
         using Harness h = new();
         string first = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, h.Dir, "first.epub");
         string second = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, h.Dir, "second.epub");
 
         await h.Workflow.LoadFileAsync(first);
+
         h.OtherInstance.TryAcquire(first).Should().BeNull("the first book is open here");
 
+        // Act
         await h.Workflow.LoadFileAsync(second);
+
+        // Assert
         using (BookFileLock? freed = h.OtherInstance.TryAcquire(first))
         {
             freed.Should().NotBeNull("the first book is no longer open here");
         }
 
         h.OtherInstance.TryAcquire(second).Should().BeNull();
+
+        // Act
         await h.Workflow.CloseAsync();
         using BookFileLock? afterClose = h.OtherInstance.TryAcquire(second);
+
+        // Assert
         afterClose.Should().NotBeNull("closing the book releases its file");
     }
 
     [Fact]
     public async Task Save_As_moves_the_lock_to_the_new_file()
     {
+        // Arrange
         using Harness h = new();
         string first = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, h.Dir, "first.epub");
         await h.Workflow.LoadFileAsync(first);
         h.Prompts.SavePath = h.PathIn("renamed.epub");
 
+        // Act
         await h.Workflow.SaveAsAsync();
 
+        // Assert
         h.OtherInstance.TryAcquire(h.PathIn("renamed.epub")).Should().BeNull("the book now lives in the new file");
         using BookFileLock? old = h.OtherInstance.TryAcquire(first);
         old.Should().NotBeNull("the old file is free");
@@ -461,11 +552,14 @@ public sealed class FileWorkflowTests
     [Fact]
     public async Task LoadFileAsync_without_warnings_shows_no_dialog()
     {
+        // Arrange
         using Harness h = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, h.Dir);
 
+        // Act
         await h.Workflow.LoadFileAsync(epub);
 
+        // Assert
         h.Workspace.CurrentBook!.LoadWarnings.Should().BeEmpty();
         h.Prompts.LastLoadWarnings.Should().BeNull();
     }
@@ -473,14 +567,17 @@ public sealed class FileWorkflowTests
     [Fact]
     public async Task LoadFileAsync_loads_with_a_progress_window_and_shows_an_error_only_after_it()
     {
+        // Arrange
         using Harness h = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, h.Dir);
         string broken = h.PathIn("broken.epub");
         File.WriteAllText(broken, "not a zip archive");
 
+        // Act & Assert
         (await h.Workflow.LoadFileAsync(epub)).Should().BeTrue();
         (await h.Workflow.LoadFileAsync(broken)).Should().BeFalse();
 
+        // Assert
         h.Prompts.ProgressMessages.Should().Equal(
             Strings.Format("File_Loading", Path.GetFileName(epub)), Strings.Format("File_Loading", "broken.epub"));
         h.Prompts.LastError.Should().NotBeNullOrEmpty();
@@ -490,12 +587,15 @@ public sealed class FileWorkflowTests
     [Fact]
     public async Task LoadFileAsync_imports_a_txt_file()
     {
+        // Arrange
         using Harness h = new();
         string txt = h.PathIn("story.txt");
         File.WriteAllText(txt, "Rozdział pierwszy.\n\nByło ciemno i burzliwie.\n");
 
+        // Act
         bool ok = await h.Workflow.LoadFileAsync(txt);
 
+        // Assert
         ok.Should().BeTrue();
         h.Workspace.CurrentBook!.GetHtmlResources().Should().Contain(r => r.Filename == "Section0001.xhtml");
         h.Workspace.LastAppliedPath.Should().Be(txt);
@@ -504,23 +604,29 @@ public sealed class FileWorkflowTests
     [Fact]
     public async Task OpenDroppedFile_loads_the_file_without_an_open_dialog()
     {
+        // Arrange
         using Harness h = new();
         string txt = h.PathIn("dropped.txt");
         File.WriteAllText(txt, "Przeciągnięty plik.\n");
 
+        // Act
         await h.Workflow.OpenDroppedFileAsync(txt);
 
+        // Assert
         h.Workspace.LastAppliedPath.Should().Be(txt);
     }
 
     [Fact]
     public async Task Custom_layout_cancelled_does_not_build_a_book()
     {
+        // Arrange
         using Harness h = new();
         h.Prompts.CustomLayout = null;
 
+        // Act
         await h.Workflow.NewWithCustomLayoutAsync("3.0");
 
+        // Assert
         h.Workspace.ApplyBookCalls.Should().Be(0);
     }
 }

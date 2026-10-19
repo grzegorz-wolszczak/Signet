@@ -44,8 +44,10 @@ public sealed class EmptyLayoutWindowTests
     [AvaloniaFact]
     public void The_tree_shows_the_whole_layout_expanded_with_the_type_of_every_item()
     {
+        // Act
         (EmptyLayoutWindow window, EmptyLayoutViewModel vm, TreeDataGrid tree) = Show();
 
+        // Assert
         tree.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().Select(h => h.Header).Should().Equal(
             Strings.Get("ReportsWindow_Name"), Strings.Get("ReportsWindow_Type"));
         tree.Rows!.Count.Should().BeGreaterThan(vm.Root.Children.Count, "the folders are expanded");
@@ -59,21 +61,34 @@ public sealed class EmptyLayoutWindowTests
     [AvaloniaFact]
     public void The_selection_follows_the_view_model_both_ways()
     {
+        // Act
         (EmptyLayoutWindow window, EmptyLayoutViewModel vm, TreeDataGrid tree) = Show();
+
+        // Assert
         tree.RowSelection!.SelectedItem.Should().BeSameAs(vm.Root, "the root is selected at first");
 
         LayoutNode folder = vm.Root.Children.First(c => c.IsFolder);
+
+        // Act
         tree.RowSelection.SelectedIndex = new IndexPath(0, vm.Root.Children.IndexOf(folder));
+
+        // Assert
         vm.SelectedNode.Should().BeSameAs(folder);
 
+        // Act
         LayoutNode added = vm.AddFolder("extras")!;
         vm.SelectedNode = added;
         Settle(window);
+
+        // Assert
         tree.RowSelection.SelectedItem.Should().BeSameAs(added);
         RowNames(tree).Should().Contain("extras");
 
+        // Act
         vm.DeleteSelection();
         Settle(window);
+
+        // Assert
         tree.RowSelection.SelectedItem.Should().BeSameAs(folder, "deleting selects the parent");
         RowNames(tree).Should().NotContain("extras");
         window.Close();

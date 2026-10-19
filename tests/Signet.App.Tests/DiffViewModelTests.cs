@@ -38,8 +38,10 @@ public sealed class DiffViewModelTests
     [Fact]
     public void Without_differences_shows_the_no_changes_message()
     {
+        // Arrange
         DiffViewModel vm = New();
 
+        // Act & Assert
         vm.IsMessageVisible.Should().BeTrue();
         vm.Message.Should().Be(Strings.Get("Diff_NoChanges"));
     }
@@ -47,9 +49,11 @@ public sealed class DiffViewModelTests
     [Fact]
     public void Selects_the_first_file_and_jumps_to_its_first_change()
     {
+        // Arrange
         using TempDir temp = new();
         DiffViewModel vm = New(TextFile(temp, Lines(Numbered(40)), Lines(TwoChanges())));
 
+        // Act & Assert
         vm.SelectedFile.Should().Be(vm.Files[0]);
         vm.Files[0].Label.Should().Contain("EPUB/text/ch.xhtml");
         vm.IsSideBySideTextVisible.Should().BeTrue();
@@ -60,41 +64,57 @@ public sealed class DiffViewModelTests
     [Fact]
     public void Next_and_previous_change_move_between_change_blocks()
     {
+        // Arrange
         using TempDir temp = new();
         DiffViewModel vm = New(TextFile(temp, Lines(Numbered(40)), Lines(TwoChanges())));
 
+        // Act
         vm.NextChangeCommand.Execute(null);
+
+        // Assert
         vm.SideBySideRows[vm.SelectedRowIndex].Row.Right.Text.Should().Be("second change");
 
+        // Act
         vm.NextChangeCommand.Execute(null);
+
+        // Assert
         vm.Status.Should().Be(Strings.Get("Diff_NoNextChange"));
 
+        // Act
         vm.PreviousChangeCommand.Execute(null);
+
+        // Assert
         vm.SideBySideRows[vm.SelectedRowIndex].Row.Right.Text.Should().Be("first change");
     }
 
     [Fact]
     public void Default_context_is_three_lines_and_all_text_shows_every_line()
     {
+        // Arrange
         using TempDir temp = new();
         DiffViewModel vm = New(TextFile(temp, Lines(Numbered(40)), Lines(TwoChanges())));
 
         vm.ContextOptions[vm.ContextIndex].Should().Be(Strings.Format("Diff_ContextLines", 3));
         vm.SideBySideRows.Should().Contain(r => r.IsCollapsed);
 
+        // Act
         vm.ContextIndex = vm.ContextOptions.Count - 1;
 
+        // Assert
         vm.SideBySideRows.Should().HaveCount(40).And.OnlyContain(r => r.IsLine);
     }
 
     [Fact]
     public void Unified_view_shows_deleted_and_inserted_lines()
     {
+        // Arrange
         using TempDir temp = new();
         DiffViewModel vm = New(TextFile(temp, Lines("a", "old", "c"), Lines("a", "new", "c")));
 
+        // Act
         vm.ViewIndex = 1;
 
+        // Assert
         vm.IsUnified.Should().BeTrue();
         vm.IsUnifiedTextVisible.Should().BeTrue();
         vm.IsSideBySideTextVisible.Should().BeFalse();
@@ -104,39 +124,53 @@ public sealed class DiffViewModelTests
     [Fact]
     public void Search_finds_text_in_the_chosen_panel()
     {
+        // Arrange
         using TempDir temp = new();
         DiffViewModel vm = New(TextFile(temp, Lines("alpha", "beta", "gamma"), Lines("alpha", "BETA2", "gamma")));
         vm.ContextIndex = vm.ContextOptions.Count - 1;
 
+        // Act
         vm.SearchText = "beta2";
         vm.FindNextCommand.Execute(null);
+
+        // Assert
         vm.SelectedRowIndex.Should().Be(1);
 
+        // Act
         vm.SearchInLeft = true;
         vm.FindNextCommand.Execute(null);
+
+        // Assert
         vm.Status.Should().Be(Strings.Get("Diff_NotFound"), "the left panel has no \"beta2\"");
 
+        // Act
         vm.SearchText = "gamma";
         vm.FindNextCommand.Execute(null);
+
+        // Assert
         vm.SelectedRowIndex.Should().Be(2);
     }
 
     [Fact]
     public void Activating_a_row_requests_the_editor_at_the_right_side_line()
     {
+        // Arrange
         using TempDir temp = new();
         DiffViewModel vm = New(TextFile(temp, Lines("a", "b"), Lines("a", "x", "b")));
         (string BookPath, int Line)? requested = null;
         vm.OpenInEditorRequested += (_, target) => requested = target;
 
+        // Act
         vm.ActivateRow(vm.SelectedRowIndex);
 
+        // Assert
         requested.Should().Be(("EPUB/text/ch.xhtml", 2));
     }
 
     [Fact]
     public void Removed_file_does_not_open_the_editor()
     {
+        // Arrange
         using TempDir temp = new();
         string leftPath = temp.Combine("left.xhtml");
         File.WriteAllText(leftPath, "gone");
@@ -145,8 +179,10 @@ public sealed class DiffViewModelTests
         bool requested = false;
         vm.OpenInEditorRequested += (_, _) => requested = true;
 
+        // Act
         vm.ActivateRow(0);
 
+        // Assert
         requested.Should().BeFalse();
         vm.SideBySideRows.Should().ContainSingle().Which.Row.Left.Kind.Should().Be(DiffLineKind.Deleted);
     }
@@ -154,6 +190,7 @@ public sealed class DiffViewModelTests
     [Fact]
     public void Renamed_binary_and_image_files_have_their_own_presentation()
     {
+        // Arrange
         using TempDir temp = new();
         string a = temp.Combine("a.png");
         string b = temp.Combine("b.png");
@@ -166,11 +203,17 @@ public sealed class DiffViewModelTests
 
         vm.Message.Should().Be(Strings.Format("Diff_RenamedMessage", "EPUB/old.css", "EPUB/new.css"));
 
+        // Act
         vm.SelectedFile = vm.Files[1];
+
+        // Assert
         vm.IsMessageVisible.Should().BeTrue();
         vm.Message.Should().Be(Strings.Format("Diff_BinaryAdded", "EPUB/font.ttf"));
 
+        // Act
         vm.SelectedFile = vm.Files[2];
+
+        // Assert
         vm.IsImageVisible.Should().BeTrue();
         vm.LeftImagePath.Should().Be(a);
         vm.RightImagePath.Should().Be(b);
@@ -179,8 +222,10 @@ public sealed class DiffViewModelTests
     [Fact]
     public void Two_texts_in_memory_are_compared_like_two_files()
     {
+        // Arrange
         DiffViewModel vm = New(BookFileDiff.FromTexts("EPUB/text/ch.xhtml", Lines("a", "b"), Lines("a", "c")));
 
+        // Act & Assert
         vm.SideBySideRows.Should().Contain(r => r.Row.IsChange && r.Row.Right.Text == "c");
         vm.CanRevert.Should().BeFalse("only a diff shown after Mend Code offers undoing");
         vm.RevertCommand.CanExecute(null).Should().BeFalse();
@@ -189,6 +234,7 @@ public sealed class DiffViewModelTests
     [Fact]
     public void Undo_the_change_restores_once_and_reports_when_it_cannot()
     {
+        // Arrange
         DiffViewModel vm = New(BookFileDiff.FromTexts("EPUB/text/ch.xhtml", "a", "b"));
         bool possible = false;
         int calls = 0;
@@ -199,12 +245,19 @@ public sealed class DiffViewModelTests
         });
 
         vm.CanRevert.Should().BeTrue();
+
+        // Act
         vm.RevertCommand.Execute(null);
+
+        // Assert
         vm.Status.Should().Be(Strings.Get("Diff_RevertNotPossible"));
         vm.RevertCommand.CanExecute(null).Should().BeTrue("it may be possible again after the edit is undone");
 
+        // Act
         possible = true;
         vm.RevertCommand.Execute(null);
+
+        // Assert
         vm.Status.Should().Be(Strings.Get("Diff_Reverted"));
         vm.RevertCommand.CanExecute(null).Should().BeFalse();
         calls.Should().Be(2);

@@ -26,11 +26,14 @@ public sealed class ClipAutoFillTests
     [Fact]
     public void BareClassSelector_ProducesThreeElementVariants()
     {
+        // Arrange
         using var temp = new TempDir();
         using Book book = LoadWithCss(temp, ".example { color: red; }");
 
+        // Act
         var entries = ClipAutoFill.BuildAutofillEntries(book);
 
+        // Assert
         entries.Select(e => e.FullName).Should().Equal(
             "Autofill/p.example", "Autofill/span.example", "Autofill/div.example");
         entries.Should().OnlyContain(e => e.Text.Contains("\\1"));
@@ -42,11 +45,14 @@ public sealed class ClipAutoFillTests
     [Fact]
     public void ElementQualifiedClassSelector_ProducesSingleEntry()
     {
+        // Arrange
         using var temp = new TempDir();
         using Book book = LoadWithCss(temp, "h1.heading { font-weight: bold; }");
 
+        // Act
         var entries = ClipAutoFill.BuildAutofillEntries(book);
 
+        // Assert
         entries.Select(e => e.FullName).Should().Equal("Autofill/h1.heading");
         entries.Single().Text.Should().Be("<h1 class=\"heading\">\\1</h1>");
     }
@@ -54,24 +60,29 @@ public sealed class ClipAutoFillTests
     [Fact]
     public void SelectorsWithoutClass_AreIgnored()
     {
+        // Arrange
         using var temp = new TempDir();
         using Book book = LoadWithCss(temp, "body { margin: 0; } #id { color: blue; }");
 
+        // Act & Assert
         ClipAutoFill.BuildAutofillEntries(book).Should().BeEmpty();
     }
 
     [Fact]
     public void Entries_AddedThroughModel_MergeIntoOneAutofillGroup()
     {
+        // Arrange
         using var temp = new TempDir();
         using Book book = LoadWithCss(temp, ".a { } .b { }");
         var model = new ClipEditorModel();
 
+        // Act
         foreach (ClipEntry entry in ClipAutoFill.BuildAutofillEntries(book))
         {
             model.AddPathEntry(entry);
         }
 
+        // Assert
         model.Root.Children.Should().ContainSingle(n => n.IsGroup && n.Name == "Autofill");
     }
 }

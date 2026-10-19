@@ -25,16 +25,20 @@ public sealed class CrossFileStructureValidatorTests : IDisposable
     [Fact]
     public void Validate_returns_no_results_for_a_wellformed_book()
     {
+        // Arrange
         using Book book = OpenMutableBook();
 
+        // Act
         var results = CrossFileStructureValidator.Validate(book);
 
+        // Assert
         results.Should().BeEmpty();
     }
 
     [Fact]
     public void Validate_reports_duplicate_id_across_files()
     {
+        // Arrange
         using Book book = OpenMutableBook();
         HtmlResource nav = FindHtml(book, "nav.xhtml");
         HtmlResource chapter1 = FindHtml(book, "chapter1.xhtml");
@@ -42,8 +46,10 @@ public sealed class CrossFileStructureValidatorTests : IDisposable
         nav.SetText(nav.GetText().Replace("<h1>", "<h1 id=\"shared-anchor\">"));
         chapter1.SetText(chapter1.GetText().Replace("<h1>", "<h1 id=\"shared-anchor\">"));
 
+        // Act
         var results = CrossFileStructureValidator.Validate(book);
 
+        // Assert
         results.Should().Contain(r =>
             r.Severity == ValidationSeverity.Warning &&
             r.BookPath == nav.BookPath &&
@@ -59,13 +65,16 @@ public sealed class CrossFileStructureValidatorTests : IDisposable
     [Fact]
     public void Validate_reports_oversized_html_file()
     {
+        // Arrange
         using Book book = OpenMutableBook();
         HtmlResource chapter1 = FindHtml(book, "chapter1.xhtml");
         string padding = new string('a', CrossFileStructureValidator.MaxHtmlFileSizeBytes + 1);
         chapter1.SetText(chapter1.GetText().Replace("</body>", $"<p>{padding}</p></body>"));
 
+        // Act
         var results = CrossFileStructureValidator.Validate(book);
 
+        // Assert
         results.Should().Contain(r =>
             r.Severity == ValidationSeverity.Warning &&
             r.BookPath == chapter1.BookPath &&
@@ -75,12 +84,15 @@ public sealed class CrossFileStructureValidatorTests : IDisposable
     [Fact]
     public void Validate_reports_bare_text_directly_in_body()
     {
+        // Arrange
         using Book book = OpenMutableBook();
         HtmlResource chapter1 = FindHtml(book, "chapter1.xhtml");
         chapter1.SetText(chapter1.GetText().Replace("<body>", "<body>Goly tekst bez elementu blokowego."));
 
+        // Act
         var results = CrossFileStructureValidator.Validate(book);
 
+        // Assert
         results.Should().Contain(r =>
             r.Severity == ValidationSeverity.Warning &&
             r.BookPath == chapter1.BookPath &&
@@ -90,6 +102,7 @@ public sealed class CrossFileStructureValidatorTests : IDisposable
     [Fact]
     public void Validate_reports_invalid_utf8_bytes_on_disk()
     {
+        // Arrange
         using Book book = OpenMutableBook();
         HtmlResource chapter1 = FindHtml(book, "chapter1.xhtml");
 
@@ -101,8 +114,10 @@ public sealed class CrossFileStructureValidatorTests : IDisposable
             .ToArray();
         File.WriteAllBytes(chapter1.FullPath, corrupted);
 
+        // Act
         var results = CrossFileStructureValidator.Validate(book);
 
+        // Assert
         results.Should().Contain(r =>
             r.Severity == ValidationSeverity.Warning &&
             r.BookPath == chapter1.BookPath &&

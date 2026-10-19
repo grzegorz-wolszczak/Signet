@@ -19,10 +19,15 @@ public sealed class MenuWidthTests
     [AvaloniaFact]
     public void Context_menu_grows_to_fit_a_label_wider_than_the_fluent_flyout_cap()
     {
+        // Arrange
         const string label = "Rebase OPF Manifest IDs on Current Filenames, then update every reference in the book";
         TextBlock probe = new() { Text = label };
+
+        // Act
         probe.Measure(Size.Infinity);
         double labelWidth = probe.DesiredSize.Width;
+
+        // Assert
         labelWidth.Should().BeGreaterThan(FluentFlyoutMaxWidth, "the label must be long enough to hit the Fluent cap");
 
         MenuItem item = new() { Header = label };
@@ -30,6 +35,7 @@ public sealed class MenuWidthTests
         Border target = new() { Width = 100, Height = 100, ContextMenu = menu };
         var window = new Window { Width = 1600, Height = 400, Content = target };
 
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         menu.Open(target);
@@ -39,6 +45,7 @@ public sealed class MenuWidthTests
 
         try
         {
+            // Assert
             menu.Bounds.Width.Should().BeGreaterThan(labelWidth);
         }
         finally

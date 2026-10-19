@@ -29,6 +29,7 @@ public sealed class MediaTypesTests
     [InlineData("jxl", "image/jxl")]
     public void GetMediaTypeFromExtension_maps_known_extensions(string extension, string expected)
     {
+        // Act & Assert
         MediaTypes.GetMediaTypeFromExtension(extension).Should().Be(expected);
     }
 
@@ -38,13 +39,17 @@ public sealed class MediaTypesTests
     [InlineData("  .Css  ", "text/css")]
     public void GetMediaTypeFromExtension_ignores_leading_dot_and_case(string extension, string expected)
     {
+        // Act & Assert
         MediaTypes.GetMediaTypeFromExtension(extension).Should().Be(expected);
     }
 
     [Fact]
     public void GetMediaTypeFromExtension_returns_fallback_for_unknown()
     {
+        // Act & Assert
         MediaTypes.GetMediaTypeFromExtension("qwerty").Should().BeEmpty();
+
+        // Act & Assert
         MediaTypes.GetMediaTypeFromExtension("qwerty", "application/octet-stream")
             .Should().Be("application/octet-stream");
     }
@@ -58,6 +63,7 @@ public sealed class MediaTypesTests
     [InlineData("application/x-dtbncx+xml", "ncx")]
     public void GetExtensionFromMediaType_maps_known_media_types(string mediaType, string expected)
     {
+        // Act & Assert
         MediaTypes.GetExtensionFromMediaType(mediaType).Should().Be(expected);
     }
 
@@ -74,6 +80,7 @@ public sealed class MediaTypesTests
     [InlineData("application/pdf", "Misc")]
     public void GetGroupFromMediaType_maps_known_media_types(string mediaType, string expected)
     {
+        // Act & Assert
         MediaTypes.GetGroupFromMediaType(mediaType).Should().Be(expected);
     }
 
@@ -85,12 +92,14 @@ public sealed class MediaTypesTests
     [InlineData("video/strange", "Video")]
     public void GetGroupFromMediaType_falls_back_to_prefix_heuristics(string mediaType, string expected)
     {
+        // Act & Assert
         MediaTypes.GetGroupFromMediaType(mediaType).Should().Be(expected);
     }
 
     [Fact]
     public void GetGroupFromMediaType_returns_fallback_when_nothing_matches()
     {
+        // Act & Assert
         MediaTypes.GetGroupFromMediaType("chemical/x-pdb", "Misc").Should().Be("Misc");
     }
 
@@ -113,6 +122,7 @@ public sealed class MediaTypesTests
     [InlineData("application/pdf", ResourceType.Pdf)]
     public void GetResourceType_maps_media_types_to_the_resource_enum(string mediaType, ResourceType expected)
     {
+        // Act & Assert
         MediaTypes.GetResourceType(mediaType).Should().Be(expected);
     }
 
@@ -121,6 +131,7 @@ public sealed class MediaTypesTests
     [InlineData("image/avif", ResourceType.Image)]
     public void GetResourceType_treats_epub33_image_types_as_images(string mediaType, ResourceType expected)
     {
+        // Act & Assert
         MediaTypes.GetResourceType(mediaType).Should().Be(expected);
     }
 
@@ -130,13 +141,17 @@ public sealed class MediaTypesTests
     [InlineData("audio/strange", ResourceType.Audio)]
     public void GetResourceType_falls_back_to_prefix_heuristics(string mediaType, ResourceType expected)
     {
+        // Act & Assert
         MediaTypes.GetResourceType(mediaType).Should().Be(expected);
     }
 
     [Fact]
     public void GetResourceType_returns_fallback_when_nothing_matches()
     {
+        // Act & Assert
         MediaTypes.GetResourceType("chemical/x-pdb").Should().Be(ResourceType.Generic);
+
+        // Act & Assert
         MediaTypes.GetResourceType("chemical/x-pdb", ResourceType.Text).Should().Be(ResourceType.Text);
     }
 
@@ -151,9 +166,11 @@ public sealed class MediaTypesTests
     [InlineData("opf")]
     public void Extension_media_type_round_trips_for_canonical_extensions(string extension)
     {
+        // Act
         string mediaType = MediaTypes.GetMediaTypeFromExtension(extension);
         string backExtension = MediaTypes.GetExtensionFromMediaType(mediaType);
 
+        // Assert
         MediaTypes.GetMediaTypeFromExtension(backExtension).Should().Be(mediaType);
     }
 }

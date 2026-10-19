@@ -79,6 +79,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     [Fact]
     public void CountAll_AggregatesAcrossResolvedFiles()
     {
+        // Arrange
         HtmlResource a = Html("<p>cat cat</p>");
         HtmlResource b = Html("<p>cat</p>");
         var host = new FakeMultiFileSearchHost
@@ -91,7 +92,10 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         panel.LookWhereIndex = (int)LookWhere.AllHtmlFiles;
         panel.FindText = "cat";
 
+        // Act & Assert
         panel.Count().Should().Be(3);
+
+        // Assert
         panel.HasReport.Should().BeFalse();
         panel.Message.Should().Be(Strings.Format("FindReplace_MatchesInFiles", 3, 2));
         host.FlushCount.Should().BeGreaterThan(0);
@@ -100,6 +104,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     [Fact]
     public void CountAll_ShowsTheMatchesInTheFindUsagesWindow()
     {
+        // Arrange
         HtmlResource a = Html("<p>cat cat</p>\n<p>dog</p>");
         HtmlResource b = Html("<p>cat</p>");
         var host = new FakeMultiFileSearchHost
@@ -111,8 +116,10 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         panel.LookWhereIndex = (int)LookWhere.AllHtmlFiles;
         panel.FindText = "cat";
 
+        // Act
         panel.Count();
 
+        // Assert
         host.ShownUsages.Should().ContainSingle();
         IReadOnlyList<ClassUsage> usages = host.ShownUsages[0].Usages;
         usages.Select(u => (u.BookPath, u.Offset, u.Length, u.Line, u.Column, u.Kind)).Should().Equal(
@@ -131,6 +138,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     [Fact]
     public void CountAll_WithoutMatches_DoesNotOpenTheWindow()
     {
+        // Arrange
         HtmlResource a = Html("<p>dog</p>");
         var host = new FakeMultiFileSearchHost
         {
@@ -141,8 +149,10 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         panel.LookWhereIndex = (int)LookWhere.AllHtmlFiles;
         panel.FindText = "cat";
 
+        // Act & Assert
         panel.Count().Should().Be(0);
 
+        // Assert
         host.ShownUsages.Should().BeEmpty();
         panel.Message.Should().Be(Strings.Get("FindReplace_NotFoundInScope"));
     }
@@ -150,6 +160,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     [Fact]
     public void CountAll_InASingleFile_ShowsTheWindowAlsoForOneFile()
     {
+        // Arrange
         HtmlResource a = Html("<p>cat</p>");
         CodeTabViewModel tab = OpenTab(a);
         var host = new FakeMultiFileSearchHost { BookLoaded = true };
@@ -158,8 +169,10 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         panel.LookWhereIndex = (int)LookWhere.CurrentFile;
         panel.FindText = "cat";
 
+        // Act & Assert
         panel.Count().Should().Be(1);
 
+        // Assert
         host.ShownUsages.Should().ContainSingle();
         host.ShownUsages[0].Usages.Should().ContainSingle().Which.BookPath.Should().Be(a.BookPath);
         host.ShownUsages[0].Header().Should().Contain(Strings.Get("FindReplace_LookInCurrentFile"));
@@ -168,6 +181,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     [Fact]
     public void CountAll_HeaderListsTheRegexOptionsThatAreOnWithoutTheirSyntax()
     {
+        // Arrange
         HtmlResource a = Html("<p>cat</p>");
         var host = new FakeMultiFileSearchHost
         {
@@ -181,10 +195,13 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         panel.RegexDotAll = true;
         panel.RegexAutoTokenise = true;
 
+        // Act
         panel.Count();
 
         string options = Strings.Get("FindReplaceView_DotMatchesAll").Replace(" (?s)", string.Empty, StringComparison.Ordinal)
             + " | " + Strings.Get("FindReplaceView_AutoTokenise");
+
+        // Assert
         host.ShownUsages[0].Header().Should().Be(Strings.Format(
             "FindUsages_TextHeader",
             "c.t",
@@ -196,6 +213,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     [Fact]
     public void CountAll_RerunSearchesTheCurrentTextAgain()
     {
+        // Arrange
         HtmlResource a = Html("<p>cat</p>");
         var host = new FakeMultiFileSearchHost
         {
@@ -205,17 +223,21 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         FindReplaceViewModel panel = NewPanel(host, () => null, out _);
         panel.LookWhereIndex = (int)LookWhere.AllHtmlFiles;
         panel.FindText = "cat";
+
+        // Act
         panel.Count();
         a.SetText("<p>cat cat cat</p>");
 
         IReadOnlyList<ClassUsage> again = host.ShownUsages[0].Rerun();
 
+        // Assert
         again.Should().HaveCount(3);
     }
 
     [Fact]
     public void SavedCountAll_DoesNotOpenTheWindow()
     {
+        // Arrange
         HtmlResource a = Html("<p>cat</p>");
         var host = new FakeMultiFileSearchHost
         {
@@ -226,8 +248,10 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         panel.LookWhereIndex = (int)LookWhere.AllHtmlFiles;
         SearchEntry entry = panel.CurrentAsEntry("cats") with { Find = "cat" };
 
+        // Act & Assert
         panel.CountForEntry(entry).Should().Be(1);
 
+        // Assert
         host.ShownUsages.Should().BeEmpty();
     }
 
@@ -254,6 +278,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     [InlineData(true)]
     public void Restart_StartsTheNextFindAtTheBeginningOfTheScope(bool restart)
     {
+        // Arrange
         HtmlResource a = Html("<p>cat</p>");
         HtmlResource b = Html("<p>cat</p>");
         CodeTabViewModel tabB = OpenTab(b);
@@ -270,13 +295,18 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         // The caret at the start of file b: without "Restart" the match in b is next, with it the one in a.
         tabB.UpdateSelection(0, 0);
         tabB.UpdateCaret(1, 1, 0, -1);
+
+        // Act
         if (restart)
         {
             panel.RestartCommand.Execute(null);
             panel.Message.Should().Be(Strings.Get("FindReplace_SearchWillRestart"));
         }
 
+        // Act & Assert
         panel.FindNext().Should().BeTrue();
+
+        // Assert
         host.Jumps[^1].BookPath.Should().Be(restart ? a.BookPath : b.BookPath);
     }
 
@@ -285,6 +315,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     [InlineData(false)]
     public void Wrap_decides_whether_the_search_goes_on_past_the_end_of_the_scope(bool wrap)
     {
+        // Arrange
         HtmlResource a = Html("<p>cat</p>");
         HtmlResource b = Html("<p>dog</p>");
         CodeTabViewModel tabB = OpenTab(b);
@@ -298,17 +329,23 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         panel.FindText = "cat";
         panel.OptionWrap = wrap;
 
+        // Act & Assert
         panel.FindNext().Should().Be(wrap);
+
+        // Assert
         panel.Message.Should().Be(wrap ? Strings.Get("FindReplace_WrappedScope") : Strings.Get("FindReplace_NotFoundEnd"));
     }
 
     [Fact]
     public void CloseReportCommand_ClearsTheReport()
     {
+        // Arrange
         FindReplaceViewModel panel = PanelWithCountReport();
 
+        // Act
         panel.CloseReportCommand.Execute(null);
 
+        // Assert
         panel.HasReport.Should().BeFalse();
         panel.ReportSummary.Should().BeEmpty();
         panel.ReportRows.Should().BeEmpty();
@@ -317,10 +354,13 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     [Fact]
     public void ChangingFindText_ClearsTheStaleReport()
     {
+        // Arrange
         FindReplaceViewModel panel = PanelWithCountReport();
 
+        // Act
         panel.FindText = "dog";
 
+        // Assert
         panel.HasReport.Should().BeFalse();
         panel.ReportRows.Should().BeEmpty();
     }
@@ -328,10 +368,13 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     [Fact]
     public void ChangingLookWhere_ClearsTheStaleReport()
     {
+        // Arrange
         FindReplaceViewModel panel = PanelWithCountReport();
 
+        // Act
         panel.LookWhereIndex = (int)LookWhere.TabbedHtmlFiles;
 
+        // Assert
         panel.HasReport.Should().BeFalse();
         panel.ReportRows.Should().BeEmpty();
     }
@@ -339,16 +382,20 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     [Fact]
     public void SettingTheSameFindText_KeepsTheReport()
     {
+        // Arrange
         FindReplaceViewModel panel = PanelWithCountReport();
 
+        // Act
         panel.FindText = "cat";
 
+        // Assert
         panel.HasReport.Should().BeTrue();
     }
 
     [Fact]
     public void ReplaceAll_ClosedFilesViaResource_OpenFilesViaDocument()
     {
+        // Arrange
         HtmlResource closed = Html("<p>needle needle</p>");
         HtmlResource opened = Html("<p>needle</p>");
         CodeTabViewModel openedTab = OpenTab(opened);
@@ -365,8 +412,10 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         panel.FindText = "needle";
         panel.ReplaceText = "pin";
 
+        // Act
         panel.ReplaceAll().Should().Be(3);
 
+        // Assert
         closed.GetText().Should().Be("<p>pin pin</p>");
         openedTab.Document.Text.Should().Be("<p>pin</p>");
         openedTab.CanUndo.Should().BeTrue();
@@ -376,6 +425,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     [Fact]
     public void ReplaceAll_SkipsFilesThatAreNotWellFormed()
     {
+        // Arrange
         HtmlResource ok = Html("<p>term</p>");
         HtmlResource broken = Html("<p>term <b>oops</p>");
 
@@ -389,8 +439,10 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         panel.FindText = "term";
         panel.ReplaceText = "word";
 
+        // Act
         panel.ReplaceAll().Should().Be(1);
 
+        // Assert
         ok.GetText().Should().Contain("word");
         broken.GetText().Should().Contain("term");
         panel.ReportRows.Should().Contain(r => r.Skipped);
@@ -400,6 +452,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     [Fact]
     public void FindNext_MultiFile_JumpsToMatchingResource()
     {
+        // Arrange
         HtmlResource a = Html("<p>nothing</p>");
         HtmlResource b = Html("<p>the target here</p>");
 
@@ -412,8 +465,10 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         panel.LookWhereIndex = (int)LookWhere.AllHtmlFiles;
         panel.FindText = "target";
 
+        // Act & Assert
         panel.FindNext().Should().BeTrue();
 
+        // Assert
         host.Jumps.Should().ContainSingle();
         host.Jumps[0].BookPath.Should().Be(b.BookPath);
         b.GetText().Substring(host.Jumps[0].Start, host.Jumps[0].End - host.Jumps[0].Start)
@@ -423,6 +478,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     [Fact]
     public void Replace_after_multi_file_FindNext_replaces_the_found_match()
     {
+        // Arrange
         HtmlResource a = Html("<p>nothing</p>");
         HtmlResource b = Html("<p>the target here</p>");
         CodeTabViewModel? active = null;
@@ -441,17 +497,22 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         panel.LookWhereIndex = (int)LookWhere.AllHtmlFiles;
         panel.FindText = "</p>";
         panel.ReplaceText = string.Empty;
+
+        // Act & Assert
         panel.FindNext().Should().BeTrue();
 
         // Regression: "No selected match to replace." was reported even though a match was selected.
+        // Act & Assert
         panel.Replace().Should().BeTrue();
 
+        // Assert
         active!.Document.Text.Should().Be("<p>nothing");
     }
 
     [Fact]
     public void EmptyScope_ReportsAndDoesNothing()
     {
+        // Arrange
         var host = new FakeMultiFileSearchHost
         {
             BookLoaded = true,
@@ -461,14 +522,18 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         panel.LookWhereIndex = (int)LookWhere.SelectedCssFiles;
         panel.FindText = "x";
 
+        // Act & Assert
         panel.FindNext().Should().BeFalse();
         panel.Count().Should().Be(0);
+
+        // Assert
         panel.Message.Should().Be(Strings.Get("FindReplace_EmptyScope"));
     }
 
     [Fact]
     public void MarkedText_ForcesCurrentFileEvenWhenScopeIsMultiFile()
     {
+        // Arrange
         HtmlResource a = Html("<p>cat cat cat</p>");
         HtmlResource other = Html("<p>cat</p>");
         CodeTabViewModel tab = OpenTab(a);
@@ -486,7 +551,10 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         panel.ReplaceText = "dog";
 
         // The "marked text" region takes precedence: replace only in the current file, within the region.
+        // Act & Assert
         panel.ReplaceAll().Should().Be(2);
+
+        // Assert
         tab.Document.Text.Should().Be("<p>dog dog cat</p>");
         other.GetText().Should().Be("<p>cat</p>");
     }
@@ -494,12 +562,16 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     [Fact]
     public void LookWhere_IsPersistedAndReloaded()
     {
+        // Arrange
         var host = new FakeMultiFileSearchHost { BookLoaded = true };
         FindReplaceViewModel panel = NewPanel(host, () => null, out SettingsStore settings);
 
+        // Act
         panel.LookWhereIndex = (int)LookWhere.OpfFile;
 
         var reloaded = new FindReplaceViewModel(settings, new StatusBarService(), () => null, host);
+
+        // Assert
         reloaded.LookWhereIndex.Should().Be((int)LookWhere.OpfFile);
         reloaded.IsMultiFileScope.Should().BeTrue();
     }
@@ -507,6 +579,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     [Fact]
     public void ReplaceAll_creates_a_checkpoint_before_replacing()
     {
+        // Arrange
         HtmlResource a = Html("<p>needle</p>");
         var host = new FakeMultiFileSearchHost { BookLoaded = true, Resolver = _ => new TextResource[] { a } };
         FindReplaceViewModel panel = NewPanel(host, () => null, out _);
@@ -514,8 +587,10 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         panel.FindText = "needle";
         panel.ReplaceText = "pin";
 
+        // Act & Assert
         panel.ReplaceAll().Should().Be(1);
 
+        // Assert
         host.Checkpoints.Should().Equal(Strings.Get("CheckpointOp_ReplaceAll"));
         host.Rewinds.Should().Be(0);
     }
@@ -523,6 +598,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     [Fact]
     public void ReplaceAll_without_matches_rewinds_its_checkpoint()
     {
+        // Arrange
         HtmlResource a = Html("<p>hay</p>");
         var host = new FakeMultiFileSearchHost { BookLoaded = true, Resolver = _ => new TextResource[] { a } };
         FindReplaceViewModel panel = NewPanel(host, () => null, out _);
@@ -530,8 +606,10 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         panel.FindText = "needle";
         panel.ReplaceText = "pin";
 
+        // Act & Assert
         panel.ReplaceAll().Should().Be(0);
 
+        // Assert
         host.Checkpoints.Should().ContainSingle();
         host.Rewinds.Should().Be(1);
     }
@@ -539,6 +617,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     [Fact]
     public void ReplaceAll_in_marked_text_does_not_create_a_checkpoint()
     {
+        // Arrange
         HtmlResource a = Html("<p>cat cat cat</p>");
         CodeTabViewModel tab = OpenTab(a);
         tab.UpdateSelection(3, 10);
@@ -548,8 +627,10 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         panel.FindText = "cat";
         panel.ReplaceText = "dog";
 
+        // Act & Assert
         panel.ReplaceAll().Should().Be(2);
 
+        // Assert
         host.Checkpoints.Should().BeEmpty();
     }
 }

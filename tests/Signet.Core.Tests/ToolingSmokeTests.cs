@@ -16,17 +16,24 @@ public sealed class ToolingSmokeTests
     [AutoData]
     public void AutoFixture_supplies_anonymous_values(string text, int number)
     {
+        // Act & Assert
         text.Should().NotBeNullOrEmpty();
+
+        // Act & Assert
         number.Should().NotBe(0);
     }
 
     [Fact]
     public void Moq_creates_a_working_test_double()
     {
+        // Arrange
         Mock<IComparable<int>> comparable = new();
         comparable.Setup(c => c.CompareTo(It.IsAny<int>())).Returns(42);
 
+        // Act & Assert
         comparable.Object.CompareTo(7).Should().Be(42);
+
+        // Assert
         comparable.Verify(c => c.CompareTo(7), Times.Once);
     }
 }

@@ -21,6 +21,7 @@ public sealed class OpfModelMoveListTests
     [Fact]
     public void MoveResourceList_MovesResourceAndUpdatesCrossReferences()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
         using OpfModel model = new(book);
@@ -28,8 +29,10 @@ public sealed class OpfModelMoveListTests
         HtmlResource chapter = book.GetHtmlResources().Single(r => r.Filename == "chapter1.xhtml");
         string oldGroupFolder = Signet.Core.BookPath.StartingDir(image.BookPath);
 
+        // Act
         bool ok = model.MoveResourceList(new Resource[] { image }, oldGroupFolder + "/sub", out string? error);
 
+        // Assert
         ok.Should().BeTrue();
         error.Should().BeNull();
         image.BookPath.Should().Be(oldGroupFolder + "/sub/figure.png");
@@ -40,13 +43,16 @@ public sealed class OpfModelMoveListTests
     [Fact]
     public void MoveResourceList_ToEpubRoot_UsesEmptyFolder()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
         using OpfModel model = new(book);
         Resource image = book.GetAllResources().Single(r => r.Filename == "figure.png");
 
+        // Act
         bool ok = model.MoveResourceList(new Resource[] { image }, string.Empty, out string? error);
 
+        // Assert
         ok.Should().BeTrue();
         error.Should().BeNull();
         image.BookPath.Should().Be("figure.png");
@@ -55,6 +61,7 @@ public sealed class OpfModelMoveListTests
     [Fact]
     public void MoveResourceList_DuplicateFilenameAtDestination_FailsWithoutMovingAnything()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
         using OpfModel model = new(book);
@@ -62,6 +69,7 @@ public sealed class OpfModelMoveListTests
         Resource cover = book.GetAllResources().Single(r => r.Filename == "cover.png");
         string imagesFolder = Signet.Core.BookPath.StartingDir(figure.BookPath);
 
+        // Act
         // "figure.png" goes to the "sub" subfolder; "cover.png" is renamed to "figure.png"
         // in its current folder (no collision, because the original "figure.png" has already moved),
         // and then we try to move it to where "figure.png" already is — a real name collision.
@@ -70,6 +78,7 @@ public sealed class OpfModelMoveListTests
 
         bool ok = model.MoveResourceList(new Resource[] { cover }, imagesFolder + "/sub", out string? error);
 
+        // Assert
         ok.Should().BeFalse();
         error.Should().NotBeNull();
         cover.BookPath.Should().Be(imagesFolder + "/figure.png");
@@ -78,13 +87,16 @@ public sealed class OpfModelMoveListTests
     [Fact]
     public void MoveResourceList_InvalidPathTraversal_Fails()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
         using OpfModel model = new(book);
         Resource image = book.GetAllResources().Single(r => r.Filename == "figure.png");
 
+        // Act
         bool ok = model.MoveResourceList(new Resource[] { image }, "../outside", out string? error);
 
+        // Assert
         ok.Should().BeFalse();
         error.Should().NotBeNull();
     }
@@ -92,14 +104,17 @@ public sealed class OpfModelMoveListTests
     [Fact]
     public void MoveResourceList_SameFolder_IsNoOpAndReportsSuccess()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
         using OpfModel model = new(book);
         Resource image = book.GetAllResources().Single(r => r.Filename == "figure.png");
         string folder = Signet.Core.BookPath.StartingDir(image.BookPath);
 
+        // Act
         bool ok = model.MoveResourceList(new Resource[] { image }, folder, out string? error);
 
+        // Assert
         ok.Should().BeTrue();
         error.Should().BeNull();
         book.Modified.Should().BeFalse();
@@ -108,6 +123,7 @@ public sealed class OpfModelMoveListTests
     [Fact]
     public void MoveResourceList_RegistersNewFolderForGroup()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
         using OpfModel model = new(book);
@@ -115,8 +131,10 @@ public sealed class OpfModelMoveListTests
         string oldGroupFolder = Signet.Core.BookPath.StartingDir(image.BookPath);
         string group = MediaTypes.GetGroupFromMediaType(image.MediaType, "other");
 
+        // Act
         bool ok = model.MoveResourceList(new Resource[] { image }, oldGroupFolder + "/sub", out _);
 
+        // Assert
         ok.Should().BeTrue();
         IReadOnlyList<string> folders = book.GetFolderKeeper().GetFoldersForGroup(group);
         folders.Should().Contain(oldGroupFolder + "/sub");

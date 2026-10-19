@@ -15,8 +15,10 @@ public sealed class SpecialCharactersTests
     [Fact]
     public void Curated_grid_contains_the_em_dash_entry()
     {
+        // Act
         SpecialCharacterEntry emDash = SpecialCharacters.Entries.Single(e => e.Entity == "&mdash;");
 
+        // Assert
         emDash.Insert.Should().Be("—");
         emDash.Group.Should().Be(SpecialCharacterGroup.Common);
     }
@@ -24,6 +26,7 @@ public sealed class SpecialCharactersTests
     [Fact]
     public void Curated_grid_covers_every_original_group()
     {
+        // Act & Assert
         SpecialCharacters.Entries.Select(e => e.Group).Distinct()
             .Should().BeEquivalentTo(new[]
             {
@@ -37,26 +40,34 @@ public sealed class SpecialCharactersTests
     [Fact]
     public void DisplayText_falls_back_to_the_insert_text_and_unescapes_qt_ampersand()
     {
+        // Act & Assert
         SpecialCharacters.Entries.Single(e => e.Entity == "&rsquo;").DisplayText.Should().Be("’");
+
+        // Act & Assert
         SpecialCharacters.Entries.Single(e => e.Description == "ampersand").DisplayText.Should().Be("&");
     }
 
     [Fact]
     public void Search_finds_a_codepoint_by_words_in_its_name()
     {
+        // Act & Assert
         CodepointNames.Search("rightwards arrow").Select(r => r.Codepoint).Should().Contain(0x2192);
     }
 
     [Fact]
     public void Search_accepts_a_hex_or_u_plus_code()
     {
+        // Act & Assert
         CodepointNames.Search("U+2192").Select(r => r.Codepoint).Should().Contain(0x2192);
+
+        // Act & Assert
         CodepointNames.Search("2033").Select(r => r.Codepoint).Should().Contain(0x2033);
     }
 
     [Fact]
     public void Search_returns_nothing_for_a_blank_query()
     {
+        // Act & Assert
         CodepointNames.Search("   ").Should().BeEmpty();
     }
 }

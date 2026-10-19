@@ -47,29 +47,39 @@ public sealed class UnwrapDivTests : IDisposable
     [Fact]
     public void The_action_has_no_default_shortcut()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         (_, _, AppAction action) = Open(temp);
 
+        // Act & Assert
         action.Descriptor.DefaultShortcut.Should().BeEmpty();
     }
 
     [Fact]
     public void The_innermost_div_is_unwrapped_and_the_edit_is_one_undo_step()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         (_, CodeTabViewModel tab, AppAction action) = Open(temp);
         Caret(tab, "<p>x");
 
+        // Act
         action.Execute(null);
 
+        // Assert
         tab.Document.Text.Should().Be("<html><body>\n<div class=\"a\">\n  <p>x</p>\n</div>\n<p>out</p>\n</body></html>");
+
+        // Act
         tab.Document.UndoStack.Undo();
+
+        // Assert
         tab.Document.Text.Should().Be(Doc);
     }
 
     [Fact]
     public void A_div_with_an_id_asks_first()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string doc = "<div id=\"k\"><p>x</p></div>";
         (MainWindowViewModel vm, CodeTabViewModel tab, AppAction action) = Open(temp, doc);
@@ -77,43 +87,68 @@ public sealed class UnwrapDivTests : IDisposable
         vm.UnwrapDivConfirmationRequested += (_, id) => asked = id;
         Caret(tab, "<p>");
 
+        // Act
         action.Execute(null);
 
+        // Assert
         asked.Should().Be("k");
         tab.Document.Text.Should().Be(doc);
 
+        // Act
         vm.ConfirmUnwrapDiv();
 
+        // Assert
         tab.Document.Text.Should().Be("<p>x</p>");
     }
 
     [Fact]
     public void The_action_is_enabled_only_while_the_caret_is_inside_a_div()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         (_, CodeTabViewModel tab, AppAction action) = Open(temp);
 
+        // Act
         Caret(tab, "<?xml");
+
+        // Assert
         action.IsEnabled.Should().BeFalse();
+
+        // Act
         Caret(tab, "<p>x");
+
+        // Assert
         action.IsEnabled.Should().BeTrue();
+
+        // Act
         Caret(tab, "<p>out");
+
+        // Assert
         action.IsEnabled.Should().BeFalse();
+
+        // Act
         Caret(tab, "<div class=\"b\"");
+
+        // Assert
         action.IsEnabled.Should().BeTrue();
     }
 
     [Fact]
     public void Outside_a_div_nothing_changes_and_the_reason_is_given()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         (_, CodeTabViewModel tab, AppAction action) = Open(temp);
         Caret(tab, "<p>out");
 
+        // Act
         action.Execute(null);
 
+        // Assert
         action.IsEnabled.Should().BeFalse("the Edit menu item is greyed out when the caret is not in a div");
         tab.Document.Text.Should().Be(Doc);
+
+        // Act & Assert
         tab.CheckUnwrapDiv().Problem.Should().Be(DivUnwrapProblem.NotInDiv);
         CodeTabViewModel.UnwrapDivProblemText(DivUnwrapProblem.NotInDiv).Should().Be(Strings.Get("UnwrapDiv_NotInDiv"));
         CodeTabViewModel.UnwrapDivProblemText(DivUnwrapProblem.None).Should().BeNull();

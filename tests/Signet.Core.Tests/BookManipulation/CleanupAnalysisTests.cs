@@ -85,13 +85,16 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void Prepare_is_held_back_when_any_html_is_not_well_formed()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMinimal(temp, _ => { });
         HtmlResource chapter = book.GetHtmlResources().Single(h => h.Filename == "chapter1.xhtml");
         chapter.SetText("<html><head><body><p>broken");
 
+        // Act
         CleanupPreparation preparation = CleanupAnalysis.Prepare(book);
 
+        // Assert
         preparation.Analysis.Should().BeNull();
         preparation.NotWellFormed.Should().BeSameAs(chapter);
     }
@@ -99,12 +102,15 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void Plan_lists_only_enabled_steps_and_does_not_modify_the_book()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMinimal(temp, tree => AppendCss(tree, ".ghost { color: red }"));
         string cssBefore = book.GetCssResources().Single().GetText();
 
+        // Act
         CleanupPlan plan = Plan(book, CleanupStep.UnusedSelectors);
 
+        // Assert
         plan.Steps.Select(s => s.Step).Should().Equal(CleanupStep.UnusedSelectors);
         plan.HasChanges.Should().BeTrue();
         book.GetCssResources().Single().GetText().Should().Be(cssBefore);
@@ -114,11 +120,14 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void ApplyCleanup_with_an_empty_plan_returns_false_and_does_not_modify()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMinimal(temp, _ => { });
 
+        // Act
         CleanupPlan plan = Plan(book);
 
+        // Assert
         book.ApplyCleanup(plan).Should().BeFalse();
         book.Modified.Should().BeFalse();
     }
@@ -130,25 +139,33 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void UnusedMedia_does_not_flag_the_cover_or_used_media()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMedia(temp, _ => { });
 
+        // Act & Assert
         Step(Plan(book, CleanupStep.UnusedMedia), CleanupStep.UnusedMedia).Items.Should().BeEmpty();
     }
 
     [Fact]
     public void UnusedMedia_flags_a_resource_referenced_from_nowhere_and_apply_removes_it()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMedia(temp, tree => AddOrphanImage(tree, "orphan.png"));
         Resource orphan = book.GetMediaResources().Single(r => r.Filename == "orphan.png");
         string fullPath = orphan.FullPath;
 
+        // Act
         CleanupPlan plan = Plan(book, CleanupStep.UnusedMedia);
+
+        // Assert
         Step(plan, CleanupStep.UnusedMedia).Items.Select(i => i.BookPath).Should().Equal(orphan.BookPath);
 
+        // Act
         book.ApplyCleanup(plan).Should().BeTrue();
 
+        // Assert
         book.GetMediaResources().Should().NotContain(orphan);
         File.Exists(fullPath).Should().BeFalse();
         book.Modified.Should().BeTrue();
@@ -160,6 +177,7 @@ public sealed class CleanupAnalysisTests
     [InlineData("style-block")]
     public void UnusedMedia_does_not_flag_an_image_used_only_from_css(string where)
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMedia(temp, tree =>
         {
@@ -178,6 +196,7 @@ public sealed class CleanupAnalysisTests
             }
         });
 
+        // Act & Assert
         Step(Plan(book, CleanupStep.UnusedMedia), CleanupStep.UnusedMedia).Items
             .Should().NotContain(i => i.BookPath.EndsWith("bg.png", StringComparison.Ordinal));
     }
@@ -189,6 +208,7 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void UnusedSelectors_flags_only_selectors_that_match_nothing()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMinimal(temp, tree =>
         {
@@ -196,6 +216,7 @@ public sealed class CleanupAnalysisTests
             ReplaceInChapter1(tree, "<p>Hello, world.</p>", "<p class=\"tag\">Hello, world.</p>");
         });
 
+        // Act & Assert
         Step(Plan(book, CleanupStep.UnusedSelectors), CleanupStep.UnusedSelectors).Items
             .Select(i => i.Text).Should().Equal(".ghost");
     }
@@ -203,11 +224,14 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void UnusedSelectors_apply_removes_the_selector_from_the_stylesheet_and_keeps_the_others()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMinimal(temp, tree => AppendCss(tree, ".ghost { color: red }"));
 
+        // Act & Assert
         book.ApplyCleanup(Plan(book, CleanupStep.UnusedSelectors)).Should().BeTrue();
 
+        // Assert
         string css = book.GetCssResources().Single().GetText();
         css.Should().NotContain(".ghost");
         css.Should().Contain("body").And.Contain("h1");
@@ -216,12 +240,15 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void UnusedSelectors_apply_removes_the_selector_from_a_style_block()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMinimal(temp, tree =>
             ReplaceInChapter1(tree, "</head>", "<style>.ghost2 { color: blue }\nh1 { color: purple }</style>\n</head>"));
 
+        // Act & Assert
         book.ApplyCleanup(Plan(book, CleanupStep.UnusedSelectors)).Should().BeTrue();
 
+        // Assert
         string chapter = book.GetHtmlResources().Single(h => h.Filename == "chapter1.xhtml").GetText();
         chapter.Should().NotContain(".ghost2");
         chapter.Should().Contain("purple");
@@ -230,6 +257,7 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void An_excluded_item_is_listed_but_not_applied()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMinimal(temp, tree => AppendCss(tree, ".ghost { color: red }\n.ghost2 { color: red }"));
         CleanupAnalysis analysis = Analyse(book);
@@ -237,11 +265,17 @@ public sealed class CleanupAnalysisTests
         string ghostKey = analysis.Plan(steps, NoExclusions).GetStep(CleanupStep.UnusedSelectors)!
             .Items.Single(i => i.Text == ".ghost").Key;
 
+        // Act
         CleanupPlan plan = analysis.Plan(steps, new HashSet<string> { ghostKey });
 
+        // Assert
         Step(plan, CleanupStep.UnusedSelectors).Items.Should().HaveCount(2);
         Step(plan, CleanupStep.UnusedSelectors).AppliedCount.Should().Be(1);
+
+        // Act
         book.ApplyCleanup(plan);
+
+        // Assert
         string css = book.GetCssResources().Single().GetText();
         css.Should().Contain(".ghost {").And.NotContain(".ghost2");
     }
@@ -253,16 +287,22 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void MergeSameSelectors_finds_and_merges_rules_with_the_same_selector()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMinimal(temp, tree => AppendCss(tree, "body { padding: 1px }"));
 
+        // Act
         CleanupPlan plan = Plan(book, CleanupStep.MergeSameSelectors);
         CleanupStepResult step = Step(plan, CleanupStep.MergeSameSelectors);
+
+        // Assert
         step.Items.Should().ContainSingle(i => i.Text.Contains("body", StringComparison.Ordinal));
         step.AppliedRuleCount.Should().Be(2);
 
+        // Act
         book.ApplyCleanup(plan).Should().BeTrue();
 
+        // Assert
         string css = book.GetCssResources().Single().GetText();
         css.Should().Contain("padding: 1px");
         new CssInfo(css).Rules.Count(r => r.SelectorText == "body").Should().Be(1);
@@ -271,9 +311,11 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void MergeSameProperties_finds_rules_with_identical_properties()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMinimal(temp, tree => AppendCss(tree, ".twin1 { color: teal } .twin2 { color: teal }"));
 
+        // Act & Assert
         Step(Plan(book, CleanupStep.MergeSameProperties), CleanupStep.MergeSameProperties).Items.Should().ContainSingle();
     }
 
@@ -284,16 +326,22 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void UnreferencedStylesheets_flags_a_stylesheet_no_html_links_and_apply_removes_it()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMinimal(temp, tree => AddOrphanStylesheet(tree, "orphan.css", "body { color: pink }"));
         CssResource orphan = book.GetCssResources().Single(c => c.Filename == "orphan.css");
         string fullPath = orphan.FullPath;
 
+        // Act
         CleanupPlan plan = Plan(book, CleanupStep.UnreferencedStylesheets);
+
+        // Assert
         Step(plan, CleanupStep.UnreferencedStylesheets).Items.Select(i => i.BookPath).Should().Equal(orphan.BookPath);
 
+        // Act & Assert
         book.ApplyCleanup(plan).Should().BeTrue();
 
+        // Assert
         book.GetCssResources().Should().NotContain(orphan);
         File.Exists(fullPath).Should().BeFalse();
     }
@@ -305,6 +353,7 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void A_merge_is_placed_where_it_keeps_the_styling()
     {
+        // Arrange
         // <p class="a b">: the last ".a" wins (blue). At the first ".a" the merge would let ".b" (green) win, so it
         // goes to the place of the last ".a" instead — and is safe.
         using TempDir temp = new();
@@ -314,13 +363,19 @@ public sealed class CleanupAnalysisTests
             ReplaceInChapter1(tree, "<p>Hello, world.</p>", "<p class=\"a b\">Hello, world.</p>");
         });
 
+        // Act
         CleanupPlan plan = Plan(book, CleanupStep.MergeSameSelectors);
         CleanupItem merge = Step(plan, CleanupStep.MergeSameSelectors).Items.Single();
 
+        // Assert
         merge.IsRisky.Should().BeFalse();
         merge.IsApplied.Should().BeTrue();
+
+        // Act
         book.ApplyCleanup(plan);
         string css = book.GetCssResources().Single().GetText();
+
+        // Assert
         css.IndexOf(".b", StringComparison.Ordinal).Should().BeLessThan(css.LastIndexOf(".a", StringComparison.Ordinal));
         new CssInfo(css).Rules.Count(r => r.SelectorText == ".a").Should().Be(1);
     }
@@ -328,6 +383,7 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void A_merge_is_risky_when_no_place_keeps_the_styling_and_applied_only_when_accepted()
     {
+        // Arrange
         // <p class="a b">: color comes from ".b" (after the first ".a"), background from the last ".a" (after ".b").
         // At the first ".a" the background changes, at the last ".a" the color does.
         using TempDir temp = new();
@@ -339,15 +395,20 @@ public sealed class CleanupAnalysisTests
         CleanupAnalysis analysis = Analyse(book);
         HashSet<CleanupStep> steps = new() { CleanupStep.MergeSameSelectors };
 
+        // Act
         CleanupItem merge = analysis.Plan(steps, NoExclusions).GetStep(CleanupStep.MergeSameSelectors)!.Items.Single();
 
+        // Assert
         merge.IsRisky.Should().BeTrue();
         merge.IsApplied.Should().BeFalse();
         merge.Consequences.Should().ContainSingle();
         merge.Consequences[0].Text.Should().Contain("chapter1.xhtml").And.Contain("background").And.Contain("blue").And.Contain("white");
         merge.Consequences[0].BookPath.Should().EndWith("chapter1.xhtml");
 
+        // Act
         CleanupPlan accepted = analysis.Plan(steps, NoExclusions, new HashSet<string> { merge.Key });
+
+        // Assert
         accepted.GetStep(CleanupStep.MergeSameSelectors)!.Items.Single().IsApplied.Should().BeTrue();
         accepted.HasChanges.Should().BeTrue();
     }
@@ -355,6 +416,7 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void A_merge_is_safe_when_no_element_of_the_book_changes()
     {
+        // Arrange
         // The same rules, but no element has both classes.
         using TempDir temp = new();
         using Book book = LoadMinimal(temp, tree =>
@@ -363,8 +425,10 @@ public sealed class CleanupAnalysisTests
             ReplaceInChapter1(tree, "<p>Hello, world.</p>", "<p class=\"a\">Hello,</p><p class=\"b\">world.</p>");
         });
 
+        // Act
         CleanupItem merge = Step(Plan(book, CleanupStep.MergeSameSelectors), CleanupStep.MergeSameSelectors).Items.Single();
 
+        // Assert
         merge.IsRisky.Should().BeFalse();
         merge.IsApplied.Should().BeTrue();
     }
@@ -374,6 +438,7 @@ public sealed class CleanupAnalysisTests
     [InlineData("<p><span class=\"b c\">y</span><span class=\"a b\">z</span></p>", true)]
     public void A_properties_merge_is_risky_only_when_both_places_change_an_element(string body, bool risky)
     {
+        // Arrange
         // ".a, .c" at the place of ".a" moves ".c" before ".b" (breaks "b c"); at the place of ".c" it moves ".a"
         // after ".b" (breaks "a b").
         using TempDir temp = new();
@@ -383,8 +448,10 @@ public sealed class CleanupAnalysisTests
             ReplaceInChapter1(tree, "<p>Hello, world.</p>", body);
         });
 
+        // Act
         CleanupItem merge = Step(Plan(book, CleanupStep.MergeSameProperties), CleanupStep.MergeSameProperties).Items.Single();
 
+        // Assert
         merge.IsRisky.Should().Be(risky);
         if (risky)
         {
@@ -395,6 +462,7 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void A_change_caused_by_a_rule_inside_media_names_the_condition()
     {
+        // Arrange
         // At the first "p" the margin of the last "p" moves before @media; at the last "p" the color of the first
         // moves after it — on wide screens something changes either way.
         using TempDir temp = new();
@@ -403,8 +471,10 @@ public sealed class CleanupAnalysisTests
             AppendCss(tree, "p { margin: 0; color: red; }\n@media (min-width: 600px) { p { margin: 1em; color: blue; } }\np { margin: 2em; }");
         });
 
+        // Act
         CleanupItem merge = Step(Plan(book, CleanupStep.MergeSameSelectors), CleanupStep.MergeSameSelectors).Items.Single();
 
+        // Assert
         merge.IsRisky.Should().BeTrue();
         merge.Consequences.Single().Text.Should().Contain("min-width: 600px");
     }
@@ -412,6 +482,7 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void Merging_a_vendor_prefixed_selector_into_a_list_is_risky()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMinimal(temp, tree =>
         {
@@ -419,8 +490,10 @@ public sealed class CleanupAnalysisTests
             ReplaceInChapter1(tree, "<p>Hello, world.</p>", "<p class=\"note\">Hello, world.</p>");
         });
 
+        // Act
         CleanupItem merge = Step(Plan(book, CleanupStep.MergeSameProperties), CleanupStep.MergeSameProperties).Items.Single();
 
+        // Assert
         merge.IsRisky.Should().BeTrue();
         merge.Consequences.Should().Contain(c => c.Text.Contains("p::-moz-selection", StringComparison.Ordinal)
             && c.Text.Contains(".note", StringComparison.Ordinal));
@@ -429,6 +502,7 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void An_excluded_risky_merge_stays_excluded_even_when_accepted()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMinimal(temp, tree =>
         {
@@ -439,8 +513,10 @@ public sealed class CleanupAnalysisTests
         HashSet<CleanupStep> steps = new() { CleanupStep.MergeSameSelectors };
         string key = analysis.Plan(steps, NoExclusions).GetStep(CleanupStep.MergeSameSelectors)!.Items.Single().Key;
 
+        // Act
         CleanupPlan plan = analysis.Plan(steps, new HashSet<string> { key }, new HashSet<string> { key });
 
+        // Assert
         plan.HasChanges.Should().BeFalse();
     }
 
@@ -451,10 +527,12 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void UnusedSelectors_keeps_state_pseudo_classes_and_pseudo_elements_of_existing_elements()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMinimal(temp, tree =>
             AppendCss(tree, "p:hover { color: red }\np::before { content: '*' }\np::first-letter { font-size: 2em }\n::selection { color: red }\nblockquote:hover { color: red }"));
 
+        // Act & Assert
         Step(Plan(book, CleanupStep.UnusedSelectors), CleanupStep.UnusedSelectors).Items
             .Select(i => i.Text).Should().Equal("blockquote:hover");
     }
@@ -467,6 +545,7 @@ public sealed class CleanupAnalysisTests
     [InlineData("<a href=\"../images/ref.png\">full size</a>")]
     public void UnusedMedia_keeps_media_referenced_from_any_attribute(string html)
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMedia(temp, tree =>
         {
@@ -474,6 +553,7 @@ public sealed class CleanupAnalysisTests
             AppendToChapter1Body(tree, html);
         });
 
+        // Act & Assert
         Step(Plan(book, CleanupStep.UnusedMedia), CleanupStep.UnusedMedia).Items
             .Should().NotContain(i => i.BookPath.EndsWith("ref.png", StringComparison.Ordinal));
     }
@@ -481,6 +561,7 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void UnusedMedia_keeps_an_image_used_only_by_an_svg_file()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMedia(temp, tree =>
         {
@@ -492,6 +573,7 @@ public sealed class CleanupAnalysisTests
             AppendToChapter1Body(tree, "<img src=\"../images/frame.svg\" alt=\"\"/>");
         });
 
+        // Act & Assert
         Step(Plan(book, CleanupStep.UnusedMedia), CleanupStep.UnusedMedia).Items
             .Should().NotContain(i => i.BookPath.EndsWith("ref.png", StringComparison.Ordinal));
     }
@@ -499,6 +581,7 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void UnusedMedia_keeps_audio_used_only_by_a_media_overlay()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMedia(temp, tree =>
         {
@@ -512,6 +595,7 @@ public sealed class CleanupAnalysisTests
             AddManifestItem(tree, "chapter1-overlay", "chapter1.smil", "application/smil+xml");
         });
 
+        // Act & Assert
         Step(Plan(book, CleanupStep.UnusedMedia), CleanupStep.UnusedMedia).Items
             .Should().NotContain(i => i.BookPath.EndsWith("chapter1.mp3", StringComparison.Ordinal));
     }
@@ -519,6 +603,7 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void UnusedMedia_keeps_an_image_that_is_a_manifest_fallback()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMedia(temp, tree =>
         {
@@ -533,6 +618,7 @@ public sealed class CleanupAnalysisTests
                     StringComparison.Ordinal));
         });
 
+        // Act & Assert
         Step(Plan(book, CleanupStep.UnusedMedia), CleanupStep.UnusedMedia).Items
             .Should().NotContain(i => i.BookPath.EndsWith("ref.png", StringComparison.Ordinal));
     }
@@ -544,6 +630,7 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void A_stylesheet_imported_by_a_linked_one_is_referenced_and_its_selectors_are_checked()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMinimal(temp, tree =>
         {
@@ -552,8 +639,10 @@ public sealed class CleanupAnalysisTests
             File.WriteAllText(cssPath, "@import url(\"imported.css\");\n" + File.ReadAllText(cssPath));
         });
 
+        // Act
         CleanupPlan plan = Plan(book, CleanupStep.UnreferencedStylesheets, CleanupStep.UnusedSelectors);
 
+        // Assert
         Step(plan, CleanupStep.UnreferencedStylesheets).Items.Should().BeEmpty();
         Step(plan, CleanupStep.UnusedSelectors).Items.Select(i => i.Text).Should().Equal(".nowhere");
     }
@@ -561,6 +650,7 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void A_stylesheet_imported_by_a_style_block_is_referenced()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMinimal(temp, tree =>
         {
@@ -568,8 +658,10 @@ public sealed class CleanupAnalysisTests
             ReplaceInChapter1(tree, "</head>", "<style>@import \"../styles/imported.css\";</style>\n</head>");
         });
 
+        // Act
         CleanupPlan plan = Plan(book, CleanupStep.UnreferencedStylesheets, CleanupStep.UnusedSelectors);
 
+        // Assert
         Step(plan, CleanupStep.UnreferencedStylesheets).Items.Should().BeEmpty();
         Step(plan, CleanupStep.UnusedSelectors).Items.Should().NotContain(i => i.Text == "h1");
     }
@@ -577,6 +669,7 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void A_stylesheet_imported_only_by_an_unreferenced_one_is_unreferenced_too()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMinimal(temp, tree =>
         {
@@ -584,6 +677,7 @@ public sealed class CleanupAnalysisTests
             AddOrphanStylesheet(tree, "chained.css", "h1 { color: navy }");
         });
 
+        // Act & Assert
         Step(Plan(book, CleanupStep.UnreferencedStylesheets), CleanupStep.UnreferencedStylesheets).Items
             .Select(i => Path.GetFileName(i.BookPath)).Should().BeEquivalentTo("orphan.css", "chained.css");
     }
@@ -595,12 +689,15 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void Selectors_of_a_removed_stylesheet_are_not_listed_as_unused_selectors()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMinimal(temp, tree => AddOrphanStylesheet(tree, "orphan.css", ".lonely { color: pink }"));
 
+        // Act
         CleanupPlan selectorsOnly = Plan(book, CleanupStep.UnusedSelectors);
         CleanupPlan both = Plan(book, CleanupStep.UnreferencedStylesheets, CleanupStep.UnusedSelectors);
 
+        // Assert
         Step(selectorsOnly, CleanupStep.UnusedSelectors).Items.Should().Contain(i => i.Text == ".lonely");
         Step(both, CleanupStep.UnusedSelectors).Items.Should().NotContain(i => i.Text == ".lonely");
     }
@@ -608,6 +705,7 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void Media_used_only_by_a_removed_selector_becomes_unused()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMedia(temp, tree =>
         {
@@ -617,11 +715,17 @@ public sealed class CleanupAnalysisTests
         CleanupAnalysis analysis = Analyse(book);
         HashSet<CleanupStep> both = new() { CleanupStep.UnusedSelectors, CleanupStep.UnusedMedia };
 
+        // Act
         CleanupPlan mediaOnly = analysis.Plan(new HashSet<CleanupStep> { CleanupStep.UnusedMedia }, NoExclusions);
         CleanupPlan withSelectors = analysis.Plan(both, NoExclusions);
+
+        // Arrange
         string ghostKey = withSelectors.GetStep(CleanupStep.UnusedSelectors)!.Items.Single(i => i.Text == ".ghost").Key;
+
+        // Act
         CleanupPlan ghostKept = analysis.Plan(both, new HashSet<string> { ghostKey });
 
+        // Assert
         Step(mediaOnly, CleanupStep.UnusedMedia).Items.Should().BeEmpty();
         Step(withSelectors, CleanupStep.UnusedMedia).Items.Should().ContainSingle(i => i.BookPath.EndsWith("bg.png", StringComparison.Ordinal));
         Step(ghostKept, CleanupStep.UnusedMedia).Items.Should().BeEmpty();
@@ -630,18 +734,24 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void Removing_an_unused_selector_can_create_a_new_merge_group()
     {
+        // Arrange
         // ".ghost, h1" becomes "h1" — the same selector as the corpus "h1" rule.
         using TempDir temp = new();
         using Book book = LoadMinimal(temp, tree => AppendCss(tree, ".ghost, h1 { color: red }"));
 
+        // Act
         CleanupPlan mergeOnly = Plan(book, CleanupStep.MergeSameSelectors);
         CleanupPlan both = Plan(book, CleanupStep.UnusedSelectors, CleanupStep.MergeSameSelectors);
 
+        // Assert
         Step(mergeOnly, CleanupStep.MergeSameSelectors).Items.Should().BeEmpty();
         Step(both, CleanupStep.MergeSameSelectors).Items.Should().ContainSingle(i => i.Text.Contains("h1", StringComparison.Ordinal));
 
+        // Act
         book.ApplyCleanup(both);
         CssInfo info = new(book.GetCssResources().Single().GetText());
+
+        // Assert
         info.Rules.Count(r => r.SelectorText == "h1").Should().Be(1);
         info.Selectors.Should().NotContain(s => s.Text == ".ghost");
     }
@@ -649,6 +759,7 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void A_merge_item_found_after_earlier_changes_points_to_the_rule_in_the_unchanged_file()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMinimal(temp, tree =>
         {
@@ -657,9 +768,12 @@ public sealed class CleanupAnalysisTests
         });
         string original = book.GetCssResources().Single().GetText();
 
+        // Act
         CleanupPlan plan = Plan(book, CleanupStep.UnusedSelectors, CleanupStep.MergeSameProperties);
 
         CleanupItem merge = Step(plan, CleanupStep.MergeSameProperties).Items.Single();
+
+        // Assert
         merge.Offset.Should().Be(original.IndexOf(".p1", StringComparison.Ordinal));
     }
 
@@ -681,12 +795,16 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void NestedDivs_lists_the_safe_chains_of_a_file_as_one_item_and_apply_collapses_them()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadNested(temp, ".w { color: red; margin: 0; }");
 
+        // Act
         CleanupPlan plan = Plan(book, CleanupStep.NestedDivs);
 
         CleanupItem item = Step(plan, CleanupStep.NestedDivs).Items.Should().ContainSingle().Subject;
+
+        // Assert
         item.IsRisky.Should().BeFalse();
         item.IsApplied.Should().BeTrue();
         item.RuleCount.Should().Be(1);
@@ -694,26 +812,35 @@ public sealed class CleanupAnalysisTests
         item.Offset.Should().Be(Chapter1(book).IndexOf("<div", StringComparison.Ordinal));
         Step(plan, CleanupStep.NestedDivs).AppliedRuleCount.Should().Be(1);
 
+        // Act
         book.ApplyCleanup(plan).Should().BeTrue();
+
+        // Assert
         Chapter1(book).Should().Contain("<div class=\"w\">\n  <p>Hello, world.</p>\n</div>");
     }
 
     [Fact]
     public void NestedDivs_a_chain_with_a_comment_is_risky_and_applied_only_when_accepted()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadNested(temp, string.Empty, "<div class=\"w\">\n  <div class=\"w\">\n    <p>Hello, world.</p>\n  </div>\n  <!-- note -->\n</div>");
         CleanupAnalysis analysis = Analyse(book);
         HashSet<CleanupStep> steps = new() { CleanupStep.NestedDivs };
 
+        // Act
         CleanupItem chain = analysis.Plan(steps, NoExclusions).GetStep(CleanupStep.NestedDivs)!.Items.Single();
 
+        // Assert
         chain.IsRisky.Should().BeTrue();
         chain.IsApplied.Should().BeFalse();
         chain.Consequences.Should().ContainSingle().Which.Text.Should().Contain("<!-- note -->");
 
+        // Act
         CleanupPlan accepted = analysis.Plan(steps, NoExclusions, new HashSet<string> { chain.Key });
         book.ApplyCleanup(accepted).Should().BeTrue();
+
+        // Assert
         Chapter1(book).Should().Contain("<div class=\"w\">\n  <p>Hello, world.</p>\n<!-- note -->\n</div>");
     }
 
@@ -726,11 +853,14 @@ public sealed class CleanupAnalysisTests
     [InlineData(".w > .w { border: 1px solid; }", "border")]
     public void NestedDivs_a_chain_whose_collapse_changes_the_styling_is_risky(string css, string expected)
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadNested(temp, css);
 
+        // Act
         CleanupItem chain = Step(Plan(book, CleanupStep.NestedDivs), CleanupStep.NestedDivs).Items.Single();
 
+        // Assert
         chain.IsRisky.Should().BeTrue();
         chain.IsApplied.Should().BeFalse();
         chain.Consequences.Should().Contain(c => c.Text.Contains(expected, StringComparison.Ordinal));
@@ -744,25 +874,31 @@ public sealed class CleanupAnalysisTests
     [InlineData(".w { border-left: 0 solid red; outline: hidden; letter-spacing: 0.1em; line-height: 120%; }")]
     public void NestedDivs_a_chain_whose_collapse_keeps_the_styling_is_safe(string css)
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadNested(temp, css);
 
+        // Act
         CleanupItem item = Step(Plan(book, CleanupStep.NestedDivs), CleanupStep.NestedDivs).Items.Single();
 
+        // Assert
         item.IsRisky.Should().BeFalse();
     }
 
     [Fact]
     public void NestedDivs_an_excluded_file_item_is_not_applied()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadNested(temp, string.Empty);
         CleanupAnalysis analysis = Analyse(book);
         HashSet<CleanupStep> steps = new() { CleanupStep.NestedDivs };
         string key = analysis.Plan(steps, NoExclusions).GetStep(CleanupStep.NestedDivs)!.Items.Single().Key;
 
+        // Act
         CleanupPlan plan = analysis.Plan(steps, new HashSet<string> { key });
 
+        // Assert
         plan.HasChanges.Should().BeFalse();
         plan.GetStep(CleanupStep.NestedDivs)!.Items.Single().IsApplied.Should().BeFalse();
     }
@@ -788,12 +924,16 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void MergeDivs_a_safe_run_is_listed_with_its_level_and_apply_merges_it()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadSiblings(temp, ".w { color: red; margin: 0; }");
 
+        // Act
         CleanupPlan plan = Plan(book, CleanupStep.MergeDivs);
 
         CleanupItem item = Step(plan, CleanupStep.MergeDivs).Items.Should().ContainSingle().Subject;
+
+        // Assert
         item.IsRisky.Should().BeFalse();
         item.IsApplied.Should().BeTrue();
         item.RuleCount.Should().Be(1);
@@ -802,7 +942,10 @@ public sealed class CleanupAnalysisTests
         Step(plan, CleanupStep.MergeDivs).Levels.Should().ContainSingle()
             .Which.Should().BeEquivalentTo(new CleanupLevelFile(Chapter1Path(book), LevelOne));
 
+        // Act
         book.ApplyCleanup(plan).Should().BeTrue();
+
+        // Assert
         Chapter1(book).Should().Contain("<div class=\"w\">\n    <p>Hello, world.</p>\n    <p>Bye.</p>\n  </div>");
     }
 
@@ -813,11 +956,14 @@ public sealed class CleanupAnalysisTests
     [InlineData(".w:last-child p { color: green; }", "green")]
     public void MergeDivs_a_run_whose_merge_changes_the_styling_is_risky(string css, string expected)
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadSiblings(temp, css);
 
+        // Act
         CleanupItem item = Step(Plan(book, CleanupStep.MergeDivs), CleanupStep.MergeDivs).Items.Single();
 
+        // Assert
         item.IsRisky.Should().BeTrue();
         item.IsApplied.Should().BeFalse();
         item.Consequences.Should().Contain(c => c.Text.Contains(expected, StringComparison.Ordinal));
@@ -826,11 +972,14 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void MergeDivs_text_that_would_run_together_makes_a_run_risky()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadSiblings(temp, string.Empty, "<div class=\"w\">Hello,</div> <div class=\"w\">world.</div>");
 
+        // Act
         CleanupItem item = Step(Plan(book, CleanupStep.MergeDivs), CleanupStep.MergeDivs).Items.Single();
 
+        // Assert
         item.IsRisky.Should().BeTrue();
         item.Consequences.Should().ContainSingle();
     }
@@ -845,11 +994,14 @@ public sealed class CleanupAnalysisTests
     [InlineData("<div><p>Hello,</p></div><![CDATA[ some text ]]><div><p>world.</p></div>", "some text")]
     public void MergeDivs_a_referenced_id_or_cdata_text_make_a_run_risky(string body, string expected)
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadSiblings(temp, string.Empty, body);
 
+        // Act
         CleanupItem item = Step(Plan(book, CleanupStep.MergeDivs), CleanupStep.MergeDivs).Items.Single();
 
+        // Assert
         item.IsRisky.Should().BeTrue();
         item.Consequences.Should().Contain(c => c.Text.Contains(expected, StringComparison.Ordinal));
     }
@@ -857,6 +1009,7 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void MergeDivs_an_id_linked_from_another_file_makes_a_run_risky()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMinimal(temp, tree =>
         {
@@ -865,8 +1018,10 @@ public sealed class CleanupAnalysisTests
             File.WriteAllText(nav, File.ReadAllText(nav).Replace("text/chapter1.xhtml\"", "text/chapter1.xhtml#x\"", StringComparison.Ordinal));
         });
 
+        // Act
         CleanupItem item = Step(Plan(book, CleanupStep.MergeDivs), CleanupStep.MergeDivs).Items.Single();
 
+        // Assert
         item.IsRisky.Should().BeTrue();
         item.Consequences.Should().ContainSingle().Which.Text.Should().Contain("id=\"x\"");
     }
@@ -880,26 +1035,33 @@ public sealed class CleanupAnalysisTests
     [InlineData(".w { margin-top: 2em; } .w + .w { margin-top: 0; }", SiblingDivs)]
     public void MergeDivs_what_looks_the_same_after_merging_is_not_risky(string css, string body)
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadSiblings(temp, css, body);
 
+        // Act
         CleanupItem item = Step(Plan(book, CleanupStep.MergeDivs), CleanupStep.MergeDivs).Items.Single();
 
+        // Assert
         item.IsRisky.Should().BeFalse();
     }
 
     [Fact]
     public void MergeDivs_an_accepted_risky_run_is_merged()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadSiblings(temp, ".w { margin-bottom: 1em; }");
         CleanupAnalysis analysis = Analyse(book);
         HashSet<CleanupStep> steps = new() { CleanupStep.MergeDivs };
         string key = analysis.Plan(steps, NoExclusions).GetStep(CleanupStep.MergeDivs)!.Items.Single().Key;
 
+        // Act
         CleanupPlan accepted = analysis.Plan(steps, NoExclusions, new HashSet<string> { key });
 
         book.ApplyCleanup(accepted).Should().BeTrue();
+
+        // Assert
         Chapter1(book).Should().Contain("<p>Hello, world.</p>\n    <p>Bye.</p>");
     }
 
@@ -910,22 +1072,34 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void MergeDivs_levels_switched_off_in_a_file_are_reported_but_not_listed_or_merged()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadSiblings(temp, string.Empty, TwoLevels);
         CleanupAnalysis analysis = Analyse(book);
         HashSet<CleanupStep> steps = new() { CleanupStep.MergeDivs };
         string path = Chapter1Path(book);
 
+        // Act
         CleanupStepResult all = analysis.Plan(steps, NoExclusions).GetStep(CleanupStep.MergeDivs)!;
+
+        // Assert
         all.Items.Should().HaveCount(2);
         all.Levels.Single().Levels.Should().Equal(1, 2);
 
+        // Arrange
         DivMergeOptions chosen = new(false, true, new HashSet<string> { DivMergeOptions.LevelKey(path, 2) });
+
+        // Act
         CleanupPlan plan = analysis.Plan(steps, NoExclusions, null, chosen);
 
+        // Assert
         plan.GetStep(CleanupStep.MergeDivs)!.Items.Should().ContainSingle().Which.Text.Should().Contain("class=\"w\"");
         plan.GetStep(CleanupStep.MergeDivs)!.Levels.Single().Levels.Should().Equal(1, 2);
+
+        // Act
         book.ApplyCleanup(plan).Should().BeTrue();
+
+        // Assert
         Chapter1(book).Should().Contain("<div class=\"w\"><p>a</p><p>b</p></div>")
             .And.Contain("<div class=\"v\"><p>c</p></div><div class=\"v\"><p>d</p></div>");
     }
@@ -933,13 +1107,17 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void MergeDivs_in_all_levels_mode_the_switched_off_levels_are_ignored()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadSiblings(temp, string.Empty, TwoLevels);
         string path = Chapter1Path(book);
 
         DivMergeOptions allLevels = new(true, true, new HashSet<string> { DivMergeOptions.LevelKey(path, 2) });
+
+        // Act
         CleanupPlan plan = Analyse(book).Plan(new HashSet<CleanupStep> { CleanupStep.MergeDivs }, NoExclusions, null, allLevels);
 
+        // Assert
         plan.GetStep(CleanupStep.MergeDivs)!.Items.Should().HaveCount(2);
     }
 
@@ -949,43 +1127,63 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void MergeDivs_repeat_merges_the_runs_that_a_merge_creates()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadSiblings(temp, string.Empty, Cascading);
 
+        // Act
         CleanupPlan plan = Plan(book, CleanupStep.MergeDivs);
 
+        // Assert
         plan.GetStep(CleanupStep.MergeDivs)!.Items.Select(i => i.Text).Should().HaveCount(2)
             .And.Contain(t => t.Contains("class=\"o\"", StringComparison.Ordinal))
             .And.Contain(t => t.Contains("class=\"i\"", StringComparison.Ordinal));
         plan.GetStep(CleanupStep.MergeDivs)!.Levels.Single().Levels.Should().Equal(1, 2);
+
+        // Act
         book.ApplyCleanup(plan).Should().BeTrue();
+
+        // Assert
         Chapter1(book).Should().Contain("<div class=\"o\"><div class=\"i\"><p>a</p><p>b</p></div></div>");
     }
 
     [Fact]
     public void MergeDivs_without_repeat_only_the_runs_found_in_the_original_text_are_merged()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadSiblings(temp, string.Empty, Cascading);
 
         DivMergeOptions once = new(true, false, new HashSet<string>());
+
+        // Act
         CleanupPlan plan = Analyse(book).Plan(new HashSet<CleanupStep> { CleanupStep.MergeDivs }, NoExclusions, null, once);
 
+        // Assert
         plan.GetStep(CleanupStep.MergeDivs)!.Items.Should().ContainSingle();
+
+        // Act
         book.ApplyCleanup(plan).Should().BeTrue();
+
+        // Assert
         Chapter1(book).Should().Contain("<div class=\"o\"><div class=\"i\"><p>a</p></div><div class=\"i\"><p>b</p></div></div>");
     }
 
     [Fact]
     public void MergeDivs_runs_before_nested_divs_so_the_nesting_a_merge_leaves_is_collapsed()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadSiblings(
             temp, string.Empty, "<div class=\"w\"><div class=\"w\"><p>a</p></div></div><div class=\"w\"><div class=\"w\"><p>b</p></div></div>");
 
+        // Act
         CleanupPlan plan = Plan(book, CleanupStep.MergeDivs, CleanupStep.NestedDivs);
 
+        // Act & Assert
         book.ApplyCleanup(plan).Should().BeTrue();
+
+        // Assert
         Chapter1(book).Should().Contain("<div class=\"w\"><p>a</p><p>b</p></div>");
     }
 
@@ -1002,18 +1200,25 @@ public sealed class CleanupAnalysisTests
     [Fact]
     public void EmptyElements_lists_the_safe_ones_of_a_file_as_one_item_and_apply_removes_them()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadEmpty(temp, ".calibre8 { text-indent: 1.5em; margin: 0; color: red; }",
             "  <p class=\"calibre8\"></p>\n  <div class=\"calibre8\"> </div>\n  <p id=\"keep\"></p>");
 
+        // Act
         CleanupPlan plan = Plan(book, CleanupStep.EmptyElements);
 
         CleanupItem item = Step(plan, CleanupStep.EmptyElements).Items.Should().ContainSingle().Subject;
+
+        // Assert
         item.IsRisky.Should().BeFalse();
         item.RuleCount.Should().Be(2);
         item.Text.Should().Contain("<div>: 1").And.Contain("<p>: 1");
 
+        // Act
         book.ApplyCleanup(plan).Should().BeTrue();
+
+        // Assert
         Chapter1(book).Should().NotContain("calibre8").And.Contain("<p id=\"keep\"></p>").And.Contain("<p>Hello, world.</p>");
     }
 
@@ -1026,47 +1231,68 @@ public sealed class CleanupAnalysisTests
     [InlineData(".e { border-bottom: 1px solid black; }", "border-bottom")]
     public void EmptyElements_an_empty_element_that_css_still_gives_an_effect_is_risky(string css, string expected)
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadEmpty(temp, css, "  <p class=\"e\"></p>");
         CleanupAnalysis analysis = Analyse(book);
         HashSet<CleanupStep> steps = new() { CleanupStep.EmptyElements };
 
+        // Act
         CleanupItem item = analysis.Plan(steps, NoExclusions).GetStep(CleanupStep.EmptyElements)!.Items.Single();
 
+        // Assert
         item.IsRisky.Should().BeTrue();
         item.IsApplied.Should().BeFalse();
         item.Consequences.Should().Contain(c => c.Text.Contains(expected, StringComparison.Ordinal));
 
+        // Act
         CleanupPlan accepted = analysis.Plan(steps, NoExclusions, new HashSet<string> { item.Key });
         book.ApplyCleanup(accepted).Should().BeTrue();
+
+        // Assert
         Chapter1(book).Should().NotContain("class=\"e\"");
     }
 
     [Fact]
     public void EmptyElements_run_before_nested_divs_so_a_removed_empty_element_reveals_a_chain()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadEmpty(temp, string.Empty, "  <div class=\"w\">\n    <p></p>\n    <div class=\"w\"><p>x</p></div>\n  </div>");
 
+        // Act
         CleanupPlan plan = Plan(book, CleanupStep.EmptyElements, CleanupStep.NestedDivs);
 
+        // Assert
         Step(plan, CleanupStep.NestedDivs).AppliedRuleCount.Should().Be(1);
+
+        // Act & Assert
         book.ApplyCleanup(plan).Should().BeTrue();
+
+        // Assert
         Chapter1(book).Split("class=\"w\"").Length.Should().Be(2);
     }
 
     [Fact]
     public void BareSpans_without_css_reaching_them_are_one_safe_item_and_apply_unwraps_them()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadEmpty(temp, ".x { color: red; } p em { font-weight: bold; }", "  <p>a <span>b</span> <span>c <em>d</em></span></p>");
 
+        // Act
         CleanupPlan plan = Plan(book, CleanupStep.BareSpans);
 
         CleanupItem item = Step(plan, CleanupStep.BareSpans).Items.Should().ContainSingle().Subject;
+
+        // Assert
         item.IsRisky.Should().BeFalse();
         item.RuleCount.Should().Be(2);
+
+        // Act & Assert
         book.ApplyCleanup(plan).Should().BeTrue();
+
+        // Assert
         Chapter1(book).Should().Contain("<p>a b c <em>d</em></p>");
     }
 
@@ -1076,11 +1302,14 @@ public sealed class CleanupAnalysisTests
     [InlineData("p > em { color: blue; }", "blue")]
     public void BareSpans_a_span_that_css_reaches_is_risky(string css, string expected)
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadEmpty(temp, css, "  <p>a <span>c <em>d</em></span></p>");
 
+        // Act
         CleanupItem item = Step(Plan(book, CleanupStep.BareSpans), CleanupStep.BareSpans).Items.Single();
 
+        // Assert
         item.IsRisky.Should().BeTrue();
         item.IsApplied.Should().BeFalse();
         item.Text.Should().Contain("c d");

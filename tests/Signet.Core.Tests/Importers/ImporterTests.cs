@@ -19,24 +19,29 @@ public sealed class ImporterTests
     [InlineData("notes.txt", typeof(ImportTxt))]
     public void Factory_picks_the_right_importer(string name, System.Type expected)
     {
+        // Act & Assert
         ImporterFactory.GetImporter(name).Should().BeOfType(expected);
     }
 
     [Fact]
     public void Factory_returns_null_for_unsupported_extensions()
     {
+        // Act & Assert
         ImporterFactory.GetImporter("cover.png").Should().BeNull();
     }
 
     [Fact]
     public void ImportTxt_wraps_paragraphs_and_builds_a_single_section_epub()
     {
+        // Arrange
         using TempDir temp = new();
         string txt = Path.Combine(temp.Path, "a.txt");
         File.WriteAllText(txt, "Pierwszy akapit.\nDalszy ciąg.\n\nDrugi akapit.\n");
 
+        // Act
         using Book book = new ImportTxt(txt, new ImporterOptions("2.0", false)).GetBook();
 
+        // Assert
         book.GetHtmlResources().Should().ContainSingle();
         string text = book.GetHtmlResources()[0].GetText();
         text.Should().Contain("<p>").And.Contain("Pierwszy akapit").And.Contain("Drugi akapit");
@@ -46,12 +51,15 @@ public sealed class ImporterTests
     [Fact]
     public void ImportTxt_epub3_gets_a_nav_document()
     {
+        // Arrange
         using TempDir temp = new();
         string txt = Path.Combine(temp.Path, "a.txt");
         File.WriteAllText(txt, "Treść.\n");
 
+        // Act
         using Book book = new ImportTxt(txt, new ImporterOptions("3.0", false)).GetBook();
 
+        // Assert
         book.IsEpub3.Should().BeTrue();
         book.GetOpf().GetNavResourceBookPath().Should().EndWith("nav.xhtml");
         book.GetNcx().Should().BeNull();
@@ -60,6 +68,7 @@ public sealed class ImporterTests
     [Fact]
     public void ImportHtml_imports_a_page_with_its_stylesheet_and_image()
     {
+        // Arrange
         using TempDir temp = new();
         File.WriteAllText(Path.Combine(temp.Path, "style.css"), "body { color: black; }");
         File.WriteAllBytes(Path.Combine(temp.Path, "pic.png"), new byte[] { 1, 2, 3, 4 });
@@ -70,8 +79,10 @@ public sealed class ImporterTests
             + "<link rel=\"stylesheet\" href=\"style.css\"/></head>"
             + "<body><p><img src=\"pic.png\" alt=\"\"/></p></body></html>");
 
+        // Act
         using Book book = new ImportHtml(html, new ImporterOptions("3.0", true)).GetBook();
 
+        // Assert
         book.GetAllResources().Select(r => r.Filename).Should()
             .Contain("style.css").And.Contain("pic.png");
         book.GetOpf().GetPrimaryBookTitle().Should().Be("Rozdział 1");
@@ -84,12 +95,15 @@ public sealed class ImporterTests
     [Fact]
     public void ImportHtml_reports_not_well_formed_content()
     {
+        // Arrange
         using TempDir temp = new();
         string html = Path.Combine(temp.Path, "broken.xhtml");
         File.WriteAllText(html, "<html><body><p>oops</body></html>");
 
+        // Act
         WellFormedResult? result = new ImportHtml(html, new ImporterOptions("2.0", false)).CheckValidToLoad();
 
+        // Assert
         result.Should().NotBeNull();
         result!.IsWellFormed.Should().BeFalse();
     }

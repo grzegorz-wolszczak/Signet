@@ -52,10 +52,12 @@ public sealed class RecentLocationsWindowTests : IDisposable
     [AvaloniaFact]
     public void The_entries_show_their_snippets()
     {
+        // Act
         (RecentLocationsWindow window, RecentLocationsViewModel vm, Book book, TempDir temp) = Show();
 
         LocationSnippetEditor[] snippets = window.GetVisualDescendants().OfType<LocationSnippetEditor>().ToArray();
 
+        // Assert
         snippets.Should().HaveCount(vm.Items.Count);
         snippets.Should().OnlyContain(s => s.Document.TextLength > 0 && s.Bounds.Height > 0);
         window.Close();
@@ -66,19 +68,31 @@ public sealed class RecentLocationsWindowTests : IDisposable
     [AvaloniaFact]
     public void Keys_move_the_selection_toggle_edited_only_forget_and_close()
     {
+        // Act
         (RecentLocationsWindow window, RecentLocationsViewModel vm, Book book, TempDir temp) = Show();
         int count = vm.Items.Count;
 
         window.KeyPressQwerty(PhysicalKey.ArrowDown, RawInputModifiers.None);
+
+        // Assert
         vm.Selected.Should().BeSameAs(vm.Items[1]);
 
+        // Act
         window.KeyPressQwerty(PhysicalKey.Delete, RawInputModifiers.None);
+
+        // Assert
         vm.Items.Should().HaveCount(count - 1);
 
+        // Act
         window.KeyPressQwerty(PhysicalKey.E, RawInputModifiers.Control | RawInputModifiers.Shift);
+
+        // Assert
         vm.ShowEditedOnly.Should().BeTrue();
 
+        // Act
         window.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
+
+        // Assert
         window.IsVisible.Should().BeFalse();
         book.Dispose();
         temp.Dispose();

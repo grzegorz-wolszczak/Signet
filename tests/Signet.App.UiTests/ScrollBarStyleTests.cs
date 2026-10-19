@@ -43,8 +43,10 @@ public sealed class ScrollBarStyleTests
     [AvaloniaFact]
     public void A_scroll_viewer_has_an_expanded_bar_beside_its_content()
     {
+        // Act
         (Window window, ScrollViewer viewer) = Show(new ScrollViewer { Content = new Border { Height = 2000 } });
 
+        // Assert
         ShouldBeExpandedBesideTheContent(viewer);
         window.Close();
     }
@@ -52,6 +54,7 @@ public sealed class ScrollBarStyleTests
     [AvaloniaFact]
     public void A_multi_line_text_box_has_an_expanded_bar_beside_its_text()
     {
+        // Act
         (Window window, TextBox box) = Show(new TextBox
         {
             AcceptsReturn = true,
@@ -59,6 +62,7 @@ public sealed class ScrollBarStyleTests
             Text = string.Join("\n", Enumerable.Range(1, 50)),
         });
 
+        // Assert
         ShouldBeExpandedBesideTheContent(box);
         window.Close();
     }
@@ -66,11 +70,13 @@ public sealed class ScrollBarStyleTests
     [AvaloniaFact]
     public void The_code_editor_has_an_expanded_bar_beside_its_text()
     {
+        // Act
         (Window window, AvaloniaEdit.TextEditor editor) = Show(new AvaloniaEdit.TextEditor
         {
             Document = new AvaloniaEdit.Document.TextDocument(string.Join("\n", Enumerable.Range(1, 200))),
         });
 
+        // Assert
         ShouldBeExpandedBesideTheContent(editor);
         window.Close();
     }

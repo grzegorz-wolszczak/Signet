@@ -14,9 +14,12 @@ public sealed class EmptyLayoutViewModelTests
     [InlineData("3.0")]
     public void Default_tree_matches_the_standard_layout_and_validates(string version)
     {
+        // Arrange
         EmptyLayoutViewModel vm = new(version);
 
         vm.GetBookPaths().Should().BeEquivalentTo(BookCreator.StandardLayout(version));
+
+        // Act & Assert
         vm.Validate().Should().BeTrue();
         vm.ValidationError.Should().BeEmpty();
     }
@@ -24,11 +27,14 @@ public sealed class EmptyLayoutViewModelTests
     [Fact]
     public void Deleting_the_opf_makes_the_layout_invalid()
     {
+        // Arrange
         EmptyLayoutViewModel vm = new("2.0");
         vm.SelectedNode = TryFind(vm.Root, "content.opf");
 
+        // Act
         vm.DeleteSelection();
 
+        // Act & Assert
         vm.Validate().Should().BeFalse();
         vm.ValidationError.Should().Contain("OPF");
     }
@@ -36,7 +42,10 @@ public sealed class EmptyLayoutViewModelTests
     [Fact]
     public void The_opf_file_type_cannot_be_added_twice()
     {
+        // Arrange
         EmptyLayoutViewModel vm = new("2.0");
+
+        // Act & Assert
         vm.IsFileTypeAllowed("content.opf").Should().BeFalse();
         vm.IsFileTypeAllowed("marker.xhtml").Should().BeTrue();
     }
@@ -44,19 +53,26 @@ public sealed class EmptyLayoutViewModelTests
     [Fact]
     public void Epub2_layout_has_no_nav_or_js_marker_types()
     {
+        // Arrange
         EmptyLayoutViewModel vm = new("2.0");
+
+        // Act & Assert
         vm.MarkerTypes.Select(t => t.FileName).Should().NotContain("nav.xhtml").And.NotContain("marker.js");
     }
 
     [Fact]
     public void Adding_a_folder_and_file_extends_the_book_paths()
     {
+        // Arrange
         EmptyLayoutViewModel vm = new("3.0");
         vm.SelectedNode = vm.Root;
+
+        // Act
         LayoutNode? extras = vm.AddFolder("Extra");
         vm.SelectedNode = extras;
         vm.AddFile(vm.MarkerTypes.First(t => t.FileName == "marker.xhtml"));
 
+        // Assert
         vm.GetBookPaths().Should().Contain("Extra/marker.xhtml");
     }
 

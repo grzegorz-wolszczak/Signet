@@ -21,9 +21,13 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [InlineData(true)]
             public void Creates_Cells_For_Root_Models(bool sorted)
             {
+                // Arrange
                 var data = CreateData();
+
+                // Act
                 var target = CreateTarget(data, sorted);
 
+                // Assert
                 AssertState(target, data, 5, sorted);
             }
 
@@ -32,11 +36,14 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [InlineData(true)]
             public void Expanding_Root_Node_Creates_Child_Cells(bool sorted)
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, sorted);
 
+                // Act
                 target.Expand(new IndexPath(0));
 
+                // Assert
                 AssertState(target, data, 10, sorted, new IndexPath(0));
             }
 
@@ -45,6 +52,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [InlineData(true)]
             public void Collapsing_Root_Node_Removes_Child_Cells(bool sorted)
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, sorted);
 
@@ -52,8 +60,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.Rows.Count.Should().Be(10);
 
+                // Act
                 target.Collapse(new IndexPath(0));
 
+                // Assert
                 AssertState(target, data, 5, sorted);
             }
 
@@ -62,6 +72,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [InlineData(true)]
             public void Supports_Adding_Root_Row(bool sorted)
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, sorted);
 
@@ -70,8 +81,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var raised = 0;
                 target.Rows.CollectionChanged += (s, e) => ++raised;
 
+                // Act
                 data.Add(new Node { Id = 100, Caption = "New Node 1" });
 
+                // Assert
                 AssertState(target, data, 6, sorted);
             }
 
@@ -80,6 +93,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [InlineData(true)]
             public void Supports_Inserting_Root_Row(bool sorted)
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, sorted);
 
@@ -88,8 +102,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var raised = 0;
                 target.Rows.CollectionChanged += (s, e) => ++raised;
 
+                // Act
                 data.Insert(1, new Node { Id = 100, Caption = "New Node 1" });
 
+                // Assert
                 AssertState(target, data, 6, sorted);
             }
 
@@ -98,6 +114,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [InlineData(true)]
             public void Supports_Removing_Root_Row(bool sorted)
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, sorted);
 
@@ -106,8 +123,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var raised = 0;
                 target.Rows.CollectionChanged += (s, e) => ++raised;
 
+                // Act
                 data.RemoveAt(1);
 
+                // Assert
                 AssertState(target, data, 4, sorted);
             }
 
@@ -116,6 +135,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [InlineData(true)]
             public void Supports_Removing_Root_Row_With_Earlier_Row_Expanded_To_Grandchildren(bool sorted)
             {
+                // Arrange
                 var data = CreateData();
                 data[0].Children![0].Children = new AvaloniaListDebug<Node>
                 {
@@ -136,8 +156,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var raised = 0;
                 target.Rows.CollectionChanged += (s, e) => ++raised;
 
+                // Act
                 data.RemoveAt(1);
 
+                // Assert
                 AssertState(target, data, 10, sorted, new IndexPath(0), new IndexPath(0, 0));
             }
 
@@ -146,6 +168,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [InlineData(true)]
             public void Supports_Removing_Root_Row_With_Later_Row_Expanded(bool sorted)
             {
+                // Arrange
                 var data = CreateData();
 
                 var target = CreateTarget(data, sorted);
@@ -157,8 +180,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var raised = 0;
                 target.Rows.CollectionChanged += (s, e) => ++raised;
 
+                // Act
                 data.RemoveAt(1);
 
+                // Assert
                 AssertState(target, data, 9, sorted, new IndexPath(3));
             }
 
@@ -167,14 +192,19 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [InlineData(true)]
             public void Removing_Expanded_Root_Row_Unsubscribes_From_CollectionChanged(bool sorted)
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, sorted);
                 var toRemove = data[1];
 
                 target.Expand(1);
+
                 toRemove.Children!.CollectionChangedSubscriberCount().Should().Be(1);
 
+                // Act
                 data.RemoveAt(1);
+
+                // Assert
                 toRemove.Children!.CollectionChangedSubscriberCount().Should().Be(0);
             }
 
@@ -183,6 +213,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [InlineData(true)]
             public void Removing_Expanded_Root_Row_With_Expanded_Child_Unsubscribes_From_CollectionChanged(bool sorted)
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, sorted);
                 var toRemove = data[1].Children![1];
@@ -190,9 +221,13 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 toRemove.Children = new AvaloniaListDebug<Node> { new Node() };
 
                 target.Expand(new IndexPath(1, 1));
+
                 toRemove.Children!.CollectionChangedSubscriberCount().Should().Be(1);
 
+                // Act
                 data.RemoveAt(1);
+
+                // Assert
                 toRemove.Children!.CollectionChangedSubscriberCount().Should().Be(0);
             }
 
@@ -201,6 +236,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [InlineData(true)]
             public void Supports_Adding_Child_Row(bool sorted)
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, sorted);
 
@@ -211,8 +247,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var raised = 0;
                 target.Rows.CollectionChanged += (s, e) => ++raised;
 
+                // Act
                 data[0].Children!.Add(new Node { Id = 100, Caption = "New Node 1" });
 
+                // Assert
                 AssertState(target, data, 11, sorted, new IndexPath(0));
             }
 
@@ -221,14 +259,17 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [InlineData(true)]
             public void Supports_Adding_Child_To_Expanded_Then_Unexpanded_Root_Node(bool sorted)
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, sorted);
 
                 target.Expand(new IndexPath(0));
                 target.Collapse(new IndexPath(0));
 
+                // Act
                 data[0].Children!.Add(new Node { Id = 100, Caption = "New Node 1" });
 
+                // Assert
                 AssertState(target, data, 5, sorted);
             }
 
@@ -237,6 +278,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [InlineData(true)]
             public void Supports_Inserting_Child_Row(bool sorted)
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, sorted);
 
@@ -247,8 +289,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var raised = 0;
                 target.Rows.CollectionChanged += (s, e) => ++raised;
 
+                // Act
                 data[0].Children!.Insert(1, new Node { Id = 100, Caption = "New Node 1" });
 
+                // Assert
                 AssertState(target, data, 11, sorted, new IndexPath(0));
             }
 
@@ -257,17 +301,21 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [InlineData(true)]
             public void Supports_Removing_Child_Row(bool sorted)
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, sorted);
 
                 target.Expand(new IndexPath(0));
+
                 target.Rows.Count.Should().Be(10);
 
                 var raised = 0;
                 target.Rows.CollectionChanged += (s, e) => ++raised;
 
+                // Act
                 data[0].Children!.RemoveAt(3);
 
+                // Assert
                 AssertState(target, data, 9, sorted, new IndexPath(0));
             }
 
@@ -276,17 +324,21 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [InlineData(true)]
             public void Supports_Removing_Child_Rows_At_Start(bool sorted)
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, sorted);
 
                 target.Expand(new IndexPath(0));
+
                 target.Rows.Count.Should().Be(10);
 
                 var raised = 0;
                 target.Rows.CollectionChanged += (s, e) => ++raised;
 
+                // Act
                 data[0].Children!.RemoveRange(0, 2);
 
+                // Assert
                 AssertState(target, data, 8, sorted, new IndexPath(0));
             }
 
@@ -295,6 +347,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [InlineData(true)]
             public void Supports_Replacing_Root_Row(bool sorted)
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, sorted);
 
@@ -303,8 +356,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var raised = 0;
                 target.Rows.CollectionChanged += (s, e) => ++raised;
 
+                // Act
                 data[2] = new Node { Id = 100, Caption = "Replaced" };
 
+                // Assert
                 AssertState(target, data, 5, sorted);
             }
 
@@ -313,6 +368,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [InlineData(true)]
             public void Supports_Moving_Root_Row(bool sorted)
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, sorted);
 
@@ -321,14 +377,17 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 var raised = 0;
                 target.Rows.CollectionChanged += (s, e) => ++raised;
 
+                // Act
                 data.Move(2, 4);
 
+                // Assert
                 AssertState(target, data, 5, sorted);
             }
 
             [AvaloniaFact(Timeout = 10000)]
             public void Setting_Sort_Updates_Rows()
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, false);
 
@@ -336,14 +395,17 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.Rows.Count.Should().Be(10);
 
+                // Act
                 target.Sort((x, y) => y.Id - x.Id);
 
+                // Assert
                 AssertState(target, data, 10, true, new IndexPath(0));
             }
 
             [AvaloniaFact(Timeout = 10000)]
             public void Clearing_Sort_Updates_Rows()
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, true);
 
@@ -351,8 +413,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 target.Rows.Count.Should().Be(10);
 
+                // Act
                 target.Sort(null);
 
+                // Assert
                 AssertState(target, data, 10, false, new IndexPath(0));
             }
         }
@@ -362,6 +426,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [AvaloniaFact(Timeout = 10000)]
             public void Expanding_Updates_Cell_IsExpanded()
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, false);
                 var expander = (ExpanderCell<Node>)target.Rows.RealizeCell(target.Columns[0], 0, 0);
@@ -373,8 +438,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                         ++raised;
                 };
 
+                // Act
                 target.Expand(new IndexPath(0));
 
+                // Assert
                 expander.IsExpanded.Should().BeTrue();
                 raised.Should().Be(1);
             }
@@ -382,6 +449,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [AvaloniaFact(Timeout = 10000)]
             public void Expanding_Previously_Expanded_Node_Creates_Expanded_Descendent()
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, false);
 
@@ -391,48 +459,67 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 };
 
                 // Expand first root node.
+                // Act
                 target.Expand(new IndexPath(0));
 
+                // Assert
                 AssertState(target, data, 10, false, new IndexPath(0));
 
                 // Expand first child node.
+                // Act
                 target.Expand(new IndexPath(0, 0));
 
                 // Grandchild should now be visible.
+                // Assert
                 AssertState(target, data, 11, false, new IndexPath(0), new IndexPath(0, 0));
 
                 // Collapse root node.
+                // Act
                 target.Collapse(new IndexPath(0));
+
+                // Assert
                 AssertState(target, data, 5, false);
 
                 // And expand again. Grandchild should now be visible once more.
+                // Act
                 target.Expand(new IndexPath(0));
+
+                // Assert
                 AssertState(target, data, 11, false, new IndexPath(0), new IndexPath(0, 0));
             }
 
             [AvaloniaFact(Timeout = 10000)]
             public void Shows_Expander_For_Row_With_Children()
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, false);
+
+                // Act
                 var expander = (ExpanderCell<Node>)target.Rows.RealizeCell(target.Columns[0], 0, 0);
 
+                // Assert
                 expander.ShowExpander.Should().BeTrue();
             }
 
             [AvaloniaFact(Timeout = 10000)]
             public void Hides_Expander_For_Row_Without_Children()
             {
+                // Arrange
                 var data = new[] { new Node { Id = 0, Caption = "Node 0" } };
                 var target = CreateTarget(data, false);
+
+                // Act
                 var expander = (ExpanderCell<Node>)target.Rows.RealizeCell(target.Columns[0], 0, 0);
 
+                // Assert
                 expander.ShowExpander.Should().BeFalse();
             }
 
             [AvaloniaFact(Timeout = 10000)]
             public void Attempting_To_Expand_Node_That_Has_No_Children_Hides_Expander()
             {
+                // Arrange
                 var data = new Node { Id = 0, Caption = "Node 0" };
 
                 // Here we return true from hasChildren selector, but there are actually no children.
@@ -451,8 +538,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
 
                 var expander = (IExpanderCell)target.Rows.RealizeCell(target.Columns[0], 0, 0);
 
+                // Act
                 target.Expand(new IndexPath(0));
 
+                // Assert
                 expander.ShowExpander.Should().BeFalse();
                 expander.IsExpanded.Should().BeFalse();
             }
@@ -462,11 +551,14 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [InlineData(true)]
             public void ExpandAll_Expands_All_Rows(bool sorted)
             {
+                // Arrange
                 var data = CreateData(5, 3, 3);
                 var target = CreateTarget(data, sorted);
 
+                // Act
                 target.ExpandAll();
 
+                // Assert
                 target.Rows.Count.Should().Be(65);
             }
 
@@ -475,20 +567,30 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [InlineData(true)]
             public void CollapseAll_Collapses_All_Rows(bool sorted)
             {
+                // Arrange
                 var data = CreateData(5, 3, 3);
                 var target = CreateTarget(data, sorted);
 
                 // We need to expand before we can collapse.
+                // Act
                 target.ExpandAll();
+
+                // Assert
                 target.Rows.Count.Should().Be(65);
 
                 // Now we can test collapsing.
+                // Act
                 target.CollapseAll();
+
+                // Assert
                 target.Rows.Count.Should().Be(5);
 
                 // Ensure that nested rows were collapsed, i.e. only the first level of rows is
                 // visible after expanding now.
+                // Act
                 target.Expand(0);
+
+                // Assert
                 target.Rows.Count.Should().Be(8);
             }
         }
@@ -496,9 +598,11 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void Adding_Second_Expander_Column_Throws()
         {
+            // Arrange
             var data = CreateData();
             var target = CreateTarget(data, false);
 
+            // Act & Assert
             FluentActions.Invoking(() =>
             {
                 target.Columns.Add(new HierarchicalExpanderColumn<Node>(
@@ -512,11 +616,13 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void Removing_Expander_Column_Throws()
         {
+            // Arrange
             var data = CreateData();
             var target = CreateTarget(data, false);
 
             var expander = target.Columns.OfType<IExpanderColumn<Node>>().First();
 
+            // Act & Assert
             FluentActions.Invoking(() =>
             {
                 target.Columns.Remove(expander);
@@ -528,32 +634,41 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [AvaloniaFact(Timeout = 10000)]
             public void Root_Is_Initially_Expanded()
             {
+                // Arrange
                 var data = CreateData();
                 data[0].IsExpanded = true;
 
                 var target = CreateTarget(data, false, bindExpanded: true);
+
+                // Act
                 RealizeCells(target);
 
+                // Assert
                 AssertState(target, data, 10, false, new IndexPath(0));
             }
 
             [AvaloniaFact(Timeout = 10000)]
             public void Child_Is_Initially_Expanded()
             {
+                // Arrange
                 var data = CreateData();
                 data[0].IsExpanded = true;
                 data[0].Children![1].IsExpanded = true;
                 data[0].Children![1].Children!.Add(new Node());
 
                 var target = CreateTarget(data, false, bindExpanded: true);
+
+                // Act
                 RealizeCells(target);
 
+                // Assert
                 AssertState(target, data, 11, false, new IndexPath(0), new IndexPath(0, 1));
             }
 
             [AvaloniaFact(Timeout = 10000)]
             public void Handles_Initial_Expanded_Row_With_No_Children()
             {
+                // Arrange
                 var data = CreateData();
                 data[0].IsExpanded = true;
 
@@ -561,79 +676,110 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 data[0].Children![1].IsExpanded = true;
 
                 var target = CreateTarget(data, false, bindExpanded: true);
+
+                // Act
                 RealizeCells(target);
 
+                // Assert
                 AssertState(target, data, 10, false, new IndexPath(0));
             }
 
             [AvaloniaFact(Timeout = 10000)]
             public void Root_Can_Be_Expanded_Via_Model()
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, false, bindExpanded: true);
 
+                // Act
                 RealizeCells(target);
+
+                // Assert
                 AssertState(target, data, 5, false);
 
+                // Act
                 data[0].IsExpanded = true;
 
+                // Assert
                 AssertState(target, data, 10, false, new IndexPath(0));
             }
 
             [AvaloniaFact(Timeout = 10000)]
             public void Child_Can_Be_Expanded_Via_Model()
             {
+                // Arrange
                 var data = CreateData();
                 data[0].Children![1].Children!.Add(new Node());
 
                 var target = CreateTarget(data, false, bindExpanded: true);
 
+                // Act
                 RealizeCells(target);
+
+                // Assert
                 AssertState(target, data, 5, false);
 
+                // Act
                 data[0].IsExpanded = true;
                 RealizeRow(target, new IndexPath(0, 1));
                 data[0].Children![1].IsExpanded = true;
 
+                // Assert
                 AssertState(target, data, 11, false, new IndexPath(0), new IndexPath(0, 1));
             }
 
             [AvaloniaFact(Timeout = 10000)]
             public void Expanding_Collapsing_Root_Row_Writes_To_Model()
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, false, bindExpanded: true);
 
+                // Act
                 RealizeCells(target);
+
+                // Assert
                 AssertState(target, data, 5, false);
 
+                // Act
                 ((IExpander)target.Rows[0]).IsExpanded = true;
 
+                // Assert
                 AssertState(target, data, 10, false, new IndexPath(0));
 
+                // Act
                 ((IExpander)target.Rows[0]).IsExpanded = false;
 
+                // Assert
                 AssertState(target, data, 5, false);
             }
 
             [AvaloniaFact(Timeout = 10000)]
             public void Expanding_Collapsing_Child_Row_Writes_To_Model()
             {
+                // Arrange
                 var data = CreateData();
                 data[0].Children![1].Children!.Add(new Node());
 
                 var target = CreateTarget(data, false, bindExpanded: true);
 
+                // Act
                 RealizeCells(target);
+
+                // Assert
                 AssertState(target, data, 5, false);
 
+                // Act
                 ((IExpander)target.Rows[0]).IsExpanded = true;
                 ((IExpander)target.Rows[2]).IsExpanded = true;
 
+                // Assert
                 AssertState(target, data, 11, false, new IndexPath(0), new IndexPath(0, 1));
 
+                // Act
                 ((IExpander)target.Rows[2]).IsExpanded = false;
 
+                // Assert
                 AssertState(target, data, 10, false, new IndexPath(0));
             }
 
@@ -692,26 +838,35 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [AvaloniaFact(Timeout = 10000)]
             public void Initially_Hides_Expander_With_No_Children()
             {
+                // Arrange
                 var data = CreateData(count: 1, childCount: 0);
                 var target = CreateTarget(data, false);
+
+                // Act
                 var expander = (ExpanderCell<Node>)target.Rows.RealizeCell(target.Columns[0], 0, 0);
 
+                // Assert
                 expander.ShowExpander.Should().BeFalse();
             }
 
             [AvaloniaFact(Timeout = 10000)]
             public void Initially_Shows_Expander_With_Children()
             {
+                // Arrange
                 var data = CreateData(count: 1, childCount: 1);
                 var target = CreateTarget(data, false);
+
+                // Act
                 var expander = (ExpanderCell<Node>)target.Rows.RealizeCell(target.Columns[0], 0, 0);
 
+                // Assert
                 expander.ShowExpander.Should().BeTrue();
             }
 
             [AvaloniaFact(Timeout = 10000)]
             public void Shows_Expander_When_First_Child_Added()
             {
+                // Arrange
                 var data = CreateData(count: 1, childCount: 0);
                 var target = CreateTarget(data, false);
                 var expander = (ExpanderCell<Node>)target.Rows.RealizeCell(target.Columns[0], 0, 0);
@@ -723,8 +878,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                     ++raised;
                 };
 
+                // Act
                 data[0].Children!.Add(new Node());
 
+                // Assert
                 expander.ShowExpander.Should().BeTrue();
                 raised.Should().Be(1);
             }
@@ -732,6 +889,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [AvaloniaFact(Timeout = 10000)]
             public void Hides_Expander_When_Last_Child_Removed()
             {
+                // Arrange
                 var data = CreateData(count: 1, childCount: 1);
                 var target = CreateTarget(data, false);
                 var expander = (ExpanderCell<Node>)target.Rows.RealizeCell(target.Columns[0], 0, 0);
@@ -743,8 +901,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                     ++raised;
                 };
 
+                // Act
                 data[0].Children!.RemoveAt(0);
 
+                // Assert
                 expander.ShowExpander.Should().BeFalse();
                 raised.Should().Be(1);
             }
@@ -752,6 +912,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [AvaloniaFact(Timeout = 10000)]
             public void Cell_Synchronizes_Row_ShowExpander()
             {
+                // Arrange
                 var data = CreateData(count: 1, childCount: 1);
                 var target = CreateTarget(data, false);
                 var row = (HierarchicalRow<Node>)target.Rows[0];
@@ -760,8 +921,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 expander.ShowExpander.Should().BeTrue();
                 row.ShowExpander.Should().BeTrue();
 
+                // Act
                 data[0].Children!.RemoveAt(0);
 
+                // Assert
                 expander.ShowExpander.Should().BeFalse();
                 row.ShowExpander.Should().BeFalse();
             }
@@ -772,6 +935,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [AvaloniaFact(Timeout = 10000)]
             public void Reassigning_Source_Updates_Selection_Model_Source()
             {
+                // Arrange
                 var data1 = CreateData();
                 var data2 = CreateData(5);
                 var target = CreateTarget(data1, false);
@@ -779,8 +943,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 // Ensure selection model is created.
                 (((ITreeDataGridSelection?)target.RowSelection)!.Source).Should().BeSameAs(data1);
 
+                // Act
                 target.Items = data2;
 
+                // Assert
                 (((ITreeDataGridSelection?)target.RowSelection)!.Source).Should().BeSameAs(data2);
             }
         }
@@ -792,6 +958,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [InlineData(true)]
             public void Can_Reassign_Items(bool sorted)
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, sorted);
                 var raised = 0;
@@ -804,8 +971,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                     ++raised;
                 };
 
+                // Act
                 target.Items = CreateData(10);
 
+                // Assert
                 target.Rows.Count.Should().Be(10);
                 raised.Should().Be(1);
             }
@@ -815,6 +984,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [InlineData(true)]
             public void Can_Reassign_Items_With_Expanded_Node(bool sorted)
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, sorted);
                 var raised = 0;
@@ -828,8 +998,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                     ++raised;
                 };
 
+                // Act
                 target.Items = CreateData(12);
 
+                // Assert
                 target.Rows.Count.Should().Be(12);
                 raised.Should().Be(1);
             }
@@ -839,6 +1011,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [InlineData(true)]
             public void Reassigning_Items_With_Expanded_Root_Node_Unsubscribes_From_CollectionChanged(bool sorted)
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, sorted);
                 var toRemove = data[1];
@@ -846,8 +1019,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 target.Expand(1);
                 toRemove.Children!.CollectionChangedSubscriberCount().Should().Be(1);
 
+                // Act
                 target.Items = CreateData(12);
 
+                // Assert
                 toRemove.Children!.CollectionChangedSubscriberCount().Should().Be(0);
             }
 
@@ -856,6 +1031,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [InlineData(true)]
             public void Reassigning_Items_With_Expanded_Child_Node_Unsubscribes_From_CollectionChanged(bool sorted)
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, sorted);
                 var toRemove = data[1].Children![1];
@@ -865,14 +1041,17 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 target.Expand(new IndexPath(1, 1));
                 toRemove.Children!.CollectionChangedSubscriberCount().Should().Be(1);
 
+                // Act
                 target.Items = CreateData(12);
 
+                // Assert
                 toRemove.Children!.CollectionChangedSubscriberCount().Should().Be(0);
             }
 
             [AvaloniaFact(Timeout = 10000)]
             public void Selects_Correct_Item_After_Items_Reassigned()
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data, false);
                 var raised = 0;
@@ -890,8 +1069,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                     ++raised;
                 };
 
+                // Act
                 target.RowSelection!.Select(new IndexPath(1, 0));
 
+                // Assert
                 raised.Should().Be(1);
             }
         }

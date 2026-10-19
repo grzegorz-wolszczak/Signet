@@ -12,10 +12,13 @@ public sealed class CssDeclarationScannerTests
     [Fact]
     public void ScanRules_reports_rules_and_declarations_with_offsets_into_the_original_text()
     {
+        // Arrange
         const string css = "/* fonts */\r\n@font-face {\r\n  font-family: \"A;B\";\r\n  src: url(a.ttf)\r\n}\r\np { color: red; }";
 
+        // Act
         IReadOnlyList<CssScannedRule> rules = CssDeclarationScanner.ScanRules(css);
 
+        // Assert
         rules.Should().HaveCount(2);
         CssScannedRule fontFace = rules[0];
         fontFace.IsFontFace.Should().BeTrue();
@@ -33,10 +36,13 @@ public sealed class CssDeclarationScannerTests
     [Fact]
     public void ScanRules_descends_into_grouping_rules()
     {
+        // Arrange
         const string css = "@import url(x.css);\n@media screen { h1 { font-family: serif } @font-face { font-family: X } }\n@page { margin: 0 }";
 
+        // Act
         IReadOnlyList<CssScannedRule> rules = CssDeclarationScanner.ScanRules(css);
 
+        // Assert
         rules.Select(r => r.Prelude).Should().Equal("h1", "@font-face", "@page");
         rules[0].ParentAtRule.Should().Be("@media screen");
         rules[1].ParentAtRule.Should().Be("@media screen");
@@ -46,10 +52,13 @@ public sealed class CssDeclarationScannerTests
     [Fact]
     public void ScanDeclarations_skips_comments_and_keeps_important()
     {
+        // Arrange
         const string style = " /* x */ font-family: 'Foo', serif !important ; color:blue";
 
+        // Act
         IReadOnlyList<CssScannedDeclaration> declarations = CssDeclarationScanner.ScanDeclarations(style, 0, style.Length);
 
+        // Assert
         declarations.Select(d => style[d.ValueStart..d.ValueEnd]).Should().Equal("'Foo', serif !important", "blue");
     }
 }

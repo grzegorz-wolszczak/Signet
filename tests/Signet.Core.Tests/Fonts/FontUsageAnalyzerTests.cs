@@ -29,10 +29,12 @@ public sealed class FontUsageAnalyzerTests
     [Fact]
     public void Bold_text_without_a_bold_face_is_reported()
     {
+        // Act
         FontUsageReport report = Analyze(
             RegularAndItalic + "body { font-family: K, serif }\n.x { font-weight: 700 }",
             "<p>plain</p><p><b>bold</b> and <i>italic</i></p><p class=\"x\"><em>both</em></p>");
 
+        // Assert
         report.ElementsByFamily["k"].Should().Be(5);
         report.Missing.Select(m => (m.Variant, m.Elements)).Should().Equal(("bold", 1), ("bold italic", 1));
         report.Missing[0].BookPath.Should().Be(HtmlPath);
@@ -42,10 +44,12 @@ public sealed class FontUsageAnalyzerTests
     [Fact]
     public void Text_in_another_family_is_not_counted()
     {
+        // Act
         FontUsageReport report = Analyze(
             RegularAndItalic + "body { font-family: K, serif }\nh1 { font: bold 2em Georgia, serif }",
             "<h1>title</h1><p style=\"font-family: serif\">p</p>");
 
+        // Assert
         report.ElementsByFamily.Should().BeEmpty();
         report.Missing.Should().BeEmpty();
     }
@@ -53,10 +57,12 @@ public sealed class FontUsageAnalyzerTests
     [Fact]
     public void Inline_styles_and_important_follow_the_cascade()
     {
+        // Act
         FontUsageReport report = Analyze(
             RegularAndItalic + "p { font-family: K !important; font-weight: bold }\n#a { font-family: Georgia }",
             "<p id=\"a\" style=\"font-weight: normal\">a</p>");
 
+        // Assert
         report.ElementsByFamily["k"].Should().Be(1);
         report.Missing.Should().BeEmpty();
     }
@@ -69,21 +75,29 @@ public sealed class FontUsageAnalyzerTests
     [InlineData(300, "normal", null)]
     public void MissingVariant_follows_the_font_matching(int weight, string style, string? expected)
     {
+        // Arrange
         IReadOnlyList<FontFaceRule> faces = BookFontIndex.Build(new[] { new FontIndexSource(CssPath, RegularAndItalic, true) }).Rules;
 
+        // Act & Assert
         FontUsageAnalyzer.MissingVariant(faces, weight, style).Should().Be(expected);
     }
 
     [Fact]
     public void MissingVariant_accepts_a_variable_weight_range()
     {
+        // Arrange
         IReadOnlyList<FontFaceRule> faces = BookFontIndex.Build(new[]
         {
             new FontIndexSource(CssPath, "@font-face { font-family: V; font-weight: 100 900; src: url(v.ttf) }", true),
         }).Rules;
 
+        // Act & Assert
         FontUsageAnalyzer.MissingVariant(faces, 700, "normal").Should().BeNull();
+
+        // Act & Assert
         FontUsageAnalyzer.MissingVariant(faces, 700, "italic").Should().Be("bold italic");
+
+        // Act & Assert
         FontUsageAnalyzer.MissingVariant(faces, 400, "italic").Should().Be("italic");
     }
 }

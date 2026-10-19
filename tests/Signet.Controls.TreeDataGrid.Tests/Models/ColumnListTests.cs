@@ -11,6 +11,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Models
         [AvaloniaFact(Timeout = 10000)]
         public void Columns_Are_Sized_At_End_Of_Measure()
         {
+            // Arrange
             var target = new ColumnList<Model>
             {
                 new TextColumn<Model, string?>(null, x => x.Name, new GridLength(100, GridUnitType.Pixel)),
@@ -29,8 +30,10 @@ namespace Signet.Controls.TreeDataGrid.Tests.Models
                 }
             }
 
+            // Act
             target.CommitActualWidths();
 
+            // Assert
             target[0].ActualWidth.Should().Be(100);
             target[1].ActualWidth.Should().Be(60);
             target[2].ActualWidth.Should().Be(85);
@@ -40,6 +43,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Models
         [AvaloniaFact(Timeout = 10000)]
         public void Layout_Is_Invalidated_At_End_Of_Measure_If_AutoSized_Column_Changes_Width()
         {
+            // Arrange
             var target = new ColumnList<Model>
             {
                 new TextColumn<Model, string?>(null, x => x.Name, GridLength.Auto),
@@ -64,8 +68,10 @@ namespace Signet.Controls.TreeDataGrid.Tests.Models
             var raised = 0;
             target.LayoutInvalidated += (s, e) => ++raised;
 
+            // Act
             target.CommitActualWidths();
 
+            // Assert
             raised.Should().Be(1);
         }
 

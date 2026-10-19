@@ -35,17 +35,26 @@ public sealed class NotificationsPanelTests
     [AvaloniaFact]
     public void Panel_lists_the_messages_and_marks_warnings_as_read_when_visible()
     {
+        // Arrange
         using StatusBarService statusBar = new();
         NotificationsViewModel vm = new(statusBar);
+
+        // Act
         statusBar.ShowMessage("Book loaded", TimeSpan.FromSeconds(1));
         statusBar.ShowMessage("Delete Unused Stylesheet Selectors cancelled: part0000.html is not well-formed.",
             TimeSpan.FromSeconds(1), NotificationLevel.Warning);
+
+        // Assert
         vm.HasUnreadWarnings.Should().BeTrue();
 
         var window = new Window { Width = 600, Height = 300, Content = new NotificationsView { DataContext = vm } };
+
+        // Act
         Render(window);
 
         string[] texts = window.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text ?? string.Empty).ToArray();
+
+        // Assert
         texts.Should().Contain("Book loaded");
         texts.Should().Contain(t => t.StartsWith("Delete Unused Stylesheet Selectors cancelled", StringComparison.Ordinal));
         vm.HasUnreadWarnings.Should().BeFalse("the list is on screen, so the warning was seen");
@@ -114,12 +123,15 @@ public sealed class NotificationsPanelTests
     [AvaloniaFact]
     public void Tool_tab_shows_the_bell_with_the_unread_count()
     {
+        // Act
         (Window window, NotificationsTool notifications, _) = ShowToolDock(pinNotifications: false);
 
         ToolTabStripItem tab = window.GetVisualDescendants().OfType<ToolTabStripItem>().Single(t => t.DataContext == notifications);
         BellFollowsAttention(window, tab, notifications);
 
         ToolTabStripItem other = window.GetVisualDescendants().OfType<ToolTabStripItem>().Single(t => t.DataContext != notifications);
+
+        // Assert
         other.GetVisualDescendants().OfType<NotificationBell>().Should().OnlyContain(b => !b.IsVisible, "only the Notifications tab has a bell");
         window.Close();
     }
@@ -127,9 +139,12 @@ public sealed class NotificationsPanelTests
     [AvaloniaFact]
     public void Collapsed_tab_shows_the_bell_with_the_unread_count()
     {
+        // Act
         (Window window, NotificationsTool notifications, _) = ShowToolDock(pinNotifications: true);
 
         ToolPinItemControl pin = window.GetVisualDescendants().OfType<ToolPinItemControl>().Single(t => t.DataContext == notifications);
+
+        // Act & Assert
         BellFollowsAttention(window, pin, notifications);
         window.Close();
     }
@@ -137,8 +152,11 @@ public sealed class NotificationsPanelTests
     [AvaloniaFact]
     public void Error_rows_are_drawn_with_the_error_color()
     {
+        // Arrange
         using StatusBarService statusBar = new();
         NotificationsViewModel vm = new(statusBar);
+
+        // Act
         statusBar.ShowMessage("Book loaded", TimeSpan.FromSeconds(1));
         statusBar.ShowMessage("Add Nav to Reading Order is not available for EPUB 2.", TimeSpan.FromSeconds(1), NotificationLevel.Warning);
 
@@ -148,6 +166,8 @@ public sealed class NotificationsPanelTests
         TextBlock[] texts = window.GetVisualDescendants().OfType<TextBlock>().ToArray();
         TextBlock error = texts.Single(t => t.Text?.StartsWith("Add Nav", StringComparison.Ordinal) == true);
         TextBlock info = texts.Single(t => t.Text == "Book loaded");
+
+        // Assert
         ((ISolidColorBrush)error.Foreground!).Color.Should().Be(ErrorColor(window));
         ((ISolidColorBrush)info.Foreground!).Color.Should().NotBe(ErrorColor(window));
         window.Close();

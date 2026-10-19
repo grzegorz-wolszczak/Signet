@@ -22,17 +22,21 @@ public sealed class ShortcutConversionTests
     [InlineData("Mouse:Ctrl+Shift+WheelDown")]
     public void A_shortcut_survives_a_round_trip(string text)
     {
+        // Act & Assert
         ShortcutConversion.TryParse(text, out Shortcut? shortcut).Should().BeTrue();
 
+        // Assert
         shortcut!.PortableText.Should().Be(text);
     }
 
     [Fact]
     public void Two_strokes_and_the_comma_key_are_told_apart()
     {
+        // Act
         ShortcutConversion.TryParse("Ctrl+,", out Shortcut? comma).Should().BeTrue();
         ShortcutConversion.TryParse("Ctrl+K, Ctrl+C", out Shortcut? chord).Should().BeTrue();
 
+        // Assert
         comma.Should().BeOfType<KeyStrokeShortcut>().Which.Second.Should().BeNull();
         comma.Should().BeOfType<KeyStrokeShortcut>().Which.First.Key.Should().Be(Key.OemComma);
         chord.Should().BeOfType<KeyStrokeShortcut>().Which.Second.Should().Be(new KeyGesture(Key.C, KeyModifiers.Control));
@@ -45,15 +49,20 @@ public sealed class ShortcutConversionTests
     [InlineData("Mouse:Hyper+Left")]
     public void Unrecognized_text_is_not_a_shortcut(string text)
     {
+        // Act & Assert
         ShortcutConversion.TryParse(text, out Shortcut? shortcut).Should().BeFalse();
+
+        // Assert
         shortcut.Should().BeNull();
     }
 
     [Fact]
     public void A_list_keeps_the_order_skips_unknown_items_and_duplicates()
     {
+        // Act
         var list = ShortcutConversion.ParseList("Ctrl+S; Mouse:Back; nonsense+?; Ctrl+S");
 
+        // Assert
         ShortcutConversion.ToListString(list).Should().Be("Ctrl+S; Mouse:Back");
         ShortcutConversion.ParseList("F9").Should().ContainSingle("a single key sequence is the older settings format");
     }
@@ -61,8 +70,10 @@ public sealed class ShortcutConversionTests
     [Fact]
     public void Mouse_shortcuts_are_shown_like_in_intellij()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
 
+        // Act & Assert
         new MouseShortcut(MouseShortcutButton.Left, KeyModifiers.Control).DisplayText.Should().Be("Ctrl+" + Strings.Get("Shortcut_MouseClick"));
         new MouseShortcut(MouseShortcutButton.Left, KeyModifiers.Alt, 2).DisplayText.Should().Be("Alt+Double Click");
         new MouseShortcut(MouseShortcutButton.WheelUp, KeyModifiers.Control | KeyModifiers.Shift).DisplayText.Should().Be("Ctrl+Shift+Wheel Up");
@@ -72,6 +83,7 @@ public sealed class ShortcutConversionTests
     [Fact]
     public void A_plain_left_or_right_click_is_reserved()
     {
+        // Act & Assert
         new MouseShortcut(MouseShortcutButton.Left, KeyModifiers.None).IsReserved.Should().BeTrue();
         new MouseShortcut(MouseShortcutButton.Right, KeyModifiers.None).IsReserved.Should().BeTrue();
         new MouseShortcut(MouseShortcutButton.Left, KeyModifiers.None, 2).IsReserved.Should().BeFalse();

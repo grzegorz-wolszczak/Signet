@@ -31,11 +31,14 @@ public sealed class CssSelectorUsageAnalyzerTests
     [Fact]
     public void GetUnusedSelectors_FlagsSelectorNotMatchedByAnyLinkedXhtml()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(temp, tree => AppendCss(tree, ".ghost { color: red }"));
 
+        // Act
         var unused = CssSelectorUsageAnalyzer.GetUnusedSelectors(book);
 
+        // Assert
         unused.Select(u => u.SelectorText).Should().Equal(".ghost");
         unused.Single().CssBookPath.Should().EndWith("style.css");
     }
@@ -43,21 +46,26 @@ public sealed class CssSelectorUsageAnalyzerTests
     [Fact]
     public void GetUnusedSelectors_DoesNotFlagSelectorsActuallyUsed()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(temp, _ => { });
 
         // The base style.css has only `body` and `h1` — both used in chapter1.xhtml.
+        // Act & Assert
         CssSelectorUsageAnalyzer.GetUnusedSelectors(book).Should().BeEmpty();
     }
 
     [Fact]
     public void GetSelectorUsage_ReportsWhereEachSelectorIsUsed()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(temp, tree => AppendCss(tree, ".ghost { color: red }"));
 
+        // Act
         var usage = CssSelectorUsageAnalyzer.GetSelectorUsage(book);
 
+        // Assert
         usage.Single(u => u.SelectorText == "body").UsedInHtmlBookPath.Should().EndWith("chapter1.xhtml");
         usage.Single(u => u.SelectorText == "body").IsUsed.Should().BeTrue();
         usage.Single(u => u.SelectorText == ".ghost").IsUsed.Should().BeFalse();
@@ -66,6 +74,7 @@ public sealed class CssSelectorUsageAnalyzerTests
     [Fact]
     public void GetUnusedSelectors_KeepsMediaOverlayActiveClassSelectors()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(temp, tree =>
         {
@@ -80,14 +89,17 @@ public sealed class CssSelectorUsageAnalyzerTests
             File.WriteAllText(opfPath, opf);
         });
 
+        // Act
         var unused = CssSelectorUsageAnalyzer.GetUnusedSelectors(book);
 
+        // Assert
         unused.Select(u => u.SelectorText).Should().Equal(".ghost");
     }
 
     [Fact]
     public void GetUnusedSelectors_ConsidersInternalStyleBlocks()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(temp, tree =>
         {
@@ -101,8 +113,10 @@ public sealed class CssSelectorUsageAnalyzerTests
                 StringComparison.Ordinal));
         });
 
+        // Act
         var unused = CssSelectorUsageAnalyzer.GetUnusedSelectors(book);
 
+        // Assert
         unused.Select(u => u.SelectorText).Should().Equal(".inline-ghost");
         unused.Single().CssBookPath.Should().EndWith("chapter1.xhtml");
     }
@@ -110,11 +124,14 @@ public sealed class CssSelectorUsageAnalyzerTests
     [Fact]
     public void GetSelectorUsage_TreatsUnparseableSelectorAsUsed()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(temp, tree => AppendCss(tree, "!!! broken ??? { color: red }"));
 
+        // Act
         var usage = CssSelectorUsageAnalyzer.GetSelectorUsage(book);
 
+        // Assert
         usage.Where(u => !u.SelectorText.StartsWith('.') && u.SelectorText is not ("body" or "h1"))
             .Should().OnlyContain(u => u.IsUsed);
     }
@@ -122,10 +139,12 @@ public sealed class CssSelectorUsageAnalyzerTests
     [Fact]
     public void GetUnusedSelectors_MediaCorpus_HasNoUnusedSelectors()
     {
+        // Arrange
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         using Book book = new ImportEpub(epub).GetBook();
 
+        // Act & Assert
         CssSelectorUsageAnalyzer.GetUnusedSelectors(book).Should().BeEmpty();
     }
 }

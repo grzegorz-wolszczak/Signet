@@ -21,6 +21,7 @@ public sealed class OpfModelRenameListTests
     [Fact]
     public void RenameResourceList_RenamesEachResourceAndUpdatesCrossReferences()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
         using OpfModel model = new(book);
@@ -30,8 +31,11 @@ public sealed class OpfModelRenameListTests
 
         Resource[] resources = { css, image };
         string[] newNames = { "style-new.css", "figure-new.png" };
+
+        // Act
         bool ok = model.RenameResourceList(resources, newNames, out IReadOnlyList<string> notRenamed, out IReadOnlyList<string> wellFormedErrors);
 
+        // Assert
         ok.Should().BeTrue();
         notRenamed.Should().BeEmpty();
         wellFormedErrors.Should().BeEmpty();
@@ -45,6 +49,7 @@ public sealed class OpfModelRenameListTests
     [Fact]
     public void RenameResourceList_DuplicateProposedName_SkipsThatEntryButRenamesOthers()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
         using OpfModel model = new(book);
@@ -53,8 +58,11 @@ public sealed class OpfModelRenameListTests
 
         Resource[] resources = { css, image };
         string[] newNames = { "style-new.css", "cover.png" }; // "cover.png" already used by another image in the same folder
+
+        // Act
         bool ok = model.RenameResourceList(resources, newNames, out IReadOnlyList<string> notRenamed, out _);
 
+        // Assert
         ok.Should().BeFalse();
         notRenamed.Should().ContainSingle(p => p.EndsWith("figure.png"));
         css.Filename.Should().Be("style-new.css");
@@ -64,6 +72,7 @@ public sealed class OpfModelRenameListTests
     [Fact]
     public void RenameResourceList_ForbiddenCharacterInOneEntry_SkipsOnlyThatEntry()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
         using OpfModel model = new(book);
@@ -72,8 +81,11 @@ public sealed class OpfModelRenameListTests
 
         Resource[] resources = { css, image };
         string[] newNames = { "bad:name.css", "figure-new.png" };
+
+        // Act
         bool ok = model.RenameResourceList(resources, newNames, out IReadOnlyList<string> notRenamed, out _);
 
+        // Assert
         ok.Should().BeFalse();
         notRenamed.Should().ContainSingle(p => p.EndsWith("style.css"));
         css.Filename.Should().Be("style.css");
@@ -83,6 +95,7 @@ public sealed class OpfModelRenameListTests
     [Fact]
     public void RenameResourceList_SameNameForAll_IsNoOpAndReportsSuccess()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
         using OpfModel model = new(book);
@@ -90,8 +103,10 @@ public sealed class OpfModelRenameListTests
         Resource[] resources = { css };
         string[] newNames = { "style.css" };
 
+        // Act
         bool ok = model.RenameResourceList(resources, newNames, out IReadOnlyList<string> notRenamed, out IReadOnlyList<string> wellFormedErrors);
 
+        // Assert
         ok.Should().BeTrue();
         notRenamed.Should().BeEmpty();
         wellFormedErrors.Should().BeEmpty();

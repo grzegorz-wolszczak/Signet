@@ -106,14 +106,22 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Selected_page_index_selects_the_page_and_ignores_a_page_that_does_not_exist()
     {
+        // Arrange
         PreferencesWindow window = BuildWindow();
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
 
         window.SelectedPageIndex = 2;
+
+        // Assert
         window.SelectedPageIndex.Should().Be(2);
 
+        // Act
         window.SelectedPageIndex = 999;
+
+        // Assert
         window.SelectedPageIndex.Should().Be(0);
         window.Close();
     }
@@ -125,8 +133,11 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Edition_page_tab_enables_its_options_with_the_check_box()
     {
+        // Arrange
         PreferencesWindow window = BuildWindow();
         var vm = (PreferencesViewModel)window.DataContext!;
+
+        // Act
         window.Show();
         TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
         SelectTab(tabs, "PreferencesWindow_EditionPage");
@@ -134,14 +145,18 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         window.CaptureRenderedFrame();
 
         Control Find(string name) => window.GetVisualDescendants().OfType<Control>().Single(c => c.Name == name);
+
+        // Assert
         Find("RemoveEditionPageButton").IsEffectivelyEnabled.Should().BeFalse("no book is open");
         Find("EditionPageOptions").IsEffectivelyEnabled.Should().BeFalse("the edition page is off by default");
 
+        // Act
         ((CheckBox)Find("EditionPageEnabledBox")).IsChecked = true;
         vm.AddEditionPageFieldCommand.Execute(null);
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
+        // Assert
         vm.EditionPageEnabled.Should().BeTrue();
         Find("EditionPageOptions").IsEffectivelyEnabled.Should().BeTrue();
         Find("EditionPageFieldList").GetVisualDescendants().OfType<TextBox>().Should().HaveCount(2, "a new row has a key and a value box");
@@ -164,15 +179,20 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Save_writes_the_changes_and_keeps_the_window_open_and_Close_closes_it()
     {
+        // Arrange
         PreferencesWindow window = BuildWindow(out SettingsStore settings);
         var vm = (PreferencesViewModel)window.DataContext!;
         bool closed = false;
         window.Closed += (_, _) => closed = true;
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         bool before = settings.SpellCheck;
         Button save = window.FindControl<Button>("SaveButton")!;
         Button close = window.FindControl<Button>("CloseButton")!;
+
+        // Assert
         window.FindControl<Button>("ApplyButton").Should().BeNull();
         window.FindControl<Button>("CancelButton").Should().BeNull("the button is Close now");
         close.Content.Should().Be(Strings.Get("Common_Close"));
@@ -180,19 +200,27 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         close.Classes.Should().Contain("outline");
         save.IsEffectivelyEnabled.Should().BeFalse("nothing has changed yet");
 
+        // Act
         vm.SpellCheckEnabled = !before;
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         save.IsEffectivelyEnabled.Should().BeTrue();
+
+        // Act
         save.Command!.Execute(null);
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         settings.SpellCheck.Should().Be(!before);
         closed.Should().BeFalse("Save keeps the window open");
         save.IsEffectivelyEnabled.Should().BeFalse("everything is saved");
 
+        // Act
         close.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         closed.Should().BeTrue();
         window.OwnedWindows.Should().BeEmpty("nothing is unsaved: Close does not ask");
     }
@@ -201,10 +229,13 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Close_with_unsaved_changes_asks_first()
     {
+        // Arrange
         PreferencesWindow window = BuildWindow(out SettingsStore settings);
         var vm = (PreferencesViewModel)window.DataContext!;
         bool closed = false;
         window.Closed += (_, _) => closed = true;
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         bool before = settings.SpellCheck;
@@ -214,9 +245,12 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         window.FindControl<Button>("CloseButton")!.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         closed.Should().BeFalse("the window waits for the answer");
         window.OwnedWindows.Should().ContainSingle("the question about the unsaved changes");
         settings.SpellCheck.Should().Be(before, "nothing was saved");
+
+        // Act
         window.OwnedWindows[0].Close();
         window.Close();
     }
@@ -228,7 +262,10 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void A_disabled_fonts_page_can_still_be_scrolled()
     {
+        // Arrange
         PreferencesWindow window = BuildWindow();
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         ShowPage(window, "AppearanceGeneralPage");
@@ -238,12 +275,16 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         page.IsContentEnabled = false;
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         page.FindControl<StackPanel>("Settings")!.IsEffectivelyEnabled.Should().BeFalse("the settings are switched off");
         ScrollViewer scroll = page.GetVisualDescendants().OfType<ScrollViewer>().First();
         scroll.IsEffectivelyEnabled.Should().BeTrue("the scroll viewer keeps working");
 
+        // Act
         page.IsContentEnabled = true;
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         page.FindControl<StackPanel>("Settings")!.IsEffectivelyEnabled.Should().BeTrue();
         window.Close();
     }
@@ -252,8 +293,11 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_preview_of_a_fonts_page_is_resized_with_the_splitter()
     {
+        // Arrange
         PreferencesWindow window = BuildWindow();
         window.Width = 1500; // room for both columns to grow
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         ShowFontsTab(window, "TableOfContents");
@@ -269,15 +313,19 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
+        // Assert
         grid.ColumnDefinitions[2].ActualWidth.Should().BeGreaterThan(before + 60, "dragging the splitter to the left widens the preview");
 
         Point moved = splitter.TranslatePoint(new Point(splitter.Bounds.Width / 2, splitter.Bounds.Height / 2), window)!.Value;
+
+        // Act
         window.MouseDown(moved, MouseButton.Left);
         window.MouseMove(moved + new Vector(400, 0));
         window.MouseUp(moved + new Vector(400, 0), MouseButton.Left);
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
+        // Assert
         grid.ColumnDefinitions[2].ActualWidth.Should().BeGreaterThanOrEqualTo(160, "the preview keeps a minimum width");
         grid.ColumnDefinitions[2].ActualWidth.Should().BeLessThan(before + 60, "dragging to the right narrows it again");
         window.Close();
@@ -300,9 +348,13 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_settings_of_a_page_take_the_width_of_their_content_and_a_splitter_follows()
     {
+        // Arrange
         PreferencesWindow window = BuildWindow();
+
+        // Act
         PageWidthHost host = ShowLanguagePage(window);
 
+        // Assert
         host.SettingsWidth.Should().BeInRange(PageWidthHost.MinSettingsWidth, PageWidthHost.DefaultMaxWidth);
         host.SettingsWidth.Should().BeLessThan(host.Bounds.Width / 2, "the page is wide and the content is not");
         host.GetVisualDescendants().OfType<GridSplitter>().Should().ContainSingle(s => s.IsEffectivelyVisible && s.Bounds.Width > 4);
@@ -314,7 +366,10 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Dragging_the_splitter_sets_the_width_and_the_window_remembers_it()
     {
+        // Arrange
         PreferencesWindow window = BuildWindow();
+
+        // Act
         PageWidthHost host = ShowLanguagePage(window);
         GridSplitter splitter = host.GetVisualDescendants().OfType<GridSplitter>().Single();
         double before = host.SettingsWidth;
@@ -326,20 +381,31 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
+        // Assert
         host.SettingsWidth.Should().BeApproximately(before + 300, 2);
         host.UserWidth.Should().BeApproximately(before + 300, 2);
         window.SplitterSizes[host.Name + ".settingsWidth"].Should().BeCloseTo((int)(before + 300), 2);
 
+        // Act
         PreferencesWindow reopened = BuildWindow();
         reopened.SplitterSizes = window.SplitterSizes;
         PageWidthHost again = ShowLanguagePage(reopened);
+
+        // Assert
         again.SettingsWidth.Should().BeApproximately(before + 300, 2, "the width is remembered between openings");
 
+        // Act
         again.UserWidth = 5000;
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         again.SettingsWidth.Should().BeLessThanOrEqualTo(again.Bounds.Width, "the splitter cannot go past the right edge of the page");
+
+        // Act
         again.UserWidth = double.NaN;
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         again.SettingsWidth.Should().BeApproximately(before, 2, "back to the default width");
         window.Close();
         reopened.Close();
@@ -349,15 +415,19 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Escape_without_changes_closes_the_window()
     {
+        // Arrange
         PreferencesWindow window = BuildWindow();
         bool closed = false;
         window.Closed += (_, _) => closed = true;
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
 
         window.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         closed.Should().BeTrue();
     }
 
@@ -368,10 +438,13 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Closing_with_unsaved_changes_asks_what_to_do_with_them()
     {
+        // Arrange
         PreferencesWindow window = BuildWindow(out SettingsStore settings);
         var vm = (PreferencesViewModel)window.DataContext!;
         bool closed = false;
         window.Closed += (_, _) => closed = true;
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         bool before = settings.SpellCheck;
@@ -380,13 +453,18 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         window.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
         Dispatcher.UIThread.RunJobs();
         Answer(window, "PreferencesWindow_UnsavedBack");
+
+        // Assert
         closed.Should().BeFalse();
         vm.HasChanges.Should().BeTrue();
 
         window.Close();
+
+        // Act
         Dispatcher.UIThread.RunJobs();
         Answer(window, "PreferencesWindow_UnsavedSave");
 
+        // Assert
         closed.Should().BeTrue();
         settings.SpellCheck.Should().Be(!before, "Save and Close saved the change");
     }
@@ -395,10 +473,13 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Discarding_unsaved_changes_closes_the_window_without_saving()
     {
+        // Arrange
         PreferencesWindow window = BuildWindow(out SettingsStore settings);
         var vm = (PreferencesViewModel)window.DataContext!;
         bool closed = false;
         window.Closed += (_, _) => closed = true;
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         bool before = settings.SpellCheck;
@@ -408,6 +489,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         Dispatcher.UIThread.RunJobs();
         Answer(window, "PreferencesWindow_UnsavedDiscard");
 
+        // Assert
         closed.Should().BeTrue();
         settings.SpellCheck.Should().Be(before);
     }
@@ -419,12 +501,16 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_sections_are_a_tree_that_selects_the_page_and_shows_its_path()
     {
+        // Arrange
         PreferencesWindow window = BuildWindow();
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
         TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
 
+        // Assert
         window.Sections.Roots.Select(n => n.Title).Should().Equal(
             tabs.Items.OfType<TabItem>().Where(t => PreferencesPage.GetParent(t) is null).Select(t => (string)t.Header!));
         window.Sections.Roots.Should().OnlyContain(n => n.IsTopLevel);
@@ -434,9 +520,12 @@ public sealed class PreferencesWindowRenderTests : IDisposable
             .Should().NotBeEmpty().And.OnlyContain(t => t.FontWeight == FontWeight.Bold);
 
         PreferencesSectionNode spelling = window.Sections.Roots.Single(n => n.Title == Strings.Get("PreferencesWindow_Spellcheck"));
+
+        // Act
         window.Sections.Selected = spelling;
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         tabs.SelectedIndex.Should().Be(spelling.PageIndex);
         window.FindControl<TextBlock>("Breadcrumb")!.Text.Should().Be(spelling.Title);
         window.Close();
@@ -458,7 +547,10 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_parts_are_sections_of_appearance_with_a_tab_bar()
     {
+        // Arrange
         PreferencesWindow window = BuildWindow();
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         string appearanceAndBehavior = Strings.Get("PreferencesWindow_AppearanceAndBehavior");
@@ -468,6 +560,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         string general = Strings.Get("PreferencesWindow_General");
         PreferencesSectionNode root = window.Sections.Roots.Single(n => n.Title == appearanceAndBehavior);
 
+        // Assert
         root.Children.Select(n => n.Title).Should().Equal(
             appearance, codeEditor, Strings.Get("PreferencesWindow_Preview"), Strings.Get("PreferencesWindow_FindUsagesWindow"),
             Strings.Get("PreferencesWindow_Footnotes"));
@@ -484,6 +577,8 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         {
             string pageName = (part == "General" ? "AppearanceGeneral" : part + "Appearance") + "Page";
             string tabsName = (part == "General" ? "AppearanceGeneral" : part + "Appearance") + "Tabs";
+
+            // Act
             ShowPage(window, pageName);
             string[] headers = window.FindControl<TabControl>(tabsName)!.Items.OfType<TabItem>().Select(t => (string)t.Header!).ToArray();
             string[] expected = part == "General"
@@ -493,12 +588,18 @@ public sealed class PreferencesWindowRenderTests : IDisposable
                     : part is "BookBrowser" or "StartScreen" or "CodeEditor"
                         ? new[] { general, fonts } // the general settings, then the fonts
                         : new[] { fonts };
+
+            // Assert
             headers.Should().Equal(expected, "the tab bar of {0}", part);
         }
 
         PreferencesSectionNode codeEditorLook = look.Children.Single(n => n.Title == codeEditor);
+
+        // Act
         window.Sections.Selected = codeEditorLook;
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         window.FindControl<TextBlock>("Breadcrumb")!.Text.Should().Be(string.Join(" › ", appearanceAndBehavior, appearance, codeEditor));
         window.Close();
     }
@@ -517,13 +618,17 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Appearance_page_lists_the_themes_and_the_color_schemes_with_their_actions()
     {
+        // Arrange
         PreferencesWindow window = BuildWindow();
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
 
         ShowPage(window, "AppearanceGeneralPage");
 
+        // Assert
         window.Sections.Selected!.Path.Should().Be(
             Strings.Get("PreferencesWindow_AppearanceAndBehavior") + " › " + Strings.Get("PreferencesWindow_Appearance"));
         ThemeSelectorView theme = window.FindControl<ThemeSelectorView>("ThemeSelector")!;
@@ -542,9 +647,11 @@ public sealed class PreferencesWindowRenderTests : IDisposable
 
         vm.Theme.RenameCommand.CanExecute(null).Should().BeFalse("a bundled theme keeps its name");
 
+        // Act
         theme.List.SelectedItem = vm.Theme.Themes.Single(t => t.Id == Signet.Core.Themes.ThemeStore.DarkId);
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         vm.HasChanges.Should().BeTrue();
         ((VariantOption)window.FindControl<ComboBox>("VariantBox")!.SelectedItem!).Value.Should().Be(Signet.Core.Themes.InterfaceVariant.Dark);
         ((ThemeOption)scheme.List.SelectedItem!).Id.Should().Be(Signet.Core.Themes.ThemeStore.DarkId, "a dark theme brings the dark scheme");
@@ -558,13 +665,17 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Color_scheme_page_lists_the_color_schemes_with_their_actions()
     {
+        // Arrange
         PreferencesWindow window = BuildWindow();
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
 
         ShowPage(window, "ColorSchemePage");
 
+        // Assert
         window.Sections.Selected!.Path.Should().Be(string.Join(" › ",
             Strings.Get("PreferencesWindow_AppearanceAndBehavior"), Strings.Get("PreferencesWindow_CodeEditor"),
             Strings.Get("PreferencesWindow_ColorScheme")));
@@ -573,9 +684,11 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         selector.List.ItemCount.Should().Be(2);
         SchemeActionItems.Should().OnlyContain(name => selector.FindControl<MenuItem>(name) != null);
 
+        // Act
         selector.List.SelectedItem = vm.ColorScheme.Themes.Single(t => t.Id == Signet.Core.Themes.ThemeStore.DarkId);
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         vm.HasChanges.Should().BeTrue();
         ((ThemeOption)window.FindControl<ThemeSelectorView>("SchemeSelector")!.List.SelectedItem!).Id
             .Should().Be(Signet.Core.Themes.ThemeStore.DarkId, "the Appearance page shows the same scheme");
@@ -590,8 +703,11 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void A_color_scheme_page_shows_its_keys_and_links_to_the_base_of_a_key()
     {
+        // Arrange
         PreferencesWindow window = BuildWindow();
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         ThemeKeysPageViewModel xhtml = vm.ColorScheme.PageFor(Signet.Core.Themes.ThemePage.Xhtml);
@@ -599,6 +715,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
 
         ShowPage(window, "ThemeXhtmlPage");
 
+        // Assert
         window.Sections.Selected!.Path.Should().Be(string.Join(" › ",
             Strings.Get("PreferencesWindow_AppearanceAndBehavior"), Strings.Get("PreferencesWindow_CodeEditor"),
             Strings.Get("PreferencesWindow_ColorScheme"), Strings.Get("PreferencesWindow_ThemeXhtml")));
@@ -610,9 +727,11 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         view.FindControl<StackPanel>("ColorPanel")!.IsVisible.Should().BeFalse();
         view.FindControl<CheckBox>("InheritBox")!.IsChecked.Should().BeFalse("Signet Light sets nothing, so xhtml.css keeps its default");
 
+        // Act
         view.FindControl<HyperlinkButton>("BaseLink")!.Command!.Execute(null);
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         window.Sections.Selected!.Title.Should().Be(Strings.Get("PreferencesWindow_ThemeCss"));
         vm.ColorScheme.PageFor(Signet.Core.Themes.ThemePage.Css).Key.Should().Be(Signet.Core.Themes.ThemeKeys.CssValue);
         window.Close();
@@ -625,34 +744,44 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_preview_of_a_color_scheme_page_follows_the_edits_and_a_click_selects_the_key()
     {
+        // Arrange
         PreferencesWindow window = BuildWindow();
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
         window.Width = 1100;
         window.Height = 860;
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         ShowPage(window, "ThemeXhtmlPage");
         ThemeKeysPageViewModel xhtml = vm.ColorScheme.PageFor(ThemePage.Xhtml);
         ThemePreviewEditor preview = window.FindControl<ThemeKeysView>("ThemeXhtmlView")!
             .GetVisualDescendants().OfType<ThemePreviewEditor>().Single();
+
+        // Assert
         preview.Document.Text.Should().Be(ThemeSamples.Xhtml.Text);
         int head = preview.Document.Text.IndexOf("<head>", StringComparison.Ordinal) + 2;
 
+        // Act
         xhtml.SelectKey(ThemeKeys.XhtmlTag);
         xhtml.Foreground = "#123456";
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
+        // Assert
         ForegroundAt(preview, head).Should().Be(Color.Parse("#123456"));
 
         AvaloniaEdit.Rendering.TextView view = preview.TextArea.TextView;
         AvaloniaEdit.TextViewPosition position = new(preview.Document.GetLocation(preview.Document.Text.IndexOf("xmlns:epub", StringComparison.Ordinal) + 1));
         Avalonia.Point point = view.GetVisualPosition(position, AvaloniaEdit.Rendering.VisualYPosition.LineMiddle) - view.ScrollOffset;
         Avalonia.Point at = Avalonia.VisualExtensions.TranslatePoint(view, point, window)!.Value;
+
+        // Act
         window.MouseDown(at, MouseButton.Left);
         window.MouseUp(at, MouseButton.Left);
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         xhtml.Key!.Id.Should().Be(ThemeKeys.XhtmlNamespacePrefix.Id);
         window.Close();
     }
@@ -664,10 +793,13 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_number_of_the_current_line_in_the_preview_has_a_key_of_its_own()
     {
+        // Arrange
         PreferencesWindow window = BuildWindow();
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
         window.Width = 1100;
         window.Height = 860;
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         ShowPage(window, "ThemeGeneralPage");
@@ -689,17 +821,24 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         }
 
         ClickNumberOf(caretLine);
+
+        // Assert
         general.Key!.Id.Should().Be(ThemeKeys.EditorCurrentLineNumber.Id);
 
+        // Act
         ClickNumberOf(caretLine == 1 ? 2 : 1);
+
+        // Assert
         general.Key!.Id.Should().Be(ThemeKeys.EditorLineNumbers.Id);
 
+        // Act
         general.SelectKey(ThemeKeys.EditorCurrentLineNumber);
         general.Foreground = "#112233";
         general.Bold = true;
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
+        // Assert
         margin.CurrentLineOverride.Should().Be(caretLine);
         ((ISolidColorBrush)margin.CurrentForeground!).Color.Should().Be(Color.Parse("#112233"));
         margin.CurrentBold.Should().BeTrue();
@@ -714,10 +853,13 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_Book_Browser_page_has_one_preview_panel_for_both_its_tabs_that_follows_the_settings()
     {
+        // Arrange
         PreferencesWindow window = BuildWindow();
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
         window.Width = 1100;
         window.Height = 860;
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         ShowPage(window, "BookBrowserAppearancePage");
@@ -725,16 +867,19 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         Border pane = window.FindControl<Border>("BookBrowserPreviewPane")!;
         BookBrowserView preview = window.FindControl<BookBrowserView>("BookBrowserPreview")!;
 
+        // Assert
         pane.IsEffectivelyVisible.Should().BeTrue("the General tab is selected");
         pane.GetVisualDescendants().OfType<TextBlock>().Should().Contain(t => t.Text == Strings.Get("PreferencesWindow_Preview"));
         preview.DataContext.Should().BeSameAs(vm.BookBrowserSample);
         pane.Bounds.Left.Should().BeGreaterThan(tabs.Bounds.Left + 300, "the panel is at the right of the tabs");
 
+        // Act
         tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(t => Equals(t.Header, Strings.Get("PreferencesWindow_Fonts")));
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         pane.IsEffectivelyVisible.Should().BeTrue("the same panel stays while the Fonts tab is selected");
         FontsPageView fonts = window.FindControl<FontsPageView>("BookBrowserFontsView")!;
         FontSettingView[] rows = fonts.GetVisualDescendants().OfType<FontSettingView>().ToArray();
@@ -746,6 +891,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         TextBlock tip = window.FindControl<TooltipSample>("BookBrowserSampleTip")!.Text;
         tip.Text.Should().Be(Strings.Get("FontPreview_TooltipBookBrowser"));
 
+        // Act
         vm.BookBrowserItemsFontSize = 23;
         FontSettingViewModel tooltipFont = vm.BookBrowserFonts.Fonts.Single(f => f.Key == "Tooltip" + Signet.Core.Misc.TooltipArea.BookBrowser);
         tooltipFont.InheritFromParent = false;
@@ -754,6 +900,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         preview.GetVisualDescendants().OfType<TextBlock>().First(t => t.Text == "Chapter01.xhtml").FontSize.Should().Be(23, "the preview follows the font");
         tip.FontSize.Should().Be(18, "and so does the sample of a tooltip");
         _ = chapter;
@@ -767,10 +914,13 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_Start_Screen_page_has_one_preview_panel_with_the_list_of_recent_files_that_follows_the_settings()
     {
+        // Arrange
         PreferencesWindow window = BuildWindow();
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
         window.Width = 1100;
         window.Height = 860;
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         ShowPage(window, "StartScreenAppearancePage");
@@ -778,24 +928,31 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         Border pane = window.FindControl<Border>("StartScreenPreviewPane")!;
         StartScreenView preview = window.FindControl<StartScreenView>("StartScreenPreview")!;
 
+        // Assert
         pane.IsEffectivelyVisible.Should().BeTrue("the General tab is selected");
         preview.DataContext.Should().BeSameAs(vm.StartScreenSample);
         window.FindControl<NumericUpDown>("StartScreenRecentFilesLimitBox")!.Value.Should().Be(vm.RecentFilesLimit);
+
+        // Act
         window.FindControl<NumericUpDown>("StartScreenIndentBox")!.Value = 30;
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         vm.StartScreenIndent.Should().Be(30);
         Button[] entries = preview.GetVisualDescendants().OfType<Button>().Where(b => b.Classes.Contains("recentFile")).ToArray();
         entries.Should().HaveCount(vm.RecentFilesLimit);
         entries.Should().OnlyContain(b => b.Padding.Left == 30, "the indentation of the entries follows the setting");
         entries.Where(b => b.Classes.Contains("highlighted")).Should().ContainSingle();
 
+        // Act
         window.FindControl<NumericUpDown>("StartScreenRecentFilesLimitBox")!.Value = 3;
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         preview.GetVisualDescendants().OfType<Button>().Count(b => b.Classes.Contains("recentFile")).Should().Be(3);
 
         tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(t => Equals(t.Header, Strings.Get("PreferencesWindow_Fonts")));
@@ -834,10 +991,13 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_Code_Editor_page_has_one_preview_panel_with_the_tabs_and_the_editor_that_follows_the_settings()
     {
+        // Arrange
         PreferencesWindow window = BuildWindow();
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
         window.Width = 1200;
         window.Height = 900;
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         ShowPage(window, "CodeEditorAppearancePage");
@@ -846,33 +1006,45 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         Signet.App.Views.Tabs.CodeTabView preview = window.FindControl<Signet.App.Views.Tabs.CodeTabView>("CodeEditorPreview")!;
         DocumentTabsSample strip = window.FindControl<DocumentTabsSample>("DocumentTabsPreview")!;
 
+        // Assert
         pane.IsEffectivelyVisible.Should().BeTrue("the General tab is selected");
         preview.DataContext.Should().BeSameAs(vm.CodeEditorSample);
         window.FindControl<CheckBox>("ExtendedHighlightingBox")!.IsEffectivelyVisible.Should().BeTrue("the look of the editor is on the General tab");
         window.FindControl<CheckBox>("MultilineTabsBox")!.IsEffectivelyVisible.Should().BeTrue();
         AvaloniaEdit.TextEditor editor = preview.GetVisualDescendants().OfType<AvaloniaEdit.TextEditor>().Single();
         editor.IsReadOnly.Should().BeTrue("the sample is not edited");
+
+        // Act
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         editor.Document.GetText(editor.Document.GetLineByOffset(editor.CaretOffset)).Should().Contain("class=\"lead\"", "the caret rests in a tag");
 
         strip.GetVisualDescendants().OfType<WrapPanel>().Should().BeEmpty("the tabs are in one row that scrolls");
+
+        // Act
         window.FindControl<CheckBox>("MultilineTabsBox")!.IsChecked = true;
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
+
+        // Assert
         strip.GetVisualDescendants().OfType<WrapPanel>().Should().NotBeEmpty("the tabs that do not fit go to several rows now");
 
+        // Act
         tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(t => Equals(t.Header, Strings.Get("PreferencesWindow_Fonts")));
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         pane.IsEffectivelyVisible.Should().BeTrue("the same panel stays while the Fonts tab is selected");
         FontsPageView fonts = window.FindControl<FontsPageView>("CodeEditorFontsView")!;
         FontSettingView[] rows = fonts.GetVisualDescendants().OfType<FontSettingView>().ToArray();
         rows.Select(r => r.Name).Should().Equal("FontCodeEditorText", "FontLineNumbers", "FontOpenTagHint", "FontDocumentTabs");
         rows.Should().OnlyContain(r => !r.FindControl<Border>("PreviewFrame")!.IsVisible && r.Bounds.Width > fonts.Bounds.Width - 60);
 
+        // Act
         vm.CodeEditor.FontSize = 19;
         vm.OpenTagHintFontSize = 15;
         vm.DocumentTabFontSize = 17;
@@ -880,6 +1052,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         editor.FontSize.Should().Be(19, "the editor follows the font");
         window.FindControl<TooltipSample>("CodeEditorSampleHint")!.Text.FontSize.Should().Be(15);
         strip.GetVisualDescendants().OfType<TextBlock>().Should().OnlyContain(t => t.FontSize == 17, "the tabs follow their font");
@@ -893,10 +1066,13 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_Find_Usages_page_has_one_preview_panel_under_the_settings_that_follows_them()
     {
+        // Arrange
         PreferencesWindow window = BuildWindow();
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
         window.Width = 1100;
         window.Height = 900;
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         ShowPage(window, "FindUsagesPage");
@@ -905,6 +1081,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         FindUsagesView preview = window.FindControl<FindUsagesView>("FindUsagesPreview")!;
         window.CaptureRenderedFrame();
 
+        // Assert
         pane.IsEffectivelyVisible.Should().BeTrue("the General tab is selected");
         preview.DataContext.Should().BeSameAs(vm.FindUsagesSample);
         pane.Bounds.Top.Should().BeGreaterThanOrEqualTo(tabs.Bounds.Bottom, "the panel is under the tabs, as the window is wide");
@@ -912,33 +1089,44 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         TreeDataGrid grid = preview.GetVisualDescendants().OfType<TreeDataGrid>().Single();
         grid.GetVisualDescendants().OfType<TreeDataGridRow>().Should().NotBeEmpty("the sample usages are shown");
 
+        // Act
         window.FindControl<NumericUpDown>("FindUsagesRowSpacingBox")!.Value = 6;
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
+
+        // Assert
         grid.GetVisualDescendants().OfType<TreeDataGridRow>().Should().OnlyContain(r => r.Margin.Bottom == 6, "the row spacing follows the setting");
 
+        // Act
         tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(t => Equals(t.Header, Strings.Get("PreferencesWindow_Fonts")));
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         pane.IsEffectivelyVisible.Should().BeTrue("the same panel stays while the Fonts tab is selected");
         FontsPageView fonts = window.FindControl<FontsPageView>("FindUsagesFontsView")!;
         FontSettingView[] rows = fonts.GetVisualDescendants().OfType<FontSettingView>().ToArray();
         rows.Should().HaveCount(3);
         rows.Should().OnlyContain(r => !r.FindControl<Border>("PreviewFrame")!.IsVisible && r.Bounds.Width > fonts.Bounds.Width - 60);
 
+        // Act
         vm.FindUsagesCellsFontSize = 18;
         vm.FindUsagesHeaderFontSize = 15;
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         grid.GetVisualDescendants().OfType<TreeDataGridTextCell>().Should().Contain(c => c.FontSize == 18, "the cells follow their font");
         grid.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().Should().OnlyContain(h => h.FontSize == 15, "and so do the headers");
 
         window.SplitterSizes.Should().ContainKey("FindUsagesPreviewHost.paneHeight");
+
+        // Act
         window.SplitterSizes = new Dictionary<string, int> { ["FindUsagesPreviewHost.paneHeight"] = 310 };
+
+        // Assert
         window.SplitterSizes["FindUsagesPreviewHost.paneHeight"].Should().Be(310);
         window.Close();
     }
@@ -984,20 +1172,25 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_Find_and_Replace_page_has_a_preview_panel_with_the_real_panel_and_the_tooltip_sample()
     {
+        // Act
         (PreferencesWindow window, PreferencesViewModel vm, Border pane, TooltipSample tip) =
             ShowPreviewPage("FindReplace", "FindReplacePreviewHost", "FindReplacePreviewPane", "FindReplaceSampleTip", bottom: true);
         FindReplaceView preview = window.FindControl<FindReplaceView>("FindReplacePreview")!;
 
+        // Assert
         preview.DataContext.Should().BeSameAs(vm.FindReplaceSample);
         preview.FindControl<AutoCompleteBox>("FindBox")!.Text.Should().Be(vm.FindReplaceSample.FindText);
         pane.IsEffectivelyVisible.Should().BeTrue();
 
         FontSettingViewModel tooltipFont = vm.FindReplaceFonts.Fonts.Single();
+
+        // Act
         tooltipFont.InheritFromParent = false;
         tooltipFont.Size = 19;
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
+        // Assert
         tip.Text.FontSize.Should().Be(19, "the sample of the tooltip follows the font");
         window.Close();
     }
@@ -1009,6 +1202,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_Special_Characters_page_has_a_preview_panel_with_the_table_in_the_unsaved_font()
     {
+        // Act
         (PreferencesWindow window, PreferencesViewModel vm, _, TooltipSample tip) = ShowPreviewPage(
             "SpecialCharacters", "SpecialCharactersPreviewHost", "SpecialCharactersPreviewPane", "SpecialCharactersSampleTip", bottom: true);
         SpecialCharactersSample preview = window.FindControl<SpecialCharactersSample>("SpecialCharactersPreview")!;
@@ -1016,8 +1210,10 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         grid.GetVisualDescendants().OfType<TreeDataGridRow>().Should().NotBeEmpty("the sample characters are shown");
 
+        // Act
         vm.SpecialCharacterFontSize = 27;
         vm.SpecialCharacterFonts.Fonts.Single(f => f.Key == "Tooltip" + TooltipArea.SpecialCharacters).InheritFromParent = false;
         vm.SpecialCharacterFonts.Fonts.Single(f => f.Key == "Tooltip" + TooltipArea.SpecialCharacters).Size = 18;
@@ -1025,6 +1221,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         grid.GetVisualDescendants().OfType<TextBlock>().Where(t => t.Classes.Contains("symbol")).Should()
             .NotBeEmpty().And.OnlyContain(t => t.FontSize == 27, "the characters follow the font");
         tip.Text.FontSize.Should().Be(18);
@@ -1035,19 +1232,24 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_Cleanup_page_has_a_preview_panel_with_the_dialog_and_the_tooltip_sample()
     {
+        // Act
         (PreferencesWindow window, PreferencesViewModel vm, _, TooltipSample tip) = ShowPreviewPage(
             "Cleanup", "CleanupPreviewHost", "CleanupPreviewPane", "CleanupSampleTip", bottom: false);
         CleanupView preview = window.FindControl<CleanupView>("CleanupPreview")!;
 
+        // Assert
         preview.DataContext.Should().BeSameAs(vm.CleanupSample);
         preview.GetVisualDescendants().OfType<TabControl>().Should().NotBeEmpty("the tabs of the cleanup steps are shown");
 
         FontSettingViewModel tooltipFont = vm.CleanupFonts.Fonts.Single();
+
+        // Act
         tooltipFont.InheritFromParent = false;
         tooltipFont.Size = 20;
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
+        // Assert
         tip.Text.FontSize.Should().Be(20);
         window.Close();
     }
@@ -1056,20 +1258,25 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_Footnotes_page_has_a_preview_panel_with_the_footnote_window_and_the_tooltip_sample()
     {
+        // Act
         (PreferencesWindow window, PreferencesViewModel vm, _, TooltipSample tip) = ShowPreviewPage(
             "Footnotes", "FootnotesPreviewHost", "FootnotesPreviewPane", "FootnotesSampleTip", bottom: true);
         FootnoteView preview = window.FindControl<FootnoteView>("FootnotesPreview")!;
 
+        // Assert
         preview.DataContext.Should().BeSameAs(vm.FootnoteSample);
         preview.GetVisualDescendants().OfType<TextBox>().Should().Contain(t => t.Text == vm.FootnoteSample.Content, "the note is filled in");
         preview.GetVisualDescendants().OfType<AvaloniaEdit.TextEditor>().Single().Text.Should().Be(vm.FootnoteSample.PreviewCode);
 
         FontSettingViewModel tooltipFont = vm.FootnotesFonts.Fonts.Single();
+
+        // Act
         tooltipFont.InheritFromParent = false;
         tooltipFont.Size = 21;
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
+        // Assert
         tip.Text.FontSize.Should().Be(21);
         window.Close();
     }
@@ -1078,21 +1285,26 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_Validation_page_has_a_preview_panel_with_the_results_panel_and_the_tooltip_sample()
     {
+        // Act
         (PreferencesWindow window, PreferencesViewModel vm, _, TooltipSample tip) = ShowPreviewPage(
             "Validation", "ValidationPreviewHost", "ValidationPreviewPane", "ValidationSampleTip", bottom: true);
         ValidationResultsView preview = window.FindControl<ValidationResultsView>("ValidationPreview")!;
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         preview.DataContext.Should().BeSameAs(vm.ValidationSample);
         preview.GetVisualDescendants().OfType<TreeDataGridRow>().Should().NotBeEmpty("the fabricated results are shown");
 
         FontSettingViewModel tooltipFont = vm.ValidationFonts.Fonts.Single();
+
+        // Act
         tooltipFont.InheritFromParent = false;
         tooltipFont.Size = 22;
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
+        // Assert
         tip.Text.FontSize.Should().Be(22);
         window.Close();
     }
@@ -1104,46 +1316,59 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_Preview_page_has_a_preview_panel_with_a_page_in_the_unsaved_fonts_and_the_mark_of_the_caret()
     {
+        // Act
         (PreferencesWindow window, PreferencesViewModel vm, _, TooltipSample tip) = ShowPreviewPage(
             "Preview", "PreviewPreviewHost", "PreviewPreviewPane", "PreviewSampleTip", bottom: false);
         PreviewSample sample = window.FindControl<PreviewSample>("PreviewSamplePage")!;
         TextBlock serif = sample.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Name == "SerifText");
         Border[] blocks = { sample.FindControl<Border>("Block0")!, sample.FindControl<Border>("Block1")!, sample.FindControl<Border>("Block2")! };
 
+        // Assert
         sample.MarkedBlock.Should().Be(1);
         blocks[1].Background.Should().BeAssignableTo<ISolidColorBrush>("the marked block has the background of the highlight");
         ((ISolidColorBrush)blocks[1].Background!).Opacity.Should().BeApproximately(vm.PreviewHighlightOpacity / 100.0, 0.01);
         blocks[0].Background.Should().Be(Brushes.Transparent);
 
+        // Act
         vm.PreviewFontSerif = "Georgia";
         vm.PreviewFontSize = 24;
         vm.PreviewHighlightStyle = PreviewHighlightStyle.Outline;
         vm.PreviewHighlightOutlineWidth = 5;
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         serif.FontFamily.Name.Should().Be("Georgia");
         serif.FontSize.Should().Be(24, "the page follows the fonts");
         blocks[1].BorderThickness.Should().Be(new Thickness(5));
         blocks[1].BorderBrush.Should().BeAssignableTo<ISolidColorBrush>("the marked block has the outline");
         blocks[1].Background.Should().Be(Brushes.Transparent);
 
+        // Act
         blocks[2].RaiseEvent(new PointerPressedEventArgs(
             blocks[2], new Pointer(0, PointerType.Mouse, true), blocks[2], new Point(2, 2),
             0, new PointerPointProperties(RawInputModifiers.LeftMouseButton, PointerUpdateKind.LeftButtonPressed), KeyModifiers.None));
 
+        // Assert
         sample.MarkedBlock.Should().Be(2, "a click moves the mark, as the caret does");
 
+        // Act
         TabControl tabs = window.FindControl<TabControl>("PreviewAppearanceTabs")!;
         tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(t => Equals(t.Header, Strings.Get("PreferencesWindow_Fonts")));
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
+
+        // Assert
         window.FindControl<Border>("PreviewPreviewPane")!.IsEffectivelyVisible.Should().BeTrue("the same panel stays on the Fonts tab");
 
         FontSettingViewModel tooltipFont = vm.PreviewFonts.Fonts.Single(f => f.Key == "Tooltip" + TooltipArea.Preview);
+
+        // Act
         tooltipFont.InheritFromParent = false;
         tooltipFont.Size = 19;
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
+
+        // Assert
         tip.Text.FontSize.Should().Be(19);
         window.Close();
     }
@@ -1152,6 +1377,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_list_of_recent_files_takes_the_colors_of_the_theme_when_they_are_set()
     {
+        // Act
         PreferencesWindow window = BuildWindow();
         window.Width = 1100;
         window.Height = 860;
@@ -1162,6 +1388,8 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         TextBlock Title() => preview.GetVisualDescendants().OfType<TextBlock>().First(t => t.Classes.Contains("recentTitle"));
         TextBlock Location() => preview.GetVisualDescendants().OfType<TextBlock>().First(t => t.Classes.Contains("recentLocation"));
         double dimmed = Location().Opacity;
+
+        // Assert
         dimmed.Should().BeLessThan(1, "nothing is set: the folder is dimmed text");
 
         Theme theme = new Theme("t", "T")
@@ -1170,11 +1398,13 @@ public sealed class PreferencesWindowRenderTests : IDisposable
             .With(ThemeKeys.UiStartScreenHighlight.Id, ThemeEntry.Of(ThemeColor.Parse("#FF0000")));
         try
         {
+            // Act
             AppTheme.Apply(Avalonia.Application.Current!, ResolvedTheme.Of(ThemeDocumentKind.Theme, theme, new ThemeResolver(_ => null)));
             Dispatcher.UIThread.RunJobs();
             window.CaptureRenderedFrame();
             Dispatcher.UIThread.RunJobs();
 
+            // Assert
             ((ISolidColorBrush)Title().Foreground!).Color.Should().Be(Colors.Lime);
             ((ISolidColorBrush)Location().Foreground!).Color.Should().Be(Colors.Blue);
             Location().Opacity.Should().Be(1, "a color of the theme is the color shown");
@@ -1184,10 +1414,13 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         }
         finally
         {
+            // Act
             AppTheme.Apply(Avalonia.Application.Current!, ResolvedTheme.Defaults);
         }
 
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         Location().Opacity.Should().Be(dimmed, "the default theme sets nothing again");
         window.Close();
     }
@@ -1196,6 +1429,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_width_of_the_preview_panel_is_remembered_and_its_samples_are_not_searched()
     {
+        // Act
         PreferencesWindow window = BuildWindow();
         window.Width = 1100;
         window.Height = 860;
@@ -1210,15 +1444,23 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
         FontsPageView fonts = window.FindControl<FontsPageView>("BookBrowserFontsView")!;
+
+        // Assert
         fonts.GetVisualDescendants().OfType<FontSettingView>().Should().OnlyContain(
             r => r.Bounds.Width > fonts.Bounds.Width - 60, "the settings take the whole tab, whatever width the old pages remembered");
 
         window.SplitterSizes.Should().ContainKey("BookBrowserPreviewHost.paneWidth");
+
+        // Act
         window.SplitterSizes = new Dictionary<string, int> { ["BookBrowserPreviewHost.paneWidth"] = 410 };
+
+        // Assert
         window.SplitterSizes["BookBrowserPreviewHost.paneWidth"].Should().Be(410);
 
+        // Act
         window.Sections.Query = "Titlepage";
 
+        // Assert
         window.Sections.All.Where(n => n.IsVisible && n.Id.Length > 0).Should().BeEmpty("a file name of the sample is not a setting");
         window.Close();
     }
@@ -1230,6 +1472,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_link_to_the_book_browser_background_selects_its_key_in_the_theme()
     {
+        // Act
         PreferencesWindow window = BuildWindow();
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
         window.Width = 1100;
@@ -1243,6 +1486,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         link.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         window.Sections.Selected!.Title.Should().Be(Strings.Get("PreferencesWindow_Appearance"));
         window.FindControl<TabControl>("AppearanceGeneralTabs")!.SelectedItem.Should().BeSameAs(window.FindControl<TabItem>("InterfaceColorsTab"));
         window.FindControl<ThemeKeysView>("ThemeInterfaceView")!.IsEffectivelyVisible.Should().BeTrue();
@@ -1259,6 +1503,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_splitters_of_a_color_scheme_page_resize_it_and_every_page_keeps_its_own_sizes()
     {
+        // Act
         PreferencesWindow window = BuildWindow();
         window.Width = 1100;
         window.Height = 860;
@@ -1273,6 +1518,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         Drag(window, css.FindControl<GridSplitter>("TreeSplitter")!, new Avalonia.Vector(60, 0));
         Drag(window, css.FindControl<GridSplitter>("PreviewSplitter")!, new Avalonia.Vector(0, -50));
 
+        // Assert
         css.TreeWidth.Should().BeApproximately(treeWidth + 60, 1);
         css.PreviewHeight.Should().BeApproximately(previewHeight + 50, 1);
         IReadOnlyDictionary<string, int> sizes = window.SplitterSizes;
@@ -1280,8 +1526,11 @@ public sealed class PreferencesWindowRenderTests : IDisposable
             .And.Contain("ThemeCssView.preview", (int)Math.Round(css.PreviewHeight))
             .And.Contain("ThemeXhtmlView.tree", (int)treeWidth, "the other pages keep theirs");
 
+        // Act
         window.SplitterSizes = new Dictionary<string, int> { ["ThemeXhtmlView.tree"] = 250, ["ThemeXhtmlView.preview"] = 20 };
         ThemeKeysView xhtml = window.FindControl<ThemeKeysView>("ThemeXhtmlView")!;
+
+        // Assert
         xhtml.TreeWidth.Should().Be(250);
         xhtml.PreviewHeight.Should().Be(80, "not below the minimum");
         css.TreeWidth.Should().BeApproximately(treeWidth + 60, 1, "a page missing from the map keeps its size");
@@ -1292,6 +1541,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_splitter_of_the_section_tree_resizes_it_and_is_remembered()
     {
+        // Act
         PreferencesWindow window = BuildWindow();
         window.Width = 1100;
         window.Height = 860;
@@ -1304,9 +1554,14 @@ public sealed class PreferencesWindowRenderTests : IDisposable
 
         Drag(window, window.FindControl<GridSplitter>("SectionsSplitter")!, new Avalonia.Vector(70, 0));
 
+        // Assert
         panel.Bounds.Width.Should().BeApproximately(width + 70, 1);
         window.SplitterSizes["Sections"].Should().BeCloseTo(remembered + 70, 1);
+
+        // Act
         window.SplitterSizes = new Dictionary<string, int> { ["Sections"] = 40 };
+
+        // Assert
         window.SplitterSizes["Sections"].Should().Be(150, "not below the minimum");
         window.Close();
     }
@@ -1315,22 +1570,30 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_code_previews_use_the_font_of_the_color_scheme_page()
     {
+        // Act
         PreferencesWindow window = BuildWindow();
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
         window.Show();
         Dispatcher.UIThread.RunJobs();
         ShowPage(window, "ColorSchemePage");
+
+        // Assert
         window.FindControl<FontSettingView>("ColorSchemePreviewFontView")!.DataContext.Should().BeSameAs(vm.ColorSchemePreviewFont);
+
+        // Act
         ShowPage(window, "ThemeJavaScriptJsonPage");
         ThemePreviewEditor[] editors = window.FindControl<ThemeKeysView>("ThemeJavaScriptJsonView")!
             .GetVisualDescendants().OfType<ThemePreviewEditor>().ToArray();
 
+        // Assert
         editors.Should().HaveCount(2).And.OnlyContain(e => e.FontFamily.Name == ColorSchemePreviewAppearance.Default.FontFamily
             && e.FontSize == ColorSchemePreviewAppearance.Default.FontSize);
 
+        // Act
         vm.ColorScheme.PreviewFont = new ColorSchemePreviewAppearance("Courier New", 17);
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         editors.Should().OnlyContain(e => e.FontFamily.Name == "Courier New" && e.FontSize == 17);
         window.Close();
     }
@@ -1363,6 +1626,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_preview_section_links_to_its_appearance()
     {
+        // Act
         PreferencesWindow window = BuildWindow();
         window.Show();
         Dispatcher.UIThread.RunJobs();
@@ -1373,13 +1637,18 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         appearance.IsExpanded = false;
         ShowPage(window, "PreviewPage");
         HyperlinkButton link = window.FindControl<HyperlinkButton>("PreviewAppearanceLink")!;
+
+        // Assert
         link.Content.Should().Be(Strings.Get("PreferencesWindow_Appearance"));
         ((StackPanel)link.Parent!).Children[0].Should().BeSameAs(link, "the link is above every other setting");
 
+        // Act
         link.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
 
         PreferencesSectionNode target = window.Sections.Selected!;
+
+        // Assert
         target.Path.Should().Be(string.Join(
             " › ", Strings.Get("PreferencesWindow_AppearanceAndBehavior"), Strings.Get("PreferencesWindow_Appearance"), Strings.Get("PreferencesWindow_Preview")));
         appearance.IsExpanded.Should().BeTrue("the link opens the collapsed branch, as a click in the tree");
@@ -1394,6 +1663,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Collapsed_sections_are_remembered_and_restored()
     {
+        // Act
         PreferencesWindow first = BuildWindow();
         first.Show();
         Dispatcher.UIThread.RunJobs();
@@ -1401,29 +1671,39 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         PreferencesSectionNode appearance = first.Sections.Roots.Single(n => n.Title == Strings.Get("PreferencesWindow_AppearanceAndBehavior"));
         PreferencesSectionNode codeEditor = appearance.Children.Single(n => n.Title == Strings.Get("PreferencesWindow_CodeEditor"));
         PreferencesSectionNode colorScheme = codeEditor.Children.Single(n => n.Title == Strings.Get("PreferencesWindow_ColorScheme"));
+
+        // Assert
         first.CollapsedSections.Should().BeEmpty("a fresh tree is fully expanded");
 
+        // Act
         source.Collapse(new IndexPath(first.Sections.Roots.IndexOf(appearance), appearance.Children.IndexOf(codeEditor), codeEditor.Children.IndexOf(colorScheme)));
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         appearance.IsExpanded.Should().BeTrue();
         colorScheme.IsExpanded.Should().BeFalse("collapsing a row in the tree updates the section");
         IReadOnlyList<string> remembered = first.CollapsedSections;
         remembered.Should().Equal("ColorSchemePage");
         first.Close();
 
+        // Act
         PreferencesWindow second = BuildWindow();
         second.Show();
         Dispatcher.UIThread.RunJobs();
         second.CollapsedSections = remembered;
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         second.Sections.All.Single(n => n.Id == "ColorSchemePage").IsExpanded.Should().BeFalse();
         second.Sections.All.Single(n => n.Id == "AppearancePage").IsExpanded.Should().BeTrue();
         second.CollapsedSections.Should().Equal("ColorSchemePage");
 
         // A section that contains the selected one is never collapsed: the selection must stay visible.
+        // Act
         second.Sections.Selected = second.Sections.All.Single(n => n.Id == "ThemeCssPage");
         second.CollapsedSections = new[] { "ColorSchemePage", "AppearancePage" };
+
+        // Assert
         second.Sections.All.Single(n => n.Id == "ColorSchemePage").IsExpanded.Should().BeFalse("it was collapsed before, the setter does not reopen it");
         second.Sections.All.Single(n => n.Id == "AppearancePage").IsExpanded.Should().BeTrue("it contains the selected section");
         second.Close();
@@ -1437,32 +1717,53 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_preview_width_of_a_fonts_page_is_its_own_and_remembered()
     {
+        // Act
         PreferencesWindow window = BuildWindow();
         window.Width = 1500;
         window.Show();
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         window.SplitterSizes.Keys.Should().NotContain(k => k.EndsWith(".previewWidth"), "nothing was resized yet");
+
+        // Act
         ShowFontsTab(window, "TableOfContents");
         double tocBefore = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible).PreviewWidth;
 
         window.SplitterSizes = new System.Collections.Generic.Dictionary<string, int> { ["CheckpointsFontsView.previewWidth"] = 420 };
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         window.SplitterSizes.Should().Contain("CheckpointsFontsView.previewWidth", 420);
+
+        // Act
         ShowFontsTab(window, "Checkpoints");
         window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible)
+
+            // Assert
             .PreviewWidth.Should().BeApproximately(420, 2);
+
+        // Act
         ShowFontsTab(window, "TableOfContents");
         window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible).PreviewWidth
+
+            // Assert
             .Should().BeApproximately(tocBefore, 2, "another page is not resized with it");
 
         // The width of the old settings (one for all the pages) is taken by the pages that have no width of their own.
+        // Act
         window.SplitterSizes = new System.Collections.Generic.Dictionary<string, int> { ["FontsPreview"] = 380 };
         Dispatcher.UIThread.RunJobs();
         window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible).PreviewWidth
+
+            // Assert
             .Should().BeApproximately(380, 2);
+
+        // Act
         ShowFontsTab(window, "Checkpoints");
         window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible).PreviewWidth
+
+            // Assert
             .Should().BeApproximately(420, 2, "this page keeps its own");
         window.Close();
     }
@@ -1471,6 +1772,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void A_section_without_settings_links_to_its_subsections()
     {
+        // Act
         PreferencesWindow window = BuildWindow();
         window.Show();
         Dispatcher.UIThread.RunJobs();
@@ -1478,11 +1780,15 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         PreferencesSectionNode appearance = window.Sections.Roots.Single(n => n.Title == Strings.Get("PreferencesWindow_AppearanceAndBehavior"));
 
         HyperlinkButton[] links = window.GetVisualDescendants().OfType<HyperlinkButton>().Where(l => l.IsEffectivelyVisible).ToArray();
+
+        // Assert
         links.Select(l => l.Content).Should().Equal(appearance.Children.Select(n => n.Title));
 
+        // Act
         links.Single(l => Equals(l.Content, Strings.Get("PreferencesWindow_CodeEditor"))).RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         window.Sections.Selected!.Path.Should().Be(
             Strings.Get("PreferencesWindow_AppearanceAndBehavior") + " › " + Strings.Get("PreferencesWindow_CodeEditor"));
         window.Close();
@@ -1495,6 +1801,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Searching_filters_the_sections_by_page_text_and_frames_the_matches()
     {
+        // Act
         PreferencesWindow window = BuildWindow();
         window.Show();
         Dispatcher.UIThread.RunJobs();
@@ -1505,6 +1812,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         window.Sections.Roots.Where(n => n.IsVisible).Select(n => n.Title)
             .Should().Equal(Strings.Get("PreferencesWindow_EditionPage"));
         window.Sections.Selected!.Title.Should().Be(Strings.Get("PreferencesWindow_EditionPage"));
@@ -1516,8 +1824,11 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         Avalonia.Controls.Primitives.AdornerLayer.GetAdornerLayer(match)!.Children.Should().Contain(frame, "the frame is shown");
         ((Border)frame).BorderBrush.Should().NotBeNull();
 
+        // Act
         window.FindControl<TextBox>("SectionSearch")!.Text = string.Empty;
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         window.Sections.Roots.Should().OnlyContain(n => n.IsVisible);
         Avalonia.Controls.Primitives.AdornerLayer.GetAdorner(match).Should().BeNull();
         window.Close();
@@ -1534,11 +1845,13 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_footnotes_page_has_a_general_tab_and_a_css_tab()
     {
+        // Act
         PreferencesWindow window = BuildWindow();
         var vm = (PreferencesViewModel)window.DataContext!;
         window.Show();
         TabControl footnotes = ShowPage(window, "FootnotesPage").SelectedContent.Should().BeOfType<TabControl>().Subject;
 
+        // Assert
         footnotes.Items.OfType<TabItem>().Select(t => t.Name).Should().Equal("FootnotesGeneralTab", "FootnotesCssTab");
         footnotes.SelectedIndex.Should().Be(0, "General is shown first");
         TabItem general = (TabItem)footnotes.Items[0]!;
@@ -1554,7 +1867,11 @@ public sealed class PreferencesWindowRenderTests : IDisposable
 
         ComboBox letters = inGeneral.OfType<ComboBox>().Single(c => c.Name == "FootnoteLetterStyleBox");
         letters.SelectedItem.Should().Be(vm.FootnoteLetterStyle);
+
+        // Act
         letters.SelectedItem = FootnoteLetterStyle.UpperLatin;
+
+        // Assert
         vm.FootnoteLetterStyle.Should().Be(FootnoteLetterStyle.UpperLatin);
         window.Close();
     }
@@ -1566,6 +1883,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Footnote_style_fields_show_their_error_and_resize_with_the_grip()
     {
+        // Act
         PreferencesWindow window = BuildWindow();
         var vm = (PreferencesViewModel)window.DataContext!;
         window.Show();
@@ -1575,23 +1893,44 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         window.CaptureRenderedFrame();
 
         TextBlock error = window.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Name == "FootnoteNoteStyleError");
+
+        // Assert
         error.IsVisible.Should().BeFalse();
+
+        // Act
         vm.FootnoteNoteStyle = "fnot-size: 1em;";
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         error.IsVisible.Should().BeTrue();
         error.Text.Should().Be(vm.FootnoteNoteStyleError).And.NotBeEmpty();
 
         CssEditor box = window.GetVisualDescendants().OfType<CssEditor>().Single(t => t.Name == "FootnoteNoteStyleBox");
         box.Height.Should().Be(PreferencesWindow.DefaultFieldHeight);
         HeightResizeGrip grip = window.GetVisualDescendants().OfType<HeightResizeGrip>().Single(g => g.Target == box);
+
+        // Act
         grip.ResizeBy(40);
+
+        // Assert
         box.Height.Should().Be(PreferencesWindow.DefaultFieldHeight + 40);
+
+        // Act
         grip.ResizeBy(-1000);
+
+        // Assert
         box.Height.Should().Be(grip.MinTargetHeight, "not below the minimum");
 
+        // Act
         grip.ResizeBy(60);
+
+        // Assert
         window.FieldHeights.Should().Contain("FootnoteNoteStyleBox", (int)box.Height);
+
+        // Act
         window.FieldHeights = new System.Collections.Generic.Dictionary<string, int> { ["FootnoteNoteStyleBox"] = 200 };
+
+        // Assert
         box.Height.Should().Be(200);
         window.Close();
     }
@@ -1604,6 +1943,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Section_tree_and_page_are_visually_separated()
     {
+        // Act
         PreferencesWindow window = BuildWindow();
         window.Show();
         Dispatcher.UIThread.RunJobs();
@@ -1611,6 +1951,8 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         Dispatcher.UIThread.RunJobs();
 
         Border panel = window.GetVisualDescendants().OfType<Border>().First(b => b.Classes.Contains("sectionPanel"));
+
+        // Assert
         panel.Background.Should().NotBeNull("the section tree must differ from the page");
 
         ContentPresenter content = window.GetVisualDescendants()
@@ -1630,6 +1972,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Keymap_tab_shows_the_action_tree_and_finds_a_pressed_shortcut()
     {
+        // Act
         PreferencesWindow window = BuildWindow();
         var vm = (PreferencesViewModel)window.DataContext!;
         window.Show();
@@ -1642,12 +1985,17 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         Dispatcher.UIThread.RunJobs();
 
         KeymapView keymap = window.GetVisualDescendants().OfType<KeymapView>().Single();
+
+        // Assert
         window.GetVisualDescendants().OfType<TextBlock>().Should().Contain(t => t.Text == vm.Keymap.Roots[0].Name);
 
         ShortcutCaptureBox find = keymap.FindControl<ShortcutCaptureBox>("FindFirstStroke")!;
+
+        // Act
         find.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = Key.S, KeyModifiers = KeyModifiers.Control });
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         vm.Keymap.ShortcutFilter.Should().Be(new KeyStrokeShortcut(new KeyGesture(Key.S, KeyModifiers.Control)));
         vm.Keymap.ActionNodes.Single(n => n.ActionId == AppActionIds.Save).IsVisible.Should().BeTrue();
         vm.Keymap.ActionNodes.Single(n => n.ActionId == AppActionIds.Open).IsVisible.Should().BeFalse();
@@ -1660,6 +2008,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Keymap_find_shortcut_field_shows_a_mouse_shortcut_and_is_cleared_by_its_button_or_by_typing()
     {
+        // Act
         PreferencesWindow window = BuildWindow();
         var vm = (PreferencesViewModel)window.DataContext!;
         window.Show();
@@ -1674,31 +2023,43 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         ShortcutCaptureBox find = keymap.FindControl<ShortcutCaptureBox>("FindFirstStroke")!;
         Button clear = keymap.FindControl<Button>("FindFirstStrokeClear")!;
         MouseShortcutPad pad = keymap.FindControl<MouseShortcutPad>("FindMousePad")!;
+
+        // Assert
         clear.IsVisible.Should().BeFalse();
 
         MouseShortcut ctrlClick = new(MouseShortcutButton.Left, KeyModifiers.Control);
+
+        // Act
         pad.SetShortcut(ctrlClick);
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         vm.Keymap.ShortcutFilter.Should().Be(ctrlClick);
         find.Text.Should().Be(ctrlClick.DisplayText);
         pad.Shortcut.Should().BeNull();
         clear.IsVisible.Should().BeTrue();
 
+        // Act
         clear.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         vm.Keymap.ShortcutFilter.Should().BeNull();
         find.Text.Should().BeNullOrEmpty();
         clear.IsVisible.Should().BeFalse();
 
+        // Act
         find.RaiseEvent(new KeyEventArgs { RoutedEvent = InputElement.KeyDownEvent, Key = Key.S, KeyModifiers = KeyModifiers.Control });
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         vm.Keymap.HasShortcutFilter.Should().BeTrue();
 
+        // Act
         vm.Keymap.Filter = vm.Keymap.Roots[0].Name;
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         vm.Keymap.HasShortcutFilter.Should().BeFalse();
         find.Gesture.Should().BeNull();
         find.Text.Should().BeNullOrEmpty();
@@ -1713,6 +2074,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Spellcheck_tab_manages_user_dictionaries_and_their_words()
     {
+        // Act
         PreferencesWindow window = BuildWindow();
         var vm = (PreferencesViewModel)window.DataContext!;
         window.Show();
@@ -1724,6 +2086,8 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         Dispatcher.UIThread.RunJobs();
 
         ComboBox primary = window.GetVisualDescendants().OfType<ComboBox>().Single(c => c.Name == "PrimaryDictionaryBox");
+
+        // Assert
         primary.SelectedItem.Should().Be(new DictionaryOption("en_US", SpellChecker.DisplayName("en_US")));
         primary.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).Should().Contain(SpellChecker.DisplayName("en_US"));
 
@@ -1736,12 +2100,16 @@ public sealed class PreferencesWindowRenderTests : IDisposable
 
         TabControl inner = window.GetVisualDescendants().OfType<TabControl>().Single(t => t != tabs);
         vm.SelectedUserDictionary!.Name.Should().Be(SpellChecker.DefaultUserDictionaryName);
+
+        // Act
         inner.SelectedIndex = 1; // the word list
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
 
         Button remove = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "RemoveUserWordsButton");
+
+        // Assert
         remove.IsEffectivelyEnabled.Should().BeFalse("without a selected word there is nothing to remove");
     }
 
@@ -1752,7 +2120,10 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Font_picker_renders_every_font_name_in_its_own_font()
     {
+        // Arrange
         FontEntry[] fonts = { new("Arial", false), new("Consolas", true), new("Georgia", false) };
+
+        // Act
         FontPickerWindow window = new()
         {
             DataContext = new FontPickerViewModel(fonts, new FontPickRequest("Georgia", 12, false)),
@@ -1763,6 +2134,8 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         Dispatcher.UIThread.RunJobs();
 
         ListBox list = window.GetVisualDescendants().OfType<ListBox>().Single();
+
+        // Assert
         list.SelectedItem.Should().Be(fonts[2]);
         TextBlock[] names = list.GetVisualDescendants().OfType<TextBlock>()
             .Where(t => fonts.Any(f => f.Name == t.Text))
@@ -1782,7 +2155,10 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Font_picker_lists_the_weights_of_the_font_and_previews_the_chosen_one()
     {
+        // Arrange
         FontEntry[] fonts = { new("Arial", false), new("Georgia", false) };
+
+        // Act
         FontPickerWindow window = new()
         {
             DataContext = new FontPickerViewModel(
@@ -1795,21 +2171,28 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         ComboBox weights = window.GetVisualDescendants().OfType<ComboBox>().Single(c => c.Name == "WeightBox");
         TextBlock sample = window.FindControl<TextBlock>("SampleText")!;
 
+        // Assert
         weights.IsEffectivelyVisible.Should().BeTrue();
         weights.Items.OfType<FontWeightOption>().Select(w => w.Name).Should().Equal(FontWeightOptions.Default.Name, "Light", "Regular", "Bold");
         ((FontWeightOption)weights.SelectedItem!).Value.Should().Be(300);
         sample.FontWeight.Should().Be(FontWeight.Light);
 
+        // Act
         weights.SelectedItem = weights.Items.OfType<FontWeightOption>().Single(w => w.Value == 700);
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         sample.FontWeight.Should().Be(FontWeight.Bold);
         ((FontPickerViewModel)window.DataContext!).Result()!.Weight.Should().Be(700);
+
+        // Act
         window.Close();
 
         FontPickerWindow withoutWeight = new() { DataContext = new FontPickerViewModel(fonts, new FontPickRequest("Arial", 12, false)) };
         withoutWeight.Show();
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         withoutWeight.GetVisualDescendants().OfType<ComboBox>().Single(c => c.Name == "WeightBox").IsEffectivelyVisible.Should().BeFalse();
         withoutWeight.Close();
     }
@@ -1821,6 +2204,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Choosing_a_font_with_a_weight_in_the_picker_shows_the_weight_in_the_row()
     {
+        // Act
         PreferencesWindow window = BuildWindow();
         window.Show();
         Dispatcher.UIThread.RunJobs();
@@ -1841,6 +2225,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         vm.FindUsagesContextFontFamily.Should().Be("Consolas");
         vm.FindUsagesContextFontSize.Should().Be(17);
         vm.FindUsagesContextFontWeight.Should().Be(350);
@@ -1855,6 +2240,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void A_font_row_is_one_line_that_follows_the_picker_and_Cancel_puts_it_back()
     {
+        // Act
         PreferencesWindow window = BuildWindow();
         window.Show();
         Dispatcher.UIThread.RunJobs();
@@ -1870,11 +2256,17 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         TextBlock summary = page.RowOf(row)!.GetVisualDescendants().OfType<TextBlock>().Single(c => c.Name == "FontSummary");
 
         FontSettingView[] rows = page.GetVisualDescendants().OfType<FontSettingView>().ToArray();
+
+        // Assert
         rows.SelectMany(r => r.GetVisualDescendants().OfType<ComboBox>()).Should().BeEmpty("the picker is the only way to change a font");
         rows.SelectMany(r => r.GetVisualDescendants().OfType<NumericUpDown>().Where(n => n.IsEffectivelyVisible)).Should().BeEmpty();
+
+        // Act
         vm.FindUsagesContextFontFamily = "Arial";
         vm.FindUsagesContextFontSize = 12;
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         summary.Text.Should().Be("Arial, 12");
 
         string? whileOpen = null;
@@ -1886,9 +2278,11 @@ public sealed class PreferencesWindowRenderTests : IDisposable
             return Task.FromResult<FontPickResult?>(null);
         };
 
+        // Act
         row.ChooseCommand!.Execute(null);
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         whileOpen.Should().Be("Consolas, 18, " + FontWeightScale.NameOf(700), "the row follows the window");
         summary.Text.Should().Be("Arial, 12", "Cancel puts the font back");
         window.Close();
@@ -1902,6 +2296,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Labeled_grids_keep_the_fields_next_to_the_label_or_at_the_edge_of_the_box()
     {
+        // Act
         PreferencesWindow window = BuildWindow();
         window.Width = 1900;
         window.Height = 860;
@@ -1918,10 +2313,12 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         double label = grid.ColumnDefinitions[0].ActualWidth;
         double control = grid.ColumnDefinitions[1].ActualWidth;
 
+        // Assert
         label.Should().BeApproximately(268, 1, "a label column of a fixed width (260 and the column spacing)");
         control.Should().BeGreaterThan(150, "the control takes the rest of the settings");
         grid.Children.OfType<TextBlock>().Should().OnlyContain(t => t.TextWrapping == TextWrapping.Wrap);
 
+        // Act
         ShowPage(window, "StartScreenAppearancePage");
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
@@ -1929,6 +2326,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         Grid row = (Grid)box.Parent!;
         TextBlock text = row.Children.OfType<TextBlock>().Single();
 
+        // Assert
         (row.Bounds.Width - (box.Bounds.Right)).Should().BeLessThan(2, "the field sits at the right edge of the box");
         text.Bounds.Height.Should().BeLessThan(text.FontSize * 2, "the label of a wide box is on one line");
     }
@@ -1940,6 +2338,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Mend_prettify_tab_has_separate_doctype_options()
     {
+        // Act
         PreferencesWindow window = BuildWindow();
         var vm = (PreferencesViewModel)window.DataContext!;
         window.Show();
@@ -1950,6 +2349,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         ((TabItem)tabs.SelectedItem!).Header.Should().Be(Strings.Get("PreferencesWindow_MendPrettify"));
         window.GetVisualDescendants().OfType<Border>().Count(b => b.Classes.Contains("section") && b.IsEffectivelyVisible)
             .Should().Be(3);
@@ -1958,10 +2358,12 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         CheckBox warn = CheckBoxWith(window, "PreferencesWindow_WarnMissingDoctype", 0);
         (prettify.IsChecked, mend.IsChecked, warn.IsChecked).Should().Be((false, false, true));
 
+        // Act
         mend.IsChecked = true;
         warn.IsChecked = false;
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         (vm.PrettifyAddMissingDoctype, vm.MendAddMissingDoctype, vm.WarnMissingDoctype).Should().Be((false, true, false));
     }
 
@@ -1978,6 +2380,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Each_font_row_has_a_preview_of_its_own_under_the_font()
     {
+        // Act
         PreferencesWindow window = BuildWindow();
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
         window.Show();
@@ -1986,18 +2389,26 @@ public sealed class PreferencesWindowRenderTests : IDisposable
 
         FontsPageView page = window.GetVisualDescendants().OfType<FontsPageView>().Single(p => p.IsEffectivelyVisible);
         FontSettingView[] rows = page.GetVisualDescendants().OfType<FontSettingView>().ToArray();
+
+        // Assert
         rows.Select(r => r.Name).Take(2).Should().Equal("FontInterface", "FontWarnings");
         TextBlock preview = rows[1].FindControl<TextBlock>("PreviewText")!;
         rows[1].FindControl<ScrollViewer>("PlainPreview")!.IsVisible.Should().BeTrue();
         rows[1].FindControl<CodePreviewEditor>("CodePreview")!.IsVisible.Should().BeFalse("only a font of the editor is previewed as code");
         Panel area = rows[1].FindControl<Panel>("PreviewArea")!;
+
+        // Act
         window.CaptureRenderedFrame();
+
+        // Assert
         area.TranslatePoint(default, rows[1])!.Value.Y.Should().BeGreaterThan(
             rows[1].FindControl<TextBlock>("FontSummary")?.TranslatePoint(default, rows[1])?.Y ?? 0, "the preview is under the font");
 
+        // Act
         vm.WarningFontSize = 21;
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         preview.FontSize.Should().Be(21);
         window.Close();
     }
@@ -2006,6 +2417,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void A_font_preview_is_two_lines_tall_to_start_with_and_the_grip_makes_it_taller_and_is_remembered()
     {
+        // Act
         PreferencesWindow window = BuildWindow();
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
         window.Show();
@@ -2017,18 +2429,23 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         window.CaptureRenderedFrame();
         double start = area.Bounds.Height;
 
+        // Assert
         start.Should().BeInRange(20, 90, "a line or two, not a pane");
         warnings.UserPreviewHeight.Should().BeNull();
 
+        // Act
         vm.WarningFontSize = 40;
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
+        // Assert
         area.Bounds.Height.Should().BeGreaterThan(start, "the default height follows the font");
 
+        // Act
         warnings.FindControl<HeightResizeGrip>("PreviewGrip")!.ResizeBy(60);
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         warnings.UserPreviewHeight.Should().NotBeNull();
         window.SplitterSizes.Should().ContainKey("AppearanceFontsView.Warnings.previewHeight");
 
@@ -2036,9 +2453,13 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         int remembered = window.SplitterSizes["AppearanceFontsView.Warnings.previewHeight"];
         PreferencesWindow again = BuildWindow();
         again.SplitterSizes = new System.Collections.Generic.Dictionary<string, int> { ["AppearanceFontsView.Warnings.previewHeight"] = remembered };
+
+        // Act
         again.Show();
         Dispatcher.UIThread.RunJobs();
         ShowGeneralFontsTab(again);
+
+        // Assert
         again.GetVisualDescendants().OfType<FontSettingView>().Single(r => r.Name == "FontWarnings" && r.IsEffectivelyVisible)
             .UserPreviewHeight.Should().Be(remembered);
         again.Close();
@@ -2049,6 +2470,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Wrapping_the_lines_of_a_preview_is_a_choice_of_its_row()
     {
+        // Act
         PreferencesWindow window = BuildWindow();
         window.Show();
         Dispatcher.UIThread.RunJobs();
@@ -2057,12 +2479,16 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         FontSettingView[] rows = page.GetVisualDescendants().OfType<FontSettingView>().ToArray();
         TextBlock first = rows[0].FindControl<TextBlock>("PreviewText")!;
         TextBlock second = rows[1].FindControl<TextBlock>("PreviewText")!;
+
+        // Assert
         first.TextWrapping.Should().Be(TextWrapping.NoWrap);
         second.TextWrapping.Should().Be(TextWrapping.NoWrap);
 
+        // Act
         rows[0].FindControl<CheckBox>("WrapPreviewBox")!.IsChecked = true;
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         ((FontSettingViewModel)rows[0].DataContext!).WrapPreview.Should().BeTrue();
         first.TextWrapping.Should().Be(TextWrapping.Wrap);
         second.TextWrapping.Should().Be(TextWrapping.NoWrap, "another row is not wrapped with it");
@@ -2076,6 +2502,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Searching_finds_the_font_settings_but_not_the_preview_samples()
     {
+        // Act
         PreferencesWindow window = BuildWindow();
         window.Show();
         Dispatcher.UIThread.RunJobs();
@@ -2084,15 +2511,18 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         search.Text = Strings.Get("PreferencesWindow_CodeEditorTextFont");
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         window.Sections.Selected!.Path.Should().Be(string.Join(
             " › ", Strings.Get("PreferencesWindow_AppearanceAndBehavior"), Strings.Get("PreferencesWindow_Appearance"),
             Strings.Get("PreferencesWindow_CodeEditor")));
         window.FindControl<TabControl>("CodeEditorAppearanceTabs")!.SelectedItem.Should().BeAssignableTo<TabItem>()
             .Which.Header.Should().Be(Strings.Get("PreferencesWindow_Fonts"), "the hit is on the Fonts tab, which the search shows");
 
+        // Act
         search.Text = Strings.Get("FontPreview_SpecialCharacters").Split('\n')[0].Trim();
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         window.Sections.All.Should().NotContain(n => n.IsVisible, "the sample of a preview is not a setting");
         window.Close();
     }
@@ -2104,23 +2534,32 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Preview_section_splits_refresh_highlight_and_fonts()
     {
+        // Act
         PreferencesWindow window = BuildWindow();
         window.Show();
         Dispatcher.UIThread.RunJobs();
 
         ShowPage(window, "PreviewPage");
+
+        // Assert
         window.GetVisualDescendants().OfType<Border>().Where(b => b.Classes.Contains("section"))
             .Should().ContainSingle();
         window.GetVisualDescendants().OfType<TextBlock>()
             .Should().Contain(t => t.Text == Strings.Get("PreferencesWindow_PreviewRefreshDelay"));
 
+        // Act
         ShowPage(window, "PreviewAppearancePage");
+
+        // Assert
         window.GetVisualDescendants().OfType<TextBox>().Should().NotContain(t => t.Classes.Contains("colorValue"),
             "the color of the highlight is in the color scheme");
         window.GetVisualDescendants().OfType<TextBlock>()
             .Should().Contain(t => t.Text == Strings.Get("PreferencesWindow_ColorsInScheme"));
 
+        // Act
         ShowFontsTab(window, "Preview");
+
+        // Assert
         window.GetVisualDescendants().OfType<FontSettingView>().Where(r => r.IsEffectivelyVisible).Select(r => r.Name)
             .Should().Equal("FontPreviewStandard", "FontPreviewSerif", "FontPreviewSansSerif", "FontPreviewSize", "FontTooltipPreview");
     }
@@ -2129,6 +2568,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Invalid_color_value_leaves_the_theme_background()
     {
+        // Act & Assert
         ColorConverters.ToBrush.Convert("#zzz", typeof(IBrush), null, System.Globalization.CultureInfo.InvariantCulture)
             .Should().Be(Avalonia.AvaloniaProperty.UnsetValue);
     }
@@ -2137,12 +2577,15 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Ui_font_is_applied_live_and_reset_restores_the_default()
     {
+        // Arrange
         string root = _disposables.Add(new TempDir("uifont-")).Path;
         SettingsStore settings = new(Path.Combine(root, "settings.xml"));
         UiDensityManager manager = new(
             settings, new IconThemeManager(settings, NullLogger<IconThemeManager>.Instance), NullLogger<UiDensityManager>.Instance);
         TextBlock text = new() { Text = "Wycinki" };
         Window window = new() { Content = text };
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         double before = text.FontSize;
@@ -2152,15 +2595,18 @@ public sealed class PreferencesWindowRenderTests : IDisposable
             manager.ApplyUiFont("Tahoma", 17);
             Dispatcher.UIThread.RunJobs();
 
+            // Assert
             text.FontSize.Should().Be(17);
             text.FontFamily.Name.Should().Be("Tahoma");
         }
         finally
         {
+            // Act
             manager.ApplyUiFont(string.Empty, 0);
             Dispatcher.UIThread.RunJobs();
         }
 
+        // Assert
         text.FontSize.Should().Be(before);
     }
 }

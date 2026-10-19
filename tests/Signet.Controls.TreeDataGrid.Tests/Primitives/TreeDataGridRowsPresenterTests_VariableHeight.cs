@@ -26,13 +26,18 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
         [InlineData(50)]
         public void Scroll_Down_To_Bottom(double step)
         {
+            // Arrange
             var (target, scroll, _) = CreateTarget();
 
+            // Act
             Layout(target);
 
             var index = GetFirstRowIndex(target);
+
+            // Assert
             index.Should().Be(0);
 
+            // Act & Assert
             while (scroll.Offset.Y < scroll.Extent.Height - scroll.Viewport.Height)
             {
                 scroll.Offset = new Vector(0, scroll.Offset.Y + step);
@@ -48,19 +53,26 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
         [AvaloniaFact]
         public void Scroll_To_Bottom()
         {
+            // Arrange
             var (target, scroll, items) = CreateTarget();
 
             scroll.GetObservable(ScrollViewer.OffsetProperty).Subscribe(x => { });
 
+            // Act
             Layout(target);
 
             var index = GetFirstRowIndex(target);
+
+            // Assert
             index.Should().Be(0);
 
+            // Act
             scroll.Offset = new Vector(0, scroll.Extent.Height - scroll.Viewport.Height);
             Layout(target);
 
             var lastIndex = GetLastRowIndex(target);
+
+            // Assert
             lastIndex.Should().Be(items.Count - 1);
         }
 

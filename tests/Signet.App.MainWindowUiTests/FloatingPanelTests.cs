@@ -72,12 +72,15 @@ public sealed class FloatingPanelTests
     [AvaloniaFact]
     public void Float_opens_the_panel_in_a_visible_window()
     {
+        // Act
         Host host = Show();
 
         host.Factory.FloatDockable(Panel(host, DockableIds.TableOfContents));
         Settle(host.Window);
 
         HostWindow floating = FloatingWindow(host);
+
+        // Assert
         floating.IsVisible.Should().BeTrue("the floating panel must be shown, not vanish");
         host.Factory.IsToolFloating(DockableIds.TableOfContents).Should().BeTrue();
         host.Factory.IsToolVisible(DockableIds.TableOfContents).Should().BeTrue();
@@ -101,6 +104,7 @@ public sealed class FloatingPanelTests
     [AvaloniaFact]
     public void Dragging_the_title_bar_floats_the_panel_not_its_region_and_Dock_brings_it_back()
     {
+        // Act
         Host host = Show();
         IToolDock region = RegionOf(host, DockableIds.BookBrowser);
         IDockable bookBrowser = Panel(host, DockableIds.BookBrowser);
@@ -108,15 +112,18 @@ public sealed class FloatingPanelTests
         host.Factory.FloatDockable(region); // what the drag of the title bar asks Dock for
         Settle(host.Window);
 
+        // Assert
         host.Factory.IsToolFloating(DockableIds.BookBrowser).Should().BeTrue("the panel floats");
         Flatten(host.Root).Should().Contain(region, "the region itself stays in the main layout");
         host.Root.Windows!.Select(w => w.Layout).OfType<IDockable>().SelectMany(Flatten).Should().NotContain(region,
             "no floating window holds the region");
         host.Factory.DescribePlaces().Should().Contain(DockableIds.BookBrowser + "=floating");
 
+        // Act
         host.Factory.PinDockable(bookBrowser); // "Dock" in the panel's menu
         Settle(host.Window);
 
+        // Assert
         host.Factory.IsToolFloating(DockableIds.BookBrowser).Should().BeFalse();
         region.VisibleDockables.Should().Contain(bookBrowser, "it is back in its region");
         host.Root.Windows.Should().BeNullOrEmpty("the emptied window is closed");
@@ -128,6 +135,7 @@ public sealed class FloatingPanelTests
     [AvaloniaFact]
     public void Dock_on_a_floating_panel_docks_it_once_without_recursion()
     {
+        // Act
         Host host = Show();
         IDockable toc = Panel(host, DockableIds.TableOfContents);
         IToolDock region = RegionOf(host, DockableIds.TableOfContents);
@@ -137,6 +145,7 @@ public sealed class FloatingPanelTests
         host.Factory.PinDockable(toc);
         Settle(host.Window);
 
+        // Assert
         region.VisibleDockables.Should().Contain(toc);
         host.Factory.IsToolFloating(DockableIds.TableOfContents).Should().BeFalse();
         host.Window.Close();
@@ -145,6 +154,7 @@ public sealed class FloatingPanelTests
     [AvaloniaFact]
     public void Closing_the_floating_window_hides_the_panel_and_showing_it_again_floats_it()
     {
+        // Act
         Host host = Show();
         IDockable toc = Panel(host, DockableIds.TableOfContents);
 
@@ -153,11 +163,15 @@ public sealed class FloatingPanelTests
         FloatingWindow(host).Close();
         Settle(host.Window);
 
+        // Assert
         host.Factory.IsToolVisible(DockableIds.TableOfContents).Should().BeFalse("the window's × closes its panels");
         host.Root.Windows.Should().BeNullOrEmpty();
 
+        // Act
         host.Factory.ToggleTool(DockableIds.TableOfContents).Should().BeTrue("shown again");
         Settle(host.Window);
+
+        // Assert
         host.Factory.IsToolFloating(DockableIds.TableOfContents).Should().BeTrue("it was closed floating");
         FloatingWindow(host).IsVisible.Should().BeTrue();
         host.Window.Close();
@@ -168,6 +182,7 @@ public sealed class FloatingPanelTests
     {
         // The Book Browser is alone in its region: closed while floating, the View menu must bring it back (it used
         // to dock back on the window's × — and the next View → Book Browser hid it).
+        // Act
         Host host = Show();
         IDockable bookBrowser = Panel(host, DockableIds.BookBrowser);
 
@@ -178,6 +193,7 @@ public sealed class FloatingPanelTests
         host.Factory.ToggleTool(DockableIds.BookBrowser).Should().BeTrue("shown again");
         Settle(host.Window);
 
+        // Assert
         host.Factory.FindDockable(host.Root, d => d.Id == DockableIds.BookBrowser).Should().BeSameAs(bookBrowser);
         host.Factory.IsToolFloating(DockableIds.BookBrowser).Should().BeTrue();
         FloatingWindow(host).GetVisualDescendants().OfType<BookBrowserView>().Should().ContainSingle()
@@ -188,6 +204,7 @@ public sealed class FloatingPanelTests
     [AvaloniaFact]
     public void A_floating_panel_closed_with_its_own_close_comes_back_floating_at_the_same_place()
     {
+        // Act
         Host host = Show();
         IDockable toc = Panel(host, DockableIds.TableOfContents);
         host.Factory.FloatDockable(toc);
@@ -199,12 +216,17 @@ public sealed class FloatingPanelTests
 
         host.Factory.CloseDockable(toc);
         Settle(host.Window);
+
+        // Assert
         host.Root.Windows.Should().BeNullOrEmpty("the emptied floating window is closed");
 
+        // Act
         host.Factory.ToggleTool(DockableIds.TableOfContents).Should().BeTrue("shown again");
         Settle(host.Window);
         IDockWindow reopened = host.Root.Windows!.Single();
         reopened.Save();
+
+        // Assert
         (reopened.Width, reopened.Height).Should().Be((300d, 400d));
         host.Window.Close();
     }
@@ -212,17 +234,24 @@ public sealed class FloatingPanelTests
     [AvaloniaFact]
     public void Hiding_a_floating_panel_from_the_View_menu_and_showing_it_again_floats_it()
     {
+        // Act
         Host host = Show();
         IDockable toc = Panel(host, DockableIds.TableOfContents);
         host.Factory.FloatDockable(toc);
         Settle(host.Window);
 
+        // Act & Assert
         host.Factory.ToggleTool(DockableIds.TableOfContents).Should().BeFalse("hidden");
         Settle(host.Window);
+
+        // Assert
         host.Root.Windows.Should().BeNullOrEmpty("the emptied floating window is closed");
 
+        // Act
         host.Factory.ToggleTool(DockableIds.TableOfContents).Should().BeTrue("shown again");
         Settle(host.Window);
+
+        // Assert
         host.Factory.IsToolFloating(DockableIds.TableOfContents).Should().BeTrue();
         host.Window.Close();
     }
@@ -230,6 +259,7 @@ public sealed class FloatingPanelTests
     [AvaloniaFact]
     public void A_panel_hidden_while_floating_is_saved_and_restored_as_floating_when_shown()
     {
+        // Act
         Host host = Show();
         host.Factory.FloatDockable(Panel(host, DockableIds.TableOfContents));
         Settle(host.Window);
@@ -238,17 +268,25 @@ public sealed class FloatingPanelTests
         IReadOnlyDictionary<string, string> visibility = host.Factory.CaptureToolVisibility();
         IReadOnlyDictionary<string, string> floating = host.Factory.CaptureFloatingPanels();
         host.Window.Close();
+
+        // Assert
         floating.Should().ContainKey(DockableIds.TableOfContents);
 
+        // Act
         Host restarted = Show();
         restarted.Factory.ApplyToolVisibility(visibility);
         restarted.Factory.ApplyFloatingPanels(floating);
         Settle(restarted.Window);
+
+        // Assert
         restarted.Factory.IsToolVisible(DockableIds.TableOfContents).Should().BeFalse("it stays closed");
         restarted.Root.Windows.Should().BeNullOrEmpty();
 
+        // Act
         restarted.Factory.ToggleTool(DockableIds.TableOfContents).Should().BeTrue();
         Settle(restarted.Window);
+
+        // Assert
         restarted.Factory.IsToolFloating(DockableIds.TableOfContents).Should().BeTrue();
         restarted.Window.Close();
     }
@@ -256,10 +294,12 @@ public sealed class FloatingPanelTests
     [AvaloniaFact]
     public void A_floating_panel_is_saved_in_the_region_it_came_from()
     {
+        // Act
         Host host = Show();
         host.Factory.FloatDockable(Panel(host, DockableIds.TableOfContents));
         Settle(host.Window);
 
+        // Assert
         host.Factory.CaptureLayoutState().Regions.Single(r => r.DockId == "RightDock").ToolIds
             .Should().Contain(DockableIds.TableOfContents);
         FloatingWindow(host).Close();
@@ -269,19 +309,23 @@ public sealed class FloatingPanelTests
     [AvaloniaFact]
     public void The_panel_menu_offers_Dock_instead_of_Float_in_a_floating_window()
     {
+        // Act
         Host host = Show();
         IDockable toc = Panel(host, DockableIds.TableOfContents);
 
         host.Factory.SetActiveDockable(toc);
         Settle(host.Window);
 
+        // Assert
         PanelMenuEnabled(host.Window, toc).Should().Be((true, false), "a docked panel can float, it is docked already");
 
+        // Act
         host.Factory.FloatDockable(toc);
         Settle(host.Window);
         HostWindow floating = FloatingWindow(host);
         Settle(floating);
 
+        // Assert
         PanelMenuEnabled(floating, toc).Should().Be((false, true), "a floating panel can only be docked back");
         host.Window.Close();
     }
@@ -289,6 +333,7 @@ public sealed class FloatingPanelTests
     [AvaloniaFact]
     public void Dock_docks_a_floating_panel_back_and_closes_its_window()
     {
+        // Act
         Host host = Show();
         IDockable toc = Panel(host, DockableIds.TableOfContents);
         IDock rightDock = (IDock)toc.Owner!;
@@ -298,6 +343,7 @@ public sealed class FloatingPanelTests
         host.Factory.PinDockable(toc);
         Settle(host.Window);
 
+        // Assert
         toc.Owner.Should().BeSameAs(rightDock);
         host.Factory.IsToolFloating(DockableIds.TableOfContents).Should().BeFalse();
         host.Factory.IsToolPinned(DockableIds.TableOfContents).Should().BeFalse("\"Dock\" must not switch the panel to Auto Hide");
@@ -308,11 +354,13 @@ public sealed class FloatingPanelTests
     [AvaloniaFact]
     public void A_floating_panel_uses_the_UI_font_of_the_main_window()
     {
+        // Act
         Host host = Show();
         host.Factory.FloatDockable(Panel(host, DockableIds.TableOfContents));
         Settle(host.Window);
         HostWindow floating = FloatingWindow(host);
 
+        // Assert
         floating.FontSize.Should().Be(host.Window.FontSize, "a floated panel must not fall back to Avalonia's 12 px");
         floating.FontFamily.Should().Be(host.Window.FontFamily);
 
@@ -321,7 +369,10 @@ public sealed class FloatingPanelTests
         Application.Current!.Resources.MergedDictionaries.Add(uiFont);
         try
         {
+            // Act
             Settle(host.Window);
+
+            // Assert
             floating.FontSize.Should().Be(17);
             host.Window.FontSize.Should().Be(17);
         }
@@ -336,8 +387,11 @@ public sealed class FloatingPanelTests
     [AvaloniaFact]
     public void Closing_the_main_window_closes_the_floating_windows_too()
     {
+        // Arrange
         MainWindowViewModel vm = new();
         MainWindow main = new() { DataContext = vm };
+
+        // Act
         main.Show();
         Settle(main);
         MainDockFactory factory = (MainDockFactory)vm.DockFactory;
@@ -345,11 +399,15 @@ public sealed class FloatingPanelTests
         factory.FloatDockable(factory.FindDockable(vm.Layout, d => d.Id == DockableIds.BookBrowser)!);
         Settle(main);
         HostWindow[] floating = vm.Layout.Windows!.Select(w => w.Host).OfType<HostWindow>().ToArray();
+
+        // Assert
         floating.Should().HaveCount(2).And.OnlyContain(w => w.IsVisible);
 
+        // Act
         main.Close();
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         main.IsVisible.Should().BeFalse();
         floating.Should().OnlyContain(w => !w.IsVisible, "a floating window must not outlive the application");
         vm.Layout.Windows.Should().BeNullOrEmpty();

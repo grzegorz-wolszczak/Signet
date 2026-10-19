@@ -12,10 +12,13 @@ public sealed class FontFamilyListTests
     [Fact]
     public void Parse_reads_quoted_unquoted_and_generic_names_with_offsets()
     {
+        // Arrange
         const string value = "\"KCaecilia\", Book  Antiqua, 'A, B', serif !important";
 
+        // Act
         IReadOnlyList<FontFamilyEntry> entries = FontFamilyList.Parse(value, 0, value.Length);
 
+        // Assert
         entries.Select(e => e.Name).Should().Equal("KCaecilia", "Book Antiqua", "A, B", "serif");
         entries.Select(e => e.IsGeneric).Should().Equal(false, false, false, true);
         entries.Select(e => value[e.Start..e.End]).Should().Equal("\"KCaecilia\"", "Book  Antiqua", "'A, B'", "serif");
@@ -29,8 +32,10 @@ public sealed class FontFamilyListTests
     [InlineData("bold 1em /1.2 \"KCaecilia\", serif", "normal", "bold")]
     public void ParseShorthand_finds_the_family_list(string value, string style, string weight)
     {
+        // Act
         FontShorthand? shorthand = FontFamilyList.ParseShorthand(value, 0, value.Length);
 
+        // Assert
         shorthand.Should().NotBeNull();
         shorthand!.Style.Should().Be(style);
         shorthand.Weight.Should().Be(weight);
@@ -43,23 +48,33 @@ public sealed class FontFamilyListTests
     [InlineData("bold")]
     public void ParseShorthand_gives_up_on_system_fonts_variables_and_values_without_a_size(string value)
     {
+        // Act & Assert
         FontFamilyList.ParseShorthand(value, 0, value.Length).Should().BeNull();
     }
 
     [Fact]
     public void Without_keeps_the_remaining_entries_as_written()
     {
+        // Arrange
         const string value = "\"KCaecilia\", 'Georgia', serif";
+
+        // Act
         IReadOnlyList<FontFamilyEntry> entries = FontFamilyList.Parse(value, 0, value.Length);
 
+        // Act & Assert
         FontFamilyList.Without(value, entries, e => e.Name == "KCaecilia").Should().Be("'Georgia', serif");
+
+        // Act & Assert
         FontFamilyList.Without(value, entries, _ => true).Should().BeEmpty();
     }
 
     [Fact]
     public void Quote_escapes_the_quote_character()
     {
+        // Act & Assert
         FontFamilyList.Quote("My \"Font\"").Should().Be("\"My \\\"Font\\\"\"");
+
+        // Act & Assert
         FontFamilyList.Quote("Font", '\'').Should().Be("'Font'");
     }
 }

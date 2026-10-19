@@ -11,6 +11,7 @@ public sealed class SearchControlsTests
     [Fact]
     public void Build_ProducesTokensInOriginalOrder()
     {
+        // Arrange
         var values = new SearchControlValues(
             SearchMode.Regex,
             SearchDirection.Up,
@@ -22,12 +23,14 @@ public sealed class SearchControlsTests
             UnicodeProperty: true,
             TextOnly: true);
 
+        // Act & Assert
         SearchControls.Build(values).Should().Be("RX DA UN WR TO UP AH");
     }
 
     [Fact]
     public void Parse_EmptyString_ReturnsDefaults()
     {
+        // Act & Assert
         SearchControls.Parse(string.Empty).Should().Be(SearchControlValues.Defaults);
     }
 
@@ -38,8 +41,10 @@ public sealed class SearchControlsTests
     public void Parse_DecodesModeDirectionScope(
         string controls, SearchMode mode, SearchDirection direction, LookWhere lookWhere)
     {
+        // Act
         SearchControlValues values = SearchControls.Parse(controls);
 
+        // Assert
         values.Mode.Should().Be(mode);
         values.Direction.Should().Be(direction);
         values.LookWhere.Should().Be(lookWhere);
@@ -48,6 +53,7 @@ public sealed class SearchControlsTests
     [Fact]
     public void BuildThenParse_RoundTripsAllFlags()
     {
+        // Arrange
         var original = new SearchControlValues(
             SearchMode.CaseSensitive,
             SearchDirection.Down,
@@ -59,14 +65,17 @@ public sealed class SearchControlsTests
             UnicodeProperty: true,
             TextOnly: false);
 
+        // Act & Assert
         SearchControls.Parse(SearchControls.Build(original)).Should().Be(original);
     }
 
     [Fact]
     public void ToSearchOptions_MapsRegexFlags()
     {
+        // Arrange
         var values = SearchControlValues.Defaults with { DotAll = true, TextOnly = true };
 
+        // Act & Assert
         SearchControls.ToSearchOptions(values)
             .Should().Be(new SearchOptions(DotAll: true, MinimalMatch: false, UnicodeProperty: false, TextOnly: true));
     }
@@ -74,8 +83,10 @@ public sealed class SearchControlsTests
     [Fact]
     public void BuildToolTip_ListsHumanReadableTokens()
     {
+        // Act
         string tip = SearchControls.BuildToolTip("RX DN AH");
 
+        // Assert
         tip.Should().Contain("RX - ").And.Contain("DN - ").And.Contain("AH - ");
     }
 }

@@ -50,8 +50,10 @@ public sealed class StandardizationViewModelTests : IDisposable
     [Fact]
     public void Sections_follow_the_step_order_and_the_remembered_choice()
     {
+        // Arrange
         StandardizationViewModel vm = New(StandardizationStep.RebaseManifestIds);
 
+        // Act & Assert
         vm.Sections.Select(s => s.Step).Should().Equal(EpubStandardization.AllSteps);
         vm.EnabledSteps.Should().Equal(StandardizationStep.RebaseManifestIds);
         vm.Sections.Should().OnlyContain(s => s.Title.Length > 0 && s.Description.Length > 0 && s.Info.Length > 0);
@@ -63,14 +65,20 @@ public sealed class StandardizationViewModelTests : IDisposable
     [Fact]
     public void Checking_an_earlier_step_replans_the_later_ones()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         StandardizationViewModel vm = New(StandardizationStep.RebaseManifestIds);
         StandardizationSectionViewModel ids = Section(vm, StandardizationStep.RebaseManifestIds);
+
+        // Act & Assert
         ids.Items.Should().Contain(i => i.Change.Before == "ch01" && i.Change.After == "ch01_html");
 
+        // Act
         Section(vm, StandardizationStep.StandardFileExtensions).IsEnabled = true;
 
         StandardizationSectionViewModel extensions = Section(vm, StandardizationStep.StandardFileExtensions);
+
+        // Assert
         extensions.Summary.Should().Be(
             Strings.Format("StandardizeStep_StandardFileExtensions_Summary", 1) + Strings.Format("StandardizeWindow_Summary_SideIds", 1));
         extensions.Items.Select(i => (i.Text, i.FileText)).Should().Equal(
@@ -82,17 +90,24 @@ public sealed class StandardizationViewModelTests : IDisposable
     [Fact]
     public void Select_none_leaves_nothing_to_apply_and_select_all_checks_every_step()
     {
+        // Arrange
         StandardizationViewModel vm = New(StandardizationStep.StandardFolders);
+
+        // Act & Assert
         vm.HasChanges.Should().BeTrue();
 
+        // Act
         vm.SelectNoneCommand.Execute(null);
 
+        // Assert
         vm.EnabledSteps.Should().BeEmpty();
         vm.HasChanges.Should().BeFalse();
         vm.ApplyCommand.CanExecute(null).Should().BeFalse();
 
+        // Act
         vm.SelectAllCommand.Execute(null);
 
+        // Assert
         vm.EnabledSteps.Should().Equal(EpubStandardization.AllSteps);
         vm.ApplyCommand.CanExecute(null).Should().BeTrue();
     }
@@ -100,12 +115,15 @@ public sealed class StandardizationViewModelTests : IDisposable
     [Fact]
     public void Apply_runs_the_checked_steps_and_closes_the_dialog()
     {
+        // Arrange
         StandardizationViewModel vm = New(StandardizationStep.StandardFolders, StandardizationStep.ManifestMediaTypes);
         bool closed = false;
         vm.CloseRequested += (_, _) => closed = true;
 
+        // Act
         vm.ApplyCommand.Execute(null);
 
+        // Assert
         _applied.Should().ContainSingle()
             .Which.Should().Equal(StandardizationStep.StandardFolders, StandardizationStep.ManifestMediaTypes);
         closed.Should().BeTrue();

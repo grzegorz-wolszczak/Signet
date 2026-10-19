@@ -37,6 +37,7 @@ public sealed class FindReplaceHistorySelectionTests
     [InlineData("ReplaceBox")]
     public void Text_picked_from_history_stays_in_the_field_after_the_operation(string boxName)
     {
+        // Arrange
         using TempDir temp = new();
         CodeTabViewModel tab = NewCodeTab(temp.Path, "<p>test foo bar</p>");
         FindReplaceViewModel vm = new(
@@ -55,6 +56,8 @@ public sealed class FindReplaceHistorySelectionTests
 
         vm.FindText = "foo";
         Window window = new() { Width = 900, Height = 400, Content = new FindReplaceView { DataContext = vm } };
+
+        // Act
         window.Show();
         Pump(window);
         AutoCompleteBox box = window.GetVisualDescendants().OfType<AutoCompleteBox>().Single(b => b.Name == boxName);
@@ -74,12 +77,17 @@ public sealed class FindReplaceHistorySelectionTests
         ListBoxItem barItem = list.GetVisualDescendants().OfType<ListBoxItem>().Single(i => Equals(i.Content, "bar"));
         Click(TopLevel.GetTopLevel(barItem)!, barItem);
         Pump(window);
+
+        // Assert
         box.Text.Should().Be("bar");
 
         System.Windows.Input.ICommand command = boxName == "FindBox" ? vm.FindNextCommand : vm.ReplaceFindCommand;
+
+        // Act
         Click(window, window.GetVisualDescendants().OfType<Button>().First(b => ReferenceEquals(b.Command, command)));
         Pump(window);
 
+        // Assert
         box.Text.Should().Be("bar");
         (boxName == "FindBox" ? vm.FindText : vm.ReplaceText).Should().Be("bar");
         (boxName == "FindBox" ? vm.FindHistory : vm.ReplaceHistory).First().Should().Be("bar");

@@ -29,6 +29,7 @@ public sealed class StartupArgumentsTests : IDisposable
     [Fact]
     public void No_arguments_mean_no_file()
     {
+        // Act & Assert
         StartupArguments.FileToOpen(Array.Empty<string>(), Path.GetTempPath()).Should().BeNull();
         StartupArguments.FileToOpen(null, Path.GetTempPath()).Should().BeNull();
         StartupArguments.FileToOpen([" "], Path.GetTempPath()).Should().BeNull();
@@ -37,17 +38,23 @@ public sealed class StartupArgumentsTests : IDisposable
     [Fact]
     public void Relative_path_is_resolved_against_the_current_directory()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
 
+        // Act
         string? path = StartupArguments.FileToOpen(["book.epub", "ignored"], temp.Path);
 
+        // Assert
         path.Should().Be(Path.Combine(temp.Path, "book.epub"));
     }
 
     [Fact]
     public void Path_with_spaces_and_a_leading_at_sign_is_a_plain_file()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
+
+        // Act & Assert
         StartupArguments.FileToOpen(["@my book.epub"], temp.Path)
             .Should().Be(temp.Combine("@my book.epub"), "\"@\" does not denote a response file here");
     }
@@ -55,14 +62,17 @@ public sealed class StartupArgumentsTests : IDisposable
     [Fact]
     public async Task Startup_opens_the_file_from_the_command_line()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp, "from-cli.epub");
         MainWindowViewModel vm = _disposables.Add(new MainWindowViewModel());
         vm.AttachFileWorkflowPrompts(new FakeFileWorkflowPrompts());
         vm.StartupFilePath = epub;
 
+        // Act
         await vm.RunStartupAsync();
 
+        // Assert
         ((IBookWorkspace)vm).CurrentBook.Should().NotBeNull();
         vm.WindowTitle.Should().Contain("from-cli.epub");
         vm.CheckpointHistory.Dispose();
@@ -71,14 +81,17 @@ public sealed class StartupArgumentsTests : IDisposable
     [Fact]
     public async Task Missing_file_from_the_command_line_shows_an_error_and_starts_without_a_book()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         MainWindowViewModel vm = _disposables.Add(new MainWindowViewModel());
         FakeFileWorkflowPrompts prompts = new();
         vm.AttachFileWorkflowPrompts(prompts);
         vm.StartupFilePath = temp.Combine("missing.epub");
 
+        // Act
         await vm.RunStartupAsync();
 
+        // Assert
         prompts.LastError.Should().NotBeNull();
         ((IBookWorkspace)vm).CurrentBook.Should().BeNull("after the error the window starts without a book");
         vm.HasBook.Should().BeFalse();
@@ -111,6 +124,7 @@ public sealed class StartupArgumentsTests : IDisposable
     [Fact]
     public async Task The_last_book_is_reopened_only_when_a_book_was_open_at_exit()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp, "last.epub");
         SettingsStore settings = new(temp.Combine("settings.xml"));
@@ -119,25 +133,47 @@ public sealed class StartupArgumentsTests : IDisposable
 
         // Opened and left open at exit: the next start reopens it.
         MainWindowViewModel first = NewOn(settings);
+
+        // Act
         await first.RunStartupAsync();
+
+        // Assert
         first.HasBook.Should().BeTrue();
+
+        // Act
         first.PersistState();
+
+        // Assert
         settings.BookOpenAtExit.Should().BeTrue();
         first.CheckpointHistory.Dispose();
         first.FileWorkflow!.Dispose(); // the instance ends: its book file is free again
 
         // Closed before exit: the next start has no book.
+        // Arrange
         MainWindowViewModel second = NewOn(settings);
+
+        // Act
         await second.RunStartupAsync();
+
+        // Assert
         second.HasBook.Should().BeTrue();
+
+        // Act
         ((IBookWorkspace)second).CloseBook();
         second.PersistState();
+
+        // Assert
         settings.BookOpenAtExit.Should().BeFalse();
         second.CheckpointHistory.Dispose();
         second.FileWorkflow!.Dispose();
 
+        // Arrange
         MainWindowViewModel third = NewOn(settings);
+
+        // Act
         await third.RunStartupAsync();
+
+        // Assert
         third.HasBook.Should().BeFalse("the application was closed without a book");
         third.CheckpointHistory.Dispose();
     }

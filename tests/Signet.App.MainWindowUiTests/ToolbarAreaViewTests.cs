@@ -53,11 +53,13 @@ public sealed class ToolbarAreaViewTests : IDisposable
     [AvaloniaFact]
     public void Every_shown_toolbar_has_a_grip()
     {
+        // Act
         (MainWindow window, MainWindowViewModel vm) = ShowMainWindow();
 
         ToolbarStripView[] strips = Area(window, vm.TopToolbars).GetVisualDescendants().OfType<ToolbarStripView>()
             .Where(s => s.IsVisible).ToArray();
 
+        // Assert
         strips.Should().NotBeEmpty();
         strips.Should().OnlyContain(s => s.FindControl<Border>("Grip")!.Bounds.Width >= 8);
     }
@@ -65,38 +67,51 @@ public sealed class ToolbarAreaViewTests : IDisposable
     [AvaloniaFact]
     public void The_empty_bottom_area_takes_no_space_until_a_toolbar_is_dragged()
     {
+        // Arrange
         (MainWindow window, MainWindowViewModel vm) = ShowMainWindow();
         ToolbarAreaView bottom = Area(window, vm.BottomToolbars);
+
         bottom.IsVisible.Should().BeFalse();
 
+        // Act
         ToolbarDragState.Begin(ToolbarId.Format);
         try
         {
             Flush(window);
 
+            // Assert
             bottom.IsVisible.Should().BeTrue();
             bottom.FindControl<Border>("Placeholder")!.IsVisible.Should().BeTrue();
+
+            // Act & Assert
             bottom.ResolveAt(new Point(10, 5)).Should().Match<ToolbarDropTarget>(t => t.NewRow && t.RowIndex == 0);
         }
         finally
         {
+            // Act
             ToolbarDragState.End();
         }
 
         Flush(window);
+
+        // Assert
         bottom.IsVisible.Should().BeFalse();
     }
 
     [AvaloniaFact]
     public void A_toolbar_dropped_in_a_new_bottom_row_shows_above_the_status_bar()
     {
+        // Arrange
         (MainWindow window, MainWindowViewModel vm) = ShowMainWindow();
 
+        // Act
         vm.BottomToolbars.Drop(ToolbarId.Format, new ToolbarDropTarget(true, 0, null, default));
         Flush(window);
 
         ToolbarAreaView top = Area(window, vm.TopToolbars);
         ToolbarAreaView bottom = Area(window, vm.BottomToolbars);
+
+        // Assert
         bottom.IsVisible.Should().BeTrue();
         top.GetVisualDescendants().OfType<ToolbarStripView>().Select(s => ((ToolbarViewModel)s.DataContext!).Id)
             .Should().NotContain(ToolbarId.Format);
@@ -114,6 +129,7 @@ public sealed class ToolbarAreaViewTests : IDisposable
     [AvaloniaFact]
     public void The_pointer_over_the_rows_resolves_to_the_row_the_toolbar_under_it_and_the_gaps()
     {
+        // Arrange
         (MainWindow window, MainWindowViewModel vm) = ShowMainWindow();
         ToolbarAreaView top = Area(window, vm.TopToolbars);
         ToolbarStripView file = Strip(top, ToolbarId.File);
@@ -121,19 +137,30 @@ public sealed class ToolbarAreaViewTests : IDisposable
         Size fileSize = file.Bounds.Size;
 
         // Left half of the File toolbar, vertically in the middle of its row → before File, in the first row.
+        // Act
         ToolbarDropTarget before = top.ResolveAt(new Point(filePos.X + 2, filePos.Y + fileSize.Height / 2));
+
+        // Assert
         before.NewRow.Should().BeFalse();
         before.RowIndex.Should().Be(0);
         before.Before.Should().Be(ToolbarId.File);
 
         // Right of everything in the first row → the end of that row.
+        // Act
         ToolbarDropTarget end = top.ResolveAt(new Point(top.Bounds.Width - 1, filePos.Y + fileSize.Height / 2));
+
+        // Assert
         end.NewRow.Should().BeFalse();
         end.RowIndex.Should().Be(0);
 
         // Above the first row and below the last → new rows at the ends.
+        // Act & Assert
         top.ResolveAt(new Point(20, 0)).Should().Match<ToolbarDropTarget>(t => t.NewRow && t.RowIndex == 0);
+
+        // Act
         ToolbarDropTarget last = top.ResolveAt(new Point(20, top.Bounds.Height - 0.5));
+
+        // Assert
         last.NewRow.Should().BeTrue();
         last.RowIndex.Should().BeGreaterThan(0);
     }
@@ -141,10 +168,12 @@ public sealed class ToolbarAreaViewTests : IDisposable
     [AvaloniaFact]
     public void Right_click_menu_of_a_toolbar_offers_hide_and_edit_bound_to_that_toolbar()
     {
+        // Arrange
         (MainWindow window, MainWindowViewModel vm) = ShowMainWindow();
         ToolbarStripView format = Strip(Area(window, vm.TopToolbars), ToolbarId.Format);
 
         ContextMenu menu = format.ContextMenu!;
+
         menu.Should().NotBeNull();
         menu.DataContext = format.DataContext;
         MenuItem[] items = menu.Items.OfType<MenuItem>().ToArray();
@@ -152,11 +181,18 @@ public sealed class ToolbarAreaViewTests : IDisposable
 
         ToolbarId? edited = null;
         vm.CustomizeToolbarRequested += (_, id) => edited = id;
+
+        // Act
         items[1].Command!.Execute(null);
+
+        // Assert
         edited.Should().Be(ToolbarId.Format);
 
+        // Act
         items[0].Command!.Execute(null);
         Flush(window);
+
+        // Assert
         format.IsVisible.Should().BeFalse();
     }
 
@@ -164,21 +200,32 @@ public sealed class ToolbarAreaViewTests : IDisposable
     public void Right_click_on_a_disabled_toolbar_button_still_opens_the_toolbar_menu()
     {
         // Without a book the book actions are blocked and their toolbar buttons disabled.
+        // Arrange
         (MainWindow window, MainWindowViewModel vm) = ShowMainWindow();
         vm.Actions.Get(AppActionIds.Cut)!.IsBlocked = true;
+
+        // Act
         Flush(window);
         ToolbarStripView strip = Strip(Area(window, vm.TopToolbars), ToolbarId.Edit);
         Button cut = strip.GetVisualDescendants().OfType<Button>()
             .First(b => b.DataContext is ToolbarItemViewModel { Action.Id: AppActionIds.Cut });
+
+        // Assert
         cut.IsEffectivelyEnabled.Should().BeFalse("the premise: the button is disabled");
 
         // Control: the same gesture on the (always enabled) grip opens the menu, so the simulation itself works.
         Border grip = strip.FindControl<Border>("Grip")!;
         Point gripCenter = grip.TranslatePoint(new Point(grip.Bounds.Width / 2, grip.Bounds.Height / 2), window)!.Value;
+
+        // Act
         window.MouseDown(gripCenter, MouseButton.Right);
         window.MouseUp(gripCenter, MouseButton.Right);
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         strip.ContextMenu!.IsOpen.Should().BeTrue();
+
+        // Act
         strip.ContextMenu.Close();
         Dispatcher.UIThread.RunJobs();
 
@@ -187,6 +234,7 @@ public sealed class ToolbarAreaViewTests : IDisposable
         window.MouseUp(center, MouseButton.Right);
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         strip.ContextMenu!.IsOpen.Should().BeTrue();
         strip.ContextMenu.Close();
     }
@@ -194,7 +242,10 @@ public sealed class ToolbarAreaViewTests : IDisposable
     [AvaloniaFact]
     public void Right_click_on_any_button_of_any_toolbar_opens_the_toolbar_menu_when_no_book_is_open()
     {
+        // Arrange
         (MainWindow window, MainWindowViewModel vm) = ShowMainWindow();
+
+        // Act
         vm.Actions.SetBookOpen(false);
         Flush(window);
 
@@ -226,6 +277,7 @@ public sealed class ToolbarAreaViewTests : IDisposable
             }
         }
 
+        // Assert
         disabled.Should().BeGreaterThan(0, "without a book many toolbar buttons are disabled");
         failures.Should().BeEmpty();
     }

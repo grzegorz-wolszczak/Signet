@@ -39,14 +39,18 @@ public sealed class FindReplaceLayoutTests
     [AvaloniaFact]
     public void The_close_button_of_the_panel_is_on_the_right_of_the_search_fields()
     {
+        // Arrange
         FindReplacePanel panel = new();
         Window window = new() { Width = 1400, Height = 400, Content = panel };
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
 
         Button close = panel.GetLogicalDescendants().OfType<Button>().Single(b => Equals(b.Content, "✕") && b.GetLogicalParent() is Grid { Name: null } g && g.Children.OfType<FindReplaceView>().Any());
         FindReplaceView view = panel.GetLogicalDescendants().OfType<FindReplaceView>().Single();
 
+        // Assert
         Grid.GetColumn(close).Should().BeGreaterThan(Grid.GetColumn(view), "the search fields come first, the close button is in the right corner");
         close.HorizontalAlignment.Should().Be(Avalonia.Layout.HorizontalAlignment.Right);
         window.Close();
@@ -55,13 +59,17 @@ public sealed class FindReplaceLayoutTests
     [AvaloniaFact]
     public void Six_action_buttons_with_icons_are_laid_out()
     {
+        // Arrange
         using TempDir temp = new();
+
+        // Act
         (Window window, FindReplaceView view, FindReplaceViewModel vm) = Show(temp);
 
         Grid grid = view.GetVisualDescendants().OfType<Grid>().Single(g => g.Name == "ActionButtons");
         Button[] buttons = grid.Children.OfType<Button>()
             .OrderBy(Grid.GetRow).ThenBy(Grid.GetColumn).ToArray();
 
+        // Assert
         buttons.Select(b => b.Tag).Should().Equal("find", "replace", "restart", "replace-find", "replace-all", "count-all");
         buttons.Select(b => b.Command).Should().Equal(
             vm.FindNextCommand, vm.ReplaceCommand, vm.RestartCommand,
@@ -82,13 +90,22 @@ public sealed class FindReplaceLayoutTests
     [AvaloniaFact]
     public void Text_only_and_regex_options_are_available_outside_regex_mode()
     {
+        // Arrange
         using TempDir temp = new();
+
+        // Act
         (Window window, FindReplaceView view, FindReplaceViewModel vm) = Show(temp);
+
+        // Assert
         vm.IsRegexMode.Should().BeFalse();
 
         CheckBox textOnly = view.GetVisualDescendants().OfType<CheckBox>().Single(c => c.Name == "TextOnlyCheckBox");
         textOnly.IsEffectivelyVisible.Should().BeTrue("the option also works in Normal mode, so it must be visible");
+
+        // Act
         textOnly.IsChecked = true;
+
+        // Assert
         vm.RegexTextOnly.Should().BeTrue();
 
         DropDownButton regexOptions = view.GetVisualDescendants().OfType<DropDownButton>().Single(b => b.Name == "RegexOptionsButton");

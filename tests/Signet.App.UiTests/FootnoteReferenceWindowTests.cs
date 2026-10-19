@@ -26,17 +26,21 @@ public sealed class FootnoteReferenceWindowTests
     [AvaloniaFact]
     public void The_table_selects_the_chosen_note_follows_the_filter_and_add_returns_the_note()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("3.0");
         HtmlResource html = book.GetHtmlResourcesExcludingNav()[0];
         html.SetText("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<!DOCTYPE html>\n"
             + "<html xmlns=\"http://www.w3.org/1999/xhtml\" xmlns:epub=\"http://www.idpf.org/2007/ops\">\n"
             + "<head><title>t</title></head>\n<body>\n<p>One.</p>\n<p>Two.</p>\n<p>Three.</p>\n</body>\n</html>");
+
+        // Act & Assert
         FootnoteEditor.Add(book, html, After(html, "One"), "Apples.", FootnotePlacement.Local).Should().Be(FootnoteError.None);
         FootnoteEditor.Add(book, html, After(html, "Two"), "Bananas.", FootnotePlacement.Local).Should().Be(FootnoteError.None);
         FootnoteReferenceViewModel vm = new(FootnoteEditor.ReferenceTargets(book, html, After(html, "Three")));
         Window owner = new();
         owner.Show();
 
+        // Act
         Task<Footnote?> result = FootnoteReferenceWindow.AskAsync(owner, vm);
         Dispatcher.UIThread.RunJobs();
         FootnoteReferenceWindow window = owner.OwnedWindows.OfType<FootnoteReferenceWindow>().Single();
@@ -44,20 +48,32 @@ public sealed class FootnoteReferenceWindowTests
 
         TreeDataGrid grid = window.GetVisualDescendants().OfType<TreeDataGrid>().Single(g => g.Name == "NotesGrid");
         var source = (FlatTreeDataGridSource<FootnoteReferenceRow>)grid.Source!;
+
+        // Assert
         source.Rows.Count.Should().Be(2);
         source.RowSelection!.SelectedItem.Should().BeSameAs(vm.Visible[1], "the bananas are the nearest note before the caret");
 
+        // Act
         source.RowSelection.Select(new IndexPath(0));
+
+        // Assert
         vm.Selected!.Text.Should().Be("Apples.");
+
+        // Act
         vm.Filter = "banana";
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         source.Rows.Count.Should().Be(1);
         source.RowSelection.SelectedItem.Should().BeSameAs(vm.Visible[0]);
 
         Button add = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "AddButton");
+
+        // Act
         add.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         result.IsCompleted.Should().BeTrue();
         result.Result.Should().BeSameAs(vm.Visible[0].Target.Footnote);
         owner.Close();

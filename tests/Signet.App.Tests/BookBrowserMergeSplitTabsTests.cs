@@ -68,12 +68,16 @@ public sealed class BookBrowserMergeSplitTabsTests
     [AutoData]
     public void Split_at_markers_reloads_the_open_tab_of_the_split_file(string secondPart)
     {
+        // Arrange
         using TempDir temp = new();
         using Session s = new(temp);
+
+        // Act
         CodeTabViewModel tab = s.OpenChapter();
 
         s.SplitChapter(tab, secondPart);
 
+        // Assert
         tab.Document.Text.Should().Be(s.Chapter.GetText());
         tab.Document.Text.Should().NotContain(secondPart, "the second part moved to the new file");
         tab.IsModified.Should().BeFalse();
@@ -83,14 +87,18 @@ public sealed class BookBrowserMergeSplitTabsTests
     [AutoData]
     public void Merge_reloads_the_open_tab_of_the_target_file(string secondPart)
     {
+        // Arrange
         using TempDir temp = new();
         using Session s = new(temp);
+
+        // Act
         CodeTabViewModel tab = s.OpenChapter();
         HtmlResource second = s.SplitChapter(tab, secondPart);
         s.Select(s.Chapter, second);
 
         s.Vm.BookBrowser.MergeSelectedCommand.Execute(null);
 
+        // Assert
         tab.Document.Text.Should().Be(s.Chapter.GetText());
         tab.Document.Text.Should().Contain(secondPart, "the merged file's body is appended to the target");
         tab.IsModified.Should().BeFalse();

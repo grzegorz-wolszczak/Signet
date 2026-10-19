@@ -39,6 +39,7 @@ public sealed class BookFontOperationsTests
     [Fact]
     public void AddFontFaces_without_a_stylesheet_creates_fonts_css_and_links_it()
     {
+        // Arrange
         using TempDir temp = new();
         (Book book, IReadOnlyList<FontResource> fonts) = NewBookWithFonts(temp, Html("<p>text</p>"));
         using (book)
@@ -46,8 +47,10 @@ public sealed class BookFontOperationsTests
             FontFaceCandidate candidate = FontFaceAddition.Describe(fonts[0], book.IsEpub3);
             FontFaceRequest request = new(fonts[0].BookPath, candidate.Suggested.Family, candidate.Suggested.Weight, candidate.Suggested.Style);
 
+            // Act
             (CssResource css, IReadOnlyList<HtmlResource> notLinked) = book.AddFontFaces(null, new[] { request }, candidate.Suggested.Family);
 
+            // Assert
             css.Filename.Should().Be("fonts.css");
             notLinked.Should().BeEmpty();
             book.GetHtmlResources()[0].GetLinkedStylesheets().Should().Equal(css.BookPath);
@@ -58,15 +61,19 @@ public sealed class BookFontOperationsTests
     [Fact]
     public void FontManagerReport_lists_files_families_and_missing_faces()
     {
+        // Arrange
         using TempDir temp = new();
         (Book book, IReadOnlyList<FontResource> fonts) = NewBookWithFonts(temp, Html("<p>text <i>slanted</i></p>"));
         using (book)
         {
             string family = fonts[0].GetFontInfo().Family;
+
+            // Act
             book.AddFontFaces(null, new[] { new FontFaceRequest(fonts[0].BookPath, family, "normal", "normal") }, family);
 
             FontManagerReport report = FontManagerReport.Build(book);
 
+            // Assert
             report.Files.Select(f => f.IsUnused).Should().Equal(false, true);
             FontFamilyReport familyReport = report.Families.Should().ContainSingle().Subject;
             familyReport.IsEmbedded.Should().BeTrue();
@@ -79,6 +86,7 @@ public sealed class BookFontOperationsTests
     [Fact]
     public void A_removal_plan_applied_to_the_book_cleans_the_stylesheet()
     {
+        // Arrange
         using TempDir temp = new();
         (Book book, IReadOnlyList<FontResource> fonts) = NewBookWithFonts(temp, Html("<p>text</p>"));
         using (book)
@@ -89,9 +97,11 @@ public sealed class BookFontOperationsTests
                 fonts.Select(f => new FontFaceRequest(f.BookPath, family, f == fonts[0] ? "normal" : "bold", "normal")).ToList(),
                 family);
 
+            // Act
             FontRemovalPlan plan = FontRemovalPlan.Create(BookFontIndex.Build(book), fonts.Select(f => f.BookPath).ToList());
             book.ApplyTexts(plan.BuildNewTexts(new HashSet<string>())).Should().BeTrue();
 
+            // Assert
             css.GetText().Should().Be("body {\n  font-family: serif;\n}\n");
         }
     }

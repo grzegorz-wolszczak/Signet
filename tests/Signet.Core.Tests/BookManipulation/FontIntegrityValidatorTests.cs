@@ -33,32 +33,41 @@ public sealed class FontIntegrityValidatorTests : IDisposable
     [Fact]
     public void Validate_reports_only_the_damage_when_font_unparsable()
     {
+        // Arrange
         using Book book = OpenMutableBook();
 
+        // Act
         var results = FontIntegrityValidator.Validate(book);
 
+        // Assert
         results.Should().ContainSingle().Which.Code.Should().Be("Validation_FontCorrupt");
     }
 
     [Fact]
     public void Validate_returns_no_results_when_family_matches_and_not_restricted()
     {
+        // Arrange
         using Book book = OpenMutableBook();
         OverwriteFont(book, family: "Fancy", fsType: 0x0000);
 
+        // Act
         var results = FontIntegrityValidator.Validate(book);
 
+        // Assert
         results.Should().BeEmpty();
     }
 
     [Fact]
     public void Validate_reports_family_mismatch()
     {
+        // Arrange
         using Book book = OpenMutableBook();
         OverwriteFont(book, family: "Other Name", fsType: 0x0000);
 
+        // Act
         var results = FontIntegrityValidator.Validate(book);
 
+        // Assert
         results.Should().Contain(r =>
             r.Severity == ValidationSeverity.Warning &&
             r.BookPath.EndsWith("style.css", StringComparison.Ordinal) &&
@@ -69,11 +78,14 @@ public sealed class FontIntegrityValidatorTests : IDisposable
     [Fact]
     public void Validate_reports_embedding_restricted_font()
     {
+        // Arrange
         using Book book = OpenMutableBook();
         OverwriteFont(book, family: "Fancy", fsType: 0x0002);
 
+        // Act
         var results = FontIntegrityValidator.Validate(book);
 
+        // Assert
         results.Should().Contain(r =>
             r.Severity == ValidationSeverity.Warning &&
             r.BookPath.EndsWith("font.ttf", StringComparison.Ordinal) &&
@@ -83,11 +95,14 @@ public sealed class FontIntegrityValidatorTests : IDisposable
     [Fact]
     public void Validate_does_not_report_embedding_restriction_for_editable_fstype()
     {
+        // Arrange
         using Book book = OpenMutableBook();
         OverwriteFont(book, family: "Fancy", fsType: 0x0008); // bit 3 "Editable" — dopuszcza embedding
 
+        // Act
         var results = FontIntegrityValidator.Validate(book);
 
+        // Assert
         results.Should().BeEmpty();
     }
 

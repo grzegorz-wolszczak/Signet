@@ -30,8 +30,10 @@ public sealed class PreferencesSectionsViewModelTests
     [Fact]
     public void Sections_know_their_level_and_path_and_the_first_one_is_selected()
     {
+        // Arrange
         PreferencesSectionsViewModel sut = New(out PreferencesSectionNode codeEditor);
 
+        // Act & Assert
         sut.Selected!.Title.Should().Be("Language");
         codeEditor.IsTopLevel.Should().BeFalse();
         codeEditor.Parent!.IsTopLevel.Should().BeTrue();
@@ -40,26 +42,38 @@ public sealed class PreferencesSectionsViewModelTests
         sut.All.Select(n => n.Title).Should().Equal("Language", "Appearance", "Code Editor", "Spelling");
         sut.FindByPage(3).Should().BeSameAs(codeEditor);
 
+        // Act
         sut.Selected = codeEditor;
+
+        // Assert
         sut.Breadcrumb.Should().Be("Appearance › Code Editor");
     }
 
     [Fact]
     public void The_search_keeps_sections_matching_by_name_or_page_text_with_their_parents_expanded()
     {
+        // Arrange
         PreferencesSectionsViewModel sut = New(out PreferencesSectionNode codeEditor);
         codeEditor.Parent!.IsExpanded = false;
 
+        // Act
         sut.Query = "tab";
 
+        // Assert
         sut.All.Where(n => n.IsVisible).Select(n => n.Title).Should().Equal("Appearance", "Code Editor");
         codeEditor.Parent.IsExpanded.Should().BeTrue("the parent of a match is opened");
         sut.Selected.Should().BeSameAs(codeEditor, "the selected section was filtered out, so the first match is shown");
 
+        // Act
         sut.Query = "LANGUAGE";
+
+        // Assert
         sut.All.Where(n => n.IsVisible).Select(n => n.Title).Should().Equal("Language");
 
+        // Act
         sut.Query = "  ";
+
+        // Assert
         sut.All.Should().OnlyContain(n => n.IsVisible);
         sut.IsSearching.Should().BeFalse();
     }
@@ -67,11 +81,16 @@ public sealed class PreferencesSectionsViewModelTests
     [Fact]
     public void Matches_compares_case_insensitively_and_only_while_searching()
     {
+        // Arrange
         PreferencesSectionsViewModel sut = New(out _);
+
+        // Act & Assert
         sut.Matches("Font size").Should().BeFalse("there is no search");
 
+        // Act
         sut.Query = " FONT ";
 
+        // Assert
         sut.Matches("Font size").Should().BeTrue();
         sut.Matches("Spelling").Should().BeFalse();
         sut.Matches(null).Should().BeFalse();

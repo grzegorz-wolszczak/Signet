@@ -37,17 +37,25 @@ public sealed class CheckBookPanelTests : IDisposable
     public void Fix_all_applies_the_fixes_after_a_checkpoint_and_checks_the_book_again()
     {
         TempDir temp = _disposables.Add(new TempDir());
+
+        // Arrange
         (MainWindowViewModel vm, Book book) = Load(temp);
         try
         {
             HtmlResource html = book.GetHtmlResourcesExcludingNav()[0];
             html.SetText(html.GetText().Replace("<body>", "<body>\nLoose text", StringComparison.Ordinal));
+
+            // Act
             vm.Actions.Require(AppActionIds.WellFormedCheckEpub).Execute(null);
+
+            // Assert
             vm.ValidationResults.Rows.Should().Contain(r => r.Result.Code == "Validation_BareBodyText" && r.CanFix);
             vm.ValidationResults.HasFixable.Should().BeTrue();
 
+            // Act
             vm.ValidationResults.FixAll();
 
+            // Assert
             html.GetText().Should().Contain("<p>Loose text</p>");
             vm.ValidationResults.Rows.Should().NotContain(r => r.Result.Code == "Validation_BareBodyText");
             vm.CheckpointHistory.UndoMessage.Should().Be(Strings.Format("Checkpoint_Before", Strings.Get("CheckpointOp_FixProblems")));
@@ -62,6 +70,7 @@ public sealed class CheckBookPanelTests : IDisposable
     [Fact]
     public void A_skipped_type_of_problem_is_left_out_until_it_is_restored()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel vm, _) = Load(temp);
         try
@@ -69,16 +78,24 @@ public sealed class CheckBookPanelTests : IDisposable
             vm.Actions.Require(AppActionIds.WellFormedCheckEpub).Execute(null);
             ValidationResultRow font = vm.ValidationResults.Rows.Single(r => r.Result.Code == DummyFontCode);
 
+            // Act
             vm.ValidationResults.SkipRule(font);
 
+            // Assert
             vm.ValidationResults.Rows.Should().NotContain(r => r.Result.Code == DummyFontCode);
             vm.ValidationResults.SkippedRules.Select(r => r.Code).Should().Equal(DummyFontCode);
             vm.ValidationResults.HasSkippedRules.Should().BeTrue();
+
+            // Act
             vm.Actions.Require(AppActionIds.WellFormedCheckEpub).Execute(null);
+
+            // Assert
             vm.ValidationResults.Rows.Should().NotContain(r => r.Result.Code == DummyFontCode, "the skip is remembered");
 
+            // Act
             vm.ValidationResults.RestoreRules(new[] { DummyFontCode });
 
+            // Assert
             vm.ValidationResults.Rows.Should().Contain(r => r.Result.Code == DummyFontCode);
             vm.ValidationResults.HasSkippedRules.Should().BeFalse();
         }
@@ -91,6 +108,7 @@ public sealed class CheckBookPanelTests : IDisposable
     [Fact]
     public void Fix_selected_raises_only_the_results_that_have_a_fix()
     {
+        // Arrange
         ValidationResultsViewModel vm = new();
         ValidationResult fixable = new(ValidationSeverity.Warning, "a.xhtml", -1, -1, "a", "Validation_BareBodyText",
             new BareBodyTextFix("a.xhtml"));
@@ -99,12 +117,22 @@ public sealed class CheckBookPanelTests : IDisposable
         System.Collections.Generic.IReadOnlyList<ValidationResult>? requested = null;
         vm.FixRequested += (_, results) => requested = results;
 
+        // Act
         vm.SetSelection(new[] { vm.Rows[1] });
+
+        // Assert
         vm.CanFixSelection.Should().BeFalse();
+
+        // Act
         vm.SetSelection(vm.Rows.ToList());
+
+        // Assert
         vm.CanFixSelection.Should().BeTrue();
+
+        // Act
         vm.FixSelected();
 
+        // Assert
         requested.Should().Equal(fixable);
         vm.Rows.Select(r => r.FixText).Should().Equal("✓", string.Empty);
     }
@@ -112,7 +140,10 @@ public sealed class CheckBookPanelTests : IDisposable
     [Fact]
     public void A_rule_is_named_after_its_message_without_the_details()
     {
+        // Act & Assert
         ValidationResultsViewModel.RuleName("Validation_DeadLink").Should().NotContain("{0}").And.Contain("…");
+
+        // Act & Assert
         ValidationResultsViewModel.RuleName("Unknown_Code").Should().Be("Unknown_Code");
     }
 }

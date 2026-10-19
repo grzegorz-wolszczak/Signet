@@ -11,22 +11,44 @@ public sealed class SemanticsDataTests
     [Fact]
     public void GuideItems_has_expected_cardinality_and_bidirectional_lookup()
     {
+        // Act & Assert
         GuideItems.GetCodeMap().Should().HaveCount(36);
+
+        // Act & Assert
         GuideItems.GetName("text").Should().Be(CoreStrings.Get("Guide_text_Name"));
+
+        // Act & Assert
         GuideItems.GetCode("Table of Contents").Should().Be("toc");
+
+        // Act & Assert
         GuideItems.IsGuideItemsCode("other.afterword").Should().BeTrue();
+
+        // Act & Assert
         GuideItems.IsGuideItemsName("Cover").Should().BeTrue();
+
+        // Act & Assert
         GuideItems.GetName("unknown-code").Should().Be("unknown-code");
+
+        // Act & Assert
         GuideItems.GetDescriptionByCode("cover").Should().Be(CoreStrings.Get("Guide_cover_Desc"));
     }
 
     [Fact]
     public void Landmarks_has_expected_cardinality_and_bidirectional_lookup()
     {
+        // Act & Assert
         Landmarks.GetCodeMap().Should().HaveCount(49);
+
+        // Act & Assert
         Landmarks.GetName("bodymatter").Should().Be(CoreStrings.Get("Landmark_bodymatter_Name"));
+
+        // Act & Assert
         Landmarks.GetCode("Title Page").Should().Be("titlepage");
+
+        // Act & Assert
         Landmarks.IsLandmarksCode("toc").Should().BeTrue();
+
+        // Act & Assert
         Landmarks.GetName("not-a-code").Should().BeEmpty();
     }
 
@@ -40,12 +62,14 @@ public sealed class SemanticsDataTests
     [InlineData("toc", "toc")]
     public void Landmarks_GuideLandMapping_maps_both_directions(string input, string expected)
     {
+        // Act & Assert
         Landmarks.GuideLandMapping(input).Should().Be(expected);
     }
 
     [Fact]
     public void Landmarks_GuideLandMapping_returns_empty_for_unmapped()
     {
+        // Act & Assert
         Landmarks.GuideLandMapping("chapter").Should().BeEmpty();
     }
 }

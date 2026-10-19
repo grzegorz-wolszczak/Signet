@@ -18,9 +18,11 @@ public sealed class NumericUpDownLayoutTests
     [AvaloniaFact]
     public void Decrease_button_is_left_of_the_increase_button()
     {
+        // Arrange
         NumericUpDown box = new() { Value = 16, Minimum = 6, Maximum = 72, Width = 160 };
         var window = new Window { Width = 300, Height = 100, Content = box };
 
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
@@ -31,6 +33,7 @@ public sealed class NumericUpDownLayoutTests
         Point increaseX = increase.TranslatePoint(default, window)!.Value;
         Point decreaseX = decrease.TranslatePoint(default, window)!.Value;
 
+        // Assert
         decreaseX.X.Should().BeLessThan(increaseX.X, "the down arrow is on the left, the up arrow on the right");
         window.Close();
     }

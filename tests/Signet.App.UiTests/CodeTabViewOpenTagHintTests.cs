@@ -81,23 +81,28 @@ public sealed class CodeTabViewOpenTagHintTests
     [AvaloniaFact]
     public void Resting_on_a_closing_tag_shows_its_opening_tag_with_the_line_number()
     {
+        // Act
         using Host host = Show(settings => settings.CodeEditorOpenTagHintDelayMs = 0);
 
         HoverOffset(host, CloseTagOffset + 3);
 
+        // Assert
         host.Popup.IsOpen.Should().BeTrue();
         host.View.FindControl<TextBlock>("OpenTagHintTag")!.Text.Should().Be(OpenTag);
         host.View.FindControl<TextBlock>("OpenTagHintTag")!.FontFamily.Should().Be(host.Editor.FontFamily);
         host.View.FindControl<TextBlock>("OpenTagHintLine")!.Text.Should().Be(Strings.Format("CodeEditor_OpenTagHintLine", 3));
 
+        // Act
         HoverOffset(host, Xhtml.IndexOf("text", StringComparison.Ordinal));
 
+        // Assert
         host.Popup.IsOpen.Should().BeFalse("the mouse left the closing tag");
     }
 
     [AvaloniaFact]
     public void The_hint_uses_the_font_from_Preferences_and_the_colors_of_the_theme()
     {
+        // Act
         using Host host = Show(settings =>
         {
             settings.CodeEditorOpenTagHintDelayMs = 0;
@@ -107,6 +112,8 @@ public sealed class CodeTabViewOpenTagHintTests
         HoverOffset(host, CloseTagOffset + 3);
 
         TextBlock tag = host.View.FindControl<TextBlock>("OpenTagHintTag")!;
+
+        // Assert
         tag.FontFamily.Name.Should().Be("Courier New");
         tag.FontSize.Should().Be(19);
         ((Avalonia.Media.ISolidColorBrush)tag.Foreground!).Color
@@ -118,23 +125,28 @@ public sealed class CodeTabViewOpenTagHintTests
     [AvaloniaFact]
     public void The_hint_waits_for_the_delay()
     {
+        // Act
         using Host host = Show(settings => settings.CodeEditorOpenTagHintDelayMs = 150);
 
         HoverOffset(host, CloseTagOffset + 3);
 
+        // Assert
         host.Popup.IsOpen.Should().BeFalse("the delay has not passed yet");
 
         // RunJobs does not run timers — run the dispatcher loop for a while, as the application does.
+        // Act
         DispatcherFrame frame = new();
         DispatcherTimer.RunOnce(() => frame.Continue = false, TimeSpan.FromMilliseconds(400));
         Dispatcher.UIThread.PushFrame(frame);
 
+        // Assert
         host.Popup.IsOpen.Should().BeTrue("the delay has passed");
     }
 
     [AvaloniaFact]
     public void A_switched_off_hint_never_shows()
     {
+        // Act
         using Host host = Show(settings =>
         {
             settings.CodeEditorOpenTagHint = false;
@@ -143,6 +155,7 @@ public sealed class CodeTabViewOpenTagHintTests
 
         HoverOffset(host, CloseTagOffset + 3);
 
+        // Assert
         host.Popup.IsOpen.Should().BeFalse();
     }
 }

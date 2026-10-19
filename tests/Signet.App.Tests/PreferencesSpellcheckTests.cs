@@ -62,6 +62,7 @@ public sealed class PreferencesSpellcheckTests : IDisposable
     [Fact]
     public void Default_user_dictionary_exists_and_is_selected_on_first_open()
     {
+        // Act & Assert
         _vm.UserDictionaries.Select(d => d.Name).Should().Equal(SpellChecker.DefaultUserDictionaryName);
         _vm.SelectedUserDictionary!.Name.Should().Be("default");
         _vm.DefaultUserDictionaryText.Should().Be(Strings.Format("PreferencesWindow_DefaultUserDictionary", "default"));
@@ -70,16 +71,23 @@ public sealed class PreferencesSpellcheckTests : IDisposable
     [Fact]
     public void Dictionaries_are_shown_by_language_name_and_secondary_can_be_cleared()
     {
+        // Act & Assert
         _vm.AvailableDictionaries.Should().Contain(new DictionaryOption("en_US", SpellChecker.DisplayName("en_US")));
         _vm.SelectedPrimaryDictionary!.Name.Should().Be(_host.Settings.Dictionary);
         _vm.AvailableSecondaryDictionaries[^1].Name.Should().BeEmpty();
 
+        // Act
         _vm.SelectedSecondaryDictionary = _vm.AvailableSecondaryDictionaries.Single(d => d.Name == "en_US");
         _vm.ApplyCommand.Execute(null);
+
+        // Assert
         _host.Settings.SecondaryDictionary.Should().Be("en_US");
 
+        // Act
         _vm.SelectedSecondaryDictionary = _vm.AvailableSecondaryDictionaries[^1];
         _vm.ApplyCommand.Execute(null);
+
+        // Assert
         _host.Settings.SecondaryDictionary.Should().BeEmpty();
     }
 
@@ -87,13 +95,20 @@ public sealed class PreferencesSpellcheckTests : IDisposable
     [AutoData]
     public async Task Add_creates_an_enabled_dictionary_and_makes_it_the_default(string name)
     {
+        // Arrange
         _answers.Enqueue(name);
 
+        // Act
         await _vm.AddUserDictionaryCommand.ExecuteAsync(null);
 
+        // Assert
         _vm.UserDictionaries.Should().Contain(d => d.Name == name && d.IsEnabled);
         _vm.SelectedUserDictionary!.Name.Should().Be(name);
+
+        // Act
         _vm.ApplyCommand.Execute(null);
+
+        // Assert
         _host.Settings.DefaultUserDictionary.Should().Be(name);
         _host.Settings.EnabledUserDictionaries.Should().Contain(name);
     }
@@ -101,19 +116,29 @@ public sealed class PreferencesSpellcheckTests : IDisposable
     [Fact]
     public async Task Dictionary_operations_happen_at_once_and_applying_later_keeps_them()
     {
+        // Arrange
         _answers.Enqueue("alice");
+
+        // Act
         await _vm.AddUserDictionaryCommand.ExecuteAsync(null);
         _vm.UserDictionaries.Single(d => d.Name == "alice").IsEnabled = false;
+
+        // Assert
         _host.Settings.EnabledUserDictionaries.Should().Contain("alice", "disabling waits for Save");
 
         _answers.Enqueue("bob");
+
+        // Act
         await _vm.RenameUserDictionaryCommand.ExecuteAsync(null);
 
+        // Assert
         _spellChecker.UserDictionaries().Should().Contain("bob").And.NotContain("alice");
         _vm.UserDictionaries.Single(d => d.Name == "bob").IsEnabled.Should().BeFalse();
 
+        // Act
         _vm.ApplyCommand.Execute(null);
 
+        // Assert
         _host.Settings.EnabledUserDictionaries.Should().NotContain("alice").And.NotContain("bob");
         _host.Settings.DefaultUserDictionary.Should().Be("bob");
     }
@@ -121,10 +146,13 @@ public sealed class PreferencesSpellcheckTests : IDisposable
     [Fact]
     public async Task Add_with_an_existing_name_shows_an_error_and_changes_nothing()
     {
+        // Arrange
         _answers.Enqueue("DEFAULT");
 
+        // Act
         await _vm.AddUserDictionaryCommand.ExecuteAsync(null);
 
+        // Assert
         _errors.Should().Equal(Strings.Get("PreferencesWindow_DictionaryExists"));
         _vm.UserDictionaries.Should().ContainSingle();
     }
@@ -132,10 +160,13 @@ public sealed class PreferencesSpellcheckTests : IDisposable
     [Fact]
     public async Task Add_with_an_invalid_name_shows_an_error()
     {
+        // Arrange
         _answers.Enqueue("a/b");
 
+        // Act
         await _vm.AddUserDictionaryCommand.ExecuteAsync(null);
 
+        // Assert
         _errors.Should().Equal(Strings.Get("PreferencesWindow_DictionaryNameInvalid"));
     }
 
@@ -143,11 +174,14 @@ public sealed class PreferencesSpellcheckTests : IDisposable
     [AutoData]
     public async Task Rename_renames_the_selected_dictionary_and_keeps_it_default(string name)
     {
+        // Arrange
         _spellChecker.AddToUserDictionary("Wonderland");
         _answers.Enqueue(name);
 
+        // Act
         await _vm.RenameUserDictionaryCommand.ExecuteAsync(null);
 
+        // Assert
         _vm.UserDictionaries.Select(d => d.Name).Should().Equal(name);
         _host.Settings.DefaultUserDictionary.Should().Be(name);
         _vm.UserWords.Should().Equal("Wonderland");
@@ -156,10 +190,13 @@ public sealed class PreferencesSpellcheckTests : IDisposable
     [Fact]
     public async Task Copy_duplicates_the_selected_dictionary_with_its_words()
     {
+        // Arrange
         _spellChecker.AddToUserDictionary("Wonderland");
 
+        // Act
         await _vm.CopyUserDictionaryCommand.ExecuteAsync(null);
 
+        // Assert
         _vm.UserDictionaries.Select(d => d.Name).Should().Equal("default", "default_copy");
         _vm.SelectedUserDictionary!.Name.Should().Be("default_copy");
         _vm.UserWords.Should().Equal("Wonderland");
@@ -168,8 +205,10 @@ public sealed class PreferencesSpellcheckTests : IDisposable
     [Fact]
     public async Task Remove_refuses_the_last_dictionary()
     {
+        // Act
         await _vm.RemoveUserDictionaryCommand.ExecuteAsync(null);
 
+        // Assert
         _errors.Should().Equal(Strings.Get("PreferencesWindow_CannotRemoveLastDictionary"));
         _vm.UserDictionaries.Should().ContainSingle();
     }
@@ -178,11 +217,15 @@ public sealed class PreferencesSpellcheckTests : IDisposable
     [AutoData]
     public async Task Remove_deletes_the_selected_dictionary_and_selects_the_new_default(string name)
     {
+        // Arrange
         _answers.Enqueue(name);
+
+        // Act
         await _vm.AddUserDictionaryCommand.ExecuteAsync(null);
 
         await _vm.RemoveUserDictionaryCommand.ExecuteAsync(null);
 
+        // Assert
         _vm.UserDictionaries.Select(d => d.Name).Should().Equal("default");
         _vm.SelectedUserDictionary!.Name.Should().Be("default");
         _host.Settings.DefaultUserDictionary.Should().Be("default");
@@ -191,14 +234,18 @@ public sealed class PreferencesSpellcheckTests : IDisposable
     [Fact]
     public async Task Selecting_a_dictionary_makes_it_default_and_shows_its_words()
     {
+        // Arrange
         _spellChecker.CreateUserDictionary("alice");
         _spellChecker.AddToUserDictionary("Cheshire", "alice");
         _answers.Enqueue("people");
+
+        // Act
         await _vm.AddUserDictionaryCommand.ExecuteAsync(null);
 
         _vm.SelectedUserDictionary = _vm.UserDictionaries.Single(d => d.Name == "alice");
         _vm.ApplyCommand.Execute(null);
 
+        // Assert
         _host.Settings.DefaultUserDictionary.Should().Be("alice");
         _vm.UserWords.Should().Equal("Cheshire");
     }
@@ -206,22 +253,36 @@ public sealed class PreferencesSpellcheckTests : IDisposable
     [Fact]
     public async Task Word_list_supports_add_edit_remove_and_remove_all()
     {
+        // Arrange
         _answers.Enqueue("zzyzx, brillig  mimsy");
+
+        // Act
         await _vm.AddUserWordsCommand.ExecuteAsync(null);
+
+        // Assert
         _vm.UserWords.Should().Equal("brillig", "mimsy", "zzyzx");
         _spellChecker.Check("zzyzx").Should().BeTrue();
 
+        // Act
         _vm.SetSelectedUserWords(Mimsy);
         _answers.Enqueue("borogove");
         await _vm.EditUserWordCommand.ExecuteAsync(null);
+
+        // Assert
         _vm.UserWords.Should().Equal("borogove", "brillig", "zzyzx");
 
+        // Act
         _vm.SetSelectedUserWords(ZzyzxAndBrillig);
         await _vm.RemoveUserWordsCommand.ExecuteAsync(null);
+
+        // Assert
         _vm.UserWords.Should().Equal("borogove");
         _spellChecker.Check("zzyzx").Should().BeFalse();
 
+        // Act
         await _vm.RemoveAllUserWordsCommand.ExecuteAsync(null);
+
+        // Assert
         _vm.UserWords.Should().BeEmpty();
         _spellChecker.UserDictionaryWords("default").Should().BeEmpty();
     }
@@ -229,6 +290,7 @@ public sealed class PreferencesSpellcheckTests : IDisposable
     [Fact]
     public void Word_commands_need_a_selection()
     {
+        // Act & Assert
         _vm.EditUserWordCommand.CanExecute(null).Should().BeFalse();
         _vm.RemoveUserWordsCommand.CanExecute(null).Should().BeFalse();
         _vm.RemoveAllUserWordsCommand.CanExecute(null).Should().BeFalse();

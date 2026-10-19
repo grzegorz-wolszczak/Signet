@@ -30,10 +30,13 @@ public sealed class ExtendedCssHighlighterTests
     [Fact]
     public void Class_id_and_pseudo_selectors_are_distinguished_from_the_tag_selector()
     {
+        // Arrange
         const string text = ".intro a:hover, #main {";
 
+        // Act
         List<SyntaxSpan> spans = Highlight(text);
 
+        // Assert
         FormatAt(spans, text.IndexOf(".intro", System.StringComparison.Ordinal)).Should().Be(CssSpecialSelector);
         FormatAt(spans, text.IndexOf("a:", System.StringComparison.Ordinal)).Should().Be(CssSelector);
         FormatAt(spans, text.IndexOf(":hover", System.StringComparison.Ordinal)).Should().Be(CssSpecialSelector);
@@ -43,8 +46,10 @@ public sealed class ExtendedCssHighlighterTests
     [Fact]
     public void At_rule_is_highlighted()
     {
+        // Act
         List<SyntaxSpan> spans = Highlight("@media screen {");
 
+        // Assert
         FormatAt(spans, 0).Should().Be(CssAtRule);
         FormatAt(spans, 5).Should().Be(CssAtRule);
         FormatAt(spans, 7).Should().Be(CssSelector);
@@ -53,10 +58,13 @@ public sealed class ExtendedCssHighlighterTests
     [Fact]
     public void Numbers_colours_and_important_are_highlighted_inside_values_only()
     {
+        // Arrange
         const string text = "p { margin: -1.5em 10px; color: #fff; background: red !important; }";
 
+        // Act
         List<SyntaxSpan> spans = Highlight(text);
 
+        // Assert
         FormatAt(spans, text.IndexOf("-1.5em", System.StringComparison.Ordinal)).Should().Be(CssConstant);
         FormatAt(spans, text.IndexOf("10px", System.StringComparison.Ordinal) + 3).Should().Be(CssConstant);
         FormatAt(spans, text.IndexOf("#fff", System.StringComparison.Ordinal)).Should().Be(CssConstant);
@@ -68,8 +76,10 @@ public sealed class ExtendedCssHighlighterTests
     [Fact]
     public void Nothing_is_refined_inside_a_comment()
     {
+        // Act
         List<SyntaxSpan> spans = Highlight("/* .x #y 12px red */");
 
+        // Assert
         spans.Should().OnlyContain(s => s.Format == CssComment);
     }
 
@@ -78,15 +88,18 @@ public sealed class ExtendedCssHighlighterTests
     [InlineData(false, BadLink, SyntaxIssue.BrokenLink)]
     public void Url_target_is_a_link_checked_against_the_book(bool exists, SyntaxFormat format, SyntaxIssue issue)
     {
+        // Arrange
         const string text = "p { background: url(\"../Images/a.png\"); }";
         List<string> asked = new();
 
+        // Act
         List<SyntaxSpan> spans = Highlight(text, reference =>
         {
             asked.Add(reference);
             return exists;
         });
 
+        // Assert
         asked.Should().Equal("../Images/a.png");
         spans.Should().Contain(new SyntaxSpan(text.IndexOf("../", System.StringComparison.Ordinal), "../Images/a.png".Length, format, issue));
     }
@@ -94,18 +107,23 @@ public sealed class ExtendedCssHighlighterTests
     [Fact]
     public void Data_url_is_not_a_link()
     {
+        // Act
         List<SyntaxSpan> spans = Highlight("p { background: url(data:image/png;base64,AAAA); }", _ => false);
 
+        // Assert
         spans.Should().NotContain(s => s.Format == Link || s.Format == BadLink);
     }
 
     [Fact]
     public void Unterminated_string_is_marked_as_an_error()
     {
+        // Arrange
         const string text = "p { font-family: \"Foo";
 
+        // Act
         List<SyntaxSpan> spans = Highlight(text);
 
+        // Assert
         spans.Should().Contain(s => s.Format == SyntaxError && s.Issue == SyntaxIssue.UnterminatedString &&
                                     s.Start == text.IndexOf('"', System.StringComparison.Ordinal));
     }
@@ -113,16 +131,20 @@ public sealed class ExtendedCssHighlighterTests
     [Fact]
     public void Line_states_are_the_same_as_in_the_basic_automaton()
     {
+        // Arrange
         string[] lines = { "body {", "  color: red; /* x", " y */ margin: 0", "}", "a:hover { x: \"q", "\" }" };
         var basic = new CssHighlighter();
         var sut = new ExtendedCssHighlighter();
         int expected = basic.InitialState;
         int actual = sut.InitialState;
 
+        // Act
         foreach (string line in lines)
         {
             expected = basic.HighlightLine(line, expected, new List<SyntaxSpan>());
             actual = sut.HighlightLine(line, actual, new List<SyntaxSpan>());
+
+            // Assert
             actual.Should().Be(expected, line);
         }
     }

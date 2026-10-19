@@ -74,10 +74,12 @@ public sealed class ThemeKeysPageViewModelTests : IDisposable
     [Fact]
     public void Every_key_is_in_the_tree_of_its_page_under_its_group()
     {
+        // Arrange
         ThemeDocumentViewModel sut = New();
         ThemeDocumentViewModel theme = NewTheme();
 
         // The theme edits the keys of the interface only, the color scheme all the others.
+        // Act & Assert
         theme.Pages.Select(p => p.Page).Should().Equal(new[] { ThemePage.Interface });
         sut.Pages.Select(p => p.Page).Should().Equal(Enum.GetValues<ThemePage>().Where(p => p != ThemePage.Interface).ToArray());
         FluentActions.Invoking(() => sut.PageFor(ThemePage.Interface)).Should().Throw<InvalidOperationException>();
@@ -97,16 +99,22 @@ public sealed class ThemeKeysPageViewModelTests : IDisposable
     [Fact]
     public void A_color_typed_for_a_key_changes_the_theme_until_save_and_marks_the_key_and_its_group()
     {
+        // Arrange
         ThemeDocumentViewModel sut = New();
         int changed = 0;
         sut.Changed += (_, _) => changed++;
         ThemeKeysPageViewModel page = Select(sut, ThemeKeys.XhtmlTag);
 
+        // Act
         page.Foreground = "not a color";
+
+        // Assert
         sut.HasChanges.Should().BeFalse("a text that is not a color is ignored");
 
+        // Act
         page.Foreground = "#123456";
 
+        // Assert
         sut.Current!.Entries[ThemeKeys.XhtmlTag.Id].Attributes!.Foreground.Should().Be(ThemeColor.Parse("#123456"));
         page.Foreground.Should().Be("#123456");
         sut.HasChanges.Should().BeTrue();
@@ -120,9 +128,11 @@ public sealed class ThemeKeysPageViewModelTests : IDisposable
     [Fact]
     public void The_attributes_of_a_key_are_edited_one_by_one()
     {
+        // Arrange
         ThemeDocumentViewModel sut = New();
         ThemeKeysPageViewModel page = Select(sut, ThemeKeys.CssProperty);
 
+        // Act
         page.Bold = true;
         page.Italic = true;
         page.HasBackground = true;
@@ -133,6 +143,7 @@ public sealed class ThemeKeysPageViewModelTests : IDisposable
         page.EffectColor = "#00FF00";
         page.HasForeground = false;
 
+        // Assert
         sut.Resolved!.Attributes(ThemeKeys.CssProperty).Should().Be(new TextAttributes
         {
             Bold = true,
@@ -143,8 +154,10 @@ public sealed class ThemeKeysPageViewModelTests : IDisposable
         });
         page.Effects.Should().NotContain(e => e.Value == EffectType.None, "the check box turns the effect off");
 
+        // Act
         page.HasEffect = false;
 
+        // Assert
         sut.Resolved!.Attributes(ThemeKeys.CssProperty).Effect.Should().Be(EffectType.None);
         sut.Resolved!.Attributes(ThemeKeys.CssProperty).EffectColor.Should().BeNull();
     }
@@ -152,26 +165,37 @@ public sealed class ThemeKeysPageViewModelTests : IDisposable
     [Fact]
     public void An_inheriting_key_shows_the_values_of_its_base_and_cannot_be_edited_until_inheriting_is_turned_off()
     {
+        // Arrange
         ThemeDocumentViewModel sut = New(ThemeStore.DarkId);
         ThemeKeysPageViewModel page = Select(sut, ThemeKeys.JsonString);
         TextAttributes jsString = sut.Resolved!.Attributes(ThemeKeys.JsString);
 
+        // Act & Assert
         page.CanInherit.Should().BeTrue();
         page.BaseName.Should().NotBeEmpty();
         page.Inherit.Should().BeTrue("Signet Dark says json.string inherits");
         page.IsEditable.Should().BeFalse();
         page.Foreground.Should().Be(jsString.Foreground.ToString());
+
+        // Act
         page.Bold = !jsString.Bold;
+
+        // Assert
         sut.HasChanges.Should().BeFalse("an inheriting key is not edited");
 
+        // Act
         page.Inherit = false;
 
+        // Assert
         page.IsEditable.Should().BeTrue();
         sut.Current!.Entries[ThemeKeys.JsonString.Id].Should().Be(ThemeEntry.Of(jsString), "it keeps the values it showed");
+
+        // Act
         page.Foreground = "#ABCDEF";
 
         page.Inherit = true;
 
+        // Assert
         sut.Current!.Entries[ThemeKeys.JsonString.Id].Should().Be(ThemeEntry.Inherited);
         page.Foreground.Should().Be(jsString.Foreground.ToString());
     }
@@ -179,9 +203,11 @@ public sealed class ThemeKeysPageViewModelTests : IDisposable
     [Fact]
     public void A_key_no_theme_sets_keeps_its_default_and_does_not_inherit()
     {
+        // Arrange
         ThemeDocumentViewModel sut = New();
         ThemeKeysPageViewModel page = Select(sut, ThemeKeys.XhtmlCss);
 
+        // Act & Assert
         page.CanInherit.Should().BeTrue();
         page.Inherit.Should().BeFalse("Signet Light sets nothing, so the key keeps its default");
         page.Foreground.Should().Be(ThemeKeys.XhtmlCss.DefaultAttributes!.Foreground.ToString());
@@ -191,13 +217,16 @@ public sealed class ThemeKeysPageViewModelTests : IDisposable
     [Fact]
     public void The_link_to_the_base_selects_it_on_its_page()
     {
+        // Arrange
         ThemeDocumentViewModel sut = New();
         List<ThemeKey> requested = new();
         sut.KeyRequested += (_, key) => requested.Add(key);
         ThemeKeysPageViewModel page = Select(sut, ThemeKeys.XhtmlCss);
 
+        // Act
         page.ShowBaseCommand.Execute(null);
 
+        // Assert
         requested.Should().Equal(ThemeKeys.CssValue);
         sut.PageFor(ThemePage.Css).Key.Should().Be(ThemeKeys.CssValue);
     }
@@ -205,14 +234,21 @@ public sealed class ThemeKeysPageViewModelTests : IDisposable
     [Fact]
     public void Restore_in_a_bundled_theme_brings_back_its_value()
     {
+        // Arrange
         ThemeDocumentViewModel sut = New(ThemeStore.DarkId);
         ThemeKeysPageViewModel page = Select(sut, ThemeKeys.XhtmlTag);
         string bundled = page.Foreground;
+
+        // Act
         page.Foreground = "#123456";
 
+        // Act & Assert
         page.RestoreText.Should().Be(Signet.App.Resources.Strings.Get("ColorScheme_RestoreDefault"));
+
+        // Act
         page.RestoreCommand.Execute(null);
 
+        // Assert
         page.Foreground.Should().Be(bundled);
         page.IsModified.Should().BeFalse();
         page.Selected!.IsModified.Should().BeFalse();
@@ -221,14 +257,21 @@ public sealed class ThemeKeysPageViewModelTests : IDisposable
     [Fact]
     public void Restore_in_a_theme_of_the_user_takes_the_value_of_the_parent()
     {
+        // Arrange
         ThemeDocumentViewModel sut = NewWithUserTheme();
         ThemeKeysPageViewModel page = Select(sut, ThemeKeys.XhtmlTag);
         string parent = page.Foreground;
+
+        // Act
         page.Foreground = "#123456";
 
+        // Act & Assert
         page.RestoreText.Should().Contain("Signet Dark");
+
+        // Act
         page.RestoreCommand.Execute(null);
 
+        // Assert
         page.Foreground.Should().Be(parent);
         sut.Current!.Entries.Should().NotContainKey(ThemeKeys.XhtmlTag.Id);
     }
@@ -236,20 +279,26 @@ public sealed class ThemeKeysPageViewModelTests : IDisposable
     [Fact]
     public void A_color_key_that_may_be_empty_has_an_own_color_switch()
     {
+        // Arrange
         ThemeDocumentViewModel sut = NewTheme();
         ThemeKeysPageViewModel page = Select(sut, ThemeKeys.UiAccent);
 
+        // Act & Assert
         page.IsColorKey.Should().BeTrue();
         page.CanBeEmpty.Should().BeTrue();
         page.HasColor.Should().BeFalse("Signet Light uses the system accent");
 
+        // Act
         page.HasColor = true;
         page.Color = "#3366CC";
 
+        // Act & Assert
         sut.Resolved!.ColorOf(ThemeKeys.UiAccent).Should().Be(ThemeColor.Parse("#3366CC"));
 
+        // Act
         page.HasColor = false;
 
+        // Act & Assert
         sut.Resolved!.ColorOf(ThemeKeys.UiAccent).Should().BeNull();
         Select(New(), ThemeKeys.EditorCurrentLine).CanBeEmpty.Should().BeFalse();
     }
@@ -257,6 +306,7 @@ public sealed class ThemeKeysPageViewModelTests : IDisposable
     [Fact]
     public async Task The_color_picker_starts_from_the_color_and_its_choice_is_kept()
     {
+        // Arrange
         ThemeDocumentViewModel sut = New();
         List<string> initial = new();
         sut.ColorPicker = (_, start) =>
@@ -267,8 +317,10 @@ public sealed class ThemeKeysPageViewModelTests : IDisposable
         ThemeKeysPageViewModel page = Select(sut, ThemeKeys.DiffDeletedLine);
         string before = page.Background;
 
+        // Act
         await page.PickBackgroundCommand.ExecuteAsync(null);
 
+        // Assert
         initial.Should().Equal(before);
         page.Background.Should().Be("#40102030");
     }
@@ -276,12 +328,15 @@ public sealed class ThemeKeysPageViewModelTests : IDisposable
     [Fact]
     public void Another_theme_shows_its_own_values_and_markers()
     {
+        // Arrange
         ThemeDocumentViewModel sut = New();
         ThemeKeysPageViewModel page = Select(sut, ThemeKeys.EditorText);
         page.Background = "#FAFAFA";
 
+        // Act
         sut.Selected = sut.Themes.Single(t => t.Id == ThemeStore.DarkId);
 
+        // Assert
         page.Background.Should().Be(sut.Resolved!.Attributes(ThemeKeys.EditorText).Background.ToString());
         page.IsModified.Should().BeFalse();
         page.Selected!.IsModified.Should().BeFalse();

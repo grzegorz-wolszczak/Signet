@@ -29,16 +29,20 @@ public sealed class FileNamePortabilityValidatorTests : IDisposable
     [Fact]
     public void Validate_returns_no_results_for_a_wellformed_book()
     {
+        // Arrange
         using Book book = OpenMutableBook();
 
+        // Act
         var results = FileNamePortabilityValidator.Validate(book);
 
+        // Assert
         results.Should().BeEmpty();
     }
 
     [Fact]
     public void CheckFileName_reports_windows_forbidden_character()
     {
+        // Act & Assert
         FileNamePortabilityValidator.CheckFileName("chapter1:bad.xhtml")
             .Should().ContainSingle().Which.Should().Contain(LocalizedText.Fragment("Validation_FileNameIllegalChar")).And.Contain(":");
     }
@@ -46,6 +50,7 @@ public sealed class FileNamePortabilityValidatorTests : IDisposable
     [Fact]
     public void CheckFileName_reports_windows_reserved_name()
     {
+        // Act & Assert
         FileNamePortabilityValidator.CheckFileName("CON.xhtml")
             .Should().ContainSingle().Which.Should().Contain(LocalizedText.Fragment("Validation_FileNameReserved")).And.Contain("CON");
     }
@@ -53,9 +58,11 @@ public sealed class FileNamePortabilityValidatorTests : IDisposable
     [Fact]
     public void CheckFileName_reports_trailing_dot_and_trailing_space()
     {
+        // Act & Assert
         FileNamePortabilityValidator.CheckFileName("chapter1.xhtml.")
             .Should().ContainSingle().Which.Should().Be(CoreStrings.Format("Validation_FileNameTrailingDot", "chapter1.xhtml."));
 
+        // Act & Assert
         FileNamePortabilityValidator.CheckFileName("chapter1.xhtml ")
             .Should().ContainSingle().Which.Should().Be(CoreStrings.Format("Validation_FileNameTrailingSpace", "chapter1.xhtml "));
     }
@@ -63,9 +70,11 @@ public sealed class FileNamePortabilityValidatorTests : IDisposable
     [Fact]
     public void CheckFileName_reports_non_nfc_normalized_filename()
     {
+        // Arrange
         // "e" + combining acute (U+0065 U+0301) instead of the single "é" — NFD form.
         string nfd = "chapteér1.xhtml";
 
+        // Act & Assert
         FileNamePortabilityValidator.CheckFileName(nfd)
             .Should().ContainSingle().Which.Should().Contain("NFC");
     }
@@ -73,12 +82,14 @@ public sealed class FileNamePortabilityValidatorTests : IDisposable
     [Fact]
     public void CheckFileName_accepts_a_portable_name()
     {
+        // Act & Assert
         FileNamePortabilityValidator.CheckFileName("chapter1.xhtml").Should().BeEmpty();
     }
 
     [Fact]
     public void CheckFileName_rejects_null()
     {
+        // Act & Assert
         FluentActions.Invoking(() => FileNamePortabilityValidator.CheckFileName(null!))
             .Should().Throw<ArgumentNullException>();
     }
@@ -91,14 +102,18 @@ public sealed class FileNamePortabilityValidatorTests : IDisposable
     [Fact]
     public void Validate_maps_a_bad_filename_onto_the_resource_bookpath()
     {
+        // Arrange
         using Book book = OpenMutableBook();
         HtmlResource chapter1 = FindHtml(book, "chapter1.xhtml");
 
+        // Act & Assert
         chapter1.MoveTo("Text/chapter1.xhtml.")
             .Should().BeTrue("without a successful rename the test would not check the rule");
 
+        // Act
         var results = FileNamePortabilityValidator.Validate(book);
 
+        // Assert
         results.Should().Contain(r =>
             r.Severity == ValidationSeverity.Warning &&
             r.BookPath == chapter1.BookPath &&

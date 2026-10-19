@@ -21,43 +21,58 @@ public sealed class FontObfuscationTests
     [InlineData(Adobe, FontObfuscation.AdobeMethodNumBytes)]
     public void ObfuscateFile_IsInvolution_AndTouchesOnlyLeadingBytes(string algorithm, int span)
     {
+        // Arrange
         using TempDir temp = new();
         byte[] original = DeterministicBytes(4096, seed: 7);
         string path = temp.Combine("font.bin");
         File.WriteAllBytes(path, original);
 
+        // Act
         FontObfuscation.ObfuscateFile(path, algorithm, Identifier);
         byte[] obfuscated = File.ReadAllBytes(path);
 
+        // Assert
         obfuscated.Should().NotEqual(original, "the first bytes should be scrambled");
         obfuscated[span..].Should().Equal(original[span..], "bytes outside the method range must stay untouched");
         obfuscated[..span].Should().NotEqual(original[..span]);
 
+        // Act
         FontObfuscation.ObfuscateFile(path, algorithm, Identifier);
+
+        // Assert
         File.ReadAllBytes(path).Should().Equal(original, "the operation is an involution: f(f(x)) = x");
     }
 
     [Fact]
     public void ObfuscateFile_ShorterThanMethodSpan_StillRoundTrips()
     {
+        // Arrange
         using TempDir temp = new();
         byte[] original = DeterministicBytes(64, seed: 3);
         string path = temp.Combine("tiny.bin");
         File.WriteAllBytes(path, original);
 
+        // Act
         FontObfuscation.ObfuscateFile(path, Idpf, Identifier);
+
+        // Assert
         File.ReadAllBytes(path).Should().NotEqual(original);
 
+        // Act
         FontObfuscation.ObfuscateFile(path, Idpf, Identifier);
+
+        // Assert
         File.ReadAllBytes(path).Should().Equal(original);
     }
 
     [Fact]
     public void IdpfKeyFromIdentifier_StripsWhitespace_AndMatchesSha1()
     {
+        // Act
         byte[] spaced = FontObfuscation.IdpfKeyFromIdentifier(" abc\t123\r\n");
         byte[] tight = FontObfuscation.IdpfKeyFromIdentifier("abc123");
 
+        // Assert
         spaced.Should().Equal(tight);
 #pragma warning disable CA5350
         spaced.Should().Equal(SHA1.HashData(Encoding.Latin1.GetBytes("abc123")));
@@ -68,53 +83,70 @@ public sealed class FontObfuscationTests
     [Fact]
     public void AdobeKeyFromIdentifier_StripsUrnPrefixDashesAndColons()
     {
+        // Act
         byte[] key = FontObfuscation.AdobeKeyFromIdentifier("urn:uuid:0f0e0d0c-0b0a-0908-0706-050403020100");
 
+        // Assert
         key.Should().HaveCount(16);
         key.Should().Equal(Convert.FromHexString("0f0e0d0c0b0a09080706050403020100"));
     }
 
     [Fact]
-    public void AdobeKeyFromIdentifier_NonHexIdentifier_ReturnsEmptyKey() =>
+    public void AdobeKeyFromIdentifier_NonHexIdentifier_ReturnsEmptyKey()
+    {
+        // Act & Assert
         FontObfuscation.AdobeKeyFromIdentifier("not-a-uuid-value").Should().BeEmpty();
+    }
 
     [Fact]
     public void ObfuscateFile_MissingFile_Throws()
     {
+        // Arrange
         Action act = () => FontObfuscation.ObfuscateFile("Z:/nope/missing.ttf", Idpf, Identifier);
+
+        // Act & Assert
         act.Should().Throw<FontObfuscationException>();
     }
 
     [Fact]
     public void ObfuscateFile_EmptyIdentifier_Throws()
     {
+        // Arrange
         using TempDir temp = new();
         string path = temp.Combine("f.ttf");
         File.WriteAllBytes(path, DeterministicBytes(32, seed: 1));
 
         Action act = () => FontObfuscation.ObfuscateFile(path, Idpf, string.Empty);
+
+        // Act & Assert
         act.Should().Throw<FontObfuscationException>();
     }
 
     [Fact]
     public void ObfuscateFile_EmptyAlgorithm_Throws()
     {
+        // Arrange
         using TempDir temp = new();
         string path = temp.Combine("f.ttf");
         File.WriteAllBytes(path, DeterministicBytes(32, seed: 1));
 
         Action act = () => FontObfuscation.ObfuscateFile(path, string.Empty, Identifier);
+
+        // Act & Assert
         act.Should().Throw<FontObfuscationException>();
     }
 
     [Fact]
     public void ObfuscateFile_UnknownAlgorithm_Throws()
     {
+        // Arrange
         using TempDir temp = new();
         string path = temp.Combine("f.ttf");
         File.WriteAllBytes(path, DeterministicBytes(32, seed: 1));
 
         Action act = () => FontObfuscation.ObfuscateFile(path, "http://example.com/enc", Identifier);
+
+        // Act & Assert
         act.Should().Throw<FontObfuscationException>();
     }
 

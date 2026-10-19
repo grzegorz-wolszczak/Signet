@@ -44,8 +44,10 @@ public sealed class WellFormedCheckerTests
     [Fact]
     public void Check_ValidXhtml_IsWellFormed()
     {
+        // Act
         WellFormedResult result = WellFormedChecker.Check(ValidXhtml, "application/xhtml+xml");
 
+        // Assert
         result.IsWellFormed.Should().BeTrue();
         result.Line.Should().Be(-1);
         result.Column.Should().Be(-1);
@@ -55,6 +57,7 @@ public sealed class WellFormedCheckerTests
     [Fact]
     public void Check_UnclosedTag_IsNotWellFormed_WithPlausibleLine()
     {
+        // Arrange
         const string source =
             "<?xml version=\"1.0\"?>\n" +
             "<!DOCTYPE html>\n" +
@@ -64,8 +67,10 @@ public sealed class WellFormedCheckerTests
             "</body>\n" +
             "</html>\n";
 
+        // Act
         WellFormedResult result = WellFormedChecker.Check(source);
 
+        // Assert
         result.IsWellFormed.Should().BeFalse();
         result.Line.Should().BeInRange(5, 7);
         result.Message.Should().NotBeNullOrEmpty();
@@ -74,8 +79,10 @@ public sealed class WellFormedCheckerTests
     [Fact]
     public void Check_MismatchedNesting_ReportsNestingErrorMessageAtCloseTag()
     {
+        // Act
         WellFormedResult result = WellFormedChecker.Check("<root><a><b>x</a></b></root>");
 
+        // Assert
         result.IsWellFormed.Should().BeFalse();
         result.Line.Should().Be(1);
         result.Message.Should().Be(CoreStrings.Format("Nesting_UnmatchedClosingTag", "a"));
@@ -84,29 +91,35 @@ public sealed class WellFormedCheckerTests
     [Fact]
     public void Check_UnescapedAmpersand_IsNotWellFormed()
     {
+        // Act & Assert
         WellFormedChecker.Check("<root>Tom & Jerry</root>").IsWellFormed.Should().BeFalse();
     }
 
     [Fact]
     public void Check_DuplicateAttribute_IsNotWellFormed()
     {
+        // Act & Assert
         WellFormedChecker.Check("<root><a x=\"1\" x=\"2\"/></root>").IsWellFormed.Should().BeFalse();
     }
 
     [Fact]
     public void Check_NamedHtmlEntity_IsNotWellFormed_DtdResolutionDisabled()
     {
+        // Act & Assert
         WellFormedChecker.Check("<p>hard&nbsp;space</p>").IsWellFormed.Should().BeFalse();
     }
 
     [Fact]
     public void Check_MalformedCorpusXhtml_DetectedNearLineSeven()
     {
+        // Arrange
         string source = File.ReadAllText(
             Path.Combine(CorpusPaths.Malformed("not-wellformed-xhtml"), "EPUB", "text", "chapter1.xhtml"));
 
+        // Act
         WellFormedResult result = WellFormedChecker.Check(source, "application/xhtml+xml");
 
+        // Assert
         result.IsWellFormed.Should().BeFalse();
         result.Line.Should().BeInRange(6, 8);
     }
@@ -114,22 +127,28 @@ public sealed class WellFormedCheckerTests
     [Fact]
     public void Check_MalformedCorpusOpf_IsNotWellFormed()
     {
+        // Arrange
         string source = File.ReadAllText(
             Path.Combine(CorpusPaths.Malformed("bad-opf-xml"), "EPUB", "package.opf"));
 
+        // Act & Assert
         WellFormedChecker.Check(source, "application/oebps-package+xml").IsWellFormed.Should().BeFalse();
     }
 
     [Fact]
     public void IsWellFormed_MatchesCheck()
     {
+        // Act & Assert
         WellFormedChecker.IsWellFormed(ValidXhtml).Should().BeTrue();
+
+        // Act & Assert
         WellFormedChecker.IsWellFormed("<root><a></b></root>").Should().BeFalse();
     }
 
     [Fact]
     public void CheckXhtmlStructure_ValidDocument_Passes()
     {
+        // Act & Assert
         WellFormedChecker.CheckXhtmlStructure(ValidXhtml, "3.0").IsWellFormed.Should().BeTrue();
     }
 
@@ -142,8 +161,10 @@ public sealed class WellFormedCheckerTests
         "<html>")]
     public void CheckXhtmlStructure_MissingRequiredElement_IsReported(string source, string expectedFragment)
     {
+        // Act
         WellFormedResult result = WellFormedChecker.CheckXhtmlStructure(source);
 
+        // Assert
         result.IsWellFormed.Should().BeFalse();
         result.Message.Should().Contain(expectedFragment);
         result.Line.Should().Be(1);
@@ -152,10 +173,13 @@ public sealed class WellFormedCheckerTests
     [Fact]
     public void CheckXhtmlStructure_NotWellFormed_ReturnsUnderlyingSyntaxError()
     {
+        // Arrange
         const string source = "<!DOCTYPE html>\n<html><head><title>t</title></head><body><p>x</body></html>";
 
+        // Act
         WellFormedResult result = WellFormedChecker.CheckXhtmlStructure(source);
 
+        // Assert
         result.IsWellFormed.Should().BeFalse();
         result.Message.Should().Contain("</body>");
     }
@@ -164,6 +188,7 @@ public sealed class WellFormedCheckerTests
     [MemberData(nameof(AllCorpusMarkup))]
     public void Check_EveryValidCorpusMarkupFile_IsWellFormed(string path)
     {
+        // Act & Assert
         WellFormedChecker.Check(File.ReadAllText(path)).IsWellFormed.Should().BeTrue();
     }
 }

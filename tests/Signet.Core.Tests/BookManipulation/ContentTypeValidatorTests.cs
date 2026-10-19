@@ -22,22 +22,28 @@ public sealed class ContentTypeValidatorTests : IDisposable
     [Fact]
     public void Validate_returns_no_results_for_a_wellformed_book()
     {
+        // Arrange
         using Book book = OpenMutableBook();
 
+        // Act
         var results = ContentTypeValidator.Validate(book);
 
+        // Assert
         results.Should().BeEmpty();
     }
 
     [Fact]
     public void Validate_reports_png_declared_as_jpeg()
     {
+        // Arrange
         using Book book = OpenMutableBook();
         ImageResource cover = FindImage(book, "cover.png");
         cover.MediaType = "image/jpeg";
 
+        // Act
         var results = ContentTypeValidator.Validate(book);
 
+        // Assert
         results.Should().Contain(r =>
             r.Severity == ValidationSeverity.Warning &&
             r.BookPath == cover.BookPath &&
@@ -48,12 +54,15 @@ public sealed class ContentTypeValidatorTests : IDisposable
     [Fact]
     public void Validate_ignores_svg_resources()
     {
+        // Arrange
         using Book book = OpenMutableBook();
         ImageResource cover = FindImage(book, "cover.png");
         cover.MediaType = "image/svg+xml";
 
+        // Act
         var results = ContentTypeValidator.Validate(book);
 
+        // Assert
         results.Should().BeEmpty();
     }
 

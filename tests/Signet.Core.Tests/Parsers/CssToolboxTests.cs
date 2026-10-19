@@ -11,22 +11,27 @@ public sealed class CssToolboxTests
     [Fact]
     public void FindClassesInSelector_returns_every_class_with_its_position_including_not()
     {
+        // Arrange
         const string selector = "p.note, div .box:not(.hidden)";
 
+        // Act & Assert
         CssToolbox.FindClassesInSelector(selector).Should().Equal((2, "note"), (13, "box"), (22, "hidden"));
     }
 
     [Fact]
     public void FindClassesInSelector_ignores_attribute_selectors_strings_and_numbers()
     {
+        // Arrange
         const string selector = "a[href$=\".xhtml\"][title='.x'] > span";
 
+        // Act & Assert
         CssToolbox.FindClassesInSelector(selector).Should().BeEmpty();
     }
 
     [Fact]
     public void FindClassesInSelector_reads_whole_names_with_hyphens_and_underscores()
     {
+        // Act & Assert
         CssToolbox.FindClassesInSelector(".a-b_c.-d").Select(c => c.Name).Should().Equal("a-b_c", "-d");
     }
 }

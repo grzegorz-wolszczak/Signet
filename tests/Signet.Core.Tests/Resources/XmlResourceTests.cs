@@ -16,10 +16,12 @@ public sealed class XmlResourceTests
     [InlineData("   ", false)]
     public void IsWellFormed_reflects_xml_validity(string content, bool expected)
     {
+        // Arrange
         using TempDir root = new();
         XmlResource resource = new(root.Path, root.Combine("x.xml"));
         resource.SetText(content);
 
+        // Act & Assert
         resource.IsWellFormed().Should().Be(expected);
     }
 
@@ -34,14 +36,17 @@ public sealed class XmlResourceTests
     [InlineData("第一章.xhtml", "diyizhang.xhtml")]
     public void GetValidId_sanitizes_and_transliterates_the_requested_value(string input, string expected)
     {
+        // Act & Assert
         XmlResource.GetValidId(input).Should().Be(expected);
     }
 
     [Fact]
     public void GetValidId_generates_an_id_when_nothing_valid_remains()
     {
+        // Act
         string id = XmlResource.GetValidId("€");
 
+        // Assert
         id.Should().MatchRegex("^[A-Za-z][A-Za-z0-9]*$");
         id.Length.Should().BeGreaterThan(10);
     }
@@ -49,6 +54,7 @@ public sealed class XmlResourceTests
     [Fact]
     public void Reads_a_windows_1250_encoded_file_via_the_charset_declaration()
     {
+        // Arrange
         using TempDir root = new();
         string full = root.Combine("ch.xhtml");
         HtmlEncodingResolver.TryGetEncoding("windows-1250", out Encoding cp1250).Should().BeTrue();
@@ -58,8 +64,11 @@ public sealed class XmlResourceTests
         File.WriteAllBytes(full, cp1250.GetBytes(xhtml));
 
         XmlResource resource = new(root.Path, full);
+
+        // Act
         resource.InitialLoad();
 
+        // Assert
         resource.GetText().Should().Contain("Zażółć gęślą jaźń");
     }
 }

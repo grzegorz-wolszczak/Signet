@@ -24,8 +24,10 @@ public sealed class FontPickerViewModelTests
     [Fact]
     public void Current_font_is_preselected_case_insensitively_taking_the_first_name_of_a_fallback_list()
     {
+        // Act
         FontPickerViewModel sut = new(Fonts, new FontPickRequest("consolas, 'Courier New', monospace", 11, false));
 
+        // Assert
         sut.SelectedFont.Should().Be(Consolas);
         sut.Size.Should().Be(11);
         sut.ShowSize.Should().BeTrue();
@@ -34,8 +36,10 @@ public sealed class FontPickerViewModelTests
     [Fact]
     public void Monospace_filter_shows_only_fixed_pitch_fonts()
     {
+        // Act
         FontPickerViewModel sut = new(Fonts, new FontPickRequest("Consolas", 10, true));
 
+        // Assert
         sut.MonospaceOnly.Should().BeTrue();
         sut.VisibleFonts.Should().Equal(Consolas, CourierNew);
     }
@@ -43,8 +47,10 @@ public sealed class FontPickerViewModelTests
     [Fact]
     public void Monospace_filter_starts_off_when_the_current_font_is_proportional()
     {
+        // Act
         FontPickerViewModel sut = new(Fonts, new FontPickRequest("Georgia", 10, true));
 
+        // Assert
         sut.MonospaceOnly.Should().BeFalse();
         sut.SelectedFont.Should().Be(Georgia);
     }
@@ -52,10 +58,12 @@ public sealed class FontPickerViewModelTests
     [Fact]
     public void Name_filter_narrows_the_list_and_drops_a_selection_that_no_longer_matches()
     {
+        // Act
         FontPickerViewModel sut = new(Fonts, new FontPickRequest("Arial", null, false));
 
         sut.Filter = "cou";
 
+        // Assert
         sut.VisibleFonts.Should().Equal(CourierNew);
         sut.SelectedFont.Should().BeNull();
         sut.CanAccept.Should().BeFalse();
@@ -65,8 +73,10 @@ public sealed class FontPickerViewModelTests
     [Fact]
     public void Unknown_current_font_leaves_nothing_selected()
     {
+        // Act
         FontPickerViewModel sut = new(Fonts, new FontPickRequest("No Such Font", null, false));
 
+        // Assert
         sut.SelectedFont.Should().BeNull();
         sut.ShowSize.Should().BeFalse();
         sut.VisibleFonts.Should().HaveCount(Fonts.Length);
@@ -75,10 +85,12 @@ public sealed class FontPickerViewModelTests
     [Fact]
     public void Result_returns_the_selected_family_and_a_clamped_size()
     {
+        // Act
         FontPickerViewModel sut = new(Fonts, new FontPickRequest("Arial", 12, false));
         sut.SelectedFont = Georgia;
         sut.Size = 500;
 
+        // Act & Assert
         sut.Result().Should().Be(new FontPickResult("Georgia", FontPickerViewModel.MaxSize));
     }
 
@@ -93,8 +105,10 @@ public sealed class FontPickerViewModelTests
     [Fact]
     public void Without_a_weight_in_the_request_there_is_no_list_of_weights()
     {
+        // Act
         FontPickerViewModel sut = new(Fonts, new FontPickRequest("Arial", 12, false), WeightsOf);
 
+        // Assert
         sut.ShowWeight.Should().BeFalse();
         sut.Weights.Should().BeEmpty();
         sut.Result()!.Weight.Should().Be(0);
@@ -103,8 +117,10 @@ public sealed class FontPickerViewModelTests
     [Fact]
     public void The_weights_of_the_selected_font_are_listed_with_the_default_first_and_the_current_one_selected()
     {
+        // Act
         FontPickerViewModel sut = new(Fonts, new FontPickRequest("Arial", 12, false, 600), WeightsOf);
 
+        // Assert
         sut.ShowWeight.Should().BeTrue();
         sut.Weights.Select(w => w.Name).Should().Equal(FontWeightOptions.Default.Name, "Light", "Regular", "SemiBold", "Bold");
         sut.SelectedWeight!.Value.Should().Be(600);
@@ -114,28 +130,36 @@ public sealed class FontPickerViewModelTests
     [Fact]
     public void Changing_the_font_changes_the_list_and_keeps_the_weight_the_new_font_has()
     {
+        // Act
         FontPickerViewModel sut = new(Fonts, new FontPickRequest("Arial", 12, false, 700), WeightsOf);
 
         sut.SelectedFont = Consolas;
 
+        // Assert
         sut.Weights.Select(w => w.Value).Should().Equal(0, 400, 700);
         sut.SelectedWeight!.Value.Should().Be(700);
 
+        // Act
         sut.SelectedFont = Georgia;
 
+        // Assert
         sut.Weights.Select(w => w.Value).Should().Equal(0, 400);
         sut.SelectedWeight!.Value.Should().Be(0, "a font without the weight falls back to the default");
 
+        // Act
         sut.SelectedFont = Arial;
 
+        // Assert
         sut.SelectedWeight!.Value.Should().Be(700, "the weight wanted comes back when a font has it again");
     }
 
     [Fact]
     public void A_stored_weight_the_font_lacks_stays_selectable()
     {
+        // Act
         FontPickerViewModel sut = new(Fonts, new FontPickRequest("Georgia", 12, false, 300), WeightsOf);
 
+        // Assert
         sut.Weights.Select(w => w.Value).Should().Equal(0, 300, 400);
         sut.SelectedWeight!.Value.Should().Be(300);
         sut.Result()!.Weight.Should().Be(300);
@@ -144,11 +168,16 @@ public sealed class FontPickerViewModelTests
     [Fact]
     public void A_weight_chosen_in_the_list_is_the_result()
     {
+        // Act
         FontPickerViewModel sut = new(Fonts, new FontPickRequest("Arial", 12, false, 0), WeightsOf);
+
+        // Assert
         sut.SelectedWeight!.Value.Should().Be(0);
 
+        // Act
         sut.SelectedWeight = sut.Weights.Single(w => w.Value == 300);
 
+        // Assert
         sut.Result()!.Weight.Should().Be(300);
         sut.PreviewWeight.Should().Be(Avalonia.Media.FontWeight.Light);
     }
@@ -156,16 +185,22 @@ public sealed class FontPickerViewModelTests
     [Fact]
     public void Each_change_in_the_window_is_reported_to_the_caller_but_not_the_start()
     {
+        // Arrange
         List<FontPickResult> reported = new();
+
+        // Act
         FontPickerViewModel sut = new(
             Fonts, new FontPickRequest("Arial", 12, false, 400, reported.Add), family => ThreeWeights);
 
+        // Assert
         reported.Should().BeEmpty("opening the window changes nothing");
 
+        // Act
         sut.Size = 15;
         sut.SelectedWeight = sut.Weights.Single(w => w.Value == 700);
         sut.SelectedFont = Georgia;
 
+        // Assert
         reported.First().Should().Be(new FontPickResult("Arial", 15, 400));
         reported.Should().Contain(new FontPickResult("Arial", 15, 700));
         reported.Last().Should().Be(new FontPickResult("Georgia", 15, 700), "the weight wanted stays while the font has it");
@@ -174,12 +209,16 @@ public sealed class FontPickerViewModelTests
     [Fact]
     public void A_change_of_the_font_is_reported_once_with_the_weights_of_the_new_font()
     {
+        // Arrange
         List<FontPickResult> reported = new();
+
+        // Act
         FontPickerViewModel sut = new(
             Fonts, new FontPickRequest("Arial", 12, false, 300, reported.Add), family => family == "Arial" ? LightAndRegular : RegularOnly);
 
         sut.SelectedFont = Georgia;
 
+        // Assert
         reported.Should().Equal(new FontPickResult("Georgia", 12, 0));
     }
 }

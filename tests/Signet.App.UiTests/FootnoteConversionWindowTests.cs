@@ -40,6 +40,7 @@ public sealed class FootnoteConversionWindowTests
     [AvaloniaFact]
     public void The_rows_show_the_footnotes_and_the_notes_file_appears_only_for_global_ones()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("3.0");
         HtmlResource chapter = book.GetHtmlResourcesExcludingNav()[0];
         HtmlResource notes = book.CreateEmptyHtmlFile();
@@ -47,19 +48,24 @@ public sealed class FootnoteConversionWindowTests
             "<p>A<a href=\"#a\" id=\"a-back\">1</a> B<a href=\"" + notes.Filename + "#b\" id=\"b-back\">*</a>.</p>\n"
             + "<div id=\"a\"><p><a href=\"#a-back\">1</a> Local note.</p></div>"));
         notes.SetText(Xhtml("<div id=\"b\"><p><a href=\"" + chapter.Filename + "#b-back\">*</a> Global note.</p></div>"));
+
+        // Act
         FootnoteConversionWindow window = Show(book);
         FootnoteConversionViewModel vm = (FootnoteConversionViewModel)window.DataContext!;
 
+        // Assert
         window.GetVisualDescendants().OfType<TextBlock>().Where(t => t.Classes.Contains("noteCell")).Select(t => t.Text)
             .Should().Equal(new[] { string.Empty }.Concat(vm.Items.Select(i => i.Note)), "the file row has no note");
         ListBox files = window.GetVisualDescendants().OfType<ListBox>().Single(l => l.Name == "FileList");
         files.IsEffectivelyVisible.Should().BeFalse("only the local footnote is checked");
         window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "ConvertButton").IsEffectivelyEnabled.Should().BeTrue();
 
+        // Act
         vm.Items[1].IsChecked = true;
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
+        // Assert
         files.IsEffectivelyVisible.Should().BeTrue();
         files.SelectedItem.Should().BeSameAs(vm.Files[0], "the only, dedicated notes file is chosen automatically");
         window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "ConvertButton").IsEffectivelyEnabled.Should().BeTrue();
@@ -69,10 +75,15 @@ public sealed class FootnoteConversionWindowTests
     [AvaloniaFact]
     public void Without_footnotes_of_other_origin_the_dialog_says_so()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("3.0");
+
+        // Act
         FootnoteConversionWindow window = Show(book);
 
         window.GetVisualDescendants().OfType<TextBlock>()
+
+            // Assert
             .Should().Contain(t => t.Text == Strings.Get("FootnoteConversionWindow_None") && t.IsEffectivelyVisible);
         window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "ConvertButton").IsEffectivelyEnabled.Should().BeFalse();
         window.Close();
@@ -85,6 +96,7 @@ public sealed class FootnoteConversionWindowTests
     [AvaloniaFact]
     public void A_double_click_in_a_column_opens_its_place_and_the_details_follow_the_selection()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("3.0");
         HtmlResource chapter = book.GetHtmlResourcesExcludingNav()[0];
         chapter.SetText(Xhtml(
@@ -96,6 +108,8 @@ public sealed class FootnoteConversionWindowTests
             FootnoteEditor.PlanConversion(book), null, (path, offset) => went.Add((path, offset)),
             _ => Task.FromResult<FootnoteConversionOutcome?>(null));
         FootnoteConversionWindow window = new() { DataContext = vm };
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
@@ -104,16 +118,19 @@ public sealed class FootnoteConversionWindowTests
         DoubleClick(window, Cell(window, "referenceCell", vm.Items[0].Reference));
         DoubleClick(window, Cell(window, "noteCell", vm.Items[0].Note));
 
+        // Assert
         went.Should().Equal(
             (chapter.BookPath, text.IndexOf("<a href=\"#a\"", StringComparison.Ordinal)),
             (chapter.BookPath, text.IndexOf("<div id=\"a\"", StringComparison.Ordinal)));
         vm.Selected.Should().BeSameAs(vm.Items[0], "the click selected the row");
         window.FindControl<ItemsControl>("PlaceList")!.ItemsSource.Should().BeSameAs(vm.Items[0].Places);
 
+        // Act
         window.FindControl<CheckBox>("OnlyWarningsBox")!.IsChecked = true;
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
+        // Assert
         window.GetVisualDescendants().OfType<TextBlock>().Where(t => t.Classes.Contains("noteCell")).Select(t => t.Text)
             .Should().Equal(string.Empty, vm.Items[1].Note);
         window.DetailsHeight = 20;

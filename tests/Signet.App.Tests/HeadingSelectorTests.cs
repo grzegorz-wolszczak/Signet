@@ -29,10 +29,13 @@ public sealed class HeadingSelectorTests : IDisposable
     [Fact]
     public void Builds_a_node_tree_from_the_headings()
     {
+        // Arrange
         SetBody("<body>\n<h1>A</h1>\n<h2>A one</h2>\n<h1>B</h1>\n</body>");
 
+        // Act
         HeadingSelectorViewModel vm = NewViewModel();
 
+        // Assert
         vm.Nodes.Select(n => n.TitleText).Should().Equal("A", "B");
         vm.Nodes[0].Children.Should().ContainSingle().Which.TitleText.Should().Be("A one");
     }
@@ -40,11 +43,15 @@ public sealed class HeadingSelectorTests : IDisposable
     [Fact]
     public void Toc_items_only_hides_excluded_headings_and_promotes_their_children()
     {
+        // Arrange
         SetBody("<body>\n<h1>A</h1>\n<h2>A one</h2>\n<h1>B</h1>\n</body>");
+
+        // Act
         HeadingSelectorViewModel vm = NewViewModel();
 
         vm.Nodes[0].IncludeInToc = false;
 
+        // Assert
         vm.TocItemsOnly.Should().BeTrue();
         vm.Nodes.Select(n => n.TitleText).Should().Equal("A one", "B");
     }
@@ -52,26 +59,37 @@ public sealed class HeadingSelectorTests : IDisposable
     [Fact]
     public void Up_to_level_choice_marks_inclusion_and_resets_the_combo()
     {
+        // Arrange
         SetBody("<body>\n<h1>A</h1>\n<h2>B</h2>\n<h3>C</h3>\n</body>");
+
+        // Act
         HeadingSelectorViewModel vm = NewViewModel();
 
         // 0 = prompt, 1 = "None", 2 = "Up to level 1", 3 = "Up to level 2", 4 = "All"
         vm.SelectedLevelChoiceIndex = 2;
 
+        // Assert
         vm.SelectedLevelChoiceIndex.Should().Be(0);
+
+        // Act
         vm.TocItemsOnly = true;
+
+        // Assert
         vm.Nodes.Select(n => n.TitleText).Should().Equal("A");
     }
 
     [Fact]
     public void Change_level_command_reparents_and_updates_selection()
     {
+        // Arrange
         SetBody("<body>\n<h1>A</h1>\n<h2>B</h2>\n</body>");
         HeadingSelectorViewModel vm = NewViewModel();
         vm.SelectedNode = vm.Nodes[0].Children[0];
 
+        // Act
         vm.DecreaseLevelCommand.Execute(null);
 
+        // Assert
         vm.Nodes.Select(n => n.TitleText).Should().Equal("A", "B");
         vm.SelectedNode!.TitleText.Should().Be("B");
     }
@@ -79,7 +97,10 @@ public sealed class HeadingSelectorTests : IDisposable
     [Fact]
     public void Accept_applies_changes_and_raises_close()
     {
+        // Arrange
         SetBody("<body>\n<h1>A</h1>\n<h2>B</h2>\n</body>");
+
+        // Act
         HeadingSelectorViewModel vm = NewViewModel();
         bool closed = false;
         vm.CloseRequested += (_, _) => closed = true;
@@ -87,6 +108,7 @@ public sealed class HeadingSelectorTests : IDisposable
 
         vm.AcceptCommand.Execute(null);
 
+        // Assert
         vm.Accepted.Should().BeTrue();
         vm.BookChanged.Should().BeTrue();
         closed.Should().BeTrue();

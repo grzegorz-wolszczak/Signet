@@ -45,15 +45,18 @@ public sealed class GenerateTocTests
     [Fact]
     public void Epub3_nav_toc_reflects_heading_hierarchy_and_fragments()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(temp, CorpusPaths.Epub3Minimal);
         SetChapterBody(book, MultiHeadingBody);
 
+        // Act
         new HeadingSelectorModel(book).Apply();
         TocGenerator.GenerateToc(book);
 
         var tree = new NavProcessor(book.GetNavResource()!).GetTocTree();
 
+        // Assert
         tree.Select(e => e.Title).Should().Equal("Alpha", "Beta");
         tree[0].Children.Select(e => e.Title).Should().Equal("Alpha One", "Alpha Two");
         tree[0].Href.Should().Be("text/chapter1.xhtml");
@@ -65,39 +68,51 @@ public sealed class GenerateTocTests
     [Fact]
     public void Heading_marked_not_in_toc_is_omitted()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(temp, CorpusPaths.Epub3Minimal);
         SetChapterBody(book, MultiHeadingBody);
 
+        // Act
         new HeadingSelectorModel(book).Apply();
         TocGenerator.GenerateToc(book);
 
         var flat = new NavProcessor(book.GetNavResource()!).GetToc();
+
+        // Assert
         flat.Select(e => e.Title).Should().NotContain("Skip Me");
     }
 
     [Fact]
     public void Regenerating_an_unchanged_toc_reports_no_change()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(temp, CorpusPaths.Epub3Minimal);
         SetChapterBody(book, MultiHeadingBody);
         new HeadingSelectorModel(book).Apply();
 
+        // Act & Assert
         TocGenerator.GenerateToc(book).Should().BeTrue();
+
+        // Act & Assert
         TocGenerator.GenerateToc(book).Should().BeFalse();
     }
 
     [Fact]
     public void Existing_non_generated_id_is_preserved()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(temp, CorpusPaths.Epub3Minimal);
         SetChapterBody(book, MultiHeadingBody);
 
+        // Act
         new HeadingSelectorModel(book).Apply();
 
         string source = Chapter(book).GetText();
+
+        // Assert
         source.Should().Contain("id=\"existing\"");
         source.Should().Contain("id=\"signet_toc_id_1\"");
     }
@@ -105,14 +120,18 @@ public sealed class GenerateTocTests
     [Fact]
     public void Epub2_ncx_navmap_is_built_from_headings_with_sequential_play_order()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(temp, CorpusPaths.Epub2Minimal);
         SetChapterBody(book, MultiHeadingBody);
 
+        // Act
         new HeadingSelectorModel(book).Apply();
         TocGenerator.GenerateToc(book);
 
         NcxDocument ncx = book.GetNcx()!.GetNcxDocument();
+
+        // Assert
         ncx.NavMap.Select(p => p.Label).Should().Equal("Alpha", "Beta");
         ncx.NavMap[0].Children.Select(p => p.Label).Should().Equal("Alpha One", "Alpha Two");
         ncx.NavMap[0].ContentSrc.Should().Be("Text/chapter1.xhtml");
@@ -127,13 +146,17 @@ public sealed class GenerateTocTests
     [Fact]
     public void Ncx_without_headings_gets_a_single_fallback_navpoint()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(temp, CorpusPaths.Epub2Minimal);
         SetChapterBody(book, "<body>\n  <p>no headings here</p>\n</body>");
 
+        // Act
         TocGenerator.GenerateToc(book);
 
         NcxDocument ncx = book.GetNcx()!.GetNcxDocument();
+
+        // Assert
         ncx.NavMap.Should().ContainSingle();
         ncx.NavMap[0].Label.Should().Be("Start");
     }
@@ -141,14 +164,18 @@ public sealed class GenerateTocTests
     [Fact]
     public void At_file_start_heading_links_to_the_file_without_a_fragment()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(temp, CorpusPaths.Epub3Minimal);
         SetChapterBody(book, "<body>\n  <h1 id=\"signet_toc_id_9\">Only</h1>\n  <p>x</p>\n</body>");
 
+        // Act
         new HeadingSelectorModel(book).Apply();
         TocGenerator.GenerateToc(book);
 
         var tree = new NavProcessor(book.GetNavResource()!).GetTocTree();
+
+        // Assert
         tree.Should().ContainSingle();
         tree[0].Href.Should().Be("text/chapter1.xhtml");
         // The auto-generated id disappears when the heading does not need a fragment.

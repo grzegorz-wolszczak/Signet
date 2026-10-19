@@ -26,9 +26,13 @@ public sealed class CodeEditorModelTests
     [Fact]
     public void Loads_resource_text_and_starts_unmodified()
     {
+        // Arrange
         using TempDir temp = new();
+
+        // Act
         var model = new CodeEditorModel(NewHtml(temp, ValidXhtml));
 
+        // Assert
         model.Text.Should().Be(ValidXhtml);
         model.IsModified.Should().BeFalse();
         model.Syntax.Should().Be(CodeEditorSyntax.Html);
@@ -37,14 +41,21 @@ public sealed class CodeEditorModelTests
     [Fact]
     public void Editing_text_marks_modified_until_saved_to_resource()
     {
+        // Arrange
         using TempDir temp = new();
         HtmlResource resource = NewHtml(temp, ValidXhtml);
         var model = new CodeEditorModel(resource);
 
+        // Act
         model.Text = ValidXhtml.Replace("hi", "bye");
+
+        // Assert
         model.IsModified.Should().BeTrue();
 
+        // Act
         model.SaveToResource().Should().BeTrue();
+
+        // Assert
         model.IsModified.Should().BeFalse();
         resource.GetText().Should().Contain("bye");
     }
@@ -52,21 +63,27 @@ public sealed class CodeEditorModelTests
     [Fact]
     public void SaveToResource_is_a_no_op_when_nothing_changed()
     {
+        // Arrange
         using TempDir temp = new();
         var model = new CodeEditorModel(NewHtml(temp, ValidXhtml));
 
+        // Act & Assert
         model.SaveToResource().Should().BeFalse();
     }
 
     [Fact]
     public void ReloadFromResource_discards_unsaved_edits()
     {
+        // Arrange
         using TempDir temp = new();
         var model = new CodeEditorModel(NewHtml(temp, ValidXhtml));
+
+        // Act
         model.Text = "totally different";
 
         model.ReloadFromResource();
 
+        // Assert
         model.Text.Should().Be(ValidXhtml);
         model.IsModified.Should().BeFalse();
     }
@@ -74,11 +91,14 @@ public sealed class CodeEditorModelTests
     [Fact]
     public void CheckWellFormed_passes_for_valid_xhtml()
     {
+        // Arrange
         using TempDir temp = new();
         var model = new CodeEditorModel(NewHtml(temp, ValidXhtml));
 
+        // Act
         WellFormedResult? result = model.CheckWellFormed();
 
+        // Assert
         result.Should().NotBeNull();
         result!.IsWellFormed.Should().BeTrue();
     }
@@ -86,11 +106,14 @@ public sealed class CodeEditorModelTests
     [Fact]
     public void CheckWellFormed_reports_position_for_broken_xhtml()
     {
+        // Arrange
         using TempDir temp = new();
         var model = new CodeEditorModel(NewHtml(temp, BrokenXhtml));
 
+        // Act
         WellFormedResult? result = model.CheckWellFormed();
 
+        // Assert
         result.Should().NotBeNull();
         result!.IsWellFormed.Should().BeFalse();
         result.Line.Should().BeGreaterThan(0);
@@ -100,25 +123,31 @@ public sealed class CodeEditorModelTests
     [Fact]
     public void CheckWellFormed_checks_css_structure_for_css_resources()
     {
+        // Arrange
         using TempDir temp = new();
         var resource = new CssResource(temp.Path, temp.Combine("s.css"));
         resource.SetText("body { color: red; }");
         var model = new CodeEditorModel(resource);
 
         model.SupportsWellFormedCheck.Should().BeTrue();
+
+        // Act & Assert
         model.CheckWellFormed()!.IsWellFormed.Should().BeTrue();
     }
 
     [Fact]
     public void CheckWellFormed_reports_position_for_broken_css()
     {
+        // Arrange
         using TempDir temp = new();
         var resource = new CssResource(temp.Path, temp.Combine("s.css"));
         resource.SetText("body { color: red; }\np {");
         var model = new CodeEditorModel(resource);
 
+        // Act
         WellFormedResult? result = model.CheckWellFormed();
 
+        // Assert
         result.Should().NotBeNull();
         result!.IsWellFormed.Should().BeFalse();
         result.Line.Should().BeGreaterThan(0);
@@ -127,36 +156,48 @@ public sealed class CodeEditorModelTests
     [Fact]
     public void GetCssRuleCount_counts_rules_for_css_and_zero_otherwise()
     {
+        // Arrange
         using TempDir temp = new();
         var css = new CssResource(temp.Path, temp.Combine("s.css"));
         css.SetText("body { color: red; }\nh1 { font-size: 2em; }\np { margin: 0; }");
+
+        // Act & Assert
         new CodeEditorModel(css).GetCssRuleCount().Should().Be(3);
 
+        // Arrange
         var html = NewHtml(temp, ValidXhtml);
+
+        // Act & Assert
         new CodeEditorModel(html).GetCssRuleCount().Should().Be(0);
     }
 
     [Fact]
     public void CheckWellFormed_uses_plain_xml_check_for_xml_resources()
     {
+        // Arrange
         using TempDir temp = new();
         var resource = new XmlResource(temp.Path, temp.Combine("data.xml"));
         resource.SetText("<root><a></root>");
         var model = new CodeEditorModel(resource);
 
         model.Syntax.Should().Be(CodeEditorSyntax.Xml);
+
+        // Act & Assert
         model.CheckWellFormed()!.IsWellFormed.Should().BeFalse();
     }
 
     [Fact]
     public void InsertSectionMarkerAt_inserts_marker_and_returns_caret_past_it()
     {
+        // Arrange
         using TempDir temp = new();
         var model = new CodeEditorModel(NewHtml(temp, "<body>AB</body>"));
         int at = "<body>A".Length;
 
+        // Act
         int caret = model.InsertSectionMarkerAt(at);
 
+        // Assert
         model.Text.Should().Be("<body>A" + CodeEditorModel.SectionMarker + "B</body>");
         caret.Should().Be(at + CodeEditorModel.SectionMarker.Length);
     }
@@ -164,22 +205,28 @@ public sealed class CodeEditorModelTests
     [Fact]
     public void InsertSectionMarkerAt_clamps_out_of_range_offsets()
     {
+        // Arrange
         using TempDir temp = new();
         var model = new CodeEditorModel(NewHtml(temp, "abc"));
 
+        // Act
         model.InsertSectionMarkerAt(999);
 
+        // Assert
         model.Text.Should().Be("abc" + CodeEditorModel.SectionMarker);
     }
 
     [Fact]
     public void GetTagPairHighlight_marks_open_and_matching_close_when_caret_is_in_the_open_tag()
     {
+        // Arrange
         using TempDir temp = new();
         var model = new CodeEditorModel(NewHtml(temp, "<body><p>hi</p></body>"));
 
+        // Act
         TagPairHighlight? pair = model.GetTagPairHighlight("<body><".Length); // inside <p>
 
+        // Assert
         pair.Should().NotBeNull();
         pair!.Value.Open.Should().Be((6, 3));
         pair.Value.Close.Should().Be((11, 4));
@@ -188,11 +235,14 @@ public sealed class CodeEditorModelTests
     [Fact]
     public void GetTagPairHighlight_marks_the_pair_when_caret_is_in_the_close_tag()
     {
+        // Arrange
         using TempDir temp = new();
         var model = new CodeEditorModel(NewHtml(temp, "<body><p>hi</p></body>"));
 
+        // Act
         TagPairHighlight? pair = model.GetTagPairHighlight("<body><p>hi</".Length);
 
+        // Assert
         pair!.Value.Open.Should().Be((6, 3));
         pair.Value.Close.Should().Be((11, 4));
     }
@@ -200,20 +250,25 @@ public sealed class CodeEditorModelTests
     [Fact]
     public void GetTagPairHighlight_is_null_when_caret_is_in_text_content()
     {
+        // Arrange
         using TempDir temp = new();
         var model = new CodeEditorModel(NewHtml(temp, "<body><p>hi</p></body>"));
 
+        // Act & Assert
         model.GetTagPairHighlight("<body><p>h".Length).Should().BeNull();
     }
 
     [Fact]
     public void GetTagPairHighlight_has_no_close_range_for_a_self_closing_tag()
     {
+        // Arrange
         using TempDir temp = new();
         var model = new CodeEditorModel(NewHtml(temp, "<body><br/>x</body>"));
 
+        // Act
         TagPairHighlight? pair = model.GetTagPairHighlight("<body><b".Length);
 
+        // Assert
         pair!.Value.Open.Should().Be((6, 5));
         pair.Value.Close.Should().BeNull();
     }
@@ -221,11 +276,13 @@ public sealed class CodeEditorModelTests
     [Fact]
     public void GetTagPairHighlight_is_null_for_css()
     {
+        // Arrange
         using TempDir temp = new();
         var resource = new CssResource(temp.Path, temp.Combine("s.css"));
         resource.SetText("body { color: red; }");
         var model = new CodeEditorModel(resource);
 
+        // Act & Assert
         model.GetTagPairHighlight(2).Should().BeNull();
     }
 
@@ -237,9 +294,11 @@ public sealed class CodeEditorModelTests
     [InlineData("<style>p { background: url('../Images/b.png') }</style>", "<style>p { background: url('../I", "../Images/b.png")]
     public void GetLinkAtCaret_returns_the_link_value_under_the_caret(string html, string before, string? expected)
     {
+        // Arrange
         using TempDir temp = new();
         var model = new CodeEditorModel(NewHtml(temp, html));
 
+        // Act & Assert
         model.GetLinkAtCaret(before.Length).Should().Be(expected);
     }
 
@@ -251,80 +310,102 @@ public sealed class CodeEditorModelTests
     [InlineData("<body><img src=\"../Images/a.png\"/>text</body>", "<body><img src=\"../Images/a.png\"/>te", null)]
     public void GetImageSourceAtCaret_returns_the_image_reference_of_the_tag_under_the_caret(string html, string before, string? expected)
     {
+        // Arrange
         using TempDir temp = new();
         var model = new CodeEditorModel(NewHtml(temp, html));
 
+        // Act & Assert
         model.GetImageSourceAtCaret(before.Length).Should().Be(expected);
     }
 
     [Fact]
     public void GetLinkAtCaret_finds_url_in_a_stylesheet()
     {
+        // Arrange
         using TempDir temp = new();
         var resource = new CssResource(temp.Path, temp.Combine("s.css"));
         resource.SetText("body {\n  background: url(\"../Images/a%20b.png\");\n}");
         var model = new CodeEditorModel(resource);
 
+        // Act & Assert
         model.GetLinkAtCaret("body {\n  background: url(\"../Im".Length).Should().Be("../Images/a%20b.png");
+
+        // Act & Assert
         model.GetLinkAtCaret(2).Should().BeNull();
     }
 
     [Fact]
     public void GetClassNameAtCaret_returns_the_single_class_under_the_caret()
     {
+        // Arrange
         using TempDir temp = new();
         var model = new CodeEditorModel(NewHtml(temp, "<body><p class=\"note\">hi</p></body>"));
 
+        // Act & Assert
         model.GetClassNameAtCaret("<body><p class=\"no".Length).Should().Be("note");
     }
 
     [Fact]
     public void GetClassNameAtCaret_picks_the_token_under_the_caret_among_several_classes()
     {
+        // Arrange
         using TempDir temp = new();
         var model = new CodeEditorModel(NewHtml(temp, "<body><p class=\"a bold c\">hi</p></body>"));
 
+        // Act & Assert
         model.GetClassNameAtCaret("<body><p class=\"a bo".Length).Should().Be("bold");
     }
 
     [Fact]
     public void GetClassNameAtCaret_is_null_outside_the_class_attribute_value()
     {
+        // Arrange
         using TempDir temp = new();
         var model = new CodeEditorModel(NewHtml(temp, "<body><p class=\"note\">hi</p></body>"));
 
+        // Act & Assert
         model.GetClassNameAtCaret("<body><p ".Length).Should().BeNull();
+
+        // Act & Assert
         model.GetClassNameAtCaret("<body><p class=\"note\">h".Length).Should().BeNull();
     }
 
     [Fact]
     public void GetClassNameAtCaret_is_null_when_the_tag_has_no_class_attribute()
     {
+        // Arrange
         using TempDir temp = new();
         var model = new CodeEditorModel(NewHtml(temp, "<body><p>hi</p></body>"));
 
+        // Act & Assert
         model.GetClassNameAtCaret("<body><p".Length).Should().BeNull();
     }
 
     [Fact]
     public void GetClassNameAtCaret_is_null_for_css()
     {
+        // Arrange
         using TempDir temp = new();
         var resource = new CssResource(temp.Path, temp.Combine("s.css"));
         resource.SetText(".note { color: red; }");
         var model = new CodeEditorModel(resource);
 
+        // Act & Assert
         model.GetClassNameAtCaret(2).Should().BeNull();
     }
 
     [Fact]
     public void FormatCaretPosition_includes_codepoint_name_and_hex_like_original()
     {
+        // Act & Assert
         CodeEditorModel.FormatCaretPosition(12, 5, 'a')
             .Should().Be("LATIN SMALL LETTER A (U+0061) — Linia 12, kol. 5");
     }
 
     [Fact]
-    public void FormatCaretPosition_omits_the_codepoint_at_end_of_document() =>
+    public void FormatCaretPosition_omits_the_codepoint_at_end_of_document()
+    {
+        // Act & Assert
         CodeEditorModel.FormatCaretPosition(3, 1).Should().Be("EOF — Linia 3, kol. 1");
+    }
 }

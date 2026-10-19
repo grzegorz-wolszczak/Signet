@@ -14,8 +14,10 @@ public sealed class ThemeSampleTests
     [Fact]
     public void The_markup_marks_nested_fragments_with_their_keys()
     {
+        // Act
         ThemeSample sut = ThemeSample.Parse("a «diff.deletedLine|b «diff.deletedWord|c» d» e", CodeEditorSyntax.PlainText);
 
+        // Assert
         sut.Text.Should().Be("a b c d e");
         sut.Marks.Should().BeEquivalentTo(new[]
         {
@@ -33,16 +35,20 @@ public sealed class ThemeSampleTests
     [InlineData("«no.such.key|text»")]
     public void A_broken_markup_is_rejected(string markup)
     {
+        // Arrange
         Action parse = () => ThemeSample.Parse(markup, CodeEditorSyntax.PlainText);
 
+        // Act & Assert
         parse.Should().Throw<Exception>();
     }
 
     [Fact]
     public void The_keys_of_the_syntax_come_from_the_highlighting_of_code_editor()
     {
+        // Act
         ThemeSample sut = ThemeSample.Parse("<p class=\"a\">x &amp; <a href=\"missing.xhtml\">y</a></p>", CodeEditorSyntax.Html);
 
+        // Assert
         sut.KeyAt(1).Should().Be(ThemeKeys.XhtmlTag);
         sut.KeyAt(4).Should().Be(ThemeKeys.XhtmlAttributeName);
         sut.KeyAt(sut.Text.IndexOf("&amp;", StringComparison.Ordinal) + 1).Should().Be(ThemeKeys.XhtmlEntity);
@@ -53,9 +59,11 @@ public sealed class ThemeSampleTests
     [Fact]
     public void A_style_block_takes_the_css_keys_in_the_extended_highlighting_and_the_embedded_css_key_in_the_basic_one()
     {
+        // Act
         ThemeSample sut = ThemeSample.Parse("<style>\np { color: red; }\n</style>", CodeEditorSyntax.Html);
         int property = sut.Text.IndexOf("color", StringComparison.Ordinal);
 
+        // Assert
         sut.IsExtended.Should().BeTrue();
         sut.KeyAt(property).Should().Be(ThemeKeys.CssProperty);
         sut.Basic.IsExtended.Should().BeFalse();
@@ -65,9 +73,11 @@ public sealed class ThemeSampleTests
     [Fact]
     public void The_keys_of_javascript_and_json_come_from_the_textmate_scopes()
     {
+        // Act
         ThemeSample js = ThemeSample.Parse("var n = 42; // done\nif (n) { return \"s\"; }", CodeEditorSyntax.JavaScript);
         ThemeSample json = ThemeSample.Parse("{ \"a\": 1, \"b\": true }", CodeEditorSyntax.Json);
 
+        // Assert
         js.KeyAt(0).Should().Be(ThemeKeys.JsKeyword);
         js.KeyAt(js.Text.IndexOf("42", StringComparison.Ordinal)).Should().Be(ThemeKeys.JsNumber);
         js.KeyAt(js.Text.IndexOf("done", StringComparison.Ordinal)).Should().Be(ThemeKeys.JsComment);
@@ -81,6 +91,7 @@ public sealed class ThemeSampleTests
     [Fact]
     public void The_sample_of_every_editor_page_shows_each_key_of_its_page()
     {
+        // Arrange
         (ThemePage Page, ThemeSample[] Samples)[] pages =
         {
             (ThemePage.General, new[] { ThemeSamples.General }),
@@ -93,12 +104,15 @@ public sealed class ThemeSampleTests
         foreach ((ThemePage page, ThemeSample[] samples) in pages)
         {
             // The extended and the basic highlighting together (e.g. xhtml.css is the <style> block of the basic one).
+            // Act
             ThemeKey[] shown = samples.SelectMany(s => new[] { s, s.Basic })
                 .SelectMany(s => s.Marks.Concat(s.SyntaxRanges)).Select(r => r.Key).Distinct().ToArray();
             ThemeKey[] notShown = ThemeKeys.On(page)
                 .Where(k => k != ThemeKeys.EditorText && k != ThemeKeys.EditorCurrentLine && k != ThemeKeys.EditorLineNumbers
                             && k != ThemeKeys.EditorCurrentLineNumber)
                 .Except(shown).ToArray();
+
+            // Assert
             notShown.Select(k => k.Id).Should().BeEmpty($"the sample of {page} shows every key of the page");
         }
     }

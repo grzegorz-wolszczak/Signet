@@ -21,9 +21,11 @@ public sealed class DebugLogTests
     [Fact]
     public void A_path_in_the_profile_folder_is_masked()
     {
+        // Arrange
         string home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         string file = _fixture.Create<string>() + ".epub";
 
+        // Act & Assert
         DebugLog.MaskPath(Path.Combine(home, "Books", file)).Should().Be("~" + Path.DirectorySeparatorChar + Path.Combine("Books", file));
         DebugLog.MaskPath(null).Should().BeEmpty();
     }
@@ -31,6 +33,7 @@ public sealed class DebugLogTests
     [Fact]
     public void Values_are_written_quoted_invariant_and_shortened()
     {
+        // Act & Assert
         DebugLog.Describe(null).Should().Be("(none)");
         DebugLog.Describe("abc").Should().Be("\"abc\"");
         DebugLog.Describe(1.5).Should().Be("1.5");
@@ -43,10 +46,13 @@ public sealed class DebugLogTests
     [InlineData("CleanupWindow_SelectAll")]
     public void A_label_is_written_as_the_resource_key_of_its_text(string key)
     {
+        // Arrange
         string text = Strings.Get(key);
 
+        // Act
         string? found = DebugLog.ResourceKeyOf(text);
 
+        // Assert
         found.Should().NotBeNull();
         Strings.Get(found!).Should().Be(text, "a key with the same text identifies the same label");
         DebugLog.ResourceKeyOf("_" + text + "…").Should().Be(found, "mnemonics and an ellipsis are ignored");
@@ -55,6 +61,7 @@ public sealed class DebugLogTests
     [Fact]
     public void A_text_that_is_no_resource_has_no_key()
     {
+        // Act & Assert
         DebugLog.ResourceKeyOf(_fixture.Create<string>()).Should().BeNull();
         DebugLog.ResourceKeyOf("  ").Should().BeNull();
     }
@@ -62,12 +69,15 @@ public sealed class DebugLogTests
     [Fact]
     public void A_tracked_setting_is_logged_with_its_value_before_and_after()
     {
+        // Arrange
         bool wasEnabled = DebugLog.IsEnabled;
         DebugLog.IsEnabled = true;
         try
         {
             Settings settings = new();
             string context = "Test" + Guid.NewGuid().ToString("N");
+
+            // Act
             using (DebugLog.TrackChanges(settings, context))
             {
                 settings.Flag = true;
@@ -77,6 +87,7 @@ public sealed class DebugLogTests
 
             settings.Flag = false;
 
+            // Assert
             DebugLog.RecentEvents().Should()
                 .Contain($"{context}: Flag: False → True")
                 .And.Contain($"{context}: Count: 3 → 7")

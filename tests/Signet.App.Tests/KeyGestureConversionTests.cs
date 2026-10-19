@@ -27,7 +27,10 @@ public sealed class KeyGestureConversionTests
     [InlineData("Alt+F1", Key.F1, KeyModifiers.Alt)]
     public void Parses_qt_shortcuts(string input, Key expectedKey, KeyModifiers expectedModifiers)
     {
+        // Act & Assert
         KeyGestureConversion.TryParse(input, out KeyGesture? gesture).Should().BeTrue();
+
+        // Assert
         gesture!.Key.Should().Be(expectedKey);
         gesture.KeyModifiers.Should().Be(expectedModifiers);
     }
@@ -38,14 +41,20 @@ public sealed class KeyGestureConversionTests
     [InlineData(null)]
     public void Empty_input_returns_false(string? input)
     {
+        // Act & Assert
         KeyGestureConversion.TryParse(input, out KeyGesture? gesture).Should().BeFalse();
+
+        // Assert
         gesture.Should().BeNull();
     }
 
     [Fact]
     public void Round_trips_through_qt_string()
     {
+        // Act
         _ = KeyGestureConversion.TryParse("Ctrl+Shift+G", out KeyGesture? gesture);
+
+        // Assert
         KeyGestureConversion.ToPortableString(gesture).Should().Be("Ctrl+Shift+G");
     }
 }

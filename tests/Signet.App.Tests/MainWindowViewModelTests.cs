@@ -44,6 +44,7 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void The_title_shows_the_file_name_or_the_full_path_and_never_the_epub_version()
     {
+        // Act & Assert
         MainWindowViewModel.FormatWindowTitle(true, "Book - Part 2.epub", @"C:\Books\Book - Part 2.epub", false, false)
             .Should().Be($"Book - Part 2.epub - {ApplicationInfo.Name}");
         MainWindowViewModel.FormatWindowTitle(true, "Book.epub", @"C:\Books\Book.epub", true, true)
@@ -56,30 +57,37 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void WindowTitle_is_the_application_name()
     {
+        // Act & Assert
         New().WindowTitle.Should().Be(ApplicationInfo.Name);
     }
 
     [Fact]
     public void Open_action_routes_through_the_file_workflow()
     {
+        // Arrange
         MainWindowViewModel sut = New();
         FakeFileWorkflowPrompts prompts = new();
         sut.AttachFileWorkflowPrompts(prompts);
 
+        // Act
         sut.Actions.Require(AppActionIds.Open).Execute(null);
 
+        // Assert
         prompts.AskOpenPathCalls.Should().Be(1);
     }
 
     [Fact]
     public void LoadBook_feeds_the_book_browser_and_updates_the_title()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
 
+        // Act
         sut.LoadBook(_disposables.Add(new ImportEpub(epub).GetBook()), epub);
 
+        // Assert
         sut.BookBrowser.HasBook.Should().BeTrue();
         sut.BookBrowser.Nodes.Should().NotBeEmpty();
         sut.WindowTitle.Should().Contain(ApplicationInfo.Name).And.Contain(".epub");
@@ -91,15 +99,19 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void Opening_a_resource_from_the_book_browser_creates_a_document_tab()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
         sut.LoadBook(_disposables.Add(new ImportEpub(epub).GetBook()), epub);
 
         BookBrowserNode text = sut.BookBrowser.Nodes.Single(n => n.Header == "Text");
+
+        // Act
         sut.BookBrowser.UpdateSelection(new object?[] { text.Children[0] });
         sut.BookBrowser.OpenSelectedCommand.Execute(null);
 
+        // Assert
         sut.Tabs.Count.Should().Be(1);
         sut.Tabs.ActiveTab!.Resource.BookPath.Should().Be(text.Children[0].Entry!.BookPath);
     }
@@ -107,9 +119,11 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void Menu_has_all_top_level_entries_and_no_excluded_features()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         MainWindowViewModel sut = New();
 
+        // Act & Assert
         sut.MenuItems.Select(m => m.Header).Should().Equal(
             "_File", "_Edit", "_Insert", "For_mat", "_Search", "_Tools", "_View", "_Window", "_Help");
 
@@ -117,12 +131,15 @@ public sealed class MainWindowViewModelTests : IDisposable
             item.Header + " " + string.Concat((item.Items ?? System.Array.Empty<MenuItemViewModel>()).Select(Flatten));
 
         string all = string.Concat(sut.MenuItems.Select(Flatten));
+
+        // Act & Assert
         all.Should().NotContainAny("Plugin", "Manage Repositories", "Automat", "Index Editor");
     }
 
     [Fact]
     public void Every_menu_leaf_is_bound_to_a_command()
     {
+        // Arrange
         MainWindowViewModel sut = New();
 
         static void Check(MenuItemViewModel item)
@@ -140,6 +157,7 @@ public sealed class MainWindowViewModelTests : IDisposable
             }
         }
 
+        // Act & Assert
         foreach (MenuItemViewModel top in sut.MenuItems)
         {
             Check(top);
@@ -149,8 +167,10 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void Main_toolbars_are_exposed_in_rows()
     {
+        // Arrange
         MainWindowViewModel sut = New();
 
+        // Act & Assert
         sut.Toolbars.Should().HaveCount(ToolbarManager.AllToolbars.Count);
         sut.TopToolbars.Rows.Should().HaveCount(ToolbarManager.DefaultRows.Count);
         sut.TopToolbars.Rows[0].HasVisibleToolbars.Should().BeTrue();
@@ -162,8 +182,10 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void Dock_layout_contains_a_documents_area()
     {
+        // Arrange
         MainWindowViewModel sut = New();
 
+        // Act & Assert
         sut.Layout.Should().NotBeNull();
         sut.DockFactory.Should().NotBeNull();
     }
@@ -171,10 +193,12 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void Documents_area_holds_its_space_and_does_not_collapse_when_empty()
     {
+        // Arrange
         MainWindowViewModel sut = New();
         MainDockFactory factory = (MainDockFactory)sut.DockFactory;
 
         // Without this, an empty tab area collapsed to zero and the other panels took over its space.
+        // Act & Assert
         factory.DocumentDock!.IsCollapsable.Should().BeFalse();
 
         // Validation Results starts hidden, so it does not dominate the center.
@@ -184,25 +208,35 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void Panel_toggle_action_is_enabled_and_flips_visibility()
     {
+        // Arrange
         MainWindowViewModel sut = New();
         AppAction toggle = sut.Actions.Require(AppActionIds.ToggleBookBrowser);
         MainDockFactory factory = (MainDockFactory)sut.DockFactory;
 
+        // Act & Assert
         toggle.IsEnabled.Should().BeTrue();
         factory.IsToolVisible(DockableIds.BookBrowser).Should().BeTrue();
 
+        // Act
         toggle.Execute(null);
+
+        // Assert
         factory.IsToolVisible(DockableIds.BookBrowser).Should().BeFalse();
 
+        // Act
         toggle.Execute(null);
+
+        // Assert
         factory.IsToolVisible(DockableIds.BookBrowser).Should().BeTrue();
     }
 
     [Fact]
     public void Without_a_book_only_the_actions_that_need_none_are_enabled()
     {
+        // Arrange
         MainWindowViewModel sut = New();
 
+        // Act & Assert
         sut.HasBook.Should().BeFalse();
         sut.StartScreen.IsVisible.Should().BeTrue();
         foreach (string id in new[]
@@ -230,15 +264,20 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void Closing_the_book_leaves_the_window_without_one()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         MainWindowViewModel sut = NewWithBook();
+
+        // Act & Assert
         sut.HasBook.Should().BeTrue();
         sut.StartScreen.IsVisible.Should().BeFalse();
         sut.Actions.Require(AppActionIds.Save).IsEnabled.Should().BeTrue();
         sut.Actions.Require(AppActionIds.Close).IsEnabled.Should().BeTrue();
 
+        // Act
         ((IBookWorkspace)sut).CloseBook();
 
+        // Assert
         sut.HasBook.Should().BeFalse();
         ((IBookWorkspace)sut).CurrentBook.Should().BeNull();
         sut.StartScreen.IsVisible.Should().BeTrue();
@@ -256,76 +295,95 @@ public sealed class MainWindowViewModelTests : IDisposable
     public void Unimplemented_action_reports_on_the_status_bar()
     {
         // InsertRole (Insert -> Role...) is not wired up.
+        // Arrange
         MainWindowViewModel sut = NewWithBook();
         AppAction insertRole = sut.Actions.Require(AppActionIds.InsertRole);
         insertRole.IsEnabled = true;
 
+        // Act
         insertRole.Execute(null);
 
+        // Assert
         sut.StatusMessage.Should().Be(Strings.Format("Status_NotImplemented", insertRole.DefaultText.Replace("&", string.Empty, StringComparison.Ordinal)));
     }
 
     [Fact]
     public void AddCover_action_raises_AddCoverRequested()
     {
+        // Arrange
         MainWindowViewModel sut = NewWithBook();
         bool raised = false;
         sut.AddCoverRequested += (_, _) => raised = true;
 
+        // Act
         sut.Actions.Require(AppActionIds.AddCover).Execute(null);
 
+        // Assert
         raised.Should().BeTrue();
     }
 
     [Fact]
     public void Preferences_action_raises_PreferencesRequested()
     {
+        // Arrange
         MainWindowViewModel sut = New();
         bool raised = false;
         sut.PreferencesRequested += (_, _) => raised = true;
 
+        // Act
         sut.Actions.Require(AppActionIds.Preferences).Execute(null);
 
+        // Assert
         raised.Should().BeTrue();
     }
 
     [Fact]
     public void Reports_action_raises_ReportsRequested()
     {
+        // Arrange
         MainWindowViewModel sut = NewWithBook();
         bool raised = false;
         sut.ReportsRequested += (_, _) => raised = true;
 
+        // Act
         sut.Actions.Require(AppActionIds.Reports).Execute(null);
 
+        // Assert
         raised.Should().BeTrue();
     }
 
     [Fact]
     public void Cleanup_action_raises_CleanupRequested()
     {
+        // Arrange
         MainWindowViewModel sut = NewWithBook();
         bool raised = false;
         sut.CleanupRequested += (_, _) => raised = true;
 
+        // Act
         sut.Actions.Require(AppActionIds.Cleanup).Execute(null);
 
+        // Assert
         raised.Should().BeTrue();
     }
 
     [Fact]
     public async Task PrepareCleanup_returns_null_without_a_book()
     {
+        // Arrange
         MainWindowViewModel sut = New();
 
+        // Act
         CleanupViewModel? cleanup = await sut.PrepareCleanupAsync();
 
+        // Assert
         cleanup.Should().BeNull();
     }
 
     [Fact]
     public async Task PrepareCleanup_and_cleaning_the_CSS_tab_remove_an_unused_selector_and_report_it()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         TempDir temp = _disposables.Add(new TempDir());
         string tree = temp.Combine("tree");
@@ -337,14 +395,19 @@ public sealed class MainWindowViewModelTests : IDisposable
         Book book = _disposables.Add(new ImportEpub(epub).GetBook());
         sut.LoadBook(book, epub);
 
+        // Act
         CleanupViewModel? cleanup = await sut.PrepareCleanupAsync();
+
+        // Assert
         cleanup.Should().NotBeNull();
         cleanup!.Sections.Single(s => s.Step == CleanupStep.UnusedSelectors).IsEnabled = true;
         CleanupTabViewModel cssTab = cleanup.Tabs[0];
         cssTab.HasChanges.Should().BeTrue();
 
+        // Act
         cssTab.CleanCommand.Execute(null);
 
+        // Assert
         book.GetCssResources().Single().GetText().Should().NotContain(".ghost");
         book.Modified.Should().BeTrue();
         sut.StatusMessage.Should().Be(Strings.Get("Status_CleanupDone"));
@@ -354,16 +417,22 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void ApplyAddCover_MarksImageAsCoverAndOpensTheCoverPage()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
         sut.LoadBook(_disposables.Add(new ImportEpub(epub).GetBook()), epub);
 
+        // Act
         ImageResource figure = (ImageResource)sut.GetCoverCandidateImages().Single(i => i.Filename == "figure.png");
+
+        // Assert
         sut.FindExistingCoverHtml().Should().BeNull();
 
+        // Act
         sut.ApplyAddCover(figure);
 
+        // Assert
         sut.Tabs.ActiveTab!.Resource.Filename.Should().Be("cover.xhtml");
         sut.FindExistingCoverHtml().Should().NotBeNull();
     }
@@ -371,32 +440,43 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void AddNavToSpine_and_RemoveNavFromSpine_actions_toggle_spine_membership()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
         Book book = _disposables.Add(new ImportEpub(epub).GetBook());
         sut.LoadBook(book, epub);
 
+        // Act & Assert
         book.IsNavInSpine.Should().BeFalse();
 
+        // Act
         sut.Actions.Require(AppActionIds.AddNavToSpineNonLinear).Execute(null);
+
+        // Assert
         book.IsNavInSpine.Should().BeTrue();
 
+        // Act
         sut.Actions.Require(AppActionIds.RemoveNavFromSpine).Execute(null);
+
+        // Assert
         book.IsNavInSpine.Should().BeFalse();
     }
 
     [Fact]
     public void WellFormedCheckEpub_action_populates_ValidationResults_and_shows_the_panel()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("not-wellformed-xhtml"), temp);
         MainWindowViewModel sut = New();
         sut.LoadBook(_disposables.Add(new ImportEpub(epub).GetBook()), epub);
         MainDockFactory factory = (MainDockFactory)sut.DockFactory;
 
+        // Act
         sut.Actions.Require(AppActionIds.WellFormedCheckEpub).Execute(null);
 
+        // Assert
         sut.ValidationResults.HasResults.Should().BeTrue();
         sut.ValidationResults.Rows.Should().Contain(r => r.FileName == "chapter1.xhtml");
         factory.IsToolVisible(DockableIds.ValidationResults).Should().BeTrue();
@@ -405,20 +485,24 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void WellFormedCheckEpub_action_reports_no_results_for_a_wellformed_book()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
         sut.LoadBook(_disposables.Add(new ImportEpub(epub).GetBook()), epub);
 
+        // Act
         sut.Actions.Require(AppActionIds.WellFormedCheckEpub).Execute(null);
 
         // The corpus font is a dummy, not a real font (see tests/corpus/generate-binaries.sh).
+        // Assert
         sut.ValidationResults.Rows.Should().ContainSingle().Which.Result.Code.Should().Be("Validation_FontCorrupt");
     }
 
     [Fact]
     public void ValidationResults_activation_opens_the_offending_resource_in_a_tab()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("not-wellformed-xhtml"), temp);
         MainWindowViewModel sut = New();
@@ -426,14 +510,18 @@ public sealed class MainWindowViewModelTests : IDisposable
         sut.Actions.Require(AppActionIds.WellFormedCheckEpub).Execute(null);
 
         ValidationResultRow row = sut.ValidationResults.Rows.First();
+
+        // Act
         sut.ValidationResults.Activate(row);
 
+        // Assert
         sut.Tabs.ActiveTab!.Resource.BookPath.Should().Be(row.Result.BookPath);
     }
 
     [Fact]
     public void ValidateStylesheetsWithW3C_opens_a_generated_page_per_stylesheet()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
@@ -442,8 +530,10 @@ public sealed class MainWindowViewModelTests : IDisposable
         List<string> openedPaths = new();
         sut.AttachExternalFileOpener(path => { openedPaths.Add(_disposables.DeleteFile(path)); return true; });
 
+        // Act
         sut.Actions.Require(AppActionIds.ValidateStylesheetsWithW3C).Execute(null);
 
+        // Assert
         openedPaths.Should().HaveCount(book.GetCssResources().Count);
         string html = File.ReadAllText(openedPaths[0]);
         html.Should().Contain(W3CValidation.ValidatorUrl);
@@ -452,6 +542,7 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void Print_action_delegates_to_PreviewViewModel_RequestPrint()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
@@ -461,14 +552,17 @@ public sealed class MainWindowViewModelTests : IDisposable
         bool raised = false;
         sut.Preview.PrintRequested += (_, _) => raised = true;
 
+        // Act
         sut.Actions.Require(AppActionIds.Print).Execute(null);
 
+        // Assert
         raised.Should().BeTrue();
     }
 
     [Fact]
     public void PrintPreview_action_generates_a_pdf_and_opens_it_via_the_external_file_opener()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
@@ -480,28 +574,40 @@ public sealed class MainWindowViewModelTests : IDisposable
         string? requestedPath = null;
         sut.Preview.PrintToPdfRequested += (_, path) => requestedPath = path;
 
+        // Act
         sut.Actions.Require(AppActionIds.PrintPreview).Execute(null);
 
         // The view (PreviewView) generates the PDF through the WebView and only on success calls
         // PreviewViewModel.NotifyPrintPreviewReady; without a WebView the test simulates that step.
+        // Assert
         requestedPath.Should().NotBeNullOrEmpty();
+
+        // Act
         sut.Preview.NotifyPrintPreviewReady(requestedPath!);
+
+        // Assert
         openedPaths.Should().Equal(requestedPath);
     }
 
     [Fact]
     public void NcxGuideFromNav_generates_ncx_and_guide_entries_from_the_nav()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
         Book book = _disposables.Add(new ImportEpub(epub).GetBook());
         sut.LoadBook(book, epub);
+
+        // Act & Assert
         book.GetNcx().Should().BeNull();
 
+        // Act
         sut.Actions.Require(AppActionIds.NcxGuideFromNav).Execute(null);
 
         NcxResource? ncx = book.GetNcx();
+
+        // Assert
         ncx.Should().NotBeNull();
         ncx!.GetText().Should().Contain("chapter1.xhtml");
 
@@ -513,15 +619,20 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void RemoveNcxGuide_removes_the_ncx_resource_and_clears_the_guide()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3WithNcx, temp);
         MainWindowViewModel sut = New();
         Book book = _disposables.Add(new ImportEpub(epub).GetBook());
         sut.LoadBook(book, epub);
+
+        // Act & Assert
         book.GetNcx().Should().NotBeNull();
 
+        // Act
         sut.Actions.Require(AppActionIds.RemoveNcxGuide).Execute(null);
 
+        // Assert
         book.GetNcx().Should().BeNull();
         book.Modified.Should().BeTrue();
     }
@@ -529,31 +640,43 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void UpdateManifestMediaTypes_and_UpdateManifestProperties_actions_mark_the_book_modified()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
         Book book = _disposables.Add(new ImportEpub(epub).GetBook());
         sut.LoadBook(book, epub);
 
+        // Act
         sut.Actions.Require(AppActionIds.UpdateManifestMediaTypes).Execute(null);
+
+        // Assert
         book.Modified.Should().BeTrue();
 
         book.Modified = false;
+
+        // Act
         sut.Actions.Require(AppActionIds.UpdateManifestProperties).Execute(null);
+
+        // Assert
         book.Modified.Should().BeTrue();
     }
 
     [Fact]
     public void LoadBook_opens_the_first_html_file_in_spine_order()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3WithNcx, temp);
         MainWindowViewModel sut = New();
         Book book = _disposables.Add(new ImportEpub(epub).GetBook());
 
+        // Act
         sut.LoadBook(book, epub);
 
         Resource firstInSpine = book.GetOpf().GetSpineOrderResources(book.GetFolderKeeper().GetResourceList())[0];
+
+        // Assert
         sut.Tabs.ActiveTab.Should().NotBeNull();
         sut.Tabs.ActiveTab!.Resource.Should().BeSameAs(firstInSpine);
     }
@@ -561,17 +684,22 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void Blocked_action_shows_the_notifications_panel_collapsed_with_an_unread_warning()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub2Minimal, temp);
         MainWindowViewModel sut = New();
         sut.LoadBook(_disposables.Add(new ImportEpub(epub).GetBook()), epub);
         var factory = (MainDockFactory)sut.DockFactory;
+
+        // Act & Assert
         factory.IsToolVisible(DockableIds.Notifications).Should().BeFalse("the panel is hidden until needed");
         sut.HasUnreadWarnings.Should().BeFalse("the 'book loaded' message is only informational");
 
         // "Add Nav to Reading Order" is not available for EPUB 2 — the action is blocked.
+        // Act
         sut.Actions.Require(AppActionIds.AddNavToSpine).Execute(null);
 
+        // Assert
         sut.Notifications.Entries[0].IsWarning.Should().BeTrue();
         sut.IsStatusMessageWarning.Should().BeTrue();
         factory.IsToolVisible(DockableIds.Notifications).Should().BeTrue();
@@ -579,27 +707,37 @@ public sealed class MainWindowViewModelTests : IDisposable
         sut.HasUnreadWarnings.Should().BeTrue();
         sut.Notifications.UnreadWarnings.Should().Be(1);
 
+        // Act
         sut.OpenNotificationsCommand.Execute(null);
 
+        // Assert
         sut.HasUnreadWarnings.Should().BeFalse("opening the panel marks the warnings as read");
     }
 
     [Fact]
     public void Notifications_panel_action_toggles_the_panel()
     {
+        // Arrange
         MainWindowViewModel sut = New();
         var factory = (MainDockFactory)sut.DockFactory;
 
+        // Act
         sut.Actions.Require(AppActionIds.ToggleNotifications).Execute(null);
+
+        // Assert
         factory.IsToolVisible(DockableIds.Notifications).Should().BeTrue();
 
+        // Act
         sut.Actions.Require(AppActionIds.ToggleNotifications).Execute(null);
+
+        // Assert
         factory.IsToolVisible(DockableIds.Notifications).Should().BeFalse();
     }
 
     [Fact]
     public void Format_actions_are_enabled_only_for_an_html_code_tab()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
@@ -607,21 +745,34 @@ public sealed class MainWindowViewModelTests : IDisposable
         sut.LoadBook(book, epub);
 
         AppAction bold = sut.Actions.Require(AppActionIds.Bold);
+
+        // Act
         sut.Tabs.CloseAllTabs(); // LoadBook opens the first HTML file; this test needs a state without tabs
+
+        // Assert
         bold.IsEnabled.Should().BeFalse();
 
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
+
+        // Act
         sut.Tabs.OpenResources(new Resource[] { html });
+
+        // Assert
         bold.IsEnabled.Should().BeTrue();
 
         CssResource css = book.GetAllResources().OfType<CssResource>().First();
+
+        // Act
         sut.Tabs.OpenResources(new Resource[] { css });
+
+        // Assert
         bold.IsEnabled.Should().BeFalse();
     }
 
     [Fact]
     public void Preview_click_while_another_tab_is_active_switches_to_the_previewed_file()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
@@ -629,6 +780,8 @@ public sealed class MainWindowViewModelTests : IDisposable
         sut.LoadBook(book, epub);
 
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
+
+        // Act
         sut.Tabs.OpenResources(new Resource[] { html });
         var htmlTab = (Signet.App.ViewModels.Tabs.CodeTabViewModel)sut.Tabs.ActiveTab!;
         int? htmlJump = null;
@@ -639,10 +792,14 @@ public sealed class MainWindowViewModelTests : IDisposable
         var cssTab = (Signet.App.ViewModels.Tabs.CodeTabViewModel)sut.Tabs.ActiveTab!;
         bool cssJumped = false;
         cssTab.ScrollToOffsetRequested += _ => cssJumped = true;
+
+        // Assert
         sut.Preview.CurrentBookPath.Should().Be(html.BookPath, "the preview stays on the last HTML file");
 
+        // Act
         sut.Preview.HandlePreviewMessage("signet-loc:5");
 
+        // Assert
         sut.Tabs.ActiveTab.Should().BeSameAs(htmlTab, "the click refers to the previewed file, not the CSS tab");
         htmlJump.Should().Be(5);
         cssJumped.Should().BeFalse();
@@ -651,6 +808,7 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void Bold_action_wraps_the_active_code_tab_selection()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
@@ -658,6 +816,8 @@ public sealed class MainWindowViewModelTests : IDisposable
         sut.LoadBook(book, epub);
 
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
+
+        // Act
         sut.Tabs.OpenResources(new Resource[] { html });
         var tab = (Signet.App.ViewModels.Tabs.CodeTabViewModel)sut.Tabs.ActiveTab!;
 
@@ -669,12 +829,14 @@ public sealed class MainWindowViewModelTests : IDisposable
 
         sut.Actions.Require(AppActionIds.Bold).Execute(null);
 
+        // Assert
         tab.Document.Text.Should().Contain("<p>alpha <b>beta</b></p>");
     }
 
     [Fact]
     public void Insert_actions_are_enabled_only_for_an_html_code_tab()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
@@ -682,21 +844,33 @@ public sealed class MainWindowViewModelTests : IDisposable
         sut.LoadBook(book, epub);
 
         AppAction special = sut.Actions.Require(AppActionIds.InsertSpecialCharacter);
+
+        // Act
         sut.Tabs.CloseAllTabs(); // LoadBook opens the first HTML file; this test needs a state without tabs
+
+        // Act & Assert
         special.IsEnabled.Should().BeFalse();
 
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
+
+        // Act
         sut.Tabs.OpenResources(new Resource[] { html });
+
+        // Act & Assert
         special.IsEnabled.Should().BeTrue();
 
+        // Act
         CssResource css = book.GetAllResources().OfType<CssResource>().First();
         sut.Tabs.OpenResources(new Resource[] { css });
+
+        // Act & Assert
         special.IsEnabled.Should().BeFalse();
     }
 
     [Fact]
     public void PasteClipboardHistory_action_is_enabled_only_with_an_open_tab_and_raises_the_request()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
@@ -704,24 +878,35 @@ public sealed class MainWindowViewModelTests : IDisposable
         sut.LoadBook(book, epub);
 
         AppAction paste = sut.Actions.Require(AppActionIds.PasteClipboardHistory);
+
+        // Act
         sut.Tabs.CloseAllTabs(); // LoadBook opens the first HTML file; this test needs a state without tabs
+
+        // Assert
         paste.IsEnabled.Should().BeFalse();
 
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
+
+        // Act
         sut.Tabs.OpenResources(new Resource[] { html });
+
+        // Assert
         paste.IsEnabled.Should().BeTrue();
 
         bool raised = false;
         sut.PasteClipboardHistoryRequested += (_, _) => raised = true;
 
+        // Act
         paste.Execute(null);
 
+        // Assert
         raised.Should().BeTrue();
     }
 
     [Fact]
     public void PasteClipboardHistoryEntry_inserts_the_chosen_text_in_the_active_code_tab()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
@@ -733,14 +918,17 @@ public sealed class MainWindowViewModelTests : IDisposable
         int caret = tab.Document.Text.IndexOf("<body>", System.StringComparison.Ordinal) + "<body>".Length;
         tab.UpdateSelection(caret, caret);
 
+        // Act
         sut.PasteClipboardHistoryEntry("PASTED");
 
+        // Assert
         tab.Document.Text.Should().Contain("<body>PASTED");
     }
 
     [Fact]
     public void InsertClip_action_raises_InsertAriaClipRequested()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
@@ -750,14 +938,17 @@ public sealed class MainWindowViewModelTests : IDisposable
         bool raised = false;
         sut.InsertAriaClipRequested += (_, _) => raised = true;
 
+        // Act
         sut.Actions.Require(AppActionIds.InsertClip).Execute(null);
 
+        // Assert
         raised.Should().BeTrue();
     }
 
     [Fact]
     public void ApplyAriaClip_for_a_number_only_code_inserts_the_translated_template()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
@@ -765,8 +956,10 @@ public sealed class MainWindowViewModelTests : IDisposable
         sut.LoadBook(book, epub);
         sut.Tabs.OpenResources(new Resource[] { book.GetAllResources().OfType<HtmlResource>().First() });
 
+        // Act
         sut.ApplyAriaClip("pagebreak_hr", roleCode: null);
 
+        // Assert
         sut.ActiveCodeTab!.DocumentText.Should().Contain("epub:type=\"pagebreak\"");
     }
 
@@ -787,14 +980,18 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void SplitSection_splits_the_file_at_the_caret_and_opens_the_new_file_at_its_content()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, Book book, HtmlResource chapter) = OpenMinimalChapter(temp);
         SetCaret(sut, sut.ActiveCodeTab!.DocumentText.IndexOf("<p>Hello", StringComparison.Ordinal));
 
+        // Act
         sut.Actions.Require(AppActionIds.SplitSection).Execute(null);
 
         HtmlResource created = book.GetHtmlResources().Single(h => h.Filename == "chapter1_0001.xhtml");
+
+        // Assert
         chapter.GetText().Should().Contain("Chapter 1</h1>").And.NotContain("Hello, world.");
         created.GetText().Should().Contain("<p>Hello, world.</p>").And.NotContain("<h1");
         sut.ActiveCodeTab!.Resource.Should().BeSameAs(created);
@@ -804,13 +1001,16 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void SplitSection_inside_a_tag_changes_nothing_and_reports_it()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, Book book, HtmlResource _) = OpenMinimalChapter(temp);
         SetCaret(sut, sut.ActiveCodeTab!.DocumentText.IndexOf("<p>Hello", StringComparison.Ordinal) + 1);
 
+        // Act
         sut.Actions.Require(AppActionIds.SplitSection).Execute(null);
 
+        // Assert
         book.GetHtmlResources().Should().NotContain(h => h.Filename.StartsWith("chapter1_", StringComparison.Ordinal));
         sut.StatusMessage.Should().Be(Strings.Get("Status_CannotSplitFileHere"));
     }
@@ -818,13 +1018,16 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void SplitOnSgfSectionMarkers_splits_the_current_file_at_its_markers()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, Book book, HtmlResource chapter) = OpenMinimalChapter(temp);
         sut.ActiveCodeTab!.InsertSectionMarker(sut.ActiveCodeTab.DocumentText.IndexOf("<p>Hello", StringComparison.Ordinal));
 
+        // Act
         sut.Actions.Require(AppActionIds.SplitOnSgfSectionMarkers).Execute(null);
 
+        // Assert
         book.GetHtmlResources().Should().Contain(h => h.Filename == "chapter1_0001.xhtml");
         chapter.GetText().Should().NotContain("Hello, world.").And.NotContain("signet_split_marker");
         sut.StatusMessage.Should().Be(Strings.Format("Status_FileSplitAtMarkers", 1));
@@ -833,13 +1036,16 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void SplitOnSgfSectionMarkers_without_markers_reports_it()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, Book book, HtmlResource _) = OpenMinimalChapter(temp);
         int before = book.GetHtmlResources().Count;
 
+        // Act
         sut.Actions.Require(AppActionIds.SplitOnSgfSectionMarkers).Execute(null);
 
+        // Assert
         book.GetHtmlResources().Should().HaveCount(before);
         sut.StatusMessage.Should().Be(Strings.Get("Status_NoSplitMarkersInFile"));
     }
@@ -847,6 +1053,7 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void Removing_a_span_in_the_whole_book_writes_the_files_and_reports_it()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         TempDir temp = _disposables.Add(new TempDir());
         string tree = temp.Combine("tree");
@@ -863,10 +1070,14 @@ public sealed class MainWindowViewModelTests : IDisposable
         string text = chapter.GetText();
         int offset = text.IndexOf("<span", StringComparison.Ordinal) + 1;
 
+        // Act & Assert
         host.CountSameSpansInBook(chapter, text, offset).Should().Be(2);
+
+        // Act
         SpanRemovalPlan plan = host.PlanSpanRemoval(chapter, text, offset, SpanRemovalScope.Book)!;
         host.ApplySpanRemovalInBook(plan);
 
+        // Assert
         chapter.GetText().Should().Contain("<p>Hello, world.</p>");
         book.Modified.Should().BeTrue();
         sut.StatusMessage.Should().Be(Strings.Format("Status_SpansRemovedInBook", 2, 1));
@@ -875,18 +1086,22 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void ClipEditor_action_raises_ClipEditorRequested()
     {
+        // Arrange
         MainWindowViewModel sut = New();
         bool raised = false;
         sut.ClipEditorRequested += (_, _) => raised = true;
 
+        // Act
         sut.Actions.Require(AppActionIds.ClipEditor).Execute(null);
 
+        // Assert
         raised.Should().BeTrue();
     }
 
     [Fact]
     public void SelectClip_action_raises_SelectClipRequested_and_ApplySelectedClip_pastes_it()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
@@ -896,9 +1111,11 @@ public sealed class MainWindowViewModelTests : IDisposable
         bool raised = false;
         sut.SelectClipRequested += (_, _) => raised = true;
 
+        // Act
         sut.Actions.Require(AppActionIds.SelectClip).Execute(null);
         sut.ApplySelectedClip("<mark>library clip</mark>");
 
+        // Assert
         raised.Should().BeTrue();
         sut.ActiveCodeTab!.DocumentText.Should().Contain("<mark>library clip</mark>");
     }
@@ -906,13 +1123,18 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void Adding_a_top_level_clip_refreshes_the_first_clip_bar_action()
     {
+        // Arrange
         MainWindowViewModel sut = NewWithBook();
         AppAction clip1 = sut.Actions.Require(AppActionIds.Clip(1));
+
+        // Act & Assert
         clip1.IsEnabled.Should().BeFalse();
 
+        // Act
         sut.Clips.AddEntryCommand.Execute(null);
         sut.Clips.Nodes.Single().Name = "MyClip";
 
+        // Assert
         clip1.IsEnabled.Should().BeTrue();
         clip1.Text.Should().Be("MyClip");
     }
@@ -920,16 +1142,20 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void ApplyInsertId_rejects_an_invalid_identifier_with_a_status_message()
     {
+        // Arrange
         MainWindowViewModel sut = New();
 
+        // Act
         sut.ApplyInsertId("1-bad-start");
 
+        // Assert
         sut.StatusMessage.Should().Contain("ID");
     }
 
     [Fact]
     public void InsertMediaResources_inserts_an_img_tag_in_the_active_code_tab()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
@@ -947,24 +1173,31 @@ public sealed class MainWindowViewModelTests : IDisposable
         tab.UpdateCaret(1, 1, caret, '\n');
 
         ImageResource figure = book.GetAllResources().OfType<ImageResource>().First(i => i.Filename == "figure.png");
+
+        // Act
         sut.InsertMediaResources(new Resource[] { figure });
 
+        // Assert
         tab.Document.Text.Should().Contain("<img alt=\"figure\" src=\"../images/figure.png\"/>");
     }
 
     [Fact]
     public void HeadingPreserveAttributes_action_toggles_and_shows_a_status_message()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         MainWindowViewModel sut = NewWithBook();
         AppAction preserve = sut.Actions.Require(AppActionIds.HeadingPreserveAttributes);
 
+        // Act & Assert
         preserve.IsCheckable.Should().BeTrue();
         preserve.IsChecked.Should().BeFalse();
 
+        // Act
         preserve.IsEnabled = true;
         preserve.Execute(null);
 
+        // Assert
         preserve.IsChecked.Should().BeTrue();
         sut.StatusMessage.Should().Contain("ON");
     }
@@ -972,6 +1205,7 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void MendHtml_action_fixes_malformed_html_and_reports_on_status_bar()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("not-wellformed-xhtml"), temp);
@@ -980,8 +1214,10 @@ public sealed class MainWindowViewModelTests : IDisposable
         sut.LoadBook(book, epub);
         HtmlResource chapter = book.GetAllResources().OfType<HtmlResource>().Single(r => r.Filename == "chapter1.xhtml");
 
+        // Act
         sut.Actions.Require(AppActionIds.MendHtml).Execute(null);
 
+        // Assert
         WellFormedChecker.CheckXhtmlStructure(chapter.GetText(), chapter.EpubVersion).IsWellFormed.Should().BeTrue();
         sut.StatusMessage.Should().Contain("Mend All");
     }
@@ -989,6 +1225,7 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void MendPrettifyHtml_action_skips_html_that_is_not_well_formed_and_reports_it()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("not-wellformed-xhtml"), temp);
         MainWindowViewModel sut = New();
@@ -997,8 +1234,10 @@ public sealed class MainWindowViewModelTests : IDisposable
         SkippedFilesReport? report = null;
         sut.SkippedFilesReportRequested += (_, r) => report = r;
 
+        // Act
         sut.Actions.Require(AppActionIds.MendPrettifyHtml).Execute(null);
 
+        // Assert
         report.Should().NotBeNull();
         report!.Skipped.Select(s => s.BookPath).Should().Contain(p => p.EndsWith("chapter1.xhtml", StringComparison.Ordinal));
         sut.StatusMessage.Should().Be(Strings.Format(
@@ -1008,6 +1247,7 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void MendHtml_action_repairs_html_that_is_not_well_formed_without_a_report()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("not-wellformed-xhtml"), temp);
         MainWindowViewModel sut = New();
@@ -1016,8 +1256,10 @@ public sealed class MainWindowViewModelTests : IDisposable
         bool reported = false;
         sut.SkippedFilesReportRequested += (_, _) => reported = true;
 
+        // Act
         sut.Actions.Require(AppActionIds.MendHtml).Execute(null);
 
+        // Assert
         reported.Should().BeFalse();
         book.GetHtmlResources().Should().OnlyContain(
             h => WellFormedChecker.CheckXhtmlStructure(h.GetText(), h.EpubVersion).IsWellFormed);
@@ -1026,28 +1268,35 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void Standardize_action_raises_StandardizeRequested()
     {
+        // Arrange
         MainWindowViewModel sut = NewWithBook();
         bool raised = false;
         sut.StandardizeRequested += (_, _) => raised = true;
 
+        // Act
         sut.Actions.Require(AppActionIds.Standardize).Execute(null);
 
+        // Assert
         raised.Should().BeTrue();
     }
 
     [Fact]
     public async Task PrepareStandardization_returns_null_without_a_book()
     {
+        // Arrange
         MainWindowViewModel sut = New();
 
+        // Act
         StandardizationViewModel? standardization = await sut.PrepareStandardizationAsync();
 
+        // Assert
         standardization.Should().BeNull();
     }
 
     [Fact]
     public async Task Applying_the_Standardize_dialog_standardizes_the_book_and_remembers_the_checked_steps()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.EdgeDeepFolders, temp);
@@ -1055,13 +1304,18 @@ public sealed class MainWindowViewModelTests : IDisposable
         Book book = _disposables.Add(new ImportEpub(epub).GetBook());
         sut.LoadBook(book, epub);
 
+        // Act
         StandardizationViewModel? standardization = await sut.PrepareStandardizationAsync();
+
+        // Assert
         standardization.Should().NotBeNull();
         standardization!.EnabledSteps.Should().Equal(EpubStandardization.AllSteps, "every step is checked the first time");
         standardization.Sections.Single(s => s.Step == StandardizationStep.RebaseManifestIds).IsEnabled = false;
 
+        // Act
         standardization.ApplyCommand.Execute(null);
 
+        // Assert
         book.GetOpf().BookPath.Should().Be("OEBPS/content.opf");
         book.GetAllResources().OfType<HtmlResource>().Should().OnlyContain(r => r.BookPath.StartsWith("OEBPS/Text/", StringComparison.Ordinal));
         book.Modified.Should().BeTrue();
@@ -1073,18 +1327,22 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void StandardizeEpub_action_raises_StandardizeEpubRequested()
     {
+        // Arrange
         MainWindowViewModel sut = NewWithBook();
         bool raised = false;
         sut.StandardizeEpubRequested += (_, _) => raised = true;
 
+        // Act
         sut.Actions.Require(AppActionIds.StandardizeEpub).Execute(null);
 
+        // Assert
         raised.Should().BeTrue();
     }
 
     [Fact]
     public async Task ApplyStandardizeEpub_moves_every_resource_to_its_standard_folder()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.EdgeDeepFolders, temp);
@@ -1092,8 +1350,10 @@ public sealed class MainWindowViewModelTests : IDisposable
         Book book = _disposables.Add(new ImportEpub(epub).GetBook());
         sut.LoadBook(book, epub);
 
+        // Act
         await sut.ApplyStandardizeEpubAsync();
 
+        // Assert
         book.GetOpf().BookPath.Should().Be("OEBPS/content.opf");
         book.GetAllResources().OfType<HtmlResource>().Should().OnlyContain(r => r.BookPath.StartsWith("OEBPS/Text/", System.StringComparison.Ordinal));
         sut.StatusMessage.Should().Contain("Restructuring");
@@ -1102,6 +1362,7 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void UseStandardFileExtensions_action_renames_mismatched_extension_and_reports_on_status_bar()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         TempDir temp = _disposables.Add(new TempDir());
         string tree = temp.Combine("tree");
@@ -1119,8 +1380,10 @@ public sealed class MainWindowViewModelTests : IDisposable
         Book book = _disposables.Add(new ImportEpub(epub).GetBook());
         sut.LoadBook(book, epub);
 
+        // Act
         sut.Actions.Require(AppActionIds.UseStandardFileExtensions).Execute(null);
 
+        // Assert
         book.GetCssResources().Single().Filename.Should().Be("main.css");
         sut.StatusMessage.Should().Contain("Bulk rename");
     }
@@ -1128,6 +1391,7 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void RebaseManifestIds_action_renumbers_ids_and_reports_on_status_bar()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.EdgeDeepFolders, temp);
@@ -1135,8 +1399,10 @@ public sealed class MainWindowViewModelTests : IDisposable
         Book book = _disposables.Add(new ImportEpub(epub).GetBook());
         sut.LoadBook(book, epub);
 
+        // Act
         sut.Actions.Require(AppActionIds.RebaseManifestIds).Execute(null);
 
+        // Assert
         book.Modified.Should().BeTrue();
         sut.StatusMessage.Should().Contain("rebased");
     }
@@ -1155,6 +1421,7 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void WordWrap_is_on_by_default_and_the_View_action_toggles_open_code_tabs()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
@@ -1163,23 +1430,29 @@ public sealed class MainWindowViewModelTests : IDisposable
         var tab = (Signet.App.ViewModels.Tabs.CodeTabViewModel)sut.Tabs.ActiveTab!;
         AppAction toggle = sut.Actions.Require(AppActionIds.WordWrap);
 
+        // Act & Assert
         toggle.IsCheckable.Should().BeTrue();
         toggle.IsChecked.Should().BeTrue();
         tab.WordWrap.Should().BeTrue("Code Editor wraps lines by default");
 
+        // Act
         toggle.Execute(null);
 
+        // Assert
         toggle.IsChecked.Should().BeFalse();
         tab.WordWrap.Should().BeFalse();
 
+        // Act
         toggle.Execute(null);
 
+        // Assert
         tab.WordWrap.Should().BeTrue();
     }
 
     [Fact]
     public void AutoSpellCheck_action_toggles_setting_and_refreshes_open_tabs()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
@@ -1187,16 +1460,22 @@ public sealed class MainWindowViewModelTests : IDisposable
         sut.LoadBook(book, epub);
         var tab = OpenHtmlTabWithMisspelling(sut, book);
         AppAction toggle = sut.Actions.Require(AppActionIds.AutoSpellCheck);
+
+        // Act & Assert
         toggle.IsChecked.Should().BeFalse();
         tab.MisspelledWordHighlights.Should().BeEmpty();
 
+        // Act
         toggle.Execute(null);
 
+        // Assert
         toggle.IsChecked.Should().BeTrue();
         tab.MisspelledWordHighlights.Should().ContainSingle();
 
+        // Act
         toggle.Execute(null);
 
+        // Assert
         toggle.IsChecked.Should().BeFalse();
         tab.MisspelledWordHighlights.Should().BeEmpty();
     }
@@ -1204,6 +1483,7 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void Spellcheck_actions_are_enabled_only_for_an_html_code_tab_with_spellcheck_on()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
@@ -1211,22 +1491,35 @@ public sealed class MainWindowViewModelTests : IDisposable
         sut.LoadBook(book, epub);
 
         AppAction next = sut.Actions.Require(AppActionIds.Spellcheck);
+
+        // Act & Assert
         next.IsEnabled.Should().BeFalse();
 
+        // Act
         OpenHtmlTabWithMisspelling(sut, book);
+
+        // Assert
         next.IsEnabled.Should().BeFalse("spellcheck is still disabled");
 
+        // Act
         sut.Actions.Require(AppActionIds.AutoSpellCheck).Execute(null);
+
+        // Assert
         next.IsEnabled.Should().BeTrue();
 
         CssResource css = book.GetAllResources().OfType<CssResource>().First();
+
+        // Act
         sut.Tabs.OpenResources(new Resource[] { css });
+
+        // Assert
         next.IsEnabled.Should().BeFalse();
     }
 
     [Fact]
     public void Spellcheck_action_jumps_to_the_next_misspelled_word()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
@@ -1239,8 +1532,10 @@ public sealed class MainWindowViewModelTests : IDisposable
         (int Start, int End, bool Wrapped)? found = null;
         tab.SearchResultRequested += (start, end, wrapped) => found = (start, end, wrapped);
 
+        // Act
         sut.Actions.Require(AppActionIds.Spellcheck).Execute(null);
 
+        // Assert
         found.Should().NotBeNull();
         tab.Document.GetText(found!.Value.Start, found.Value.End - found.Value.Start).Should().Be("wrold");
     }
@@ -1248,6 +1543,7 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void AddMisspelledWord_and_IgnoreMisspelledWord_actions_delegate_to_the_active_code_tab()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
@@ -1258,14 +1554,17 @@ public sealed class MainWindowViewModelTests : IDisposable
         int wordStart = tab.Document.Text.IndexOf("wrold", System.StringComparison.Ordinal);
         tab.UpdateCaret(1, 1, wordStart + 2, -1);
 
+        // Act
         sut.Actions.Require(AppActionIds.IgnoreMisspelledWord).Execute(null);
 
+        // Assert
         tab.MisspelledWordHighlights.Should().BeEmpty();
     }
 
     [Fact]
     public void ClearIgnoredWords_action_makes_previously_ignored_words_misspelled_again()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
@@ -1276,10 +1575,13 @@ public sealed class MainWindowViewModelTests : IDisposable
         int wordStart = tab.Document.Text.IndexOf("wrold", System.StringComparison.Ordinal);
         tab.UpdateCaret(1, 1, wordStart + 2, -1);
         sut.Actions.Require(AppActionIds.IgnoreMisspelledWord).Execute(null);
+
         tab.MisspelledWordHighlights.Should().BeEmpty();
 
+        // Act
         sut.Actions.Require(AppActionIds.ClearIgnoredWords).Execute(null);
 
+        // Assert
         tab.MisspelledWordHighlights.Should().ContainSingle();
     }
 
@@ -1288,26 +1590,32 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void SpellcheckEditor_action_raises_SpellcheckEditorRequested()
     {
+        // Arrange
         MainWindowViewModel sut = NewWithBook();
         bool raised = false;
         sut.SpellcheckEditorRequested += (_, _) => raised = true;
 
+        // Act
         sut.Actions.Require(AppActionIds.SpellcheckEditor).Execute(null);
 
+        // Assert
         raised.Should().BeTrue();
     }
 
     [Fact]
     public void OpenSpellcheckEditor_returns_null_without_a_book()
     {
+        // Arrange
         MainWindowViewModel sut = New();
 
+        // Act & Assert
         sut.OpenSpellcheckEditor().Should().BeNull();
     }
 
     [Fact]
     public void OpenSpellcheckEditor_lists_misspelled_words_from_open_tab_edits()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
@@ -1315,8 +1623,10 @@ public sealed class MainWindowViewModelTests : IDisposable
         sut.LoadBook(book, epub);
         OpenHtmlTabWithMisspelling(sut, book);
 
+        // Act
         SpellcheckEditorViewModel? editor = sut.OpenSpellcheckEditor();
 
+        // Assert
         editor.Should().NotBeNull();
         editor!.Words.Should().ContainSingle(w => w.Word == "wrold" && w.Misspelled);
     }
@@ -1324,6 +1634,7 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void SpellcheckEditor_ChangeAll_replaces_word_in_all_files_and_reloads_open_tabs()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
@@ -1335,8 +1646,10 @@ public sealed class MainWindowViewModelTests : IDisposable
         editor.SetSelectedWords(new[] { row });
         editor.ChangeAllText = "world";
 
+        // Act
         editor.ChangeAllCommand.Execute(null);
 
+        // Assert
         tab.Document.Text.Should().Contain("world").And.NotContain("wrold");
         book.Modified.Should().BeTrue();
         editor.Words.Should().NotContain(w => w.Word == "wrold");
@@ -1345,6 +1658,7 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void SpellcheckEditor_Ignore_refreshes_open_tab_highlights()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
@@ -1352,30 +1666,38 @@ public sealed class MainWindowViewModelTests : IDisposable
         sut.LoadBook(book, epub);
         var tab = OpenHtmlTabWithMisspelling(sut, book);
         sut.Actions.Require(AppActionIds.AutoSpellCheck).Execute(null);
+
         tab.MisspelledWordHighlights.Should().ContainSingle();
 
         SpellcheckEditorViewModel editor = sut.OpenSpellcheckEditor()!;
         SpellcheckWordRow row = editor.Words.Single(w => w.Word == "wrold");
         editor.SetSelectedWords(new[] { row });
 
+        // Act
         editor.IgnoreCommand.Execute(null);
 
+        // Assert
         tab.MisspelledWordHighlights.Should().BeEmpty();
     }
 
     [Fact]
     public void AddFavoriteSpecialCharacter_is_idempotent_and_RemoveFavoriteSpecialCharacter_removes_it()
     {
+        // Arrange
         MainWindowViewModel sut = New();
 
+        // Act
         sut.AddFavoriteSpecialCharacter("—");
         sut.AddFavoriteSpecialCharacter("—");
         sut.AddFavoriteSpecialCharacter("§");
 
+        // Assert
         sut.FavoriteSpecialCharacters.Should().Equal("—", "§");
 
+        // Act
         sut.RemoveFavoriteSpecialCharacter("—");
 
+        // Assert
         sut.FavoriteSpecialCharacters.Should().Equal("§");
     }
 
@@ -1388,12 +1710,15 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void Book_browser_context_menu_actions_are_available_as_bindable_actions()
     {
+        // Arrange
         MainWindowViewModel sut = NewWithBook();
 
+        // Act
         AppAction[] bookBrowserActions = sut.Actions.Actions
             .Where(a => a.Category == AppActionIds.BookBrowserCategory)
             .ToArray();
 
+        // Assert
         bookBrowserActions.Should().HaveCount(30);
         bookBrowserActions.Should().OnlyContain(a => a.IsEnabled, "each one has a handler attached");
         sut.Actions.Require(AppActionIds.BookBrowserRename).InputGestureText.Should().Be("F2");
@@ -1406,8 +1731,10 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void Book_browser_shortcuts_are_scoped_to_the_panel_not_the_window()
     {
+        // Arrange
         MainWindowViewModel sut = New();
 
+        // Act & Assert
         sut.ShortcutActions.Should().NotContain(a => a.Category == AppActionIds.BookBrowserCategory);
         sut.BookBrowser.ShortcutActions.Should().OnlyContain(a => a.Category == AppActionIds.BookBrowserCategory);
         sut.BookBrowser.ShortcutActions.Should().Contain(a => a.Id == AppActionIds.BookBrowserRename);
@@ -1420,8 +1747,10 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void Code_editor_shortcuts_are_bound_by_the_code_tabs_not_the_window()
     {
+        // Arrange
         MainWindowViewModel sut = New();
 
+        // Act & Assert
         sut.ShortcutActions.Should().NotContain(a => AppActionIds.IsCodeEditorAction(a.Id));
         sut.CodeEditorShortcutActions.Should().OnlyContain(a => AppActionIds.IsCodeEditorAction(a.Id));
         sut.CodeEditorShortcutActions.Select(a => a.Id).Should().Contain(new[] { AppActionIds.RenameClass, AppActionIds.FindUsages });
@@ -1431,19 +1760,24 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void Clip_editor_rename_is_a_panel_scoped_action_bound_to_F2_that_renames_the_selected_clip()
     {
+        // Arrange
         MainWindowViewModel sut = New();
 
         AppAction rename = sut.Actions.Require(AppActionIds.ClipEditorRename);
+
+        // Act & Assert
         rename.InputGestureText.Should().Be("F2");
         rename.IsEnabled.Should().BeTrue("it has a handler attached");
         sut.ShortcutActions.Should().NotContain(a => a.Category == AppActionIds.ClipEditorCategory);
         sut.Clips.ShortcutActions.Should().ContainSingle().Which.Id.Should().Be(AppActionIds.ClipEditorRename);
 
+        // Act
         sut.Clips.AddGroupCommand.Execute(null);
         ClipNodeViewModel group = sut.Clips.Nodes.First();
         sut.Clips.SetSelectedNodes(new[] { group });
         rename.Execute(null);
 
+        // Assert
         sut.Clips.EditingNode.Should().BeSameAs(group);
     }
 
@@ -1454,8 +1788,10 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void Window_shortcut_actions_include_actions_without_a_current_shortcut()
     {
+        // Arrange
         MainWindowViewModel sut = New();
 
+        // Act & Assert
         sut.ShortcutActions.Should().Contain(a => a.Gesture == null);
         sut.ShortcutActions.Should().Contain(a => a.Gesture != null);
     }
@@ -1464,6 +1800,7 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void Book_browser_rename_action_runs_the_panel_command()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         MainWindowViewModel sut = New();
@@ -1477,8 +1814,10 @@ public sealed class MainWindowViewModelTests : IDisposable
         Signet.Core.MainUI.OpfModelEntry? renamed = null;
         sut.BookBrowser.RenameRequested += (_, entry) => renamed = entry;
 
+        // Act
         sut.Actions.Require(AppActionIds.BookBrowserRename).Execute(null);
 
+        // Assert
         renamed.Should().NotBeNull();
     }
 
@@ -1486,12 +1825,15 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void Book_browser_action_does_nothing_without_a_selection()
     {
+        // Arrange
         MainWindowViewModel sut = New();
         bool raised = false;
         sut.BookBrowser.RenameRequested += (_, _) => raised = true;
 
+        // Act
         sut.Actions.Require(AppActionIds.BookBrowserRename).Execute(null);
 
+        // Assert
         raised.Should().BeFalse();
     }
 
@@ -1503,13 +1845,18 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public void Switching_the_ui_language_live_updates_menu_actions_and_toolbars()
     {
+        // Arrange
         using UiCultureScope culture = new("pl");
         MainWindowViewModel sut = New();
+
+        // Act & Assert
         sut.MenuItems[0].Header.Should().Be("_Plik");
 
+        // Act
         System.Globalization.CultureInfo.CurrentUICulture = System.Globalization.CultureInfo.GetCultureInfo("en");
         sut.OnLanguageChanged();
 
+        // Assert
         sut.MenuItems[0].Header.Should().Be("_File");
         sut.MenuItems[1].Header.Should().Be("_Edit");
         sut.MenuItems[0].Items!.Should().Contain(m => m.Header == "_Save");

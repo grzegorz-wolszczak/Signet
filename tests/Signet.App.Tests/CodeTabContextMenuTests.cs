@@ -40,12 +40,14 @@ public sealed class CodeTabContextMenuTests : IDisposable
     [Fact]
     public void Html_tab_offers_reformat_html_and_css_tab_offers_reformat_css()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
 
         CodeTabViewModel html = NewTab(book.GetAllResources().OfType<HtmlResource>().First());
         CodeTabViewModel css = NewTab(book.GetAllResources().OfType<CssResource>().First());
 
+        // Act & Assert
         (html.IsHtmlFlow, html.IsCss).Should().Be((true, false));
         (css.IsHtmlFlow, css.IsCss).Should().Be((false, true));
     }
@@ -54,21 +56,33 @@ public sealed class CodeTabContextMenuTests : IDisposable
     [Fact]
     public void Class_at_caret_for_rename_is_offered_only_on_a_class_name_in_xhtml()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel html = NewTab(book.GetAllResources().OfType<HtmlResource>().First());
         html.Document.Text = "<html><body><p class=\"c1\">c1</p></body></html>";
         const string beforeName = "<html><body><p class=\"c";
 
+        // Act
         html.UpdateCaret(1, beforeName.Length + 1, beforeName.Length, -1);
+
+        // Assert
         html.ClassAtCaretForRename().Should().BeEquivalentTo(new Signet.Core.BookManipulation.ClassAtCaret("c1", ["html", "body", "p"]));
 
+        // Act
         html.UpdateCaret(1, 30, 29, -1); // element content
+
+        // Assert
         html.ClassAtCaretForRename().Should().BeNull();
 
+        // Arrange
         CodeTabViewModel css = NewTab(book.GetAllResources().OfType<CssResource>().First());
         css.Document.Text = "<p class=\"c1\"/>";
+
+        // Act
         css.UpdateCaret(1, 11, 10, -1);
+
+        // Assert
         css.ClassAtCaretForRename().Should().BeNull();
     }
 
@@ -78,6 +92,7 @@ public sealed class CodeTabContextMenuTests : IDisposable
     [Fact]
     public void Rename_class_action_requests_the_dialog_only_on_a_class_name()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel html = NewTab(book.GetAllResources().OfType<HtmlResource>().First());
@@ -87,11 +102,20 @@ public sealed class CodeTabContextMenuTests : IDisposable
         html.RenameClassRequested += () => requests++;
 
         html.UpdateCaret(1, 30, 29, -1); // element content
+
+        // Act & Assert
         html.RequestRenameClassAtCaret().Should().BeFalse();
+
+        // Assert
         requests.Should().Be(0);
 
+        // Arrange
         html.UpdateCaret(1, beforeName.Length + 1, beforeName.Length, -1);
+
+        // Act & Assert
         html.RequestRenameClassAtCaret().Should().BeTrue();
+
+        // Assert
         requests.Should().Be(1);
     }
 
@@ -99,49 +123,68 @@ public sealed class CodeTabContextMenuTests : IDisposable
     [Fact]
     public void Style_class_at_caret_for_rename_is_offered_in_stylesheets_and_style_blocks()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel css = NewTab(book.GetAllResources().OfType<CssResource>().First());
         css.Document.Text = "p.note { color: red }";
         css.UpdateCaret(1, 5, 4, -1);
 
+        // Act & Assert
         css.StyleClassAtCaretForRename().Should().Be(new Signet.Core.BookManipulation.StyleClassAtCaret("note", css.ResourceBookPath, -1));
 
+        // Arrange
         css.UpdateCaret(1, 13, 12, -1); // declaration
+
+        // Act & Assert
         css.StyleClassAtCaretForRename().Should().BeNull();
 
+        // Arrange
         CodeTabViewModel html = NewTab(book.GetAllResources().OfType<HtmlResource>().First());
         html.Document.Text = "<html><head><style>.a { }</style></head><body/></html>";
         html.UpdateCaret(1, 22, 21, -1);
+
+        // Act & Assert
         html.StyleClassAtCaretForRename().Should().Be(new Signet.Core.BookManipulation.StyleClassAtCaret("a", html.ResourceBookPath, 0));
     }
 
     [Fact]
     public void Toggle_line_wrap_mode_changes_only_this_tab()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewTab(book.GetAllResources().OfType<HtmlResource>().First());
         bool before = sut.WordWrap;
 
+        // Act
         sut.ToggleLineWrapMode();
 
+        // Assert
         sut.WordWrap.Should().Be(!before);
     }
 
     [Fact]
     public void Selected_text_and_unmark_offer_follow_the_selection()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewTab(book.GetAllResources().OfType<HtmlResource>().First());
         sut.Document.Text = "<p>hello world</p>";
 
+        // Act
         sut.UpdateSelection(3, 8);
+
+        // Assert
         (sut.HasSelection, sut.SelectedText).Should().Be((true, "hello"));
+
+        // Act
         sut.ToggleMarkSelection();
 
         sut.UpdateSelection(4, 4);
+
+        // Assert
         sut.HasSelection.Should().BeFalse();
         sut.OffersUnmark.Should().BeTrue();
     }
@@ -149,6 +192,7 @@ public sealed class CodeTabContextMenuTests : IDisposable
     [Fact]
     public void Image_under_the_caret_resolves_to_a_book_path_and_opens_its_tab()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
@@ -160,10 +204,14 @@ public sealed class CodeTabContextMenuTests : IDisposable
         string? opened = null;
         sut.LinkJumpRequested += r => opened = r;
 
+        // Act & Assert
         sut.ImageSourceAtCaret().Should().Be("../images/cover.png");
+
+        // Act
         sut.ViewImageAtCaret();
         sut.OpenImageTabAtCaret();
 
+        // Assert
         string expectedPath = LinkReference.ResolveBookPath("../images/cover.png", html.Folder)!;
         host.Verify(h => h.ViewImage(expectedPath), Times.Once);
         opened.Should().Be("../images/cover.png");
@@ -172,15 +220,18 @@ public sealed class CodeTabContextMenuTests : IDisposable
     [Fact]
     public void Reformat_css_switches_between_single_and_multiple_line_format()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewTab(book.GetAllResources().OfType<CssResource>().First());
         sut.Document.Text = "p { color: red; margin: 0 }";
 
+        // Act
         sut.ReformatCss(multipleLineFormat: true);
         string multi = sut.Document.Text;
         sut.ReformatCss(multipleLineFormat: false);
 
+        // Assert
         multi.Split('\n').Length.Should().BeGreaterThan(2);
         sut.Document.Text.Trim().Split('\n').Should().ContainSingle();
     }
@@ -188,6 +239,7 @@ public sealed class CodeTabContextMenuTests : IDisposable
     [Fact]
     public async Task Reformat_html_replaces_the_text_with_the_host_result_as_one_undo_step()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         var host = new Mock<ICodeTabHost>();
@@ -196,10 +248,16 @@ public sealed class CodeTabContextMenuTests : IDisposable
         sut.Document.Text = "<p>a</p>";
         sut.Document.UndoStack.ClearAll();
 
+        // Act
         await sut.ReformatHtmlAsync(toValid: true);
 
+        // Assert
         sut.Document.Text.Should().Be("<p>mended</p>");
+
+        // Act
         sut.Undo();
+
+        // Assert
         sut.Document.Text.Should().Be("<p>a</p>");
     }
 }

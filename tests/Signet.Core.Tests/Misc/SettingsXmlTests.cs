@@ -20,6 +20,7 @@ public sealed class SettingsXmlTests
     [Fact]
     public void Strings_numbers_booleans_lists_and_maps_survive_save_and_reload()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
         string language = Fixture.Create<string>();
@@ -31,10 +32,13 @@ public sealed class SettingsXmlTests
         sut.RecentFiles = recent;
         sut.SetStringMap("dock_panels", new System.Collections.Generic.Dictionary<string, string> { ["BookBrowser"] = "1", ["Preview"] = "0" });
         sut.SetWindowGeometry("main", new WindowGeometry(-8, 12, 1200, 800, Maximized: true, FullScreen: false));
+
+        // Act
         sut.Save();
 
         SettingsStore reloaded = new(path);
 
+        // Assert
         reloaded.UiLanguage.Should().Be(language);
         reloaded.ZoomText.Should().Be(1.25f);
         reloaded.SpellCheck.Should().BeTrue();
@@ -46,15 +50,19 @@ public sealed class SettingsXmlTests
     [Fact]
     public void The_file_is_xml_with_groups_and_typed_values()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
         SettingsStore sut = new(path);
         sut.SpellCheck = true;
         sut.RecentFiles = new[] { "/books/a.epub" };
+
+        // Act
         sut.Save();
 
         XElement root = XDocument.Load(path).Root!;
 
+        // Assert
         root.Name.LocalName.Should().Be("settings");
         XElement[] values = root.Elements("group").SelectMany(g => g.Elements()).ToArray();
         values.Should().Contain(e => e.Name.LocalName == "bool" && e.Attribute("key")!.Value == "spell_check" && e.Value == "true");
@@ -65,16 +73,19 @@ public sealed class SettingsXmlTests
     [Fact]
     public void A_json_settings_file_is_not_read()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
         File.WriteAllText(path, "{ \"user_preferences\": { \"ui_language\": \"pl\" } }");
 
+        // Act & Assert
         new SettingsStore(path).UiLanguage.Should().Be("en", "the default");
     }
 
     [Fact]
     public void Unreadable_values_are_skipped_like_missing_settings()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
         File.WriteAllText(path, """
@@ -87,8 +98,10 @@ public sealed class SettingsXmlTests
             </settings>
             """);
 
+        // Act
         SettingsStore sut = new(path);
 
+        // Assert
         sut.ZoomText.Should().Be(1.0f);
         sut.SpellCheck.Should().BeFalse();
         sut.UiLanguage.Should().Be("en");
@@ -97,6 +110,7 @@ public sealed class SettingsXmlTests
     [Fact]
     public void Default_settings_file_is_settings_xml()
     {
+        // Act & Assert
         AppDirectories.SettingsFileName.Should().Be("settings.xml");
     }
 }

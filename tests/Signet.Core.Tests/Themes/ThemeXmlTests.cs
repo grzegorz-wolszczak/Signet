@@ -15,6 +15,7 @@ public sealed class ThemeXmlTests
     [Fact]
     public void A_theme_survives_writing_and_reading()
     {
+        // Arrange
         Theme theme = new Theme("01JA2B3C4D5E6F7G8H9J0K1M2N", Any.Create<string>())
         {
             ParentId = "signet-light",
@@ -27,8 +28,10 @@ public sealed class ThemeXmlTests
             .With(ThemeKeys.UiDangerButtonHover.Id, ThemeEntry.Inherited)
             .With(ThemeKeys.UiTextSelection.Id, ThemeEntry.Of(new TextAttributes { Background = ThemeColor.Parse("#20FFFFFF") }));
 
+        // Act
         Theme read = ThemeXml.FromXml(ThemeXml.ToXml(theme, ThemeDocumentKind.Theme, "0.8.0-202610121510"));
 
+        // Assert
         (read.Id, read.Name, read.ParentId, read.Variant, read.Created, read.Modified)
             .Should().Be((theme.Id, theme.Name, theme.ParentId, theme.Variant, theme.Created, theme.Modified));
         read.Entries.Should().BeEquivalentTo(theme.Entries);
@@ -37,6 +40,7 @@ public sealed class ThemeXmlTests
     [Fact]
     public void A_color_scheme_survives_writing_and_reading_and_has_no_interface_settings()
     {
+        // Arrange
         Theme scheme = new Theme("01JA2B3C4D5E6F7G8H9J0K1M2N", Any.Create<string>())
         {
             ParentId = "signet-light",
@@ -54,9 +58,11 @@ public sealed class ThemeXmlTests
             }))
             .With(ThemeKeys.XhtmlCssComment.Id, ThemeEntry.Inherited);
 
+        // Act
         string xml = ThemeXml.ToXml(scheme, ThemeDocumentKind.Scheme);
         Theme read = ThemeXml.FromXml(xml, ThemeDocumentKind.Scheme);
 
+        // Assert
         xml.Should().Contain("<signet-scheme ").And.NotContain("signet-theme");
         read.Entries.Should().BeEquivalentTo(scheme.Entries);
         read.Variant.Should().BeNull("the variant belongs to the theme");
@@ -65,12 +71,15 @@ public sealed class ThemeXmlTests
     [Fact]
     public void The_file_holds_only_what_the_theme_sets_in_the_order_of_the_registry()
     {
+        // Arrange
         Theme theme = new Theme("my-theme", "Sepia") { ParentId = "signet-light" }
             .With(ThemeKeys.CssComment.Id, ThemeEntry.Of(new TextAttributes { Foreground = ThemeColor.Parse("#00aa00") }))
             .With(ThemeKeys.XhtmlTag.Id, ThemeEntry.Of(new TextAttributes { Bold = true }));
 
+        // Act
         string xml = ThemeXml.ToXml(theme, ThemeDocumentKind.Scheme);
 
+        // Assert
         xml.Should().StartWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<signet-scheme version=\"1\" id=\"my-theme\" name=\"Sepia\" parent=\"signet-light\">");
         xml.Should().Contain("""
               <attributes>
@@ -84,6 +93,7 @@ public sealed class ThemeXmlTests
     [Fact]
     public void Unknown_keys_and_keys_in_the_wrong_section_are_skipped_with_a_warning()
     {
+        // Arrange
         string xml = """
             <signet-scheme version="1" id="t" name="T">
               <colors>
@@ -97,8 +107,10 @@ public sealed class ThemeXmlTests
             """;
         List<string> warnings = new();
 
+        // Act
         Theme theme = ThemeXml.FromXml(xml, ThemeDocumentKind.Scheme, warnings);
 
+        // Assert
         theme.Entries.Keys.Should().Equal("css.comment");
         warnings.Should().Equal(
             CoreStrings.Format("Theme_WrongSection", 3, "xhtml.tag"),
@@ -108,6 +120,7 @@ public sealed class ThemeXmlTests
     [Fact]
     public void A_key_of_the_other_document_is_skipped_with_a_warning()
     {
+        // Arrange
         string theme = """
             <signet-theme version="1" id="t" name="T">
               <colors>
@@ -127,9 +140,13 @@ public sealed class ThemeXmlTests
         List<string> themeWarnings = new();
         List<string> schemeWarnings = new();
 
+        // Act & Assert
         ThemeXml.FromXml(theme, ThemeDocumentKind.Theme, themeWarnings).Entries.Keys.Should().Equal("ui.frame");
+
+        // Act & Assert
         ThemeXml.FromXml(scheme, ThemeDocumentKind.Scheme, schemeWarnings).Entries.Keys.Should().Equal("editor.currentLine");
 
+        // Assert
         themeWarnings.Should().Equal(CoreStrings.Format("Theme_WrongDocument", 3, "editor.currentLine"));
         schemeWarnings.Should().Equal(CoreStrings.Format("Theme_WrongDocument", 4, "ui.frame"));
     }
@@ -137,8 +154,11 @@ public sealed class ThemeXmlTests
     [Fact]
     public void A_file_of_the_other_kind_is_not_read()
     {
+        // Act & Assert
         FluentActions.Invoking(() => ThemeXml.FromXml("<signet-theme version=\"1\" id=\"t\" name=\"T\" />", ThemeDocumentKind.Scheme))
             .Should().Throw<ThemeFormatException>().WithMessage(CoreStrings.Get("Theme_NotAScheme"));
+
+        // Act & Assert
         FluentActions.Invoking(() => ThemeXml.FromXml("<signet-scheme version=\"1\" id=\"t\" name=\"T\" />", ThemeDocumentKind.Theme))
             .Should().Throw<ThemeFormatException>().WithMessage(CoreStrings.Get("Theme_NotATheme"));
     }
@@ -155,6 +175,7 @@ public sealed class ThemeXmlTests
     [InlineData("<signet-theme version=\"1\" id=\"t\" name=\"T\">\n<colors>", 2)]
     public void A_file_this_version_cannot_read_is_refused_with_its_line(string xml, int line)
     {
+        // Act & Assert
         FluentActions.Invoking(() => ThemeXml.FromXml(xml)).Should().Throw<ThemeFormatException>()
             .Which.Line.Should().Be(line);
     }
@@ -162,6 +183,7 @@ public sealed class ThemeXmlTests
     [Fact]
     public void A_newer_format_is_named_in_the_message()
     {
+        // Act & Assert
         FluentActions.Invoking(() => ThemeXml.FromXml("<signet-theme version=\"7\" id=\"t\" name=\"T\" />"))
             .Should().Throw<ThemeFormatException>().WithMessage(CoreStrings.Format("Theme_UnsupportedVersion", 7));
     }

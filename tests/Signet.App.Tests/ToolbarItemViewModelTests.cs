@@ -22,10 +22,13 @@ public sealed class ToolbarItemViewModelTests
     [Fact]
     public void Heading_toolbar_holds_a_drop_down_with_the_seven_heading_actions()
     {
+        // Arrange
         using TestHost host = new();
 
+        // Act
         ToolbarItemViewModel sut = HeadingDropDown(host);
 
+        // Assert
         sut.IsDropDown.Should().BeTrue();
         sut.MenuActions.Select(a => a.Id).Should().Equal(
             AppActionIds.Heading1, AppActionIds.Heading2, AppActionIds.Heading3, AppActionIds.Heading4,
@@ -36,12 +39,15 @@ public sealed class ToolbarItemViewModelTests
     [Fact]
     public void Choosing_an_action_makes_it_the_default_and_takes_over_its_icon()
     {
+        // Arrange
         using TestHost host = new();
         ToolbarItemViewModel sut = HeadingDropDown(host);
         AppAction heading2 = sut.MenuActions[1];
 
+        // Act
         sut.ChooseCommand.Execute(heading2);
 
+        // Assert
         sut.DefaultAction.Should().BeSameAs(heading2);
         sut.IconKey.Should().Be(heading2.IconKey);
     }
@@ -49,13 +55,16 @@ public sealed class ToolbarItemViewModelTests
     [Fact]
     public void Main_part_without_a_default_action_asks_for_the_menu()
     {
+        // Arrange
         using TestHost host = new();
         ToolbarItemViewModel sut = HeadingDropDown(host);
         bool requested = false;
         sut.MenuRequested += (_, _) => requested = true;
 
+        // Act
         sut.Command!.Execute(null);
 
+        // Assert
         requested.Should().BeTrue();
     }
 }

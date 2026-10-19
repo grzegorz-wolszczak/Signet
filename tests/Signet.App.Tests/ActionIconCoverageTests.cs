@@ -28,13 +28,17 @@ public sealed partial class ActionIconCoverageTests
     [Fact]
     public void Every_icon_key_of_the_catalog_is_defined_in_all_three_icon_sets()
     {
+        // Arrange
         // The colored PNGs (ColoredIconKeys) are shared by all sets and are not in the dictionaries.
+        // Act
         List<string> keys = AppActionCatalog.All
             .Select(a => a.IconKey)
             .OfType<string>()
             .Where(k => !IconThemeManager.ColoredIconKeys.Contains(k))
             .Distinct()
             .ToList();
+
+        // Assert
         keys.Should().NotBeEmpty();
 
         foreach (string file in IconSets)
@@ -47,8 +51,10 @@ public sealed partial class ActionIconCoverageTests
     [Fact]
     public void The_three_icon_sets_define_the_same_keys()
     {
+        // Act
         HashSet<string> main = KeysOf("MainIcons.axaml");
 
+        // Assert
         KeysOf("FluentIcons.axaml").Should().BeEquivalentTo(main);
         KeysOf("MaterialIcons.axaml").Should().BeEquivalentTo(main);
     }
@@ -56,9 +62,12 @@ public sealed partial class ActionIconCoverageTests
     [Fact]
     public void Every_colored_icon_key_has_its_png()
     {
+        // Act
         foreach (string key in IconThemeManager.ColoredIconKeys)
         {
             File.Exists(Path.Combine(LocalizationTests.AppSourceRoot, "Assets", "Icons", "Calibre", key + ".png"))
+
+                // Assert
                 .Should().BeTrue($"{key}.png must exist next to the other colored icons");
         }
     }

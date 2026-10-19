@@ -20,6 +20,7 @@ public sealed class AppThemeTests
     [AvaloniaFact]
     public void Signet_dark_turns_the_controls_dark_and_recolors_the_interface_live()
     {
+        // Arrange
         using TempDir dir = new();
         ThemeStores store = ThemeStores.In(dir.Path);
         TextBlock marker = new() { Text = "⚠" };
@@ -31,6 +32,7 @@ public sealed class AppThemeTests
         AppTheme.Changed += OnChanged;
         try
         {
+            // Act
             window.Show();
             Dispatcher.UIThread.RunJobs();
             Color lightMarker = ((ISolidColorBrush)marker.Foreground!).Color;
@@ -38,6 +40,7 @@ public sealed class AppThemeTests
             AppTheme.Apply(Application.Current!, new ResolvedTheme(store.Themes.Get(ThemeStore.DarkId), store.Themes.Resolver, store.Schemes.Get(ThemeStore.DarkId), store.Schemes.Resolver));
             Dispatcher.UIThread.RunJobs();
 
+            // Assert
             changed.Should().Be(1);
             Application.Current!.ActualThemeVariant.Should().Be(Avalonia.Styling.ThemeVariant.Dark);
             ((ISolidColorBrush)marker.Foreground!).Color.Should().Be(Color.Parse("#F14C4C")).And.NotBe(lightMarker);
@@ -59,15 +62,19 @@ public sealed class AppThemeTests
     [AvaloniaFact]
     public void The_fluent_palette_and_the_accent_of_a_theme_go_to_the_palette_of_its_variant()
     {
+        // Arrange
         Theme theme = new Theme(Ulid.NewUlid().ToString(), "Palette") { ParentId = ThemeStore.LightId }
             .With(ThemeKeys.UiAccent.Id, ThemeEntry.Of(ThemeColor.Parse("#336699")))
             .With(ThemeKeys.FluentPaletteKeyId("RegionColor"), ThemeEntry.Of(ThemeColor.Parse("#FAF4E8")));
         try
         {
+            // Act
             AppTheme.Apply(Application.Current!, ResolvedTheme.Of(ThemeDocumentKind.Theme, theme, new ThemeResolver(_ => null)));
 
             ColorPaletteResources palette = Application.Current!.Styles.OfType<FluentTheme>().Single()
                 .Palettes[Avalonia.Styling.ThemeVariant.Light];
+
+            // Assert
             palette.Accent.Should().Be(Color.Parse("#336699"));
             palette.RegionColor.Should().Be(Color.Parse("#FAF4E8"));
         }
@@ -80,14 +87,17 @@ public sealed class AppThemeTests
     [AvaloniaFact]
     public void A_theme_that_no_longer_exists_gives_way_to_signet_light()
     {
+        // Arrange
         using TempDir dir = new();
         string settingsPath = System.IO.Path.Combine(dir.Path, "settings.xml");
         SettingsStore settings = new(settingsPath) { UiThemeId = Ulid.NewUlid().ToString() };
         ThemeManager sut = new(settings, ThemeStores.In(dir.Path), NullLogger<ThemeManager>.Instance);
         try
         {
+            // Act
             sut.ApplySaved();
 
+            // Assert
             AppTheme.Current.Theme.Id.Should().Be(ThemeStore.LightId);
         }
         finally
@@ -99,14 +109,17 @@ public sealed class AppThemeTests
     [AvaloniaFact]
     public void The_drawn_icons_take_the_hue_of_the_attention_color()
     {
+        // Arrange
         Color blue = Color.FromRgb(0x1E, 0x88, 0xE5);
         Color red = ActionIcons.ToAttention(blue);
         try
         {
+            // Act
             ActionIcons.SetStateColors(ActionIcons.DefaultInactiveColor, Color.Parse("#2E7D32"));
 
             Color green = ActionIcons.ToAttention(blue);
 
+            // Assert
             green.ToHsl().H.Should().BeApproximately(Color.Parse("#2E7D32").ToHsl().H, 1);
             red.ToHsl().H.Should().BeApproximately(0, 1, "the default attention color is red");
         }

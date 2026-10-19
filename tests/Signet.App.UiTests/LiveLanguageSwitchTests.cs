@@ -38,19 +38,25 @@ public sealed class LiveLanguageSwitchTests : IDisposable
     [AvaloniaFact]
     public void Open_window_texts_follow_a_language_switch()
     {
+        // Arrange
         CultureInfo previous = CultureInfo.CurrentUICulture;
         try
         {
+            // Act
             CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("pl");
             TextPromptWindow window = new();
             window.Show();
             Render(window);
+
+            // Assert
             window.GetVisualDescendants().OfType<Button>().Select(b => b.Content).Should().Contain("Anuluj");
 
+            // Act
             CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("en");
             Strings.NotifyLanguageChanged();
             Render(window);
 
+            // Assert
             window.GetVisualDescendants().OfType<Button>().Select(b => b.Content).Should().Contain("Cancel");
             window.Close();
         }
@@ -64,6 +70,7 @@ public sealed class LiveLanguageSwitchTests : IDisposable
     [AvaloniaFact]
     public void ApplySaved_notifies_only_when_the_language_actually_changes()
     {
+        // Arrange
         CultureInfo previous = CultureInfo.CurrentUICulture;
         string root = _disposables.Add(new TempDir("lang-")).Path;
         SettingsStore settings = new(Path.Combine(root, "settings.xml"));
@@ -72,13 +79,19 @@ public sealed class LiveLanguageSwitchTests : IDisposable
         Strings.RegisterLanguageAware(listener);
         try
         {
+            // Act
             CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("pl");
             manager.Set("pl");
             manager.ApplySaved();
+
+            // Assert
             listener.Calls.Should().Be(0);
 
+            // Act
             manager.Set("en");
             manager.ApplySaved();
+
+            // Assert
             listener.Calls.Should().Be(1);
             CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.Should().Be("en");
         }

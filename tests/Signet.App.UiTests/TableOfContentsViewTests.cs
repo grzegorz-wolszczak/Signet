@@ -67,9 +67,11 @@ public sealed class TableOfContentsViewTests : IDisposable
     [AvaloniaFact]
     public void The_tree_shows_every_entry_expanded_with_its_target()
     {
+        // Act
         (Window window, TableOfContentsViewModel vm, TreeDataGrid tree, Book book) = Show();
         using (book)
         {
+            // Assert
             tree.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().Select(h => h.Header).Should().Equal(
                 Strings.Get("EditTocWindow_ColumnTitle"), Strings.Get("EditTocWindow_ColumnTarget"));
             tree.Rows!.Count.Should().Be(3, "the nested entry is shown expanded");
@@ -91,25 +93,32 @@ public sealed class TableOfContentsViewTests : IDisposable
     [AvaloniaFact]
     public void Entries_of_the_active_file_are_bold_and_revealed_after_a_collapse()
     {
+        // Act
         (Window window, TableOfContentsViewModel vm, TreeDataGrid tree, Book book) = Show();
         using (book)
         {
             HierarchicalTreeDataGridSource<TocEntryViewModel> source = (HierarchicalTreeDataGridSource<TocEntryViewModel>)tree.Source!;
             source.Collapse(new IndexPath(0));
             Settle(window);
+
+            // Assert
             tree.Rows!.Count.Should().Be(2);
 
+            // Act
             vm.SetCurrentFile(vm.Nodes[0].Entry.TargetBookPath);
             Settle(window);
 
+            // Assert
             tree.Rows!.Count.Should().Be(3, "the branch down to the first entry of the file is expanded");
             TitleBlock(tree, "Alpha").FontWeight.Should().Be(FontWeight.Bold);
             TitleBlock(tree, "Alpha One").FontWeight.Should().Be(FontWeight.Bold);
             tree.RowSelection!.SelectedItem.Should().BeNull("revealing does not change the selection");
 
+            // Act
             vm.SetCurrentFile("OEBPS/Text/other.xhtml");
             Settle(window);
 
+            // Assert
             TitleBlock(tree, "Alpha").FontWeight.Should().Be(FontWeight.Normal);
             window.Close();
         }
@@ -118,6 +127,7 @@ public sealed class TableOfContentsViewTests : IDisposable
     [AvaloniaFact]
     public void Double_click_and_Enter_navigate_to_the_entry()
     {
+        // Act
         (Window window, TableOfContentsViewModel vm, TreeDataGrid tree, Book book) = Show();
         using (book)
         {
@@ -131,14 +141,17 @@ public sealed class TableOfContentsViewTests : IDisposable
             window.MouseUp(beta, MouseButton.Left);
             Settle(window);
 
+            // Assert
             activated.Should().BeSameAs(vm.Nodes[1].Entry);
 
+            // Act
             activated = null;
             tree.RowSelection!.SelectedIndex = new IndexPath(0);
             ((Control)tree.TryGetRow(0)!).Focus();
             window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
             Settle(window);
 
+            // Assert
             activated.Should().BeSameAs(vm.Nodes[0].Entry);
             window.Close();
         }

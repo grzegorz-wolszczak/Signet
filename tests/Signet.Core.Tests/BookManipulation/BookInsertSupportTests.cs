@@ -19,9 +19,11 @@ public sealed class BookInsertSupportTests
     [Fact]
     public void GetMediaResources_lists_the_book_images()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(temp);
 
+        // Act & Assert
         book.GetMediaResources().OfType<ImageResource>().Select(r => r.Filename)
             .Should().Contain("figure.png");
     }
@@ -29,12 +31,16 @@ public sealed class BookInsertSupportTests
     [Fact]
     public void GetIdsInHtmlFile_returns_the_ids_present_in_the_document()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(temp);
         HtmlResource chapter = book.GetHtmlResources().First(h => h.Filename == "chapter1.xhtml");
         chapter.SetText(chapter.GetText().Replace("<body>", "<body>\n<p id=\"para-one\">hi</p>"));
 
+        // Act & Assert
         book.GetIdsInHtmlFile(chapter).Should().Contain("para-one");
+
+        // Act & Assert
         book.GetIdsInHtmlFiles()[chapter.BookPath].Should().Contain("para-one");
     }
 }

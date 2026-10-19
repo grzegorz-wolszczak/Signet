@@ -54,9 +54,11 @@ public sealed class HeadingSelectorWindowTests : IDisposable
     [AvaloniaFact]
     public void The_tree_shows_the_headings_expanded_with_their_level_and_inclusion()
     {
+        // Act
         (HeadingSelectorWindow window, HeadingSelectorViewModel vm, TreeDataGrid tree, Book book) = Show();
         using (book)
         {
+            // Assert
             tree.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().Select(h => h.Header).Should().Equal(
                 Strings.Get("EditTocWindow_ColumnTitle"), Strings.Get("EditTocWindow_ColumnLevel"),
                 Strings.Get("HeadingSelectorWindow_ColumnInToc"));
@@ -70,8 +72,10 @@ public sealed class HeadingSelectorWindowTests : IDisposable
             CheckBox include = tree.GetVisualDescendants().OfType<CheckBox>().Single(c => ReferenceEquals(c.DataContext, alphaOne));
             bool before = alphaOne.Heading.IncludeInToc;
 
+            // Act
             include.IsChecked = !before;
 
+            // Assert
             alphaOne.Heading.IncludeInToc.Should().Be(!before, "the check box edits the heading");
             window.Close();
         }
@@ -80,15 +84,20 @@ public sealed class HeadingSelectorWindowTests : IDisposable
     [AvaloniaFact]
     public void Changing_the_level_keeps_the_heading_selected_in_the_tree()
     {
+        // Act
         (HeadingSelectorWindow window, HeadingSelectorViewModel vm, TreeDataGrid tree, Book book) = Show();
         using (book)
         {
             tree.RowSelection!.SelectedIndex = new IndexPath(1);
+
+            // Assert
             vm.SelectedNode!.TitleText.Should().Be("Beta");
 
+            // Act
             vm.IncreaseLevelCommand.Execute(null);
             Settle(window);
 
+            // Assert
             vm.SelectedNode!.TitleText.Should().Be("Beta");
             vm.SelectedNode.LevelLabel.Should().Be("h2");
             tree.RowSelection.SelectedItem.Should().BeSameAs(vm.SelectedNode, "the rebuilt node is selected again");

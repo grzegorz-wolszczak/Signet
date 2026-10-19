@@ -22,6 +22,7 @@ public sealed class EmptyElementCleanerTests
     [InlineData("<p>x<span class=\"s\"></span>y</p>", "span")]
     public void Elements_without_content_or_with_only_whitespace_are_empty(string body, string tagName)
     {
+        // Act & Assert
         EmptyElementCleaner.Find(Page(body)).Should().ContainSingle().Which.TagName.Should().Be(tagName);
     }
 
@@ -35,39 +36,48 @@ public sealed class EmptyElementCleanerTests
     [InlineData("<section></section>")]
     public void Content_entities_comments_children_and_ids_keep_an_element(string body)
     {
+        // Act & Assert
         EmptyElementCleaner.Find(Page(body)).Should().BeEmpty();
     }
 
     [Fact]
     public void A_block_alone_on_its_line_is_removed_with_the_line()
     {
+        // Arrange
         string text = Page("<p>a</p>\n  <p class=\"calibre8\"></p>\n<p>b</p>");
 
+        // Act & Assert
         RemoveAll(text).Should().Be(Page("<p>a</p>\n<p>b</p>"));
     }
 
     [Fact]
     public void A_block_sharing_its_line_is_removed_alone()
     {
+        // Arrange
         string text = Page("<p>a</p><div></div><p>b</p>");
 
+        // Act & Assert
         RemoveAll(text).Should().Be(Page("<p>a</p><p>b</p>"));
     }
 
     [Fact]
     public void An_empty_span_keeps_its_space()
     {
+        // Arrange
         string text = Page("<p>word<span class=\"s\"> </span>word</p>");
 
+        // Act & Assert
         RemoveAll(text).Should().Be(Page("<p>word word</p>"));
     }
 
     [Fact]
     public void Only_the_requested_elements_are_removed()
     {
+        // Arrange
         string text = Page("<p class=\"a\"></p>\n<p class=\"b\"></p>");
         int second = EmptyElementCleaner.Find(text)[1].Pos;
 
+        // Act & Assert
         EmptyElementCleaner.Remove(text, new[] { second }).Should().Be(Page("<p class=\"a\"></p>"));
     }
 }

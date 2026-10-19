@@ -12,23 +12,28 @@ public sealed class CssWellFormedCheckerTests
     [Fact]
     public void Check_passes_for_structurally_valid_css()
     {
+        // Act
         WellFormedResult result = CssWellFormedChecker.Check(
             "body { color: red; }\n\nh1 { font-size: 1.5em; }\n");
 
+        // Assert
         result.IsWellFormed.Should().BeTrue();
     }
 
     [Fact]
     public void Check_passes_for_empty_css()
     {
+        // Act & Assert
         CssWellFormedChecker.Check(string.Empty).IsWellFormed.Should().BeTrue();
     }
 
     [Fact]
     public void Check_reports_unexpected_closing_brace_with_position()
     {
+        // Act
         WellFormedResult result = CssWellFormedChecker.Check("body { color: red; }\n}\n");
 
+        // Assert
         result.IsWellFormed.Should().BeFalse();
         result.Line.Should().Be(2);
         result.Column.Should().BeGreaterThan(0);
@@ -37,8 +42,10 @@ public sealed class CssWellFormedCheckerTests
     [Fact]
     public void Check_reports_unterminated_block_at_end_of_document()
     {
+        // Act
         WellFormedResult result = CssWellFormedChecker.Check("body {\n  color: red;\n");
 
+        // Assert
         result.IsWellFormed.Should().BeFalse();
         result.Message.Should().Be(CoreStrings.Get("Css_UnterminatedBlock"));
     }
@@ -46,8 +53,10 @@ public sealed class CssWellFormedCheckerTests
     [Fact]
     public void Check_reports_unterminated_comment()
     {
+        // Act
         WellFormedResult result = CssWellFormedChecker.Check("body { color: red; }\n/* not closed\n");
 
+        // Assert
         result.IsWellFormed.Should().BeFalse();
         result.Message.Should().Contain(LocalizedText.Fragment("Css_UnterminatedComment"));
     }

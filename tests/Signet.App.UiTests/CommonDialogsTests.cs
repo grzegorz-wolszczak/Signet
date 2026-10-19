@@ -39,13 +39,17 @@ public sealed class CommonDialogsTests
     [AvaloniaFact]
     public void LoadWarningsDialog_shows_the_warnings_as_a_tree_with_a_localized_header()
     {
+        // Arrange
         LoadWarningsDialog window = LoadWarningsDialog.Build("book.epub", TwoWarnings);
+
+        // Act
         ShowAndRender(window);
 
         string?[] texts = window.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).ToArray();
         TreeDataGrid tree = window.GetVisualDescendants().OfType<TreeDataGrid>().Single();
         string?[] buttons = window.GetVisualDescendants().OfType<Button>().Select(b => b.Content as string).ToArray();
 
+        // Assert
         window.Title.Should().Be(Strings.Get("LoadWarningsDialog_Title"));
         texts.Should().Contain(Strings.Format("LoadWarningsDialog_Header", "book.epub", 2));
         tree.Source.Should().NotBeNull();
@@ -59,14 +63,18 @@ public sealed class CommonDialogsTests
     [AvaloniaFact]
     public void LoadWarningsDialog_as_a_skipped_files_report_has_its_own_title_and_header()
     {
+        // Arrange
         SkippedFilesReport report = new(
             "Mend All HTML Files", Processed: 4, new[] { new SkippedFile("Text/a.xhtml", "bad", 3, 7) });
         LoadWarningsDialog window = LoadWarningsDialog.BuildReport(report);
+
+        // Act
         ShowAndRender(window);
 
         string?[] texts = window.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).ToArray();
         TreeDataGrid tree = window.GetVisualDescendants().OfType<TreeDataGrid>().Single();
 
+        // Assert
         window.Title.Should().Be(Strings.Get("SkippedFilesDialog_Title"));
         texts.Should().Contain(report.Header);
         tree.Source.Should().NotBeNull();
@@ -75,11 +83,15 @@ public sealed class CommonDialogsTests
     [AvaloniaFact]
     public void FileInUseDialog_offers_the_four_choices_and_names_the_file()
     {
+        // Arrange
         FileInUseDialog window = FileInUseDialog.Build("book.epub");
+
+        // Act
         ShowAndRender(window);
 
         string?[] texts = window.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).ToArray();
 
+        // Assert
         window.Title.Should().Be(Strings.Get("FileInUseDialog_Title"));
         texts.Should().Contain(Strings.Format("FileInUseDialog_Message", "book.epub"));
         texts.Should().Contain(new[]
@@ -97,6 +109,7 @@ public sealed class CommonDialogsTests
     [AvaloniaFact]
     public void SelectFilesWindow_SingleFileMode_renders_with_thumbnail_list()
     {
+        // Arrange
         SelectFilesEntry[] entries =
         {
             new("OEBPS/Images/cover.png", "cover.png", ResourceType.Image, null),
@@ -107,14 +120,17 @@ public sealed class CommonDialogsTests
             "Add Cover", "Wybierz obraz:", SelectFilesMode.SingleFile, entries,
             allowInsertFromDisk: true, defaultSelectedBookPath: entries[0].BookPath);
 
+        // Act
         ShowAndRender(window);
 
+        // Assert
         window.GetVisualDescendants().OfType<ListBox>().Should().NotBeEmpty();
     }
 
     [AvaloniaFact]
     public void SelectFilesWindow_MultipleMode_withTypeFilter_renders()
     {
+        // Arrange
         SelectFilesEntry[] entries =
         {
             new("OEBPS/Images/figure.png", "figure.png", ResourceType.Image, null),
@@ -125,14 +141,17 @@ public sealed class CommonDialogsTests
             "Insert File", "Wybierz pliki do wstawienia:", SelectFilesMode.Multiple, entries,
             allowInsertFromDisk: true, showTypeFilter: true);
 
+        // Act
         ShowAndRender(window);
 
+        // Assert
         window.GetVisualDescendants().OfType<ListBox>().Should().NotBeEmpty();
     }
 
     [AvaloniaFact]
     public void SelectFilesWindow_MultipleOrderedMode_renders_checkbox_rows_and_reorder_buttons()
     {
+        // Arrange
         SelectFilesEntry[] entries =
         {
             new("OEBPS/Styles/a.css", "OEBPS/Styles/a.css", ResourceType.Css, null, InitiallyIncluded: true),
@@ -142,30 +161,38 @@ public sealed class CommonDialogsTests
         SelectFilesWindow window = SelectFilesWindow.Build(
             "Link Stylesheets", "Arkusze stylów:", SelectFilesMode.MultipleOrdered, entries);
 
+        // Act
         ShowAndRender(window);
 
+        // Assert
         window.GetVisualDescendants().OfType<CheckBox>().Should().HaveCount(2);
     }
 
     [AvaloniaFact]
     public void SelectFolderWindow_renders_with_folder_suggestions()
     {
+        // Arrange
         string[] folders = { "OEBPS/Images", "OEBPS/Images/sub" };
         SelectFolderWindow window = SelectFolderWindow.Build(folders, "OEBPS/Images");
 
+        // Act
         ShowAndRender(window);
 
+        // Assert
         window.GetVisualDescendants().OfType<AutoCompleteBox>().Should().NotBeEmpty();
     }
 
     [AvaloniaFact]
     public void ClipboardHistorySelectorWindow_renders_with_history_entries()
     {
+        // Arrange
         string[] history = { "first entry", "second entry" };
         ClipboardHistorySelectorWindow window = ClipboardHistorySelectorWindow.Build(history);
 
+        // Act
         ShowAndRender(window);
 
+        // Assert
         window.GetVisualDescendants().OfType<ListBox>().Should().NotBeEmpty();
     }
 }

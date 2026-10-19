@@ -40,17 +40,20 @@ public sealed class NavigationTrackerTests
     [AutoData]
     public void Opening_a_tab_and_moving_its_caret_in_one_command_records_only_the_place_left(string from, string to)
     {
+        // Arrange
         NavigationHistory history = new();
         Commands commands = new();
         NavigationTracker tracker = new(history, commands.Schedule, () => Now);
         tracker.UpdateCurrentPlace(At(from, 5));
 
+        // Act
         tracker.NoteNavigation();
         tracker.UpdateCurrentPlace(At(to, 1));
         tracker.NoteNavigation();
         tracker.UpdateCurrentPlace(At(to, 40));
         commands.EndCommand();
 
+        // Assert
         history.BackPlaces.Should().Equal(At(from, 5) with { Time = Now });
     }
 
@@ -58,15 +61,18 @@ public sealed class NavigationTrackerTests
     [AutoData]
     public void A_jump_that_stays_on_the_same_line_records_nothing(string file)
     {
+        // Arrange
         NavigationHistory history = new();
         Commands commands = new();
         NavigationTracker tracker = new(history, commands.Schedule);
         tracker.UpdateCurrentPlace(At(file, 5));
 
+        // Act
         tracker.NoteNavigation();
         tracker.UpdateCurrentPlace(At(file, 5) with { Offset = 52 });
         commands.EndCommand();
 
+        // Assert
         history.CanGoBack.Should().BeFalse();
     }
 
@@ -74,10 +80,12 @@ public sealed class NavigationTrackerTests
     [AutoData]
     public void Without_a_scheduler_the_next_jump_or_Flush_commits_the_pending_one(string a, string b, string c)
     {
+        // Arrange
         NavigationHistory history = new();
         NavigationTracker tracker = new(history, _ => false);
         tracker.UpdateCurrentPlace(At(a, 1));
 
+        // Act
         tracker.NoteNavigation();
         tracker.UpdateCurrentPlace(At(b, 1));
         tracker.NoteNavigation();
@@ -85,6 +93,8 @@ public sealed class NavigationTrackerTests
         tracker.Flush();
 
         history.BackPlaces.Should().HaveCount(2);
+
+        // Assert
         history.BackPlaces[0].BookPath.Should().Be(a);
         history.BackPlaces[1].BookPath.Should().Be(b);
     }
@@ -93,11 +103,13 @@ public sealed class NavigationTrackerTests
     [AutoData]
     public void Jumps_while_suspended_are_not_recorded(string a, string b)
     {
+        // Arrange
         NavigationHistory history = new();
         Commands commands = new();
         NavigationTracker tracker = new(history, commands.Schedule);
         tracker.UpdateCurrentPlace(At(a, 1));
 
+        // Act
         using (tracker.Suspend())
         {
             tracker.NoteNavigation();
@@ -106,6 +118,7 @@ public sealed class NavigationTrackerTests
 
         commands.EndCommand();
 
+        // Assert
         history.CanGoBack.Should().BeFalse();
         tracker.CurrentPlace.Should().Be(At(b, 1));
     }
@@ -114,14 +127,17 @@ public sealed class NavigationTrackerTests
     [AutoData]
     public void A_jump_from_nowhere_records_nothing(string file)
     {
+        // Arrange
         NavigationHistory history = new();
         Commands commands = new();
         NavigationTracker tracker = new(history, commands.Schedule);
 
+        // Act
         tracker.NoteNavigation();
         tracker.UpdateCurrentPlace(At(file, 1));
         commands.EndCommand();
 
+        // Assert
         history.CanGoBack.Should().BeFalse();
     }
 }

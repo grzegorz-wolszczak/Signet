@@ -46,11 +46,14 @@ public sealed class AltGrShortcutTests
     [AvaloniaFact]
     public void With_the_option_off_the_shortcut_wins_over_the_character()
     {
+        // Arrange
         AltGrKeys.Enabled = false;
         (MainWindow window, _, int[] runs) = Setup();
 
+        // Act
         PressCtrlAltL(window, "ł");
 
+        // Assert
         runs[0].Should().Be(1);
         window.Close();
     }
@@ -58,13 +61,16 @@ public sealed class AltGrShortcutTests
     [AvaloniaFact]
     public void With_the_option_on_a_stroke_that_types_a_character_is_not_a_shortcut()
     {
+        // Arrange
         AltGrKeys.Enabled = true;
         try
         {
             (MainWindow window, _, int[] runs) = Setup();
 
+            // Act
             PressCtrlAltL(window, "ł");
 
+            // Assert
             runs[0].Should().Be(0);
             window.Close();
         }
@@ -77,15 +83,18 @@ public sealed class AltGrShortcutTests
     [AvaloniaFact]
     public void With_the_option_on_Ctrl_Alt_that_types_nothing_is_still_a_shortcut_and_so_is_the_next_one()
     {
+        // Arrange
         AltGrKeys.Enabled = true;
         try
         {
             (MainWindow window, _, int[] runs) = Setup();
 
+            // Act
             PressCtrlAltL(window, null);
             PressCtrlAltL(window, "ł");
             PressCtrlAltL(window, null);
 
+            // Assert
             runs[0].Should().Be(2, "only the stroke that typed a character was left to the focused control");
             window.Close();
         }
@@ -98,19 +107,30 @@ public sealed class AltGrShortcutTests
     [AvaloniaFact]
     public void Switching_the_option_changes_how_an_open_window_treats_the_stroke()
     {
+        // Arrange
         AltGrKeys.Enabled = false;
         try
         {
             (MainWindow window, _, int[] runs) = Setup();
+
+            // Act
             PressCtrlAltL(window, "ł");
+
+            // Assert
             runs[0].Should().Be(1, "off: the shortcut wins");
 
+            // Act
             AltGrKeys.Enabled = true;
             PressCtrlAltL(window, "ł");
+
+            // Assert
             runs[0].Should().Be(1, "on: the character is left to the focused control");
 
+            // Act
             AltGrKeys.Enabled = false;
             PressCtrlAltL(window, "ł");
+
+            // Assert
             runs[0].Should().Be(2, "off again: the shortcut wins again");
             window.Close();
         }

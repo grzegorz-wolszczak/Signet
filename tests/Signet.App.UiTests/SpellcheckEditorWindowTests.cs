@@ -63,9 +63,13 @@ public sealed class SpellcheckEditorWindowTests : IDisposable
     [AvaloniaFact]
     public void The_table_lists_the_misspelled_words_with_their_columns()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
+
+        // Act
         (SpellcheckEditorWindow window, _, TreeDataGrid grid) = Show(temp, "<p>hello wrold wrongg wrold</p>");
 
+        // Assert
         grid.Classes.Should().Contain("gridLines");
         grid.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().Select(h => h.Header).Should().Equal(
             Strings.Get("SpellcheckEditorWindow_Word"), Strings.Get("ReportsWindow_Count"),
@@ -78,7 +82,10 @@ public sealed class SpellcheckEditorWindowTests : IDisposable
     [AvaloniaFact]
     public void Ctrl_clicking_selects_several_rows_for_the_batch_commands()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
+
+        // Act
         (SpellcheckEditorWindow window, SpellcheckEditorViewModel vm, TreeDataGrid grid) = Show(temp, "<p>wrold wrongg</p>");
 
         Point first = CellCenter(grid, window, 0, 0);
@@ -86,17 +93,23 @@ public sealed class SpellcheckEditorWindowTests : IDisposable
         window.MouseDown(first, MouseButton.Left);
         window.MouseUp(first, MouseButton.Left);
         Settle(window);
+
+        // Assert
         vm.SingleSelectedRow.Should().NotBeNull("one row is selected");
 
+        // Act
         window.MouseDown(second, MouseButton.Left, RawInputModifiers.Control);
         window.MouseUp(second, MouseButton.Left, RawInputModifiers.Control);
         Settle(window);
 
+        // Assert
         grid.RowSelection!.SelectedItems.Should().HaveCount(2);
         vm.SingleSelectedRow.Should().BeNull("two rows are selected");
 
+        // Act
         vm.IgnoreCommand.Execute(null);
 
+        // Assert
         vm.Words.Should().BeEmpty("both selected words were ignored");
         window.Close();
     }
@@ -112,7 +125,10 @@ public sealed class SpellcheckEditorWindowTests : IDisposable
     [AvaloniaFact]
     public void After_ignoring_a_word_the_next_word_is_selected()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
+
+        // Act
         (SpellcheckEditorWindow window, SpellcheckEditorViewModel vm, TreeDataGrid grid) = Show(temp, "<p>wrold wrongg wrongx</p>");
         string[] before = vm.Words.Select(w => w.Word).ToArray();
         ClickRow(window, grid, 1);
@@ -121,12 +137,15 @@ public sealed class SpellcheckEditorWindowTests : IDisposable
         Settle(window);
 
         // Sigil keeps the row index, so the next word moves under the selection (calibre 6.12 fixed it moving up).
+        // Assert
         vm.SingleSelectedRow!.Word.Should().Be(before[2]);
         grid.RowSelection!.SelectedIndex.ToString().Should().Be(new IndexPath(1).ToString());
 
+        // Act
         vm.IgnoreCommand.Execute(null);
         Settle(window);
 
+        // Assert
         vm.SingleSelectedRow!.Word.Should().Be(before[0], "after the last row the selection stays on the new last row");
         window.Close();
     }
@@ -134,7 +153,10 @@ public sealed class SpellcheckEditorWindowTests : IDisposable
     [AvaloniaFact]
     public void After_change_all_the_next_word_is_selected()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
+
+        // Act
         (SpellcheckEditorWindow window, SpellcheckEditorViewModel vm, TreeDataGrid grid) = Show(temp, "<p>wrold wrongg wrongx</p>");
         string[] before = vm.Words.Select(w => w.Word).ToArray();
         Book book = _disposables.Add(BookCreator.CreateNewBook("2.0"));
@@ -149,6 +171,7 @@ public sealed class SpellcheckEditorWindowTests : IDisposable
         vm.ChangeAllCommand.Execute(null);
         Settle(window);
 
+        // Assert
         vm.SingleSelectedRow!.Word.Should().Be(before[1]);
         window.Close();
     }
@@ -156,7 +179,10 @@ public sealed class SpellcheckEditorWindowTests : IDisposable
     [AvaloniaFact]
     public void Double_clicking_a_word_requests_navigation_to_its_first_occurrence()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
+
+        // Act
         (SpellcheckEditorWindow window, SpellcheckEditorViewModel vm, TreeDataGrid grid) = Show(temp, "<p>wrold</p>");
         string? navigatedTo = null;
         vm.NavigationRequested += (path, _) => navigatedTo = path;
@@ -168,6 +194,7 @@ public sealed class SpellcheckEditorWindowTests : IDisposable
         window.MouseUp(point, MouseButton.Left);
         Settle(window);
 
+        // Assert
         navigatedTo.Should().Be(vm.Words.Single().BookPath);
         window.Close();
     }

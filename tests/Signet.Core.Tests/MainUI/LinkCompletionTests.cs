@@ -29,10 +29,13 @@ public sealed class LinkCompletionTests
     [InlineData("<svg:image xlink:href=\"c", LinkTargetKind.Any, "c")]
     public void Detects_a_link_attribute_value_being_typed(string typed, LinkTargetKind kind, string query)
     {
+        // Arrange
         string text = "<body>" + typed;
 
+        // Act
         LinkCompletionContext? context = LinkCompletion.Detect(text, text.Length, CodeEditorSyntax.Html);
 
+        // Assert
         context.Should().NotBeNull();
         context!.Kind.Should().Be(kind);
         context.Query.Should().Be(query);
@@ -43,10 +46,13 @@ public sealed class LinkCompletionTests
     [Fact]
     public void Hash_switches_to_anchors_of_the_target_document()
     {
+        // Arrange
         const string text = "<body><a href=\"ch2.xhtml#sec";
 
+        // Act
         LinkCompletionContext? context = LinkCompletion.Detect(text, text.Length, CodeEditorSyntax.Html);
 
+        // Assert
         context.Should().Be(new LinkCompletionContext(text.Length - 3, "sec", LinkTargetKind.TextLink, "ch2.xhtml"));
     }
 
@@ -57,6 +63,7 @@ public sealed class LinkCompletionTests
     [InlineData("<body></a href=\"x")]
     public void No_context_outside_a_link_attribute_value(string text)
     {
+        // Act & Assert
         LinkCompletion.Detect(text, text.Length, CodeEditorSyntax.Html).Should().BeNull();
     }
 
@@ -66,18 +73,22 @@ public sealed class LinkCompletionTests
     [InlineData(CodeEditorSyntax.Html, "<style>p { background: url(../", "../")]
     public void Detects_css_url_argument(CodeEditorSyntax syntax, string text, string query)
     {
+        // Act
         LinkCompletionContext? context = LinkCompletion.Detect(text, text.Length, syntax);
 
+        // Assert
         context.Should().Be(new LinkCompletionContext(text.Length - query.Length, query, LinkTargetKind.CssResource, null));
     }
 
     [Fact]
     public void File_candidates_are_relative_hrefs_filtered_by_kind_in_natural_order()
     {
+        // Act
         IReadOnlyList<LinkCompletionItem> text = LinkCompletion.FileCandidates(Files, "OEBPS/Text/ch1.xhtml", LinkTargetKind.TextLink);
         IReadOnlyList<LinkCompletionItem> css = LinkCompletion.FileCandidates(Files, "OEBPS/Styles/main style.css", LinkTargetKind.CssResource);
         IReadOnlyList<LinkCompletionItem> sheets = LinkCompletion.FileCandidates(Files, "OEBPS/Text/ch1.xhtml", LinkTargetKind.Stylesheet);
 
+        // Assert
         text.Select(i => i.Text).Should().Equal("ch2.xhtml", "ch10.xhtml");
         text.Should().OnlyContain(i => i.Description == "Text");
         css.Select(i => i.Text).Should().Equal("../Fonts/serif.otf", "../Images/cover.jpg", "../Images/map.svg");
@@ -87,10 +98,13 @@ public sealed class LinkCompletionTests
     [Fact]
     public void Anchor_candidates_list_ids_and_names_once_with_a_description()
     {
+        // Arrange
         const string html = "<body><h1 id=\"top\">Chapter One Title</h1><p id=\"p1\" title=\"First paragraph\">x</p><a name=\"old\"/><span id=\"top\">dup</span></body>";
 
+        // Act
         IReadOnlyList<LinkCompletionItem> anchors = LinkCompletion.AnchorCandidates(html);
 
+        // Assert
         anchors.Should().Equal(
             new LinkCompletionItem("old", string.Empty),
             new LinkCompletionItem("p1", "First paragraph"),
@@ -100,6 +114,7 @@ public sealed class LinkCompletionTests
     [Fact]
     public void Filter_keeps_subsequence_matches_best_first()
     {
+        // Arrange
         LinkCompletionItem[] items =
         {
             new("../Images/cover.jpg", "Image"),
@@ -107,8 +122,10 @@ public sealed class LinkCompletionTests
             new("../Fonts/serif.otf", "Font"),
         };
 
+        // Act
         IReadOnlyList<LinkCompletionItem> result = LinkCompletion.Filter(items, "co");
 
+        // Assert
         result.Select(i => i.Text).Should().Equal("../Images/cover.jpg", "../Images/chapter-ornament.png");
         LinkCompletion.Filter(items, "xyz").Should().BeEmpty();
         LinkCompletion.Filter(items, string.Empty).Should().Equal(items);
@@ -117,10 +134,19 @@ public sealed class LinkCompletionTests
     [Fact]
     public void Score_prefers_matches_at_segment_starts_and_is_case_insensitive()
     {
+        // Act & Assert
         LinkCompletion.Score("Images/cover.jpg", "cj").Should().BeGreaterThan(0);
+
+        // Act & Assert
         LinkCompletion.Score("Images/cover.jpg", "IC").Should().BeGreaterThan(0);
+
+        // Act & Assert
         LinkCompletion.Score("abc", "abcd").Should().Be(0);
+
+        // Act & Assert
         LinkCompletion.Score("x/cover", "co").Should().BeGreaterThan(LinkCompletion.Score("xacover", "co") - 1e-12);
+
+        // Act & Assert
         LinkCompletion.Score("a-bc", "b").Should().BeGreaterThan(LinkCompletion.Score("axbc", "b"));
     }
 }

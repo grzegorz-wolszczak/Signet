@@ -19,6 +19,7 @@ public sealed class BookPathTests
     [InlineData("a/b/c/../../d", "a/d")]
     public void ResolveRelativeSegments_collapses_dot_and_dotdot(string input, string expected)
     {
+        // Act & Assert
         BookPath.ResolveRelativeSegments(input).Should().Be(expected);
     }
 
@@ -32,6 +33,7 @@ public sealed class BookPathTests
     public void BuildBookPath_resolves_relative_href_against_start_folder(
         string destRelativePath, string startFolder, string expected)
     {
+        // Act & Assert
         BookPath.BuildBookPath(destRelativePath, startFolder).Should().Be(expected);
     }
 
@@ -42,6 +44,7 @@ public sealed class BookPathTests
     [InlineData("a/b/c/d.xhtml", "a/b/c")]
     public void StartingDir_returns_parent_folder(string fileBookPath, string expected)
     {
+        // Act & Assert
         BookPath.StartingDir(fileBookPath).Should().Be(expected);
     }
 
@@ -63,6 +66,7 @@ public sealed class BookPathTests
     public void Relative_builds_href_from_source_file_to_target_file(
         string fromFileBookPath, string toFileBookPath, string expected)
     {
+        // Act & Assert
         BookPath.Relative(fromFileBookPath, toFileBookPath).Should().Be(expected);
     }
 
@@ -74,19 +78,24 @@ public sealed class BookPathTests
     public void RelativePath_is_computed_from_a_starting_directory(
         string destination, string startDir, string expected)
     {
+        // Act & Assert
         BookPath.RelativePath(destination, startDir).Should().Be(expected);
     }
 
     [Fact]
     public void Relative_then_BuildBookPath_round_trips()
     {
+        // Arrange
         const string from = "OEBPS/Text/ch1.xhtml";
         const string to = "OEBPS/Styles/fonts/../main.css";
+
+        // Act
         string resolvedTo = BookPath.ResolveRelativeSegments(to);
 
         string href = BookPath.Relative(from, resolvedTo);
         string back = BookPath.BuildBookPath(href, BookPath.StartingDir(from));
 
+        // Assert
         back.Should().Be(resolvedTo);
     }
 
@@ -99,21 +108,30 @@ public sealed class BookPathTests
     public void LongestCommonPath_returns_shared_prefix_with_trailing_separator(
         string[] filePaths, string expected)
     {
+        // Act & Assert
         BookPath.LongestCommonPath(filePaths).Should().Be(expected);
     }
 
     [Fact]
     public void LongestCommonPath_of_empty_collection_is_empty()
     {
+        // Act & Assert
         BookPath.LongestCommonPath(Array.Empty<string>()).Should().BeEmpty();
     }
 
     [Fact]
     public void Null_arguments_are_rejected()
     {
+        // Act & Assert
         FluentActions.Invoking(() => BookPath.ResolveRelativeSegments(null!)).Should().Throw<ArgumentNullException>();
+
+        // Act & Assert
         FluentActions.Invoking(() => BookPath.BuildBookPath(null!, "")).Should().Throw<ArgumentNullException>();
+
+        // Act & Assert
         FluentActions.Invoking(() => BookPath.Relative("a", null!)).Should().Throw<ArgumentNullException>();
+
+        // Act & Assert
         FluentActions.Invoking(() => BookPath.LongestCommonPath(null!)).Should().Throw<ArgumentNullException>();
     }
 }

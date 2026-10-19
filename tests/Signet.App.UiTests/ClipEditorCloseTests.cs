@@ -62,13 +62,18 @@ public sealed class ClipEditorCloseTests : IDisposable
     [AvaloniaFact]
     public void Title_shows_an_asterisk_only_while_there_are_unsaved_changes()
     {
+        // Act
         (ClipEditorWindow window, ClipsViewModel vm, _) = ShowModifiedEditor();
         string title = Strings.Get("ClipEditorWindow_Title");
 
+        // Assert
         window.Title.Should().Be(title + "*");
 
+        // Act
         vm.SaveCommand.Execute(null);
         Render(window);
+
+        // Assert
         window.Title.Should().Be(title);
         window.Close();
     }
@@ -76,25 +81,34 @@ public sealed class ClipEditorCloseTests : IDisposable
     [AvaloniaFact]
     public void Closing_with_unsaved_changes_asks_and_Cancel_keeps_the_window_open()
     {
+        // Act
         (ClipEditorWindow window, ClipsViewModel vm, _) = ShowModifiedEditor();
 
         SaveChangesDialog prompt = CloseAndGetPrompt(window);
+
+        // Assert
         prompt.FindControl<TextBlock>("MessageText")!.Text.Should().Be(Strings.Get("ClipEditor_SaveChangesPrompt"));
+
+        // Act
         Press(prompt, "CancelButton");
 
+        // Assert
         window.IsVisible.Should().BeTrue();
         vm.IsDataModified.Should().BeTrue();
 
+        // Act
         Press(CloseAndGetPrompt(window), "DiscardButton");
     }
 
     [AvaloniaFact]
     public void Discard_closes_the_window_and_restores_the_saved_library()
     {
+        // Act
         (ClipEditorWindow window, ClipsViewModel vm, ClipStore store) = ShowModifiedEditor();
 
         Press(CloseAndGetPrompt(window), "DiscardButton");
 
+        // Assert
         window.IsVisible.Should().BeFalse();
         vm.Nodes.Should().BeEmpty();
         vm.IsDataModified.Should().BeFalse();
@@ -104,10 +118,12 @@ public sealed class ClipEditorCloseTests : IDisposable
     [AvaloniaFact]
     public void Save_closes_the_window_and_writes_the_library_to_disk()
     {
+        // Act
         (ClipEditorWindow window, ClipsViewModel vm, ClipStore store) = ShowModifiedEditor();
 
         Press(CloseAndGetPrompt(window), "SaveButton");
 
+        // Assert
         window.IsVisible.Should().BeFalse();
         vm.IsDataModified.Should().BeFalse();
         store.Load().Should().ContainSingle();
@@ -116,22 +132,29 @@ public sealed class ClipEditorCloseTests : IDisposable
     [AvaloniaFact]
     public void Closing_without_changes_does_not_ask()
     {
+        // Arrange
         ClipStore store = new(_disposables.Add(new TempDir("signet-clipclose-")).Combine("file.xml"));
         ClipEditorWindow window = new() { DataContext = new ClipsViewModel(store, () => null, () => null, new StatusBarService()) };
+
+        // Act
         window.Show();
         Render(window);
 
         window.Close();
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         window.IsVisible.Should().BeFalse();
         window.OwnedWindows.Should().BeEmpty();
     }
     [AvaloniaFact]
     public void Exiting_the_app_with_unsaved_clips_asks_and_Cancel_aborts_the_exit()
     {
+        // Arrange
         MainWindowViewModel vm = _disposables.Add(new MainWindowViewModel());
         MainWindow main = new() { DataContext = vm };
+
+        // Act
         main.Show();
         Dispatcher.UIThread.RunJobs();
         vm.Clips.AddEntryCommand.Execute(null);
@@ -140,13 +163,16 @@ public sealed class ClipEditorCloseTests : IDisposable
         Dispatcher.UIThread.RunJobs();
         Press(main.OwnedWindows.OfType<SaveChangesDialog>().Single(), "CancelButton");
 
+        // Assert
         main.IsVisible.Should().BeTrue();
         vm.Clips.IsDataModified.Should().BeTrue();
 
+        // Act
         main.Close();
         Dispatcher.UIThread.RunJobs();
         Press(main.OwnedWindows.OfType<SaveChangesDialog>().Single(), "DiscardButton");
 
+        // Assert
         main.IsVisible.Should().BeFalse();
         vm.Clips.IsDataModified.Should().BeFalse();
     }

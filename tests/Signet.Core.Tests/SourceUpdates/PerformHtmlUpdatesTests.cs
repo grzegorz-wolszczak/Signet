@@ -25,6 +25,7 @@ public sealed class PerformHtmlUpdatesTests
     [Fact]
     public void Apply_HrefAndSrcAttributes_AreRewritten()
     {
+        // Arrange
         Dictionary<string, string> htmlUpdates = new()
         {
             ["OEBPS/Images/old.jpg"] = "OEBPS/Images/new.jpg",
@@ -32,9 +33,11 @@ public sealed class PerformHtmlUpdatesTests
         };
         Dictionary<string, string> cssUpdates = new();
 
+        // Act
         string result = PerformHtmlUpdates.Apply(
             Source, "OEBPS/Text/ch1.xhtml", "OEBPS/Text/ch1.xhtml", htmlUpdates, cssUpdates, "2.0");
 
+        // Assert
         result.Should().Contain("src=\"../Images/new.jpg\"");
         result.Should().Contain("href=\"ch2-new.xhtml#note\"");
     }
@@ -42,18 +45,22 @@ public sealed class PerformHtmlUpdatesTests
     [Fact]
     public void Apply_StylesheetLink_IsRewrittenWhenTargetIsCssType()
     {
+        // Arrange
         Dictionary<string, string> htmlUpdates = new() { ["OEBPS/Styles/old.css"] = "OEBPS/Styles/new.css" };
         Dictionary<string, string> cssUpdates = new();
 
+        // Act
         string result = PerformHtmlUpdates.Apply(
             Source, "OEBPS/Text/ch1.xhtml", "OEBPS/Text/ch1.xhtml", htmlUpdates, cssUpdates, "2.0");
 
+        // Assert
         result.Should().Contain("href=\"../Styles/new.css\"");
     }
 
     [Fact]
     public void Apply_InlineStyleUrl_IsRewritten()
     {
+        // Arrange
         string source =
             "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
             "<!DOCTYPE html>\n" +
@@ -62,15 +69,18 @@ public sealed class PerformHtmlUpdatesTests
         Dictionary<string, string> htmlUpdates = new() { ["OEBPS/Images/old.jpg"] = "OEBPS/Images/new.jpg" };
         Dictionary<string, string> cssUpdates = new() { ["OEBPS/Images/old.jpg"] = "OEBPS/Images/new.jpg" };
 
+        // Act
         string result = PerformHtmlUpdates.Apply(
             source, "OEBPS/Text/ch1.xhtml", "OEBPS/Text/ch1.xhtml", htmlUpdates, cssUpdates, "2.0");
 
+        // Assert
         result.Should().Contain("url(../Images/new.jpg)");
     }
 
     [Fact]
     public void Apply_StyleElementContent_IsRewritten()
     {
+        // Arrange
         string source =
             "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
             "<!DOCTYPE html>\n" +
@@ -80,15 +90,18 @@ public sealed class PerformHtmlUpdatesTests
         Dictionary<string, string> htmlUpdates = new() { ["OEBPS/Images/old.jpg"] = "OEBPS/Images/new.jpg" };
         Dictionary<string, string> cssUpdates = new() { ["OEBPS/Images/old.jpg"] = "OEBPS/Images/new.jpg" };
 
+        // Act
         string result = PerformHtmlUpdates.Apply(
             source, "OEBPS/Text/ch1.xhtml", "OEBPS/Text/ch1.xhtml", htmlUpdates, cssUpdates, "2.0");
 
+        // Assert
         result.Should().Contain("url(../Images/new.jpg)");
     }
 
     [Fact]
     public void Apply_SrcsetCandidates_AreEachRewritten()
     {
+        // Arrange
         string source =
             "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
             "<!DOCTYPE html>\n" +
@@ -100,19 +113,23 @@ public sealed class PerformHtmlUpdatesTests
             ["OEBPS/Images/b.jpg"] = "OEBPS/Images/b2.jpg",
         };
 
+        // Act
         string result = PerformHtmlUpdates.Apply(
             source, "OEBPS/Text/ch1.xhtml", "OEBPS/Text/ch1.xhtml", htmlUpdates, new Dictionary<string, string>(), "2.0");
 
+        // Assert
         result.Should().Contain("srcset=\"../Images/a2.jpg 1x, ../Images/b2.jpg 2x\"");
     }
 
     [Fact]
     public void Apply_NoMatchingUpdates_PreservesDocumentStructure()
     {
+        // Act
         string result = PerformHtmlUpdates.Apply(
             Source, "OEBPS/Text/ch1.xhtml", "OEBPS/Text/ch1.xhtml",
             new Dictionary<string, string>(), new Dictionary<string, string>(), "2.0");
 
+        // Assert
         result.Should().StartWith("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
         result.Should().Contain("href=\"../Styles/old.css\"");
         result.Should().Contain("src=\"../Images/old.jpg\"");

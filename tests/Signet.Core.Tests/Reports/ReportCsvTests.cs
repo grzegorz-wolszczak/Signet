@@ -11,18 +11,21 @@ public sealed class ReportCsvTests
     [Fact]
     public void WriteLine_JoinsPlainFieldsWithComma()
     {
+        // Act & Assert
         ReportCsv.WriteLine(new List<string> { "chapter1.xhtml", "12", "Yes" }).Should().Be("chapter1.xhtml,12,Yes");
     }
 
     [Fact]
     public void WriteLine_QuotesFieldsContainingComma()
     {
+        // Act & Assert
         ReportCsv.WriteLine(new List<string> { "a, b", "c" }).Should().Be("\"a, b\",c");
     }
 
     [Fact]
     public void WriteLine_QuotesAndDoublesQuoteCharacterEvenWithoutComma()
     {
+        // Act & Assert
         // A quote character alone (without a comma) still forces the value to be quoted.
         ReportCsv.WriteLine(new List<string> { "5\" screen" }).Should().Be("\"5\"\" screen\"");
     }
@@ -30,6 +33,7 @@ public sealed class ReportCsvTests
     [Fact]
     public void WriteLine_QuotesFieldsContainingNewline()
     {
+        // Act & Assert
         ReportCsv.WriteLine(new List<string> { "line1\nline2" }).Should().Be("\"line1\nline2\"");
     }
 }

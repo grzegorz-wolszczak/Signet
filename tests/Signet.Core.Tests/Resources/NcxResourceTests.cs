@@ -18,11 +18,14 @@ public sealed class NcxResourceTests
     [Fact]
     public void FillWithDefaultText_epub2_has_doctype_and_relative_content_href()
     {
+        // Arrange
         NcxResource ncx = Make(out TempDir root);
         using (root)
         {
+            // Act
             ncx.FillWithDefaultText("2.0", "OEBPS/Text/Section0001.xhtml");
 
+            // Assert
             string text = ncx.GetText();
             text.Should().Contain("<!DOCTYPE ncx");
             text.Should().Contain("<content src=\"Text/Section0001.xhtml\" />");
@@ -34,11 +37,14 @@ public sealed class NcxResourceTests
     [Fact]
     public void FillWithDefaultText_epub3_has_no_doctype()
     {
+        // Arrange
         NcxResource ncx = Make(out TempDir root);
         using (root)
         {
+            // Act
             ncx.FillWithDefaultText("3.0", "OEBPS/Text/Section0001.xhtml");
 
+            // Assert
             ncx.GetText().Should().NotContain("<!DOCTYPE");
         }
     }
@@ -46,9 +52,11 @@ public sealed class NcxResourceTests
     [Fact]
     public void GetNcxDocument_and_SetNcxDocument_round_trip_through_resource()
     {
+        // Arrange
         NcxResource ncx = Make(out TempDir root);
         using (root)
         {
+            // Act
             ncx.FillWithDefaultText("2.0", "OEBPS/Text/Section0001.xhtml");
 
             NcxDocument document = ncx.GetNcxDocument();
@@ -56,6 +64,7 @@ public sealed class NcxResourceTests
             document.NavMap[0].Label = "Rozdzial 1";
             ncx.SetNcxDocument(document);
 
+            // Assert
             ncx.GetText().Should().Contain("<text>Rozdzial 1</text>");
             ncx.GetNcxDocument().NavMap[0].Label.Should().Be("Rozdzial 1");
             ncx.IsWellFormed().Should().BeTrue();
@@ -65,12 +74,16 @@ public sealed class NcxResourceTests
     [Fact]
     public void SetMainId_replaces_the_placeholder()
     {
+        // Arrange
         NcxResource ncx = Make(out TempDir root);
         using (root)
         {
+            // Act
             ncx.FillWithDefaultText("2.0", "OEBPS/Text/Section0001.xhtml");
+
             ncx.SetMainId("urn:uuid:1234");
 
+            // Assert
             ncx.GetText().Should().NotContain("ID_UNKNOWN");
             ncx.GetText().Should().Contain("content=\"urn:uuid:1234\"");
         }

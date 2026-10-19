@@ -26,8 +26,10 @@ public sealed class PreviewInstrumentationTests
     [Fact]
     public void Create_TagsEveryElementWithSourceOffset()
     {
+        // Act
         PreviewInstrumentation result = PreviewInstrumentation.Create(Sample);
 
+        // Assert
         result.Locs.Should().NotBeEmpty();
         result.Locs.Should().BeInAscendingOrder();
 
@@ -50,8 +52,10 @@ public sealed class PreviewInstrumentationTests
     [Fact]
     public void Create_LocValuesPointAtOpeningTagInSource()
     {
+        // Act
         PreviewInstrumentation result = PreviewInstrumentation.Create(Sample);
 
+        // Assert
         foreach (int loc in result.Locs)
         {
             Sample[loc].Should().Be('<', "the offset should point at the '<' of the opening tag");
@@ -61,16 +65,20 @@ public sealed class PreviewInstrumentationTests
     [Fact]
     public void NearestLocAtOrBefore_ReturnsLargestLocNotAfterOffset()
     {
+        // Act
         PreviewInstrumentation result = PreviewInstrumentation.Create(Sample);
         int[] locs = result.Locs.ToArray();
 
+        // Act & Assert
         // Exact hit.
         result.NearestLocAtOrBefore(locs[2]).Should().Be(locs[2]);
 
+        // Act & Assert
         // Inside an element (offset between two tags) → the earlier loc.
         int between = locs[2] + 1;
         result.NearestLocAtOrBefore(between).Should().Be(locs[2]);
 
+        // Act & Assert
         // Far past the end → the last loc.
         result.NearestLocAtOrBefore(Sample.Length + 100).Should().Be(locs[^1]);
     }
@@ -78,18 +86,23 @@ public sealed class PreviewInstrumentationTests
     [Fact]
     public void NearestLocAtOrBefore_OffsetBeforeFirstElement_ReturnsMinusOne()
     {
+        // Act
         PreviewInstrumentation result = PreviewInstrumentation.Create(Sample);
 
+        // Act & Assert
         result.NearestLocAtOrBefore(0).Should().Be(-1);
     }
 
     [Fact]
     public void Create_PlainText_ProducesUsableResult()
     {
+        // Arrange
         const string plain = "tylko goły tekst bez znaczników";
 
+        // Act
         PreviewInstrumentation result = PreviewInstrumentation.Create(plain);
 
+        // Assert
         result.Html.Should().Contain(plain);
         result.Locs.Should().BeInAscendingOrder();
         result.NearestLocAtOrBefore(0).Should().BeGreaterThanOrEqualTo(-1);
@@ -98,9 +111,11 @@ public sealed class PreviewInstrumentationTests
     [Fact]
     public void Create_IsIdempotentOnLocValues()
     {
+        // Act
         PreviewInstrumentation once = PreviewInstrumentation.Create(Sample);
         PreviewInstrumentation twice = PreviewInstrumentation.Create(Sample);
 
+        // Assert
         twice.Locs.Should().Equal(once.Locs);
         once.Locs.Select(l => l.ToString(CultureInfo.InvariantCulture)).Should().OnlyHaveUniqueItems();
     }

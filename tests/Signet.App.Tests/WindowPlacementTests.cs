@@ -24,8 +24,10 @@ public sealed class WindowPlacementTests
     [InlineData(3000, 400, 840, 640)]
     public void A_window_whose_corners_lie_on_monitors_is_left_where_it_is(int x, int y, int width, int height)
     {
+        // Arrange
         PixelRect rect = new(x, y, width, height);
 
+        // Act & Assert
         WindowPlacement.IsFullyVisible(rect, TwoMonitors).Should().BeTrue();
         WindowPlacement.Correct(rect, TwoMonitors, Primary).Should().BeNull();
     }
@@ -38,32 +40,40 @@ public sealed class WindowPlacementTests
     [InlineData(100, -50, 800, 600)]
     public void A_window_with_a_corner_off_every_working_area_is_not_fully_visible(int x, int y, int width, int height)
     {
+        // Act & Assert
         WindowPlacement.IsFullyVisible(new PixelRect(x, y, width, height), TwoMonitors).Should().BeFalse();
     }
 
     [Fact]
     public void A_window_left_on_a_monitor_that_is_gone_is_centered_on_the_primary_one()
     {
+        // Arrange
         PixelRect rect = new(2500, 200, 800, 600);
 
+        // Act
         PixelRect? corrected = WindowPlacement.Correct(rect, new[] { Primary }, Primary);
 
+        // Assert
         corrected.Should().Be(new PixelRect(560, 220, 800, 600));
     }
 
     [Fact]
     public void A_window_larger_than_the_primary_monitor_is_shrunk_to_fit_it()
     {
+        // Arrange
         PixelRect rect = new(0, 0, 3000, 2000);
 
+        // Act
         PixelRect? corrected = WindowPlacement.Correct(rect, new[] { Primary }, Primary);
 
+        // Assert
         corrected.Should().Be(Primary);
     }
 
     [Fact]
     public void An_empty_rectangle_is_never_visible()
     {
+        // Act & Assert
         WindowPlacement.IsFullyVisible(new PixelRect(10, 10, 0, 0), TwoMonitors).Should().BeFalse();
     }
 }

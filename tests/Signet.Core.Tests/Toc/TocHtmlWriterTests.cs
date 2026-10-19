@@ -16,6 +16,7 @@ public sealed class TocHtmlWriterTests
     [Fact]
     public void Writes_nested_levels_with_relative_hrefs_and_epub3_doctype()
     {
+        // Arrange
         var entries = new List<TocHtmlWriter.Entry>
         {
             new()
@@ -29,8 +30,10 @@ public sealed class TocHtmlWriterTests
             },
         };
 
+        // Act
         string xhtml = TocHtmlWriter.WriteXml("EPUB/TOC.xhtml", "EPUB/styles/sgc-toc.css", entries, "Contents", "3.0");
 
+        // Assert
         xhtml.Should().Contain("<!DOCTYPE html>\n");
         xhtml.Should().Contain("href=\"styles/sgc-toc.css\"");
         xhtml.Should().Contain("<div class=\"sgc-toc-level-1\">");
@@ -42,15 +45,18 @@ public sealed class TocHtmlWriterTests
     [Fact]
     public void Uses_the_xhtml11_doctype_for_epub2()
     {
+        // Act
         string xhtml = TocHtmlWriter.WriteXml(
             "OEBPS/TOC.xhtml", "OEBPS/Styles/sgc-toc.css", System.Array.Empty<TocHtmlWriter.Entry>(), "Contents", "2.0");
 
+        // Assert
         xhtml.Should().Contain("-//W3C//DTD XHTML 1.1//EN");
     }
 
     [Fact]
     public void Create_html_toc_adds_a_toc_file_at_the_start_of_the_spine_with_css_and_semantic()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, temp)).GetBook();
 
@@ -63,8 +69,10 @@ public sealed class TocHtmlWriterTests
         new HeadingSelectorModel(book).Apply();
         TocGenerator.GenerateToc(book);
 
+        // Act
         HtmlResource tocResource = TocGenerator.CreateHtmlToc(book);
 
+        // Assert
         tocResource.Filename.Should().Be("TOC.xhtml");
         book.GetHtmlResources()[0].Should().BeSameAs(tocResource);
         book.GetCssResources().Should().Contain(c => c.Filename == "sgc-toc.css");
@@ -74,6 +82,7 @@ public sealed class TocHtmlWriterTests
         toc.Should().Contain("<a href=\"text/chapter1.xhtml\">Alpha</a>");
         toc.Should().Contain("<a href=\"text/chapter1.xhtml#x\">Beta</a>");
 
+        // Act & Assert
         // A repeated call overwrites the same file and does not create a second one.
         TocGenerator.CreateHtmlToc(book).Should().BeSameAs(tocResource);
     }

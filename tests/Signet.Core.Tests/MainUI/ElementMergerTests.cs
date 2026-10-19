@@ -34,25 +34,34 @@ public sealed class ElementMergerTests
     [Fact]
     public void Two_paragraphs_separated_by_a_newline_merge_with_a_space()
     {
+        // Act & Assert
         Analyze("«<p>Ala</p>\n  <p>kot</p>»").Should().BeEquivalentTo(
             new { ElementName = "p", Count = 2, AttributesDiffer = false });
+
+        // Act & Assert
         MergedBody("«<p>Ala</p>\n  <p>kot</p>»").Should().Be("<p>Ala kot</p>");
     }
 
     [Fact]
     public void Adjacent_spans_merge_without_a_separator()
     {
+        // Act & Assert
         MergedBody("«<span>ab</span><span>cd</span>»").Should().Be("<span>abcd</span>");
     }
 
     [Fact]
     public void Three_headings_with_nested_markup_merge_and_the_result_is_selected()
     {
+        // Arrange
         (string text, int start, int end) = Doc("x«<h2 id=\"a\">A <em>b</em></h2> <h2 id=\"a\">C</h2> <h2 id=\"a\">D</h2>»y");
 
+        // Act & Assert
         Analyze("«<h2>1</h2><h2>2</h2><h2>3</h2>»")!.Count.Should().Be(3);
+
+        // Act
         FormatEdit edit = ElementMerger.Merge(text, start, end);
 
+        // Assert
         const string merged = "<h2 id=\"a\">A <em>b</em> C D</h2>";
         edit.Text.Should().Be("<html><body>x" + merged + "y</body></html>");
         (edit.SelectionStart, edit.SelectionEnd).Should().Be((start, start + merged.Length));
@@ -61,6 +70,7 @@ public sealed class ElementMergerTests
     [Fact]
     public void Whitespace_at_the_edges_of_the_selection_is_ignored()
     {
+        // Act & Assert
         Analyze("«\n  <p>a</p>\n<p>b</p>\n»").Should().NotBeNull();
     }
 
@@ -70,12 +80,14 @@ public sealed class ElementMergerTests
     [InlineData("«<p>a</p><p>b</p><span>c</span>»")]
     public void Elements_of_different_kinds_cannot_be_merged(string marked)
     {
+        // Act & Assert
         Analyze(marked).Should().BeNull();
     }
 
     [Fact]
     public void Plain_whitespace_between_elements_needs_no_warning()
     {
+        // Act & Assert
         Analyze("«<p>a</p>\n\n  <p>b</p>»")!.NeedsConfirmation.Should().BeFalse();
     }
 
@@ -86,8 +98,10 @@ public sealed class ElementMergerTests
     public void Text_between_elements_goes_into_the_merged_element_with_collapsed_whitespace_and_a_warning(
         string marked, string expected, string textBetween)
     {
+        // Act
         ElementMergeCandidate candidate = Analyze(marked)!;
 
+        // Assert
         candidate.TextBetween.Should().Equal(textBetween);
         candidate.NeedsConfirmation.Should().BeTrue();
         MergedBody(marked).Should().Be(expected);
@@ -101,8 +115,10 @@ public sealed class ElementMergerTests
     public void Comments_and_other_non_element_nodes_between_elements_are_removed_with_a_warning(
         string marked, string expected, string removed)
     {
+        // Act
         ElementMergeCandidate candidate = Analyze(marked)!;
 
+        // Assert
         candidate.RemovedNodes.Should().Equal(removed);
         candidate.NeedsConfirmation.Should().BeTrue();
         MergedBody(marked).Should().Be(expected);
@@ -114,6 +130,7 @@ public sealed class ElementMergerTests
     [InlineData("«<p>a</p> tekst </div><p>b</p>»")]
     public void Another_tag_between_elements_blocks_merging(string marked)
     {
+        // Act & Assert
         Analyze(marked).Should().BeNull();
     }
 
@@ -128,16 +145,20 @@ public sealed class ElementMergerTests
     [InlineData("<p>a «<b>x</b> <b>y</b>» c</p>", "<p>a <b>x y</b> c</p>")]
     public void Selection_edges_inside_sibling_elements_expand_to_whole_elements(string marked, string expected)
     {
+        // Act & Assert
         MergedBody(marked).Should().Be(expected);
     }
 
     [Fact]
     public void Expanded_merge_selects_the_whole_merged_element()
     {
+        // Arrange
         (string text, int start, int end) = Doc("x<p>Ala «ma</p><p>ko»ta</p>y");
 
+        // Act
         FormatEdit edit = ElementMerger.Merge(text, start, end);
 
+        // Assert
         edit.Text[edit.SelectionStart..edit.SelectionEnd].Should().Be("<p>Ala makota</p>");
     }
 
@@ -151,12 +172,14 @@ public sealed class ElementMergerTests
     [InlineData("<p>a <em>x«y</em> z»</p>")]
     public void Selection_edge_in_loose_text_or_within_a_single_element_cannot_be_merged(string marked)
     {
+        // Act & Assert
         Analyze(marked).Should().BeNull();
     }
 
     [Fact]
     public void Nested_elements_of_the_same_kind_are_merged_only_at_the_selected_level()
     {
+        // Act & Assert
         MergedBody("«<div><div>a</div></div><div>b</div>»").Should().Be("<div><div>a</div>b</div>");
     }
 
@@ -165,16 +188,20 @@ public sealed class ElementMergerTests
     [InlineData("«<p>1</p><p>2</p>»")]
     public void Same_attributes_in_any_order_and_class_as_a_set_give_no_warning(string marked)
     {
+        // Act & Assert
         Analyze(marked)!.AttributesDiffer.Should().BeFalse();
     }
 
     [Fact]
     public void Different_attributes_are_reported_and_only_the_first_elements_are_kept()
     {
+        // Arrange
         const string marked = "«<p class=\"a\">1</p> <p class=\"b\">2</p> <p class=\"a\">3</p> <p class=\"a\" id=\"z\">4</p>»";
 
+        // Act
         ElementMergeCandidate candidate = Analyze(marked)!;
 
+        // Assert
         candidate.AttributesDiffer.Should().BeTrue();
         candidate.FirstOpenTag.Should().Be("<p class=\"a\">");
         candidate.DifferingOpenTags.Should().Equal("<p class=\"b\">", "<p class=\"a\" id=\"z\">");
@@ -184,17 +211,23 @@ public sealed class ElementMergerTests
     [Fact]
     public void Empty_elements_do_not_add_separators_and_a_self_closing_first_element_gets_a_closing_tag()
     {
+        // Act & Assert
         MergedBody("«<p/> <p>a</p> <p></p> <p>b</p>»").Should().Be("<p>a b</p>");
+
+        // Act & Assert
         MergedBody("«<p class=\"c\" /> <p/>»").Should().Be("<p class=\"c\" />");
     }
 
     [Fact]
     public void Merge_of_an_invalid_selection_leaves_the_text_unchanged_with_a_message()
     {
+        // Arrange
         (string text, int start, int end) = Doc("«<p>a</p> <b>x</b> <p>b</p>»");
 
+        // Act
         FormatEdit edit = ElementMerger.Merge(text, start, end);
 
+        // Assert
         edit.Changed.Should().BeFalse();
         edit.Text.Should().Be(text);
         edit.StatusMessage.Should().NotBeNullOrEmpty();

@@ -48,12 +48,15 @@ public sealed class FootnoteLettersViewModelTests
     [Fact]
     public void The_tree_holds_the_notes_in_another_style_with_their_references()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         (Book book, HtmlResource html) = BookWithSharedNotes();
         using (book)
         {
+            // Act
             FootnoteLettersViewModel sut = NewViewModel(book, FootnoteLetterStyle.LowerLatin);
 
+            // Assert
             FootnoteLetterFileNode file = sut.Roots.Should().ContainSingle().Subject;
             file.File.Should().BeSameAs(html);
             FootnoteLetterNoteNode note = sut.Notes.Should().ContainSingle().Subject;
@@ -72,28 +75,42 @@ public sealed class FootnoteLettersViewModelTests
     [Fact]
     public void Another_style_lists_other_notes_and_unify_passes_the_checked_ones()
     {
+        // Arrange
         (Book book, HtmlResource _) = BookWithSharedNotes();
         using (book)
         {
             List<(IReadOnlyList<LetterItem> Items, FootnoteLetterStyle Style)> applied = new();
+
+            // Act
             FootnoteLettersViewModel sut = NewViewModel(book, FootnoteLetterStyle.LowerLatin, applied);
             bool done = false;
             sut.Done += (_, _) => done = true;
 
             sut.Style = FootnoteLetterStyle.UpperLatin;
 
+            // Assert
             sut.Notes.Should().HaveCount(2, "neither note is written in upper case");
             sut.Roots[0].Check.Should().BeTrue();
+
+            // Act
             sut.Notes[1].IsChecked = false;
+
+            // Assert
             sut.Roots[0].Check.Should().BeNull();
+
+            // Act
             sut.UnifyCommand.Execute(null);
 
+            // Assert
             applied.Should().ContainSingle();
             applied[0].Style.Should().Be(FootnoteLetterStyle.UpperLatin);
             applied[0].Items.Should().Equal(sut.Notes[0].Item);
             done.Should().BeTrue();
 
+            // Act
             sut.SelectNoneCommand.Execute(null);
+
+            // Assert
             sut.CanUnify.Should().BeFalse();
             sut.UnifyCommand.CanExecute(null).Should().BeFalse();
         }

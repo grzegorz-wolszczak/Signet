@@ -17,15 +17,20 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void Creates_Initial_Rows()
         {
+            // Arrange
             var data = CreateData();
+
+            // Act
             var target = CreateTarget(data);
 
+            // Assert
             AssertRows(target.Rows, data);
         }
 
         [AvaloniaFact(Timeout = 10000)]
         public void Supports_Adding_Row()
         {
+            // Arrange
             var data = CreateData();
             var target = CreateTarget(data);
 
@@ -39,8 +44,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 ++raised;
             };
 
+            // Act
             data.Add(new Row { Id = 10, Caption = "New Row 10" });
 
+            // Assert
             target.Rows.Count.Should().Be(11);
             raised.Should().Be(1);
 
@@ -50,6 +57,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void Supports_Removing_Row()
         {
+            // Arrange
             var data = CreateData();
             var target = CreateTarget(data);
 
@@ -63,8 +71,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 ++raised;
             };
 
+            // Act
             data.RemoveAt(5);
 
+            // Assert
             raised.Should().Be(1);
             AssertRows(target.Rows, data);
         }
@@ -72,6 +82,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void Supports_Replacing_Row()
         {
+            // Arrange
             var data = CreateData();
             var target = CreateTarget(data);
 
@@ -86,8 +97,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 ++raised;
             };
 
+            // Act
             data[5] = new Row { Id = 10, Caption = "New Row 10" };
 
+            // Assert
             raised.Should().Be(1);
             AssertRows(target.Rows, data);
         }
@@ -95,6 +108,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void Supports_Moving_Row()
         {
+            // Arrange
             var data = CreateData();
             var target = CreateTarget(data);
 
@@ -109,8 +123,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 ++raised;
             };
 
+            // Act
             data.Move(5, 8);
 
+            // Assert
             raised.Should().Be(1);
             AssertRows(target.Rows, data);
         }
@@ -118,6 +134,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void Supports_Clearing_Rows()
         {
+            // Arrange
             var data = CreateData();
             var target = CreateTarget(data);
 
@@ -130,8 +147,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 ++raised;
             };
 
+            // Act
             data.Clear();
 
+            // Assert
             raised.Should().Be(1);
             AssertRows(target.Rows, data);
         }
@@ -139,6 +158,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void Can_Reassign_Items()
         {
+            // Arrange
             var data = CreateData();
             var target = CreateTarget(data);
             var raised = 0;
@@ -151,8 +171,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 ++raised;
             };
 
+            // Act
             target.Items = data = CreateData(20);
 
+            // Assert
             raised.Should().Be(1);
             AssertRows(target.Rows, data);
         }
@@ -160,6 +182,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
         [AvaloniaFact(Timeout = 10000)]
         public void Raises_Rows_Reset_When_Reassigning_Items_But_Rows_Not_Yet_Read()
         {
+            // Arrange
             var data = CreateData();
             var target = CreateTarget(data);
             var raised = 0;
@@ -170,8 +193,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                     ++raised;
             };
 
+            // Act
             target.Items = CreateData();
 
+            // Assert
             raised.Should().Be(1);
         }
 
@@ -180,9 +205,13 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [AvaloniaFact(Timeout = 10000)]
             public void Sorts_Initial_Cells()
             {
+                // Arrange
                 var data = CreateData();
+
+                // Act
                 var target = CreateTarget(data);
 
+                // Assert
                 target.Rows.Count.Should().Be(10);
 
                 AssertRows(target.Rows, data);
@@ -191,9 +220,13 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [AvaloniaFact(Timeout = 10000)]
             public void Supports_Adding_Row()
             {
+                // Arrange
                 var data = CreateData();
+
+                // Act
                 var target = CreateTarget(data);
 
+                // Assert
                 AssertRows(target.Rows, data);
 
                 var raised = 0;
@@ -206,8 +239,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                     ++raised;
                 };
 
+                // Act
                 data.Add(new Row { Id = 10, Caption = "New Row 10" });
 
+                // Assert
                 target.Rows.Count.Should().Be(11);
                 raised.Should().Be(1);
 
@@ -217,9 +252,13 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [AvaloniaFact(Timeout = 10000)]
             public void Supports_Removing_Row()
             {
+                // Arrange
                 var data = CreateData();
+
+                // Act
                 var target = CreateTarget(data);
 
+                // Assert
                 AssertRows(target.Rows, data);
 
                 var raised = 0;
@@ -232,8 +271,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                     ++raised;
                 };
 
+                // Act
                 data.RemoveAt(5);
 
+                // Assert
                 raised.Should().Be(1);
                 AssertRows(target.Rows, data);
             }
@@ -241,9 +282,13 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [AvaloniaFact(Timeout = 10000)]
             public void Supports_Replacing_Row()
             {
+                // Arrange
                 var data = CreateData();
+
+                // Act
                 var target = CreateTarget(data);
 
+                // Assert
                 AssertRows(target.Rows, data);
 
                 var raised = 0;
@@ -258,8 +303,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                     ++raised;
                 };
 
+                // Act
                 data[5] = new Row { Id = 10, Caption = "New Row 10" };
 
+                // Assert
                 raised.Should().Be(2);
                 AssertRows(target.Rows, data);
             }
@@ -267,9 +314,13 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [AvaloniaFact(Timeout = 10000)]
             public void Supports_Moving_Row()
             {
+                // Arrange
                 var data = CreateData();
+
+                // Act
                 var target = CreateTarget(data);
 
+                // Assert
                 AssertRows(target.Rows, data);
 
                 var raised = 0;
@@ -284,8 +335,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                     ++raised;
                 };
 
+                // Act
                 data.Move(5, 8);
 
+                // Assert
                 raised.Should().Be(2);
                 AssertRows(target.Rows, data);
             }
@@ -293,9 +346,13 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [AvaloniaFact(Timeout = 10000)]
             public void Supports_Clearing_Rows()
             {
+                // Arrange
                 var data = CreateData();
+
+                // Act
                 var target = CreateTarget(data);
 
+                // Assert
                 AssertRows(target.Rows, data);
 
                 var raised = 0;
@@ -305,8 +362,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                     ++raised;
                 };
 
+                // Act
                 data.Clear();
 
+                // Assert
                 raised.Should().Be(1);
                 AssertRows(target.Rows, data);
             }
@@ -314,10 +373,14 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [AvaloniaFact(Timeout = 10000)]
             public void Can_Reassign_Items()
             {
+                // Arrange
                 var data = CreateData();
+
+                // Act
                 var target = CreateTarget(data);
                 var raised = 0;
 
+                // Assert
                 AssertRows(target.Rows, data);
 
                 target.Rows.CollectionChanged += (s, e) =>
@@ -326,8 +389,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                     ++raised;
                 };
 
+                // Act
                 target.Items = data = CreateData(20);
 
+                // Assert
                 raised.Should().Be(1);
                 AssertRows(target.Rows, data);
             }
@@ -335,6 +400,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [AvaloniaFact(Timeout = 10000)]
             public void Raises_Rows_Reset_When_Reassigning_Items_But_Rows_Not_Yet_Read()
             {
+                // Arrange
                 var data = CreateData();
                 var target = CreateTarget(data);
                 var raised = 0;
@@ -345,8 +411,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                         ++raised;
                 };
 
+                // Act
                 target.Items = CreateData();
 
+                // Assert
                 raised.Should().Be(1);
             }
 
@@ -379,6 +447,7 @@ namespace Signet.Controls.TreeDataGrid.Tests
             [AvaloniaFact(Timeout = 10000)]
             public void Reassigning_Source_Updates_Selection_Model_Source()
             {
+                // Arrange
                 var data1 = CreateData();
                 var data2 = CreateData(5);
                 var target = CreateTarget(data1);
@@ -386,8 +455,10 @@ namespace Signet.Controls.TreeDataGrid.Tests
                 // Ensure selection model is created.
                 (((ITreeDataGridSelection?)target.RowSelection)!.Source).Should().BeSameAs(data1);
 
+                // Act
                 target.Items = data2;
 
+                // Assert
                 (((ITreeDataGridSelection?)target.RowSelection)!.Source).Should().BeSameAs(data2);
             }
         }
