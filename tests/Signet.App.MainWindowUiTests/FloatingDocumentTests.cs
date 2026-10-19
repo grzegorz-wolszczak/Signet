@@ -19,7 +19,7 @@ using Signet.Core.BookManipulation;
 using Signet.Core.Resources;
 using Signet.Core.Tests.TestSupport;
 
-namespace Signet.App.UiTests;
+namespace Signet.App.MainWindowUiTests;
 
 /// <summary>
 /// Document tabs dragged out of the tab strip into their own windows: such a window has its own tab strip, accepts

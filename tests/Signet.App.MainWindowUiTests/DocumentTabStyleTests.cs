@@ -20,7 +20,7 @@ using Signet.Core.Resources;
 using Signet.Core.Themes;
 using Signet.Core.Tests.TestSupport;
 
-namespace Signet.App.UiTests;
+namespace Signet.App.MainWindowUiTests;
 
 /// <summary>The look of the document tabs: the colors of the theme, the font of the setting, the rows when they do not fit.</summary>
 public sealed class DocumentTabStyleTests

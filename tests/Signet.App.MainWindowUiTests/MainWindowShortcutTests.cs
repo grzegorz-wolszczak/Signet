@@ -12,7 +12,7 @@ using Signet.App.Input;
 using Signet.App.ViewModels;
 using Signet.App.Views;
 
-namespace Signet.App.UiTests;
+namespace Signet.App.MainWindowUiTests;
 
 /// <summary>
 /// The main window shortcuts must keep up with changes in Preferences → Keyboard Shortcuts without a restart:

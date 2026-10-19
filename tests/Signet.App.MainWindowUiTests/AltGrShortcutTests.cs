@@ -9,7 +9,7 @@ using Signet.App.ViewModels;
 using Signet.App.Views;
 using Xunit;
 
-namespace Signet.App.UiTests;
+namespace Signet.App.MainWindowUiTests;
 
 /// <summary>
 /// A Ctrl+Alt shortcut against a character typed with AltGr (Windows reports AltGr as Ctrl+Alt): with "Enable AltGr" on,

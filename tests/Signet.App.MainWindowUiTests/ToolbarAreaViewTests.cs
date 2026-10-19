@@ -13,7 +13,7 @@ using Signet.App.Toolbars;
 using Signet.App.ViewModels;
 using Signet.App.Views;
 
-namespace Signet.App.UiTests;
+namespace Signet.App.MainWindowUiTests;
 
 /// <summary>
 /// Toolbar areas of the main window: the grips, the empty bottom area, and mapping a pointer position over the real

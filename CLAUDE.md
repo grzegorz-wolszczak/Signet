@@ -18,7 +18,7 @@ validation, checkpoints (snapshot + diff).
 - **Naming:** solution `Signet.slnx`; projects `Signet.Core` (domain model, no UI dependencies),
   `Signet.App` (Avalonia app), `Signet.Cli` (headless CLI), `Signet.Controls.TreeDataGrid` (the
   TreeDataGrid fork); tests `Signet.Core.Tests`, `Signet.App.Tests`, `Signet.App.UiTests`,
-  `Signet.Controls.TreeDataGrid.Tests`; namespaces `Signet.*`.
+  `Signet.App.MainWindowUiTests`, `Signet.App.PreferencesUiTests`, `Signet.Controls.TreeDataGrid.Tests`; namespaces `Signet.*`.
 - **License:** GNU GPL v3 or later (see `LICENSE`). Source files carry **no** license header.
 - **UI localization:** `.resx` resources — `Strings.resx` / `CoreStrings.resx` hold Polish (default),
   `*.en.resx` hold English. Every user-visible string goes through resources, in both languages.
@@ -98,7 +98,7 @@ Fixed technology set for all test projects:
 | Assertions | **AwesomeAssertions** (`value.Should().Be(...)` style) |
 | Mocks / stubs | **Moq** |
 | Anonymous / random values | **AutoFixture** (+ `AutoFixture.Xunit3` for `[Theory]` with `[AutoData]` / `[InlineAutoData]`) |
-| Avalonia view tests (UI thread) | **`Avalonia.Headless.XUnit`** — `[AvaloniaFact]` / `[AvaloniaTheory]`, project `tests/Signet.App.UiTests` |
+| Avalonia view tests (UI thread) | **`Avalonia.Headless.XUnit`** — `[AvaloniaFact]` / `[AvaloniaTheory]`, projects `tests/Signet.App.UiTests`, `tests/Signet.App.MainWindowUiTests`, `tests/Signet.App.PreferencesUiTests` |
 
 Rules:
 - Do not use xUnit `Assert.*` for state assertions — always AwesomeAssertions.
@@ -113,8 +113,17 @@ Rules:
   to `global.json`.
 - **xUnit.v3 is pinned to `3.2.2`** (runner `3.1.5`). Reason: the official `Avalonia.Headless.XUnit`
   (12.1.x) is built against xUnit.v3 3.2.x and fails during discovery on 4.0.0
-  (`MissingMethodException`). Do not bump xUnit without checking that `Signet.App.UiTests` still runs.
-- View render tests (`[AvaloniaFact]`) in `Signet.App.UiTests`: after `window.Show()` force a layout
+  (`MissingMethodException`). Do not bump xUnit without checking that the headless UI test projects still run.
+- **Three headless UI test projects, split only to run in parallel.** A headless test assembly runs all its tests
+  one by one on a single UI dispatcher, so one big assembly was the slowest part of `dotnet test`.
+  `Signet.App.MainWindowUiTests` holds the tests of the main window and the docking layout (panels, floating
+  tabs/windows, toolbar areas, main window shortcuts); `Signet.App.PreferencesUiTests` the tests of the Preferences
+  window; `Signet.App.UiTests` the tests of the other views and dialogs. Keep them roughly the same length when
+  adding slow tests.
+- **Avalonia.Headless creates a new `App` for every test** (the default `PerTest` isolation). Static state that
+  `App.Initialize` walks (registries of controls, static events) must start over for each new application —
+  otherwise every test starts slower than the one before (see `TooltipFonts.Reset`).
+- View render tests (`[AvaloniaFact]`): after `window.Show()` force a layout
   pass with `Dispatcher.UIThread.RunJobs()` + `window.CaptureRenderedFrame()`.
   A document tab can be opened in the main window's `DocumentDock` under headless
   (`WindowRenderTests`; this used to hang with earlier versions). Tab logic that needs no UI

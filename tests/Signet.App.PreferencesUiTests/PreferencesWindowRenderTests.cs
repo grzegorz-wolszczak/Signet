@@ -30,7 +30,7 @@ using Signet.Core.Misc;
 using Signet.Core.Themes;
 using Signet.Core.Spellcheck;
 
-namespace Signet.App.UiTests;
+namespace Signet.App.PreferencesUiTests;
 
 /// <summary>
 /// Headless tests of the "Preferences" window — in particular the visual separation of the tab list

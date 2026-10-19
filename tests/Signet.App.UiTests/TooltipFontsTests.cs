@@ -76,6 +76,32 @@ public sealed class TooltipFontsTests
         }
     }
 
+    /// <summary>
+    /// A new application starts with no area roots: a later change does not restyle the roots of an earlier one. The
+    /// headless tests create an application per test, and restyling every root left by the earlier tests made each test
+    /// start slower than the one before (the UI test run took five times longer).
+    /// </summary>
+    [AvaloniaFact]
+    public void Reset_forgets_the_area_roots_so_a_later_change_does_not_restyle_them()
+    {
+        StackPanel area = new();
+        TooltipFonts.SetArea(area, TooltipArea.BookBrowser);
+        try
+        {
+            TooltipFonts.Reset();
+            object? before = area.Resources[TooltipFonts.SizeResourceKey];
+
+            TooltipFonts.Apply(_ => new TooltipFont("Arial", 23));
+
+            area.Resources[TooltipFonts.SizeResourceKey].Should().Be(before, "the root belongs to an earlier application");
+            Application.Current!.Resources[TooltipFonts.SizeResourceKey].Should().Be(23d, "the application still follows the change");
+        }
+        finally
+        {
+            TooltipFonts.Reset();
+        }
+    }
+
     // Opens the tooltip of the control and reads the weight its text is shown in.
     private static FontWeight TipWeight(Control control)
     {

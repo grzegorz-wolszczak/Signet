@@ -27,7 +27,7 @@ namespace Signet.App.UiTests;
 /// <summary>
 /// Headless render test of the Code Editor tab: the <c>TextEditor</c> control is hosted on its own
 /// (outside <c>DocumentDock</c>; the tab in the real main window is covered by
-/// <see cref="WindowRenderTests"/>).
+/// <c>WindowRenderTests</c> in Signet.App.MainWindowUiTests).
 /// </summary>
 public sealed class CodeTabViewRenderTests
 {
@@ -123,6 +123,44 @@ public sealed class CodeTabViewRenderTests
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
         return (window, vm);
+    }
+
+    /// <summary>
+    /// A JavaScript tab is coloured by TextMate, whose tokenizer holds a thread pool thread until TextMate is released. The
+    /// view releases it when it leaves the screen (the tab closed, or moved into a window of its own) and installs it
+    /// again when it comes back: a closed tab used to keep its thread, its model and its document for good.
+    /// </summary>
+    [AvaloniaFact]
+    public void A_view_releases_TextMate_when_it_leaves_the_screen_and_installs_it_again_when_it_comes_back()
+    {
+        (SettingsStore settings, SpellChecker spellChecker) = NewSpellChecker();
+        string dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"signet-uitests-{System.Guid.NewGuid():N}");
+        System.IO.Directory.CreateDirectory(dir);
+        string path = System.IO.Path.Combine(dir, "script.js");
+        System.IO.File.WriteAllText(path, "function hello() {\n  return 'world';\n}\n");
+        MiscTextResource script = new(dir, path);
+        script.InitialLoad();
+        var vm = new CodeTabViewModel(new TabManagerModel().OpenResource(script), new StatusBarService(), settings, spellChecker);
+        vm.Syntax.Should().Be(CodeEditorSyntax.JavaScript);
+        var view = new CodeTabView { DataContext = vm };
+        var window = new Window { Width = 600, Height = 400, Content = view };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        TextEditor editor = view.GetVisualDescendants().OfType<TextEditor>().Single();
+        bool Coloured() => editor.TextArea.TextView.LineTransformers.OfType<AvaloniaEdit.TextMate.TextMateColoringTransformer>().Any();
+        Coloured().Should().BeTrue("JavaScript is coloured by TextMate");
+
+        window.Content = null;
+        Dispatcher.UIThread.RunJobs();
+        Coloured().Should().BeFalse("a view off the screen holds no TextMate");
+
+        window.Content = view;
+        Dispatcher.UIThread.RunJobs();
+        Coloured().Should().BeTrue("the view on the screen again is coloured again");
+
+        window.Close();
+        Dispatcher.UIThread.RunJobs();
+        Coloured().Should().BeFalse("the closed tab holds no TextMate");
     }
 
     // The text color of a key in the theme in use.
