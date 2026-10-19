@@ -750,6 +750,7 @@ public partial class CodeTabView : UserControl
             items.Add(Item(
                 Strings.Get("CodeEditorMenu_GoToLinkOrStyle"),
                 () => host.ExecuteAction(AppActionIds.GoToLinkOrStyle),
+                host.GetActionIcon(AppActionIds.GoToLinkOrStyle),
                 gesture: host.GetActionGesture(AppActionIds.GoToLinkOrStyle)));
             items.Add(new Separator());
 
@@ -761,16 +762,21 @@ public partial class CodeTabView : UserControl
                 items.Add(Item(
                     Strings.Get("CodeEditorMenu_RenameClass"),
                     () => RenameClassAtCaret(vm),
+                    host.GetActionIcon(AppActionIds.RenameClass),
                     gesture: host.GetActionGesture(AppActionIds.RenameClass)));
                 classItems = true;
             }
 
-            if (vm.ClassNameAtCaretForUsages() is not null)
+            if (vm.ClassNameAtCaretForUsages() is { } classNameAtCaret)
             {
                 items.Add(Item(
                     Strings.Get("CodeEditorMenu_FindUsages"),
                     () => host.ExecuteAction(AppActionIds.FindUsages),
+                    host.GetActionIcon(AppActionIds.FindUsages),
                     gesture: host.GetActionGesture(AppActionIds.FindUsages)));
+                items.Add(Item(
+                    Strings.Get("CodeEditorMenu_RemoveClass"),
+                    () => RemoveClassAtCaret(classNameAtCaret)));
                 classItems = true;
             }
 
@@ -791,6 +797,7 @@ public partial class CodeTabView : UserControl
             items.Add(Item(
                 vm.MergeContentText,
                 () => host.ExecuteAction(AppActionIds.MergeContent),
+                host.GetActionIcon(AppActionIds.MergeContent),
                 enabled: vm.MergeCandidate is not null,
                 gesture: host.GetActionGesture(AppActionIds.MergeContent),
                 literal: true));
@@ -798,6 +805,7 @@ public partial class CodeTabView : UserControl
             items.Add(Item(
                 Strings.Get("CodeEditorMenu_UnwrapDiv"),
                 () => host.ExecuteAction(AppActionIds.UnwrapDiv),
+                host.GetActionIcon(AppActionIds.UnwrapDiv),
                 enabled: divCheck.Div is not null,
                 gesture: host.GetActionGesture(AppActionIds.UnwrapDiv),
                 toolTip: CodeTabViewModel.UnwrapDivProblemText(divCheck.Problem)));
@@ -807,6 +815,7 @@ public partial class CodeTabView : UserControl
             items.Add(Item(
                 Strings.Get(vm.OffersUnmark ? "CodeEditorMenu_UnmarkMarkedText" : "CodeEditorMenu_MarkSelectedText"),
                 () => host.ExecuteAction(AppActionIds.MarkSelection),
+                host.GetActionIcon(AppActionIds.MarkSelection),
                 gesture: host.GetActionGesture(AppActionIds.MarkSelection)));
             items.Add(new Separator());
 
@@ -909,6 +918,26 @@ public partial class CodeTabView : UserControl
         {
             host.ApplyClassRename(result);
         }
+    }
+
+    // "Remove Class…" — the confirmation shows where and how many times the class is used; the remover works on
+    // the book's saved texts.
+    private async void RemoveClassAtCaret(string className)
+    {
+        if (_boundViewModel?.Host is not { } host || TopLevel.GetTopLevel(this) is not Window owner
+            || await host.PrepareClassRemovalAsync().ConfigureAwait(true) is not { } remover)
+        {
+            return;
+        }
+
+        int totalOccurrences = remover.FindUsages(className).Count;
+        IReadOnlyList<ClassUsageFileSummary> summary = remover.SummarizeUsages(className);
+        if (totalOccurrences == 0 || !await RemoveClassWindow.AskAsync(owner, className, totalOccurrences, summary))
+        {
+            return;
+        }
+
+        host.ApplyClassRemoval(remover.Remove(className));
     }
 
     // "Remove span": when the removal would change the styling, the consequences are shown first and the user has

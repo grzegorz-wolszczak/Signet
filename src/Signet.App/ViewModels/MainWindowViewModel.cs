@@ -2172,6 +2172,9 @@ public sealed partial class MainWindowViewModel
     Avalonia.Input.KeyGesture? ICodeTabHost.GetActionGesture(string actionId) => _actions.Get(actionId)?.Gesture;
 
     /// <inheritdoc/>
+    string? ICodeTabHost.GetActionIcon(string actionId) => _actions.Get(actionId)?.Descriptor.IconKey;
+
+    /// <inheritdoc/>
     void ICodeTabHost.ExecuteAction(string actionId)
     {
         if (_actions.Get(actionId) is { } action && action.CanExecute(null))
@@ -2257,6 +2260,54 @@ public sealed partial class MainWindowViewModel
 
         RefreshAfterMaintenanceOperation();
         _statusBar.ShowMessage(Strings.Get("CodeEditor_ClassRenamed"), TimeSpan.FromSeconds(4));
+    }
+
+    /// <inheritdoc/>
+    async Task<ClassRemover?> ICodeTabHost.PrepareClassRemovalAsync()
+    {
+        if (_currentBook is null)
+        {
+            return null;
+        }
+
+        _tabManager.SaveAllTabs();
+        if (!await ConfirmMissingDoctypeAsync("Operation_RemoveClass").ConfigureAwait(true))
+        {
+            return null;
+        }
+
+        ClassRemovalPreparation preparation = _currentBook.PrepareClassRemoval();
+        if (preparation.Remover is null)
+        {
+            _statusBar.ShowMessage(
+                Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_RemoveClass"), preparation.NotWellFormed?.Filename),
+                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
+        }
+
+        return preparation.Remover;
+    }
+
+    /// <inheritdoc/>
+    void ICodeTabHost.ApplyClassRemoval(ClassRemovalResult result)
+    {
+        if (_currentBook is null)
+        {
+            return;
+        }
+
+        bool checkpoint = AddCheckpointBefore(Strings.Get("Operation_RemoveClass"));
+        if (!_currentBook.ApplyClassRemoval(result))
+        {
+            if (checkpoint)
+            {
+                RewindCheckpoint();
+            }
+
+            return;
+        }
+
+        RefreshAfterMaintenanceOperation();
+        _statusBar.ShowMessage(Strings.Get("CodeEditor_ClassRemoved"), TimeSpan.FromSeconds(4));
     }
 
     /// <inheritdoc/>

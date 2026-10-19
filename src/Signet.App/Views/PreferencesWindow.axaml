@@ -541,22 +541,37 @@
                                            views:PreferencesPage.Target="ColorSchemePage" />
 
                           <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightOpacity}" VerticalAlignment="Center" TextWrapping="Wrap"
-                                     IsEnabled="{Binding IsPreviewHighlightBackground}" />
-                          <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding PreviewHighlightOpacity}" Width="80" HorizontalAlignment="Left"
-                                   IsEnabled="{Binding IsPreviewHighlightBackground}" />
+                                     IsEnabled="{Binding IsPreviewHighlightBackground}"
+                                     ToolTip.Tip="{loc:Loc PreferencesWindow_PreviewHighlightOpacityTip}" ToolTip.ShowOnDisabled="True" />
+                          <NumericUpDown x:Name="PreviewHighlightOpacityBox" Grid.Row="2" Grid.Column="1" Value="{Binding PreviewHighlightOpacity}"
+                                         Minimum="{x:Static vm:PreferencesViewModel.PreviewHighlightOpacityMin}"
+                                         Maximum="{x:Static vm:PreferencesViewModel.PreviewHighlightOpacityMax}"
+                                         Increment="1" FormatString="0" Width="130" HorizontalAlignment="Left"
+                                         IsEnabled="{Binding IsPreviewHighlightBackground}"
+                                         ToolTip.Tip="{loc:Loc PreferencesWindow_PreviewHighlightOpacityTip}" ToolTip.ShowOnDisabled="True" />
 
                           <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightOutlineWidth}" VerticalAlignment="Center" TextWrapping="Wrap"
-                                     IsEnabled="{Binding IsPreviewHighlightOutline}" />
-                          <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding PreviewHighlightOutlineWidth}" Width="80" HorizontalAlignment="Left"
-                                   IsEnabled="{Binding IsPreviewHighlightOutline}" />
+                                     IsEnabled="{Binding IsPreviewHighlightOutline}"
+                                     ToolTip.Tip="{loc:Loc PreferencesWindow_PreviewHighlightOutlineWidthTip}" ToolTip.ShowOnDisabled="True" />
+                          <NumericUpDown x:Name="PreviewHighlightOutlineWidthBox" Grid.Row="3" Grid.Column="1" Value="{Binding PreviewHighlightOutlineWidth}"
+                                         Minimum="{x:Static vm:PreferencesViewModel.PreviewHighlightOutlineWidthMin}"
+                                         Maximum="{x:Static vm:PreferencesViewModel.PreviewHighlightOutlineWidthMax}"
+                                         Increment="1" FormatString="0" Width="130" HorizontalAlignment="Left"
+                                         IsEnabled="{Binding IsPreviewHighlightOutline}"
+                                         ToolTip.Tip="{loc:Loc PreferencesWindow_PreviewHighlightOutlineWidthTip}" ToolTip.ShowOnDisabled="True" />
 
                           <CheckBox Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Content="{loc:Loc PreferencesWindow_PreviewHighlightAutoHide}"
                                     IsChecked="{Binding PreviewHighlightAutoHide}" />
 
                           <TextBlock Grid.Row="5" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightAutoHideDelay}" VerticalAlignment="Center" TextWrapping="Wrap"
-                                     IsEnabled="{Binding PreviewHighlightAutoHide}" />
-                          <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding PreviewHighlightAutoHideDelay}" Width="80" HorizontalAlignment="Left"
-                                   IsEnabled="{Binding PreviewHighlightAutoHide}" />
+                                     IsEnabled="{Binding PreviewHighlightAutoHide}"
+                                     ToolTip.Tip="{loc:Loc PreferencesWindow_PreviewHighlightAutoHideDelayTip}" ToolTip.ShowOnDisabled="True" />
+                          <NumericUpDown x:Name="PreviewHighlightAutoHideDelayBox" Grid.Row="5" Grid.Column="1" Value="{Binding PreviewHighlightAutoHideDelay}"
+                                         Minimum="{x:Static vm:PreferencesViewModel.PreviewHighlightAutoHideDelayMin}"
+                                         Maximum="{x:Static vm:PreferencesViewModel.PreviewHighlightAutoHideDelayMax}"
+                                         Increment="100" FormatString="0" Width="130" HorizontalAlignment="Left"
+                                         IsEnabled="{Binding PreviewHighlightAutoHide}"
+                                         ToolTip.Tip="{loc:Loc PreferencesWindow_PreviewHighlightAutoHideDelayTip}" ToolTip.ShowOnDisabled="True" />
                         </Grid>
                       </StackPanel>
                     </Border>
@@ -775,8 +790,10 @@
               <CheckBox Content="{loc:Loc PreferencesWindow_OpenTagHint}" IsChecked="{Binding OpenTagHint}" />
               <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="28,0,0,0">
                 <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_OpenTagHintDelay}" IsEnabled="{Binding OpenTagHint}" />
-                <TextBox Grid.Column="1" Text="{Binding OpenTagHintDelay}" Width="80" HorizontalAlignment="Right"
-                         IsEnabled="{Binding OpenTagHint}" />
+                <NumericUpDown x:Name="OpenTagHintDelayBox" Grid.Column="1" Value="{Binding OpenTagHintDelay}"
+                               Minimum="0" Maximum="{x:Static vm:PreferencesViewModel.OpenTagHintDelayMax}"
+                               Increment="100" FormatString="0" Width="130" HorizontalAlignment="Right"
+                               IsEnabled="{Binding OpenTagHint}" />
               </Grid>
 
               <!-- The colors of the editor and of the hint are in the color scheme (its section is below), their fonts are under Appearance. -->
@@ -851,7 +868,10 @@
                     <TextBlock Text="{loc:Loc PreferencesWindow_PreviewLiveRefresh}" FontWeight="Bold" />
                     <Grid Classes="labeled" ColumnDefinitions="Auto,Auto" ColumnSpacing="8">
                       <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewRefreshDelay}" VerticalAlignment="Center" TextWrapping="Wrap" />
-                      <TextBox Grid.Column="1" Text="{Binding PreviewRefreshDelay}" Width="80" HorizontalAlignment="Left" />
+                      <NumericUpDown x:Name="PreviewRefreshDelayBox" Grid.Column="1" Value="{Binding PreviewRefreshDelay}"
+                                     Minimum="{x:Static vm:PreferencesViewModel.PreviewRefreshDelayMin}"
+                                     Maximum="{x:Static vm:PreferencesViewModel.PreviewRefreshDelayMax}"
+                                     Increment="100" FormatString="0" Width="130" HorizontalAlignment="Left" />
                     </Grid>
                   </StackPanel>
                 </Border>
@@ -1100,18 +1120,26 @@
               <CheckBox Content="{loc:Loc PreferencesWindow_NavigationHistoryRemember}" IsChecked="{Binding NavigationHistoryRemember}" />
               <StackPanel Orientation="Horizontal" Spacing="8" Margin="28,0,0,0" IsEnabled="{Binding NavigationHistoryRemember}">
                 <TextBlock Text="{loc:Loc PreferencesWindow_NavigationHistoryDays}" VerticalAlignment="Center" />
-                <TextBox Text="{Binding NavigationHistoryDays}" Width="80" />
+                <NumericUpDown x:Name="NavigationHistoryDaysBox" Value="{Binding NavigationHistoryDays}"
+                               Minimum="1" Maximum="{x:Static vm:PreferencesViewModel.NavigationHistoryDaysMax}"
+                               Increment="1" FormatString="0" Width="130" />
               </StackPanel>
 
               <Grid Classes="labeled" ColumnDefinitions="260,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8" Margin="0,6,0,0">
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_ClipboardHistoryLimit}" VerticalAlignment="Center" />
-                <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding ClipboardHistoryLimit}" Width="80" HorizontalAlignment="Left" />
+                <NumericUpDown x:Name="ClipboardHistoryLimitBox" Grid.Row="0" Grid.Column="1" Value="{Binding ClipboardHistoryLimit}"
+                               Minimum="0" Maximum="{x:Static vm:PreferencesViewModel.ClipboardHistoryLimitMax}"
+                               Increment="1" FormatString="0" Width="130" HorizontalAlignment="Left" />
 
                 <TextBlock Grid.Row="5" Grid.Column="0" Text="{loc:Loc PreferencesWindow_RecentFilesLimit}" VerticalAlignment="Center" TextWrapping="Wrap" />
-                <TextBox Grid.Row="5" Grid.Column="1" Text="{Binding RecentFilesLimit}" Width="80" HorizontalAlignment="Left" />
+                <NumericUpDown x:Name="GeneralRecentFilesLimitBox" Grid.Row="5" Grid.Column="1" Value="{Binding RecentFilesLimit}"
+                               Minimum="0" Maximum="{x:Static vm:PreferencesViewModel.RecentFilesLimitMax}"
+                               Increment="1" FormatString="0" Width="130" HorizontalAlignment="Left" />
 
                 <TextBlock Grid.Row="6" Grid.Column="0" Text="{loc:Loc PreferencesWindow_RecentLocationsLimit}" VerticalAlignment="Center" TextWrapping="Wrap" />
-                <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding RecentLocationsLimit}" Width="80" HorizontalAlignment="Left" />
+                <NumericUpDown x:Name="RecentLocationsLimitBox" Grid.Row="6" Grid.Column="1" Value="{Binding RecentLocationsLimit}"
+                               Minimum="1" Maximum="{x:Static vm:PreferencesViewModel.RecentLocationsLimitMax}"
+                               Increment="1" FormatString="0" Width="130" HorizontalAlignment="Left" />
 
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_TempFolder}" VerticalAlignment="Center" />
                 <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding TempFolderHome}" />

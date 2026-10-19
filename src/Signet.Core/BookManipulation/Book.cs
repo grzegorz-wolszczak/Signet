@@ -980,6 +980,31 @@ public sealed class Book : IDisposable
     }
 
     /// <summary>
+    /// Prepares "Remove Class" from Code Editor: a <see cref="ClassRemover"/>
+    /// over the current texts of all XHTML and CSS files. Like other whole-book operations,
+    /// it refuses when any XHTML file is not well-formed.
+    /// </summary>
+    public ClassRemovalPreparation PrepareClassRemoval()
+    {
+        if (FindFirstNotWellFormed(GetHtmlResources()) is { } bad)
+        {
+            return new ClassRemovalPreparation(null, bad);
+        }
+
+        ClassRemover remover = new(
+            GetHtmlResources().Select(h => new ClassRenameSource(h.BookPath, h.GetText())),
+            GetCssResources().Select(c => new ClassRenameSource(c.BookPath, c.GetText())));
+        return new ClassRemovalPreparation(remover, null);
+    }
+
+    /// <summary>Stores the file texts computed by <see cref="ClassRemover.Remove"/>. Returns whether anything changed.</summary>
+    public bool ApplyClassRemoval(ClassRemovalResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        return ApplyTexts(result.ChangedTexts);
+    }
+
+    /// <summary>
     /// Writes <c>@font-face</c> rules for font files of the book into <paramref name="stylesheet"/>
     /// (<see cref="FontFaceAddition.Apply"/>) and, when <paramref name="bodyFamily"/> is given, sets the font of
     /// <c>body</c> there. Without a stylesheet a new <c>fonts.css</c> is created in the Styles folder and linked first

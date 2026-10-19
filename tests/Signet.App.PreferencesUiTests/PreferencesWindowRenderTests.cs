@@ -1373,6 +1373,52 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         window.Close();
     }
 
+    /// <summary>
+    /// Regression: the cursor highlight's numeric settings used a plain TextBox, so typing anything other than a
+    /// number threw an exception. They are <see cref="NumericUpDown"/> with the real bounds, and each is enabled
+    /// only together with the highlight setting it affects — disabled, it explains why in its tooltip.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_cursor_highlight_numeric_fields_are_NumericUpDown_enabled_with_the_setting_they_affect()
+    {
+        // Arrange
+        (PreferencesWindow window, PreferencesViewModel vm, _, _) = ShowPreviewPage(
+            "Preview", "PreviewPreviewHost", "PreviewPreviewPane", "PreviewSampleTip", bottom: false);
+        NumericUpDown opacity = window.FindControl<NumericUpDown>("PreviewHighlightOpacityBox")!;
+        NumericUpDown outlineWidth = window.FindControl<NumericUpDown>("PreviewHighlightOutlineWidthBox")!;
+        NumericUpDown autoHideDelay = window.FindControl<NumericUpDown>("PreviewHighlightAutoHideDelayBox")!;
+
+        // Act
+        vm.PreviewHighlightStyle = PreviewHighlightStyle.Background;
+        vm.PreviewHighlightAutoHide = false;
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        opacity.Minimum.Should().Be(PreviewHighlight.OpacityMin);
+        opacity.Maximum.Should().Be(PreviewHighlight.OpacityMax);
+        opacity.IsEnabled.Should().BeTrue("the style is Background");
+        outlineWidth.Minimum.Should().Be(PreviewHighlight.OutlineWidthMin);
+        outlineWidth.Maximum.Should().Be(PreviewHighlight.OutlineWidthMax);
+        outlineWidth.IsEnabled.Should().BeFalse("the style is Background, not Outline");
+        ToolTip.GetTip(outlineWidth).Should().Be(Strings.Get("PreferencesWindow_PreviewHighlightOutlineWidthTip"));
+        ToolTip.GetShowOnDisabled(outlineWidth).Should().BeTrue("a disabled field must still explain why");
+        autoHideDelay.Minimum.Should().Be(PreviewHighlight.AutoHideDelayMin);
+        autoHideDelay.Maximum.Should().Be(PreviewHighlight.AutoHideDelayMax);
+        autoHideDelay.IsEnabled.Should().BeFalse("auto-hide is off");
+        ToolTip.GetTip(autoHideDelay).Should().Be(Strings.Get("PreferencesWindow_PreviewHighlightAutoHideDelayTip"));
+
+        // Act
+        vm.PreviewHighlightStyle = PreviewHighlightStyle.Outline;
+        vm.PreviewHighlightAutoHide = true;
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        opacity.IsEnabled.Should().BeFalse("the style is now Outline, not Background");
+        outlineWidth.IsEnabled.Should().BeTrue("the style is now Outline");
+        autoHideDelay.IsEnabled.Should().BeTrue("auto-hide is now on");
+        window.Close();
+    }
+
     /// <summary>The colors of the theme: the name, the folder and the highlighted entry of the list take them when they are set.</summary>
     [AvaloniaFact]
     public void The_list_of_recent_files_takes_the_colors_of_the_theme_when_they_are_set()
