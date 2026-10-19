@@ -422,4 +422,89 @@ public sealed class FootnoteConversionTests
             html.GetText().Should().Contain("id=\"fn-1\"><p class=\"signet-fn-p\"><a href=\"#fn-1-ref\">1.</a> Old note.</p>");
         }
     }
+
+    // Two notes nested by a comment that swallows the closing tag of the first (as in a scraped book), then a normal note.
+    private const string NestedNotesBody =
+        "<p>One<a epub:type=\"noteref\" href=\"#n1\" id=\"r1\">[1]</a> two<a epub:type=\"noteref\" href=\"#n2\" id=\"r2\">[2]</a>"
+        + " three<a epub:type=\"noteref\" href=\"#n3\" id=\"r3\">[3]</a>.</p>\n"
+        + "<section epub:type=\"footnotes\">\n"
+        + "<aside epub:type=\"footnote\" id=\"n1\"><a href=\"#r1\">[1]</a> First.<!--\n</aside-->\n"
+        + "<aside epub:type=\"footnote\" id=\"n2\"><a href=\"#r2\">[2]</a> Second.</aside>\n</aside>\n"
+        + "<aside epub:type=\"footnote\" id=\"n3\"><a href=\"#r3\">[3]</a> Third.</aside>\n"
+        + "</section>";
+
+    [Fact]
+    public void Notes_nested_in_each_other_cannot_be_converted_and_say_which_note_they_are_nested_with()
+    {
+        // Arrange
+        (Book book, HtmlResource _) = NewBook(NestedNotesBody);
+        using (book)
+        {
+            // Act
+            ConversionPlan plan = FootnoteEditor.PlanConversion(book);
+
+            // Assert
+            plan.Items.Select(i => (i.Footnote.NoteId, i.CanConvert, i.Blocker, i.BlockerDetail)).Should().Equal(
+                ("n1", false, ConversionBlocker.ContainsNote, "n2"),
+                ("n2", false, ConversionBlocker.InsideNote, "n1"),
+                ("n3", true, ConversionBlocker.None, string.Empty));
+        }
+    }
+
+    [Fact]
+    public void The_notes_around_nested_ones_convert_without_a_problem_and_the_nested_ones_stay_as_they_are()
+    {
+        // Arrange
+        (Book book, HtmlResource html) = NewBook(NestedNotesBody);
+        using (book)
+        {
+            string nested = BodyOf(html)[BodyOf(html).IndexOf("<aside epub:type=\"footnote\" id=\"n1\">", StringComparison.Ordinal)..BodyOf(html).IndexOf("<aside epub:type=\"footnote\" id=\"n3\">", StringComparison.Ordinal)];
+
+            // Act
+            ConversionResult result = ConvertAll(book);
+
+            // Assert
+            result.Problems.Should().BeEmpty();
+            result.Converted.Should().Be(1);
+            BodyOf(html).Should().Contain(nested).And.Contain("signet-fn");
+        }
+    }
+
+    [Fact]
+    public void Converting_reports_its_stages_and_how_many_footnotes_are_done()
+    {
+        // Arrange
+        (Book book, HtmlResource _) = NewBook(
+            "<p>One<a epub:type=\"noteref\" href=\"#n1\" id=\"r1\">[1]</a> two<a epub:type=\"noteref\" href=\"#n2\" id=\"r2\">[2]</a>.</p>\n"
+            + "<section epub:type=\"footnotes\">\n"
+            + "<aside epub:type=\"footnote\" id=\"n1\"><a href=\"#r1\">[1]</a> First.</aside>\n"
+            + "<aside epub:type=\"footnote\" id=\"n2\"><a href=\"#r2\">[2]</a> Second.</aside>\n"
+            + "</section>");
+        using (book)
+        {
+            List<ConversionProgress> reports = new();
+            ConversionPlan plan = FootnoteEditor.PlanConversion(book);
+
+            // Act
+            ConversionResult result = FootnoteEditor.Convert(
+                book, new ConversionRequest(plan.Items, plan.AutomaticFile?.File, false), null, new SyncProgress(reports.Add));
+
+            // Assert
+            result.Problems.Should().BeEmpty();
+            reports.Select(r => r.Stage).Distinct().Should().Equal(
+                ConversionStage.Preparing, ConversionStage.Converting, ConversionStage.Finishing, ConversionStage.Checking);
+            reports.Where(r => r.Stage == ConversionStage.Converting).Select(r => r.Done).Should().BeInAscendingOrder().And.EndWith(2);
+            reports.Should().OnlyContain(r => r.Total == 2);
+        }
+    }
+
+    // Reports on the thread that reports (Progress<T> would post them to another one).
+    private sealed class SyncProgress : IProgress<ConversionProgress>
+    {
+        private readonly Action<ConversionProgress> _report;
+
+        public SyncProgress(Action<ConversionProgress> report) => _report = report;
+
+        public void Report(ConversionProgress value) => _report(value);
+    }
 }

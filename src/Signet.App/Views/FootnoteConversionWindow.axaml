@@ -63,11 +63,19 @@
     <Border DockPanel.Dock="Bottom" Classes="section" Margin="0,10,0,0" IsVisible="{Binding HasProblems}">
       <StackPanel Spacing="4">
         <TextBlock Classes="warningNote" Text="{Binding ProblemsTitle}" FontWeight="SemiBold" />
-        <ScrollViewer MaxHeight="120">
+        <!-- Each problem: what is wrong, where the footnote was and, for a text that changed, the text before and after; a click
+             goes to the note (the book was brought back, so it is where it was). -->
+        <ScrollViewer MaxHeight="160">
           <ItemsControl ItemsSource="{Binding Problems}">
             <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="x:String">
-                <TextBlock Classes="warning" Text="{Binding}" TextWrapping="Wrap" Margin="12,0,0,0" />
+              <DataTemplate x:DataType="vm:FootnoteConversionProblemRow">
+                <Panel Margin="12,0,0,6">
+                  <HyperlinkButton Command="{Binding GoTo}" IsVisible="{Binding IsLink}" Padding="0" HorizontalAlignment="Left"
+                                   ToolTip.Tip="{loc:Loc FootnoteConversionWindow_ProblemGoTo}">
+                    <TextBlock Classes="warning" Text="{Binding Text}" TextWrapping="Wrap" />
+                  </HyperlinkButton>
+                  <TextBlock Classes="warning" Text="{Binding Text}" TextWrapping="Wrap" IsVisible="{Binding !IsLink}" />
+                </Panel>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>

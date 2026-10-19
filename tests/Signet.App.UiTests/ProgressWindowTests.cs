@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
 using AwesomeAssertions;
+using Signet.App.Infrastructure;
 using Signet.App.Views;
 
 namespace Signet.App.UiTests;
@@ -143,6 +144,91 @@ public sealed class ProgressWindowTests
         // Assert
         run.Exception!.InnerException.Should().BeOfType<InvalidOperationException>();
         owner.OwnedWindows.Should().BeEmpty();
+        owner.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_window_shows_the_message_and_the_percent_the_work_reports_and_closes_when_it_is_done()
+    {
+        // Arrange
+        Window owner = Owner();
+        TaskCompletionSource work = new();
+        IProgress<WorkProgress>? progress = null;
+
+        // Act
+        Task run = ProgressWindow.RunWithProgressAsync(
+            owner, "Converting", "Starting", p =>
+            {
+                progress = p;
+                return work.Task;
+            }, TimeSpan.Zero);
+        RunUntil(() => owner.OwnedWindows.Count == 1);
+        ProgressWindow window = owner.OwnedWindows.OfType<ProgressWindow>().Single();
+        ProgressBar bar = window.FindControl<ProgressBar>("Bar")!;
+        TextBlock percent = window.FindControl<TextBlock>("PercentText")!;
+
+        // Assert
+        window.Title.Should().Be("Converting");
+        window.FindControl<TextBlock>("MessageText")!.Text.Should().Be("Starting");
+        bar.IsIndeterminate.Should().BeTrue("the work has not said how far it is");
+        percent.IsVisible.Should().BeFalse();
+        window.FindControl<Button>("CancelButton")!.IsVisible.Should().BeFalse();
+
+        // Act
+        progress!.Report(new WorkProgress("Converting: 3 of 4", 0.75));
+        RunUntil(() => bar.Value == 75);
+
+        // Assert
+        window.FindControl<TextBlock>("MessageText")!.Text.Should().Be("Converting: 3 of 4");
+        bar.IsIndeterminate.Should().BeFalse();
+        percent.IsVisible.Should().BeTrue();
+        percent.Text.Should().Contain("75");
+
+        // Act
+        progress.Report(new WorkProgress(null, null));
+        RunUntil(() => bar.IsIndeterminate);
+
+        // Assert
+        window.FindControl<TextBlock>("MessageText")!.Text.Should().Be("Converting: 3 of 4", "a report without a message keeps the last one");
+        percent.IsVisible.Should().BeFalse();
+
+        // Act
+        work.SetResult();
+        RunUntil(() => run.IsCompleted);
+
+        // Assert
+        owner.OwnedWindows.Should().BeEmpty();
+        owner.Close();
+    }
+
+    [AvaloniaFact]
+    public void Work_that_is_done_before_the_delay_shows_no_window()
+    {
+        // Arrange
+        Window owner = Owner();
+
+        // Act
+        Task run = ProgressWindow.RunWithProgressAsync(owner, "Title", "Working", _ => Task.CompletedTask);
+        RunUntil(() => run.IsCompleted);
+
+        // Assert
+        owner.OwnedWindows.Should().BeEmpty();
+        owner.Close();
+    }
+
+    [AvaloniaFact]
+    public void An_exception_of_the_work_is_thrown_to_the_caller()
+    {
+        // Arrange
+        Window owner = Owner();
+
+        // Act
+        Task run = ProgressWindow.RunWithProgressAsync(owner, "Title", "Working", _ => Task.FromException(new InvalidOperationException("boom")));
+        RunUntil(() => run.IsCompleted);
+
+        // Assert
+        run.IsFaulted.Should().BeTrue();
+        run.Exception!.InnerException.Should().BeOfType<InvalidOperationException>();
         owner.Close();
     }
 }

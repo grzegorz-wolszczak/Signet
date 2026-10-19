@@ -1,9 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoFixture.Xunit3;
 using AwesomeAssertions;
 using Signet.App.Actions;
+using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.App.Tests.TestSupport;
@@ -37,7 +39,7 @@ public sealed class MainWindowFootnotesTests : IDisposable
     }
 
     // The minimal chapter with a footnote of other origin after "Hello" (marked [7], its note at the end of the body).
-    private (MainWindowViewModel Sut, HtmlResource Chapter) OpenChapterWithForeignFootnote(TempDir temp)
+    private (MainWindowViewModel Sut, HtmlResource Chapter) OpenChapterWithForeignFootnote(TempDir temp, bool openTab = true)
     {
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, temp);
         MainWindowViewModel sut = _disposables.Add(new MainWindowViewModel());
@@ -51,7 +53,11 @@ public sealed class MainWindowFootnotesTests : IDisposable
         int body = text.LastIndexOf("</body>", StringComparison.Ordinal);
         chapter.SetText(text.Insert(body, "<aside epub:type=\"footnote\" id=\"n7\"><p><a href=\"#n7-back\">7.</a> Other note.</p></aside>\n"));
         sut.LoadBook(book, epub);
-        sut.Tabs.OpenResources(new Resource[] { chapter });
+        if (openTab)
+        {
+            sut.Tabs.OpenResources(new Resource[] { chapter });
+        }
+
         return (sut, chapter);
     }
 
@@ -450,6 +456,53 @@ public sealed class MainWindowFootnotesTests : IDisposable
 
         // Assert
         sut.StatusMessage.Should().Be(Strings.Get("Status_NoForeignFootnotes"));
+    }
+
+    private sealed class RecordingProgress : IProgress<WorkProgress>
+    {
+        public List<WorkProgress> Reports { get; } = new();
+
+        public void Report(WorkProgress value)
+        {
+            lock (Reports)
+            {
+                Reports.Add(value);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task The_conversion_runs_under_the_progress_runner_and_reports_its_progress()
+    {
+        // Arrange
+        using UiCultureScope culture = new("en");
+        TempDir temp = _disposables.Add(new TempDir());
+        // No tab is open: its editor document belongs to the thread that made it, and the test continues on another after an await.
+        (MainWindowViewModel sut, HtmlResource chapter) = OpenChapterWithForeignFootnote(temp, openTab: false);
+        sut.Tabs.CloseAllTabs();
+        RecordingProgress progress = new();
+        int runs = 0;
+        ProgressRunner runner = work =>
+        {
+            runs++;
+            return work(progress);
+        };
+        FootnoteConversionViewModel dialog = (await sut.PrepareFootnoteConversionAsync(() => Task.FromResult(true), runner))!;
+        dialog.SelectAllCommand.Execute(null);
+
+        // Act
+        await dialog.ConvertCommand.ExecuteAsync(null);
+
+        // Assert
+        runs.Should().Be(2, "the conversion and the analysis after it");
+        chapter.GetText().Should().Contain("signet-fn-ref");
+        dialog.HasProblems.Should().BeFalse();
+        List<string?> messages = progress.Reports.Select(r => r.Message).ToList();
+        messages.Should().Contain(Strings.Format("FootnoteConversion_Progress_Converting", 1, 1));
+        messages.Should().Contain(Strings.Get("FootnoteConversion_Progress_Checking"));
+        messages.Should().Contain(Strings.Get("FootnoteConversion_Analyzing"));
+        progress.Reports.Select(r => r.Fraction).OfType<double>().Should().BeInAscendingOrder();
+        sut.BookBrowser.SuspendRebuilds.Should().BeFalse("the tree follows the book again when the work is done");
     }
 
     [Theory]

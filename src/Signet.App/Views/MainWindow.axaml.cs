@@ -1325,7 +1325,12 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             this,
             Strings.Get("FootnoteConversionWindow_Title"),
             Strings.Get("FootnoteConversion_Analyzing"),
-            vm.PrepareFootnoteConversionAsync(() => FootnoteConversionWindow.ConfirmWithoutCheckpointAsync(window ?? (Window)this)));
+            vm.PrepareFootnoteConversionAsync(
+                () => FootnoteConversionWindow.ConfirmWithoutCheckpointAsync(window ?? (Window)this),
+                // The conversion itself (tens of seconds for thousands of footnotes) shows how far it is over the dialog.
+                work => ProgressWindow.RunWithProgressAsync(
+                    window ?? (Window)this, Strings.Get("FootnoteConversion_ProgressTitle"),
+                    Strings.Get("FootnoteConversion_Progress_Preparing"), work)));
         if (conversion is not null)
         {
             window = new FootnoteConversionWindow { DataContext = conversion };

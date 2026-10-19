@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.App.ViewModels.Tabs;
@@ -115,7 +116,11 @@ public sealed partial class MainWindowViewModel
     /// <param name="confirmWithoutCheckpoint">
     /// Asks whether to convert although the checkpoint before the conversion could not be created.
     /// </param>
-    public async Task<FootnoteConversionViewModel?> PrepareFootnoteConversionAsync(Func<Task<bool>> confirmWithoutCheckpoint)
+    /// <param name="runWithProgress">
+    /// Runs the conversion with a window that shows how far it is (<c>null</c>: without one, as in the tests).
+    /// </param>
+    public async Task<FootnoteConversionViewModel?> PrepareFootnoteConversionAsync(
+        Func<Task<bool>> confirmWithoutCheckpoint, ProgressRunner? runWithProgress = null)
     {
         ArgumentNullException.ThrowIfNull(confirmWithoutCheckpoint);
         if (_currentBook is not { } book)
@@ -138,7 +143,7 @@ public sealed partial class MainWindowViewModel
 
         return new FootnoteConversionViewModel(
             plan, FootnoteEditor.FindGlobalFile(_currentBook)?.Filename, NavigateToBookPathAtOffset,
-            request => ConvertFootnotesAsync(request, confirmWithoutCheckpoint));
+            request => ConvertFootnotesAsync(request, confirmWithoutCheckpoint, runWithProgress));
     }
 
     /// <summary>
@@ -147,8 +152,12 @@ public sealed partial class MainWindowViewModel
     /// brought back to the checkpoint and the state of the conversion is thrown away. Returns the plan of the book
     /// afterwards with the problems, or <c>null</c> when no book is open or the user cancelled.
     /// </summary>
+    /// <remarks>
+    /// The conversion of a big book takes tens of seconds, so it runs off the UI thread under <paramref name="runWithProgress"/>
+    /// (a progress window with the percent); the UI waits for it, so nothing else edits the book meanwhile.
+    /// </remarks>
     public async Task<FootnoteConversionOutcome?> ConvertFootnotesAsync(
-        ConversionRequest request, Func<Task<bool>> confirmWithoutCheckpoint)
+        ConversionRequest request, Func<Task<bool>> confirmWithoutCheckpoint, ProgressRunner? runWithProgress = null)
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(confirmWithoutCheckpoint);
@@ -164,7 +173,10 @@ public sealed partial class MainWindowViewModel
             return null;
         }
 
-        ConversionResult result = FootnoteEditor.Convert(_currentBook!, request, FootnoteOptions);
+        Book converting = _currentBook!;
+        ConversionResult result = await RunInBackgroundAsync(
+            runWithProgress, editsBook: true,
+            progress => FootnoteEditor.Convert(converting, request, FootnoteOptions, new ConversionProgressMap(progress))).ConfigureAwait(true);
         bool restored = false;
         if (!result.Succeeded)
         {
@@ -199,8 +211,65 @@ public sealed partial class MainWindowViewModel
         }
 
         Book book = _currentBook!;
-        return new FootnoteConversionOutcome(
-            FootnoteEditor.PlanConversion(book), result.Problems, restored, FootnoteEditor.FindGlobalFile(book)?.Filename);
+        ConversionPlan plan = await RunInBackgroundAsync(
+            runWithProgress, editsBook: false,
+            progress =>
+            {
+                progress.Report(new WorkProgress(Strings.Get("FootnoteConversion_Analyzing"), null));
+                return FootnoteEditor.PlanConversion(book);
+            }).ConfigureAwait(true);
+        return new FootnoteConversionOutcome(plan, result.Problems, restored, FootnoteEditor.FindGlobalFile(book)?.Filename);
+    }
+
+    // The book raises its events (a file added or removed, the book modified) on the thread that edits it. While that is not the
+    // UI thread the handlers that touch the UI wait; the UI is brought up to date once the work is done.
+    private bool _bookEditedInBackground;
+
+    // Runs `work` off the UI thread (under `runner`, when there is one: the progress window) and returns its result.
+    private async Task<T> RunInBackgroundAsync<T>(ProgressRunner? runner, bool editsBook, Func<IProgress<WorkProgress>, T> work)
+    {
+        T result = default!;
+        Task Run(IProgress<WorkProgress> progress) => Task.Run(() => result = work(progress));
+        if (editsBook)
+        {
+            _bookEditedInBackground = true;
+            BookBrowser.SuspendRebuilds = true;
+        }
+
+        try
+        {
+            await (runner is null ? Run(new Progress<WorkProgress>()) : runner(Run)).ConfigureAwait(true);
+        }
+        finally
+        {
+            if (editsBook)
+            {
+                _bookEditedInBackground = false;
+                BookBrowser.SuspendRebuilds = false;
+                RefreshTitle();
+                _toc.Refresh();
+            }
+        }
+
+        return result;
+    }
+
+    // What Convert reports as what the progress window shows: the percent while the footnotes are converted, the stages around it
+    // without one (the cleaning up and the numbering take most of the time and cannot tell how far they are).
+    private sealed class ConversionProgressMap : IProgress<ConversionProgress>
+    {
+        private readonly IProgress<WorkProgress> _target;
+
+        public ConversionProgressMap(IProgress<WorkProgress> target) => _target = target;
+
+        public void Report(ConversionProgress value) => _target.Report(value.Stage switch
+        {
+            ConversionStage.Preparing => new WorkProgress(Strings.Get("FootnoteConversion_Progress_Preparing"), 0),
+            ConversionStage.Converting => WorkProgress.InStage(
+                Strings.Format("FootnoteConversion_Progress_Converting", value.Done, value.Total), 0.05, 0.3, value.Done, value.Total),
+            ConversionStage.Finishing => new WorkProgress(Strings.Get("FootnoteConversion_Progress_Finishing"), null),
+            _ => new WorkProgress(Strings.Get("FootnoteConversion_Progress_Checking"), null),
+        });
     }
 
     /// <inheritdoc/>

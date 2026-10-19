@@ -5138,6 +5138,57 @@ Konwertować mimo to?</value>
   <data name="FootnoteConversionWindow_NoSelection" xml:space="preserve">
     <value>Wybierz wiersz, aby zobaczyć szczegóły.</value>
   </data>
+  <data name="FootnoteConversion_ProgressTitle" xml:space="preserve">
+    <value>Konwersja przypisów</value>
+  </data>
+  <data name="FootnoteConversion_Progress_Preparing" xml:space="preserve">
+    <value>Przygotowanie konwersji…</value>
+  </data>
+  <data name="FootnoteConversion_Progress_Converting" xml:space="preserve">
+    <value>Konwertowanie przypisów: {0} z {1}</value>
+  </data>
+  <data name="FootnoteConversion_Progress_Finishing" xml:space="preserve">
+    <value>Porządkowanie, przenumerowanie i poprawianie linków…</value>
+  </data>
+  <data name="FootnoteConversion_Progress_Checking" xml:space="preserve">
+    <value>Sprawdzanie wyniku konwersji…</value>
+  </data>
+  <data name="FootnoteConversionBlocker_ReferenceNotFound" xml:space="preserve">
+    <value>Signet nie znalazł w pliku odnośnika do tego przypisu (albo jednego z odnośników przypisu współdzielonego) — zostanie obcy.</value>
+  </data>
+  <data name="FootnoteConversionBlocker_NoteNotFound" xml:space="preserve">
+    <value>Signet nie znalazł w pliku treści tego przypisu — zostanie obcy.</value>
+  </data>
+  <data name="FootnoteConversionBlocker_OtherReference" xml:space="preserve">
+    <value>Prowadzi do niego link, który wygląda na odnośnik, ale nim nie jest — zostanie obcy.</value>
+  </data>
+  <data name="FootnoteConversionBlocker_ContainsNote" xml:space="preserve">
+    <value>Treść tego przypisu zawiera inny przypis ({0}): elementy są zagnieżdżone (zwykle przez niezamknięty znacznik albo komentarz HTML, który połyka znacznik zamykający, np. „&lt;!-- &lt;/aside --&gt;”). Konwersja zmieniłaby jego tekst, więc zostanie obcy — popraw kod i uruchom konwersję ponownie.</value>
+  </data>
+  <data name="FootnoteConversionBlocker_InsideNote" xml:space="preserve">
+    <value>Ten przypis leży wewnątrz treści innego przypisu ({0}): elementy są zagnieżdżone (zwykle przez niezamknięty znacznik albo komentarz HTML, który połyka znacznik zamykający). Zostanie obcy — popraw kod i uruchom konwersję ponownie.</value>
+  </data>
+  <data name="FootnoteConversionProblem_Source" xml:space="preserve">
+    <value>Przypis „{0}” ({2}) w {1}</value>
+  </data>
+  <data name="FootnoteConversionProblem_Before" xml:space="preserve">
+    <value>przed konwersją: {0}</value>
+  </data>
+  <data name="FootnoteConversionProblem_After" xml:space="preserve">
+    <value>po konwersji: {0}</value>
+  </data>
+  <data name="FootnoteConversionProblem_Gone" xml:space="preserve">
+    <value>zniknęło: „{0}”</value>
+  </data>
+  <data name="FootnoteConversionProblem_Appeared" xml:space="preserve">
+    <value>pojawiło się: „{0}”</value>
+  </data>
+  <data name="FootnoteConversionProblem_NoteLost" xml:space="preserve">
+    <value>po konwersji nie znaleziono treści przypisu</value>
+  </data>
+  <data name="FootnoteConversionWindow_ProblemGoTo" xml:space="preserve">
+    <value>Kliknij, aby przejść do przypisu w kodzie</value>
+  </data>
   <data name="FootnoteConversion_Analyzing" xml:space="preserve">
     <value>Analizowanie przypisów…</value>
   </data>

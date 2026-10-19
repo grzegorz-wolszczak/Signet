@@ -5138,6 +5138,57 @@ Convert anyway?</value>
   <data name="FootnoteConversionWindow_NoSelection" xml:space="preserve">
     <value>Select a row to see its details.</value>
   </data>
+  <data name="FootnoteConversion_ProgressTitle" xml:space="preserve">
+    <value>Converting footnotes</value>
+  </data>
+  <data name="FootnoteConversion_Progress_Preparing" xml:space="preserve">
+    <value>Preparing the conversion…</value>
+  </data>
+  <data name="FootnoteConversion_Progress_Converting" xml:space="preserve">
+    <value>Converting footnotes: {0} of {1}</value>
+  </data>
+  <data name="FootnoteConversion_Progress_Finishing" xml:space="preserve">
+    <value>Cleaning up, renumbering and retargeting links…</value>
+  </data>
+  <data name="FootnoteConversion_Progress_Checking" xml:space="preserve">
+    <value>Checking the result of the conversion…</value>
+  </data>
+  <data name="FootnoteConversionBlocker_ReferenceNotFound" xml:space="preserve">
+    <value>Signet did not find the reference to this footnote in its file (or one of the references of a shared note) — it stays of other origin.</value>
+  </data>
+  <data name="FootnoteConversionBlocker_NoteNotFound" xml:space="preserve">
+    <value>Signet did not find the text of this footnote in its file — it stays of other origin.</value>
+  </data>
+  <data name="FootnoteConversionBlocker_OtherReference" xml:space="preserve">
+    <value>A link that looks like a reference but is not one leads to it — it stays of other origin.</value>
+  </data>
+  <data name="FootnoteConversionBlocker_ContainsNote" xml:space="preserve">
+    <value>The text of this footnote contains another footnote ({0}): the elements are nested (usually by an unclosed tag or an HTML comment that swallows a closing tag, e.g. “&lt;!-- &lt;/aside --&gt;”). Converting would change its text, so it stays of other origin — fix the code and convert again.</value>
+  </data>
+  <data name="FootnoteConversionBlocker_InsideNote" xml:space="preserve">
+    <value>This footnote is inside the text of another footnote ({0}): the elements are nested (usually by an unclosed tag or an HTML comment that swallows a closing tag). It stays of other origin — fix the code and convert again.</value>
+  </data>
+  <data name="FootnoteConversionProblem_Source" xml:space="preserve">
+    <value>Footnote “{0}” ({2}) in {1}</value>
+  </data>
+  <data name="FootnoteConversionProblem_Before" xml:space="preserve">
+    <value>before the conversion: {0}</value>
+  </data>
+  <data name="FootnoteConversionProblem_After" xml:space="preserve">
+    <value>after the conversion: {0}</value>
+  </data>
+  <data name="FootnoteConversionProblem_Gone" xml:space="preserve">
+    <value>gone: “{0}”</value>
+  </data>
+  <data name="FootnoteConversionProblem_Appeared" xml:space="preserve">
+    <value>appeared: “{0}”</value>
+  </data>
+  <data name="FootnoteConversionProblem_NoteLost" xml:space="preserve">
+    <value>the text of the note was not found after the conversion</value>
+  </data>
+  <data name="FootnoteConversionWindow_ProblemGoTo" xml:space="preserve">
+    <value>Click to go to the footnote in the code</value>
+  </data>
   <data name="FootnoteConversion_Analyzing" xml:space="preserve">
     <value>Analyzing the footnotes…</value>
   </data>
