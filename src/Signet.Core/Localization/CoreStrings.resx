@@ -137,6 +137,24 @@
   <data name="LoadWarning_HtmlUnreadable" xml:space="preserve">
     <value>Nie udało się odczytać pliku: {0}</value>
   </data>
+  <data name="LoadWarning_HtmlBadComments" xml:space="preserve">
+    <value>EPUB zawiera komentarze HTML, których XML nie dopuszcza (przez nie plik nie jest poprawny składniowo): {0}. Popraw je ręcznie.</value>
+  </data>
+  <data name="LoadWarningGroup_HtmlBadComments" xml:space="preserve">
+    <value>Komentarze HTML niedozwolone w XML</value>
+  </data>
+  <data name="LoadWarningReasonCommentNested" xml:space="preserve">
+    <value>Komentarz wewnątrz komentarza: „&lt;!--” przed „--&gt;”, który kończy pierwszy</value>
+  </data>
+  <data name="LoadWarningReasonCommentDoubleHyphen" xml:space="preserve">
+    <value>Tekst komentarza zawiera „--”, czego XML zabrania</value>
+  </data>
+  <data name="LoadWarningReasonCommentEndsWithHyphen" xml:space="preserve">
+    <value>Komentarz kończy się znakiem „-” przed „--&gt;”, czego XML zabrania</value>
+  </data>
+  <data name="LoadWarningReasonCommentUnterminated" xml:space="preserve">
+    <value>Komentarz nie jest zamknięty (brak „--&gt;”)</value>
+  </data>
   <data name="LoadWarningGroup_HtmlNotWellFormed" xml:space="preserve">
     <value>Pliki HTML niepoprawne składniowo (well-formed)</value>
   </data>

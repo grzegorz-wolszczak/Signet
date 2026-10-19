@@ -137,6 +137,24 @@
   <data name="LoadWarning_HtmlUnreadable" xml:space="preserve">
     <value>The file could not be read: {0}</value>
   </data>
+  <data name="LoadWarning_HtmlBadComments" xml:space="preserve">
+    <value>The EPUB contains HTML comments that XML does not allow (they make the file not well-formed): {0}. Fix them manually.</value>
+  </data>
+  <data name="LoadWarningGroup_HtmlBadComments" xml:space="preserve">
+    <value>HTML comments that XML does not allow</value>
+  </data>
+  <data name="LoadWarningReasonCommentNested" xml:space="preserve">
+    <value>A comment inside a comment: “&lt;!--” before the “--&gt;” that ends the first one</value>
+  </data>
+  <data name="LoadWarningReasonCommentDoubleHyphen" xml:space="preserve">
+    <value>The text of the comment contains “--”, which XML forbids</value>
+  </data>
+  <data name="LoadWarningReasonCommentEndsWithHyphen" xml:space="preserve">
+    <value>The comment ends with “-” before “--&gt;”, which XML forbids</value>
+  </data>
+  <data name="LoadWarningReasonCommentUnterminated" xml:space="preserve">
+    <value>The comment is never closed (no “--&gt;”)</value>
+  </data>
   <data name="LoadWarningGroup_HtmlNotWellFormed" xml:space="preserve">
     <value>HTML files that are not well-formed</value>
   </data>
