@@ -16,6 +16,9 @@ public enum ClassUsageKind
 
     /// <summary>A match of a Find &amp; Replace search ("Count All"), not a class usage.</summary>
     Text,
+
+    /// <summary>An <c>id="…"</c> attribute — used by <see cref="IdUsageFinder"/>, not <see cref="ClassUsageFinder"/>.</summary>
+    IdAttribute,
 }
 
 /// <summary>A file searched by <see cref="ClassUsageFinder"/>.</summary>
@@ -213,7 +216,8 @@ public static class ClassUsageFinder
 
     // The line of the usage at offset (whose column is 1-based): without the line break and the leading whitespace, cut
     // to MaxContextLength around the usage. Also where the usage (matchLength characters) lies in that text.
-    private static (string Text, int MatchStart, int MatchLength) Context(string text, int offset, int column, int matchLength)
+    // Internal: reused by IdUsageFinder, whose usages carry the same kind of context.
+    internal static (string Text, int MatchStart, int MatchLength) Context(string text, int offset, int column, int matchLength)
     {
         int lineStart = offset - (column - 1);
         int lineEnd = text.IndexOf('\n', offset);
@@ -249,8 +253,8 @@ public static class ClassUsageFinder
         return (cut, prefix.Length + offset - from, MarkedLength(to));
     }
 
-    /// <summary>Line starts of a text, for offset → (line, column).</summary>
-    private sealed class LineIndex
+    /// <summary>Line starts of a text, for offset → (line, column). Internal: reused by <see cref="IdUsageFinder"/>.</summary>
+    internal sealed class LineIndex
     {
         private readonly List<int> _starts = new() { 0 };
 

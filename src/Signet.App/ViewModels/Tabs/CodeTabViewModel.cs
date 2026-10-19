@@ -669,6 +669,22 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
     }
 
     /// <summary>
+    /// The id under the caret for "Find Usages (Id)": in an <c>id</c> attribute of any markup file ((X)HTML, SVG, XML)
+    /// or in a selector (<c>#name</c>) of a stylesheet or a <c>&lt;style&gt;</c> block; <c>null</c> when the caret is
+    /// not on an id.
+    /// </summary>
+    public string? IdNameAtCaretForUsages()
+    {
+        string text = Document.Text;
+        if (SupportsTagStructure && IdUsageFinder.FindIdAtCaret(text, _caretOffset) is { } inAttribute)
+        {
+            return inAttribute;
+        }
+
+        return IsCss || SupportsTagStructure ? IdUsageFinder.FindIdAtCaretInSelector(text, _caretOffset, IsCss) : null;
+    }
+
+    /// <summary>
     /// Image reference under the caret (<c>src</c>/<c>xlink:href</c> of an <c>img</c>/<c>image</c> tag)
     /// or <c>null</c> — the condition of the "View Image" / "Open Tab For Image" items.
     /// </summary>

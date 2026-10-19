@@ -70,6 +70,12 @@ public interface ICodeTabHost
     void ApplyClassRemoval(ClassRemovalResult result);
 
     /// <summary>
+    /// "Find Usages (Id)" — searches the whole book for the usages of <paramref name="id"/> (<see cref="IdUsageFinder"/>)
+    /// and shows them in the "Find Usages" panel. Does nothing without a book.
+    /// </summary>
+    void FindIdUsages(string id);
+
+    /// <summary>
     /// "Remove span" — how many spans of the book are the same as the span under <paramref name="offset"/> in
     /// <paramref name="text"/> (the current text of <paramref name="html"/>); 0 without a book.
     /// </summary>

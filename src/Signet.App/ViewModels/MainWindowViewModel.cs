@@ -2311,6 +2311,24 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <inheritdoc/>
+    void ICodeTabHost.FindIdUsages(string id)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(id);
+        if (_currentBook is null)
+        {
+            return;
+        }
+
+        _tabManager.SaveAllTabs();
+        IReadOnlyList<ClassUsage> usages = _currentBook.FindIdUsages(id);
+        _findUsages.LoadText(
+            () => Strings.Format("FindUsages_HeaderId", id), usages, () => _currentBook?.FindIdUsages(id) ?? Array.Empty<ClassUsage>());
+        ShowFindUsagesTool();
+        _statusBar.ShowMessage(
+            Strings.Format("Status_FindUsagesId", id, FindUsagesViewModel.ResultsText(usages.Count)), TimeSpan.FromSeconds(4));
+    }
+
+    /// <inheritdoc/>
     int ICodeTabHost.CountSameSpansInBook(HtmlResource html, string text, int offset) =>
         _currentBook is null ? 0 : SpanRemoval.CountInBook(_currentBook, html, text, offset);
 

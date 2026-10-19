@@ -4410,8 +4410,14 @@ It does not change the files, their names or their IDs.</value>
   <data name="CodeEditorMenu_RemoveClass" xml:space="preserve">
     <value>Remove Class...</value>
   </data>
+  <data name="CodeEditorMenu_FindIdUsages" xml:space="preserve">
+    <value>Find Id Usages</value>
+  </data>
   <data name="FindUsages_Header" xml:space="preserve">
     <value>Usages of class “{0}”</value>
+  </data>
+  <data name="FindUsages_HeaderId" xml:space="preserve">
+    <value>Usages of id “{0}”</value>
   </data>
   <data name="FindUsages_Empty" xml:space="preserve">
     <value>Right-click a class name in the code (in a class attribute or a CSS selector) and choose “Find Usages” (Alt+F7).</value>
@@ -4500,6 +4506,9 @@ It does not change the files, their names or their IDs.</value>
   <data name="Status_FindUsages" xml:space="preserve">
     <value>Usages of class “{0}”: {1}.</value>
   </data>
+  <data name="Status_FindUsagesId" xml:space="preserve">
+    <value>Usages of id “{0}”: {1}.</value>
+  </data>
   <data name="Status_FindUsagesNoClass" xml:space="preserve">
     <value>The caret is not on a class name (in a class attribute or a CSS selector).</value>
   </data>
@@ -4535,6 +4544,9 @@ It does not change the files, their names or their IDs.</value>
   </data>
   <data name="FindUsages_KindAttribute" xml:space="preserve">
     <value>class attribute</value>
+  </data>
+  <data name="FindUsages_KindIdAttribute" xml:space="preserve">
+    <value>id attribute</value>
   </data>
   <data name="FindUsages_KindSelector" xml:space="preserve">
     <value>CSS selector</value>

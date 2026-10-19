@@ -950,6 +950,23 @@ public sealed class Book : IDisposable
     public IReadOnlyList<ClassUsage> FindClassUsages(string className)
     {
         ArgumentException.ThrowIfNullOrEmpty(className);
+        return ClassUsageFinder.Find(className, ClassUsageSources());
+    }
+
+    /// <summary>
+    /// "Find Usages" of an id (<see cref="IdUsageFinder"/>) in the stylesheets and the markup files ((X)HTML, SVG,
+    /// XML), in the order of the Book Browser. The lenient tag scanner needs no well-formed guard.
+    /// </summary>
+    public IReadOnlyList<ClassUsage> FindIdUsages(string id)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(id);
+        return IdUsageFinder.Find(id, ClassUsageSources());
+    }
+
+    // The stylesheets and the markup files ((X)HTML, SVG, XML), in the order of the Book Browser — shared by
+    // FindClassUsages and FindIdUsages (they search the very same files).
+    private List<ClassUsageSource> ClassUsageSources()
+    {
         using MainUI.OpfModel browserOrder = new(this);
         List<ClassUsageSource> sources = new();
         foreach (MainUI.OpfModelEntry entry in browserOrder.AllEntries())
@@ -969,7 +986,7 @@ public sealed class Book : IDisposable
             }
         }
 
-        return ClassUsageFinder.Find(className, sources);
+        return sources;
     }
 
     /// <summary>Stores the file texts computed by <see cref="ClassRenamer.Rename"/>. Returns whether anything changed.</summary>

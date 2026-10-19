@@ -785,6 +785,16 @@ public partial class CodeTabView : UserControl
                 items.Add(new Separator());
             }
 
+            // ---- Find Usages (Id) — the id under the caret in an id attribute or in a selector ----
+            if (vm.IdNameAtCaretForUsages() is { } idNameAtCaret)
+            {
+                items.Add(Item(
+                    Strings.Get("CodeEditorMenu_FindIdUsages"),
+                    () => host.FindIdUsages(idNameAtCaret),
+                    "find-usages"));
+                items.Add(new Separator());
+            }
+
             // ---- Footnotes (XHTML files of a book) ----
             if (vm.IsHtmlFlow && vm.FootnoteStateAtCaret() is { } footnotes)
             {
