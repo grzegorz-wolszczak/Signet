@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Threading;
+using Signet.App.Infrastructure;
 
 namespace Signet.App.Views;
 
@@ -58,6 +59,120 @@ public partial class ProgressWindow : Window
         }
 
         return await work.ConfigureAwait(true);
+    }
+
+    /// <summary>
+    /// Runs <paramref name="work"/> with a window over <paramref name="owner"/> that shows what it is doing and how far it is
+    /// (<see cref="WorkProgress"/>): the work reports to the progress it is given, from any thread. The window appears when
+    /// the work is not done after <paramref name="delay"/> (<see cref="DefaultDelay"/> when <c>null</c>; <see cref="TimeSpan.Zero"/>
+    /// shows it at once) and has no Cancel — it cannot be closed until the work is done and the UI has caught up with it.
+    /// An exception of the work is thrown here.
+    /// </summary>
+    /// <remarks>
+    /// The work must leave the UI thread before it does anything long (<c>Task.Run</c>), or the window cannot be drawn.
+    /// </remarks>
+    /// <param name="owner">The window the progress window is shown over.</param>
+    /// <param name="title">The name of the operation (the title of the window).</param>
+    /// <param name="message">What it is doing at the start.</param>
+    /// <param name="work">The work.</param>
+    /// <param name="delay">How long the work may take before the window appears.</param>
+    public static async Task RunWithProgressAsync(
+        Window owner, string title, string message, Func<IProgress<WorkProgress>, Task> work, TimeSpan? delay = null)
+    {
+        ArgumentNullException.ThrowIfNull(owner);
+        ArgumentNullException.ThrowIfNull(work);
+        UiProgress progress = new(message);
+        Task task = work(progress);
+        await Task.WhenAny(task, Task.Delay(delay ?? DefaultDelay)).ConfigureAwait(true);
+        if (!task.IsCompleted)
+        {
+            ProgressWindow window = new() { Title = title };
+            window.CancelButton.IsVisible = false;
+            window.CancelButton.IsCancel = false;
+            progress.Attach(window);
+            bool done = false;
+            window.Closing += (_, e) => e.Cancel = !done;
+            _ = task.ContinueWith(
+                _ => Dispatcher.UIThread.Post(
+                    () =>
+                    {
+                        done = true;
+                        window.Close();
+                    },
+                    DispatcherPriority.Background),
+                TaskScheduler.Default);
+            await window.ShowDialog(owner).ConfigureAwait(true);
+        }
+
+        await task.ConfigureAwait(true);
+    }
+
+    // Takes reports from any thread and shows the last one in the window, on the UI thread, when there is one.
+    private sealed class UiProgress : IProgress<WorkProgress>
+    {
+        private readonly object _gate = new();
+        private WorkProgress _latest;
+        private ProgressWindow? _window;
+
+        public UiProgress(string message) => _latest = new WorkProgress(message, null);
+
+        public void Attach(ProgressWindow window)
+        {
+            lock (_gate)
+            {
+                _window = window;
+                window.Apply(_latest);
+            }
+        }
+
+        public void Report(WorkProgress value)
+        {
+            lock (_gate)
+            {
+                _latest = value with { Message = value.Message ?? _latest.Message };
+                if (_window is null)
+                {
+                    return;
+                }
+            }
+
+            Dispatcher.UIThread.Post(
+                () =>
+                {
+                    WorkProgress latest;
+                    lock (_gate)
+                    {
+                        latest = _latest;
+                    }
+
+                    _window?.Apply(latest);
+                },
+                DispatcherPriority.Render);
+        }
+    }
+
+    /// <summary>Shows <paramref name="progress"/>: the message, and the bar with the percent when the fraction is known.</summary>
+    internal void Apply(WorkProgress progress)
+    {
+        ArgumentNullException.ThrowIfNull(progress);
+        if (progress.Message is not null)
+        {
+            MessageText.Text = progress.Message;
+        }
+
+        if (progress.Fraction is { } fraction)
+        {
+            int percent = (int)Math.Round(Math.Clamp(fraction, 0, 1) * 100);
+            Bar.IsIndeterminate = false;
+            Bar.Value = percent;
+            PercentText.Text = percent.ToString(System.Globalization.CultureInfo.CurrentCulture) + " %";
+            PercentText.IsVisible = true;
+        }
+        else
+        {
+            Bar.IsIndeterminate = true;
+            PercentText.IsVisible = false;
+        }
     }
 
     /// <summary>

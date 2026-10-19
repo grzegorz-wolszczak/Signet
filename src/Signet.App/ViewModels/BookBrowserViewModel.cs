@@ -1555,7 +1555,19 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         }
     }
 
-    private void OnModelChanged(object? sender, EventArgs e) => Rebuild();
+    /// <summary>
+    /// Whether the tree ignores the changes of the book: set while the book is edited off the UI thread (the changes are raised
+    /// there, and the tree is bound to the UI); the caller refreshes the tree when it is done (<see cref="Refresh"/>).
+    /// </summary>
+    public bool SuspendRebuilds { get; set; }
+
+    private void OnModelChanged(object? sender, EventArgs e)
+    {
+        if (!SuspendRebuilds)
+        {
+            Rebuild();
+        }
+    }
 
     private void OnFolderNodePropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {

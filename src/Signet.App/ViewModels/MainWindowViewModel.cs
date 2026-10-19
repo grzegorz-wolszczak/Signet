@@ -1479,6 +1479,12 @@ public sealed partial class MainWindowViewModel
 
     private void OnBookModifiedStateChanged(object? sender, bool modified)
     {
+        if (_bookEditedInBackground)
+        {
+            // Raised off the UI thread; the title and the table of contents are refreshed when the work is done.
+            return;
+        }
+
         RefreshTitle();
         _toc.Refresh();
     }

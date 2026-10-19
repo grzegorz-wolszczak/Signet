@@ -366,8 +366,100 @@ public sealed class FootnoteConversionViewModelTests
             sut.HasItems.Should().BeFalse();
             sut.HasProblems.Should().BeTrue();
             sut.ProblemsTitle.Should().Be(Strings.Get("FootnoteConversionWindow_ProblemsRestored"));
-            sut.Problems.Should().Equal(
+            sut.Problems.Select(p => p.Text).Should().Equal(
                 Strings.Get("FootnoteConversionProblem_TextChanged") + " — " + html.BookPath + ", " + detail);
+        }
+    }
+
+    [Fact]
+    public void A_text_that_changed_is_reported_with_where_it_was_and_what_went_missing()
+    {
+        // Arrange
+        using UiCultureScope culture = new("en");
+        ConversionProblem problem = new(
+            ConversionProblemKind.TextChanged, "Text/a.xhtml", "fn-9", "See Lk 6,47. [10] The Jewish scholars relied on tradition.", "See Lk 6,47.")
+        {
+            SourcePath = "Text/mt-07.xhtml",
+            SourceId = "fn9",
+            Marker = "[9]",
+        };
+
+        // Act
+        string text = FootnoteConversionViewModel.ProblemText(problem);
+
+        // Assert
+        text.Split('\n').Should().Equal(
+            Strings.Get("FootnoteConversionProblem_TextChanged") + " — " + Strings.Format("FootnoteConversionProblem_Source", "[9]", "Text/mt-07.xhtml", "fn9"),
+            Strings.Format("FootnoteConversionProblem_Before", "See Lk 6,47. [10] The Jewish scholars relied on tradition."),
+            Strings.Format("FootnoteConversionProblem_After", "See Lk 6,47."),
+            Strings.Format("FootnoteConversionProblem_Gone", "[10] The Jewish scholars relied on tradition."));
+    }
+
+    [Fact]
+    public void A_note_that_was_not_found_after_the_conversion_is_reported_as_lost()
+    {
+        // Arrange
+        using UiCultureScope culture = new("en");
+        ConversionProblem problem = new(ConversionProblemKind.TextChanged, "Text/a.xhtml", "fn-1", "Some text.", null);
+
+        // Act
+        string text = FootnoteConversionViewModel.ProblemText(problem);
+
+        // Assert
+        text.Split('\n').Should().HaveCount(3);
+        text.Should().EndWith(Strings.Get("FootnoteConversionProblem_NoteLost"));
+    }
+
+    [Theory]
+    [InlineData("a b c", "a x c", "b", "x")]
+    [InlineData("abc", "abc", "", "")]
+    [InlineData("abcd", "ad", "bc", "")]
+    [InlineData("ad", "abcd", "", "bc")]
+    public void Difference_is_what_lies_between_the_common_start_and_end(string before, string after, string gone, string appeared)
+    {
+        // Act
+        (string actualGone, string actualAppeared) = FootnoteConversionViewModel.Difference(before, after);
+
+        // Assert
+        actualGone.Should().Be(gone);
+        actualAppeared.Should().Be(appeared);
+    }
+
+    [Theory]
+    [InlineData(ConversionBlocker.ContainsNote)]
+    [InlineData(ConversionBlocker.InsideNote)]
+    public void A_nested_note_says_which_other_note_it_is_nested_with(ConversionBlocker blocker)
+    {
+        // Arrange
+        using UiCultureScope culture = new("en");
+        (Book book, HtmlResource _) = BookWithLocalFootnotes();
+        using (book)
+        {
+            ConversionItem item = FootnoteEditor.PlanConversion(book).Items[0] with { CanConvert = false, Blocker = blocker, BlockerDetail = "fn10" };
+
+            // Act
+            string text = FootnoteConversionItemViewModel.BlockerText(item);
+
+            // Assert
+            text.Should().Contain("fn10").And.Contain("nested");
+        }
+    }
+
+    [Fact]
+    public void A_blocked_item_without_a_reason_gets_the_general_text()
+    {
+        // Arrange
+        using UiCultureScope culture = new("en");
+        (Book book, HtmlResource _) = BookWithLocalFootnotes();
+        using (book)
+        {
+            ConversionItem item = FootnoteEditor.PlanConversion(book).Items[0] with { CanConvert = false };
+
+            // Act
+            string text = FootnoteConversionItemViewModel.BlockerText(item);
+
+            // Assert
+            text.Should().Be(Strings.Get("FootnoteConversionWindow_CannotConvert"));
         }
     }
 

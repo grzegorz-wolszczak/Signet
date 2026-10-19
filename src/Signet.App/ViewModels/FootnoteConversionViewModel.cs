@@ -106,8 +106,8 @@ public sealed partial class FootnoteConversionViewModel : ViewModelBase
     /// </summary>
     public ObservableCollection<FootnoteConversionFileViewModel> Files { get; } = new();
 
-    /// <summary>What went wrong in the last conversion (one line each); empty when nothing did.</summary>
-    public ObservableCollection<string> Problems { get; } = new();
+    /// <summary>What went wrong in the last conversion (a few lines each); empty when nothing did.</summary>
+    public ObservableCollection<FootnoteConversionProblemRow> Problems { get; } = new();
 
     /// <summary>The heading over <see cref="Problems"/>.</summary>
     public string ProblemsTitle { get; private set; } = string.Empty;
@@ -283,7 +283,12 @@ public sealed partial class FootnoteConversionViewModel : ViewModelBase
         Problems.Clear();
         foreach (ConversionProblem problem in outcome.Problems)
         {
-            Problems.Add(ProblemText(problem));
+            // The book was brought back, so the note is where it was: a click goes to it.
+            FootnoteConversionItemViewModel? item = outcome.Restored && problem.SourceId.Length > 0
+                ? Items.FirstOrDefault(i => i.Item.Footnote.NoteId == problem.SourceId && i.Item.Footnote.NoteFile.BookPath == problem.SourcePath)
+                : null;
+            Problems.Add(new FootnoteConversionProblemRow(
+                ProblemText(problem), item is null ? null : new RelayCommand(() => Navigate(item, FootnoteSide.Note))));
         }
 
         ProblemsTitle = Strings.Get(outcome.Restored ? "FootnoteConversionWindow_ProblemsRestored" : "FootnoteConversionWindow_ProblemsKept");
@@ -291,14 +296,71 @@ public sealed partial class FootnoteConversionViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasProblems));
     }
 
-    /// <summary>One line about a problem found by the check after the conversion.</summary>
+    // How much of a text the report of a problem shows.
+    private const int ReportedTextLength = 300;
+
+    private const char LineBreak = '\n';
+
+    /// <summary>
+    /// A problem found by the check after the conversion: what is wrong and where the footnote was before the conversion
+    /// (its marker, id and file); for a text that changed also the text before and after, and what went missing or appeared.
+    /// </summary>
     public static string ProblemText(ConversionProblem problem)
     {
         ArgumentNullException.ThrowIfNull(problem);
         string what = Strings.Get("FootnoteConversionProblem_" + problem.Kind.ToString());
-        string where = string.Join(", ", new[] { problem.BookPath, problem.Detail }.Where(s => s.Length > 0));
-        return where.Length == 0 ? what : what + " — " + where;
+        string where = problem.SourceId.Length > 0
+            ? Strings.Format("FootnoteConversionProblem_Source", problem.Marker, problem.SourcePath, problem.SourceId)
+            : string.Join(", ", new[] { problem.BookPath, problem.Detail }.Where(s => s.Length > 0));
+        System.Text.StringBuilder text = new(where.Length == 0 ? what : what + " — " + where);
+        if (problem.Kind != ConversionProblemKind.TextChanged || problem.Expected is not { } expected)
+        {
+            return text.ToString();
+        }
+
+        text.Append(LineBreak).Append(Strings.Format("FootnoteConversionProblem_Before", Shorten(expected)));
+        if (problem.Actual is not { } actual)
+        {
+            return text.Append(LineBreak).Append(Strings.Get("FootnoteConversionProblem_NoteLost")).ToString();
+        }
+
+        text.Append(LineBreak).Append(Strings.Format("FootnoteConversionProblem_After", Shorten(actual)));
+        (string gone, string appeared) = Difference(expected, actual);
+        if (gone.Length > 0)
+        {
+            text.Append(LineBreak).Append(Strings.Format("FootnoteConversionProblem_Gone", Shorten(gone)));
+        }
+
+        if (appeared.Length > 0)
+        {
+            text.Append(LineBreak).Append(Strings.Format("FootnoteConversionProblem_Appeared", Shorten(appeared)));
+        }
+
+        return text.ToString();
     }
+
+    /// <summary>What <paramref name="before"/> has that <paramref name="after"/> has not, and the other way round (what lies between the common start and end).</summary>
+    public static (string Gone, string Appeared) Difference(string before, string after)
+    {
+        ArgumentNullException.ThrowIfNull(before);
+        ArgumentNullException.ThrowIfNull(after);
+        int start = 0;
+        while (start < before.Length && start < after.Length && before[start] == after[start])
+        {
+            start++;
+        }
+
+        int end = 0;
+        while (end < before.Length - start && end < after.Length - start && before[^(end + 1)] == after[^(end + 1)])
+        {
+            end++;
+        }
+
+        return (before[start..^end].Trim(), after[start..^end].Trim());
+    }
+
+    private static string Shorten(string text) =>
+        text.Length > ReportedTextLength ? text[..ReportedTextLength] + "…" : text;
 
     // "Notes.xhtml — 12 notes; only notes, all global notes; epub:type of notes (chosen automatically)".
     private static string CandidateText(GlobalFileCandidate candidate, bool automatic)
@@ -344,7 +406,7 @@ public sealed partial class FootnoteConversionItemViewModel : FootnoteConversion
         Note = item.NoteText.Length > NoteLength ? item.NoteText[..NoteLength] + "…" : item.NoteText;
         Warnings = item.CanConvert
             ? item.Warnings.Select(w => WarningText(w, item)).ToList()
-            : new[] { Strings.Get("FootnoteConversionWindow_CannotConvert") };
+            : new[] { BlockerText(item) };
         Notices = item.Notices.Select(n => NoticeText(n, item)).ToList();
         Children = item.Links.Select(l => new FootnoteConversionLinkNode(owner, l, footnote.ReferenceFile)).ToArray();
         _isChecked = item.CanConvert && item.Warnings.Count == 0;
@@ -461,6 +523,19 @@ public sealed partial class FootnoteConversionItemViewModel : FootnoteConversion
         _owner.OnItemToggled();
     }
 
+    /// <summary>Why <paramref name="item"/> cannot be converted.</summary>
+    public static string BlockerText(ConversionItem item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        return item.Blocker switch
+        {
+            ConversionBlocker.None => Strings.Get("FootnoteConversionWindow_CannotConvert"),
+            ConversionBlocker.ContainsNote or ConversionBlocker.InsideNote =>
+                Strings.Format("FootnoteConversionBlocker_" + item.Blocker, item.BlockerDetail),
+            _ => Strings.Get("FootnoteConversionBlocker_" + item.Blocker),
+        };
+    }
+
     /// <summary>The description of a notice of <paramref name="item"/>.</summary>
     public static string NoticeText(ConversionNotice notice, ConversionItem item)
     {
@@ -496,6 +571,15 @@ public sealed partial class FootnoteConversionItemViewModel : FootnoteConversion
         item.ReferenceRange is { } range
             ? FootnoteViewModel.Context(item.Footnote.ReferenceFile.GetText(), range.Start, range.End)
             : (string.Empty, string.Empty);
+}
+
+/// <summary>A problem the check after the conversion found, as the dialog lists it.</summary>
+/// <param name="Text">What is wrong (a few lines).</param>
+/// <param name="GoTo">Opens the note in the code; <c>null</c> when it cannot (the book was not brought back).</param>
+public sealed record FootnoteConversionProblemRow(string Text, System.Windows.Input.ICommand? GoTo)
+{
+    /// <summary>Whether a click goes to the note.</summary>
+    public bool IsLink => GoTo is not null;
 }
 
 /// <summary>A file the global notes can go to in the conversion dialog.</summary>
