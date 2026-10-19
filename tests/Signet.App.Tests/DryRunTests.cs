@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using AwesomeAssertions;
+using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.App.Tests.TestSupport;
 using Signet.App.ViewModels;
@@ -8,10 +9,10 @@ using Signet.App.ViewModels.Tabs;
 using Signet.Core.BookManipulation;
 using Signet.Core.MainUI;
 using Signet.Core.Misc;
-using Signet.App.Resources;
 using Signet.Core.Resources;
 using Signet.Core.Search;
 using Signet.Core.Spellcheck;
+using Signet.Core.Tests.TestSupport;
 using Xunit;
 
 namespace Signet.App.Tests;
@@ -22,6 +23,8 @@ namespace Signet.App.Tests;
 /// </summary>
 public sealed class DryRunTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
     private readonly string _settingsPath =
         Path.Combine(Path.GetTempPath(), $"signet-dryrun-{Guid.NewGuid():N}.xml");
 
@@ -30,6 +33,7 @@ public sealed class DryRunTests : IDisposable
 
     public void Dispose()
     {
+        _disposables.Dispose();
         _book.Dispose();
         if (File.Exists(_settingsPath))
         {
@@ -47,7 +51,7 @@ public sealed class DryRunTests : IDisposable
     private CodeTabViewModel OpenTab(HtmlResource html)
     {
         OpenTab tab = _tabModel.OpenResource(html);
-        (SettingsStore settings, SpellChecker spellChecker) = SpellCheckTestFactory.New();
+        (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         var vm = new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker);
         vm.Document.Text = html.GetText();
         vm.UpdateSelection(0, 0);

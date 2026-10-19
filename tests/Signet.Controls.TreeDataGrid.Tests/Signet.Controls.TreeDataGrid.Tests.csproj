@@ -23,6 +23,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The temporary-folder isolation and cleanup check shared by all the test projects (Signet.Core.Tests is not
+         referenced here: the fork's tests do not depend on Signet.Core). -->
+    <Compile Include="..\Signet.Core.Tests\TestSupport\TestIsolation.cs" Link="TestSupport\TestIsolation.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Signet.Controls.TreeDataGrid\Signet.Controls.TreeDataGrid.csproj" />
   </ItemGroup>
 

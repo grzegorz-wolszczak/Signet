@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia;
@@ -12,6 +13,7 @@ using Signet.App.Actions;
 using Signet.App.Toolbars;
 using Signet.App.ViewModels;
 using Signet.App.Views;
+using Signet.Core.Tests.TestSupport;
 
 namespace Signet.App.MainWindowUiTests;
 
@@ -19,11 +21,16 @@ namespace Signet.App.MainWindowUiTests;
 /// Toolbar areas of the main window: the grips, the empty bottom area, and mapping a pointer position over the real
 /// rows to a drop target. The drag itself (the OS drag loop) is not driven here.
 /// </summary>
-public sealed class ToolbarAreaViewTests
+public sealed class ToolbarAreaViewTests : IDisposable
 {
-    private static (MainWindow Window, MainWindowViewModel Vm) ShowMainWindow()
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
+    private (MainWindow Window, MainWindowViewModel Vm) ShowMainWindow()
     {
-        MainWindowViewModel vm = new();
+        MainWindowViewModel vm = _disposables.Add(new MainWindowViewModel());
         MainWindow window = new() { DataContext = vm };
         window.Show();
         Flush(window);

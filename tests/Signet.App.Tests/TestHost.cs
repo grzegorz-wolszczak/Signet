@@ -1,11 +1,11 @@
 using System;
-using System.IO;
 using Microsoft.Extensions.Logging.Abstractions;
 using Signet.App.Actions;
 using Signet.App.Input;
 using Signet.App.Services;
 using Signet.App.Toolbars;
 using Signet.Core.Misc;
+using Signet.Core.Tests.TestSupport;
 
 namespace Signet.App.Tests;
 
@@ -14,9 +14,12 @@ namespace Signet.App.Tests;
 /// </summary>
 internal sealed class TestHost : IDisposable
 {
+    // The folder of the settings file and of what is saved beside it; deleted with the host.
+    private readonly TempDir _folder = new("app-");
+
     public TestHost()
     {
-        SettingsPath = Path.Combine(Path.GetTempPath(), "Signet.Tests", $"app-{Guid.NewGuid():N}.xml");
+        SettingsPath = _folder.Combine("settings.xml");
         Settings = new SettingsStore(SettingsPath);
         StatusBar = new StatusBarService();
         Shortcuts = new KeyboardShortcutManager(Settings);
@@ -42,16 +45,6 @@ internal sealed class TestHost : IDisposable
     public void Dispose()
     {
         StatusBar.Dispose();
-        try
-        {
-            if (File.Exists(SettingsPath))
-            {
-                File.Delete(SettingsPath);
-            }
-        }
-        catch (IOException)
-        {
-            // best-effort
-        }
+        _folder.Dispose();
     }
 }

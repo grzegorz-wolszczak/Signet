@@ -13,8 +13,13 @@ namespace Signet.Core.Tests.BookManipulation;
 /// Tests of <see cref="OpfStructureValidator"/> (validating the
 /// OPF/manifest/spine structure).
 /// </summary>
-public sealed class OpfStructureValidatorTests
+public sealed class OpfStructureValidatorTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
     [Fact]
     public void Validate_returns_no_results_for_a_wellformed_book()
     {
@@ -134,9 +139,9 @@ public sealed class OpfStructureValidatorTests
             r.Severity == ValidationSeverity.Error && r.Message.Contains("<spine>"));
     }
 
-    private static Book OpenMutableBook()
+    private Book OpenMutableBook()
     {
-        TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         return new ImportEpub(epub).GetBook();
     }

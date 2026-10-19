@@ -39,9 +39,15 @@ namespace Signet.App.ViewModels;
 /// An action without a handler shows a message on the status bar when executed.
 /// </summary>
 public sealed partial class MainWindowViewModel
-    : ViewModelBase, IBookWorkspace, IEditionPageHost, IRecentFilesMenu, IBookmarksMenu, IMultiFileSearchHost, ICodeTabHost, ILanguageAware
+    : ViewModelBase, IBookWorkspace, IEditionPageHost, IRecentFilesMenu, IBookmarksMenu, IMultiFileSearchHost, ICodeTabHost, ILanguageAware,
+        IDisposable
 {
     private readonly MenuBuilder _menuBuilder;
+
+    // The folder of the designer preview's settings and of the files kept beside them (clips, saved searches, navigation
+    // history, book locks, dictionaries); deleted with the view model. Null in the application.
+    private readonly string? _designTimeFolder;
+    private bool _disposed;
 
     private readonly TableOfContentsViewModel _toc = new();
     private readonly FindReplaceViewModel _findReplace;
@@ -120,6 +126,7 @@ public sealed partial class MainWindowViewModel
             b.Toolbars, b.DockFactory, b.StatusBar, b.Settings, b.BookBrowser, b.Tabs, b.Preview, b.SpellChecker,
             b.ClipboardHistory, b.DoctypeGuard)
     {
+        _designTimeFolder = b.Folder;
     }
 
     /// <summary>Constructor injected by DI.</summary>
@@ -1584,6 +1591,21 @@ public sealed partial class MainWindowViewModel
         _searchEditor.PersistIfModified();
         _clips.PersistIfModified();
         _settings.Save();
+        Dispose();
+    }
+
+    /// <summary>
+    /// Lets go of the book, the tabs, the preview and the other resources (<see cref="PersistState"/> does it after saving
+    /// the state when the window closes). The designer preview's folder goes with it.
+    /// </summary>
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
         if (_activeCaretTab is not null)
         {
             _activeCaretTab.PropertyChanged -= OnActiveTabPropertyChanged;
@@ -1601,6 +1623,10 @@ public sealed partial class MainWindowViewModel
         _currentBook?.Dispose();
         _currentBook = null;
         _checkpoints.Dispose();
+        if (_designTimeFolder is not null && System.IO.Directory.Exists(_designTimeFolder))
+        {
+            System.IO.Directory.Delete(_designTimeFolder, recursive: true);
+        }
     }
 
     /// <summary>Shows a message on the status bar (used by the view, e.g. on a file open error).</summary>
@@ -4060,27 +4086,30 @@ public sealed partial class MainWindowViewModel
         PreviewViewModel Preview,
         SpellChecker SpellChecker,
         ClipboardHistoryService ClipboardHistory,
-        MissingDoctypeGuard DoctypeGuard)
+        MissingDoctypeGuard DoctypeGuard,
+        string Folder)
     {
         public static DesignTimeBundle Create()
         {
-            SettingsStore settings = new(System.IO.Path.Combine(
-                System.IO.Path.GetTempPath(),
-                $"signet-designtime-{Guid.NewGuid():N}.json"));
+            // A folder of its own, so that nothing of the preview reaches the user's data folder.
+            string folder = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "Signet.DesignTime", Guid.NewGuid().ToString("N"));
+            System.IO.Directory.CreateDirectory(folder);
+            SettingsStore settings = new(System.IO.Path.Combine(folder, AppDirectories.SettingsFileName));
             KeyboardShortcutManager shortcuts = new(settings);
             ToolbarManager toolbars = new(settings);
             StatusBarService statusBar = new();
             AppActionRegistry actions = new(shortcuts, statusBar, NullLogger<AppActionRegistry>.Instance);
             MissingDoctypeGuard doctypeGuard = new(settings);
             BookBrowserViewModel bookBrowser = new(settings, statusBar, doctypeGuard);
-            PreviewViewModel preview = new(statusBar);
+            PreviewViewModel preview = new(statusBar, folder);
             MainDockFactory dockFactory = new(bookBrowser, preview);
-            SpellChecker spellChecker = new(settings);
+            SpellChecker spellChecker = new(
+                settings, System.IO.Path.Combine(folder, "hunspell_dictionaries"), System.IO.Path.Combine(folder, "user_dictionaries"));
             TabManager tabs = new(dockFactory, statusBar, settings, spellChecker);
             ClipboardHistoryService clipboardHistory = new(settings);
             return new DesignTimeBundle(
                 actions, shortcuts, toolbars,
-                dockFactory, statusBar, settings, bookBrowser, tabs, preview, spellChecker, clipboardHistory, doctypeGuard);
+                dockFactory, statusBar, settings, bookBrowser, tabs, preview, spellChecker, clipboardHistory, doctypeGuard, folder);
         }
     }
 }

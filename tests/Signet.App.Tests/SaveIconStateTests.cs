@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Avalonia.Media;
 using AwesomeAssertions;
@@ -16,15 +17,20 @@ namespace Signet.App.Tests;
 /// The "Save" floppy icon on the toolbar and in the menu: grey without changes, red with unsaved
 /// changes (the action works in both states).
 /// </summary>
-public sealed class SaveIconStateTests
+public sealed class SaveIconStateTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
     [Fact]
     public void Save_icon_is_grey_without_changes_and_red_after_editing_a_tab()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
-        MainWindowViewModel sut = new();
-        Book book = new ImportEpub(epub).GetBook();
+        MainWindowViewModel sut = _disposables.Add(new MainWindowViewModel());
+        Book book = _disposables.Add(new ImportEpub(epub).GetBook());
         sut.LoadBook(book, epub);
         AppAction save = sut.Actions.Require(AppActionIds.Save);
 

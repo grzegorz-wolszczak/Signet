@@ -12,8 +12,13 @@ namespace Signet.Core.Tests.BookManipulation;
 /// Tests of <see cref="LinkIntegrityValidator"/> (checking
 /// links/references: broken/dangling/case-mismatch).
 /// </summary>
-public sealed class LinkIntegrityValidatorTests
+public sealed class LinkIntegrityValidatorTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
     [Fact]
     public void Validate_returns_no_results_for_a_wellformed_book()
     {
@@ -144,9 +149,9 @@ public sealed class LinkIntegrityValidatorTests
             .OfType<HtmlResource>()
             .First(r => r.BookPath.EndsWith(fileName, StringComparison.Ordinal));
 
-    private static Book OpenMutableBook()
+    private Book OpenMutableBook()
     {
-        TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         return new ImportEpub(epub).GetBook();
     }

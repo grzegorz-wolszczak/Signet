@@ -15,6 +15,8 @@ namespace Signet.App.Tests;
 /// </summary>
 public sealed class IconThemeManagerTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
     private readonly string _settingsPath =
         Path.Combine(Path.GetTempPath(), "Signet.Tests", $"icons-{Guid.NewGuid():N}.xml");
 
@@ -53,7 +55,7 @@ public sealed class IconThemeManagerTests : IDisposable
     [Fact]
     public void A_custom_icon_set_is_read_from_icons_xml()
     {
-        using TempDir dir = new();
+        TempDir dir = _disposables.Add(new TempDir());
         string path = Path.Combine(dir.Path, IconThemeManager.CustomIconFileName);
         File.WriteAllText(path, """
             <icons>
@@ -74,7 +76,7 @@ public sealed class IconThemeManagerTests : IDisposable
     [Fact]
     public void A_json_icon_map_is_not_read()
     {
-        using TempDir dir = new();
+        TempDir dir = _disposables.Add(new TempDir());
         string path = Path.Combine(dir.Path, IconThemeManager.CustomIconFileName);
         File.WriteAllText(path, "{ \"icon-open\": \"M0 0 L10 10 Z\" }");
 
@@ -83,6 +85,7 @@ public sealed class IconThemeManagerTests : IDisposable
 
     public void Dispose()
     {
+        _disposables.Dispose();
         if (File.Exists(_settingsPath))
         {
             File.Delete(_settingsPath);

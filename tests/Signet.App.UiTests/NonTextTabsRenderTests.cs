@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Headless;
@@ -20,18 +21,23 @@ namespace Signet.App.UiTests;
 /// (image, font, audio) opens in the proper view model and renders without an exception.
 /// The controls are mounted standalone, without the main window.
 /// </summary>
-public sealed class NonTextTabsRenderTests
+public sealed class NonTextTabsRenderTests : IDisposable
 {
-    private static (Book Book, TabManagerModel Model) LoadMedia(TempDir temp)
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
+    private (Book Book, TabManagerModel Model) LoadMedia(TempDir temp)
     {
-        Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         return (book, new TabManagerModel());
     }
 
     [AvaloniaFact]
     public void Image_resource_opens_in_an_image_tab_and_renders()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (Book book, TabManagerModel model) = LoadMedia(temp);
         using (book)
         {
@@ -52,7 +58,7 @@ public sealed class NonTextTabsRenderTests
     [AvaloniaFact]
     public void Font_resource_opens_in_a_font_tab_without_throwing()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (Book book, TabManagerModel model) = LoadMedia(temp);
         using (book)
         {
@@ -77,7 +83,7 @@ public sealed class NonTextTabsRenderTests
     [AvaloniaFact]
     public void Audio_resource_opens_in_a_media_tab_and_renders()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (Book book, TabManagerModel model) = LoadMedia(temp);
         using (book)
         {

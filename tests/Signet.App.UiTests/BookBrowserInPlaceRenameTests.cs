@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -24,8 +25,13 @@ namespace Signet.App.UiTests;
 /// In-place file rename in the Book Browser (an editor in the tree instead of a window) and the
 /// light text selection color in edit fields.
 /// </summary>
-public sealed class BookBrowserInPlaceRenameTests
+public sealed class BookBrowserInPlaceRenameTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
     private static void Render(Window window)
     {
         Dispatcher.UIThread.RunJobs();
@@ -33,10 +39,9 @@ public sealed class BookBrowserInPlaceRenameTests
         Dispatcher.UIThread.RunJobs();
     }
 
-    private static (Window Window, BookBrowserViewModel ViewModel, BookBrowserNode File) ShowBrowser(Book book)
+    private (Window Window, BookBrowserViewModel ViewModel, BookBrowserNode File) ShowBrowser(Book book)
     {
-        SettingsStore settings = new(System.IO.Path.Combine(
-            System.IO.Path.GetTempPath(), $"signet-bbui-{System.Guid.NewGuid():N}.xml"));
+        SettingsStore settings = new(_disposables.Add(new TempDir("signet-bbui-")).Combine("file.xml"));
         BookBrowserViewModel vm = new(settings, new StatusBarService());
         vm.SetBook(book);
 
@@ -58,8 +63,8 @@ public sealed class BookBrowserInPlaceRenameTests
     [AvaloniaFact]
     public void Rename_shows_a_focused_editor_in_the_tree_with_the_filename_selected()
     {
-        using TempDir temp = new();
-        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3WithNcx, temp)).GetBook();
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3WithNcx, temp)).GetBook());
         (Window window, BookBrowserViewModel vm, BookBrowserNode file) = ShowBrowser(book);
 
         vm.RenameSelectedCommand.Execute(null);
@@ -74,8 +79,8 @@ public sealed class BookBrowserInPlaceRenameTests
     [AvaloniaFact]
     public void Enter_commits_and_Escape_cancels_the_in_place_rename()
     {
-        using TempDir temp = new();
-        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3WithNcx, temp)).GetBook();
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3WithNcx, temp)).GetBook());
         (Window window, BookBrowserViewModel vm, BookBrowserNode file) = ShowBrowser(book);
         Signet.Core.Resources.Resource resource = file.Entry!.Resource;
         string original = resource.Filename;
@@ -102,8 +107,8 @@ public sealed class BookBrowserInPlaceRenameTests
     [AvaloniaFact]
     public void After_a_committed_rename_the_focus_stays_on_the_renamed_file_and_it_can_be_renamed_again()
     {
-        using TempDir temp = new();
-        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3WithNcx, temp)).GetBook();
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3WithNcx, temp)).GetBook());
         (Window window, BookBrowserViewModel vm, BookBrowserNode file) = ShowBrowser(book);
         Signet.Core.Resources.Resource resource = file.Entry!.Resource;
 

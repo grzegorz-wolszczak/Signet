@@ -1,13 +1,14 @@
+using System;
 using System.Linq;
 using AwesomeAssertions;
 using Signet.App.Actions;
 using Signet.App.Menu;
+using Signet.App.Tests.TestSupport;
 using Signet.App.ViewModels;
 using Signet.App.ViewModels.Tabs;
 using Signet.Core.BookManipulation;
 using Signet.Core.Resources;
 using Signet.Core.Tests.TestSupport;
-using Signet.App.Tests.TestSupport;
 using Xunit;
 
 namespace Signet.App.Tests;
@@ -16,15 +17,20 @@ namespace Signet.App.Tests;
 /// Navigation tests: Go To Line, bookmarks (bookmark round-trip), the "Table Of Contents" panel,
 /// "Focus on…" messages, focus-dependent zoom.
 /// </summary>
-public sealed class NavigationTests
+public sealed class NavigationTests : IDisposable
 {
-    private static MainWindowViewModel New() => new();
+    private readonly Disposables _disposables = new();
 
-    private static (MainWindowViewModel Sut, Book Book) Loaded(TempDir temp, string corpus)
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
+    private MainWindowViewModel New() => _disposables.Add(new MainWindowViewModel());
+
+    private (MainWindowViewModel Sut, Book Book) Loaded(TempDir temp, string corpus)
     {
         string epub = EpubBuilder.BuildInto(corpus, temp);
         MainWindowViewModel sut = New();
-        Book book = new ImportEpub(epub).GetBook();
+        Book book = _disposables.Add(new ImportEpub(epub).GetBook());
         sut.LoadBook(book, epub);
         return (sut, book);
     }
@@ -32,7 +38,7 @@ public sealed class NavigationTests
     [Fact]
     public void GoToLine_scrolls_the_active_code_tab()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, Book book) = Loaded(temp, CorpusPaths.Epub3Media);
         sut.Tabs.OpenResources(new Resource[] { book.GetAllResources().OfType<HtmlResource>().First() });
         var tab = (CodeTabViewModel)sut.Tabs.ActiveTab!;
@@ -47,7 +53,7 @@ public sealed class NavigationTests
     [Fact]
     public void Bookmark_survives_a_tab_switch_and_the_bookmarks_menu_returns_to_it()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, Book book) = Loaded(temp, CorpusPaths.Epub3WithNcx);
         HtmlResource chapter1 = book.GetHtmlResources().First(h => h.Filename == "chapter1.xhtml");
         HtmlResource chapter2 = book.GetHtmlResources().First(h => h.Filename == "chapter2.xhtml");
@@ -71,7 +77,7 @@ public sealed class NavigationTests
     [Fact]
     public void Table_of_contents_panel_is_populated_from_the_book_and_navigates_on_activate()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, Book book) = Loaded(temp, CorpusPaths.Epub3WithNcx);
 
         sut.TableOfContents.HasEntries.Should().BeTrue();
@@ -96,7 +102,7 @@ public sealed class NavigationTests
     [Fact]
     public void Zoom_targets_the_code_editor_by_default_and_not_after_focusing_preview()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, Book book) = Loaded(temp, CorpusPaths.Epub3Media);
         sut.Tabs.OpenResources(new Resource[] { book.GetAllResources().OfType<HtmlResource>().First() });
         var tab = (CodeTabViewModel)sut.Tabs.ActiveTab!;

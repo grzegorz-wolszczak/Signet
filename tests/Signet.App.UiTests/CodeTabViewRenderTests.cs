@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Headless;
@@ -29,11 +30,16 @@ namespace Signet.App.UiTests;
 /// (outside <c>DocumentDock</c>; the tab in the real main window is covered by
 /// <c>WindowRenderTests</c> in Signet.App.MainWindowUiTests).
 /// </summary>
-public sealed class CodeTabViewRenderTests
+public sealed class CodeTabViewRenderTests : IDisposable
 {
-    private static (SettingsStore Settings, SpellChecker SpellChecker) NewSpellChecker()
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
+    private (SettingsStore Settings, SpellChecker SpellChecker) NewSpellChecker()
     {
-        string root = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"signet-uitests-{System.Guid.NewGuid():N}");
+        string root = _disposables.Add(new TempDir("signet-uitests-")).Path;
         SettingsStore settings = new(System.IO.Path.Combine(root, "settings.xml"));
         SpellChecker spellChecker = new(
             settings,
@@ -45,8 +51,8 @@ public sealed class CodeTabViewRenderTests
     [AvaloniaFact]
     public void Code_tab_view_renders_the_editor_with_the_resource_text()
     {
-        using TempDir temp = new();
-        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
         html.InitialLoad();
 
@@ -76,8 +82,8 @@ public sealed class CodeTabViewRenderTests
     [AvaloniaFact]
     public void Error_renderer_update_is_null_safe_when_the_editor_document_is_not_bound_yet()
     {
-        using TempDir temp = new();
-        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
         html.InitialLoad();
 
@@ -105,11 +111,11 @@ public sealed class CodeTabViewRenderTests
         vm.Invoking(x => x.RunWellFormedCheck()).Should().NotThrow();
     }
 
-    private static (Window Window, CodeTabViewModel Vm) ShowCodeTab(string xhtml, bool extended = true)
+    private (Window Window, CodeTabViewModel Vm) ShowCodeTab(string xhtml, bool extended = true)
     {
         (SettingsStore settings, SpellChecker spellChecker) = NewSpellChecker();
         settings.CodeEditorExtendedHighlighting = extended;
-        string dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"signet-uitests-{System.Guid.NewGuid():N}");
+        string dir = _disposables.Add(new TempDir("signet-uitests-")).Path;
         System.IO.Directory.CreateDirectory(dir);
         string path = System.IO.Path.Combine(dir, "Section0001.xhtml");
         System.IO.File.WriteAllText(path, xhtml);
@@ -134,7 +140,7 @@ public sealed class CodeTabViewRenderTests
     public void A_view_releases_TextMate_when_it_leaves_the_screen_and_installs_it_again_when_it_comes_back()
     {
         (SettingsStore settings, SpellChecker spellChecker) = NewSpellChecker();
-        string dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"signet-uitests-{System.Guid.NewGuid():N}");
+        string dir = _disposables.Add(new TempDir("signet-uitests-")).Path;
         System.IO.Directory.CreateDirectory(dir);
         string path = System.IO.Path.Combine(dir, "script.js");
         System.IO.File.WriteAllText(path, "function hello() {\n  return 'world';\n}\n");
@@ -222,7 +228,7 @@ public sealed class CodeTabViewRenderTests
     {
         (Window window, _) = ShowCodeTab("<p class=\"x\">a</p>", extended: false);
         TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
-        string folder = System.IO.Directory.CreateTempSubdirectory("signet-theme-").FullName;
+        string folder = _disposables.Add(new TempDir("signet-theme-")).Path;
         try
         {
             ThemeStores stores = ThemeStores.In(folder);
@@ -245,10 +251,10 @@ public sealed class CodeTabViewRenderTests
     }
 
     // A script or JSON file in its own tab (highlighted by TextMate).
-    private static Window ShowMiscTab(string fileName, string text)
+    private Window ShowMiscTab(string fileName, string text)
     {
         (SettingsStore settings, SpellChecker spellChecker) = NewSpellChecker();
-        string dir = System.IO.Directory.CreateTempSubdirectory("signet-uitests-").FullName;
+        string dir = _disposables.Add(new TempDir("signet-uitests-")).Path;
         string path = System.IO.Path.Combine(dir, fileName);
         System.IO.File.WriteAllText(path, text);
         MiscTextResource resource = new(dir, path);
@@ -461,7 +467,7 @@ public sealed class CodeTabViewRenderTests
             FontSize = 21,
         };
 
-        string dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"signet-uitests-{System.Guid.NewGuid():N}");
+        string dir = _disposables.Add(new TempDir("signet-uitests-")).Path;
         System.IO.Directory.CreateDirectory(dir);
         string path = System.IO.Path.Combine(dir, "Section0001.xhtml");
         System.IO.File.WriteAllText(path, "<p>a</p>");
@@ -542,8 +548,8 @@ public sealed class CodeTabViewRenderTests
     [AvaloniaFact]
     public void Context_menu_opens_with_the_default_layout_without_a_misspelled_word()
     {
-        using TempDir temp = new();
-        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
         html.InitialLoad();
 
@@ -587,8 +593,8 @@ public sealed class CodeTabViewRenderTests
     [AvaloniaFact]
     public void Context_menu_offers_rename_class_when_the_caret_is_on_a_class_name()
     {
-        using TempDir temp = new();
-        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
         html.InitialLoad();
 
@@ -620,8 +626,8 @@ public sealed class CodeTabViewRenderTests
     [AvaloniaFact]
     public void Class_items_of_the_context_menu_show_the_shortcuts_of_their_actions()
     {
-        using TempDir temp = new();
-        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
         html.InitialLoad();
 
@@ -657,8 +663,8 @@ public sealed class CodeTabViewRenderTests
     [AvaloniaFact]
     public void Context_menu_offers_rename_class_in_a_stylesheet_selector()
     {
-        using TempDir temp = new();
-        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         CssResource css = book.GetAllResources().OfType<CssResource>().First();
         css.InitialLoad();
 
@@ -690,8 +696,8 @@ public sealed class CodeTabViewRenderTests
     [AvaloniaFact]
     public void Context_menu_always_shows_merge_content_enabled_only_for_mergeable_selection()
     {
-        using TempDir temp = new();
-        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
         html.InitialLoad();
 
@@ -736,8 +742,8 @@ public sealed class CodeTabViewRenderTests
     [AvaloniaFact]
     public void Context_menu_unwrap_div_is_disabled_with_a_reason_outside_a_div()
     {
-        using TempDir temp = new();
-        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
         html.InitialLoad();
 
@@ -787,8 +793,8 @@ public sealed class CodeTabViewRenderTests
     [AvaloniaFact]
     public void Context_menu_footnotes_submenu_follows_the_footnote_state_at_the_caret()
     {
-        using TempDir temp = new();
-        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         HtmlResource html = book.GetHtmlResources().First(h => !ReferenceEquals(h, book.GetNavResource()));
         html.InitialLoad();
         string source = html.GetText();
@@ -871,7 +877,7 @@ public sealed class CodeTabViewRenderTests
         int renames = 0;
         registry.SetHandler(AppActionIds.RenameClass, () => renames++);
 
-        string dir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"signet-uitests-{System.Guid.NewGuid():N}");
+        string dir = _disposables.Add(new TempDir("signet-uitests-")).Path;
         System.IO.Directory.CreateDirectory(dir);
         string path = System.IO.Path.Combine(dir, "Section0001.xhtml");
         System.IO.File.WriteAllText(path, "<p class=\"x\">a</p>");
@@ -1020,8 +1026,8 @@ public sealed class CodeTabViewRenderTests
     [InlineData(true)]
     public void Find_next_keeps_each_match_visible_with_a_one_line_margin(bool jumpAround)
     {
-        using TempDir temp = new();
-        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
         html.InitialLoad();
         string paragraph = string.Concat(Enumerable.Repeat("Ala ma kota, a kot ma Alę i dużo innych słów. ", 12));
@@ -1086,8 +1092,8 @@ public sealed class CodeTabViewRenderTests
     [AvaloniaFact]
     public void Match_selected_before_the_editor_is_laid_out_is_scrolled_into_view_with_a_margin()
     {
-        using TempDir temp = new();
-        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
         html.InitialLoad();
         string paragraph = string.Concat(Enumerable.Repeat("Ala ma kota, a kot ma Alę i dużo innych słów. ", 12));
@@ -1134,8 +1140,8 @@ public sealed class CodeTabViewRenderTests
     [AvaloniaFact]
     public void Caret_jump_requested_before_the_editor_is_laid_out_is_scrolled_into_view_with_a_margin()
     {
-        using TempDir temp = new();
-        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
         html.InitialLoad();
         string paragraph = string.Concat(Enumerable.Repeat("Ala ma kota, a kot ma Alę i dużo innych słów. ", 12));

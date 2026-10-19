@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using AwesomeAssertions;
 using Signet.Core.BookManipulation;
@@ -11,8 +12,13 @@ namespace Signet.Core.Tests.BookManipulation;
 /// Tests of <see cref="ContentTypeValidator"/> (checking the mimetype against the actual
 /// content of the file).
 /// </summary>
-public sealed class ContentTypeValidatorTests
+public sealed class ContentTypeValidatorTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
     [Fact]
     public void Validate_returns_no_results_for_a_wellformed_book()
     {
@@ -56,9 +62,9 @@ public sealed class ContentTypeValidatorTests
             .OfType<ImageResource>()
             .First(r => r.BookPath.EndsWith(fileName, System.StringComparison.Ordinal));
 
-    private static Book OpenMutableBook()
+    private Book OpenMutableBook()
     {
-        TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         return new ImportEpub(epub).GetBook();
     }

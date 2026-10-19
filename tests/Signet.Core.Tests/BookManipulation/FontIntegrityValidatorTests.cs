@@ -23,8 +23,13 @@ namespace Signet.Core.Tests.BookManipulation;
 /// disk (<c>FontResource.FullPath</c>) with a synthetic, minimal SFNT font built
 /// right here, to control the family/<c>fsType</c> that is read.
 /// </remarks>
-public sealed class FontIntegrityValidatorTests
+public sealed class FontIntegrityValidatorTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
     [Fact]
     public void Validate_reports_only_the_damage_when_font_unparsable()
     {
@@ -92,9 +97,9 @@ public sealed class FontIntegrityValidatorTests
         File.WriteAllBytes(font.FullPath, BuildFont(family, fsType));
     }
 
-    private static Book OpenMutableBook()
+    private Book OpenMutableBook()
     {
-        TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         return new ImportEpub(epub).GetBook();
     }

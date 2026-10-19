@@ -1,15 +1,16 @@
+using System;
 using System.Linq;
 using AwesomeAssertions;
 using Signet.App.Actions;
 using Signet.App.Menu;
 using Signet.App.Resources;
+using Signet.App.Tests.TestSupport;
 using Signet.App.ViewModels;
 using Signet.App.ViewModels.Tabs;
 using Signet.Core.BookManipulation;
 using Signet.Core.MainUI;
 using Signet.Core.Resources;
 using Signet.Core.Tests.TestSupport;
-using Signet.App.Tests.TestSupport;
 using Xunit;
 
 namespace Signet.App.Tests;
@@ -18,15 +19,20 @@ namespace Signet.App.Tests;
 /// "Merge Content" in the application: action state and label, merging in the tab, confirmation
 /// when attributes differ, the position in the Edit menu.
 /// </summary>
-public sealed class MergeContentTests
+public sealed class MergeContentTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
     private const string Doc = "<html><body>\n<p class=\"a\">Ala</p>\n<p class=\"a\">ma</p>\n<p class=\"b\">kota</p>\n</body></html>";
 
-    private static (MainWindowViewModel Vm, CodeTabViewModel Tab, AppAction Action) Open(TempDir temp, string doc = Doc)
+    private (MainWindowViewModel Vm, CodeTabViewModel Tab, AppAction Action) Open(TempDir temp, string doc = Doc)
     {
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
-        MainWindowViewModel vm = new();
-        Book book = new ImportEpub(epub).GetBook();
+        MainWindowViewModel vm = _disposables.Add(new MainWindowViewModel());
+        Book book = _disposables.Add(new ImportEpub(epub).GetBook());
         vm.LoadBook(book, epub);
         vm.Tabs.CloseAllTabs();
         vm.Tabs.OpenResources(new Resource[] { book.GetAllResources().OfType<HtmlResource>().First() });
@@ -48,7 +54,7 @@ public sealed class MergeContentTests
     [Fact]
     public void Action_is_disabled_with_the_plain_label_until_the_selection_covers_mergeable_elements()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (_, CodeTabViewModel tab, AppAction action) = Open(temp);
         string plain = CodeTabViewModel.MergeContentTextFor(null);
 
@@ -75,7 +81,7 @@ public sealed class MergeContentTests
     [Fact]
     public void Same_attributes_merge_immediately_without_asking()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel vm, CodeTabViewModel tab, AppAction action) = Open(temp);
         bool asked = false;
         vm.MergeContentConfirmationRequested += (_, _) => asked = true;
@@ -90,7 +96,7 @@ public sealed class MergeContentTests
     [Fact]
     public void Different_attributes_ask_first_and_merge_only_after_confirmation()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel vm, CodeTabViewModel tab, AppAction action) = Open(temp);
         ElementMergeCandidate? asked = null;
         vm.MergeContentConfirmationRequested += (_, c) => asked = c;
@@ -123,7 +129,7 @@ public sealed class MergeContentTests
     [Fact]
     public void Text_and_a_comment_between_elements_ask_first_and_are_merged_after_confirmation()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         const string doc = "<html><body><span>abc</span>  bcd <!-- k --> <span>xyz</span></body></html>";
         (MainWindowViewModel vm, CodeTabViewModel tab, AppAction action) = Open(temp, doc);
         ElementMergeCandidate? asked = null;

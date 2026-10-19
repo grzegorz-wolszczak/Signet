@@ -1,4 +1,6 @@
+using System;
 using System.Linq;
+using AwesomeAssertions;
 using Dock.Controls.DeferredContentControl;
 using Dock.Model.Mvvm.Controls;
 using Signet.App.Docking;
@@ -11,7 +13,6 @@ using Signet.Core.Misc;
 using Signet.Core.Resources;
 using Signet.Core.Spellcheck;
 using Signet.Core.Tests.TestSupport;
-using AwesomeAssertions;
 using Xunit;
 
 namespace Signet.App.Tests;
@@ -22,8 +23,13 @@ namespace Signet.App.Tests;
 /// caused re-entrancy in the views' <c>DataContextChanged</c> handlers when docks were re-parented
 /// (e.g. a <c>NullReferenceException</c> in <c>CodeTabView</c>).
 /// </summary>
-public sealed class DeferredContentOptOutTests
+public sealed class DeferredContentOptOutTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
     public static TheoryData<Tool> Tools => new()
     {
         new BookBrowserTool(),
@@ -44,13 +50,13 @@ public sealed class DeferredContentOptOutTests
     [Fact]
     public void Document_tabs_opt_out_of_deferred_content()
     {
-        using TempDir temp = new();
-        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
 
         var model = new TabManagerModel();
         OpenTab tab = model.OpenResource(html);
-        (SettingsStore settings, SpellChecker spellChecker) = SpellCheckTestFactory.New();
+        (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         var vm = new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker);
 
         vm.Should().BeAssignableTo<IDeferredContentPresentation>();

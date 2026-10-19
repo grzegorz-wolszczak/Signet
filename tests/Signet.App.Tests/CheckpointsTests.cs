@@ -43,7 +43,7 @@ public sealed class CheckpointsTests
             return Vm.ActiveCodeTab!;
         }
 
-        public void Dispose() => Vm.CheckpointHistory.Dispose();
+        public void Dispose() => Vm.Dispose();
     }
 
     private static string AppendParagraph(CodeTabViewModel tab, string text)
@@ -98,14 +98,14 @@ public sealed class CheckpointsTests
         }
         finally
         {
-            vm.CheckpointHistory.Dispose();
+            vm.Dispose();
         }
     }
 
     [Fact]
     public void Checkpoint_actions_are_disabled_without_a_book()
     {
-        MainWindowViewModel vm = new();
+        using MainWindowViewModel vm = new();
 
         vm.Actions.Require(AppActionIds.CreateCheckpoint).IsEnabled.Should().BeFalse();
         vm.Actions.Require(AppActionIds.RevertToBefore).IsEnabled.Should().BeFalse();

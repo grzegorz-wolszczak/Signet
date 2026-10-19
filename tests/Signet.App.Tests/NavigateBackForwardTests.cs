@@ -39,7 +39,7 @@ public sealed class NavigateBackForwardTests : IDisposable
 
     public void Dispose()
     {
-        _sut.CheckpointHistory.Dispose();
+        _sut.Dispose();
         _temp.Dispose();
     }
 

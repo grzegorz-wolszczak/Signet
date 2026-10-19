@@ -27,6 +27,7 @@ using Signet.App.ViewModels;
 using Signet.App.Views;
 using Signet.Core.Footnotes;
 using Signet.Core.Misc;
+using Signet.Core.Tests.TestSupport;
 using Signet.Core.Themes;
 using Signet.Core.Spellcheck;
 
@@ -36,8 +37,13 @@ namespace Signet.App.PreferencesUiTests;
 /// Headless tests of the "Preferences" window — in particular the visual separation of the tab list
 /// from the content area (in the light theme both parts were white and blended into one surface).
 /// </summary>
-public sealed class PreferencesWindowRenderTests
+public sealed class PreferencesWindowRenderTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
     // Selects a top-level page by its header (resource key), so the tests do not depend on the order of the pages.
     private static void SelectTab(TabControl tabs, string headerKey) =>
         tabs.SelectedItem = tabs.Items.OfType<TabItem>()
@@ -77,11 +83,11 @@ public sealed class PreferencesWindowRenderTests
         Dispatcher.UIThread.RunJobs();
     }
 
-    private static PreferencesWindow BuildWindow() => BuildWindow(out _);
+    private PreferencesWindow BuildWindow() => BuildWindow(out _);
 
-    private static PreferencesWindow BuildWindow(out SettingsStore settings)
+    private PreferencesWindow BuildWindow(out SettingsStore settings)
     {
-        string root = Path.Combine(Path.GetTempPath(), "Signet.Tests", "prefs-ui-" + Guid.NewGuid().ToString("N"));
+        string root = _disposables.Add(new TempDir("prefs-ui-")).Path;
         settings = new(Path.Combine(root, "settings.xml"));
         SpellChecker spellChecker = new(settings, Path.Combine(root, "hunspell"), Path.Combine(root, "user"));
         LocalizationManager localization = new(settings, NullLogger<LocalizationManager>.Instance);
@@ -93,7 +99,7 @@ public sealed class PreferencesWindowRenderTests
         UiDensityManager uiDensity = new(settings, iconTheme, NullLogger<UiDensityManager>.Instance);
         ThemeManager themes = new(settings, ThemeStores.In(root), NullLogger<ThemeManager>.Instance);
         PreferencesViewModel vm = new(settings, spellChecker, localization, iconTheme, shortcuts, registry, uiDensity, themes);
-        return new PreferencesWindow { DataContext = vm };
+        return new PreferencesWindow { DataContext = _disposables.Add(vm) };
     }
 
     /// <summary>The selected page can be set from outside (the main window restores the last one); a page that no longer exists falls back to the first.</summary>
@@ -939,7 +945,7 @@ public sealed class PreferencesWindowRenderTests
 
     // A page of Appearance that has only the font of its tooltip (and perhaps others) and a preview panel next to its settings:
     // the panel is there with the sample of the tooltip, which follows the unsaved font; the rows have no previews of their own.
-    private static (PreferencesWindow Window, PreferencesViewModel Vm, Border Pane, TooltipSample Tip) ShowPreviewPage(
+    private (PreferencesWindow Window, PreferencesViewModel Vm, Border Pane, TooltipSample Tip) ShowPreviewPage(
         string part, string hostName, string paneName, string tipName, bool bottom)
     {
         PreferencesWindow window = BuildWindow();
@@ -2131,7 +2137,7 @@ public sealed class PreferencesWindowRenderTests
     [AvaloniaFact]
     public void Ui_font_is_applied_live_and_reset_restores_the_default()
     {
-        string root = Path.Combine(Path.GetTempPath(), "Signet.Tests", "uifont-" + Guid.NewGuid().ToString("N"));
+        string root = _disposables.Add(new TempDir("uifont-")).Path;
         SettingsStore settings = new(Path.Combine(root, "settings.xml"));
         UiDensityManager manager = new(
             settings, new IconThemeManager(settings, NullLogger<IconThemeManager>.Instance), NullLogger<UiDensityManager>.Instance);

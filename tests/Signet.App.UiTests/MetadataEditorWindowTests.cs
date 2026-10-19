@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Headless;
@@ -11,12 +12,18 @@ using Signet.App.Views;
 using Signet.Controls.TreeDataGrid;
 using Signet.Controls.TreeDataGrid.Primitives;
 using Signet.Core.BookManipulation;
+using Signet.Core.Tests.TestSupport;
 
 namespace Signet.App.UiTests;
 
 /// <summary>The "Metadata Editor" dialog: the metadata tree (Name, Value), in-place value editing and the selection.</summary>
-public sealed class MetadataEditorWindowTests
+public sealed class MetadataEditorWindowTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
     private static void Settle(Window window)
     {
         for (int i = 0; i < 3; i++)
@@ -26,9 +33,9 @@ public sealed class MetadataEditorWindowTests
         }
     }
 
-    private static (MetadataEditorWindow Window, MetadataEditorViewModel Vm, TreeDataGrid Tree, Book Book) Show()
+    private (MetadataEditorWindow Window, MetadataEditorViewModel Vm, TreeDataGrid Tree, Book Book) Show()
     {
-        Book book = BookCreator.CreateNewBook("3.0");
+        Book book = _disposables.Add(BookCreator.CreateNewBook("3.0"));
         MetadataEditorViewModel vm = new(book);
         MetadataEditorWindow window = new() { DataContext = vm };
         window.Show();

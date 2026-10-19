@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using AwesomeAssertions;
@@ -20,20 +21,25 @@ namespace Signet.App.Tests;
 /// Tests for the App layer of the tab manager: mapping <c>TabManagerModel</c> onto the Dock.Avalonia
 /// <c>DocumentDock</c> area (opening, activating an existing tab, closing).
 /// </summary>
-public sealed class TabManagerTests
+public sealed class TabManagerTests : IDisposable
 {
-    private static (TabManager Tabs, MainDockFactory Dock) NewManager()
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
+    private (TabManager Tabs, MainDockFactory Dock) NewManager()
     {
         StatusBarService statusBar = new();
         MainDockFactory dockFactory = new();
         dockFactory.InitLayout(dockFactory.CreateLayout());
-        (SettingsStore settings, SpellChecker spellChecker) = SpellCheckTestFactory.New();
+        (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         TabManager tabs = new(dockFactory, statusBar, settings, spellChecker);
         return (tabs, dockFactory);
     }
 
-    private static Book Load(TempDir temp) =>
-        new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+    private Book Load(TempDir temp) =>
+        _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
 
     private static List<Resource> ThreeResources(Book book)
     {
@@ -52,7 +58,7 @@ public sealed class TabManagerTests
     [Fact]
     public void Opening_three_resources_puts_three_documents_in_the_dock()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         (TabManager tabs, MainDockFactory dock) = NewManager();
         tabs.SetBook(book);
@@ -72,7 +78,7 @@ public sealed class TabManagerTests
     [Fact]
     public void A_closed_image_tab_no_longer_follows_its_file_on_disk()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         (TabManager tabs, MainDockFactory dock) = NewManager();
         tabs.SetBook(book);
@@ -95,7 +101,7 @@ public sealed class TabManagerTests
     [Fact]
     public void Reopening_a_resource_activates_the_existing_document()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         (TabManager tabs, MainDockFactory dock) = NewManager();
         tabs.SetBook(book);
@@ -112,7 +118,7 @@ public sealed class TabManagerTests
     [Fact]
     public void Closing_a_document_from_the_dock_updates_the_model()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         (TabManager tabs, MainDockFactory dock) = NewManager();
         tabs.SetBook(book);
@@ -129,7 +135,7 @@ public sealed class TabManagerTests
     [Fact]
     public void Unsupported_resources_do_not_open_a_tab()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         (TabManager tabs, MainDockFactory dock) = NewManager();
         tabs.SetBook(book);
@@ -147,16 +153,16 @@ public sealed class TabManagerTests
     [Fact]
     public void Session_capture_and_restore_reopens_the_same_tabs()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
-        SettingsStore settings = new(System.IO.Path.Combine(
-            System.IO.Path.GetTempPath(), $"signet-tabs-{System.Guid.NewGuid():N}.xml"));
+        TempDir folder = _disposables.Add(new TempDir("signet-tabs-"));
+        SettingsStore settings = new(folder.Combine("settings.xml"));
         StatusBarService statusBar = new();
         List<Resource> resources = ThreeResources(book);
         SpellChecker spellChecker = new(
             settings,
-            System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"signet-dicts-{System.Guid.NewGuid():N}"),
-            System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"signet-userdicts-{System.Guid.NewGuid():N}"));
+            folder.Combine("dicts"),
+            folder.Combine("userdicts"));
 
         MainDockFactory dock1 = new();
         dock1.InitLayout(dock1.CreateLayout());
@@ -180,16 +186,16 @@ public sealed class TabManagerTests
     [Fact]
     public void Session_capture_and_restore_reopens_the_cursor_offset_of_each_code_tab()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
-        SettingsStore settings = new(System.IO.Path.Combine(
-            System.IO.Path.GetTempPath(), $"signet-tabs-{System.Guid.NewGuid():N}.xml"));
+        TempDir folder = _disposables.Add(new TempDir("signet-tabs-"));
+        SettingsStore settings = new(folder.Combine("settings.xml"));
         StatusBarService statusBar = new();
         Resource html = book.GetAllResources().First(r => r.Type == ResourceType.Html);
         SpellChecker spellChecker = new(
             settings,
-            System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"signet-dicts-{System.Guid.NewGuid():N}"),
-            System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"signet-userdicts-{System.Guid.NewGuid():N}"));
+            folder.Combine("dicts"),
+            folder.Combine("userdicts"));
 
         MainDockFactory dock1 = new();
         dock1.InitLayout(dock1.CreateLayout());
@@ -223,9 +229,9 @@ public sealed class TabManagerTests
     [Fact]
     public void Zooming_one_code_tab_applies_the_same_zoom_to_other_open_code_tabs_and_settings()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
-        (SettingsStore settings, SpellChecker spellChecker) = SpellCheckTestFactory.New();
+        (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         MainDockFactory dock = new();
         dock.InitLayout(dock.CreateLayout());
         using TabManager tabs = new(dock, new StatusBarService(), settings, spellChecker);
@@ -243,9 +249,9 @@ public sealed class TabManagerTests
     [Fact]
     public void Newly_opened_code_tab_starts_with_the_shared_code_zoom()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
-        (SettingsStore settings, SpellChecker spellChecker) = SpellCheckTestFactory.New();
+        (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         MainDockFactory dock = new();
         dock.InitLayout(dock.CreateLayout());
         using TabManager tabs = new(dock, new StatusBarService(), settings, spellChecker);

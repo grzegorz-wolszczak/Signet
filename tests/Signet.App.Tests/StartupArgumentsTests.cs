@@ -19,8 +19,13 @@ using Xunit;
 namespace Signet.App.Tests;
 
 /// <summary>Opening the file given on the command line.</summary>
-public sealed class StartupArgumentsTests
+public sealed class StartupArgumentsTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
     [Fact]
     public void No_arguments_mean_no_file()
     {
@@ -32,7 +37,7 @@ public sealed class StartupArgumentsTests
     [Fact]
     public void Relative_path_is_resolved_against_the_current_directory()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
 
         string? path = StartupArguments.FileToOpen(["book.epub", "ignored"], temp.Path);
 
@@ -42,7 +47,7 @@ public sealed class StartupArgumentsTests
     [Fact]
     public void Path_with_spaces_and_a_leading_at_sign_is_a_plain_file()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         StartupArguments.FileToOpen(["@my book.epub"], temp.Path)
             .Should().Be(temp.Combine("@my book.epub"), "\"@\" does not denote a response file here");
     }
@@ -50,9 +55,9 @@ public sealed class StartupArgumentsTests
     [Fact]
     public async Task Startup_opens_the_file_from_the_command_line()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp, "from-cli.epub");
-        MainWindowViewModel vm = new();
+        MainWindowViewModel vm = _disposables.Add(new MainWindowViewModel());
         vm.AttachFileWorkflowPrompts(new FakeFileWorkflowPrompts());
         vm.StartupFilePath = epub;
 
@@ -66,8 +71,8 @@ public sealed class StartupArgumentsTests
     [Fact]
     public async Task Missing_file_from_the_command_line_shows_an_error_and_starts_without_a_book()
     {
-        using TempDir temp = new();
-        MainWindowViewModel vm = new();
+        TempDir temp = _disposables.Add(new TempDir());
+        MainWindowViewModel vm = _disposables.Add(new MainWindowViewModel());
         FakeFileWorkflowPrompts prompts = new();
         vm.AttachFileWorkflowPrompts(prompts);
         vm.StartupFilePath = temp.Combine("missing.epub");
@@ -81,22 +86,24 @@ public sealed class StartupArgumentsTests
         vm.CheckpointHistory.Dispose();
     }
 
-    // The main window on the given settings (the parameterless constructor uses a settings file of its own).
-    private static MainWindowViewModel NewOn(SettingsStore settings)
+    // The main window on the given settings (the parameterless constructor uses a settings file of its own); the
+    // dictionaries and the custom preview styles are looked up in the folder of the settings file.
+    private MainWindowViewModel NewOn(SettingsStore settings)
     {
+        string folder = Path.GetDirectoryName(settings.FilePath)!;
         StatusBarService statusBar = new();
         KeyboardShortcutManager shortcuts = new(settings);
         MissingDoctypeGuard doctypeGuard = new(settings);
         BookBrowserViewModel bookBrowser = new(settings, statusBar, doctypeGuard);
-        PreviewViewModel preview = new(statusBar);
+        PreviewViewModel preview = new(statusBar, folder);
         MainDockFactory dockFactory = new(bookBrowser, preview);
-        SpellChecker spellChecker = new(settings);
-        MainWindowViewModel vm = new(
+        SpellChecker spellChecker = new(settings, Path.Combine(folder, "hunspell_dictionaries"), Path.Combine(folder, "user_dictionaries"));
+        MainWindowViewModel vm = _disposables.Add(new MainWindowViewModel(
             NullLogger<MainWindowViewModel>.Instance,
             new AppActionRegistry(shortcuts, statusBar, NullLogger<AppActionRegistry>.Instance), shortcuts,
             new ToolbarManager(settings), dockFactory, statusBar, settings, bookBrowser,
             new TabManager(dockFactory, statusBar, settings, spellChecker), preview, spellChecker,
-            new ClipboardHistoryService(settings), doctypeGuard);
+            new ClipboardHistoryService(settings), doctypeGuard));
         vm.AttachFileWorkflowPrompts(new FakeFileWorkflowPrompts());
         return vm;
     }
@@ -104,7 +111,7 @@ public sealed class StartupArgumentsTests
     [Fact]
     public async Task The_last_book_is_reopened_only_when_a_book_was_open_at_exit()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp, "last.epub");
         SettingsStore settings = new(temp.Combine("settings.xml"));
         settings.ReopenLastFileOnStartup = true;

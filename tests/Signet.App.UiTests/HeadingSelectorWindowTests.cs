@@ -14,12 +14,18 @@ using Signet.Controls.TreeDataGrid.Primitives;
 using Signet.Core.BookManipulation;
 using Signet.Core.MainUI;
 using Signet.Core.Resources;
+using Signet.Core.Tests.TestSupport;
 
 namespace Signet.App.UiTests;
 
 /// <summary>The "Generate Table Of Contents" dialog: the headings tree (Title, Level, In TOC) and its selection.</summary>
-public sealed class HeadingSelectorWindowTests
+public sealed class HeadingSelectorWindowTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
     private static void Settle(Window window)
     {
         for (int i = 0; i < 3; i++)
@@ -30,9 +36,9 @@ public sealed class HeadingSelectorWindowTests
     }
 
     // Headings Alpha (h1) > Alpha One (h2), Beta (h1); the dialog shown on them.
-    private static (HeadingSelectorWindow Window, HeadingSelectorViewModel Vm, TreeDataGrid Tree, Book Book) Show()
+    private (HeadingSelectorWindow Window, HeadingSelectorViewModel Vm, TreeDataGrid Tree, Book Book) Show()
     {
-        Book book = BookCreator.CreateNewBook("3.0");
+        Book book = _disposables.Add(BookCreator.CreateNewBook("3.0"));
         HtmlResource html = book.GetHtmlResourcesExcludingNav().First();
         string text = html.GetText();
         int start = text.IndexOf("<body", StringComparison.Ordinal);

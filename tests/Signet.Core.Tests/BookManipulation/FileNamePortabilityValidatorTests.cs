@@ -19,8 +19,13 @@ namespace Signet.Core.Tests.BookManipulation;
 /// (<c>CON</c>) cannot be created on Windows, so <c>MoveTo</c> returned <c>false</c> there,
 /// the bookpath stayed the old one, and the test failed on an empty result list instead of on the rule.
 /// </remarks>
-public sealed class FileNamePortabilityValidatorTests
+public sealed class FileNamePortabilityValidatorTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
     [Fact]
     public void Validate_returns_no_results_for_a_wellformed_book()
     {
@@ -105,9 +110,9 @@ public sealed class FileNamePortabilityValidatorTests
             .OfType<HtmlResource>()
             .First(r => r.BookPath.EndsWith(fileName, StringComparison.Ordinal));
 
-    private static Book OpenMutableBook()
+    private Book OpenMutableBook()
     {
-        TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         return new ImportEpub(epub).GetBook();
     }

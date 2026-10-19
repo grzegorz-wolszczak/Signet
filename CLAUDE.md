@@ -136,6 +136,39 @@ Rules:
 - `Catastrophic failure: Call from invalid thread` lines printed during a full `dotnet test` run are
   known noise from the headless UI tests; they do not fail the run.
 
+### Tests leave nothing behind
+
+- **Every test deletes everything it made** — files, folders, books, view models. **When writing or changing tests,
+  always run them and check that they leave nothing behind** (the guard below must pass, not only the tests).
+- Make temporary files only in a `TempDir` (`Signet.Core.Tests.TestSupport`), never by building a path under
+  `Path.GetTempPath()` by hand. Dispose what owns files: `Book` (it extracts the EPUB to `%TEMP%/Signet/scratch`),
+  `MainWindowViewModel`, `PreferencesViewModel`, `SpellCheckSetup` (`SpellCheckTestFactory.New()`), `TestHost`.
+  Use `using`, or — when helpers hand out what they made — a `Disposables` field in a test class that implements
+  `IDisposable` (`_disposables.Add(...)`, `_disposables.DeleteFile(path)` for a file the code under test made, e.g. a
+  page passed to the external file opener).
+- Headless UI tests: the constructor and `Dispose` of a test class do not run on the UI thread — windows and views
+  are closed inside the test. Closing the main window disposes its view model only when the close goes through
+  (with a book open it asks first and is cancelled), so dispose it explicitly.
+- **The run checks it.** Each test project calls `TestIsolation.Install` from a module initializer
+  (`TestIsolationSetup.cs`): the test process gets `%TEMP%/Signet.TestRuns/<project>-<guid>/` with `temp` as its
+  `Path.GetTempPath()` and `prefs` as the application's data folder (`SIGNET_PREFS_DIR`), so tests never touch the
+  user's real data. The `TempCleanupGuard` assembly fixture fails the run ("Test Assembly Cleanup Failure") when
+  anything is left in `temp`; the list of leftovers shows with `dotnet test --logger "console;verbosity=detailed"`.
+  A new test project gets its own `TestIsolationSetup.cs`.
+- Why (found in October 2026): one full test run left ~31 MB and ~4900 files in `%TEMP%` and wrote into the user's
+  real data folder (`%LOCALAPPDATA%\Signet` on Windows). The kinds of garbage found:
+  - books never disposed — the extracted EPUBs (by far the most);
+  - paths built under `%TEMP%` with a GUID (settings, clip libraries, saved searches, dictionaries) never deleted,
+    and `TempDir`s made without `using`;
+  - helpers that handed out what they made with no way to dispose it (`SpellCheckTestFactory`), or deleted only the
+    settings file and not what was saved beside it (`TestHost`);
+  - the design-time `MainWindowViewModel()` wrote its settings straight into `%TEMP%` with the clips, saved
+    searches, navigation history and book locks next to them, and used the user's real dictionary and preferences
+    folders (it now has a folder of its own, deleted by `Dispose`);
+  - tests writing the real `settings.xml`, logs, book locks, `prettyprint.xml` and the default user dictionary of the
+    application data folder;
+  - files the code under test hands to an external program (the W3C validation page), never deleted by the test.
+
 ## Build settings
 
 - `Directory.Build.props` (root): `TargetFramework net10.0`, `Nullable enable`,

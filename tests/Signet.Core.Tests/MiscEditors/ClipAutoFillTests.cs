@@ -27,7 +27,7 @@ public sealed class ClipAutoFillTests
     public void BareClassSelector_ProducesThreeElementVariants()
     {
         using var temp = new TempDir();
-        Book book = LoadWithCss(temp, ".example { color: red; }");
+        using Book book = LoadWithCss(temp, ".example { color: red; }");
 
         var entries = ClipAutoFill.BuildAutofillEntries(book);
 
@@ -43,7 +43,7 @@ public sealed class ClipAutoFillTests
     public void ElementQualifiedClassSelector_ProducesSingleEntry()
     {
         using var temp = new TempDir();
-        Book book = LoadWithCss(temp, "h1.heading { font-weight: bold; }");
+        using Book book = LoadWithCss(temp, "h1.heading { font-weight: bold; }");
 
         var entries = ClipAutoFill.BuildAutofillEntries(book);
 
@@ -55,7 +55,7 @@ public sealed class ClipAutoFillTests
     public void SelectorsWithoutClass_AreIgnored()
     {
         using var temp = new TempDir();
-        Book book = LoadWithCss(temp, "body { margin: 0; } #id { color: blue; }");
+        using Book book = LoadWithCss(temp, "body { margin: 0; } #id { color: blue; }");
 
         ClipAutoFill.BuildAutofillEntries(book).Should().BeEmpty();
     }
@@ -64,7 +64,7 @@ public sealed class ClipAutoFillTests
     public void Entries_AddedThroughModel_MergeIntoOneAutofillGroup()
     {
         using var temp = new TempDir();
-        Book book = LoadWithCss(temp, ".a { } .b { }");
+        using Book book = LoadWithCss(temp, ".a { } .b { }");
         var model = new ClipEditorModel();
 
         foreach (ClipEntry entry in ClipAutoFill.BuildAutofillEntries(book))

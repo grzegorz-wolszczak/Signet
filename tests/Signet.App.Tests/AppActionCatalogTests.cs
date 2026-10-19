@@ -46,7 +46,7 @@ public sealed class AppActionCatalogTests
     [Fact]
     public void Registry_builds_all_catalog_actions_and_wires_gestures()
     {
-        TestHost host = new();
+        using TestHost host = new();
 
         host.Registry.Actions.Should().HaveCount(AppActionCatalog.All.Count);
         host.Registry.Require(AppActionIds.Save).Gesture!.ToString().Should().Contain("Ctrl");

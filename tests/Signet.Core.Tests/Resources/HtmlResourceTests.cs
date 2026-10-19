@@ -1,3 +1,4 @@
+using System;
 using AwesomeAssertions;
 using Signet.Core.Resources;
 using Signet.Core.Tests.TestSupport;
@@ -6,8 +7,13 @@ using Xunit;
 namespace Signet.Core.Tests.Resources;
 
 /// <summary>Tests for <see cref="HtmlResource"/> — the DOM cache and queries for linked resources / properties.</summary>
-public sealed class HtmlResourceTests
+public sealed class HtmlResourceTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
     private static readonly string[] ExpectedLinkedResources = { "styles/main.css", "images/pic.png" };
 
     private const string Sample =
@@ -26,9 +32,9 @@ public sealed class HtmlResourceTests
         "</body>\n" +
         "</html>\n";
 
-    private static HtmlResource Make(string text = Sample)
+    private HtmlResource Make(string text = Sample)
     {
-        TempDir root = new();
+        TempDir root = _disposables.Add(new TempDir());
         HtmlResource resource = new(root.Path, root.Combine("Text", "chapter1.xhtml"));
         resource.SetText(text);
         return resource;

@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using AwesomeAssertions;
 using Signet.App.Services;
@@ -8,6 +9,7 @@ using Signet.Core.MainUI;
 using Signet.Core.Misc;
 using Signet.Core.Resources;
 using Signet.Core.Spellcheck;
+using Signet.Core.Tests.TestSupport;
 using Xunit;
 
 namespace Signet.App.Tests;
@@ -17,11 +19,16 @@ namespace Signet.App.Tests;
 /// Add/Ignore, "Next Misspelled Word". Uses the real bundled <c>en_US</c> dictionary; the test
 /// words are chosen so that they are unambiguously correct or misspelled.
 /// </summary>
-public sealed class CodeTabViewModelSpellcheckTests
+public sealed class CodeTabViewModelSpellcheckTests : IDisposable
 {
-    private static CodeTabViewModel NewTab(string text, SettingsStore settings, SpellChecker spellChecker)
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
+    private CodeTabViewModel NewTab(string text, SettingsStore settings, SpellChecker spellChecker)
     {
-        Book book = BookCreator.CreateNewBook("2.0");
+        Book book = _disposables.Add(BookCreator.CreateNewBook("2.0"));
         HtmlResource html = book.CreateEmptyHtmlFile();
         html.SetText(text);
         var model = new TabManagerModel();
@@ -36,7 +43,7 @@ public sealed class CodeTabViewModelSpellcheckTests
     [Fact]
     public void No_highlights_when_spellcheck_setting_is_disabled()
     {
-        (SettingsStore settings, SpellChecker spellChecker) = SpellCheckTestFactory.New();
+        (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         settings.SpellCheck = false;
 
         CodeTabViewModel sut = NewTab(Html, settings, spellChecker);
@@ -47,7 +54,7 @@ public sealed class CodeTabViewModelSpellcheckTests
     [Fact]
     public void Highlights_the_misspelled_word_when_spellcheck_is_enabled()
     {
-        (SettingsStore settings, SpellChecker spellChecker) = SpellCheckTestFactory.New();
+        (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         settings.SpellCheck = true;
 
         CodeTabViewModel sut = NewTab(Html, settings, spellChecker);
@@ -60,7 +67,7 @@ public sealed class CodeTabViewModelSpellcheckTests
     [Fact]
     public void GetMisspelledWordAtCaret_matches_only_strictly_inside_the_word()
     {
-        (SettingsStore settings, SpellChecker spellChecker) = SpellCheckTestFactory.New();
+        (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         settings.SpellCheck = true;
         CodeTabViewModel sut = NewTab(Html, settings, spellChecker);
         int wordStart = Html.IndexOf("wrold", System.StringComparison.Ordinal);
@@ -75,7 +82,7 @@ public sealed class CodeTabViewModelSpellcheckTests
     [Fact]
     public void AddCurrentMisspelledWordToDictionary_removes_it_from_highlights()
     {
-        (SettingsStore settings, SpellChecker spellChecker) = SpellCheckTestFactory.New();
+        (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         settings.SpellCheck = true;
         CodeTabViewModel sut = NewTab(Html, settings, spellChecker);
         int wordStart = Html.IndexOf("wrold", System.StringComparison.Ordinal);
@@ -90,7 +97,7 @@ public sealed class CodeTabViewModelSpellcheckTests
     [Fact]
     public void IgnoreCurrentMisspelledWord_removes_it_from_highlights_for_the_session()
     {
-        (SettingsStore settings, SpellChecker spellChecker) = SpellCheckTestFactory.New();
+        (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         settings.SpellCheck = true;
         CodeTabViewModel sut = NewTab(Html, settings, spellChecker);
         int wordStart = Html.IndexOf("wrold", System.StringComparison.Ordinal);
@@ -105,7 +112,7 @@ public sealed class CodeTabViewModelSpellcheckTests
     [Fact]
     public void GoToNextMisspelledWord_raises_SearchResultRequested_for_the_next_word_and_wraps_around()
     {
-        (SettingsStore settings, SpellChecker spellChecker) = SpellCheckTestFactory.New();
+        (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         settings.SpellCheck = true;
         const string html = "<html><body><p>wrold and wrold</p></body></html>";
         CodeTabViewModel sut = NewTab(html, settings, spellChecker);
@@ -133,7 +140,7 @@ public sealed class CodeTabViewModelSpellcheckTests
     [Fact]
     public void GetSuggestionsFor_returns_non_empty_suggestions_for_a_misspelled_word()
     {
-        (SettingsStore settings, SpellChecker spellChecker) = SpellCheckTestFactory.New();
+        (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         settings.SpellCheck = true;
         CodeTabViewModel sut = NewTab(Html, settings, spellChecker);
         int wordStart = Html.IndexOf("wrold", System.StringComparison.Ordinal);

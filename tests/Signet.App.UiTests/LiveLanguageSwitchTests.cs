@@ -13,6 +13,7 @@ using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.Views;
 using Signet.Core.Misc;
+using Signet.Core.Tests.TestSupport;
 
 namespace Signet.App.UiTests;
 
@@ -20,8 +21,13 @@ namespace Signet.App.UiTests;
 /// Switching the UI language live: the XAML texts (<c>{loc:Loc …}</c>) are bindings to
 /// <see cref="Localizer"/> and change in open windows without a restart.
 /// </summary>
-public sealed class LiveLanguageSwitchTests
+public sealed class LiveLanguageSwitchTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
     private static void Render(Window window)
     {
         Dispatcher.UIThread.RunJobs();
@@ -59,7 +65,7 @@ public sealed class LiveLanguageSwitchTests
     public void ApplySaved_notifies_only_when_the_language_actually_changes()
     {
         CultureInfo previous = CultureInfo.CurrentUICulture;
-        string root = Path.Combine(Path.GetTempPath(), "Signet.Tests", "lang-" + Guid.NewGuid().ToString("N"));
+        string root = _disposables.Add(new TempDir("lang-")).Path;
         SettingsStore settings = new(Path.Combine(root, "settings.xml"));
         LocalizationManager manager = new(settings, NullLogger<LocalizationManager>.Instance);
         Listener listener = new();

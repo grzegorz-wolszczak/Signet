@@ -43,6 +43,7 @@ public sealed class FindUsagesTests : IDisposable
 
     public void Dispose()
     {
+        _sut.Dispose();
         _culture.Dispose();
         _temp.Dispose();
     }

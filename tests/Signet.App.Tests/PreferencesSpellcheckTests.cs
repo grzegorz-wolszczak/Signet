@@ -10,6 +10,7 @@ using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.ViewModels;
 using Signet.Core.Spellcheck;
+using Signet.Core.Tests.TestSupport;
 using Xunit;
 
 namespace Signet.App.Tests;
@@ -24,6 +25,7 @@ public sealed class PreferencesSpellcheckTests : IDisposable
     private static readonly string[] ZzyzxAndBrillig = { "zzyzx", "brillig" };
 
     private readonly TestHost _host = new();
+    private readonly TempDir _root = new("prefs-spell-");
     private readonly SpellChecker _spellChecker;
     private readonly PreferencesViewModel _vm;
     private readonly Queue<string?> _answers = new();
@@ -33,7 +35,7 @@ public sealed class PreferencesSpellcheckTests : IDisposable
     {
         LocalizationManager localization = new(_host.Settings, NullLogger<LocalizationManager>.Instance);
         IconThemeManager iconTheme = new(_host.Settings, NullLogger<IconThemeManager>.Instance);
-        string root = Path.Combine(Path.GetTempPath(), "Signet.Tests", "prefs-spell-" + Guid.NewGuid().ToString("N"));
+        string root = _root.Path;
         _spellChecker = new SpellChecker(_host.Settings, Path.Combine(root, "hunspell"), Path.Combine(root, "user"));
         UiDensityManager uiDensity = new(
             _host.Settings, iconTheme, NullLogger<UiDensityManager>.Instance, () => "Segoe UI", _ => false);
@@ -50,7 +52,12 @@ public sealed class PreferencesSpellcheckTests : IDisposable
         };
     }
 
-    public void Dispose() => _host.Dispose();
+    public void Dispose()
+    {
+        _vm.Dispose();
+        _host.Dispose();
+        _root.Dispose();
+    }
 
     [Fact]
     public void Default_user_dictionary_exists_and_is_selected_on_first_open()

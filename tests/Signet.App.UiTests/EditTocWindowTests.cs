@@ -16,17 +16,23 @@ using Signet.Controls.TreeDataGrid.Primitives;
 using Signet.Core.BookManipulation;
 using Signet.Core.MainUI;
 using Signet.Core.Resources;
+using Signet.Core.Tests.TestSupport;
 using Signet.Core.Toc;
 
 namespace Signet.App.UiTests;
 
 /// <summary>Rendering of the "Edit Table Of Contents" window.</summary>
-public sealed class EditTocWindowTests
+public sealed class EditTocWindowTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
     // A book whose TOC is Alpha (h1) > Alpha One (h2), Beta (h1); the window shown on it.
-    private static (EditTocWindow Window, EditTocViewModel Vm, TreeDataGrid Grid, Book Book) Show()
+    private (EditTocWindow Window, EditTocViewModel Vm, TreeDataGrid Grid, Book Book) Show()
     {
-        Book book = BookCreator.CreateNewBook("3.0");
+        Book book = _disposables.Add(BookCreator.CreateNewBook("3.0"));
         HtmlResource html = book.GetHtmlResourcesExcludingNav().First();
         string text = html.GetText();
         int start = text.IndexOf("<body", StringComparison.Ordinal);

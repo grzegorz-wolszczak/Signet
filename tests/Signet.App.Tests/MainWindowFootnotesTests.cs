@@ -18,13 +18,18 @@ using Xunit;
 namespace Signet.App.Tests;
 
 /// <summary>The footnote services of the main window for the Code Editor "Footnotes" submenu (<see cref="ICodeTabHost"/>).</summary>
-public sealed class MainWindowFootnotesTests
+public sealed class MainWindowFootnotesTests : IDisposable
 {
-    private static (MainWindowViewModel Sut, Book Book, HtmlResource Chapter) OpenMinimalChapter(TempDir temp)
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
+    private (MainWindowViewModel Sut, Book Book, HtmlResource Chapter) OpenMinimalChapter(TempDir temp)
     {
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, temp);
-        MainWindowViewModel sut = new();
-        Book book = new ImportEpub(epub).GetBook();
+        MainWindowViewModel sut = _disposables.Add(new MainWindowViewModel());
+        Book book = _disposables.Add(new ImportEpub(epub).GetBook());
         sut.LoadBook(book, epub);
         HtmlResource chapter = book.GetHtmlResources().Single(h => h.Filename == "chapter1.xhtml");
         sut.Tabs.OpenResources(new Resource[] { chapter });
@@ -32,11 +37,11 @@ public sealed class MainWindowFootnotesTests
     }
 
     // The minimal chapter with a footnote of other origin after "Hello" (marked [7], its note at the end of the body).
-    private static (MainWindowViewModel Sut, HtmlResource Chapter) OpenChapterWithForeignFootnote(TempDir temp)
+    private (MainWindowViewModel Sut, HtmlResource Chapter) OpenChapterWithForeignFootnote(TempDir temp)
     {
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, temp);
-        MainWindowViewModel sut = new();
-        Book book = new ImportEpub(epub).GetBook();
+        MainWindowViewModel sut = _disposables.Add(new MainWindowViewModel());
+        Book book = _disposables.Add(new ImportEpub(epub).GetBook());
         HtmlResource chapter = book.GetHtmlResources().Single(h => h.Filename == "chapter1.xhtml");
         string text = chapter.GetText().Replace(
             "<html xmlns=\"http://www.w3.org/1999/xhtml\"",
@@ -56,7 +61,7 @@ public sealed class MainWindowFootnotesTests
     public void A_footnote_is_added_edited_into_the_global_notes_and_removed_with_its_notes_file()
     {
         using UiCultureScope culture = new("en");
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, Book book, HtmlResource chapter) = OpenMinimalChapter(temp);
         ICodeTabHost host = sut;
         int offset = AfterHello(chapter);
@@ -101,7 +106,7 @@ public sealed class MainWindowFootnotesTests
     public void Editing_only_the_text_keeps_the_footnote_in_place_and_an_invalid_text_changes_nothing()
     {
         using UiCultureScope culture = new("en");
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, Book book, HtmlResource chapter) = OpenMinimalChapter(temp);
         ICodeTabHost host = sut;
         host.AddFootnote(chapter, AfterHello(chapter), "Old text.", FootnotePlacement.Local);
@@ -128,7 +133,7 @@ public sealed class MainWindowFootnotesTests
     public void A_reference_added_to_a_footnote_makes_it_shared_and_removing_it_makes_it_ordinary_again()
     {
         using UiCultureScope culture = new("en");
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, Book _, HtmlResource chapter) = OpenMinimalChapter(temp);
         ICodeTabHost host = sut;
         host.AddFootnote(chapter, AfterHello(chapter), "Shared note.", FootnotePlacement.Local);
@@ -158,7 +163,7 @@ public sealed class MainWindowFootnotesTests
     public void Shared_footnotes_in_another_style_open_the_unifying_dialog_and_unifying_rewrites_them()
     {
         using UiCultureScope culture = new("en");
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, Book book, HtmlResource chapter) = OpenMinimalChapter(temp);
         ICodeTabHost host = sut;
         sut.PrepareFootnoteLetters().Should().BeNull();
@@ -187,7 +192,7 @@ public sealed class MainWindowFootnotesTests
     [Fact]
     public void The_removal_confirmation_is_a_setting()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, Book _, HtmlResource _) = OpenMinimalChapter(temp);
         ICodeTabHost host = sut;
         host.ConfirmFootnoteRemoval.Should().BeTrue("removing asks by default");
@@ -201,7 +206,7 @@ public sealed class MainWindowFootnotesTests
     public void An_invalid_footnote_text_adds_nothing_and_says_why()
     {
         using UiCultureScope culture = new("en");
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, Book _, HtmlResource chapter) = OpenMinimalChapter(temp);
         ICodeTabHost host = sut;
         string before = chapter.GetText();
@@ -217,7 +222,7 @@ public sealed class MainWindowFootnotesTests
     [Fact]
     public void The_footnote_state_inside_a_tag_has_the_reason_and_no_footnote()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, Book _, HtmlResource chapter) = OpenMinimalChapter(temp);
         ICodeTabHost host = sut;
         int insideTag = chapter.GetText().IndexOf("<p>Hello", StringComparison.Ordinal) + 1;
@@ -229,7 +234,7 @@ public sealed class MainWindowFootnotesTests
     public void Renumbering_numbered_footnotes_reports_that_the_numbering_is_up_to_date()
     {
         using UiCultureScope culture = new("en");
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, Book _, HtmlResource chapter) = OpenMinimalChapter(temp);
         ICodeTabHost host = sut;
         host.AddFootnote(chapter, AfterHello(chapter), "Note.", FootnotePlacement.Local);
@@ -242,7 +247,7 @@ public sealed class MainWindowFootnotesTests
     [Fact]
     public void The_placement_of_the_last_added_footnote_is_the_next_default()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, Book _, HtmlResource chapter) = OpenMinimalChapter(temp);
         ICodeTabHost host = sut;
 
@@ -257,7 +262,7 @@ public sealed class MainWindowFootnotesTests
     public void Tools_renumber_footnotes_renumbers_like_the_context_menu()
     {
         using UiCultureScope culture = new("en");
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, HtmlResource _) = OpenChapterWithForeignFootnote(temp);
 
         sut.Actions.Require(AppActionIds.RenumberFootnotes).Execute(null);
@@ -268,7 +273,7 @@ public sealed class MainWindowFootnotesTests
     [Fact]
     public void The_footnote_state_counts_the_footnotes_of_other_origin()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, HtmlResource chapter) = OpenChapterWithForeignFootnote(temp);
         ICodeTabHost host = sut;
 
@@ -282,7 +287,7 @@ public sealed class MainWindowFootnotesTests
     public void Renumbering_leaves_footnotes_of_other_origin_as_they_are_and_warns_about_them()
     {
         using UiCultureScope culture = new("en");
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, HtmlResource chapter) = OpenChapterWithForeignFootnote(temp);
         ICodeTabHost host = sut;
         int afterWorld = chapter.GetText().IndexOf(", world", StringComparison.Ordinal) + ", world".Length;
@@ -299,7 +304,7 @@ public sealed class MainWindowFootnotesTests
     [Fact]
     public void The_preview_of_a_footnote_changes_nothing()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, Book _, HtmlResource chapter) = OpenMinimalChapter(temp);
         ICodeTabHost host = sut;
         string before = chapter.GetText();
@@ -317,7 +322,7 @@ public sealed class MainWindowFootnotesTests
     [Fact]
     public void Tools_convert_footnotes_asks_the_view_for_the_dialog()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, HtmlResource _) = OpenChapterWithForeignFootnote(temp);
         bool raised = false;
         sut.FootnoteConversionRequested += (_, _) => raised = true;
@@ -331,7 +336,7 @@ public sealed class MainWindowFootnotesTests
     public async Task Without_footnotes_of_other_origin_there_is_no_conversion_dialog()
     {
         using UiCultureScope culture = new("en");
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, Book _, HtmlResource _) = OpenMinimalChapter(temp);
 
         (await sut.PrepareFootnoteConversionAsync(() => Task.FromResult(true))).Should().BeNull();
@@ -343,7 +348,7 @@ public sealed class MainWindowFootnotesTests
     [AutoData]
     public void Abandoning_a_checkpoint_brings_the_book_back_and_forgets_the_failed_state(string operation, string edit)
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, Book _, HtmlResource chapter) = OpenMinimalChapter(temp);
         string before = chapter.GetText();
         int states = sut.CheckpointHistory.States.Count;

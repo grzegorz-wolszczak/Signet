@@ -3,13 +3,14 @@ using System.IO;
 using System.Linq;
 using AwesomeAssertions;
 using Signet.App.Services;
+using Signet.App.Tests.TestSupport;
 using Signet.App.ViewModels;
 using Signet.Core.BookManipulation;
 using Signet.Core.Misc;
 using Signet.Core.MiscEditors;
 using Signet.Core.Resources;
 using Signet.Core.Search;
-using Signet.App.Tests.TestSupport;
+using Signet.Core.Tests.TestSupport;
 using Xunit;
 
 namespace Signet.App.Tests;
@@ -20,6 +21,8 @@ namespace Signet.App.Tests;
 /// </summary>
 public sealed class SearchEditorTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
     private readonly string _dir =
         Path.Combine(Path.GetTempPath(), $"signet-searcheditor-{Guid.NewGuid():N}");
 
@@ -29,6 +32,7 @@ public sealed class SearchEditorTests : IDisposable
 
     public void Dispose()
     {
+        _disposables.Dispose();
         _book.Dispose();
         try
         {

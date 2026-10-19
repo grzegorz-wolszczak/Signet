@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Headless;
@@ -16,8 +17,13 @@ using Signet.Core.Tests.TestSupport;
 namespace Signet.App.UiTests;
 
 /// <summary>The "Mass Rename" window: its fields, the live preview of the names and the options it hands back.</summary>
-public sealed class MassRenameWindowTests
+public sealed class MassRenameWindowTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
     private static void Render(Window window)
     {
         for (int i = 0; i < 3; i++)
@@ -27,9 +33,9 @@ public sealed class MassRenameWindowTests
         }
     }
 
-    private static (BookBrowserViewModel Vm, System.Collections.Generic.List<OpfModelEntry> Text, Book Book) Open(TempDir temp, SettingsStore settings)
+    private (BookBrowserViewModel Vm, System.Collections.Generic.List<OpfModelEntry> Text, Book Book) Open(TempDir temp, SettingsStore settings)
     {
-        Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         BookBrowserViewModel vm = new(settings, new StatusBarService());
         vm.SetBook(book);
         return (vm, vm.Nodes.Single(n => n.Header == "Text").Children.Select(n => n.Entry!).ToList(), book);
@@ -38,7 +44,7 @@ public sealed class MassRenameWindowTests
     [AvaloniaFact]
     public void The_window_starts_with_the_last_values_and_shows_how_the_names_come_out()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         SettingsStore settings = new(temp.Combine("settings.xml")) { MassRename = new MassRenameOptions("part", 2, '0', 3, true) };
         (BookBrowserViewModel vm, var text, Book book) = Open(temp, settings);
         using Book _ = book;
@@ -62,7 +68,7 @@ public sealed class MassRenameWindowTests
     [AvaloniaFact]
     public void Editing_the_fields_changes_the_preview_and_a_bad_character_blocks_the_button()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (BookBrowserViewModel vm, var text, Book book) = Open(temp, new SettingsStore(temp.Combine("settings.xml")));
         using Book _ = book;
         MassRenameWindow window = MassRenameWindow.Create(vm, text);
@@ -91,7 +97,7 @@ public sealed class MassRenameWindowTests
     [AvaloniaFact]
     public void The_order_of_the_book_is_offered_only_for_html_files()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (BookBrowserViewModel vm, var text, Book book) = Open(temp, new SettingsStore(temp.Combine("settings.xml")));
         using Book _ = book;
         OpfModelEntry css = vm.Nodes.Single(n => n.Header == "Styles").Children.First().Entry!;

@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -15,19 +14,25 @@ using Signet.App.Toolbars;
 using Signet.App.ViewModels;
 using Signet.App.Views;
 using Signet.Core.Misc;
+using Signet.Core.Tests.TestSupport;
 
 namespace Signet.App.UiTests;
 
 /// <summary>The icon column of the lists in the "Customize Toolbars" window.</summary>
-public sealed class ToolbarCustomizeWindowTests
+public sealed class ToolbarCustomizeWindowTests : IDisposable
 {
-    private static ToolbarCustomizeWindow Show(bool withEntryWithoutIcon = false)
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
+    private ToolbarCustomizeWindow Show(bool withEntryWithoutIcon = false)
     {
-        string settingsPath = Path.Combine(Path.GetTempPath(), "Signet.Tests", $"uitests-{Guid.NewGuid():N}.xml");
+        string settingsPath = _disposables.Add(new TempDir("uitests-")).Combine("file.xml");
         SettingsStore settings = new(settingsPath);
         new IconThemeManager(settings, NullLogger<IconThemeManager>.Instance).ApplySaved();
 
-        ToolbarCustomizeViewModel vm = new(new ToolbarManager(settings), new MainWindowViewModel().Actions);
+        ToolbarCustomizeViewModel vm = new(new ToolbarManager(settings), _disposables.Add(new MainWindowViewModel()).Actions);
         if (withEntryWithoutIcon)
         {
             // Every command of the catalog has an icon now; an action added later (or a clip slot) may not.
@@ -76,9 +81,9 @@ public sealed class ToolbarCustomizeWindowTests
     [AvaloniaFact]
     public void The_menu_buttons_of_the_Heading_and_Change_Case_toolbars_have_their_icons_in_the_list()
     {
-        MainWindowViewModel vm = new();
+        MainWindowViewModel vm = _disposables.Add(new MainWindowViewModel());
         ToolbarCustomizeViewModel sut = new(
-            new ToolbarManager(new SettingsStore(Path.Combine(Path.GetTempPath(), "Signet.Tests", $"uitests-{Guid.NewGuid():N}.xml"))),
+            new ToolbarManager(new SettingsStore(_disposables.Add(new TempDir("uitests-")).Combine("file.xml"))),
             vm.Actions);
 
         sut.AvailableActions.Single(e => e.Id == ToolbarManager.HeadingsMenu).IconKey.Should().Be("heading-all");

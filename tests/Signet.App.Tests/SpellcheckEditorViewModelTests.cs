@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using AwesomeAssertions;
 using Signet.App.Tests.TestSupport;
@@ -6,6 +7,7 @@ using Signet.Core.BookManipulation;
 using Signet.Core.Misc;
 using Signet.Core.Resources;
 using Signet.Core.Spellcheck;
+using Signet.Core.Tests.TestSupport;
 using Xunit;
 
 namespace Signet.App.Tests;
@@ -15,12 +17,17 @@ namespace Signet.App.Tests;
 /// of <see cref="MainWindowViewModel"/>. Uses the real bundled <c>en_US</c> dictionary: "wrold" is an
 /// unambiguously misspelled test word, "hello"/"world" are unambiguously correct.
 /// </summary>
-public sealed class SpellcheckEditorViewModelTests
+public sealed class SpellcheckEditorViewModelTests : IDisposable
 {
-    private static (SpellcheckEditorViewModel Editor, Book Book, HtmlResource Html) New(string text)
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
+    private (SpellcheckEditorViewModel Editor, Book Book, HtmlResource Html) New(string text)
     {
-        (SettingsStore settings, SpellChecker spellChecker) = SpellCheckTestFactory.New();
-        Book book = BookCreator.CreateNewBook("2.0");
+        (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
+        Book book = _disposables.Add(BookCreator.CreateNewBook("2.0"));
         HtmlResource html = book.GetHtmlResources()[0];
         html.SetText(text);
 

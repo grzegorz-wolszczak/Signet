@@ -16,22 +16,27 @@ namespace Signet.App.Tests;
 /// The Validation Results panel as the Check Book tool (calibre CF-01): automatic fixes with a checkpoint, skipped
 /// types of problems kept in the settings, and the panel view model.
 /// </summary>
-public sealed class CheckBookPanelTests
+public sealed class CheckBookPanelTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
     private const string DummyFontCode = "Validation_FontCorrupt";
 
-    private static (MainWindowViewModel Vm, Book Book) Load(TempDir temp)
+    private (MainWindowViewModel Vm, Book Book) Load(TempDir temp)
     {
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
-        MainWindowViewModel vm = new();
-        vm.LoadBook(new ImportEpub(epub).GetBook(), epub);
+        MainWindowViewModel vm = _disposables.Add(new MainWindowViewModel());
+        vm.LoadBook(_disposables.Add(new ImportEpub(epub).GetBook()), epub);
         return (vm, ((IBookWorkspace)vm).CurrentBook!);
     }
 
     [Fact]
     public void Fix_all_applies_the_fixes_after_a_checkpoint_and_checks_the_book_again()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel vm, Book book) = Load(temp);
         try
         {
@@ -57,7 +62,7 @@ public sealed class CheckBookPanelTests
     [Fact]
     public void A_skipped_type_of_problem_is_left_out_until_it_is_restored()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel vm, _) = Load(temp);
         try
         {

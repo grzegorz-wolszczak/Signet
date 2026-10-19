@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using AwesomeAssertions;
 using Signet.Core.BookManipulation;
@@ -13,11 +14,16 @@ namespace Signet.Core.Tests.Spellcheck;
 /// Tests for <see cref="SpellcheckEditorEngine"/> — aggregating the unique words of the whole book
 /// with occurrence counts and spelling status, and replacing a word across all (X)HTML files.
 /// </summary>
-public sealed class SpellcheckEditorEngineTests
+public sealed class SpellcheckEditorEngineTests : IDisposable
 {
-    private static (Book Book, HtmlResource First, HtmlResource Second) NewTwoFileBook()
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
+    private (Book Book, HtmlResource First, HtmlResource Second) NewTwoFileBook()
     {
-        Book book = BookCreator.CreateNewBook("2.0");
+        Book book = _disposables.Add(BookCreator.CreateNewBook("2.0"));
         HtmlResource first = book.GetHtmlResources()[0];
         HtmlResource second = book.CreateEmptyHtmlFile();
         return (book, first, second);

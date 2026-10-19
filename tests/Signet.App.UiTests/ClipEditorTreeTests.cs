@@ -1,4 +1,4 @@
-using System.IO;
+using System;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -19,6 +19,7 @@ using Signet.App.Views;
 using Signet.Controls.TreeDataGrid.Primitives;
 using Signet.Core.Misc;
 using Signet.Core.MiscEditors;
+using Signet.Core.Tests.TestSupport;
 
 namespace Signet.App.UiTests;
 
@@ -26,8 +27,13 @@ namespace Signet.App.UiTests;
 /// The Clip Editor tree (a TreeDataGrid): a name is edited only after a double click / F2 (not a single click), and
 /// groups are bold with an expand chevron, even an empty group.
 /// </summary>
-public sealed class ClipEditorTreeTests
+public sealed class ClipEditorTreeTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
     private static void Render(Window window)
     {
         Dispatcher.UIThread.RunJobs();
@@ -35,16 +41,16 @@ public sealed class ClipEditorTreeTests
         Dispatcher.UIThread.RunJobs();
     }
 
-    private static (ClipEditorWindow Window, ClipsViewModel ViewModel) ShowEditor()
+    private (ClipEditorWindow Window, ClipsViewModel ViewModel) ShowEditor()
     {
-        ClipStore store = new(Path.Combine(Path.GetTempPath(), $"signet-clipui-{System.Guid.NewGuid():N}.xml"));
+        ClipStore store = new(_disposables.Add(new TempDir("signet-clipui-")).Combine("file.xml"));
         ClipsViewModel vm = new(store, () => null, () => null, new StatusBarService());
         vm.AddGroupCommand.Execute(null);
         vm.AddEntryCommand.Execute(null);
 
         // As MainWindowViewModel does: the panel-scoped "Clip Editor → Rename" action (F2 by default), from which
         // the window builds its key bindings.
-        SettingsStore settings = new(Path.Combine(Path.GetTempPath(), $"signet-clipui-{System.Guid.NewGuid():N}-settings.xml"));
+        SettingsStore settings = new(_disposables.Add(new TempDir("signet-clipui-")).Combine("settings.xml"));
         AppActionRegistry actions = new(new KeyboardShortcutManager(settings), new StatusBarService(), NullLogger<AppActionRegistry>.Instance);
         actions.SetHandler(AppActionIds.ClipEditorRename, () => vm.RenameSelectedCommand.Execute(null));
         vm.ShortcutActions = new[] { actions.Require(AppActionIds.ClipEditorRename) };

@@ -21,8 +21,13 @@ namespace Signet.App.MainWindowUiTests;
 /// synchronization context, as in the application. Without it the continuation lands on a thread-pool thread and the
 /// test fails with "Call from invalid thread".
 /// </summary>
-public sealed class MainWindowFootnoteConversionTests
+public sealed class MainWindowFootnoteConversionTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
     private sealed class UiCultureScope : IDisposable
     {
         private readonly CultureInfo _previous = CultureInfo.CurrentUICulture;
@@ -33,11 +38,11 @@ public sealed class MainWindowFootnoteConversionTests
     }
 
     // The minimal chapter with a footnote of other origin after "Hello" (marked [7], its note at the end of the body).
-    private static (MainWindowViewModel Sut, HtmlResource Chapter) OpenChapterWithForeignFootnote(TempDir temp)
+    private (MainWindowViewModel Sut, HtmlResource Chapter) OpenChapterWithForeignFootnote(TempDir temp)
     {
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, temp);
-        MainWindowViewModel sut = new();
-        Book book = new ImportEpub(epub).GetBook();
+        MainWindowViewModel sut = _disposables.Add(new MainWindowViewModel());
+        Book book = _disposables.Add(new ImportEpub(epub).GetBook());
         HtmlResource chapter = book.GetHtmlResources().Single(h => h.Filename == "chapter1.xhtml");
         string text = chapter.GetText().Replace(
             "<html xmlns=\"http://www.w3.org/1999/xhtml\"",
@@ -55,7 +60,7 @@ public sealed class MainWindowFootnoteConversionTests
     public async Task The_conversion_dialog_converts_behind_a_checkpoint_and_shows_what_is_left()
     {
         using UiCultureScope culture = new("en");
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, HtmlResource chapter) = OpenChapterWithForeignFootnote(temp);
         bool asked = false;
         FootnoteConversionViewModel dialog = (await sut.PrepareFootnoteConversionAsync(() =>

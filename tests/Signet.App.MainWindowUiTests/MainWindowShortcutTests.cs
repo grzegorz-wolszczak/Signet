@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
@@ -11,6 +12,7 @@ using Signet.App.Infrastructure;
 using Signet.App.Input;
 using Signet.App.ViewModels;
 using Signet.App.Views;
+using Signet.Core.Tests.TestSupport;
 
 namespace Signet.App.MainWindowUiTests;
 
@@ -19,11 +21,16 @@ namespace Signet.App.MainWindowUiTests;
 /// the window rebuilds its <c>KeyBinding</c>s when <see cref="AppAction.Shortcuts"/> change. Two-stroke shortcuts wait
 /// for their second stroke; mouse shortcuts run through <see cref="MouseShortcutRouter"/>.
 /// </summary>
-public sealed class MainWindowShortcutTests
+public sealed class MainWindowShortcutTests : IDisposable
 {
-    private static (MainWindow Window, MainWindowViewModel ViewModel) ShowMainWindow()
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
+    private (MainWindow Window, MainWindowViewModel ViewModel) ShowMainWindow()
     {
-        MainWindowViewModel vm = new();
+        MainWindowViewModel vm = _disposables.Add(new MainWindowViewModel());
         MainWindow window = new() { DataContext = vm };
         window.Show();
         Dispatcher.UIThread.RunJobs();
@@ -115,7 +122,7 @@ public sealed class MainWindowShortcutTests
     {
         Border area = new() { Width = 200, Height = 100, Background = Avalonia.Media.Brushes.White };
         Window window = new() { Width = 200, Height = 100, Content = area };
-        MainWindowViewModel vm = new();
+        MainWindowViewModel vm = _disposables.Add(new MainWindowViewModel());
         AppAction action = vm.ShortcutActions.First(a => a.IsEnabled && a.Gesture is null);
         int invoked = 0;
         action.Invoked += (_, _) => invoked++;

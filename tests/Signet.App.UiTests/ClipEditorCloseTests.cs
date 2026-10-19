@@ -1,4 +1,4 @@
-using System.IO;
+using System;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Headless;
@@ -11,6 +11,7 @@ using Signet.App.Services;
 using Signet.App.ViewModels;
 using Signet.App.Views;
 using Signet.Core.MiscEditors;
+using Signet.Core.Tests.TestSupport;
 
 namespace Signet.App.UiTests;
 
@@ -18,8 +19,13 @@ namespace Signet.App.UiTests;
 /// Clip Editor: a "*" in the title while there are unsaved changes, and a Save / Discard / Cancel
 /// prompt when the window is closed.
 /// </summary>
-public sealed class ClipEditorCloseTests
+public sealed class ClipEditorCloseTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
     private static void Render(Window window)
     {
         Dispatcher.UIThread.RunJobs();
@@ -27,9 +33,9 @@ public sealed class ClipEditorCloseTests
         Dispatcher.UIThread.RunJobs();
     }
 
-    private static (ClipEditorWindow Window, ClipsViewModel ViewModel, ClipStore Store) ShowModifiedEditor()
+    private (ClipEditorWindow Window, ClipsViewModel ViewModel, ClipStore Store) ShowModifiedEditor()
     {
-        ClipStore store = new(Path.Combine(Path.GetTempPath(), $"signet-clipclose-{System.Guid.NewGuid():N}.xml"));
+        ClipStore store = new(_disposables.Add(new TempDir("signet-clipclose-")).Combine("file.xml"));
         ClipsViewModel vm = new(store, () => null, () => null, new StatusBarService());
         ClipEditorWindow window = new() { DataContext = vm };
         window.Show();
@@ -110,7 +116,7 @@ public sealed class ClipEditorCloseTests
     [AvaloniaFact]
     public void Closing_without_changes_does_not_ask()
     {
-        ClipStore store = new(Path.Combine(Path.GetTempPath(), $"signet-clipclose-{System.Guid.NewGuid():N}.xml"));
+        ClipStore store = new(_disposables.Add(new TempDir("signet-clipclose-")).Combine("file.xml"));
         ClipEditorWindow window = new() { DataContext = new ClipsViewModel(store, () => null, () => null, new StatusBarService()) };
         window.Show();
         Render(window);
@@ -124,7 +130,7 @@ public sealed class ClipEditorCloseTests
     [AvaloniaFact]
     public void Exiting_the_app_with_unsaved_clips_asks_and_Cancel_aborts_the_exit()
     {
-        MainWindowViewModel vm = new();
+        MainWindowViewModel vm = _disposables.Add(new MainWindowViewModel());
         MainWindow main = new() { DataContext = vm };
         main.Show();
         Dispatcher.UIThread.RunJobs();
