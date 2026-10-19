@@ -1148,9 +1148,12 @@ public static partial class FootnoteEditor
             styled.Add(footnote.NoteFile);
         }
 
+        // The files of a book share a few stylesheets: each gets the rules once (applying them takes ~10 ms, and a book of a
+        // thousand chapters with footnotes spent ten seconds on the same stylesheet).
+        HashSet<CssResource> styledSheets = new(ReferenceEqualityComparer.Instance);
         foreach (HtmlResource file in book.GetHtmlResources().Where(styled.Contains))
         {
-            changed |= ApplyStyles(book, file, (options ?? FootnoteOptions.Default).Styles);
+            changed |= ApplyStyles(book, file, (options ?? FootnoteOptions.Default).Styles, styledSheets);
         }
 
         if (changed)
@@ -1757,7 +1760,8 @@ public static partial class FootnoteEditor
 
     // The footnote rules for `html` (FootnoteStyles.ApplyTo) go to: the linked stylesheet that already has some, or a
     // <style> element of the file that has some, or the first linked stylesheet, or a new <style> element in <head>.
-    private static bool ApplyStyles(Book book, HtmlResource html, FootnoteStyles styles)
+    // `styledSheets` (when given) holds the stylesheets that were already given the rules in this pass: they are not done again.
+    private static bool ApplyStyles(Book book, HtmlResource html, FootnoteStyles styles, HashSet<CssResource>? styledSheets = null)
     {
         List<CssResource> stylesheets = LinkedStylesheets(book, html);
         CssResource? withRules = stylesheets.FirstOrDefault(css => FootnoteStyles.HasSignetRule(css.GetText()));
@@ -1767,6 +1771,11 @@ public static partial class FootnoteEditor
             : null;
         if (styleElement is null && (withRules ?? stylesheets.FirstOrDefault()) is { } sheet)
         {
+            if (styledSheets is not null && !styledSheets.Add(sheet))
+            {
+                return false;
+            }
+
             string css = sheet.GetText();
             string updated = styles.ApplyTo(css);
             if (updated == css)
