@@ -36,34 +36,37 @@
     </Style>
   </UserControl.Styles>
 
-  <ScrollViewer IsVisible="{Binding IsVisible}">
-    <StackPanel Margin="32" Spacing="16" MaxWidth="560" HorizontalAlignment="Center" VerticalAlignment="Center">
+  <!-- The title, the buttons and the heading of the list stay in place; only the list of the files scrolls. -->
+  <Grid IsVisible="{Binding IsVisible}" RowDefinitions="Auto,*" Margin="32" MaxWidth="560"
+        HorizontalAlignment="Center" VerticalAlignment="Center">
+    <StackPanel Grid.Row="0" Spacing="16">
       <TextBlock Text="{loc:Loc StartScreen_NoBook}" FontSize="20" FontWeight="SemiBold" HorizontalAlignment="Center" />
       <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center">
         <Button x:Name="OpenButton" Content="{loc:Loc StartScreen_Open}" Command="{Binding OpenCommand}" MinWidth="120" />
         <Button x:Name="NewButton" Content="{loc:Loc StartScreen_New}" Command="{Binding NewCommand}" MinWidth="120" />
       </StackPanel>
-      <StackPanel Spacing="4" IsVisible="{Binding HasRecentFiles}" Margin="0,8,0,0">
-        <TextBlock x:Name="RecentFilesHeading" Classes="recentSection" Text="{loc:Loc StartScreen_RecentFiles}" />
-        <ItemsControl x:Name="RecentFilesList" ItemsSource="{Binding RecentFileItems}">
-          <ItemsControl.ItemTemplate>
-            <DataTemplate x:DataType="vm:StartScreenRecentFile">
-              <Button Classes="recentFile" Classes.highlighted="{Binding IsHighlighted}" Command="{Binding OpenCommand}"
-                      ToolTip.Tip="{Binding Path}">
-                <Button.ContextMenu>
-                  <ContextMenu>
-                    <MenuItem Header="{loc:Loc Menu_RemoveFromRecentFiles}" Command="{Binding RemoveCommand}" />
-                  </ContextMenu>
-                </Button.ContextMenu>
-                <StackPanel>
-                  <TextBlock Classes="recentTitle" Text="{Binding Name}" />
-                  <TextBlock Classes="recentLocation" Text="{Binding Folder}" TextTrimming="CharacterEllipsis" />
-                </StackPanel>
-              </Button>
-            </DataTemplate>
-          </ItemsControl.ItemTemplate>
-        </ItemsControl>
-      </StackPanel>
+      <TextBlock x:Name="RecentFilesHeading" Classes="recentSection" Text="{loc:Loc StartScreen_RecentFiles}"
+                 IsVisible="{Binding HasRecentFiles}" Margin="0,8,0,0" />
     </StackPanel>
-  </ScrollViewer>
+    <ScrollViewer x:Name="RecentFilesScroll" Grid.Row="1" IsVisible="{Binding HasRecentFiles}" Margin="0,4,0,0">
+      <ItemsControl x:Name="RecentFilesList" ItemsSource="{Binding RecentFileItems}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:StartScreenRecentFile">
+            <Button Classes="recentFile" Classes.highlighted="{Binding IsHighlighted}" Command="{Binding OpenCommand}"
+                    ToolTip.Tip="{Binding Path}">
+              <Button.ContextMenu>
+                <ContextMenu>
+                  <MenuItem Header="{loc:Loc Menu_RemoveFromRecentFiles}" Command="{Binding RemoveCommand}" />
+                </ContextMenu>
+              </Button.ContextMenu>
+              <StackPanel>
+                <TextBlock Classes="recentTitle" Text="{Binding Name}" />
+                <TextBlock Classes="recentLocation" Text="{Binding Folder}" TextTrimming="CharacterEllipsis" />
+              </StackPanel>
+            </Button>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+  </Grid>
 </UserControl>
