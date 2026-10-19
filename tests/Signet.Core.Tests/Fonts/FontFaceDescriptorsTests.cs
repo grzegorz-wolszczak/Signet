@@ -17,34 +17,43 @@ public sealed class FontFaceDescriptorsTests
     [InlineData(600, true, "SemiBold Italic", "600", "italic")]
     public void FromFont_uses_the_weight_class_and_the_italic_flag(int weight, bool italic, string subfamily, string cssWeight, string cssStyle)
     {
+        // Arrange
         FontFileInfo info = OpenTypeFontInfo.Parse(FontFileBuilder.Ttf("KCaecilia Condensed", subfamily, (ushort)weight, italic));
 
+        // Act
         FontFaceDescriptor descriptor = FontFaceDescriptors.FromFont(info, "CaeciliaCondensed-Whatever.ttf");
 
+        // Assert
         descriptor.Should().Be(new FontFaceDescriptor("KCaecilia Condensed", cssWeight, cssStyle));
     }
 
     [Fact]
     public void FromFont_prefers_the_typographic_family()
     {
+        // Arrange
         FontFileInfo info = OpenTypeFontInfo.Parse(FontFileBuilder.Ttf("Acme Light", "Regular", 300, false, typographicFamily: "Acme"));
 
+        // Act & Assert
         FontFaceDescriptors.FromFont(info, "Acme-Light.otf").Should().Be(new FontFaceDescriptor("Acme", "300", "normal"));
     }
 
     [Fact]
     public void FromFont_writes_a_weight_range_for_a_variable_font()
     {
+        // Arrange
         FontFileInfo info = new FontFileInfo("Acme", "Regular", "Acme", "1.0") { WeightAxisMin = 100, WeightAxisMax = 900, WeightClass = 400 };
 
+        // Act & Assert
         FontFaceDescriptors.FromFont(info, "Acme.ttf").Weight.Should().Be("100 900");
     }
 
     [Fact]
     public void FromFont_trusts_the_bold_flag_when_the_weight_class_says_regular()
     {
+        // Arrange
         FontFileInfo info = new FontFileInfo("Acme", "Bold", "Acme Bold", "1.0") { WeightClass = 400, FsSelection = 0x0020 };
 
+        // Act & Assert
         FontFaceDescriptors.FromFont(info, "Acme-Bold.ttf").Weight.Should().Be("bold");
     }
 
@@ -54,6 +63,7 @@ public sealed class FontFaceDescriptorsTests
     [InlineData("Garamond.otf", "Garamond", "normal", "normal")]
     public void FromFont_falls_back_to_the_file_name_without_names(string fileName, string family, string weight, string style)
     {
+        // Act & Assert
         FontFaceDescriptors.FromFont(FontFileInfo.Empty, fileName).Should().Be(new FontFaceDescriptor(family, weight, style));
     }
 
@@ -66,6 +76,7 @@ public sealed class FontFaceDescriptorsTests
     [InlineData((byte)0, (byte)0, (byte)0, (short)0, "serif")]
     public void GenericFallback_follows_panose_and_the_family_class(byte familyType, byte serifStyle, byte proportion, short familyClass, string expected)
     {
+        // Arrange
         FontFileInfo info = FontFileInfo.Empty with
         {
             PanoseFamilyType = familyType,
@@ -74,6 +85,7 @@ public sealed class FontFaceDescriptorsTests
             FamilyClass = familyClass,
         };
 
+        // Act & Assert
         FontFaceDescriptors.GenericFallback(info).Should().Be(expected);
     }
 
@@ -86,6 +98,7 @@ public sealed class FontFaceDescriptorsTests
     [InlineData("bold !important", 700, 700)]
     public void ParseWeight_understands_keywords_numbers_and_ranges(string value, int min, int max)
     {
+        // Act & Assert
         FontFaceDescriptors.ParseWeight(value).Should().Be(new FontWeightRange(min, max));
     }
 
@@ -95,6 +108,7 @@ public sealed class FontFaceDescriptorsTests
     [InlineData("K\\ Caecilia", "k caecilia")]
     public void FamilyKey_ignores_quotes_case_and_spacing(string family, string key)
     {
+        // Act & Assert
         FontFaceDescriptors.FamilyKey(family).Should().Be(key);
     }
 
@@ -106,6 +120,7 @@ public sealed class FontFaceDescriptorsTests
     [InlineData(100, 900, "normal", "100 900")]
     public void Describe_names_the_face(int min, int max, string style, string expected)
     {
+        // Act & Assert
         FontFaceDescriptors.Describe(new FontWeightRange(min, max), style).Should().Be(expected);
     }
 }

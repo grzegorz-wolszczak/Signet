@@ -50,11 +50,14 @@ public sealed class CheckBookTests
     [Fact]
     public void Every_result_carries_the_resource_key_of_its_message_as_its_code()
     {
+        // Arrange
         (Book book, _) = NewBook("<p><a href=\"missing.xhtml\">x</a></p>");
         using (book)
         {
+            // Act
             ValidationResult result = Single(book, "Validation_DeadLink");
 
+            // Assert
             result.Message.Should().Contain("missing.xhtml");
             result.Fix.Should().BeNull();
         }
@@ -63,11 +66,14 @@ public sealed class CheckBookTests
     [Fact]
     public void Skipped_rules_are_left_out()
     {
+        // Arrange
         (Book book, _) = NewBook("<p id=\"1st\">a</p>");
         using (book)
         {
+            // Act & Assert
             Check(book).Should().Contain(r => r.Code == "Validation_InvalidId");
 
+            // Act & Assert
             BookValidator.ValidateCurrentBook(book, SkipInvalidId).Should().NotContain(r => r.Code == "Validation_InvalidId");
         }
     }
@@ -75,6 +81,7 @@ public sealed class CheckBookTests
     [Fact]
     public void An_invalid_id_is_renamed_in_the_file_its_links_and_its_css_selectors()
     {
+        // Arrange
         (Book book, HtmlResource html) = NewBook(
             "<p id=\"1st\">a</p>\n<p><a href=\"#1st\">same file</a></p>",
             "<style>#\\31 st { color: red; } p { color: #1st; }</style>");
@@ -84,8 +91,10 @@ public sealed class CheckBookTests
             string link = Core.BookPath.Relative(other.BookPath, html.BookPath) + "#1st";
             other.SetText(Xhtml($"<p><a href=\"{link}\">other file</a></p>"));
 
+            // Act
             Single(book, "Validation_InvalidId").Fix!.Apply(book).Should().BeTrue();
 
+            // Assert
             string text = html.GetText();
             text.Should().Contain("<p id=\"id_1st\">").And.Contain("href=\"#id_1st\"")
                 .And.Contain("#id_1st { color: red; }")
@@ -98,14 +107,20 @@ public sealed class CheckBookTests
     [Fact]
     public void Duplicate_ids_in_a_file_get_new_ids_after_the_first()
     {
+        // Arrange
         (Book book, HtmlResource html) = NewBook("<p id=\"a\">1</p>\n<p id=\"a\">2</p>\n<p id=\"a_2\">3</p>");
         using (book)
         {
+            // Act
             ValidationResult result = Single(book, "Validation_DuplicateIdInFile");
+
+            // Assert
             result.Line.Should().Be(8);
 
+            // Act
             result.Fix!.Apply(book).Should().BeTrue();
 
+            // Assert
             html.GetText().Should().Contain("<p id=\"a\">1</p>").And.Contain("<p id=\"a_3\">2</p>");
             Check(book).Should().NotContain(r => r.Code == "Validation_DuplicateIdInFile");
         }
@@ -114,11 +129,14 @@ public sealed class CheckBookTests
     [Fact]
     public void Bare_text_in_the_body_is_wrapped_in_paragraphs()
     {
+        // Arrange
         (Book book, HtmlResource html) = NewBook("Loose text\n<p>kept <b>as</b> is</p>\n tail ");
         using (book)
         {
+            // Act
             Single(book, "Validation_BareBodyText").Fix!.Apply(book).Should().BeTrue();
 
+            // Assert
             html.GetText().Should().Contain("<body>\n<p>Loose text</p>\n<p>kept <b>as</b> is</p>\n <p>tail</p> \n</body>");
             Check(book).Should().NotContain(r => r.Code == "Validation_BareBodyText");
         }
@@ -127,6 +145,7 @@ public sealed class CheckBookTests
     [Fact]
     public void A_link_with_the_wrong_letter_case_is_corrected()
     {
+        // Arrange
         using TempDir temp = new();
         (Book book, HtmlResource html) = NewBook(string.Empty);
         using (book)
@@ -136,8 +155,10 @@ public sealed class CheckBookTests
             string wrong = correct.Replace("Pic.png", "pic.png", StringComparison.Ordinal);
             html.SetText(Xhtml($"<p><img src=\"{wrong}\" alt=\"\"/></p>"));
 
+            // Act
             Single(book, "Validation_LinkCaseMismatch").Fix!.Apply(book).Should().BeTrue();
 
+            // Assert
             html.GetText().Should().Contain($"src=\"{correct}\"");
             Check(book).Should().NotContain(r => r.Code == "Validation_LinkCaseMismatch");
         }
@@ -146,6 +167,7 @@ public sealed class CheckBookTests
     [Fact]
     public void A_css_url_with_the_wrong_letter_case_is_corrected()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = BookCreator.CreateNewBook("3.0");
         Resource image = AddFile(book, temp, "Pic.png", Png1x1);
@@ -153,22 +175,27 @@ public sealed class CheckBookTests
         string correct = Core.BookPath.Relative(css.BookPath, image.BookPath);
         css.SetText($"body {{ background: url('{correct.ToLowerInvariant()}'); }}");
 
+        // Act
         Single(book, "Validation_CssUrlCaseMismatch").Fix!.Apply(book).Should().BeTrue();
 
+        // Assert
         css.GetText().Should().Be($"body {{ background: url('{correct}'); }}");
     }
 
     [Fact]
     public void A_manifest_media_type_that_does_not_match_the_extension_is_corrected()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("3.0");
         CssResource css = book.CreateEmptyCssFile();
         OpfDocument document = book.GetOpf().GetOpfDocument();
         document.Manifest.Single(m => m.Href.EndsWith(css.Filename, StringComparison.Ordinal)).MediaType = "text/plain";
         book.GetOpf().SetOpfDocument(document);
 
+        // Act
         Single(book, "Validation_OpfMediaTypeMismatch").Fix!.Apply(book).Should().BeTrue();
 
+        // Assert
         book.GetOpf().GetOpfDocument().Manifest.Single(m => m.Href.EndsWith(css.Filename, StringComparison.Ordinal))
             .MediaType.Should().Be("text/css");
     }
@@ -176,13 +203,16 @@ public sealed class CheckBookTests
     [Fact]
     public void An_empty_unique_identifier_gets_a_uuid()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("3.0");
         OpfDocument document = book.GetOpf().GetOpfDocument();
         document.Metadata.Single(m => m.Attributes.Value("id") == document.UniqueIdentifierId).Content = string.Empty;
         book.GetOpf().SetOpfDocument(document);
 
+        // Act
         Single(book, "Validation_OpfUniqueIdentifierValueEmpty").Fix!.Apply(book).Should().BeTrue();
 
+        // Assert
         book.GetOpf().GetMainIdentifierValue().Should().StartWith("urn:uuid:");
         Check(book).Should().NotContain(r => r.Code.StartsWith("Validation_OpfUniqueIdentifier", StringComparison.Ordinal));
     }
@@ -190,19 +220,23 @@ public sealed class CheckBookTests
     [Fact]
     public void A_missing_unique_identifier_is_created()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("3.0");
         OpfDocument document = book.GetOpf().GetOpfDocument();
         document.Metadata.RemoveAll(m => m.Name == "dc:identifier");
         book.GetOpf().SetOpfDocument(document);
 
+        // Act
         Single(book, "Validation_OpfNoUniqueIdentifier").Fix!.Apply(book).Should().BeTrue();
 
+        // Assert
         book.GetOpf().GetMainIdentifierValue().Should().StartWith("urn:uuid:");
     }
 
     [Fact]
     public void An_epub3_book_without_a_nav_is_reported()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("3.0");
         OpfDocument document = book.GetOpf().GetOpfDocument();
         foreach (ManifestEntry entry in document.Manifest)
@@ -212,29 +246,36 @@ public sealed class CheckBookTests
 
         book.GetOpf().SetOpfDocument(document);
 
+        // Act & Assert
         Single(book, "Validation_NoNav").Severity.Should().Be(ValidationSeverity.Error);
     }
 
     [Fact]
     public void A_truncated_image_is_reported_as_damaged()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = BookCreator.CreateNewBook("3.0");
         AddFile(book, temp, "whole.png", Png1x1);
         AddFile(book, temp, "cut.png", Png1x1[..^12]);
 
+        // Act & Assert
         Single(book, "Validation_ImageCorrupt").BookPath.Should().EndWith("cut.png");
     }
 
     [Fact]
     public void A_cmyk_jpeg_is_reported()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = BookCreator.CreateNewBook("3.0");
         AddFile(book, temp, "rgb.jpg", Jpeg(components: 3));
         AddFile(book, temp, "cmyk.jpg", Jpeg(components: 4));
 
+        // Act & Assert
         Single(book, "Validation_ImageCmyk").BookPath.Should().EndWith("cmyk.jpg");
+
+        // Act & Assert
         Check(book).Should().NotContain(r => r.Code == "Validation_ImageCorrupt");
     }
 
@@ -245,23 +286,28 @@ public sealed class CheckBookTests
     [InlineData(0x12345678, 0, false)]
     public void A_web_font_must_be_as_long_as_its_header_says(uint signature, int missing, bool intact)
     {
+        // Arrange
         byte[] font = new byte[64];
         System.Buffers.Binary.BinaryPrimitives.WriteUInt32BigEndian(font, signature);
         System.Buffers.Binary.BinaryPrimitives.WriteUInt32BigEndian(font.AsSpan(8), (uint)font.Length);
 
+        // Act & Assert
         FontIntegrityValidator.IsIntact(font[..^missing]).Should().Be(intact);
     }
 
     [Fact]
     public void Unknown_css_properties_and_empty_values_are_reported_with_their_line()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("3.0");
         CssResource css = book.CreateEmptyCssFile();
         css.SetText("p {\r\n  color: red;\r\n}\r\n\r\nh1 {\r\n  colr: red;\r\n  margin: ;\r\n  padding: !important;\r\n"
             + "  -webkit-hyphens: auto;\r\n  --accent: blue;\r\n  font-weight: bold !important;\r\n}\r\n");
 
+        // Act
         List<ValidationResult> results = Check(book).Where(r => r.BookPath == css.BookPath).ToList();
 
+        // Assert
         results.Select(r => (r.Code, r.Line)).Should().BeEquivalentTo(new[]
         {
             ("Validation_CssUnknownProperty", 5), ("Validation_CssEmptyValue", 5), ("Validation_CssEmptyValue", 5),
@@ -272,11 +318,14 @@ public sealed class CheckBookTests
     [Fact]
     public void Css_in_style_elements_is_checked_too()
     {
+        // Arrange
         (Book book, HtmlResource html) = NewBook("<p>a</p>", "\n<style>\np { colour: red; }\n</style>");
         using (book)
         {
+            // Act
             ValidationResult result = Single(book, "Validation_CssUnknownProperty");
 
+            // Assert
             result.BookPath.Should().Be(html.BookPath);
             result.Line.Should().Be(7);
         }

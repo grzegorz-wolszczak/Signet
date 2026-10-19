@@ -31,11 +31,14 @@ public sealed class BookReportEngineTests
     [Fact]
     public void GetAllFiles_ReportsEveryResourceWithSpineFlag()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(temp, _ => { });
 
+        // Act
         var rows = BookReportEngine.GetAllFiles(book);
 
+        // Assert
         rows.Should().HaveCount(book.GetAllResources().Count);
         rows.Single(r => r.Name == "chapter1.xhtml").Should().Match<AllFilesRow>(r => r.InSpine && r.TypeName == "HTML");
         rows.Single(r => r.Name == "nav.xhtml").InSpine.Should().BeFalse();
@@ -46,11 +49,14 @@ public sealed class BookReportEngineTests
     [Fact]
     public void GetHtmlFiles_CountsWordsAndChecksWellFormed()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(temp, _ => { });
 
+        // Act
         var rows = BookReportEngine.GetHtmlFiles(book);
 
+        // Assert
         HtmlFilesRow chapter = rows.Single(r => r.Name == "chapter1.xhtml");
         chapter.WellFormed.Should().BeTrue();
         // Visible text: "Chapter 1" (the title — in <title>, not in body, but words are counted over
@@ -61,6 +67,7 @@ public sealed class BookReportEngineTests
     [Fact]
     public void GetHtmlFiles_FlagsMalformedMarkup()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(temp, tree =>
         {
@@ -68,25 +75,31 @@ public sealed class BookReportEngineTests
             File.WriteAllText(chapter, File.ReadAllText(chapter).Replace("<p>Hello, world.</p>", "<p>Hello, world.", StringComparison.Ordinal));
         });
 
+        // Act
         var rows = BookReportEngine.GetHtmlFiles(book);
 
+        // Assert
         rows.Single(r => r.Name == "chapter1.xhtml").WellFormed.Should().BeFalse();
     }
 
     [Fact]
     public void GetCssFiles_CountsSelectors()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(temp, _ => { });
 
+        // Act
         var rows = BookReportEngine.GetCssFiles(book);
 
+        // Assert
         rows.Single(r => r.Name == "style.css").SelectorCount.Should().Be(2); // body, h1
     }
 
     [Fact]
     public void GetHtmlClassUsage_FlagsUnmatchedAndMatchedClasses()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(temp, tree =>
         {
@@ -98,8 +111,10 @@ public sealed class BookReportEngineTests
             File.WriteAllText(css, File.ReadAllText(css) + "\n.lead { font-weight: bold; }\n");
         });
 
+        // Act
         var rows = BookReportEngine.GetHtmlClassUsage(book);
 
+        // Assert
         rows.Should().ContainSingle(r => r.ClassName == "lead");
         HtmlClassUsageRow lead = rows.Single(r => r.ClassName == "lead");
         lead.ElementName.Should().Be("p");
@@ -110,6 +125,7 @@ public sealed class BookReportEngineTests
     [Fact]
     public void GetHtmlClassUsage_FlagsUnusedClassAsNotMatched()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(temp, tree =>
         {
@@ -118,14 +134,17 @@ public sealed class BookReportEngineTests
                 .Replace("<p>Hello, world.</p>", "<p class=\"ghost\">Hello, world.</p>", StringComparison.Ordinal));
         });
 
+        // Act
         var rows = BookReportEngine.GetHtmlClassUsage(book);
 
+        // Assert
         rows.Single(r => r.ClassName == "ghost").IsUsed.Should().BeFalse();
     }
 
     [Fact]
     public void GetHtmlClassUsage_SkipsSignetMarkerClasses()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(temp, tree =>
         {
@@ -134,23 +153,28 @@ public sealed class BookReportEngineTests
                 .Replace("<h1 id=\"ch1\">", "<h1 id=\"ch1\" class=\"signet_not_in_toc\">", StringComparison.Ordinal));
         });
 
+        // Act
         var rows = BookReportEngine.GetHtmlClassUsage(book);
 
+        // Assert
         rows.Should().NotContain(r => r.ClassName == "signet_not_in_toc");
     }
 
     [Fact]
     public void GetStylesInCss_DelegatesToCssSelectorUsageAnalyzer()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(temp, _ => { });
 
+        // Act & Assert
         BookReportEngine.GetStylesInCss(book).Should().BeEquivalentTo(CssSelectorUsageAnalyzer.GetSelectorUsage(book));
     }
 
     [Fact]
     public void GetLinks_ClassifiesInternalExternalAndBrokenTargets()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(temp, tree =>
         {
@@ -165,8 +189,10 @@ public sealed class BookReportEngineTests
                 StringComparison.Ordinal));
         });
 
+        // Act
         var rows = BookReportEngine.GetLinks(book);
 
+        // Assert
         rows.Single(r => r.Text == "Top").Should().Match<LinkRow>(r => r.IsInternal && r.TargetExists == true);
         rows.Single(r => r.Text == "Broken fragment").Should().Match<LinkRow>(r => r.IsInternal && r.TargetExists == false);
         rows.Single(r => r.Text == "Broken file").Should().Match<LinkRow>(r => r.IsInternal && r.TargetExists == false);
@@ -176,6 +202,7 @@ public sealed class BookReportEngineTests
     [Fact]
     public void GetCharacterUsage_CollectsNonAsciiCodepointsOnly()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(temp, tree =>
         {
@@ -184,8 +211,10 @@ public sealed class BookReportEngineTests
                 .Replace("<p>Hello, world.</p>", "<p>Café naïve Café</p>", StringComparison.Ordinal));
         });
 
+        // Act
         var rows = BookReportEngine.GetCharacterUsage(book);
 
+        // Assert
         rows.Should().NotContain(r => r.CodePoint <= 0x7F);
         CharacterUsageRow eAcute = rows.Single(r => r.CodePoint == 0x00E9); // é
         eAcute.Count.Should().Be(2); // "Café" x2
@@ -195,11 +224,14 @@ public sealed class BookReportEngineTests
     [Fact]
     public void GetWordCharacterCounts_SumsPerFileAndTotal()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(temp, _ => { });
 
+        // Act
         WordCharacterCountsReport report = BookReportEngine.GetWordCharacterCounts(book);
 
+        // Assert
         report.Files.Should().HaveCount(2); // chapter1.xhtml + nav.xhtml (GetHtmlResources returns both)
         report.TotalWords.Should().Be(report.Files.Sum(f => f.Words));
         report.TotalCharacters.Should().Be(report.Files.Sum(f => f.Characters));
@@ -209,11 +241,14 @@ public sealed class BookReportEngineTests
     [Fact]
     public void GetImageFiles_ReportsDimensionsFormatAndUsage()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMedia(temp);
 
+        // Act
         var rows = BookReportEngine.GetImageFiles(book);
 
+        // Assert
         ImageFilesRow figure = rows.Single(r => r.Name == "figure.png");
         figure.Format.Should().Be("PNG");
         figure.Width.Should().BeGreaterThan(0);
@@ -227,13 +262,16 @@ public sealed class BookReportEngineTests
     [Fact]
     public void GetAllFiles_MediaCorpus_MatchesManualResourceCount()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMedia(temp);
 
         // Matches a manual count of corpus/epub3/media.
         // Manifest: nav.xhtml, package.opf, style.css, chapter1.xhtml, cover.png, figure.png, font.ttf, clip.mp3.
+        // Act
         var rows = BookReportEngine.GetAllFiles(book);
 
+        // Assert
         rows.Should().HaveCount(8);
         rows.Should().ContainSingle(r => r.Name == "clip.mp3" && r.TypeName == "Audio");
         rows.Should().ContainSingle(r => r.Name == "font.ttf" && r.TypeName == "Font");

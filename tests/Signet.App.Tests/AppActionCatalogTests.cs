@@ -12,6 +12,7 @@ public sealed class AppActionCatalogTests
     [Fact]
     public void Action_ids_are_unique()
     {
+        // Act & Assert
         AppActionCatalog.All.Select(a => a.Id).Should().OnlyHaveUniqueItems();
     }
 
@@ -25,6 +26,7 @@ public sealed class AppActionCatalogTests
     [InlineData("XEditor")]
     public void Excluded_features_are_absent(string fragment)
     {
+        // Act & Assert
         AppActionCatalog.All.Should().NotContain(a => a.Id.Contains(fragment));
     }
 
@@ -38,6 +40,7 @@ public sealed class AppActionCatalogTests
                 continue;
             }
 
+            // Act & Assert
             KeyGestureConversion.TryParse(descriptor.DefaultShortcut, out _)
                 .Should().BeTrue($"the shortcut '{descriptor.DefaultShortcut}' of action {descriptor.Id} should parse");
         }
@@ -46,10 +49,16 @@ public sealed class AppActionCatalogTests
     [Fact]
     public void Registry_builds_all_catalog_actions_and_wires_gestures()
     {
+        // Arrange
         using TestHost host = new();
 
+        // Act & Assert
         host.Registry.Actions.Should().HaveCount(AppActionCatalog.All.Count);
+
+        // Act & Assert
         host.Registry.Require(AppActionIds.Save).Gesture!.ToString().Should().Contain("Ctrl");
+
+        // Act & Assert
         host.Registry.Require(AppActionIds.SaveACopy).Gesture.Should().BeNull();
     }
 
@@ -62,9 +71,11 @@ public sealed class AppActionCatalogTests
     [Fact]
     public void No_default_shortcut_blocks_a_polish_AltGr_character()
     {
+        // Arrange
         // Letters that produce a character through AltGr in the "Polish (programmer)" layout.
         const string altGrLetters = "ACELNOSXZ";
 
+        // Act
         string[] offending = AppActionCatalog.All
             .Where(a => a.DefaultShortcut.StartsWith("Ctrl+Alt+", System.StringComparison.Ordinal))
             .Where(a =>
@@ -75,6 +86,7 @@ public sealed class AppActionCatalogTests
             .Select(a => $"{a.Id} = {a.DefaultShortcut}")
             .ToArray();
 
+        // Assert
         offending.Should().BeEmpty("a Ctrl+Alt+<letter> shortcut from this list blocks typing a Polish character");
     }
 }

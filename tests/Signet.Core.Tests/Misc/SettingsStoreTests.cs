@@ -26,9 +26,13 @@ public sealed class SettingsStoreTests
     [Fact]
     public void Defaults_apply_when_file_is_missing()
     {
+        // Arrange
         using TempDir dir = new();
+
+        // Act
         SettingsStore sut = NewStore(dir);
 
+        // Assert
         sut.UiLanguage.Should().Be("en", "the UI starts in English regardless of the system language");
         sut.DefaultMetadataLang.Should().Be("en");
         sut.DefaultVersion.Should().Be("3.0");
@@ -48,6 +52,7 @@ public sealed class SettingsStoreTests
     [Fact]
     public void Values_survive_save_and_reload()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
 
@@ -65,11 +70,17 @@ public sealed class SettingsStoreTests
             true, EditionPagePosition.Second, new[] { new EditionPageField("Edited by", "GreatWorksPublishing", true), new EditionPageField("Note", "x", false) },
             false, true, false, true, false, "Colophon", 3);
         writer.OpenTagHintAppearance = new OpenTagHintAppearance("Consolas", 15);
+
+        // Act
         writer.Save();
 
+        // Assert
         File.Exists(path).Should().BeTrue();
 
+        // Act
         SettingsStore reader = new(path);
+
+        // Assert
         reader.DefaultMetadataLang.Should().Be("pl");
         reader.SpellCheck.Should().BeTrue();
         reader.CleanOn.Should().Be(CleanOn.Save);
@@ -88,12 +99,15 @@ public sealed class SettingsStoreTests
     [Fact]
     public void Empty_file_yields_defaults()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
         File.WriteAllText(path, string.Empty);
 
+        // Act
         SettingsStore sut = new(path);
 
+        // Assert
         sut.DefaultVersion.Should().Be("3.0");
         sut.CodeEditorWordWrap.Should().BeTrue("Code Editor wraps lines by default");
         sut.CleanupEnabledSteps.Should().BeEmpty("no Cleanup step is checked until the user confirms one");
@@ -108,30 +122,41 @@ public sealed class SettingsStoreTests
     [Fact]
     public void The_mass_rename_options_default_to_part_from_1_and_survive_a_reload_normalized()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
         SettingsStore writer = new(path);
+
         writer.MassRename.Should().Be(MassRenameOptions.Default);
 
         writer.MassRename = new MassRenameOptions(" page ", -3, '#', 500, false);
+
+        // Act
         writer.Save();
 
+        // Act & Assert
         new SettingsStore(path).MassRename.Should().Be(new MassRenameOptions("page", 0, '#', MassRenameOptions.MinLengthMax, false));
     }
 
     [Fact]
     public void The_line_numbers_font_defaults_to_the_editor_font_is_normalized_and_survives_a_reload()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
         SettingsStore writer = new(path);
+
         writer.LineNumberFontAppearance.Should().Be(LineNumberFontAppearance.Default);
         LineNumberFontAppearance.Default.IsInherited.Should().BeTrue();
 
         writer.LineNumberFontAppearance = new LineNumberFontAppearance(" Consolas ", 500);
+
+        // Act
         writer.Save();
 
         LineNumberFontAppearance read = new SettingsStore(path).LineNumberFontAppearance;
+
+        // Assert
         read.Should().Be(new LineNumberFontAppearance("Consolas", LineNumberFontAppearance.FontSizeMax));
         read.IsInherited.Should().BeFalse();
     }
@@ -139,9 +164,13 @@ public sealed class SettingsStoreTests
     [Fact]
     public void The_find_usages_panel_fits_its_first_column_and_does_not_wrap_rows_by_default()
     {
+        // Arrange
         using TempDir dir = new();
+
+        // Act
         SettingsStore sut = new(dir.Combine("settings.xml"));
 
+        // Assert
         sut.FindUsagesFitUsageColumn.Should().BeTrue();
         sut.FindUsagesWrapRows.Should().BeFalse();
         sut.FindUsagesUsageColumnWidth.Should().Be(0, "no width was set yet");
@@ -150,6 +179,7 @@ public sealed class SettingsStoreTests
     [Fact]
     public void The_find_usages_panel_settings_survive_a_reload()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
         SettingsStore writer = new(path)
@@ -158,10 +188,13 @@ public sealed class SettingsStoreTests
             FindUsagesWrapRows = true,
             FindUsagesUsageColumnWidth = 240,
         };
+
+        // Act
         writer.Save();
 
         SettingsStore reader = new(path);
 
+        // Assert
         reader.FindUsagesFitUsageColumn.Should().BeFalse();
         reader.FindUsagesWrapRows.Should().BeTrue();
         reader.FindUsagesUsageColumnWidth.Should().Be(240);
@@ -170,48 +203,69 @@ public sealed class SettingsStoreTests
     [Fact]
     public void A_negative_find_usages_column_width_is_stored_as_none()
     {
+        // Arrange
         using TempDir dir = new();
+
+        // Act
         SettingsStore sut = new(dir.Combine("settings.xml")) { FindUsagesUsageColumnWidth = -5 };
 
+        // Act & Assert
         sut.FindUsagesUsageColumnWidth.Should().Be(0);
     }
 
     [Fact]
     public void Restoring_the_appearance_defaults_makes_the_find_usages_column_fit_again()
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore sut = new(dir.Combine("settings.xml")) { FindUsagesFitUsageColumn = false };
 
+        // Act
         sut.ClearAppearanceSettings();
 
+        // Assert
         sut.FindUsagesFitUsageColumn.Should().BeTrue();
     }
 
     [Fact]
     public void The_find_usages_row_spacing_is_zero_by_default_clamped_and_reset_with_the_appearance()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
         SettingsStore sut = new(path);
+
         sut.FindUsagesRowSpacing.Should().Be(0);
 
+        // Act
         sut.FindUsagesRowSpacing = 500;
         sut.Save();
+
+        // Act & Assert
         new SettingsStore(path).FindUsagesRowSpacing.Should().Be(SettingsStore.FindUsagesRowSpacingMax);
+
+        // Act
         sut.FindUsagesRowSpacing = -3;
+
+        // Assert
         sut.FindUsagesRowSpacing.Should().Be(0);
 
+        // Act
         sut.FindUsagesRowSpacing = 4;
         sut.ClearAppearanceSettings();
+
+        // Assert
         sut.FindUsagesRowSpacing.Should().Be(0);
     }
 
     [Fact]
     public void Font_weights_are_not_set_by_default_and_survive_a_reload()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
         SettingsStore writer = new(path);
+
         writer.OpenTagHintAppearance.FontWeight.Should().Be(0);
         writer.UiFontWeight.Should().Be(0);
         writer.CodeEditorAppearance.FontWeight.Should().Be(0);
@@ -226,10 +280,13 @@ public sealed class SettingsStoreTests
         writer.CodeEditorAppearance = new CodeEditorAppearance { FontWeight = 300 };
         writer.SetTooltipFont(TooltipArea.BookBrowser, new TooltipFont("Arial", 13, 600));
         writer.UiFontWeight = 300;
+
+        // Act
         writer.Save();
 
         SettingsStore reader = new(path);
 
+        // Assert
         reader.OpenTagHintAppearance.FontWeight.Should().Be(300);
         reader.LineNumberFontAppearance.FontWeight.Should().Be(200);
         reader.LineNumberFontAppearance.IsInherited.Should().BeFalse("a weight of its own is a font of its own");
@@ -247,13 +304,16 @@ public sealed class SettingsStoreTests
     [Fact]
     public void A_stored_font_weight_is_clamped()
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore sut = new(dir.Combine("settings.xml"));
 
+        // Act
         sut.OpenTagHintAppearance = new OpenTagHintAppearance("Arial", 12, 5000);
         sut.UiFontWeight = -3;
         sut.SetTooltipFont(TooltipArea.MainWindow, new TooltipFont(string.Empty, 13, 5000));
 
+        // Assert
         sut.OpenTagHintAppearance.FontWeight.Should().Be(FontWeightScale.Max);
         sut.UiFontWeight.Should().Be(0);
         sut.GetTooltipFont(TooltipArea.MainWindow).FontWeight.Should().Be(FontWeightScale.Max);
@@ -262,6 +322,7 @@ public sealed class SettingsStoreTests
     [Fact]
     public void Restoring_the_appearance_defaults_clears_the_font_weights()
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore sut = new(dir.Combine("settings.xml"));
         sut.OpenTagHintAppearance = new OpenTagHintAppearance(string.Empty, 0, 300);
@@ -273,8 +334,10 @@ public sealed class SettingsStoreTests
         sut.CodeEditorAppearance = new CodeEditorAppearance { FontWeight = 300 };
         sut.SetTooltipFont(TooltipArea.Preview, new TooltipFont(string.Empty, 13, 300));
 
+        // Act
         sut.ClearAppearanceSettings();
 
+        // Assert
         sut.OpenTagHintAppearance.FontWeight.Should().Be(0);
         sut.LineNumberFontAppearance.IsInherited.Should().BeTrue();
         sut.DocumentTabFontAppearance.FontWeight.Should().Be(0);
@@ -288,9 +351,13 @@ public sealed class SettingsStoreTests
     [Fact]
     public void The_find_usages_fonts_default_to_the_interface_font()
     {
+        // Arrange
         using TempDir dir = new();
+
+        // Act
         SettingsStore sut = new(dir.Combine("settings.xml"));
 
+        // Assert
         sut.FindUsagesAppearance.Should().Be(FindUsagesAppearance.Default);
         FindUsagesAppearance.Default.Should().Be(new FindUsagesAppearance(string.Empty, 0, string.Empty, 0, string.Empty, 0));
     }
@@ -298,16 +365,20 @@ public sealed class SettingsStoreTests
     [Fact]
     public void The_find_usages_fonts_are_stored_normalized_and_survive_a_reload()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
         SettingsStore writer = new(path)
         {
             FindUsagesAppearance = new FindUsagesAppearance(" Arial ", 500, "Consolas", -3, "Segoe UI", 13),
         };
+
+        // Act
         writer.Save();
 
         SettingsStore reader = new(path);
 
+        // Assert
         reader.FindUsagesAppearance.Should().Be(
             new FindUsagesAppearance("Arial", FindUsagesAppearance.FontSizeMax, "Consolas", 0, "Segoe UI", 13));
     }
@@ -315,47 +386,60 @@ public sealed class SettingsStoreTests
     [Fact]
     public void Changing_the_find_usages_fonts_raises_one_setting_changed()
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore sut = new(dir.Combine("settings.xml"));
         List<string> keys = new();
         sut.SettingChanged += (_, e) => keys.Add(e.QualifiedKey);
 
+        // Act
         sut.FindUsagesAppearance = new FindUsagesAppearance("Arial", 12, string.Empty, 0, string.Empty, 0);
 
+        // Assert
         keys.Should().ContainSingle().Which.Should().Contain("find_usages_appearance");
     }
 
     [Fact]
     public void Restoring_the_appearance_defaults_clears_the_find_usages_fonts()
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore sut = new(dir.Combine("settings.xml"))
         {
             FindUsagesAppearance = new FindUsagesAppearance("Arial", 12, "Consolas", 14, "Segoe UI", 13),
         };
 
+        // Act
         sut.ClearAppearanceSettings();
 
+        // Assert
         sut.FindUsagesAppearance.Should().Be(FindUsagesAppearance.Default);
     }
 
     [Fact]
     public void Restoring_the_appearance_defaults_clears_the_line_numbers_font()
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore sut = new(dir.Combine("settings.xml")) { LineNumberFontAppearance = new LineNumberFontAppearance("Arial", 12) };
 
+        // Act
         sut.ClearAppearanceSettings();
 
+        // Assert
         sut.LineNumberFontAppearance.Should().Be(LineNumberFontAppearance.Default);
     }
 
     [Fact]
     public void The_book_browser_look_defaults_to_the_interface_font_an_indent_of_20_and_no_folders_in_the_names()
     {
+        // Arrange
         using TempDir dir = new();
+
+        // Act
         SettingsStore sut = new(dir.Combine("settings.xml"));
 
+        // Assert
         sut.BookBrowserAppearance.Should().Be(BookBrowserAppearance.Default);
         BookBrowserAppearance.Default.Should().Be(new BookBrowserAppearance(string.Empty, 0, string.Empty, 0, 20));
         BookBrowserAppearance.Default.ShowFolders.Should().BeFalse();
@@ -364,16 +448,20 @@ public sealed class SettingsStoreTests
     [Fact]
     public void The_book_browser_look_is_stored_normalized_and_survives_a_reload()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
         SettingsStore writer = new(path)
         {
             BookBrowserAppearance = new BookBrowserAppearance(" Consolas ", 500, "Arial", -3, 999, 500, -2, ShowFolders: true),
         };
+
+        // Act
         writer.Save();
 
         SettingsStore reader = new(path);
 
+        // Assert
         reader.BookBrowserAppearance.Should().Be(new BookBrowserAppearance(
             "Consolas", BookBrowserAppearance.FontSizeMax, "Arial", 0, BookBrowserAppearance.IndentMax,
             BookBrowserAppearance.CellMinHeightMax, 0, ShowFolders: true));
@@ -384,23 +472,30 @@ public sealed class SettingsStoreTests
     [Fact]
     public void Restoring_the_appearance_defaults_clears_the_book_browser_look()
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore sut = new(dir.Combine("settings.xml"))
         {
             BookBrowserAppearance = new BookBrowserAppearance("Consolas", 14, "Arial", 12, 35, 6, 2, true),
         };
 
+        // Act
         sut.ClearAppearanceSettings();
 
+        // Assert
         sut.BookBrowserAppearance.Should().Be(BookBrowserAppearance.Default);
     }
 
     [Fact]
     public void The_book_browser_follows_the_active_tab_by_default_and_the_tabs_do_not_wrap()
     {
+        // Arrange
         using TempDir dir = new();
+
+        // Act
         SettingsStore sut = new(dir.Combine("settings.xml"));
 
+        // Assert
         sut.BookBrowserFollowsActiveTab.Should().BeTrue();
         sut.CodeEditorMultilineTabs.Should().BeFalse();
     }
@@ -408,11 +503,14 @@ public sealed class SettingsStoreTests
     [Fact]
     public void Open_tag_hint_appearance_is_normalized()
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore sut = new(dir.Combine("settings.xml"));
 
+        // Act
         sut.OpenTagHintAppearance = new OpenTagHintAppearance(" Consolas ", 500);
 
+        // Act & Assert
         sut.OpenTagHintAppearance.Should().Be(new OpenTagHintAppearance("Consolas", OpenTagHintAppearance.FontSizeMax));
     }
 
@@ -423,11 +521,14 @@ public sealed class SettingsStoreTests
     [InlineData(99999, SettingsStore.OpenTagHintDelayMaxMs)]
     public void Open_tag_hint_delay_is_clamped(int stored, int expected)
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore sut = new(dir.Combine("settings.xml"));
 
+        // Act
         sut.CodeEditorOpenTagHintDelayMs = stored;
 
+        // Assert
         sut.CodeEditorOpenTagHintDelayMs.Should().Be(expected);
     }
 
@@ -439,128 +540,183 @@ public sealed class SettingsStoreTests
     [InlineData(18, 18)]
     public void Warning_font_size_is_normalized_and_0_means_the_interface_text_size(int stored, int expected)
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore sut = new(dir.Combine("settings.xml"));
 
+        // Act
         sut.WarningAppearance = new WarningAppearance(stored);
 
+        // Assert
         sut.WarningAppearance.Should().Be(new WarningAppearance(expected));
     }
 
     [Fact]
     public void The_last_preferences_page_survives_a_restart_and_is_never_negative()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
         SettingsStore writer = new(path);
+
         writer.PreferencesPageIndex.Should().Be(0);
 
+        // Act
         writer.PreferencesPageIndex = 5;
         writer.Save();
+
+        // Act & Assert
         new SettingsStore(path).PreferencesPageIndex.Should().Be(5);
 
+        // Act
         writer.PreferencesPageIndex = -3;
+
+        // Assert
         writer.PreferencesPageIndex.Should().Be(0);
     }
 
     [Fact]
     public void The_find_scope_is_all_html_files_without_settings_or_with_an_invalid_value_and_survives_a_restart()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
         SettingsStore writer = new(path);
+
         writer.GetFindReplaceSettings().LookWhere.Should().Be(LookWhere.AllHtmlFiles, "a fresh installation");
 
+        // Act
         writer.SaveFindReplaceSettings(writer.GetFindReplaceSettings() with { LookWhere = (LookWhere)99 });
+
+        // Assert
         writer.GetFindReplaceSettings().LookWhere.Should().Be(LookWhere.AllHtmlFiles, "a value that is no scope would leave the list empty");
 
+        // Act
         writer.SaveFindReplaceSettings(writer.GetFindReplaceSettings() with { LookWhere = LookWhere.OpfFile });
         writer.Save();
+
+        // Act & Assert
         new SettingsStore(path).GetFindReplaceSettings().LookWhere.Should().Be(LookWhere.OpfFile);
     }
 
     [Fact]
     public void The_zoom_hint_is_on_by_default_survives_a_restart_and_is_reset_with_the_appearance()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
         SettingsStore writer = new(path);
+
         writer.ShowZoomHint.Should().BeTrue();
 
+        // Act
         writer.ShowZoomHint = false;
         writer.Save();
+
+        // Act & Assert
         new SettingsStore(path).ShowZoomHint.Should().BeFalse();
 
+        // Act
         writer.ClearAppearanceSettings();
+
+        // Assert
         writer.ShowZoomHint.Should().BeTrue("Restore Appearance Defaults turns it on again");
     }
 
     [Fact]
     public void The_zoom_of_the_preferences_editors_survives_a_restart_and_stays_in_range()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
         SettingsStore writer = new(path);
+
         writer.PreferencesEditorZoom.Should().Be(0);
 
+        // Act
         writer.PreferencesEditorZoom = 5;
         writer.Save();
+
+        // Act & Assert
         new SettingsStore(path).PreferencesEditorZoom.Should().Be(5);
 
+        // Act
         writer.PreferencesEditorZoom = -500;
+
+        // Assert
         writer.PreferencesEditorZoom.Should().Be(-12);
+
+        // Act
         writer.PreferencesEditorZoom = 500;
+
+        // Assert
         writer.PreferencesEditorZoom.Should().Be(48);
     }
 
     [Fact]
     public void The_collapsed_preferences_sections_survive_a_restart_and_start_empty()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
         SettingsStore writer = new(path);
+
         writer.PreferencesCollapsedSections.Should().BeEmpty("every section is expanded by default");
 
+        // Act
         writer.PreferencesCollapsedSections = new[] { "AppearancePage", "ColorSchemePage", "AppearancePage" };
         writer.Save();
 
+        // Act & Assert
         new SettingsStore(path).PreferencesCollapsedSections.Should().Equal("AppearancePage", "ColorSchemePage");
     }
 
     [Fact]
     public void The_font_of_the_color_scheme_previews_is_monospaced_by_default_and_survives_a_restart()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
         SettingsStore writer = new(path);
+
         writer.ColorSchemePreviewAppearance.Should().Be(new ColorSchemePreviewAppearance("Consolas", 13));
+
         Fixture any = new();
         ColorSchemePreviewAppearance font = new(any.Create<string>(), any.Create<int>());
 
+        // Act
         writer.ColorSchemePreviewAppearance = font;
         writer.Save();
 
+        // Act & Assert
         new SettingsStore(path).ColorSchemePreviewAppearance.Should().Be(font);
     }
 
     [Fact]
     public void The_preferences_splitter_sizes_survive_a_restart_without_the_ones_that_are_not_positive()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
         SettingsStore writer = new(path);
+
         writer.PreferencesSplitterSizes.Should().BeEmpty();
 
+        // Act
         writer.PreferencesSplitterSizes = new Dictionary<string, int> { ["ThemeCssView.tree"] = 280, ["ThemeCssView.preview"] = 0 };
         writer.Save();
 
+        // Act & Assert
         new SettingsStore(path).PreferencesSplitterSizes.Should().BeEquivalentTo(new Dictionary<string, int> { ["ThemeCssView.tree"] = 280 });
+
+        // Act & Assert
         new SettingsStore(path).PreferencesFieldHeights.Should().BeEmpty("the field heights are a separate map");
     }
 
     [Fact]
     public void The_keys_of_the_removed_dark_theme_are_dropped_on_load_and_not_saved_again()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
         File.WriteAllText(path, """
@@ -582,15 +738,20 @@ public sealed class SettingsStoreTests
             """);
 
         SettingsStore sut = new(path);
+
+        // Act
         sut.Save();
 
         string saved = File.ReadAllText(path);
+
+        // Assert
         saved.Should().NotContain("ui_theme").And.NotContain("dark").And.NotContain("warning_color");
     }
 
     [Fact]
     public void The_unused_code_editor_colors_are_dropped_on_load()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
         File.WriteAllText(path, """
@@ -605,9 +766,13 @@ public sealed class SettingsStoreTests
             """);
 
         SettingsStore sut = new(path);
+
+        // Act
         sut.Save();
 
         string saved = File.ReadAllText(path);
+
+        // Assert
         saved.Should().NotContain("line_number").And.NotContain("spelling_underline").And.NotContain("css_comment");
     }
 
@@ -646,6 +811,7 @@ public sealed class SettingsStoreTests
     [Fact]
     public void A_tooltip_font_is_stored_per_area_normalized_and_reset_with_the_appearance()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
         SettingsStore sut = new(path);
@@ -653,83 +819,118 @@ public sealed class SettingsStoreTests
 
         sut.GetTooltipFont(TooltipArea.FindReplace).Should().Be(new TooltipFont(string.Empty, 13), "the interface font at 13 px");
 
+        // Act
         sut.SetTooltipFont(TooltipArea.FindReplace, new TooltipFont(" " + family + " ", 99));
         sut.Save();
 
+        // Assert
         sut.GetTooltipFont(TooltipArea.FindReplace).Should().Be(new TooltipFont(family, TooltipFont.FontSizeMax));
         sut.GetTooltipFont(TooltipArea.Footnotes).Should().Be(TooltipFont.Default, "another area");
         File.ReadAllText(path).Should().Contain("tooltip_find_replace_font_family").And.Contain("tooltip_find_replace_font_size");
 
+        // Act
         sut.ClearAppearanceSettings();
 
+        // Assert
         sut.GetTooltipFont(TooltipArea.FindReplace).Should().Be(TooltipFont.Default);
     }
 
     [Fact]
     public void A_tooltip_area_inherits_the_font_of_the_other_windows_unless_told_otherwise()
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore sut = new(dir.Combine("settings.xml"));
         string own = new Fixture().Create<string>();
         string other = new Fixture().Create<string>();
+
+        // Act
         sut.SetTooltipFont(TooltipArea.FindReplace, new TooltipFont(own, 20));
         sut.SetTooltipFont(TooltipArea.OtherWindows, new TooltipFont(other, 15));
 
+        // Assert
         sut.GetTooltipInherit(TooltipArea.FindReplace).Should().BeTrue("inheriting is the default, whatever is stored");
         sut.GetEffectiveTooltipFont(TooltipArea.FindReplace).Should().Be(new TooltipFont(other, 15));
 
+        // Act
         sut.SetTooltipInherit(TooltipArea.FindReplace, false);
 
+        // Assert
         sut.GetEffectiveTooltipFont(TooltipArea.FindReplace).Should().Be(new TooltipFont(own, 20));
         sut.GetEffectiveTooltipFont(TooltipArea.Footnotes).Should().Be(new TooltipFont(other, 15), "another area still inherits");
 
+        // Act
         sut.SetTooltipInherit(TooltipArea.OtherWindows, false);
+
+        // Assert
         sut.GetTooltipInherit(TooltipArea.OtherWindows).Should().BeFalse("the other windows have no parent");
         sut.GetEffectiveTooltipFont(TooltipArea.OtherWindows).Should().Be(new TooltipFont(other, 15));
 
+        // Act
         sut.ClearAppearanceSettings();
+
+        // Assert
         sut.GetTooltipInherit(TooltipArea.FindReplace).Should().BeTrue();
     }
 
     [Fact]
     public void Only_the_Text_folder_of_the_Book_Browser_is_expanded_on_load_by_default()
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore sut = new(dir.Combine("settings.xml"));
 
         Enum.GetValues<OpfModelGroupKind>().Where(sut.GetBookBrowserExpandOnLoad).Should().Equal(OpfModelGroupKind.Text);
 
+        // Act
         sut.SetBookBrowserExpandOnLoad(OpfModelGroupKind.Fonts, true);
         sut.SetBookBrowserExpandOnLoad(OpfModelGroupKind.Text, false);
+
+        // Assert
         sut.GetBookBrowserExpandOnLoad(OpfModelGroupKind.Fonts).Should().BeTrue();
         sut.GetBookBrowserExpandOnLoad(OpfModelGroupKind.Text).Should().BeFalse();
 
+        // Act
         sut.ClearAppearanceSettings();
+
+        // Assert
         Enum.GetValues<OpfModelGroupKind>().Where(sut.GetBookBrowserExpandOnLoad).Should().Equal(OpfModelGroupKind.Text);
     }
 
     [Fact]
     public void The_preferences_window_is_modal_by_default()
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore sut = new(dir.Combine("settings.xml"));
 
         sut.PreferencesWindowModal.Should().BeTrue();
+
+        // Act
         sut.PreferencesWindowModal = false;
+
+        // Assert
         sut.PreferencesWindowModal.Should().BeFalse();
+
+        // Act
         sut.ClearAppearanceSettings();
+
+        // Assert
         sut.PreferencesWindowModal.Should().BeTrue();
     }
 
     [Fact]
     public void Corrupt_file_is_tolerated_and_yields_defaults()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
         File.WriteAllText(path, "<settings><group name=\"user_preferences\"><string key=");
 
+        // Act
         SettingsStore sut = new(path);
 
+        // Assert
         sut.DefaultVersion.Should().Be("3.0");
         sut.UiIconTheme.Should().Be("main");
     }
@@ -741,11 +942,14 @@ public sealed class SettingsStoreTests
     [InlineData(21, 9)]
     public void RecentFilesLimit_outside_0_to_20_falls_back_to_9(int stored, int expected)
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore sut = NewStore(dir);
 
+        // Act
         sut.RecentFilesLimit = stored;
 
+        // Assert
         sut.RecentFilesLimit.Should().Be(expected);
     }
 
@@ -757,11 +961,14 @@ public sealed class SettingsStoreTests
     [InlineData(10001, 1000)]
     public void UiPreviewTimeout_outside_100_to_10000_falls_back_to_1000(int stored, int expected)
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore sut = NewStore(dir);
 
+        // Act
         sut.UiPreviewTimeout = stored;
 
+        // Assert
         sut.UiPreviewTimeout.Should().Be(expected);
     }
 
@@ -770,16 +977,20 @@ public sealed class SettingsStoreTests
     {
         using TempDir dir = new();
 
+        // Act & Assert
         NewStore(dir).UiPreviewTimeout.Should().Be(1000);
     }
 
     [Fact]
     public void PreviewHighlight_defaults_to_a_background_45_percent_persistent()
     {
+        // Arrange
         using TempDir dir = new();
 
+        // Act
         PreviewHighlight sut = NewStore(dir).PreviewHighlight;
 
+        // Assert
         sut.Should().Be(PreviewHighlight.Default);
         sut.Style.Should().Be(PreviewHighlightStyle.Background);
         sut.OpacityPercent.Should().Be(45);
@@ -791,28 +1002,40 @@ public sealed class SettingsStoreTests
     [Fact]
     public void PreviewHighlight_round_trips_and_raises_one_change()
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore sut = NewStore(dir);
         PreviewHighlight value = new(PreviewHighlightStyle.Outline, 60, 7, true, 4500);
         List<string> changed = new();
         sut.SettingChanged += (_, e) => changed.Add(e.QualifiedKey);
 
+        // Act
         sut.PreviewHighlight = value;
 
+        // Assert
         sut.PreviewHighlight.Should().Be(value);
+
+        // Act
         sut.Save();
+
+        // Act & Assert
         NewStore(dir).PreviewHighlight.Should().Be(value, "the value goes to the settings file");
+
+        // Assert
         changed.Should().Equal("user_preferences/preview_highlight");
     }
 
     [Fact]
     public void PreviewHighlight_out_of_range_values_are_clamped()
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore sut = NewStore(dir);
 
+        // Act
         sut.PreviewHighlight = new((PreviewHighlightStyle)42, 0, 99, true, 10);
 
+        // Assert
         sut.PreviewHighlight.Should().Be(new PreviewHighlight(
             PreviewHighlightStyle.Background,
             PreviewHighlight.OpacityMin, PreviewHighlight.OutlineWidthMax, true, PreviewHighlight.AutoHideDelayMin));
@@ -821,19 +1044,23 @@ public sealed class SettingsStoreTests
     [Fact]
     public void SettingChanged_fires_with_qualified_key()
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore sut = NewStore(dir);
         string? changed = null;
         sut.SettingChanged += (_, e) => changed = e.QualifiedKey;
 
+        // Act
         sut.DefaultMetadataLang = "de";
 
+        // Assert
         changed.Should().Be("user_preferences/default_metadata_lang");
     }
 
     [Fact]
     public void Reload_discards_unsaved_changes()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
 
@@ -842,23 +1069,31 @@ public sealed class SettingsStoreTests
         sut.Save();
         sut.DefaultMetadataLang = "es";
 
+        // Act
         sut.Reload();
 
+        // Assert
         sut.DefaultMetadataLang.Should().Be("fr");
     }
 
     [Fact]
     public void Window_geometry_roundtrips()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
 
         SettingsStore writer = new(path);
+
         writer.GetWindowGeometry("MainWindow").Should().BeNull();
+
+        // Act
         writer.SetWindowGeometry("MainWindow", new WindowGeometry(10, 20, 1200, 800, Maximized: true));
         writer.Save();
 
         SettingsStore reader = new(path);
+
+        // Assert
         reader.GetWindowGeometry("MainWindow").Should().Be(new WindowGeometry(10, 20, 1200, 800, Maximized: true));
     }
 
@@ -867,33 +1102,45 @@ public sealed class SettingsStoreTests
     {
         // Regression: the values set in this session are int JSON nodes; reading them as double threw
         // (opening Preferences a second time crashed the app).
+        // Arrange
         using TempDir dir = new();
         SettingsStore store = new(dir.Combine("settings.xml"));
         WindowGeometry geometry = new(0, 0, 900, 640, Maximized: false, FullScreen: false);
 
+        // Act
         store.SetWindowGeometry("PreferencesWindow", geometry);
 
+        // Assert
         store.GetWindowGeometry("PreferencesWindow").Should().Be(geometry);
     }
 
     [Fact]
     public void Appearance_structs_roundtrip_and_reset()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
 
         SettingsStore writer = new(path);
+
         writer.CodeEditorAppearance.Should().Be(CodeEditorAppearance.Default);
+
+        // Act
         writer.CodeEditorAppearance = CodeEditorAppearance.Default with { FontSize = 14, FontFamily = "Consolas" };
         writer.PreviewAppearance = PreviewAppearance.Default with { FontSize = 20 };
         writer.Save();
 
         SettingsStore reader = new(path);
+
+        // Assert
         reader.CodeEditorAppearance.FontSize.Should().Be(14);
         reader.CodeEditorAppearance.FontFamily.Should().Be("Consolas");
         reader.PreviewAppearance.FontSize.Should().Be(20);
 
+        // Act
         reader.ClearAppearanceSettings();
+
+        // Assert
         reader.CodeEditorAppearance.Should().Be(CodeEditorAppearance.Default);
         reader.PreviewAppearance.Should().Be(PreviewAppearance.Default);
     }
@@ -901,58 +1148,84 @@ public sealed class SettingsStoreTests
     [Fact]
     public void Extended_highlighting_is_on_by_default_and_roundtrips()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
 
         SettingsStore writer = new(path);
+
         writer.CodeEditorExtendedHighlighting.Should().BeTrue();
+
+        // Act
         writer.CodeEditorExtendedHighlighting = false;
         writer.Save();
 
         SettingsStore reader = new(path);
+
+        // Assert
         reader.CodeEditorExtendedHighlighting.Should().BeFalse();
     }
 
     [Fact]
     public void String_map_group_roundtrips_and_clears()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
 
         SettingsStore writer = new(path);
+
+        // Assert
         writer.GetStringMap("keyboard_shortcuts").Should().BeEmpty();
+
+        // Arrange
         writer.SetStringMap("keyboard_shortcuts", new Dictionary<string, string>
         {
             ["MainWindow.Save"] = "Ctrl+S",
             ["MainWindow.Open"] = "Ctrl+O",
         });
+
+        // Act
         writer.Save();
 
         SettingsStore reader = new(path);
+
+        // Assert
         reader.GetStringMap("keyboard_shortcuts").Should().ContainKey("MainWindow.Save")
             .WhoseValue.Should().Be("Ctrl+S");
 
+        // Act
         reader.SetStringMap("keyboard_shortcuts", new Dictionary<string, string>());
         reader.Save();
+
+        // Act & Assert
         new SettingsStore(path).GetStringMap("keyboard_shortcuts").Should().BeEmpty();
     }
 
     [Fact]
     public void TempFolderHome_returns_empty_when_stored_path_is_missing()
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore sut = NewStore(dir);
 
+        // Act
         sut.TempFolderHome = Path.Combine(dir.Path, "does-not-exist");
+
+        // Assert
         sut.TempFolderHome.Should().BeEmpty();
 
+        // Act
         sut.TempFolderHome = dir.Path;
+
+        // Assert
         sut.TempFolderHome.Should().Be(dir.Path);
     }
 
     [Fact]
     public void A_draft_reads_the_current_values_and_keeps_its_changes_to_itself()
     {
+        // Arrange
         using TempDir dir = new();
         string path = dir.Combine("settings.xml");
         Fixture fixture = new();
@@ -962,11 +1235,17 @@ public sealed class SettingsStoreTests
         sut.DefaultMetadataLang = original;
         sut.Save();
 
+        // Act
         SettingsStore draft = sut.CreateDraft();
+
+        // Assert
         draft.DefaultMetadataLang.Should().Be(original);
+
+        // Act
         draft.DefaultMetadataLang = changed;
         draft.Save();
 
+        // Assert
         draft.IsDraft.Should().BeTrue();
         sut.DefaultMetadataLang.Should().Be(original);
         new SettingsStore(path).DefaultMetadataLang.Should().Be(original, "a draft never writes the file");
@@ -976,6 +1255,7 @@ public sealed class SettingsStoreTests
     [Fact]
     public void Committing_a_draft_copies_only_its_changes_and_raises_SettingChanged()
     {
+        // Arrange
         using TempDir dir = new();
         Fixture fixture = new();
         string meanwhile = fixture.Create<string>();
@@ -984,6 +1264,7 @@ public sealed class SettingsStoreTests
         List<string> raised = new();
         sut.SettingChanged += (_, e) => raised.Add(e.QualifiedKey);
 
+        // Act
         draft.SpellCheck = true;
         draft.UiIconTheme = "fluent";
         sut.DefaultMetadataLang = meanwhile;
@@ -991,6 +1272,7 @@ public sealed class SettingsStoreTests
 
         IReadOnlyList<string> committed = sut.CommitDraft(draft);
 
+        // Assert
         committed.Should().BeEquivalentTo("user_preferences/spell_check", "user_preferences/ui_icon_theme");
         raised.Should().BeEquivalentTo(committed);
         sut.SpellCheck.Should().BeTrue();
@@ -1002,68 +1284,90 @@ public sealed class SettingsStoreTests
     [Fact]
     public void Committing_a_composite_setting_raises_its_own_key_too()
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore sut = NewStore(dir);
         SettingsStore draft = sut.CreateDraft();
         List<string> raised = new();
         sut.SettingChanged += (_, e) => raised.Add(e.QualifiedKey);
 
+        // Act
         draft.PreviewAppearance = draft.PreviewAppearance with { FontSize = draft.PreviewAppearance.FontSize + 1 };
         sut.CommitDraft(draft);
 
+        // Assert
         raised.Should().Contain("user_preferences/preview_appearance");
     }
 
     [Fact]
     public void A_change_reverted_in_the_draft_is_not_a_change()
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore sut = NewStore(dir);
         sut.UiIconTheme = "main";
         SettingsStore draft = sut.CreateDraft();
         string original = draft.UiIconTheme;
 
+        // Act
         draft.UiIconTheme = "fluent";
         draft.UiIconTheme = original;
 
+        // Assert
         sut.HasDraftChanges(draft).Should().BeFalse();
+
+        // Act & Assert
         sut.CommitDraft(draft).Should().BeEmpty();
     }
 
     [Fact]
     public void A_draft_can_be_committed_again_with_later_changes_only()
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore sut = NewStore(dir);
         SettingsStore draft = sut.CreateDraft();
+
+        // Act
         draft.SpellCheck = true;
         sut.CommitDraft(draft);
 
         draft.SpellCheckNumbers = !draft.SpellCheckNumbers;
 
+        // Act & Assert
         sut.CommitDraft(draft).Should().Equal("user_preferences/spell_check_numbers");
     }
 
     [Fact]
     public void After_a_rebase_earlier_draft_writes_are_not_changes()
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore sut = NewStore(dir);
         SettingsStore draft = sut.CreateDraft();
+
+        // Act
         draft.SpellCheck = !draft.SpellCheck;
 
         draft.RebaseDraft();
 
+        // Assert
         sut.HasDraftChanges(draft).Should().BeFalse();
+
+        // Act & Assert
         sut.CommitDraft(draft).Should().BeEmpty();
     }
 
     [Fact]
     public void A_draft_cannot_make_a_draft()
     {
+        // Arrange
         using TempDir dir = new();
+
+        // Act
         SettingsStore draft = NewStore(dir).CreateDraft();
 
+        // Act & Assert
         FluentActions.Invoking(() => draft.CreateDraft()).Should().Throw<System.InvalidOperationException>();
     }
 }

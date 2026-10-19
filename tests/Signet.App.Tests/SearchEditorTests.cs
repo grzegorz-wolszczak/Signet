@@ -64,10 +64,12 @@ public sealed class SearchEditorTests : IDisposable
     [Fact]
     public void AddEntriesAndGroups_ThenSave_PersistsAcrossReload()
     {
+        // Arrange
         SavedSearchStore store = Store();
         var host = new FakeMultiFileSearchHost();
         var panel = new SearchEditorViewModel(store, NewFindReplace(host));
 
+        // Act
         panel.AddGroupCommand.Execute(null);
         SearchEntryNodeViewModel group = panel.Nodes.Single();
         group.Name = "Typografia";
@@ -86,6 +88,8 @@ public sealed class SearchEditorTests : IDisposable
         // "Restart": a new panel instance on the same file.
         var reloaded = new SearchEditorViewModel(store, NewFindReplace(new FakeMultiFileSearchHost()));
         SearchEntryNodeViewModel reloadedEntry = reloaded.Nodes.Single().Children.Single();
+
+        // Assert
         reloadedEntry.Name.Should().Be("Cudzysłowy");
         reloadedEntry.Find.Should().Be("\"");
         reloadedEntry.Replace.Should().Be("„");
@@ -95,6 +99,7 @@ public sealed class SearchEditorTests : IDisposable
     [Fact]
     public void ReplaceAll_FromListOfThreeSearches_RunsThemSequentially()
     {
+        // Arrange
         HtmlResource a = Html("<p>alpha beta gamma</p>");
         HtmlResource b = Html("<p>alpha alpha</p>");
         var host = new FakeMultiFileSearchHost
@@ -114,8 +119,10 @@ public sealed class SearchEditorTests : IDisposable
         var panel = new SearchEditorViewModel(store, NewFindReplace(host));
         panel.SetSelectedNodes(new[] { panel.Nodes.Single() }); // group "seq" → all 3 entries
 
+        // Act
         panel.ReplaceAllCommand.Execute(null);
 
+        // Assert
         a.GetText().Should().Be("<p>ALPHA BETA GAMMA</p>");
         b.GetText().Should().Be("<p>ALPHA ALPHA</p>");
         panel.Message.Should().Contain("5"); // 3 (alpha) + 1 (beta) + 1 (gamma)
@@ -129,6 +136,7 @@ public sealed class SearchEditorTests : IDisposable
     [InlineData("fix nbsp", true, new[] { "Fix dashes" })]
     public void Filter_matches_entries_that_contain_every_keyword_in_any_order(string filter, bool filterAll, string[] expected)
     {
+        // Arrange
         SavedSearchStore store = Store();
         store.Save(new SearchEntry[]
         {
@@ -138,15 +146,18 @@ public sealed class SearchEditorTests : IDisposable
         });
         var panel = new SearchEditorViewModel(store, NewFindReplace(new FakeMultiFileSearchHost()));
 
+        // Act
         panel.FilterAll = filterAll;
         panel.FilterText = filter;
 
+        // Assert
         panel.Nodes.Where(n => n.IsVisible).Select(n => n.Name).Should().Equal(expected);
     }
 
     [Fact]
     public void CountsReport_ListsPerEntryCounts()
     {
+        // Arrange
         HtmlResource a = Html("<p>cat cat dog</p>");
         var host = new FakeMultiFileSearchHost
         {
@@ -164,15 +175,19 @@ public sealed class SearchEditorTests : IDisposable
         var panel = new SearchEditorViewModel(store, NewFindReplace(host));
         panel.SetSelectedNodes(panel.Nodes.ToList());
 
+        // Act
         panel.CountsReportCommand.Execute(null);
 
+        // Assert
         panel.HasReport.Should().BeTrue();
         panel.ReportRows.Should().HaveCount(2);
         panel.ReportRows.Should().Contain(r => r.Contains("cats") && r.EndsWith('2'));
         panel.ReportRows.Should().Contain(r => r.Contains("dogs") && r.EndsWith('1'));
 
+        // Act
         panel.CloseReportCommand.Execute(null);
 
+        // Assert
         panel.HasReport.Should().BeFalse();
         panel.ReportSummary.Should().BeEmpty();
         panel.ReportRows.Should().BeEmpty();
@@ -181,6 +196,7 @@ public sealed class SearchEditorTests : IDisposable
     [Fact]
     public void ImportFile_Xml_AddsEntriesUnderImportedGroup()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         SavedSearchStore store = Store();
         var panel = new SearchEditorViewModel(store, NewFindReplace(new FakeMultiFileSearchHost()));
@@ -191,9 +207,12 @@ public sealed class SearchEditorTests : IDisposable
             new(false, Array.Empty<string>(), "Foo", "x", "y", "NL DN CF"),
         }));
 
+        // Act
         panel.ImportFile(importPath);
 
         SearchEntryNodeViewModel imported = panel.Nodes.Single();
+
+        // Assert
         imported.Name.Should().Be("Imported");
         imported.Children.Single().Name.Should().Be("Foo");
     }
@@ -201,6 +220,7 @@ public sealed class SearchEditorTests : IDisposable
     [Fact]
     public void LoadSearch_PushesEntryIntoFindReplacePanel()
     {
+        // Arrange
         SavedSearchStore store = Store();
         store.Save(new SearchEntry[]
         {
@@ -212,8 +232,10 @@ public sealed class SearchEditorTests : IDisposable
         var panel = new SearchEditorViewModel(store, findReplace);
         panel.SetSelectedNodes(new[] { panel.Nodes.Single() });
 
+        // Act
         panel.LoadSearchCommand.Execute(null);
 
+        // Assert
         findReplace.FindText.Should().Be(@"\d+");
         findReplace.ReplaceText.Should().Be("N");
         findReplace.ModeIndex.Should().Be(2); // Regex
@@ -224,6 +246,7 @@ public sealed class SearchEditorTests : IDisposable
     [Fact]
     public void MoveRight_ThenSave_KeepsEntryInsideGroup()
     {
+        // Arrange
         SavedSearchStore store = Store();
         store.Save(new SearchEntry[]
         {
@@ -235,9 +258,11 @@ public sealed class SearchEditorTests : IDisposable
         SearchEntryNodeViewModel loose = panel.Nodes.Single(n => n.Name == "loose");
         panel.SetSelectedNodes(new[] { loose });
 
+        // Act
         panel.MoveRightCommand.Execute(null);
         panel.SaveCommand.Execute(null);
 
+        // Assert
         store.Load().Select(e => e.FullName).Should().Contain("G/loose");
     }
 }

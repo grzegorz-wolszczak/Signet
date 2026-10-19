@@ -11,60 +11,76 @@ public sealed class PerformCssUpdatesTests
     [Fact]
     public void Apply_NoUpdates_ReturnsSourceUnchanged()
     {
+        // Arrange
         string css = "body { background: url(images/old.jpg); }";
 
+        // Act
         string result = PerformCssUpdates.Apply(css, new Dictionary<string, string>(), "OEBPS/Styles/s.css", "OEBPS/Styles/s.css");
 
+        // Assert
         result.Should().Be(css);
     }
 
     [Fact]
     public void Apply_BackgroundUrl_IsRewritten()
     {
+        // Arrange
         Dictionary<string, string> updates = new() { ["OEBPS/Images/old.jpg"] = "OEBPS/Images/new.jpg" };
         string css = "body { background: url(../Images/old.jpg); }";
 
+        // Act
         string result = PerformCssUpdates.Apply(css, updates, "OEBPS/Styles/s.css", "OEBPS/Styles/s.css");
 
+        // Assert
         result.Should().Be("body { background: url(../Images/new.jpg); }");
     }
 
     [Fact]
     public void Apply_QuotedUrl_IsRewritten()
     {
+        // Arrange
         Dictionary<string, string> updates = new() { ["OEBPS/Fonts/old.otf"] = "OEBPS/Fonts/new.otf" };
         string css = "@font-face { src: url('../Fonts/old.otf') format('opentype'); }";
 
+        // Act
         string result = PerformCssUpdates.Apply(css, updates, "OEBPS/Styles/s.css", "OEBPS/Styles/s.css");
 
+        // Assert
         result.Should().Be("@font-face { src: url('../Fonts/new.otf') format('opentype'); }");
     }
 
     [Fact]
     public void Apply_ImportRule_IsRewritten()
     {
+        // Arrange
         Dictionary<string, string> updates = new() { ["OEBPS/Styles/base.css"] = "OEBPS/Styles/base2.css" };
         string css = "@import \"base.css\";";
 
+        // Act
         string result = PerformCssUpdates.Apply(css, updates, "OEBPS/Styles/s.css", "OEBPS/Styles/s.css");
 
+        // Assert
         result.Should().Be("@import \"base2.css\";");
     }
 
     [Fact]
     public void Apply_UnrelatedProperty_IsIgnored()
     {
+        // Arrange
         Dictionary<string, string> updates = new() { ["OEBPS/Images/old.jpg"] = "OEBPS/Images/new.jpg" };
         string css = "p { color: red; margin: 0; }";
 
+        // Act
         string result = PerformCssUpdates.Apply(css, updates, "OEBPS/Styles/s.css", "OEBPS/Styles/s.css");
 
+        // Assert
         result.Should().Be(css);
     }
 
     [Fact]
     public void Apply_MultipleUrlsInSameFile_AreAllRewritten()
     {
+        // Arrange
         Dictionary<string, string> updates = new()
         {
             ["OEBPS/Images/a.jpg"] = "OEBPS/Images/a2.jpg",
@@ -72,8 +88,10 @@ public sealed class PerformCssUpdatesTests
         };
         string css = "body { background: url(../Images/a.jpg); }\n.x { background: url(../Images/b.jpg); }";
 
+        // Act
         string result = PerformCssUpdates.Apply(css, updates, "OEBPS/Styles/s.css", "OEBPS/Styles/s.css");
 
+        // Assert
         result.Should().Be("body { background: url(../Images/a2.jpg); }\n.x { background: url(../Images/b2.jpg); }");
     }
 }

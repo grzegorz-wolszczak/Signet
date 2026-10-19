@@ -24,6 +24,7 @@ public sealed class ContentTabKindTests
     [InlineData(ResourceType.Generic, ContentTabKind.Unsupported)]
     public void Each_resource_type_maps_to_the_matching_tab_kind(ResourceType type, ContentTabKind expected)
     {
+        // Act & Assert
         ContentTabKindMap.ForType(type).Should().Be(expected);
     }
 
@@ -39,6 +40,7 @@ public sealed class ContentTabKindTests
     [InlineData(ContentTabKind.Unsupported, false)]
     public void Editable_kinds_are_the_text_backed_ones(ContentTabKind kind, bool editable)
     {
+        // Act & Assert
         ContentTabKindMap.IsEditable(kind).Should().Be(editable);
     }
 }

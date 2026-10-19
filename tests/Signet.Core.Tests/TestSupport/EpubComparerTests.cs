@@ -13,10 +13,13 @@ public sealed class EpubComparerTests
     [Fact]
     public void Identical_archives_are_equivalent()
     {
+        // Arrange
         byte[] epub = EpubBuilder.BuildBytes(CorpusPaths.Epub3Minimal);
 
+        // Act
         EpubComparisonResult result = EpubComparer.CompareBytes(epub, epub);
 
+        // Assert
         result.AreEquivalent.Should().BeTrue(result.Report);
     }
 
@@ -24,22 +27,26 @@ public sealed class EpubComparerTests
     [MemberData(nameof(ValidEpubDirs))]
     public void Every_valid_fixture_equals_a_fresh_build_of_itself(string dir)
     {
+        // Act
         EpubComparisonResult result = EpubComparer.CompareBytes(
             EpubBuilder.BuildBytes(dir),
             EpubBuilder.BuildBytes(dir));
 
+        // Assert
         result.AreEquivalent.Should().BeTrue(result.Report);
     }
 
     [Fact]
     public void Changed_text_content_is_detected()
     {
+        // Arrange
         (byte[] a, byte[] b) = BuildPair(CorpusPaths.Epub3Minimal, mutate: dir =>
         {
             string file = Path.Combine(dir, "EPUB", "text", "chapter1.xhtml");
             File.WriteAllText(file, File.ReadAllText(file).Replace("Hello, world.", "Goodbye, world."));
         });
 
+        // Act & Assert
         EpubComparer.CompareBytes(a, b).Differences.Should().ContainSingle()
             .Which.Should().Contain("chapter1.xhtml");
     }
@@ -47,9 +54,11 @@ public sealed class EpubComparerTests
     [Fact]
     public void Added_file_is_reported_as_only_in_B()
     {
+        // Arrange
         (byte[] a, byte[] b) = BuildPair(CorpusPaths.Epub3Minimal, mutate: dir =>
             File.WriteAllText(Path.Combine(dir, "EPUB", "extra.txt"), "extra"));
 
+        // Act & Assert
         EpubComparer.CompareBytes(a, b).Differences.Should().ContainSingle()
             .Which.Should().Contain("tylko w B").And.Contain("extra.txt");
     }
@@ -57,9 +66,11 @@ public sealed class EpubComparerTests
     [Fact]
     public void Removed_file_is_reported_as_only_in_A()
     {
+        // Arrange
         (byte[] a, byte[] b) = BuildPair(CorpusPaths.Epub3Minimal, mutate: dir =>
             File.Delete(Path.Combine(dir, "EPUB", "styles", "style.css")));
 
+        // Act & Assert
         EpubComparer.CompareBytes(a, b).Differences.Should().ContainSingle()
             .Which.Should().Contain("tylko w A").And.Contain("style.css");
     }
@@ -67,6 +78,7 @@ public sealed class EpubComparerTests
     [Fact]
     public void Indentation_only_difference_in_xml_is_ignored()
     {
+        // Arrange
         const string reindented =
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
             "<package xmlns=\"http://www.idpf.org/2007/opf\" version=\"3.0\" unique-identifier=\"pub-id\" xml:lang=\"en\">\n" +
@@ -87,12 +99,14 @@ public sealed class EpubComparerTests
         (byte[] a, byte[] b) = BuildPair(CorpusPaths.Epub3Minimal, mutate: dir =>
             File.WriteAllText(Path.Combine(dir, "EPUB", "package.opf"), reindented));
 
+        // Act & Assert
         EpubComparer.CompareBytes(a, b).AreEquivalent.Should().BeTrue();
     }
 
     [Fact]
     public void Attribute_order_difference_is_ignored()
     {
+        // Arrange
         (byte[] a, byte[] b) = BuildPair(CorpusPaths.Epub3Minimal, mutate: dir =>
         {
             string file = Path.Combine(dir, "EPUB", "package.opf");
@@ -101,12 +115,14 @@ public sealed class EpubComparerTests
                 "<item properties=\"nav\" media-type=\"application/xhtml+xml\" href=\"nav.xhtml\" id=\"nav\"/>"));
         });
 
+        // Act & Assert
         EpubComparer.CompareBytes(a, b).AreEquivalent.Should().BeTrue();
     }
 
     [Fact]
     public void Volatile_modified_meta_differs_under_default_but_not_under_roundtrip()
     {
+        // Arrange
         (byte[] a, byte[] b) = BuildPair(CorpusPaths.Epub3Minimal, mutate: dir =>
         {
             string file = Path.Combine(dir, "EPUB", "package.opf");
@@ -114,31 +130,41 @@ public sealed class EpubComparerTests
                 "2026-01-01T00:00:00Z", "2099-12-31T23:59:59Z"));
         });
 
+        // Act & Assert
         EpubComparer.CompareBytes(a, b, EpubComparisonOptions.Default).AreEquivalent.Should().BeFalse();
+
+        // Act & Assert
         EpubComparer.CompareBytes(a, b, EpubComparisonOptions.RoundTrip).AreEquivalent.Should().BeTrue();
     }
 
     [Fact]
     public void Ignored_entry_is_skipped()
     {
+        // Arrange
         (byte[] a, byte[] b) = BuildPair(CorpusPaths.Epub3Minimal, mutate: dir =>
         {
             string file = Path.Combine(dir, "EPUB", "styles", "style.css");
             File.WriteAllText(file, "body { color: red; }\n");
         });
 
+        // Act
         EpubComparisonResult withDefault = EpubComparer.CompareBytes(a, b);
+
+        // Assert
         withDefault.AreEquivalent.Should().BeFalse();
 
+        // Arrange
         EpubComparisonOptions options = EpubComparisonOptions.Default;
         options.IgnoredEntries.Add("EPUB/styles/style.css");
 
+        // Act & Assert
         EpubComparer.CompareBytes(a, b, options).AreEquivalent.Should().BeTrue();
     }
 
     [Fact]
     public void Binary_difference_is_detected()
     {
+        // Arrange
         (byte[] a, byte[] b) = BuildPair(CorpusPaths.Epub3Media, mutate: dir =>
         {
             string images = Path.Combine(dir, "EPUB", "images");
@@ -146,6 +172,7 @@ public sealed class EpubComparerTests
             File.Copy(Path.Combine(images, "figure.png"), Path.Combine(images, "cover.png"), overwrite: true);
         });
 
+        // Act & Assert
         EpubComparer.CompareBytes(a, b).Differences.Should().ContainSingle()
             .Which.Should().Contain("cover.png").And.Contain("Bajty");
     }

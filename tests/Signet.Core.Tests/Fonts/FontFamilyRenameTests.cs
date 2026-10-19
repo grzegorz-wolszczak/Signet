@@ -14,15 +14,18 @@ public sealed class FontFamilyRenameTests
     [Fact]
     public void Rename_changes_the_rules_and_every_list_that_names_the_family()
     {
+        // Arrange
         const string css = "@font-face { font-family: 'KCaecilia Condensed'; src: url(a.ttf) }\n"
             + "body { font-family: \"kcaecilia  condensed\", serif }\nh1 { font: bold 1em KCaecilia Condensed, serif }\np { font-family: Other }";
         const string html = "<p style=\"font-family: &quot;KCaecilia Condensed&quot;, serif\">a</p>";
 
+        // Act
         IReadOnlyDictionary<string, string> texts = FontFamilyRename.Rename(
             BookFontIndex.Build(new[] { new FontIndexSource(CssPath, css, true), new FontIndexSource(HtmlPath, html, false) }),
             "KCaecilia Condensed",
             "KCaecilia");
 
+        // Assert
         texts[CssPath].Should().Be(
             "@font-face { font-family: 'KCaecilia'; src: url(a.ttf) }\n"
             + "body { font-family: \"KCaecilia\", serif }\nh1 { font: bold 1em \"KCaecilia\", serif }\np { font-family: Other }");
@@ -32,8 +35,10 @@ public sealed class FontFamilyRenameTests
     [Fact]
     public void Rename_to_the_same_name_changes_nothing()
     {
+        // Arrange
         BookFontIndex index = BookFontIndex.Build(new[] { new FontIndexSource(CssPath, "body { font-family: A }", true) });
 
+        // Act & Assert
         FontFamilyRename.Rename(index, "A", " A ").Should().BeEmpty();
     }
 }

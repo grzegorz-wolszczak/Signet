@@ -79,6 +79,7 @@ public sealed class ClipEditorTreeTests : IDisposable
     [AvaloniaFact]
     public void Single_click_selects_without_renaming_and_double_click_starts_rename()
     {
+        // Act
         (ClipEditorWindow window, ClipsViewModel vm) = ShowEditor();
         ClipNodeViewModel group = vm.Nodes[0];
         Point at = CenterOf(window, NameLabel(window, group));
@@ -86,14 +87,17 @@ public sealed class ClipEditorTreeTests : IDisposable
         Click(window, at);
         Render(window);
 
+        // Assert
         vm.SelectedNode.Should().BeSameAs(group);
         vm.EditingNode.Should().BeNull();
         window.GetVisualDescendants().OfType<TextBox>().Where(t => t.Classes.Contains("inPlaceRename"))
             .Should().OnlyContain(t => !t.IsVisible);
 
+        // Act
         Click(window, at);
         Render(window);
 
+        // Assert
         vm.EditingNode.Should().BeSameAs(group);
         group.IsExpanded.Should().BeFalse("a double click on a group name must rename it, not expand it");
         TextBox editor = Editor(window);
@@ -105,6 +109,7 @@ public sealed class ClipEditorTreeTests : IDisposable
     [AvaloniaFact]
     public void F2_starts_rename_Enter_commits_and_Escape_cancels()
     {
+        // Act
         (ClipEditorWindow window, ClipsViewModel vm) = ShowEditor();
         ClipNodeViewModel entry = vm.Nodes[1];
         string original = entry.Name;
@@ -117,16 +122,19 @@ public sealed class ClipEditorTreeTests : IDisposable
         window.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
         Render(window);
 
+        // Assert
         entry.Name.Should().Be(original);
         vm.EditingNode.Should().BeNull();
         window.IsVisible.Should().BeTrue("Esc in the name editor must not close the window");
 
+        // Act
         window.KeyPressQwerty(PhysicalKey.F2, RawInputModifiers.None);
         Render(window);
         Editor(window).Text = "committed";
         window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
         Render(window);
 
+        // Assert
         entry.Name.Should().Be("committed");
         vm.EditingNode.Should().BeNull();
         window.Close();
@@ -135,9 +143,12 @@ public sealed class ClipEditorTreeTests : IDisposable
     [AvaloniaFact]
     public void Groups_are_bold_and_have_a_chevron_even_when_empty()
     {
+        // Act
         (ClipEditorWindow window, ClipsViewModel vm) = ShowEditor();
         ClipNodeViewModel group = vm.Nodes[0];
         ClipNodeViewModel entry = vm.Nodes[1];
+
+        // Assert
         group.Children.Should().BeEmpty();
 
         NameLabel(window, group).FontWeight.Should().Be(FontWeight.Bold);
@@ -152,25 +163,37 @@ public sealed class ClipEditorTreeTests : IDisposable
         ExpanderOf(group).ShowExpander.Should().BeTrue("a group has a chevron even when it is empty");
         ExpanderOf(entry).ShowExpander.Should().BeFalse();
 
+        // Act
         Click(window, CenterOf(window, Chevron(group)));
         Render(window);
+
+        // Assert
         vm.EditingNode.Should().BeNull("a click on a chevron never renames");
 
         // With a clip inside (the nodes are rebuilt after every change), the chevron expands and collapses the group.
+        // Act
         vm.SetSelectedNodes(new[] { group });
         vm.AddEntryCommand.Execute(null);
         Render(window);
         ClipNodeViewModel filled = vm.Nodes[0];
+
+        // Assert
         filled.Children.Should().ContainSingle();
         bool expanded = filled.IsExpanded;
 
+        // Act
         Click(window, CenterOf(window, Chevron(filled)));
         Render(window);
+
+        // Assert
         filled.IsExpanded.Should().Be(!expanded);
         vm.EditingNode.Should().BeNull();
 
+        // Act
         Click(window, CenterOf(window, Chevron(filled)));
         Render(window);
+
+        // Assert
         filled.IsExpanded.Should().Be(expanded);
         window.Close();
     }

@@ -18,12 +18,15 @@ public sealed class BookValidatorTests
     [Fact]
     public void ValidateCurrentBook_reports_the_not_wellformed_html_file_with_a_line_number()
     {
+        // Arrange
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("not-wellformed-xhtml"), temp);
         using Book book = new ImportEpub(epub).GetBook();
 
+        // Act
         var results = BookValidator.ValidateCurrentBook(book);
 
+        // Assert
         results.Should().NotBeEmpty();
         results.Should().OnlyContain(r => r.Severity == ValidationSeverity.Error);
         results.Should().OnlyContain(r => r.Line > 0);
@@ -33,25 +36,31 @@ public sealed class BookValidatorTests
     [Fact]
     public void ValidateCurrentBook_returns_no_results_for_a_wellformed_book()
     {
+        // Arrange
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         using Book book = new ImportEpub(epub).GetBook();
 
+        // Act
         var results = BookValidator.ValidateCurrentBook(book, SkipDummyFont);
 
+        // Assert
         results.Should().BeEmpty();
     }
 
     [Fact]
     public void ValidateCurrentBook_orders_results_like_GetHtmlResources()
     {
+        // Arrange
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("not-wellformed-xhtml"), temp);
         using Book book = new ImportEpub(epub).GetBook();
 
+        // Act
         var results = BookValidator.ValidateCurrentBook(book);
         var expectedOrder = book.GetHtmlResources().Select(r => r.BookPath).ToList();
 
+        // Assert
         results.Select(r => r.BookPath).Should().BeSubsetOf(expectedOrder);
     }
 }

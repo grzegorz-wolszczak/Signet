@@ -16,6 +16,7 @@ public sealed class FontWeightScaleTests
     [InlineData(5000, 950)]
     public void A_weight_is_clamped_and_zero_stays_not_set(int stored, int expected)
     {
+        // Act & Assert
         FontWeightScale.Normalize(stored).Should().Be(expected);
     }
 
@@ -35,12 +36,14 @@ public sealed class FontWeightScaleTests
     [InlineData(450, "450")]
     public void A_weight_has_the_name_fonts_give_it(int weight, string? name)
     {
+        // Act & Assert
         FontWeightScale.NameOf(weight).Should().Be(name);
     }
 
     [Fact]
     public void The_standard_weights_are_ordered_and_all_named()
     {
+        // Act & Assert
         FontWeightScale.Standard.Should().BeInAscendingOrder().And.OnlyContain(w => FontWeightScale.NameOf(w)!.Any(char.IsLetter));
     }
 }

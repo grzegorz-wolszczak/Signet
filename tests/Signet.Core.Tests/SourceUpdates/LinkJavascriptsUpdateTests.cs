@@ -23,9 +23,13 @@ public sealed class LinkJavascriptsUpdateTests
     [Fact]
     public void Apply_replaces_js_links_but_keeps_stylesheet_links()
     {
+        // Arrange
         string[] scripts = { "OEBPS/Scripts/a.js" };
+
+        // Act
         string result = LinkJavascriptsUpdate.Apply(Source, "OEBPS/Text/ch1.xhtml", scripts, "3.0");
 
+        // Assert
         result.Should().NotContain("old.js");
         result.Should().Contain("src=\"../Scripts/a.js\"");
         result.Should().Contain("href=\"../Styles/s.css\"");
@@ -34,9 +38,11 @@ public sealed class LinkJavascriptsUpdateTests
     [Fact]
     public void Apply_with_empty_list_removes_all_js_links()
     {
+        // Act
         string result = LinkJavascriptsUpdate.Apply(
             Source, "OEBPS/Text/ch1.xhtml", Array.Empty<string>(), "3.0");
 
+        // Assert
         result.Should().NotContain("<script");
         result.Should().Contain("href=\"../Styles/s.css\"");
     }
@@ -44,9 +50,13 @@ public sealed class LinkJavascriptsUpdateTests
     [Fact]
     public void Apply_emits_non_self_closing_script_element()
     {
+        // Arrange
         string[] scripts = { "OEBPS/Scripts/a.js" };
+
+        // Act
         string result = LinkJavascriptsUpdate.Apply(Source, "OEBPS/Text/ch1.xhtml", scripts, "3.0");
 
+        // Assert
         result.Should().Contain("</script>");
     }
 }

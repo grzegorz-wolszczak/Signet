@@ -66,9 +66,12 @@ public sealed class SpecialCharacterWindowTests
     [AvaloniaFact]
     public void Results_are_a_table_with_entity_code_hex_decimal_name_and_favorite_columns()
     {
+        // Act
         SpecialCharacterWindow window = Show(Context());
 
         TreeDataGrid grid = Grid(window);
+
+        // Assert
         grid.Columns!.Select(c => c.Header as string).Should().Equal(
             Strings.Get("SpecialCharacterWindow_ColumnCharacter"),
             Strings.Get("SpecialCharacterWindow_ColumnEntity"),
@@ -82,16 +85,21 @@ public sealed class SpecialCharacterWindowTests
         (recent.Insert, recent.Entity, recent.Code, recent.Hex, recent.Dec, recent.Name)
             .Should().Be(("—", "&mdash;", "U+2014", "&#x2014;", "&#8212;", CodepointNames.GetName(0x2014)));
 
+        // Act
         CategoryBox(window).SelectedItem = Strings.Get("SpecialCharacterWindow_PopularCategory");
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         window.Rows.Should().Contain(r => r.Insert == "&amp;" && r.Display == "&" && r.Code == "U+0026" && r.Entity == "&amp;");
     }
 
     [AvaloniaFact]
     public void Recently_used_is_a_separate_category_selected_on_opening()
     {
+        // Act
         SpecialCharacterWindow window = Show(Context());
 
+        // Assert
         CategoryBox(window).Items.OfType<string>().Take(3).Should().Equal(
             Strings.Get("SpecialCharacterWindow_PopularCategory"),
             Strings.Get("SpecialCharacterWindow_RecentCategory"),
@@ -99,8 +107,11 @@ public sealed class SpecialCharacterWindowTests
         CategoryBox(window).SelectedItem.Should().Be(Strings.Get("SpecialCharacterWindow_RecentCategory"));
         window.Rows.Select(r => r.Insert).Should().Equal(Recents);
 
+        // Act
         CategoryBox(window).SelectedItem = Strings.Get("SpecialCharacterWindow_PopularCategory");
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         window.Rows.Select(r => r.Insert).Should().Equal(SpecialCharacters.Entries.Select(e => e.Insert),
             "the popular category holds only the curated set, without the recently used characters");
     }
@@ -108,8 +119,10 @@ public sealed class SpecialCharacterWindowTests
     [AvaloniaFact]
     public void Opens_on_the_popular_category_when_nothing_was_used_yet()
     {
+        // Act
         SpecialCharacterWindow window = Show(Context() with { Recents = Array.Empty<string>() });
 
+        // Assert
         CategoryBox(window).SelectedItem.Should().Be(Strings.Get("SpecialCharacterWindow_PopularCategory"));
         window.Rows.Should().NotBeEmpty();
     }
@@ -117,9 +130,12 @@ public sealed class SpecialCharacterWindowTests
     [AvaloniaFact]
     public void Character_column_uses_the_preferences_font()
     {
+        // Act
         SpecialCharacterWindow window = Show(Context(new SpecialCharacterAppearance("Georgia", 30)));
 
         TextBlock symbol = window.GetVisualDescendants().OfType<TextBlock>().First(t => t.Classes.Contains("symbol"));
+
+        // Assert
         symbol.FontSize.Should().Be(30);
         symbol.FontFamily.Name.Should().Be("Georgia");
         SpecialCharacterAppearance.Default.FontSize.Should().Be(24);
@@ -128,6 +144,7 @@ public sealed class SpecialCharacterWindowTests
     [AvaloniaFact]
     public void Category_list_is_wide_enough_for_its_longest_name()
     {
+        // Act
         SpecialCharacterWindow window = Show(Context());
 
         ComboBox category = CategoryBox(window);
@@ -135,6 +152,7 @@ public sealed class SpecialCharacterWindowTests
         double longest = category.Items.OfType<string>()
             .Max(t => new FormattedText(t, CultureInfo.CurrentUICulture, FlowDirection.LeftToRight, typeface, category.FontSize, null).Width);
 
+        // Assert
         category.Bounds.Width.Should().BeGreaterThan(longest);
         category.Items.OfType<string>().First().Should().Be(Strings.Get("SpecialCharacterWindow_PopularCategory"));
     }
@@ -142,11 +160,13 @@ public sealed class SpecialCharacterWindowTests
     [AvaloniaFact]
     public void Unicode_block_rows_get_the_entity_when_one_is_known()
     {
+        // Act
         SpecialCharacterWindow window = Show(Context());
 
         CategoryBox(window).SelectedItem = UnicodeBlocks.Blocks.Single(b => b.Name == "General Punctuation").DisplayName;
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         window.Rows.Should().Contain(r => r.Code == "U+2014" && r.Entity == "&mdash;");
         window.Rows.Should().OnlyContain(r => r.CodePoint >= 0x2000 && r.CodePoint <= 0x206F);
     }
@@ -154,8 +174,11 @@ public sealed class SpecialCharacterWindowTests
     [AvaloniaFact]
     public void Favorites_are_check_marked_and_toggling_keeps_the_row_until_the_view_changes()
     {
+        // Arrange
         List<string> added = new();
         List<string> removed = new();
+
+        // Act
         SpecialCharacterWindow window = Show(Context(favorites: Favorites) with
         {
             OnAddFavorite = added.Add,
@@ -164,18 +187,23 @@ public sealed class SpecialCharacterWindowTests
         CategoryBox(window).SelectedItem = Strings.Get("SpecialCharacterWindow_FavoritesCategory");
         Render(window);
 
+        // Assert
         CharRow copyright = window.Rows.Should().ContainSingle().Which;
         copyright.FavoriteMark.Should().Be("✓");
         window.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).Should().Contain("✓");
 
+        // Act
         window.ToggleFavorite(copyright);
 
+        // Assert
         copyright.FavoriteMark.Should().BeEmpty();
         window.Rows.Should().ContainSingle("the row stays so that it can be checked back");
         removed.Should().Equal("©");
 
+        // Act
         window.ToggleFavorite(copyright);
 
+        // Assert
         copyright.FavoriteMark.Should().Be("✓");
         added.Should().Equal("©");
     }
@@ -183,10 +211,12 @@ public sealed class SpecialCharacterWindowTests
     [AvaloniaFact]
     public void Favorite_marks_follow_the_favorites_in_every_category()
     {
+        // Act
         SpecialCharacterWindow window = Show(Context(favorites: Favorites));
         CategoryBox(window).SelectedItem = Strings.Get("SpecialCharacterWindow_PopularCategory");
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         window.Rows.Where(r => r.Insert == "©").Should().NotBeEmpty().And.OnlyContain(r => r.IsFavorite);
         window.Rows.Where(r => r.Insert != "©").Should().OnlyContain(r => !r.IsFavorite && r.FavoriteMark.Length == 0);
     }
@@ -194,25 +224,39 @@ public sealed class SpecialCharacterWindowTests
     [AvaloniaFact]
     public void Without_search_all_the_filter_searches_only_the_current_category()
     {
+        // Arrange
         List<bool> remembered = new();
+
+        // Act
         SpecialCharacterWindow window = Show(Context(favorites: Favorites, searchAll: false) with
         {
             OnSearchAllChanged = remembered.Add,
         });
         CategoryBox(window).SelectedItem = Strings.Get("SpecialCharacterWindow_FavoritesCategory");
+
+        // Assert
         SearchAllBox(window).IsChecked.Should().BeFalse();
 
+        // Act
         FilterBox(window).Text = "dash";
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         window.Rows.Should().BeEmpty("the only favorite is ©");
 
+        // Act
         FilterBox(window).Text = "copy";
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         window.Rows.Should().ContainSingle().Which.Insert.Should().Be("©");
 
+        // Act
         SearchAllBox(window).IsChecked = true;
         FilterBox(window).Text = "dash";
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         window.Rows.Should().Contain(r => r.Insert == "—");
         remembered.Should().Equal(true);
     }
@@ -220,6 +264,7 @@ public sealed class SpecialCharacterWindowTests
     [AvaloniaFact]
     public void Search_all_check_box_sits_under_the_filter()
     {
+        // Act
         SpecialCharacterWindow window = Show(Context());
 
         TextBox filter = FilterBox(window);
@@ -227,6 +272,7 @@ public sealed class SpecialCharacterWindowTests
         Point filterTopLeft = filter.TranslatePoint(default, window)!.Value;
         Point checkTopLeft = searchAll.TranslatePoint(default, window)!.Value;
 
+        // Assert
         checkTopLeft.Y.Should().BeGreaterThanOrEqualTo(filterTopLeft.Y + filter.Bounds.Height);
         checkTopLeft.X.Should().BeApproximately(filterTopLeft.X, 0.5);
     }
@@ -234,35 +280,47 @@ public sealed class SpecialCharacterWindowTests
     [AvaloniaFact]
     public void Insert_buttons_follow_what_the_selected_row_has()
     {
+        // Act
         SpecialCharacterWindow window = Show(Context());
         Button code = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "InsertCodeButton");
         Button entity = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "InsertEntityButton");
 
         Select(window, window.Rows.First(r => r.Insert == "—"));
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         (code.IsEnabled, entity.IsEnabled).Should().Be((true, true));
 
+        // Act
         CategoryBox(window).SelectedItem = UnicodeBlocks.Blocks.Single(b => b.Name == "Arrows").DisplayName;
         Dispatcher.UIThread.RunJobs();
         Select(window, window.Rows.First(r => r.Entity.Length == 0));
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         (code.IsEnabled, entity.IsEnabled).Should().Be((true, false));
     }
 
     [AvaloniaFact]
     public void Double_click_inserts_the_character_unless_the_cell_content_option_is_on()
     {
+        // Arrange
         List<bool> remembered = new();
+
+        // Act
         SpecialCharacterWindow window = Show(Context() with { OnDoubleClickInsertsCellChanged = remembered.Add });
         var columns = Grid(window).Columns!;
         CheckBox option = window.GetVisualDescendants().OfType<CheckBox>().Single(c => c.Name == "DoubleClickInsertsCell");
 
+        // Assert
         option.IsChecked.Should().BeFalse();
         columns.Take(columns.Count - 1).Select(window.DoubleClickForm).Should().OnlyContain(f => f == SpecialCharacterInsertForm.Character);
         window.DoubleClickForm(columns[^1]).Should().BeNull("the favorite column only toggles the mark");
 
+        // Act
         option.IsChecked = true;
 
+        // Assert
         remembered.Should().Equal(true);
         columns.Select(window.DoubleClickForm).Should().Equal(
             SpecialCharacterInsertForm.Character,
@@ -277,26 +335,33 @@ public sealed class SpecialCharacterWindowTests
     [AvaloniaFact]
     public void The_cells_whose_content_is_not_inserted_are_dimmed_while_the_option_is_on()
     {
+        // Act
         SpecialCharacterWindow window = Show(Context());
         CategoryBox(window).SelectedItem = Strings.Get("SpecialCharacterWindow_PopularCategory");
         Render(window);
         CheckBox option = window.GetVisualDescendants().OfType<CheckBox>().Single(c => c.Name == "DoubleClickInsertsCell");
         Signet.Controls.TreeDataGrid.Primitives.TreeDataGridCell[] cells = Grid(window).GetVisualDescendants()
             .OfType<Signet.Controls.TreeDataGrid.Primitives.TreeDataGridCell>().ToArray();
+
+        // Assert
         cells.Should().NotBeEmpty();
 
         cells.Should().OnlyContain(c => !c.Classes.Contains("notInserted"), "nothing is dimmed while a double-click inserts the character");
 
+        // Act
         option.IsChecked = true;
         Render(window);
 
+        // Assert
         cells.Where(c => c.ColumnIndex is 2 or 5).Should().NotBeEmpty().And.OnlyContain(c => c.Classes.Contains("notInserted"), "the code and the name");
         cells.Where(c => c.ColumnIndex is 0 or 1 or 3 or 4 or 6).Should().NotBeEmpty()
             .And.OnlyContain(c => !c.Classes.Contains("notInserted"), "these insert, and the favorite cell toggles the mark");
 
+        // Act
         option.IsChecked = false;
         Render(window);
 
+        // Assert
         cells.Should().OnlyContain(c => !c.Classes.Contains("notInserted"));
         window.Close();
     }
@@ -304,9 +369,12 @@ public sealed class SpecialCharacterWindowTests
     [AvaloniaFact]
     public void Only_a_double_click_on_a_favorite_cell_toggles_the_mark_and_it_does_not_insert()
     {
+        // Arrange
         List<string> added = new();
         List<string> removed = new();
         List<SpecialCharacterChoice> inserted = new();
+
+        // Act
         SpecialCharacterWindow window = Show(Context() with
         {
             OnAddFavorite = added.Add,
@@ -320,12 +388,16 @@ public sealed class SpecialCharacterWindowTests
         window.MouseDown(center, Avalonia.Input.MouseButton.Left);
         window.MouseUp(center, Avalonia.Input.MouseButton.Left);
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         added.Should().BeEmpty("a single click does not toggle");
 
+        // Act
         window.MouseDown(center, Avalonia.Input.MouseButton.Left);
         window.MouseUp(center, Avalonia.Input.MouseButton.Left);
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         added.Should().Equal("—");
         removed.Should().BeEmpty();
         window.Rows[0].FavoriteMark.Should().Be("✓");
@@ -336,7 +408,10 @@ public sealed class SpecialCharacterWindowTests
     [AvaloniaFact]
     public void Inserting_keeps_the_window_open()
     {
+        // Arrange
         List<SpecialCharacterChoice> inserted = new();
+
+        // Act
         SpecialCharacterWindow window = Show(Context() with { OnInsert = inserted.Add });
         bool closed = false;
         window.Closed += (_, _) => closed = true;
@@ -353,6 +428,7 @@ public sealed class SpecialCharacterWindowTests
         window.MouseUp(center, Avalonia.Input.MouseButton.Left);
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         inserted.Should().Equal(new SpecialCharacterChoice("—", "—"), new SpecialCharacterChoice("—", "—"));
         closed.Should().BeFalse();
     }
@@ -360,9 +436,11 @@ public sealed class SpecialCharacterWindowTests
     [AvaloniaFact]
     public void Each_form_inserts_the_matching_cell_content()
     {
+        // Arrange
         CharRow dash = new("—", "—", 0x2014, "U+2014", "&mdash;", "EM DASH");
         CharRow arrow = new("↔", "↔", 0x2194, "U+2194", string.Empty, "LEFT RIGHT ARROW");
 
+        // Act & Assert
         SpecialCharacterWindow.FormText(dash, SpecialCharacterInsertForm.Character).Should().Be("—");
         SpecialCharacterWindow.FormText(dash, SpecialCharacterInsertForm.Entity).Should().Be("&mdash;");
         SpecialCharacterWindow.FormText(dash, SpecialCharacterInsertForm.Hex).Should().Be("&#x2014;");
@@ -373,6 +451,7 @@ public sealed class SpecialCharacterWindowTests
     [AvaloniaFact]
     public void Insert_character_escapes_markup_characters()
     {
+        // Act & Assert
         SpecialCharacterWindow.CharacterText(new CharRow("&", "&", 0x26, "U+0026", "&amp;", "AMPERSAND")).Should().Be("&amp;");
         SpecialCharacterWindow.CharacterText(new CharRow("<", "<", 0x3C, "U+003C", "&lt;", "LESS-THAN SIGN")).Should().Be("&lt;");
         SpecialCharacterWindow.CharacterText(new CharRow("—", "—", 0x2014, "U+2014", "&mdash;", "EM DASH")).Should().Be("—");
@@ -381,12 +460,16 @@ public sealed class SpecialCharacterWindowTests
     [AvaloniaFact]
     public void Insert_code_window_offers_hex_decimal_and_text_forms()
     {
+        // Act & Assert
         InsertCodeWindow.Forms(0x2014).Should().Be(("&#x2014;", "&#8212;", "U+2014"));
 
         InsertCodeWindow window = InsertCodeWindow.Build(0x2014);
+
+        // Act
         window.Show();
         Render(window);
 
+        // Assert
         window.GetVisualDescendants().OfType<Button>().Select(b => b.Content as string).Should().Contain(new[]
         {
             Strings.Format("InsertCodeWindow_Hex", "&#x2014;"),
@@ -400,8 +483,10 @@ public sealed class SpecialCharacterWindowTests
     [AvaloniaFact]
     public void Every_column_is_shown_including_the_favorite_column_after_the_name()
     {
+        // Act
         SpecialCharacterWindow window = Show(Context());
 
+        // Assert
         Grid(window).GetVisualDescendants().OfType<Signet.Controls.TreeDataGrid.Primitives.TreeDataGridColumnHeader>()
             .Select(h => h.Header as string).Should().Contain(Strings.Get("SpecialCharacterWindow_ColumnFavorite"));
         window.Close();
@@ -410,20 +495,25 @@ public sealed class SpecialCharacterWindowTests
     [AvaloniaFact]
     public void The_decimal_column_sorts_by_code_point_not_by_text()
     {
+        // Act
         SpecialCharacterWindow window = Show(Context());
         CategoryBox(window).SelectedItem = Strings.Get("SpecialCharacterWindow_PopularCategory");
         Render(window);
         TreeDataGrid grid = Grid(window);
         // As text "&#169;" (©) would come before "&#38;" (&).
+        // Assert
         window.Rows.Should().Contain(r => r.Dec == "&#38;").And.Contain(r => r.Dec == "&#169;");
         Signet.Controls.TreeDataGrid.Models.IColumn dec = grid.Columns![4];
 
+        // Act
         grid.Source!.SortBy(dec, System.ComponentModel.ListSortDirection.Ascending).Should().BeTrue();
         Render(window);
 
         int[] sorted = Enumerable.Range(0, grid.Rows!.Count)
             .Select(i => ((CharRow)grid.Rows[i].Model!).CodePoint)
             .ToArray();
+
+        // Assert
         sorted.Should().BeInAscendingOrder().And.HaveCount(window.Rows.Count);
         window.Close();
     }

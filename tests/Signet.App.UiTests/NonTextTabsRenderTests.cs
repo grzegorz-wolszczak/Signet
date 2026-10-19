@@ -37,6 +37,7 @@ public sealed class NonTextTabsRenderTests : IDisposable
     [AvaloniaFact]
     public void Image_resource_opens_in_an_image_tab_and_renders()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         (Book book, TabManagerModel model) = LoadMedia(temp);
         using (book)
@@ -45,19 +46,23 @@ public sealed class NonTextTabsRenderTests : IDisposable
             OpenTab tab = model.OpenResource(image);
             var vm = new ImageTabViewModel(tab, new StatusBarService(), book);
 
-            vm.InfoLine.Should().Contain("px").And.Contain("KB");
-            vm.PixelWidth.Should().BeGreaterThan(0);
-
             var window = new Window { Width = 400, Height = 300, Content = new ImageTabView { DataContext = vm } };
+
+            // Act
             window.Show();
             Dispatcher.UIThread.RunJobs();
             window.CaptureRenderedFrame();
+
+            // Assert
+            vm.InfoLine.Should().Contain("px").And.Contain("KB");
+            vm.PixelWidth.Should().BeGreaterThan(0);
         }
     }
 
     [AvaloniaFact]
     public void Font_resource_opens_in_a_font_tab_without_throwing()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         (Book book, TabManagerModel model) = LoadMedia(temp);
         using (book)
@@ -69,11 +74,16 @@ public sealed class NonTextTabsRenderTests : IDisposable
             vm.InfoLine.Should().Contain("KB");
             vm.ObfuscationMethod.Should().Be(FontObfuscationMethod.None);
 
+            // Act
             vm.ObfuscationMethod = FontObfuscationMethod.Idpf;
+
+            // Assert
             font.ObfuscationAlgorithm.Should().NotBeEmpty();
             book.Modified.Should().BeTrue();
 
             var window = new Window { Width = 400, Height = 300, Content = new FontTabView { DataContext = vm } };
+
+            // Act
             window.Show();
             Dispatcher.UIThread.RunJobs();
             window.CaptureRenderedFrame();
@@ -83,6 +93,7 @@ public sealed class NonTextTabsRenderTests : IDisposable
     [AvaloniaFact]
     public void Audio_resource_opens_in_a_media_tab_and_renders()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         (Book book, TabManagerModel model) = LoadMedia(temp);
         using (book)
@@ -91,13 +102,16 @@ public sealed class NonTextTabsRenderTests : IDisposable
             OpenTab tab = model.OpenResource(audio);
             var vm = new MediaTabViewModel(tab);
 
-            vm.Media.Should().Be(MediaKind.Audio);
-            vm.InfoLine.Should().Contain("KB");
-
             var window = new Window { Width = 400, Height = 300, Content = new MediaTabView { DataContext = vm } };
+
+            // Act
             window.Show();
             Dispatcher.UIThread.RunJobs();
             window.CaptureRenderedFrame();
+
+            // Assert
+            vm.Media.Should().Be(MediaKind.Audio);
+            vm.InfoLine.Should().Contain("KB");
         }
     }
 }

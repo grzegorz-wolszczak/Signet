@@ -37,10 +37,13 @@ public sealed class LiveCssPanelViewModelTests
     [Fact]
     public void Update_builds_one_level_per_hierarchy_element_in_order()
     {
+        // Arrange
         LiveCssPanelViewModel vm = new();
 
+        // Act
         vm.Update(HierarchyResult(), _ => CssText, (_, _) => { });
 
+        // Assert
         vm.ElementDescription.Should().Be("p.b");
         vm.Levels.Should().HaveCount(2);
         vm.Levels[0].IsInspectedElement.Should().BeFalse();
@@ -53,13 +56,16 @@ public sealed class LiveCssPanelViewModelTests
     [Fact]
     public void Update_annotates_an_overridden_declaration_with_the_winning_selector_and_its_file_line()
     {
+        // Arrange
         LiveCssPanelViewModel vm = new();
 
+        // Act
         vm.Update(HierarchyResult(), _ => CssText, (_, _) => { });
 
         LiveCssDeclarationViewModel overridden = vm.Levels[0].Rules.Single().Declarations.Single();
         LiveCssDeclarationViewModel winner = vm.Levels[1].Rules.Single().Declarations.Single();
 
+        // Assert
         overridden.IsOverridden.Should().BeTrue();
         overridden.IsDimmed.Should().BeTrue();
         overridden.HasOverriddenBy.Should().BeTrue();

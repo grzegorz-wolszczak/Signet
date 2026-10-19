@@ -59,22 +59,30 @@ public sealed class MainWindowFootnoteConversionTests : IDisposable
     [AvaloniaFact]
     public async Task The_conversion_dialog_converts_behind_a_checkpoint_and_shows_what_is_left()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, HtmlResource chapter) = OpenChapterWithForeignFootnote(temp);
         bool asked = false;
+
+        // Act
         FootnoteConversionViewModel dialog = (await sut.PrepareFootnoteConversionAsync(() =>
         {
             asked = true;
             return Task.FromResult(false);
         }))!;
         FootnoteConversionItemViewModel item = dialog.Items.Single();
+
+        // Assert
         item.Item.Warnings.Should().Equal(ConversionWarning.NumberChanges);
         item.IsChecked.Should().BeFalse("a footnote whose number changes needs a look");
+
+        // Act
         item.IsChecked = true;
 
         await dialog.ConvertCommand.ExecuteAsync(null);
 
+        // Assert
         asked.Should().BeFalse("the checkpoint was created");
         chapter.GetText().Should().Contain("Hello<a class=\"signet-fn-ref\"").And.Contain("Other note.");
         FootnoteScanner.Scan(((IBookWorkspace)sut).CurrentBook!).Should().ContainSingle().Which.IsSignet.Should().BeTrue();

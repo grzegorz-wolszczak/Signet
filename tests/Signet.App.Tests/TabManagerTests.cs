@@ -58,14 +58,18 @@ public sealed class TabManagerTests : IDisposable
     [Fact]
     public void Opening_three_resources_puts_three_documents_in_the_dock()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         (TabManager tabs, MainDockFactory dock) = NewManager();
         tabs.SetBook(book);
 
         List<Resource> resources = ThreeResources(book);
+
+        // Act
         tabs.OpenResources(resources);
 
+        // Assert
         Documents(dock).Select(d => d.Resource).Should().Equal(resources);
         dock.DocumentDock!.ActiveDockable.Should().BeSameAs(Documents(dock)[2]);
         tabs.Dispose();
@@ -78,22 +82,29 @@ public sealed class TabManagerTests : IDisposable
     [Fact]
     public void A_closed_image_tab_no_longer_follows_its_file_on_disk()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         (TabManager tabs, MainDockFactory dock) = NewManager();
         tabs.SetBook(book);
         ImageResource image = book.GetAllResources().OfType<ImageResource>().First();
+
+        // Act
         tabs.OpenResource(image);
         ImageTabViewModel view = Documents(dock).OfType<ImageTabViewModel>().Single();
         List<string?> changes = new();
         view.PropertyChanged += (_, e) => changes.Add(e.PropertyName);
         image.NotifyUpdatedOnDisk();
+
+        // Assert
         changes.Should().Contain(nameof(ImageTabViewModel.InfoLine), "an open tab follows its file");
 
+        // Act
         tabs.CloseAllTabs();
         changes.Clear();
         image.NotifyUpdatedOnDisk();
 
+        // Assert
         changes.Should().BeEmpty("a closed tab no longer follows the file");
         tabs.Dispose();
     }
@@ -101,6 +112,7 @@ public sealed class TabManagerTests : IDisposable
     [Fact]
     public void Reopening_a_resource_activates_the_existing_document()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         (TabManager tabs, MainDockFactory dock) = NewManager();
@@ -108,8 +120,10 @@ public sealed class TabManagerTests : IDisposable
         List<Resource> resources = ThreeResources(book);
         tabs.OpenResources(resources);
 
+        // Act
         tabs.OpenResource(resources[0]);
 
+        // Assert
         Documents(dock).Should().HaveCount(3);
         dock.DocumentDock!.ActiveDockable.Should().BeSameAs(Documents(dock)[0]);
         tabs.Dispose();
@@ -118,6 +132,7 @@ public sealed class TabManagerTests : IDisposable
     [Fact]
     public void Closing_a_document_from_the_dock_updates_the_model()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         (TabManager tabs, MainDockFactory dock) = NewManager();
@@ -125,8 +140,10 @@ public sealed class TabManagerTests : IDisposable
         List<Resource> resources = ThreeResources(book);
         tabs.OpenResources(resources);
 
+        // Act
         dock.CloseDockable(Documents(dock)[1]);
 
+        // Assert
         tabs.Model.Count.Should().Be(2);
         Documents(dock).Select(d => d.Resource).Should().NotContain(resources[1]);
         tabs.Dispose();
@@ -135,6 +152,7 @@ public sealed class TabManagerTests : IDisposable
     [Fact]
     public void Unsupported_resources_do_not_open_a_tab()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         (TabManager tabs, MainDockFactory dock) = NewManager();
@@ -143,7 +161,10 @@ public sealed class TabManagerTests : IDisposable
         Resource? generic = book.GetAllResources().FirstOrDefault(r => r.Type == ResourceType.Generic);
         if (generic is not null)
         {
+            // Act
             tabs.OpenResource(generic);
+
+            // Assert
             Documents(dock).Should().BeEmpty();
         }
 
@@ -153,6 +174,7 @@ public sealed class TabManagerTests : IDisposable
     [Fact]
     public void Session_capture_and_restore_reopens_the_same_tabs()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         TempDir folder = _disposables.Add(new TempDir("signet-tabs-"));
@@ -168,17 +190,22 @@ public sealed class TabManagerTests : IDisposable
         dock1.InitLayout(dock1.CreateLayout());
         using (TabManager first = new(dock1, statusBar, settings, spellChecker))
         {
+            // Act
             first.SetBook(book);
             first.OpenResources(resources);
             first.CaptureSession(settings);
         }
 
+        // Arrange
         MainDockFactory dock2 = new();
         dock2.InitLayout(dock2.CreateLayout());
         using TabManager restored = new(dock2, statusBar, settings, spellChecker);
+
+        // Act
         restored.SetBook(book);
         restored.RestoreSession(settings);
 
+        // Assert
         Documents(dock2).Select(d => d.Resource.BookPath)
             .Should().Equal(resources.Select(r => r.BookPath));
     }
@@ -186,6 +213,7 @@ public sealed class TabManagerTests : IDisposable
     [Fact]
     public void Session_capture_and_restore_reopens_the_cursor_offset_of_each_code_tab()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         TempDir folder = _disposables.Add(new TempDir("signet-tabs-"));
@@ -202,12 +230,15 @@ public sealed class TabManagerTests : IDisposable
         using (TabManager first = new(dock1, statusBar, settings, spellChecker))
         {
             first.SetBook(book);
+
+            // Act
             first.OpenResource(html);
             var code = (CodeTabViewModel)Documents(dock1).Single(d => d.Resource.BookPath == html.BookPath);
             code.UpdateCaret(line: 1, column: 1, offset: 5, codepoint: -1);
             first.CaptureSession(settings);
         }
 
+        // Arrange
         MainDockFactory dock2 = new();
         dock2.InitLayout(dock2.CreateLayout());
         using TabManager restored = new(dock2, statusBar, settings, spellChecker);
@@ -221,14 +252,17 @@ public sealed class TabManagerTests : IDisposable
         int? requestedOffset = null;
         restoredCode.ScrollToOffsetRequested += offset => requestedOffset = offset;
 
+        // Act
         restored.RestoreSession(settings);
 
+        // Assert
         requestedOffset.Should().Be(5);
     }
 
     [Fact]
     public void Zooming_one_code_tab_applies_the_same_zoom_to_other_open_code_tabs_and_settings()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
@@ -240,8 +274,10 @@ public sealed class TabManagerTests : IDisposable
         tabs.OpenResources(new[] { all.First(r => r.Type == ResourceType.Html), all.First(r => r.Type == ResourceType.Css) });
         List<CodeTabViewModel> codeTabs = Documents(dock).OfType<CodeTabViewModel>().ToList();
 
+        // Act
         codeTabs[0].ZoomFactor = 1.5;
 
+        // Assert
         codeTabs[1].ZoomFactor.Should().Be(1.5);
         settings.ZoomText.Should().Be(1.5f);
     }
@@ -249,6 +285,7 @@ public sealed class TabManagerTests : IDisposable
     [Fact]
     public void Newly_opened_code_tab_starts_with_the_shared_code_zoom()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
@@ -258,10 +295,13 @@ public sealed class TabManagerTests : IDisposable
         tabs.SetBook(book);
         List<Resource> all = book.GetAllResources().ToList();
         tabs.OpenResource(all.First(r => r.Type == ResourceType.Html));
+
+        // Act
         Documents(dock).OfType<CodeTabViewModel>().Single().ZoomFactor = 2.0;
 
         tabs.OpenResource(all.First(r => r.Type == ResourceType.Css));
 
+        // Assert
         Documents(dock).OfType<CodeTabViewModel>().Should().OnlyContain(t => t.ZoomFactor == 2.0);
     }
 }

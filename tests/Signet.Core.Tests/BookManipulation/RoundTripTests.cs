@@ -33,31 +33,40 @@ public sealed class RoundTripTests
     [MemberData(nameof(ValidCorpus))]
     public void RoundTrip_ValidCorpus_ProducesEquivalentEpub(string corpusDir)
     {
+        // Arrange
         using TempDir temp = new();
         string original = EpubBuilder.BuildInto(corpusDir, temp, "original.epub");
 
         string exported = temp.Combine("exported.epub");
+
+        // Act
         using (Book book = new ImportEpub(original).GetBook())
         {
             new ExportEpub(book).WriteBook(exported, stampMetadata: false);
         }
 
         EpubComparisonResult result = EpubComparer.Compare(original, exported, EpubComparisonOptions.RoundTrip);
+
+        // Assert
         result.AreEquivalent.Should().BeTrue(result.Report);
     }
 
     [Fact]
     public void RoundTrip_WithMetadataStamping_StillEquivalentUnderRoundTripComparison()
     {
+        // Arrange
         using TempDir temp = new();
         string original = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, temp, "original.epub");
 
         string exported = temp.Combine("stamped.epub");
+
+        // Act
         using (Book book = new ImportEpub(original).GetBook())
         {
             new ExportEpub(book).WriteBook(exported, stampMetadata: true);
         }
 
+        // Assert
         EpubComparisonResult result = EpubComparer.Compare(original, exported, EpubComparisonOptions.RoundTrip);
         result.AreEquivalent.Should().BeTrue(result.Report);
     }
@@ -65,16 +74,21 @@ public sealed class RoundTripTests
     [Fact]
     public void RoundTrip_ExportedEpub_HasMimetypeFirstAndStored()
     {
+        // Arrange
         using TempDir temp = new();
         string original = EpubBuilder.BuildInto(CorpusPaths.Epub2Minimal, temp, "original.epub");
 
         string exported = temp.Combine("exported.epub");
+
+        // Act
         using (Book book = new ImportEpub(original).GetBook())
         {
             new ExportEpub(book).WriteBook(exported, stampMetadata: false);
         }
 
         using System.IO.Compression.ZipArchive zip = System.IO.Compression.ZipFile.OpenRead(exported);
+
+        // Assert
         zip.Entries[0].FullName.Should().Be("mimetype");
         zip.Entries[0].CompressedLength.Should().Be(zip.Entries[0].Length, "mimetype must be STORED");
         zip.GetEntry(".signet-lock").Should().BeNull("the working directory lock file must not end up in the EPUB");
@@ -83,16 +97,21 @@ public sealed class RoundTripTests
     [Fact]
     public void RoundTrip_ReimportingExportedEpub_KeepsResourcesAndSpineOrder()
     {
+        // Arrange
         using TempDir temp = new();
         string original = EpubBuilder.BuildInto(CorpusPaths.Epub3WithNcx, temp, "original.epub");
 
         string exported = temp.Combine("exported.epub");
+
+        // Act
         using (Book first = new ImportEpub(original).GetBook())
         {
             new ExportEpub(first).WriteBook(exported, stampMetadata: false);
         }
 
         using Book second = new ImportEpub(exported).GetBook();
+
+        // Assert
         second.GetNcx().Should().NotBeNull();
         second.GetHtmlResources().Select(h => h.Filename)
             .Should().ContainInOrder("chapter1.xhtml", "chapter2.xhtml");
@@ -101,6 +120,7 @@ public sealed class RoundTripTests
     [Fact]
     public void RoundTrip_ObfuscatedFonts_DeobfuscateOnImportThenReobfuscateOnExport()
     {
+        // Arrange
         const string identifier = "urn:uuid:5b2e8c1a-0000-4000-8000-0000000000ab";
         string fixtureDir = CorpusPaths.Epub3ObfuscatedFonts;
 
@@ -122,6 +142,8 @@ public sealed class RoundTripTests
         string original = EpubBuilder.BuildInto(staged, temp, "original.epub");
 
         string exported = temp.Combine("exported.epub");
+
+        // Act
         using (Book book = new ImportEpub(original).GetBook())
         {
             new ExportEpub(book).WriteBook(exported, stampMetadata: false);
@@ -129,12 +151,16 @@ public sealed class RoundTripTests
 
         using System.IO.Compression.ZipArchive zip = System.IO.Compression.ZipFile.OpenRead(exported);
 
+        // Assert
         zip.GetEntry("META-INF/encryption.xml").Should().NotBeNull("the export regenerates encryption.xml for obfuscated fonts");
         ReadEntry(zip, "EPUB/fonts/idpf-font.ttf").Should().Equal(idpfExpected, "eksport reobfuskuje font IDPF");
         ReadEntry(zip, "EPUB/fonts/adobe-font.otf").Should().Equal(adobeExpected, "eksport reobfuskuje font Adobe");
 
         // Ponowny import znow deobfuskuje do postaci golden.
+        // Act
         using Book reimported = new ImportEpub(exported).GetBook();
+
+        // Assert
         FontResource idpf = reimported.GetAllResources().OfType<FontResource>().Single(f => f.Filename == "idpf-font.ttf");
         idpf.ObfuscationAlgorithm.Should().Be(OcfReader.IdpfFontAlgorithmId);
         File.ReadAllBytes(idpf.FullPath).Should()

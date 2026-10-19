@@ -71,12 +71,15 @@ public sealed class RecentLocationsViewModelTests : IDisposable
     [Fact]
     public void The_popup_lists_the_visited_files_newest_first_with_their_text()
     {
+        // Arrange
         Open(Chapter(1));
         Open(Chapter(2));
         Open(_book.GetAllResources().OfType<CssResource>().First());
 
+        // Act
         RecentLocationsViewModel popup = ShowPopup();
 
+        // Assert
         popup.Items.Select(i => i.FileName).Take(2).Should().Equal("chapter2.xhtml", "chapter1.xhtml");
         popup.Items[0].Snippet.Text.Should().NotBeEmpty();
         popup.Selected.Should().BeSameAs(popup.Items[0]);
@@ -86,13 +89,16 @@ public sealed class RecentLocationsViewModelTests : IDisposable
     [Fact]
     public void Edits_in_the_active_tab_appear_under_show_edited_only()
     {
+        // Arrange
         Open(Chapter(1));
         var tab = (CodeTabViewModel)_sut.Tabs.ActiveTab!;
         tab.Document.Insert(tab.Document.Text.IndexOf("</body>", StringComparison.Ordinal), "<p>new text</p>");
 
+        // Act
         RecentLocationsViewModel popup = ShowPopup();
         popup.ShowEditedOnly = true;
 
+        // Assert
         popup.Title.Should().Be(Strings.Get("RecentLocations_TitleEdited"));
         popup.Items.Should().ContainSingle().Which.Snippet.Text.Should().Contain("new text");
     }
@@ -100,16 +106,22 @@ public sealed class RecentLocationsViewModelTests : IDisposable
     [Fact]
     public void Typing_filters_and_Delete_forgets_the_selected_place()
     {
+        // Arrange
         Open(Chapter(1));
         Open(Chapter(2));
         Open(_book.GetAllResources().OfType<CssResource>().First());
         RecentLocationsViewModel popup = ShowPopup();
 
+        // Act
         popup.Filter = "chapter1";
+
+        // Assert
         popup.Items.Should().ContainSingle().Which.FileName.Should().Be("chapter1.xhtml");
 
+        // Act
         popup.RemoveSelected();
 
+        // Assert
         popup.Items.Should().BeEmpty();
         _sut.NavigationHistory.BackPlaces.Should().NotContain(p => p.BookPath == Chapter(1).BookPath);
     }
@@ -117,14 +129,17 @@ public sealed class RecentLocationsViewModelTests : IDisposable
     [Fact]
     public void Choosing_an_entry_closes_the_popup_and_goes_to_the_place()
     {
+        // Arrange
         Open(Chapter(1));
         Open(Chapter(2));
         RecentLocationsViewModel popup = ShowPopup();
         bool closed = false;
         popup.CloseRequested += (_, _) => closed = true;
 
+        // Act
         popup.Navigate(popup.Items.Single(i => i.FileName == "chapter1.xhtml"));
 
+        // Assert
         closed.Should().BeTrue();
         _sut.Tabs.ActiveTab!.Resource.Should().BeSameAs(Chapter(1));
     }
@@ -132,15 +147,22 @@ public sealed class RecentLocationsViewModelTests : IDisposable
     [Fact]
     public void MoveSelection_stays_within_the_list()
     {
+        // Arrange
         Open(Chapter(1));
         Open(Chapter(2));
         Open(_book.GetAllResources().OfType<CssResource>().First());
         RecentLocationsViewModel popup = ShowPopup();
 
+        // Act
         popup.MoveSelection(-1);
+
+        // Assert
         popup.Selected.Should().BeSameAs(popup.Items[0]);
 
+        // Act
         popup.MoveSelection(100);
+
+        // Assert
         popup.Selected.Should().BeSameAs(popup.Items[^1]);
     }
 
@@ -154,17 +176,21 @@ public sealed class RecentLocationsViewModelTests : IDisposable
     [InlineData(60, "Godzinę temu")]
     public void FormatTime_within_an_hour_uses_minutes_with_polish_plural_forms(int minutes, string expected)
     {
+        // Arrange
         using UiCultureScope culture = new("pl");
 
+        // Act & Assert
         RecentLocationsViewModel.FormatTime(Now.AddMinutes(-minutes), Now).Should().Be(expected);
     }
 
     [Fact]
     public void FormatTime_of_older_places_names_the_day()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         DateTimeOffset now = new DateTimeOffset(2026, 10, 9, 18, 0, 0, TimeZoneInfo.Local.GetUtcOffset(new DateTime(2026, 10, 9)));
 
+        // Act & Assert
         RecentLocationsViewModel.FormatTime(now.AddHours(-5), now).Should().StartWith("Today ");
         RecentLocationsViewModel.FormatTime(now.AddDays(-1), now).Should().StartWith("Yesterday ");
         RecentLocationsViewModel.FormatTime(now.AddDays(-5), now).Should().NotStartWith("Today").And.NotStartWith("Yesterday");

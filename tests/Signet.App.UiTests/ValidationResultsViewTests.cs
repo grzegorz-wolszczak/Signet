@@ -37,13 +37,18 @@ public sealed class ValidationResultsViewTests
     [AvaloniaFact]
     public void The_table_shows_the_columns_and_one_row_per_result()
     {
+        // Arrange
         ValidationResultsViewModel vm = new();
         vm.LoadResults(new[] { Result("OEBPS/Text/a.xhtml", 3, "first"), Result("OEBPS/Text/b.xhtml", 0, "second") });
         Window window = new() { Width = 700, Height = 300, Content = new ValidationResultsView { DataContext = vm } };
+
+        // Act
         window.Show();
         Settle(window);
 
         TreeDataGrid grid = window.GetVisualDescendants().OfType<TreeDataGrid>().Single();
+
+        // Assert
         grid.IsEffectivelyVisible.Should().BeTrue();
         grid.Classes.Should().Contain("gridLines");
         grid.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().Select(h => h.Header).Should().Equal(
@@ -59,11 +64,15 @@ public sealed class ValidationResultsViewTests
     [AvaloniaFact]
     public void Without_results_only_the_message_is_shown()
     {
+        // Arrange
         ValidationResultsViewModel vm = new();
         Window window = new() { Width = 700, Height = 300, Content = new ValidationResultsView { DataContext = vm } };
+
+        // Act
         window.Show();
         Settle(window);
 
+        // Assert
         window.GetVisualDescendants().OfType<TreeDataGrid>().Single().IsVisible.Should().BeFalse();
         window.Close();
     }
@@ -71,12 +80,15 @@ public sealed class ValidationResultsViewTests
     [AvaloniaFact]
     public void Double_clicking_a_row_activates_its_result()
     {
+        // Arrange
         ValidationResultsViewModel vm = new();
         ValidationResult second = Result("OEBPS/Text/b.xhtml", 7, "second");
         vm.LoadResults(new[] { Result("OEBPS/Text/a.xhtml", 3, "first"), second });
         ValidationResult? activated = null;
         vm.EntryActivated += (_, r) => activated = r;
         Window window = new() { Width = 700, Height = 300, Content = new ValidationResultsView { DataContext = vm } };
+
+        // Act
         window.Show();
         Settle(window);
         TreeDataGrid grid = window.GetVisualDescendants().OfType<TreeDataGrid>().Single();
@@ -89,6 +101,7 @@ public sealed class ValidationResultsViewTests
         window.MouseUp(point, MouseButton.Left);
         Settle(window);
 
+        // Assert
         activated.Should().Be(second);
         window.Close();
     }
@@ -96,6 +109,7 @@ public sealed class ValidationResultsViewTests
     [AvaloniaFact]
     public void Line_and_offset_sort_as_numbers_with_unknown_values_last()
     {
+        // Arrange
         ValidationResultsViewModel vm = new();
         vm.LoadResults(new[]
         {
@@ -104,15 +118,22 @@ public sealed class ValidationResultsViewTests
             new ValidationResult(ValidationSeverity.Error, "a.xhtml", 2, 40, "two"),
         });
         Window window = new() { Width = 700, Height = 300, Content = new ValidationResultsView { DataContext = vm } };
+
+        // Act
         window.Show();
         Settle(window);
         TreeDataGrid grid = window.GetVisualDescendants().OfType<TreeDataGrid>().Single();
         string[] Messages() => Enumerable.Range(0, grid.Rows!.Count).Select(i => ((ValidationResultRow)grid.Rows[i].Model!).Message).ToArray();
 
         grid.Source!.SortBy(grid.Columns![1], ListSortDirection.Ascending);
+
+        // Assert
         Messages().Should().Equal("two", "ten", "unknown");
 
+        // Act
         grid.Source.SortBy(grid.Columns[2], ListSortDirection.Ascending);
+
+        // Assert
         Messages().Should().Equal("ten", "two", "unknown");
         window.Close();
     }
@@ -120,6 +141,7 @@ public sealed class ValidationResultsViewTests
     [AvaloniaFact]
     public void The_toolbar_fixes_the_selected_row_and_knows_whether_there_are_skipped_rules()
     {
+        // Arrange
         ValidationResultsViewModel vm = new();
         ValidationResult fixable = new(ValidationSeverity.Warning, "a.xhtml", 1, -1, "fixable", "Validation_BareBodyText",
             new BareBodyTextFix("a.xhtml"));
@@ -127,23 +149,38 @@ public sealed class ValidationResultsViewTests
         System.Collections.Generic.IReadOnlyList<ValidationResult>? requested = null;
         vm.FixRequested += (_, results) => requested = results;
         Window window = new() { Width = 700, Height = 300, Content = new ValidationResultsView { DataContext = vm } };
+
+        // Act
         window.Show();
         Settle(window);
         Button fix = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "FixButton");
         Button skipped = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "SkippedRulesButton");
+
+        // Assert
         window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "FixAllButton").IsEnabled.Should().BeTrue();
         fix.IsEnabled.Should().BeFalse("nothing is selected");
         skipped.IsEnabled.Should().BeFalse();
 
         TreeDataGrid grid = window.GetVisualDescendants().OfType<TreeDataGrid>().Single();
+
+        // Act
         grid.RowSelection!.Select(new IndexPath(1));
         Settle(window);
+
+        // Assert
         fix.IsEnabled.Should().BeTrue();
+
+        // Act
         fix.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+
+        // Assert
         requested.Should().Equal(fixable);
 
+        // Act
         vm.SetSkippedRules(SkippedDeadLinks);
         Settle(window);
+
+        // Assert
         skipped.IsEnabled.Should().BeTrue();
         window.Close();
     }

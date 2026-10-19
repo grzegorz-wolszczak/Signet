@@ -66,9 +66,11 @@ public sealed class EditTocWindowTests : IDisposable
     [AvaloniaFact]
     public void The_entries_are_a_flat_table_with_resizable_title_level_and_target_columns()
     {
+        // Act
         (EditTocWindow window, _, TreeDataGrid grid, Book book) = Show();
         using (book)
         {
+            // Assert
             grid.Columns!.Select(c => c.Header).Should().Equal(
                 Strings.Get("EditTocWindow_ColumnTitle"), Strings.Get("EditTocWindow_ColumnLevel"), Strings.Get("EditTocWindow_ColumnTarget"));
             grid.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().Should().HaveCount(3, "every column is shown");
@@ -87,20 +89,30 @@ public sealed class EditTocWindowTests : IDisposable
     [AvaloniaFact]
     public void Rename_puts_the_selected_title_in_edit_mode_and_the_text_goes_to_the_entry()
     {
+        // Act
         (EditTocWindow window, EditTocViewModel vm, TreeDataGrid grid, Book book) = Show();
         using (book)
         {
             grid.RowSelection!.SelectedIndex = new IndexPath(2);
             Settle(window);
+
+            // Assert
             vm.SelectedNode.Should().BeSameAs(vm.Rows[2]);
 
+            // Act
             vm.RenameCommand.Execute(null);
             Settle(window);
 
             TreeDataGridCell cell = grid.TryGetCell(0, 2).Should().BeAssignableTo<TreeDataGridCell>().Subject;
+
+            // Assert
             cell.IsEditing.Should().BeTrue();
             TextBox editor = cell.GetVisualDescendants().OfType<TextBox>().Should().ContainSingle().Subject;
+
+            // Act
             editor.Text = "Gamma";
+
+            // Assert
             vm.Rows[2].Text.Should().Be("Gamma");
             window.Close();
         }
@@ -109,6 +121,7 @@ public sealed class EditTocWindowTests : IDisposable
     [AvaloniaFact]
     public void Ctrl_click_selects_several_entries_and_moving_keeps_the_moved_entry_selected()
     {
+        // Act
         (EditTocWindow window, EditTocViewModel vm, TreeDataGrid grid, Book book) = Show();
         using (book)
         {
@@ -120,15 +133,18 @@ public sealed class EditTocWindowTests : IDisposable
             window.MouseUp(beta, MouseButton.Left, RawInputModifiers.Control);
             Settle(window);
 
+            // Assert
             grid.RowSelection!.SelectedItems.Should().HaveCount(2);
             vm.SelectedNode.Should().BeNull("two entries are selected");
 
+            // Act
             grid.RowSelection.SelectedIndex = new IndexPath(2);
             Settle(window);
             EditTocNodeViewModel betaNode = vm.Rows[2];
             vm.MoveUpCommand.Execute(null);
             Settle(window);
 
+            // Assert
             vm.Rows[0].Should().BeSameAs(betaNode, "Beta moved above Alpha");
             grid.RowSelection.SelectedItem.Should().BeSameAs(betaNode, "the moved entry stays selected");
             window.Close();

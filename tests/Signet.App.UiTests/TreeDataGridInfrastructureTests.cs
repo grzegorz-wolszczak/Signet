@@ -56,11 +56,17 @@ public sealed class TreeDataGridInfrastructureTests
     [AvaloniaFact]
     public void A_narrow_column_is_widened_to_its_header_and_columns_are_resizable()
     {
+        // Act
         (Window window, TreeDataGrid grid, FlatTreeDataGridSource<Item> source, _) = Show(new GridLength(5));
 
+        // Assert
         grid.CanUserResizeColumns.Should().BeTrue();
         TreeDataGridColumnHeader header = grid.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().Single();
+
+        // Act
         header.Measure(Size.Infinity);
+
+        // Assert
         source.Columns[0].ActualWidth.Should().BeGreaterThanOrEqualTo(header.DesiredSize.Width, "the header must be fully visible");
         window.Close();
     }
@@ -68,17 +74,23 @@ public sealed class TreeDataGridInfrastructureTests
     [AvaloniaFact]
     public void Column_headers_follow_a_language_switch()
     {
+        // Arrange
         CultureInfo previous = CultureInfo.CurrentUICulture;
         try
         {
+            // Act
             CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("en");
             (Window window, _, FlatTreeDataGridSource<Item> source, LocalizedColumns<Item> columns) = Show(new GridLength(1, GridUnitType.Star));
+
+            // Assert
             source.Columns[0].Header.Should().Be(Strings.Get("ValidationResultsView_Message"));
             string english = Strings.Get("ValidationResultsView_Message");
 
+            // Act
             CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("pl");
             Strings.NotifyLanguageChanged();
 
+            // Assert
             source.Columns[0].Header.Should().Be(Strings.Get("ValidationResultsView_Message")).And.NotBe(english);
             columns.Should().NotBeNull("the factory must stay alive for the language listener");
             window.Close();
@@ -93,9 +105,12 @@ public sealed class TreeDataGridInfrastructureTests
     [AvaloniaFact]
     public void The_gridLines_class_draws_a_line_under_every_row()
     {
+        // Act
         (Window window, TreeDataGrid grid, _, _) = Show(new GridLength(1, GridUnitType.Star), "gridLines");
 
         TreeDataGridRow[] rows = grid.GetVisualDescendants().OfType<TreeDataGridRow>().ToArray();
+
+        // Assert
         rows.Should().HaveCount(2).And.OnlyContain(r => r.BorderThickness == new Thickness(0, 0, 0, 1) && r.BorderBrush is ISolidColorBrush);
         window.Close();
     }
@@ -118,26 +133,34 @@ public sealed class TreeDataGridInfrastructureTests
     [AvaloniaFact]
     public void VisibleItemsView_shows_the_visible_items_and_resets_once_per_change_batch()
     {
+        // Arrange
         ObservableCollection<Node> nodes = new() { new("a"), new("b"), new("c") };
         VisibleItemsView<Node> view = VisibleItems.For(nodes, n => n.IsVisible, nameof(Node.IsVisible));
         int resets = 0;
         view.CollectionChanged += (_, e) => resets += e.Action == System.Collections.Specialized.NotifyCollectionChangedAction.Reset ? 1 : 0;
+
         view.Select(n => n.Name).Should().Equal("a", "b", "c");
+
+        // Act & Assert
         VisibleItems.For(nodes, n => n.IsVisible, nameof(Node.IsVisible)).Should().BeSameAs(view, "one view per collection");
 
+        // Act
         nodes[0].IsVisible = false;
         nodes[2].IsVisible = false;
         nodes.Add(new("d"));
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         view.Select(n => n.Name).Should().Equal("b", "d");
         resets.Should().Be(1, "the changes of one batch give one reset");
         ((System.Collections.IList)view).IsReadOnly.Should().BeTrue();
         ((System.Collections.IList)view).IndexOf(nodes[3]).Should().Be(1);
 
+        // Act
         nodes[1].IsVisible = true;
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         resets.Should().Be(1, "nothing changed in the view");
     }
 }

@@ -14,23 +14,29 @@ public sealed class EpubUpgraderTests
     [Fact]
     public void An_epub3_book_is_left_alone()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("3.0");
         string opf = book.GetOpf().GetText();
 
+        // Act
         EpubUpgrader.UpgradeToEpub3(book).Should().BeNull();
 
+        // Assert
         book.GetOpf().GetText().Should().Be(opf);
     }
 
     [Fact]
     public void The_book_becomes_epub3_and_keeps_the_ncx_and_the_guide()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource section = book.GetHtmlResources()[0];
         book.GetOpf().AddGuideSemanticCode(section, "text");
 
+        // Act
         EpubUpgradeResult? result = EpubUpgrader.UpgradeToEpub3(book);
 
+        // Assert
         result.Should().NotBeNull();
         book.IsEpub3.Should().BeTrue();
         book.Modified.Should().BeTrue();
@@ -45,14 +51,17 @@ public sealed class EpubUpgraderTests
     [Fact]
     public void The_nav_gets_the_ncx_entries_and_the_guide_landmarks()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource section = book.GetHtmlResources()[0];
         book.GetOpf().AddGuideSemanticCode(section, "text");
         book.GetOpf().AddGuideSemanticCode(section, "other.afterword", toggle: false, tgtId: "after");
         int ncxEntries = book.GetNcx()!.GetNcxDocument().NavMap.Count;
 
+        // Act
         EpubUpgradeResult result = EpubUpgrader.UpgradeToEpub3(book)!;
 
+        // Assert
         book.GetNavResource().Should().BeSameAs(result.Nav);
         NavProcessor nav = new(result.Nav);
         nav.GetToc().Should().HaveCount(ncxEntries).And.OnlyContain(e => e.Href.EndsWith(section.Filename));
@@ -65,25 +74,32 @@ public sealed class EpubUpgraderTests
     [Fact]
     public void The_nav_takes_the_language_of_the_book()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         OpfDocument document = book.GetOpf().GetOpfDocument();
         document.Metadata.First(m => m.Name == "dc:language").Content = "pl";
         book.GetOpf().SetOpfDocument(document);
 
+        // Act
         EpubUpgradeResult result = EpubUpgrader.UpgradeToEpub3(book)!;
 
+        // Assert
         result.Nav.GetText().Should().Contain("lang=\"pl\"");
     }
 
     [Fact]
     public void Html_files_get_the_html5_doctype()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource section = book.GetHtmlResources()[0];
+
         section.GetText().Should().Contain("XHTML 1.1");
 
+        // Act
         EpubUpgradeResult result = EpubUpgrader.UpgradeToEpub3(book)!;
 
+        // Assert
         section.GetText().Should().Contain("<!DOCTYPE html>").And.NotContain("XHTML 1.1");
         result.Doctypes.Should().Be(1);
     }
@@ -91,20 +107,24 @@ public sealed class EpubUpgraderTests
     [Fact]
     public void A_doctype_with_an_internal_subset_is_kept()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource section = book.GetHtmlResources()[0];
         string doctype = "<!DOCTYPE html [ <!ENTITY nbsp \"&#160;\"> ]>";
         section.SetText("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" + doctype
             + "\n<html xmlns=\"http://www.w3.org/1999/xhtml\"><head><title></title></head><body><p>a</p></body></html>");
 
+        // Act & Assert
         EpubUpgrader.ReplaceDoctype(section).Should().BeFalse();
 
+        // Assert
         section.GetText().Should().Contain(doctype);
     }
 
     [Fact]
     public void Epub2_metadata_attributes_become_epub3_metadata()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         OpfDocument document = book.GetOpf().GetOpfDocument();
         MetaEntry creator = new() { Name = "dc:creator", Content = "Jane Doe" };
@@ -122,8 +142,10 @@ public sealed class EpubUpgraderTests
         document.Metadata.AddRange(new[] { creator, isbn, modified, published, fixedLayout });
         book.GetOpf().SetOpfDocument(document);
 
+        // Act
         EpubUpgrader.UpgradeToEpub3(book);
 
+        // Assert
         MetaEntry[] metadata = book.GetOpf().GetOpfDocument().Metadata.ToArray();
         MetaEntry upgradedCreator = metadata.Single(m => m.Name == "dc:creator");
         string id = upgradedCreator.Attributes.Value("id");
@@ -145,12 +167,15 @@ public sealed class EpubUpgraderTests
     [Fact]
     public void Html_entries_get_their_manifest_properties()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource section = book.GetHtmlResources()[0];
         section.SetText(section.GetText().Replace("<p>", "<svg xmlns=\"http://www.w3.org/2000/svg\"></svg><p>"));
 
+        // Act
         EpubUpgradeResult result = EpubUpgrader.UpgradeToEpub3(book)!;
 
+        // Assert
         book.GetOpf().GetManifestPropertiesForResource(section).Should().Be("svg");
         book.GetOpf().GetManifestPropertiesForResource(result.Nav).Should().Be("nav");
     }

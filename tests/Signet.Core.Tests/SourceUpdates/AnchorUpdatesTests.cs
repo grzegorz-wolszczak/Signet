@@ -22,14 +22,17 @@ public sealed class AnchorUpdatesTests
     [Fact]
     public void GetIdLocations_MapsEachIdToItsResourceBookPath()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource a = book.CreateEmptyHtmlFile();
         a.SetText(Xhtml("<p id=\"one\">1</p>"));
         HtmlResource b = book.CreateEmptyHtmlFile();
         b.SetText(Xhtml("<p id=\"two\">2</p>"));
 
+        // Act
         Dictionary<string, string> locations = AnchorUpdates.GetIdLocations(new[] { a, b });
 
+        // Assert
         locations["one"].Should().Be(a.BookPath);
         locations["two"].Should().Be(b.BookPath);
     }
@@ -37,34 +40,41 @@ public sealed class AnchorUpdatesTests
     [Fact]
     public void UpdateAllAnchorsWithIds_RedirectsLinkToFileNowHoldingTheFragment()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource a = book.CreateEmptyHtmlFile();
         a.SetText(Xhtml("<a href=\"#target\">go</a>"));
         HtmlResource b = book.CreateEmptyHtmlFile();
         b.SetText(Xhtml("<p id=\"target\">Target</p>"));
 
+        // Act
         AnchorUpdates.UpdateAllAnchorsWithIds(new[] { a, b });
 
+        // Assert
         a.GetText().Should().Contain($"href=\"{b.Filename}#target\"");
     }
 
     [Fact]
     public void UpdateAllAnchorsWithIds_LeavesLocalFragmentAlone()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource a = book.CreateEmptyHtmlFile();
         a.SetText(Xhtml("<p id=\"local\">x</p><a href=\"#local\">go</a>"));
         HtmlResource b = book.CreateEmptyHtmlFile();
         b.SetText(Xhtml("<p>other</p>"));
 
+        // Act
         AnchorUpdates.UpdateAllAnchorsWithIds(new[] { a, b });
 
+        // Assert
         a.GetText().Should().Contain("href=\"#local\"");
     }
 
     [Fact]
     public void UpdateExternalAnchors_RedirectsReferenceToOriginatingFileIntoNewFile()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource originating = book.CreateEmptyHtmlFile();
         string originatingBookPath = originating.BookPath;
@@ -73,14 +83,17 @@ public sealed class AnchorUpdatesTests
         HtmlResource newFile = book.CreateEmptyHtmlFile();
         newFile.SetText(Xhtml("<p id=\"target\">Target</p>"));
 
+        // Act
         AnchorUpdates.UpdateExternalAnchors(new[] { other }, originatingBookPath, new[] { newFile });
 
+        // Assert
         other.GetText().Should().Contain($"href=\"{newFile.Filename}#target\"");
     }
 
     [Fact]
     public void UpdateAllAnchors_RedirectsFragmentReferenceToMergedFileIntoSink()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource mergedA = book.CreateEmptyHtmlFile();
         string mergedABookPath = mergedA.BookPath;
@@ -88,15 +101,18 @@ public sealed class AnchorUpdatesTests
         HtmlResource other = book.CreateEmptyHtmlFile();
         other.SetText(Xhtml($"<a href=\"{mergedA.Filename}#chapter\">go</a>"));
 
+        // Act
         AnchorUpdates.UpdateAllAnchors(
             new[] { other }, new[] { mergedABookPath }, sink, new Dictionary<string, string>());
 
+        // Assert
         other.GetText().Should().Contain($"href=\"{sink.Filename}#chapter\"");
     }
 
     [Fact]
     public void UpdateAllAnchors_NoFragment_UsesInjectedSectionAnchor()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource mergedA = book.CreateEmptyHtmlFile();
         string mergedABookPath = mergedA.BookPath;
@@ -105,14 +121,17 @@ public sealed class AnchorUpdatesTests
         other.SetText(Xhtml($"<a href=\"{mergedA.Filename}\">go</a>"));
         Dictionary<string, string> sectionIdMap = new() { [mergedABookPath] = "section1" };
 
+        // Act
         AnchorUpdates.UpdateAllAnchors(new[] { other }, new[] { mergedABookPath }, sink, sectionIdMap);
 
+        // Assert
         other.GetText().Should().Contain($"href=\"{sink.Filename}#section1\"");
     }
 
     [Fact]
     public void UpdateTocEntries_RedirectsNcxContentSrcAfterSplit()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         NcxResource ncx = book.GetNcx()!;
         HtmlResource originating = book.CreateEmptyHtmlFile();
@@ -130,8 +149,10 @@ public sealed class AnchorUpdatesTests
         });
         ncx.SetNcxDocument(document);
 
+        // Act
         AnchorUpdates.UpdateTocEntries(ncx, originatingBookPath, new[] { newFile });
 
+        // Assert
         ncx.GetNcxDocument().NavMap[0].ContentSrc.Should().Be(
             BookPath.Relative(ncx.BookPath, newFile.BookPath) + "#chapter2");
     }
@@ -139,6 +160,7 @@ public sealed class AnchorUpdatesTests
     [Fact]
     public void UpdateTocEntriesAfterMerge_RedirectsNcxContentSrcToSink()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         NcxResource ncx = book.GetNcx()!;
         HtmlResource mergedA = book.CreateEmptyHtmlFile();
@@ -155,8 +177,10 @@ public sealed class AnchorUpdatesTests
         });
         ncx.SetNcxDocument(document);
 
+        // Act
         AnchorUpdates.UpdateTocEntriesAfterMerge(ncx, sink.BookPath, new[] { mergedABookPath });
 
+        // Assert
         ncx.GetNcxDocument().NavMap[0].ContentSrc.Should().Be(BookPath.Relative(ncx.BookPath, sink.BookPath));
     }
 }

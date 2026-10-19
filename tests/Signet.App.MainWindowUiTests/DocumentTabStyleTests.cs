@@ -67,6 +67,7 @@ public sealed class DocumentTabStyleTests
     [AvaloniaFact]
     public void The_tabs_take_the_colors_of_the_theme_selected_and_not()
     {
+        // Arrange
         using Scenario s = new();
         Theme theme = new Theme("t", "T")
             .With(ThemeKeys.UiDocumentTab.Id, ThemeEntry.Of(new TextAttributes
@@ -81,10 +82,13 @@ public sealed class DocumentTabStyleTests
             }));
         try
         {
+            // Act
             AppTheme.Apply(Avalonia.Application.Current!, ResolvedTheme.Of(ThemeDocumentKind.Theme, theme, new ThemeResolver(_ => null)));
             s.Settle();
 
             List<DocumentTabStripItem> items = s.Items;
+
+            // Assert
             items.Should().HaveCountGreaterThan(1);
             DocumentTabStripItem selected = items.Single(i => i.IsSelected);
             ((ISolidColorBrush)selected.Foreground!).Color.Should().Be(Color.Parse("#FFFFFF"));
@@ -104,43 +108,56 @@ public sealed class DocumentTabStyleTests
     [AvaloniaFact]
     public void The_tabs_take_the_font_of_the_setting_and_return_to_the_default_font()
     {
+        // Arrange
         using Scenario s = new();
         double normal = s.Items[0].FontSize;
         try
         {
+            // Act
             UiDensityManager.ApplyDocumentTab(Avalonia.Application.Current!, new DocumentTabFontAppearance("Courier New", 21));
             s.Settle();
 
+            // Assert
             s.Items.Should().OnlyContain(i => i.FontSize == 21 && i.FontFamily.Name == "Courier New");
         }
         finally
         {
+            // Act
             UiDensityManager.ApplyDocumentTab(Avalonia.Application.Current!, DocumentTabFontAppearance.Default);
         }
 
         s.Settle();
+
+        // Assert
         s.Items.Should().OnlyContain(i => i.FontSize == normal);
     }
 
     [AvaloniaFact]
     public void Tabs_that_do_not_fit_go_to_several_rows_when_the_option_is_on()
     {
+        // Arrange
         using Scenario s = new(width: 420);
         int Rows() => s.Items.Select(i => Math.Round(i.TranslatePoint(default, s.Window)!.Value.Y)).Distinct().Count();
+
         s.Items.Should().HaveCountGreaterThan(3);
 
+        // Act & Assert
         Rows().Should().Be(1, "the tabs scroll in one row by default");
 
+        // Act
         s.Window.Classes.Set("multilineTabs", true);
         s.Settle();
 
+        // Assert
         Rows().Should().BeGreaterThan(1, "the tabs that do not fit start a new row");
         s.Window.GetVisualDescendants().OfType<RepeatButton>().Where(b => b.IsEffectivelyVisible && b.Bounds.Width > 0)
             .Where(b => b.FindAncestorOfType<DocumentTabStrip>() is not null).Should().BeEmpty("there is nothing to scroll");
 
+        // Act
         s.Window.Classes.Set("multilineTabs", false);
         s.Settle();
 
+        // Assert
         Rows().Should().Be(1);
     }
 }

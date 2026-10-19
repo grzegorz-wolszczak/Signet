@@ -30,14 +30,17 @@ public sealed class XmlConfigTests
     [InlineData("tab\there")]
     public void Text_round_trips_unchanged(string value)
     {
+        // Act & Assert
         RoundTrip(value).Should().Be(value);
     }
 
     [Fact]
     public void A_control_character_does_not_make_writing_or_reading_fail()
     {
+        // Arrange
         string value = Fixture.Create<string>() + "\u0001";
 
+        // Act & Assert
         RoundTrip(value).Should().Be(value);
     }
 
@@ -49,24 +52,29 @@ public sealed class XmlConfigTests
     [InlineData("{ \"json\": true }")]
     public void Malformed_or_empty_text_yields_null(string? text)
     {
+        // Act & Assert
         XmlConfig.TryParse(text).Should().BeNull();
     }
 
     [Fact]
     public void A_DTD_is_rejected()
     {
+        // Act & Assert
         XmlConfig.TryParse("<!DOCTYPE root [<!ENTITY e \"x\">]><root>&e;</root>").Should().BeNull();
     }
 
     [Fact]
     public void Save_then_load_round_trips_and_leaves_no_temporary_file()
     {
+        // Arrange
         using TempDir dir = new();
         string path = Path.Combine(dir.Combine("sub"), "config.xml");
         string value = Fixture.Create<string>();
 
+        // Act
         XmlConfig.Save(path, new XDocument(new XElement("root", value)));
 
+        // Assert
         XmlConfig.TryLoad(path)!.Root!.Value.Should().Be(value);
         File.Exists(path + ".tmp").Should().BeFalse();
         File.ReadAllText(path).Should().StartWith("<?xml");
@@ -75,8 +83,10 @@ public sealed class XmlConfigTests
     [Fact]
     public void Load_of_a_missing_file_yields_null()
     {
+        // Arrange
         using TempDir dir = new();
 
+        // Act & Assert
         XmlConfig.TryLoad(dir.Combine("missing.xml")).Should().BeNull();
     }
 }

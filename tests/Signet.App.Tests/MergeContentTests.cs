@@ -54,26 +54,34 @@ public sealed class MergeContentTests : IDisposable
     [Fact]
     public void Action_is_disabled_with_the_plain_label_until_the_selection_covers_mergeable_elements()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         (_, CodeTabViewModel tab, AppAction action) = Open(temp);
         string plain = CodeTabViewModel.MergeContentTextFor(null);
 
+        // Act & Assert
         action.IsEnabled.Should().BeFalse();
         tab.MergeContentText.Should().Be(plain);
 
+        // Act
         Select(tab, "<p class=\"a\">Ala", "ma</p>");
 
+        // Assert
         action.IsEnabled.Should().BeTrue();
         string label = Strings.Format("CodeEditorMenu_MergeContentCount", "p", 2);
         action.Text.Should().Be(label);
         tab.MergeContentText.Should().Be(label);
 
+        // Act
         Select(tab, "la", "ma");
 
+        // Assert
         action.IsEnabled.Should().BeTrue("a selection from the middle of the first to the middle of the second paragraph is enough");
 
+        // Act
         Select(tab, "Al", "la");
 
+        // Assert
         action.IsEnabled.Should().BeFalse();
         action.Text.Should().Be(action.DefaultText.Replace('&', '_'));
     }
@@ -81,14 +89,18 @@ public sealed class MergeContentTests : IDisposable
     [Fact]
     public void Same_attributes_merge_immediately_without_asking()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel vm, CodeTabViewModel tab, AppAction action) = Open(temp);
         bool asked = false;
         vm.MergeContentConfirmationRequested += (_, _) => asked = true;
+
+        // Act
         Select(tab, "<p class=\"a\">Ala", "ma</p>");
 
         action.Execute(null);
 
+        // Assert
         asked.Should().BeFalse();
         tab.Document.Text.Should().Contain("<p class=\"a\">Ala ma</p>\n<p class=\"b\">kota</p>");
     }
@@ -96,68 +108,88 @@ public sealed class MergeContentTests : IDisposable
     [Fact]
     public void Different_attributes_ask_first_and_merge_only_after_confirmation()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel vm, CodeTabViewModel tab, AppAction action) = Open(temp);
         ElementMergeCandidate? asked = null;
         vm.MergeContentConfirmationRequested += (_, c) => asked = c;
+
+        // Act
         Select(tab, "<p class=\"a\">Ala", "kota</p>");
 
         action.Execute(null);
 
+        // Assert
         asked.Should().NotBeNull();
         asked!.Count.Should().Be(3);
         asked.DifferingOpenTags.Should().Equal("<p class=\"b\">");
         tab.Document.Text.Should().Be(Doc);
 
+        // Act
         vm.ConfirmMergeContent();
 
+        // Assert
         tab.Document.Text.Should().Contain("<p class=\"a\">Ala ma kota</p>");
     }
 
     [Fact]
     public void Merge_Content_is_followed_only_by_Unwrap_div_in_the_Edit_menu()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         using TestHost host = new();
         MenuBuilder builder = new(host.Registry, host.Toolbars, new CommunityToolkit.Mvvm.Input.RelayCommand(() => { }));
 
+        // Act
         MenuItemViewModel edit = builder.Build().Single(m => m.Header == "_Edit");
 
+        // Act & Assert
         edit.Items![^2].Command.Should().BeSameAs(host.Registry.Require(AppActionIds.MergeContent));
         edit.Items![^1].Command.Should().BeSameAs(host.Registry.Require(AppActionIds.UnwrapDiv));
     }
     [Fact]
     public void Text_and_a_comment_between_elements_ask_first_and_are_merged_after_confirmation()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         const string doc = "<html><body><span>abc</span>  bcd <!-- k --> <span>xyz</span></body></html>";
         (MainWindowViewModel vm, CodeTabViewModel tab, AppAction action) = Open(temp, doc);
         ElementMergeCandidate? asked = null;
         vm.MergeContentConfirmationRequested += (_, c) => asked = c;
+
+        // Act
         Select(tab, "<span>abc", "xyz</span>");
 
         action.Execute(null);
 
+        // Assert
         asked!.TextBetween.Should().Equal("bcd");
         asked.RemovedNodes.Should().Equal("<!-- k -->");
         tab.Document.Text.Should().Be(doc);
 
+        // Act
         vm.ConfirmMergeContent();
 
+        // Assert
         tab.Document.Text.Should().Be("<html><body><span>abc bcd xyz</span></body></html>");
     }
 
     [Fact]
     public void Warning_lists_a_section_for_every_reason()
     {
+        // Arrange
         ElementMergeCandidate candidate = new(
             "p", 3, "<p class=\"a\">", ["<p class=\"b\">"], ["tekst"], ["<!-- k -->"]);
 
+        // Act
         string warning = MainWindowViewModel.MergeContentWarning(candidate);
 
+        // Assert
         warning.Should().Contain(Strings.Format("MergeContent_AttributesWarning", "p", "<p class=\"a\">", "<p class=\"b\">"));
         warning.Should().Contain(Strings.Format("MergeContent_TextBetweenWarning", "tekst"));
         warning.Should().Contain(Strings.Format("MergeContent_RemovedNodesWarning", "<!-- k -->"));
+
+        // Act & Assert
         MainWindowViewModel.MergeContentWarning(candidate with { DifferingOpenTags = [], RemovedNodes = [] })
             .Should().Be(Strings.Format("MergeContent_TextBetweenWarning", "tekst"));
     }

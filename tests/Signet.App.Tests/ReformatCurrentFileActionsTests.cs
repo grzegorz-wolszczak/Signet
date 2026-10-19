@@ -48,19 +48,27 @@ public sealed class ReformatCurrentFileActionsTests : IDisposable
     [Fact]
     public void Actions_are_enabled_only_for_an_html_code_tab()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel vm, Book book) = Open(temp);
         AppAction prettify = vm.Actions.Require(AppActionIds.PrettifyCurrentHtml);
         AppAction mend = vm.Actions.Require(AppActionIds.MendCurrentHtml);
 
+        // Act & Assert
         prettify.IsEnabled.Should().BeFalse("no code tab is open");
         mend.IsEnabled.Should().BeFalse();
 
+        // Act
         vm.Tabs.OpenResources(new Resource[] { book.GetAllResources().OfType<CssResource>().First() });
+
+        // Assert
         prettify.IsEnabled.Should().BeFalse("a CSS stylesheet is not an HTML file");
         mend.IsEnabled.Should().BeFalse();
 
+        // Act
         OpenHtml(vm, book, Unformatted);
+
+        // Assert
         prettify.IsEnabled.Should().BeTrue();
         mend.IsEnabled.Should().BeTrue();
     }
@@ -68,12 +76,15 @@ public sealed class ReformatCurrentFileActionsTests : IDisposable
     [Fact]
     public void Prettify_reformats_the_current_file_like_the_context_menu_entry()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel vm, Book book) = Open(temp);
         CodeTabViewModel tab = OpenHtml(vm, book, Unformatted);
 
+        // Act
         vm.Actions.Require(AppActionIds.PrettifyCurrentHtml).Execute(null);
 
+        // Assert
         tab.Document.Text.Should().NotBe(Unformatted);
         tab.Document.Text.Should().Contain("<p>Ala</p>");
         tab.Document.Text.Split('\n').Length.Should().BeGreaterThan(Unformatted.Split('\n').Length,
@@ -83,35 +94,43 @@ public sealed class ReformatCurrentFileActionsTests : IDisposable
     [Fact]
     public void Prettify_leaves_a_not_well_formed_file_unchanged()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel vm, Book book) = Open(temp);
         string broken = Unformatted.Replace("<p>kot</p>", "<p>kot", System.StringComparison.Ordinal);
         CodeTabViewModel tab = OpenHtml(vm, book, broken);
 
+        // Act
         vm.Actions.Require(AppActionIds.PrettifyCurrentHtml).Execute(null);
 
+        // Assert
         tab.Document.Text.Should().Be(broken);
     }
 
     [Fact]
     public void Mend_repairs_a_not_well_formed_file()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel vm, Book book) = Open(temp);
         string broken = Unformatted.Replace("<p>kot</p>", "<p>kot", System.StringComparison.Ordinal);
         CodeTabViewModel tab = OpenHtml(vm, book, broken);
 
+        // Act
         vm.Actions.Require(AppActionIds.MendCurrentHtml).Execute(null);
 
+        // Assert
         tab.Document.Text.Should().Contain("<p>kot</p>");
     }
 
     [Fact]
     public void Current_file_and_all_files_actions_use_the_beautify_and_html_fix_icons()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel vm, _) = Open(temp);
 
+        // Act & Assert
         vm.Actions.Require(AppActionIds.PrettifyCurrentHtml).IconKey.Should().Be("beautify");
         vm.Actions.Require(AppActionIds.MendPrettifyHtml).IconKey.Should().Be("beautify");
         vm.Actions.Require(AppActionIds.MendCurrentHtml).IconKey.Should().Be("html-fix");
@@ -121,6 +140,7 @@ public sealed class ReformatCurrentFileActionsTests : IDisposable
     [Fact]
     public void Tools_toolbar_ends_with_prettify_and_mend_by_default()
     {
+        // Act & Assert
         ToolbarManager.GetDefaultItems(ToolbarId.Tools).TakeLast(3).Should().Equal(
             ToolbarManager.Separator, AppActionIds.PrettifyCurrentHtml, AppActionIds.MendCurrentHtml);
     }

@@ -26,10 +26,13 @@ public sealed class DialogFrameTests
     [AvaloniaFact]
     public void A_dialog_has_a_thin_frame_in_the_color_of_the_theme_close_to_its_edge()
     {
+        // Arrange
         ConfirmWindow dialog = new();
 
+        // Act
         ContentPresenter presenter = Presenter(dialog);
 
+        // Assert
         presenter.BorderThickness.Should().Be(new Avalonia.Thickness(1));
         presenter.Margin.Should().Be(new Avalonia.Thickness(4), "close to the edge, not on it");
         presenter.BorderBrush.Should().BeOfType<SolidColorBrush>().Which.Color
@@ -40,10 +43,13 @@ public sealed class DialogFrameTests
     [AvaloniaFact]
     public void A_window_that_opts_out_has_no_frame()
     {
+        // Arrange
         Window window = new() { Classes = { "noFrame" }, Content = new TextBlock { Text = "x" } };
 
+        // Act
         ContentPresenter presenter = Presenter(window);
 
+        // Assert
         presenter.BorderBrush.Should().BeNull();
         presenter.Margin.Should().Be(new Avalonia.Thickness(0));
         window.Close();

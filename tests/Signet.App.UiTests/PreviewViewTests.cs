@@ -19,8 +19,11 @@ public sealed class PreviewViewTests
     [AvaloniaFact]
     public void Web_view_survives_leaving_and_reentering_the_visual_tree()
     {
+        // Arrange
         PreviewView view = new();
         Window window = new() { Content = view };
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
@@ -28,11 +31,16 @@ public sealed class PreviewViewTests
 
         window.Content = null;
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         web.LifecycleState.Should().NotBe(NativeWebComponentState.Disposed);
 
+        // Act
         window.Content = view;
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
+
+        // Assert
         web.LifecycleState.Should().NotBe(NativeWebComponentState.Disposed);
     }
 }

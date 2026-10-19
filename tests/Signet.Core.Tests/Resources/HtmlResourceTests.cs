@@ -43,55 +43,73 @@ public sealed class HtmlResourceTests : IDisposable
     [Fact]
     public void Reports_its_type_and_language()
     {
+        // Arrange
         HtmlResource resource = Make();
 
+        // Act & Assert
         resource.Type.Should().Be(ResourceType.Html);
+
+        // Act & Assert
         resource.GetLanguageAttribute().Should().Be("pl");
     }
 
     [Fact]
     public void Lists_linked_stylesheets_and_javascripts_as_bookpaths()
     {
+        // Arrange
         HtmlResource resource = Make();
 
+        // Act & Assert
         resource.GetLinkedStylesheets().Should().ContainSingle().Which.Should().Be("styles/main.css");
+
+        // Act & Assert
         resource.GetLinkedJavascripts().Should().ContainSingle().Which.Should().Be("js/app.js");
     }
 
     [Fact]
     public void Lists_paths_to_linked_resources_ignoring_absolute_urls_and_fragments()
     {
+        // Arrange
         HtmlResource resource = Make();
 
+        // Act & Assert
         resource.GetPathsToLinkedResources().Should().BeEquivalentTo(ExpectedLinkedResources);
     }
 
     [Fact]
     public void Derives_manifest_properties_from_content()
     {
+        // Arrange
         HtmlResource resource = Make();
 
+        // Act & Assert
         resource.GetManifestProperties().Should().Equal("svg", "scripted");
     }
 
     [Fact]
     public void Detects_remote_resources_property()
     {
+        // Arrange
         HtmlResource resource = Make(
             "<html xmlns=\"http://www.w3.org/1999/xhtml\"><body>" +
             "<audio src=\"https://cdn.example.com/a.mp3\"></audio></body></html>");
 
+        // Act & Assert
         resource.GetManifestProperties().Should().Contain("remote-resources");
     }
 
     [Fact]
     public void Rebuilds_the_dom_cache_after_the_text_changes()
     {
+        // Arrange
         HtmlResource resource = Make();
+
         resource.GetManifestProperties().Should().Contain("svg");
 
+        // Act
         resource.SetText("<html xmlns=\"http://www.w3.org/1999/xhtml\"><body><p>plain</p></body></html>");
 
+        // Assert
         resource.GetManifestProperties().Should().BeEmpty();
     }
 }

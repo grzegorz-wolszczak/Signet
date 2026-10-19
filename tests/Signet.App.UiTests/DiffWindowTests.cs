@@ -30,13 +30,18 @@ public sealed class DiffWindowTests
     [AvaloniaFact]
     public void Side_by_side_view_renders_both_sides_with_word_level_highlights()
     {
+        // Arrange
         using TempDir temp = new();
         DiffWindow window = new() { DataContext = Model(temp) };
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
         DiffLineText[] lines = window.GetVisualDescendants().OfType<DiffLineText>().Where(l => l.IsEffectivelyVisible).ToArray();
+
+        // Assert
         lines.Should().NotBeEmpty();
         lines.Should().Contain(l => l.IsLeft && l.Kind == DiffLineKind.Modified);
         DiffLineText modifiedRight = lines.First(l => !l.IsLeft && l.Kind == DiffLineKind.Modified);
@@ -48,9 +53,12 @@ public sealed class DiffWindowTests
     [AvaloniaFact]
     public void Switching_to_unified_view_shows_the_single_column_list()
     {
+        // Arrange
         using TempDir temp = new();
         DiffViewModel vm = Model(temp);
         DiffWindow window = new() { DataContext = vm };
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
 
@@ -60,6 +68,8 @@ public sealed class DiffWindowTests
 
         ListBox unified = window.GetVisualDescendants().OfType<ListBox>().Single(l => l.Name == "UnifiedList");
         ListBox sideBySide = window.GetVisualDescendants().OfType<ListBox>().Single(l => l.Name == "SideBySideList");
+
+        // Assert
         unified.IsEffectivelyVisible.Should().BeTrue();
         sideBySide.IsEffectivelyVisible.Should().BeFalse();
         window.GetVisualDescendants().OfType<DiffLineText>().Where(l => l.IsEffectivelyVisible)

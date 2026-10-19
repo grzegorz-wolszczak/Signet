@@ -24,8 +24,10 @@ public sealed class XhtmlHighlighterTests
     [Fact]
     public void Tag_attributes_and_entity_get_their_formats()
     {
+        // Act
         (List<SyntaxSpan> spans, int state) = Run("<p class=\"x\">A&amp;B</p>");
 
+        // Assert
         spans.Should().Equal(
             new SyntaxSpan(0, 2, XhtmlTagName),          // "<p"
             new SyntaxSpan(3, 6, XhtmlAttributeName),    // "class="
@@ -40,17 +42,21 @@ public sealed class XhtmlHighlighterTests
     [Fact]
     public void Doctype_line_is_one_span()
     {
+        // Act
         (List<SyntaxSpan> spans, _) = Run("<!DOCTYPE html>");
 
+        // Assert
         spans.Should().Equal(new SyntaxSpan(0, 15, XhtmlDoctype));
     }
 
     [Fact]
     public void Comment_state_is_carried_to_the_next_line()
     {
+        // Act
         (List<SyntaxSpan> first, int state) = Run("<!-- a");
         (List<SyntaxSpan> second, int end) = Run("b -->x", state);
 
+        // Assert
         first.Should().Equal(new SyntaxSpan(0, 6, XhtmlComment));
         second.Should().Equal(new SyntaxSpan(0, 5, XhtmlComment));
         end.Should().Be(_sut.InitialState);
@@ -59,16 +65,20 @@ public sealed class XhtmlHighlighterTests
     [Fact]
     public void Empty_line_resets_the_state_like_the_original()
     {
+        // Act
         (_, int state) = Run("<!-- a");
 
+        // Act & Assert
         _sut.HighlightLine(string.Empty, state, null).Should().Be(_sut.InitialState);
     }
 
     [Fact]
     public void Inline_style_block_uses_css_formats()
     {
+        // Act
         (List<SyntaxSpan> spans, int state) = Run("<style>p{}</style>");
 
+        // Assert
         spans.Should().Equal(
             new SyntaxSpan(0, 7, XhtmlTagName),
             new SyntaxSpan(7, 3, XhtmlCss),
@@ -79,9 +89,11 @@ public sealed class XhtmlHighlighterTests
     [Fact]
     public void Multi_line_style_block_highlights_css_and_css_comments()
     {
+        // Act
         (_, int state) = Run("<style>");
         (List<SyntaxSpan> spans, int end) = Run("p { color: red } /* c */", state);
 
+        // Assert
         spans.Should().Equal(
             new SyntaxSpan(0, 19, XhtmlCss),
             new SyntaxSpan(19, 5, XhtmlCssComment));
@@ -91,8 +103,10 @@ public sealed class XhtmlHighlighterTests
     [Fact]
     public void Special_space_is_marked()
     {
+        // Act
         (List<SyntaxSpan> spans, _) = Run("a b");
 
+        // Assert
         spans.Should().Equal(new SyntaxSpan(1, 1, XhtmlSpecialSpace));
     }
 }

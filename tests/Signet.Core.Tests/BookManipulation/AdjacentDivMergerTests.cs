@@ -28,9 +28,13 @@ public sealed class AdjacentDivMergerTests
     [Fact]
     public void Two_divs_merge_into_the_first_one_and_the_contents_keep_their_lines()
     {
+        // Arrange
         string text = Page("<div class=\"a\">\n  <p>x</p>\n</div>\n<div class=\"a\">\n  <p>y</p>\n</div>");
 
+        // Act
         AdjacentDivGroup group = AdjacentDivMerger.FindGroups(text).Should().ContainSingle().Subject;
+
+        // Assert
         (group.Count, group.Level, group.OpenTag).Should().Be((2, 1, "<div class=\"a\">"));
         group.Separators.Should().BeEmpty();
         MergeAll(text).Should().Be(Page("<div class=\"a\">\n  <p>x</p>\n  <p>y</p>\n</div>"));
@@ -39,9 +43,13 @@ public sealed class AdjacentDivMergerTests
     [Fact]
     public void A_run_of_three_merges_into_one_div()
     {
+        // Arrange
         string text = Page("<div><p>x</p></div>\n<div><p>y</p></div>\n<div><p>z</p></div>");
 
+        // Act & Assert
         AdjacentDivMerger.FindGroups(text).Should().ContainSingle().Which.Count.Should().Be(3);
+
+        // Act & Assert
         MergeAll(text).Should().Be(Page("<div><p>x</p>\n<p>y</p>\n<p>z</p></div>"));
     }
 
@@ -51,17 +59,22 @@ public sealed class AdjacentDivMergerTests
     [InlineData("<section><div class=\"o\"><div class=\"a\"><p>x</p></div><div class=\"a\"><p>y</p></div></div></section>", 3)]
     public void The_level_counts_every_element_between_the_run_and_body(string body, int level)
     {
+        // Act & Assert
         AdjacentDivMerger.FindGroups(Page(body)).Should().ContainSingle().Which.Level.Should().Be(level);
     }
 
     [Fact]
     public void Runs_on_different_levels_are_found_in_one_pass()
     {
+        // Arrange
         string text = Page(
             "<div class=\"o\"><div class=\"i\"><p>a</p></div><div class=\"i\"><p>b</p></div></div>"
             + "<div class=\"o\"><p>c</p></div>");
 
+        // Act & Assert
         AdjacentDivMerger.FindGroups(text).Select(g => (g.Level, g.Count)).Should().Equal((1, 2), (2, 2));
+
+        // Act & Assert
         MergeAll(text).Should().Be(Page("<div class=\"o\"><div class=\"i\"><p>a</p><p>b</p></div><p>c</p></div>"));
     }
 
@@ -70,6 +83,7 @@ public sealed class AdjacentDivMergerTests
     [InlineData("<div><p>x</p></div>\n  <div><p>y</p></div>")]
     public void Identical_attributes_are_compared_as_a_set_with_classes_in_any_order(string body)
     {
+        // Act & Assert
         AdjacentDivMerger.FindGroups(Page(body)).Should().ContainSingle().Which.Count.Should().Be(2);
     }
 
@@ -82,15 +96,20 @@ public sealed class AdjacentDivMergerTests
     [InlineData("<section class=\"a\"><p>x</p></section><section class=\"a\"><p>y</p></section>")]
     public void Anything_but_whitespace_comments_and_cdata_between_identical_divs_prevents_merging(string body)
     {
+        // Act & Assert
         AdjacentDivMerger.FindGroups(Page(body)).Should().BeEmpty();
     }
 
     [Fact]
     public void Comments_between_the_divs_are_reported_and_kept_inside_the_merged_div()
     {
+        // Arrange
         string text = Page("<div class=\"a\">\n  <p>x</p>\n</div>\n<!-- c -->\n<div class=\"a\">\n  <p>y</p>\n</div>");
 
+        // Act
         AdjacentDivGroup group = AdjacentDivMerger.FindGroups(text).Should().ContainSingle().Subject;
+
+        // Assert
         group.Separators.Select(s => (s.Text, s.IsCData)).Should().Equal(("<!-- c -->", false));
         MergeAll(text).Should().Be(Page("<div class=\"a\">\n  <p>x</p>\n<!-- c -->\n  <p>y</p>\n</div>"));
     }
@@ -101,14 +120,17 @@ public sealed class AdjacentDivMergerTests
     [InlineData("<div>one</div><div>two</div>", "<div>onetwo</div>")]
     public void The_whitespace_between_the_divs_is_kept_when_the_contents_have_none_at_the_joint(string body, string expected)
     {
+        // Act & Assert
         MergeAll(Page(body)).Should().Be(Page(expected));
     }
 
     [Fact]
     public void Merge_returns_null_when_there_is_no_run_at_the_position()
     {
+        // Arrange
         string text = Page("<div><p>x</p></div><p>y</p>");
 
+        // Act & Assert
         AdjacentDivMerger.Merge(text, text.IndexOf("<div", System.StringComparison.Ordinal)).Should().BeNull();
     }
 }

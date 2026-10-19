@@ -27,8 +27,13 @@ public sealed class XhtmlEntitiesTests
     [Fact]
     public void Dtd_names_are_the_html4_set_and_all_decode_to_one_character()
     {
+        // Act & Assert
         XhtmlEntities.DtdNames.Should().HaveCount(248);
+
+        // Act & Assert
         XhtmlEntities.DtdNames.Should().NotContain(XmlPredefined);
+
+        // Act & Assert
         XhtmlEntities.DtdNames.Select(n => WebUtility.HtmlDecode("&" + n + ";"))
             .Should().OnlyContain(s => s.Length == 1 && s[0] != '&');
     }
@@ -40,6 +45,7 @@ public sealed class XhtmlEntitiesTests
     [InlineData("", false)]
     public void HasXhtml1Doctype_recognizes_xhtml_1_x(string doctype, bool expected)
     {
+        // Act & Assert
         XhtmlEntities.HasXhtml1Doctype(Document(doctype, "x")).Should().Be(expected);
     }
 
@@ -53,6 +59,7 @@ public sealed class XhtmlEntitiesTests
     [InlineData("&NewLine;", true, false)]
     public void IsDefined_depends_on_the_doctype_only_for_html_entities(string entity, bool xhtml1, bool expected)
     {
+        // Act & Assert
         XhtmlEntities.IsDefined(entity, xhtml1).Should().Be(expected);
     }
 
@@ -61,7 +68,10 @@ public sealed class XhtmlEntitiesTests
     [InlineData(Xhtml10StrictDoctype)]
     public void Html_entities_are_well_formed_under_an_xhtml_1_x_doctype(string doctype)
     {
+        // Act & Assert
         WellFormedChecker.Check(Document(doctype, "a&mdash;b&nbsp;c&euro;")).IsWellFormed.Should().BeTrue();
+
+        // Act & Assert
         WellFormedChecker.CheckXhtmlStructure(Document(doctype, "&shy;"), "2.0").IsWellFormed.Should().BeTrue();
     }
 
@@ -70,14 +80,17 @@ public sealed class XhtmlEntitiesTests
     [InlineData("")]
     public void Html_entities_are_errors_without_an_xhtml_1_x_doctype(string doctype)
     {
+        // Act & Assert
         WellFormedChecker.Check(Document(doctype, "a&mdash;b")).IsWellFormed.Should().BeFalse();
     }
 
     [Fact]
     public void Unknown_entities_stay_errors_even_under_an_xhtml_1_x_doctype()
     {
+        // Act
         WellFormedResult result = WellFormedChecker.Check(Document(Xhtml11Doctype, "&NewLine;"));
 
+        // Assert
         result.IsWellFormed.Should().BeFalse();
         result.Line.Should().Be(4);
     }

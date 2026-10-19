@@ -28,15 +28,18 @@ public sealed class BookComparerTests
     [Fact]
     public void Identical_states_have_no_differences()
     {
+        // Arrange
         using TempDir temp = new();
         (string left, string right) = TwoCopies(temp);
 
+        // Act & Assert
         BookComparer.Compare(left, right).Should().BeEmpty();
     }
 
     [Fact]
     public void Detects_modified_added_removed_and_renamed_files()
     {
+        // Arrange
         using TempDir temp = new();
         (string left, string right) = TwoCopies(temp);
         string modified = FirstFile(right, "*.css");
@@ -50,8 +53,10 @@ public sealed class BookComparerTests
         string imageBookPath = BookPath(right, image);
         File.Move(image, Path.Combine(Path.GetDirectoryName(image)!, "renamed" + Path.GetExtension(image)));
 
+        // Act
         IReadOnlyList<BookFileDiff> diffs = BookComparer.Compare(left, right);
 
+        // Assert
         diffs.Should().ContainSingle(d => d.Change == BookFileChange.Modified && d.RightPath == BookPath(right, modified))
             .Which.ContentKind.Should().Be(BookFileContentKind.Text);
         diffs.Should().ContainSingle(d => d.Change == BookFileChange.Added && d.RightPath == "EPUB/added.txt");
@@ -64,25 +69,30 @@ public sealed class BookComparerTests
     [Fact]
     public void Ignores_the_working_folder_technical_files()
     {
+        // Arrange
         using TempDir temp = new();
         (string left, string right) = TwoCopies(temp);
         File.WriteAllText(Path.Combine(right, BookStateFile.FileName), "<signet_state />");
         File.WriteAllText(Path.Combine(right, BookStateFile.LegacyFileName), "{}");
         File.WriteAllText(Path.Combine(right, TempFolder.LockFileName), string.Empty);
 
+        // Act & Assert
         BookComparer.Compare(left, right).Should().BeEmpty();
     }
 
     [Fact]
     public void Text_of_both_sides_is_readable()
     {
+        // Arrange
         using TempDir temp = new();
         (string left, string right) = TwoCopies(temp);
         string css = FirstFile(right, "*.css");
         File.AppendAllText(css, "\n/* x */\n");
 
+        // Act
         BookFileDiff diff = BookComparer.Compare(left, right).Single();
 
+        // Assert
         diff.ReadRightText().Should().Contain("/* x */");
         diff.ReadLeftText().Should().NotContain("/* x */");
     }

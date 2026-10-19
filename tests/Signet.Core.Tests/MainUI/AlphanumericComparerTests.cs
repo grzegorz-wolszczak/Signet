@@ -18,16 +18,20 @@ public sealed class AlphanumericComparerTests
     [InlineData("Section2", "section2", -1)] // wielkosc liter znaczaca (ordinal)
     public void Compare_orders_digit_runs_numerically(string left, string right, int expectedSign)
     {
+        // Act
         int result = AlphanumericComparer.Instance.Compare(left, right);
 
+        // Assert
         System.Math.Sign(result).Should().Be(expectedSign);
     }
 
     [Fact]
     public void Sorting_a_list_places_numbers_in_human_order()
     {
+        // Arrange
         string[] names = { "p10", "p2", "p1", "p20", "p3" };
 
+        // Act & Assert
         names.OrderBy(x => x, AlphanumericComparer.Instance)
             .Should().Equal("p1", "p2", "p3", "p10", "p20");
     }
@@ -35,7 +39,10 @@ public sealed class AlphanumericComparerTests
     [Fact]
     public void Empty_keys_do_not_throw()
     {
+        // Act & Assert
         AlphanumericComparer.Instance.Compare(string.Empty, "x").Should().BePositive();
+
+        // Act & Assert
         AlphanumericComparer.Instance.Compare(string.Empty, string.Empty).Should().Be(0);
     }
 }

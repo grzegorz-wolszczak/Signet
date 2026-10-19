@@ -20,12 +20,15 @@ public sealed class OcfReaderTests
     [Fact]
     public void Extracts_a_minimal_epub3_and_resolves_the_opf()
     {
+        // Arrange
         using TempDir epubDir = new();
         using TempDir work = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, epubDir);
 
+        // Act
         OcfContainer container = new OcfReader(epub).Extract(work.Path);
 
+        // Assert
         container.OpfBookPath.Should().Be("EPUB/package.opf");
         container.Rootfiles.Should().ContainSingle().Which.Should().Be("EPUB/package.opf");
         container.OpfDirectory.Should().Be("EPUB");
@@ -41,12 +44,15 @@ public sealed class OcfReaderTests
     [Fact]
     public void Extracts_epub2_with_its_ncx()
     {
+        // Arrange
         using TempDir epubDir = new();
         using TempDir work = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub2Minimal, epubDir);
 
+        // Act
         OcfContainer container = new OcfReader(epub).Extract(work.Path);
 
+        // Assert
         container.OpfBookPath.Should().Be("OEBPS/content.opf");
         File.Exists(SysPath.Combine(work.Path, "OEBPS", "toc.ncx")).Should().BeTrue();
     }
@@ -54,12 +60,15 @@ public sealed class OcfReaderTests
     [Fact]
     public void Resolves_the_opf_for_a_deep_folder_layout()
     {
+        // Arrange
         using TempDir epubDir = new();
         using TempDir work = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.EdgeDeepFolders, epubDir);
 
+        // Act
         OcfContainer container = new OcfReader(epub).Extract(work.Path);
 
+        // Assert
         container.OpfBookPath.Should().Be("content/book.opf");
         container.OpfDirectory.Should().Be("content");
     }
@@ -68,28 +77,34 @@ public sealed class OcfReaderTests
     [MemberData(nameof(ValidEpubDirs))]
     public void Extraction_is_lossless_for_every_valid_corpus_epub(string corpusDir)
     {
+        // Arrange
         using TempDir epubDir = new();
         using TempDir work = new();
         string epub = EpubBuilder.BuildInto(corpusDir, epubDir);
 
+        // Act
         OcfContainer container = new OcfReader(epub).Extract(work.Path);
 
         byte[] original = EpubBuilder.BuildBytes(corpusDir);
         byte[] afterExtraction = EpubBuilder.BuildBytes(container.RootDirectory);
         EpubComparisonResult result = EpubComparer.CompareBytes(original, afterExtraction);
 
+        // Assert
         result.AreEquivalent.Should().BeTrue(result.Report);
     }
 
     [Fact]
     public void Works_through_the_TempFolder_overload()
     {
+        // Arrange
         using TempDir epubDir = new();
         using TempFolder work = new(epubDir.Path);
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, epubDir);
 
+        // Act
         OcfContainer container = new OcfReader(epub).Extract(work);
 
+        // Assert
         container.OpfBookPath.Should().Be("EPUB/package.opf");
     }
 
@@ -98,12 +113,15 @@ public sealed class OcfReaderTests
     [Fact]
     public void A_missing_mimetype_is_a_warning_not_an_error()
     {
+        // Arrange
         using TempDir epubDir = new();
         using TempDir work = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("missing-mimetype"), epubDir);
 
+        // Act
         OcfContainer container = new OcfReader(epub).Extract(work.Path);
 
+        // Assert
         container.OpfBookPath.Should().Be("EPUB/package.opf");
         container.Warnings.Should().Contain(w => w.Contains("mimetype", StringComparison.Ordinal));
     }
@@ -111,6 +129,7 @@ public sealed class OcfReaderTests
     [Fact]
     public void A_compressed_mimetype_entry_produces_a_warning()
     {
+        // Arrange
         using TempDir dir = new();
         string epub = SysPath.Combine(dir.Path, "compressed-mimetype.epub");
         WriteZip(epub, zip =>
@@ -122,18 +141,22 @@ public sealed class OcfReaderTests
             WriteText(zip.CreateEntry("OEBPS/content.opf"), "<package/>");
         });
 
+        // Act
         OcfContainer container = new OcfReader(epub).Extract(dir.Combine("out"));
 
+        // Assert
         container.Warnings.Should().Contain(CoreStrings.Get("LoadWarning_MimetypeCompressed"));
     }
 
     [Fact]
     public void An_empty_rootfiles_list_throws()
     {
+        // Arrange
         using TempDir epubDir = new();
         using TempDir work = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("no-rootfile"), epubDir);
 
+        // Act & Assert
         FluentActions.Invoking(() => new OcfReader(epub).Extract(work.Path))
             .Should().Throw<EpubLoadException>()
             .WithMessage("*rootfile*");
@@ -143,22 +166,27 @@ public sealed class OcfReaderTests
     public void A_bad_opf_still_extracts_at_the_ocf_stage()
     {
         // The validity of the OPF itself is checked elsewhere — OcfReader only locates the file.
+        // Arrange
         using TempDir epubDir = new();
         using TempDir work = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("bad-opf-xml"), epubDir);
 
+        // Act
         OcfContainer container = new OcfReader(epub).Extract(work.Path);
 
+        // Assert
         container.OpfBookPath.Should().Be("EPUB/package.opf");
     }
 
     [Fact]
     public void A_corrupt_zip_throws_EpubLoadException()
     {
+        // Arrange
         using TempDir dir = new();
         string fake = SysPath.Combine(dir.Path, "broken.epub");
         File.WriteAllBytes(fake, Encoding.ASCII.GetBytes(new string('x', 200)));
 
+        // Act & Assert
         FluentActions.Invoking(() => new OcfReader(fake).Extract(dir.Combine("out")))
             .Should().Throw<EpubLoadException>()
             .WithMessage("*" + LocalizedText.Fragment("LoadError_CorruptZip") + "*");
@@ -167,8 +195,10 @@ public sealed class OcfReaderTests
     [Fact]
     public void A_missing_epub_file_throws_EpubLoadException()
     {
+        // Arrange
         using TempDir dir = new();
 
+        // Act & Assert
         FluentActions.Invoking(() => new OcfReader(dir.Combine("nope.epub")).Extract(dir.Combine("out")))
             .Should().Throw<EpubLoadException>()
             .WithMessage("*" + LocalizedText.Fragment("LoadError_EpubNotFound") + "*");
@@ -177,6 +207,7 @@ public sealed class OcfReaderTests
     [Fact]
     public void An_entry_that_escapes_the_target_directory_is_rejected()
     {
+        // Arrange
         using TempDir dir = new();
         string evil = SysPath.Combine(dir.Path, "evil.epub");
         WriteZip(evil, zip =>
@@ -185,6 +216,7 @@ public sealed class OcfReaderTests
             WriteText(zip.CreateEntry("../escape.txt"), "pwned");
         });
 
+        // Act & Assert
         FluentActions.Invoking(() => new OcfReader(evil).Extract(dir.Combine("out")))
             .Should().Throw<EpubLoadException>()
             .WithMessage("*" + LocalizedText.Fragment("LoadError_SuspiciousEntryName") + "*");
@@ -195,6 +227,7 @@ public sealed class OcfReaderTests
     [Fact]
     public void ParseContainerXml_returns_the_rootfile_bookpath()
     {
+        // Act & Assert
         OcfReader.ParseContainerXml(MinimalContainer("EPUB/package.opf"))
             .Should().ContainSingle().Which.Should().Be("EPUB/package.opf");
     }
@@ -202,6 +235,7 @@ public sealed class OcfReaderTests
     [Fact]
     public void ParseContainerXml_returns_every_rendition_in_document_order()
     {
+        // Arrange
         const string xml = """
             <?xml version="1.0" encoding="UTF-8"?>
             <container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
@@ -212,12 +246,14 @@ public sealed class OcfReaderTests
             </container>
             """;
 
+        // Act & Assert
         OcfReader.ParseContainerXml(xml).Should().Equal("EPUB/main.opf", "EPUB/alt.opf");
     }
 
     [Fact]
     public void ParseContainerXml_ignores_rootfiles_with_the_wrong_or_missing_media_type()
     {
+        // Arrange
         const string xml = """
             <container xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
               <rootfiles>
@@ -228,6 +264,7 @@ public sealed class OcfReaderTests
             </container>
             """;
 
+        // Act & Assert
         OcfReader.ParseContainerXml(xml).Should().Equal("EPUB/right.opf");
     }
 
@@ -237,6 +274,7 @@ public sealed class OcfReaderTests
     [InlineData("/EPUB/package.opf")]
     public void ParseContainerXml_normalizes_the_full_path(string fullPath)
     {
+        // Act & Assert
         OcfReader.ParseContainerXml(MinimalContainer(fullPath))
             .Should().ContainSingle().Which.Should().Be("EPUB/package.opf");
     }
@@ -244,6 +282,7 @@ public sealed class OcfReaderTests
     [Fact]
     public void ParseContainerXml_throws_on_malformed_xml()
     {
+        // Act & Assert
         FluentActions.Invoking(() => OcfReader.ParseContainerXml("<container><rootfiles></container>"))
             .Should().Throw<EpubLoadException>()
             .WithMessage("*container.xml*");
@@ -254,6 +293,7 @@ public sealed class OcfReaderTests
     [Fact]
     public void ParseEncryptionXml_maps_font_paths_to_their_algorithm()
     {
+        // Arrange
         const string xml = """
             <?xml version="1.0" encoding="UTF-8"?>
             <encryption xmlns="urn:oasis:names:tc:opendocument:xmlns:container"
@@ -269,8 +309,10 @@ public sealed class OcfReaderTests
             </encryption>
             """;
 
+        // Act
         var map = OcfReader.ParseEncryptionXml(xml);
 
+        // Assert
         map.Should().HaveCount(2);
         map["EPUB/fonts/OpenSans.otf"].Should().Be(OcfReader.IdpfFontAlgorithmId);
         map["EPUB/fonts/My Font.otf"].Should().Be(OcfReader.AdobeFontAlgorithmId);
@@ -279,12 +321,14 @@ public sealed class OcfReaderTests
     [Fact]
     public void ParseEncryptionXml_of_an_empty_document_is_empty()
     {
+        // Act & Assert
         OcfReader.ParseEncryptionXml("<encryption/>").Should().BeEmpty();
     }
 
     [Fact]
     public void ParseEncryptionXml_throws_on_malformed_xml()
     {
+        // Act & Assert
         FluentActions.Invoking(() => OcfReader.ParseEncryptionXml("<encryption>"))
             .Should().Throw<EpubLoadException>()
             .WithMessage("*encryption.xml*");
@@ -293,8 +337,13 @@ public sealed class OcfReaderTests
     [Fact]
     public void Null_arguments_are_rejected()
     {
+        // Act & Assert
         FluentActions.Invoking(() => new OcfReader(null!)).Should().Throw<ArgumentException>();
+
+        // Act & Assert
         FluentActions.Invoking(() => OcfReader.ParseContainerXml(null!)).Should().Throw<ArgumentNullException>();
+
+        // Act & Assert
         FluentActions.Invoking(() => OcfReader.ParseEncryptionXml(null!)).Should().Throw<ArgumentNullException>();
     }
 
@@ -334,12 +383,15 @@ public sealed class OcfReaderTests
     [Fact]
     public void ReadExtracted_reads_an_unpacked_publication_without_modifying_it()
     {
+        // Arrange
         using TempDir tree = new();
         TestFs.CopyDirectory(CorpusPaths.Epub3ObfuscatedFonts, tree.Path);
         string[] before = Directory.GetFiles(tree.Path, "*", SearchOption.AllDirectories);
 
+        // Act
         OcfContainer container = OcfReader.ReadExtracted(tree.Path);
 
+        // Assert
         container.OpfBookPath.Should().Be("EPUB/package.opf");
         container.EncryptedFiles.Should().NotBeEmpty();
         Directory.GetFiles(tree.Path, "*", SearchOption.AllDirectories).Should().BeEquivalentTo(before);
@@ -348,10 +400,13 @@ public sealed class OcfReaderTests
     [Fact]
     public void ReadExtracted_rejects_a_missing_directory()
     {
+        // Arrange
         using TempDir tree = new();
 
+        // Act
         Action act = () => OcfReader.ReadExtracted(tree.Combine("missing"));
 
+        // Assert
         act.Should().Throw<EpubLoadException>();
     }
 }

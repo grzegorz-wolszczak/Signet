@@ -20,11 +20,14 @@ public sealed class FootnoteWindowTests
     [AvaloniaFact]
     public void The_window_shows_the_caret_place_and_returns_the_footnote_once_the_text_is_valid()
     {
+        // Arrange
         const string text = "<html><head><title>t</title></head><body><p>Before after</p></body></html>";
         FootnoteViewModel vm = new(
             text, text.IndexOf(" after", System.StringComparison.Ordinal), FootnotePlacement.Global, 2, 7,
             content => FootnoteEditor.ValidateContent(content, "3.0"));
         Window owner = new();
+
+        // Act
         owner.Show();
 
         Task<FootnoteRequest?> result = FootnoteWindow.AskAsync(owner, vm);
@@ -33,23 +36,39 @@ public sealed class FootnoteWindowTests
         window.CaptureRenderedFrame();
 
         TextBlock context = window.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Name == "ContextText");
+
+        // Assert
         context.Inlines!.OfType<Run>().Select(r => r.Text).Should().Equal("Before", "[7]", " after");
+
+        // Act
         vm.IsLocal = true;
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         context.Inlines!.OfType<Run>().Select(r => r.Text).Should().Equal("Before", "[2]", " after");
+
+        // Act
         vm.IsGlobal = true;
         Button ok = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "OkButton");
+
+        // Assert
         ok.IsEnabled.Should().BeFalse("the text is empty");
         ok.IsDefault.Should().BeFalse("Enter makes a new line in the text");
         window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "RemoveButton").IsVisible
             .Should().BeFalse("a new footnote has nothing to remove");
 
+        // Act
         vm.Content = "A <i>note</i>.";
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         ok.IsEnabled.Should().BeTrue();
+
+        // Act
         ok.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         result.IsCompleted.Should().BeTrue();
         result.Result.Should().Be(new FootnoteRequest("A <i>note</i>.", FootnotePlacement.Global));
         owner.Close();
@@ -68,8 +87,11 @@ public sealed class FootnoteWindowTests
     [AvaloniaFact]
     public void An_edited_footnote_is_saved_once_changed()
     {
+        // Arrange
         FootnoteViewModel vm = Edit();
         Window owner = new();
+
+        // Act
         owner.Show();
 
         Task<FootnoteRequest?> result = FootnoteWindow.AskAsync(owner, vm);
@@ -77,6 +99,7 @@ public sealed class FootnoteWindowTests
         FootnoteWindow window = owner.OwnedWindows.OfType<FootnoteWindow>().Single();
         window.CaptureRenderedFrame();
 
+        // Assert
         window.Title.Should().Be(vm.Title);
         TextBlock context = window.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Name == "ContextText");
         context.Inlines!.OfType<Run>().Select(r => r.Text).Should().Equal("Before", "[1]", " after");
@@ -88,11 +111,13 @@ public sealed class FootnoteWindowTests
         ok.Classes.Should().Contain(ButtonClasses.Accent, "Save is blue");
         ok.IsEnabled.Should().BeFalse("nothing changed yet");
 
+        // Act
         vm.Content = "New text.";
         Dispatcher.UIThread.RunJobs();
         ok.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         result.IsCompleted.Should().BeTrue();
         result.Result.Should().Be(new FootnoteRequest("New text.", FootnotePlacement.Local));
         owner.Close();
@@ -101,9 +126,12 @@ public sealed class FootnoteWindowTests
     [AvaloniaFact]
     public void A_footnote_that_cannot_change_its_placement_keeps_it_and_says_why()
     {
+        // Arrange
         FootnoteViewModel vm = Edit();
         vm.PlacementBlocked = FootnoteViewModel.ErrorSentence(FootnoteError.SeveralFiles);
         Window owner = new();
+
+        // Act
         owner.Show();
 
         _ = FootnoteWindow.AskAsync(owner, vm);
@@ -112,6 +140,8 @@ public sealed class FootnoteWindowTests
         window.CaptureRenderedFrame();
 
         StackPanel placement = window.GetVisualDescendants().OfType<StackPanel>().Single(p => p.Name == "PlacementPanel");
+
+        // Assert
         placement.IsEnabled.Should().BeFalse();
         ToolTip.GetTip(placement).Should().Be(vm.PlacementBlocked);
         vm.CanChangePlacement.Should().BeFalse();
@@ -121,10 +151,13 @@ public sealed class FootnoteWindowTests
     [AvaloniaFact]
     public void Remove_asks_first_and_can_stop_asking()
     {
+        // Arrange
         bool stopped = false;
         FootnoteViewModel vm = Edit();
         vm.StopConfirmingRemoval = () => stopped = true;
         Window owner = new();
+
+        // Act
         owner.Show();
 
         Task<FootnoteRequest?> result = FootnoteWindow.AskAsync(owner, vm);
@@ -139,22 +172,30 @@ public sealed class FootnoteWindowTests
         confirm.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "CancelButton")
             .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         result.IsCompleted.Should().BeFalse();
 
         // Confirmed with "Don't ask again".
+        // Act
         remove.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
         confirm = window.OwnedWindows.OfType<ConfirmWindow>().Single();
         confirm.CaptureRenderedFrame();
         CheckBox dontAsk = confirm.GetVisualDescendants().OfType<CheckBox>().Single(c => c.Name == "DontAskAgainBox");
+
+        // Assert
         dontAsk.IsVisible.Should().BeTrue();
         confirm.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "OkButton").Classes
             .Should().Contain(ButtonClasses.Danger, "the confirming Remove is red");
+
+        // Act
         dontAsk.IsChecked = true;
         confirm.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "OkButton")
             .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         stopped.Should().BeTrue();
         result.IsCompleted.Should().BeTrue();
         result.Result.Should().Be(new FootnoteRequest("Old text.", FootnotePlacement.Local, Remove: true));
@@ -164,9 +205,12 @@ public sealed class FootnoteWindowTests
     [AvaloniaFact]
     public void Remove_without_the_confirmation_closes_right_away()
     {
+        // Arrange
         FootnoteViewModel vm = Edit();
         vm.ConfirmRemoval = false;
         Window owner = new();
+
+        // Act
         owner.Show();
 
         Task<FootnoteRequest?> result = FootnoteWindow.AskAsync(owner, vm);
@@ -176,6 +220,7 @@ public sealed class FootnoteWindowTests
             .RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         result.IsCompleted.Should().BeTrue();
         result.Result!.Remove.Should().BeTrue();
         owner.Close();
@@ -184,6 +229,7 @@ public sealed class FootnoteWindowTests
     [AvaloniaFact]
     public void The_code_preview_shows_the_markup_of_a_valid_text()
     {
+        // Arrange
         const string text = "<html><head><title>t</title></head><body><p>Before after</p></body></html>";
         FootnoteViewModel vm = new(
             text, text.IndexOf(" after", System.StringComparison.Ordinal), FootnotePlacement.Local, 1, 1,
@@ -192,6 +238,8 @@ public sealed class FootnoteWindowTests
             Preview = (content, _, number) => new FootnoteMarkup("<a>[" + number + "]</a>", "<aside>" + content + "</aside>", "page"),
         };
         Window owner = new();
+
+        // Act
         owner.Show();
 
         Task<FootnoteRequest?> result = FootnoteWindow.AskAsync(owner, vm);
@@ -199,17 +247,25 @@ public sealed class FootnoteWindowTests
         FootnoteWindow window = owner.OwnedWindows.OfType<FootnoteWindow>().Single();
         window.CaptureRenderedFrame();
         AvaloniaEdit.TextEditor code = window.GetVisualDescendants().OfType<AvaloniaEdit.TextEditor>().Single(e => e.Name == "PreviewCodeEditor");
+
+        // Assert
         code.IsVisible.Should().BeFalse("the text is empty");
 
+        // Act
         vm.Content = "One.\n\nTwo.";
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         code.IsVisible.Should().BeTrue();
         code.Text.Should().Be("<a>[1]</a>\n\n<aside>One.\n\nTwo.</aside>");
         window.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Name == "ContentHintText").Text
             .Should().Be(vm.ContentHint);
+
+        // Act
         window.Close();
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         result.IsCompleted.Should().BeTrue();
         owner.Close();
     }

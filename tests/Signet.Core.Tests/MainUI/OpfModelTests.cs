@@ -22,10 +22,14 @@ public sealed class OpfModelTests
     [Fact]
     public void All_seven_groups_are_always_built_in_canonical_order_even_when_empty()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
+
+        // Act
         using OpfModel model = new(book);
 
+        // Assert
         model.Folders.Select(f => f.Kind).Should().Equal(
             OpfModelGroupKind.Text,
             OpfModelGroupKind.Styles,
@@ -42,10 +46,14 @@ public sealed class OpfModelTests
     [Fact]
     public void Opf_and_ncx_are_top_level_not_inside_a_group()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub2Minimal, temp);
+
+        // Act
         using OpfModel model = new(book);
 
+        // Assert
         model.TopLevelFiles.Select(e => e.ResourceType)
             .Should().Contain(ResourceType.Opf).And.Contain(ResourceType.Ncx);
         model.Folders.SelectMany(f => f.Entries)
@@ -56,13 +64,17 @@ public sealed class OpfModelTests
     [Fact]
     public void Text_group_is_ordered_by_spine()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3WithNcx, temp);
+
+        // Act
         using OpfModel model = new(book);
 
         var text = model.GetFolder(OpfModelGroupKind.Text)!;
         var spined = text.Entries.Where(e => e.ReadingOrder >= 0).ToList();
 
+        // Assert
         spined.Select(e => e.ReadingOrder).Should().BeInAscendingOrder();
         spined.Select(e => e.BookPath).Should().ContainInOrder(
             book.GetOpf().GetSpineOrderBookPaths());
@@ -71,11 +83,16 @@ public sealed class OpfModelTests
     [Fact]
     public void Non_text_groups_are_sorted_alphabetically()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
+
+        // Act
         using OpfModel model = new(book);
 
         var images = model.GetFolder(OpfModelGroupKind.Images)!;
+
+        // Assert
         images.Entries.Select(e => e.DisplayName)
             .Should().BeInAscendingOrder(StringComparer.Ordinal)
             .And.HaveCountGreaterThan(1);
@@ -84,10 +101,14 @@ public sealed class OpfModelTests
     [Fact]
     public void Cover_image_and_nav_document_are_flagged()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
+
+        // Act
         using OpfModel model = new(book);
 
+        // Assert
         model.AllEntries().Should().ContainSingle(e => e.IsCover)
             .Which.BookPath.Should().EndWith("cover.png");
         model.AllEntries().Should().ContainSingle(e => e.IsNav)
@@ -97,20 +118,28 @@ public sealed class OpfModelTests
     [Fact]
     public void Nav_entry_carries_manifest_properties()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
+
+        // Act
         using OpfModel model = new(book);
 
+        // Assert
         model.AllEntries().Single(e => e.IsNav).ManifestProperties.Should().Contain("nav");
     }
 
     [Fact]
     public void Html_entries_in_a_clean_book_are_well_formed()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3WithNcx, temp);
+
+        // Act
         using OpfModel model = new(book);
 
+        // Assert
         model.AllEntries()
             .Where(e => e.ResourceType == ResourceType.Html)
             .Should().OnlyContain(e => e.IsWellFormed == true);
@@ -119,6 +148,7 @@ public sealed class OpfModelTests
     [Fact]
     public void ReorderText_rewrites_the_spine_and_raises_changed()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3WithNcx, temp);
         using OpfModel model = new(book);
@@ -128,8 +158,11 @@ public sealed class OpfModelTests
 
         var text = model.GetFolder(OpfModelGroupKind.Text)!;
         var reversed = text.Entries.Reverse().ToList();
+
+        // Act
         model.ReorderText(reversed).Should().BeTrue();
 
+        // Assert
         changed.Should().BeGreaterThan(0);
         var spine = book.GetOpf().GetSpineOrderBookPaths();
         spine.Should().HaveCount(2);
@@ -141,6 +174,7 @@ public sealed class OpfModelTests
     [Fact]
     public void ReorderText_rejects_a_list_that_is_not_a_permutation()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3WithNcx, temp);
         using OpfModel model = new(book);
@@ -148,20 +182,27 @@ public sealed class OpfModelTests
         var text = model.GetFolder(OpfModelGroupKind.Text)!;
         var incomplete = text.Entries.Take(1).ToList();
 
+        // Act
         Action act = () => model.ReorderText(incomplete);
+
+        // Assert
         act.Should().Throw<ArgumentException>();
     }
 
     [Fact]
     public void MoveText_shifts_a_single_document()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3WithNcx, temp);
         using OpfModel model = new(book);
 
         var first = model.GetFolder(OpfModelGroupKind.Text)!.Entries[0];
+
+        // Act
         model.MoveText(first, 1).Should().BeTrue();
 
+        // Assert
         model.GetFolder(OpfModelGroupKind.Text)!.Entries[1].BookPath.Should().Be(first.BookPath);
     }
 
@@ -181,6 +222,7 @@ public sealed class OpfModelTests
     [InlineData(false)]
     public void MoveTextToEdge_moves_the_selected_documents_keeping_their_order(bool toTop)
     {
+        // Arrange
         using Book book = BookWithChapters(4);
         using OpfModel model = new(book);
         List<string> before = model.GetFolder(OpfModelGroupKind.Text)!.Entries.Select(e => e.BookPath).ToList();
@@ -189,8 +231,10 @@ public sealed class OpfModelTests
         var selected = new[] { entries[^1], entries[1] };
         string[] moved = { before[1], before[^1] };
 
+        // Act
         model.MoveTextToEdge(selected, toTop).Should().BeTrue();
 
+        // Assert
         List<string> after = model.GetFolder(OpfModelGroupKind.Text)!.Entries.Select(e => e.BookPath).ToList();
         List<string> rest = before.Except(moved).ToList();
         after.Should().Equal(toTop ? moved.Concat(rest) : rest.Concat(moved));
@@ -200,17 +244,22 @@ public sealed class OpfModelTests
     [Fact]
     public void MoveTextToEdge_reports_no_change_when_the_documents_are_already_there()
     {
+        // Arrange
         using Book book = BookWithChapters(3);
         using OpfModel model = new(book);
         var entries = model.GetFolder(OpfModelGroupKind.Text)!.Entries;
 
+        // Act & Assert
         model.MoveTextToEdge(new[] { entries[0] }, toTop: true).Should().BeFalse();
+
+        // Act & Assert
         model.MoveTextToEdge(new[] { entries[^1] }, toTop: false).Should().BeFalse();
     }
 
     [Fact]
     public void Model_refreshes_when_a_resource_is_removed()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
         using OpfModel model = new(book);
@@ -221,8 +270,11 @@ public sealed class OpfModelTests
 
         Resource figure = model.GetFolder(OpfModelGroupKind.Images)!
             .Entries.First(e => e.BookPath.EndsWith("figure.png", StringComparison.Ordinal)).Resource;
+
+        // Act
         book.GetFolderKeeper().BulkRemoveResources(new[] { figure });
 
+        // Assert
         changed.Should().BeGreaterThan(0);
         model.GetFolder(OpfModelGroupKind.Images)!.Entries.Count.Should().Be(before - 1);
     }
@@ -230,6 +282,7 @@ public sealed class OpfModelTests
     [Fact]
     public void ShowFolders_switches_display_names_to_the_path_from_the_opf_folder_and_back()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
         using OpfModel model = new(book, showFolders: true);
@@ -239,11 +292,14 @@ public sealed class OpfModelTests
 
         model.AllEntries().ToList().ForEach(e => e.DisplayName.Should().Be(FromOpf(e.BookPath)));
         model.AllEntries().Should().Contain(e => e.DisplayName.Contains('/', StringComparison.Ordinal), "the files are in folders");
+
         int changed = 0;
         model.Changed += (_, _) => changed++;
 
+        // Act
         model.ShowFolders = false;
 
+        // Assert
         changed.Should().Be(1, "the tree is rebuilt");
         model.AllEntries().Should().OnlyContain(e => e.DisplayName == (e.Resource.ShortPathName.Length > 0 ? e.Resource.ShortPathName : e.Resource.Filename));
     }

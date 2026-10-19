@@ -59,12 +59,15 @@ public sealed class PreviewLiveRefreshTests
     [Fact]
     public void Loading_a_book_shows_the_initially_opened_chapter_in_preview()
     {
+        // Arrange
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         using MainWindowViewModel vm = new();
 
+        // Act
         vm.LoadBook(new ImportEpub(epub).GetBook(), epub);
 
+        // Assert
         vm.ActiveTab.Should().NotBeNull("BookBrowser.SetBook opens the first chapter");
         vm.Preview.CurrentBookPath.Should().Be(vm.ActiveTab!.Resource!.BookPath);
     }
@@ -72,16 +75,20 @@ public sealed class PreviewLiveRefreshTests
     [Fact]
     public void Live_refresh_delay_comes_from_settings_default_1000_ms()
     {
+        // Arrange
         using MainWindowViewModel vm = new();
 
+        // Act & Assert
         vm.Preview.DebounceInterval.Should().Be(TimeSpan.FromMilliseconds(1000));
     }
 
     [Fact]
     public void Preview_highlight_comes_from_settings()
     {
+        // Arrange
         using MainWindowViewModel vm = new();
 
+        // Act & Assert
         vm.Preview.Highlight.Should().Be(PreviewHighlight.Default);
     }
 
@@ -89,14 +96,17 @@ public sealed class PreviewLiveRefreshTests
     [AutoData]
     public void Typing_in_html_tab_updates_mirror_without_saving_the_tab(string marker)
     {
+        // Arrange
         using TempDir temp = new();
         using Session s = new(temp);
         CodeTabViewModel tab = s.Open(s.Html);
         string resourceBefore = s.Html.GetText();
         int reloadsBefore = s.Reloads;
 
+        // Act
         AppendParagraph(tab, marker);
 
+        // Assert
         s.Reloads.Should().BeGreaterThan(reloadsBefore);
         s.Mirrored(s.Html).Should().Contain(marker);
         tab.IsModified.Should().BeTrue("the preview does not save the tab");
@@ -108,6 +118,7 @@ public sealed class PreviewLiveRefreshTests
     [AutoData]
     public void Editing_css_tab_refreshes_previously_shown_html_with_new_stylesheet(string marker)
     {
+        // Arrange
         using TempDir temp = new();
         using Session s = new(temp);
         s.Open(s.Html);
@@ -115,8 +126,10 @@ public sealed class PreviewLiveRefreshTests
         string cssBefore = s.Css.GetText();
         int reloadsBefore = s.Reloads;
 
+        // Act
         css.Document.Text += $"\n/* {marker} */\n";
 
+        // Assert
         s.Reloads.Should().BeGreaterThan(reloadsBefore);
         s.Vm.Preview.CurrentBookPath.Should().Be(s.Html.BookPath, "a CSS tab does not change the HTML being shown");
         s.Mirrored(s.Css).Should().Contain(marker);
@@ -126,6 +139,7 @@ public sealed class PreviewLiveRefreshTests
     [Fact]
     public void Caret_moves_in_css_tab_do_not_scroll_the_html_preview()
     {
+        // Arrange
         using TempDir temp = new();
         using Session s = new(temp);
         s.Open(s.Html);
@@ -133,22 +147,27 @@ public sealed class PreviewLiveRefreshTests
         bool scrolled = false;
         s.Vm.Preview.ScrollToLocRequested += (_, _) => scrolled = true;
 
+        // Act
         css.UpdateCaret(1, 1, css.DocumentText.Length, 0);
 
+        // Assert
         scrolled.Should().BeFalse("an offset in a CSS stylesheet does not correspond to any location in the HTML page");
     }
 
     [Fact]
     public void Caret_moves_in_shown_html_tab_scroll_the_preview()
     {
+        // Arrange
         using TempDir temp = new();
         using Session s = new(temp);
         CodeTabViewModel html = s.Open(s.Html);
         bool scrolled = false;
         s.Vm.Preview.ScrollToLocRequested += (_, _) => scrolled = true;
 
+        // Act
         html.UpdateCaret(1, 1, html.DocumentText.Length, 0);
 
+        // Assert
         scrolled.Should().BeTrue();
     }
 
@@ -158,14 +177,18 @@ public sealed class PreviewLiveRefreshTests
     {
         // Switching tabs saves the tab being left, so unsaved text in an inactive tab comes from
         // an edit "on the side" (e.g. Find & Replace across multiple tabs).
+        // Arrange
         using TempDir temp = new();
         using Session s = new(temp);
         CodeTabViewModel css = s.Open(s.Css);
         CodeTabViewModel html = s.Open(s.Html);
+
+        // Act
         css.Document.Text += $"\n/* {cssMarker} */\n";
 
         AppendParagraph(html, htmlMarker);
 
+        // Assert
         css.IsModified.Should().BeTrue();
         s.Css.GetText().Should().NotContain(cssMarker);
         s.Mirrored(s.Css).Should().Contain(cssMarker);
@@ -176,13 +199,17 @@ public sealed class PreviewLiveRefreshTests
     [AutoData]
     public void Saving_open_tabs_keeps_the_edit_in_the_mirror(string marker)
     {
+        // Arrange
         using TempDir temp = new();
         using Session s = new(temp);
         CodeTabViewModel tab = s.Open(s.Html);
+
+        // Act
         AppendParagraph(tab, marker);
 
         ((IBookWorkspace)s.Vm).SaveOpenTabs();
 
+        // Assert
         tab.IsModified.Should().BeFalse();
         s.Html.GetText().Should().Contain(marker);
         s.Mirrored(s.Html).Should().Contain(marker);
@@ -192,6 +219,7 @@ public sealed class PreviewLiveRefreshTests
     [AutoData]
     public void Not_well_formed_edit_keeps_last_good_preview_until_source_is_fixed(string good, string fixedText)
     {
+        // Arrange
         using TempDir temp = new();
         using Session s = new(temp);
         CodeTabViewModel tab = s.Open(s.Html);
@@ -200,14 +228,18 @@ public sealed class PreviewLiveRefreshTests
         int reloadsBefore = s.Reloads;
 
         // While typing: an unclosed tag, so not well-formed.
+        // Act
         tab.Document.Text = tab.Document.Text.Replace("</body>", "<p</body>", StringComparison.Ordinal);
 
+        // Assert
         tab.IsWellFormed.Should().BeFalse();
         s.Reloads.Should().Be(reloadsBefore, "the preview stays at the last valid version");
         s.Mirrored(s.Html).Should().Be(lastGood);
 
+        // Act
         tab.Document.Text = tab.Document.Text.Replace("<p</body>", $"<p>{fixedText}</p></body>", StringComparison.Ordinal);
 
+        // Assert
         s.Reloads.Should().BeGreaterThan(reloadsBefore);
         s.Mirrored(s.Html).Should().Contain(fixedText);
     }
@@ -216,14 +248,17 @@ public sealed class PreviewLiveRefreshTests
     [AutoData]
     public void Explicit_refresh_shows_not_well_formed_source_anyway(string marker)
     {
+        // Arrange
         using TempDir temp = new();
         using Session s = new(temp);
         CodeTabViewModel tab = s.Open(s.Html);
         tab.Document.Text = tab.Document.Text.Replace("</body>", $"<p>{marker}</body>", StringComparison.Ordinal);
         int reloadsBefore = s.Reloads;
 
+        // Act
         s.Vm.Preview.Refresh();
 
+        // Assert
         s.Reloads.Should().Be(reloadsBefore + 1);
         s.Mirrored(s.Html).Should().Contain(marker);
     }

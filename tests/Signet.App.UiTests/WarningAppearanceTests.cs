@@ -47,11 +47,16 @@ public sealed class WarningAppearanceTests
     [AvaloniaFact]
     public void A_warning_is_as_large_as_the_interface_text_by_default()
     {
+        // Arrange
         Application app = Application.Current!;
+
+        // Act
         UiDensityManager.ApplyWarning(app, WarningAppearance.Default, HeadlessUiFontSize);
         (SpanRemovalRiskWindow window, Window owner) = ShowSpanRemovalRisk();
 
         TextBlock intro = window.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Name == "Intro");
+
+        // Assert
         Consequence(window).FontSize.Should().Be(intro.FontSize);
 
         window.Close();
@@ -61,7 +66,10 @@ public sealed class WarningAppearanceTests
     [AvaloniaFact]
     public void The_warning_size_and_color_change_live()
     {
+        // Arrange
         Application app = Application.Current!;
+
+        // Act
         (SpanRemovalRiskWindow window, Window owner) = ShowSpanRemovalRisk();
         Theme theme = new Theme(Ulid.NewUlid().ToString(), "Warnings")
             .With(ThemeKeys.UiWarningText.Id, ThemeEntry.Of(ThemeColor.Parse("#123456")));
@@ -72,13 +80,17 @@ public sealed class WarningAppearanceTests
             Dispatcher.UIThread.RunJobs();
 
             TextBlock consequence = Consequence(window);
+
+            // Assert
             consequence.FontSize.Should().Be(20);
             consequence.Foreground.Should().BeOfType<SolidColorBrush>()
                 .Which.Color.Should().Be(Color.Parse("#123456"));
 
+            // Act
             UiDensityManager.ApplyWarning(app, new WarningAppearance(0), 17);
             Dispatcher.UIThread.RunJobs();
 
+            // Assert
             consequence.FontSize.Should().Be(17, "0 means the interface text size");
         }
         finally
@@ -93,7 +105,10 @@ public sealed class WarningAppearanceTests
     [AvaloniaFact]
     public void The_error_color_changes_live()
     {
+        // Arrange
         Application app = Application.Current!;
+
+        // Act
         Window window = new() { Content = new NotificationBell { UnreadCount = 1 } };
         window.Show();
         Theme theme = new Theme(Ulid.NewUlid().ToString(), "Errors")
@@ -106,6 +121,8 @@ public sealed class WarningAppearanceTests
 
             Avalonia.Controls.Shapes.Ellipse dot = window.GetVisualDescendants().OfType<Avalonia.Controls.Shapes.Ellipse>().Single();
             dot.Fill.Should().BeOfType<SolidColorBrush>()
+
+                // Assert
                 .Which.Color.Should().Be(Color.Parse("#123456"));
         }
         finally

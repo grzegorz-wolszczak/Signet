@@ -44,6 +44,7 @@ public sealed class FootnoteConversionTests
     [Fact]
     public void A_local_aside_note_gets_the_template_and_its_old_container_and_line_go()
     {
+        // Arrange
         (Book book, HtmlResource html) = NewBook(
             "<p>Text<sup class=\"s\"><a class=\"r\" epub:type=\"noteref\" href=\"#n1\" id=\"n1-back\">1</a></sup>.</p>\n"
             + "<hr/>\n<section epub:type=\"footnotes\">\n"
@@ -51,8 +52,10 @@ public sealed class FootnoteConversionTests
             + "</section>");
         using (book)
         {
+            // Act
             ConversionResult result = ConvertAll(book);
 
+            // Assert
             result.Problems.Should().BeEmpty();
             result.Converted.Should().Be(1);
             BodyOf(html).Should().Be(
@@ -65,7 +68,11 @@ public sealed class FootnoteConversionTests
                 + "  </aside>\n"
                 + "</section>\n"
                 + "</body>\n</html>");
+
+            // Act
             Footnote footnote = FootnoteScanner.Scan(book).Single();
+
+            // Assert
             footnote.IsSignet.Should().BeTrue();
             FootnoteEditor.GetContent(footnote).Should().Be(new FootnoteContent("First <i>note</i>.\n\nMore.", false));
         }
@@ -74,13 +81,16 @@ public sealed class FootnoteConversionTests
     [Fact]
     public void The_classes_of_the_converted_elements_can_stay()
     {
+        // Arrange
         (Book book, HtmlResource html) = NewBook(
             "<p>Text<sup class=\"s\"><a class=\"r\" epub:type=\"noteref\" href=\"#n1\" id=\"n1-back\">1</a></sup>.</p>\n"
             + "<aside class=\"note\" epub:type=\"footnote\" id=\"n1\"><p class=\"pn\"><a href=\"#n1-back\">1</a> Note.</p></aside>");
         using (book)
         {
+            // Act
             ConvertAll(book, keepClasses: true).Problems.Should().BeEmpty();
 
+            // Assert
             string text = html.GetText();
             text.Should().Contain("<a class=\"signet-fn-ref s r\" epub:type=\"noteref\"")
                 .And.Contain("<aside class=\"signet-fn note\" epub:type=\"footnote\" id=\"fn-1\"><p class=\"signet-fn-p pn\"><a href=\"#fn-1-ref\">1.</a> Note.</p></aside>");
@@ -90,6 +100,7 @@ public sealed class FootnoteConversionTests
     [Fact]
     public void InDesign_notes_of_a_notes_file_are_taken_over_with_the_links_to_them()
     {
+        // Arrange
         (Book book, HtmlResource chapter) = NewBook(string.Empty);
         HtmlResource notes = AddFile(book, string.Empty);
         chapter.SetText(Xhtml(
@@ -102,7 +113,10 @@ public sealed class FootnoteConversionTests
             + "<div id=\"footnote-2\"><p><a href=\"" + chapter.Filename + "#footnote-2-backlink\">2</a> Second.</p></div>"));
         using (book)
         {
+            // Act
             ConversionPlan plan = FootnoteEditor.PlanConversion(book);
+
+            // Assert
             plan.AutomaticFile!.File.Should().BeSameAs(notes);
             plan.Items.Should().OnlyContain(i => i.CanConvert);
             plan.Items[1].Warnings.Should().Equal(ConversionWarning.LinkedElsewhere);
@@ -110,8 +124,10 @@ public sealed class FootnoteConversionTests
                 chapter, chapter.GetText().IndexOf("<a href=\"" + notes.Filename + "#footnote-2\">see", StringComparison.Ordinal), IsReference: false));
             plan.Items[1].OtherLinks.Should().Equal(chapter.BookPath);
 
+            // Act
             ConversionResult result = FootnoteEditor.Convert(book, new ConversionRequest(plan.Items, notes, false));
 
+            // Assert
             result.Problems.Should().BeEmpty();
             BodyOf(notes).Should().Be(
                 "<body>\n<h1>Notes</h1>\n"
@@ -131,6 +147,7 @@ public sealed class FootnoteConversionTests
     [Fact]
     public void The_headings_between_the_notes_of_a_taken_over_file_become_groups()
     {
+        // Arrange
         (Book book, HtmlResource chapter) = NewBook(string.Empty);
         HtmlResource notes = AddFile(book, string.Empty);
         chapter.SetText(Xhtml(
@@ -142,8 +159,10 @@ public sealed class FootnoteConversionTests
             + "<div id=\"b\"><p><a href=\"" + chapter.Filename + "#b-back\">2</a> Note b.</p></div>"));
         using (book)
         {
+            // Act
             ConvertAll(book, notes).Problems.Should().BeEmpty();
 
+            // Assert
             BodyOf(notes).Should().Be(
                 "<body>\n<h1>Notes</h1>\n"
                 + "<section class=\"signet-endnotes\" epub:type=\"endnotes\">\n"
@@ -163,6 +182,7 @@ public sealed class FootnoteConversionTests
     [Fact]
     public void Notes_of_several_files_go_to_Signets_notes_file_and_the_emptied_files_go()
     {
+        // Arrange
         (Book book, HtmlResource chapter) = NewBook(string.Empty);
         HtmlResource first = AddFile(book, string.Empty);
         HtmlResource second = AddFile(book, string.Empty);
@@ -173,12 +193,17 @@ public sealed class FootnoteConversionTests
         second.SetText(Xhtml("<h1>Notes</h1>\n<div id=\"b\"><p><a href=\"" + chapter.Filename + "#b-back\">2</a> Note b.</p></div>"));
         using (book)
         {
+            // Act
             ConversionPlan plan = FootnoteEditor.PlanConversion(book);
+
+            // Assert
             plan.Candidates.Should().HaveCount(2);
             plan.AutomaticFile.Should().BeNull();
 
+            // Act
             ConversionResult result = FootnoteEditor.Convert(book, new ConversionRequest(plan.Items, null, false));
 
+            // Assert
             result.Problems.Should().BeEmpty();
             HtmlResource notes = FootnoteEditor.FindGlobalFile(book)!;
             notes.Filename.Should().Be(FootnoteEditor.GlobalFileName);
@@ -193,21 +218,27 @@ public sealed class FootnoteConversionTests
     [Fact]
     public void A_note_with_several_references_becomes_a_shared_note()
     {
+        // Arrange
         (Book book, HtmlResource html) = NewBook(
             "<p>A<a href=\"#n\" id=\"n-back\">1</a> again<a href=\"#n\">1</a>.</p>\n"
             + "<div id=\"n\"><p><a href=\"#n-back\">1</a> Shared note.</p></div>");
         using (book)
         {
+            // Act
             ConversionPlan plan = FootnoteEditor.PlanConversion(book);
             ConversionItem item = plan.Items.Single();
+
+            // Assert
             item.CanConvert.Should().BeTrue();
             item.Notices.Should().Equal(ConversionNotice.SharedNote);
             item.Warnings.Should().BeEmpty("a shared note is for information only");
             item.Links.Should().BeEmpty("the other reference is the note's own");
             item.References.Select(r => r.ReferenceIndex).Should().Equal(0, 1);
 
+            // Act
             ConversionResult result = FootnoteEditor.Convert(book, new ConversionRequest(plan.Items, null, false));
 
+            // Assert
             result.Problems.Should().BeEmpty();
             result.Converted.Should().Be(1);
             BodyOf(html).Should().Be(
@@ -227,6 +258,7 @@ public sealed class FootnoteConversionTests
     [Fact]
     public void References_that_repeat_the_number_and_the_id_of_the_first_one_become_lettered_references()
     {
+        // Arrange
         (Book book, HtmlResource html) = NewBook(
             "<p>Balak<sup class=\"fnref\"><a href=\"#fn4\" id=\"ref4\" epub:type=\"noteref\">4</a></sup>, Gilgal"
             + "<sup class=\"fnref\"><a href=\"#fn4\" id=\"ref4\" epub:type=\"noteref\">4</a></sup>, works"
@@ -234,8 +266,10 @@ public sealed class FootnoteConversionTests
             + "<aside id=\"fn4\" epub:type=\"footnote\" class=\"footnote\">\n  <a href=\"#ref4\" class=\"fn-back\">[4]</a> Three places.\n</aside>");
         using (book)
         {
+            // Act
             ConversionResult result = ConvertAll(book);
 
+            // Assert
             result.Problems.Should().BeEmpty();
             string body = BodyOf(html);
             body.Should().Contain("Balak<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"#fn-1\" id=\"fn-1a-ref\">[1a]</a>, Gilgal"
@@ -250,6 +284,7 @@ public sealed class FootnoteConversionTests
     [Fact]
     public void A_note_with_references_from_several_files_becomes_global()
     {
+        // Arrange
         (Book book, HtmlResource first) = NewBook(
             "<p>Here<a epub:type=\"noteref\" href=\"#n\" id=\"n-back\">1</a>.</p>\n"
             + "<aside epub:type=\"footnote\" id=\"n\"><a href=\"#n-back\">1</a> Note.</aside>");
@@ -257,14 +292,21 @@ public sealed class FootnoteConversionTests
         {
             HtmlResource second = AddFile(book, "<p>There<a epub:type=\"noteref\" href=\""
                 + first.Filename + "#n\">1</a>.</p>");
+
+            // Act
             ConversionPlan plan = FootnoteEditor.PlanConversion(book);
             ConversionItem item = plan.Items.Single();
+
+            // Assert
             item.Footnote.Placement.Should().Be(FootnotePlacement.Global);
             item.Notices.Should().Equal(ConversionNotice.SharedNote, ConversionNotice.BecomesGlobal);
 
+            // Act & Assert
             FootnoteEditor.Convert(book, new ConversionRequest(plan.Items, null, false)).Problems.Should().BeEmpty();
 
             HtmlResource notes = FootnoteEditor.FindGlobalFile(book)!;
+
+            // Assert
             notes.GetText().Should().Contain("id=\"en-1\"").And.Contain(">1a</a>, <a href=").And.Contain(">1b</a>. Note.");
             BodyOf(first).Should().Contain("[1a]</a>").And.NotContain("aside");
             BodyOf(second).Should().Contain("[1b]</a>");
@@ -275,16 +317,21 @@ public sealed class FootnoteConversionTests
     [Fact]
     public void The_plan_gives_the_range_of_each_reference()
     {
+        // Arrange
         (Book book, HtmlResource html) = NewBook(
             "<p>A<sup><a href=\"#a\" id=\"a-back\">1</a></sup> B<a href=\"#b\" id=\"b-back\">2</a>.</p>\n"
             + "<div id=\"a\"><p><a href=\"#a-back\">1</a> First.</p></div>\n"
             + "<div id=\"b\"><p><a href=\"#b-back\">2</a> Second.</p></div>");
         using (book)
         {
+            // Act
             ConversionPlan plan = FootnoteEditor.PlanConversion(book);
 
+            // Act & Assert
             plan.Items.Select(i => i.ReferenceRange).Should().Equal(
                 plan.Items.Select(i => FootnoteEditor.LocateReferenceRange(i.Footnote) is { } r ? (r.Start, r.End) : ((int, int)?)null));
+
+            // Assert
             html.GetText()[plan.Items[0].ReferenceRange!.Value.Start..plan.Items[0].ReferenceRange!.Value.End]
                 .Should().Be("<sup><a href=\"#a\" id=\"a-back\">1</a></sup>");
         }
@@ -293,6 +340,7 @@ public sealed class FootnoteConversionTests
     [Fact]
     public void The_plan_says_what_needs_a_look()
     {
+        // Arrange
         (Book book, HtmlResource _) = NewBook(
             "<p>A<a href=\"#x\" id=\"x-back\">*</a> B<a href=\"#y\" id=\"y-back\">5</a> C<a href=\"#z\" id=\"z-back\">3</a>.</p>\n"
             + "<div id=\"x\"><p>Starred <a href=\"#x-back\">back</a> note.</p></div>\n"
@@ -300,8 +348,10 @@ public sealed class FootnoteConversionTests
             + "<div id=\"z\"><p><a href=\"#z-back\">3</a> Third.</p></div>");
         using (book)
         {
+            // Act
             ConversionPlan plan = FootnoteEditor.PlanConversion(book);
 
+            // Assert
             plan.Items.Select(i => (i.Marker, i.NewNumber)).Should().Equal(("*", 1), ("5", 2), ("3", 3));
             plan.Items[0].Warnings.Should().Equal(ConversionWarning.NonNumericMarker, ConversionWarning.BacklinkInText);
             plan.Items[1].Warnings.Should().Equal(
@@ -313,13 +363,16 @@ public sealed class FootnoteConversionTests
     [Fact]
     public void The_plan_has_the_text_of_each_note_without_its_link_back()
     {
+        // Arrange
         (Book book, HtmlResource _) = NewBook(
             "<p>A<a href=\"#x\" id=\"x-back\">1</a>.</p>\n"
             + "<div id=\"x\"><p><a href=\"#x-back\">1</a>. First <i>note</i>, &amp;\n  more.</p><p>Second.</p></div>");
         using (book)
         {
+            // Act
             ConversionPlan plan = FootnoteEditor.PlanConversion(book);
 
+            // Assert
             plan.Items.Single().NoteText.Should().Be("First note, & more. Second.");
         }
     }
@@ -327,13 +380,16 @@ public sealed class FootnoteConversionTests
     [Fact]
     public void A_note_that_starts_with_a_list_gets_a_paragraph_for_its_link_back()
     {
+        // Arrange
         (Book book, HtmlResource html) = NewBook(
             "<p>A<a href=\"#y\" id=\"y-back\">1</a>.</p>\n"
             + "<div id=\"y\"><ul><li>A list.</li></ul><p><a href=\"#y-back\">1</a> After it.</p></div>");
         using (book)
         {
+            // Act & Assert
             ConvertAll(book).Problems.Should().BeEmpty();
 
+            // Assert
             html.GetText().Should().Contain(
                 "  <aside class=\"signet-fn\" epub:type=\"footnote\" id=\"fn-1\">\n"
                 + "    <p class=\"signet-fn-p\"><a href=\"#fn-1-ref\">1.</a></p>\n"
@@ -347,15 +403,19 @@ public sealed class FootnoteConversionTests
     [Fact]
     public void Signet_footnotes_and_converted_ones_are_numbered_together()
     {
+        // Arrange
         (Book book, HtmlResource html) = NewBook(
             "<p>First<a href=\"#n\" id=\"n-back\">7</a> sentence.</p>\n<p>Second sentence.</p>\n"
             + "<div id=\"n\"><p><a href=\"#n-back\">7</a> Old note.</p></div>");
         using (book)
         {
+            // Act
             FootnoteEditor.Add(book, html, html.GetText().IndexOf("Second", StringComparison.Ordinal) + 6, "Signet note", FootnotePlacement.Local);
 
+            // Act & Assert
             ConvertAll(book).Problems.Should().BeEmpty();
 
+            // Assert
             IReadOnlyList<Footnote> footnotes = FootnoteScanner.Scan(book);
             footnotes.Should().OnlyContain(f => f.IsSignet);
             footnotes.Select(f => f.NoteId).Should().Equal("fn-1", "fn-2");

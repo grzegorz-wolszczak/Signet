@@ -13,14 +13,17 @@ public sealed class BulkRegexRenamingTests
     [Fact]
     public void TryPreviewNewFilenames_AppliesPatternToEachFilename()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource a = book.CreateEmptyHtmlFile();
         HtmlResource b = book.CreateEmptyHtmlFile();
         List<Resource> resources = new() { a, b };
 
+        // Act
         bool ok = BulkRegexRenaming.TryPreviewNewFilenames(
             resources, "^Section", "Chapter", out IReadOnlyList<string>? newFilenames, out string? error);
 
+        // Assert
         ok.Should().BeTrue();
         error.Should().BeNull();
         newFilenames.Should().Equal(
@@ -31,13 +34,16 @@ public sealed class BulkRegexRenamingTests
     [Fact]
     public void TryPreviewNewFilenames_NoMatch_LeavesFilenameUnchanged()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource a = book.CreateEmptyHtmlFile();
         List<Resource> resources = new() { a };
 
+        // Act
         bool ok = BulkRegexRenaming.TryPreviewNewFilenames(
             resources, "NoSuchPattern", "X", out IReadOnlyList<string>? newFilenames, out _);
 
+        // Assert
         ok.Should().BeTrue();
         newFilenames.Should().Equal(a.Filename);
     }
@@ -45,13 +51,16 @@ public sealed class BulkRegexRenamingTests
     [Fact]
     public void TryPreviewNewFilenames_UsesCaptureGroupBackreferences()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource a = book.CreateEmptyHtmlFile();
         List<Resource> resources = new() { a };
 
+        // Act
         bool ok = BulkRegexRenaming.TryPreviewNewFilenames(
             resources, @"Section(\d+)", "Ch$1", out IReadOnlyList<string>? newFilenames, out _);
 
+        // Assert
         ok.Should().BeTrue();
         newFilenames.Should().Equal("Ch" + a.Filename["Section".Length..]);
     }
@@ -59,13 +68,16 @@ public sealed class BulkRegexRenamingTests
     [Fact]
     public void TryPreviewNewFilenames_StripsUriDelimiterCharacters()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource a = book.CreateEmptyHtmlFile();
         List<Resource> resources = new() { a };
 
+        // Act
         bool ok = BulkRegexRenaming.TryPreviewNewFilenames(
             resources, "^Section", "a/b:c?d", out IReadOnlyList<string>? newFilenames, out _);
 
+        // Assert
         ok.Should().BeTrue();
         newFilenames.Should().Equal("abcd" + a.Filename["Section".Length..]);
     }
@@ -73,13 +85,16 @@ public sealed class BulkRegexRenamingTests
     [Fact]
     public void TryPreviewNewFilenames_InvalidPattern_ReturnsFalseWithError()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource a = book.CreateEmptyHtmlFile();
         List<Resource> resources = new() { a };
 
+        // Act
         bool ok = BulkRegexRenaming.TryPreviewNewFilenames(
             resources, "(unterminated", "x", out IReadOnlyList<string>? newFilenames, out string? error);
 
+        // Assert
         ok.Should().BeFalse();
         newFilenames.Should().BeNull();
         error.Should().NotBeNull();

@@ -13,11 +13,15 @@ public sealed class AboutWindowTests
     [AvaloniaFact]
     public void Shows_the_compiled_in_version()
     {
+        // Arrange
         AboutWindow window = new();
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
+        // Assert
         window.FindControl<SelectableTextBlock>("VersionText")!.Text
             .Should().MatchRegex(@"^0\.8\.0-\d{12}$");
         window.Close();

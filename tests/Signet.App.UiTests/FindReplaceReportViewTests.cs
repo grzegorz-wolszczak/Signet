@@ -27,8 +27,11 @@ public sealed class FindReplaceReportViewTests
     [AvaloniaFact]
     public void Long_report_list_is_scrollable_instead_of_being_clipped()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = BookCreator.CreateNewBook("2.0");
+
+        // Act
         (Window window, FindReplaceView view, _) = ShowPanelWithCountReport(book, temp);
 
         Expander expander = view.GetVisualDescendants().OfType<Expander>().Single(e => e.Name == "ReportExpander");
@@ -37,11 +40,16 @@ public sealed class FindReplaceReportViewTests
         window.CaptureRenderedFrame();
 
         ScrollViewer scroll = view.GetVisualDescendants().OfType<ScrollViewer>().Single(s => s.Name == "ReportScroll");
+
+        // Assert
         scroll.Viewport.Height.Should().BeLessThanOrEqualTo(180);
         scroll.Extent.Height.Should().BeGreaterThan(scroll.Viewport.Height, "30 rows do not fit in 180 px");
 
+        // Act
         scroll.Offset = scroll.Offset.WithY(scroll.Extent.Height);
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         scroll.Offset.Y.Should().BeGreaterThan(0, "the list can be scrolled to the end");
         window.Close();
     }
@@ -49,18 +57,26 @@ public sealed class FindReplaceReportViewTests
     [AvaloniaFact]
     public void Close_button_hides_the_report()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = BookCreator.CreateNewBook("2.0");
+
+        // Act
         (Window window, FindReplaceView view, FindReplaceViewModel vm) = ShowPanelWithCountReport(book, temp);
 
         Button close = view.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "CloseReportButton");
+
+        // Assert
         close.IsEffectivelyVisible.Should().BeTrue();
 
         close.Command.Should().BeSameAs(vm.CloseReportCommand);
+
+        // Act
         close.Command!.Execute(close.CommandParameter);
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
+        // Assert
         vm.HasReport.Should().BeFalse();
         close.IsEffectivelyVisible.Should().BeFalse();
         view.GetVisualDescendants().OfType<Expander>().Single(e => e.Name == "ReportExpander")

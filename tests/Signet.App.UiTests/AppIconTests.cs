@@ -12,13 +12,16 @@ public sealed class AppIconTests
     [AvaloniaFact]
     public void Every_window_gets_the_application_icon()
     {
+        // Arrange
         Window plain = new();
         FontPickerWindow dialog = new();
 
+        // Act
         plain.Show();
         dialog.Show();
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         plain.Icon.Should().NotBeNull();
         dialog.Icon.Should().NotBeNull("dialogs must also have the application icon, not Avalonia's default one");
         dialog.Close();

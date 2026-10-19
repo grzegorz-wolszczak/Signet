@@ -46,28 +46,38 @@ public sealed class ReformatRestructureTests
     [Fact]
     public void SafePrettyPrintHtmlText_refuses_text_that_is_not_well_formed_and_MendHtmlText_repairs_it()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMalformed(temp);
         HtmlResource chapter = Html(book, "chapter1.xhtml");
         string broken = chapter.GetText();
 
+        // Act
         book.SafePrettyPrintHtmlText(chapter, broken).Should().BeNull();
 
         string mended = book.MendHtmlText(chapter, broken);
+
+        // Assert
         WellFormedChecker.CheckXhtmlStructure(mended, chapter.EpubVersion).IsWellFormed.Should().BeTrue();
+
+        // Act & Assert
         book.SafePrettyPrintHtmlText(chapter, mended).Should().NotBeNull();
     }
 
     [Fact]
     public void MendAllHtml_fixes_malformed_structure_without_well_formed_guard()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMalformed(temp);
         HtmlResource chapter = Html(book, "chapter1.xhtml");
+
         WellFormedChecker.CheckXhtmlStructure(chapter.GetText(), chapter.EpubVersion).IsWellFormed.Should().BeFalse();
 
+        // Act
         FileBatchResult result = book.MendAllHtml();
 
+        // Assert
         result.Modified.Should().BeTrue();
         result.Skipped.Should().BeEmpty();
         book.Modified.Should().BeTrue();
@@ -77,28 +87,34 @@ public sealed class ReformatRestructureTests
     [Fact]
     public void MendAllHtml_forwards_entity_overrides_Task_T51()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadDeepFolders(temp);
         HtmlResource chapter = book.GetHtmlResources().First();
         chapter.SetText(chapter.GetText().Replace("</body>", "<p>a—b</p></body>", StringComparison.Ordinal));
         IReadOnlyDictionary<char, string> overrides = new Dictionary<char, string> { ['—'] = "&#8212;" };
 
+        // Act
         book.MendAllHtml(overrides);
 
+        // Assert
         chapter.GetText().Should().Contain("a&#8212;b");
     }
 
     [Fact]
     public void PrettyPrintAllHtml_forwards_entity_overrides_Task_T51()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadDeepFolders(temp);
         HtmlResource chapter = book.GetHtmlResources().First();
         chapter.SetText(chapter.GetText().Replace("</body>", "<p>a—b</p></body>", StringComparison.Ordinal));
         IReadOnlyDictionary<char, string> overrides = new Dictionary<char, string> { ['—'] = "&#8212;" };
 
+        // Act
         book.PrettyPrintAllHtml(overrides);
 
+        // Assert
         chapter.GetText().Should().Contain("a&#8212;b");
     }
 
@@ -134,13 +150,17 @@ public sealed class ReformatRestructureTests
     [Fact]
     public void MendAllHtml_is_idempotent()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadDeepFolders(temp);
+
+        // Act
         book.MendAllHtml();
         string[] afterFirstPass = book.GetHtmlResources().Select(r => r.GetText()).ToArray();
 
         FileBatchResult secondPass = book.MendAllHtml();
 
+        // Assert
         secondPass.Modified.Should().BeFalse();
         book.GetHtmlResources().Select(r => r.GetText()).Should().Equal(afterFirstPass);
     }
@@ -148,6 +168,7 @@ public sealed class ReformatRestructureTests
     [Fact]
     public void PrettyPrintAllHtml_skips_a_file_that_is_not_well_formed_and_formats_the_rest()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadDeepFolders(temp);
         IReadOnlyList<HtmlResource> chapters = book.GetHtmlResources();
@@ -161,8 +182,10 @@ public sealed class ReformatRestructureTests
             + "<body><h1>Title</h1><p>Hello world.</p></body></html>");
         string compactText = compact.GetText();
 
+        // Act
         FileBatchResult result = book.PrettyPrintAllHtml();
 
+        // Assert
         result.Skipped.Should().ContainSingle();
         result.Skipped[0].BookPath.Should().Be(broken.BookPath);
         result.Skipped[0].Line.Should().BePositive();
@@ -176,6 +199,7 @@ public sealed class ReformatRestructureTests
     [Fact]
     public void PrettyPrintAllHtml_reports_nothing_processed_when_every_file_is_not_well_formed()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadDeepFolders(temp);
         foreach (HtmlResource html in book.GetHtmlResources())
@@ -185,8 +209,10 @@ public sealed class ReformatRestructureTests
 
         string[] before = book.GetHtmlResources().Select(h => h.GetText()).ToArray();
 
+        // Act
         FileBatchResult result = book.PrettyPrintAllHtml();
 
+        // Assert
         result.NothingProcessed.Should().BeTrue();
         result.Processed.Should().Be(0);
         result.Modified.Should().BeFalse();
@@ -197,6 +223,7 @@ public sealed class ReformatRestructureTests
     [Fact]
     public void PrettyPrintAllHtml_reformats_compact_html_into_indented_markup()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedDeepFolders(temp, tree =>
         {
@@ -211,8 +238,10 @@ public sealed class ReformatRestructureTests
         string compact = chapter.GetText();
         compact.Should().NotContain("\n  <h1>");
 
+        // Act
         FileBatchResult result = book.PrettyPrintAllHtml();
 
+        // Assert
         result.Skipped.Should().BeEmpty();
         chapter.GetText().Should().NotBe(compact);
         chapter.GetText().Should().Contain("<h1>Chapter 1</h1>");
@@ -221,6 +250,7 @@ public sealed class ReformatRestructureTests
     [Fact]
     public void RemoveSoftHyphens_skips_a_file_that_is_not_well_formed_and_processes_the_rest()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadDeepFolders(temp);
         IReadOnlyList<HtmlResource> chapters = book.GetHtmlResources();
@@ -231,8 +261,10 @@ public sealed class ReformatRestructureTests
             + "<html xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>T</title></head>"
             + "<body><p>hy&#173;phen</p></body></html>");
 
+        // Act
         FileBatchResult result = book.RemoveSoftHyphens();
 
+        // Assert
         result.Skipped.Should().ContainSingle().Which.BookPath.Should().Be(chapters[0].BookPath);
         result.Modified.Should().BeTrue();
         chapters[0].GetText().Should().Contain("&#173;");
@@ -242,14 +274,17 @@ public sealed class ReformatRestructureTests
     [Fact]
     public void AddSoftHyphens_skips_a_file_that_is_not_well_formed_and_processes_the_rest()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadDeepFolders(temp);
         IReadOnlyList<HtmlResource> chapters = book.GetHtmlResources();
         chapters.Should().HaveCountGreaterThan(1);
         chapters[0].SetText("<html><head><body><p>broken");
 
+        // Act
         FileBatchResult result = book.AddSoftHyphens();
 
+        // Assert
         result.Skipped.Should().ContainSingle().Which.BookPath.Should().Be(chapters[0].BookPath);
         result.Processed.Should().Be(chapters.Count - 1);
         chapters[0].GetText().Should().Be("<html><head><body><p>broken");
@@ -260,13 +295,16 @@ public sealed class ReformatRestructureTests
     [Fact]
     public void RestructureToSignetNorm_cancels_when_any_html_not_well_formed()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadMalformed(temp);
         HtmlResource chapter = Html(book, "chapter1.xhtml");
         string opfFilename = book.GetOpf().Filename;
 
+        // Act
         MaintenanceOperationResult result = book.RestructureToSignetNorm();
 
+        // Assert
         result.Applied.Should().BeFalse();
         result.NotWellFormed.Should().BeSameAs(chapter);
         book.GetOpf().Filename.Should().Be(opfFilename);
@@ -275,11 +313,14 @@ public sealed class ReformatRestructureTests
     [Fact]
     public void RestructureToSignetNorm_moves_everything_to_std_folders_and_updates_all_references()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadDeepFolders(temp);
 
+        // Act
         MaintenanceOperationResult result = book.RestructureToSignetNorm();
 
+        // Assert
         result.Applied.Should().BeTrue();
         book.Modified.Should().BeTrue();
 
@@ -309,6 +350,7 @@ public sealed class ReformatRestructureTests
     [Fact]
     public void RestructureToSignetNorm_renames_opf_and_ncx_to_standard_filenames()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedDeepFolders(temp, tree =>
         {
@@ -334,10 +376,13 @@ public sealed class ReformatRestructureTests
                 + "  </navMap>\n"
                 + "</ncx>\n");
         });
+
         book.GetNcx().Should().NotBeNull();
 
+        // Act
         MaintenanceOperationResult result = book.RestructureToSignetNorm();
 
+        // Assert
         result.Applied.Should().BeTrue();
         book.GetOpf().Filename.Should().Be("content.opf");
         book.GetNcx()!.Filename.Should().Be("toc.ncx");
@@ -347,6 +392,7 @@ public sealed class ReformatRestructureTests
     [Fact]
     public void RestructureToSignetNorm_resolves_case_insensitive_filename_collisions_before_moving()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedDeepFolders(temp, tree =>
         {
@@ -364,10 +410,13 @@ public sealed class ReformatRestructureTests
                 StringComparison.Ordinal);
             File.WriteAllText(opfPath, opf);
         });
+
         book.GetCssResources().Should().HaveCount(2);
 
+        // Act
         MaintenanceOperationResult result = book.RestructureToSignetNorm();
 
+        // Assert
         result.Applied.Should().BeTrue();
         book.GetCssResources().Select(r => r.BookPath).Should().OnlyHaveUniqueItems();
         book.GetCssResources().Should().Contain(r => r.BookPath == "OEBPS/Styles/main.css");
@@ -380,6 +429,7 @@ public sealed class ReformatRestructureTests
     [Fact]
     public void UseStandardFileExtensions_cancels_when_opf_not_well_formed()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedDeepFolders(temp, tree =>
         {
@@ -387,8 +437,10 @@ public sealed class ReformatRestructureTests
             File.WriteAllText(opfPath, File.ReadAllText(opfPath).Replace("</package>", string.Empty, StringComparison.Ordinal));
         });
 
+        // Act
         MaintenanceOperationResult result = book.UseStandardFileExtensions();
 
+        // Assert
         result.Applied.Should().BeFalse();
         result.NotWellFormed.Should().BeSameAs(book.GetOpf());
     }
@@ -396,15 +448,20 @@ public sealed class ReformatRestructureTests
     [Fact]
     public void UseStandardFileExtensions_is_noop_when_all_extensions_already_match_media_types()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadDeepFolders(temp);
+
         book.GetOpf().Filename.Should().Be("book.opf");
+
         IReadOnlyList<string> bookPathsBefore = book.GetAllResources().Select(r => r.BookPath).ToList();
 
+        // Act
         MaintenanceOperationResult result = book.UseStandardFileExtensions();
 
         // "book.opf" already has the correct ".opf" extension — only the name stem is non-standard,
         // and that is normalized only by Restructure Epub to Signet Norm, not by this operation.
+        // Assert
         result.Applied.Should().BeTrue();
         book.GetOpf().Filename.Should().Be("book.opf");
         book.GetAllResources().Select(r => r.BookPath).Should().Equal(bookPathsBefore);
@@ -413,6 +470,7 @@ public sealed class ReformatRestructureTests
     [Fact]
     public void UseStandardFileExtensions_fixes_mismatched_extension_and_updates_references()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedDeepFolders(temp, tree =>
         {
@@ -435,10 +493,13 @@ public sealed class ReformatRestructureTests
             }
         });
         CssResource css = book.GetCssResources().Single();
+
         css.Filename.Should().Be("main.txt");
 
+        // Act
         MaintenanceOperationResult result = book.UseStandardFileExtensions();
 
+        // Assert
         result.Applied.Should().BeTrue();
         book.Modified.Should().BeTrue();
         css.Filename.Should().Be("main.css");
@@ -451,6 +512,7 @@ public sealed class ReformatRestructureTests
     [Fact]
     public void RebaseManifestIds_cancels_when_opf_not_well_formed()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedDeepFolders(temp, tree =>
         {
@@ -458,8 +520,10 @@ public sealed class ReformatRestructureTests
             File.WriteAllText(opfPath, File.ReadAllText(opfPath).Replace("</package>", string.Empty, StringComparison.Ordinal));
         });
 
+        // Act
         MaintenanceOperationResult result = book.RebaseManifestIds();
 
+        // Assert
         result.Applied.Should().BeFalse();
         result.NotWellFormed.Should().BeSameAs(book.GetOpf());
     }
@@ -467,12 +531,15 @@ public sealed class ReformatRestructureTests
     [Fact]
     public void RebaseManifestIds_renumbers_ids_from_filenames_and_keeps_spine_consistent()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadDeepFolders(temp);
         int spineCountBefore = book.GetOpf().GetSpineOrderBookPaths().Count;
 
+        // Act
         MaintenanceOperationResult result = book.RebaseManifestIds();
 
+        // Assert
         result.Applied.Should().BeTrue();
         book.Modified.Should().BeTrue();
         book.GetOpf().GetSpineOrderBookPaths().Should().HaveCount(spineCountBefore);

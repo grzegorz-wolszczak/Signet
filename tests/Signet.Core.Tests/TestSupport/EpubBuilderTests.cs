@@ -13,8 +13,10 @@ public sealed class EpubBuilderTests
     [MemberData(nameof(ValidEpubDirs))]
     public void Builds_every_valid_fixture_into_a_readable_archive(string dir)
     {
+        // Act
         byte[] bytes = EpubBuilder.BuildBytes(dir);
 
+        // Assert
         using ZipArchive zip = new(new MemoryStream(bytes), ZipArchiveMode.Read);
         zip.Entries.Should().NotBeEmpty();
 
@@ -30,10 +32,12 @@ public sealed class EpubBuilderTests
     [Fact]
     public void Mimetype_is_first_and_stored_uncompressed()
     {
+        // Act
         byte[] bytes = EpubBuilder.BuildBytes(CorpusPaths.Epub3Minimal);
 
         using ZipArchive zip = new(new MemoryStream(bytes), ZipArchiveMode.Read);
 
+        // Assert
         zip.Entries[0].FullName.Should().Be("mimetype");
 
         ZipArchiveEntry mimetype = zip.Entries[0];
@@ -46,6 +50,7 @@ public sealed class EpubBuilderTests
     [Fact]
     public void Build_is_deterministic_in_entry_order()
     {
+        // Act
         byte[] first = EpubBuilder.BuildBytes(CorpusPaths.Epub3WithNcx);
         byte[] second = EpubBuilder.BuildBytes(CorpusPaths.Epub3WithNcx);
 
@@ -55,16 +60,20 @@ public sealed class EpubBuilderTests
             return zip.Entries.Select(e => e.FullName).ToArray();
         }
 
+        // Assert
         Order(first).Should().Equal(Order(second));
     }
 
     [Fact]
     public void BuildInto_writes_a_file_named_after_the_source_directory()
     {
+        // Arrange
         using TempDir temp = new();
 
+        // Act
         string path = EpubBuilder.BuildInto(CorpusPaths.Epub2Minimal, temp);
 
+        // Assert
         Path.GetFileName(path).Should().Be("minimal.epub");
         File.Exists(path).Should().BeTrue();
     }

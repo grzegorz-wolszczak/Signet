@@ -43,16 +43,20 @@ public sealed class ClassRenamerTests
     [InlineData(18)] // right after "1"
     public void FindClassAtCaret_detects_the_class_when_the_caret_touches_or_is_inside_the_name(int caret)
     {
+        // Act
         ClassAtCaret? result = ClassRenamer.FindClassAtCaret("<html><body><p class=\"c1\">x</p></body></html>", caret + 6);
 
+        // Assert
         result.Should().BeEquivalentTo(new ClassAtCaret("c1", ["html", "body", "p"]));
     }
 
     [Fact]
     public void FindClassAtCaret_picks_the_class_under_the_caret_among_several()
     {
+        // Arrange
         const string html = "<html><body><div class=\"first second\"/></body></html>";
 
+        // Act & Assert
         ClassRenamer.FindClassAtCaret(html, html.IndexOf("second", StringComparison.Ordinal) + 3)!.Name.Should().Be("second");
     }
 
@@ -60,8 +64,11 @@ public sealed class ClassRenamerTests
     [InlineData("<html><body><p title=\"c1\">x</p></body></html>", 23)] // another attribute
     [InlineData("<html><body><p class=\"c1\">c1 text</p></body></html>", 27)] // element content
     [InlineData("<html><body><p class=\"a  b\">x</p></body></html>", 24)] // a space between classes
-    public void FindClassAtCaret_returns_null_outside_class_names(string html, int caret) =>
+    public void FindClassAtCaret_returns_null_outside_class_names(string html, int caret)
+    {
+        // Act & Assert
         ClassRenamer.FindClassAtCaret(html, caret).Should().BeNull();
+    }
 
     // ---- detecting the class under the caret: a CSS selector ----
 
@@ -70,24 +77,34 @@ public sealed class ClassRenamerTests
     [InlineData(5)] // right before the name
     [InlineData(6)] // in the middle
     [InlineData(7)] // right after the name
-    public void FindStyleClassAtCaret_detects_the_class_in_a_stylesheet_selector(int caret) =>
+    public void FindStyleClassAtCaret_detects_the_class_in_a_stylesheet_selector(int caret)
+    {
+        // Act & Assert
         ClassRenamer.FindStyleClassAtCaret("div .c1 > span { color: red }", caret, "styles/a.css", isStyleSheet: true)
             .Should().Be(new StyleClassAtCaret("c1", "styles/a.css", -1));
+    }
 
     [Theory]
     [InlineData(2)] // „div"
     [InlineData(20)] // deklaracja
-    public void FindStyleClassAtCaret_returns_null_outside_class_names_of_selectors(int caret) =>
+    public void FindStyleClassAtCaret_returns_null_outside_class_names_of_selectors(int caret)
+    {
+        // Act & Assert
         ClassRenamer.FindStyleClassAtCaret("div .c1 > span { color: red }", caret, "styles/a.css", isStyleSheet: true)
             .Should().BeNull();
+    }
 
     [Fact]
     public void FindStyleClassAtCaret_in_xhtml_finds_the_style_block_and_ignores_class_attributes()
     {
+        // Arrange
         const string html = "<html><head><style>.a { }</style><style>.b { }</style></head><body><p class=\"a\"/></body></html>";
 
+        // Act & Assert
         ClassRenamer.FindStyleClassAtCaret(html, html.IndexOf(".b", StringComparison.Ordinal) + 1, "t.xhtml", isStyleSheet: false)
             .Should().Be(new StyleClassAtCaret("b", "t.xhtml", 1));
+
+        // Act & Assert
         ClassRenamer.FindStyleClassAtCaret(html, html.IndexOf("\"a\"", StringComparison.Ordinal) + 1, "t.xhtml", isStyleSheet: false)
             .Should().BeNull();
     }
@@ -97,12 +114,15 @@ public sealed class ClassRenamerTests
     [Fact]
     public void Everywhere_renames_all_attributes_and_all_definitions_in_place_even_unused_ones()
     {
+        // Arrange
         ClassRenamer sut = new(
             [new ClassRenameSource("text/ch1.xhtml", Chapter)],
             [new ClassRenameSource("styles/a.css", ".c1 { margin: 0 }\n"), new ClassRenameSource("styles/unlinked.css", ".c1 { }\n")]);
 
+        // Act
         ClassRenameResult result = sut.Rename(Everywhere, "lead");
 
+        // Assert
         result.ChangedTexts["text/ch1.xhtml"].Should().Be(
             "<html><head>" + LinkA + "<style>p.lead { color: red }</style></head>\n"
             + "<body><p class=\"lead\">a</p><div><p class=\"x lead\">b</p></div><p class=\"lead\">c</p></body></html>");
@@ -115,10 +135,13 @@ public sealed class ClassRenamerTests
     [Fact]
     public void Class_names_are_matched_as_whole_tokens_only()
     {
+        // Arrange
         ClassRenamer sut = Renamer("<html><head>" + LinkA + "</head><body><p class=\"c1 c10 xc1\">a</p></body></html>", ".c10, .xc1 { }\n");
 
+        // Act
         ClassRenameResult result = sut.Rename(Everywhere, "lead");
 
+        // Assert
         result.ChangedTexts["text/ch1.xhtml"].Should().Contain("class=\"lead c10 xc1\"");
         result.ChangedTexts.Should().NotContainKey("styles/a.css");
     }
@@ -128,10 +151,13 @@ public sealed class ClassRenamerTests
     [Fact]
     public void SameNesting_copies_rules_of_sources_also_used_by_elements_that_keep_the_old_name()
     {
+        // Arrange
         ClassRenamer sut = Renamer(Chapter, "body {\n  margin: 1em;\n}\n\n.c1 {\n  color: blue;\n}\n");
 
+        // Act
         ClassRenameResult result = sut.Rename(SameNesting, "lead");
 
+        // Assert
         result.ChangedTexts["text/ch1.xhtml"].Should().Be(
             "<html><head>" + LinkA + "<style>p.c1 { color: red }\np.lead { color: red }</style></head>\n"
             + "<body><p class=\"lead\">a</p><div><p class=\"x c1\">b</p></div><p class=\"lead\">c</p></body></html>");
@@ -146,6 +172,7 @@ public sealed class ClassRenamerTests
     [Fact]
     public void SameNesting_leaves_sources_that_no_changed_element_uses()
     {
+        // Arrange
         const string html = "<html><head>" + LinkA + "</head>\n"
             + "<body><p class=\"c1\">a</p><div><p class=\"c1\">b</p></div></body></html>";
         ClassRenamer sut = new(
@@ -153,8 +180,10 @@ public sealed class ClassRenamerTests
             [new ClassRenameSource("styles/a.css", "body > .c1 { color: red }\ndiv > .c1 { color: blue }\n"),
              new ClassRenameSource("styles/unlinked.css", ".c1 { }\n")]);
 
+        // Act
         ClassRenameResult result = sut.Rename(SameNesting, "lead");
 
+        // Assert
         // both rules are in the same stylesheet, and the stylesheet is also used by div > p → a copy
         result.ChangedTexts["styles/a.css"].Should().Be(
             "body > .c1 { color: red }\nbody > .lead { color: red }\ndiv > .c1 { color: blue }\ndiv > .lead { color: blue }\n");
@@ -165,10 +194,13 @@ public sealed class ClassRenamerTests
     [Fact]
     public void SameNesting_renames_in_place_when_only_changed_elements_use_the_source()
     {
+        // Arrange
         ClassRenamer sut = Renamer("<html><head>" + LinkA + "</head><body><p class=\"c1\">a</p><p class=\"c1\">b</p></body></html>", ".c1 { color: red }\n");
 
+        // Act
         ClassRenameResult result = sut.Rename(SameNesting, "lead");
 
+        // Assert
         result.ChangedTexts["styles/a.css"].Should().Be(".lead { color: red }\n");
         result.Stats.CopiesCssRules.Should().BeFalse();
     }
@@ -176,10 +208,13 @@ public sealed class ClassRenamerTests
     [Fact]
     public void Copy_keeps_only_group_members_with_the_class_and_stays_inside_media()
     {
+        // Arrange
         ClassRenamer sut = Renamer(Chapter, "@media screen {\n  .c1 span, h1, p.c1 { color: red }\n}\n");
 
+        // Act
         ClassRenameResult result = sut.Rename(SameNesting, "lead");
 
+        // Assert
         result.ChangedTexts["styles/a.css"].Should().Be(
             "@media screen {\n  .c1 span, h1, p.c1 { color: red }\n  .lead span, p.lead { color: red }\n}\n");
     }
@@ -187,10 +222,13 @@ public sealed class ClassRenamerTests
     [Fact]
     public void Copy_uses_the_crlf_line_ending_of_the_file()
     {
+        // Arrange
         ClassRenamer sut = Renamer(Chapter, ".c1 { color: red }\r\n");
 
+        // Act
         ClassRenameResult result = sut.Rename(SameNesting, "lead");
 
+        // Assert
         result.ChangedTexts["styles/a.css"].Should().Be(".c1 { color: red }\r\n.lead { color: red }\r\n");
     }
 
@@ -199,13 +237,16 @@ public sealed class ClassRenamerTests
     [Fact]
     public void From_a_stylesheet_only_elements_of_documents_using_it_are_renamed()
     {
+        // Arrange
         ClassRenamer sut = new(
             [new ClassRenameSource("text/ch1.xhtml", "<html><head>" + LinkA + "</head><body><p class=\"c1\">a</p></body></html>"),
              new ClassRenameSource("text/ch2.xhtml", "<html><head></head><body><p class=\"c1\">b</p></body></html>")],
             [new ClassRenameSource("styles/a.css", ".c1 { color: red }\n")]);
 
+        // Act
         ClassRenameResult result = sut.Rename(FromSheet("styles/a.css"), "lead");
 
+        // Assert
         result.ChangedTexts["text/ch1.xhtml"].Should().Contain("<p class=\"lead\">a</p>");
         result.ChangedTexts.Should().NotContainKey("text/ch2.xhtml");
         result.ChangedTexts["styles/a.css"].Should().Be(".lead { color: red }\n");
@@ -215,11 +256,14 @@ public sealed class ClassRenamerTests
     [Fact]
     public void From_a_stylesheet_elements_not_matching_its_selectors_keep_the_old_name()
     {
+        // Arrange
         const string html = "<html><head>" + LinkA + "</head><body><p class=\"c1\">a</p><div><p class=\"c1\">b</p></div></body></html>";
         ClassRenamer sut = Renamer(html, "div > .c1 { color: red }\n");
 
+        // Act
         ClassRenameResult result = sut.Rename(FromSheet("styles/a.css"), "lead");
 
+        // Assert
         result.ChangedTexts["text/ch1.xhtml"].Should().Contain("<p class=\"c1\">a</p>").And.Contain("<div><p class=\"lead\">b</p>");
         result.ChangedTexts["styles/a.css"].Should().Be("div > .lead { color: red }\n");
     }
@@ -227,23 +271,29 @@ public sealed class ClassRenamerTests
     [Fact]
     public void From_a_stylesheet_state_pseudo_classes_and_pseudo_elements_count_as_matching()
     {
+        // Arrange
         ClassRenamer sut = Renamer("<html><head>" + LinkA + "</head><body><a class=\"c1\">a</a></body></html>", "a.c1:hover::after { content: '' }\n");
 
+        // Act
         ClassRenameResult result = sut.Rename(FromSheet("styles/a.css"), "lead");
 
+        // Assert
         result.ChangedTexts["text/ch1.xhtml"].Should().Contain("<a class=\"lead\">");
     }
 
     [Fact]
     public void From_a_stylesheet_sources_used_only_by_the_changed_elements_are_renamed_in_place()
     {
+        // Arrange
         ClassRenamer sut = new(
             [new ClassRenameSource("text/ch1.xhtml", Chapter),
              new ClassRenameSource("text/ch2.xhtml", "<html><head><link rel=\"stylesheet\" href=\"../styles/b.css\"/></head><body><p class=\"c1\">z</p></body></html>")],
             [new ClassRenameSource("styles/a.css", "p.c1 { margin: 0 }\n"), new ClassRenameSource("styles/b.css", ".c1 { color: blue }\n")]);
 
+        // Act
         ClassRenameResult result = sut.Rename(FromSheet("styles/a.css"), "lead");
 
+        // Assert
         result.ChangedTexts["styles/a.css"].Should().Be("p.lead { margin: 0 }\n");
         // the ch1 <style> block is used only by the elements being changed → in place; b.css is not visible to ch1 → unchanged
         result.ChangedTexts["text/ch1.xhtml"].Should().Contain("<style>p.lead { color: red }</style>");
@@ -256,13 +306,16 @@ public sealed class ClassRenamerTests
     [Fact]
     public void From_a_stylesheet_a_second_source_shared_with_other_elements_is_copied()
     {
+        // Arrange
         ClassRenamer sut = new(
             [new ClassRenameSource("text/ch1.xhtml", "<html><head>" + LinkA + "<link rel=\"stylesheet\" href=\"../styles/b.css\"/></head><body><p class=\"c1\">a</p></body></html>"),
              new ClassRenameSource("text/ch2.xhtml", "<html><head><link rel=\"stylesheet\" href=\"../styles/b.css\"/></head><body><p class=\"c1\">z</p></body></html>")],
             [new ClassRenameSource("styles/a.css", ".c1 { margin: 0 }\n"), new ClassRenameSource("styles/b.css", ".c1 { color: blue }\n")]);
 
+        // Act
         ClassRenameResult result = sut.Rename(FromSheet("styles/a.css"), "lead");
 
+        // Assert
         result.ChangedTexts["styles/b.css"].Should().Be(".c1 { color: blue }\n.lead { color: blue }\n");
         result.ChangedTexts.Should().NotContainKey("text/ch2.xhtml");
         result.Stats.CopiesCssRules.Should().BeTrue();
@@ -271,27 +324,33 @@ public sealed class ClassRenamerTests
     [Fact]
     public void Stylesheets_imported_by_a_linked_stylesheet_are_used_by_the_document()
     {
+        // Arrange
         ClassRenamer sut = new(
             [new ClassRenameSource("text/ch1.xhtml", "<html><head><link rel=\"stylesheet\" href=\"../styles/main.css\"/></head><body><p class=\"c1\">a</p></body></html>")],
             [new ClassRenameSource("styles/main.css", "/* @import \"ignored.css\"; */\n@import url(\"parts/a.css\");\n"),
              new ClassRenameSource("styles/parts/a.css", ".c1 { color: red }\n")]);
 
+        // Act
         ClassRenameResult result = sut.Rename(FromSheet("styles/parts/a.css"), "lead");
 
+        // Assert
         result.ChangedTexts["text/ch1.xhtml"].Should().Contain("<p class=\"lead\">a</p>");
     }
 
     [Fact]
     public void From_a_style_block_only_its_document_is_affected()
     {
+        // Arrange
         const string html = "<html><head><style>.c1 { color: red }</style></head><body><p class=\"c1\">a</p></body></html>";
         ClassRenamer sut = new(
             [new ClassRenameSource("text/ch1.xhtml", html),
              new ClassRenameSource("text/ch2.xhtml", "<html><head><style>.c1 { }</style></head><body><p class=\"c1\">b</p></body></html>")],
             []);
 
+        // Act
         ClassRenameResult result = sut.Rename(ClassRenameRequest.ForStyleSource(new StyleClassAtCaret("c1", "text/ch1.xhtml", 0)), "lead");
 
+        // Assert
         result.ChangedTexts["text/ch1.xhtml"].Should().Be("<html><head><style>.lead { color: red }</style></head><body><p class=\"lead\">a</p></body></html>");
         result.ChangedTexts.Should().NotContainKey("text/ch2.xhtml");
     }
@@ -299,10 +358,13 @@ public sealed class ClassRenamerTests
     [Fact]
     public void From_an_unused_stylesheet_only_the_stylesheet_is_renamed()
     {
+        // Arrange
         ClassRenamer sut = Renamer("<html><head></head><body><p class=\"c1\">a</p></body></html>", ".c1 { }\n");
 
+        // Act
         ClassRenameResult result = sut.Rename(FromSheet("styles/a.css"), "lead");
 
+        // Assert
         result.ChangedTexts.Keys.Should().Equal("styles/a.css");
         result.Stats.ChangedOccurrences.Should().Be(0);
     }
@@ -310,10 +372,13 @@ public sealed class ClassRenamerTests
     [Fact]
     public void Preview_matches_the_stats_of_the_rename()
     {
+        // Arrange
         ClassRenamer sut = Renamer(Chapter, ".c1 { }\n");
 
+        // Act
         ClassRenameStats preview = sut.Preview(SameNesting);
 
+        // Assert
         preview.Should().BeEquivalentTo(sut.Rename(SameNesting, "lead").Stats);
         preview.ChangedOccurrences.Should().Be(2);
     }
@@ -332,8 +397,10 @@ public sealed class ClassRenamerTests
     [InlineData("other", ClassNameProblem.AlreadyExists)] // only in the CSS selector
     public void Validate_rejects_bad_names_with_a_reason(string newName, ClassNameProblem expected)
     {
+        // Act
         ClassNameValidation result = Renamer(Chapter, ".other { }\n").Validate("c1", newName);
 
+        // Assert
         result.IsValid.Should().BeFalse();
         result.Problems.Should().Contain(expected);
     }
@@ -343,18 +410,26 @@ public sealed class ClassRenamerTests
     [InlineData("_a-1")]
     [InlineData("--custom")]
     [InlineData("żółw")]
-    public void Validate_accepts_css_identifiers_not_used_in_the_book(string newName) =>
+    public void Validate_accepts_css_identifiers_not_used_in_the_book(string newName)
+    {
+        // Act & Assert
         Renamer(Chapter, ".other { }\n").Validate("c1", newName).IsValid.Should().BeTrue();
+    }
 
     [Fact]
-    public void Validate_lists_every_invalid_character_once() =>
+    public void Validate_lists_every_invalid_character_once()
+    {
+        // Act & Assert
         Renamer(Chapter, string.Empty).Validate("c1", "a.b#c.d").InvalidCharacters.Should().Equal('.', '#');
+    }
 
     [Fact]
     public void Rename_refuses_an_invalid_name()
     {
+        // Arrange
         Action act = () => Renamer(Chapter, string.Empty).Rename(Everywhere, "x");
 
+        // Act & Assert
         act.Should().Throw<ArgumentException>();
     }
 
@@ -364,6 +439,7 @@ public sealed class ClassRenamerTests
     [AutoData]
     public void Book_applies_a_rename_started_in_the_stylesheet(string suffix)
     {
+        // Arrange
         using TempDir temp = new();
         string tree = temp.Combine("tree");
         TestFs.CopyDirectory(CorpusPaths.Epub3Minimal, tree);
@@ -374,9 +450,11 @@ public sealed class ClassRenamerTests
         CssResource css = book.GetCssResources().Single();
         string newName = "n" + suffix.Replace("-", string.Empty, StringComparison.Ordinal);
 
+        // Act
         ClassRenamer renamer = book.PrepareClassRename().Renamer!;
         ClassRenameResult result = renamer.Rename(FromSheet(css.BookPath), newName);
 
+        // Assert
         book.ApplyClassRename(result).Should().BeTrue();
         book.GetHtmlResources().Single(h => h.Filename == "chapter1.xhtml").GetText().Should().Contain($"<p class=\"{newName}\">");
         css.GetText().Should().Contain($".{newName} {{ color: red }}");
@@ -386,6 +464,7 @@ public sealed class ClassRenamerTests
     [Fact]
     public void Book_refuses_to_prepare_when_an_xhtml_file_is_not_well_formed()
     {
+        // Arrange
         using TempDir temp = new();
         string tree = temp.Combine("tree");
         TestFs.CopyDirectory(CorpusPaths.Epub3Minimal, tree);
@@ -393,8 +472,10 @@ public sealed class ClassRenamerTests
         File.WriteAllText(chapterPath, File.ReadAllText(chapterPath).Replace("</p>", string.Empty, StringComparison.Ordinal));
         using Book book = new ImportEpub(EpubBuilder.BuildInto(tree, temp, "book.epub")).GetBook();
 
+        // Act
         ClassRenamePreparation result = book.PrepareClassRename();
 
+        // Assert
         result.Renamer.Should().BeNull();
         result.NotWellFormed.Should().BeOfType<HtmlResource>().Which.Filename.Should().Be("chapter1.xhtml");
     }

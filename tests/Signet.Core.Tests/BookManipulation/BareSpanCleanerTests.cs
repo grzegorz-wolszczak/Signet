@@ -15,18 +15,23 @@ public sealed class BareSpanCleanerTests
     [Fact]
     public void Only_spans_without_any_attribute_are_found()
     {
+        // Arrange
         string text = Page("<p><span>a</span> <span >b</span> <span class=\"x\">c</span> <span lang=\"en\">d</span></p>");
 
+        // Act & Assert
         BareSpanCleaner.Find(text).Select(s => s.Content).Should().Equal("a", "b");
     }
 
     [Fact]
     public void Removing_keeps_the_content_including_nested_bare_spans()
     {
+        // Arrange
         string text = Page("<p>x <span>a <em>b</em> <span>c</span></span> y</p>");
 
+        // Act
         string result = BareSpanCleaner.Remove(text, BareSpanCleaner.Find(text).Select(s => s.OpenPos));
 
+        // Assert
         result.Should().Be(Page("<p>x a <em>b</em> c y</p>"));
     }
 }

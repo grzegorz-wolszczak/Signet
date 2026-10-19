@@ -23,8 +23,10 @@ public sealed class IconThemeManagerTests : IDisposable
     [Fact]
     public void Default_icon_theme_is_the_colour_main_set()
     {
+        // Act
         IconThemeManager sut = new(new SettingsStore(_settingsPath), NullLogger<IconThemeManager>.Instance);
 
+        // Assert
         sut.Current.Should().Be("main");
         IconThemeManager.SupportedThemes.Should().Contain(("main", "Default"));
     }
@@ -35,11 +37,14 @@ public sealed class IconThemeManagerTests : IDisposable
     [InlineData("unknown-theme", "main")]
     public void Set_normalizes_the_theme_code_and_falls_back_to_main(string code, string expected)
     {
+        // Arrange
         SettingsStore settings = new(_settingsPath);
         IconThemeManager sut = new(settings, NullLogger<IconThemeManager>.Instance);
 
+        // Act
         sut.Set(code);
 
+        // Assert
         sut.Current.Should().Be(expected);
         settings.UiIconTheme.Should().Be(expected);
     }
@@ -55,6 +60,7 @@ public sealed class IconThemeManagerTests : IDisposable
     [Fact]
     public void A_custom_icon_set_is_read_from_icons_xml()
     {
+        // Arrange
         TempDir dir = _disposables.Add(new TempDir());
         string path = Path.Combine(dir.Path, IconThemeManager.CustomIconFileName);
         File.WriteAllText(path, """
@@ -65,21 +71,26 @@ public sealed class IconThemeManagerTests : IDisposable
             </icons>
             """);
 
+        // Act & Assert
         IconThemeManager.ReadCustomIcons(path).Should().BeEquivalentTo(new System.Collections.Generic.Dictionary<string, string>
         {
             ["icon-open"] = "M0 0 L10 10 Z",
             ["icon-save"] = "M2 2 H4",
         });
+
+        // Assert
         IconThemeManager.CustomIconFileName.Should().Be("icons.xml");
     }
 
     [Fact]
     public void A_json_icon_map_is_not_read()
     {
+        // Arrange
         TempDir dir = _disposables.Add(new TempDir());
         string path = Path.Combine(dir.Path, IconThemeManager.CustomIconFileName);
         File.WriteAllText(path, "{ \"icon-open\": \"M0 0 L10 10 Z\" }");
 
+        // Act & Assert
         IconThemeManager.ReadCustomIcons(path).Should().BeEmpty();
     }
 

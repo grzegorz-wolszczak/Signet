@@ -23,26 +23,32 @@ public sealed class OpfStructureValidatorTests : IDisposable
     [Fact]
     public void Validate_returns_no_results_for_a_wellformed_book()
     {
+        // Arrange
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         using Book book = new ImportEpub(epub).GetBook();
 
+        // Act
         var results = OpfStructureValidator.Validate(book);
 
+        // Assert
         results.Should().BeEmpty();
     }
 
     [Fact]
     public void Validate_reports_missing_unique_identifier()
     {
+        // Arrange
         using Book book = OpenMutableBook();
         OpfResource opf = book.GetOpf();
         OpfDocument document = opf.GetOpfDocument();
         document.Metadata.RemoveAll(m => m.Name == "dc:identifier");
         opf.SetOpfDocument(document);
 
+        // Act
         var results = OpfStructureValidator.Validate(book);
 
+        // Assert
         results.Should().Contain(r =>
             r.Severity == ValidationSeverity.Error && r.Message.Contains("dc:identifier"));
     }
@@ -50,14 +56,17 @@ public sealed class OpfStructureValidatorTests : IDisposable
     [Fact]
     public void Validate_reports_empty_manifest_id()
     {
+        // Arrange
         using Book book = OpenMutableBook();
         OpfResource opf = book.GetOpf();
         OpfDocument document = opf.GetOpfDocument();
         document.Manifest[0].Id = string.Empty;
         opf.SetOpfDocument(document);
 
+        // Act
         var results = OpfStructureValidator.Validate(book);
 
+        // Assert
         results.Should().Contain(r =>
             r.Severity == ValidationSeverity.Error && r.Message.Contains(LocalizedText.Fragment("Validation_OpfManifestItemNoId"), StringComparison.Ordinal));
     }
@@ -65,6 +74,7 @@ public sealed class OpfStructureValidatorTests : IDisposable
     [Fact]
     public void Validate_reports_duplicate_manifest_id()
     {
+        // Arrange
         using Book book = OpenMutableBook();
         OpfResource opf = book.GetOpf();
         OpfDocument document = opf.GetOpfDocument();
@@ -72,8 +82,10 @@ public sealed class OpfStructureValidatorTests : IDisposable
         document.Manifest[0].Id = duplicated;
         opf.SetOpfDocument(document);
 
+        // Act
         var results = OpfStructureValidator.Validate(book);
 
+        // Assert
         results.Should().Contain(r =>
             r.Severity == ValidationSeverity.Error && r.Message == CoreStrings.Format("Validation_OpfDuplicateId", duplicated, 2));
     }
@@ -81,14 +93,17 @@ public sealed class OpfStructureValidatorTests : IDisposable
     [Fact]
     public void Validate_reports_duplicate_manifest_href()
     {
+        // Arrange
         using Book book = OpenMutableBook();
         OpfResource opf = book.GetOpf();
         OpfDocument document = opf.GetOpfDocument();
         document.Manifest[0].Href = document.Manifest[1].Href;
         opf.SetOpfDocument(document);
 
+        // Act
         var results = OpfStructureValidator.Validate(book);
 
+        // Assert
         results.Should().Contain(r =>
             r.Severity == ValidationSeverity.Warning && r.Message.Contains(LocalizedText.Fragment("Validation_OpfDuplicateHref"), StringComparison.Ordinal));
     }
@@ -96,6 +111,7 @@ public sealed class OpfStructureValidatorTests : IDisposable
     [Fact]
     public void Validate_reports_media_type_mismatch()
     {
+        // Arrange
         using Book book = OpenMutableBook();
         OpfResource opf = book.GetOpf();
         OpfDocument document = opf.GetOpfDocument();
@@ -103,8 +119,10 @@ public sealed class OpfStructureValidatorTests : IDisposable
         htmlEntry.MediaType = "text/plain";
         opf.SetOpfDocument(document);
 
+        // Act
         var results = OpfStructureValidator.Validate(book);
 
+        // Assert
         results.Should().Contain(r =>
             r.Severity == ValidationSeverity.Warning && r.Message.Contains(htmlEntry.Href));
     }
@@ -112,14 +130,17 @@ public sealed class OpfStructureValidatorTests : IDisposable
     [Fact]
     public void Validate_reports_dangling_spine_idref()
     {
+        // Arrange
         using Book book = OpenMutableBook();
         OpfResource opf = book.GetOpf();
         OpfDocument document = opf.GetOpfDocument();
         document.Spine[0].IdRef = "does-not-exist-in-manifest";
         opf.SetOpfDocument(document);
 
+        // Act
         var results = OpfStructureValidator.Validate(book);
 
+        // Assert
         results.Should().Contain(r =>
             r.Severity == ValidationSeverity.Error && r.Message.Contains("does-not-exist-in-manifest"));
     }
@@ -127,14 +148,17 @@ public sealed class OpfStructureValidatorTests : IDisposable
     [Fact]
     public void Validate_reports_empty_spine()
     {
+        // Arrange
         using Book book = OpenMutableBook();
         OpfResource opf = book.GetOpf();
         OpfDocument document = opf.GetOpfDocument();
         document.Spine.Clear();
         opf.SetOpfDocument(document);
 
+        // Act
         var results = OpfStructureValidator.Validate(book);
 
+        // Assert
         results.Should().Contain(r =>
             r.Severity == ValidationSeverity.Error && r.Message.Contains("<spine>"));
     }

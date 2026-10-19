@@ -30,8 +30,10 @@ public sealed class CodeEditorWordSelectionTests
     [InlineData("<p>«quoted»</p>")]
     public void A_double_click_selects_the_word_without_the_typographic_quotes(string text)
     {
+        // Arrange
         int inside = text.IndexOf("quoted", StringComparison.Ordinal) + 2;
 
+        // Act & Assert
         WordAt(text, inside).Should().Be("quoted");
     }
 }

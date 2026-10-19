@@ -26,14 +26,17 @@ public sealed class ResourceTypeTests
     [InlineData(ResourceType.Pdf, 1 << 13)]
     public void Enum_values_match_the_expected_bit_flags(ResourceType value, int expected)
     {
+        // Act & Assert
         ((int)value).Should().Be(expected);
     }
 
     [Fact]
     public void Values_can_be_combined_and_tested_as_flags()
     {
+        // Act
         ResourceType textual = ResourceType.Html | ResourceType.Text | ResourceType.MiscText;
 
+        // Assert
         textual.HasFlag(ResourceType.Html).Should().BeTrue();
         textual.HasFlag(ResourceType.Css).Should().BeFalse();
     }

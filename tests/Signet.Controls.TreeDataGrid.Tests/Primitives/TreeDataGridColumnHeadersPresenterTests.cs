@@ -23,8 +23,10 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
         [AvaloniaFact(Timeout = 10000)]
         public void Creates_Initial_Columns()
         {
+            // Arrange
             var (target, _) = CreateTarget();
 
+            // Act & Assert
             AssertColumnIndexes(target, 0, 10);
             AssertRecyclable(target, 0);
         }
@@ -32,6 +34,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
         [AvaloniaFact(Timeout = 10000)]
         public void Updates_Auto_Column_ActualWidth()
         {
+            // Arrange
             // We're testing Auto columns so make cells have a width of 10.
             var root = new TestWindow
             {
@@ -49,6 +52,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
 
             var (target, _) = CreateTarget(root: root, width: GridLength.Auto);
 
+            // Act & Assert
             for (var i = 0; i < target.Items!.Count; ++i)
             {
                 var column = target.Items[i];
@@ -59,11 +63,14 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
         [AvaloniaFact(Timeout = 10000)]
         public void Scrolls_Right_One_Row()
         {
+            // Arrange
             var (target, scroll) = CreateTarget();
 
+            // Act
             scroll.Offset = new Vector(10, 00);
             Layout(target);
 
+            // Assert
             AssertColumnIndexes(target, 1, 10);
             AssertRecyclable(target, 0);
         }
@@ -71,11 +78,14 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
         [AvaloniaFact(Timeout = 10000)]
         public void Scrolls_Right_More_Than_A_Page()
         {
+            // Arrange
             var (target, scroll) = CreateTarget();
 
+            // Act
             scroll.Offset = new Vector(200, 0);
             Layout(target);
 
+            // Assert
             AssertColumnIndexes(target, 20, 10);
             AssertRecyclable(target, 0);
         }
@@ -83,14 +93,17 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
         [AvaloniaFact(Timeout = 10000)]
         public void Scrolls_Left_More_Than_A_Page()
         {
+            // Arrange
             var (target, scroll) = CreateTarget();
 
+            // Act
             scroll!.Offset = new Vector(200, 0);
             Layout(target);
 
             scroll!.Offset = new Vector(0, 0);
             Layout(target);
 
+            // Assert
             AssertColumnIndexes(target, 0, 10);
             AssertRecyclable(target, 0);
         }
@@ -98,14 +111,17 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
         [AvaloniaFact(Timeout = 10000)]
         public void Updates_Column_Width_When_Width_Changes()
         {
+            // Arrange
             var (target, _) = CreateTarget();
 
             foreach (var child in target.GetVisualChildren())
                 child.Bounds.Width.Should().Be(10);
 
+            // Act
             ((IColumns)target.Items!).SetColumnWidth(1, new GridLength(12, GridUnitType.Pixel));
             Layout(target);
 
+            // Assert
             foreach (TreeDataGridColumnHeader column in target.GetVisualChildren())
             {
                 column.Bounds.Width.Should().Be(column.ColumnIndex == 1 ? 12 : 10);
@@ -115,6 +131,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
         [AvaloniaFact(Timeout = 10000)]
         public void Nth_Child_Handles_Deletion_And_Addition_Correctly()
         {
+            // Arrange
             var (target, scroll) = CreateTarget(additionalStyles:
                 new List<IStyle>
                 {
@@ -127,6 +144,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
                     }
                 });
 
+            // Act
             Layout(target);
 
             int CountEvenRedRows(TreeDataGridColumnHeadersPresenter presenter)
@@ -135,6 +153,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
                     .Where(x => x is SolidColorBrush brush && brush.Color == Colors.Red).Count();
             }
 
+            // Assert
             CountEvenRedRows(target).Should().Be(5);
         }
 

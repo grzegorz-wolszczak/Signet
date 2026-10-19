@@ -51,6 +51,7 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [AvaloniaFact]
     public void Code_tab_view_renders_the_editor_with_the_resource_text()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
@@ -62,12 +63,16 @@ public sealed class CodeTabViewRenderTests : IDisposable
         var vm = new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker);
 
         var window = new Window { Width = 600, Height = 400, Content = new CodeTabView { DataContext = vm } };
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
 
         TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
+
+        // Assert
         editor.Document.Text.Should().Be(html.GetText());
         editor.Bounds.Height.Should().BeGreaterThan(0);
     }
@@ -82,6 +87,7 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [AvaloniaFact]
     public void Error_renderer_update_is_null_safe_when_the_editor_document_is_not_bound_yet()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
@@ -94,9 +100,14 @@ public sealed class CodeTabViewRenderTests : IDisposable
 
         // Force a remembered well-formed error (an unclosed tag).
         vm.Document.Text = "<p>oops";
+
+        // Act
         vm.RunWellFormedCheck();
+
+        // Assert
         vm.WellFormedError.Should().NotBeNull();
 
+        // Act
         var view = new CodeTabView { DataContext = vm };
         var window = new Window { Width = 600, Height = 400, Content = view };
         window.Show();
@@ -108,6 +119,7 @@ public sealed class CodeTabViewRenderTests : IDisposable
         // change notification arrives (as when Dock re-materializes the tab).
         editor.Document = null;
 
+        // Act & Assert
         vm.Invoking(x => x.RunWellFormedCheck()).Should().NotThrow();
     }
 
@@ -139,6 +151,7 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [AvaloniaFact]
     public void A_view_releases_TextMate_when_it_leaves_the_screen_and_installs_it_again_when_it_comes_back()
     {
+        // Arrange
         (SettingsStore settings, SpellChecker spellChecker) = NewSpellChecker();
         string dir = _disposables.Add(new TempDir("signet-uitests-")).Path;
         System.IO.Directory.CreateDirectory(dir);
@@ -147,25 +160,39 @@ public sealed class CodeTabViewRenderTests : IDisposable
         MiscTextResource script = new(dir, path);
         script.InitialLoad();
         var vm = new CodeTabViewModel(new TabManagerModel().OpenResource(script), new StatusBarService(), settings, spellChecker);
+
         vm.Syntax.Should().Be(CodeEditorSyntax.JavaScript);
+
+        // Act
         var view = new CodeTabView { DataContext = vm };
         var window = new Window { Width = 600, Height = 400, Content = view };
         window.Show();
         Dispatcher.UIThread.RunJobs();
         TextEditor editor = view.GetVisualDescendants().OfType<TextEditor>().Single();
         bool Coloured() => editor.TextArea.TextView.LineTransformers.OfType<AvaloniaEdit.TextMate.TextMateColoringTransformer>().Any();
+
+        // Assert
         Coloured().Should().BeTrue("JavaScript is coloured by TextMate");
 
+        // Act
         window.Content = null;
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         Coloured().Should().BeFalse("a view off the screen holds no TextMate");
 
+        // Act
         window.Content = view;
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         Coloured().Should().BeTrue("the view on the screen again is coloured again");
 
+        // Act
         window.Close();
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         Coloured().Should().BeFalse("the closed tab holds no TextMate");
     }
 
@@ -184,22 +211,32 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [AvaloniaFact]
     public void A_new_view_of_a_tab_puts_the_user_back_where_they_were_in_the_text()
     {
+        // Arrange
         string text = string.Join('\n', Enumerable.Range(1, 400).Select(i => $"<p>line {i}</p>"));
         (Window window, CodeTabViewModel vm) = ShowCodeTab(text, extended: false);
         TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
+
+        // Act
         editor.CaretOffset = editor.Document.GetLineByNumber(300).Offset + 3;
         editor.TextArea.TextView.MakeVisible(new Avalonia.Rect(0, editor.TextArea.TextView.GetVisualPosition(
             new AvaloniaEdit.TextViewPosition(150, 1), AvaloniaEdit.Rendering.VisualYPosition.LineTop).Y, 1, editor.TextArea.TextView.Bounds.Height));
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
         int topLine = editor.TextArea.TextView.GetDocumentLineByVisualTop(editor.TextArea.TextView.VerticalOffset)!.LineNumber;
+
+        // Assert
         topLine.Should().BeInRange(140, 160, "the view is scrolled to the middle of the file");
         int caret = editor.CaretOffset;
 
         // The tab is dragged into a window of its own: its view goes away, a new one is made for the same tab.
+        // Act
         window.Content = null;
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         vm.ViewState.Should().NotBeNull("the view that went away remembered the place");
+
+        // Act
         window.Content = new CodeTabView { DataContext = vm };
         for (int i = 0; i < 6; i++)
         {
@@ -208,6 +245,8 @@ public sealed class CodeTabViewRenderTests : IDisposable
         }
 
         TextEditor again = window.GetVisualDescendants().OfType<TextEditor>().Single();
+
+        // Assert
         again.TextArea.TextView.GetDocumentLineByVisualTop(again.TextArea.TextView.VerticalOffset)!.LineNumber
             .Should().BeInRange(topLine - 2, topLine + 2, "the first visible line is the same");
         again.CaretOffset.Should().Be(caret);
@@ -217,8 +256,10 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [AvaloniaFact]
     public void Html_is_coloured_with_the_line_highlighter_and_the_colours_of_the_theme()
     {
+        // Arrange
         (Window window, _) = ShowCodeTab("<p class=\"x\">a</p>\n<!-- c -->", extended: false);
 
+        // Act & Assert
         ForegroundOfFirstElement(window, 1).Should().Be(Fg(ThemeKeys.XhtmlTag));
         ForegroundOfFirstElement(window, 2).Should().Be(Fg(ThemeKeys.XhtmlComment));
     }
@@ -226,17 +267,21 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [AvaloniaFact]
     public void Another_theme_recolours_an_open_tab_at_once()
     {
+        // Arrange
         (Window window, _) = ShowCodeTab("<p class=\"x\">a</p>", extended: false);
         TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
         string folder = _disposables.Add(new TempDir("signet-theme-")).Path;
         try
         {
             ThemeStores stores = ThemeStores.In(folder);
+
+            // Act
             AppTheme.Apply(Avalonia.Application.Current!, new ResolvedTheme(
                 stores.Themes.Get(ThemeStore.DarkId), stores.Themes.Resolver, stores.Schemes.Get(ThemeStore.DarkId), stores.Schemes.Resolver));
             Dispatcher.UIThread.RunJobs();
             window.CaptureRenderedFrame();
 
+            // Assert
             ForegroundOfFirstElement(window, 1).Should().Be(Color.Parse("#569CD6"), "the tag color of Signet Dark");
             ((ISolidColorBrush)editor.Background!).Color.Should().Be(Color.Parse("#1E1E1E"));
             editor.TextArea.LeftMargins.OfType<Signet.App.CodeEditor.ThemedLineNumberMargin>().Single()
@@ -296,10 +341,12 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [AvaloniaFact]
     public void JavaScript_tokens_take_the_colours_of_the_js_keys()
     {
+        // Arrange
         const string text = "var s = \"a\"; // note\nif (s) { return 42; }";
         Window window = ShowMiscTab("script.js", text);
         try
         {
+            // Act & Assert
             ForegroundAt(window, 1, 0).Should().Be(Fg(ThemeKeys.JsKeyword));
             ForegroundAt(window, 1, text.IndexOf("\"a\"", System.StringComparison.Ordinal)).Should().Be(Fg(ThemeKeys.JsString));
             ForegroundAt(window, 1, text.IndexOf("note", System.StringComparison.Ordinal)).Should().Be(Fg(ThemeKeys.JsComment));
@@ -319,9 +366,11 @@ public sealed class CodeTabViewRenderTests : IDisposable
     {
         foreach (string fileName in new[] { "first.js", "second.js", "third.js" })
         {
+            // Arrange
             Window window = ShowMiscTab(fileName, "var x = 1;");
             try
             {
+                // Act & Assert
                 ForegroundAt(window, 1, 0).Should().Be(Fg(ThemeKeys.JsKeyword), fileName);
             }
             finally
@@ -334,10 +383,12 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [AvaloniaFact]
     public void Json_tokens_take_the_colours_of_the_json_keys()
     {
+        // Arrange
         const string text = "{ \"name\": \"x\", \"n\": 1, \"ok\": true }";
         Window window = ShowMiscTab("data.json", text);
         try
         {
+            // Act & Assert
             ForegroundAt(window, 1, text.IndexOf("name", System.StringComparison.Ordinal)).Should().Be(Fg(ThemeKeys.JsonProperty));
             ForegroundAt(window, 1, text.IndexOf("\"x\"", System.StringComparison.Ordinal) + 1).Should().Be(Fg(ThemeKeys.JsonString));
             ForegroundAt(window, 1, text.IndexOf('1', System.StringComparison.Ordinal)).Should().Be(Fg(ThemeKeys.JsonNumber));
@@ -352,16 +403,20 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [AvaloniaFact]
     public void Another_theme_recolours_an_open_script_tab_with_its_attributes()
     {
+        // Arrange
         Window window = ShowMiscTab("script.js", "var x = 1;");
         Theme theme = new Theme(System.Ulid.NewUlid().ToString(), "Script").With(
             ThemeKeys.JsKeyword.Id, ThemeEntry.Of(new TextAttributes { Foreground = ThemeColor.FromRgb(0x12, 0x34, 0x56), Bold = true }));
         try
         {
+            // Act
             AppTheme.Apply(Avalonia.Application.Current!, ResolvedTheme.Of(ThemeDocumentKind.Scheme, theme, new ThemeResolver(_ => null)));
             Dispatcher.UIThread.RunJobs();
             window.CaptureRenderedFrame();
 
             VisualLineElement keyword = ElementAt(window, 1, 0);
+
+            // Assert
             ((ISolidColorBrush)keyword.TextRunProperties.ForegroundBrush!).Color.Should().Be(Color.FromRgb(0x12, 0x34, 0x56));
             keyword.TextRunProperties.Typeface.Weight.Should().Be(FontWeight.Bold);
         }
@@ -377,14 +432,19 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [InlineData(true)]
     public void Opening_a_comment_recolours_the_following_lines_after_the_edit(bool extended)
     {
+        // Arrange
         (Window window, CodeTabViewModel vm) = ShowCodeTab("<p>a</p>\n<p>b</p>\n<p>c</p>", extended);
+
+        // Act & Assert
         ForegroundOfFirstElement(window, 3).Should().Be(Fg(ThemeKeys.XhtmlTag));
 
+        // Act
         vm.Document.Insert(0, "<!-- ");
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         ForegroundOfFirstElement(window, 3).Should().Be(Fg(ThemeKeys.XhtmlComment),
             "the comment state from line 1 must carry over to the following lines without scrolling the view");
     }
@@ -400,12 +460,15 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [AvaloniaFact]
     public void Extended_highlighting_styles_text_and_colours_css_inside_style()
     {
+        // Arrange
         const string line1 = "<p><b>bold</b> <i>it</i></p>";
         const string line2 = "<style>p { color: red }</style>";
         (Window window, _) = ShowCodeTab(line1 + "\n" + line2);
 
         Typeface bold = ElementAt(window, 1, line1.IndexOf("bold", System.StringComparison.Ordinal)).TextRunProperties.Typeface;
         Typeface italic = ElementAt(window, 1, line1.IndexOf("it<", System.StringComparison.Ordinal)).TextRunProperties.Typeface;
+
+        // Act & Assert
         bold.Weight.Should().Be(FontWeight.Bold);
         italic.Style.Should().Be(FontStyle.Italic);
 
@@ -416,10 +479,13 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [AvaloniaFact]
     public void Without_extended_highlighting_style_content_keeps_a_single_colour()
     {
+        // Arrange
         const string text = "<style>p { color: red }</style>";
         (Window window, _) = ShowCodeTab(text, extended: false);
 
         VisualLineElement red = ElementAt(window, 1, text.IndexOf("red", System.StringComparison.Ordinal));
+
+        // Act & Assert
         ((ISolidColorBrush)red.TextRunProperties.ForegroundBrush!).Color
             .Should().Be(Fg(ThemeKeys.XhtmlCss));
     }
@@ -427,27 +493,33 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [AvaloniaFact]
     public void Syntax_errors_of_drawn_lines_are_remembered_for_the_squiggle_and_tooltip()
     {
+        // Arrange
         (Window window, _) = ShowCodeTab("<p>a < b</p>");
         TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
         IVisualLineTransformer colorizer = editor.TextArea.TextView.LineTransformers.Single(t => t.GetType().Name.StartsWith("LineStateSyntaxColorizer", System.StringComparison.Ordinal));
 
+        // Act
         var issues = (System.Collections.Generic.IReadOnlyList<SyntaxSpan>)colorizer.GetType()
             .GetMethod("IssuesOf")!.Invoke(colorizer, new object[] { editor.Document.GetLineByNumber(1) })!;
 
+        // Assert
         issues.Should().ContainSingle(s => s.Issue == SyntaxIssue.UnescapedLessThan && s.Start == 5);
     }
 
     [AvaloniaFact]
     public void Typing_lt_slash_in_the_editor_closes_the_open_element()
     {
+        // Arrange
         (Window window, CodeTabViewModel vm) = ShowCodeTab("<p>abc<");
         TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
         editor.TextArea.Focus();
         editor.CaretOffset = vm.Document.TextLength;
 
+        // Act
         window.KeyTextInput("/");
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         vm.Document.Text.Should().Be("<p>abc</p>");
         editor.CaretOffset.Should().Be("<p>abc</p>".Length);
     }
@@ -460,6 +532,7 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [AvaloniaFact]
     public void Code_editor_font_family_and_size_come_from_the_appearance_settings()
     {
+        // Arrange
         (SettingsStore settings, SpellChecker spellChecker) = NewSpellChecker();
         settings.CodeEditorAppearance = settings.CodeEditorAppearance with
         {
@@ -476,22 +549,30 @@ public sealed class CodeTabViewRenderTests : IDisposable
 
         var vm = new CodeTabViewModel(new TabManagerModel().OpenResource(html), new StatusBarService(), settings, spellChecker);
         var window = new Window { Width = 600, Height = 400, Content = new CodeTabView { DataContext = vm } };
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
 
         TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
+
+        // Assert
         editor.FontSize.Should().Be(21);
         editor.FontFamily.Name.Should().Be("Consolas");
 
         // Zoom scales the size from the settings, not a hardcoded base value.
+        // Act
         vm.ZoomFactor = 2.0;
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         editor.FontSize.Should().Be(42);
     }
 
     [AvaloniaFact]
     public void Typing_in_href_shows_file_completions_and_enter_inserts_the_best_match()
     {
+        // Arrange
         (Window window, CodeTabViewModel vm) = ShowCodeTab("<p><a href=\"</p>");
         vm.BookFiles = () => new[]
         {
@@ -503,12 +584,14 @@ public sealed class CodeTabViewRenderTests : IDisposable
         editor.TextArea.Focus();
         editor.CaretOffset = "<p><a href=\"".Length;
 
+        // Act
         window.KeyTextInput("c");
         window.KeyTextInput("t");
         Dispatcher.UIThread.RunJobs();
         window.KeyPressQwerty(Avalonia.Input.PhysicalKey.Enter, Avalonia.Input.RawInputModifiers.None);
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         vm.Document.Text.Should().Be("<p><a href=\"chapter-two.xhtml</p>");
     }
 
@@ -521,6 +604,7 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [AvaloniaFact]
     public void A_character_that_leaves_fewer_completions_than_the_best_old_row_does_not_crash()
     {
+        // Arrange
         (Window window, CodeTabViewModel vm) = ShowCodeTab("<p><a href=\"</p>");
         vm.BookFiles = () => new[]
         {
@@ -532,11 +616,13 @@ public sealed class CodeTabViewRenderTests : IDisposable
         editor.TextArea.Focus();
         editor.CaretOffset = "<p><a href=\"".Length;
 
+        // Act
         window.KeyTextInput("a"); // all three
         window.KeyTextInput("e"); // only the third one
         window.KeyPressQwerty(Avalonia.Input.PhysicalKey.Enter, Avalonia.Input.RawInputModifiers.None);
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         vm.Document.Text.Should().Be("<p><a href=\"aef.xhtml</p>");
     }
 
@@ -548,6 +634,7 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [AvaloniaFact]
     public void Context_menu_opens_with_the_default_layout_without_a_misspelled_word()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
@@ -565,9 +652,11 @@ public sealed class CodeTabViewRenderTests : IDisposable
         TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
         ContextMenu menu = editor.ContextMenu!;
         // Like a right click / the menu key: ContextRequested from the text area (Open() from code skips Opening).
+        // Act
         editor.TextArea.RaiseEvent(new Avalonia.Input.ContextRequestedEventArgs());
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         menu.IsOpen.Should().BeTrue();
         string[] headers = menu.Items.OfType<MenuItem>().Select(i => (string)i.Header!).ToArray();
         headers.Should().Equal(
@@ -593,6 +682,7 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [AvaloniaFact]
     public void Context_menu_offers_rename_class_when_the_caret_is_on_a_class_name()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
@@ -610,10 +700,14 @@ public sealed class CodeTabViewRenderTests : IDisposable
         editor.Document.Text = "<html><body><p class=\"c1\">x</p></body></html>";
         editor.CaretOffset = "<html><body><p class=\"c1".Length;
         Dispatcher.UIThread.RunJobs();
+
+        // Act
         editor.TextArea.RaiseEvent(new Avalonia.Input.ContextRequestedEventArgs());
         Dispatcher.UIThread.RunJobs();
 
         ContextMenu menu = editor.ContextMenu!;
+
+        // Assert
         menu.Items.OfType<MenuItem>().Select(i => (string)i.Header!)
             .Should().Contain(Signet.App.Resources.Strings.Get("CodeEditorMenu_RenameClass"));
         menu.Close();
@@ -626,6 +720,7 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [AvaloniaFact]
     public void Class_items_of_the_context_menu_show_the_shortcuts_of_their_actions()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
@@ -639,6 +734,8 @@ public sealed class CodeTabViewRenderTests : IDisposable
 
         var window = new Window { Width = 600, Height = 400, Content = new CodeTabView { DataContext = vm } };
         window.Show();
+
+        // Act
         Dispatcher.UIThread.RunJobs();
 
         TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
@@ -651,6 +748,8 @@ public sealed class CodeTabViewRenderTests : IDisposable
         ContextMenu menu = editor.ContextMenu!;
         MenuItem Item(string key) =>
             menu.Items.OfType<MenuItem>().Single(i => (string?)i.Header == Signet.App.Resources.Strings.Get(key));
+
+        // Assert
         Item("CodeEditorMenu_FindUsages").InputGesture.Should().Be(host.Gestures[AppActionIds.FindUsages]);
         Item("CodeEditorMenu_RenameClass").InputGesture.Should().BeNull("Rename Class has no shortcut by default");
         menu.Close();
@@ -663,6 +762,7 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [AvaloniaFact]
     public void Context_menu_offers_rename_class_in_a_stylesheet_selector()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         CssResource css = book.GetAllResources().OfType<CssResource>().First();
@@ -677,6 +777,8 @@ public sealed class CodeTabViewRenderTests : IDisposable
         Dispatcher.UIThread.RunJobs();
 
         TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
+
+        // Act
         editor.Document.Text = "p.note { color: red }";
         editor.CaretOffset = 4;
         Dispatcher.UIThread.RunJobs();
@@ -684,6 +786,8 @@ public sealed class CodeTabViewRenderTests : IDisposable
         Dispatcher.UIThread.RunJobs();
 
         ContextMenu menu = editor.ContextMenu!;
+
+        // Assert
         menu.Items.OfType<MenuItem>().Select(i => (string)i.Header!)
             .Should().Contain(Signet.App.Resources.Strings.Get("CodeEditorMenu_RenameClass"));
         menu.Close();
@@ -696,6 +800,7 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [AvaloniaFact]
     public void Context_menu_always_shows_merge_content_enabled_only_for_mergeable_selection()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
@@ -727,13 +832,19 @@ public sealed class CodeTabViewRenderTests : IDisposable
             return item;
         }
 
+        // Act
         editor.Select(start, end - start);
         MenuItem enabled = MergeItem();
+
+        // Assert
         enabled.Header.Should().Be(Signet.App.Resources.Strings.Format("CodeEditorMenu_MergeContentCount", "p", 2));
         enabled.IsEnabled.Should().BeTrue();
 
+        // Act
         editor.Select(start + 3, 1); // "a": both ends in one paragraph
         MenuItem disabled = MergeItem();
+
+        // Assert
         disabled.Header.Should().Be(CodeTabViewModel.MergeContentTextFor(null));
         disabled.IsEnabled.Should().BeFalse();
     }
@@ -742,6 +853,7 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [AvaloniaFact]
     public void Context_menu_unwrap_div_is_disabled_with_a_reason_outside_a_div()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
@@ -771,11 +883,17 @@ public sealed class CodeTabViewRenderTests : IDisposable
             return item;
         }
 
+        // Act
         MenuItem inside = UnwrapItem(text.IndexOf("<p>a", System.StringComparison.Ordinal));
+
+        // Assert
         inside.IsEnabled.Should().BeTrue();
         ToolTip.GetTip(inside).Should().BeNull();
 
+        // Act
         MenuItem outside = UnwrapItem(text.IndexOf("<p>b", System.StringComparison.Ordinal));
+
+        // Assert
         outside.IsEnabled.Should().BeFalse();
         ToolTip.GetTip(outside).Should().Be(Signet.App.Resources.Strings.Get("UnwrapDiv_NotInDiv"));
     }
@@ -793,6 +911,7 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [AvaloniaFact]
     public void Context_menu_footnotes_submenu_follows_the_footnote_state_at_the_caret()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         HtmlResource html = book.GetHtmlResources().First(h => !ReferenceEquals(h, book.GetNavResource()));
@@ -828,11 +947,14 @@ public sealed class CodeTabViewRenderTests : IDisposable
             return items.Select(i => (string)i.Header!).ToArray();
         }
 
+        // Act
         string[] onFootnote = Footnotes(
             new FootnoteMenuState(
                 new Signet.Core.Footnotes.FootnoteHit(footnote!, Signet.Core.Footnotes.FootnoteSide.Reference),
                 Signet.Core.Footnotes.FootnoteError.InsideLink, true, ForeignCount: 2),
             out bool[] onFootnoteEnabled);
+
+        // Assert
         onFootnote.Should().Equal(
             Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnoteEdit"),
             Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnoteGoToNote"),
@@ -843,7 +965,10 @@ public sealed class CodeTabViewRenderTests : IDisposable
             Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnotesUnifyLetters"));
         onFootnoteEnabled.Should().Equal(OnSingleFootnoteEnabled, "the only reference is removed with the whole footnote");
 
+        // Act
         string[] blocked = Footnotes(new FootnoteMenuState(null, Signet.Core.Footnotes.FootnoteError.InsideTag, false), out bool[] blockedEnabled);
+
+        // Assert
         blocked.Should().Equal(
             Signet.App.Resources.Strings.Format(
                 "CodeEditorMenu_FootnoteAddBlocked",
@@ -854,11 +979,17 @@ public sealed class CodeTabViewRenderTests : IDisposable
             Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnotesUnifyLetters"));
         blockedEnabled.Should().Equal(false, false, false, false, false);
 
+        // Act
         string[] free = Footnotes(new FootnoteMenuState(null, Signet.Core.Footnotes.FootnoteError.None, true), out bool[] freeEnabled);
+
+        // Assert
         free[0].Should().Be(Signet.App.Resources.Strings.Get("CodeEditorMenu_FootnoteAdd"));
         freeEnabled.Should().Equal(FreeWithoutNotesEnabled, "without notes there is nothing to add a reference to");
 
+        // Act
         Footnotes(new FootnoteMenuState(null, Signet.Core.Footnotes.FootnoteError.None, true, ReferenceTargetCount: 3), out bool[] withNotes);
+
+        // Assert
         withNotes[1].Should().BeTrue("a reference can lead to one of the notes");
     }
 
@@ -869,6 +1000,7 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [AvaloniaFact]
     public void Code_editor_shortcuts_work_only_while_the_editor_has_focus()
     {
+        // Arrange
         (SettingsStore settings, SpellChecker spellChecker) = NewSpellChecker();
         Signet.App.Input.KeyboardShortcutManager shortcuts = new(settings);
         AppActionRegistry registry = new(
@@ -897,14 +1029,20 @@ public sealed class CodeTabViewRenderTests : IDisposable
         Dispatcher.UIThread.RunJobs();
         TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
 
+        // Act
         editor.TextArea.Focus();
         window.KeyPressQwerty(Avalonia.Input.PhysicalKey.F2, Avalonia.Input.RawInputModifiers.None);
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         renames.Should().Be(1);
 
+        // Act
         other.Focus();
         window.KeyPressQwerty(Avalonia.Input.PhysicalKey.F2, Avalonia.Input.RawInputModifiers.None);
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         renames.Should().Be(1, "outside the editor the shortcut is not the editor's");
     }
 
@@ -1026,6 +1164,7 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [InlineData(true)]
     public void Find_next_keeps_each_match_visible_with_a_one_line_margin(bool jumpAround)
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
@@ -1063,6 +1202,8 @@ public sealed class CodeTabViewRenderTests : IDisposable
         foreach (int start in order)
         {
             int end = start + needle.Length;
+
+            // Act
             vm.SelectMatch(start, end);
             Dispatcher.UIThread.RunJobs();
             window.CaptureRenderedFrame();
@@ -1076,6 +1217,7 @@ public sealed class CodeTabViewRenderTests : IDisposable
             double offset = textView.VerticalOffset;
             double viewport = textView.Bounds.Height;
 
+            // Assert
             (top - offset).Should().BeGreaterThanOrEqualTo(margin - 0.5, $"the match at {start} has a top margin");
             (offset + viewport - bottom).Should().BeGreaterThanOrEqualTo(margin - 0.5, $"the match at {start} has a bottom margin");
         }
@@ -1092,6 +1234,7 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [AvaloniaFact]
     public void Match_selected_before_the_editor_is_laid_out_is_scrolled_into_view_with_a_margin()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
@@ -1110,6 +1253,7 @@ public sealed class CodeTabViewRenderTests : IDisposable
         int start = html.GetText().IndexOf(needle, System.StringComparison.Ordinal);
         int end = start + needle.Length;
 
+        // Act
         window.Show();
         vm.SelectMatch(start, end);
         for (int i = 0; i < 3; i++)
@@ -1127,6 +1271,7 @@ public sealed class CodeTabViewRenderTests : IDisposable
             new TextViewPosition(editor.Document.GetLocation(end)), VisualYPosition.LineBottom).Y;
         double offset = textView.VerticalOffset;
 
+        // Assert
         (top - offset).Should().BeGreaterThanOrEqualTo(margin - 0.5, "top margin");
         (offset + textView.Bounds.Height - bottom).Should().BeGreaterThanOrEqualTo(margin - 0.5, "bottom margin");
         window.Close();
@@ -1140,6 +1285,7 @@ public sealed class CodeTabViewRenderTests : IDisposable
     [AvaloniaFact]
     public void Caret_jump_requested_before_the_editor_is_laid_out_is_scrolled_into_view_with_a_margin()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
@@ -1161,6 +1307,7 @@ public sealed class CodeTabViewRenderTests : IDisposable
 
         // The view is laid out for another tab first (e.g. a CSS file), then switched to the HTML
         // tab — the jump arrives together with the switch, before the new document is laid out.
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
@@ -1180,6 +1327,7 @@ public sealed class CodeTabViewRenderTests : IDisposable
         double bottom = textView.GetVisualPosition(position, VisualYPosition.LineBottom).Y;
         double offset = textView.VerticalOffset;
 
+        // Assert
         editor.CaretOffset.Should().Be(target);
         (top - offset).Should().BeGreaterThanOrEqualTo(margin - 0.5, "top margin");
         (offset + textView.Bounds.Height - bottom).Should().BeGreaterThanOrEqualTo(margin - 0.5, "bottom margin");

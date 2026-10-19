@@ -85,13 +85,16 @@ public sealed class FloatingDocumentTests
     [AvaloniaFact]
     public void A_tab_floated_out_of_the_tab_strip_gets_its_own_window()
     {
+        // Arrange
         using Scenario s = new();
         int before = s.Tabs.Count;
         ContentTabViewModel tab = s.Tabs[1];
 
+        // Act
         s.Factory.FloatDockable(tab);
         s.Settle();
 
+        // Assert
         s.Windows.Should().ContainSingle();
         TabsOf(s.Windows[0]).Should().Equal(tab);
         s.Tabs.Should().NotContain(tab).And.HaveCount(before - 1);
@@ -100,60 +103,85 @@ public sealed class FloatingDocumentTests
     [AvaloniaFact]
     public void The_tab_floated_out_of_the_tab_strip_stays_the_active_one_so_the_preview_follows_it()
     {
+        // Arrange
         using Scenario s = new();
         ContentTabViewModel tab = s.Tabs[1];
+
+        // Act & Assert
         s._vm.ActiveTab.Should().NotBeSameAs(tab, "another tab is active before");
 
+        // Act
         s.Factory.FloatDockable(tab);
         s.Settle();
 
+        // Assert
         s._vm.ActiveTab.Should().BeSameAs(tab, "the tab that was taken out is the one being worked on");
     }
 
     [AvaloniaFact]
     public void Focusing_a_floated_tab_makes_it_the_active_one_again()
     {
+        // Arrange
         using Scenario s = new();
         ContentTabViewModel floated = s.Tabs[1];
         ContentTabViewModel other = s.Tabs[0];
+
+        // Act
         s.Factory.FloatDockable(floated);
         s.Settle();
         IDocumentDock windowTabs = (IDocumentDock)((IDock)s.Windows[0].Layout!).VisibleDockables!.Single();
         s._vm.NavigateToBookPathAtOffset(other.Resource.BookPath, 0);
         s.Settle();
+
+        // Assert
         s._vm.ActiveTab.Should().BeSameAs(other);
 
+        // Act
         s.Factory.SetFocusedDockable(windowTabs, floated);
         s.Settle();
 
+        // Assert
         s._vm.ActiveTab.Should().BeSameAs(floated, "a click in the floated tab shows its file in the preview");
     }
 
     [AvaloniaFact]
     public void The_book_browser_selects_the_file_of_the_tab_that_became_active_also_a_floated_one()
     {
+        // Arrange
         using Scenario s = new();
         ContentTabViewModel floated = s.Tabs[1];
         ContentTabViewModel other = s.Tabs[0];
+
+        // Act
         s.Factory.FloatDockable(floated);
         s.Settle();
         IDocumentDock windowTabs = (IDocumentDock)((IDock)s.Windows[0].Layout!).VisibleDockables!.Single();
 
+        // Act & Assert
         s._vm.BookBrowser.SelectedResources.Should().ContainSingle().Which.Should().BeSameAs(floated.Resource, "the tab taken out is the active one");
 
+        // Act
         s._vm.NavigateToBookPathAtOffset(other.Resource.BookPath, 0);
         s.Settle();
+
+        // Assert
         s._vm.BookBrowser.SelectedResources.Should().ContainSingle().Which.Should().BeSameAs(other.Resource);
 
+        // Act
         s.Factory.SetFocusedDockable(windowTabs, floated);
         s.Settle();
+
+        // Assert
         s._vm.BookBrowser.SelectedResources.Should().ContainSingle().Which.Should().BeSameAs(floated.Resource, "the focused tab is shown in the Book Browser");
     }
 
     [AvaloniaFact]
     public void The_window_of_a_floated_tab_has_no_dialog_frame()
     {
+        // Arrange
         using Scenario s = new();
+
+        // Act
         s.Factory.FloatDockable(s.Tabs[1]);
         s.Settle();
         HostWindow host = (HostWindow)s.Windows[0].Host!;
@@ -163,6 +191,7 @@ public sealed class FloatingDocumentTests
         Avalonia.Controls.Presenters.ContentPresenter[] presenters = host.GetVisualDescendants()
             .OfType<Avalonia.Controls.Presenters.ContentPresenter>().Where(p => p.Name == "PART_ContentPresenter").ToArray();
 
+        // Assert
         presenters.Should().NotBeEmpty();
         presenters.Take(1).Should().OnlyContain(p => p.BorderBrush == null && p.Margin == default, "only dialogs have the frame");
     }
@@ -170,15 +199,19 @@ public sealed class FloatingDocumentTests
     [AvaloniaFact]
     public void Closing_the_window_of_a_floated_tab_attaches_it_to_the_tab_strip_again()
     {
+        // Arrange
         using Scenario s = new();
         int before = s.Tabs.Count;
         ContentTabViewModel tab = s.Tabs[1];
+
+        // Act
         s.Factory.FloatDockable(tab);
         s.Settle();
 
         ((HostWindow)s.Windows[0].Host!).Close();
         s.Settle();
 
+        // Assert
         s.Windows.Should().BeEmpty();
         s.Tabs.Should().Contain(tab).And.HaveCount(before, "closing the window does not close the file");
         s.MainTabs.ActiveDockable.Should().BeSameAs(tab);
@@ -187,15 +220,19 @@ public sealed class FloatingDocumentTests
     [AvaloniaFact]
     public void Closing_a_floated_tab_closes_it_and_its_window()
     {
+        // Arrange
         using Scenario s = new();
         int before = s.Tabs.Count;
         ContentTabViewModel tab = s.Tabs[1];
+
+        // Act
         s.Factory.FloatDockable(tab);
         s.Settle();
 
         s.Factory.CloseDockable(tab);
         s.Settle();
 
+        // Assert
         s.Windows.Should().BeEmpty();
         s.Tabs.Should().NotContain(tab).And.HaveCount(before - 1);
     }
@@ -203,9 +240,12 @@ public sealed class FloatingDocumentTests
     [AvaloniaFact]
     public void A_floated_tab_can_be_dropped_into_the_window_of_another_one_and_floated_out_again()
     {
+        // Arrange
         using Scenario s = new();
         ContentTabViewModel first = s.Tabs[0];
         ContentTabViewModel second = s.Tabs[1];
+
+        // Act
         s.Factory.FloatDockable(first);
         s.Settle();
         IDocumentDock windowTabs = (IDocumentDock)((IDock)s.Windows[0].Layout!).VisibleDockables!.Single();
@@ -213,12 +253,15 @@ public sealed class FloatingDocumentTests
         s.Factory.MoveDockable(s.MainTabs, windowTabs, second, null);
         s.Settle();
 
+        // Assert
         s.Windows.Should().ContainSingle();
         TabsOf(s.Windows[0]).Should().BeEquivalentTo(new IDocument[] { first, second });
 
+        // Act
         s.Factory.FloatDockable(second);
         s.Settle();
 
+        // Assert
         s.Windows.Should().HaveCount(2);
         s.Windows.Select(TabsOf).Should().OnlyContain(tabs => tabs.Length == 1);
     }
@@ -226,17 +269,24 @@ public sealed class FloatingDocumentTests
     [AvaloniaFact]
     public void Closing_the_application_windows_attaches_all_floated_tabs_again()
     {
+        // Arrange
         using Scenario s = new();
         List<ContentTabViewModel> all = s.Tabs;
+
+        // Act
         s.Factory.FloatDockable(all[0]);
         s.Settle();
         s.Factory.FloatDockable(all[1]);
         s.Settle();
+
+        // Assert
         s.Windows.Should().HaveCount(2);
 
+        // Act
         s.Factory.CloseFloatingWindows();
         s.Settle();
 
+        // Assert
         s.Windows.Should().BeEmpty();
         s.Tabs.Should().BeEquivalentTo(all);
     }
@@ -244,6 +294,7 @@ public sealed class FloatingDocumentTests
     [AvaloniaFact]
     public void A_tab_docks_only_into_a_tab_strip_never_into_a_panel_region()
     {
+        // Arrange
         using Scenario s = new();
         DockManager manager = new(new DockService());
         ContentTabViewModel tab = s.Tabs[0];
@@ -255,21 +306,29 @@ public sealed class FloatingDocumentTests
         {
             foreach (DockOperation operation in new[] { DockOperation.Fill, DockOperation.Left, DockOperation.Window })
             {
+                // Act
                 manager.ValidateDockable(tab, region, DragAction.Move, operation, false)
+
+                    // Assert
                     .Should().BeFalse($"{region.Id} is a panel region ({operation})");
             }
         }
 
+        // Act & Assert
         manager.ValidateDockable(tab, s.MainTabs, DragAction.Move, DockOperation.Fill, false).Should().BeTrue();
     }
 
     [AvaloniaFact]
     public void A_window_of_floated_tabs_has_the_keyboard_shortcuts_of_the_main_window()
     {
+        // Arrange
         using Scenario s = new();
+
+        // Act
         s.Factory.FloatDockable(s.Tabs[0]);
         s.Settle();
 
+        // Assert
         ((HostWindow)s.Windows[0].Host!).KeyBindings.Should().NotBeEmpty();
     }
 }

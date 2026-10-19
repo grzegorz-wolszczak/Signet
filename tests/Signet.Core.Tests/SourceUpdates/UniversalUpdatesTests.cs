@@ -20,6 +20,7 @@ public sealed class UniversalUpdatesTests
     [Fact]
     public void Perform_ImageRenamed_UpdatesReferencingHtmlResource()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = BookCreator.CreateNewBook("2.0");
 
@@ -37,12 +38,18 @@ public sealed class UniversalUpdatesTests
         string oldImageBookPath = image.BookPath;
         Resource[] toRename = { image };
         string[] newNames = { "cover-renamed.jpg" };
+
+        // Act
         book.GetFolderKeeper().BulkRenameResources(toRename, newNames);
         image.CurrentBookRelPath = oldImageBookPath;
 
+        // Arrange
         Dictionary<string, string> updates = new() { [oldImageBookPath] = image.BookPath };
+
+        // Act
         UniversalUpdates.Perform(book, updates);
 
+        // Assert
         html.GetText().Should().Contain("src=\"../Images/cover-renamed.jpg\"");
         html.CurrentBookRelPath.Should().Be(html.BookPath);
     }
@@ -50,6 +57,7 @@ public sealed class UniversalUpdatesTests
     [Fact]
     public void Perform_CssRenamed_UpdatesLinkInHtmlAndImageUrlInCss()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = BookCreator.CreateNewBook("2.0");
 
@@ -75,6 +83,8 @@ public sealed class UniversalUpdatesTests
         string oldImageBookPath = image.BookPath;
         Resource[] toRename = { css, image };
         string[] newNames = { "style-new.css", "cover-new.jpg" };
+
+        // Act
         book.GetFolderKeeper().BulkRenameResources(toRename, newNames);
         css.CurrentBookRelPath = oldCssBookPath;
         image.CurrentBookRelPath = oldImageBookPath;
@@ -84,8 +94,11 @@ public sealed class UniversalUpdatesTests
             [oldCssBookPath] = css.BookPath,
             [oldImageBookPath] = image.BookPath,
         };
+
+        // Act
         UniversalUpdates.Perform(book, updates);
 
+        // Assert
         html.GetText().Should().Contain("href=\"../Styles/style-new.css\"");
         ((CssResource)css).GetText().Should().Contain("url(../Images/cover-new.jpg)");
     }
@@ -93,12 +106,15 @@ public sealed class UniversalUpdatesTests
     [Fact]
     public void Perform_EmptyUpdates_DoesNothing()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource html = book.GetHtmlResources()[0];
         string original = html.GetText();
 
+        // Act
         UniversalUpdates.Perform(book, new Dictionary<string, string>());
 
+        // Assert
         html.GetText().Should().Be(original);
     }
 }

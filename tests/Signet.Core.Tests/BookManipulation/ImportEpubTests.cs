@@ -29,11 +29,14 @@ public sealed class ImportEpubTests
     [MemberData(nameof(ValidCorpus))]
     public void GetBook_ValidCorpus_ImportsWithoutException(string corpusDir)
     {
+        // Arrange
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(corpusDir, temp);
 
+        // Act
         using Book book = new ImportEpub(epub).GetBook();
 
+        // Assert
         book.GetOpf().Should().NotBeNull();
         book.GetAllResources().Should().NotBeEmpty();
         book.EpubVersion.Should().MatchRegex("^[23]");
@@ -49,11 +52,14 @@ public sealed class ImportEpubTests
     [Fact]
     public void GetBook_CleanEpub_ImportsWithoutWarningsAndUnmodified()
     {
+        // Arrange
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, temp);
 
+        // Act
         using Book book = new ImportEpub(epub).GetBook();
 
+        // Assert
         book.LoadWarnings.Should().BeEmpty();
         book.Modified.Should().BeFalse();
     }
@@ -61,11 +67,14 @@ public sealed class ImportEpubTests
     [Fact]
     public void GetBook_Epub2Minimal_LoadsRealNcxContent_NotDefaultTemplate()
     {
+        // Arrange
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub2Minimal, temp);
 
+        // Act
         using Book book = new ImportEpub(epub).GetBook();
 
+        // Assert
         string ncxText = book.GetNcx()!.GetText();
         ncxText.Should().Contain("Minimal EPUB 2").And.Contain("Chapter 1");
         ncxText.Should().NotContain("ID_UNKNOWN").And.NotContain("Section0001.xhtml");
@@ -74,11 +83,14 @@ public sealed class ImportEpubTests
     [Fact]
     public void GetBook_Epub2Minimal_HasNcxAndSpineHtml()
     {
+        // Arrange
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub2Minimal, temp);
 
+        // Act
         using Book book = new ImportEpub(epub).GetBook();
 
+        // Assert
         book.EpubVersion.Should().Be("2.0");
         book.IsEpub3.Should().BeFalse();
         book.GetNcx().Should().NotBeNull();
@@ -89,11 +101,14 @@ public sealed class ImportEpubTests
     [Fact]
     public void GetBook_Epub3Minimal_IsEpub3_WithNavAndNoNcx()
     {
+        // Arrange
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, temp);
 
+        // Act
         using Book book = new ImportEpub(epub).GetBook();
 
+        // Assert
         book.EpubVersion.Should().Be("3.0");
         book.IsEpub3.Should().BeTrue();
         book.GetNcx().Should().BeNull();
@@ -103,11 +118,14 @@ public sealed class ImportEpubTests
     [Fact]
     public void GetBook_Epub3WithNcx_LoadsNcxAndKeepsSpineOrder()
     {
+        // Arrange
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3WithNcx, temp);
 
+        // Act
         using Book book = new ImportEpub(epub).GetBook();
 
+        // Assert
         book.GetNcx().Should().NotBeNull();
         book.GetHtmlResources().Select(h => h.Filename)
             .Should().ContainInOrder("chapter1.xhtml", "chapter2.xhtml");
@@ -116,11 +134,14 @@ public sealed class ImportEpubTests
     [Fact]
     public void GetBook_Media_DetectsResourceTypes_AndFontsAreNotObfuscated()
     {
+        // Arrange
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
 
+        // Act
         using Book book = new ImportEpub(epub).GetBook();
 
+        // Assert
         book.GetAllResources().OfType<ImageResource>().Should().HaveCountGreaterThanOrEqualTo(2);
         book.GetAllResources().OfType<AudioResource>().Should().ContainSingle();
         book.GetAllResources().OfType<FontResource>().Should().ContainSingle()
@@ -130,11 +151,14 @@ public sealed class ImportEpubTests
     [Fact]
     public void GetBook_DeepFolders_ResolvesRelativeHrefs_AndWarnsOnMissingManifestFile()
     {
+        // Arrange
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.EdgeDeepFolders, temp);
 
+        // Act
         using Book book = new ImportEpub(epub).GetBook();
 
+        // Assert
         book.GetAllResources().Should().Contain(r => r.BookPath == "content/pages/body/ch01.xhtml");
         book.GetAllResources().Should().Contain(r => r.BookPath == "content/resources/styles/main.css");
         // The manifest lists resources/img/pic.png, which is not in the tree.
@@ -145,6 +169,7 @@ public sealed class ImportEpubTests
     [Fact]
     public void GetBook_Epub3WithoutNavDocument_CreatesOneAndWarns()
     {
+        // Arrange
         using TempDir temp = new();
         string staged = TestFs.CopyDirectory(CorpusPaths.Epub3Minimal, temp.Combine("staged"));
 
@@ -156,8 +181,10 @@ public sealed class ImportEpubTests
 
         string epub = EpubBuilder.BuildInto(staged, temp, "no-nav.epub");
 
+        // Act
         using Book book = new ImportEpub(epub).GetBook();
 
+        // Assert
         book.LoadWarnings.Should().Contain(CoreStrings.Get("LoadWarning_NavCreated"));
         book.GetAllResources().OfType<HtmlResource>()
             .Should().Contain(h => h.Filename == "nav.xhtml", "Signet creates the missing navigation document");
@@ -166,11 +193,14 @@ public sealed class ImportEpubTests
     [Fact]
     public void GetBook_NotWellFormedXhtml_ImportsWithWarning()
     {
+        // Arrange
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("not-wellformed-xhtml"), temp);
 
+        // Act
         using Book book = new ImportEpub(epub).GetBook();
 
+        // Assert
         book.LoadWarnings.Should().Contain(w => w.Contains("well-formed", StringComparison.OrdinalIgnoreCase));
         book.Modified.Should().BeTrue();
     }
@@ -178,13 +208,17 @@ public sealed class ImportEpubTests
     [Fact]
     public void GetBook_NotWellFormedXhtml_ListsEachFileWithTheReasonAndPosition()
     {
+        // Arrange
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("not-wellformed-xhtml"), temp);
 
+        // Act
         using Book book = new ImportEpub(epub).GetBook();
 
         LoadWarning warning = book.LoadWarningDetails.Should()
             .ContainSingle(w => w.Title == CoreStrings.Get("LoadWarningGroup_HtmlNotWellFormed")).Which;
+
+        // Assert
         warning.Items.Should().NotBeEmpty().And.OnlyContain(i => !string.IsNullOrEmpty(i.BookPath) && i.Reason.Length > 0);
         warning.Items.Should().Contain(i => i.Line > 0 && i.Column > 0, "the XML parser reports where the error is");
         warning.Items.Should().OnlyContain(i => !i.Reason.Contains("position", StringComparison.Ordinal) || i.Line <= 0,
@@ -196,11 +230,14 @@ public sealed class ImportEpubTests
     [Fact]
     public void GetBook_DeepFolders_ListsTheMissingManifestFileAsAnItem()
     {
+        // Arrange
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.EdgeDeepFolders, temp);
 
+        // Act
         using Book book = new ImportEpub(epub).GetBook();
 
+        // Assert
         LoadWarning warning = book.LoadWarningDetails.Should()
             .ContainSingle(w => w.Title == CoreStrings.Get("LoadWarningGroup_ManifestFilesMissing")).Which;
         warning.Items.Should().ContainSingle(i => i.BookPath!.EndsWith("pic.png", StringComparison.Ordinal))
@@ -210,34 +247,43 @@ public sealed class ImportEpubTests
     [Fact]
     public void GetBook_MissingMimetype_ImportsWithWarning()
     {
+        // Arrange
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("missing-mimetype"), temp);
 
+        // Act
         using Book book = new ImportEpub(epub).GetBook();
 
+        // Assert
         book.LoadWarnings.Should().Contain(w => w.Contains("mimetype", StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
     public void GetBook_NoRootfile_ThrowsEpubLoadException()
     {
+        // Arrange
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("no-rootfile"), temp);
 
         Action act = () => new ImportEpub(epub).GetBook();
 
+        // Act & Assert
         act.Should().Throw<EpubLoadException>();
     }
 
     [Fact]
     public void GetBook_BadOpfXml_EitherImportsWithWarningOrThrows()
     {
+        // Arrange
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("bad-opf-xml"), temp);
 
+        // Act
         try
         {
             using Book book = new ImportEpub(epub).GetBook();
+
+            // Assert
             book.LoadWarnings.Should().Contain(w => w.Contains("OPF", StringComparison.Ordinal));
         }
         catch (EpubLoadException)
@@ -249,14 +295,17 @@ public sealed class ImportEpubTests
     [Fact]
     public void GetBook_MissingFile_ThrowsEpubLoadException()
     {
+        // Arrange
         Action act = () => new ImportEpub(Path.Combine(Path.GetTempPath(), "signet-does-not-exist.epub")).GetBook();
 
+        // Act & Assert
         act.Should().Throw<EpubLoadException>();
     }
 
     [Fact]
     public void GetBook_ObfuscatedFonts_DeobfuscatesBothAlgorithmsOnImport()
     {
+        // Arrange
         const string identifier = "urn:uuid:5b2e8c1a-0000-4000-8000-0000000000ab";
         string fixtureDir = CorpusPaths.Epub3ObfuscatedFonts;
 
@@ -273,8 +322,10 @@ public sealed class ImportEpubTests
 
         string epub = EpubBuilder.BuildInto(staged, temp, "obfuscated-fonts.epub");
 
+        // Act
         using Book book = new ImportEpub(epub).GetBook();
 
+        // Assert
         FontResource idpf = book.GetAllResources().OfType<FontResource>()
             .Single(f => f.Filename == "idpf-font.ttf");
         FontResource adobe = book.GetAllResources().OfType<FontResource>()
@@ -290,11 +341,14 @@ public sealed class ImportEpubTests
     [Fact]
     public void GetBook_ExposesMetadata_FromOpf()
     {
+        // Arrange
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub2Minimal, temp);
 
+        // Act
         using Book book = new ImportEpub(epub).GetBook();
 
+        // Assert
         book.GetMetadataValues("dc:title").Should().ContainSingle().Which.Should().Be("Minimal EPUB 2");
         book.GetMetadata().Should().Contain(m => m.Name == "dc:language" && m.Content == "en");
     }

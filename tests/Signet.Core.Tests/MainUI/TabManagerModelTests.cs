@@ -27,16 +27,19 @@ public sealed class TabManagerModelTests
     [Fact]
     public void Opening_three_distinct_resources_creates_three_tabs()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(temp);
         using TabManagerModel sut = new();
         List<Resource> resources = ThreeDistinctResources(book);
 
+        // Act
         foreach (Resource resource in resources)
         {
             sut.OpenResource(resource);
         }
 
+        // Assert
         sut.Count.Should().Be(3);
         sut.Tabs.Select(t => t.Resource).Should().Equal(resources);
         sut.ActiveTab!.Resource.Should().Be(resources[2]);
@@ -45,6 +48,7 @@ public sealed class TabManagerModelTests
     [Fact]
     public void Reopening_a_resource_activates_the_existing_tab_instead_of_duplicating()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(temp);
         using TabManagerModel sut = new();
@@ -52,8 +56,11 @@ public sealed class TabManagerModelTests
         resources.ForEach(r => sut.OpenResource(r));
 
         OpenTab first = sut.Tabs[0];
+
+        // Act
         sut.OpenResource(resources[0]);
 
+        // Assert
         sut.Count.Should().Be(3);
         sut.ActiveTab.Should().BeSameAs(first);
     }
@@ -61,15 +68,22 @@ public sealed class TabManagerModelTests
     [Fact]
     public void Closing_the_last_tab_is_ignored_without_force()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(temp);
         using TabManagerModel sut = new();
         sut.OpenResource(book.GetAllResources().First(r => r.Type == ResourceType.Html));
 
+        // Act
         sut.CloseTab(0).Should().BeFalse();
+
+        // Assert
         sut.Count.Should().Be(1);
 
+        // Act
         sut.CloseTab(0, force: true).Should().BeTrue();
+
+        // Assert
         sut.Count.Should().Be(0);
         sut.ActiveTab.Should().BeNull();
     }
@@ -77,15 +91,18 @@ public sealed class TabManagerModelTests
     [Fact]
     public void Closing_the_active_tab_activates_the_previously_active_one()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(temp);
         using TabManagerModel sut = new();
         List<Resource> resources = ThreeDistinctResources(book);
         resources.ForEach(r => sut.OpenResource(r));
 
+        // Act
         sut.Activate(0);          // history: [2] then [0] active, prev active pushed => history has index-2 tab, current 0
         sut.CloseActiveTab();     // closes tab 0 -> should fall back to the history entry (old active)
 
+        // Assert
         sut.Count.Should().Be(2);
         sut.ActiveTab!.Resource.Should().Be(resources[2]);
     }
@@ -93,29 +110,41 @@ public sealed class TabManagerModelTests
     [Fact]
     public void Next_and_previous_tab_wrap_around()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(temp);
         using TabManagerModel sut = new();
         ThreeDistinctResources(book).ForEach(r => sut.OpenResource(r));
 
         sut.ActiveIndex.Should().Be(2);
+
+        // Act
         sut.NextTab();
+
+        // Assert
         sut.ActiveIndex.Should().Be(0);
+
+        // Act
         sut.PreviousTab();
+
+        // Assert
         sut.ActiveIndex.Should().Be(2);
     }
 
     [Fact]
     public void Close_other_tabs_keeps_only_the_requested_one()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(temp);
         using TabManagerModel sut = new();
         List<Resource> resources = ThreeDistinctResources(book);
         resources.ForEach(r => sut.OpenResource(r));
 
+        // Act
         sut.CloseOtherTabs(1);
 
+        // Assert
         sut.Count.Should().Be(1);
         sut.ActiveTab!.Resource.Should().Be(resources[1]);
     }
@@ -123,30 +152,40 @@ public sealed class TabManagerModelTests
     [Fact]
     public void Back_returns_to_the_previously_active_tab()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(temp);
         using TabManagerModel sut = new();
         List<Resource> resources = ThreeDistinctResources(book);
         resources.ForEach(r => sut.OpenResource(r));
 
+        // Act
         sut.Activate(0);
+
+        // Assert
         sut.CanGoBack.Should().BeTrue();
+
+        // Act
         sut.Back();
 
+        // Assert
         sut.ActiveTab!.Resource.Should().Be(resources[2]);
     }
 
     [Fact]
     public void Deleting_the_underlying_resource_closes_its_tab()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(temp);
         using TabManagerModel sut = new();
         List<Resource> resources = ThreeDistinctResources(book);
         resources.ForEach(r => sut.OpenResource(r));
 
+        // Act
         book.GetFolderKeeper().BulkRemoveResources(new[] { resources[1] });
 
+        // Assert
         sut.Count.Should().Be(2);
         sut.Tabs.Select(t => t.Resource).Should().NotContain(resources[1]);
     }
@@ -154,6 +193,7 @@ public sealed class TabManagerModelTests
     [Fact]
     public void Renaming_the_underlying_resource_raises_a_caption_change()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(temp);
         using TabManagerModel sut = new();
@@ -165,8 +205,11 @@ public sealed class TabManagerModelTests
 
         Resource[] toRename = { css };
         string[] newNames = { "renamed.css" };
+
+        // Act
         book.GetFolderKeeper().BulkRenameResources(toRename, newNames);
 
+        // Assert
         renamed.Should().NotBeNull();
         renamed!.Resource.Should().BeSameAs(css);
     }
@@ -174,11 +217,14 @@ public sealed class TabManagerModelTests
     [Fact]
     public void Capture_and_restore_session_round_trips_open_tabs_and_the_active_one()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(temp);
         List<Resource> resources = ThreeDistinctResources(book);
 
         TabSession session;
+
+        // Act
         using (TabManagerModel first = new())
         {
             resources.ForEach(r => first.OpenResource(r));
@@ -186,12 +232,15 @@ public sealed class TabManagerModelTests
             session = first.CaptureSession();
         }
 
+        // Assert
         session.OpenBookPaths.Should().HaveCount(3);
         session.ActiveBookPath.Should().Be(resources[1].BookPath);
 
+        // Act
         using TabManagerModel restored = new();
         restored.RestoreSession(session, book.GetFolderKeeper().GetResourceByBookPathNoThrow);
 
+        // Assert
         restored.Tabs.Select(t => t.Resource.BookPath).Should().Equal(session.OpenBookPaths);
         restored.ActiveTab!.Resource.BookPath.Should().Be(resources[1].BookPath);
     }

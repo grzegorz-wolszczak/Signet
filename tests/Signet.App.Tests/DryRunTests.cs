@@ -87,12 +87,15 @@ public sealed class DryRunTests : IDisposable
     [Fact]
     public void DryRun_BuildsRows_WithMatchCountAndTrimmedContext()
     {
+        // Arrange
         HtmlResource a = Html("<p>the quick brown fox</p>");
         HtmlResource b = Html("<p>quick</p>");
         ReplacePreviewRequest request = BuildRequest("quick", a, b);
 
+        // Act
         var dryRun = new DryRunReplaceViewModel(request.Resources, request.SearchRegex, "slow");
 
+        // Assert
         dryRun.MatchCount.Should().Be(2);
         dryRun.Rows.Should().HaveCount(2);
         dryRun.Rows[0].MatchText.Should().Be("quick");
@@ -103,13 +106,16 @@ public sealed class DryRunTests : IDisposable
     [Fact]
     public void DryRun_Filter_LimitsVisibleRows()
     {
+        // Arrange
         HtmlResource a = Html("<p>xx yy match</p>");
         HtmlResource b = Html("<p>zz match</p>");
         ReplacePreviewRequest request = BuildRequest("match", a, b);
         var dryRun = new DryRunReplaceViewModel(request.Resources, request.SearchRegex, "X");
 
+        // Act
         dryRun.FilterText = "yy";
 
+        // Assert
         dryRun.Rows.Should().ContainSingle();
         dryRun.Rows[0].BeforeSnippet.Should().Contain("yy");
         dryRun.MatchCount.Should().Be(2);
@@ -118,30 +124,39 @@ public sealed class DryRunTests : IDisposable
     [Fact]
     public void DryRun_ChangingContextAmount_Rebuilds()
     {
+        // Arrange
         HtmlResource a = Html("<p>needle aa bb cc dd ee ff gg hh</p>");
         ReplacePreviewRequest request = BuildRequest("needle", a);
         var dryRun = new DryRunReplaceViewModel(request.Resources, request.SearchRegex, "X") { ContextAmount = 5 };
 
         int shortPost = dryRun.Rows[0].PostContext.Length;
+
+        // Act
         dryRun.ContextAmount = 40;
 
+        // Assert
         dryRun.Rows[0].PostContext.Length.Should().BeGreaterThan(shortPost);
     }
 
     [Fact]
     public void TryBuildReplacePreviewRequest_NoFindText_ReturnsNullWithMessage()
     {
+        // Arrange
         var host = new FakeMultiFileSearchHost { BookLoaded = true };
         FindReplaceViewModel panel = NewPanel(host, () => null);
         panel.LookWhereIndex = (int)LookWhere.AllHtmlFiles;
 
+        // Act & Assert
         panel.TryBuildReplacePreviewRequest().Should().BeNull();
+
+        // Assert
         panel.Message.Should().Be(Strings.Get("FindReplace_EnterSearchText"));
     }
 
     [Fact]
     public void ChooseReplacements_DeselectingRow_SkipsItOnApply()
     {
+        // Arrange
         HtmlResource a = Html("<p>cat cat</p>");
         HtmlResource b = Html("<p>cat</p>");
         var host = new FakeMultiFileSearchHost { BookLoaded = true, Resolver = _ => new TextResource[] { a, b } };
@@ -150,15 +165,20 @@ public sealed class DryRunTests : IDisposable
         panel.FindText = "cat";
         panel.ReplaceText = "dog";
 
+        // Act
         ReplacePreviewRequest request = panel.TryBuildReplacePreviewRequest()!;
         var chooser = new ReplacementChooserViewModel(
             request.Resources, request.SearchRegex, request.ReplaceText, panel.ApplyChosenReplacements);
 
+        // Assert
         chooser.Rows.Should().HaveCount(3);
+
+        // Act
         chooser.Rows[0].IsChecked = false; // the first "cat" in file a
 
         chooser.ApplyCommand.Execute(null);
 
+        // Assert
         chooser.ReplacementCount.Should().Be(2);
         a.GetText().Should().Be("<p>cat dog</p>");
         b.GetText().Should().Be("<p>dog</p>");
@@ -167,6 +187,7 @@ public sealed class DryRunTests : IDisposable
     [Fact]
     public void ChooseReplacements_Apply_OpenTab_KeepsSingleUndoStep()
     {
+        // Arrange
         HtmlResource closed = Html("<p>needle needle</p>");
         HtmlResource opened = Html("<p>needle</p>");
         CodeTabViewModel openedTab = OpenTab(opened);
@@ -190,8 +211,10 @@ public sealed class DryRunTests : IDisposable
         bool closeRaised = false;
         chooser.CloseRequested += (_, _) => closeRaised = true;
 
+        // Act
         chooser.ApplyCommand.Execute(null);
 
+        // Assert
         chooser.ReplacementCount.Should().Be(3);
         closed.GetText().Should().Be("<p>pin pin</p>");
         openedTab.Document.Text.Should().Be("<p>pin</p>");
@@ -202,6 +225,7 @@ public sealed class DryRunTests : IDisposable
     [Fact]
     public void ChooseReplacements_SelectAll_TogglesEveryRow()
     {
+        // Arrange
         HtmlResource a = Html("<p>x x x</p>");
         ReplacePreviewRequest request = BuildRequest("x", a);
         var chooser = new ReplacementChooserViewModel(
@@ -210,11 +234,17 @@ public sealed class DryRunTests : IDisposable
 
         chooser.SelectedCount.Should().Be(3);
 
+        // Act
         chooser.SelectAll = false;
+
+        // Assert
         chooser.SelectedCount.Should().Be(0);
         chooser.Rows.Should().OnlyContain(r => !r.IsChecked);
 
+        // Act
         chooser.Rows[1].IsChecked = true;
+
+        // Assert
         chooser.SelectAll.Should().BeFalse();
         chooser.SelectedCount.Should().Be(1);
     }

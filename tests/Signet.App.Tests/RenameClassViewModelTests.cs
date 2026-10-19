@@ -23,14 +23,18 @@ public sealed class RenameClassViewModelTests
     [Fact]
     public void Starts_with_the_old_name_and_cannot_be_accepted_until_it_changes()
     {
+        // Arrange
         RenameClassViewModel sut = FromElement();
 
+        // Act & Assert
         sut.NewName.Should().Be("c1");
         sut.CanAccept.Should().BeFalse();
         sut.ValidationMessages.Should().Equal(Strings.Get("RenameClass_SameAsOld"));
 
+        // Act
         sut.NewName = "lead";
 
+        // Assert
         sut.CanAccept.Should().BeTrue();
         sut.ValidationError.Should().BeEmpty();
     }
@@ -38,10 +42,13 @@ public sealed class RenameClassViewModelTests
     [Fact]
     public void Shows_every_problem_of_the_new_name()
     {
+        // Arrange
         RenameClassViewModel sut = FromElement();
 
+        // Act
         sut.NewName = "1a.b";
 
+        // Assert
         sut.CanAccept.Should().BeFalse();
         sut.ValidationMessages.Should().Equal(
             Strings.Format("RenameClass_InvalidCharacters", "'.'"),
@@ -51,25 +58,32 @@ public sealed class RenameClassViewModelTests
     [Fact]
     public void Rejects_a_class_that_already_exists()
     {
+        // Arrange
         RenameClassViewModel sut = FromElement();
 
+        // Act
         sut.NewName = "x";
 
+        // Assert
         sut.ValidationMessages.Should().Equal(Strings.Format("RenameClass_AlreadyExists", "x"));
     }
 
     [Fact]
     public void Summary_and_source_notes_follow_the_chosen_scope()
     {
+        // Arrange
         RenameClassViewModel sut = FromElement();
 
+        // Act & Assert
         sut.ShowsScopeChoice.Should().BeTrue();
         sut.IsEverywhere.Should().BeTrue();
         sut.Summary.Should().Be(Strings.Format("RenameClassWindow_Summary", 2, 2, 2));
         sut.SourceNotes.Should().Equal(Strings.Format("RenameClassWindow_SourceRenamed", "s.css", 1));
 
+        // Act
         sut.IsSameNesting = true;
 
+        // Assert
         sut.IsEverywhere.Should().BeFalse();
         sut.Request.Scope.Should().Be(ClassRenameScope.SameNesting);
         sut.Summary.Should().Be(Strings.Format("RenameClassWindow_Summary", 1, 2, 2));
@@ -80,8 +94,10 @@ public sealed class RenameClassViewModelTests
     [Fact]
     public void Started_from_a_stylesheet_has_no_scope_choice_and_names_the_source()
     {
+        // Arrange
         RenameClassViewModel sut = FromSheet();
 
+        // Act & Assert
         sut.ShowsScopeChoice.Should().BeFalse();
         sut.Request.Scope.Should().Be(ClassRenameScope.StyleSource);
         sut.ClassLabel.Should().Be(Strings.Format("RenameClassWindow_ClassInSource", "c1", "s.css"));
@@ -91,6 +107,7 @@ public sealed class RenameClassViewModelTests
     [Fact]
     public void Explains_when_the_changed_elements_use_several_sources()
     {
+        // Arrange
         const string html = "<html><head><link rel=\"stylesheet\" href=\"a.css\"/><link rel=\"stylesheet\" href=\"b.css\"/>"
             + "<style>.c1 { }</style></head><body><p class=\"c1\">a</p></body></html>";
         ClassRenamer renamer = new(
@@ -98,8 +115,10 @@ public sealed class RenameClassViewModelTests
              new ClassRenameSource("ch2.xhtml", "<html><head><link rel=\"stylesheet\" href=\"b.css\"/></head><body><p class=\"c1\">z</p></body></html>")],
             [new ClassRenameSource("a.css", ".c1 { }\n"), new ClassRenameSource("b.css", ".c1 { }\n")]);
 
+        // Act
         RenameClassViewModel sut = new(renamer, new StyleClassAtCaret("c1", "a.css", -1));
 
+        // Assert
         sut.SourceNotes.Should().Equal(
             Strings.Format("RenameClassWindow_MultipleSources", 3),
             Strings.Format("RenameClassWindow_SourceRenamed", "a.css", 1),
@@ -110,22 +129,28 @@ public sealed class RenameClassViewModelTests
     [Fact]
     public void Notes_that_the_class_has_no_definitions()
     {
+        // Act
         RenameClassViewModel sut = new(
             new ClassRenamer([new ClassRenameSource("ch.xhtml", "<html><body><p class=\"c1\"/></body></html>")], []),
             new ClassAtCaret("c1", ["html", "body", "p"]));
 
+        // Assert
         sut.SourceNotes.Should().Equal(Strings.Get("RenameClassWindow_NoDefinitions"));
     }
 
     [Fact]
     public void Rename_uses_the_typed_name_and_scope()
     {
+        // Arrange
         RenameClassViewModel sut = FromElement();
+
+        // Act
         sut.NewName = "lead";
         sut.IsSameNesting = true;
 
         ClassRenameResult result = sut.Rename();
 
+        // Assert
         result.ChangedTexts["ch.xhtml"].Should().Contain("<p class=\"lead\">a</p><div><p class=\"x c1\">b</p>");
         result.ChangedTexts["s.css"].Should().Be(".c1 { }\n.lead { }\n");
     }

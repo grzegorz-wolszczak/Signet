@@ -22,22 +22,28 @@ public sealed class LinkIntegrityValidatorTests : IDisposable
     [Fact]
     public void Validate_returns_no_results_for_a_wellformed_book()
     {
+        // Arrange
         using Book book = OpenMutableBook();
 
+        // Act
         var results = LinkIntegrityValidator.Validate(book);
 
+        // Assert
         results.Should().BeEmpty();
     }
 
     [Fact]
     public void Validate_reports_broken_html_link()
     {
+        // Arrange
         using Book book = OpenMutableBook();
         HtmlResource nav = FindHtml(book, "nav.xhtml");
         nav.SetText(nav.GetText().Replace("text/chapter1.xhtml\">Chapter 1", "text/does-not-exist.xhtml\">Chapter 1"));
 
+        // Act
         var results = LinkIntegrityValidator.Validate(book);
 
+        // Assert
         results.Should().Contain(r =>
             r.Severity == ValidationSeverity.Error &&
             r.BookPath == nav.BookPath &&
@@ -48,12 +54,15 @@ public sealed class LinkIntegrityValidatorTests : IDisposable
     [Fact]
     public void Validate_reports_broken_css_url()
     {
+        // Arrange
         using Book book = OpenMutableBook();
         CssResource css = book.GetCssResources().First();
         css.SetText(css.GetText() + "\n.missing { background: url(\"../images/missing.png\"); }\n");
 
+        // Act
         var results = LinkIntegrityValidator.Validate(book);
 
+        // Assert
         results.Should().Contain(r =>
             r.Severity == ValidationSeverity.Error &&
             r.BookPath == css.BookPath &&
@@ -64,12 +73,15 @@ public sealed class LinkIntegrityValidatorTests : IDisposable
     [Fact]
     public void Validate_reports_case_mismatch()
     {
+        // Arrange
         using Book book = OpenMutableBook();
         HtmlResource nav = FindHtml(book, "nav.xhtml");
         nav.SetText(nav.GetText().Replace("text/chapter1.xhtml\">Chapter 1", "text/Chapter1.xhtml\">Chapter 1"));
 
+        // Act
         var results = LinkIntegrityValidator.Validate(book);
 
+        // Assert
         results.Should().Contain(r =>
             r.Severity == ValidationSeverity.Warning &&
             r.BookPath == nav.BookPath &&
@@ -80,14 +92,17 @@ public sealed class LinkIntegrityValidatorTests : IDisposable
     [Fact]
     public void Validate_reports_bad_fragment_in_other_document()
     {
+        // Arrange
         using Book book = OpenMutableBook();
         HtmlResource nav = FindHtml(book, "nav.xhtml");
         nav.SetText(nav.GetText().Replace(
             "text/chapter1.xhtml\">Chapter 1",
             "text/chapter1.xhtml#does-not-exist\">Chapter 1"));
 
+        // Act
         var results = LinkIntegrityValidator.Validate(book);
 
+        // Assert
         results.Should().Contain(r =>
             r.Severity == ValidationSeverity.Error &&
             r.BookPath == nav.BookPath &&
@@ -98,14 +113,17 @@ public sealed class LinkIntegrityValidatorTests : IDisposable
     [Fact]
     public void Validate_reports_bad_fragment_within_same_document()
     {
+        // Arrange
         using Book book = OpenMutableBook();
         HtmlResource nav = FindHtml(book, "nav.xhtml");
         nav.SetText(nav.GetText().Replace(
             "<h1>Table of Contents</h1>",
             "<h1>Table of Contents</h1><p><a href=\"#does-not-exist\">skip</a></p>"));
 
+        // Act
         var results = LinkIntegrityValidator.Validate(book);
 
+        // Assert
         results.Should().Contain(r =>
             r.Severity == ValidationSeverity.Error &&
             r.BookPath == nav.BookPath &&
@@ -116,14 +134,17 @@ public sealed class LinkIntegrityValidatorTests : IDisposable
     [Fact]
     public void Validate_reports_resource_missing_from_manifest()
     {
+        // Arrange
         using Book book = OpenMutableBook();
         OpfResource opf = book.GetOpf();
         OpfDocument document = opf.GetOpfDocument();
         document.Manifest.RemoveAll(e => e.Href.EndsWith("figure.png", StringComparison.Ordinal));
         opf.SetOpfDocument(document);
 
+        // Act
         var results = LinkIntegrityValidator.Validate(book);
 
+        // Assert
         results.Should().Contain(r =>
             r.Severity == ValidationSeverity.Warning &&
             r.Message.Contains("figure.png") &&
@@ -133,14 +154,17 @@ public sealed class LinkIntegrityValidatorTests : IDisposable
     [Fact]
     public void Validate_ignores_external_references()
     {
+        // Arrange
         using Book book = OpenMutableBook();
         HtmlResource nav = FindHtml(book, "nav.xhtml");
         nav.SetText(nav.GetText().Replace(
             "<h1>Table of Contents</h1>",
             "<h1>Table of Contents</h1><p><a href=\"https://example.com/x\">external</a> <a href=\"mailto:a@b.com\">mail</a></p>"));
 
+        // Act
         var results = LinkIntegrityValidator.Validate(book);
 
+        // Assert
         results.Should().BeEmpty();
     }
 

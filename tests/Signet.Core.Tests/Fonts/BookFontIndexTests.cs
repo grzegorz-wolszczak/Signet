@@ -14,11 +14,14 @@ public sealed class BookFontIndexTests
     [Fact]
     public void Build_reads_font_face_rules_and_resolves_their_sources()
     {
+        // Arrange
         const string css = "@font-face {\n  font-family: \"KCaecilia\";\n  font-weight: bold;\n  font-style: italic;\n"
             + "  src: local(\"KCaecilia\"), url(\"../Fonts/K%20BI.ttf\") format(\"truetype\"), url(http://x/y.ttf);\n}\n";
 
+        // Act
         BookFontIndex index = BookFontIndex.Build(new[] { new FontIndexSource(CssPath, css, true) });
 
+        // Assert
         FontFaceRule rule = index.Rules.Should().ContainSingle().Subject;
         rule.Family.Should().Be("KCaecilia");
         rule.Weight.Should().Be(new FontWeightRange(700, 700));
@@ -33,16 +36,19 @@ public sealed class BookFontIndexTests
     [Fact]
     public void Build_finds_usages_in_stylesheets_style_blocks_and_style_attributes()
     {
+        // Arrange
         const string css = "body { font-family: \"KCaecilia\", serif; }\nh1 { font: bold 2em/1 KCaecilia, sans-serif }";
         const string html = "<html><head><style>p.x { font-family: 'Georgia' }</style></head>"
             + "<body><p style=\"color: red; font-family: &quot;KCaecilia&quot;, serif\">a</p></body></html>";
 
+        // Act
         BookFontIndex index = BookFontIndex.Build(new[]
         {
             new FontIndexSource(CssPath, css, true),
             new FontIndexSource(HtmlPath, html, false),
         });
 
+        // Assert
         index.Usages.Select(u => (u.Context, u.Property)).Should().Equal(
             ("body", "font-family"), ("h1", "font"), ("p.x", "font-family"), ("style=\"color: red; font-family: \"KCaecilia\", serif\"", "font-family"));
         index.UsagesOfFamily("KCaecilia").Should().HaveCount(3);
@@ -57,11 +63,13 @@ public sealed class BookFontIndexTests
     [Fact]
     public void Build_ignores_font_family_inside_font_face_as_a_usage()
     {
+        // Act
         BookFontIndex index = BookFontIndex.Build(new[]
         {
             new FontIndexSource(CssPath, "@font-face { font-family: A; src: url(a.ttf) }", true),
         });
 
+        // Assert
         index.Usages.Should().BeEmpty();
         index.Rules.Single().Sources.Single().BookPath.Should().Be("OEBPS/Styles/a.ttf");
     }

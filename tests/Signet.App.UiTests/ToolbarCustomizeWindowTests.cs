@@ -50,12 +50,14 @@ public sealed class ToolbarCustomizeWindowTests : IDisposable
     [AvaloniaFact]
     public void Entries_with_an_icon_show_it_in_a_column_in_front_of_the_text()
     {
+        // Act
         ToolbarCustomizeWindow window = Show();
 
         Image[] icons = window.GetVisualDescendants().OfType<Image>()
             .Where(i => i.DataContext is ToolbarEntry { IconKey: not null } && i.IsEffectivelyVisible)
             .ToArray();
 
+        // Assert
         icons.Should().NotBeEmpty("the default layout holds actions with icons (e.g. the Tools toolbar)");
         icons.Should().OnlyContain(i => i.Bounds.Width > 0 && i.Bounds.Height > 0);
     }
@@ -63,6 +65,7 @@ public sealed class ToolbarCustomizeWindowTests : IDisposable
     [AvaloniaFact]
     public void The_text_of_every_entry_starts_at_the_same_place_whether_or_not_it_has_an_icon()
     {
+        // Act
         ToolbarCustomizeWindow window = Show(withEntryWithoutIcon: true);
         ListBox available = window.GetVisualDescendants().OfType<ListBox>().First();
 
@@ -72,6 +75,7 @@ public sealed class ToolbarCustomizeWindowTests : IDisposable
             .Distinct()
             .ToArray();
 
+        // Assert
         textStarts.Should().HaveCount(1);
         window.GetVisualDescendants().OfType<TextBlock>()
             .Where(t => t.DataContext is ToolbarEntry { IconKey: null } && t.IsEffectivelyVisible)
@@ -81,11 +85,15 @@ public sealed class ToolbarCustomizeWindowTests : IDisposable
     [AvaloniaFact]
     public void The_menu_buttons_of_the_Heading_and_Change_Case_toolbars_have_their_icons_in_the_list()
     {
+        // Arrange
         MainWindowViewModel vm = _disposables.Add(new MainWindowViewModel());
+
+        // Act
         ToolbarCustomizeViewModel sut = new(
             new ToolbarManager(new SettingsStore(_disposables.Add(new TempDir("uitests-")).Combine("file.xml"))),
             vm.Actions);
 
+        // Assert
         sut.AvailableActions.Single(e => e.Id == ToolbarManager.HeadingsMenu).IconKey.Should().Be("heading-all");
         sut.AvailableActions.Single(e => e.Id == ToolbarManager.CaseMenu).IconKey.Should().Be("case-change");
         sut.AvailableActions.Single(e => e.Id == AppActionIds.Save).IconKey.Should().NotBeNullOrEmpty();

@@ -51,14 +51,18 @@ public sealed class FontWindowsTests : IDisposable
     [AvaloniaFact]
     public void Font_face_window_shows_a_row_per_font_with_its_warnings_and_the_preview()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         (Book book, BookBrowserViewModel host, List<FontResource> fonts) = NewBook(temp);
         using (book)
         {
             FontFaceDialogViewModel vm = host.PrepareFontFaces(fonts)!;
             FontFaceWindow window = new() { DataContext = vm };
+
+            // Act
             Render(window);
 
+            // Assert
             window.GetVisualDescendants().OfType<TextBox>().Select(t => t.Text).Should().Contain("Acme").And.Contain("bold");
             window.GetVisualDescendants().OfType<TextBlock>().Should().Contain(t => t.IsEffectivelyVisible && t.Text == vm.Rows[0].WarningText);
             window.GetVisualDescendants().OfType<TextBox>().Single(t => t.IsReadOnly).Text.Should().Contain("@font-face");
@@ -69,6 +73,7 @@ public sealed class FontWindowsTests : IDisposable
     [AvaloniaFact]
     public void Font_removal_window_lists_the_rules_to_remove()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         (Book book, BookBrowserViewModel host, List<FontResource> fonts) = NewBook(temp);
         using (book)
@@ -76,8 +81,11 @@ public sealed class FontWindowsTests : IDisposable
             host.ApplyFontFaces(host.PrepareFontFaces(fonts)!.BuildResult());
             FontRemovalViewModel vm = host.PrepareFontRemoval(fonts.Cast<Resource>().ToList())!;
             FontRemovalWindow window = new() { DataContext = vm };
+
+            // Act
             Render(window);
 
+            // Assert
             window.GetVisualDescendants().OfType<ListBoxItem>().Should().HaveCount(2);
             window.GetVisualDescendants().OfType<CheckBox>().Where(c => c.IsEffectivelyVisible).Should().OnlyContain(c => c.IsChecked == true);
             window.Close();
@@ -87,6 +95,7 @@ public sealed class FontWindowsTests : IDisposable
     [AvaloniaFact]
     public void Manage_fonts_window_fills_its_tables()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         (Book book, BookBrowserViewModel host, List<FontResource> fonts) = NewBook(temp);
         using (book)
@@ -94,9 +103,13 @@ public sealed class FontWindowsTests : IDisposable
             host.ApplyFontFaces(host.PrepareFontFaces(fonts.Take(1).ToList())!.BuildResult());
             ManageFontsViewModel vm = new(host, null);
             ManageFontsWindow window = ManageFontsWindow.Create(vm, host);
+
+            // Act
             Render(window);
 
             TreeDataGrid files = window.GetVisualDescendants().OfType<TreeDataGrid>().First(g => g.Name == "FilesGrid");
+
+            // Assert
             files.Rows!.Count.Should().Be(2);
             vm.SelectedFamily!.Family.Should().Be("Acme");
             window.Close();

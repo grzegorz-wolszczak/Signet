@@ -41,6 +41,7 @@ public sealed class CodeTabViewPasteTests
     [InlineData(false)]
     public async Task Ctrl_V_pastes_the_clipboard_text_normalized_when_enabled(bool enabled)
     {
+        // Arrange
         using TempDir temp = new();
         var html = new HtmlResource(temp.Path, temp.Combine("ch.xhtml"));
         html.SetText("<p></p>");
@@ -48,6 +49,8 @@ public sealed class CodeTabViewPasteTests
         SpellChecker spellChecker = new(settings, temp.Combine("hunspell"), temp.Combine("user"));
         var vm = new CodeTabViewModel(new TabManagerModel().OpenResource(html), new StatusBarService(), settings, spellChecker);
         var window = new Window { Width = 600, Height = 300, Content = new CodeTabView { DataContext = vm } };
+
+        // Act
         window.Show();
         Settle(window);
         TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
@@ -58,6 +61,7 @@ public sealed class CodeTabViewPasteTests
         window.KeyPress(Key.V, RawInputModifiers.Control, PhysicalKey.V, "v");
         Settle(window);
 
+        // Assert
         editor.Document.Text.Should().Be("<p>" + (enabled ? "caf" + (char)0x00E9 : Decomposed) + "</p>");
         window.Close();
     }

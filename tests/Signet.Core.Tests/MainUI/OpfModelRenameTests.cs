@@ -20,14 +20,17 @@ public sealed class OpfModelRenameTests
     [Fact]
     public void RenameResource_ImageReferencedFromHtml_UpdatesImgSrc()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
         using OpfModel model = new(book);
         Resource image = book.GetAllResources().Single(r => r.Filename == "figure.png");
         HtmlResource chapter = book.GetHtmlResources().Single(r => r.Filename == "chapter1.xhtml");
 
+        // Act
         bool result = model.RenameResource(image, "figure-renamed.png", out string? error);
 
+        // Assert
         result.Should().BeTrue();
         error.Should().BeNull();
         image.Filename.Should().Be("figure-renamed.png");
@@ -39,14 +42,17 @@ public sealed class OpfModelRenameTests
     [Fact]
     public void RenameResource_CssReferencedFromHtml_UpdatesLinkHref()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
         using OpfModel model = new(book);
         Resource css = book.GetAllResources().Single(r => r.Filename == "style.css");
         HtmlResource chapter = book.GetHtmlResources().Single(r => r.Filename == "chapter1.xhtml");
 
+        // Act
         bool result = model.RenameResource(css, "style-renamed.css", out string? error);
 
+        // Assert
         result.Should().BeTrue();
         chapter.GetText().Should().Contain("href=\"../styles/style-renamed.css\"");
     }
@@ -54,14 +60,17 @@ public sealed class OpfModelRenameTests
     [Fact]
     public void RenameResource_FontReferencedFromCss_UpdatesFontFaceUrl()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
         using OpfModel model = new(book);
         Resource font = book.GetAllResources().Single(r => r.Filename == "font.ttf");
         CssResource style = (CssResource)book.GetAllResources().Single(r => r.Filename == "style.css");
 
+        // Act
         bool result = model.RenameResource(font, "font-renamed.ttf", out string? error);
 
+        // Assert
         result.Should().BeTrue();
         style.GetText().Should().Contain("url(\"../fonts/font-renamed.ttf\")");
     }
@@ -69,13 +78,16 @@ public sealed class OpfModelRenameTests
     [Fact]
     public void RenameResource_ForbiddenCharacter_FailsWithoutModifyingBook()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
         using OpfModel model = new(book);
         Resource image = book.GetAllResources().Single(r => r.Filename == "figure.png");
 
+        // Act
         bool result = model.RenameResource(image, "bad:name.png", out string? error);
 
+        // Assert
         result.Should().BeFalse();
         error.Should().NotBeNull();
         image.Filename.Should().Be("figure.png");
@@ -85,13 +97,16 @@ public sealed class OpfModelRenameTests
     [Fact]
     public void RenameResource_NameAlreadyInUse_Fails()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
         using OpfModel model = new(book);
         Resource image = book.GetAllResources().Single(r => r.Filename == "figure.png");
 
+        // Act
         bool result = model.RenameResource(image, "cover.png", out string? error);
 
+        // Assert
         result.Should().BeFalse();
         error.Should().NotBeNull();
     }
@@ -99,13 +114,16 @@ public sealed class OpfModelRenameTests
     [Fact]
     public void RenameResource_SameName_IsNoOpAndSucceeds()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
         using OpfModel model = new(book);
         Resource image = book.GetAllResources().Single(r => r.Filename == "figure.png");
 
+        // Act
         bool result = model.RenameResource(image, "figure.png", out string? error);
 
+        // Assert
         result.Should().BeTrue();
         error.Should().BeNull();
         book.Modified.Should().BeFalse();
@@ -114,13 +132,16 @@ public sealed class OpfModelRenameTests
     [Fact]
     public void RenameResource_WithoutExtension_KeepsOriginalExtension()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
         using OpfModel model = new(book);
         Resource image = book.GetAllResources().Single(r => r.Filename == "figure.png");
 
+        // Act
         bool result = model.RenameResource(image, "figure-renamed", out string? error);
 
+        // Assert
         result.Should().BeTrue();
         image.Filename.Should().Be("figure-renamed.png");
     }

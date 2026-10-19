@@ -35,10 +35,13 @@ public sealed class ExtendedXhtmlHighlighterTests
     [Fact]
     public void Tag_attribute_and_value_use_the_basic_formats()
     {
+        // Arrange
         const string text = "<p class=\"x\">Hi</p>";
 
+        // Act
         List<SyntaxSpan> spans = Highlight(text);
 
+        // Assert
         FormatAt(spans, text, "<p").Should().Be(XhtmlTagName);
         FormatAt(spans, text, "p ").Should().Be(XhtmlTagName);
         FormatAt(spans, text, "class").Should().Be(XhtmlAttributeName);
@@ -52,10 +55,13 @@ public sealed class ExtendedXhtmlHighlighterTests
     [Fact]
     public void Namespace_prefixes_have_their_own_format()
     {
+        // Arrange
         const string text = "<svg:svg xmlns:svg=\"http://www.w3.org/2000/svg\" epub:type=\"x\"/>";
 
+        // Act
         List<SyntaxSpan> spans = Highlight(text);
 
+        // Assert
         FormatAt(spans, text, "svg:svg").Should().Be(XhtmlNamespacePrefix);
         FormatAt(spans, text, "svg:svg", 4).Should().Be(XhtmlTagName);
         FormatAt(spans, text, "xmlns:").Should().Be(XhtmlNamespacePrefix);
@@ -66,10 +72,13 @@ public sealed class ExtendedXhtmlHighlighterTests
     [Fact]
     public void Text_inside_bold_and_italic_elements_is_styled()
     {
+        // Arrange
         const string text = "<p><b>bold <i>both</i></b> plain <em>it</em></p>";
 
+        // Act
         List<SyntaxSpan> spans = Highlight(text);
 
+        // Assert
         FormatAt(spans, text, "bold").Should().Be(XhtmlBoldText);
         FormatAt(spans, text, "both").Should().Be(XhtmlBoldItalicText);
         FormatAt(spans, text, "plain").Should().BeNull();
@@ -79,8 +88,10 @@ public sealed class ExtendedXhtmlHighlighterTests
     [Fact]
     public void Heading_style_continues_on_the_next_line_until_the_closing_tag()
     {
+        // Act
         List<SyntaxSpan> spans = Highlight("<h1>Title", "continues</h1> after");
 
+        // Assert
         FormatAt(spans, "continues</h1> after", "continues").Should().Be(XhtmlBoldText);
         FormatAt(spans, "continues</h1> after", "after").Should().BeNull();
     }
@@ -88,10 +99,13 @@ public sealed class ExtendedXhtmlHighlighterTests
     [Fact]
     public void Title_content_is_bold()
     {
+        // Arrange
         const string text = "<title>Book</title>";
 
+        // Act
         List<SyntaxSpan> spans = Highlight(text);
 
+        // Assert
         FormatAt(spans, text, "Book").Should().Be(XhtmlBoldText);
         FormatAt(spans, text, "</title", 3).Should().Be(XhtmlTagName);
     }
@@ -99,10 +113,13 @@ public sealed class ExtendedXhtmlHighlighterTests
     [Fact]
     public void Style_content_is_highlighted_as_css()
     {
+        // Arrange
         const string text = "<style>p { color: red }</style><p>x</p>";
 
+        // Act
         List<SyntaxSpan> spans = Highlight(text);
 
+        // Assert
         FormatAt(spans, text, "p {").Should().Be(CssSelector);
         FormatAt(spans, text, "color").Should().Be(CssProperty);
         FormatAt(spans, text, "red").Should().Be(CssConstant);
@@ -113,14 +130,22 @@ public sealed class ExtendedXhtmlHighlighterTests
     [Fact]
     public void Css_state_is_carried_across_lines_inside_style()
     {
+        // Act
         List<SyntaxSpan> spans = Highlight("<style type=\"text/css\">", ".a {", "  margin: 0 /* x", "   y */ }", "</style>");
 
+        // Assert
         FormatAt(spans, "</style>", "style").Should().Be(XhtmlTagName);
 
+        // Act
         List<SyntaxSpan> comment = Highlight("<style>", ".a {", "  margin: 0 /* x", "   y */ }");
+
+        // Assert
         FormatAt(comment, "   y */ }", "y").Should().Be(CssComment);
 
+        // Act
         List<SyntaxSpan> selector = Highlight("<style>", "", ".a {");
+
+        // Assert
         FormatAt(selector, ".a {", ".a").Should().Be(CssSpecialSelector);
     }
 
@@ -134,9 +159,12 @@ public sealed class ExtendedXhtmlHighlighterTests
     [InlineData("<br / x>", "/", SyntaxIssue.MisplacedSlash)]
     public void Syntax_errors_are_marked_with_their_kind(string text, string fragment, SyntaxIssue issue)
     {
+        // Act
         List<SyntaxSpan> spans = Highlight(text);
 
         int index = text.IndexOf(fragment, StringComparison.Ordinal);
+
+        // Assert
         spans.Should().Contain(s => s.Format == SyntaxError && s.Issue == issue && s.Start == index);
     }
 
@@ -148,14 +176,17 @@ public sealed class ExtendedXhtmlHighlighterTests
     [InlineData("<?xml version=\"1.0\" encoding=\"utf-8\"?>")]
     public void Valid_markup_has_no_errors(string text)
     {
+        // Act & Assert
         Highlight(text).Should().NotContain(s => s.Format == SyntaxError);
     }
 
     [Fact]
     public void Missing_attribute_value_does_not_swallow_the_end_of_the_tag()
     {
+        // Act
         List<SyntaxSpan> spans = Highlight("<a href=>x</a>");
 
+        // Assert
         FormatAt(spans, "<a href=>x</a>", ">x").Should().Be(XhtmlTagName);
         FormatAt(spans, "<a href=>x</a>", "x<").Should().BeNull();
     }
@@ -165,6 +196,7 @@ public sealed class ExtendedXhtmlHighlighterTests
     [InlineData(false, BadLink, SyntaxIssue.BrokenLink)]
     public void Href_value_is_a_link_checked_against_the_book(bool exists, SyntaxFormat format, SyntaxIssue issue)
     {
+        // Arrange
         const string text = "<a href=\"ch2.xhtml#x\">next</a>";
         List<string> asked = new();
         var sut = new ExtendedXhtmlHighlighter(linkExists: reference =>
@@ -173,8 +205,10 @@ public sealed class ExtendedXhtmlHighlighterTests
             return exists;
         });
 
+        // Act
         List<SyntaxSpan> spans = Highlight(sut, text);
 
+        // Assert
         asked.Should().Equal("ch2.xhtml#x");
         spans.Should().Contain(new SyntaxSpan(9, "ch2.xhtml#x".Length, format, issue));
         FormatAt(spans, text, "\">").Should().Be(XhtmlAttributeValue);
@@ -183,22 +217,27 @@ public sealed class ExtendedXhtmlHighlighterTests
     [Fact]
     public void Data_uri_and_other_attributes_are_not_links()
     {
+        // Act
         List<SyntaxSpan> spans = Highlight(
             new ExtendedXhtmlHighlighter(linkExists: _ => false),
             "<img src=\"data:image/png;base64,AA\" alt=\"a.png\"/>");
 
+        // Assert
         spans.Should().NotContain(s => s.Format == Link || s.Format == BadLink);
     }
 
     [Fact]
     public void Xml_mode_checks_links_but_does_not_style_text_or_treat_style_as_css()
     {
+        // Arrange
         var sut = new ExtendedXhtmlHighlighter(isXml: true, linkExists: _ => false);
 
+        // Act
         List<SyntaxSpan> item = Highlight(sut, "<item id=\"a\" href=\"Text/a.xhtml\" media-type=\"application/xhtml+xml\"/>");
         List<SyntaxSpan> bold = Highlight(sut, "<b>x</b>");
         List<SyntaxSpan> style = Highlight(sut, "<style>.a { }</style>");
 
+        // Assert
         item.Should().Contain(s => s.Format == BadLink);
         FormatAt(bold, "<b>x</b>", "x").Should().BeNull();
         FormatAt(style, "<style>.a { }</style>", ".a").Should().BeNull();
@@ -207,13 +246,16 @@ public sealed class ExtendedXhtmlHighlighterTests
     [Fact]
     public void Unclosed_element_changes_the_end_state_and_identical_lines_give_equal_states()
     {
+        // Arrange
         var sut = new ExtendedXhtmlHighlighter();
 
+        // Act
         ExtendedXhtmlState plain = sut.HighlightLine("<p>text</p>", sut.InitialState, null);
         ExtendedXhtmlState open = sut.HighlightLine("<p><b>text", sut.InitialState, null);
         ExtendedXhtmlState again = sut.HighlightLine("<p><b>text", sut.InitialState, null);
         ExtendedXhtmlState closedByParent = sut.HighlightLine("<p><b>text</p>", sut.InitialState, null);
 
+        // Assert
         plain.Should().Be(sut.InitialState);
         open.Should().NotBe(plain);
         open.Should().Be(again, "the state has value equality, so subsequent lines are not recomputed needlessly");
@@ -223,8 +265,10 @@ public sealed class ExtendedXhtmlHighlighterTests
     [Fact]
     public void Comment_continues_across_lines()
     {
+        // Act
         List<SyntaxSpan> spans = Highlight("<!-- start", "middle", "end --> <p>");
 
+        // Assert
         FormatAt(spans, "end --> <p>", "end").Should().Be(XhtmlComment);
         FormatAt(spans, "end --> <p>", "<p").Should().Be(XhtmlTagName);
     }
@@ -232,10 +276,13 @@ public sealed class ExtendedXhtmlHighlighterTests
     [Fact]
     public void Special_spaces_are_marked()
     {
+        // Arrange
         const string text = "<p>a b</p>";
 
+        // Act
         List<SyntaxSpan> spans = Highlight(text);
 
+        // Assert
         FormatAt(spans, text, " ").Should().Be(XhtmlSpecialSpace);
     }
 }

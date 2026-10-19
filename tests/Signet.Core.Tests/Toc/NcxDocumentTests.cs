@@ -79,8 +79,10 @@ public sealed class NcxDocumentTests
     [Fact]
     public void Parses_epub2_minimal_corpus_ncx()
     {
+        // Act
         NcxDocument ncx = NcxDocument.Parse(ReadCorpusNcx(CorpusPaths.Epub2Minimal));
 
+        // Assert
         ncx.DocTitle.Should().Be("Minimal EPUB 2");
         ncx.DtbUid.Should().Be("urn:uuid:22222222-2222-4222-8222-222222222222");
         ncx.IncludeDoctype.Should().BeTrue();
@@ -94,8 +96,10 @@ public sealed class NcxDocumentTests
     [Fact]
     public void Parses_epub3_with_ncx_corpus_two_navpoints()
     {
+        // Act
         NcxDocument ncx = NcxDocument.Parse(ReadCorpusNcx(CorpusPaths.Epub3WithNcx));
 
+        // Assert
         ncx.NavMap.Select(np => np.Label).Should().Equal("Chapter 1", "Chapter 2");
         ncx.NavMap.Select(np => np.ContentSrc).Should().Equal("text/chapter1.xhtml", "text/chapter2.xhtml");
     }
@@ -105,13 +109,16 @@ public sealed class NcxDocumentTests
     [InlineData("epub3/with-ncx")]
     public void Round_trips_corpus_ncx(string which)
     {
+        // Arrange
         string dir = which == "epub2/minimal" ? CorpusPaths.Epub2Minimal : CorpusPaths.Epub3WithNcx;
         string source = ReadCorpusNcx(dir);
 
+        // Act
         NcxDocument first = NcxDocument.Parse(source);
         string xml = first.ToXml();
         NcxDocument second = NcxDocument.Parse(xml);
 
+        // Assert
         second.ToXml().Should().Be(xml);
         Flatten(second).Should().Equal(Flatten(first));
         second.DocTitle.Should().Be(first.DocTitle);
@@ -123,8 +130,10 @@ public sealed class NcxDocumentTests
     [Fact]
     public void Parses_nested_navpoint_tree()
     {
+        // Act
         NcxDocument ncx = NcxDocument.Parse(NestedNcx);
 
+        // Assert
         ncx.NavMap.Should().HaveCount(2);
         ncx.NavMap[0].Label.Should().Be("Part I");
         ncx.NavMap[0].Children.Should().ContainSingle();
@@ -137,10 +146,12 @@ public sealed class NcxDocumentTests
     [Fact]
     public void ToXml_recomputes_playorder_in_preorder()
     {
+        // Act
         NcxDocument ncx = NcxDocument.Parse(NestedNcx);
         NcxDocument round = NcxDocument.Parse(ncx.ToXml());
 
         // preorder: Part I=1, Chapter 1=2, Section 1.1=3, Part II=4
+        // Assert
         round.NavMap[0].PlayOrder.Should().Be(1);
         round.NavMap[0].Children[0].PlayOrder.Should().Be(2);
         round.NavMap[0].Children[0].Children[0].PlayOrder.Should().Be(3);
@@ -150,10 +161,12 @@ public sealed class NcxDocumentTests
     [Fact]
     public void ToXml_fills_missing_navpoint_id_from_playorder()
     {
+        // Arrange
         NcxDocument ncx = new();
         ncx.Head.Add(new NcxMeta("dtb:uid", "x"));
         ncx.NavMap.Add(new NcxNavPoint { Label = "Only", ContentSrc = "a.xhtml" });
 
+        // Act & Assert
         ncx.ToXml().Should().Contain("<navPoint id=\"navPoint-1\" playOrder=\"1\">");
     }
 
@@ -162,8 +175,10 @@ public sealed class NcxDocumentTests
     [Fact]
     public void Round_trips_pagelist_and_navlist()
     {
+        // Act
         NcxDocument first = NcxDocument.Parse(PageAndNavListNcx);
 
+        // Assert
         first.PageList.Should().HaveCount(2);
         first.PageList[0].Type.Should().Be("normal");
         first.PageList[0].Value.Should().Be("1");
@@ -174,8 +189,11 @@ public sealed class NcxDocumentTests
         first.NavLists[0].Targets.Should().ContainSingle();
         first.NavLists[0].Targets[0].Label.Should().Be("Figure 1");
 
+        // Act
         string xml = first.ToXml();
         NcxDocument second = NcxDocument.Parse(xml);
+
+        // Assert
         second.ToXml().Should().Be(xml);
         Flatten(second).Should().Equal(Flatten(first));
     }
@@ -183,9 +201,11 @@ public sealed class NcxDocumentTests
     [Fact]
     public void Shared_playorder_counter_spans_navmap_pagelist_navlist()
     {
+        // Act
         NcxDocument ncx = NcxDocument.Parse(PageAndNavListNcx);
         ncx.RecomputePlayOrder();
 
+        // Assert
         ncx.NavMap[0].PlayOrder.Should().Be(1);
         ncx.PageList[0].PlayOrder.Should().Be(2);
         ncx.PageList[1].PlayOrder.Should().Be(3);
@@ -197,10 +217,12 @@ public sealed class NcxDocumentTests
     [Fact]
     public void CreateEmpty_round_trips_with_empty_navmap()
     {
+        // Act
         NcxDocument created = NcxDocument.CreateEmpty("My Book", "urn:uuid:1");
         string xml = created.ToXml();
         NcxDocument parsed = NcxDocument.Parse(xml);
 
+        // Assert
         parsed.DocTitle.Should().Be("My Book");
         parsed.DtbUid.Should().Be("urn:uuid:1");
         parsed.IncludeDoctype.Should().BeTrue();
@@ -212,21 +234,26 @@ public sealed class NcxDocumentTests
     [Fact]
     public void CreateEmpty_epub3_omits_doctype()
     {
+        // Act
         NcxDocument created = NcxDocument.CreateEmpty("B", "u", epub2: false);
 
+        // Act & Assert
         created.ToXml().Should().NotContain("<!DOCTYPE");
     }
 
     [Fact]
     public void Parse_without_doctype_keeps_doctype_off_on_write()
     {
+        // Arrange
         string noDoctype = NestedNcx.Replace(
             "<!DOCTYPE ncx PUBLIC \"-//NISO//DTD ncx 2005-1//EN\" \"http://www.daisy.org/z3986/2005/ncx-2005-1.dtd\">\n",
             string.Empty,
             System.StringComparison.Ordinal);
 
+        // Act
         NcxDocument ncx = NcxDocument.Parse(noDoctype);
 
+        // Assert
         ncx.IncludeDoctype.Should().BeFalse();
         ncx.ToXml().Should().NotContain("<!DOCTYPE");
     }
@@ -236,12 +263,19 @@ public sealed class NcxDocumentTests
     [Fact]
     public void Decodes_and_reencodes_xml_entities_in_labels()
     {
+        // Arrange
         string src = NestedNcx.Replace("Part I", "Tom &amp; Jerry &lt;b&gt;", System.StringComparison.Ordinal);
 
+        // Act
         NcxDocument ncx = NcxDocument.Parse(src);
+
+        // Assert
         ncx.NavMap[0].Label.Should().Be("Tom & Jerry <b>");
 
+        // Act
         string xml = ncx.ToXml();
+
+        // Assert
         xml.Should().Contain("<text>Tom &amp; Jerry &lt;b&gt;</text>");
         NcxDocument.Parse(xml).NavMap[0].Label.Should().Be("Tom & Jerry <b>");
     }
@@ -249,9 +283,13 @@ public sealed class NcxDocumentTests
     [Fact]
     public void SyncHeadCounts_updates_depth_and_page_totals()
     {
+        // Arrange
         NcxDocument ncx = NcxDocument.Parse(PageAndNavListNcx);
+
+        // Act
         ncx.SyncHeadCounts();
 
+        // Assert
         ncx.Head.Single(m => m.Name == "dtb:depth").Content.Should().Be("1");
         ncx.Head.Single(m => m.Name == "dtb:totalPageCount").Content.Should().Be("2");
         ncx.Head.Single(m => m.Name == "dtb:maxPageNumber").Content.Should().Be("2");

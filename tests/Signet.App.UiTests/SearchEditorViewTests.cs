@@ -53,9 +53,13 @@ public sealed class SearchEditorViewTests
     [AvaloniaFact]
     public void The_tree_has_real_columns_edited_in_place_and_a_group_has_only_a_name()
     {
+        // Arrange
         using TempDir temp = new();
+
+        // Act
         (Window window, SearchEditorViewModel vm, _, TreeDataGrid tree) = Show(temp);
 
+        // Assert
         tree.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().Select(h => h.Header).Should().Equal(
             Strings.Get("ReportsWindow_Name"), Strings.Get("SearchEditorView_ColumnFind"),
             Strings.Get("FindReplaceView_ReplaceButton"), Strings.Get("SearchEditorView_Controls"));
@@ -66,8 +70,10 @@ public sealed class SearchEditorViewTests
         TextBox find = tree.GetVisualDescendants().OfType<TextBox>()
             .Single(t => ReferenceEquals(t.DataContext, search) && t.Text == "cat");
 
+        // Act
         find.Text = "mouse";
 
+        // Assert
         search.Find.Should().Be("mouse");
         window.Close();
     }
@@ -75,28 +81,43 @@ public sealed class SearchEditorViewTests
     [AvaloniaFact]
     public void The_filter_hides_rows_and_a_double_click_loads_the_search()
     {
+        // Arrange
         using TempDir temp = new();
+
+        // Act
         (Window window, SearchEditorViewModel vm, FindReplaceViewModel findReplace, TreeDataGrid tree) = Show(temp);
         SearchEntryNodeViewModel search = vm.Nodes.Single(n => !n.IsGroup);
 
         vm.FilterText = "no such search";
         Render(window);
+
+        // Assert
         tree.Rows!.Count.Should().Be(0);
+
+        // Act
         vm.FilterText = string.Empty;
         Render(window);
+
+        // Assert
         tree.Rows.Count.Should().Be(2);
 
+        // Act
         vm.SetSelectedNodes(new[] { search });
         Render(window);
+
+        // Assert
         tree.RowSelection!.SelectedItem.Should().BeSameAs(search);
         Control cell = tree.TryGetCell(0, vm.Nodes.IndexOf(search))!;
         Point point = cell.TranslatePoint(new Point(2, cell.Bounds.Height / 2), window)!.Value;
+
+        // Act
         window.MouseDown(point, MouseButton.Left);
         window.MouseUp(point, MouseButton.Left);
         window.MouseDown(point, MouseButton.Left);
         window.MouseUp(point, MouseButton.Left);
         Render(window);
 
+        // Assert
         findReplace.FindText.Should().Be("cat");
         window.Close();
     }

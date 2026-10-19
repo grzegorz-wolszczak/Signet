@@ -52,6 +52,7 @@ public sealed class CodeTabViewCtrlEndTests
     [AvaloniaFact]
     public void A_single_Ctrl_End_shows_the_end_of_a_document_with_wrapped_paragraphs()
     {
+        // Arrange
         using TempDir temp = new();
         var html = new HtmlResource(temp.Path, temp.Combine("ch.xhtml"));
         html.SetText(LongParagraphs());
@@ -61,15 +62,22 @@ public sealed class CodeTabViewCtrlEndTests
         SpellChecker spellChecker = new(settings, temp.Combine("hunspell"), temp.Combine("user"));
         var vm = new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker);
         var window = new Window { Width = 700, Height = 400, Content = new CodeTabView { DataContext = vm } };
+
+        // Act
         window.Show();
         Settle(window);
         TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
+
+        // Assert
         editor.WordWrap.Should().BeTrue();
+
+        // Act
         editor.TextArea.Focus();
 
         window.KeyPress(Key.End, RawInputModifiers.Control, PhysicalKey.End, null);
         Settle(window);
 
+        // Assert
         editor.CaretOffset.Should().Be(editor.Document.TextLength);
         TextView textView = editor.TextArea.TextView;
         double caretBottom = textView.GetVisualPosition(

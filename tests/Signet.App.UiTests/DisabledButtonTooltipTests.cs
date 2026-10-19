@@ -12,15 +12,18 @@ public sealed class DisabledButtonTooltipTests
     [AvaloniaFact]
     public void Disabled_buttons_show_their_tooltips()
     {
+        // Arrange
         Button button = new() { Content = "a", IsEnabled = false };
         ToggleButton toggle = new() { Content = "b", IsEnabled = false };
         SplitButton split = new() { Content = "c", IsEnabled = false };
         TextBlock text = new() { Text = "d" };
         Window window = new() { Content = new StackPanel { Children = { button, toggle, split, text } } };
 
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         ToolTip.GetShowOnDisabled(button).Should().BeTrue();
         ToolTip.GetShowOnDisabled(toggle).Should().BeTrue();
         ToolTip.GetShowOnDisabled(split).Should().BeTrue();

@@ -19,9 +19,11 @@ namespace Signet.Controls.TreeDataGrid.Tests.Models
         [AvaloniaFact(Timeout = 10000)]
         public void Value_Is_Initially_Read_From_String()
         {
+            // Arrange
             var binding = new BehaviorSubject<BindingValue<string>>("initial");
             var target = new TextCell<string>(binding, true);
 
+            // Act & Assert
             target.Text.Should().Be("initial");
             target.Value.Should().Be("initial");
         }
@@ -29,47 +31,60 @@ namespace Signet.Controls.TreeDataGrid.Tests.Models
         [AvaloniaFact(Timeout = 10000)]
         public void Modified_Value_Is_Written_To_Binding()
         {
+            // Arrange
             var binding = new BehaviorSubject<BindingValue<string>>("initial");
             var target = new TextCell<string>(binding, false);
             var result = new List<string>();
 
             binding.Subscribe(x => result.Add(x.Value));
+
+            // Act
             target.Value = "new";
 
+            // Assert
             result.Should().Equal(new[] { "initial", "new" });
         }
 
         [AvaloniaFact(Timeout = 10000)]
         public void Modified_Text_Is_Written_To_Binding()
         {
+            // Arrange
             var binding = new BehaviorSubject<BindingValue<string>>("initial");
             var target = new TextCell<string>(binding, false);
             var result = new List<string>();
 
             binding.Subscribe(x => result.Add(x.Value));
+
+            // Act
             target.Text = "new";
 
+            // Assert
             result.Should().Equal(new[] { "initial", "new" });
         }
 
         [AvaloniaFact(Timeout = 10000)]
         public void Modified_Value_Is_Written_To_Binding_On_EndEdit()
         {
+            // Arrange
             var binding = new BehaviorSubject<BindingValue<string>>("initial");
             var target = new TextCell<string>(binding, false);
             var result = new List<string>();
 
             binding.Subscribe(x => result.Add(x.Value));
 
+            // Act
             target.BeginEdit();
             target.Text = "new";
 
+            // Assert
             target.Text.Should().Be("new");
             target.Value.Should().Be("initial");
             result.Should().Equal(new[] { "initial"});
 
+            // Act
             target.EndEdit();
 
+            // Assert
             target.Text.Should().Be("new");
             target.Value.Should().Be("new");
             result.Should().Equal(new[] { "initial", "new" });
@@ -78,21 +93,26 @@ namespace Signet.Controls.TreeDataGrid.Tests.Models
         [AvaloniaFact(Timeout = 10000)]
         public void Modified_Value_Is_Not_Written_To_Binding_On_CancelEdit()
         {
+            // Arrange
             var binding = new BehaviorSubject<BindingValue<string>>("initial");
             var target = new TextCell<string>(binding, false);
             var result = new List<string>();
 
             binding.Subscribe(x => result.Add(x.Value));
 
+            // Act
             target.BeginEdit();
             target.Text = "new";
 
+            // Assert
             target.Text.Should().Be("new");
             target.Value.Should().Be("initial");
             result.Should().Equal(new[] { "initial" });
 
+            // Act
             target.CancelEdit();
 
+            // Assert
             target.Text.Should().Be("initial");
             target.Value.Should().Be("initial");
             result.Should().Equal(new[] { "initial" });
@@ -103,9 +123,11 @@ namespace Signet.Controls.TreeDataGrid.Tests.Models
             [AvaloniaFact(Timeout = 10000)]
             public void Initial_Int_Value_Is_Formatted()
             {
+                // Arrange
                 var binding = new BehaviorSubject<BindingValue<int>>(42);
                 var target = new TextCell<int>(binding, true, GetOptions());
 
+                // Act & Assert
                 target.Text.Should().Be("42.00");
                 target.Value.Should().Be(42);
             }
@@ -113,21 +135,26 @@ namespace Signet.Controls.TreeDataGrid.Tests.Models
             [AvaloniaFact(Timeout = 10000)]
             public void Int_Value_Is_Formatted_After_Editing()
             {
+                // Arrange
                 var binding = new BehaviorSubject<BindingValue<int>>(42);
                 var target = new TextCell<int>(binding, false, GetOptions());
                 var result = new List<int>();
 
                 binding.Subscribe(x => result.Add(x.Value));
 
+                // Act
                 target.BeginEdit();
                 target.Text = "43";
 
+                // Assert
                 target.Text.Should().Be("43");
                 target.Value.Should().Be(42);
                 result.Should().Equal(new[] { 42 });
 
+                // Act
                 target.EndEdit();
 
+                // Assert
                 target.Text.Should().Be("43.00");
                 target.Value.Should().Be(43);
                 result.Should().Equal(new[] { 42, 43 });

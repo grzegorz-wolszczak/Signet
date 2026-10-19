@@ -18,17 +18,20 @@ public sealed class UiDensityTests
     [AvaloniaFact]
     public void Compact_resources_shrink_the_ui_font_and_menu_item_padding()
     {
+        // Arrange
         TextBlock text = new() { Text = "Wycinki" };
         MenuItem item = new() { Header = "Wycinki" };
         Avalonia.Controls.Menu menu = new() { ItemsSource = new[] { item } };
         var window = new Window { Width = 300, Height = 200, Content = new StackPanel { Children = { menu, text } } };
         window.Resources.MergedDictionaries.Add(UiDensityManager.CreateCompactResources());
 
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         window.FontSize.Should().Be(UiDensityManager.CompactFontSize);
         text.FontSize.Should().Be(UiDensityManager.CompactFontSize);
         text.FontFamily.Should().Be(FontFamily.Default, "the system font is used instead of Inter");
@@ -38,6 +41,7 @@ public sealed class UiDensityTests
     [AvaloniaFact]
     public void Compact_context_menu_items_are_shorter_than_the_default_fluent_ones()
     {
+        // Arrange
         static double Height(bool compact)
         {
             MenuItem item = new() { Header = "Przełącz tryb zawijania linii" };
@@ -61,9 +65,11 @@ public sealed class UiDensityTests
             return height;
         }
 
+        // Act
         double normal = Height(compact: false);
         double compact = Height(compact: true);
 
+        // Assert
         compact.Should().BeGreaterThan(0);
         compact.Should().BeLessThan(normal);
     }
@@ -71,14 +77,17 @@ public sealed class UiDensityTests
     [AvaloniaFact]
     public void Chosen_ui_font_overrides_the_compact_default()
     {
+        // Arrange
         TextBlock text = new() { Text = "Wycinki" };
         var window = new Window { Width = 300, Height = 200, Content = text };
         window.Resources.MergedDictionaries.Add(UiDensityManager.CreateCompactResources());
         window.Resources.MergedDictionaries.Add(UiDensityManager.CreateFontResources("Tahoma", 13)!);
 
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         text.FontSize.Should().Be(13);
         text.FontFamily.Name.Should().Be("Tahoma");
         UiDensityManager.CreateFontResources(string.Empty, 0).Should().BeNull();

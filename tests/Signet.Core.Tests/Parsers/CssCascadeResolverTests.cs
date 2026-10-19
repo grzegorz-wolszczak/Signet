@@ -56,6 +56,7 @@ public sealed class CssCascadeResolverTests
     [Fact]
     public void Resolve_matches_a_rule_from_the_linked_stylesheet()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(
             temp,
@@ -68,8 +69,10 @@ public sealed class CssCascadeResolverTests
         HtmlResource html = Chapter1(book);
         int caret = OffsetOfTag(html, "<p class=\"note\">");
 
+        // Act
         CssCascadeResult? result = CssCascadeResolver.Resolve(html, caret, ResolveCssInfo(book));
 
+        // Assert
         result.Should().NotBeNull();
         result!.MatchedRules.Should().ContainSingle(r => r.SelectorText == ".note");
         result.MatchedRules.Single().Declarations.Single().Property.Should().Be("color");
@@ -79,6 +82,7 @@ public sealed class CssCascadeResolverTests
     [Fact]
     public void Resolve_returns_empty_rules_when_nothing_matches()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(
             temp,
@@ -91,8 +95,10 @@ public sealed class CssCascadeResolverTests
         HtmlResource html = Chapter1(book);
         int caret = OffsetOfTag(html, "<p class=\"note\">");
 
+        // Act
         CssCascadeResult? result = CssCascadeResolver.Resolve(html, caret, ResolveCssInfo(book));
 
+        // Assert
         result.Should().NotBeNull();
         result!.MatchedRules.Should().BeEmpty();
     }
@@ -100,6 +106,7 @@ public sealed class CssCascadeResolverTests
     [Fact]
     public void Resolve_marks_lower_specificity_declaration_as_overridden()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(
             temp,
@@ -112,8 +119,10 @@ public sealed class CssCascadeResolverTests
         HtmlResource html = Chapter1(book);
         int caret = OffsetOfTag(html, "<p id=\"special\"");
 
+        // Act
         CssCascadeResult? result = CssCascadeResolver.Resolve(html, caret, ResolveCssInfo(book));
 
+        // Assert
         result.Should().NotBeNull();
         CssMatchedRule idRule = result!.MatchedRules.Single(r => r.SelectorText == "#special");
         CssMatchedRule classRule = result.MatchedRules.Single(r => r.SelectorText == ".note");
@@ -125,6 +134,7 @@ public sealed class CssCascadeResolverTests
     [Fact]
     public void Resolve_lets_important_beat_higher_specificity()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(
             temp,
@@ -137,8 +147,10 @@ public sealed class CssCascadeResolverTests
         HtmlResource html = Chapter1(book);
         int caret = OffsetOfTag(html, "<p id=\"special\"");
 
+        // Act
         CssCascadeResult? result = CssCascadeResolver.Resolve(html, caret, ResolveCssInfo(book));
 
+        // Assert
         result.Should().NotBeNull();
         CssMatchedRule idRule = result!.MatchedRules.Single(r => r.SelectorText == "#special");
         CssMatchedRule classRule = result.MatchedRules.Single(r => r.SelectorText == ".note");
@@ -150,6 +162,7 @@ public sealed class CssCascadeResolverTests
     [Fact]
     public void Resolve_uses_source_order_as_tiebreaker_for_equal_specificity()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(
             temp,
@@ -162,8 +175,10 @@ public sealed class CssCascadeResolverTests
         HtmlResource html = Chapter1(book);
         int caret = OffsetOfTag(html, "<p class=\"note\">");
 
+        // Act
         CssCascadeResult? result = CssCascadeResolver.Resolve(html, caret, ResolveCssInfo(book));
 
+        // Assert
         result.Should().NotBeNull();
         result!.MatchedRules.Should().HaveCount(2);
         CssMatchedRule first = result.MatchedRules[0];
@@ -177,6 +192,7 @@ public sealed class CssCascadeResolverTests
     [Fact]
     public void Resolve_lets_inline_style_beat_any_selector_based_rule_in_the_same_importance_tier()
     {
+        // Arrange
         // Note: this comparison only holds within the same importance tier — in the CSS cascade the
         // WHOLE "!important" tier (regardless of origin) beats the WHOLE normal tier, so a
         // low-specificity !important rule would win over a non-important inline style (see
@@ -194,8 +210,10 @@ public sealed class CssCascadeResolverTests
         HtmlResource html = Chapter1(book);
         int caret = OffsetOfTag(html, "<p id=\"special\"");
 
+        // Act
         CssCascadeResult? result = CssCascadeResolver.Resolve(html, caret, ResolveCssInfo(book));
 
+        // Assert
         result.Should().NotBeNull();
         CssMatchedRule inlineRule = result!.MatchedRules.Single(r => r.IsInlineStyle);
         CssMatchedRule cssRule = result.MatchedRules.Single(r => !r.IsInlineStyle);
@@ -207,6 +225,7 @@ public sealed class CssCascadeResolverTests
     [Fact]
     public void Resolve_lists_ancestors_with_rules_from_body_down_to_the_inspected_element()
     {
+        // Arrange
         // The corpus stylesheet has a body rule; the section has no rule, so it is left out.
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(
@@ -220,8 +239,10 @@ public sealed class CssCascadeResolverTests
         HtmlResource html = Chapter1(book);
         int caret = OffsetOfTag(html, "<p class=\"b\">");
 
+        // Act
         CssCascadeResult? result = CssCascadeResolver.Resolve(html, caret, ResolveCssInfo(book));
 
+        // Assert
         result.Should().NotBeNull();
         result!.Levels.Select(l => l.ElementDescription).Should().Equal("body", "div.a", "p.b");
         result.Levels.Select(l => l.IsInspectedElement).Should().Equal(false, false, true);
@@ -231,6 +252,7 @@ public sealed class CssCascadeResolverTests
     [Fact]
     public void Resolve_strikes_an_inherited_ancestor_property_redefined_by_a_descendant()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(
             temp,
@@ -243,8 +265,10 @@ public sealed class CssCascadeResolverTests
         HtmlResource html = Chapter1(book);
         int caret = OffsetOfTag(html, "<p class=\"b\">");
 
+        // Act
         CssCascadeResult? result = CssCascadeResolver.Resolve(html, caret, ResolveCssInfo(book));
 
+        // Assert
         result.Should().NotBeNull();
         CssMatchedDeclaration ancestorColor = result!.Levels.Single(l => l.ElementDescription == "div.a")
             .MatchedRules.Single().Declarations.Single();
@@ -262,6 +286,7 @@ public sealed class CssCascadeResolverTests
     [Fact]
     public void Resolve_keeps_an_inherited_ancestor_property_that_no_descendant_redefines()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(
             temp,
@@ -270,8 +295,10 @@ public sealed class CssCascadeResolverTests
         HtmlResource html = Chapter1(book);
         int caret = OffsetOfTag(html, "<p class=\"b\">");
 
+        // Act
         CssCascadeResult? result = CssCascadeResolver.Resolve(html, caret, ResolveCssInfo(book));
 
+        // Assert
         result.Should().NotBeNull();
         CssMatchedDeclaration fontFamily = result!.Levels[0].MatchedRules.Single(r => r.SelectorText == "body")
             .Declarations.Single(d => d.Property == "font-family");
@@ -283,6 +310,7 @@ public sealed class CssCascadeResolverTests
     [Fact]
     public void Resolve_does_not_inherit_a_non_inherited_ancestor_property()
     {
+        // Arrange
         // margin on body and on p are unrelated: the body one is neither struck nor in effect on the p.
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(
@@ -296,8 +324,10 @@ public sealed class CssCascadeResolverTests
         HtmlResource html = Chapter1(book);
         int caret = OffsetOfTag(html, "<p class=\"b\">");
 
+        // Act
         CssCascadeResult? result = CssCascadeResolver.Resolve(html, caret, ResolveCssInfo(book));
 
+        // Assert
         result.Should().NotBeNull();
         CssMatchedDeclaration bodyMargin = result!.Levels[0].MatchedRules.Single(r => r.SelectorText == "body")
             .Declarations.Single(d => d.Property == "margin");
@@ -312,6 +342,7 @@ public sealed class CssCascadeResolverTests
     [Fact]
     public void Resolve_names_the_winning_rule_of_a_declaration_overridden_on_the_same_element()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(
             temp,
@@ -324,8 +355,10 @@ public sealed class CssCascadeResolverTests
         HtmlResource html = Chapter1(book);
         int caret = OffsetOfTag(html, "<p id=\"special\"");
 
+        // Act
         CssCascadeResult? result = CssCascadeResolver.Resolve(html, caret, ResolveCssInfo(book));
 
+        // Assert
         result.Should().NotBeNull();
         CssMatchedDeclaration loser = result!.MatchedRules.Single(r => r.SelectorText == ".note").Declarations.Single();
 
@@ -336,6 +369,7 @@ public sealed class CssCascadeResolverTests
     [Fact]
     public void Resolve_includes_rules_from_an_imported_stylesheet_before_the_importing_one()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(
             temp,
@@ -354,8 +388,11 @@ public sealed class CssCascadeResolverTests
             });
 
         HtmlResource html = Chapter1(book);
+
+        // Act
         CssCascadeResult? result = CssCascadeResolver.Resolve(html, OffsetOfTag(html, "<p class=\"note\">"), ResolveCssInfo(book));
 
+        // Assert
         result.Should().NotBeNull();
         result!.MatchedRules.Select(r => r.BookPath.Split('/')[^1]).Should().Equal("imported.css", "style.css");
         result.MatchedRules[0].Declarations.Single().IsOverridden.Should().BeTrue();
@@ -371,19 +408,23 @@ public sealed class CssCascadeResolverTests
     [InlineData("background-color", false)]
     public void CssInheritedProperties_knows_which_properties_are_inherited(string property, bool expected)
     {
+        // Act & Assert
         CssInheritedProperties.IsInherited(property).Should().Be(expected);
     }
 
     [Fact]
     public void Resolve_returns_null_for_a_negative_offset()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(temp, _ => { });
 
         HtmlResource html = Chapter1(book);
 
+        // Act
         CssCascadeResult? result = CssCascadeResolver.Resolve(html, -1, ResolveCssInfo(book));
 
+        // Assert
         result.Should().BeNull();
     }
 }

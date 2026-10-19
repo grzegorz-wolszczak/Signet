@@ -38,6 +38,7 @@ public sealed class NavigationTests : IDisposable
     [Fact]
     public void GoToLine_scrolls_the_active_code_tab()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, Book book) = Loaded(temp, CorpusPaths.Epub3Media);
         sut.Tabs.OpenResources(new Resource[] { book.GetAllResources().OfType<HtmlResource>().First() });
@@ -45,14 +46,17 @@ public sealed class NavigationTests : IDisposable
         int? requested = null;
         tab.ScrollToLineRequested += l => requested = l;
 
+        // Act
         sut.GoToLine(3);
 
+        // Assert
         requested.Should().Be(3);
     }
 
     [Fact]
     public void Bookmark_survives_a_tab_switch_and_the_bookmarks_menu_returns_to_it()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, Book book) = Loaded(temp, CorpusPaths.Epub3WithNcx);
         HtmlResource chapter1 = book.GetHtmlResources().First(h => h.Filename == "chapter1.xhtml");
@@ -61,59 +65,81 @@ public sealed class NavigationTests : IDisposable
         sut.Tabs.OpenResources(new Resource[] { chapter1 });
         var tab1 = (CodeTabViewModel)sut.Tabs.ActiveTab!;
         tab1.UpdateCaret(2, 1, 5, 'x');
+
+        // Act
         sut.Actions.Require(AppActionIds.BookmarkLocation).Execute(null);
 
+        // Assert
         sut.Bookmarks.Should().ContainSingle();
         sut.Bookmarks[0].BookPath.Should().Be(chapter1.BookPath);
 
+        // Act
         sut.Tabs.OpenResources(new Resource[] { chapter2 });
+
+        // Assert
         sut.Tabs.ActiveTab!.Resource.BookPath.Should().Be(chapter2.BookPath);
 
+        // Act
         ((IBookmarksMenu)sut).GoToBookmark(sut.Bookmarks[0]);
 
+        // Assert
         sut.Tabs.ActiveTab!.Resource.BookPath.Should().Be(chapter1.BookPath);
     }
 
     [Fact]
     public void Table_of_contents_panel_is_populated_from_the_book_and_navigates_on_activate()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, Book book) = Loaded(temp, CorpusPaths.Epub3WithNcx);
 
+        // Act & Assert
         sut.TableOfContents.HasEntries.Should().BeTrue();
         sut.TableOfContents.Nodes.Select(n => n.Title).Should().Equal("Chapter 1", "Chapter 2");
 
+        // Act
         sut.TableOfContents.Activate(sut.TableOfContents.Nodes[1]);
 
+        // Assert
         sut.Tabs.ActiveTab!.Resource.Filename.Should().Be("chapter2.xhtml");
     }
 
     [Fact]
     public void Focus_action_reports_the_target_panel_on_the_status_bar()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         MainWindowViewModel sut = New();
 
+        // Act
         sut.Actions.Require(AppActionIds.FocusPreview).Execute(null);
 
+        // Assert
         sut.StatusMessage.Should().Contain("Preview");
     }
 
     [Fact]
     public void Zoom_targets_the_code_editor_by_default_and_not_after_focusing_preview()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         (MainWindowViewModel sut, Book book) = Loaded(temp, CorpusPaths.Epub3Media);
         sut.Tabs.OpenResources(new Resource[] { book.GetAllResources().OfType<HtmlResource>().First() });
         var tab = (CodeTabViewModel)sut.Tabs.ActiveTab!;
 
+        // Act
         sut.Actions.Require(AppActionIds.ZoomIn).Execute(null);
+
+        // Assert
         tab.ZoomFactor.Should().BeGreaterThan(1.0);
 
         double afterFirst = tab.ZoomFactor;
+
+        // Act
         sut.Actions.Require(AppActionIds.FocusPreview).Execute(null);
         sut.Actions.Require(AppActionIds.ZoomIn).Execute(null);
 
+        // Assert
         tab.ZoomFactor.Should().Be(afterFirst);
     }
 }

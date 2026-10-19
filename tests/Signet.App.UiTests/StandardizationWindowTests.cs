@@ -20,15 +20,20 @@ public sealed class StandardizationWindowTests
     [AvaloniaFact]
     public void Window_shows_a_checkbox_and_an_info_icon_with_the_detailed_description_for_every_step()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.EdgeDeepFolders, temp)).GetBook();
         StandardizationViewModel vm = new(EpubStandardization.AllSteps, steps => EpubStandardization.Plan(book, steps), _ => { });
         StandardizationWindow window = new() { DataContext = vm };
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
         List<CheckBox> checkBoxes = window.GetVisualDescendants().OfType<CheckBox>().ToList();
+
+        // Assert
         checkBoxes.Select(c => c.DataContext).Should().Equal(vm.Sections);
         checkBoxes.Should().OnlyContain(c => c.IsChecked == true);
 
@@ -36,9 +41,11 @@ public sealed class StandardizationWindowTests
         infoIcons.Should().HaveCount(vm.Sections.Count);
         foreach (Border icon in infoIcons)
         {
+            // Act
             ToolTip.SetIsOpen(icon, true);
             Dispatcher.UIThread.RunJobs();
 
+            // Assert
             TextBlock tip = ToolTip.GetTip(icon).Should().BeOfType<TextBlock>().Subject;
             tip.Text.Should().Be(((StandardizationSectionViewModel)icon.DataContext!).Info);
             tip.IsEffectivelyVisible.Should().BeTrue();

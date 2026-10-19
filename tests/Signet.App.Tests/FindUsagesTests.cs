@@ -60,11 +60,15 @@ public sealed class FindUsagesTests : IDisposable
     [Fact]
     public void Alt_F7_on_a_class_lists_its_usages_in_html_and_css_in_book_browser_order()
     {
+        // Arrange
         OpenChapterWithCaretOn("ote\">Hello");
 
+        // Act
         _sut.Actions.Require(AppActionIds.FindUsages).Execute(null);
 
         FindUsagesViewModel panel = _sut.FindUsages;
+
+        // Assert
         panel.ClassName.Should().Be("note");
         panel.Header.Should().Be(Strings.Format("FindUsages_Header", "note"));
         FindUsagesNode root = panel.Roots.Should().ContainSingle().Subject;
@@ -80,12 +84,15 @@ public sealed class FindUsagesTests : IDisposable
     [Fact]
     public void Alt_F7_on_a_class_in_a_css_selector_finds_the_same_usages()
     {
+        // Arrange
         _sut.Tabs.OpenResources(new Resource[] { _book.GetCssResources().Single() });
         int offset = _sut.ActiveCodeTab!.DocumentText.IndexOf(".note", StringComparison.Ordinal) + 2;
         _sut.ActiveCodeTab.UpdateCaret(1, 1, offset, 0);
 
+        // Act
         _sut.Actions.Require(AppActionIds.FindUsages).Execute(null);
 
+        // Assert
         _sut.FindUsages.ClassName.Should().Be("note");
         _sut.FindUsages.Roots.Single().CountText.Should().Be("3 results in 2 files");
     }
@@ -93,10 +100,13 @@ public sealed class FindUsagesTests : IDisposable
     [Fact]
     public void Without_a_class_under_the_caret_only_the_status_bar_says_so()
     {
+        // Arrange
         OpenChapterWithCaretOn("Hello");
 
+        // Act
         _sut.Actions.Require(AppActionIds.FindUsages).Execute(null);
 
+        // Assert
         _sut.FindUsages.HasSearch.Should().BeFalse();
         _sut.StatusMessage.Should().Be(Strings.Get("Status_FindUsagesNoClass"));
     }
@@ -104,10 +114,13 @@ public sealed class FindUsagesTests : IDisposable
     [Fact]
     public void Grouping_by_file_gives_one_node_per_file_with_line_and_column_usages()
     {
+        // Act
         _sut.FindClassUsages("note");
         _sut.FindUsages.GroupByFile = true;
 
         FindUsagesNode root = _sut.FindUsages.Roots.Single();
+
+        // Assert
         root.Children.Select(f => (f.Text, f.CountText, f.Usage)).Should().Equal(
             (ChapterPath, "2 results", null),
             (StylesPath, "1 result", null));
@@ -118,38 +131,49 @@ public sealed class FindUsagesTests : IDisposable
     [Fact]
     public void Double_clicking_a_usage_opens_its_file()
     {
+        // Arrange
         _sut.FindClassUsages("note");
         FindUsagesNode cssUsage = _sut.FindUsages.Roots.Single().Children.Last();
 
+        // Act
         _sut.FindUsages.Activate(_sut.FindUsages.Roots.Single());
         _sut.FindUsages.Activate(cssUsage);
 
+        // Assert
         _sut.ActiveCodeTab!.Resource.BookPath.Should().Be(StylesPath);
     }
 
     [Fact]
     public void Refresh_searches_the_same_class_again()
     {
+        // Act & Assert
         _sut.FindUsages.RefreshCommand.CanExecute(null).Should().BeFalse("there is nothing to refresh yet");
+
+        // Arrange
         _sut.FindClassUsages("note");
         CssResource css = _book.GetCssResources().Single();
         css.SetText(css.GetText() + "\np.note { margin: 0 }\n");
 
+        // Act
         _sut.FindUsages.RefreshCommand.Execute(null);
 
+        // Assert
         _sut.FindUsages.Roots.Single().CountText.Should().Be("4 results in 2 files");
     }
 
     [Fact]
     public void Saving_refreshes_the_shown_panel_without_taking_the_focus_or_the_status_bar()
     {
+        // Arrange
         _sut.FindClassUsages("note");
         string status = _sut.StatusMessage;
         CssResource css = _book.GetCssResources().Single();
         css.SetText(css.GetText() + "\np.note { margin: 0 }\n");
 
+        // Act
         _sut.RefreshFindUsagesAfterSave();
 
+        // Assert
         _sut.FindUsages.Roots.Single().CountText.Should().Be("4 results in 2 files");
         _sut.StatusMessage.Should().Be(status);
     }
@@ -157,25 +181,34 @@ public sealed class FindUsagesTests : IDisposable
     [Fact]
     public void Saving_does_not_refresh_a_hidden_panel_nor_after_a_failed_save()
     {
+        // Arrange
         _sut.FindClassUsages("note");
         CssResource css = _book.GetCssResources().Single();
         css.SetText(css.GetText() + "\np.note { margin: 0 }\n");
 
+        // Act
         _sut.RefreshFindUsagesAfterSave(saved: false);
+
+        // Assert
         _sut.FindUsages.Roots.Single().CountText.Should().Be("3 results in 2 files");
 
+        // Act
         _sut.Actions.Require(AppActionIds.ToggleFindUsages).Execute(null);
         _sut.RefreshFindUsagesAfterSave();
+
+        // Assert
         _sut.FindUsages.Roots.Single().CountText.Should().Be("3 results in 2 files");
     }
 
     [Fact]
     public void The_grouping_is_remembered_in_the_settings()
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore settings = new(dir.Combine("settings.xml"));
         FindUsagesViewModel panel = new(settings) { GroupByFile = true };
 
+        // Act & Assert
         settings.FindUsagesGroupByFile.Should().BeTrue();
         new FindUsagesViewModel(settings).GroupByFile.Should().BeTrue();
         panel.GroupByFile.Should().BeTrue();
@@ -184,13 +217,18 @@ public sealed class FindUsagesTests : IDisposable
     [Fact]
     public void Wrapping_rows_is_remembered_in_the_settings()
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore settings = new(dir.Combine("settings.xml"));
         FindUsagesViewModel panel = new(settings);
+
+        // Act & Assert
         panel.WrapRows.Should().BeFalse("rows are cut with an ellipsis by default");
 
+        // Act
         panel.WrapRows = true;
 
+        // Assert
         settings.FindUsagesWrapRows.Should().BeTrue();
         new FindUsagesViewModel(settings).WrapRows.Should().BeTrue();
     }
@@ -198,26 +236,38 @@ public sealed class FindUsagesTests : IDisposable
     [Fact]
     public void The_usage_column_fits_its_content_until_Preferences_say_otherwise()
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore settings = new(dir.Combine("settings.xml"));
         FindUsagesViewModel panel = new(settings);
+
+        // Act & Assert
         panel.FitUsageColumn.Should().BeTrue();
 
+        // Act
         settings.FindUsagesFitUsageColumn = false;
+
+        // Assert
         panel.FitUsageColumn.Should().BeTrue("the panel reads the setting when Preferences are saved");
+
+        // Act
         panel.ReloadSettings();
 
+        // Assert
         panel.FitUsageColumn.Should().BeFalse();
     }
 
     [Fact]
     public void The_width_the_user_gave_the_usage_column_is_kept_in_the_settings()
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore settings = new(dir.Combine("settings.xml"));
 
+        // Act
         FindUsagesViewModel panel = new(settings) { UsageColumnWidth = 321 };
 
+        // Assert
         settings.FindUsagesUsageColumnWidth.Should().Be(321);
         panel.UsageColumnWidth.Should().Be(321);
     }
@@ -225,16 +275,23 @@ public sealed class FindUsagesTests : IDisposable
     [Fact]
     public void A_change_of_the_fonts_in_the_settings_raises_AppearanceChanged()
     {
+        // Arrange
         using TempDir dir = new();
         SettingsStore settings = new(dir.Combine("settings.xml"));
         FindUsagesViewModel panel = new(settings);
         int raised = 0;
         panel.AppearanceChanged += (_, _) => raised++;
 
+        // Act
         settings.FindUsagesWrapRows = true;
+
+        // Assert
         raised.Should().Be(0, "only the fonts matter");
+
+        // Act
         settings.FindUsagesAppearance = new FindUsagesAppearance(string.Empty, 0, "Consolas", 14, string.Empty, 0);
 
+        // Assert
         raised.Should().Be(1);
         panel.Appearance.ContextFontFamily.Should().Be("Consolas");
     }
@@ -242,14 +299,18 @@ public sealed class FindUsagesTests : IDisposable
     [Fact]
     public void A_node_knows_its_level_and_puts_a_gap_before_the_count()
     {
+        // Arrange
         using TempDir dir = new();
         FindUsagesViewModel panel = new(new SettingsStore(dir.Combine("settings.xml"))) { GroupByFile = true };
+
+        // Act
         panel.Load("note", new[] { new ClassUsage("a.xhtml", 10, 3, 14, ClassUsageKind.ClassAttribute) });
 
         FindUsagesNode root = panel.Roots.Single();
         FindUsagesNode file = root.Children.Single();
         FindUsagesNode usage = file.Children.Single();
 
+        // Assert
         new[] { root.Level, file.Level, usage.Level }.Should().Equal(0, 1, 2);
         root.CountSuffix.Should().Be("  " + root.CountText);
         usage.CountSuffix.Should().BeEmpty();
@@ -265,26 +326,35 @@ public sealed class FindUsagesTests : IDisposable
     [InlineData(112, "112 wyników")]
     public void Polish_result_counts_use_the_plural_forms(int count, string expected)
     {
+        // Arrange
         using UiCultureScope polish = new("pl");
 
+        // Act & Assert
         FindUsagesViewModel.ResultsText(count).Should().Be(expected);
     }
 
     [Fact]
     public void Collapse_All_and_Expand_All_switch_the_root_and_the_file_nodes()
     {
+        // Act & Assert
         _sut.FindUsages.CollapseAllCommand.CanExecute(null).Should().BeFalse("there is no tree yet");
+
+        // Arrange
         _sut.FindClassUsages("note");
         _sut.FindUsages.GroupByFile = true;
         FindUsagesNode root = _sut.FindUsages.Roots.Single();
 
+        // Act
         _sut.FindUsages.CollapseAllCommand.Execute(null);
 
+        // Assert
         root.IsExpanded.Should().BeFalse();
         root.Children.Should().OnlyContain(file => !file.IsExpanded);
 
+        // Act
         _sut.FindUsages.ExpandAllCommand.Execute(null);
 
+        // Assert
         root.IsExpanded.Should().BeTrue();
         root.Children.Should().OnlyContain(file => file.IsExpanded);
     }
@@ -292,6 +362,7 @@ public sealed class FindUsagesTests : IDisposable
     [Fact]
     public void Usage_nodes_carry_the_line_column_kind_and_context_and_the_other_nodes_none()
     {
+        // Arrange
         _sut.FindClassUsages("note");
         _sut.FindUsages.GroupByFile = true;
         FindUsagesNode root = _sut.FindUsages.Roots.Single();
@@ -300,6 +371,7 @@ public sealed class FindUsagesTests : IDisposable
         FindUsagesNode selector = root.Children[1].Children[0];
         ClassUsage first = _book.FindClassUsages("note")[0];
 
+        // Act & Assert
         (attribute.Line, attribute.Column).Should().Be((first.Line, first.Column));
         attribute.KindText.Should().Be(Strings.Get("FindUsages_KindAttribute"));
         attribute.Context.Should().Contain("class=\"note\"").And.NotStartWith(" ");
@@ -315,22 +387,30 @@ public sealed class FindUsagesTests : IDisposable
     [Fact]
     public void Refresh_keeps_the_collapsed_nodes_collapsed_and_a_new_class_starts_expanded()
     {
+        // Arrange
         _sut.FindClassUsages("note");
         _sut.FindUsages.GroupByFile = true;
         _sut.FindUsages.Roots.Single().Children.Single(f => f.Text == ChapterPath).IsExpanded = false;
 
+        // Act
         _sut.FindUsages.RefreshCommand.Execute(null);
 
         FindUsagesNode root = _sut.FindUsages.Roots.Single();
+
+        // Assert
         root.Children.Select(f => (f.Text, f.IsExpanded)).Should().Equal((ChapterPath, false), (StylesPath, true));
 
+        // Act
         root.IsExpanded = false;
         _sut.FindUsages.GroupByFile = false;
 
+        // Assert
         _sut.FindUsages.Roots.Single().IsExpanded.Should().BeFalse("switching the grouping keeps the root collapsed");
 
+        // Act
         _sut.FindClassUsages("lead");
 
+        // Assert
         _sut.FindUsages.Roots.Single().IsExpanded.Should().BeTrue("another class starts fully expanded");
     }
 
@@ -346,8 +426,10 @@ public sealed class FindUsagesTests : IDisposable
     [Fact]
     public void Count_All_shows_its_matches_in_the_window_with_the_number_of_files()
     {
+        // Act
         int count = CountAllInAllHtml("note");
 
+        // Assert
         count.Should().Be(2);
         _sut.FindUsages.HasTextSearch.Should().BeTrue();
         _sut.FindUsages.ClassName.Should().BeNull();
@@ -369,10 +451,13 @@ public sealed class FindUsagesTests : IDisposable
     [Fact]
     public void Count_All_without_matches_leaves_the_window_alone()
     {
+        // Arrange
         _sut.FindClassUsages("note");
 
+        // Act & Assert
         CountAllInAllHtml("no such text anywhere").Should().Be(0);
 
+        // Assert
         _sut.FindUsages.HasTextSearch.Should().BeFalse();
         _sut.FindUsages.ClassName.Should().Be("note");
     }
@@ -380,14 +465,17 @@ public sealed class FindUsagesTests : IDisposable
     [Fact]
     public void Double_clicking_a_match_selects_it_in_the_editor()
     {
+        // Arrange
         CountAllInAllHtml("again");
         FindUsagesNode match = _sut.FindUsages.Roots.Single().Children.Single();
         _sut.Tabs.OpenResources(new Resource[] { Chapter });
         (int Start, int End)? selected = null;
         _sut.ActiveCodeTab!.SearchResultRequested += (start, end, _) => selected = (start, end);
 
+        // Act
         _sut.FindUsages.Activate(match);
 
+        // Assert
         _sut.ActiveCodeTab!.Resource.BookPath.Should().Be(ChapterPath);
         selected.Should().Be((match.Usage!.Offset, match.Usage.Offset + "Again".Length));
     }
@@ -395,32 +483,44 @@ public sealed class FindUsagesTests : IDisposable
     [Fact]
     public void Refresh_runs_the_text_search_again_and_the_save_refreshes_it_too()
     {
+        // Arrange
         CountAllInAllHtml("note");
+
+        // Act & Assert
         _sut.FindUsages.RefreshCommand.CanExecute(null).Should().BeTrue();
         Chapter.SetText(Chapter.GetText().Replace("Hello", "note Hello", StringComparison.Ordinal));
 
+        // Act
         _sut.FindUsages.RefreshCommand.Execute(null);
 
+        // Assert
         _sut.FindUsages.Roots.Single().CountText.Should().Be("3 results in 1 file");
 
+        // Act
         Chapter.SetText(Chapter.GetText().Replace("Hello", "note Hello", StringComparison.Ordinal));
         _sut.RefreshFindUsagesAfterSave();
 
+        // Assert
         _sut.FindUsages.Roots.Single().CountText.Should().Be("4 results in 1 file");
     }
 
     [Fact]
     public void A_class_search_replaces_the_text_search_and_the_other_way_round()
     {
+        // Arrange
         CountAllInAllHtml("note");
 
+        // Act
         _sut.FindClassUsages("note");
 
+        // Assert
         _sut.FindUsages.HasTextSearch.Should().BeFalse();
         _sut.FindUsages.Header.Should().Be(Strings.Format("FindUsages_Header", "note"));
 
+        // Act
         CountAllInAllHtml("note");
 
+        // Assert
         _sut.FindUsages.ClassName.Should().BeNull();
         _sut.FindUsages.HasTextSearch.Should().BeTrue();
     }
@@ -431,6 +531,7 @@ public sealed class FindUsagesTests : IDisposable
     [InlineData(5, "in 5 files")]
     public void File_counts_are_worded_in_the_current_language(int count, string expected)
     {
+        // Act & Assert
         FindUsagesViewModel.FilesText(count).Should().Be(expected);
     }
 
@@ -440,8 +541,10 @@ public sealed class FindUsagesTests : IDisposable
     [InlineData(34, "w 34 plikach")]
     public void Polish_file_counts_use_the_locative_forms(int count, string expected)
     {
+        // Arrange
         using UiCultureScope polish = new("pl");
 
+        // Act & Assert
         FindUsagesViewModel.FilesText(count).Should().Be(expected);
     }
 }

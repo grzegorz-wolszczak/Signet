@@ -17,12 +17,15 @@ public sealed class NotificationsViewModelTests
     [Fact]
     public void Messages_shown_in_the_status_bar_are_recorded_newest_first()
     {
+        // Arrange
         using StatusBarService statusBar = new();
         NotificationsViewModel sut = new(statusBar);
 
+        // Act
         statusBar.ShowMessage("first", TimeSpan.FromSeconds(1));
         statusBar.ShowMessage("second", TimeSpan.FromSeconds(1), NotificationLevel.Warning);
 
+        // Assert
         sut.Entries.Select(e => e.Message).Should().Equal("second", "first");
         sut.Entries[0].IsWarning.Should().BeTrue();
         sut.Entries[1].IsWarning.Should().BeFalse();
@@ -32,12 +35,15 @@ public sealed class NotificationsViewModelTests
     [Fact]
     public void Clearing_the_status_bar_is_not_recorded()
     {
+        // Arrange
         using StatusBarService statusBar = new();
         NotificationsViewModel sut = new(statusBar);
 
+        // Act
         statusBar.ShowMessage(string.Empty);
         statusBar.Clear();
 
+        // Assert
         sut.Entries.Should().BeEmpty();
         sut.HasEntries.Should().BeFalse();
     }
@@ -45,17 +51,23 @@ public sealed class NotificationsViewModelTests
     [Fact]
     public void Only_warnings_raise_the_unread_counter_and_the_warning_event()
     {
+        // Arrange
         using StatusBarService statusBar = new();
         NotificationsViewModel sut = new(statusBar);
         int raised = 0;
         sut.WarningArrived += (_, _) => raised++;
 
+        // Act
         sut.Add(Info("done"));
+
+        // Act & Assert
         sut.HasUnreadWarnings.Should().BeFalse();
 
+        // Act
         sut.Add(Warning("cancelled"));
         sut.Add(Warning("failed"));
 
+        // Assert
         sut.UnreadWarnings.Should().Be(2);
         sut.HasUnreadWarnings.Should().BeTrue();
         raised.Should().Be(2);
@@ -64,12 +76,15 @@ public sealed class NotificationsViewModelTests
     [Fact]
     public void MarkAsRead_resets_the_counter_but_keeps_the_entries()
     {
+        // Arrange
         using StatusBarService statusBar = new();
         NotificationsViewModel sut = new(statusBar);
         sut.Add(Warning("cancelled"));
 
+        // Act
         sut.MarkAsRead();
 
+        // Assert
         sut.UnreadWarnings.Should().Be(0);
         sut.Entries.Should().ContainSingle();
     }
@@ -77,13 +92,16 @@ public sealed class NotificationsViewModelTests
     [Fact]
     public void Clear_removes_the_entries_and_the_unread_counter()
     {
+        // Arrange
         using StatusBarService statusBar = new();
         NotificationsViewModel sut = new(statusBar);
         sut.Add(Warning("cancelled"));
         sut.Add(Info("done"));
 
+        // Act
         sut.ClearCommand.Execute(null);
 
+        // Assert
         sut.Entries.Should().BeEmpty();
         sut.HasEntries.Should().BeFalse();
         sut.UnreadWarnings.Should().Be(0);
@@ -92,14 +110,17 @@ public sealed class NotificationsViewModelTests
     [Fact]
     public void The_list_is_limited_and_drops_the_oldest_entries()
     {
+        // Arrange
         using StatusBarService statusBar = new();
         NotificationsViewModel sut = new(statusBar);
 
+        // Act
         for (int i = 0; i < NotificationsViewModel.MaxEntries + 5; i++)
         {
             sut.Add(Info("message " + i));
         }
 
+        // Assert
         sut.Entries.Should().HaveCount(NotificationsViewModel.MaxEntries);
         sut.Entries[0].Message.Should().Be("message " + (NotificationsViewModel.MaxEntries + 4));
         sut.Entries[^1].Message.Should().Be("message 5");
@@ -108,8 +129,10 @@ public sealed class NotificationsViewModelTests
     [Fact]
     public void Entry_time_is_formatted_as_hours_minutes_seconds()
     {
+        // Arrange
         NotificationEntry entry = new(new StatusNotification(new DateTime(2026, 10, 3, 20, 34, 7), "x", NotificationLevel.Info));
 
+        // Act & Assert
         entry.TimeText.Should().Be("20:34:07");
     }
 }

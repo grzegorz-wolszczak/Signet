@@ -63,7 +63,6 @@ public class TypedBindingTests
         // Act - set up binding
         target.Bind(TestTarget.TextProperty, expression);
 
-        // Act - change source
         source.Name = "Updated";
 
         // Assert
@@ -111,7 +110,6 @@ public class TypedBindingTests
         // Act - initialize binding
         target.Bind(TestTarget.TextProperty, expression);
 
-        // Act - update leaf property
         child.Name = "UpdatedChild";
 
         // Assert
@@ -140,7 +138,6 @@ public class TypedBindingTests
         // Act - initialize binding
         target.Bind(TestTarget.TextProperty, expression);
 
-        // Act - update from source
         child.Name = "UpdatedChild";
 
         // Assert
@@ -204,7 +201,6 @@ public class TypedBindingTests
         // Act - initialize binding
         target.Bind(TestTarget.TextProperty, expression);
 
-        // Act - update leaf property
         grandChild.Name = "UpdatedGrandChild";
 
         // Assert
@@ -245,7 +241,6 @@ public class TypedBindingTests
         // Act - initialize binding
         target.Bind(TestTarget.TextProperty, expression);
 
-        // Act - set from target
         target.Text = "UpdatedFromTarget";
         binding.Write!.Invoke(source, target.Text);
 
@@ -306,7 +301,6 @@ public class TypedBindingTests
         // Act - initialize binding
         target.Bind(TestTarget.TextProperty, expression);
 
-        // Act - update leaf node
         greatGrandChild.Name = "UpdatedGreatGrandChild";
 
         // Assert
@@ -348,7 +342,6 @@ public class TypedBindingTests
         // Act - initialize binding
         target.Bind(TestTarget.TextProperty, expression);
 
-        // Act - set from target
         target.Text = "UpdatedFromTarget";
         binding.Write!.Invoke(source, target.Text);
 
@@ -427,7 +420,6 @@ public class TypedBindingTests
         // Act - set up binding
         target.Bind(TestTarget.TextProperty, expression);
 
-        // Act - update via OnNext
         expression.OnNext("UpdatedViaOnNext");
 
         // Assert
@@ -450,7 +442,6 @@ public class TypedBindingTests
         // Act - initialize binding
         target.Bind(TestTarget.TextProperty, expression);
 
-        // Act - update via OnNext
         expression.OnNext("UpdatedViaOnNext");
 
         // Assert
@@ -487,7 +478,6 @@ public class TypedBindingTests
         // Act - initialize binding
         target.Bind(TestTarget.TextProperty, expression);
 
-        // Act - update via OnNext
         expression.OnNext("UpdatedViaOnNext");
 
         // Assert
@@ -592,6 +582,7 @@ public class TypedBindingTests
     [AvaloniaFact]
     public void TwoWay_Binding_Should_Work_With_Multiple_Binding_Expressions_And_Long_Chain()
     {
+        // Arrange
         // Create a deep chain of 5 TestViewModels
         var level5 = new TestViewModel { Name = "Level5" };
         var level4 = new TestViewModel { Name = "Level4", Child = level5 };
@@ -615,7 +606,6 @@ public class TypedBindingTests
         target1.Bind(TestTarget.TextProperty, expression1);
         target2.Bind(TestTarget.TextProperty, expression2);
 
-        // Assert initial binding
         target1.Text.Should().Be("Level5");
         target2.Text.Should().Be("Level5");
 

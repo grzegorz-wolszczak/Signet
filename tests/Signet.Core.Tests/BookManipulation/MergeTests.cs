@@ -18,11 +18,14 @@ public sealed class MergeTests
     [Fact]
     public void MergeResources_FewerThanTwo_IsNoOp()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource only = book.GetHtmlResources()[0];
 
+        // Act
         HtmlResource? result = book.MergeResources(new[] { only });
 
+        // Assert
         result.Should().BeNull();
         book.Modified.Should().BeFalse();
     }
@@ -30,6 +33,7 @@ public sealed class MergeTests
     [Fact]
     public void MergeResources_CombinesBodiesIntoSinkAndRemovesOthers()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource sink = book.GetHtmlResources()[0];
         sink.SetText(Xhtml("<p>first</p>"));
@@ -37,8 +41,10 @@ public sealed class MergeTests
         second.SetText(Xhtml("<p>second</p>"));
         string secondBookPath = second.BookPath;
 
+        // Act
         HtmlResource? result = book.MergeResources(new[] { sink, second });
 
+        // Assert
         result.Should().BeNull();
         sink.GetText().Should().Contain("<p>first</p>").And.Contain("<p>second</p>");
         book.GetAllResources().Should().NotContain(r => r.BookPath == secondBookPath);
@@ -48,34 +54,41 @@ public sealed class MergeTests
     [Fact]
     public void MergeResources_InjectsSectionAnchorBeforeNonSinkBody()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("3.0");
         HtmlResource sink = book.GetHtmlResources()[0];
         sink.SetText(Xhtml("<p>first</p>"));
         HtmlResource second = book.CreateEmptyHtmlFile();
         second.SetText(Xhtml("<p>second</p>"));
 
+        // Act
         book.MergeResources(new[] { sink, second });
 
+        // Assert
         sink.GetText().Should().MatchRegex("<a id=\"section_\\d+\"></a>");
     }
 
     [Fact]
     public void MergeResources_Epub2_UsesHiddenParagraphAnchor()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource sink = book.GetHtmlResources()[0];
         sink.SetText(Xhtml("<p>first</p>"));
         HtmlResource second = book.CreateEmptyHtmlFile();
         second.SetText(Xhtml("<p>second</p>"));
 
+        // Act
         book.MergeResources(new[] { sink, second });
 
+        // Assert
         sink.GetText().Should().Contain("style=\"display:none\"");
     }
 
     [Fact]
     public void MergeResources_InternalCrossReferenceBecomesLocalAnchor()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource sink = book.GetHtmlResources()[0];
         sink.SetText(Xhtml("<p>first</p>"));
@@ -83,14 +96,17 @@ public sealed class MergeTests
         second.SetText(Xhtml("<p id=\"target\">second</p>"));
         sink.SetText(Xhtml($"<a href=\"{second.Filename}#target\">go</a><p>first</p>"));
 
+        // Act
         book.MergeResources(new[] { sink, second });
 
+        // Assert
         sink.GetText().Should().Contain("href=\"#target\"");
     }
 
     [Fact]
     public void MergeResources_ExternalReferenceWithFragment_RedirectsToSink()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource sink = book.GetHtmlResources()[0];
         sink.SetText(Xhtml("<p>first</p>"));
@@ -101,14 +117,17 @@ public sealed class MergeTests
         HtmlResource other = book.CreateEmptyHtmlFile();
         other.SetText(Xhtml($"<a href=\"{secondFilename}#target\">go</a>"));
 
+        // Act
         book.MergeResources(new[] { sink, second });
 
+        // Assert
         other.GetText().Should().Contain($"href=\"{sink.Filename}#target\"");
     }
 
     [Fact]
     public void MergeResources_ExternalReferenceWithoutFragment_RedirectsToInjectedSectionAnchor()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource sink = book.GetHtmlResources()[0];
         sink.SetText(Xhtml("<p>first</p>"));
@@ -119,14 +138,17 @@ public sealed class MergeTests
         HtmlResource other = book.CreateEmptyHtmlFile();
         other.SetText(Xhtml($"<a href=\"{secondFilename}\">go</a>"));
 
+        // Act
         book.MergeResources(new[] { sink, second });
 
+        // Assert
         other.GetText().Should().MatchRegex($"href=\"{System.Text.RegularExpressions.Regex.Escape(sink.Filename)}#section_\\d+\"");
     }
 
     [Fact]
     public void MergeResources_NcxEntry_RedirectsToSink()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource sink = book.GetHtmlResources()[0];
         sink.SetText(Xhtml("<p>first</p>"));
@@ -144,8 +166,10 @@ public sealed class MergeTests
         });
         ncx.SetNcxDocument(document);
 
+        // Act
         book.MergeResources(new[] { sink, second });
 
+        // Assert
         ncx.GetNcxDocument().NavMap[0].ContentSrc.Should().Be(
             Signet.Core.BookPath.Relative(ncx.BookPath, sink.BookPath));
     }
@@ -153,6 +177,7 @@ public sealed class MergeTests
     [Fact]
     public void MergeResources_Epub2GuideEntry_RedirectsToSink()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource sink = book.GetHtmlResources()[0];
         sink.SetText(Xhtml("<p>first</p>"));
@@ -160,8 +185,10 @@ public sealed class MergeTests
         second.SetText(Xhtml("<p>second</p>"));
         book.GetOpf().AddGuideSemanticCode(second, "text");
 
+        // Act
         book.MergeResources(new[] { sink, second });
 
+        // Assert
         book.GetOpf().GetAllGuideInfoByBookPath().Should().ContainSingle(
             info => info.BookPath == sink.BookPath);
     }
@@ -169,6 +196,7 @@ public sealed class MergeTests
     [Fact]
     public void MergeResources_RemovesMergedFileFromSpine()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource sink = book.GetHtmlResources()[0];
         sink.SetText(Xhtml("<p>first</p>"));
@@ -176,21 +204,26 @@ public sealed class MergeTests
         second.SetText(Xhtml("<p>second</p>"));
         string secondBookPath = second.BookPath;
 
+        // Act
         book.MergeResources(new[] { sink, second });
 
+        // Assert
         book.GetOpf().GetSpineOrderBookPaths().Should().NotContain(secondBookPath);
     }
 
     [Fact]
     public void MergeResources_Epub3NavAmongSelection_IsRejectedWithoutChanges()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("3.0");
         HtmlResource sink = book.GetHtmlResources()[0];
         string navBookPath = book.GetOpf().GetNavResourceBookPath();
         HtmlResource nav = (HtmlResource)book.GetAllResources().Single(r => r.BookPath == navBookPath);
 
+        // Act
         HtmlResource? result = book.MergeResources(new[] { sink, nav });
 
+        // Assert
         result.Should().Be(nav);
         book.Modified.Should().BeFalse();
         book.GetAllResources().Should().Contain(r => r.BookPath == navBookPath);

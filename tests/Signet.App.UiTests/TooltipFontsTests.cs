@@ -18,6 +18,7 @@ public sealed class TooltipFontsTests
     [AvaloniaFact]
     public void A_tooltip_uses_the_font_of_the_innermost_area_and_follows_changes()
     {
+        // Arrange
         Button inBookBrowser = Tipped();
         Button inMainWindow = Tipped();
         StackPanel bookBrowser = new() { Children = { inBookBrowser } };
@@ -27,6 +28,7 @@ public sealed class TooltipFontsTests
         Window window = new() { Content = main };
         try
         {
+            // Act
             TooltipFonts.Apply(area => area switch
             {
                 TooltipArea.BookBrowser => new TooltipFont("Courier New", 21),
@@ -36,11 +38,14 @@ public sealed class TooltipFontsTests
             window.Show();
             Dispatcher.UIThread.RunJobs();
 
+            // Assert
             TipFont(inBookBrowser).Should().Be(("Courier New", 21d));
             TipFont(inMainWindow).Should().Be(("Georgia", 15d));
 
+            // Act
             TooltipFonts.Apply(area => area == TooltipArea.BookBrowser ? new TooltipFont("Arial", 17) : TooltipFont.Default);
 
+            // Assert
             TipFont(inBookBrowser).Should().Be(("Arial", 17d), "a change applies to the open windows");
         }
         finally
@@ -53,20 +58,25 @@ public sealed class TooltipFontsTests
     [AvaloniaFact]
     public void A_tooltip_takes_the_weight_of_its_area()
     {
+        // Arrange
         Button button = Tipped();
         StackPanel area = new() { Children = { button } };
         TooltipFonts.SetArea(area, TooltipArea.Checkpoints);
         Window window = new() { Content = area };
         try
         {
+            // Act
             TooltipFonts.Apply(a => a == TooltipArea.Checkpoints ? new TooltipFont("Arial", 14, 300) : TooltipFont.Default);
             window.Show();
             Dispatcher.UIThread.RunJobs();
 
+            // Assert
             TipWeight(button).Should().Be(FontWeight.Light);
 
+            // Act
             TooltipFonts.Apply(_ => TooltipFont.Default);
 
+            // Assert
             TipWeight(button).Should().Be(FontWeight.Normal, "a weight that is not set is Regular");
         }
         finally
@@ -84,15 +94,18 @@ public sealed class TooltipFontsTests
     [AvaloniaFact]
     public void Reset_forgets_the_area_roots_so_a_later_change_does_not_restyle_them()
     {
+        // Arrange
         StackPanel area = new();
         TooltipFonts.SetArea(area, TooltipArea.BookBrowser);
         try
         {
+            // Act
             TooltipFonts.Reset();
             object? before = area.Resources[TooltipFonts.SizeResourceKey];
 
             TooltipFonts.Apply(_ => new TooltipFont("Arial", 23));
 
+            // Assert
             area.Resources[TooltipFonts.SizeResourceKey].Should().Be(before, "the root belongs to an earlier application");
             Application.Current!.Resources[TooltipFonts.SizeResourceKey].Should().Be(23d, "the application still follows the change");
         }
@@ -118,15 +131,20 @@ public sealed class TooltipFontsTests
     [AvaloniaFact]
     public void Outside_every_area_a_tooltip_uses_the_font_of_the_other_windows_in_the_interface_typeface()
     {
+        // Arrange
         Button button = Tipped();
         Window window = new() { Content = button };
         try
         {
+            // Act
             TooltipFonts.Apply(area => area == TooltipArea.OtherWindows ? new TooltipFont(string.Empty, 16) : TooltipFont.Default);
             window.Show();
             Dispatcher.UIThread.RunJobs();
+
+            // Act & Assert
             Application.Current!.TryGetResource("ContentControlThemeFontFamily", null, out object? interfaceFont).Should().BeTrue();
 
+            // Assert
             TipFont(button).Should().Be((((FontFamily)interfaceFont!).Name, 16d));
         }
         finally

@@ -59,8 +59,10 @@ public sealed class EditTocTests : IDisposable
     [Fact]
     public void Builds_a_node_tree_from_the_book_toc()
     {
+        // Arrange
         EditTocViewModel vm = NewViewModel();
 
+        // Act & Assert
         vm.Nodes.Select(n => n.Text).Should().Equal("Alpha", "Beta", "Gamma");
         vm.Nodes[0].Children.Should().ContainSingle().Which.Text.Should().Be("Alpha One");
         vm.Nodes[0].Children[0].Target.Should().NotBeEmpty();
@@ -69,14 +71,21 @@ public sealed class EditTocTests : IDisposable
     [Fact]
     public void Sort_puts_the_entries_of_every_level_back_in_book_order()
     {
+        // Arrange
         EditTocViewModel vm = NewViewModel();
+
+        // Act
         vm.SetSelectedNodes(new[] { Find(vm, "Gamma") });
         vm.MoveUpCommand.Execute(null);
         vm.MoveUpCommand.Execute(null);
+
+        // Assert
         vm.Nodes.Select(n => n.Text).Should().Equal("Gamma", "Alpha", "Beta");
 
+        // Act
         vm.SortByBookOrderCommand.Execute(null);
 
+        // Assert
         vm.Rows.Select(r => (r.Text, r.Level)).Should().Equal(("Alpha", 1), ("Alpha One", 2), ("Beta", 1), ("Gamma", 1));
         vm.SelectedNode!.Text.Should().Be("Gamma", "the selection stays on the same entry");
         vm.Message.Should().BeEmpty();
@@ -85,10 +94,13 @@ public sealed class EditTocTests : IDisposable
     [Fact]
     public void Sort_reports_when_the_entries_are_already_in_book_order()
     {
+        // Arrange
         EditTocViewModel vm = NewViewModel();
 
+        // Act
         vm.SortByBookOrderCommand.Execute(null);
 
+        // Assert
         vm.Nodes.Select(n => n.Text).Should().Equal("Alpha", "Beta", "Gamma");
         vm.Message.Should().NotBeEmpty();
     }
@@ -96,8 +108,10 @@ public sealed class EditTocTests : IDisposable
     [Fact]
     public void Rows_list_every_entry_in_reading_order_with_its_level()
     {
+        // Arrange
         EditTocViewModel vm = NewViewModel();
 
+        // Act & Assert
         vm.Rows.Select(r => (r.Text, r.Level)).Should().Equal(("Alpha", 1), ("Alpha One", 2), ("Beta", 1), ("Gamma", 1));
         vm.Rows[1].Indent.Left.Should().BeGreaterThan(vm.Rows[0].Indent.Left);
     }
@@ -105,34 +119,46 @@ public sealed class EditTocTests : IDisposable
     [Fact]
     public void Rows_and_levels_follow_moves_additions_and_deletions()
     {
+        // Arrange
         EditTocViewModel vm = NewViewModel();
         List<IReadOnlyList<EditTocNodeViewModel>> requested = new();
         vm.SelectionChangeRequested += (_, nodes) => requested.Add(nodes);
         vm.SetSelectedNodes(new[] { Find(vm, "Beta") });
 
+        // Act
         vm.MoveRightCommand.Execute(null);
 
+        // Assert
         vm.Rows.Select(r => (r.Text, r.Level)).Should().Equal(("Alpha", 1), ("Alpha One", 2), ("Beta", 2), ("Gamma", 1));
         requested.Last().Should().ContainSingle().Which.Text.Should().Be("Beta");
 
+        // Act
         vm.AddBelowCommand.Execute(null);
+
+        // Assert
         vm.Rows.Should().HaveCount(5);
         vm.Rows[3].Level.Should().Be(2);
         vm.Rows[3].Text.Should().BeEmpty();
 
+        // Act
         vm.SetSelectedNodes(new[] { Find(vm, "Gamma") });
         vm.DeleteCommand.Execute(null);
+
+        // Assert
         vm.Rows.Select(r => r.Text).Should().NotContain("Gamma");
     }
 
     [Fact]
     public void MoveRight_indents_a_contiguous_selection_under_the_preceding_sibling()
     {
+        // Arrange
         EditTocViewModel vm = NewViewModel();
         vm.SetSelectedNodes(new[] { Find(vm, "Beta"), Find(vm, "Gamma") });
 
+        // Act
         vm.MoveRightCommand.Execute(null);
 
+        // Assert
         vm.Nodes.Select(n => n.Text).Should().Equal("Alpha");
         vm.Nodes[0].Children.Select(n => n.Text).Should().Equal("Alpha One", "Beta", "Gamma");
         vm.Nodes[0].Children[1].Parent.Should().BeSameAs(vm.Nodes[0]);
@@ -141,22 +167,28 @@ public sealed class EditTocTests : IDisposable
     [Fact]
     public void MoveRight_on_the_first_child_is_a_no_op()
     {
+        // Arrange
         EditTocViewModel vm = NewViewModel();
         vm.SetSelectedNodes(new[] { vm.Nodes[0] });
 
+        // Act
         vm.MoveRightCommand.Execute(null);
 
+        // Assert
         vm.Nodes.Select(n => n.Text).Should().Equal("Alpha", "Beta", "Gamma");
     }
 
     [Fact]
     public void MoveLeft_outdents_a_child_to_the_grandparent()
     {
+        // Arrange
         EditTocViewModel vm = NewViewModel();
         vm.SetSelectedNodes(new[] { Find(vm, "Alpha One") });
 
+        // Act
         vm.MoveLeftCommand.Execute(null);
 
+        // Assert
         vm.Nodes.Select(n => n.Text).Should().Equal("Alpha", "Alpha One", "Beta", "Gamma");
         vm.Nodes[1].Children.Should().BeEmpty();
     }
@@ -164,37 +196,47 @@ public sealed class EditTocTests : IDisposable
     [Fact]
     public void MoveUp_reorders_within_the_parent()
     {
+        // Arrange
         EditTocViewModel vm = NewViewModel();
         vm.SetSelectedNodes(new[] { Find(vm, "Gamma") });
 
+        // Act
         vm.MoveUpCommand.Execute(null);
 
+        // Assert
         vm.Nodes.Select(n => n.Text).Should().Equal("Alpha", "Gamma", "Beta");
     }
 
     [Fact]
     public void Deleting_the_last_entry_inserts_a_placeholder()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         EditTocViewModel vm = NewViewModel();
+
+        // Act
         foreach (EditTocNodeViewModel node in vm.Nodes.ToList())
         {
             vm.SetSelectedNodes(new[] { node });
             vm.DeleteCommand.Execute(null);
         }
 
+        // Assert
         vm.Nodes.Should().ContainSingle().Which.Text.Should().Be("[placeholder]");
     }
 
     [Fact]
     public void Accept_is_blocked_when_an_entry_has_no_target()
     {
+        // Arrange
         EditTocViewModel vm = NewViewModel();
         vm.SetSelectedNodes(new[] { vm.Nodes[0] });
         vm.AddBelowCommand.Execute(null);
 
+        // Act
         vm.AcceptCommand.Execute(null);
 
+        // Assert
         vm.Accepted.Should().BeFalse();
         vm.Message.Should().NotBeEmpty();
     }
@@ -202,12 +244,15 @@ public sealed class EditTocTests : IDisposable
     [Fact]
     public void Accept_saves_edited_titles_to_the_book()
     {
+        // Arrange
         EditTocViewModel vm = NewViewModel();
         Find(vm, "Beta").Text = "Beta Renamed";
         vm.SetSelectedNodes(Array.Empty<EditTocNodeViewModel>());
 
+        // Act
         vm.AcceptCommand.Execute(null);
 
+        // Assert
         vm.Accepted.Should().BeTrue();
         new NavProcessor(_book.GetNavResource()!).GetToc()
             .Select(e => e.Title).Should().Equal("Alpha", "Alpha One", "Beta Renamed", "Gamma");
@@ -216,10 +261,13 @@ public sealed class EditTocTests : IDisposable
     [Fact]
     public void Select_target_list_offers_book_resources_relative_to_the_nav()
     {
+        // Arrange
         EditTocViewModel vm = NewViewModel();
 
+        // Act
         var items = vm.GetTargetItems();
 
+        // Assert
         items.Should().NotBeEmpty();
         items.Should().Contain(i => i.Href.Contains("chapter", StringComparison.OrdinalIgnoreCase)
             || i.Href.Contains("Section", StringComparison.OrdinalIgnoreCase));

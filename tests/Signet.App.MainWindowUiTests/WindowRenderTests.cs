@@ -53,8 +53,10 @@ public sealed class WindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Main_window_renders_menu_toolbars_and_dock()
     {
+        // Act
         MainWindow window = ShowMainWindow();
 
+        // Assert
         window.GetVisualDescendants().OfType<Avalonia.Controls.Menu>().Should().NotBeEmpty();
         window.GetVisualDescendants().Any(v => v.GetType().Name.Contains("DockControl"))
             .Should().BeTrue();
@@ -63,6 +65,7 @@ public sealed class WindowRenderTests : IDisposable
     [AvaloniaFact]
     public void The_zoom_in_the_status_bar_has_the_font_size_of_the_rest_of_the_status_bar()
     {
+        // Act
         MainWindow window = ShowMainWindow();
 
         // The buttons of the status bar: the ones in the same panel as the text of the open book.
@@ -73,6 +76,7 @@ public sealed class WindowRenderTests : IDisposable
         Button zoomOut = buttons.Single(b => Equals(b.Content, "−"));
         double statusText = bookFile.FontSize;
 
+        // Assert
         percent.FontSize.Should().Be(statusText);
         zoomOut.FontSize.Should().Be(statusText);
     }
@@ -80,7 +84,10 @@ public sealed class WindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Toolbar_buttons_render_colour_icons_from_the_default_icon_theme()
     {
+        // Arrange
         string settingsPath = _disposables.Add(new TempDir("uitests-")).Combine("file.xml");
+
+        // Act
         new IconThemeManager(new SettingsStore(settingsPath), NullLogger<IconThemeManager>.Instance).ApplySaved();
 
         MainWindow window = ShowMainWindow();
@@ -89,6 +96,8 @@ public sealed class WindowRenderTests : IDisposable
         List<Image> icons = window.GetVisualDescendants().OfType<Image>()
             .Where(i => i.DataContext is ToolbarItemViewModel { IconKey: not null })
             .ToList();
+
+        // Assert
         icons.Should().NotBeEmpty("the New/Open/Save toolbar should show icons");
         static bool IsColourPng(Image i) =>
             IconThemeManager.ColoredIconKeys.Contains(((ToolbarItemViewModel)i.DataContext!).IconKey!);
@@ -105,12 +114,14 @@ public sealed class WindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Documents_area_gets_the_bulk_of_the_center_column_height()
     {
+        // Act
         MainWindow window = ShowMainWindow();
 
         Control? documentControl = window.GetVisualDescendants()
             .OfType<Control>()
             .FirstOrDefault(v => v.GetType().Name is "DocumentControl" or "DocumentDockControl");
 
+        // Assert
         documentControl.Should().NotBeNull(
             "the tab area must render even with no open documents");
 
@@ -122,8 +133,11 @@ public sealed class WindowRenderTests : IDisposable
     [AvaloniaFact]
     public void Opening_a_resource_renders_a_code_editor_tab_in_the_document_dock()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
+
+        // Act
         MainWindow window = ShowMainWindow();
         MainWindowViewModel vm = (MainWindowViewModel)window.DataContext!;
         vm.LoadBook(book, string.Empty);
@@ -134,11 +148,13 @@ public sealed class WindowRenderTests : IDisposable
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
+        // Assert
         vm.ActiveCodeTab.Should().NotBeNull();
         window.GetVisualDescendants().OfType<AvaloniaEdit.TextEditor>().Should().NotBeEmpty(
             "the tab added to the DocumentDock must be materialized and rendered");
 
         // Closing the book detaches the view model from it (a view model that stays reachable gets later language-change notifications).
+        // Act
         ((IBookWorkspace)vm).CloseBook();
         window.Close();
     }

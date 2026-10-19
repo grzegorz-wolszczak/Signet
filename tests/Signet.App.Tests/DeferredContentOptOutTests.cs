@@ -43,6 +43,7 @@ public sealed class DeferredContentOptOutTests : IDisposable
     [MemberData(nameof(Tools))]
     public void Tool_panels_opt_out_of_deferred_content(Tool tool)
     {
+        // Act & Assert
         tool.Should().BeAssignableTo<IDeferredContentPresentation>();
         ((IDeferredContentPresentation)tool).DeferContentPresentation.Should().BeFalse();
     }
@@ -50,6 +51,7 @@ public sealed class DeferredContentOptOutTests : IDisposable
     [Fact]
     public void Document_tabs_opt_out_of_deferred_content()
     {
+        // Arrange
         TempDir temp = _disposables.Add(new TempDir());
         using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
@@ -59,6 +61,7 @@ public sealed class DeferredContentOptOutTests : IDisposable
         (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         var vm = new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker);
 
+        // Act & Assert
         vm.Should().BeAssignableTo<IDeferredContentPresentation>();
         ((IDeferredContentPresentation)vm).DeferContentPresentation.Should().BeFalse();
     }

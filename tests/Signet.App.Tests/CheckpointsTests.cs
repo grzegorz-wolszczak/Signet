@@ -55,9 +55,13 @@ public sealed class CheckpointsTests
     [Fact]
     public void Loading_a_book_starts_the_history_with_a_start_of_session_checkpoint()
     {
+        // Arrange
         using TempDir temp = new();
+
+        // Act
         using Session s = new(temp);
 
+        // Assert
         s.Vm.CheckpointHistory.States.Should().HaveCount(2);
         s.Vm.CheckpointHistory.UndoMessage.Should().Be(Strings.Get("Checkpoint_StartOfSession"));
 
@@ -71,6 +75,7 @@ public sealed class CheckpointsTests
     [Fact]
     public void Upgrade_to_epub3_converts_the_book_and_reverting_brings_back_epub2()
     {
+        // Arrange
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub2Minimal, temp);
         MainWindowViewModel vm = new();
@@ -79,20 +84,30 @@ public sealed class CheckpointsTests
             vm.LoadBook(new ImportEpub(epub).GetBook(), epub);
             IBookWorkspace workspace = vm;
 
+            // Act
             vm.Actions.Require(AppActionIds.UpgradeToEpub3).Execute(null);
 
+            // Assert
             workspace.CurrentBook!.IsEpub3.Should().BeTrue();
             workspace.CurrentBook.GetNavResource().Should().NotBeNull();
             vm.CheckpointHistory.UndoMessage.Should().Be(Strings.Format(
                 "Checkpoint_Before", Strings.Get("Action_MainWindow_UpgradeToEpub3").Replace("&", string.Empty, StringComparison.Ordinal)));
 
+            // Arrange
             // The revert removes the new nav, so it is confirmed first.
             CheckpointRevertRequest? confirmation = null;
             vm.RevertConfirmationRequested += (_, request) => confirmation = request;
+
+            // Act
             vm.Actions.Require(AppActionIds.RevertToBefore).Execute(null);
+
+            // Assert
             confirmation!.Rows.Should().ContainSingle(r => r.Text.Contains("nav.xhtml", StringComparison.Ordinal));
+
+            // Act
             vm.RevertToBeforeCheckpoint();
 
+            // Assert
             workspace.CurrentBook!.IsEpub3.Should().BeFalse();
             workspace.CurrentBook.GetNcx().Should().NotBeNull();
         }
@@ -105,24 +120,30 @@ public sealed class CheckpointsTests
     [Fact]
     public void Checkpoint_actions_are_disabled_without_a_book()
     {
+        // Arrange
         using MainWindowViewModel vm = new();
 
         vm.Actions.Require(AppActionIds.CreateCheckpoint).IsEnabled.Should().BeFalse();
         vm.Actions.Require(AppActionIds.RevertToBefore).IsEnabled.Should().BeFalse();
         vm.Actions.Require(AppActionIds.RevertToAfter).IsEnabled.Should().BeFalse();
+
+        // Act & Assert
         vm.CreateCheckpoint("x").Should().BeFalse();
     }
 
     [Fact]
     public void Create_checkpoint_action_asks_the_view_for_a_name()
     {
+        // Arrange
         using TempDir temp = new();
         using Session s = new(temp);
         int requests = 0;
         s.Vm.CreateCheckpointRequested += (_, _) => requests++;
 
+        // Act
         s.Vm.Actions.Require(AppActionIds.CreateCheckpoint).Execute(null);
 
+        // Assert
         requests.Should().Be(1);
     }
 
@@ -130,6 +151,7 @@ public sealed class CheckpointsTests
     [AutoData]
     public void Reverting_restores_the_checkpointed_text_keeps_the_tab_open_and_marks_the_book_modified(string name, string edit)
     {
+        // Arrange
         using TempDir temp = new();
         using Session s = new(temp);
         CodeTabViewModel tab = s.OpenFirstHtml();
@@ -137,16 +159,21 @@ public sealed class CheckpointsTests
         s.Vm.CreateCheckpoint(name).Should().BeTrue();
         AppendParagraph(tab, edit);
 
+        // Act
         s.Vm.Actions.Require(AppActionIds.RevertToBefore).Execute(null);
 
         CodeTabViewModel reverted = s.Vm.ActiveCodeTab!;
+
+        // Assert
         reverted.Resource.BookPath.Should().Be(bookPath);
         reverted.Document.Text.Should().NotContain(edit);
         s.Book.Modified.Should().BeTrue();
         s.Vm.Actions.Require(AppActionIds.RevertToAfter).IsEnabled.Should().BeTrue();
 
+        // Act
         s.Vm.Actions.Require(AppActionIds.RevertToAfter).Execute(null);
 
+        // Assert
         s.Vm.ActiveCodeTab!.Document.Text.Should().Contain(edit, "the \"after\" state contains the changes made before the revert");
     }
 
@@ -154,11 +181,14 @@ public sealed class CheckpointsTests
     [AutoData]
     public void The_checkpoint_name_is_used_in_the_revert_label(string name)
     {
+        // Arrange
         using TempDir temp = new();
         using Session s = new(temp);
 
+        // Act
         s.Vm.CreateCheckpoint(name);
 
+        // Assert
         s.Vm.Actions.Require(AppActionIds.RevertToBefore).Text
             .Should().Be(Strings.Format("Checkpoint_RevertToBeforeNamed", name));
     }
@@ -167,14 +197,21 @@ public sealed class CheckpointsTests
     [AutoData]
     public void Automatic_checkpoint_can_be_rewound_when_the_operation_changed_nothing(string operation)
     {
+        // Arrange
         using TempDir temp = new();
         using Session s = new(temp);
         int before = s.Vm.CheckpointHistory.States.Count;
 
+        // Act & Assert
         s.Vm.AddCheckpointBefore(operation).Should().BeTrue();
+
+        // Assert
         s.Vm.CheckpointHistory.UndoMessage.Should().Be(Strings.Format("Checkpoint_Before", operation));
+
+        // Act
         s.Vm.RewindCheckpoint();
 
+        // Assert
         s.Vm.CheckpointHistory.States.Should().HaveCount(before);
     }
 
@@ -182,6 +219,7 @@ public sealed class CheckpointsTests
     [AutoData]
     public void Panel_lists_the_states_with_the_current_one_selected_and_reverts_the_selected_one(string name, string edit)
     {
+        // Arrange
         using TempDir temp = new();
         using Session s = new(temp);
         CodeTabViewModel tab = s.OpenFirstHtml();
@@ -194,10 +232,16 @@ public sealed class CheckpointsTests
         panel.SelectedItem.Should().Be(panel.Items[2]);
         panel.RevertCommand.CanExecute(null).Should().BeFalse("the current state cannot be reverted to");
 
+        // Act
         panel.SelectedItem = panel.Items[1];
+
+        // Assert
         panel.RevertCommand.CanExecute(null).Should().BeTrue();
+
+        // Act
         panel.RevertCommand.Execute(null);
 
+        // Assert
         s.Vm.ActiveCodeTab!.Document.Text.Should().NotContain(edit);
         panel.Items[1].IsCurrent.Should().BeTrue();
         panel.Items[1].Label.Should().Be(Strings.Format("Checkpoint_CurrentStateWas", name));
@@ -207,11 +251,15 @@ public sealed class CheckpointsTests
     [Fact]
     public void Edit_menu_contains_the_checkpoint_actions_and_view_menu_the_panel_toggle()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         using TestHost host = new();
         MenuBuilder builder = new(host.Registry, host.Toolbars, new CommunityToolkit.Mvvm.Input.RelayCommand(() => { }));
+
+        // Act
         var menus = builder.Build();
 
+        // Assert
         MenuItemViewModel edit = menus.Single(m => m.Header == "_Edit");
         edit.Items!.Select(i => i.ActionId).Should().ContainInOrder(
             AppActionIds.RevertToBefore, AppActionIds.RevertToAfter, AppActionIds.CreateCheckpoint);
@@ -223,19 +271,24 @@ public sealed class CheckpointsTests
     [Fact]
     public void Deleting_files_in_the_book_browser_creates_a_checkpoint_first()
     {
+        // Arrange
         using TempDir temp = new();
         using Session s = new(temp);
         OpfModelEntry image = s.Vm.BookBrowser.Nodes.Single(n => n.Header == "Images").Children[0].Entry!;
         int states = s.Vm.CheckpointHistory.States.Count;
 
+        // Act
         s.Vm.BookBrowser.ApplyDelete(new[] { image });
 
+        // Assert
         s.Vm.CheckpointHistory.States.Should().HaveCount(states + 1);
         s.Vm.CheckpointHistory.UndoMessage.Should().Be(
             Strings.Format("Checkpoint_Before", Strings.Get("CheckpointOp_DeleteFiles")));
 
+        // Act
         s.Vm.RevertToBeforeCheckpoint();
 
+        // Assert
         s.Book.GetFolderKeeper().GetResourceByBookPathNoThrow(image.Resource.BookPath)
             .Should().NotBeNull("reverting restores the deleted file");
     }
@@ -243,25 +296,31 @@ public sealed class CheckpointsTests
     [Fact]
     public void Split_without_markers_rewinds_its_checkpoint()
     {
+        // Arrange
         using TempDir temp = new();
         using Session s = new(temp);
         BookBrowserNode text = s.Vm.BookBrowser.Nodes.Single(n => n.Header == "Text").Children[0];
         s.Vm.BookBrowser.UpdateSelection(new object?[] { text });
         int states = s.Vm.CheckpointHistory.States.Count;
 
+        // Act
         s.Vm.BookBrowser.SplitSelectedCommand.Execute(null);
 
+        // Assert
         s.Vm.CheckpointHistory.States.Should().HaveCount(states);
     }
 
     [Fact]
     public void Mend_all_html_creates_a_checkpoint_named_after_the_action()
     {
+        // Arrange
         using TempDir temp = new();
         using Session s = new(temp);
 
+        // Act
         s.Vm.Actions.Require(AppActionIds.MendHtml).Execute(null);
 
+        // Assert
         s.Vm.CheckpointHistory.UndoMessage.Should().StartWith(Strings.Format("Checkpoint_Before", string.Empty))
             .And.NotContain("&");
     }
@@ -270,6 +329,7 @@ public sealed class CheckpointsTests
     [AutoData]
     public void Compare_from_the_panel_diffs_the_checkpoint_against_the_unsaved_current_text(string name, string edit)
     {
+        // Arrange
         using TempDir temp = new();
         using Session s = new(temp);
         CodeTabViewModel tab = s.OpenFirstHtml();
@@ -281,17 +341,22 @@ public sealed class CheckpointsTests
         CheckpointsViewModel panel = s.Vm.CheckpointsPanel;
 
         panel.SelectedItem = panel.Items.Single(i => i.Label == name);
+
+        // Act
         panel.CompareCommand.Execute(null);
 
+        // Assert
         shown.Should().NotBeNull();
         shown!.LeftTitle.Should().Be(name);
         shown.Files.Should().ContainSingle().Which.Diff.RightPath.Should().Be(bookPath);
         SideBySideRowItem changed = shown.SideBySideRows[shown.SelectedRowIndex];
         changed.Row.Right.Text.Should().Contain(edit);
 
+        // Act
         s.Vm.Tabs.CloseAllTabs();
         shown.ActivateRow(shown.SelectedRowIndex);
 
+        // Assert
         s.Vm.ActiveCodeTab!.Resource.BookPath.Should().Be(bookPath);
     }
 
@@ -299,14 +364,17 @@ public sealed class CheckpointsTests
     [AutoData]
     public void Creating_a_checkpoint_keeps_unsaved_editor_changes_visible_as_book_changes(string name, string edit)
     {
+        // Arrange
         using TempDir temp = new();
         using Session s = new(temp);
         CodeTabViewModel tab = s.OpenFirstHtml();
         s.Book.Modified = false;
         AppendParagraph(tab, edit);
 
+        // Act
         s.Vm.CreateCheckpoint(name);
 
+        // Assert
         tab.IsModified.Should().BeFalse("the tab text was written to the resource before the checkpoint");
         s.Book.Modified.Should().BeTrue("otherwise closing the application would not prompt to save");
         ((IBookWorkspace)s.Vm).HasUnsavedChanges.Should().BeTrue();
@@ -316,11 +384,14 @@ public sealed class CheckpointsTests
     [Fact]
     public void A_checkpoint_with_an_empty_name_is_shown_as_an_ellipsis_in_the_revert_label()
     {
+        // Arrange
         using TempDir temp = new();
         using Session s = new(temp);
 
+        // Act
         s.Vm.CreateCheckpoint(string.Empty);
 
+        // Assert
         s.Vm.Actions.Require(AppActionIds.RevertToBefore).Text
             .Should().Be(Strings.Format("Checkpoint_RevertToBeforeNamed", "…"));
         s.Vm.CheckpointsPanel.Items[1].Label.Should().Be(Strings.Get("Checkpoint_Unnamed"));
@@ -330,6 +401,7 @@ public sealed class CheckpointsTests
     [AutoData]
     public void Revert_to_before_that_keeps_the_set_of_files_reverts_without_asking(string name, string edit)
     {
+        // Arrange
         using TempDir temp = new();
         using Session s = new(temp);
         CodeTabViewModel tab = s.OpenFirstHtml();
@@ -338,8 +410,10 @@ public sealed class CheckpointsTests
         CheckpointRevertRequest? asked = null;
         s.Vm.RevertConfirmationRequested += (_, request) => asked = request;
 
+        // Act
         s.Vm.Actions.Require(AppActionIds.RevertToBefore).Execute(null);
 
+        // Assert
         asked.Should().BeNull();
         s.Vm.CheckpointHistory.CanRedo.Should().BeTrue("the book was reverted right away");
     }
@@ -349,6 +423,7 @@ public sealed class CheckpointsTests
     [InlineAutoData(true)]
     public void Revert_to_before_a_split_lists_the_new_file_first_and_flags_edits_made_in_it(bool editNewFile, string secondPart, string edit)
     {
+        // Arrange
         using TempDir temp = new();
         using Session s = new(temp);
         HtmlResource created = SplitFirstHtml(s, secondPart);
@@ -361,8 +436,10 @@ public sealed class CheckpointsTests
         CheckpointRevertRequest? asked = null;
         s.Vm.RevertConfirmationRequested += (_, request) => asked = request;
 
+        // Act
         s.Vm.Actions.Require(AppActionIds.RevertToBefore).Execute(null);
 
+        // Assert
         asked.Should().NotBeNull();
         asked!.Forward.Should().BeFalse();
         asked.Rows.Should().Equal(new CheckpointRevertRow(
@@ -371,8 +448,10 @@ public sealed class CheckpointsTests
         s.Book.GetFolderKeeper().GetResourceByBookPathNoThrow(created.BookPath)
             .Should().NotBeNull("nothing is reverted before the user confirms");
 
+        // Act
         s.Vm.RevertToBeforeCheckpoint();
 
+        // Assert
         s.Book.GetFolderKeeper().GetResourceByBookPathNoThrow(created.BookPath).Should().BeNull();
     }
 
@@ -380,6 +459,7 @@ public sealed class CheckpointsTests
     [AutoData]
     public void Revert_to_after_a_split_lists_the_file_that_comes_back(string secondPart)
     {
+        // Arrange
         using TempDir temp = new();
         using Session s = new(temp);
         string createdPath = SplitFirstHtml(s, secondPart).BookPath;
@@ -387,8 +467,10 @@ public sealed class CheckpointsTests
         CheckpointRevertRequest? asked = null;
         s.Vm.RevertConfirmationRequested += (_, request) => asked = request;
 
+        // Act
         s.Vm.Actions.Require(AppActionIds.RevertToAfter).Execute(null);
 
+        // Assert
         asked.Should().NotBeNull();
         asked!.Forward.Should().BeTrue();
         asked.Rows.Should().Equal(new CheckpointRevertRow(Strings.Format("CheckpointRevert_Restored", createdPath), false));

@@ -26,10 +26,13 @@ public sealed class ResourceFactoryTests
     [InlineData("application/octet-stream", typeof(Resource))]
     public void Selects_subtype_from_media_type(string mediaType, System.Type expected)
     {
+        // Arrange
         using TempDir root = new();
 
+        // Act
         Resource resource = ResourceFactory.Create(root.Path, root.Combine("f.bin"), mediaType);
 
+        // Assert
         resource.Should().BeOfType(expected);
         resource.MediaType.Should().Be(mediaType);
     }
@@ -37,11 +40,14 @@ public sealed class ResourceFactoryTests
     [Fact]
     public void Falls_back_to_extension_when_media_type_is_missing()
     {
+        // Arrange
         using TempDir root = new();
 
+        // Act
         Resource css = ResourceFactory.Create(root.Path, root.Combine("Styles", "main.css"));
         Resource html = ResourceFactory.Create(root.Path, root.Combine("Text", "c.xhtml"));
 
+        // Assert
         css.Should().BeOfType<CssResource>();
         css.MediaType.Should().Be("text/css");
         html.Should().BeOfType<HtmlResource>();

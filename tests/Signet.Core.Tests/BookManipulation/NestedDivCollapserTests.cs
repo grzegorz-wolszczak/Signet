@@ -28,9 +28,13 @@ public sealed class NestedDivCollapserTests
     [Fact]
     public void A_chain_of_three_collapses_into_one_div_and_the_content_moves_left()
     {
+        // Arrange
         string text = Page("<div class=\"a\">\n    <div class=\"a\">\n        <div class=\"a\">\n             some content\n        </div>\n    </div>\n</div>");
 
+        // Act
         NestedDivChain chain = NestedDivCollapser.FindChains(text).Should().ContainSingle().Subject;
+
+        // Assert
         chain.Depth.Should().Be(3);
         chain.Separators.Should().BeEmpty();
         CollapseAll(text).Should().Be(Page("<div class=\"a\">\n     some content\n</div>"));
@@ -39,8 +43,10 @@ public sealed class NestedDivCollapserTests
     [Fact]
     public void Divs_on_one_line_collapse_without_reindenting()
     {
+        // Arrange
         string text = Page("<div class=\"a\"><div class=\"a\"> <div class=\"a\"><p>x</p></div></div>\n</div>");
 
+        // Act & Assert
         CollapseAll(text).Should().Be(Page("<div class=\"a\"><p>x</p>\n</div>"));
     }
 
@@ -49,6 +55,7 @@ public sealed class NestedDivCollapserTests
     [InlineData("<div><div><p>x</p></div></div>")]
     public void Identical_attributes_are_compared_as_a_set_with_classes_in_any_order(string body)
     {
+        // Act & Assert
         NestedDivCollapser.FindChains(Page(body)).Should().ContainSingle().Which.Depth.Should().Be(2);
     }
 
@@ -62,16 +69,21 @@ public sealed class NestedDivCollapserTests
     [InlineData("<section class=\"a\"><section class=\"a\"><p>x</p></section></section>")]
     public void Anything_but_whitespace_comments_and_cdata_between_the_tags_breaks_the_chain(string body)
     {
+        // Act & Assert
         NestedDivCollapser.FindChains(Page(body)).Should().BeEmpty();
     }
 
     [Fact]
     public void Comments_and_cdata_between_the_tags_are_reported_and_kept_inside_the_remaining_div()
     {
+        // Arrange
         string text = Page(
             "<div class=\"a\">\n    <div class=\"a\">\n    <![CDATA[ x < y ]]>\n        <div class=\"a\">\n            some content\n        </div>\n    </div>\n    <!-- some comment -->\n</div>");
 
+        // Act
         NestedDivChain chain = NestedDivCollapser.FindChains(text).Should().ContainSingle().Subject;
+
+        // Assert
         chain.Depth.Should().Be(3);
         chain.Separators.Select(s => (s.Text, s.IsCData)).Should().Equal(("<![CDATA[ x < y ]]>", true), ("<!-- some comment -->", false));
 
@@ -81,33 +93,43 @@ public sealed class NestedDivCollapserTests
     [Fact]
     public void The_content_is_not_reindented_when_it_contains_pre()
     {
+        // Arrange
         string text = Page("<div>\n  <div>\n    <pre>\n    code\n    </pre>\n  </div>\n</div>");
 
+        // Act & Assert
         CollapseAll(text).Should().Be(Page("<div>\n    <pre>\n    code\n    </pre>\n</div>"));
     }
 
     [Fact]
     public void The_content_is_not_reindented_when_a_line_is_indented_less_than_the_removed_levels()
     {
+        // Arrange
         string text = Page("<div>\n    <div>\n        <p>a\nb</p>\n    </div>\n</div>");
 
+        // Act & Assert
         CollapseAll(text).Should().Be(Page("<div>\n        <p>a\nb</p>\n</div>"));
     }
 
     [Fact]
     public void Nested_chains_inside_a_chain_are_separate_and_both_collapse()
     {
+        // Arrange
         string text = Page("<div class=\"a\">\n  <div class=\"a\">\n    <p>x</p>\n    <div class=\"b\">\n      <div class=\"b\">\n        <p>y</p>\n      </div>\n    </div>\n  </div>\n</div>");
 
+        // Act & Assert
         NestedDivCollapser.FindChains(text).Select(c => c.Depth).Should().Equal(2, 2);
+
+        // Act & Assert
         CollapseAll(text).Should().Be(Page("<div class=\"a\">\n  <p>x</p>\n  <div class=\"b\">\n    <p>y</p>\n  </div>\n</div>"));
     }
 
     [Fact]
     public void Collapse_returns_null_where_there_is_no_chain()
     {
+        // Arrange
         string text = Page("<div class=\"a\"><p>x</p></div>");
 
+        // Act & Assert
         NestedDivCollapser.Collapse(text, text.IndexOf("<div", System.StringComparison.Ordinal)).Should().BeNull();
     }
 }

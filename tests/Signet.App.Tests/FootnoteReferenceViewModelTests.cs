@@ -37,12 +37,15 @@ public sealed class FootnoteReferenceViewModelTests
     [Fact]
     public void The_rows_show_the_notes_and_the_nearest_one_before_the_caret_is_chosen()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         (Book book, ReferenceTargetList targets) = BookWithNotes();
         using (book)
         {
+            // Act
             FootnoteReferenceViewModel sut = new(targets);
 
+            // Assert
             sut.Visible.Select(r => (r.Number, r.Kind, r.Text)).Should().Equal(
                 ("[1]", Strings.Get("FootnoteConversionWindow_Local"), "Apples are red."),
                 ("[2]", Strings.Get("FootnoteConversionWindow_Local"), "Cherries are red."),
@@ -58,6 +61,7 @@ public sealed class FootnoteReferenceViewModelTests
     [Fact]
     public void The_filter_keeps_the_matching_rows_and_the_choice_when_it_matches()
     {
+        // Arrange
         using UiCultureScope culture = new("en");
         (Book book, ReferenceTargetList targets) = BookWithNotes();
         using (book)
@@ -65,18 +69,24 @@ public sealed class FootnoteReferenceViewModelTests
             FootnoteReferenceViewModel sut = new(targets);
             FootnoteReferenceRow cherries = sut.Selected!;
 
+            // Act
             sut.Filter = "RED";
 
+            // Assert
             sut.Visible.Select(r => r.Text).Should().Equal("Apples are red.", "Cherries are red.");
             sut.Selected.Should().BeSameAs(cherries);
 
+            // Act
             sut.Filter = "banana";
 
+            // Assert
             sut.Visible.Should().ContainSingle().Which.Text.Should().Be("Bananas are yellow.");
             sut.Selected.Should().BeSameAs(sut.Visible[0], "the choice moves to the first matching row");
 
+            // Act
             sut.Filter = "kiwi";
 
+            // Assert
             sut.Visible.Should().BeEmpty();
             sut.Selected.Should().BeNull();
             sut.CanAccept.Should().BeFalse();

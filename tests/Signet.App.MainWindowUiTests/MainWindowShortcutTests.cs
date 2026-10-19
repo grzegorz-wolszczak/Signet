@@ -43,12 +43,15 @@ public sealed class MainWindowShortcutTests : IDisposable
     [AvaloniaFact]
     public void Changed_shortcut_replaces_the_window_key_binding_immediately()
     {
+        // Arrange
         (MainWindow window, MainWindowViewModel vm) = ShowMainWindow();
         AppAction action = vm.ShortcutActions.First(a => a.Gesture is not null);
         KeyGesture newGesture = new(Key.F12, KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift);
 
+        // Act
         action.Shortcuts = new[] { new KeyStrokeShortcut(newGesture) };
 
+        // Assert
         BindingFor(window, action).Should().NotBeNull();
         BindingFor(window, action)!.Gesture.Should().Be(newGesture);
         window.Close();
@@ -57,13 +60,17 @@ public sealed class MainWindowShortcutTests : IDisposable
     [AvaloniaFact]
     public void Shortcut_assigned_to_an_action_without_default_starts_working_immediately()
     {
+        // Arrange
         (MainWindow window, MainWindowViewModel vm) = ShowMainWindow();
         AppAction action = vm.ShortcutActions.First(a => a.Gesture is null);
+
         BindingFor(window, action).Should().BeNull();
         KeyGesture newGesture = new(Key.F11, KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift);
 
+        // Act
         action.Shortcuts = new[] { new KeyStrokeShortcut(newGesture) };
 
+        // Assert
         BindingFor(window, action)!.Gesture.Should().Be(newGesture);
         window.Close();
     }
@@ -71,11 +78,14 @@ public sealed class MainWindowShortcutTests : IDisposable
     [AvaloniaFact]
     public void Cleared_shortcut_removes_the_window_key_binding()
     {
+        // Arrange
         (MainWindow window, MainWindowViewModel vm) = ShowMainWindow();
         AppAction action = vm.ShortcutActions.First(a => a.Gesture is not null);
 
+        // Act
         action.Shortcuts = System.Array.Empty<Shortcut>();
 
+        // Assert
         BindingFor(window, action).Should().BeNull();
         window.Close();
     }
@@ -83,13 +93,16 @@ public sealed class MainWindowShortcutTests : IDisposable
     [AvaloniaFact]
     public void Every_keyboard_shortcut_of_an_action_gets_a_binding()
     {
+        // Arrange
         (MainWindow window, MainWindowViewModel vm) = ShowMainWindow();
         AppAction action = vm.ShortcutActions.First(a => a.Gesture is null);
         KeyGesture first = new(Key.F7, KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift);
         KeyGesture second = new(Key.F8, KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift);
 
+        // Act
         action.Shortcuts = new Shortcut[] { new KeyStrokeShortcut(first), new KeyStrokeShortcut(second) };
 
+        // Assert
         window.KeyBindings.Where(b => ReferenceEquals(b.Command, action)).Select(b => b.Gesture).Should().Equal(first, second);
         window.Close();
     }
@@ -97,6 +110,7 @@ public sealed class MainWindowShortcutTests : IDisposable
     [AvaloniaFact]
     public void A_two_stroke_shortcut_runs_its_action_after_the_second_stroke()
     {
+        // Arrange
         (MainWindow window, MainWindowViewModel vm) = ShowMainWindow();
         AppAction action = vm.ShortcutActions.First(a => a.IsEnabled && a.Gesture is null);
         int invoked = 0;
@@ -106,13 +120,23 @@ public sealed class MainWindowShortcutTests : IDisposable
             new KeyStrokeShortcut(new KeyGesture(Key.F5, KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift), new KeyGesture(Key.F6, KeyModifiers.Control | KeyModifiers.Alt | KeyModifiers.Shift)),
         };
 
+        // Act
         window.KeyPressQwerty(PhysicalKey.F5, RawInputModifiers.Control | RawInputModifiers.Alt | RawInputModifiers.Shift);
+
+        // Assert
         invoked.Should().Be(0, "the first stroke only waits for the second one");
+
+        // Act
         window.KeyPressQwerty(PhysicalKey.F6, RawInputModifiers.Control | RawInputModifiers.Alt | RawInputModifiers.Shift);
+
+        // Assert
         invoked.Should().Be(1);
 
+        // Act
         window.KeyPressQwerty(PhysicalKey.F5, RawInputModifiers.Control | RawInputModifiers.Alt | RawInputModifiers.Shift);
         window.KeyPressQwerty(PhysicalKey.X, RawInputModifiers.None);
+
+        // Assert
         invoked.Should().Be(1, "another second stroke cancels the shortcut");
         window.Close();
     }
@@ -120,6 +144,7 @@ public sealed class MainWindowShortcutTests : IDisposable
     [AvaloniaFact]
     public void Mouse_shortcuts_run_their_action_only_in_the_chosen_area()
     {
+        // Arrange
         Border area = new() { Width = 200, Height = 100, Background = Avalonia.Media.Brushes.White };
         Window window = new() { Width = 200, Height = 100, Content = area };
         MainWindowViewModel vm = _disposables.Add(new MainWindowViewModel());
@@ -133,6 +158,8 @@ public sealed class MainWindowShortcutTests : IDisposable
         };
         bool inArea = true;
         _ = new MouseShortcutRouter(window, () => new[] { action }, _ => inArea);
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         Avalonia.Point center = new(100, 50);
@@ -143,11 +170,16 @@ public sealed class MainWindowShortcutTests : IDisposable
         window.MouseUp(center, MouseButton.XButton1, RawInputModifiers.None);
         window.MouseDown(center, MouseButton.Left, RawInputModifiers.None);
         window.MouseUp(center, MouseButton.Left, RawInputModifiers.None);
+
+        // Assert
         invoked.Should().Be(2, "a plain click is not one of the shortcuts");
 
+        // Act
         inArea = false;
         window.MouseDown(center, MouseButton.Left, RawInputModifiers.Control);
         window.MouseUp(center, MouseButton.Left, RawInputModifiers.Control);
+
+        // Assert
         invoked.Should().Be(2);
         window.Close();
     }
@@ -156,6 +188,7 @@ public sealed class MainWindowShortcutTests : IDisposable
     [AvaloniaFact]
     public void Toolbar_drop_down_menu_shows_the_changed_shortcut()
     {
+        // Act
         (MainWindow window, _) = ShowMainWindow();
         MenuItem item = window.GetVisualDescendants().OfType<SplitButton>()
             .Select(b => b.Flyout).OfType<MenuFlyout>()
@@ -166,6 +199,7 @@ public sealed class MainWindowShortcutTests : IDisposable
 
         action.Gesture = newGesture;
 
+        // Assert
         item.InputGesture.Should().Be(newGesture);
         window.Close();
     }

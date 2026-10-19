@@ -31,8 +31,10 @@ public sealed class OpfDocumentTests
     [Fact]
     public void Parses_epub2_package_metadata_manifest_spine_and_guide()
     {
+        // Act
         OpfDocument doc = OpfDocument.Parse(ReadCorpusOpf(CorpusPaths.Epub2Minimal));
 
+        // Assert
         doc.Version.Should().Be("2.0");
         doc.UniqueIdentifierId.Should().Be("BookId");
 
@@ -58,8 +60,10 @@ public sealed class OpfDocumentTests
     [Fact]
     public void Parses_epub3_manifest_properties_and_spine_toc()
     {
+        // Act
         OpfDocument doc = OpfDocument.Parse(ReadCorpusOpf(CorpusPaths.Epub3WithNcx));
 
+        // Assert
         doc.Version.Should().Be("3.0");
         doc.Manifest.Single(m => m.Id == "nav").Attributes.Value("properties").Should().Be("nav");
         doc.SpineAttributes.Attributes.Value("toc").Should().Be("ncx");
@@ -69,8 +73,10 @@ public sealed class OpfDocumentTests
     [Fact]
     public void Parses_epub3_refinements_multiple_identifiers_and_link()
     {
+        // Act
         OpfDocument doc = OpfDocument.Parse(ReadCorpusOpf(CorpusPaths.Epub3RichMetadata));
 
+        // Assert
         doc.Metadata.Where(m => m.Name == "dc:identifier").Select(m => m.Attributes.Value("id"))
             .Should().Equal("pub-id", "isbn");
 
@@ -93,8 +99,10 @@ public sealed class OpfDocumentTests
     [Fact]
     public void Comments_in_the_opf_are_ignored_without_error()
     {
+        // Act
         OpfDocument doc = OpfDocument.Parse(ReadCorpusOpf(CorpusPaths.Epub3RichMetadata));
 
+        // Assert
         doc.ToXml().Should().NotContain("<!--");
         doc.Metadata.Should().NotContain(m => m.Name.Contains("!--", StringComparison.Ordinal));
     }
@@ -105,11 +113,14 @@ public sealed class OpfDocumentTests
     [MemberData(nameof(AllCorpusOpfFiles))]
     public void Round_trip_parse_to_xml_to_parse_is_stable(string opfFile)
     {
+        // Arrange
         string source = File.ReadAllText(opfFile);
 
+        // Act
         string once = OpfDocument.Parse(source).ToXml();
         string twice = OpfDocument.Parse(once).ToXml();
 
+        // Assert
         twice.Should().Be(once);
     }
 
@@ -117,9 +128,11 @@ public sealed class OpfDocumentTests
     [MemberData(nameof(AllCorpusOpfFiles))]
     public void Round_trip_preserves_manifest_and_spine_order(string opfFile)
     {
+        // Act
         OpfDocument first = OpfDocument.Parse(File.ReadAllText(opfFile));
         OpfDocument second = OpfDocument.Parse(first.ToXml());
 
+        // Assert
         second.Manifest.Select(m => (m.Id, m.Href, m.MediaType))
             .Should().Equal(first.Manifest.Select(m => (m.Id, m.Href, m.MediaType)));
         second.Spine.Select(s => s.IdRef).Should().Equal(first.Spine.Select(s => s.IdRef));
@@ -131,6 +144,7 @@ public sealed class OpfDocumentTests
     [Fact]
     public void ToXml_uses_the_fixed_layout()
     {
+        // Arrange
         const string source = """
             <?xml version="1.0" encoding="UTF-8"?>
             <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="bookid">
@@ -147,8 +161,10 @@ public sealed class OpfDocumentTests
             </package>
             """;
 
+        // Act
         string xml = OpfDocument.Parse(source).ToXml();
 
+        // Assert
         xml.Should().Be(
             "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
             "<package version=\"3.0\" unique-identifier=\"bookid\" xmlns=\"http://www.idpf.org/2007/opf\">\n" +
@@ -168,8 +184,10 @@ public sealed class OpfDocumentTests
     [Fact]
     public void ToXml_omits_an_empty_guide()
     {
+        // Act
         OpfDocument doc = OpfDocument.Parse(ReadCorpusOpf(CorpusPaths.Epub3Minimal));
 
+        // Assert
         doc.Guide.Should().BeEmpty();
         doc.ToXml().Should().NotContain("<guide>");
     }
@@ -177,10 +195,12 @@ public sealed class OpfDocumentTests
     [Fact]
     public void GetMetadataXml_returns_only_the_metadata_block()
     {
+        // Act
         OpfDocument doc = OpfDocument.Parse(ReadCorpusOpf(CorpusPaths.Epub2Minimal));
 
         string md = doc.GetMetadataXml();
 
+        // Assert
         md.Should().StartWith("  <metadata");
         md.Should().EndWith("  </metadata>\n");
         md.Should().Contain("<dc:title>Minimal EPUB 2</dc:title>");
@@ -192,14 +212,17 @@ public sealed class OpfDocumentTests
     [Fact]
     public void Handles_a_prefixed_package_element_and_rewrites_the_namespace()
     {
+        // Arrange
         const string source =
             "<opf:package xmlns:opf=\"http://www.idpf.org/2007/opf\" version=\"3.0\" unique-identifier=\"id\">" +
             "<opf:metadata><dc:title xmlns:dc=\"http://purl.org/dc/elements/1.1/\">X</dc:title></opf:metadata>" +
             "<opf:manifest><opf:item id=\"a\" href=\"a.xhtml\" media-type=\"application/xhtml+xml\"/></opf:manifest>" +
             "<opf:spine><opf:itemref idref=\"a\"/></opf:spine></opf:package>";
 
+        // Act
         OpfDocument doc = OpfDocument.Parse(source);
 
+        // Assert
         doc.Version.Should().Be("3.0");
         doc.Package.Attributes.Value("xmlns").Should().Be("http://www.idpf.org/2007/opf");
         doc.Package.Attributes.Contains("xmlns:opf").Should().BeFalse();
@@ -210,22 +233,27 @@ public sealed class OpfDocumentTests
     [Fact]
     public void Assigns_sequential_ids_to_manifest_items_without_one()
     {
+        // Arrange
         const string source =
             "<package version=\"3.0\" unique-identifier=\"id\"><metadata/><manifest>" +
             "<item href=\"a.xhtml\" media-type=\"application/xhtml+xml\"/>" +
             "<item href=\"b.xhtml\" media-type=\"application/xhtml+xml\"/>" +
             "</manifest><spine/></package>";
 
+        // Act
         OpfDocument doc = OpfDocument.Parse(source);
 
+        // Assert
         doc.Manifest.Select(m => m.Id).Should().Equal("xid000", "xid001");
     }
 
     [Fact]
     public void Builds_lookup_maps_for_manifest_id_and_href()
     {
+        // Act
         OpfDocument doc = OpfDocument.Parse(ReadCorpusOpf(CorpusPaths.Epub3WithNcx));
 
+        // Assert
         doc.IdToManifestPosition["ch2"].Should().Be(4);
         doc.HrefToManifestPosition["text/chapter2.xhtml"].Should().Be(4);
     }
@@ -233,12 +261,16 @@ public sealed class OpfDocumentTests
     [Fact]
     public void RebuildManifestIndex_reflects_manifest_mutation()
     {
+        // Arrange
         OpfDocument doc = OpfDocument.Parse(ReadCorpusOpf(CorpusPaths.Epub3Minimal));
         int before = doc.Manifest.Count;
 
         doc.Manifest.Add(new ManifestEntry { Id = "extra", Href = "z.xhtml", MediaType = "application/xhtml+xml" });
+
+        // Act
         doc.RebuildManifestIndex();
 
+        // Assert
         doc.IdToManifestPosition["extra"].Should().Be(before);
         doc.HrefToManifestPosition["z.xhtml"].Should().Be(before);
     }
@@ -246,13 +278,16 @@ public sealed class OpfDocumentTests
     [Fact]
     public void Drops_deprecated_dc_metadata_and_x_metadata_wrappers()
     {
+        // Arrange
         const string source =
             "<package version=\"2.0\" unique-identifier=\"id\"><metadata>" +
             "<dc-metadata><dc:title xmlns:dc=\"http://purl.org/dc/elements/1.1/\">Y</dc:title></dc-metadata>" +
             "</metadata><manifest/><spine/></package>";
 
+        // Act
         OpfDocument doc = OpfDocument.Parse(source);
 
+        // Assert
         doc.Metadata.Should().ContainSingle();
         doc.Metadata[0].Name.Should().Be("dc:title");
         doc.Metadata[0].Content.Should().Be("Y");
@@ -261,13 +296,16 @@ public sealed class OpfDocumentTests
     [Fact]
     public void Bindings_are_emitted_only_for_non_epub2()
     {
+        // Arrange
         const string bindings =
             "<metadata/><manifest><item id=\"h\" href=\"h.xhtml\" media-type=\"application/xhtml+xml\"/></manifest>" +
             "<spine/><bindings><mediaType media-type=\"application/x-demo\" handler=\"h\"/></bindings>";
 
+        // Act
         OpfDocument v3 = OpfDocument.Parse($"<package version=\"3.0\" unique-identifier=\"id\">{bindings}</package>");
         OpfDocument v2 = OpfDocument.Parse($"<package version=\"2.0\" unique-identifier=\"id\">{bindings}</package>");
 
+        // Assert
         v3.Bindings.Should().ContainSingle();
         v3.ToXml().Should().Contain("<bindings>").And.Contain("media-type=\"application/x-demo\"");
         v2.Bindings.Should().ContainSingle();
@@ -277,6 +315,7 @@ public sealed class OpfDocumentTests
     [Fact]
     public void Null_source_is_rejected()
     {
+        // Act & Assert
         FluentActions.Invoking(() => OpfDocument.Parse(null!))
             .Should().Throw<ArgumentNullException>();
     }

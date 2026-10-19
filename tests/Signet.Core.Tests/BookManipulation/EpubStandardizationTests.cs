@@ -50,6 +50,7 @@ public sealed class EpubStandardizationTests
     [Fact]
     public void Planning_does_not_change_the_book()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadNonStandardBook(temp);
         BreakStylesheetManifestType(book);
@@ -57,8 +58,10 @@ public sealed class EpubStandardizationTests
         List<string> bookPaths = book.GetAllResources().Select(r => r.BookPath).ToList();
         string opfText = book.GetOpf().GetText();
 
+        // Act
         StandardizationPlan plan = EpubStandardization.Plan(book, EpubStandardization.AllSteps);
 
+        // Assert
         plan.Steps.Should().OnlyContain(s => s.Changes.Count > 0, "every step has something to do in this book");
         book.GetAllResources().Select(r => r.BookPath).Should().Equal(bookPaths);
         book.GetOpf().GetText().Should().Be(opfText);
@@ -68,13 +71,16 @@ public sealed class EpubStandardizationTests
     [Fact]
     public void Plan_lists_only_the_checked_steps_in_the_fixed_order()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadNonStandardBook(temp);
 
+        // Act
         StandardizationPlan plan = EpubStandardization.Plan(
             book,
             new[] { StandardizationStep.ManifestMediaTypes, StandardizationStep.StandardFolders });
 
+        // Assert
         plan.Steps.Select(s => s.Step).Should().Equal(StandardizationStep.StandardFolders, StandardizationStep.ManifestMediaTypes);
         plan.For(StandardizationStep.RebaseManifestIds).Should().BeNull();
     }
@@ -82,6 +88,7 @@ public sealed class EpubStandardizationTests
     [Fact]
     public void Applying_does_exactly_what_the_preview_shows()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadNonStandardBook(temp);
         BreakStylesheetManifestType(book);
@@ -103,8 +110,10 @@ public sealed class EpubStandardizationTests
             }
         }
 
+        // Act
         MaintenanceOperationResult result = EpubStandardization.Apply(book, EpubStandardization.AllSteps);
 
+        // Assert
         result.Applied.Should().BeTrue();
         book.Modified.Should().BeTrue();
         book.GetAllResources().Should().OnlyContain(r => r.BookPath == expectedPaths[r]);
@@ -116,14 +125,17 @@ public sealed class EpubStandardizationTests
     [Fact]
     public void Later_steps_are_planned_on_the_result_of_the_earlier_ones()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadNonStandardBook(temp);
 
+        // Act
         StandardizationPlan plan = EpubStandardization.Plan(
             book,
             new[] { StandardizationStep.StandardFolders, StandardizationStep.StandardFileExtensions, StandardizationStep.RebaseManifestIds });
 
         // Renaming a file also renames its manifest identifier (as the rename handler of the OPF does).
+        // Assert
         plan.For(StandardizationStep.StandardFileExtensions)!.Changes.Should().Equal(
             new StandardizationChange(StandardizationChangeKind.Path, "OEBPS/Text/ch01.html", "OEBPS/Text/ch01.xhtml", "OEBPS/Text/ch01.xhtml"),
             new StandardizationChange(StandardizationChangeKind.ManifestId, "ch01", "ch01.xhtml", "OEBPS/Text/ch01.xhtml"));
@@ -135,6 +147,7 @@ public sealed class EpubStandardizationTests
     [Fact]
     public void A_new_extension_never_overwrites_another_file_of_the_same_folder()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadNonStandardBook(temp, tree =>
         {
@@ -146,9 +159,11 @@ public sealed class EpubStandardizationTests
                 "    <item id=\"ch01b\" href=\"" + ChapterOpfHref + "\" media-type=\"application/xhtml+xml\"/>\n  </manifest>");
         });
 
+        // Act
         StandardizationPlan plan = EpubStandardization.Plan(book, new[] { StandardizationStep.StandardFileExtensions });
         EpubStandardization.Apply(book, new[] { StandardizationStep.StandardFileExtensions });
 
+        // Assert
         StandardizationChange change = plan.Steps.Single().Changes.Should().ContainSingle(c => c.Kind == StandardizationChangeKind.Path).Subject;
         change.Before.Should().Be("content/pages/body/ch01.html");
         change.After.Should().NotBe("content/pages/body/ch01.xhtml").And.EndWith(".xhtml");
@@ -160,13 +175,18 @@ public sealed class EpubStandardizationTests
     [Fact]
     public void Moving_the_opf_to_another_folder_keeps_the_manifest_pointing_at_the_files()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadNonStandardBook(temp);
+
         book.GetOpf().BookPath.Should().Be("content/book.opf");
 
+        // Act
         EpubStandardization.Apply(book, new[] { StandardizationStep.StandardFolders });
 
         OpfResource opf = book.GetOpf();
+
+        // Assert
         opf.BookPath.Should().Be("OEBPS/content.opf");
         opf.GetSpineOrderBookPaths().Should().Equal("OEBPS/Text/title.xhtml", "OEBPS/Text/ch01.html");
         opf.GetText().Should().Contain("href=\"Text/nav.xhtml\"").And.Contain("href=\"Styles/main.css\"");
@@ -175,13 +195,16 @@ public sealed class EpubStandardizationTests
     [Fact]
     public void Applying_is_refused_when_a_file_is_not_well_formed()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadNonStandardBook(temp, tree =>
             ReplaceInFile(Path.Combine(tree, "content", "pages", "front", "title.xhtml"), "</body>", string.Empty));
         List<string> bookPaths = book.GetAllResources().Select(r => r.BookPath).ToList();
 
+        // Act
         MaintenanceOperationResult result = EpubStandardization.Apply(book, EpubStandardization.AllSteps);
 
+        // Assert
         result.Applied.Should().BeFalse();
         result.NotWellFormed!.Filename.Should().Be("title.xhtml");
         book.GetAllResources().Select(r => r.BookPath).Should().Equal(bookPaths);

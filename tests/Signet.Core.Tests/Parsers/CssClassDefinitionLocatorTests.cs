@@ -52,6 +52,7 @@ public sealed class CssClassDefinitionLocatorTests
     [Fact]
     public void Find_locates_the_rule_in_a_linked_stylesheet()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(
             temp,
@@ -63,8 +64,10 @@ public sealed class CssClassDefinitionLocatorTests
 
         var html = book.GetHtmlResources().Single(h => h.BookPath.EndsWith("chapter1.xhtml", StringComparison.Ordinal));
 
+        // Act
         CssClassDefinition? found = CssClassDefinitionLocator.Find(html, "note", ResolveCssInfo(book));
 
+        // Assert
         found.Should().NotBeNull();
         found!.Value.BookPath.Should().EndWith("style.css");
     }
@@ -72,6 +75,7 @@ public sealed class CssClassDefinitionLocatorTests
     [Fact]
     public void Find_locates_the_rule_in_an_inline_style_block_when_no_linked_stylesheet_matches()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(
             temp,
@@ -85,8 +89,10 @@ public sealed class CssClassDefinitionLocatorTests
             StringComparison.Ordinal);
         html.SetText(withInlineStyle);
 
+        // Act
         CssClassDefinition? found = CssClassDefinitionLocator.Find(html, "note", ResolveCssInfo(book));
 
+        // Assert
         found.Should().NotBeNull();
         found!.Value.BookPath.Should().Be(html.BookPath);
         withInlineStyle.Substring(found.Value.Offset, 5).Should().Be(".note");
@@ -95,6 +101,7 @@ public sealed class CssClassDefinitionLocatorTests
     [Fact]
     public void Find_prefers_the_linked_stylesheet_over_an_inline_style_block()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(
             temp,
@@ -111,30 +118,36 @@ public sealed class CssClassDefinitionLocatorTests
             "<meta charset=\"utf-8\"/><style>.note { color: blue }</style>",
             StringComparison.Ordinal));
 
+        // Act
         CssClassDefinition? found = CssClassDefinitionLocator.Find(html, "note", ResolveCssInfo(book));
 
+        // Assert
         found!.Value.BookPath.Should().EndWith("style.css");
     }
 
     [Fact]
     public void Find_returns_null_when_no_rule_matches_the_class()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(temp, _ => { });
 
         var html = book.GetHtmlResources().Single(h => h.BookPath.EndsWith("chapter1.xhtml", StringComparison.Ordinal));
 
+        // Act & Assert
         CssClassDefinitionLocator.Find(html, "ghost", ResolveCssInfo(book)).Should().BeNull();
     }
 
     [Fact]
     public void Find_returns_null_for_an_empty_class_name()
     {
+        // Arrange
         using TempDir temp = new();
         using Book book = LoadModifiedMinimal(temp, _ => { });
 
         var html = book.GetHtmlResources().Single(h => h.BookPath.EndsWith("chapter1.xhtml", StringComparison.Ordinal));
 
+        // Act & Assert
         CssClassDefinitionLocator.Find(html, string.Empty, ResolveCssInfo(book)).Should().BeNull();
     }
 }

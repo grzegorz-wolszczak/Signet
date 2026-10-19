@@ -12,18 +12,21 @@ public sealed class ApplicationInfoTests
     [Fact]
     public void Name_is_Signet()
     {
+        // Act & Assert
         ApplicationInfo.Name.Should().Be("Signet");
     }
 
     [Fact]
     public void Version_is_not_blank()
     {
+        // Act & Assert
         ApplicationInfo.Version.Should().NotBeNullOrWhiteSpace();
     }
 
     [Fact]
     public void NameWithVersion_starts_with_name_and_a_space()
     {
+        // Act & Assert
         ApplicationInfo.NameWithVersion.Should().StartWith($"{ApplicationInfo.Name} ");
     }
 }

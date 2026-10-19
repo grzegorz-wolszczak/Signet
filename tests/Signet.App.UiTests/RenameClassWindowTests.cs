@@ -18,10 +18,13 @@ public sealed class RenameClassWindowTests
     [AvaloniaFact]
     public void Window_shows_validation_in_red_and_enables_rename_only_for_a_valid_name()
     {
+        // Arrange
         ClassRenamer renamer = new(
             [new ClassRenameSource("ch.xhtml", "<html><body><p class=\"c1\">a</p><p class=\"x\">b</p></body></html>")],
             []);
         RenameClassViewModel vm = new(renamer, new ClassAtCaret("c1", ["html", "body", "p"]));
+
+        // Act
         RenameClassWindow window = new() { DataContext = vm };
         window.Show();
         Dispatcher.UIThread.RunJobs();
@@ -29,17 +32,25 @@ public sealed class RenameClassWindowTests
 
         Button ok = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "OkButton");
         TextBlock error = window.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Text == Strings.Get("RenameClass_SameAsOld"));
+
+        // Assert
         ok.IsEnabled.Should().BeFalse();
         error.IsVisible.Should().BeTrue();
         window.GetVisualDescendants().OfType<RadioButton>().Should().HaveCount(2);
 
+        // Act
         window.GetVisualDescendants().OfType<TextBox>().Single().Text = "x";
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         ok.IsEnabled.Should().BeFalse();
         error.Text.Should().Be(Strings.Format("RenameClass_AlreadyExists", "x"));
 
+        // Act
         window.GetVisualDescendants().OfType<TextBox>().Single().Text = "lead";
         Dispatcher.UIThread.RunJobs();
+
+        // Assert
         ok.IsEnabled.Should().BeTrue();
         error.IsVisible.Should().BeFalse();
         window.Close();
@@ -48,14 +59,18 @@ public sealed class RenameClassWindowTests
     [AvaloniaFact]
     public void Window_started_from_a_stylesheet_hides_the_scope_choice_and_lists_the_sources()
     {
+        // Arrange
         ClassRenamer renamer = new(
             [new ClassRenameSource("ch.xhtml", "<html><head><link rel=\"stylesheet\" href=\"s.css\"/></head><body><p class=\"c1\">a</p></body></html>")],
             [new ClassRenameSource("s.css", ".c1 { }\n")]);
+
+        // Act
         RenameClassWindow window = new() { DataContext = new RenameClassViewModel(renamer, new StyleClassAtCaret("c1", "s.css", -1)) };
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
+        // Assert
         window.GetVisualDescendants().OfType<RadioButton>().Should().OnlyContain(r => !r.IsEffectivelyVisible);
         window.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text)
             .Should().Contain(Strings.Format("RenameClassWindow_SourceRenamed", "s.css", 1));

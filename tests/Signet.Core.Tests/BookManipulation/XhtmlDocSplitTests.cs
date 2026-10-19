@@ -18,10 +18,13 @@ public sealed class XhtmlDocSplitTests
     [Fact]
     public void GetSgfSectionSplits_NoMarker_ReturnsSingleSectionWithSameContent()
     {
+        // Arrange
         string source = Xhtml("<p>only section</p>");
 
+        // Act
         IReadOnlyList<string> sections = XhtmlDoc.GetSgfSectionSplits(source);
 
+        // Assert
         sections.Should().ContainSingle();
         sections[0].Should().Contain("<p>only section</p>").And.Contain("<title>T</title>");
     }
@@ -29,20 +32,26 @@ public sealed class XhtmlDocSplitTests
     [Fact]
     public void GetSgfSectionSplits_NoBodyTag_ReturnsSourceUnchanged()
     {
+        // Arrange
         const string source = "<p>fragment without html/body</p>";
 
+        // Act
         IReadOnlyList<string> sections = XhtmlDoc.GetSgfSectionSplits(source);
 
+        // Assert
         sections.Should().Equal(source);
     }
 
     [Fact]
     public void GetSgfSectionSplits_OneMarker_ProducesTwoSectionsEachWithHeadAndBody()
     {
+        // Arrange
         string source = Xhtml($"<p>first</p>{Marker}<p>second</p>");
 
+        // Act
         IReadOnlyList<string> sections = XhtmlDoc.GetSgfSectionSplits(source);
 
+        // Assert
         sections.Should().HaveCount(2);
         sections[0].Should().Contain("<title>T</title>").And.Contain("<p>first</p>").And.NotContain("<p>second</p>");
         sections[1].Should().Contain("<title>T</title>").And.Contain("<p>second</p>").And.NotContain("<p>first</p>");
@@ -55,10 +64,13 @@ public sealed class XhtmlDocSplitTests
     [Fact]
     public void GetSgfSectionSplits_TwoMarkers_ProducesThreeSections()
     {
+        // Arrange
         string source = Xhtml($"<p>a</p>{Marker}<p>b</p>{Marker}<p>c</p>");
 
+        // Act
         IReadOnlyList<string> sections = XhtmlDoc.GetSgfSectionSplits(source);
 
+        // Assert
         sections.Should().HaveCount(3);
         sections[0].Should().Contain("<p>a</p>");
         sections[1].Should().Contain("<p>b</p>");
@@ -68,10 +80,13 @@ public sealed class XhtmlDocSplitTests
     [Fact]
     public void GetSgfSectionSplits_MarkerInsideOpenDiv_ReinjectsOpenDivIntoSecondSection()
     {
+        // Arrange
         string source = Xhtml($"<div class=\"wrap\"><p>a</p>{Marker}<p>b</p></div>");
 
+        // Act
         IReadOnlyList<string> sections = XhtmlDoc.GetSgfSectionSplits(source);
 
+        // Assert
         sections.Should().HaveCount(2);
         sections[0].Should().Contain("<div class=\"wrap\">").And.Contain("<p>a</p>");
         sections[1].Should().Contain("<div class=\"wrap\">").And.Contain("<p>b</p>");
@@ -80,10 +95,13 @@ public sealed class XhtmlDocSplitTests
     [Fact]
     public void GetSgfSectionSplits_MarkerWrappedInDiv_IsRecognized()
     {
+        // Arrange
         string source = Xhtml($"<p>a</p><div>{Marker}</div><p>b</p>");
 
+        // Act
         IReadOnlyList<string> sections = XhtmlDoc.GetSgfSectionSplits(source);
 
+        // Assert
         sections.Should().HaveCount(2);
         sections[0].Should().Contain("<p>a</p>");
         sections[1].Should().Contain("<p>b</p>");

@@ -23,12 +23,15 @@ public sealed class SplitTests
     [Fact]
     public void SplitOnSectionMarkers_NoMarker_ReturnsEmptyAndLeavesResourceUnchanged()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource html = book.GetHtmlResources()[0];
         html.SetText(Xhtml("<p>whole</p>"));
 
+        // Act
         var created = book.SplitOnSectionMarkers(html);
 
+        // Assert
         created.Should().BeEmpty();
         html.GetText().Should().Contain("<p>whole</p>");
     }
@@ -36,12 +39,15 @@ public sealed class SplitTests
     [Fact]
     public void SplitOnSectionMarkers_OneMarker_CreatesOneNewSectionRightAfterOriginalInSpine()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource original = book.GetHtmlResources()[0];
         original.SetText(Xhtml($"<p>first</p>{Marker}<p>second</p>"));
 
+        // Act
         var created = book.SplitOnSectionMarkers(original);
 
+        // Assert
         created.Should().ContainSingle();
         original.GetText().Should().Contain("<p>first</p>").And.NotContain("<p>second</p>");
         created[0].GetText().Should().Contain("<p>second</p>").And.NotContain("<p>first</p>");
@@ -56,13 +62,16 @@ public sealed class SplitTests
     [Fact]
     public void SplitOnSectionMarkers_NewSectionFilename_FollowsPrefixNumberingPattern()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource original = book.GetHtmlResources()[0];
         string baseName = original.Filename[..original.Filename.LastIndexOf('.')];
         original.SetText(Xhtml($"<p>a</p>{Marker}<p>b</p>{Marker}<p>c</p>"));
 
+        // Act
         var created = book.SplitOnSectionMarkers(original);
 
+        // Assert
         created.Should().HaveCount(2);
         created[0].Filename.Should().Be($"{baseName}_0001.xhtml");
         created[1].Filename.Should().Be($"{baseName}_0002.xhtml");
@@ -71,19 +80,23 @@ public sealed class SplitTests
     [Fact]
     public void SplitOnSectionMarkers_InternalLinkToMovedFragment_IsRedirectedToNewFile()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource original = book.GetHtmlResources()[0];
         original.SetText(Xhtml(
             $"<a href=\"#target\">go</a><p>first</p>{Marker}<p id=\"target\">second</p>"));
 
+        // Act
         var created = book.SplitOnSectionMarkers(original);
 
+        // Assert
         original.GetText().Should().Contain($"href=\"{created[0].Filename}#target\"");
     }
 
     [Fact]
     public void SplitOnSectionMarkers_ExternalLinkToOriginalFragment_IsRedirectedToNewFile()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource original = book.GetHtmlResources()[0];
         string originalFilename = original.Filename;
@@ -92,14 +105,17 @@ public sealed class SplitTests
         HtmlResource other = book.CreateEmptyHtmlFile();
         other.SetText(Xhtml($"<a href=\"{originalFilename}#target\">go</a>"));
 
+        // Act
         var created = book.SplitOnSectionMarkers(original);
 
+        // Assert
         other.GetText().Should().Contain($"href=\"{created[0].Filename}#target\"");
     }
 
     [Fact]
     public void SplitOnSectionMarkers_NcxEntryToMovedFragment_IsRedirectedToNewFile()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource original = book.GetHtmlResources()[0];
         original.SetText(Xhtml($"<p>first</p>{Marker}<p id=\"chapter2\">second</p>"));
@@ -114,8 +130,10 @@ public sealed class SplitTests
         });
         ncx.SetNcxDocument(document);
 
+        // Act
         var created = book.SplitOnSectionMarkers(original);
 
+        // Assert
         string expected = Signet.Core.BookPath.Relative(ncx.BookPath, created[0].BookPath) + "#chapter2";
         ncx.GetNcxDocument().NavMap[0].ContentSrc.Should().Be(expected);
     }
@@ -138,9 +156,11 @@ public sealed class SplitTests
     [Fact]
     public void SplitAtPosition_KeepsTheTopInTheFileAndMovesTheRestToANewFileRightAfterIt()
     {
+        // Act
         (Book book, HtmlResource original, HtmlResource? created) = SplitAtCaret("<p>first</p>|<p>second</p>");
         using Book _ = book;
 
+        // Assert
         created.Should().NotBeNull();
         original.GetText().Should().Contain("<p>first</p>").And.NotContain("second");
         created!.GetText().Should().Contain("<p>second</p>").And.NotContain("first");
@@ -154,9 +174,11 @@ public sealed class SplitTests
     [Fact]
     public void SplitAtPosition_InsideAnElement_ClosesItInTheTopAndReopensItInTheNewFile()
     {
+        // Act
         (Book book, HtmlResource original, HtmlResource? created) = SplitAtCaret("<div class=\"c\"><p>first</p>|<p>second</p></div>");
         using Book _ = book;
 
+        // Assert
         Compact(original.GetText()).Should().Contain("<divclass=\"c\"><p>first</p></div></body>");
         Compact(created!.GetText()).Should().Contain("<body><divclass=\"c\"><p>second</p></div></body>");
     }
@@ -164,9 +186,11 @@ public sealed class SplitTests
     [Fact]
     public void SplitAtPosition_LeavesOtherSplitMarkersAlone()
     {
+        // Act
         (Book book, HtmlResource _, HtmlResource? created) = SplitAtCaret("<p>a</p>|<p>b</p>", $"{Marker}<p>c</p>");
         using Book __ = book;
 
+        // Assert
         book.GetHtmlResources().Should().HaveCount(2);
         created!.GetText().Should().Contain("signet_split_marker").And.Contain("<p>c</p>");
     }
@@ -174,9 +198,11 @@ public sealed class SplitTests
     [Fact]
     public void SplitAtPosition_InsideATag_ReturnsNullAndLeavesTheBookUnchanged()
     {
+        // Act
         (Book book, HtmlResource original, HtmlResource? created) = SplitAtCaret("<p cl|ass=\"x\">first</p>");
         using Book _ = book;
 
+        // Assert
         created.Should().BeNull();
         book.GetHtmlResources().Should().ContainSingle();
         original.GetText().Should().Contain("<p class=\"x\">first</p>");
@@ -185,9 +211,11 @@ public sealed class SplitTests
     [Fact]
     public void SplitAtPosition_RightBeforeATag_Splits()
     {
+        // Act
         (Book book, HtmlResource original, HtmlResource? created) = SplitAtCaret("<p>first</p>|<p>second</p>");
         using Book _ = book;
 
+        // Assert
         created.Should().NotBeNull();
         original.GetText().Should().NotContain("second");
     }
@@ -195,9 +223,11 @@ public sealed class SplitTests
     [Fact]
     public void SplitAtPosition_AtTheStartOfTheBody_LeavesAnEmptyParagraphInTheFile()
     {
+        // Act
         (Book book, HtmlResource original, HtmlResource? created) = SplitAtCaret("|<p>all</p>");
         using Book _ = book;
 
+        // Assert
         original.GetText().Should().Contain("<p>&#160;</p>").And.NotContain("all");
         created!.GetText().Should().Contain("<p>all</p>");
     }
@@ -205,6 +235,7 @@ public sealed class SplitTests
     [Fact]
     public void SplitAtPosition_ExternalLinkToAMovedFragment_IsRedirectedToTheNewFile()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("2.0");
         HtmlResource original = book.GetHtmlResources()[0];
         string text = Xhtml("<p>first</p><p id=\"target\">second</p>");
@@ -212,8 +243,10 @@ public sealed class SplitTests
         HtmlResource other = book.CreateEmptyHtmlFile();
         other.SetText(Xhtml($"<a href=\"{original.Filename}#target\">go</a>"));
 
+        // Act
         HtmlResource? created = book.SplitAtPosition(original, text.IndexOf("<p id", System.StringComparison.Ordinal));
 
+        // Assert
         other.GetText().Should().Contain($"href=\"{created!.Filename}#target\"");
     }
 }

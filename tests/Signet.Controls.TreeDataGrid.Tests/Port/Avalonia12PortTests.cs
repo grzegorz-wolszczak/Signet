@@ -86,6 +86,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [AvaloniaFact(Timeout = 10000)]
         public void Fluent_theme_renders_a_hierarchical_grid_and_realizes_only_the_visible_rows()
         {
+            // Arrange
             var root = new Model { Id = -1, Title = "Root" };
             root.Children.AddRange(FlatItems(10_000));
             var source = new HierarchicalTreeDataGridSource<Model>(new[] { root })
@@ -99,9 +100,11 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
             var target = new TreeDataGrid { Source = source };
             var window = ThemedWindow(target, new Size(400, 300));
 
+            // Act
             source.Expand(new IndexPath(0));
             Settle(window);
 
+            // Assert
             source.Rows.Count.Should().Be(10_001);
             target.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().Select(h => h.Header)
                 .Should().Equal("Title", "ID");
@@ -113,6 +116,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [AvaloniaFact(Timeout = 10000)]
         public void Dropping_a_DragInfo_from_a_DataTransfer_moves_the_row()
         {
+            // Arrange
             var items = FlatItems(10);
             var source = new FlatTreeDataGridSource<Model>(items)
             {
@@ -127,22 +131,26 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
             var data = new DataTransfer();
             data.Add(DataTransferItem.Create(DragInfo.DataFormat, new DragInfo(source, new[] { new IndexPath(0) })));
 
+            // Act
             window.DragDrop(point, RawDragEventType.DragEnter, data, DragDropEffects.Move, RawInputModifiers.None);
             window.DragDrop(point, RawDragEventType.DragOver, data, DragDropEffects.Move, RawInputModifiers.None);
             window.DragDrop(point, RawDragEventType.Drop, data, DragDropEffects.Move, RawInputModifiers.None);
             Settle(window);
 
+            // Assert
             items.Select(x => x.Id).Should().Equal(1, 2, 3, 4, 0, 5, 6, 7, 8, 9);
         }
 
         [AvaloniaFact(Timeout = 10000)]
         public void DragInfo_round_trips_through_a_DataTransfer_in_process()
         {
+            // Arrange
             var source = new FlatTreeDataGridSource<Model>(FlatItems(3));
             var info = new DragInfo(source, new[] { new IndexPath(1) });
             var data = new DataTransfer();
             data.Add(DataTransferItem.Create(DragInfo.DataFormat, info));
 
+            // Act & Assert
             data.TryGetValue(DragInfo.DataFormat).Should().BeSameAs(info);
             data.Formats.Should().Contain(DragInfo.DataFormat);
         }
@@ -150,6 +158,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [AvaloniaFact(Timeout = 10000)]
         public void Double_tapping_a_double_tap_editable_cell_begins_editing()
         {
+            // Arrange
             var items = FlatItems(5);
             var source = new FlatTreeDataGridSource<Model>(items)
             {
@@ -164,22 +173,27 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
             var cell = target.TryGetCell(0, 2).Should().BeOfType<TreeDataGridTextCell>().Subject;
             var point = CenterOf(cell, window);
 
+            // Act
             window.MouseDown(point, MouseButton.Left);
             window.MouseUp(point, MouseButton.Left);
             Settle(window);
 
+            // Assert
             cell.IsEditing.Should().BeFalse("a single tap is not the configured gesture");
 
+            // Act
             window.MouseDown(point, MouseButton.Left);
             window.MouseUp(point, MouseButton.Left);
             Settle(window);
 
+            // Assert
             cell.IsEditing.Should().BeTrue("the second click of a double-click raises DoubleTapped (OnDoubleTapped override)");
         }
 
         [AvaloniaFact(Timeout = 10000)]
         public void Moving_the_focus_out_of_an_editing_cell_ends_the_edit_and_commits_the_value()
         {
+            // Arrange
             var items = FlatItems(5);
             var source = new FlatTreeDataGridSource<Model>(items)
             {
@@ -189,15 +203,22 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
             var other = new Button { Content = "Other" };
             var window = ThemedWindow(new StackPanel { Children = { target, other } }, new Size(300, 300));
             var cell = target.TryGetCell(0, 1).Should().BeOfType<TreeDataGridTextCell>().Subject;
+
+            // Act
             cell.BeginEdit();
             Settle(window);
+
+            // Assert
             var editor = cell.GetVisualDescendants().OfType<TextBox>().Should().ContainSingle().Subject;
+
+            // Act
             editor.Focus();
             editor.Text = "Changed";
 
             other.Focus();
             Settle(window);
 
+            // Assert
             cell.IsEditing.Should().BeFalse();
             items[1].Title.Should().Be("Changed");
         }
@@ -205,6 +226,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [AvaloniaFact(Timeout = 10000)]
         public void BeginEdit_is_public_so_a_command_can_start_editing_a_cell()
         {
+            // Arrange
             var items = FlatItems(3);
             var source = new FlatTreeDataGridSource<Model>(items)
             {
@@ -214,9 +236,11 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
             var window = ThemedWindow(target, new Size(300, 300));
             var cell = target.TryGetCell(0, 1).Should().BeOfType<TreeDataGridTextCell>().Subject;
 
+            // Act
             cell.BeginEdit();
             Settle(window);
 
+            // Assert
             cell.IsEditing.Should().BeTrue();
             cell.GetVisualDescendants().OfType<TextBox>().Should().ContainSingle();
         }
@@ -225,6 +249,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         public void The_expander_of_a_row_that_cannot_expand_goes_back_to_collapsed()
         {
             // A "group" with a chevron (hasChildren: true) but no children yet.
+            // Arrange
             var empty = new Model { Id = 0, Title = "Empty group" };
             var source = new HierarchicalTreeDataGridSource<Model>(new[] { empty })
             {
@@ -241,10 +266,13 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
             cell.ShowExpander.Should().BeTrue();
 
             var point = CenterOf(toggle, window);
+
+            // Act
             window.MouseDown(point, MouseButton.Left);
             window.MouseUp(point, MouseButton.Left);
             Settle(window);
 
+            // Assert
             cell.IsExpanded.Should().BeFalse("a row without children does not expand");
             toggle.IsChecked.Should().BeFalse("the chevron must not stay in the expanded state");
         }
@@ -252,6 +280,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [AvaloniaFact(Timeout = 10000)]
         public void The_indentation_of_a_level_is_the_IndentSize_of_the_cell()
         {
+            // Arrange
             var child = new Model { Id = 1, Title = "Child" };
             var parent = new Model { Id = 0, Title = "Parent" };
             parent.Children.Add(child);
@@ -271,12 +300,14 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
             cells().Should().HaveCount(2);
             cells().Select(c => c.IndentPadding.Left).Should().Equal(0, 20);
 
+            // Act
             target.Styles.Add(new Style(x => x.OfType<TreeDataGridExpanderCell>())
             {
                 Setters = { new Setter(TreeDataGridExpanderCell.IndentSizeProperty, 35.0) },
             });
             Settle(window);
 
+            // Assert
             cells().Select(c => c.IndentPadding.Left).Should().Equal(0, 35);
             cells()[1].GetVisualDescendants().OfType<Border>().First(b => b.Name == "CellBorder").Padding.Left
                 .Should().Be(35, "the template pads the cell by the indentation");
@@ -291,6 +322,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [InlineData(double.PositiveInfinity, double.PositiveInfinity, true)]
         public void MathUtilities_AreClose_uses_a_relative_tolerance(double a, double b, bool expected)
         {
+            // Act & Assert
             MathUtilities.AreClose(a, b).Should().Be(expected);
             MathUtilities.AreClose(b, a).Should().Be(expected);
         }
@@ -298,6 +330,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Port
         [AvaloniaFact(Timeout = 10000)]
         public void MathUtilities_IsZero_and_GreaterThan_ignore_rounding_noise()
         {
+            // Act & Assert
             MathUtilities.IsZero(0).Should().BeTrue();
             MathUtilities.IsZero(1e-16).Should().BeTrue();
             MathUtilities.IsZero(1e-10).Should().BeFalse();

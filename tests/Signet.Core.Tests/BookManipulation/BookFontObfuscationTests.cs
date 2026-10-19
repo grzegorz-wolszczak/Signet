@@ -22,17 +22,24 @@ public sealed class BookFontObfuscationTests
     [Fact]
     public void SetFontObfuscation_toggles_algorithm_and_marks_book_modified()
     {
+        // Arrange
         using TempDir temp = new();
         (Book book, FontResource font) = LoadWithFont(temp);
+
         font.ObfuscationAlgorithm.Should().BeEmpty();
 
+        // Act
         book.SetFontObfuscation(font, OcfReader.IdpfFontAlgorithmId);
 
+        // Assert
         font.ObfuscationAlgorithm.Should().Be(OcfReader.IdpfFontAlgorithmId);
         book.Modified.Should().BeTrue();
         book.HasObfuscatedFonts().Should().BeTrue();
 
+        // Act
         book.SetFontObfuscation(font, string.Empty);
+
+        // Assert
         font.ObfuscationAlgorithm.Should().BeEmpty();
         book.HasObfuscatedFonts().Should().BeFalse();
 
@@ -42,11 +49,14 @@ public sealed class BookFontObfuscationTests
     [Fact]
     public void SetFontObfuscation_rejects_an_unknown_algorithm()
     {
+        // Arrange
         using TempDir temp = new();
         (Book book, FontResource font) = LoadWithFont(temp);
 
+        // Act
         Action act = () => book.SetFontObfuscation(font, "http://example.com/made-up");
 
+        // Act & Assert
         act.Should().Throw<ArgumentException>();
         book.Dispose();
     }

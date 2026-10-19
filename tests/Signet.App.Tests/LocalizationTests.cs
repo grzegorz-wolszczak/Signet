@@ -36,9 +36,14 @@ public sealed class LocalizationTests
     [Fact]
     public void Every_polish_resource_key_has_an_english_translation()
     {
+        // Arrange
         ResourceManager manager = Strings.RawManager;
+
+        // Act
         ResourceSet? polish = manager.GetResourceSet(new System.Globalization.CultureInfo("pl"), true, true);
         ResourceSet? english = manager.GetResourceSet(new System.Globalization.CultureInfo("en"), true, true);
+
+        // Assert
         polish.Should().NotBeNull();
         english.Should().NotBeNull();
 
@@ -53,11 +58,14 @@ public sealed class LocalizationTests
     public void Every_loc_key_used_in_axaml_exists_in_the_resources()
     {
         // A misspelled key renders as empty text (e.g. a blank OK button), with no build error.
+        // Arrange
         ResourceSet? polish = Strings.RawManager.GetResourceSet(new System.Globalization.CultureInfo("pl"), true, true);
         HashSet<string> keys = polish!.Cast<System.Collections.DictionaryEntry>().Select(e => (string)e.Key).ToHashSet(StringComparer.Ordinal);
         Regex locKey = new(@"\{loc:Loc\s+(?:Key=)?(?<key>[\w.]+)\s*\}");
 
         List<string> missing = new();
+
+        // Act
         foreach (string path in Directory.EnumerateFiles(AppSourceRoot, "*.axaml", SearchOption.AllDirectories))
         {
             foreach (Match match in locKey.Matches(File.ReadAllText(path)))
@@ -69,14 +77,17 @@ public sealed class LocalizationTests
             }
         }
 
+        // Assert
         missing.Should().BeEmpty("every loc:Loc key used in a view must exist in Strings.resx");
     }
 
     [Fact]
     public void No_axaml_view_has_a_hardcoded_user_facing_string_literal()
     {
+        // Arrange
         List<string> violations = new();
 
+        // Act
         foreach (string path in Directory.EnumerateFiles(AppSourceRoot, "*.axaml", SearchOption.AllDirectories))
         {
             string content = File.ReadAllText(path);
@@ -99,6 +110,7 @@ public sealed class LocalizationTests
             }
         }
 
+        // Assert
         violations.Should().BeEmpty(
             "all user-facing strings in the view layer (.axaml) must go through {{loc:Loc ...}}");
     }

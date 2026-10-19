@@ -17,10 +17,13 @@ public sealed class CssHighlighterTests
     [Fact]
     public void Rule_is_split_into_selector_property_and_value()
     {
+        // Arrange
         List<SyntaxSpan> spans = new();
 
+        // Act
         int state = _sut.HighlightLine("p { color: red; }", _sut.InitialState, spans);
 
+        // Assert
         spans.Should().Equal(
             new SyntaxSpan(0, 2, CssSelector),
             new SyntaxSpan(3, 6, CssProperty),
@@ -32,10 +35,13 @@ public sealed class CssHighlighterTests
     [Fact]
     public void Comment_is_highlighted_including_its_delimiters()
     {
+        // Arrange
         List<SyntaxSpan> spans = new();
 
+        // Act
         _sut.HighlightLine("/* x */ a {", _sut.InitialState, spans);
 
+        // Assert
         spans.Should().Equal(
             new SyntaxSpan(0, 6, CssComment),
             new SyntaxSpan(6, 1, CssComment),
@@ -45,17 +51,22 @@ public sealed class CssHighlighterTests
     [Fact]
     public void Unterminated_comment_continues_on_the_next_line()
     {
+        // Arrange
         List<SyntaxSpan> spans = new();
+
+        // Act
         int state = _sut.HighlightLine("/* start", _sut.InitialState, null);
 
         _sut.HighlightLine("still */ b", state, spans);
 
+        // Assert
         spans.Should().Contain(new SyntaxSpan(0, 7, CssComment));
     }
 
     [Fact]
     public void Empty_first_line_keeps_the_state_undetermined()
     {
+        // Act & Assert
         _sut.HighlightLine(string.Empty, _sut.InitialState, null).Should().Be(_sut.InitialState);
     }
 }

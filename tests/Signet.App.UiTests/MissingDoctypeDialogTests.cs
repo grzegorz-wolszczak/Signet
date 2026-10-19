@@ -33,10 +33,14 @@ public sealed class MissingDoctypeDialogTests
     [AvaloniaFact]
     public void Lists_the_files_under_a_header_with_the_operation_name()
     {
+        // Arrange
         string[] files = { "OEBPS/Text/ch1.xhtml", "OEBPS/Text/ch2.xhtml" };
         MissingDoctypeDialog window = MissingDoctypeDialog.Build("Prettify", files);
+
+        // Act
         ShowAndRender(window);
 
+        // Assert
         window.Title.Should().Be(Strings.Get("MissingDoctypeDialog_Title"));
         window.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text)
             .Should().Contain(Strings.Format("MissingDoctypeDialog_Header", "Prettify", 2));
@@ -46,11 +50,15 @@ public sealed class MissingDoctypeDialogTests
     [AvaloniaFact]
     public void A_long_list_scrolls_instead_of_growing_the_window()
     {
+        // Arrange
         string[] files = Enumerable.Range(1, 300).Select(i => $"OEBPS/Text/chapter{i}.xhtml").ToArray();
         MissingDoctypeDialog window = MissingDoctypeDialog.Build("Prettify", files);
         double height = window.Height;
+
+        // Act
         ShowAndRender(window);
 
+        // Assert
         window.Bounds.Height.Should().Be(height);
         ScrollViewer scroller = window.GetVisualDescendants().OfType<ScrollViewer>().First();
         scroller.Extent.Height.Should().BeGreaterThan(scroller.Viewport.Height);
@@ -59,23 +67,31 @@ public sealed class MissingDoctypeDialogTests
     [AvaloniaFact]
     public void Dont_ask_again_disables_No_and_turns_Yes_into_remembered_continue()
     {
+        // Arrange
         MissingDoctypeDialog window = MissingDoctypeDialog.Build("Prettify", OneFile);
+
+        // Act
         ShowAndRender(window);
         CheckBox dontAsk = window.GetVisualDescendants().OfType<CheckBox>().Single();
         Button no = ButtonWith(window, Strings.Get("Common_No"));
 
+        // Assert
         no.IsEnabled.Should().BeTrue();
         window.Answer.Should().Be(MissingDoctypeAnswer.Continue);
 
+        // Act
         dontAsk.IsChecked = true;
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         no.IsEnabled.Should().BeFalse();
         window.Answer.Should().Be(MissingDoctypeAnswer.ContinueAndDontAskAgain);
 
+        // Act
         dontAsk.IsChecked = false;
         Dispatcher.UIThread.RunJobs();
 
+        // Assert
         no.IsEnabled.Should().BeTrue();
     }
 }

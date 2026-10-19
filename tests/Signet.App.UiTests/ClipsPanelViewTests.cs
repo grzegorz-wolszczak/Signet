@@ -55,8 +55,10 @@ public sealed class ClipsPanelViewTests : IDisposable
     [AvaloniaFact]
     public void The_tree_shows_the_name_and_the_text_of_the_clips()
     {
+        // Act
         (Window window, ClipsViewModel vm, TreeDataGrid tree) = Show();
 
+        // Assert
         tree.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().Select(h => h.Header).Should().Equal(
             Strings.Get("ReportsWindow_Name"), Strings.Get("ReportsWindow_Text"));
         RowNames(tree).Should().Equal(vm.Nodes[0].Name, vm.Nodes[1].Name);
@@ -68,18 +70,27 @@ public sealed class ClipsPanelViewTests : IDisposable
     [AvaloniaFact]
     public void The_filter_hides_the_nodes_and_keeps_the_selected_one_selected()
     {
+        // Act
         (Window window, ClipsViewModel vm, TreeDataGrid tree) = Show();
         ClipNodeViewModel clip = vm.Nodes[1];
         vm.SetSelectedNodes(new[] { clip });
         Render(window);
+
+        // Assert
         tree.RowSelection!.SelectedItem.Should().BeSameAs(clip);
 
+        // Act
         vm.FilterText = "no such clip";
         Render(window);
+
+        // Assert
         RowNames(tree).Should().BeEmpty();
 
+        // Act
         vm.FilterText = clip.Name;
         Render(window);
+
+        // Assert
         RowNames(tree).Should().Contain(clip.Name);
         tree.RowSelection.SelectedItem.Should().BeSameAs(clip, "the view model's selection survives the filter");
         vm.SelectedNode.Should().BeSameAs(clip);
@@ -89,12 +100,14 @@ public sealed class ClipsPanelViewTests : IDisposable
     [AvaloniaFact]
     public void Ctrl_click_selects_several_nodes_in_the_view_model()
     {
+        // Act
         (Window window, ClipsViewModel vm, TreeDataGrid tree) = Show();
 
         tree.RowSelection!.Select(new IndexPath(0));
         tree.RowSelection.Select(new IndexPath(1));
         Render(window);
 
+        // Assert
         vm.SelectedNodes.Should().HaveCount(2);
         window.Close();
     }

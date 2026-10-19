@@ -32,13 +32,16 @@ public sealed class ImageResourceTests
     [Fact]
     public void Reads_dimensions_from_a_png_header()
     {
+        // Arrange
         using TempDir root = new();
         string full = root.Combine("Images", "cover.png");
         Directory.CreateDirectory(Path.GetDirectoryName(full)!);
         File.WriteAllBytes(full, PngHeader(640, 480));
 
+        // Act
         ImageResource resource = new(root.Path, full);
 
+        // Assert
         resource.Type.Should().Be(ResourceType.Image);
         resource.GetDimensions().Should().Be((640, 480));
         resource.FileSize.Should().Be(24);
@@ -47,6 +50,7 @@ public sealed class ImageResourceTests
     [Fact]
     public void Reads_dimensions_from_a_gif_header()
     {
+        // Arrange
         using TempDir root = new();
         string full = root.Combine("a.gif");
         // "GIF89a" + width=3 (LE) + height=7 (LE) + padding
@@ -56,49 +60,59 @@ public sealed class ImageResourceTests
             0x03, 0x00, 0x07, 0x00, 0x00, 0x00,
         });
 
+        // Act & Assert
         new ImageResource(root.Path, full).GetDimensions().Should().Be((3, 7));
     }
 
     [Fact]
     public void Unknown_format_yields_zero_dimensions()
     {
+        // Arrange
         using TempDir root = new();
         string full = root.Combine("a.bin");
         File.WriteAllBytes(full, new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
 
+        // Act & Assert
         new ImageResource(root.Path, full).GetDimensions().Should().Be((0, 0));
     }
 
     [Fact]
     public void Cover_flag_is_settable()
     {
+        // Arrange
         using TempDir root = new();
         string full = root.Combine("c.png");
         File.WriteAllBytes(full, PngHeader(1, 1));
 
+        // Act
         ImageResource resource = new(root.Path, full) { IsCoverImage = true };
 
+        // Assert
         resource.IsCoverImage.Should().BeTrue();
     }
 
     [Fact]
     public void GetDpi_reads_png_phys_chunk_in_dots_per_inch()
     {
+        // Arrange
         using TempDir root = new();
         string full = root.Combine("dpi.png");
         // 300 DPI ≈ 11811 pixels / metre.
         File.WriteAllBytes(full, PngWithPhys(200, 100, 11811, 11811, unit: 1));
 
+        // Act & Assert
         new ImageResource(root.Path, full).GetDpi().Should().Be((300, 300));
     }
 
     [Fact]
     public void GetDpi_returns_zero_when_no_resolution_information()
     {
+        // Arrange
         using TempDir root = new();
         string full = root.Combine("nodpi.png");
         File.WriteAllBytes(full, PngHeader(10, 10));
 
+        // Act & Assert
         new ImageResource(root.Path, full).GetDpi().Should().Be((0, 0));
     }
 

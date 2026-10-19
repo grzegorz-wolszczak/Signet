@@ -40,12 +40,15 @@ public sealed class SpanRemovalTests : IDisposable
     [Fact]
     public void Removing_a_span_whose_class_has_no_rules_is_safe()
     {
+        // Arrange
         using Book book = Load(".other { color: red; }", "<p>a <span class=\"x\">b</span></p>", "<p>c</p>");
         HtmlResource html = Chapter(book, "chapter1.xhtml");
         string text = html.GetText();
 
+        // Act
         SpanRemovalPlan plan = SpanRemoval.Plan(book, html, text, SpanOffset(text), SpanRemovalScope.This)!;
 
+        // Assert
         plan.Consequences.Should().BeEmpty();
         plan.SpanCount.Should().Be(1);
         plan.NewTexts[html.BookPath].Should().Contain("<p>a b</p>");
@@ -54,30 +57,37 @@ public sealed class SpanRemovalTests : IDisposable
     [Fact]
     public void Removing_a_span_whose_class_has_rules_lists_what_stops_applying()
     {
+        // Arrange
         using Book book = Load(".x { color: red; margin: 0; }", "<p>a <span class=\"x\">b</span></p>", "<p>c</p>");
         HtmlResource html = Chapter(book, "chapter1.xhtml");
         string text = html.GetText();
 
+        // Act
         SpanRemovalPlan plan = SpanRemoval.Plan(book, html, text, SpanOffset(text), SpanRemovalScope.This)!;
 
+        // Assert
         plan.Consequences.Should().ContainSingle().Which.Text.Should().Contain("color").And.Contain(".x");
     }
 
     [Fact]
     public void A_structural_change_is_a_consequence_even_for_a_bare_span()
     {
+        // Arrange
         using Book book = Load("p > em { color: blue; }", "<p>a <span>b <em>c</em></span></p>", "<p>c</p>");
         HtmlResource html = Chapter(book, "chapter1.xhtml");
         string text = html.GetText();
 
+        // Act
         SpanRemovalPlan plan = SpanRemoval.Plan(book, html, text, SpanOffset(text), SpanRemovalScope.This)!;
 
+        // Assert
         plan.Consequences.Should().Contain(c => c.Text.Contains("blue", StringComparison.Ordinal));
     }
 
     [Fact]
     public void The_book_scope_covers_the_same_spans_of_every_file()
     {
+        // Arrange
         using Book book = Load(
             ".other { color: red; }",
             "<p><span class=\"x y\">a</span> <span class=\"x\">b</span></p>",
@@ -86,9 +96,13 @@ public sealed class SpanRemovalTests : IDisposable
         string text = html.GetText();
         int offset = SpanOffset(text);
 
+        // Act & Assert
         SpanRemoval.CountInBook(book, html, text, offset).Should().Be(2);
+
+        // Act
         SpanRemovalPlan plan = SpanRemoval.Plan(book, html, text, offset, SpanRemovalScope.Book)!;
 
+        // Assert
         plan.SpanCount.Should().Be(2);
         plan.NewTexts.Should().HaveCount(2);
         plan.NewTexts[html.BookPath].Should().Contain("<p>a <span class=\"x\">b</span></p>");
@@ -99,11 +113,15 @@ public sealed class SpanRemovalTests : IDisposable
     [Fact]
     public void There_is_no_plan_for_a_span_with_an_id_or_outside_a_span()
     {
+        // Arrange
         using Book book = Load(string.Empty, "<p><span id=\"i\">a</span></p>", "<p>c</p>");
         HtmlResource html = Chapter(book, "chapter1.xhtml");
         string text = html.GetText();
 
+        // Act & Assert
         SpanRemoval.Plan(book, html, text, SpanOffset(text), SpanRemovalScope.File).Should().BeNull();
+
+        // Act & Assert
         SpanRemoval.Plan(book, html, text, SpanOffset(text, "<p>"), SpanRemovalScope.File).Should().BeNull();
     }
 }

@@ -26,10 +26,12 @@ public sealed class ActionIconsTests
     public void Save_icon_variants_are_grey_or_red_and_cached()
     {
         // The icon set is loaded only by the desktop app startup, so the bundled "main" set is merged in temporarily here.
+        // Arrange
         var icons = (ResourceDictionary)AvaloniaXamlLoader.Load(new Uri("avares://Signet.App/Assets/Icons/MainIcons.axaml"));
         Application.Current!.Resources.MergedDictionaries.Add(icons);
         try
         {
+            // Act & Assert
             AssertVariants();
         }
         finally

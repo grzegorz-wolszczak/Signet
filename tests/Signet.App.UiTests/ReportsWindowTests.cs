@@ -36,22 +36,30 @@ public sealed class ReportsWindowTests
     [AvaloniaFact]
     public void Report_columns_are_resizable_and_no_header_is_cut_off()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("3.0");
         ReportsViewModel vm = new(book);
         // Wide enough for all the columns of every report: TreeDataGrid realizes only the columns in view (the
         // headless font is wide).
         ReportsWindow window = new() { DataContext = vm, Width = 2400, Height = 500 };
+
+        // Act
         window.Show();
 
         // Every tab, so that each grid gets loaded.
         TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
+
+        // Assert
         tabs.ItemCount.Should().Be(9);
         for (int i = 0; i < tabs.ItemCount; i++)
         {
+            // Act
             tabs.SelectedIndex = i;
             Settle(window);
 
             TreeDataGrid grid = window.GetVisualDescendants().OfType<TreeDataGrid>().First(g => g.IsEffectivelyVisible);
+
+            // Assert
             grid.CanUserResizeColumns.Should().BeTrue();
             grid.Classes.Should().Contain("gridLines");
             TreeDataGridColumnHeader[] headers = grid.GetVisualDescendants().OfType<TreeDataGridColumnHeader>()
@@ -59,7 +67,10 @@ public sealed class ReportsWindowTests
             headers.Should().HaveCount(grid.Columns!.Count, $"every column of tab {i} fits the wide window");
             foreach (TreeDataGridColumnHeader header in headers)
             {
+                // Act
                 header.Measure(Size.Infinity);
+
+                // Assert
                 grid.Columns[header.ColumnIndex].ActualWidth.Should().BeGreaterThanOrEqualTo(
                     header.DesiredSize.Width, $"the header \"{header.Header}\" (tab {i}) must be fully visible");
             }
@@ -71,14 +82,19 @@ public sealed class ReportsWindowTests
     [AvaloniaFact]
     public void All_files_lists_the_book_files_and_a_double_click_opens_one()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("3.0");
         ReportsViewModel vm = new(book);
         string? navigatedTo = null;
         vm.NavigationRequested += (path, _) => navigatedTo = path;
         ReportsWindow window = new() { DataContext = vm, Width = 2400, Height = 500 };
+
+        // Act
         window.Show();
         Settle(window);
         TreeDataGrid grid = window.GetVisualDescendants().OfType<TreeDataGrid>().First(g => g.IsEffectivelyVisible);
+
+        // Assert
         grid.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().Select(h => h.Header).Should().Equal(
             Strings.Get("ReportsWindow_Name"), Strings.Get("ReportsWindow_Type"),
             Strings.Get("ReportsWindow_SizeBytes"), Strings.Get("ReportsWindow_InSpine"));
@@ -87,12 +103,14 @@ public sealed class ReportsWindowTests
         Control cell = grid.TryGetCell(0, 0)!;
         Point point = cell.TranslatePoint(new Point(cell.Bounds.Width / 2, cell.Bounds.Height / 2), window)!.Value;
 
+        // Act
         window.MouseDown(point, MouseButton.Left);
         window.MouseUp(point, MouseButton.Left);
         window.MouseDown(point, MouseButton.Left);
         window.MouseUp(point, MouseButton.Left);
         Settle(window);
 
+        // Assert
         navigatedTo.Should().Be(vm.AllFiles[0].BookPath);
         window.Close();
     }
@@ -100,11 +118,14 @@ public sealed class ReportsWindowTests
     [AvaloniaFact]
     public void Enter_on_a_selected_row_opens_it_like_a_double_click()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("3.0");
         ReportsViewModel vm = new(book);
         string? navigatedTo = null;
         vm.NavigationRequested += (path, _) => navigatedTo = path;
         ReportsWindow window = new() { DataContext = vm, Width = 2400, Height = 500 };
+
+        // Act
         window.Show();
         Settle(window);
         TreeDataGrid grid = window.GetVisualDescendants().OfType<TreeDataGrid>().First(g => g.IsEffectivelyVisible);
@@ -113,11 +134,15 @@ public sealed class ReportsWindowTests
         window.MouseDown(point, MouseButton.Left);
         window.MouseUp(point, MouseButton.Left);
         Settle(window);
+
+        // Assert
         navigatedTo.Should().BeNull("a single click only selects the row");
 
+        // Act
         window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
         Settle(window);
 
+        // Assert
         navigatedTo.Should().Be(vm.AllFiles[1].BookPath);
         window.Close();
     }
@@ -125,6 +150,7 @@ public sealed class ReportsWindowTests
     [AvaloniaFact]
     public void The_decimal_column_of_the_characters_report_sorts_by_code_point()
     {
+        // Arrange
         using Book book = BookCreator.CreateNewBook("3.0");
         Signet.Core.Resources.HtmlResource html = book.GetHtmlResourcesExcludingNav().First();
         string text = html.GetText();
@@ -134,14 +160,19 @@ public sealed class ReportsWindowTests
         html.SetText(text[..start] + "<body><p>a&#160;b&#1000;c&#8212;d</p></body>" + text[end..]);
         ReportsViewModel vm = new(book);
         ReportsWindow window = new() { DataContext = vm, Width = 2400, Height = 500 };
+
+        // Act
         window.Show();
         window.GetVisualDescendants().OfType<TabControl>().First().SelectedIndex = 7;
         Settle(window);
         TreeDataGrid grid = window.GetVisualDescendants().OfType<TreeDataGrid>().First(g => g.IsEffectivelyVisible);
 
+        // Act & Assert
         grid.Source!.SortBy(grid.Columns![1], ListSortDirection.Ascending).Should().BeTrue();
 
         int[] codes = Enumerable.Range(0, grid.Rows!.Count).Select(i => ((CharacterDisplayRow)grid.Rows[i].Model!).CodePoint).ToArray();
+
+        // Assert
         codes.Where(c => c is 160 or 1000 or 8212).Should().Equal(160, 1000, 8212);
         codes.Should().BeInAscendingOrder();
         window.Close();

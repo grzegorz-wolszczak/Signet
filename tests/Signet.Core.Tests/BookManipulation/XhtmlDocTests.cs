@@ -57,13 +57,16 @@ public sealed class XhtmlDocTests
     [Fact]
     public void ParseThenSerialize_PreservesEpubTypeAndClosesEmptyElements()
     {
+        // Arrange
         const string source =
             "<html xmlns=\"http://www.w3.org/1999/xhtml\"><body>" +
             "<nav epub:type=\"toc\"><ol><li><a href=\"a.xhtml\">A</a></li></ol></nav><hr></body></html>";
 
+        // Act
         IHtmlDocument document = XhtmlDoc.Parse(source);
         string xhtml = XhtmlDoc.Serialize(document.Body!);
 
+        // Assert
         xhtml.Should().Contain("epub:type=\"toc\"");
         xhtml.Should().Contain("<hr />");
     }
@@ -71,18 +74,21 @@ public sealed class XhtmlDocTests
     [Fact]
     public void GetAllDescendantIds_IncludesIdAttributesAndLegacyAnchorNames()
     {
+        // Act & Assert
         XhtmlDoc.GetAllDescendantIds(Sample).Should().Equal("top", "p1", "legacy");
     }
 
     [Fact]
     public void GetIdsInFile_ReturnsOnlyIdAttributes()
     {
+        // Act & Assert
         XhtmlDoc.GetIdsInFile(Sample).Should().Equal("top", "p1");
     }
 
     [Fact]
     public void GetAllDescendantHrefs_ReturnsRawValues_Deduplicated()
     {
+        // Act & Assert
         XhtmlDoc.GetAllDescendantHrefs(Sample)
             .Should().Equal("../styles/main.css", "other.xhtml#frag", "https://example.com/");
     }
@@ -90,8 +96,10 @@ public sealed class XhtmlDocTests
     [Fact]
     public void GetLinkElements_CollectsAnchorLinkImgScriptWithNaturalAttribute()
     {
+        // Act
         var links = XhtmlDoc.GetLinkElements(Sample);
 
+        // Assert
         links.Should().Contain(new LinkElement("link", "href", "../styles/main.css"));
         links.Should().Contain(new LinkElement("script", "src", "../js/app.js"));
         links.Should().Contain(new LinkElement("img", "src", "../img/pic.png"));
@@ -102,19 +110,24 @@ public sealed class XhtmlDocTests
     [Fact]
     public void ResolveHrefs_RelativeReferencesBecomeBookPaths_AbsoluteAndFragmentSkipped()
     {
+        // Act
         var resolved = XhtmlDoc.ResolveHrefs(Sample, "EPUB/text");
 
+        // Assert
         resolved.Should().BeEquivalentTo(ExpectedResolvedHrefs);
     }
 
     [Fact]
     public void ResolveHrefs_DeepFoldersFixture_ResolvesAgainstFileFolder()
     {
+        // Arrange
         string file = Path.Combine(CorpusPaths.EdgeDeepFolders, "content", "pages", "body", "ch01.xhtml");
         string source = File.ReadAllText(file);
 
+        // Act
         var resolved = XhtmlDoc.ResolveHrefs(source, "content/pages/body");
 
+        // Assert
         resolved.Should().Contain("content/pages/front/title.xhtml");
         resolved.Should().Contain("content/resources/styles/main.css");
         resolved.Should().Contain("content/resources/img/pic.png");
@@ -123,8 +136,10 @@ public sealed class XhtmlDocTests
     [Fact]
     public void GetHeadingElements_ReturnsLevelIdAndCollapsedText_InDocumentOrder()
     {
+        // Act
         var headings = XhtmlDoc.GetHeadingElements(Sample);
 
+        // Assert
         headings.Should().HaveCount(2);
         headings[0].Should().Be(new HeadingElement("h1", 1, "top", "Title"));
         headings[1].Should().Be(new HeadingElement("h2", 2, string.Empty, "Sub & section"));
@@ -138,45 +153,61 @@ public sealed class XhtmlDocTests
     [InlineData("<html dir=\"sideways\"><body></body></html>", "")]
     public void GetDominantTextDirection_PrefersHtmlThenBody(string source, string expected)
     {
+        // Act & Assert
         XhtmlDoc.GetDominantTextDirection(source).Should().Be(expected);
     }
 
     [Fact]
     public void GetBodyClasses_SplitsOnWhitespace()
     {
+        // Act & Assert
         XhtmlDoc.GetBodyClasses(Sample).Should().Equal("chap", "fancy");
+
+        // Act & Assert
         XhtmlDoc.GetBodyClasses("<html><body></body></html>").Should().BeEmpty();
     }
 
     [Fact]
     public void OffsetFromNode_ReturnsStartOfOpeningTag()
     {
+        // Arrange
         IHtmlDocument document = XhtmlDoc.Parse(Sample);
         IElement h2 = document.QuerySelector("h2")!;
 
+        // Act & Assert
         XhtmlDoc.OffsetFromNode(h2).Should().Be(Sample.IndexOf("<h2>", StringComparison.Ordinal));
     }
 
     [Fact]
     public void NodeFromOffset_ReturnsDeepestElementContainingOffset()
     {
+        // Arrange
         IHtmlDocument document = XhtmlDoc.Parse(Sample);
 
         int insideBold = Sample.IndexOf("bold</b>", StringComparison.Ordinal);
+
+        // Act
         INode? node = XhtmlDoc.NodeFromOffset(document, insideBold);
+
+        // Assert
         (node as IElement)?.LocalName.Should().Be("b");
 
         int atH1 = Sample.IndexOf("<h1", StringComparison.Ordinal);
+
+        // Act & Assert
         (XhtmlDoc.NodeFromOffset(document, atH1) as IElement)?.LocalName.Should().Be("h1");
     }
 
     [Fact]
     public void OffsetFromNode_TextNode_ReturnsMinusOne()
     {
+        // Arrange
         IHtmlDocument document = XhtmlDoc.Parse(Sample);
         INode textNode = document.QuerySelector("p")!.FirstChild!;
 
         textNode.NodeType.Should().Be(NodeType.Text);
+
+        // Act & Assert
         XhtmlDoc.OffsetFromNode(textNode).Should().Be(-1);
     }
 
@@ -184,10 +215,13 @@ public sealed class XhtmlDocTests
     [MemberData(nameof(AllCorpusXhtml))]
     public void QueryHelpers_RunOnEveryCorpusXhtml_WithoutThrowing(string xhtmlPath)
     {
+        // Arrange
         string source = File.ReadAllText(xhtmlPath);
 
+        // Act
         IHtmlDocument document = XhtmlDoc.Parse(source);
 
+        // Assert
         XhtmlDoc.GetAllDescendantIds(document).Should().NotBeNull();
         XhtmlDoc.GetIdsInFile(document).Should().NotBeNull();
         XhtmlDoc.GetAllDescendantHrefs(document).Should().NotBeNull();

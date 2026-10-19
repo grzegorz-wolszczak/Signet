@@ -27,13 +27,18 @@ public sealed class StartScreenTests
     [AvaloniaFact]
     public void Without_a_book_the_document_area_shows_the_start_screen_and_the_book_panels_are_disabled()
     {
+        // Arrange
         MainWindowViewModel vm = new();
         MainWindow window = new() { DataContext = vm };
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
         StartScreenView start = window.GetVisualDescendants().OfType<StartScreenView>().Single();
+
+        // Assert
         start.GetVisualDescendants().OfType<ScrollViewer>().First().IsVisible.Should().BeTrue();
         start.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "OpenButton").IsEffectivelyEnabled.Should().BeTrue();
 
@@ -45,6 +50,7 @@ public sealed class StartScreenTests
     [AvaloniaFact]
     public void The_recent_files_open_on_click()
     {
+        // Arrange
         List<string> opened = new();
         StartScreenViewModel vm = new(
             new RelayCommand(() => { }), new RelayCommand(() => { }),
@@ -53,17 +59,22 @@ public sealed class StartScreenTests
             IsVisible = true,
         };
         Window window = new() { Width = 600, Height = 400, Content = new StartScreenView { DataContext = vm } };
+
+        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
 
+        // Assert
         vm.HasRecentFiles.Should().BeTrue();
         vm.RecentFileItems.Select(f => f.Name).Should().Equal("First.epub", "Second.epub");
         Button[] entries = window.GetVisualDescendants().OfType<Button>().Where(b => b.Classes.Contains("recentFile")).ToArray();
         entries.Should().HaveCount(2);
 
+        // Act
         entries[1].Command!.Execute(entries[1].CommandParameter);
 
+        // Assert
         opened.Should().Equal(RecentFiles[1]);
         window.Close();
     }

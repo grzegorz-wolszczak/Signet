@@ -28,49 +28,59 @@ public sealed class ReplaceBuilderTests
     [Fact]
     public void PlainText_WithoutBackslash_IsReturnedVerbatim()
     {
+        // Act & Assert
         Replace("abc", "b", "XYZ").Should().Be("XYZ");
     }
 
     [Fact]
     public void NumberedBackreferences()
     {
+        // Act & Assert
         Replace("John Smith", @"(\w+)\s+(\w+)", @"\2, \1").Should().Be("Smith, John");
     }
 
     [Fact]
     public void WholeMatchBackreferenceZero()
     {
+        // Act & Assert
         Replace("abc", @"b", @"[\0]").Should().Be("[b]");
     }
 
     [Fact]
     public void NamedBackreference_BraceAndAngle()
     {
+        // Act & Assert
         Replace("2026-09", @"(?<y>\d{4})-(?<m>\d{2})", @"\g<m>/\g{y}").Should().Be("09/2026");
     }
 
     [Fact]
     public void NumberedBackreference_InsideBraces()
     {
+        // Act & Assert
         Replace("ab", @"(a)(b)", @"\g{2}\g{1}").Should().Be("ba");
     }
 
     [Fact]
     public void CaseFolding_UpperUntilE()
     {
+        // Act & Assert
         Replace("hello world", @"(\w+) (\w+)", @"\U\1\E \2").Should().Be("HELLO world");
     }
 
     [Fact]
     public void CaseFolding_LowerUntilE()
     {
+        // Act & Assert
         Replace("HELLO", @"(\w+)", @"\L\1\E").Should().Be("hello");
     }
 
     [Fact]
     public void CaseFolding_SingleCharUpperAndLower()
     {
+        // Act & Assert
         Replace("john smith", @"(\w)(\w+) (\w)(\w+)", @"\u\1\2 \u\3\4").Should().Be("John Smith");
+
+        // Act & Assert
         Replace("HELLO", @"(H)(ELLO)", @"\l\1\2").Should().Be("hELLO");
     }
 
@@ -78,27 +88,37 @@ public sealed class ReplaceBuilderTests
     public void CaseFolding_InnerChangeIgnoredUntilE()
     {
         // \L inside \U is ignored until \E.
+        // Act & Assert
         Replace("abc", @"(abc)", @"\U\L\1\E").Should().Be("ABC");
     }
 
     [Fact]
     public void EscapedMetacharacters()
     {
+        // Act & Assert
         Replace("x", "x", @"a\tb\nc").Should().Be("a\tb\nc");
+
+        // Act & Assert
         Replace("x", "x", @"\\n").Should().Be(@"\n");
     }
 
     [Fact]
     public void HexEscape_TwoDigits()
     {
+        // Act & Assert
         Replace("x", "x", @"\x41\x42").Should().Be("AB");
     }
 
     [Fact]
     public void HexEscape_BracedBmpAndAstral()
     {
+        // Act & Assert
         Replace("x", "x", @"\x{41}").Should().Be("A");
+
+        // Act & Assert
         Replace("x", "x", @"\x{20AC}").Should().Be("\u20AC");          // EURO SIGN
+
+        // Act & Assert
         // Outside the BMP 6 digits are required (a length of 5 is invalid).
         Replace("x", "x", @"\x{01F600}").Should().Be("\U0001F600");    // GRINNING FACE
     }
@@ -106,45 +126,56 @@ public sealed class ReplaceBuilderTests
     [Fact]
     public void HexEscape_FiveDigitBrace_IsInvalid()
     {
+        // Act & Assert
         Replace("x", "x", @"\x{1F600}").Should().Be(@"\x{1F600}");
     }
 
     [Fact]
     public void InvalidBackreference_IsEmittedLiterally()
     {
+        // Act & Assert
         Replace("ab", @"(a)(b)", @"\9").Should().Be(@"\9");
     }
 
     [Fact]
     public void UnknownEscape_IsEmittedLiterally()
     {
+        // Act & Assert
         Replace("x", "x", @"\q\z").Should().Be(@"\q\z");
     }
 
     [Fact]
     public void DanglingBackslash_IsEmittedLiterally()
     {
+        // Act & Assert
         Replace("x", "x", @"end\").Should().Be(@"end\");
     }
 
     [Fact]
     public void MalformedBracedHex_IsEmittedLiterally()
     {
+        // Act & Assert
         Replace("x", "x", @"\x{2}").Should().Be(@"\x{2}");
     }
 
     [Fact]
     public void UnsetOptionalGroup_ReplacesWithEmptyString()
     {
+        // Act & Assert
         Replace("b", @"(a)?(b)", @"[\1][\2]").Should().Be("[][b]");
     }
 
     [Fact]
     public void InvalidRegex_BuildFails()
     {
+        // Arrange
         var re = new Spcre("(unclosed");
+
+        // Act
         re.ReplaceText("x", new SpcreCapture[] { new(0, 1) }, "y", out string result)
             .Should().BeFalse();
+
+        // Assert
         result.Should().BeEmpty();
     }
 }
