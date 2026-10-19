@@ -1197,6 +1197,157 @@ public sealed class CleanupAnalysisTests
         ReplaceInChapter1(tree, "  <p>Hello, world.</p>", "  <p>Hello, world.</p>\n" + body);
     });
 
+    private static IEnumerable<CleanupItem> Chapter1Items(CleanupPlan plan, CleanupStep step) =>
+        Step(plan, step).Items.Where(i => i.BookPath.EndsWith("chapter1.xhtml", StringComparison.Ordinal));
+
+    [Fact]
+    public void UnusedIds_lists_the_unreferenced_ids_of_a_file_as_one_item_and_apply_removes_them()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadEmpty(temp, ".x { color: red; }",
+            "  <p id=\"a\" class=\"x\">one</p>\n  <span id='b'>two</span>\n  <p id=\"kept\">three</p>\n  <a href=\"#kept\">go</a>");
+
+        // Act
+        CleanupPlan plan = Plan(book, CleanupStep.UnusedIds);
+
+        CleanupItem item = Chapter1Items(plan, CleanupStep.UnusedIds).Should().ContainSingle().Subject;
+
+        // Assert
+        item.IsRisky.Should().BeFalse();
+        item.RuleCount.Should().Be(3);
+
+        // Act
+        book.ApplyCleanup(plan).Should().BeTrue();
+
+        // Assert
+        Chapter1(book).Should()
+            .Contain("<p class=\"x\">one</p>")
+            .And.Contain("<span>two</span>")
+            .And.Contain("<h1>Chapter 1</h1>")
+            .And.Contain("<p id=\"kept\">three</p>");
+    }
+
+    [Theory]
+    [InlineData("<label for=\"f\">l</label><input id=\"f\" type=\"text\"/>", "f")]
+    [InlineData("<p aria-labelledby=\"t other\">x</p><h2 id=\"t\">title</h2>", "t")]
+    [InlineData("<a href=\"chapter1.xhtml#c\">x</a><p id=\"c\">y</p>", "c")]
+    [InlineData("<svg xmlns=\"http://www.w3.org/2000/svg\"><linearGradient id=\"g\"/><rect fill=\"url(#g)\"/></svg>", "g")]
+    [InlineData("<style>.q { fill: url(#m); }</style><svg xmlns=\"http://www.w3.org/2000/svg\"><mask id=\"m\"/></svg>", "m")]
+    [InlineData("<p id=\"s\">x</p><script>document.getElementById(\"s\");</script>", "s")]
+    public void UnusedIds_an_id_the_book_refers_to_is_not_listed(string body, string id)
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadEmpty(temp, string.Empty, body);
+
+        // Act
+        CleanupPlan plan = Plan(book, CleanupStep.UnusedIds);
+        book.ApplyCleanup(plan);
+
+        // Assert
+        Chapter1(book).Should().Contain("id=\"" + id + "\"");
+    }
+
+    [Fact]
+    public void UnusedIds_an_id_that_a_stylesheet_refers_to_with_url_is_not_listed()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadEmpty(temp, ".q { filter: url(#blur); }",
+            "<svg xmlns=\"http://www.w3.org/2000/svg\"><filter id=\"blur\"/></svg>");
+
+        // Act
+        book.ApplyCleanup(Plan(book, CleanupStep.UnusedIds));
+
+        // Assert
+        Chapter1(book).Should().Contain("id=\"blur\"");
+    }
+
+    [Theory]
+    [InlineData("#note { color: red; }", "color")]
+    [InlineData("[id^=\"no\"] { font-weight: bold; }", "font-weight")]
+    [InlineData("#note + p { margin-top: 2em; }", "margin-top")]
+    public void UnusedIds_an_id_that_a_selector_still_reaches_is_risky_and_the_others_are_one_safe_item(string css, string expected)
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadEmpty(temp, css, "  <p id=\"note\">a</p>\n  <p>b</p>\n  <p id=\"free\">c</p>");
+        CleanupAnalysis analysis = Analyse(book);
+        HashSet<CleanupStep> steps = new() { CleanupStep.UnusedIds };
+
+        // Act
+        CleanupPlan plan = analysis.Plan(steps, NoExclusions);
+        CleanupItem risky = Chapter1Items(plan, CleanupStep.UnusedIds).Single(i => i.IsRisky);
+
+        // Assert
+        risky.IsApplied.Should().BeFalse();
+        risky.Text.Should().Contain("note");
+        risky.Consequences.Should().Contain(c => c.Text.Contains(expected, StringComparison.Ordinal));
+
+        plan.NewTexts.Single(t => t.Key.EndsWith("chapter1.xhtml", StringComparison.Ordinal)).Value
+            .Should().Contain("id=\"note\"").And.NotContain("id=\"free\"");
+
+        // Act
+        CleanupPlan accepted = analysis.Plan(steps, NoExclusions, new HashSet<string> { risky.Key });
+        book.ApplyCleanup(accepted).Should().BeTrue();
+
+        // Assert
+        Chapter1(book).Should().NotContain("id=\"note\"").And.NotContain("id=\"free\"");
+    }
+
+    [Fact]
+    public void UnusedIds_a_selector_that_loses_the_cascade_anyway_does_not_make_the_id_risky()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadEmpty(temp, "#note { color: red; } p { color: blue !important; }", "  <p id=\"note\">a</p>");
+
+        // Act
+        CleanupPlan plan = Plan(book, CleanupStep.UnusedIds);
+
+        // Assert
+        Chapter1Items(plan, CleanupStep.UnusedIds).Should().ContainSingle().Which.IsRisky.Should().BeFalse();
+    }
+
+    [Fact]
+    public void UnusedIds_run_before_empty_elements_so_an_element_kept_by_its_id_can_be_removed()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadEmpty(temp, string.Empty, "  <div id=\"gone\"></div>\n  <p id=\"kept\"></p>\n  <a href=\"#kept\">go</a>");
+
+        // Act
+        CleanupPlan plan = Plan(book, CleanupStep.UnusedIds, CleanupStep.EmptyElements);
+
+        // Assert
+        Chapter1Items(plan, CleanupStep.EmptyElements).Should().ContainSingle().Which.RuleCount.Should().Be(1);
+
+        // Act
+        book.ApplyCleanup(plan).Should().BeTrue();
+
+        // Assert
+        Chapter1(book).Should().NotContain("gone").And.Contain("<p id=\"kept\"></p>");
+    }
+
+    [Fact]
+    public void UnusedIds_an_excluded_item_keeps_its_ids_so_empty_elements_leave_the_element()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadEmpty(temp, string.Empty, "  <div id=\"gone\"></div>");
+        CleanupAnalysis analysis = Analyse(book);
+        HashSet<CleanupStep> steps = new() { CleanupStep.UnusedIds, CleanupStep.EmptyElements };
+        string idKey = analysis.Plan(steps, NoExclusions).GetStep(CleanupStep.UnusedIds)!.Items
+            .Single(i => i.BookPath.EndsWith("chapter1.xhtml", StringComparison.Ordinal)).Key;
+
+        // Act
+        CleanupPlan plan = analysis.Plan(steps, new HashSet<string> { idKey });
+
+        // Assert
+        Chapter1Items(plan, CleanupStep.EmptyElements).Should().BeEmpty();
+    }
+
     [Fact]
     public void EmptyElements_lists_the_safe_ones_of_a_file_as_one_item_and_apply_removes_them()
     {

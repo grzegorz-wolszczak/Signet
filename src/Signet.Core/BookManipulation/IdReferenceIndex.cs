@@ -19,6 +19,8 @@ namespace Signet.Core.BookManipulation;
 /// <c>itemref</c> and every <c>aria-*</c> attribute — each token counts), in the same file;</item>
 /// <item><c>href</c>/<c>src</c> attributes with a fragment in the other text files (OPF guide and manifest, NCX, SVG,
 /// SMIL…), resolved from their folder;</item>
+/// <item><c>url(#x)</c> in the stylesheets (any document the rule is applied to), in <c>&lt;style&gt;</c> elements and in
+/// presentation attributes (<c>fill</c>, <c>clip-path</c>, <c>filter</c>…);</item>
 /// <item>scripts (JavaScript files and <c>&lt;script&gt;</c> elements): an <c>id</c> whose text appears anywhere in a
 /// script counts as used, since a script can reach it in ways that cannot be checked.</item>
 /// </list>
@@ -31,6 +33,7 @@ internal sealed partial class IdReferenceIndex
     };
 
     private readonly HashSet<string> _targets = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _stylesheetFragments = new(StringComparer.Ordinal);
     private readonly List<string> _scripts = new();
 
     /// <summary>Indexes the references of <paramref name="book"/>.</summary>
@@ -52,7 +55,19 @@ internal sealed partial class IdReferenceIndex
                     IndexElement(element, html.BookPath, html.Folder);
                 }
             }
-            else if (resource is TextResource text and not CssResource)
+            else if (resource is CssResource css)
+            {
+                // url(#x) in a stylesheet points into whichever document the rule is applied to.
+                foreach (Match match in UrlRegex().Matches(css.GetText()))
+                {
+                    string value = match.Groups["value"].Value.Trim();
+                    if (value.StartsWith('#') && value.Length > 1)
+                    {
+                        _stylesheetFragments.Add(value[1..]);
+                    }
+                }
+            }
+            else if (resource is TextResource text)
             {
                 foreach (Match match in ReferenceAttributeRegex().Matches(text.GetText()))
                 {
@@ -70,7 +85,9 @@ internal sealed partial class IdReferenceIndex
     {
         ArgumentNullException.ThrowIfNull(bookPath);
         ArgumentNullException.ThrowIfNull(id);
-        return _targets.Contains(Key(bookPath, id)) || _scripts.Any(s => s.Contains(id, StringComparison.Ordinal));
+        return _targets.Contains(Key(bookPath, id))
+            || _stylesheetFragments.Contains(id)
+            || _scripts.Any(s => s.Contains(id, StringComparison.Ordinal));
     }
 
     private void IndexElement(IElement element, string bookPath, string folder)
@@ -78,6 +95,13 @@ internal sealed partial class IdReferenceIndex
         if (string.Equals(element.LocalName, "script", StringComparison.OrdinalIgnoreCase))
         {
             _scripts.Add(element.TextContent);
+        }
+        else if (string.Equals(element.LocalName, "style", StringComparison.OrdinalIgnoreCase))
+        {
+            foreach (Match match in UrlRegex().Matches(element.TextContent))
+            {
+                AddReference(match.Groups["value"].Value, bookPath, folder);
+            }
         }
 
         foreach (IAttr attribute in element.Attributes)
@@ -92,7 +116,8 @@ internal sealed partial class IdReferenceIndex
                 }
             }
 
-            if (name.Equals("style", StringComparison.OrdinalIgnoreCase))
+            // url(#x) in the style attribute and in presentation attributes (fill, stroke, clip-path, mask, filter…).
+            if (name.Equals("style", StringComparison.OrdinalIgnoreCase) || value.Contains("url(", StringComparison.OrdinalIgnoreCase))
             {
                 foreach (Match match in UrlRegex().Matches(value))
                 {

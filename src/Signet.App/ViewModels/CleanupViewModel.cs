@@ -78,7 +78,7 @@ public sealed partial class CleanupViewModel : ViewModelBase
     /// <summary>The steps of the HTML tab, in execution order.</summary>
     public static IReadOnlyList<CleanupStep> HtmlSteps { get; } = new[]
     {
-        CleanupStep.EmptyElements, CleanupStep.BareSpans, CleanupStep.MergeDivs, CleanupStep.NestedDivs,
+        CleanupStep.UnusedIds, CleanupStep.EmptyElements, CleanupStep.BareSpans, CleanupStep.MergeDivs, CleanupStep.NestedDivs,
     };
 
     /// <summary>The steps of the Files tab, in execution order.</summary>
@@ -351,6 +351,7 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
         Warning = step switch
         {
             CleanupStep.MergeSameSelectors or CleanupStep.MergeSameProperties => Strings.Get("Cleanup_MergeWarning"),
+            CleanupStep.UnusedIds => Strings.Get("Cleanup_UnusedIdsWarning"),
             CleanupStep.EmptyElements => Strings.Get("Cleanup_EmptyElementsWarning"),
             CleanupStep.BareSpans => Strings.Get("Cleanup_BareSpansWarning"),
             CleanupStep.MergeDivs => Strings.Get("Cleanup_MergeDivsWarning"),
@@ -474,8 +475,8 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
             return Strings.Get("Cleanup_NothingFound");
         }
 
-        string summary = Step is CleanupStep.MergeSameSelectors or CleanupStep.MergeSameProperties or CleanupStep.EmptyElements or CleanupStep.BareSpans
-            or CleanupStep.MergeDivs or CleanupStep.NestedDivs
+        string summary = Step is CleanupStep.MergeSameSelectors or CleanupStep.MergeSameProperties or CleanupStep.UnusedIds
+            or CleanupStep.EmptyElements or CleanupStep.BareSpans or CleanupStep.MergeDivs or CleanupStep.NestedDivs
             ? Strings.Format($"Cleanup_{Step}_Summary", result.AppliedCount, result.Items.Count, result.AppliedRuleCount)
             : Strings.Format($"Cleanup_{Step}_Summary", result.AppliedCount, result.Items.Count);
         return result.RiskyCount > 0 ? summary + Strings.Format("Cleanup_RiskySummary", result.RiskyCount) : summary;

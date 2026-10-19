@@ -6167,6 +6167,12 @@
   <data name="Cleanup_Risk_MergeDivInline" xml:space="preserve">
     <value>{0}: koniec &lt;div&gt; nr {1} i początek &lt;div&gt; nr {2} to tekst lub elementy liniowe — zleją się w jedną linię zamiast zaczynać się od nowej</value>
   </data>
+  <data name="Cleanup_UnusedIds_File" xml:space="preserve">
+    <value>Nieużywane atrybuty id do usunięcia: {0}</value>
+  </data>
+  <data name="Cleanup_UnusedIds_Id" xml:space="preserve">
+    <value>id="{0}" w {1}</value>
+  </data>
   <data name="Cleanup_EmptyElements_File" xml:space="preserve">
     <value>Puste znaczniki do usunięcia: {0} ({1})</value>
   </data>

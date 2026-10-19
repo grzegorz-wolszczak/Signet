@@ -3890,11 +3890,23 @@ Insert anyway?</value>
   <data name="Cleanup_MergeSameProperties_Summary" xml:space="preserve">
     <value>Groups to merge: {0} of {1} (rules in the merged groups: {2}).</value>
   </data>
+  <data name="Cleanup_UnusedIds_Title" xml:space="preserve">
+    <value>Remove unused id attributes</value>
+  </data>
+  <data name="Cleanup_UnusedIds_Description" xml:space="preserve">
+    <value>Removes id attributes in the XHTML files that nothing in the book points to: no link (the table of contents and navigation included), no ID reference (for, headers, aria-*, url(#…)) and no script. The rest of the tag stays. This frees elements that an id kept from being removed or merged (empty tags, bare spans, adjacent and nested &lt;div&gt;s) — which is why the step runs before them.</value>
+  </data>
+  <data name="Cleanup_UnusedIds_Summary" xml:space="preserve">
+    <value>Items to apply: {0} of {1} (id attributes removed: {2}).</value>
+  </data>
+  <data name="Cleanup_UnusedIdsWarning" xml:space="preserve">
+    <value>Links from outside this book (e.g. reader bookmarks or references from other books) cannot be seen, so ids that are their target look unused — uncheck them if you need them. An id that a CSS selector reaches (#id, [id^=…]) and whose removal would change the styling is marked ⚠ and unchecked by default; each one lists what would change.</value>
+  </data>
   <data name="Cleanup_EmptyElements_Title" xml:space="preserve">
     <value>Remove empty &lt;p&gt;, &lt;span&gt; and &lt;div&gt; tags</value>
   </data>
   <data name="Cleanup_EmptyElements_Description" xml:space="preserve">
-    <value>Removes &lt;p&gt;, &lt;span&gt; and &lt;div&gt; elements with no content or only whitespace (e.g. &lt;p class="calibre8"&gt;&lt;/p&gt;). &amp;nbsp; and comments count as content. Elements with an id attribute are always kept (they can be a link target). From an empty &lt;span&gt; only the tags go, the space stays.</value>
+    <value>Removes &lt;p&gt;, &lt;span&gt; and &lt;div&gt; elements with no content or only whitespace (e.g. &lt;p class="calibre8"&gt;&lt;/p&gt;). &amp;nbsp; and comments count as content. Elements with an id attribute are always kept (they can be a link target) — the earlier step removes unused ids. From an empty &lt;span&gt; only the tags go, the space stays.</value>
   </data>
   <data name="Cleanup_EmptyElements_Summary" xml:space="preserve">
     <value>Items to apply: {0} of {1} (tags removed: {2}).</value>
