@@ -225,7 +225,8 @@ public sealed partial class MainWindowViewModel
 
         StartScreen = new StartScreenViewModel(
             _actions.Require(AppActionIds.Open), _actions.Require(AppActionIds.NewDefault),
-            () => ((IRecentFilesMenu)this).RecentFiles, path => ((IRecentFilesMenu)this).Open(path), _settings);
+            () => _settings.RecentFiles.Take(_settings.StartScreenRecentFilesLimit).ToList(),
+            path => ((IRecentFilesMenu)this).Open(path), path => ((IRecentFilesMenu)this).Remove(path), _settings);
         Changed += (_, _) => StartScreen.Refresh();
         _dockFactory.DocumentsEmptyContent = StartScreen;
 

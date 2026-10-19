@@ -13,8 +13,10 @@ namespace Signet.App.ViewModels;
 /// <param name="Folder">The folder of the file.</param>
 /// <param name="Path">The full path.</param>
 /// <param name="OpenCommand">Opens the file.</param>
+/// <param name="RemoveCommand">Removes the file from the list of recent files (the context menu of the entry).</param>
 /// <param name="IsHighlighted">Whether the entry is drawn as if the pointer were on it (the sample in Preferences only).</param>
-public sealed record StartScreenRecentFile(string Name, string Folder, string Path, ICommand OpenCommand, bool IsHighlighted = false);
+public sealed record StartScreenRecentFile(
+    string Name, string Folder, string Path, ICommand OpenCommand, ICommand RemoveCommand, bool IsHighlighted = false);
 
 /// <summary>
 /// The start screen shown in the empty document area while no book is open: "Open…", "New book" and the recent files.
@@ -44,25 +46,31 @@ public sealed partial class StartScreenViewModel : ObservableObject, IDisposable
 
     private readonly Func<IReadOnlyList<string>> _recentFiles;
     private readonly Action<string> _openRecent;
+    private readonly Action<string>? _removeRecent;
     private readonly SettingsStore? _settings;
 
     /// <summary>Creates the start screen.</summary>
     /// <param name="openCommand">"Open…" (File → Open).</param>
     /// <param name="newCommand">"New book" (File → New with the default version).</param>
-    /// <param name="recentFiles">The recent files, newest first.</param>
+    /// <param name="recentFiles">The recent files to show, newest first.</param>
     /// <param name="openRecent">Opens a recent file.</param>
+    /// <param name="removeRecent">
+    /// Removes a file from the list of recent files (the caller refreshes the screen, e.g. through the change event of its list);
+    /// <c>null</c> = the entries cannot be removed.
+    /// </param>
     /// <param name="settings">
     /// The settings the look of the list comes from (<see cref="Appearance"/>); the screen follows their changes. <c>null</c> = the
     /// default look.
     /// </param>
     public StartScreenViewModel(
         ICommand openCommand, ICommand newCommand, Func<IReadOnlyList<string>> recentFiles, Action<string> openRecent,
-        SettingsStore? settings = null)
+        Action<string>? removeRecent = null, SettingsStore? settings = null)
     {
         OpenCommand = openCommand ?? throw new ArgumentNullException(nameof(openCommand));
         NewCommand = newCommand ?? throw new ArgumentNullException(nameof(newCommand));
         _recentFiles = recentFiles ?? throw new ArgumentNullException(nameof(recentFiles));
         _openRecent = openRecent ?? throw new ArgumentNullException(nameof(openRecent));
+        _removeRecent = removeRecent;
         _settings = settings;
         if (_settings is not null)
         {
@@ -83,8 +91,8 @@ public sealed partial class StartScreenViewModel : ObservableObject, IDisposable
         RelayCommand nothing = new(() => { });
         StartScreenViewModel sample = new(
             nothing, nothing,
-            () => SampleFiles.Take(settings.RecentFilesLimit).Select(f => System.IO.Path.Combine(f.Folder, f.Name)).ToList(),
-            _ => { }, settings)
+            () => SampleFiles.Take(settings.StartScreenRecentFilesLimit).Select(f => System.IO.Path.Combine(f.Folder, f.Name)).ToList(),
+            _ => { }, null, settings)
         {
             IsSample = true,
             IsVisible = true,
@@ -104,13 +112,13 @@ public sealed partial class StartScreenViewModel : ObservableObject, IDisposable
 
     private void OnSettingChanged(object? sender, SettingChangedEventArgs e)
     {
-        if (e.QualifiedKey.Contains("start_screen_", StringComparison.Ordinal))
-        {
-            AppearanceChanged?.Invoke(this, EventArgs.Empty);
-        }
-        else if (e.QualifiedKey.Contains("recent_files_limit", StringComparison.Ordinal))
+        if (e.QualifiedKey.Contains("start_screen_recent_files_limit", StringComparison.Ordinal))
         {
             Refresh();
+        }
+        else if (e.QualifiedKey.Contains("start_screen_", StringComparison.Ordinal))
+        {
+            AppearanceChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -149,6 +157,7 @@ public sealed partial class StartScreenViewModel : ObservableObject, IDisposable
                 System.IO.Path.GetDirectoryName(path) ?? string.Empty,
                 path,
                 new RelayCommand(() => _openRecent(path)),
+                new RelayCommand(() => _removeRecent?.Invoke(path), () => _removeRecent is not null),
                 IsSample && index == SampleHighlightedIndex))
             .ToList();
 }

@@ -143,6 +143,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _mendShowDiff = _settings.MendShowDiff;
         _clipboardHistoryLimit = _settings.ClipboardHistoryLimit;
         _recentFilesLimit = _settings.RecentFilesLimit;
+        _startScreenRecentFilesLimit = _settings.StartScreenRecentFilesLimit;
         _previewRefreshDelay = _settings.UiPreviewTimeout;
         _tempFolderHome = _settings.TempFolderHome;
         _externalXEditorPath = _settings.ExternalXEditorPath;
@@ -930,7 +931,14 @@ public sealed partial class PreferencesViewModel : ObservableObject
     private int _recentFilesLimit;
 
     partial void OnRecentFilesLimitChanged(int value) =>
-        _settings.RecentFilesLimit = Math.Clamp(value, 0, SettingsStore.RecentFilesMax);
+        _settings.RecentFilesLimit = Math.Clamp(value, 0, SettingsStore.RecentFilesMenuMax);
+
+    /// <summary>How many recent files to show on the start screen (0–100; out of range — clamped).</summary>
+    [ObservableProperty]
+    private int _startScreenRecentFilesLimit;
+
+    partial void OnStartScreenRecentFilesLimitChanged(int value) =>
+        _settings.StartScreenRecentFilesLimit = Math.Clamp(value, 0, SettingsStore.RecentFilesMax);
 
     /// <summary>
     /// Delay (ms) of the "live" preview refresh after a change in Code Editor (100–10000; out of

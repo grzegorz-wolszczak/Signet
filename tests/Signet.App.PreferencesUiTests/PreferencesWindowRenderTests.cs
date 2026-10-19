@@ -931,7 +931,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         // Assert
         pane.IsEffectivelyVisible.Should().BeTrue("the General tab is selected");
         preview.DataContext.Should().BeSameAs(vm.StartScreenSample);
-        window.FindControl<NumericUpDown>("StartScreenRecentFilesLimitBox")!.Value.Should().Be(vm.RecentFilesLimit);
+        window.FindControl<NumericUpDown>("StartScreenRecentFilesLimitBox")!.Value.Should().Be(vm.StartScreenRecentFilesLimit);
 
         // Act
         window.FindControl<NumericUpDown>("StartScreenIndentBox")!.Value = 30;
@@ -942,7 +942,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         // Assert
         vm.StartScreenIndent.Should().Be(30);
         Button[] entries = preview.GetVisualDescendants().OfType<Button>().Where(b => b.Classes.Contains("recentFile")).ToArray();
-        entries.Should().HaveCount(vm.RecentFilesLimit);
+        entries.Should().HaveCount(vm.StartScreenSample.RecentFileItems.Count).And.NotBeEmpty();
         entries.Should().OnlyContain(b => b.Padding.Left == 30, "the indentation of the entries follows the setting");
         entries.Where(b => b.Classes.Contains("highlighted")).Should().ContainSingle();
 
@@ -2464,6 +2464,36 @@ public sealed class PreferencesWindowRenderTests : IDisposable
 
         // Assert
         gaps.Should().OnlyContain(gap => gap < 2, "each field sits at the right edge of the settings");
+        window.Close();
+    }
+
+    /// <summary>
+    /// The number of the recent files of the File menu (General page, up to 20) and the number of those on the start screen
+    /// (Start Screen page, up to 100) are two settings, each with its own box.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_File_menu_and_the_start_screen_have_a_limit_of_recent_files_each()
+    {
+        // Arrange
+        PreferencesWindow window = BuildWindow();
+        PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+        window.Width = 1100;
+        window.Height = 860;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        // Act
+        NumericUpDown menu = window.FindControl<NumericUpDown>("GeneralRecentFilesLimitBox")!;
+        NumericUpDown start = window.FindControl<NumericUpDown>("StartScreenRecentFilesLimitBox")!;
+        start.Value = 55;
+        menu.Value = 4;
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        menu.Maximum.Should().Be(20);
+        start.Maximum.Should().Be(100);
+        vm.StartScreenRecentFilesLimit.Should().Be(55);
+        vm.RecentFilesLimit.Should().Be(4);
         window.Close();
     }
 

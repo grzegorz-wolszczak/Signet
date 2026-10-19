@@ -43,6 +43,7 @@ public sealed class SettingsStoreTests
         sut.MainMenuIconSize.Should().Be(1.8);
         sut.ClipboardHistoryLimit.Should().Be(20);
         sut.RecentFilesLimit.Should().Be(9);
+        sut.StartScreenRecentFilesLimit.Should().Be(30);
         sut.CssEpub3ValidationSpec.Should().Be("css30");
         sut.HighlightOpenCloseTags.Should().BeTrue();
         sut.PreserveEntityCodeNames.Should().ContainSingle()
@@ -951,6 +952,25 @@ public sealed class SettingsStoreTests
 
         // Assert
         sut.RecentFilesLimit.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(100, 100)]
+    [InlineData(-1, 30)]
+    [InlineData(101, 30)]
+    public void StartScreenRecentFilesLimit_outside_0_to_100_falls_back_to_30(int stored, int expected)
+    {
+        // Arrange
+        using TempDir dir = new();
+        SettingsStore sut = NewStore(dir);
+
+        // Act
+        sut.StartScreenRecentFilesLimit = stored;
+
+        // Assert
+        sut.StartScreenRecentFilesLimit.Should().Be(expected);
+        sut.RecentFilesLimit.Should().Be(9, "the File menu has a limit of its own");
     }
 
     [Theory]

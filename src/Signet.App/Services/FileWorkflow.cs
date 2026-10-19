@@ -122,8 +122,8 @@ public sealed class FileWorkflow : IDisposable
     /// <summary>Default file name for a new publication.</summary>
     public const string DefaultFileName = "untitled.epub";
 
-    // We store up to the upper bound of the Preferences limit — the menu shows only the first
-    // SettingsStore.RecentFilesLimit entries, so lowering the limit does not lose history.
+    // We store up to the upper bound of the start screen limit — the start screen and the menu show only the first
+    // SettingsStore.StartScreenRecentFilesLimit / RecentFilesLimit entries, so lowering a limit does not lose history.
     private const int MaxRecentFiles = SettingsStore.RecentFilesMax;
 
     private readonly SettingsStore _settings;

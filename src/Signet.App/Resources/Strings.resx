@@ -6455,7 +6455,7 @@ Zamknij zakładkę</value>
     <value>Lista ostatnich plików</value>
   </data>
   <data name="PreferencesWindow_StartScreenRecentFilesLimit" xml:space="preserve">
-    <value>Maksymalna liczba ostatnich plików (także w menu Plik, 0–20)</value>
+    <value>Maksymalna liczba ostatnich plików na ekranie startowym (0–100)</value>
   </data>
   <data name="PreferencesWindow_StartScreenIndent" xml:space="preserve">
     <value>Wcięcie wpisów względem nagłówka listy (px)</value>

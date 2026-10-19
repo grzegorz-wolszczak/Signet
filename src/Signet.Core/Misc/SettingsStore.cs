@@ -28,15 +28,19 @@ public sealed class SettingsStore
 
     private const float ZoomNormal = 1.0f;
     private const int RecentFilesDefault = 9;
+    private const int StartScreenRecentFilesDefault = 30;
 
     /// <summary>Upper bound of <see cref="ClipboardHistoryLimit"/> (0 = disabled).</summary>
     public const int ClipboardHistoryMax = 20;
 
+    /// <summary>Upper bound of <see cref="RecentFilesLimit"/> (the File menu shows the first entries of <see cref="RecentFiles"/>).</summary>
+    public const int RecentFilesMenuMax = 20;
+
     /// <summary>
-    /// Upper bound of <see cref="RecentFilesLimit"/> — and also how many paths
-    /// <see cref="RecentFiles"/> keeps, so that lowering the limit does not lose history.
+    /// Upper bound of <see cref="StartScreenRecentFilesLimit"/> — and also how many paths
+    /// <see cref="RecentFiles"/> keeps, so that lowering a limit does not lose history.
     /// </summary>
-    public const int RecentFilesMax = 20;
+    public const int RecentFilesMax = 100;
 
     /// <summary>Lower bound of <see cref="UiPreviewTimeout"/> (ms).</summary>
     public const int UiPreviewTimeoutMin = 100;
@@ -966,17 +970,32 @@ public sealed class SettingsStore
 
     /// <summary>
     /// How many recently opened publications to show in the File menu (0 = none; a value outside
-    /// <c>0..<see cref="RecentFilesMax"/></c> → 9).
+    /// <c>0..<see cref="RecentFilesMenuMax"/></c> → 9). The menu shows the first entries of <see cref="RecentFiles"/>.
     /// </summary>
     public int RecentFilesLimit
     {
         get
         {
             int limit = ReadInt("recent_files_limit", RecentFilesDefault);
-            return limit is >= 0 and <= RecentFilesMax ? limit : RecentFilesDefault;
+            return limit is >= 0 and <= RecentFilesMenuMax ? limit : RecentFilesDefault;
         }
 
         set => Write("recent_files_limit", value);
+    }
+
+    /// <summary>
+    /// How many recently opened publications to show on the start screen (0 = none; a value outside
+    /// <c>0..<see cref="RecentFilesMax"/></c> → 30). The list scrolls when the entries do not fit the window.
+    /// </summary>
+    public int StartScreenRecentFilesLimit
+    {
+        get
+        {
+            int limit = ReadInt("start_screen_recent_files_limit", StartScreenRecentFilesDefault);
+            return limit is >= 0 and <= RecentFilesMax ? limit : StartScreenRecentFilesDefault;
+        }
+
+        set => Write("start_screen_recent_files_limit", value);
     }
 
     /// <summary>
