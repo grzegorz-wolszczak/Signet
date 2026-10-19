@@ -1,15 +1,21 @@
 using System;
 using System.IO;
+using System.Linq;
+using System.Threading;
 using SysPath = System.IO.Path;
 
 namespace Signet.Core.Tests.TestSupport;
 
 /// <summary>
 /// A disposable temporary directory under <c>%TEMP%/Signet.Tests</c>, deleted recursively
-/// on <see cref="Dispose"/> (best-effort).
+/// on <see cref="Dispose"/>. A few retries cover a short-lived lock; when a file stays open (a test did not
+/// dispose what holds it) <see cref="Dispose"/> throws, naming the directory and the files left.
 /// </summary>
 public sealed class TempDir : IDisposable
 {
+    private const int DeleteAttempts = 5;
+    private const int DeleteRetryDelayMs = 100;
+
     /// <summary>Creates a new, unique temporary directory.</summary>
     /// <param name="prefix">An optional directory name prefix.</param>
     public TempDir(string? prefix = null)
@@ -34,20 +40,42 @@ public sealed class TempDir : IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
-        try
+        for (int attempt = 1; ; attempt++)
         {
-            if (Directory.Exists(Path))
+            try
             {
-                Directory.Delete(Path, recursive: true);
+                if (Directory.Exists(Path))
+                {
+                    Directory.Delete(Path, recursive: true);
+                }
+
+                return;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                if (attempt == DeleteAttempts)
+                {
+                    throw new IOException(
+                        $"Could not delete the temporary directory '{Path}' after {DeleteAttempts} attempts: a file in it "
+                        + "is still open (a test did not dispose what holds it). Left: " + Left(), ex);
+                }
+
+                // A scanner or indexer can hold a fresh file for a moment.
+                Thread.Sleep(DeleteRetryDelayMs);
             }
         }
-        catch (IOException)
+    }
+
+    private string Left()
+    {
+        try
         {
-            // Best-effort cleanup — e.g. a temporarily locked file.
+            return string.Join(", ", Directory.EnumerateFiles(Path, "*", SearchOption.AllDirectories)
+                .Select(file => SysPath.GetRelativePath(Path, file)).Take(10));
         }
-        catch (UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            // j.w.
+            return "(unreadable)";
         }
     }
 }
