@@ -49,11 +49,18 @@ public sealed class TempDirTests
         // Arrange
         TempDir sut = new();
         FileStream held = new(sut.Combine(_fixture.Create<Guid>().ToString("N")), FileMode.Create, FileAccess.ReadWrite, FileShare.None);
-        System.Threading.Timer release = new(_ => held.Dispose(), null, 150, System.Threading.Timeout.Infinite);
+
+        // A thread of its own: the thread pool of a busy test run can be late by more than the retries last.
+        System.Threading.Thread release = new(() =>
+        {
+            System.Threading.Thread.Sleep(50);
+            held.Dispose();
+        });
+        release.Start();
 
         // Act
         sut.Dispose();
-        release.Dispose();
+        release.Join();
 
         // Assert
         Directory.Exists(sut.Path).Should().BeFalse();
