@@ -123,7 +123,7 @@ public static class RecentLocations
     // The open elements at the offset: a stack of opening tags walked in source order.
     private static string MarkupBreadcrumb(string text, int offset)
     {
-        TagLister lister = new(text);
+        TagLister lister = TagLister.For(text);
         List<TagLister.TagInfo> open = new();
         foreach (TagLister.TagInfo tag in lister.Tags)
         {

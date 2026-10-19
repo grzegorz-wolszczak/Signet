@@ -68,7 +68,7 @@ public static class SoftHyphenInserter
     {
         ArgumentNullException.ThrowIfNull(htmlSource);
 
-        TagLister lister = new(htmlSource);
+        TagLister lister = TagLister.For(htmlSource);
         List<(int Pos, string Text)> insertions = new();
         Stack<string> openTags = new();
 

@@ -190,7 +190,7 @@ public static partial class FootnoteEditor
             if (!parsed.TryGetValue(file, out (string Text, TagLister Tags) entry))
             {
                 string text = file.GetText();
-                parsed[file] = entry = (text, new TagLister(text));
+                parsed[file] = entry = (text, TagLister.For(text));
             }
 
             return entry;
@@ -452,7 +452,7 @@ public static partial class FootnoteEditor
         // The note: its text without the link back, in Signet's template.
         HtmlResource noteFile = footnote.NoteFile;
         string text = noteFile.GetText();
-        TagLister tags = new(text);
+        TagLister tags = TagLister.For(text);
         Element note = FindElementById(tags, text, footnote.NoteId)!;
         (Anchor? backlink, int backTo) = NoteBacklink(tags, text, note, references);
         (string content, _) = CutContent(tags, text, note, backlink);
@@ -514,7 +514,7 @@ public static partial class FootnoteEditor
 
         // The reference, with the wrappers that held only it and the empty element its link back led to.
         string text = referenceFile.GetText();
-        TagLister tags = new(text);
+        TagLister tags = TagLister.For(text);
         Anchor anchor = FindAnchor(tags, text, footnote.ReferenceHref, footnote.ReferenceOccurrence)!;
         string? returnId = footnote.ReferenceId.Length > 0 ? footnote.ReferenceId : null;
         (int start, int end) = Unwrap(tags, text, anchor.OuterStart, anchor.OuterEnd, returnId);
@@ -585,7 +585,7 @@ public static partial class FootnoteEditor
     // paragraph when it has no block element.
     private static List<NoteBlock> NoteBlocks(string content, bool keepClasses)
     {
-        TagLister tags = new(content);
+        TagLister tags = TagLister.For(content);
         List<NoteBlock> blocks = new();
         StringBuilder inline = new();
 
@@ -682,7 +682,7 @@ public static partial class FootnoteEditor
     {
         Dictionary<string, int> groupOf = new(StringComparer.Ordinal);
         string text = file.GetText();
-        TagLister tags = new(text);
+        TagLister tags = TagLister.For(text);
         List<Element> elements = notes
             .Select(n => FindElementById(tags, text, n.NoteId))
             .OfType<Element>()
@@ -784,7 +784,7 @@ public static partial class FootnoteEditor
     private static void InsertIntoGroup(HtmlResource file, int group, string note)
     {
         string text = file.GetText();
-        TagLister tags = new(text);
+        TagLister tags = TagLister.For(text);
         Element container = FindContainer(tags, text, GlobalContainerClass)!;
         Element target = ChildElements(tags, text, container)
             .Where(c => HasClass(text.Substring(c.Start, tags.At(c.OpenIndex).Len), GroupClass))
@@ -799,7 +799,7 @@ public static partial class FootnoteEditor
         foreach (Footnote footnote in FootnoteScanner.Scan(book).Where(f => f.IsSignet && ReferenceEquals(f.NoteFile, from)))
         {
             string text = from.GetText();
-            Element? note = FindElementById(new TagLister(text), text, footnote.NoteId);
+            Element? note = FindElementById(TagLister.For(text), text, footnote.NoteId);
             if (note is null)
             {
                 continue;
@@ -810,7 +810,7 @@ public static partial class FootnoteEditor
             from.SetText(text.Remove(start, end - start));
             InsertNote(to, markup, FootnotePlacement.Global, book.IsEpub3);
             string referenceText = footnote.ReferenceFile.GetText();
-            if (FindAnchor(new TagLister(referenceText), referenceText, footnote.ReferenceHref, footnote.ReferenceOccurrence) is { Href: { } href })
+            if (FindAnchor(TagLister.For(referenceText), referenceText, footnote.ReferenceHref, footnote.ReferenceOccurrence) is { Href: { } href })
             {
                 footnote.ReferenceFile.SetText(Apply(
                     referenceText, new[] { new TextEdit(href.Start, href.Length, Encode(Href(footnote.ReferenceFile.BookPath, to.BookPath, footnote.NoteId))) }));
@@ -826,7 +826,7 @@ public static partial class FootnoteEditor
     {
         while (true)
         {
-            TagLister tags = new(text);
+            TagLister tags = TagLister.For(text);
             List<TagLister.TagInfo> open = OpenElementsAt(tags, offset);
             if (open.Count == 0)
             {
@@ -865,7 +865,7 @@ public static partial class FootnoteEditor
         {
             changed = false;
             string text = file.GetText();
-            TagLister tags = new(text);
+            TagLister tags = TagLister.For(text);
             for (int i = 0; i < tags.Count && tags.At(i).Pos >= 0; i++)
             {
                 TagLister.TagInfo tag = tags.At(i);
@@ -931,7 +931,7 @@ public static partial class FootnoteEditor
     // Whether nothing but headings, lines and whitespace is left in the body.
     private static bool OnlyHeadingsLeft(string text)
     {
-        TagLister tags = new(text);
+        TagLister tags = TagLister.For(text);
         int body = tags.FindBodyOpenTag();
         int bodyClose = tags.FindBodyCloseTag();
         if (body < 0 || bodyClose < 0)
@@ -997,7 +997,7 @@ public static partial class FootnoteEditor
         }
 
         string text = html.GetText();
-        TagLister tags = new(text);
+        TagLister tags = TagLister.For(text);
         int index = tags.FindLastTagOnOrBefore(link.Position);
         if (index < 0 || tags.At(index).Pos != link.Position || !tags.At(index).TagName.Equals("a", StringComparison.OrdinalIgnoreCase))
         {
@@ -1127,7 +1127,7 @@ public static partial class FootnoteEditor
             }
 
             string text = footnote.NoteFile.GetText();
-            TagLister tags = new(text);
+            TagLister tags = TagLister.For(text);
             if (FindElementById(tags, text, footnote.NoteId) is not { } note
                 || Compact(PlainText(ConvertedContent(tags, text, note, footnote))) != converted[i].Expected)
             {

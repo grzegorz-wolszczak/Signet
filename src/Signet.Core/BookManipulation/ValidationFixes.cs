@@ -205,7 +205,7 @@ public sealed class BareBodyTextFix : ValidationFix
     /// <summary>Wraps every run of text that is a direct child of <c>&lt;body&gt;</c> in <c>&lt;p&gt;</c>.</summary>
     internal static string WrapBareBodyText(string text)
     {
-        TagLister tags = new(text);
+        TagLister tags = TagLister.For(text);
         int bodyOpen = tags.FindBodyOpenTag();
         if (bodyOpen < 0)
         {

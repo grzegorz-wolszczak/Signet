@@ -29,6 +29,7 @@ public sealed class ClipboardHistoryService : IDisposable
     private readonly DispatcherTimer _timer;
     private readonly List<string> _items;
     private IClipboard? _clipboard;
+    private bool _polling;
     private string? _lastSeenText;
 
     /// <summary>Creates the service and loads the existing history from <paramref name="settings"/>.</summary>
@@ -63,12 +64,15 @@ public sealed class ClipboardHistoryService : IDisposable
 
     private async Task PollAsync()
     {
-        if (_clipboard is null)
+        // A read can take longer than the poll interval (a clipboard owner that renders its data on request): the next
+        // ticks wait for it instead of starting more reads of the same clipboard.
+        if (_clipboard is null || _polling)
         {
             return;
         }
 
         string? text;
+        _polling = true;
         try
         {
             text = await _clipboard.TryGetTextAsync();
@@ -76,6 +80,10 @@ public sealed class ClipboardHistoryService : IDisposable
         catch (Exception)
         {
             return;
+        }
+        finally
+        {
+            _polling = false;
         }
 
         ApplyClipboardText(text);

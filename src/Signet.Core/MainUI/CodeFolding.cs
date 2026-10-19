@@ -38,7 +38,7 @@ public static class CodeFolding
     {
         ArgumentNullException.ThrowIfNull(text);
         LineIndex lines = new(text);
-        TagLister lister = new(text);
+        TagLister lister = TagLister.For(text);
         IReadOnlyList<TagLister.TagInfo> tags = lister.Tags;
         List<FoldRegion> regions = new();
 

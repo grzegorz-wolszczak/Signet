@@ -102,6 +102,35 @@ public sealed class ReformatRestructureTests
         chapter.GetText().Should().Contain("a&#8212;b");
     }
 
+    /// <summary>
+    /// A file whose linked stylesheet sets <c>white-space</c> keeps its spaces; the others have them collapsed. Every
+    /// file linking the stylesheet keeps them, also the ones after the first (the answer for a stylesheet is remembered
+    /// for the whole operation).
+    /// </summary>
+    [Theory]
+    [InlineData("p { white-space: pre-wrap; }")]
+    [InlineData("p { white-space-collapse: preserve; }")]
+    public void PrettyPrintAllHtml_keeps_the_spaces_of_every_file_whose_stylesheet_sets_white_space(string css)
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadDeepFolders(temp);
+        book.GetCssResources().Single().SetText(css);
+        HtmlResource[] files = { Html(book, "ch01.xhtml"), Html(book, "title.xhtml"), Html(book, "nav.xhtml") };
+        foreach (HtmlResource file in files)
+        {
+            file.SetText(file.GetText().Replace("</body>", "<p>a   b</p></body>", StringComparison.Ordinal));
+        }
+
+        // Act
+        book.PrettyPrintAllHtml();
+
+        // Assert
+        files[0].GetText().Should().Contain("a   b", "the chapter links the stylesheet");
+        files[1].GetText().Should().Contain("a   b", "the title page links the same stylesheet");
+        files[2].GetText().Should().Contain("a b").And.NotContain("a   b", "the nav does not link it");
+    }
+
     [Fact]
     public void MendAllHtml_is_idempotent()
     {

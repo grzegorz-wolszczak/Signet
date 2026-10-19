@@ -397,7 +397,7 @@ public static class XhtmlDoc
     {
         ArgumentNullException.ThrowIfNull(source);
 
-        TagLister tagList = new(source);
+        TagLister tagList = TagLister.For(source);
         int bo = tagList.FindBodyOpenTag();
         int bc = tagList.FindBodyCloseTag();
         if (bo < 0 || bc < 0)
@@ -466,7 +466,7 @@ public static class XhtmlDoc
     {
         ArgumentNullException.ThrowIfNull(source);
 
-        TagLister tagList = new(source);
+        TagLister tagList = TagLister.For(source);
         int bo = tagList.FindBodyOpenTag();
         int bc = tagList.FindBodyCloseTag();
         int pos = Math.Clamp(position, 0, source.Length);

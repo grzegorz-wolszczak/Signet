@@ -54,9 +54,12 @@ public static class LinkIntegrityValidator
 
         List<ValidationResult> results = new();
 
+        // The ids and names of each document, gathered once: many links (e.g. every footnote reference) point into the
+        // same document, and searching all its elements for each of them made the check quadratic.
+        Dictionary<IDocument, HashSet<string>> anchors = new(ReferenceEqualityComparer.Instance);
         foreach (HtmlResource html in book.GetHtmlResources())
         {
-            CheckHtmlLinks(book, html, allBookPaths, lowerToActual, manifestBookPaths, results);
+            CheckHtmlLinks(book, html, allBookPaths, lowerToActual, manifestBookPaths, anchors, results);
         }
 
         foreach (CssResource css in book.GetCssResources())
@@ -94,6 +97,7 @@ public static class LinkIntegrityValidator
         HashSet<string> allBookPaths,
         Dictionary<string, string> lowerToActual,
         HashSet<string> manifestBookPaths,
+        Dictionary<IDocument, HashSet<string>> anchors,
         List<ValidationResult> results)
     {
         IDocument document = html.GetDocument();
@@ -107,13 +111,13 @@ public static class LinkIntegrityValidator
             string? rawHref = element.GetAttribute("href");
             if (rawHref is not null)
             {
-                CheckReference(book, html, rawHref, document, allBookPaths, lowerToActual, manifestBookPaths, results);
+                CheckReference(book, html, rawHref, document, allBookPaths, lowerToActual, manifestBookPaths, anchors, results);
             }
 
             string? rawSrc = element.GetAttribute("src");
             if (rawSrc is not null)
             {
-                CheckReference(book, html, rawSrc, document, allBookPaths, lowerToActual, manifestBookPaths, results);
+                CheckReference(book, html, rawSrc, document, allBookPaths, lowerToActual, manifestBookPaths, anchors, results);
             }
         }
     }
@@ -126,6 +130,7 @@ public static class LinkIntegrityValidator
         HashSet<string> allBookPaths,
         Dictionary<string, string> lowerToActual,
         HashSet<string> manifestBookPaths,
+        Dictionary<IDocument, HashSet<string>> anchors,
         List<ValidationResult> results)
     {
         if (rawReference.Length == 0 || IsExternalReference(rawReference))
@@ -138,7 +143,7 @@ public static class LinkIntegrityValidator
         if (pathPart.Length == 0)
         {
             // A fragment-only reference (e.g. href="#chapter-2") — the target is the same document.
-            if (fragment.Length > 0 && !HasAnchor(ownerDocument, fragment))
+            if (fragment.Length > 0 && !HasAnchor(ownerDocument, fragment, anchors))
             {
                 Add(results, ValidationSeverity.Error, owner.BookPath, "Validation_BadFragmentSameFile",
                     CoreStrings.Format("Validation_BadFragmentSameFile", fragment));
@@ -151,7 +156,7 @@ public static class LinkIntegrityValidator
 
         if (allBookPaths.Contains(targetBookPath))
         {
-            if (fragment.Length > 0 && !TargetHasAnchor(book, targetBookPath, fragment))
+            if (fragment.Length > 0 && !TargetHasAnchor(book, targetBookPath, fragment, anchors))
             {
                 Add(results, ValidationSeverity.Error, owner.BookPath, "Validation_BadFragment",
                     CoreStrings.Format("Validation_BadFragment", rawReference, fragment, targetBookPath));
@@ -234,7 +239,8 @@ public static class LinkIntegrityValidator
     private static string CorrectedReference(Resource owner, string rawReference, string pathPart, string actualBookPath) =>
         Core.Utility.UrlEncodePath(Core.BookPath.Relative(owner.BookPath, actualBookPath)) + rawReference[pathPart.Length..];
 
-    private static bool TargetHasAnchor(Book book, string targetBookPath, string fragment)
+    private static bool TargetHasAnchor(
+        Book book, string targetBookPath, string fragment, Dictionary<IDocument, HashSet<string>> anchors)
     {
         if (book.GetFolderKeeper().GetResourceByBookPathNoThrow(targetBookPath) is not HtmlResource target)
         {
@@ -243,13 +249,33 @@ public static class LinkIntegrityValidator
             return true;
         }
 
-        return HasAnchor(target.GetDocument(), fragment);
+        return HasAnchor(target.GetDocument(), fragment, anchors);
     }
 
-    private static bool HasAnchor(IDocument document, string fragment) =>
-        document.All.Any(e =>
-            string.Equals(e.GetAttribute("id"), fragment, StringComparison.Ordinal) ||
-            string.Equals(e.GetAttribute("name"), fragment, StringComparison.Ordinal));
+    // Whether an element of the document has the fragment as its id or name.
+    private static bool HasAnchor(IDocument document, string fragment, Dictionary<IDocument, HashSet<string>> anchors)
+    {
+        if (!anchors.TryGetValue(document, out HashSet<string>? names))
+        {
+            names = new HashSet<string>(StringComparer.Ordinal);
+            foreach (IElement element in document.All)
+            {
+                if (element.GetAttribute("id") is { } id)
+                {
+                    names.Add(id);
+                }
+
+                if (element.GetAttribute("name") is { } name)
+                {
+                    names.Add(name);
+                }
+            }
+
+            anchors[document] = names;
+        }
+
+        return names.Contains(fragment);
+    }
 
     private static bool IsExternalReference(string reference)
     {

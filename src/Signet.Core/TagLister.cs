@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using Signet.Core.Localization;
 
 namespace Signet.Core;
@@ -69,6 +70,10 @@ public sealed class TagLister
     private int _bodyOpenTag = -1;
     private int _bodyCloseTag = -1;
 
+    // The lister built last by For: the Code Editor asks for the tags of the same text many times in a row (each caret
+    // move runs several checks of what the caret is in), and building the list is a pass over the whole file.
+    private static Cached? s_last;
+
     /// <summary>Creates the scanner and immediately builds the tag list for the given source.</summary>
     public TagLister(string source)
     {
@@ -76,8 +81,26 @@ public sealed class TagLister
         Reload(source);
     }
 
-    /// <summary>Loads a new source and rebuilds the tag list.</summary>
-    public void Reload(string source)
+    /// <summary>
+    /// The tag list of a source: the one built last when the source is the same string instance (a string does not
+    /// change, so the list still holds), a new one otherwise. A lister is not changed once built, so it can be shared
+    /// (also across threads).
+    /// </summary>
+    public static TagLister For(string source)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        if (Volatile.Read(ref s_last) is { } last && ReferenceEquals(last.Source, source))
+        {
+            return last.Lister;
+        }
+
+        TagLister lister = new(source);
+        Volatile.Write(ref s_last, new Cached(source, lister));
+        return lister;
+    }
+
+    // Loads a new source and rebuilds the tag list.
+    private void Reload(string source)
     {
         ArgumentNullException.ThrowIfNull(source);
         _source = source;
@@ -839,6 +862,8 @@ public sealed class TagLister
 
         return p;
     }
+
+    private sealed record Cached(string Source, TagLister Lister);
 
     /// <summary>
     /// A single entry of the tag list. All positions are counted in characters from the start of the source.

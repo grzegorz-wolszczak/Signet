@@ -101,6 +101,11 @@ Fixed technology set for all test projects:
 | Avalonia view tests (UI thread) | **`Avalonia.Headless.XUnit`** — `[AvaloniaFact]` / `[AvaloniaTheory]`, projects `tests/Signet.App.UiTests`, `tests/Signet.App.MainWindowUiTests`, `tests/Signet.App.PreferencesUiTests` |
 
 Rules:
+- **Every test has explicit `// Arrange`, `// Act`, `// Assert` sections** (all test projects, the TreeDataGrid
+  fork's tests included). A test of several steps repeats the pairs in order (`// Act`, `// Assert`, `// Act`,
+  `// Assert`, …) instead of being split. When acting and asserting is one expression (e.g.
+  `sut.Invoking(x => x.Run()).Should().Throw<…>()`) the section is `// Act & Assert`. A test with nothing to
+  arrange has no `// Arrange` section.
 - Do not use xUnit `Assert.*` for state assertions — always AwesomeAssertions.
 - Generate values irrelevant to the tested behavior with AutoFixture; do not hard-code them.
 - Unit tests live in `tests/Signet.Core.Tests` and `tests/Signet.App.Tests`; tests that use sample

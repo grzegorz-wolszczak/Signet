@@ -65,6 +65,33 @@ public sealed class TabManagerTests
         tabs.Dispose();
     }
 
+    /// <summary>
+    /// A closed image tab lets go of its image: the resource lives as long as the book, and a tab still subscribed to it
+    /// stayed in memory with its bitmap and reloaded it whenever the file changed on disk.
+    /// </summary>
+    [Fact]
+    public void A_closed_image_tab_no_longer_follows_its_file_on_disk()
+    {
+        using TempDir temp = new();
+        using Book book = Load(temp);
+        (TabManager tabs, MainDockFactory dock) = NewManager();
+        tabs.SetBook(book);
+        ImageResource image = book.GetAllResources().OfType<ImageResource>().First();
+        tabs.OpenResource(image);
+        ImageTabViewModel view = Documents(dock).OfType<ImageTabViewModel>().Single();
+        List<string?> changes = new();
+        view.PropertyChanged += (_, e) => changes.Add(e.PropertyName);
+        image.NotifyUpdatedOnDisk();
+        changes.Should().Contain(nameof(ImageTabViewModel.InfoLine), "an open tab follows its file");
+
+        tabs.CloseAllTabs();
+        changes.Clear();
+        image.NotifyUpdatedOnDisk();
+
+        changes.Should().BeEmpty("a closed tab no longer follows the file");
+        tabs.Dispose();
+    }
+
     [Fact]
     public void Reopening_a_resource_activates_the_existing_document()
     {

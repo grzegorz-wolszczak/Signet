@@ -153,7 +153,7 @@ public sealed partial class CodeEditorModel
             return null;
         }
 
-        var lister = new TagLister(text);
+        var lister = TagLister.For(text);
         int i = lister.FindFirstTagOnOrAfter(pos);
         TagLister.TagInfo ti = lister.At(i);
         if (pos < ti.Pos || pos >= ti.Pos + ti.Len)
@@ -226,7 +226,7 @@ public sealed partial class CodeEditorModel
             return null;
         }
 
-        var lister = new TagLister(_text);
+        var lister = TagLister.For(_text);
         TagLister.TagInfo ti = lister.At(lister.FindLastTagOnOrBefore(closeTagOffset));
         return ti.Kind == TagKind.End && ti.Pos == closeTagOffset && ti.OpenLen > 0
             ? (ti.OpenPos, ti.OpenLen)
@@ -249,7 +249,7 @@ public sealed partial class CodeEditorModel
         string text = _text;
         int pos = Math.Clamp(caretOffset, 0, text.Length);
 
-        var lister = new TagLister(text);
+        var lister = TagLister.For(text);
         int i = lister.FindFirstTagOnOrAfter(pos);
         TagLister.TagInfo ti = lister.At(i);
         if (pos < ti.Pos || pos >= ti.Pos + ti.Len || ti.Kind is not (TagKind.Begin or TagKind.SelfClosing))
@@ -313,7 +313,7 @@ public sealed partial class CodeEditorModel
 
         if (Syntax is CodeEditorSyntax.Html or CodeEditorSyntax.Xml)
         {
-            var lister = new TagLister(text);
+            var lister = TagLister.For(text);
             TagLister.TagInfo ti = lister.At(lister.FindFirstTagOnOrAfter(pos));
             if (pos >= ti.Pos && pos < ti.Pos + ti.Len)
             {
@@ -372,7 +372,7 @@ public sealed partial class CodeEditorModel
 
         string text = _text;
         int pos = Math.Clamp(caretOffset, 0, text.Length);
-        var lister = new TagLister(text);
+        var lister = TagLister.For(text);
         TagLister.TagInfo ti = lister.At(lister.FindFirstTagOnOrAfter(pos));
         if (pos < ti.Pos || pos >= ti.Pos + ti.Len || ti.Kind is not (TagKind.Begin or TagKind.SelfClosing))
         {

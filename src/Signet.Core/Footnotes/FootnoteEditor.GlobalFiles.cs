@@ -103,7 +103,7 @@ public static partial class FootnoteEditor
     // Besides the notes and the headings, at most IntroLimit characters of text in the body.
     private static bool IsDedicated(string text, HashSet<string> noteIds)
     {
-        TagLister tags = new(text);
+        TagLister tags = TagLister.For(text);
         List<(int Start, int End)> skipped = new();
         for (int i = 0; i < tags.Count && tags.At(i).Pos >= 0; i++)
         {
@@ -146,7 +146,7 @@ public static partial class FootnoteEditor
     private static List<GlobalFileHint> Hints(Book book, HtmlResource file, string text, NavProcessor? landmarks)
     {
         List<GlobalFileHint> hints = new();
-        TagLister tags = new(text);
+        TagLister tags = TagLister.For(text);
         bool type = false;
         bool role = false;
         for (int i = 0; i < tags.Count && tags.At(i).Pos >= 0; i++)

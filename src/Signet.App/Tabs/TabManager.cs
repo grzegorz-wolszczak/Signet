@@ -308,6 +308,11 @@ public sealed class TabManager : IDisposable
         _dockFactory.DockableClosed -= OnDockableClosed;
 
         _model.Dispose();
+        foreach (ContentTabViewModel view in _views.Values)
+        {
+            view.Release();
+        }
+
         _views.Clear();
         _disposed = true;
     }
@@ -620,20 +625,20 @@ public sealed class TabManager : IDisposable
 
         view.Save();
 
-        if (_bridging || DocumentDock is null)
+        if (!_bridging && DocumentDock is not null)
         {
-            return;
+            _bridging = true;
+            try
+            {
+                _dockFactory.CloseDockable(view);
+            }
+            finally
+            {
+                _bridging = false;
+            }
         }
 
-        _bridging = true;
-        try
-        {
-            _dockFactory.CloseDockable(view);
-        }
-        finally
-        {
-            _bridging = false;
-        }
+        view.Release();
     }
 
     private void OnModelTabCaptionChanged(object? sender, TabEventArgs e)

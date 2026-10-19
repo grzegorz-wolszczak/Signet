@@ -2084,7 +2084,7 @@ public sealed partial class MainWindowViewModel
     // The offset of the first non-whitespace character after the <body> opening tag (0 without a body).
     private static int BodyContentStart(string text)
     {
-        TagLister lister = new(text);
+        TagLister lister = TagLister.For(text);
         int bodyOpen = lister.FindBodyOpenTag();
         if (bodyOpen < 0)
         {

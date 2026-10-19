@@ -45,7 +45,7 @@ internal static class NestedDivCollapser
     public static IReadOnlyList<NestedDivChain> FindChains(string text)
     {
         ArgumentNullException.ThrowIfNull(text);
-        TagLister lister = new(text);
+        TagLister lister = TagLister.For(text);
         IReadOnlyList<TagLister.TagInfo> tags = lister.Tags;
         List<NestedDivChain> chains = new();
         HashSet<int> inner = new();
@@ -89,7 +89,7 @@ internal static class NestedDivCollapser
     public static string? Collapse(string text, int outerPos)
     {
         ArgumentNullException.ThrowIfNull(text);
-        TagLister lister = new(text);
+        TagLister lister = TagLister.For(text);
         IReadOnlyList<TagLister.TagInfo> tags = lister.Tags;
         int outerIndex = -1;
         for (int i = 0; i < tags.Count; i++)
