@@ -6484,4 +6484,94 @@ Close the tab</value>
   <data name="PreviewSample_Hint" xml:space="preserve">
     <value>Click a paragraph to move the highlight, as the caret does in the editor.</value>
   </data>
+  <data name="Action_MainWindow_ChangeFootnotePlacement" xml:space="preserve">
+    <value>Change Footnote &amp;Placement (Local / Global)...</value>
+  </data>
+  <data name="FootnotePlacementWindow_Title" xml:space="preserve">
+    <value>Change Footnote Placement (Local / Global)</value>
+  </data>
+  <data name="FootnotePlacementWindow_Intro" xml:space="preserve">
+    <value>Check the footnotes of Signet that should change their kind: a local one (at the end of the file with its reference) becomes global (in the notes file), a global one becomes local. The footnotes are renumbered afterwards. A global footnote that references from several files lead to can only be global (it is grayed out). A checkpoint is taken before the change, and Cancel in the progress window puts the book back.</value>
+  </data>
+  <data name="FootnotePlacementWindow_GlobalFile" xml:space="preserve">
+    <value>File of the global footnotes:</value>
+  </data>
+  <data name="FootnotePlacementWindow_GlobalFileHint" xml:space="preserve">
+    <value>It matters for the footnotes that become global. When you choose another file than the one that holds the global footnotes now, all of them move to it.</value>
+  </data>
+  <data name="FootnotePlacementWindow_NewFile" xml:space="preserve">
+    <value>{0} (new file)</value>
+  </data>
+  <data name="FootnotePlacementWindow_CurrentFile" xml:space="preserve">
+    <value>{0} (the current notes file)</value>
+  </data>
+  <data name="FootnotePlacementWindow_ShowLocal" xml:space="preserve">
+    <value>Show local</value>
+  </data>
+  <data name="FootnotePlacementWindow_ShowGlobal" xml:space="preserve">
+    <value>Show global</value>
+  </data>
+  <data name="FootnotePlacementWindow_Summary" xml:space="preserve">
+    <value>{0} of {1} checked (to global: {2}, to local: {3})</value>
+  </data>
+  <data name="FootnotePlacementWindow_DoubleClickHint" xml:space="preserve">
+    <value>Double-click opens the reference in the code.</value>
+  </data>
+  <data name="FootnotePlacementWindow_None" xml:space="preserve">
+    <value>The book has no footnotes of Signet.</value>
+  </data>
+  <data name="FootnotePlacementWindow_ColumnFootnote" xml:space="preserve">
+    <value>Footnote</value>
+  </data>
+  <data name="FootnotePlacementWindow_ColumnKind" xml:space="preserve">
+    <value>Kind</value>
+  </data>
+  <data name="FootnotePlacementWindow_ColumnText" xml:space="preserve">
+    <value>Text</value>
+  </data>
+  <data name="FootnotePlacementWindow_ColumnFile" xml:space="preserve">
+    <value>File</value>
+  </data>
+  <data name="FootnotePlacementWindow_ColumnRemark" xml:space="preserve">
+    <value>Remarks</value>
+  </data>
+  <data name="FootnotePlacementWindow_Apply" xml:space="preserve">
+    <value>Change kind</value>
+  </data>
+  <data name="FootnotePlacementWindow_FileMore" xml:space="preserve">
+    <value>{0} (+{1})</value>
+  </data>
+  <data name="FootnotePlacementWindow_BlockedSeveralFiles" xml:space="preserve">
+    <value>References from several files — it can only be global</value>
+  </data>
+  <data name="FootnotePlacement_Local" xml:space="preserve">
+    <value>local</value>
+  </data>
+  <data name="FootnotePlacement_Global" xml:space="preserve">
+    <value>global</value>
+  </data>
+  <data name="FootnotePlacement_Analyzing" xml:space="preserve">
+    <value>Analyzing the footnotes…</value>
+  </data>
+  <data name="FootnotePlacement_Progress_Preparing" xml:space="preserve">
+    <value>Preparing…</value>
+  </data>
+  <data name="FootnotePlacement_Progress_Moving" xml:space="preserve">
+    <value>Moving footnotes: {0} of {1}</value>
+  </data>
+  <data name="FootnotePlacement_Progress_Finishing" xml:space="preserve">
+    <value>Writing the files and numbering the footnotes…</value>
+  </data>
+  <data name="CheckpointOp_ChangeFootnotePlacement" xml:space="preserve">
+    <value>Change footnote placement</value>
+  </data>
+  <data name="Status_NoSignetFootnotes" xml:space="preserve">
+    <value>The book has no footnotes of Signet.</value>
+  </data>
+  <data name="Status_FootnotePlacementChanged" xml:space="preserve">
+    <value>Footnote placement changed: {0}.</value>
+  </data>
+  <data name="Status_FootnotePlacementChangedSkipped" xml:space="preserve">
+    <value>Footnote placement changed: {0}, skipped: {1}.</value>
+  </data>
 </root>

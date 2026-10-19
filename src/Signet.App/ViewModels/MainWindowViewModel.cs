@@ -399,6 +399,7 @@ public sealed partial class MainWindowViewModel
         _actions.SetHandler(AppActionIds.RenumberFootnotes, () => ((ICodeTabHost)this).RenumberFootnotes());
         _actions.SetHandler(AppActionIds.ConvertFootnotes, () => ((ICodeTabHost)this).ShowFootnoteConversion());
         _actions.SetHandler(AppActionIds.UnifyFootnoteLetters, () => ((ICodeTabHost)this).ShowFootnoteLetters());
+        _actions.SetHandler(AppActionIds.ChangeFootnotePlacement, () => FootnotePlacementRequested?.Invoke(this, EventArgs.Empty));
 
         // Reformat HTML / Restructure Epub to Signet Norm / Use Standard File Extensions /
         // Rebase Manifest IDs.

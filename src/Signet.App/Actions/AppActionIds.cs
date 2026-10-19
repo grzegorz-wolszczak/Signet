@@ -203,6 +203,9 @@ public static class AppActionIds
     /// <summary>Tools → Footnotes → Unify Letters of Shared Footnotes (the dialog with the notes in another style).</summary>
     public const string UnifyFootnoteLetters = "MainWindow.UnifyFootnoteLetters";
 
+    /// <summary>Tools → Footnotes → Change Footnote Placement (the dialog that moves footnotes of Signet between local and global).</summary>
+    public const string ChangeFootnotePlacement = "MainWindow.ChangeFootnotePlacement";
+
     /// <summary>Add soft hyphens.</summary>
     public const string AddSoftHyphens = "MainWindow.AddSoftHyphens";
 

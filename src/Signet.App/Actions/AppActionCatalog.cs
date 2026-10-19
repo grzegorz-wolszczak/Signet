@@ -186,6 +186,7 @@ public static class AppActionCatalog
         new("MainWindow.RenumberFootnotes", "&Renumber Footnotes", "", "footnotes-renumber", "Tools"),
         new("MainWindow.ConvertFootnotes", "&Convert Footnotes of Other Origin...", "", "footnotes-convert", "Tools"),
         new("MainWindow.UnifyFootnoteLetters", "&Unify Letters of Shared Footnotes...", "", "footnotes-unify-letters", "Tools"),
+        new("MainWindow.ChangeFootnotePlacement", "Change Footnote &Placement (Local / Global)...", "", "footnotes-convert", "Tools"),
         new("MainWindow.AddSoftHyphens", "Add &Soft Hyphens", "", "hyphen-add", "Tools"),
         new("MainWindow.RemoveSoftHyphens", "&Remove Soft Hyphens", "", "hyphen-remove", "Tools"),
         new("MainWindow.SpellcheckEditor", "&Spellcheck...", "Ctrl+Alt+Q", "document-spellcheck", "Tools"),

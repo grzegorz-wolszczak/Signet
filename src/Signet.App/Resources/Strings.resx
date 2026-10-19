@@ -6484,4 +6484,94 @@ Zamknij zakładkę</value>
   <data name="PreviewSample_Hint" xml:space="preserve">
     <value>Kliknij akapit, aby przenieść podświetlenie, jak robi to kursor w edytorze.</value>
   </data>
+  <data name="Action_MainWindow_ChangeFootnotePlacement" xml:space="preserve">
+    <value>Zmień rodzaj &amp;przypisów (lokalne / globalne)...</value>
+  </data>
+  <data name="FootnotePlacementWindow_Title" xml:space="preserve">
+    <value>Zmiana rodzaju przypisów (lokalne / globalne)</value>
+  </data>
+  <data name="FootnotePlacementWindow_Intro" xml:space="preserve">
+    <value>Zaznacz przypisy Signeta, które mają zmienić rodzaj: lokalny (na końcu pliku z odnośnikiem) stanie się globalnym (w pliku przypisów), a globalny — lokalnym. Po zmianie przypisy są przenumerowane. Przypis globalny z odnośnikami z kilku plików może być tylko globalny (jest wyszarzony). Przed zmianą tworzony jest punkt kontrolny, a w oknie postępu można anulować, co cofa książkę.</value>
+  </data>
+  <data name="FootnotePlacementWindow_GlobalFile" xml:space="preserve">
+    <value>Plik przypisów globalnych:</value>
+  </data>
+  <data name="FootnotePlacementWindow_GlobalFileHint" xml:space="preserve">
+    <value>Dotyczy przypisów, które stają się globalne. Gdy wybierzesz inny plik niż ten, w którym są teraz przypisy globalne, przejdą do niego wszystkie.</value>
+  </data>
+  <data name="FootnotePlacementWindow_NewFile" xml:space="preserve">
+    <value>{0} (nowy plik)</value>
+  </data>
+  <data name="FootnotePlacementWindow_CurrentFile" xml:space="preserve">
+    <value>{0} (obecny plik przypisów)</value>
+  </data>
+  <data name="FootnotePlacementWindow_ShowLocal" xml:space="preserve">
+    <value>Pokaż lokalne</value>
+  </data>
+  <data name="FootnotePlacementWindow_ShowGlobal" xml:space="preserve">
+    <value>Pokaż globalne</value>
+  </data>
+  <data name="FootnotePlacementWindow_Summary" xml:space="preserve">
+    <value>Zaznaczono {0} z {1} (na globalne: {2}, na lokalne: {3})</value>
+  </data>
+  <data name="FootnotePlacementWindow_DoubleClickHint" xml:space="preserve">
+    <value>Podwójne kliknięcie otwiera odnośnik w kodzie.</value>
+  </data>
+  <data name="FootnotePlacementWindow_None" xml:space="preserve">
+    <value>Książka nie ma przypisów Signeta.</value>
+  </data>
+  <data name="FootnotePlacementWindow_ColumnFootnote" xml:space="preserve">
+    <value>Przypis</value>
+  </data>
+  <data name="FootnotePlacementWindow_ColumnKind" xml:space="preserve">
+    <value>Rodzaj</value>
+  </data>
+  <data name="FootnotePlacementWindow_ColumnText" xml:space="preserve">
+    <value>Treść</value>
+  </data>
+  <data name="FootnotePlacementWindow_ColumnFile" xml:space="preserve">
+    <value>Plik</value>
+  </data>
+  <data name="FootnotePlacementWindow_ColumnRemark" xml:space="preserve">
+    <value>Uwagi</value>
+  </data>
+  <data name="FootnotePlacementWindow_Apply" xml:space="preserve">
+    <value>Zmień rodzaj</value>
+  </data>
+  <data name="FootnotePlacementWindow_FileMore" xml:space="preserve">
+    <value>{0} (+{1})</value>
+  </data>
+  <data name="FootnotePlacementWindow_BlockedSeveralFiles" xml:space="preserve">
+    <value>Odnośniki z kilku plików — może być tylko globalny</value>
+  </data>
+  <data name="FootnotePlacement_Local" xml:space="preserve">
+    <value>lokalny</value>
+  </data>
+  <data name="FootnotePlacement_Global" xml:space="preserve">
+    <value>globalny</value>
+  </data>
+  <data name="FootnotePlacement_Analyzing" xml:space="preserve">
+    <value>Analizowanie przypisów…</value>
+  </data>
+  <data name="FootnotePlacement_Progress_Preparing" xml:space="preserve">
+    <value>Przygotowanie…</value>
+  </data>
+  <data name="FootnotePlacement_Progress_Moving" xml:space="preserve">
+    <value>Przenoszenie przypisów: {0} z {1}</value>
+  </data>
+  <data name="FootnotePlacement_Progress_Finishing" xml:space="preserve">
+    <value>Zapisywanie plików i numerowanie przypisów…</value>
+  </data>
+  <data name="CheckpointOp_ChangeFootnotePlacement" xml:space="preserve">
+    <value>Zmiana rodzaju przypisów</value>
+  </data>
+  <data name="Status_NoSignetFootnotes" xml:space="preserve">
+    <value>Książka nie ma przypisów Signeta.</value>
+  </data>
+  <data name="Status_FootnotePlacementChanged" xml:space="preserve">
+    <value>Zmieniono rodzaj przypisów: {0}.</value>
+  </data>
+  <data name="Status_FootnotePlacementChangedSkipped" xml:space="preserve">
+    <value>Zmieniono rodzaj przypisów: {0}, pominięto: {1}.</value>
+  </data>
 </root>
