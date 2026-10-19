@@ -57,7 +57,6 @@ public sealed class SettingsStoreTests
         writer.CleanOn = CleanOn.Save;
         writer.ZoomPreview = 1.25f;
         writer.RecentFiles = new[] { "a.epub", "b.epub" };
-        writer.ClipboardHistory = new[] { "newest", "older" };
         writer.FavoriteSpecialCharacters = new[] { "—", "§" };
         writer.CleanupEnabledSteps = new[] { CleanupStep.UnusedSelectors, CleanupStep.UnusedMedia };
         writer.StandardizationEnabledSteps = new[] { StandardizationStep.RebaseManifestIds };
@@ -76,7 +75,6 @@ public sealed class SettingsStoreTests
         reader.CleanOn.Should().Be(CleanOn.Save);
         reader.ZoomPreview.Should().Be(1.25f);
         reader.RecentFiles.Should().Equal("a.epub", "b.epub");
-        reader.ClipboardHistory.Should().Equal("newest", "older");
         reader.FavoriteSpecialCharacters.Should().Equal("—", "§");
         reader.CleanupEnabledSteps.Should().Equal(CleanupStep.UnusedSelectors, CleanupStep.UnusedMedia);
         reader.StandardizationEnabledSteps.Should().Equal(StandardizationStep.RebaseManifestIds);
@@ -611,6 +609,38 @@ public sealed class SettingsStoreTests
 
         string saved = File.ReadAllText(path);
         saved.Should().NotContain("line_number").And.NotContain("spelling_underline").And.NotContain("css_comment");
+    }
+
+    /// <summary>
+    /// The clipboard history is kept for the session only: a history saved by an earlier version is dropped, so what was
+    /// copied does not stay on the disk.
+    /// </summary>
+    [Fact]
+    public void A_saved_clipboard_history_is_dropped_on_load()
+    {
+        // Arrange
+        using TempDir dir = new();
+        string path = dir.Combine("settings.xml");
+        File.WriteAllText(path, """
+            <settings>
+              <group name="user_preferences">
+                <array key="clipboardhistory">
+                  <string>copied secret</string>
+                  <string>older copy</string>
+                </array>
+                <number key="clipboard_history_limit">7</number>
+              </group>
+            </settings>
+            """);
+
+        // Act
+        SettingsStore sut = new(path);
+        sut.Save();
+
+        // Assert
+        string saved = File.ReadAllText(path);
+        saved.Should().NotContain("clipboardhistory").And.NotContain("copied secret").And.NotContain("older copy");
+        sut.ClipboardHistoryLimit.Should().Be(7, "the limit of the history is still a setting");
     }
 
     [Fact]
