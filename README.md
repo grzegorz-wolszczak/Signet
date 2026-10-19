@@ -65,9 +65,12 @@ EPUB editor I know of) has them:
     removes structure that adds nothing:
     - nested `<div>`s with identical attributes are collapsed into one;
     - empty `<p>`, `<span>` and `<div>` elements (whitespace only) are removed;
-    - bare `<span>`s without attributes are unwrapped.
+    - bare `<span>`s without attributes are unwrapped;
+    - `id` attributes that nothing in the book refers to (no link, ID reference or script) are removed, which also
+      frees the elements they kept from being removed or merged. An `id` that a CSS selector still reaches and whose
+      removal would change the styling is marked ⚠.
 
-    Elements with an `id` are never removed.
+    An element whose `id` is still used is never removed.
 - **Remove span** (Code Editor context menu): unwraps the `<span>` at the caret. It can also unwrap
   every identical span (same attributes) in the file or in the whole book. Risky removals go through
   the same ⚠ confirmation as in Cleanup.

@@ -330,7 +330,7 @@ public sealed class CleanupViewModelTests : IDisposable
     public void Merge_divs_is_the_html_step_between_bare_spans_and_nested_divs()
     {
         // Act & Assert
-        CleanupViewModel.HtmlSteps.Should().Equal(CleanupStep.EmptyElements, CleanupStep.BareSpans, CleanupStep.MergeDivs, CleanupStep.NestedDivs);
+        CleanupViewModel.HtmlSteps.Should().Equal(CleanupStep.UnusedIds, CleanupStep.EmptyElements, CleanupStep.BareSpans, CleanupStep.MergeDivs, CleanupStep.NestedDivs);
 
         // Act & Assert
         Section(New(), CleanupStep.MergeDivs).HasWarning.Should().BeTrue();

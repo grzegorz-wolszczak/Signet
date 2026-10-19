@@ -6167,6 +6167,12 @@
   <data name="Cleanup_Risk_MergeDivInline" xml:space="preserve">
     <value>{0}: the end of &lt;div&gt; {1} and the start of &lt;div&gt; {2} are text or inline elements — they will run together instead of starting on a new line</value>
   </data>
+  <data name="Cleanup_UnusedIds_File" xml:space="preserve">
+    <value>Unused id attributes to remove: {0}</value>
+  </data>
+  <data name="Cleanup_UnusedIds_Id" xml:space="preserve">
+    <value>id="{0}" in {1}</value>
+  </data>
   <data name="Cleanup_EmptyElements_File" xml:space="preserve">
     <value>Empty tags to remove: {0} ({1})</value>
   </data>

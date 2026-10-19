@@ -3890,11 +3890,23 @@ Wstawić mimo to?</value>
   <data name="Cleanup_MergeSameProperties_Summary" xml:space="preserve">
     <value>Grupy do scalenia: {0} z {1} (reguł w scalanych grupach: {2}).</value>
   </data>
+  <data name="Cleanup_UnusedIds_Title" xml:space="preserve">
+    <value>Usuń nieużywane atrybuty id</value>
+  </data>
+  <data name="Cleanup_UnusedIds_Description" xml:space="preserve">
+    <value>Usuwa atrybuty id w plikach XHTML, do których nic w książce nie prowadzi: ani link (w tym spis treści i nawigacja), ani odwołanie do ID (for, headers, aria-*, url(#…)), ani skrypt. Zostaje reszta znacznika. Zwalnia to elementy, które przez id nie mogły zostać usunięte ani scalone (puste znaczniki, gołe spany, sąsiednie i zagnieżdżone znaczniki &lt;div&gt;) — dlatego krok działa przed nimi.</value>
+  </data>
+  <data name="Cleanup_UnusedIds_Summary" xml:space="preserve">
+    <value>Pozycje do wykonania: {0} z {1} (usuwanych atrybutów id: {2}).</value>
+  </data>
+  <data name="Cleanup_UnusedIdsWarning" xml:space="preserve">
+    <value>Linki spoza tej książki (np. zakładki czytnika albo odwołania z innych książek) nie są widoczne, więc id, które są ich celem, wyglądają na nieużywane — odznacz je, jeśli ich potrzebujesz. Id, do którego odwołuje się selektor CSS (#id, [id^=…]) i którego usunięcie zmieniłoby wygląd, jest oznaczone ⚠ i domyślnie odznaczone; pod nim widać, co by się zmieniło.</value>
+  </data>
   <data name="Cleanup_EmptyElements_Title" xml:space="preserve">
     <value>Usuń puste znaczniki &lt;p&gt;, &lt;span&gt; i &lt;div&gt;</value>
   </data>
   <data name="Cleanup_EmptyElements_Description" xml:space="preserve">
-    <value>Usuwa elementy &lt;p&gt;, &lt;span&gt; i &lt;div&gt; bez treści albo z samymi białymi znakami (np. &lt;p class="calibre8"&gt;&lt;/p&gt;). &amp;nbsp; i komentarze to treść. Elementy z atrybutem id zostają zawsze (mogą być celem linku). Z pustego &lt;span&gt; znikają tylko znaczniki, spacja zostaje.</value>
+    <value>Usuwa elementy &lt;p&gt;, &lt;span&gt; i &lt;div&gt; bez treści albo z samymi białymi znakami (np. &lt;p class="calibre8"&gt;&lt;/p&gt;). &amp;nbsp; i komentarze to treść. Elementy z atrybutem id zostają zawsze (mogą być celem linku) — nieużywane id zdejmuje wcześniejszy krok. Z pustego &lt;span&gt; znikają tylko znaczniki, spacja zostaje.</value>
   </data>
   <data name="Cleanup_EmptyElements_Summary" xml:space="preserve">
     <value>Pozycje do wykonania: {0} z {1} (usuwanych znaczników: {2}).</value>

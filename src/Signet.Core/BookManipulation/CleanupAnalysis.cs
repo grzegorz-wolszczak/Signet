@@ -30,6 +30,13 @@ public enum CleanupStep
     MergeSameProperties,
 
     /// <summary>
+    /// Remove <c>id</c> attributes nothing in the book refers to (<see cref="UnusedIdCleaner"/>, references:
+    /// <see cref="IdReferenceIndex"/>). Before the empty elements, bare spans and divs, which an <c>id</c> kept
+    /// out of the way of: an element with an <c>id</c> is never removed or merged.
+    /// </summary>
+    UnusedIds,
+
+    /// <summary>
     /// Remove empty <c>&lt;p&gt;</c>, <c>&lt;span&gt;</c> and <c>&lt;div&gt;</c> elements without an <c>id</c>
     /// (<see cref="EmptyElementCleaner"/>). Before the nested divs, which removing an empty element can reveal.
     /// </summary>
@@ -173,8 +180,8 @@ public sealed record CleanupPreparation(CleanupAnalysis? Analysis, HtmlResource?
 /// </summary>
 /// <remarks>
 /// <b>Execution order</b> (<see cref="CleanupStep"/>): unreferenced stylesheets → unused selectors → merging
-/// identical selectors → merging identical properties → empty elements → bare spans → merging adjacent divs → nested
-/// divs → unused media.
+/// identical selectors → merging identical properties → unused ids → empty elements → bare spans → merging adjacent
+/// divs → nested divs → unused media.
 /// Unused selectors are always computed on the original texts (only whole stylesheets can disappear before them),
 /// merges and the HTML steps on the texts left by the previous steps, and media references on the CSS that remains
 /// at the end.
@@ -187,6 +194,7 @@ public sealed class CleanupAnalysis
     private const string MergePropertiesKeyPrefix = "mergeprop|";
     private const string MediaKeyPrefix = "media|";
     private const string NestedDivsKeyPrefix = "divnest|";
+    private const string UnusedIdsKeyPrefix = "unusedid|";
     private const string EmptyElementsKeyPrefix = "empty|";
     private const string BareSpansKeyPrefix = "barespan|";
     private const string MergeDivsKeyPrefix = "divmerge|";
@@ -234,6 +242,10 @@ public sealed class CleanupAnalysis
 
     // The same for the mergeable div runs of each XHTML file, per merge round (key: path|round).
     private readonly Dictionary<string, (string Stamp, List<(AdjacentDivGroup Group, IReadOnlyList<CleanupConsequence> Consequences)> Groups)> _divGroups =
+        new(StringComparer.Ordinal);
+
+    // The same for the unused ids of each XHTML file.
+    private readonly Dictionary<string, (string Stamp, List<(IdAttribute Id, IReadOnlyList<CleanupConsequence> Consequences)> Ids)> _unusedIds =
         new(StringComparer.Ordinal);
 
     // The same for the empty elements of each XHTML file.
@@ -389,6 +401,11 @@ public sealed class CleanupAnalysis
         if (enabledSteps.Contains(CleanupStep.MergeSameProperties))
         {
             steps.Add(PlanMerges(CleanupStep.MergeSameProperties, CssMergeKind.SameProperties, cssTexts, ruleOrigins, excludedKeys, acceptedRiskyKeys));
+        }
+
+        if (enabledSteps.Contains(CleanupStep.UnusedIds))
+        {
+            steps.Add(PlanUnusedIds(cssTexts, htmlTexts, excludedKeys, acceptedRiskyKeys));
         }
 
         if (enabledSteps.Contains(CleanupStep.EmptyElements))
@@ -744,6 +761,93 @@ public sealed class CleanupAnalysis
             .Select(chain => (chain, NestedDivRiskAnalyzer.Analyse(path, text, chain, sheets)))
             .ToList();
         _divChains[path] = (stamp, result);
+        return result;
+    }
+
+    /// <summary>
+    /// Plans the unused-id step: per XHTML file, one item for all the ids nothing refers to and no selector names
+    /// (they are applied together) and one item for every id a selector still reaches
+    /// (<see cref="UnusedIdRiskAnalyzer"/>), applied only when accepted. The <see cref="CleanupItem.RuleCount"/> of an
+    /// item is the number of <c>id</c> attributes it removes.
+    /// </summary>
+    private CleanupStepResult PlanUnusedIds(
+        Dictionary<string, string> cssTexts,
+        Dictionary<string, string> htmlTexts,
+        IReadOnlySet<string> excludedKeys,
+        IReadOnlySet<string> acceptedRiskyKeys)
+    {
+        List<CleanupItem> items = new();
+        foreach (string path in htmlTexts.Keys.ToList())
+        {
+            string text = htmlTexts[path];
+            var ids = UnusedIdsOf(path, text, cssTexts);
+            if (ids.Count == 0)
+            {
+                continue;
+            }
+
+            List<int> toRemove = new();
+            List<IdAttribute> safe = ids.Where(i => i.Consequences.Count == 0).Select(i => i.Id).ToList();
+            if (safe.Count > 0)
+            {
+                string key = UnusedIdsKeyPrefix + path;
+                bool isApplied = !excludedKeys.Contains(key);
+                items.Add(new CleanupItem(
+                    CleanupStep.UnusedIds, key, CoreStrings.Format("Cleanup_UnusedIds_File", safe.Count), path, safe[0].Pos, safe.Count)
+                {
+                    IsApplied = isApplied,
+                });
+                if (isApplied)
+                {
+                    toRemove.AddRange(safe.Select(i => i.TagPos));
+                }
+            }
+
+            for (int i = 0; i < ids.Count; i++)
+            {
+                (IdAttribute id, IReadOnlyList<CleanupConsequence> consequences) = ids[i];
+                if (consequences.Count == 0)
+                {
+                    continue;
+                }
+
+                string key = $"{UnusedIdsKeyPrefix}{path}|{i}";
+                bool isApplied = !excludedKeys.Contains(key) && acceptedRiskyKeys.Contains(key);
+                items.Add(new CleanupItem(
+                    CleanupStep.UnusedIds, key, CoreStrings.Format("Cleanup_UnusedIds_Id", id.Value, DescribeOpenTag(id.OpenTag)), path, id.Pos, 1)
+                {
+                    Consequences = consequences,
+                    IsApplied = isApplied,
+                });
+                if (isApplied)
+                {
+                    toRemove.Add(id.TagPos);
+                }
+            }
+
+            if (toRemove.Count > 0)
+            {
+                htmlTexts[path] = UnusedIdCleaner.Remove(text, toRemove);
+            }
+        }
+
+        return Result(CleanupStep.UnusedIds, items);
+    }
+
+    private List<(IdAttribute Id, IReadOnlyList<CleanupConsequence> Consequences)> UnusedIdsOf(
+        string path, string text, Dictionary<string, string> cssTexts)
+    {
+        (List<string> sheetTexts, string stamp) = SheetsAndStamp(path, text, cssTexts);
+        if (_unusedIds.TryGetValue(path, out var cached) && string.Equals(cached.Stamp, stamp, StringComparison.Ordinal))
+        {
+            return cached.Ids;
+        }
+
+        List<IdAttribute> found = UnusedIdCleaner.Find(text).Where(id => !_idReferences.Value.IsReferenced(path, id.Value)).ToList();
+        List<CssInfo> sheets = found.Count == 0 ? new List<CssInfo>() : sheetTexts.Select(t => new CssInfo(t)).ToList();
+        IReadOnlyList<IReadOnlyList<CleanupConsequence>> consequences = UnusedIdRiskAnalyzer.Analyse(path, text, found, sheets);
+        var result = found.Select((id, i) => (id, consequences[i])).ToList();
+        _unusedIds[path] = (stamp, result);
         return result;
     }
 
