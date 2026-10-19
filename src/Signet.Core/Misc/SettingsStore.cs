@@ -1676,24 +1676,6 @@ public sealed class SettingsStore
     }
 
     /// <summary>
-    /// Clipboard history (Edit &#8594; Paste From Clipboard History menu), newest entry first.
-    /// Storage only; tracking of system clipboard changes lives in the App layer.
-    /// </summary>
-    public IReadOnlyList<string> ClipboardHistory
-    {
-        get => (_file.GetRaw(Group, "clipboardhistory") as JsonArray)?
-            .Select(n => n?.GetValue<string>() ?? string.Empty)
-            .Where(s => s.Length > 0)
-            .ToList() ?? new List<string>();
-
-        set
-        {
-            _file.SetRaw(Group, "clipboardhistory", new JsonArray(value.Select(s => JsonValue.Create(s)).ToArray<JsonNode?>()));
-            RaiseChangedQualified($"{Group}/clipboardhistory");
-        }
-    }
-
-    /// <summary>
     /// Recently inserted special characters (Insert &#8594; Special Character menu), newest
     /// first.
     /// </summary>
@@ -2212,6 +2194,8 @@ public sealed class SettingsStore
             // Code Editor colors nothing used: the line numbers and the spelling squiggle had fixed colors.
             "code_editor_line_number_background_color", "code_editor_line_number_foreground_color",
             "code_editor_spelling_underline_color",
+            // The clipboard history is kept for the session only: what was copied does not stay on the disk.
+            "clipboardhistory",
         };
         foreach (string key in keys)
         {

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Input.Platform;
 using Avalonia.Threading;
@@ -9,9 +8,9 @@ using Signet.Core.Misc;
 namespace Signet.App.Services;
 
 /// <summary>
-/// Clipboard history (tracking only, no dialog): polls the system clipboard in the background and
-/// persists successive unique text values in <see cref="SettingsStore.ClipboardHistory"/>
-/// (newest first, limited by <see cref="SettingsStore.ClipboardHistoryLimit"/>).
+/// Clipboard history (tracking only, no dialog): polls the system clipboard in the background and keeps
+/// successive unique text values (newest first, limited by <see cref="SettingsStore.ClipboardHistoryLimit"/>)
+/// for the session only — the history is not saved, so what was copied does not stay on the disk.
 /// </summary>
 /// <remarks>
 /// Avalonia has no "clipboard changed" event, so instead of a subscription the service uses
@@ -27,22 +26,21 @@ public sealed class ClipboardHistoryService : IDisposable
 
     private readonly SettingsStore _settings;
     private readonly DispatcherTimer _timer;
-    private readonly List<string> _items;
+    private readonly List<string> _items = new();
     private IClipboard? _clipboard;
     private bool _polling;
     private string? _lastSeenText;
 
-    /// <summary>Creates the service and loads the existing history from <paramref name="settings"/>.</summary>
+    /// <summary>Creates the service with an empty history; <paramref name="settings"/> give its limit.</summary>
     public ClipboardHistoryService(SettingsStore settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
         _settings = settings;
-        _items = settings.ClipboardHistory.ToList();
         _timer = new DispatcherTimer { Interval = PollInterval };
         _timer.Tick += (_, _) => _ = PollAsync();
     }
 
-    /// <summary>Raised after every history change (a new entry or loading from the settings).</summary>
+    /// <summary>Raised after every history change (a new entry).</summary>
     public event EventHandler? Changed;
 
     /// <summary>History entries, newest first.</summary>
@@ -127,8 +125,6 @@ public sealed class ClipboardHistoryService : IDisposable
             _items.RemoveAt(_items.Count - 1);
         }
 
-        _settings.ClipboardHistory = _items;
-        _settings.Save();
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
