@@ -546,7 +546,7 @@
                           <NumericUpDown x:Name="PreviewHighlightOpacityBox" Grid.Row="2" Grid.Column="1" Value="{Binding PreviewHighlightOpacity}"
                                          Minimum="{x:Static vm:PreferencesViewModel.PreviewHighlightOpacityMin}"
                                          Maximum="{x:Static vm:PreferencesViewModel.PreviewHighlightOpacityMax}"
-                                         Increment="1" FormatString="0" Width="130" HorizontalAlignment="Left"
+                                         Increment="1" FormatString="0" Width="130" HorizontalAlignment="Right"
                                          IsEnabled="{Binding IsPreviewHighlightBackground}"
                                          ToolTip.Tip="{loc:Loc PreferencesWindow_PreviewHighlightOpacityTip}" ToolTip.ShowOnDisabled="True" />
 
@@ -556,7 +556,7 @@
                           <NumericUpDown x:Name="PreviewHighlightOutlineWidthBox" Grid.Row="3" Grid.Column="1" Value="{Binding PreviewHighlightOutlineWidth}"
                                          Minimum="{x:Static vm:PreferencesViewModel.PreviewHighlightOutlineWidthMin}"
                                          Maximum="{x:Static vm:PreferencesViewModel.PreviewHighlightOutlineWidthMax}"
-                                         Increment="1" FormatString="0" Width="130" HorizontalAlignment="Left"
+                                         Increment="1" FormatString="0" Width="130" HorizontalAlignment="Right"
                                          IsEnabled="{Binding IsPreviewHighlightOutline}"
                                          ToolTip.Tip="{loc:Loc PreferencesWindow_PreviewHighlightOutlineWidthTip}" ToolTip.ShowOnDisabled="True" />
 
@@ -569,7 +569,7 @@
                           <NumericUpDown x:Name="PreviewHighlightAutoHideDelayBox" Grid.Row="5" Grid.Column="1" Value="{Binding PreviewHighlightAutoHideDelay}"
                                          Minimum="{x:Static vm:PreferencesViewModel.PreviewHighlightAutoHideDelayMin}"
                                          Maximum="{x:Static vm:PreferencesViewModel.PreviewHighlightAutoHideDelayMax}"
-                                         Increment="100" FormatString="0" Width="130" HorizontalAlignment="Left"
+                                         Increment="100" FormatString="0" Width="130" HorizontalAlignment="Right"
                                          IsEnabled="{Binding PreviewHighlightAutoHide}"
                                          ToolTip.Tip="{loc:Loc PreferencesWindow_PreviewHighlightAutoHideDelayTip}" ToolTip.ShowOnDisabled="True" />
                         </Grid>
@@ -1105,7 +1105,7 @@
       </TabItem>
 
       <!-- ================================ General ================================ -->
-      <TabItem Header="{loc:Loc PreferencesWindow_General}">
+      <TabItem x:Name="GeneralPage" Header="{loc:Loc PreferencesWindow_General}">
         <views:PageWidthHost x:Name="GeneralWidth">
           <ScrollViewer>
             <StackPanel Spacing="10" Margin="8">
@@ -1119,28 +1119,28 @@
                         ToolTip.Tip="{loc:Loc PreferencesWindow_PasteNormalizeNfcTip}" />
               <CheckBox Content="{loc:Loc PreferencesWindow_FindUsagesRefreshOnSave}" IsChecked="{Binding FindUsagesRefreshOnSave}" />
               <CheckBox Content="{loc:Loc PreferencesWindow_NavigationHistoryRemember}" IsChecked="{Binding NavigationHistoryRemember}" />
-              <StackPanel Orientation="Horizontal" Spacing="8" Margin="28,0,0,0" IsEnabled="{Binding NavigationHistoryRemember}">
-                <TextBlock Text="{loc:Loc PreferencesWindow_NavigationHistoryDays}" VerticalAlignment="Center" />
-                <NumericUpDown x:Name="NavigationHistoryDaysBox" Value="{Binding NavigationHistoryDays}"
+              <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="28,0,0,0" IsEnabled="{Binding NavigationHistoryRemember}">
+                <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_NavigationHistoryDays}" />
+                <NumericUpDown x:Name="NavigationHistoryDaysBox" Grid.Column="1" Value="{Binding NavigationHistoryDays}"
                                Minimum="1" Maximum="{x:Static vm:PreferencesViewModel.NavigationHistoryDaysMax}"
-                               Increment="1" FormatString="0" Width="130" />
-              </StackPanel>
+                               Increment="1" FormatString="0" Width="130" HorizontalAlignment="Right" />
+              </Grid>
 
               <Grid Classes="labeled" ColumnDefinitions="260,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8" Margin="0,6,0,0">
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_ClipboardHistoryLimit}" VerticalAlignment="Center" />
                 <NumericUpDown x:Name="ClipboardHistoryLimitBox" Grid.Row="0" Grid.Column="1" Value="{Binding ClipboardHistoryLimit}"
                                Minimum="0" Maximum="{x:Static vm:PreferencesViewModel.ClipboardHistoryLimitMax}"
-                               Increment="1" FormatString="0" Width="130" HorizontalAlignment="Left" />
+                               Increment="1" FormatString="0" Width="130" HorizontalAlignment="Right" />
 
                 <TextBlock Grid.Row="5" Grid.Column="0" Text="{loc:Loc PreferencesWindow_RecentFilesLimit}" VerticalAlignment="Center" TextWrapping="Wrap" />
                 <NumericUpDown x:Name="GeneralRecentFilesLimitBox" Grid.Row="5" Grid.Column="1" Value="{Binding RecentFilesLimit}"
                                Minimum="0" Maximum="{x:Static vm:PreferencesViewModel.RecentFilesLimitMax}"
-                               Increment="1" FormatString="0" Width="130" HorizontalAlignment="Left" />
+                               Increment="1" FormatString="0" Width="130" HorizontalAlignment="Right" />
 
                 <TextBlock Grid.Row="6" Grid.Column="0" Text="{loc:Loc PreferencesWindow_RecentLocationsLimit}" VerticalAlignment="Center" TextWrapping="Wrap" />
                 <NumericUpDown x:Name="RecentLocationsLimitBox" Grid.Row="6" Grid.Column="1" Value="{Binding RecentLocationsLimit}"
                                Minimum="1" Maximum="{x:Static vm:PreferencesViewModel.RecentLocationsLimitMax}"
-                               Increment="1" FormatString="0" Width="130" HorizontalAlignment="Left" />
+                               Increment="1" FormatString="0" Width="130" HorizontalAlignment="Right" />
 
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_TempFolder}" VerticalAlignment="Center" />
                 <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding TempFolderHome}" />
