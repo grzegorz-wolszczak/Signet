@@ -2410,6 +2410,64 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     }
 
     /// <summary>
+    /// The number fields of the caret highlight (Appearance › Preview) sit at the right edge of their box, like those of the
+    /// Book Browser — previously they were left-aligned in the column and did not reach the edge.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_preview_highlight_number_fields_sit_at_the_right_edge_of_the_box()
+    {
+        // Arrange
+        PreferencesWindow window = BuildWindow();
+        window.Width = 1900;
+        window.Height = 860;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        // Act
+        ShowPage(window, "PreviewAppearancePage");
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+        string[] names = { "PreviewHighlightOpacityBox", "PreviewHighlightOutlineWidthBox", "PreviewHighlightAutoHideDelayBox" };
+        double[] gaps = names
+            .Select(name => window.FindControl<NumericUpDown>(name)!)
+            .Select(box => ((Grid)box.Parent!).Bounds.Width - box.Bounds.Right)
+            .ToArray();
+
+        // Assert
+        gaps.Should().OnlyContain(gap => gap < 2, "each field sits at the right edge of the box");
+        window.Close();
+    }
+
+    /// <summary>
+    /// The number fields of the General page (the history of the navigation, the limits of the clipboard history, the recent
+    /// files and the recent locations) sit at the right edge of the settings, like the text fields below them.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_general_page_number_fields_sit_at_the_right_edge()
+    {
+        // Arrange
+        PreferencesWindow window = BuildWindow();
+        window.Width = 1900;
+        window.Height = 860;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        // Act
+        ShowPage(window, "GeneralPage");
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+        string[] names = { "NavigationHistoryDaysBox", "ClipboardHistoryLimitBox", "GeneralRecentFilesLimitBox", "RecentLocationsLimitBox" };
+        double[] gaps = names
+            .Select(name => window.FindControl<NumericUpDown>(name)!)
+            .Select(box => ((Grid)box.Parent!).Bounds.Width - box.Bounds.Right)
+            .ToArray();
+
+        // Assert
+        gaps.Should().OnlyContain(gap => gap < 2, "each field sits at the right edge of the settings");
+        window.Close();
+    }
+
+    /// <summary>
     /// The "General" tab of the Find Usages page has the vertical splitter after its settings, like the other pages (the width
     /// of the settings is the user's and is remembered) — previously its boxes took the whole width with no splitter.
     /// </summary>
