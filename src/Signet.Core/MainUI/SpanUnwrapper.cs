@@ -30,7 +30,7 @@ public static class SpanUnwrapper
     public static SpanAtCaret? Find(string text, int offset)
     {
         ArgumentNullException.ThrowIfNull(text);
-        TagLister lister = new(text);
+        TagLister lister = TagLister.For(text);
         if (OpenTagIndexAt(lister, offset) is not { } open)
         {
             return null;
@@ -51,7 +51,7 @@ public static class SpanUnwrapper
     public static FormatEdit Unwrap(string text, int offset, bool all, int caret)
     {
         ArgumentNullException.ThrowIfNull(text);
-        TagLister lister = new(text);
+        TagLister lister = TagLister.For(text);
         if (OpenTagIndexAt(lister, offset) is not { } open
             || TagLister.ParseAttribute(text.Substring(lister.At(open).Pos, lister.At(open).Len), "id").Pos >= 0)
         {
@@ -87,7 +87,7 @@ public static class SpanUnwrapper
     public static string? OpenTagAt(string text, int offset)
     {
         ArgumentNullException.ThrowIfNull(text);
-        TagLister lister = new(text);
+        TagLister lister = TagLister.For(text);
         return OpenTagIndexAt(lister, offset) is { } open ? text.Substring(lister.At(open).Pos, lister.At(open).Len) : null;
     }
 
@@ -98,7 +98,7 @@ public static class SpanUnwrapper
     public static IReadOnlyList<SpanTags> SpansAt(string text, int offset, bool all)
     {
         ArgumentNullException.ThrowIfNull(text);
-        TagLister lister = new(text);
+        TagLister lister = TagLister.For(text);
         if (OpenTagIndexAt(lister, offset) is not { } open)
         {
             return Array.Empty<SpanTags>();
@@ -123,7 +123,7 @@ public static class SpanUnwrapper
     {
         ArgumentNullException.ThrowIfNull(text);
         ArgumentNullException.ThrowIfNull(openTag);
-        TagLister lister = new(text);
+        TagLister lister = TagLister.For(text);
         return SameSpans(lister, ElementAttributes.Parse(openTag)).Select(i => ToSpanTags(lister, i)).ToList();
     }
 

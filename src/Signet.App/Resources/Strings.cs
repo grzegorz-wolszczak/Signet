@@ -20,6 +20,10 @@ public static class Strings
     // Language change listeners — weak references so that registration does not extend the lifetime of view models.
     private static readonly List<WeakReference<ILanguageAware>> Listeners = new();
 
+    // The count at which a registration drops the listeners already collected (doubled each time), so that the list does
+    // not grow for the whole session with the views made and thrown away.
+    private static int s_pruneAt = 64;
+
     /// <summary>
     /// Registers an object that built its texts once (menus, actions, toolbars, panels) and must
     /// recompute them when the language is switched while the application is running. Texts in XAML
@@ -30,6 +34,12 @@ public static class Strings
         ArgumentNullException.ThrowIfNull(listener);
         lock (Listeners)
         {
+            if (Listeners.Count >= s_pruneAt)
+            {
+                Listeners.RemoveAll(w => !w.TryGetTarget(out _));
+                s_pruneAt = Math.Max(64, Listeners.Count * 2);
+            }
+
             Listeners.Add(new WeakReference<ILanguageAware>(listener));
         }
     }

@@ -115,6 +115,16 @@ public sealed class ImageTabViewModel : ContentTabViewModel
     /// <inheritdoc />
     public override void Reload() => LoadMetadata();
 
+    /// <inheritdoc />
+    public override void Release()
+    {
+        _image.ResourceUpdatedOnDisk -= OnResourceUpdatedOnDisk;
+        Bitmap? bitmap = _bitmap;
+        _bitmap = null;
+        OnPropertyChanged(nameof(Bitmap));
+        bitmap?.Dispose();
+    }
+
     private void OnResourceUpdatedOnDisk(object? sender, EventArgs e) => LoadMetadata();
 
     private void LoadMetadata()

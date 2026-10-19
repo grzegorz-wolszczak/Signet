@@ -135,7 +135,7 @@ public static class WellFormedChecker
         TagLister.TagInfo? xmlHeader = null;
         TagLister.TagInfo? htmlTag = null;
 
-        TagLister lister = new(text);
+        TagLister lister = TagLister.For(text);
         foreach (TagLister.TagInfo ti in lister.Tags)
         {
             if (ti.Len == -1)
@@ -220,7 +220,7 @@ public static class WellFormedChecker
     {
         try
         {
-            return new TagLister(text).FindFirstNestingError();
+            return TagLister.For(text).FindFirstNestingError();
         }
         catch (ArgumentException)
         {

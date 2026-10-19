@@ -50,7 +50,7 @@ public static partial class TagStructureOperations
         }
 
         int pos = Math.Clamp(caret, 0, text.Length);
-        var lister = new TagLister(text);
+        var lister = TagLister.For(text);
 
         int i = lister.FindFirstTagOnOrAfter(pos);
         TagLister.TagInfo ti = lister.At(i);
@@ -174,7 +174,7 @@ public static partial class TagStructureOperations
     {
         ArgumentNullException.ThrowIfNull(text);
         int pos = Math.Clamp(caret, 0, text.Length);
-        var lister = new TagLister(text);
+        var lister = TagLister.For(text);
         TagLister.TagInfo ti = lister.At(lister.FindFirstTagOnOrAfter(pos));
         if (ti.Len > 0 && pos > ti.Pos && pos < ti.Pos + ti.Len)
         {

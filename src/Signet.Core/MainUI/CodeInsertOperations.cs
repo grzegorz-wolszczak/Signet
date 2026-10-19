@@ -70,7 +70,7 @@ public static class CodeInsertOperations
     {
         ArgumentNullException.ThrowIfNull(text);
         int pos = Math.Clamp(caretPosition, 0, text.Length);
-        var lister = new TagLister(text);
+        var lister = TagLister.For(text);
         if (!lister.IsPositionInBody(pos))
         {
             return false;
@@ -146,7 +146,7 @@ public static class CodeInsertOperations
     {
         ArgumentNullException.ThrowIfNull(text);
         int pos = Math.Clamp(caretPosition, 0, text.Length);
-        var lister = new TagLister(text);
+        var lister = TagLister.For(text);
         if (!lister.IsPositionInBody(pos))
         {
             return false;
@@ -177,7 +177,7 @@ public static class CodeInsertOperations
     {
         ArgumentNullException.ThrowIfNull(text);
         int pos = Math.Clamp(caretPosition, 0, text.Length);
-        var lister = new TagLister(text);
+        var lister = TagLister.For(text);
         HashSet<string> tagList = GetOpeningTagName(lister, pos).Length == 0 ? AnchorTags : CodeFormatOperations.IdTags;
         return CodeFormatOperations.ProcessAttribute(
             text, lister, pos, pos, "id", tagList, null, setAttr: false, out _, out _) ?? string.Empty;
@@ -188,7 +188,7 @@ public static class CodeInsertOperations
     {
         ArgumentNullException.ThrowIfNull(text);
         int pos = Math.Clamp(caretPosition, 0, text.Length);
-        var lister = new TagLister(text);
+        var lister = TagLister.For(text);
         return CodeFormatOperations.ProcessAttribute(
             text, lister, pos, pos, "href", AnchorTags, null, setAttr: false, out _, out _) ?? string.Empty;
     }
@@ -210,7 +210,7 @@ public static class CodeInsertOperations
         ArgumentNullException.ThrowIfNull(idValue);
         CodeFormatOperations.Normalize(text, ref selectionStart, ref selectionEnd);
 
-        var lister = new TagLister(text);
+        var lister = TagLister.For(text);
         HashSet<string> tagList =
             GetOpeningTagName(lister, selectionStart).Length == 0 ? AnchorTags : CodeFormatOperations.IdTags;
 
@@ -228,7 +228,7 @@ public static class CodeInsertOperations
         ArgumentNullException.ThrowIfNull(hrefValue);
         CodeFormatOperations.Normalize(text, ref selectionStart, ref selectionEnd);
 
-        var lister = new TagLister(text);
+        var lister = TagLister.For(text);
         return InsertTagAttribute(text, lister, selectionStart, selectionEnd, "a", "href", HtmlSafe(hrefValue), AnchorTags);
     }
 

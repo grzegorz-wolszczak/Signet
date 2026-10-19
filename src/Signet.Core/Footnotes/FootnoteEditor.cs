@@ -215,7 +215,7 @@ public static partial class FootnoteEditor
         ArgumentNullException.ThrowIfNull(html);
         IReadOnlyList<Footnote> footnotes = FootnoteScanner.Scan(book);
         string text = html.GetText();
-        TagLister tags = new(text);
+        TagLister tags = TagLister.For(text);
 
         // A reference inside a note is the more specific hit.
         foreach (Footnote footnote in footnotes.Where(f => ReferenceEquals(f.ReferenceFile, html)))
@@ -276,13 +276,13 @@ public static partial class FootnoteEditor
         if (side == FootnoteSide.Reference)
         {
             string text = footnote.ReferenceFile.GetText();
-            return FindAnchor(new TagLister(text), text, footnote.ReferenceHref, footnote.ReferenceOccurrence) is { } anchor
+            return FindAnchor(TagLister.For(text), text, footnote.ReferenceHref, footnote.ReferenceOccurrence) is { } anchor
                 ? (footnote.ReferenceFile, anchor.Start)
                 : null;
         }
 
         string noteText = footnote.NoteFile.GetText();
-        return FindElementById(new TagLister(noteText), noteText, footnote.NoteId) is { } note
+        return FindElementById(TagLister.For(noteText), noteText, footnote.NoteId) is { } note
             ? (footnote.NoteFile, note.Start)
             : null;
     }
@@ -293,7 +293,7 @@ public static partial class FootnoteEditor
         ArgumentNullException.ThrowIfNull(book);
         ArgumentNullException.ThrowIfNull(html);
         string text = html.GetText();
-        TagLister tags = new(text);
+        TagLister tags = TagLister.For(text);
         if (offset < 0 || offset > text.Length || !tags.IsPositionInBody(offset))
         {
             return FootnoteError.NotInBody;
@@ -345,7 +345,7 @@ public static partial class FootnoteEditor
                 return FootnoteError.InvalidContent;
             }
 
-            TagLister tags = new(paragraph);
+            TagLister tags = TagLister.For(paragraph);
             for (int i = 0; i < tags.Count; i++)
             {
                 if (IsOpening(tags.At(i)) && BlockNames.Contains(tags.At(i).TagName))
@@ -553,7 +553,7 @@ public static partial class FootnoteEditor
             .Where(f => ReferenceEquals(f.NoteFile, current.NoteFile) && f.NoteId == current.NoteId)
             .ToList();
         string noteText = current.NoteFile.GetText();
-        Element? note = FindElementById(new TagLister(noteText), noteText, current.NoteId);
+        Element? note = FindElementById(TagLister.For(noteText), noteText, current.NoteId);
         if (note is null)
         {
             return false;
@@ -610,7 +610,7 @@ public static partial class FootnoteEditor
         }
 
         string noteText = current.NoteFile.GetText();
-        if (FindElementById(new TagLister(noteText), noteText, current.NoteId) is not { } note
+        if (FindElementById(TagLister.For(noteText), noteText, current.NoteId) is not { } note
             || ReferenceEdits(book, current, note) is not { } edits)
         {
             return false;
@@ -627,7 +627,7 @@ public static partial class FootnoteEditor
     private static List<TextEdit>? ReferenceEdits(Book book, Footnote footnote, Element note)
     {
         string text = footnote.ReferenceFile.GetText();
-        TagLister tags = new(text);
+        TagLister tags = TagLister.For(text);
         if (FindAnchor(tags, text, footnote.ReferenceHref, footnote.ReferenceOccurrence) is not { } anchor)
         {
             return null;
@@ -696,7 +696,7 @@ public static partial class FootnoteEditor
         List<Footnote> references = ReferencesOf(book, current);
         HtmlResource oldFile = current.NoteFile;
         string oldText = oldFile.GetText();
-        Element? element = FindElementById(new TagLister(oldText), oldText, current.NoteId);
+        Element? element = FindElementById(TagLister.For(oldText), oldText, current.NoteId);
         if (element is null)
         {
             return false;
@@ -732,7 +732,7 @@ public static partial class FootnoteEditor
         foreach (IGrouping<HtmlResource, Footnote> file in references.GroupBy(r => r.ReferenceFile))
         {
             string referenceText = file.Key.GetText();
-            TagLister referenceTags = new(referenceText);
+            TagLister referenceTags = TagLister.For(referenceText);
             List<TextEdit> edits = new();
             foreach (Footnote reference in file)
             {
@@ -917,7 +917,7 @@ public static partial class FootnoteEditor
     {
         ArgumentNullException.ThrowIfNull(footnote);
         string text = footnote.ReferenceFile.GetText();
-        return FindAnchor(new TagLister(text), text, footnote.ReferenceHref, footnote.ReferenceOccurrence) is { } anchor
+        return FindAnchor(TagLister.For(text), text, footnote.ReferenceHref, footnote.ReferenceOccurrence) is { } anchor
             ? (footnote.ReferenceFile, anchor.OuterStart, anchor.OuterEnd)
             : null;
     }
@@ -949,7 +949,7 @@ public static partial class FootnoteEditor
             if (!snapshots.TryGetValue(file, out (string Text, TagLister Tags) snapshot))
             {
                 string text = file.GetText();
-                snapshots[file] = snapshot = (text, new TagLister(text));
+                snapshots[file] = snapshot = (text, TagLister.For(text));
             }
 
             return snapshot;
@@ -1193,7 +1193,7 @@ public static partial class FootnoteEditor
         {
             string text = h.GetText();
             return text.Contains(GlobalContainerClass, StringComparison.Ordinal)
-                && FindContainer(new TagLister(text), text, GlobalContainerClass) is not null;
+                && FindContainer(TagLister.For(text), text, GlobalContainerClass) is not null;
         });
     }
 
@@ -1265,7 +1265,7 @@ public static partial class FootnoteEditor
     {
         string containerClass = placement == FootnotePlacement.Local ? LocalContainerClass : GlobalContainerClass;
         string text = file.GetText();
-        TagLister tags = new(text);
+        TagLister tags = TagLister.For(text);
         if (FindContainer(tags, text, containerClass) is null)
         {
             string section = epub3 ? "section" : "div";
@@ -1276,7 +1276,7 @@ public static partial class FootnoteEditor
             int bodyClose = tags.FindBodyCloseTag();
             int at = bodyClose >= 0 ? LineStartIfBlank(text, tags.At(bodyClose).Pos) : text.Length;
             text = text.Insert(at, container);
-            tags = new TagLister(text);
+            tags = TagLister.For(text);
         }
 
         Element containerElement = FindContainer(tags, text, containerClass)!;
@@ -1300,7 +1300,7 @@ public static partial class FootnoteEditor
         foreach (string containerClass in new[] { LocalContainerClass, GlobalContainerClass })
         {
             string text = file.GetText();
-            TagLister tags = new(text);
+            TagLister tags = TagLister.For(text);
             if (FindContainer(tags, text, containerClass) is not { } container || HasChildElements(tags, container))
             {
                 continue;
@@ -1370,7 +1370,7 @@ public static partial class FootnoteEditor
                 continue;
             }
 
-            TagLister tags = new(text);
+            TagLister tags = TagLister.For(text);
             for (int i = 0; i < tags.Count; i++)
             {
                 TagLister.TagInfo tag = tags.At(i);
@@ -1444,7 +1444,7 @@ public static partial class FootnoteEditor
         }
 
         string text = file.GetText();
-        TagLister tags = new(text);
+        TagLister tags = TagLister.For(text);
         if (FindContainer(tags, text, GlobalContainerClass) is not { } container)
         {
             return false;
@@ -1646,7 +1646,7 @@ public static partial class FootnoteEditor
     private static string ChapterTitle(HtmlResource html)
     {
         string text = html.GetText();
-        TagLister tags = new(text);
+        TagLister tags = TagLister.For(text);
         int body = text.IndexOf("<body", StringComparison.OrdinalIgnoreCase);
         string? heading = null;
         string? title = null;
@@ -1708,7 +1708,7 @@ public static partial class FootnoteEditor
             return false;
         }
 
-        TagLister tags = new(text);
+        TagLister tags = TagLister.For(text);
         if (FindContainer(tags, text, containerClass) is not { } container)
         {
             return false;
@@ -1832,7 +1832,7 @@ public static partial class FootnoteEditor
 
     private static NoteContent? ContentOf(Footnote footnote, string text)
     {
-        TagLister tags = new(text);
+        TagLister tags = TagLister.For(text);
         if (FindElementById(tags, text, footnote.NoteId) is not { } note || tags.At(note.OpenIndex).Kind != TagKind.Begin)
         {
             return null;
@@ -1955,7 +1955,7 @@ public static partial class FootnoteEditor
     // Whether the markup holds only block elements (whitespace and comments between them).
     private static bool OnlyBlocks(string markup)
     {
-        TagLister tags = new(markup);
+        TagLister tags = TagLister.For(markup);
         int depth = 0;
         int position = 0;
         for (int i = 0; i < tags.Count; i++)
@@ -1990,7 +1990,7 @@ public static partial class FootnoteEditor
         FootnoteStyles styles)
     {
         string text = html.GetText();
-        TagLister tags = new(text);
+        TagLister tags = TagLister.For(text);
         string context = "<p>" + reference + "</p>";
         if (EnclosingBlock(tags, text, start, end) is { } block)
         {
@@ -2110,7 +2110,7 @@ public static partial class FootnoteEditor
     // Whether the markup has a link to the given id (the link back of a note).
     private static bool HasBacklink(string markup, string referenceId)
     {
-        TagLister tags = new(markup);
+        TagLister tags = TagLister.For(markup);
         for (int i = 0; i < tags.Count; i++)
         {
             TagLister.TagInfo tag = tags.At(i);

@@ -41,7 +41,7 @@ public static class DivUnwrapper
     public static DivUnwrapCheck Check(string text, int offset)
     {
         ArgumentNullException.ThrowIfNull(text);
-        TagLister lister = new(text);
+        TagLister lister = TagLister.For(text);
         if (FindDiv(lister, offset) is { } found)
         {
             string openTag = text.Substring(found.Open.Pos, found.Open.Len);
@@ -74,7 +74,7 @@ public static class DivUnwrapper
     public static FormatEdit Unwrap(string text, int offset, int caret)
     {
         ArgumentNullException.ThrowIfNull(text);
-        TagLister lister = new(text);
+        TagLister lister = TagLister.For(text);
         if (FindDiv(lister, offset) is not { } found)
         {
             return FormatEdit.Unchanged(text, caret, caret);

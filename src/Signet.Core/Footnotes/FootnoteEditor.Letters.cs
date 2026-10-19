@@ -53,7 +53,7 @@ public static partial class FootnoteEditor
 
             Footnote first = references[0];
             string text = first.NoteFile.GetText();
-            Element? element = FindElementById(new TagLister(text), text, first.NoteId);
+            Element? element = FindElementById(TagLister.For(text), text, first.NoteId);
             HashSet<(string, string)> ids = references.Where(r => r.ReferenceId.Length > 0)
                 .Select(r => (r.ReferenceFile.BookPath, r.ReferenceId))
                 .ToHashSet();
@@ -129,7 +129,7 @@ public static partial class FootnoteEditor
         FootnoteLetters.Detect(references.Select(r =>
         {
             string text = r.ReferenceFile.GetText();
-            return FindAnchor(new TagLister(text), text, r.ReferenceHref, r.ReferenceOccurrence) is { } anchor
+            return FindAnchor(TagLister.For(text), text, r.ReferenceHref, r.ReferenceOccurrence) is { } anchor
                 ? MarkerLetters(text[anchor.InnerStart..anchor.InnerEnd])
                 : string.Empty;
         }));
@@ -142,7 +142,7 @@ public static partial class FootnoteEditor
         foreach (Footnote note in notes.Where(f => f.ReferenceIndex == 0))
         {
             string text = note.NoteFile.GetText();
-            if (FindElementById(new TagLister(text), text, note.NoteId) is { } element)
+            if (FindElementById(TagLister.For(text), text, note.NoteId) is { } element)
             {
                 if (!inside.TryGetValue(note.NoteFile, out List<(int Start, int End)>? ranges))
                 {

@@ -102,6 +102,15 @@ public abstract class ContentTabViewModel : Document, IDeferredContentPresentati
     {
     }
 
+    /// <summary>
+    /// Lets go of what the tab holds once it is closed (the tab manager calls it; a closed tab is not shown again — the
+    /// resource opens in a new one). The resource lives as long as the book, so a tab that stays subscribed to it would
+    /// stay in memory with it. Does nothing by default.
+    /// </summary>
+    public virtual void Release()
+    {
+    }
+
     /// <summary>Refreshes the tab caption after the resource's name/location changes.</summary>
     internal virtual void RefreshCaption() => Title = Tab.Caption;
 }

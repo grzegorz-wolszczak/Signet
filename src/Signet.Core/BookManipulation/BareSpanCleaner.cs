@@ -27,7 +27,7 @@ internal static class BareSpanCleaner
     public static IReadOnlyList<SpanTags> Find(string text)
     {
         ArgumentNullException.ThrowIfNull(text);
-        TagLister lister = new(text);
+        TagLister lister = TagLister.For(text);
         IReadOnlyList<TagLister.TagInfo> tags = lister.Tags;
         List<SpanTags> found = new();
         for (int i = 0; i < tags.Count; i++)

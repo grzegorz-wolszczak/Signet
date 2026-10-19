@@ -27,6 +27,10 @@ public static class EditorZoom
         AvaloniaProperty.RegisterAttached<TextEditor, double>("BaseSize", typeof(EditorZoom), 13);
 
     private static readonly List<WeakReference<TextEditor>> s_editors = new();
+
+    // The count at which attaching an editor drops the editors already collected (doubled each time), so that the list
+    // does not grow for the whole session with the previews made and thrown away.
+    private static int s_pruneAt = 64;
     private static int s_delta;
 
     static EditorZoom() => BaseSizeProperty.Changed.AddClassHandler<TextEditor>((editor, _) => Apply(editor));
@@ -68,6 +72,12 @@ public static class EditorZoom
     public static void Attach(TextEditor editor)
     {
         ArgumentNullException.ThrowIfNull(editor);
+        if (s_editors.Count >= s_pruneAt)
+        {
+            s_editors.RemoveAll(r => !r.TryGetTarget(out _));
+            s_pruneAt = Math.Max(64, s_editors.Count * 2);
+        }
+
         s_editors.Add(new WeakReference<TextEditor>(editor));
         editor.AddHandler(InputElement.PointerWheelChangedEvent, OnWheel, RoutingStrategies.Tunnel);
         SetBaseSize(editor, editor.FontSize);

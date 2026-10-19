@@ -173,7 +173,7 @@ public static partial class ElementMerger
             return null;
         }
 
-        var lister = new TagLister(text);
+        var lister = TagLister.For(text);
         if (ExpandToSiblings(lister, start, end) is not { } range)
         {
             return null;

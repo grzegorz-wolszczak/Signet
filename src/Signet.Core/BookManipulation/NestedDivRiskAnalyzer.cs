@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
@@ -194,7 +195,24 @@ internal static class NestedDivRiskAnalyzer
     }
 
     internal static IElement? ElementAt(IHtmlDocument document, int offset) =>
-        document.All.FirstOrDefault(e => XhtmlDoc.OffsetFromNode(e) == offset);
+        ElementsByOffset.GetValue(document, IndexByOffset).GetValueOrDefault(offset);
+
+    // The elements of a document by the offset of their opening tag (the first one in document order wins, as a search
+    // of document.All would find it). The risk analysers look up an element for each candidate of a file: a search of
+    // the whole document for each of them made the analysis of a file with many candidates quadratic. The documents
+    // are parsed for the analysis and never changed, so the index holds; it goes with its document.
+    private static readonly ConditionalWeakTable<IHtmlDocument, Dictionary<int, IElement>> ElementsByOffset = new();
+
+    private static Dictionary<int, IElement> IndexByOffset(IHtmlDocument document)
+    {
+        Dictionary<int, IElement> index = new();
+        foreach (IElement element in document.All)
+        {
+            index.TryAdd(XhtmlDoc.OffsetFromNode(element), element);
+        }
+
+        return index;
+    }
 
     // The winning declaration of each property on the element: !important first, then specificity, then source
     // order; the style attribute beats selector rules within the same importance.

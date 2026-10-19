@@ -49,7 +49,7 @@ public sealed class FontTabViewModel : ContentTabViewModel
         }
 
         _font = font;
-        _font.ResourceUpdatedOnDisk += (_, _) => LoadMetadata();
+        _font.ResourceUpdatedOnDisk += OnResourceUpdatedOnDisk;
         LoadMetadata();
     }
 
@@ -130,6 +130,19 @@ public sealed class FontTabViewModel : ContentTabViewModel
 
     /// <inheritdoc />
     public override void Reload() => LoadMetadata();
+
+    /// <inheritdoc />
+    public override void Release()
+    {
+        _font.ResourceUpdatedOnDisk -= OnResourceUpdatedOnDisk;
+        Bitmap? preview = _preview;
+        _preview = null;
+        OnPropertyChanged(nameof(Preview));
+        OnPropertyChanged(nameof(HasPreview));
+        preview?.Dispose();
+    }
+
+    private void OnResourceUpdatedOnDisk(object? sender, EventArgs e) => LoadMetadata();
 
     private void LoadMetadata()
     {

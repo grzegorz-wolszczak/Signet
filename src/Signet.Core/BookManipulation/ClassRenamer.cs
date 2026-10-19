@@ -252,7 +252,7 @@ public sealed class ClassRenamer
         }
 
         int pos = Math.Clamp(caretOffset, 0, text.Length);
-        TagLister lister = new(text);
+        TagLister lister = TagLister.For(text);
         TagLister.TagInfo tag = lister.At(lister.FindFirstTagOnOrAfter(pos));
         if (pos < tag.Pos || pos >= tag.Pos + tag.Len || tag.Kind is not (TagKind.Begin or TagKind.SelfClosing))
         {
@@ -715,7 +715,7 @@ public sealed class ClassRenamer
                 .ToList();
 
             string folder = Core.BookPath.StartingDir(bookPath);
-            TagLister lister = new(text);
+            TagLister lister = TagLister.For(text);
             foreach (TagLister.TagInfo tag in lister.Tags)
             {
                 if (tag.Pos < 0 || tag.Kind is not (TagKind.Begin or TagKind.SelfClosing))

@@ -81,7 +81,7 @@ public static class CodeFormatOperations
         }
 
         int pos = selectionStart;
-        var lister = new TagLister(text);
+        var lister = TagLister.For(text);
 
         if (!lister.IsPositionInBody(pos))
         {
@@ -223,7 +223,7 @@ public static class CodeFormatOperations
         }
 
         int pos = selectionStart;
-        var lister = new TagLister(text);
+        var lister = TagLister.For(text);
         if (!lister.IsPositionInBody(pos))
         {
             return FormatEdit.Unchanged(text, selectionStart, selectionEnd);
@@ -391,7 +391,7 @@ public static class CodeFormatOperations
         ArgumentException.ThrowIfNullOrEmpty(value);
         Normalize(text, ref selectionStart, ref selectionEnd);
 
-        var lister = new TagLister(text);
+        var lister = TagLister.For(text);
         int pos = selectionStart;
         if (!lister.IsPositionInBody(pos))
         {
@@ -444,7 +444,7 @@ public static class CodeFormatOperations
         ArgumentNullException.ThrowIfNull(dirValue);
         Normalize(text, ref selectionStart, ref selectionEnd);
 
-        var lister = new TagLister(text);
+        var lister = TagLister.For(text);
         int pos = selectionStart;
         if (!lister.IsPositionInBody(pos))
         {
@@ -625,7 +625,7 @@ public static class CodeFormatOperations
             return false;
         }
 
-        var lister = new TagLister(text);
+        var lister = TagLister.For(text);
         int start = selectionStart;
         int end = selectionEnd - 1;
         if (start < text.Length && end >= 0 && text[start] == '<' && text[end] == '>')
@@ -665,7 +665,7 @@ public static class CodeFormatOperations
             return false;
         }
 
-        return IsPositionInTag(text, new TagLister(text), caretPosition);
+        return IsPositionInTag(text, TagLister.For(text), caretPosition);
     }
 
     /// <summary>Removes the enclosing element (a begin/end pair or a single tag), leaving the content.</summary>
@@ -673,7 +673,7 @@ public static class CodeFormatOperations
     {
         ArgumentNullException.ThrowIfNull(text);
         int caret = Math.Clamp(caretPosition, 0, text.Length);
-        var lister = new TagLister(text);
+        var lister = TagLister.For(text);
         if (!IsPositionInTag(text, lister, caret))
         {
             return FormatEdit.Unchanged(text, caret, caret);
@@ -755,7 +755,7 @@ public static class CodeFormatOperations
             return false;
         }
 
-        var lister = new TagLister(text);
+        var lister = TagLister.For(text);
         if (IsPositionInTag(text, lister, caretPosition))
         {
             return caretPosition < text.Length && text[caretPosition] == '<';
@@ -782,7 +782,7 @@ public static class CodeFormatOperations
             };
         }
 
-        var lister = new TagLister(text);
+        var lister = TagLister.For(text);
         List<string> unmatched = UnmatchedTagsForBlock(text, lister, caret);
         if (unmatched.Count == 0)
         {
@@ -821,7 +821,7 @@ public static class CodeFormatOperations
         }
 
         int caret = Math.Clamp(caretPosition, 0, text.Length);
-        var lister = new TagLister(text);
+        var lister = TagLister.For(text);
         string path = lister.GeneratePathToTag(caret);
         string name = string.Empty;
         foreach (string node in path.Split(',', StringSplitOptions.RemoveEmptyEntries))

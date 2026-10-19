@@ -47,7 +47,7 @@ internal static class AdjacentDivMerger
     public static IReadOnlyList<AdjacentDivGroup> FindGroups(string text)
     {
         ArgumentNullException.ThrowIfNull(text);
-        TagLister lister = new(text);
+        TagLister lister = TagLister.For(text);
         IReadOnlyList<TagLister.TagInfo> tags = lister.Tags;
         Dictionary<int, int> levels = DivLevels(tags);
         HashSet<int> taken = new();
@@ -89,7 +89,7 @@ internal static class AdjacentDivMerger
     public static string? Merge(string text, int firstPos)
     {
         ArgumentNullException.ThrowIfNull(text);
-        TagLister lister = new(text);
+        TagLister lister = TagLister.For(text);
         IReadOnlyList<TagLister.TagInfo> tags = lister.Tags;
         int first = -1;
         for (int i = 0; i < tags.Count && tags[i].Pos >= 0; i++)

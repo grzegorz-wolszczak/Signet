@@ -35,6 +35,29 @@ public sealed class TagListerTests
         return data;
     }
 
+    /// <summary>
+    /// <see cref="TagLister.For"/> keeps the lister it built last for the same string instance; a different string, even
+    /// one built from the same pieces after an edit, always gets the tags of its own text.
+    /// </summary>
+    [Fact]
+    public void For_lists_the_tags_of_the_text_given_also_after_the_text_changed()
+    {
+        // Arrange
+        string before = Doc;
+        string after = Doc.Replace("<b>bold</b>", "<i>it</i> <b>bold</b>", StringComparison.Ordinal);
+
+        // Act
+        TagLister first = TagLister.For(before);
+        TagLister again = TagLister.For(before);
+        TagLister edited = TagLister.For(after);
+
+        // Assert
+        first.Tags.Select(t => (t.Pos, t.TagName)).Should().Equal(new TagLister(before).Tags.Select(t => (t.Pos, t.TagName)));
+        again.Tags.Select(t => (t.Pos, t.TagName)).Should().Equal(first.Tags.Select(t => (t.Pos, t.TagName)));
+        edited.Source.Should().BeSameAs(after);
+        edited.Tags.Select(t => t.TagName).Should().Contain("i", "the edited text has a tag the first one did not have");
+    }
+
     [Fact]
     public void Tags_AreListedInSourceOrder_WithPositionsAndKinds()
     {

@@ -914,8 +914,7 @@ public sealed class Book : IDisposable
             return null;
         }
 
-        bool keepWhitespace = XhtmlUsesStyleProperty(html, "white-space")
-            || XhtmlUsesStyleProperty(html, "white-space-collapse");
+        bool keepWhitespace = XhtmlUsesWhiteSpace(html, cssUsesWhiteSpace: new());
         return CleanSource.PrettyPrint(
             text,
             keepWhitespace,
@@ -1065,11 +1064,12 @@ public sealed class Book : IDisposable
         // content and the built-in values are used).
         PrettyPrintProps props = PrettyPrintProps.LoadUserPrefs();
 
+        // The chapters of a book mostly link the same stylesheets: each one is parsed once for the whole batch.
+        Dictionary<string, bool> cssUsesWhiteSpace = new(StringComparer.Ordinal);
         return ProcessHtmlFiles(GetHtmlResources(), requireWellFormed: true, html =>
         {
             string original = html.GetText();
-            bool keepWhitespace = XhtmlUsesStyleProperty(html, "white-space")
-                || XhtmlUsesStyleProperty(html, "white-space-collapse");
+            bool keepWhitespace = XhtmlUsesWhiteSpace(html, cssUsesWhiteSpace);
             string newSource = CleanSource.PrettyPrint(
                 original,
                 keepWhitespace,
@@ -1234,31 +1234,45 @@ public sealed class Book : IDisposable
         return MaintenanceOperationResult.Ok;
     }
 
+    // The properties that make pretty-printing keep the whitespace of a file.
+    private static readonly string[] WhiteSpaceProperties = { "white-space", "white-space-collapse" };
+
     /// <summary>
-    /// Whether the file uses the given CSS property — in <c>style</c> attributes (substring match),
+    /// Whether the file uses one of <see cref="WhiteSpaceProperties"/> — in <c>style</c> attributes (substring match),
     /// in the file's <c>&lt;style&gt;</c> block, or in any of the linked CSS stylesheets.
-    /// Used to decide <c>keep_whitespace</c> when pretty-printing.
+    /// Used to decide <c>keep_whitespace</c> when pretty-printing. <paramref name="cssUsesWhiteSpace"/> remembers the
+    /// answer for each stylesheet (by bookpath) across the files of one operation.
     /// </summary>
-    private bool XhtmlUsesStyleProperty(HtmlResource html, string property)
+    private bool XhtmlUsesWhiteSpace(HtmlResource html, Dictionary<string, bool> cssUsesWhiteSpace)
     {
         foreach (IElement element in html.GetDocument().All)
         {
             string? style = element.GetAttribute("style");
-            if (!string.IsNullOrEmpty(style) && style.Contains(property, StringComparison.Ordinal))
+            if (!string.IsNullOrEmpty(style) && WhiteSpaceProperties.Any(p => style.Contains(p, StringComparison.Ordinal)))
             {
                 return true;
             }
         }
 
-        if (new HtmlStyleInfo(html.GetText()).GetAllPropertyValues(property).Count > 0)
+        HtmlStyleInfo inline = new(html.GetText());
+        if (WhiteSpaceProperties.Any(p => inline.GetAllPropertyValues(p).Count > 0))
         {
             return true;
         }
 
+        Dictionary<string, CssResource>? stylesheets = null;
         foreach (string cssPath in html.GetPathsToLinkedResources())
         {
-            CssResource? css = GetCssResources().FirstOrDefault(c => string.Equals(c.BookPath, cssPath, StringComparison.Ordinal));
-            if (css is not null && new CssInfo(css.GetText()).GetAllPropertyValues(property).Count > 0)
+            if (!cssUsesWhiteSpace.TryGetValue(cssPath, out bool uses))
+            {
+                stylesheets ??= GetCssResources().ToDictionary(c => c.BookPath, StringComparer.Ordinal);
+                uses = stylesheets.TryGetValue(cssPath, out CssResource? css)
+                    && new CssInfo(css.GetText()) is var info
+                    && WhiteSpaceProperties.Any(p => info.GetAllPropertyValues(p).Count > 0);
+                cssUsesWhiteSpace[cssPath] = uses;
+            }
+
+            if (uses)
             {
                 return true;
             }
