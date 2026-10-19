@@ -404,6 +404,29 @@ public sealed class FootnoteEditorTests
     }
 
     [Fact]
+    public void A_stylesheet_shared_by_several_files_gets_the_rules_once()
+    {
+        // Arrange
+        (Book book, HtmlResource first) = NewBook();
+        using (book)
+        {
+            CssResource css = book.CreateEmptyCssFile();
+            css.SetText("p { margin: 0; }\n");
+            first.SetText(Xhtml(Body, "\n<link href=\"" + Core.BookPath.Relative(first.BookPath, css.BookPath) + "\" rel=\"stylesheet\" type=\"text/css\"/>"));
+            HtmlResource second = book.CreateEmptyHtmlFile();
+            second.SetText(Xhtml(Body, "\n<link href=\"" + Core.BookPath.Relative(second.BookPath, css.BookPath) + "\" rel=\"stylesheet\" type=\"text/css\"/>"));
+
+            // Act
+            FootnoteEditor.Add(book, first, After(first, "First"), "note", FootnotePlacement.Local);
+            FootnoteEditor.Add(book, second, After(second, "First"), "note 2", FootnotePlacement.Local);
+            FootnoteEditor.Renumber(book);
+
+            // Assert
+            css.GetText().Should().Be("p { margin: 0; }\n\n" + FootnoteStyles.Default.ApplyTo(string.Empty));
+        }
+    }
+
+    [Fact]
     public void Every_footnote_operation_keeps_the_rules_equal_to_the_styles()
     {
         // Arrange
