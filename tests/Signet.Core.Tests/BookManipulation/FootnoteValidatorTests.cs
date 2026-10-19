@@ -103,6 +103,48 @@ public sealed class FootnoteValidatorTests
     }
 
     [Fact]
+    public void A_link_in_the_text_of_a_note_that_is_not_the_link_back_is_not_reported()
+    {
+        // Arrange — a note with a link to a verse and a cross reference after its link back, as the notes of a Bible have.
+        (Book book, _) = NewBook(
+            Reference + "\n<p id=\"verse-3\">Verse.</p>\n<aside class=\"aside_footnote\" id=\"fn-1\" epub:type=\"footnote\"><p><a href=\"#fn-1-ref\">1.</a> "
+            + "<a href=\"#verse-3\"><b>Gen 1, 3</b></a> - Compare <a href=\"#verse-3\">Gen 1,3</a> and <a href=\"#verse-3\">Gen 1,4</a>.</p></aside>");
+        using (book)
+        {
+            // Act & Assert
+            Codes(book).Should().BeEmpty();
+        }
+    }
+
+    [Fact]
+    public void A_note_whose_only_link_leads_to_a_verse_has_no_link_back_but_that_is_not_a_mismatch_of_it()
+    {
+        // Arrange
+        (Book book, _) = NewBook(
+            Reference + "\n<p id=\"verse-3\">Verse.</p>\n<aside class=\"aside_footnote\" id=\"fn-1\" epub:type=\"footnote\"><p>1. See <a href=\"#verse-3\">Gen 1,3</a>.</p></aside>");
+        using (book)
+        {
+            // Act & Assert
+            Codes(book).Should().Equal("Validation_FootnoteNoBacklink");
+        }
+    }
+
+    [Fact]
+    public void The_links_back_of_a_shared_note_are_each_checked_and_the_links_after_them_are_not()
+    {
+        // Arrange — "1a, 1b." leads to two references; the second one leads to the wrong place.
+        (Book book, _) = NewBook(
+            "<p>A<a class=\"a_note\" epub:type=\"noteref\" href=\"#fn-1\" id=\"fn-1a-ref\">[1a]</a> B<a class=\"a_note\" epub:type=\"noteref\" href=\"#fn-1\" id=\"fn-1b-ref\">[1b]</a></p>\n"
+            + "<p id=\"elsewhere\">x</p>\n<aside id=\"fn-1\" epub:type=\"footnote\"><p><a href=\"#fn-1a-ref\">1a</a>, <a href=\"#elsewhere\">1b</a>. Text <a href=\"#elsewhere\">link</a></p></aside>");
+        using (book)
+        {
+            // Act & Assert
+            // The second link back is a mismatch, and so the second reference has no link back.
+            Codes(book).Should().BeEquivalentTo("Validation_FootnoteBacklinkMismatch", "Validation_FootnoteManyRefs");
+        }
+    }
+
+    [Fact]
     public void A_plain_link_to_a_note_is_not_a_second_reference()
     {
         // Arrange
