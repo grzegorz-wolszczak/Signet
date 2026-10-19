@@ -17,13 +17,19 @@ using Signet.Controls.TreeDataGrid.Primitives;
 using Signet.Core.BookManipulation;
 using Signet.Core.MainUI;
 using Signet.Core.Resources;
+using Signet.Core.Tests.TestSupport;
 using Signet.Core.Toc;
 
 namespace Signet.App.UiTests;
 
 /// <summary>The "Table Of Contents" panel: the TOC tree (Title, Target), expanded, and navigation to an entry.</summary>
-public sealed class TableOfContentsViewTests
+public sealed class TableOfContentsViewTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
     private static void Settle(Window window)
     {
         for (int i = 0; i < 3; i++)
@@ -34,9 +40,9 @@ public sealed class TableOfContentsViewTests
     }
 
     // A book whose TOC is Alpha > Alpha One, Beta; the panel shown on it.
-    private static (Window Window, TableOfContentsViewModel Vm, TreeDataGrid Tree, Book Book) Show()
+    private (Window Window, TableOfContentsViewModel Vm, TreeDataGrid Tree, Book Book) Show()
     {
-        Book book = BookCreator.CreateNewBook("3.0");
+        Book book = _disposables.Add(BookCreator.CreateNewBook("3.0"));
         HtmlResource html = book.GetHtmlResourcesExcludingNav().First();
         string text = html.GetText();
         int start = text.IndexOf("<body", StringComparison.Ordinal);

@@ -9,6 +9,7 @@ using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.ViewModels;
 using Signet.Core.Spellcheck;
+using Signet.Core.Tests.TestSupport;
 using Signet.Core.Themes;
 using Xunit;
 
@@ -17,6 +18,8 @@ namespace Signet.App.Tests;
 /// <summary>Preferences › Appearance (the themes) and › Code Editor › Color Scheme (<see cref="ThemeDocumentViewModel"/>).</summary>
 public sealed class ThemeDocumentViewModelTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
     private readonly TestHost _host = new();
     private readonly string _root = Path.Combine(Path.GetTempPath(), "Signet.Tests", "scheme-" + Guid.NewGuid().ToString("N"));
     private readonly List<string> _messages = new();
@@ -24,6 +27,7 @@ public sealed class ThemeDocumentViewModelTests : IDisposable
 
     public void Dispose()
     {
+        _disposables.Dispose();
         _host.Dispose();
         if (Directory.Exists(_root))
         {

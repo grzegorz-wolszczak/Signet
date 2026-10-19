@@ -15,8 +15,13 @@ namespace Signet.Core.Tests.BookManipulation;
 /// Tests of <see cref="CrossFileStructureValidator"/> (checking parsing/structure at the level of the
 /// whole book).
 /// </summary>
-public sealed class CrossFileStructureValidatorTests
+public sealed class CrossFileStructureValidatorTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
     [Fact]
     public void Validate_returns_no_results_for_a_wellformed_book()
     {
@@ -109,9 +114,9 @@ public sealed class CrossFileStructureValidatorTests
             .OfType<HtmlResource>()
             .First(r => r.BookPath.EndsWith(fileName, StringComparison.Ordinal));
 
-    private static Book OpenMutableBook()
+    private Book OpenMutableBook()
     {
-        TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
         return new ImportEpub(epub).GetBook();
     }

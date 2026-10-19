@@ -1,24 +1,25 @@
-using Signet.Core.MainUI;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using AutoFixture;
-using AwesomeAssertions;
 using Avalonia.Input;
-using Signet.App.Actions;
-using Signet.App.Input;
+using AwesomeAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
+using Signet.App.Actions;
 using Signet.App.Infrastructure;
+using Signet.App.Input;
 using Signet.App.Resources;
 using Signet.App.Services;
+using Signet.App.Tests.TestSupport;
 using Signet.App.ViewModels;
 using Signet.Core.Footnotes;
+using Signet.Core.MainUI;
 using Signet.Core.Misc;
 using Signet.Core.Spellcheck;
+using Signet.Core.Tests.TestSupport;
 using Signet.Core.Themes;
-using Signet.App.Tests.TestSupport;
 using Xunit;
 
 namespace Signet.App.Tests;
@@ -27,24 +28,30 @@ namespace Signet.App.Tests;
 /// Tests for <see cref="PreferencesViewModel"/>: changes are written to <see cref="SettingsStore"/> only when
 /// saved (Save), and the keyboard shortcuts page is the keymap of all actions.
 /// </summary>
-public sealed class PreferencesViewModelTests
+public sealed class PreferencesViewModelTests : IDisposable
 {
-    private static (TestHost Host, PreferencesViewModel Vm) New()
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
+    private (TestHost Host, PreferencesViewModel Vm) New()
     {
-        TestHost host = new();
+        TestHost host = _disposables.Add(new TestHost());
         return (host, NewOn(host));
     }
 
-    private static PreferencesViewModel NewOn(TestHost host)
+    private PreferencesViewModel NewOn(TestHost host)
     {
         LocalizationManager localization = new(host.Settings, NullLogger<LocalizationManager>.Instance);
         IconThemeManager iconTheme = new(host.Settings, NullLogger<IconThemeManager>.Instance);
-        string root = Path.Combine(Path.GetTempPath(), "Signet.Tests", "prefs-" + Guid.NewGuid().ToString("N"));
+        string root = _disposables.Add(new TempDir("prefs-")).Path;
         SpellChecker spellChecker = new(host.Settings, Path.Combine(root, "hunspell"), Path.Combine(root, "user"));
         UiDensityManager uiDensity = new(
             host.Settings, iconTheme, NullLogger<UiDensityManager>.Instance, () => "Segoe UI", _ => false);
         ThemeManager themes = new(host.Settings, ThemeStores.In(root), NullLogger<ThemeManager>.Instance);
-        return new PreferencesViewModel(host.Settings, spellChecker, localization, iconTheme, host.Shortcuts, host.Registry, uiDensity, themes);
+        return _disposables.Add(
+            new PreferencesViewModel(host.Settings, spellChecker, localization, iconTheme, host.Shortcuts, host.Registry, uiDensity, themes));
     }
 
     [Fact]
@@ -1154,7 +1161,7 @@ public sealed class PreferencesViewModelTests
         sample.GroupByFile = false;
         sample.UsageColumnWidth = 321;
         host.Settings.FindUsagesWrapRows.Should().BeFalse();
-        host.Settings.FindUsagesGroupByFile.Should().Be(new SettingsStore(System.IO.Path.GetTempFileName()).FindUsagesGroupByFile, "the default");
+        host.Settings.FindUsagesGroupByFile.Should().Be(new SettingsStore(_disposables.Add(new TempDir()).Combine("defaults.xml")).FindUsagesGroupByFile, "the default");
         host.Settings.FindUsagesUsageColumnWidth.Should().NotBe(321);
         host.Settings.FindUsagesAppearance.CellsFontSize.Should().Be(0, "the preview shows what is not saved yet");
     }

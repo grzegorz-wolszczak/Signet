@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Signet.App.Infrastructure;
 using Signet.App.ViewModels;
 using Signet.Core.Spellcheck;
+using Signet.Core.Tests.TestSupport;
 using Signet.Core.Themes;
 using Xunit;
 
@@ -17,6 +18,8 @@ namespace Signet.App.Tests;
 /// <summary>The pages of the keys of Appearance › Color Scheme (<see cref="ThemeKeysPageViewModel"/>).</summary>
 public sealed class ThemeKeysPageViewModelTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
     private static readonly Fixture Any = new();
     private readonly TestHost _host = new();
     private readonly string _root = Path.Combine(Path.GetTempPath(), "Signet.Tests", "scheme-page-" + Guid.NewGuid().ToString("N"));
@@ -24,6 +27,7 @@ public sealed class ThemeKeysPageViewModelTests : IDisposable
 
     public void Dispose()
     {
+        _disposables.Dispose();
         _host.Dispose();
         if (Directory.Exists(_root))
         {

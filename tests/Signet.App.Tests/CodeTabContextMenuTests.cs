@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using AwesomeAssertions;
@@ -19,22 +20,27 @@ namespace Signet.App.Tests;
 /// Code Editor context menu logic in <see cref="CodeTabViewModel"/>, tested without the control
 /// and with the host replaced by a mock.
 /// </summary>
-public sealed class CodeTabContextMenuTests
+public sealed class CodeTabContextMenuTests : IDisposable
 {
-    private static Book Load(TempDir temp) =>
-        new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+    private readonly Disposables _disposables = new();
 
-    private static CodeTabViewModel NewTab(Resource resource, ICodeTabHost? host = null)
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
+    private Book Load(TempDir temp) =>
+        _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
+
+    private CodeTabViewModel NewTab(Resource resource, ICodeTabHost? host = null)
     {
         OpenTab tab = new TabManagerModel().OpenResource(resource);
-        (SettingsStore settings, SpellChecker spellChecker) = SpellCheckTestFactory.New();
+        (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         return new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker) { Host = host };
     }
 
     [Fact]
     public void Html_tab_offers_reformat_html_and_css_tab_offers_reformat_css()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
 
         CodeTabViewModel html = NewTab(book.GetAllResources().OfType<HtmlResource>().First());
@@ -48,7 +54,7 @@ public sealed class CodeTabContextMenuTests
     [Fact]
     public void Class_at_caret_for_rename_is_offered_only_on_a_class_name_in_xhtml()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel html = NewTab(book.GetAllResources().OfType<HtmlResource>().First());
         html.Document.Text = "<html><body><p class=\"c1\">c1</p></body></html>";
@@ -72,7 +78,7 @@ public sealed class CodeTabContextMenuTests
     [Fact]
     public void Rename_class_action_requests_the_dialog_only_on_a_class_name()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel html = NewTab(book.GetAllResources().OfType<HtmlResource>().First());
         html.Document.Text = "<html><body><p class=\"c1\">c1</p></body></html>";
@@ -93,7 +99,7 @@ public sealed class CodeTabContextMenuTests
     [Fact]
     public void Style_class_at_caret_for_rename_is_offered_in_stylesheets_and_style_blocks()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel css = NewTab(book.GetAllResources().OfType<CssResource>().First());
         css.Document.Text = "p.note { color: red }";
@@ -113,7 +119,7 @@ public sealed class CodeTabContextMenuTests
     [Fact]
     public void Toggle_line_wrap_mode_changes_only_this_tab()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewTab(book.GetAllResources().OfType<HtmlResource>().First());
         bool before = sut.WordWrap;
@@ -126,7 +132,7 @@ public sealed class CodeTabContextMenuTests
     [Fact]
     public void Selected_text_and_unmark_offer_follow_the_selection()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewTab(book.GetAllResources().OfType<HtmlResource>().First());
         sut.Document.Text = "<p>hello world</p>";
@@ -143,7 +149,7 @@ public sealed class CodeTabContextMenuTests
     [Fact]
     public void Image_under_the_caret_resolves_to_a_book_path_and_opens_its_tab()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
         var host = new Mock<ICodeTabHost>();
@@ -166,7 +172,7 @@ public sealed class CodeTabContextMenuTests
     [Fact]
     public void Reformat_css_switches_between_single_and_multiple_line_format()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewTab(book.GetAllResources().OfType<CssResource>().First());
         sut.Document.Text = "p { color: red; margin: 0 }";
@@ -182,7 +188,7 @@ public sealed class CodeTabContextMenuTests
     [Fact]
     public async Task Reformat_html_replaces_the_text_with_the_host_result_as_one_undo_step()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         var host = new Mock<ICodeTabHost>();
         host.Setup(h => h.ReformatHtmlTextAsync(It.IsAny<Resource>(), "<p>a</p>", true)).ReturnsAsync("<p>mended</p>");

@@ -7,6 +7,7 @@ using Signet.App.Infrastructure;
 using Signet.App.Input;
 using Signet.App.ViewModels;
 using Signet.Core.Spellcheck;
+using Signet.Core.Tests.TestSupport;
 using Xunit;
 
 namespace Signet.App.Tests;
@@ -18,6 +19,8 @@ namespace Signet.App.Tests;
 [Collection("AltGrKeys")]
 public sealed class AltGrKeysTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
     private readonly Func<KeyEventArgs, bool?> _detector = AltGrKeys.DetectAltGr;
 
     public AltGrKeysTests()
@@ -28,6 +31,7 @@ public sealed class AltGrKeysTests : IDisposable
 
     public void Dispose()
     {
+        _disposables.Dispose();
         AltGrKeys.Enabled = false;
         AltGrKeys.DetectAltGr = _detector;
     }
@@ -98,15 +102,16 @@ public sealed class AltGrKeysTests : IDisposable
         host.ReopenSettings().EnableAltGr.Should().BeTrue();
     }
 
-    private static PreferencesViewModel NewPreferences(TestHost host)
+    private PreferencesViewModel NewPreferences(TestHost host)
     {
         LocalizationManager localization = new(host.Settings, NullLogger<LocalizationManager>.Instance);
         IconThemeManager iconTheme = new(host.Settings, NullLogger<IconThemeManager>.Instance);
-        string root = Path.Combine(Path.GetTempPath(), "Signet.Tests", "prefs-" + Guid.NewGuid().ToString("N"));
+        string root = _disposables.Add(new TempDir("prefs-")).Path;
         SpellChecker spellChecker = new(host.Settings, Path.Combine(root, "hunspell"), Path.Combine(root, "user"));
         UiDensityManager uiDensity = new(
             host.Settings, iconTheme, NullLogger<UiDensityManager>.Instance, () => "Segoe UI", _ => false);
         ThemeManager themes = new(host.Settings, ThemeStores.In(root), NullLogger<ThemeManager>.Instance);
-        return new PreferencesViewModel(host.Settings, spellChecker, localization, iconTheme, host.Shortcuts, host.Registry, uiDensity, themes);
+        return _disposables.Add(
+            new PreferencesViewModel(host.Settings, spellChecker, localization, iconTheme, host.Shortcuts, host.Registry, uiDensity, themes));
     }
 }

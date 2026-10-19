@@ -24,12 +24,15 @@ namespace Signet.App.Tests;
 /// </summary>
 public sealed class ClipsViewModelTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
     private readonly string _dir = Path.Combine(Path.GetTempPath(), $"signet-clips-{Guid.NewGuid():N}");
 
     public ClipsViewModelTests() => Directory.CreateDirectory(_dir);
 
     public void Dispose()
     {
+        _disposables.Dispose();
         try
         {
             Directory.Delete(_dir, recursive: true);
@@ -42,12 +45,12 @@ public sealed class ClipsViewModelTests : IDisposable
 
     private ClipStore Store() => new(Path.Combine(_dir, "clips.xml"));
 
-    private static CodeTabViewModel NewCodeTab(Book book)
+    private CodeTabViewModel NewCodeTab(Book book)
     {
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
         var model = new TabManagerModel();
         OpenTab tab = model.OpenResource(html);
-        (SettingsStore settings, SpellChecker spellChecker) = SpellCheckTestFactory.New();
+        (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         return new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker);
     }
 
@@ -108,8 +111,8 @@ public sealed class ClipsViewModelTests : IDisposable
     [Fact]
     public void PasteText_with_a_selection_wraps_it_using_the_backslash_one_placeholder()
     {
-        using TempDir temp = new();
-        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         CodeTabViewModel tab = NewCodeTab(book);
         int start = tab.DocumentText.IndexOf("Chapter 1", StringComparison.Ordinal);
         start.Should().BeGreaterThanOrEqualTo(0);
@@ -126,8 +129,8 @@ public sealed class ClipsViewModelTests : IDisposable
     [Fact]
     public void AutoFillCommand_adds_a_group_of_clips_derived_from_the_book_css_classes()
     {
-        using TempDir temp = new();
-        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
 
         var clips = new ClipsViewModel(Store(), () => null, () => book, new StatusBarService());
         int before = clips.Nodes.Count;

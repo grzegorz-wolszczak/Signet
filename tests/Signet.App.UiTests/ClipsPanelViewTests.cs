@@ -1,4 +1,4 @@
-using System.IO;
+using System;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Headless;
@@ -13,12 +13,18 @@ using Signet.App.Views;
 using Signet.Controls.TreeDataGrid;
 using Signet.Controls.TreeDataGrid.Primitives;
 using Signet.Core.MiscEditors;
+using Signet.Core.Tests.TestSupport;
 
 namespace Signet.App.UiTests;
 
 /// <summary>The docked "Clips" panel: the clips tree (Name, Text), the filter hiding nodes and the selection.</summary>
-public sealed class ClipsPanelViewTests
+public sealed class ClipsPanelViewTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
     private static void Render(Window window)
     {
         for (int i = 0; i < 3; i++)
@@ -29,9 +35,9 @@ public sealed class ClipsPanelViewTests
     }
 
     // A group and a clip "Clip" with a text, in a temporary store; the panel shown on them.
-    private static (Window Window, ClipsViewModel Vm, TreeDataGrid Tree) Show()
+    private (Window Window, ClipsViewModel Vm, TreeDataGrid Tree) Show()
     {
-        ClipStore store = new(Path.Combine(Path.GetTempPath(), $"signet-clippanel-{System.Guid.NewGuid():N}.xml"));
+        ClipStore store = new(_disposables.Add(new TempDir("signet-clippanel-")).Combine("file.xml"));
         ClipsViewModel vm = new(store, () => null, () => null, new StatusBarService());
         vm.AddGroupCommand.Execute(null);
         vm.SetSelectedNodes(System.Array.Empty<ClipNodeViewModel>());

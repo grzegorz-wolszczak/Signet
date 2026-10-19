@@ -75,4 +75,6 @@ history.
   XML documentation file) are off for this project and its tests; compiler warnings are still errors.
 - **Tests.** The upstream tests run on Signet's test stack (xUnit.v3 `mtp-off`, `Avalonia.Headless.XUnit`).
   `TextCellTests.StringFormat` sets the culture of the column options explicitly (upstream relied on an English
-  current culture, so the expected `42.00` failed as `42,00` on other systems).
+  current culture, so the expected `42.00` failed as `42,00` on other systems). As every Signet test project, the
+  test process gets its own temporary and data folders and the run fails if the tests leave anything in the temporary
+  one (`TestIsolationSetup.cs`, with `TestIsolation.cs` linked from `Signet.Core.Tests`).

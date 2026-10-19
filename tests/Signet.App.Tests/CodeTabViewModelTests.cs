@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using AwesomeAssertions;
 using Signet.App.Services;
@@ -17,17 +18,22 @@ namespace Signet.App.Tests;
 /// Tests for <see cref="CodeTabViewModel"/> without the AvaloniaEdit control: just a
 /// <c>TextDocument</c> plus a view-less <see cref="CodeEditorModel"/>.
 /// </summary>
-public sealed class CodeTabViewModelTests
+public sealed class CodeTabViewModelTests : IDisposable
 {
-    private static Book Load(TempDir temp) =>
-        new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+    private readonly Disposables _disposables = new();
 
-    private static CodeTabViewModel NewCodeTab(Book book, out HtmlResource html)
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
+    private Book Load(TempDir temp) =>
+        _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
+
+    private CodeTabViewModel NewCodeTab(Book book, out HtmlResource html)
     {
         html = book.GetAllResources().OfType<HtmlResource>().First();
         var model = new TabManagerModel();
         OpenTab tab = model.OpenResource(html);
-        (SettingsStore settings, SpellChecker spellChecker) = SpellCheckTestFactory.New();
+        (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         return new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker);
     }
 
@@ -37,7 +43,7 @@ public sealed class CodeTabViewModelTests
     [InlineData("<p class=\"note\">x</p>", null, null, "note")]
     public void Ctrl_click_on_a_link_or_class_raises_the_matching_request(string element, string? link, string? external, string? className)
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewCodeTab(book, out _);
         sut.Document.Text = "<html><body>" + element + "</body></html>";
@@ -55,7 +61,7 @@ public sealed class CodeTabViewModelTests
     [Fact]
     public void Ctrl_click_on_plain_text_raises_nothing()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewCodeTab(book, out _);
         sut.Document.Text = "<html><body><p>text</p></body></html>";
@@ -66,7 +72,7 @@ public sealed class CodeTabViewModelTests
     [Fact]
     public void Link_targets_are_checked_against_the_book_relative_to_the_file_folder()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewCodeTab(book, out HtmlResource html);
         string folder = Signet.Core.BookPath.StartingDir(html.BookPath);
@@ -81,7 +87,7 @@ public sealed class CodeTabViewModelTests
     [Fact]
     public void Loads_resource_content_into_the_document_unmodified()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewCodeTab(book, out HtmlResource html);
 
@@ -94,7 +100,7 @@ public sealed class CodeTabViewModelTests
     [Fact]
     public void Editing_the_document_marks_modified_and_save_pushes_to_the_resource()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewCodeTab(book, out HtmlResource html);
 
@@ -110,7 +116,7 @@ public sealed class CodeTabViewModelTests
     [Fact]
     public void Undo_and_redo_go_through_the_document_undo_stack()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewCodeTab(book, out _);
         string original = sut.Document.Text;
@@ -128,7 +134,7 @@ public sealed class CodeTabViewModelTests
     [Fact]
     public void Well_formed_state_tracks_edits()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewCodeTab(book, out _);
 
@@ -145,7 +151,7 @@ public sealed class CodeTabViewModelTests
     [Fact]
     public void Missing_doctype_is_a_warning_not_an_error()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewCodeTab(book, out _);
         sut.WellFormedWarning.Should().BeNull();
@@ -162,7 +168,7 @@ public sealed class CodeTabViewModelTests
     [Fact]
     public void RunWellFormedCheck_returns_the_verdict()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewCodeTab(book, out _);
 
@@ -172,7 +178,7 @@ public sealed class CodeTabViewModelTests
     [Fact]
     public void InsertSectionMarker_adds_the_split_marker_through_the_document()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewCodeTab(book, out _);
 
@@ -185,7 +191,7 @@ public sealed class CodeTabViewModelTests
     [Fact]
     public void GoToLine_requests_a_scroll_clamped_to_the_document()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewCodeTab(book, out _);
         int? requested = null;
@@ -199,7 +205,7 @@ public sealed class CodeTabViewModelTests
     [Fact]
     public void Tag_highlight_updates_when_the_caret_moves_into_a_tag()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewCodeTab(book, out _);
         sut.Document.Text = "<body><p>hi</p></body>";
@@ -214,7 +220,7 @@ public sealed class CodeTabViewModelTests
     [Fact]
     public void Reload_discards_unsaved_edits()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewCodeTab(book, out HtmlResource html);
         html.InitialLoad();
@@ -230,7 +236,7 @@ public sealed class CodeTabViewModelTests
     [Fact]
     public void Modified_tab_title_gets_a_marker_prefix()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewCodeTab(book, out _);
         string caption = sut.Title!;
@@ -243,12 +249,12 @@ public sealed class CodeTabViewModelTests
     [Fact]
     public void Constructing_a_code_tab_for_a_binary_resource_throws()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         ImageResource image = book.GetAllResources().OfType<ImageResource>().First();
         var model = new TabManagerModel();
         OpenTab tab = model.OpenResource(image);
-        (SettingsStore settings, SpellChecker spellChecker) = SpellCheckTestFactory.New();
+        (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
 
         var act = () => new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker);
 
@@ -271,7 +277,7 @@ public sealed class CodeTabViewModelTests
     [Fact]
     public void Bold_wraps_the_selection_and_reports_the_new_selection()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewCodeTab(book, out _);
         sut.Document.Text = FormatDoc;
@@ -289,7 +295,7 @@ public sealed class CodeTabViewModelTests
     [Fact]
     public void Heading_style_replaces_the_paragraph_and_updates_caret_block_element()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewCodeTab(book, out _);
         sut.Document.Text = FormatDoc;
@@ -307,7 +313,7 @@ public sealed class CodeTabViewModelTests
     [Fact]
     public void RemoveTagPairEnabled_tracks_caret_position_and_selection()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewCodeTab(book, out _);
         sut.Document.Text = FormatDoc.Replace("<p>Hello world</p>", "<p><em>x</em></p>");
@@ -321,7 +327,7 @@ public sealed class CodeTabViewModelTests
         sut.Document.Text.Should().Contain("<p>x</p>");
     }
 
-    private static CodeTabViewModel TagTab(Book book, string text, string caretBefore)
+    private CodeTabViewModel TagTab(Book book, string text, string caretBefore)
     {
         CodeTabViewModel sut = NewCodeTab(book, out _);
         sut.Document.Text = text;
@@ -334,7 +340,7 @@ public sealed class CodeTabViewModelTests
     [Fact]
     public void Tag_structure_actions_select_rename_and_split_the_enclosing_element()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         const string text = "<html><body><p class=\"a\">one two</p></body></html>";
         CodeTabViewModel sut = TagTab(book, text, "<html><body><p class=\"a\">one");
@@ -357,7 +363,7 @@ public sealed class CodeTabViewModelTests
     [Fact]
     public void Link_completions_offer_book_files_and_anchors_filtered_by_the_query()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewCodeTab(book, out HtmlResource html);
         string folder = Signet.Core.BookPath.StartingDir(html.BookPath);
@@ -390,10 +396,10 @@ public sealed class CodeTabViewModelTests
     [InlineData(false, "<html><body><p>abc</\n</body></html>")]
     public void Typing_slash_after_lt_auto_closes_the_element_when_enabled(bool enabled, string expected)
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
-        (SettingsStore settings, SpellChecker spellChecker) = SpellCheckTestFactory.New();
+        (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         settings.CodeEditorAutoCloseTags = enabled;
         var sut = new CodeTabViewModel(new TabManagerModel().OpenResource(html), new StatusBarService(), settings, spellChecker);
         sut.Document.Text = "<html><body><p>abc</\n</body></html>";
@@ -416,10 +422,10 @@ public sealed class CodeTabViewModelTests
     [InlineData(false)]
     public void Pasted_text_is_normalized_to_nfc_when_enabled(bool enabled)
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
-        (SettingsStore settings, SpellChecker spellChecker) = SpellCheckTestFactory.New();
+        (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         settings.CodeEditorPasteNormalizeNfc = enabled;
         var sut = new CodeTabViewModel(new TabManagerModel().OpenResource(html), new StatusBarService(), settings, spellChecker);
 
@@ -430,7 +436,7 @@ public sealed class CodeTabViewModelTests
     [Fact]
     public void Normalizing_pasted_text_is_on_by_default()
     {
-        (SettingsStore settings, _) = SpellCheckTestFactory.New();
+        (SettingsStore settings, _) = _disposables.Add(SpellCheckTestFactory.New());
 
         settings.CodeEditorPasteNormalizeNfc.Should().BeTrue();
     }
@@ -438,10 +444,10 @@ public sealed class CodeTabViewModelTests
     [Fact]
     public void Tag_structure_actions_are_not_supported_for_css()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CssResource css = book.GetAllResources().OfType<CssResource>().First();
-        (SettingsStore settings, SpellChecker spellChecker) = SpellCheckTestFactory.New();
+        (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         var sut = new CodeTabViewModel(new TabManagerModel().OpenResource(css), new StatusBarService(), settings, spellChecker);
 
         sut.SupportsTagStructure.Should().BeFalse();
@@ -450,7 +456,7 @@ public sealed class CodeTabViewModelTests
     [Fact]
     public void InsertRawText_inserts_the_value_at_the_selection()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewCodeTab(book, out _);
         sut.Document.Text = FormatDoc;
@@ -465,7 +471,7 @@ public sealed class CodeTabViewModelTests
     [Fact]
     public void InsertHyperlink_wraps_the_selection_in_an_anchor()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewCodeTab(book, out _);
         sut.Document.Text = FormatDoc;
@@ -480,7 +486,7 @@ public sealed class CodeTabViewModelTests
     [Fact]
     public void InsertIdEnabled_tracks_whether_the_caret_sits_in_an_anchor_or_plain_body_text()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         CodeTabViewModel sut = NewCodeTab(book, out _);
         sut.Document.Text = FormatDoc.Replace("<p>Hello world</p>", "<p><a href=\"x\">z</a></p>");
@@ -499,13 +505,13 @@ public sealed class CodeTabViewModelTests
     [Fact]
     public void Format_state_is_inactive_for_a_css_resource()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         using Book book = Load(temp);
         Signet.Core.Resources.CssResource css =
             book.GetAllResources().OfType<Signet.Core.Resources.CssResource>().First();
         var model = new TabManagerModel();
         OpenTab tab = model.OpenResource(css);
-        (SettingsStore settings, SpellChecker spellChecker) = SpellCheckTestFactory.New();
+        (SettingsStore settings, SpellChecker spellChecker) = _disposables.Add(SpellCheckTestFactory.New());
         var sut = new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker);
 
         sut.SupportsFormatting.Should().BeFalse();

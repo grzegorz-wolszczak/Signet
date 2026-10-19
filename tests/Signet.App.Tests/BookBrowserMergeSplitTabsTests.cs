@@ -61,7 +61,7 @@ public sealed class BookBrowserMergeSplitTabsTests
                 .Single(r => r.BookPath.EndsWith("chapter1_0001.xhtml", StringComparison.Ordinal));
         }
 
-        public void Dispose() => Vm.CheckpointHistory.Dispose();
+        public void Dispose() => Vm.Dispose();
     }
 
     [Theory]

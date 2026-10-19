@@ -1,7 +1,8 @@
-using System.IO;
+using System;
 using AwesomeAssertions;
 using Signet.App.Services;
 using Signet.Core.Misc;
+using Signet.Core.Tests.TestSupport;
 using Xunit;
 
 namespace Signet.App.Tests;
@@ -10,9 +11,14 @@ namespace Signet.App.Tests;
 /// Tests for <see cref="ClipboardHistoryService"/>: the history update logic
 /// (<see cref="ClipboardHistoryService.ApplyClipboardText"/>), without the real system clipboard.
 /// </summary>
-public sealed class ClipboardHistoryServiceTests
+public sealed class ClipboardHistoryServiceTests : IDisposable
 {
-    private static SettingsStore NewSettings() => new(Path.Combine(Path.GetTempPath(), $"cliphist-{System.Guid.NewGuid():N}.xml"));
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
+    private SettingsStore NewSettings() => new(_disposables.Add(new TempDir("cliphist-")).Combine("settings.xml"));
 
     [Fact]
     public void ApplyClipboardText_NewValue_AddsToFrontAndPersists()

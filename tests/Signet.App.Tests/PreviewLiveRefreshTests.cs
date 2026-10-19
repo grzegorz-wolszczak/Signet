@@ -50,11 +50,7 @@ public sealed class PreviewLiveRefreshTests
         public string Mirrored(Resource resource) => File.ReadAllText(Path.Combine(
             Vm.Preview.MirrorRootPath!, resource.BookPath.Replace('/', Path.DirectorySeparatorChar)));
 
-        public void Dispose()
-        {
-            Vm.Preview.Dispose();
-            Vm.CheckpointHistory.Dispose();
-        }
+        public void Dispose() => Vm.Dispose();
     }
 
     private static void AppendParagraph(CodeTabViewModel tab, string text) =>
@@ -65,21 +61,18 @@ public sealed class PreviewLiveRefreshTests
     {
         using TempDir temp = new();
         string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
-        MainWindowViewModel vm = new();
-        using PreviewViewModel _ = vm.Preview;
+        using MainWindowViewModel vm = new();
 
         vm.LoadBook(new ImportEpub(epub).GetBook(), epub);
 
         vm.ActiveTab.Should().NotBeNull("BookBrowser.SetBook opens the first chapter");
         vm.Preview.CurrentBookPath.Should().Be(vm.ActiveTab!.Resource!.BookPath);
-        vm.CheckpointHistory.Dispose();
     }
 
     [Fact]
     public void Live_refresh_delay_comes_from_settings_default_1000_ms()
     {
-        MainWindowViewModel vm = new();
-        using PreviewViewModel _ = vm.Preview;
+        using MainWindowViewModel vm = new();
 
         vm.Preview.DebounceInterval.Should().Be(TimeSpan.FromMilliseconds(1000));
     }
@@ -87,8 +80,7 @@ public sealed class PreviewLiveRefreshTests
     [Fact]
     public void Preview_highlight_comes_from_settings()
     {
-        MainWindowViewModel vm = new();
-        using PreviewViewModel _ = vm.Preview;
+        using MainWindowViewModel vm = new();
 
         vm.Preview.Highlight.Should().Be(PreviewHighlight.Default);
     }

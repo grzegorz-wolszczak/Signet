@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -19,13 +20,18 @@ using Signet.Core.Tests.TestSupport;
 namespace Signet.App.UiTests;
 
 /// <summary>Rendering of the font windows: "@font-face rules", "Deleting Fonts" and "Manage Fonts".</summary>
-public sealed class FontWindowsTests
+public sealed class FontWindowsTests : IDisposable
 {
-    private static (Book Book, BookBrowserViewModel Host, List<FontResource> Fonts) NewBook(TempDir temp)
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
+    private (Book Book, BookBrowserViewModel Host, List<FontResource> Fonts) NewBook(TempDir temp)
     {
-        Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, temp)).GetBook();
+        Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, temp)).GetBook());
         BookBrowserViewModel host = new(
-            new SettingsStore(Path.Combine(Path.GetTempPath(), $"signet-fontui-{System.Guid.NewGuid():N}.xml")), new StatusBarService());
+            new SettingsStore(_disposables.Add(new TempDir("signet-fontui-")).Combine("file.xml")), new StatusBarService());
         host.SetBook(book);
         string regular = temp.Combine("Acme-Regular.ttf");
         string bold = temp.Combine("Acme-Bold.ttf");
@@ -45,7 +51,7 @@ public sealed class FontWindowsTests
     [AvaloniaFact]
     public void Font_face_window_shows_a_row_per_font_with_its_warnings_and_the_preview()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (Book book, BookBrowserViewModel host, List<FontResource> fonts) = NewBook(temp);
         using (book)
         {
@@ -63,7 +69,7 @@ public sealed class FontWindowsTests
     [AvaloniaFact]
     public void Font_removal_window_lists_the_rules_to_remove()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (Book book, BookBrowserViewModel host, List<FontResource> fonts) = NewBook(temp);
         using (book)
         {
@@ -81,7 +87,7 @@ public sealed class FontWindowsTests
     [AvaloniaFact]
     public void Manage_fonts_window_fills_its_tables()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (Book book, BookBrowserViewModel host, List<FontResource> fonts) = NewBook(temp);
         using (book)
         {

@@ -17,12 +17,17 @@ using Signet.Core.Tests.TestSupport;
 namespace Signet.App.UiTests;
 
 /// <summary>The Recent Locations popup: renders the snippets, keys move the selection, forget an entry and close it.</summary>
-public sealed class RecentLocationsWindowTests
+public sealed class RecentLocationsWindowTests : IDisposable
 {
-    private static (RecentLocationsWindow Window, RecentLocationsViewModel ViewModel, Book Book, TempDir Temp) Show()
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
+    private (RecentLocationsWindow Window, RecentLocationsViewModel ViewModel, Book Book, TempDir Temp) Show()
     {
-        TempDir temp = new();
-        Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3WithNcx, temp)).GetBook();
+        TempDir temp = _disposables.Add(new TempDir());
+        Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3WithNcx, temp)).GetBook());
         NavigationHistory history = new();
         foreach (HtmlResource html in book.GetHtmlResourcesExcludingNav())
         {

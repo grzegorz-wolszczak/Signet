@@ -1,3 +1,4 @@
+using System;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -23,8 +24,13 @@ namespace Signet.App.UiTests;
 /// The "Spellcheck Editor" dialog's words table (TreeDataGrid): columns, multi-selection feeding the batch commands,
 /// navigation on double click. Uses the bundled en_US dictionary ("wrold", "wrongg" are misspelled).
 /// </summary>
-public sealed class SpellcheckEditorWindowTests
+public sealed class SpellcheckEditorWindowTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
     private static void Settle(Window window)
     {
         for (int i = 0; i < 3; i++)
@@ -34,11 +40,11 @@ public sealed class SpellcheckEditorWindowTests
         }
     }
 
-    private static (SpellcheckEditorWindow Window, SpellcheckEditorViewModel Vm, TreeDataGrid Grid) Show(TempDir temp, string text)
+    private (SpellcheckEditorWindow Window, SpellcheckEditorViewModel Vm, TreeDataGrid Grid) Show(TempDir temp, string text)
     {
         SettingsStore settings = new(temp.Combine("settings.xml"));
         SpellChecker spellChecker = new(settings, temp.Combine("hunspell"), temp.Combine("user"));
-        Book book = BookCreator.CreateNewBook("2.0");
+        Book book = _disposables.Add(BookCreator.CreateNewBook("2.0"));
         book.GetHtmlResources()[0].SetText(text);
         SpellcheckEditorViewModel vm = new(spellChecker, settings);
         vm.Refresh(book);
@@ -57,7 +63,7 @@ public sealed class SpellcheckEditorWindowTests
     [AvaloniaFact]
     public void The_table_lists_the_misspelled_words_with_their_columns()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (SpellcheckEditorWindow window, _, TreeDataGrid grid) = Show(temp, "<p>hello wrold wrongg wrold</p>");
 
         grid.Classes.Should().Contain("gridLines");
@@ -72,7 +78,7 @@ public sealed class SpellcheckEditorWindowTests
     [AvaloniaFact]
     public void Ctrl_clicking_selects_several_rows_for_the_batch_commands()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (SpellcheckEditorWindow window, SpellcheckEditorViewModel vm, TreeDataGrid grid) = Show(temp, "<p>wrold wrongg</p>");
 
         Point first = CellCenter(grid, window, 0, 0);
@@ -106,7 +112,7 @@ public sealed class SpellcheckEditorWindowTests
     [AvaloniaFact]
     public void After_ignoring_a_word_the_next_word_is_selected()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (SpellcheckEditorWindow window, SpellcheckEditorViewModel vm, TreeDataGrid grid) = Show(temp, "<p>wrold wrongg wrongx</p>");
         string[] before = vm.Words.Select(w => w.Word).ToArray();
         ClickRow(window, grid, 1);
@@ -128,10 +134,10 @@ public sealed class SpellcheckEditorWindowTests
     [AvaloniaFact]
     public void After_change_all_the_next_word_is_selected()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (SpellcheckEditorWindow window, SpellcheckEditorViewModel vm, TreeDataGrid grid) = Show(temp, "<p>wrold wrongg wrongx</p>");
         string[] before = vm.Words.Select(w => w.Word).ToArray();
-        Book book = BookCreator.CreateNewBook("2.0");
+        Book book = _disposables.Add(BookCreator.CreateNewBook("2.0"));
         vm.ChangeAllRequested += (word, _, replacement) =>
         {
             book.GetHtmlResources()[0].SetText("<p>" + string.Join(' ', before.Select(w => w == word ? replacement : w)) + "</p>");
@@ -150,7 +156,7 @@ public sealed class SpellcheckEditorWindowTests
     [AvaloniaFact]
     public void Double_clicking_a_word_requests_navigation_to_its_first_occurrence()
     {
-        using TempDir temp = new();
+        TempDir temp = _disposables.Add(new TempDir());
         (SpellcheckEditorWindow window, SpellcheckEditorViewModel vm, TreeDataGrid grid) = Show(temp, "<p>wrold</p>");
         string? navigatedTo = null;
         vm.NavigationRequested += (path, _) => navigatedTo = path;

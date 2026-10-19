@@ -1,9 +1,10 @@
 using System;
 using System.Linq;
 using AwesomeAssertions;
+using Signet.App.Tests.TestSupport;
 using Signet.App.ViewModels;
 using Signet.Core.BookManipulation;
-using Signet.App.Tests.TestSupport;
+using Signet.Core.Tests.TestSupport;
 using Xunit;
 
 namespace Signet.App.Tests;
@@ -11,9 +12,15 @@ namespace Signet.App.Tests;
 /// <summary>Tests for <see cref="ReportsViewModel"/> (the "Reports" dialog).</summary>
 public sealed class ReportsViewModelTests : IDisposable
 {
+    private readonly Disposables _disposables = new();
+
     private readonly Book _book = BookCreator.CreateNewBook("3.0");
 
-    public void Dispose() => _book.Dispose();
+    public void Dispose()
+    {
+        _disposables.Dispose();
+        _book.Dispose();
+    }
 
     [Fact]
     public void Constructor_PopulatesAllReportsFromCurrentBook()
@@ -98,9 +105,9 @@ public sealed class ReportsViewModelTests : IDisposable
         lines.Last().Should().StartWith("TOTAL,");
     }
 
-    private static string WriteTempCss()
+    private string WriteTempCss()
     {
-        string path = System.IO.Path.Combine(System.IO.Path.GetTempPath(), Guid.NewGuid() + ".css");
+        string path = _disposables.DeleteFile(System.IO.Path.Combine(System.IO.Path.GetTempPath(), Guid.NewGuid() + ".css"));
         System.IO.File.WriteAllText(path, "body { color: black; }");
         return path;
     }

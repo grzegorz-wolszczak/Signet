@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Headless;
@@ -34,11 +33,16 @@ namespace Signet.App.MainWindowUiTests;
 /// logic is also covered without UI in <c>Signet.App.Tests</c> (<c>TabManagerTests</c>) and
 /// <c>Signet.Core.Tests</c> (<c>TabManagerModelTests</c>).
 /// </remarks>
-public sealed class WindowRenderTests
+public sealed class WindowRenderTests : IDisposable
 {
-    private static MainWindow ShowMainWindow()
+    private readonly Disposables _disposables = new();
+
+    /// <inheritdoc />
+    public void Dispose() => _disposables.Dispose();
+
+    private MainWindow ShowMainWindow()
     {
-        MainWindow window = new() { DataContext = new MainWindowViewModel() };
+        MainWindow window = new() { DataContext = _disposables.Add(new MainWindowViewModel()) };
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
@@ -76,7 +80,7 @@ public sealed class WindowRenderTests
     [AvaloniaFact]
     public void Toolbar_buttons_render_colour_icons_from_the_default_icon_theme()
     {
-        string settingsPath = Path.Combine(Path.GetTempPath(), "Signet.Tests", $"uitests-{Guid.NewGuid():N}.xml");
+        string settingsPath = _disposables.Add(new TempDir("uitests-")).Combine("file.xml");
         new IconThemeManager(new SettingsStore(settingsPath), NullLogger<IconThemeManager>.Instance).ApplySaved();
 
         MainWindow window = ShowMainWindow();
@@ -118,8 +122,8 @@ public sealed class WindowRenderTests
     [AvaloniaFact]
     public void Opening_a_resource_renders_a_code_editor_tab_in_the_document_dock()
     {
-        using TempDir temp = new();
-        Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        TempDir temp = _disposables.Add(new TempDir());
+        Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
         MainWindow window = ShowMainWindow();
         MainWindowViewModel vm = (MainWindowViewModel)window.DataContext!;
         vm.LoadBook(book, string.Empty);

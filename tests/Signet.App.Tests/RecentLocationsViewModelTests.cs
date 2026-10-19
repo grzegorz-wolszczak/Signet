@@ -42,7 +42,7 @@ public sealed class RecentLocationsViewModelTests : IDisposable
 
     public void Dispose()
     {
-        _sut.CheckpointHistory.Dispose();
+        _sut.Dispose();
         _temp.Dispose();
     }
 
