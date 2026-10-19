@@ -5195,6 +5195,18 @@ Konwertować mimo to?</value>
   <data name="Status_FootnoteConversionCancelled" xml:space="preserve">
     <value>Konwersję przypisów anulowano — książka wróciła do stanu sprzed konwersji.</value>
   </data>
+  <data name="Progress_Starting" xml:space="preserve">
+    <value>Uruchamianie…</value>
+  </data>
+  <data name="Progress_FileBatch" xml:space="preserve">
+    <value>Plik {0} z {1}: {2}</value>
+  </data>
+  <data name="Status_OperationCancelled" xml:space="preserve">
+    <value>Anulowano: {0}.</value>
+  </data>
+  <data name="Status_OperationCancelledRestored" xml:space="preserve">
+    <value>Anulowano: {0} — książka wróciła do stanu sprzed operacji.</value>
+  </data>
   <data name="FootnoteConversion_Analyzing" xml:space="preserve">
     <value>Analizowanie przypisów…</value>
   </data>

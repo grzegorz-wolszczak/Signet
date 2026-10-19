@@ -231,6 +231,10 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         _boundViewModel.SkippedFilesReportRequested += OnSkippedFilesReportRequested;
         _boundViewModel.AttachFileWorkflowPrompts(this);
 
+        // The long operations on the whole book show how far they are over this window (and can be cancelled).
+        _boundViewModel.ProgressRunner = (title, work, cancellable) =>
+            ProgressWindow.RunWithProgressAsync(this, title, Strings.Get("Progress_Starting"), work, cancellable);
+
         // A shortcut change in Preferences takes effect immediately, without restarting the application.
         _shortcutBindings.Attach(_boundViewModel.ShortcutActions);
 
@@ -1328,9 +1332,8 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             vm.PrepareFootnoteConversionAsync(
                 () => FootnoteConversionWindow.ConfirmWithoutCheckpointAsync(window ?? (Window)this),
                 // The conversion itself (tens of seconds for thousands of footnotes) shows how far it is over the dialog.
-                (work, cancellable) => ProgressWindow.RunWithProgressAsync(
-                    window ?? (Window)this, Strings.Get("FootnoteConversion_ProgressTitle"),
-                    Strings.Get("FootnoteConversion_Progress_Preparing"), work, cancellable)));
+                (title, work, cancellable) => ProgressWindow.RunWithProgressAsync(
+                    window ?? (Window)this, title, Strings.Get("FootnoteConversion_Progress_Preparing"), work, cancellable)));
         if (conversion is not null)
         {
             window = new FootnoteConversionWindow { DataContext = conversion };

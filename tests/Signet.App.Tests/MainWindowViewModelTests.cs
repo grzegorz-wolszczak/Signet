@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
+using Signet.App.Infrastructure;
 using AwesomeAssertions;
 using Signet.App.Actions;
 using Signet.App.Docking;
@@ -1202,67 +1204,167 @@ public sealed class MainWindowViewModelTests : IDisposable
         sut.StatusMessage.Should().Contain("ON");
     }
 
-    [Fact]
-    public void MendHtml_action_fixes_malformed_html_and_reports_on_status_bar()
+    // The long whole-book operations run off the UI thread: wait until the condition holds (the operation is done).
+    private static async Task WaitUntilAsync(Func<bool> condition)
     {
-        // Arrange
-        using UiCultureScope culture = new("en");
-        TempDir temp = _disposables.Add(new TempDir());
-        string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("not-wellformed-xhtml"), temp);
-        MainWindowViewModel sut = New();
-        Book book = _disposables.Add(new ImportEpub(epub).GetBook());
-        sut.LoadBook(book, epub);
-        HtmlResource chapter = book.GetAllResources().OfType<HtmlResource>().Single(r => r.Filename == "chapter1.xhtml");
+        for (int i = 0; i < 400 && !condition(); i++)
+        {
+            await Task.Delay(25);
+        }
 
-        // Act
-        sut.Actions.Require(AppActionIds.MendHtml).Execute(null);
-
-        // Assert
-        WellFormedChecker.CheckXhtmlStructure(chapter.GetText(), chapter.EpubVersion).IsWellFormed.Should().BeTrue();
-        sut.StatusMessage.Should().Contain("Mend All");
+        condition().Should().BeTrue("the operation is done");
     }
 
     [Fact]
-    public void MendPrettifyHtml_action_skips_html_that_is_not_well_formed_and_reports_it()
+    public async Task MendHtml_action_fixes_malformed_html_and_reports_on_status_bar()
     {
-        // Arrange
-        TempDir temp = _disposables.Add(new TempDir());
-        string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("not-wellformed-xhtml"), temp);
-        MainWindowViewModel sut = New();
-        Book book = _disposables.Add(new ImportEpub(epub).GetBook());
-        sut.LoadBook(book, epub);
-        SkippedFilesReport? report = null;
-        sut.SkippedFilesReportRequested += (_, r) => report = r;
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("not-wellformed-xhtml"), temp);
+            MainWindowViewModel sut = New();
+            Book book = _disposables.Add(new ImportEpub(epub).GetBook());
+            sut.LoadBook(book, epub);
+            HtmlResource chapter = book.GetAllResources().OfType<HtmlResource>().Single(r => r.Filename == "chapter1.xhtml");
 
-        // Act
-        sut.Actions.Require(AppActionIds.MendPrettifyHtml).Execute(null);
+            // Act
+            sut.Actions.Require(AppActionIds.MendHtml).Execute(null);
+            await WaitUntilAsync(() => sut.StatusMessage.Contains("Mend All", StringComparison.Ordinal));
 
-        // Assert
-        report.Should().NotBeNull();
-        report!.Skipped.Select(s => s.BookPath).Should().Contain(p => p.EndsWith("chapter1.xhtml", StringComparison.Ordinal));
-        sut.StatusMessage.Should().Be(Strings.Format(
-            "Status_BatchPartial", Strings.Get("Operation_MendPrettifyAll"), report.Processed, report.Skipped.Count));
+            // Assert
+            WellFormedChecker.CheckXhtmlStructure(chapter.GetText(), chapter.EpubVersion).IsWellFormed.Should().BeTrue();
+            sut.StatusMessage.Should().Contain("Mend All");
+        });
     }
 
     [Fact]
-    public void MendHtml_action_repairs_html_that_is_not_well_formed_without_a_report()
+    public async Task MendPrettifyHtml_action_skips_html_that_is_not_well_formed_and_reports_it()
     {
-        // Arrange
-        TempDir temp = _disposables.Add(new TempDir());
-        string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("not-wellformed-xhtml"), temp);
-        MainWindowViewModel sut = New();
-        Book book = _disposables.Add(new ImportEpub(epub).GetBook());
-        sut.LoadBook(book, epub);
-        bool reported = false;
-        sut.SkippedFilesReportRequested += (_, _) => reported = true;
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            TempDir temp = _disposables.Add(new TempDir());
+            string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("not-wellformed-xhtml"), temp);
+            MainWindowViewModel sut = New();
+            Book book = _disposables.Add(new ImportEpub(epub).GetBook());
+            sut.LoadBook(book, epub);
+            SkippedFilesReport? report = null;
+            sut.SkippedFilesReportRequested += (_, r) => report = r;
 
-        // Act
-        sut.Actions.Require(AppActionIds.MendHtml).Execute(null);
+            // Act
+            sut.Actions.Require(AppActionIds.MendPrettifyHtml).Execute(null);
+            await WaitUntilAsync(() => report is not null);
 
-        // Assert
-        reported.Should().BeFalse();
-        book.GetHtmlResources().Should().OnlyContain(
-            h => WellFormedChecker.CheckXhtmlStructure(h.GetText(), h.EpubVersion).IsWellFormed);
+            // Assert
+            report.Should().NotBeNull();
+            report!.Skipped.Select(s => s.BookPath).Should().Contain(p => p.EndsWith("chapter1.xhtml", StringComparison.Ordinal));
+            sut.StatusMessage.Should().Be(Strings.Format(
+                "Status_BatchPartial", Strings.Get("Operation_MendPrettifyAll"), report.Processed, report.Skipped.Count));
+        });
+    }
+
+    [Fact]
+    public async Task MendHtml_action_repairs_html_that_is_not_well_formed_without_a_report()
+    {
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            TempDir temp = _disposables.Add(new TempDir());
+            string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("not-wellformed-xhtml"), temp);
+            MainWindowViewModel sut = New();
+            Book book = _disposables.Add(new ImportEpub(epub).GetBook());
+            sut.LoadBook(book, epub);
+            bool reported = false;
+            sut.SkippedFilesReportRequested += (_, _) => reported = true;
+
+            // Act
+            sut.Actions.Require(AppActionIds.MendHtml).Execute(null);
+            await WaitUntilAsync(() => sut.StatusMessage.Length > 0);
+
+            // Assert
+            reported.Should().BeFalse();
+            book.GetHtmlResources().Should().OnlyContain(
+                h => WellFormedChecker.CheckXhtmlStructure(h.GetText(), h.EpubVersion).IsWellFormed);
+        });
+    }
+
+    private sealed class CollectingProgress : IProgress<WorkProgress>
+    {
+        public List<WorkProgress> Reports { get; } = new();
+
+        public void Report(WorkProgress value) => Reports.Add(value);
+    }
+
+    [Fact]
+    public async Task Mend_All_runs_under_the_progress_runner_with_the_name_of_the_operation_and_reports_the_files()
+    {
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("not-wellformed-xhtml"), temp);
+            MainWindowViewModel sut = New();
+            Book book = _disposables.Add(new ImportEpub(epub).GetBook());
+            sut.LoadBook(book, epub);
+            int files = book.GetHtmlResources().Count;
+            CollectingProgress progress = new();
+            string? title = null;
+            bool? cancellable = null;
+            sut.ProgressRunner = (t, work, c) =>
+            {
+                title = t;
+                cancellable = c;
+                return work(progress, CancellationToken.None);
+            };
+
+            // Act
+            sut.Actions.Require(AppActionIds.MendHtml).Execute(null);
+            await WaitUntilAsync(() => sut.StatusMessage.Contains("Mend All", StringComparison.Ordinal));
+
+            // Assert
+            title.Should().Be("Mend All HTML Files");
+            cancellable.Should().BeTrue("a checkpoint was taken before the operation");
+            progress.Reports.Should().HaveCount(files);
+            progress.Reports[0].Message.Should().StartWith(Strings.Format("Progress_FileBatch", 1, files, string.Empty));
+            progress.Reports.Select(r => r.Fraction).OfType<double>().Should().BeInAscendingOrder().And.OnlyContain(f => f >= 0 && f < 1);
+        });
+    }
+
+    [Fact]
+    public async Task Cancelling_Mend_All_brings_the_book_back_and_says_so()
+    {
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("not-wellformed-xhtml"), temp);
+            MainWindowViewModel sut = New();
+            Book book = _disposables.Add(new ImportEpub(epub).GetBook());
+            sut.LoadBook(book, epub);
+            Dictionary<string, string> before = book.GetHtmlResources().ToDictionary(h => h.BookPath, h => h.GetText());
+            int states = sut.CheckpointHistory.States.Count;
+            using CancellationTokenSource pressed = new();
+            sut.ProgressRunner = (_, work, _) =>
+            {
+                pressed.Cancel();
+                return work(new CollectingProgress(), pressed.Token);
+            };
+
+            // Act
+            sut.Actions.Require(AppActionIds.MendHtml).Execute(null);
+            await WaitUntilAsync(() => sut.StatusMessage.Contains("Cancelled", StringComparison.Ordinal));
+
+            // Assert
+            sut.StatusMessage.Should().Be(Strings.Format("Status_OperationCancelledRestored", "Mend All HTML Files"));
+            Book restored = ((IBookWorkspace)sut).CurrentBook!;
+            restored.GetHtmlResources().ToDictionary(h => h.BookPath, h => h.GetText()).Should().Equal(before);
+            sut.CheckpointHistory.States.Should().HaveCount(states, "the checkpoint of the cancelled operation is forgotten");
+            sut.BookBrowser.SuspendRebuilds.Should().BeFalse();
+        });
     }
 
     [Fact]

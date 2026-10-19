@@ -402,7 +402,7 @@ public sealed partial class MainWindowViewModel
         // Reformat HTML / Restructure Epub to Signet Norm / Use Standard File Extensions /
         // Rebase Manifest IDs.
         _actions.SetHandler(AppActionIds.MendPrettifyHtml, () => RunAsyncAction(MendPrettifyHtmlAsync));
-        _actions.SetHandler(AppActionIds.MendHtml, MendHtml);
+        _actions.SetHandler(AppActionIds.MendHtml, () => RunAsyncAction(MendHtmlAsync));
         _actions.SetHandler(AppActionIds.PrettifyCurrentHtml, () => RunAsyncAction(() => ActiveCodeTab?.ReformatHtmlAsync(toValid: false) ?? Task.CompletedTask));
         _actions.SetHandler(AppActionIds.MendCurrentHtml, () => RunAsyncAction(MendCurrentFileAsync));
         _actions.SetHandler(AppActionIds.AddSoftHyphens, () => RunAsyncAction(AddSoftHyphensAsync));
@@ -2456,16 +2456,25 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        bool checkpoint = CheckpointBeforeAction(AppActionIds.MendPrettifyHtml);
-        FileBatchResult result = _currentBook.PrettyPrintAllHtml(BuildEntityOverrides(), _settings.PrettifyAddMissingDoctype);
-        FinishFileBatch(result, checkpoint, "Operation_MendPrettifyAll", "Status_MendPrettifyAllDone");
+        Book book = _currentBook;
+        Dictionary<char, string> overrides = BuildEntityOverrides();
+        bool addDoctype = _settings.PrettifyAddMissingDoctype;
+        string title = ActionLabel(AppActionIds.MendPrettifyHtml);
+        BookOperationOutcome<FileBatchResult> run = await RunBookOperationAsync(
+            title, title, editsBook: true,
+            (progress, cancel) => book.PrettyPrintAllHtml(overrides, addDoctype, new FileBatchRun(new FileBatchProgressMap(progress), cancel)))
+            .ConfigureAwait(true);
+        if (run.Completed)
+        {
+            FinishFileBatch(run.Result!, run.Checkpoint, "Operation_MendPrettifyAll", "Status_MendPrettifyAllDone");
+        }
     }
 
     /// <summary>
     /// "Mend All HTML Files" — without the well-formed guard, since repairing such files is exactly what Mend does.
     /// A file the repair fails on is skipped and the rest goes on.
     /// </summary>
-    private void MendHtml()
+    private async Task MendHtmlAsync()
     {
         if (_currentBook is null)
         {
@@ -2473,9 +2482,18 @@ public sealed partial class MainWindowViewModel
         }
 
         _tabManager.SaveAllTabs();
-        bool checkpoint = CheckpointBeforeAction(AppActionIds.MendHtml);
-        FileBatchResult result = _currentBook.MendAllHtml(BuildEntityOverrides(), _settings.MendAddMissingDoctype);
-        FinishFileBatch(result, checkpoint, "Operation_MendAll", "Status_MendAllDone");
+        Book book = _currentBook;
+        Dictionary<char, string> overrides = BuildEntityOverrides();
+        bool addDoctype = _settings.MendAddMissingDoctype;
+        string title = ActionLabel(AppActionIds.MendHtml);
+        BookOperationOutcome<FileBatchResult> run = await RunBookOperationAsync(
+            title, title, editsBook: true,
+            (progress, cancel) => book.MendAllHtml(overrides, addDoctype, new FileBatchRun(new FileBatchProgressMap(progress), cancel)))
+            .ConfigureAwait(true);
+        if (run.Completed)
+        {
+            FinishFileBatch(run.Result!, run.Checkpoint, "Operation_MendAll", "Status_MendAllDone");
+        }
     }
 
     /// <summary>
@@ -2530,8 +2548,12 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        FileBatchResult result = _currentBook.AddSoftHyphens();
-        FinishFileBatch(result, checkpoint: false, "Operation_AddSoftHyphens", "Status_SoftHyphensAdded");
+        Book book = _currentBook;
+        BookOperationOutcome<FileBatchResult> run = await RunBookOperationAsync(
+            ActionLabel(AppActionIds.AddSoftHyphens), checkpointName: null, editsBook: true,
+            (progress, cancel) => book.AddSoftHyphens(new FileBatchRun(new FileBatchProgressMap(progress), cancel)))
+            .ConfigureAwait(true);
+        FinishFileBatch(run.Result!, checkpoint: false, "Operation_AddSoftHyphens", "Status_SoftHyphensAdded");
     }
 
     /// <summary>"Remove Soft Hyphens" — the inverse of <see cref="AddSoftHyphensAsync"/>.</summary>
@@ -2548,8 +2570,12 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        FileBatchResult result = _currentBook.RemoveSoftHyphens();
-        FinishFileBatch(result, checkpoint: false, "Operation_RemoveSoftHyphens", "Status_SoftHyphensRemoved");
+        Book book = _currentBook;
+        BookOperationOutcome<FileBatchResult> run = await RunBookOperationAsync(
+            ActionLabel(AppActionIds.RemoveSoftHyphens), checkpointName: null, editsBook: true,
+            (progress, cancel) => book.RemoveSoftHyphens(new FileBatchRun(new FileBatchProgressMap(progress), cancel)))
+            .ConfigureAwait(true);
+        FinishFileBatch(run.Result!, checkpoint: false, "Operation_RemoveSoftHyphens", "Status_SoftHyphensRemoved");
     }
 
     /// <summary>

@@ -483,7 +483,7 @@ public sealed class MainWindowFootnotesTests : IDisposable
         sut.Tabs.CloseAllTabs();
         RecordingProgress progress = new();
         List<bool> cancellable = new();
-        ProgressRunner runner = (work, canCancel) =>
+        ProgressRunner runner = (_, work, canCancel) =>
         {
             cancellable.Add(canCancel);
             return work(progress, CancellationToken.None);
@@ -518,7 +518,7 @@ public sealed class MainWindowFootnotesTests : IDisposable
         string before = chapter.GetText();
         int states = sut.CheckpointHistory.States.Count;
         using CancellationTokenSource pressed = new();
-        ProgressRunner runner = (work, cancellable) =>
+        ProgressRunner runner = (_, work, cancellable) =>
         {
             cancellable.Should().BeTrue();
             pressed.Cancel();

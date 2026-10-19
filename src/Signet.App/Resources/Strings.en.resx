@@ -5195,6 +5195,18 @@ Convert anyway?</value>
   <data name="Status_FootnoteConversionCancelled" xml:space="preserve">
     <value>The footnote conversion was cancelled — the book is back to the state before it.</value>
   </data>
+  <data name="Progress_Starting" xml:space="preserve">
+    <value>Starting…</value>
+  </data>
+  <data name="Progress_FileBatch" xml:space="preserve">
+    <value>File {0} of {1}: {2}</value>
+  </data>
+  <data name="Status_OperationCancelled" xml:space="preserve">
+    <value>Cancelled: {0}.</value>
+  </data>
+  <data name="Status_OperationCancelledRestored" xml:space="preserve">
+    <value>Cancelled: {0} — the book is back to the state before the operation.</value>
+  </data>
   <data name="FootnoteConversion_Analyzing" xml:space="preserve">
     <value>Analyzing the footnotes…</value>
   </data>

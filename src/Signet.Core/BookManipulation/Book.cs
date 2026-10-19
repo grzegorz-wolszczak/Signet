@@ -867,8 +867,10 @@ public sealed class Book : IDisposable
     /// </param>
     /// <param name="addMissingDoctype">Whether to add a DOCTYPE to files that have none.</param>
     /// <returns>How many files were processed, whether any was changed, and the files that were skipped.</returns>
-    public FileBatchResult MendAllHtml(IReadOnlyDictionary<char, string>? entityOverrides = null, bool addMissingDoctype = false) =>
-        ProcessHtmlFiles(GetHtmlResources(), requireWellFormed: false, html =>
+    /// <param name="run">Reports the progress and can stop it.</param>
+    public FileBatchResult MendAllHtml(
+        IReadOnlyDictionary<char, string>? entityOverrides = null, bool addMissingDoctype = false, FileBatchRun run = default) =>
+        ProcessHtmlFiles(GetHtmlResources(), requireWellFormed: false, run: run, process: html =>
         {
             string source = html.GetText();
             string newSource = CleanSource.Mend(source, VersionOf(html), entityOverrides, addMissingDoctype);
@@ -1121,9 +1123,11 @@ public sealed class Book : IDisposable
     /// An optional character → entity text map — "Preserve Entities" from Preferences.
     /// </param>
     /// <param name="addMissingDoctype">Whether to add a DOCTYPE to files that have none.</param>
+    /// <param name="run">Reports the progress and can stop it.</param>
     public FileBatchResult PrettyPrintAllHtml(
         IReadOnlyDictionary<char, string>? entityOverrides = null,
-        bool addMissingDoctype = false)
+        bool addMissingDoctype = false,
+        FileBatchRun run = default)
     {
         // Tag classification and indent_string/singlespace are loaded once per call
         // from prettyprint.xml in the user's prefs folder (if missing — created with the default
@@ -1132,7 +1136,7 @@ public sealed class Book : IDisposable
 
         // The chapters of a book mostly link the same stylesheets: each one is parsed once for the whole batch.
         Dictionary<string, bool> cssUsesWhiteSpace = new(StringComparer.Ordinal);
-        return ProcessHtmlFiles(GetHtmlResources(), requireWellFormed: true, html =>
+        return ProcessHtmlFiles(GetHtmlResources(), requireWellFormed: true, run: run, process: html =>
         {
             string original = html.GetText();
             bool keepWhitespace = XhtmlUsesWhiteSpace(html, cssUsesWhiteSpace);
@@ -1159,7 +1163,9 @@ public sealed class Book : IDisposable
     /// in the content of all the book's HTML resources. A file that is not well-formed is skipped
     /// (left unchanged) and the rest is processed; the skipped files are listed in the result.
     /// </summary>
-    public FileBatchResult AddSoftHyphens() => ReplaceInEachWellFormed(source => SoftHyphenInserter.InsertSoftHyphens(source));
+    /// <param name="run">Reports the progress and can stop it.</param>
+    public FileBatchResult AddSoftHyphens(FileBatchRun run = default) =>
+        ReplaceInEachWellFormed(source => SoftHyphenInserter.InsertSoftHyphens(source), run);
 
     /// <summary>
     /// "Remove soft hyphens" — the inverse of <see cref="AddSoftHyphens"/>,
@@ -1167,10 +1173,12 @@ public sealed class Book : IDisposable
     /// A file that is not well-formed is skipped (left unchanged) and the rest is processed; the skipped files are
     /// listed in the result.
     /// </summary>
-    public FileBatchResult RemoveSoftHyphens() => ReplaceInEachWellFormed(SoftHyphenInserter.RemoveSoftHyphens);
+    /// <param name="run">Reports the progress and can stop it.</param>
+    public FileBatchResult RemoveSoftHyphens(FileBatchRun run = default) =>
+        ReplaceInEachWellFormed(SoftHyphenInserter.RemoveSoftHyphens, run);
 
-    private FileBatchResult ReplaceInEachWellFormed(Func<string, string> transform) =>
-        ProcessHtmlFiles(GetHtmlResources(), requireWellFormed: true, html =>
+    private FileBatchResult ReplaceInEachWellFormed(Func<string, string> transform, FileBatchRun run) =>
+        ProcessHtmlFiles(GetHtmlResources(), requireWellFormed: true, run: run, process: html =>
         {
             string original = html.GetText();
             string newSource = transform(original);
@@ -1191,13 +1199,18 @@ public sealed class Book : IDisposable
     /// <see cref="Modified"/> when any file changed.
     /// </summary>
     private FileBatchResult ProcessHtmlFiles(
-        IEnumerable<HtmlResource> resources, bool requireWellFormed, Func<HtmlResource, bool> process)
+        IEnumerable<HtmlResource> resources, bool requireWellFormed, Func<HtmlResource, bool> process, FileBatchRun run = default)
     {
         List<SkippedFile> skipped = new();
+        List<HtmlResource> files = resources as List<HtmlResource> ?? resources.ToList();
         int processed = 0;
+        int gone = 0;
         bool modified = false;
-        foreach (HtmlResource html in resources)
+        foreach (HtmlResource html in files)
         {
+            // Between two files: what was done stays done (the caller that cancels rewinds the book).
+            run.Cancellation.ThrowIfCancellationRequested();
+            run.Progress?.Report(new FileBatchProgress(gone++, files.Count, html.BookPath));
             try
             {
                 if (requireWellFormed)
