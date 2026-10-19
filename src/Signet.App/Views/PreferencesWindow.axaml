@@ -61,6 +61,13 @@
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="CornerRadius" Value="4" />
     </Style>
+    <!-- Inside a "Preview" section (below), the component actually being previewed sits on the normal page
+         background (the same one the window uses outside the section) so it stands out against the section's
+         own dimmed background (set inline on each "...PreviewPane" border, the same token Border.sectionPanel
+         uses) — the section is just a container around it, the previewed component is what the eye should land on. -->
+    <Style Selector="Border.previewFrame">
+      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundAltHighBrush}" />
+    </Style>
     <!-- Code Editor color fields: the background takes the color of the entered value, also on hover and when focused
          (Fluent then replaces the template border's background with its own). -->
     <Style Selector="TextBox.colorValue:pointerover /template/ Border#PART_BorderElement">
@@ -337,11 +344,11 @@
           <GridSplitter Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Background="Transparent" />
           <!-- The preview, common to the tabs of the page: the real start screen with fabricated books, in the look the settings
                give it now (the unsaved ones too), and the sample of a tooltip under it. Not searched: it holds no settings. -->
-          <Border x:Name="StartScreenPreviewPane" Grid.Column="2" Classes="section noSearchTree" Padding="8"
+          <Border x:Name="StartScreenPreviewPane" Grid.Column="2" Classes="section noSearchTree" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" Padding="8"
                   infra:TooltipFonts.Area="StartScreen">
             <DockPanel>
               <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
-              <Border Classes="listFrame">
+              <Border Classes="listFrame previewFrame">
                 <Grid RowDefinitions="*,Auto">
                   <views:StartScreenView x:Name="StartScreenPreview" />
                   <views:TooltipSample x:Name="StartScreenSampleTip" Grid.Row="1" Margin="8" />
@@ -425,13 +432,13 @@
           <GridSplitter Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Background="Transparent" />
           <!-- The preview, common to the tabs of the page: the real Book Browser over a sample book, in the look the settings
                give it now (the unsaved ones too); the sample of a tooltip is under it. Not searched: it holds no settings. -->
-          <Border x:Name="BookBrowserPreviewPane" Grid.Column="2" Classes="section noSearchTree" Padding="8"
+          <Border x:Name="BookBrowserPreviewPane" Grid.Column="2" Classes="section noSearchTree" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" Padding="8"
                   infra:TooltipFonts.Area="BookBrowser">
             <DockPanel>
               <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
               <!-- The tooltip of a file, drawn in the empty space under the tree and always there (a real one shows only while the
                    pointer rests on a file): its font follows the tooltip font setting as it is changed. -->
-              <Border Classes="listFrame">
+              <Border Classes="listFrame previewFrame">
                 <Grid RowDefinitions="*,Auto">
                   <views:BookBrowserView x:Name="BookBrowserPreview" />
                   <views:TooltipSample x:Name="BookBrowserSampleTip" Grid.Row="1" Margin="8" />
@@ -489,10 +496,10 @@
           <!-- The preview, common to the tabs of the page: the tabs of the documents and the real Code Editor tab over a
                chapter of the sample book, in the look the settings give them now (the unsaved ones too), and the opening tag
                hint (which a real one shows only over a closing tag) under it. Not searched: it holds no settings. -->
-          <Border x:Name="CodeEditorPreviewPane" Grid.Column="2" Classes="section noSearchTree" Padding="8">
+          <Border x:Name="CodeEditorPreviewPane" Grid.Column="2" Classes="section noSearchTree" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" Padding="8">
             <DockPanel>
               <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
-              <Border Classes="listFrame">
+              <Border Classes="listFrame previewFrame">
                 <DockPanel>
                   <views:DocumentTabsSample x:Name="DocumentTabsPreview" DockPanel.Dock="Top" Margin="4,4,4,0" />
                   <views:TooltipSample x:Name="CodeEditorSampleHint" DockPanel.Dock="Bottom" Margin="8" />
@@ -566,10 +573,10 @@
           <GridSplitter Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Background="Transparent" />
           <!-- The preview, common to the tabs of the page: a page drawn in the fonts of the settings with the mark of the caret as the
                real preview draws it (the real one is a web view), and a sample of its tooltip. Not searched: it holds no settings. -->
-          <Border x:Name="PreviewPreviewPane" Grid.Column="2" Classes="section noSearchTree" Padding="8">
+          <Border x:Name="PreviewPreviewPane" Grid.Column="2" Classes="section noSearchTree" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" Padding="8">
             <DockPanel>
               <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
-              <Border Classes="listFrame">
+              <Border Classes="listFrame previewFrame">
                 <Grid RowDefinitions="*,Auto">
                   <views:PreviewSample x:Name="PreviewSamplePage" />
                   <views:TooltipSample x:Name="PreviewSampleTip" Grid.Row="1" Margin="8" />
@@ -597,10 +604,10 @@
           </TabControl>
           <GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Background="Transparent" />
           <!-- The preview: the real Find and Replace panel (wide, so it is under the settings) with no book behind it, and a sample of its tooltip. Not searched: it holds no settings. -->
-          <Border x:Name="FindReplacePreviewPane" Grid.Row="2" Classes="section noSearchTree" Padding="8">
+          <Border x:Name="FindReplacePreviewPane" Grid.Row="2" Classes="section noSearchTree" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" Padding="8">
             <DockPanel>
               <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
-              <Border Classes="listFrame">
+              <Border Classes="listFrame previewFrame">
                 <Grid RowDefinitions="*,Auto">
                   <views:FindReplaceView x:Name="FindReplacePreview" />
                   <views:TooltipSample x:Name="FindReplaceSampleTip" Grid.Row="1" Margin="8" />
@@ -628,10 +635,10 @@
           </TabControl>
           <GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Background="Transparent" />
           <!-- The preview: the "Insert Special Character" window (wide, so it is under the settings) with a few characters, and a sample of its tooltip. Not searched: it holds no settings. -->
-          <Border x:Name="SpecialCharactersPreviewPane" Grid.Row="2" Classes="section noSearchTree" Padding="8">
+          <Border x:Name="SpecialCharactersPreviewPane" Grid.Row="2" Classes="section noSearchTree" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" Padding="8">
             <DockPanel>
               <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
-              <Border Classes="listFrame">
+              <Border Classes="listFrame previewFrame">
                 <Grid RowDefinitions="*,Auto">
                   <views:SpecialCharactersSample x:Name="SpecialCharactersPreview" />
                   <views:TooltipSample x:Name="SpecialCharactersSampleTip" Grid.Row="1" Margin="8" />
@@ -668,10 +675,10 @@
           </TabControl>
           <GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Background="Transparent" />
           <!-- The preview: the real Validation Results panel (wide, so it is under the settings) over fabricated results, and a sample of its tooltip. Not searched: it holds no settings. -->
-          <Border x:Name="ValidationPreviewPane" Grid.Row="2" Classes="section noSearchTree" Padding="8">
+          <Border x:Name="ValidationPreviewPane" Grid.Row="2" Classes="section noSearchTree" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" Padding="8">
             <DockPanel>
               <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
-              <Border Classes="listFrame">
+              <Border Classes="listFrame previewFrame">
                 <Grid RowDefinitions="*,Auto">
                   <views:ValidationResultsView x:Name="ValidationPreview" />
                   <views:TooltipSample x:Name="ValidationSampleTip" Grid.Row="1" Margin="8" />
@@ -708,10 +715,10 @@
           </TabControl>
           <GridSplitter Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Background="Transparent" />
           <!-- The preview: the content of the Cleanup dialog over the sample book (Clean changes nothing), and a sample of its tooltip. Not searched: it holds no settings. -->
-          <Border x:Name="CleanupPreviewPane" Grid.Column="2" Classes="section noSearchTree" Padding="8">
+          <Border x:Name="CleanupPreviewPane" Grid.Column="2" Classes="section noSearchTree" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" Padding="8">
             <DockPanel>
               <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
-              <Border Classes="listFrame">
+              <Border Classes="listFrame previewFrame">
                 <Grid RowDefinitions="*,Auto">
                   <views:CleanupView x:Name="CleanupPreview" />
                   <views:TooltipSample x:Name="CleanupSampleTip" Grid.Row="1" Margin="8" />
@@ -739,10 +746,10 @@
           </TabControl>
           <GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Background="Transparent" />
           <!-- The preview: the footnote window (wide, so it is under the settings) with a note filled in, and a sample of its tooltip. Not searched: it holds no settings. -->
-          <Border x:Name="FootnotesPreviewPane" Grid.Row="2" Classes="section noSearchTree" Padding="8">
+          <Border x:Name="FootnotesPreviewPane" Grid.Row="2" Classes="section noSearchTree" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" Padding="8">
             <DockPanel>
               <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
-              <Border Classes="listFrame">
+              <Border Classes="listFrame previewFrame">
                 <Grid RowDefinitions="*,Auto">
                   <views:FootnoteView x:Name="FootnotesPreview" />
                   <views:TooltipSample x:Name="FootnotesSampleTip" Grid.Row="1" Margin="8" />
@@ -912,10 +919,10 @@
           <GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Background="Transparent" />
           <!-- The preview, common to the tabs of the page: the real Find Usages panel over fabricated usages, in the look the
                settings give it now (the unsaved ones too). Not searched: it holds no settings. -->
-          <Border x:Name="FindUsagesPreviewPane" Grid.Row="2" Classes="section noSearchTree" Padding="8">
+          <Border x:Name="FindUsagesPreviewPane" Grid.Row="2" Classes="section noSearchTree" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" Padding="8">
             <DockPanel>
               <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
-              <Border Classes="listFrame">
+              <Border Classes="listFrame previewFrame">
                 <views:FindUsagesView x:Name="FindUsagesPreview" />
               </Border>
             </DockPanel>
