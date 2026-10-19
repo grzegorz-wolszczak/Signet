@@ -93,6 +93,23 @@ public sealed partial class MainWindowViewModel
         }
     }
 
+    // What the validation of the book reports: the percent through the files, then one step for each further check.
+    private sealed class ValidationProgressMap : IProgress<ValidationProgress>
+    {
+        // The files take the first part of the bar; the ten further checks share the rest.
+        private const double FilesShare = 0.5;
+
+        private readonly IProgress<WorkProgress> _target;
+
+        public ValidationProgressMap(IProgress<WorkProgress> target) => _target = target;
+
+        public void Report(ValidationProgress value) => _target.Report(value.Stage == ValidationStage.WellFormed
+            ? WorkProgress.InStage(Strings.Format("ValidationProgress_Files", value.Done + 1, value.Total), 0, FilesShare, value.Done, value.Total)
+            : new WorkProgress(
+                Strings.Format("ValidationProgress_Stage", Strings.Get("ValidationProgress_Stage_" + value.Stage)),
+                FilesShare + ((1 - FilesShare) * ((int)value.Stage - 1) / (Enum.GetValues<ValidationStage>().Length - 1))));
+    }
+
     // What an operation applied file by file reports as what the progress window shows: the file it is on and the percent.
     private sealed class FileBatchProgressMap : IProgress<FileBatchProgress>
     {

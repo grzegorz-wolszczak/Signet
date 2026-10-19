@@ -5207,6 +5207,45 @@ Konwertować mimo to?</value>
   <data name="Status_OperationCancelledRestored" xml:space="preserve">
     <value>Anulowano: {0} — książka wróciła do stanu sprzed operacji.</value>
   </data>
+  <data name="Progress_Fixing" xml:space="preserve">
+    <value>Naprawianie problemów: {0} z {1}</value>
+  </data>
+  <data name="ValidationProgress_Files" xml:space="preserve">
+    <value>Sprawdzanie plików HTML: {0} z {1}</value>
+  </data>
+  <data name="ValidationProgress_Stage" xml:space="preserve">
+    <value>Sprawdzanie: {0}</value>
+  </data>
+  <data name="ValidationProgress_Stage_Opf" xml:space="preserve">
+    <value>struktura OPF</value>
+  </data>
+  <data name="ValidationProgress_Stage_Links" xml:space="preserve">
+    <value>linki i odnośniki</value>
+  </data>
+  <data name="ValidationProgress_Stage_Fonts" xml:space="preserve">
+    <value>czcionki</value>
+  </data>
+  <data name="ValidationProgress_Stage_CrossFile" xml:space="preserve">
+    <value>struktura między plikami</value>
+  </data>
+  <data name="ValidationProgress_Stage_FileNames" xml:space="preserve">
+    <value>nazwy plików</value>
+  </data>
+  <data name="ValidationProgress_Stage_ContentTypes" xml:space="preserve">
+    <value>typy mediów</value>
+  </data>
+  <data name="ValidationProgress_Stage_Ids" xml:space="preserve">
+    <value>identyfikatory</value>
+  </data>
+  <data name="ValidationProgress_Stage_Images" xml:space="preserve">
+    <value>obrazy</value>
+  </data>
+  <data name="ValidationProgress_Stage_Css" xml:space="preserve">
+    <value>właściwości CSS</value>
+  </data>
+  <data name="ValidationProgress_Stage_Footnotes" xml:space="preserve">
+    <value>przypisy</value>
+  </data>
   <data name="FootnoteConversion_Analyzing" xml:space="preserve">
     <value>Analizowanie przypisów…</value>
   </data>

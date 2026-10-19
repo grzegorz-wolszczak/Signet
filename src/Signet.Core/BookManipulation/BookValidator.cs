@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using Signet.Core.Resources;
 using Signet.Core.Localization;
 
@@ -50,6 +52,57 @@ public abstract class ValidationFix
     public abstract bool Apply(Book book);
 }
 
+/// <summary>The part of the whole-book validation that is running (<see cref="ValidationProgress.Stage"/>).</summary>
+public enum ValidationStage
+{
+    /// <summary>The well-formedness of each (X)HTML file (<see cref="ValidationProgress.Done"/> of <see cref="ValidationProgress.Total"/>).</summary>
+    WellFormed,
+
+    /// <summary>The OPF structure.</summary>
+    Opf,
+
+    /// <summary>The links and references.</summary>
+    Links,
+
+    /// <summary>The fonts.</summary>
+    Fonts,
+
+    /// <summary>The structure across files.</summary>
+    CrossFile,
+
+    /// <summary>The portability of the file names.</summary>
+    FileNames,
+
+    /// <summary>The media types against the content.</summary>
+    ContentTypes,
+
+    /// <summary>The ids.</summary>
+    Ids,
+
+    /// <summary>The images.</summary>
+    Images,
+
+    /// <summary>The CSS properties.</summary>
+    Css,
+
+    /// <summary>The footnotes.</summary>
+    Footnotes,
+}
+
+/// <summary>Where <see cref="BookValidator.ValidateCurrentBook"/> is.</summary>
+/// <param name="Stage">What it is checking.</param>
+/// <param name="Done">For <see cref="ValidationStage.WellFormed"/>: the files checked before the current one.</param>
+/// <param name="Total">For <see cref="ValidationStage.WellFormed"/>: the files to check.</param>
+public sealed record ValidationProgress(ValidationStage Stage, int Done = 0, int Total = 0);
+
+/// <summary>
+/// What a caller may ask of the whole-book validation: to be told where it is, and to be able to stop it (an
+/// <see cref="OperationCanceledException"/> between two steps; the validation only reads the book, so nothing is left to undo).
+/// </summary>
+/// <param name="Progress">Told before each file and each further check; <c>null</c> for nobody.</param>
+/// <param name="Cancellation">Checked before each file and each further check.</param>
+public readonly record struct ValidationRun(IProgress<ValidationProgress>? Progress = null, CancellationToken Cancellation = default);
+
 /// <summary>
 /// Whole-book validation — "Well-Formed Check EPUB" (F7) plus the additional checks listed in
 /// <see cref="ValidateCurrentBook"/>, built on <see cref="WellFormedChecker.CheckXhtmlStructure"/>.
@@ -65,13 +118,19 @@ public static class BookValidator
     /// </summary>
     /// <param name="book">The book.</param>
     /// <param name="skippedCodes">The rule codes (<see cref="ValidationResult.Code"/>) whose results are left out.</param>
-    public static IReadOnlyList<ValidationResult> ValidateCurrentBook(Book book, IReadOnlyCollection<string>? skippedCodes = null)
+    /// <param name="run">Reports where the validation is and can stop it.</param>
+    public static IReadOnlyList<ValidationResult> ValidateCurrentBook(
+        Book book, IReadOnlyCollection<string>? skippedCodes = null, ValidationRun run = default)
     {
         ArgumentNullException.ThrowIfNull(book);
 
         List<ValidationResult> results = new();
-        foreach (HtmlResource html in book.GetHtmlResources())
+        List<HtmlResource> files = book.GetHtmlResources().ToList();
+        for (int i = 0; i < files.Count; i++)
         {
+            run.Cancellation.ThrowIfCancellationRequested();
+            run.Progress?.Report(new ValidationProgress(ValidationStage.WellFormed, i, files.Count));
+            HtmlResource html = files[i];
             string text = html.GetText();
             WellFormedResult check = WellFormedChecker.CheckXhtmlStructure(text, html.EpubVersion);
             if (check.IsWellFormed)
@@ -100,16 +159,23 @@ public static class BookValidator
         // cross-file structure, file name portability, mimetype vs. content consistency —
         // further categories are added here the same way, each as a separate
         // call returning an IReadOnlyList<ValidationResult>.
-        results.AddRange(OpfStructureValidator.Validate(book));
-        results.AddRange(LinkIntegrityValidator.Validate(book));
-        results.AddRange(FontIntegrityValidator.Validate(book));
-        results.AddRange(CrossFileStructureValidator.Validate(book));
-        results.AddRange(FileNamePortabilityValidator.Validate(book));
-        results.AddRange(ContentTypeValidator.Validate(book));
-        results.AddRange(IdValidator.Validate(book));
-        results.AddRange(ImageIntegrityValidator.Validate(book));
-        results.AddRange(CssPropertyValidator.Validate(book));
-        results.AddRange(FootnoteValidator.Validate(book));
+        void Check(ValidationStage stage, Func<IReadOnlyList<ValidationResult>> validate)
+        {
+            run.Cancellation.ThrowIfCancellationRequested();
+            run.Progress?.Report(new ValidationProgress(stage));
+            results.AddRange(validate());
+        }
+
+        Check(ValidationStage.Opf, () => OpfStructureValidator.Validate(book));
+        Check(ValidationStage.Links, () => LinkIntegrityValidator.Validate(book));
+        Check(ValidationStage.Fonts, () => FontIntegrityValidator.Validate(book));
+        Check(ValidationStage.CrossFile, () => CrossFileStructureValidator.Validate(book));
+        Check(ValidationStage.FileNames, () => FileNamePortabilityValidator.Validate(book));
+        Check(ValidationStage.ContentTypes, () => ContentTypeValidator.Validate(book));
+        Check(ValidationStage.Ids, () => IdValidator.Validate(book));
+        Check(ValidationStage.Images, () => ImageIntegrityValidator.Validate(book));
+        Check(ValidationStage.Css, () => CssPropertyValidator.Validate(book));
+        Check(ValidationStage.Footnotes, () => FootnoteValidator.Validate(book));
 
         if (skippedCodes is { Count: > 0 })
         {
