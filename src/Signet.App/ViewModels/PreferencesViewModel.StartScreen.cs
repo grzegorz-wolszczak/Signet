@@ -29,7 +29,10 @@ public sealed partial class PreferencesViewModel
     public static decimal StartScreenIndentMax => StartScreenAppearance.IndentMax;
 
     /// <summary>Upper bound of <see cref="RecentFilesLimit"/>.</summary>
-    public static decimal RecentFilesLimitMax => SettingsStore.RecentFilesMax;
+    public static decimal RecentFilesLimitMax => SettingsStore.RecentFilesMenuMax;
+
+    /// <summary>Upper bound of <see cref="StartScreenRecentFilesLimit"/>.</summary>
+    public static decimal StartScreenRecentFilesLimitMax => SettingsStore.RecentFilesMax;
 
     /// <summary>Indentation (px) of the entries of the list of recent files under its heading.</summary>
     [ObservableProperty]

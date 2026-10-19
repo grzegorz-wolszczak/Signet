@@ -50,6 +50,11 @@
             <DataTemplate x:DataType="vm:StartScreenRecentFile">
               <Button Classes="recentFile" Classes.highlighted="{Binding IsHighlighted}" Command="{Binding OpenCommand}"
                       ToolTip.Tip="{Binding Path}">
+                <Button.ContextMenu>
+                  <ContextMenu>
+                    <MenuItem Header="{loc:Loc Menu_RemoveFromRecentFiles}" Command="{Binding RemoveCommand}" />
+                  </ContextMenu>
+                </Button.ContextMenu>
                 <StackPanel>
                   <TextBlock Classes="recentTitle" Text="{Binding Name}" />
                   <TextBlock Classes="recentLocation" Text="{Binding Folder}" TextTrimming="CharacterEllipsis" />

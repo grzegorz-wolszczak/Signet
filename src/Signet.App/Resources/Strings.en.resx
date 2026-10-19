@@ -6455,7 +6455,7 @@ Close the tab</value>
     <value>List of recent files</value>
   </data>
   <data name="PreferencesWindow_StartScreenRecentFilesLimit" xml:space="preserve">
-    <value>Maximum number of recent files (also in the File menu, 0–20)</value>
+    <value>Maximum number of recent files on the start screen (0–100)</value>
   </data>
   <data name="PreferencesWindow_StartScreenIndent" xml:space="preserve">
     <value>Indentation of the entries under the list heading (px)</value>

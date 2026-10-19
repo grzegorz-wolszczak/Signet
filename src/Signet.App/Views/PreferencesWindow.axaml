@@ -307,11 +307,11 @@
                   <Border Classes="section">
                     <StackPanel Spacing="6">
                       <TextBlock Text="{loc:Loc PreferencesWindow_StartScreenRecentList}" FontWeight="Bold" />
-                      <!-- The same setting as the number of recent files of the File menu (General › Behavior). -->
+                      <!-- Not the number of recent files of the File menu (General › Behavior): that menu shows the first entries of the same list. -->
                       <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
                         <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_StartScreenRecentFilesLimit}" />
-                        <NumericUpDown x:Name="StartScreenRecentFilesLimitBox" Grid.Column="1" Value="{Binding RecentFilesLimit}"
-                                       Minimum="0" Maximum="{x:Static vm:PreferencesViewModel.RecentFilesLimitMax}"
+                        <NumericUpDown x:Name="StartScreenRecentFilesLimitBox" Grid.Column="1" Value="{Binding StartScreenRecentFilesLimit}"
+                                       Minimum="0" Maximum="{x:Static vm:PreferencesViewModel.StartScreenRecentFilesLimitMax}"
                                        Increment="1" FormatString="0" HorizontalAlignment="Right" Width="130" />
                       </Grid>
                       <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">

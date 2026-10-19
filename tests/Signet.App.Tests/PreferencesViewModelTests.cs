@@ -1426,18 +1426,25 @@ public sealed class PreferencesViewModelTests : IDisposable
 
         sample.IsSample.Should().BeTrue();
         sample.IsVisible.Should().BeTrue();
-        sample.RecentFileItems.Should().HaveCount(vm.RecentFilesLimit);
+        sample.RecentFileItems.Should().NotBeEmpty();
+        sample.RecentFileItems.Should().HaveCountLessThanOrEqualTo(vm.StartScreenRecentFilesLimit);
         sample.RecentFileItems.Where(f => f.IsHighlighted).Should().ContainSingle();
 
         // Act
-        vm.RecentFilesLimit = 4;
+        vm.StartScreenRecentFilesLimit = 4;
 
         // Assert
         sample.RecentFileItems.Should().HaveCount(4, "the preview follows the draft");
-        host.Settings.RecentFilesLimit.Should().NotBe(4, "the draft is not saved yet");
+        host.Settings.StartScreenRecentFilesLimit.Should().NotBe(4, "the draft is not saved yet");
 
         // Act
-        vm.RecentFilesLimit = 0;
+        vm.RecentFilesLimit = 2;
+
+        // Assert
+        sample.RecentFileItems.Should().HaveCount(4, "the number of the entries of the File menu does not change the start screen");
+
+        // Act
+        vm.StartScreenRecentFilesLimit = 0;
 
         // Assert
         sample.HasRecentFiles.Should().BeFalse();
