@@ -5162,11 +5162,11 @@ Konwertować mimo to?</value>
   <data name="FootnoteConversionBlocker_OtherReference" xml:space="preserve">
     <value>Prowadzi do niego link, który wygląda na odnośnik, ale nim nie jest — zostanie obcy.</value>
   </data>
-  <data name="FootnoteConversionBlocker_ContainsNote" xml:space="preserve">
-    <value>Treść tego przypisu zawiera inny przypis ({0}): elementy są zagnieżdżone (zwykle przez niezamknięty znacznik albo komentarz HTML, który połyka znacznik zamykający, np. „&lt;!-- &lt;/aside --&gt;”). Konwersja zmieniłaby jego tekst, więc zostanie obcy — popraw kod i uruchom konwersję ponownie.</value>
+  <data name="FootnoteConversionWarning_ContainsNote" xml:space="preserve">
+    <value>Treść tego przypisu zawiera w sobie inny przypis ({0}): elementy są zagnieżdżone (zwykle przez komentarz HTML, który połyka znacznik zamykający, np. „&lt;!-- &lt;/aside --&gt;”, albo przez niezamknięty znacznik). Po konwersji będą osobnymi przypisami, a ten zostanie tylko ze swoim tekstem.</value>
   </data>
-  <data name="FootnoteConversionBlocker_InsideNote" xml:space="preserve">
-    <value>Ten przypis leży wewnątrz treści innego przypisu ({0}): elementy są zagnieżdżone (zwykle przez niezamknięty znacznik albo komentarz HTML, który połyka znacznik zamykający). Zostanie obcy — popraw kod i uruchom konwersję ponownie.</value>
+  <data name="FootnoteConversionWarning_InsideNote" xml:space="preserve">
+    <value>Ten przypis leży wewnątrz treści innego przypisu ({0}): elementy są zagnieżdżone (zwykle przez komentarz HTML, który połyka znacznik zamykający, albo przez niezamknięty znacznik). Po konwersji będzie osobnym przypisem.</value>
   </data>
   <data name="FootnoteConversionProblem_Source" xml:space="preserve">
     <value>Przypis „{0}” ({2}) w {1}</value>

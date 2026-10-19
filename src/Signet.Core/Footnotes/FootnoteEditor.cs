@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Signet.Core.BookManipulation;
 using Signet.Core.Resources;
 
@@ -932,9 +933,12 @@ public static partial class FootnoteEditor
     /// </summary>
     public static bool Renumber(Book book, FootnoteOptions? options = null) => RenumberWith(book, options, null);
 
-    // Renumber with the letters of some shared notes written in a given style (`styles`: by the note's file and id).
+    // Renumber with the letters of some shared notes written in a given style (`styles`: by the note's file and id). With a
+    // cancelled token it throws an OperationCanceledException between the steps; the book may then be partly renumbered, so the
+    // caller that cancels rewinds it (a checkpoint taken before).
     private static bool RenumberWith(
-        Book book, FootnoteOptions? options, IReadOnlyDictionary<(string BookPath, string Id), FootnoteLetterStyle>? styles)
+        Book book, FootnoteOptions? options, IReadOnlyDictionary<(string BookPath, string Id), FootnoteLetterStyle>? styles,
+        CancellationToken cancel = default)
     {
         ArgumentNullException.ThrowIfNull(book);
         IReadOnlyList<Footnote> footnotes = FootnoteScanner.Scan(book);
@@ -997,6 +1001,7 @@ public static partial class FootnoteEditor
             .ToDictionary(g => g.Key, g => g.ToList());
         foreach (Footnote footnote in footnotes)
         {
+            cancel.ThrowIfCancellationRequested();
             if (!numbers.TryGetValue((footnote.NoteFile.BookPath, footnote.NoteId), out int number))
             {
                 if (footnote.Placement == FootnotePlacement.Local)
@@ -1123,12 +1128,14 @@ public static partial class FootnoteEditor
         bool changed = false;
         foreach ((HtmlResource file, List<TextEdit> list) in edits)
         {
+            cancel.ThrowIfCancellationRequested();
             file.SetText(Apply(snapshots[file].Text, list));
             changed = true;
         }
 
         foreach (HtmlResource file in book.GetHtmlResources())
         {
+            cancel.ThrowIfCancellationRequested();
             changed |= SortContainer(file, LocalContainerClass);
         }
 

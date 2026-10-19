@@ -426,19 +426,19 @@ public sealed class FootnoteConversionViewModelTests
     }
 
     [Theory]
-    [InlineData(ConversionBlocker.ContainsNote)]
-    [InlineData(ConversionBlocker.InsideNote)]
-    public void A_nested_note_says_which_other_note_it_is_nested_with(ConversionBlocker blocker)
+    [InlineData(ConversionWarning.ContainsNote)]
+    [InlineData(ConversionWarning.InsideNote)]
+    public void A_nested_note_says_which_other_note_it_is_nested_with(ConversionWarning warning)
     {
         // Arrange
         using UiCultureScope culture = new("en");
         (Book book, HtmlResource _) = BookWithLocalFootnotes();
         using (book)
         {
-            ConversionItem item = FootnoteEditor.PlanConversion(book).Items[0] with { CanConvert = false, Blocker = blocker, BlockerDetail = "fn10" };
+            ConversionItem item = FootnoteEditor.PlanConversion(book).Items[0] with { NestedWith = "fn10" };
 
             // Act
-            string text = FootnoteConversionItemViewModel.BlockerText(item);
+            string text = FootnoteConversionItemViewModel.WarningText(warning, item);
 
             // Assert
             text.Should().Contain("fn10").And.Contain("nested");
