@@ -39,7 +39,7 @@ public sealed class StartScreenTests
         StartScreenView start = window.GetVisualDescendants().OfType<StartScreenView>().Single();
 
         // Assert
-        start.GetVisualDescendants().OfType<ScrollViewer>().First().IsVisible.Should().BeTrue();
+        start.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "OpenButton").IsEffectivelyVisible.Should().BeTrue();
         start.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "OpenButton").IsEffectivelyEnabled.Should().BeTrue();
 
         BookBrowserView browser = window.GetVisualDescendants().OfType<BookBrowserView>().Single();
@@ -118,7 +118,7 @@ public sealed class StartScreenTests
     }
 
     [AvaloniaFact]
-    public void A_long_list_of_recent_files_scrolls_when_it_does_not_fit_the_window()
+    public void A_long_list_of_recent_files_scrolls_alone_while_the_buttons_and_the_heading_stay_in_place()
     {
         // Arrange
         string[] many = Enumerable.Range(0, 60).Select(i => Path.Combine(Books, "Book" + i + ".epub")).ToArray();
@@ -132,12 +132,23 @@ public sealed class StartScreenTests
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
-        ScrollViewer scroll = window.GetVisualDescendants().OfType<ScrollViewer>().First();
+        ScrollViewer scroll = window.GetVisualDescendants().OfType<ScrollViewer>().Single(s => s.Name == "RecentFilesScroll");
+        Button open = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "OpenButton");
+        TextBlock heading = window.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Name == "RecentFilesHeading");
+        double openTop = open.Bounds.Y;
+        double headingTop = heading.Bounds.Y;
+        scroll.Offset = new Avalonia.Vector(0, 300);
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
 
         // Assert
         vm.RecentFileItems.Should().HaveCount(60);
         scroll.Extent.Height.Should().BeGreaterThan(scroll.Viewport.Height, "the entries do not fit the window");
-        scroll.ScrollBarMaximum.Y.Should().BeGreaterThan(0, "so the list can be scrolled");
+        scroll.Offset.Y.Should().BeGreaterThan(0, "the list scrolled");
+        scroll.GetVisualDescendants().OfType<Button>().Should().NotContain(b => b.Name == "OpenButton", "the buttons are not in the scrolled part");
+        open.Bounds.Y.Should().Be(openTop, "the buttons did not move");
+        heading.Bounds.Y.Should().Be(headingTop, "the heading did not move");
+        (scroll.Bounds.Bottom + 32).Should().BeLessThanOrEqualTo(window.Bounds.Height + 1, "the list ends within the window");
         window.Close();
     }
 }
