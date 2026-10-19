@@ -154,7 +154,12 @@ public static class FootnoteValidator
             return;
         }
 
-        List<Link> backlinks = BacklinksOf(note, linksInside).ToList();
+        // A note has other links than the one back (a reference to a verse, "see also…"): only the links at the start of the note —
+        // "1." or "4a, 4b." — and the links that really lead back count as links back.
+        HashSet<IElement> leading = LeadingLinks(note);
+        List<Link> backlinks = BacklinksOf(note, linksInside)
+            .Where(b => leading.Contains(b.Anchor) || references.Any(r => Points(b, r.Anchor)))
+            .ToList();
         if (backlinks.Count == 0 && strong)
         {
             Add(results, html, line, "Validation_FootnoteNoBacklink", id, Describe(references[0]));
@@ -172,6 +177,45 @@ public static class FootnoteValidator
         {
             Add(results, html, line, "Validation_FootnoteManyRefs", id, markers.Count);
         }
+    }
+
+    // The links the note starts with: the first thing in it is a link, and each next one follows it after a comma or a semicolon
+    // ("4a, 4b."); the first text of another kind (even a space) ends the run, so "1. <link to a verse> text" has one.
+    private static HashSet<IElement> LeadingLinks(IElement note)
+    {
+        HashSet<IElement> result = new();
+        bool Walk(INode node)
+        {
+            foreach (INode child in node.ChildNodes)
+            {
+                if (child is IElement element)
+                {
+                    if (element.LocalName.Equals("a", StringComparison.OrdinalIgnoreCase) && element.HasAttribute("href"))
+                    {
+                        result.Add(element);
+                    }
+                    else if (!Walk(element))
+                    {
+                        return false;
+                    }
+                }
+                else if (child is IText text && text.Data.Length > 0)
+                {
+                    // Before the first link only white space (the indentation of the markup); between two links only a comma or a
+                    // semicolon: a space alone, or any other text, ends the run.
+                    string data = text.Data.Trim();
+                    if (data.Length == 0 ? result.Count > 0 : result.Count == 0 || data.Any(c => c is not (',' or ';')))
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        Walk(note);
+        return result;
     }
 
     // The links inside the note that lead out of it (to the reference in the text).
