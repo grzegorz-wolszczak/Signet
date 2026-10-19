@@ -319,6 +319,7 @@ public partial class PreferencesWindow : Window
         yield return CodeEditorWidth;
         yield return ColorSchemeWidth;
         yield return PreviewWidth;
+        yield return FindUsagesGeneralWidth;
         yield return FootnotesGeneralWidth;
         yield return FootnotesCssWidth;
         yield return GeneralWidth;

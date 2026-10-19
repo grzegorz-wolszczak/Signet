@@ -2378,6 +2378,67 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     }
 
     /// <summary>
+    /// The "Live refresh" box of the Preview page takes the whole width of the settings (up to the splitter, so the splitter
+    /// resizes the box and not only half of it) and its field sits at the right edge of the box — previously the box took the
+    /// left half of the page and the label and the field did not fit in it.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_live_refresh_box_fills_the_settings_and_its_field_sits_at_the_right_edge()
+    {
+        // Arrange
+        PreferencesWindow window = BuildWindow();
+        window.Width = 1900;
+        window.Height = 860;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        // Act
+        ShowPage(window, "PreviewPage");
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+        PageWidthHost host = window.FindControl<PageWidthHost>("PreviewWidth")!;
+        NumericUpDown field = window.FindControl<NumericUpDown>("PreviewRefreshDelayBox")!;
+        Border box = field.GetVisualAncestors().OfType<Border>().First(b => b.Classes.Contains("section"));
+        double boxRight = box.TranslatePoint(new Point(box.Bounds.Width, 0), window)!.Value.X;
+        double fieldRight = field.TranslatePoint(new Point(field.Bounds.Width, 0), window)!.Value.X;
+        double hostRight = host.TranslatePoint(new Point(host.SettingsWidth, 0), window)!.Value.X;
+
+        // Assert
+        (hostRight - boxRight).Should().BeInRange(0, 20, "the box reaches the splitter (up to the margin of the page)");
+        (boxRight - fieldRight).Should().BeInRange(0, 14, "the field sits at the right edge of the box (its padding and frame)");
+        window.Close();
+    }
+
+    /// <summary>
+    /// The "General" tab of the Find Usages page has the vertical splitter after its settings, like the other pages (the width
+    /// of the settings is the user's and is remembered) — previously its boxes took the whole width with no splitter.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_find_usages_general_tab_has_the_width_splitter()
+    {
+        // Arrange
+        PreferencesWindow window = BuildWindow();
+        window.Width = 1900;
+        window.Height = 860;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        // Act
+        ShowPage(window, "FindUsagesPage");
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+        PageWidthHost host = window.FindControl<PageWidthHost>("FindUsagesGeneralWidth")!;
+        GridSplitter splitter = host.GetVisualDescendants().OfType<GridSplitter>().First(s => s.Name == "PART_Splitter");
+
+        // Assert
+        host.IsEffectivelyVisible.Should().BeTrue();
+        splitter.IsEffectivelyVisible.Should().BeTrue();
+        splitter.ResizeDirection.Should().Be(GridResizeDirection.Columns);
+        host.SettingsWidth.Should().BeLessThan(host.Bounds.Width, "the settings do not take the whole page: the splitter is after them");
+        window.Close();
+    }
+
+    /// <summary>
     /// The "Mend &amp; Prettify" tab: separate boxes for Prettify, Mend and the warnings; the
     /// DOCTYPE checkboxes reflect and change the view model (adding is off, warning is on by default).
     /// </summary>
