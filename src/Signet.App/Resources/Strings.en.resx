@@ -5189,6 +5189,12 @@ Convert anyway?</value>
   <data name="FootnoteConversionWindow_ProblemGoTo" xml:space="preserve">
     <value>Click to go to the footnote in the code</value>
   </data>
+  <data name="ProgressWindow_Cancelling" xml:space="preserve">
+    <value>Cancelling… Wait until the operation stops and the book is back to the state before it.</value>
+  </data>
+  <data name="Status_FootnoteConversionCancelled" xml:space="preserve">
+    <value>The footnote conversion was cancelled — the book is back to the state before it.</value>
+  </data>
   <data name="FootnoteConversion_Analyzing" xml:space="preserve">
     <value>Analyzing the footnotes…</value>
   </data>

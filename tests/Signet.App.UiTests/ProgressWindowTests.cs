@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
@@ -157,11 +158,11 @@ public sealed class ProgressWindowTests
 
         // Act
         Task run = ProgressWindow.RunWithProgressAsync(
-            owner, "Converting", "Starting", p =>
+            owner, "Converting", "Starting", (p, _) =>
             {
                 progress = p;
                 return work.Task;
-            }, TimeSpan.Zero);
+            });
         RunUntil(() => owner.OwnedWindows.Count == 1);
         ProgressWindow window = owner.OwnedWindows.OfType<ProgressWindow>().Single();
         ProgressBar bar = window.FindControl<ProgressBar>("Bar")!;
@@ -208,7 +209,7 @@ public sealed class ProgressWindowTests
         Window owner = Owner();
 
         // Act
-        Task run = ProgressWindow.RunWithProgressAsync(owner, "Title", "Working", _ => Task.CompletedTask);
+        Task run = ProgressWindow.RunWithProgressAsync(owner, "Title", "Working", (_, _) => Task.CompletedTask);
         RunUntil(() => run.IsCompleted);
 
         // Assert
@@ -223,12 +224,75 @@ public sealed class ProgressWindowTests
         Window owner = Owner();
 
         // Act
-        Task run = ProgressWindow.RunWithProgressAsync(owner, "Title", "Working", _ => Task.FromException(new InvalidOperationException("boom")));
+        Task run = ProgressWindow.RunWithProgressAsync(owner, "Title", "Working", (_, _) => Task.FromException(new InvalidOperationException("boom")));
         RunUntil(() => run.IsCompleted);
 
         // Assert
         run.IsFaulted.Should().BeTrue();
         run.Exception!.InnerException.Should().BeOfType<InvalidOperationException>();
+        owner.Close();
+    }
+
+    [AvaloniaFact]
+    public void A_cancellable_window_cancels_the_token_says_so_and_stays_until_the_work_has_stopped()
+    {
+        // Arrange
+        Window owner = Owner();
+        TaskCompletionSource work = new();
+        CancellationToken token = default;
+
+        // Act
+        Task run = ProgressWindow.RunWithProgressAsync(
+            owner, "Converting", "Working", (_, t) =>
+            {
+                token = t;
+                return work.Task;
+            }, cancellable: true);
+        RunUntil(() => owner.OwnedWindows.Count == 1);
+        ProgressWindow window = owner.OwnedWindows.OfType<ProgressWindow>().Single();
+        Button cancel = window.FindControl<Button>("CancelButton")!;
+
+        // Assert
+        cancel.IsVisible.Should().BeTrue();
+        token.IsCancellationRequested.Should().BeFalse();
+
+        // Act
+        cancel.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        token.IsCancellationRequested.Should().BeTrue();
+        cancel.IsEnabled.Should().BeFalse();
+        window.FindControl<TextBlock>("MessageText")!.Text.Should().Be(Signet.App.Resources.Strings.Get("ProgressWindow_Cancelling"));
+        owner.OwnedWindows.Should().ContainSingle("the work has not stopped yet");
+
+        // Act
+        work.SetCanceled(token);
+        RunUntil(() => run.IsCompleted);
+
+        // Assert
+        run.IsCanceled.Should().BeTrue();
+        owner.OwnedWindows.Should().BeEmpty();
+        owner.Close();
+    }
+
+    [AvaloniaFact]
+    public void A_window_that_is_not_cancellable_has_no_cancel_button()
+    {
+        // Arrange
+        Window owner = Owner();
+        TaskCompletionSource work = new();
+
+        // Act
+        Task run = ProgressWindow.RunWithProgressAsync(owner, "Converting", "Working", (_, _) => work.Task);
+        RunUntil(() => owner.OwnedWindows.Count == 1);
+
+        // Assert
+        owner.OwnedWindows.OfType<ProgressWindow>().Single().FindControl<Button>("CancelButton")!.IsVisible.Should().BeFalse();
+
+        // Act
+        work.SetResult();
+        RunUntil(() => run.IsCompleted);
         owner.Close();
     }
 }

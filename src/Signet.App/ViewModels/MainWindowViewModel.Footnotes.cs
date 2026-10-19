@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Signet.App.Infrastructure;
@@ -174,9 +175,23 @@ public sealed partial class MainWindowViewModel
         }
 
         Book converting = _currentBook!;
-        ConversionResult result = await RunInBackgroundAsync(
-            runWithProgress, editsBook: true,
-            progress => FootnoteEditor.Convert(converting, request, FootnoteOptions, new ConversionProgressMap(progress))).ConfigureAwait(true);
+        ConversionResult result;
+        try
+        {
+            // Cancel is offered when the book can be brought back (the checkpoint above).
+            result = await RunInBackgroundAsync(
+                runWithProgress, editsBook: true, cancellable: checkpoint,
+                (progress, cancel) => FootnoteEditor.Convert(converting, request, FootnoteOptions, new ConversionProgressMap(progress), cancel))
+                .ConfigureAwait(true);
+        }
+        catch (OperationCanceledException)
+        {
+            // The book is half converted: back to the checkpoint, and the dialog stays as it was.
+            AbandonCheckpoint();
+            _statusBar.ShowMessage(Strings.Get("Status_FootnoteConversionCancelled"), TimeSpan.FromSeconds(6));
+            return null;
+        }
+
         bool restored = false;
         if (!result.Succeeded)
         {
@@ -212,8 +227,8 @@ public sealed partial class MainWindowViewModel
 
         Book book = _currentBook!;
         ConversionPlan plan = await RunInBackgroundAsync(
-            runWithProgress, editsBook: false,
-            progress =>
+            runWithProgress, editsBook: false, cancellable: false,
+            (progress, _) =>
             {
                 progress.Report(new WorkProgress(Strings.Get("FootnoteConversion_Analyzing"), null));
                 return FootnoteEditor.PlanConversion(book);
@@ -226,10 +241,13 @@ public sealed partial class MainWindowViewModel
     private bool _bookEditedInBackground;
 
     // Runs `work` off the UI thread (under `runner`, when there is one: the progress window) and returns its result.
-    private async Task<T> RunInBackgroundAsync<T>(ProgressRunner? runner, bool editsBook, Func<IProgress<WorkProgress>, T> work)
+    private async Task<T> RunInBackgroundAsync<T>(
+        ProgressRunner? runner, bool editsBook, bool cancellable, Func<IProgress<WorkProgress>, CancellationToken, T> work)
     {
         T result = default!;
-        Task Run(IProgress<WorkProgress> progress) => Task.Run(() => result = work(progress));
+
+        // The work decides when it stops (it checks the token), so the task is not given the token: it always starts.
+        Task Run(IProgress<WorkProgress> progress, CancellationToken cancel) => Task.Run(() => result = work(progress, cancel));
         if (editsBook)
         {
             _bookEditedInBackground = true;
@@ -238,7 +256,7 @@ public sealed partial class MainWindowViewModel
 
         try
         {
-            await (runner is null ? Run(new Progress<WorkProgress>()) : runner(Run)).ConfigureAwait(true);
+            await (runner is null ? Run(new Progress<WorkProgress>(), CancellationToken.None) : runner(Run, cancellable)).ConfigureAwait(true);
         }
         finally
         {

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using AutoFixture.Xunit3;
 using AwesomeAssertions;
@@ -481,11 +482,11 @@ public sealed class MainWindowFootnotesTests : IDisposable
         (MainWindowViewModel sut, HtmlResource chapter) = OpenChapterWithForeignFootnote(temp, openTab: false);
         sut.Tabs.CloseAllTabs();
         RecordingProgress progress = new();
-        int runs = 0;
-        ProgressRunner runner = work =>
+        List<bool> cancellable = new();
+        ProgressRunner runner = (work, canCancel) =>
         {
-            runs++;
-            return work(progress);
+            cancellable.Add(canCancel);
+            return work(progress, CancellationToken.None);
         };
         FootnoteConversionViewModel dialog = (await sut.PrepareFootnoteConversionAsync(() => Task.FromResult(true), runner))!;
         dialog.SelectAllCommand.Execute(null);
@@ -494,7 +495,8 @@ public sealed class MainWindowFootnotesTests : IDisposable
         await dialog.ConvertCommand.ExecuteAsync(null);
 
         // Assert
-        runs.Should().Be(2, "the conversion and the analysis after it");
+        // The conversion (a checkpoint was taken, so it can be cancelled) and the analysis after it (it cannot).
+        cancellable.Should().Equal(true, false);
         chapter.GetText().Should().Contain("signet-fn-ref");
         dialog.HasProblems.Should().BeFalse();
         List<string?> messages = progress.Reports.Select(r => r.Message).ToList();
@@ -503,6 +505,40 @@ public sealed class MainWindowFootnotesTests : IDisposable
         messages.Should().Contain(Strings.Get("FootnoteConversion_Analyzing"));
         progress.Reports.Select(r => r.Fraction).OfType<double>().Should().BeInAscendingOrder();
         sut.BookBrowser.SuspendRebuilds.Should().BeFalse("the tree follows the book again when the work is done");
+    }
+
+    [Fact]
+    public async Task Cancelling_the_conversion_brings_the_book_back_and_leaves_the_dialog_as_it_was()
+    {
+        // Arrange
+        using UiCultureScope culture = new("en");
+        TempDir temp = _disposables.Add(new TempDir());
+        (MainWindowViewModel sut, HtmlResource chapter) = OpenChapterWithForeignFootnote(temp, openTab: false);
+        sut.Tabs.CloseAllTabs();
+        string before = chapter.GetText();
+        int states = sut.CheckpointHistory.States.Count;
+        using CancellationTokenSource pressed = new();
+        ProgressRunner runner = (work, cancellable) =>
+        {
+            cancellable.Should().BeTrue();
+            pressed.Cancel();
+            return work(new RecordingProgress(), pressed.Token);
+        };
+        FootnoteConversionViewModel dialog = (await sut.PrepareFootnoteConversionAsync(() => Task.FromResult(true), runner))!;
+        dialog.SelectAllCommand.Execute(null);
+
+        // Act
+        await dialog.ConvertCommand.ExecuteAsync(null);
+
+        // Assert
+        Book restored = ((IBookWorkspace)sut).CurrentBook!;
+        restored.GetHtmlResources().Single(h => h.Filename == "chapter1.xhtml").GetText().Should().Be(before);
+        sut.CheckpointHistory.States.Should().HaveCount(states, "the checkpoint of the cancelled conversion is forgotten");
+        sut.StatusMessage.Should().Be(Strings.Get("Status_FootnoteConversionCancelled"));
+        dialog.HasProblems.Should().BeFalse();
+        dialog.Items.Should().HaveCount(1, "the dialog stays as it was");
+        dialog.IsConverting.Should().BeFalse();
+        sut.BookBrowser.SuspendRebuilds.Should().BeFalse();
     }
 
     [Theory]
