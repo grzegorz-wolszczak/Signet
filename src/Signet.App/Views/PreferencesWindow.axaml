@@ -861,21 +861,20 @@
               <HyperlinkButton x:Name="PreviewAppearanceLink" Content="{loc:Loc PreferencesWindow_Appearance}" Padding="0"
                                views:PreferencesPage.Target="PreviewAppearancePage" />
 
-              <!-- The box takes the left half of the page; the field sits right after its label. -->
-              <Grid ColumnDefinitions="*,*">
-                <Border Classes="section">
-                  <StackPanel Spacing="6">
-                    <TextBlock Text="{loc:Loc PreferencesWindow_PreviewLiveRefresh}" FontWeight="Bold" />
-                    <Grid Classes="labeled" ColumnDefinitions="Auto,Auto" ColumnSpacing="8">
-                      <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewRefreshDelay}" VerticalAlignment="Center" TextWrapping="Wrap" />
-                      <NumericUpDown x:Name="PreviewRefreshDelayBox" Grid.Column="1" Value="{Binding PreviewRefreshDelay}"
-                                     Minimum="{x:Static vm:PreferencesViewModel.PreviewRefreshDelayMin}"
-                                     Maximum="{x:Static vm:PreferencesViewModel.PreviewRefreshDelayMax}"
-                                     Increment="100" FormatString="0" Width="130" HorizontalAlignment="Left" />
-                    </Grid>
-                  </StackPanel>
-                </Border>
-              </Grid>
+              <!-- The box takes the whole width of the settings (up to the splitter); the label takes what is left and the field
+                   sits at the right edge of the box. -->
+              <Border Classes="section">
+                <StackPanel Spacing="6">
+                  <TextBlock Text="{loc:Loc PreferencesWindow_PreviewLiveRefresh}" FontWeight="Bold" />
+                  <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewRefreshDelay}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                    <NumericUpDown x:Name="PreviewRefreshDelayBox" Grid.Column="1" Value="{Binding PreviewRefreshDelay}"
+                                   Minimum="{x:Static vm:PreferencesViewModel.PreviewRefreshDelayMin}"
+                                   Maximum="{x:Static vm:PreferencesViewModel.PreviewRefreshDelayMax}"
+                                   Increment="100" FormatString="0" Width="130" HorizontalAlignment="Right" />
+                  </Grid>
+                </StackPanel>
+              </Border>
 
             </StackPanel>
           </ScrollViewer>
@@ -897,6 +896,7 @@
           </Grid.RowDefinitions>
           <TabControl x:Name="FindUsagesTabs">
             <TabItem Header="{loc:Loc PreferencesWindow_General}">
+              <views:PageWidthHost x:Name="FindUsagesGeneralWidth">
               <ScrollViewer>
                 <StackPanel Spacing="10" Margin="8">
                   <Border Classes="section">
@@ -929,6 +929,7 @@
                   </Border>
                 </StackPanel>
               </ScrollViewer>
+              </views:PageWidthHost>
             </TabItem>
             <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
               <views:PageWidthHost x:Name="FindUsagesFontsViewWidth">
