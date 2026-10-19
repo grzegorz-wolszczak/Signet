@@ -59,6 +59,17 @@ public interface ICodeTabHost
     void ApplyClassRename(ClassRenameResult result);
 
     /// <summary>
+    /// "Rename #id" from an XHTML file: saves the tabs and returns an
+    /// <see cref="IdRenamer"/> over the texts of the whole book. <c>null</c> (with a message on the
+    /// status bar) when there is no book or any XHTML file is not well-formed, and also when the user
+    /// cancelled the missing DOCTYPE warning.
+    /// </summary>
+    Task<IdRenamer?> PrepareIdRenameAsync();
+
+    /// <summary>Writes the result of "Rename #id" into the book files and refreshes the tabs, Book Browser and Preview.</summary>
+    void ApplyIdRename(IdRenameResult result);
+
+    /// <summary>
     /// "Remove Class" from an XHTML or CSS file: saves the tabs and returns a
     /// <see cref="ClassRemover"/> over the texts of the whole book. <c>null</c> (with a message on the
     /// status bar) when there is no book or any XHTML file is not well-formed, and also when the user

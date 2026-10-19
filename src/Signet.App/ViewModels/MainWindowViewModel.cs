@@ -2263,6 +2263,54 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <inheritdoc/>
+    async Task<IdRenamer?> ICodeTabHost.PrepareIdRenameAsync()
+    {
+        if (_currentBook is null)
+        {
+            return null;
+        }
+
+        _tabManager.SaveAllTabs();
+        if (!await ConfirmMissingDoctypeAsync("Operation_RenameId").ConfigureAwait(true))
+        {
+            return null;
+        }
+
+        IdRenamePreparation preparation = _currentBook.PrepareIdRename();
+        if (preparation.Renamer is null)
+        {
+            _statusBar.ShowMessage(
+                Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_RenameId"), preparation.NotWellFormed?.Filename),
+                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
+        }
+
+        return preparation.Renamer;
+    }
+
+    /// <inheritdoc/>
+    void ICodeTabHost.ApplyIdRename(IdRenameResult result)
+    {
+        if (_currentBook is null)
+        {
+            return;
+        }
+
+        bool checkpoint = AddCheckpointBefore(Strings.Get("Operation_RenameId"));
+        if (!_currentBook.ApplyIdRename(result))
+        {
+            if (checkpoint)
+            {
+                RewindCheckpoint();
+            }
+
+            return;
+        }
+
+        RefreshAfterMaintenanceOperation();
+        _statusBar.ShowMessage(Strings.Get("CodeEditor_IdRenamed"), TimeSpan.FromSeconds(4));
+    }
+
+    /// <inheritdoc/>
     async Task<ClassRemover?> ICodeTabHost.PrepareClassRemovalAsync()
     {
         if (_currentBook is null)

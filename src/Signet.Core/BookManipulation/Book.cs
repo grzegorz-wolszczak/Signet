@@ -997,6 +997,30 @@ public sealed class Book : IDisposable
     }
 
     /// <summary>
+    /// Prepares "Rename #id" from Code Editor: an <see cref="IdRenamer"/> over the current texts of all XHTML and
+    /// CSS files. Like other whole-book operations, it refuses when any XHTML file is not well-formed.
+    /// </summary>
+    public IdRenamePreparation PrepareIdRename()
+    {
+        if (FindFirstNotWellFormed(GetHtmlResources()) is { } bad)
+        {
+            return new IdRenamePreparation(null, bad);
+        }
+
+        IdRenamer renamer = new(
+            GetHtmlResources().Select(h => new ClassRenameSource(h.BookPath, h.GetText())),
+            GetCssResources().Select(c => new ClassRenameSource(c.BookPath, c.GetText())));
+        return new IdRenamePreparation(renamer, null);
+    }
+
+    /// <summary>Stores the file texts computed by <see cref="IdRenamer.Rename"/>. Returns whether anything changed.</summary>
+    public bool ApplyIdRename(IdRenameResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        return ApplyTexts(result.ChangedTexts);
+    }
+
+    /// <summary>
     /// Prepares "Remove Class" from Code Editor: a <see cref="ClassRemover"/>
     /// over the current texts of all XHTML and CSS files. Like other whole-book operations,
     /// it refuses when any XHTML file is not well-formed.

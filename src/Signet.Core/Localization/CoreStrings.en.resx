@@ -545,6 +545,9 @@
   <data name="Error_InvalidClassName" xml:space="preserve">
     <value>Invalid new class name "{0}".</value>
   </data>
+  <data name="Error_InvalidId" xml:space="preserve">
+    <value>Invalid new id "{0}".</value>
+  </data>
   <data name="Error_UnknownObfuscationAlgorithm" xml:space="preserve">
     <value>Unknown obfuscation algorithm: {0}</value>
   </data>
