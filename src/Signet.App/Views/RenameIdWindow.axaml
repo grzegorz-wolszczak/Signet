@@ -1,0 +1,30 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Signet.App.ViewModels"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.RenameIdWindow"
+        x:DataType="vm:RenameIdViewModel"
+        Width="560" SizeToContent="Height"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Title="{loc:Loc RenameIdWindow_Title}">
+
+  <StackPanel Margin="16" Spacing="8">
+    <TextBlock Text="{Binding IdLabel}" FontWeight="SemiBold" TextWrapping="Wrap" />
+
+    <TextBlock Text="{loc:Loc RenameIdWindow_NewName}" Margin="0,4,0,0" />
+    <TextBox x:Name="NameBox" Text="{Binding NewName, Mode=TwoWay}" />
+    <TextBlock Text="{Binding ValidationError}"
+               Foreground="{DynamicResource SystemControlErrorTextForegroundBrush}"
+               TextWrapping="Wrap"
+               IsVisible="{Binding ValidationError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+
+    <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" Margin="0,4,0,0" />
+
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,8,0,0">
+      <Button x:Name="OkButton" Content="{loc:Loc RenameIdWindow_RenameButton}" IsDefault="True" MinWidth="100"
+              IsEnabled="{Binding CanAccept}" />
+      <Button x:Name="CancelButton" Content="{loc:Loc Common_Cancel}" IsCancel="True" MinWidth="80" />
+    </StackPanel>
+  </StackPanel>
+</Window>

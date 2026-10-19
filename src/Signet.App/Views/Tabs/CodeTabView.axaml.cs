@@ -785,9 +785,12 @@ public partial class CodeTabView : UserControl
                 items.Add(new Separator());
             }
 
-            // ---- Find Usages (Id) — the id under the caret in an id attribute or in a selector ----
+            // ---- Rename Id / Find Id Usages — the id under the caret in an id attribute or in a selector ----
             if (vm.IdNameAtCaretForUsages() is { } idNameAtCaret)
             {
+                items.Add(Item(
+                    Strings.Get("CodeEditorMenu_RenameId"),
+                    () => RenameIdAtCaret(idNameAtCaret)));
                 items.Add(Item(
                     Strings.Get("CodeEditorMenu_FindIdUsages"),
                     () => host.FindIdUsages(idNameAtCaret),
@@ -927,6 +930,22 @@ public partial class CodeTabView : UserControl
         if (result is not null)
         {
             host.ApplyClassRename(result);
+        }
+    }
+
+    // "Rename Id…" — dialog with the new name and a change counter; the renamer works on the book's saved texts.
+    private async void RenameIdAtCaret(string idAtCaret)
+    {
+        if (_boundViewModel?.Host is not { } host || TopLevel.GetTopLevel(this) is not Window owner
+            || await host.PrepareIdRenameAsync().ConfigureAwait(true) is not { } renamer)
+        {
+            return;
+        }
+
+        IdRenameResult? result = await RenameIdWindow.AskAsync(owner, new RenameIdViewModel(renamer, idAtCaret));
+        if (result is not null)
+        {
+            host.ApplyIdRename(result);
         }
     }
 

@@ -812,6 +812,9 @@
   <data name="CodeEditorMenu_RenameClass" xml:space="preserve">
     <value>Rename Class...</value>
   </data>
+  <data name="CodeEditorMenu_RenameId" xml:space="preserve">
+    <value>Rename Id...</value>
+  </data>
   <data name="Action_MainWindow_MergeContent" xml:space="preserve">
     <value>Merge C&amp;ontent</value>
   </data>
@@ -2459,6 +2462,9 @@ Do you want to save the changes?</value>
   <data name="Operation_RenameClass" xml:space="preserve">
     <value>Rename Class</value>
   </data>
+  <data name="Operation_RenameId" xml:space="preserve">
+    <value>Rename Id</value>
+  </data>
   <data name="Operation_RemoveClass" xml:space="preserve">
     <value>Remove Class</value>
   </data>
@@ -2923,6 +2929,9 @@ Only HTML files can be merged.</value>
   <data name="CodeEditor_ClassRenamed" xml:space="preserve">
     <value>Class renamed.</value>
   </data>
+  <data name="CodeEditor_IdRenamed" xml:space="preserve">
+    <value>Id renamed.</value>
+  </data>
   <data name="CodeEditor_ClassRemoved" xml:space="preserve">
     <value>Class removed.</value>
   </data>
@@ -3000,6 +3009,33 @@ Only HTML files can be merged.</value>
   </data>
   <data name="RenameClass_AlreadyExists" xml:space="preserve">
     <value>Class "{0}" already exists in the book.</value>
+  </data>
+  <data name="RenameIdWindow_Title" xml:space="preserve">
+    <value>Rename Id</value>
+  </data>
+  <data name="RenameIdWindow_Id" xml:space="preserve">
+    <value>Id: {0}</value>
+  </data>
+  <data name="RenameIdWindow_NewName" xml:space="preserve">
+    <value>New name:</value>
+  </data>
+  <data name="RenameIdWindow_Summary" xml:space="preserve">
+    <value>Id occurrences changed: {0} · selectors changed: {1} · links updated: {2} · files changed: {3}</value>
+  </data>
+  <data name="RenameIdWindow_RenameButton" xml:space="preserve">
+    <value>Rename</value>
+  </data>
+  <data name="RenameId_Empty" xml:space="preserve">
+    <value>The name cannot be empty.</value>
+  </data>
+  <data name="RenameId_Invalid" xml:space="preserve">
+    <value>The name is not a valid XML name (for example, it starts with a digit or contains a space or a colon).</value>
+  </data>
+  <data name="RenameId_SameAsOld" xml:space="preserve">
+    <value>The new name is the same as the current one.</value>
+  </data>
+  <data name="RenameId_AlreadyExists" xml:space="preserve">
+    <value>Id "{0}" already exists in the book.</value>
   </data>
   <data name="CodeEditor_WellFormed" xml:space="preserve">
     <value>The document is well-formed.</value>

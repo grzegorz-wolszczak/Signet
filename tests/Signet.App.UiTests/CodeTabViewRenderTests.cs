@@ -862,6 +862,58 @@ public sealed class CodeTabViewRenderTests : IDisposable
         }
     }
 
+    /// <summary>"Rename Id..." sits right before "Find Id Usages" and opens the rename window for the id under the caret.</summary>
+    [AvaloniaFact]
+    public void Context_menu_offers_rename_id_right_before_find_id_usages_and_opens_its_window()
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
+        HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
+        html.InitialLoad();
+
+        OpenTab tab = new TabManagerModel().OpenResource(html);
+        (SettingsStore settings, SpellChecker spellChecker) = NewSpellChecker();
+        FakeHost host = new();
+        host.PrepareIdRenameFunc = () => System.Threading.Tasks.Task.FromResult<Signet.Core.BookManipulation.IdRenamer?>(
+            new Signet.Core.BookManipulation.IdRenamer(
+                [new Signet.Core.BookManipulation.ClassRenameSource("a.xhtml", "<html><body><p id=\"note1\">x</p></body></html>")],
+                []));
+        var vm = new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker) { Host = host };
+
+        var window = new Window { Width = 600, Height = 400, Content = new CodeTabView { DataContext = vm } };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
+        editor.Document.Text = "<html><body><p id=\"note1\">x</p></body></html>";
+        editor.CaretOffset = "<html><body><p id=\"note1".Length;
+        Dispatcher.UIThread.RunJobs();
+
+        // Act
+        editor.TextArea.RaiseEvent(new Avalonia.Input.ContextRequestedEventArgs());
+        Dispatcher.UIThread.RunJobs();
+
+        ContextMenu menu = editor.ContextMenu!;
+        List<string> headers = menu.Items.OfType<MenuItem>().Select(i => (string)i.Header!).ToList();
+        int renameId = headers.IndexOf(Signet.App.Resources.Strings.Get("CodeEditorMenu_RenameId"));
+        int findIdUsages = headers.IndexOf(Signet.App.Resources.Strings.Get("CodeEditorMenu_FindIdUsages"));
+
+        // Assert
+        renameId.Should().BeGreaterThanOrEqualTo(0);
+        findIdUsages.Should().Be(renameId + 1, "Rename Id sits right before Find Id Usages");
+
+        // Act
+        menu.Items.OfType<MenuItem>().Single(i => (string?)i.Header == Signet.App.Resources.Strings.Get("CodeEditorMenu_RenameId"))
+            .RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(MenuItem.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+        menu.Close();
+
+        // Assert
+        Window renameWindow = window.OwnedWindows.OfType<Signet.App.Views.RenameIdWindow>().Single();
+        renameWindow.Close();
+    }
+
     /// <summary>
     /// The class items run application actions, so they show the actions' current shortcuts (like the main menu);
     /// an action without a shortcut shows none.
@@ -1284,6 +1336,15 @@ public sealed class CodeTabViewRenderTests : IDisposable
         public void ApplyClassRename(Signet.Core.BookManipulation.ClassRenameResult result)
         {
         }
+
+        public System.Func<System.Threading.Tasks.Task<Signet.Core.BookManipulation.IdRenamer?>> PrepareIdRenameFunc { get; set; } =
+            () => System.Threading.Tasks.Task.FromResult<Signet.Core.BookManipulation.IdRenamer?>(null);
+
+        public System.Threading.Tasks.Task<Signet.Core.BookManipulation.IdRenamer?> PrepareIdRenameAsync() => PrepareIdRenameFunc();
+
+        public Signet.Core.BookManipulation.IdRenameResult? AppliedIdRename { get; private set; }
+
+        public void ApplyIdRename(Signet.Core.BookManipulation.IdRenameResult result) => AppliedIdRename = result;
 
         public System.Threading.Tasks.Task<Signet.Core.BookManipulation.ClassRemover?> PrepareClassRemovalAsync() =>
             System.Threading.Tasks.Task.FromResult<Signet.Core.BookManipulation.ClassRemover?>(null);
