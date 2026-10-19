@@ -1623,6 +1623,9 @@ public sealed partial class MainWindowViewModel
         _currentBook?.Dispose();
         _currentBook = null;
         _checkpoints.Dispose();
+
+        // The lock on the book file is held open in the locks folder, which may be the one deleted below.
+        _fileWorkflow?.Dispose();
         if (_designTimeFolder is not null && System.IO.Directory.Exists(_designTimeFolder))
         {
             System.IO.Directory.Delete(_designTimeFolder, recursive: true);

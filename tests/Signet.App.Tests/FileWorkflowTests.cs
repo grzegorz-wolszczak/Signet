@@ -83,6 +83,8 @@ public sealed class FileWorkflowTests
 
         public void Dispose()
         {
+            // The workflow holds the lock of the open file inside Dir; release it before the folder is deleted.
+            Workflow.Dispose();
             Workspace.CurrentBook?.Dispose();
             Dir.Dispose();
         }
