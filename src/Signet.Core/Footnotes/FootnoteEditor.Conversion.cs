@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Signet.Core.BookManipulation;
 using Signet.Core.Resources;
 
@@ -30,6 +31,16 @@ public enum ConversionWarning
 
     /// <summary>The note does not start with a paragraph (a list, a quotation…); the link back gets a paragraph of its own.</summary>
     FirstBlockNotParagraph,
+
+    /// <summary>
+    /// The note holds the note of another footnote (<see cref="ConversionItem.NestedWith"/>): the elements are nested, usually by a
+    /// comment that swallows a closing tag or an unclosed element. The notes become separate; the text of this one stays
+    /// without the other.
+    /// </summary>
+    ContainsNote,
+
+    /// <summary>The note is inside the note of another footnote (<see cref="ConversionItem.NestedWith"/>); it becomes a separate one.</summary>
+    InsideNote,
 }
 
 /// <summary>Why a footnote of other origin cannot be converted (<see cref="ConversionItem.Blocker"/>).</summary>
@@ -46,15 +57,6 @@ public enum ConversionBlocker
 
     /// <summary>A link that looks like a reference but is not one of the note's leads to it.</summary>
     OtherReference,
-
-    /// <summary>
-    /// Its note holds the note of another footnote (an unclosed element, or a comment that swallows a closing tag, nests
-    /// them); converting would split the text of the outer note.
-    /// </summary>
-    ContainsNote,
-
-    /// <summary>Its note is inside the note of another footnote (the other side of <see cref="ContainsNote"/>).</summary>
-    InsideNote,
 }
 
 /// <summary>What <see cref="FootnoteEditor.Convert"/> is doing (<see cref="ConversionProgress.Stage"/>).</summary>
@@ -120,10 +122,10 @@ public sealed record ConversionItem(
     public ConversionBlocker Blocker { get; init; }
 
     /// <summary>
-    /// More about <see cref="Blocker"/>: for <see cref="ConversionBlocker.ContainsNote"/> and
-    /// <see cref="ConversionBlocker.InsideNote"/> the id of the other note; empty otherwise.
+    /// For <see cref="ConversionWarning.ContainsNote"/> and <see cref="ConversionWarning.InsideNote"/> the id of the other note;
+    /// empty otherwise.
     /// </summary>
-    public string BlockerDetail { get; init; } = string.Empty;
+    public string NestedWith { get; init; } = string.Empty;
 
     /// <summary>
     /// All the references of its note in reading order (<see cref="Footnote"/> first); more than one for a shared note,
@@ -296,16 +298,21 @@ public static partial class FootnoteEditor
         return new ConversionPlan(items, candidates, AutomaticGlobalFile(candidates));
     }
 
-    // The notes that hold the note of another footnote, and the ones inside them, each with the id of the other (by file and id).
+    // The notes that hold the note of another footnote, and the ones inside them, each with the id of one other (by file and id);
+    // and how deep a note is (how many notes it is inside).
     private sealed record NestedNotes(
-        Dictionary<(string BookPath, string Id), string> Outer, Dictionary<(string BookPath, string Id), string> Inner);
+        Dictionary<(string BookPath, string Id), string> Outer,
+        Dictionary<(string BookPath, string Id), string> Inner,
+        Dictionary<(string BookPath, string Id), int> Depth);
 
-    // A comment that swallows a closing tag, or an unclosed element, nests one note in another. The text of the outer note then
-    // includes the inner one, which the conversion moves out: the text would change, so neither note is converted.
+    // A comment that swallows a closing tag, or an unclosed element, nests one note in another (the book is well formed, the
+    // note just holds the other). The text of the outer note then includes the inner one. The conversion converts the inner
+    // notes first (see Convert): moving one out of the outer note leaves the outer one with its own text.
     private static NestedNotes FindNestedNotes(
         IReadOnlyList<Footnote> footnotes, Func<HtmlResource, (string Text, TagLister Tags)> parsed)
     {
-        NestedNotes nested = new(new Dictionary<(string, string), string>(), new Dictionary<(string, string), string>());
+        NestedNotes nested = new(
+            new Dictionary<(string, string), string>(), new Dictionary<(string, string), string>(), new Dictionary<(string, string), int>());
         foreach (IGrouping<HtmlResource, Footnote> file in footnotes.Where(f => !f.IsSignet).GroupBy(f => f.NoteFile))
         {
             HashSet<string> ids = file.Select(f => f.NoteId).ToHashSet(StringComparer.Ordinal);
@@ -336,6 +343,7 @@ public static partial class FootnoteEditor
                 {
                     nested.Outer.TryAdd((file.Key.BookPath, opens[outer].Id), opens[inner].Id);
                     nested.Inner.TryAdd((file.Key.BookPath, opens[inner].Id), opens[outer].Id);
+                    nested.Depth[(file.Key.BookPath, opens[inner].Id)] = nested.Depth.GetValueOrDefault((file.Key.BookPath, opens[inner].Id)) + 1;
                 }
             }
         }
@@ -449,7 +457,19 @@ public static partial class FootnoteEditor
         }
 
         (string BookPath, string Id) noteKey = (footnote.NoteFile.BookPath, footnote.NoteId);
-        string blockerDetail = string.Empty;
+        string nestedWith = string.Empty;
+        if (nested.Outer.TryGetValue(noteKey, out string? innerId))
+        {
+            warnings.Add(ConversionWarning.ContainsNote);
+            nestedWith = innerId;
+        }
+
+        if (nested.Inner.TryGetValue(noteKey, out string? outerId))
+        {
+            warnings.Add(ConversionWarning.InsideNote);
+            nestedWith = nestedWith.Length > 0 ? nestedWith : outerId;
+        }
+
         ConversionBlocker blocker;
         if (anchor is null || !allFound)
         {
@@ -458,16 +478,6 @@ public static partial class FootnoteEditor
         else if (note is null)
         {
             blocker = ConversionBlocker.NoteNotFound;
-        }
-        else if (nested.Outer.TryGetValue(noteKey, out string? innerId))
-        {
-            blocker = ConversionBlocker.ContainsNote;
-            blockerDetail = innerId;
-        }
-        else if (nested.Inner.TryGetValue(noteKey, out string? outerId))
-        {
-            blocker = ConversionBlocker.InsideNote;
-            blockerDetail = outerId;
         }
         else
         {
@@ -480,7 +490,7 @@ public static partial class FootnoteEditor
             References = references,
             Notices = notices,
             Blocker = blocker,
-            BlockerDetail = blockerDetail,
+            NestedWith = nestedWith,
         };
     }
 
@@ -490,10 +500,13 @@ public static partial class FootnoteEditor
     /// the request; every link to their old ids is rewritten, emptied containers of the old notes go (with the line
     /// right before them), and so do files where nothing but headings is left. Then the footnotes are renumbered and the
     /// result is checked: the texts of the notes, the number of footnotes and the links/footnote pairs check (F7). On a
-    /// problem the book is left as it is now; the caller rewinds it (a checkpoint taken before).
+    /// problem the book is left as it is now; the caller rewinds it (a checkpoint taken before). The same when
+    /// <paramref name="cancellationToken"/> is cancelled: an <see cref="OperationCanceledException"/> is thrown and the book is
+    /// left half converted, so the caller rewinds it.
     /// </summary>
     public static ConversionResult Convert(
-        Book book, ConversionRequest request, FootnoteOptions? options = null, IProgress<ConversionProgress>? progress = null)
+        Book book, ConversionRequest request, FootnoteOptions? options = null, IProgress<ConversionProgress>? progress = null,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(book);
         ArgumentNullException.ThrowIfNull(request);
@@ -505,7 +518,28 @@ public static partial class FootnoteEditor
         }
 
         progress?.Report(new ConversionProgress(ConversionStage.Preparing, 0, items.Count));
-        int countBefore = FootnoteScanner.Scan(book).Count;
+        cancellationToken.ThrowIfCancellationRequested();
+        IReadOnlyList<Footnote> scanned = FootnoteScanner.Scan(book);
+        int countBefore = scanned.Count;
+
+        // A note inside another one is converted first: moved out, it leaves the outer note with its own text; the other way
+        // round the outer note would take the inner one with it and the check would find its text changed.
+        Dictionary<HtmlResource, (string Text, TagLister Tags)> parsedFiles = new(ReferenceEqualityComparer.Instance);
+        NestedNotes nested = FindNestedNotes(scanned, file =>
+        {
+            if (!parsedFiles.TryGetValue(file, out (string Text, TagLister Tags) entry))
+            {
+                string fileText = file.GetText();
+                parsedFiles[file] = entry = (fileText, TagLister.For(fileText));
+            }
+
+            return entry;
+        });
+        if (nested.Depth.Count > 0)
+        {
+            items = items.OrderByDescending(i => nested.Depth.GetValueOrDefault((i.Footnote.NoteFile.BookPath, i.Footnote.NoteId))).ToList();
+        }
+
         Dictionary<(string Code, string BookPath), int> checksBefore = LinkChecks(book);
         HashSet<(string BookPath, string Id)> linked = BookLinks(book).Select(l => (l.Target, l.Fragment)).ToHashSet();
         bool epub3 = book.IsEpub3;
@@ -530,6 +564,7 @@ public static partial class FootnoteEditor
         int step = Math.Max(1, items.Count / 200);
         for (int i = 0; i < items.Count; i++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             ConversionItem item = items[i];
             Footnote footnote = item.Footnote;
             IReadOnlyList<Footnote> references = item.References.Count > 0 ? item.References : new[] { footnote };
@@ -544,6 +579,7 @@ public static partial class FootnoteEditor
 
         progress?.Report(new ConversionProgress(ConversionStage.Converting, items.Count, items.Count));
         progress?.Report(new ConversionProgress(ConversionStage.Finishing, items.Count, items.Count));
+        cancellationToken.ThrowIfCancellationRequested();
 
         // Signet's own global notes move to a taken-over file.
         if (target is not null && signetFile is not null && !ReferenceEquals(target, signetFile))
@@ -583,7 +619,8 @@ public static partial class FootnoteEditor
         }
 
         List<int> indexes = converted.Select(c => beforeIndex.GetValueOrDefault(c.TempId, -1)).ToList();
-        Renumber(book, options);
+        cancellationToken.ThrowIfCancellationRequested();
+        RenumberWith(book, options, null, cancellationToken);
         if (signetFile is not null && !ReferenceEquals(signetFile, target) && book.GetHtmlResources().Contains(signetFile))
         {
             RemoveEmptyContainer(book, signetFile);
@@ -605,6 +642,7 @@ public static partial class FootnoteEditor
         RetargetLinks(book, finals, new Dictionary<string, string>());
         book.Modified = true;
 
+        cancellationToken.ThrowIfCancellationRequested();
         progress?.Report(new ConversionProgress(ConversionStage.Checking, items.Count, items.Count));
         List<ConversionProblem> problems = Check(book, converted, indexes, countBefore, checksBefore);
         return new ConversionResult(selected.Count, removed, problems);

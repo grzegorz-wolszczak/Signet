@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using AwesomeAssertions;
 using Signet.Core.BookManipulation;
 using Signet.Core.Footnotes;
@@ -125,7 +126,7 @@ public sealed class FootnoteConversionTests
             plan.Items[1].OtherLinks.Should().Equal(chapter.BookPath);
 
             // Act
-            ConversionResult result = FootnoteEditor.Convert(book, new ConversionRequest(plan.Items, notes, false));
+            ConversionResult result = FootnoteEditor.Convert(book, new ConversionRequest(plan.Items, notes, false), cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             result.Problems.Should().BeEmpty();
@@ -201,7 +202,7 @@ public sealed class FootnoteConversionTests
             plan.AutomaticFile.Should().BeNull();
 
             // Act
-            ConversionResult result = FootnoteEditor.Convert(book, new ConversionRequest(plan.Items, null, false));
+            ConversionResult result = FootnoteEditor.Convert(book, new ConversionRequest(plan.Items, null, false), cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             result.Problems.Should().BeEmpty();
@@ -236,7 +237,7 @@ public sealed class FootnoteConversionTests
             item.References.Select(r => r.ReferenceIndex).Should().Equal(0, 1);
 
             // Act
-            ConversionResult result = FootnoteEditor.Convert(book, new ConversionRequest(plan.Items, null, false));
+            ConversionResult result = FootnoteEditor.Convert(book, new ConversionRequest(plan.Items, null, false), cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             result.Problems.Should().BeEmpty();
@@ -302,7 +303,7 @@ public sealed class FootnoteConversionTests
             item.Notices.Should().Equal(ConversionNotice.SharedNote, ConversionNotice.BecomesGlobal);
 
             // Act & Assert
-            FootnoteEditor.Convert(book, new ConversionRequest(plan.Items, null, false)).Problems.Should().BeEmpty();
+            FootnoteEditor.Convert(book, new ConversionRequest(plan.Items, null, false), cancellationToken: TestContext.Current.CancellationToken).Problems.Should().BeEmpty();
 
             HtmlResource notes = FootnoteEditor.FindGlobalFile(book)!;
 
@@ -434,7 +435,7 @@ public sealed class FootnoteConversionTests
         + "</section>";
 
     [Fact]
-    public void Notes_nested_in_each_other_cannot_be_converted_and_say_which_note_they_are_nested_with()
+    public void Notes_nested_in_each_other_are_planned_with_a_warning_that_names_the_other_note()
     {
         // Arrange
         (Book book, HtmlResource _) = NewBook(NestedNotesBody);
@@ -444,30 +445,45 @@ public sealed class FootnoteConversionTests
             ConversionPlan plan = FootnoteEditor.PlanConversion(book);
 
             // Assert
-            plan.Items.Select(i => (i.Footnote.NoteId, i.CanConvert, i.Blocker, i.BlockerDetail)).Should().Equal(
-                ("n1", false, ConversionBlocker.ContainsNote, "n2"),
-                ("n2", false, ConversionBlocker.InsideNote, "n1"),
-                ("n3", true, ConversionBlocker.None, string.Empty));
+            plan.Items.Select(i => (i.Footnote.NoteId, i.CanConvert, i.NestedWith, i.Warnings.Contains(ConversionWarning.ContainsNote), i.Warnings.Contains(ConversionWarning.InsideNote)))
+                .Should().Equal(
+                    ("n1", true, "n2", true, false),
+                    ("n2", true, "n1", false, true),
+                    ("n3", true, string.Empty, false, false));
         }
     }
 
     [Fact]
-    public void The_notes_around_nested_ones_convert_without_a_problem_and_the_nested_ones_stay_as_they_are()
+    public void Notes_nested_in_each_other_become_separate_notes_and_the_outer_one_keeps_only_its_own_text()
     {
         // Arrange
         (Book book, HtmlResource html) = NewBook(NestedNotesBody);
         using (book)
         {
-            string nested = BodyOf(html)[BodyOf(html).IndexOf("<aside epub:type=\"footnote\" id=\"n1\">", StringComparison.Ordinal)..BodyOf(html).IndexOf("<aside epub:type=\"footnote\" id=\"n3\">", StringComparison.Ordinal)];
-
             // Act
             ConversionResult result = ConvertAll(book);
 
             // Assert
             result.Problems.Should().BeEmpty();
-            result.Converted.Should().Be(1);
-            BodyOf(html).Should().Contain(nested).And.Contain("signet-fn");
+            result.Converted.Should().Be(3);
+            IReadOnlyList<Footnote> notes = FootnoteScanner.Scan(book);
+            notes.Should().HaveCount(3).And.OnlyContain(n => n.IsSignet);
+            string body = BodyOf(html);
+            body.Should().NotContain("id=\"n1\"").And.NotContain("id=\"n2\"");
+            string first = NoteText(body, notes[0].NoteId);
+            string second = NoteText(body, notes[1].NoteId);
+            first.Should().Contain("First.").And.NotContain("Second.");
+            second.Should().Contain("Second.").And.NotContain("First.");
+            NoteText(body, notes[2].NoteId).Should().Contain("Third.");
         }
+    }
+
+    // The markup of the note with the id, up to its closing tag (after the conversion the notes do not nest).
+    private static string NoteText(string body, string id)
+    {
+        int start = body.IndexOf("id=\"" + id + "\"", StringComparison.Ordinal);
+        start.Should().BePositive();
+        return body[start..body.IndexOf("</aside>", start, StringComparison.Ordinal)];
     }
 
     [Fact]
@@ -487,7 +503,8 @@ public sealed class FootnoteConversionTests
 
             // Act
             ConversionResult result = FootnoteEditor.Convert(
-                book, new ConversionRequest(plan.Items, plan.AutomaticFile?.File, false), null, new SyncProgress(reports.Add));
+                book, new ConversionRequest(plan.Items, plan.AutomaticFile?.File, false), null, new SyncProgress(reports.Add),
+                TestContext.Current.CancellationToken);
 
             // Assert
             result.Problems.Should().BeEmpty();
@@ -495,6 +512,46 @@ public sealed class FootnoteConversionTests
                 ConversionStage.Preparing, ConversionStage.Converting, ConversionStage.Finishing, ConversionStage.Checking);
             reports.Where(r => r.Stage == ConversionStage.Converting).Select(r => r.Done).Should().BeInAscendingOrder().And.EndWith(2);
             reports.Should().OnlyContain(r => r.Total == 2);
+        }
+    }
+
+    [Fact]
+    public void A_cancelled_token_stops_the_conversion_with_an_OperationCanceledException()
+    {
+        // Arrange
+        (Book book, HtmlResource _) = NewBook(NestedNotesBody);
+        using (book)
+        {
+            using CancellationTokenSource cancelled = new();
+            cancelled.Cancel();
+            ConversionPlan plan = FootnoteEditor.PlanConversion(book);
+
+            // Act & Assert
+            book.Invoking(b => FootnoteEditor.Convert(b, new ConversionRequest(plan.Items, plan.AutomaticFile?.File, false), null, null, cancelled.Token))
+                .Should().Throw<OperationCanceledException>();
+        }
+    }
+
+    [Fact]
+    public void The_conversion_can_be_cancelled_in_the_middle_of_the_footnotes()
+    {
+        // Arrange
+        (Book book, HtmlResource _) = NewBook(NestedNotesBody);
+        using (book)
+        {
+            using CancellationTokenSource source = new();
+            ConversionPlan plan = FootnoteEditor.PlanConversion(book);
+            SyncProgress cancelWhenConverting = new(report =>
+            {
+                if (report.Stage == ConversionStage.Converting)
+                {
+                    source.Cancel();
+                }
+            });
+
+            // Act & Assert
+            book.Invoking(b => FootnoteEditor.Convert(b, new ConversionRequest(plan.Items, plan.AutomaticFile?.File, false), null, cancelWhenConverting, source.Token))
+                .Should().Throw<OperationCanceledException>();
         }
     }
 

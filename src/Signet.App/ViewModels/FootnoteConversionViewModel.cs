@@ -530,8 +530,6 @@ public sealed partial class FootnoteConversionItemViewModel : FootnoteConversion
         return item.Blocker switch
         {
             ConversionBlocker.None => Strings.Get("FootnoteConversionWindow_CannotConvert"),
-            ConversionBlocker.ContainsNote or ConversionBlocker.InsideNote =>
-                Strings.Format("FootnoteConversionBlocker_" + item.Blocker, item.BlockerDetail),
             _ => Strings.Get("FootnoteConversionBlocker_" + item.Blocker),
         };
     }
@@ -556,6 +554,8 @@ public sealed partial class FootnoteConversionItemViewModel : FootnoteConversion
             ConversionWarning.NonNumericMarker => Strings.Format("FootnoteConversionWarning_NonNumericMarker", item.Marker, item.NewNumber),
             ConversionWarning.NumberChanges => Strings.Format("FootnoteConversionWarning_NumberChanges", item.Marker, item.NewNumber),
             ConversionWarning.LinkedElsewhere => Strings.Format("FootnoteConversionWarning_LinkedElsewhere", string.Join(", ", item.OtherLinks)),
+            ConversionWarning.ContainsNote or ConversionWarning.InsideNote =>
+                Strings.Format("FootnoteConversionWarning_" + warning, item.NestedWith),
             _ => Strings.Get("FootnoteConversionWarning_" + warning.ToString()),
         };
     }

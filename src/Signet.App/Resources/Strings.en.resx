@@ -5162,11 +5162,11 @@ Convert anyway?</value>
   <data name="FootnoteConversionBlocker_OtherReference" xml:space="preserve">
     <value>A link that looks like a reference but is not one leads to it — it stays of other origin.</value>
   </data>
-  <data name="FootnoteConversionBlocker_ContainsNote" xml:space="preserve">
-    <value>The text of this footnote contains another footnote ({0}): the elements are nested (usually by an unclosed tag or an HTML comment that swallows a closing tag, e.g. “&lt;!-- &lt;/aside --&gt;”). Converting would change its text, so it stays of other origin — fix the code and convert again.</value>
+  <data name="FootnoteConversionWarning_ContainsNote" xml:space="preserve">
+    <value>The text of this footnote contains another footnote ({0}): the elements are nested (usually by an HTML comment that swallows a closing tag, e.g. “&lt;!-- &lt;/aside --&gt;”, or by an unclosed tag). After the conversion they are separate footnotes, and this one keeps only its own text.</value>
   </data>
-  <data name="FootnoteConversionBlocker_InsideNote" xml:space="preserve">
-    <value>This footnote is inside the text of another footnote ({0}): the elements are nested (usually by an unclosed tag or an HTML comment that swallows a closing tag). It stays of other origin — fix the code and convert again.</value>
+  <data name="FootnoteConversionWarning_InsideNote" xml:space="preserve">
+    <value>This footnote is inside the text of another footnote ({0}): the elements are nested (usually by an HTML comment that swallows a closing tag, or by an unclosed tag). After the conversion it is a separate footnote.</value>
   </data>
   <data name="FootnoteConversionProblem_Source" xml:space="preserve">
     <value>Footnote “{0}” ({2}) in {1}</value>
