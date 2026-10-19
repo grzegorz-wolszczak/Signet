@@ -27,8 +27,10 @@ public sealed class SettingsStore
     private const string FindReplaceGroup = "find_replace";
 
     private const float ZoomNormal = 1.0f;
-    private const int ClipboardHistoryMax = 20;
     private const int RecentFilesDefault = 9;
+
+    /// <summary>Upper bound of <see cref="ClipboardHistoryLimit"/> (0 = disabled).</summary>
+    public const int ClipboardHistoryMax = 20;
 
     /// <summary>
     /// Upper bound of <see cref="RecentFilesLimit"/> — and also how many paths

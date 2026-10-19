@@ -593,14 +593,23 @@
   <data name="PreferencesWindow_PreviewHighlightOpacity" xml:space="preserve">
     <value>Krycie tła, % (5–100):</value>
   </data>
+  <data name="PreferencesWindow_PreviewHighlightOpacityTip" xml:space="preserve">
+    <value>Używane tylko przy sposobie podświetlenia „Tło bloku”.</value>
+  </data>
   <data name="PreferencesWindow_PreviewHighlightOutlineWidth" xml:space="preserve">
     <value>Grubość ramki, px (1–20):</value>
+  </data>
+  <data name="PreferencesWindow_PreviewHighlightOutlineWidthTip" xml:space="preserve">
+    <value>Używane tylko przy sposobie podświetlenia „Ramka wokół bloku”.</value>
   </data>
   <data name="PreferencesWindow_PreviewHighlightAutoHide" xml:space="preserve">
     <value>Ukrywaj podświetlenie po czasie</value>
   </data>
   <data name="PreferencesWindow_PreviewHighlightAutoHideDelay" xml:space="preserve">
     <value>Ukryj po, ms (500–30000):</value>
+  </data>
+  <data name="PreferencesWindow_PreviewHighlightAutoHideDelayTip" xml:space="preserve">
+    <value>Używane tylko, gdy zaznaczone jest „Ukrywaj podświetlenie po czasie”.</value>
   </data>
   <data name="PreviewHighlightStyle_Background" xml:space="preserve">
     <value>Tło bloku</value>
@@ -2450,6 +2459,9 @@ Czy chcesz zapisać zmiany?</value>
   <data name="Operation_RenameClass" xml:space="preserve">
     <value>Zmiana nazwy klasy</value>
   </data>
+  <data name="Operation_RemoveClass" xml:space="preserve">
+    <value>Usunięcie klasy</value>
+  </data>
   <data name="Operation_PrettyPrint" xml:space="preserve">
     <value>Formatowanie</value>
   </data>
@@ -2910,6 +2922,18 @@ Scalać można tylko pliki HTML.</value>
   </data>
   <data name="CodeEditor_ClassRenamed" xml:space="preserve">
     <value>Zmieniono nazwę klasy.</value>
+  </data>
+  <data name="CodeEditor_ClassRemoved" xml:space="preserve">
+    <value>Usunięto klasę.</value>
+  </data>
+  <data name="RemoveClassWindow_Title" xml:space="preserve">
+    <value>Usuń klasę</value>
+  </data>
+  <data name="RemoveClassWindow_Intro" xml:space="preserve">
+    <value>Klasa „{0}” jest użyta {1} razy, w {2} plikach. Jej usunięcie opróżnia atrybut class="…", jeśli nie zostanie w nim nic innego, i kasuje regułę CSS, której selektor nazywał tylko tę klasę.</value>
+  </data>
+  <data name="RemoveClassWindow_Accept" xml:space="preserve">
+    <value>Usuń</value>
   </data>
   <data name="RenameClassWindow_Title" xml:space="preserve">
     <value>Zmień nazwę klasy</value>
@@ -4382,6 +4406,9 @@ Nie zmienia plików, ich nazw ani ID.</value>
   </data>
   <data name="CodeEditorMenu_FindUsages" xml:space="preserve">
     <value>Znajdź użycia</value>
+  </data>
+  <data name="CodeEditorMenu_RemoveClass" xml:space="preserve">
+    <value>Usuń klasę...</value>
   </data>
   <data name="FindUsages_Header" xml:space="preserve">
     <value>Użycia klasy „{0}”</value>

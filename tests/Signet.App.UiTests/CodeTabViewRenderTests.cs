@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
+using Avalonia.Markup.Xaml;
 using Avalonia.Media;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
@@ -678,6 +681,65 @@ public sealed class CodeTabViewRenderTests : IDisposable
         menu.Close();
     }
 
+    /// <summary>
+    /// Regression: "Go To Link Or Style", "Merge Content", "Unwrap &lt;div&gt;" and "Mark Selected Text" run
+    /// application actions that also have an icon in the main menu, but the context menu item did not show it.
+    /// </summary>
+    [AvaloniaFact]
+    public void Context_menu_items_with_a_main_menu_action_show_its_icon()
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
+        HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
+        html.InitialLoad();
+
+        OpenTab tab = new TabManagerModel().OpenResource(html);
+        (SettingsStore settings, SpellChecker spellChecker) = NewSpellChecker();
+        FakeHost host = new();
+        foreach (string actionId in new[]
+                 {
+                     AppActionIds.GoToLinkOrStyle, AppActionIds.MergeContent, AppActionIds.UnwrapDiv, AppActionIds.MarkSelection,
+                 })
+        {
+            host.Icons[actionId] = AppActionCatalog.All.Single(a => a.Id == actionId).IconKey!;
+        }
+
+        var vm = new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker) { Host = host };
+
+        var window = new Window { Width = 600, Height = 400, Content = new CodeTabView { DataContext = vm } };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
+        ContextMenu menu = editor.ContextMenu!;
+
+        // The icon set is loaded only by the desktop app startup, so the bundled "main" set is merged in temporarily here.
+        var icons = (ResourceDictionary)AvaloniaXamlLoader.Load(new Uri("avares://Signet.App/Assets/Icons/MainIcons.axaml"));
+        Application.Current!.Resources.MergedDictionaries.Add(icons);
+        try
+        {
+            // Act
+            editor.TextArea.RaiseEvent(new Avalonia.Input.ContextRequestedEventArgs());
+            Dispatcher.UIThread.RunJobs();
+
+            MenuItem Item(string key) =>
+                menu.Items.OfType<MenuItem>().Single(i => (string?)i.Header == Signet.App.Resources.Strings.Get(key));
+
+            // Assert
+            Item("CodeEditorMenu_GoToLinkOrStyle").Icon.Should().NotBeNull();
+            menu.Items.OfType<MenuItem>().Single(i => (string?)i.Header == CodeTabViewModel.MergeContentTextFor(null))
+                .Icon.Should().NotBeNull();
+            Item("CodeEditorMenu_UnwrapDiv").Icon.Should().NotBeNull();
+            Item("CodeEditorMenu_MarkSelectedText").Icon.Should().NotBeNull();
+            menu.Close();
+        }
+        finally
+        {
+            Application.Current.Resources.MergedDictionaries.Remove(icons);
+        }
+    }
+
     /// <summary>"Rename Class…" appears when the caret is on a class name in XHTML.</summary>
     [AvaloniaFact]
     public void Context_menu_offers_rename_class_when_the_caret_is_on_a_class_name()
@@ -710,6 +772,44 @@ public sealed class CodeTabViewRenderTests : IDisposable
         // Assert
         menu.Items.OfType<MenuItem>().Select(i => (string)i.Header!)
             .Should().Contain(Signet.App.Resources.Strings.Get("CodeEditorMenu_RenameClass"));
+        menu.Close();
+    }
+
+    /// <summary>"Remove Class…" appears right after "Find Usages" when the caret is on a class name.</summary>
+    [AvaloniaFact]
+    public void Context_menu_offers_remove_class_right_after_find_usages()
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
+        HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
+        html.InitialLoad();
+
+        OpenTab tab = new TabManagerModel().OpenResource(html);
+        (SettingsStore settings, SpellChecker spellChecker) = NewSpellChecker();
+        var vm = new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker) { Host = new FakeHost() };
+
+        var window = new Window { Width = 600, Height = 400, Content = new CodeTabView { DataContext = vm } };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
+        editor.Document.Text = "<html><body><p class=\"c1\">x</p></body></html>";
+        editor.CaretOffset = "<html><body><p class=\"c1".Length;
+        Dispatcher.UIThread.RunJobs();
+
+        // Act
+        editor.TextArea.RaiseEvent(new Avalonia.Input.ContextRequestedEventArgs());
+        Dispatcher.UIThread.RunJobs();
+
+        ContextMenu menu = editor.ContextMenu!;
+
+        // Assert
+        List<string> headers = menu.Items.OfType<MenuItem>().Select(i => (string)i.Header!).ToList();
+        int findUsages = headers.IndexOf(Signet.App.Resources.Strings.Get("CodeEditorMenu_FindUsages"));
+        int removeClass = headers.IndexOf(Signet.App.Resources.Strings.Get("CodeEditorMenu_RemoveClass"));
+        findUsages.Should().BeGreaterThanOrEqualTo(0);
+        removeClass.Should().Be(findUsages + 1, "Remove Class sits right after Find Usages");
         menu.Close();
     }
 
@@ -753,6 +853,59 @@ public sealed class CodeTabViewRenderTests : IDisposable
         Item("CodeEditorMenu_FindUsages").InputGesture.Should().Be(host.Gestures[AppActionIds.FindUsages]);
         Item("CodeEditorMenu_RenameClass").InputGesture.Should().BeNull("Rename Class has no shortcut by default");
         menu.Close();
+    }
+
+    /// <summary>
+    /// Regression: "Rename Class…" and "Find Usages" run application actions that also have an icon in the
+    /// main menu, but the context menu item did not show it.
+    /// </summary>
+    [AvaloniaFact]
+    public void Class_items_of_the_context_menu_show_the_icons_of_their_actions()
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
+        HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
+        html.InitialLoad();
+
+        OpenTab tab = new TabManagerModel().OpenResource(html);
+        (SettingsStore settings, SpellChecker spellChecker) = NewSpellChecker();
+        FakeHost host = new();
+        host.Icons[AppActionIds.RenameClass] = AppActionCatalog.All.Single(a => a.Id == AppActionIds.RenameClass).IconKey!;
+        host.Icons[AppActionIds.FindUsages] = AppActionCatalog.All.Single(a => a.Id == AppActionIds.FindUsages).IconKey!;
+        var vm = new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker) { Host = host };
+
+        var window = new Window { Width = 600, Height = 400, Content = new CodeTabView { DataContext = vm } };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
+        editor.Document.Text = "<html><body><p class=\"c1\">x</p></body></html>";
+        editor.CaretOffset = "<html><body><p class=\"c1".Length;
+        Dispatcher.UIThread.RunJobs();
+        ContextMenu menu = editor.ContextMenu!;
+
+        // The icon set is loaded only by the desktop app startup, so the bundled "main" set is merged in temporarily here.
+        var icons = (ResourceDictionary)AvaloniaXamlLoader.Load(new Uri("avares://Signet.App/Assets/Icons/MainIcons.axaml"));
+        Application.Current!.Resources.MergedDictionaries.Add(icons);
+        try
+        {
+            // Act — the icon lookup runs while the context menu is built, so the set must already be merged.
+            editor.TextArea.RaiseEvent(new Avalonia.Input.ContextRequestedEventArgs());
+            Dispatcher.UIThread.RunJobs();
+
+            MenuItem Item(string key) =>
+                menu.Items.OfType<MenuItem>().Single(i => (string?)i.Header == Signet.App.Resources.Strings.Get(key));
+
+            // Assert
+            Item("CodeEditorMenu_RenameClass").Icon.Should().NotBeNull();
+            Item("CodeEditorMenu_FindUsages").Icon.Should().NotBeNull();
+            menu.Close();
+        }
+        finally
+        {
+            Application.Current.Resources.MergedDictionaries.Remove(icons);
+        }
     }
 
     /// <summary>
@@ -1069,6 +1222,10 @@ public sealed class CodeTabViewRenderTests : IDisposable
 
         public Avalonia.Input.KeyGesture? GetActionGesture(string actionId) => Gestures.TryGetValue(actionId, out Avalonia.Input.KeyGesture? gesture) ? gesture : null;
 
+        public System.Collections.Generic.Dictionary<string, string> Icons { get; } = new();
+
+        public string? GetActionIcon(string actionId) => Icons.TryGetValue(actionId, out string? icon) ? icon : null;
+
         public System.Threading.Tasks.Task<string?> ReformatHtmlTextAsync(Resource resource, string text, bool toValid) =>
             System.Threading.Tasks.Task.FromResult<string?>(null);
 
@@ -1076,6 +1233,13 @@ public sealed class CodeTabViewRenderTests : IDisposable
             System.Threading.Tasks.Task.FromResult<Signet.Core.BookManipulation.ClassRenamer?>(null);
 
         public void ApplyClassRename(Signet.Core.BookManipulation.ClassRenameResult result)
+        {
+        }
+
+        public System.Threading.Tasks.Task<Signet.Core.BookManipulation.ClassRemover?> PrepareClassRemovalAsync() =>
+            System.Threading.Tasks.Task.FromResult<Signet.Core.BookManipulation.ClassRemover?>(null);
+
+        public void ApplyClassRemoval(Signet.Core.BookManipulation.ClassRemovalResult result)
         {
         }
 

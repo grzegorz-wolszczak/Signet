@@ -1,0 +1,35 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:loc="using:Signet.App.Resources"
+        xmlns:core="using:Signet.Core.BookManipulation"
+        x:Class="Signet.App.Views.RemoveClassWindow"
+        Width="560" Height="420" MinWidth="360" MinHeight="240"
+        WindowStartupLocation="CenterOwner"
+        Title="{loc:Loc RemoveClassWindow_Title}">
+
+  <DockPanel Margin="16">
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right"
+                Spacing="8" Margin="0,12,0,0">
+      <Button Classes="danger" x:Name="AcceptButton" Content="{loc:Loc RemoveClassWindow_Accept}" MinWidth="80" />
+      <Button x:Name="CancelButton" Content="{loc:Loc Common_Cancel}" IsCancel="True" IsDefault="True" MinWidth="80" />
+    </StackPanel>
+
+    <TextBlock x:Name="Intro" DockPanel.Dock="Top" TextWrapping="Wrap" Margin="0,0,0,10" />
+
+    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" BorderThickness="1"
+            CornerRadius="4" Padding="10">
+      <ScrollViewer>
+        <ItemsControl x:Name="Usages">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="core:ClassUsageFileSummary">
+              <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12" Margin="0,2">
+                <TextBlock Grid.Column="0" Text="{Binding BookPath}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding BookPath}" />
+                <TextBlock Grid.Column="1" Text="{Binding Occurrences}" HorizontalAlignment="Right" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </Border>
+  </DockPanel>
+</Window>

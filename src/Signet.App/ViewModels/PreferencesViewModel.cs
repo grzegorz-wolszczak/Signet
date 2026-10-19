@@ -535,9 +535,21 @@ public sealed partial class PreferencesViewModel : ObservableObject
     [ObservableProperty]
     private int _previewHighlightOpacity;
 
+    /// <summary>Lower bound of <see cref="PreviewHighlightOpacity"/>.</summary>
+    public static decimal PreviewHighlightOpacityMin => PreviewHighlight.OpacityMin;
+
+    /// <summary>Upper bound of <see cref="PreviewHighlightOpacity"/>.</summary>
+    public static decimal PreviewHighlightOpacityMax => PreviewHighlight.OpacityMax;
+
     /// <summary>Border thickness in pixels (1–20; out of range — clamped on save).</summary>
     [ObservableProperty]
     private int _previewHighlightOutlineWidth;
+
+    /// <summary>Lower bound of <see cref="PreviewHighlightOutlineWidth"/>.</summary>
+    public static decimal PreviewHighlightOutlineWidthMin => PreviewHighlight.OutlineWidthMin;
+
+    /// <summary>Upper bound of <see cref="PreviewHighlightOutlineWidth"/>.</summary>
+    public static decimal PreviewHighlightOutlineWidthMax => PreviewHighlight.OutlineWidthMax;
 
     /// <summary>Whether the highlight disappears on its own after <see cref="PreviewHighlightAutoHideDelay"/>.</summary>
     [ObservableProperty]
@@ -546,6 +558,12 @@ public sealed partial class PreferencesViewModel : ObservableObject
     /// <summary>After how many milliseconds the highlight disappears (500–30000; out of range — clamped).</summary>
     [ObservableProperty]
     private int _previewHighlightAutoHideDelay;
+
+    /// <summary>Lower bound of <see cref="PreviewHighlightAutoHideDelay"/>.</summary>
+    public static decimal PreviewHighlightAutoHideDelayMin => PreviewHighlight.AutoHideDelayMin;
+
+    /// <summary>Upper bound of <see cref="PreviewHighlightAutoHideDelay"/>.</summary>
+    public static decimal PreviewHighlightAutoHideDelayMax => PreviewHighlight.AutoHideDelayMax;
 
     partial void OnPreviewHighlightStyleChanged(PreviewHighlightStyle value) => PersistPreviewHighlight();
 
@@ -698,6 +716,9 @@ public sealed partial class PreferencesViewModel : ObservableObject
     /// <summary>The delay (ms) of the opening tag hint, 0–<see cref="SettingsStore.OpenTagHintDelayMaxMs"/>; clamped on save.</summary>
     [ObservableProperty]
     private int _openTagHintDelay;
+
+    /// <summary>Upper bound of <see cref="OpenTagHintDelay"/>.</summary>
+    public static decimal OpenTagHintDelayMax => SettingsStore.OpenTagHintDelayMaxMs;
 
     partial void OnOpenTagHintChanged(bool value) => _settings.CodeEditorOpenTagHint = value;
 
@@ -879,6 +900,9 @@ public sealed partial class PreferencesViewModel : ObservableObject
     [ObservableProperty]
     private int _navigationHistoryDays;
 
+    /// <summary>Upper bound of <see cref="NavigationHistoryDays"/>.</summary>
+    public static decimal NavigationHistoryDaysMax => NavigationHistoryStore.MaxDays;
+
     partial void OnNavigationHistoryDaysChanged(int value) =>
         _settings.NavigationHistoryDays = Math.Clamp(value, 1, NavigationHistoryStore.MaxDays);
 
@@ -886,12 +910,18 @@ public sealed partial class PreferencesViewModel : ObservableObject
     [ObservableProperty]
     private int _recentLocationsLimit;
 
+    /// <summary>Upper bound of <see cref="RecentLocationsLimit"/>.</summary>
+    public static decimal RecentLocationsLimitMax => RecentLocations.MaxLimit;
+
     partial void OnRecentLocationsLimitChanged(int value) =>
         _settings.RecentLocationsLimit = Math.Clamp(value, 1, RecentLocations.MaxLimit);
 
     /// <summary>Clipboard history limit (0–20).</summary>
     [ObservableProperty]
     private int _clipboardHistoryLimit;
+
+    /// <summary>Upper bound of <see cref="ClipboardHistoryLimit"/>.</summary>
+    public static decimal ClipboardHistoryLimitMax => SettingsStore.ClipboardHistoryMax;
 
     partial void OnClipboardHistoryLimitChanged(int value) => _settings.ClipboardHistoryLimit = value;
 
@@ -908,6 +938,12 @@ public sealed partial class PreferencesViewModel : ObservableObject
     /// </summary>
     [ObservableProperty]
     private int _previewRefreshDelay;
+
+    /// <summary>Lower bound of <see cref="PreviewRefreshDelay"/>.</summary>
+    public static decimal PreviewRefreshDelayMin => SettingsStore.UiPreviewTimeoutMin;
+
+    /// <summary>Upper bound of <see cref="PreviewRefreshDelay"/>.</summary>
+    public static decimal PreviewRefreshDelayMax => SettingsStore.UiPreviewTimeoutMax;
 
     partial void OnPreviewRefreshDelayChanged(int value) =>
         _settings.UiPreviewTimeout = Math.Clamp(value, SettingsStore.UiPreviewTimeoutMin, SettingsStore.UiPreviewTimeoutMax);

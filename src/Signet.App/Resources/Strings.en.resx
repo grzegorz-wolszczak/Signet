@@ -593,14 +593,23 @@
   <data name="PreferencesWindow_PreviewHighlightOpacity" xml:space="preserve">
     <value>Background opacity, % (5–100):</value>
   </data>
+  <data name="PreferencesWindow_PreviewHighlightOpacityTip" xml:space="preserve">
+    <value>Only used by the "Block background" highlight style.</value>
+  </data>
   <data name="PreferencesWindow_PreviewHighlightOutlineWidth" xml:space="preserve">
     <value>Frame width, px (1–20):</value>
+  </data>
+  <data name="PreferencesWindow_PreviewHighlightOutlineWidthTip" xml:space="preserve">
+    <value>Only used by the "Frame around block" highlight style.</value>
   </data>
   <data name="PreferencesWindow_PreviewHighlightAutoHide" xml:space="preserve">
     <value>Hide the highlight after a delay</value>
   </data>
   <data name="PreferencesWindow_PreviewHighlightAutoHideDelay" xml:space="preserve">
     <value>Hide after, ms (500–30000):</value>
+  </data>
+  <data name="PreferencesWindow_PreviewHighlightAutoHideDelayTip" xml:space="preserve">
+    <value>Only used while "Hide the highlight after a delay" is checked.</value>
   </data>
   <data name="PreviewHighlightStyle_Background" xml:space="preserve">
     <value>Block background</value>
@@ -2450,6 +2459,9 @@ Do you want to save the changes?</value>
   <data name="Operation_RenameClass" xml:space="preserve">
     <value>Rename Class</value>
   </data>
+  <data name="Operation_RemoveClass" xml:space="preserve">
+    <value>Remove Class</value>
+  </data>
   <data name="Operation_PrettyPrint" xml:space="preserve">
     <value>Pretty print</value>
   </data>
@@ -2910,6 +2922,18 @@ Only HTML files can be merged.</value>
   </data>
   <data name="CodeEditor_ClassRenamed" xml:space="preserve">
     <value>Class renamed.</value>
+  </data>
+  <data name="CodeEditor_ClassRemoved" xml:space="preserve">
+    <value>Class removed.</value>
+  </data>
+  <data name="RemoveClassWindow_Title" xml:space="preserve">
+    <value>Remove Class</value>
+  </data>
+  <data name="RemoveClassWindow_Intro" xml:space="preserve">
+    <value>Class "{0}" is used {1} times, in {2} files. Removing it empties a class="…" attribute left with nothing else, and deletes a CSS rule whose selector named only this class.</value>
+  </data>
+  <data name="RemoveClassWindow_Accept" xml:space="preserve">
+    <value>Remove</value>
   </data>
   <data name="RenameClassWindow_Title" xml:space="preserve">
     <value>Rename Class</value>
@@ -4382,6 +4406,9 @@ It does not change the files, their names or their IDs.</value>
   </data>
   <data name="CodeEditorMenu_FindUsages" xml:space="preserve">
     <value>Find Usages</value>
+  </data>
+  <data name="CodeEditorMenu_RemoveClass" xml:space="preserve">
+    <value>Remove Class...</value>
   </data>
   <data name="FindUsages_Header" xml:space="preserve">
     <value>Usages of class “{0}”</value>

@@ -37,6 +37,9 @@ public interface ICodeTabHost
     /// <summary>The current keyboard shortcut of the action (shown next to its context menu item); <c>null</c> = none.</summary>
     KeyGesture? GetActionGesture(string actionId);
 
+    /// <summary>The icon key of the action (shown next to its context menu item, as in the main menu); <c>null</c> = none.</summary>
+    string? GetActionIcon(string actionId);
+
     /// <summary>
     /// Formats the text of an (X)HTML file editor: <paramref name="toValid"/> = Mend Code, otherwise
     /// Mend and Prettify Code. <c>null</c> when the operation was cancelled (e.g. the file is not
@@ -54,6 +57,17 @@ public interface ICodeTabHost
 
     /// <summary>Writes the result of "Rename Class" into the book files and refreshes the tabs, Book Browser and Preview.</summary>
     void ApplyClassRename(ClassRenameResult result);
+
+    /// <summary>
+    /// "Remove Class" from an XHTML or CSS file: saves the tabs and returns a
+    /// <see cref="ClassRemover"/> over the texts of the whole book. <c>null</c> (with a message on the
+    /// status bar) when there is no book or any XHTML file is not well-formed, and also when the user
+    /// cancelled the missing DOCTYPE warning.
+    /// </summary>
+    Task<ClassRemover?> PrepareClassRemovalAsync();
+
+    /// <summary>Writes the result of "Remove Class" into the book files and refreshes the tabs, Book Browser and Preview.</summary>
+    void ApplyClassRemoval(ClassRemovalResult result);
 
     /// <summary>
     /// "Remove span" — how many spans of the book are the same as the span under <paramref name="offset"/> in
