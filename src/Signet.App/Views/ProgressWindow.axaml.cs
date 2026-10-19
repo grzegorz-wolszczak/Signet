@@ -1,8 +1,10 @@
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Threading;
 using Signet.App.Infrastructure;
+using Signet.App.Resources;
 
 namespace Signet.App.Views;
 
@@ -63,32 +65,51 @@ public partial class ProgressWindow : Window
 
     /// <summary>
     /// Runs <paramref name="work"/> with a window over <paramref name="owner"/> that shows what it is doing and how far it is
-    /// (<see cref="WorkProgress"/>): the work reports to the progress it is given, from any thread. The window appears when
-    /// the work is not done after <paramref name="delay"/> (<see cref="DefaultDelay"/> when <c>null</c>; <see cref="TimeSpan.Zero"/>
-    /// shows it at once) and has no Cancel — it cannot be closed until the work is done and the UI has caught up with it.
-    /// An exception of the work is thrown here.
+    /// (<see cref="WorkProgress"/>): the work reports to the progress it is given, from any thread. The window appears at once
+    /// (a long operation says so even when it is short; <paramref name="delay"/> keeps it away from the work that finishes
+    /// within it) and cannot be closed until the work is done and the UI has caught up with it. An exception of the work is
+    /// thrown here.
     /// </summary>
     /// <remarks>
-    /// The work must leave the UI thread before it does anything long (<c>Task.Run</c>), or the window cannot be drawn.
+    /// The work must leave the UI thread before it does anything long (<c>Task.Run</c>), or the window cannot be drawn. With
+    /// <c>cancellable</c> the window has Cancel: it cancels the token the work is given, the window then says it is cancelling
+    /// and stays until the work has stopped (an <see cref="OperationCanceledException"/> is thrown here); undoing what the work
+    /// did is the caller's.
     /// </remarks>
     /// <param name="owner">The window the progress window is shown over.</param>
     /// <param name="title">The name of the operation (the title of the window).</param>
     /// <param name="message">What it is doing at the start.</param>
     /// <param name="work">The work.</param>
-    /// <param name="delay">How long the work may take before the window appears.</param>
+    /// <param name="cancellable">Whether the window has Cancel.</param>
+    /// <param name="delay">How long the work may take before the window appears (none by default).</param>
     public static async Task RunWithProgressAsync(
-        Window owner, string title, string message, Func<IProgress<WorkProgress>, Task> work, TimeSpan? delay = null)
+        Window owner, string title, string message, Func<IProgress<WorkProgress>, CancellationToken, Task> work,
+        bool cancellable = false, TimeSpan? delay = null)
     {
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentNullException.ThrowIfNull(work);
+        using CancellationTokenSource cancel = new();
         UiProgress progress = new(message);
-        Task task = work(progress);
-        await Task.WhenAny(task, Task.Delay(delay ?? DefaultDelay)).ConfigureAwait(true);
+        Task task = work(progress, cancel.Token);
+        await Task.WhenAny(task, Task.Delay(delay ?? TimeSpan.Zero)).ConfigureAwait(true);
         if (!task.IsCompleted)
         {
             ProgressWindow window = new() { Title = title };
-            window.CancelButton.IsVisible = false;
-            window.CancelButton.IsCancel = false;
+            window.CancelButton.IsVisible = cancellable;
+            window.CancelButton.IsCancel = cancellable;
+            if (cancellable)
+            {
+                window.CancelButton.Click += (_, _) =>
+                {
+                    cancel.Cancel();
+                    window.CancelButton.IsEnabled = false;
+                    progress.Stop();
+                    window.MessageText.Text = Strings.Get("ProgressWindow_Cancelling");
+                    window.Bar.IsIndeterminate = true;
+                    window.PercentText.IsVisible = false;
+                };
+            }
+
             progress.Attach(window);
             bool done = false;
             window.Closing += (_, e) => e.Cancel = !done;
@@ -115,6 +136,15 @@ public partial class ProgressWindow : Window
         private ProgressWindow? _window;
 
         public UiProgress(string message) => _latest = new WorkProgress(message, null);
+
+        // The reports that come after Cancel was pressed are not shown: the window says it is cancelling.
+        public void Stop()
+        {
+            lock (_gate)
+            {
+                _window = null;
+            }
+        }
 
         public void Attach(ProgressWindow window)
         {

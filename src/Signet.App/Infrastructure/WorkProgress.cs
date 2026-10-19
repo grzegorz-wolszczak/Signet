@@ -25,5 +25,13 @@ public sealed record WorkProgress(string? Message, double? Fraction)
 /// Runs a long operation with a progress window over the owner of the operation: the view model calls it with the work, which
 /// reports its progress; a runner without a window (the tests) just runs the work.
 /// </summary>
-/// <param name="work">The work; it reports to the progress it is given from any thread.</param>
-public delegate System.Threading.Tasks.Task ProgressRunner(Func<IProgress<WorkProgress>, System.Threading.Tasks.Task> work);
+/// <param name="work">
+/// The work; it reports to the progress it is given from any thread and stops with an
+/// <see cref="OperationCanceledException"/> when the token it is given is cancelled (the user pressed Cancel).
+/// </param>
+/// <param name="cancellable">
+/// Whether the window has a Cancel button: only an operation that can be brought back to the state before it (a checkpoint
+/// was taken) can be cancelled.
+/// </param>
+public delegate System.Threading.Tasks.Task ProgressRunner(
+    Func<IProgress<WorkProgress>, System.Threading.CancellationToken, System.Threading.Tasks.Task> work, bool cancellable);

@@ -5189,6 +5189,12 @@ Konwertować mimo to?</value>
   <data name="FootnoteConversionWindow_ProblemGoTo" xml:space="preserve">
     <value>Kliknij, aby przejść do przypisu w kodzie</value>
   </data>
+  <data name="ProgressWindow_Cancelling" xml:space="preserve">
+    <value>Anulowanie… Poczekaj, aż operacja się zatrzyma i książka wróci do stanu sprzed niej.</value>
+  </data>
+  <data name="Status_FootnoteConversionCancelled" xml:space="preserve">
+    <value>Konwersję przypisów anulowano — książka wróciła do stanu sprzed konwersji.</value>
+  </data>
   <data name="FootnoteConversion_Analyzing" xml:space="preserve">
     <value>Analizowanie przypisów…</value>
   </data>
