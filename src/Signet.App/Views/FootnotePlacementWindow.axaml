@@ -1,0 +1,78 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:infra="using:Signet.App.Infrastructure"
+        xmlns:vm="using:Signet.App.ViewModels"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.FootnotePlacementWindow"
+        infra:TooltipFonts.Area="Footnotes"
+        x:DataType="vm:FootnotePlacementViewModel"
+        Width="1000" Height="640" MinWidth="640" MinHeight="400"
+        WindowStartupLocation="CenterOwner"
+        Title="{loc:Loc FootnotePlacementWindow_Title}">
+
+  <!-- The cells of the list (the columns are built in code; FootnotePlacementRow). A double click opens the reference. A footnote
+       that cannot move is dimmed and its check box is disabled. -->
+  <Window.Resources>
+    <DataTemplate x:Key="FootnotePlacementMarkerCellTemplate" x:DataType="vm:FootnotePlacementRow">
+      <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Background="Transparent" Opacity="{Binding Fade}"
+                  DoubleTapped="OnRowDoubleTapped">
+        <CheckBox IsChecked="{Binding IsChecked, Mode=TwoWay}" IsEnabled="{Binding IsEnabled}" MinWidth="0" Margin="0,0,4,0" />
+        <TextBlock Text="{Binding Marker}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Marker}" />
+      </StackPanel>
+    </DataTemplate>
+    <DataTemplate x:Key="FootnotePlacementKindCellTemplate" x:DataType="vm:FootnotePlacementRow">
+      <TextBlock Text="{Binding Kind}" VerticalAlignment="Center" Opacity="{Binding Fade}" Background="Transparent"
+                 DoubleTapped="OnRowDoubleTapped" />
+    </DataTemplate>
+    <DataTemplate x:Key="FootnotePlacementTextCellTemplate" x:DataType="vm:FootnotePlacementRow">
+      <TextBlock Text="{Binding Text}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Opacity="{Binding Fade}"
+                 Background="Transparent" ToolTip.Tip="{Binding Text}" DoubleTapped="OnRowDoubleTapped" />
+    </DataTemplate>
+    <DataTemplate x:Key="FootnotePlacementFileCellTemplate" x:DataType="vm:FootnotePlacementRow">
+      <TextBlock Text="{Binding File}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Opacity="{Binding Fade}"
+                 Background="Transparent" ToolTip.Tip="{Binding File}" DoubleTapped="OnRowDoubleTapped" />
+    </DataTemplate>
+    <DataTemplate x:Key="FootnotePlacementRemarkCellTemplate" x:DataType="vm:FootnotePlacementRow">
+      <TextBlock Text="{Binding Remark}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                 Background="Transparent" ToolTip.Tip="{Binding Remark}" DoubleTapped="OnRowDoubleTapped" />
+    </DataTemplate>
+  </Window.Resources>
+
+  <DockPanel Margin="16">
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,12,0,0">
+      <Button x:Name="ApplyButton" Content="{loc:Loc FootnotePlacementWindow_Apply}" Command="{Binding ApplyCommand}"
+              Classes="accent" MinWidth="80" />
+      <Button x:Name="CloseButton" Content="{loc:Loc Common_Close}" IsCancel="True" MinWidth="80" />
+    </StackPanel>
+
+    <StackPanel DockPanel.Dock="Top" Spacing="8" Margin="0,0,0,8">
+      <TextBlock Text="{loc:Loc FootnotePlacementWindow_Intro}" TextWrapping="Wrap" />
+      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8" IsVisible="{Binding HasItems}">
+        <TextBlock Grid.Column="0" Text="{loc:Loc FootnotePlacementWindow_GlobalFile}" VerticalAlignment="Center" />
+        <ComboBox x:Name="GlobalFileBox" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding GlobalFiles}"
+                  SelectedItem="{Binding SelectedGlobalFile}" IsEnabled="{Binding IsGlobalFileEnabled}">
+          <ComboBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:GlobalFileChoice">
+              <TextBlock Text="{Binding Display}" TextTrimming="CharacterEllipsis" />
+            </DataTemplate>
+          </ComboBox.ItemTemplate>
+        </ComboBox>
+      </Grid>
+      <TextBlock Text="{loc:Loc FootnotePlacementWindow_GlobalFileHint}" FontSize="12" Opacity="0.75" TextWrapping="Wrap"
+                 IsVisible="{Binding HasItems}" />
+      <WrapPanel Orientation="Horizontal" ItemSpacing="12" LineSpacing="4" IsVisible="{Binding HasItems}">
+        <Button Content="{loc:Loc FootnoteConversionWindow_SelectAll}" Command="{Binding SelectAllCommand}" />
+        <Button Content="{loc:Loc FootnoteConversionWindow_SelectNone}" Command="{Binding SelectNoneCommand}" />
+        <CheckBox x:Name="ShowLocalBox" Content="{loc:Loc FootnotePlacementWindow_ShowLocal}" IsChecked="{Binding ShowLocal}" />
+        <CheckBox x:Name="ShowGlobalBox" Content="{loc:Loc FootnotePlacementWindow_ShowGlobal}" IsChecked="{Binding ShowGlobal}" />
+        <TextBlock Text="{Binding Summary}" FontWeight="SemiBold" VerticalAlignment="Center" />
+        <TextBlock Text="{loc:Loc FootnotePlacementWindow_DoubleClickHint}" FontSize="12" Opacity="0.75" VerticalAlignment="Center" />
+      </WrapPanel>
+      <TextBlock Text="{loc:Loc FootnotePlacementWindow_None}" IsVisible="{Binding !HasItems}" TextWrapping="Wrap" />
+    </StackPanel>
+
+    <Border BorderBrush="{DynamicResource SignetFrameBrush}" BorderThickness="1" IsVisible="{Binding HasItems}">
+      <TreeDataGrid x:Name="List" />
+    </Border>
+  </DockPanel>
+</Window>

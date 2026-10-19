@@ -41,6 +41,96 @@ public sealed partial class MainWindowViewModel
     void ICodeTabHost.ShowFootnoteLetters() => FootnoteLettersRequested?.Invoke(this, EventArgs.Empty);
 
     /// <summary>
+    /// Raised by "Change Footnote Placement…" (Tools → Footnotes) — the view calls <see cref="PrepareFootnotePlacementAsync"/> and
+    /// shows the modal dialog.
+    /// </summary>
+    public event EventHandler? FootnotePlacementRequested;
+
+    /// <summary>
+    /// Prepares the "Change Footnote Placement" dialog: saves the open tabs and lists the footnotes of Signet off the UI thread (a
+    /// book can have thousands; the caller shows that it is working, modally, so nothing edits the book meanwhile). Returns the view
+    /// model of the dialog, or <c>null</c> (with a message in the status bar) when no book is open or the book has no footnotes of
+    /// Signet. <paramref name="runWithProgress"/> shows how far the change is, over the dialog (<c>null</c>: without a window).
+    /// </summary>
+    public async Task<FootnotePlacementViewModel?> PrepareFootnotePlacementAsync(ProgressRunner? runWithProgress = null)
+    {
+        if (_currentBook is not { } book)
+        {
+            return null;
+        }
+
+        _tabManager.SaveAllTabs();
+        IReadOnlyList<PlacementItem> plan = await Task.Run(() => FootnoteEditor.PlanPlacement(book)).ConfigureAwait(true);
+        if (!ReferenceEquals(book, _currentBook))
+        {
+            return null;
+        }
+
+        if (plan.Count == 0)
+        {
+            _statusBar.ShowMessage(Strings.Get("Status_NoSignetFootnotes"), TimeSpan.FromSeconds(4));
+            return null;
+        }
+
+        return new FootnotePlacementViewModel(
+            plan, book.GetHtmlResourcesExcludingNav(), FootnoteEditor.FindGlobalFile(book), NavigateToBookPathAtOffset,
+            (items, file) => ChangeFootnotePlacementAsync(items, file, runWithProgress));
+    }
+
+    /// <summary>
+    /// "Change" in the dialog: moves the footnotes of <paramref name="items"/> to the other placement behind a checkpoint, off the UI
+    /// thread under a progress window with Cancel (which puts the book back from the checkpoint), and refreshes the tabs. The
+    /// notes that become global go to <paramref name="globalFile"/> (<c>null</c>: the notes file of the book). Returns what was done,
+    /// or <c>null</c> when no book is open, nothing was chosen or the user cancelled.
+    /// </summary>
+    public async Task<PlacementOutcome?> ChangeFootnotePlacementAsync(
+        IReadOnlyList<PlacementItem> items, HtmlResource? globalFile, ProgressRunner? runWithProgress = null)
+    {
+        ArgumentNullException.ThrowIfNull(items);
+        if (_currentBook is not { } book || items.Count == 0)
+        {
+            return null;
+        }
+
+        _tabManager.SaveAllTabs();
+        BookOperationOutcome<PlacementOutcome> outcome = await RunBookOperationAsync(
+            Strings.Get("FootnotePlacementWindow_Title"), Strings.Get("CheckpointOp_ChangeFootnotePlacement"), editsBook: true,
+            (progress, cancel) => FootnoteEditor.ChangePlacement(
+                book, items, globalFile, FootnoteOptions, new PlacementRun(new PlacementProgressMap(progress), cancel)),
+            runWithProgress).ConfigureAwait(true);
+        if (!outcome.Completed)
+        {
+            return null;
+        }
+
+        RefreshAfterMaintenanceOperation();
+        PlacementOutcome result = outcome.Result;
+        _statusBar.ShowMessage(
+            result.Skipped == 0
+                ? Strings.Format("Status_FootnotePlacementChanged", result.Moved)
+                : Strings.Format("Status_FootnotePlacementChangedSkipped", result.Moved, result.Skipped),
+            TimeSpan.FromSeconds(6), result.Skipped == 0 ? NotificationLevel.Info : NotificationLevel.Warning);
+        return result;
+    }
+
+    // What ChangePlacement reports as what the progress window shows: the percent while the notes are prepared, then the writing and
+    // the numbering without one (they cannot tell how far they are).
+    private sealed class PlacementProgressMap : IProgress<PlacementProgress>
+    {
+        private readonly IProgress<WorkProgress> _target;
+
+        public PlacementProgressMap(IProgress<WorkProgress> target) => _target = target;
+
+        public void Report(PlacementProgress value) => _target.Report(value.Stage switch
+        {
+            PlacementStage.Preparing => new WorkProgress(Strings.Get("FootnotePlacement_Progress_Preparing"), 0),
+            PlacementStage.Moving => WorkProgress.InStage(
+                Strings.Format("FootnotePlacement_Progress_Moving", value.Done, value.Total), 0.05, 0.4, value.Done, value.Total),
+            _ => new WorkProgress(Strings.Get("FootnotePlacement_Progress_Finishing"), null),
+        });
+    }
+
+    /// <summary>
     /// Prepares the "Unify Letters of Shared Footnotes" dialog with the style of Preferences: saves the open tabs and
     /// returns its view model, or <c>null</c> (with a message in the status bar) when no book is open, the book has no
     /// shared footnotes, or all of them are written in that style.

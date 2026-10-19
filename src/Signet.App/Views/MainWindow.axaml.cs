@@ -165,6 +165,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             _boundViewModel.ManageFontsRequested -= OnManageFontsRequested;
             _boundViewModel.FootnoteConversionRequested -= OnFootnoteConversionRequested;
             _boundViewModel.FootnoteLettersRequested -= OnFootnoteLettersRequested;
+            _boundViewModel.FootnotePlacementRequested -= OnFootnotePlacementRequested;
             _boundViewModel.StandardizeRequested -= OnStandardizeRequested;
             _boundViewModel.LiveCssPanelRequested -= OnLiveCssPanelRequested;
             _boundViewModel.LiveCssContextChanged -= OnLiveCssContextChanged;
@@ -222,6 +223,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         _boundViewModel.ManageFontsRequested += OnManageFontsRequested;
         _boundViewModel.FootnoteConversionRequested += OnFootnoteConversionRequested;
         _boundViewModel.FootnoteLettersRequested += OnFootnoteLettersRequested;
+        _boundViewModel.FootnotePlacementRequested += OnFootnotePlacementRequested;
         _boundViewModel.StandardizeRequested += OnStandardizeRequested;
         _boundViewModel.LiveCssPanelRequested += OnLiveCssPanelRequested;
         _boundViewModel.LiveCssContextChanged += OnLiveCssContextChanged;
@@ -1222,6 +1224,31 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         if (_boundViewModel?.PrepareFootnoteLetters() is { } letters)
         {
             await FootnoteLettersWindow.ShowAsync(this, letters);
+        }
+    }
+
+    /// <summary>
+    /// Handles "Change Footnote Placement…": lists the footnotes of Signet (a progress window while it takes long) and shows the
+    /// modal dialog; it moves the checked footnotes and closes. The progress of the change shows over the dialog.
+    /// </summary>
+    private async void OnFootnotePlacementRequested(object? sender, EventArgs e)
+    {
+        if (_boundViewModel is not { } vm)
+        {
+            return;
+        }
+
+        FootnotePlacementWindow? window = null;
+        FootnotePlacementViewModel? placement = await ProgressWindow.RunAsync(
+            this,
+            Strings.Get("FootnotePlacementWindow_Title"),
+            Strings.Get("FootnotePlacement_Analyzing"),
+            vm.PrepareFootnotePlacementAsync((title, work, cancellable) => ProgressWindow.RunWithProgressAsync(
+                window ?? (Window)this, title, Strings.Get("Progress_Starting"), work, cancellable)));
+        if (placement is not null)
+        {
+            window = new FootnotePlacementWindow { DataContext = placement };
+            await window.ShowDialog(this);
         }
     }
 
