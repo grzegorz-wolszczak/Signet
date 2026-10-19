@@ -4410,8 +4410,14 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="CodeEditorMenu_RemoveClass" xml:space="preserve">
     <value>Usuń klasę...</value>
   </data>
+  <data name="CodeEditorMenu_FindIdUsages" xml:space="preserve">
+    <value>Znajdź użycia Id</value>
+  </data>
   <data name="FindUsages_Header" xml:space="preserve">
     <value>Użycia klasy „{0}”</value>
+  </data>
+  <data name="FindUsages_HeaderId" xml:space="preserve">
+    <value>Użycia id „{0}”</value>
   </data>
   <data name="FindUsages_Empty" xml:space="preserve">
     <value>Kliknij prawym przyciskiem nazwę klasy w kodzie (w atrybucie class lub w selektorze CSS) i wybierz „Znajdź użycia” (Alt+F7).</value>
@@ -4500,6 +4506,9 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="Status_FindUsages" xml:space="preserve">
     <value>Użycia klasy „{0}”: {1}.</value>
   </data>
+  <data name="Status_FindUsagesId" xml:space="preserve">
+    <value>Użycia id „{0}”: {1}.</value>
+  </data>
   <data name="Status_FindUsagesNoClass" xml:space="preserve">
     <value>Kursor nie stoi na nazwie klasy (w atrybucie class ani w selektorze CSS).</value>
   </data>
@@ -4535,6 +4544,9 @@ Nie zmienia plików, ich nazw ani ID.</value>
   </data>
   <data name="FindUsages_KindAttribute" xml:space="preserve">
     <value>atrybut class</value>
+  </data>
+  <data name="FindUsages_KindIdAttribute" xml:space="preserve">
+    <value>atrybut id</value>
   </data>
   <data name="FindUsages_KindSelector" xml:space="preserve">
     <value>selektor CSS</value>

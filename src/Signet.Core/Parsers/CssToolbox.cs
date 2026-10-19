@@ -13,7 +13,17 @@ public static class CssToolbox
     /// The classes occurring in a selector text: the name position (the character after the dot) and the name. Skips
     /// the insides of <c>[...]</c> (attribute selectors) and of quoted strings.
     /// </summary>
-    public static IReadOnlyList<(int Index, string Name)> FindClassesInSelector(string selector)
+    public static IReadOnlyList<(int Index, string Name)> FindClassesInSelector(string selector) =>
+        FindMarkedNamesInSelector(selector, '.');
+
+    /// <summary>
+    /// The ids occurring in a selector text (<c>#name</c>): the name position (the character after the hash) and the
+    /// name. Skips the insides of <c>[...]</c> (attribute selectors) and of quoted strings.
+    /// </summary>
+    public static IReadOnlyList<(int Index, string Name)> FindIdsInSelector(string selector) =>
+        FindMarkedNamesInSelector(selector, '#');
+
+    private static List<(int Index, string Name)> FindMarkedNamesInSelector(string selector, char marker)
     {
         ArgumentNullException.ThrowIfNull(selector);
         List<(int, string)> result = new();
@@ -52,7 +62,7 @@ public static class CssToolbox
                     continue;
             }
 
-            if (c != '.' || bracketDepth > 0 || i + 1 >= selector.Length || !IsIdentStart(selector, i + 1))
+            if (c != marker || bracketDepth > 0 || i + 1 >= selector.Length || !IsIdentStart(selector, i + 1))
             {
                 continue;
             }

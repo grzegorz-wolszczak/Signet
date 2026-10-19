@@ -474,6 +474,7 @@ public sealed partial class FindUsagesNode : ObservableObject
     public string KindText => Usage?.Kind switch
     {
         ClassUsageKind.ClassAttribute => Strings.Get("FindUsages_KindAttribute"),
+        ClassUsageKind.IdAttribute => Strings.Get("FindUsages_KindIdAttribute"),
         ClassUsageKind.Selector => Strings.Get("FindUsages_KindSelector"),
         ClassUsageKind.Text => Strings.Get("FindUsages_KindText"),
         _ => string.Empty,

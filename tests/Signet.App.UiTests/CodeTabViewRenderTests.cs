@@ -813,6 +813,55 @@ public sealed class CodeTabViewRenderTests : IDisposable
         menu.Close();
     }
 
+    /// <summary>"Find Id Usages" appears when the caret is on an id attribute and asks the host to search for it.</summary>
+    [AvaloniaFact]
+    public void Context_menu_offers_find_id_usages_when_the_caret_is_on_an_id()
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
+        HtmlResource html = book.GetAllResources().OfType<HtmlResource>().First();
+        html.InitialLoad();
+
+        OpenTab tab = new TabManagerModel().OpenResource(html);
+        (SettingsStore settings, SpellChecker spellChecker) = NewSpellChecker();
+        FakeHost host = new();
+        var vm = new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker) { Host = host };
+
+        var window = new Window { Width = 600, Height = 400, Content = new CodeTabView { DataContext = vm } };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
+        editor.Document.Text = "<html><body><p id=\"note1\">x</p></body></html>";
+        editor.CaretOffset = "<html><body><p id=\"note1".Length;
+        Dispatcher.UIThread.RunJobs();
+
+        // The icon set is loaded only by the desktop app startup, so the bundled "main" set is merged in temporarily here.
+        var icons = (ResourceDictionary)AvaloniaXamlLoader.Load(new Uri("avares://Signet.App/Assets/Icons/MainIcons.axaml"));
+        Application.Current!.Resources.MergedDictionaries.Add(icons);
+        try
+        {
+            // Act — the icon lookup runs while the context menu is built, so the set must already be merged.
+            editor.TextArea.RaiseEvent(new Avalonia.Input.ContextRequestedEventArgs());
+            Dispatcher.UIThread.RunJobs();
+
+            ContextMenu menu = editor.ContextMenu!;
+            MenuItem item = menu.Items.OfType<MenuItem>()
+                .Single(i => (string?)i.Header == Signet.App.Resources.Strings.Get("CodeEditorMenu_FindIdUsages"));
+            item.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(MenuItem.ClickEvent));
+
+            // Assert
+            item.Icon.Should().NotBeNull();
+            host.IdUsagesRequested.Should().Equal("note1");
+            menu.Close();
+        }
+        finally
+        {
+            Application.Current.Resources.MergedDictionaries.Remove(icons);
+        }
+    }
+
     /// <summary>
     /// The class items run application actions, so they show the actions' current shortcuts (like the main menu);
     /// an action without a shortcut shows none.
@@ -1242,6 +1291,10 @@ public sealed class CodeTabViewRenderTests : IDisposable
         public void ApplyClassRemoval(Signet.Core.BookManipulation.ClassRemovalResult result)
         {
         }
+
+        public System.Collections.Generic.List<string> IdUsagesRequested { get; } = new();
+
+        public void FindIdUsages(string id) => IdUsagesRequested.Add(id);
 
         public int CountSameSpansInBook(HtmlResource html, string text, int offset) => 0;
 
