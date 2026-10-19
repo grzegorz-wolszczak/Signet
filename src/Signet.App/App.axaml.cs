@@ -29,7 +29,7 @@ public partial class App : Application
 
         // The default tooltip font (the interface font, 13 px) and the colors of Signet Light until the saved ones are
         // applied — also in tests.
-        TooltipFonts.Apply(_ => TooltipFont.Default);
+        TooltipFonts.Reset();
         AppTheme.Apply(this, ResolvedTheme.Defaults);
     }
 

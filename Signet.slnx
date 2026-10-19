@@ -6,6 +6,8 @@
     <Project Path="src/Signet.Core/Signet.Core.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Signet.App.MainWindowUiTests/Signet.App.MainWindowUiTests.csproj" />
+    <Project Path="tests/Signet.App.PreferencesUiTests/Signet.App.PreferencesUiTests.csproj" />
     <Project Path="tests/Signet.App.Tests/Signet.App.Tests.csproj" />
     <Project Path="tests/Signet.App.UiTests/Signet.App.UiTests.csproj" />
     <Project Path="tests/Signet.Controls.TreeDataGrid.Tests/Signet.Controls.TreeDataGrid.Tests.csproj" />

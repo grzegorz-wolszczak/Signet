@@ -20,7 +20,7 @@ using Signet.Core.Misc;
 using Signet.Core.Resources;
 using Signet.Core.Tests.TestSupport;
 
-namespace Signet.App.UiTests;
+namespace Signet.App.MainWindowUiTests;
 
 /// <summary>
 /// Headless render tests of the main window. They check what the model tests cannot catch:

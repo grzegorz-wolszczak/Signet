@@ -15,7 +15,7 @@ using Signet.App.Infrastructure;
 using Signet.App.ViewModels;
 using Signet.App.Views;
 
-namespace Signet.App.UiTests;
+namespace Signet.App.MainWindowUiTests;
 
 /// <summary>
 /// "Float" on a dockable panel: the panel opens in its own window (it used to vanish — the factory had no host window

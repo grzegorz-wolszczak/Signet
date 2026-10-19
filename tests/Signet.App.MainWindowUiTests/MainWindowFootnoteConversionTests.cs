@@ -12,7 +12,7 @@ using Signet.Core.Footnotes;
 using Signet.Core.Resources;
 using Signet.Core.Tests.TestSupport;
 
-namespace Signet.App.UiTests;
+namespace Signet.App.MainWindowUiTests;
 
 /// <summary>
 /// The footnote conversion dialog of the main window. It lives here, not in Signet.App.Tests, because it awaits

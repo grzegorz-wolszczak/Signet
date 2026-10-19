@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Headless tests (Avalonia.Headless) of the main window and the docking layout: the panels, floating tabs and windows,
+    the toolbar areas, the main window shortcuts. They are split from Signet.App.UiTests only to run in parallel with it:
+    a headless test assembly runs all its tests one by one on a single UI dispatcher, so one assembly of all the view
+    tests was the slowest part of the test run. Tests of single views and dialogs go to Signet.App.UiTests.
+  -->
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3.mtp-off" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="AwesomeAssertions" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Avalonia.Headless.XUnit" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Signet.App\Signet.App.csproj" />
+    <!-- EPUB corpus helpers (CorpusPaths / EpubBuilder / TempDir). -->
+    <ProjectReference Include="..\Signet.Core.Tests\Signet.Core.Tests.csproj" />
+  </ItemGroup>
+
+</Project>

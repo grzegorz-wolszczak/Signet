@@ -80,6 +80,18 @@ public static class TooltipFonts
         }
     }
 
+    /// <summary>
+    /// Starts over for a new application (<see cref="App.Initialize"/>): forgets the area roots of an earlier one and
+    /// applies the default fonts until the saved ones are applied. In the application it runs once, with no roots yet;
+    /// the headless tests create an application per test, and without it each new one restyled every root the earlier
+    /// tests had left, which made each test start slower than the one before.
+    /// </summary>
+    public static void Reset()
+    {
+        Roots.Clear();
+        Apply(_ => TooltipFont.Default);
+    }
+
     /// <summary>The typeface of an area's tooltips: the chosen one, or the interface font in use.</summary>
     public static FontFamily FamilyOf(TooltipFont font) =>
         !string.IsNullOrWhiteSpace(font.FontFamily)

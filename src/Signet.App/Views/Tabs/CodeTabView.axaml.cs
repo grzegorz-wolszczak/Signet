@@ -147,6 +147,13 @@ public partial class CodeTabView : UserControl
 
         AttachCodeEditorShortcuts();
         AppTheme.Changed += OnAppThemeChanged;
+
+        // TextMate released when the view left the screen (see OnDetachedFromVisualTree) comes back with it.
+        if (_boundViewModel is not null && _textMate is null && _lineColorizer is null)
+        {
+            ApplyGrammar(_boundViewModel.Syntax);
+        }
+
         ApplyTheme();
     }
 
@@ -157,6 +164,12 @@ public partial class CodeTabView : UserControl
         RememberViewState();
         _codeEditorShortcuts.Detach();
         AppTheme.Changed -= OnAppThemeChanged;
+
+        // TextMate's tokenizer holds a thread pool thread (and the model and the document) until TextMate is released:
+        // a closed tab kept them for good. A view that comes back installs it again (OnAttachedToVisualTree).
+        _textMate?.Dispose();
+        _textMate = null;
+        _textMateTheme = null;
     }
 
     // Remembers where the user is in the text, for the next view of the tab (a tab dragged out into a window of its own

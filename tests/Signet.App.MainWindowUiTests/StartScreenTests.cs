@@ -11,7 +11,7 @@ using CommunityToolkit.Mvvm.Input;
 using Signet.App.ViewModels;
 using Signet.App.Views;
 
-namespace Signet.App.UiTests;
+namespace Signet.App.MainWindowUiTests;
 
 /// <summary>The window without a book: the start screen in the document area and the book's panels grayed out.</summary>
 public sealed class StartScreenTests
