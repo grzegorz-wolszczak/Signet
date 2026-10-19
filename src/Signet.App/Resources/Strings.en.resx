@@ -5207,6 +5207,45 @@ Convert anyway?</value>
   <data name="Status_OperationCancelledRestored" xml:space="preserve">
     <value>Cancelled: {0} — the book is back to the state before the operation.</value>
   </data>
+  <data name="Progress_Fixing" xml:space="preserve">
+    <value>Fixing problems: {0} of {1}</value>
+  </data>
+  <data name="ValidationProgress_Files" xml:space="preserve">
+    <value>Checking HTML files: {0} of {1}</value>
+  </data>
+  <data name="ValidationProgress_Stage" xml:space="preserve">
+    <value>Checking: {0}</value>
+  </data>
+  <data name="ValidationProgress_Stage_Opf" xml:space="preserve">
+    <value>the OPF structure</value>
+  </data>
+  <data name="ValidationProgress_Stage_Links" xml:space="preserve">
+    <value>links and references</value>
+  </data>
+  <data name="ValidationProgress_Stage_Fonts" xml:space="preserve">
+    <value>fonts</value>
+  </data>
+  <data name="ValidationProgress_Stage_CrossFile" xml:space="preserve">
+    <value>the structure across files</value>
+  </data>
+  <data name="ValidationProgress_Stage_FileNames" xml:space="preserve">
+    <value>file names</value>
+  </data>
+  <data name="ValidationProgress_Stage_ContentTypes" xml:space="preserve">
+    <value>media types</value>
+  </data>
+  <data name="ValidationProgress_Stage_Ids" xml:space="preserve">
+    <value>ids</value>
+  </data>
+  <data name="ValidationProgress_Stage_Images" xml:space="preserve">
+    <value>images</value>
+  </data>
+  <data name="ValidationProgress_Stage_Css" xml:space="preserve">
+    <value>CSS properties</value>
+  </data>
+  <data name="ValidationProgress_Stage_Footnotes" xml:space="preserve">
+    <value>footnotes</value>
+  </data>
   <data name="FootnoteConversion_Analyzing" xml:space="preserve">
     <value>Analyzing the footnotes…</value>
   </data>

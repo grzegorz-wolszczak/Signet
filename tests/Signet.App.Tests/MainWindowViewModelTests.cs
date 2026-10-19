@@ -466,58 +466,70 @@ public sealed class MainWindowViewModelTests : IDisposable
     }
 
     [Fact]
-    public void WellFormedCheckEpub_action_populates_ValidationResults_and_shows_the_panel()
+    public async Task WellFormedCheckEpub_action_populates_ValidationResults_and_shows_the_panel()
     {
-        // Arrange
-        TempDir temp = _disposables.Add(new TempDir());
-        string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("not-wellformed-xhtml"), temp);
-        MainWindowViewModel sut = New();
-        sut.LoadBook(_disposables.Add(new ImportEpub(epub).GetBook()), epub);
-        MainDockFactory factory = (MainDockFactory)sut.DockFactory;
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            TempDir temp = _disposables.Add(new TempDir());
+            string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("not-wellformed-xhtml"), temp);
+            MainWindowViewModel sut = New();
+            sut.LoadBook(_disposables.Add(new ImportEpub(epub).GetBook()), epub);
+            MainDockFactory factory = (MainDockFactory)sut.DockFactory;
 
-        // Act
-        sut.Actions.Require(AppActionIds.WellFormedCheckEpub).Execute(null);
+            // Act
+            sut.Actions.Require(AppActionIds.WellFormedCheckEpub).Execute(null);
+            await sut.WhenIdleAsync();
 
-        // Assert
-        sut.ValidationResults.HasResults.Should().BeTrue();
-        sut.ValidationResults.Rows.Should().Contain(r => r.FileName == "chapter1.xhtml");
-        factory.IsToolVisible(DockableIds.ValidationResults).Should().BeTrue();
+            // Assert
+            sut.ValidationResults.HasResults.Should().BeTrue();
+            sut.ValidationResults.Rows.Should().Contain(r => r.FileName == "chapter1.xhtml");
+            factory.IsToolVisible(DockableIds.ValidationResults).Should().BeTrue();
+        });
     }
 
     [Fact]
-    public void WellFormedCheckEpub_action_reports_no_results_for_a_wellformed_book()
+    public async Task WellFormedCheckEpub_action_reports_no_results_for_a_wellformed_book()
     {
-        // Arrange
-        TempDir temp = _disposables.Add(new TempDir());
-        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
-        MainWindowViewModel sut = New();
-        sut.LoadBook(_disposables.Add(new ImportEpub(epub).GetBook()), epub);
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            TempDir temp = _disposables.Add(new TempDir());
+            string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
+            MainWindowViewModel sut = New();
+            sut.LoadBook(_disposables.Add(new ImportEpub(epub).GetBook()), epub);
 
-        // Act
-        sut.Actions.Require(AppActionIds.WellFormedCheckEpub).Execute(null);
+            // Act
+            sut.Actions.Require(AppActionIds.WellFormedCheckEpub).Execute(null);
+            await sut.WhenIdleAsync();
 
-        // The corpus font is a dummy, not a real font (see tests/corpus/generate-binaries.sh).
-        // Assert
-        sut.ValidationResults.Rows.Should().ContainSingle().Which.Result.Code.Should().Be("Validation_FontCorrupt");
+            // The corpus font is a dummy, not a real font (see tests/corpus/generate-binaries.sh).
+            // Assert
+            sut.ValidationResults.Rows.Should().ContainSingle().Which.Result.Code.Should().Be("Validation_FontCorrupt");
+        });
     }
 
     [Fact]
-    public void ValidationResults_activation_opens_the_offending_resource_in_a_tab()
+    public async Task ValidationResults_activation_opens_the_offending_resource_in_a_tab()
     {
-        // Arrange
-        TempDir temp = _disposables.Add(new TempDir());
-        string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("not-wellformed-xhtml"), temp);
-        MainWindowViewModel sut = New();
-        sut.LoadBook(_disposables.Add(new ImportEpub(epub).GetBook()), epub);
-        sut.Actions.Require(AppActionIds.WellFormedCheckEpub).Execute(null);
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            TempDir temp = _disposables.Add(new TempDir());
+            string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("not-wellformed-xhtml"), temp);
+            MainWindowViewModel sut = New();
+            sut.LoadBook(_disposables.Add(new ImportEpub(epub).GetBook()), epub);
+            sut.Actions.Require(AppActionIds.WellFormedCheckEpub).Execute(null);
+            await sut.WhenIdleAsync();
 
-        ValidationResultRow row = sut.ValidationResults.Rows.First();
+            ValidationResultRow row = sut.ValidationResults.Rows.First();
 
-        // Act
-        sut.ValidationResults.Activate(row);
+            // Act
+            sut.ValidationResults.Activate(row);
 
-        // Assert
-        sut.Tabs.ActiveTab!.Resource.BookPath.Should().Be(row.Result.BookPath);
+            // Assert
+            sut.Tabs.ActiveTab!.Resource.BookPath.Should().Be(row.Result.BookPath);
+        });
     }
 
     [Fact]

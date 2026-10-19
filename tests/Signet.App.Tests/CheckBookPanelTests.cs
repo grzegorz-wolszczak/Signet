@@ -1,4 +1,9 @@
 using System;
+using Signet.App.Infrastructure;
+using System.Threading;
+using System.Collections.Generic;
+using Signet.App.Tests.TestSupport;
+using System.Threading.Tasks;
 using System.Linq;
 using AwesomeAssertions;
 using Signet.App.Actions;
@@ -34,75 +39,151 @@ public sealed class CheckBookPanelTests : IDisposable
     }
 
     [Fact]
-    public void Fix_all_applies_the_fixes_after_a_checkpoint_and_checks_the_book_again()
+    public async Task Fix_all_applies_the_fixes_after_a_checkpoint_and_checks_the_book_again()
     {
-        TempDir temp = _disposables.Add(new TempDir());
-
-        // Arrange
-        (MainWindowViewModel vm, Book book) = Load(temp);
-        try
+        await SingleThreadContext.RunAsync(async () =>
         {
-            HtmlResource html = book.GetHtmlResourcesExcludingNav()[0];
-            html.SetText(html.GetText().Replace("<body>", "<body>\nLoose text", StringComparison.Ordinal));
+            TempDir temp = _disposables.Add(new TempDir());
 
-            // Act
-            vm.Actions.Require(AppActionIds.WellFormedCheckEpub).Execute(null);
+            // Arrange
+            (MainWindowViewModel vm, Book book) = Load(temp);
+            try
+            {
+                HtmlResource html = book.GetHtmlResourcesExcludingNav()[0];
+                html.SetText(html.GetText().Replace("<body>", "<body>\nLoose text", StringComparison.Ordinal));
 
-            // Assert
-            vm.ValidationResults.Rows.Should().Contain(r => r.Result.Code == "Validation_BareBodyText" && r.CanFix);
-            vm.ValidationResults.HasFixable.Should().BeTrue();
+                // Act
+                vm.Actions.Require(AppActionIds.WellFormedCheckEpub).Execute(null);
+                await vm.WhenIdleAsync();
 
-            // Act
-            vm.ValidationResults.FixAll();
+                // Assert
+                vm.ValidationResults.Rows.Should().Contain(r => r.Result.Code == "Validation_BareBodyText" && r.CanFix);
+                vm.ValidationResults.HasFixable.Should().BeTrue();
 
-            // Assert
-            html.GetText().Should().Contain("<p>Loose text</p>");
-            vm.ValidationResults.Rows.Should().NotContain(r => r.Result.Code == "Validation_BareBodyText");
-            vm.CheckpointHistory.UndoMessage.Should().Be(Strings.Format("Checkpoint_Before", Strings.Get("CheckpointOp_FixProblems")));
-            book.Modified.Should().BeTrue();
-        }
-        finally
-        {
-            vm.CheckpointHistory.Dispose();
-        }
+                // Act
+                vm.ValidationResults.FixAll();
+                await vm.WhenIdleAsync();
+
+                // Assert
+                html.GetText().Should().Contain("<p>Loose text</p>");
+                vm.ValidationResults.Rows.Should().NotContain(r => r.Result.Code == "Validation_BareBodyText");
+                vm.CheckpointHistory.UndoMessage.Should().Be(Strings.Format("Checkpoint_Before", Strings.Get("CheckpointOp_FixProblems")));
+                book.Modified.Should().BeTrue();
+            }
+            finally
+            {
+                vm.CheckpointHistory.Dispose();
+            }
+        });
     }
 
     [Fact]
-    public void A_skipped_type_of_problem_is_left_out_until_it_is_restored()
+    public async Task A_skipped_type_of_problem_is_left_out_until_it_is_restored()
     {
-        // Arrange
-        TempDir temp = _disposables.Add(new TempDir());
-        (MainWindowViewModel vm, _) = Load(temp);
-        try
+        await SingleThreadContext.RunAsync(async () =>
         {
-            vm.Actions.Require(AppActionIds.WellFormedCheckEpub).Execute(null);
-            ValidationResultRow font = vm.ValidationResults.Rows.Single(r => r.Result.Code == DummyFontCode);
+            // Arrange
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel vm, _) = Load(temp);
+            try
+            {
+                vm.Actions.Require(AppActionIds.WellFormedCheckEpub).Execute(null);
+                await vm.WhenIdleAsync();
+                ValidationResultRow font = vm.ValidationResults.Rows.Single(r => r.Result.Code == DummyFontCode);
 
-            // Act
-            vm.ValidationResults.SkipRule(font);
+                // Act
+                vm.ValidationResults.SkipRule(font);
 
-            // Assert
-            vm.ValidationResults.Rows.Should().NotContain(r => r.Result.Code == DummyFontCode);
-            vm.ValidationResults.SkippedRules.Select(r => r.Code).Should().Equal(DummyFontCode);
-            vm.ValidationResults.HasSkippedRules.Should().BeTrue();
+                // Assert
+                vm.ValidationResults.Rows.Should().NotContain(r => r.Result.Code == DummyFontCode);
+                vm.ValidationResults.SkippedRules.Select(r => r.Code).Should().Equal(DummyFontCode);
+                vm.ValidationResults.HasSkippedRules.Should().BeTrue();
 
-            // Act
-            vm.Actions.Require(AppActionIds.WellFormedCheckEpub).Execute(null);
+                // Act
+                vm.Actions.Require(AppActionIds.WellFormedCheckEpub).Execute(null);
+                await vm.WhenIdleAsync();
 
-            // Assert
-            vm.ValidationResults.Rows.Should().NotContain(r => r.Result.Code == DummyFontCode, "the skip is remembered");
+                // Assert
+                vm.ValidationResults.Rows.Should().NotContain(r => r.Result.Code == DummyFontCode, "the skip is remembered");
 
-            // Act
-            vm.ValidationResults.RestoreRules(new[] { DummyFontCode });
+                // Act
+                vm.ValidationResults.RestoreRules(new[] { DummyFontCode });
+                await vm.WhenIdleAsync();
 
-            // Assert
-            vm.ValidationResults.Rows.Should().Contain(r => r.Result.Code == DummyFontCode);
-            vm.ValidationResults.HasSkippedRules.Should().BeFalse();
-        }
-        finally
+                // Assert
+                vm.ValidationResults.Rows.Should().Contain(r => r.Result.Code == DummyFontCode);
+                vm.ValidationResults.HasSkippedRules.Should().BeFalse();
+            }
+            finally
+            {
+                vm.CheckpointHistory.Dispose();
+            }
+        });
+    }
+
+    private sealed class Collecting : IProgress<WorkProgress>
+    {
+        public List<WorkProgress> Reports { get; } = new();
+
+        public void Report(WorkProgress value) => Reports.Add(value);
+    }
+
+    [Fact]
+    public async Task The_check_runs_under_the_progress_runner_with_the_name_of_the_action_and_reports_where_it_is()
+    {
+        await SingleThreadContext.RunAsync(async () =>
         {
-            vm.CheckpointHistory.Dispose();
-        }
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel vm, _) = Load(temp);
+            Collecting progress = new();
+            string? title = null;
+            bool? cancellable = null;
+            vm.ProgressRunner = (t, work, c) =>
+            {
+                title = t;
+                cancellable = c;
+                return work(progress, CancellationToken.None);
+            };
+
+            // Act
+            vm.Actions.Require(AppActionIds.WellFormedCheckEpub).Execute(null);
+            await vm.WhenIdleAsync();
+
+            // Assert
+            title.Should().Be("Well-Formed Check EPUB");
+            cancellable.Should().BeTrue("the check only reads the book, so nothing has to be undone");
+            progress.Reports.Select(r => r.Message).Should().Contain(Strings.Format("ValidationProgress_Stage", Strings.Get("ValidationProgress_Stage_Footnotes")));
+            progress.Reports.Select(r => r.Fraction).OfType<double>().Should().BeInAscendingOrder().And.OnlyContain(f => f >= 0 && f < 1);
+            vm.ValidationResults.HasResults.Should().BeTrue();
+        });
+    }
+
+    [Fact]
+    public async Task Cancelling_the_check_leaves_the_results_as_they_were_and_says_so()
+    {
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel vm, _) = Load(temp);
+            using CancellationTokenSource pressed = new();
+            vm.ProgressRunner = (_, work, _) =>
+            {
+                pressed.Cancel();
+                return work(new Collecting(), pressed.Token);
+            };
+
+            // Act
+            vm.Actions.Require(AppActionIds.WellFormedCheckEpub).Execute(null);
+            await vm.WhenIdleAsync();
+
+            // Assert
+            vm.StatusMessage.Should().Be(Strings.Format("Status_OperationCancelled", "Well-Formed Check EPUB"));
+            vm.ValidationResults.HasResults.Should().BeFalse("nothing was loaded into the panel");
+        });
     }
 
     [Fact]

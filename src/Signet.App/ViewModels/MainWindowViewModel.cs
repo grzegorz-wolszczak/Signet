@@ -186,9 +186,9 @@ public sealed partial class MainWindowViewModel
 
         _dockFactory.ValidationResults = _validationResults;
         _validationResults.EntryActivated += (_, result) => NavigateToValidationResult(result);
-        _validationResults.FixRequested += (_, results) => FixValidationResults(results);
+        _validationResults.FixRequested += (_, results) => RunAsyncAction(() => FixValidationResultsAsync(results));
         _validationResults.SkipRuleRequested += (_, code) => SkipValidationRule(code);
-        _validationResults.RestoreRulesRequested += (_, codes) => RestoreValidationRules(codes);
+        _validationResults.RestoreRulesRequested += (_, codes) => RunAsyncAction(() => RestoreValidationRulesAsync(codes));
         _validationResults.SetSkippedRules(_settings.CheckBookSkippedRules);
 
         _findUsages = new FindUsagesViewModel(_settings);
@@ -430,7 +430,7 @@ public sealed partial class MainWindowViewModel
         _actions.SetHandler(AppActionIds.SpellcheckEditor, () => SpellcheckEditorRequested?.Invoke(this, EventArgs.Empty));
 
         // Well-Formed Check EPUB, Validate Stylesheets With W3C, Epub3 Tools.
-        _actions.SetHandler(AppActionIds.WellFormedCheckEpub, WellFormedCheckEpub);
+        _actions.SetHandler(AppActionIds.WellFormedCheckEpub, () => RunAsyncAction(WellFormedCheckEpubAsync));
         _actions.SetHandler(AppActionIds.ValidateStylesheetsWithW3C, ValidateStylesheetsWithW3C);
         _actions.SetHandler(AppActionIds.UpgradeToEpub3, UpgradeToEpub3);
         _actions.SetHandler(AppActionIds.NcxGuideFromNav, GenerateNcxGuideFromNav);
@@ -1532,6 +1532,7 @@ public sealed partial class MainWindowViewModel
     // synchronous action callback, logging errors instead of losing them.
     private async void RunAsyncAction(System.Func<Task> op)
     {
+        _asyncActionsRunning++;
         try
         {
             await op().ConfigureAwait(true);
@@ -1541,6 +1542,35 @@ public sealed partial class MainWindowViewModel
             _logger.LogError(ex, "Action error");
             _statusBar.ShowMessage(Strings.Format("Status_FileOperationError", ex.Message), TimeSpan.FromSeconds(6), NotificationLevel.Warning);
         }
+        finally
+        {
+            if (--_asyncActionsRunning == 0)
+            {
+                TaskCompletionSource? idle = _asyncActionsIdle;
+                _asyncActionsIdle = null;
+                idle?.TrySetResult();
+            }
+        }
+    }
+
+    // The asynchronous actions (RunAsyncAction) that have not finished; they start and end on the UI thread.
+    private int _asyncActionsRunning;
+    private TaskCompletionSource? _asyncActionsIdle;
+
+    /// <summary>
+    /// A task that is done when every asynchronous action that was started (a long operation under a progress window, a dialog
+    /// that asks first…) has finished — already done when none is running. For the code that has to wait for what an action
+    /// started (the tests); call it on the thread the actions run on.
+    /// </summary>
+    public Task WhenIdleAsync()
+    {
+        if (_asyncActionsRunning == 0)
+        {
+            return Task.CompletedTask;
+        }
+
+        _asyncActionsIdle ??= new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        return _asyncActionsIdle.Task;
     }
 
     private async void RunFileAction(System.Func<FileWorkflow, Task> op)
@@ -3015,7 +3045,7 @@ public sealed partial class MainWindowViewModel
     /// (<see cref="BookValidator.ValidateCurrentBook"/>) and shows the results in the "Validation
     /// Results" panel, using <see cref="Core.BookManipulation.WellFormedChecker"/>.
     /// </summary>
-    private void WellFormedCheckEpub()
+    private async Task WellFormedCheckEpubAsync()
     {
         if (_currentBook is null)
         {
@@ -3023,7 +3053,11 @@ public sealed partial class MainWindowViewModel
         }
 
         _tabManager.SaveAllTabs();
-        IReadOnlyList<ValidationResult> results = RunBookCheck(_currentBook);
+        IReadOnlyList<ValidationResult>? results = await RunBookCheckAsync(_currentBook).ConfigureAwait(true);
+        if (results is null)
+        {
+            return;
+        }
 
         if (!_dockFactory.IsToolVisible(DockableIds.ValidationResults))
         {
@@ -3036,21 +3070,30 @@ public sealed partial class MainWindowViewModel
             TimeSpan.FromSeconds(4));
     }
 
-    // Checks the book without the skipped rules and shows the results in the Validation Results panel.
-    private IReadOnlyList<ValidationResult> RunBookCheck(Book book)
+    // Checks the book without the skipped rules (under the progress window, which can cancel it: the check only reads the book)
+    // and shows the results in the Validation Results panel. Null when it was cancelled.
+    private async Task<IReadOnlyList<ValidationResult>?> RunBookCheckAsync(Book book)
     {
         IReadOnlyList<string> skipped = _settings.CheckBookSkippedRules;
-        IReadOnlyList<ValidationResult> results = BookValidator.ValidateCurrentBook(book, skipped);
-        _validationResults.LoadResults(results);
+        BookOperationOutcome<IReadOnlyList<ValidationResult>> run = await RunBookOperationAsync(
+            ActionLabel(AppActionIds.WellFormedCheckEpub), checkpointName: null, editsBook: false,
+            (progress, cancel) => BookValidator.ValidateCurrentBook(book, skipped, new ValidationRun(new ValidationProgressMap(progress), cancel)))
+            .ConfigureAwait(true);
+        if (!run.Completed)
+        {
+            return null;
+        }
+
+        _validationResults.LoadResults(run.Result!);
         _validationResults.SetSkippedRules(skipped);
-        return results;
+        return run.Result;
     }
 
     /// <summary>
     /// "Fix" / "Fix all" in the Validation Results panel: applies the automatic fixes after an automatic checkpoint
     /// (so the Checkpoints panel can undo them), reloads the open tabs and checks the book again.
     /// </summary>
-    private void FixValidationResults(IReadOnlyList<ValidationResult> results)
+    private async Task FixValidationResultsAsync(IReadOnlyList<ValidationResult> results)
     {
         if (_currentBook is not { } book)
         {
@@ -3058,16 +3101,38 @@ public sealed partial class MainWindowViewModel
         }
 
         _tabManager.SaveAllTabs();
-        bool checkpoint = AddCheckpointBefore(Strings.Get("CheckpointOp_FixProblems"));
-        int fixedCount = results.Count(r => r.Fix?.Apply(book) == true);
+        string title = Strings.Get("CheckpointOp_FixProblems");
+        BookOperationOutcome<int> run = await RunBookOperationAsync(
+            title, title, editsBook: true,
+            (progress, cancel) =>
+            {
+                int fixedSoFar = 0;
+                for (int i = 0; i < results.Count; i++)
+                {
+                    cancel.ThrowIfCancellationRequested();
+                    progress.Report(new WorkProgress(Strings.Format("Progress_Fixing", i + 1, results.Count), WorkProgress.FractionOf(i, results.Count)));
+                    if (results[i].Fix?.Apply(book) == true)
+                    {
+                        fixedSoFar++;
+                    }
+                }
+
+                return fixedSoFar;
+            }).ConfigureAwait(true);
+        if (!run.Completed)
+        {
+            return;
+        }
+
+        int fixedCount = run.Result;
         if (fixedCount == 0)
         {
-            if (checkpoint)
+            if (run.Checkpoint)
             {
                 RewindCheckpoint();
             }
 
-            RunBookCheck(book);
+            await RunBookCheckAsync(book).ConfigureAwait(true);
             _statusBar.ShowMessage(Strings.Get("Status_NothingToFix"), TimeSpan.FromSeconds(4));
             return;
         }
@@ -3075,8 +3140,11 @@ public sealed partial class MainWindowViewModel
         book.Modified = true;
         RefreshAfterMaintenanceOperation();
         _toc.Refresh();
-        IReadOnlyList<ValidationResult> remaining = RunBookCheck(book);
-        _statusBar.ShowMessage(Strings.Format("Status_ProblemsFixed", fixedCount, remaining.Count), TimeSpan.FromSeconds(5));
+        IReadOnlyList<ValidationResult>? remaining = await RunBookCheckAsync(book).ConfigureAwait(true);
+        if (remaining is not null)
+        {
+            _statusBar.ShowMessage(Strings.Format("Status_ProblemsFixed", fixedCount, remaining.Count), TimeSpan.FromSeconds(5));
+        }
     }
 
     // "Skip this type of problem": remembered in the settings, the results are filtered right away.
@@ -3095,14 +3163,14 @@ public sealed partial class MainWindowViewModel
     }
 
     // "Restore": the rules are checked again (the book is checked again when one is open).
-    private void RestoreValidationRules(IReadOnlyList<string> codes)
+    private async Task RestoreValidationRulesAsync(IReadOnlyList<string> codes)
     {
         List<string> skipped = _settings.CheckBookSkippedRules.Where(c => !codes.Contains(c, StringComparer.Ordinal)).ToList();
         _settings.CheckBookSkippedRules = skipped;
         if (_currentBook is { } book)
         {
             _tabManager.SaveAllTabs();
-            RunBookCheck(book);
+            await RunBookCheckAsync(book).ConfigureAwait(true);
         }
         else
         {
