@@ -509,6 +509,7 @@ public sealed partial class ImportEpub : IImporter
     private static void LoadHtmlAndCheckWellFormed(Book book, FolderKeeper folderKeeper)
     {
         List<LoadWarningItem> problems = new();
+        List<LoadWarningItem> comments = new();
         foreach (HtmlResource html in folderKeeper.GetResourceTypeList<HtmlResource>())
         {
             try
@@ -522,13 +523,24 @@ public sealed partial class ImportEpub : IImporter
             }
 
             WellFormedResult result = WellFormedChecker.Check(html.GetText());
-            if (!result.IsWellFormed)
+
+            // The XML parser stops at the first error and words it in its own way: the comments it does not allow are listed
+            // one by one, each with its place. The error of the parser that is one of them is not listed twice.
+            IReadOnlyList<HtmlCommentProblem> badComments = HtmlCommentChecker.Find(html.GetText());
+            foreach (HtmlCommentProblem comment in badComments)
+            {
+                comments.Add(new LoadWarningItem(
+                    html.BookPath, CoreStrings.Get("LoadWarningReasonComment" + comment.Kind), comment.Line, comment.Column));
+            }
+
+            if (!result.IsWellFormed && !badComments.Any(c => result.Line >= c.StartLine && result.Line <= c.EndLine))
             {
                 problems.Add(new LoadWarningItem(html.BookPath, WithoutPosition(result.Message), result.Line, result.Column));
             }
         }
 
         AddFileListWarning(book, "HtmlNotWellFormed", problems);
+        AddFileListWarning(book, "HtmlBadComments", comments);
     }
 
     private static void DeobfuscateFonts(
