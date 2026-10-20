@@ -101,7 +101,50 @@ tle, odpala raz (catch-up) po powrocie na UI.
 zmianie typu kontrolki — FluentTheme ma własny, bardziej specyficzny styl dla
 `SelectableTextBlock`).
 
-### 7. Rsync WSL→Windows: build zawsze czysty
+### 7. Naprawiony crash znaleziony na żywo: wyścig między operacjami po backgroundowaniu checkpointów
+
+Po wdrożeniu punktu 5 użytkownik przetestował na żywo na Windows scenariusz: Renumber → Cancel →
+Renumber (dwa razy pod rząd). Drugie uruchomienie zakończyło się realnym crashem:
+
+```
+System.ObjectDisposedException: Cannot access a disposed object.
+  at FootnoteEditor.<>c__DisplayClass81_0.<RenumberWith>g__Snapshot|1(HtmlResource file)
+  at FootnoteEditor.RenumberWith(...)
+```
+
+Z logów (`[DBG] Checkpoint`/`Operation`): drugie kliknięcie "Renumber Footnotes" (`17:39:30.227`,
+checkpoint utworzony `17:39:32.306`) wystartowało **podczas** gdy przywracanie książki po Cancel z
+pierwszego uruchomienia wciąż trwało w tle (`abandoning...` od `17:39:25.153`, `abandoned, book
+restored` dopiero `17:39:39.553` — **9 s później**). Drugie uruchomienie zeskanowało książkę
+(`FootnoteScanner.Scan`, ~18.6 s), ale do czasu, gdy doszło do etapu Numbering, stare przywracanie
+checkpointu już zdążyło podmienić/zwolnić `_currentBook` i jego zasoby — `file.GetText()` w
+`Snapshot()` dostał już usunięty (disposed) `HtmlResource`.
+
+To jest dokładnie ten sam rodzaj wyścigu co w punkcie 2, tylko po stronie checkpointów: odkładając
+`AddCheckpointBeforeAsync`/`AbandonCheckpointAsync` do tła (punkt 5), UI przestało być zablokowane
+*przez cały czas* operacji — więc użytkownik mógł kliknąć drugą operację, zanim pierwsza naprawdę
+się skończyła (łącznie z odtwarzaniem książki po Cancel).
+
+**Naprawione:** dodano flagę `_bookOperationBusy`
+(`MainWindowViewModel.Operations.cs`) + `TryEnterBookOperation()`/`ExitBookOperation()`.
+Obejmuje całe `RunBookOperationAsync` (checkpoint → praca → ewentualne odtworzenie po Cancel) oraz
+osobno owinięto nią `ConvertFootnotesAsync`, pięć metod edycji przypisu i
+`PrepareFootnotePlacementAsync`/`PrepareFootnoteConversionAsync` (te dwie nie biorą checkpointu, ale
+czytają książkę w tle, więc też muszą czekać). Druga próba startu dowolnej z tych operacji, gdy
+poprzednia jeszcze trwa (razem z końcówką Cancel), jest **odrzucana synchronicznie** — status bar
+pokazuje `Status_OperationBusy`, bez żadnej pracy w tle, więc nic nie wyścigowo dotyka książki.
+Test regresyjny: `MainWindowFootnotesTests.Starting_a_new_operation_while_a_cancelled_one_is_still_restoring_the_book_is_refused`
+(potwierdzone, że bez poprawki test faktycznie się wywala tym samym rodzajem błędu).
+
+Zakres: naprawione tylko tam, gdzie operacje już są asynchroniczne (idą przez
+`RunBookOperationAsync`/`AddCheckpointBeforeAsync`/`AbandonCheckpointAsync`/`RunInBackgroundAsync`
+bezpośrednio) — czyli wszystko dotknięte w tej i poprzedniej sesji. Pozostałe, w pełni
+synchroniczne miejsca (`SpellCheck`, `RenameClass`, `RenameId`, `RemoveClass`, `RemoveSpans`,
+`RemoveEditionPage`, `UnifyFootnoteLetters`) **nie sprawdzają tej flagi** — teoretycznie mogłyby
+nadal się wyścigowo zderzyć z operacją działającą w tle (patrz punkt 3 poniżej), ale to nie był
+zgłoszony/zweryfikowany scenariusz i nie zostało dziś dotknięte.
+
+### 8. Rsync WSL→Windows: build zawsze czysty
 
 Osobny temat poruszony po drodze: skrypt rsync do kopiowania repo na Windows do budowania
 potrzebuje `--delete --delete-excluded`, inaczej stare `bin`/`obj` z poprzednich buildów
@@ -118,12 +161,12 @@ Unable to resolve "!AvaloniaResources"` przez niespójny stan inkrementalnego bu
    spine++)` — dodanie opcjonalnego `IProgress<int>` (plik X z Y) powinno być proste i
    nieinwazyjne (dodatkowy parametr opcjonalny, jak przy `Renumber`/`RenumberProgress`).
 
-2. **Nie zweryfikowane na żywo po najnowszych zmianach** (checkpoint create/abandon w tle +
-   granularne logi Renumber) — ostatni test użytkownika na Windows pokazywał STARĄ wersję kodu
-   (sprzed backgroundowania checkpointów). Trzeba: zrsyncować, zbudować (pamiętać o
-   `--delete --delete-excluded`), powtórzyć scenariusz Renumber + Cancel oraz Change Placement +
-   Cancel na tej samej książce, sprawdzić nowe logi `[DBG] Checkpoint: .../Operation: .../
-   Renumber: ...`.
+2. **Częściowo zweryfikowane na żywo** — test po backgroundowaniu checkpointów (punkt 5) znalazł
+   realny crash (punkt 7, naprawiony: `_bookOperationBusy`). Trzeba powtórzyć na Windows: Renumber
+   → Cancel → Renumber dwa razy pod rząd (dokładny scenariusz z logów), oraz Renumber + Cancel →
+   Change Placement (druga operacja innego typu, nie tylko to samo Renumber), sprawdzić że
+   pojawia się komunikat "Status_OperationBusy" i że nie ma już crasha; dopiero potem zmierzyć,
+   czy same czasy (checkpoint abandon, Scan) faktycznie spadły jak oczekiwano.
 
 3. **Pozostałe synchroniczne miejsca `AddCheckpointBefore`** (patrz punkt 5) — SpellCheck,
    RenameClass, RenameId, RemoveClass, RemoveSpans, RemoveEditionPage, UnifyFootnoteLetters.
@@ -166,11 +209,12 @@ Unable to resolve "!AvaloniaResources"` przez niespójny stan inkrementalnego bu
 - `src/Signet.Core/Footnotes/FootnoteEditor.cs` — `Renumber`/`RenumberWith` z `IProgress<RenumberProgress>`, nowe typy `RenumberStage`/`RenumberProgress`.
 - `src/Signet.Core/Footnotes/FootnoteEditor.Placement.cs`, `FootnoteEditor.Conversion.cs` — dopasowanie wywołań `RenumberWith` do nowej sygnatury.
 - `src/Signet.Core/BookManipulation/CheckpointHistory.cs` — `SuppressChanged`/`ResumeChanged`.
-- `src/Signet.App/ViewModels/MainWindowViewModel.Footnotes.cs` — sześć operacji przypisów w tle, `RenumberProgressMap`, logi `Preparing footnote placement/conversion`.
+- `src/Signet.App/ViewModels/MainWindowViewModel.Footnotes.cs` — sześć operacji przypisów w tle, `RenumberProgressMap`, logi `Preparing footnote placement/conversion`, guard `_bookOperationBusy` wokół `ConvertFootnotesAsync`, pięciu edycji przypisu i `Prepare*Async` (punkt 7).
 - `src/Signet.App/ViewModels/MainWindowViewModel.Checkpoints.cs` — `AddCheckpointBeforeAsync`/`AbandonCheckpointAsync`, logi `"Checkpoint"`.
-- `src/Signet.App/ViewModels/MainWindowViewModel.Operations.cs` — logi `"Operation"`, `UpdateNavigationPlace()` po pracy w tle.
+- `src/Signet.App/ViewModels/MainWindowViewModel.Operations.cs` — logi `"Operation"`, `UpdateNavigationPlace()` po pracy w tle, flaga `_bookOperationBusy` + `TryEnterBookOperation`/`ExitBookOperation` (punkt 7).
 - `src/Signet.App/ViewModels/MainWindowViewModel.Navigation.cs` — guard na `_bookEditedInBackground` w `OnNavigationResourcePathChanged`.
 - `src/Signet.App/ViewModels/Tabs/ICodeTabHost.cs`, `CodeTabViewModel.cs`, `Views/Tabs/CodeTabView.axaml.cs` — async sygnatury + `DelayedFootnoteProgress`.
 - `src/Signet.App/Views/NotificationsView.axaml` — `SelectableTextBlock`.
 - `src/Signet.App/Resources/Strings.resx`, `Strings.en.resx` — nowe stringi progresu/tytułów.
-- Testy: `tests/Signet.Core.Tests/Footnotes/FootnoteEditorTests.cs`, `tests/Signet.App.Tests/MainWindowFootnotesTests.cs`, `tests/Signet.App.UiTests/CodeTabViewRenderTests.cs`, `tests/Signet.App.Tests/MainWindowViewModelTests.cs` (dodane `UiCultureScope`), `tests/Signet.App.Tests/CheckpointsTests.cs` (test przerobiony na `async Task` + `WhenIdleAsync`).
+- Testy: `tests/Signet.Core.Tests/Footnotes/FootnoteEditorTests.cs`, `tests/Signet.App.Tests/MainWindowFootnotesTests.cs` (plus nowy test regresyjny na race z punktu 7), `tests/Signet.App.UiTests/CodeTabViewRenderTests.cs`, `tests/Signet.App.Tests/MainWindowViewModelTests.cs` (dodane `UiCultureScope`), `tests/Signet.App.Tests/CheckpointsTests.cs` (test przerobiony na `async Task` + `WhenIdleAsync`).
+- `src/Signet.App/Resources/Strings.resx`, `Strings.en.resx` — nowy string `Status_OperationBusy` (punkt 7).

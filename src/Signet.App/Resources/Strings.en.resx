@@ -5225,6 +5225,9 @@ Convert anyway?</value>
   <data name="Status_OperationCancelledRestored" xml:space="preserve">
     <value>Cancelled: {0} — the book is back to the state before the operation.</value>
   </data>
+  <data name="Status_OperationBusy" xml:space="preserve">
+    <value>Wait for the previous book operation to finish (including restoring the book after Cancel).</value>
+  </data>
   <data name="Progress_Fixing" xml:space="preserve">
     <value>Fixing problems: {0} of {1}</value>
   </data>
