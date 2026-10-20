@@ -59,25 +59,37 @@ public sealed partial class MainWindowViewModel
             return null;
         }
 
-        _tabManager.SaveAllTabs();
-        long start = System.Diagnostics.Stopwatch.GetTimestamp();
-        DebugLog.Write("Operation", "Preparing footnote placement: starting in background");
-        IReadOnlyList<PlacementItem> plan = await Task.Run(() => FootnoteEditor.PlanPlacement(book)).ConfigureAwait(true);
-        DebugLog.Write("Operation", $"Preparing footnote placement: finished ({DebugLog.Elapsed(start)})");
-        if (!ReferenceEquals(book, _currentBook))
+        if (!TryEnterBookOperation())
         {
             return null;
         }
 
-        if (plan.Count == 0)
+        try
         {
-            _statusBar.ShowMessage(Strings.Get("Status_NoSignetFootnotes"), TimeSpan.FromSeconds(4));
-            return null;
-        }
+            _tabManager.SaveAllTabs();
+            long start = System.Diagnostics.Stopwatch.GetTimestamp();
+            DebugLog.Write("Operation", "Preparing footnote placement: starting in background");
+            IReadOnlyList<PlacementItem> plan = await Task.Run(() => FootnoteEditor.PlanPlacement(book)).ConfigureAwait(true);
+            DebugLog.Write("Operation", $"Preparing footnote placement: finished ({DebugLog.Elapsed(start)})");
+            if (!ReferenceEquals(book, _currentBook))
+            {
+                return null;
+            }
 
-        return new FootnotePlacementViewModel(
-            plan, book.GetHtmlResourcesExcludingNav(), FootnoteEditor.FindGlobalFile(book), NavigateToBookPathAtOffset,
-            (items, file) => ChangeFootnotePlacementAsync(items, file, runWithProgress));
+            if (plan.Count == 0)
+            {
+                _statusBar.ShowMessage(Strings.Get("Status_NoSignetFootnotes"), TimeSpan.FromSeconds(4));
+                return null;
+            }
+
+            return new FootnotePlacementViewModel(
+                plan, book.GetHtmlResourcesExcludingNav(), FootnoteEditor.FindGlobalFile(book), NavigateToBookPathAtOffset,
+                (items, file) => ChangeFootnotePlacementAsync(items, file, runWithProgress));
+        }
+        finally
+        {
+            ExitBookOperation();
+        }
     }
 
     /// <summary>
@@ -221,25 +233,37 @@ public sealed partial class MainWindowViewModel
             return null;
         }
 
-        _tabManager.SaveAllTabs();
-        long start = System.Diagnostics.Stopwatch.GetTimestamp();
-        DebugLog.Write("Operation", "Preparing footnote conversion: starting in background");
-        ConversionPlan plan = await Task.Run(() => FootnoteEditor.PlanConversion(book)).ConfigureAwait(true);
-        DebugLog.Write("Operation", $"Preparing footnote conversion: finished ({DebugLog.Elapsed(start)})");
-        if (!ReferenceEquals(book, _currentBook))
+        if (!TryEnterBookOperation())
         {
             return null;
         }
 
-        if (plan.Items.Count == 0)
+        try
         {
-            _statusBar.ShowMessage(Strings.Get("Status_NoForeignFootnotes"), TimeSpan.FromSeconds(4));
-            return null;
-        }
+            _tabManager.SaveAllTabs();
+            long start = System.Diagnostics.Stopwatch.GetTimestamp();
+            DebugLog.Write("Operation", "Preparing footnote conversion: starting in background");
+            ConversionPlan plan = await Task.Run(() => FootnoteEditor.PlanConversion(book)).ConfigureAwait(true);
+            DebugLog.Write("Operation", $"Preparing footnote conversion: finished ({DebugLog.Elapsed(start)})");
+            if (!ReferenceEquals(book, _currentBook))
+            {
+                return null;
+            }
 
-        return new FootnoteConversionViewModel(
-            plan, FootnoteEditor.FindGlobalFile(_currentBook)?.Filename, NavigateToBookPathAtOffset,
-            request => ConvertFootnotesAsync(request, confirmWithoutCheckpoint, runWithProgress));
+            if (plan.Items.Count == 0)
+            {
+                _statusBar.ShowMessage(Strings.Get("Status_NoForeignFootnotes"), TimeSpan.FromSeconds(4));
+                return null;
+            }
+
+            return new FootnoteConversionViewModel(
+                plan, FootnoteEditor.FindGlobalFile(_currentBook)?.Filename, NavigateToBookPathAtOffset,
+                request => ConvertFootnotesAsync(request, confirmWithoutCheckpoint, runWithProgress));
+        }
+        finally
+        {
+            ExitBookOperation();
+        }
     }
 
     /// <summary>
@@ -262,73 +286,87 @@ public sealed partial class MainWindowViewModel
             return null;
         }
 
-        _tabManager.SaveAllTabs();
-        bool checkpoint = await AddCheckpointBeforeAsync(Strings.Get("CheckpointOp_ConvertFootnotes")).ConfigureAwait(true);
-        if (!checkpoint && !await confirmWithoutCheckpoint().ConfigureAwait(true))
+        if (!TryEnterBookOperation())
         {
             return null;
         }
 
-        Book converting = _currentBook!;
-        ConversionResult result;
         try
         {
-            // Cancel is offered when the book can be brought back (the checkpoint above).
-            result = await RunInBackgroundAsync(
-                Strings.Get("FootnoteConversion_ProgressTitle"), runWithProgress, editsBook: true, cancellable: checkpoint,
-                (progress, cancel) => FootnoteEditor.Convert(converting, request, FootnoteOptions, new ConversionProgressMap(progress), cancel))
-                .ConfigureAwait(true);
-        }
-        catch (OperationCanceledException)
-        {
-            // The book is half converted: back to the checkpoint, and the dialog stays as it was.
-            await AbandonCheckpointAsync().ConfigureAwait(true);
-            _statusBar.ShowMessage(Strings.Get("Status_FootnoteConversionCancelled"), TimeSpan.FromSeconds(6));
-            return null;
-        }
+            _tabManager.SaveAllTabs();
+            bool checkpoint = await AddCheckpointBeforeAsync(Strings.Get("CheckpointOp_ConvertFootnotes")).ConfigureAwait(true);
+            if (!checkpoint && !await confirmWithoutCheckpoint().ConfigureAwait(true))
+            {
+                return null;
+            }
 
-        bool restored = false;
-        if (!result.Succeeded)
-        {
-            _logger.LogWarning(
-                "Footnote conversion failed the check: {Problems}",
-                string.Join("; ", result.Problems.Select(p => $"{p.Kind} {p.BookPath} {p.Detail}")));
-            restored = checkpoint && await AbandonCheckpointAsync().ConfigureAwait(true);
-            if (!restored)
+            Book converting = _currentBook!;
+            ConversionResult result;
+            try
+            {
+                // Cancel is offered when the book can be brought back (the checkpoint above).
+                result = await RunInBackgroundAsync(
+                    Strings.Get("FootnoteConversion_ProgressTitle"), runWithProgress, editsBook: true, cancellable: checkpoint,
+                    (progress, cancel) =>
+                        FootnoteEditor.Convert(converting, request, FootnoteOptions, new ConversionProgressMap(progress), cancel))
+                    .ConfigureAwait(true);
+            }
+            catch (OperationCanceledException)
+            {
+                // The book is half converted: back to the checkpoint, and the dialog stays as it was.
+                await AbandonCheckpointAsync().ConfigureAwait(true);
+                _statusBar.ShowMessage(Strings.Get("Status_FootnoteConversionCancelled"), TimeSpan.FromSeconds(6));
+                return null;
+            }
+
+            bool restored = false;
+            if (!result.Succeeded)
+            {
+                _logger.LogWarning(
+                    "Footnote conversion failed the check: {Problems}",
+                    string.Join("; ", result.Problems.Select(p => $"{p.Kind} {p.BookPath} {p.Detail}")));
+                restored = checkpoint && await AbandonCheckpointAsync().ConfigureAwait(true);
+                if (!restored)
+                {
+                    RefreshAfterMaintenanceOperation();
+                }
+
+                _statusBar.ShowMessage(
+                    Strings.Get(restored ? "Status_FootnoteConversionFailedRestored" : "Status_FootnoteConversionFailedKept"),
+                    TimeSpan.FromSeconds(8), NotificationLevel.Warning);
+            }
+            else if (result.Converted == 0)
+            {
+                if (checkpoint)
+                {
+                    RewindCheckpoint();
+                }
+            }
+            else
             {
                 RefreshAfterMaintenanceOperation();
+                _statusBar.ShowMessage(
+                    result.RemovedFiles.Count == 0
+                        ? Strings.Format("Status_FootnotesConverted", result.Converted)
+                        : Strings.Format(
+                            "Status_FootnotesConvertedFilesRemoved", result.Converted, string.Join(", ", result.RemovedFiles)),
+                    TimeSpan.FromSeconds(6));
             }
 
-            _statusBar.ShowMessage(
-                Strings.Get(restored ? "Status_FootnoteConversionFailedRestored" : "Status_FootnoteConversionFailedKept"),
-                TimeSpan.FromSeconds(8), NotificationLevel.Warning);
+            Book book = _currentBook!;
+            ConversionPlan plan = await RunInBackgroundAsync(
+                Strings.Get("FootnoteConversion_ProgressTitle"), runWithProgress, editsBook: false, cancellable: false,
+                (progress, _) =>
+                {
+                    progress.Report(new WorkProgress(Strings.Get("FootnoteConversion_Analyzing"), null));
+                    return FootnoteEditor.PlanConversion(book);
+                }).ConfigureAwait(true);
+            return new FootnoteConversionOutcome(plan, result.Problems, restored, FootnoteEditor.FindGlobalFile(book)?.Filename);
         }
-        else if (result.Converted == 0)
+        finally
         {
-            if (checkpoint)
-            {
-                RewindCheckpoint();
-            }
+            ExitBookOperation();
         }
-        else
-        {
-            RefreshAfterMaintenanceOperation();
-            _statusBar.ShowMessage(
-                result.RemovedFiles.Count == 0
-                    ? Strings.Format("Status_FootnotesConverted", result.Converted)
-                    : Strings.Format("Status_FootnotesConvertedFilesRemoved", result.Converted, string.Join(", ", result.RemovedFiles)),
-                TimeSpan.FromSeconds(6));
-        }
-
-        Book book = _currentBook!;
-        ConversionPlan plan = await RunInBackgroundAsync(
-            Strings.Get("FootnoteConversion_ProgressTitle"), runWithProgress, editsBook: false, cancellable: false,
-            (progress, _) =>
-            {
-                progress.Report(new WorkProgress(Strings.Get("FootnoteConversion_Analyzing"), null));
-                return FootnoteEditor.PlanConversion(book);
-            }).ConfigureAwait(true);
-        return new FootnoteConversionOutcome(plan, result.Problems, restored, FootnoteEditor.FindGlobalFile(book)?.Filename);
     }
 
     // What Convert reports as what the progress window shows: the percent while the footnotes are converted, the stages around it
@@ -391,40 +429,52 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        _settings.FootnoteGlobalPlacement = placement == FootnotePlacement.Global;
-        _tabManager.SaveAllTabs();
-        bool checkpoint = await AddCheckpointBeforeAsync(Strings.Get("CheckpointOp_AddFootnote")).ConfigureAwait(true);
-        FootnoteOptions options = FootnoteOptions;
-        (FootnoteError Error, Footnote? Added) result = await RunInBackgroundAsync(
-            Strings.Get("CheckpointOp_AddFootnote"), runWithProgress, editsBook: true, cancellable: false,
-            (progress, cancel) =>
-            {
-                FootnoteError error = FootnoteEditor.Add(book, html, offset, content, placement, out Footnote? added, options);
-                return (error, added);
-            }).ConfigureAwait(true);
-
-        if (result.Error != FootnoteError.None)
+        if (!TryEnterBookOperation())
         {
-            if (checkpoint)
-            {
-                RewindCheckpoint();
-            }
-
-            _statusBar.ShowMessage(
-                Strings.Format("Status_FootnoteNotAdded", FootnoteViewModel.ErrorText(result.Error)),
-                TimeSpan.FromSeconds(5), NotificationLevel.Warning);
             return;
         }
 
-        RefreshAfterMaintenanceOperation();
-        if (result.Added is not null)
+        try
         {
-            GoToFootnoteSide(result.Added, FootnoteSide.Reference);
-        }
+            _settings.FootnoteGlobalPlacement = placement == FootnotePlacement.Global;
+            _tabManager.SaveAllTabs();
+            bool checkpoint = await AddCheckpointBeforeAsync(Strings.Get("CheckpointOp_AddFootnote")).ConfigureAwait(true);
+            FootnoteOptions options = FootnoteOptions;
+            (FootnoteError Error, Footnote? Added) result = await RunInBackgroundAsync(
+                Strings.Get("CheckpointOp_AddFootnote"), runWithProgress, editsBook: true, cancellable: false,
+                (progress, cancel) =>
+                {
+                    FootnoteError error = FootnoteEditor.Add(book, html, offset, content, placement, out Footnote? added, options);
+                    return (error, added);
+                }).ConfigureAwait(true);
 
-        _statusBar.ShowMessage(
-            Strings.Get(placement == FootnotePlacement.Local ? "Status_FootnoteAddedLocal" : "Status_FootnoteAddedGlobal"),
-            TimeSpan.FromSeconds(4));
+            if (result.Error != FootnoteError.None)
+            {
+                if (checkpoint)
+                {
+                    RewindCheckpoint();
+                }
+
+                _statusBar.ShowMessage(
+                    Strings.Format("Status_FootnoteNotAdded", FootnoteViewModel.ErrorText(result.Error)),
+                    TimeSpan.FromSeconds(5), NotificationLevel.Warning);
+                return;
+            }
+
+            RefreshAfterMaintenanceOperation();
+            if (result.Added is not null)
+            {
+                GoToFootnoteSide(result.Added, FootnoteSide.Reference);
+            }
+
+            _statusBar.ShowMessage(
+                Strings.Get(placement == FootnotePlacement.Local ? "Status_FootnoteAddedLocal" : "Status_FootnoteAddedGlobal"),
+                TimeSpan.FromSeconds(4));
+        }
+        finally
+        {
+            ExitBookOperation();
+        }
     }
 
     /// <inheritdoc/>
@@ -448,37 +498,49 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        _tabManager.SaveAllTabs();
-        bool checkpoint = await AddCheckpointBeforeAsync(Strings.Get("CheckpointOp_AddFootnoteReference")).ConfigureAwait(true);
-        FootnoteOptions options = FootnoteOptions;
-        (FootnoteError Error, Footnote? Added) result = await RunInBackgroundAsync(
-            Strings.Get("CheckpointOp_AddFootnoteReference"), runWithProgress, editsBook: true, cancellable: false,
-            (progress, cancel) =>
-            {
-                FootnoteError error = FootnoteEditor.AddReference(book, html, offset, target, out Footnote? added, options);
-                return (error, added);
-            }).ConfigureAwait(true);
-
-        if (result.Error != FootnoteError.None)
+        if (!TryEnterBookOperation())
         {
-            if (checkpoint)
-            {
-                RewindCheckpoint();
-            }
-
-            _statusBar.ShowMessage(
-                Strings.Format("Status_FootnoteReferenceNotAdded", FootnoteViewModel.ErrorText(result.Error)),
-                TimeSpan.FromSeconds(5), NotificationLevel.Warning);
             return;
         }
 
-        RefreshAfterMaintenanceOperation();
-        if (result.Added is not null)
+        try
         {
-            GoToFootnoteSide(result.Added, FootnoteSide.Reference);
-        }
+            _tabManager.SaveAllTabs();
+            bool checkpoint = await AddCheckpointBeforeAsync(Strings.Get("CheckpointOp_AddFootnoteReference")).ConfigureAwait(true);
+            FootnoteOptions options = FootnoteOptions;
+            (FootnoteError Error, Footnote? Added) result = await RunInBackgroundAsync(
+                Strings.Get("CheckpointOp_AddFootnoteReference"), runWithProgress, editsBook: true, cancellable: false,
+                (progress, cancel) =>
+                {
+                    FootnoteError error = FootnoteEditor.AddReference(book, html, offset, target, out Footnote? added, options);
+                    return (error, added);
+                }).ConfigureAwait(true);
 
-        _statusBar.ShowMessage(Strings.Get("Status_FootnoteReferenceAdded"), TimeSpan.FromSeconds(4));
+            if (result.Error != FootnoteError.None)
+            {
+                if (checkpoint)
+                {
+                    RewindCheckpoint();
+                }
+
+                _statusBar.ShowMessage(
+                    Strings.Format("Status_FootnoteReferenceNotAdded", FootnoteViewModel.ErrorText(result.Error)),
+                    TimeSpan.FromSeconds(5), NotificationLevel.Warning);
+                return;
+            }
+
+            RefreshAfterMaintenanceOperation();
+            if (result.Added is not null)
+            {
+                GoToFootnoteSide(result.Added, FootnoteSide.Reference);
+            }
+
+            _statusBar.ShowMessage(Strings.Get("Status_FootnoteReferenceAdded"), TimeSpan.FromSeconds(4));
+        }
+        finally
+        {
+            ExitBookOperation();
+        }
     }
 
     /// <inheritdoc/>
@@ -490,45 +552,58 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        _tabManager.SaveAllTabs();
-        Footnote? footnote = FootnoteEditor.Refresh(book, hit.Footnote);
-
-        // Where the caret goes afterwards: where the removed part was, or where the reference was when the file of the
-        // note goes away with it (the last global note).
-        (HtmlResource File, int Offset)? reference = footnote is null ? null : FootnoteEditor.Locate(footnote, FootnoteSide.Reference);
-        (HtmlResource File, int Offset)? place = footnote is null ? null : FootnoteEditor.Locate(footnote, hit.Side);
-        bool checkpoint = await AddCheckpointBeforeAsync(Strings.Get("CheckpointOp_RemoveFootnote")).ConfigureAwait(true);
-        FootnoteOptions options = FootnoteOptions;
-        bool removed = false;
-        if (footnote is { } found)
+        if (!TryEnterBookOperation())
         {
-            removed = await RunInBackgroundAsync(
-                Strings.Get("CheckpointOp_RemoveFootnote"), runWithProgress, editsBook: true, cancellable: false,
-                (progress, cancel) => FootnoteEditor.Remove(book, found, options)).ConfigureAwait(true);
-        }
-
-        if (!removed)
-        {
-            if (checkpoint)
-            {
-                RewindCheckpoint();
-            }
-
-            _statusBar.ShowMessage(Strings.Get("Status_FootnoteGone"), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
             return;
         }
 
-        RefreshAfterMaintenanceOperation();
-        if (place is { } target && book.GetHtmlResources().Contains(target.File))
+        try
         {
-            NavigateToBookPathAtOffset(target.File.BookPath, target.Offset);
-        }
-        else if (reference is { } fallback)
-        {
-            NavigateToBookPathAtOffset(fallback.File.BookPath, fallback.Offset);
-        }
+            _tabManager.SaveAllTabs();
+            Footnote? footnote = FootnoteEditor.Refresh(book, hit.Footnote);
 
-        _statusBar.ShowMessage(Strings.Get("Status_FootnoteRemoved"), TimeSpan.FromSeconds(4));
+            // Where the caret goes afterwards: where the removed part was, or where the reference was when the file of the
+            // note goes away with it (the last global note).
+            (HtmlResource File, int Offset)? reference =
+                footnote is null ? null : FootnoteEditor.Locate(footnote, FootnoteSide.Reference);
+            (HtmlResource File, int Offset)? place = footnote is null ? null : FootnoteEditor.Locate(footnote, hit.Side);
+            bool checkpoint = await AddCheckpointBeforeAsync(Strings.Get("CheckpointOp_RemoveFootnote")).ConfigureAwait(true);
+            FootnoteOptions options = FootnoteOptions;
+            bool removed = false;
+            if (footnote is { } found)
+            {
+                removed = await RunInBackgroundAsync(
+                    Strings.Get("CheckpointOp_RemoveFootnote"), runWithProgress, editsBook: true, cancellable: false,
+                    (progress, cancel) => FootnoteEditor.Remove(book, found, options)).ConfigureAwait(true);
+            }
+
+            if (!removed)
+            {
+                if (checkpoint)
+                {
+                    RewindCheckpoint();
+                }
+
+                _statusBar.ShowMessage(Strings.Get("Status_FootnoteGone"), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
+                return;
+            }
+
+            RefreshAfterMaintenanceOperation();
+            if (place is { } target && book.GetHtmlResources().Contains(target.File))
+            {
+                NavigateToBookPathAtOffset(target.File.BookPath, target.Offset);
+            }
+            else if (reference is { } fallback)
+            {
+                NavigateToBookPathAtOffset(fallback.File.BookPath, fallback.Offset);
+            }
+
+            _statusBar.ShowMessage(Strings.Get("Status_FootnoteRemoved"), TimeSpan.FromSeconds(4));
+        }
+        finally
+        {
+            ExitBookOperation();
+        }
     }
 
     /// <inheritdoc/>
@@ -540,37 +615,50 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        _tabManager.SaveAllTabs();
-        Footnote? footnote = FootnoteEditor.Refresh(book, hit.Footnote);
-        (HtmlResource File, int Offset)? place = footnote is null ? null : FootnoteEditor.Locate(footnote, FootnoteSide.Reference);
-        bool checkpoint = await AddCheckpointBeforeAsync(Strings.Get("CheckpointOp_RemoveFootnoteReference")).ConfigureAwait(true);
-        FootnoteOptions options = FootnoteOptions;
-        bool removed = false;
-        if (footnote is { } found)
+        if (!TryEnterBookOperation())
         {
-            removed = await RunInBackgroundAsync(
-                Strings.Get("CheckpointOp_RemoveFootnoteReference"), runWithProgress, editsBook: true, cancellable: false,
-                (progress, cancel) => FootnoteEditor.RemoveReference(book, found, options)).ConfigureAwait(true);
-        }
-
-        if (!removed)
-        {
-            if (checkpoint)
-            {
-                RewindCheckpoint();
-            }
-
-            _statusBar.ShowMessage(Strings.Get("Status_FootnoteGone"), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
             return;
         }
 
-        RefreshAfterMaintenanceOperation();
-        if (place is { } target)
+        try
         {
-            NavigateToBookPathAtOffset(target.File.BookPath, target.Offset);
-        }
+            _tabManager.SaveAllTabs();
+            Footnote? footnote = FootnoteEditor.Refresh(book, hit.Footnote);
+            (HtmlResource File, int Offset)? place =
+                footnote is null ? null : FootnoteEditor.Locate(footnote, FootnoteSide.Reference);
+            bool checkpoint = await AddCheckpointBeforeAsync(Strings.Get("CheckpointOp_RemoveFootnoteReference")).ConfigureAwait(true);
+            FootnoteOptions options = FootnoteOptions;
+            bool removed = false;
+            if (footnote is { } found)
+            {
+                removed = await RunInBackgroundAsync(
+                    Strings.Get("CheckpointOp_RemoveFootnoteReference"), runWithProgress, editsBook: true, cancellable: false,
+                    (progress, cancel) => FootnoteEditor.RemoveReference(book, found, options)).ConfigureAwait(true);
+            }
 
-        _statusBar.ShowMessage(Strings.Get("Status_FootnoteReferenceRemoved"), TimeSpan.FromSeconds(4));
+            if (!removed)
+            {
+                if (checkpoint)
+                {
+                    RewindCheckpoint();
+                }
+
+                _statusBar.ShowMessage(Strings.Get("Status_FootnoteGone"), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
+                return;
+            }
+
+            RefreshAfterMaintenanceOperation();
+            if (place is { } target)
+            {
+                NavigateToBookPathAtOffset(target.File.BookPath, target.Offset);
+            }
+
+            _statusBar.ShowMessage(Strings.Get("Status_FootnoteReferenceRemoved"), TimeSpan.FromSeconds(4));
+        }
+        finally
+        {
+            ExitBookOperation();
+        }
     }
 
     /// <inheritdoc/>
@@ -613,42 +701,54 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        _tabManager.SaveAllTabs();
-        Footnote? footnote = FootnoteEditor.Refresh(book, hit.Footnote);
-        bool checkpoint = await AddCheckpointBeforeAsync(Strings.Get("CheckpointOp_EditFootnote")).ConfigureAwait(true);
-        FootnoteOptions options = FootnoteOptions;
-        (FootnoteError Error, Footnote? Edited) result = footnote is not { } found
-            ? (FootnoteError.NotFound, null)
-            : await RunInBackgroundAsync(
-                Strings.Get("CheckpointOp_EditFootnote"), runWithProgress, editsBook: true, cancellable: false,
-                (progress, cancel) =>
-                {
-                    FootnoteError error = FootnoteEditor.Edit(book, found, content, placement, out Footnote? edited, options);
-                    return (error, edited);
-                }).ConfigureAwait(true);
-        if (result.Error != FootnoteError.None)
+        if (!TryEnterBookOperation())
         {
-            if (checkpoint)
-            {
-                RewindCheckpoint();
-            }
-
-            _statusBar.ShowMessage(
-                Strings.Format("Status_FootnoteNotEdited", FootnoteViewModel.ErrorText(result.Error)),
-                TimeSpan.FromSeconds(5), NotificationLevel.Warning);
             return;
         }
 
-        RefreshAfterMaintenanceOperation();
-        if (result.Edited is not null)
+        try
         {
-            GoToFootnoteSide(result.Edited, hit.Side);
-        }
+            _tabManager.SaveAllTabs();
+            Footnote? footnote = FootnoteEditor.Refresh(book, hit.Footnote);
+            bool checkpoint = await AddCheckpointBeforeAsync(Strings.Get("CheckpointOp_EditFootnote")).ConfigureAwait(true);
+            FootnoteOptions options = FootnoteOptions;
+            (FootnoteError Error, Footnote? Edited) result = footnote is not { } found
+                ? (FootnoteError.NotFound, null)
+                : await RunInBackgroundAsync(
+                    Strings.Get("CheckpointOp_EditFootnote"), runWithProgress, editsBook: true, cancellable: false,
+                    (progress, cancel) =>
+                    {
+                        FootnoteError error = FootnoteEditor.Edit(book, found, content, placement, out Footnote? edited, options);
+                        return (error, edited);
+                    }).ConfigureAwait(true);
+            if (result.Error != FootnoteError.None)
+            {
+                if (checkpoint)
+                {
+                    RewindCheckpoint();
+                }
 
-        string message = footnote!.Placement == placement ? "Status_FootnoteEdited"
-            : placement == FootnotePlacement.Local ? "Status_FootnoteMovedLocal"
-            : "Status_FootnoteMovedGlobal";
-        _statusBar.ShowMessage(Strings.Get(message), TimeSpan.FromSeconds(4));
+                _statusBar.ShowMessage(
+                    Strings.Format("Status_FootnoteNotEdited", FootnoteViewModel.ErrorText(result.Error)),
+                    TimeSpan.FromSeconds(5), NotificationLevel.Warning);
+                return;
+            }
+
+            RefreshAfterMaintenanceOperation();
+            if (result.Edited is not null)
+            {
+                GoToFootnoteSide(result.Edited, hit.Side);
+            }
+
+            string message = footnote!.Placement == placement ? "Status_FootnoteEdited"
+                : placement == FootnotePlacement.Local ? "Status_FootnoteMovedLocal"
+                : "Status_FootnoteMovedGlobal";
+            _statusBar.ShowMessage(Strings.Get(message), TimeSpan.FromSeconds(4));
+        }
+        finally
+        {
+            ExitBookOperation();
+        }
     }
 
     /// <inheritdoc/>

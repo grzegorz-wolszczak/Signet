@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Signet.App.Infrastructure;
 using Signet.App.Resources;
+using Signet.App.Services;
 using Signet.Core.BookManipulation;
 
 namespace Signet.App.ViewModels;
@@ -23,6 +24,28 @@ public sealed partial class MainWindowViewModel
     // The book raises its events (a file added or removed, the book modified) on the thread that edits it. While that is not the
     // UI thread the handlers that touch the UI wait; the UI is brought up to date once the work is done.
     private bool _bookEditedInBackground;
+
+    // Set for the whole span of a background book operation: taking its checkpoint, running the work, and — when it is
+    // cancelled — putting the book back from that checkpoint. All three steps can run off the UI thread, so a second
+    // operation starting while the first one's checkpoint restore is still swapping/disposing the book's resources would
+    // race it (found live: renumbering a huge book, cancelling, and immediately renumbering again threw
+    // ObjectDisposedException reading a file of the book that the still-running restore had already disposed).
+    private bool _bookOperationBusy;
+
+    // Marks a background book operation as started; false (with a status message) when one is already running.
+    private bool TryEnterBookOperation()
+    {
+        if (_bookOperationBusy)
+        {
+            _statusBar.ShowMessage(Strings.Get("Status_OperationBusy"), TimeSpan.FromSeconds(4), NotificationLevel.Warning);
+            return false;
+        }
+
+        _bookOperationBusy = true;
+        return true;
+    }
+
+    private void ExitBookOperation() => _bookOperationBusy = false;
 
     /// <summary>The outcome of <see cref="RunBookOperationAsync{T}"/>.</summary>
     /// <param name="Completed">Whether the work ran to the end (not cancelled).</param>
@@ -82,23 +105,36 @@ public sealed partial class MainWindowViewModel
         string title, string? checkpointName, bool editsBook, Func<IProgress<WorkProgress>, CancellationToken, T> work,
         ProgressRunner? runner = null)
     {
-        bool checkpoint = checkpointName is not null && await AddCheckpointBeforeAsync(checkpointName).ConfigureAwait(true);
+        if (!TryEnterBookOperation())
+        {
+            return new BookOperationOutcome<T>(false, default, false);
+        }
+
         try
         {
-            T result = await RunInBackgroundAsync(title, runner ?? ProgressRunner, editsBook, cancellable: !editsBook || checkpoint, work)
-                .ConfigureAwait(true);
-            return new BookOperationOutcome<T>(true, result, checkpoint);
-        }
-        catch (OperationCanceledException)
-        {
-            if (checkpoint)
+            bool checkpoint = checkpointName is not null && await AddCheckpointBeforeAsync(checkpointName).ConfigureAwait(true);
+            try
             {
-                await AbandonCheckpointAsync().ConfigureAwait(true);
+                T result = await RunInBackgroundAsync(title, runner ?? ProgressRunner, editsBook, cancellable: !editsBook || checkpoint, work)
+                    .ConfigureAwait(true);
+                return new BookOperationOutcome<T>(true, result, checkpoint);
             }
+            catch (OperationCanceledException)
+            {
+                if (checkpoint)
+                {
+                    await AbandonCheckpointAsync().ConfigureAwait(true);
+                }
 
-            _statusBar.ShowMessage(
-                Strings.Format(checkpoint ? "Status_OperationCancelledRestored" : "Status_OperationCancelled", title), TimeSpan.FromSeconds(6));
-            return new BookOperationOutcome<T>(false, default, checkpoint);
+                _statusBar.ShowMessage(
+                    Strings.Format(checkpoint ? "Status_OperationCancelledRestored" : "Status_OperationCancelled", title),
+                    TimeSpan.FromSeconds(6));
+                return new BookOperationOutcome<T>(false, default, checkpoint);
+            }
+        }
+        finally
+        {
+            ExitBookOperation();
         }
     }
 

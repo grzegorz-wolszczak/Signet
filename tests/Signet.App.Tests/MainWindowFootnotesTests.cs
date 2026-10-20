@@ -466,6 +466,47 @@ public sealed class MainWindowFootnotesTests : IDisposable
     }
 
     [Fact]
+    public async Task Starting_a_new_operation_while_a_cancelled_one_is_still_restoring_the_book_is_refused()
+    {
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange — reproduces a live crash: renumbering a huge book, cancelling it, and renumbering again right away (before
+            // the restore from the checkpoint, which also runs off the UI thread, had finished) threw ObjectDisposedException
+            // reading a file of the book that the still-running restore had already disposed.
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel sut, Book _, HtmlResource chapter) = OpenMinimalChapter(temp);
+            ICodeTabHost host = sut;
+            await host.AddFootnote(chapter, AfterHello(chapter), "Note.", FootnotePlacement.Local);
+            string before = chapter.GetText();
+            using CancellationTokenSource pressed = new();
+            ProgressRunner runner = (_, work, cancellable) =>
+            {
+                pressed.Cancel();
+                return work(new RecordingProgress(), pressed.Token);
+            };
+
+            // Act
+            Task first = host.RenumberFootnotes(runner);
+            Task second = host.RenumberFootnotes();
+
+            // Assert — the second call is refused synchronously, before it ever touches the book, instead of racing the first
+            // one's cancellation (which puts the book back on a background thread).
+            second.IsCompleted.Should().BeTrue("a second book operation must not start while one is already running");
+            sut.StatusMessage.Should().Be(Strings.Get("Status_OperationBusy"));
+            sut.IsStatusMessageWarning.Should().BeTrue();
+
+            // Act
+            await first;
+
+            // Assert — the first (accepted) operation still ran to completion and restored the book from its checkpoint.
+            Book restored = ((IBookWorkspace)sut).CurrentBook!;
+            restored.GetHtmlResources().Single(h => h.Filename == chapter.Filename).GetText().Should().Be(before);
+            sut.StatusMessage.Should().Be(Strings.Format("Status_OperationCancelledRestored", Strings.Get("FootnoteRenumber_ProgressTitle")));
+        });
+    }
+
+    [Fact]
     public void The_preview_of_a_footnote_changes_nothing()
     {
         // Arrange

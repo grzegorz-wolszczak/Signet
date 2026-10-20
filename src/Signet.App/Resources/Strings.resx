@@ -5225,6 +5225,9 @@ Konwertować mimo to?</value>
   <data name="Status_OperationCancelledRestored" xml:space="preserve">
     <value>Anulowano: {0} — książka wróciła do stanu sprzed operacji.</value>
   </data>
+  <data name="Status_OperationBusy" xml:space="preserve">
+    <value>Poczekaj, aż poprzednia operacja na książce się zakończy (w tym przywracanie po Cancel).</value>
+  </data>
   <data name="Progress_Fixing" xml:space="preserve">
     <value>Naprawianie problemów: {0} z {1}</value>
   </data>
