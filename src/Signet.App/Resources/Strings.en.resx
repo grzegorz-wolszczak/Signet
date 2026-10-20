@@ -4254,6 +4254,24 @@ It does not change the files, their names or their IDs.</value>
   <data name="CheckpointOp_RenumberFootnotes" xml:space="preserve">
     <value>Renumber footnotes</value>
   </data>
+  <data name="FootnoteRenumber_ProgressTitle" xml:space="preserve">
+    <value>Renumbering footnotes</value>
+  </data>
+  <data name="FootnoteRenumber_Progress_Scanning" xml:space="preserve">
+    <value>Scanning footnotes…</value>
+  </data>
+  <data name="FootnoteRenumber_Progress_Numbering" xml:space="preserve">
+    <value>Numbering footnotes: {0} of {1}</value>
+  </data>
+  <data name="FootnoteRenumber_Progress_Writing" xml:space="preserve">
+    <value>Writing files: {0} of {1}</value>
+  </data>
+  <data name="FootnoteRenumber_Progress_Sorting" xml:space="preserve">
+    <value>Sorting files: {0} of {1}</value>
+  </data>
+  <data name="FootnoteRenumber_Progress_Styling" xml:space="preserve">
+    <value>Applying styles: {0} of {1}</value>
+  </data>
   <data name="FootnoteWindow_Title" xml:space="preserve">
     <value>Add Footnote</value>
   </data>

@@ -1283,6 +1283,7 @@ public sealed class MainWindowViewModelTests : IDisposable
         await SingleThreadContext.RunAsync(async () =>
         {
             // Arrange
+            using UiCultureScope culture = new("en");
             TempDir temp = _disposables.Add(new TempDir());
             string epub = EpubBuilder.BuildInto(CorpusPaths.Malformed("not-wellformed-xhtml"), temp);
             MainWindowViewModel sut = New();
@@ -1293,7 +1294,7 @@ public sealed class MainWindowViewModelTests : IDisposable
 
             // Act
             sut.Actions.Require(AppActionIds.MendHtml).Execute(null);
-            await WaitUntilAsync(() => sut.StatusMessage.Length > 0);
+            await WaitUntilAsync(() => sut.StatusMessage.Contains("Mend All", StringComparison.Ordinal));
 
             // Assert
             reported.Should().BeFalse();

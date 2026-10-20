@@ -289,7 +289,7 @@ public static partial class FootnoteEditor
         cancellationToken.ThrowIfCancellationRequested();
         if (changed)
         {
-            RenumberWith(book, options, null, cancellationToken);
+            RenumberWith(book, options, null, cancel: cancellationToken);
             book.Modified = true;
         }
 

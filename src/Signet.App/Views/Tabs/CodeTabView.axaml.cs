@@ -1015,7 +1015,7 @@ public partial class CodeTabView : UserControl
                     : !hit.Footnote.IsShared ? Strings.Get("CodeEditorMenu_FootnoteRemoveReferenceOnlyOne")
                     : null);
             menu.Items.Add(Item(
-                Strings.Get("CodeEditorMenu_FootnoteRemoveReference"), () => host.RemoveFootnoteReference(hit),
+                Strings.Get("CodeEditorMenu_FootnoteRemoveReference"), () => RemoveFootnoteReference(host, hit),
                 enabled: referenceBlocked is null, toolTip: referenceBlocked));
             menu.Items.Add(Item(
                 Strings.Get("CodeEditorMenu_FootnoteRemove"), () => RemoveFootnote(host, hit), enabled: foreign is null, toolTip: foreign));
@@ -1038,7 +1038,7 @@ public partial class CodeTabView : UserControl
         }
 
         menu.Items.Add(new Separator());
-        menu.Items.Add(Item(Strings.Get("CodeEditorMenu_FootnotesRenumber"), host.RenumberFootnotes, enabled: state.HasFootnotes));
+        menu.Items.Add(Item(Strings.Get("CodeEditorMenu_FootnotesRenumber"), () => RenumberFootnotes(host), enabled: state.HasFootnotes));
         menu.Items.Add(Item(Strings.Get("CodeEditorMenu_FootnotesConvert"), host.ShowFootnoteConversion, enabled: state.ForeignCount > 0));
         menu.Items.Add(Item(Strings.Get("CodeEditorMenu_FootnotesUnifyLetters"), host.ShowFootnoteLetters, enabled: state.HasFootnotes));
         return menu;
@@ -1051,7 +1051,7 @@ public partial class CodeTabView : UserControl
             && vm.CreateFootnoteReferenceViewModel() is { } model
             && await FootnoteReferenceWindow.AskAsync(owner, model).ConfigureAwait(true) is { } target)
         {
-            vm.AddFootnoteReference(target);
+            await vm.AddFootnoteReference(target, DelayedFootnoteProgress(owner));
         }
     }
 
@@ -1062,9 +1062,13 @@ public partial class CodeTabView : UserControl
             && await FootnoteWindow.ConfirmRemovalAsync(
                 owner, hit.Footnote.ReferenceCount, host.ConfirmFootnoteRemoval, () => host.ConfirmFootnoteRemoval = false).ConfigureAwait(true))
         {
-            host.RemoveFootnote(hit);
+            await host.RemoveFootnote(hit, DelayedFootnoteProgress(owner));
         }
     }
+
+    // "Remove Reference" from the "Footnotes" submenu: no confirmation, unlike "Remove Footnote…" above.
+    private async void RemoveFootnoteReference(ICodeTabHost host, FootnoteHit hit) =>
+        await host.RemoveFootnoteReference(hit, TopLevel.GetTopLevel(this) is Window owner ? DelayedFootnoteProgress(owner) : null);
 
     // "Add Footnote…": the window with the text and the placement, then the footnote is added at the caret.
     private async void AddFootnote(CodeTabViewModel vm)
@@ -1076,7 +1080,7 @@ public partial class CodeTabView : UserControl
 
         if (await FootnoteWindow.AskAsync(owner, model, CurrentAppearance()) is { } request)
         {
-            vm.AddFootnote(request);
+            await vm.AddFootnote(request, DelayedFootnoteProgress(owner));
         }
     }
 
@@ -1090,9 +1094,19 @@ public partial class CodeTabView : UserControl
 
         if (await FootnoteWindow.AskAsync(owner, model, CurrentAppearance()) is { } request)
         {
-            vm.ApplyFootnoteEdit(hit, request);
+            await vm.ApplyFootnoteEdit(hit, request, DelayedFootnoteProgress(owner));
         }
     }
+
+    // "Renumber Footnotes": no custom runner — falls back to the main window's progress window (the same one the Tools
+    // menu action uses), since this is a deliberate whole-book command, not a quick single-footnote edit.
+    private static async void RenumberFootnotes(ICodeTabHost host) => await host.RenumberFootnotes();
+
+    // A footnote edit is normally instant; on a huge book the full-book renumbering it triggers can take a while, so the
+    // window appears only when it actually does (ProgressWindow.DefaultDelay), instead of flashing on every click.
+    private static ProgressRunner DelayedFootnoteProgress(Window owner) =>
+        (title, work, cancellable) =>
+            ProgressWindow.RunWithProgressAsync(owner, title, Strings.Get("Progress_Starting"), work, cancellable, ProgressWindow.DefaultDelay);
 
     // "Edit Footnote…" on a footnote of other origin: Signet edits such footnotes only after converting them, so the
     // notice offers the conversion dialog.

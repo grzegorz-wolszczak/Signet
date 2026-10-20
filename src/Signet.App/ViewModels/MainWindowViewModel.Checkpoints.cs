@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Signet.App.Actions;
 using Signet.App.Docking;
+using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.App.Tabs;
@@ -84,6 +86,41 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <summary>
+    /// Like <see cref="AddCheckpointBefore"/>, but the heavy part (copying the book's folder) runs off the UI thread:
+    /// for the background-operation flows, where a big book would otherwise freeze the window for its duration.
+    /// </summary>
+    public async Task<bool> AddCheckpointBeforeAsync(string operation)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+        if (_currentBook is not { } book || !_checkpoints.IsOpen)
+        {
+            return false;
+        }
+
+        string message = Strings.Format("Checkpoint_Before", operation);
+        _tabManager.SaveAllTabs();
+        long start = System.Diagnostics.Stopwatch.GetTimestamp();
+        DebugLog.Write("Checkpoint", $"creating \"{message}\"…");
+        _checkpoints.SuppressChanged();
+        try
+        {
+            await Task.Run(() => _checkpoints.AddCheckpoint(book, message)).ConfigureAwait(true);
+            DebugLog.Write("Checkpoint", $"created \"{message}\" ({DebugLog.Elapsed(start)})");
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            _logger.LogError(ex, "Failed to create a checkpoint");
+            _statusBar.ShowMessage(Strings.Format("Status_CheckpointError", ex.Message), TimeSpan.FromSeconds(6), NotificationLevel.Warning);
+            return false;
+        }
+        finally
+        {
+            _checkpoints.ResumeChanged();
+        }
+    }
+
+    /// <summary>
     /// Rolls back the checkpoint created right before an operation that was cancelled or
     /// changed nothing.
     /// </summary>
@@ -125,6 +162,8 @@ public sealed partial class MainWindowViewModel
 
         // The tabs are not saved: what they would write belongs to the state that is thrown away.
         TabSnapshot tabs = _tabManager.CaptureSnapshot();
+        long start = System.Diagnostics.Stopwatch.GetTimestamp();
+        DebugLog.Write("Checkpoint", "abandoning (bringing the book back)…");
         Book? loaded;
         try
         {
@@ -143,6 +182,50 @@ public sealed partial class MainWindowViewModel
         }
 
         SwapToCheckpointBook(loaded, tabs);
+        DebugLog.Write("Checkpoint", $"abandoned, book restored ({DebugLog.Elapsed(start)})");
+        return true;
+    }
+
+    /// <summary>
+    /// Like <see cref="AbandonCheckpoint"/>, but the heavy part (reloading the book from the checkpoint's folder) runs
+    /// off the UI thread: for the background-operation flows, where a big book would otherwise freeze the window for
+    /// its duration (most visibly after Cancel).
+    /// </summary>
+    public async Task<bool> AbandonCheckpointAsync()
+    {
+        if (_currentBook is not { } live || !_checkpoints.IsOpen)
+        {
+            return false;
+        }
+
+        // The tabs are not saved: what they would write belongs to the state that is thrown away.
+        TabSnapshot tabs = _tabManager.CaptureSnapshot();
+        long start = System.Diagnostics.Stopwatch.GetTimestamp();
+        DebugLog.Write("Checkpoint", "abandoning (bringing the book back)…");
+        _checkpoints.SuppressChanged();
+        Book? loaded;
+        try
+        {
+            loaded = await Task.Run(() => _checkpoints.Abandon(live)).ConfigureAwait(true);
+        }
+        catch (Exception ex) when (ex is EpubLoadException or IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            _logger.LogError(ex, "Failed to bring back the checkpoint");
+            _statusBar.ShowMessage(Strings.Format("Status_CheckpointError", ex.Message), TimeSpan.FromSeconds(6), NotificationLevel.Warning);
+            return false;
+        }
+        finally
+        {
+            _checkpoints.ResumeChanged();
+        }
+
+        if (loaded is null)
+        {
+            return false;
+        }
+
+        SwapToCheckpointBook(loaded, tabs);
+        DebugLog.Write("Checkpoint", $"abandoned, book restored ({DebugLog.Elapsed(start)})");
         return true;
     }
 
@@ -278,9 +361,12 @@ public sealed partial class MainWindowViewModel
 
         // Commit all editors: unsaved tab content goes into the resources.
         _tabManager.SaveAllTabs();
+        long start = System.Diagnostics.Stopwatch.GetTimestamp();
+        DebugLog.Write("Checkpoint", $"creating \"{message}\"…");
         try
         {
             _checkpoints.AddCheckpoint(book, message);
+            DebugLog.Write("Checkpoint", $"created \"{message}\" ({DebugLog.Elapsed(start)})");
             return true;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)

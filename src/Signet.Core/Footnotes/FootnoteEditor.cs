@@ -929,19 +929,28 @@ public static partial class FootnoteEditor
     /// their places in the count (a Signet footnote after one of them gets the next number). The files with Signet's
     /// footnotes get the rules of the styles of <paramref name="options"/> (<see cref="FootnoteOptions.Default"/> when
     /// <c>null</c>), and the global notes are grouped as the options and the notes file say.
-    /// Returns whether anything changed.
+    /// Returns whether anything changed. <paramref name="progress"/> reports how far it is (a book with thousands of
+    /// footnotes can take a while). With a cancelled <paramref name="cancellationToken"/> throws an
+    /// <see cref="OperationCanceledException"/> between the steps; the book may then be partly renumbered, so the caller
+    /// that cancels rewinds it (a checkpoint taken before).
     /// </summary>
-    public static bool Renumber(Book book, FootnoteOptions? options = null) => RenumberWith(book, options, null);
+    public static bool Renumber(
+        Book book, FootnoteOptions? options = null, IProgress<RenumberProgress>? progress = null,
+        CancellationToken cancellationToken = default) =>
+        RenumberWith(book, options, null, progress, cancellationToken);
 
     // Renumber with the letters of some shared notes written in a given style (`styles`: by the note's file and id). With a
     // cancelled token it throws an OperationCanceledException between the steps; the book may then be partly renumbered, so the
     // caller that cancels rewinds it (a checkpoint taken before).
     private static bool RenumberWith(
         Book book, FootnoteOptions? options, IReadOnlyDictionary<(string BookPath, string Id), FootnoteLetterStyle>? styles,
-        CancellationToken cancel = default)
+        IProgress<RenumberProgress>? progress = null, CancellationToken cancel = default)
     {
         ArgumentNullException.ThrowIfNull(book);
+        progress?.Report(new RenumberProgress(RenumberStage.Scanning, 0, 0));
         IReadOnlyList<Footnote> footnotes = FootnoteScanner.Scan(book);
+        int foreignCount = footnotes.Count(f => !f.IsSignet && f.ReferenceIndex == 0);
+        progress?.Report(new RenumberProgress(RenumberStage.Scanning, footnotes.Count, footnotes.Count, foreignCount));
         Dictionary<HtmlResource, (string Text, TagLister Tags)> snapshots = new(ReferenceEqualityComparer.Instance);
         Dictionary<HtmlResource, List<TextEdit>> edits = new(ReferenceEqualityComparer.Instance);
         Dictionary<HtmlResource, HashSet<string>> takenIds = new(ReferenceEqualityComparer.Instance);
@@ -999,9 +1008,11 @@ public static partial class FootnoteEditor
         Dictionary<(string BookPath, string Id), List<Footnote>> referencesOf = footnotes
             .GroupBy(f => (f.NoteFile.BookPath, f.NoteId))
             .ToDictionary(g => g.Key, g => g.ToList());
+        int numbered = 0;
         foreach (Footnote footnote in footnotes)
         {
             cancel.ThrowIfCancellationRequested();
+            progress?.Report(new RenumberProgress(RenumberStage.Numbering, numbered++, footnotes.Count, foreignCount));
             if (!numbers.TryGetValue((footnote.NoteFile.BookPath, footnote.NoteId), out int number))
             {
                 if (footnote.Placement == FootnotePlacement.Local)
@@ -1126,17 +1137,24 @@ public static partial class FootnoteEditor
         }
 
         bool changed = false;
+        int written = 0;
+        progress?.Report(new RenumberProgress(RenumberStage.Writing, 0, edits.Count, foreignCount));
         foreach ((HtmlResource file, List<TextEdit> list) in edits)
         {
             cancel.ThrowIfCancellationRequested();
             file.SetText(Apply(snapshots[file].Text, list));
             changed = true;
+            progress?.Report(new RenumberProgress(RenumberStage.Writing, ++written, edits.Count, foreignCount));
         }
 
-        foreach (HtmlResource file in book.GetHtmlResources())
+        IReadOnlyList<HtmlResource> allFiles = book.GetHtmlResources();
+        int sorted = 0;
+        progress?.Report(new RenumberProgress(RenumberStage.Sorting, 0, allFiles.Count, foreignCount));
+        foreach (HtmlResource file in allFiles)
         {
             cancel.ThrowIfCancellationRequested();
             changed |= SortContainer(file, LocalContainerClass);
+            progress?.Report(new RenumberProgress(RenumberStage.Sorting, ++sorted, allFiles.Count, foreignCount));
         }
 
         changed |= ArrangeGlobalNotes(book, options ?? FootnoteOptions.Default);
@@ -1151,9 +1169,13 @@ public static partial class FootnoteEditor
         // The files of a book share a few stylesheets: each gets the rules once (applying them takes ~10 ms, and a book of a
         // thousand chapters with footnotes spent ten seconds on the same stylesheet).
         HashSet<CssResource> styledSheets = new(ReferenceEqualityComparer.Instance);
-        foreach (HtmlResource file in book.GetHtmlResources().Where(styled.Contains))
+        int styledDone = 0;
+        List<HtmlResource> styledFiles = allFiles.Where(styled.Contains).ToList();
+        progress?.Report(new RenumberProgress(RenumberStage.Styling, 0, styledFiles.Count, foreignCount));
+        foreach (HtmlResource file in styledFiles)
         {
             changed |= ApplyStyles(book, file, (options ?? FootnoteOptions.Default).Styles, styledSheets);
+            progress?.Report(new RenumberProgress(RenumberStage.Styling, ++styledDone, styledFiles.Count, foreignCount));
         }
 
         if (changed)
@@ -2376,3 +2398,31 @@ public static partial class FootnoteEditor
         return lineStart == 0 || text[lineStart - 1] == '\n' ? lineStart : offset;
     }
 }
+
+/// <summary>The step <see cref="FootnoteEditor.Renumber"/> is doing, reported through <see cref="RenumberProgress"/>.</summary>
+public enum RenumberStage
+{
+    /// <summary>Scanning the footnotes of the book.</summary>
+    Scanning,
+
+    /// <summary>Numbering the footnotes and preparing their edits, one by one.</summary>
+    Numbering,
+
+    /// <summary>Writing the edited files.</summary>
+    Writing,
+
+    /// <summary>Sorting the containers of local notes and arranging the global ones.</summary>
+    Sorting,
+
+    /// <summary>Applying the footnote styles to the stylesheets.</summary>
+    Styling,
+}
+
+/// <summary>Where <see cref="FootnoteEditor.Renumber"/> is.</summary>
+/// <param name="Stage">What it is doing.</param>
+/// <param name="Done">How far within the stage (a footnote numbered, or a file written, sorted or styled).</param>
+/// <param name="Total">The total for <paramref name="Done"/>.</param>
+/// <param name="ForeignCount">
+/// How many footnotes of the book are not Signet's — known once <see cref="RenumberStage.Scanning"/> is done, 0 before.
+/// </param>
+public readonly record struct RenumberProgress(RenumberStage Stage, int Done, int Total, int ForeignCount = 0);

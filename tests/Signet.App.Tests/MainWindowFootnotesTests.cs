@@ -65,199 +65,211 @@ public sealed class MainWindowFootnotesTests : IDisposable
     private static int AfterHello(HtmlResource chapter) => chapter.GetText().IndexOf("Hello", StringComparison.Ordinal) + 5;
 
     [Fact]
-    public void A_footnote_is_added_edited_into_the_global_notes_and_removed_with_its_notes_file()
+    public async Task A_footnote_is_added_edited_into_the_global_notes_and_removed_with_its_notes_file()
     {
-        // Arrange
-        using UiCultureScope culture = new("en");
-        TempDir temp = _disposables.Add(new TempDir());
-        (MainWindowViewModel sut, Book book, HtmlResource chapter) = OpenMinimalChapter(temp);
-        ICodeTabHost host = sut;
-        int offset = AfterHello(chapter);
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel sut, Book book, HtmlResource chapter) = OpenMinimalChapter(temp);
+            ICodeTabHost host = sut;
+            int offset = AfterHello(chapter);
 
-        // Act & Assert
-        host.GetFootnoteState(chapter, offset).Should().Be(new FootnoteMenuState(null, FootnoteError.None, false));
-        host.GetFootnoteNumbers(chapter, offset).Should().Be((1, 1));
+            // Act & Assert
+            host.GetFootnoteState(chapter, offset).Should().Be(new FootnoteMenuState(null, FootnoteError.None, false));
+            host.GetFootnoteNumbers(chapter, offset).Should().Be((1, 1));
 
-        // Act
-        host.AddFootnote(chapter, offset, "A <i>note</i>.", FootnotePlacement.Local);
+            // Act
+            await host.AddFootnote(chapter, offset, "A <i>note</i>.", FootnotePlacement.Local);
 
-        // Assert
-        chapter.GetText().Should().Contain("Hello<a class=\"signet-fn-ref\"").And.Contain("A <i>note</i>.");
-        sut.StatusMessage.Should().Be(Strings.Get("Status_FootnoteAddedLocal"));
-        sut.ActiveCodeTab!.DocumentText.Should().Be(chapter.GetText());
+            // Assert
+            chapter.GetText().Should().Contain("Hello<a class=\"signet-fn-ref\"").And.Contain("A <i>note</i>.");
+            sut.StatusMessage.Should().Be(Strings.Get("Status_FootnoteAddedLocal"));
+            sut.ActiveCodeTab!.DocumentText.Should().Be(chapter.GetText());
 
-        // Act
-        FootnoteMenuState onReference = host.GetFootnoteState(chapter, chapter.GetText().IndexOf("[1]", StringComparison.Ordinal))!;
+            // Act
+            FootnoteMenuState onReference = host.GetFootnoteState(chapter, chapter.GetText().IndexOf("[1]", StringComparison.Ordinal))!;
 
-        // Assert
-        onReference.Hit!.Side.Should().Be(FootnoteSide.Reference);
-        onReference.HasFootnotes.Should().BeTrue();
+            // Assert
+            onReference.Hit!.Side.Should().Be(FootnoteSide.Reference);
+            onReference.HasFootnotes.Should().BeTrue();
 
-        // Act
-        FootnoteEditState edit = host.GetFootnoteEdit(onReference.Hit)!;
+            // Act
+            FootnoteEditState edit = host.GetFootnoteEdit(onReference.Hit)!;
 
-        // Assert
-        edit.Content.Should().Be(new FootnoteContent("A <i>note</i>.", false));
-        (edit.LocalNumber, edit.GlobalNumber).Should().Be((1, 1));
-        edit.ReferenceText[edit.ReferenceStart..edit.ReferenceEnd].Should().StartWith("<a class=\"signet-fn-ref\"").And.EndWith("[1]</a>");
+            // Assert
+            edit.Content.Should().Be(new FootnoteContent("A <i>note</i>.", false));
+            (edit.LocalNumber, edit.GlobalNumber).Should().Be((1, 1));
+            edit.ReferenceText[edit.ReferenceStart..edit.ReferenceEnd].Should().StartWith("<a class=\"signet-fn-ref\"").And.EndWith("[1]</a>");
 
-        // Act
-        host.EditFootnote(onReference.Hit, "A <b>new</b> note.", FootnotePlacement.Global);
+            // Act
+            await host.EditFootnote(onReference.Hit, "A <b>new</b> note.", FootnotePlacement.Global);
 
-        HtmlResource notes = FootnoteEditor.FindGlobalFile(book)!;
-        notes.Filename.Should().Be(FootnoteEditor.GlobalFileName);
+            HtmlResource notes = FootnoteEditor.FindGlobalFile(book)!;
+            notes.Filename.Should().Be(FootnoteEditor.GlobalFileName);
 
-        // Assert
-        notes.GetText().Should().Contain("A <b>new</b> note.");
-        chapter.GetText().Should().NotContain("A <i>note</i>.").And.NotContain("A <b>new</b> note.");
-        sut.StatusMessage.Should().Be(Strings.Get("Status_FootnoteMovedGlobal"));
-        sut.ActiveCodeTab!.Resource.Should().BeSameAs(chapter);
+            // Assert
+            notes.GetText().Should().Contain("A <b>new</b> note.");
+            chapter.GetText().Should().NotContain("A <i>note</i>.").And.NotContain("A <b>new</b> note.");
+            sut.StatusMessage.Should().Be(Strings.Get("Status_FootnoteMovedGlobal"));
+            sut.ActiveCodeTab!.Resource.Should().BeSameAs(chapter);
 
-        // Act
-        FootnoteMenuState onNote = host.GetFootnoteState(notes, notes.GetText().IndexOf("A <b>new", StringComparison.Ordinal))!;
+            // Act
+            FootnoteMenuState onNote = host.GetFootnoteState(notes, notes.GetText().IndexOf("A <b>new", StringComparison.Ordinal))!;
 
-        // Assert
-        onNote.Hit!.Side.Should().Be(FootnoteSide.Note);
+            // Assert
+            onNote.Hit!.Side.Should().Be(FootnoteSide.Note);
 
-        // Act
-        host.GoToFootnote(onNote.Hit);
+            // Act
+            host.GoToFootnote(onNote.Hit);
 
-        // Assert
-        sut.ActiveCodeTab!.Resource.Should().BeSameAs(chapter);
+            // Assert
+            sut.ActiveCodeTab!.Resource.Should().BeSameAs(chapter);
 
-        // Act
-        host.RemoveFootnote(onNote.Hit);
+            // Act
+            await host.RemoveFootnote(onNote.Hit);
 
-        // Assert
-        book.GetHtmlResources().Should().NotContain(notes);
-        chapter.GetText().Should().NotContain("<a class=\"signet-fn-ref\"").And.Contain("Hello, world.");
-        sut.StatusMessage.Should().Be(Strings.Get("Status_FootnoteRemoved"));
+            // Assert
+            book.GetHtmlResources().Should().NotContain(notes);
+            chapter.GetText().Should().NotContain("<a class=\"signet-fn-ref\"").And.Contain("Hello, world.");
+            sut.StatusMessage.Should().Be(Strings.Get("Status_FootnoteRemoved"));
+        });
     }
 
     [Fact]
-    public void Editing_only_the_text_keeps_the_footnote_in_place_and_an_invalid_text_changes_nothing()
+    public async Task Editing_only_the_text_keeps_the_footnote_in_place_and_an_invalid_text_changes_nothing()
     {
-        // Arrange
-        using UiCultureScope culture = new("en");
-        TempDir temp = _disposables.Add(new TempDir());
-        (MainWindowViewModel sut, Book book, HtmlResource chapter) = OpenMinimalChapter(temp);
-        ICodeTabHost host = sut;
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel sut, Book book, HtmlResource chapter) = OpenMinimalChapter(temp);
+            ICodeTabHost host = sut;
 
-        // Act
-        host.AddFootnote(chapter, AfterHello(chapter), "Old text.", FootnotePlacement.Local);
-        FootnoteHit hit = host.GetFootnoteState(chapter, chapter.GetText().IndexOf("Old text.", StringComparison.Ordinal))!.Hit!;
+            // Act
+            await host.AddFootnote(chapter, AfterHello(chapter), "Old text.", FootnotePlacement.Local);
+            FootnoteHit hit = host.GetFootnoteState(chapter, chapter.GetText().IndexOf("Old text.", StringComparison.Ordinal))!.Hit!;
 
-        // Assert
-        hit.Side.Should().Be(FootnoteSide.Note);
+            // Assert
+            hit.Side.Should().Be(FootnoteSide.Note);
 
-        // Act & Assert
-        host.ValidateFootnoteEdit(hit.Footnote, "a < b").Should().Be(FootnoteError.InvalidContent);
+            // Act & Assert
+            host.ValidateFootnoteEdit(hit.Footnote, "a < b").Should().Be(FootnoteError.InvalidContent);
 
-        // Act
-        host.EditFootnote(hit, "a < b", FootnotePlacement.Local);
+            // Act
+            await host.EditFootnote(hit, "a < b", FootnotePlacement.Local);
 
-        // Assert
-        chapter.GetText().Should().Contain("Old text.");
-        sut.StatusMessage.Should().Be(
-            Strings.Format("Status_FootnoteNotEdited", FootnoteViewModel.ErrorText(FootnoteError.InvalidContent)));
+            // Assert
+            chapter.GetText().Should().Contain("Old text.");
+            sut.StatusMessage.Should().Be(
+                Strings.Format("Status_FootnoteNotEdited", FootnoteViewModel.ErrorText(FootnoteError.InvalidContent)));
 
-        // Arrange
-        int scrolledTo = -1;
-        sut.ActiveCodeTab!.ScrollToOffsetRequested += offset => scrolledTo = offset;
+            // Arrange
+            int scrolledTo = -1;
+            sut.ActiveCodeTab!.ScrollToOffsetRequested += offset => scrolledTo = offset;
 
-        // Act
-        host.EditFootnote(hit, "New text.", FootnotePlacement.Local);
+            // Act
+            await host.EditFootnote(hit, "New text.", FootnotePlacement.Local);
 
-        // Assert
-        chapter.GetText().Should().Contain("1.</a> New text.</p>").And.NotContain("Old text.");
-        FootnoteEditor.FindGlobalFile(book).Should().BeNull();
-        sut.StatusMessage.Should().Be(Strings.Get("Status_FootnoteEdited"));
-        scrolledTo.Should().Be(chapter.GetText().IndexOf("<aside", StringComparison.Ordinal), "the caret goes back to the note");
+            // Assert
+            chapter.GetText().Should().Contain("1.</a> New text.</p>").And.NotContain("Old text.");
+            FootnoteEditor.FindGlobalFile(book).Should().BeNull();
+            sut.StatusMessage.Should().Be(Strings.Get("Status_FootnoteEdited"));
+            scrolledTo.Should().Be(chapter.GetText().IndexOf("<aside", StringComparison.Ordinal), "the caret goes back to the note");
+        });
     }
 
     [Fact]
-    public void A_reference_added_to_a_footnote_makes_it_shared_and_removing_it_makes_it_ordinary_again()
+    public async Task A_reference_added_to_a_footnote_makes_it_shared_and_removing_it_makes_it_ordinary_again()
     {
-        // Arrange
-        using UiCultureScope culture = new("en");
-        TempDir temp = _disposables.Add(new TempDir());
-        (MainWindowViewModel sut, Book _, HtmlResource chapter) = OpenMinimalChapter(temp);
-        ICodeTabHost host = sut;
-        host.AddFootnote(chapter, AfterHello(chapter), "Shared note.", FootnotePlacement.Local);
-        int end = chapter.GetText().IndexOf("world", StringComparison.Ordinal) + 5;
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel sut, Book _, HtmlResource chapter) = OpenMinimalChapter(temp);
+            ICodeTabHost host = sut;
+            await host.AddFootnote(chapter, AfterHello(chapter), "Shared note.", FootnotePlacement.Local);
+            int end = chapter.GetText().IndexOf("world", StringComparison.Ordinal) + 5;
 
-        // Act & Assert
-        host.GetFootnoteState(chapter, end)!.ReferenceTargetCount.Should().Be(1);
+            // Act & Assert
+            host.GetFootnoteState(chapter, end)!.ReferenceTargetCount.Should().Be(1);
 
-        // Act
-        ReferenceTargetList targets = host.GetFootnoteReferenceTargets(chapter, end)!;
+            // Act
+            ReferenceTargetList targets = host.GetFootnoteReferenceTargets(chapter, end)!;
 
-        // Assert
-        targets.Targets.Should().ContainSingle().Which.Text.Should().Be("Shared note.");
+            // Assert
+            targets.Targets.Should().ContainSingle().Which.Text.Should().Be("Shared note.");
 
-        // Act
-        host.AddFootnoteReference(chapter, end, targets.Targets[targets.Nearest].Footnote);
+            // Act
+            await host.AddFootnoteReference(chapter, end, targets.Targets[targets.Nearest].Footnote);
 
-        // Assert
-        chapter.GetText().Should().Contain("Hello<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"#fn-1\" id=\"fn-1a-ref\">[1a]</a>")
-            .And.Contain("world<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"#fn-1\" id=\"fn-1b-ref\">[1b]</a>")
-            .And.Contain("<a href=\"#fn-1a-ref\">1a</a>, <a href=\"#fn-1b-ref\">1b</a>. Shared note.");
-        sut.StatusMessage.Should().Be(Strings.Get("Status_FootnoteReferenceAdded"));
-        sut.ActiveCodeTab!.DocumentText.Should().Be(chapter.GetText());
+            // Assert
+            chapter.GetText().Should().Contain("Hello<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"#fn-1\" id=\"fn-1a-ref\">[1a]</a>")
+                .And.Contain("world<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"#fn-1\" id=\"fn-1b-ref\">[1b]</a>")
+                .And.Contain("<a href=\"#fn-1a-ref\">1a</a>, <a href=\"#fn-1b-ref\">1b</a>. Shared note.");
+            sut.StatusMessage.Should().Be(Strings.Get("Status_FootnoteReferenceAdded"));
+            sut.ActiveCodeTab!.DocumentText.Should().Be(chapter.GetText());
 
-        // Act
-        FootnoteMenuState onSecond = host.GetFootnoteState(chapter, chapter.GetText().IndexOf("[1b]", StringComparison.Ordinal))!;
-        onSecond.Hit!.Footnote.IsShared.Should().BeTrue();
-        host.RemoveFootnoteReference(onSecond.Hit);
+            // Act
+            FootnoteMenuState onSecond = host.GetFootnoteState(chapter, chapter.GetText().IndexOf("[1b]", StringComparison.Ordinal))!;
+            onSecond.Hit!.Footnote.IsShared.Should().BeTrue();
+            await host.RemoveFootnoteReference(onSecond.Hit);
 
-        // Assert
-        chapter.GetText().Should().Contain("Hello<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"#fn-1\" id=\"fn-1-ref\">[1]</a>")
-            .And.NotContain("[1b]").And.Contain("<a href=\"#fn-1-ref\">1.</a> Shared note.");
-        sut.StatusMessage.Should().Be(Strings.Get("Status_FootnoteReferenceRemoved"));
+            // Assert
+            chapter.GetText().Should().Contain("Hello<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"#fn-1\" id=\"fn-1-ref\">[1]</a>")
+                .And.NotContain("[1b]").And.Contain("<a href=\"#fn-1-ref\">1.</a> Shared note.");
+            sut.StatusMessage.Should().Be(Strings.Get("Status_FootnoteReferenceRemoved"));
+        });
     }
 
     [Fact]
-    public void Shared_footnotes_in_another_style_open_the_unifying_dialog_and_unifying_rewrites_them()
+    public async Task Shared_footnotes_in_another_style_open_the_unifying_dialog_and_unifying_rewrites_them()
     {
-        // Arrange
-        using UiCultureScope culture = new("en");
-        TempDir temp = _disposables.Add(new TempDir());
-        (MainWindowViewModel sut, Book book, HtmlResource chapter) = OpenMinimalChapter(temp);
-        ICodeTabHost host = sut;
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel sut, Book book, HtmlResource chapter) = OpenMinimalChapter(temp);
+            ICodeTabHost host = sut;
 
-        // Act & Assert
-        sut.PrepareFootnoteLetters().Should().BeNull();
+            // Act & Assert
+            sut.PrepareFootnoteLetters().Should().BeNull();
 
-        // Assert
-        sut.StatusMessage.Should().Be(Strings.Get("Status_NoSharedFootnotes"));
+            // Assert
+            sut.StatusMessage.Should().Be(Strings.Get("Status_NoSharedFootnotes"));
 
-        // Act
-        host.AddFootnote(chapter, AfterHello(chapter), "Shared note.", FootnotePlacement.Local);
-        int end = chapter.GetText().IndexOf("world", StringComparison.Ordinal) + 5;
-        FootnoteEditor.AddReference(book, chapter, end, FootnoteScanner.Scan(book).Single(), out _,
-            FootnoteOptions.Default with { LetterStyle = FootnoteLetterStyle.UpperLatin }).Should().Be(FootnoteError.None);
-        sut.ActiveCodeTab!.Reload();
+            // Act
+            await host.AddFootnote(chapter, AfterHello(chapter), "Shared note.", FootnotePlacement.Local);
+            int end = chapter.GetText().IndexOf("world", StringComparison.Ordinal) + 5;
+            FootnoteEditor.AddReference(book, chapter, end, FootnoteScanner.Scan(book).Single(), out _,
+                FootnoteOptions.Default with { LetterStyle = FootnoteLetterStyle.UpperLatin }).Should().Be(FootnoteError.None);
+            sut.ActiveCodeTab!.Reload();
 
-        // Assert
-        sut.CountFootnoteLetterMismatches().Should().Be(1, "Preferences say a, b");
+            // Assert
+            sut.CountFootnoteLetterMismatches().Should().Be(1, "Preferences say a, b");
 
-        // Act
-        FootnoteLettersViewModel letters = sut.PrepareFootnoteLetters()!;
+            // Act
+            FootnoteLettersViewModel letters = sut.PrepareFootnoteLetters()!;
 
-        // Assert
-        letters.Style.Should().Be(FootnoteLetterStyle.LowerLatin);
-        letters.Notes.Should().ContainSingle();
+            // Assert
+            letters.Style.Should().Be(FootnoteLetterStyle.LowerLatin);
+            letters.Notes.Should().ContainSingle();
 
-        // Act
-        letters.UnifyCommand.Execute(null);
+            // Act
+            letters.UnifyCommand.Execute(null);
 
-        // Assert
-        chapter.GetText().Should().Contain("[1a]</a>").And.Contain("[1b]</a>").And.NotContain("[1A]");
-        sut.StatusMessage.Should().Be(Strings.Format("Status_FootnoteLettersUnified", 1, Strings.Get("FootnoteLetterStyle_LowerLatin")));
-        sut.ActiveCodeTab!.DocumentText.Should().Be(chapter.GetText());
-        sut.CountFootnoteLetterMismatches().Should().Be(0);
-        sut.PrepareFootnoteLetters().Should().BeNull();
-        sut.StatusMessage.Should().Be(Strings.Format("Status_FootnoteLettersAlreadyUnified", Strings.Get("FootnoteLetterStyle_LowerLatin")));
+            // Assert
+            chapter.GetText().Should().Contain("[1a]</a>").And.Contain("[1b]</a>").And.NotContain("[1A]");
+            sut.StatusMessage.Should().Be(Strings.Format("Status_FootnoteLettersUnified", 1, Strings.Get("FootnoteLetterStyle_LowerLatin")));
+            sut.ActiveCodeTab!.DocumentText.Should().Be(chapter.GetText());
+            sut.CountFootnoteLetterMismatches().Should().Be(0);
+            sut.PrepareFootnoteLetters().Should().BeNull();
+            sut.StatusMessage.Should().Be(Strings.Format("Status_FootnoteLettersAlreadyUnified", Strings.Get("FootnoteLetterStyle_LowerLatin")));
+        });
     }
 
     [Fact]
@@ -279,25 +291,28 @@ public sealed class MainWindowFootnotesTests : IDisposable
     }
 
     [Fact]
-    public void An_invalid_footnote_text_adds_nothing_and_says_why()
+    public async Task An_invalid_footnote_text_adds_nothing_and_says_why()
     {
-        // Arrange
-        using UiCultureScope culture = new("en");
-        TempDir temp = _disposables.Add(new TempDir());
-        (MainWindowViewModel sut, Book _, HtmlResource chapter) = OpenMinimalChapter(temp);
-        ICodeTabHost host = sut;
-        string before = chapter.GetText();
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel sut, Book _, HtmlResource chapter) = OpenMinimalChapter(temp);
+            ICodeTabHost host = sut;
+            string before = chapter.GetText();
 
-        // Act & Assert
-        host.ValidateFootnoteContent("a < b").Should().Be(FootnoteError.InvalidContent);
+            // Act & Assert
+            host.ValidateFootnoteContent("a < b").Should().Be(FootnoteError.InvalidContent);
 
-        // Act
-        host.AddFootnote(chapter, AfterHello(chapter), "a < b", FootnotePlacement.Local);
+            // Act
+            await host.AddFootnote(chapter, AfterHello(chapter), "a < b", FootnotePlacement.Local);
 
-        // Assert
-        chapter.GetText().Should().Be(before);
-        sut.StatusMessage.Should().Be(
-            Strings.Format("Status_FootnoteNotAdded", FootnoteViewModel.ErrorText(FootnoteError.InvalidContent)));
+            // Assert
+            chapter.GetText().Should().Be(before);
+            sut.StatusMessage.Should().Be(
+                Strings.Format("Status_FootnoteNotAdded", FootnoteViewModel.ErrorText(FootnoteError.InvalidContent)));
+        });
     }
 
     [Fact]
@@ -314,57 +329,67 @@ public sealed class MainWindowFootnotesTests : IDisposable
     }
 
     [Fact]
-    public void Renumbering_numbered_footnotes_reports_that_the_numbering_is_up_to_date()
+    public async Task Renumbering_numbered_footnotes_reports_that_the_numbering_is_up_to_date()
     {
-        // Arrange
-        using UiCultureScope culture = new("en");
-        TempDir temp = _disposables.Add(new TempDir());
-        (MainWindowViewModel sut, Book _, HtmlResource chapter) = OpenMinimalChapter(temp);
-        ICodeTabHost host = sut;
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel sut, Book _, HtmlResource chapter) = OpenMinimalChapter(temp);
+            ICodeTabHost host = sut;
 
-        // Act
-        host.AddFootnote(chapter, AfterHello(chapter), "Note.", FootnotePlacement.Local);
+            // Act
+            await host.AddFootnote(chapter, AfterHello(chapter), "Note.", FootnotePlacement.Local);
 
-        host.RenumberFootnotes();
+            await host.RenumberFootnotes();
 
-        // Assert
-        sut.StatusMessage.Should().Be(Strings.Get("Status_FootnotesUpToDate"));
+            // Assert
+            sut.StatusMessage.Should().Be(Strings.Get("Status_FootnotesUpToDate"));
+        });
     }
 
     [Fact]
-    public void The_placement_of_the_last_added_footnote_is_the_next_default()
+    public async Task The_placement_of_the_last_added_footnote_is_the_next_default()
     {
-        // Arrange
-        TempDir temp = _disposables.Add(new TempDir());
-        (MainWindowViewModel sut, Book _, HtmlResource chapter) = OpenMinimalChapter(temp);
-        ICodeTabHost host = sut;
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel sut, Book _, HtmlResource chapter) = OpenMinimalChapter(temp);
+            ICodeTabHost host = sut;
 
-        // Act
-        host.AddFootnote(chapter, AfterHello(chapter), "Note.", FootnotePlacement.Global);
+            // Act
+            await host.AddFootnote(chapter, AfterHello(chapter), "Note.", FootnotePlacement.Global);
 
-        // Assert
-        host.LastFootnotePlacement.Should().Be(FootnotePlacement.Global);
+            // Assert
+            host.LastFootnotePlacement.Should().Be(FootnotePlacement.Global);
 
-        // Act
-        host.AddFootnote(chapter, AfterHello(chapter), "Note.", FootnotePlacement.Local);
+            // Act
+            await host.AddFootnote(chapter, AfterHello(chapter), "Note.", FootnotePlacement.Local);
 
-        // Assert
-        host.LastFootnotePlacement.Should().Be(FootnotePlacement.Local);
+            // Assert
+            host.LastFootnotePlacement.Should().Be(FootnotePlacement.Local);
+        });
     }
 
     [Fact]
-    public void Tools_renumber_footnotes_renumbers_like_the_context_menu()
+    public async Task Tools_renumber_footnotes_renumbers_like_the_context_menu()
     {
-        // Arrange
-        using UiCultureScope culture = new("en");
-        TempDir temp = _disposables.Add(new TempDir());
-        (MainWindowViewModel sut, HtmlResource _) = OpenChapterWithForeignFootnote(temp);
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel sut, HtmlResource _) = OpenChapterWithForeignFootnote(temp);
 
-        // Act
-        sut.Actions.Require(AppActionIds.RenumberFootnotes).Execute(null);
+            // Act
+            sut.Actions.Require(AppActionIds.RenumberFootnotes).Execute(null);
+            await sut.WhenIdleAsync();
 
-        // Assert
-        sut.StatusMessage.Should().Be(Strings.Format("Status_FootnotesUpToDateForeignSkipped", 1));
+            // Assert
+            sut.StatusMessage.Should().Be(Strings.Format("Status_FootnotesUpToDateForeignSkipped", 1));
+        });
     }
 
     [Fact]
@@ -384,25 +409,60 @@ public sealed class MainWindowFootnotesTests : IDisposable
     }
 
     [Fact]
-    public void Renumbering_leaves_footnotes_of_other_origin_as_they_are_and_warns_about_them()
+    public async Task Renumbering_leaves_footnotes_of_other_origin_as_they_are_and_warns_about_them()
     {
-        // Arrange
-        using UiCultureScope culture = new("en");
-        TempDir temp = _disposables.Add(new TempDir());
-        (MainWindowViewModel sut, HtmlResource chapter) = OpenChapterWithForeignFootnote(temp);
-        ICodeTabHost host = sut;
-        int afterWorld = chapter.GetText().IndexOf(", world", StringComparison.Ordinal) + ", world".Length;
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel sut, HtmlResource chapter) = OpenChapterWithForeignFootnote(temp);
+            ICodeTabHost host = sut;
+            int afterWorld = chapter.GetText().IndexOf(", world", StringComparison.Ordinal) + ", world".Length;
 
-        // Act
-        host.AddFootnote(chapter, afterWorld, "Note.", FootnotePlacement.Local);
+            // Act
+            await host.AddFootnote(chapter, afterWorld, "Note.", FootnotePlacement.Local);
 
-        host.RenumberFootnotes();
+            await host.RenumberFootnotes();
 
-        // Assert
-        chapter.GetText().Should().Contain(">[7]</a>").And.Contain(">7.</a> Other note.")
-            .And.Contain("id=\"fn-2-ref\">[2]</a>", "the footnote of other origin before it counts");
-        sut.StatusMessage.Should().Be(Strings.Format("Status_FootnotesUpToDateForeignSkipped", 1));
-        sut.IsStatusMessageWarning.Should().BeTrue();
+            // Assert
+            chapter.GetText().Should().Contain(">[7]</a>").And.Contain(">7.</a> Other note.")
+                .And.Contain("id=\"fn-2-ref\">[2]</a>", "the footnote of other origin before it counts");
+            sut.StatusMessage.Should().Be(Strings.Format("Status_FootnotesUpToDateForeignSkipped", 1));
+            sut.IsStatusMessageWarning.Should().BeTrue();
+        });
+    }
+
+    [Fact]
+    public async Task Cancelling_the_renumbering_brings_the_book_back()
+    {
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel sut, Book _, HtmlResource chapter) = OpenMinimalChapter(temp);
+            ICodeTabHost host = sut;
+            await host.AddFootnote(chapter, AfterHello(chapter), "Note.", FootnotePlacement.Local);
+            string before = chapter.GetText();
+            int states = sut.CheckpointHistory.States.Count;
+            using CancellationTokenSource pressed = new();
+            ProgressRunner runner = (_, work, cancellable) =>
+            {
+                cancellable.Should().BeTrue();
+                pressed.Cancel();
+                return work(new RecordingProgress(), pressed.Token);
+            };
+
+            // Act
+            await host.RenumberFootnotes(runner);
+
+            // Assert
+            Book restored = ((IBookWorkspace)sut).CurrentBook!;
+            restored.GetHtmlResources().Single(h => h.Filename == chapter.Filename).GetText().Should().Be(before);
+            sut.CheckpointHistory.States.Should().HaveCount(states, "the checkpoint of the cancelled renumbering is forgotten");
+            sut.StatusMessage.Should().Be(Strings.Format("Status_OperationCancelledRestored", Strings.Get("FootnoteRenumber_ProgressTitle")));
+        });
     }
 
     [Fact]

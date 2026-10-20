@@ -3,6 +3,7 @@ using System.Linq;
 using System;
 using System.Threading.Tasks;
 using AvaloniaEdit.Document;
+using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.Core.BookManipulation;
@@ -1542,13 +1543,12 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
     }
 
     /// <summary>Adds the footnote accepted in the "Add Footnote" window at the caret (through the host, with a checkpoint).</summary>
-    public void AddFootnote(FootnoteRequest request)
+    public Task AddFootnote(FootnoteRequest request, ProgressRunner? runWithProgress = null)
     {
         ArgumentNullException.ThrowIfNull(request);
-        if (Host is { } host && Resource is HtmlResource html)
-        {
-            host.AddFootnote(html, _caretOffset, request.Content, request.Placement);
-        }
+        return Host is { } host && Resource is HtmlResource html
+            ? host.AddFootnote(html, _caretOffset, request.Content, request.Placement, runWithProgress)
+            : Task.CompletedTask;
     }
 
     /// <summary>
@@ -1567,13 +1567,12 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
     }
 
     /// <summary>Adds a reference at the caret to the note of <paramref name="target"/> (through the host, with a checkpoint).</summary>
-    public void AddFootnoteReference(Footnote target)
+    public Task AddFootnoteReference(Footnote target, ProgressRunner? runWithProgress = null)
     {
         ArgumentNullException.ThrowIfNull(target);
-        if (Host is { } host && Resource is HtmlResource html)
-        {
-            host.AddFootnoteReference(html, _caretOffset, target);
-        }
+        return Host is { } host && Resource is HtmlResource html
+            ? host.AddFootnoteReference(html, _caretOffset, target, runWithProgress)
+            : Task.CompletedTask;
     }
 
     /// <summary>
@@ -1610,23 +1609,18 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
     /// Applies what the "Edit Footnote" window was closed with to the footnote of <paramref name="hit"/>: saves its text
     /// and placement, or removes it (through the host, with a checkpoint).
     /// </summary>
-    public void ApplyFootnoteEdit(FootnoteHit hit, FootnoteRequest request)
+    public Task ApplyFootnoteEdit(FootnoteHit hit, FootnoteRequest request, ProgressRunner? runWithProgress = null)
     {
         ArgumentNullException.ThrowIfNull(hit);
         ArgumentNullException.ThrowIfNull(request);
         if (Host is not { } host)
         {
-            return;
+            return Task.CompletedTask;
         }
 
-        if (request.Remove)
-        {
-            host.RemoveFootnote(hit);
-        }
-        else
-        {
-            host.EditFootnote(hit, request.Content, request.Placement);
-        }
+        return request.Remove
+            ? host.RemoveFootnote(hit, runWithProgress)
+            : host.EditFootnote(hit, request.Content, request.Placement, runWithProgress);
     }
 
     /// <summary>"Split Tag" — splits the enclosing element at the caret.</summary>

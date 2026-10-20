@@ -4254,6 +4254,24 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="CheckpointOp_RenumberFootnotes" xml:space="preserve">
     <value>Przenumerowanie przypisów</value>
   </data>
+  <data name="FootnoteRenumber_ProgressTitle" xml:space="preserve">
+    <value>Przenumerowywanie przypisów</value>
+  </data>
+  <data name="FootnoteRenumber_Progress_Scanning" xml:space="preserve">
+    <value>Skanowanie przypisów…</value>
+  </data>
+  <data name="FootnoteRenumber_Progress_Numbering" xml:space="preserve">
+    <value>Numerowanie przypisów: {0} z {1}</value>
+  </data>
+  <data name="FootnoteRenumber_Progress_Writing" xml:space="preserve">
+    <value>Zapisywanie plików: {0} z {1}</value>
+  </data>
+  <data name="FootnoteRenumber_Progress_Sorting" xml:space="preserve">
+    <value>Porządkowanie plików: {0} z {1}</value>
+  </data>
+  <data name="FootnoteRenumber_Progress_Styling" xml:space="preserve">
+    <value>Stosowanie stylów: {0} z {1}</value>
+  </data>
   <data name="FootnoteWindow_Title" xml:space="preserve">
     <value>Dodaj przypis</value>
   </data>

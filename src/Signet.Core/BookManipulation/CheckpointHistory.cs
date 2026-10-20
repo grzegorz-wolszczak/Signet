@@ -85,6 +85,9 @@ public sealed class CheckpointHistory : IDisposable
     /// <summary>Raised after every change to the list of states or to <see cref="Position"/>.</summary>
     public event EventHandler? Changed;
 
+    private bool _suppressChanged;
+    private bool _missedChange;
+
     /// <summary>The states, oldest first.</summary>
     public IReadOnlyList<CheckpointState> States => _states;
 
@@ -431,5 +434,33 @@ public sealed class CheckpointHistory : IDisposable
         }
     }
 
-    private void OnChanged() => Changed?.Invoke(this, EventArgs.Empty);
+    private void OnChanged()
+    {
+        if (_suppressChanged)
+        {
+            _missedChange = true;
+            return;
+        }
+
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Stops <see cref="Changed"/> from firing until <see cref="ResumeChanged"/> — for a caller about to make a change
+    /// (e.g. <see cref="AddCheckpoint"/>, <see cref="Abandon"/>) off the UI thread: its subscribers (actions, panels)
+    /// would otherwise be touched from that thread. <see cref="ResumeChanged"/> fires it once more if anything changed
+    /// meanwhile.
+    /// </summary>
+    public void SuppressChanged() => _suppressChanged = true;
+
+    /// <summary>Lets <see cref="Changed"/> fire again (see <see cref="SuppressChanged"/>), firing it once if it was missed.</summary>
+    public void ResumeChanged()
+    {
+        _suppressChanged = false;
+        if (_missedChange)
+        {
+            _missedChange = false;
+            OnChanged();
+        }
+    }
 }
