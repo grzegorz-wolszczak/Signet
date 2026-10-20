@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using AwesomeAssertions;
 using Signet.Core.BookManipulation;
 using Signet.Core.Footnotes;
@@ -419,7 +420,7 @@ public sealed class FootnoteEditorTests
             // Act
             FootnoteEditor.Add(book, first, After(first, "First"), "note", FootnotePlacement.Local);
             FootnoteEditor.Add(book, second, After(second, "First"), "note 2", FootnotePlacement.Local);
-            FootnoteEditor.Renumber(book);
+            FootnoteEditor.Renumber(book, cancellationToken: TestContext.Current.CancellationToken);
 
             // Assert
             css.GetText().Should().Be("p { margin: 0; }\n\n" + FootnoteStyles.Default.ApplyTo(string.Empty));
@@ -444,10 +445,13 @@ public sealed class FootnoteEditorTests
             css.GetText().Should().Contain(".signet-fn {\n  color: blue;\n}");
 
             // Act & Assert
-            FootnoteEditor.Renumber(book, new FootnoteOptions(first)).Should().BeFalse("everything is up to date");
+            FootnoteEditor.Renumber(book, new FootnoteOptions(first), cancellationToken: TestContext.Current.CancellationToken)
+                .Should().BeFalse("everything is up to date");
 
             // Act & Assert
-            FootnoteEditor.Renumber(book, new FootnoteOptions(first with { Note = "color: green;" })).Should().BeTrue();
+            FootnoteEditor.Renumber(
+                    book, new FootnoteOptions(first with { Note = "color: green;" }), cancellationToken: TestContext.Current.CancellationToken)
+                .Should().BeTrue();
 
             // Assert
             css.GetText().Should().Contain(".signet-fn {\n  color: green;\n}").And.NotContain("blue");
@@ -489,7 +493,8 @@ public sealed class FootnoteEditorTests
             string before = html.GetText();
 
             // Act & Assert
-            FootnoteEditor.Renumber(book).Should().BeFalse("Signet changes other footnotes only by converting them");
+            FootnoteEditor.Renumber(book, cancellationToken: TestContext.Current.CancellationToken)
+                .Should().BeFalse("Signet changes other footnotes only by converting them");
 
             string text = html.GetText();
 
@@ -507,6 +512,23 @@ public sealed class FootnoteEditorTests
 
             // Assert
             html.GetText().Should().Contain("<p>Text.</p>").And.NotContain("aside");
+        }
+    }
+
+    [Fact]
+    public void A_cancelled_token_stops_renumbering()
+    {
+        // Arrange
+        (Book book, HtmlResource html) = NewBook();
+        using (book)
+        {
+            FootnoteEditor.Add(book, html, After(html, "First"), "note", FootnotePlacement.Local);
+            using CancellationTokenSource cancelled = new();
+            cancelled.Cancel();
+
+            // Act & Assert
+            Action act = () => FootnoteEditor.Renumber(book, cancellationToken: cancelled.Token);
+            act.Should().Throw<OperationCanceledException>();
         }
     }
 
@@ -734,14 +756,14 @@ public sealed class FootnoteEditorTests
             FootnoteEditor.GetContent(footnote).Should().Be(new FootnoteContent("One.\n\nTwo.", false));
 
             // Act
-            FootnoteEditor.Renumber(book).Should().BeTrue();
+            FootnoteEditor.Renumber(book, cancellationToken: TestContext.Current.CancellationToken).Should().BeTrue();
 
             // Assert
             html.GetText().Should().Contain(
                 "    <p class=\"signet-fn-p\"><a href=\"#fn-1-ref\">1.</a> One.</p>\n    <p class=\"signet-fn-p\">Two.</p>\n");
 
             // Act & Assert
-            FootnoteEditor.Renumber(book).Should().BeFalse("the note is up to date now");
+            FootnoteEditor.Renumber(book, cancellationToken: TestContext.Current.CancellationToken).Should().BeFalse("the note is up to date now");
         }
     }
 
@@ -911,7 +933,7 @@ public sealed class FootnoteEditorTests
             ShouldBeConsistent(book);
 
             // Act & Assert
-            FootnoteEditor.Renumber(book, ByChapter).Should().BeFalse("the groups are up to date");
+            FootnoteEditor.Renumber(book, ByChapter, cancellationToken: TestContext.Current.CancellationToken).Should().BeFalse("the groups are up to date");
         }
     }
 
@@ -968,7 +990,7 @@ public sealed class FootnoteEditorTests
             NotesContainer(book).Should().NotContain("signet-fn-group");
 
             // Act & Assert
-            FootnoteEditor.Renumber(book, ByChapter).Should().BeTrue();
+            FootnoteEditor.Renumber(book, ByChapter, cancellationToken: TestContext.Current.CancellationToken).Should().BeTrue();
 
             // Assert
             NotesContainer(book).Should().Contain("signet-fn-by-chapter")

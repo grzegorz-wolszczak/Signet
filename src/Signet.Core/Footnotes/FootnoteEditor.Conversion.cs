@@ -620,7 +620,7 @@ public static partial class FootnoteEditor
 
         List<int> indexes = converted.Select(c => beforeIndex.GetValueOrDefault(c.TempId, -1)).ToList();
         cancellationToken.ThrowIfCancellationRequested();
-        RenumberWith(book, options, null, cancellationToken);
+        RenumberWith(book, options, null, cancel: cancellationToken);
         if (signetFile is not null && !ReferenceEquals(signetFile, target) && book.GetHtmlResources().Contains(signetFile))
         {
             RemoveEmptyContainer(book, signetFile);

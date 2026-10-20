@@ -396,7 +396,7 @@ public sealed partial class MainWindowViewModel
         _actions.SetHandler(AppActionIds.ManageFonts, RequestManageFonts);
         _actions.SetHandler(AppActionIds.Standardize, () => StandardizeRequested?.Invoke(this, EventArgs.Empty));
         _actions.SetHandler(AppActionIds.LiveCssPanel, () => LiveCssPanelRequested?.Invoke(this, EventArgs.Empty));
-        _actions.SetHandler(AppActionIds.RenumberFootnotes, () => ((ICodeTabHost)this).RenumberFootnotes());
+        _actions.SetHandler(AppActionIds.RenumberFootnotes, () => RunAsyncAction(() => ((ICodeTabHost)this).RenumberFootnotes()));
         _actions.SetHandler(AppActionIds.ConvertFootnotes, () => ((ICodeTabHost)this).ShowFootnoteConversion());
         _actions.SetHandler(AppActionIds.UnifyFootnoteLetters, () => ((ICodeTabHost)this).ShowFootnoteLetters());
         _actions.SetHandler(AppActionIds.ChangeFootnotePlacement, () => FootnotePlacementRequested?.Invoke(this, EventArgs.Empty));

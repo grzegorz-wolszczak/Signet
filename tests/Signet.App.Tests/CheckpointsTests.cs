@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using AutoFixture.Xunit3;
 using AwesomeAssertions;
 using Signet.App.Actions;
@@ -311,7 +312,7 @@ public sealed class CheckpointsTests
     }
 
     [Fact]
-    public void Mend_all_html_creates_a_checkpoint_named_after_the_action()
+    public async Task Mend_all_html_creates_a_checkpoint_named_after_the_action()
     {
         // Arrange
         using TempDir temp = new();
@@ -319,6 +320,7 @@ public sealed class CheckpointsTests
 
         // Act
         s.Vm.Actions.Require(AppActionIds.MendHtml).Execute(null);
+        await s.Vm.WhenIdleAsync();
 
         // Assert
         s.Vm.CheckpointHistory.UndoMessage.Should().StartWith(Strings.Format("Checkpoint_Before", string.Empty))

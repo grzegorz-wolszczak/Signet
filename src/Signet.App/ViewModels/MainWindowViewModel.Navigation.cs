@@ -183,6 +183,12 @@ public sealed partial class MainWindowViewModel
     private void OnNavigationResourcePathChanged(object? sender, ResourceBookPathChangedEventArgs e)
     {
         _navigation.RenameBookPath(e.OldBookPath, e.Resource.BookPath);
+        if (_bookEditedInBackground)
+        {
+            // Raised off the UI thread; it would touch the open tab's document, so the place is refreshed once the work is done.
+            return;
+        }
+
         UpdateNavigationPlace();
     }
 

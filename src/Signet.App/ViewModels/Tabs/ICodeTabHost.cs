@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Avalonia.Input;
 using Signet.App.Actions;
+using Signet.App.Infrastructure;
 using Signet.Core.BookManipulation;
 using Signet.Core.Footnotes;
 using Signet.Core.MiscEditors;
@@ -124,9 +125,11 @@ public interface ICodeTabHost
 
     /// <summary>
     /// "Add Footnote" — adds a footnote at <paramref name="offset"/> of <paramref name="html"/> (with a checkpoint),
-    /// refreshes the tabs and panels and puts the caret on the new reference.
+    /// refreshes the tabs and panels and puts the caret on the new reference. Runs off the UI thread; <paramref
+    /// name="runWithProgress"/> shows a progress window over it only when it takes a moment (<c>null</c>: never shown).
     /// </summary>
-    void AddFootnote(HtmlResource html, int offset, string content, FootnotePlacement placement);
+    Task AddFootnote(
+        HtmlResource html, int offset, string content, FootnotePlacement placement, ProgressRunner? runWithProgress = null);
 
     /// <summary>
     /// "Add Reference to Footnote…" — the notes a reference at <paramref name="offset"/> of <paramref name="html"/> can
@@ -136,9 +139,10 @@ public interface ICodeTabHost
 
     /// <summary>
     /// "Add Reference to Footnote…" — adds a reference at <paramref name="offset"/> of <paramref name="html"/> to the note
-    /// of <paramref name="target"/> (with a checkpoint): the note becomes shared.
+    /// of <paramref name="target"/> (with a checkpoint): the note becomes shared. Runs off the UI thread; <paramref
+    /// name="runWithProgress"/> shows a progress window over it only when it takes a moment (<c>null</c>: never shown).
     /// </summary>
-    void AddFootnoteReference(HtmlResource html, int offset, Footnote target);
+    Task AddFootnoteReference(HtmlResource html, int offset, Footnote target, ProgressRunner? runWithProgress = null);
 
     /// <summary>
     /// "Edit Footnote" — the data of the footnote window for the footnote of <paramref name="hit"/> (saves the open tabs
@@ -152,21 +156,24 @@ public interface ICodeTabHost
     /// <summary>
     /// "Edit Footnote" — replaces the text of the note and moves it to <paramref name="placement"/> when it is elsewhere
     /// (with a checkpoint), refreshes the tabs and panels and puts the caret back on the part of the footnote of
-    /// <paramref name="hit"/>.
+    /// <paramref name="hit"/>. Runs off the UI thread; <paramref name="runWithProgress"/> shows a progress window over it
+    /// only when it takes a moment (<c>null</c>: never shown).
     /// </summary>
-    void EditFootnote(FootnoteHit hit, string content, FootnotePlacement placement);
+    Task EditFootnote(FootnoteHit hit, string content, FootnotePlacement placement, ProgressRunner? runWithProgress = null);
 
     /// <summary>
     /// "Remove Footnote" (the footnote window, the "Footnotes" submenu) — removes the note with all its references (with a
-    /// checkpoint).
+    /// checkpoint). Runs off the UI thread; <paramref name="runWithProgress"/> shows a progress window over it only when
+    /// it takes a moment (<c>null</c>: never shown).
     /// </summary>
-    void RemoveFootnote(FootnoteHit hit);
+    Task RemoveFootnote(FootnoteHit hit, ProgressRunner? runWithProgress = null);
 
     /// <summary>
     /// "Remove Reference" — removes the reference of <paramref name="hit"/> from its shared note; the other references
-    /// get their letters anew (with a checkpoint).
+    /// get their letters anew (with a checkpoint). Runs off the UI thread; <paramref name="runWithProgress"/> shows a
+    /// progress window over it only when it takes a moment (<c>null</c>: never shown).
     /// </summary>
-    void RemoveFootnoteReference(FootnoteHit hit);
+    Task RemoveFootnoteReference(FootnoteHit hit, ProgressRunner? runWithProgress = null);
 
     /// <summary>
     /// The preview of the footnote window: the markup of a footnote with <paramref name="content"/> as footnote
@@ -187,9 +194,10 @@ public interface ICodeTabHost
 
     /// <summary>
     /// "Renumber Footnotes" — renumbers Signet's footnotes of the book (with a checkpoint); footnotes of other origin are
-    /// left as they are, with a warning.
+    /// left as they are, with a warning. Runs off the UI thread under a progress window with Cancel (<paramref
+    /// name="runWithProgress"/>; <c>null</c> falls back to the window wired by the main window).
     /// </summary>
-    void RenumberFootnotes();
+    Task RenumberFootnotes(ProgressRunner? runWithProgress = null);
 
     /// <summary>"Convert Footnotes of Other Origin…" — opens the conversion dialog.</summary>
     void ShowFootnoteConversion();

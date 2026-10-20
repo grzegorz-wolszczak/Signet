@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
@@ -1381,33 +1382,29 @@ public sealed class CodeTabViewRenderTests : IDisposable
         public Signet.Core.Footnotes.FootnoteError ValidateFootnoteContent(string content) =>
             Signet.Core.Footnotes.FootnoteError.None;
 
-        public void AddFootnote(HtmlResource html, int offset, string content, Signet.Core.Footnotes.FootnotePlacement placement)
-        {
-        }
+        public Task AddFootnote(
+            HtmlResource html, int offset, string content, Signet.Core.Footnotes.FootnotePlacement placement,
+            ProgressRunner? runWithProgress = null) => Task.CompletedTask;
 
         public FootnoteEditState? GetFootnoteEdit(Signet.Core.Footnotes.FootnoteHit hit) => null;
 
         public Signet.Core.Footnotes.FootnoteError ValidateFootnoteEdit(Signet.Core.Footnotes.Footnote footnote, string content) =>
             Signet.Core.Footnotes.FootnoteError.None;
 
-        public void EditFootnote(
-            Signet.Core.Footnotes.FootnoteHit hit, string content, Signet.Core.Footnotes.FootnotePlacement placement)
-        {
-        }
+        public Task EditFootnote(
+            Signet.Core.Footnotes.FootnoteHit hit, string content, Signet.Core.Footnotes.FootnotePlacement placement,
+            ProgressRunner? runWithProgress = null) => Task.CompletedTask;
 
-        public void RemoveFootnote(Signet.Core.Footnotes.FootnoteHit hit)
-        {
-        }
+        public Task RemoveFootnote(Signet.Core.Footnotes.FootnoteHit hit, ProgressRunner? runWithProgress = null) => Task.CompletedTask;
 
-        public void RemoveFootnoteReference(Signet.Core.Footnotes.FootnoteHit hit)
-        {
-        }
+        public Task RemoveFootnoteReference(Signet.Core.Footnotes.FootnoteHit hit, ProgressRunner? runWithProgress = null) =>
+            Task.CompletedTask;
 
         public Signet.Core.Footnotes.ReferenceTargetList? GetFootnoteReferenceTargets(HtmlResource html, int offset) => null;
 
-        public void AddFootnoteReference(HtmlResource html, int offset, Signet.Core.Footnotes.Footnote target)
-        {
-        }
+        public Task AddFootnoteReference(
+            HtmlResource html, int offset, Signet.Core.Footnotes.Footnote target, ProgressRunner? runWithProgress = null) =>
+            Task.CompletedTask;
 
         public Signet.Core.Footnotes.FootnoteMarkup? PreviewFootnote(
             HtmlResource html, int referenceStart, int referenceEnd, string content, Signet.Core.Footnotes.FootnotePlacement placement, int number,
@@ -1419,9 +1416,7 @@ public sealed class CodeTabViewRenderTests : IDisposable
         {
         }
 
-        public void RenumberFootnotes()
-        {
-        }
+        public Task RenumberFootnotes(ProgressRunner? runWithProgress = null) => Task.CompletedTask;
 
         public void ShowFootnoteLetters()
         {

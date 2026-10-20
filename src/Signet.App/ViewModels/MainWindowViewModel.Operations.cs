@@ -35,6 +35,8 @@ public sealed partial class MainWindowViewModel
         string title, ProgressRunner? runner, bool editsBook, bool cancellable, Func<IProgress<WorkProgress>, CancellationToken, T> work)
     {
         T result = default!;
+        long start = System.Diagnostics.Stopwatch.GetTimestamp();
+        DebugLog.Write("Operation", $"{title}: starting in background" + (runner is null ? " (no progress window)" : string.Empty));
 
         // The work decides when it stops (it checks the token), so the task is not given the token: it always starts.
         Task Run(IProgress<WorkProgress> progress, CancellationToken cancel) => Task.Run(() => result = work(progress, cancel));
@@ -47,6 +49,12 @@ public sealed partial class MainWindowViewModel
         try
         {
             await (runner is null ? Run(new Progress<WorkProgress>(), CancellationToken.None) : runner(title, Run, cancellable)).ConfigureAwait(true);
+            DebugLog.Write("Operation", $"{title}: finished ({DebugLog.Elapsed(start)})");
+        }
+        catch (OperationCanceledException)
+        {
+            DebugLog.Write("Operation", $"{title}: cancelled ({DebugLog.Elapsed(start)})");
+            throw;
         }
         finally
         {
@@ -56,6 +64,7 @@ public sealed partial class MainWindowViewModel
                 BookBrowser.SuspendRebuilds = false;
                 RefreshTitle();
                 _toc.Refresh();
+                UpdateNavigationPlace();
             }
         }
 
@@ -73,7 +82,7 @@ public sealed partial class MainWindowViewModel
         string title, string? checkpointName, bool editsBook, Func<IProgress<WorkProgress>, CancellationToken, T> work,
         ProgressRunner? runner = null)
     {
-        bool checkpoint = checkpointName is not null && AddCheckpointBefore(checkpointName);
+        bool checkpoint = checkpointName is not null && await AddCheckpointBeforeAsync(checkpointName).ConfigureAwait(true);
         try
         {
             T result = await RunInBackgroundAsync(title, runner ?? ProgressRunner, editsBook, cancellable: !editsBook || checkpoint, work)
@@ -84,7 +93,7 @@ public sealed partial class MainWindowViewModel
         {
             if (checkpoint)
             {
-                AbandonCheckpoint();
+                await AbandonCheckpointAsync().ConfigureAwait(true);
             }
 
             _statusBar.ShowMessage(
