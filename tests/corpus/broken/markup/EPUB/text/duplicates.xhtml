@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="en" xml:lang="en">
+<head>
+  <title>Repeated ids</title>
+  <meta charset="utf-8"/>
+</head>
+<body>
+  <h1 id="duplicates">Repeated ids</h1>
+
+  <!-- The same id written twice. A lookup by id has to answer with the first one, as the DOM does. -->
+  <p id="twin">The first twin.</p>
+  <p id="twin">The second twin.</p>
+
+  <!-- A footnote whose reference id is also used by something else further down. -->
+  <p>Note<a epub:type="noteref" href="#note" id="note-ref">[1]</a>.</p>
+  <p><span id="note-ref">Something else wearing the reference's id.</span></p>
+
+  <!-- A link to an id that is written twice. -->
+  <p><a href="#twin">To the twins</a>.</p>
+
+  <section epub:type="footnotes">
+    <aside epub:type="footnote" id="note"><p><a href="#note-ref">1.</a> The note.</p></aside>
+  </section>
+</body>
+</html>

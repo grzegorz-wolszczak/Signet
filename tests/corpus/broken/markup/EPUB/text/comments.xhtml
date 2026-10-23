@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="en" xml:lang="en">
+<head>
+  <title>Comments and look-alikes</title>
+  <meta charset="utf-8"/>
+</head>
+<body>
+  <h1 id="comments">Comments and look-alikes</h1>
+
+  <!-- A comment that looks as if it held another comment: <!-- the inner one -- ends the whole thing here, and
+       the rest is text. A scanner that counts "<!--" and "-->" in pairs reads this file wrongly. -->
+  <p id="after-comment">Text after the comment.</p>
+
+  <!-- A comment holding a whole footnote, which must not be found as one:
+  <p>Ghost<a epub:type="noteref" href="#ghost" id="ghost-ref">[9]</a>.</p>
+  <aside epub:type="footnote" id="ghost"><p><a href="#ghost-ref">9.</a> Ghost.</p></aside>
+  -->
+
+  <p>A real footnote<a epub:type="noteref" href="#real" id="real-ref">[1]</a>.</p>
+
+  <!-- A script and a style holding what looks like markup: neither is content. -->
+  <script type="text/javascript">var a = "<aside id=\"not-a-note\">"; if (1 < 2) { a += "</aside>"; }</script>
+  <style type="text/css">/* a &gt; b { content: "<p>"; } */ p { margin: 0; }</style>
+
+  <p id="cdata">Characters: &amp; &lt; &gt; &#8212; &#x2014; and a non-breaking&#160;space.</p>
+
+  <section epub:type="footnotes">
+    <aside epub:type="footnote" id="real"><p><a href="#real-ref">1.</a> The only note in this file.</p></aside>
+  </section>
+</body>
+</html>

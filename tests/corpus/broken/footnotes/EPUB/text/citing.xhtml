@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="en" xml:lang="en">
+<head>
+  <title>Footnotes citing footnotes</title>
+  <meta charset="utf-8"/>
+</head>
+<body>
+  <h1 id="citing">Footnotes citing footnotes</h1>
+
+  <!-- A footnote cited from inside another footnote's text: the reference of "aside" stands in the text of
+       "outer". Found in October 2026; Signet used to drop the reference's replacement with the cut and leave a
+       link back to a temporary id, which the F7 check caught and the caller rewound. -->
+  <p>One<a epub:type="noteref" href="#one" id="one-ref">[1]</a>.</p>
+
+  <!-- Two footnotes citing each other: no order of whole footnotes can serve this. -->
+  <p>Two<a epub:type="noteref" href="#left" id="left-ref">[2]</a>.</p>
+
+  <!-- An ordinary footnote, so the file is not only awkward cases. -->
+  <p>Three<a epub:type="noteref" href="#plain" id="plain-ref">[3]</a>.</p>
+
+  <section epub:type="footnotes">
+    <aside epub:type="footnote" id="one"><p><a href="#one-ref">1.</a> Cites<a epub:type="noteref" href="#aside" id="aside-ref">[4]</a> another note.</p></aside>
+    <aside epub:type="footnote" id="aside"><p><a href="#aside-ref">4.</a> Cited from inside a note.</p></aside>
+    <aside epub:type="footnote" id="left"><p><a href="#left-ref">2.</a> Left, cf.<a epub:type="noteref" href="#right" id="right-ref">[5]</a></p></aside>
+    <aside epub:type="footnote" id="right"><p><a href="#right-ref">5.</a> Right, cf.<a epub:type="noteref" href="#left" id="left-ref-2">[2b]</a></p></aside>
+    <aside epub:type="footnote" id="plain"><p><a href="#plain-ref">3.</a> Plain.</p></aside>
+  </section>
+</body>
+</html>

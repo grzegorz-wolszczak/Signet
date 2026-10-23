@@ -22,14 +22,12 @@ public sealed class TagListerTests
 
     public static TheoryData<string> AllCorpusXhtml()
     {
-        string malformedDir = $"{Path.DirectorySeparatorChar}malformed{Path.DirectorySeparatorChar}";
         TheoryData<string> data = new();
-        foreach (string path in Directory.EnumerateFiles(CorpusPaths.Root, "*.xhtml", SearchOption.AllDirectories))
+        foreach (string path in Directory
+                     .EnumerateFiles(CorpusPaths.Root, "*.xhtml", SearchOption.AllDirectories)
+                     .Where(p => !CorpusPaths.IsFaultyOnPurpose(p)))
         {
-            if (!path.Contains(malformedDir, StringComparison.Ordinal))
-            {
-                data.Add(path);
-            }
+            data.Add(path);
         }
 
         return data;
@@ -314,6 +312,34 @@ public sealed class TagListerTests
         lister.Count.Should().BeGreaterThan(1);
         lister.FindBodyOpenTag().Should().BeGreaterThanOrEqualTo(0);
         lister.FindFirstNestingError().Should().BeNull();
+    }
+
+    /// <summary>
+    /// Found in October 2026 on <c>tests/corpus/broken/markup</c>: <see cref="TagLister"/> is a scanner over the
+    /// text, not a parser, so what a <c>&lt;style&gt;</c> or a <c>&lt;script&gt;</c> holds is read as markup too.
+    /// A <c>&lt;p&gt;</c> written inside a CSS string therefore opens a tag that is never closed, and the
+    /// <c>&lt;/style&gt;</c> that follows is reported as mismatched although the document is sound.
+    ///
+    /// This is wrong but harmless where it is used: <c>WellFormedChecker</c> asks for the nesting error only after
+    /// <c>XmlReader</c> has already refused the file, to say where the trouble is — so the false report can only
+    /// mislead the message of a file that is broken anyway. The test asserts today's behaviour; the day the scanner
+    /// learns about raw-text elements, it will say so.
+    /// </summary>
+    [Fact]
+    public void TagsWrittenInsideAStyleAreReadAsMarkup()
+    {
+        // Arrange
+        const string source =
+            "<html><body>\n"
+            + "<style type=\"text/css\">p { content: \"<p>\"; }</style>\n"
+            + "</body></html>\n";
+
+        // Act
+        NestingError? error = new TagLister(source).FindFirstNestingError();
+
+        // Assert
+        error.Should().NotBeNull();
+        error!.Value.TagName.Should().Be("style", "the <p> inside the CSS was taken for an open tag");
     }
 
     [Fact]

@@ -136,6 +136,25 @@ Rules:
 - `Catastrophic failure: Call from invalid thread` lines printed during a full `dotnet test` run are
   known noise from the headless UI tests; they do not fail the run.
 
+### A case found is a case written into a book
+
+- **When work finds a case the tests did not cover, the case goes into a corpus book — not into a note
+  in a `.md` file.** `tests/corpus/broken/` holds valid EPUBs written around the shapes that caught
+  Signet out (footnotes citing footnotes, a comment swallowing a closing tag, repeated ids…), each
+  with a comment saying when and why it was added; `tests/corpus/broken/README.md` has the rule and
+  how to add one. Assert the behaviour in the matching test — and if the behaviour is wrong and not
+  yet fixed, assert the wrong behaviour and say so, so the day it changes something says it changed.
+  (`tests/corpus/malformed/` is the other thing: books broken as EPUBs, which stop Signet at the door.)
+- **`tests/corpus/real/`** holds the markup of real published books with the prose replaced by Lorem
+  ipsum (`EpubAnonymizer`): everything structural is kept, including the faults the books shipped
+  with. Those faults stay — a fixture tidied up for the tests stops being evidence. A test on such a
+  book records what it comes with and holds the operation to **adding nothing**.
+- **Scale is generated, not stored.** `SyntheticBook` writes a book of any size and shape; the corpus
+  books hold one to three content files and cannot show a cost that grows with the book.
+- **Timings are never asserted.** `tests/Signet.Benchmarks` measures on demand only
+  (`SIGNET_BENCHMARKS=1`), asserts only that the work was done, and keeps numbers in `BASELINE.md`
+  to compare by eye. The same code measured 2145 ms and 3156 ms on one machine in one session.
+
 ### Tests leave nothing behind
 
 - **Every test deletes everything it made** — files, folders, books, view models. **When writing or changing tests,

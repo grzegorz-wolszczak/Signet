@@ -5,7 +5,6 @@ using System.Linq;
 using AwesomeAssertions;
 using Signet.Core.BookManipulation;
 using Signet.Core.Footnotes;
-using Signet.Core.Resources;
 using Xunit;
 
 namespace Signet.Core.Tests.TestSupport;

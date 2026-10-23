@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using AwesomeAssertions;
 using Signet.Core.BookManipulation;
 using Signet.Core.Tests.TestSupport;
@@ -27,6 +28,24 @@ public sealed class CleanSourceTests
     {
         TheoryData<string> data = new();
         foreach (string path in Directory.EnumerateFiles(CorpusPaths.Root, "*.xhtml", SearchOption.AllDirectories))
+        {
+            data.Add(path);
+        }
+
+        return data;
+    }
+
+    /// <summary>
+    /// The corpus files that are not faulty on purpose. <c>Mend</c> repairs an ordinary fault — an unclosed tag, a
+    /// bare ampersand, a missing <c>body</c> — but it does not rewrite what a comment swallowed, so the books of
+    /// <c>broken/</c> and <c>malformed/</c> are left to the tests written for them.
+    /// </summary>
+    public static TheoryData<string> SoundCorpusXhtml()
+    {
+        TheoryData<string> data = new();
+        foreach (string path in Directory
+                     .EnumerateFiles(CorpusPaths.Root, "*.xhtml", SearchOption.AllDirectories)
+                     .Where(p => !CorpusPaths.IsFaultyOnPurpose(p)))
         {
             data.Add(path);
         }
@@ -334,7 +353,7 @@ public sealed class CleanSourceTests
     // =====================================================================
 
     [Theory]
-    [MemberData(nameof(AllCorpusXhtml))]
+    [MemberData(nameof(SoundCorpusXhtml))]
     public void Mend_EveryCorpusXhtml_IsWellFormedForBothEpubVersions(string xhtmlPath)
     {
         // Arrange
@@ -370,5 +389,26 @@ public sealed class CleanSourceTests
 
         // Act & Assert
         WellFormedChecker.Check(CleanSource.Mend(source, "3.0")).IsWellFormed.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// What <c>Mend</c> does not repair, found in October 2026 while writing <c>tests/corpus/broken/markup</c>:
+    /// a comment holding a <c>--</c>. XML ends a comment at the first <c>--</c>, so the text after it is markup
+    /// again — and that text is prose, not tags. Mending it would mean deciding where the author meant the comment
+    /// to end, which <c>Mend</c> does not guess; the file is left not well formed, both before and after.
+    /// This test asserts today's behaviour so the day it changes, something says it changed.
+    /// </summary>
+    [Fact]
+    public void Mend_DoesNotRepairACommentHoldingADoubleHyphen()
+    {
+        // Arrange
+        string source = File.ReadAllText(
+            Path.Combine(CorpusPaths.Broken("markup"), "EPUB", "text", "comments.xhtml"));
+
+        // Act & Assert
+        WellFormedChecker.Check(source).IsWellFormed.Should().BeFalse("XML ends the comment at the first --");
+
+        // Act & Assert
+        WellFormedChecker.Check(CleanSource.Mend(source, "3.0")).IsWellFormed.Should().BeFalse();
     }
 }

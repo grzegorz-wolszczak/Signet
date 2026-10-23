@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="en" xml:lang="en">
+<head>
+  <title>Awkward footnotes</title>
+  <meta charset="utf-8"/>
+</head>
+<body>
+  <h1 id="awkward">Awkward footnotes</h1>
+  <p>Nested<a epub:type="noteref" href="#outer" id="outer-ref">[1]</a>, inner<a epub:type="noteref" href="#inner" id="inner-ref">[3]</a>, shared<a epub:type="noteref" href="#shared" id="shared-ref">[2]</a> and again<a epub:type="noteref" href="#shared">[2]</a>.</p>
+
+  <section epub:type="footnotes">
+    <!-- A comment that swallows a closing tag, so one note holds another. The book is well formed; the note
+         simply contains the other one. Signet converts the inner note first, so the outer one keeps its own text. -->
+    <aside epub:type="footnote" id="outer"><p><a href="#outer-ref">1.</a> Outer.<!--
+    </aside-->
+    <aside epub:type="footnote" id="inner"><p><a href="#inner-ref">3.</a> Inner.</p></aside>
+    </p></aside>
+
+    <!-- A shared note: two references, and a link back to only the first of them. -->
+    <aside epub:type="footnote" id="shared"><p><a href="#shared-ref">2.</a> Shared, with one link back.</p></aside>
+
+    <!-- A note nothing links to, whose link back points at an id nobody wrote. -->
+    <aside epub:type="footnote" id="orphan"><p><a href="#never-written">4.</a> Orphan.</p></aside>
+  </section>
+</body>
+</html>

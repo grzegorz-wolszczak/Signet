@@ -17,11 +17,10 @@ public sealed class PrettyPrintTests
 
     public static TheoryData<string> AllCorpusXhtml()
     {
-        string malformedDir = $"{Path.DirectorySeparatorChar}malformed{Path.DirectorySeparatorChar}";
         TheoryData<string> data = new();
         foreach (string path in Directory.EnumerateFiles(CorpusPaths.Root, "*.xhtml", SearchOption.AllDirectories))
         {
-            if (!path.Contains(malformedDir, StringComparison.Ordinal))
+            if (!CorpusPaths.IsFaultyOnPurpose(path))
             {
                 data.Add(path);
             }
@@ -120,7 +119,7 @@ public sealed class PrettyPrintTests
                     ? "application/x-dtbncx+xml"
                     : null!;
 
-            if (mediaType is null || path.Contains($"{Path.DirectorySeparatorChar}malformed{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+            if (mediaType is null || CorpusPaths.IsFaultyOnPurpose(path))
             {
                 continue;
             }

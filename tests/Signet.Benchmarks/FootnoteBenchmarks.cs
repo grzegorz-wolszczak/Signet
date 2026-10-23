@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -7,7 +6,6 @@ using System.Text;
 using AwesomeAssertions;
 using Signet.Core.BookManipulation;
 using Signet.Core.Footnotes;
-using Signet.Core.Importers;
 using Signet.Core.Tests.TestSupport;
 using Xunit;
 
@@ -89,7 +87,7 @@ public sealed class FootnoteBenchmarks
             result.Converted.Should().Be(expected);
         }
 
-        Publish(shape, report.ToString());
+        Publish(report.ToString());
     }
 
     private static long Best(int times, Action work)
@@ -114,7 +112,7 @@ public sealed class FootnoteBenchmarks
     private static void Row(StringBuilder report, string name, long ms) =>
         report.Append(CultureInfo.InvariantCulture, $"| {name} | {ms} |\n");
 
-    private static void Publish(string shape, string report)
+    private static void Publish(string report)
     {
         TestContext.Current.TestOutputHelper?.WriteLine(report);
         if (Environment.GetEnvironmentVariable("SIGNET_BENCHMARK_OUT") is { Length: > 0 } path)
