@@ -19,11 +19,12 @@ public partial class StandardizationWindow : Window
         CloseButton.Click += (_, _) => Close();
     }
 
-    /// <summary>Shows the dialog and waits until it is closed.</summary>
-    public static async Task ShowAsync(Window owner, StandardizationViewModel viewModel)
+    /// <summary>Shows the dialog and waits until it is closed; <paramref name="created"/> gets the window before it is shown.</summary>
+    public static async Task ShowAsync(Window owner, StandardizationViewModel viewModel, Action<StandardizationWindow>? created = null)
     {
         ArgumentNullException.ThrowIfNull(viewModel);
         StandardizationWindow window = new() { DataContext = viewModel };
+        created?.Invoke(window);
         void OnCloseRequested(object? sender, EventArgs e) => window.Close();
         viewModel.CloseRequested += OnCloseRequested;
         try

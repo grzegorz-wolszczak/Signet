@@ -805,29 +805,32 @@ public sealed class MainWindowFootnotesTests : IDisposable
 
     [Theory]
     [AutoData]
-    public void Abandoning_a_checkpoint_brings_the_book_back_and_forgets_the_failed_state(string operation, string edit)
+    public async Task Abandoning_a_checkpoint_brings_the_book_back_and_forgets_the_failed_state(string operation, string edit)
     {
-        // Arrange
-        TempDir temp = _disposables.Add(new TempDir());
-        (MainWindowViewModel sut, Book _, HtmlResource chapter) = OpenMinimalChapter(temp);
-        string before = chapter.GetText();
-        int states = sut.CheckpointHistory.States.Count;
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel sut, Book _, HtmlResource chapter) = OpenMinimalChapter(temp);
+            string before = chapter.GetText();
+            int states = sut.CheckpointHistory.States.Count;
 
-        // Act & Assert
-        sut.AddCheckpointBefore(operation).Should().BeTrue();
-        chapter.SetText(before.Replace("Hello", edit, StringComparison.Ordinal));
+            // Act & Assert
+            (await sut.AddCheckpointBeforeAsync(operation)).Should().BeTrue();
+            chapter.SetText(before.Replace("Hello", edit, StringComparison.Ordinal));
 
-        // Act
-        sut.AbandonCheckpoint().Should().BeTrue();
+            // Act
+            sut.AbandonCheckpoint().Should().BeTrue();
 
-        Book restored = ((IBookWorkspace)sut).CurrentBook!;
+            Book restored = ((IBookWorkspace)sut).CurrentBook!;
 
-        // Assert
-        restored.GetHtmlResources().Single(h => h.Filename == "chapter1.xhtml").GetText().Should().Be(before);
-        sut.CheckpointHistory.States.Should().HaveCount(states);
-        sut.CheckpointHistory.CanRedo.Should().BeFalse();
+            // Assert
+            restored.GetHtmlResources().Single(h => h.Filename == "chapter1.xhtml").GetText().Should().Be(before);
+            sut.CheckpointHistory.States.Should().HaveCount(states);
+            sut.CheckpointHistory.CanRedo.Should().BeFalse();
 
-        // Act & Assert
-        sut.AbandonCheckpoint().Should().BeFalse("there is no checkpoint just created any more");
+            // Act & Assert
+            sut.AbandonCheckpoint().Should().BeFalse("there is no checkpoint just created any more");
+        });
     }
 }

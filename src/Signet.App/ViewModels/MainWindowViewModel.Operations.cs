@@ -14,7 +14,7 @@ namespace Signet.App.ViewModels;
 /// percent and, when the book can be brought back (a checkpoint was taken before), Cancel — which puts the book back to the
 /// state before the operation.
 /// </summary>
-public sealed partial class MainWindowViewModel
+public sealed partial class MainWindowViewModel : IBookOperationHost
 {
     /// <summary>
     /// Runs a long operation with a progress window over the main window; set by the view. <c>null</c> (the tests): the work
@@ -57,6 +57,20 @@ public sealed partial class MainWindowViewModel
         AppActionIds.UnifyFootnoteLetters,
         AppActionIds.ChangeFootnotePlacement,
         AppActionIds.Cleanup,
+        AppActionIds.ReplaceAll,
+        AppActionIds.ReplaceAllInFile,
+        AppActionIds.CreateCheckpoint,
+        AppActionIds.GenerateToc,
+        AppActionIds.EditToc,
+        AppActionIds.Standardize,
+        AppActionIds.StandardizeEpub,
+        AppActionIds.UseStandardFileExtensions,
+        AppActionIds.RebaseManifestIds,
+        AppActionIds.SplitSection,
+        AppActionIds.SplitOnSgfSectionMarkers,
+        AppActionIds.CreateHtmlToc,
+        AppActionIds.UpgradeToEpub3,
+        AppActionIds.AddCover,
         AppActionIds.RevertToBefore,
         AppActionIds.RevertToAfter,
     ];
@@ -72,6 +86,23 @@ public sealed partial class MainWindowViewModel
     {
         get => _bookOperationBusy;
         private set => SetProperty(ref _bookOperationBusy, value);
+    }
+
+    /// <inheritdoc/>
+    Task<BookOperationOutcome<T>> IBookOperationHost.RunAsync<T>(string title, string? checkpointName, Func<T> work) =>
+        RunBookOperationAsync(title, checkpointName, editsBook: true, (_, _) => work(), interruptible: false);
+
+    /// <inheritdoc/>
+    async Task<bool> IBookWorkspace.RunBookWorkAsync(string title, Action<IProgress<WorkProgress>> work)
+    {
+        ArgumentNullException.ThrowIfNull(work);
+        BookOperationOutcome<bool> run = await RunBookOperationAsync(
+            title, checkpointName: null, editsBook: true, (progress, _) =>
+            {
+                work(progress);
+                return true;
+            }).ConfigureAwait(true);
+        return run.Completed;
     }
 
     // Marks a background book operation as started; false (with a status message) when one is already running.
@@ -93,12 +124,6 @@ public sealed partial class MainWindowViewModel
         IsBookOperationBusy = false;
         _actions.SetBusy(false, BookOperationActionIds);
     }
-
-    /// <summary>The outcome of <see cref="RunBookOperationAsync{T}"/>.</summary>
-    /// <param name="Completed">Whether the work ran to the end (not cancelled).</param>
-    /// <param name="Result">What the work returned; <c>default</c> when it was cancelled.</param>
-    /// <param name="Checkpoint">Whether a checkpoint was taken before the operation (and, when cancelled, used to bring the book back).</param>
-    private readonly record struct BookOperationOutcome<T>(bool Completed, T? Result, bool Checkpoint);
 
     // Runs `work` off the UI thread (under `runner`, when there is one: the progress window titled `title`) and returns its result.
     private async Task<T> RunInBackgroundAsync<T>(
@@ -146,11 +171,11 @@ public sealed partial class MainWindowViewModel
     /// <paramref name="checkpointName"/> (when given), runs <paramref name="work"/> off the UI thread under the progress window
     /// <paramref name="title"/>, and when the user cancels puts the book back from the checkpoint. A read-only operation
     /// (<paramref name="editsBook"/> <c>false</c>) can always be cancelled; one that edits the book only when there is a checkpoint
-    /// to go back to.
+    /// to go back to. Neither can be cancelled when the work is not <paramref name="interruptible"/> (it does not check the token).
     /// </summary>
     private async Task<BookOperationOutcome<T>> RunBookOperationAsync<T>(
         string title, string? checkpointName, bool editsBook, Func<IProgress<WorkProgress>, CancellationToken, T> work,
-        ProgressRunner? runner = null)
+        ProgressRunner? runner = null, bool interruptible = true)
     {
         if (!TryEnterBookOperation())
         {
@@ -170,7 +195,7 @@ public sealed partial class MainWindowViewModel
 
             try
             {
-                T result = await RunInBackgroundAsync(title, runner ?? ProgressRunner, editsBook, cancellable: !editsBook || checkpoint, work)
+                T result = await RunInBackgroundAsync(title, runner ?? ProgressRunner, editsBook, cancellable: interruptible && (!editsBook || checkpoint), work)
                     .ConfigureAwait(true);
                 return new BookOperationOutcome<T>(true, result, checkpoint);
             }

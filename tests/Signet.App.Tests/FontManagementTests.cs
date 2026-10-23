@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -92,7 +93,7 @@ public sealed class FontManagementTests
     }
 
     [Fact]
-    public void Added_fonts_get_rules_and_deleting_them_cleans_the_stylesheet()
+    public async Task Added_fonts_get_rules_and_deleting_them_cleans_the_stylesheet()
     {
         // Arrange
         using TempDir temp = new();
@@ -102,7 +103,7 @@ public sealed class FontManagementTests
         CssResource css = book.GetCssResources().Single();
 
         // Act
-        List<FontResource> fonts = sut.AddFiles(WriteFonts(temp)).OfType<FontResource>().ToList();
+        List<FontResource> fonts = (await sut.AddFilesAsync(WriteFonts(temp))).OfType<FontResource>().ToList();
         FontFaceDialogViewModel dialog = sut.PrepareFontFaces(fonts)!;
 
         // Assert
@@ -111,7 +112,7 @@ public sealed class FontManagementTests
 
         // Act
         dialog.SetBodyFont = true;
-        sut.ApplyFontFaces(dialog.BuildResult()).Should().BeSameAs(css);
+        (await sut.ApplyFontFacesAsync(dialog.BuildResult())).Should().BeSameAs(css);
 
         // Assert
         css.GetText().Should().Contain("font-family: \"Acme Text\";").And.Contain("font-style: italic;")
@@ -125,7 +126,7 @@ public sealed class FontManagementTests
         removal.UsageItems.Should().ContainSingle();
 
         // Act
-        sut.DeleteResources(fonts.Cast<Resource>().ToList(), removal.Plan, removal.ExcludedKeys());
+        await sut.DeleteResourcesAsync(fonts.Cast<Resource>().ToList(), removal.Plan, removal.ExcludedKeys());
 
         // Assert
         book.GetAllResources().OfType<FontResource>().Should().BeEmpty();
@@ -133,14 +134,14 @@ public sealed class FontManagementTests
     }
 
     [Fact]
-    public void A_face_typed_twice_in_the_dialog_is_skipped_with_a_reason()
+    public async Task A_face_typed_twice_in_the_dialog_is_skipped_with_a_reason()
     {
         // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Minimal, temp);
         BookBrowserViewModel sut = NewViewModel();
         sut.SetBook(book);
-        List<FontResource> fonts = sut.AddFiles(WriteFonts(temp)).OfType<FontResource>().ToList();
+        List<FontResource> fonts = (await sut.AddFilesAsync(WriteFonts(temp))).OfType<FontResource>().ToList();
         FontFaceDialogViewModel dialog = sut.PrepareFontFaces(fonts)!;
 
         // Act
@@ -160,31 +161,31 @@ public sealed class FontManagementTests
     }
 
     [Fact]
-    public void Deleting_a_font_no_stylesheet_uses_needs_no_font_window()
+    public async Task Deleting_a_font_no_stylesheet_uses_needs_no_font_window()
     {
         // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Minimal, temp);
         BookBrowserViewModel sut = NewViewModel();
         sut.SetBook(book);
-        List<Resource> fonts = sut.AddFiles(WriteFonts(temp)).ToList();
+        List<Resource> fonts = (await sut.AddFilesAsync(WriteFonts(temp))).ToList();
 
         // Act & Assert
         sut.PrepareFontRemoval(fonts).Should().BeNull();
     }
 
     [Fact]
-    public void Manage_fonts_lists_files_and_families_and_renames_a_family()
+    public async Task Manage_fonts_lists_files_and_families_and_renames_a_family()
     {
         // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Minimal, temp);
         BookBrowserViewModel sut = NewViewModel();
         sut.SetBook(book);
-        List<FontResource> fonts = sut.AddFiles(WriteFonts(temp)).OfType<FontResource>().ToList();
+        List<FontResource> fonts = (await sut.AddFilesAsync(WriteFonts(temp))).OfType<FontResource>().ToList();
         FontFaceDialogViewModel dialog = sut.PrepareFontFaces(fonts.Take(1).ToList())!;
         dialog.SetBodyFont = true;
-        sut.ApplyFontFaces(dialog.BuildResult());
+        await sut.ApplyFontFacesAsync(dialog.BuildResult());
 
         // Act
         ManageFontsViewModel manage = new(sut, null);
@@ -196,7 +197,7 @@ public sealed class FontManagementTests
         manage.Details.Should().Contain(d => d.Kind == "@font-face").And.Contain(d => d.Kind == "font-family");
 
         // Act
-        sut.RenameFontFamily("Acme Text", "Acme").Should().BeTrue();
+        (await sut.RenameFontFamilyAsync("Acme Text", "Acme")).Should().BeTrue();
         manage.Refresh();
 
         // Assert

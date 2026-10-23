@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -27,7 +28,7 @@ public sealed class FontWindowsTests : IDisposable
     /// <inheritdoc />
     public void Dispose() => _disposables.Dispose();
 
-    private (Book Book, BookBrowserViewModel Host, List<FontResource> Fonts) NewBook(TempDir temp)
+    private async Task<(Book Book, BookBrowserViewModel Host, List<FontResource> Fonts)> NewBook(TempDir temp)
     {
         Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, temp)).GetBook());
         BookBrowserViewModel host = new(
@@ -37,7 +38,7 @@ public sealed class FontWindowsTests : IDisposable
         string bold = temp.Combine("Acme-Bold.ttf");
         File.WriteAllBytes(regular, FontFileBuilder.Ttf("Acme", "Regular", 400, false, fsType: 2));
         File.WriteAllBytes(bold, FontFileBuilder.Ttf("Acme", "Bold", 700, false));
-        List<FontResource> fonts = host.AddFiles(new[] { regular, bold }).OfType<FontResource>().ToList();
+        List<FontResource> fonts = (await host.AddFilesAsync(new[] { regular, bold })).OfType<FontResource>().ToList();
         return (book, host, fonts);
     }
 
@@ -49,11 +50,11 @@ public sealed class FontWindowsTests : IDisposable
     }
 
     [AvaloniaFact]
-    public void Font_face_window_shows_a_row_per_font_with_its_warnings_and_the_preview()
+    public async Task Font_face_window_shows_a_row_per_font_with_its_warnings_and_the_preview()
     {
         // Arrange
         TempDir temp = _disposables.Add(new TempDir());
-        (Book book, BookBrowserViewModel host, List<FontResource> fonts) = NewBook(temp);
+        (Book book, BookBrowserViewModel host, List<FontResource> fonts) = await NewBook(temp);
         using (book)
         {
             FontFaceDialogViewModel vm = host.PrepareFontFaces(fonts)!;
@@ -71,14 +72,14 @@ public sealed class FontWindowsTests : IDisposable
     }
 
     [AvaloniaFact]
-    public void Font_removal_window_lists_the_rules_to_remove()
+    public async Task Font_removal_window_lists_the_rules_to_remove()
     {
         // Arrange
         TempDir temp = _disposables.Add(new TempDir());
-        (Book book, BookBrowserViewModel host, List<FontResource> fonts) = NewBook(temp);
+        (Book book, BookBrowserViewModel host, List<FontResource> fonts) = await NewBook(temp);
         using (book)
         {
-            host.ApplyFontFaces(host.PrepareFontFaces(fonts)!.BuildResult());
+            await host.ApplyFontFacesAsync(host.PrepareFontFaces(fonts)!.BuildResult());
             FontRemovalViewModel vm = host.PrepareFontRemoval(fonts.Cast<Resource>().ToList())!;
             FontRemovalWindow window = new() { DataContext = vm };
 
@@ -93,14 +94,14 @@ public sealed class FontWindowsTests : IDisposable
     }
 
     [AvaloniaFact]
-    public void Manage_fonts_window_fills_its_tables()
+    public async Task Manage_fonts_window_fills_its_tables()
     {
         // Arrange
         TempDir temp = _disposables.Add(new TempDir());
-        (Book book, BookBrowserViewModel host, List<FontResource> fonts) = NewBook(temp);
+        (Book book, BookBrowserViewModel host, List<FontResource> fonts) = await NewBook(temp);
         using (book)
         {
-            host.ApplyFontFaces(host.PrepareFontFaces(fonts.Take(1).ToList())!.BuildResult());
+            await host.ApplyFontFacesAsync(host.PrepareFontFaces(fonts.Take(1).ToList())!.BuildResult());
             ManageFontsViewModel vm = new(host, null);
             ManageFontsWindow window = ManageFontsWindow.Create(vm, host);
 

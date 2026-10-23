@@ -109,10 +109,10 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     public event EventHandler<string>? MergeErrorRequested;
 
     /// <summary>
-    /// Creates an automatic "Before: …" checkpoint right before an operation that changes the
-    /// book; returns whether one was created. Set by the main window.
+    /// Runs the operations that change the book (each behind an automatic "Before: …" checkpoint, off the UI thread, under a
+    /// progress window). Set by the main window; <c>null</c> (the tests): the work just runs, without a checkpoint.
     /// </summary>
-    public Func<string, bool>? CheckpointBefore { get; set; }
+    public IBookOperationHost? Operations { get; set; }
 
     /// <summary>
     /// Commits the content of the open tabs into the resources — called before an operation that edits files the tabs
@@ -136,18 +136,18 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     /// <summary>
     /// Request: in-place rename of an entry has started (<see cref="EditingNode"/> is already
     /// set) — the view moves focus to the editor in the tree. Committed by
-    /// <see cref="CommitInPlaceRename"/>.
+    /// <see cref="CommitInPlaceRenameAsync"/>.
     /// </summary>
     public event EventHandler<OpfModelEntry>? RenameRequested;
 
-    /// <summary>Request: confirm deleting the entries (the view then calls <see cref="ApplyDelete"/>).</summary>
+    /// <summary>Request: confirm deleting the entries (the view then calls <see cref="ApplyDeleteAsync"/>).</summary>
     public event EventHandler<IReadOnlyList<OpfModelEntry>>? DeleteRequested;
 
-    /// <summary>Request: show the file picker (the view then calls <see cref="ApplyAddExistingFiles"/>).</summary>
+    /// <summary>Request: show the file picker (the view then calls <see cref="ApplyAddExistingFilesAsync"/>).</summary>
     public event EventHandler? AddExistingFilesRequested;
 
     /// <summary>
-    /// Request: show the file picker for font files (the view then adds them with <see cref="AddFiles"/> and shows the
+    /// Request: show the file picker for font files (the view then adds them with <see cref="AddFilesAsync"/> and shows the
     /// "Add @font-face rules" dialog).
     /// </summary>
     public event EventHandler? AddFontFilesRequested;
@@ -161,38 +161,38 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     public Action<string, int>? NavigateTo { get; set; }
 
     /// <summary>
-    /// Request: show the "Mass Rename" window for the entries (the view then calls <see cref="ApplyMassRename"/>).
+    /// Request: show the "Mass Rename" window for the entries (the view then calls <see cref="ApplyMassRenameAsync"/>).
     /// </summary>
     public event EventHandler<IReadOnlyList<OpfModelEntry>>? MassRenameRequested;
 
     /// <summary>
     /// Request: show the "Bulk rename regex" dialog for the entries (the view then calls
-    /// <see cref="ApplyRenameList"/>).
+    /// <see cref="ApplyRenameListAsync"/>).
     /// </summary>
     public event EventHandler<IReadOnlyList<OpfModelEntry>>? BulkRegexRenameRequested;
 
     /// <summary>
     /// Request: show the "Move Files" (SelectFolder) dialog for the selected entries (the view then
-    /// calls <see cref="ApplyMove"/>).
+    /// calls <see cref="ApplyMoveAsync"/>).
     /// </summary>
     public event EventHandler<IReadOnlyList<OpfModelEntry>>? MoveRequested;
 
     /// <summary>
     /// Request: show the "Add Semantics" dialog for the selected (X)HTML file (the view then calls
-    /// <see cref="ApplySemanticCode"/>). The semantics apply to the whole file (no target
+    /// <see cref="ApplySemanticCodeAsync"/>). The semantics apply to the whole file (no target
     /// fragment selection).
     /// </summary>
     public event EventHandler<OpfModelEntry>? AddSemanticsRequested;
 
     /// <summary>
     /// Request: show the "Link Stylesheets" dialog for the selected (X)HTML files (the view then
-    /// calls <see cref="ApplyLinkStylesheets"/>).
+    /// calls <see cref="ApplyLinkStylesheetsAsync"/>).
     /// </summary>
     public event EventHandler<IReadOnlyList<HtmlResource>>? LinkStylesheetsRequested;
 
     /// <summary>
     /// Request: show the "Link Javascripts" dialog for the selected (X)HTML files (the view then
-    /// calls <see cref="ApplyLinkJavascripts"/>).
+    /// calls <see cref="ApplyLinkJavascriptsAsync"/>).
     /// </summary>
     public event EventHandler<IReadOnlyList<HtmlResource>>? LinkJavascriptsRequested;
 
@@ -252,7 +252,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     /// Finishes the in-place rename and — if the name changed — renames the file, then selects it
     /// again in the rebuilt tree. An empty or unchanged name does nothing.
     /// </summary>
-    public void CommitInPlaceRename()
+    public async Task CommitInPlaceRenameAsync()
     {
         if (EditingNode is not { Entry: { } entry } node)
         {
@@ -266,7 +266,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
             return;
         }
 
-        ApplyRename(entry, newFilename);
+        await ApplyRenameAsync(entry, newFilename).ConfigureAwait(true);
 
         BookBrowserNode? renamed = Nodes
             .SelectMany(n => n.IsFolder ? n.Children : Enumerable.Repeat(n, 1))
@@ -394,7 +394,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
 
     /// <summary>
     /// What "Mass Rename" would do with the entries and the options (the preview of the window, and the plan
-    /// <see cref="ApplyMassRename"/> carries out): the resources in the order they are numbered and their new names, or the
+    /// <see cref="ApplyMassRenameAsync"/> carries out): the resources in the order they are numbered and their new names, or the
     /// message why there are none. The option "in the order of the book" counts only when <see cref="CanUseBookOrder"/>.
     /// </summary>
     public MassRenamePlan PlanMassRename(IReadOnlyList<OpfModelEntry> entries, MassRenameOptions options)
@@ -553,8 +553,8 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         ValidateSelectedWithW3CCommand.NotifyCanExecuteChanged();
     }
 
-    /// <summary>Renames a file (called by <see cref="CommitInPlaceRename"/>).</summary>
-    public void ApplyRename(OpfModelEntry entry, string newFilename)
+    /// <summary>Renames a file (called by <see cref="CommitInPlaceRenameAsync"/>).</summary>
+    public async Task ApplyRenameAsync(OpfModelEntry entry, string newFilename)
     {
         ArgumentNullException.ThrowIfNull(entry);
         if (_book is null || string.IsNullOrWhiteSpace(newFilename))
@@ -568,33 +568,44 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
             return;
         }
 
-        bool checkpoint = Checkpoint(Strings.Format("CheckpointOp_Rename", entry.Resource.Filename));
-        try
+        string title = Strings.Format("CheckpointOp_Rename", entry.Resource.Filename);
+        BookOperationOutcome<string?> run = await RunOperationAsync<string?>(title, title, () =>
         {
-            if (_model is not null && !_model.RenameResource(entry.Resource, newFilename.Trim(), out string? error))
+            try
             {
-                Rewind(checkpoint);
-                _statusBar.ShowMessage(error ?? Strings.Get("BookBrowser_RenameFailed"), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
+                return _model is not null && !_model.RenameResource(entry.Resource, newFilename.Trim(), out string? error)
+                    ? error ?? Strings.Get("BookBrowser_RenameFailed")
+                    : null;
             }
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or System.IO.IOException)
+            catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or System.IO.IOException)
+            {
+                return Strings.Format("BookBrowser_RenameFailedDetail", ex.Message);
+            }
+        }).ConfigureAwait(true);
+        if (!run.Completed)
         {
-            Rewind(checkpoint);
-            _statusBar.ShowMessage(Strings.Format("BookBrowser_RenameFailedDetail", ex.Message), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
+            return;
+        }
+
+        if (run.Result is { } failure)
+        {
+            Rewind(run.Checkpoint);
+            _statusBar.ShowMessage(failure, TimeSpan.FromSeconds(5), NotificationLevel.Warning);
         }
 
         _model?.Refresh();
     }
 
     /// <summary>Deletes the given files (called by the view after confirmation).</summary>
-    public void ApplyDelete(IReadOnlyList<OpfModelEntry> entries)
+    public Task ApplyDeleteAsync(IReadOnlyList<OpfModelEntry> entries)
     {
         ArgumentNullException.ThrowIfNull(entries);
-        DeleteResources(entries.Select(e => e.Resource).ToList());
+        return DeleteResourcesAsync(entries.Select(e => e.Resource).ToList());
     }
 
     /// <inheritdoc/>
-    public void DeleteResources(IReadOnlyList<Resource> resources, FontRemovalPlan? plan = null, IReadOnlySet<string>? excludedKeys = null)
+    public async Task DeleteResourcesAsync(
+        IReadOnlyList<Resource> resources, FontRemovalPlan? plan = null, IReadOnlySet<string>? excludedKeys = null)
     {
         ArgumentNullException.ThrowIfNull(resources);
         if (_book is null || resources.Count == 0)
@@ -632,29 +643,37 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
             return;
         }
 
-        bool checkpoint = Checkpoint(Strings.Get("CheckpointOp_DeleteFiles"));
+        string title = Strings.Get("CheckpointOp_DeleteFiles");
         SaveOpenTabs?.Invoke();
-        bool tocChanged = false;
-        bool stylesChanged = false;
-        try
+        Book book = _book;
+        BookOperationOutcome<(bool TocChanged, bool StylesChanged, string? Error)> run = await RunOperationAsync(title, title, () =>
         {
-            // The stylesheets lose the rules and family names of the deleted fonts (as checked in the font window).
-            if (plan is not null)
+            try
             {
-                stylesChanged = _book.ApplyTexts(plan.BuildNewTexts(excludedKeys ?? new HashSet<string>()));
-            }
+                // The stylesheets lose the rules and family names of the deleted fonts (as checked in the font window).
+                bool styles = plan is not null && book.ApplyTexts(plan.BuildNewTexts(excludedKeys ?? new HashSet<string>()));
 
-            // Entries of the table of contents pointing to the deleted files would be dead links.
-            tocChanged = TocFileEntries.RemoveEntriesForFiles(_book, removable.OfType<HtmlResource>().Select(r => r.BookPath));
-            _book.GetFolderKeeper().BulkRemoveResources(removable);
-            _book.Modified = true;
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or System.IO.IOException)
+                // Entries of the table of contents pointing to the deleted files would be dead links.
+                bool toc = TocFileEntries.RemoveEntriesForFiles(book, removable.OfType<HtmlResource>().Select(r => r.BookPath));
+                book.GetFolderKeeper().BulkRemoveResources(removable);
+                book.Modified = true;
+                return (toc, styles, (string?)null);
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or System.IO.IOException)
+            {
+                return (false, false, Strings.Format("BookBrowser_DeleteFailed", ex.Message));
+            }
+        }).ConfigureAwait(true);
+        if (!run.Completed)
         {
-            Rewind(checkpoint);
-            _statusBar.ShowMessage(Strings.Format("BookBrowser_DeleteFailed", ex.Message), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
-            tocChanged = false;
-            stylesChanged = false;
+            return;
+        }
+
+        (bool tocChanged, bool stylesChanged, string? error) = run.Result;
+        if (error is not null)
+        {
+            Rewind(run.Checkpoint);
+            _statusBar.ShowMessage(error, TimeSpan.FromSeconds(5), NotificationLevel.Warning);
         }
 
         _model?.Refresh();
@@ -675,9 +694,9 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     /// unique suffix, as with "Add Blank". Returns the new resources (the view offers <c>@font-face</c> rules for the
     /// fonts among them).
     /// </summary>
-    public IReadOnlyList<Resource> ApplyAddExistingFiles(IReadOnlyList<string> filePaths)
+    public async Task<IReadOnlyList<Resource>> ApplyAddExistingFilesAsync(IReadOnlyList<string> filePaths)
     {
-        IReadOnlyList<Resource> added = AddFiles(filePaths);
+        IReadOnlyList<Resource> added = await AddFilesAsync(filePaths).ConfigureAwait(true);
         if (added.Count > 0)
         {
             OpenResourceRequested?.Invoke(this, added);
@@ -687,7 +706,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     }
 
     /// <inheritdoc/>
-    public IReadOnlyList<Resource> AddFiles(IReadOnlyList<string> filePaths)
+    public async Task<IReadOnlyList<Resource>> AddFilesAsync(IReadOnlyList<string> filePaths)
     {
         ArgumentNullException.ThrowIfNull(filePaths);
         if (_book is null || filePaths.Count == 0)
@@ -695,29 +714,43 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
             return Array.Empty<Resource>();
         }
 
-        bool checkpoint = Checkpoint(filePaths.Count == 1
+        Book book = _book;
+        string title = filePaths.Count == 1
             ? Strings.Format("CheckpointOp_AddFile", System.IO.Path.GetFileName(filePaths[0]))
-            : Strings.Get("CheckpointOp_AddFiles"));
-        try
+            : Strings.Get("CheckpointOp_AddFiles");
+        BookOperationOutcome<(IReadOnlyList<Resource> Added, string? Error)> run = await RunOperationAsync(title, title, () =>
         {
-            IReadOnlyList<Resource> added = _book.AddExistingFiles(filePaths);
-            if (added.Count > 0)
+            try
             {
-                _model?.Refresh();
+                return (book.AddExistingFiles(filePaths), (string?)null);
             }
-            else
+            catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or System.IO.IOException)
             {
-                Rewind(checkpoint);
+                return (Array.Empty<Resource>(), Strings.Format("BookBrowser_AddFilesFailed", ex.Message));
             }
-
-            return added;
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or System.IO.IOException)
+        }).ConfigureAwait(true);
+        if (!run.Completed)
         {
-            Rewind(checkpoint);
-            _statusBar.ShowMessage(Strings.Format("BookBrowser_AddFilesFailed", ex.Message), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
             return Array.Empty<Resource>();
         }
+
+        if (run.Result.Error is { } error)
+        {
+            Rewind(run.Checkpoint);
+            _statusBar.ShowMessage(error, TimeSpan.FromSeconds(5), NotificationLevel.Warning);
+            return Array.Empty<Resource>();
+        }
+
+        if (run.Result.Added.Count > 0)
+        {
+            _model?.Refresh();
+        }
+        else
+        {
+            Rewind(run.Checkpoint);
+        }
+
+        return run.Result.Added;
     }
 
     // =====================================================================
@@ -754,7 +787,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     }
 
     /// <inheritdoc/>
-    public CssResource? ApplyFontFaces(FontFaceDialogResult result)
+    public async Task<CssResource?> ApplyFontFacesAsync(FontFaceDialogResult result)
     {
         ArgumentNullException.ThrowIfNull(result);
         if (_book is null || (result.Requests.Count == 0 && result.BodyFamily is null))
@@ -762,34 +795,52 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
             return null;
         }
 
-        bool checkpoint = Checkpoint(Strings.Get("CheckpointOp_AddFontFaces"));
+        string title = Strings.Get("CheckpointOp_AddFontFaces");
         SaveOpenTabs?.Invoke();
-        try
-        {
-            (CssResource stylesheet, IReadOnlyList<HtmlResource> notLinked) =
-                _book.AddFontFaces(result.Stylesheet, result.Requests, result.BodyFamily, result.BodyGeneric);
-            _model?.Refresh();
-            ReloadOpenTabs?.Invoke();
-            if (notLinked.Count > 0)
+        Book book = _book;
+        BookOperationOutcome<(CssResource? Stylesheet, IReadOnlyList<HtmlResource> NotLinked, string? Error)> run =
+            await RunOperationAsync(title, title, () =>
             {
-                _statusBar.ShowMessage(
-                    Strings.Format("BookBrowser_FontsCssNotLinked", stylesheet.Filename, string.Join(", ", notLinked.Select(h => h.Filename))),
-                    TimeSpan.FromSeconds(8),
-                    NotificationLevel.Warning);
-            }
-            else
-            {
-                _statusBar.ShowMessage(Strings.Format("BookBrowser_FontFacesAdded", result.Requests.Count, stylesheet.Filename), TimeSpan.FromSeconds(4));
-            }
-
-            return stylesheet;
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or System.IO.IOException)
+                try
+                {
+                    (CssResource stylesheet, IReadOnlyList<HtmlResource> notLinked) =
+                        book.AddFontFaces(result.Stylesheet, result.Requests, result.BodyFamily, result.BodyGeneric);
+                    return ((CssResource?)stylesheet, notLinked, (string?)null);
+                }
+                catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or System.IO.IOException)
+                {
+                    return (null, Array.Empty<HtmlResource>(), Strings.Format("BookBrowser_FontFacesFailed", ex.Message));
+                }
+            }).ConfigureAwait(true);
+        if (!run.Completed)
         {
-            Rewind(checkpoint);
-            _statusBar.ShowMessage(Strings.Format("BookBrowser_FontFacesFailed", ex.Message), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
             return null;
         }
+
+        if (run.Result.Error is { } error)
+        {
+            Rewind(run.Checkpoint);
+            _statusBar.ShowMessage(error, TimeSpan.FromSeconds(5), NotificationLevel.Warning);
+            return null;
+        }
+
+        CssResource stylesheet = run.Result.Stylesheet!;
+        IReadOnlyList<HtmlResource> notLinked = run.Result.NotLinked;
+        _model?.Refresh();
+        ReloadOpenTabs?.Invoke();
+        if (notLinked.Count > 0)
+        {
+            _statusBar.ShowMessage(
+                Strings.Format("BookBrowser_FontsCssNotLinked", stylesheet.Filename, string.Join(", ", notLinked.Select(h => h.Filename))),
+                TimeSpan.FromSeconds(8),
+                NotificationLevel.Warning);
+        }
+        else
+        {
+            _statusBar.ShowMessage(Strings.Format("BookBrowser_FontFacesAdded", result.Requests.Count, stylesheet.Filename), TimeSpan.FromSeconds(4));
+        }
+
+        return stylesheet;
     }
 
     /// <inheritdoc/>
@@ -810,7 +861,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     }
 
     /// <inheritdoc/>
-    public bool RenameFontFamily(string oldFamily, string newFamily)
+    public async Task<bool> RenameFontFamilyAsync(string oldFamily, string newFamily)
     {
         ArgumentNullException.ThrowIfNull(oldFamily);
         ArgumentNullException.ThrowIfNull(newFamily);
@@ -826,10 +877,17 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
             return false;
         }
 
-        bool checkpoint = Checkpoint(Strings.Format("CheckpointOp_RenameFontFamily", oldFamily));
-        if (!_book.ApplyTexts(texts))
+        Book book = _book;
+        string title = Strings.Format("CheckpointOp_RenameFontFamily", oldFamily);
+        BookOperationOutcome<bool> run = await RunOperationAsync(title, title, () => book.ApplyTexts(texts)).ConfigureAwait(true);
+        if (!run.Completed)
         {
-            Rewind(checkpoint);
+            return false;
+        }
+
+        if (!run.Result)
+        {
+            Rewind(run.Checkpoint);
             return false;
         }
 
@@ -859,7 +917,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     /// options, numbers the files (in the order of the book when asked and possible) and renames them, updating the links.
     /// Nothing changes (and a warning is shown) when the options are not valid or a name would collide with another file.
     /// </summary>
-    public void ApplyMassRename(IReadOnlyList<OpfModelEntry> entries, MassRenameOptions options)
+    public async Task ApplyMassRenameAsync(IReadOnlyList<OpfModelEntry> entries, MassRenameOptions options)
     {
         ArgumentNullException.ThrowIfNull(entries);
         if (_book is null || _model is null || entries.Count == 0)
@@ -875,31 +933,44 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         }
 
         _settings.MassRename = options;
-        ApplyRenameList(plan.Resources, plan.NewFilenames);
+        await ApplyRenameListAsync(plan.Resources, plan.NewFilenames).ConfigureAwait(true);
     }
 
     /// <summary>
     /// Applies "Bulk rename regex" — renames the resources to the already computed and validated
     /// <paramref name="newFilenames"/> (preview built in the dialog). Also used by
-    /// <see cref="ApplyMassRename"/>.
+    /// <see cref="ApplyMassRenameAsync"/>.
     /// </summary>
-    public void ApplyRenameList(IReadOnlyList<Resource> resources, IReadOnlyList<string> newFilenames)
+    public async Task ApplyRenameListAsync(IReadOnlyList<Resource> resources, IReadOnlyList<string> newFilenames)
     {
         ArgumentNullException.ThrowIfNull(resources);
         ArgumentNullException.ThrowIfNull(newFilenames);
-        if (_model is null || resources.Count == 0)
+        if (_model is not { } model || resources.Count == 0)
         {
             return;
         }
 
-        bool checkpoint = Checkpoint(Strings.Get("Operation_BulkRename"));
-        bool ok = _model.RenameResourceList(resources, newFilenames, out IReadOnlyList<string> notRenamed, out IReadOnlyList<string> wellFormedErrors);
-        if (!ok)
+        string title = Strings.Get("Operation_BulkRename");
+        BookOperationOutcome<string?> run = await RunOperationAsync<string?>(title, title, () =>
         {
-            Rewind(checkpoint);
-            string message = wellFormedErrors.Count > 0
+            bool ok = model.RenameResourceList(resources, newFilenames, out IReadOnlyList<string> notRenamed, out IReadOnlyList<string> wellFormedErrors);
+            if (ok)
+            {
+                return null;
+            }
+
+            return wellFormedErrors.Count > 0
                 ? Strings.Format("BookBrowser_RenameRejectedXml", string.Join(", ", wellFormedErrors))
                 : Strings.Format("BookBrowser_RenameFailedDetail", string.Join(", ", notRenamed));
+        }).ConfigureAwait(true);
+        if (!run.Completed)
+        {
+            return;
+        }
+
+        if (run.Result is { } message)
+        {
+            Rewind(run.Checkpoint);
             _statusBar.ShowMessage(message, TimeSpan.FromSeconds(6), NotificationLevel.Warning);
         }
 
@@ -926,24 +997,31 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>Applies "Move Files" to the given entries, moving them to a common target folder.</summary>
-    public void ApplyMove(IReadOnlyList<OpfModelEntry> entries, string folderPath)
+    public async Task ApplyMoveAsync(IReadOnlyList<OpfModelEntry> entries, string folderPath)
     {
         ArgumentNullException.ThrowIfNull(entries);
         ArgumentNullException.ThrowIfNull(folderPath);
-        if (_model is null || entries.Count == 0)
+        if (_model is not { } model || entries.Count == 0)
         {
             return;
         }
 
         // Moving a file is a rename of its path — hence the "Rename" / bulk rename checkpoint labels.
-        bool checkpoint = Checkpoint(entries.Count == 1
+        string title = entries.Count == 1
             ? Strings.Format("CheckpointOp_Rename", entries[0].Resource.Filename)
-            : Strings.Get("Operation_BulkRename"));
-        bool ok = _model.MoveResourceList(entries.Select(e => e.Resource).ToList(), folderPath, out string? error);
-        if (!ok)
+            : Strings.Get("Operation_BulkRename");
+        List<Resource> moving = entries.Select(e => e.Resource).ToList();
+        BookOperationOutcome<string?> run = await RunOperationAsync<string?>(title, title, () =>
+            model.MoveResourceList(moving, folderPath, out string? error) ? null : error ?? Strings.Get("BookBrowser_MoveFailed")).ConfigureAwait(true);
+        if (!run.Completed)
         {
-            Rewind(checkpoint);
-            _statusBar.ShowMessage(error ?? Strings.Get("BookBrowser_MoveFailed"), TimeSpan.FromSeconds(5), NotificationLevel.Warning);
+            return;
+        }
+
+        if (run.Result is { } message)
+        {
+            Rewind(run.Checkpoint);
+            _statusBar.ShowMessage(message, TimeSpan.FromSeconds(5), NotificationLevel.Warning);
         }
 
         _model?.Refresh();
@@ -976,7 +1054,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     /// Applies the semantics chosen in the "Add Semantics" dialog (toggles the code — choosing
     /// the code that is already set removes it).
     /// </summary>
-    public void ApplySemanticCode(OpfModelEntry entry, string code)
+    public async Task ApplySemanticCodeAsync(OpfModelEntry entry, string code)
     {
         ArgumentNullException.ThrowIfNull(entry);
         ArgumentNullException.ThrowIfNull(code);
@@ -1000,13 +1078,28 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
                 return;
             }
 
-            Checkpoint(Strings.Get("CheckpointOp_SetSemantics"));
-            new NavProcessor(nav).AddLandmarkCode(html, code, toggle: true);
+            string title = Strings.Get("CheckpointOp_SetSemantics");
+            if (!(await RunOperationAsync(title, title, () =>
+                {
+                    new NavProcessor(nav).AddLandmarkCode(html, code, toggle: true);
+                    return true;
+                }).ConfigureAwait(true)).Completed)
+            {
+                return;
+            }
         }
         else
         {
-            Checkpoint(Strings.Get("CheckpointOp_SetSemantics"));
-            _book.GetOpf().AddGuideSemanticCode(html, code, toggle: true);
+            string title = Strings.Get("CheckpointOp_SetSemantics");
+            Book book = _book;
+            if (!(await RunOperationAsync(title, title, () =>
+                {
+                    book.GetOpf().AddGuideSemanticCode(html, code, toggle: true);
+                    return true;
+                }).ConfigureAwait(true)).Completed)
+            {
+                return;
+            }
         }
 
         _book.Modified = true;
@@ -1071,33 +1164,38 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
             .Distinct(StringComparer.Ordinal).Count() == 1;
 
     [RelayCommand(CanExecute = nameof(HasBook))]
-    private void AddBlankHtml() => AddBlank(() => _book!.CreateEmptyHtmlFile());
+    private Task AddBlankHtml() => AddBlank(() => _book!.CreateEmptyHtmlFile());
 
     [RelayCommand(CanExecute = nameof(HasBook))]
-    private void AddBlankCss() => AddBlank(() => _book!.CreateEmptyCssFile());
+    private Task AddBlankCss() => AddBlank(() => _book!.CreateEmptyCssFile());
 
     [RelayCommand(CanExecute = nameof(HasBook))]
-    private void AddBlankSvg() => AddBlank(() => _book!.CreateEmptySvgFile());
+    private Task AddBlankSvg() => AddBlank(() => _book!.CreateEmptySvgFile());
 
     [RelayCommand(CanExecute = nameof(CanAddBlankJs))]
-    private void AddBlankJs() => AddBlank(() => _book!.CreateEmptyJsFile());
+    private Task AddBlankJs() => AddBlank(() => _book!.CreateEmptyJsFile());
 
     private bool CanAddBlankJs => _book is not null && _book.IsEpub3;
 
     [RelayCommand(CanExecute = nameof(HasBook))]
     private void AddExistingFiles() => AddExistingFilesRequested?.Invoke(this, EventArgs.Empty);
 
-    private void AddBlank(Func<Resource> create)
+    private async Task AddBlank(Func<Resource> create)
     {
         if (_book is null)
         {
             return;
         }
 
-        Checkpoint(Strings.Get("CheckpointOp_AddNewFile"));
-        Resource resource = create();
+        string title = Strings.Get("CheckpointOp_AddNewFile");
+        BookOperationOutcome<Resource> run = await RunOperationAsync(title, title, create).ConfigureAwait(true);
+        if (!run.Completed)
+        {
+            return;
+        }
+
         _model?.Refresh();
-        OpenResourceRequested?.Invoke(this, new[] { resource });
+        OpenResourceRequested?.Invoke(this, new[] { run.Result! });
     }
 
     /// <summary>Whether exactly one (X)HTML, CSS or font file is selected — target of "Add Copy".</summary>
@@ -1111,7 +1209,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     /// "Add Blank *" actions.
     /// </summary>
     [RelayCommand(CanExecute = nameof(CanAddCopy))]
-    private void AddCopySelected()
+    private async Task AddCopySelected()
     {
         if (_book is null || _selection.Length != 1)
         {
@@ -1121,7 +1219,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         switch (_selection[0].Entry!.Resource)
         {
             case FontResource font:
-                AddBlank(() =>
+                await AddBlank(() =>
                 {
                     Resource copy = _book.GetFolderKeeper().AddContentFileToFolder(font.FullPath, folderPath: font.Folder);
                     _book.Modified = true;
@@ -1129,7 +1227,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
                 });
                 break;
             case HtmlResource source:
-                AddBlank(() =>
+                await AddBlank(() =>
                 {
                     HtmlResource copy = _book.CreateEmptyHtmlFile();
                     copy.SetText(source.GetText());
@@ -1137,7 +1235,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
                 });
                 break;
             case CssResource source:
-                AddBlank(() =>
+                await AddBlank(() =>
                 {
                     CssResource copy = _book.CreateEmptyCssFile();
                     copy.SetText(source.GetText());
@@ -1258,32 +1356,44 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     private bool CanSelectAllInFolder => SelectAllTarget() is { Children.Count: > 1 };
 
     [RelayCommand(CanExecute = nameof(CanMoveText))]
-    private void MoveTextUp() => MoveSelectedText(-1);
+    private Task MoveTextUp() => MoveSelectedText(-1);
 
     [RelayCommand(CanExecute = nameof(CanMoveText))]
-    private void MoveTextDown() => MoveSelectedText(1);
+    private Task MoveTextDown() => MoveSelectedText(1);
 
     [RelayCommand(CanExecute = nameof(CanMoveTextToEdge))]
-    private void MoveTextToTop() => MoveSelectedTextToEdge(toTop: true);
+    private Task MoveTextToTop() => MoveSelectedTextToEdge(toTop: true);
 
     [RelayCommand(CanExecute = nameof(CanMoveTextToEdge))]
-    private void MoveTextToBottom() => MoveSelectedTextToEdge(toTop: false);
+    private Task MoveTextToBottom() => MoveSelectedTextToEdge(toTop: false);
 
-    private void MoveSelectedTextToEdge(bool toTop)
+    private async Task MoveSelectedTextToEdge(bool toTop)
     {
-        Checkpoint(Strings.Get("CheckpointOp_ReorderText"));
-        _model?.MoveTextToEdge(_selection.Select(n => n.Entry!), toTop);
+        OpfModel? model = _model;
+        List<OpfModelEntry> entries = _selection.Select(n => n.Entry!).ToList();
+        string title = Strings.Get("CheckpointOp_ReorderText");
+        await RunOperationAsync(title, title, () =>
+        {
+            model?.MoveTextToEdge(entries, toTop);
+            return true;
+        }).ConfigureAwait(true);
     }
 
     [RelayCommand(CanExecute = nameof(CanSortText))]
-    private void SortText()
+    private async Task SortText()
     {
-        Checkpoint(Strings.Get("CheckpointOp_ReorderText"));
-        _model?.SortTextByFilename(_selection.Select(n => n.Entry!).Where(IsText));
+        OpfModel? model = _model;
+        List<OpfModelEntry> entries = _selection.Select(n => n.Entry!).Where(IsText).ToList();
+        string title = Strings.Get("CheckpointOp_ReorderText");
+        await RunOperationAsync(title, title, () =>
+        {
+            model?.SortTextByFilename(entries);
+            return true;
+        }).ConfigureAwait(true);
     }
 
     [RelayCommand(CanExecute = nameof(CanMergeText))]
-    private void MergeSelected()
+    private async Task MergeSelected()
     {
         if (_book is null)
         {
@@ -1297,11 +1407,17 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         }
 
         List<HtmlResource> resources = _selection.Select(n => (HtmlResource)n.Entry!.Resource).ToList();
-        bool checkpoint = Checkpoint(Strings.Format("CheckpointOp_MergeFiles", resources[0].Filename));
-        HtmlResource? rejected = _book.MergeResources(resources);
-        if (rejected is not null)
+        Book book = _book;
+        string title = Strings.Format("CheckpointOp_MergeFiles", resources[0].Filename);
+        BookOperationOutcome<HtmlResource?> run = await RunOperationAsync(title, title, () => book.MergeResources(resources)).ConfigureAwait(true);
+        if (!run.Completed)
         {
-            Rewind(checkpoint);
+            return;
+        }
+
+        if (run.Result is not null)
+        {
+            Rewind(run.Checkpoint);
             _statusBar.ShowMessage(Strings.Get("BookBrowser_CannotMergeNav"), TimeSpan.FromSeconds(4), NotificationLevel.Warning);
             return;
         }
@@ -1311,30 +1427,39 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand(CanExecute = nameof(CanSplitText))]
-    private void SplitSelected()
+    private async Task SplitSelected()
     {
         if (_book is null)
         {
             return;
         }
 
-        bool checkpoint = Checkpoint(Strings.Format(
-            "CheckpointOp_Split",
-            string.Join(", ", _selection.Where(n => IsText(n.Entry!)).Select(n => n.Entry!.Resource.Filename))));
-        List<Resource> created = new();
-        foreach (BookBrowserNode node in _selection.Where(n => IsText(n.Entry!)))
+        Book book = _book;
+        List<HtmlResource> files = _selection.Where(n => IsText(n.Entry!)).Select(n => (HtmlResource)n.Entry!.Resource).ToList();
+        string title = Strings.Format("CheckpointOp_Split", string.Join(", ", files.Select(f => f.Filename)));
+        BookOperationOutcome<int> run = await RunOperationAsync(title, title, () =>
         {
-            created.AddRange(_book.SplitOnSectionMarkers((HtmlResource)node.Entry!.Resource));
+            int created = 0;
+            foreach (HtmlResource file in files)
+            {
+                created += book.SplitOnSectionMarkers(file).Count;
+            }
+
+            return created;
+        }).ConfigureAwait(true);
+        if (!run.Completed)
+        {
+            return;
         }
 
-        if (created.Count > 0)
+        if (run.Result > 0)
         {
             _model?.Refresh();
             ReloadOpenTabs?.Invoke();
         }
         else
         {
-            Rewind(checkpoint);
+            Rewind(run.Checkpoint);
             _statusBar.ShowMessage(Strings.Get("BookBrowser_NoSplitMarkers"), TimeSpan.FromSeconds(4));
         }
     }
@@ -1380,7 +1505,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     /// Applies the choice from the "Link Stylesheets" dialog: relinks CSS in the selected files to
     /// exactly <paramref name="orderedBookPaths"/>.
     /// </summary>
-    public void ApplyLinkStylesheets(
+    public async Task ApplyLinkStylesheetsAsync(
         IReadOnlyList<HtmlResource> resources, IReadOnlyList<string> orderedBookPaths)
     {
         ArgumentNullException.ThrowIfNull(resources);
@@ -1390,20 +1515,27 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
             return;
         }
 
-        bool checkpoint = Checkpoint(Strings.Get("CheckpointOp_LinkStylesheets"));
-        FileBatchResult result = _book.LinkStylesheetsToResources(resources, orderedBookPaths);
-        if (result.NothingProcessed)
+        Book book = _book;
+        string title = Strings.Get("CheckpointOp_LinkStylesheets");
+        BookOperationOutcome<FileBatchResult> run = await RunOperationAsync(
+            title, title, () => book.LinkStylesheetsToResources(resources, orderedBookPaths)).ConfigureAwait(true);
+        if (!run.Completed)
         {
-            Rewind(checkpoint);
+            return;
         }
 
-        ReportLinkResult(result, Strings.Get("BookBrowserView_LinkStylesheetsTitle"));
+        if (run.Result!.NothingProcessed)
+        {
+            Rewind(run.Checkpoint);
+        }
+
+        ReportLinkResult(run.Result, Strings.Get("BookBrowserView_LinkStylesheetsTitle"));
     }
 
     /// <summary>
     /// Applies the choice from the "Link Javascripts" dialog: relinks scripts in the selected files.
     /// </summary>
-    public void ApplyLinkJavascripts(
+    public async Task ApplyLinkJavascriptsAsync(
         IReadOnlyList<HtmlResource> resources, IReadOnlyList<string> orderedBookPaths)
     {
         ArgumentNullException.ThrowIfNull(resources);
@@ -1413,8 +1545,15 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
             return;
         }
 
-        FileBatchResult result = _book.LinkJavascriptsToResources(resources, orderedBookPaths);
-        ReportLinkResult(result, Strings.Get("BookBrowserView_LinkJavascriptsTitle"));
+        // No checkpoint (it never had one): a book operation only for the window and for the other operations to wait.
+        Book book = _book;
+        BookOperationOutcome<FileBatchResult> run = await RunOperationAsync(
+            Strings.Get("BookBrowserView_LinkJavascriptsTitle"), null, () => book.LinkJavascriptsToResources(resources, orderedBookPaths))
+            .ConfigureAwait(true);
+        if (run.Completed)
+        {
+            ReportLinkResult(run.Result!, Strings.Get("BookBrowserView_LinkJavascriptsTitle"));
+        }
     }
 
     /// <summary>
@@ -1446,35 +1585,49 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         _selection.Select(n => (HtmlResource)n.Entry!.Resource).ToList();
 
     [RelayCommand(CanExecute = nameof(CanSetCoverImage))]
-    private void CoverImageSelected()
+    private async Task CoverImageSelected()
     {
-        if (_book is null || _selection[0].Entry!.Resource is not ImageResource image)
+        if (_book is not { } book || _selection[0].Entry!.Resource is not ImageResource image)
         {
             return;
         }
 
-        Checkpoint(Strings.Get("CheckpointOp_SetSemantics"));
-        _book.GetOpf().SetResourceAsCoverImage(image);
-        _book.Modified = true;
+        string title = Strings.Get("CheckpointOp_SetSemantics");
+        if (!(await RunOperationAsync(title, title, () =>
+            {
+                book.GetOpf().SetResourceAsCoverImage(image);
+                book.Modified = true;
+                return true;
+            }).ConfigureAwait(true)).Completed)
+        {
+            return;
+        }
+
         _model?.Refresh();
     }
 
     [RelayCommand(CanExecute = nameof(CanMarkAsNav))]
-    private void MarkAsNavSelected()
+    private async Task MarkAsNavSelected()
     {
-        if (_book is null || _selection[0].Entry!.Resource is not HtmlResource html)
+        if (_book is not { } book || _selection[0].Entry!.Resource is not HtmlResource html)
         {
             return;
         }
 
-        bool checkpoint = Checkpoint(Strings.Get("CheckpointOp_SetSemantics"));
-        if (_book.SetNavDocument(html))
+        string title = Strings.Get("CheckpointOp_SetSemantics");
+        BookOperationOutcome<bool> run = await RunOperationAsync(title, title, () => book.SetNavDocument(html)).ConfigureAwait(true);
+        if (!run.Completed)
+        {
+            return;
+        }
+
+        if (run.Result)
         {
             _model?.Refresh();
         }
         else
         {
-            Rewind(checkpoint);
+            Rewind(run.Checkpoint);
         }
     }
 
@@ -1537,16 +1690,27 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     private static string FileList(IEnumerable<OpfModelEntry> entries) =>
         string.Join("\n", entries.Select(e => "  • " + System.IO.Path.GetFileName(e.BookPath)));
 
-    private void MoveSelectedText(int delta)
+    private async Task MoveSelectedText(int delta)
     {
         if (_selection.Length == 1 && IsText(_selection[0].Entry!))
         {
-            Checkpoint(Strings.Get("CheckpointOp_ReorderText"));
-            _model?.MoveText(_selection[0].Entry!, delta);
+            OpfModel? model = _model;
+            OpfModelEntry entry = _selection[0].Entry!;
+            string title = Strings.Get("CheckpointOp_ReorderText");
+            await RunOperationAsync(title, title, () =>
+            {
+                model?.MoveText(entry, delta);
+                return true;
+            }).ConfigureAwait(true);
         }
     }
 
-    private bool Checkpoint(string operation) => CheckpointBefore?.Invoke(operation) ?? false;
+    // Runs `work`, which changes the book, as a book operation behind the checkpoint `checkpointName` (see IBookOperationHost). A work that
+    // fails catches its exceptions and returns them in its result, so that the caller can rewind the checkpoint.
+    private async Task<BookOperationOutcome<T>> RunOperationAsync<T>(string title, string? checkpointName, Func<T> work) =>
+        Operations is null
+            ? new BookOperationOutcome<T>(true, work(), false)
+            : await Operations.RunAsync(title, checkpointName, work).ConfigureAwait(true);
 
     private void Rewind(bool checkpointCreated)
     {

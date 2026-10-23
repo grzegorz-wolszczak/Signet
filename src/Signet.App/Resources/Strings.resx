@@ -6646,4 +6646,19 @@ Zamknij zakładkę</value>
   <data name="CheckpointOp_Cleanup" xml:space="preserve">
     <value>Czyszczenie</value>
   </data>
+  <data name="File_SavingTitle" xml:space="preserve">
+    <value>Zapisywanie książki</value>
+  </data>
+  <data name="BookSave_Phase_Preparing" xml:space="preserve">
+    <value>Przygotowanie plików</value>
+  </data>
+  <data name="BookSave_Phase_Copying" xml:space="preserve">
+    <value>Kopiowanie plików</value>
+  </data>
+  <data name="BookSave_Phase_Archiving" xml:space="preserve">
+    <value>Tworzenie archiwum EPUB</value>
+  </data>
+  <data name="Checkpoint_CreatingTitle" xml:space="preserve">
+    <value>Tworzenie checkpointu</value>
+  </data>
 </root>

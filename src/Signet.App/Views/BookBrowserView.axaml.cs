@@ -493,7 +493,7 @@ public partial class BookBrowserView : UserControl
         }
     }
 
-    private void OnRenameEditorKeyDown(object? sender, KeyEventArgs e)
+    private async void OnRenameEditorKeyDown(object? sender, KeyEventArgs e)
     {
         if (!IsInRenameEditor(e.Source) || _boundViewModel is null)
         {
@@ -504,7 +504,7 @@ public partial class BookBrowserView : UserControl
         {
             case Key.Enter:
                 e.Handled = true;
-                _boundViewModel.CommitInPlaceRename();
+                await _boundViewModel.CommitInPlaceRenameAsync();
                 break;
             case Key.Escape:
                 e.Handled = true;
@@ -592,7 +592,7 @@ public partial class BookBrowserView : UserControl
         }
 
         // Fonts among the added files are offered @font-face rules (skipping leaves them without rules).
-        List<FontResource> fonts = _boundViewModel.ApplyAddExistingFiles(paths).OfType<FontResource>().ToList();
+        List<FontResource> fonts = (await _boundViewModel.ApplyAddExistingFilesAsync(paths)).OfType<FontResource>().ToList();
         if (fonts.Count > 0 && this.FindAncestorOfType<Window>() is { } owner)
         {
             await FontDialogs.OfferFontFacesAsync(owner, _boundViewModel, fonts);
@@ -609,7 +609,7 @@ public partial class BookBrowserView : UserControl
 
         if (await MassRenameWindow.AskAsync(owner, _boundViewModel, entries) is { } options)
         {
-            _boundViewModel.ApplyMassRename(entries, options);
+            await _boundViewModel.ApplyMassRenameAsync(entries, options);
         }
     }
 
@@ -627,7 +627,7 @@ public partial class BookBrowserView : UserControl
 
         if (result is not null)
         {
-            _boundViewModel.ApplyRenameList(resources, result.Value.NewFilenames);
+            await _boundViewModel.ApplyRenameListAsync(resources, result.Value.NewFilenames);
         }
     }
 
@@ -643,7 +643,7 @@ public partial class BookBrowserView : UserControl
         string? folder = await SelectFolderWindow.AskAsync(owner, folders, entries[0].Resource.Folder);
         if (folder is not null)
         {
-            _boundViewModel.ApplyMove(entries, folder);
+            await _boundViewModel.ApplyMoveAsync(entries, folder);
         }
     }
 
@@ -661,7 +661,7 @@ public partial class BookBrowserView : UserControl
         string? code = await AddSemanticsWindow.AskAsync(owner, currentCode, codeMap);
         if (!string.IsNullOrEmpty(code))
         {
-            _boundViewModel.ApplySemanticCode(entry, code);
+            await _boundViewModel.ApplySemanticCodeAsync(entry, code);
         }
     }
 
@@ -683,7 +683,7 @@ public partial class BookBrowserView : UserControl
 
         if (result is not null)
         {
-            _boundViewModel.ApplyLinkStylesheets(resources, result.BookPaths);
+            await _boundViewModel.ApplyLinkStylesheetsAsync(resources, result.BookPaths);
         }
     }
 
@@ -705,7 +705,7 @@ public partial class BookBrowserView : UserControl
 
         if (result is not null)
         {
-            _boundViewModel.ApplyLinkJavascripts(resources, result.BookPaths);
+            await _boundViewModel.ApplyLinkJavascriptsAsync(resources, result.BookPaths);
         }
     }
 

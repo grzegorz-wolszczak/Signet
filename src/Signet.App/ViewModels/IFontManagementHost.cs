@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Signet.Core.Fonts;
 using Signet.Core.Resources;
 
@@ -15,13 +16,13 @@ public interface IFontManagementHost
     FontManagerReport? BuildFontReport();
 
     /// <summary>Copies files from disk into the book; returns the new resources.</summary>
-    IReadOnlyList<Resource> AddFiles(IReadOnlyList<string> filePaths);
+    Task<IReadOnlyList<Resource>> AddFilesAsync(IReadOnlyList<string> filePaths);
 
     /// <summary>The "Add @font-face rules" dialog for <paramref name="fonts"/>, or <c>null</c> without a book or fonts.</summary>
     FontFaceDialogViewModel? PrepareFontFaces(IReadOnlyList<FontResource> fonts);
 
     /// <summary>Writes the rules chosen in the dialog; returns the stylesheet written to, or <c>null</c> on failure.</summary>
-    CssResource? ApplyFontFaces(FontFaceDialogResult result);
+    Task<CssResource?> ApplyFontFacesAsync(FontFaceDialogResult result);
 
     /// <summary>
     /// The window to show before <paramref name="resources"/> are deleted when fonts among them are used by the
@@ -33,10 +34,10 @@ public interface IFontManagementHost
     /// Deletes <paramref name="resources"/>; with a <paramref name="plan"/>, its changes (except
     /// <paramref name="excludedKeys"/>) are applied to the stylesheets first — all under one checkpoint.
     /// </summary>
-    void DeleteResources(IReadOnlyList<Resource> resources, FontRemovalPlan? plan = null, IReadOnlySet<string>? excludedKeys = null);
+    Task DeleteResourcesAsync(IReadOnlyList<Resource> resources, FontRemovalPlan? plan = null, IReadOnlySet<string>? excludedKeys = null);
 
     /// <summary>Renames a family in the whole book; returns whether anything changed.</summary>
-    bool RenameFontFamily(string oldFamily, string newFamily);
+    Task<bool> RenameFontFamilyAsync(string oldFamily, string newFamily);
 
     /// <summary>Opens the resources in tabs.</summary>
     void OpenResources(IReadOnlyList<Resource> resources);

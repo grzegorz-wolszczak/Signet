@@ -32,7 +32,7 @@ public sealed partial class MainWindowViewModel
     private readonly CheckpointHistory _checkpoints = new();
     private CheckpointsViewModel? _checkpointsPanel;
 
-    /// <summary>Raised after "Create Checkpoint…" — the view asks for a name and calls <see cref="CreateCheckpoint"/>.</summary>
+    /// <summary>Raised after "Create Checkpoint…" — the view asks for a name and calls <see cref="CreateCheckpointAsync"/>.</summary>
     public event EventHandler? CreateCheckpointRequested;
 
     /// <summary>
@@ -59,12 +59,31 @@ public sealed partial class MainWindowViewModel
     /// </summary>
     /// <param name="name">Name given by the user (empty — an unnamed checkpoint).</param>
     /// <returns><c>true</c> when the checkpoint was created.</returns>
-    public bool CreateCheckpoint(string name)
+    public async Task<bool> CreateCheckpointAsync(string name)
     {
         ArgumentNullException.ThrowIfNull(name);
-        if (!AddCheckpoint(name.Trim()))
+        if (_currentBook is null || !_checkpoints.IsOpen || !TryEnterBookOperation())
         {
             return false;
+        }
+
+        try
+        {
+            // Copying the book takes a while on a big one: off the UI thread, under a progress window the user can cancel (nothing is
+            // left behind then).
+            if (!await AddCheckpointAsync(name.Trim()).ConfigureAwait(true))
+            {
+                return false;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            _statusBar.ShowMessage(Strings.Format("Status_OperationCancelled", Strings.Get("Checkpoint_CreatingTitle")), TimeSpan.FromSeconds(6));
+            return false;
+        }
+        finally
+        {
+            ExitBookOperation();
         }
 
         _statusBar.ShowMessage(
@@ -74,19 +93,7 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <summary>
-    /// An automatic "Before: <paramref name="operation"/>" checkpoint created right before
-    /// an operation that changes the book.
-    /// </summary>
-    /// <param name="operation">Operation name (e.g. the action label without mnemonics).</param>
-    /// <returns><c>true</c> when the checkpoint was created (<see cref="RewindCheckpoint"/> can then roll it back).</returns>
-    public bool AddCheckpointBefore(string operation)
-    {
-        ArgumentNullException.ThrowIfNull(operation);
-        return AddCheckpoint(Strings.Format("Checkpoint_Before", operation));
-    }
-
-    /// <summary>
-    /// Like <see cref="AddCheckpointBefore"/>, but the heavy part (copying the book's folder) runs off the UI thread
+    /// An automatic "Before: <paramref name="operation"/>" checkpoint created right before an operation that changes the book. The heavy part (copying the book's folder) runs off the UI thread
     /// under a progress window (<see cref="DelayedProgressRunner"/>, shown only once it takes a moment): for the
     /// background-operation flows, where a big book would otherwise freeze the window for its duration. Cancellable:
     /// the copy leaves nothing behind (see <see cref="CheckpointHistory.AddCheckpointCancellable"/>), so cancelling here means
@@ -96,12 +103,17 @@ public sealed partial class MainWindowViewModel
     public async Task<bool> AddCheckpointBeforeAsync(string operation)
     {
         ArgumentNullException.ThrowIfNull(operation);
+        return await AddCheckpointAsync(Strings.Format("Checkpoint_Before", operation)).ConfigureAwait(true);
+    }
+
+    // A checkpoint named `message` (empty: an unnamed one) taken off the UI thread under a progress window; see AddCheckpointBeforeAsync.
+    private async Task<bool> AddCheckpointAsync(string message)
+    {
         if (_currentBook is not { } book || !_checkpoints.IsOpen)
         {
             return false;
         }
 
-        string message = Strings.Format("Checkpoint_Before", operation);
         _tabManager.SaveAllTabs();
         long start = System.Diagnostics.Stopwatch.GetTimestamp();
         DebugLog.Write("Checkpoint", $"creating \"{message}\"…");
@@ -109,7 +121,7 @@ public sealed partial class MainWindowViewModel
         try
         {
             await RunInBackgroundAsync(
-                message, DelayedProgressRunner, editsBook: false, cancellable: true,
+                message.Length > 0 ? message : Strings.Get("Checkpoint_CreatingTitle"), DelayedProgressRunner, editsBook: false, cancellable: true,
                 (_, cancel) =>
                 {
                     _checkpoints.AddCheckpointCancellable(book, message, cancel);
@@ -274,13 +286,27 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <inheritdoc/>
-    bool IMultiFileSearchHost.CheckpointBefore(string operation) => AddCheckpointBefore(operation);
+    async Task<bool?> IMultiFileSearchHost.CheckpointBeforeAsync(string operation)
+    {
+        // The checkpoint holds the book still while it is copied; the replacing that follows runs on the UI thread, straight after.
+        if (!TryEnterBookOperation())
+        {
+            return null;
+        }
+
+        try
+        {
+            (bool cancelled, bool checkpoint) = await AddCheckpointOrCancelAsync(operation).ConfigureAwait(true);
+            return cancelled ? null : checkpoint;
+        }
+        finally
+        {
+            ExitBookOperation();
+        }
+    }
 
     /// <inheritdoc/>
     void IMultiFileSearchHost.RewindCheckpoint() => RewindCheckpoint();
-
-    // An automatic checkpoint named with the menu action's label (without the mnemonic and the ellipsis).
-    private bool CheckpointBeforeAction(string actionId) => AddCheckpointBefore(ActionLabel(actionId));
 
     private static string ActionLabel(string actionId) =>
         Strings.Get("Action_" + actionId.Replace('.', '_'))
@@ -341,7 +367,7 @@ public sealed partial class MainWindowViewModel
     private void InitCheckpoints()
     {
         _checkpointsPanel = new CheckpointsViewModel(_checkpoints);
-        BookBrowser.CheckpointBefore = AddCheckpointBefore;
+        BookBrowser.Operations = this;
         BookBrowser.RewindCheckpoint = RewindCheckpoint;
         BookBrowser.SaveOpenTabs = _tabManager.SaveAllTabs;
         _checkpointsPanel.RevertRequested += (_, state) => RunAsyncAction(() => RevertToCheckpointAsync(state));
@@ -381,31 +407,6 @@ public sealed partial class MainWindowViewModel
         }
 
         RefreshCheckpointActions();
-    }
-
-    private bool AddCheckpoint(string message)
-    {
-        if (_currentBook is not { } book || !_checkpoints.IsOpen)
-        {
-            return false;
-        }
-
-        // Commit all editors: unsaved tab content goes into the resources.
-        _tabManager.SaveAllTabs();
-        long start = System.Diagnostics.Stopwatch.GetTimestamp();
-        DebugLog.Write("Checkpoint", $"creating \"{message}\"…");
-        try
-        {
-            _checkpoints.AddCheckpoint(book, message);
-            DebugLog.Write("Checkpoint", $"created \"{message}\" ({DebugLog.Elapsed(start)})");
-            return true;
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
-        {
-            _logger.LogError(ex, "Failed to create a checkpoint");
-            _statusBar.ShowMessage(Strings.Format("Status_CheckpointError", ex.Message), TimeSpan.FromSeconds(6), NotificationLevel.Warning);
-            return false;
-        }
     }
 
     private async Task RequestRevertAsync(bool forward)

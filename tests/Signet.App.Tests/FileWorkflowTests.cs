@@ -46,6 +46,27 @@ public sealed class FileWorkflowTests
 
         public void SaveOpenTabs() => SaveOpenTabsCalls++;
 
+        /// <summary>The titles of the <see cref="RunBookWorkAsync"/> calls and what the work reported.</summary>
+        public List<string> BookWorkTitles { get; } = new();
+
+        public List<WorkProgress> BookWorkReports { get; } = new();
+
+        public Task<bool> RunBookWorkAsync(string title, Action<IProgress<WorkProgress>> work)
+        {
+            BookWorkTitles.Add(title);
+            work(new Progress(BookWorkReports));
+            return Task.FromResult(true);
+        }
+
+        private sealed class Progress : IProgress<WorkProgress>
+        {
+            private readonly List<WorkProgress> _reports;
+
+            public Progress(List<WorkProgress> reports) => _reports = reports;
+
+            public void Report(WorkProgress value) => _reports.Add(value);
+        }
+
         public void RefreshAfterBookEdit() => RefreshAfterBookEditCalls++;
 
         public void ApplyBook(Book book, string? sourcePath)
@@ -181,6 +202,29 @@ public sealed class FileWorkflowTests
         h.Prompts.AskSaveChangesCalls.Should().Be(1);
         h.Workspace.CurrentBook.Should().BeSameAs(open);
         h.Workspace.CloseBookCalls.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Saving_runs_the_export_as_a_book_operation_in_three_phases()
+    {
+        // Arrange
+        using UiCultureScope culture = new("en");
+        using Harness h = new();
+        h.Prompts.SavePath = h.PathIn("book.epub");
+        await h.Workflow.NewAsync("3.0");
+
+        // Act
+        await h.Workflow.SaveAsAsync();
+
+        // Assert
+        h.Workspace.BookWorkTitles.Should().Equal(Strings.Get("File_SavingTitle"));
+        List<WorkProgress> reports = h.Workspace.BookWorkReports;
+        reports.Should().OnlyContain(r => r.Phase != null && r.Phase.Count == 3);
+        reports.Select(r => r.Phase!.Name).Distinct().Should().Equal(
+            Strings.Get("BookSave_Phase_Preparing"), Strings.Get("BookSave_Phase_Copying"), Strings.Get("BookSave_Phase_Archiving"));
+        reports.Where(r => r.Phase!.Index == 1).Should().OnlyContain(r => r.Message == null && r.Fraction == null, "the preparation cannot count");
+        reports.Where(r => r.Phase!.Index == 2).Should().Contain(r => r.Message != null && r.Message.StartsWith("file", StringComparison.Ordinal));
+        reports.Where(r => r.Phase!.Index == 3).Should().Contain(r => r.Fraction == 0);
     }
 
     [Fact]

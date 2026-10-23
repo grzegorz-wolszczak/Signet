@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using AwesomeAssertions;
 using Signet.Core.BookManipulation;
+using Signet.Core.Importers;
 using Signet.Core.Misc;
 using Signet.Core.Resources;
 using Signet.Core.Tests.TestSupport;
@@ -18,6 +20,34 @@ namespace Signet.Core.Tests.BookManipulation;
 /// </summary>
 public sealed class RoundTripTests
 {
+    [Fact]
+    public void WriteBook_reports_the_files_copied_and_the_entries_written()
+    {
+        // Arrange
+        using TempDir temp = new();
+        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, temp);
+        using Book book = new ImportEpub(epub).GetBook();
+        List<BookSaveProgress> reports = new();
+
+        // Act
+        new ExportEpub(book).WriteBook(temp.Combine("out.epub"), progress: new SyncProgress(reports.Add));
+
+        // Assert
+        reports.Select(r => r.Stage).Distinct().Should().Equal(BookSaveStage.Preparing, BookSaveStage.Copying, BookSaveStage.Archiving);
+        reports.Single(r => r.Stage == BookSaveStage.Preparing).Total.Should().Be(0, "the preparation has no count");
+        reports.Where(r => r.Stage == BookSaveStage.Copying).Select(r => r.Done).Should().BeInAscendingOrder().And.StartWith(0);
+        reports.Where(r => r.Stage == BookSaveStage.Archiving).Select(r => r.Total).Distinct().Should().ContainSingle().Which.Should().BeGreaterThan(0);
+    }
+
+    private sealed class SyncProgress : IProgress<BookSaveProgress>
+    {
+        private readonly Action<BookSaveProgress> _report;
+
+        public SyncProgress(Action<BookSaveProgress> report) => _report = report;
+
+        public void Report(BookSaveProgress value) => _report(value);
+    }
+
     public static TheoryData<string> ValidCorpus()
     {
         TheoryData<string> data = new();

@@ -260,7 +260,7 @@ public partial class ManageFontsWindow : Window
             return;
         }
 
-        if (_host.RenameFontFamily(family, newName))
+        if (await _host.RenameFontFamilyAsync(family, newName))
         {
             _bound.Refresh();
         }

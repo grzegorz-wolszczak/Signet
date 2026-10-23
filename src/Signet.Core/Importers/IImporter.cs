@@ -19,6 +19,25 @@ public enum BookLoadStage
     Finishing,
 }
 
+/// <summary>The part of saving an EPUB that is running (<see cref="BookSaveProgress.Stage"/>).</summary>
+public enum BookSaveStage
+{
+    /// <summary>Writing the resources to the working folder and stamping the metadata (no count).</summary>
+    Preparing,
+
+    /// <summary>Copying the files of the working folder to the staging folder (a file of the total).</summary>
+    Copying,
+
+    /// <summary>Writing the entries of the archive (an entry of the total).</summary>
+    Archiving,
+}
+
+/// <summary>How far saving an EPUB (<see cref="ExportEpub.WriteBook"/>) is.</summary>
+/// <param name="Stage">What it is doing.</param>
+/// <param name="Done">How far within the stage.</param>
+/// <param name="Total">The total for <paramref name="Done"/>; 0 when the stage has no count.</param>
+public readonly record struct BookSaveProgress(BookSaveStage Stage, int Done, int Total);
+
 /// <summary>How far loading an EPUB (<see cref="IImporter.GetBook"/>) is.</summary>
 /// <param name="Stage">What it is doing.</param>
 /// <param name="Done">How far within the stage.</param>

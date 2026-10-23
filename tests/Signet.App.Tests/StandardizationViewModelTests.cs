@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using AwesomeAssertions;
 using Signet.App.Resources;
 using Signet.App.Tests.TestSupport;
@@ -42,7 +43,11 @@ public sealed class StandardizationViewModelTests : IDisposable
     }
 
     private StandardizationViewModel New(params StandardizationStep[] enabled) =>
-        new(enabled, steps => EpubStandardization.Plan(_book, steps), _applied.Add);
+        new(enabled, steps => EpubStandardization.Plan(_book, steps), steps =>
+        {
+            _applied.Add(steps);
+            return Task.CompletedTask;
+        });
 
     private static StandardizationSectionViewModel Section(StandardizationViewModel vm, StandardizationStep step) =>
         vm.Sections.Single(s => s.Step == step);

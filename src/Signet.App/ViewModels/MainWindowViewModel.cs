@@ -319,8 +319,8 @@ public sealed partial class MainWindowViewModel
         _actions.SetHandler(AppActionIds.ZoomOut, () => AdjustActiveZoom(1 / 1.1));
         _actions.SetHandler(AppActionIds.ZoomReset, ResetActiveZoom);
         _actions.SetHandler(AppActionIds.InsertSgfSectionMarker, () => ActiveCodeTab?.InsertSectionMarkerAtCaret());
-        _actions.SetHandler(AppActionIds.SplitSection, SplitFileAtCaret);
-        _actions.SetHandler(AppActionIds.SplitOnSgfSectionMarkers, SplitCurrentFileAtMarkers);
+        _actions.SetHandler(AppActionIds.SplitSection, () => RunAsyncAction(SplitFileAtCaretAsync));
+        _actions.SetHandler(AppActionIds.SplitOnSgfSectionMarkers, () => RunAsyncAction(SplitCurrentFileAtMarkersAsync));
         _actions.SetHandler(
             AppActionIds.PasteClipboardHistory,
             () => PasteClipboardHistoryRequested?.Invoke(this, EventArgs.Empty));
@@ -364,12 +364,12 @@ public sealed partial class MainWindowViewModel
         _actions.SetHandler(AppActionIds.ReplaceCurrent, () => _findReplace.Replace());
         _actions.SetHandler(AppActionIds.ReplaceNext, () => _findReplace.ReplaceFind());
         _actions.SetHandler(AppActionIds.ReplacePrevious, () => _findReplace.ReplaceFind());
-        _actions.SetHandler(AppActionIds.ReplaceAll, () => _findReplace.ReplaceAll());
+        _actions.SetHandler(AppActionIds.ReplaceAll, () => RunAsyncAction(_findReplace.ReplaceAllAsync));
         _actions.SetHandler(AppActionIds.Count, () => _findReplace.Count());
         _actions.SetHandler(AppActionIds.MarkSelection, () => _findReplace.ToggleMarkSelection());
         _actions.SetHandler(AppActionIds.FindNextInFile, () => _findReplace.InCurrentFile(p => p.FindNext()));
         _actions.SetHandler(AppActionIds.ReplaceNextInFile, () => _findReplace.InCurrentFile(p => p.ReplaceFind()));
-        _actions.SetHandler(AppActionIds.ReplaceAllInFile, () => _findReplace.InCurrentFile(p => p.ReplaceAll()));
+        _actions.SetHandler(AppActionIds.ReplaceAllInFile, () => RunAsyncAction(() => _findReplace.InCurrentFileAsync(p => p.ReplaceAllAsync())));
         _actions.SetHandler(AppActionIds.CountInFile, () => _findReplace.InCurrentFile(p => p.Count()));
 
         // Dry Run Replace All / Filter Replacements.
@@ -386,7 +386,7 @@ public sealed partial class MainWindowViewModel
 
         // Generate / Create HTML Table Of Contents.
         _actions.SetHandler(AppActionIds.GenerateToc, () => GenerateTocRequested?.Invoke(this, EventArgs.Empty));
-        _actions.SetHandler(AppActionIds.CreateHtmlToc, CreateHtmlToc);
+        _actions.SetHandler(AppActionIds.CreateHtmlToc, () => RunAsyncAction(CreateHtmlTocAsync));
         _actions.SetHandler(
             AppActionIds.EditToc,
             () => EditTocRequested?.Invoke(this, EventArgs.Empty));
@@ -424,7 +424,7 @@ public sealed partial class MainWindowViewModel
         _actions.SetHandler(AppActionIds.RemoveSoftHyphens, () => RunAsyncAction(RemoveSoftHyphensAsync));
         _actions.SetHandler(AppActionIds.StandardizeEpub, () => StandardizeEpubRequested?.Invoke(this, EventArgs.Empty));
         _actions.SetHandler(AppActionIds.UseStandardFileExtensions, () => RunAsyncAction(UseStandardFileExtensionsAsync));
-        _actions.SetHandler(AppActionIds.RebaseManifestIds, RebaseManifestIds);
+        _actions.SetHandler(AppActionIds.RebaseManifestIds, () => RunAsyncAction(RebaseManifestIdsAsync));
 
         // Spellcheck in Code Editor: Highlight toggle, Next Misspelled Word (F4), Add/Ignore,
         // Clear Ignored Words.
@@ -447,7 +447,7 @@ public sealed partial class MainWindowViewModel
         // Well-Formed Check EPUB, Validate Stylesheets With W3C, Epub3 Tools.
         _actions.SetHandler(AppActionIds.WellFormedCheckEpub, () => RunAsyncAction(WellFormedCheckEpubAsync));
         _actions.SetHandler(AppActionIds.ValidateStylesheetsWithW3C, ValidateStylesheetsWithW3C);
-        _actions.SetHandler(AppActionIds.UpgradeToEpub3, UpgradeToEpub3);
+        _actions.SetHandler(AppActionIds.UpgradeToEpub3, () => RunAsyncAction(UpgradeToEpub3Async));
         _actions.SetHandler(AppActionIds.NcxGuideFromNav, GenerateNcxGuideFromNav);
         _actions.SetHandler(AppActionIds.RemoveNcxGuide, RemoveNcxGuideFromEpub3);
         _actions.SetHandler(AppActionIds.UpdateManifestMediaTypes, UpdateManifestMediaTypes);
@@ -686,14 +686,14 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>
     /// Raised by the "Add Cover" action — the view shows an image picker and, if needed, a confirmation
-    /// of overwriting the existing cover, then calls <see cref="ApplyAddCover"/>.
+    /// of overwriting the existing cover, then calls <see cref="ApplyAddCoverAsync"/>.
     /// </summary>
     public event EventHandler? AddCoverRequested;
 
     /// <summary>
     /// Raised by the "Generate Table Of Contents" action — the view opens a modal heading
     /// selection dialog (<see cref="HeadingSelectorViewModel"/>) and, once accepted, calls
-    /// <see cref="CompleteGenerateToc"/>.
+    /// <see cref="CompleteGenerateTocAsync"/>.
     /// </summary>
     public event EventHandler? GenerateTocRequested;
 
@@ -762,7 +762,7 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>
     /// Raised by the "Standardize EPUB" action — the view calls <see cref="PrepareStandardizationAsync"/> and shows the
-    /// modal dialog, whose "Apply" calls <see cref="ApplyStandardization"/>.
+    /// modal dialog, whose "Apply" calls <see cref="ApplyStandardizationAsync"/>.
     /// </summary>
     public event EventHandler? StandardizeRequested;
 
@@ -1731,16 +1731,23 @@ public sealed partial class MainWindowViewModel
     /// Confirms "Add Cover" for the chosen image (the view has already decided about a possible overwrite
     /// of the existing cover). Opens the resulting page in a tab.
     /// </summary>
-    public void ApplyAddCover(ImageResource image)
+    public async Task ApplyAddCoverAsync(ImageResource image)
     {
         ArgumentNullException.ThrowIfNull(image);
-        if (_currentBook is null)
+        if (_currentBook is not { } book)
         {
             return;
         }
 
-        CheckpointBeforeAction(AppActionIds.AddCover);
-        HtmlResource cover = _currentBook.SetCoverImage(image, _currentBook.FindExistingCoverHtmlResource());
+        string title = ActionLabel(AppActionIds.AddCover);
+        BookOperationOutcome<HtmlResource> run = await RunBookOperationAsync(
+            title, title, editsBook: true, (_, _) => book.SetCoverImage(image, book.FindExistingCoverHtmlResource())).ConfigureAwait(true);
+        if (!run.Completed)
+        {
+            return;
+        }
+
+        HtmlResource cover = run.Result!;
         BookBrowser.Refresh();
         _tabManager.OpenResources(new Resource[] { cover });
         _statusBar.ShowMessage(Strings.Get("Status_CoverAdded"), TimeSpan.FromSeconds(4));
@@ -1751,18 +1758,21 @@ public sealed partial class MainWindowViewModel
     /// (first flushing the content of the open tabs into the resources), or <c>null</c> when there is no book
     /// or there are no XHTML files.
     /// </summary>
-    public HeadingSelectorViewModel? CreateHeadingSelectorViewModel()
+    public async Task<HeadingSelectorViewModel?> CreateHeadingSelectorViewModelAsync()
     {
-        if (_currentBook is null || _currentBook.GetHtmlResources().Count == 0)
+        if (_currentBook is not { } book || book.GetHtmlResources().Count == 0)
         {
             return null;
         }
 
         _tabManager.SaveAllTabs();
         // A checkpoint before opening the window, because the window changes headings
-        // in the sources; the view rolls it back after cancelling (RewindCheckpoint).
-        CheckpointBeforeAction(AppActionIds.GenerateToc);
-        return new HeadingSelectorViewModel(_currentBook);
+        // in the sources; the view rolls it back after cancelling (RewindCheckpoint). Taking it and listing the headings of the
+        // book run off the UI thread under a progress window; cancelling it puts the book back and opens nothing.
+        string title = ActionLabel(AppActionIds.GenerateToc);
+        BookOperationOutcome<HeadingSelectorViewModel> run = await RunBookOperationAsync(
+            title, title, editsBook: true, (_, _) => new HeadingSelectorViewModel(book)).ConfigureAwait(true);
+        return run.Completed ? run.Result : null;
     }
 
     /// <summary>
@@ -1771,14 +1781,23 @@ public sealed partial class MainWindowViewModel
     /// the open tabs and refreshes the panels.
     /// </summary>
     /// <param name="headingsChanged">Whether the dialog changed headings in the sources (from <see cref="HeadingSelectorViewModel.BookChanged"/>).</param>
-    public void CompleteGenerateToc(bool headingsChanged)
+    public async Task CompleteGenerateTocAsync(bool headingsChanged)
     {
-        if (_currentBook is null)
+        if (_currentBook is not { } book)
         {
             return;
         }
 
-        bool tocChanged = TocGenerator.GenerateToc(_currentBook);
+        // The checkpoint was taken before the dialog, so this is a book operation without one of its own (no Cancel).
+        BookOperationOutcome<bool> run = await RunBookOperationAsync(
+            ActionLabel(AppActionIds.GenerateToc), checkpointName: null, editsBook: true, (_, _) => TocGenerator.GenerateToc(book))
+            .ConfigureAwait(true);
+        if (!run.Completed)
+        {
+            return;
+        }
+
+        bool tocChanged = run.Result;
 
         if (headingsChanged || tocChanged)
         {
@@ -1804,16 +1823,18 @@ public sealed partial class MainWindowViewModel
     /// Builds the view model of the "Edit Table Of Contents" dialog for the current publication (first
     /// flushing the content of the open tabs), or <c>null</c> when no book is open.
     /// </summary>
-    public EditTocViewModel? CreateEditTocViewModel()
+    public async Task<EditTocViewModel?> CreateEditTocViewModelAsync()
     {
-        if (_currentBook is null)
+        if (_currentBook is not { } book)
         {
             return null;
         }
 
         _tabManager.SaveAllTabs();
-        CheckpointBeforeAction(AppActionIds.EditToc);
-        return new EditTocViewModel(_currentBook);
+        string title = ActionLabel(AppActionIds.EditToc);
+        BookOperationOutcome<EditTocViewModel> run = await RunBookOperationAsync(
+            title, title, editsBook: true, (_, _) => new EditTocViewModel(book)).ConfigureAwait(true);
+        return run.Completed ? run.Result : null;
     }
 
     /// <summary>
@@ -2008,7 +2029,22 @@ public sealed partial class MainWindowViewModel
             return null;
         }
 
-        CleanupPreparation preparation = CleanupAnalysis.Prepare(_currentBook);
+        // Parsing every file and matching every selector takes long on a big book: off the UI thread under a progress window, which can
+        // be cancelled (the analysis only reads the book).
+        Book book = _currentBook;
+        BookOperationOutcome<CleanupPreparation> run = await RunBookOperationAsync(
+            Strings.Get("Operation_Cleanup"), checkpointName: null, editsBook: false,
+            (progress, cancel) =>
+            {
+                progress.Report(new WorkProgress(Strings.Get("Cleanup_Phase_Analyzing"), null));
+                return CleanupAnalysis.PrepareCancellable(book, cancel);
+            }).ConfigureAwait(true);
+        if (!run.Completed)
+        {
+            return null;
+        }
+
+        CleanupPreparation preparation = run.Result!;
         if (preparation.Analysis is null)
         {
             _statusBar.ShowMessage(
@@ -2088,7 +2124,7 @@ public sealed partial class MainWindowViewModel
     /// view model, or <c>null</c> when no book is open, the user cancelled, or a file is not well-formed (then a message
     /// goes to the status bar).
     /// </summary>
-    public async Task<StandardizationViewModel?> PrepareStandardizationAsync()
+    public async Task<StandardizationViewModel?> PrepareStandardizationAsync(ProgressRunner? runWithProgress = null)
     {
         if (_currentBook is not { } book)
         {
@@ -2101,7 +2137,20 @@ public sealed partial class MainWindowViewModel
             return null;
         }
 
-        if (EpubStandardization.FindNotWellFormed(book) is { } bad)
+        // Checking every file takes long on a big book: off the UI thread under a progress window, which can be cancelled.
+        BookOperationOutcome<Resource?> check = await RunBookOperationAsync(
+            Strings.Get("Operation_Standardize"), checkpointName: null, editsBook: false,
+            (_, cancel) =>
+            {
+                cancel.ThrowIfCancellationRequested();
+                return EpubStandardization.FindNotWellFormed(book);
+            }).ConfigureAwait(true);
+        if (!check.Completed)
+        {
+            return null;
+        }
+
+        if (check.Result is { } bad)
         {
             _statusBar.ShowMessage(
                 Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_Standardize"), bad.Filename),
@@ -2112,14 +2161,14 @@ public sealed partial class MainWindowViewModel
         return new StandardizationViewModel(
             _settings.StandardizationEnabledSteps,
             steps => EpubStandardization.Plan(book, steps),
-            ApplyStandardization);
+            steps => ApplyStandardizationAsync(steps, runWithProgress));
     }
 
     /// <summary>
     /// Runs the checked steps of the "Standardize EPUB" dialog ("Apply") behind one automatic checkpoint, remembers the
     /// checked steps for the next time and refreshes the open tabs and panels.
     /// </summary>
-    public void ApplyStandardization(IReadOnlyList<StandardizationStep> enabledSteps)
+    public async Task ApplyStandardizationAsync(IReadOnlyList<StandardizationStep> enabledSteps, ProgressRunner? runWithProgress = null)
     {
         ArgumentNullException.ThrowIfNull(enabledSteps);
         _settings.StandardizationEnabledSteps = enabledSteps;
@@ -2135,23 +2184,52 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        bool checkpoint = CheckpointBeforeAction(AppActionIds.Standardize);
-        MaintenanceOperationResult result = EpubStandardization.Apply(book, enabledSteps);
-        if (!result.Applied)
+        string title = ActionLabel(AppActionIds.Standardize);
+        if (!await RunMaintenanceAsync(
+                title, title, "Operation_Standardize", b => EpubStandardization.Apply(b, enabledSteps), runWithProgress).ConfigureAwait(true))
         {
-            if (checkpoint)
-            {
-                RewindCheckpoint();
-            }
-
-            _statusBar.ShowMessage(
-                Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_Standardize"), result.NotWellFormed?.Filename),
-                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
             return;
         }
 
         RefreshAfterMaintenanceOperation();
         _statusBar.ShowMessage(Strings.Get("Status_StandardizeDone"), TimeSpan.FromSeconds(4));
+    }
+
+    // A maintenance operation of the whole book (Standardize, Restructure, Use Standard File Extensions…): the checkpoint named
+    // `checkpointName` (when given) and `apply` run off the UI thread under the progress window `title`, with Cancel when there is
+    // a checkpoint to go back to. When `apply` refuses (an (X)HTML file is not well-formed) the checkpoint is rewound and the status
+    // bar says so (`operationKey` is the resource key of the operation's name). Returns whether it was applied; the caller then
+    // refreshes the UI and reports.
+    private async Task<bool> RunMaintenanceAsync(
+        string title, string? checkpointName, string operationKey, Func<Book, MaintenanceOperationResult> apply,
+        ProgressRunner? runWithProgress = null)
+    {
+        if (_currentBook is not { } book)
+        {
+            return false;
+        }
+
+        BookOperationOutcome<MaintenanceOperationResult> run = await RunBookOperationAsync(
+            title, checkpointName, editsBook: true, (_, _) => apply(book), runWithProgress).ConfigureAwait(true);
+        if (!run.Completed)
+        {
+            return false;
+        }
+
+        if (!run.Result!.Applied)
+        {
+            if (run.Checkpoint)
+            {
+                RewindCheckpoint();
+            }
+
+            _statusBar.ShowMessage(
+                Strings.Format("Status_CancelledNotWellFormed", Strings.Get(operationKey), run.Result.NotWellFormed?.Filename),
+                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
+            return false;
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -2161,7 +2239,7 @@ public sealed partial class MainWindowViewModel
     /// splitting can go on). Refused (status bar message) for the nav file, a file that is not well-formed, or a
     /// caret inside a tag.
     /// </summary>
-    public void SplitFileAtCaret()
+    public async Task SplitFileAtCaretAsync()
     {
         if (_currentBook is null || ActiveCodeTab is not { IsHtmlFlow: true, Resource: HtmlResource html } tab)
         {
@@ -2181,11 +2259,19 @@ public sealed partial class MainWindowViewModel
 
         int caret = tab.CaretOffset;
         _tabManager.SaveAllTabs();
-        bool checkpoint = CheckpointBeforeAction(AppActionIds.SplitSection);
-        HtmlResource? created = _currentBook.SplitAtPosition(html, caret);
+        Book book = _currentBook;
+        string title = ActionLabel(AppActionIds.SplitSection);
+        BookOperationOutcome<HtmlResource?> run = await RunBookOperationAsync(
+            title, title, editsBook: true, (_, _) => book.SplitAtPosition(html, caret)).ConfigureAwait(true);
+        if (!run.Completed)
+        {
+            return;
+        }
+
+        HtmlResource? created = run.Result;
         if (created is null)
         {
-            if (checkpoint)
+            if (run.Checkpoint)
             {
                 RewindCheckpoint();
             }
@@ -2204,7 +2290,7 @@ public sealed partial class MainWindowViewModel
     /// (<see cref="Book.SplitOnSectionMarkers"/>) — the first section stays in the file, the others go to new files
     /// right after it. The Book Browser has the same operation for the selected files.
     /// </summary>
-    public void SplitCurrentFileAtMarkers()
+    public async Task SplitCurrentFileAtMarkersAsync()
     {
         if (_currentBook is null || ActiveCodeTab is not { IsHtmlFlow: true, Resource: HtmlResource html } tab)
         {
@@ -2223,11 +2309,19 @@ public sealed partial class MainWindowViewModel
         }
 
         _tabManager.SaveAllTabs();
-        bool checkpoint = CheckpointBeforeAction(AppActionIds.SplitOnSgfSectionMarkers);
-        IReadOnlyList<HtmlResource> created = _currentBook.SplitOnSectionMarkers(html);
+        Book book = _currentBook;
+        string title = ActionLabel(AppActionIds.SplitOnSgfSectionMarkers);
+        BookOperationOutcome<IReadOnlyList<HtmlResource>> run = await RunBookOperationAsync(
+            title, title, editsBook: true, (_, _) => book.SplitOnSectionMarkers(html)).ConfigureAwait(true);
+        if (!run.Completed)
+        {
+            return;
+        }
+
+        IReadOnlyList<HtmlResource> created = run.Result!;
         if (created.Count == 0)
         {
-            if (checkpoint)
+            if (run.Checkpoint)
             {
                 RewindCheckpoint();
             }
@@ -2875,18 +2969,9 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        bool checkpoint = CheckpointBeforeAction(AppActionIds.StandardizeEpub);
-        MaintenanceOperationResult result = _currentBook.RestructureToSignetNorm();
-        if (!result.Applied)
+        string title = ActionLabel(AppActionIds.StandardizeEpub);
+        if (!await RunMaintenanceAsync(title, title, "Operation_Restructure", b => b.RestructureToSignetNorm()).ConfigureAwait(true))
         {
-            if (checkpoint)
-            {
-                RewindCheckpoint();
-            }
-
-            _statusBar.ShowMessage(
-                Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_Restructure"), result.NotWellFormed?.Filename),
-                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
             return;
         }
 
@@ -2908,12 +2993,10 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        MaintenanceOperationResult result = _currentBook.UseStandardFileExtensions();
-        if (!result.Applied)
+        if (!await RunMaintenanceAsync(
+                ActionLabel(AppActionIds.UseStandardFileExtensions), null, "Operation_BulkRename", b => b.UseStandardFileExtensions())
+                .ConfigureAwait(true))
         {
-            _statusBar.ShowMessage(
-                Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_BulkRename"), result.NotWellFormed?.Filename),
-                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
             return;
         }
 
@@ -2922,19 +3005,16 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <summary>"Rebase OPF Manifest IDs on Current Filenames".</summary>
-    private void RebaseManifestIds()
+    private async Task RebaseManifestIdsAsync()
     {
         if (_currentBook is null)
         {
             return;
         }
 
-        MaintenanceOperationResult result = _currentBook.RebaseManifestIds();
-        if (!result.Applied)
+        if (!await RunMaintenanceAsync(
+                ActionLabel(AppActionIds.RebaseManifestIds), null, "Operation_Rebase", b => b.RebaseManifestIds()).ConfigureAwait(true))
         {
-            _statusBar.ShowMessage(
-                Strings.Format("Status_CancelledNotWellFormed", Strings.Get("Operation_Rebase"), result.NotWellFormed?.Filename),
-                TimeSpan.FromSeconds(6), NotificationLevel.Warning);
             return;
         }
 
@@ -3156,17 +3236,24 @@ public sealed partial class MainWindowViewModel
     /// book's table of contents, adds <c>sgc-toc.css</c> if needed and opens the result in a tab
     /// (no overwrite confirmation dialog).
     /// </summary>
-    private void CreateHtmlToc()
+    private async Task CreateHtmlTocAsync()
     {
-        if (_currentBook is null)
+        if (_currentBook is not { } book)
         {
             _statusBar.ShowMessage(Strings.Get("Status_NoBookOpen"), TimeSpan.FromSeconds(4));
             return;
         }
 
         _tabManager.SaveAllTabs();
-        CheckpointBeforeAction(AppActionIds.CreateHtmlToc);
-        HtmlResource tocResource = TocGenerator.CreateHtmlToc(_currentBook);
+        string title = ActionLabel(AppActionIds.CreateHtmlToc);
+        BookOperationOutcome<HtmlResource> run = await RunBookOperationAsync(
+            title, title, editsBook: true, (_, _) => TocGenerator.CreateHtmlToc(book)).ConfigureAwait(true);
+        if (!run.Completed)
+        {
+            return;
+        }
+
+        HtmlResource tocResource = run.Result!;
 
         foreach (ContentTabViewModel view in _tabManager.OpenTabViews)
         {
@@ -3420,9 +3507,9 @@ public sealed partial class MainWindowViewModel
     /// guide, EPUB 3 metadata and manifest properties, HTML5 DOCTYPEs. The NCX and the guide stay. An automatic
     /// checkpoint before the conversion makes it undoable.
     /// </summary>
-    private void UpgradeToEpub3()
+    private async Task UpgradeToEpub3Async()
     {
-        if (_currentBook is null)
+        if (_currentBook is not { } book)
         {
             return;
         }
@@ -3434,8 +3521,15 @@ public sealed partial class MainWindowViewModel
         }
 
         _tabManager.SaveAllTabs();
-        CheckpointBeforeAction(AppActionIds.UpgradeToEpub3);
-        EpubUpgradeResult result = EpubUpgrader.UpgradeToEpub3(_currentBook)!;
+        string title = ActionLabel(AppActionIds.UpgradeToEpub3);
+        BookOperationOutcome<EpubUpgradeResult?> run = await RunBookOperationAsync(
+            title, title, editsBook: true, (_, _) => EpubUpgrader.UpgradeToEpub3(book)).ConfigureAwait(true);
+        if (!run.Completed)
+        {
+            return;
+        }
+
+        EpubUpgradeResult result = run.Result!;
 
         RefreshAfterMaintenanceOperation();
         _toc.Refresh();

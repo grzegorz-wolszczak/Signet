@@ -23,7 +23,7 @@ public sealed class StandardizationWindowTests
         // Arrange
         using TempDir temp = new();
         using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.EdgeDeepFolders, temp)).GetBook();
-        StandardizationViewModel vm = new(EpubStandardization.AllSteps, steps => EpubStandardization.Plan(book, steps), _ => { });
+        StandardizationViewModel vm = new(EpubStandardization.AllSteps, steps => EpubStandardization.Plan(book, steps), _ => System.Threading.Tasks.Task.CompletedTask);
         StandardizationWindow window = new() { DataContext = vm };
 
         // Act

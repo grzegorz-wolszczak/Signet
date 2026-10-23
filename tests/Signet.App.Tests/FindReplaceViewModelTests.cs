@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using System;
 using System.IO;
 using AwesomeAssertions;
@@ -303,7 +304,7 @@ public sealed class FindReplaceViewModelTests : IDisposable
     }
 
     [Fact]
-    public void ReplaceAll_ReplacesEveryMatchInDocument()
+    public async Task ReplaceAll_ReplacesEveryMatchInDocument()
     {
         // Arrange
         CodeTabViewModel tab = NewTab("cat cat cat");
@@ -313,7 +314,7 @@ public sealed class FindReplaceViewModelTests : IDisposable
         panel.ReplaceText = "dog";
 
         // Act & Assert
-        panel.ReplaceAll().Should().Be(3);
+        (await panel.ReplaceAllAsync()).Should().Be(3);
 
         // Assert
         tab.Document.Text.Should().Be("dog dog dog");
@@ -357,7 +358,7 @@ public sealed class FindReplaceViewModelTests : IDisposable
     }
 
     [Fact]
-    public void RegexMode_BackreferenceReplaceAll()
+    public async Task RegexMode_BackreferenceReplaceAll()
     {
         // Arrange
         CodeTabViewModel tab = NewTab("2026-09-08");
@@ -368,7 +369,7 @@ public sealed class FindReplaceViewModelTests : IDisposable
         panel.ReplaceText = @"\3.\2.\1";
 
         // Act & Assert
-        panel.ReplaceAll().Should().Be(1);
+        (await panel.ReplaceAllAsync()).Should().Be(1);
 
         // Assert
         tab.Document.Text.Should().Be("08.09.2026");
@@ -391,7 +392,7 @@ public sealed class FindReplaceViewModelTests : IDisposable
     }
 
     [Fact]
-    public void History_IsPersistedAndReloaded()
+    public async Task History_IsPersistedAndReloaded()
     {
         // Arrange
         CodeTabViewModel tab = NewTab("hello hello");
@@ -401,7 +402,7 @@ public sealed class FindReplaceViewModelTests : IDisposable
         panel.ReplaceText = "hi";
 
         // Act
-        panel.ReplaceAll();
+        await panel.ReplaceAllAsync();
 
         // Assert
         panel.FindHistory.Should().Contain("hello");
@@ -438,7 +439,7 @@ public sealed class FindReplaceViewModelTests : IDisposable
     }
 
     [Fact]
-    public void RestrictToSelection_MarksRegionAndLimitsReplaceAll()
+    public async Task RestrictToSelection_MarksRegionAndLimitsReplaceAll()
     {
         // Arrange
         CodeTabViewModel tab = NewTab("cat cat cat cat");
@@ -457,7 +458,7 @@ public sealed class FindReplaceViewModelTests : IDisposable
         panel.ReplaceText = "dog";
 
         // Act & Assert
-        panel.ReplaceAll().Should().Be(2);
+        (await panel.ReplaceAllAsync()).Should().Be(2);
 
         // Assert
         tab.Document.Text.Should().Be("cat dog dog cat");

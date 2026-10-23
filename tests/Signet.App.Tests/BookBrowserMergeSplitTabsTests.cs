@@ -1,8 +1,10 @@
+using System.Threading.Tasks;
 using System;
 using System.Linq;
 using AutoFixture.Xunit3;
 using AwesomeAssertions;
 using Signet.App.Services;
+using Signet.App.Tests.TestSupport;
 using Signet.App.ViewModels;
 using Signet.App.ViewModels.Tabs;
 using Signet.Core.BookManipulation;
@@ -51,12 +53,12 @@ public sealed class BookBrowserMergeSplitTabsTests
 
         // Puts a split marker followed by a paragraph at the end of the chapter (through the tab) and splits it
         // from the Book Browser; returns the new file.
-        public HtmlResource SplitChapter(CodeTabViewModel tab, string secondPart)
+        public async Task<HtmlResource> SplitChapter(CodeTabViewModel tab, string secondPart)
         {
             tab.Document.Text = tab.Document.Text.Replace(
                 "</body>", $"{CodeEditorModel.SectionMarker}<p>{secondPart}</p></body>", StringComparison.Ordinal);
             Select(Chapter);
-            Vm.BookBrowser.SplitSelectedCommand.Execute(null);
+            await Vm.BookBrowser.SplitSelectedCommand.ExecuteAsync(null);
             return Book.GetAllResources().OfType<HtmlResource>()
                 .Single(r => r.BookPath.EndsWith("chapter1_0001.xhtml", StringComparison.Ordinal));
         }
@@ -66,41 +68,47 @@ public sealed class BookBrowserMergeSplitTabsTests
 
     [Theory]
     [AutoData]
-    public void Split_at_markers_reloads_the_open_tab_of_the_split_file(string secondPart)
+    public async Task Split_at_markers_reloads_the_open_tab_of_the_split_file(string secondPart)
     {
-        // Arrange
-        using TempDir temp = new();
-        using Session s = new(temp);
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using TempDir temp = new();
+            using Session s = new(temp);
 
-        // Act
-        CodeTabViewModel tab = s.OpenChapter();
+            // Act
+            CodeTabViewModel tab = s.OpenChapter();
 
-        s.SplitChapter(tab, secondPart);
+            await s.SplitChapter(tab, secondPart);
 
-        // Assert
-        tab.Document.Text.Should().Be(s.Chapter.GetText());
-        tab.Document.Text.Should().NotContain(secondPart, "the second part moved to the new file");
-        tab.IsModified.Should().BeFalse();
+            // Assert
+            tab.Document.Text.Should().Be(s.Chapter.GetText());
+            tab.Document.Text.Should().NotContain(secondPart, "the second part moved to the new file");
+            tab.IsModified.Should().BeFalse();
+        });
     }
 
     [Theory]
     [AutoData]
-    public void Merge_reloads_the_open_tab_of_the_target_file(string secondPart)
+    public async Task Merge_reloads_the_open_tab_of_the_target_file(string secondPart)
     {
-        // Arrange
-        using TempDir temp = new();
-        using Session s = new(temp);
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using TempDir temp = new();
+            using Session s = new(temp);
 
-        // Act
-        CodeTabViewModel tab = s.OpenChapter();
-        HtmlResource second = s.SplitChapter(tab, secondPart);
-        s.Select(s.Chapter, second);
+            // Act
+            CodeTabViewModel tab = s.OpenChapter();
+            HtmlResource second = await s.SplitChapter(tab, secondPart);
+            s.Select(s.Chapter, second);
 
-        s.Vm.BookBrowser.MergeSelectedCommand.Execute(null);
+            await s.Vm.BookBrowser.MergeSelectedCommand.ExecuteAsync(null);
 
-        // Assert
-        tab.Document.Text.Should().Be(s.Chapter.GetText());
-        tab.Document.Text.Should().Contain(secondPart, "the merged file's body is appended to the target");
-        tab.IsModified.Should().BeFalse();
+            // Assert
+            tab.Document.Text.Should().Be(s.Chapter.GetText());
+            tab.Document.Text.Should().Contain(secondPart, "the merged file's body is appended to the target");
+            tab.IsModified.Should().BeFalse();
+        });
     }
 }

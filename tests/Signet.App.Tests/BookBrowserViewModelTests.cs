@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -316,7 +317,7 @@ public sealed class BookBrowserViewModelTests
     }
 
     [Fact]
-    public void CommitInPlaceRename_renames_the_file_and_reselects_it()
+    public async Task CommitInPlaceRename_renames_the_file_and_reselects_it()
     {
         // Arrange
         using TempDir temp = new();
@@ -333,7 +334,7 @@ public sealed class BookBrowserViewModelTests
 
         sut.RenameSelectedCommand.Execute(null);
         file.EditText = "  renamed.xhtml ";
-        sut.CommitInPlaceRename();
+        await sut.CommitInPlaceRenameAsync();
 
         // Assert
         resource.Filename.Should().Be("renamed.xhtml");
@@ -369,7 +370,7 @@ public sealed class BookBrowserViewModelTests
     [Theory]
     [InlineData("")]
     [InlineData("   ")]
-    public void CommitInPlaceRename_with_a_blank_name_does_nothing(string blank)
+    public async Task CommitInPlaceRename_with_a_blank_name_does_nothing(string blank)
     {
         // Arrange
         using TempDir temp = new();
@@ -384,7 +385,7 @@ public sealed class BookBrowserViewModelTests
 
         sut.RenameSelectedCommand.Execute(null);
         file.EditText = blank;
-        sut.CommitInPlaceRename();
+        await sut.CommitInPlaceRenameAsync();
 
         // Assert
         file.Entry.Resource.Filename.Should().Be(original);
@@ -392,7 +393,7 @@ public sealed class BookBrowserViewModelTests
     }
 
     [Fact]
-    public void ApplyDelete_removes_files_and_rebuilds_the_tree()
+    public async Task ApplyDelete_removes_files_and_rebuilds_the_tree()
     {
         // Arrange
         using TempDir temp = new();
@@ -407,7 +408,7 @@ public sealed class BookBrowserViewModelTests
             .Children.First(n => n.Header.EndsWith("figure.png", System.StringComparison.Ordinal));
 
         // Act
-        sut.ApplyDelete(new[] { figure.Entry! });
+        await sut.ApplyDeleteAsync(new[] { figure.Entry! });
 
         // Assert
         sut.Nodes.Single(n => n.Header == "Images").Children
@@ -416,7 +417,7 @@ public sealed class BookBrowserViewModelTests
     }
 
     [Fact]
-    public void ApplyDelete_removes_the_toc_entries_of_deleted_files_and_reports_it()
+    public async Task ApplyDelete_removes_the_toc_entries_of_deleted_files_and_reports_it()
     {
         // Arrange
         using Book book = BookCreator.CreateNewBook("3.0");
@@ -441,7 +442,7 @@ public sealed class BookBrowserViewModelTests
         sut.TocChanged += (_, _) => tocChanged++;
         BookBrowserNode node = Flatten(sut.Nodes.Single(n => n.Header == "Text")).Single(n => n.Entry?.Resource == chapter);
 
-        sut.ApplyDelete(new[] { node.Entry! });
+        await sut.ApplyDeleteAsync(new[] { node.Entry! });
 
         // Assert
         TocEditModel.GetRootTocEntry(book).Children.Select(e => e.Text).Should().Equal("Kept");
@@ -548,7 +549,7 @@ public sealed class BookBrowserViewModelTests
     }
 
     [Fact]
-    public void ApplyAddExistingFiles_copiesFilesIntoBookAndRaisesOpenRequest()
+    public async Task ApplyAddExistingFiles_copiesFilesIntoBookAndRaisesOpenRequest()
     {
         // Arrange
         using TempDir temp = new();
@@ -564,7 +565,7 @@ public sealed class BookBrowserViewModelTests
         IReadOnlyList<Resource>? opened = null;
         sut.OpenResourceRequested += (_, r) => opened = r;
 
-        sut.ApplyAddExistingFiles(new[] { imagePath });
+        await sut.ApplyAddExistingFilesAsync(new[] { imagePath });
 
         // Assert
         opened.Should().ContainSingle().Which.Filename.Should().Be("added.jpg");
@@ -572,7 +573,7 @@ public sealed class BookBrowserViewModelTests
     }
 
     [Fact]
-    public void ApplyDelete_refusesToRemoveTheNavDocument()
+    public async Task ApplyDelete_refusesToRemoveTheNavDocument()
     {
         // Arrange
         using TempDir temp = new();
@@ -584,14 +585,14 @@ public sealed class BookBrowserViewModelTests
 
         BookBrowserNode nav = sut.Nodes.SelectMany(Flatten).Single(n => n.Entry?.IsNav == true);
 
-        sut.ApplyDelete(new[] { nav.Entry! });
+        await sut.ApplyDeleteAsync(new[] { nav.Entry! });
 
         // Assert
         book.GetAllResources().Should().Contain(r => r.BookPath == nav.Entry!.BookPath);
     }
 
     [Fact]
-    public void ApplyDelete_refusesToRemoveTheNcx()
+    public async Task ApplyDelete_refusesToRemoveTheNcx()
     {
         // Arrange
         using TempDir temp = new();
@@ -603,14 +604,14 @@ public sealed class BookBrowserViewModelTests
 
         BookBrowserNode ncx = sut.Nodes.SelectMany(Flatten).Single(n => n.Header.EndsWith(".ncx", System.StringComparison.Ordinal));
 
-        sut.ApplyDelete(new[] { ncx.Entry! });
+        await sut.ApplyDeleteAsync(new[] { ncx.Entry! });
 
         // Assert
         book.GetNcx().Should().NotBeNull();
     }
 
     [Fact]
-    public void ApplyDelete_refusesToRemoveAllHtmlFiles()
+    public async Task ApplyDelete_refusesToRemoveAllHtmlFiles()
     {
         // Arrange
         using TempDir temp = new();
@@ -625,14 +626,14 @@ public sealed class BookBrowserViewModelTests
             .Select(n => n.Entry!)
             .ToList();
 
-        sut.ApplyDelete(allHtml);
+        await sut.ApplyDeleteAsync(allHtml);
 
         // Assert
         book.GetHtmlResources().Should().HaveCount(allHtml.Count);
     }
 
     [Fact]
-    public void ApplyMassRename_NumbersTheFilesWithPaddingKeepsTheExtensionsAndRemembersTheOptions()
+    public async Task ApplyMassRename_NumbersTheFilesWithPaddingKeepsTheExtensionsAndRemembersTheOptions()
     {
         // Arrange
         using TempDir temp = new();
@@ -649,7 +650,7 @@ public sealed class BookBrowserViewModelTests
         MassRenameOptions options = new("part", 2, '#', 5, false);
 
         // Act
-        sut.ApplyMassRename(text, options);
+        await sut.ApplyMassRenameAsync(text, options);
 
         // Assert
         text.Select(e => e.Resource.Filename).Should().Equal(
@@ -659,7 +660,7 @@ public sealed class BookBrowserViewModelTests
     }
 
     [Fact]
-    public void ApplyMassRename_InTheOrderOfTheBookNumbersTheFilesByTheSpineNotBySelection()
+    public async Task ApplyMassRename_InTheOrderOfTheBookNumbersTheFilesByTheSpineNotBySelection()
     {
         // Arrange
         using TempDir temp = new();
@@ -680,7 +681,7 @@ public sealed class BookBrowserViewModelTests
         BookBrowserViewModel.CanUseBookOrder(reversed).Should().BeTrue();
 
         // Act
-        sut.ApplyMassRename(reversed, new MassRenameOptions("part", 1, '0', 3, true));
+        await sut.ApplyMassRenameAsync(reversed, new MassRenameOptions("part", 1, '0', 3, true));
 
         // Assert
         bySpine.Select(e => System.IO.Path.GetFileNameWithoutExtension(e.Resource.Filename))
@@ -718,7 +719,7 @@ public sealed class BookBrowserViewModelTests
     }
 
     [Fact]
-    public void ApplyMassRename_ForbiddenCharacterShowsStatusAndDoesNotRename()
+    public async Task ApplyMassRename_ForbiddenCharacterShowsStatusAndDoesNotRename()
     {
         // Arrange
         using TempDir temp = new();
@@ -734,7 +735,7 @@ public sealed class BookBrowserViewModelTests
         List<string> before = book.GetHtmlResources().Select(r => r.Filename).ToList();
 
         // Act
-        sut.ApplyMassRename(text, new MassRenameOptions("bad:name", 1, '0', 1, false));
+        await sut.ApplyMassRenameAsync(text, new MassRenameOptions("bad:name", 1, '0', 1, false));
 
         // Assert
         book.GetHtmlResources().Select(r => r.Filename).Should().BeEquivalentTo(before);
@@ -925,7 +926,7 @@ public sealed class BookBrowserViewModelTests
     }
 
     [Fact]
-    public void ApplyRenameList_RenamesAndUpdatesCrossReferences()
+    public async Task ApplyRenameList_RenamesAndUpdatesCrossReferences()
     {
         // Arrange
         using TempDir temp = new();
@@ -940,7 +941,7 @@ public sealed class BookBrowserViewModelTests
         List<Resource> resources = new() { image };
         List<string> newNames = new() { "figure-bulk.png" };
 
-        sut.ApplyRenameList(resources, newNames);
+        await sut.ApplyRenameListAsync(resources, newNames);
 
         // Assert
         image.Filename.Should().Be("figure-bulk.png");
@@ -1280,7 +1281,7 @@ public sealed class BookBrowserViewModelTests
     }
 
     [Fact]
-    public void ApplySemanticCode_Epub3_SetsLandmarkAndRefreshesTree()
+    public async Task ApplySemanticCode_Epub3_SetsLandmarkAndRefreshesTree()
     {
         // Arrange
         using TempDir temp = new();
@@ -1293,7 +1294,7 @@ public sealed class BookBrowserViewModelTests
         OpfModelEntry chapter = sut.Nodes.Single(n => n.Header == "Text")
             .Children.Select(n => n.Entry!).Single(e => e.Resource.Filename == "chapter1.xhtml");
 
-        sut.ApplySemanticCode(chapter, "preface");
+        await sut.ApplySemanticCodeAsync(chapter, "preface");
 
         OpfModelEntry updated = sut.Nodes.Single(n => n.Header == "Text")
             .Children.Select(n => n.Entry!).Single(e => e.Resource.Filename == "chapter1.xhtml");
@@ -1304,7 +1305,7 @@ public sealed class BookBrowserViewModelTests
     }
 
     [Fact]
-    public void ApplySemanticCode_Epub3_NavResourceOnlyAcceptsTocCode()
+    public async Task ApplySemanticCode_Epub3_NavResourceOnlyAcceptsTocCode()
     {
         // Arrange
         using TempDir temp = new();
@@ -1319,7 +1320,7 @@ public sealed class BookBrowserViewModelTests
         HtmlResource navResource = (HtmlResource)navEntry.Resource;
 
         int landmarkCountBefore = new NavProcessor(navResource).GetLandmarks().Count;
-        sut.ApplySemanticCode(navEntry, "bodymatter");
+        await sut.ApplySemanticCodeAsync(navEntry, "bodymatter");
 
         // Assert
         new NavProcessor(navResource).GetLandmarks().Should().HaveCount(landmarkCountBefore);
@@ -1328,7 +1329,7 @@ public sealed class BookBrowserViewModelTests
         // so GetLandmarkCodeForResource(nav) will not find it (a side effect —
         // so we check the landmark list directly).
         // Act
-        sut.ApplySemanticCode(navEntry, "toc");
+        await sut.ApplySemanticCodeAsync(navEntry, "toc");
 
         // Assert
         new NavProcessor(navResource).GetLandmarks().Should().Contain(e => e.EpubType == "toc" && e.Href == "#toc");
@@ -1446,7 +1447,7 @@ public sealed class BookBrowserViewModelTests
     }
 
     [Fact]
-    public void ApplyLinkStylesheets_rewrites_head_links_of_selected_files()
+    public async Task ApplyLinkStylesheets_rewrites_head_links_of_selected_files()
     {
         // Arrange
         using TempDir temp = new();
@@ -1458,7 +1459,7 @@ public sealed class BookBrowserViewModelTests
 
         var chapter = (HtmlResource)book.GetHtmlResources().Single(h => h.Filename == "chapter1.xhtml");
 
-        sut.ApplyLinkStylesheets(new[] { chapter }, System.Array.Empty<string>());
+        await sut.ApplyLinkStylesheetsAsync(new[] { chapter }, System.Array.Empty<string>());
 
         // Assert
         chapter.GetText().Should().NotContain("stylesheet");
@@ -1466,7 +1467,7 @@ public sealed class BookBrowserViewModelTests
     }
 
     [Fact]
-    public void ApplyLinkStylesheets_reportsSkippedNotWellFormedFileOnStatusBarAndInReport()
+    public async Task ApplyLinkStylesheets_reportsSkippedNotWellFormedFileOnStatusBarAndInReport()
     {
         // Arrange
         using TempDir temp = new();
@@ -1483,7 +1484,7 @@ public sealed class BookBrowserViewModelTests
         var chapter = (HtmlResource)book.GetHtmlResources().Single(h => h.Filename == "chapter1.xhtml");
         chapter.SetText("<html><head><body><p>broken");
 
-        sut.ApplyLinkStylesheets(new[] { chapter }, System.Array.Empty<string>());
+        await sut.ApplyLinkStylesheetsAsync(new[] { chapter }, System.Array.Empty<string>());
 
         // Assert
         status.CurrentMessage.Should().Be(
@@ -1567,7 +1568,7 @@ public sealed class BookBrowserViewModelTests
     }
 
     [Fact]
-    public void ApplyMove_movesTheResourceAndUpdatesCrossReferences()
+    public async Task ApplyMove_movesTheResourceAndUpdatesCrossReferences()
     {
         // Arrange
         using TempDir temp = new();
@@ -1581,7 +1582,7 @@ public sealed class BookBrowserViewModelTests
         BookBrowserNode images = sut.Nodes.Single(n => n.Header == "Images");
         OpfModelEntry entry = images.Children.Select(n => n.Entry!).Single(e => e.Resource.Filename == "figure.png");
 
-        sut.ApplyMove(new[] { entry }, imagesFolder + "/sub");
+        await sut.ApplyMoveAsync(new[] { entry }, imagesFolder + "/sub");
 
         // Assert
         image.BookPath.Should().Be(imagesFolder + "/sub/figure.png");
@@ -1589,7 +1590,7 @@ public sealed class BookBrowserViewModelTests
     }
 
     [Fact]
-    public void ApplyMove_invalidDestination_showsStatusMessage()
+    public async Task ApplyMove_invalidDestination_showsStatusMessage()
     {
         // Arrange
         using TempDir temp = new();
@@ -1603,7 +1604,7 @@ public sealed class BookBrowserViewModelTests
         BookBrowserNode images = sut.Nodes.Single(n => n.Header == "Images");
         OpfModelEntry entry = images.Children.Select(n => n.Entry!).Single(e => e.Resource.Filename == "figure.png");
 
-        sut.ApplyMove(new[] { entry }, "../outside");
+        await sut.ApplyMoveAsync(new[] { entry }, "../outside");
 
         // Assert
         status.CurrentMessage.Should().NotBeNullOrEmpty();
