@@ -24,6 +24,13 @@ public sealed class TempDirTests
         Directory.Exists(sut.Path).Should().BeFalse();
     }
 
+    // Guards the "tests leave nothing behind" rule: a test that forgets to dispose a FileStream it opened should
+    // make TempDir.Dispose fail loudly, not silently "succeed" while a handle is still open. On Windows this falls
+    // out of Directory.Delete itself (the OS refuses to remove a file that is still open). On Linux/WSL it would
+    // not: deleting there only unlinks the directory entry, which does not check for open handles — the file's
+    // inode keeps the held FileStream's data alive until that handle closes, so Directory.Delete(recursive: true)
+    // reports success even though the test leaked a handle. TempDir.Dispose (FindOpenFile) works around this by
+    // probing every file for an exclusive open before deleting, which fails on both platforms when one is held.
     [Fact]
     public void Dispose_throws_naming_the_file_that_is_still_open()
     {
