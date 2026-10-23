@@ -151,47 +151,168 @@ potrzebuje `--delete --delete-excluded`, inaczej stare `bin`/`obj` z poprzednich
 (wykluczone z synchronizacji, ale nigdy nieczyszczone) mogą powodować błędy typu `AVLN2000:
 Unable to resolve "!AvaloniaResources"` przez niespójny stan inkrementalnego builda.
 
+### 9. Naprawione (druga sesja): realny % podczas skanowania przypisów
+
+`FootnoteScanner.Scan` dostał opcjonalny `IProgress<ScanProgress>` (nowy publiczny typ
+`ScanProgress(Done, Total)` w `Signet.Core.Footnotes`, plik `FootnoteScanner.cs`), raportujący po
+każdym pliku. Wątek przez trzy miejsca, które już go wołały:
+- `FootnoteEditor.RenumberWith` — etap `RenumberStage.Scanning` ma teraz realny `Done`/`Total`
+  zamiast tylko 0/0 na starcie i total/total na końcu (adapter `ScanProgressRelay`).
+- `FootnoteEditor.PlanPlacement`/`PlanConversion` — dostały opcjonalny `IProgress<ScanProgress>?`
+  i przekazują go prosto do `Scan`.
+
+Po stronie App: `MainWindowViewModel.Footnotes.cs` ma nową `ScanProgressMap` (mapuje `ScanProgress`
+na `WorkProgress` z formatem "plik X z Y"), użytą w `PrepareFootnotePlacementAsync`/
+`PrepareFootnoteConversionAsync` (nowy parametr `analysisProgress`). `ProgressWindow.RunAsync<T>`
+zmienił sygnaturę z `Task<T?> work` na `Func<IProgress<WorkProgress>, Task<T?>> work`, żeby fazy
+"Analizowanie…" (Change Placement / Convert Footnotes) też mogły pokazywać realny procent, nie
+tylko nieokreślony spinner — jedyni dwaj wołający (`MainWindow.axaml.cs`) dostali odpowiadające
+zmiany. Nowe stringi (PL/EN): `FootnotePlacement_Progress_Analyzing`,
+`FootnoteConversion_Progress_Analyzing`, zmieniony `FootnoteRenumber_Progress_Scanning` (dodane
+`{0}`/`{1}`).
+
+### 10. Naprawione (druga sesja): pozostałe synchroniczne `AddCheckpointBefore` przeniesione do tła
+
+Siedem operacji z punktu 3 (lista poniżej) dostało ten sam wzorzec co pięć szybkich edycji
+przypisów (`AddFootnote` itp.): `TryEnterBookOperation`/`ExitBookOperation`,
+`AddCheckpointBeforeAsync`, ciężka edycja przez `RunInBackgroundAsync`. Okno progresu: delay 300 ms,
+bez Cancel (`ProgressWindow.DelayedRunner(Window)` — nowy wspólny helper w `ProgressWindow.axaml.cs`,
+zastąpił prywatny `CodeTabView.DelayedFootnoteProgress`, który robił to samo tylko dla przypisów).
+
+- `ICodeTabHost.ApplyClassRename`/`ApplyIdRename`/`ApplyClassRemoval`/`ApplySpanRemovalInBook` —
+  zmienione na `Task` z nowym parametrem `ProgressRunner? runWithProgress = null`; wołający w
+  `CodeTabView.axaml.cs`/`CodeTabViewModel.ApplySpanRemoval` dostają `ProgressWindow.DelayedRunner(owner)`.
+- `IEditionPageHost.RemoveEditionPage()` → `RemoveEditionPageAsync()` (`Task<bool>`). Wołane z
+  `PreferencesViewModel` (okno Preferencji), które nie ma dotąd żadnego dostępu do `Window` dla
+  okna progresu — **uruchamiane w tle bez okna progresu** (`runner: null`), pragmatyczny wybór dla
+  tej jednej, rzadkiej operacji, żeby nie dodawać nowego przewodu Window przez
+  `PreferencesViewModel`/`PreferencesWindow` tylko dla tego przycisku.
+- `MainWindowViewModel.ApplySpellcheckChangeAll` (prywatna, event handler `ChangeAllRequested`) —
+  z tego samego powodu (brak Window w miejscu podpięcia zdarzenia) też bez okna progresu; podpięta
+  teraz przez `RunAsyncAction` (`ApplySpellcheckChangeAllAsync`), żeby testy mogły czekać na
+  `WhenIdleAsync()`.
+- `UnifyFootnoteLetters` — ma Window w `MainWindow.axaml.cs` (`OnFootnoteLettersRequested`), więc
+  dostał pełny `ProgressWindow.DelayedRunner(this)` wątkiem przez `PrepareFootnoteLetters`.
+  `FootnoteLettersViewModel.UnifyCommand` zmienione z `RelayCommand` na `AsyncRelayCommand`
+  (`IAsyncRelayCommand`), `_apply` z `Func<..., bool>` na `Func<..., Task<bool>>`.
+
+### 11. Naprawione (druga sesja): Revert do checkpointu (Undo/Redo/panel) w tle
+
+`RevertToBeforeCheckpoint`/`RevertToAfterCheckpoint`/`RevertToCheckpoint` (`MoveToCheckpoint`) —
+ten sam problem jak `Abandon` (`CheckpointHistory.Undo`/`.Redo`/`.RevertTo` → `MoveTo` → `OnChanged()`
+z wątku w tle), więc dostały ten sam lek: `_checkpoints.SuppressChanged()`/`.ResumeChanged()` wokół
+`RunInBackgroundAsync`. W przeciwieństwie do punktu 10 (szybkie, pojedyncze edycje) Revert to
+zawsze pełne przeładowanie folderu stanu — tej samej kategorii kosztu co `Abandon` (35+ s na dużej
+książce) — więc dostało okno progresu **od razu, bez delay'u** (domyślny `ProgressRunner` główne
+okno, jak `Renumber Footnotes`), bez Cancel (nie ma tu sensownego "cofnij w pół drogi"). Wołający
+(`_actions.SetHandler(RevertToBefore/After)`, `CheckpointsViewModel.RevertRequested`,
+`MainWindow.axaml.cs: OnRevertConfirmationRequested`) owinięte przez `RunAsyncAction` lub `await`.
+
+### 12. Niewyjaśnione — logi dodane (trzecia sesja), reprodukcja na żywo wciąż do zrobienia
+
+Użytkownik zgłosił, że po zakończeniu Cancel (Renumber) i zamknięciu okna postępu, kliknięcie
+panelu Notifications dało kolejne ~9–20s zawieszenia, mimo że log nie pokazuje w tym czasie
+żadnej zarejestrowanej operacji. Podejrzenie: `BookBrowser.SuspendRebuilds = false` (ustawiane w
+`finally` `RunInBackgroundAsync` po zakończeniu pracy w tle) mogło wyzwolić odłożony pełny rebuild
+drzewa BookBrowser dla 1409 plików, synchronicznie, bez logów.
+
+Dodane logi (kategoria `"BookBrowser"`, `BookBrowserViewModel.cs`):
+- `SuspendRebuilds: on` / `SuspendRebuilds: off` — przy każdej realnej zmianie flagi.
+- `model changed while suspended, rebuild deferred` — w `OnModelChanged`, gdy zmiana modelu
+  przyszła podczas `SuspendRebuilds == true` (potwierdza/zaprzecza, że coś naprawdę czeka).
+- `Rebuild: N files (XXX ms)` (albo `Rebuild: no book (...)`) — czas i rozmiar każdego pełnego
+  przebudowania drzewa, z `Stopwatch`.
+
+**Wciąż do zrobienia:** odtworzyć scenariusz na Windows z włączonym debug loggingiem (Preferencje
+→ Debug → "Enable debug logging") i sprawdzić, czy w logu po Cancel pojawia się `Rebuild` z dużym
+czasem w momencie kliknięcia Notifications, czy coś innego (wtedy problem jest poza
+`BookBrowserViewModel`, np. w `TreeDataGrid`/renderowaniu, i log tego nie złapie).
+
+### 13. Naprawione (trzecia sesja): O(n²) w `FindElementById`/`FindAnchor` — pasek postępu "Change
+    Footnote Placement" wyraźnie zwalniał w trakcie
+
+Użytkownik zgłosił na żywo (zrzut ekranu "Moving footnotes: 4268 of 8923", 24%): pasek postępu w
+"Change Footnote Placement (Local / Global)" wyraźnie **zwalnia z czasem**, nie idzie równym
+tempem.
+
+**Przyczyna:** `FootnoteEditor.FindElementById`/`FindAnchor` (prywatne, używane w pętli
+`ChangePlacement` — i tak samo w `RenumberWith`, `ChangeConversion`, `UnifyFootnoteLetters`, czyli
+we wszystkich operacjach na wielu przypisach naraz) skanowały **całą** listę tagów pliku od
+indeksu 0 przy **każdym** wywołaniu — liniowo. Wywoływane raz na przypis. Gdy wiele przypisów
+dzieli jeden plik w czytanej kolejności (typowy przypadek: plik globalnych przypisów rośnie
+przypis po przypisie, albo odwrotnie — przy "global → local" `NoteFile` to cały czas ten sam,
+coraz dalej skanowany plik), koszt pojedynczego wywołania rósł wraz z pozycją przypisu w pliku:
+pierwsze przypisy — szybkie skanowanie od początku, ostatnie — skanowanie niemal całej (coraz
+większej/dalszej) listy tagów. Sumarycznie O(n²) względem liczby przypisów w jednym pliku — i
+stąd dokładnie obserwowany efekt "pasek coraz wolniej idzie naprzód", a nie stałe spowolnienie.
+To był dokładnie kandydat opisany już wcześniej jako punkt 1 w sekcji "Co warto
+zoptymalizować/przyspieszyć" ("Nie profilowane szczegółowo... Warto sprawdzić, czy da się
+przyspieszyć wyszukiwanie elementów po ID") — tym razem potwierdzony i naprawiony.
+
+**Naprawa:** indeks `id → pozycja tagu` i `href → lista pozycji tagów <a>` budowany raz na plik
+(raz na instancję `TagLister`, cache'owany w `ConditionalWeakTable<TagLister, TagIndex>`), zamiast
+liniowego skanu przy każdym wywołaniu. `FindElementById` to teraz słownikowy lookup O(1);
+`FindAnchor` to lookup + indeksacja do listy kandydatów po `href` zamiast liczenia `occurrence`-tego
+dopasowania od zera. Reszta logiki (dopasowanie `<sup>` wokół linku, `FindCloseTagForOpen`) bez
+zmian. Dotyczy wszystkich operacji korzystających z tych dwóch funkcji: Renumber, Change
+Placement, Convert Footnotes, Letters — więc powinno też realnie skrócić największy pojedynczy
+koszt z sekcji "Co warto zoptymalizować" (główna pętla numerująca w `RenumberWith`).
+
+Zweryfikowane: `dotnet build` (0 ostrzeżeń/błędów), `Signet.Core.Tests` (2781/2782 — jedyny fail to
+znany, niezwiązany quirk WSL z punktu "Pliki zmienione w trzeciej sesji" niżej) i
+`Signet.App.Tests` (1078/1078) zielone. **Nie zweryfikowane na żywo na dużej książce** — warto
+powtórzyć scenariusz z Windows (ta sama książka, Change Placement) i sprawdzić, czy pasek
+postępu teraz idzie równym tempem.
+
+### 14. Naprawiony (trzecia sesja): `TempDirTests.Dispose_throws_naming_the_file_that_is_still_open`
+    na WSL/Linux
+
+Wcześniej opisywany jako "pre-existing, niezwiązany fail" (patrz niżej, sekcja plików). Na
+żądanie użytkownika zbadane i naprawione. Przyczyna: `TempDir.Dispose()` polegał na tym, że
+`Directory.Delete(recursive: true)` rzuci `IOException`, gdy plik w środku jest otwarty — prawda
+na Windows (NTFS odmawia), ale nie na Linuksie/WSL, gdzie `unlink` zawsze się udaje niezależnie od
+otwartych uchwytów (usuwany jest tylko wpis katalogu, i-węzeł żyje dalej, dopóki uchwyt nie
+zostanie zamknięty) — czyli na Linuksie realna luka w regule "testy nic po sobie nie zostawiają",
+nie tylko czerwony test. Potwierdzone empirycznie (mały probe na tej maszynie): drugi
+`FileStream.Open(..., FileShare.None)` na otwarty plik **rzuca** `IOException` nawet na Linuksie
+(.NET to emuluje w ramach procesu), ale `File.Delete`/`Directory.Delete` **nie sprawdza** otwartych
+uchwytów wcale.
+
+Naprawa: `TempDir.Dispose()` przed usunięciem katalogu próbnie otwiera każdy plik z
+`FileAccess.Read, FileShare.None` (`FindOpenFile`) — to wykrywa dowolny otwarty uchwyt niezależnie
+od trybu, w jakim go otwarto, na obu platformach, bo żądanie `FileShare.None` od siebie koliduje z
+każdym istniejącym uchwytem. Zweryfikowane: `Signet.Core.Tests` 2782/2782 zielone (zniknął pre-
+existing fail), `Signet.App.Tests` 1078/1078 bez zmian.
+
 ## Co NIE zostało zrobione / zostało do następnej sesji
 
-1. **Brak realnego % podczas `FootnoteScanner.Scan`** (etap "Scanning" w Renumber) oraz podczas
-   `PlanPlacement`/`PlanConversion` ("Preparing"/"Analyzing"). Użytkownik potwierdził chęć dodania
-   tego (raportowanie per-plik: "plik X z Y"), ale **nie zostało zaimplementowane** — w trakcie
-   pracy nad tym odkryliśmy pilniejszy problem (checkpoint abandon, punkt 4–5) i tam skierowaliśmy
-   uwagę. `FootnoteScanner.Scan(Book book)` iteruje `for (int spine = 0; spine < files.Count;
-   spine++)` — dodanie opcjonalnego `IProgress<int>` (plik X z Y) powinno być proste i
-   nieinwazyjne (dodatkowy parametr opcjonalny, jak przy `Renumber`/`RenumberProgress`).
-
-2. **Częściowo zweryfikowane na żywo** — test po backgroundowaniu checkpointów (punkt 5) znalazł
+1. **Częściowo zweryfikowane na żywo** — test po backgroundowaniu checkpointów (punkt 5) znalazł
    realny crash (punkt 7, naprawiony: `_bookOperationBusy`). Trzeba powtórzyć na Windows: Renumber
    → Cancel → Renumber dwa razy pod rząd (dokładny scenariusz z logów), oraz Renumber + Cancel →
    Change Placement (druga operacja innego typu, nie tylko to samo Renumber), sprawdzić że
    pojawia się komunikat "Status_OperationBusy" i że nie ma już crasha; dopiero potem zmierzyć,
-   czy same czasy (checkpoint abandon, Scan) faktycznie spadły jak oczekiwano.
+   czy same czasy (checkpoint abandon, Scan) faktycznie spadły jak oczekiwano. To samo dotyczy
+   teraz Revert (punkt 11) i siedmiu operacji z punktu 10 — **niezweryfikowane na żywo na
+   Windows**, tylko testy jednostkowe/headless.
 
-3. **Pozostałe synchroniczne miejsca `AddCheckpointBefore`** (patrz punkt 5) — SpellCheck,
-   RenameClass, RenameId, RemoveClass, RemoveSpans, RemoveEditionPage, UnifyFootnoteLetters.
-   Prawdopodobnie też wieszają UI na dużej książce, ale niezweryfikowane logami — do zrobienia po
-   potwierdzeniu.
+2. **Notifications freeze** — patrz punkt 12 wyżej.
 
-4. **`RevertToBeforeCheckpoint`/`RevertToAfterCheckpoint`/`RevertToCheckpoint`**
-   (`MoveToCheckpoint`) — manualne przechodzenie między checkpointami (Undo/Redo w panelu
-   Checkpoints) — też robi `_checkpoints.Undo`/`.Redo`/`.RevertTo` synchronicznie. Nie dotknięte
-   dziś, nie zmierzone, ale tej samej kategorii co punkt 5.
-
-5. **Niewyjaśnione:** użytkownik zgłosił, że po zakończeniu Cancel (Renumber) i zamknięciu okna
-   postępu, kliknięcie panelu Notifications dało kolejne ~9–20s zawieszenia, mimo że log nie
-   pokazuje w tym czasie żadnej zarejestrowanej operacji. Podejrzenie: `BookBrowser.SuspendRebuilds
-   = false` (ustawiane w `finally` `RunInBackgroundAsync` po zakończeniu pracy w tle) mogło
-   wyzwolić odłożony pełny rebuild drzewa BookBrowser dla 1409 plików, synchronicznie, bez logów.
-   Niezweryfikowane — wymaga dodania logu wokół `BookBrowser.SuspendRebuilds` / rebuildu drzewa.
+3. **`RemoveEditionPage` i `ApplySpellcheckChangeAll` bez okna progresu** (patrz punkt 10) —
+   działają w tle, ale użytkownik nie widzi nic podczas oczekiwania (checkpoint 2–3s na dużej
+   książce). Jeśli to się okaże niewystarczające, trzeba dodać przewód `Window`/`ProgressRunner`
+   przez `PreferencesViewModel`/`PreferencesWindow` i przez subskrypcję `ChangeAllRequested`.
 
 ## Co warto zoptymalizować/przyspieszyć (od najdłuższego)
 
-1. **Główna pętla numerująca w `FootnoteEditor.RenumberWith`** (etap "Numbering", ~9551
-   przypisów) — największy pojedynczy koszt (dziesiątki-do-stu+ sekund na tej książce). Nie
-   profilowane szczegółowo — per-footnote robi m.in. `Snapshot`/`TagLister.For`/`FindAnchor`/
-   `FindElementById` (parsowanie/regex). Warto sprawdzić, czy da się ograniczyć powtórne
-   parsowanie / przyspieszyć wyszukiwanie elementów po ID.
+1. ~~**Główna pętla numerująca w `FootnoteEditor.RenumberWith`**~~ — **zrobione w trzeciej sesji**,
+   patrz punkt 13 niżej: `FindElementById`/`FindAnchor` skanowały listę tagów całego pliku od
+   zera przy każdym wywołaniu (liniowo), a są wywoływane raz na przypis. Gdy wiele przypisów
+   dzieli jeden plik (typowo plik globalnych przypisów), to dawało O(n²) — i to tłumaczy też
+   obserwację użytkownika: pasek postępu w "Change Footnote Placement" wyraźnie zwalniał z
+   czasem (coraz wolniej szedł naprzód), bo każde kolejne wywołanie skanowało coraz dalej w
+   coraz większej liście tagów. Naprawione przez indeks (id → pozycja, href → lista pozycji)
+   budowany raz na plik i cache'owany per instancja `TagLister`. Dotyczy wszystkich operacji
+   korzystających z tych dwóch funkcji: Renumber, Change Placement, Convert Footnotes, Letters.
 2. **`FootnoteScanner.Scan`** (~18.7 s) — pełny DOM-parsing (AngleSharp) 1409 plików przy każdym
    wywołaniu. Używane w wielu miejscach (Renumber, PlanPlacement, PlanConversion, GetFootnoteState
    przy każdym otwarciu menu kontekstowego przypisów!). Potencjalny kandydat do cache'owania
@@ -218,3 +339,21 @@ Unable to resolve "!AvaloniaResources"` przez niespójny stan inkrementalnego bu
 - `src/Signet.App/Resources/Strings.resx`, `Strings.en.resx` — nowe stringi progresu/tytułów.
 - Testy: `tests/Signet.Core.Tests/Footnotes/FootnoteEditorTests.cs`, `tests/Signet.App.Tests/MainWindowFootnotesTests.cs` (plus nowy test regresyjny na race z punktu 7), `tests/Signet.App.UiTests/CodeTabViewRenderTests.cs`, `tests/Signet.App.Tests/MainWindowViewModelTests.cs` (dodane `UiCultureScope`), `tests/Signet.App.Tests/CheckpointsTests.cs` (test przerobiony na `async Task` + `WhenIdleAsync`).
 - `src/Signet.App/Resources/Strings.resx`, `Strings.en.resx` — nowy string `Status_OperationBusy` (punkt 7).
+
+## Pliki zmienione w drugiej sesji (punkty 9–11)
+
+- `src/Signet.Core/Footnotes/FootnoteScanner.cs` — `Scan` z `IProgress<ScanProgress>?`, nowy typ `ScanProgress`.
+- `src/Signet.Core/Footnotes/FootnoteEditor.cs` — `ScanProgressRelay`, `RenumberWith` przekazuje progres do `Scan`.
+- `src/Signet.Core/Footnotes/FootnoteEditor.Placement.cs`, `FootnoteEditor.Conversion.cs` — `PlanPlacement`/`PlanConversion` z `IProgress<ScanProgress>?`.
+- `src/Signet.App/Views/ProgressWindow.axaml.cs` — `RunAsync<T>` przyjmuje teraz `Func<IProgress<WorkProgress>, Task<T?>>` (był `Task<T?>`), nowy `DelayedRunner(Window)`.
+- `src/Signet.App/Views/Tabs/CodeTabView.axaml.cs` — `ApplyClassRename`/`ApplyIdRename`/`ApplyClassRemoval`/`RemoveSpan` z `await` + `ProgressWindow.DelayedRunner(owner)`; usunięty prywatny `DelayedFootnoteProgress`.
+- `src/Signet.App/ViewModels/Tabs/ICodeTabHost.cs`, `CodeTabViewModel.cs` — cztery metody `Apply*` zmienione na `Task` z `ProgressRunner?`.
+- `src/Signet.App/Services/IEditionPageHost.cs` — `RemoveEditionPage()` → `RemoveEditionPageAsync()` (`Task<bool>`).
+- `src/Signet.App/ViewModels/MainWindowViewModel.cs` — cztery operacje `ICodeTabHost`/`IEditionPageHost` + `ApplySpellcheckChangeAllAsync` w tle za `TryEnterBookOperation`/`AddCheckpointBeforeAsync`/`RunInBackgroundAsync`.
+- `src/Signet.App/ViewModels/MainWindowViewModel.Footnotes.cs` — `ScanProgressMap`, `PrepareFootnotePlacementAsync`/`PrepareFootnoteConversionAsync` z `analysisProgress`, `UnifyFootnoteLetters` → `Task<bool>` z `runWithProgress`, `PrepareFootnoteLetters` z `runWithProgress`.
+- `src/Signet.App/ViewModels/MainWindowViewModel.Checkpoints.cs` — `MoveToCheckpoint` → `MoveToCheckpointAsync` (w tle, `SuppressChanged`/`ResumeChanged`), `RevertToBeforeCheckpoint`/`RevertToAfterCheckpoint`/`RevertToCheckpoint` → warianty `*Async`, `RequestRevert` → `RequestRevertAsync`, `RequestRevertToBefore`/`RequestRevertToAfter` → `*Async`.
+- `src/Signet.App/Views/MainWindow.axaml.cs` — `OnFootnotePlacementRequested`/`OnFootnoteConversionRequested` (nowy `analysisProgress`), `OnFootnoteLettersRequested` (`DelayedRunner`), `OnRevertConfirmationRequested` (`await`).
+- `src/Signet.App/ViewModels/FootnoteLettersViewModel.cs` — `UnifyCommand` `RelayCommand` → `AsyncRelayCommand`, `_apply` → `Func<..., Task<bool>>`.
+- `src/Signet.App/ViewModels/PreferencesViewModel.cs` — `RemoveEditionPage` (metoda `[RelayCommand]`) → `async Task`.
+- `src/Signet.App/Resources/Strings.resx`, `Strings.en.resx` — `FootnotePlacement_Progress_Analyzing`, `FootnoteConversion_Progress_Analyzing`, `FootnoteRenumber_Progress_Scanning` z `{0}`/`{1}`.
+- Testy: `FootnoteScannerTests`-style nowe testy w `FootnotePlacementTests.cs`/`FootnoteConversionTests.cs`/`FootnoteEditorTests.cs` (progres skanowania), `ProgressWindowTests.cs` (nowa sygnatura `RunAsync`), `MainWindowFootnotePlacementTests.cs`/`MainWindowFootnotesTests.cs` (testy `analysisProgress`), `CodeTabViewRenderTests.cs`, `FootnoteLettersViewModelTests.cs`, `FootnoteLettersWindowTests.cs`, `PreferencesViewModelTests.cs`, `MainWindowViewModelTests.cs`, `CheckpointsTests.cs` (kilka testów przerobionych na `async Task` + `SingleThreadContext.RunAsync`/`WhenIdleAsync`, bo Revert/RenameClass/itd. teraz działają w tle).
