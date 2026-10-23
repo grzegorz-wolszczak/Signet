@@ -77,6 +77,54 @@ public sealed class FootnoteValidatorTests
         }
     }
 
+    /// <summary>
+    /// The line of each note comes out of one index of the file's ids instead of one search of the whole text per
+    /// note, so every note must still get its own line, not the line of the first of them.
+    /// </summary>
+    [Fact]
+    public void Each_footnote_without_a_link_back_is_reported_with_its_own_line()
+    {
+        // Arrange
+        string note = Note.Replace("<a href=\"#fn-1-ref\">1.</a>", "1.", System.StringComparison.Ordinal);
+        (Book book, _) = NewBook(
+            Reference + "\n"
+            + Reference.Replace("fn-1", "fn-2", System.StringComparison.Ordinal) + "\n"
+            + Reference.Replace("fn-1", "fn-3", System.StringComparison.Ordinal) + "\n"
+            + note + "\n"
+            + note.Replace("fn-1", "fn-2", System.StringComparison.Ordinal) + "\n"
+            + note.Replace("fn-1", "fn-3", System.StringComparison.Ordinal));
+        using (book)
+        {
+            // Act
+            IReadOnlyList<ValidationResult> results = FootnoteValidator.Validate(book);
+
+            // Assert
+            results.Should().HaveCount(3).And.OnlyContain(r => r.Code == "Validation_FootnoteNoBacklink");
+            results.Select(r => r.Line).Should().Equal(9, 10, 11);
+        }
+    }
+
+    /// <summary>
+    /// An id written more than once is reported at its first mention — the line index keeps the first of a repeated
+    /// id, as searching the text for it used to find the first hit.
+    /// </summary>
+    [Fact]
+    public void A_footnote_whose_id_is_written_twice_is_reported_at_its_first_mention()
+    {
+        // Arrange
+        string note = Note.Replace("<a href=\"#fn-1-ref\">1.</a>", "1.", System.StringComparison.Ordinal);
+        (Book book, _) = NewBook(Reference + "\n" + note + "\n<p><span id=\"fn-1\">A later twin.</span></p>");
+        using (book)
+        {
+            // Act
+            ValidationResult result = FootnoteValidator.Validate(book).Should().ContainSingle().Subject;
+
+            // Assert
+            result.Code.Should().Be("Validation_FootnoteNoBacklink");
+            result.Line.Should().Be(7);
+        }
+    }
+
     [Fact]
     public void A_footnote_that_nothing_links_to_is_reported()
     {
