@@ -48,7 +48,7 @@ public sealed class ImportHtml : IImporter
     }
 
     /// <inheritdoc />
-    public Book GetBook(bool extractMetadata = true)
+    public Book GetBook(bool extractMetadata = true, IProgress<BookLoadProgress>? progress = null)
     {
         if (!File.Exists(_fullFilePath))
         {

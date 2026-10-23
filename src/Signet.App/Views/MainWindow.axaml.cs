@@ -369,12 +369,13 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
     // ------------------------------------------------ IFileWorkflowPrompts --- //
 
     /// <inheritdoc />
-    public async Task<T> ShowProgressAsync<T>(string message, Func<Task<T>> work)
+    public async Task<T> ShowProgressAsync<T>(string message, Func<IProgress<WorkProgress>, Task<T>> work)
     {
         ArgumentNullException.ThrowIfNull(work);
-        Task<T> running = work();
-        await ProgressWindow.ShowWhileAsync(this, "Signet", message, running);
-        return await running;
+        Task<T>? running = null;
+        await ProgressWindow.RunWithProgressAsync(
+            this, message, message, (progress, _) => running = work(progress), cancellable: false, ProgressWindow.DefaultDelay);
+        return await running!;
     }
 
     /// <inheritdoc />

@@ -406,8 +406,10 @@ public sealed partial class MainWindowViewModel
                 Strings.Get("FootnoteConversion_ProgressTitle"), runWithProgress, editsBook: false, cancellable: false,
                 (progress, _) =>
                 {
-                    progress.Report(new WorkProgress(Strings.Get("FootnoteConversion_Analyzing"), null));
-                    return FootnoteEditor.PlanConversion(book);
+                    // The phase that follows the stages of Convert, in a window of its own.
+                    PhaseInfo phase = ConversionAnalysisPhase();
+                    progress.Report(new WorkProgress(null, null, phase));
+                    return FootnoteEditor.PlanConversion(book, new PhasedScanMap(progress, phase));
                 }).ConfigureAwait(true);
             return new FootnoteConversionOutcome(plan, result.Problems, restored, FootnoteEditor.FindGlobalFile(book)?.Filename);
         }
@@ -417,22 +419,47 @@ public sealed partial class MainWindowViewModel
         }
     }
 
-    // What Convert reports as what the progress window shows: the percent while the footnotes are converted, the stages around it
-    // without one (the cleaning up and the numbering take most of the time and cannot tell how far they are).
+    // The phases of a conversion: the stages of Convert and, after them, the analysis of the book that gives the dialog its new plan.
+    private static int ConversionPhaseCount => Enum.GetValues<ConversionStage>().Length + 1;
+
+    private static PhaseInfo ConversionAnalysisPhase() =>
+        new(ConversionPhaseCount, ConversionPhaseCount, Strings.Get("FootnoteConversion_Phase_Analyzing"));
+
+    // What FootnoteScanner.Scan reports while a phase scans the files of the book: the files done of the total in that phase.
+    private sealed class PhasedScanMap : IProgress<ScanProgress>
+    {
+        private readonly IProgress<WorkProgress> _target;
+        private readonly PhaseInfo _phase;
+
+        public PhasedScanMap(IProgress<WorkProgress> target, PhaseInfo phase)
+        {
+            _target = target;
+            _phase = phase;
+        }
+
+        public void Report(ScanProgress value) =>
+            _target.Report(WorkProgress.InPhase(_phase, Strings.Format("Progress_Detail_File", value.Done, value.Total), value.Done, value.Total));
+    }
+
+    // What Convert reports as what the progress window shows: the files scanned and the footnotes converted are counted in a phase
+    // each; the cleaning up (with the numbering) and the check take most of the time and cannot tell how far they are, so their phases
+    // have only a bar that works.
     private sealed class ConversionProgressMap : IProgress<ConversionProgress>
     {
         private readonly IProgress<WorkProgress> _target;
 
         public ConversionProgressMap(IProgress<WorkProgress> target) => _target = target;
 
-        public void Report(ConversionProgress value) => _target.Report(value.Stage switch
+        public void Report(ConversionProgress value)
         {
-            ConversionStage.Preparing => new WorkProgress(Strings.Get("FootnoteConversion_Progress_Preparing"), 0),
-            ConversionStage.Converting => WorkProgress.InStage(
-                Strings.Format("FootnoteConversion_Progress_Converting", value.Done, value.Total), 0.05, 0.3, value.Done, value.Total),
-            ConversionStage.Finishing => new WorkProgress(Strings.Get("FootnoteConversion_Progress_Finishing"), null),
-            _ => new WorkProgress(Strings.Get("FootnoteConversion_Progress_Checking"), null),
-        });
+            PhaseInfo phase = new((int)value.Stage + 1, ConversionPhaseCount, Strings.Get("FootnoteConversion_Phase_" + value.Stage));
+            _target.Report(value.Stage switch
+            {
+                ConversionStage.Preparing => WorkProgress.InPhase(phase, Strings.Format("Progress_Detail_File", value.Done, value.Total), value.Done, value.Total),
+                ConversionStage.Converting => WorkProgress.InPhase(phase, Strings.Format("Progress_Detail_Footnote", value.Done, value.Total), value.Done, value.Total),
+                _ => new WorkProgress(null, null, phase),
+            });
+        }
     }
 
     /// <inheritdoc/>
