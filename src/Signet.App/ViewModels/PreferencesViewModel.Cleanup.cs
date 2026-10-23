@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using Signet.Core.BookManipulation;
 
 namespace Signet.App.ViewModels;
@@ -18,6 +19,6 @@ public sealed partial class PreferencesViewModel
     {
         CleanupAnalysis analysis = CleanupAnalysis.Prepare(SampleBookInMemory).Analysis
             ?? throw new InvalidOperationException("The sample book is not well-formed.");
-        return new CleanupViewModel(analysis, Enum.GetValues<CleanupStep>(), (_, _) => { }, (_, _) => analysis);
+        return new CleanupViewModel(analysis, Enum.GetValues<CleanupStep>(), (_, _) => { }, (_, _) => Task.FromResult<CleanupAnalysis?>(analysis));
     }
 }

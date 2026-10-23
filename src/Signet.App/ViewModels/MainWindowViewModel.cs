@@ -738,7 +738,7 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>
     /// Raised by the "Cleanup" action — the view calls <see cref="PrepareCleanupAsync"/>, shows the modal Cleanup
-    /// dialog and, once confirmed, calls <see cref="ApplyCleanup"/>.
+    /// dialog and, once confirmed, calls <see cref="ApplyCleanupAsync"/>.
     /// </summary>
     public event EventHandler? CleanupRequested;
 
@@ -1995,7 +1995,7 @@ public sealed partial class MainWindowViewModel
     /// book (<see cref="CleanupAnalysis.Prepare"/>). Returns the dialog's view model, or <c>null</c> when no book is
     /// open, the user cancelled, or an (X)HTML file is not well-formed (then a message goes to the status bar).
     /// </summary>
-    public async Task<CleanupViewModel?> PrepareCleanupAsync()
+    public async Task<CleanupViewModel?> PrepareCleanupAsync(ProgressRunner? runWithProgress = null)
     {
         if (_currentBook is null)
         {
@@ -2017,35 +2017,69 @@ public sealed partial class MainWindowViewModel
             return null;
         }
 
-        return new CleanupViewModel(preparation.Analysis, _settings.CleanupEnabledSteps, NavigateToBookPathAtOffset, ApplyCleanup);
+        return new CleanupViewModel(
+            preparation.Analysis, _settings.CleanupEnabledSteps, NavigateToBookPathAtOffset,
+            (plan, steps) => ApplyCleanupAsync(plan, steps, runWithProgress));
     }
 
     /// <summary>
     /// Applies the plan of one tab of the "Cleanup" dialog ("Clean"), remembers the checked steps for the next time,
     /// refreshes the open tabs and panels and re-analyses the changed book, so the dialog can stay open. Returns the
-    /// new analysis, or <c>null</c> when no book is open or an (X)HTML file is not well-formed any more.
+    /// new analysis, or <c>null</c> when no book is open, an (X)HTML file is not well-formed any more, or another book operation
+    /// is running (the dialog disables "Clean" meanwhile, so that is only a race).
     /// </summary>
-    public CleanupAnalysis? ApplyCleanup(CleanupPlan plan, IReadOnlyList<CleanupStep> enabledSteps)
+    /// <remarks>
+    /// The cleaning and the analysis of the changed book take long on a big book, so both run off the UI thread under
+    /// <paramref name="runWithProgress"/> (a progress window over the dialog, in two phases) behind a checkpoint — a cleaning
+    /// changes a lot (it deletes stylesheets and media). The user can cancel it: the book is put back from the checkpoint, and
+    /// since the analysis the dialog holds belongs to the book that was replaced, the dialog closes (<c>null</c>).
+    /// </remarks>
+    public async Task<CleanupAnalysis?> ApplyCleanupAsync(
+        CleanupPlan plan, IReadOnlyList<CleanupStep> enabledSteps, ProgressRunner? runWithProgress = null)
     {
         ArgumentNullException.ThrowIfNull(plan);
         ArgumentNullException.ThrowIfNull(enabledSteps);
         _settings.CleanupEnabledSteps = enabledSteps;
-        if (_currentBook is null)
+        if (_currentBook is not { } book)
         {
             return null;
         }
 
+        _tabManager.SaveAllTabs();
         DebugLog.Write(
             "Cleanup",
             "apply: " + string.Join("; ", plan.Steps.Select(st => $"{st.Step} {st.AppliedCount}/{st.Items.Count} items")) +
             $"; files changed {plan.NewTexts.Count}, files removed {plan.ResourcesToDelete.Count}");
-        if (_currentBook.ApplyCleanup(plan))
+        BookOperationOutcome<(bool Changed, CleanupAnalysis? Analysis)> run = await RunBookOperationAsync(
+            Strings.Get("Operation_Cleanup"), Strings.Get("CheckpointOp_Cleanup"), editsBook: true,
+            (progress, cancel) =>
+            {
+                // Neither step can tell how far it is, so each phase has only a bar that works.
+                progress.Report(new WorkProgress(null, null, new PhaseInfo(1, 2, Strings.Get("Cleanup_Phase_Cleaning"))));
+                bool changed = book.ApplyCleanupCancellable(plan, cancel);
+                progress.Report(new WorkProgress(null, null, new PhaseInfo(2, 2, Strings.Get("Cleanup_Phase_Analyzing"))));
+                return (changed, CleanupAnalysis.PrepareCancellable(book, cancel).Analysis);
+            },
+            runWithProgress).ConfigureAwait(true);
+        if (!run.Completed)
         {
-            RefreshAfterMaintenanceOperation();
-            _statusBar.ShowMessage(Strings.Get("Status_CleanupDone"), TimeSpan.FromSeconds(4));
+            // Cancelled (RunBookOperationAsync put the book back and said so) or refused: the analysis of the dialog is stale.
+            return null;
         }
 
-        return CleanupAnalysis.Prepare(_currentBook).Analysis;
+        if (!run.Result.Changed)
+        {
+            if (run.Checkpoint)
+            {
+                RewindCheckpoint();
+            }
+
+            return run.Result.Analysis;
+        }
+
+        RefreshAfterMaintenanceOperation();
+        _statusBar.ShowMessage(Strings.Get("Status_CleanupDone"), TimeSpan.FromSeconds(4));
+        return run.Result.Analysis;
     }
 
     /// <summary>

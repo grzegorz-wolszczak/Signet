@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using AngleSharp.Dom;
 using AngleSharp.Html.Dom;
 using Signet.Core.BookManipulation;
@@ -43,7 +44,15 @@ public static class CssSelectorUsageAnalyzer
     /// that use that stylesheet — link it (<c>&lt;link rel="stylesheet"&gt;</c>) or import it through <c>@import</c>
     /// (<see cref="Book.GetVisibleStylesheets"/>).
     /// </summary>
-    public static IReadOnlyList<CssSelectorUsage> GetSelectorUsage(Book book)
+    public static IReadOnlyList<CssSelectorUsage> GetSelectorUsage(Book book) =>
+        GetSelectorUsageCancellable(book, CancellationToken.None);
+
+    /// <summary>
+    /// Like <see cref="GetSelectorUsage"/>, but stops with an <see cref="OperationCanceledException"/> between the XHTML files when
+    /// <paramref name="cancellationToken"/> is cancelled. (Named differently rather than overloaded: see
+    /// <c>CheckpointHistory.AddCheckpointCancellable</c>.)
+    /// </summary>
+    public static IReadOnlyList<CssSelectorUsage> GetSelectorUsageCancellable(Book book, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(book);
 
@@ -76,6 +85,7 @@ public static class CssSelectorUsageAnalyzer
 
         foreach (HtmlResource html in htmlResources)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             string text = html.GetText();
             IHtmlDocument document = XhtmlDoc.Parse(text);
 
@@ -147,14 +157,18 @@ public static class CssSelectorUsageAnalyzer
     /// Selectors that are defined but never used:
     /// skips the Media Overlays "active class" selectors (<c>OpfResource.GetMediaOverlayActiveClassSelectors</c>).
     /// </summary>
-    public static IReadOnlyList<CssSelectorUsage> GetUnusedSelectors(Book book)
+    public static IReadOnlyList<CssSelectorUsage> GetUnusedSelectors(Book book) =>
+        GetUnusedSelectorsCancellable(book, CancellationToken.None);
+
+    /// <summary>Like <see cref="GetUnusedSelectors"/>, but cancellable (see <see cref="GetSelectorUsageCancellable"/>).</summary>
+    public static IReadOnlyList<CssSelectorUsage> GetUnusedSelectorsCancellable(Book book, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(book);
 
         HashSet<string> active = new(book.GetOpf().GetMediaOverlayActiveClassSelectors(), StringComparer.Ordinal);
 
         List<CssSelectorUsage> unused = new();
-        foreach (CssSelectorUsage usage in GetSelectorUsage(book))
+        foreach (CssSelectorUsage usage in GetSelectorUsageCancellable(book, cancellationToken))
         {
             if (!usage.IsUsed && !active.Contains(usage.SelectorText))
             {

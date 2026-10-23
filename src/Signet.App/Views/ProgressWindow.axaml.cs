@@ -23,7 +23,19 @@ public partial class ProgressWindow : Window
     {
         InitializeComponent();
         CancelButton.Click += (_, _) => Close();
+
+        // The window is as wide as its widest text so far and does not shrink again, so it does not jump while the texts change.
+        LayoutUpdated += (_, _) =>
+        {
+            if (DesiredSize.Width > MinWidth)
+            {
+                MinWidth = Math.Min(DesiredSize.Width, MaxWidth);
+            }
+        };
     }
+
+    // The window for the operation `headline`: its name is the bold first line (few look at a title bar), the title bar says Signet.
+    private static ProgressWindow For(string headline) => new() { Title = "Signet", HeadlineText = { Text = headline } };
 
     /// <summary>
     /// A <see cref="ProgressRunner"/> for a quick edit that only takes a while on a very large book: the window over
@@ -55,7 +67,7 @@ public partial class ProgressWindow : Window
             return await task.ConfigureAwait(true);
         }
 
-        ProgressWindow window = new() { Title = title };
+        ProgressWindow window = For(title);
         progress.Attach(window);
         bool done = false;
         _ = task.ContinueWith(
@@ -107,7 +119,7 @@ public partial class ProgressWindow : Window
         await Task.WhenAny(task, Task.Delay(delay ?? TimeSpan.Zero)).ConfigureAwait(true);
         if (!task.IsCompleted)
         {
-            ProgressWindow window = new() { Title = title };
+            ProgressWindow window = For(title);
             window.CancelButton.IsVisible = cancellable;
             window.CancelButton.IsCancel = cancellable;
             if (cancellable)
@@ -249,7 +261,7 @@ public partial class ProgressWindow : Window
         await Task.WhenAny(work, Task.Delay(delay ?? DefaultDelay)).ConfigureAwait(true);
         if (!work.IsCompleted)
         {
-            ProgressWindow window = new() { Title = title };
+            ProgressWindow window = For(title);
             window.MessageText.Text = message;
             window.CancelButton.IsVisible = false;
             window.CancelButton.IsCancel = false;

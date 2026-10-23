@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using AwesomeAssertions;
 using Signet.App.ViewModels;
 using Signet.Core.BookManipulation;
@@ -45,13 +46,14 @@ public sealed class CleanupViewModelTests : IDisposable
     private CleanupViewModel New(params CleanupStep[] enabled) =>
         new(CleanupAnalysis.Prepare(_book).Analysis!, enabled, (_, _) => { }, ApplyToBook);
 
-    private CleanupAnalysis? ApplyToBook(CleanupPlan plan, IReadOnlyList<CleanupStep> enabledSteps)
+    private Task<CleanupAnalysis?> ApplyToBook(CleanupPlan plan, IReadOnlyList<CleanupStep> enabledSteps)
     {
         _book.ApplyCleanup(plan);
-        return CleanupAnalysis.Prepare(_book).Analysis;
+        return Task.FromResult(CleanupAnalysis.Prepare(_book).Analysis);
     }
 
-    private static CleanupAnalysis? NoApply(CleanupPlan plan, IReadOnlyList<CleanupStep> enabledSteps) => null;
+    private static Task<CleanupAnalysis?> NoApply(CleanupPlan plan, IReadOnlyList<CleanupStep> enabledSteps) =>
+        Task.FromResult<CleanupAnalysis?>(null);
 
     private static CleanupSectionViewModel Section(CleanupViewModel vm, CleanupStep step) =>
         vm.Sections.Single(s => s.Step == step);

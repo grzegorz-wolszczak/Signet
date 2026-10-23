@@ -623,6 +623,7 @@ public sealed class FileWorkflowTests
         // Assert
         h.Prompts.ProgressMessages.Should().Equal(
             Strings.Format("File_Loading", Path.GetFileName(epub)), Strings.Format("File_Loading", "broken.epub"));
+        h.Prompts.ProgressTitles.Should().OnlyContain(t => t == Strings.Get("File_LoadingTitle"), "the headline names the operation, not the file");
         h.Prompts.LastError.Should().NotBeNullOrEmpty();
         h.Workspace.LastAppliedPath.Should().Be(epub, "the broken file is not applied");
     }

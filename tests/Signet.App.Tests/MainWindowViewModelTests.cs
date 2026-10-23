@@ -386,35 +386,131 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public async Task PrepareCleanup_and_cleaning_the_CSS_tab_remove_an_unused_selector_and_report_it()
     {
-        // Arrange
-        using UiCultureScope culture = new("en");
-        TempDir temp = _disposables.Add(new TempDir());
-        string tree = temp.Combine("tree");
-        TestFs.CopyDirectory(CorpusPaths.Epub3Minimal, tree);
-        File.AppendAllText(Path.Combine(tree, "EPUB", "styles", "style.css"), "\n.ghost { color: red }\n");
-        string epub = EpubBuilder.BuildInto(tree, temp, "book.epub");
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            string tree = temp.Combine("tree");
+            TestFs.CopyDirectory(CorpusPaths.Epub3Minimal, tree);
+            File.AppendAllText(Path.Combine(tree, "EPUB", "styles", "style.css"), "\n.ghost { color: red }\n");
+            string epub = EpubBuilder.BuildInto(tree, temp, "book.epub");
 
-        MainWindowViewModel sut = New();
-        Book book = _disposables.Add(new ImportEpub(epub).GetBook());
-        sut.LoadBook(book, epub);
+            MainWindowViewModel sut = New();
+            Book book = _disposables.Add(new ImportEpub(epub).GetBook());
+            sut.LoadBook(book, epub);
 
-        // Act
-        CleanupViewModel? cleanup = await sut.PrepareCleanupAsync();
+            // Act
+            CleanupViewModel? cleanup = await sut.PrepareCleanupAsync();
 
-        // Assert
-        cleanup.Should().NotBeNull();
-        cleanup!.Sections.Single(s => s.Step == CleanupStep.UnusedSelectors).IsEnabled = true;
-        CleanupTabViewModel cssTab = cleanup.Tabs[0];
-        cssTab.HasChanges.Should().BeTrue();
+            // Assert
+            cleanup.Should().NotBeNull();
+            cleanup!.Sections.Single(s => s.Step == CleanupStep.UnusedSelectors).IsEnabled = true;
+            CleanupTabViewModel cssTab = cleanup.Tabs[0];
+            cssTab.HasChanges.Should().BeTrue();
 
-        // Act
-        cssTab.CleanCommand.Execute(null);
+            // Act
+            await cssTab.CleanCommand.ExecuteAsync(null);
 
-        // Assert
-        book.GetCssResources().Single().GetText().Should().NotContain(".ghost");
-        book.Modified.Should().BeTrue();
-        sut.StatusMessage.Should().Be(Strings.Get("Status_CleanupDone"));
-        cssTab.HasChanges.Should().BeFalse();
+            // Assert
+            book.GetCssResources().Single().GetText().Should().NotContain(".ghost");
+            book.Modified.Should().BeTrue();
+            sut.StatusMessage.Should().Be(Strings.Get("Status_CleanupDone"));
+            cssTab.HasChanges.Should().BeFalse();
+        });
+    }
+
+    [Fact]
+    public async Task Cleaning_runs_under_the_progress_runner_in_two_phases_and_disables_the_other_book_operations()
+    {
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            string tree = temp.Combine("tree");
+            TestFs.CopyDirectory(CorpusPaths.Epub3Minimal, tree);
+            File.AppendAllText(Path.Combine(tree, "EPUB", "styles", "style.css"), "\n.ghost { color: red }\n");
+            string epub = EpubBuilder.BuildInto(tree, temp, "book.epub");
+            MainWindowViewModel sut = New();
+            Book book = _disposables.Add(new ImportEpub(epub).GetBook());
+            sut.LoadBook(book, epub);
+            List<(string Title, bool Cancellable)> runs = new();
+            List<bool> busyWhileRunning = new();
+            List<WorkProgress> reports = new();
+            ProgressRunner runner = (title, work, cancellable) =>
+            {
+                runs.Add((title, cancellable));
+                busyWhileRunning.Add(sut.IsBookOperationBusy && !sut.Actions.Require(AppActionIds.RenumberFootnotes).CanExecute(null)
+                    && !sut.Actions.Require(AppActionIds.Cleanup).CanExecute(null));
+                return work(new ListProgress(reports), CancellationToken.None);
+            };
+            CleanupViewModel cleanup = (await sut.PrepareCleanupAsync(runner))!;
+            cleanup.Sections.Single(s => s.Step == CleanupStep.UnusedSelectors).IsEnabled = true;
+            int states = sut.CheckpointHistory.States.Count;
+
+            // Act
+            await cleanup.Tabs[0].CleanCommand.ExecuteAsync(null);
+
+            // Assert
+            runs.Should().ContainSingle().Which.Should().Be((Strings.Get("Operation_Cleanup"), true), "a checkpoint was taken, so the cleaning can be cancelled");
+            sut.CheckpointHistory.States.Should().HaveCount(states + 1, "a checkpoint was taken before the cleaning");
+            busyWhileRunning.Should().Equal(true);
+            reports.Select(r => r.Phase!.Name).Distinct().Should().Equal(Strings.Get("Cleanup_Phase_Cleaning"), Strings.Get("Cleanup_Phase_Analyzing"));
+            reports.Should().OnlyContain(r => r.Phase!.Count == 2 && r.Message == null && r.Fraction == null);
+            sut.IsBookOperationBusy.Should().BeFalse();
+        });
+    }
+
+    [Fact]
+    public async Task Cancelling_the_cleaning_brings_the_book_back_and_closes_the_dialog()
+    {
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            string tree = temp.Combine("tree");
+            TestFs.CopyDirectory(CorpusPaths.Epub3Minimal, tree);
+            File.AppendAllText(Path.Combine(tree, "EPUB", "styles", "style.css"), "\n.ghost { color: red }\n");
+            string epub = EpubBuilder.BuildInto(tree, temp, "book.epub");
+            MainWindowViewModel sut = New();
+            Book book = _disposables.Add(new ImportEpub(epub).GetBook());
+            sut.LoadBook(book, epub);
+            using CancellationTokenSource pressed = new();
+            ProgressRunner runner = (_, work, cancellable) =>
+            {
+                cancellable.Should().BeTrue();
+                pressed.Cancel();
+                return work(new ListProgress(new List<WorkProgress>()), pressed.Token);
+            };
+            CleanupViewModel cleanup = (await sut.PrepareCleanupAsync(runner))!;
+            cleanup.Sections.Single(s => s.Step == CleanupStep.UnusedSelectors).IsEnabled = true;
+            string before = book.GetCssResources().Single().GetText();
+            int states = sut.CheckpointHistory.States.Count;
+            bool closeRequested = false;
+            cleanup.CloseRequested += (_, _) => closeRequested = true;
+
+            // Act
+            await cleanup.Tabs[0].CleanCommand.ExecuteAsync(null);
+
+            // Assert
+            Book restored = ((IBookWorkspace)sut).CurrentBook!;
+            restored.GetCssResources().Single().GetText().Should().Be(before).And.Contain(".ghost");
+            sut.CheckpointHistory.States.Should().HaveCount(states, "the checkpoint of the cancelled cleaning is forgotten");
+            sut.StatusMessage.Should().Be(Strings.Format("Status_OperationCancelledRestored", Strings.Get("Operation_Cleanup")));
+            closeRequested.Should().BeTrue("the analysis of the dialog belongs to the book that was replaced");
+            sut.IsBookOperationBusy.Should().BeFalse();
+        });
+    }
+
+    private sealed class ListProgress : IProgress<WorkProgress>
+    {
+        private readonly List<WorkProgress> _reports;
+
+        public ListProgress(List<WorkProgress> reports) => _reports = reports;
+
+        public void Report(WorkProgress value) => _reports.Add(value);
     }
 
     [Fact]

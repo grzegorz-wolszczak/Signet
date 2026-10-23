@@ -6634,4 +6634,16 @@ Close the tab</value>
   <data name="BookLoad_Phase_Displaying" xml:space="preserve">
     <value>Displaying the book</value>
   </data>
+  <data name="Cleanup_Phase_Cleaning" xml:space="preserve">
+    <value>Cleaning the book</value>
+  </data>
+  <data name="Cleanup_Phase_Analyzing" xml:space="preserve">
+    <value>Analyzing the book</value>
+  </data>
+  <data name="File_LoadingTitle" xml:space="preserve">
+    <value>Opening a file</value>
+  </data>
+  <data name="CheckpointOp_Cleanup" xml:space="preserve">
+    <value>Cleanup</value>
+  </data>
 </root>

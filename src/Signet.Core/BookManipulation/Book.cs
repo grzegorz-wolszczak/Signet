@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using AngleSharp.Dom;
 using Signet.Core.Fonts;
 using Signet.Core.Parsers;
@@ -832,7 +833,15 @@ public sealed class Book : IDisposable
     /// new texts of the changed CSS/XHTML files and removes the stylesheets and media files to delete. Returns
     /// <c>true</c> when anything was changed.
     /// </summary>
-    public bool ApplyCleanup(CleanupPlan plan)
+    public bool ApplyCleanup(CleanupPlan plan) => ApplyCleanupCancellable(plan, CancellationToken.None);
+
+    /// <summary>
+    /// Like <see cref="ApplyCleanup"/>, but stops with an <see cref="OperationCanceledException"/> between the files when
+    /// <paramref name="cancellationToken"/> is cancelled — the book is then partly cleaned, so the caller that cancels rewinds it
+    /// from a checkpoint it took before. (Named differently rather than overloaded: see
+    /// <c>CheckpointHistory.AddCheckpointCancellable</c>.)
+    /// </summary>
+    public bool ApplyCleanupCancellable(CleanupPlan plan, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(plan);
         if (!plan.HasChanges)
@@ -842,12 +851,14 @@ public sealed class Book : IDisposable
 
         foreach ((string bookPath, string text) in plan.NewTexts)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             if (_folderKeeper.GetResourceByBookPathNoThrow(bookPath) is TextResource resource)
             {
                 resource.SetText(text);
             }
         }
 
+        cancellationToken.ThrowIfCancellationRequested();
         if (plan.ResourcesToDelete.Count > 0)
         {
             _folderKeeper.BulkRemoveResources(plan.ResourcesToDelete);
