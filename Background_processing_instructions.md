@@ -197,15 +197,41 @@ Legenda statusu: `[ ]` do zrobienia, `[x]` zrobione (z krótką notatką i commi
     checkpoint, co przestawia wybór panelu na nowy stan bieżący, niezależnie od tej zmiany).
   - `dotnet build` + `dotnet test Signet.App.Tests` (1086/1086) — zielone.
 
-- [ ] **A2d. Spięcie `IsBookOperationBusy` z wywołaniami bez żadnego `ICommand` (code-behind).**
-  `CodeTabView.axaml.cs` woła bezpośrednio `ICodeTabHost.AddFootnote`/`AddFootnoteReference`/
-  `RemoveFootnote`/`RemoveFootnoteReference`/`EditFootnote`/`ApplyClassRename`/`ApplyIdRename`/
-  `ApplyClassRemoval`/`ApplySpanRemovalInBook` z menu kontekstowego edytora kodu — dziś enable tych
-  pozycji menu to ręczny warunek (`enabled: state.HasFootnotes` itp.), niezwiązany z
-  `IsBookOperationBusy`. Podobnie `_validationResults.FixRequested` (przycisk w panelu Validation
-  Results, woła `FixValidationResultsAsync`) nie jest `AppAction` i nie ma dziś żadnego disable.
-  Do zrobienia: sprawdzać `IsBookOperationBusy` przy budowaniu tych pozycji menu/przycisków (albo
-  przy samym kliknięciu, zanim cokolwiek się zacznie).
+- [x] **A2d. Spięcie `IsBookOperationBusy` z wywołaniami bez żadnego `ICommand` (code-behind).**
+  (2026-10-23, commit w `background-processing`)
+
+  Co zrobione:
+  - `ICodeTabHost` (`src/Signet.App/ViewModels/Tabs/ICodeTabHost.cs`): nowa właściwość
+    `bool IsBookOperationBusy { get; }`, zaimplementowana w `MainWindowViewModel` jako
+    `bool ICodeTabHost.IsBookOperationBusy => IsBookOperationBusy;`.
+  - `CodeTabView.axaml.cs`, `OnContextMenuOpening`: menu kontekstowe jest i tak budowane od zera
+    przy **każdym** otwarciu (`ContextMenu.Opening`), więc wystarczyło odpytać
+    `host?.IsBookOperationBusy == true` raz na początek metody i dopisać `&& !busy` do `enabled:`
+    pozycji, które realnie startują operację na książce: "Remove span" → "the whole book" (nie
+    "this file"/"this paragraph" — te są lokalną, synchroniczną edycją w edytorze, nie operacją na
+    książce), "Rename Class", "Remove Class", "Rename Id", oraz w podmenu "Footnotes": Edit/Remove
+    Reference/Remove/Add/Add Reference **i** Renumber/Convert/Unify Letters — te trzy ostatnie
+    wołają `host.ExecuteAction`/`host.ShowFootnoteConversion`/`host.ShowFootnoteLetters`
+    **bezpośrednio**, mijając `AppActionRegistry` całkowicie, więc A2's `SetBusy` ich tu nie
+    pokrywał mimo że mają swój `AppAction` w głównym menu. "Find Usages"/"Find Id Usages" (tylko
+    czytają) i "Go to" zostały bez zmian.
+  - Panel Validation Results: `ValidationResultsViewModel` (trwały singleton jak Spellcheck/
+    Checkpoints) dostał `IsBookOperationBusy`; `HasFixable`/`CanFixSelection` (bindowane do
+    `IsEnabled` przycisków "Fix"/"Fix all") są teraz "jest coś do poprawienia" **i**
+    `!IsBookOperationBusy` — osobne prywatne pola (`_anyRowFixable`/`_selectionFixable`) trzymają
+    surowy fakt, żeby zmiana samego busy mogła przeliczyć obie właściwości bez ponownego
+    skanowania `Rows`/zaznaczenia. `ValidationResultsView.axaml.cs`'s `OnRowMenuOpening` (pozycja
+    "Fix" menu kontekstowego tabeli) dostał to samo AND-owanie. Spięcie dopisane jako trzecia linia
+    do istniejącego handlera `PropertyChanged` z A2b/A2c.
+  - Testy: nowy `[Fact]` w `CheckBookPanelTests.cs` (`HasFixable`/`CanFixSelection` w obie strony);
+    nowy `[AvaloniaFact]` w `tests/Signet.App.UiTests/CodeTabViewRenderTests.cs` — otwiera realne
+    menu kontekstowe (`ContextRequestedEventArgs`) na pozycji "Rename Class" z kontrolowanym
+    `FakeHost.IsBookOperationBusy` i sprawdza `MenuItem.IsEnabled` w obie strony (jedyny istniejący
+    wzorzec testu na poziomie widoku dla tego menu — żadnego testu enable/disable nie było tu
+    wcześniej, dopisany od zera). `FakeHost` (klasa testowa w tym pliku) i `ICodeTabHost`-Moq-mock w
+    `CodeTabContextMenuTests.cs` zaktualizowane/sprawdzone po dodaniu nowego członka interfejsu.
+  - `dotnet build Signet.slnx` + `dotnet test Signet.App.Tests` (1087/1087) +
+    `dotnet test Signet.App.UiTests` (279/279) — zielone.
 
 - [ ] **A3. Zamienić `runner: null` na realne okno.** `RemoveEditionPage`
   (`MainWindowViewModel.cs`, `IEditionPageHost.RemoveEditionPageAsync`) i

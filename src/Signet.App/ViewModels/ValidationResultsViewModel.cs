@@ -17,6 +17,9 @@ public sealed partial class ValidationResultsViewModel : ViewModelBase
     private bool _hasResults;
     private bool _hasFixable;
     private bool _canFixSelection;
+    private bool _anyRowFixable;
+    private bool _selectionFixable;
+    private bool _isBookOperationBusy;
     private IReadOnlyList<ValidationResultRow> _selection = Array.Empty<ValidationResultRow>();
 
     /// <summary>Raised when an entry is activated (double click) — handled by the main window.</summary>
@@ -63,6 +66,23 @@ public sealed partial class ValidationResultsViewModel : ViewModelBase
     /// <summary>Whether some rules are skipped (the "Restore" button).</summary>
     public bool HasSkippedRules => SkippedRules.Count > 0;
 
+    /// <summary>
+    /// Whether another operation on the book is running elsewhere (set by <c>MainWindowViewModel</c> from its own
+    /// <c>IsBookOperationBusy</c>) — disables <see cref="HasFixable"/>/<see cref="CanFixSelection"/> (and so "Fix"/
+    /// "Fix all") until it finishes, since <see cref="FixRequested"/> ends up starting one too.
+    /// </summary>
+    public bool IsBookOperationBusy
+    {
+        get => _isBookOperationBusy;
+        set
+        {
+            if (SetProperty(ref _isBookOperationBusy, value))
+            {
+                RefreshFixability();
+            }
+        }
+    }
+
     /// <summary>Replaces the current results with new ones (clears and fills again).</summary>
     public void LoadResults(IReadOnlyList<ValidationResult> results)
     {
@@ -75,8 +95,18 @@ public sealed partial class ValidationResultsViewModel : ViewModelBase
         }
 
         HasResults = Rows.Count > 0;
-        HasFixable = Rows.Any(r => r.CanFix);
+        _anyRowFixable = Rows.Any(r => r.CanFix);
+        RefreshFixability();
         SetSelection(Array.Empty<ValidationResultRow>());
+    }
+
+    // HasFixable/CanFixSelection are "there is a fixable row/selection" AND "no other book operation is busy": a
+    // separate field keeps the raw fact (recomputed on every load/selection change) so a later busy-state change alone
+    // can refresh the two bindable properties without rescanning Rows/the selection.
+    private void RefreshFixability()
+    {
+        HasFixable = _anyRowFixable && !IsBookOperationBusy;
+        CanFixSelection = _selectionFixable && !IsBookOperationBusy;
     }
 
     /// <summary>Clears the results.</summary>
@@ -100,7 +130,8 @@ public sealed partial class ValidationResultsViewModel : ViewModelBase
     {
         ArgumentNullException.ThrowIfNull(rows);
         _selection = rows;
-        CanFixSelection = rows.Any(r => r.CanFix);
+        _selectionFixable = rows.Any(r => r.CanFix);
+        RefreshFixability();
     }
 
     /// <summary>Raises a request to navigate to a result (called from the view after a double click).</summary>

@@ -655,6 +655,10 @@ public partial class CodeTabView : UserControl
         List<Control> items = new();
         ICodeTabHost? host = vm.Host;
 
+        // Disables the items below that would start a background book operation (not the ones that only edit this
+        // file through the editor, e.g. "Remove span" in this file/this file — only "the whole book").
+        bool busy = host?.IsBookOperationBusy == true;
+
         // ---- View Image / Open Tab For Image ----
         if (host is not null && vm.ImageBookPathAtCaret() is not null)
         {
@@ -685,7 +689,8 @@ public partial class CodeTabView : UserControl
                 if (host is not null)
                 {
                     removeSpan.Items.Add(Item(
-                        Strings.Format("CodeEditorMenu_RemoveSpanBook", vm.CountSameSpansInBook()), () => RemoveSpan(vm, SpanRemovalScope.Book)));
+                        Strings.Format("CodeEditorMenu_RemoveSpanBook", vm.CountSameSpansInBook()), () => RemoveSpan(vm, SpanRemovalScope.Book),
+                        enabled: !busy));
                 }
             }
 
@@ -763,6 +768,7 @@ public partial class CodeTabView : UserControl
                     Strings.Get("CodeEditorMenu_RenameClass"),
                     () => RenameClassAtCaret(vm),
                     host.GetActionIcon(AppActionIds.RenameClass),
+                    enabled: !busy,
                     gesture: host.GetActionGesture(AppActionIds.RenameClass)));
                 classItems = true;
             }
@@ -776,7 +782,8 @@ public partial class CodeTabView : UserControl
                     gesture: host.GetActionGesture(AppActionIds.FindUsages)));
                 items.Add(Item(
                     Strings.Get("CodeEditorMenu_RemoveClass"),
-                    () => RemoveClassAtCaret(classNameAtCaret)));
+                    () => RemoveClassAtCaret(classNameAtCaret),
+                    enabled: !busy));
                 classItems = true;
             }
 
@@ -790,7 +797,8 @@ public partial class CodeTabView : UserControl
             {
                 items.Add(Item(
                     Strings.Get("CodeEditorMenu_RenameId"),
-                    () => RenameIdAtCaret(idNameAtCaret)));
+                    () => RenameIdAtCaret(idNameAtCaret),
+                    enabled: !busy));
                 items.Add(Item(
                     Strings.Get("CodeEditorMenu_FindIdUsages"),
                     () => host.FindIdUsages(idNameAtCaret),
@@ -801,7 +809,7 @@ public partial class CodeTabView : UserControl
             // ---- Footnotes (XHTML files of a book) ----
             if (vm.IsHtmlFlow && vm.FootnoteStateAtCaret() is { } footnotes)
             {
-                items.Add(FootnotesMenu(vm, host, footnotes));
+                items.Add(FootnotesMenu(vm, host, footnotes, busy));
                 items.Add(new Separator());
             }
 
@@ -990,7 +998,7 @@ public partial class CodeTabView : UserControl
     // "Footnotes": on a footnote (its reference or note) edit it (its text, placement, or removing it) and go to the
     // other part; elsewhere add one (disabled with the reason when the caret is not in a place for a reference); always
     // renumber. A footnote of other origin is read-only: editing it only says so.
-    private MenuItem FootnotesMenu(CodeTabViewModel vm, ICodeTabHost host, FootnoteMenuState state)
+    private MenuItem FootnotesMenu(CodeTabViewModel vm, ICodeTabHost host, FootnoteMenuState state, bool busy)
     {
         MenuItem menu = new() { Header = Strings.Get("CodeEditorMenu_Footnotes") };
         if (state.Hit is { } hit)
@@ -1007,7 +1015,8 @@ public partial class CodeTabView : UserControl
                     {
                         ShowForeignFootnoteNotice(host, state.ForeignCount);
                     }
-                }));
+                },
+                enabled: !busy));
             menu.Items.Add(Item(
                 Strings.Get(hit.Side == FootnoteSide.Reference ? "CodeEditorMenu_FootnoteGoToNote" : "CodeEditorMenu_FootnoteGoToReference"),
                 () => host.GoToFootnote(hit)));
@@ -1020,9 +1029,9 @@ public partial class CodeTabView : UserControl
                     : null);
             menu.Items.Add(Item(
                 Strings.Get("CodeEditorMenu_FootnoteRemoveReference"), () => RemoveFootnoteReference(host, hit),
-                enabled: referenceBlocked is null, toolTip: referenceBlocked));
+                enabled: referenceBlocked is null && !busy, toolTip: referenceBlocked));
             menu.Items.Add(Item(
-                Strings.Get("CodeEditorMenu_FootnoteRemove"), () => RemoveFootnote(host, hit), enabled: foreign is null, toolTip: foreign));
+                Strings.Get("CodeEditorMenu_FootnoteRemove"), () => RemoveFootnote(host, hit), enabled: foreign is null && !busy, toolTip: foreign));
         }
         else
         {
@@ -1032,19 +1041,19 @@ public partial class CodeTabView : UserControl
                     ? Strings.Get("CodeEditorMenu_FootnoteAdd")
                     : Strings.Format("CodeEditorMenu_FootnoteAddBlocked", FootnoteViewModel.ErrorText(state.AddError)),
                 () => AddFootnote(vm),
-                enabled: canAdd));
+                enabled: canAdd && !busy));
             string? referenceBlocked = !canAdd ? FootnoteViewModel.ErrorSentence(state.AddError)
                 : state.ReferenceTargetCount == 0 ? Strings.Get("CodeEditorMenu_FootnoteAddReferenceNoNotes")
                 : null;
             menu.Items.Add(Item(
                 Strings.Get("CodeEditorMenu_FootnoteAddReference"), () => AddFootnoteReference(vm),
-                enabled: referenceBlocked is null, toolTip: referenceBlocked));
+                enabled: referenceBlocked is null && !busy, toolTip: referenceBlocked));
         }
 
         menu.Items.Add(new Separator());
-        menu.Items.Add(Item(Strings.Get("CodeEditorMenu_FootnotesRenumber"), () => RenumberFootnotes(host), enabled: state.HasFootnotes));
-        menu.Items.Add(Item(Strings.Get("CodeEditorMenu_FootnotesConvert"), host.ShowFootnoteConversion, enabled: state.ForeignCount > 0));
-        menu.Items.Add(Item(Strings.Get("CodeEditorMenu_FootnotesUnifyLetters"), host.ShowFootnoteLetters, enabled: state.HasFootnotes));
+        menu.Items.Add(Item(Strings.Get("CodeEditorMenu_FootnotesRenumber"), () => RenumberFootnotes(host), enabled: state.HasFootnotes && !busy));
+        menu.Items.Add(Item(Strings.Get("CodeEditorMenu_FootnotesConvert"), host.ShowFootnoteConversion, enabled: state.ForeignCount > 0 && !busy));
+        menu.Items.Add(Item(Strings.Get("CodeEditorMenu_FootnotesUnifyLetters"), host.ShowFootnoteLetters, enabled: state.HasFootnotes && !busy));
         return menu;
     }
 

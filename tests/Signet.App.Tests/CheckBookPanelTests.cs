@@ -219,6 +219,33 @@ public sealed class CheckBookPanelTests : IDisposable
     }
 
     [Fact]
+    public void Fix_and_fix_all_are_disabled_while_another_book_operation_is_busy_and_enabled_again_once_it_is_not()
+    {
+        // Arrange
+        ValidationResultsViewModel vm = new();
+        ValidationResult fixable = new(ValidationSeverity.Warning, "a.xhtml", -1, -1, "a", "Validation_BareBodyText",
+            new BareBodyTextFix("a.xhtml"));
+        vm.LoadResults(new[] { fixable });
+        vm.SetSelection(vm.Rows.ToList());
+        vm.HasFixable.Should().BeTrue("a precondition of this test");
+        vm.CanFixSelection.Should().BeTrue("a precondition of this test");
+
+        // Act
+        vm.IsBookOperationBusy = true;
+
+        // Assert
+        vm.HasFixable.Should().BeFalse();
+        vm.CanFixSelection.Should().BeFalse();
+
+        // Act
+        vm.IsBookOperationBusy = false;
+
+        // Assert
+        vm.HasFixable.Should().BeTrue();
+        vm.CanFixSelection.Should().BeTrue();
+    }
+
+    [Fact]
     public void A_rule_is_named_after_its_message_without_the_details()
     {
         // Act & Assert

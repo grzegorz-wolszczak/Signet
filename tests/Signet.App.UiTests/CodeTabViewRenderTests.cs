@@ -1049,6 +1049,60 @@ public sealed class CodeTabViewRenderTests : IDisposable
     }
 
     /// <summary>
+    /// "Rename Class…" would start a book operation: disabled while another one is already running elsewhere
+    /// (<see cref="ICodeTabHost.IsBookOperationBusy"/>), enabled again once it is not. The menu is rebuilt on every
+    /// opening, so this needs no extra refresh mechanism — just reading the flag at that point.
+    /// </summary>
+    [AvaloniaFact]
+    public void Context_menu_rename_class_is_disabled_while_another_book_operation_is_busy()
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
+        CssResource css = book.GetAllResources().OfType<CssResource>().First();
+        css.InitialLoad();
+
+        OpenTab tab = new TabManagerModel().OpenResource(css);
+        (SettingsStore settings, SpellChecker spellChecker) = NewSpellChecker();
+        FakeHost host = new();
+        var vm = new CodeTabViewModel(tab, new StatusBarService(), settings, spellChecker) { Host = host };
+
+        var window = new Window { Width = 600, Height = 400, Content = new CodeTabView { DataContext = vm } };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        TextEditor editor = window.GetVisualDescendants().OfType<TextEditor>().Single();
+        editor.Document.Text = "p.note { color: red }";
+        editor.CaretOffset = 4;
+
+        MenuItem RenameClassItem()
+        {
+            Dispatcher.UIThread.RunJobs();
+            editor.TextArea.RaiseEvent(new Avalonia.Input.ContextRequestedEventArgs());
+            Dispatcher.UIThread.RunJobs();
+            ContextMenu menu = editor.ContextMenu!;
+            MenuItem item = menu.Items.OfType<MenuItem>().Single(
+                i => (string)i.Header! == Signet.App.Resources.Strings.Get("CodeEditorMenu_RenameClass"));
+            menu.Close();
+            return item;
+        }
+
+        // Act
+        host.IsBookOperationBusy = true;
+        MenuItem whileBusy = RenameClassItem();
+
+        // Assert
+        whileBusy.IsEnabled.Should().BeFalse();
+
+        // Act
+        host.IsBookOperationBusy = false;
+        MenuItem whileIdle = RenameClassItem();
+
+        // Assert
+        whileIdle.IsEnabled.Should().BeTrue();
+    }
+
+    /// <summary>
     /// "Merge Content": the item is always present; it is enabled, showing the element name and
     /// count, when the selection spans adjacent elements of the same kind.
     /// </summary>
@@ -1305,6 +1359,8 @@ public sealed class CodeTabViewRenderTests : IDisposable
     {
         public System.Collections.Generic.IReadOnlyList<AppAction> CodeEditorShortcutActions { get; set; } =
             System.Array.Empty<AppAction>();
+
+        public bool IsBookOperationBusy { get; set; }
 
         public Signet.Core.MiscEditors.ClipEditorNode ClipLibraryRoot { get; } = new Signet.Core.MiscEditors.ClipEditorModel().Root;
 
