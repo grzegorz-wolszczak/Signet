@@ -44,6 +44,31 @@ public static class CorpusPaths
     /// <summary>The directory of a malformed EPUB with the given name (a <c>malformed/</c> subdirectory).</summary>
     public static string Malformed(string name) => Sub("malformed", name);
 
+    /// <summary>
+    /// The markup of a real, published book, with its prose replaced by Lorem ipsum
+    /// (<see cref="EpubAnonymizer"/>): numbered verses, footnotes of other origin in a container of their own, shared
+    /// notes read several times, a deep folder name and a stray second <c>container.xml</c>. See its
+    /// <c>README.md</c> for what it is for and how it was made.
+    /// </summary>
+    public static string RealVerseChapters => Sub("real", "verse-chapters");
+
+    /// <summary>The directory of a book with deliberate faults (a <c>broken/</c> subdirectory).</summary>
+    public static string Broken(string name) => Sub("broken", name);
+
+    /// <summary>
+    /// Whether the file belongs to a book that is faulty on purpose — <c>malformed/</c>, which is broken as an EPUB,
+    /// or <c>broken/</c>, which loads but holds awkward content (one of its files is deliberately not well-formed
+    /// XML: a comment with <c>--</c> inside it). A test that sweeps the corpus asserting that every file is sound has
+    /// to leave these out; a test about reading awkward input wants them.
+    /// </summary>
+    public static bool IsFaultyOnPurpose(string path)
+    {
+        ArgumentNullException.ThrowIfNull(path);
+        char separator = Path.DirectorySeparatorChar;
+        return path.Contains($"{separator}malformed{separator}", StringComparison.Ordinal)
+            || path.Contains($"{separator}broken{separator}", StringComparison.Ordinal);
+    }
+
     /// <summary>The directories of all valid EPUBs — for parametrized tests.</summary>
     public static IReadOnlyList<string> ValidEpubDirs { get; } =
     [

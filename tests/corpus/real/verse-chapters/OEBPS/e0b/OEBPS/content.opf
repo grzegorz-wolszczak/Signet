@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package version="3.0" unique-identifier="BookId" xmlns="http://www.idpf.org/2007/opf" xml:lang="pl">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf">
+    <dc:identifier id="BookId">urn:uuid:64df7cef-a5f6-49e0-a0dd-ede7871bd424</dc:identifier>
+    <dc:title>Adipis Aliquaexerc</dc:title>
+    <dc:language>do</dc:language>
+    <dc:creator>Adipis dolorequi exercita</dc:creator>
+    <dc:publisher>Temporaliqu (źródło: labori.dolo.co)</dc:publisher>
+    <dc:rights>Conse Incidi Nostrudipsu – dolor incididun enimul ve loremel</dc:rights>
+    <meta property="dcterms:modified">2026-10-23T13:32:35Z</meta>
+    <meta name="Signet version" content="Signet 0.8.0" />
+  </metadata>
+  <manifest>
+    <item id="title" href="title.xhtml" media-type="application/xhtml+xml"/>
+    <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+    <item id="css" href="Styles/style.css" media-type="text/css"/>
+    <item id="2sm-13" href="Text/2sm-13.xhtml" media-type="application/xhtml+xml"/>
+    <item id="2krn-19" href="Text/2krn-19.xhtml" media-type="application/xhtml+xml"/>
+    <item id="est-01" href="Text/est-01.xhtml" media-type="application/xhtml+xml"/>
+    <item id="hi-09" href="Text/hi-09.xhtml" media-type="application/xhtml+xml"/>
+    <item id="dz-13" href="Text/dz-13.xhtml" media-type="application/xhtml+xml"/>
+    <item id="dz-15" href="Text/dz-15.xhtml" media-type="application/xhtml+xml"/>
+    <item id="2kor-03" href="Text/2kor-03.xhtml" media-type="application/xhtml+xml"/>
+    <item id="1j-01" href="Text/1j-01.xhtml" media-type="application/xhtml+xml"/>
+    <item id="ap-23" href="Text/ap-23.xhtml" media-type="application/xhtml+xml"/>
+  </manifest>
+  <spine>
+    <itemref idref="title"/>
+    <itemref idref="2sm-13"/>
+    <itemref idref="2krn-19"/>
+    <itemref idref="est-01"/>
+    <itemref idref="hi-09"/>
+    <itemref idref="dz-13"/>
+    <itemref idref="dz-15"/>
+    <itemref idref="2kor-03"/>
+    <itemref idref="1j-01"/>
+    <itemref idref="ap-23"/>
+  </spine>
+</package>

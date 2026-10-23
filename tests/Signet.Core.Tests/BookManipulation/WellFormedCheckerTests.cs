@@ -33,7 +33,7 @@ public sealed class WellFormedCheckerTests
                      .Where(p => p.EndsWith(".xhtml", StringComparison.Ordinal)
                                  || p.EndsWith(".opf", StringComparison.Ordinal)
                                  || p.EndsWith(".ncx", StringComparison.Ordinal))
-                     .Where(p => !p.Contains($"{Path.DirectorySeparatorChar}malformed{Path.DirectorySeparatorChar}", StringComparison.Ordinal)))
+                     .Where(p => !CorpusPaths.IsFaultyOnPurpose(p)))
         {
             data.Add(path);
         }
