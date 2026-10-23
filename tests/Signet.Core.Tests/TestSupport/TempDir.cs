@@ -42,28 +42,71 @@ public sealed class TempDir : IDisposable
     {
         for (int attempt = 1; ; attempt++)
         {
-            try
+            if (!Directory.Exists(Path))
             {
-                if (Directory.Exists(Path))
-                {
-                    Directory.Delete(Path, recursive: true);
-                }
-
                 return;
             }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-            {
-                if (attempt == DeleteAttempts)
-                {
-                    throw new IOException(
-                        $"Could not delete the temporary directory '{Path}' after {DeleteAttempts} attempts: a file in it "
-                        + "is still open (a test did not dispose what holds it). Left: " + Left(), ex);
-                }
 
-                // A scanner or indexer can hold a fresh file for a moment.
-                Thread.Sleep(DeleteRetryDelayMs);
+            // Deleting the directory alone would catch a file another handle still holds open on Windows (the OS
+            // refuses), but not on Linux/WSL: removing a directory entry there does not check for open handles on
+            // it, the inode survives until the last one closes. Probing each file for an exclusive open catches it
+            // on both — see FindOpenFile.
+            string? locked = FindOpenFile();
+            Exception failure;
+            if (locked is null)
+            {
+                try
+                {
+                    Directory.Delete(Path, recursive: true);
+                    return;
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    failure = ex;
+                }
+            }
+            else
+            {
+                failure = new IOException($"'{locked}' is still open.");
+            }
+
+            if (attempt == DeleteAttempts)
+            {
+                throw new IOException(
+                    $"Could not delete the temporary directory '{Path}' after {DeleteAttempts} attempts: a file in it "
+                    + "is still open (a test did not dispose what holds it). Left: " + Left(), failure);
+            }
+
+            // A scanner or indexer can hold a fresh file for a moment.
+            Thread.Sleep(DeleteRetryDelayMs);
+        }
+    }
+
+    // Requesting FileShare.None here conflicts with any existing open handle regardless of its own access/share
+    // mode (on both Windows and Linux/WSL — confirmed: .NET enforces FileShare in-process even on Unix, only the
+    // delete syscall does not), and FileAccess.Read keeps the probe itself from failing on a merely read-only file.
+    private string? FindOpenFile()
+    {
+        try
+        {
+            foreach (string file in Directory.EnumerateFiles(Path, "*", SearchOption.AllDirectories))
+            {
+                try
+                {
+                    using FileStream probe = new(file, FileMode.Open, FileAccess.Read, FileShare.None);
+                }
+                catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                {
+                    return file;
+                }
             }
         }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // The directory may already be gone between the Directory.Exists check and here.
+        }
+
+        return null;
     }
 
     private string Left()
