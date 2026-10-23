@@ -22,6 +22,13 @@ public sealed partial class MainWindowViewModel
     /// </summary>
     public ProgressRunner? ProgressRunner { get; set; }
 
+    /// <summary>
+    /// Like <see cref="ProgressRunner"/>, but for a quick edit that only takes a while on a very large book
+    /// (<c>ProgressWindow.DelayedRunner</c>, set by the view): the window appears only once the work has run for a
+    /// moment, and never offers Cancel. <c>null</c> (the tests): the work just runs, off the UI thread.
+    /// </summary>
+    public ProgressRunner? DelayedProgressRunner { get; set; }
+
     // The book raises its events (a file added or removed, the book modified) on the thread that edits it. While that is not the
     // UI thread the handlers that touch the UI wait; the UI is brought up to date once the work is done.
     private bool _bookEditedInBackground;

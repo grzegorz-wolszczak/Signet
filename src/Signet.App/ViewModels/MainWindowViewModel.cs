@@ -1132,7 +1132,7 @@ public sealed partial class MainWindowViewModel
             string title = Strings.Get("CheckpointOp_RemoveEditionPage");
             bool checkpoint = await AddCheckpointBeforeAsync(title).ConfigureAwait(true);
             bool removed = await RunInBackgroundAsync(
-                title, runner: null, editsBook: true, cancellable: false, (_, _) => EditionPage.Remove(book)).ConfigureAwait(true);
+                title, DelayedProgressRunner, editsBook: true, cancellable: false, (_, _) => EditionPage.Remove(book)).ConfigureAwait(true);
             if (!removed)
             {
                 if (checkpoint)
@@ -1930,7 +1930,7 @@ public sealed partial class MainWindowViewModel
             string title = Strings.Get("CheckpointOp_SpellCheck");
             bool checkpoint = await AddCheckpointBeforeAsync(title).ConfigureAwait(true);
             int replaced = await RunInBackgroundAsync(
-                title, runner: null, editsBook: true, cancellable: false,
+                title, DelayedProgressRunner, editsBook: true, cancellable: false,
                 (_, _) => SpellcheckEditorEngine.ReplaceWordInAllFiles(book, _spellChecker, _settings, word, lang, newWord))
                 .ConfigureAwait(true);
             if (replaced == 0)

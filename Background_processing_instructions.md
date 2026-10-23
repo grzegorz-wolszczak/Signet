@@ -233,15 +233,26 @@ Legenda statusu: `[ ]` do zrobienia, `[x]` zrobione (z krótką notatką i commi
   - `dotnet build Signet.slnx` + `dotnet test Signet.App.Tests` (1087/1087) +
     `dotnet test Signet.App.UiTests` (279/279) — zielone.
 
-- [ ] **A3. Zamienić `runner: null` na realne okno.** `RemoveEditionPage`
-  (`MainWindowViewModel.cs`, `IEditionPageHost.RemoveEditionPageAsync`) i
-  `ApplySpellcheckChangeAllAsync` dziś dostają `runner: null`, bo `PreferencesViewModel` nie ma
-  referencji do `Window`, a `ChangeAllRequested` to subskrypcja viewmodel→viewmodel bez widoku.
-  Trzeba przeprowadzić `Window`/`ProgressRunner` przez `PreferencesViewModel`/`PreferencesWindow` i
-  przez subskrypcję `ChangeAllRequested` (dokładnie to, co poprzednia sesja świadomie odłożyła —
-  patrz `FOOTNOTES_PERFORMANCE_NOTES.md`, "Co NIE zostało zrobione", punkt 3). Użyć
-  `ProgressWindow.DelayedRunner` (bez Cancel, jak reszta szybkich edycji) — chyba że audyt w C1
-  wykaże, że powinny być cancellable.
+- [x] **A3. Zamienić `runner: null` na realne okno.** (2026-10-23, commit w `background-processing`)
+  Korekta założenia zadania po audycie kodu: `runner: null` leży w `MainWindowViewModel`
+  (`RemoveEditionPageAsync`, `ApplySpellcheckChangeAllAsync`), **nie** w `PreferencesViewModel` czy w
+  subskrypcji `ChangeAllRequested` — te dwa miejsca nie mają `Window`, ale `runner: null` nie jest
+  w ich kodzie. `MainWindowViewModel` **już ma** dostęp do swojego własnego `ProgressRunner` (pole
+  ustawiane przez `MainWindow.axaml.cs`) — nie trzeba żadnego przewodu przez
+  `PreferencesViewModel`/`PreferencesWindow`/`SpellcheckEditorViewModel`/`SpellcheckEditorWindow`.
+
+  Co zrobione:
+  - Nowa właściwość `MainWindowViewModel.DelayedProgressRunner` (`MainWindowViewModel.Operations.cs`,
+    analogiczna do istniejącego `ProgressRunner`, ustawiana przez widok).
+  - `MainWindow.axaml.cs`: `_boundViewModel.DelayedProgressRunner = ProgressWindow.DelayedRunner(this);`
+    tuż przy istniejącym ustawieniu `ProgressRunner`.
+  - `RemoveEditionPageAsync`/`ApplySpellcheckChangeAllAsync`: `runner: null` → `DelayedProgressRunner`
+    (okno po 300 ms, bez Cancel — zgodnie z zaleceniem zadania dla "reszty szybkich edycji").
+  - Testy: nowy `[Fact]` `RemoveEditionPageAsync_runs_under_the_delayed_progress_runner` i
+    rozszerzony `SpellcheckEditor_ChangeAll_replaces_word_in_all_files_and_reloads_open_tabs`
+    (`MainWindowViewModelTests.cs`) — ustawiają `sut.DelayedProgressRunner` i sprawdzają, że
+    operacja przechodzi przez niego (tytuł, `cancellable: false`), zamiast biegnąć bez żadnego okna.
+  - `dotnet build Signet.slnx` + `dotnet test Signet.App.Tests` (1088/1088) — zielone.
 
 - [ ] **A4. Owinąć `AddCheckpointBeforeAsync`/`AbandonCheckpointAsync` w okno progresu.** Zależy od
   decyzji A1 (cancellable czy nie). Prawdopodobnie najprościej: dodać im własny `ProgressRunner?`

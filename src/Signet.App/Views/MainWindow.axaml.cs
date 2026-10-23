@@ -238,6 +238,10 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         _boundViewModel.ProgressRunner = (title, work, cancellable) =>
             ProgressWindow.RunWithProgressAsync(this, title, Strings.Get("Progress_Starting"), work, cancellable);
 
+        // Quick edits that are usually immediate but can take a while on a very large book (e.g. Remove Edition Page,
+        // Spellcheck's "Change All to...") — a window only once that happens, and never with Cancel.
+        _boundViewModel.DelayedProgressRunner = ProgressWindow.DelayedRunner(this);
+
         // A shortcut change in Preferences takes effect immediately, without restarting the application.
         _shortcutBindings.Attach(_boundViewModel.ShortcutActions);
 
