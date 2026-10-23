@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
 using AngleSharp.Dom;
 using Signet.Core.Localization;
 using Signet.Core.Misc;
@@ -252,7 +253,7 @@ public sealed class CleanupAnalysis
     private readonly Dictionary<string, (string Stamp, List<(EmptyElement Element, IReadOnlyList<CleanupConsequence> Consequences)> Elements)> _emptyElements =
         new(StringComparer.Ordinal);
 
-    private CleanupAnalysis(Book book)
+    private CleanupAnalysis(Book book, CancellationToken cancellationToken)
     {
         _cssResources = book.GetCssResources();
         foreach (CssResource css in _cssResources)
@@ -262,6 +263,7 @@ public sealed class CleanupAnalysis
 
         foreach (HtmlResource html in book.GetHtmlResources())
         {
+            cancellationToken.ThrowIfCancellationRequested();
             _htmlTexts[html.BookPath] = html.GetText();
             _htmlFolders[html.BookPath] = html.Folder;
 
@@ -320,7 +322,7 @@ public sealed class CleanupAnalysis
         }
 
         _unreferencedSheets = book.FindUnusedStylesheets();
-        _unusedSelectors = CssSelectorUsageAnalyzer.GetUnusedSelectors(book);
+        _unusedSelectors = CssSelectorUsageAnalyzer.GetUnusedSelectorsCancellable(book, cancellationToken);
         _media = book.GetMediaResources();
         _coverImagePath = book.GetOpf().GetCoverImagePath();
     }
@@ -329,15 +331,26 @@ public sealed class CleanupAnalysis
     /// Prepares the analysis of <paramref name="book"/> (parses the files, finds unused selectors). Held back when
     /// any (X)HTML file is not well-formed.
     /// </summary>
-    public static CleanupPreparation Prepare(Book book)
+    public static CleanupPreparation Prepare(Book book) => PrepareCancellable(book, CancellationToken.None);
+
+    /// <summary>
+    /// Like <see cref="Prepare"/>, but stops with an <see cref="OperationCanceledException"/> between the files when
+    /// <paramref name="cancellationToken"/> is cancelled. (Named differently rather than overloaded: see
+    /// <c>CheckpointHistory.AddCheckpointCancellable</c>.)
+    /// </summary>
+    public static CleanupPreparation PrepareCancellable(Book book, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(book);
-        if (Book.FindFirstNotWellFormed(book.GetHtmlResources()) is { } bad)
+        foreach (HtmlResource html in book.GetHtmlResources())
         {
-            return new CleanupPreparation(null, bad);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (Book.FindFirstNotWellFormed(new[] { html }) is { } bad)
+            {
+                return new CleanupPreparation(null, bad);
+            }
         }
 
-        return new CleanupPreparation(new CleanupAnalysis(book), null);
+        return new CleanupPreparation(new CleanupAnalysis(book, cancellationToken), null);
     }
 
     /// <summary>

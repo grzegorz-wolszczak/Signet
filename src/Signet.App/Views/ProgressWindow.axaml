@@ -2,17 +2,19 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:loc="using:Signet.App.Resources"
         x:Class="Signet.App.Views.ProgressWindow"
-        Width="420" SizeToContent="Height"
+        MinWidth="420" MaxWidth="720" SizeToContent="WidthAndHeight"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         ShowInTaskbar="False"
         Title="Signet">
 
-  <!-- Long work in the background: the phase it is in (only for an operation made of phases), what is going on (the detail of
-       the phase then), a bar (indeterminate until the work reports how far it is, then with the percent) and Cancel when the
-       work can be left (the result is then dropped). -->
+  <!-- Long work in the background: the headline (what the operation is), the phase it is in (only for an operation made of
+       phases), what is going on (the detail of the phase then), a bar (indeterminate until the work reports how far it is, then
+       with the percent) and Cancel when the work can be left (the result is then dropped). The window is as wide as its widest
+       text has been (up to MaxWidth, then the text wraps). -->
   <StackPanel Margin="16" Spacing="12">
-    <TextBlock x:Name="PhaseText" TextWrapping="Wrap" FontWeight="SemiBold" IsVisible="False" />
+    <TextBlock x:Name="HeadlineText" TextWrapping="Wrap" FontWeight="Bold" FontSize="16" />
+    <TextBlock x:Name="PhaseText" TextWrapping="Wrap" IsVisible="False" />
     <TextBlock x:Name="MessageText" TextWrapping="Wrap" />
     <ProgressBar x:Name="Bar" IsIndeterminate="True" Minimum="0" Maximum="100" />
     <TextBlock x:Name="PercentText" HorizontalAlignment="Right" Opacity="0.75" IsVisible="False" />

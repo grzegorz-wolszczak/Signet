@@ -56,6 +56,7 @@ public sealed partial class MainWindowViewModel
         AppActionIds.ConvertFootnotes,
         AppActionIds.UnifyFootnoteLetters,
         AppActionIds.ChangeFootnotePlacement,
+        AppActionIds.Cleanup,
         AppActionIds.RevertToBefore,
         AppActionIds.RevertToAfter,
     ];

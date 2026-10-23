@@ -369,12 +369,12 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
     // ------------------------------------------------ IFileWorkflowPrompts --- //
 
     /// <inheritdoc />
-    public async Task<T> ShowProgressAsync<T>(string message, Func<IProgress<WorkProgress>, Task<T>> work)
+    public async Task<T> ShowProgressAsync<T>(string title, string message, Func<IProgress<WorkProgress>, Task<T>> work)
     {
         ArgumentNullException.ThrowIfNull(work);
         Task<T>? running = null;
         await ProgressWindow.RunWithProgressAsync(
-            this, message, message, (progress, _) => running = work(progress), cancellable: false, ProgressWindow.DefaultDelay);
+            this, title, message, (progress, _) => running = work(progress), cancellable: false, ProgressWindow.DefaultDelay);
         return await running!;
     }
 
@@ -1374,10 +1374,31 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             return;
         }
 
-        CleanupViewModel? cleanup = await vm.PrepareCleanupAsync();
+        // "Clean" shows how far it is over the dialog.
+        CleanupWindow? dialog = null;
+        CleanupViewModel? cleanup = await vm.PrepareCleanupAsync(
+            (title, work, cancellable) => ProgressWindow.RunWithProgressAsync(
+                dialog ?? (Window)this, title, Strings.Get("Progress_Starting"), work, cancellable));
         if (cleanup is not null)
         {
-            await CleanupWindow.ShowAsync(this, cleanup);
+            // "Clean" is off while a book operation runs (this dialog's own included).
+            cleanup.IsBookOperationBusy = vm.IsBookOperationBusy;
+            PropertyChangedEventHandler busyChanged = (_, args) =>
+            {
+                if (args.PropertyName == nameof(MainWindowViewModel.IsBookOperationBusy))
+                {
+                    cleanup.IsBookOperationBusy = vm.IsBookOperationBusy;
+                }
+            };
+            vm.PropertyChanged += busyChanged;
+            try
+            {
+                await CleanupWindow.ShowAsync(this, cleanup, window => dialog = window);
+            }
+            finally
+            {
+                vm.PropertyChanged -= busyChanged;
+            }
         }
     }
 

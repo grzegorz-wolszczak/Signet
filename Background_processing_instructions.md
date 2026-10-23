@@ -472,6 +472,58 @@ Legenda statusu: `[ ]` do zrobienia, `[x]` zrobione (z krótką notatką i commi
   lista "dodaj token wszędzie" — zgodnie z (V), robimy to tylko tam, gdzie się realnie okaże, że
   trzeba.
 
+### Część F — zgłoszenia po testach ręcznych (2026-10-23)
+
+- [x] **F1. "Wyczyść" w oknie Cleanup nie pokazywało okna postępu.** `CleanupViewModel.Clean` wołał
+  synchronicznie `ApplyCleanup` (zapis plików + ponowna analiza całej książki) na wątku UI, bez
+  `TryEnterBookOperation` i bez okna. Teraz: `ApplyCleanupAsync` idzie przez `RunBookOperationAsync`
+  (stan "zajęte", modalne okno nad oknem Cleanup, dwie fazy: "Czyszczenie książki" i "Analizowanie
+  książki", obie indeterminate — `CleanupAnalysis` nie ma haków postępu), `CleanCommand` jest
+  `AsyncRelayCommand` wyłączonym na czas każdej operacji na książce (`IsBookOperationBusy` spięte
+  jak w A2b), a `AppActionIds.Cleanup` jest w `BookOperationActionIds`. **Checkpoint i Cancel (decyzja usera):** "Wyczyść" bierze teraz checkpoint
+  (`CheckpointOp_Cleanup`) i jest cancellable: Core dostał warianty z tokenem
+  (`CleanupAnalysis.PrepareCancellable`, `Book.ApplyCleanupCancellable`,
+  `CssSelectorUsageAnalyzer.GetUnusedSelectorsCancellable`/`GetSelectorUsageCancellable` — sprawdzanie
+  między plikami; osobne nazwy zamiast przeciążeń, jak `AddCheckpointCancellable`). Cancel przywraca
+  książkę z checkpointu i **zamyka dialog** (analiza, którą trzyma, należy do podmienionej książki).
+  Gdy nic się nie zmieniło, checkpoint jest cofany (`RewindCheckpoint`). Testy:
+  `Cleaning_runs_under_the_progress_runner_in_two_phases_and_disables_the_other_book_operations`
+  (checkpoint, `cancellable: true`), `Cancelling_the_cleaning_brings_the_book_back_and_closes_the_dialog`.
+  **Rozbieżność z założeniem usera do rozstrzygnięcia:** user zakłada, że Cancel jest możliwy także
+  bez checkpointu (praca CPU-bound w pętli z tokenem). Dziś `RunBookOperationAsync` daje Cancel tylko
+  gdy `!editsBook || checkpoint`, bo przerwana edycja bez checkpointu zostawia książkę w połowie
+  zmienioną, bez drogi powrotnej. Dotyczy dziś: Add/Remove Soft Hyphens (`checkpointName: null`);
+  szybkie edycje z C1 nie mają tokenu w ogóle.
+- [x] **F2. Nagłówek operacji w oknie postępu.** Pogrubiona, większa etykieta u góry okna
+  (`HeadlineText`) mówi, co to za operacja ("Przenumerowywanie przypisów", "Otwieranie pliku"…);
+  pasek tytułu okna to teraz zawsze "Signet". Pod nagłówkiem: faza, szczegół, pasek, %. Okno jest
+  tak szerokie jak najszerszy dotychczas pokazany tekst (`SizeToContent="WidthAndHeight"`,
+  `MinWidth` rośnie i nie maleje, `MaxWidth` 720, dalej zawijanie). `IFileWorkflowPrompts
+  .ShowProgressAsync` dostał parametr `title`; otwieranie książki ma nagłówek `File_LoadingTitle`
+  ("Otwieranie pliku"), a nazwa pliku jest tylko w komunikacie początkowym (znika po pierwszym
+  raporcie fazowym). Test szerokości sprawdza `MinWidth` (platforma headless nie zmienia rozmiaru
+  okna), nie faktyczną szerokość — do obejrzenia ręcznie.
+- [ ] **F3. Luki synchroniczne (audyt, nie naprawione).** Operacje na wątku UI bez okna postępu i
+  bez stanu "zajęte" (przeczytane w kodzie, nie uruchamiane):
+  1. **Synchroniczny checkpoint (kopia całego folderu książki) przed:** Replace All
+     (`FindReplaceViewModel.WithReplaceAllCheckpoint`), Add Cover, Generate TOC, Edit TOC,
+     Standardize, Split Section, Split on SGF markers, Standardize EPUB (Restructure), Create HTML
+     TOC, Upgrade to EPUB 3 (wszystkie `CheckpointBeforeAction`/`AddCheckpointBefore`), oraz wszystkie
+     operacje Book Browsera: Rename, Delete files, Add files, Add font faces, Set semantics, Reorder,
+     Merge, Link stylesheets (`BookBrowserViewModel.Checkpoint`). To jest **jedna wspólna
+     przyczyna** — `AddCheckpointBefore` kopiuje książkę synchronicznie — i najtańsza do naprawy
+     hurtowo (async wariant `AddCheckpointBeforeAsync` już jest).
+  2. Ręczny checkpoint (`CreateCheckpoint`) i checkpoint "Start of editing session" przy otwieraniu
+     książki (`StartCheckpointHistory`, w fazie "Wyświetlanie książki").
+  3. **Zapis książki** (Save / Save As / Save a Copy): `ExportEpub.WriteBook` synchronicznie.
+  4. Same operacje po checkpoincie, wykonywane synchronicznie: Standardize (`EpubStandardization
+     .Apply`), Restructure (`RestructureToSignetNorm`), Upgrade to EPUB 3, Create HTML TOC, Split…,
+     Replace All.
+  5. Analiza na otwarciu dialogu Cleanup (`CleanupAnalysis.Prepare`) i dialogu Standardize.
+  6. `IBookWorkspace.ApplyBook` przy otwieraniu książki (opisane przy B5).
+  **Nie sprawdzone:** Metadata Editor, Manage Fonts poza dodawaniem fontów, Reports, Find in Files,
+  TOC/Landmarks edytory, Spellcheck (poza Change All), import innych formatów (HTML/TXT).
+
 ### Część E — dokumentacja
 
 - [x] **E1. Zaktualizować `FOOTNOTES_PERFORMANCE_NOTES.md`.** Zrobione od razu (trzecia sesja, przy

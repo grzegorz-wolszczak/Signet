@@ -22,7 +22,7 @@ public sealed class CleanupWindowTests
         // Arrange
         using TempDir temp = new();
         using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, temp)).GetBook();
-        CleanupViewModel vm = new(CleanupAnalysis.Prepare(book).Analysis!, [], (_, _) => { }, (_, _) => null);
+        CleanupViewModel vm = new(CleanupAnalysis.Prepare(book).Analysis!, [], (_, _) => { }, (_, _) => System.Threading.Tasks.Task.FromResult<CleanupAnalysis?>(null));
         CleanupWindow window = new() { DataContext = vm };
 
         // Act

@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
 using AwesomeAssertions;
@@ -15,6 +16,13 @@ namespace Signet.App.UiTests;
 /// <summary>Tests of the window shown while work runs in the background (<see cref="ProgressWindow"/>).</summary>
 public sealed class ProgressWindowTests
 {
+    // Forces a layout pass and a frame (the window does not resize on its own in the headless platform between jobs).
+    private static bool Laid(Window window)
+    {
+        window.CaptureRenderedFrame();
+        return true;
+    }
+
     private static Window Owner()
     {
         Window owner = new();
@@ -64,7 +72,8 @@ public sealed class ProgressWindowTests
         ProgressWindow window = owner.OwnedWindows.OfType<ProgressWindow>().Single();
 
         // Assert
-        window.Title.Should().Be("Title");
+        window.FindControl<TextBlock>("HeadlineText")!.Text.Should().Be("Title");
+        window.Title.Should().Be("Signet", "the title bar says the application, the operation is the bold headline");
         window.FindControl<TextBlock>("MessageText")!.Text.Should().Be("Working");
 
         // Act
@@ -208,7 +217,8 @@ public sealed class ProgressWindowTests
         TextBlock percent = window.FindControl<TextBlock>("PercentText")!;
 
         // Assert
-        window.Title.Should().Be("Converting");
+        window.FindControl<TextBlock>("HeadlineText")!.Text.Should().Be("Converting");
+        window.FindControl<TextBlock>("HeadlineText")!.FontWeight.Should().Be(Avalonia.Media.FontWeight.Bold);
         window.FindControl<TextBlock>("MessageText")!.Text.Should().Be("Starting");
         bar.IsIndeterminate.Should().BeTrue("the work has not said how far it is");
         percent.IsVisible.Should().BeFalse();
@@ -300,6 +310,42 @@ public sealed class ProgressWindowTests
         detail.IsVisible.Should().BeTrue();
         detail.Text.Should().Be("Roof");
         bar.Value.Should().Be(50);
+
+        // Act
+        work.SetResult();
+        RunUntil(() => run.IsCompleted);
+        owner.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_window_is_as_wide_as_its_widest_text_and_does_not_shrink_again()
+    {
+        // Arrange
+        Window owner = Owner();
+        TaskCompletionSource work = new();
+        IProgress<WorkProgress>? progress = null;
+        Task run = ProgressWindow.RunWithProgressAsync(
+            owner, "Short", "Short", (p, _) =>
+            {
+                progress = p;
+                return work.Task;
+            });
+        RunUntil(() => owner.OwnedWindows.Count == 1);
+        ProgressWindow window = owner.OwnedWindows.OfType<ProgressWindow>().Single();
+        double narrow = window.MinWidth;
+
+        // Act
+        progress!.Report(new WorkProgress(new string('x', 70), null, new PhaseInfo(1, 2, "Phase")));
+        RunUntil(() => Laid(window) && window.MinWidth > narrow);
+        double wide = window.MinWidth;
+        progress.Report(new WorkProgress("short", null, new PhaseInfo(1, 2, "Phase")));
+        RunUntil(() => window.FindControl<TextBlock>("MessageText")!.Text == "short" && Laid(window));
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        narrow.Should().BeLessThan(wide, "a longer text widens the window");
+        window.MinWidth.Should().Be(wide, "a shorter text later does not shrink it");
+        window.MinWidth.Should().BeLessThanOrEqualTo(window.MaxWidth);
 
         // Act
         work.SetResult();

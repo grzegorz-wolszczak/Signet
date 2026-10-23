@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Signet.App.Resources;
@@ -22,7 +23,7 @@ namespace Signet.App.ViewModels;
 public sealed partial class CleanupViewModel : ViewModelBase
 {
     private readonly Action<string, int> _navigate;
-    private readonly Func<CleanupPlan, IReadOnlyList<CleanupStep>, CleanupAnalysis?> _apply;
+    private readonly Func<CleanupPlan, IReadOnlyList<CleanupStep>, Task<CleanupAnalysis?>> _apply;
     private readonly HashSet<string> _excludedKeys = new(StringComparer.Ordinal);
     private readonly HashSet<string> _acceptedRiskyKeys = new(StringComparer.Ordinal);
     private readonly HashSet<string> _excludedLevels = new(StringComparer.Ordinal);
@@ -31,6 +32,7 @@ public sealed partial class CleanupViewModel : ViewModelBase
     private CleanupAnalysis _analysis;
     private bool _updating;
     private bool _togglingSections;
+    private bool _isBookOperationBusy;
 
     /// <summary>Creates the view model and computes the first plans.</summary>
     /// <param name="analysis">The prepared analysis of the book.</param>
@@ -38,13 +40,14 @@ public sealed partial class CleanupViewModel : ViewModelBase
     /// <param name="navigate">Opens a file at an offset (a double click on an item).</param>
     /// <param name="apply">
     /// Applies a tab's plan to the book and remembers the checked steps (the second argument); returns the analysis
-    /// of the changed book, or <c>null</c> when it cannot be analysed any more (the dialog then closes).
+    /// of the changed book, or <c>null</c> when it cannot be analysed any more (the dialog then closes). It runs under a progress
+    /// window, so it is asynchronous.
     /// </param>
     public CleanupViewModel(
         CleanupAnalysis analysis,
         IEnumerable<CleanupStep> enabledSteps,
         Action<string, int> navigate,
-        Func<CleanupPlan, IReadOnlyList<CleanupStep>, CleanupAnalysis?> apply)
+        Func<CleanupPlan, IReadOnlyList<CleanupStep>, Task<CleanupAnalysis?>> apply)
     {
         ArgumentNullException.ThrowIfNull(analysis);
         ArgumentNullException.ThrowIfNull(enabledSteps);
@@ -83,6 +86,25 @@ public sealed partial class CleanupViewModel : ViewModelBase
 
     /// <summary>The steps of the Files tab, in execution order.</summary>
     public static IReadOnlyList<CleanupStep> FilesSteps { get; } = new[] { CleanupStep.UnusedMedia };
+
+    /// <summary>
+    /// Whether a book operation is running (this dialog's own "Clean", or one of the main window): "Clean" is disabled until it is
+    /// done. Set by the view, which follows the main window's view model.
+    /// </summary>
+    public bool IsBookOperationBusy
+    {
+        get => _isBookOperationBusy;
+        set
+        {
+            if (SetProperty(ref _isBookOperationBusy, value))
+            {
+                foreach (CleanupTabViewModel tab in Tabs)
+                {
+                    tab.CleanCommand.NotifyCanExecuteChanged();
+                }
+            }
+        }
+    }
 
     /// <summary>The tabs: CSS, HTML, Files.</summary>
     public ObservableCollection<CleanupTabViewModel> Tabs { get; } = new();
@@ -204,14 +226,14 @@ public sealed partial class CleanupViewModel : ViewModelBase
     }
 
     /// <summary>Applies the plan of <paramref name="tab"/> and re-plans every tab on the changed book.</summary>
-    internal void Clean(CleanupTabViewModel tab)
+    internal async Task CleanAsync(CleanupTabViewModel tab)
     {
-        if (!tab.HasChanges)
+        if (!tab.HasChanges || IsBookOperationBusy)
         {
             return;
         }
 
-        CleanupAnalysis? analysis = _apply(tab.Plan, EnabledSteps);
+        CleanupAnalysis? analysis = await _apply(tab.Plan, EnabledSteps).ConfigureAwait(true);
         if (analysis is null)
         {
             CloseRequested?.Invoke(this, EventArgs.Empty);
@@ -275,7 +297,7 @@ public sealed partial class CleanupTabViewModel : ObservableObject
             Sections.Add(new CleanupSectionViewModel(owner, step, enabled.Contains(step)));
         }
 
-        CleanCommand = new RelayCommand(() => owner.Clean(this), () => HasChanges);
+        CleanCommand = new AsyncRelayCommand(() => owner.CleanAsync(this), () => HasChanges && !owner.IsBookOperationBusy);
         EnableAllCommand = new RelayCommand(() => owner.SetAllSections(this, true));
         DisableAllCommand = new RelayCommand(() => owner.SetAllSections(this, false));
     }
@@ -290,7 +312,7 @@ public sealed partial class CleanupTabViewModel : ObservableObject
     public CleanupPlan Plan { get; private set; } = null!;
 
     /// <summary>Applies <see cref="Plan"/> to the book ("Clean").</summary>
-    public IRelayCommand CleanCommand { get; }
+    public IAsyncRelayCommand CleanCommand { get; }
 
     /// <summary>Checks every section (step) of the tab.</summary>
     public IRelayCommand EnableAllCommand { get; }

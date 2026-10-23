@@ -82,11 +82,12 @@ public interface IFileWorkflowPrompts
     Task<IReadOnlyList<string>?> DesignCustomLayoutAsync(string version);
 
     /// <summary>
-    /// Runs <paramref name="work"/> (started at once) with a progress window showing <paramref name="message"/> when it
-    /// lasts; the window goes when the work is done and its result is on screen. The work tells how far it is
-    /// (<see cref="WorkProgress"/>) through the progress it is given. Returns the result of the work.
+    /// Runs <paramref name="work"/> (started at once) with a progress window headed <paramref name="title"/> (the name of the
+    /// operation) and showing <paramref name="message"/> until the work reports, when it lasts; the window goes when the work is done
+    /// and its result is on screen. The work tells how far it is (<see cref="WorkProgress"/>) through the progress it is given.
+    /// Returns the result of the work.
     /// </summary>
-    Task<T> ShowProgressAsync<T>(string message, Func<IProgress<WorkProgress>, Task<T>> work);
+    Task<T> ShowProgressAsync<T>(string title, string message, Func<IProgress<WorkProgress>, Task<T>> work);
 }
 
 /// <summary>The main window surface as seen by <see cref="FileWorkflow"/> (swapping the book, change state).</summary>
@@ -367,6 +368,7 @@ public sealed class FileWorkflow : IDisposable
         // The check of the file, the import and showing the book take seconds for a big book: they run with a progress
         // window (when they last), the messages come after it.
         (Book? book, string? error) = await _prompts.ShowProgressAsync(
+            Strings.Get("File_LoadingTitle"),
             Strings.Format("File_Loading", Path.GetFileName(path)),
             progress => ImportAndApplyAsync(importer, path, progress)).ConfigureAwait(true);
         if (book is null)
