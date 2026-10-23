@@ -242,12 +242,13 @@ public static partial class FootnoteEditor
     /// <summary>
     /// What converting the footnotes of other origin would do: each with the number it gets and what needs a look, and
     /// the candidates for the notes file of the global footnotes. It only reads the book, so it can run off the UI
-    /// thread while nothing edits the book.
+    /// thread while nothing edits the book. <paramref name="progress"/> reports how far the scan of the book's files is
+    /// (a book can have thousands).
     /// </summary>
-    public static ConversionPlan PlanConversion(Book book)
+    public static ConversionPlan PlanConversion(Book book, IProgress<ScanProgress>? progress = null)
     {
         ArgumentNullException.ThrowIfNull(book);
-        IReadOnlyList<Footnote> footnotes = FootnoteScanner.Scan(book);
+        IReadOnlyList<Footnote> footnotes = FootnoteScanner.Scan(book, progress);
 
         // Every link by what it leads to, and every file parsed once: a book can have thousands of footnotes.
         Dictionary<(string Target, string Fragment), List<BookLink>> links = new();

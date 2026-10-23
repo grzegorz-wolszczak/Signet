@@ -42,8 +42,8 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>
     /// Raised by "Revert to before / after …" when the move would remove, bring back or rename files — the view
-    /// lists them and, once confirmed, calls <see cref="RevertToBeforeCheckpoint"/> /
-    /// <see cref="RevertToAfterCheckpoint"/>.
+    /// lists them and, once confirmed, calls <see cref="RevertToBeforeCheckpointAsync"/> /
+    /// <see cref="RevertToAfterCheckpointAsync"/>.
     /// </summary>
     public event EventHandler<CheckpointRevertRequest>? RevertConfirmationRequested;
 
@@ -130,10 +130,10 @@ public sealed partial class MainWindowViewModel
     /// "Revert to before …": restores the state before the current one right away, or — when that would remove,
     /// bring back or rename files — first asks for confirmation (<see cref="RevertConfirmationRequested"/>).
     /// </summary>
-    public void RequestRevertToBefore() => RequestRevert(forward: false);
+    public Task RequestRevertToBeforeAsync() => RequestRevertAsync(forward: false);
 
-    /// <summary>"Revert to after …": like <see cref="RequestRevertToBefore"/>, towards the state after the current one.</summary>
-    public void RequestRevertToAfter() => RequestRevert(forward: true);
+    /// <summary>"Revert to after …": like <see cref="RequestRevertToBeforeAsync"/>, towards the state after the current one.</summary>
+    public Task RequestRevertToAfterAsync() => RequestRevertAsync(forward: true);
 
     /// <summary>The text of one row of the revert confirmation (what happens to the file).</summary>
     public static string RevertImpactText(CheckpointFileImpact file)
@@ -229,17 +229,17 @@ public sealed partial class MainWindowViewModel
         return true;
     }
 
-    /// <summary>Restores the state before the current one.</summary>
-    public void RevertToBeforeCheckpoint() => MoveToCheckpoint(_checkpoints.Undo);
+    /// <summary>Restores the state before the current one, off the UI thread under a progress window.</summary>
+    public Task RevertToBeforeCheckpointAsync() => MoveToCheckpointAsync(_checkpoints.Undo, RevertLabel(forward: false));
 
-    /// <summary>Restores the state after the current one.</summary>
-    public void RevertToAfterCheckpoint() => MoveToCheckpoint(_checkpoints.Redo);
+    /// <summary>Restores the state after the current one, off the UI thread under a progress window.</summary>
+    public Task RevertToAfterCheckpointAsync() => MoveToCheckpointAsync(_checkpoints.Redo, RevertLabel(forward: true));
 
-    /// <summary>Restores the given state.</summary>
-    public void RevertToCheckpoint(CheckpointState state)
+    /// <summary>Restores the given state, off the UI thread under a progress window.</summary>
+    public Task RevertToCheckpointAsync(CheckpointState state)
     {
         ArgumentNullException.ThrowIfNull(state);
-        MoveToCheckpoint(live => _checkpoints.RevertTo(live, state));
+        return MoveToCheckpointAsync(live => _checkpoints.RevertTo(live, state), Strings.Get("Checkpoint_Revert"));
     }
 
     /// <inheritdoc/>
@@ -313,7 +313,7 @@ public sealed partial class MainWindowViewModel
         BookBrowser.CheckpointBefore = AddCheckpointBefore;
         BookBrowser.RewindCheckpoint = RewindCheckpoint;
         BookBrowser.SaveOpenTabs = _tabManager.SaveAllTabs;
-        _checkpointsPanel.RevertRequested += (_, state) => RevertToCheckpoint(state);
+        _checkpointsPanel.RevertRequested += (_, state) => RunAsyncAction(() => RevertToCheckpointAsync(state));
         _checkpointsPanel.CompareRequested += (_, state) => CompareWithCheckpoint(state);
         _dockFactory.Checkpoints = _checkpointsPanel;
         _checkpoints.Changed += (_, _) => RefreshCheckpointActions();
@@ -329,8 +329,8 @@ public sealed partial class MainWindowViewModel
                 CreateCheckpointRequested?.Invoke(this, EventArgs.Empty);
             }
         });
-        _actions.SetHandler(AppActionIds.RevertToBefore, RequestRevertToBefore);
-        _actions.SetHandler(AppActionIds.RevertToAfter, RequestRevertToAfter);
+        _actions.SetHandler(AppActionIds.RevertToBefore, () => RunAsyncAction(RequestRevertToBeforeAsync));
+        _actions.SetHandler(AppActionIds.RevertToAfter, () => RunAsyncAction(RequestRevertToAfterAsync));
         _actions.SetHandler(AppActionIds.ToggleCheckpoints, () => _dockFactory.ToggleTool(DockableIds.Checkpoints));
         RefreshCheckpointActions();
     }
@@ -377,7 +377,7 @@ public sealed partial class MainWindowViewModel
         }
     }
 
-    private void RequestRevert(bool forward)
+    private async Task RequestRevertAsync(bool forward)
     {
         if (_currentBook is not { } live || !_checkpoints.IsOpen || !(forward ? _checkpoints.CanRedo : _checkpoints.CanUndo))
         {
@@ -407,11 +407,11 @@ public sealed partial class MainWindowViewModel
         }
         else if (forward)
         {
-            RevertToAfterCheckpoint();
+            await RevertToAfterCheckpointAsync().ConfigureAwait(true);
         }
         else
         {
-            RevertToBeforeCheckpoint();
+            await RevertToBeforeCheckpointAsync().ConfigureAwait(true);
         }
     }
 
@@ -424,40 +424,61 @@ public sealed partial class MainWindowViewModel
             "Checkpoint_RevertToBeforeNamed",
             string.IsNullOrEmpty(_checkpoints.UndoMessage) ? "…" : _checkpoints.UndoMessage);
 
-    private void MoveToCheckpoint(Func<Book, Book?> move)
+    // Moves the book to another checkpoint state (Undo/Redo/RevertTo): the heavy part (loading the other state's
+    // folder) runs off the UI thread, under the main window's progress window, so a big book does not freeze it
+    // for the duration (most visibly on Undo/Redo across checkpoints far apart, or a book with many files).
+    private async Task MoveToCheckpointAsync(Func<Book, Book?> move, string title)
     {
         if (_currentBook is not { } live || !_checkpoints.IsOpen)
         {
             return;
         }
 
-        _tabManager.SaveAllTabs();
-        TabSnapshot tabs = _tabManager.CaptureSnapshot();
+        if (!TryEnterBookOperation())
+        {
+            return;
+        }
 
-        Book? loaded;
         try
         {
-            loaded = move(live);
-        }
-        catch (Exception ex) when (ex is EpubLoadException or IOException or UnauthorizedAccessException or InvalidOperationException)
-        {
-            _logger.LogError(ex, "Failed to restore the checkpoint");
-            _statusBar.ShowMessage(Strings.Format("Status_CheckpointError", ex.Message), TimeSpan.FromSeconds(6), NotificationLevel.Warning);
-            return;
-        }
+            _tabManager.SaveAllTabs();
+            TabSnapshot tabs = _tabManager.CaptureSnapshot();
 
-        if (loaded is null)
-        {
-            return;
-        }
+            _checkpoints.SuppressChanged();
+            Book? loaded;
+            try
+            {
+                loaded = await RunInBackgroundAsync(
+                    title, ProgressRunner, editsBook: true, cancellable: false, (_, _) => move(live)).ConfigureAwait(true);
+            }
+            catch (Exception ex) when (ex is EpubLoadException or IOException or UnauthorizedAccessException or InvalidOperationException)
+            {
+                _logger.LogError(ex, "Failed to restore the checkpoint");
+                _statusBar.ShowMessage(Strings.Format("Status_CheckpointError", ex.Message), TimeSpan.FromSeconds(6), NotificationLevel.Warning);
+                return;
+            }
+            finally
+            {
+                _checkpoints.ResumeChanged();
+            }
 
-        SwapToCheckpointBook(loaded, tabs);
-        CheckpointState current = _checkpoints.Current;
-        _statusBar.ShowMessage(
-            Strings.Format(
-                "Status_CheckpointReverted",
-                string.IsNullOrEmpty(current.Message) ? Strings.Get("Checkpoint_Unnamed") : current.Message),
-            TimeSpan.FromSeconds(3));
+            if (loaded is null)
+            {
+                return;
+            }
+
+            SwapToCheckpointBook(loaded, tabs);
+            CheckpointState current = _checkpoints.Current;
+            _statusBar.ShowMessage(
+                Strings.Format(
+                    "Status_CheckpointReverted",
+                    string.IsNullOrEmpty(current.Message) ? Strings.Get("Checkpoint_Unnamed") : current.Message),
+                TimeSpan.FromSeconds(3));
+        }
+        finally
+        {
+            ExitBookOperation();
+        }
     }
 
     // Replaces the book in all views while keeping the open tabs (tabs of files that the

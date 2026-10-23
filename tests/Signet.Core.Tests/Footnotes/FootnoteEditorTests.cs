@@ -533,6 +533,36 @@ public sealed class FootnoteEditorTests
     }
 
     [Fact]
+    public void Renumbering_reports_a_real_percent_while_scanning_the_books_files()
+    {
+        // Arrange
+        (Book book, HtmlResource html) = NewBook();
+        using (book)
+        {
+            book.CreateEmptyHtmlFile();
+            FootnoteEditor.Add(book, html, After(html, "First"), "note", FootnotePlacement.Local);
+            int totalFiles = book.GetHtmlResources().Count;
+            List<RenumberProgress> reported = new();
+
+            // Act
+            FootnoteEditor.Renumber(book, progress: new RenumberSyncProgress(reported.Add), cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            List<int> fileScans = reported.Where(r => r.Stage == RenumberStage.Scanning && r.Total == totalFiles).Select(r => r.Done).ToList();
+            fileScans.Should().Equal(Enumerable.Range(0, totalFiles + 1), "a report for each file parsed, not only the start and the end");
+        }
+    }
+
+    private sealed class RenumberSyncProgress : IProgress<RenumberProgress>
+    {
+        private readonly Action<RenumberProgress> _report;
+
+        public RenumberSyncProgress(Action<RenumberProgress> report) => _report = report;
+
+        public void Report(RenumberProgress value) => _report(value);
+    }
+
+    [Fact]
     public void The_content_of_a_signet_note_is_the_text_after_its_link_back_and_edits_keep_the_template()
     {
         // Arrange

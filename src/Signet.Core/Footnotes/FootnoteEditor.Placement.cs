@@ -66,9 +66,11 @@ public static partial class FootnoteEditor
 {
     /// <summary>
     /// The footnotes of Signet (one per note, a shared note once) with what blocks moving them, in reading order of their
-    /// first references. Footnotes of other origin are left out (they are converted first).
+    /// first references. Footnotes of other origin are left out (they are converted first). It only reads the book, so it
+    /// can run off the UI thread while nothing edits the book. <paramref name="progress"/> reports how far the scan of the
+    /// book's files is (a book can have thousands).
     /// </summary>
-    public static IReadOnlyList<PlacementItem> PlanPlacement(Book book)
+    public static IReadOnlyList<PlacementItem> PlanPlacement(Book book, IProgress<ScanProgress>? progress = null)
     {
         ArgumentNullException.ThrowIfNull(book);
         Dictionary<HtmlResource, (string Text, TagLister Tags)> snapshots = new(ReferenceEqualityComparer.Instance);
@@ -86,7 +88,7 @@ public static partial class FootnoteEditor
         }
 
         List<PlacementItem> items = new();
-        foreach (IGrouping<(string BookPath, string Id), Footnote> note in FootnoteScanner.Scan(book)
+        foreach (IGrouping<(string BookPath, string Id), Footnote> note in FootnoteScanner.Scan(book, progress)
                      .Where(f => f.IsSignet)
                      .GroupBy(f => (f.NoteFile.BookPath, f.NoteId)))
         {

@@ -948,7 +948,8 @@ public static partial class FootnoteEditor
     {
         ArgumentNullException.ThrowIfNull(book);
         progress?.Report(new RenumberProgress(RenumberStage.Scanning, 0, 0));
-        IReadOnlyList<Footnote> footnotes = FootnoteScanner.Scan(book);
+        IReadOnlyList<Footnote> footnotes = FootnoteScanner.Scan(
+            book, progress is null ? null : new ScanProgressRelay(progress));
         int foreignCount = footnotes.Count(f => !f.IsSignet && f.ReferenceIndex == 0);
         progress?.Report(new RenumberProgress(RenumberStage.Scanning, footnotes.Count, footnotes.Count, foreignCount));
         Dictionary<HtmlResource, (string Text, TagLister Tags)> snapshots = new(ReferenceEqualityComparer.Instance);
@@ -1184,6 +1185,17 @@ public static partial class FootnoteEditor
         }
 
         return changed;
+    }
+
+    // Relays FootnoteScanner.Scan's per-file progress into RenumberStage.Scanning, so Renumber shows a real percent while
+    // it scans rather than only at the start and the end.
+    private sealed class ScanProgressRelay : IProgress<ScanProgress>
+    {
+        private readonly IProgress<RenumberProgress> _target;
+
+        public ScanProgressRelay(IProgress<RenumberProgress> target) => _target = target;
+
+        public void Report(ScanProgress value) => _target.Report(new RenumberProgress(RenumberStage.Scanning, value.Done, value.Total));
     }
 
     /// <summary>

@@ -26,26 +26,38 @@ public partial class ProgressWindow : Window
     }
 
     /// <summary>
-    /// Waits for <paramref name="work"/>; when it is not done after <paramref name="delay"/> (<see cref="DefaultDelay"/>
-    /// when <c>null</c>), shows the window over <paramref name="owner"/> until it is. Returns the result of the work, or
-    /// <c>null</c> when the user cancelled (the work is not stopped, its result is dropped). An exception of the work is
-    /// thrown here unless the user cancelled.
+    /// A <see cref="ProgressRunner"/> for a quick edit that only takes a while on a very large book: the window over
+    /// <paramref name="owner"/> appears only once the work has run longer than <see cref="DefaultDelay"/> (instead of
+    /// flashing on every edit), and never offers Cancel.
     /// </summary>
-    public static async Task<T?> RunAsync<T>(Window owner, string title, string message, Task<T?> work, TimeSpan? delay = null)
+    public static ProgressRunner DelayedRunner(Window owner) =>
+        (title, work, _) => RunWithProgressAsync(owner, title, Strings.Get("Progress_Starting"), work, cancellable: false, DefaultDelay);
+
+    /// <summary>
+    /// Runs <paramref name="work"/>, which reports how far it is (<see cref="WorkProgress"/>) from any thread; when it is
+    /// not done after <paramref name="delay"/> (<see cref="DefaultDelay"/> when <c>null</c>), shows the window over
+    /// <paramref name="owner"/>, with <paramref name="message"/> until the first report, until it is. Returns the result
+    /// of the work, or <c>null</c> when the user cancelled (the work is not stopped, its result is dropped). An exception
+    /// of the work is thrown here unless the user cancelled.
+    /// </summary>
+    public static async Task<T?> RunAsync<T>(
+        Window owner, string title, string message, Func<IProgress<WorkProgress>, Task<T?>> work, TimeSpan? delay = null)
         where T : class
     {
         ArgumentNullException.ThrowIfNull(owner);
         ArgumentNullException.ThrowIfNull(work);
-        await Task.WhenAny(work, Task.Delay(delay ?? DefaultDelay)).ConfigureAwait(true);
-        if (work.IsCompleted)
+        UiProgress progress = new(message);
+        Task<T?> task = work(progress);
+        await Task.WhenAny(task, Task.Delay(delay ?? DefaultDelay)).ConfigureAwait(true);
+        if (task.IsCompleted)
         {
-            return await work.ConfigureAwait(true);
+            return await task.ConfigureAwait(true);
         }
 
         ProgressWindow window = new() { Title = title };
-        window.MessageText.Text = message;
+        progress.Attach(window);
         bool done = false;
-        _ = work.ContinueWith(
+        _ = task.ContinueWith(
             _ => Dispatcher.UIThread.Post(() =>
             {
                 done = true;
@@ -56,11 +68,11 @@ public partial class ProgressWindow : Window
         if (!done)
         {
             // Cancelled: whatever the work ends with is not wanted any more (an exception included).
-            _ = work.ContinueWith(t => t.Exception, TaskScheduler.Default);
+            _ = task.ContinueWith(t => t.Exception, TaskScheduler.Default);
             return null;
         }
 
-        return await work.ConfigureAwait(true);
+        return await task.ConfigureAwait(true);
     }
 
     /// <summary>

@@ -1334,9 +1334,8 @@ public sealed class CodeTabViewRenderTests : IDisposable
         public System.Threading.Tasks.Task<Signet.Core.BookManipulation.ClassRenamer?> PrepareClassRenameAsync() =>
             System.Threading.Tasks.Task.FromResult<Signet.Core.BookManipulation.ClassRenamer?>(null);
 
-        public void ApplyClassRename(Signet.Core.BookManipulation.ClassRenameResult result)
-        {
-        }
+        public Task ApplyClassRename(Signet.Core.BookManipulation.ClassRenameResult result, ProgressRunner? runWithProgress = null) =>
+            Task.CompletedTask;
 
         public System.Func<System.Threading.Tasks.Task<Signet.Core.BookManipulation.IdRenamer?>> PrepareIdRenameFunc { get; set; } =
             () => System.Threading.Tasks.Task.FromResult<Signet.Core.BookManipulation.IdRenamer?>(null);
@@ -1345,14 +1344,17 @@ public sealed class CodeTabViewRenderTests : IDisposable
 
         public Signet.Core.BookManipulation.IdRenameResult? AppliedIdRename { get; private set; }
 
-        public void ApplyIdRename(Signet.Core.BookManipulation.IdRenameResult result) => AppliedIdRename = result;
+        public Task ApplyIdRename(Signet.Core.BookManipulation.IdRenameResult result, ProgressRunner? runWithProgress = null)
+        {
+            AppliedIdRename = result;
+            return Task.CompletedTask;
+        }
 
         public System.Threading.Tasks.Task<Signet.Core.BookManipulation.ClassRemover?> PrepareClassRemovalAsync() =>
             System.Threading.Tasks.Task.FromResult<Signet.Core.BookManipulation.ClassRemover?>(null);
 
-        public void ApplyClassRemoval(Signet.Core.BookManipulation.ClassRemovalResult result)
-        {
-        }
+        public Task ApplyClassRemoval(Signet.Core.BookManipulation.ClassRemovalResult result, ProgressRunner? runWithProgress = null) =>
+            Task.CompletedTask;
 
         public System.Collections.Generic.List<string> IdUsagesRequested { get; } = new();
 
@@ -1363,9 +1365,8 @@ public sealed class CodeTabViewRenderTests : IDisposable
         public Signet.Core.BookManipulation.SpanRemovalPlan? PlanSpanRemoval(
             HtmlResource html, string text, int offset, Signet.Core.BookManipulation.SpanRemovalScope scope) => null;
 
-        public void ApplySpanRemovalInBook(Signet.Core.BookManipulation.SpanRemovalPlan plan)
-        {
-        }
+        public Task ApplySpanRemovalInBook(Signet.Core.BookManipulation.SpanRemovalPlan plan, ProgressRunner? runWithProgress = null) =>
+            Task.CompletedTask;
 
         public void ViewImage(string bookPath)
         {

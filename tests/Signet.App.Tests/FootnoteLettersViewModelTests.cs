@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using AwesomeAssertions;
 using Signet.App.Resources;
 using Signet.App.Tests.TestSupport;
@@ -42,7 +43,7 @@ public sealed class FootnoteLettersViewModelTests
         new(style, s => FootnoteEditor.PlanLetters(book, s), (_, _) => { }, (items, s) =>
         {
             applied?.Add((items, s));
-            return true;
+            return Task.FromResult(true);
         });
 
     [Fact]

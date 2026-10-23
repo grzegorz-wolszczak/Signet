@@ -555,6 +555,26 @@ public sealed class FootnoteConversionTests
         }
     }
 
+    [Fact]
+    public void Planning_the_conversion_reports_a_file_scanned_of_the_books_total()
+    {
+        // Arrange
+        (Book book, HtmlResource html) = NewBook("<p>Text.</p>");
+        using (book)
+        {
+            AddFile(book, "<p>More text.</p>");
+            int totalFiles = book.GetHtmlResources().Count;
+            List<ScanProgress> reported = new();
+
+            // Act
+            FootnoteEditor.PlanConversion(book, new ScanSyncProgress(reported.Add));
+
+            // Assert
+            reported.Select(r => r.Done).Should().Equal(Enumerable.Range(0, totalFiles + 1));
+            reported.Should().OnlyContain(r => r.Total == totalFiles);
+        }
+    }
+
     // Reports on the thread that reports (Progress<T> would post them to another one).
     private sealed class SyncProgress : IProgress<ConversionProgress>
     {
@@ -563,5 +583,14 @@ public sealed class FootnoteConversionTests
         public SyncProgress(Action<ConversionProgress> report) => _report = report;
 
         public void Report(ConversionProgress value) => _report(value);
+    }
+
+    private sealed class ScanSyncProgress : IProgress<ScanProgress>
+    {
+        private readonly Action<ScanProgress> _report;
+
+        public ScanSyncProgress(Action<ScanProgress> report) => _report = report;
+
+        public void Report(ScanProgress value) => _report(value);
     }
 }

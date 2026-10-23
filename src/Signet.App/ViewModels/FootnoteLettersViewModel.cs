@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Signet.App.Resources;
@@ -244,7 +245,7 @@ public sealed partial class FootnoteLettersViewModel : ObservableObject
 {
     private readonly Func<FootnoteLetterStyle, IReadOnlyList<LetterItem>> _plan;
     private readonly Action<string, int> _navigate;
-    private readonly Func<IReadOnlyList<LetterItem>, FootnoteLetterStyle, bool> _apply;
+    private readonly Func<IReadOnlyList<LetterItem>, FootnoteLetterStyle, Task<bool>> _apply;
     private bool _updating;
 
     /// <summary>Creates the model.</summary>
@@ -256,13 +257,13 @@ public sealed partial class FootnoteLettersViewModel : ObservableObject
         FootnoteLetterStyle style,
         Func<FootnoteLetterStyle, IReadOnlyList<LetterItem>> plan,
         Action<string, int> navigate,
-        Func<IReadOnlyList<LetterItem>, FootnoteLetterStyle, bool> apply)
+        Func<IReadOnlyList<LetterItem>, FootnoteLetterStyle, Task<bool>> apply)
     {
         _plan = plan ?? throw new ArgumentNullException(nameof(plan));
         _navigate = navigate ?? throw new ArgumentNullException(nameof(navigate));
         _apply = apply ?? throw new ArgumentNullException(nameof(apply));
         _style = style;
-        UnifyCommand = new RelayCommand(Unify, () => CanUnify);
+        UnifyCommand = new AsyncRelayCommand(UnifyAsync, () => CanUnify);
         SelectAllCommand = new RelayCommand(() => SetChecked(Notes, true));
         SelectNoneCommand = new RelayCommand(() => SetChecked(Notes, false));
         Build();
@@ -293,7 +294,7 @@ public sealed partial class FootnoteLettersViewModel : ObservableObject
     public bool CanUnify => Notes.Any(n => n.IsChecked);
 
     /// <summary>"Unify" — rewrites the checked notes and closes the dialog (<see cref="Done"/>).</summary>
-    public IRelayCommand UnifyCommand { get; }
+    public IAsyncRelayCommand UnifyCommand { get; }
 
     /// <summary>Checks every note.</summary>
     public IRelayCommand SelectAllCommand { get; }
@@ -370,9 +371,9 @@ public sealed partial class FootnoteLettersViewModel : ObservableObject
         OnNoteToggled();
     }
 
-    private void Unify()
+    private async Task UnifyAsync()
     {
-        if (_apply(Notes.Where(n => n.IsChecked).Select(n => n.Item).ToList(), Style))
+        if (await _apply(Notes.Where(n => n.IsChecked).Select(n => n.Item).ToList(), Style).ConfigureAwait(true))
         {
             Done?.Invoke(this, EventArgs.Empty);
         }

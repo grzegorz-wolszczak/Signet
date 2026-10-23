@@ -62,6 +62,25 @@ public sealed class FootnotePlacementTests
     }
 
     [Fact]
+    public void Planning_reports_a_file_scanned_of_the_books_total()
+    {
+        // Arrange
+        (Book book, _, _) = NewBook();
+        using (book)
+        {
+            int totalFiles = book.GetHtmlResources().Count;
+            List<ScanProgress> reported = new();
+
+            // Act
+            FootnoteEditor.PlanPlacement(book, new ScanSyncProgress(reported.Add));
+
+            // Assert
+            reported.Select(r => r.Done).Should().Equal(Enumerable.Range(0, totalFiles + 1));
+            reported.Should().OnlyContain(r => r.Total == totalFiles);
+        }
+    }
+
+    [Fact]
     public void The_plan_blocks_a_global_note_with_references_from_several_files()
     {
         // Arrange
@@ -265,5 +284,14 @@ public sealed class FootnotePlacementTests
         public SyncProgress(Action<PlacementProgress> report) => _report = report;
 
         public void Report(PlacementProgress value) => _report(value);
+    }
+
+    private sealed class ScanSyncProgress : IProgress<ScanProgress>
+    {
+        private readonly Action<ScanProgress> _report;
+
+        public ScanSyncProgress(Action<ScanProgress> report) => _report = report;
+
+        public void Report(ScanProgress value) => _report(value);
     }
 }

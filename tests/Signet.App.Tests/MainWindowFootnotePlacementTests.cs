@@ -90,6 +90,25 @@ public sealed class MainWindowFootnotePlacementTests : IDisposable
     }
 
     [Fact]
+    public async Task The_listing_reports_a_file_scanned_of_the_books_total()
+    {
+        // Arrange
+        using UiCultureScope culture = new("en");
+        TempDir temp = _disposables.Add(new TempDir());
+        (MainWindowViewModel sut, HtmlResource _) = OpenChapterWithFootnote(temp);
+        RecordingProgress analysisProgress = new();
+
+        // Act
+        FootnotePlacementViewModel? dialog = await sut.PrepareFootnotePlacementAsync(analysisProgress: analysisProgress);
+
+        // Assert
+        dialog.Should().NotBeNull();
+        analysisProgress.Reports.Should().NotBeEmpty();
+        analysisProgress.Reports[^1].Fraction.Should().Be(1);
+        analysisProgress.Reports.Should().Contain(r => r.Message != null && r.Message.StartsWith("Analyzing the footnotes: file", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task The_footnotes_move_under_the_progress_runner_behind_a_checkpoint()
     {
         // Arrange

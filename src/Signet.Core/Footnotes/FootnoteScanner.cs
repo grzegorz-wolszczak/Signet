@@ -29,13 +29,17 @@ public static class FootnoteScanner
     private static readonly string[] BlockNames = { "aside", "div", "p", "li", "section", "dd" };
     private static readonly string[] InlineNames = { "a", "sup", "span" };
 
-    /// <summary>The footnotes of the book in reading order of their references.</summary>
-    public static IReadOnlyList<Footnote> Scan(Book book)
+    /// <summary>
+    /// The footnotes of the book in reading order of their references. <paramref name="progress"/> reports how many of
+    /// the book's files were parsed (the DOM parsing is the costly part on a book with thousands of files).
+    /// </summary>
+    public static IReadOnlyList<Footnote> Scan(Book book, IProgress<ScanProgress>? progress = null)
     {
         ArgumentNullException.ThrowIfNull(book);
 
         HtmlResource? nav = book.GetNavResource();
         List<HtmlResource> files = book.GetHtmlResources().ToList();
+        progress?.Report(new ScanProgress(0, files.Count));
         Dictionary<string, (HtmlResource Html, IDocument Document, int Spine)> documents = new(StringComparer.Ordinal);
         Dictionary<IElement, int> order = new();
         List<Link> links = new();
@@ -52,6 +56,7 @@ public static class FootnoteScanner
 
             if (ReferenceEquals(html, nav))
             {
+                progress?.Report(new ScanProgress(spine + 1, files.Count));
                 continue;
             }
 
@@ -63,6 +68,8 @@ public static class FootnoteScanner
                 occurrences[href] = occurrence + 1;
                 links.Add(new Link(html, spine, anchor, href, occurrence));
             }
+
+            progress?.Report(new ScanProgress(spine + 1, files.Count));
         }
 
         foreach (Link link in links)
@@ -222,3 +229,8 @@ public static class FootnoteScanner
         public HtmlResource? TargetHtml { get; set; }
     }
 }
+
+/// <summary>How far <see cref="FootnoteScanner.Scan"/> is: a file parsed, of the book's total.</summary>
+/// <param name="Done">How many files were parsed.</param>
+/// <param name="Total">How many files the book has.</param>
+public readonly record struct ScanProgress(int Done, int Total);
