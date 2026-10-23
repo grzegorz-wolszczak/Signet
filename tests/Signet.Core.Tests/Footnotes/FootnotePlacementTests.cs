@@ -261,6 +261,27 @@ public sealed class FootnotePlacementTests
     }
 
     [Fact]
+    public void The_preparing_stage_counts_the_files_of_the_book_it_scans()
+    {
+        // Arrange
+        (Book book, _, _) = NewBook();
+        using (book)
+        {
+            List<PlacementProgress> reported = new();
+            int files = book.GetHtmlResources().Count;
+
+            // Act
+            FootnoteEditor.ChangePlacement(book, FootnoteEditor.PlanPlacement(book), null, null, new PlacementRun(new SyncProgress(reported.Add)));
+
+            // Assert
+            List<PlacementProgress> preparing = reported.Where(p => p.Stage == PlacementStage.Preparing).ToList();
+            preparing[0].Total.Should().Be(0, "the count of the files is not known before the scan starts");
+            preparing.Skip(1).Should().NotBeEmpty().And.OnlyContain(p => p.Total == files);
+            preparing[^1].Done.Should().Be(preparing[^1].Total);
+        }
+    }
+
+    [Fact]
     public void A_cancelled_token_stops_the_work()
     {
         // Arrange

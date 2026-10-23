@@ -434,6 +434,37 @@ public sealed class MainWindowFootnotesTests : IDisposable
     }
 
     [Fact]
+    public async Task The_renumbering_reports_each_stage_as_a_phase_of_five_with_its_own_count()
+    {
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel sut, Book _, HtmlResource chapter) = OpenMinimalChapter(temp);
+            ICodeTabHost host = sut;
+            await host.AddFootnote(chapter, AfterHello(chapter), "Note.", FootnotePlacement.Local);
+            RecordingProgress progress = new();
+            ProgressRunner runner = (_, work, _) => work(progress, CancellationToken.None);
+            sut.DelayedProgressRunner = (_, work, _) => work(new RecordingProgress(), CancellationToken.None);
+
+            // Act
+            await host.RenumberFootnotes(runner);
+
+            // Assert
+            progress.Reports.Should().OnlyContain(r => r.Phase != null && r.Phase.Count == 5, "every report names its phase of five");
+            progress.Reports.Select(r => r.Phase!.Index).Distinct().Should().Equal(1, 2, 3, 4, 5);
+            progress.Reports.Select(r => r.Phase!.Name).Distinct().Should().Equal(
+                Strings.Get("FootnoteRenumber_Phase_Scanning"), Strings.Get("FootnoteRenumber_Phase_Numbering"),
+                Strings.Get("FootnoteRenumber_Phase_Writing"), Strings.Get("FootnoteRenumber_Phase_Sorting"),
+                Strings.Get("FootnoteRenumber_Phase_Styling"));
+            progress.Reports.Where(r => r.Phase!.Index == 2).Should().Contain(
+                r => r.Message == Strings.Format("Progress_Detail_Footnote", 0, 1) && r.Fraction == 0, "numbering counts the footnotes (before the one it is on)");
+            progress.Reports.Where(r => r.Message == null).Should().OnlyContain(r => r.Fraction == null, "a phase whose count is not known yet has no percent");
+        });
+    }
+
+    [Fact]
     public async Task Cancelling_the_renumbering_brings_the_book_back()
     {
         await SingleThreadContext.RunAsync(async () =>

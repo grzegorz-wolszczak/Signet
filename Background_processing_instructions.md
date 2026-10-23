@@ -77,12 +77,17 @@ Synteza zgłoszenia (I)–(VI) na konkretne reguły, które zadania niżej wdra�
      Wymaga dodania sprawdzania `CancellationToken` w `CopyStateFolder`/`CheckpointHistory.AddCheckpoint`
      (dziś tam nie ma żadnego) i przeprowadzenia tokenu przez `AddCheckpointBeforeAsync` — do
      zrobienia w zadaniu A4.
-5. **Okno progresu może mieć więcej niż jedną linię opisu.** Dziś `WorkProgress` niesie tylko jeden
-   `Message` + `Fraction`. Docelowo: wiersz "faza" (np. "Faza 2 z 4: Konwertowanie") pokazywany
-   zawsze, gdy operacja ma rozpoznawalne fazy — nawet bez dokładnego %, z paskiem indeterminate na
-   czas tej fazy — plus opcjonalny trzeci wiersz ze szczegółem (np. "plik 120 z 405"), **tylko
-   gdy dana faza faktycznie go raportuje**. Pasek postępu (%) dalej reprezentuje **całą** operację
-   (tak jak dziś robi `WorkProgress.InStage`), nie samą bieżącą fazę.
+5. **Okno progresu może mieć więcej niż jedną linię opisu** (uzgodnione z userem przy B1,
+   2026-10-23 — to **zastępuje** wcześniejszy zapis, wedle którego pasek liczył całą operację).
+   Operacja złożona z faz pokazuje: tytuł okna = nazwa operacji; wiersz fazy ("Faza 4 z 20:
+   Budowanie ściany 1"); opcjonalny wiersz szczegółu ("stawianie cegły: 45/457", **tylko gdy faza go
+   raportuje**); pasek z %. **Pasek należy do bieżącej fazy i zaczyna się od zera w każdej nowej
+   fazie**; "4 z 20" mówi, gdzie jesteśmy w całości. `Fraction` to postęp najgłębszego poziomu,
+   który raport podaje: licznik szczegółu, a gdy go nie ma — sama faza; `null` = pasek indeterminate
+   bez % (faza, której postępu nie da się określić — **tego przypadku ma być jak najmniej**, bo nie
+   widać, kiedy faza się skończy). Operacja z jedną fazą nie pokazuje "Faza 1 z 1" — działa jak
+   dotąd (`Message` + `Fraction`, bez `Phase`). Dla fazowych raportów `WorkProgress.InStage` nie
+   służy (składa udziały etapów w jeden pasek) — faza dostaje `FractionOf(done, total)`.
 6. **Częstotliwość sprawdzania `CancellationToken`** nie jest ustalana z góry hurtowo. Dodawać/
    poprawiać tylko tam, gdzie ręczny test na dużej, prawdziwej książce pokaże, że Cancel reaguje
    zauważalnie wolno. Nie ma tu zadania "dodaj token wszędzie, gdzie się da" — patrz zadanie D1.
@@ -302,19 +307,60 @@ Legenda statusu: `[ ]` do zrobienia, `[x]` zrobione (z krótką notatką i commi
 
 ### Część B — okno z wieloma wierszami (fazy)
 
-- [ ] **B1. Rozszerzyć `WorkProgress`/`ProgressWindow` o opcjonalny wiersz "faza".** Zmiana modelu
-  (np. nowe pole `Phase` obok `Message`/`Fraction`, albo osobny typ) + XAML `ProgressWindow.axaml`
-  (drugi `TextBlock` nad paskiem, widoczny tylko gdy `Phase` nie jest `null`). Pasek % nadal liczy
-  się na całą operację (jak dziś `WorkProgress.InStage`), nie resetuje się między fazami. To
-  zadanie tylko **buduje mechanizm** — nie podłącza go jeszcze do żadnej konkretnej operacji (to
-  B2–B5).
+- [x] **B1. Rozszerzyć `WorkProgress`/`ProgressWindow` o opcjonalny wiersz "faza".** (2026-10-23)
+  Tylko mechanizm — żadna operacja nie jest jeszcze podłączona (to B2–B5). Zakres zmieniony wobec
+  pierwotnego opisu po rozmowie z userem: pasek jest **per faza**, nie per cała operacja (patrz
+  punkt 5 kontraktu).
 
-- [ ] **B2. Fazy w Renumber.** User wskazał to wprost jako najbliższy/najłatwiejszy przypadek:
-  `RenumberStage` już istnieje (Scanning → Numbering → …), brakuje tylko pokazania "Faza X z Y: nazwa"
-  w oknie. Zależy od B1.
+  Co zrobione:
+  - `WorkProgress(Message, Fraction, PhaseInfo? Phase = null)` + nowy `PhaseInfo(Index, Count, Name)`
+    (`Infrastructure/WorkProgress.cs`). Trzeci parametr jest opcjonalny, więc wszystkie dotychczasowe
+    wywołania `new WorkProgress(msg, frac)` działają bez zmian.
+  - `ProgressWindow.axaml`: nowy `PhaseText` (SemiBold, domyślnie ukryty) nad `MessageText`.
+    `Apply`: z fazą — `PhaseText` = `Progress_Phase` ("Faza {0} z {1}: {2}" / "Phase {0} of {1}:
+    {2}"), `MessageText` to szczegół i **chowa się**, gdy raport nie ma `Message`; bez fazy —
+    zachowanie bez zmian (jedna linia, `null` zachowuje ostatni tekst).
+  - `UiProgress.Report`: sticky `Message` (`null` = zachowaj) obowiązuje tylko dla raportów bez
+    fazy; w raporcie z fazą `Message = null` znaczy "brak szczegółu" (inaczej szczegół poprzedniej
+    fazy przeciekałby do następnej). `Phase = null` znaczy "brak fazy" — każdy raport fazowy musi
+    sam podać fazę.
+  - Cancel (`RunWithProgressAsync`) chowa wiersz fazy i pokazuje "Anulowanie…".
+  - Testy (`ProgressWindowTests.cs`): faza ze szczegółem i %, faza z % bez szczegółu, faza
+    indeterminate, powrót do raportu bez fazy; Cancel w trakcie fazy.
+  - `dotnet build Signet.slnx` (0 ostrzeżeń) + `dotnet test Signet.App.Tests` (1089/1089) +
+    `dotnet test Signet.App.UiTests` (281/281) — zielone.
+  - **Do uwzględnienia w B2–B5:** `ProgressWindow.DelayedRunner` (A4) zawsze chowa Cancel, więc fazy
+    przez niego też pokażą wiersz, ale bez Cancel. Dla walidacji rozważyć zebranie 10 krótkich
+    kroków po fazie plików w jedną fazę "Dalsze sprawdzenia" (szczegół = nazwa kroku, pasek =
+    krok/10), zamiast 10 faz indeterminate; `Preparing` w Placement/Convert jest dziś raportowane
+    jako 0 % (pasek stoi) — lepiej indeterminate albo własny licznik.
 
-- [ ] **B3. Fazy w Change Footnote Placement.** `PlacementStage` (Preparing/Moving/Finishing +
-  Scanning z `ScanProgress`) → wiersz fazy. Zależy od B1.
+- [x] **B2. Fazy w Renumber.** (2026-10-23) Pięć etapów `RenumberStage` = pięć faz ("Faza 2 z 5:
+  Numerowanie przypisów"). Szczegół = licznik etapu ("przypis 4268 z 8923" w Numbering, "plik 12 z
+  40" w pozostałych), pasek = `Done/Total` fazy i zaczyna się od zera w każdej nowej fazie.
+  Etap, którego liczba kroków nie jest jeszcze znana (`Total` = 0, np. start skanowania), nie ma
+  szczegółu ani %, tylko pasek indeterminate (nowy `WorkProgress.InPhase`) — zamiast dawnego "0 z 0"
+  i stojącego paska. Usunięte stare klucze `FootnoteRenumber_Progress_*`, dodane
+  `FootnoteRenumber_Phase_*` oraz wspólne `Progress_Detail_File`/`Progress_Detail_Footnote` (PL/EN).
+  `InStage` w Renumber nie jest już używany (zostaje dla walidacji i Convert). Test:
+  `The_renumbering_reports_each_stage_as_a_phase_of_five_with_its_own_count`
+  (`MainWindowFootnotesTests.cs`). Uwaga (zastane, nie ruszane): Numbering raportuje licznik przed
+  przetworzeniem przypisu, więc ostatni raport to "n-1 z n".
+
+- [x] **B3. Fazy w Change Footnote Placement.** (2026-10-23) Trzy fazy `PlacementStage`:
+  1 Preparing ("Analizowanie przypisów", "plik x z y"), 2 Moving ("Przenoszenie przypisów", "przypis x
+  z y"), 3 Finishing ("Zapisywanie plików i numerowanie przypisów", indeterminate).
+  **Zmiana w Core:** `FootnoteEditor.ChangePlacement` przekazuje teraz do `FootnoteScanner.Scan`
+  postęp (`PlacementScanRelay`), więc `Preparing` niesie `Done/Total` plików (pierwszy raport ma
+  `Total` = 0 = liczba nieznana); wcześniej skanowanie całej książki szło bez żadnego postępu, przy
+  pasku stojącym na 0 %. Dialog "Analizowanie" przed oknem zmiany (`PrepareFootnotePlacementAsync`,
+  `ScanProgressMap`) to osobna operacja z jedną fazą i zostaje bez faz. Usunięte stare klucze
+  `FootnotePlacement_Progress_{Preparing,Moving,Finishing}`, dodane `FootnotePlacement_Phase_*`.
+  Testy: `The_preparing_stage_counts_the_files_of_the_book_it_scans` (Core) i rozszerzony
+  `The_footnotes_move_under_the_progress_runner_behind_a_checkpoint` (App).
+  **Zostaje przypadek 3 (indeterminate): faza 3 Finishing.** To zapis plików + `RenumberWith`, który
+  dziś jest wołany z `progress: null`, a na dużej książce to prawdopodobnie najdłuższy etap. Da się to
+  naprawić, przekazując postęp Renumber do fazy (osobne zadanie — dopisać jako B3b, jeśli user chce).
 
 - [ ] **B4. Fazy w Convert Footnotes.** Analogicznie do B3, dla etapów konwersji. Zależy od B1.
 

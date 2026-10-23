@@ -4260,21 +4260,6 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="FootnoteRenumber_ProgressTitle" xml:space="preserve">
     <value>Przenumerowywanie przypisów</value>
   </data>
-  <data name="FootnoteRenumber_Progress_Scanning" xml:space="preserve">
-    <value>Skanowanie przypisów: plik {0} z {1}</value>
-  </data>
-  <data name="FootnoteRenumber_Progress_Numbering" xml:space="preserve">
-    <value>Numerowanie przypisów: {0} z {1}</value>
-  </data>
-  <data name="FootnoteRenumber_Progress_Writing" xml:space="preserve">
-    <value>Zapisywanie plików: {0} z {1}</value>
-  </data>
-  <data name="FootnoteRenumber_Progress_Sorting" xml:space="preserve">
-    <value>Porządkowanie plików: {0} z {1}</value>
-  </data>
-  <data name="FootnoteRenumber_Progress_Styling" xml:space="preserve">
-    <value>Stosowanie stylów: {0} z {1}</value>
-  </data>
   <data name="FootnoteWindow_Title" xml:space="preserve">
     <value>Dodaj przypis</value>
   </data>
@@ -5218,6 +5203,9 @@ Konwertować mimo to?</value>
   </data>
   <data name="Progress_Starting" xml:space="preserve">
     <value>Uruchamianie…</value>
+  </data>
+  <data name="Progress_Phase" xml:space="preserve">
+    <value>Faza {0} z {1}: {2}</value>
   </data>
   <data name="Progress_FileBatch" xml:space="preserve">
     <value>Plik {0} z {1}: {2}</value>
@@ -6583,15 +6571,6 @@ Zamknij zakładkę</value>
   <data name="FootnotePlacement_Progress_Analyzing" xml:space="preserve">
     <value>Analizowanie przypisów: plik {0} z {1}</value>
   </data>
-  <data name="FootnotePlacement_Progress_Preparing" xml:space="preserve">
-    <value>Przygotowanie…</value>
-  </data>
-  <data name="FootnotePlacement_Progress_Moving" xml:space="preserve">
-    <value>Przenoszenie przypisów: {0} z {1}</value>
-  </data>
-  <data name="FootnotePlacement_Progress_Finishing" xml:space="preserve">
-    <value>Zapisywanie plików i numerowanie przypisów…</value>
-  </data>
   <data name="CheckpointOp_ChangeFootnotePlacement" xml:space="preserve">
     <value>Zmiana rodzaju przypisów</value>
   </data>
@@ -6603,5 +6582,35 @@ Zamknij zakładkę</value>
   </data>
   <data name="Status_FootnotePlacementChangedSkipped" xml:space="preserve">
     <value>Zmieniono rodzaj przypisów: {0}, pominięto: {1}.</value>
+  </data>
+  <data name="FootnoteRenumber_Phase_Scanning" xml:space="preserve">
+    <value>Skanowanie przypisów</value>
+  </data>
+  <data name="FootnoteRenumber_Phase_Numbering" xml:space="preserve">
+    <value>Numerowanie przypisów</value>
+  </data>
+  <data name="FootnoteRenumber_Phase_Writing" xml:space="preserve">
+    <value>Zapisywanie plików</value>
+  </data>
+  <data name="FootnoteRenumber_Phase_Sorting" xml:space="preserve">
+    <value>Porządkowanie plików</value>
+  </data>
+  <data name="FootnoteRenumber_Phase_Styling" xml:space="preserve">
+    <value>Stosowanie stylów</value>
+  </data>
+  <data name="FootnotePlacement_Phase_Preparing" xml:space="preserve">
+    <value>Analizowanie przypisów</value>
+  </data>
+  <data name="FootnotePlacement_Phase_Moving" xml:space="preserve">
+    <value>Przenoszenie przypisów</value>
+  </data>
+  <data name="FootnotePlacement_Phase_Finishing" xml:space="preserve">
+    <value>Zapisywanie plików i numerowanie przypisów</value>
+  </data>
+  <data name="Progress_Detail_File" xml:space="preserve">
+    <value>plik {0} z {1}</value>
+  </data>
+  <data name="Progress_Detail_Footnote" xml:space="preserve">
+    <value>przypis {0} z {1}</value>
   </data>
 </root>

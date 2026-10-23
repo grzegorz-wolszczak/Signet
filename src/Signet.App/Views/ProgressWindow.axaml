@@ -8,9 +8,11 @@
         ShowInTaskbar="False"
         Title="Signet">
 
-  <!-- Long work in the background: what is going on, a bar (indeterminate until the work reports how far it is, then with the
-       percent) and Cancel when the work can be left (the result is then dropped). -->
+  <!-- Long work in the background: the phase it is in (only for an operation made of phases), what is going on (the detail of
+       the phase then), a bar (indeterminate until the work reports how far it is, then with the percent) and Cancel when the
+       work can be left (the result is then dropped). -->
   <StackPanel Margin="16" Spacing="12">
+    <TextBlock x:Name="PhaseText" TextWrapping="Wrap" FontWeight="SemiBold" IsVisible="False" />
     <TextBlock x:Name="MessageText" TextWrapping="Wrap" />
     <ProgressBar x:Name="Bar" IsIndeterminate="True" Minimum="0" Maximum="100" />
     <TextBlock x:Name="PercentText" HorizontalAlignment="Right" Opacity="0.75" IsVisible="False" />

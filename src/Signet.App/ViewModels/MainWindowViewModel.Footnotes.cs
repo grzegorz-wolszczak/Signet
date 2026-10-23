@@ -150,21 +150,24 @@ public sealed partial class MainWindowViewModel
             _target.Report(new WorkProgress(Strings.Format(_messageKey, value.Done, value.Total), WorkProgress.FractionOf(value.Done, value.Total)));
     }
 
-    // What ChangePlacement reports as what the progress window shows: the percent while the notes are prepared, then the writing and
-    // the numbering without one (they cannot tell how far they are).
+    // What ChangePlacement reports as what the progress window shows: the files scanned and the notes moved are counted in a phase
+    // each; the writing and the numbering at the end cannot tell how far they are, so their phase has only a bar that works.
     private sealed class PlacementProgressMap : IProgress<PlacementProgress>
     {
         private readonly IProgress<WorkProgress> _target;
 
         public PlacementProgressMap(IProgress<WorkProgress> target) => _target = target;
 
-        public void Report(PlacementProgress value) => _target.Report(value.Stage switch
+        public void Report(PlacementProgress value)
         {
-            PlacementStage.Preparing => new WorkProgress(Strings.Get("FootnotePlacement_Progress_Preparing"), 0),
-            PlacementStage.Moving => WorkProgress.InStage(
-                Strings.Format("FootnotePlacement_Progress_Moving", value.Done, value.Total), 0.05, 0.4, value.Done, value.Total),
-            _ => new WorkProgress(Strings.Get("FootnotePlacement_Progress_Finishing"), null),
-        });
+            PhaseInfo phase = new((int)value.Stage + 1, Enum.GetValues<PlacementStage>().Length, Strings.Get("FootnotePlacement_Phase_" + value.Stage));
+            _target.Report(value.Stage switch
+            {
+                PlacementStage.Preparing => WorkProgress.InPhase(phase, Strings.Format("Progress_Detail_File", value.Done, value.Total), value.Done, value.Total),
+                PlacementStage.Moving => WorkProgress.InPhase(phase, Strings.Format("Progress_Detail_Footnote", value.Done, value.Total), value.Done, value.Total),
+                _ => new WorkProgress(null, null, phase),
+            });
+        }
     }
 
     /// <summary>
@@ -907,19 +910,11 @@ public sealed partial class MainWindowViewModel
                 DebugLog.Write("Renumber", $"{value.Stage} starting ({value.Total} to go)");
             }
 
-            _target.Report(value.Stage switch
-            {
-                RenumberStage.Scanning => WorkProgress.InStage(
-                    Strings.Format("FootnoteRenumber_Progress_Scanning", value.Done, value.Total), 0, 0.05, value.Done, value.Total),
-                RenumberStage.Numbering => WorkProgress.InStage(
-                    Strings.Format("FootnoteRenumber_Progress_Numbering", value.Done, value.Total), 0.05, 0.65, value.Done, value.Total),
-                RenumberStage.Writing => WorkProgress.InStage(
-                    Strings.Format("FootnoteRenumber_Progress_Writing", value.Done, value.Total), 0.70, 0.10, value.Done, value.Total),
-                RenumberStage.Sorting => WorkProgress.InStage(
-                    Strings.Format("FootnoteRenumber_Progress_Sorting", value.Done, value.Total), 0.80, 0.15, value.Done, value.Total),
-                _ => WorkProgress.InStage(
-                    Strings.Format("FootnoteRenumber_Progress_Styling", value.Done, value.Total), 0.95, 0.05, value.Done, value.Total),
-            });
+            // Each stage is a phase of its own: the bar counts the steps of the phase and starts over with the next one.
+            string detailKey = value.Stage == RenumberStage.Numbering ? "Progress_Detail_Footnote" : "Progress_Detail_File";
+            _target.Report(WorkProgress.InPhase(
+                new PhaseInfo((int)value.Stage + 1, Enum.GetValues<RenumberStage>().Length, Strings.Get("FootnoteRenumber_Phase_" + value.Stage)),
+                Strings.Format(detailKey, value.Done, value.Total), value.Done, value.Total));
         }
     }
 
