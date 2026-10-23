@@ -15,6 +15,7 @@ using Signet.App.Toolbars;
 using Signet.App.ViewModels;
 using Signet.Core;
 using Signet.Core.BookManipulation;
+using Signet.Core.Misc;
 using Signet.Core.Resources;
 using Signet.Core.Tests.TestSupport;
 using Signet.App.Tests.TestSupport;
@@ -1765,6 +1766,13 @@ public sealed class MainWindowViewModelTests : IDisposable
             SpellcheckWordRow row = editor.Words.Single(w => w.Word == "wrold");
             editor.SetSelectedWords(new[] { row });
             editor.ChangeAllText = "world";
+            string? title = null;
+            sut.DelayedProgressRunner = (t, work, c) =>
+            {
+                title = t;
+                c.Should().BeFalse("a quick edit like this one offers no Cancel");
+                return work(new CollectingProgress(), CancellationToken.None);
+            };
 
             // Act
             editor.ChangeAllCommand.Execute(null);
@@ -1774,6 +1782,40 @@ public sealed class MainWindowViewModelTests : IDisposable
             tab.Document.Text.Should().Contain("world").And.NotContain("wrold");
             book.Modified.Should().BeTrue();
             editor.Words.Should().NotContain(w => w.Word == "wrold");
+            title.Should().Be(Strings.Get("CheckpointOp_SpellCheck"), "the operation now runs under DelayedProgressRunner instead of no window at all");
+        });
+    }
+
+    [Fact]
+    public async Task RemoveEditionPageAsync_runs_under_the_delayed_progress_runner()
+    {
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            TempDir temp = _disposables.Add(new TempDir());
+            string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
+            MainWindowViewModel sut = New();
+            Book book = _disposables.Add(new ImportEpub(epub).GetBook());
+            sut.LoadBook(book, epub);
+            EditionPage.Stamp(book, EditionPageSettings.Default with { Enabled = true }, DateTime.UtcNow, "en", "0.0.0-test");
+            EditionPage.Find(book).Should().NotBeNull("a precondition of this test");
+            string? title = null;
+            sut.DelayedProgressRunner = (t, work, c) =>
+            {
+                title = t;
+                c.Should().BeFalse("a quick edit like this one offers no Cancel");
+                return work(new CollectingProgress(), CancellationToken.None);
+            };
+            IEditionPageHost host = sut;
+
+            // Act
+            bool removed = await host.RemoveEditionPageAsync();
+
+            // Assert
+            removed.Should().BeTrue();
+            EditionPage.Find(book).Should().BeNull();
+            title.Should().Be(
+                Strings.Get("CheckpointOp_RemoveEditionPage"), "the operation now runs under DelayedProgressRunner instead of no window at all");
         });
     }
 
