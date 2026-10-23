@@ -295,6 +295,68 @@ zostaje jako dziennik śledztwa wydajności przypisów (sekcje 1–14 wyżej, z 
 przyczynami) — nie jest kasowany, ale punkty 2 i 3 niżej w sekcji "Co NIE zostało zrobione" są teraz
 pokryte (i rozszerzone) przez zadania w tamtym pliku, nie duplikujemy ich tutaj.
 
+### 16. Naprawione (czwarta sesja): pętla konwersji przestała być O(n²), a `TagLister` szuka binarnie
+
+Po review pod kątem złożoności (komity `d92cd16`, `aa6c80a`, `aaa990a`) został ostatni, największy
+kawałek: `ConvertOne`/`ConvertReference` dla **każdej** notatki i **każdej** referencji czytały,
+parsowały i przepisywały cały plik (`GetText` → `TagLister.For` → `SetText`). Książka z wszystkimi
+przypisami w jednym pliku płaciła za to kwadratem ich liczby.
+
+Zmiana: w `Convert` powstaje jeden `ConversionTexts` — każdy plik jest czytany i parsowany raz,
+wszystkie pozycje żyją w współrzędnych tekstu „jak go konwersja znalazła", edycje zbierają się w
+`FileEdits` (posortowane, binarnie szukane), a każdy plik jest zapisywany raz w `WriteAll(linked)`.
+Skutki uboczne tego, że nic nie jest zapisywane w locie:
+
+- referencje jednej notatki idą teraz **w kolejności występowania**, a nie od ostatniej (odwrotna
+  kolejność istniała tylko dlatego, że zapis jednej przesuwał pozostałe);
+- `RemoveEmptyAncestors` (pętla „sparsuj plik od nowa po każdym usunięciu") zastąpione przez
+  `CutEmptiedAncestors` + `OpenElementChains` + `AfterEdits`: łańcuchy przodków dla wszystkich cięć
+  liczone jednym przemiataniem listy tagów, a „czy w środku coś zostało" czytane **przez** zebrane
+  edycje. Przodki rozstrzygane są **poziomami, od najgłębszego** — opakowanie wokół kilku notatek
+  jest puste tylko wtedy, gdy wyszła ostatnia z nich, a wcześniej muszą zniknąć ich własne
+  opakowania. Pierwsza wersja memoizowała decyzję „zostaje" i przez to opakowanie zbiorcze nie było
+  usuwane; wykrył to nowy test `All_the_notes_of_one_file_leave_it_together_and_their_wrappers_go`;
+- treść notatki czyta się przez edycje (`CutContent(..., FileEdits?)`), bo notatka zagnieżdżona w
+  innej jest konwertowana pierwsza i musi już być „poza" treścią tej zewnętrznej. Bez tego padał
+  istniejący test `Notes_nested_in_each_other_...` — dowód, że ten test naprawdę pilnuje reguły.
+
+**Osobne, ważniejsze znalezisko: `TagLister.FindLastTagOnOrBefore` i `FindFirstTagOnOrAfter` były
+skanami liniowymi od indeksu 0**, mimo że lista tagów jest posortowana po pozycji. Czyli `Unwrap`
+(wywoływany raz na referencję) sam z siebie przechodził całą listę tagów pliku — kwadrat
+niezależnie od wszystkiego powyżej. Zamienione na wyszukiwanie binarne (sentinel na końcu zostaje
+na swoim miejscu). To dotyczy **wszystkich** operacji używających `TagLister`, nie tylko konwersji.
+Nowy test `FindFirstAndLastTag_AgreeWithTheirDefinitionAtEveryPosition` sprawdza oba lookupy
+przeciw ich definicji na **każdej** pozycji **każdego** pliku z `tests/corpus/`.
+
+Pomiar (sonda tymczasowa, Release, książka z N przypisami w jednym pliku; sonda usunięta po
+pomiarze), czas samego `Convert`:
+
+| N | przed | po |
+|---|---|---|
+| 100 | 523 ms | — |
+| 200 | 1327 ms | 364 ms |
+| 400 | 2496 ms | 472 ms |
+| 800 | 10434 ms | 839 ms |
+| 3200 | (~160 s ekstrapolując) | 10,3 s |
+
+Czyli ~16× szybciej przy N=3200. **Sama pętla konwersji jest już liniowa**: 32 ms przy N=800 →
+46 ms przy N=3200.
+
+**Co jeszcze zostało kwadratowe (zmierzone fazami przy N=800 → N=3200, czyli 4× wejścia):**
+
+| faza | N=800 | N=3200 | mnożnik |
+|---|---|---|---|
+| `Check` (walidacja na końcu) | 365 ms | 3576 ms | 9,8× |
+| `prepare` (`LinkChecks` + `BookLinks`) | 343 ms | 3062 ms | 8,9× |
+| `FootnoteScanner.Scan` (×3 w `Convert`) | ~100 ms | ~900 ms | ~9× |
+| `scan+nested` (`FindNestedNotes`) | 114 ms | 841 ms | 7,4× |
+| `RenumberWith` | 155 ms | 985 ms | 6,4× |
+| **pętla konwersji** | **32 ms** | **46 ms** | **1,4× (liniowa)** |
+
+To są **cztery osobne, niezależne zadania** i dotyczą nie tylko konwersji — `FootnoteScanner.Scan`,
+`BookLinks` i `LinkChecks` są używane przez Renumber, Change Placement i Letters. Nie zostały
+ruszone w tej sesji: zakres uzgodniony z użytkownikiem kończył się na `ConvertOne`/`ConvertReference`.
+
 ## Co NIE zostało zrobione / zostało do następnej sesji
 
 1. **Częściowo zweryfikowane na żywo** — test po backgroundowaniu checkpointów (punkt 5) znalazł
@@ -329,9 +391,15 @@ pokryte (i rozszerzone) przez zadania w tamtym pliku, nie duplikujemy ich tutaj.
    wywołaniu. Używane w wielu miejscach (Renumber, PlanPlacement, PlanConversion, GetFootnoteState
    przy każdym otwarciu menu kontekstowego przypisów!). Potencjalny kandydat do cache'owania
    wyniku między operacjami (inwalidacja przy edycji) — **ale to ryzykowniejsza zmiana
-   architektoniczna, nie podejmowana dziś bez wyraźnej zgody**.
+   architektoniczna, nie podejmowana dziś bez wyraźnej zgody**. Pomiar z punktu 16 pokazuje
+   dodatkowo, że `Scan` jest **kwadratowy w liczbie przypisów na plik** (~9× przy 4× wejścia),
+   niezależnie od liczby plików.
 3. **`BookLinks`/link-scanning w `PlanConversion`/`PlanPlacement`** (~19.5 s) — skan wszystkich
-   `<a href>` w całej książce (~43k w tej książce). Podobny charakter do punktu 2.
+   `<a href>` w całej książce (~43k w tej książce). Podobny charakter do punktu 2; pomiar z punktu
+   16 pokazuje, że `BookLinks` + `LinkChecks` razem też rosną kwadratowo (~8,9×).
+3a. **`Check` na końcu `Convert`** — najdroższa pojedyncza faza konwersji po naprawie z punktu 16
+   (3,6 s przy 3200 przypisach, ~9,8× przy 4× wejścia).
+3b. **`FindNestedNotes`** — ~7,4× przy 4× wejścia (punkt 16).
 4. **Checkpoint create/abandon** (2–3 s / 35–37 s) — już przeniesione do tła (punkt 5 wyżej), więc
    nie blokują UI, ale wciąż zajmują realny czas kopiowania/odtwarzania całego folderu książki na
    dysku. Gdyby nadal za wolne nawet w tle (np. bardzo duże książki z obrazami), warto rozważyć

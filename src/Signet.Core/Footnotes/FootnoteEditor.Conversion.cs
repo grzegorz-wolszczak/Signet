@@ -563,6 +563,7 @@ public static partial class FootnoteEditor
         HashSet<HtmlResource> touched = new(ReferenceEqualityComparer.Instance);
         Dictionary<(HtmlResource File, FootnotePlacement Placement, int? Group), List<string>> insertions = new();
         List<ConvertedNote> converted = new();
+        ConversionTexts texts = new();
         int step = Math.Max(1, items.Count / 200);
         for (int i = 0; i < items.Count; i++)
         {
@@ -571,7 +572,7 @@ public static partial class FootnoteEditor
             Footnote footnote = item.Footnote;
             IReadOnlyList<Footnote> references = item.References.Count > 0 ? item.References : new[] { footnote };
             (string tempId, string content) = ConvertOne(references, footnote.Placement == FootnotePlacement.Local ? footnote.ReferenceFile : target!,
-                groupOf, request.KeepClasses, epub3, linked, moves, touched, insertions);
+                groupOf, request.KeepClasses, epub3, moves, touched, insertions, texts);
             converted.Add(new ConvertedNote(tempId, content, footnote.NoteFile.BookPath, footnote.NoteId, item.Marker));
             if (i % step == 0)
             {
@@ -582,6 +583,10 @@ public static partial class FootnoteEditor
         progress?.Report(new ConversionProgress(ConversionStage.Converting, items.Count, items.Count));
         progress?.Report(new ConversionProgress(ConversionStage.Finishing, items.Count, items.Count));
         cancellationToken.ThrowIfCancellationRequested();
+
+        // The notes leave their files and the references are replaced, each file written once; the elements that the
+        // notes leave empty go with them. Everything after this reads the files again, so it must come first.
+        texts.WriteAll(linked);
 
         // The converted notes go in, each file (and group) written once, in the order they were converted. This comes
         // before the notes of Signet's own file below, which then follow them, as they did when every note went in on
@@ -668,12 +673,15 @@ public static partial class FootnoteEditor
     // A footnote converted by Convert: its temporary note id, the markup its note must keep inside, and where it was.
     private sealed record ConvertedNote(string TempId, string Content, string SourcePath, string SourceId, string Marker);
 
-    // Converts one footnote (all the references of its note, the last first: the occurrences of the earlier ones in a
-    // file stay as they are); returns its temporary note id and the markup its note must keep inside.
+    // Converts one footnote (all the references of its note); returns its temporary note id and the markup its note
+    // must keep inside. Nothing is written here: every position is read in the text of the file as the conversion found
+    // it and the edits wait in `texts`, so the references can be taken in the order they stand (they used to be taken
+    // the last first, because writing one moved the ones behind it).
     private static (string TempId, string Content) ConvertOne(
         IReadOnlyList<Footnote> references, HtmlResource target, Dictionary<string, int> groupOf, bool keepClasses, bool epub3,
-        HashSet<(string BookPath, string Id)> linked, Dictionary<(string BookPath, string Id), (string BookPath, string Id)> moves,
-        HashSet<HtmlResource> touched, Dictionary<(HtmlResource File, FootnotePlacement Placement, int? Group), List<string>> insertions)
+        Dictionary<(string BookPath, string Id), (string BookPath, string Id)> moves,
+        HashSet<HtmlResource> touched, Dictionary<(HtmlResource File, FootnotePlacement Placement, int? Group), List<string>> insertions,
+        ConversionTexts texts)
     {
         Footnote footnote = references[0];
         bool local = footnote.Placement == FootnotePlacement.Local;
@@ -681,18 +689,17 @@ public static partial class FootnoteEditor
         List<string> referenceIds = references
             .Select((_, i) => noteId + "-ref" + (i == 0 ? string.Empty : "-" + i.ToString(CultureInfo.InvariantCulture)))
             .ToList();
-        for (int i = references.Count - 1; i >= 0; i--)
+        for (int i = 0; i < references.Count; i++)
         {
-            ConvertReference(references[i], referenceIds[i], target, noteId, keepClasses, epub3, moves, touched);
+            ConvertReference(references[i], referenceIds[i], target, noteId, keepClasses, epub3, moves, touched, texts);
         }
 
         // The note: its text without the link back, in Signet's template.
         HtmlResource noteFile = footnote.NoteFile;
-        string text = noteFile.GetText();
-        TagLister tags = TagLister.For(text);
+        (string text, TagLister tags) = texts.Read(noteFile);
         Element note = FindElementById(tags, text, footnote.NoteId)!;
         (Anchor? backlink, int backTo) = NoteBacklink(tags, text, note, references);
-        (string content, _) = CutContent(tags, text, note, backlink);
+        (string content, _) = CutContent(tags, text, note, backlink, texts.Pending(noteFile));
         List<string> noteClasses = keepClasses ? Classes(text, tags.At(note.OpenIndex)).ToList() : new List<string>();
         string tag = epub3 ? "aside" : "div";
         string open = "<" + tag + " class=\"" + JoinClasses(NoteClass, noteClasses) + "\""
@@ -711,8 +718,7 @@ public static partial class FootnoteEditor
         }
 
         (int noteStart, int noteEnd) = WholeLines(text, note.Start, note.End);
-        text = text.Remove(noteStart, noteEnd - noteStart);
-        noteFile.SetText(RemoveEmptyAncestors(text, noteStart, noteFile.BookPath, linked));
+        texts.Cut(noteFile, new TextEdit(noteStart, noteEnd - noteStart, string.Empty));
         touched.Add(noteFile);
 
         // The notes wait and go into their file (and group) together once the whole conversion is worked out: putting
@@ -746,22 +752,25 @@ public static partial class FootnoteEditor
     // Puts Signet's reference in place of a reference of other origin.
     private static void ConvertReference(
         Footnote footnote, string referenceId, HtmlResource target, string noteId, bool keepClasses, bool epub3,
-        Dictionary<(string BookPath, string Id), (string BookPath, string Id)> moves, HashSet<HtmlResource> touched)
+        Dictionary<(string BookPath, string Id), (string BookPath, string Id)> moves, HashSet<HtmlResource> touched,
+        ConversionTexts texts)
     {
         HtmlResource referenceFile = footnote.ReferenceFile;
 
         // The reference, with the wrappers that held only it and the empty element its link back led to.
-        string text = referenceFile.GetText();
-        TagLister tags = TagLister.For(text);
+        (string text, TagLister tags) = texts.Read(referenceFile);
         Anchor anchor = FindAnchor(tags, text, footnote.ReferenceHref, footnote.ReferenceOccurrence)!;
         string? returnId = footnote.ReferenceId.Length > 0 ? footnote.ReferenceId : null;
         (int start, int end) = Unwrap(tags, text, anchor.OuterStart, anchor.OuterEnd, returnId);
         List<string> referenceClasses = new();
         if (keepClasses)
         {
-            for (int i = 0; i < tags.Count && tags.At(i).Pos >= 0 && tags.At(i).Pos <= anchor.Start; i++)
+            // Only the wrappers that Unwrap took in carry classes over, so the walk starts at the first tag of that
+            // range instead of at the first tag of the file: starting at the file put the tags before every reference
+            // through once per reference, which a file with many of them pays for in the square of their number.
+            for (int i = tags.FindFirstTagOnOrAfter(start); i < tags.Count && tags.At(i).Pos >= 0 && tags.At(i).Pos <= anchor.Start; i++)
             {
-                if (tags.At(i).Pos >= start && IsOpening(tags.At(i)))
+                if (IsOpening(tags.At(i)))
                 {
                     referenceClasses.AddRange(Classes(text, tags.At(i)));
                 }
@@ -771,17 +780,16 @@ public static partial class FootnoteEditor
         string reference = "<a class=\"" + JoinClasses(ReferenceClass, referenceClasses) + "\""
             + (epub3 ? " epub:type=\"noteref\"" : string.Empty)
             + " href=\"" + Encode(Href(referenceFile.BookPath, target.BookPath, noteId)) + "\" id=\"" + referenceId + "\">[0]</a>";
-        List<TextEdit> edits = new() { new TextEdit(start, end - start, reference) };
+        texts.Edit(referenceFile, new TextEdit(start, end - start, reference));
         if (returnId is not null
             && FindElementById(tags, text, returnId) is { } empty
             && (empty.End <= start || empty.Start >= end)
             && Tag.Replace(text[empty.Start..empty.End], string.Empty).Trim().Length == 0)
         {
             (int emptyStart, int emptyEnd) = Unwrap(tags, text, empty.Start, empty.End, null);
-            edits.Add(new TextEdit(emptyStart, emptyEnd - emptyStart, string.Empty));
+            texts.Edit(referenceFile, new TextEdit(emptyStart, emptyEnd - emptyStart, string.Empty));
         }
 
-        referenceFile.SetText(Apply(text, edits));
         touched.Add(referenceFile);
         if (returnId is not null)
         {
@@ -791,19 +799,25 @@ public static partial class FootnoteEditor
 
     // The inside of a note without its link back (and what is left of its marker next to it), and whether the link back
     // was at its start.
-    private static (string Content, bool BacklinkAtStart) CutContent(TagLister tags, string text, Element note, Anchor? backlink)
+    private static (string Content, bool BacklinkAtStart) CutContent(
+        TagLister tags, string text, Element note, Anchor? backlink, FileEdits? edits = null)
     {
+        // With `edits` the note's text is read as those edits leave it. A note inside this one is converted first and
+        // its edits are among them, so what is read here is this note's own text — which is what reading the file again
+        // after writing the inner note used to give.
+        string Read(int from, int to) => edits is null ? text[from..to] : AfterEdits(text, edits, from, to);
+
         int innerStart = tags.At(note.OpenIndex).Pos + tags.At(note.OpenIndex).Len;
         int innerEnd = note.CloseStart;
         if (backlink is null)
         {
-            return (text[innerStart..innerEnd], false);
+            return (Read(innerStart, innerEnd), false);
         }
 
         (int start, int end) = Unwrap(tags, text, backlink.Start, backlink.End, null);
         start = Math.Max(start, innerStart);
         end = Math.Min(end, innerEnd);
-        bool atStart = PlainText(text[innerStart..start]).Length == 0;
+        bool atStart = PlainText(Read(innerStart, start)).Length == 0;
         if (atStart)
         {
             while (end < innerEnd && MarkerResidue.Contains(text[end], StringComparison.Ordinal))
@@ -812,7 +826,7 @@ public static partial class FootnoteEditor
             }
         }
 
-        return (text[innerStart..start] + text[end..innerEnd], atStart);
+        return (Read(innerStart, start) + Read(end, innerEnd), atStart);
     }
 
     // A block of a note's text: a paragraph (its attributes without the class, its classes and its inside) or another
@@ -1102,40 +1116,198 @@ public static partial class FootnoteEditor
         }
     }
 
-    // Removes the elements around `offset` that a removed note left empty (no element, no text), up to the body; one
-    // that something links to stays, and so does Signet's container.
-    private static string RemoveEmptyAncestors(string text, int offset, string bookPath, HashSet<(string BookPath, string Id)> linked)
+    /// <summary>
+    /// The files a conversion writes, each read and parsed once. Taking the notes out one at a time read, parsed and
+    /// rewrote a whole file for every one of them, so a book with all its notes in one file cost the square of their
+    /// number; here every position is read in the text as the conversion found it, the edits wait together, and each
+    /// file is written once at the end.
+    /// </summary>
+    private sealed class ConversionTexts
     {
-        while (true)
+        private readonly Dictionary<HtmlResource, Entry> _files = new(ReferenceEqualityComparer.Instance);
+
+        /// <summary>The text of <paramref name="file"/> as the conversion found it, with its tags.</summary>
+        public (string Text, TagLister Tags) Read(HtmlResource file)
         {
-            TagLister tags = TagLister.For(text);
-            List<TagLister.TagInfo> open = OpenElementsAt(tags, offset);
-            if (open.Count == 0)
-            {
-                return text;
-            }
-
-            TagLister.TagInfo innermost = open[^1];
-            int index = tags.FindLastTagOnOrBefore(innermost.Pos);
-            if (innermost.TagName.Equals("body", StringComparison.OrdinalIgnoreCase)
-                || ToElement(tags, text, index) is not { } element
-                || HasClass(text.Substring(innermost.Pos, innermost.Len), LocalContainerClass)
-                || HasClass(text.Substring(innermost.Pos, innermost.Len), GlobalContainerClass)
-                || (element.IdValue.Length > 0 && linked.Contains((bookPath, element.IdValue))))
-            {
-                return text;
-            }
-
-            string inside = text[(innermost.Pos + innermost.Len)..element.CloseStart];
-            if (Regex.Replace(inside, "<!--.*?-->", string.Empty, RegexOptions.Singleline | RegexOptions.CultureInvariant).Trim().Length > 0)
-            {
-                return text;
-            }
-
-            (int start, int end) = WholeLines(text, element.Start, element.End);
-            text = text.Remove(start, end - start);
-            offset = start;
+            Entry entry = EntryFor(file);
+            return (entry.Text, entry.Tags);
         }
+
+        /// <summary>The edits of <paramref name="file"/> so far, for reading its text as they leave it.</summary>
+        public FileEdits Pending(HtmlResource file) => EntryFor(file).Edits;
+
+        /// <summary>
+        /// Takes an edit of <paramref name="file"/> in; its positions are those of <see cref="Read"/>. An edit inside a
+        /// piece already cut out is dropped: the reference of a note that stood inside another note goes with it.
+        /// </summary>
+        public void Edit(HtmlResource file, TextEdit edit)
+        {
+            FileEdits edits = EntryFor(file).Edits;
+            if (!edits.Covers(edit))
+            {
+                edits.Add(edit);
+            }
+        }
+
+        /// <summary>
+        /// Cuts a note out of <paramref name="file"/>, with whatever was going to be done inside it, and marks the
+        /// place so that what held the note is looked at once the whole conversion is known.
+        /// </summary>
+        public void Cut(HtmlResource file, TextEdit edit)
+        {
+            Entry entry = EntryFor(file);
+            entry.Edits.AddCovering(edit);
+            entry.Cuts.Add(edit.Start);
+        }
+
+        /// <summary>Writes every file read here, with the elements the notes emptied taken out.</summary>
+        public void WriteAll(HashSet<(string BookPath, string Id)> linked)
+        {
+            foreach (KeyValuePair<HtmlResource, Entry> read in _files)
+            {
+                Entry entry = read.Value;
+                if (entry.Cuts.Count > 0)
+                {
+                    CutEmptiedAncestors(entry.Text, entry.Tags, read.Key.BookPath, entry.Cuts, entry.Edits, linked);
+                }
+
+                read.Key.SetText(Apply(entry.Text, entry.Edits.Edits));
+            }
+        }
+
+        private Entry EntryFor(HtmlResource file)
+        {
+            if (!_files.TryGetValue(file, out Entry? entry))
+            {
+                string text = file.GetText();
+                _files[file] = entry = new Entry { Text = text, Tags = TagLister.For(text) };
+            }
+
+            return entry;
+        }
+
+        private sealed class Entry
+        {
+            public required string Text { get; init; }
+
+            public required TagLister Tags { get; init; }
+
+            public FileEdits Edits { get; } = new();
+
+            public List<int> Cuts { get; } = new();
+        }
+    }
+
+    // The elements that the cut notes leave empty (no element, no text) go with them, up to the body; one that something
+    // links to stays, and so does Signet's container. This is the rule that used to be applied to one note at a time, on
+    // the text as that note left it; here it is worked out on the text as it was before any of the edits, reading what
+    // is left inside an element through the edits collected so far — which says the same thing, because every note cut
+    // out of this file is already among them.
+    private static void CutEmptiedAncestors(
+        string text, TagLister tags, string bookPath, IReadOnlyList<int> cuts, FileEdits edits,
+        HashSet<(string BookPath, string Id)> linked)
+    {
+        Dictionary<int, List<int>> chains = OpenElementChains(tags, cuts);
+        HashSet<int> looked = new();
+        int deepest = chains.Values.Max(c => c.Count);
+
+        // Every element of one depth is looked at before the ones that hold them: what is left inside an element is
+        // read through the edits collected so far, so whatever was inside it has to have gone first. A wrapper around
+        // several notes, say, is empty only once the last of them is out, and it is their own wrappers that go first.
+        for (int depth = deepest - 1; depth >= 0; depth--)
+        {
+            foreach (int at in cuts)
+            {
+                List<int> open = chains[at];
+                if (depth < open.Count && looked.Add(open[depth]))
+                {
+                    CutIfEmptied(text, tags, bookPath, open[depth], edits, linked);
+                }
+            }
+        }
+    }
+
+    // Takes the element out if the notes left nothing inside it. What holds it is left to the caller: whether it is
+    // empty too follows from reading what is inside it, which is the same question asked one step further out.
+    private static void CutIfEmptied(
+        string text, TagLister tags, string bookPath, int index, FileEdits edits, HashSet<(string BookPath, string Id)> linked)
+    {
+        TagLister.TagInfo tag = tags.At(index);
+        if (tag.TagName.Equals("body", StringComparison.OrdinalIgnoreCase)
+            || ToElement(tags, text, index) is not { } element
+            || HasClass(text.Substring(tag.Pos, tag.Len), LocalContainerClass)
+            || HasClass(text.Substring(tag.Pos, tag.Len), GlobalContainerClass)
+            || (element.IdValue.Length > 0 && linked.Contains((bookPath, element.IdValue))))
+        {
+            return;
+        }
+
+        string inside = AfterEdits(text, edits, tag.Pos + tag.Len, element.CloseStart);
+        if (Regex.Replace(inside, "<!--.*?-->", string.Empty, RegexOptions.Singleline | RegexOptions.CultureInvariant).Trim().Length > 0)
+        {
+            return;
+        }
+
+        (int start, int end) = WholeLines(text, element.Start, element.End);
+        edits.AddCovering(new TextEdit(start, end - start, string.Empty));
+    }
+
+    // The elements open at each of `positions` (their places in the tag list, outermost first), in one pass over the
+    // tags: asking for one position at a time walks the whole list every time, and one file can hold thousands of notes.
+    private static Dictionary<int, List<int>> OpenElementChains(TagLister tags, IReadOnlyList<int> positions)
+    {
+        List<int> wanted = positions.Distinct().OrderBy(p => p).ToList();
+        Dictionary<int, List<int>> chains = new();
+        List<int> open = new();
+        int next = 0;
+        for (int i = 0; i < tags.Count && next < wanted.Count; i++)
+        {
+            TagLister.TagInfo tag = tags.At(i);
+            while (next < wanted.Count && tag.Pos >= wanted[next])
+            {
+                chains[wanted[next++]] = new List<int>(open);
+            }
+
+            if (tag.Kind == TagKind.Begin)
+            {
+                open.Add(i);
+            }
+            else if (tag.Kind == TagKind.End)
+            {
+                int match = open.FindLastIndex(t => tags.At(t).TagName.Equals(tag.TagName, StringComparison.OrdinalIgnoreCase));
+                if (match >= 0)
+                {
+                    open.RemoveRange(match, open.Count - match);
+                }
+            }
+        }
+
+        while (next < wanted.Count)
+        {
+            chains[wanted[next++]] = new List<int>(open);
+        }
+
+        return chains;
+    }
+
+    // A part of the text as the edits collected so far leave it.
+    private static string AfterEdits(string text, FileEdits edits, int from, int to)
+    {
+        StringBuilder result = new(to - from);
+        int at = from;
+        foreach (TextEdit edit in edits.Between(from, to))
+        {
+            int start = Math.Clamp(edit.Start, from, to);
+            if (start > at)
+            {
+                result.Append(text, at, start - at);
+            }
+
+            result.Append(edit.Text);
+            at = Math.Clamp(Math.Max(at, edit.Start + edit.Length), from, to);
+        }
+
+        return result.Append(text, at, to - at).ToString();
     }
 
     // A line (<hr/>) or a notes heading ("Notes"…) left at the end of its block after the notes behind it went: what

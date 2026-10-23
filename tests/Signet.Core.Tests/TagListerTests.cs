@@ -166,6 +166,44 @@ public sealed class TagListerTests
             t => t.TagName == "b" && t.Kind == TagKind.End);
     }
 
+    /// <summary>
+    /// Both lookups halve the tag list instead of walking it, so they are checked against what they promise at every
+    /// position of a real file: the last tag that starts at the position or before it, and the first one that ends
+    /// after it. The index out of the range of the real tags is the sentinel at the end of the list.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(AllCorpusXhtml))]
+    public void FindFirstAndLastTag_AgreeWithTheirDefinitionAtEveryPosition(string path)
+    {
+        // Arrange
+        string text = File.ReadAllText(path);
+        TagLister lister = new(text);
+        int tags = lister.Count - 1;
+
+        // Act & Assert
+        for (int position = -1; position <= text.Length; position++)
+        {
+            int last = -1;
+            int first = tags;
+            for (int i = 0; i < tags; i++)
+            {
+                TagLister.TagInfo tag = lister.Tags[i];
+                if (tag.Pos <= position)
+                {
+                    last = i;
+                }
+
+                if (tag.Pos + tag.Len > position && first == tags)
+                {
+                    first = i;
+                }
+            }
+
+            lister.FindLastTagOnOrBefore(position).Should().Be(last, "the last tag on or before {0}", position);
+            lister.FindFirstTagOnOrAfter(position).Should().Be(first, "the first tag on or after {0}", position);
+        }
+    }
+
     [Fact]
     public void GeneratePathToTag_ReturnsTagPathWithChildNumbers()
     {

@@ -347,6 +347,75 @@ public static partial class FootnoteEditor
         /// <summary>Takes <paramref name="edit"/> in, in the order of its position.</summary>
         public void Add(TextEdit edit) => _edits.Insert(PlaceFor(edit.Start), edit);
 
+        /// <summary>
+        /// Takes <paramref name="edit"/> in, in place of the edits it covers: an element cut out of the text takes with
+        /// it what was going to be done inside it (the note whose going emptied it, the elements inside it already cut).
+        /// </summary>
+        public void AddCovering(TextEdit edit)
+        {
+            int end = edit.Start + edit.Length;
+            int first = PlaceFor(edit.Start);
+            int last = first;
+            while (last < _edits.Count && _edits[last].Start < end && _edits[last].Start + _edits[last].Length <= end)
+            {
+                last++;
+            }
+
+            _edits.RemoveRange(first, last - first);
+            _edits.Insert(first, edit);
+        }
+
+        /// <summary>Whether one of the edits here holds the whole of <paramref name="edit"/>.</summary>
+        public bool Covers(TextEdit edit)
+        {
+            for (int i = PlaceFor(edit.Start + 1) - 1; i >= 0; i--)
+            {
+                if (_edits[i].Length == 0)
+                {
+                    continue;
+                }
+
+                return _edits[i].Start <= edit.Start && _edits[i].Start + _edits[i].Length >= edit.Start + edit.Length;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// The edits that fall inside <paramref name="from"/>..<paramref name="to"/>, in the order of their positions
+        /// (for reading a part of the text as the edits leave it).
+        /// </summary>
+        public IEnumerable<TextEdit> Between(int from, int to)
+        {
+            // An edit that starts before the range may still reach into it; of the edits here only one can, as they do
+            // not overlap. The edits of no length (insertions) in front of it reach nowhere, but they stand between it
+            // and the range, so the walk back goes over them.
+            int at = PlaceFor(from);
+            int begin = at;
+            for (int i = at - 1; i >= 0; i--)
+            {
+                if (_edits[i].Length == 0)
+                {
+                    continue;
+                }
+
+                if (_edits[i].Start + _edits[i].Length > from)
+                {
+                    begin = i;
+                }
+
+                break;
+            }
+
+            for (int i = begin; i < _edits.Count && _edits[i].Start < to; i++)
+            {
+                if (_edits[i].Start >= from || _edits[i].Start + _edits[i].Length > from)
+                {
+                    yield return _edits[i];
+                }
+            }
+        }
+
         // The place of the first edit that starts at `start` or after it.
         private int PlaceFor(int start)
         {
