@@ -465,9 +465,11 @@ Dwie rzeczy warte zapamiętania na przyszłość:
   czterech rewizjach**, HEAD włącznie — czyli dzisiejsza przebudowa ścieżki zapisu nie zepsuła
   konwersji na 7482 realnych przypisach. To najmocniejszy dowód regresyjny, jaki w tej sesji mamy.
 
-### 18. Znalezione ograniczenie konwersji: przypis, którego **referencja** stoi w tekście innego przypisu
+### 18. Naprawione (czwarta sesja): przypis cytujący przypis — i cykl takich cytowań
 
-Znalezione przy dopisywaniu testów (czwarta sesja), nieudokumentowane wcześniej. Kształt:
+**Kształt.** Referencja przypisu A stoi w **tekście** przypisu B — czyli przypis cytujący inny
+przypis, rzecz normalna w książkach naukowych. To **nie** to samo co przypis zagnieżdżony w
+przypisie: tam w środku siedzi *notatka*, tu tylko *referencja*, i tej relacji nic nie śledziło.
 
 ```html
 <p>Tekst<a href="#nB" id="rB">[B]</a>.</p>
@@ -477,56 +479,72 @@ Znalezione przy dopisywaniu testów (czwarta sesja), nieudokumentowane wcześnie
 </section>
 ```
 
-Czyli **przypis cytujący inny przypis** — rzecz normalna w książkach naukowych. To **nie** to samo co
-przypis zagnieżdżony w przypisie (punkt wyżej, `FindNestedNotes`): tam w środku siedzi *notatka*,
-tu tylko *referencja*.
+**Co było źle.** Kolejność konwersji to kolejność skanowania, czyli pozycja referencji. `rB` stoi w
+akapicie, `rA` dopiero w sekcji przypisów, więc B szło pierwsze i wycinało swój element. Gdy
+przychodziła kolej na A, jego referencja leżała już w wyciętym zakresie, więc podmiana była
+porzucana. Notatka A zostawała z linkiem powrotnym do tymczasowego `fn-new-…-ref`, którego nikt nie
+nosił. Kontrola F7 to wyłapywała (`TextChanged`, `Validation_BadFragmentSameFile`,
+`Validation_FootnoteNoBacklink`), więc wywołujący cofał książkę — użytkownik nie dostawał zepsutego
+pliku, ale i nie dostawał konwersji.
 
-**Co się dzieje.** Kolejność konwersji to kolejność skanowania, czyli pozycja referencji. `rB` stoi
-w akapicie, `rA` dopiero w sekcji przypisów, więc B idzie pierwsze. Konwersja B wycina jego element
-z pliku. Gdy przychodzi kolej na A, jego referencja `rA` leży już wewnątrz wyciętego zakresu, więc
-podmiana jest porzucana (`FileEdits.Covers` → `ConversionTexts.Edit`) — inaczej wpisywalibyśmy nową
-referencję w tekst, który i tak znika. Notatka A zostaje z linkiem powrotnym do tymczasowego
-`fn-new-…-ref`, którego żaden element nie nosi.
+**Cykl.** Gdy dwie notatki cytują się wzajemnie (referencja A w notatce B i referencja B w notatce
+A), wynik był śmieciem: dwie edycje wchodziły na siebie i dawały zlepiony `href="#fn-1#fn-2-ref"`,
+plus `CountChanged: 3 → 2`. Pierwsza propozycja naprawy w tej sesji brzmiała „wykryć cykl i
+zablokować konwersję" — i była **błędna**. Jeśli autor tak napisał książkę, Signet ma to przenieść,
+a nie odmawiać, bo nasz pipeline ma niewygodny kształt.
 
-**Użytkownik jest chroniony**: kontrola F7 to wyłapuje i `Convert` zwraca problemy, więc wywołujący
-cofa książkę do checkpointu (tak jak mówi kontrakt `Convert`). Zmierzone na tym kształcie:
+**Naprawa — rozdzielenie dwóch przebiegów, bez redesignu signetowych przypisów i bez blokad.**
+`ConvertOne` robiło dla jednego przypisu dwie rzeczy naraz: podmieniało jego referencje **i**
+wycinało jego notatkę. To ta atomowość tworzyła pozorny cykl. Prawdziwa zależność jest między
+**podmianą referencji A** i **wycięciem notatki B** — nie między „konwersją A" i „konwersją B".
+Teraz `Convert`:
 
-```
-converted=2 problems=3
-  TextChanged:fn-1
-  NewValidationResult:Validation_BadFragmentSameFile
-  NewValidationResult:Validation_FootnoteNoBacklink
-```
+1. rozdaje z góry id notatek i referencji dla **wszystkich** przypisów (podmiana referencji
+   potrzebuje id notatki, do której poprowadzi) — rekord `PlannedNote`;
+2. przebieg pierwszy: podmienia **wszystkie** referencje (`ConvertReference`);
+3. przebieg drugi: wycina **wszystkie** notatki i buduje ich nową treść (`CutNote`, dawne
+   `ConvertOne` bez pętli po referencjach).
 
-Przed zmianami z punktu 16 ten sam kształt dawał `NullReferenceException` na `FindAnchor(...)!` —
-więc guard `Covers` jest realną poprawą, a nie martwym kodem. Pokryte testem
-`FootnoteConversionTests.A_reference_that_stood_inside_another_note_goes_with_it`, który przypina
-wykrycie (a nie „jakoś przeszło").
+Cykl znika sam, **bez żadnego porządkowania**: `rA` wewnątrz `nB` i `rB` wewnątrz `nA` to dwie
+różne pozycje, więc edycje się nie nakładają; a w przebiegu drugim treść każdej notatki czytana jest
+*przez* zebrane edycje (punkt 16), więc każda bierze już nową referencję Signeta tej drugiej. Druga
+relacja — notatka w notatce — to zawieranie elementów, czyli drzewo, więc cyklu mieć nie może;
+istniejące sortowanie po głębokości (`FindNestedNotes`) nadal jest potrzebne, tylko wewnątrz
+przebiegu drugiego.
 
-**To jest problem wyłącznie kolejności — nie architektury.** Zmierzone sondą (tymczasowe odwrócenie
-listy `items` w `Convert`, sonda usunięta): przy odwrotnej kolejności ten sam kształt konwertuje się
-**bezbłędnie**, `converted=2 problems=0`, i wynik jest prawidłowy:
+**Zmierzone.** Oba kształty konwertują się teraz bezbłędnie, `problems=0`. Cykl daje poprawny wynik,
+w którym „Aye" jest notatką współdzieloną (czytaną z tekstu i z wnętrza „Bee"), więc dostaje literę
+na referencję:
 
 ```html
-<aside class="signet-fn" id="fn-1"><p class="signet-fn-p"><a href="#fn-1-ref">1.</a> Bee, zob. też<a
-  class="signet-fn-ref" epub:type="noteref" href="#fn-2" id="fn-2-ref">[2]</a>.</p></aside>
-<aside class="signet-fn" id="fn-2"><p class="signet-fn-p"><a href="#fn-2-ref">2.</a> Aye.</p></aside>
+<aside class="signet-fn" id="fn-1"><p class="signet-fn-p"><a href="#fn-1a-ref">1a</a>, <a
+  href="#fn-1b-ref">1b</a>. Aye, cf.<a class="signet-fn-ref" href="#fn-2" id="fn-2-ref">[2]</a>.</p></aside>
+<aside class="signet-fn" id="fn-2"><p class="signet-fn-p"><a href="#fn-2-ref">2.</a> Bee, cf.<a
+  class="signet-fn-ref" href="#fn-1" id="fn-1b-ref">[1b]</a>.</p></aside>
 ```
 
-Działa, bo gdy A idzie pierwsze, jego referencja jest podmieniana w tekście B, który jeszcze stoi, a
-treść B czytana jest **przez** zebrane edycje (punkt 16), więc B bierze już nową referencję Signeta
-do swojej nowej notatki.
+**Obawa, która okazała się nieuzasadniona.** Podejrzewałem, że sam rozdział przebiegów nie wystarczy,
+bo kontrola F7 porównuje tekst notatki przed i po, a marker referencji zmienia się przy numerowaniu
+(`[0]` → `[2]`). Okazało się, że `PlainText` **usuwa w całości** anchory z klasą `signet-fn-ref`
+wraz z ich tekstem — markery referencji Signeta nie są częścią tekstu notatki — więc marker nigdy nie
+wchodzi do porównania. I to wyjaśnia stare `TextChanged:fn-1`: wtedy referencja *nie dostawała* klasy
+Signeta (edycja była porzucana), więc nie była usuwana i jej tekst przeciekał do porównania.
 
-**Propozycja naprawy (nie wdrożona — do decyzji):** rozszerzyć istniejące porządkowanie zależności.
-Dziś `FindNestedNotes` liczy głębokość tylko dla notatek w notatkach i `Convert` sortuje po niej
-malejąco. Trzeba dodać drugą relację: „referencja A leży w elemencie notatki B" ⇒ A przed B. To ten
-sam mechanizm, nie nowy — więc zmiana jest umiarkowana, ale dotyka **kolejności konwersji**, czyli
-najbardziej wrażliwego miejsca w całym module. Do rozważenia przy wdrożeniu:
-- **cykle**: referencja A w notatce B i referencja B w notatce A — żadna kolejność nie wystarczy;
-  trzeba wykryć cykl i zgłosić `ConversionBlocker`, zamiast pętlić się albo zepsuć książkę;
-- alternatywa minimalna i bezpieczniejsza: nie próbować wcale — wykryć ten kształt w
-  `PlanConversion` i ustawić blocker/ostrzeżenie, żeby użytkownik wiedział, czego Signet nie zrobi,
-  zamiast dowiadywać się tego z cofniętej operacji.
+**Usunięte jako martwy kod:** `FileEdits.Covers` (dodany w punkcie 16 jako strażnik na tę właśnie
+sytuację). Po rozdzieleniu przebiegów wszystkie `Edit` są w przebiegu pierwszym, a wszystkie `Cut` w
+drugim, więc żadna edycja nie może trafić w już wycięty fragment — niezmiennik jest strukturalny.
+Potwierdzone sondą: z `throw` w tej gałęzi przechodzi całe 2843 testów, cykl i przypadek
+jednokierunkowy włącznie. `FileEdits.AddCovering` zostaje — to ono porzuca edycje, które cięcie
+pochłania, i to jest normalna droga dla cytowanej referencji.
+
+**Regresja sprawdzona na realnych danych.** Konwersja `Biblia-Tysiaclecia.deon.epub` (1331 plików,
+8066 przypisów, żaden nie jest Signeta) daje **identyczny wynik przed i po zmianie**: 7482
+skonwertowane, `problems=0`, liczba wyników walidacji 1935 przed konwersją → 1434 po (konwersja
+naprawia 501 zastanych defektów książki), czas 4,3–4,8 s w obu przypadkach.
+
+Testy: `A_note_cited_from_inside_another_note_is_converted_with_it` (dawny test ograniczenia,
+przepisany na test sukcesu z dokładnym oczekiwanym markupem) i
+`Two_notes_that_cite_each_other_are_both_converted` (cykl).
 
 ## Co NIE zostało zrobione / zostało do następnej sesji
 
