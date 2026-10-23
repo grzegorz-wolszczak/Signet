@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using AwesomeAssertions;
 using Signet.Core.BookManipulation;
@@ -180,6 +181,225 @@ public sealed class FootnoteConversionTests
             BodyOf(chapter).Should().NotContain(signetNotes.Filename);
             FootnoteScanner.Scan(book).Should().HaveCount(2)
                 .And.OnlyContain(f => f.IsSignet && ReferenceEquals(f.NoteFile, taken));
+        }
+    }
+
+    [Fact]
+    public void All_the_references_of_a_shared_note_of_Signet_follow_it_and_the_note_moves_once()
+    {
+        // Arrange
+        (Book book, HtmlResource chapter) = NewBook(string.Empty);
+        HtmlResource signetNotes = AddFile(book, string.Empty);
+        HtmlResource taken = AddFile(book, string.Empty);
+        chapter.SetText(Xhtml(
+            "<p>One<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"" + signetNotes.Filename + "#en-1\" id=\"en-1a-ref\">[1a]</a>"
+            + " again<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"" + signetNotes.Filename + "#en-1\" id=\"en-1b-ref\">[1b]</a>"
+            + " two<span id=\"footnote-2-backlink\"><a href=\"" + taken.Filename + "#footnote-2\">2</a></span>.</p>"));
+        signetNotes.SetText(Xhtml(
+            "<section class=\"signet-endnotes\" epub:type=\"endnotes\">\n"
+            + "  <aside class=\"signet-fn\" epub:type=\"endnote\" id=\"en-1\"><p class=\"signet-fn-p\"><a href=\""
+            + chapter.Filename + "#en-1a-ref\">1a</a>, <a href=\"" + chapter.Filename + "#en-1b-ref\">1b</a>. Shared one.</p></aside>\n"
+            + "</section>"));
+        taken.SetText(Xhtml(
+            "<h1>Notes</h1>\n"
+            + "<div id=\"footnote-2\"><p><a href=\"" + chapter.Filename + "#footnote-2-backlink\">2</a> Of other origin.</p></div>"));
+        using (book)
+        {
+            // Act
+            ConversionPlan plan = FootnoteEditor.PlanConversion(book);
+            ConversionResult result = FootnoteEditor.Convert(
+                book, new ConversionRequest(plan.Items, taken, false), cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert: the note went over once, not once per reference.
+            result.Problems.Should().BeEmpty();
+            Regex.Matches(BodyOf(taken), "Shared one\\.").Should().ContainSingle();
+            BodyOf(signetNotes).Should().NotContain("Shared one.");
+
+            // Assert: neither reference is left pointing at the file the note came from.
+            BodyOf(chapter).Should().NotContain(signetNotes.Filename);
+            FootnoteScanner.Scan(book).Where(f => f.IsShared).Should().HaveCount(2)
+                .And.OnlyContain(f => ReferenceEquals(f.NoteFile, taken));
+        }
+    }
+
+    [Fact]
+    public void Several_notes_of_Signet_move_in_reading_order_with_references_from_several_files()
+    {
+        // Arrange
+        (Book book, HtmlResource first) = NewBook(string.Empty);
+        HtmlResource second = AddFile(book, string.Empty);
+        HtmlResource signetNotes = AddFile(book, string.Empty);
+        HtmlResource taken = AddFile(book, string.Empty);
+        first.SetText(Xhtml(
+            "<p>One<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"" + signetNotes.Filename + "#en-1\" id=\"en-1-ref\">[1]</a>.</p>"));
+        second.SetText(Xhtml(
+            "<p>Two<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"" + signetNotes.Filename + "#en-2\" id=\"en-2-ref\">[2]</a>"
+            + " three<span id=\"footnote-3-backlink\"><a href=\"" + taken.Filename + "#footnote-3\">3</a></span>.</p>"));
+        signetNotes.SetText(Xhtml(
+            "<section class=\"signet-endnotes\" epub:type=\"endnotes\">\n"
+            + "  <aside class=\"signet-fn\" epub:type=\"endnote\" id=\"en-1\"><p class=\"signet-fn-p\"><a href=\""
+            + first.Filename + "#en-1-ref\">1.</a> Signet A.</p></aside>\n"
+            + "  <aside class=\"signet-fn\" epub:type=\"endnote\" id=\"en-2\"><p class=\"signet-fn-p\"><a href=\""
+            + second.Filename + "#en-2-ref\">2.</a> Signet B.</p></aside>\n"
+            + "</section>"));
+        taken.SetText(Xhtml(
+            "<h1>Notes</h1>\n"
+            + "<div id=\"footnote-3\"><p><a href=\"" + second.Filename + "#footnote-3-backlink\">3</a> Of other origin.</p></div>"));
+        using (book)
+        {
+            // Act
+            ConversionPlan plan = FootnoteEditor.PlanConversion(book);
+            ConversionResult result = FootnoteEditor.Convert(
+                book, new ConversionRequest(plan.Items, taken, false), cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert: every note is in the taken-over file, in the reading order of its reference.
+            result.Problems.Should().BeEmpty();
+            string body = BodyOf(taken);
+            body.IndexOf("Signet A.", StringComparison.Ordinal).Should()
+                .BePositive().And.BeLessThan(body.IndexOf("Signet B.", StringComparison.Ordinal));
+            body.IndexOf("Signet B.", StringComparison.Ordinal).Should()
+                .BeLessThan(body.IndexOf("Of other origin.", StringComparison.Ordinal));
+            BodyOf(signetNotes).Should().NotContain("Signet A.").And.NotContain("Signet B.");
+
+            // Assert: the references of both files were retargeted.
+            BodyOf(first).Should().NotContain(signetNotes.Filename);
+            BodyOf(second).Should().NotContain(signetNotes.Filename);
+        }
+    }
+
+    [Fact]
+    public void A_link_to_a_moved_note_of_Signet_follows_it_and_the_emptied_notes_file_goes()
+    {
+        // Arrange
+        (Book book, HtmlResource chapter) = NewBook(string.Empty);
+        HtmlResource signetNotes = AddFile(book, string.Empty);
+        HtmlResource taken = AddFile(book, string.Empty);
+        chapter.SetText(Xhtml(
+            "<p>One<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"" + signetNotes.Filename + "#en-1\" id=\"en-1-ref\">[1]</a>"
+            + " two<span id=\"footnote-2-backlink\"><a href=\"" + taken.Filename + "#footnote-2\">2</a></span>.</p>\n"
+            + "<p><a href=\"" + signetNotes.Filename + "#en-1\">see the first note</a></p>"));
+        signetNotes.SetText(Xhtml(
+            "<section class=\"signet-endnotes\" epub:type=\"endnotes\">\n"
+            + "  <aside class=\"signet-fn\" epub:type=\"endnote\" id=\"en-1\"><p class=\"signet-fn-p\"><a href=\""
+            + chapter.Filename + "#en-1-ref\">1.</a> Signet's own.</p></aside>\n"
+            + "</section>"));
+        taken.SetText(Xhtml(
+            "<h1>Notes</h1>\n"
+            + "<div id=\"footnote-2\"><p><a href=\"" + chapter.Filename + "#footnote-2-backlink\">2</a> Of other origin.</p></div>"));
+        using (book)
+        {
+            // Act
+            ConversionPlan plan = FootnoteEditor.PlanConversion(book);
+            ConversionResult result = FootnoteEditor.Convert(
+                book, new ConversionRequest(plan.Items, taken, false), cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert: with its notes gone the file has nothing left, so it goes with them.
+            result.Problems.Should().BeEmpty();
+            result.RemovedFiles.Should().Equal(signetNotes.BookPath);
+            book.GetHtmlResources().Should().NotContain(signetNotes);
+
+            // Assert: the link that led to the note, which is not a reference, leads to its new file.
+            BodyOf(chapter).Should().Contain("see the first note").And.NotContain(signetNotes.Filename);
+        }
+    }
+
+    [Fact]
+    public void The_notes_of_Signet_move_into_a_taken_over_file_whose_headings_became_groups()
+    {
+        // Arrange
+        (Book book, HtmlResource chapter) = NewBook(string.Empty);
+        HtmlResource signetNotes = AddFile(book, string.Empty);
+        HtmlResource taken = AddFile(book, string.Empty);
+        chapter.SetText(Xhtml(
+            "<p>A<a href=\"" + taken.Filename + "#a\" id=\"a-back\">1</a>"
+            + " B<a href=\"" + taken.Filename + "#b\" id=\"b-back\">2</a>"
+            + " C<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"" + signetNotes.Filename + "#en-9\" id=\"en-9-ref\">[3]</a>.</p>"));
+        signetNotes.SetText(Xhtml(
+            "<section class=\"signet-endnotes\" epub:type=\"endnotes\">\n"
+            + "  <aside class=\"signet-fn\" epub:type=\"endnote\" id=\"en-9\"><p class=\"signet-fn-p\"><a href=\""
+            + chapter.Filename + "#en-9-ref\">3.</a> Signet's own.</p></aside>\n"
+            + "</section>"));
+        taken.SetText(Xhtml(
+            "<h1>Notes</h1>\n<h2>Chapter 1</h2>\n"
+            + "<div id=\"a\"><p><a href=\"" + chapter.Filename + "#a-back\">1</a> Note a.</p></div>\n"
+            + "<h2>Chapter 2</h2>\n"
+            + "<div id=\"b\"><p><a href=\"" + chapter.Filename + "#b-back\">2</a> Note b.</p></div>"));
+        using (book)
+        {
+            // Act
+            ConversionPlan plan = FootnoteEditor.PlanConversion(book);
+            ConversionResult result = FootnoteEditor.Convert(
+                book, new ConversionRequest(plan.Items, taken, false), cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert: the groups the headings became are kept, and the moved note is in the file with them.
+            result.Problems.Should().BeEmpty();
+            string body = BodyOf(taken);
+            Regex.Matches(body, "signet-fn-group\"").Should().HaveCount(2);
+            body.Should().Contain("Note a.").And.Contain("Note b.").And.Contain("Signet's own.");
+            BodyOf(signetNotes).Should().NotContain("Signet's own.");
+            FootnoteScanner.Scan(book).Should().HaveCount(3).And.OnlyContain(f => ReferenceEquals(f.NoteFile, taken));
+        }
+    }
+
+    [Fact]
+    public void A_notes_file_of_Signet_with_no_notes_in_it_does_not_get_in_the_way()
+    {
+        // Arrange
+        (Book book, HtmlResource chapter) = NewBook(string.Empty);
+        HtmlResource signetNotes = AddFile(book, string.Empty);
+        HtmlResource taken = AddFile(book, string.Empty);
+        chapter.SetText(Xhtml(
+            "<p>One<span id=\"footnote-1-backlink\"><a href=\"" + taken.Filename + "#footnote-1\">1</a></span>.</p>"));
+        signetNotes.SetText(Xhtml("<section class=\"signet-endnotes\" epub:type=\"endnotes\">\n</section>"));
+        taken.SetText(Xhtml(
+            "<h1>Notes</h1>\n"
+            + "<div id=\"footnote-1\"><p><a href=\"" + chapter.Filename + "#footnote-1-backlink\">1</a> Of other origin.</p></div>"));
+        using (book)
+        {
+            // Act
+            ConversionPlan plan = FootnoteEditor.PlanConversion(book);
+            ConversionResult result = FootnoteEditor.Convert(
+                book, new ConversionRequest(plan.Items, taken, false), cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            result.Problems.Should().BeEmpty();
+            BodyOf(taken).Should().Contain("Of other origin.");
+            FootnoteEditor.FindGlobalFile(book).Should().BeSameAs(taken);
+            FootnoteScanner.Scan(book).Should().ContainSingle().Which.NoteFile.Should().BeSameAs(taken);
+        }
+    }
+
+    [Fact]
+    public void Signets_own_notes_move_into_the_taken_over_file_of_an_epub2_book_too()
+    {
+        // Arrange
+        Book book = BookCreator.CreateNewBook("2.0");
+        HtmlResource chapter = book.GetHtmlResourcesExcludingNav()[0];
+        HtmlResource signetNotes = book.CreateEmptyHtmlFile();
+        HtmlResource taken = book.CreateEmptyHtmlFile();
+        chapter.SetText(Xhtml(
+            "<p>One<a class=\"signet-fn-ref\" href=\"" + signetNotes.Filename + "#en-1\" id=\"en-1-ref\">[1]</a>"
+            + " two<span id=\"footnote-2-backlink\"><a href=\"" + taken.Filename + "#footnote-2\">2</a></span>.</p>"));
+        signetNotes.SetText(Xhtml(
+            "<div class=\"signet-endnotes\">\n"
+            + "  <div class=\"signet-fn\" id=\"en-1\"><p class=\"signet-fn-p\"><a href=\""
+            + chapter.Filename + "#en-1-ref\">1.</a> Signet's own.</p></div>\n"
+            + "</div>"));
+        taken.SetText(Xhtml(
+            "<h1>Notes</h1>\n"
+            + "<div id=\"footnote-2\"><p><a href=\"" + chapter.Filename + "#footnote-2-backlink\">2</a> Of other origin.</p></div>"));
+        using (book)
+        {
+            // Act
+            ConversionPlan plan = FootnoteEditor.PlanConversion(book);
+            ConversionResult result = FootnoteEditor.Convert(
+                book, new ConversionRequest(plan.Items, taken, false), cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert: the notes of an EPUB 2 book are divs, with no epub:type on them.
+            result.Problems.Should().BeEmpty();
+            BodyOf(taken).Should().Contain("Signet's own.").And.Contain("Of other origin.").And.NotContain("epub:type");
+            BodyOf(signetNotes).Should().NotContain("Signet's own.");
+            BodyOf(chapter).Should().NotContain(signetNotes.Filename);
         }
     }
 
