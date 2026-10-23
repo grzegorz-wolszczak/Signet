@@ -146,6 +146,44 @@ public sealed class FootnoteConversionTests
     }
 
     [Fact]
+    public void Signets_own_notes_follow_the_converted_ones_into_the_taken_over_file()
+    {
+        // Arrange
+        (Book book, HtmlResource chapter) = NewBook(string.Empty);
+        HtmlResource signetNotes = AddFile(book, string.Empty);
+        HtmlResource taken = AddFile(book, string.Empty);
+        chapter.SetText(Xhtml(
+            "<p>One<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"" + signetNotes.Filename + "#en-1\" id=\"en-1-ref\">[1]</a>"
+            + " two<span id=\"footnote-2-backlink\"><a href=\"" + taken.Filename + "#footnote-2\">2</a></span>.</p>"));
+        signetNotes.SetText(Xhtml(
+            "<section class=\"signet-endnotes\" epub:type=\"endnotes\">\n"
+            + "  <aside class=\"signet-fn\" epub:type=\"endnote\" id=\"en-1\"><p class=\"signet-fn-p\"><a href=\""
+            + chapter.Filename + "#en-1-ref\">1.</a> Signet's own.</p></aside>\n"
+            + "</section>"));
+        taken.SetText(Xhtml(
+            "<h1>Notes</h1>\n"
+            + "<div id=\"footnote-2\"><p><a href=\"" + chapter.Filename + "#footnote-2-backlink\">2</a> Of other origin.</p></div>"));
+        using (book)
+        {
+            // Act
+            ConversionPlan plan = FootnoteEditor.PlanConversion(book);
+            ConversionResult result = FootnoteEditor.Convert(
+                book, new ConversionRequest(plan.Items, taken, false), cancellationToken: TestContext.Current.CancellationToken);
+
+            // Assert
+            result.Problems.Should().BeEmpty();
+            BodyOf(taken).Should().Contain("Signet's own.").And.Contain("Of other origin.");
+            BodyOf(signetNotes).Should().NotContain("Signet's own.");
+            FootnoteEditor.FindGlobalFile(book).Should().BeSameAs(taken);
+
+            // Both references lead to the file the notes are in now.
+            BodyOf(chapter).Should().NotContain(signetNotes.Filename);
+            FootnoteScanner.Scan(book).Should().HaveCount(2)
+                .And.OnlyContain(f => f.IsSignet && ReferenceEquals(f.NoteFile, taken));
+        }
+    }
+
+    [Fact]
     public void The_headings_between_the_notes_of_a_taken_over_file_become_groups()
     {
         // Arrange

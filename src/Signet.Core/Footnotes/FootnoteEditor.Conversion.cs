@@ -561,6 +561,7 @@ public static partial class FootnoteEditor
 
         Dictionary<(string BookPath, string Id), (string BookPath, string Id)> moves = new();
         HashSet<HtmlResource> touched = new(ReferenceEqualityComparer.Instance);
+        Dictionary<(HtmlResource File, FootnotePlacement Placement, int? Group), List<string>> insertions = new();
         List<ConvertedNote> converted = new();
         int step = Math.Max(1, items.Count / 200);
         for (int i = 0; i < items.Count; i++)
@@ -570,7 +571,7 @@ public static partial class FootnoteEditor
             Footnote footnote = item.Footnote;
             IReadOnlyList<Footnote> references = item.References.Count > 0 ? item.References : new[] { footnote };
             (string tempId, string content) = ConvertOne(references, footnote.Placement == FootnotePlacement.Local ? footnote.ReferenceFile : target!,
-                groupOf, request.KeepClasses, epub3, linked, moves, touched);
+                groupOf, request.KeepClasses, epub3, linked, moves, touched, insertions);
             converted.Add(new ConvertedNote(tempId, content, footnote.NoteFile.BookPath, footnote.NoteId, item.Marker));
             if (i % step == 0)
             {
@@ -581,6 +582,21 @@ public static partial class FootnoteEditor
         progress?.Report(new ConversionProgress(ConversionStage.Converting, items.Count, items.Count));
         progress?.Report(new ConversionProgress(ConversionStage.Finishing, items.Count, items.Count));
         cancellationToken.ThrowIfCancellationRequested();
+
+        // The converted notes go in, each file (and group) written once, in the order they were converted. This comes
+        // before the notes of Signet's own file below, which then follow them, as they did when every note went in on
+        // its own.
+        foreach (((HtmlResource file, FootnotePlacement placement, int? group), List<string> notes) in insertions)
+        {
+            if (group is { } at)
+            {
+                InsertIntoGroup(file, at, string.Join('\n', notes));
+            }
+            else
+            {
+                InsertNote(file, string.Join('\n', notes), placement, epub3);
+            }
+        }
 
         // Signet's own global notes move to a taken-over file.
         if (target is not null && signetFile is not null && !ReferenceEquals(target, signetFile))
@@ -657,7 +673,7 @@ public static partial class FootnoteEditor
     private static (string TempId, string Content) ConvertOne(
         IReadOnlyList<Footnote> references, HtmlResource target, Dictionary<string, int> groupOf, bool keepClasses, bool epub3,
         HashSet<(string BookPath, string Id)> linked, Dictionary<(string BookPath, string Id), (string BookPath, string Id)> moves,
-        HashSet<HtmlResource> touched)
+        HashSet<HtmlResource> touched, Dictionary<(HtmlResource File, FootnotePlacement Placement, int? Group), List<string>> insertions)
     {
         Footnote footnote = references[0];
         bool local = footnote.Placement == FootnotePlacement.Local;
@@ -699,15 +715,16 @@ public static partial class FootnoteEditor
         noteFile.SetText(RemoveEmptyAncestors(text, noteStart, noteFile.BookPath, linked));
         touched.Add(noteFile);
 
-        if (!local && groupOf.TryGetValue(footnote.NoteId, out int group))
+        // The notes wait and go into their file (and group) together once the whole conversion is worked out: putting
+        // each one in on its own read, parsed and rewrote the whole file it goes to, which grows with every note in it.
+        FootnotePlacement placement = local ? FootnotePlacement.Local : FootnotePlacement.Global;
+        int? group = !local && groupOf.TryGetValue(footnote.NoteId, out int at) ? at : null;
+        if (!insertions.TryGetValue((target, placement, group), out List<string>? waiting))
         {
-            InsertIntoGroup(target, group, markup);
-        }
-        else
-        {
-            InsertNote(target, markup, local ? FootnotePlacement.Local : FootnotePlacement.Global, epub3);
+            insertions[(target, placement, group)] = waiting = new List<string>();
         }
 
+        waiting.Add(markup);
         moves[(noteFile.BookPath, footnote.NoteId)] = (target.BookPath, noteId);
         return (noteId, content);
     }
@@ -1017,27 +1034,64 @@ public static partial class FootnoteEditor
     private static void MoveSignetNotes(
         Book book, HtmlResource from, HtmlResource to, Dictionary<(string BookPath, string Id), (string BookPath, string Id)> moves)
     {
+        // Worked out on one text of each file and written once. Note by note this read, parsed and rewrote the whole
+        // file the notes leave, the one they go to (which grows with each of them) and the file of each reference —
+        // for every one of what can be thousands of notes.
+        string text = from.GetText();
+        TagLister tags = TagLister.For(text);
+        List<TextEdit> removals = new();
+        List<string> markups = new();
+        List<Footnote> moved = new();
         foreach (Footnote footnote in FootnoteScanner.Scan(book).Where(f => f.IsSignet && ReferenceEquals(f.NoteFile, from)))
         {
-            string text = from.GetText();
-            Element? note = FindElementById(TagLister.For(text), text, footnote.NoteId);
-            if (note is null)
+            if (FindElementById(tags, text, footnote.NoteId) is not { } note)
             {
                 continue;
             }
 
-            string markup = Unindent(text, note);
+            markups.Add(Unindent(text, note));
             (int start, int end) = WholeLines(text, note.Start, note.End);
-            from.SetText(text.Remove(start, end - start));
-            InsertNote(to, markup, FootnotePlacement.Global, book.IsEpub3);
-            string referenceText = footnote.ReferenceFile.GetText();
-            if (FindAnchor(TagLister.For(referenceText), referenceText, footnote.ReferenceHref, footnote.ReferenceOccurrence) is { Href: { } href })
+            removals.Add(new TextEdit(start, end - start, string.Empty));
+            moved.Add(footnote);
+            moves[(from.BookPath, footnote.NoteId)] = (to.BookPath, footnote.NoteId);
+        }
+
+        if (moved.Count == 0)
+        {
+            return;
+        }
+
+        from.SetText(Apply(text, removals));
+        InsertNote(to, string.Join('\n', markups), FootnotePlacement.Global, book.IsEpub3);
+
+        // The references lead to the notes' new file. They are looked for in the texts as they are now (the notes are
+        // already out, so a link that sat inside one is gone with it), and each file is written once.
+        Dictionary<HtmlResource, (string Text, TagLister Tags)> snapshots = new(ReferenceEqualityComparer.Instance);
+        Dictionary<HtmlResource, List<TextEdit>> edits = new(ReferenceEqualityComparer.Instance);
+        foreach (Footnote footnote in moved)
+        {
+            if (!snapshots.TryGetValue(footnote.ReferenceFile, out (string Text, TagLister Tags) snapshot))
             {
-                footnote.ReferenceFile.SetText(Apply(
-                    referenceText, new[] { new TextEdit(href.Start, href.Length, Encode(Href(footnote.ReferenceFile.BookPath, to.BookPath, footnote.NoteId))) }));
+                string referenceText = footnote.ReferenceFile.GetText();
+                snapshots[footnote.ReferenceFile] = snapshot = (referenceText, TagLister.For(referenceText));
             }
 
-            moves[(from.BookPath, footnote.NoteId)] = (to.BookPath, footnote.NoteId);
+            if (FindAnchor(snapshot.Tags, snapshot.Text, footnote.ReferenceHref, footnote.ReferenceOccurrence) is not { Href: { } href })
+            {
+                continue;
+            }
+
+            if (!edits.TryGetValue(footnote.ReferenceFile, out List<TextEdit>? list))
+            {
+                edits[footnote.ReferenceFile] = list = new List<TextEdit>();
+            }
+
+            list.Add(new TextEdit(href.Start, href.Length, Encode(Href(footnote.ReferenceFile.BookPath, to.BookPath, footnote.NoteId))));
+        }
+
+        foreach ((HtmlResource file, List<TextEdit> list) in edits)
+        {
+            file.SetText(Apply(snapshots[file].Text, list));
         }
     }
 
