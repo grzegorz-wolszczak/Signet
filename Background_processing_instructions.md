@@ -71,11 +71,12 @@ Synteza zgłoszenia (I)–(VI) na konkretne reguły, które zadania niżej wdra�
      `RunBookOperationAsync`: `cancellable: !editsBook || checkpoint`). Do zweryfikowania, czy to
      rzeczywiście jest to, co chcemy, i czy user to jakoś widzi (brak przycisku Cancel w oknie to
      already wystarczający sygnał, czy potrzeba czegoś więcej?).
-   - **tworzenie checkpointu** (`AddCheckpointBeforeAsync`) — **otwarte pytanie użytkownika**, nie
-     rozstrzygnięte tu: czy w ogóle można to przerwać i co by to znaczyło (książka nie ma jeszcze
-     nowego checkpointu, ale operacja, która go potrzebowała, też się nie zaczęła — więc chyba
-     najbezpieczniej: tak, można, efekt to "nic się nie stało, cofamy się do stanu sprzed
-     kliknięcia" — ale to decyzja do zatwierdzenia w zadaniu A1, nie założenie).
+   - **tworzenie checkpointu** (`AddCheckpointBeforeAsync`) — **decyzja zatwierdzona w A1
+     (2026-10-23):** tak, cancellable. Efekt Cancel podczas tworzenia checkpointu: checkpoint nie
+     powstaje, operacja, która go potrzebowała, też się nie zaczyna, książka zostaje nietknięta.
+     Wymaga dodania sprawdzania `CancellationToken` w `CopyStateFolder`/`CheckpointHistory.AddCheckpoint`
+     (dziś tam nie ma żadnego) i przeprowadzenia tokenu przez `AddCheckpointBeforeAsync` — do
+     zrobienia w zadaniu A4.
 5. **Okno progresu może mieć więcej niż jedną linię opisu.** Dziś `WorkProgress` niesie tylko jeden
    `Message` + `Fraction`. Docelowo: wiersz "faza" (np. "Faza 2 z 4: Konwertowanie") pokazywany
    zawsze, gdy operacja ma rozpoznawalne fazy — nawet bez dokładnego %, z paskiem indeterminate na
@@ -92,12 +93,17 @@ Legenda statusu: `[ ]` do zrobienia, `[x]` zrobione (z krótką notatką i commi
 
 ### Część A — fundament (rób w tej kolejności, każde kolejne zależy od A2)
 
-- [ ] **A1. Decyzja: czy i jak można przerwać tworzenie checkpointu.** Nie-kodowe zadanie (albo
-  minimalne): przeczytać `CheckpointHistory.AddCheckpoint`/`_checkpoints.AddCheckpoint` (czy kopiowanie
-  folderu książki w ogóle sprawdza jakiś token dziś — prawdopodobnie nie), zaproponować userowi
-  konkretną odpowiedź (rekomendacja w tym dokumencie: tak, cancellable, efekt = checkpoint nie
-  powstaje, operacja która go potrzebowała też się nie zaczyna, książka zostaje nietknięta) i
-  zapisać decyzję tutaj, w sekcji "Ustalone podejście" punkt 4, zanim zacznie się zadanie A4.
+- [x] **A1. Decyzja: czy i jak można przerwać tworzenie checkpointu.** (2026-10-23) Zweryfikowano
+  w kodzie: `CheckpointHistory.AddCheckpoint` → `CopyStateFolder` (kopiowanie plików/folderów przez
+  `Directory.CreateDirectory`/`File.Copy`) i `CheckpointHistory.Abandon` nie przyjmują i nie
+  sprawdzają dziś żadnego `CancellationToken` — potwierdzone grepem, zero wystąpień w
+  `CheckpointHistory.cs` i `MainWindowViewModel.Checkpoints.cs`. `RunBookOperationAsync` przekazuje
+  token tylko do `work` (patrz komentarz w `RunInBackgroundAsync`: "the task is not given the
+  token: it always starts"), nie do `AddCheckpointBeforeAsync`/`AbandonCheckpointAsync`. User
+  zatwierdził rekomendację: tworzenie checkpointu jest cancellable, efekt = checkpoint nie
+  powstaje, operacja docelowa się nie zaczyna, książka nietknięta. Decyzja zapisana w "Ustalone
+  podejście", punkt 4. Zadanie A4 implementuje token w `CopyStateFolder`/`AddCheckpoint` i
+  przeprowadza go przez `AddCheckpointBeforeAsync`.
 
 - [ ] **A2. `IsBookOperationBusy` + spięcie z `CanExecute` wszystkich komend, które startują
   operację na książce.** Nowa właściwość (albo event) na `MainWindowViewModel`, ustawiana
