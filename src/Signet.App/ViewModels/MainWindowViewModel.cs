@@ -220,15 +220,16 @@ public sealed partial class MainWindowViewModel
 
         InitCheckpoints();
 
-        // Both the Spellcheck Editor and the Checkpoints panel are single persistent instances (see their class
-        // remarks) that can stay open/visible while another book operation starts elsewhere, so they are kept in sync
-        // for as long as this view model lives, not only at creation.
+        // The Spellcheck Editor, the Checkpoints panel and the Validation Results panel are single persistent
+        // instances (see their class remarks) that can stay open/visible while another book operation starts
+        // elsewhere, so they are kept in sync for as long as this view model lives, not only at creation.
         PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(IsBookOperationBusy))
             {
                 _spellcheckEditor.IsBookOperationBusy = IsBookOperationBusy;
                 CheckpointsPanel.IsBookOperationBusy = IsBookOperationBusy;
+                _validationResults.IsBookOperationBusy = IsBookOperationBusy;
             }
         };
 
@@ -2245,6 +2246,9 @@ public sealed partial class MainWindowViewModel
 
     /// <inheritdoc/>
     ClipEditorNode ICodeTabHost.ClipLibraryRoot => _clips.LibraryRoot;
+
+    /// <inheritdoc/>
+    bool ICodeTabHost.IsBookOperationBusy => IsBookOperationBusy;
 
     /// <inheritdoc/>
     void ICodeTabHost.PasteClip(string text) => _clips.PasteText(text);

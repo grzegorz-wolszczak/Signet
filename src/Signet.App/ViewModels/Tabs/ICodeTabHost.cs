@@ -220,6 +220,12 @@ public interface ICodeTabHost
 
     /// <summary>"Unify Letters of Shared Footnotes…" — opens the dialog with the shared notes in another style.</summary>
     void ShowFootnoteLetters();
+
+    /// <summary>
+    /// Whether a background book operation is already running (<c>MainWindowViewModel.IsBookOperationBusy</c>) — the
+    /// context menu disables the items that would start one while this is <see langword="true"/>.
+    /// </summary>
+    bool IsBookOperationBusy { get; }
 }
 
 /// <summary>The footnote state at a position of a file (<see cref="ICodeTabHost.GetFootnoteState"/>).</summary>

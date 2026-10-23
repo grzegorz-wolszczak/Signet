@@ -104,7 +104,7 @@ public partial class ValidationResultsView : UserControl
             return;
         }
 
-        FixMenuItem.IsEnabled = rows.Any(r => r.CanFix);
+        FixMenuItem.IsEnabled = rows.Any(r => r.CanFix) && ViewModel?.IsBookOperationBusy != true;
         SkipRuleMenuItem.IsEnabled = rows[0].Result.Code.Length > 0;
     }
 
