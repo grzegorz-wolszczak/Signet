@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -122,7 +123,7 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
         FindPreviousCommand = new RelayCommand(() => Logged("Find Previous", FindPrevious));
         ReplaceCommand = new RelayCommand(() => Logged("Replace", Replace));
         ReplaceFindCommand = new RelayCommand(() => Logged("Replace/Find", ReplaceFind));
-        ReplaceAllCommand = new RelayCommand(() => Logged("Replace All", ReplaceAll));
+        ReplaceAllCommand = new AsyncRelayCommand(() => LoggedAsync("Replace All", ReplaceAllAsync));
         CountCommand = new RelayCommand(() => Logged("Count", Count));
         CloseReportCommand = new RelayCommand(ClearReport);
         RestartCommand = new RelayCommand(Restart);
@@ -398,6 +399,20 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
     // they were last written), the operation and its result.
     private void Logged<T>(string operation, Func<T> run)
     {
+        LogSettings();
+        T result = run();
+        DebugLog.Write("Find&Replace", $"{operation} → {DebugLog.Describe(result)}");
+    }
+
+    private async Task LoggedAsync<T>(string operation, Func<Task<T>> run)
+    {
+        LogSettings();
+        T result = await run().ConfigureAwait(true);
+        DebugLog.Write("Find&Replace", $"{operation} → {DebugLog.Describe(result)}");
+    }
+
+    private void LogSettings()
+    {
         if (DebugLog.IsEnabled)
         {
             string settings = string.Join(
@@ -421,9 +436,6 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
                 DebugLog.Write("Find&Replace", "settings: " + settings);
             }
         }
-
-        T result = run();
-        DebugLog.Write("Find&Replace", $"{operation} → {DebugLog.Describe(result)}");
     }
 
     /// <summary>
@@ -497,7 +509,7 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
     public IRelayCommand ReplaceFindCommand { get; }
 
     /// <summary>Replace All.</summary>
-    public IRelayCommand ReplaceAllCommand { get; }
+    public IAsyncRelayCommand ReplaceAllCommand { get; }
 
     /// <summary>Count All.</summary>
     public IRelayCommand CountCommand { get; }
@@ -656,7 +668,7 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
     /// Before replacing, a "Before: Replace All" checkpoint is created (except in
     /// selected-text mode), rolled back when nothing was replaced.
     /// </remarks>
-    public int ReplaceAll() => WithReplaceAllCheckpoint(ReplaceAllCore);
+    public Task<int> ReplaceAllAsync() => WithReplaceAllCheckpointAsync(ReplaceAllCore);
 
     private int ReplaceAllCore()
     {
@@ -893,10 +905,10 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
     }
 
     /// <summary>Runs Replace All for all entries in turn, summing the replacements.</summary>
-    public int RunSavedReplaceAll(IReadOnlyList<SearchEntry> entries)
+    public async Task<int> RunSavedReplaceAllAsync(IReadOnlyList<SearchEntry> entries)
     {
         ArgumentNullException.ThrowIfNull(entries);
-        int total = WithReplaceAllCheckpoint(() =>
+        int total = await WithReplaceAllCheckpointAsync(() =>
         {
             int sum = 0;
             foreach (SearchEntry entry in Leaves(entries))
@@ -906,7 +918,7 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
             }
 
             return sum;
-        });
+        }).ConfigureAwait(true);
 
         SetMessage(total == 0
             ? Strings.Get("FindReplace_NoReplacements")
@@ -939,13 +951,23 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
         return CountCore(showUsages: false);
     }
 
-    // Checkpoint before Replace All — skipped when replacing in selected text;
-    // rolled back when nothing was replaced.
-    private int WithReplaceAllCheckpoint(Func<int> replaceAll)
+    // Checkpoint before Replace All — skipped when replacing in selected text; rolled back when nothing was replaced. The checkpoint (a copy
+    // of the book) is taken off the UI thread under a progress window; when the user cancels it nothing is replaced. The replacing itself
+    // runs on the UI thread, because the open tabs it changes belong to it.
+    private async Task<int> WithReplaceAllCheckpointAsync(Func<int> replaceAll)
     {
-        bool checkpoint = !(_activeCodeTab()?.Search.Marked.IsMarked ?? false)
-            && _host.HasBook
-            && _host.CheckpointBefore(Strings.Get("CheckpointOp_ReplaceAll"));
+        bool checkpoint = false;
+        if (!(_activeCodeTab()?.Search.Marked.IsMarked ?? false) && _host.HasBook)
+        {
+            bool? taken = await _host.CheckpointBeforeAsync(Strings.Get("CheckpointOp_ReplaceAll")).ConfigureAwait(true);
+            if (taken is null)
+            {
+                return 0;
+            }
+
+            checkpoint = taken.Value;
+        }
+
         int count = replaceAll();
         if (checkpoint && count == 0)
         {
@@ -1128,6 +1150,21 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
         try
         {
             return operation(this);
+        }
+        finally
+        {
+            _forceCurrentFile = false;
+        }
+    }
+
+    /// <summary>Like <see cref="InCurrentFile{T}"/>, for an asynchronous operation.</summary>
+    public async Task<T> InCurrentFileAsync<T>(Func<FindReplaceViewModel, Task<T>> operation)
+    {
+        ArgumentNullException.ThrowIfNull(operation);
+        _forceCurrentFile = true;
+        try
+        {
+            return await operation(this).ConfigureAwait(true);
         }
         finally
         {

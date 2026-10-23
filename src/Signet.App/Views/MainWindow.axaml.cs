@@ -576,7 +576,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             this, Strings.Get("Checkpoint_CreateTitle"), Strings.Get("Checkpoint_CreatePrompt"), string.Empty);
         if (name is not null)
         {
-            vm.CreateCheckpoint(name);
+            await vm.CreateCheckpointAsync(name);
         }
     }
 
@@ -670,7 +670,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             }
         }
 
-        vm.ApplyAddCover(image);
+        await vm.ApplyAddCoverAsync(image);
     }
 
     // ------------------------------------------------- "Insert" menu --- //
@@ -1065,7 +1065,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             return;
         }
 
-        HeadingSelectorViewModel? selector = vm.CreateHeadingSelectorViewModel();
+        HeadingSelectorViewModel? selector = await vm.CreateHeadingSelectorViewModelAsync();
         if (selector is null)
         {
             return;
@@ -1074,7 +1074,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         bool accepted = await HeadingSelectorWindow.RunAsync(this, selector);
         if (accepted)
         {
-            vm.CompleteGenerateToc(selector.BookChanged);
+            await vm.CompleteGenerateTocAsync(selector.BookChanged);
         }
         else
         {
@@ -1090,7 +1090,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             return;
         }
 
-        EditTocViewModel? editor = vm.CreateEditTocViewModel();
+        EditTocViewModel? editor = await vm.CreateEditTocViewModelAsync();
         if (editor is null)
         {
             return;
@@ -1484,10 +1484,31 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             return;
         }
 
-        StandardizationViewModel? standardization = await vm.PrepareStandardizationAsync();
+        // "Apply" shows how far it is over the dialog.
+        StandardizationWindow? dialog = null;
+        StandardizationViewModel? standardization = await vm.PrepareStandardizationAsync(
+            (title, work, cancellable) => ProgressWindow.RunWithProgressAsync(
+                dialog ?? (Window)this, title, Strings.Get("Progress_Starting"), work, cancellable));
         if (standardization is not null)
         {
-            await StandardizationWindow.ShowAsync(this, standardization);
+            // "Apply" is off while a book operation runs (this dialog's own included).
+            standardization.IsBookOperationBusy = vm.IsBookOperationBusy;
+            PropertyChangedEventHandler busyChanged = (_, args) =>
+            {
+                if (args.PropertyName == nameof(MainWindowViewModel.IsBookOperationBusy))
+                {
+                    standardization.IsBookOperationBusy = vm.IsBookOperationBusy;
+                }
+            };
+            vm.PropertyChanged += busyChanged;
+            try
+            {
+                await StandardizationWindow.ShowAsync(this, standardization, window => dialog = window);
+            }
+            finally
+            {
+                vm.PropertyChanged -= busyChanged;
+            }
         }
     }
 

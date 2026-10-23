@@ -45,7 +45,7 @@ public static class FontDialogs
             return false;
         }
 
-        IReadOnlyList<Resource> added = host.AddFiles(paths);
+        IReadOnlyList<Resource> added = await host.AddFilesAsync(paths);
         await OfferFontFacesAsync(owner, host, added.OfType<FontResource>().ToList());
         return added.Count > 0;
     }
@@ -65,7 +65,7 @@ public static class FontDialogs
         }
 
         FontFaceDialogResult? result = await FontFaceWindow.ShowAsync(owner, dialog);
-        if (result is null || host.ApplyFontFaces(result) is not { } stylesheet)
+        if (result is null || await host.ApplyFontFacesAsync(result) is not { } stylesheet)
         {
             return false;
         }
@@ -95,7 +95,7 @@ public static class FontDialogs
                 return false;
             }
 
-            host.DeleteResources(resources, removal.Plan, removal.ExcludedKeys());
+            await host.DeleteResourcesAsync(resources, removal.Plan, removal.ExcludedKeys());
             return true;
         }
 
@@ -110,7 +110,7 @@ public static class FontDialogs
             return false;
         }
 
-        host.DeleteResources(resources);
+        await host.DeleteResourcesAsync(resources);
         return true;
     }
 }

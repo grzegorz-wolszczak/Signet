@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using System;
 using System.Collections.Generic;
 using Signet.App.ViewModels.Tabs;
@@ -47,9 +48,11 @@ public interface IMultiFileSearchHost
     void ShowTextUsages(Func<string> header, IReadOnlyList<ClassUsage> usages, Func<IReadOnlyList<ClassUsage>> rerun);
 
     /// <summary>
-    /// Creates an automatic "Before: <paramref name="operation"/>" checkpoint; returns whether one was created.
+    /// Creates an automatic "Before: <paramref name="operation"/>" checkpoint, off the UI thread under a progress window the user can
+    /// cancel. Returns whether one was created, or <c>null</c> when the user cancelled it (or another operation on the book is running):
+    /// the operation must not start then.
     /// </summary>
-    bool CheckpointBefore(string operation);
+    Task<bool?> CheckpointBeforeAsync(string operation);
 
     /// <summary>Rolls back the checkpoint when the operation changed nothing.</summary>
     void RewindCheckpoint();

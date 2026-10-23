@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
@@ -45,7 +46,7 @@ public sealed class SearchEditorViewModel : ViewModelBase
         FindCommand = new RelayCommand(() => RunBatch(_findReplace.RunSavedFind));
         ReplaceCurrentCommand = new RelayCommand(() => RunBatch(_findReplace.RunSavedReplaceCurrent));
         ReplaceCommand = new RelayCommand(() => RunBatch(_findReplace.RunSavedReplaceFind));
-        ReplaceAllCommand = new RelayCommand(() => RunBatchInt(_findReplace.RunSavedReplaceAll));
+        ReplaceAllCommand = new AsyncRelayCommand(() => RunBatchIntAsync(_findReplace.RunSavedReplaceAllAsync));
         CountAllCommand = new RelayCommand(() => RunBatchInt(_findReplace.RunSavedCountAll));
         CountsReportCommand = new RelayCommand(CountsReport);
         CloseReportCommand = new RelayCommand(CloseReport);
@@ -105,7 +106,7 @@ public sealed class SearchEditorViewModel : ViewModelBase
     public IRelayCommand ReplaceCommand { get; }
 
     /// <summary>Runs Replace All for the selected entries sequentially.</summary>
-    public IRelayCommand ReplaceAllCommand { get; }
+    public IAsyncRelayCommand ReplaceAllCommand { get; }
 
     /// <summary>Runs Count All for the selected entries sequentially.</summary>
     public IRelayCommand CountAllCommand { get; }
@@ -461,6 +462,19 @@ public sealed class SearchEditorViewModel : ViewModelBase
         }
 
         run(entries);
+        Message = _findReplace.Message;
+    }
+
+    private async Task RunBatchIntAsync(Func<IReadOnlyList<SearchEntry>, Task<int>> run)
+    {
+        IReadOnlyList<SearchEntry> entries = SelectedEntries();
+        if (entries.Count == 0)
+        {
+            Message = Strings.Get("SearchEditor_NothingSelected");
+            return;
+        }
+
+        await run(entries).ConfigureAwait(true);
         Message = _findReplace.Message;
     }
 

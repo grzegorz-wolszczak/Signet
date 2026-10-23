@@ -6646,4 +6646,19 @@ Close the tab</value>
   <data name="CheckpointOp_Cleanup" xml:space="preserve">
     <value>Cleanup</value>
   </data>
+  <data name="File_SavingTitle" xml:space="preserve">
+    <value>Saving the book</value>
+  </data>
+  <data name="BookSave_Phase_Preparing" xml:space="preserve">
+    <value>Preparing the files</value>
+  </data>
+  <data name="BookSave_Phase_Copying" xml:space="preserve">
+    <value>Copying the files</value>
+  </data>
+  <data name="BookSave_Phase_Archiving" xml:space="preserve">
+    <value>Writing the EPUB archive</value>
+  </data>
+  <data name="Checkpoint_CreatingTitle" xml:space="preserve">
+    <value>Creating a checkpoint</value>
+  </data>
 </root>

@@ -38,7 +38,8 @@ public sealed class SampleSearchHost : IMultiFileSearchHost
     }
 
     /// <inheritdoc />
-    public bool CheckpointBefore(string operation) => false;
+    public System.Threading.Tasks.Task<bool?> CheckpointBeforeAsync(string operation) =>
+        System.Threading.Tasks.Task.FromResult<bool?>(false);
 
     /// <inheritdoc />
     public void RewindCheckpoint()

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Signet.App.Resources;
@@ -18,8 +19,9 @@ namespace Signet.App.ViewModels;
 public sealed partial class StandardizationViewModel : ViewModelBase
 {
     private readonly Func<IReadOnlyList<StandardizationStep>, StandardizationPlan> _plan;
-    private readonly Action<IReadOnlyList<StandardizationStep>> _apply;
+    private readonly Func<IReadOnlyList<StandardizationStep>, Task> _apply;
     private bool _togglingSections;
+    private bool _isBookOperationBusy;
 
     [ObservableProperty]
     private bool _hasChanges;
@@ -27,11 +29,14 @@ public sealed partial class StandardizationViewModel : ViewModelBase
     /// <summary>Creates the view model and computes the first plan.</summary>
     /// <param name="enabledSteps">The steps checked when the dialog opens (the remembered choice).</param>
     /// <param name="plan">Plans the given steps on the book without changing it.</param>
-    /// <param name="apply">Runs the given steps on the book (and remembers them as the checked steps).</param>
+    /// <param name="apply">
+    /// Runs the given steps on the book (and remembers them as the checked steps); it runs under a progress window, so it is
+    /// asynchronous.
+    /// </param>
     public StandardizationViewModel(
         IEnumerable<StandardizationStep> enabledSteps,
         Func<IReadOnlyList<StandardizationStep>, StandardizationPlan> plan,
-        Action<IReadOnlyList<StandardizationStep>> apply)
+        Func<IReadOnlyList<StandardizationStep>, Task> apply)
     {
         ArgumentNullException.ThrowIfNull(enabledSteps);
         ArgumentNullException.ThrowIfNull(plan);
@@ -45,7 +50,7 @@ public sealed partial class StandardizationViewModel : ViewModelBase
             Sections.Add(new StandardizationSectionViewModel(this, step, enabled.Contains(step)));
         }
 
-        ApplyCommand = new RelayCommand(Apply, () => HasChanges);
+        ApplyCommand = new AsyncRelayCommand(ApplyAsync, () => HasChanges && !IsBookOperationBusy);
         SelectAllCommand = new RelayCommand(() => SetAllSections(true));
         SelectNoneCommand = new RelayCommand(() => SetAllSections(false));
         Replan();
@@ -62,7 +67,23 @@ public sealed partial class StandardizationViewModel : ViewModelBase
         Sections.Where(s => s.IsEnabled).Select(s => s.Step).ToList();
 
     /// <summary>Runs the checked steps on the book and closes the dialog.</summary>
-    public IRelayCommand ApplyCommand { get; }
+    public IAsyncRelayCommand ApplyCommand { get; }
+
+    /// <summary>
+    /// Whether a book operation is running (this dialog's own "Apply", or one of the main window): "Apply" is disabled until it is
+    /// done. Set by the view, which follows the main window's view model.
+    /// </summary>
+    public bool IsBookOperationBusy
+    {
+        get => _isBookOperationBusy;
+        set
+        {
+            if (SetProperty(ref _isBookOperationBusy, value))
+            {
+                ApplyCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
 
     /// <summary>Checks every step.</summary>
     public IRelayCommand SelectAllCommand { get; }
@@ -98,14 +119,14 @@ public sealed partial class StandardizationViewModel : ViewModelBase
         Replan();
     }
 
-    private void Apply()
+    private async Task ApplyAsync()
     {
-        if (!HasChanges)
+        if (!HasChanges || IsBookOperationBusy)
         {
             return;
         }
 
-        _apply(EnabledSteps);
+        await _apply(EnabledSteps).ConfigureAwait(true);
         CloseRequested?.Invoke(this, EventArgs.Empty);
     }
 

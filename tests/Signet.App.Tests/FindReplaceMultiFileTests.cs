@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -235,7 +236,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     }
 
     [Fact]
-    public void SavedCountAll_DoesNotOpenTheWindow()
+    public async Task SavedCountAll_DoesNotOpenTheWindow()
     {
         // Arrange
         HtmlResource a = Html("<p>cat</p>");
@@ -255,7 +256,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         host.ShownUsages.Should().BeEmpty();
     }
 
-    private FindReplaceViewModel PanelWithCountReport()  // a report as Replace All leaves it
+    private async Task<FindReplaceViewModel> PanelWithCountReport()  // a report as Replace All leaves it
     {
         HtmlResource a = Html("<p>cat cat</p>");
         HtmlResource b = Html("<p>cat</p>");
@@ -268,7 +269,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         panel.LookWhereIndex = (int)LookWhere.AllHtmlFiles;
         panel.FindText = "cat";
         panel.ReplaceText = "cat";
-        panel.ReplaceAll();
+        await panel.ReplaceAllAsync();
         panel.HasReport.Should().BeTrue();
         return panel;
     }
@@ -337,10 +338,10 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     }
 
     [Fact]
-    public void CloseReportCommand_ClearsTheReport()
+    public async Task CloseReportCommand_ClearsTheReport()
     {
         // Arrange
-        FindReplaceViewModel panel = PanelWithCountReport();
+        FindReplaceViewModel panel = await PanelWithCountReport();
 
         // Act
         panel.CloseReportCommand.Execute(null);
@@ -352,10 +353,10 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     }
 
     [Fact]
-    public void ChangingFindText_ClearsTheStaleReport()
+    public async Task ChangingFindText_ClearsTheStaleReport()
     {
         // Arrange
-        FindReplaceViewModel panel = PanelWithCountReport();
+        FindReplaceViewModel panel = await PanelWithCountReport();
 
         // Act
         panel.FindText = "dog";
@@ -366,10 +367,10 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     }
 
     [Fact]
-    public void ChangingLookWhere_ClearsTheStaleReport()
+    public async Task ChangingLookWhere_ClearsTheStaleReport()
     {
         // Arrange
-        FindReplaceViewModel panel = PanelWithCountReport();
+        FindReplaceViewModel panel = await PanelWithCountReport();
 
         // Act
         panel.LookWhereIndex = (int)LookWhere.TabbedHtmlFiles;
@@ -380,10 +381,10 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     }
 
     [Fact]
-    public void SettingTheSameFindText_KeepsTheReport()
+    public async Task SettingTheSameFindText_KeepsTheReport()
     {
         // Arrange
-        FindReplaceViewModel panel = PanelWithCountReport();
+        FindReplaceViewModel panel = await PanelWithCountReport();
 
         // Act
         panel.FindText = "cat";
@@ -393,7 +394,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     }
 
     [Fact]
-    public void ReplaceAll_ClosedFilesViaResource_OpenFilesViaDocument()
+    public async Task ReplaceAll_ClosedFilesViaResource_OpenFilesViaDocument()
     {
         // Arrange
         HtmlResource closed = Html("<p>needle needle</p>");
@@ -413,7 +414,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         panel.ReplaceText = "pin";
 
         // Act
-        panel.ReplaceAll().Should().Be(3);
+        (await panel.ReplaceAllAsync()).Should().Be(3);
 
         // Assert
         closed.GetText().Should().Be("<p>pin pin</p>");
@@ -423,7 +424,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     }
 
     [Fact]
-    public void ReplaceAll_SkipsFilesThatAreNotWellFormed()
+    public async Task ReplaceAll_SkipsFilesThatAreNotWellFormed()
     {
         // Arrange
         HtmlResource ok = Html("<p>term</p>");
@@ -440,7 +441,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         panel.ReplaceText = "word";
 
         // Act
-        panel.ReplaceAll().Should().Be(1);
+        (await panel.ReplaceAllAsync()).Should().Be(1);
 
         // Assert
         ok.GetText().Should().Contain("word");
@@ -531,7 +532,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     }
 
     [Fact]
-    public void MarkedText_ForcesCurrentFileEvenWhenScopeIsMultiFile()
+    public async Task MarkedText_ForcesCurrentFileEvenWhenScopeIsMultiFile()
     {
         // Arrange
         HtmlResource a = Html("<p>cat cat cat</p>");
@@ -552,7 +553,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
 
         // The "marked text" region takes precedence: replace only in the current file, within the region.
         // Act & Assert
-        panel.ReplaceAll().Should().Be(2);
+        (await panel.ReplaceAllAsync()).Should().Be(2);
 
         // Assert
         tab.Document.Text.Should().Be("<p>dog dog cat</p>");
@@ -577,7 +578,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     }
 
     [Fact]
-    public void ReplaceAll_creates_a_checkpoint_before_replacing()
+    public async Task ReplaceAll_creates_a_checkpoint_before_replacing()
     {
         // Arrange
         HtmlResource a = Html("<p>needle</p>");
@@ -588,7 +589,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         panel.ReplaceText = "pin";
 
         // Act & Assert
-        panel.ReplaceAll().Should().Be(1);
+        (await panel.ReplaceAllAsync()).Should().Be(1);
 
         // Assert
         host.Checkpoints.Should().Equal(Strings.Get("CheckpointOp_ReplaceAll"));
@@ -596,7 +597,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     }
 
     [Fact]
-    public void ReplaceAll_without_matches_rewinds_its_checkpoint()
+    public async Task ReplaceAll_without_matches_rewinds_its_checkpoint()
     {
         // Arrange
         HtmlResource a = Html("<p>hay</p>");
@@ -607,7 +608,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         panel.ReplaceText = "pin";
 
         // Act & Assert
-        panel.ReplaceAll().Should().Be(0);
+        (await panel.ReplaceAllAsync()).Should().Be(0);
 
         // Assert
         host.Checkpoints.Should().ContainSingle();
@@ -615,7 +616,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     }
 
     [Fact]
-    public void ReplaceAll_in_marked_text_does_not_create_a_checkpoint()
+    public async Task ReplaceAll_in_marked_text_does_not_create_a_checkpoint()
     {
         // Arrange
         HtmlResource a = Html("<p>cat cat cat</p>");
@@ -628,7 +629,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         panel.ReplaceText = "dog";
 
         // Act & Assert
-        panel.ReplaceAll().Should().Be(2);
+        (await panel.ReplaceAllAsync()).Should().Be(2);
 
         // Assert
         host.Checkpoints.Should().BeEmpty();

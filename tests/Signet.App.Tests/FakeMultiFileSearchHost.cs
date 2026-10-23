@@ -32,10 +32,13 @@ internal sealed class FakeMultiFileSearchHost : IMultiFileSearchHost
 
     public bool HasBook => BookLoaded;
 
-    public bool CheckpointBefore(string operation)
+    /// <summary>When set, the checkpoint is "cancelled by the user" (<c>null</c>).</summary>
+    public bool CancelCheckpoint { get; set; }
+
+    public System.Threading.Tasks.Task<bool?> CheckpointBeforeAsync(string operation)
     {
         Checkpoints.Add(operation);
-        return true;
+        return System.Threading.Tasks.Task.FromResult<bool?>(CancelCheckpoint ? null : true);
     }
 
     public void RewindCheckpoint() => Rewinds++;

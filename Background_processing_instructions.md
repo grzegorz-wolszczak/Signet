@@ -503,26 +503,48 @@ Legenda statusu: `[ ]` do zrobienia, `[x]` zrobione (z krótką notatką i commi
   ("Otwieranie pliku"), a nazwa pliku jest tylko w komunikacie początkowym (znika po pierwszym
   raporcie fazowym). Test szerokości sprawdza `MinWidth` (platforma headless nie zmienia rozmiaru
   okna), nie faktyczną szerokość — do obejrzenia ręcznie.
-- [ ] **F3. Luki synchroniczne (audyt, nie naprawione).** Operacje na wątku UI bez okna postępu i
-  bez stanu "zajęte" (przeczytane w kodzie, nie uruchamiane):
-  1. **Synchroniczny checkpoint (kopia całego folderu książki) przed:** Replace All
-     (`FindReplaceViewModel.WithReplaceAllCheckpoint`), Add Cover, Generate TOC, Edit TOC,
-     Standardize, Split Section, Split on SGF markers, Standardize EPUB (Restructure), Create HTML
-     TOC, Upgrade to EPUB 3 (wszystkie `CheckpointBeforeAction`/`AddCheckpointBefore`), oraz wszystkie
-     operacje Book Browsera: Rename, Delete files, Add files, Add font faces, Set semantics, Reorder,
-     Merge, Link stylesheets (`BookBrowserViewModel.Checkpoint`). To jest **jedna wspólna
-     przyczyna** — `AddCheckpointBefore` kopiuje książkę synchronicznie — i najtańsza do naprawy
-     hurtowo (async wariant `AddCheckpointBeforeAsync` już jest).
-  2. Ręczny checkpoint (`CreateCheckpoint`) i checkpoint "Start of editing session" przy otwieraniu
-     książki (`StartCheckpointHistory`, w fazie "Wyświetlanie książki").
-  3. **Zapis książki** (Save / Save As / Save a Copy): `ExportEpub.WriteBook` synchronicznie.
-  4. Same operacje po checkpoincie, wykonywane synchronicznie: Standardize (`EpubStandardization
-     .Apply`), Restructure (`RestructureToSignetNorm`), Upgrade to EPUB 3, Create HTML TOC, Split…,
-     Replace All.
-  5. Analiza na otwarciu dialogu Cleanup (`CleanupAnalysis.Prepare`) i dialogu Standardize.
-  6. `IBookWorkspace.ApplyBook` przy otwieraniu książki (opisane przy B5).
-  **Nie sprawdzone:** Metadata Editor, Manage Fonts poza dodawaniem fontów, Reports, Find in Files,
-  TOC/Landmarks edytory, Spellcheck (poza Change All), import innych formatów (HTML/TXT).
+- [x] **F3. Luki synchroniczne.** (2026-10-24) Audyt (opis niżej w "Co było") i naprawa. Wszystko idzie
+  wzorcem `await RunBookOperationAsync(...)` (stan "zajęte", checkpoint w tle z Cancel, praca w tle,
+  okno z nagłówkiem), bez żadnego obejścia na wątku UI. Nie użyłem pompowania wątku UI
+  (`PushFrame`) — rozważałem je dla Book Browsera i odrzuciłem (re-entrancja, drugi mechanizm obok
+  `async`).
+  - **Operacje konserwacyjne głównego okna:** Standardize (dialog: `Apply` jest `AsyncRelayCommand`
+    wyłączonym na czas operacji, okno nad dialogiem), Restructure, Use Standard File Extensions,
+    Rebase Manifest IDs, Upgrade to EPUB 3, Create HTML TOC, Split Section, Split at Markers, Add Cover
+    (wspólny helper `RunMaintenanceAsync`; wszystkie dopisane do `BookOperationActionIds`).
+  - **Dialogi TOC:** Generate TOC / Edit TOC — checkpoint i budowa view modelu w tle przed otwarciem
+    dialogu (`Create…ViewModelAsync`), `CompleteGenerateTocAsync` w tle.
+  - **Zapis książki** (Save / Save As / Save a Copy): `ExportEpub.WriteBook` w tle jako operacja na
+    książce przez nowe `IBookWorkspace.RunBookWorkAsync`; trzy fazy (przygotowanie, kopiowanie plików
+    x z y, tworzenie archiwum x z y) — `BookSaveStage`/`BookSaveProgress`; `FileWorkflow.SaveFile` jest
+    asynchroniczny.
+  - **Ręczny checkpoint** (`CreateCheckpointAsync`, z Cancel) i checkpoint przed Replace All
+    (`IMultiFileSearchHost.CheckpointBeforeAsync`; Cancel = nic nie jest zamieniane). Replace All:
+    `ReplaceAllAsync`, `RunSavedReplaceAllAsync`, `InCurrentFileAsync`.
+  - **Analiza przy otwarciu** dialogów Cleanup (`CleanupAnalysis.PrepareCancellable`, Cancel) i
+    Standardize (sprawdzenie dobrze-sformowania w tle, Cancel).
+  - **Book Browser — wszystkie 19 miejsc z synchronicznym checkpointem:** rename (w miejscu i lista),
+    delete (+ z fontami), add files, font faces, rename font family, move, semantics, add blank/copy,
+    reorder/sort text, merge, split, link stylesheets/javascripts, cover, mark as nav. Nowy
+    `IBookOperationHost` (implementuje `MainWindowViewModel`: `RunBookOperationAsync` z
+    `interruptible: false`, czyli Cancel tylko przy tworzeniu checkpointu — praca nie sprawdza
+    tokenu); metody Book Browsera i `IFontManagementHost` są `…Async`. Praca, która może zawieść,
+    łapie własne wyjątki i zwraca je w wyniku, żeby wołający cofnął checkpoint.
+  - Usunięte synchroniczne `AddCheckpointBefore`/`CheckpointBeforeAction`/`AddCheckpoint` (nikt ich już
+    nie woła); `BookOperationOutcome<T>` jest publicznym typem w `IBookOperationHost.cs`.
+  - **Zostaje (celowo, do decyzji):**
+    1. **Sama zamiana w Replace All** idzie na wątku UI — dotyka dokumentów otwartych kart
+       (AvaloniaEdit, tylko wątek UI). Checkpoint (kopia książki) jest w tle; dalej synchroniczne
+       jest przejście regexu po plikach.
+    2. **Checkpoint "Start of editing session"** przy otwieraniu książki (`StartCheckpointHistory`,
+       w `ApplyBook`) — w fazie "Wyświetlanie książki", synchronicznie.
+    3. `IBookWorkspace.ApplyBook` (podmiana książki w widokach) — wątek UI.
+    4. **Nie sprawdzone przy audycie:** Metadata Editor, Reports, Find in Files, edytory
+       TOC/Landmarks (poza checkpointem), Spellcheck (poza Change All), import HTML/TXT, Rename
+       Class/Id dialogi (są asynchroniczne od A3).
+    5. Okna operacji Book Browsera z dialogów (Manage Fonts, usuwanie fontów) otwierają się nad
+       **głównym oknem**, nie nad dialogiem — mogą wyskoczyć pod modalnym dialogiem; do sprawdzenia
+       ręcznie.
 
 ### Część E — dokumentacja
 

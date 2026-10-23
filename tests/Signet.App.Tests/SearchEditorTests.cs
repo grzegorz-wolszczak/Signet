@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using System;
 using System.IO;
 using System.Linq;
@@ -97,7 +98,7 @@ public sealed class SearchEditorTests : IDisposable
     }
 
     [Fact]
-    public void ReplaceAll_FromListOfThreeSearches_RunsThemSequentially()
+    public async Task ReplaceAll_FromListOfThreeSearches_RunsThemSequentially()
     {
         // Arrange
         HtmlResource a = Html("<p>alpha beta gamma</p>");
@@ -120,7 +121,7 @@ public sealed class SearchEditorTests : IDisposable
         panel.SetSelectedNodes(new[] { panel.Nodes.Single() }); // group "seq" → all 3 entries
 
         // Act
-        panel.ReplaceAllCommand.Execute(null);
+        await panel.ReplaceAllCommand.ExecuteAsync(null);
 
         // Assert
         a.GetText().Should().Be("<p>ALPHA BETA GAMMA</p>");

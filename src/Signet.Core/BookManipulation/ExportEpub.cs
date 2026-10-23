@@ -4,6 +4,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using Signet.Core.Importers;
 using Signet.Core.Misc;
 using Signet.Core.Resources;
 using Signet.Core.Localization;
@@ -53,10 +54,12 @@ public sealed class ExportEpub
     /// modification date are added to the OPF. Round-trip tests can disable
     /// stamping to make the comparison fully deterministic.
     /// </param>
+    /// <param name="progress">Told how far the save is: the files copied, then the entries written (the work can be on any thread).</param>
     /// <exception cref="EpubExportException">The output file could not be created or written.</exception>
-    public void WriteBook(string epubPath, bool stampMetadata = true)
+    public void WriteBook(string epubPath, bool stampMetadata = true, IProgress<BookSaveProgress>? progress = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(epubPath);
+        progress?.Report(new BookSaveProgress(BookSaveStage.Preparing, 0, 0));
 
         OpfResource opf = _book.GetOpf();
         bool hasObfuscatedFonts = _book.HasObfuscatedFonts();
@@ -78,7 +81,7 @@ public sealed class ExportEpub
         using TempFolder staging = new();
         string stageRoot = staging.Path;
 
-        CopyWorkingFolder(_book.GetFolderKeeper().MainFolderPath, stageRoot);
+        CopyWorkingFolder(_book.GetFolderKeeper().MainFolderPath, stageRoot, progress);
 
         // A fresh mimetype — OCF requires the exact content (without a trailing newline).
         File.WriteAllText(SysPath.Combine(stageRoot, MimetypeEntry), OcfReader.OcfMimetype, Utf8NoBom);
@@ -89,17 +92,20 @@ public sealed class ExportEpub
             ObfuscateFonts(stageRoot, opf);
         }
 
-        WriteEpubArchive(stageRoot, epubPath);
+        WriteEpubArchive(stageRoot, epubPath, progress);
     }
 
     // -----------------------------------------------------------------
     //  Stages
     // -----------------------------------------------------------------
 
-    private static void CopyWorkingFolder(string sourceRoot, string destinationRoot)
+    private static void CopyWorkingFolder(string sourceRoot, string destinationRoot, IProgress<BookSaveProgress>? progress)
     {
-        foreach (string sourceFile in Directory.EnumerateFiles(sourceRoot, "*", SearchOption.AllDirectories))
+        List<string> files = Directory.EnumerateFiles(sourceRoot, "*", SearchOption.AllDirectories).ToList();
+        for (int i = 0; i < files.Count; i++)
         {
+            progress?.Report(new BookSaveProgress(BookSaveStage.Copying, i, files.Count));
+            string sourceFile = files[i];
             string relative = SysPath.GetRelativePath(sourceRoot, sourceFile);
             string firstSegment = relative.Split(SysPath.DirectorySeparatorChar, SysPath.AltDirectorySeparatorChar)[0];
 
@@ -148,7 +154,7 @@ public sealed class ExportEpub
         }
     }
 
-    private static void WriteEpubArchive(string stageRoot, string epubPath)
+    private static void WriteEpubArchive(string stageRoot, string epubPath, IProgress<BookSaveProgress>? progress)
     {
         string? outDir = SysPath.GetDirectoryName(SysPath.GetFullPath(epubPath));
         if (!string.IsNullOrEmpty(outDir))
@@ -163,8 +169,11 @@ public sealed class ExportEpub
             using (FileStream fs = File.Create(tempFile))
             using (ZipArchive zip = new(fs, ZipArchiveMode.Create))
             {
-                foreach ((string entryName, string absolutePath) in EnumerateOrdered(stageRoot))
+                List<(string EntryName, string AbsolutePath)> entries = EnumerateOrdered(stageRoot);
+                int done = 0;
+                foreach ((string entryName, string absolutePath) in entries)
                 {
+                    progress?.Report(new BookSaveProgress(BookSaveStage.Archiving, done++, entries.Count));
                     CompressionLevel level = entryName == MimetypeEntry
                         ? CompressionLevel.NoCompression
                         : CompressionLevel.Optimal;

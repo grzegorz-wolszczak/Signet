@@ -514,26 +514,29 @@ public sealed class MainWindowViewModelTests : IDisposable
     }
 
     [Fact]
-    public void ApplyAddCover_MarksImageAsCoverAndOpensTheCoverPage()
+    public async Task ApplyAddCover_MarksImageAsCoverAndOpensTheCoverPage()
     {
-        // Arrange
-        TempDir temp = _disposables.Add(new TempDir());
-        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
-        MainWindowViewModel sut = New();
-        sut.LoadBook(_disposables.Add(new ImportEpub(epub).GetBook()), epub);
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            TempDir temp = _disposables.Add(new TempDir());
+            string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
+            MainWindowViewModel sut = New();
+            sut.LoadBook(_disposables.Add(new ImportEpub(epub).GetBook()), epub);
 
-        // Act
-        ImageResource figure = (ImageResource)sut.GetCoverCandidateImages().Single(i => i.Filename == "figure.png");
+            // Act
+            ImageResource figure = (ImageResource)sut.GetCoverCandidateImages().Single(i => i.Filename == "figure.png");
 
-        // Assert
-        sut.FindExistingCoverHtml().Should().BeNull();
+            // Assert
+            sut.FindExistingCoverHtml().Should().BeNull();
 
-        // Act
-        sut.ApplyAddCover(figure);
+            // Act
+            await sut.ApplyAddCoverAsync(figure);
 
-        // Assert
-        sut.Tabs.ActiveTab!.Resource.Filename.Should().Be("cover.xhtml");
-        sut.FindExistingCoverHtml().Should().NotBeNull();
+            // Assert
+            sut.Tabs.ActiveTab!.Resource.Filename.Should().Be("cover.xhtml");
+            sut.FindExistingCoverHtml().Should().NotBeNull();
+        });
     }
 
     [Fact]
@@ -1089,76 +1092,92 @@ public sealed class MainWindowViewModelTests : IDisposable
     }
 
     [Fact]
-    public void SplitSection_splits_the_file_at_the_caret_and_opens_the_new_file_at_its_content()
+    public async Task SplitSection_splits_the_file_at_the_caret_and_opens_the_new_file_at_its_content()
     {
-        // Arrange
-        using UiCultureScope culture = new("en");
-        TempDir temp = _disposables.Add(new TempDir());
-        (MainWindowViewModel sut, Book book, HtmlResource chapter) = OpenMinimalChapter(temp);
-        SetCaret(sut, sut.ActiveCodeTab!.DocumentText.IndexOf("<p>Hello", StringComparison.Ordinal));
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel sut, Book book, HtmlResource chapter) = OpenMinimalChapter(temp);
+            SetCaret(sut, sut.ActiveCodeTab!.DocumentText.IndexOf("<p>Hello", StringComparison.Ordinal));
 
-        // Act
-        sut.Actions.Require(AppActionIds.SplitSection).Execute(null);
+            // Act
+            sut.Actions.Require(AppActionIds.SplitSection).Execute(null);
+        await sut.WhenIdleAsync();
 
-        HtmlResource created = book.GetHtmlResources().Single(h => h.Filename == "chapter1_0001.xhtml");
+            HtmlResource created = book.GetHtmlResources().Single(h => h.Filename == "chapter1_0001.xhtml");
 
-        // Assert
-        chapter.GetText().Should().Contain("Chapter 1</h1>").And.NotContain("Hello, world.");
-        created.GetText().Should().Contain("<p>Hello, world.</p>").And.NotContain("<h1");
-        sut.ActiveCodeTab!.Resource.Should().BeSameAs(created);
-        sut.StatusMessage.Should().Be(Strings.Format("Status_FileSplit", "chapter1_0001.xhtml"));
+            // Assert
+            chapter.GetText().Should().Contain("Chapter 1</h1>").And.NotContain("Hello, world.");
+            created.GetText().Should().Contain("<p>Hello, world.</p>").And.NotContain("<h1");
+            sut.ActiveCodeTab!.Resource.Should().BeSameAs(created);
+            sut.StatusMessage.Should().Be(Strings.Format("Status_FileSplit", "chapter1_0001.xhtml"));
+        });
     }
 
     [Fact]
-    public void SplitSection_inside_a_tag_changes_nothing_and_reports_it()
+    public async Task SplitSection_inside_a_tag_changes_nothing_and_reports_it()
     {
-        // Arrange
-        using UiCultureScope culture = new("en");
-        TempDir temp = _disposables.Add(new TempDir());
-        (MainWindowViewModel sut, Book book, HtmlResource _) = OpenMinimalChapter(temp);
-        SetCaret(sut, sut.ActiveCodeTab!.DocumentText.IndexOf("<p>Hello", StringComparison.Ordinal) + 1);
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel sut, Book book, HtmlResource _) = OpenMinimalChapter(temp);
+            SetCaret(sut, sut.ActiveCodeTab!.DocumentText.IndexOf("<p>Hello", StringComparison.Ordinal) + 1);
 
-        // Act
-        sut.Actions.Require(AppActionIds.SplitSection).Execute(null);
+            // Act
+            sut.Actions.Require(AppActionIds.SplitSection).Execute(null);
+        await sut.WhenIdleAsync();
 
-        // Assert
-        book.GetHtmlResources().Should().NotContain(h => h.Filename.StartsWith("chapter1_", StringComparison.Ordinal));
-        sut.StatusMessage.Should().Be(Strings.Get("Status_CannotSplitFileHere"));
+            // Assert
+            book.GetHtmlResources().Should().NotContain(h => h.Filename.StartsWith("chapter1_", StringComparison.Ordinal));
+            sut.StatusMessage.Should().Be(Strings.Get("Status_CannotSplitFileHere"));
+        });
     }
 
     [Fact]
-    public void SplitOnSgfSectionMarkers_splits_the_current_file_at_its_markers()
+    public async Task SplitOnSgfSectionMarkers_splits_the_current_file_at_its_markers()
     {
-        // Arrange
-        using UiCultureScope culture = new("en");
-        TempDir temp = _disposables.Add(new TempDir());
-        (MainWindowViewModel sut, Book book, HtmlResource chapter) = OpenMinimalChapter(temp);
-        sut.ActiveCodeTab!.InsertSectionMarker(sut.ActiveCodeTab.DocumentText.IndexOf("<p>Hello", StringComparison.Ordinal));
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel sut, Book book, HtmlResource chapter) = OpenMinimalChapter(temp);
+            sut.ActiveCodeTab!.InsertSectionMarker(sut.ActiveCodeTab.DocumentText.IndexOf("<p>Hello", StringComparison.Ordinal));
 
-        // Act
-        sut.Actions.Require(AppActionIds.SplitOnSgfSectionMarkers).Execute(null);
+            // Act
+            sut.Actions.Require(AppActionIds.SplitOnSgfSectionMarkers).Execute(null);
+        await sut.WhenIdleAsync();
 
-        // Assert
-        book.GetHtmlResources().Should().Contain(h => h.Filename == "chapter1_0001.xhtml");
-        chapter.GetText().Should().NotContain("Hello, world.").And.NotContain("signet_split_marker");
-        sut.StatusMessage.Should().Be(Strings.Format("Status_FileSplitAtMarkers", 1));
+            // Assert
+            book.GetHtmlResources().Should().Contain(h => h.Filename == "chapter1_0001.xhtml");
+            chapter.GetText().Should().NotContain("Hello, world.").And.NotContain("signet_split_marker");
+            sut.StatusMessage.Should().Be(Strings.Format("Status_FileSplitAtMarkers", 1));
+        });
     }
 
     [Fact]
-    public void SplitOnSgfSectionMarkers_without_markers_reports_it()
+    public async Task SplitOnSgfSectionMarkers_without_markers_reports_it()
     {
-        // Arrange
-        using UiCultureScope culture = new("en");
-        TempDir temp = _disposables.Add(new TempDir());
-        (MainWindowViewModel sut, Book book, HtmlResource _) = OpenMinimalChapter(temp);
-        int before = book.GetHtmlResources().Count;
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel sut, Book book, HtmlResource _) = OpenMinimalChapter(temp);
+            int before = book.GetHtmlResources().Count;
 
-        // Act
-        sut.Actions.Require(AppActionIds.SplitOnSgfSectionMarkers).Execute(null);
+            // Act
+            sut.Actions.Require(AppActionIds.SplitOnSgfSectionMarkers).Execute(null);
+        await sut.WhenIdleAsync();
 
-        // Assert
-        book.GetHtmlResources().Should().HaveCount(before);
-        sut.StatusMessage.Should().Be(Strings.Get("Status_NoSplitMarkersInFile"));
+            // Assert
+            book.GetHtmlResources().Should().HaveCount(before);
+            sut.StatusMessage.Should().Be(Strings.Get("Status_NoSplitMarkersInFile"));
+        });
     }
 
     [Fact]
@@ -1511,32 +1530,35 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public async Task Applying_the_Standardize_dialog_standardizes_the_book_and_remembers_the_checked_steps()
     {
-        // Arrange
-        using UiCultureScope culture = new("en");
-        TempDir temp = _disposables.Add(new TempDir());
-        string epub = EpubBuilder.BuildInto(CorpusPaths.EdgeDeepFolders, temp);
-        MainWindowViewModel sut = New();
-        Book book = _disposables.Add(new ImportEpub(epub).GetBook());
-        sut.LoadBook(book, epub);
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            string epub = EpubBuilder.BuildInto(CorpusPaths.EdgeDeepFolders, temp);
+            MainWindowViewModel sut = New();
+            Book book = _disposables.Add(new ImportEpub(epub).GetBook());
+            sut.LoadBook(book, epub);
 
-        // Act
-        StandardizationViewModel? standardization = await sut.PrepareStandardizationAsync();
+            // Act
+            StandardizationViewModel? standardization = await sut.PrepareStandardizationAsync();
 
-        // Assert
-        standardization.Should().NotBeNull();
-        standardization!.EnabledSteps.Should().Equal(EpubStandardization.AllSteps, "every step is checked the first time");
-        standardization.Sections.Single(s => s.Step == StandardizationStep.RebaseManifestIds).IsEnabled = false;
+            // Assert
+            standardization.Should().NotBeNull();
+            standardization!.EnabledSteps.Should().Equal(EpubStandardization.AllSteps, "every step is checked the first time");
+            standardization.Sections.Single(s => s.Step == StandardizationStep.RebaseManifestIds).IsEnabled = false;
 
-        // Act
-        standardization.ApplyCommand.Execute(null);
+            // Act
+            await standardization.ApplyCommand.ExecuteAsync(null);
 
-        // Assert
-        book.GetOpf().BookPath.Should().Be("OEBPS/content.opf");
-        book.GetAllResources().OfType<HtmlResource>().Should().OnlyContain(r => r.BookPath.StartsWith("OEBPS/Text/", StringComparison.Ordinal));
-        book.Modified.Should().BeTrue();
-        sut.StatusMessage.Should().Be(Strings.Get("Status_StandardizeDone"));
-        (await sut.PrepareStandardizationAsync())!.EnabledSteps.Should().Equal(
-            StandardizationStep.StandardFolders, StandardizationStep.StandardFileExtensions, StandardizationStep.ManifestMediaTypes);
+            // Assert
+            book.GetOpf().BookPath.Should().Be("OEBPS/content.opf");
+            book.GetAllResources().OfType<HtmlResource>().Should().OnlyContain(r => r.BookPath.StartsWith("OEBPS/Text/", StringComparison.Ordinal));
+            book.Modified.Should().BeTrue();
+            sut.StatusMessage.Should().Be(Strings.Get("Status_StandardizeDone"));
+            (await sut.PrepareStandardizationAsync())!.EnabledSteps.Should().Equal(
+                StandardizationStep.StandardFolders, StandardizationStep.StandardFileExtensions, StandardizationStep.ManifestMediaTypes);
+        });
     }
 
     [Fact]
@@ -1557,69 +1579,80 @@ public sealed class MainWindowViewModelTests : IDisposable
     [Fact]
     public async Task ApplyStandardizeEpub_moves_every_resource_to_its_standard_folder()
     {
-        // Arrange
-        using UiCultureScope culture = new("en");
-        TempDir temp = _disposables.Add(new TempDir());
-        string epub = EpubBuilder.BuildInto(CorpusPaths.EdgeDeepFolders, temp);
-        MainWindowViewModel sut = New();
-        Book book = _disposables.Add(new ImportEpub(epub).GetBook());
-        sut.LoadBook(book, epub);
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            string epub = EpubBuilder.BuildInto(CorpusPaths.EdgeDeepFolders, temp);
+            MainWindowViewModel sut = New();
+            Book book = _disposables.Add(new ImportEpub(epub).GetBook());
+            sut.LoadBook(book, epub);
 
-        // Act
-        await sut.ApplyStandardizeEpubAsync();
+            // Act
+            await sut.ApplyStandardizeEpubAsync();
 
-        // Assert
-        book.GetOpf().BookPath.Should().Be("OEBPS/content.opf");
-        book.GetAllResources().OfType<HtmlResource>().Should().OnlyContain(r => r.BookPath.StartsWith("OEBPS/Text/", System.StringComparison.Ordinal));
-        sut.StatusMessage.Should().Contain("Restructuring");
+            // Assert
+            book.GetOpf().BookPath.Should().Be("OEBPS/content.opf");
+            book.GetAllResources().OfType<HtmlResource>().Should().OnlyContain(r => r.BookPath.StartsWith("OEBPS/Text/", System.StringComparison.Ordinal));
+            sut.StatusMessage.Should().Contain("Restructuring");
+        });
     }
 
     [Fact]
-    public void UseStandardFileExtensions_action_renames_mismatched_extension_and_reports_on_status_bar()
+    public async Task UseStandardFileExtensions_action_renames_mismatched_extension_and_reports_on_status_bar()
     {
-        // Arrange
-        using UiCultureScope culture = new("en");
-        TempDir temp = _disposables.Add(new TempDir());
-        string tree = temp.Combine("tree");
-        TestFs.CopyDirectory(CorpusPaths.EdgeDeepFolders, tree);
-        string oldCssPath = Path.Combine(tree, "content", "resources", "styles", "main.css");
-        string newCssPath = Path.Combine(tree, "content", "resources", "styles", "main.txt");
-        File.Move(oldCssPath, newCssPath);
-        string opfPath = Path.Combine(tree, "content", "book.opf");
-        File.WriteAllText(
-            opfPath,
-            File.ReadAllText(opfPath).Replace("resources/styles/main.css", "resources/styles/main.txt"));
-        string epub = EpubBuilder.BuildInto(tree, temp, "book.epub");
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            string tree = temp.Combine("tree");
+            TestFs.CopyDirectory(CorpusPaths.EdgeDeepFolders, tree);
+            string oldCssPath = Path.Combine(tree, "content", "resources", "styles", "main.css");
+            string newCssPath = Path.Combine(tree, "content", "resources", "styles", "main.txt");
+            File.Move(oldCssPath, newCssPath);
+            string opfPath = Path.Combine(tree, "content", "book.opf");
+            File.WriteAllText(
+                opfPath,
+                File.ReadAllText(opfPath).Replace("resources/styles/main.css", "resources/styles/main.txt"));
+            string epub = EpubBuilder.BuildInto(tree, temp, "book.epub");
 
-        MainWindowViewModel sut = New();
-        Book book = _disposables.Add(new ImportEpub(epub).GetBook());
-        sut.LoadBook(book, epub);
+            MainWindowViewModel sut = New();
+            Book book = _disposables.Add(new ImportEpub(epub).GetBook());
+            sut.LoadBook(book, epub);
 
-        // Act
-        sut.Actions.Require(AppActionIds.UseStandardFileExtensions).Execute(null);
+            // Act
+            sut.Actions.Require(AppActionIds.UseStandardFileExtensions).Execute(null);
+        await sut.WhenIdleAsync();
 
-        // Assert
-        book.GetCssResources().Single().Filename.Should().Be("main.css");
-        sut.StatusMessage.Should().Contain("Bulk rename");
+            // Assert
+            book.GetCssResources().Single().Filename.Should().Be("main.css");
+            sut.StatusMessage.Should().Contain("Bulk rename");
+        });
     }
 
     [Fact]
-    public void RebaseManifestIds_action_renumbers_ids_and_reports_on_status_bar()
+    public async Task RebaseManifestIds_action_renumbers_ids_and_reports_on_status_bar()
     {
-        // Arrange
-        using UiCultureScope culture = new("en");
-        TempDir temp = _disposables.Add(new TempDir());
-        string epub = EpubBuilder.BuildInto(CorpusPaths.EdgeDeepFolders, temp);
-        MainWindowViewModel sut = New();
-        Book book = _disposables.Add(new ImportEpub(epub).GetBook());
-        sut.LoadBook(book, epub);
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            string epub = EpubBuilder.BuildInto(CorpusPaths.EdgeDeepFolders, temp);
+            MainWindowViewModel sut = New();
+            Book book = _disposables.Add(new ImportEpub(epub).GetBook());
+            sut.LoadBook(book, epub);
 
-        // Act
-        sut.Actions.Require(AppActionIds.RebaseManifestIds).Execute(null);
+            // Act
+            sut.Actions.Require(AppActionIds.RebaseManifestIds).Execute(null);
+        await sut.WhenIdleAsync();
 
-        // Assert
-        book.Modified.Should().BeTrue();
-        sut.StatusMessage.Should().Contain("rebased");
+            // Assert
+            book.Modified.Should().BeTrue();
+            sut.StatusMessage.Should().Contain("rebased");
+        });
     }
 
     // ---------------------------------------------------------- Spellcheck --- //

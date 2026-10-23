@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using System.IO;
 using System.Linq;
 using Avalonia.Controls;
@@ -25,14 +26,14 @@ public sealed class FindReplaceReportViewTests
     private const int FileCount = 30;
 
     [AvaloniaFact]
-    public void Long_report_list_is_scrollable_instead_of_being_clipped()
+    public async Task Long_report_list_is_scrollable_instead_of_being_clipped()
     {
         // Arrange
         using TempDir temp = new();
         using Book book = BookCreator.CreateNewBook("2.0");
 
         // Act
-        (Window window, FindReplaceView view, _) = ShowPanelWithCountReport(book, temp);
+        (Window window, FindReplaceView view, _) = await ShowPanelWithCountReport(book, temp);
 
         Expander expander = view.GetVisualDescendants().OfType<Expander>().Single(e => e.Name == "ReportExpander");
         expander.IsExpanded = true;
@@ -55,14 +56,14 @@ public sealed class FindReplaceReportViewTests
     }
 
     [AvaloniaFact]
-    public void Close_button_hides_the_report()
+    public async Task Close_button_hides_the_report()
     {
         // Arrange
         using TempDir temp = new();
         using Book book = BookCreator.CreateNewBook("2.0");
 
         // Act
-        (Window window, FindReplaceView view, FindReplaceViewModel vm) = ShowPanelWithCountReport(book, temp);
+        (Window window, FindReplaceView view, FindReplaceViewModel vm) = await ShowPanelWithCountReport(book, temp);
 
         Button close = view.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "CloseReportButton");
 
@@ -84,7 +85,7 @@ public sealed class FindReplaceReportViewTests
         window.Close();
     }
 
-    private static (Window Window, FindReplaceView View, FindReplaceViewModel Vm) ShowPanelWithCountReport(
+    private static async Task<(Window Window, FindReplaceView View, FindReplaceViewModel Vm)> ShowPanelWithCountReport(
         Book book, TempDir temp)
     {
         TextResource[] files = Enumerable.Range(0, FileCount)
@@ -98,6 +99,7 @@ public sealed class FindReplaceReportViewTests
 
         var host = new Mock<IMultiFileSearchHost>();
         host.SetupGet(h => h.HasBook).Returns(true);
+        host.Setup(h => h.CheckpointBeforeAsync(It.IsAny<string>())).ReturnsAsync(true);
         host.Setup(h => h.ResolveLookWhere(It.IsAny<LookWhere>())).Returns(files);
         FindReplaceViewModel vm = new(
             new SettingsStore(Path.Combine(temp.Path, "settings.xml")),
@@ -109,7 +111,7 @@ public sealed class FindReplaceReportViewTests
             FindText = "cat",
             ReplaceText = "cat",
         };
-        vm.ReplaceAll().Should().Be(2 * FileCount);
+        (await vm.ReplaceAllAsync()).Should().Be(2 * FileCount);
         vm.ReportRows.Should().HaveCount(FileCount);
 
         var view = new FindReplaceView { DataContext = vm };

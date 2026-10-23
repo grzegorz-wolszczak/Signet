@@ -105,6 +105,14 @@ public interface IBookWorkspace
     /// <summary>Hands a freshly built publication over to the views.</summary>
     void ApplyBook(Book book, string? sourcePath);
 
+    /// <summary>
+    /// Runs <paramref name="work"/>, which works on the current publication, off the UI thread as a book operation: under a progress
+    /// window headed <paramref name="title"/> and with every other operation on the book off meanwhile. The work tells how far it is
+    /// through the progress it is given. Returns <c>false</c> when it did not run (another operation is running). An exception of the
+    /// work is thrown here.
+    /// </summary>
+    Task<bool> RunBookWorkAsync(string title, Action<IProgress<WorkProgress>> work);
+
     /// <summary>Closes the current publication: the window is left without a book (the start screen).</summary>
     void CloseBook();
 
@@ -463,6 +471,21 @@ public sealed class FileWorkflow : IDisposable
         return (book, null);
     }
 
+    // What the export reports as what the progress window shows: the files copied and the entries written are counted in a phase each;
+    // the preparation before them has only a bar that works.
+    private sealed class BookSaveMap : IProgress<BookSaveProgress>
+    {
+        private readonly IProgress<WorkProgress> _target;
+
+        public BookSaveMap(IProgress<WorkProgress> target) => _target = target;
+
+        public void Report(BookSaveProgress value)
+        {
+            PhaseInfo phase = new((int)value.Stage + 1, Enum.GetValues<BookSaveStage>().Length, Strings.Get("BookSave_Phase_" + value.Stage));
+            _target.Report(WorkProgress.InPhase(phase, Strings.Format("Progress_Detail_File", value.Done, value.Total), value.Done, value.Total));
+        }
+    }
+
     // The phases of loading an EPUB: the stages of the importer and, after them, showing the book (swapping it into the workspace).
     private static int LoadPhaseCount => Enum.GetValues<BookLoadStage>().Length + 1;
 
@@ -499,7 +522,7 @@ public sealed class FileWorkflow : IDisposable
             return SaveAsAsync();
         }
 
-        return Task.FromResult(SaveFile(_currentFilePath, updateCurrentFilename: true));
+        return SaveFile(_currentFilePath, updateCurrentFilename: true);
     }
 
     /// <summary>File → Save As.</summary>
@@ -520,7 +543,7 @@ public sealed class FileWorkflow : IDisposable
 
         _settings.LastFolderOpen = Path.GetDirectoryName(Path.GetFullPath(filename)) ?? string.Empty;
 
-        bool ok = SaveFile(filename, updateCurrentFilename: true);
+        bool ok = await SaveFile(filename, updateCurrentFilename: true).ConfigureAwait(true);
         _settings.Save();
         return ok;
     }
@@ -547,7 +570,7 @@ public sealed class FileWorkflow : IDisposable
         }
 
         _saveACopyFilename = filename;
-        return SaveFile(filename, updateCurrentFilename: false);
+        return await SaveFile(filename, updateCurrentFilename: false).ConfigureAwait(true);
     }
 
     /// <summary>
@@ -605,17 +628,17 @@ public sealed class FileWorkflow : IDisposable
 
     // -------------------------------------------------------------- helpers --- //
 
-    private bool SaveFile(string fullFilePath, bool updateCurrentFilename)
+    private async Task<bool> SaveFile(string fullFilePath, bool updateCurrentFilename)
     {
         long start = System.Diagnostics.Stopwatch.GetTimestamp();
-        bool saved = SaveFileCore(fullFilePath, updateCurrentFilename);
+        bool saved = await SaveFileCore(fullFilePath, updateCurrentFilename).ConfigureAwait(true);
         DebugLog.Write(
             "File",
             $"{(updateCurrentFilename ? "save" : "save a copy")} {DebugLog.MaskPath(fullFilePath)} → {(saved ? "ok" : "failed")} ({DebugLog.Elapsed(start)})");
         return saved;
     }
 
-    private bool SaveFileCore(string fullFilePath, bool updateCurrentFilename)
+    private async Task<bool> SaveFileCore(string fullFilePath, bool updateCurrentFilename)
     {
         Book? book = _workspace.CurrentBook;
         if (book is null)
@@ -635,7 +658,15 @@ public sealed class FileWorkflow : IDisposable
         {
             _workspace.SaveOpenTabs();
             bool stamped = StampEditionPage(book);
-            new ExportEpub(book).WriteBook(fullFilePath);
+            // Writing the archive of a big book takes a while: off the UI thread, under a progress window.
+            if (!await _workspace.RunBookWorkAsync(
+                    Strings.Get("File_SavingTitle"),
+                    progress => new ExportEpub(book).WriteBook(fullFilePath, progress: new BookSaveMap(progress)))
+                    .ConfigureAwait(true))
+            {
+                return false;
+            }
+
             if (stamped)
             {
                 _workspace.RefreshAfterBookEdit();
