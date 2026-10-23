@@ -72,9 +72,31 @@ public sealed partial class CheckpointsViewModel : ViewModelBase, ILanguageAware
     /// <inheritdoc />
     public void OnLanguageChanged() => Rebuild();
 
+    private bool _isBookOperationBusy;
+
+    /// <summary>
+    /// Whether another operation on the book is running elsewhere (set once, for the lifetime of this persistent view
+    /// model, by <c>MainWindowViewModel</c> from its own <c>IsBookOperationBusy</c>) — disables <see cref="RevertCommand"/>
+    /// (which starts one, through <see cref="RevertRequested"/>) until it finishes. <see cref="CompareCommand"/> stays
+    /// enabled: it only reads the checkpoint, it does not move the book to it.
+    /// </summary>
+    public bool IsBookOperationBusy
+    {
+        get => _isBookOperationBusy;
+        set
+        {
+            if (SetProperty(ref _isBookOperationBusy, value))
+            {
+                RevertCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
     private bool CanActOnSelection() => SelectedItem is { IsCurrent: false };
 
-    [RelayCommand(CanExecute = nameof(CanActOnSelection))]
+    private bool CanRevert() => CanActOnSelection() && !IsBookOperationBusy;
+
+    [RelayCommand(CanExecute = nameof(CanRevert))]
     private void Revert()
     {
         if (SelectedItem is { IsCurrent: false } item)
