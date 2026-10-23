@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Net;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -2235,16 +2236,57 @@ public static partial class FootnoteEditor
 
     private static Element? FindElementById(TagLister tags, string text, string id)
     {
+        TagIndex index = GetTagIndex(tags, text);
+        return index.ById.TryGetValue(id, out int i) ? ToElement(tags, text, i) : null;
+    }
+
+    // FindElementById/FindAnchor are called once per footnote while moving/converting/renumbering, and a book can
+    // share one file (e.g. the global notes file) between thousands of them; scanning the whole tag list from the
+    // start on every call made that work quadratic in the file's tag count. The index below is built once per
+    // TagLister instance (TagLister.For already caches one per source string) and reused for the rest of the
+    // operation.
+    private static readonly ConditionalWeakTable<TagLister, TagIndex> s_tagIndexes = new();
+
+    private sealed class TagIndex
+    {
+        public required Dictionary<string, int> ById { get; init; }
+
+        public required Dictionary<string, List<int>> OpeningATagsByHref { get; init; }
+    }
+
+    private static TagIndex GetTagIndex(TagLister tags, string text) => s_tagIndexes.GetValue(tags, _ => BuildTagIndex(tags, text));
+
+    private static TagIndex BuildTagIndex(TagLister tags, string text)
+    {
+        Dictionary<string, int> byId = new(StringComparer.Ordinal);
+        Dictionary<string, List<int>> aTagsByHref = new(StringComparer.Ordinal);
         for (int i = 0; i < tags.Count; i++)
         {
             TagLister.TagInfo tag = tags.At(i);
-            if (IsOpening(tag) && AttributeValue(text, tag, "id") == id)
+            if (!IsOpening(tag))
             {
-                return ToElement(tags, text, i);
+                continue;
+            }
+
+            string id = AttributeValue(text, tag, "id");
+            if (id.Length > 0)
+            {
+                byId.TryAdd(id, i);
+            }
+
+            if (tag.Kind == TagKind.Begin && tag.TagName.Equals("a", StringComparison.OrdinalIgnoreCase))
+            {
+                string href = AttributeValue(text, tag, "href");
+                if (!aTagsByHref.TryGetValue(href, out List<int>? list))
+                {
+                    aTagsByHref[href] = list = new List<int>();
+                }
+
+                list.Add(i);
             }
         }
 
-        return null;
+        return new TagIndex { ById = byId, OpeningATagsByHref = aTagsByHref };
     }
 
     private static Element? FindContainer(TagLister tags, string text, string containerClass)
@@ -2264,40 +2306,35 @@ public static partial class FootnoteEditor
     // The k-th link of the file with the given href (decoded), with a <sup> that holds only it as its outer range.
     private static Anchor? FindAnchor(TagLister tags, string text, string href, int occurrence)
     {
-        int count = 0;
-        for (int i = 0; i < tags.Count; i++)
+        TagIndex index = GetTagIndex(tags, text);
+        if (!index.OpeningATagsByHref.TryGetValue(href, out List<int>? candidates) || occurrence < 0 || occurrence >= candidates.Count)
         {
-            TagLister.TagInfo tag = tags.At(i);
-            if (tag.Kind != TagKind.Begin || !tag.TagName.Equals("a", StringComparison.OrdinalIgnoreCase)
-                || AttributeValue(text, tag, "href") != href || count++ != occurrence)
-            {
-                continue;
-            }
-
-            int close = tags.FindCloseTagForOpen(i);
-            if (close < 0)
-            {
-                return null;
-            }
-
-            TagLister.TagInfo end = tags.At(close);
-            int outerStart = tag.Pos;
-            int outerEnd = end.Pos + end.Len;
-            if (i > 0 && close + 1 < tags.Count
-                && tags.At(i - 1) is { Kind: TagKind.Begin } sup && sup.TagName.Equals("sup", StringComparison.OrdinalIgnoreCase)
-                && tags.At(close + 1) is { Kind: TagKind.End } supEnd && supEnd.TagName.Equals("sup", StringComparison.OrdinalIgnoreCase)
-                && string.IsNullOrWhiteSpace(text[(sup.Pos + sup.Len)..tag.Pos])
-                && string.IsNullOrWhiteSpace(text[outerEnd..supEnd.Pos]))
-            {
-                outerStart = sup.Pos;
-                outerEnd = supEnd.Pos + supEnd.Len;
-            }
-
-            return new Anchor(tag.Pos, end.Pos + end.Len, tag.Pos + tag.Len, end.Pos, outerStart, outerEnd,
-                AttributeSpan(text, tag, "href"), AttributeSpan(text, tag, "id"));
+            return null;
         }
 
-        return null;
+        int i = candidates[occurrence];
+        TagLister.TagInfo tag = tags.At(i);
+        int close = tags.FindCloseTagForOpen(i);
+        if (close < 0)
+        {
+            return null;
+        }
+
+        TagLister.TagInfo end = tags.At(close);
+        int outerStart = tag.Pos;
+        int outerEnd = end.Pos + end.Len;
+        if (i > 0 && close + 1 < tags.Count
+            && tags.At(i - 1) is { Kind: TagKind.Begin } sup && sup.TagName.Equals("sup", StringComparison.OrdinalIgnoreCase)
+            && tags.At(close + 1) is { Kind: TagKind.End } supEnd && supEnd.TagName.Equals("sup", StringComparison.OrdinalIgnoreCase)
+            && string.IsNullOrWhiteSpace(text[(sup.Pos + sup.Len)..tag.Pos])
+            && string.IsNullOrWhiteSpace(text[outerEnd..supEnd.Pos]))
+        {
+            outerStart = sup.Pos;
+            outerEnd = supEnd.Pos + supEnd.Len;
+        }
+
+        return new Anchor(tag.Pos, end.Pos + end.Len, tag.Pos + tag.Len, end.Pos, outerStart, outerEnd,
+            AttributeSpan(text, tag, "href"), AttributeSpan(text, tag, "id"));
     }
 
     // The link inside the note that leads back to the reference with the given id.
