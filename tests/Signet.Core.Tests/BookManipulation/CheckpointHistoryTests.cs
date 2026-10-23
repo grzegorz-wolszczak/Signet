@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Threading;
 using AutoFixture.Xunit3;
 using AwesomeAssertions;
 using Signet.Core.BookManipulation;
@@ -75,6 +76,27 @@ public sealed class CheckpointHistoryTests
 
         string frozenChapter = Path.Combine(history.States[0].FolderPath, chapter.BookPath.Replace('/', Path.DirectorySeparatorChar));
         File.ReadAllText(frozenChapter).Should().Contain(edit, "the checkpoint includes editor changes that were not saved before");
+    }
+
+    [Theory]
+    [AutoData]
+    public void AddCheckpointCancellable_cancelled_leaves_nothing_behind(string message)
+    {
+        // Arrange
+        using TempDir temp = new();
+        using CheckpointHistory history = new();
+        using Book book = Load(temp, CorpusPaths.Epub3Minimal);
+        history.Open(book);
+        int statesBefore = history.States.Count;
+        int positionBefore = history.Position;
+        using CancellationTokenSource cancelled = new();
+        cancelled.Cancel();
+
+        // Act & Assert
+        history.Invoking(h => h.AddCheckpointCancellable(book, message, cancelled.Token)).Should().Throw<OperationCanceledException>();
+        history.States.Should().HaveCount(statesBefore, "the partial copy is thrown away, not kept as a checkpoint");
+        history.Position.Should().Be(positionBefore);
+        history.CanUndo.Should().BeFalse();
     }
 
     [Theory]

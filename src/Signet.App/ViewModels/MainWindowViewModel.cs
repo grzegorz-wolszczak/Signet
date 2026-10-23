@@ -1130,7 +1130,19 @@ public sealed partial class MainWindowViewModel
         {
             _tabManager.SaveAllTabs();
             string title = Strings.Get("CheckpointOp_RemoveEditionPage");
-            bool checkpoint = await AddCheckpointBeforeAsync(title).ConfigureAwait(true);
+            bool checkpoint;
+            try
+            {
+                checkpoint = await AddCheckpointBeforeAsync(title).ConfigureAwait(true);
+            }
+            catch (OperationCanceledException)
+            {
+                // Cancelled while taking the checkpoint itself: nothing was created and the book is untouched (see
+                // RunBookOperationAsync, which does the same for the operations that go through it).
+                _statusBar.ShowMessage(Strings.Format("Status_OperationCancelled", title), TimeSpan.FromSeconds(6));
+                return false;
+            }
+
             bool removed = await RunInBackgroundAsync(
                 title, DelayedProgressRunner, editsBook: true, cancellable: false, (_, _) => EditionPage.Remove(book)).ConfigureAwait(true);
             if (!removed)
@@ -1928,7 +1940,19 @@ public sealed partial class MainWindowViewModel
         {
             _tabManager.SaveAllTabs();
             string title = Strings.Get("CheckpointOp_SpellCheck");
-            bool checkpoint = await AddCheckpointBeforeAsync(title).ConfigureAwait(true);
+            bool checkpoint;
+            try
+            {
+                checkpoint = await AddCheckpointBeforeAsync(title).ConfigureAwait(true);
+            }
+            catch (OperationCanceledException)
+            {
+                // Cancelled while taking the checkpoint itself: nothing was created and the book is untouched (see
+                // RunBookOperationAsync, which does the same for the operations that go through it).
+                _statusBar.ShowMessage(Strings.Format("Status_OperationCancelled", title), TimeSpan.FromSeconds(6));
+                return;
+            }
+
             int replaced = await RunInBackgroundAsync(
                 title, DelayedProgressRunner, editsBook: true, cancellable: false,
                 (_, _) => SpellcheckEditorEngine.ReplaceWordInAllFiles(book, _spellChecker, _settings, word, lang, newWord))
