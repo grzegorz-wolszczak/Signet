@@ -136,17 +136,37 @@ Legenda statusu: `[ ]` do zrobienia, `[x]` zrobione (z krótką notatką i commi
   - `Status_OperationBusy` w Notifications zostaje jako fallback (np. dla skrótu klawiszowego
     złapanego tuż przed disable) — zgodnie z opisem zadania.
 
-- [ ] **A2b. Spięcie `IsBookOperationBusy` z komendami dialogów przypisów/spellchecku.**
-  `FootnotePlacementViewModel.ApplyCommand`, `FootnoteLettersViewModel.UnifyCommand`,
-  `FootnoteConversionViewModel.ConvertCommand`, `SpellcheckEditorViewModel.ChangeAllCommand` to
-  własne `AsyncRelayCommand`/`RelayCommand` na **innych** viewmodelach niż `MainWindowViewModel` —
-  dziś nie wiedzą o `IsBookOperationBusy` wcale. W praktyce dziś nie da się ich kliknąć w trakcie
-  innej operacji, bo A2 blokuje już samo otwarcie okna Change Placement/Convert/Unify z menu — ale
-  jeśli okno jest już otwarte (otwarte przed startem innej operacji) i user kliknie Apply w trakcie,
-  trafi dziś na `TryEnterBookOperation` → `false` → komunikat w Notifications, nie na disabled
-  przycisk. `SpellcheckEditorViewModel.ChangeAllCommand` nie ma dziś żadnego `CanExecute` w ogóle.
-  Do zrobienia: przekazać `IsBookOperationBusy` (referencja/event z `MainWindowViewModel`) do tych
-  viewmodeli i dodać `CanExecute` odwołujące się do niego.
+- [x] **A2b. Spięcie `IsBookOperationBusy` z komendami dialogów przypisów/spellchecku.**
+  (2026-10-23, commit w `background-processing`) Problem był realny: `FootnotePlacementViewModel`/
+  `FootnoteLettersViewModel`/`FootnoteConversionViewModel`/`SpellcheckEditorViewModel` nie wiedziały
+  o `IsBookOperationBusy` wcale, a dla Spellchecku (jedyny trwały singleton z tej czwórki, żyje
+  cały czas działania okna głównego) dało się realnie otworzyć okno, zacząć inną operację z menu, i
+  kliknąć "Change All" — trafiając na `TryEnterBookOperation` → `false` → komunikat w Notifications
+  zamiast disabled przycisku.
+
+  Co zrobione:
+  - Każdy z 4 viewmodeli dostał własną właściwość `IsBookOperationBusy` (styl zgodny z lokalnym
+    idiomem każdej klasy: `[ObservableProperty]` + `[NotifyCanExecuteChangedFor]` w
+    `FootnoteConversionViewModel`, ręczny `SetProperty` + `NotifyCanExecuteChanged()` w pozostałych
+    trzech) i `CanApply`/`CanUnify`/`CanConvert` zaktualizowane o `&& !IsBookOperationBusy`.
+    `SpellcheckEditorViewModel.ChangeAllCommand` nie miał żadnego `CanExecute` — dodany.
+  - `FootnotePlacementViewModel`/`FootnoteLettersViewModel`/`FootnoteConversionViewModel` żyją tylko
+    tyle, ile otwarte okno (nowa instancja za każdym otwarciem) — spięcie zrobione w widoku
+    (`MainWindow.axaml.cs`, `OnFootnotePlacementRequested`/`OnFootnoteLettersRequested`/
+    `OnFootnoteConversionRequested`): subskrypcja `vm.PropertyChanged` (filtr po
+    `nameof(IsBookOperationBusy)`) ustawiana tuż przed `ShowDialog`/`ShowAsync` i zdejmowana w
+    `finally` po jego zakończeniu — działa niezależnie od tego, czy dialog się zamknął przez Apply/
+    Unify/Convert czy przez Cancel/X.
+  - `SpellcheckEditorViewModel` jest jedynym trwałym singletonem z czwórki (pole `_spellcheckEditor`
+    w `MainWindowViewModel`, żyje całą sesję) — spięcie zrobione raz, w konstruktorze
+    `MainWindowViewModel`, bez odsubskrybowania (oba obiekty żyją i umierają razem).
+  - Testy: po jednym nowym `[Fact]` w `FootnotePlacementViewModelTests.cs`,
+    `FootnoteLettersViewModelTests.cs`, `FootnoteConversionViewModelTests.cs`,
+    `SpellcheckEditorViewModelTests.cs` — ustawiają `IsBookOperationBusy = true/false` wprost na
+    viewmodelu (bez przechodzenia przez `MainWindowViewModel`/widok, które są przetestowane osobno
+    w A2) i sprawdzają `CanXxx`/`XxxCommand.CanExecute(null)` w obie strony.
+  - `dotnet build` całego `Signet.slnx` + `dotnet test Signet.App.Tests` (1085/1085) +
+    `dotnet test Signet.App.MainWindowUiTests` (183/183) — zielone.
 
 - [ ] **A2c. Spięcie `IsBookOperationBusy` z Undo/Redo/RevertTo checkpointów.**
   `CheckpointsViewModel` ma własne komendy wołające `MainWindowViewModel.MoveToCheckpointAsync`

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -1221,9 +1222,32 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
     /// <summary>Handles "Unify Letters of Shared Footnotes…": shows the modal dialog (or only a status message).</summary>
     private async void OnFootnoteLettersRequested(object? sender, EventArgs e)
     {
-        if (_boundViewModel?.PrepareFootnoteLetters(ProgressWindow.DelayedRunner(this)) is { } letters)
+        if (_boundViewModel is not { } vm)
         {
-            await FootnoteLettersWindow.ShowAsync(this, letters);
+            return;
+        }
+
+        if (vm.PrepareFootnoteLetters(ProgressWindow.DelayedRunner(this)) is { } letters)
+        {
+            // Kept in sync for as long as the dialog is open: another book operation can start elsewhere (e.g. a
+            // keyboard shortcut caught just before a menu item disables) while this one is still showing.
+            letters.IsBookOperationBusy = vm.IsBookOperationBusy;
+            PropertyChangedEventHandler busyChanged = (_, args) =>
+            {
+                if (args.PropertyName == nameof(MainWindowViewModel.IsBookOperationBusy))
+                {
+                    letters.IsBookOperationBusy = vm.IsBookOperationBusy;
+                }
+            };
+            vm.PropertyChanged += busyChanged;
+            try
+            {
+                await FootnoteLettersWindow.ShowAsync(this, letters);
+            }
+            finally
+            {
+                vm.PropertyChanged -= busyChanged;
+            }
         }
     }
 
@@ -1250,7 +1274,23 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         if (placement is not null)
         {
             window = new FootnotePlacementWindow { DataContext = placement };
-            await window.ShowDialog(this);
+            placement.IsBookOperationBusy = vm.IsBookOperationBusy;
+            PropertyChangedEventHandler busyChanged = (_, args) =>
+            {
+                if (args.PropertyName == nameof(MainWindowViewModel.IsBookOperationBusy))
+                {
+                    placement.IsBookOperationBusy = vm.IsBookOperationBusy;
+                }
+            };
+            vm.PropertyChanged += busyChanged;
+            try
+            {
+                await window.ShowDialog(this);
+            }
+            finally
+            {
+                vm.PropertyChanged -= busyChanged;
+            }
         }
     }
 
@@ -1385,7 +1425,24 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
                     settings.Save();
                 }
             };
-            await window.ShowDialog(this);
+
+            conversion.IsBookOperationBusy = vm.IsBookOperationBusy;
+            PropertyChangedEventHandler busyChanged = (_, args) =>
+            {
+                if (args.PropertyName == nameof(MainWindowViewModel.IsBookOperationBusy))
+                {
+                    conversion.IsBookOperationBusy = vm.IsBookOperationBusy;
+                }
+            };
+            vm.PropertyChanged += busyChanged;
+            try
+            {
+                await window.ShowDialog(this);
+            }
+            finally
+            {
+                vm.PropertyChanged -= busyChanged;
+            }
         }
     }
 

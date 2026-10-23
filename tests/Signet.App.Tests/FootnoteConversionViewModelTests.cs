@@ -111,6 +111,32 @@ public sealed class FootnoteConversionViewModelTests
     }
 
     [Fact]
+    public void Convert_is_disabled_while_another_book_operation_is_busy_and_enabled_again_once_it_is_not()
+    {
+        // Arrange
+        (Book book, HtmlResource _) = BookWithLocalFootnotes();
+        using (book)
+        {
+            FootnoteConversionViewModel sut = NewViewModel(book);
+            sut.CanConvert.Should().BeTrue("a precondition of this test: the default selection converts");
+
+            // Act
+            sut.IsBookOperationBusy = true;
+
+            // Assert
+            sut.CanConvert.Should().BeFalse();
+            sut.ConvertCommand.CanExecute(null).Should().BeFalse();
+
+            // Act
+            sut.IsBookOperationBusy = false;
+
+            // Assert
+            sut.CanConvert.Should().BeTrue();
+            sut.ConvertCommand.CanExecute(null).Should().BeTrue();
+        }
+    }
+
+    [Fact]
     public void A_row_shows_the_marker_the_new_number_the_reference_in_its_text_and_the_start_of_the_note()
     {
         // Arrange

@@ -116,4 +116,30 @@ public sealed class FootnoteLettersViewModelTests
             sut.UnifyCommand.CanExecute(null).Should().BeFalse();
         }
     }
+
+    [Fact]
+    public void Unify_is_disabled_while_another_book_operation_is_busy_and_enabled_again_once_it_is_not()
+    {
+        // Arrange
+        (Book book, HtmlResource _) = BookWithSharedNotes();
+        using (book)
+        {
+            FootnoteLettersViewModel sut = NewViewModel(book, FootnoteLetterStyle.LowerLatin);
+            sut.CanUnify.Should().BeTrue("a precondition of this test: a note is checked");
+
+            // Act
+            sut.IsBookOperationBusy = true;
+
+            // Assert
+            sut.CanUnify.Should().BeFalse();
+            sut.UnifyCommand.CanExecute(null).Should().BeFalse();
+
+            // Act
+            sut.IsBookOperationBusy = false;
+
+            // Assert
+            sut.CanUnify.Should().BeTrue();
+            sut.UnifyCommand.CanExecute(null).Should().BeTrue();
+        }
+    }
 }
