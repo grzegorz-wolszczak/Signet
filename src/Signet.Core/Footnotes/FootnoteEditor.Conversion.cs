@@ -642,7 +642,10 @@ public static partial class FootnoteEditor
 
         List<int> indexes = converted.Select(c => beforeIndex.GetValueOrDefault(c.TempId, -1)).ToList();
         cancellationToken.ThrowIfCancellationRequested();
-        RenumberWith(book, options, null, cancel: cancellationToken);
+
+        // The scan just above is handed over: nothing between the two touches the book, and a scan of a book with
+        // thousands of files is the costliest single step of renumbering.
+        RenumberWith(book, options, null, scanned: beforeRenumber, cancel: cancellationToken);
         if (signetFile is not null && !ReferenceEquals(signetFile, target) && book.GetHtmlResources().Contains(signetFile))
         {
             RemoveEmptyContainer(book, signetFile);

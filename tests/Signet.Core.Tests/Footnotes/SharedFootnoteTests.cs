@@ -472,6 +472,50 @@ public sealed class SharedFootnoteTests
         }
     }
 
+    /// <summary>
+    /// Several shared notes restyled at once: each reference of each of them keeps its own place in the reading order,
+    /// so the links from outside follow the right one. Where a reference stands is now read from an index of the whole
+    /// footnote list instead of searched for one reference at a time, and one note alone would not tell the two apart.
+    /// </summary>
+    [Fact]
+    public void The_letters_of_several_shared_notes_are_restyled_together_and_every_link_follows_its_own_reference()
+    {
+        // Arrange
+        (Book book, HtmlResource html) = NewBook(
+            "<p>First one.</p>\n<p>Second one.</p>\n<p>Third one.</p>\n<p>Fourth one.</p>\n"
+            + "<p>See <a href=\"#fn-1ii-ref\">one</a>, <a href=\"#fn-2ii-ref\">two</a>.</p>");
+        using (book)
+        {
+            FootnoteOptions roman = FootnoteOptions.Default with { LetterStyle = FootnoteLetterStyle.LowerRoman };
+            FootnoteEditor.Add(book, html, After(html, "First one."), "alpha", FootnotePlacement.Local, out Footnote? one, roman)
+                .Should().Be(FootnoteError.None);
+            FootnoteEditor.AddReference(book, html, After(html, "Second one."), one!, out _, roman).Should().Be(FootnoteError.None);
+            FootnoteEditor.Add(book, html, After(html, "Third one."), "beta", FootnotePlacement.Local, out Footnote? two, roman)
+                .Should().Be(FootnoteError.None);
+            FootnoteEditor.AddReference(book, html, After(html, "Fourth one."), two!, out _, roman).Should().Be(FootnoteError.None);
+
+            // Act
+            System.Collections.Generic.IReadOnlyList<LetterItem> items =
+                FootnoteEditor.PlanLetters(book, FootnoteLetterStyle.LowerLatin);
+
+            // Assert
+            items.Should().HaveCount(2);
+            items.Select(i => i.Number).Should().Equal(1, 2);
+
+            // Act
+            FootnoteEditor.UnifyLetters(book, items, FootnoteLetterStyle.LowerLatin).Should().Be(2);
+
+            // Assert
+            string text = html.GetText();
+            text.Should().Contain("First one." + Reference("fn-1a-ref", "#fn-1", "[1a]"))
+                .And.Contain("Second one." + Reference("fn-1b-ref", "#fn-1", "[1b]"))
+                .And.Contain("Third one." + Reference("fn-2a-ref", "#fn-2", "[2a]"))
+                .And.Contain("Fourth one." + Reference("fn-2b-ref", "#fn-2", "[2b]"))
+                .And.Contain("See <a href=\"#fn-1b-ref\">one</a>, <a href=\"#fn-2b-ref\">two</a>.");
+            FootnoteValidator.Validate(book).Should().BeEmpty();
+        }
+    }
+
     [Fact]
     public void A_new_id_equal_to_the_old_id_of_another_reference_does_not_mislead_the_links()
     {

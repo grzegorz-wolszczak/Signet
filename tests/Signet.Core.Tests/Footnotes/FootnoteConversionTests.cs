@@ -906,6 +906,40 @@ public sealed class FootnoteConversionTests
         }
     }
 
+    /// <summary>
+    /// A note referred to from inside another note: the reference stands in the text of the note that is converted
+    /// first, so by the time its turn comes the piece of the file it stood in is already cut out. Replacing it there
+    /// would write the new reference into text that is on its way out, so the edit goes with the cut — which leaves
+    /// that note without its reference. Signet cannot convert this shape; what matters is that it says so instead of
+    /// writing a book with a link that leads nowhere, and this test holds it to that.
+    /// </summary>
+    [Fact]
+    public void A_reference_that_stood_inside_another_note_goes_with_it()
+    {
+        // Arrange
+        (Book book, HtmlResource html) = NewBook(
+            "<p>Text<a epub:type=\"noteref\" href=\"#nB\" id=\"rB\">[B]</a>.</p>\n"
+            + "<section epub:type=\"footnotes\">\n"
+            + "<aside epub:type=\"footnote\" id=\"nB\"><a href=\"#rB\">[B]</a> Bee, see also"
+            + "<a epub:type=\"noteref\" href=\"#nA\" id=\"rA\">[A]</a>.</aside>\n"
+            + "<aside epub:type=\"footnote\" id=\"nA\"><a href=\"#rA\">[A]</a> Aye.</aside>\n"
+            + "</section>");
+        using (book)
+        {
+            // Act
+            ConversionResult result = ConvertAll(book);
+
+            // Assert
+            string body = BodyOf(html);
+            // The reference's replacement went with the cut, so the note it belonged to keeps its temporary link back.
+            body.Should().Contain("fn-new-").And.NotContain("id=\"nA\"").And.NotContain("id=\"nB\"");
+
+            // The conversion's own check sees it and reports, so the caller rewinds the book (see Convert's remarks).
+            result.Problems.Select(p => p.Detail).Should().Contain("Validation_BadFragmentSameFile");
+            result.Problems.Select(p => p.Kind).Should().Contain(ConversionProblemKind.TextChanged);
+        }
+    }
+
     [Fact]
     public void Converting_reports_its_stages_and_how_many_footnotes_are_done()
     {
