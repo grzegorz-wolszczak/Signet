@@ -1042,6 +1042,7 @@ public static partial class FootnoteEditor
         List<TextEdit> removals = new();
         List<string> markups = new();
         List<Footnote> moved = new();
+        HashSet<string> taken = new(StringComparer.Ordinal);
         foreach (Footnote footnote in FootnoteScanner.Scan(book).Where(f => f.IsSignet && ReferenceEquals(f.NoteFile, from)))
         {
             if (FindElementById(tags, text, footnote.NoteId) is not { } note)
@@ -1049,11 +1050,17 @@ public static partial class FootnoteEditor
                 continue;
             }
 
-            markups.Add(Unindent(text, note));
-            (int start, int end) = WholeLines(text, note.Start, note.End);
-            removals.Add(new TextEdit(start, end - start, string.Empty));
+            // A shared note is one footnote per reference, so the same note comes up here once per reference: it moves
+            // once, while every one of its references is retargeted below.
+            if (taken.Add(footnote.NoteId))
+            {
+                markups.Add(Unindent(text, note));
+                (int start, int end) = WholeLines(text, note.Start, note.End);
+                removals.Add(new TextEdit(start, end - start, string.Empty));
+                moves[(from.BookPath, footnote.NoteId)] = (to.BookPath, footnote.NoteId);
+            }
+
             moved.Add(footnote);
-            moves[(from.BookPath, footnote.NoteId)] = (to.BookPath, footnote.NoteId);
         }
 
         if (moved.Count == 0)
