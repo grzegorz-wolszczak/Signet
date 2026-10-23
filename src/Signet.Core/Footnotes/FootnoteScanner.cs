@@ -40,19 +40,26 @@ public static class FootnoteScanner
         HtmlResource? nav = book.GetNavResource();
         List<HtmlResource> files = book.GetHtmlResources().ToList();
         progress?.Report(new ScanProgress(0, files.Count));
-        Dictionary<string, (HtmlResource Html, IDocument Document, int Spine)> documents = new(StringComparer.Ordinal);
+        Dictionary<string, (HtmlResource Html, IDocument Document, int Spine, Dictionary<string, IElement> ById)> documents = new(StringComparer.Ordinal);
         Dictionary<IElement, int> order = new();
         List<Link> links = new();
         for (int spine = 0; spine < files.Count; spine++)
         {
             HtmlResource html = files[spine];
             IDocument document = html.GetDocument();
-            documents[html.BookPath] = (html, document, spine);
+            // The reading order of the elements and the index of their ids come out of the same pass.
             int index = 0;
+            Dictionary<string, IElement> byId = new(StringComparer.Ordinal);
             foreach (IElement element in document.All)
             {
                 order[element] = index++;
+                if (element.GetAttribute("id") is { Length: > 0 } elementId)
+                {
+                    byId.TryAdd(elementId, element);
+                }
             }
+
+            documents[html.BookPath] = (html, document, spine, byId);
 
             if (ReferenceEquals(html, nav))
             {
@@ -187,7 +194,7 @@ public static class FootnoteScanner
         container is not null && (ReferenceEquals(element, container) || container.Contains(element));
 
     private static (HtmlResource? Html, IElement? Element) Resolve(
-        Link link, Dictionary<string, (HtmlResource Html, IDocument Document, int Spine)> documents)
+        Link link, Dictionary<string, (HtmlResource Html, IDocument Document, int Spine, Dictionary<string, IElement> ById)> documents)
     {
         (string path, string fragment) = FootnoteEditor.SplitHref(link.Href);
         if (fragment.Length == 0 || FootnoteEditor.IsExternal(path))
@@ -198,8 +205,9 @@ public static class FootnoteScanner
         string bookPath = path.Length == 0
             ? link.Owner.BookPath
             : Core.BookPath.BuildBookPath(Utility.UrlDecodePath(path), link.Owner.Folder);
-        return documents.TryGetValue(bookPath, out (HtmlResource Html, IDocument Document, int Spine) target)
-            ? (target.Html, target.Document.GetElementById(fragment))
+        // The id index of the file, not GetElementById, which walks the document: see ElementIds.
+        return documents.TryGetValue(bookPath, out (HtmlResource Html, IDocument Document, int Spine, Dictionary<string, IElement> ById) target)
+            ? (target.Html, target.ById.GetValueOrDefault(fragment))
             : (null, null);
     }
 

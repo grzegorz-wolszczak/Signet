@@ -356,6 +356,65 @@ Czyli ~16× szybciej przy N=3200. **Sama pętla konwersji jest już liniowa**: 3
 To są **cztery osobne, niezależne zadania** i dotyczą nie tylko konwersji — `FootnoteScanner.Scan`,
 `BookLinks` i `LinkChecks` są używane przez Renumber, Change Placement i Letters. Nie zostały
 ruszone w tej sesji: zakres uzgodniony z użytkownikiem kończył się na `ConvertOne`/`ConvertReference`.
+**Zrobione zaraz potem — patrz punkt 17.**
+
+### 17. Naprawione (czwarta sesja): cztery pozostałe kwadraty to były **dwie** przyczyny
+
+Użytkownik polecił usunąć kwadraty też z tych faz. Instrumentacja fazowa (tymczasowy `ZzProbe`,
+usunięty po pomiarze) pokazała, że cztery „osobne zadania" z punktu 16 miały wspólny kształt:
+**operacja liniowa w rozmiarze pliku wołana raz na przypis**. Konkretnie dwie przyczyny:
+
+1. **`IDocument.GetElementById` wołany raz na link.** AngleSharp **nie trzyma indeksu id** —
+   `GetElementById` przechodzi drzewo. `FootnoteScanner.Resolve` i `FootnoteValidator.Resolve`
+   wołały je dla każdego linku w książce. Przy 3200 przypisach sam `Scan.resolve` to było 4092 ms
+   z 11 074 ms całego `Convert`.
+
+   Naprawa: nowy `src/Signet.Core/Footnotes/ElementIds.cs` — indeks `id → element` budowany raz na
+   dokument (pierwszy element w kolejności dokumentu wygrywa, dokładnie jak `GetElementById`). W
+   `FootnoteScanner` wychodzi z tego samego przejścia po `document.All`, które i tak buduje mapę
+   kolejności, więc jest praktycznie darmowy.
+
+2. **`FootnoteValidator.LineOfId` wołany raz na notatkę** — `Regex.Match` po **całym** tekście
+   pliku, a potem zliczanie `\n` znak po znaku do trafienia. Przy 3200 przypisach
+   `FootnoteValidator` (wołany 2× na konwersję) to było 6460 ms.
+
+   Naprawa: `LinesOfIds(text)` — jedno przejście po tekście daje linię pierwszego wystąpienia
+   **każdego** id, budowane raz na plik (`linesOf` w `Validate`). Wzorzec jest ten sam, który
+   wcześniej był składany per id, tylko id czytane jest z dopasowania zamiast wpisywane do wzorca —
+   więc akceptuje to samo (wliczając wartość między niedopasowanymi cudzysłowami) i znajduje to
+   samo pierwsze wystąpienie.
+
+Pomiar (ta sama sonda i maszyna, czas samego `Convert`, N przypisów w jednym pliku):
+
+| N | przed (`1da866b`) | po |
+|---|---|---|
+| 200 | 369 ms | 106 ms |
+| 400 | 887 ms | 129 ms |
+| 800 | 868 ms | 306 ms |
+| 1600 | 2604 ms | 572 ms |
+| 3200 | 9858 ms | 755 ms |
+| 6400 | 46 858 ms | 1072 ms |
+| 12800 | **241 203 ms** | **2148 ms** |
+
+Czyli **112× przy N=12800**, i — co ważniejsze — skalowanie jest liniowe: 4× wejścia daje ~2×
+czasu (koszty stałe się amortyzują). Żadna faza nie rośnie już kwadratowo; przy N=12800 największe
+to `RenumberWith` 621 ms, `GetDocument` (parsowanie AngleSharp, 10 wywołań) 414 ms,
+`FootnoteScanner.Scan` ~340 ms.
+
+**To dotyczy znacznie więcej niż konwersji.** `FootnoteScanner.Scan` jest wołany przy Renumber,
+`PlanPlacement`, `PlanConversion` i przy **każdym otwarciu menu kontekstowego przypisów**
+(`GetFootnoteState`), a `FootnoteValidator.Validate` przy walidacji książki. To unieważnia punkty 2
+i 3 z listy „Co warto zoptymalizować" niżej w ich dotychczasowym brzmieniu: tam było napisane, że
+`Scan` to „pełny DOM-parsing 1409 plików" i że cache'owanie wyniku byłoby ryzykowną zmianą
+architektoniczną. Okazało się, że dominującym kosztem nie było parsowanie, tylko `GetElementById`
+— i że dało się to naprawić bez żadnego cache'u między operacjami.
+
+Testy pilnujące równoważności (bo oba podmienione wywołania to „to samo, tylko szybciej"):
+`ElementIdsTests` — indeks musi odpowiadać dokładnie to, co `GetElementById`, dla **każdego** id
+**każdego** pliku z `tests/corpus/`, plus powtórzone id (wygrywa pierwsze) i puste id (pomijane);
+`FootnoteValidatorTests.Each_footnote_without_a_link_back_is_reported_with_its_own_line` (każda
+notatka dostaje swoją linię, nie linię pierwszej) i
+`A_footnote_whose_id_is_written_twice_is_reported_at_its_first_mention`.
 
 ## Co NIE zostało zrobione / zostało do następnej sesji
 
@@ -387,19 +446,23 @@ ruszone w tej sesji: zakres uzgodniony z użytkownikiem kończył się na `Conve
    coraz większej liście tagów. Naprawione przez indeks (id → pozycja, href → lista pozycji)
    budowany raz na plik i cache'owany per instancja `TagLister`. Dotyczy wszystkich operacji
    korzystających z tych dwóch funkcji: Renumber, Change Placement, Convert Footnotes, Letters.
-2. **`FootnoteScanner.Scan`** (~18.7 s) — pełny DOM-parsing (AngleSharp) 1409 plików przy każdym
-   wywołaniu. Używane w wielu miejscach (Renumber, PlanPlacement, PlanConversion, GetFootnoteState
-   przy każdym otwarciu menu kontekstowego przypisów!). Potencjalny kandydat do cache'owania
-   wyniku między operacjami (inwalidacja przy edycji) — **ale to ryzykowniejsza zmiana
-   architektoniczna, nie podejmowana dziś bez wyraźnej zgody**. Pomiar z punktu 16 pokazuje
-   dodatkowo, że `Scan` jest **kwadratowy w liczbie przypisów na plik** (~9× przy 4× wejścia),
-   niezależnie od liczby plików.
+2. ~~**`FootnoteScanner.Scan`**~~ (~18.7 s) — **kwadrat usunięty w czwartej sesji, patrz punkt 17.**
+   Opisywaliśmy to jako „pełny DOM-parsing (AngleSharp) 1409 plików" i jako kandydata do
+   ryzykownego cache'owania wyniku między operacjami. Pomiar fazowy pokazał, że dominującym
+   kosztem nie było parsowanie, a `IDocument.GetElementById` wołane raz na link (AngleSharp nie
+   trzyma indeksu id, więc każde wywołanie przechodzi drzewo). Naprawione indeksem `id → element`
+   budowanym raz na dokument (`ElementIds`) — **bez żadnego cache'u między operacjami**. Zostaje
+   samo parsowanie, liniowe (~414 ms na 10 wywołań przy 12 800 przypisach).
 3. **`BookLinks`/link-scanning w `PlanConversion`/`PlanPlacement`** (~19.5 s) — skan wszystkich
-   `<a href>` w całej książce (~43k w tej książce). Podobny charakter do punktu 2; pomiar z punktu
-   16 pokazuje, że `BookLinks` + `LinkChecks` razem też rosną kwadratowo (~8,9×).
-3a. **`Check` na końcu `Convert`** — najdroższa pojedyncza faza konwersji po naprawie z punktu 16
-   (3,6 s przy 3200 przypisach, ~9,8× przy 4× wejścia).
-3b. **`FindNestedNotes`** — ~7,4× przy 4× wejścia (punkt 16).
+   `<a href>` w całej książce (~43k w tej książce). Pomiar z punktu 17 pokazuje, że samo
+   `BookLinks` jest **tanie i liniowe** (13 ms przy 3200 przypisach); droga była sąsiednia faza
+   `LinkChecks` → `FootnoteValidator`, i to już naprawione (punkt 17). Jeśli te ~19,5 s nadal
+   występuje na realnej książce z 1409 plikami, to jest kwestia liczby **plików**, nie przypisów —
+   do zmierzenia osobno.
+3a. ~~**`Check` na końcu `Convert`**~~ — **naprawione w punkcie 17** (jego koszt to był
+   `FootnoteValidator` wołany w `LinkChecks`).
+3b. ~~**`FindNestedNotes`**~~ — **naprawione w punkcie 17**; jego koszt to był `Scan` w tej samej
+   fazie pomiaru, sam `FindNestedNotes` jest liniowy.
 4. **Checkpoint create/abandon** (2–3 s / 35–37 s) — już przeniesione do tła (punkt 5 wyżej), więc
    nie blokują UI, ale wciąż zajmują realny czas kopiowania/odtwarzania całego folderu książki na
    dysku. Gdyby nadal za wolne nawet w tle (np. bardzo duże książki z obrazami), warto rozważyć

@@ -37,12 +37,12 @@ public static class FootnoteValidator
         ArgumentNullException.ThrowIfNull(book);
 
         List<Link> links = new();
-        Dictionary<string, (HtmlResource Html, IDocument Document)> documents = new(StringComparer.Ordinal);
+        Dictionary<string, (HtmlResource Html, IDocument Document, Dictionary<string, IElement> ById)> documents = new(StringComparer.Ordinal);
         HtmlResource? nav = book.GetNavResource();
         foreach (HtmlResource html in book.GetHtmlResources())
         {
             IDocument document = html.GetDocument();
-            documents[html.BookPath] = (html, document);
+            documents[html.BookPath] = (html, document, Footnotes.ElementIds.Of(document));
 
             // The links of the nav document are a table of contents, never note references.
             if (ReferenceEquals(html, nav))
@@ -96,7 +96,7 @@ public static class FootnoteValidator
         // so only its links back are checked.
         List<(HtmlResource Html, IElement Note, bool Strong)> notes = new();
         HashSet<IElement> seen = new();
-        foreach ((HtmlResource html, IDocument document) in documents.Values)
+        foreach ((HtmlResource html, IDocument document, Dictionary<string, IElement> _) in documents.Values)
         {
             foreach (IElement element in document.All)
             {
@@ -125,9 +125,15 @@ public static class FootnoteValidator
         }
 
         List<ValidationResult> results = new();
+        Dictionary<HtmlResource, Dictionary<string, int>> linesOf = new(ReferenceEqualityComparer.Instance);
         foreach ((HtmlResource html, IElement note, bool strong) in notes)
         {
-            CheckNote(html, note, strong, linksTo, linksInside, results);
+            if (!linesOf.TryGetValue(html, out Dictionary<string, int>? lines))
+            {
+                linesOf[html] = lines = LinesOfIds(html.GetText());
+            }
+
+            CheckNote(html, note, strong, linksTo, linksInside, lines, results);
         }
 
         return results;
@@ -139,11 +145,11 @@ public static class FootnoteValidator
         bool strong,
         Dictionary<IElement, List<Link>> linksTo,
         Dictionary<IElement, List<Link>> linksInside,
+        Dictionary<string, int> lines,
         List<ValidationResult> results)
     {
         string id = note.GetAttribute("id") ?? string.Empty;
-        string text = html.GetText();
-        int line = id.Length > 0 ? LineOfId(text, id) : -1;
+        int line = id.Length > 0 ? lines.GetValueOrDefault(id, -1) : -1;
         List<Link> references = linksTo.GetValueOrDefault(note, new List<Link>())
             .Where(l => !Inside(l.Anchor, note))
             .ToList();
@@ -241,7 +247,7 @@ public static class FootnoteValidator
         value?.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
 
     private static (HtmlResource? Html, IElement? Element) Resolve(
-        Link link, Dictionary<string, (HtmlResource Html, IDocument Document)> documents)
+        Link link, Dictionary<string, (HtmlResource Html, IDocument Document, Dictionary<string, IElement> ById)> documents)
     {
         string href = link.Href.Trim();
         int hash = href.IndexOf('#', StringComparison.Ordinal);
@@ -261,8 +267,9 @@ public static class FootnoteValidator
         string bookPath = path.Length == 0
             ? link.Owner.BookPath
             : Core.BookPath.BuildBookPath(Utility.UrlDecodePath(path), link.Owner.Folder);
-        return documents.TryGetValue(bookPath, out (HtmlResource Html, IDocument Document) target)
-            ? (target.Html, target.Document.GetElementById(Uri.UnescapeDataString(href[(hash + 1)..])))
+        // The id index of the file, not GetElementById, which walks the document: see Footnotes.ElementIds.
+        return documents.TryGetValue(bookPath, out (HtmlResource Html, IDocument Document, Dictionary<string, IElement> ById) target)
+            ? (target.Html, target.ById.GetValueOrDefault(Uri.UnescapeDataString(href[(hash + 1)..])))
             : (null, null);
     }
 
@@ -272,24 +279,33 @@ public static class FootnoteValidator
         return id.Length > 0 ? reference.Owner.Filename + "#" + id : reference.Owner.Filename;
     }
 
-    private static int LineOfId(string text, string id)
+    // Every id written in the file, with the line its first mention stands on. This used to be one search of the whole
+    // text per note, plus counting the newlines in front of the hit character by character, so a file holding thousands
+    // of notes paid for it in the square of their number -- it was the most expensive step of validating such a book.
+    // One pass answers it for every id at once. The pattern is the one that used to be built per id, with the id read
+    // out of the match instead of written into it, so it accepts the same (a value between mismatched quotes included)
+    // and finds the same first mention.
+    private static Dictionary<string, int> LinesOfIds(string text)
     {
-        Match match = Regex.Match(text, @"\bid\s*=\s*[""']" + Regex.Escape(id) + @"[""']", RegexOptions.CultureInvariant);
-        if (!match.Success)
-        {
-            return -1;
-        }
-
+        Dictionary<string, int> lines = new(StringComparer.Ordinal);
         int line = 1;
-        for (int i = 0; i < match.Index; i++)
+        int at = 0;
+        foreach (Match match in Regex.Matches(text, @"\bid\s*=\s*[""']([^""']*)[""']", RegexOptions.CultureInvariant))
         {
-            if (text[i] == '\n')
+            while (at < match.Index)
             {
-                line++;
+                if (text[at] == '\n')
+                {
+                    line++;
+                }
+
+                at++;
             }
+
+            lines.TryAdd(match.Groups[1].Value, line);
         }
 
-        return line;
+        return lines;
     }
 
     private static void Add(List<ValidationResult> results, HtmlResource html, int line, string code, params object[] args) =>
