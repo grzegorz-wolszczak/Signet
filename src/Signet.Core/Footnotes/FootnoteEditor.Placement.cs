@@ -31,7 +31,7 @@ public sealed record PlacementItem(Footnote Footnote, IReadOnlyList<Footnote> Re
 /// <summary>The steps of <see cref="FootnoteEditor.ChangePlacement"/>.</summary>
 public enum PlacementStage
 {
-    /// <summary>Looking at the footnotes.</summary>
+    /// <summary>Looking at the footnotes: scanning the files of the book (<see cref="PlacementProgress.Done"/> of <see cref="PlacementProgress.Total"/>).</summary>
     Preparing,
 
     /// <summary>Moving the notes (<see cref="PlacementProgress.Done"/> of <see cref="PlacementProgress.Total"/>).</summary>
@@ -43,8 +43,8 @@ public enum PlacementStage
 
 /// <summary>How far <see cref="FootnoteEditor.ChangePlacement"/> is.</summary>
 /// <param name="Stage">The step.</param>
-/// <param name="Done">How many notes were prepared (in <see cref="PlacementStage.Moving"/>).</param>
-/// <param name="Total">How many notes are to be moved.</param>
+/// <param name="Done">How many files were scanned (in <see cref="PlacementStage.Preparing"/>), or notes prepared (in <see cref="PlacementStage.Moving"/>).</param>
+/// <param name="Total">How many files the book has (in <see cref="PlacementStage.Preparing"/>), or notes are to be moved; 0 before the count is known.</param>
 public readonly record struct PlacementProgress(PlacementStage Stage, int Done, int Total);
 
 /// <summary>
@@ -104,6 +104,17 @@ public static partial class FootnoteEditor
         return items;
     }
 
+    // Relays FootnoteScanner.Scan's per-file progress into PlacementStage.Preparing, so ChangePlacement shows how far the
+    // scan is rather than a stage without a number.
+    private sealed class PlacementScanRelay : IProgress<ScanProgress>
+    {
+        private readonly IProgress<PlacementProgress> _target;
+
+        public PlacementScanRelay(IProgress<PlacementProgress> target) => _target = target;
+
+        public void Report(ScanProgress value) => _target.Report(new PlacementProgress(PlacementStage.Preparing, value.Done, value.Total));
+    }
+
     /// <summary>
     /// Moves the notes of <paramref name="items"/> to the other placement (local to global, global to local) with all their
     /// references and renumbers the footnotes once — what <see cref="Move(Book, Footnote)"/> does for one footnote, without
@@ -126,10 +137,10 @@ public static partial class FootnoteEditor
         CancellationToken cancellationToken = run.Cancellation;
         ArgumentNullException.ThrowIfNull(book);
         ArgumentNullException.ThrowIfNull(items);
-        progress?.Report(new PlacementProgress(PlacementStage.Preparing, 0, items.Count));
+        progress?.Report(new PlacementProgress(PlacementStage.Preparing, 0, 0));
         cancellationToken.ThrowIfCancellationRequested();
 
-        Dictionary<(string BookPath, string Id), List<Footnote>> notes = FootnoteScanner.Scan(book)
+        Dictionary<(string BookPath, string Id), List<Footnote>> notes = FootnoteScanner.Scan(book, progress is null ? null : new PlacementScanRelay(progress))
             .Where(f => f.IsSignet)
             .GroupBy(f => (f.NoteFile.BookPath, f.NoteId))
             .ToDictionary(g => g.Key, g => g.OrderBy(f => f.ReferenceIndex).ToList());

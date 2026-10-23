@@ -241,6 +241,109 @@ public sealed class ProgressWindowTests
     }
 
     [AvaloniaFact]
+    public void A_phase_shows_above_its_detail_and_the_bar_and_each_report_decides_what_is_shown()
+    {
+        // Arrange
+        Window owner = Owner();
+        TaskCompletionSource work = new();
+        IProgress<WorkProgress>? progress = null;
+        Task run = ProgressWindow.RunWithProgressAsync(
+            owner, "Building", "Starting", (p, _) =>
+            {
+                progress = p;
+                return work.Task;
+            });
+        RunUntil(() => owner.OwnedWindows.Count == 1);
+        ProgressWindow window = owner.OwnedWindows.OfType<ProgressWindow>().Single();
+        TextBlock phase = window.FindControl<TextBlock>("PhaseText")!;
+        TextBlock detail = window.FindControl<TextBlock>("MessageText")!;
+        ProgressBar bar = window.FindControl<ProgressBar>("Bar")!;
+        TextBlock percent = window.FindControl<TextBlock>("PercentText")!;
+
+        // Assert
+        phase.IsVisible.Should().BeFalse("an operation without phases looks as it did");
+
+        // Act
+        progress!.Report(new WorkProgress("brick 45 of 457", 0.1, new PhaseInfo(4, 20, "Wall 1")));
+        RunUntil(() => phase.IsVisible);
+
+        // Assert
+        phase.Text.Should().Be(Signet.App.Resources.Strings.Format("Progress_Phase", 4, 20, "Wall 1"));
+        detail.IsVisible.Should().BeTrue();
+        detail.Text.Should().Be("brick 45 of 457");
+        bar.IsIndeterminate.Should().BeFalse();
+        percent.IsVisible.Should().BeTrue();
+
+        // Act
+        progress.Report(new WorkProgress(null, 0.4, new PhaseInfo(5, 20, "Window")));
+        RunUntil(() => bar.Value == 40);
+
+        // Assert
+        phase.Text.Should().Be(Signet.App.Resources.Strings.Format("Progress_Phase", 5, 20, "Window"));
+        detail.IsVisible.Should().BeFalse("a phase report without a message has no detail, the last one does not stay");
+
+        // Act
+        progress.Report(new WorkProgress(null, null, new PhaseInfo(6, 20, "Door")));
+        RunUntil(() => bar.IsIndeterminate);
+
+        // Assert
+        phase.Text.Should().Be(Signet.App.Resources.Strings.Format("Progress_Phase", 6, 20, "Door"));
+        detail.IsVisible.Should().BeFalse();
+        percent.IsVisible.Should().BeFalse();
+
+        // Act
+        progress.Report(new WorkProgress("Roof", 0.5));
+        RunUntil(() => !phase.IsVisible);
+
+        // Assert
+        detail.IsVisible.Should().BeTrue();
+        detail.Text.Should().Be("Roof");
+        bar.Value.Should().Be(50);
+
+        // Act
+        work.SetResult();
+        RunUntil(() => run.IsCompleted);
+        owner.Close();
+    }
+
+    [AvaloniaFact]
+    public void Cancelling_replaces_the_phase_and_the_detail_with_the_cancelling_message()
+    {
+        // Arrange
+        Window owner = Owner();
+        TaskCompletionSource work = new();
+        IProgress<WorkProgress>? progress = null;
+        CancellationToken token = default;
+        Task run = ProgressWindow.RunWithProgressAsync(
+            owner, "Building", "Starting", (p, t) =>
+            {
+                progress = p;
+                token = t;
+                return work.Task;
+            }, cancellable: true);
+        RunUntil(() => owner.OwnedWindows.Count == 1);
+        ProgressWindow window = owner.OwnedWindows.OfType<ProgressWindow>().Single();
+        TextBlock phase = window.FindControl<TextBlock>("PhaseText")!;
+        TextBlock detail = window.FindControl<TextBlock>("MessageText")!;
+        progress!.Report(new WorkProgress(null, null, new PhaseInfo(2, 3, "Walls")));
+        RunUntil(() => phase.IsVisible);
+
+        // Act
+        window.FindControl<Button>("CancelButton")!.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        phase.IsVisible.Should().BeFalse();
+        detail.IsVisible.Should().BeTrue();
+        detail.Text.Should().Be(Signet.App.Resources.Strings.Get("ProgressWindow_Cancelling"));
+
+        // Act
+        work.SetCanceled(token);
+        RunUntil(() => run.IsCompleted);
+        owner.Close();
+    }
+
+    [AvaloniaFact]
     public void Work_that_is_done_before_the_delay_shows_no_window()
     {
         // Arrange

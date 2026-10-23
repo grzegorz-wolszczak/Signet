@@ -116,6 +116,8 @@ public partial class ProgressWindow : Window
                     cancel.Cancel();
                     window.CancelButton.IsEnabled = false;
                     progress.Stop();
+                    window.PhaseText.IsVisible = false;
+                    window.MessageText.IsVisible = true;
                     window.MessageText.Text = Strings.Get("ProgressWindow_Cancelling");
                     window.Bar.IsIndeterminate = true;
                     window.PercentText.IsVisible = false;
@@ -171,7 +173,8 @@ public partial class ProgressWindow : Window
         {
             lock (_gate)
             {
-                _latest = value with { Message = value.Message ?? _latest.Message };
+                // Without a phase the message is the one line of the window and null keeps it; with a phase it is the detail.
+                _latest = value.Phase is null ? value with { Message = value.Message ?? _latest.Message } : value;
                 if (_window is null)
                 {
                     return;
@@ -193,13 +196,28 @@ public partial class ProgressWindow : Window
         }
     }
 
-    /// <summary>Shows <paramref name="progress"/>: the message, and the bar with the percent when the fraction is known.</summary>
+    /// <summary>
+    /// Shows <paramref name="progress"/>: the phase when there is one, the message (the detail of the phase, which is gone when
+    /// the report has none), and the bar with the percent when the fraction is known.
+    /// </summary>
     internal void Apply(WorkProgress progress)
     {
         ArgumentNullException.ThrowIfNull(progress);
-        if (progress.Message is not null)
+        if (progress.Phase is { } phase)
         {
+            PhaseText.Text = Strings.Format("Progress_Phase", phase.Index, phase.Count, phase.Name);
+            PhaseText.IsVisible = true;
             MessageText.Text = progress.Message;
+            MessageText.IsVisible = !string.IsNullOrEmpty(progress.Message);
+        }
+        else
+        {
+            PhaseText.IsVisible = false;
+            MessageText.IsVisible = true;
+            if (progress.Message is not null)
+            {
+                MessageText.Text = progress.Message;
+            }
         }
 
         if (progress.Fraction is { } fraction)
