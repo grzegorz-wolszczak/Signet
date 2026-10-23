@@ -86,8 +86,12 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <summary>
-    /// Like <see cref="AddCheckpointBefore"/>, but the heavy part (copying the book's folder) runs off the UI thread:
-    /// for the background-operation flows, where a big book would otherwise freeze the window for its duration.
+    /// Like <see cref="AddCheckpointBefore"/>, but the heavy part (copying the book's folder) runs off the UI thread
+    /// under a progress window (<see cref="DelayedProgressRunner"/>, shown only once it takes a moment): for the
+    /// background-operation flows, where a big book would otherwise freeze the window for its duration. Cancellable:
+    /// the copy leaves nothing behind (see <see cref="CheckpointHistory.AddCheckpointCancellable"/>), so cancelling here means
+    /// "nothing happened" — <see cref="OperationCanceledException"/> propagates to the caller
+    /// (<see cref="RunBookOperationAsync{T}"/>), which then never starts the operation that needed this checkpoint.
     /// </summary>
     public async Task<bool> AddCheckpointBeforeAsync(string operation)
     {
@@ -104,7 +108,13 @@ public sealed partial class MainWindowViewModel
         _checkpoints.SuppressChanged();
         try
         {
-            await Task.Run(() => _checkpoints.AddCheckpoint(book, message)).ConfigureAwait(true);
+            await RunInBackgroundAsync(
+                message, DelayedProgressRunner, editsBook: false, cancellable: true,
+                (_, cancel) =>
+                {
+                    _checkpoints.AddCheckpointCancellable(book, message, cancel);
+                    return true;
+                }).ConfigureAwait(true);
             DebugLog.Write("Checkpoint", $"created \"{message}\" ({DebugLog.Elapsed(start)})");
             return true;
         }
@@ -188,8 +198,10 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>
     /// Like <see cref="AbandonCheckpoint"/>, but the heavy part (reloading the book from the checkpoint's folder) runs
-    /// off the UI thread: for the background-operation flows, where a big book would otherwise freeze the window for
-    /// its duration (most visibly after Cancel).
+    /// off the UI thread under a progress window (<see cref="DelayedProgressRunner"/>, shown only once it takes a
+    /// moment): for the background-operation flows, where a big book would otherwise freeze the window for its
+    /// duration (most visibly after Cancel). Not cancellable: restoring the book back is itself what Cancel already
+    /// started — there is no further "back" from it.
     /// </summary>
     public async Task<bool> AbandonCheckpointAsync()
     {
@@ -206,7 +218,9 @@ public sealed partial class MainWindowViewModel
         Book? loaded;
         try
         {
-            loaded = await Task.Run(() => _checkpoints.Abandon(live)).ConfigureAwait(true);
+            loaded = await RunInBackgroundAsync(
+                Strings.Get("Checkpoint_AbandonProgressTitle"), DelayedProgressRunner, editsBook: false, cancellable: false,
+                (_, _) => _checkpoints.Abandon(live)).ConfigureAwait(true);
         }
         catch (Exception ex) when (ex is EpubLoadException or IOException or UnauthorizedAccessException or InvalidOperationException)
         {

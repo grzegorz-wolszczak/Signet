@@ -1766,11 +1766,10 @@ public sealed class MainWindowViewModelTests : IDisposable
             SpellcheckWordRow row = editor.Words.Single(w => w.Word == "wrold");
             editor.SetSelectedWords(new[] { row });
             editor.ChangeAllText = "world";
-            string? title = null;
+            List<(string Title, bool Cancellable)> runs = new();
             sut.DelayedProgressRunner = (t, work, c) =>
             {
-                title = t;
-                c.Should().BeFalse("a quick edit like this one offers no Cancel");
+                runs.Add((t, c));
                 return work(new CollectingProgress(), CancellationToken.None);
             };
 
@@ -1782,7 +1781,9 @@ public sealed class MainWindowViewModelTests : IDisposable
             tab.Document.Text.Should().Contain("world").And.NotContain("wrold");
             book.Modified.Should().BeTrue();
             editor.Words.Should().NotContain(w => w.Word == "wrold");
-            title.Should().Be(Strings.Get("CheckpointOp_SpellCheck"), "the operation now runs under DelayedProgressRunner instead of no window at all");
+            runs.Select(r => r.Title).Should().Equal(
+                Strings.Format("Checkpoint_Before", Strings.Get("CheckpointOp_SpellCheck")), Strings.Get("CheckpointOp_SpellCheck"));
+            runs[^1].Cancellable.Should().BeFalse("a quick edit like this one offers no Cancel");
         });
     }
 
@@ -1799,11 +1800,10 @@ public sealed class MainWindowViewModelTests : IDisposable
             sut.LoadBook(book, epub);
             EditionPage.Stamp(book, EditionPageSettings.Default with { Enabled = true }, DateTime.UtcNow, "en", "0.0.0-test");
             EditionPage.Find(book).Should().NotBeNull("a precondition of this test");
-            string? title = null;
+            List<(string Title, bool Cancellable)> runs = new();
             sut.DelayedProgressRunner = (t, work, c) =>
             {
-                title = t;
-                c.Should().BeFalse("a quick edit like this one offers no Cancel");
+                runs.Add((t, c));
                 return work(new CollectingProgress(), CancellationToken.None);
             };
             IEditionPageHost host = sut;
@@ -1814,8 +1814,9 @@ public sealed class MainWindowViewModelTests : IDisposable
             // Assert
             removed.Should().BeTrue();
             EditionPage.Find(book).Should().BeNull();
-            title.Should().Be(
-                Strings.Get("CheckpointOp_RemoveEditionPage"), "the operation now runs under DelayedProgressRunner instead of no window at all");
+            runs.Select(r => r.Title).Should().Equal(
+                Strings.Format("Checkpoint_Before", Strings.Get("CheckpointOp_RemoveEditionPage")), Strings.Get("CheckpointOp_RemoveEditionPage"));
+            runs[^1].Cancellable.Should().BeFalse("a quick edit like this one offers no Cancel");
         });
     }
 

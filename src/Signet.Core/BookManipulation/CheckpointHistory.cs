@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using SysPath = System.IO.Path;
 using Signet.Core.Diff;
 using Signet.Core.Localization;
@@ -149,14 +150,27 @@ public sealed class CheckpointHistory : IDisposable
         _editedSinceMove.Add(bookPath);
     }
 
+    /// <summary>Like <see cref="AddCheckpointCancellable"/>, never cancelled.</summary>
+    public void AddCheckpoint(Book liveBook, string message) => AddCheckpointCancellable(liveBook, message, CancellationToken.None);
+
     /// <summary>
     /// Creates a checkpoint of the book's current state: saves
     /// the book to disk, copies its folder as a frozen state described by <paramref name="message"/>,
     /// cuts off the "after" states and enforces the limit. Editing continues in the existing folder.
     /// </summary>
+    /// <remarks>
+    /// Named differently from <see cref="AddCheckpoint(Book,string)"/> (rather than overloaded) so that calls to the
+    /// plain, uncancellable method are not flagged by the xUnit analyzer that expects every call to a method named
+    /// the same as one accepting a <see cref="CancellationToken"/> to pass one.
+    /// </remarks>
     /// <param name="liveBook">The current book (working in the <see cref="Current"/> folder).</param>
     /// <param name="message">The checkpoint name.</param>
-    public void AddCheckpoint(Book liveBook, string message)
+    /// <param name="cancel">
+    /// Checked between files while the folder is copied — the one part of this call that can take a while on a big
+    /// book. Cancelling leaves nothing behind: the partial snapshot is disposed and the live state is untouched (the
+    /// in-memory bookkeeping below only runs once the copy has fully succeeded).
+    /// </param>
+    public void AddCheckpointCancellable(Book liveBook, string message, CancellationToken cancel)
     {
         ArgumentNullException.ThrowIfNull(message);
         CheckpointState live = RequireLive(liveBook);
@@ -165,7 +179,7 @@ public sealed class CheckpointHistory : IDisposable
         TempFolder snapshot = new();
         try
         {
-            CopyStateFolder(live.FolderPath, snapshot.Path);
+            CopyStateFolder(live.FolderPath, snapshot.Path, cancel);
         }
         catch
         {
@@ -198,7 +212,7 @@ public sealed class CheckpointHistory : IDisposable
     /// <summary>
     /// Withdraws a checkpoint created just before an operation that was cancelled or changed
     /// nothing. Works only directly after
-    /// <see cref="AddCheckpoint"/> (with no moves between states in the meantime); otherwise does nothing.
+    /// <see cref="AddCheckpoint(Book,string)"/> (with no moves between states in the meantime); otherwise does nothing.
     /// </summary>
     /// <remarks>
     /// The current book is left unchanged — call this only when the operation did not change it
@@ -415,15 +429,17 @@ public sealed class CheckpointHistory : IDisposable
     }
 
     // A copy of the state folder without the TempFolder lock file (each folder has its own).
-    private static void CopyStateFolder(string sourceRoot, string destinationRoot)
+    private static void CopyStateFolder(string sourceRoot, string destinationRoot, CancellationToken cancel = default)
     {
         foreach (string directory in Directory.EnumerateDirectories(sourceRoot, "*", SearchOption.AllDirectories))
         {
+            cancel.ThrowIfCancellationRequested();
             Directory.CreateDirectory(SysPath.Combine(destinationRoot, SysPath.GetRelativePath(sourceRoot, directory)));
         }
 
         foreach (string file in Directory.EnumerateFiles(sourceRoot, "*", SearchOption.AllDirectories))
         {
+            cancel.ThrowIfCancellationRequested();
             string relative = SysPath.GetRelativePath(sourceRoot, file);
             if (string.Equals(relative, TempFolder.LockFileName, StringComparison.Ordinal))
             {
@@ -447,7 +463,7 @@ public sealed class CheckpointHistory : IDisposable
 
     /// <summary>
     /// Stops <see cref="Changed"/> from firing until <see cref="ResumeChanged"/> — for a caller about to make a change
-    /// (e.g. <see cref="AddCheckpoint"/>, <see cref="Abandon"/>) off the UI thread: its subscribers (actions, panels)
+    /// (e.g. <see cref="AddCheckpoint(Book,string)"/>, <see cref="Abandon"/>) off the UI thread: its subscribers (actions, panels)
     /// would otherwise be touched from that thread. <see cref="ResumeChanged"/> fires it once more if anything changed
     /// meanwhile.
     /// </summary>

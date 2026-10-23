@@ -157,7 +157,19 @@ public sealed partial class MainWindowViewModel
 
         try
         {
-            bool checkpoint = checkpointName is not null && await AddCheckpointBeforeAsync(checkpointName).ConfigureAwait(true);
+            bool checkpoint;
+            try
+            {
+                checkpoint = checkpointName is not null && await AddCheckpointBeforeAsync(checkpointName).ConfigureAwait(true);
+            }
+            catch (OperationCanceledException)
+            {
+                // Cancelled while taking the checkpoint itself: nothing was created and the book is untouched, so the
+                // operation that needed this checkpoint never starts either (see CheckpointHistory.AddCheckpoint).
+                _statusBar.ShowMessage(Strings.Format("Status_OperationCancelled", title), TimeSpan.FromSeconds(6));
+                return new BookOperationOutcome<T>(false, default, false);
+            }
+
             try
             {
                 T result = await RunInBackgroundAsync(title, runner ?? ProgressRunner, editsBook, cancellable: !editsBook || checkpoint, work)

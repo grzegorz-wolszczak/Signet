@@ -254,14 +254,51 @@ Legenda statusu: `[ ]` do zrobienia, `[x]` zrobione (z krótką notatką i commi
     operacja przechodzi przez niego (tytuł, `cancellable: false`), zamiast biegnąć bez żadnego okna.
   - `dotnet build Signet.slnx` + `dotnet test Signet.App.Tests` (1088/1088) — zielone.
 
-- [ ] **A4. Owinąć `AddCheckpointBeforeAsync`/`AbandonCheckpointAsync` w okno progresu.** Zależy od
-  decyzji A1 (cancellable czy nie). Prawdopodobnie najprościej: dodać im własny `ProgressRunner?`
-  parametr (tak jak reszta operacji) i wywoływać przez `RunWithProgressAsync`/`DelayedRunner`
-  zamiast gołego `await Task.Run(...)`. Uwaga: to są dwie osobne, krótkie fazy jednej logicznej
-  operacji z punktu widzenia użytkownika (np. "Cofanie do checkpointu: tworzenie migawki" /
-  "Cofanie do checkpointu: przywracanie") — dobry naturalny pierwszy przypadek użycia dla okna
-  wielowierszowego z zadania B1, jeśli B1 jest już zrobione; jeśli nie, zacząć od zwykłego
-  jednowierszowego okna i dopiero potem (osobnym małym zadaniem, jeśli trzeba) dodać wiersz fazy.
+- [x] **A4. Owinąć `AddCheckpointBeforeAsync`/`AbandonCheckpointAsync` w okno progresu.**
+  (2026-10-23, commit w `background-processing`) B1 nie jest zrobione, więc zgodnie z opisem
+  zadania zrobione jako zwykłe, jednowierszowe okno (`DelayedProgressRunner`, bez wiersza fazy).
+
+  Co zrobione:
+  - `CheckpointHistory.cs`: `CopyStateFolder` i nowa `AddCheckpointCancellable(Book, string,
+    CancellationToken)` sprawdzają token między plikami/folderami — cancel nie zostawia nic (patrz
+    test `AddCheckpointCancellable_cancelled_leaves_nothing_behind`). Istniejąca
+    `AddCheckpoint(Book, string)` zostaje bez zmian (woła `AddCheckpointCancellable` z
+    `CancellationToken.None`) — **osobna nazwa, nie przeciążenie**, bo przeciążenie o tej samej
+    nazwie z `CancellationToken` powodowało błąd analizatora `xUnit1051` na **wszystkich**
+    dotychczasowych wywołaniach dwuargumentowych w testach (analizator łapie po samej nazwie
+    metody, nie po faktycznie wybranym przeciążeniu).
+  - `MainWindowViewModel`: nowa `DelayedProgressRunner` (patrz A3) używana teraz też przez
+    `AddCheckpointBeforeAsync` (`cancellable: true`, zgodnie z decyzją A1) i `AbandonCheckpointAsync`
+    (`cancellable: false` — przywracanie samo jest już tym, co Cancel zaczął, nie ma już "dalszego
+    wstecz"). Nowe klucze zasobów `Checkpoint_AbandonProgressTitle` (PL/EN) na tytuł okna
+    przywracania; tytuł okna tworzenia checkpointu to istniejące `Checkpoint_Before` (nazwa
+    checkpointu i tytuł okna to teraz to samo, sensownie).
+  - `RunBookOperationAsync`: anulowanie **samego tworzenia checkpointu** teraz przerywa całą
+    operację (komunikat `Status_OperationCancelled`, książka nietknięta, operacja nigdy nie
+    startuje) — zamiast dotychczasowego "checkpoint się nie udał, operacja i tak rusza bez
+    ochrony", które było poprawne dla błędów (IOException i podobne — tam zostaje bez zmian), ale
+    złe dla świadomego Cancel przez użytkownika, zgodnie z decyzją A1.
+  - `RemoveEditionPageAsync`/`ApplySpellcheckChangeAllAsync` (A3) same nie przechodzą przez
+    `RunBookOperationAsync` — dopisany analogiczny `catch (OperationCanceledException)` wokół ich
+    własnego wywołania `AddCheckpointBeforeAsync`, żeby anulowanie checkpointu nie uciekało jako
+    nieobsłużony wyjątek.
+  - Testy: `AddCheckpointCancellable_cancelled_leaves_nothing_behind` (`Signet.Core.Tests`);
+    `Cancelling_the_checkpoint_itself_aborts_the_operation_before_it_ever_starts` (nowy) i
+    rozszerzony `Cancelling_the_renumbering_brings_the_book_back` (sprawdza tytuły i `cancellable`
+    obu wywołań `DelayedProgressRunner` — tworzenie i przywracanie) w `MainWindowFootnotesTests.cs`;
+    rozszerzone testy A3 dla RemoveEditionPage/SpellCheck o drugi wpis (checkpoint) w liście wywołań
+    runnera.
+  - `dotnet build Signet.slnx` + `dotnet test Signet.Core.Tests` (2991/2991) +
+    `dotnet test Signet.App.Tests` (1089/1089) + `dotnet test Signet.App.MainWindowUiTests`
+    (183/183) — zielone.
+  - **Znana niedoróbka do dalszych zadań (C1 albo nowe B-zadanie):** `ProgressWindow.DelayedRunner`
+    ignoruje parametr `cancellable` i zawsze pokazuje okno **bez** przycisku Cancel
+    (`cancellable: false` na stałe w jego implementacji) — więc mimo że tworzenie checkpointu jest
+    teraz mechanicznie przerywalne (token działa, testy to dowodzą), użytkownik **nie ma dziś
+    żadnego przycisku**, którym mógłby to zrobić w realnym UI, nawet przy bardzo dużej książce.
+    Żeby to naprawić, tworzenie checkpointu przed operacją, która sama ma duże, cancellable okno
+    (np. Renumber), powinałoby prawdopodobnie użyć **tego samego** `runner` co operacja główna
+    (z realnym Cancel), nie `DelayedProgressRunner` — do rozstrzygnięcia w C1 albo osobnym zadaniu.
 
 ### Część B — okno z wieloma wierszami (fazy)
 

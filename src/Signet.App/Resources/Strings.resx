@@ -3490,6 +3490,9 @@ Tego typu pliku nie można jeszcze edytować w Signet.</value>
   <data name="Checkpoint_Before" xml:space="preserve">
     <value>Przed: {0}</value>
   </data>
+  <data name="Checkpoint_AbandonProgressTitle" xml:space="preserve">
+    <value>Przywracanie punktu kontrolnego</value>
+  </data>
   <data name="Checkpoint_CreateTitle" xml:space="preserve">
     <value>Utwórz punkt kontrolny</value>
   </data>

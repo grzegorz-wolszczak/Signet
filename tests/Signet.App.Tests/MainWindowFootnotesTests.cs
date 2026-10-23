@@ -453,6 +453,12 @@ public sealed class MainWindowFootnotesTests : IDisposable
                 pressed.Cancel();
                 return work(new RecordingProgress(), pressed.Token);
             };
+            List<(string Title, bool Cancellable)> checkpointRuns = new();
+            sut.DelayedProgressRunner = (title, work, cancellable) =>
+            {
+                checkpointRuns.Add((title, cancellable));
+                return work(new RecordingProgress(), CancellationToken.None);
+            };
 
             // Act
             await host.RenumberFootnotes(runner);
@@ -462,6 +468,52 @@ public sealed class MainWindowFootnotesTests : IDisposable
             restored.GetHtmlResources().Single(h => h.Filename == chapter.Filename).GetText().Should().Be(before);
             sut.CheckpointHistory.States.Should().HaveCount(states, "the checkpoint of the cancelled renumbering is forgotten");
             sut.StatusMessage.Should().Be(Strings.Format("Status_OperationCancelledRestored", Strings.Get("FootnoteRenumber_ProgressTitle")));
+            checkpointRuns.Select(r => r.Title).Should().Equal(
+                Strings.Format("Checkpoint_Before", Strings.Get("CheckpointOp_RenumberFootnotes")),
+                Strings.Get("Checkpoint_AbandonProgressTitle"));
+            checkpointRuns[0].Cancellable.Should().BeTrue("creating a checkpoint is itself cancellable");
+            checkpointRuns[1].Cancellable.Should().BeFalse("restoring the book back is already what Cancel started — there is no further back from it");
+        });
+    }
+
+    [Fact]
+    public async Task Cancelling_the_checkpoint_itself_aborts_the_operation_before_it_ever_starts()
+    {
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange — Cancel is pressed while the checkpoint is still being taken (under DelayedProgressRunner, not
+            // the operation's own runner), so the renumbering work below never gets a chance to run at all.
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel sut, Book _, HtmlResource chapter) = OpenMinimalChapter(temp);
+            ICodeTabHost host = sut;
+            await host.AddFootnote(chapter, AfterHello(chapter), "Note.", FootnotePlacement.Local);
+            string before = chapter.GetText();
+            int states = sut.CheckpointHistory.States.Count;
+            using CancellationTokenSource pressed = new();
+            string? checkpointTitle = null;
+            sut.DelayedProgressRunner = (title, work, cancellable) =>
+            {
+                checkpointTitle = title;
+                cancellable.Should().BeTrue();
+                pressed.Cancel();
+                return work(new RecordingProgress(), pressed.Token);
+            };
+            bool mainWorkRan = false;
+
+            // Act
+            await host.RenumberFootnotes((_, work, _) =>
+            {
+                mainWorkRan = true;
+                return work(new RecordingProgress(), CancellationToken.None);
+            });
+
+            // Assert
+            mainWorkRan.Should().BeFalse("the operation's own runner is never reached when the checkpoint itself is cancelled");
+            checkpointTitle.Should().Be(Strings.Format("Checkpoint_Before", Strings.Get("CheckpointOp_RenumberFootnotes")));
+            chapter.GetText().Should().Be(before);
+            sut.CheckpointHistory.States.Should().HaveCount(states, "the cancelled checkpoint was never added");
+            sut.StatusMessage.Should().Be(Strings.Format("Status_OperationCancelled", Strings.Get("FootnoteRenumber_ProgressTitle")));
         });
     }
 
