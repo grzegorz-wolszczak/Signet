@@ -105,18 +105,63 @@ Legenda statusu: `[ ]` do zrobienia, `[x]` zrobione (z krótką notatką i commi
   podejście", punkt 4. Zadanie A4 implementuje token w `CopyStateFolder`/`AddCheckpoint` i
   przeprowadza go przez `AddCheckpointBeforeAsync`.
 
-- [ ] **A2. `IsBookOperationBusy` + spięcie z `CanExecute` wszystkich komend, które startują
-  operację na książce.** Nowa właściwość (albo event) na `MainWindowViewModel`, ustawiana
-  synchronicznie w `TryEnterBookOperation`/`ExitBookOperation`. Każda komenda/`AppAction`, która
-  dziś woła `TryEnterBookOperation` pośrednio (przez `RunBookOperationAsync`/`RunInBackgroundAsync`)
-  musi mieć `CanExecute` zwracające `false`, gdy `IsBookOperationBusy == true` — żeby menu/toolbar/
-  skrót były disabled od razu, nie tylko żeby druga próba dostała komunikat w Notifications. To
-  **nie musi** objąć w jednym zadaniu każdej pojedynczej komendy w appce na raz — jeśli lista
-  okaże się duża, podziel to na kolejne pod-zadania wg obszaru (menu górne / toolbar / skróty /
-  przypisy) i dopisz je tutaj. Warunek akceptacji: scenariusz z poprzedniej sesji (Renumber na
-  dużej książce, w trakcie próba kliknięcia Change Placement) kończy się tym, że drugiej opcji nie
-  da się w ogóle kliknąć — nie komunikatem "Status_OperationBusy" w Notifications (ten komunikat
-  zostaje jako fallback dla ścieżek nie-UI, np. skrótu klawiszowego złapanego tuż przed disable).
+- [x] **A2. `IsBookOperationBusy` + spięcie z `CanExecute` wszystkich komend, które startują
+  operację na książce.** (2026-10-23, commit w `background-processing`) Zrobione dla **wszystkich
+  komend podpiętych przez `AppActionRegistry`** (menu górne, toolbar, skróty — to pokrywa
+  dokładnie warunek akceptacji z opisu zadania). Pozostałe trzy kategorie entry-pointów (inne
+  viewmodels z własnym `RelayCommand`, code-behind bez żadnego `ICommand`) wydzielone jako A2b/A2c/
+  A2d niżej — audyt pokazał, że są trzy różne mechanizmy komend w appce, nie jeden.
+
+  Co zrobione:
+  - `AppAction.cs`: nowa właściwość `IsBusy` (analogicznie do istniejącego `IsBlocked`) —
+    `IsEnabled => _isEnabled && !_isBlocked && !_isBusy`.
+  - `AppActionRegistry.cs`: nowa metoda `SetBusy(bool busy, params string[] ids)` (analogicznie do
+    `SetEnabled`/`SetBookOpen`).
+  - `MainWindowViewModel.Operations.cs`: nowa publiczna właściwość `IsBookOperationBusy`
+    (`SetProperty`, prywatny setter) + statyczna tablica `BookOperationActionIds` z identyfikatorami
+    wszystkich `AppAction`, które same wołają `RunBookOperationAsync`/`RunInBackgroundAsync` **lub**
+    otwierają okno dialogowe, które to robi po kliknięciu własnego Apply/Convert/Unify
+    (`MendPrettifyHtml`, `MendHtml`, `AddSoftHyphens`, `RemoveSoftHyphens`, `WellFormedCheckEpub`,
+    `RenumberFootnotes`, `ConvertFootnotes`, `UnifyFootnoteLetters`, `ChangeFootnotePlacement`).
+    `TryEnterBookOperation`/`ExitBookOperation` ustawiają `IsBookOperationBusy` i wołają
+    `_actions.SetBusy(...)` synchronicznie, przed jakimkolwiek `await`.
+  - Decyzja projektowa: okna-dialogi (Change Placement / Convert Footnotes / Unify Letters) też są
+    na liście, mimo że ich `AppAction`-handler sam nie woła `RunBookOperationAsync` — tylko otwiera
+    okno z własnym przyciskiem Apply na innym viewmodelu. Bez tego dałoby się otworzyć okno w
+    trakcie Renumber i dopiero Apply by się nie powiodło — niezgodne z warunkiem akceptacji ("nie
+    da się w ogóle kliknąć").
+  - Test: rozszerzony `Starting_a_new_operation_while_a_cancelled_one_is_still_restoring_the_book_is_refused`
+    (`MainWindowFootnotesTests.cs`) — asercje na `sut.IsBookOperationBusy` i na
+    `sut.Actions.Require(AppActionIds.ChangeFootnotePlacement).CanExecute(null)` przed/po operacji.
+  - `Status_OperationBusy` w Notifications zostaje jako fallback (np. dla skrótu klawiszowego
+    złapanego tuż przed disable) — zgodnie z opisem zadania.
+
+- [ ] **A2b. Spięcie `IsBookOperationBusy` z komendami dialogów przypisów/spellchecku.**
+  `FootnotePlacementViewModel.ApplyCommand`, `FootnoteLettersViewModel.UnifyCommand`,
+  `FootnoteConversionViewModel.ConvertCommand`, `SpellcheckEditorViewModel.ChangeAllCommand` to
+  własne `AsyncRelayCommand`/`RelayCommand` na **innych** viewmodelach niż `MainWindowViewModel` —
+  dziś nie wiedzą o `IsBookOperationBusy` wcale. W praktyce dziś nie da się ich kliknąć w trakcie
+  innej operacji, bo A2 blokuje już samo otwarcie okna Change Placement/Convert/Unify z menu — ale
+  jeśli okno jest już otwarte (otwarte przed startem innej operacji) i user kliknie Apply w trakcie,
+  trafi dziś na `TryEnterBookOperation` → `false` → komunikat w Notifications, nie na disabled
+  przycisk. `SpellcheckEditorViewModel.ChangeAllCommand` nie ma dziś żadnego `CanExecute` w ogóle.
+  Do zrobienia: przekazać `IsBookOperationBusy` (referencja/event z `MainWindowViewModel`) do tych
+  viewmodeli i dodać `CanExecute` odwołujące się do niego.
+
+- [ ] **A2c. Spięcie `IsBookOperationBusy` z Undo/Redo/RevertTo checkpointów.**
+  `CheckpointsViewModel` ma własne komendy wołające `MainWindowViewModel.MoveToCheckpointAsync`
+  (przez `RunInBackgroundAsync`) — nie są podpięte przez `AppActionRegistry`. Dziś panel
+  Checkpoints nie disabluje tych przycisków w trakcie innej operacji na książce.
+
+- [ ] **A2d. Spięcie `IsBookOperationBusy` z wywołaniami bez żadnego `ICommand` (code-behind).**
+  `CodeTabView.axaml.cs` woła bezpośrednio `ICodeTabHost.AddFootnote`/`AddFootnoteReference`/
+  `RemoveFootnote`/`RemoveFootnoteReference`/`EditFootnote`/`ApplyClassRename`/`ApplyIdRename`/
+  `ApplyClassRemoval`/`ApplySpanRemovalInBook` z menu kontekstowego edytora kodu — dziś enable tych
+  pozycji menu to ręczny warunek (`enabled: state.HasFootnotes` itp.), niezwiązany z
+  `IsBookOperationBusy`. Podobnie `_validationResults.FixRequested` (przycisk w panelu Validation
+  Results, woła `FixValidationResultsAsync`) nie jest `AppAction` i nie ma dziś żadnego disable.
+  Do zrobienia: sprawdzać `IsBookOperationBusy` przy budowaniu tych pozycji menu/przycisków (albo
+  przy samym kliknięciu, zanim cokolwiek się zacznie).
 
 - [ ] **A3. Zamienić `runner: null` na realne okno.** `RemoveEditionPage`
   (`MainWindowViewModel.cs`, `IEditionPageHost.RemoveEditionPageAsync`) i

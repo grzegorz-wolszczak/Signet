@@ -84,15 +84,16 @@ public sealed partial class AppAction : ObservableObject, ICommand
 
     private bool _isEnabled;
     private bool _isBlocked;
+    private bool _isBusy;
 
     /// <summary>
     /// Whether the action is currently enabled: enabled by its owner (the value set here) and not
-    /// <see cref="IsBlocked"/>. While blocked it reads <see langword="false"/> whatever was set; the set value comes
-    /// back once the block is lifted.
+    /// <see cref="IsBlocked"/> or <see cref="IsBusy"/>. While blocked or busy it reads <see langword="false"/>
+    /// whatever was set; the set value comes back once the block/busy state is lifted.
     /// </summary>
     public bool IsEnabled
     {
-        get => _isEnabled && !_isBlocked;
+        get => _isEnabled && !_isBlocked && !_isBusy;
         set => Update(ref _isEnabled, value);
     }
 
@@ -104,6 +105,16 @@ public sealed partial class AppAction : ObservableObject, ICommand
     {
         get => _isBlocked;
         set => Update(ref _isBlocked, value);
+    }
+
+    /// <summary>
+    /// Whether the action is unavailable because another operation on the book is already running
+    /// (<see cref="AppActionRegistry.SetBusy"/>) — e.g. Renumber Footnotes while Change Footnote Placement is running.
+    /// </summary>
+    public bool IsBusy
+    {
+        get => _isBusy;
+        set => Update(ref _isBusy, value);
     }
 
     private void Update(ref bool field, bool value)

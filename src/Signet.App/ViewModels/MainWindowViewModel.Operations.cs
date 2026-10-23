@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Signet.App.Actions;
 using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.Services;
@@ -32,20 +33,55 @@ public sealed partial class MainWindowViewModel
     // ObjectDisposedException reading a file of the book that the still-running restore had already disposed).
     private bool _bookOperationBusy;
 
+    // AppAction ids disabled for the whole span of a book operation (see _bookOperationBusy) — not only the action that
+    // started it, but every other action that would itself start one. Includes the ids whose handler opens a dialog that
+    // starts the operation only once its own Apply/Convert/Unify button is clicked (Change Footnote Placement, Convert
+    // Footnotes, Unify Footnote Letters): leaving those enabled would let the dialog open just to then refuse Apply.
+    private static readonly string[] BookOperationActionIds =
+    [
+        AppActionIds.MendPrettifyHtml,
+        AppActionIds.MendHtml,
+        AppActionIds.AddSoftHyphens,
+        AppActionIds.RemoveSoftHyphens,
+        AppActionIds.WellFormedCheckEpub,
+        AppActionIds.RenumberFootnotes,
+        AppActionIds.ConvertFootnotes,
+        AppActionIds.UnifyFootnoteLetters,
+        AppActionIds.ChangeFootnotePlacement,
+    ];
+
+    /// <summary>
+    /// Whether a background book operation (see <see cref="RunBookOperationAsync{T}"/>) is currently running — set
+    /// synchronously in <see cref="TryEnterBookOperation"/>, before anything asynchronous starts. Menus/toolbar/shortcuts
+    /// for the other operations in <c>BookOperationActionIds</c> are disabled for as long as this is
+    /// <see langword="true"/> (<see cref="AppActionRegistry.SetBusy"/>); the <c>Status_OperationBusy</c> message remains
+    /// as a fallback for non-UI paths, e.g. a shortcut caught just before the disable takes effect.
+    /// </summary>
+    public bool IsBookOperationBusy
+    {
+        get => _bookOperationBusy;
+        private set => SetProperty(ref _bookOperationBusy, value);
+    }
+
     // Marks a background book operation as started; false (with a status message) when one is already running.
     private bool TryEnterBookOperation()
     {
-        if (_bookOperationBusy)
+        if (IsBookOperationBusy)
         {
             _statusBar.ShowMessage(Strings.Get("Status_OperationBusy"), TimeSpan.FromSeconds(4), NotificationLevel.Warning);
             return false;
         }
 
-        _bookOperationBusy = true;
+        IsBookOperationBusy = true;
+        _actions.SetBusy(true, BookOperationActionIds);
         return true;
     }
 
-    private void ExitBookOperation() => _bookOperationBusy = false;
+    private void ExitBookOperation()
+    {
+        IsBookOperationBusy = false;
+        _actions.SetBusy(false, BookOperationActionIds);
+    }
 
     /// <summary>The outcome of <see cref="RunBookOperationAsync{T}"/>.</summary>
     /// <param name="Completed">Whether the work ran to the end (not cancelled).</param>

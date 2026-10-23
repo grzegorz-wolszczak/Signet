@@ -488,6 +488,13 @@ public sealed class MainWindowFootnotesTests : IDisposable
 
             // Act
             Task first = host.RenumberFootnotes(runner);
+
+            // Assert — while the first operation is running, IsBookOperationBusy is set synchronously and every other
+            // action that would itself start a book operation is disabled, not only the one that started this one — the
+            // menu/toolbar/shortcut for "Change Footnote Placement" cannot even be clicked.
+            sut.IsBookOperationBusy.Should().BeTrue();
+            sut.Actions.Require(AppActionIds.ChangeFootnotePlacement).CanExecute(null).Should().BeFalse();
+
             Task second = host.RenumberFootnotes();
 
             // Assert — the second call is refused synchronously, before it ever touches the book, instead of racing the first
@@ -499,10 +506,13 @@ public sealed class MainWindowFootnotesTests : IDisposable
             // Act
             await first;
 
-            // Assert — the first (accepted) operation still ran to completion and restored the book from its checkpoint.
+            // Assert — the first (accepted) operation still ran to completion and restored the book from its checkpoint, and
+            // the other actions are enabled again.
             Book restored = ((IBookWorkspace)sut).CurrentBook!;
             restored.GetHtmlResources().Single(h => h.Filename == chapter.Filename).GetText().Should().Be(before);
             sut.StatusMessage.Should().Be(Strings.Format("Status_OperationCancelledRestored", Strings.Get("FootnoteRenumber_ProgressTitle")));
+            sut.IsBookOperationBusy.Should().BeFalse();
+            sut.Actions.Require(AppActionIds.ChangeFootnotePlacement).CanExecute(null).Should().BeTrue();
         });
     }
 
