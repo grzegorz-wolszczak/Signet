@@ -255,6 +255,28 @@ public sealed class SpellcheckEditorViewModelTests : IDisposable
     }
 
     [Fact]
+    public void ChangeAll_is_disabled_while_another_book_operation_is_busy_and_enabled_again_once_it_is_not()
+    {
+        // Arrange
+        (SpellcheckEditorViewModel editor, _, _) = New("<p>wrold</p>");
+        editor.SetSelectedWords(editor.Words);
+        editor.ChangeAllText = "world";
+        editor.ChangeAllCommand.CanExecute(null).Should().BeTrue("a precondition of this test: one word is selected");
+
+        // Act
+        editor.IsBookOperationBusy = true;
+
+        // Assert
+        editor.ChangeAllCommand.CanExecute(null).Should().BeFalse();
+
+        // Act
+        editor.IsBookOperationBusy = false;
+
+        // Assert
+        editor.ChangeAllCommand.CanExecute(null).Should().BeTrue();
+    }
+
+    [Fact]
     public void SetSelectedWords_with_a_single_row_seeds_suggestions_and_change_all_text()
     {
         // Arrange

@@ -51,6 +51,14 @@ public sealed partial class FootnoteConversionViewModel : ViewModelBase
     [NotifyCanExecuteChangedFor(nameof(ConvertCommand))]
     private bool _isConverting;
 
+    /// <summary>
+    /// Whether another operation on the book is running elsewhere (set by the host window from
+    /// <c>MainWindowViewModel.IsBookOperationBusy</c>) — disables <see cref="ConvertCommand"/> until it finishes.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ConvertCommand))]
+    private bool _isBookOperationBusy;
+
     /// <summary>Whether the tree shows only the footnotes that need a look (⚠, also those that cannot be converted).</summary>
     [ObservableProperty]
     private bool _onlyWarnings;
@@ -126,7 +134,7 @@ public sealed partial class FootnoteConversionViewModel : ViewModelBase
         Strings.Format("FootnoteConversionWindow_Summary", Items.Count(i => i.IsChecked), Items.Count);
 
     /// <summary>Whether "Convert" can run: something is checked and, for global footnotes, a file is chosen.</summary>
-    public bool CanConvert => !IsConverting && Items.Any(i => i.IsChecked) && (!NeedsGlobalFile || SelectedFile is not null);
+    public bool CanConvert => !IsConverting && !IsBookOperationBusy && Items.Any(i => i.IsChecked) && (!NeedsGlobalFile || SelectedFile is not null);
 
     /// <summary>Converts the checked footnotes.</summary>
     public IAsyncRelayCommand ConvertCommand { get; }

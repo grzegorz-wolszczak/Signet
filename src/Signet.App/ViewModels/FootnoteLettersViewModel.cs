@@ -291,7 +291,26 @@ public sealed partial class FootnoteLettersViewModel : ObservableObject
         Notes.Count(n => n.IsChecked).ToString(CultureInfo.CurrentCulture), Notes.Count.ToString(CultureInfo.CurrentCulture));
 
     /// <summary>Whether a checked note can be rewritten.</summary>
-    public bool CanUnify => Notes.Any(n => n.IsChecked);
+    public bool CanUnify => Notes.Any(n => n.IsChecked) && !IsBookOperationBusy;
+
+    private bool _isBookOperationBusy;
+
+    /// <summary>
+    /// Whether another operation on the book is running elsewhere (set by the host window from
+    /// <c>MainWindowViewModel.IsBookOperationBusy</c>) — disables <see cref="UnifyCommand"/> until it finishes.
+    /// </summary>
+    public bool IsBookOperationBusy
+    {
+        get => _isBookOperationBusy;
+        set
+        {
+            if (SetProperty(ref _isBookOperationBusy, value))
+            {
+                OnPropertyChanged(nameof(CanUnify));
+                UnifyCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
 
     /// <summary>"Unify" — rewrites the checked notes and closes the dialog (<see cref="Done"/>).</summary>
     public IAsyncRelayCommand UnifyCommand { get; }

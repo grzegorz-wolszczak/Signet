@@ -77,12 +77,31 @@ public sealed class SpellcheckEditorViewModel : ViewModelBase
         RefreshCommand = new RelayCommand(() => Refresh(_book));
         IgnoreCommand = new RelayCommand(Ignore);
         AddCommand = new RelayCommand(Add);
-        ChangeAllCommand = new RelayCommand(ChangeAll);
+        ChangeAllCommand = new RelayCommand(ChangeAll, () => !IsBookOperationBusy);
         ExportCsvCommand = new RelayCommand(() => ExportCsvRequested?.Invoke(this, EventArgs.Empty));
     }
 
     /// <summary>Raised by "Export CSV…" — the view asks for the file and writes <see cref="BuildCsv"/> to it.</summary>
     public event EventHandler? ExportCsvRequested;
+
+    private bool _isBookOperationBusy;
+
+    /// <summary>
+    /// Whether another operation on the book is running elsewhere (set once, for the lifetime of this persistent view
+    /// model, by <c>MainWindowViewModel</c> from its own <c>IsBookOperationBusy</c>) — disables
+    /// <see cref="ChangeAllCommand"/> until it finishes.
+    /// </summary>
+    public bool IsBookOperationBusy
+    {
+        get => _isBookOperationBusy;
+        set
+        {
+            if (SetProperty(ref _isBookOperationBusy, value))
+            {
+                ChangeAllCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
 
     /// <summary>Exports the visible rows to a CSV file.</summary>
     public IRelayCommand ExportCsvCommand { get; }

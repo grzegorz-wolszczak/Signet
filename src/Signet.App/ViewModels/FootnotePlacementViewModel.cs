@@ -177,7 +177,26 @@ public sealed partial class FootnotePlacementViewModel : ObservableObject
     public bool HasItems => _all.Count > 0;
 
     /// <summary>Whether something is checked.</summary>
-    public bool CanApply => Checked().Any();
+    public bool CanApply => Checked().Any() && !IsBookOperationBusy;
+
+    private bool _isBookOperationBusy;
+
+    /// <summary>
+    /// Whether another operation on the book is running elsewhere (set by the host window from
+    /// <c>MainWindowViewModel.IsBookOperationBusy</c>) — disables <see cref="ApplyCommand"/> until it finishes.
+    /// </summary>
+    public bool IsBookOperationBusy
+    {
+        get => _isBookOperationBusy;
+        set
+        {
+            if (SetProperty(ref _isBookOperationBusy, value))
+            {
+                OnPropertyChanged(nameof(CanApply));
+                ApplyCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
 
     /// <summary>"Change" — moves the checked footnotes and closes the dialog (<see cref="Done"/>).</summary>
     public IAsyncRelayCommand ApplyCommand { get; }

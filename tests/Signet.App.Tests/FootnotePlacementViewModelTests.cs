@@ -142,6 +142,33 @@ public sealed class FootnotePlacementViewModelTests
     }
 
     [Fact]
+    public void Apply_is_disabled_while_another_book_operation_is_busy_and_enabled_again_once_it_is_not()
+    {
+        // Arrange
+        (Book book, HtmlResource _) = NewBook();
+        using (book)
+        {
+            FootnotePlacementViewModel sut = NewViewModel(book);
+            sut.SelectAllCommand.Execute(null);
+            sut.CanApply.Should().BeTrue("a precondition of this test: something is checked");
+
+            // Act
+            sut.IsBookOperationBusy = true;
+
+            // Assert
+            sut.CanApply.Should().BeFalse();
+            sut.ApplyCommand.CanExecute(null).Should().BeFalse();
+
+            // Act
+            sut.IsBookOperationBusy = false;
+
+            // Assert
+            sut.CanApply.Should().BeTrue();
+            sut.ApplyCommand.CanExecute(null).Should().BeTrue();
+        }
+    }
+
+    [Fact]
     public void The_filter_hides_a_kind_and_unchecks_what_it_hides()
     {
         // Arrange
