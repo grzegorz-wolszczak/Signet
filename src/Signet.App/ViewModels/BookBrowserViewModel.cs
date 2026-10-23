@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Signet.App.Actions;
+using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.Core;
@@ -1555,17 +1556,35 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         }
     }
 
+    private bool _suspendRebuilds;
+
     /// <summary>
     /// Whether the tree ignores the changes of the book: set while the book is edited off the UI thread (the changes are raised
     /// there, and the tree is bound to the UI); the caller refreshes the tree when it is done (<see cref="Refresh"/>).
     /// </summary>
-    public bool SuspendRebuilds { get; set; }
+    public bool SuspendRebuilds
+    {
+        get => _suspendRebuilds;
+        set
+        {
+            if (_suspendRebuilds != value)
+            {
+                DebugLog.Write("BookBrowser", value ? "SuspendRebuilds: on" : "SuspendRebuilds: off");
+            }
+
+            _suspendRebuilds = value;
+        }
+    }
 
     private void OnModelChanged(object? sender, EventArgs e)
     {
         if (!SuspendRebuilds)
         {
             Rebuild();
+        }
+        else
+        {
+            DebugLog.Write("BookBrowser", "model changed while suspended, rebuild deferred");
         }
     }
 
@@ -1588,6 +1607,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
 
     private void Rebuild()
     {
+        long start = System.Diagnostics.Stopwatch.GetTimestamp();
         foreach (BookBrowserNode node in Nodes)
         {
             node.PropertyChanged -= OnFolderNodePropertyChanged;
@@ -1598,6 +1618,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         Nodes.Clear();
         if (_model is null)
         {
+            DebugLog.Write("BookBrowser", $"Rebuild: no book ({DebugLog.Elapsed(start)})");
             return;
         }
 
@@ -1620,6 +1641,9 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         {
             Nodes.Add(BookBrowserNode.File(entry));
         }
+
+        DebugLog.Write(
+            "BookBrowser", $"Rebuild: {_model.Folders.Sum(f => f.Entries.Count) + _model.TopLevelFiles.Count} files ({DebugLog.Elapsed(start)})");
     }
 }
 
