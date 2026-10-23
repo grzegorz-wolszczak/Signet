@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Signet.App.Infrastructure;
 using Signet.App.Services;
 using Signet.Core.BookManipulation;
 
@@ -27,10 +28,23 @@ public sealed class FakeFileWorkflowPrompts : IFileWorkflowPrompts
     public List<string> ProgressMessages { get; } = new();
 
     /// <inheritdoc />
-    public Task<T> ShowProgressAsync<T>(string message, System.Func<Task<T>> work)
+    public Task<T> ShowProgressAsync<T>(string message, System.Func<System.IProgress<WorkProgress>, Task<T>> work)
     {
         ProgressMessages.Add(message);
-        return work();
+        return work(ProgressReports);
+    }
+
+    /// <summary>What the work of the <see cref="ShowProgressAsync"/> calls reported.</summary>
+    public RecordingWorkProgress ProgressReports { get; } = new();
+
+    /// <summary>Remembers the reports it is given.</summary>
+    public sealed class RecordingWorkProgress : System.IProgress<WorkProgress>
+    {
+        /// <summary>The reports, in order.</summary>
+        public List<WorkProgress> Reports { get; } = new();
+
+        /// <inheritdoc />
+        public void Report(WorkProgress value) => Reports.Add(value);
     }
 
     /// <summary>The answers to <see cref="AskFileInUseAsync"/>, in order (the dialog closed = <see cref="FileInUseChoice.Close"/>).</summary>

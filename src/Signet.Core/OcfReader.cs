@@ -7,6 +7,7 @@ using System.Text;
 using System.Xml;
 using System.Xml.Linq;
 using SysPath = System.IO.Path;
+using Signet.Core.Importers;
 using Signet.Core.Localization;
 
 namespace Signet.Core;
@@ -61,8 +62,9 @@ public sealed class OcfReader
 
     /// <summary>Unpacks the EPUB into <paramref name="destinationDirectory"/> and reads the container.</summary>
     /// <param name="destinationDirectory">The target working folder (it will be created).</param>
+    /// <param name="progress">Told how many entries of the archive are unpacked (<see cref="BookLoadStage.Extracting"/>).</param>
     /// <exception cref="EpubLoadException">The EPUB is corrupted or incomplete.</exception>
-    public OcfContainer Extract(string destinationDirectory)
+    public OcfContainer Extract(string destinationDirectory, IProgress<BookLoadProgress>? progress = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(destinationDirectory);
 
@@ -77,7 +79,7 @@ public sealed class OcfReader
 
         List<string> warnings = new();
 
-        ExtractArchive(root, warnings);
+        ExtractArchive(root, warnings, progress);
         IReadOnlyList<string> rootfiles = LocateRootfiles(root, warnings);
         IReadOnlyDictionary<string, string> encrypted = ReadEncryptionXml(root, warnings);
 
@@ -193,7 +195,7 @@ public sealed class OcfReader
         return encrypted;
     }
 
-    private void ExtractArchive(string root, List<string> warnings)
+    private void ExtractArchive(string root, List<string> warnings, IProgress<BookLoadProgress>? progress)
     {
         ZipArchive archive;
         try
@@ -209,8 +211,10 @@ public sealed class OcfReader
         {
             ValidateMimetype(archive, warnings);
 
+            int done = 0;
             foreach (ZipArchiveEntry entry in archive.Entries)
             {
+                progress?.Report(new BookLoadProgress(BookLoadStage.Extracting, done++, archive.Entries.Count));
                 ExtractEntry(entry, root);
             }
         }

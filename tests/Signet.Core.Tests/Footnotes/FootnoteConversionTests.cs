@@ -1004,6 +1004,7 @@ public sealed class FootnoteConversionTests
         {
             List<ConversionProgress> reports = new();
             ConversionPlan plan = FootnoteEditor.PlanConversion(book);
+            int files = book.GetHtmlResources().Count;
 
             // Act
             ConversionResult result = FootnoteEditor.Convert(
@@ -1015,7 +1016,11 @@ public sealed class FootnoteConversionTests
             reports.Select(r => r.Stage).Distinct().Should().Equal(
                 ConversionStage.Preparing, ConversionStage.Converting, ConversionStage.Finishing, ConversionStage.Checking);
             reports.Where(r => r.Stage == ConversionStage.Converting).Select(r => r.Done).Should().BeInAscendingOrder().And.EndWith(2);
-            reports.Should().OnlyContain(r => r.Total == 2);
+            reports.Where(r => r.Stage != ConversionStage.Preparing).Should().OnlyContain(r => r.Total == 2);
+            List<ConversionProgress> preparing = reports.Where(r => r.Stage == ConversionStage.Preparing).ToList();
+            preparing[0].Total.Should().Be(0, "the count of the files is not known before the scan starts");
+            preparing.Skip(1).Should().NotBeEmpty().And.OnlyContain(r => r.Total == files);
+            preparing[^1].Done.Should().Be(files);
         }
     }
 

@@ -362,15 +362,48 @@ Legenda statusu: `[ ]` do zrobienia, `[x]` zrobione (z krótką notatką i commi
   dziś jest wołany z `progress: null`, a na dużej książce to prawdopodobnie najdłuższy etap. Da się to
   naprawić, przekazując postęp Renumber do fazy (osobne zadanie — dopisać jako B3b, jeśli user chce).
 
-- [ ] **B4. Fazy w Convert Footnotes.** Analogicznie do B3, dla etapów konwersji. Zależy od B1.
+- [x] **B4. Fazy w Convert Footnotes.** (2026-10-23) Pięć faz: cztery etapy `ConversionStage` +
+  piąta, "Analizowanie przypisów", czyli ponowne planowanie konwersji, które po `Convert` odbywa się
+  w osobnym oknie (`ConvertFootnotesAsync` woła `RunInBackgroundAsync` drugi raz). Numeracja
+  "Faza X z 5" jest więc wspólna dla obu okien. Preparing = "plik x z y" (**zmiana w Core:**
+  `Convert` przekazuje teraz postęp do `FootnoteScanner.Scan`, `ConversionScanRelay`, pierwszy raport
+  ma `Total` = 0), Converting = "przypis x z y", Finishing i Checking = indeterminate, Analyzing =
+  "plik x z y" (`PhasedScanMap` + `PlanConversion(book, progress)`). Usunięte
+  `FootnoteConversion_Progress_{Converting,Finishing,Checking}`, dodane `FootnoteConversion_Phase_*`
+  (`FootnoteConversion_Analyzing`/`_Progress_Preparing` zostają: okno w `MainWindow.axaml.cs` używa ich
+  jako komunikatu początkowego). Testy: `The_conversion_runs_under_the_progress_runner_and_reports_its_progress`
+  (App, przepisany: fazy, nazwy, liczniki) i rozszerzony test postępu w `FootnoteConversionTests` (Core).
+  **Zostaje przypadek 3:** faza 3 (Finishing = zapis + `RenumberWith` z `progress: null` + dwa
+  skany) i 4 (Checking). To to samo zadanie co B3b poniżej.
 
-- [ ] **B5. Fazy przy otwieraniu/wczytywaniu książki.** Dziś `ShowProgressAsync`/`ShowWhileAsync`
-  (`IFileWorkflowPrompts`) pokazują jeden statyczny komunikat, bez % i bez faz — a to jest
-  dokładnie przykład z (III): rozpakowanie epub → szukanie plików → walidacja → wczytywanie. Nawet
-  bez dokładnego % w każdej fazie, same nazwy faz + numer X/Y już dają userowi informację, że coś
-  się dzieje i na jakim jest etapie. Zależy od B1; wymaga znalezienia, gdzie dokładnie w kodzie
-  ładowania książki da się rozróżnić te kroki (prawdopodobnie `Book`/`EpubLoader` czy podobne —
-  do zbadania w ramach tego zadania, nie założone tutaj).
+- [x] **B5. Fazy przy otwieraniu/wczytywaniu książki.** (2026-10-23) Rozpoznane kroki w kodzie:
+  `OcfReader.ExtractArchive` (rozpakowanie, wpis po wpisie) → `ImportEpub.LoadContentFiles` (plik po
+  pliku z manifestu) → `LoadHtmlAndCheckWellFormed` (plik po pliku, najcięższe) → reszta (czcionki,
+  nav, NCX, `PerformInitialLoads`; bez licznika) → w App `IBookWorkspace.ApplyBook` (wyświetlenie).
+  Co zrobione:
+  - Core: `BookLoadStage` {Extracting, Reading, Checking, Finishing} + `BookLoadProgress(Stage, Done,
+    Total)` (`Importers/IImporter.cs`); `IImporter.GetBook(bool extractMetadata = true,
+    IProgress<BookLoadProgress>? progress = null)` — `ImportHtml`/`ImportTxt` parametr ignorują (tylko
+    EPUB raportuje); `OcfReader.Extract(string, progress)`; `LoadWorkingFolder` (checkpointy) bez
+    postępu.
+  - App: `IFileWorkflowPrompts.ShowProgressAsync<T>(message, Func<IProgress<WorkProgress>, Task<T>>)`
+    (był `Func<Task<T>>`); `MainWindow.ShowProgressAsync` idzie teraz przez
+    `ProgressWindow.RunWithProgressAsync` (bez Cancel, z opóźnieniem 300 ms jak dotąd) i **tytuł okna
+    to teraz komunikat "Wczytywanie plik.epub…"** (zamiast "Signet"), bo po pierwszym raporcie
+    fazowym komunikat znika z okna, a nazwa pliku ma zostać widoczna. `FileWorkflow.BookLoadMap`
+    mapuje etapy na 4 fazy + piątą "Wyświetlanie książki" (raport tuż przed `ApplyBook`, tylko gdy
+    importer raportował); pliki nie-EPUB zostają z jednym komunikatem, bez faz.
+  - Resources: `BookLoad_Phase_{Extracting,Reading,Checking,Finishing,Displaying}` (PL/EN).
+  - Testy: `GetBook_reports_the_stages_in_order_and_counts_the_entries_and_the_files` (Core),
+    `LoadFileAsync_reports_the_phases_of_loading_an_epub`, `..._reports_no_phases_for_a_file_that_is_not_an_epub`
+    (App; `FakeFileWorkflowPrompts` nagrywa teraz raporty).
+  - **Nie zweryfikowane ręcznie:** `ApplyBook` biegnie synchronicznie na wątku UI, więc etykieta
+    "Faza 5 z 5: Wyświetlanie książki" może nie zdążyć się narysować przed jego zablokowaniem (raporty
+    trafiają do okna przez `Dispatcher.Post`). Do sprawdzenia na dużej książce; jeśli się nie rysuje,
+    trzeba `ApplyBook` wyprzedzić oddaniem sterowania pętli UI.
+  - **B3b (dopisane, do zrobienia):** przekazać postęp `RenumberWith` do faz kończących w Placement
+    (faza 3) i Convert (faza 3) — dziś to jedyne duże fazy bez postępu, a na dużej książce
+    najdłuższe.
 
 ### Część C — audyt Cancel
 

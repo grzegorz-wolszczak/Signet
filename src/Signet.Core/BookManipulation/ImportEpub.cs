@@ -55,8 +55,9 @@ public sealed partial class ImportEpub : IImporter
     /// When <c>true</c> and the OPF has no valid spine — the original DC metadata is restored after the
     /// OPF is rebuilt.
     /// </param>
+    /// <param name="progress">Told how far the load is: the entries unpacked, then the files read and checked.</param>
     /// <exception cref="EpubLoadException">The EPUB is unreadable, DRM-encrypted or corrupted.</exception>
-    public Book GetBook(bool extractMetadata = true)
+    public Book GetBook(bool extractMetadata = true, IProgress<BookLoadProgress>? progress = null)
     {
         if (!File.Exists(_epubPath))
         {
@@ -67,8 +68,8 @@ public sealed partial class ImportEpub : IImporter
         FolderKeeper folderKeeper = new(tempFolder);
         try
         {
-            OcfContainer container = new OcfReader(_epubPath).Extract(folderKeeper.MainFolderPath);
-            return BuildBook(folderKeeper, container, extractMetadata, fontsAreObfuscatedOnDisk: true);
+            OcfContainer container = new OcfReader(_epubPath).Extract(folderKeeper.MainFolderPath, progress);
+            return BuildBook(folderKeeper, container, extractMetadata, fontsAreObfuscatedOnDisk: true, progress);
         }
         catch
         {
@@ -101,7 +102,7 @@ public sealed partial class ImportEpub : IImporter
             {
                 EncryptedFiles = BookStateFile.ReadFontObfuscation(folder.Path),
             };
-            return BuildBook(folderKeeper, container, extractMetadata: true, fontsAreObfuscatedOnDisk: false);
+            return BuildBook(folderKeeper, container, extractMetadata: true, fontsAreObfuscatedOnDisk: false, progress: null);
         }
         catch
         {
@@ -114,7 +115,8 @@ public sealed partial class ImportEpub : IImporter
         FolderKeeper folderKeeper,
         OcfContainer container,
         bool extractMetadata,
-        bool fontsAreObfuscatedOnDisk)
+        bool fontsAreObfuscatedOnDisk,
+        IProgress<BookLoadProgress>? progress)
     {
         RejectDrm(container);
 
@@ -158,15 +160,16 @@ public sealed partial class ImportEpub : IImporter
 
         folderKeeper.SetGroupFolders(scan.ManifestFilePaths, scan.ManifestMediaTypes);
 
-        LoadContentFiles(book, folderKeeper, container, scan);
+        LoadContentFiles(book, folderKeeper, container, scan, progress);
 
         // NCX — locate it or (EPUB 2) create it.
         string spineTocId = opfDoc.SpineAttributes.Attributes.Value("toc");
         NcxLocation ncx = LocateOrCreateNcx(
             book, folderKeeper, container, scan, opfDir, version, spineTocId, uuidIdentifierValue);
 
-        LoadHtmlAndCheckWellFormed(book, folderKeeper);
+        LoadHtmlAndCheckWellFormed(book, folderKeeper, progress);
 
+        progress?.Report(new BookLoadProgress(BookLoadStage.Finishing, 0, 0));
         DeobfuscateFonts(
             book, folderKeeper, container, uniqueIdentifierValue, uuidIdentifierValue, fontsAreObfuscatedOnDisk);
 
@@ -412,11 +415,14 @@ public sealed partial class ImportEpub : IImporter
         }
     }
 
-    private static void LoadContentFiles(Book book, FolderKeeper folderKeeper, OcfContainer container, ManifestScan scan)
+    private static void LoadContentFiles(
+        Book book, FolderKeeper folderKeeper, OcfContainer container, ManifestScan scan, IProgress<BookLoadProgress>? progress)
     {
         List<LoadWarningItem> missing = new();
+        int done = 0;
         foreach ((string bookPath, string mediaType) in scan.ContentToLoad)
         {
+            progress?.Report(new BookLoadProgress(BookLoadStage.Reading, done++, scan.ContentToLoad.Count));
             string fullPath = container.ToAbsolutePath(bookPath);
             if (!File.Exists(fullPath))
             {
@@ -506,12 +512,15 @@ public sealed partial class ImportEpub : IImporter
         ncx.SaveToDisk();
     }
 
-    private static void LoadHtmlAndCheckWellFormed(Book book, FolderKeeper folderKeeper)
+    private static void LoadHtmlAndCheckWellFormed(Book book, FolderKeeper folderKeeper, IProgress<BookLoadProgress>? progress)
     {
         List<LoadWarningItem> problems = new();
         List<LoadWarningItem> comments = new();
-        foreach (HtmlResource html in folderKeeper.GetResourceTypeList<HtmlResource>())
+        IReadOnlyList<HtmlResource> files = folderKeeper.GetResourceTypeList<HtmlResource>();
+        int done = 0;
+        foreach (HtmlResource html in files)
         {
+            progress?.Report(new BookLoadProgress(BookLoadStage.Checking, done++, files.Count));
             try
             {
                 html.SetText(HtmlEncodingResolver.ReadHtmlFile(html.FullPath));

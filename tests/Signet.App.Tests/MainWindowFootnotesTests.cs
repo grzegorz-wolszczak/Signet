@@ -712,11 +712,18 @@ public sealed class MainWindowFootnotesTests : IDisposable
         cancellable.Should().Equal(true, false);
         chapter.GetText().Should().Contain("signet-fn-ref");
         dialog.HasProblems.Should().BeFalse();
-        List<string?> messages = progress.Reports.Select(r => r.Message).ToList();
-        messages.Should().Contain(Strings.Format("FootnoteConversion_Progress_Converting", 1, 1));
-        messages.Should().Contain(Strings.Get("FootnoteConversion_Progress_Checking"));
-        messages.Should().Contain(Strings.Get("FootnoteConversion_Analyzing"));
-        progress.Reports.Select(r => r.Fraction).OfType<double>().Should().BeInAscendingOrder();
+        progress.Reports.Should().OnlyContain(r => r.Phase != null && r.Phase.Count == 5, "every report names its phase of five: the four stages and the analysis");
+        progress.Reports.Select(r => r.Phase!.Index).Should().BeInAscendingOrder().And.Subject.Distinct().Should().Equal(1, 2, 3, 4, 5);
+        progress.Reports.Select(r => r.Phase!.Name).Distinct().Should().Equal(
+            Strings.Get("FootnoteConversion_Phase_Preparing"), Strings.Get("FootnoteConversion_Phase_Converting"),
+            Strings.Get("FootnoteConversion_Phase_Finishing"), Strings.Get("FootnoteConversion_Phase_Checking"),
+            Strings.Get("FootnoteConversion_Phase_Analyzing"));
+        progress.Reports.Where(r => r.Phase!.Index == 2).Should().Contain(
+            r => r.Message == Strings.Format("Progress_Detail_Footnote", 1, 1) && r.Fraction == 1, "converting counts the footnotes");
+        progress.Reports.Where(r => r.Phase!.Index is 3 or 4).Should().OnlyContain(
+            r => r.Message == null && r.Fraction == null, "the cleaning up and the check cannot tell how far they are");
+        progress.Reports.Where(r => r.Phase!.Index == 5).Should().Contain(
+            r => r.Message != null && r.Message.StartsWith("file", StringComparison.Ordinal), "the analysis counts the files");
         sut.BookBrowser.SuspendRebuilds.Should().BeFalse("the tree follows the book again when the work is done");
     }
 

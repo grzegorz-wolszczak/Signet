@@ -83,9 +83,10 @@ public interface IFileWorkflowPrompts
 
     /// <summary>
     /// Runs <paramref name="work"/> (started at once) with a progress window showing <paramref name="message"/> when it
-    /// lasts; the window goes when the work is done and its result is on screen. Returns the result of the work.
+    /// lasts; the window goes when the work is done and its result is on screen. The work tells how far it is
+    /// (<see cref="WorkProgress"/>) through the progress it is given. Returns the result of the work.
     /// </summary>
-    Task<T> ShowProgressAsync<T>(string message, Func<Task<T>> work);
+    Task<T> ShowProgressAsync<T>(string message, Func<IProgress<WorkProgress>, Task<T>> work);
 }
 
 /// <summary>The main window surface as seen by <see cref="FileWorkflow"/> (swapping the book, change state).</summary>
@@ -367,7 +368,7 @@ public sealed class FileWorkflow : IDisposable
         // window (when they last), the messages come after it.
         (Book? book, string? error) = await _prompts.ShowProgressAsync(
             Strings.Format("File_Loading", Path.GetFileName(path)),
-            () => ImportAndApplyAsync(importer, path)).ConfigureAwait(true);
+            progress => ImportAndApplyAsync(importer, path, progress)).ConfigureAwait(true);
         if (book is null)
         {
             acquired?.Dispose();
@@ -421,9 +422,10 @@ public sealed class FileWorkflow : IDisposable
 
     // Checks and imports the file off the UI thread and makes it the current publication; the book, or why it could not
     // be loaded.
-    private async Task<(Book? Book, string? Error)> ImportAndApplyAsync(IImporter importer, string path)
+    private async Task<(Book? Book, string? Error)> ImportAndApplyAsync(IImporter importer, string path, IProgress<WorkProgress> progress)
     {
         Book book;
+        BookLoadMap loading = new(progress);
         try
         {
             Core.BookManipulation.WellFormedResult? invalid = await Task.Run(() => importer.CheckValidToLoad()).ConfigureAwait(true);
@@ -432,7 +434,7 @@ public sealed class FileWorkflow : IDisposable
                 return (null, Strings.Format("File_NotWellFormedOnOpen", err.Line, err.Message));
             }
 
-            book = await Task.Run(() => importer.GetBook()).ConfigureAwait(true);
+            book = await Task.Run(() => importer.GetBook(progress: loading)).ConfigureAwait(true);
         }
         catch (EpubLoadException ex)
         {
@@ -443,6 +445,12 @@ public sealed class FileWorkflow : IDisposable
             return (null, Strings.Format("File_IoError", ex.Message));
         }
 
+        // Only an importer that reports (EPUB) has phases; the others keep the one message of the window.
+        if (loading.Reported)
+        {
+            progress.Report(new WorkProgress(null, null, BookLoadMap.Phase(LoadPhaseCount, Strings.Get("BookLoad_Phase_Displaying"))));
+        }
+
         _workspace.ApplyBook(book, path);
         SetCurrentFile(path);
         _saveACopyFilename = string.Empty;
@@ -451,6 +459,32 @@ public sealed class FileWorkflow : IDisposable
         _settings.Save();
         _logger.LogInformation("Loaded file {Path} ({Warnings} warnings)", path, book.LoadWarnings.Count);
         return (book, null);
+    }
+
+    // The phases of loading an EPUB: the stages of the importer and, after them, showing the book (swapping it into the workspace).
+    private static int LoadPhaseCount => Enum.GetValues<BookLoadStage>().Length + 1;
+
+    // What the importer reports as what the progress window shows: the entries unpacked and the files read and checked are counted
+    // in a phase each; the rest (fonts, navigation) has only a bar that works.
+    private sealed class BookLoadMap : IProgress<BookLoadProgress>
+    {
+        private readonly IProgress<WorkProgress> _target;
+
+        public BookLoadMap(IProgress<WorkProgress> target) => _target = target;
+
+        /// <summary>Whether the importer reported at all.</summary>
+        public bool Reported { get; private set; }
+
+        public static PhaseInfo Phase(int index, string name) => new(index, LoadPhaseCount, name);
+
+        public void Report(BookLoadProgress value)
+        {
+            Reported = true;
+            PhaseInfo phase = Phase((int)value.Stage + 1, Strings.Get("BookLoad_Phase_" + value.Stage));
+            _target.Report(value.Stage == BookLoadStage.Finishing
+                ? new WorkProgress(null, null, phase)
+                : WorkProgress.InPhase(phase, Strings.Format("Progress_Detail_File", value.Done, value.Total), value.Done, value.Total));
+        }
     }
 
     // ---------------------------------------------------------------- Save --- //

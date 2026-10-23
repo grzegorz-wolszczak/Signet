@@ -1,8 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using AwesomeAssertions;
 using Signet.Core.BookManipulation;
+using Signet.Core.Importers;
 using Signet.Core.Misc;
 using Signet.Core.Resources;
 using Signet.Core.Localization;
@@ -47,6 +50,39 @@ public sealed class ImportEpubTests
         {
             File.Exists(resource.FullPath).Should().BeTrue($"the file of resource {resource.BookPath} should exist");
         }
+    }
+
+    [Fact]
+    public void GetBook_reports_the_stages_in_order_and_counts_the_entries_and_the_files()
+    {
+        // Arrange
+        using TempDir temp = new();
+        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, temp);
+        List<BookLoadProgress> reports = new();
+
+        // Act
+        using Book book = new ImportEpub(epub).GetBook(progress: new SyncProgress(reports.Add));
+
+        // Assert
+        reports.Select(r => r.Stage).Distinct().Should().Equal(
+            BookLoadStage.Extracting, BookLoadStage.Reading, BookLoadStage.Checking, BookLoadStage.Finishing);
+        using (ZipArchive archive = ZipFile.OpenRead(epub))
+        {
+            reports.Where(r => r.Stage == BookLoadStage.Extracting).Should().OnlyContain(r => r.Total == archive.Entries.Count);
+        }
+
+        reports.Where(r => r.Stage == BookLoadStage.Checking).Should().OnlyContain(r => r.Total == book.GetHtmlResources().Count)
+            .And.Subject.Select(r => r.Done).Should().BeInAscendingOrder().And.StartWith(0);
+        reports.Single(r => r.Stage == BookLoadStage.Finishing).Total.Should().Be(0, "the last stage has no count");
+    }
+
+    private sealed class SyncProgress : IProgress<BookLoadProgress>
+    {
+        private readonly Action<BookLoadProgress> _report;
+
+        public SyncProgress(Action<BookLoadProgress> report) => _report = report;
+
+        public void Report(BookLoadProgress value) => _report(value);
     }
 
     [Fact]

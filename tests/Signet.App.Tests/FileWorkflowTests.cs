@@ -1,11 +1,14 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using AwesomeAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
+using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.Services;
+using Signet.App.Tests.TestSupport;
 using Signet.Core.BookManipulation;
 using Signet.Core.Localization;
 using Signet.Core.Misc;
@@ -564,6 +567,44 @@ public sealed class FileWorkflowTests
         // Assert
         h.Workspace.CurrentBook!.LoadWarnings.Should().BeEmpty();
         h.Prompts.LastLoadWarnings.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task LoadFileAsync_reports_the_phases_of_loading_an_epub()
+    {
+        // Arrange
+        using UiCultureScope culture = new("en");
+        using Harness h = new();
+        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, h.Dir);
+
+        // Act
+        await h.Workflow.LoadFileAsync(epub);
+
+        // Assert
+        List<WorkProgress> reports = h.Prompts.ProgressReports.Reports;
+        reports.Should().OnlyContain(r => r.Phase != null && r.Phase.Count == 5, "the four stages of the importer and the display of the book");
+        reports.Select(r => r.Phase!.Index).Should().BeInAscendingOrder().And.Subject.Distinct().Should().Equal(1, 2, 3, 4, 5);
+        reports.Select(r => r.Phase!.Name).Distinct().Should().Equal(
+            Strings.Get("BookLoad_Phase_Extracting"), Strings.Get("BookLoad_Phase_Reading"), Strings.Get("BookLoad_Phase_Checking"),
+            Strings.Get("BookLoad_Phase_Finishing"), Strings.Get("BookLoad_Phase_Displaying"));
+        reports.Where(r => r.Phase!.Index == 3).Should().Contain(
+            r => r.Message != null && r.Message.StartsWith("file", StringComparison.Ordinal), "the files are counted");
+        reports.Where(r => r.Phase!.Index is 4 or 5).Should().OnlyContain(r => r.Message == null && r.Fraction == null);
+    }
+
+    [Fact]
+    public async Task LoadFileAsync_reports_no_phases_for_a_file_that_is_not_an_epub()
+    {
+        // Arrange
+        using Harness h = new();
+        string txt = h.PathIn("book.txt");
+        File.WriteAllText(txt, "Hello");
+
+        // Act
+        await h.Workflow.LoadFileAsync(txt);
+
+        // Assert
+        h.Prompts.ProgressReports.Reports.Should().BeEmpty("only an EPUB reports its load, the window keeps its one message");
     }
 
     [Fact]

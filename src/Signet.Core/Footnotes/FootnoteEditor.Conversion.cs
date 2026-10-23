@@ -62,7 +62,10 @@ public enum ConversionBlocker
 /// <summary>What <see cref="FootnoteEditor.Convert"/> is doing (<see cref="ConversionProgress.Stage"/>).</summary>
 public enum ConversionStage
 {
-    /// <summary>Reading the book before the conversion (the footnotes and the links check).</summary>
+    /// <summary>
+    /// Reading the book before the conversion (the footnotes and the links check): scanning its files
+    /// (<see cref="ConversionProgress.Done"/> of <see cref="ConversionProgress.Total"/>).
+    /// </summary>
     Preparing,
 
     /// <summary>Converting the footnotes one by one.</summary>
@@ -77,8 +80,8 @@ public enum ConversionStage
 
 /// <summary>Where <see cref="FootnoteEditor.Convert"/> is.</summary>
 /// <param name="Stage">What it is doing.</param>
-/// <param name="Done">The footnotes converted so far (while <see cref="ConversionStage.Converting"/>).</param>
-/// <param name="Total">The footnotes to convert.</param>
+/// <param name="Done">The files scanned so far (while <see cref="ConversionStage.Preparing"/>) or the footnotes converted so far (while <see cref="ConversionStage.Converting"/>).</param>
+/// <param name="Total">The files of the book (while <see cref="ConversionStage.Preparing"/>; 0 before the count is known) or the footnotes to convert.</param>
 public sealed record ConversionProgress(ConversionStage Stage, int Done, int Total);
 
 /// <summary>
@@ -518,9 +521,9 @@ public static partial class FootnoteEditor
             return new ConversionResult(0, Array.Empty<string>(), Array.Empty<ConversionProblem>());
         }
 
-        progress?.Report(new ConversionProgress(ConversionStage.Preparing, 0, items.Count));
+        progress?.Report(new ConversionProgress(ConversionStage.Preparing, 0, 0));
         cancellationToken.ThrowIfCancellationRequested();
-        IReadOnlyList<Footnote> scanned = FootnoteScanner.Scan(book);
+        IReadOnlyList<Footnote> scanned = FootnoteScanner.Scan(book, progress is null ? null : new ConversionScanRelay(progress));
         int countBefore = scanned.Count;
 
         // A note inside another one is converted first: moved out, it leaves the outer note with its own text; the other way
@@ -709,6 +712,17 @@ public static partial class FootnoteEditor
         progress?.Report(new ConversionProgress(ConversionStage.Checking, items.Count, items.Count));
         List<ConversionProblem> problems = Check(book, converted, indexes, countBefore, checksBefore);
         return new ConversionResult(selected.Count, removed, problems);
+    }
+
+    // Relays FootnoteScanner.Scan's per-file progress into ConversionStage.Preparing, so Convert shows how far the scan is
+    // rather than a stage without a number.
+    private sealed class ConversionScanRelay : IProgress<ScanProgress>
+    {
+        private readonly IProgress<ConversionProgress> _target;
+
+        public ConversionScanRelay(IProgress<ConversionProgress> target) => _target = target;
+
+        public void Report(ScanProgress value) => _target.Report(new ConversionProgress(ConversionStage.Preparing, value.Done, value.Total));
     }
 
     // A footnote converted by Convert: its temporary note id, the markup its note must keep inside, and where it was.

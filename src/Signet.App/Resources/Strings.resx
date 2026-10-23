@@ -5150,15 +5150,6 @@ Konwertować mimo to?</value>
   <data name="FootnoteConversion_Progress_Preparing" xml:space="preserve">
     <value>Przygotowanie konwersji…</value>
   </data>
-  <data name="FootnoteConversion_Progress_Converting" xml:space="preserve">
-    <value>Konwertowanie przypisów: {0} z {1}</value>
-  </data>
-  <data name="FootnoteConversion_Progress_Finishing" xml:space="preserve">
-    <value>Porządkowanie, przenumerowanie i poprawianie linków…</value>
-  </data>
-  <data name="FootnoteConversion_Progress_Checking" xml:space="preserve">
-    <value>Sprawdzanie wyniku konwersji…</value>
-  </data>
   <data name="FootnoteConversionBlocker_ReferenceNotFound" xml:space="preserve">
     <value>Signet nie znalazł w pliku odnośnika do tego przypisu (albo jednego z odnośników przypisu współdzielonego) — zostanie obcy.</value>
   </data>
@@ -6612,5 +6603,35 @@ Zamknij zakładkę</value>
   </data>
   <data name="Progress_Detail_Footnote" xml:space="preserve">
     <value>przypis {0} z {1}</value>
+  </data>
+  <data name="FootnoteConversion_Phase_Preparing" xml:space="preserve">
+    <value>Przygotowanie konwersji</value>
+  </data>
+  <data name="FootnoteConversion_Phase_Converting" xml:space="preserve">
+    <value>Konwertowanie przypisów</value>
+  </data>
+  <data name="FootnoteConversion_Phase_Finishing" xml:space="preserve">
+    <value>Porządkowanie, przenumerowanie i poprawianie linków</value>
+  </data>
+  <data name="FootnoteConversion_Phase_Checking" xml:space="preserve">
+    <value>Sprawdzanie wyniku konwersji</value>
+  </data>
+  <data name="FootnoteConversion_Phase_Analyzing" xml:space="preserve">
+    <value>Analizowanie przypisów</value>
+  </data>
+  <data name="BookLoad_Phase_Extracting" xml:space="preserve">
+    <value>Rozpakowywanie EPUB</value>
+  </data>
+  <data name="BookLoad_Phase_Reading" xml:space="preserve">
+    <value>Wczytywanie plików</value>
+  </data>
+  <data name="BookLoad_Phase_Checking" xml:space="preserve">
+    <value>Sprawdzanie plików (X)HTML</value>
+  </data>
+  <data name="BookLoad_Phase_Finishing" xml:space="preserve">
+    <value>Czcionki, nawigacja i porządki</value>
+  </data>
+  <data name="BookLoad_Phase_Displaying" xml:space="preserve">
+    <value>Wyświetlanie książki</value>
   </data>
 </root>
