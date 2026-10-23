@@ -105,6 +105,22 @@ public sealed class AppActionRegistry
         }
     }
 
+    /// <summary>
+    /// Marks the given actions as busy (or not) — used while a long operation on the book is already running, so a
+    /// second one of them cannot be started from a menu, a toolbar or a shortcut before the operation's own
+    /// synchronous entry check (<c>TryEnterBookOperation</c>) even runs.
+    /// </summary>
+    public void SetBusy(bool busy, params string[] ids)
+    {
+        foreach (string id in ids)
+        {
+            if (_actions.TryGetValue(id, out AppAction? action))
+            {
+                action.IsBusy = busy;
+            }
+        }
+    }
+
     private void OnActionInvoked(object? sender, EventArgs e)
     {
         if (sender is not AppAction action)
