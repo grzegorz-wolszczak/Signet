@@ -744,6 +744,168 @@ public sealed class FootnoteConversionTests
         return body[start..body.IndexOf("</aside>", start, StringComparison.Ordinal)];
     }
 
+    /// <summary>
+    /// The notes of one file all leave it in one write, each of them taking the wrapper it emptied. This is the case
+    /// the conversion used to read, parse and rewrite the whole file for, once per note.
+    /// </summary>
+    [Fact]
+    public void All_the_notes_of_one_file_leave_it_together_and_their_wrappers_go()
+    {
+        // Arrange
+        (Book book, HtmlResource html) = NewBook(
+            "<p>One<a epub:type=\"noteref\" href=\"#n1\" id=\"r1\">[1]</a> two<a epub:type=\"noteref\" href=\"#n2\" id=\"r2\">[2]</a>"
+            + " three<a epub:type=\"noteref\" href=\"#n3\" id=\"r3\">[3]</a>.</p>\n"
+            + "<div class=\"notes\">\n"
+            + "<div class=\"n\"><aside epub:type=\"footnote\" id=\"n1\"><a href=\"#r1\">[1]</a> First.</aside></div>\n"
+            + "<div class=\"n\"><aside epub:type=\"footnote\" id=\"n2\"><a href=\"#r2\">[2]</a> Second.</aside></div>\n"
+            + "<div class=\"n\"><aside epub:type=\"footnote\" id=\"n3\"><a href=\"#r3\">[3]</a> Third.</aside></div>\n"
+            + "</div>");
+        using (book)
+        {
+            // Act
+            ConversionResult result = ConvertAll(book);
+
+            // Assert
+            result.Problems.Should().BeEmpty();
+            result.Converted.Should().Be(3);
+            string body = BodyOf(html);
+            body.Should().NotContain("class=\"notes\"").And.NotContain("class=\"n\"")
+                .And.NotContain("id=\"n1\"").And.NotContain("id=\"n2\"").And.NotContain("id=\"n3\"");
+            IReadOnlyList<Footnote> notes = FootnoteScanner.Scan(book);
+            notes.Should().HaveCount(3).And.OnlyContain(n => n.IsSignet);
+            notes.Select(n => FootnoteEditor.GetContent(n)!.Text).Should().Equal("First.", "Second.", "Third.");
+            body.IndexOf("id=\"" + notes[0].ReferenceId + "\"", StringComparison.Ordinal)
+                .Should().BeLessThan(body.IndexOf("id=\"" + notes[1].ReferenceId + "\"", StringComparison.Ordinal));
+        }
+    }
+
+    /// <summary>
+    /// A wrapper around several notes goes when the last of them is out — the note that leaves first does not take it,
+    /// because the others are still inside. The conversion now decides that on the text as the whole of it leaves it,
+    /// which says the same thing.
+    /// </summary>
+    [Fact]
+    public void A_wrapper_that_held_several_notes_goes_once_all_of_them_are_out()
+    {
+        // Arrange
+        (Book book, HtmlResource html) = NewBook(
+            "<p>One<a epub:type=\"noteref\" href=\"#n1\" id=\"r1\">[1]</a> two<a epub:type=\"noteref\" href=\"#n2\" id=\"r2\">[2]</a>.</p>\n"
+            + "<div class=\"wrap\">\n"
+            + "<aside epub:type=\"footnote\" id=\"n1\"><a href=\"#r1\">[1]</a> First.</aside>\n"
+            + "<aside epub:type=\"footnote\" id=\"n2\"><a href=\"#r2\">[2]</a> Second.</aside>\n"
+            + "</div>");
+        using (book)
+        {
+            // Act
+            ConversionResult result = ConvertAll(book);
+
+            // Assert
+            result.Problems.Should().BeEmpty();
+            BodyOf(html).Should().NotContain("class=\"wrap\"");
+        }
+    }
+
+    /// <summary>A wrapper left empty stays when something links to it: the link would lead nowhere.</summary>
+    [Fact]
+    public void An_emptied_wrapper_that_something_links_to_stays()
+    {
+        // Arrange
+        (Book book, HtmlResource html) = NewBook(
+            "<p>One<a epub:type=\"noteref\" href=\"#n1\" id=\"r1\">[1]</a>.</p>\n"
+            + "<p><a href=\"#wrap\">To the notes</a></p>\n"
+            + "<div id=\"wrap\">\n"
+            + "<aside epub:type=\"footnote\" id=\"n1\"><a href=\"#r1\">[1]</a> First.</aside>\n"
+            + "</div>");
+        using (book)
+        {
+            // Act
+            ConversionResult result = ConvertAll(book);
+
+            // Assert
+            result.Problems.Should().BeEmpty();
+            BodyOf(html).Should().Contain("id=\"wrap\"").And.NotContain("id=\"n1\"");
+        }
+    }
+
+    /// <summary>The wrappers a note leaves empty go all the way up, but the body stays.</summary>
+    [Fact]
+    public void The_wrappers_a_note_leaves_empty_go_up_to_the_body()
+    {
+        // Arrange
+        (Book book, HtmlResource html) = NewBook(
+            "<p>One<a epub:type=\"noteref\" href=\"#n1\" id=\"r1\">[1]</a>.</p>\n"
+            + "<div class=\"outer\">\n<div class=\"middle\">\n<div class=\"inner\">\n"
+            + "<aside epub:type=\"footnote\" id=\"n1\"><a href=\"#r1\">[1]</a> First.</aside>\n"
+            + "</div>\n</div>\n</div>");
+        using (book)
+        {
+            // Act
+            ConversionResult result = ConvertAll(book);
+
+            // Assert
+            result.Problems.Should().BeEmpty();
+            string body = BodyOf(html);
+            body.Should().NotContain("class=\"outer\"").And.NotContain("class=\"middle\"").And.NotContain("class=\"inner\"");
+            body.Should().StartWith("<body>").And.Contain("</body>");
+        }
+    }
+
+    /// <summary>
+    /// Every reference of a shared note in one paragraph is replaced. The references used to be taken the last first,
+    /// because replacing one moved the ones behind it; they are now all read in the text as the conversion found it,
+    /// so the order no longer matters — this test says the result is the same either way.
+    /// </summary>
+    [Fact]
+    public void Every_reference_of_a_shared_note_in_one_paragraph_is_replaced()
+    {
+        // Arrange
+        (Book book, HtmlResource html) = NewBook(
+            "<p>One<a epub:type=\"noteref\" href=\"#n1\" id=\"r1\">[1]</a> two<a epub:type=\"noteref\" href=\"#n1\">[1]</a>"
+            + " three<a epub:type=\"noteref\" href=\"#n1\">[1]</a>.</p>\n"
+            + "<aside epub:type=\"footnote\" id=\"n1\"><a href=\"#r1\">[1]</a> First.</aside>");
+        using (book)
+        {
+            // Act
+            ConversionResult result = ConvertAll(book);
+
+            // Assert
+            result.Problems.Should().BeEmpty();
+            string body = BodyOf(html);
+            body.Should().NotContain("href=\"#n1\"");
+            Regex.Matches(body, "class=\"signet-fn-ref\"").Should().HaveCount(3);
+            FootnoteScanner.Scan(book).Should().HaveCount(3).And.OnlyContain(n => n.IsSignet);
+        }
+    }
+
+    /// <summary>
+    /// References of different notes standing next to each other keep their order and their numbers: their
+    /// replacements are collected together and written in one go, so none of them may move another.
+    /// </summary>
+    [Fact]
+    public void References_of_different_notes_next_to_each_other_keep_their_order()
+    {
+        // Arrange
+        (Book book, HtmlResource html) = NewBook(
+            "<p>Text<a epub:type=\"noteref\" href=\"#n1\" id=\"r1\">[1]</a><a epub:type=\"noteref\" href=\"#n2\" id=\"r2\">[2]</a>"
+            + "<a epub:type=\"noteref\" href=\"#n3\" id=\"r3\">[3]</a>.</p>\n"
+            + "<aside epub:type=\"footnote\" id=\"n1\"><a href=\"#r1\">[1]</a> First.</aside>\n"
+            + "<aside epub:type=\"footnote\" id=\"n2\"><a href=\"#r2\">[2]</a> Second.</aside>\n"
+            + "<aside epub:type=\"footnote\" id=\"n3\"><a href=\"#r3\">[3]</a> Third.</aside>");
+        using (book)
+        {
+            // Act
+            ConversionResult result = ConvertAll(book);
+
+            // Assert
+            result.Problems.Should().BeEmpty();
+            string body = BodyOf(html);
+            Regex.Matches(body, "signet-fn-ref\" epub:type=\"noteref\" href=\"#(fn-\\d+)\"")
+                .Select(m => m.Groups[1].Value).Should().Equal("fn-1", "fn-2", "fn-3");
+            FootnoteScanner.Scan(book).Select(n => FootnoteEditor.GetContent(n)!.Text)
+                .Should().Equal("First.", "Second.", "Third.");
+        }
+    }
+
     [Fact]
     public void Converting_reports_its_stages_and_how_many_footnotes_are_done()
     {

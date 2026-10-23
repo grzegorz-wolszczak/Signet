@@ -194,15 +194,25 @@ public sealed class TagLister
     /// </summary>
     public int FindLastTagOnOrBefore(int pos)
     {
-        int i = 0;
-        TagInfo ti = _tags[i];
-        while (ti.Pos <= pos && ti.Len != -1)
+        // The tags come in the order they stand in the source, so the first one past `pos` is found by halving the
+        // list instead of walking it. Walking it made every lookup cost the whole file, which an operation that looks
+        // a tag up once per footnote (unwrapping a reference, say) pays for in the square of their number.
+        int low = 0;
+        int high = _tags.Count - 1;
+        while (low < high)
         {
-            i++;
-            ti = _tags[i];
+            int middle = low + ((high - low) / 2);
+            if (_tags[middle].Pos <= pos)
+            {
+                low = middle + 1;
+            }
+            else
+            {
+                high = middle;
+            }
         }
 
-        return i - 1;
+        return low - 1;
     }
 
     /// <summary>
@@ -211,15 +221,24 @@ public sealed class TagLister
     /// </summary>
     public int FindFirstTagOnOrAfter(int pos)
     {
-        int i = 0;
-        TagInfo ti = _tags[i];
-        while (ti.Pos + ti.Len <= pos && ti.Len != -1)
+        // Tags do not overlap, so where each one ends grows with the list and the search can halve it; see
+        // FindLastTagOnOrBefore for why walking it was too slow. The sentinel keeps its place at the end.
+        int low = 0;
+        int high = _tags.Count - 1;
+        while (low < high)
         {
-            i++;
-            ti = _tags[i];
+            int middle = low + ((high - low) / 2);
+            if (_tags[middle].Pos + _tags[middle].Len <= pos)
+            {
+                low = middle + 1;
+            }
+            else
+            {
+                high = middle;
+            }
         }
 
-        return i;
+        return low;
     }
 
     /// <summary>For a closing-tag entry — the index of its opening tag.</summary>
