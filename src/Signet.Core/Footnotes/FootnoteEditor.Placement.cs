@@ -177,7 +177,7 @@ public static partial class FootnoteEditor
 
         // The edits are worked out on the texts as they are now, and written at the end, so every position stays valid.
         Dictionary<HtmlResource, (string Text, TagLister Tags)> snapshots = new(ReferenceEqualityComparer.Instance);
-        Dictionary<HtmlResource, List<TextEdit>> edits = new(ReferenceEqualityComparer.Instance);
+        Dictionary<HtmlResource, FileEdits> edits = new(ReferenceEqualityComparer.Instance);
         Dictionary<(HtmlResource File, FootnotePlacement Placement), List<string>> insertions = new();
         HashSet<HtmlResource> oldFiles = new(ReferenceEqualityComparer.Instance);
 
@@ -228,7 +228,7 @@ public static partial class FootnoteEditor
                 mine.Add((reference.ReferenceFile, new TextEdit(href.Start, href.Length, Encode(Href(reference.ReferenceFile, file, noteId)))));
             }
 
-            if (!complete || mine.Any(m => edits.TryGetValue(m.File, out List<TextEdit>? taken) && taken.Any(t => Overlap(t, m.Edit))))
+            if (!complete || mine.Any(m => edits.TryGetValue(m.File, out FileEdits? taken) && taken.Overlaps(m.Edit)))
             {
                 skipped++;
                 continue;
@@ -236,9 +236,9 @@ public static partial class FootnoteEditor
 
             foreach ((HtmlResource editedFile, TextEdit edit) in mine)
             {
-                if (!edits.TryGetValue(editedFile, out List<TextEdit>? list))
+                if (!edits.TryGetValue(editedFile, out FileEdits? list))
                 {
-                    edits[editedFile] = list = new List<TextEdit>();
+                    edits[editedFile] = list = new FileEdits();
                 }
 
                 list.Add(edit);
@@ -270,9 +270,9 @@ public static partial class FootnoteEditor
 
         progress?.Report(new PlacementProgress(PlacementStage.Finishing, moves.Count, moves.Count));
         cancellationToken.ThrowIfCancellationRequested();
-        foreach ((HtmlResource file, List<TextEdit> list) in edits)
+        foreach ((HtmlResource file, FileEdits list) in edits)
         {
-            file.SetText(Apply(snapshots[file].Text, list));
+            file.SetText(Apply(snapshots[file].Text, list.Edits));
         }
 
         foreach (((HtmlResource file, FootnotePlacement placement), List<string> inserted) in insertions)
@@ -296,5 +296,76 @@ public static partial class FootnoteEditor
         }
 
         return new PlacementOutcome(moved, skipped);
+    }
+
+    /// <summary>
+    /// The edits of one file, kept in the order of their positions so that a new one can be checked against them
+    /// without reading them all: going through the whole list for every footnote made moving the notes of a book
+    /// quadratic in their number (a book's notes file holds thousands of them, and the list grew with each one).
+    /// </summary>
+    private sealed class FileEdits
+    {
+        private readonly List<TextEdit> _edits = new();
+
+        /// <summary>The edits, in the order of their positions.</summary>
+        public IReadOnlyList<TextEdit> Edits => _edits;
+
+        /// <summary>Whether <paramref name="edit"/> overlaps one of the edits here.</summary>
+        public bool Overlaps(TextEdit edit)
+        {
+            // The edits here never overlap each other (an overlapping one is turned away), so their positions only grow
+            // and the search can stop at the first edit that ends before this one starts. An edit of no length (an
+            // insertion) overlaps nothing itself, but one of the others may still hold the place it goes into, so it
+            // does not end the search either.
+            int at = PlaceFor(edit.Start);
+            for (int i = at - 1; i >= 0; i--)
+            {
+                if (_edits[i].Length == 0)
+                {
+                    continue;
+                }
+
+                if (_edits[i].Start + _edits[i].Length <= edit.Start)
+                {
+                    break;
+                }
+
+                return true;
+            }
+
+            for (int i = at; i < _edits.Count && _edits[i].Start < edit.Start + edit.Length; i++)
+            {
+                if (Overlap(_edits[i], edit))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>Takes <paramref name="edit"/> in, in the order of its position.</summary>
+        public void Add(TextEdit edit) => _edits.Insert(PlaceFor(edit.Start), edit);
+
+        // The place of the first edit that starts at `start` or after it.
+        private int PlaceFor(int start)
+        {
+            int low = 0;
+            int high = _edits.Count;
+            while (low < high)
+            {
+                int middle = low + ((high - low) / 2);
+                if (_edits[middle].Start < start)
+                {
+                    low = middle + 1;
+                }
+                else
+                {
+                    high = middle;
+                }
+            }
+
+            return low;
+        }
     }
 }

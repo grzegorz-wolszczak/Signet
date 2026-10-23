@@ -70,9 +70,16 @@ public sealed class TagLister
     private int _bodyOpenTag = -1;
     private int _bodyCloseTag = -1;
 
-    // The lister built last by For: the Code Editor asks for the tags of the same text many times in a row (each caret
-    // move runs several checks of what the caret is in), and building the list is a pass over the whole file.
-    private static Cached? s_last;
+    // The listers built last by For: the Code Editor asks for the tags of the same text many times in a row (each caret
+    // move runs several checks of what the caret is in), and building the list is a pass over the whole file. A few of
+    // them, not one, because the editing of a book works on two or three files in turn (a note's file, its reference's
+    // file, the notes file they move to) — with a single entry each of those asks threw the other's list away and
+    // rebuilt it. Kept small on purpose: a lister of a large file holds a tag path per tag, so this is memory.
+    private const int CacheSize = 4;
+
+    // Replaced as a whole (never written in place), so a reader sees either the old set of entries or the new one.
+    private static Cached?[] s_cache = new Cached?[CacheSize];
+    private static int s_nextCacheSlot;
 
     /// <summary>Creates the scanner and immediately builds the tag list for the given source.</summary>
     public TagLister(string source)
@@ -82,20 +89,26 @@ public sealed class TagLister
     }
 
     /// <summary>
-    /// The tag list of a source: the one built last when the source is the same string instance (a string does not
-    /// change, so the list still holds), a new one otherwise. A lister is not changed once built, so it can be shared
-    /// (also across threads).
+    /// The tag list of a source: one of the last few built when the source is the same string instance (a string does
+    /// not change, so the list still holds), a new one otherwise. A lister is not changed once built, so it can be
+    /// shared (also across threads).
     /// </summary>
     public static TagLister For(string source)
     {
         ArgumentNullException.ThrowIfNull(source);
-        if (Volatile.Read(ref s_last) is { } last && ReferenceEquals(last.Source, source))
+        Cached?[] cache = Volatile.Read(ref s_cache);
+        foreach (Cached? entry in cache)
         {
-            return last.Lister;
+            if (entry is { } cached && ReferenceEquals(cached.Source, source))
+            {
+                return cached.Lister;
+            }
         }
 
         TagLister lister = new(source);
-        Volatile.Write(ref s_last, new Cached(source, lister));
+        Cached?[] updated = (Cached?[])cache.Clone();
+        updated[(int)((uint)Interlocked.Increment(ref s_nextCacheSlot) % CacheSize)] = new Cached(source, lister);
+        Volatile.Write(ref s_cache, updated);
         return lister;
     }
 
