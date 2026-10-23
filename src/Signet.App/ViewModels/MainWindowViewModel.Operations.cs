@@ -25,7 +25,8 @@ public sealed partial class MainWindowViewModel
     /// <summary>
     /// Like <see cref="ProgressRunner"/>, but for a quick edit that only takes a while on a very large book
     /// (<c>ProgressWindow.DelayedRunner</c>, set by the view): the window appears only once the work has run for a
-    /// moment, and never offers Cancel. <c>null</c> (the tests): the work just runs, off the UI thread.
+    /// moment, and offers Cancel only to the work that can be stopped (the creation of a checkpoint). <c>null</c> (the tests): the
+    /// work just runs, off the UI thread.
     /// </summary>
     public ProgressRunner? DelayedProgressRunner { get; set; }
 
@@ -157,16 +158,12 @@ public sealed partial class MainWindowViewModel
 
         try
         {
-            bool checkpoint;
-            try
+            // Cancelled while taking the checkpoint itself: the operation that needed it never starts.
+            (bool cancelled, bool checkpoint) = checkpointName is null
+                ? (false, false)
+                : await AddCheckpointOrCancelAsync(checkpointName, title).ConfigureAwait(true);
+            if (cancelled)
             {
-                checkpoint = checkpointName is not null && await AddCheckpointBeforeAsync(checkpointName).ConfigureAwait(true);
-            }
-            catch (OperationCanceledException)
-            {
-                // Cancelled while taking the checkpoint itself: nothing was created and the book is untouched, so the
-                // operation that needed this checkpoint never starts either (see CheckpointHistory.AddCheckpoint).
-                _statusBar.ShowMessage(Strings.Format("Status_OperationCancelled", title), TimeSpan.FromSeconds(6));
                 return new BookOperationOutcome<T>(false, default, false);
             }
 

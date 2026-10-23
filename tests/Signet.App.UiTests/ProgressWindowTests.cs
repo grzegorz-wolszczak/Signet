@@ -8,6 +8,7 @@ using Avalonia.Threading;
 using AwesomeAssertions;
 using Signet.App.Infrastructure;
 using Signet.App.Views;
+using Xunit;
 
 namespace Signet.App.UiTests;
 
@@ -414,6 +415,29 @@ public sealed class ProgressWindowTests
         // Assert
         run.IsCanceled.Should().BeTrue();
         owner.OwnedWindows.Should().BeEmpty();
+        owner.Close();
+    }
+
+    [AvaloniaTheory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void The_delayed_runner_offers_cancel_only_when_the_work_can_be_stopped(bool cancellable)
+    {
+        // Arrange
+        Window owner = Owner();
+        TaskCompletionSource work = new();
+        ProgressRunner runner = ProgressWindow.DelayedRunner(owner);
+
+        // Act
+        Task run = runner("Copying", (_, _) => work.Task, cancellable);
+        RunUntil(() => owner.OwnedWindows.Count == 1);
+
+        // Assert
+        owner.OwnedWindows.OfType<ProgressWindow>().Single().FindControl<Button>("CancelButton")!.IsVisible.Should().Be(cancellable);
+
+        // Act
+        work.SetResult();
+        RunUntil(() => run.IsCompleted);
         owner.Close();
     }
 

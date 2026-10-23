@@ -59,7 +59,8 @@ Synteza zgłoszenia (I)–(VI) na konkretne reguły, które zadania niżej wdra�
    `AddCheckpointBeforeAsync`/`AbandonCheckpointAsync` (tworzenie/przywracanie checkpointu) nie mają
    dziś **żadnego** okna — a to one, nie "właściwa" praca, odpowiadały w notatkach o wydajności za
    35–37 s zawieszenia. Trzeba je owinąć w okno tak samo jak każdą inną długą operację.
-4. **Cancel — macierz zachowań:**
+4. **Cancel — macierz zachowań** (dodatkowy warunek z C1: Cancel oferujemy tylko, gdy praca faktycznie
+   sprawdza token — niepodzielna edycja bez tokenu nie jest cancellable, nawet z checkpointem):
    - operacja **tylko czytająca** książkę (np. walidacja, raport) — Cancel zawsze dostępny, działa
      "w miarę" natychmiast (patrz punkt 6 niżej o częstotliwości sprawdzania tokenu);
    - operacja **edytująca**, dla której checkpoint **powstał** — Cancel dostępny podczas właściwej
@@ -296,7 +297,7 @@ Legenda statusu: `[ ]` do zrobienia, `[x]` zrobione (z krótką notatką i commi
   - `dotnet build Signet.slnx` + `dotnet test Signet.Core.Tests` (2991/2991) +
     `dotnet test Signet.App.Tests` (1089/1089) + `dotnet test Signet.App.MainWindowUiTests`
     (183/183) — zielone.
-  - **Znana niedoróbka do dalszych zadań (C1 albo nowe B-zadanie):** `ProgressWindow.DelayedRunner`
+  - **Znana niedoróbka do dalszych zadań (C1 albo nowe B-zadanie) — naprawiona w C1/C2:** `ProgressWindow.DelayedRunner`
     ignoruje parametr `cancellable` i zawsze pokazuje okno **bez** przycisku Cancel
     (`cancellable: false` na stałe w jego implementacji) — więc mimo że tworzenie checkpointu jest
     teraz mechanicznie przerywalne (token działa, testy to dowodzą), użytkownik **nie ma dziś
@@ -401,25 +402,67 @@ Legenda statusu: `[ ]` do zrobienia, `[x]` zrobione (z krótką notatką i commi
     "Faza 5 z 5: Wyświetlanie książki" może nie zdążyć się narysować przed jego zablokowaniem (raporty
     trafiają do okna przez `Dispatcher.Post`). Do sprawdzenia na dużej książce; jeśli się nie rysuje,
     trzeba `ApplyBook` wyprzedzić oddaniem sterowania pętli UI.
-  - **B3b (dopisane, do zrobienia):** przekazać postęp `RenumberWith` do faz kończących w Placement
-    (faza 3) i Convert (faza 3) — dziś to jedyne duże fazy bez postępu, a na dużej książce
-    najdłuższe.
+  - Dopisane przy B5 jako B3b, zrobione niżej.
+
+- [x] **B3b. Postęp przenumerowania w Placement i Convert.** (2026-10-23) Przenumerowanie na końcu
+  `ChangePlacement` i `Convert` szło z `progress: null` — to były jedyne duże fazy bez postępu.
+  Pięć kroków `RenumberStage` jest teraz pięcioma kolejnymi fazami w obu operacjach (tak jak w samym
+  Renumber): Placement ma 8 faz (Preparing, Moving, Finishing = zapis plików, potem 5 kroków
+  przenumerowania), Convert ma 10 (Preparing, Converting, Finishing = sprzątanie, 5 kroków
+  przenumerowania, Checking, Analyzing). Core: nowy `PlacementStage.Renumbering` i
+  `ConversionStage.Renumbering` (ten drugi wstawiony przed `Checking`), `PlacementProgress`/
+  `ConversionProgress` mają dodatkowe pole `Renumbering` (który krok), relaye
+  `PlacementRenumberRelay`/`ConversionRenumberRelay`. App: wspólny `RenumberPhase(...)` używany też
+  przez sam Renumber; numery faz liczone jawnie, nie rzutowaniem enumu. Ocena: ostatnia faza bez
+  postępu, która została, to `Finishing` (zapis plików w Placement, sprzątanie w Convert) i
+  `Checking` — krótsze niż przenumerowanie, ale na bardzo dużej książce nadal nieoszacowane;
+  dopisać do D1, jeśli ręczny test pokaże, że trwają zauważalnie. Testy: zaktualizowane testy faz
+  (Core: Placement, Convert; App: Placement, Convert).
 
 ### Część C — audyt Cancel
 
-- [ ] **C1. Audyt dostępności Cancel na wszystkich dzisiejszych wywołaniach
-  `RunBookOperationAsync`/`RunInBackgroundAsync`.** Przejść każde miejsce wywołania, sprawdzić że
-  odpowiada macierzy z punktu 4 "Ustalonego podejścia" (read-only = zawsze cancellable; editing +
-  checkpoint = cancellable aż do startu przywracania; editing bez checkpointu = nie cancellable);
-  naprawić niezgodności. Dobra okazja, żeby rozstrzygnąć pytanie z punktu 4 o tym, czy user ma
-  dostawać jakiś sygnał, gdy operacja edytująca nie ma Cancel z powodu braku checkpointu (dziś: po
-  prostu nie ma przycisku w oknie — czy to wystarczy?).
+- [x] **C1. Audyt dostępności Cancel na wszystkich dzisiejszych wywołaniach
+  `RunBookOperationAsync`/`RunInBackgroundAsync`.** (2026-10-23) Przejrzane wszystkie wywołania
+  (`grep RunBookOperationAsync|RunInBackgroundAsync` w `src`). Wyniki:
+  - **Zgodne z macierzą:** sprawdzenie książki (read-only, Cancel zawsze), Mend/Prettify, Fix
+    problems, Renumber, Placement, Convert (edytujące, `cancellable` = powstał checkpoint, a praca
+    sprawdza token), przywracanie checkpointu (nie do przerwania), Revert/Undo (`cancellable:
+    false`).
+  - **Doprecyzowanie macierzy (nowy warunek):** Cancel oferujemy tylko, gdy **praca sprawdza token**.
+    Szybkie edycje (Rename Class/Id, Remove Class/Spans, Add/Edit/Remove Footnote i Reference, Unify
+    Letters, Remove Edition Page, Spellcheck Change All) to niepodzielne wywołania Core bez tokenu
+    (`(_, _) => ...`): Cancel byłby tam kłamstwem — okno pisałoby "Anulowanie…", a edycja i tak by się
+    skończyła. Zostają bez Cancel, nawet z checkpointem. Gdyby któraś okazała się na tyle długa, że
+    brakuje Cancel, to zadanie typu D1 (dodać token do jej pętli), nie zmiana okna.
+  - **Odpowiedź na pytanie z punktu 4 (edytujące bez checkpointu):** brak przycisku Cancel w oknie
+    wystarcza jako sygnał dla soft hyphens (`checkpointName: null`: Cancel w pół drogi zostawiłby
+    książkę w połowie zmienioną bez drogi powrotnej); gdy tworzenie checkpointu **się nie uda**
+    (IO), jest już ostrzeżenie `Status_CheckpointError`. Nic więcej nie dodawane.
+  - **Naprawione niezgodności** (znana niedoróbka z A4): (1) `ProgressWindow.DelayedRunner` ignorował
+    `cancellable`, więc tworzenie checkpointu było mechanicznie przerywalne, ale bez przycisku w
+    prawdziwym UI — teraz przekazuje `cancellable` (szybkie edycje nadal przekazują `false`);
+    (2) osiem miejsc wołających `AddCheckpointBeforeAsync` (Rename Class/Id, Remove Class/Spans, Add/
+    Edit/Remove Footnote i Reference, Unify Letters, Convert) **nie łapało**
+    `OperationCanceledException`, co po (1) skończyłoby się wyjątkiem w UI po kliknięciu Cancel —
+    wszystkie (razem z trzema, które łapały po swojemu) idą teraz przez jeden helper
+    `AddCheckpointOrCancelAsync` (komunikat `Status_OperationCancelled`, operacja się nie zaczyna).
+  - Testy: `Cancelling_the_checkpoint_of_a_quick_edit_leaves_the_book_as_it_was` (App),
+    `The_delayed_runner_offers_cancel_only_when_the_work_can_be_stopped` (UiTests).
 
-- [ ] **C2. Zweryfikować, że start przywracania checkpointu po Cancel jest widoczny i
-  nieprzerywalny.** Zależy od A4 (okno dla `AbandonCheckpointAsync` musi już istnieć). Sprawdzić
-  realnym testem/manualnie: po kliknięciu Cancel w trakcie długiej operacji edytującej, czy
-  użytkownik widzi ciągłość (np. "Cancelling…" → bez przerwy w "Przywracanie checkpointu…", nie
-  pusty ekran/zamrożenie między zamknięciem jednego okna a otwarciem drugiego).
+- [x] **C2. Zweryfikować, że start przywracania checkpointu po Cancel jest widoczny i
+  nieprzerywalny.** (2026-10-23) Analiza przepływu w kodzie znalazła lukę: okno "Anulowanie…" zamyka
+  się, gdy praca się zatrzyma, a okno przywracania (`AbandonCheckpointAsync`) było otwierane przez
+  `DelayedProgressRunner`, czyli **dopiero po 300 ms** — przez ten czas okno główne nie pokazywało
+  żadnej pracy (a przywracanie dużej książki trwa dziesiątki sekund). Naprawa:
+  `AbandonCheckpointAsync` używa teraz zwykłego `ProgressRunner` (okno od razu, bez Cancel), więc
+  następuje bezpośrednio po oknie "Anulowanie…". Wszystkie trzy wywołania `AbandonCheckpointAsync`
+  (Cancel w `RunBookOperationAsync`, Cancel konwersji, nieudane sprawdzenie konwersji) to
+  przywracanie po porażce, gdzie krótkie mignięcie okna jest akceptowalne. Nieprzerywalność:
+  okno ma `cancellable: false` (test `Cancelling_the_renumbering_brings_the_book_back` sprawdza
+  teraz, że przywracanie idzie przez `ProgressRunner` i bez Cancel). **Nie sprawdzone ręcznie na
+  prawdziwym oknie:** ciągłość wizualną pokazuje tylko kod (oba okna otwierane kolejno bez
+  `await` między zamknięciem jednego a `ShowDialog` drugiego poza zwykłym zamknięciem w
+  `Background`), nie zrzut; do potwierdzenia przy ręcznym teście na dużej książce.
 
 ### Część D — cadence tokenu (meta, nie konkretne zadanie)
 

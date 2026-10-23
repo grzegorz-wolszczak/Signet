@@ -150,17 +150,27 @@ public sealed partial class MainWindowViewModel
             _target.Report(new WorkProgress(Strings.Format(_messageKey, value.Done, value.Total), WorkProgress.FractionOf(value.Done, value.Total)));
     }
 
-    // What ChangePlacement reports as what the progress window shows: the files scanned and the notes moved are counted in a phase
-    // each; the writing and the numbering at the end cannot tell how far they are, so their phase has only a bar that works.
+    // What ChangePlacement reports as what the progress window shows: the files scanned, the notes moved and the steps of the
+    // renumbering at the end are counted in a phase each; the writing between them cannot tell how far it is, so its phase has only a
+    // bar that works.
     private sealed class PlacementProgressMap : IProgress<PlacementProgress>
     {
         private readonly IProgress<WorkProgress> _target;
 
         public PlacementProgressMap(IProgress<WorkProgress> target) => _target = target;
 
+        // The stages of ChangePlacement, then the five steps of the renumbering as phases of their own.
+        private static int PhaseCount => Enum.GetValues<PlacementStage>().Length - 1 + RenumberPhaseCount;
+
         public void Report(PlacementProgress value)
         {
-            PhaseInfo phase = new((int)value.Stage + 1, Enum.GetValues<PlacementStage>().Length, Strings.Get("FootnotePlacement_Phase_" + value.Stage));
+            if (value.Stage == PlacementStage.Renumbering)
+            {
+                _target.Report(RenumberPhase(value.Renumbering, value.Done, value.Total, (int)PlacementStage.Renumbering + 1, PhaseCount));
+                return;
+            }
+
+            PhaseInfo phase = new((int)value.Stage + 1, PhaseCount, Strings.Get("FootnotePlacement_Phase_" + value.Stage));
             _target.Report(value.Stage switch
             {
                 PlacementStage.Preparing => WorkProgress.InPhase(phase, Strings.Format("Progress_Detail_File", value.Done, value.Total), value.Done, value.Total),
@@ -240,7 +250,12 @@ public sealed partial class MainWindowViewModel
         {
             _tabManager.SaveAllTabs();
             string title = Strings.Get("CheckpointOp_UnifyFootnoteLetters");
-            await AddCheckpointBeforeAsync(title).ConfigureAwait(true);
+            (bool cancelled, _) = await AddCheckpointOrCancelAsync(title).ConfigureAwait(true);
+            if (cancelled)
+            {
+                return false;
+            }
+
             FootnoteOptions options = FootnoteOptions;
             int changed = await RunInBackgroundAsync(
                 title, runWithProgress, editsBook: true, cancellable: false,
@@ -342,7 +357,12 @@ public sealed partial class MainWindowViewModel
         try
         {
             _tabManager.SaveAllTabs();
-            bool checkpoint = await AddCheckpointBeforeAsync(Strings.Get("CheckpointOp_ConvertFootnotes")).ConfigureAwait(true);
+            (bool cancelled, bool checkpoint) = await AddCheckpointOrCancelAsync(Strings.Get("CheckpointOp_ConvertFootnotes")).ConfigureAwait(true);
+            if (cancelled)
+            {
+                return null;
+            }
+
             if (!checkpoint && !await confirmWithoutCheckpoint().ConfigureAwait(true))
             {
                 return null;
@@ -419,11 +439,15 @@ public sealed partial class MainWindowViewModel
         }
     }
 
-    // The phases of a conversion: the stages of Convert and, after them, the analysis of the book that gives the dialog its new plan.
-    private static int ConversionPhaseCount => Enum.GetValues<ConversionStage>().Length + 1;
+    // The phases of a conversion: the stages of Convert (the renumbering in the middle is five phases of its own) and, after them,
+    // the analysis of the book that gives the dialog its new plan.
+    private static int ConversionPhaseCount => Enum.GetValues<ConversionStage>().Length - 1 + RenumberPhaseCount + 1;
 
     private static PhaseInfo ConversionAnalysisPhase() =>
         new(ConversionPhaseCount, ConversionPhaseCount, Strings.Get("FootnoteConversion_Phase_Analyzing"));
+
+    // The number of the first phase of the renumbering inside Convert: after preparing, converting and finishing.
+    private const int ConversionRenumberFirstPhase = (int)ConversionStage.Renumbering + 1;
 
     // What FootnoteScanner.Scan reports while a phase scans the files of the book: the files done of the total in that phase.
     private sealed class PhasedScanMap : IProgress<ScanProgress>
@@ -441,9 +465,9 @@ public sealed partial class MainWindowViewModel
             _target.Report(WorkProgress.InPhase(_phase, Strings.Format("Progress_Detail_File", value.Done, value.Total), value.Done, value.Total));
     }
 
-    // What Convert reports as what the progress window shows: the files scanned and the footnotes converted are counted in a phase
-    // each; the cleaning up (with the numbering) and the check take most of the time and cannot tell how far they are, so their phases
-    // have only a bar that works.
+    // What Convert reports as what the progress window shows: the files scanned, the footnotes converted and the steps of the
+    // renumbering are counted in a phase each; the cleaning up before the renumbering and the check cannot tell how far they are, so
+    // their phases have only a bar that works.
     private sealed class ConversionProgressMap : IProgress<ConversionProgress>
     {
         private readonly IProgress<WorkProgress> _target;
@@ -452,7 +476,15 @@ public sealed partial class MainWindowViewModel
 
         public void Report(ConversionProgress value)
         {
-            PhaseInfo phase = new((int)value.Stage + 1, ConversionPhaseCount, Strings.Get("FootnoteConversion_Phase_" + value.Stage));
+            if (value.Stage == ConversionStage.Renumbering)
+            {
+                _target.Report(RenumberPhase(value.Renumbering, value.Done, value.Total, ConversionRenumberFirstPhase, ConversionPhaseCount));
+                return;
+            }
+
+            // Checking follows the five phases of the renumbering.
+            int index = value.Stage == ConversionStage.Checking ? ConversionRenumberFirstPhase + RenumberPhaseCount : (int)value.Stage + 1;
+            PhaseInfo phase = new(index, ConversionPhaseCount, Strings.Get("FootnoteConversion_Phase_" + value.Stage));
             _target.Report(value.Stage switch
             {
                 ConversionStage.Preparing => WorkProgress.InPhase(phase, Strings.Format("Progress_Detail_File", value.Done, value.Total), value.Done, value.Total),
@@ -513,7 +545,12 @@ public sealed partial class MainWindowViewModel
         {
             _settings.FootnoteGlobalPlacement = placement == FootnotePlacement.Global;
             _tabManager.SaveAllTabs();
-            bool checkpoint = await AddCheckpointBeforeAsync(Strings.Get("CheckpointOp_AddFootnote")).ConfigureAwait(true);
+            (bool cancelled, bool checkpoint) = await AddCheckpointOrCancelAsync(Strings.Get("CheckpointOp_AddFootnote")).ConfigureAwait(true);
+            if (cancelled)
+            {
+                return;
+            }
+
             FootnoteOptions options = FootnoteOptions;
             (FootnoteError Error, Footnote? Added) result = await RunInBackgroundAsync(
                 Strings.Get("CheckpointOp_AddFootnote"), runWithProgress, editsBook: true, cancellable: false,
@@ -581,7 +618,12 @@ public sealed partial class MainWindowViewModel
         try
         {
             _tabManager.SaveAllTabs();
-            bool checkpoint = await AddCheckpointBeforeAsync(Strings.Get("CheckpointOp_AddFootnoteReference")).ConfigureAwait(true);
+            (bool cancelled, bool checkpoint) = await AddCheckpointOrCancelAsync(Strings.Get("CheckpointOp_AddFootnoteReference")).ConfigureAwait(true);
+            if (cancelled)
+            {
+                return;
+            }
+
             FootnoteOptions options = FootnoteOptions;
             (FootnoteError Error, Footnote? Added) result = await RunInBackgroundAsync(
                 Strings.Get("CheckpointOp_AddFootnoteReference"), runWithProgress, editsBook: true, cancellable: false,
@@ -642,7 +684,12 @@ public sealed partial class MainWindowViewModel
             (HtmlResource File, int Offset)? reference =
                 footnote is null ? null : FootnoteEditor.Locate(footnote, FootnoteSide.Reference);
             (HtmlResource File, int Offset)? place = footnote is null ? null : FootnoteEditor.Locate(footnote, hit.Side);
-            bool checkpoint = await AddCheckpointBeforeAsync(Strings.Get("CheckpointOp_RemoveFootnote")).ConfigureAwait(true);
+            (bool cancelled, bool checkpoint) = await AddCheckpointOrCancelAsync(Strings.Get("CheckpointOp_RemoveFootnote")).ConfigureAwait(true);
+            if (cancelled)
+            {
+                return;
+            }
+
             FootnoteOptions options = FootnoteOptions;
             bool removed = false;
             if (footnote is { } found)
@@ -701,7 +748,12 @@ public sealed partial class MainWindowViewModel
             Footnote? footnote = FootnoteEditor.Refresh(book, hit.Footnote);
             (HtmlResource File, int Offset)? place =
                 footnote is null ? null : FootnoteEditor.Locate(footnote, FootnoteSide.Reference);
-            bool checkpoint = await AddCheckpointBeforeAsync(Strings.Get("CheckpointOp_RemoveFootnoteReference")).ConfigureAwait(true);
+            (bool cancelled, bool checkpoint) = await AddCheckpointOrCancelAsync(Strings.Get("CheckpointOp_RemoveFootnoteReference")).ConfigureAwait(true);
+            if (cancelled)
+            {
+                return;
+            }
+
             FootnoteOptions options = FootnoteOptions;
             bool removed = false;
             if (footnote is { } found)
@@ -785,7 +837,12 @@ public sealed partial class MainWindowViewModel
         {
             _tabManager.SaveAllTabs();
             Footnote? footnote = FootnoteEditor.Refresh(book, hit.Footnote);
-            bool checkpoint = await AddCheckpointBeforeAsync(Strings.Get("CheckpointOp_EditFootnote")).ConfigureAwait(true);
+            (bool cancelled, bool checkpoint) = await AddCheckpointOrCancelAsync(Strings.Get("CheckpointOp_EditFootnote")).ConfigureAwait(true);
+            if (cancelled)
+            {
+                return;
+            }
+
             FootnoteOptions options = FootnoteOptions;
             (FootnoteError Error, Footnote? Edited) result = footnote is not { } found
                 ? (FootnoteError.NotFound, null)
@@ -909,6 +966,15 @@ public sealed partial class MainWindowViewModel
         ShowRenumberResult("Status_FootnotesRenumbered", outcome.Result.Foreign);
     }
 
+    private static int RenumberPhaseCount => Enum.GetValues<RenumberStage>().Length;
+
+    // The report of a step of the renumbering as a phase: the five steps are consecutive phases from `firstIndex` (of `count`) in
+    // whatever operation they belong to (the renumbering itself, or the end of a change of placement or of a conversion).
+    private static WorkProgress RenumberPhase(RenumberStage stage, int done, int total, int firstIndex, int count) =>
+        WorkProgress.InPhase(
+            new PhaseInfo(firstIndex + (int)stage, count, Strings.Get("FootnoteRenumber_Phase_" + stage)),
+            Strings.Format(stage == RenumberStage.Numbering ? "Progress_Detail_Footnote" : "Progress_Detail_File", done, total), done, total);
+
     // What Renumber reports: each stage's share of the progress bar, and — in the debug log, when enabled — how long each
     // stage took, so a slow book shows exactly where the time goes (scanning, numbering, writing, sorting, styling).
     private sealed class RenumberProgressMap : IProgress<RenumberProgress>
@@ -938,10 +1004,7 @@ public sealed partial class MainWindowViewModel
             }
 
             // Each stage is a phase of its own: the bar counts the steps of the phase and starts over with the next one.
-            string detailKey = value.Stage == RenumberStage.Numbering ? "Progress_Detail_Footnote" : "Progress_Detail_File";
-            _target.Report(WorkProgress.InPhase(
-                new PhaseInfo((int)value.Stage + 1, Enum.GetValues<RenumberStage>().Length, Strings.Get("FootnoteRenumber_Phase_" + value.Stage)),
-                Strings.Format(detailKey, value.Done, value.Total), value.Done, value.Total));
+            _target.Report(RenumberPhase(value.Stage, value.Done, value.Total, 1, RenumberPhaseCount));
         }
     }
 

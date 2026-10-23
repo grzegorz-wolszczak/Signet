@@ -465,6 +465,37 @@ public sealed class MainWindowFootnotesTests : IDisposable
     }
 
     [Fact]
+    public async Task Cancelling_the_checkpoint_of_a_quick_edit_leaves_the_book_as_it_was()
+    {
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel sut, Book _, HtmlResource chapter) = OpenMinimalChapter(temp);
+            ICodeTabHost host = sut;
+            string before = chapter.GetText();
+            int states = sut.CheckpointHistory.States.Count;
+            using CancellationTokenSource pressed = new();
+            sut.DelayedProgressRunner = (_, work, cancellable) =>
+            {
+                cancellable.Should().BeTrue("the window of a checkpoint offers Cancel");
+                pressed.Cancel();
+                return work(new RecordingProgress(), pressed.Token);
+            };
+
+            // Act
+            await host.AddFootnote(chapter, AfterHello(chapter), "Note.", FootnotePlacement.Local);
+
+            // Assert
+            chapter.GetText().Should().Be(before, "the edit never started");
+            sut.CheckpointHistory.States.Should().HaveCount(states, "the cancelled checkpoint left nothing behind");
+            sut.StatusMessage.Should().Be(Strings.Format("Status_OperationCancelled", Strings.Get("CheckpointOp_AddFootnote")));
+            sut.IsBookOperationBusy.Should().BeFalse();
+        });
+    }
+
+    [Fact]
     public async Task Cancelling_the_renumbering_brings_the_book_back()
     {
         await SingleThreadContext.RunAsync(async () =>
@@ -490,6 +521,12 @@ public sealed class MainWindowFootnotesTests : IDisposable
                 checkpointRuns.Add((title, cancellable));
                 return work(new RecordingProgress(), CancellationToken.None);
             };
+            List<(string Title, bool Cancellable)> restoreRuns = new();
+            sut.ProgressRunner = (title, work, cancellable) =>
+            {
+                restoreRuns.Add((title, cancellable));
+                return work(new RecordingProgress(), CancellationToken.None);
+            };
 
             // Act
             await host.RenumberFootnotes(runner);
@@ -499,11 +536,12 @@ public sealed class MainWindowFootnotesTests : IDisposable
             restored.GetHtmlResources().Single(h => h.Filename == chapter.Filename).GetText().Should().Be(before);
             sut.CheckpointHistory.States.Should().HaveCount(states, "the checkpoint of the cancelled renumbering is forgotten");
             sut.StatusMessage.Should().Be(Strings.Format("Status_OperationCancelledRestored", Strings.Get("FootnoteRenumber_ProgressTitle")));
-            checkpointRuns.Select(r => r.Title).Should().Equal(
-                Strings.Format("Checkpoint_Before", Strings.Get("CheckpointOp_RenumberFootnotes")),
-                Strings.Get("Checkpoint_AbandonProgressTitle"));
+            checkpointRuns.Select(r => r.Title).Should().Equal(Strings.Format("Checkpoint_Before", Strings.Get("CheckpointOp_RenumberFootnotes")));
             checkpointRuns[0].Cancellable.Should().BeTrue("creating a checkpoint is itself cancellable");
-            checkpointRuns[1].Cancellable.Should().BeFalse("restoring the book back is already what Cancel started — there is no further back from it");
+            restoreRuns.Select(r => r.Title).Should().Equal(
+                new[] { Strings.Get("Checkpoint_AbandonProgressTitle") },
+                "the restore has a window at once (the runner without a delay), so it follows the Cancelling window without a gap");
+            restoreRuns[0].Cancellable.Should().BeFalse("restoring the book back is already what Cancel started — there is no further back from it");
         });
     }
 
@@ -712,17 +750,21 @@ public sealed class MainWindowFootnotesTests : IDisposable
         cancellable.Should().Equal(true, false);
         chapter.GetText().Should().Contain("signet-fn-ref");
         dialog.HasProblems.Should().BeFalse();
-        progress.Reports.Should().OnlyContain(r => r.Phase != null && r.Phase.Count == 5, "every report names its phase of five: the four stages and the analysis");
-        progress.Reports.Select(r => r.Phase!.Index).Should().BeInAscendingOrder().And.Subject.Distinct().Should().Equal(1, 2, 3, 4, 5);
+        progress.Reports.Should().OnlyContain(r => r.Phase != null && r.Phase.Count == 10, "every report names its phase of ten: the stages, the five of the renumbering and the analysis");
+        progress.Reports.Select(r => r.Phase!.Index).Should().BeInAscendingOrder().And.Subject.Distinct().Should().Equal(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
         progress.Reports.Select(r => r.Phase!.Name).Distinct().Should().Equal(
             Strings.Get("FootnoteConversion_Phase_Preparing"), Strings.Get("FootnoteConversion_Phase_Converting"),
-            Strings.Get("FootnoteConversion_Phase_Finishing"), Strings.Get("FootnoteConversion_Phase_Checking"),
-            Strings.Get("FootnoteConversion_Phase_Analyzing"));
+            Strings.Get("FootnoteConversion_Phase_Finishing"), Strings.Get("FootnoteRenumber_Phase_Scanning"),
+            Strings.Get("FootnoteRenumber_Phase_Numbering"), Strings.Get("FootnoteRenumber_Phase_Writing"),
+            Strings.Get("FootnoteRenumber_Phase_Sorting"), Strings.Get("FootnoteRenumber_Phase_Styling"),
+            Strings.Get("FootnoteConversion_Phase_Checking"), Strings.Get("FootnoteConversion_Phase_Analyzing"));
         progress.Reports.Where(r => r.Phase!.Index == 2).Should().Contain(
             r => r.Message == Strings.Format("Progress_Detail_Footnote", 1, 1) && r.Fraction == 1, "converting counts the footnotes");
-        progress.Reports.Where(r => r.Phase!.Index is 3 or 4).Should().OnlyContain(
+        progress.Reports.Where(r => r.Phase!.Index is 3 or 9).Should().OnlyContain(
             r => r.Message == null && r.Fraction == null, "the cleaning up and the check cannot tell how far they are");
         progress.Reports.Where(r => r.Phase!.Index == 5).Should().Contain(
+            r => r.Message != null && r.Message.StartsWith("footnote", StringComparison.Ordinal), "the renumbering counts the footnotes");
+        progress.Reports.Where(r => r.Phase!.Index == 10).Should().Contain(
             r => r.Message != null && r.Message.StartsWith("file", StringComparison.Ordinal), "the analysis counts the files");
         sut.BookBrowser.SuspendRebuilds.Should().BeFalse("the tree follows the book again when the work is done");
     }

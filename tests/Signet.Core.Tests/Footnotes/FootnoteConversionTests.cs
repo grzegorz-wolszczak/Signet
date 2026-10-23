@@ -1014,9 +1014,13 @@ public sealed class FootnoteConversionTests
             // Assert
             result.Problems.Should().BeEmpty();
             reports.Select(r => r.Stage).Distinct().Should().Equal(
-                ConversionStage.Preparing, ConversionStage.Converting, ConversionStage.Finishing, ConversionStage.Checking);
+                ConversionStage.Preparing, ConversionStage.Converting, ConversionStage.Finishing, ConversionStage.Renumbering,
+                ConversionStage.Checking);
+            reports.Where(r => r.Stage == ConversionStage.Renumbering).Select(r => r.Renumbering).Distinct().Should().Equal(
+                RenumberStage.Scanning, RenumberStage.Numbering, RenumberStage.Writing, RenumberStage.Sorting, RenumberStage.Styling);
             reports.Where(r => r.Stage == ConversionStage.Converting).Select(r => r.Done).Should().BeInAscendingOrder().And.EndWith(2);
-            reports.Where(r => r.Stage != ConversionStage.Preparing).Should().OnlyContain(r => r.Total == 2);
+            reports.Where(r => r.Stage is ConversionStage.Converting or ConversionStage.Finishing or ConversionStage.Checking)
+                .Should().OnlyContain(r => r.Total == 2);
             List<ConversionProgress> preparing = reports.Where(r => r.Stage == ConversionStage.Preparing).ToList();
             preparing[0].Total.Should().Be(0, "the count of the files is not known before the scan starts");
             preparing.Skip(1).Should().NotBeEmpty().And.OnlyContain(r => r.Total == files);

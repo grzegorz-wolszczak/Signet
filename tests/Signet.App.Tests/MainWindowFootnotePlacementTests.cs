@@ -141,10 +141,15 @@ public sealed class MainWindowFootnotePlacementTests : IDisposable
         chapter.GetText().Should().Contain("#en-1", "the book was edited in place");
         sut.CheckpointHistory.States.Should().HaveCount(states + 1, "a checkpoint was taken before the change");
         sut.StatusMessage.Should().Be(Strings.Format("Status_FootnotePlacementChanged", 1));
-        progress.Reports.Select(r => r.Phase).Should().OnlyContain(p => p != null && p.Count == 3, "every report names its phase of three");
-        progress.Reports.Select(r => r.Phase!.Index).Should().BeInAscendingOrder().And.Contain(1).And.Contain(2).And.Contain(3);
-        progress.Reports.Select(r => r.Phase!.Name).Should().Contain(Strings.Get("FootnotePlacement_Phase_Finishing"));
-        progress.Reports.Last().Should().Match<WorkProgress>(r => r.Fraction == null && r.Message == null, "the last phase cannot tell how far it is");
+        progress.Reports.Select(r => r.Phase).Should().OnlyContain(p => p != null && p.Count == 8, "every report names its phase of eight: three stages and five of the renumbering");
+        progress.Reports.Select(r => r.Phase!.Index).Should().BeInAscendingOrder().And.Subject.Distinct().Should().Equal(1, 2, 3, 4, 5, 6, 7, 8);
+        progress.Reports.Select(r => r.Phase!.Name).Distinct().Should().Equal(
+            Strings.Get("FootnotePlacement_Phase_Preparing"), Strings.Get("FootnotePlacement_Phase_Moving"),
+            Strings.Get("FootnotePlacement_Phase_Finishing"), Strings.Get("FootnoteRenumber_Phase_Scanning"),
+            Strings.Get("FootnoteRenumber_Phase_Numbering"), Strings.Get("FootnoteRenumber_Phase_Writing"),
+            Strings.Get("FootnoteRenumber_Phase_Sorting"), Strings.Get("FootnoteRenumber_Phase_Styling"));
+        progress.Reports.Where(r => r.Phase!.Index == 3).Should().OnlyContain(r => r.Fraction == null && r.Message == null, "the writing cannot tell how far it is");
+        progress.Reports.Where(r => r.Phase!.Index == 5).Should().Contain(r => r.Message != null && r.Message.StartsWith("footnote", StringComparison.Ordinal), "the renumbering counts the footnotes");
         progress.Reports.Where(r => r.Phase!.Index == 2).Should().Contain(r => r.Message == Strings.Format("Progress_Detail_Footnote", 0, 1), "the moving phase counts the notes");
         sut.BookBrowser.SuspendRebuilds.Should().BeFalse("the tree follows the book again when the work is done");
     }
