@@ -365,22 +365,6 @@ public static partial class FootnoteEditor
             _edits.Insert(first, edit);
         }
 
-        /// <summary>Whether one of the edits here holds the whole of <paramref name="edit"/>.</summary>
-        public bool Covers(TextEdit edit)
-        {
-            for (int i = PlaceFor(edit.Start + 1) - 1; i >= 0; i--)
-            {
-                if (_edits[i].Length == 0)
-                {
-                    continue;
-                }
-
-                return _edits[i].Start <= edit.Start && _edits[i].Start + _edits[i].Length >= edit.Start + edit.Length;
-            }
-
-            return false;
-        }
-
         /// <summary>
         /// The edits that fall inside <paramref name="from"/>..<paramref name="to"/>, in the order of their positions
         /// (for reading a part of the text as the edits leave it).

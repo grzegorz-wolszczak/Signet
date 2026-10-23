@@ -564,19 +564,57 @@ public static partial class FootnoteEditor
         Dictionary<(HtmlResource File, FootnotePlacement Placement, int? Group), List<string>> insertions = new();
         List<ConvertedNote> converted = new();
         ConversionTexts texts = new();
-        int step = Math.Max(1, items.Count / 200);
-        for (int i = 0; i < items.Count; i++)
+        // The ids of every note and of every reference are handed out before anything changes: replacing a reference
+        // needs the id of the note it will lead to, and the references are all replaced before any note is cut out.
+        List<PlannedNote> planned = new(items.Count);
+        foreach (ConversionItem item in items)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            ConversionItem item = items[i];
             Footnote footnote = item.Footnote;
             IReadOnlyList<Footnote> references = item.References.Count > 0 ? item.References : new[] { footnote };
-            (string tempId, string content) = ConvertOne(references, footnote.Placement == FootnotePlacement.Local ? footnote.ReferenceFile : target!,
-                groupOf, request.KeepClasses, epub3, moves, touched, insertions, texts);
-            converted.Add(new ConvertedNote(tempId, content, footnote.NoteFile.BookPath, footnote.NoteId, item.Marker));
+            string noteId = "fn-new-" + Ulid.NewUlid().ToString().ToLowerInvariant();
+            planned.Add(new PlannedNote(
+                item,
+                references,
+                footnote.Placement == FootnotePlacement.Local ? footnote.ReferenceFile : target!,
+                noteId,
+                references.Select((_, i) => noteId + "-ref" + (i == 0 ? string.Empty : "-" + i.ToString(CultureInfo.InvariantCulture))).ToList()));
+        }
+
+        // Every reference first, and only then the notes. The text of a note may hold the reference of another note (a
+        // footnote citing a footnote): cutting that note out before the reference was replaced took the replacement
+        // with it, and when two notes held each other's references no order of whole footnotes could work at all. What
+        // one waits for is the other's reference being replaced, not the whole of the other footnote, so replacing and
+        // cutting are done in turn over all of them instead of both at once for one of them.
+        //
+        // The progress of the two passes shares one count, each filling half of it, so it still ends at the number of
+        // footnotes and never goes back.
+        int step = Math.Max(1, items.Count / 200);
+        for (int i = 0; i < planned.Count; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            PlannedNote one = planned[i];
+            for (int r = 0; r < one.References.Count; r++)
+            {
+                ConvertReference(
+                    one.References[r], one.ReferenceIds[r], one.Target, one.NoteId, request.KeepClasses, epub3, moves, touched, texts);
+            }
+
             if (i % step == 0)
             {
-                progress?.Report(new ConversionProgress(ConversionStage.Converting, i + 1, items.Count));
+                progress?.Report(new ConversionProgress(ConversionStage.Converting, (i + 1) / 2, items.Count));
+            }
+        }
+
+        for (int i = 0; i < planned.Count; i++)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            PlannedNote one = planned[i];
+            (string tempId, string content) = CutNote(one, groupOf, request.KeepClasses, epub3, moves, touched, insertions, texts);
+            converted.Add(new ConvertedNote(
+                tempId, content, one.Item.Footnote.NoteFile.BookPath, one.Item.Footnote.NoteId, one.Item.Marker));
+            if (i % step == 0)
+            {
+                progress?.Report(new ConversionProgress(ConversionStage.Converting, (items.Count + i + 1) / 2, items.Count));
             }
         }
 
@@ -676,26 +714,32 @@ public static partial class FootnoteEditor
     // A footnote converted by Convert: its temporary note id, the markup its note must keep inside, and where it was.
     private sealed record ConvertedNote(string TempId, string Content, string SourcePath, string SourceId, string Marker);
 
-    // Converts one footnote (all the references of its note); returns its temporary note id and the markup its note
-    // must keep inside. Nothing is written here: every position is read in the text of the file as the conversion found
-    // it and the edits wait in `texts`, so the references can be taken in the order they stand (they used to be taken
-    // the last first, because writing one moved the ones behind it).
-    private static (string TempId, string Content) ConvertOne(
-        IReadOnlyList<Footnote> references, HtmlResource target, Dictionary<string, int> groupOf, bool keepClasses, bool epub3,
+    // What Convert works out for one footnote before it changes anything: the ids its note and its references will
+    // carry, and the file its note goes to.
+    private sealed record PlannedNote(
+        ConversionItem Item,
+        IReadOnlyList<Footnote> References,
+        HtmlResource Target,
+        string NoteId,
+        IReadOnlyList<string> ReferenceIds);
+
+    // Takes one footnote's note out of its file and puts its text into Signet's template; returns its temporary note id
+    // and the markup the note must keep inside. The references are already replaced by now (see Convert), so the text
+    // read here -- through the edits collected so far -- holds Signet's reference for any note cited inside it.
+    // Nothing is written: every position is read in the text of the file as the conversion found it and the edits wait
+    // in `texts`.
+    private static (string TempId, string Content) CutNote(
+        PlannedNote one, Dictionary<string, int> groupOf, bool keepClasses, bool epub3,
         Dictionary<(string BookPath, string Id), (string BookPath, string Id)> moves,
         HashSet<HtmlResource> touched, Dictionary<(HtmlResource File, FootnotePlacement Placement, int? Group), List<string>> insertions,
         ConversionTexts texts)
     {
+        IReadOnlyList<Footnote> references = one.References;
+        IReadOnlyList<string> referenceIds = one.ReferenceIds;
+        HtmlResource target = one.Target;
+        string noteId = one.NoteId;
         Footnote footnote = references[0];
         bool local = footnote.Placement == FootnotePlacement.Local;
-        string noteId = "fn-new-" + Ulid.NewUlid().ToString().ToLowerInvariant();
-        List<string> referenceIds = references
-            .Select((_, i) => noteId + "-ref" + (i == 0 ? string.Empty : "-" + i.ToString(CultureInfo.InvariantCulture)))
-            .ToList();
-        for (int i = 0; i < references.Count; i++)
-        {
-            ConvertReference(references[i], referenceIds[i], target, noteId, keepClasses, epub3, moves, touched, texts);
-        }
 
         // The note: its text without the link back, in Signet's template.
         HtmlResource noteFile = footnote.NoteFile;
@@ -1140,17 +1184,11 @@ public static partial class FootnoteEditor
         public FileEdits Pending(HtmlResource file) => EntryFor(file).Edits;
 
         /// <summary>
-        /// Takes an edit of <paramref name="file"/> in; its positions are those of <see cref="Read"/>. An edit inside a
-        /// piece already cut out is dropped: the reference of a note that stood inside another note goes with it.
+        /// Takes an edit of <paramref name="file"/> in; its positions are those of <see cref="Read"/>. Convert replaces
+        /// every reference before it cuts any note out, so an edit never lands inside a piece already cut; what a cut
+        /// swallows is dropped by <see cref="FileEdits.AddCovering"/> at the other end.
         /// </summary>
-        public void Edit(HtmlResource file, TextEdit edit)
-        {
-            FileEdits edits = EntryFor(file).Edits;
-            if (!edits.Covers(edit))
-            {
-                edits.Add(edit);
-            }
-        }
+        public void Edit(HtmlResource file, TextEdit edit) => EntryFor(file).Edits.Add(edit);
 
         /// <summary>
         /// Cuts a note out of <paramref name="file"/>, with whatever was going to be done inside it, and marks the

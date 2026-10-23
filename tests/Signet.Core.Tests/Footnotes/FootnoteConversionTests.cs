@@ -907,14 +907,11 @@ public sealed class FootnoteConversionTests
     }
 
     /// <summary>
-    /// A note referred to from inside another note: the reference stands in the text of the note that is converted
-    /// first, so by the time its turn comes the piece of the file it stood in is already cut out. Replacing it there
-    /// would write the new reference into text that is on its way out, so the edit goes with the cut — which leaves
-    /// that note without its reference. Signet cannot convert this shape; what matters is that it says so instead of
-    /// writing a book with a link that leads nowhere, and this test holds it to that.
+    /// A footnote citing a footnote: the reference of one note stands in the text of another. Every reference is
+    /// replaced before any note is cut out, so the citing note takes Signet's reference into its own new text.
     /// </summary>
     [Fact]
-    public void A_reference_that_stood_inside_another_note_goes_with_it()
+    public void A_note_cited_from_inside_another_note_is_converted_with_it()
     {
         // Arrange
         (Book book, HtmlResource html) = NewBook(
@@ -931,12 +928,65 @@ public sealed class FootnoteConversionTests
 
             // Assert
             string body = BodyOf(html);
-            // The reference's replacement went with the cut, so the note it belonged to keeps its temporary link back.
-            body.Should().Contain("fn-new-").And.NotContain("id=\"nA\"").And.NotContain("id=\"nB\"");
+            result.Problems.Should().BeEmpty();
+            result.Converted.Should().Be(2);
+            body.Should().NotContain("fn-new-", "no temporary id is left behind")
+                .And.NotContain("id=\"nA\"").And.NotContain("id=\"nB\"");
 
-            // The conversion's own check sees it and reports, so the caller rewinds the book (see Convert's remarks).
-            result.Problems.Select(p => p.Detail).Should().Contain("Validation_BadFragmentSameFile");
-            result.Problems.Select(p => p.Kind).Should().Contain(ConversionProblemKind.TextChanged);
+            // The citing note holds Signet's reference to the cited one, and the cited one links back to it.
+            body.Should().Contain(
+                "<aside class=\"signet-fn\" epub:type=\"footnote\" id=\"fn-1\"><p class=\"signet-fn-p\">"
+                + "<a href=\"#fn-1-ref\">1.</a> Bee, see also"
+                + "<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"#fn-2\" id=\"fn-2-ref\">[2]</a>.</p></aside>")
+                .And.Contain(
+                "<aside class=\"signet-fn\" epub:type=\"footnote\" id=\"fn-2\"><p class=\"signet-fn-p\">"
+                + "<a href=\"#fn-2-ref\">2.</a> Aye.</p></aside>");
+            FootnoteValidator.Validate(book).Should().BeEmpty();
+        }
+    }
+
+    /// <summary>
+    /// Two notes that cite each other — each one's reference stands in the other's text. No order of whole footnotes
+    /// can serve this: whichever went first would be cut out before the other's reference was replaced. Replacing
+    /// every reference before cutting any note settles it without an order at all, so a book that does this converts
+    /// like any other instead of being refused.
+    /// </summary>
+    [Fact]
+    public void Two_notes_that_cite_each_other_are_both_converted()
+    {
+        // Arrange
+        (Book book, HtmlResource html) = NewBook(
+            "<p>Start<a epub:type=\"noteref\" href=\"#nA\" id=\"rA0\">[A]</a>.</p>\n"
+            + "<section epub:type=\"footnotes\">\n"
+            + "<aside epub:type=\"footnote\" id=\"nA\"><a href=\"#rA0\">[A]</a> Aye, cf."
+            + "<a epub:type=\"noteref\" href=\"#nB\" id=\"rB\">[B]</a>.</aside>\n"
+            + "<aside epub:type=\"footnote\" id=\"nB\"><a href=\"#rB\">[B]</a> Bee, cf."
+            + "<a epub:type=\"noteref\" href=\"#nA\" id=\"rA1\">[A2]</a>.</aside>\n"
+            + "</section>");
+        using (book)
+        {
+            // Act
+            ConversionResult result = ConvertAll(book);
+
+            // Assert
+            result.Problems.Should().BeEmpty();
+            result.Converted.Should().Be(2);
+            string body = BodyOf(html);
+
+            // "Aye" is shared: read from the text and from inside "Bee", so it gets a letter per reference.
+            body.Should().Contain(
+                "<aside class=\"signet-fn\" epub:type=\"footnote\" id=\"fn-1\"><p class=\"signet-fn-p\">"
+                + "<a href=\"#fn-1a-ref\">1a</a>, <a href=\"#fn-1b-ref\">1b</a>. Aye, cf."
+                + "<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"#fn-2\" id=\"fn-2-ref\">[2]</a>.</p></aside>")
+                .And.Contain(
+                "<aside class=\"signet-fn\" epub:type=\"footnote\" id=\"fn-2\"><p class=\"signet-fn-p\">"
+                + "<a href=\"#fn-2-ref\">2.</a> Bee, cf."
+                + "<a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\"#fn-1\" id=\"fn-1b-ref\">[1b]</a>.</p></aside>");
+            body.Should().NotContain("fn-new-").And.NotContain("id=\"nA\"").And.NotContain("id=\"nB\"");
+
+            // Act & Assert
+            FootnoteValidator.Validate(book).Should().BeEmpty();
+            FootnoteScanner.Scan(book).Should().HaveCount(3).And.OnlyContain(f => f.IsSignet);
         }
     }
 
