@@ -284,6 +284,17 @@ od trybu, w jakim go otwarto, na obu platformach, bo żądanie `FileShare.None` 
 każdym istniejącym uchwytem. Zweryfikowane: `Signet.Core.Tests` 2782/2782 zielone (zniknął pre-
 existing fail), `Signet.App.Tests` 1078/1078 bez zmian.
 
+### 15. Przeniesione: podejście do operacji w tle/progresu/Cancel — osobny dokument
+
+Użytkownik zgłosił (trzecia sesja) szerszy problem, wykraczający poza same przypisy: całe podejście
+do pokazywania progresu, blokowania drugiej operacji i Cancel powinno być jednolite w całej
+appce, nie tylko dla przypisów. Ustalenia i lista zadań poszły do nowego pliku
+**`Background_processing_instructions.md`** (w katalogu głównym repo) — tam jest kontrakt (sekcja
+"Ustalone podejście") i podzielone na małe zadania wdrożenie. Ten plik (`FOOTNOTES_PERFORMANCE_NOTES.md`)
+zostaje jako dziennik śledztwa wydajności przypisów (sekcje 1–14 wyżej, z realnymi pomiarami i
+przyczynami) — nie jest kasowany, ale punkty 2 i 3 niżej w sekcji "Co NIE zostało zrobione" są teraz
+pokryte (i rozszerzone) przez zadania w tamtym pliku, nie duplikujemy ich tutaj.
+
 ## Co NIE zostało zrobione / zostało do następnej sesji
 
 1. **Częściowo zweryfikowane na żywo** — test po backgroundowaniu checkpointów (punkt 5) znalazł
@@ -295,12 +306,13 @@ existing fail), `Signet.App.Tests` 1078/1078 bez zmian.
    teraz Revert (punkt 11) i siedmiu operacji z punktu 10 — **niezweryfikowane na żywo na
    Windows**, tylko testy jednostkowe/headless.
 
-2. **Notifications freeze** — patrz punkt 12 wyżej.
+2. **Notifications freeze** — patrz punkt 12 wyżej. **Prawdopodobny winowajca znaleziony przy
+   okazji punktu 15**: `AddCheckpointBeforeAsync`/`AbandonCheckpointAsync` nie mają dziś żadnego
+   okna progresu — zadanie A4 w `Background_processing_instructions.md` to adresuje bezpośrednio.
 
 3. **`RemoveEditionPage` i `ApplySpellcheckChangeAll` bez okna progresu** (patrz punkt 10) —
-   działają w tle, ale użytkownik nie widzi nic podczas oczekiwania (checkpoint 2–3s na dużej
-   książce). Jeśli to się okaże niewystarczające, trzeba dodać przewód `Window`/`ProgressRunner`
-   przez `PreferencesViewModel`/`PreferencesWindow` i przez subskrypcję `ChangeAllRequested`.
+   przeniesione do zadania A3 w `Background_processing_instructions.md` (punkt 15 wyżej), razem z
+   szerszą zasadą "żadna operacja bez widocznego okna".
 
 ## Co warto zoptymalizować/przyspieszyć (od najdłuższego)
 
