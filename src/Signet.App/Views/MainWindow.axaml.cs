@@ -541,11 +541,11 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
 
         if (request.Forward)
         {
-            vm.RevertToAfterCheckpoint();
+            await vm.RevertToAfterCheckpointAsync();
         }
         else
         {
-            vm.RevertToBeforeCheckpoint();
+            await vm.RevertToBeforeCheckpointAsync();
         }
     }
 
@@ -1221,7 +1221,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
     /// <summary>Handles "Unify Letters of Shared Footnotes…": shows the modal dialog (or only a status message).</summary>
     private async void OnFootnoteLettersRequested(object? sender, EventArgs e)
     {
-        if (_boundViewModel?.PrepareFootnoteLetters() is { } letters)
+        if (_boundViewModel?.PrepareFootnoteLetters(ProgressWindow.DelayedRunner(this)) is { } letters)
         {
             await FootnoteLettersWindow.ShowAsync(this, letters);
         }
@@ -1243,8 +1243,10 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             this,
             Strings.Get("FootnotePlacementWindow_Title"),
             Strings.Get("FootnotePlacement_Analyzing"),
-            vm.PrepareFootnotePlacementAsync((title, work, cancellable) => ProgressWindow.RunWithProgressAsync(
-                window ?? (Window)this, title, Strings.Get("Progress_Starting"), work, cancellable)));
+            analysisProgress => vm.PrepareFootnotePlacementAsync(
+                (title, work, cancellable) => ProgressWindow.RunWithProgressAsync(
+                    window ?? (Window)this, title, Strings.Get("Progress_Starting"), work, cancellable),
+                analysisProgress));
         if (placement is not null)
         {
             window = new FootnotePlacementWindow { DataContext = placement };
@@ -1356,11 +1358,12 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             this,
             Strings.Get("FootnoteConversionWindow_Title"),
             Strings.Get("FootnoteConversion_Analyzing"),
-            vm.PrepareFootnoteConversionAsync(
+            analysisProgress => vm.PrepareFootnoteConversionAsync(
                 () => FootnoteConversionWindow.ConfirmWithoutCheckpointAsync(window ?? (Window)this),
                 // The conversion itself (tens of seconds for thousands of footnotes) shows how far it is over the dialog.
                 (title, work, cancellable) => ProgressWindow.RunWithProgressAsync(
-                    window ?? (Window)this, title, Strings.Get("FootnoteConversion_Progress_Preparing"), work, cancellable)));
+                    window ?? (Window)this, title, Strings.Get("FootnoteConversion_Progress_Preparing"), work, cancellable),
+                analysisProgress));
         if (conversion is not null)
         {
             window = new FootnoteConversionWindow { DataContext = conversion };

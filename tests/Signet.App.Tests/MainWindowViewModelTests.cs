@@ -1065,36 +1065,39 @@ public sealed class MainWindowViewModelTests : IDisposable
     }
 
     [Fact]
-    public void Removing_a_span_in_the_whole_book_writes_the_files_and_reports_it()
+    public async Task Removing_a_span_in_the_whole_book_writes_the_files_and_reports_it()
     {
-        // Arrange
-        using UiCultureScope culture = new("en");
-        TempDir temp = _disposables.Add(new TempDir());
-        string tree = temp.Combine("tree");
-        TestFs.CopyDirectory(CorpusPaths.Epub3Minimal, tree);
-        string chapterPath = Path.Combine(tree, "EPUB", "text", "chapter1.xhtml");
-        File.WriteAllText(chapterPath, File.ReadAllText(chapterPath).Replace(
-            "<p>Hello, world.</p>", "<p><span class=\"s\">Hello</span>, <span class=\"s\">world</span>.</p>", StringComparison.Ordinal));
-        string epub = EpubBuilder.BuildInto(tree, temp, "book.epub");
-        MainWindowViewModel sut = New();
-        Book book = _disposables.Add(new ImportEpub(epub).GetBook());
-        sut.LoadBook(book, epub);
-        HtmlResource chapter = book.GetHtmlResources().Single(h => h.Filename == "chapter1.xhtml");
-        Signet.App.ViewModels.Tabs.ICodeTabHost host = sut;
-        string text = chapter.GetText();
-        int offset = text.IndexOf("<span", StringComparison.Ordinal) + 1;
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            string tree = temp.Combine("tree");
+            TestFs.CopyDirectory(CorpusPaths.Epub3Minimal, tree);
+            string chapterPath = Path.Combine(tree, "EPUB", "text", "chapter1.xhtml");
+            File.WriteAllText(chapterPath, File.ReadAllText(chapterPath).Replace(
+                "<p>Hello, world.</p>", "<p><span class=\"s\">Hello</span>, <span class=\"s\">world</span>.</p>", StringComparison.Ordinal));
+            string epub = EpubBuilder.BuildInto(tree, temp, "book.epub");
+            MainWindowViewModel sut = New();
+            Book book = _disposables.Add(new ImportEpub(epub).GetBook());
+            sut.LoadBook(book, epub);
+            HtmlResource chapter = book.GetHtmlResources().Single(h => h.Filename == "chapter1.xhtml");
+            Signet.App.ViewModels.Tabs.ICodeTabHost host = sut;
+            string text = chapter.GetText();
+            int offset = text.IndexOf("<span", StringComparison.Ordinal) + 1;
 
-        // Act & Assert
-        host.CountSameSpansInBook(chapter, text, offset).Should().Be(2);
+            // Act & Assert
+            host.CountSameSpansInBook(chapter, text, offset).Should().Be(2);
 
-        // Act
-        SpanRemovalPlan plan = host.PlanSpanRemoval(chapter, text, offset, SpanRemovalScope.Book)!;
-        host.ApplySpanRemovalInBook(plan);
+            // Act
+            SpanRemovalPlan plan = host.PlanSpanRemoval(chapter, text, offset, SpanRemovalScope.Book)!;
+            await host.ApplySpanRemovalInBook(plan);
 
-        // Assert
-        chapter.GetText().Should().Contain("<p>Hello, world.</p>");
-        book.Modified.Should().BeTrue();
-        sut.StatusMessage.Should().Be(Strings.Format("Status_SpansRemovedInBook", 2, 1));
+            // Assert
+            chapter.GetText().Should().Contain("<p>Hello, world.</p>");
+            book.Modified.Should().BeTrue();
+            sut.StatusMessage.Should().Be(Strings.Format("Status_SpansRemovedInBook", 2, 1));
+        });
     }
 
     [Fact]
@@ -1747,27 +1750,31 @@ public sealed class MainWindowViewModelTests : IDisposable
     }
 
     [Fact]
-    public void SpellcheckEditor_ChangeAll_replaces_word_in_all_files_and_reloads_open_tabs()
+    public async Task SpellcheckEditor_ChangeAll_replaces_word_in_all_files_and_reloads_open_tabs()
     {
-        // Arrange
-        TempDir temp = _disposables.Add(new TempDir());
-        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
-        MainWindowViewModel sut = New();
-        Book book = _disposables.Add(new ImportEpub(epub).GetBook());
-        sut.LoadBook(book, epub);
-        var tab = OpenHtmlTabWithMisspelling(sut, book);
-        SpellcheckEditorViewModel editor = sut.OpenSpellcheckEditor()!;
-        SpellcheckWordRow row = editor.Words.Single(w => w.Word == "wrold");
-        editor.SetSelectedWords(new[] { row });
-        editor.ChangeAllText = "world";
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            TempDir temp = _disposables.Add(new TempDir());
+            string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
+            MainWindowViewModel sut = New();
+            Book book = _disposables.Add(new ImportEpub(epub).GetBook());
+            sut.LoadBook(book, epub);
+            var tab = OpenHtmlTabWithMisspelling(sut, book);
+            SpellcheckEditorViewModel editor = sut.OpenSpellcheckEditor()!;
+            SpellcheckWordRow row = editor.Words.Single(w => w.Word == "wrold");
+            editor.SetSelectedWords(new[] { row });
+            editor.ChangeAllText = "world";
 
-        // Act
-        editor.ChangeAllCommand.Execute(null);
+            // Act
+            editor.ChangeAllCommand.Execute(null);
+            await sut.WhenIdleAsync();
 
-        // Assert
-        tab.Document.Text.Should().Contain("world").And.NotContain("wrold");
-        book.Modified.Should().BeTrue();
-        editor.Words.Should().NotContain(w => w.Word == "wrold");
+            // Assert
+            tab.Document.Text.Should().Contain("world").And.NotContain("wrold");
+            book.Modified.Should().BeTrue();
+            editor.Words.Should().NotContain(w => w.Word == "wrold");
+        });
     }
 
     [Fact]

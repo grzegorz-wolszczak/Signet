@@ -4258,7 +4258,7 @@ Nie zmienia plików, ich nazw ani ID.</value>
     <value>Przenumerowywanie przypisów</value>
   </data>
   <data name="FootnoteRenumber_Progress_Scanning" xml:space="preserve">
-    <value>Skanowanie przypisów…</value>
+    <value>Skanowanie przypisów: plik {0} z {1}</value>
   </data>
   <data name="FootnoteRenumber_Progress_Numbering" xml:space="preserve">
     <value>Numerowanie przypisów: {0} z {1}</value>
@@ -5269,6 +5269,9 @@ Konwertować mimo to?</value>
   </data>
   <data name="FootnoteConversion_Analyzing" xml:space="preserve">
     <value>Analizowanie przypisów…</value>
+  </data>
+  <data name="FootnoteConversion_Progress_Analyzing" xml:space="preserve">
+    <value>Analizowanie przypisów: plik {0} z {1}</value>
   </data>
   <data name="FootnoteConversionWindow_CannotConvert" xml:space="preserve">
     <value>Signet nie potrafi przekonwertować tego przypisu automatycznie (nie znalazł odnośnika lub notatki albo prowadzi do niej link wyglądający na odnośnik, który nim nie jest) — zostanie obcy.</value>
@@ -6573,6 +6576,9 @@ Zamknij zakładkę</value>
   </data>
   <data name="FootnotePlacement_Analyzing" xml:space="preserve">
     <value>Analizowanie przypisów…</value>
+  </data>
+  <data name="FootnotePlacement_Progress_Analyzing" xml:space="preserve">
+    <value>Analizowanie przypisów: plik {0} z {1}</value>
   </data>
   <data name="FootnotePlacement_Progress_Preparing" xml:space="preserve">
     <value>Przygotowanie…</value>

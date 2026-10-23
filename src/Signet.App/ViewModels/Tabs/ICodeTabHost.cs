@@ -56,8 +56,12 @@ public interface ICodeTabHost
     /// </summary>
     Task<ClassRenamer?> PrepareClassRenameAsync();
 
-    /// <summary>Writes the result of "Rename Class" into the book files and refreshes the tabs, Book Browser and Preview.</summary>
-    void ApplyClassRename(ClassRenameResult result);
+    /// <summary>
+    /// Writes the result of "Rename Class" into the book files and refreshes the tabs, Book Browser and Preview. The
+    /// checkpoint and the write run off the UI thread; <paramref name="runWithProgress"/> shows a window only once that
+    /// takes a while (<c>null</c>: without one, as in the tests).
+    /// </summary>
+    Task ApplyClassRename(ClassRenameResult result, ProgressRunner? runWithProgress = null);
 
     /// <summary>
     /// "Rename #id" from an XHTML file: saves the tabs and returns an
@@ -67,8 +71,12 @@ public interface ICodeTabHost
     /// </summary>
     Task<IdRenamer?> PrepareIdRenameAsync();
 
-    /// <summary>Writes the result of "Rename #id" into the book files and refreshes the tabs, Book Browser and Preview.</summary>
-    void ApplyIdRename(IdRenameResult result);
+    /// <summary>
+    /// Writes the result of "Rename #id" into the book files and refreshes the tabs, Book Browser and Preview. The
+    /// checkpoint and the write run off the UI thread; <paramref name="runWithProgress"/> shows a window only once that
+    /// takes a while (<c>null</c>: without one, as in the tests).
+    /// </summary>
+    Task ApplyIdRename(IdRenameResult result, ProgressRunner? runWithProgress = null);
 
     /// <summary>
     /// "Remove Class" from an XHTML or CSS file: saves the tabs and returns a
@@ -78,8 +86,12 @@ public interface ICodeTabHost
     /// </summary>
     Task<ClassRemover?> PrepareClassRemovalAsync();
 
-    /// <summary>Writes the result of "Remove Class" into the book files and refreshes the tabs, Book Browser and Preview.</summary>
-    void ApplyClassRemoval(ClassRemovalResult result);
+    /// <summary>
+    /// Writes the result of "Remove Class" into the book files and refreshes the tabs, Book Browser and Preview. The
+    /// checkpoint and the write run off the UI thread; <paramref name="runWithProgress"/> shows a window only once that
+    /// takes a while (<c>null</c>: without one, as in the tests).
+    /// </summary>
+    Task ApplyClassRemoval(ClassRemovalResult result, ProgressRunner? runWithProgress = null);
 
     /// <summary>
     /// "Find Usages (Id)" — searches the whole book for the usages of <paramref name="id"/> (<see cref="IdUsageFinder"/>)
@@ -99,8 +111,12 @@ public interface ICodeTabHost
     /// </summary>
     SpanRemovalPlan? PlanSpanRemoval(HtmlResource html, string text, int offset, SpanRemovalScope scope);
 
-    /// <summary>Writes a book-wide "Remove span" into the files (with a checkpoint) and refreshes the tabs and panels.</summary>
-    void ApplySpanRemovalInBook(SpanRemovalPlan plan);
+    /// <summary>
+    /// Writes a book-wide "Remove span" into the files (with a checkpoint) and refreshes the tabs and panels. The
+    /// checkpoint and the write run off the UI thread; <paramref name="runWithProgress"/> shows a window only once that
+    /// takes a while (<c>null</c>: without one, as in the tests).
+    /// </summary>
+    Task ApplySpanRemovalInBook(SpanRemovalPlan plan, ProgressRunner? runWithProgress = null);
 
     /// <summary>"View Image" — shows the image with the given book path in the preview window.</summary>
     void ViewImage(string bookPath);

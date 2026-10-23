@@ -185,11 +185,11 @@ public sealed class PreferencesViewModelTests : IDisposable
 
         public int RemoveCalls { get; private set; }
 
-        public bool RemoveEditionPage()
+        public Task<bool> RemoveEditionPageAsync()
         {
             RemoveCalls++;
             EditionPageBookPath = null;
-            return true;
+            return Task.FromResult(true);
         }
     }
 

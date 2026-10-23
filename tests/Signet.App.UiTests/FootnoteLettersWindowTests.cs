@@ -38,7 +38,7 @@ public sealed class FootnoteLettersWindowTests
         FootnoteEditor.AddReference(book, html, After(html, "Two"), footnote!, out _, upper).Should().Be(FootnoteError.None);
         FootnoteLettersViewModel vm = new(
             FootnoteLetterStyle.LowerLatin, s => FootnoteEditor.PlanLetters(book, s), (_, _) => { },
-            (items, style) => FootnoteEditor.UnifyLetters(book, items, style) > 0);
+            (items, style) => Task.FromResult(FootnoteEditor.UnifyLetters(book, items, style) > 0));
         Window owner = new();
 
         // Act

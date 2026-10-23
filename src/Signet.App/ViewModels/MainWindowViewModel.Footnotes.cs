@@ -51,8 +51,10 @@ public sealed partial class MainWindowViewModel
     /// book can have thousands; the caller shows that it is working, modally, so nothing edits the book meanwhile). Returns the view
     /// model of the dialog, or <c>null</c> (with a message in the status bar) when no book is open or the book has no footnotes of
     /// Signet. <paramref name="runWithProgress"/> shows how far the change is, over the dialog (<c>null</c>: without a window).
+    /// <paramref name="analysisProgress"/> shows how far the listing itself is (<c>null</c>: without one, as in the tests).
     /// </summary>
-    public async Task<FootnotePlacementViewModel?> PrepareFootnotePlacementAsync(ProgressRunner? runWithProgress = null)
+    public async Task<FootnotePlacementViewModel?> PrepareFootnotePlacementAsync(
+        ProgressRunner? runWithProgress = null, IProgress<WorkProgress>? analysisProgress = null)
     {
         if (_currentBook is not { } book)
         {
@@ -69,7 +71,10 @@ public sealed partial class MainWindowViewModel
             _tabManager.SaveAllTabs();
             long start = System.Diagnostics.Stopwatch.GetTimestamp();
             DebugLog.Write("Operation", "Preparing footnote placement: starting in background");
-            IReadOnlyList<PlacementItem> plan = await Task.Run(() => FootnoteEditor.PlanPlacement(book)).ConfigureAwait(true);
+            IProgress<ScanProgress>? scanProgress = analysisProgress is null
+                ? null
+                : new ScanProgressMap(analysisProgress, "FootnotePlacement_Progress_Analyzing");
+            IReadOnlyList<PlacementItem> plan = await Task.Run(() => FootnoteEditor.PlanPlacement(book, scanProgress)).ConfigureAwait(true);
             DebugLog.Write("Operation", $"Preparing footnote placement: finished ({DebugLog.Elapsed(start)})");
             if (!ReferenceEquals(book, _currentBook))
             {
@@ -128,6 +133,23 @@ public sealed partial class MainWindowViewModel
         return result;
     }
 
+    // What FootnoteScanner.Scan reports while PlanPlacement/PlanConversion lists the footnotes of a book: a real percent
+    // of the files parsed, with a message of `messageKey` formatted with the file done and the total.
+    private sealed class ScanProgressMap : IProgress<ScanProgress>
+    {
+        private readonly IProgress<WorkProgress> _target;
+        private readonly string _messageKey;
+
+        public ScanProgressMap(IProgress<WorkProgress> target, string messageKey)
+        {
+            _target = target;
+            _messageKey = messageKey;
+        }
+
+        public void Report(ScanProgress value) =>
+            _target.Report(new WorkProgress(Strings.Format(_messageKey, value.Done, value.Total), WorkProgress.FractionOf(value.Done, value.Total)));
+    }
+
     // What ChangePlacement reports as what the progress window shows: the percent while the notes are prepared, then the writing and
     // the numbering without one (they cannot tell how far they are).
     private sealed class PlacementProgressMap : IProgress<PlacementProgress>
@@ -148,9 +170,10 @@ public sealed partial class MainWindowViewModel
     /// <summary>
     /// Prepares the "Unify Letters of Shared Footnotes" dialog with the style of Preferences: saves the open tabs and
     /// returns its view model, or <c>null</c> (with a message in the status bar) when no book is open, the book has no
-    /// shared footnotes, or all of them are written in that style.
+    /// shared footnotes, or all of them are written in that style. <paramref name="runWithProgress"/> shows how far
+    /// "Unify" is, over the dialog (<c>null</c>: without a window).
     /// </summary>
-    public FootnoteLettersViewModel? PrepareFootnoteLetters()
+    public FootnoteLettersViewModel? PrepareFootnoteLetters(ProgressRunner? runWithProgress = null)
     {
         if (_currentBook is not { } book)
         {
@@ -173,7 +196,8 @@ public sealed partial class MainWindowViewModel
         }
 
         return new FootnoteLettersViewModel(
-            style, s => FootnoteEditor.PlanLetters(book, s), NavigateToBookPathAtOffset, UnifyFootnoteLetters);
+            style, s => FootnoteEditor.PlanLetters(book, s), NavigateToBookPathAtOffset,
+            (items, chosenStyle) => UnifyFootnoteLetters(items, chosenStyle, runWithProgress));
     }
 
     /// <summary>
@@ -193,23 +217,40 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>
     /// "Unify" in the dialog: rewrites the letters of <paramref name="items"/> in <paramref name="style"/> behind a
-    /// checkpoint and refreshes the tabs. Returns whether anything changed.
+    /// checkpoint off the UI thread and refreshes the tabs. Returns whether anything changed.
     /// </summary>
-    public bool UnifyFootnoteLetters(IReadOnlyList<LetterItem> items, FootnoteLetterStyle style)
+    public async Task<bool> UnifyFootnoteLetters(
+        IReadOnlyList<LetterItem> items, FootnoteLetterStyle style, ProgressRunner? runWithProgress = null)
     {
         ArgumentNullException.ThrowIfNull(items);
-        if (_currentBook is null || items.Count == 0)
+        if (_currentBook is not { } book || items.Count == 0)
         {
             return false;
         }
 
-        _tabManager.SaveAllTabs();
-        AddCheckpointBefore(Strings.Get("CheckpointOp_UnifyFootnoteLetters"));
-        int changed = FootnoteEditor.UnifyLetters(_currentBook, items, style, FootnoteOptions);
-        RefreshAfterMaintenanceOperation();
-        _statusBar.ShowMessage(
-            Strings.Format("Status_FootnoteLettersUnified", changed, Strings.Get("FootnoteLetterStyle_" + style)), TimeSpan.FromSeconds(5));
-        return true;
+        if (!TryEnterBookOperation())
+        {
+            return false;
+        }
+
+        try
+        {
+            _tabManager.SaveAllTabs();
+            string title = Strings.Get("CheckpointOp_UnifyFootnoteLetters");
+            await AddCheckpointBeforeAsync(title).ConfigureAwait(true);
+            FootnoteOptions options = FootnoteOptions;
+            int changed = await RunInBackgroundAsync(
+                title, runWithProgress, editsBook: true, cancellable: false,
+                (_, _) => FootnoteEditor.UnifyLetters(book, items, style, options)).ConfigureAwait(true);
+            RefreshAfterMaintenanceOperation();
+            _statusBar.ShowMessage(
+                Strings.Format("Status_FootnoteLettersUnified", changed, Strings.Get("FootnoteLetterStyle_" + style)), TimeSpan.FromSeconds(5));
+            return true;
+        }
+        finally
+        {
+            ExitBookOperation();
+        }
     }
 
     /// <summary>
@@ -224,8 +265,9 @@ public sealed partial class MainWindowViewModel
     /// <param name="runWithProgress">
     /// Runs the conversion with a window that shows how far it is (<c>null</c>: without one, as in the tests).
     /// </param>
+    /// <param name="analysisProgress">Shows how far the plan itself is (<c>null</c>: without one, as in the tests).</param>
     public async Task<FootnoteConversionViewModel?> PrepareFootnoteConversionAsync(
-        Func<Task<bool>> confirmWithoutCheckpoint, ProgressRunner? runWithProgress = null)
+        Func<Task<bool>> confirmWithoutCheckpoint, ProgressRunner? runWithProgress = null, IProgress<WorkProgress>? analysisProgress = null)
     {
         ArgumentNullException.ThrowIfNull(confirmWithoutCheckpoint);
         if (_currentBook is not { } book)
@@ -243,7 +285,10 @@ public sealed partial class MainWindowViewModel
             _tabManager.SaveAllTabs();
             long start = System.Diagnostics.Stopwatch.GetTimestamp();
             DebugLog.Write("Operation", "Preparing footnote conversion: starting in background");
-            ConversionPlan plan = await Task.Run(() => FootnoteEditor.PlanConversion(book)).ConfigureAwait(true);
+            IProgress<ScanProgress>? scanProgress = analysisProgress is null
+                ? null
+                : new ScanProgressMap(analysisProgress, "FootnoteConversion_Progress_Analyzing");
+            ConversionPlan plan = await Task.Run(() => FootnoteEditor.PlanConversion(book, scanProgress)).ConfigureAwait(true);
             DebugLog.Write("Operation", $"Preparing footnote conversion: finished ({DebugLog.Elapsed(start)})");
             if (!ReferenceEquals(book, _currentBook))
             {
@@ -864,7 +909,8 @@ public sealed partial class MainWindowViewModel
 
             _target.Report(value.Stage switch
             {
-                RenumberStage.Scanning => new WorkProgress(Strings.Get("FootnoteRenumber_Progress_Scanning"), null),
+                RenumberStage.Scanning => WorkProgress.InStage(
+                    Strings.Format("FootnoteRenumber_Progress_Scanning", value.Done, value.Total), 0, 0.05, value.Done, value.Total),
                 RenumberStage.Numbering => WorkProgress.InStage(
                     Strings.Format("FootnoteRenumber_Progress_Numbering", value.Done, value.Total), 0.05, 0.65, value.Done, value.Total),
                 RenumberStage.Writing => WorkProgress.InStage(

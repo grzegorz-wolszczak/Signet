@@ -929,7 +929,7 @@ public partial class CodeTabView : UserControl
         ClassRenameResult? result = await RenameClassWindow.AskAsync(owner, createViewModel(renamer));
         if (result is not null)
         {
-            host.ApplyClassRename(result);
+            await host.ApplyClassRename(result, ProgressWindow.DelayedRunner(owner));
         }
     }
 
@@ -945,7 +945,7 @@ public partial class CodeTabView : UserControl
         IdRenameResult? result = await RenameIdWindow.AskAsync(owner, new RenameIdViewModel(renamer, idAtCaret));
         if (result is not null)
         {
-            host.ApplyIdRename(result);
+            await host.ApplyIdRename(result, ProgressWindow.DelayedRunner(owner));
         }
     }
 
@@ -966,21 +966,25 @@ public partial class CodeTabView : UserControl
             return;
         }
 
-        host.ApplyClassRemoval(remover.Remove(className));
+        await host.ApplyClassRemoval(remover.Remove(className), ProgressWindow.DelayedRunner(owner));
     }
 
     // "Remove span": when the removal would change the styling, the consequences are shown first and the user has
     // to accept them; otherwise it is carried out right away.
     private async void RemoveSpan(CodeTabViewModel vm, SpanRemovalScope scope)
     {
-        SpanRemovalPlan? plan = vm.PlanSpanRemoval(scope);
-        if (plan is { Consequences.Count: > 0 }
-            && (TopLevel.GetTopLevel(this) is not Window owner || !await SpanRemovalRiskWindow.AskAsync(owner, plan)))
+        if (TopLevel.GetTopLevel(this) is not Window owner)
         {
             return;
         }
 
-        vm.ApplySpanRemoval(scope, plan);
+        SpanRemovalPlan? plan = vm.PlanSpanRemoval(scope);
+        if (plan is { Consequences.Count: > 0 } && !await SpanRemovalRiskWindow.AskAsync(owner, plan))
+        {
+            return;
+        }
+
+        await vm.ApplySpanRemoval(scope, plan, ProgressWindow.DelayedRunner(owner));
     }
 
     // "Footnotes": on a footnote (its reference or note) edit it (its text, placement, or removing it) and go to the
@@ -1051,7 +1055,7 @@ public partial class CodeTabView : UserControl
             && vm.CreateFootnoteReferenceViewModel() is { } model
             && await FootnoteReferenceWindow.AskAsync(owner, model).ConfigureAwait(true) is { } target)
         {
-            await vm.AddFootnoteReference(target, DelayedFootnoteProgress(owner));
+            await vm.AddFootnoteReference(target, ProgressWindow.DelayedRunner(owner));
         }
     }
 
@@ -1062,13 +1066,13 @@ public partial class CodeTabView : UserControl
             && await FootnoteWindow.ConfirmRemovalAsync(
                 owner, hit.Footnote.ReferenceCount, host.ConfirmFootnoteRemoval, () => host.ConfirmFootnoteRemoval = false).ConfigureAwait(true))
         {
-            await host.RemoveFootnote(hit, DelayedFootnoteProgress(owner));
+            await host.RemoveFootnote(hit, ProgressWindow.DelayedRunner(owner));
         }
     }
 
     // "Remove Reference" from the "Footnotes" submenu: no confirmation, unlike "Remove Footnote…" above.
     private async void RemoveFootnoteReference(ICodeTabHost host, FootnoteHit hit) =>
-        await host.RemoveFootnoteReference(hit, TopLevel.GetTopLevel(this) is Window owner ? DelayedFootnoteProgress(owner) : null);
+        await host.RemoveFootnoteReference(hit, TopLevel.GetTopLevel(this) is Window owner ? ProgressWindow.DelayedRunner(owner) : null);
 
     // "Add Footnote…": the window with the text and the placement, then the footnote is added at the caret.
     private async void AddFootnote(CodeTabViewModel vm)
@@ -1080,7 +1084,7 @@ public partial class CodeTabView : UserControl
 
         if (await FootnoteWindow.AskAsync(owner, model, CurrentAppearance()) is { } request)
         {
-            await vm.AddFootnote(request, DelayedFootnoteProgress(owner));
+            await vm.AddFootnote(request, ProgressWindow.DelayedRunner(owner));
         }
     }
 
@@ -1094,19 +1098,13 @@ public partial class CodeTabView : UserControl
 
         if (await FootnoteWindow.AskAsync(owner, model, CurrentAppearance()) is { } request)
         {
-            await vm.ApplyFootnoteEdit(hit, request, DelayedFootnoteProgress(owner));
+            await vm.ApplyFootnoteEdit(hit, request, ProgressWindow.DelayedRunner(owner));
         }
     }
 
     // "Renumber Footnotes": no custom runner — falls back to the main window's progress window (the same one the Tools
     // menu action uses), since this is a deliberate whole-book command, not a quick single-footnote edit.
     private static async void RenumberFootnotes(ICodeTabHost host) => await host.RenumberFootnotes();
-
-    // A footnote edit is normally instant; on a huge book the full-book renumbering it triggers can take a while, so the
-    // window appears only when it actually does (ProgressWindow.DefaultDelay), instead of flashing on every click.
-    private static ProgressRunner DelayedFootnoteProgress(Window owner) =>
-        (title, work, cancellable) =>
-            ProgressWindow.RunWithProgressAsync(owner, title, Strings.Get("Progress_Starting"), work, cancellable, ProgressWindow.DefaultDelay);
 
     // "Edit Footnote…" on a footnote of other origin: Signet edits such footnotes only after converting them, so the
     // notice offers the conversion dialog.

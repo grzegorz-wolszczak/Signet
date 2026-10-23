@@ -260,7 +260,7 @@ public sealed class MainWindowFootnotesTests : IDisposable
             letters.Notes.Should().ContainSingle();
 
             // Act
-            letters.UnifyCommand.Execute(null);
+            await letters.UnifyCommand.ExecuteAsync(null);
 
             // Assert
             chapter.GetText().Should().Contain("[1a]</a>").And.Contain("[1b]</a>").And.NotContain("[1A]");
@@ -571,6 +571,25 @@ public sealed class MainWindowFootnotesTests : IDisposable
                 Reports.Add(value);
             }
         }
+    }
+
+    [Fact]
+    public async Task The_plan_reports_a_file_scanned_of_the_books_total()
+    {
+        // Arrange
+        using UiCultureScope culture = new("en");
+        TempDir temp = _disposables.Add(new TempDir());
+        (MainWindowViewModel sut, HtmlResource _) = OpenChapterWithForeignFootnote(temp);
+        RecordingProgress analysisProgress = new();
+
+        // Act
+        FootnoteConversionViewModel? dialog = await sut.PrepareFootnoteConversionAsync(() => Task.FromResult(true), analysisProgress: analysisProgress);
+
+        // Assert
+        dialog.Should().NotBeNull();
+        analysisProgress.Reports.Should().NotBeEmpty();
+        analysisProgress.Reports[^1].Fraction.Should().Be(1);
+        analysisProgress.Reports.Should().Contain(r => r.Message != null && r.Message.StartsWith("Analyzing the footnotes: file", StringComparison.Ordinal));
     }
 
     [Fact]

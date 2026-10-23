@@ -1492,21 +1492,17 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
 
     /// <summary>
     /// Carries out "Remove span" of <paramref name="scope"/>: in this file through the editor (undoable), in the
-    /// whole book through the host (with a checkpoint) using <paramref name="plan"/>.
+    /// whole book through the host (with a checkpoint, off the UI thread) using <paramref name="plan"/>.
     /// </summary>
-    public void ApplySpanRemoval(SpanRemovalScope scope, SpanRemovalPlan? plan)
+    public Task ApplySpanRemoval(SpanRemovalScope scope, SpanRemovalPlan? plan, ProgressRunner? runWithProgress = null)
     {
         if (scope == SpanRemovalScope.Book)
         {
-            if (plan is not null)
-            {
-                Host?.ApplySpanRemovalInBook(plan);
-            }
-
-            return;
+            return plan is not null && Host is { } host ? host.ApplySpanRemovalInBook(plan, runWithProgress) : Task.CompletedTask;
         }
 
         UnwrapSpan(all: scope == SpanRemovalScope.File);
+        return Task.CompletedTask;
     }
 
     /// <summary>

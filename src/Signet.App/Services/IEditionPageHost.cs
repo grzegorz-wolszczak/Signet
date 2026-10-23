@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+
 namespace Signet.App.Services;
 
 /// <summary>
@@ -12,6 +14,9 @@ public interface IEditionPageHost
     /// <summary>The bookpath of the edition page in the open book; <c>null</c> when there is none (or no book).</summary>
     string? EditionPageBookPath { get; }
 
-    /// <summary>Removes the edition page from the open book (with its TOC entry). Returns whether it was removed.</summary>
-    bool RemoveEditionPage();
+    /// <summary>
+    /// Removes the edition page from the open book (with its TOC entry): the checkpoint and the write run off the UI
+    /// thread. Returns whether it was removed.
+    /// </summary>
+    Task<bool> RemoveEditionPageAsync();
 }

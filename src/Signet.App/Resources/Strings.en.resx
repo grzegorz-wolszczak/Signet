@@ -4258,7 +4258,7 @@ It does not change the files, their names or their IDs.</value>
     <value>Renumbering footnotes</value>
   </data>
   <data name="FootnoteRenumber_Progress_Scanning" xml:space="preserve">
-    <value>Scanning footnotes…</value>
+    <value>Scanning footnotes: file {0} of {1}</value>
   </data>
   <data name="FootnoteRenumber_Progress_Numbering" xml:space="preserve">
     <value>Numbering footnotes: {0} of {1}</value>
@@ -5269,6 +5269,9 @@ Convert anyway?</value>
   </data>
   <data name="FootnoteConversion_Analyzing" xml:space="preserve">
     <value>Analyzing the footnotes…</value>
+  </data>
+  <data name="FootnoteConversion_Progress_Analyzing" xml:space="preserve">
+    <value>Analyzing the footnotes: file {0} of {1}</value>
   </data>
   <data name="FootnoteConversionWindow_CannotConvert" xml:space="preserve">
     <value>Signet cannot convert this footnote automatically (its reference or note was not found, or a link that looks like a reference but is not one leads to it) — it stays of other origin.</value>
@@ -6573,6 +6576,9 @@ Close the tab</value>
   </data>
   <data name="FootnotePlacement_Analyzing" xml:space="preserve">
     <value>Analyzing the footnotes…</value>
+  </data>
+  <data name="FootnotePlacement_Progress_Analyzing" xml:space="preserve">
+    <value>Analyzing the footnotes: file {0} of {1}</value>
   </data>
   <data name="FootnotePlacement_Progress_Preparing" xml:space="preserve">
     <value>Preparing…</value>

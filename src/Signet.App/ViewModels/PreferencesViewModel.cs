@@ -1460,9 +1460,13 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
     /// <summary>Removes the edition page from the open book right away (not part of Save / Cancel).</summary>
     [RelayCommand(CanExecute = nameof(CanRemoveEditionPage))]
-    private void RemoveEditionPage()
+    private async Task RemoveEditionPage()
     {
-        _editionPageHost?.RemoveEditionPage();
+        if (_editionPageHost is not null)
+        {
+            await _editionPageHost.RemoveEditionPageAsync().ConfigureAwait(true);
+        }
+
         OnPropertyChanged(nameof(EditionPageStatus));
         RemoveEditionPageCommand.NotifyCanExecuteChanged();
     }

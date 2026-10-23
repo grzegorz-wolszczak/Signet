@@ -41,7 +41,7 @@ public sealed class ProgressWindowTests
         Window owner = Owner();
 
         // Act
-        Task<string?> run = ProgressWindow.RunAsync(owner, "Title", "Working", Task.FromResult<string?>("done"));
+        Task<string?> run = ProgressWindow.RunAsync(owner, "Title", "Working", _ => Task.FromResult<string?>("done"));
         RunUntil(() => run.IsCompleted);
 
         // Assert
@@ -58,7 +58,7 @@ public sealed class ProgressWindowTests
         TaskCompletionSource<string?> work = new();
 
         // Act
-        Task<string?> run = ProgressWindow.RunAsync(owner, "Title", "Working", work.Task, TimeSpan.Zero);
+        Task<string?> run = ProgressWindow.RunAsync(owner, "Title", "Working", _ => work.Task, TimeSpan.Zero);
         RunUntil(() => owner.OwnedWindows.Count == 1);
         ProgressWindow window = owner.OwnedWindows.OfType<ProgressWindow>().Single();
 
@@ -77,6 +77,44 @@ public sealed class ProgressWindowTests
     }
 
     [AvaloniaFact]
+    public void The_window_shows_the_message_and_the_percent_the_work_reports()
+    {
+        // Arrange
+        Window owner = Owner();
+        TaskCompletionSource<string?> work = new();
+        IProgress<WorkProgress>? progress = null;
+
+        // Act
+        Task<string?> run = ProgressWindow.RunAsync(
+            owner, "Title", "Working", p =>
+            {
+                progress = p;
+                return work.Task;
+            },
+            TimeSpan.Zero);
+        RunUntil(() => owner.OwnedWindows.Count == 1);
+        ProgressWindow window = owner.OwnedWindows.OfType<ProgressWindow>().Single();
+        ProgressBar bar = window.FindControl<ProgressBar>("Bar")!;
+
+        // Act
+        progress!.Report(new WorkProgress("Scanning: 3 of 4", 0.75));
+        RunUntil(() => bar.Value == 75);
+
+        // Assert
+        window.FindControl<TextBlock>("MessageText")!.Text.Should().Be("Scanning: 3 of 4");
+        bar.IsIndeterminate.Should().BeFalse();
+        window.FindControl<TextBlock>("PercentText")!.IsVisible.Should().BeTrue();
+
+        // Act
+        work.SetResult("done");
+        RunUntil(() => run.IsCompleted);
+
+        // Assert
+        run.Result.Should().Be("done");
+        owner.Close();
+    }
+
+    [AvaloniaFact]
     public void Cancel_drops_the_result_of_the_work()
     {
         // Arrange
@@ -84,7 +122,7 @@ public sealed class ProgressWindowTests
         TaskCompletionSource<string?> work = new();
 
         // Act
-        Task<string?> run = ProgressWindow.RunAsync(owner, "Title", "Working", work.Task, TimeSpan.Zero);
+        Task<string?> run = ProgressWindow.RunAsync(owner, "Title", "Working", _ => work.Task, TimeSpan.Zero);
         RunUntil(() => owner.OwnedWindows.Count == 1);
         owner.OwnedWindows.OfType<ProgressWindow>().Single().FindControl<Button>("CancelButton")!
             .RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));

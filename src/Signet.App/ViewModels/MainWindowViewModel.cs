@@ -215,7 +215,7 @@ public sealed partial class MainWindowViewModel
 
         _spellcheckEditor = new SpellcheckEditorViewModel(_spellChecker, _settings);
         _spellcheckEditor.NavigationRequested += NavigateToBookPathAtOffset;
-        _spellcheckEditor.ChangeAllRequested += ApplySpellcheckChangeAll;
+        _spellcheckEditor.ChangeAllRequested += (word, lang, newWord) => RunAsyncAction(() => ApplySpellcheckChangeAllAsync(word, lang, newWord));
         _spellcheckEditor.DictionaryStateChanged += (_, _) => RefreshOpenTabsSpellcheck();
 
         InitCheckpoints();
@@ -1101,28 +1101,43 @@ public sealed partial class MainWindowViewModel
         _currentBook is null ? null : EditionPage.Find(_currentBook)?.BookPath;
 
     /// <inheritdoc />
-    bool IEditionPageHost.RemoveEditionPage()
+    async Task<bool> IEditionPageHost.RemoveEditionPageAsync()
     {
-        if (_currentBook is null)
+        if (_currentBook is not { } book)
         {
             return false;
         }
 
-        _tabManager.SaveAllTabs();
-        bool checkpoint = AddCheckpointBefore(Strings.Get("CheckpointOp_RemoveEditionPage"));
-        if (!EditionPage.Remove(_currentBook))
+        if (!TryEnterBookOperation())
         {
-            if (checkpoint)
+            return false;
+        }
+
+        try
+        {
+            _tabManager.SaveAllTabs();
+            string title = Strings.Get("CheckpointOp_RemoveEditionPage");
+            bool checkpoint = await AddCheckpointBeforeAsync(title).ConfigureAwait(true);
+            bool removed = await RunInBackgroundAsync(
+                title, runner: null, editsBook: true, cancellable: false, (_, _) => EditionPage.Remove(book)).ConfigureAwait(true);
+            if (!removed)
             {
-                RewindCheckpoint();
+                if (checkpoint)
+                {
+                    RewindCheckpoint();
+                }
+
+                return false;
             }
 
-            return false;
+            ((IBookWorkspace)this).RefreshAfterBookEdit();
+            _statusBar.ShowMessage(Strings.Get("Status_EditionPageRemoved"), TimeSpan.FromSeconds(4));
+            return true;
         }
-
-        ((IBookWorkspace)this).RefreshAfterBookEdit();
-        _statusBar.ShowMessage(Strings.Get("Status_EditionPageRemoved"), TimeSpan.FromSeconds(4));
-        return true;
+        finally
+        {
+            ExitBookOperation();
+        }
     }
 
     /// <inheritdoc />
@@ -1884,27 +1899,47 @@ public sealed partial class MainWindowViewModel
     /// (the content may have changed since the window was last refreshed), replaces the word in all
     /// (X)HTML files, reloads the open tabs and panels, refreshes the editor table.
     /// </summary>
-    private void ApplySpellcheckChangeAll(string word, string lang, string newWord)
+    private async Task ApplySpellcheckChangeAllAsync(string word, string lang, string newWord)
     {
-        if (_currentBook is null)
+        if (_currentBook is not { } book)
         {
             return;
         }
 
-        _tabManager.SaveAllTabs();
-        AddCheckpointBefore(Strings.Get("CheckpointOp_SpellCheck"));
-        int replaced = SpellcheckEditorEngine.ReplaceWordInAllFiles(_currentBook, _spellChecker, _settings, word, lang, newWord);
-        if (replaced == 0)
+        if (!TryEnterBookOperation())
         {
-            RewindCheckpoint();
-            _spellcheckEditor.Refresh(_currentBook);
             return;
         }
 
-        _currentBook.Modified = true;
-        RefreshAfterMaintenanceOperation();
-        _spellcheckEditor.Refresh(_currentBook);
-        _statusBar.ShowMessage(Strings.Get("Status_WordUpdated"), TimeSpan.FromSeconds(4));
+        try
+        {
+            _tabManager.SaveAllTabs();
+            string title = Strings.Get("CheckpointOp_SpellCheck");
+            bool checkpoint = await AddCheckpointBeforeAsync(title).ConfigureAwait(true);
+            int replaced = await RunInBackgroundAsync(
+                title, runner: null, editsBook: true, cancellable: false,
+                (_, _) => SpellcheckEditorEngine.ReplaceWordInAllFiles(book, _spellChecker, _settings, word, lang, newWord))
+                .ConfigureAwait(true);
+            if (replaced == 0)
+            {
+                if (checkpoint)
+                {
+                    RewindCheckpoint();
+                }
+
+                _spellcheckEditor.Refresh(book);
+                return;
+            }
+
+            book.Modified = true;
+            RefreshAfterMaintenanceOperation();
+            _spellcheckEditor.Refresh(book);
+            _statusBar.ShowMessage(Strings.Get("Status_WordUpdated"), TimeSpan.FromSeconds(4));
+        }
+        finally
+        {
+            ExitBookOperation();
+        }
     }
 
     /// <summary>
@@ -2281,26 +2316,41 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <inheritdoc/>
-    void ICodeTabHost.ApplyClassRename(ClassRenameResult result)
+    async Task ICodeTabHost.ApplyClassRename(ClassRenameResult result, ProgressRunner? runWithProgress)
     {
-        if (_currentBook is null)
+        if (_currentBook is not { } book)
         {
             return;
         }
 
-        bool checkpoint = AddCheckpointBefore(Strings.Get("Operation_RenameClass"));
-        if (!_currentBook.ApplyClassRename(result))
+        if (!TryEnterBookOperation())
         {
-            if (checkpoint)
+            return;
+        }
+
+        try
+        {
+            string title = Strings.Get("Operation_RenameClass");
+            bool checkpoint = await AddCheckpointBeforeAsync(title).ConfigureAwait(true);
+            bool applied = await RunInBackgroundAsync(
+                title, runWithProgress, editsBook: true, cancellable: false, (_, _) => book.ApplyClassRename(result)).ConfigureAwait(true);
+            if (!applied)
             {
-                RewindCheckpoint();
+                if (checkpoint)
+                {
+                    RewindCheckpoint();
+                }
+
+                return;
             }
 
-            return;
+            RefreshAfterMaintenanceOperation();
+            _statusBar.ShowMessage(Strings.Get("CodeEditor_ClassRenamed"), TimeSpan.FromSeconds(4));
         }
-
-        RefreshAfterMaintenanceOperation();
-        _statusBar.ShowMessage(Strings.Get("CodeEditor_ClassRenamed"), TimeSpan.FromSeconds(4));
+        finally
+        {
+            ExitBookOperation();
+        }
     }
 
     /// <inheritdoc/>
@@ -2329,26 +2379,41 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <inheritdoc/>
-    void ICodeTabHost.ApplyIdRename(IdRenameResult result)
+    async Task ICodeTabHost.ApplyIdRename(IdRenameResult result, ProgressRunner? runWithProgress)
     {
-        if (_currentBook is null)
+        if (_currentBook is not { } book)
         {
             return;
         }
 
-        bool checkpoint = AddCheckpointBefore(Strings.Get("Operation_RenameId"));
-        if (!_currentBook.ApplyIdRename(result))
+        if (!TryEnterBookOperation())
         {
-            if (checkpoint)
+            return;
+        }
+
+        try
+        {
+            string title = Strings.Get("Operation_RenameId");
+            bool checkpoint = await AddCheckpointBeforeAsync(title).ConfigureAwait(true);
+            bool applied = await RunInBackgroundAsync(
+                title, runWithProgress, editsBook: true, cancellable: false, (_, _) => book.ApplyIdRename(result)).ConfigureAwait(true);
+            if (!applied)
             {
-                RewindCheckpoint();
+                if (checkpoint)
+                {
+                    RewindCheckpoint();
+                }
+
+                return;
             }
 
-            return;
+            RefreshAfterMaintenanceOperation();
+            _statusBar.ShowMessage(Strings.Get("CodeEditor_IdRenamed"), TimeSpan.FromSeconds(4));
         }
-
-        RefreshAfterMaintenanceOperation();
-        _statusBar.ShowMessage(Strings.Get("CodeEditor_IdRenamed"), TimeSpan.FromSeconds(4));
+        finally
+        {
+            ExitBookOperation();
+        }
     }
 
     /// <inheritdoc/>
@@ -2377,26 +2442,41 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <inheritdoc/>
-    void ICodeTabHost.ApplyClassRemoval(ClassRemovalResult result)
+    async Task ICodeTabHost.ApplyClassRemoval(ClassRemovalResult result, ProgressRunner? runWithProgress)
     {
-        if (_currentBook is null)
+        if (_currentBook is not { } book)
         {
             return;
         }
 
-        bool checkpoint = AddCheckpointBefore(Strings.Get("Operation_RemoveClass"));
-        if (!_currentBook.ApplyClassRemoval(result))
+        if (!TryEnterBookOperation())
         {
-            if (checkpoint)
+            return;
+        }
+
+        try
+        {
+            string title = Strings.Get("Operation_RemoveClass");
+            bool checkpoint = await AddCheckpointBeforeAsync(title).ConfigureAwait(true);
+            bool applied = await RunInBackgroundAsync(
+                title, runWithProgress, editsBook: true, cancellable: false, (_, _) => book.ApplyClassRemoval(result)).ConfigureAwait(true);
+            if (!applied)
             {
-                RewindCheckpoint();
+                if (checkpoint)
+                {
+                    RewindCheckpoint();
+                }
+
+                return;
             }
 
-            return;
+            RefreshAfterMaintenanceOperation();
+            _statusBar.ShowMessage(Strings.Get("CodeEditor_ClassRemoved"), TimeSpan.FromSeconds(4));
         }
-
-        RefreshAfterMaintenanceOperation();
-        _statusBar.ShowMessage(Strings.Get("CodeEditor_ClassRemoved"), TimeSpan.FromSeconds(4));
+        finally
+        {
+            ExitBookOperation();
+        }
     }
 
     /// <inheritdoc/>
@@ -2438,26 +2518,46 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <inheritdoc/>
-    void ICodeTabHost.ApplySpanRemovalInBook(SpanRemovalPlan plan)
+    async Task ICodeTabHost.ApplySpanRemovalInBook(SpanRemovalPlan plan, ProgressRunner? runWithProgress)
     {
         ArgumentNullException.ThrowIfNull(plan);
-        if (_currentBook is null || plan.NewTexts.Count == 0)
+        if (_currentBook is not { } book || plan.NewTexts.Count == 0)
         {
             return;
         }
 
-        AddCheckpointBefore(Strings.Get("Operation_RemoveSpans"));
-        foreach (HtmlResource html in _currentBook.GetHtmlResources())
+        if (!TryEnterBookOperation())
         {
-            if (plan.NewTexts.TryGetValue(html.BookPath, out string? text))
-            {
-                html.SetText(text);
-            }
+            return;
         }
 
-        _currentBook.Modified = true;
-        RefreshAfterMaintenanceOperation();
-        _statusBar.ShowMessage(Strings.Format("Status_SpansRemovedInBook", plan.SpanCount, plan.NewTexts.Count), TimeSpan.FromSeconds(4));
+        try
+        {
+            string title = Strings.Get("Operation_RemoveSpans");
+            await AddCheckpointBeforeAsync(title).ConfigureAwait(true);
+            await RunInBackgroundAsync(
+                title, runWithProgress, editsBook: true, cancellable: false,
+                (_, _) =>
+                {
+                    foreach (HtmlResource html in book.GetHtmlResources())
+                    {
+                        if (plan.NewTexts.TryGetValue(html.BookPath, out string? text))
+                        {
+                            html.SetText(text);
+                        }
+                    }
+
+                    book.Modified = true;
+                    return true;
+                }).ConfigureAwait(true);
+
+            RefreshAfterMaintenanceOperation();
+            _statusBar.ShowMessage(Strings.Format("Status_SpansRemovedInBook", plan.SpanCount, plan.NewTexts.Count), TimeSpan.FromSeconds(4));
+        }
+        finally
+        {
+            ExitBookOperation();
+        }
     }
 
     /// <inheritdoc/>
