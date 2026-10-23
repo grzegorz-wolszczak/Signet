@@ -74,6 +74,9 @@ public enum ConversionStage
     /// <summary>Removing the leftovers, retargeting the links and renumbering.</summary>
     Finishing,
 
+    /// <summary>The renumbering of the footnotes (<see cref="ConversionProgress.Renumbering"/> says which of its steps).</summary>
+    Renumbering,
+
     /// <summary>Checking the result.</summary>
     Checking,
 }
@@ -82,7 +85,8 @@ public enum ConversionStage
 /// <param name="Stage">What it is doing.</param>
 /// <param name="Done">The files scanned so far (while <see cref="ConversionStage.Preparing"/>) or the footnotes converted so far (while <see cref="ConversionStage.Converting"/>).</param>
 /// <param name="Total">The files of the book (while <see cref="ConversionStage.Preparing"/>; 0 before the count is known) or the footnotes to convert.</param>
-public sealed record ConversionProgress(ConversionStage Stage, int Done, int Total);
+/// <param name="Renumbering">The step of the renumbering that <paramref name="Done"/> and <paramref name="Total"/> count (while <see cref="ConversionStage.Renumbering"/>).</param>
+public sealed record ConversionProgress(ConversionStage Stage, int Done, int Total, RenumberStage Renumbering = RenumberStage.Scanning);
 
 /// <summary>
 /// What the conversion of a footnote of other origin does besides the usual (<see cref="ConversionItem.Notices"/>): for
@@ -686,7 +690,9 @@ public static partial class FootnoteEditor
 
         // The scan just above is handed over: nothing between the two touches the book, and a scan of a book with
         // thousands of files is the costliest single step of renumbering.
-        RenumberWith(book, options, null, scanned: beforeRenumber, cancel: cancellationToken);
+        RenumberWith(
+            book, options, null, progress is null ? null : new ConversionRenumberRelay(progress), scanned: beforeRenumber,
+            cancel: cancellationToken);
         if (signetFile is not null && !ReferenceEquals(signetFile, target) && book.GetHtmlResources().Contains(signetFile))
         {
             RemoveEmptyContainer(book, signetFile);
@@ -723,6 +729,17 @@ public static partial class FootnoteEditor
         public ConversionScanRelay(IProgress<ConversionProgress> target) => _target = target;
 
         public void Report(ScanProgress value) => _target.Report(new ConversionProgress(ConversionStage.Preparing, value.Done, value.Total));
+    }
+
+    // Relays the progress of the renumbering inside Convert into ConversionStage.Renumbering.
+    private sealed class ConversionRenumberRelay : IProgress<RenumberProgress>
+    {
+        private readonly IProgress<ConversionProgress> _target;
+
+        public ConversionRenumberRelay(IProgress<ConversionProgress> target) => _target = target;
+
+        public void Report(RenumberProgress value) =>
+            _target.Report(new ConversionProgress(ConversionStage.Renumbering, value.Done, value.Total, value.Stage));
     }
 
     // A footnote converted by Convert: its temporary note id, the markup its note must keep inside, and where it was.

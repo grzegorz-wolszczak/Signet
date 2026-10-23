@@ -37,15 +37,19 @@ public enum PlacementStage
     /// <summary>Moving the notes (<see cref="PlacementProgress.Done"/> of <see cref="PlacementProgress.Total"/>).</summary>
     Moving,
 
-    /// <summary>Writing the files and renumbering.</summary>
+    /// <summary>Writing the files and removing the containers the notes left.</summary>
     Finishing,
+
+    /// <summary>The renumbering of the footnotes that follows (<see cref="PlacementProgress.Renumbering"/> says which of its steps).</summary>
+    Renumbering,
 }
 
 /// <summary>How far <see cref="FootnoteEditor.ChangePlacement"/> is.</summary>
 /// <param name="Stage">The step.</param>
 /// <param name="Done">How many files were scanned (in <see cref="PlacementStage.Preparing"/>), or notes prepared (in <see cref="PlacementStage.Moving"/>).</param>
 /// <param name="Total">How many files the book has (in <see cref="PlacementStage.Preparing"/>), or notes are to be moved; 0 before the count is known.</param>
-public readonly record struct PlacementProgress(PlacementStage Stage, int Done, int Total);
+/// <param name="Renumbering">The step of the renumbering that <paramref name="Done"/> and <paramref name="Total"/> count (in <see cref="PlacementStage.Renumbering"/>).</param>
+public readonly record struct PlacementProgress(PlacementStage Stage, int Done, int Total, RenumberStage Renumbering = RenumberStage.Scanning);
 
 /// <summary>
 /// What a caller may ask of <see cref="FootnoteEditor.ChangePlacement"/>: to be told how far it is, and to be able to stop it
@@ -113,6 +117,17 @@ public static partial class FootnoteEditor
         public PlacementScanRelay(IProgress<PlacementProgress> target) => _target = target;
 
         public void Report(ScanProgress value) => _target.Report(new PlacementProgress(PlacementStage.Preparing, value.Done, value.Total));
+    }
+
+    // Relays the progress of the renumbering that ends ChangePlacement into PlacementStage.Renumbering.
+    private sealed class PlacementRenumberRelay : IProgress<RenumberProgress>
+    {
+        private readonly IProgress<PlacementProgress> _target;
+
+        public PlacementRenumberRelay(IProgress<PlacementProgress> target) => _target = target;
+
+        public void Report(RenumberProgress value) =>
+            _target.Report(new PlacementProgress(PlacementStage.Renumbering, value.Done, value.Total, value.Stage));
     }
 
     /// <summary>
@@ -302,7 +317,7 @@ public static partial class FootnoteEditor
         cancellationToken.ThrowIfCancellationRequested();
         if (changed)
         {
-            RenumberWith(book, options, null, cancel: cancellationToken);
+            RenumberWith(book, options, null, progress is null ? null : new PlacementRenumberRelay(progress), cancel: cancellationToken);
             book.Modified = true;
         }
 

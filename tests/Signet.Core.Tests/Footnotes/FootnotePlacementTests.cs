@@ -255,8 +255,11 @@ public sealed class FootnotePlacementTests
             FootnoteEditor.ChangePlacement(book, FootnoteEditor.PlanPlacement(book), null, null, new PlacementRun(new SyncProgress(reported.Add)));
 
             // Assert
-            reported.Select(p => p.Stage).Should().StartWith(PlacementStage.Preparing).And.Contain(PlacementStage.Moving).And.EndWith(PlacementStage.Finishing);
-            reported[^1].Total.Should().Be(4);
+            reported.Select(p => p.Stage).Distinct().Should().Equal(
+                PlacementStage.Preparing, PlacementStage.Moving, PlacementStage.Finishing, PlacementStage.Renumbering);
+            reported.Where(p => p.Stage == PlacementStage.Moving).Should().OnlyContain(p => p.Total == 4);
+            reported.Where(p => p.Stage == PlacementStage.Renumbering).Select(p => p.Renumbering).Distinct().Should().Equal(
+                RenumberStage.Scanning, RenumberStage.Numbering, RenumberStage.Writing, RenumberStage.Sorting, RenumberStage.Styling);
         }
     }
 

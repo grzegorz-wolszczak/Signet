@@ -28,10 +28,11 @@ public partial class ProgressWindow : Window
     /// <summary>
     /// A <see cref="ProgressRunner"/> for a quick edit that only takes a while on a very large book: the window over
     /// <paramref name="owner"/> appears only once the work has run longer than <see cref="DefaultDelay"/> (instead of
-    /// flashing on every edit), and never offers Cancel.
+    /// flashing on every edit). It has Cancel only when the caller asks for it (<c>cancellable</c>): the quick edits cannot be
+    /// stopped partway, the copy of the book for a checkpoint can.
     /// </summary>
     public static ProgressRunner DelayedRunner(Window owner) =>
-        (title, work, _) => RunWithProgressAsync(owner, title, Strings.Get("Progress_Starting"), work, cancellable: false, DefaultDelay);
+        (title, work, cancellable) => RunWithProgressAsync(owner, title, Strings.Get("Progress_Starting"), work, cancellable, DefaultDelay);
 
     /// <summary>
     /// Runs <paramref name="work"/>, which reports how far it is (<see cref="WorkProgress"/>) from any thread; when it is

@@ -1130,16 +1130,9 @@ public sealed partial class MainWindowViewModel
         {
             _tabManager.SaveAllTabs();
             string title = Strings.Get("CheckpointOp_RemoveEditionPage");
-            bool checkpoint;
-            try
+            (bool cancelled, bool checkpoint) = await AddCheckpointOrCancelAsync(title).ConfigureAwait(true);
+            if (cancelled)
             {
-                checkpoint = await AddCheckpointBeforeAsync(title).ConfigureAwait(true);
-            }
-            catch (OperationCanceledException)
-            {
-                // Cancelled while taking the checkpoint itself: nothing was created and the book is untouched (see
-                // RunBookOperationAsync, which does the same for the operations that go through it).
-                _statusBar.ShowMessage(Strings.Format("Status_OperationCancelled", title), TimeSpan.FromSeconds(6));
                 return false;
             }
 
@@ -1940,16 +1933,9 @@ public sealed partial class MainWindowViewModel
         {
             _tabManager.SaveAllTabs();
             string title = Strings.Get("CheckpointOp_SpellCheck");
-            bool checkpoint;
-            try
+            (bool cancelled, bool checkpoint) = await AddCheckpointOrCancelAsync(title).ConfigureAwait(true);
+            if (cancelled)
             {
-                checkpoint = await AddCheckpointBeforeAsync(title).ConfigureAwait(true);
-            }
-            catch (OperationCanceledException)
-            {
-                // Cancelled while taking the checkpoint itself: nothing was created and the book is untouched (see
-                // RunBookOperationAsync, which does the same for the operations that go through it).
-                _statusBar.ShowMessage(Strings.Format("Status_OperationCancelled", title), TimeSpan.FromSeconds(6));
                 return;
             }
 
@@ -2371,7 +2357,12 @@ public sealed partial class MainWindowViewModel
         try
         {
             string title = Strings.Get("Operation_RenameClass");
-            bool checkpoint = await AddCheckpointBeforeAsync(title).ConfigureAwait(true);
+            (bool cancelled, bool checkpoint) = await AddCheckpointOrCancelAsync(title).ConfigureAwait(true);
+            if (cancelled)
+            {
+                return;
+            }
+
             bool applied = await RunInBackgroundAsync(
                 title, runWithProgress, editsBook: true, cancellable: false, (_, _) => book.ApplyClassRename(result)).ConfigureAwait(true);
             if (!applied)
@@ -2434,7 +2425,12 @@ public sealed partial class MainWindowViewModel
         try
         {
             string title = Strings.Get("Operation_RenameId");
-            bool checkpoint = await AddCheckpointBeforeAsync(title).ConfigureAwait(true);
+            (bool cancelled, bool checkpoint) = await AddCheckpointOrCancelAsync(title).ConfigureAwait(true);
+            if (cancelled)
+            {
+                return;
+            }
+
             bool applied = await RunInBackgroundAsync(
                 title, runWithProgress, editsBook: true, cancellable: false, (_, _) => book.ApplyIdRename(result)).ConfigureAwait(true);
             if (!applied)
@@ -2497,7 +2493,12 @@ public sealed partial class MainWindowViewModel
         try
         {
             string title = Strings.Get("Operation_RemoveClass");
-            bool checkpoint = await AddCheckpointBeforeAsync(title).ConfigureAwait(true);
+            (bool cancelled, bool checkpoint) = await AddCheckpointOrCancelAsync(title).ConfigureAwait(true);
+            if (cancelled)
+            {
+                return;
+            }
+
             bool applied = await RunInBackgroundAsync(
                 title, runWithProgress, editsBook: true, cancellable: false, (_, _) => book.ApplyClassRemoval(result)).ConfigureAwait(true);
             if (!applied)
@@ -2574,7 +2575,12 @@ public sealed partial class MainWindowViewModel
         try
         {
             string title = Strings.Get("Operation_RemoveSpans");
-            await AddCheckpointBeforeAsync(title).ConfigureAwait(true);
+            (bool cancelled, _) = await AddCheckpointOrCancelAsync(title).ConfigureAwait(true);
+            if (cancelled)
+            {
+                return;
+            }
+
             await RunInBackgroundAsync(
                 title, runWithProgress, editsBook: true, cancellable: false,
                 (_, _) =>

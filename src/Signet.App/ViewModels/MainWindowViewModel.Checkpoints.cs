@@ -130,6 +130,22 @@ public sealed partial class MainWindowViewModel
         }
     }
 
+    // Takes the checkpoint of an operation (AddCheckpointBeforeAsync) for the flows that give up when the user cancels it: nothing was
+    // created and the book is untouched, so the status bar says the operation was cancelled and `Cancelled` tells the caller not to
+    // start it. `title` is the name of the operation in that message (`operation` when null).
+    private async Task<(bool Cancelled, bool Checkpoint)> AddCheckpointOrCancelAsync(string operation, string? title = null)
+    {
+        try
+        {
+            return (false, await AddCheckpointBeforeAsync(operation).ConfigureAwait(true));
+        }
+        catch (OperationCanceledException)
+        {
+            _statusBar.ShowMessage(Strings.Format("Status_OperationCancelled", title ?? operation), TimeSpan.FromSeconds(6));
+            return (true, false);
+        }
+    }
+
     /// <summary>
     /// Rolls back the checkpoint created right before an operation that was cancelled or
     /// changed nothing.
@@ -198,10 +214,11 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>
     /// Like <see cref="AbandonCheckpoint"/>, but the heavy part (reloading the book from the checkpoint's folder) runs
-    /// off the UI thread under a progress window (<see cref="DelayedProgressRunner"/>, shown only once it takes a
-    /// moment): for the background-operation flows, where a big book would otherwise freeze the window for its
-    /// duration (most visibly after Cancel). Not cancellable: restoring the book back is itself what Cancel already
-    /// started — there is no further "back" from it.
+    /// off the UI thread under a progress window (<see cref="ProgressRunner"/>, shown at once, not after a delay): for the
+    /// background-operation flows, where a big book would otherwise freeze the window for its duration (most visibly after
+    /// Cancel). It is shown at once because it follows the window that said "Cancelling…" — a delay would leave the main window
+    /// without any sign of work between the two. Not cancellable: restoring the book back is itself what Cancel already started —
+    /// there is no further "back" from it.
     /// </summary>
     public async Task<bool> AbandonCheckpointAsync()
     {
@@ -219,7 +236,7 @@ public sealed partial class MainWindowViewModel
         try
         {
             loaded = await RunInBackgroundAsync(
-                Strings.Get("Checkpoint_AbandonProgressTitle"), DelayedProgressRunner, editsBook: false, cancellable: false,
+                Strings.Get("Checkpoint_AbandonProgressTitle"), ProgressRunner, editsBook: false, cancellable: false,
                 (_, _) => _checkpoints.Abandon(live)).ConfigureAwait(true);
         }
         catch (Exception ex) when (ex is EpubLoadException or IOException or UnauthorizedAccessException or InvalidOperationException)
