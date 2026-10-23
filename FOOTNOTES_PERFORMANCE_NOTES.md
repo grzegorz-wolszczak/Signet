@@ -416,6 +416,118 @@ Testy pilnujące równoważności (bo oba podmienione wywołania to „to samo, 
 notatka dostaje swoją linię, nie linię pierwszej) i
 `A_footnote_whose_id_is_written_twice_is_reported_at_its_first_mention`.
 
+### 17a. Zweryfikowane na realnych książkach — i czego to **nie** przyspiesza
+
+Pierwsza weryfikacja dzisiejszych zmian poza sondą syntetyczną, na dwóch książkach użytkownika
+(sonda tymczasowa, usunięta po pomiarze; `min-of-3` dla operacji czytających, jeden przebieg dla
+piszących).
+
+**Książka 1** — `Biblia Tysiaclecia - Zespol biblistow polskich.epub`: 1409 plików, 9551 przypisów,
+wszystkie już Signeta (więc `Convert` nie ma tu nic do roboty):
+
+| operacja | `aaa990a` (start sesji) | `1da866b` | `c08dff0` | teraz | zysk |
+|---|---|---|---|---|---|
+| `FootnoteScanner.Scan` | 17 870 ms | 19 065 ms | 219 ms | 208 ms | **86×** |
+| `FootnoteValidator.Validate` | 34 604 ms | 31 645 ms | 325 ms | 253 ms | **137×** |
+| `PlanConversion` | 35 473 ms | 39 746 ms | 593 ms | 509 ms | **70×** |
+| `Renumber` | **40 731 ms** | 40 317 ms | 1846 ms | **1832 ms** | **22×** |
+| `LinkIntegrityValidator` | 118 ms | 125 ms | 106 ms | 87 ms | — |
+
+To potwierdza pierwotne pomiary użytkownika (~18,7 s dla `Scan`, ~19,5 s dla `PlanConversion`) na
+tej samej książce — i pokazuje, że `Renumber` trwał **40 sekund**.
+
+**Książka 2** — `Biblia-Tysiaclecia.deon.epub`: 1331 plików, 8066 przypisów, **żaden nie jest
+Signeta**, przypisy lokalne (~6 na plik, notatka w tym samym pliku co referencja):
+
+| operacja | `aaa990a` | `1da866b` | `c08dff0` | teraz |
+|---|---|---|---|---|
+| `Convert` (7482 przypisy) | 5153 ms | 4795 ms | 5346 ms | 5059 ms |
+| `Scan` / `Validator` / `PlanConversion` / `Renumber` (teraz) | — | — | — | 112 / 199 / 479 / 565 ms |
+
+**Czyli: na książce 2 dzisiejsze zmiany nie dały nic mierzalnego.** I to jest spójne, nie sprzeczne:
+**wszystkie naprawione kwadraty były kwadratowe w rozmiarze jednego pliku**, nie w rozmiarze
+książki —
+`GetElementById` przechodzi *dokument*, `LineOfId` skanuje *tekst pliku*, `Unwrap`/`TagLister`
+chodzą po *liście tagów pliku*, a `ConvertOne`/`ConvertReference` przepisywały *plik*. Książka 2 ma
+1331 **małych** plików, więc żaden z tych kosztów nie rośnie. Książka 1 trzyma 9551 przypisów w
+układzie z wielkimi dokumentami — i tam te same poprawki dają 20–137×.
+
+Wniosek praktyczny: **zysk jest tam, gdzie książka skupia przypisy w niewielu dużych plikach** — a
+to właśnie przypadek, na który użytkownik się skarżył (Renumber i Change Placement na książce 1).
+
+Dwie rzeczy warte zapamiętania na przyszłość:
+- **Commit `1da866b`** (przebudowa ścieżki zapisu konwersji + binarne szukanie w `TagLister`) — ten
+  największy i najbardziej ryzykowny kawałek — **nie dał nic mierzalnego na żadnej z dwóch realnych
+  książek**. Liczy się tylko dla książki trzymającej tysiące przypisów w *jednym* pliku (sonda
+  syntetyczna: 241 s → 2,1 s przy 12 800 przypisach w jednym pliku). Cały realny zysk dał
+  `c08dff0`, mniejszy i prostszy.
+- `Convert` na książce 2 daje **7482 skonwertowane przypisy i zero problemów przy wszystkich
+  czterech rewizjach**, HEAD włącznie — czyli dzisiejsza przebudowa ścieżki zapisu nie zepsuła
+  konwersji na 7482 realnych przypisach. To najmocniejszy dowód regresyjny, jaki w tej sesji mamy.
+
+### 18. Znalezione ograniczenie konwersji: przypis, którego **referencja** stoi w tekście innego przypisu
+
+Znalezione przy dopisywaniu testów (czwarta sesja), nieudokumentowane wcześniej. Kształt:
+
+```html
+<p>Tekst<a href="#nB" id="rB">[B]</a>.</p>
+<section epub:type="footnotes">
+  <aside id="nB"><a href="#rB">[B]</a> Bee, zob. też<a href="#nA" id="rA">[A]</a>.</aside>
+  <aside id="nA"><a href="#rA">[A]</a> Aye.</aside>
+</section>
+```
+
+Czyli **przypis cytujący inny przypis** — rzecz normalna w książkach naukowych. To **nie** to samo co
+przypis zagnieżdżony w przypisie (punkt wyżej, `FindNestedNotes`): tam w środku siedzi *notatka*,
+tu tylko *referencja*.
+
+**Co się dzieje.** Kolejność konwersji to kolejność skanowania, czyli pozycja referencji. `rB` stoi
+w akapicie, `rA` dopiero w sekcji przypisów, więc B idzie pierwsze. Konwersja B wycina jego element
+z pliku. Gdy przychodzi kolej na A, jego referencja `rA` leży już wewnątrz wyciętego zakresu, więc
+podmiana jest porzucana (`FileEdits.Covers` → `ConversionTexts.Edit`) — inaczej wpisywalibyśmy nową
+referencję w tekst, który i tak znika. Notatka A zostaje z linkiem powrotnym do tymczasowego
+`fn-new-…-ref`, którego żaden element nie nosi.
+
+**Użytkownik jest chroniony**: kontrola F7 to wyłapuje i `Convert` zwraca problemy, więc wywołujący
+cofa książkę do checkpointu (tak jak mówi kontrakt `Convert`). Zmierzone na tym kształcie:
+
+```
+converted=2 problems=3
+  TextChanged:fn-1
+  NewValidationResult:Validation_BadFragmentSameFile
+  NewValidationResult:Validation_FootnoteNoBacklink
+```
+
+Przed zmianami z punktu 16 ten sam kształt dawał `NullReferenceException` na `FindAnchor(...)!` —
+więc guard `Covers` jest realną poprawą, a nie martwym kodem. Pokryte testem
+`FootnoteConversionTests.A_reference_that_stood_inside_another_note_goes_with_it`, który przypina
+wykrycie (a nie „jakoś przeszło").
+
+**To jest problem wyłącznie kolejności — nie architektury.** Zmierzone sondą (tymczasowe odwrócenie
+listy `items` w `Convert`, sonda usunięta): przy odwrotnej kolejności ten sam kształt konwertuje się
+**bezbłędnie**, `converted=2 problems=0`, i wynik jest prawidłowy:
+
+```html
+<aside class="signet-fn" id="fn-1"><p class="signet-fn-p"><a href="#fn-1-ref">1.</a> Bee, zob. też<a
+  class="signet-fn-ref" epub:type="noteref" href="#fn-2" id="fn-2-ref">[2]</a>.</p></aside>
+<aside class="signet-fn" id="fn-2"><p class="signet-fn-p"><a href="#fn-2-ref">2.</a> Aye.</p></aside>
+```
+
+Działa, bo gdy A idzie pierwsze, jego referencja jest podmieniana w tekście B, który jeszcze stoi, a
+treść B czytana jest **przez** zebrane edycje (punkt 16), więc B bierze już nową referencję Signeta
+do swojej nowej notatki.
+
+**Propozycja naprawy (nie wdrożona — do decyzji):** rozszerzyć istniejące porządkowanie zależności.
+Dziś `FindNestedNotes` liczy głębokość tylko dla notatek w notatkach i `Convert` sortuje po niej
+malejąco. Trzeba dodać drugą relację: „referencja A leży w elemencie notatki B" ⇒ A przed B. To ten
+sam mechanizm, nie nowy — więc zmiana jest umiarkowana, ale dotyka **kolejności konwersji**, czyli
+najbardziej wrażliwego miejsca w całym module. Do rozważenia przy wdrożeniu:
+- **cykle**: referencja A w notatce B i referencja B w notatce A — żadna kolejność nie wystarczy;
+  trzeba wykryć cykl i zgłosić `ConversionBlocker`, zamiast pętlić się albo zepsuć książkę;
+- alternatywa minimalna i bezpieczniejsza: nie próbować wcale — wykryć ten kształt w
+  `PlanConversion` i ustawić blocker/ostrzeżenie, żeby użytkownik wiedział, czego Signet nie zrobi,
+  zamiast dowiadywać się tego z cofniętej operacji.
+
 ## Co NIE zostało zrobione / zostało do następnej sesji
 
 1. **Częściowo zweryfikowane na żywo** — test po backgroundowaniu checkpointów (punkt 5) znalazł
@@ -453,6 +565,11 @@ notatka dostaje swoją linię, nie linię pierwszej) i
    trzyma indeksu id, więc każde wywołanie przechodzi drzewo). Naprawione indeksem `id → element`
    budowanym raz na dokument (`ElementIds`) — **bez żadnego cache'u między operacjami**. Zostaje
    samo parsowanie, liniowe (~414 ms na 10 wywołań przy 12 800 przypisach).
+2a. **Skalowanie liczbą plików (nie przypisów) — niezmierzone do końca.** Punkt 17a pokazuje, że
+   wszystkie dotychczasowe naprawy dotyczyły kwadratów w rozmiarze **jednego pliku**. Na książce z
+   1331 **małymi** plikami nic nie przyspieszyło (`Convert` ~5 s przed i po). Jeśli kiedyś okaże
+   się za wolno na książce o wielu plikach, to będzie **inny** problem niż wszystkie z punktów
+   13–17 i trzeba go zmierzyć od nowa — żadna z dzisiejszych poprawek go nie dotyka.
 3. **`BookLinks`/link-scanning w `PlanConversion`/`PlanPlacement`** (~19.5 s) — skan wszystkich
    `<a href>` w całej książce (~43k w tej książce). Pomiar z punktu 17 pokazuje, że samo
    `BookLinks` jest **tanie i liniowe** (13 ms przy 3200 przypisach); droga była sąsiednia faza

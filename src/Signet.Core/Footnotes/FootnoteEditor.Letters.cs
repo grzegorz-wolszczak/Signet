@@ -85,6 +85,20 @@ public static partial class FootnoteEditor
 
         // The references of every note before the change: their place in the reading order finds them afterwards.
         List<Footnote> before = FootnoteScanner.Scan(book).ToList();
+
+        // Where each reference stands in that list. Looking it up by walking the list went through all the footnotes
+        // of the book once per reference of every chosen note, which a book with many shared notes pays for in the
+        // square of their number. The file, the href and the occurrence identify a reference on their own -- the
+        // scanner counts the occurrences of an href per file and gives every reference a footnote of its own -- so no
+        // two entries share a key (FootnoteScannerTests.Every_reference_is_identified_by_its_file_href_and_occurrence
+        // holds that). TryAdd keeps the first all the same, so a book that somehow broke the rule is read as the walk
+        // read it, which returned the first match, rather than throwing.
+        Dictionary<(HtmlResource File, string Href, int Occurrence), int> placeOf = new();
+        for (int i = 0; i < before.Count; i++)
+        {
+            placeOf.TryAdd((before[i].ReferenceFile, before[i].ReferenceHref, before[i].ReferenceOccurrence), i);
+        }
+
         Dictionary<(string BookPath, string Id), FootnoteLetterStyle> styles = new();
         List<(int Index, string BookPath, string OldId)> references = new();
         foreach (LetterItem item in items)
@@ -92,16 +106,15 @@ public static partial class FootnoteEditor
             styles[(item.Footnote.NoteFile.BookPath, item.Footnote.NoteId)] = style;
             foreach (Footnote reference in item.References.Where(r => r.ReferenceId.Length > 0))
             {
-                int index = before.FindIndex(f => ReferenceEquals(f.ReferenceFile, reference.ReferenceFile)
-                    && f.ReferenceHref == reference.ReferenceHref && f.ReferenceOccurrence == reference.ReferenceOccurrence);
-                if (index >= 0)
+                if (placeOf.TryGetValue((reference.ReferenceFile, reference.ReferenceHref, reference.ReferenceOccurrence), out int index))
                 {
                     references.Add((index, reference.ReferenceFile.BookPath, reference.ReferenceId));
                 }
             }
         }
 
-        RenumberWith(book, options, styles);
+        // The scan just above is handed over: nothing between the two touches the book.
+        RenumberWith(book, options, styles, scanned: before);
 
         // The links from outside the notes to the old ids of the references lead to the new ones (inside a note they
         // are its links back, written anew by the renumbering: a new id may be the old id of another reference).
