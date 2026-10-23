@@ -168,10 +168,34 @@ Legenda statusu: `[ ]` do zrobienia, `[x]` zrobione (z krótką notatką i commi
   - `dotnet build` całego `Signet.slnx` + `dotnet test Signet.App.Tests` (1085/1085) +
     `dotnet test Signet.App.MainWindowUiTests` (183/183) — zielone.
 
-- [ ] **A2c. Spięcie `IsBookOperationBusy` z Undo/Redo/RevertTo checkpointów.**
-  `CheckpointsViewModel` ma własne komendy wołające `MainWindowViewModel.MoveToCheckpointAsync`
-  (przez `RunInBackgroundAsync`) — nie są podpięte przez `AppActionRegistry`. Dziś panel
-  Checkpoints nie disabluje tych przycisków w trakcie innej operacji na książce.
+- [x] **A2c. Spięcie `IsBookOperationBusy` z Undo/Redo/RevertTo checkpointów.** (2026-10-23, commit
+  w `background-processing`) Doprecyzowanie opisu zadania wobec realnego kodu: przycisk Revert
+  panelu Checkpoints nie woła `MoveToCheckpointAsync` bezpośrednio — podnosi event
+  `RevertRequested`, który `MainWindowViewModel.InitCheckpoints()` subskrybuje i dopiero to woła
+  `RevertToCheckpointAsync` → `MoveToCheckpointAsync` (ten już poprawnie robi
+  `TryEnterBookOperation`/`ExitBookOperation` — to nie był problem). Problem był odwrotny: podczas
+  **innej** operacji na książce (np. Renumber) panel Checkpoints i akcje menu "Revert to before/
+  after" nie wiedziały o `IsBookOperationBusy` i dawały się kliknąć, trafiając na komunikat w
+  Notifications zamiast disabled przycisku/pozycji menu.
+
+  Co zrobione:
+  - `AppActionIds.RevertToBefore`/`RevertToAfter` dopisane do `BookOperationActionIds`
+    (`MainWindowViewModel.Operations.cs`) — menu/toolbar/skrót disabled przez istniejący mechanizm
+    `AppActionRegistry.SetBusy` z A2, tak jak reszta.
+  - `CheckpointsViewModel`: nowa `IsBookOperationBusy` (styl jak w `SpellcheckEditorViewModel` —
+    jedyny inny trwały singleton), `CanActOnSelection()` rozdzielone na dwa predykaty: `Compare`
+    zostaje przy `CanActOnSelection` (tylko czyta, nie przenosi książki), `Revert` dostaje nowy
+    `CanRevert() => CanActOnSelection() && !IsBookOperationBusy`.
+  - `CheckpointsViewModel` to trwały singleton (pole `_checkpointsPanel`, tworzony raz w
+    `InitCheckpoints()` z konstruktora `MainWindowViewModel`, żyje całą sesję) — spięcie dopisane
+    do istniejącego handlera `PropertyChanged` z A2b (ten sam handler aktualizuje teraz i
+    `_spellcheckEditor`, i `CheckpointsPanel`).
+  - Test: nowy `[Theory]` w `CheckpointsTests.cs` — startuje niezwiązaną operację (Renumber
+    Footnotes, nie wymaga przypisów) z kontrolowanym `ProgressRunner`, sprawdza że w trakcie
+    `panel.RevertCommand.CanExecute(null)` i `AppActionIds.RevertToBefore/RevertToAfter` są
+    `false`, a po zakończeniu znów `true` (po ponownym zaznaczeniu wiersza — Renumber sam tworzy
+    checkpoint, co przestawia wybór panelu na nowy stan bieżący, niezależnie od tej zmiany).
+  - `dotnet build` + `dotnet test Signet.App.Tests` (1086/1086) — zielone.
 
 - [ ] **A2d. Spięcie `IsBookOperationBusy` z wywołaniami bez żadnego `ICommand` (code-behind).**
   `CodeTabView.axaml.cs` woła bezpośrednio `ICodeTabHost.AddFootnote`/`AddFootnoteReference`/

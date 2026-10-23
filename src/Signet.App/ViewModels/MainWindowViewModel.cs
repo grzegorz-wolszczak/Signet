@@ -218,17 +218,19 @@ public sealed partial class MainWindowViewModel
         _spellcheckEditor.ChangeAllRequested += (word, lang, newWord) => RunAsyncAction(() => ApplySpellcheckChangeAllAsync(word, lang, newWord));
         _spellcheckEditor.DictionaryStateChanged += (_, _) => RefreshOpenTabsSpellcheck();
 
-        // The dialog is a single persistent instance (see its class remarks) that can stay open while another book
-        // operation starts elsewhere, so it is kept in sync for as long as this view model lives, not only at creation.
+        InitCheckpoints();
+
+        // Both the Spellcheck Editor and the Checkpoints panel are single persistent instances (see their class
+        // remarks) that can stay open/visible while another book operation starts elsewhere, so they are kept in sync
+        // for as long as this view model lives, not only at creation.
         PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(IsBookOperationBusy))
             {
                 _spellcheckEditor.IsBookOperationBusy = IsBookOperationBusy;
+                CheckpointsPanel.IsBookOperationBusy = IsBookOperationBusy;
             }
         };
-
-        InitCheckpoints();
 
         _notifications = new NotificationsViewModel(statusBar);
         InitNotifications();

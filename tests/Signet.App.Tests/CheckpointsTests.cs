@@ -1,9 +1,11 @@
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using AutoFixture.Xunit3;
 using AwesomeAssertions;
 using Signet.App.Actions;
+using Signet.App.Infrastructure;
 using Signet.App.Menu;
 using Signet.App.Resources;
 using Signet.App.Services;
@@ -258,6 +260,51 @@ public sealed class CheckpointsTests
             panel.Items[1].IsCurrent.Should().BeTrue();
             panel.Items[1].Label.Should().Be(Strings.Format("Checkpoint_CurrentStateWas", name));
             panel.SelectedItem.Should().Be(panel.Items[1]);
+        });
+    }
+
+    [Theory]
+    [AutoData]
+    public async Task Revert_action_and_panel_button_are_disabled_while_another_book_operation_is_busy(string name)
+    {
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange — a selected, revertible row and the enabled Revert action/button, exactly as in the test above.
+            using TempDir temp = new();
+            using Session s = new(temp);
+            s.Vm.CreateCheckpoint(name);
+            CheckpointsViewModel panel = s.Vm.CheckpointsPanel;
+            panel.SelectedItem = panel.Items[0];
+            panel.RevertCommand.CanExecute(null).Should().BeTrue("a precondition of this test");
+            s.Vm.Actions.Require(AppActionIds.RevertToBefore).CanExecute(null).Should().BeTrue("a precondition of this test");
+            ICodeTabHost host = s.Vm;
+            using CancellationTokenSource pressed = new();
+            ProgressRunner runner = (_, work, cancellable) =>
+            {
+                pressed.Cancel();
+                return work(new Progress<WorkProgress>(), pressed.Token);
+            };
+
+            // Act — a different, unrelated book operation starts (Renumber Footnotes needs no footnotes to run).
+            Task renumbering = host.RenumberFootnotes(runner);
+
+            // Assert — the panel's own Revert button and the Edit menu's Revert actions are disabled for the whole span
+            // of that other operation, not only the action that started it.
+            s.Vm.IsBookOperationBusy.Should().BeTrue();
+            panel.RevertCommand.CanExecute(null).Should().BeFalse();
+            s.Vm.Actions.Require(AppActionIds.RevertToBefore).CanExecute(null).Should().BeFalse();
+            s.Vm.Actions.Require(AppActionIds.RevertToAfter).CanExecute(null).Should().BeFalse();
+
+            // Act
+            await renumbering;
+
+            // Assert — enabled again once the other operation is done. The renumbering itself took its own checkpoint,
+            // which rebuilt the list and moved the selection to the new current state (IsCurrent, never revertible) —
+            // select the oldest row again to isolate what this test checks: the busy gate, not the selection.
+            s.Vm.IsBookOperationBusy.Should().BeFalse();
+            panel.SelectedItem = panel.Items[0];
+            panel.RevertCommand.CanExecute(null).Should().BeTrue();
+            s.Vm.Actions.Require(AppActionIds.RevertToBefore).CanExecute(null).Should().BeTrue();
         });
     }
 
