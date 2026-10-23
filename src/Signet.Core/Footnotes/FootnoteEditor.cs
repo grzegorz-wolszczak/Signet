@@ -414,9 +414,10 @@ public static partial class FootnoteEditor
             epub3, placement, noteId, "<a href=\"" + Href(noteFile, html, referenceId) + "\">0.</a>", Paragraphs(content));
         InsertNote(noteFile, note, placement, epub3);
 
-        int index = FootnoteScanner.Scan(book).ToList()
-            .FindIndex(f => ReferenceEquals(f.ReferenceFile, html) && f.ReferenceId == referenceId);
-        Renumber(book, options);
+        // The renumbering right after reads the same book, so it is given this scan instead of making its own.
+        List<Footnote> scanned = FootnoteScanner.Scan(book).ToList();
+        int index = scanned.FindIndex(f => ReferenceEquals(f.ReferenceFile, html) && f.ReferenceId == referenceId);
+        RenumberWith(book, options, null, scanned: scanned);
         added = Rescan(book, index);
         book.Modified = true;
         return FootnoteError.None;
@@ -528,9 +529,10 @@ public static partial class FootnoteEditor
         string reference = "<a class=\"" + ReferenceClass + "\"" + (book.IsEpub3 ? " epub:type=\"noteref\"" : string.Empty)
             + " href=\"" + Encode(Href(html, current.NoteFile, current.NoteId)) + "\" id=\"" + referenceId + "\">[0]</a>";
         html.SetText(html.GetText().Insert(offset, reference));
-        int index = FootnoteScanner.Scan(book).ToList()
-            .FindIndex(f => ReferenceEquals(f.ReferenceFile, html) && f.ReferenceId == referenceId);
-        Renumber(book, options);
+        // The renumbering right after reads the same book, so it is given this scan instead of making its own.
+        List<Footnote> scanned = FootnoteScanner.Scan(book).ToList();
+        int index = scanned.FindIndex(f => ReferenceEquals(f.ReferenceFile, html) && f.ReferenceId == referenceId);
+        RenumberWith(book, options, null, scanned: scanned);
         added = Rescan(book, index);
         book.Modified = true;
         return FootnoteError.None;
@@ -938,18 +940,21 @@ public static partial class FootnoteEditor
     public static bool Renumber(
         Book book, FootnoteOptions? options = null, IProgress<RenumberProgress>? progress = null,
         CancellationToken cancellationToken = default) =>
-        RenumberWith(book, options, null, progress, cancellationToken);
+        RenumberWith(book, options, null, progress, cancel: cancellationToken);
 
     // Renumber with the letters of some shared notes written in a given style (`styles`: by the note's file and id). With a
     // cancelled token it throws an OperationCanceledException between the steps; the book may then be partly renumbered, so the
     // caller that cancels rewinds it (a checkpoint taken before).
+    // `scanned`: the footnotes of the book when the caller has just scanned them and nothing changed since — a scan of a
+    // book with thousands of files is the costliest single step here, so the callers that have one hand it over.
     private static bool RenumberWith(
         Book book, FootnoteOptions? options, IReadOnlyDictionary<(string BookPath, string Id), FootnoteLetterStyle>? styles,
-        IProgress<RenumberProgress>? progress = null, CancellationToken cancel = default)
+        IProgress<RenumberProgress>? progress = null, IReadOnlyList<Footnote>? scanned = null,
+        CancellationToken cancel = default)
     {
         ArgumentNullException.ThrowIfNull(book);
         progress?.Report(new RenumberProgress(RenumberStage.Scanning, 0, 0));
-        IReadOnlyList<Footnote> footnotes = FootnoteScanner.Scan(
+        IReadOnlyList<Footnote> footnotes = scanned ?? FootnoteScanner.Scan(
             book, progress is null ? null : new ScanProgressRelay(progress));
         int foreignCount = footnotes.Count(f => !f.IsSignet && f.ReferenceIndex == 0);
         progress?.Report(new RenumberProgress(RenumberStage.Scanning, footnotes.Count, footnotes.Count, foreignCount));
@@ -980,22 +985,38 @@ public static partial class FootnoteEditor
             list.Add(edit);
         }
 
+        // The ids Signet's footnotes give up, by the file that holds them: asking every footnote of the book about each
+        // file instead made this a pass over all the footnotes per file (a book with a thousand files and ten thousand
+        // footnotes went through ten million of them).
+        Dictionary<HtmlResource, List<string>> givenUpIds = new(ReferenceEqualityComparer.Instance);
+
+        void GivesUp(HtmlResource file, string id)
+        {
+            if (!givenUpIds.TryGetValue(file, out List<string>? ids))
+            {
+                givenUpIds[file] = ids = new List<string>();
+            }
+
+            ids.Add(id);
+        }
+
+        foreach (Footnote footnote in footnotes.Where(f => f.IsSignet))
+        {
+            GivesUp(footnote.NoteFile, footnote.NoteId);
+            GivesUp(footnote.ReferenceFile, footnote.ReferenceId);
+        }
+
         // The ids Signet's footnotes give up get handed out again; every other id of a file stays taken.
         HashSet<string> Taken(HtmlResource file)
         {
             if (!takenIds.TryGetValue(file, out HashSet<string>? taken))
             {
                 taken = MarkupEdits.CollectIds(Snapshot(file).Text);
-                foreach (Footnote footnote in footnotes.Where(f => f.IsSignet))
+                if (givenUpIds.TryGetValue(file, out List<string>? ids))
                 {
-                    if (ReferenceEquals(footnote.NoteFile, file))
+                    foreach (string id in ids)
                     {
-                        taken.Remove(footnote.NoteId);
-                    }
-
-                    if (ReferenceEquals(footnote.ReferenceFile, file))
-                    {
-                        taken.Remove(footnote.ReferenceId);
+                        taken.Remove(id);
                     }
                 }
 
@@ -2175,15 +2196,25 @@ public static partial class FootnoteEditor
         return false;
     }
 
+    // The edits (which never overlap: the callers turn an overlapping one away) applied in one pass forward. Cutting each
+    // one out of the whole text instead moved everything after it, once per edit — on a notes file that takes thousands
+    // of them that is the length of the file moved thousands of times.
     private static string Apply(string text, IEnumerable<TextEdit> edits)
     {
-        StringBuilder result = new(text);
-        foreach (TextEdit edit in edits.OrderByDescending(e => e.Start))
+        StringBuilder result = new(text.Length);
+        int at = 0;
+        foreach (TextEdit edit in edits.OrderBy(e => e.Start))
         {
-            result.Remove(edit.Start, edit.Length).Insert(edit.Start, edit.Text);
+            if (edit.Start > at)
+            {
+                result.Append(text, at, edit.Start - at);
+            }
+
+            result.Append(edit.Text);
+            at = Math.Max(at, edit.Start + edit.Length);
         }
 
-        return result.ToString();
+        return result.Append(text, at, text.Length - at).ToString();
     }
 
     private static string Href(HtmlResource from, HtmlResource to, string id) => Href(from.BookPath, to.BookPath, id);
