@@ -1579,16 +1579,22 @@ public sealed partial class MainWindowViewModel
         }
         finally
         {
-            if (--_asyncActionsRunning == 0)
-            {
-                TaskCompletionSource? idle = _asyncActionsIdle;
-                _asyncActionsIdle = null;
-                idle?.TrySetResult();
-            }
+            ActionFinished();
         }
     }
 
-    // The asynchronous actions (RunAsyncAction) that have not finished; they start and end on the UI thread.
+    // One asynchronous action less to wait for (see WhenIdleAsync).
+    private void ActionFinished()
+    {
+        if (--_asyncActionsRunning == 0)
+        {
+            TaskCompletionSource? idle = _asyncActionsIdle;
+            _asyncActionsIdle = null;
+            idle?.TrySetResult();
+        }
+    }
+
+    // The asynchronous actions (RunAsyncAction, RunFileAction) that have not finished; they start and end on the UI thread.
     private int _asyncActionsRunning;
     private TaskCompletionSource? _asyncActionsIdle;
 
@@ -1616,6 +1622,7 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
+        _asyncActionsRunning++;
         try
         {
             await op(_fileWorkflow).ConfigureAwait(true);
@@ -1625,6 +1632,10 @@ public sealed partial class MainWindowViewModel
         {
             _logger.LogError(ex, "File operation error");
             _statusBar.ShowMessage(Strings.Format("Status_FileOperationError", ex.Message), TimeSpan.FromSeconds(6), NotificationLevel.Warning);
+        }
+        finally
+        {
+            ActionFinished();
         }
     }
 

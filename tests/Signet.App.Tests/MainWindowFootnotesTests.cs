@@ -273,6 +273,90 @@ public sealed class MainWindowFootnotesTests : IDisposable
     }
 
     [Fact]
+    public async Task A_footnote_reference_that_cannot_be_added_rewinds_the_checkpoint_and_says_why()
+    {
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange — a note to cite, and a position inside a tag, where no reference can go.
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel sut, Book book, HtmlResource chapter) = OpenMinimalChapter(temp);
+            ICodeTabHost host = sut;
+            await host.AddFootnote(chapter, AfterHello(chapter), "Note.", FootnotePlacement.Local);
+            Footnote note = FootnoteScanner.Scan(book).Single();
+            string before = chapter.GetText();
+            int insideTag = before.IndexOf("<p", StringComparison.Ordinal) + 1;
+            int states = sut.CheckpointHistory.States.Count;
+
+            // Act
+            await host.AddFootnoteReference(chapter, insideTag, note);
+
+            // Assert
+            chapter.GetText().Should().Be(before, "nothing was added");
+            sut.StatusMessage.Should().Be(
+                Strings.Format("Status_FootnoteReferenceNotAdded", FootnoteViewModel.ErrorText(FootnoteError.InsideTag)));
+            sut.CheckpointHistory.States.Should().HaveCount(states, "the checkpoint of the operation that did nothing is rewound");
+            sut.IsBookOperationBusy.Should().BeFalse();
+        });
+    }
+
+    [Fact]
+    public async Task The_footnote_windows_reach_the_book_through_the_tab_of_the_file()
+    {
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange — the path the Code Editor actually takes: the window hands its result to the tab, the tab to the host.
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel sut, Book book, HtmlResource chapter) = OpenMinimalChapter(temp);
+            CodeTabViewModel tab = sut.ActiveCodeTab!;
+            tab.UpdateCaret(1, 1, AfterHello(chapter), 'o');
+
+            // Act
+            await tab.AddFootnote(new FootnoteRequest("Note.", FootnotePlacement.Local));
+
+            // Assert
+            Footnote added = FootnoteScanner.Scan(book).Should().ContainSingle().Subject;
+            added.Placement.Should().Be(FootnotePlacement.Local);
+            sut.StatusMessage.Should().Be(Strings.Get("Status_FootnoteAddedLocal"));
+
+            // Act — a second reference to the same note, added from the "Add Reference to Footnote" window.
+            tab.UpdateCaret(1, 1, chapter.GetText().IndexOf("world", StringComparison.Ordinal) + 5, 'd');
+            FootnoteReferenceViewModel? references = tab.CreateFootnoteReferenceViewModel();
+
+            // Assert
+            references.Should().NotBeNull();
+            references!.CanAccept.Should().BeTrue();
+
+            // Act
+            await tab.AddFootnoteReference(references.Selected!.Target.Footnote);
+
+            // Assert
+            chapter.GetText().Should().Contain("[1a]").And.Contain("[1b]")
+                .And.Contain("<a href=\"#fn-1a-ref\">1a</a>, <a href=\"#fn-1b-ref\">1b</a>. Note.");
+            FootnoteScanner.Scan(book).Should().OnlyContain(f => f.IsShared && f.NoteId == "fn-1");
+
+            // Act — "Edit Footnote" rewrites the text of the note under the caret.
+            tab.UpdateCaret(1, 1, chapter.GetText().IndexOf("[1b]", StringComparison.Ordinal) + 1, '1');
+            FootnoteMenuState state = tab.FootnoteStateAtCaret()!;
+            state.Hit.Should().NotBeNull();
+            await tab.ApplyFootnoteEdit(state.Hit!, new FootnoteRequest("Note, rewritten.", FootnotePlacement.Local));
+
+            // Assert
+            chapter.GetText().Should().Contain("Note, rewritten.");
+            sut.StatusMessage.Should().Be(Strings.Get("Status_FootnoteEdited"));
+
+            // Act — and the same window removes it.
+            await tab.ApplyFootnoteEdit(
+                tab.FootnoteStateAtCaret()!.Hit!, new FootnoteRequest(string.Empty, FootnotePlacement.Local, Remove: true));
+
+            // Assert
+            FootnoteScanner.Scan(book).Should().BeEmpty();
+            chapter.GetText().Should().NotContain("signet-fn");
+        });
+    }
+
+    [Fact]
     public void The_removal_confirmation_is_a_setting()
     {
         // Arrange
