@@ -554,6 +554,68 @@ Legenda statusu: `[ ]` do zrobienia, `[x]` zrobione (z krótką notatką i commi
   wskazywać na zadania A3/A4 tutaj zamiast duplikować opis. `FOOTNOTES_PERFORMANCE_NOTES.md` nie
   został skasowany — zostaje jako dziennik śledztwa (sekcje 1–14), wciąż wartościowy.
 
+### Część G — pokrycie testami operacji w tle (2026-10-24)
+
+- [x] **G1. Zmierzyć pokrycie i dopisać testy tam, gdzie nowy kod nie był pokryty.** Powód: w
+  poprzednich zadaniach kilka razy okazało się, że zmieniona funkcja nie miała testu i weszła
+  regresja.
+
+  **Jak mierzyć** (`coverlet.collector` jest już w każdym projekcie testowym, nic nie trzeba
+  instalować):
+
+  ```sh
+  dotnet test Signet.slnx --collect:"XPlat Code Coverage" --results-directory <katalog>
+  ```
+
+  Powstaje jeden `coverage.cobertura.xml` na projekt testowy. **Uwaga przy sumowaniu:** raporty
+  różnych projektów zapisują ścieżki plików z różnym przedrostkiem (`src\Signet.Core\Misc\SettingsStore.cs`
+  oraz `Misc\SettingsStore.cs`), więc naiwne złożenie raportów dzieli ten sam plik na dwa wpisy i
+  zaniża pokrycie — ścieżki trzeba znormalizować do ścieżki w repo, zanim zsumuje się trafienia
+  linii. Liczą się tylko pliki `.cs` z `src/` (bez `obj/`, czyli generatora regexów, i bez `.axaml`).
+
+  **Stan po tym zadaniu:** `Signet.Core` 90,5%, `Signet.App` 74,8%, fork TreeDataGrid 59,3%
+  (zostaje blisko upstreamu, nie testujemy go u siebie), razem 80,7% linii. Pokrycie **samego diffu
+  gałęzi `background-processing`** — to, co liczy się tutaj najbardziej — wzrosło z **73,2% na
+  79,2%**, a po odjęciu `MainWindow.axaml.cs` (code-behind okna, patrz niżej) wynosi 83,4%.
+
+  **Co dopisano** (`tests/Signet.App.Tests/MainWindowBookOperationsTests.cs` — 26 testów — oraz
+  pojedyncze testy w `MainWindowFootnotesTests`, `CleanupViewModelTests` i
+  `StandardizationViewModelTests`): operacje konserwacyjne (Standardize — odmowa przy pliku, który
+  nie jest dobrze sformowany, i Cancel w trakcie checkpointu; Create HTML TOC; Upgrade to EPUB 3
+  razem z drugim, pustym przebiegiem), dialogi spisu treści (Generate TOC: checkpoint przed
+  dialogiem, Complete zapisujące nav, wycofanie checkpointu, gdy nic się nie zmieniło, oraz Cancel),
+  Edit TOC, zapis książki w tle (trzy fazy `BookSaveStage`), Replace All (checkpoint, Cancel,
+  wycofanie, gdy nic nie zamieniono, zakres „tylko bieżący plik"), checkpoint ręczny (udany i
+  anulowany), Rename Class / Rename Id / Remove Class przez `ICodeTabHost` na prawdziwym hoście,
+  Split File odmówiony w środku taga, operacje Book Browsera na prawdziwym hoście (zmiana nazwy,
+  zmiana nazwy odrzucona, Add Files wraz z plikiem, którego nie ma, odmowa, gdy trwa inna operacja,
+  odmowa usunięcia wszystkich plików HTML), droga „okno → karta → host" dla przypisów
+  (`CodeTabViewModel.AddFootnote` / `AddFootnoteReference` / `ApplyFootnoteEdit`), błąd dodania
+  odnośnika (wycofanie checkpointu) oraz blokada przycisków Wyczyść/Zastosuj w dialogach Cleanup i
+  Standardize na czas operacji na książce.
+
+  **Znalezione przy okazji i naprawione:** `RunFileAction` (Save / Save As / Open / New) nie był
+  liczony przez `WhenIdleAsync`, choć jego dokumentacja mówi „każda rozpoczęta akcja asynchroniczna".
+  Przez to na żaden test zapisu nie dało się deterministycznie poczekać — test kończył się, zanim
+  `ExportEpub.WriteBook` zapisał plik. Teraz obie ścieżki (`RunAsyncAction` i `RunFileAction`)
+  korzystają ze wspólnego `ActionFinished()`.
+
+  **Co zostaje niepokryte i dlaczego:**
+  1. `src/Signet.App/Views/MainWindow.axaml.cs` — 105 ze 106 nowych linii. To wyłącznie spięcie
+     dialogów z operacjami (tworzenie `ProgressWindow.DelayedRunner(this)`, `ShowDialog`), którego
+     nie da się wykonać bez prawdziwego okna; naturalnym miejscem byłby
+     `Signet.App.MainWindowUiTests`, ale każda z tych ścieżek otwiera okno modalne.
+  2. `BookBrowserViewModel` — 98 linii: gałęzie „praca zwróciła błąd" i „host odmówił" w pozostałych
+     z 19 operacji (fonty, przenoszenie, semantyka, merge/split, linkowanie arkuszy, okładka…).
+     Wzorzec jest pokryty na rename / delete / add files, reszta to te same trzy linie powtórzone.
+  3. Strażnicy `if (_currentBook is null) return;` i `if (!TryEnterBookOperation()) return;` w
+     `MainWindowViewModel*` — tanie do pokrycia, ale nic nie mówią o poprawności.
+  4. Gałąź „konwersja przypisów nie przeszła kontroli" (`MainWindowViewModel.Footnotes.cs`:
+     przywrócenie z checkpointu albo zostawienie książki) — wymaga książki, na której
+     `FootnoteEditor.Convert` kończy się problemami; gdy taka się trafi, jej kształt idzie do
+     `tests/corpus/broken/`.
+  5. Bloki `catch (IOException …)` przy checkpointach — wymagają podstawienia błędów systemu plików.
+
 ## Dygresja (nie zadanie, obserwacja z researchu do tego dokumentu)
 
 Podczas rozpoznania pod ten dokument znalazłem, że `AddCheckpointBeforeAsync`/

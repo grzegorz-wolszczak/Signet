@@ -133,4 +133,26 @@ public sealed class StandardizationViewModelTests : IDisposable
             .Which.Should().Equal(StandardizationStep.StandardFolders, StandardizationStep.ManifestMediaTypes);
         closed.Should().BeTrue();
     }
+
+    [Fact]
+    public void A_running_book_operation_disables_Apply()
+    {
+        // Arrange
+        StandardizationViewModel vm = New(StandardizationStep.StandardFolders);
+
+        // Act & Assert
+        vm.ApplyCommand.CanExecute(null).Should().BeTrue();
+
+        // Act — the main window started an operation on the book (its own Apply, or another one).
+        vm.IsBookOperationBusy = true;
+
+        // Assert
+        vm.ApplyCommand.CanExecute(null).Should().BeFalse();
+
+        // Act
+        vm.IsBookOperationBusy = false;
+
+        // Assert
+        vm.ApplyCommand.CanExecute(null).Should().BeTrue();
+    }
 }

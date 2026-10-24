@@ -340,4 +340,26 @@ public sealed class CleanupViewModelTests : IDisposable
         // Act & Assert
         Section(New(), CleanupStep.NestedDivs).HasLevelOptions.Should().BeFalse();
     }
+
+    [Fact]
+    public void A_running_book_operation_disables_Clean_in_every_tab()
+    {
+        // Arrange
+        CleanupViewModel vm = New(CleanupStep.UnusedSelectors);
+
+        // Act & Assert
+        vm.Tabs[0].CleanCommand.CanExecute(null).Should().BeTrue();
+
+        // Act — the main window started an operation on the book (this dialog's own Clean, or another one).
+        vm.IsBookOperationBusy = true;
+
+        // Assert
+        vm.Tabs.Should().OnlyContain(t => !t.CleanCommand.CanExecute(null));
+
+        // Act
+        vm.IsBookOperationBusy = false;
+
+        // Assert
+        vm.Tabs[0].CleanCommand.CanExecute(null).Should().BeTrue();
+    }
 }
