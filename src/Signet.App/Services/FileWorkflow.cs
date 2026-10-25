@@ -14,6 +14,16 @@ using Signet.Core;
 
 namespace Signet.App.Services;
 
+/// <summary>
+/// The user's answer to the dialog a click on a recent file that is no longer on disk opens.
+/// </summary>
+/// <param name="Remove">Whether the file is to be taken off the "Recent Files" list (OK).</param>
+/// <param name="AllMissing">
+/// Whether every file of the list that is no longer on disk goes with it (the check box of the dialog); it counts only
+/// together with <paramref name="Remove"/>.
+/// </param>
+public readonly record struct MissingRecentAnswer(bool Remove, bool AllMissing);
+
 /// <summary>The user's choice in the "unsaved changes" dialog.</summary>
 public enum SaveChangesChoice
 {
@@ -75,8 +85,11 @@ public interface IFileWorkflowPrompts
     /// </summary>
     Task ShowLoadWarningsAsync(string fileName, IReadOnlyList<LoadWarning> warnings);
 
-    /// <summary>Asks whether to remove a nonexistent file from the "Recent Files" list (OK = remove).</summary>
-    Task<bool> ConfirmRemoveMissingRecentAsync(string path);
+    /// <summary>
+    /// Asks whether to remove a nonexistent file from the "Recent Files" list (OK = remove). The dialog also offers to
+    /// take every file of the list that is no longer on disk off it, not only this one.
+    /// </summary>
+    Task<MissingRecentAnswer> ConfirmRemoveMissingRecentAsync(string path);
 
     /// <summary>"Custom Epub Layout" wizard. Returns a list of book paths, or <c>null</c> when cancelled.</summary>
     Task<IReadOnlyList<string>?> DesignCustomLayoutAsync(string version);
@@ -309,9 +322,17 @@ public sealed class FileWorkflow : IDisposable
 
         if (!File.Exists(path))
         {
-            if (await _prompts.ConfirmRemoveMissingRecentAsync(path).ConfigureAwait(true))
+            (bool remove, bool allMissing) = await _prompts.ConfirmRemoveMissingRecentAsync(path).ConfigureAwait(true);
+            if (remove)
             {
-                RemoveRecentFile(path);
+                if (allMissing)
+                {
+                    RemoveMissingRecentFiles();
+                }
+                else
+                {
+                    RemoveRecentFile(path);
+                }
             }
 
             return;
@@ -611,6 +632,24 @@ public sealed class FileWorkflow : IDisposable
         }
 
         _settings.RecentFiles = list;
+        RecentFilesChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>
+    /// Removes from the "Recent Files" list every file that is no longer on disk — the "remove all the missing ones"
+    /// option of the dialog that a click on a missing entry opens. A path on a medium that is not there (an offline
+    /// share, an unplugged drive) counts as missing, the same way the lists dim it.
+    /// </summary>
+    public void RemoveMissingRecentFiles()
+    {
+        List<string> kept = _settings.RecentFiles.Where(File.Exists).ToList();
+        if (kept.Count == _settings.RecentFiles.Count)
+        {
+            return;
+        }
+
+        _settings.RecentFiles = kept;
+        _settings.Save();
         RecentFilesChanged?.Invoke(this, EventArgs.Empty);
     }
 

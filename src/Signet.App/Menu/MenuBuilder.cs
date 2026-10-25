@@ -89,6 +89,12 @@ public sealed class MenuBuilder
     }
 
     /// <summary>
+    /// Builds the entries of the "Recent Files" lists again — called every time a menu is opened, so that a file
+    /// removed from disk meanwhile shows as missing (the existence of every path is checked while the entries are built).
+    /// </summary>
+    public void RefreshRecentFiles() => _recentFileSegments.ForEach(Rebuild);
+
+    /// <summary>
     /// Recomputes the texts of the built menu after the UI language changes (in place — without
     /// rebuilding, so as not to duplicate the subscriptions of the recent files and bookmarks lists).
     /// </summary>
@@ -197,9 +203,13 @@ public sealed class MenuBuilder
                 // are doubled so that Avalonia does not take them for an access key.
                 string name = ShortenFileName(Path.GetFileName(path)).Replace("_", "__", StringComparison.Ordinal);
                 string label = index <= 9 ? $"_{index}. {name}" : $"{index}. {name}";
-                // The full path in the tooltip: files of the same name from different folders look alike.
+                // The full path in the tooltip: files of the same name from different folders look alike. A file that is
+                // no longer on disk is dimmed and says so in its tooltip, but stays clickable: the click offers to take it
+                // off the list (FileWorkflow.OpenRecentAsync).
                 MenuItemViewModel entry = MenuItemViewModel.ForCommand(label, new RelayCommand(() => _recentFiles!.Open(captured)));
-                entry.ToolTip = path;
+                bool missing = !File.Exists(path);
+                entry.IsDimmed = missing;
+                entry.ToolTip = missing ? path + Environment.NewLine + Strings.Get("RecentFiles_FileMissingTooltip") : path;
                 entry.ContextItems = new[]
                 {
                     MenuItemViewModel.ForCommand(

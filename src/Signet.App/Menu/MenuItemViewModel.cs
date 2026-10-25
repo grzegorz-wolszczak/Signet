@@ -164,6 +164,16 @@ public sealed partial class MenuItemViewModel : ObservableObject
     /// <summary>The tooltip of the item (e.g. the full path of a recent file), or <see langword="null"/> for none.</summary>
     public string? ToolTip { get; set; }
 
+    /// <summary>
+    /// Whether the item is drawn dimmed while staying clickable — a recent file that is no longer on disk. It cannot
+    /// be <see cref="IsEnabled"/> = <see langword="false"/> instead: a disabled item takes neither the click (which
+    /// offers to remove it from the list) nor the pointer (which shows the tooltip saying why it cannot be opened).
+    /// </summary>
+    public bool IsDimmed { get; set; }
+
+    /// <summary>The opacity the item is drawn with (<see cref="IsDimmed"/>).</summary>
+    public double Opacity => IsDimmed ? 0.5 : 1.0;
+
     /// <summary>Whether the item is checkable (rendered as a checkbox).</summary>
     [ObservableProperty]
     private bool _isCheckable;

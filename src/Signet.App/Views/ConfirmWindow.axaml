@@ -10,6 +10,7 @@
   <StackPanel Margin="16" Spacing="14">
     <TextBlock x:Name="MessageText" TextWrapping="Wrap" />
     <CheckBox x:Name="DontAskAgainBox" Content="{loc:Loc ConfirmWindow_DontAskAgain}" IsVisible="False" />
+    <CheckBox x:Name="OptionBox" IsVisible="False" />
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
       <Button x:Name="OkButton" Content="{loc:Loc Common_Ok}" IsDefault="True" MinWidth="80" />
       <Button x:Name="CancelButton" Content="{loc:Loc Common_Cancel}" IsCancel="True" MinWidth="80" />

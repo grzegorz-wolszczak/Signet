@@ -396,6 +396,64 @@ public sealed class FileWorkflowTests
     }
 
     [Fact]
+    public async Task OpenRecent_with_a_missing_file_keeps_the_list_when_the_dialog_is_cancelled()
+    {
+        // Arrange
+        using Harness h = new();
+        string ghost = h.PathIn("gone.epub");
+        h.Settings.RecentFiles = new[] { ghost };
+        h.Prompts.RemoveMissingRecent = false;
+
+        // Act
+        await h.Workflow.OpenRecentAsync(ghost);
+
+        // Assert
+        h.Settings.RecentFiles.Should().Equal(ghost);
+        h.Prompts.MissingRecentPrompts.Should().Equal(ghost);
+    }
+
+    /// <summary>
+    /// The check box of the dialog ("remove all the files that no longer exist"): every missing file goes, the ones
+    /// still on disk stay — whatever their place in the list.
+    /// </summary>
+    [Fact]
+    public async Task OpenRecent_with_the_remove_all_option_removes_every_missing_file_from_the_list()
+    {
+        // Arrange
+        using Harness h = new();
+        string first = EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, h.Dir, "kept.epub");
+        string ghost = h.PathIn("gone.epub");
+        string otherGhost = h.PathIn("also-gone.epub");
+        h.Settings.RecentFiles = new[] { ghost, first, otherGhost };
+        h.Prompts.RemoveMissingRecent = true;
+        h.Prompts.RemoveAllMissingRecent = true;
+
+        // Act
+        await h.Workflow.OpenRecentAsync(ghost);
+
+        // Assert
+        h.Settings.RecentFiles.Should().Equal(first);
+    }
+
+    [Fact]
+    public async Task OpenRecent_without_the_remove_all_option_removes_only_the_clicked_file()
+    {
+        // Arrange
+        using Harness h = new();
+        string ghost = h.PathIn("gone.epub");
+        string otherGhost = h.PathIn("also-gone.epub");
+        h.Settings.RecentFiles = new[] { ghost, otherGhost };
+        h.Prompts.RemoveMissingRecent = true;
+        h.Prompts.RemoveAllMissingRecent = false;
+
+        // Act
+        await h.Workflow.OpenRecentAsync(ghost);
+
+        // Assert
+        h.Settings.RecentFiles.Should().Equal(otherGhost);
+    }
+
+    [Fact]
     public async Task LoadFileAsync_shows_load_warnings_in_one_dialog()
     {
         // Arrange

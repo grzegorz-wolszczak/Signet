@@ -34,6 +34,11 @@
       <Setter Property="FontWeight" Value="SemiBold" />
       <Setter Property="Opacity" Value="0.8" />
     </Style>
+    <!-- A file that is no longer on disk: dimmed, but still clickable — the click offers to take it off the list and
+         the pointer shows a tooltip saying why it cannot be opened. -->
+    <Style Selector="Button.recentFile.missing">
+      <Setter Property="Opacity" Value="0.5" />
+    </Style>
   </UserControl.Styles>
 
   <!-- The title, the buttons and the heading of the list stay in place; only the list of the files scrolls. -->
@@ -52,8 +57,8 @@
       <ItemsControl x:Name="RecentFilesList" ItemsSource="{Binding RecentFileItems}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="vm:StartScreenRecentFile">
-            <Button Classes="recentFile" Classes.highlighted="{Binding IsHighlighted}" Command="{Binding OpenCommand}"
-                    ToolTip.Tip="{Binding Path}">
+            <Button Classes="recentFile" Classes.highlighted="{Binding IsHighlighted}" Classes.missing="{Binding IsMissing}"
+                    Command="{Binding OpenCommand}" ToolTip.Tip="{Binding ToolTip}">
               <Button.ContextMenu>
                 <ContextMenu>
                   <MenuItem Header="{loc:Loc Menu_RemoveFromRecentFiles}" Command="{Binding RemoveCommand}" />

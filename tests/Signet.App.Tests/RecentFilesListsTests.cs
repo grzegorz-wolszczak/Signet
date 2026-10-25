@@ -7,8 +7,10 @@ using Signet.App.Actions;
 using Signet.App.Docking;
 using Signet.App.Input;
 using Signet.App.Menu;
+using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.App.Tabs;
+using Signet.App.Tests.TestSupport;
 using Signet.App.Toolbars;
 using Signet.App.ViewModels;
 using Signet.Core.Misc;
@@ -50,6 +52,75 @@ public sealed class RecentFilesListsTests : IDisposable
             new ClipboardHistoryService(settings), doctypeGuard));
         vm.AttachFileWorkflowPrompts(new FakeFileWorkflowPrompts());
         return (settings, vm);
+    }
+
+    /// <summary>
+    /// The start screen reads the list from disk: a book that is no longer there is dimmed and its tooltip says why,
+    /// while it stays clickable (the click offers to take it off the list).
+    /// </summary>
+    [Fact]
+    public void The_start_screen_dims_a_recent_file_that_is_no_longer_on_disk()
+    {
+        // Arrange
+        using UiCultureScope culture = new("en");
+        (SettingsStore settings, MainWindowViewModel vm) = New(fileMenuLimit: 10, startScreenLimit: 10, files: 2);
+        string here = settings.RecentFiles[0];
+        string gone = settings.RecentFiles[1];
+        File.WriteAllText(here, string.Empty);
+
+        // Act
+        vm.StartScreen.Refresh();
+
+        // Assert
+        StartScreenRecentFile present = vm.StartScreen.RecentFileItems.Single(f => f.Path == here);
+        StartScreenRecentFile missing = vm.StartScreen.RecentFileItems.Single(f => f.Path == gone);
+        present.IsMissing.Should().BeFalse();
+        present.ToolTip.Should().Be(here);
+        missing.IsMissing.Should().BeTrue();
+        missing.ToolTip.Should().Be(gone + Environment.NewLine + Strings.Get("RecentFiles_FileMissingTooltip"));
+        missing.OpenCommand.CanExecute(null).Should().BeTrue("the click offers to remove the entry from the list");
+    }
+
+    [Fact]
+    public void The_start_screen_reads_the_files_again_every_time_it_is_shown()
+    {
+        // Arrange
+        (SettingsStore settings, MainWindowViewModel vm) = New(fileMenuLimit: 10, startScreenLimit: 10, files: 1);
+        string path = settings.RecentFiles[0];
+        File.WriteAllText(path, string.Empty);
+        vm.StartScreen.Refresh();
+
+        // Assert
+        vm.StartScreen.RecentFileItems.Single().IsMissing.Should().BeFalse();
+
+        // Act — the book is deleted while Signet runs and the screen comes back.
+        File.Delete(path);
+        vm.StartScreen.IsVisible = false;
+        vm.StartScreen.IsVisible = true;
+
+        // Assert
+        vm.StartScreen.RecentFileItems.Single().IsMissing.Should().BeTrue();
+    }
+
+    /// <summary>
+    /// The sample of the Preferences preview is made of fabricated books that are on no disk — it must never draw them
+    /// as missing.
+    /// </summary>
+    [Fact]
+    public void The_sample_start_screen_never_dims_its_fabricated_books()
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        SettingsStore settings = new(temp.Combine("settings.xml"));
+        settings.StartScreenRecentFilesLimit = 5;
+
+        // Act
+        using StartScreenViewModel sample = StartScreenViewModel.CreateSample(settings);
+
+        // Assert
+        sample.RecentFileItems.Should().NotBeEmpty();
+        sample.RecentFileItems.Should().OnlyContain(f => !f.IsMissing);
+        sample.RecentFileItems.Should().OnlyContain(f => f.ToolTip == f.Path);
     }
 
     [Fact]
