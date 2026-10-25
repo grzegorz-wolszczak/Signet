@@ -516,6 +516,16 @@ public sealed class SettingsStore
     }
 
     /// <summary>
+    /// Whether the Live CSS panel lists, above the rules of the inspected element, the properties it inherits from
+    /// its ancestors ("Show inherited"). Off by default.
+    /// </summary>
+    public bool LiveCssShowInherited
+    {
+        get => ReadBool("live_css_show_inherited", false);
+        set => Write("live_css_show_inherited", value);
+    }
+
+    /// <summary>
     /// Whether Code Editor uses extended highlighting (CSS inside <c>&lt;style&gt;</c>, richer CSS,
     /// errors, links, namespace prefixes, bold/italic). Enabled by default; <c>false</c> uses
     /// the basic highlighting.

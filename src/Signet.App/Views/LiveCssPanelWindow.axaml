@@ -3,12 +3,27 @@
         xmlns:vm="using:Signet.App.ViewModels"
         xmlns:loc="using:Signet.App.Resources"
         xmlns:infra="using:Signet.App.Infrastructure"
+        xmlns:views="using:Signet.App.Views"
         x:Class="Signet.App.Views.LiveCssPanelWindow"
         x:DataType="vm:LiveCssPanelViewModel"
         Title="{loc:Loc LiveCssPanelWindow_Title}"
         Width="480" Height="560"
         WindowStartupLocation="Manual"
         CanResize="True">
+
+  <Window.Styles>
+    <!-- The triangle that folds a level away: a glyph with no button chrome, so the header reads as one line. -->
+    <Style Selector="ToggleButton.levelToggle">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="2,0" />
+      <Setter Property="MinWidth" Value="0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="ToggleButton.levelToggle:checked /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+  </Window.Styles>
 
   <Grid Margin="10" RowDefinitions="Auto,*" RowSpacing="8">
 
@@ -21,40 +36,89 @@
           <DataTemplate x:DataType="vm:LiveCssLevelViewModel">
             <!-- One hierarchy level: body at the top, the element under the caret at the bottom. -->
             <StackPanel Spacing="6" Margin="0,0,0,12">
-              <TextBlock Text="{Binding Header}" FontWeight="Bold"
-                         FontFamily="Consolas,Cascadia Mono,monospace" />
+              <!-- Every level but the first is set off from the one above by a line. -->
+              <Border IsVisible="{Binding ShowSeparator}" Height="1" Margin="0,0,0,6"
+                      Background="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
 
-              <TextBlock Text="{loc:Loc LiveCssPanelWindow_NoRules}" IsVisible="{Binding ShowNoRules}"
-                         Foreground="{DynamicResource SignetMutedTextBrush}" Margin="12,0,0,0" />
+              <StackPanel Orientation="Horizontal" Spacing="2">
+                <ToggleButton Classes="levelToggle" IsVisible="{Binding CanCollapse}"
+                              IsChecked="{Binding IsExpanded, Mode=TwoWay}"
+                              Content="{Binding ExpandGlyph}"
+                              ToolTip.Tip="{loc:Loc LiveCssPanelWindow_ToggleLevel}" />
+                <TextBlock Text="{Binding Header}" FontWeight="Bold" VerticalAlignment="Center"
+                           FontFamily="Consolas,Cascadia Mono,monospace" />
+              </StackPanel>
 
-              <ItemsControl ItemsSource="{Binding Rules}" Margin="12,0,0,0">
-                <ItemsControl.ItemTemplate>
-                  <DataTemplate x:DataType="vm:LiveCssRuleViewModel">
-                    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
-                            BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,4">
-                      <StackPanel Spacing="4">
-                        <Button Content="{Binding Header}" Command="{Binding JumpCommand}"
-                                HorizontalAlignment="Left" Padding="0" Background="Transparent"
-                                BorderThickness="0" FontFamily="Consolas,Cascadia Mono,monospace"
-                                HorizontalContentAlignment="Left" />
-                        <ItemsControl ItemsSource="{Binding Declarations}" Margin="12,0,0,0">
-                          <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="vm:LiveCssDeclarationViewModel">
-                              <WrapPanel Opacity="{Binding IsDimmed, Converter={x:Static infra:OverriddenDeclarationConverters.Opacity}}">
-                                <TextBlock Text="{Binding Text}" FontFamily="Consolas,Cascadia Mono,monospace"
-                                           TextDecorations="{Binding IsOverridden, Converter={x:Static infra:OverriddenDeclarationConverters.Strikethrough}}" />
-                                <TextBlock Text="{Binding OverriddenByText}" IsVisible="{Binding HasOverriddenBy}"
-                                           FontFamily="Consolas,Cascadia Mono,monospace" FontStyle="Italic"
-                                           Margin="8,0,0,0" />
-                              </WrapPanel>
-                            </DataTemplate>
-                          </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                      </StackPanel>
-                    </Border>
-                  </DataTemplate>
-                </ItemsControl.ItemTemplate>
-              </ItemsControl>
+              <!-- Under the header of the element under the caret: what it inherits from its ancestors. -->
+              <CheckBox IsVisible="{Binding IsInspectedElement}" Margin="12,0,0,0"
+                        Content="{loc:Loc LiveCssPanelWindow_ShowInherited}"
+                        IsChecked="{Binding Panel.ShowInherited, Mode=TwoWay}" />
+
+              <StackPanel IsVisible="{Binding IsExpanded}" Spacing="6">
+                <Border IsVisible="{Binding Panel.ShowInherited}" Margin="12,0,0,0">
+                  <Border IsVisible="{Binding Panel.HasInherited}"
+                          BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                          BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,4">
+                    <StackPanel Spacing="4">
+                      <TextBlock Text="{loc:Loc LiveCssPanelWindow_InheritedHeader}" FontStyle="Italic"
+                                 FontFamily="Consolas,Cascadia Mono,monospace"
+                                 Foreground="{DynamicResource SignetMutedTextBrush}" />
+                      <ItemsControl ItemsSource="{Binding Panel.Inherited}" Margin="12,0,0,0">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="vm:LiveCssInheritedViewModel">
+                            <WrapPanel>
+                              <views:CssSyntaxText CssText="{Binding Text}"
+                                                   FontFamily="Consolas,Cascadia Mono,monospace" />
+                              <TextBlock Text="{Binding SourceText}" Margin="8,0,0,0" FontStyle="Italic"
+                                         FontFamily="Consolas,Cascadia Mono,monospace"
+                                         Foreground="{DynamicResource SignetMutedTextBrush}" />
+                            </WrapPanel>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </StackPanel>
+                  </Border>
+                </Border>
+
+                <TextBlock Text="{loc:Loc LiveCssPanelWindow_NoRules}" IsVisible="{Binding ShowNoRules}"
+                           Foreground="{DynamicResource SignetMutedTextBrush}" Margin="12,0,0,0" />
+
+                <ItemsControl ItemsSource="{Binding Rules}" Margin="12,0,0,0">
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:LiveCssRuleViewModel">
+                      <Border BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                              BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,4">
+                        <StackPanel Spacing="4">
+                          <Button Command="{Binding JumpCommand}" ToolTip.Tip="{Binding Header}"
+                                  HorizontalAlignment="Left" Padding="0" Background="Transparent"
+                                  BorderThickness="0" HorizontalContentAlignment="Left">
+                            <WrapPanel>
+                              <views:CssSyntaxText CssText="{Binding SelectorText}" IsSelector="True"
+                                                   FontFamily="Consolas,Cascadia Mono,monospace" />
+                              <TextBlock Text="{Binding HeaderSuffix}"
+                                         FontFamily="Consolas,Cascadia Mono,monospace"
+                                         Foreground="{DynamicResource SignetMutedTextBrush}" />
+                            </WrapPanel>
+                          </Button>
+                          <ItemsControl ItemsSource="{Binding Declarations}" Margin="12,0,0,0">
+                            <ItemsControl.ItemTemplate>
+                              <DataTemplate x:DataType="vm:LiveCssDeclarationViewModel">
+                                <WrapPanel Opacity="{Binding IsDimmed, Converter={x:Static infra:OverriddenDeclarationConverters.Opacity}}">
+                                  <views:CssSyntaxText CssText="{Binding Text}" FontFamily="Consolas,Cascadia Mono,monospace"
+                                                       TextDecorations="{Binding IsOverridden, Converter={x:Static infra:OverriddenDeclarationConverters.Strikethrough}}" />
+                                  <TextBlock Text="{Binding OverriddenByText}" IsVisible="{Binding HasOverriddenBy}"
+                                             FontFamily="Consolas,Cascadia Mono,monospace" FontStyle="Italic"
+                                             Margin="8,0,0,0" />
+                                </WrapPanel>
+                              </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                          </ItemsControl>
+                        </StackPanel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+              </StackPanel>
             </StackPanel>
           </DataTemplate>
         </ItemsControl.ItemTemplate>

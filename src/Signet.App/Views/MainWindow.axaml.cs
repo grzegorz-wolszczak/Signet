@@ -953,7 +953,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             return;
         }
 
-        _liveCssPanelViewModel ??= new LiveCssPanelViewModel();
+        _liveCssPanelViewModel ??= new LiveCssPanelViewModel(App.Services?.GetService<SettingsStore>());
         _liveCssPanelViewModel.Update(result, vm.GetResourceTextForLiveCssPanel, vm.JumpToCssLocation);
 
         if (_liveCssPanelWindow is null || !_liveCssPanelWindow.IsVisible)

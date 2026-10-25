@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Signet.App.Resources;
+using Signet.Core.Misc;
 using Signet.Core.Parsers;
 
 namespace Signet.App.ViewModels;
@@ -50,6 +52,29 @@ public sealed class LiveCssDeclarationViewModel
     public bool HasOverriddenBy => OverriddenByText.Length > 0;
 }
 
+/// <summary>
+/// One inherited property in effect on the inspected element ("Show inherited"): the declaration as it reads, plus
+/// the ancestor it comes from and where that rule is.
+/// </summary>
+public sealed class LiveCssInheritedViewModel
+{
+    internal LiveCssInheritedViewModel(CssInheritedDeclaration inherited, Func<string, string> resolveBookText)
+    {
+        Text = inherited.IsImportant
+            ? $"{inherited.Property}: {inherited.Value} !important;"
+            : $"{inherited.Property}: {inherited.Value};";
+        SourceText = Strings.Format(
+            "LiveCssPanelWindow_InheritedFrom",
+            $"{inherited.ElementDescription} \u2014 {LiveCssFormat.Location(inherited.Source.BookPath, inherited.Source.Offset, resolveBookText)}");
+    }
+
+    /// <summary>Declaration text to display (<c>property: value;</c>).</summary>
+    public string Text { get; }
+
+    /// <summary>"(inherited from div.a — style.css:12)".</summary>
+    public string SourceText { get; }
+}
+
 /// <summary>A single CSS rule matched to the element, with a clickable jump to its declaration.</summary>
 public sealed class LiveCssRuleViewModel
 {
@@ -58,6 +83,8 @@ public sealed class LiveCssRuleViewModel
         Header = rule.IsInlineStyle
             ? Strings.Get("LiveCssPanelWindow_Inline")
             : FormatHeader(rule, resolveBookText);
+        SelectorText = rule.IsInlineStyle ? Strings.Get("LiveCssPanelWindow_Inline") : rule.SelectorText;
+        HeaderSuffix = rule.IsInlineStyle ? string.Empty : Header[SelectorText.Length..];
         Declarations = new ObservableCollection<LiveCssDeclarationViewModel>(
             rule.Declarations.Select(d => new LiveCssDeclarationViewModel(d, resolveBookText)));
         JumpCommand = new RelayCommand(() => jumpTo(rule.BookPath, rule.Offset));
@@ -65,6 +92,12 @@ public sealed class LiveCssRuleViewModel
 
     /// <summary>Rule header: selector, file:line, specificity.</summary>
     public string Header { get; }
+
+    /// <summary>The selector part of <see cref="Header"/> — shown in the colors of the CSS highlighter.</summary>
+    public string SelectorText { get; }
+
+    /// <summary>The rest of <see cref="Header"/> (file:line, specificity) — shown muted, beside the selector.</summary>
+    public string HeaderSuffix { get; }
 
     /// <summary>The rule's declarations, with the cascade result per property.</summary>
     public ObservableCollection<LiveCssDeclarationViewModel> Declarations { get; }
@@ -86,14 +119,22 @@ public sealed class LiveCssRuleViewModel
 /// One level of the element hierarchy in the Live CSS panel (from <c>body</c> down to the element under
 /// the caret) with the rules matched to that element.
 /// </summary>
-public sealed class LiveCssLevelViewModel
+public sealed partial class LiveCssLevelViewModel : ObservableObject
 {
-    internal LiveCssLevelViewModel(CssCascadeLevel level, Func<string, string> resolveBookText, Action<string, int> jumpTo)
+    internal LiveCssLevelViewModel(
+        CssCascadeLevel level,
+        LiveCssPanelViewModel panel,
+        bool isFirst,
+        Func<string, string> resolveBookText,
+        Action<string, int> jumpTo)
     {
+        ElementDescription = level.ElementDescription;
         Header = level.IsInspectedElement
             ? $"{level.ElementDescription}  {Strings.Get("LiveCssPanelWindow_InspectedElement")}"
             : level.ElementDescription;
         IsInspectedElement = level.IsInspectedElement;
+        Panel = panel;
+        ShowSeparator = !isFirst;
         Rules = new ObservableCollection<LiveCssRuleViewModel>(
             level.MatchedRules.Select(r => new LiveCssRuleViewModel(r, resolveBookText, jumpTo)));
     }
@@ -101,8 +142,31 @@ public sealed class LiveCssLevelViewModel
     /// <summary>Element description (e.g. <c>div.a</c>), marked for the element under the caret.</summary>
     public string Header { get; }
 
+    /// <summary>The element description alone — the key the panel remembers the collapsed levels by.</summary>
+    public string ElementDescription { get; }
+
     /// <summary>Whether this is the element under the caret (the last level).</summary>
     public bool IsInspectedElement { get; }
+
+    /// <summary>The panel this level belongs to — the view binds the "Show inherited" box to it.</summary>
+    public LiveCssPanelViewModel Panel { get; }
+
+    /// <summary>Whether a line is drawn above this level (every level but the first) to tell the levels apart.</summary>
+    public bool ShowSeparator { get; }
+
+    /// <summary>
+    /// Whether the rules of this level are shown. The element under the caret is what the panel is about, so it
+    /// cannot be collapsed; its ancestors can (<see cref="CanCollapse"/>).
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ExpandGlyph))]
+    private bool _isExpanded = true;
+
+    /// <summary>Whether this level can be collapsed — every level but the element under the caret.</summary>
+    public bool CanCollapse => !IsInspectedElement;
+
+    /// <summary>The triangle of the collapse button, pointing down when the level is open.</summary>
+    public string ExpandGlyph => IsExpanded ? "\u25be" : "\u25b8";
 
     /// <summary>Rules matched to this element, in source cascade order (inline style last).</summary>
     public ObservableCollection<LiveCssRuleViewModel> Rules { get; }
@@ -153,7 +217,21 @@ internal static class LiveCssFormat
 /// </summary>
 public sealed class LiveCssPanelViewModel : ViewModelBase
 {
+    private readonly SettingsStore? _settings;
+
+    // The levels the user collapsed, by element description: the panel is rebuilt on every caret move, and a level
+    // that was folded away has to stay folded while the window is open.
+    private readonly HashSet<string> _collapsed = new(StringComparer.Ordinal);
+
     private string _elementDescription = string.Empty;
+    private bool _showInherited;
+
+    /// <summary>Creates the panel; <paramref name="settings"/> keeps "Show inherited" between runs (<c>null</c>: not kept).</summary>
+    public LiveCssPanelViewModel(SettingsStore? settings = null)
+    {
+        _settings = settings;
+        _showInherited = settings?.LiveCssShowInherited ?? false;
+    }
 
     /// <summary>Short element description (e.g. <c>p.note#foo</c>) for the window header.</summary>
     public string ElementDescription
@@ -164,6 +242,32 @@ public sealed class LiveCssPanelViewModel : ViewModelBase
 
     /// <summary>The hierarchy levels, from <c>body</c> (first) down to the element under the caret (last).</summary>
     public ObservableCollection<LiveCssLevelViewModel> Levels { get; } = new();
+
+    /// <summary>
+    /// The properties the element under the caret inherits from its ancestors without setting them itself — shown
+    /// above its own rules when <see cref="ShowInherited"/>.
+    /// </summary>
+    public ObservableCollection<LiveCssInheritedViewModel> Inherited { get; } = new();
+
+    /// <summary>Whether there is anything inherited to show.</summary>
+    public bool HasInherited => Inherited.Count > 0;
+
+    /// <summary>
+    /// Whether the inherited properties are listed ("Show inherited", the check box under the header of the element
+    /// under the caret). Kept in the settings, so the panel opens the way it was left.
+    /// </summary>
+    public bool ShowInherited
+    {
+        get => _showInherited;
+        set
+        {
+            if (SetProperty(ref _showInherited, value) && _settings is not null)
+            {
+                _settings.LiveCssShowInherited = value;
+                _settings.Save();
+            }
+        }
+    }
 
     /// <summary>
     /// Replaces the panel content with the result for the newly chosen element.
@@ -190,10 +294,45 @@ public sealed class LiveCssPanelViewModel : ViewModelBase
         }
 
         ElementDescription = result.ElementDescription;
-        Levels.Clear();
-        foreach (CssCascadeLevel level in result.Levels)
+        foreach (LiveCssLevelViewModel old in Levels)
         {
-            Levels.Add(new LiveCssLevelViewModel(level, CachedText, jumpTo));
+            old.PropertyChanged -= OnLevelPropertyChanged;
+        }
+
+        Levels.Clear();
+        for (int i = 0; i < result.Levels.Count; i++)
+        {
+            LiveCssLevelViewModel level = new(result.Levels[i], this, i == 0, CachedText, jumpTo)
+            {
+                IsExpanded = !_collapsed.Contains(result.Levels[i].ElementDescription),
+            };
+            level.PropertyChanged += OnLevelPropertyChanged;
+            Levels.Add(level);
+        }
+
+        Inherited.Clear();
+        foreach (CssInheritedDeclaration inherited in result.Inherited)
+        {
+            Inherited.Add(new LiveCssInheritedViewModel(inherited, CachedText));
+        }
+
+        OnPropertyChanged(nameof(HasInherited));
+    }
+
+    private void OnLevelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(LiveCssLevelViewModel.IsExpanded) || sender is not LiveCssLevelViewModel level)
+        {
+            return;
+        }
+
+        if (level.IsExpanded)
+        {
+            _collapsed.Remove(level.ElementDescription);
+        }
+        else
+        {
+            _collapsed.Add(level.ElementDescription);
         }
     }
 }
