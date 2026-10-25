@@ -162,6 +162,16 @@ public static class AppActionIds
     // context menu items) so that they can be placed on a toolbar (icons: beautify / html-fix).
     public const string PrettifyCurrentHtml = "MainWindow.PrettifyCurrentHTML";
     public const string MendCurrentHtml = "MainWindow.MendCurrentHTML";
+
+    /// <summary>
+    /// "Prettify Stylesheet" — reformats the stylesheet of the current CSS tab into the multi-line form (the
+    /// "Reformat CSS → Multiple Lines Per Style" entry of the Code Editor context menu), as a catalog action so that
+    /// it can be put on a toolbar and given a shortcut.
+    /// </summary>
+    public const string PrettifyCurrentCss = "MainWindow.PrettifyCurrentCSS";
+
+    /// <summary>"Prettify All Stylesheets" — the same reformatting over every CSS file of the book.</summary>
+    public const string PrettifyAllCss = "MainWindow.PrettifyAllCSS";
     public const string WellFormedCheckEpub = "MainWindow.WellFormedCheckEpub";
     public const string ValidateStylesheetsWithW3C = "MainWindow.ValidateStylesheetsWithW3C";
     public const string Reports = "MainWindow.Reports";

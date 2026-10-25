@@ -874,6 +874,9 @@ Rozpakować mimo to?</value>
   <data name="CodeEditorMenu_CssSingleLine" xml:space="preserve">
     <value>Jedna linia na styl</value>
   </data>
+  <data name="CodeEditorMenu_CssPrettifyAll" xml:space="preserve">
+    <value>Upiększ wszystkie arkusze stylów</value>
+  </data>
   <data name="CodeEditorMenu_Undo" xml:space="preserve">
     <value>_Cofnij</value>
   </data>
@@ -2015,6 +2018,12 @@ Czy chcesz zapisać zmiany?</value>
   <data name="Action_MainWindow_MendCurrentHTML" xml:space="preserve">
     <value>Popraw kod bieżącego pliku</value>
   </data>
+  <data name="Action_MainWindow_PrettifyCurrentCSS" xml:space="preserve">
+    <value>Upiększ &amp;arkusz stylów</value>
+  </data>
+  <data name="Action_MainWindow_PrettifyAllCSS" xml:space="preserve">
+    <value>Upiększ &amp;wszystkie arkusze stylów</value>
+  </data>
   <data name="Action_MainWindow_MendPrettifyHTML" xml:space="preserve">
     <value>&amp;Upiększ wszystkie pliki HTML</value>
   </data>
@@ -2282,6 +2291,9 @@ Czy chcesz zapisać zmiany?</value>
   <data name="Menu_ReformatHTML" xml:space="preserve">
     <value>Prze&amp;formatuj HTML</value>
   </data>
+  <data name="Menu_ReformatCSS" xml:space="preserve">
+    <value>Przeformatuj &amp;CSS</value>
+  </data>
   <data name="Menu_Epub3Tools" xml:space="preserve">
     <value>Narzędzia EPUB &amp;3</value>
   </data>
@@ -2474,6 +2486,9 @@ Czy chcesz zapisać zmiany?</value>
   <data name="Operation_MendPrettifyAll" xml:space="preserve">
     <value>Upiększanie wszystkich plików HTML</value>
   </data>
+  <data name="Operation_PrettifyAllCss" xml:space="preserve">
+    <value>Upiększanie wszystkich arkuszy stylów</value>
+  </data>
   <data name="Operation_AddSoftHyphens" xml:space="preserve">
     <value>Dodawanie miękkich dywizów</value>
   </data>
@@ -2494,6 +2509,9 @@ Czy chcesz zapisać zmiany?</value>
   </data>
   <data name="Status_MendPrettifyAllDone" xml:space="preserve">
     <value>Zakończono upiększanie wszystkich plików.</value>
+  </data>
+  <data name="Status_PrettifyAllCssDone" xml:space="preserve">
+    <value>Zakończono upiększanie wszystkich arkuszy stylów.</value>
   </data>
   <data name="Status_MendAllDone" xml:space="preserve">
     <value>Zakończono poprawianie wszystkich plików.</value>

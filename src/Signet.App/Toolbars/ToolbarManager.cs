@@ -61,8 +61,8 @@ public sealed class ToolbarManager
         [ToolbarId.Tools] = new[]
         {
             AppActionIds.MetaEditor, AppActionIds.GenerateToc, AppActionIds.EditToc, AppActionIds.SpellcheckEditor,
-            // Prettify / Mend the current file.
-            Separator, AppActionIds.PrettifyCurrentHtml, AppActionIds.MendCurrentHtml,
+            // Prettify / Mend the current file — the HTML pair and, for a stylesheet, Prettify Stylesheet.
+            Separator, AppActionIds.PrettifyCurrentHtml, AppActionIds.MendCurrentHtml, AppActionIds.PrettifyCurrentCss,
         },
         [ToolbarId.Heading] = new[] { HeadingsMenu },
         [ToolbarId.Format] = new[]
