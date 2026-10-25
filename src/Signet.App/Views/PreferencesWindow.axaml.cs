@@ -939,6 +939,29 @@ public partial class PreferencesWindow : Window
         await Launcher.LaunchDirectoryInfoAsync(new DirectoryInfo(AppDirectories.EnsurePrefsDirectory()));
     }
 
+    // "Browse…" next to the temp folder: a folder dialog, starting at the folder in use.
+    private async void OnPickTempFolderClicked(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not PreferencesViewModel vm)
+        {
+            return;
+        }
+
+        IStorageFolder? start = vm.TempFolderHome.Length > 0
+            ? await StorageProvider.TryGetFolderFromPathAsync(vm.TempFolderHome)
+            : null;
+        IReadOnlyList<IStorageFolder> folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = Strings.Get("PreferencesWindow_TempFolderBrowseTitle"),
+            AllowMultiple = false,
+            SuggestedStartLocation = start,
+        });
+        if (folders.Count > 0 && folders[0].TryGetLocalPath() is { Length: > 0 } path)
+        {
+            vm.TempFolderHome = path;
+        }
+    }
+
     private void OnUserWordSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (DataContext is PreferencesViewModel vm && sender is ListBox list)

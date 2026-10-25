@@ -146,7 +146,6 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _startScreenRecentFilesLimit = _settings.StartScreenRecentFilesLimit;
         _previewRefreshDelay = _settings.UiPreviewTimeout;
         _tempFolderHome = _settings.TempFolderHome;
-        _externalXEditorPath = _settings.ExternalXEditorPath;
         _cssEpub2ValidationSpec = _settings.CssEpub2ValidationSpec;
         _cssEpub3ValidationSpec = _settings.CssEpub3ValidationSpec;
 
@@ -958,15 +957,25 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
     /// <summary>Parent directory of the working directory (empty = the system default).</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TempFolderDisplay))]
+    [NotifyPropertyChangedFor(nameof(HasCustomTempFolder))]
     private string _tempFolderHome;
 
     partial void OnTempFolderHomeChanged(string value) => _settings.TempFolderHome = value;
 
-    /// <summary>Path to the external XHTML editor.</summary>
-    [ObservableProperty]
-    private string _externalXEditorPath;
+    /// <summary>
+    /// What the page shows for the temp folder: the chosen one, or a note that the system default is in use. The
+    /// folder is picked in a folder dialog, so the page shows the setting instead of letting it be typed in.
+    /// </summary>
+    public string TempFolderDisplay =>
+        TempFolderHome.Length > 0 ? TempFolderHome : Strings.Get("PreferencesWindow_TempFolderDefault");
 
-    partial void OnExternalXEditorPathChanged(string value) => _settings.ExternalXEditorPath = value;
+    /// <summary>Whether a folder of one's own is set — only then has "Clear" anything to undo.</summary>
+    public bool HasCustomTempFolder => TempFolderHome.Length > 0;
+
+    /// <summary>Goes back to the default temp folder (the system one).</summary>
+    [RelayCommand]
+    private void ClearTempFolder() => TempFolderHome = string.Empty;
 
     /// <summary>Available W3C CSS validation profiles.</summary>
     public static IReadOnlyList<string> AvailableCssValidationSpecs { get; } = new[] { "css2", "css21", "css3", "css30" };

@@ -633,10 +633,22 @@
     <value>Ramka wokół bloku</value>
   </data>
   <data name="PreferencesWindow_TempFolder" xml:space="preserve">
-    <value>Folder tymczasowy (pusty = domyślny):</value>
+    <value>Folder tymczasowy:</value>
   </data>
-  <data name="PreferencesWindow_ExternalXEditorPath" xml:space="preserve">
-    <value>Ścieżka zewnętrznego edytora XHTML:</value>
+  <data name="PreferencesWindow_TempFolderDefault" xml:space="preserve">
+    <value>(domyślny folder systemowy)</value>
+  </data>
+  <data name="PreferencesWindow_TempFolderBrowse" xml:space="preserve">
+    <value>Wybierz…</value>
+  </data>
+  <data name="PreferencesWindow_TempFolderBrowseTitle" xml:space="preserve">
+    <value>Wybierz folder tymczasowy</value>
+  </data>
+  <data name="PreferencesWindow_TempFolderClear" xml:space="preserve">
+    <value>Wyczyść</value>
+  </data>
+  <data name="PreferencesWindow_TempFolderClearTip" xml:space="preserve">
+    <value>Wróć do domyślnego folderu tymczasowego</value>
   </data>
   <data name="PreferencesWindow_CssEpub2Profile" xml:space="preserve">
     <value>Profil walidacji CSS W3C dla EPUB 2:</value>

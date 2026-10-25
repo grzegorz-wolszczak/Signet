@@ -124,6 +124,10 @@
     <Style Selector="Grid.labeled > ComboBox">
       <Setter Property="HorizontalAlignment" Value="Stretch" />
     </Style>
+    <!-- A label of two lines must not stretch the spinner next to it over both of them. -->
+    <Style Selector="Grid.labeled > NumericUpDown">
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
   </Window.Styles>
 
   <Window.Resources>
@@ -1126,34 +1130,43 @@
                                Increment="1" FormatString="0" Width="130" HorizontalAlignment="Right" />
               </Grid>
 
-              <Grid Classes="labeled" ColumnDefinitions="260,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8" Margin="0,6,0,0">
+              <Grid Classes="labeled" ColumnDefinitions="260,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8" Margin="0,6,0,0">
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_ClipboardHistoryLimit}" VerticalAlignment="Center" />
                 <NumericUpDown x:Name="ClipboardHistoryLimitBox" Grid.Row="0" Grid.Column="1" Value="{Binding ClipboardHistoryLimit}"
                                Minimum="0" Maximum="{x:Static vm:PreferencesViewModel.ClipboardHistoryLimitMax}"
                                Increment="1" FormatString="0" Width="130" HorizontalAlignment="Right" />
 
-                <TextBlock Grid.Row="5" Grid.Column="0" Text="{loc:Loc PreferencesWindow_RecentFilesLimit}" VerticalAlignment="Center" TextWrapping="Wrap" />
-                <NumericUpDown x:Name="GeneralRecentFilesLimitBox" Grid.Row="5" Grid.Column="1" Value="{Binding RecentFilesLimit}"
+                <TextBlock Grid.Row="4" Grid.Column="0" Text="{loc:Loc PreferencesWindow_RecentFilesLimit}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                <NumericUpDown x:Name="GeneralRecentFilesLimitBox" Grid.Row="4" Grid.Column="1" Value="{Binding RecentFilesLimit}"
                                Minimum="0" Maximum="{x:Static vm:PreferencesViewModel.RecentFilesLimitMax}"
                                Increment="1" FormatString="0" Width="130" HorizontalAlignment="Right" />
 
-                <TextBlock Grid.Row="6" Grid.Column="0" Text="{loc:Loc PreferencesWindow_RecentLocationsLimit}" VerticalAlignment="Center" TextWrapping="Wrap" />
-                <NumericUpDown x:Name="RecentLocationsLimitBox" Grid.Row="6" Grid.Column="1" Value="{Binding RecentLocationsLimit}"
+                <TextBlock Grid.Row="5" Grid.Column="0" Text="{loc:Loc PreferencesWindow_RecentLocationsLimit}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                <NumericUpDown x:Name="RecentLocationsLimitBox" Grid.Row="5" Grid.Column="1" Value="{Binding RecentLocationsLimit}"
                                Minimum="1" Maximum="{x:Static vm:PreferencesViewModel.RecentLocationsLimitMax}"
                                Increment="1" FormatString="0" Width="130" HorizontalAlignment="Right" />
 
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_TempFolder}" VerticalAlignment="Center" />
-                <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding TempFolderHome}" />
+                <!-- The folder is chosen in a folder dialog, so the setting is shown, not typed in; "Clear" goes back
+                     to the system default and is enabled only while a folder of one's own is set. -->
+                <Grid Grid.Row="1" Grid.Column="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+                  <TextBlock x:Name="TempFolderValue" Grid.Column="0" Text="{Binding TempFolderDisplay}"
+                             VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                             ToolTip.Tip="{Binding TempFolderDisplay}" />
+                  <Button x:Name="TempFolderBrowseButton" Grid.Column="1" Click="OnPickTempFolderClicked"
+                          Content="{loc:Loc PreferencesWindow_TempFolderBrowse}" />
+                  <Button x:Name="TempFolderClearButton" Grid.Column="2" Command="{Binding ClearTempFolderCommand}"
+                          IsEnabled="{Binding HasCustomTempFolder}"
+                          Content="{loc:Loc PreferencesWindow_TempFolderClear}"
+                          ToolTip.Tip="{loc:Loc PreferencesWindow_TempFolderClearTip}" />
+                </Grid>
 
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc PreferencesWindow_ExternalXEditorPath}" VerticalAlignment="Center" />
-                <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding ExternalXEditorPath}" />
-
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Loc PreferencesWindow_CssEpub2Profile}" VerticalAlignment="Center" />
-                <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding AvailableCssValidationSpecs}"
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc PreferencesWindow_CssEpub2Profile}" VerticalAlignment="Center" />
+                <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding AvailableCssValidationSpecs}"
                           SelectedItem="{Binding CssEpub2ValidationSpec}" />
 
-                <TextBlock Grid.Row="4" Grid.Column="0" Text="{loc:Loc PreferencesWindow_CssEpub3Profile}" VerticalAlignment="Center" />
-                <ComboBox Grid.Row="4" Grid.Column="1" ItemsSource="{Binding AvailableCssValidationSpecs}"
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Loc PreferencesWindow_CssEpub3Profile}" VerticalAlignment="Center" />
+                <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding AvailableCssValidationSpecs}"
                           SelectedItem="{Binding CssEpub3ValidationSpec}" />
               </Grid>
             </StackPanel>
