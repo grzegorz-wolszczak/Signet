@@ -49,6 +49,7 @@ public sealed partial class MainWindowViewModel : IBookOperationHost
     [
         AppActionIds.MendPrettifyHtml,
         AppActionIds.MendHtml,
+        AppActionIds.PrettifyAllCss,
         AppActionIds.AddSoftHyphens,
         AppActionIds.RemoveSoftHyphens,
         AppActionIds.WellFormedCheckEpub,

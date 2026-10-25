@@ -420,6 +420,8 @@ public sealed partial class MainWindowViewModel
         _actions.SetHandler(AppActionIds.MendHtml, () => RunAsyncAction(MendHtmlAsync));
         _actions.SetHandler(AppActionIds.PrettifyCurrentHtml, () => RunAsyncAction(() => ActiveCodeTab?.ReformatHtmlAsync(toValid: false) ?? Task.CompletedTask));
         _actions.SetHandler(AppActionIds.MendCurrentHtml, () => RunAsyncAction(MendCurrentFileAsync));
+        _actions.SetHandler(AppActionIds.PrettifyCurrentCss, () => ActiveCodeTab?.ReformatCss(multipleLineFormat: true));
+        _actions.SetHandler(AppActionIds.PrettifyAllCss, () => RunAsyncAction(PrettifyAllCssAsync));
         _actions.SetHandler(AppActionIds.AddSoftHyphens, () => RunAsyncAction(AddSoftHyphensAsync));
         _actions.SetHandler(AppActionIds.RemoveSoftHyphens, () => RunAsyncAction(RemoveSoftHyphensAsync));
         _actions.SetHandler(AppActionIds.StandardizeEpub, () => StandardizeEpubRequested?.Invoke(this, EventArgs.Empty));
@@ -2788,6 +2790,31 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <summary>
+    /// "Prettify All Stylesheets" — the multi-line form over every CSS file of the book. A stylesheet whose
+    /// structure is broken is skipped and reported, the rest is reformatted.
+    /// </summary>
+    private async Task PrettifyAllCssAsync()
+    {
+        if (_currentBook is null)
+        {
+            return;
+        }
+
+        _tabManager.SaveAllTabs();
+        Book book = _currentBook;
+        string title = ActionLabel(AppActionIds.PrettifyAllCss);
+        BookOperationOutcome<FileBatchResult> run = await RunBookOperationAsync(
+            title, title, editsBook: true,
+            (progress, cancel) => book.ReformatAllCss(
+                multipleLineFormat: true, new FileBatchRun(new FileBatchProgressMap(progress), cancel)))
+            .ConfigureAwait(true);
+        if (run.Completed)
+        {
+            FinishFileBatch(run.Result!, run.Checkpoint, "Operation_PrettifyAllCss", "Status_PrettifyAllCssDone");
+        }
+    }
+
+    /// <summary>
     /// "Mend All HTML Files" — without the well-formed guard, since repairing such files is exactly what Mend does.
     /// A file the repair fails on is skipped and the rest goes on.
     /// </summary>
@@ -3995,6 +4022,7 @@ public sealed partial class MainWindowViewModel
         _actions.SetEnabled(
             tab?.IsHtmlFlow ?? false, AppActionIds.PrettifyCurrentHtml, AppActionIds.MendCurrentHtml, AppActionIds.SplitSection,
             AppActionIds.SplitOnSgfSectionMarkers);
+        _actions.SetEnabled(tab?.IsCss ?? false, AppActionIds.PrettifyCurrentCss);
         _actions.SetEnabled(
             tab?.SupportsTagStructure ?? false,
             AppActionIds.JumpToOpeningTag, AppActionIds.JumpToClosingTag, AppActionIds.SelectTagContents,

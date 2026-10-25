@@ -1170,6 +1170,41 @@ public sealed class Book : IDisposable
     }
 
     /// <summary>
+    /// "Prettify All Stylesheets" — reformats every CSS resource of the book into the multi-line form (each property
+    /// on its own line) or the single-line form, exactly as "Reformat CSS" does for the stylesheet open in the Code
+    /// Editor (<see cref="CssInfo.GetReformattedCssText"/>). A stylesheet whose structure is broken
+    /// (<see cref="CssWellFormedChecker"/>) is skipped (left unchanged) and the rest is processed; the skipped files are
+    /// listed in the result — without that guard the reformatting would silently return such a stylesheet unchanged
+    /// and the user would be told nothing.
+    /// </summary>
+    /// <param name="multipleLineFormat">Each property on its own line (<c>true</c>) or one line per rule.</param>
+    /// <param name="run">Reports the progress and can stop it.</param>
+    public FileBatchResult ReformatAllCss(bool multipleLineFormat, FileBatchRun run = default) =>
+        ProcessTextFiles(
+            GetCssResources(),
+            CssStructureGuard,
+            css =>
+            {
+                string original = css.GetText();
+                string formatted = new CssInfo(original).GetReformattedCssText(multipleLineFormat);
+                if (string.Equals(formatted, original, StringComparison.Ordinal))
+                {
+                    return false;
+                }
+
+                css.SetText(formatted);
+                return true;
+            },
+            run);
+
+    // The structure guard of ReformatAllCss: the reason the stylesheet is skipped, or null when it may be reformatted.
+    private static SkippedFile? CssStructureGuard(CssResource css)
+    {
+        WellFormedResult check = CssWellFormedChecker.Check(css.GetText());
+        return check.IsWellFormed ? null : new SkippedFile(css.BookPath, check.Message, check.Line, check.Column);
+    }
+
+    /// <summary>
     /// "Add soft hyphens" — inserts soft hyphens via <see cref="SoftHyphenInserter"/>
     /// in the content of all the book's HTML resources. A file that is not well-formed is skipped
     /// (left unchanged) and the rest is processed; the skipped files are listed in the result.
@@ -1210,31 +1245,49 @@ public sealed class Book : IDisposable
     /// <see cref="Modified"/> when any file changed.
     /// </summary>
     private FileBatchResult ProcessHtmlFiles(
-        IEnumerable<HtmlResource> resources, bool requireWellFormed, Func<HtmlResource, bool> process, FileBatchRun run = default)
+        IEnumerable<HtmlResource> resources, bool requireWellFormed, Func<HtmlResource, bool> process, FileBatchRun run = default) =>
+        ProcessTextFiles(resources, requireWellFormed ? WellFormedXhtmlGuard : null, process, run);
+
+    // The well-formed guard of ProcessHtmlFiles: the reason the file is skipped, or null when it may be processed.
+    private static SkippedFile? WellFormedXhtmlGuard(HtmlResource html)
+    {
+        WellFormedResult check = WellFormedChecker.CheckXhtmlStructure(html.GetText(), html.EpubVersion);
+        return check.IsWellFormed ? null : new SkippedFile(html.BookPath, check.Message, check.Line, check.Column);
+    }
+
+    /// <summary>
+    /// Runs <paramref name="process"/> (it returns whether it changed the file) over each of
+    /// <paramref name="resources"/>, one file at a time. A file <paramref name="guard"/> (when there is one) refuses, or
+    /// for which the guard, reading or <paramref name="process"/> throws, is skipped with the reason, and the rest goes
+    /// on — so one broken file does not stop an operation on the whole book. Sets <see cref="Modified"/> when any
+    /// file changed.
+    /// </summary>
+    private FileBatchResult ProcessTextFiles<TResource>(
+        IEnumerable<TResource> resources,
+        Func<TResource, SkippedFile?>? guard,
+        Func<TResource, bool> process,
+        FileBatchRun run)
+        where TResource : TextResource
     {
         List<SkippedFile> skipped = new();
-        List<HtmlResource> files = resources as List<HtmlResource> ?? resources.ToList();
+        List<TResource> files = resources as List<TResource> ?? resources.ToList();
         int processed = 0;
         int gone = 0;
         bool modified = false;
-        foreach (HtmlResource html in files)
+        foreach (TResource file in files)
         {
             // Between two files: what was done stays done (the caller that cancels rewinds the book).
             run.Cancellation.ThrowIfCancellationRequested();
-            run.Progress?.Report(new FileBatchProgress(gone++, files.Count, html.BookPath));
+            run.Progress?.Report(new FileBatchProgress(gone++, files.Count, file.BookPath));
             try
             {
-                if (requireWellFormed)
+                if (guard?.Invoke(file) is { } reason)
                 {
-                    WellFormedResult check = WellFormedChecker.CheckXhtmlStructure(html.GetText(), html.EpubVersion);
-                    if (!check.IsWellFormed)
-                    {
-                        skipped.Add(new SkippedFile(html.BookPath, check.Message, check.Line, check.Column));
-                        continue;
-                    }
+                    skipped.Add(reason);
+                    continue;
                 }
 
-                if (process(html))
+                if (process(file))
                 {
                     modified = true;
                 }
@@ -1243,7 +1296,7 @@ public sealed class Book : IDisposable
             }
             catch (Exception ex) when (ex is not OutOfMemoryException)
             {
-                skipped.Add(new SkippedFile(html.BookPath, ex.Message));
+                skipped.Add(new SkippedFile(file.BookPath, ex.Message));
             }
         }
 

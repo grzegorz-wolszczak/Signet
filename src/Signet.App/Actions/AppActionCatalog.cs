@@ -173,6 +173,10 @@ public static class AppActionCatalog
         // See the comment on AppActionIds.PrettifyCurrentHtml.
         new("MainWindow.PrettifyCurrentHTML", "Prettify Code", "", "beautify", "Tools"),
         new("MainWindow.MendCurrentHTML", "Mend Code", "", "html-fix", "Tools"),
+        // Reformat CSS — the current stylesheet and every stylesheet of the book (the beautify icon of their HTML
+        // counterparts: the two are never enabled at the same time, one wants an HTML tab and the other a CSS tab).
+        new("MainWindow.PrettifyCurrentCSS", "Prettify &Stylesheet", "", "beautify", "Tools"),
+        new("MainWindow.PrettifyAllCSS", "Prettify &All Stylesheets", "", "beautify", "Tools"),
         new("MainWindow.WellFormedCheckEpub", "Well-Formed Check &EPUB", "F7", "check-wellformed", "Tools"),
         new("MainWindow.ValidateStylesheetsWithW3C", "Validate Stylesheets With &W3C", "", "validate-css", "Tools"),
         new("MainWindow.Reports", "&Reports...", "Ctrl+Shift+R", "reports", "Tools"),

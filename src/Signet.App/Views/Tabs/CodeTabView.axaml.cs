@@ -858,8 +858,22 @@ public partial class CodeTabView : UserControl
         if (vm.IsCss)
         {
             MenuItem reformatCss = new() { Header = Strings.Get("CodeEditorMenu_ReformatCss") };
-            reformatCss.Items.Add(Item(Strings.Get("CodeEditorMenu_CssMultipleLines"), () => vm.ReformatCss(multipleLineFormat: true)));
+            reformatCss.Items.Add(Item(
+                Strings.Get("CodeEditorMenu_CssMultipleLines"),
+                () => vm.ReformatCss(multipleLineFormat: true),
+                "beautify",
+                gesture: host?.GetActionGesture(AppActionIds.PrettifyCurrentCss)));
             reformatCss.Items.Add(Item(Strings.Get("CodeEditorMenu_CssSingleLine"), () => vm.ReformatCss(multipleLineFormat: false)));
+            if (host is not null)
+            {
+                reformatCss.Items.Add(new Separator());
+                reformatCss.Items.Add(Item(
+                    Strings.Get("CodeEditorMenu_CssPrettifyAll"),
+                    () => host.ExecuteAction(AppActionIds.PrettifyAllCss),
+                    "beautify",
+                    gesture: host.GetActionGesture(AppActionIds.PrettifyAllCss)));
+            }
+
             items.Add(reformatCss);
             items.Add(new Separator());
         }

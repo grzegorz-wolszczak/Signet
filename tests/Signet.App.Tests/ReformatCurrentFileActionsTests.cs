@@ -13,8 +13,8 @@ using Xunit;
 namespace Signet.App.Tests;
 
 /// <summary>
-/// The "Prettify Code" / "Mend Code" actions for the current file: Tools toolbar buttons with the
-/// beautify / html-fix icons.
+/// The "Prettify Code" / "Mend Code" / "Prettify Stylesheet" actions for the current file: Tools toolbar buttons with
+/// the beautify / html-fix icons.
 /// </summary>
 public sealed class ReformatCurrentFileActionsTests : IDisposable
 {
@@ -40,6 +40,14 @@ public sealed class ReformatCurrentFileActionsTests : IDisposable
     private static CodeTabViewModel OpenHtml(MainWindowViewModel vm, Book book, string text)
     {
         vm.Tabs.OpenResources(new Resource[] { book.GetAllResources().OfType<HtmlResource>().First() });
+        CodeTabViewModel tab = vm.ActiveCodeTab!;
+        tab.Document.Text = text;
+        return tab;
+    }
+
+    private static CodeTabViewModel OpenCss(MainWindowViewModel vm, Book book, string text)
+    {
+        vm.Tabs.OpenResources(new Resource[] { book.GetAllResources().OfType<CssResource>().First() });
         CodeTabViewModel tab = vm.ActiveCodeTab!;
         tab.Document.Text = text;
         return tab;
@@ -71,6 +79,61 @@ public sealed class ReformatCurrentFileActionsTests : IDisposable
         // Assert
         prettify.IsEnabled.Should().BeTrue();
         mend.IsEnabled.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Prettify_stylesheet_is_enabled_only_for_a_css_code_tab()
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        (MainWindowViewModel vm, Book book) = Open(temp);
+        AppAction prettifyCss = vm.Actions.Require(AppActionIds.PrettifyCurrentCss);
+
+        // Act & Assert
+        prettifyCss.IsEnabled.Should().BeFalse("no code tab is open");
+
+        // Act
+        OpenHtml(vm, book, Unformatted);
+
+        // Assert
+        prettifyCss.IsEnabled.Should().BeFalse("an HTML file is not a stylesheet");
+
+        // Act
+        OpenCss(vm, book, "p { margin: 0; text-indent: 1em; }");
+
+        // Assert
+        prettifyCss.IsEnabled.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Prettify_stylesheet_reformats_the_current_stylesheet_into_the_multi_line_form()
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        (MainWindowViewModel vm, Book book) = Open(temp);
+        CodeTabViewModel tab = OpenCss(vm, book, "p { margin: 0; text-indent: 1em; }");
+
+        // Act
+        vm.Actions.Require(AppActionIds.PrettifyCurrentCss).Execute(null);
+
+        // Assert
+        tab.Document.Text.Should().Contain("margin: 0;\n").And.Contain("text-indent: 1em;\n");
+    }
+
+    [Fact]
+    public void Prettify_stylesheet_leaves_a_stylesheet_with_a_broken_structure_unchanged()
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        (MainWindowViewModel vm, Book book) = Open(temp);
+        const string Broken = "p { margin: 0;";
+        CodeTabViewModel tab = OpenCss(vm, book, Broken);
+
+        // Act
+        vm.Actions.Require(AppActionIds.PrettifyCurrentCss).Execute(null);
+
+        // Assert
+        tab.Document.Text.Should().Be(Broken);
     }
 
     [Fact]
@@ -135,13 +198,16 @@ public sealed class ReformatCurrentFileActionsTests : IDisposable
         vm.Actions.Require(AppActionIds.MendPrettifyHtml).IconKey.Should().Be("beautify");
         vm.Actions.Require(AppActionIds.MendCurrentHtml).IconKey.Should().Be("html-fix");
         vm.Actions.Require(AppActionIds.MendHtml).IconKey.Should().Be("html-fix");
+        vm.Actions.Require(AppActionIds.PrettifyCurrentCss).IconKey.Should().Be("beautify");
+        vm.Actions.Require(AppActionIds.PrettifyAllCss).IconKey.Should().Be("beautify");
     }
 
     [Fact]
     public void Tools_toolbar_ends_with_prettify_and_mend_by_default()
     {
         // Act & Assert
-        ToolbarManager.GetDefaultItems(ToolbarId.Tools).TakeLast(3).Should().Equal(
-            ToolbarManager.Separator, AppActionIds.PrettifyCurrentHtml, AppActionIds.MendCurrentHtml);
+        ToolbarManager.GetDefaultItems(ToolbarId.Tools).TakeLast(4).Should().Equal(
+            ToolbarManager.Separator, AppActionIds.PrettifyCurrentHtml, AppActionIds.MendCurrentHtml,
+            AppActionIds.PrettifyCurrentCss);
     }
 }

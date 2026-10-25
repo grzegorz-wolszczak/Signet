@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using AwesomeAssertions;
 using Signet.Core.BookManipulation;
 using Signet.Core.Resources;
@@ -12,8 +13,9 @@ namespace Signet.Core.Tests.BookManipulation;
 
 /// <summary>
 /// Tests of the whole-book tidying operations: <see cref="Book.MendAllHtml"/>,
-/// <see cref="Book.PrettyPrintAllHtml"/>, <see cref="Book.RestructureToSignetNorm"/>,
-/// <see cref="Book.UseStandardFileExtensions"/>, <see cref="Book.RebaseManifestIds"/>.
+/// <see cref="Book.PrettyPrintAllHtml"/>, <see cref="Book.ReformatAllCss"/>,
+/// <see cref="Book.RestructureToSignetNorm"/>, <see cref="Book.UseStandardFileExtensions"/>,
+/// <see cref="Book.RebaseManifestIds"/>.
 /// </summary>
 public sealed class ReformatRestructureTests
 {
@@ -145,6 +147,118 @@ public sealed class ReformatRestructureTests
         files[0].GetText().Should().Contain("a   b", "the chapter links the stylesheet");
         files[1].GetText().Should().Contain("a   b", "the title page links the same stylesheet");
         files[2].GetText().Should().Contain("a b").And.NotContain("a   b", "the nav does not link it");
+    }
+
+    // ---------------------------------------------------------------------- Reformat CSS --- //
+
+    [Fact]
+    public void ReformatAllCss_puts_every_property_of_every_stylesheet_on_its_own_line()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadDeepFolders(temp);
+        CssResource linked = book.GetCssResources().Single();
+        CssResource added = book.CreateEmptyCssFile();
+        linked.SetText("p { margin: 0; text-indent: 1em; }");
+        added.SetText("h1 { color: red; font-size: 2em; }");
+
+        // Act
+        FileBatchResult result = book.ReformatAllCss(multipleLineFormat: true);
+
+        // Assert
+        result.Processed.Should().Be(2);
+        result.Modified.Should().BeTrue();
+        result.Skipped.Should().BeEmpty();
+        linked.GetText().Should().Contain("margin: 0;\n").And.Contain("text-indent: 1em;\n");
+        added.GetText().Should().Contain("color: red;\n").And.Contain("font-size: 2em;\n");
+        book.Modified.Should().BeTrue();
+    }
+
+    [Fact]
+    public void ReformatAllCss_puts_a_whole_rule_on_one_line_in_the_single_line_form()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadDeepFolders(temp);
+        CssResource css = book.GetCssResources().Single();
+        css.SetText("p {\n    margin: 0;\n    text-indent: 1em;\n}\n");
+
+        // Act
+        book.ReformatAllCss(multipleLineFormat: false);
+
+        // Assert
+        css.GetText().Should().Contain("p{margin:0;text-indent:1em;}");
+    }
+
+    /// <summary>
+    /// A stylesheet whose structure is broken is reported as skipped instead of silently coming back unchanged
+    /// (<c>CssInfo.GetReformattedCssText</c> returns the source text on a structural error).
+    /// </summary>
+    [Fact]
+    public void ReformatAllCss_skips_a_stylesheet_whose_structure_is_broken_and_formats_the_rest()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadDeepFolders(temp);
+        CssResource broken = book.GetCssResources().Single();
+        CssResource sound = book.CreateEmptyCssFile();
+        broken.SetText("p { margin: 0;");
+        sound.SetText("h1 { color: red; font-size: 2em; }");
+
+        // Act
+        FileBatchResult result = book.ReformatAllCss(multipleLineFormat: true);
+
+        // Assert
+        result.Processed.Should().Be(1);
+        result.Skipped.Should().ContainSingle().Which.BookPath.Should().Be(broken.BookPath);
+        broken.GetText().Should().Be("p { margin: 0;");
+        sound.GetText().Should().Contain("color: red;\n");
+    }
+
+    [Fact]
+    public void ReformatAllCss_is_idempotent()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadDeepFolders(temp);
+        book.GetCssResources().Single().SetText("p { margin: 0; text-indent: 1em; }");
+
+        // Act
+        book.ReformatAllCss(multipleLineFormat: true);
+        string[] afterFirstPass = book.GetCssResources().Select(r => r.GetText()).ToArray();
+
+        FileBatchResult secondPass = book.ReformatAllCss(multipleLineFormat: true);
+
+        // Assert
+        secondPass.Modified.Should().BeFalse();
+        book.GetCssResources().Select(r => r.GetText()).Should().Equal(afterFirstPass);
+    }
+
+    [Fact]
+    public void ReformatAllCss_reports_every_stylesheet_before_it_is_processed()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadDeepFolders(temp);
+        book.CreateEmptyCssFile();
+        List<CssResource> files = book.GetCssResources().ToList();
+        List<FileBatchProgress> reports = new();
+
+        // Act
+        book.ReformatAllCss(multipleLineFormat: true, new FileBatchRun(new Progress(reports), CancellationToken.None));
+
+        // Assert
+        reports.Select(r => r.BookPath).Should().Equal(files.Select(f => f.BookPath));
+        reports.Should().OnlyContain(r => r.Total == files.Count);
+    }
+
+    private sealed class Progress : IProgress<FileBatchProgress>
+    {
+        private readonly List<FileBatchProgress> _reports;
+
+        public Progress(List<FileBatchProgress> reports) => _reports = reports;
+
+        public void Report(FileBatchProgress value) => _reports.Add(value);
     }
 
     [Fact]

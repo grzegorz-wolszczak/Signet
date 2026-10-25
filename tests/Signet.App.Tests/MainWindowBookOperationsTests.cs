@@ -779,6 +779,70 @@ public sealed class MainWindowBookOperationsTests : IDisposable
     }
 
     [Fact]
+    public async Task Prettify_all_stylesheets_runs_behind_a_checkpoint_under_a_progress_window()
+    {
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel sut, Book book) = Open(temp, CorpusPaths.Epub3Minimal);
+            CssResource css = book.GetCssResources().Single();
+            css.SetText("p { margin: 0; text-indent: 1em; }");
+            int states = sut.CheckpointHistory.States.Count;
+            Runs runs = new(sut);
+            sut.ProgressRunner = runs.Runner;
+
+            // Act
+            sut.Actions.Require(AppActionIds.PrettifyAllCss).Execute(null);
+            await sut.WhenIdleAsync();
+
+            // Assert
+            css.GetText().Should().Contain("margin: 0;\n").And.Contain("text-indent: 1em;\n");
+            sut.StatusMessage.Should().Be(Strings.Get("Status_PrettifyAllCssDone"));
+            runs.Windows.Should().ContainSingle().Which.Should().Be((Label(AppActionIds.PrettifyAllCss), true));
+            runs.BusyWhileRunning.Should().Equal(true);
+            sut.CheckpointHistory.States.Should().HaveCount(states + 1, "the operation takes a checkpoint first");
+            sut.IsBookOperationBusy.Should().BeFalse();
+        });
+    }
+
+    /// <summary>
+    /// A stylesheet whose structure is broken cannot be reformatted: it is reported as skipped and left alone (the
+    /// reformatting itself returns such a stylesheet unchanged, so without the guard nothing would be said).
+    /// </summary>
+    [Fact]
+    public async Task Prettify_all_stylesheets_reports_a_stylesheet_with_a_broken_structure()
+    {
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel sut, Book book) = Open(temp, CorpusPaths.Epub3Minimal);
+            CssResource css = book.GetCssResources().Single();
+            css.SetText("p { margin: 0;");
+            int states = sut.CheckpointHistory.States.Count;
+            SkippedFilesReport? report = null;
+            sut.SkippedFilesReportRequested += (_, r) => report = r;
+            Runs runs = new(sut);
+            sut.ProgressRunner = runs.Runner;
+
+            // Act
+            sut.Actions.Require(AppActionIds.PrettifyAllCss).Execute(null);
+            await sut.WhenIdleAsync();
+
+            // Assert
+            css.GetText().Should().Be("p { margin: 0;", "a stylesheet that cannot be reformatted is left alone");
+            report.Should().NotBeNull();
+            report!.Skipped.Should().ContainSingle().Which.BookPath.Should().Be(css.BookPath);
+            sut.StatusMessage.Should().Be(Strings.Format(
+                "Status_BatchNothingProcessed", Strings.Get("Operation_PrettifyAllCss"), report.Skipped.Count));
+            sut.CheckpointHistory.States.Should().HaveCount(states, "nothing was processed, so the checkpoint is rewound");
+        });
+    }
+
+    [Fact]
     public async Task Renaming_a_class_in_the_whole_book_runs_behind_a_checkpoint()
     {
         await SingleThreadContext.RunAsync(async () =>
