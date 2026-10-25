@@ -3947,6 +3947,15 @@ Wstawić mimo to?</value>
   <data name="Cleanup_UnusedIds_Description" xml:space="preserve">
     <value>Usuwa atrybuty id w plikach XHTML, do których nic w książce nie prowadzi: ani link (w tym spis treści i nawigacja), ani odwołanie do ID (for, headers, aria-*, url(#…)), ani skrypt. Zostaje reszta znacznika. Zwalnia to elementy, które przez id nie mogły zostać usunięte ani scalone (puste znaczniki, gołe spany, sąsiednie i zagnieżdżone znaczniki &lt;div&gt;) — dlatego krok działa przed nimi.</value>
   </data>
+  <data name="Cleanup_InheritedAttributes_Title" xml:space="preserve">
+    <value>Usuń atrybuty powtarzające wartość odziedziczoną</value>
+  </data>
+  <data name="Cleanup_InheritedAttributes_Description" xml:space="preserve">
+    <value>Usuwa atrybuty, które powtarzają wartość, jaką element i tak ma po przodku: lang, xml:lang, dir oraz powtórzone deklaracje przestrzeni nazw (xmlns, xmlns:epub). Książki składane w InDesignie powtarzają lang="pl-PL" na każdym akapicie, choć ustawia go już &lt;body&gt;. Wartość, którą element ma w efekcie, nie zmienia się — znika tylko zapis. Zostaje zawsze ten najwyższy: jeśli potomek ma inny język niż przodek (pl-PL w de-DE), nie jest ruszany.</value>
+  </data>
+  <data name="Cleanup_InheritedAttributesWarning" xml:space="preserve">
+    <value>Atrybut, w który trafia selektor atrybutowy CSS ([lang], p[lang="pl-PL"], [dir] + p), jest oznaczony ⚠ i domyślnie odznaczony; pod nim widać, co by się zmieniło. Selektory :lang() i :dir() działają dalej — badają wartość w efekcie, a ta zostaje. dir="auto" nie jest usuwany nigdy: wylicza kierunek z własnego tekstu elementu, więc pod innym auto może dać inny wynik.</value>
+  </data>
   <data name="Cleanup_UnusedIds_Summary" xml:space="preserve">
     <value>Pozycje do wykonania: {0} z {1} (usuwanych atrybutów id: {2}).</value>
   </data>
@@ -4649,6 +4658,18 @@ Nie zmienia plików, ich nazw ani ID.</value>
   </data>
   <data name="FindUsages_KindIdAttribute" xml:space="preserve">
     <value>atrybut id</value>
+  </data>
+  <data name="FindUsages_KindLanguageAttribute" xml:space="preserve">
+    <value>atrybut języka</value>
+  </data>
+  <data name="FindUsages_HeaderLanguage" xml:space="preserve">
+    <value>Język „{0}” — miejsca, które go ustawiają</value>
+  </data>
+  <data name="Status_FindUsagesLanguage" xml:space="preserve">
+    <value>Język „{0}”: {1}</value>
+  </data>
+  <data name="CodeEditorMenu_FindLanguageUsages" xml:space="preserve">
+    <value>Znajdź użycia języka „{0}”</value>
   </data>
   <data name="FindUsages_KindSelector" xml:space="preserve">
     <value>selektor CSS</value>

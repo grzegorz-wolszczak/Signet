@@ -3947,6 +3947,15 @@ Insert anyway?</value>
   <data name="Cleanup_UnusedIds_Description" xml:space="preserve">
     <value>Removes id attributes in the XHTML files that nothing in the book points to: no link (the table of contents and navigation included), no ID reference (for, headers, aria-*, url(#…)) and no script. The rest of the tag stays. This frees elements that an id kept from being removed or merged (empty tags, bare spans, adjacent and nested &lt;div&gt;s) — which is why the step runs before them.</value>
   </data>
+  <data name="Cleanup_InheritedAttributes_Title" xml:space="preserve">
+    <value>Remove attributes that only repeat an inherited value</value>
+  </data>
+  <data name="Cleanup_InheritedAttributes_Description" xml:space="preserve">
+    <value>Removes the attributes that repeat a value the element already has from an ancestor: lang, xml:lang, dir and repeated namespace declarations (xmlns, xmlns:epub). Books set in InDesign repeat lang="pl-PL" on every paragraph although &lt;body&gt; already states it. The value the element ends up with does not change — only the writing of it goes. The topmost one always stays: a descendant with a language of its own (pl-PL inside de-DE) is left alone.</value>
+  </data>
+  <data name="Cleanup_InheritedAttributesWarning" xml:space="preserve">
+    <value>An attribute a CSS attribute selector reaches ([lang], p[lang="pl-PL"], [dir] + p) is marked ⚠ and left unchecked; under it you can see what would change. :lang() and :dir() go on working — they test the value in effect, which stays. dir="auto" is never removed: it works the direction out from the element's own text, so under another auto it can come out different.</value>
+  </data>
   <data name="Cleanup_UnusedIds_Summary" xml:space="preserve">
     <value>Items to apply: {0} of {1} (id attributes removed: {2}).</value>
   </data>
@@ -4649,6 +4658,18 @@ It does not change the files, their names or their IDs.</value>
   </data>
   <data name="FindUsages_KindIdAttribute" xml:space="preserve">
     <value>id attribute</value>
+  </data>
+  <data name="FindUsages_KindLanguageAttribute" xml:space="preserve">
+    <value>language attribute</value>
+  </data>
+  <data name="FindUsages_HeaderLanguage" xml:space="preserve">
+    <value>Language “{0}” — the places that state it</value>
+  </data>
+  <data name="Status_FindUsagesLanguage" xml:space="preserve">
+    <value>Language “{0}”: {1}</value>
+  </data>
+  <data name="CodeEditorMenu_FindLanguageUsages" xml:space="preserve">
+    <value>Find usages of the language “{0}”</value>
   </data>
   <data name="FindUsages_KindSelector" xml:space="preserve">
     <value>CSS selector</value>

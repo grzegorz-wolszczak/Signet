@@ -976,8 +976,18 @@ public sealed class Book : IDisposable
         return IdUsageFinder.Find(id, ClassUsageSources());
     }
 
+    /// <summary>
+    /// "Find Usages" of a language: every <c>lang</c> / <c>xml:lang</c> attribute of the book that states
+    /// <paramref name="language"/> (<see cref="LanguageUsageFinder"/>); an empty language means every one of them.
+    /// </summary>
+    public IReadOnlyList<ClassUsage> FindLanguageUsages(string language)
+    {
+        ArgumentNullException.ThrowIfNull(language);
+        return LanguageUsageFinder.Find(language, ClassUsageSources());
+    }
+
     // The stylesheets and the markup files ((X)HTML, SVG, XML), in the order of the Book Browser — shared by
-    // FindClassUsages and FindIdUsages (they search the very same files).
+    // FindClassUsages, FindIdUsages and FindLanguageUsages (they search the very same files).
     private List<ClassUsageSource> ClassUsageSources()
     {
         using MainUI.OpfModel browserOrder = new(this);

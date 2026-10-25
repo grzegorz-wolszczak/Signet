@@ -38,6 +38,13 @@ public enum CleanupStep
     UnusedIds,
 
     /// <summary>
+    /// Remove the attributes that only repeat a value the element already has from an ancestor
+    /// (<see cref="InheritedAttributeCleaner"/>): <c>lang</c>, <c>xml:lang</c>, <c>dir</c> and repeated namespace
+    /// declarations. Before the empty elements and the bare spans, which weigh the attributes an element carries.
+    /// </summary>
+    InheritedAttributes,
+
+    /// <summary>
     /// Remove empty <c>&lt;p&gt;</c>, <c>&lt;span&gt;</c> and <c>&lt;div&gt;</c> elements without an <c>id</c>
     /// (<see cref="EmptyElementCleaner"/>). Before the nested divs, which removing an empty element can reveal.
     /// </summary>
@@ -196,6 +203,7 @@ public sealed class CleanupAnalysis
     private const string MediaKeyPrefix = "media|";
     private const string NestedDivsKeyPrefix = "divnest|";
     private const string UnusedIdsKeyPrefix = "unusedid|";
+    private const string InheritedAttributesKeyPrefix = "inherited|";
     private const string EmptyElementsKeyPrefix = "empty|";
     private const string BareSpansKeyPrefix = "barespan|";
     private const string MergeDivsKeyPrefix = "divmerge|";
@@ -247,6 +255,10 @@ public sealed class CleanupAnalysis
 
     // The same for the unused ids of each XHTML file.
     private readonly Dictionary<string, (string Stamp, List<(IdAttribute Id, IReadOnlyList<CleanupConsequence> Consequences)> Ids)> _unusedIds =
+        new(StringComparer.Ordinal);
+
+    // The same for the attributes of each XHTML file that only repeat an inherited value.
+    private readonly Dictionary<string, (string Stamp, List<(RedundantAttribute Attribute, IReadOnlyList<CleanupConsequence> Consequences)> Attributes)> _inheritedAttributes =
         new(StringComparer.Ordinal);
 
     // The same for the empty elements of each XHTML file.
@@ -419,6 +431,11 @@ public sealed class CleanupAnalysis
         if (enabledSteps.Contains(CleanupStep.UnusedIds))
         {
             steps.Add(PlanUnusedIds(cssTexts, htmlTexts, excludedKeys, acceptedRiskyKeys));
+        }
+
+        if (enabledSteps.Contains(CleanupStep.InheritedAttributes))
+        {
+            steps.Add(PlanInheritedAttributes(cssTexts, htmlTexts, excludedKeys, acceptedRiskyKeys));
         }
 
         if (enabledSteps.Contains(CleanupStep.EmptyElements))
@@ -861,6 +878,113 @@ public sealed class CleanupAnalysis
         IReadOnlyList<IReadOnlyList<CleanupConsequence>> consequences = UnusedIdRiskAnalyzer.Analyse(path, text, found, sheets);
         var result = found.Select((id, i) => (id, consequences[i])).ToList();
         _unusedIds[path] = (stamp, result);
+        return result;
+    }
+
+    /// <summary>
+    /// Plans the inherited-attribute step: per XHTML file, one item for all the attributes no selector could name
+    /// (they are applied together) and one item for every attribute a selector still reaches
+    /// (<see cref="InheritedAttributeRiskAnalyzer"/>), applied only when accepted. The
+    /// <see cref="CleanupItem.RuleCount"/> of an item is the number of attributes it removes.
+    /// </summary>
+    private CleanupStepResult PlanInheritedAttributes(
+        Dictionary<string, string> cssTexts,
+        Dictionary<string, string> htmlTexts,
+        IReadOnlySet<string> excludedKeys,
+        IReadOnlySet<string> acceptedRiskyKeys)
+    {
+        List<CleanupItem> items = new();
+        foreach (string path in htmlTexts.Keys.ToList())
+        {
+            string text = htmlTexts[path];
+            var attributes = InheritedAttributesOf(path, text, cssTexts);
+            if (attributes.Count == 0)
+            {
+                continue;
+            }
+
+            List<(int TagPos, string Name)> toRemove = new();
+            List<RedundantAttribute> safe = attributes.Where(a => a.Consequences.Count == 0).Select(a => a.Attribute).ToList();
+            if (safe.Count > 0)
+            {
+                string key = InheritedAttributesKeyPrefix + path;
+                bool isApplied = !excludedKeys.Contains(key);
+                string counts = string.Join(", ", safe
+                    .GroupBy(a => a.Name, StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+                    .Select(g => $"{g.Key}: {g.Count()}"));
+                items.Add(new CleanupItem(
+                    CleanupStep.InheritedAttributes,
+                    key,
+                    CoreStrings.Format("Cleanup_InheritedAttributes_File", safe.Count, counts),
+                    path,
+                    safe[0].Pos,
+                    safe.Count)
+                {
+                    IsApplied = isApplied,
+                });
+                if (isApplied)
+                {
+                    toRemove.AddRange(safe.Select(a => (a.TagPos, a.Name)));
+                }
+            }
+
+            for (int i = 0; i < attributes.Count; i++)
+            {
+                (RedundantAttribute attribute, IReadOnlyList<CleanupConsequence> consequences) = attributes[i];
+                if (consequences.Count == 0)
+                {
+                    continue;
+                }
+
+                string key = $"{InheritedAttributesKeyPrefix}{path}|{i}";
+                bool isApplied = !excludedKeys.Contains(key) && acceptedRiskyKeys.Contains(key);
+                items.Add(new CleanupItem(
+                    CleanupStep.InheritedAttributes,
+                    key,
+                    CoreStrings.Format(
+                        "Cleanup_InheritedAttributes_Attribute",
+                        attribute.Name,
+                        attribute.Value,
+                        attribute.FromTagName,
+                        DescribeOpenTag(attribute.OpenTag)),
+                    path,
+                    attribute.Pos,
+                    1)
+                {
+                    Consequences = consequences,
+                    IsApplied = isApplied,
+                });
+                if (isApplied)
+                {
+                    toRemove.Add((attribute.TagPos, attribute.Name));
+                }
+            }
+
+            if (toRemove.Count > 0)
+            {
+                htmlTexts[path] = InheritedAttributeCleaner.Remove(text, toRemove);
+            }
+        }
+
+        return Result(CleanupStep.InheritedAttributes, items);
+    }
+
+    private List<(RedundantAttribute Attribute, IReadOnlyList<CleanupConsequence> Consequences)> InheritedAttributesOf(
+        string path, string text, Dictionary<string, string> cssTexts)
+    {
+        (List<string> sheetTexts, string stamp) = SheetsAndStamp(path, text, cssTexts);
+        if (_inheritedAttributes.TryGetValue(path, out var cached) && string.Equals(cached.Stamp, stamp, StringComparison.Ordinal))
+        {
+            return cached.Attributes;
+        }
+
+        IReadOnlyList<RedundantAttribute> found = InheritedAttributeCleaner.Find(text);
+        List<CssInfo> sheets = found.Count == 0 ? new List<CssInfo>() : sheetTexts.Select(t => new CssInfo(t)).ToList();
+        IReadOnlyList<IReadOnlyList<CleanupConsequence>> consequences =
+            InheritedAttributeRiskAnalyzer.Analyse(path, text, found, sheets);
+        var result = found.Select((attribute, i) => (attribute, consequences[i])).ToList();
+        _inheritedAttributes[path] = (stamp, result);
         return result;
     }
 

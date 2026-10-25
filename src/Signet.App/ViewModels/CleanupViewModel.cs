@@ -81,7 +81,8 @@ public sealed partial class CleanupViewModel : ViewModelBase
     /// <summary>The steps of the HTML tab, in execution order.</summary>
     public static IReadOnlyList<CleanupStep> HtmlSteps { get; } = new[]
     {
-        CleanupStep.UnusedIds, CleanupStep.EmptyElements, CleanupStep.BareSpans, CleanupStep.MergeDivs, CleanupStep.NestedDivs,
+        CleanupStep.UnusedIds, CleanupStep.InheritedAttributes, CleanupStep.EmptyElements, CleanupStep.BareSpans,
+        CleanupStep.MergeDivs, CleanupStep.NestedDivs,
     };
 
     /// <summary>The steps of the Files tab, in execution order.</summary>
@@ -383,6 +384,7 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
         {
             CleanupStep.MergeSameSelectors or CleanupStep.MergeSameProperties => Strings.Get("Cleanup_MergeWarning"),
             CleanupStep.UnusedIds => Strings.Get("Cleanup_UnusedIdsWarning"),
+            CleanupStep.InheritedAttributes => Strings.Get("Cleanup_InheritedAttributesWarning"),
             CleanupStep.EmptyElements => Strings.Get("Cleanup_EmptyElementsWarning"),
             CleanupStep.BareSpans => Strings.Get("Cleanup_BareSpansWarning"),
             CleanupStep.MergeDivs => Strings.Get("Cleanup_MergeDivsWarning"),

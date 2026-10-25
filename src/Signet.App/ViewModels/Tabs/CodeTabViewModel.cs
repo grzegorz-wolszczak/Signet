@@ -688,6 +688,13 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
     }
 
     /// <summary>
+    /// The language under the caret for "Find Usages (language)": in a <c>lang</c> or <c>xml:lang</c> attribute of a
+    /// markup file; <c>null</c> when the caret is not on one.
+    /// </summary>
+    public string? LanguageAtCaretForUsages() =>
+        SupportsTagStructure ? LanguageUsageFinder.FindLanguageAtCaret(Document.Text, _caretOffset) : null;
+
+    /// <summary>
     /// The id under the caret for "Find Usages (Id)": in an <c>id</c> attribute of any markup file ((X)HTML, SVG, XML)
     /// or in a selector (<c>#name</c>) of a stylesheet or a <c>&lt;style&gt;</c> block; <c>null</c> when the caret is
     /// not on an id.

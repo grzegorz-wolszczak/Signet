@@ -6188,6 +6188,12 @@
   <data name="Cleanup_UnusedIds_File" xml:space="preserve">
     <value>Unused id attributes to remove: {0}</value>
   </data>
+  <data name="Cleanup_InheritedAttributes_File" xml:space="preserve">
+    <value>Redundant attributes to remove: {0} ({1})</value>
+  </data>
+  <data name="Cleanup_InheritedAttributes_Attribute" xml:space="preserve">
+    <value>{0}="{1}" — the same is already on &lt;{2}&gt; above: {3}</value>
+  </data>
   <data name="Cleanup_UnusedIds_Id" xml:space="preserve">
     <value>id="{0}" in {1}</value>
   </data>

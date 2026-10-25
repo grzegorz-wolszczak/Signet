@@ -100,6 +100,13 @@ public interface ICodeTabHost
     void FindIdUsages(string id);
 
     /// <summary>
+    /// "Find Usages (language)" — searches the whole book for the places that state <paramref name="language"/>
+    /// (<see cref="Signet.Core.BookManipulation.LanguageUsageFinder"/>) and shows them in the "Find Usages" panel.
+    /// Does nothing without a book.
+    /// </summary>
+    void FindLanguageUsages(string language);
+
+    /// <summary>
     /// "Remove span" — how many spans of the book are the same as the span under <paramref name="offset"/> in
     /// <paramref name="text"/> (the current text of <paramref name="html"/>); 0 without a book.
     /// </summary>
