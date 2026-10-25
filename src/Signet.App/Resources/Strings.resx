@@ -3863,6 +3863,9 @@ Wstawić mimo to?</value>
   <data name="CleanupWindow_Details" xml:space="preserve">
     <value>Szczegóły</value>
   </data>
+  <data name="CleanupWindow_ToggleDescription" xml:space="preserve">
+    <value>Zwiń / rozwiń opis tego kroku</value>
+  </data>
   <data name="CleanupWindow_SelectAll" xml:space="preserve">
     <value>Zaznacz wszystkie</value>
   </data>

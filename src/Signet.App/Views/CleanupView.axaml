@@ -18,6 +18,17 @@
       <Setter Property="CornerRadius" Value="4" />
       <Setter Property="Padding" Value="10" />
     </Style>
+    <!-- The triangle that folds the description of a step away: a glyph without button chrome. -->
+    <Style Selector="ToggleButton.descriptionToggle">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="2,0" />
+      <Setter Property="MinWidth" Value="0" />
+      <Setter Property="Margin" Value="0,0,2,0" />
+    </Style>
+    <Style Selector="ToggleButton.descriptionToggle:checked /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
     <Style Selector="TextBlock.note">
       <Setter Property="FontSize" Value="12" />
       <Setter Property="Opacity" Value="0.75" />
@@ -56,9 +67,17 @@
                         <CheckBox IsChecked="{Binding IsEnabled, Mode=TwoWay}" FontWeight="SemiBold">
                           <TextBlock Text="{Binding Title}" TextWrapping="Wrap" />
                         </CheckBox>
-                        <TextBlock Classes="note" Text="{Binding Description}" Margin="28,0,0,0" />
-                        <TextBlock Classes="warningNote" Text="{Binding Warning}" IsVisible="{Binding HasWarning}"
-                                   Margin="28,0,0,0" />
+                        <!-- What the step does: folded away by default, opened by the triangle on its left. -->
+                        <Grid ColumnDefinitions="Auto,*" Margin="8,0,0,0">
+                          <ToggleButton Grid.Column="0" Classes="descriptionToggle" VerticalAlignment="Top"
+                                        IsChecked="{Binding IsDescriptionExpanded, Mode=TwoWay}"
+                                        Content="{Binding DescriptionGlyph}"
+                                        ToolTip.Tip="{loc:Loc CleanupWindow_ToggleDescription}" />
+                          <StackPanel Grid.Column="1" Spacing="4" IsVisible="{Binding IsDescriptionExpanded}">
+                            <TextBlock Classes="note" Text="{Binding Description}" />
+                            <TextBlock Classes="warningNote" Text="{Binding Warning}" IsVisible="{Binding HasWarning}" />
+                          </StackPanel>
+                        </Grid>
 
                         <StackPanel IsVisible="{Binding IsEnabled}" Margin="28,6,0,0" Spacing="4">
                           <!-- MergeDivs only: merge on all nesting levels or on the levels chosen per file, and
