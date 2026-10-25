@@ -54,6 +54,19 @@ public sealed class MainDockFactory : Factory
         _bookBrowser = bookBrowser;
         _preview = preview;
 
+        // The Preview panel says in its title which file it shows ("Preview [chapter1.xhtml]"): the panel is one, while
+        // the file follows the active tab. Subscribed here, not in CreateLayout, which runs again for every layout.
+        if (_preview is not null)
+        {
+            _preview.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName is nameof(PreviewViewModel.CurrentBookPath))
+                {
+                    UpdatePreviewTitle();
+                }
+            };
+        }
+
         // "Float" (and dragging a tab out of the window) needs a host window; without a locator the panel moved into
         // a window model that was never shown, and so it vanished.
         // Every floating window is checked once shown (after Dock has placed it): when it is not fully on screen it is
@@ -216,7 +229,7 @@ public sealed class MainDockFactory : Factory
     {
         BookBrowserTool bookBrowser = new() { ViewModel = _bookBrowser };
         ClipsTool clips = new() { ViewModel = Clips };
-        PreviewTool preview = new() { ViewModel = _preview };
+        PreviewTool preview = new() { ViewModel = _preview, Title = PreviewTitle };
         TableOfContentsTool toc = new() { ViewModel = TableOfContents };
         ValidationResultsTool validation = new() { ViewModel = ValidationResults };
         CheckpointsTool checkpoints = new() { ViewModel = Checkpoints };
@@ -349,6 +362,37 @@ public sealed class MainDockFactory : Factory
         if (DocumentDock is not null)
         {
             DocumentDock.Title = Strings.Get("Panel_Documents");
+        }
+
+        // The name of the shown file goes back after the title of the panel was reset above.
+        UpdatePreviewTitle();
+    }
+
+    /// <summary>
+    /// The title of the Preview panel: the name of the file it shows in square brackets
+    /// (<c>Preview [chapter1.xhtml]</c>), or the bare name of the panel when it shows nothing. The file name alone —
+    /// the whole book path would not fit in the title bar of the panel.
+    /// </summary>
+    public string PreviewTitle
+    {
+        get
+        {
+            string title = Strings.Get("Panel_Preview");
+            if (_preview?.CurrentBookPath is not { Length: > 0 } bookPath)
+            {
+                return title;
+            }
+
+            string name = bookPath[(bookPath.LastIndexOf('/') + 1)..];
+            return name.Length == 0 ? title : $"{title} [{name}]";
+        }
+    }
+
+    private void UpdatePreviewTitle()
+    {
+        if (_tools.TryGetValue(DockableIds.Preview, out Tool? preview))
+        {
+            preview.Title = PreviewTitle;
         }
     }
 
