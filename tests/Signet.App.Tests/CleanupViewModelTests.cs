@@ -75,6 +75,28 @@ public sealed class CleanupViewModelTests : IDisposable
         vm.Tabs[1].Sections.Should().OnlyContain(s => s.HasWarning, "every HTML step can have risky (⚠) items");
     }
 
+    /// <summary>
+    /// "Check all" plans every step of the tab, and each section then says what it found. A step whose summary string
+    /// was missing threw on that very button instead (the inherited-attribute step did, in October 2026).
+    /// </summary>
+    [Fact]
+    public void Checking_every_step_of_every_tab_gives_each_section_a_summary()
+    {
+        // Arrange
+        CleanupViewModel vm = New();
+
+        // Act
+        foreach (CleanupTabViewModel tab in vm.Tabs)
+        {
+            tab.EnableAllCommand.Execute(null);
+        }
+
+        // Assert
+        vm.Sections.Should().OnlyContain(s => s.IsEnabled);
+        vm.Sections.Should().OnlyContain(s => s.Summary.Length > 0);
+        vm.EnabledSteps.Should().Equal(Enum.GetValues<CleanupStep>());
+    }
+
     [Fact]
     public void The_steps_are_grouped_into_CSS_HTML_and_Files_tabs()
     {

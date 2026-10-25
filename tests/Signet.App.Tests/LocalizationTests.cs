@@ -28,6 +28,9 @@ public sealed class LocalizationTests
         @"(?<![\w.])(?<attr>Header|Content|Text|PlaceholderText|Watermark|ToolTip\.Tip|Title)=""(?<val>[^""]*)""",
         RegexOptions.Compiled);
 
+    // What every step of the Cleanup dialog needs a string for.
+    private static readonly string[] CleanupStepParts = { "Title", "Description", "Summary" };
+
     // Contains at least one Unicode letter: tells text apart from bare symbols/arrows (e.g. "▲", "★").
     private static readonly Regex ContainsLetter = new(@"\p{L}", RegexOptions.Compiled);
 
@@ -52,6 +55,31 @@ public sealed class LocalizationTests
 
         polishKeys.Should().NotBeEmpty();
         englishKeys.Should().BeEquivalentTo(polishKeys, "every key of the neutral (Polish) language must have an English translation");
+    }
+
+    /// <summary>
+    /// Every step of the Cleanup dialog shows a title, a description and a summary of what it found. The summary is
+    /// built from the step's name at run time and only once the step is checked, so a missing one is not a blank
+    /// label but an exception — it crashed the window in October 2026.
+    /// </summary>
+    [Fact]
+    public void Every_cleanup_step_has_a_title_a_description_and_a_summary()
+    {
+        // Arrange
+        ResourceSet keys = Strings.RawManager.GetResourceSet(new System.Globalization.CultureInfo("pl"), true, true)!;
+        HashSet<string> known = keys
+            .Cast<System.Collections.DictionaryEntry>()
+            .Select(e => (string)e.Key)
+            .ToHashSet(StringComparer.Ordinal);
+
+        // Act
+        string[] missing = Enum.GetValues<Signet.Core.BookManipulation.CleanupStep>()
+            .SelectMany(step => CleanupStepParts.Select(part => $"Cleanup_{step}_{part}"))
+            .Where(key => !known.Contains(key))
+            .ToArray();
+
+        // Assert
+        missing.Should().BeEmpty("every step of the Cleanup dialog names itself, explains itself and reports what it found");
     }
 
     [Fact]
