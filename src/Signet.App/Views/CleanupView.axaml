@@ -18,16 +18,25 @@
       <Setter Property="CornerRadius" Value="4" />
       <Setter Property="Padding" Value="10" />
     </Style>
-    <!-- The triangle that folds the description of a step away: a glyph without button chrome. -->
+    <!-- The triangle that folds the description of a step away, with the line saying what clicking does: a glyph
+         and a label without button chrome, together one click target. The checked state keeps the text color of the
+         theme: the Fluent default colors the content of a checked ToggleButton for the accent background it no
+         longer has here, which made the open triangle invisible. -->
     <Style Selector="ToggleButton.descriptionToggle">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
       <Setter Property="Padding" Value="2,0" />
       <Setter Property="MinWidth" Value="0" />
       <Setter Property="Margin" Value="0,0,2,0" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
     </Style>
     <Style Selector="ToggleButton.descriptionToggle:checked /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="Background" Value="Transparent" />
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+    </Style>
+    <Style Selector="ToggleButton.descriptionToggle:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
     </Style>
     <Style Selector="TextBlock.note">
       <Setter Property="FontSize" Value="12" />
@@ -67,17 +76,22 @@
                         <CheckBox IsChecked="{Binding IsEnabled, Mode=TwoWay}" FontWeight="SemiBold">
                           <TextBlock Text="{Binding Title}" TextWrapping="Wrap" />
                         </CheckBox>
-                        <!-- What the step does: folded away by default, opened by the triangle on its left. -->
-                        <Grid ColumnDefinitions="Auto,*" Margin="8,0,0,0">
-                          <ToggleButton Grid.Column="0" Classes="descriptionToggle" VerticalAlignment="Top"
+                        <!-- What the step does: folded away by default. The triangle and the line beside it stay
+                             where they are while it is open, so the same click closes it again. -->
+                        <StackPanel Spacing="4" Margin="8,0,0,0">
+                          <ToggleButton Classes="descriptionToggle"
                                         IsChecked="{Binding IsDescriptionExpanded, Mode=TwoWay}"
-                                        Content="{Binding DescriptionGlyph}"
-                                        ToolTip.Tip="{loc:Loc CleanupWindow_ToggleDescription}" />
-                          <StackPanel Grid.Column="1" Spacing="4" IsVisible="{Binding IsDescriptionExpanded}">
+                                        ToolTip.Tip="{loc:Loc CleanupWindow_ToggleDescription}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                              <TextBlock Text="{Binding DescriptionGlyph}" FontSize="20" VerticalAlignment="Center" />
+                              <TextBlock Classes="note" Text="{Binding DescriptionToggleText}" VerticalAlignment="Center" />
+                            </StackPanel>
+                          </ToggleButton>
+                          <StackPanel Spacing="4" Margin="26,0,0,0" IsVisible="{Binding IsDescriptionExpanded}">
                             <TextBlock Classes="note" Text="{Binding Description}" />
                             <TextBlock Classes="warningNote" Text="{Binding Warning}" IsVisible="{Binding HasWarning}" />
                           </StackPanel>
-                        </Grid>
+                        </StackPanel>
 
                         <StackPanel IsVisible="{Binding IsEnabled}" Margin="28,6,0,0" Spacing="4">
                           <!-- MergeDivs only: merge on all nesting levels or on the levels chosen per file, and

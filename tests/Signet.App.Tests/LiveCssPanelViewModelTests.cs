@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using AwesomeAssertions;
 using Signet.App.Tests.TestSupport;
@@ -195,5 +197,45 @@ public sealed class LiveCssPanelViewModelTests
         rule.SelectorText.Should().Be(".a");
         rule.HeaderSuffix.Should().StartWith("  \u2014  style.css:1");
         (rule.SelectorText + rule.HeaderSuffix).Should().Be(rule.Header);
+    }
+
+    /// <summary>
+    /// The annotations say where the value really comes from, so they take you there: the one of an overridden
+    /// declaration to the rule that wins, the one of an inherited property to the rule of the ancestor.
+    /// </summary>
+    [Fact]
+    public void The_annotations_jump_to_the_rule_they_name()
+    {
+        // Arrange
+        List<(string BookPath, int Offset)> jumps = new();
+        LiveCssPanelViewModel vm = new();
+        vm.Update(ResultWithInherited(), _ => CssText, (path, offset) => jumps.Add((path, offset)));
+
+        // Act
+        LiveCssDeclarationViewModel overridden = vm.Levels[0].Rules.Single().Declarations.Single();
+        overridden.JumpCommand!.Execute(null);
+
+        // Assert
+        jumps.Should().Equal((CssPath, CssText.IndexOf(".b", StringComparison.Ordinal)));
+
+        // Act
+        vm.Inherited.Single().JumpCommand.Execute(null);
+
+        // Assert
+        jumps.Should().HaveCount(2);
+        jumps[1].Should().Be((CssPath, 0));
+    }
+
+    [Fact]
+    public void A_declaration_that_is_not_overridden_has_nowhere_to_jump()
+    {
+        // Arrange
+        LiveCssPanelViewModel vm = new();
+
+        // Act
+        vm.Update(HierarchyResult(), _ => CssText, (_, _) => { });
+
+        // Assert
+        vm.Levels[1].Rules.Single().Declarations.Single().JumpCommand.Should().BeNull();
     }
 }

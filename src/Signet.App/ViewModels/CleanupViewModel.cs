@@ -354,6 +354,7 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
     /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DescriptionGlyph))]
+    [NotifyPropertyChangedFor(nameof(DescriptionToggleText))]
     private bool _isDescriptionExpanded;
 
     [ObservableProperty]
@@ -410,6 +411,13 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
 
     /// <summary>The triangle in front of the description, pointing down when it is unfolded.</summary>
     public string DescriptionGlyph => IsDescriptionExpanded ? "▾" : "▸";
+
+    /// <summary>
+    /// The line beside the triangle, which says what clicking does. It stays in place while the description is open,
+    /// so the way to close it again is where the way to open it was.
+    /// </summary>
+    public string DescriptionToggleText => Strings.Get(
+        IsDescriptionExpanded ? "CleanupWindow_HideDescription" : "CleanupWindow_ShowDescription");
 
     /// <summary>Whether the section has the level options (<see cref="CleanupStep.MergeDivs"/>).</summary>
     public bool HasLevelOptions => Step == CleanupStep.MergeDivs;

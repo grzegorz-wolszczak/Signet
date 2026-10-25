@@ -13,15 +13,35 @@
 
   <Window.Styles>
     <!-- The triangle that folds a level away: a glyph with no button chrome, so the header reads as one line. -->
+    <!-- An annotation that says where the value really comes from: a click goes there, so it is a button that
+         looks like the text it replaces. -->
+    <Style Selector="Button.sourceLink">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="MinWidth" Value="0" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+    </Style>
+    <Style Selector="Button.sourceLink:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="TextBlock.TextDecorations" Value="Underline" />
+    </Style>
+
     <Style Selector="ToggleButton.levelToggle">
       <Setter Property="Background" Value="Transparent" />
       <Setter Property="BorderThickness" Value="0" />
       <Setter Property="Padding" Value="2,0" />
       <Setter Property="MinWidth" Value="0" />
+      <Setter Property="FontSize" Value="20" />
       <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
     </Style>
     <Style Selector="ToggleButton.levelToggle:checked /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="Background" Value="Transparent" />
+      <!-- Without this the Fluent default colors the content of a checked ToggleButton for the accent background it
+           no longer has here, and the open triangle goes invisible. -->
+      <Setter Property="TextElement.Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
     </Style>
   </Window.Styles>
 
@@ -55,8 +75,9 @@
                         IsChecked="{Binding Panel.ShowInherited, Mode=TwoWay}" />
 
               <StackPanel IsVisible="{Binding IsExpanded}" Spacing="6">
-                <Border IsVisible="{Binding Panel.ShowInherited}" Margin="12,0,0,0">
-                  <Border IsVisible="{Binding Panel.HasInherited}"
+                <!-- Only under the element the panel is about: what it inherits is its own, not every level's. -->
+                <StackPanel IsVisible="{Binding IsInspectedElement}" Margin="12,0,0,0">
+                  <Border IsVisible="{Binding Panel.ShowInheritedBox}"
                           BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                           BorderThickness="1" CornerRadius="4" Padding="8" Margin="0,0,0,4">
                     <StackPanel Spacing="4">
@@ -69,16 +90,19 @@
                             <WrapPanel>
                               <views:CssSyntaxText CssText="{Binding Text}"
                                                    FontFamily="Consolas,Cascadia Mono,monospace" />
-                              <TextBlock Text="{Binding SourceText}" Margin="8,0,0,0" FontStyle="Italic"
-                                         FontFamily="Consolas,Cascadia Mono,monospace"
-                                         Foreground="{DynamicResource SignetMutedTextBrush}" />
+                              <Button Classes="sourceLink" Command="{Binding JumpCommand}" Margin="8,0,0,0"
+                                      ToolTip.Tip="{loc:Loc LiveCssPanelWindow_GoToRule}">
+                                <TextBlock Text="{Binding SourceText}" FontStyle="Italic"
+                                           FontFamily="Consolas,Cascadia Mono,monospace"
+                                           Foreground="{DynamicResource SignetMutedTextBrush}" />
+                              </Button>
                             </WrapPanel>
                           </DataTemplate>
                         </ItemsControl.ItemTemplate>
                       </ItemsControl>
                     </StackPanel>
                   </Border>
-                </Border>
+                </StackPanel>
 
                 <TextBlock Text="{loc:Loc LiveCssPanelWindow_NoRules}" IsVisible="{Binding ShowNoRules}"
                            Foreground="{DynamicResource SignetMutedTextBrush}" Margin="12,0,0,0" />
@@ -106,9 +130,12 @@
                                 <WrapPanel Opacity="{Binding IsDimmed, Converter={x:Static infra:OverriddenDeclarationConverters.Opacity}}">
                                   <views:CssSyntaxText CssText="{Binding Text}" FontFamily="Consolas,Cascadia Mono,monospace"
                                                        TextDecorations="{Binding IsOverridden, Converter={x:Static infra:OverriddenDeclarationConverters.Strikethrough}}" />
-                                  <TextBlock Text="{Binding OverriddenByText}" IsVisible="{Binding HasOverriddenBy}"
-                                             FontFamily="Consolas,Cascadia Mono,monospace" FontStyle="Italic"
-                                             Margin="8,0,0,0" />
+                                  <Button Classes="sourceLink" IsVisible="{Binding HasOverriddenBy}" Margin="8,0,0,0"
+                                          Command="{Binding JumpCommand}"
+                                          ToolTip.Tip="{loc:Loc LiveCssPanelWindow_GoToRule}">
+                                    <TextBlock Text="{Binding OverriddenByText}" FontStyle="Italic"
+                                               FontFamily="Consolas,Cascadia Mono,monospace" />
+                                  </Button>
                                 </WrapPanel>
                               </DataTemplate>
                             </ItemsControl.ItemTemplate>
