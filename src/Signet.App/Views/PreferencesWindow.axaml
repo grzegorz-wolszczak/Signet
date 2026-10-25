@@ -824,10 +824,8 @@
               <TextBlock Text="{Binding BundledNote}" IsVisible="{Binding IsBundled}" Opacity="0.7" TextWrapping="Wrap" />
 
               <!-- The font of the code previews of the pages below (a setting of the program, not of the scheme); the
-                   DataContext is set in code. It takes the left half of the page. -->
-              <Grid ColumnDefinitions="*,*" Margin="0,8,0,0">
-                <views:FontSettingView x:Name="ColorSchemePreviewFontView" HorizontalAlignment="Stretch" />
-              </Grid>
+                   DataContext is set in code. It takes the whole width of the settings, like the pages' own previews. -->
+              <views:FontSettingView x:Name="ColorSchemePreviewFontView" HorizontalAlignment="Stretch" Margin="0,8,0,0" />
             </StackPanel>
           </ScrollViewer>
         </views:PageWidthHost>
