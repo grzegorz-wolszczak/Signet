@@ -3971,6 +3971,9 @@ Wstawić mimo to?</value>
   <data name="Cleanup_UnusedIds_Summary" xml:space="preserve">
     <value>Pozycje do wykonania: {0} z {1} (usuwanych atrybutów id: {2}).</value>
   </data>
+  <data name="Cleanup_InheritedAttributes_Summary" xml:space="preserve">
+    <value>Pozycje do wykonania: {0} z {1} (usuwanych atrybutów: {2}).</value>
+  </data>
   <data name="Cleanup_UnusedIdsWarning" xml:space="preserve">
     <value>Linki spoza tej książki (np. zakładki czytnika albo odwołania z innych książek) nie są widoczne, więc id, które są ich celem, wyglądają na nieużywane — odznacz je, jeśli ich potrzebujesz. Id, do którego odwołuje się selektor CSS (#id, [id^=…]) i którego usunięcie zmieniłoby wygląd, jest oznaczone ⚠ i domyślnie odznaczone; pod nim widać, co by się zmieniło.</value>
   </data>

@@ -519,7 +519,8 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
         }
 
         string summary = Step is CleanupStep.MergeSameSelectors or CleanupStep.MergeSameProperties or CleanupStep.UnusedIds
-            or CleanupStep.EmptyElements or CleanupStep.BareSpans or CleanupStep.MergeDivs or CleanupStep.NestedDivs
+            or CleanupStep.InheritedAttributes or CleanupStep.EmptyElements or CleanupStep.BareSpans or CleanupStep.MergeDivs
+            or CleanupStep.NestedDivs
             ? Strings.Format($"Cleanup_{Step}_Summary", result.AppliedCount, result.Items.Count, result.AppliedRuleCount)
             : Strings.Format($"Cleanup_{Step}_Summary", result.AppliedCount, result.Items.Count);
         return result.RiskyCount > 0 ? summary + Strings.Format("Cleanup_RiskySummary", result.RiskyCount) : summary;

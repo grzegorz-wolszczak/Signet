@@ -3971,6 +3971,9 @@ Insert anyway?</value>
   <data name="Cleanup_UnusedIds_Summary" xml:space="preserve">
     <value>Items to apply: {0} of {1} (id attributes removed: {2}).</value>
   </data>
+  <data name="Cleanup_InheritedAttributes_Summary" xml:space="preserve">
+    <value>Items to apply: {0} of {1} (attributes removed: {2}).</value>
+  </data>
   <data name="Cleanup_UnusedIdsWarning" xml:space="preserve">
     <value>Links from outside this book (e.g. reader bookmarks or references from other books) cannot be seen, so ids that are their target look unused — uncheck them if you need them. An id that a CSS selector reaches (#id, [id^=…]) and whose removal would change the styling is marked ⚠ and unchecked by default; each one lists what would change.</value>
   </data>
