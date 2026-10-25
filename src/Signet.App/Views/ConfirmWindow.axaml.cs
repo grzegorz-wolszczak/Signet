@@ -1,9 +1,10 @@
+using System;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 
 namespace Signet.App.Views;
 
-/// <summary>A simple confirmation window (OK / Cancel), optionally with "Don't ask again".</summary>
+/// <summary>A simple confirmation window (OK / Cancel), optionally with "Don't ask again" or a check box of its own.</summary>
 public partial class ConfirmWindow : Window
 {
     /// <summary>Initializes the window.</summary>
@@ -33,6 +34,22 @@ public partial class ConfirmWindow : Window
         ConfirmWindow window = Build(title, message, okText, dontAskAgain: true, destructive);
         bool confirmed = await window.ShowDialog<bool>(owner);
         return (confirmed, confirmed && window.DontAskAgainBox.IsChecked == true);
+    }
+
+    /// <summary>
+    /// Shows the window with a check box of its own (<paramref name="optionText"/>) under the message; returns whether
+    /// the user confirmed and whether the box was checked then (it counts only together with confirming). The box starts
+    /// unchecked — confirming without touching it does only what the message says.
+    /// </summary>
+    public static async Task<(bool Confirmed, bool Option)> AskWithOptionAsync(
+        Window owner, string title, string message, string optionText, string? okText = null, bool destructive = false)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(optionText);
+        ConfirmWindow window = Build(title, message, okText, dontAskAgain: false, destructive);
+        window.OptionBox.Content = optionText;
+        window.OptionBox.IsVisible = true;
+        bool confirmed = await window.ShowDialog<bool>(owner);
+        return (confirmed, confirmed && window.OptionBox.IsChecked == true);
     }
 
     private static ConfirmWindow Build(string title, string message, string? okText, bool dontAskAgain, bool destructive)

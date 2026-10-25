@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using AwesomeAssertions;
 using CommunityToolkit.Mvvm.Input;
@@ -7,6 +8,7 @@ using Signet.App.Actions;
 using Signet.App.Menu;
 using Signet.App.Resources;
 using Signet.App.Tests.TestSupport;
+using Signet.Core.Tests.TestSupport;
 using Xunit;
 
 namespace Signet.App.Tests;
@@ -230,15 +232,80 @@ public sealed class MenuBuilderTests
         // Arrange
         using UiCultureScope culture = new("en");
         using TestHost host = new();
-        FakeRecentFiles recent = new() { Files = new[] { "/books/one/a.epub", "/books/two/a.epub" } };
+        using TempDir temp = new();
+        string first = MakeFile(temp, "one", "a.epub");
+        string second = MakeFile(temp, "two", "a.epub");
+        FakeRecentFiles recent = new() { Files = new[] { first, second } };
 
         // Act
         MenuItemViewModel file = BuildWith(host, recent).Single(m => m.Header == "_File");
 
         // Assert
         file.Items!.Where(i => i.Header.EndsWith(". a.epub", StringComparison.Ordinal)).Select(i => i.ToolTip)
-            .Should().Equal("/books/one/a.epub", "/books/two/a.epub");
+            .Should().Equal(first, second);
+        file.Items!.Where(i => i.Header.EndsWith(". a.epub", StringComparison.Ordinal)).Should().OnlyContain(i => !i.IsDimmed);
         file.Items!.Single(i => i.Header == "Close").ToolTip.Should().BeNull();
+    }
+
+    /// <summary>
+    /// A file of the list that is no longer on disk is dimmed and its tooltip says why, but it stays enabled: the click
+    /// is what offers to take it off the list.
+    /// </summary>
+    [Fact]
+    public void A_recent_file_that_is_gone_is_dimmed_and_says_so_in_its_tooltip()
+    {
+        // Arrange
+        using UiCultureScope culture = new("en");
+        using TestHost host = new();
+        using TempDir temp = new();
+        string here = MakeFile(temp, "books", "here.epub");
+        string gone = Path.Combine(temp.Path, "books", "gone.epub");
+        FakeRecentFiles recent = new() { Files = new[] { here, gone } };
+
+        // Act
+        MenuItemViewModel file = BuildWith(host, recent).Single(m => m.Header == "_File");
+        MenuItemViewModel present = file.Items!.Single(i => i.Header.EndsWith(". here.epub", StringComparison.Ordinal));
+        MenuItemViewModel missing = file.Items!.Single(i => i.Header.EndsWith(". gone.epub", StringComparison.Ordinal));
+
+        // Assert
+        present.IsDimmed.Should().BeFalse();
+        present.Opacity.Should().Be(1.0);
+        missing.IsDimmed.Should().BeTrue();
+        missing.Opacity.Should().Be(0.5);
+        missing.IsEnabled.Should().BeTrue("the click offers to remove the entry from the list");
+        missing.ToolTip.Should().Be(gone + Environment.NewLine + Strings.Get("RecentFiles_FileMissingTooltip"));
+    }
+
+    [Fact]
+    public void RefreshRecentFiles_notices_a_file_deleted_while_the_menu_was_already_built()
+    {
+        // Arrange
+        using UiCultureScope culture = new("en");
+        using TestHost host = new();
+        using TempDir temp = new();
+        string path = MakeFile(temp, "books", "a.epub");
+        FakeRecentFiles recent = new() { Files = new[] { path } };
+        MenuBuilder builder = new(host.Registry, host.Toolbars, new RelayCommand(() => { }), recent);
+        MenuItemViewModel file = builder.Build().Single(m => m.Header == "_File");
+
+        // Assert
+        file.Items!.Single(i => i.Header.EndsWith(". a.epub", StringComparison.Ordinal)).IsDimmed.Should().BeFalse();
+
+        // Act
+        File.Delete(path);
+        builder.RefreshRecentFiles();
+
+        // Assert
+        file.Items!.Single(i => i.Header.EndsWith(". a.epub", StringComparison.Ordinal)).IsDimmed.Should().BeTrue();
+    }
+
+    private static string MakeFile(TempDir temp, string folder, string name)
+    {
+        string dir = Path.Combine(temp.Path, folder);
+        Directory.CreateDirectory(dir);
+        string path = Path.Combine(dir, name);
+        File.WriteAllText(path, string.Empty);
+        return path;
     }
 
     [Fact]

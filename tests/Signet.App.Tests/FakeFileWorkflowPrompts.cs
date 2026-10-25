@@ -24,6 +24,12 @@ public sealed class FakeFileWorkflowPrompts : IFileWorkflowPrompts
     /// <summary>Answer to the prompt about removing a missing file from the "Recent" list.</summary>
     public bool RemoveMissingRecent { get; set; } = true;
 
+    /// <summary>Whether that answer also ticks "remove all the missing ones" (the check box of the dialog).</summary>
+    public bool RemoveAllMissingRecent { get; set; }
+
+    /// <summary>The paths the prompt about a missing recent file was shown for.</summary>
+    public List<string> MissingRecentPrompts { get; } = new();
+
     /// <summary>The titles (headlines) of the <see cref="ShowProgressAsync"/> calls.</summary>
     public List<string> ProgressTitles { get; } = new();
 
@@ -121,7 +127,11 @@ public sealed class FakeFileWorkflowPrompts : IFileWorkflowPrompts
     }
 
     /// <inheritdoc />
-    public Task<bool> ConfirmRemoveMissingRecentAsync(string path) => Task.FromResult(RemoveMissingRecent);
+    public Task<MissingRecentAnswer> ConfirmRemoveMissingRecentAsync(string path)
+    {
+        MissingRecentPrompts.Add(path);
+        return Task.FromResult(new MissingRecentAnswer(RemoveMissingRecent, RemoveAllMissingRecent));
+    }
 
     /// <inheritdoc />
     public Task<IReadOnlyList<string>?> DesignCustomLayoutAsync(string version) => Task.FromResult(CustomLayout);

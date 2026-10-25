@@ -3166,6 +3166,12 @@ Enable mending XHTML on open in Preferences and try again.</value>
     <value>This file no longer exists. Click OK to remove it from the list.
 {0}</value>
   </data>
+  <data name="MainWindow_RemoveAllMissingRecent" xml:space="preserve">
+    <value>Remove all the files that no longer exist from the list</value>
+  </data>
+  <data name="RecentFiles_FileMissingTooltip" xml:space="preserve">
+    <value>This file no longer exists — it cannot be opened.</value>
+  </data>
   <data name="MainWindow_GoToLineTitle" xml:space="preserve">
     <value>Go To Line</value>
   </data>

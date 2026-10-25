@@ -864,6 +864,12 @@ public sealed partial class MainWindowViewModel
     /// <summary>The main menu tree.</summary>
     public IReadOnlyList<MenuItemViewModel> MenuItems { get; }
 
+    /// <summary>
+    /// Builds the entries of the "Recent Files" list of the menu again — the window calls it whenever a menu is
+    /// opened, so that a file removed from disk meanwhile is shown as missing.
+    /// </summary>
+    public void RefreshRecentFilesMenu() => _menuBuilder.RefreshRecentFiles();
+
     /// <summary>Configurable toolbars.</summary>
     public ObservableCollection<ToolbarViewModel> Toolbars { get; }
 

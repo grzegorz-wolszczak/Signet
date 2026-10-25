@@ -9,6 +9,7 @@ using Avalonia.VisualTree;
 using AwesomeAssertions;
 using CommunityToolkit.Mvvm.Input;
 using Signet.App.ViewModels;
+using Signet.Core.Tests.TestSupport;
 using Signet.App.Views;
 
 namespace Signet.App.MainWindowUiTests;
@@ -76,6 +77,41 @@ public sealed class StartScreenTests
 
         // Assert
         opened.Should().Equal(RecentFiles[1]);
+        window.Close();
+    }
+
+    /// <summary>
+    /// A book that is no longer on disk is drawn dimmed (the "missing" class) but stays clickable — the click is what
+    /// offers to take it off the list.
+    /// </summary>
+    [AvaloniaFact]
+    public void An_entry_whose_file_is_gone_is_dimmed_and_still_clickable()
+    {
+        // Arrange
+        using TempDir temp = new();
+        string here = temp.Combine("Here.epub");
+        File.WriteAllText(here, string.Empty);
+        string gone = temp.Combine("Gone.epub");
+        StartScreenViewModel vm = new(
+            new RelayCommand(() => { }), new RelayCommand(() => { }),
+            () => new[] { here, gone }, _ => { })
+        {
+            IsVisible = true,
+        };
+        Window window = new() { Width = 600, Height = 400, Content = new StartScreenView { DataContext = vm } };
+
+        // Act
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Button[] entries = window.GetVisualDescendants().OfType<Button>().Where(b => b.Classes.Contains("recentFile")).ToArray();
+
+        // Assert
+        entries.Should().HaveCount(2);
+        entries[0].Classes.Contains("missing").Should().BeFalse();
+        entries[1].Classes.Contains("missing").Should().BeTrue();
+        entries[1].Opacity.Should().Be(0.5);
+        entries[1].IsEffectivelyEnabled.Should().BeTrue();
         window.Close();
     }
 

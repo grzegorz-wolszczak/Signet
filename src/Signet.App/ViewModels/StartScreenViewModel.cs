@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Signet.App.Resources;
 using Signet.Core.Misc;
 
 namespace Signet.App.ViewModels;
@@ -15,8 +16,14 @@ namespace Signet.App.ViewModels;
 /// <param name="OpenCommand">Opens the file.</param>
 /// <param name="RemoveCommand">Removes the file from the list of recent files (the context menu of the entry).</param>
 /// <param name="IsHighlighted">Whether the entry is drawn as if the pointer were on it (the sample in Preferences only).</param>
+/// <param name="IsMissing">
+/// Whether the file is no longer on disk: the entry is drawn dimmed and its tooltip says why it cannot be opened, but it
+/// stays clickable — the click offers to take it off the list.
+/// </param>
+/// <param name="ToolTip">The tooltip of the entry: the full path, and the reason when <paramref name="IsMissing"/>.</param>
 public sealed record StartScreenRecentFile(
-    string Name, string Folder, string Path, ICommand OpenCommand, ICommand RemoveCommand, bool IsHighlighted = false);
+    string Name, string Folder, string Path, ICommand OpenCommand, ICommand RemoveCommand, bool IsHighlighted = false,
+    bool IsMissing = false, string ToolTip = "");
 
 /// <summary>
 /// The start screen shown in the empty document area while no book is open: "Open…", "New book" and the recent files.
@@ -149,15 +156,35 @@ public sealed partial class StartScreenViewModel : ObservableObject, IDisposable
     /// <summary>Whether there are recent files to show.</summary>
     public bool HasRecentFiles => RecentFileItems.Count > 0;
 
-    /// <summary>Reads the recent files again (after the list changed).</summary>
+    /// <summary>
+    /// Reads the recent files again (after the list changed, and every time the screen is shown): the existence of every
+    /// path is checked here, so a file removed from disk meanwhile shows as missing. The fabricated books of the sample
+    /// are never on disk and are never drawn as missing.
+    /// </summary>
     public void Refresh() =>
         RecentFileItems = _recentFiles()
-            .Select((path, index) => new StartScreenRecentFile(
-                System.IO.Path.GetFileName(path),
-                System.IO.Path.GetDirectoryName(path) ?? string.Empty,
-                path,
-                new RelayCommand(() => _openRecent(path)),
-                new RelayCommand(() => _removeRecent?.Invoke(path), () => _removeRecent is not null),
-                IsSample && index == SampleHighlightedIndex))
+            .Select((path, index) =>
+            {
+                bool missing = !IsSample && !System.IO.File.Exists(path);
+                return new StartScreenRecentFile(
+                    System.IO.Path.GetFileName(path),
+                    System.IO.Path.GetDirectoryName(path) ?? string.Empty,
+                    path,
+                    new RelayCommand(() => _openRecent(path)),
+                    new RelayCommand(() => _removeRecent?.Invoke(path), () => _removeRecent is not null),
+                    IsSample && index == SampleHighlightedIndex,
+                    missing,
+                    missing ? path + Environment.NewLine + Strings.Get("RecentFiles_FileMissingTooltip") : path);
+            })
             .ToList();
+
+    // The screen comes back every time the book is closed: the list is read again, so a file that has gone meanwhile is
+    // dimmed without waiting for the list itself to change.
+    partial void OnIsVisibleChanged(bool value)
+    {
+        if (value && !IsSample)
+        {
+            Refresh();
+        }
+    }
 }

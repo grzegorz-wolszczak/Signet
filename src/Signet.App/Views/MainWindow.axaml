@@ -88,6 +88,8 @@
           <Setter Property="Command" Value="{Binding Command}" />
           <Setter Property="IsEnabled" Value="{Binding IsEnabled}" />
           <Setter Property="ToolTip.Tip" Value="{Binding ToolTip}" />
+          <!-- A recent file that is no longer on disk is dimmed while staying clickable (MenuItemViewModel.IsDimmed). -->
+          <Setter Property="Opacity" Value="{Binding Opacity}" />
           <Setter Property="InputGesture" Value="{Binding InputGesture}" />
           <Setter Property="ToggleType" Value="{Binding ToggleType}" />
           <Setter Property="IsChecked" Value="{Binding IsChecked, Mode=TwoWay}" />

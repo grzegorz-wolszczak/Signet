@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -76,6 +77,20 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         // A right click on a main menu item with its own context items (e.g. a "Recent Files" entry). The
         // event bubbles from the submenu popups to the Menu; Avalonia does not click items with the right button.
         MainMenu.ContextRequested += OnMainMenuContextRequested;
+
+        // Every opening of a menu checks the recent files again: a file deleted while Signet was running has to show as
+        // missing without waiting for the list itself to change (File.Exists on at most a few dozen paths).
+        MainMenu.AddHandler(MenuItem.SubmenuOpenedEvent, OnMainMenuSubmenuOpened);
+    }
+
+    // A top-level menu (File, Edit, ...) opening: the recent files are read from disk again. Nested submenus do not
+    // carry the list, so they are left alone.
+    private void OnMainMenuSubmenuOpened(object? sender, RoutedEventArgs e)
+    {
+        if (e.Source is MenuItem { DataContext: Menu.MenuItemViewModel } item && item.Parent is Avalonia.Controls.Menu)
+        {
+            _boundViewModel?.RefreshRecentFilesMenu();
+        }
     }
 
     private static void OnMainMenuContextRequested(object? sender, ContextRequestedEventArgs e)
@@ -454,11 +469,15 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
     private LoadWarningsDialog? _skippedFilesWindow;
 
     /// <inheritdoc />
-    public async Task<bool> ConfirmRemoveMissingRecentAsync(string path) =>
-        await ConfirmWindow.AskAsync(
+    public async Task<MissingRecentAnswer> ConfirmRemoveMissingRecentAsync(string path)
+    {
+        (bool confirmed, bool allMissing) = await ConfirmWindow.AskWithOptionAsync(
             this,
             "Signet",
-            Strings.Format("MainWindow_RecentFileMissing", path));
+            Strings.Format("MainWindow_RecentFileMissing", path),
+            Strings.Get("MainWindow_RemoveAllMissingRecent"));
+        return new MissingRecentAnswer(confirmed, allMissing);
+    }
 
     /// <inheritdoc />
     public Task<IReadOnlyList<string>?> DesignCustomLayoutAsync(string version) =>
