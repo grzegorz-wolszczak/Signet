@@ -2468,6 +2468,74 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     }
 
     /// <summary>
+    /// A label of two lines (the last row of the General page) must not stretch the number field next to it over both
+    /// of them: the field keeps the height of the one-line fields above it.
+    /// </summary>
+    [AvaloniaFact]
+    public void A_wrapped_label_does_not_make_the_number_field_two_lines_tall()
+    {
+        // Arrange
+        PreferencesWindow window = BuildWindow();
+        window.Width = 1100;
+        window.Height = 860;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        // Act
+        ShowPage(window, "GeneralPage");
+        NumericUpDown single = window.FindControl<NumericUpDown>("ClipboardHistoryLimitBox")!;
+        NumericUpDown wrapped = window.FindControl<NumericUpDown>("RecentLocationsLimitBox")!;
+
+        // Assert
+        wrapped.Bounds.Height.Should().BeApproximately(single.Bounds.Height, 0.5);
+        window.Close();
+    }
+
+    /// <summary>
+    /// The temp folder is shown, not typed in: a label with the setting, "Browse…" for the folder dialog and "Clear",
+    /// which goes back to the system default and is off while that default is in use.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_temp_folder_is_a_label_with_a_browse_and_a_clear_button()
+    {
+        // Arrange
+        PreferencesWindow window = BuildWindow();
+        PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+        window.Width = 1100;
+        window.Height = 860;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        // Act
+        ShowPage(window, "GeneralPage");
+        TextBlock value = window.FindControl<TextBlock>("TempFolderValue")!;
+        Button clear = window.FindControl<Button>("TempFolderClearButton")!;
+
+        // Assert
+        window.FindControl<Button>("TempFolderBrowseButton").Should().NotBeNull();
+        value.Text.Should().Be(Strings.Get("PreferencesWindow_TempFolderDefault"));
+        clear.IsEffectivelyEnabled.Should().BeFalse("there is no folder of one's own to clear");
+
+        // Act
+        vm.TempFolderHome = @"C:\books\scratch";
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        value.Text.Should().Be(@"C:\books\scratch");
+        clear.IsEffectivelyEnabled.Should().BeTrue();
+
+        // Act
+        clear.Command!.Execute(null);
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        value.Text.Should().Be(Strings.Get("PreferencesWindow_TempFolderDefault"));
+        window.Close();
+    }
+
+    /// <summary>
     /// The number of the recent files of the File menu (General page, up to 20) and the number of those on the start screen
     /// (Start Screen page, up to 100) are two settings, each with its own box.
     /// </summary>

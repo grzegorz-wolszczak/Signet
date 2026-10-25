@@ -90,6 +90,46 @@ public sealed class PreferencesViewModelTests : IDisposable
         applied.Should().Be(1);
     }
 
+    /// <summary>
+    /// The temp folder is picked in a folder dialog, so the page shows the setting: the folder itself, or a note that
+    /// the system default is used. "Clear" goes back to that default and has nothing to undo while it is in use.
+    /// </summary>
+    [Fact]
+    public void The_temp_folder_is_shown_and_cleared_back_to_the_default()
+    {
+        // Arrange
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+        string folder = _disposables.Add(new TempDir("temp-home-")).Path;
+
+        // Act & Assert
+        vm.TempFolderDisplay.Should().Be(Strings.Get("PreferencesWindow_TempFolderDefault"));
+        vm.HasCustomTempFolder.Should().BeFalse();
+
+        // Act
+        vm.TempFolderHome = folder;
+
+        // Assert
+        vm.TempFolderDisplay.Should().Be(folder);
+        vm.HasCustomTempFolder.Should().BeTrue();
+
+        // Act
+        vm.ApplyCommand.Execute(null);
+
+        // Assert
+        host.Settings.TempFolderHome.Should().Be(folder);
+
+        // Act
+        vm.ClearTempFolderCommand.Execute(null);
+        vm.ApplyCommand.Execute(null);
+
+        // Assert
+        vm.TempFolderHome.Should().BeEmpty();
+        vm.TempFolderDisplay.Should().Be(Strings.Get("PreferencesWindow_TempFolderDefault"));
+        vm.HasCustomTempFolder.Should().BeFalse();
+        host.Settings.TempFolderHome.Should().BeEmpty();
+    }
+
     [Fact]
     public void A_window_closed_without_applying_changes_nothing()
     {

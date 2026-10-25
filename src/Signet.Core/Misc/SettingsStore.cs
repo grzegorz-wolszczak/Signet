@@ -348,13 +348,6 @@ public sealed class SettingsStore
         }
     }
 
-    /// <summary>Path of the external XHTML editor.</summary>
-    public string ExternalXEditorPath
-    {
-        get => ReadString("external_xhtml_editor", string.Empty);
-        set => Write("external_xhtml_editor", value);
-    }
-
     /// <summary>
     /// The dock layout of the main window — the assignment of panels to regions, their order and the proportions, not
     /// just their visibility (which is kept separately via <see cref="GetStringMap"/> under the docks group).

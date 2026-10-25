@@ -633,10 +633,22 @@
     <value>Frame around block</value>
   </data>
   <data name="PreferencesWindow_TempFolder" xml:space="preserve">
-    <value>Temp folder (blank = default):</value>
+    <value>Temp folder:</value>
   </data>
-  <data name="PreferencesWindow_ExternalXEditorPath" xml:space="preserve">
-    <value>External XHTML editor path:</value>
+  <data name="PreferencesWindow_TempFolderDefault" xml:space="preserve">
+    <value>(the system default)</value>
+  </data>
+  <data name="PreferencesWindow_TempFolderBrowse" xml:space="preserve">
+    <value>Browse…</value>
+  </data>
+  <data name="PreferencesWindow_TempFolderBrowseTitle" xml:space="preserve">
+    <value>Choose the temp folder</value>
+  </data>
+  <data name="PreferencesWindow_TempFolderClear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="PreferencesWindow_TempFolderClearTip" xml:space="preserve">
+    <value>Go back to the default temp folder</value>
   </data>
   <data name="PreferencesWindow_CssEpub2Profile" xml:space="preserve">
     <value>EPUB 2 W3C CSS validation profile:</value>
