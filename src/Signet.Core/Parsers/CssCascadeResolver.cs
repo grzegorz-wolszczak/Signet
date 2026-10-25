@@ -59,6 +59,22 @@ public sealed record CssMatchedRule(
     public CssDeclarationSource Source => new(BookPath, Offset, SelectorText, IsInlineStyle);
 }
 
+/// <summary>
+/// An inherited property in effect on the inspected element that the element itself does not set: the value comes
+/// from the nearest ancestor that gives it one (the "show inherited" list of the Live CSS panel).
+/// </summary>
+/// <param name="Property">The property name.</param>
+/// <param name="Value">The value (including a possible <c>!important</c>).</param>
+/// <param name="IsImportant">Whether the declaration has <c>!important</c>.</param>
+/// <param name="ElementDescription">The ancestor the value comes from, e.g. <c>div.a</c>.</param>
+/// <param name="Source">The rule of that ancestor which gives the value — for the "from … file:line" annotation.</param>
+public sealed record CssInheritedDeclaration(
+    string Property,
+    string Value,
+    bool IsImportant,
+    string ElementDescription,
+    CssDeclarationSource Source);
+
 /// <summary>One element of the inspected element's ancestor chain, with the rules matched to it.</summary>
 /// <param name="ElementDescription">A short description of the element, e.g. <c>div.a</c>.</param>
 /// <param name="ElementOffset">The 0-based offset of the element's opening tag in the HTML file.</param>
@@ -86,6 +102,12 @@ public sealed record CssCascadeResult(
 {
     /// <summary>The rules matched to the inspected element itself (the last level).</summary>
     public IReadOnlyList<CssMatchedRule> MatchedRules => Levels[^1].MatchedRules;
+
+    /// <summary>
+    /// The inherited properties the element takes from its ancestors and does not set itself, by property name —
+    /// what the cascade gives it without any rule of its own saying so. Empty when it inherits nothing.
+    /// </summary>
+    public IReadOnlyList<CssInheritedDeclaration> Inherited { get; init; } = Array.Empty<CssInheritedDeclaration>();
 }
 
 /// <summary>
@@ -182,10 +204,13 @@ public static class CssCascadeResolver
         List<LevelCascade> levels = chain
             .Select(e => ApplyElementCascade(MatchRules(e, sheets, html.BookPath)))
             .ToList();
-        List<CssCascadeLevel> resultLevels = ApplyInheritance(chain, levels);
+        (List<CssCascadeLevel> resultLevels, List<CssInheritedDeclaration> inherited) = ApplyInheritance(chain, levels);
 
         int caretElementOffset = Math.Max(0, XhtmlDoc.OffsetFromNode(element));
-        return new CssCascadeResult(html.BookPath, caretElementOffset, DescribeElement(element), resultLevels);
+        return new CssCascadeResult(html.BookPath, caretElementOffset, DescribeElement(element), resultLevels)
+        {
+            Inherited = inherited,
+        };
     }
 
     // The rules matched to one element plus, per property, the declaration that wins on that element.
@@ -313,21 +338,27 @@ public static class CssCascadeResolver
     /// Combines the per-element cascades of the chain (<paramref name="levels"/>, body first, the inspected
     /// element last) into the final result: an inherited property set on a level is overridden by the same
     /// property set on any level below it, and its effective source is the closest such level; a
-    /// non-inherited property only ever affects the element it is declared on.
+    /// non-inherited property only ever affects the element it is declared on. Also collects the inherited
+    /// properties whose effective source is an ancestor — what the inspected element gets without setting it itself.
     /// </summary>
-    private static List<CssCascadeLevel> ApplyInheritance(List<IElement> chain, List<LevelCascade> levels)
+    private static (List<CssCascadeLevel> Levels, List<CssInheritedDeclaration> Inherited) ApplyInheritance(
+        List<IElement> chain, List<LevelCascade> levels)
     {
         int last = levels.Count - 1;
 
         // For every inherited property: the winning declaration on the level closest to the inspected element.
-        Dictionary<string, (int Level, CssDeclarationSource Source)> effectiveInherited = new(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, (int Level, CssDeclarationSource Source, CssMatchedDeclaration Declaration)> effectiveInherited =
+            new(StringComparer.OrdinalIgnoreCase);
         for (int level = 0; level <= last; level++)
         {
             foreach ((string property, var winner) in levels[level].Winners)
             {
                 if (CssInheritedProperties.IsInherited(property))
                 {
-                    effectiveInherited[property] = (level, levels[level].Rules[winner.RuleIndex].Source);
+                    effectiveInherited[property] = (
+                        level,
+                        levels[level].Rules[winner.RuleIndex].Source,
+                        levels[level].Rules[winner.RuleIndex].Declarations[winner.DeclIndex]);
                 }
             }
         }
@@ -355,7 +386,7 @@ public static class CssCascadeResolver
 
                     if (CssInheritedProperties.IsInherited(decl.Property))
                     {
-                        (int effectiveLevel, CssDeclarationSource effectiveSource) = effectiveInherited[decl.Property];
+                        (int effectiveLevel, CssDeclarationSource effectiveSource, _) = effectiveInherited[decl.Property];
                         bool overridden = !isLocalWinner || effectiveLevel != level;
                         declarations.Add(decl with
                         {
@@ -386,7 +417,20 @@ public static class CssCascadeResolver
                 rules));
         }
 
-        return result;
+        // What the element inherits: the properties whose winning declaration sits on an ancestor, by name, so that
+        // the panel lists them in the same order whatever order the stylesheets happen to be in.
+        List<CssInheritedDeclaration> inherited = effectiveInherited.Values
+            .Where(entry => entry.Level < last)
+            .Select(entry => new CssInheritedDeclaration(
+                entry.Declaration.Property,
+                entry.Declaration.Value,
+                entry.Declaration.IsImportant,
+                DescribeElement(chain[entry.Level]),
+                entry.Source))
+            .OrderBy(d => d.Property, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return (result, inherited);
     }
 
     internal static string DescribeElement(IElement element)

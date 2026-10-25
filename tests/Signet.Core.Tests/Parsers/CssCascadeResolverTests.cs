@@ -427,4 +427,97 @@ public sealed class CssCascadeResolverTests
         // Assert
         result.Should().BeNull();
     }
+
+    /// <summary>
+    /// What the element gets without saying so itself: an inherited property set on an ancestor, with the ancestor
+    /// and the rule that gives the value. A property the element sets itself is not in the list, and neither is a
+    /// property that does not inherit at all.
+    /// </summary>
+    [Fact]
+    public void Resolve_lists_the_properties_the_element_inherits_from_its_ancestors()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadModifiedMinimal(
+            temp,
+            tree =>
+            {
+                AppendCss(tree, "div.outer { color: red; font-style: italic; margin: 4px; }\np.note { color: blue; }");
+                SetChapter1Body(tree, "<div class=\"outer\"><p class=\"note\">hi</p></div>");
+            });
+
+        HtmlResource html = Chapter1(book);
+        int caret = OffsetOfTag(html, "<p class=\"note\">");
+
+        // Act
+        CssCascadeResult? result = CssCascadeResolver.Resolve(html, caret, ResolveCssInfo(book));
+
+        // Assert
+        result.Should().NotBeNull();
+        CssInheritedDeclaration inherited = result!.Inherited.Should().ContainSingle(i => i.Property == "font-style").Subject;
+        inherited.Value.Should().Be("italic");
+        inherited.ElementDescription.Should().Be("div.outer");
+        inherited.Source.SelectorText.Should().Be("div.outer");
+        inherited.Source.BookPath.Should().EndWith("style.css");
+        result.Inherited.Should().NotContain(i => i.Property == "color", "the element sets the colour itself");
+        result.Inherited.Should().NotContain(i => i.Property == "margin", "margin does not inherit");
+        result.Inherited.Select(i => i.Property).Should().BeInAscendingOrder(StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// A property that does not inherit (margin) is no part of what the element gets from an ancestor, however many
+    /// ancestors declare it. (What the book's own stylesheet gives body — e.g. font-family — is inherited and
+    /// stays in the list: the test holds only what the ancestor added.)
+    /// </summary>
+    [Fact]
+    public void Resolve_does_not_list_a_non_inherited_property_of_an_ancestor()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadModifiedMinimal(
+            temp,
+            tree =>
+            {
+                AppendCss(tree, "div.outer { margin: 4px; }\np.note { color: blue; }");
+                SetChapter1Body(tree, "<div class=\"outer\"><p class=\"note\">hi</p></div>");
+            });
+
+        HtmlResource html = Chapter1(book);
+        int caret = OffsetOfTag(html, "<p class=\"note\">");
+
+        // Act
+        CssCascadeResult? result = CssCascadeResolver.Resolve(html, caret, ResolveCssInfo(book));
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.Inherited.Should().NotContain(i => i.ElementDescription == "div.outer");
+        result.Inherited.Should().NotContain(i => i.Property == "margin");
+    }
+
+    /// <summary>The value comes from the nearest ancestor that sets it, not from the one furthest away.</summary>
+    [Fact]
+    public void Resolve_takes_an_inherited_value_from_the_nearest_ancestor_that_sets_it()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadModifiedMinimal(
+            temp,
+            tree =>
+            {
+                AppendCss(tree, "div.outer { color: red; }\ndiv.inner { color: green; }");
+                SetChapter1Body(tree, "<div class=\"outer\"><div class=\"inner\"><p class=\"note\">hi</p></div></div>");
+            });
+
+        HtmlResource html = Chapter1(book);
+        int caret = OffsetOfTag(html, "<p class=\"note\">");
+
+        // Act
+        CssCascadeResult? result = CssCascadeResolver.Resolve(html, caret, ResolveCssInfo(book));
+
+        // Assert
+        result.Should().NotBeNull();
+        CssInheritedDeclaration inherited = result!.Inherited.Single(i => i.Property == "color");
+        inherited.Value.Should().Be("green");
+        inherited.ElementDescription.Should().Be("div.inner");
+    }
 }

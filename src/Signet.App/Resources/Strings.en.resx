@@ -125,6 +125,18 @@
   <data name="LiveCssPanelWindow_NoRules" xml:space="preserve">
     <value>No CSS rule matches this element.</value>
   </data>
+  <data name="LiveCssPanelWindow_ShowInherited" xml:space="preserve">
+    <value>Show inherited</value>
+  </data>
+  <data name="LiveCssPanelWindow_InheritedHeader" xml:space="preserve">
+    <value>inherited from ancestors</value>
+  </data>
+  <data name="LiveCssPanelWindow_InheritedFrom" xml:space="preserve">
+    <value>(from {0})</value>
+  </data>
+  <data name="LiveCssPanelWindow_ToggleLevel" xml:space="preserve">
+    <value>Collapse / expand this element's rules</value>
+  </data>
   <data name="LiveCssPanelWindow_Specificity" xml:space="preserve">
     <value>specificity</value>
   </data>
