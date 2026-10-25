@@ -6,6 +6,11 @@ using Dock.Model.Controls;
 using Dock.Model.Core;
 using Signet.App.Docking;
 using Signet.Core.Misc;
+using Signet.App.Tests.TestSupport;
+using Signet.Core.Resources;
+using Signet.Core.BookManipulation;
+using Signet.App.ViewModels;
+using Signet.App.Services;
 using Signet.Core.Tests.TestSupport;
 using Xunit;
 
@@ -36,6 +41,82 @@ public sealed class MainDockFactoryTests
                 new DockRegionState("BottomDock", bottom, Array.Empty<string>(), null),
             },
             documents);
+
+    /// <summary>
+    /// The Preview panel is one while the file it shows follows the active tab, so its title says which file that is —
+    /// and goes back to the bare name of the panel when the preview is emptied.
+    /// </summary>
+    [Fact]
+    public void The_preview_panel_says_in_its_title_which_file_it_shows()
+    {
+        // Arrange
+        using UiCultureScope culture = new("en");
+        using TempDir temp = new();
+        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        using PreviewViewModel preview = new(new StatusBarService()) { DebounceInterval = TimeSpan.Zero };
+        MainDockFactory factory = new(preview: preview);
+        IRootDock root = factory.CreateLayout();
+        factory.InitLayout(root);
+        HtmlResource chapter = book.GetHtmlResources().First();
+
+        // Assert
+        PreviewTitleOf(root).Should().Be("Preview", "nothing is shown yet");
+
+        // Act
+        preview.SetBook(book);
+        preview.ShowResource(chapter);
+
+        // Assert
+        string name = chapter.BookPath[(chapter.BookPath.LastIndexOf('/') + 1)..];
+        factory.PreviewTitle.Should().Be("Preview [" + name + "]");
+        PreviewTitleOf(root).Should().Be("Preview [" + name + "]");
+
+        // Act
+        preview.Clear();
+
+        // Assert
+        PreviewTitleOf(root).Should().Be("Preview");
+    }
+
+    [Fact]
+    public void The_preview_panel_keeps_the_name_of_its_file_after_a_language_change()
+    {
+        // Arrange
+        using UiCultureScope culture = new("en");
+        using TempDir temp = new();
+        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        using PreviewViewModel preview = new(new StatusBarService()) { DebounceInterval = TimeSpan.Zero };
+        MainDockFactory factory = new(preview: preview);
+        IRootDock root = factory.CreateLayout();
+        factory.InitLayout(root);
+        preview.SetBook(book);
+        preview.ShowResource(book.GetHtmlResources().First());
+
+        // Act
+        factory.RefreshTitles();
+
+        // Assert
+        PreviewTitleOf(root).Should().StartWith("Preview [").And.EndWith("]");
+    }
+
+    // The title the Preview panel shows in the layout (its tab header / title bar).
+    private static string? PreviewTitleOf(IDock root) =>
+        Flatten(root).OfType<Signet.App.Docking.PreviewTool>().Single().Title;
+
+    private static IEnumerable<IDockable> Flatten(IDockable dockable)
+    {
+        yield return dockable;
+        if (dockable is IDock dock && dock.VisibleDockables is { } children)
+        {
+            foreach (IDockable child in children)
+            {
+                foreach (IDockable descendant in Flatten(child))
+                {
+                    yield return descendant;
+                }
+            }
+        }
+    }
 
     [Fact]
     public void Saved_side_widths_survive_a_settings_round_trip_into_a_fresh_layout()
