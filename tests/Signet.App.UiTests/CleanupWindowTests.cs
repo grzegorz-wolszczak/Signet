@@ -1,5 +1,6 @@
 using System.Linq;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
@@ -53,6 +54,46 @@ public sealed class CleanupWindowTests
             clean.IsEffectivelyEnabled.Should().BeFalse();
         }
 
+        window.Close();
+    }
+
+    /// <summary>
+    /// The description of a step is folded away until its triangle is clicked: a tab holds a dozen steps and their
+    /// descriptions are long, so unfolded they push the summaries off the screen.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_description_of_a_step_is_folded_away_until_its_triangle_is_clicked()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Minimal, temp)).GetBook();
+        CleanupViewModel vm = new(CleanupAnalysis.Prepare(book).Analysis!, [], (_, _) => { }, (_, _) => System.Threading.Tasks.Task.FromResult<CleanupAnalysis?>(null));
+        CleanupWindow window = new() { DataContext = vm };
+        CleanupSectionViewModel section = vm.Tabs[0].Sections[0];
+
+        // Act
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        ToggleButton toggle = window.GetVisualDescendants().OfType<ToggleButton>()
+            .First(t => t.Classes.Contains("descriptionToggle"));
+
+        // Assert
+        section.IsDescriptionExpanded.Should().BeFalse("descriptions start folded away");
+        section.DescriptionGlyph.Should().Be("▸");
+        window.GetVisualDescendants().OfType<TextBlock>()
+            .Should().NotContain(t => t.Text == section.Description && t.IsEffectivelyVisible);
+
+        // Act
+        toggle.IsChecked = true;
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+
+        // Assert
+        section.IsDescriptionExpanded.Should().BeTrue();
+        section.DescriptionGlyph.Should().Be("▾");
+        window.GetVisualDescendants().OfType<TextBlock>()
+            .Should().Contain(t => t.Text == section.Description && t.IsEffectivelyVisible);
         window.Close();
     }
 }

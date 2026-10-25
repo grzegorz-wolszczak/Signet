@@ -348,6 +348,14 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
     [ObservableProperty]
     private bool _isExpanded;
 
+    /// <summary>
+    /// Whether the description of the step (what it does, and the caution that goes with it) is shown. Folded away by
+    /// default: the descriptions are long, and with a dozen steps in a tab they pushed the summaries off the screen.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DescriptionGlyph))]
+    private bool _isDescriptionExpanded;
+
     [ObservableProperty]
     private string _summary = string.Empty;
 
@@ -399,6 +407,9 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
 
     /// <summary>Whether <see cref="Warning"/> is shown.</summary>
     public bool HasWarning => Warning.Length > 0;
+
+    /// <summary>The triangle in front of the description, pointing down when it is unfolded.</summary>
+    public string DescriptionGlyph => IsDescriptionExpanded ? "▾" : "▸";
 
     /// <summary>Whether the section has the level options (<see cref="CleanupStep.MergeDivs"/>).</summary>
     public bool HasLevelOptions => Step == CleanupStep.MergeDivs;

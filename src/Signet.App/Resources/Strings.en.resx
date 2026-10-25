@@ -3863,6 +3863,9 @@ Insert anyway?</value>
   <data name="CleanupWindow_Details" xml:space="preserve">
     <value>Details</value>
   </data>
+  <data name="CleanupWindow_ToggleDescription" xml:space="preserve">
+    <value>Collapse / expand this step's description</value>
+  </data>
   <data name="CleanupWindow_SelectAll" xml:space="preserve">
     <value>Select all</value>
   </data>
