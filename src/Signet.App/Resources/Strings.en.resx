@@ -134,6 +134,9 @@
   <data name="LiveCssPanelWindow_InheritedFrom" xml:space="preserve">
     <value>(from {0})</value>
   </data>
+  <data name="LiveCssPanelWindow_GoToRule" xml:space="preserve">
+    <value>Go to that rule</value>
+  </data>
   <data name="LiveCssPanelWindow_ToggleLevel" xml:space="preserve">
     <value>Collapse / expand this element's rules</value>
   </data>
@@ -3865,6 +3868,12 @@ Insert anyway?</value>
   </data>
   <data name="CleanupWindow_ToggleDescription" xml:space="preserve">
     <value>Collapse / expand this step's description</value>
+  </data>
+  <data name="CleanupWindow_ShowDescription" xml:space="preserve">
+    <value>Click for the description</value>
+  </data>
+  <data name="CleanupWindow_HideDescription" xml:space="preserve">
+    <value>Click to fold the description away</value>
   </data>
   <data name="CleanupWindow_SelectAll" xml:space="preserve">
     <value>Select all</value>

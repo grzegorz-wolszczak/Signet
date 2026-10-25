@@ -134,6 +134,9 @@
   <data name="LiveCssPanelWindow_InheritedFrom" xml:space="preserve">
     <value>(z {0})</value>
   </data>
+  <data name="LiveCssPanelWindow_GoToRule" xml:space="preserve">
+    <value>Przejdź do tej reguły</value>
+  </data>
   <data name="LiveCssPanelWindow_ToggleLevel" xml:space="preserve">
     <value>Zwiń / rozwiń reguły tego elementu</value>
   </data>
@@ -3865,6 +3868,12 @@ Wstawić mimo to?</value>
   </data>
   <data name="CleanupWindow_ToggleDescription" xml:space="preserve">
     <value>Zwiń / rozwiń opis tego kroku</value>
+  </data>
+  <data name="CleanupWindow_ShowDescription" xml:space="preserve">
+    <value>Kliknij po opis</value>
+  </data>
+  <data name="CleanupWindow_HideDescription" xml:space="preserve">
+    <value>Kliknij, aby zwinąć opis</value>
   </data>
   <data name="CleanupWindow_SelectAll" xml:space="preserve">
     <value>Zaznacz wszystkie</value>

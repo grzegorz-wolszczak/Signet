@@ -18,16 +18,19 @@ namespace Signet.App.ViewModels;
 /// </summary>
 public sealed class LiveCssDeclarationViewModel
 {
-    internal LiveCssDeclarationViewModel(CssMatchedDeclaration declaration, Func<string, string> resolveBookText)
+    internal LiveCssDeclarationViewModel(
+        CssMatchedDeclaration declaration, Func<string, string> resolveBookText, Action<string, int> jumpTo)
     {
         Text = declaration.IsImportant
             ? $"{declaration.Property}: {declaration.Value} !important;"
             : $"{declaration.Property}: {declaration.Value};";
         IsOverridden = declaration.IsOverridden;
         IsDimmed = !declaration.AffectsElement;
-        OverriddenByText = declaration.OverriddenBy is { } source
-            ? Strings.Format("LiveCssPanelWindow_OverriddenBy", LiveCssFormat.Source(source, resolveBookText))
-            : string.Empty;
+        if (declaration.OverriddenBy is { } source)
+        {
+            OverriddenByText = Strings.Format("LiveCssPanelWindow_OverriddenBy", LiveCssFormat.Source(source, resolveBookText));
+            JumpCommand = new RelayCommand(() => jumpTo(source.BookPath, source.Offset));
+        }
     }
 
     /// <summary>Declaration text to display (<c>property: value;</c>).</summary>
@@ -46,10 +49,16 @@ public sealed class LiveCssDeclarationViewModel
     public bool IsDimmed { get; }
 
     /// <summary>"(overridden by selector, file:line)" for an overridden declaration, otherwise empty.</summary>
-    public string OverriddenByText { get; }
+    public string OverriddenByText { get; } = string.Empty;
 
     /// <summary>Whether <see cref="OverriddenByText"/> is shown.</summary>
     public bool HasOverriddenBy => OverriddenByText.Length > 0;
+
+    /// <summary>
+    /// Opens the rule that wins instead and places the caret on its selector — the annotation says where it is, so
+    /// it takes you there. <c>null</c> when the declaration is not overridden.
+    /// </summary>
+    public RelayCommand? JumpCommand { get; }
 }
 
 /// <summary>
@@ -58,8 +67,10 @@ public sealed class LiveCssDeclarationViewModel
 /// </summary>
 public sealed class LiveCssInheritedViewModel
 {
-    internal LiveCssInheritedViewModel(CssInheritedDeclaration inherited, Func<string, string> resolveBookText)
+    internal LiveCssInheritedViewModel(
+        CssInheritedDeclaration inherited, Func<string, string> resolveBookText, Action<string, int> jumpTo)
     {
+        JumpCommand = new RelayCommand(() => jumpTo(inherited.Source.BookPath, inherited.Source.Offset));
         Text = inherited.IsImportant
             ? $"{inherited.Property}: {inherited.Value} !important;"
             : $"{inherited.Property}: {inherited.Value};";
@@ -73,6 +84,9 @@ public sealed class LiveCssInheritedViewModel
 
     /// <summary>"(inherited from div.a — style.css:12)".</summary>
     public string SourceText { get; }
+
+    /// <summary>Opens the rule of the ancestor that gives the value and places the caret on its selector.</summary>
+    public RelayCommand JumpCommand { get; }
 }
 
 /// <summary>A single CSS rule matched to the element, with a clickable jump to its declaration.</summary>
@@ -86,7 +100,7 @@ public sealed class LiveCssRuleViewModel
         SelectorText = rule.IsInlineStyle ? Strings.Get("LiveCssPanelWindow_Inline") : rule.SelectorText;
         HeaderSuffix = rule.IsInlineStyle ? string.Empty : Header[SelectorText.Length..];
         Declarations = new ObservableCollection<LiveCssDeclarationViewModel>(
-            rule.Declarations.Select(d => new LiveCssDeclarationViewModel(d, resolveBookText)));
+            rule.Declarations.Select(d => new LiveCssDeclarationViewModel(d, resolveBookText, jumpTo)));
         JumpCommand = new RelayCommand(() => jumpTo(rule.BookPath, rule.Offset));
     }
 
@@ -252,6 +266,9 @@ public sealed class LiveCssPanelViewModel : ViewModelBase
     /// <summary>Whether there is anything inherited to show.</summary>
     public bool HasInherited => Inherited.Count > 0;
 
+    /// <summary>Whether the box of inherited properties is shown (asked for, and there is something in it).</summary>
+    public bool ShowInheritedBox => ShowInherited && HasInherited;
+
     /// <summary>
     /// Whether the inherited properties are listed ("Show inherited", the check box under the header of the element
     /// under the caret). Kept in the settings, so the panel opens the way it was left.
@@ -261,7 +278,13 @@ public sealed class LiveCssPanelViewModel : ViewModelBase
         get => _showInherited;
         set
         {
-            if (SetProperty(ref _showInherited, value) && _settings is not null)
+            if (!SetProperty(ref _showInherited, value))
+            {
+                return;
+            }
+
+            OnPropertyChanged(nameof(ShowInheritedBox));
+            if (_settings is not null)
             {
                 _settings.LiveCssShowInherited = value;
                 _settings.Save();
@@ -313,10 +336,11 @@ public sealed class LiveCssPanelViewModel : ViewModelBase
         Inherited.Clear();
         foreach (CssInheritedDeclaration inherited in result.Inherited)
         {
-            Inherited.Add(new LiveCssInheritedViewModel(inherited, CachedText));
+            Inherited.Add(new LiveCssInheritedViewModel(inherited, CachedText, jumpTo));
         }
 
         OnPropertyChanged(nameof(HasInherited));
+        OnPropertyChanged(nameof(ShowInheritedBox));
     }
 
     private void OnLevelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)

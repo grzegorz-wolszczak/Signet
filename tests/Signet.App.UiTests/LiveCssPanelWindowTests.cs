@@ -112,7 +112,8 @@ public sealed class LiveCssPanelWindowTests
         // Assert
         vm.ShowInherited.Should().BeTrue();
         window.GetVisualDescendants().OfType<TextBlock>()
-            .Should().Contain(t => t.Text == Strings.Get("LiveCssPanelWindow_InheritedHeader") && t.IsEffectivelyVisible);
+            .Where(t => t.Text == Strings.Get("LiveCssPanelWindow_InheritedHeader") && t.IsEffectivelyVisible)
+            .Should().ContainSingle("what the element inherits belongs to it alone, not to every level");
         window.GetVisualDescendants().OfType<TextBlock>()
             .Should().Contain(t => t.Text == Strings.Format("LiveCssPanelWindow_InheritedFrom", "div.a — style.css:1") && t.IsEffectivelyVisible);
         window.Close();
