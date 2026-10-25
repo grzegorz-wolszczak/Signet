@@ -2536,6 +2536,33 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     }
 
     /// <summary>
+    /// The font of the code previews (Code Editor › Color Scheme) spans the whole width of the settings, and its own
+    /// preview is a sample of code highlighted like the previews it is the font of.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_preview_font_of_the_color_scheme_spans_the_page_and_shows_highlighted_code()
+    {
+        // Arrange
+        PreferencesWindow window = BuildWindow();
+        PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+        window.Width = 1400;
+        window.Height = 860;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        // Act
+        ShowPage(window, "ColorSchemePage");
+        FontSettingView view = window.FindControl<FontSettingView>("ColorSchemePreviewFontView")!;
+        StackPanel panel = window.FindControl<StackPanel>("ColorSchemePanel")!;
+
+        // Assert
+        vm.ColorSchemePreviewFont.IsCodePreview.Should().BeTrue("the sample is code, so it is highlighted");
+        view.Bounds.Width.Should().BeApproximately(panel.Bounds.Width, 1, "it takes the whole width of the settings");
+        view.GetVisualDescendants().OfType<CodePreviewEditor>().Single().IsVisible.Should().BeTrue();
+        window.Close();
+    }
+
+    /// <summary>
     /// The number of the recent files of the File menu (General page, up to 20) and the number of those on the start screen
     /// (Start Screen page, up to 100) are two settings, each with its own box.
     /// </summary>

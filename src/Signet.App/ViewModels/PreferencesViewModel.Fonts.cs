@@ -286,6 +286,7 @@ public sealed partial class PreferencesViewModel
             (() => Font().FontFamily, () => Font().FontSize),
             () => ColorScheme.PreviewFont = ColorSchemePreviewAppearance.Default,
             new AsyncRelayCommand(ChooseColorSchemePreviewFont),
+            codePreview: () => ExtendedHighlighting,
             weight: (() => Font().FontWeight, v => ColorScheme.PreviewFont = Font() with { FontWeight = v }));
     }
 
