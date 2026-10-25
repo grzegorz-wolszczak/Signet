@@ -2686,6 +2686,27 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <inheritdoc/>
+    void ICodeTabHost.FindLanguageUsages(string language)
+    {
+        ArgumentNullException.ThrowIfNull(language);
+        if (_currentBook is null)
+        {
+            return;
+        }
+
+        _tabManager.SaveAllTabs();
+        IReadOnlyList<ClassUsage> usages = _currentBook.FindLanguageUsages(language);
+        _findUsages.LoadText(
+            () => Strings.Format("FindUsages_HeaderLanguage", language),
+            usages,
+            () => _currentBook?.FindLanguageUsages(language) ?? Array.Empty<ClassUsage>());
+        ShowFindUsagesTool();
+        _statusBar.ShowMessage(
+            Strings.Format("Status_FindUsagesLanguage", language, FindUsagesViewModel.ResultsText(usages.Count)),
+            TimeSpan.FromSeconds(4));
+    }
+
+    /// <inheritdoc/>
     int ICodeTabHost.CountSameSpansInBook(HtmlResource html, string text, int offset) =>
         _currentBook is null ? 0 : SpanRemoval.CountInBook(_currentBook, html, text, offset);
 

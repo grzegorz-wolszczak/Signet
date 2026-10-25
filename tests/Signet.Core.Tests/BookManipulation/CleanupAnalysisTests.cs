@@ -1228,6 +1228,96 @@ public sealed class CleanupAnalysisTests
             .And.Contain("<p id=\"kept\">three</p>");
     }
 
+    /// <summary>
+    /// The attributes that only repeat an inherited value go as one item per file, and the element highest up keeps
+    /// its own: that is the one the others inherit from.
+    /// </summary>
+    [Fact]
+    public void InheritedAttributes_lists_the_repeated_values_of_a_file_as_one_item_and_apply_removes_them()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadMinimal(temp, tree =>
+        {
+            ReplaceInChapter1(tree, "<body>", "<body lang=\"pl-PL\" xml:lang=\"pl-PL\">");
+            ReplaceInChapter1(
+                tree,
+                "  <p>Hello, world.</p>",
+                "  <p lang=\"pl-PL\" xml:lang=\"pl-PL\">Hello, world.</p>\n"
+                + "  <p lang=\"de-DE\">Hallo.</p>\n"
+                + "  <div xmlns=\"http://www.w3.org/1999/xhtml\"><span lang=\"pl-PL\">x</span></div>");
+        });
+
+        // Act
+        CleanupPlan plan = Plan(book, CleanupStep.InheritedAttributes);
+        CleanupItem item = Chapter1Items(plan, CleanupStep.InheritedAttributes).Should().ContainSingle().Subject;
+
+        // Assert
+        item.IsRisky.Should().BeFalse();
+        item.RuleCount.Should().Be(4, "two on the paragraph, one on the div and one on the span");
+
+        // Act
+        book.ApplyCleanup(plan).Should().BeTrue();
+
+        // Assert
+        Chapter1(book).Should()
+            .Contain("<body lang=\"pl-PL\" xml:lang=\"pl-PL\">", "the topmost declaration is the one that counts")
+            .And.Contain("<p>Hello, world.</p>")
+            .And.Contain("<p lang=\"de-DE\">Hallo.</p>", "a language of its own stays")
+            .And.Contain("<div><span>x</span></div>");
+    }
+
+    /// <summary>
+    /// A stylesheet can reach an element through the attribute itself, and then the removal does change something:
+    /// such an attribute is listed on its own, marked risky, and is not removed unless it is accepted.
+    /// </summary>
+    [Fact]
+    public void InheritedAttributes_an_attribute_a_selector_reaches_is_risky_and_stays()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadMinimal(temp, tree =>
+        {
+            AppendCss(tree, "p[lang] { color: red; }");
+            ReplaceInChapter1(tree, "<body>", "<body lang=\"pl-PL\">");
+            ReplaceInChapter1(tree, "  <p>Hello, world.</p>", "  <p lang=\"pl-PL\">Hello, world.</p>");
+        });
+
+        // Act
+        CleanupPlan plan = Plan(book, CleanupStep.InheritedAttributes);
+        CleanupItem item = Chapter1Items(plan, CleanupStep.InheritedAttributes).Should().ContainSingle().Subject;
+
+        // Assert
+        item.IsRisky.Should().BeTrue();
+        item.IsApplied.Should().BeFalse("a risky item waits to be accepted");
+        item.Consequences.Should().NotBeEmpty();
+        item.Consequences[0].Text.Should().Contain("color");
+
+        // Act
+        book.ApplyCleanup(plan);
+
+        // Assert
+        Chapter1(book).Should().Contain("<p lang=\"pl-PL\">Hello, world.</p>");
+    }
+
+    [Fact]
+    public void InheritedAttributes_finds_nothing_in_a_book_that_states_each_language_once()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadMinimal(temp, tree =>
+        {
+            ReplaceInChapter1(tree, "<body>", "<body lang=\"pl-PL\">");
+            ReplaceInChapter1(tree, "  <p>Hello, world.</p>", "  <p>Hello, world.</p>\n  <p lang=\"de-DE\">Hallo.</p>");
+        });
+
+        // Act
+        CleanupPlan plan = Plan(book, CleanupStep.InheritedAttributes);
+
+        // Assert
+        Chapter1Items(plan, CleanupStep.InheritedAttributes).Should().BeEmpty();
+    }
+
     [Theory]
     [InlineData("<label for=\"f\">l</label><input id=\"f\" type=\"text\"/>", "f")]
     [InlineData("<p aria-labelledby=\"t other\">x</p><h2 id=\"t\">title</h2>", "t")]

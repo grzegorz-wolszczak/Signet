@@ -19,6 +19,12 @@ public enum ClassUsageKind
 
     /// <summary>An <c>id="…"</c> attribute — used by <see cref="IdUsageFinder"/>, not <see cref="ClassUsageFinder"/>.</summary>
     IdAttribute,
+
+    /// <summary>
+    /// A <c>lang</c> or <c>xml:lang</c> attribute that states a language — used by
+    /// <see cref="LanguageUsageFinder"/>.
+    /// </summary>
+    LanguageAttribute,
 }
 
 /// <summary>A file searched by <see cref="ClassUsageFinder"/>.</summary>

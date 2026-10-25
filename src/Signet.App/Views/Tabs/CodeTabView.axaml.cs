@@ -847,6 +847,17 @@ public partial class CodeTabView : UserControl
                 items.Add(new Separator());
             }
 
+            // ---- Find Usages (language) — the caret in a lang / xml:lang attribute ----
+            if (vm.LanguageAtCaretForUsages() is { Length: > 0 } languageAtCaret)
+            {
+                items.Add(Item(
+                    Strings.Format("CodeEditorMenu_FindLanguageUsages", languageAtCaret),
+                    () => host.FindLanguageUsages(languageAtCaret),
+                    "find-usages",
+                    literal: true));
+                items.Add(new Separator());
+            }
+
             // ---- Footnotes (XHTML files of a book) ----
             if (vm.IsHtmlFlow && vm.FootnoteStateAtCaret() is { } footnotes)
             {

@@ -1416,6 +1416,10 @@ public sealed class CodeTabViewRenderTests : IDisposable
 
         public void FindIdUsages(string id) => IdUsagesRequested.Add(id);
 
+        public System.Collections.Generic.List<string> LanguageUsagesRequested { get; } = new();
+
+        public void FindLanguageUsages(string language) => LanguageUsagesRequested.Add(language);
+
         public int CountSameSpansInBook(HtmlResource html, string text, int offset) => 0;
 
         public Signet.Core.BookManipulation.SpanRemovalPlan? PlanSpanRemoval(
