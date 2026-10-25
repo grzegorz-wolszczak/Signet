@@ -103,8 +103,9 @@ public sealed class NavigateBackForwardTests : IDisposable
         tab.GoToLine(40);
         tab.UpdateCaret(40, 1, far, -1);
         EndCommand();
+        // Going back is a jump: the caret lands where it was and the line is centred (JumpRequested).
         (int Start, int End)? selected = null;
-        tab.SearchResultRequested += (start, end, _) => selected = (start, end);
+        tab.JumpRequested += (start, end) => selected = (start, end);
 
         _sut.NavigateBack();
 

@@ -224,6 +224,14 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
     /// </summary>
     public event Action<int, int, bool>? SearchResultRequested;
 
+    /// <summary>
+    /// Request after a jump to a place (Go To Link Or Style, a link with a fragment, the Live CSS Panel, Recent
+    /// Locations, Navigate Back/Forward): put the caret at <c>[start, end)</c> and bring the line to the middle of the
+    /// editor. Apart from <see cref="SearchResultRequested"/>, which leaves the view alone while the match is visible —
+    /// a jump has to land in the same place every time, not at whatever edge the target happened to be near.
+    /// </summary>
+    public event Action<int, int>? JumpRequested;
+
     /// <summary>The "marked text" area changed — to refresh the highlighting.</summary>
     public event Action? MarkedTextChanged;
 
@@ -538,6 +546,16 @@ public sealed class CodeTabViewModel : ContentTabViewModel, IDisposable
     {
         NotifyNavigation();
         SearchResultRequested?.Invoke(start, end, false);
+    }
+
+    /// <summary>
+    /// Jumps to <c>[start, end)</c>: the caret goes there (so the current-line highlight marks it) and the line is
+    /// centred vertically — see <see cref="JumpRequested"/>.
+    /// </summary>
+    public void JumpTo(int start, int end)
+    {
+        NotifyNavigation();
+        JumpRequested?.Invoke(start, end);
     }
 
     /// <summary>

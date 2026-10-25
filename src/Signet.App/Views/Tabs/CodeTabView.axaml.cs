@@ -63,9 +63,9 @@ public partial class CodeTabView : UserControl
     private CodeTabViewModel? _boundViewModel;
     private CompletionWindow? _completionWindow;
 
-    // A Find Next match that still has to be brought into view after subsequent layout passes
-    // (see ScrollPendingMatch); Attempts limits the number of corrections.
-    private (int Start, int End, int Attempts)? _pendingMatchScroll;
+    // A Find Next match (or the target of a jump, Center) that still has to be brought into view after subsequent
+    // layout passes (see ScrollPendingMatch); Attempts limits the number of corrections.
+    private (int Start, int End, int Attempts, bool Center)? _pendingMatchScroll;
 
     // The caret after Ctrl+End / Ctrl+Shift+End — the end of the document that still has to be scrolled to (see
     // ScrollPendingCaret).
@@ -262,6 +262,7 @@ public partial class CodeTabView : UserControl
             _boundViewModel.SelectionRequested -= OnSelectionRequested;
             _boundViewModel.FocusRequested -= OnFocusRequested;
             _boundViewModel.SearchResultRequested -= OnSearchResultRequested;
+            _boundViewModel.JumpRequested -= OnJumpRequested;
             _boundViewModel.SearchHighlightsChanged -= OnSearchHighlightsChanged;
             _boundViewModel.MarkedTextChanged -= OnMarkedTextChanged;
             _boundViewModel.MisspelledWordsChanged -= OnMisspelledWordsChanged;
@@ -286,6 +287,7 @@ public partial class CodeTabView : UserControl
         _boundViewModel.SelectionRequested += OnSelectionRequested;
         _boundViewModel.FocusRequested += OnFocusRequested;
         _boundViewModel.SearchResultRequested += OnSearchResultRequested;
+        _boundViewModel.JumpRequested += OnJumpRequested;
         _boundViewModel.SearchHighlightsChanged += OnSearchHighlightsChanged;
         _boundViewModel.MarkedTextChanged += OnMarkedTextChanged;
         _boundViewModel.MisspelledWordsChanged += OnMisspelledWordsChanged;
@@ -460,7 +462,33 @@ public partial class CodeTabView : UserControl
         _boundViewModel?.UpdateSelection(clampedStart, clampedEnd);
         _ = wrapped;
 
-        _pendingMatchScroll = (clampedStart, clampedEnd, 0);
+        _pendingMatchScroll = (clampedStart, clampedEnd, 0, false);
+        ScrollPendingMatch();
+    }
+
+    /// <summary>
+    /// A jump to a place (<see cref="CodeTabViewModel.JumpRequested"/>): like a Find match, but the line is centred
+    /// even when it is already on screen — the target of "Go To Link Or Style" used to stay at whatever edge it
+    /// happened to be near, and the user had to scroll to see the rest of the rule.
+    /// </summary>
+    private void OnJumpRequested(int start, int end)
+    {
+        if (Editor.Document is null)
+        {
+            return;
+        }
+
+        int docLength = Editor.Document.TextLength;
+        int clampedStart = Math.Clamp(start, 0, docLength);
+        int clampedEnd = Math.Clamp(end, clampedStart, docLength);
+
+        _pendingViewRestore = null;
+        Editor.Select(clampedStart, clampedEnd - clampedStart);
+        Editor.CaretOffset = clampedEnd;
+        Editor.TextArea.Caret.BringCaretToView(); // e.g. horizontal scrolling without word wrap
+        _boundViewModel?.UpdateSelection(clampedStart, clampedEnd);
+
+        _pendingMatchScroll = (clampedStart, clampedEnd, 0, true);
         ScrollPendingMatch();
     }
 
@@ -554,7 +582,7 @@ public partial class CodeTabView : UserControl
             return;
         }
 
-        if (ScrollMatchIntoView(pending.Start, pending.End) == false && Editor.TextArea.TextView.VisualLinesValid)
+        if (ScrollMatchIntoView(pending.Start, pending.End, pending.Center) == false && Editor.TextArea.TextView.VisualLinesValid)
         {
             _pendingMatchScroll = null;
             return;
@@ -567,9 +595,13 @@ public partial class CodeTabView : UserControl
     /// Scrolls so that the match <c>[start, end)</c> is fully visible with a margin of one line
     /// above and below it; otherwise centers it vertically. Computed in visual lines, so it also
     /// works when long paragraphs are wrapped.
+    /// <para>
+    /// With <paramref name="center"/> (a jump to a place, not a Find match) the match is centered whatever it is now:
+    /// a jump has to land in the same place every time, instead of leaving the target wherever it happened to be.
+    /// </para>
     /// </summary>
-    /// <returns><c>true</c> — scrolled, <c>false</c> — already visible, <c>null</c> — the view has no height.</returns>
-    private bool? ScrollMatchIntoView(int start, int end)
+    /// <returns><c>true</c> — scrolled, <c>false</c> — nothing to do, <c>null</c> — the view has no height.</returns>
+    private bool? ScrollMatchIntoView(int start, int end, bool center = false)
     {
         TextView textView = Editor.TextArea.TextView;
         double viewportHeight = textView.Bounds.Height;
@@ -586,18 +618,27 @@ public partial class CodeTabView : UserControl
             new TextViewPosition(document.GetLocation(end)), VisualYPosition.LineBottom).Y;
         double offset = textView.VerticalOffset;
 
-        if (top - margin >= offset && bottom + margin <= offset + viewportHeight)
+        if (!center && top - margin >= offset && bottom + margin <= offset + viewportHeight)
         {
             return false;
         }
 
         // Match taller than the viewport: show its start with a top margin instead of centering.
-        double target = bottom - top + (2 * margin) > viewportHeight
-            ? top - margin
-            : ((top + bottom) / 2) - (viewportHeight / 2);
+        double target = Math.Max(
+            0,
+            bottom - top + (2 * margin) > viewportHeight
+                ? top - margin
+                : ((top + bottom) / 2) - (viewportHeight / 2));
+
+        // Already where it should be (a centred jump repeats until this holds, or the document end stops it).
+        if (Math.Abs(target - offset) < 0.5)
+        {
+            return false;
+        }
+
         // MakeVisible with a viewport-high rectangle sets exactly this offset (the caret scrolls
         // the same way); TextEditor.ScrollToVerticalOffset did not change the scroll position here.
-        textView.MakeVisible(new Rect(textView.HorizontalOffset, Math.Max(0, target), 1, viewportHeight));
+        textView.MakeVisible(new Rect(textView.HorizontalOffset, target, 1, viewportHeight));
         return true;
     }
 
@@ -1263,8 +1304,9 @@ public partial class CodeTabView : UserControl
         // The same mechanism as for Find Next: a tab that was just activated (e.g. by a click in the
         // preview while a CSS tab was active) has no layout yet, so a single ScrollToLine would use
         // stale dimensions and leave the line at the very top. The scroll is corrected after the
-        // following layout passes until the line is visible.
-        _pendingMatchScroll = (offset, offset, 0);
+        // following layout passes until the line is centred (this is a jump from a list: Find Usages, the
+        // Spellcheck Editor, the reports).
+        _pendingMatchScroll = (offset, offset, 0, true);
         ScrollPendingMatch();
     }
 

@@ -1663,4 +1663,118 @@ public sealed class CodeTabViewRenderTests : IDisposable
         (offset + textView.Bounds.Height - bottom).Should().BeGreaterThanOrEqualTo(margin - 0.5, "bottom margin");
         window.Close();
     }
+
+    // A code tab over a stylesheet of `lines` rules, shown in a window of a fixed height.
+    private (CodeTabViewModel Vm, Window Window, TextEditor Editor) OpenCssTab(Book book, int rules)
+    {
+        CssResource css = book.GetAllResources().OfType<CssResource>().First();
+        css.InitialLoad();
+        css.SetText(string.Concat(Enumerable.Range(0, rules).Select(i =>
+            "p.rule" + i + " {\n    margin: 0;\n    text-indent: " + i + "px;\n}\n\n")));
+
+        var tabModel = new TabManagerModel();
+        (SettingsStore settings, SpellChecker spellChecker) = NewSpellChecker();
+        var vm = new CodeTabViewModel(tabModel.OpenResource(css), new StatusBarService(), settings, spellChecker);
+        var window = new Window { Width = 500, Height = 300, Content = new CodeTabView { DataContext = vm } };
+        window.Show();
+        for (int i = 0; i < 3; i++)
+        {
+            Dispatcher.UIThread.RunJobs();
+            window.CaptureRenderedFrame();
+        }
+
+        return (vm, window, window.GetVisualDescendants().OfType<TextEditor>().Single());
+    }
+
+    // Scrolls so that the line holding `offset` sits at the top edge of the view.
+    private static void ScrollToTopEdge(TextEditor editor, int offset)
+    {
+        TextView textView = editor.TextArea.TextView;
+        textView.EnsureVisualLines();
+        double top = textView.GetVisualPosition(
+            new TextViewPosition(editor.Document.GetLocation(offset)), VisualYPosition.LineTop).Y;
+        textView.MakeVisible(new Rect(textView.HorizontalOffset, top, 1, textView.Bounds.Height));
+        Dispatcher.UIThread.RunJobs();
+    }
+
+    // How far the middle of the line holding `offset` is from the middle of the view, in pixels.
+    private static double DistanceFromMiddle(TextEditor editor, int offset)
+    {
+        TextView textView = editor.TextArea.TextView;
+        TextViewPosition position = new(editor.Document.GetLocation(offset));
+        double top = textView.GetVisualPosition(position, VisualYPosition.LineTop).Y;
+        double bottom = textView.GetVisualPosition(position, VisualYPosition.LineBottom).Y;
+        return Math.Abs(((top + bottom) / 2) - (textView.VerticalOffset + (textView.Bounds.Height / 2)));
+    }
+
+    /// <summary>
+    /// "Go To Link Or Style" and the other jumps to a place centre their target even when it is already on screen:
+    /// before, the rule stayed at whatever edge it happened to be near and the user had to scroll to read it.
+    /// </summary>
+    [AvaloniaFact]
+    public void A_jump_centres_its_target_even_when_it_is_already_visible()
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
+        (CodeTabViewModel vm, Window window, TextEditor editor) = OpenCssTab(book, rules: 120);
+        const string Needle = "p.rule60 {";
+        int start = editor.Document.Text.IndexOf(Needle, StringComparison.Ordinal);
+        int end = start + Needle.Length;
+        ScrollToTopEdge(editor, start);
+        double lineHeight = editor.TextArea.TextView.DefaultLineHeight;
+
+        // Assert
+        DistanceFromMiddle(editor, start).Should().BeGreaterThan(lineHeight, "the rule starts at the top edge");
+
+        // Act
+        vm.JumpTo(start, end);
+        for (int i = 0; i < 3; i++)
+        {
+            Dispatcher.UIThread.RunJobs();
+            window.CaptureRenderedFrame();
+        }
+
+        // Assert
+        DistanceFromMiddle(editor, start).Should().BeLessThanOrEqualTo(lineHeight, "the jump centres its target");
+        editor.CaretOffset.Should().Be(end, "the current-line highlight marks the line of the definition");
+        window.Close();
+    }
+
+    /// <summary>
+    /// A Find match keeps the behaviour the jumps gave up: a match that is on screen with its margins leaves the view
+    /// where it is, so that going through matches does not shift the text under the eyes.
+    /// </summary>
+    [AvaloniaFact]
+    public void A_find_match_that_is_already_visible_does_not_move_the_view()
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        using Book book = _disposables.Add(new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook());
+        (CodeTabViewModel vm, Window window, TextEditor editor) = OpenCssTab(book, rules: 120);
+        const string Needle = "p.rule60 {";
+        int start = editor.Document.Text.IndexOf(Needle, StringComparison.Ordinal);
+        vm.JumpTo(start, start + Needle.Length);
+        for (int i = 0; i < 3; i++)
+        {
+            Dispatcher.UIThread.RunJobs();
+            window.CaptureRenderedFrame();
+        }
+
+        double before = editor.TextArea.TextView.VerticalOffset;
+        const string Other = "p.rule61 {";
+        int otherStart = editor.Document.Text.IndexOf(Other, StringComparison.Ordinal);
+
+        // Act — the next match is a couple of lines below, well inside the view.
+        vm.SelectMatch(otherStart, otherStart + Other.Length);
+        for (int i = 0; i < 3; i++)
+        {
+            Dispatcher.UIThread.RunJobs();
+            window.CaptureRenderedFrame();
+        }
+
+        // Assert
+        editor.TextArea.TextView.VerticalOffset.Should().Be(before);
+        window.Close();
+    }
 }

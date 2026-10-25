@@ -512,7 +512,7 @@ public sealed class TabManager : IDisposable
             return;
         }
 
-        targetTab.SelectMatch(offset, offset);
+        targetTab.JumpTo(offset, offset);
     }
 
     /// <summary>
@@ -539,7 +539,7 @@ public sealed class TabManager : IDisposable
         if (ActiveTab is CodeTabViewModel targetTab &&
             string.Equals(targetTab.ResourceBookPath, bookPath, StringComparison.Ordinal))
         {
-            targetTab.SelectMatch(offset, offset);
+            targetTab.JumpTo(offset, offset);
         }
     }
 
