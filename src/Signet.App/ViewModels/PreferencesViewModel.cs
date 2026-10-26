@@ -353,9 +353,25 @@ public sealed partial class PreferencesViewModel : ObservableObject
     /// <see cref="SelectedIconTheme"/>.
     /// </summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CustomIconFolderDisplay))]
+    [NotifyPropertyChangedFor(nameof(HasCustomIconFolder))]
     private string _customIconFolder;
 
     partial void OnCustomIconFolderChanged(string value) => _settings.UiCustomIconFolder = value;
+
+    /// <summary>
+    /// What the page shows for the custom icon folder: the chosen one, or a note that none is set. The folder is
+    /// picked in a folder dialog, so the page shows the setting instead of letting it be typed in.
+    /// </summary>
+    public string CustomIconFolderDisplay =>
+        CustomIconFolder.Length > 0 ? CustomIconFolder : Strings.Get("PreferencesWindow_CustomIconFolderDefault");
+
+    /// <summary>Whether a folder is set — only then has "Clear" anything to undo.</summary>
+    public bool HasCustomIconFolder => CustomIconFolder.Length > 0;
+
+    /// <summary>Empties the custom icon folder.</summary>
+    [RelayCommand]
+    private void ClearCustomIconFolder() => CustomIconFolder = string.Empty;
 
     /// <summary>
     /// UI font (menus, windows, panels — not the code editor). Empty = the default for the appearance

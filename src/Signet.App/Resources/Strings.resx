@@ -1568,6 +1568,21 @@ Czy chcesz zapisać zmiany?</value>
   <data name="PreferencesWindow_CustomIconFolder" xml:space="preserve">
     <value>Folder niestandardowych ikon:</value>
   </data>
+  <data name="PreferencesWindow_CustomIconFolderDefault" xml:space="preserve">
+    <value>(nie ustawiono)</value>
+  </data>
+  <data name="PreferencesWindow_CustomIconFolderBrowse" xml:space="preserve">
+    <value>Wybierz…</value>
+  </data>
+  <data name="PreferencesWindow_CustomIconFolderBrowseTitle" xml:space="preserve">
+    <value>Wybierz folder niestandardowych ikon</value>
+  </data>
+  <data name="PreferencesWindow_CustomIconFolderClear" xml:space="preserve">
+    <value>Wyczyść</value>
+  </data>
+  <data name="PreferencesWindow_CustomIconFolderClearTip" xml:space="preserve">
+    <value>Wyczyść folder niestandardowych ikon</value>
+  </data>
   <data name="PreferencesWindow_ExtendedHighlighting" xml:space="preserve">
     <value>Rozszerzone podświetlanie składni (wzorowane na calibre)</value>
   </data>

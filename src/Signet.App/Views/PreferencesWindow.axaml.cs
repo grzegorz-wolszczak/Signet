@@ -962,6 +962,29 @@ public partial class PreferencesWindow : Window
         }
     }
 
+    // "Browse…" next to the custom icon folder: a folder dialog, starting at the folder in use.
+    private async void OnPickCustomIconFolderClicked(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is not PreferencesViewModel vm)
+        {
+            return;
+        }
+
+        IStorageFolder? start = vm.CustomIconFolder.Length > 0
+            ? await StorageProvider.TryGetFolderFromPathAsync(vm.CustomIconFolder)
+            : null;
+        IReadOnlyList<IStorageFolder> folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = Strings.Get("PreferencesWindow_CustomIconFolderBrowseTitle"),
+            AllowMultiple = false,
+            SuggestedStartLocation = start,
+        });
+        if (folders.Count > 0 && folders[0].TryGetLocalPath() is { Length: > 0 } path)
+        {
+            vm.CustomIconFolder = path;
+        }
+    }
+
     private void OnUserWordSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (DataContext is PreferencesViewModel vm && sender is ListBox list)

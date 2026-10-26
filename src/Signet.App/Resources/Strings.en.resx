@@ -1568,6 +1568,21 @@ Do you want to save the changes?</value>
   <data name="PreferencesWindow_CustomIconFolder" xml:space="preserve">
     <value>Custom icon folder:</value>
   </data>
+  <data name="PreferencesWindow_CustomIconFolderDefault" xml:space="preserve">
+    <value>(not set)</value>
+  </data>
+  <data name="PreferencesWindow_CustomIconFolderBrowse" xml:space="preserve">
+    <value>Browse…</value>
+  </data>
+  <data name="PreferencesWindow_CustomIconFolderBrowseTitle" xml:space="preserve">
+    <value>Choose the custom icon folder</value>
+  </data>
+  <data name="PreferencesWindow_CustomIconFolderClear" xml:space="preserve">
+    <value>Clear</value>
+  </data>
+  <data name="PreferencesWindow_CustomIconFolderClearTip" xml:space="preserve">
+    <value>Clear the custom icon folder</value>
+  </data>
   <data name="PreferencesWindow_ExtendedHighlighting" xml:space="preserve">
     <value>Extended syntax highlighting (calibre-style)</value>
   </data>

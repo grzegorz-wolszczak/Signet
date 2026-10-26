@@ -76,9 +76,12 @@
     <Style Selector="TextBox.colorValue:focus /template/ Border#PART_BorderElement">
       <Setter Property="Background" Value="{Binding $parent[TextBox].Background}" />
     </Style>
-    <!-- "Label + control" grids: a narrow input (a number) is "*,Auto" — the label takes what is left and the input sits at
-         the right edge of the box; a wide control (a combo box, a text box) is "260,*" — a label column of a fixed width
-         and the control takes the rest of the settings, whose width the user sets with the splitter after them. -->
+    <!-- "Label + control" grids: a control of a fixed, known width — a number spinner, or a combo box whose choices are a
+         stable set — is "*,Auto": the label takes what is left (and stays on one line, since it gets whatever room the
+         splitter leaves), the control keeps its own natural width and sits glued to the right edge of the box, following
+         the edge as the splitter after the page moves. A control whose content is free text (a text box, or a folder path
+         with Browse/Clear next to it) is "260,*": a label column of a fixed width and the control takes the rest of the
+         settings, growing with the splitter so long values stay visible. -->
     <!-- The splitters of the window are visible, but discreet: a thin grey line in the middle of the track (a vertical or a
          horizontal one, by the resize direction); the whole track can be grabbed. -->
     <Style Selector="GridSplitter">
@@ -121,8 +124,10 @@
       <Setter Property="TextWrapping" Value="Wrap" />
       <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
+    <!-- A combo box of stable choices does not stretch: it keeps its own width (set per instance to fit its longest
+         value) and sits at the right edge of the row, like a NumericUpDown. -->
     <Style Selector="Grid.labeled > ComboBox">
-      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalAlignment" Value="Right" />
     </Style>
     <!-- A label of two lines must not stretch the spinner next to it over both of them. -->
     <Style Selector="Grid.labeled > NumericUpDown">
@@ -191,9 +196,9 @@
       <TabItem Header="{loc:Loc PreferencesWindow_Language}">
         <views:PageWidthHost x:Name="LanguageWidth">
           <StackPanel Spacing="10" Margin="8">
-            <Grid Classes="labeled" ColumnDefinitions="260,*" ColumnSpacing="8">
+            <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
               <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_Language}" />
-              <ComboBox Grid.Column="1" ItemsSource="{Binding AvailableLanguages}" SelectedItem="{Binding SelectedLanguage}"
+              <ComboBox Grid.Column="1" MinWidth="140" ItemsSource="{Binding AvailableLanguages}" SelectedItem="{Binding SelectedLanguage}"
                         DisplayMemberBinding="{Binding DisplayName}" />
             </Grid>
             <TextBlock Text="{loc:Loc PreferencesWindow_LanguageRestartNotice}"
@@ -237,9 +242,9 @@
                     <Border Classes="section">
                       <StackPanel x:Name="ThemePanel" x:DataType="vm:ThemeDocumentViewModel" Spacing="10">
                         <views:ThemeSelectorView x:Name="ThemeSelector" />
-                        <Grid Classes="labeled" ColumnDefinitions="260,*" ColumnSpacing="8">
+                        <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
                           <TextBlock Grid.Column="0" Text="{loc:Loc ColorScheme_Variant}" VerticalAlignment="Center" />
-                          <ComboBox x:Name="VariantBox" Grid.Column="1" HorizontalAlignment="Stretch"
+                          <ComboBox x:Name="VariantBox" Grid.Column="1" MinWidth="110"
                                     ItemsSource="{Binding Variants}" SelectedItem="{Binding Variant}" DisplayMemberBinding="{Binding DisplayName}" />
                         </Grid>
                         <TextBlock Text="{Binding BundledNote}" IsVisible="{Binding IsBundled}" Opacity="0.7" TextWrapping="Wrap" />
@@ -255,9 +260,9 @@
                       </StackPanel>
                     </Border>
 
-                    <Grid Classes="labeled" ColumnDefinitions="260,*" ColumnSpacing="8">
+                    <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
                       <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_IconTheme}" />
-                      <ComboBox Grid.Column="1" ItemsSource="{Binding AvailableIconThemes}" SelectedItem="{Binding SelectedIconTheme}"
+                      <ComboBox Grid.Column="1" MinWidth="140" ItemsSource="{Binding AvailableIconThemes}" SelectedItem="{Binding SelectedIconTheme}"
                                 DisplayMemberBinding="{Binding DisplayName}" />
                     </Grid>
                     <TextBlock Text="{loc:Loc PreferencesWindow_IconThemeRestartNotice}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
@@ -275,7 +280,19 @@
 
                     <Grid Classes="labeled" ColumnDefinitions="260,*" ColumnSpacing="8">
                       <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_CustomIconFolder}" />
-                      <TextBox Grid.Column="1" Text="{Binding CustomIconFolder}" />
+                      <!-- The folder is chosen in a folder dialog, so the setting is shown, not typed in; "Clear" empties
+                           it and is enabled only while a folder is set — the same pattern as the temp folder (General). -->
+                      <Grid Grid.Column="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+                        <TextBlock x:Name="CustomIconFolderValue" Grid.Column="0" Text="{Binding CustomIconFolderDisplay}"
+                                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                   ToolTip.Tip="{Binding CustomIconFolderDisplay}" />
+                        <Button x:Name="CustomIconFolderBrowseButton" Grid.Column="1" Click="OnPickCustomIconFolderClicked"
+                                Content="{loc:Loc PreferencesWindow_CustomIconFolderBrowse}" />
+                        <Button x:Name="CustomIconFolderClearButton" Grid.Column="2" Command="{Binding ClearCustomIconFolderCommand}"
+                                IsEnabled="{Binding HasCustomIconFolder}"
+                                Content="{loc:Loc PreferencesWindow_CustomIconFolderClear}"
+                                ToolTip.Tip="{loc:Loc PreferencesWindow_CustomIconFolderClearTip}" />
+                      </Grid>
                     </Grid>
 
                     <Button Content="{loc:Loc PreferencesWindow_RestoreAppearanceDefaults}" Command="{Binding RestoreAppearanceDefaultsCommand}"
@@ -530,9 +547,9 @@
                     <Border Classes="section">
                       <StackPanel Spacing="6">
                         <TextBlock Text="{loc:Loc PreferencesWindow_PreviewHighlight}" FontWeight="Bold" />
-                        <Grid Classes="labeled" ColumnDefinitions="260,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                        <Grid Classes="labeled" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
                           <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightStyle}" VerticalAlignment="Center" />
-                          <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding AvailablePreviewHighlightStyles}" SelectedItem="{Binding PreviewHighlightStyle}">
+                          <ComboBox Grid.Row="0" Grid.Column="1" MinWidth="190" ItemsSource="{Binding AvailablePreviewHighlightStyles}" SelectedItem="{Binding PreviewHighlightStyle}">
                             <ComboBox.ItemTemplate>
                               <DataTemplate>
                                 <TextBlock Text="{Binding Converter={x:Static infra:DisplayNameConverters.PreviewHighlightStyle}}" />
@@ -971,8 +988,8 @@
                                Margin="28,0,0,0" />
                   </StackPanel>
                   <StackPanel Spacing="4">
-                    <Grid ColumnDefinitions="Auto,Auto" ColumnSpacing="8">
-                      <TextBlock Text="{loc:Loc PreferencesWindow_FootnoteLetterStyle}" VerticalAlignment="Center" />
+                    <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                      <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_FootnoteLetterStyle}" VerticalAlignment="Center" />
                       <ComboBox x:Name="FootnoteLetterStyleBox" Grid.Column="1" MinWidth="160"
                                 ItemsSource="{Binding AvailableFootnoteLetterStyles}" SelectedItem="{Binding FootnoteLetterStyle}">
                         <ComboBox.ItemTemplate>
@@ -1128,45 +1145,58 @@
                                Increment="1" FormatString="0" Width="130" HorizontalAlignment="Right" />
               </Grid>
 
-              <Grid Classes="labeled" ColumnDefinitions="260,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="8" Margin="0,6,0,0">
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_ClipboardHistoryLimit}" VerticalAlignment="Center" />
-                <NumericUpDown x:Name="ClipboardHistoryLimitBox" Grid.Row="0" Grid.Column="1" Value="{Binding ClipboardHistoryLimit}"
-                               Minimum="0" Maximum="{x:Static vm:PreferencesViewModel.ClipboardHistoryLimitMax}"
-                               Increment="1" FormatString="0" Width="130" HorizontalAlignment="Right" />
-
-                <TextBlock Grid.Row="4" Grid.Column="0" Text="{loc:Loc PreferencesWindow_RecentFilesLimit}" VerticalAlignment="Center" TextWrapping="Wrap" />
-                <NumericUpDown x:Name="GeneralRecentFilesLimitBox" Grid.Row="4" Grid.Column="1" Value="{Binding RecentFilesLimit}"
-                               Minimum="0" Maximum="{x:Static vm:PreferencesViewModel.RecentFilesLimitMax}"
-                               Increment="1" FormatString="0" Width="130" HorizontalAlignment="Right" />
-
-                <TextBlock Grid.Row="5" Grid.Column="0" Text="{loc:Loc PreferencesWindow_RecentLocationsLimit}" VerticalAlignment="Center" TextWrapping="Wrap" />
-                <NumericUpDown x:Name="RecentLocationsLimitBox" Grid.Row="5" Grid.Column="1" Value="{Binding RecentLocationsLimit}"
-                               Minimum="1" Maximum="{x:Static vm:PreferencesViewModel.RecentLocationsLimitMax}"
-                               Increment="1" FormatString="0" Width="130" HorizontalAlignment="Right" />
-
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_TempFolder}" VerticalAlignment="Center" />
-                <!-- The folder is chosen in a folder dialog, so the setting is shown, not typed in; "Clear" goes back
-                     to the system default and is enabled only while a folder of one's own is set. -->
-                <Grid Grid.Row="1" Grid.Column="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
-                  <TextBlock x:Name="TempFolderValue" Grid.Column="0" Text="{Binding TempFolderDisplay}"
-                             VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
-                             ToolTip.Tip="{Binding TempFolderDisplay}" />
-                  <Button x:Name="TempFolderBrowseButton" Grid.Column="1" Click="OnPickTempFolderClicked"
-                          Content="{loc:Loc PreferencesWindow_TempFolderBrowse}" />
-                  <Button x:Name="TempFolderClearButton" Grid.Column="2" Command="{Binding ClearTempFolderCommand}"
-                          IsEnabled="{Binding HasCustomTempFolder}"
-                          Content="{loc:Loc PreferencesWindow_TempFolderClear}"
-                          ToolTip.Tip="{loc:Loc PreferencesWindow_TempFolderClearTip}" />
+              <StackPanel Spacing="8" Margin="0,6,0,0">
+                <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                  <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_ClipboardHistoryLimit}" VerticalAlignment="Center" />
+                  <NumericUpDown x:Name="ClipboardHistoryLimitBox" Grid.Column="1" Value="{Binding ClipboardHistoryLimit}"
+                                 Minimum="0" Maximum="{x:Static vm:PreferencesViewModel.ClipboardHistoryLimitMax}"
+                                 Increment="1" FormatString="0" Width="130" HorizontalAlignment="Right" />
                 </Grid>
 
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc PreferencesWindow_CssEpub2Profile}" VerticalAlignment="Center" />
-                <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding AvailableCssValidationSpecs}"
-                          SelectedItem="{Binding CssEpub2ValidationSpec}" />
+                <!-- The folder is chosen in a folder dialog, so the setting is shown, not typed in; "Clear" goes back
+                     to the system default and is enabled only while a folder of one's own is set. This row keeps the
+                     "260,*" layout (unlike the rows around it) so the shown path can grow with the splitter. -->
+                <Grid Classes="labeled" ColumnDefinitions="260,*" ColumnSpacing="8">
+                  <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_TempFolder}" VerticalAlignment="Center" />
+                  <Grid Grid.Column="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
+                    <TextBlock x:Name="TempFolderValue" Grid.Column="0" Text="{Binding TempFolderDisplay}"
+                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                               ToolTip.Tip="{Binding TempFolderDisplay}" />
+                    <Button x:Name="TempFolderBrowseButton" Grid.Column="1" Click="OnPickTempFolderClicked"
+                            Content="{loc:Loc PreferencesWindow_TempFolderBrowse}" />
+                    <Button x:Name="TempFolderClearButton" Grid.Column="2" Command="{Binding ClearTempFolderCommand}"
+                            IsEnabled="{Binding HasCustomTempFolder}"
+                            Content="{loc:Loc PreferencesWindow_TempFolderClear}"
+                            ToolTip.Tip="{loc:Loc PreferencesWindow_TempFolderClearTip}" />
+                  </Grid>
+                </Grid>
 
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Loc PreferencesWindow_CssEpub3Profile}" VerticalAlignment="Center" />
-                <ComboBox Grid.Row="3" Grid.Column="1" ItemsSource="{Binding AvailableCssValidationSpecs}"
-                          SelectedItem="{Binding CssEpub3ValidationSpec}" />
-              </Grid>
+                <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                  <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_CssEpub2Profile}" VerticalAlignment="Center" />
+                  <ComboBox Grid.Column="1" MinWidth="110" ItemsSource="{Binding AvailableCssValidationSpecs}"
+                            SelectedItem="{Binding CssEpub2ValidationSpec}" />
+                </Grid>
+
+                <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                  <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_CssEpub3Profile}" VerticalAlignment="Center" />
+                  <ComboBox Grid.Column="1" MinWidth="110" ItemsSource="{Binding AvailableCssValidationSpecs}"
+                            SelectedItem="{Binding CssEpub3ValidationSpec}" />
+                </Grid>
+
+                <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                  <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_RecentFilesLimit}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                  <NumericUpDown x:Name="GeneralRecentFilesLimitBox" Grid.Column="1" Value="{Binding RecentFilesLimit}"
+                                 Minimum="0" Maximum="{x:Static vm:PreferencesViewModel.RecentFilesLimitMax}"
+                                 Increment="1" FormatString="0" Width="130" HorizontalAlignment="Right" />
+                </Grid>
+
+                <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                  <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_RecentLocationsLimit}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                  <NumericUpDown x:Name="RecentLocationsLimitBox" Grid.Column="1" Value="{Binding RecentLocationsLimit}"
+                                 Minimum="1" Maximum="{x:Static vm:PreferencesViewModel.RecentLocationsLimitMax}"
+                                 Increment="1" FormatString="0" Width="130" HorizontalAlignment="Right" />
+                </Grid>
+              </StackPanel>
             </StackPanel>
           </ScrollViewer>
         </views:PageWidthHost>
@@ -1191,31 +1221,39 @@
                         IsChecked="{Binding EditionPageEnabled}" />
 
               <StackPanel x:Name="EditionPageOptions" Spacing="10" Margin="28,0,0,0" IsEnabled="{Binding EditionPageEnabled}">
-                <Grid Classes="labeled" ColumnDefinitions="260,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
-                  <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_EditionPagePosition}" VerticalAlignment="Center" />
-                  <ComboBox Grid.Row="0" Grid.Column="1" ItemsSource="{Binding AvailableEditionPagePositions}"
-                            SelectedItem="{Binding EditionPagePosition}">
-                    <ComboBox.ItemTemplate>
-                      <DataTemplate>
-                        <TextBlock Text="{Binding Converter={x:Static infra:DisplayNameConverters.EditionPagePosition}}" />
-                      </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                  </ComboBox>
+                <StackPanel Spacing="6">
+                  <!-- Fixed choices (where the page goes): the row docks right, sized to its longest choice. -->
+                  <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_EditionPagePosition}" VerticalAlignment="Center" />
+                    <ComboBox Grid.Column="1" MinWidth="220" ItemsSource="{Binding AvailableEditionPagePositions}"
+                              SelectedItem="{Binding EditionPagePosition}">
+                      <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                          <TextBlock Text="{Binding Converter={x:Static infra:DisplayNameConverters.EditionPagePosition}}" />
+                        </DataTemplate>
+                      </ComboBox.ItemTemplate>
+                    </ComboBox>
+                  </Grid>
 
-                  <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_EditionPageTitle}" VerticalAlignment="Center" />
-                  <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding EditionPageTitle}"
-                           PlaceholderText="{loc:Loc PreferencesWindow_EditionPageTitlePlaceholder}" />
+                  <!-- Free text: this row keeps "260,*" so the field grows with the splitter. -->
+                  <Grid Classes="labeled" ColumnDefinitions="260,*" ColumnSpacing="8">
+                    <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_EditionPageTitle}" VerticalAlignment="Center" />
+                    <TextBox Grid.Column="1" Text="{Binding EditionPageTitle}"
+                             PlaceholderText="{loc:Loc PreferencesWindow_EditionPageTitlePlaceholder}" />
+                  </Grid>
 
-                  <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc PreferencesWindow_EditionPageHeadingLevel}" VerticalAlignment="Center" />
-                  <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding EditionPageHeadingLevels}"
-                            SelectedItem="{Binding EditionPageHeadingLevel}">
-                    <ComboBox.ItemTemplate>
-                      <DataTemplate DataType="vm:HeadingLevelOption">
-                        <TextBlock Text="{Binding DisplayName}" />
-                      </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                  </ComboBox>
-                </Grid>
+                  <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                    <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_EditionPageHeadingLevel}" VerticalAlignment="Center" />
+                    <ComboBox Grid.Column="1" MinWidth="90" ItemsSource="{Binding EditionPageHeadingLevels}"
+                              SelectedItem="{Binding EditionPageHeadingLevel}">
+                      <ComboBox.ItemTemplate>
+                        <DataTemplate DataType="vm:HeadingLevelOption">
+                          <TextBlock Text="{Binding DisplayName}" />
+                        </DataTemplate>
+                      </ComboBox.ItemTemplate>
+                    </ComboBox>
+                  </Grid>
+                </StackPanel>
 
                 <CheckBox Content="{loc:Loc PreferencesWindow_EditionPageAddToToc}" IsChecked="{Binding EditionPageAddToToc}" />
 
@@ -1311,14 +1349,14 @@
         <views:PageWidthHost x:Name="SpellcheckWidth">
           <DockPanel Margin="8">
             <StackPanel DockPanel.Dock="Top" Spacing="10">
-              <Grid Classes="labeled" ColumnDefinitions="260,*" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8">
+              <Grid Classes="labeled" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="8" RowSpacing="8">
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PrimaryDictionary}" />
-                <ComboBox Grid.Row="0" Grid.Column="1" x:Name="PrimaryDictionaryBox"
+                <ComboBox Grid.Row="0" Grid.Column="1" x:Name="PrimaryDictionaryBox" MinWidth="260"
                           ItemsSource="{Binding AvailableDictionaries}"
                           SelectedItem="{Binding SelectedPrimaryDictionary}"
                           DisplayMemberBinding="{Binding DisplayName, DataType=vm:DictionaryOption}" />
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc PreferencesWindow_SecondaryDictionary}" />
-                <ComboBox Grid.Row="1" Grid.Column="1" x:Name="SecondaryDictionaryBox"
+                <ComboBox Grid.Row="1" Grid.Column="1" x:Name="SecondaryDictionaryBox" MinWidth="260"
                           ItemsSource="{Binding AvailableSecondaryDictionaries}"
                           SelectedItem="{Binding SelectedSecondaryDictionary}"
                           DisplayMemberBinding="{Binding DisplayName, DataType=vm:DictionaryOption}" />
