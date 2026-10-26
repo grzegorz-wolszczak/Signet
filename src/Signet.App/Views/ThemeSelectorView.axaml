@@ -7,11 +7,13 @@
   <!-- The list of the themes of the interface or of the color schemes of the editors with the gear of its actions
        (IntelliJ's AbstractSchemeActions): duplicate, rename, delete, restore defaults, export, import. It shows what its
        DataContext (a ThemeDocumentViewModel) manages. -->
-  <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+  <!-- The list does not stretch: it keeps its own width (set to fit a reasonably long name) and sits glued to the
+       right edge, next to the gear, like the other combo boxes of stable width in the window. -->
+  <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="8">
     <TextBlock Grid.Column="0" Text="{Binding Label}" VerticalAlignment="Center" />
-    <ComboBox x:Name="Box" Grid.Column="1" HorizontalAlignment="Stretch"
+    <ComboBox x:Name="Box" Grid.Column="2" MinWidth="220"
               ItemsSource="{Binding Themes}" SelectedItem="{Binding Selected}" DisplayMemberBinding="{Binding Name}" />
-    <Button x:Name="ActionsButton" Grid.Column="2" Content="⚙" ToolTip.Tip="{Binding ActionsTip}">
+    <Button x:Name="ActionsButton" Grid.Column="3" Content="⚙" ToolTip.Tip="{Binding ActionsTip}">
       <Button.Flyout>
         <MenuFlyout Placement="BottomEdgeAlignedRight">
           <MenuItem x:Name="DuplicateItem" Header="{loc:Loc ColorScheme_Duplicate}" Command="{Binding DuplicateCommand}" />
