@@ -64,6 +64,22 @@ public enum PreviewHighlightStyle
 }
 
 /// <summary>
+/// How the Find &amp; Replace panel's action buttons (Find, Replace, Restart, Replace/Find, Replace All, Count
+/// All) show their icon and text.
+/// </summary>
+public enum FindActionButtonDisplay
+{
+    /// <summary>Icon and text (the default).</summary>
+    IconAndText,
+
+    /// <summary>Icon only — narrower buttons, the label is still in the tooltip.</summary>
+    IconOnly,
+
+    /// <summary>Text only, no icon.</summary>
+    TextOnly,
+}
+
+/// <summary>
 /// Highlight of the Code Editor caret location in the preview (Code Editor → Preview synchronization).
 /// </summary>
 /// <param name="Style">Background or outline (the color comes from the theme: <c>preview.highlight</c>).</param>

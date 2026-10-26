@@ -79,6 +79,7 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
     private bool _regexAutoTokenise;
     private bool _highlightAllMatches;
     private bool _restrictToSelection;
+    private FindActionButtonDisplay _actionButtonDisplay;
 
     // The Find & Replace settings last written to the debug log (written again only after a change).
     private string _loggedSettings = string.Empty;
@@ -118,6 +119,18 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
         _regexTextOnly = stored.RegexTextOnly;
         _regexAutoTokenise = stored.RegexAutoTokenise;
         _highlightAllMatches = stored.HighlightAllMatches;
+        _actionButtonDisplay = settings.FindActionButtonDisplay;
+
+        // Preferences edits a draft of the settings (Save/Cancel); on Save the change lands in this store
+        // (the real one, for the main window's panel — a Preferences preview uses its own throwaway store and is
+        // pushed the new value directly instead, see PreferencesWindow.axaml.cs).
+        settings.SettingChanged += (_, e) =>
+        {
+            if (e.QualifiedKey.EndsWith("/find_action_button_display", StringComparison.Ordinal))
+            {
+                ActionButtonDisplay = settings.FindActionButtonDisplay;
+            }
+        };
 
         FindNextCommand = new RelayCommand(() => Logged("Find Next", FindNext));
         FindPreviousCommand = new RelayCommand(() => Logged("Find Previous", FindPrevious));
@@ -470,6 +483,24 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
 
             _restrictToSelection = value;
             OnPropertyChanged();
+        }
+    }
+
+    /// <summary>
+    /// How the action buttons (Find, Replace, Restart, Replace/Find, Replace All, Count All) show their icon and
+    /// text — Preferences › Appearance › Find and Replace. The setter also persists the change (so a Preferences
+    /// preview, which binds to its own throwaway store, and the real panel both end up consistent with what they
+    /// are shown).
+    /// </summary>
+    public FindActionButtonDisplay ActionButtonDisplay
+    {
+        get => _actionButtonDisplay;
+        set
+        {
+            if (SetProperty(ref _actionButtonDisplay, value))
+            {
+                _settings.FindActionButtonDisplay = value;
+            }
         }
     }
 

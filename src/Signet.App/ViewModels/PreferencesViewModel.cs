@@ -98,6 +98,9 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _previewHighlightAutoHide = highlight.AutoHide;
         _previewHighlightAutoHideDelay = highlight.AutoHideDelayMs;
 
+        // ---- Find and Replace: action button look ----
+        _findActionButtonDisplay = _settings.FindActionButtonDisplay;
+
         SpecialCharacterAppearance specialChar = _settings.SpecialCharacterAppearance;
         _specialCharacterFontFamily = specialChar.FontFamily;
         _specialCharacterFontSize = specialChar.FontSize;

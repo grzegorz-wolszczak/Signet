@@ -1,11 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using CommunityToolkit.Mvvm.ComponentModel;
 using Signet.App.Services;
 using Signet.Core.Misc;
 
 namespace Signet.App.ViewModels;
 
-/// <summary>Appearance › Find and Replace: the sample panel of the preview.</summary>
+/// <summary>Appearance › Find and Replace: the sample panel of the preview, and the action button look setting.</summary>
 public sealed partial class PreferencesViewModel
 {
     private FindReplaceViewModel? _findReplaceSample;
@@ -17,6 +19,16 @@ public sealed partial class PreferencesViewModel
     /// there. Made when first asked for.
     /// </summary>
     public FindReplaceViewModel FindReplaceSample => _findReplaceSample ??= CreateFindReplaceSample();
+
+    /// <summary>Values to choose from in the "Action buttons" field.</summary>
+    public static IReadOnlyList<FindActionButtonDisplay> AvailableFindActionButtonDisplays { get; } =
+        Enum.GetValues<FindActionButtonDisplay>();
+
+    /// <summary>Whether the Find &amp; Replace action buttons show an icon, text, or both.</summary>
+    [ObservableProperty]
+    private FindActionButtonDisplay _findActionButtonDisplay;
+
+    partial void OnFindActionButtonDisplayChanged(FindActionButtonDisplay value) => _settings.FindActionButtonDisplay = value;
 
     private FindReplaceViewModel CreateFindReplaceSample()
     {
