@@ -4260,6 +4260,12 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="FontPreview_DocumentTabs" xml:space="preserve">
     <value>part0001.html   ×</value>
   </data>
+  <data name="PreferencesWindow_ToolHeaderFont" xml:space="preserve">
+    <value>Czcionka nagłówków paneli</value>
+  </data>
+  <data name="FontPreview_ToolHeader" xml:space="preserve">
+    <value>Book Browser</value>
+  </data>
   <data name="Action_MainWindow_FindUsages" xml:space="preserve">
     <value>Znajdź użycia</value>
   </data>

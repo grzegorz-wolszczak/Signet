@@ -104,6 +104,7 @@ public sealed class UiDensityManager(
         ApplyWarning(app, _settings.WarningAppearance, EffectiveFontSize);
         ApplyTooltipFonts();
         ApplyDocumentTabFont();
+        ApplyToolHeaderFont();
     }
 
     /// <summary>The application resource of the weight of the interface font (<c>SignetUiFontWeight</c>).</summary>
@@ -176,6 +177,59 @@ public sealed class UiDensityManager(
         else
         {
             app.Resources.Remove(DocumentTabFontWeightKey);
+        }
+    }
+
+    /// <summary>The application resource of the font family of a tool panel's title bar (<c>SignetToolHeaderFontFamily</c>).</summary>
+    public const string ToolHeaderFontFamilyKey = "SignetToolHeaderFontFamily";
+
+    /// <summary>The application resource of the font size of a tool panel's title bar (<c>SignetToolHeaderFontSize</c>).</summary>
+    public const string ToolHeaderFontSizeKey = "SignetToolHeaderFontSize";
+
+    /// <summary>The application resource of the font weight of a tool panel's title bar (<c>SignetToolHeaderFontWeight</c>).</summary>
+    public const string ToolHeaderFontWeightKey = "SignetToolHeaderFontWeight";
+
+    /// <summary>Applies the saved font of a tool panel's title bar live (Preferences → Appearance › General › Fonts).</summary>
+    public void ApplyToolHeaderFont()
+    {
+        if (Application.Current is { } app)
+        {
+            ApplyToolHeader(app, _settings.ToolHeaderFontAppearance);
+        }
+    }
+
+    /// <summary>
+    /// Sets the font of a tool panel's title bar (the style of <c>dock|ToolChromeControl</c> in <c>App.axaml</c>
+    /// takes it from the resources): what is left empty / 0 is no resource, so the title keeps the font of the controls.
+    /// </summary>
+    public static void ApplyToolHeader(Application app, ToolHeaderFontAppearance font)
+    {
+        System.ArgumentNullException.ThrowIfNull(app);
+        if (font.FontFamily.Length > 0)
+        {
+            app.Resources[ToolHeaderFontFamilyKey] = FontFamily.Parse(font.FontFamily);
+        }
+        else
+        {
+            app.Resources.Remove(ToolHeaderFontFamilyKey);
+        }
+
+        if (font.FontSize > 0)
+        {
+            app.Resources[ToolHeaderFontSizeKey] = (double)font.FontSize;
+        }
+        else
+        {
+            app.Resources.Remove(ToolHeaderFontSizeKey);
+        }
+
+        if (font.FontWeight > 0)
+        {
+            app.Resources[ToolHeaderFontWeightKey] = FontWeightOptions.ToAvalonia(font.FontWeight);
+        }
+        else
+        {
+            app.Resources.Remove(ToolHeaderFontWeightKey);
         }
     }
 

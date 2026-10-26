@@ -233,6 +233,14 @@
       <Setter Property="Foreground" Value="{DynamicResource SignetDocumentTabSelectedForegroundBrush}" />
       <Setter Property="Background" Value="{DynamicResource SignetDocumentTabSelectedBackgroundBrush}" />
     </Style>
+    <!-- The title bar of a tool panel (Book Browser, Preview, Validation Results, …): the font from Preferences ›
+         Appearance › General › Fonts. A resource that is not set leaves the title as the controls have it (the
+         interface font). -->
+    <Style Selector="dock|ToolChromeControl">
+      <Setter Property="FontFamily" Value="{DynamicResource SignetToolHeaderFontFamily}" />
+      <Setter Property="FontSize" Value="{DynamicResource SignetToolHeaderFontSize}" />
+      <Setter Property="FontWeight" Value="{DynamicResource SignetToolHeaderFontWeight}" />
+    </Style>
     <!-- Tabs that do not fit in a row go to several rows instead of the scrolling arrows (Preferences › Code Editor; the
          class is on the windows that hold tabs). -->
     <Style Selector="Window.multilineTabs dock|DocumentTabStrip">

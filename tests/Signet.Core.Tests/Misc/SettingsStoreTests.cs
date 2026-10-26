@@ -274,6 +274,7 @@ public sealed class SettingsStoreTests
         writer.OpenTagHintAppearance = new OpenTagHintAppearance("Arial", 12, 300);
         writer.LineNumberFontAppearance = new LineNumberFontAppearance(string.Empty, 0, 200);
         writer.DocumentTabFontAppearance = new DocumentTabFontAppearance("Arial", 11, 600);
+        writer.ToolHeaderFontAppearance = new ToolHeaderFontAppearance("Arial", 11, 600);
         writer.BookBrowserAppearance = BookBrowserAppearance.Default with { ItemsFontWeight = 350, HeaderFontWeight = 700 };
         writer.FindUsagesAppearance = new FindUsagesAppearance(string.Empty, 0, "Consolas", 12, string.Empty, 0, 700, 300, 400);
         writer.SpecialCharacterAppearance = new SpecialCharacterAppearance("Arial", 24, 500);
@@ -292,6 +293,7 @@ public sealed class SettingsStoreTests
         reader.LineNumberFontAppearance.FontWeight.Should().Be(200);
         reader.LineNumberFontAppearance.IsInherited.Should().BeFalse("a weight of its own is a font of its own");
         reader.DocumentTabFontAppearance.FontWeight.Should().Be(600);
+        reader.ToolHeaderFontAppearance.FontWeight.Should().Be(600);
         reader.BookBrowserAppearance.ItemsFontWeight.Should().Be(350);
         reader.BookBrowserAppearance.HeaderFontWeight.Should().Be(700);
         reader.FindUsagesAppearance.Should().Be(new FindUsagesAppearance(string.Empty, 0, "Consolas", 12, string.Empty, 0, 700, 300, 400));
@@ -329,6 +331,7 @@ public sealed class SettingsStoreTests
         sut.OpenTagHintAppearance = new OpenTagHintAppearance(string.Empty, 0, 300);
         sut.LineNumberFontAppearance = new LineNumberFontAppearance(string.Empty, 0, 300);
         sut.DocumentTabFontAppearance = new DocumentTabFontAppearance(string.Empty, 0, 300);
+        sut.ToolHeaderFontAppearance = new ToolHeaderFontAppearance(string.Empty, 0, 300);
         sut.BookBrowserAppearance = BookBrowserAppearance.Default with { ItemsFontWeight = 300, HeaderFontWeight = 300 };
         sut.FindUsagesAppearance = FindUsagesAppearance.Default with { HeaderFontWeight = 300, ContextFontWeight = 300, CellsFontWeight = 300 };
         sut.SpecialCharacterAppearance = new SpecialCharacterAppearance("Arial", 24, 300);
@@ -342,6 +345,7 @@ public sealed class SettingsStoreTests
         sut.OpenTagHintAppearance.FontWeight.Should().Be(0);
         sut.LineNumberFontAppearance.IsInherited.Should().BeTrue();
         sut.DocumentTabFontAppearance.FontWeight.Should().Be(0);
+        sut.ToolHeaderFontAppearance.FontWeight.Should().Be(0);
         sut.BookBrowserAppearance.Should().Be(BookBrowserAppearance.Default);
         sut.FindUsagesAppearance.Should().Be(FindUsagesAppearance.Default);
         sut.SpecialCharacterAppearance.FontWeight.Should().Be(0);
@@ -516,6 +520,19 @@ public sealed class SettingsStoreTests
 
         // Assert
         sut.FindActionButtonDisplay.Should().Be(value);
+    }
+
+    [Fact]
+    public void Tool_header_font_defaults_to_the_interface_font()
+    {
+        // Arrange
+        using TempDir dir = new();
+
+        // Act
+        SettingsStore sut = new(dir.Combine("settings.xml"));
+
+        // Assert
+        sut.ToolHeaderFontAppearance.Should().Be(ToolHeaderFontAppearance.Default);
     }
 
     [Fact]

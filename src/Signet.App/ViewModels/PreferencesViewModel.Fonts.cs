@@ -85,6 +85,7 @@ public sealed partial class PreferencesViewModel
                 ChooseUiFontCommand,
                 placeholder: () => UiFontDescription,
                 weight: (() => UiFontWeight, SetUiFontWeight)),
+            ToolHeaderFontRow(),
             new FontSettingViewModel(
                 "Warnings",
                 Strings.Get("PreferencesWindow_WarningFontSize"),

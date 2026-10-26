@@ -272,6 +272,31 @@ public readonly record struct DocumentTabFontAppearance(string FontFamily, int F
 }
 
 /// <summary>
+/// Font of the title bar of a tool panel (Book Browser, Preview, Validation Results, …) — every dockable panel that
+/// is not a document tab, which has a font setting of its own (<see cref="DocumentTabFontAppearance"/>).
+/// </summary>
+/// <param name="FontFamily">Font family; empty = the interface font.</param>
+/// <param name="FontSize">Font size (px); 0 = the default size of the panel title.</param>
+/// <param name="FontWeight">Weight of the font (<see cref="FontWeightScale"/>); 0 = not set.</param>
+public readonly record struct ToolHeaderFontAppearance(string FontFamily, int FontSize, int FontWeight = 0)
+{
+    /// <summary>Lower bound of an explicit <see cref="FontSize"/>.</summary>
+    public const int FontSizeMin = 6;
+
+    /// <summary>Upper bound of an explicit <see cref="FontSize"/>.</summary>
+    public const int FontSizeMax = 72;
+
+    /// <summary>Default values: the interface font at the default size of the panel title.</summary>
+    public static ToolHeaderFontAppearance Default => new(string.Empty, 0);
+
+    /// <summary>A copy with the size clamped (0 stays "the default").</summary>
+    public ToolHeaderFontAppearance Normalized() => new(
+        FontFamily?.Trim() ?? string.Empty,
+        FontSize <= 0 ? 0 : Math.Clamp(FontSize, FontSizeMin, FontSizeMax),
+        FontWeightScale.Normalize(FontWeight));
+}
+
+/// <summary>
 /// Font of the line numbers of Code Editor; the colors come from the theme (<c>editor.lineNumbers</c>,
 /// <c>editor.currentLineNumber</c>).
 /// </summary>
