@@ -896,8 +896,8 @@ public partial class CodeTabView : UserControl
             if (vm.IsHtmlFlow)
             {
                 MenuItem reformat = new() { Header = Strings.Get("CodeEditorMenu_ReformatHtml") };
-                reformat.Items.Add(Item(Strings.Get("CodeEditorMenu_Prettify"), () => _ = vm.ReformatHtmlAsync(toValid: false), "beautify"));
-                reformat.Items.Add(Item(Strings.Get("CodeEditorMenu_PrettifyAll"), () => host.ExecuteAction(AppActionIds.MendPrettifyHtml), "beautify"));
+                reformat.Items.Add(Item(Strings.Get("CodeEditorMenu_Prettify"), () => _ = vm.ReformatHtmlAsync(toValid: false), "beautify-html"));
+                reformat.Items.Add(Item(Strings.Get("CodeEditorMenu_PrettifyAll"), () => host.ExecuteAction(AppActionIds.MendPrettifyHtml), "beautify-html"));
                 reformat.Items.Add(new Separator());
                 reformat.Items.Add(Item(Strings.Get("CodeEditorMenu_Mend"), () => _ = vm.ReformatHtmlAsync(toValid: true), "html-fix"));
                 reformat.Items.Add(Item(Strings.Get("CodeEditorMenu_MendAll"), () => host.ExecuteAction(AppActionIds.MendHtml), "html-fix"));
@@ -913,7 +913,7 @@ public partial class CodeTabView : UserControl
             reformatCss.Items.Add(Item(
                 Strings.Get("CodeEditorMenu_CssMultipleLines"),
                 () => vm.ReformatCss(multipleLineFormat: true),
-                "beautify",
+                "beautify-css",
                 gesture: host?.GetActionGesture(AppActionIds.PrettifyCurrentCss)));
             reformatCss.Items.Add(Item(Strings.Get("CodeEditorMenu_CssSingleLine"), () => vm.ReformatCss(multipleLineFormat: false)));
             if (host is not null)
@@ -922,7 +922,7 @@ public partial class CodeTabView : UserControl
                 reformatCss.Items.Add(Item(
                     Strings.Get("CodeEditorMenu_CssPrettifyAll"),
                     () => host.ExecuteAction(AppActionIds.PrettifyAllCss),
-                    "beautify",
+                    "beautify-css",
                     gesture: host.GetActionGesture(AppActionIds.PrettifyAllCss)));
             }
 

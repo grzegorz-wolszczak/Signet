@@ -144,7 +144,9 @@ public sealed class IconThemeManager(SettingsStore settings, ILogger<IconThemeMa
     /// </summary>
     public static readonly IReadOnlyList<string> ColoredIconKeys = new[]
     {
-        "beautify", "html-fix", "polish",
+        // "beautify" (the plain tulip, no file-type label) is kept in reserve for a possible future
+        // "Prettify All" action that is not HTML- or CSS-specific — not used by any action yet.
+        "beautify", "beautify-html", "beautify-css", "html-fix", "polish",
 
         // The icons of the Book Browser folders (calibre's file list): Text, Styles, Images, Fonts, Misc.
         "keyboard-prefs", "lookfeel", "view-image", "font", "dir",

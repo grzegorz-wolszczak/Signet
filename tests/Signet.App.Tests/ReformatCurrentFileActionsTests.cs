@@ -14,7 +14,7 @@ namespace Signet.App.Tests;
 
 /// <summary>
 /// The "Prettify Code" / "Mend Code" / "Prettify Stylesheet" actions for the current file: Tools toolbar buttons with
-/// the beautify / html-fix icons.
+/// the beautify-html / beautify-css / html-fix icons.
 /// </summary>
 public sealed class ReformatCurrentFileActionsTests : IDisposable
 {
@@ -194,12 +194,12 @@ public sealed class ReformatCurrentFileActionsTests : IDisposable
         (MainWindowViewModel vm, _) = Open(temp);
 
         // Act & Assert
-        vm.Actions.Require(AppActionIds.PrettifyCurrentHtml).IconKey.Should().Be("beautify");
-        vm.Actions.Require(AppActionIds.MendPrettifyHtml).IconKey.Should().Be("beautify");
+        vm.Actions.Require(AppActionIds.PrettifyCurrentHtml).IconKey.Should().Be("beautify-html");
+        vm.Actions.Require(AppActionIds.MendPrettifyHtml).IconKey.Should().Be("beautify-html");
         vm.Actions.Require(AppActionIds.MendCurrentHtml).IconKey.Should().Be("html-fix");
         vm.Actions.Require(AppActionIds.MendHtml).IconKey.Should().Be("html-fix");
-        vm.Actions.Require(AppActionIds.PrettifyCurrentCss).IconKey.Should().Be("beautify");
-        vm.Actions.Require(AppActionIds.PrettifyAllCss).IconKey.Should().Be("beautify");
+        vm.Actions.Require(AppActionIds.PrettifyCurrentCss).IconKey.Should().Be("beautify-css");
+        vm.Actions.Require(AppActionIds.PrettifyAllCss).IconKey.Should().Be("beautify-css");
     }
 
     [Fact]
