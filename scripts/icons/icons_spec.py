@@ -118,9 +118,10 @@ icon('spellcheck-clear-ignored', m='abc', f='text_proofing_tools_abc', mb='delet
 icon('delete', m='delete', f='delete')
 icon('add-entry', m='description', f='text_description', mb='add', fb='add')
 icon('add-group', m='folder_open', f='folder_open', mb='add', fb='add')
-icon('import', m='file_upload', f='arrow_upload')
-icon('export', m='file_download', f='arrow_download')
+icon('import', m='arrow_back', f='arrow_left')
+icon('export', m='arrow_forward', f='arrow_right')
 icon('fill-controls', m='content_copy', f='copy', mb='arrow_forward', fb='arrow_right')
+icon('edit-search', m='edit', f='edit')
 
 # ---- Action id -> icon key (existing keys are reused as they are) -----------------------------------------------
 W = 'MainWindow.'
