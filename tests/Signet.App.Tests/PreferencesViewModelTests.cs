@@ -218,6 +218,32 @@ public sealed class PreferencesViewModelTests : IDisposable
     }
 
     [Fact]
+    public void Tool_header_font_starts_from_settings_and_changes_persist_on_apply()
+    {
+        // Arrange
+        using TestHost host = new();
+        host.Settings.ToolHeaderFontAppearance = new ToolHeaderFontAppearance("Arial", 16, 600);
+
+        // Act
+        PreferencesViewModel sut = NewOn(host);
+
+        // Act & Assert
+        sut.ToolHeaderFontFamily.Should().Be("Arial");
+        sut.ToolHeaderFontSize.Should().Be(16);
+        sut.ToolHeaderFontWeight.Should().Be(600);
+        sut.AppearanceFonts.Fonts.Should().Contain(f => f.Key == "ToolHeader", "the panel-header font is on the Appearance Fonts page");
+
+        // Act
+        sut.ToolHeaderFontFamily = string.Empty;
+        sut.ToolHeaderFontSize = 0;
+        sut.ToolHeaderFontWeight = 0;
+        sut.ApplyCommand.Execute(null);
+
+        // Assert
+        host.Settings.ToolHeaderFontAppearance.Should().Be(ToolHeaderFontAppearance.Default);
+    }
+
+    [Fact]
     public void Find_action_button_display_starts_from_settings_and_changes_persist_on_apply()
     {
         // Arrange

@@ -2681,18 +2681,18 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         FontSettingView[] rows = page.GetVisualDescendants().OfType<FontSettingView>().ToArray();
 
         // Assert
-        rows.Select(r => r.Name).Take(2).Should().Equal("FontInterface", "FontWarnings");
-        TextBlock preview = rows[1].FindControl<TextBlock>("PreviewText")!;
-        rows[1].FindControl<ScrollViewer>("PlainPreview")!.IsVisible.Should().BeTrue();
-        rows[1].FindControl<CodePreviewEditor>("CodePreview")!.IsVisible.Should().BeFalse("only a font of the editor is previewed as code");
-        Panel area = rows[1].FindControl<Panel>("PreviewArea")!;
+        rows.Select(r => r.Name).Take(3).Should().Equal("FontInterface", "FontToolHeader", "FontWarnings");
+        TextBlock preview = rows[2].FindControl<TextBlock>("PreviewText")!;
+        rows[2].FindControl<ScrollViewer>("PlainPreview")!.IsVisible.Should().BeTrue();
+        rows[2].FindControl<CodePreviewEditor>("CodePreview")!.IsVisible.Should().BeFalse("only a font of the editor is previewed as code");
+        Panel area = rows[2].FindControl<Panel>("PreviewArea")!;
 
         // Act
         window.CaptureRenderedFrame();
 
         // Assert
-        area.TranslatePoint(default, rows[1])!.Value.Y.Should().BeGreaterThan(
-            rows[1].FindControl<TextBlock>("FontSummary")?.TranslatePoint(default, rows[1])?.Y ?? 0, "the preview is under the font");
+        area.TranslatePoint(default, rows[2])!.Value.Y.Should().BeGreaterThan(
+            rows[2].FindControl<TextBlock>("FontSummary")?.TranslatePoint(default, rows[2])?.Y ?? 0, "the preview is under the font");
 
         // Act
         vm.WarningFontSize = 21;

@@ -722,6 +722,31 @@ public sealed class SettingsStore
     }
 
     /// <summary>
+    /// The font of the title bar of a tool panel (empty / 0 = the interface font at the default size). Always read
+    /// normalized (<see cref="ToolHeaderFontAppearance.Normalized"/>).
+    /// </summary>
+    public ToolHeaderFontAppearance ToolHeaderFontAppearance
+    {
+        get
+        {
+            ToolHeaderFontAppearance d = ToolHeaderFontAppearance.Default;
+            return new ToolHeaderFontAppearance(
+                ReadString("tool_header_font_family", d.FontFamily),
+                ReadInt("tool_header_font_size", d.FontSize),
+                ReadInt("tool_header_font_weight", d.FontWeight)).Normalized();
+        }
+
+        set
+        {
+            ToolHeaderFontAppearance v = value.Normalized();
+            WriteSilent("tool_header_font_family", v.FontFamily);
+            WriteSilent("tool_header_font_size", v.FontSize);
+            WriteSilent("tool_header_font_weight", v.FontWeight);
+            RaiseChanged("tool_header_font");
+        }
+    }
+
+    /// <summary>
     /// After how many milliseconds of resting on a closing tag the opening tag tooltip appears
     /// (<see cref="CodeEditorOpenTagHint"/>); 0–<see cref="OpenTagHintDelayMaxMs"/>, 500 by default.
     /// </summary>
@@ -2176,6 +2201,9 @@ public sealed class SettingsStore
         yield return "document_tab_font_family";
         yield return "document_tab_font_size";
         yield return "document_tab_font_weight";
+        yield return "tool_header_font_family";
+        yield return "tool_header_font_size";
+        yield return "tool_header_font_weight";
     }
 
     // The colors the settings held before the themes (by their old keys).

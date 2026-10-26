@@ -124,6 +124,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         LoadFindUsagesFonts();
         LoadLineNumbersFont();
         LoadDocumentTabFont();
+        LoadToolHeaderFont();
         CodeEditor = new CodeEditorAppearanceEditor(_settings.CodeEditorAppearance, a => _settings.CodeEditorAppearance = a, PickFontAsync);
 
         // ---- General ----
@@ -288,6 +289,11 @@ public sealed partial class PreferencesViewModel : ObservableObject
         if (Changed("document_tab_font"))
         {
             _uiDensity.ApplyDocumentTabFont();
+        }
+
+        if (Changed("tool_header_font"))
+        {
+            _uiDensity.ApplyToolHeaderFont();
         }
 
         if (Changed("ui_theme_id", "editor_scheme_id") || themesChanged)
@@ -843,6 +849,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         LoadFindUsagesFonts();
         LoadLineNumbersFont();
         LoadDocumentTabFont();
+        LoadToolHeaderFont();
 
         // The tooltip fonts were cleared with the other appearance keys.
         RefreshFontPages();
