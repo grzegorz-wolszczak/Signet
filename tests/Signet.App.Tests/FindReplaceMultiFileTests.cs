@@ -236,7 +236,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
     }
 
     [Fact]
-    public async Task SavedCountAll_DoesNotOpenTheWindow()
+    public void RunSavedCountAll_DoesNotOpenTheWindow()
     {
         // Arrange
         HtmlResource a = Html("<p>cat</p>");
@@ -250,7 +250,7 @@ public sealed class FindReplaceMultiFileTests : IDisposable
         SearchEntry entry = panel.CurrentAsEntry("cats") with { Find = "cat" };
 
         // Act & Assert
-        panel.CountForEntry(entry).Should().Be(1);
+        panel.RunSavedCountAll(new[] { entry }).Should().Be(1);
 
         // Assert
         host.ShownUsages.Should().BeEmpty();

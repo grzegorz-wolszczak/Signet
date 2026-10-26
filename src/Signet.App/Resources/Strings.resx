@@ -1193,14 +1193,38 @@ Czy chcesz zapisać zmiany?</value>
   <data name="SearchEditorView_LoadSearch" xml:space="preserve">
     <value>Wczytaj wyszukiwanie</value>
   </data>
-  <data name="SearchEditorView_CountsReport" xml:space="preserve">
-    <value>Raport liczby trafień</value>
-  </data>
   <data name="SearchEditorView_SaveCurrentFR" xml:space="preserve">
     <value>Zapisz bieżące wyszukiwanie</value>
   </data>
   <data name="SearchEditorView_FillControls" xml:space="preserve">
     <value>Wypełnij pola</value>
+  </data>
+  <data name="SearchEditorView_AddSearch" xml:space="preserve">
+    <value>Dodaj wyszukiwanie</value>
+  </data>
+  <data name="SearchEditorView_EditSearch" xml:space="preserve">
+    <value>Edytuj wyszukiwanie</value>
+  </data>
+  <data name="SearchEditorView_Name" xml:space="preserve">
+    <value>Nazwa:</value>
+  </data>
+  <data name="SearchEditorView_NamePlaceholder" xml:space="preserve">
+    <value>nazwa, pod którą zapisać to wyszukiwanie</value>
+  </data>
+  <data name="SearchEditor_EntryUpdated" xml:space="preserve">
+    <value>Zaktualizowano wpis.</value>
+  </data>
+  <data name="SearchEditorView_DeleteConfirmGroups" xml:space="preserve">
+    <value>grup: {0}</value>
+  </data>
+  <data name="SearchEditorView_DeleteConfirmEntries" xml:space="preserve">
+    <value>wpisów: {0}</value>
+  </data>
+  <data name="SearchEditorView_DeleteConfirmMessage" xml:space="preserve">
+    <value>Usunąć zaznaczone pozycje ({0})?</value>
+  </data>
+  <data name="SearchEditorView_Details" xml:space="preserve">
+    <value>Szczegóły</value>
   </data>
   <data name="SelectClipWindow_Title" xml:space="preserve">
     <value>Wstaw wycinek</value>
@@ -1561,6 +1585,9 @@ Czy chcesz zapisać zmiany?</value>
   </data>
   <data name="SearchEditorWindow_Keep" xml:space="preserve">
     <value>Zachowaj</value>
+  </data>
+  <data name="SearchEditorWindow_UnsavedSearchPrompt" xml:space="preserve">
+    <value>To wyszukiwanie nie zostało zapisane. Zapisać je przed zamknięciem?</value>
   </data>
   <data name="PreferencesWindow_IconTheme" xml:space="preserve">
     <value>Zestaw ikon:</value>
@@ -2982,9 +3009,6 @@ Scalać można tylko pliki HTML.</value>
   </data>
   <data name="SearchEditor_NothingSelected" xml:space="preserve">
     <value>Nie zaznaczono wyszukiwań.</value>
-  </data>
-  <data name="SearchEditor_CountsSummary" xml:space="preserve">
-    <value>Trafień łącznie: {0} (wyszukiwań: {1}).</value>
   </data>
   <data name="CodeEditor_ClassRenamed" xml:space="preserve">
     <value>Zmieniono nazwę klasy.</value>
@@ -4650,6 +4674,36 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="PreferencesWindow_FindUsagesFitUsageColumnHint" xml:space="preserve">
     <value>Pierwsza kolumna (pliki) ma szerokość najszerszego wpisu plus niewielki zapas. Gdy opcja jest wyłączona, okno zachowuje szerokość, którą kolumna miała ostatnio (np. ustawioną ręcznie).</value>
   </data>
+  <data name="PreferencesWindow_SearchEditorWindow" xml:space="preserve">
+    <value>Zapisane wyszukiwania</value>
+  </data>
+  <data name="PreferencesWindow_SearchEditorHeaderFont" xml:space="preserve">
+    <value>Nagłówek kolumny „Nazwa”</value>
+  </data>
+  <data name="PreferencesWindow_SearchEditorRowsFont" xml:space="preserve">
+    <value>Wiersze drzewa, podgląd Szczegółów i pole Nazwa</value>
+  </data>
+  <data name="FontPreview_SearchEditorHeader" xml:space="preserve">
+    <value>Nazwa</value>
+  </data>
+  <data name="FontPreview_SearchEditorRows" xml:space="preserve">
+    <value>latarnia morska → wieża</value>
+  </data>
+  <data name="PreferencesWindow_SearchEditorBackgroundInTheme" xml:space="preserve">
+    <value>Tło drzewa: Wygląd › Kolory interfejsu</value>
+  </data>
+  <data name="PreferencesWindow_SearchEditorSampleGroup" xml:space="preserve">
+    <value>Przykładowa grupa</value>
+  </data>
+  <data name="PreferencesWindow_SearchEditorSampleEntry" xml:space="preserve">
+    <value>Przykładowe wyszukiwanie</value>
+  </data>
+  <data name="PreferencesWindow_SearchEditorListPreview" xml:space="preserve">
+    <value>Lista</value>
+  </data>
+  <data name="PreferencesWindow_SearchEditorEditPreview" xml:space="preserve">
+    <value>Dodaj/Edytuj</value>
+  </data>
   <data name="Status_FindUsages" xml:space="preserve">
     <value>Użycia klasy „{0}”: {1}.</value>
   </data>
@@ -6208,6 +6262,18 @@ Zamknij zakładkę</value>
   <data name="ThemeKey_ui_dangerButton_text" xml:space="preserve">
     <value>Tekst przycisku niebezpiecznego</value>
   </data>
+  <data name="ThemeKey_ui_cautionButton" xml:space="preserve">
+    <value>Przycisk ostrzegawczy</value>
+  </data>
+  <data name="ThemeKey_ui_cautionButton_hover" xml:space="preserve">
+    <value>Przycisk ostrzegawczy (wskazany)</value>
+  </data>
+  <data name="ThemeKey_ui_cautionButton_pressed" xml:space="preserve">
+    <value>Przycisk ostrzegawczy (wciśnięty)</value>
+  </data>
+  <data name="ThemeKey_ui_cautionButton_text" xml:space="preserve">
+    <value>Tekst przycisku ostrzegawczego</value>
+  </data>
   <data name="ThemeKey_ui_frame" xml:space="preserve">
     <value>Ramka</value>
   </data>
@@ -6234,6 +6300,9 @@ Zamknij zakładkę</value>
   </data>
   <data name="ThemeKey_ui_bookBrowser_background" xml:space="preserve">
     <value>Tło przeglądarki książki</value>
+  </data>
+  <data name="ThemeKey_ui_searchEditor_background" xml:space="preserve">
+    <value>Tło drzewa zapisanych wyszukiwań</value>
   </data>
   <data name="ThemeKey_ui_findUsages_usage_background" xml:space="preserve">
     <value>Tło okna znalezionych użyć: kolumna Użycie</value>

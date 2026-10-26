@@ -194,6 +194,19 @@ public sealed class ThemeControlsPreview : Border
             }));
         }
 
+        IBrush cautionText = Brush(_theme.Color(ThemeKeys.UiCautionButtonText)) ?? (IBrush)Brushes.White;
+        foreach (ThemeKey key in new[] { ThemeKeys.UiCautionButton, ThemeKeys.UiCautionButtonHover, ThemeKeys.UiCautionButtonPressed })
+        {
+            controls.Children.Add(Spaced(new Border
+            {
+                Tag = key,
+                Background = Brush(_theme.Color(key)),
+                CornerRadius = new CornerRadius(4),
+                Padding = new Thickness(12, 5),
+                Child = new TextBlock { Text = Strings.Get("Common_Cancel"), Foreground = cautionText, Tag = ThemeKeys.UiCautionButtonText },
+            }));
+        }
+
         controls.Children.Add(Spaced(new Border
         {
             Tag = ThemeKeys.UiFrame,

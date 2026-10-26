@@ -8,6 +8,10 @@
     <color key="ui.dangerButton.hover" value="#A82315" />
     <color key="ui.dangerButton.pressed" value="#8E1D11" />
     <color key="ui.dangerButton.text" value="#FFFFFF" />
+    <color key="ui.cautionButton" value="#CA5010" />
+    <color key="ui.cautionButton.hover" value="#AC440E" />
+    <color key="ui.cautionButton.pressed" value="#923A0C" />
+    <color key="ui.cautionButton.text" value="#FFFFFF" />
     <color key="ui.frame" value="#6E6E6E" />
     <color key="ui.mutedText" value="#9D9D9D" />
     <color key="ui.warningText" value="#E8A33D" />

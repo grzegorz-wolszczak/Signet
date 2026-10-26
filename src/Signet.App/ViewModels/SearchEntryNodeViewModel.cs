@@ -13,6 +13,8 @@ public sealed class SearchEntryNodeViewModel : ViewModelBase
     private readonly SearchEditorModel _model;
     private bool _isExpanded;
     private bool _isVisible = true;
+    private bool _isEditing;
+    private string _editText = string.Empty;
 
     /// <summary>Creates the view node (recursively for the children).</summary>
     public SearchEntryNodeViewModel(SearchEditorNode node, SearchEditorModel model, bool isExpanded)
@@ -112,4 +114,43 @@ public sealed class SearchEntryNodeViewModel : ViewModelBase
         get => _isVisible;
         set => SetProperty(ref _isVisible, value);
     }
+
+    /// <summary>
+    /// Whether the name is being edited in place in the tree (a double click on a group — an entry's name
+    /// is changed through Edit Search instead, never in the tree).
+    /// </summary>
+    public bool IsEditing
+    {
+        get => _isEditing;
+        set => SetProperty(ref _isEditing, value);
+    }
+
+    /// <summary>Name being typed in place — goes to <see cref="Name"/> only once committed.</summary>
+    public string EditText
+    {
+        get => _editText;
+        set => SetProperty(ref _editText, value ?? string.Empty);
+    }
+
+    /// <summary>Starts in-place rename (double click on a group).</summary>
+    public void BeginRename()
+    {
+        EditText = Name;
+        IsEditing = true;
+    }
+
+    /// <summary>Applies the typed name (Enter / losing focus).</summary>
+    public void CommitRename()
+    {
+        if (!_isEditing)
+        {
+            return;
+        }
+
+        Name = EditText;
+        IsEditing = false;
+    }
+
+    /// <summary>Discards the typed name (Escape).</summary>
+    public void CancelRename() => IsEditing = false;
 }

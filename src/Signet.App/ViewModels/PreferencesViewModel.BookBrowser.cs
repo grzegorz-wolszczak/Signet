@@ -70,6 +70,8 @@ public sealed partial class PreferencesViewModel : IDisposable
         _findReplaceSampleSettings = null;
         _findUsagesSample?.Dispose();
         _findUsagesSample = null;
+        _searchEditorListSample = null;
+        _searchEditorEditSample = null;
         _codeEditorSample?.Dispose();
         _codeEditorSample = null;
         _codeEditorSampleTabs?.Dispose();

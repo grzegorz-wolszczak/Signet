@@ -55,6 +55,8 @@ public sealed class SearchEditorTests : IDisposable
         () => null,
         host);
 
+    private SettingsStore NewSettings() => new(Path.Combine(_dir, $"settings-{Guid.NewGuid():N}.xml"));
+
     private HtmlResource Html(string text)
     {
         HtmlResource html = _book.CreateEmptyHtmlFile();
@@ -68,33 +70,33 @@ public sealed class SearchEditorTests : IDisposable
         // Arrange
         SavedSearchStore store = Store();
         var host = new FakeMultiFileSearchHost();
-        var panel = new SearchEditorViewModel(store, NewFindReplace(host));
+        var panel = new SearchEditorViewModel(store, NewSettings(), NewFindReplace(host), NewFindReplace(new FakeMultiFileSearchHost()));
 
         // Act
         panel.AddGroupCommand.Execute(null);
         SearchEntryNodeViewModel group = panel.Nodes.Single();
         group.Name = "Typografia";
         panel.SetSelectedNodes(new[] { group });
-        panel.AddEntryCommand.Execute(null);
 
-        // RebuildNodes creates new VM instances, so take fresh ones.
-        SearchEntryNodeViewModel entry = panel.Nodes.Single().Children.Single();
-        entry.Name = "Cudzysłowy";
-        entry.Find = "\"";
-        entry.Replace = "„";
-        entry.Controls = "NL DN AH";
+        // Add Search opens the Add/Edit view (Name + the embedded Find & Replace panel) instead of adding a
+        // blank row directly; Done saves it under the selected group.
+        panel.AddEntryCommand.Execute(null);
+        panel.EditingName = "Cudzysłowy";
+        panel.FindReplace.FindText = "\"";
+        panel.FindReplace.ReplaceText = "„";
+        panel.DoneEditCommand.Execute(null);
 
         panel.SaveCommand.Execute(null);
 
         // "Restart": a new panel instance on the same file.
-        var reloaded = new SearchEditorViewModel(store, NewFindReplace(new FakeMultiFileSearchHost()));
+        var reloaded = new SearchEditorViewModel(store, NewSettings(), NewFindReplace(new FakeMultiFileSearchHost()), NewFindReplace(new FakeMultiFileSearchHost()));
         SearchEntryNodeViewModel reloadedEntry = reloaded.Nodes.Single().Children.Single();
 
         // Assert
         reloadedEntry.Name.Should().Be("Cudzysłowy");
         reloadedEntry.Find.Should().Be("\"");
         reloadedEntry.Replace.Should().Be("„");
-        reloadedEntry.Controls.Should().Be("NL DN AH");
+        reloadedEntry.Controls.Should().Be("NL WR DN CF", "the Add/Edit view's Find & Replace panel starts at its defaults (Normal, Down, Current File, Wrap)");
     }
 
     [Fact]
@@ -117,7 +119,7 @@ public sealed class SearchEditorTests : IDisposable
             new(false, Seq, "three", "gamma", "GAMMA", "NL DN AH"),
         });
 
-        var panel = new SearchEditorViewModel(store, NewFindReplace(host));
+        var panel = new SearchEditorViewModel(store, NewSettings(), NewFindReplace(host), NewFindReplace(new FakeMultiFileSearchHost()));
         panel.SetSelectedNodes(new[] { panel.Nodes.Single() }); // group "seq" → all 3 entries
 
         // Act
@@ -145,7 +147,7 @@ public sealed class SearchEditorTests : IDisposable
             new(false, Array.Empty<string>(), "Fix dashes", "--", "&nbsp;—", "NL DN AH"),
             new(false, Array.Empty<string>(), "Remove spans", "<span>", "", "NL DN AH"),
         });
-        var panel = new SearchEditorViewModel(store, NewFindReplace(new FakeMultiFileSearchHost()));
+        var panel = new SearchEditorViewModel(store, NewSettings(), NewFindReplace(new FakeMultiFileSearchHost()), NewFindReplace(new FakeMultiFileSearchHost()));
 
         // Act
         panel.FilterAll = filterAll;
@@ -156,51 +158,12 @@ public sealed class SearchEditorTests : IDisposable
     }
 
     [Fact]
-    public void CountsReport_ListsPerEntryCounts()
-    {
-        // Arrange
-        HtmlResource a = Html("<p>cat cat dog</p>");
-        var host = new FakeMultiFileSearchHost
-        {
-            BookLoaded = true,
-            Resolver = _ => new TextResource[] { a },
-        };
-
-        SavedSearchStore store = Store();
-        store.Save(new SearchEntry[]
-        {
-            new(false, Array.Empty<string>(), "cats", "cat", "", "NL DN AH"),
-            new(false, Array.Empty<string>(), "dogs", "dog", "", "NL DN AH"),
-        });
-
-        var panel = new SearchEditorViewModel(store, NewFindReplace(host));
-        panel.SetSelectedNodes(panel.Nodes.ToList());
-
-        // Act
-        panel.CountsReportCommand.Execute(null);
-
-        // Assert
-        panel.HasReport.Should().BeTrue();
-        panel.ReportRows.Should().HaveCount(2);
-        panel.ReportRows.Should().Contain(r => r.Contains("cats") && r.EndsWith('2'));
-        panel.ReportRows.Should().Contain(r => r.Contains("dogs") && r.EndsWith('1'));
-
-        // Act
-        panel.CloseReportCommand.Execute(null);
-
-        // Assert
-        panel.HasReport.Should().BeFalse();
-        panel.ReportSummary.Should().BeEmpty();
-        panel.ReportRows.Should().BeEmpty();
-    }
-
-    [Fact]
     public void ImportFile_Xml_AddsEntriesUnderImportedGroup()
     {
         // Arrange
         using UiCultureScope culture = new("en");
         SavedSearchStore store = Store();
-        var panel = new SearchEditorViewModel(store, NewFindReplace(new FakeMultiFileSearchHost()));
+        var panel = new SearchEditorViewModel(store, NewSettings(), NewFindReplace(new FakeMultiFileSearchHost()), NewFindReplace(new FakeMultiFileSearchHost()));
 
         string importPath = Path.Combine(_dir, "external.xml");
         File.WriteAllText(importPath, SavedSearchIo.WriteXml(new SearchEntry[]
@@ -230,7 +193,7 @@ public sealed class SearchEditorTests : IDisposable
 
         var host = new FakeMultiFileSearchHost { BookLoaded = true };
         FindReplaceViewModel findReplace = NewFindReplace(host);
-        var panel = new SearchEditorViewModel(store, findReplace);
+        var panel = new SearchEditorViewModel(store, NewSettings(), findReplace, NewFindReplace(new FakeMultiFileSearchHost()));
         panel.SetSelectedNodes(new[] { panel.Nodes.Single() });
 
         // Act
@@ -244,6 +207,35 @@ public sealed class SearchEditorTests : IDisposable
         findReplace.OptionWrap.Should().BeTrue();
     }
 
+    // Regression: the Add/Edit view used to share the real Find & Replace panel (so typing there — or even just
+    // opening Edit Search on an entry — immediately changed what was typed in the real panel, with no "Load"
+    // needed). It now has its own instance over the same book; only Load Search and Save Current Search touch the
+    // real one.
+    [Fact]
+    public void Editing_a_search_does_not_change_the_real_Find_and_Replace_panel()
+    {
+        // Arrange
+        SavedSearchStore store = Store();
+        FindReplaceViewModel findReplace = NewFindReplace(new FakeMultiFileSearchHost());
+        findReplace.FindText = "untouched";
+        var panel = new SearchEditorViewModel(store, NewSettings(), findReplace, NewFindReplace(new FakeMultiFileSearchHost()));
+
+        // Act
+        panel.AddEntryCommand.Execute(null);
+        panel.EditingName = "New search";
+        panel.FindReplace.FindText = "typed-while-editing";
+
+        // Assert
+        findReplace.FindText.Should().Be("untouched");
+        panel.FindReplace.FindText.Should().Be("typed-while-editing");
+
+        // Act: saving it does not touch the real panel either.
+        panel.DoneEditCommand.Execute(null);
+
+        // Assert
+        findReplace.FindText.Should().Be("untouched");
+    }
+
     [Fact]
     public void MoveRight_ThenSave_KeepsEntryInsideGroup()
     {
@@ -255,7 +247,7 @@ public sealed class SearchEditorTests : IDisposable
             new(false, Array.Empty<string>(), "loose", "a", "b", "NL DN CF"),
         });
 
-        var panel = new SearchEditorViewModel(store, NewFindReplace(new FakeMultiFileSearchHost()));
+        var panel = new SearchEditorViewModel(store, NewSettings(), NewFindReplace(new FakeMultiFileSearchHost()), NewFindReplace(new FakeMultiFileSearchHost()));
         SearchEntryNodeViewModel loose = panel.Nodes.Single(n => n.Name == "loose");
         panel.SetSelectedNodes(new[] { loose });
 

@@ -42,6 +42,11 @@ public sealed partial class PreferencesViewModel
     /// <summary>Appearance › Find Usages Window › Fonts: the column headers, the "Context" column and the other cells.</summary>
     public FontPageViewModel FindUsagesFonts { get; private set; } = null!;
 
+    /// <summary>
+    /// Appearance › Saved Searches › Fonts: the "Name" column header, and the tree rows / Details preview / Name field.
+    /// </summary>
+    public FontPageViewModel SearchEditorFonts { get; private set; } = null!;
+
     /// <summary>Appearance › Table of Contents › Fonts: the tooltip font.</summary>
     public FontPageViewModel TableOfContentsFonts { get; private set; } = null!;
 
@@ -254,6 +259,33 @@ public sealed partial class PreferencesViewModel
                 ChooseFindUsagesCellsFontCommand,
                 () => FindUsagesCellsFontWeight, v => FindUsagesCellsFontWeight = v),
         });
+        SearchEditorFonts = new FontPageViewModel(new[]
+        {
+            InterfaceFontRow(
+                "SearchEditorHeader", "PreferencesWindow_SearchEditorHeaderFont", "FontPreview_SearchEditorHeader",
+                () => SearchEditorHeaderFontFamily, v => SearchEditorHeaderFontFamily = v,
+                () => SearchEditorHeaderFontSize, v => SearchEditorHeaderFontSize = v,
+                () =>
+                {
+                    SearchEditorHeaderFontFamily = string.Empty;
+                    SearchEditorHeaderFontSize = 0;
+                    SearchEditorHeaderFontWeight = 0;
+                },
+                ChooseSearchEditorHeaderFontCommand,
+                () => SearchEditorHeaderFontWeight, v => SearchEditorHeaderFontWeight = v),
+            InterfaceFontRow(
+                "SearchEditorRows", "PreferencesWindow_SearchEditorRowsFont", "FontPreview_SearchEditorRows",
+                () => SearchEditorRowsFontFamily, v => SearchEditorRowsFontFamily = v,
+                () => SearchEditorRowsFontSize, v => SearchEditorRowsFontSize = v,
+                () =>
+                {
+                    SearchEditorRowsFontFamily = string.Empty;
+                    SearchEditorRowsFontSize = 0;
+                    SearchEditorRowsFontWeight = 0;
+                },
+                ChooseSearchEditorRowsFontCommand,
+                () => SearchEditorRowsFontWeight, v => SearchEditorRowsFontWeight = v),
+        });
         TableOfContentsFonts = TooltipPage(TooltipArea.TableOfContents);
         FindReplaceFonts = TooltipPage(TooltipArea.FindReplace);
         CheckpointsFonts = TooltipPage(TooltipArea.Checkpoints);
@@ -264,7 +296,7 @@ public sealed partial class PreferencesViewModel
         _fontPages.AddRange(new[]
         {
             AppearanceFonts, StartScreenFonts, BookBrowserFonts, TableOfContentsFonts, CodeEditorFonts, PreviewFonts,
-            FindReplaceFonts, FindUsagesFonts, SpecialCharacterFonts, CheckpointsFonts, ValidationFonts, MetadataEditorFonts,
+            FindReplaceFonts, FindUsagesFonts, SearchEditorFonts, SpecialCharacterFonts, CheckpointsFonts, ValidationFonts, MetadataEditorFonts,
             CleanupFonts, FootnotesFonts,
         });
 
