@@ -24,25 +24,8 @@
   </UserControl.Resources>
 
   <UserControl.Styles>
-    <!-- The buttons of the left toolbar: small, flat, with a vector icon. -->
-    <Style Selector=":is(Button).panelTool">
-      <Setter Property="Width" Value="28" />
-      <Setter Property="Height" Value="28" />
-      <Setter Property="Padding" Value="5" />
-      <Setter Property="Background" Value="Transparent" />
-      <Setter Property="BorderThickness" Value="0" />
-    </Style>
-    <Style Selector=":is(Button).panelTool Path">
-      <Setter Property="Fill" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
-      <Setter Property="Stretch" Value="Uniform" />
-    </Style>
-    <Style Selector=":is(Button).panelTool:disabled Path">
-      <Setter Property="Opacity" Value="0.4" />
-    </Style>
-    <!-- A pressed toggle (Wrap Rows) keeps the highlight of a selected list item behind its icon. -->
-    <Style Selector="ToggleButton.panelTool:checked /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="{DynamicResource SystemControlHighlightListLowBrush}" />
-    </Style>
+    <!-- The buttons of the left toolbar (small, flat, with a vector icon) are the shared "panelTool" style in
+         App.axaml — other windows with the same kind of toolbar (Saved Searches) use it too. -->
 
     <!-- The text of the cells is cut with an ellipsis; with "Wrap Rows" it wraps and the row grows. -->
     <Style Selector="TextBlock.usageCell">

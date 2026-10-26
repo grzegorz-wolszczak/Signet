@@ -1,13 +1,16 @@
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Shapes;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AwesomeAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.App.ViewModels;
@@ -75,6 +78,63 @@ public sealed class SearchEditorViewTests
 
         // Assert
         search.Find.Should().Be("mouse");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_top_toolbar_has_icon_only_buttons_with_tooltips_and_working_commands()
+    {
+        // Arrange
+        using TempDir temp = new();
+        // Headless tests skip the desktop startup path, so the icon set is not merged into app resources by
+        // default (App.axaml.cs only does it for IClassicDesktopStyleApplicationLifetime).
+        new IconThemeManager(new SettingsStore(temp.Combine("icon-theme-settings.xml")), NullLogger<IconThemeManager>.Instance).ApplySaved();
+
+        // Act
+        (Window window, SearchEditorViewModel vm, _, _) = Show(temp);
+        Button[] toolbar = window.GetVisualDescendants().OfType<Button>().Where(b => b.Classes.Contains("iconToolbar")).ToArray();
+
+        // Assert
+        toolbar.Select(b => (string)b.Tag!).Should().Equal(
+            "document-save", "add-entry", "add-group", "delete", "fill-controls", "import", "export", "export");
+        toolbar.Should().OnlyContain(b => b.Tag is string, "the icon key is the Tag, not Content (Content is scanned for hardcoded user-facing text)");
+        toolbar.Select(ToolTip.GetTip).Should().Equal(
+            Strings.Get("SearchEditorView_SaveCurrentFR"), Strings.Get("ClipEditorWindow_AddEntry"),
+            Strings.Get("ClipEditorWindow_AddGroup"), Strings.Get("Common_Delete"), Strings.Get("SearchEditorView_FillControls"),
+            Strings.Get("Common_Import"), Strings.Get("Common_Export"), Strings.Get("ClipEditorWindow_ExportAll"));
+        foreach (Button button in toolbar)
+        {
+            Panel icon = button.GetVisualDescendants().OfType<Panel>().First();
+            (icon.GetVisualDescendants().OfType<Image>().Single().Source is not null
+                || icon.GetVisualDescendants().OfType<PathIcon>().Single().Data is not null).Should().BeTrue(
+                $"the icon key \"{button.Tag}\" resolves to an image or a geometry in the active icon set");
+        }
+
+        // Act
+        Button addEntry = toolbar.Single(b => (string)b.Tag! == "add-entry");
+        int before = vm.Nodes.Count;
+        addEntry.Command!.Execute(null);
+
+        // Assert
+        vm.Nodes.Count.Should().Be(before + 1, "the toolbar button is wired to the real AddEntryCommand");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void The_left_toolbar_has_icon_only_reload_expand_and_collapse_buttons()
+    {
+        // Arrange
+        using TempDir temp = new();
+
+        // Act
+        (Window window, SearchEditorViewModel vm, _, _) = Show(temp);
+        Button[] panelTools = window.GetVisualDescendants().OfType<Button>().Where(b => b.Classes.Contains("panelTool")).ToArray();
+
+        // Assert
+        panelTools.Should().HaveCount(3, "Reload, Expand All, Collapse All");
+        panelTools.Select(ToolTip.GetTip).Should().Equal(
+            Strings.Get("Common_Reload"), Strings.Get("Common_Expand"), Strings.Get("Common_Collapse"));
+        panelTools.Should().OnlyContain(b => b.GetVisualDescendants().OfType<Path>().Any(), "an icon-only button, no text");
         window.Close();
     }
 

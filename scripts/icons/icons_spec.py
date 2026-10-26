@@ -114,6 +114,14 @@ icon('spellcheck-add', m='abc', f='text_proofing_tools_abc', mb='add', fb='add')
 icon('spellcheck-ignore', m='abc', f='text_proofing_tools_abc', mb='visibility_off', fb='eye_off')
 icon('spellcheck-clear-ignored', m='abc', f='text_proofing_tools_abc', mb='delete', fb='delete')
 
+# ---- Saved Searches / Clip Editor list toolbar (plain RelayCommands, not catalog actions) -------------------------
+icon('delete', m='delete', f='delete')
+icon('add-entry', m='description', f='text_description', mb='add', fb='add')
+icon('add-group', m='folder_open', f='folder_open', mb='add', fb='add')
+icon('import', m='file_upload', f='arrow_upload')
+icon('export', m='file_download', f='arrow_download')
+icon('fill-controls', m='content_copy', f='copy', mb='arrow_forward', fb='arrow_right')
+
 # ---- Action id -> icon key (existing keys are reused as they are) -----------------------------------------------
 W = 'MainWindow.'
 ACTIONS = {
