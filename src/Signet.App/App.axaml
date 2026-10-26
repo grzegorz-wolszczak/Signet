@@ -202,6 +202,26 @@
   <Application.Styles>
     <FluentTheme />
     <dockFluent:DockFluentTheme />
+    <!-- The small, flat, icon-only buttons of a window's own left toolbar (Find Usages, Saved Searches, …): one
+         vector icon, no text. Shared so every such toolbar looks the same. -->
+    <Style Selector=":is(Button).panelTool">
+      <Setter Property="Width" Value="28" />
+      <Setter Property="Height" Value="28" />
+      <Setter Property="Padding" Value="5" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector=":is(Button).panelTool Path">
+      <Setter Property="Fill" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+      <Setter Property="Stretch" Value="Uniform" />
+    </Style>
+    <Style Selector=":is(Button).panelTool:disabled Path">
+      <Setter Property="Opacity" Value="0.4" />
+    </Style>
+    <!-- A pressed toggle (e.g. Find Usages' "Wrap Rows") keeps the highlight of a selected list item behind its icon. -->
+    <Style Selector="ToggleButton.panelTool:checked /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource SystemControlHighlightListLowBrush}" />
+    </Style>
     <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml" />
     <!-- Theme of Signet.Controls.TreeDataGrid (virtualized trees and tables). After FluentTheme: it resolves the Fluent
          palette colours with StaticResource when loaded. -->

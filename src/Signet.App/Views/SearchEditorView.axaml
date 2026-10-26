@@ -7,6 +7,21 @@
              infra:TooltipFonts.Area="FindReplace"
              x:DataType="vm:SearchEditorViewModel">
 
+  <UserControl.Styles>
+    <!-- The fixed, non-configurable icon toolbar at the top (Save, Add Entry/Group, Delete, Import/Export): one
+         colored icon from the current icon set (Preferences › Appearance), no text — the tooltip carries the label.
+         The icon key is the button's Tag (not Content, which is scanned for hardcoded user-facing text), read by
+         the icon Panel below like Button.findAction's icon in FindReplaceView.axaml. -->
+    <Style Selector="Button.iconToolbar">
+      <Setter Property="Padding" Value="5" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="Button.iconToolbar:disabled">
+      <Setter Property="Opacity" Value="0.4" />
+    </Style>
+  </UserControl.Styles>
+
   <UserControl.Resources>
     <!-- Cell templates of the saved searches tree (looked up by key from the code-behind); a group has only a name. -->
     <DataTemplate x:Key="NameCellTemplate" x:DataType="vm:SearchEntryNodeViewModel">
@@ -26,10 +41,91 @@
     </DataTemplate>
   </UserControl.Resources>
 
-  <Grid Margin="8" RowDefinitions="Auto,*,Auto,Auto" RowSpacing="6">
+  <Grid Margin="8" RowDefinitions="Auto,Auto,*,Auto,Auto" RowSpacing="6">
+
+    <!-- Fixed icon toolbar, not configurable (unlike the main window's toolbars): the core entry/group/import-export
+         actions. The rest (Load Search, the Find & Replace actions, Reload/Expand/Collapse) stay where they were.
+         Each button's icon key is its Tag; the icon Panel is the same shape as Button.findAction's in
+         FindReplaceView.axaml, repeated per button like the panelTool icons below. -->
+    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="2">
+      <Button Classes="iconToolbar accent" Tag="document-save" Command="{Binding SaveCurrentSearchCommand}"
+              ToolTip.Tip="{loc:Loc SearchEditorView_SaveCurrentFR}">
+        <Panel Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}">
+          <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                 IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                    IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        </Panel>
+      </Button>
+      <Separator Margin="4,0" />
+      <Button Classes="iconToolbar" Tag="add-entry" Command="{Binding AddEntryCommand}"
+              ToolTip.Tip="{loc:Loc ClipEditorWindow_AddEntry}">
+        <Panel Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}">
+          <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                 IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                    IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        </Panel>
+      </Button>
+      <Button Classes="iconToolbar" Tag="add-group" Command="{Binding AddGroupCommand}"
+              ToolTip.Tip="{loc:Loc ClipEditorWindow_AddGroup}">
+        <Panel Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}">
+          <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                 IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                    IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        </Panel>
+      </Button>
+      <Button Classes="iconToolbar danger" Tag="delete" Command="{Binding DeleteCommand}"
+              ToolTip.Tip="{loc:Loc Common_Delete}">
+        <Panel Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}">
+          <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                 IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                    IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        </Panel>
+      </Button>
+      <Button Classes="iconToolbar" Tag="fill-controls" Command="{Binding FillControlsCommand}"
+              ToolTip.Tip="{loc:Loc SearchEditorView_FillControls}">
+        <Panel Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}">
+          <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                 IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                    IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        </Panel>
+      </Button>
+      <Separator Margin="4,0" />
+      <Button Classes="iconToolbar" Tag="import" Command="{Binding ImportCommand}"
+              ToolTip.Tip="{loc:Loc Common_Import}">
+        <Panel Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}">
+          <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                 IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                    IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        </Panel>
+      </Button>
+      <Button Classes="iconToolbar" Tag="export" Command="{Binding ExportCommand}"
+              ToolTip.Tip="{loc:Loc Common_Export}">
+        <Panel Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}">
+          <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                 IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                    IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        </Panel>
+      </Button>
+      <Button Classes="iconToolbar" Tag="export" Command="{Binding ExportAllCommand}"
+              ToolTip.Tip="{loc:Loc ClipEditorWindow_ExportAll}">
+        <Panel Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}">
+          <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                 IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                    IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        </Panel>
+      </Button>
+    </StackPanel>
 
     <!-- Filter -->
-    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="6">
+    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="6">
       <TextBlock Text="{loc:Loc ClipEditorWindow_Filter}" VerticalAlignment="Center" />
       <TextBox Text="{Binding FilterText, Mode=TwoWay}" Width="240"
                PlaceholderText="{loc:Loc SearchEditorView_FilterPlaceholder}" />
@@ -37,14 +133,33 @@
                 VerticalAlignment="Center" />
     </StackPanel>
 
-    <!-- Tree + button panel -->
-    <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+    <!-- Left icon toolbar + tree + button panel -->
+    <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+      <!-- Reload / Expand All / Collapse All, icon-only — the same look as the Find Usages window's left toolbar. -->
+      <Border Grid.Column="0" BorderThickness="0,0,1,0" Padding="2"
+              BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+        <StackPanel Spacing="4">
+          <Button Classes="panelTool" Command="{Binding ReloadCommand}" ToolTip.Tip="{loc:Loc Common_Reload}">
+            <!-- Material Design "sync" icon (Apache License 2.0): two arrows turning around. -->
+            <Path Data="M12,18A6,6 0 0,1 6,12C6,11 6.25,10.03 6.7,9.2L5.24,7.74C4.46,8.97 4,10.43 4,12A8,8 0 0,0 12,20V23L16,19L12,15M12,4V1L8,5L12,9V6A6,6 0 0,1 18,12C18,13 17.75,13.97 17.3,14.8L18.76,16.26C19.54,15.03 20,13.57 20,12A8,8 0 0,0 12,4Z" />
+          </Button>
+          <Button Classes="panelTool" Command="{Binding ExpandAllCommand}" ToolTip.Tip="{loc:Loc Common_Expand}">
+            <!-- Material Design "unfold-more-horizontal" icon (Apache License 2.0): two chevrons pointing apart. -->
+            <Path Data="M12,18.17L8.83,15L7.42,16.41L12,21L16.59,16.41L15.17,15M12,5.83L15.17,9L16.58,7.59L12,3L7.41,7.59L8.83,9L12,5.83Z" />
+          </Button>
+          <Button Classes="panelTool" Command="{Binding CollapseAllCommand}" ToolTip.Tip="{loc:Loc Common_Collapse}">
+            <!-- Material Design "unfold-less-horizontal" icon (Apache License 2.0): two chevrons pointing together. -->
+            <Path Data="M16.59,5.59L18,7L12,13L6,7L7.41,5.59L12,10.17L16.59,5.59M16.59,18.41L12,13.83L7.41,18.41L6,17L12,11L18,17L16.59,18.41Z" />
+          </Button>
+        </StackPanel>
+      </Border>
+
       <!-- The saved searches tree (Name, Find, Replace, Controls - edited in place): source built in the code-behind;
            the filter hides nodes through VisibleItemsView, several nodes can be selected. -->
-      <TreeDataGrid x:Name="Tree" Grid.Column="0" CanUserSortColumns="False"
+      <TreeDataGrid x:Name="Tree" Grid.Column="1" CanUserSortColumns="False"
                     BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
 
-      <StackPanel Grid.Column="1" Spacing="4" Width="130">
+      <StackPanel Grid.Column="2" Spacing="4" Width="130">
         <!-- Core search actions, grouped. -->
         <Button Content="{loc:Loc SearchEditorView_LoadSearch}" Command="{Binding LoadSearchCommand}" HorizontalAlignment="Stretch" />
         <Separator Margin="0,6" />
@@ -63,30 +178,13 @@
           <Button Grid.Row="1" Grid.Column="1" Content="→" Command="{Binding MoveRightCommand}" />
           <Button Grid.Row="2" Grid.ColumnSpan="2" Content="↓" Command="{Binding MoveDownCommand}" HorizontalAlignment="Center" />
         </Grid>
-
-        <!-- Entry management, import/export and tree actions. -->
-        <Separator Margin="0,10" />
-        <Button Classes="accent" Content="{loc:Loc SearchEditorView_SaveCurrentFR}" Command="{Binding SaveCurrentSearchCommand}" HorizontalAlignment="Stretch" />
-        <Button Content="{loc:Loc ClipEditorWindow_AddEntry}" Command="{Binding AddEntryCommand}" HorizontalAlignment="Stretch" />
-        <Button Content="{loc:Loc ClipEditorWindow_AddGroup}" Command="{Binding AddGroupCommand}" HorizontalAlignment="Stretch" />
-        <Button Classes="danger" Content="{loc:Loc Common_Delete}" Command="{Binding DeleteCommand}" HorizontalAlignment="Stretch" />
-        <Button Content="{loc:Loc SearchEditorView_FillControls}" Command="{Binding FillControlsCommand}" HorizontalAlignment="Stretch" />
-        <Separator />
-        <Button Content="{loc:Loc Common_Import}" Command="{Binding ImportCommand}" HorizontalAlignment="Stretch" />
-        <Button Content="{loc:Loc Common_Export}" Command="{Binding ExportCommand}" HorizontalAlignment="Stretch" />
-        <Button Content="{loc:Loc ClipEditorWindow_ExportAll}" Command="{Binding ExportAllCommand}" HorizontalAlignment="Stretch" />
-        <Button Content="{loc:Loc Common_Reload}" Command="{Binding ReloadCommand}" HorizontalAlignment="Stretch" />
-        <UniformGrid Columns="2">
-          <Button Content="{loc:Loc Common_Expand}" Command="{Binding ExpandAllCommand}" />
-          <Button Content="{loc:Loc Common_Collapse}" Command="{Binding CollapseAllCommand}" />
-        </UniformGrid>
       </StackPanel>
     </Grid>
 
-    <TextBlock Grid.Row="2" Text="{Binding Message}"
+    <TextBlock Grid.Row="3" Text="{Binding Message}"
                Foreground="{DynamicResource SystemAccentColor}" TextWrapping="Wrap" />
 
-    <Grid Grid.Row="3" ColumnDefinitions="*,Auto" ColumnSpacing="4"
+    <Grid Grid.Row="4" ColumnDefinitions="*,Auto" ColumnSpacing="4"
           IsVisible="{Binding HasReport}">
       <Expander Grid.Column="0" x:Name="ReportExpander"
                 Header="{Binding ReportSummary}" IsExpanded="False"
