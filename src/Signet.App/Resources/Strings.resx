@@ -5497,6 +5497,18 @@ Zażółć gęślą jaźń — 0123456789</value>
   <data name="PreferencesWindow_FindReplace" xml:space="preserve">
     <value>Znajdź i zamień</value>
   </data>
+  <data name="PreferencesWindow_FindActionButtonDisplay" xml:space="preserve">
+    <value>Przyciski akcji:</value>
+  </data>
+  <data name="FindActionButtonDisplay_IconAndText" xml:space="preserve">
+    <value>Ikona i tekst</value>
+  </data>
+  <data name="FindActionButtonDisplay_IconOnly" xml:space="preserve">
+    <value>Tylko ikona</value>
+  </data>
+  <data name="FindActionButtonDisplay_TextOnly" xml:space="preserve">
+    <value>Tylko tekst</value>
+  </data>
   <data name="PreferencesWindow_Checkpoints" xml:space="preserve">
     <value>Punkty kontrolne</value>
   </data>

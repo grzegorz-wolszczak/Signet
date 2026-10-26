@@ -8,21 +8,25 @@
              x:DataType="vm:FindReplaceViewModel">
 
   <UserControl.Styles>
-    <!-- Action buttons: the icon from the current set
-         (key in Tag) to the left of the text (Content). -->
+    <!-- Action buttons: the icon from the current set (key in Tag) to the left of the text (Content) — or just one
+         of the two, by Preferences › Appearance › Find and Replace › ActionButtonDisplay (the view model of the
+         button's own panel, reached through the button itself since Content overrides the template's DataContext
+         to the bound string). -->
     <Style Selector="Button.findAction">
       <Setter Property="HorizontalAlignment" Value="Stretch" />
       <Setter Property="HorizontalContentAlignment" Value="Left" />
       <Setter Property="ContentTemplate">
         <DataTemplate x:DataType="x:String">
           <StackPanel Orientation="Horizontal" Spacing="6">
-            <Panel Width="16" Height="16" VerticalAlignment="Center">
+            <Panel Width="16" Height="16" VerticalAlignment="Center"
+                   IsVisible="{Binding $parent[Button].((vm:FindReplaceViewModel)DataContext).ActionButtonDisplay, Converter={x:Static infra:FindActionButtonDisplayConverters.ShowIcon}}">
               <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
                      IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
               <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
                         IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
             </Panel>
-            <TextBlock Text="{Binding}" VerticalAlignment="Center" />
+            <TextBlock Text="{Binding}" VerticalAlignment="Center"
+                       IsVisible="{Binding $parent[Button].((vm:FindReplaceViewModel)DataContext).ActionButtonDisplay, Converter={x:Static infra:FindActionButtonDisplayConverters.ShowText}}" />
           </StackPanel>
         </DataTemplate>
       </Setter>

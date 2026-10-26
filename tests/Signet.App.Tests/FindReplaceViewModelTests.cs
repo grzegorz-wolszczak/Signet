@@ -439,6 +439,38 @@ public sealed class FindReplaceViewModelTests : IDisposable
     }
 
     [Fact]
+    public void ActionButtonDisplay_StartsFromSettingsAndPersistsOnChange()
+    {
+        // Arrange
+        SettingsStore settings = new(_settingsPath);
+        settings.FindActionButtonDisplay = FindActionButtonDisplay.IconOnly;
+        var panel = new FindReplaceViewModel(settings, new StatusBarService(), () => null, new FakeMultiFileSearchHost());
+
+        // Act & Assert
+        panel.ActionButtonDisplay.Should().Be(FindActionButtonDisplay.IconOnly, "the panel starts from the persisted value");
+
+        // Act
+        panel.ActionButtonDisplay = FindActionButtonDisplay.TextOnly;
+
+        // Assert
+        settings.FindActionButtonDisplay.Should().Be(FindActionButtonDisplay.TextOnly, "the change is persisted");
+    }
+
+    [Fact]
+    public void ActionButtonDisplay_FollowsAnExternalSettingsChange()
+    {
+        // Arrange — the real panel reacts live to a Preferences Save, which writes straight into this store.
+        SettingsStore settings = new(_settingsPath);
+        var panel = new FindReplaceViewModel(settings, new StatusBarService(), () => null, new FakeMultiFileSearchHost());
+
+        // Act
+        settings.FindActionButtonDisplay = FindActionButtonDisplay.TextOnly;
+
+        // Assert
+        panel.ActionButtonDisplay.Should().Be(FindActionButtonDisplay.TextOnly);
+    }
+
+    [Fact]
     public async Task RestrictToSelection_MarksRegionAndLimitsReplaceAll()
     {
         // Arrange

@@ -550,6 +550,19 @@ public sealed class SettingsStore
     }
 
     /// <summary>
+    /// How the Find &amp; Replace panel's action buttons show their icon and text. Icon and text by default.
+    /// </summary>
+    public FindActionButtonDisplay FindActionButtonDisplay
+    {
+        get => Enum.TryParse(
+            ReadString("find_action_button_display", nameof(FindActionButtonDisplay.IconAndText)),
+            ignoreCase: true, out FindActionButtonDisplay parsed)
+            ? parsed
+            : FindActionButtonDisplay.IconAndText;
+        set => Write("find_action_button_display", value.ToString());
+    }
+
+    /// <summary>
     /// Whether Code Editor closes the open tag after <c>&lt;/</c> is typed (enabled by default).
     /// </summary>
     public bool CodeEditorAutoCloseTags

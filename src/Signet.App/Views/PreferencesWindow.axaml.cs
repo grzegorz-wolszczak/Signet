@@ -436,6 +436,7 @@ public partial class PreferencesWindow : Window
             SpecialCharactersSampleTip.DataContext = vm.SpecialCharacterFonts.Fonts.Single(f => f.Key == "Tooltip" + TooltipArea.SpecialCharacters);
             FindReplacePreview.DataContext = vm.FindReplaceSample;
             FindReplaceSampleTip.DataContext = vm.FindReplaceFonts.Fonts.Single(f => f.Key == "Tooltip" + TooltipArea.FindReplace);
+            vm.FindReplaceSample.ActionButtonDisplay = vm.FindActionButtonDisplay;
             FindUsagesPreview.DataContext = vm.FindUsagesSample;
             CodeEditorPreview.DataContext = vm.CodeEditorSample;
             DocumentTabsPreview.DataContext = vm.CodeEditorFonts.Fonts.Single(f => f.Key == "DocumentTabs");
@@ -446,6 +447,10 @@ public partial class PreferencesWindow : Window
                 if (e.PropertyName == nameof(PreferencesViewModel.MultilineTabs))
                 {
                     DocumentTabsPreview.IsMultiline = vm.MultilineTabs;
+                }
+                else if (e.PropertyName == nameof(PreferencesViewModel.FindActionButtonDisplay))
+                {
+                    vm.FindReplaceSample.ActionButtonDisplay = vm.FindActionButtonDisplay;
                 }
             };
             StartScreenPreview.DataContext = vm.StartScreenSample;

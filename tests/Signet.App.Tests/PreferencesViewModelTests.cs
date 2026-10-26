@@ -217,6 +217,27 @@ public sealed class PreferencesViewModelTests : IDisposable
         host.Settings.WarningAppearance.Should().Be(new WarningAppearance(0));
     }
 
+    [Fact]
+    public void Find_action_button_display_starts_from_settings_and_changes_persist_on_apply()
+    {
+        // Arrange
+        using TestHost host = new();
+        host.Settings.FindActionButtonDisplay = FindActionButtonDisplay.IconOnly;
+
+        // Act
+        PreferencesViewModel sut = NewOn(host);
+
+        // Act & Assert
+        sut.FindActionButtonDisplay.Should().Be(FindActionButtonDisplay.IconOnly);
+
+        // Act
+        sut.FindActionButtonDisplay = FindActionButtonDisplay.TextOnly;
+        sut.ApplyCommand.Execute(null);
+
+        // Assert
+        host.Settings.FindActionButtonDisplay.Should().Be(FindActionButtonDisplay.TextOnly);
+    }
+
     private sealed class FakeEditionPageHost : IEditionPageHost
     {
         public bool HasOpenBook { get; set; } = true;

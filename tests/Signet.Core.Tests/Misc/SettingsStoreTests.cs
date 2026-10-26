@@ -501,6 +501,36 @@ public sealed class SettingsStoreTests
         sut.CodeEditorMultilineTabs.Should().BeFalse();
     }
 
+    [Theory]
+    [InlineData(FindActionButtonDisplay.IconAndText)]
+    [InlineData(FindActionButtonDisplay.IconOnly)]
+    [InlineData(FindActionButtonDisplay.TextOnly)]
+    public void Find_action_button_display_round_trips(FindActionButtonDisplay value)
+    {
+        // Arrange
+        using TempDir dir = new();
+        SettingsStore sut = new(dir.Combine("settings.xml"));
+
+        // Act
+        sut.FindActionButtonDisplay = value;
+
+        // Assert
+        sut.FindActionButtonDisplay.Should().Be(value);
+    }
+
+    [Fact]
+    public void Find_action_button_display_is_icon_and_text_by_default()
+    {
+        // Arrange
+        using TempDir dir = new();
+
+        // Act
+        SettingsStore sut = new(dir.Combine("settings.xml"));
+
+        // Assert
+        sut.FindActionButtonDisplay.Should().Be(FindActionButtonDisplay.IconAndText);
+    }
+
     [Fact]
     public void Open_tag_hint_appearance_is_normalized()
     {

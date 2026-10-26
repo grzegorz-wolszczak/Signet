@@ -20,4 +20,9 @@ public static class DisplayNameConverters
     public static readonly IValueConverter FootnoteLetterStyle =
         new FuncValueConverter<Core.Footnotes.FootnoteLetterStyle, string>(
             value => Strings.TryGet("FootnoteLetterStyle_" + value) ?? value.ToString());
+
+    /// <summary><see cref="Core.Misc.FindActionButtonDisplay"/> → "Icon and text" / "Icon only" / "Text only" (keys <c>FindActionButtonDisplay_*</c>).</summary>
+    public static readonly IValueConverter FindActionButtonDisplay =
+        new FuncValueConverter<Core.Misc.FindActionButtonDisplay, string>(
+            value => Strings.TryGet("FindActionButtonDisplay_" + value) ?? value.ToString());
 }
