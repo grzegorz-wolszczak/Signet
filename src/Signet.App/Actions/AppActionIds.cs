@@ -159,7 +159,7 @@ public static class AppActionIds
     public const string MendHtml = "MainWindow.MendHTML";
 
     // "Beautify code" / "Fix code" for the current file — catalog actions (not only Code Editor
-    // context menu items) so that they can be placed on a toolbar (icons: beautify / html-fix).
+    // context menu items) so that they can be placed on a toolbar (icons: beautify-html / html-fix).
     public const string PrettifyCurrentHtml = "MainWindow.PrettifyCurrentHTML";
     public const string MendCurrentHtml = "MainWindow.MendCurrentHTML";
 
