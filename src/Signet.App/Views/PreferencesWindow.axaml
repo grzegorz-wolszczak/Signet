@@ -987,6 +987,74 @@
         </Grid>
       </TabItem>
 
+      <!-- =============================== Saved Searches =============================== -->
+      <!-- General: the batch action buttons' icon-or-text look; Fonts: the "Name" column header and the tree rows /
+           Details preview / Name field, shared by both of the window's views. The preview shows both views at once
+           (side by side) so a change can be checked against either. -->
+      <TabItem x:Name="SearchEditorPage" Header="{loc:Loc PreferencesWindow_SearchEditorWindow}" views:PreferencesPage.Parent="AppearancePage">
+        <Grid x:Name="SearchEditorPreviewHost">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="*" MinHeight="150" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="320" MinHeight="200" />
+          </Grid.RowDefinitions>
+          <TabControl x:Name="SearchEditorAppearanceTabs">
+            <TabItem Header="{loc:Loc PreferencesWindow_General}">
+              <ScrollViewer>
+                <StackPanel Spacing="10" Margin="8">
+                  <Border Classes="section">
+                    <StackPanel Spacing="6">
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_FindActionButtonDisplay}" />
+                        <ComboBox Grid.Column="1" MinWidth="160" ItemsSource="{Binding AvailableFindActionButtonDisplays}"
+                                  SelectedItem="{Binding SearchEditorActionButtonDisplay}">
+                          <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                              <TextBlock Text="{Binding Converter={x:Static infra:DisplayNameConverters.FindActionButtonDisplay}}" />
+                            </DataTemplate>
+                          </ComboBox.ItemTemplate>
+                        </ComboBox>
+                      </Grid>
+                      <!-- The background of the tree is a color of the theme (ui.searchEditor.background). -->
+                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_SearchEditorBackgroundInTheme}" Padding="0"
+                                       views:PreferencesPage.Target="AppearanceGeneralPage"
+                                       views:PreferencesPage.TargetKey="ui.searchEditor.background" />
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+              </ScrollViewer>
+            </TabItem>
+            <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+              <views:PageWidthHost x:Name="SearchEditorFontsViewWidth">
+                <views:FontsPageView x:Name="SearchEditorFontsView" HasSharedPreview="True" />
+              </views:PageWidthHost>
+            </TabItem>
+          </TabControl>
+          <GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Background="Transparent" />
+          <!-- The preview: both of the window's views (list, Add/Edit), side by side, with no book behind them. Not
+               searched: it holds no settings. -->
+          <Border x:Name="SearchEditorPreviewPane" Grid.Row="2" Classes="section noSearchTree" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" Padding="8">
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
+              <Grid ColumnDefinitions="*,8,*">
+                <DockPanel Grid.Column="0">
+                  <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_SearchEditorListPreview}" Opacity="0.75" Margin="0,0,0,4" />
+                  <Border Classes="listFrame previewFrame">
+                    <views:SearchEditorView x:Name="SearchEditorListPreview" />
+                  </Border>
+                </DockPanel>
+                <DockPanel Grid.Column="2">
+                  <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_SearchEditorEditPreview}" Opacity="0.75" Margin="0,0,0,4" />
+                  <Border Classes="listFrame previewFrame">
+                    <views:SearchEditorView x:Name="SearchEditorEditPreview" />
+                  </Border>
+                </DockPanel>
+              </Grid>
+            </DockPanel>
+          </Border>
+        </Grid>
+      </TabItem>
+
       <!-- =============================== Footnotes =============================== -->
       <!-- General: how the footnote operations behave; CSS: the CSS of Signet's footnote classes (FootnoteStyles),
            written to the book on every footnote operation. -->

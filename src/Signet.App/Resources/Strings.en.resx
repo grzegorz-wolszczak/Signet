@@ -1193,14 +1193,38 @@ Do you want to save the changes?</value>
   <data name="SearchEditorView_LoadSearch" xml:space="preserve">
     <value>Load Search</value>
   </data>
-  <data name="SearchEditorView_CountsReport" xml:space="preserve">
-    <value>Counts Report</value>
-  </data>
   <data name="SearchEditorView_SaveCurrentFR" xml:space="preserve">
     <value>Save current F&amp;R</value>
   </data>
   <data name="SearchEditorView_FillControls" xml:space="preserve">
     <value>Fill Controls</value>
+  </data>
+  <data name="SearchEditorView_AddSearch" xml:space="preserve">
+    <value>Add Search</value>
+  </data>
+  <data name="SearchEditorView_EditSearch" xml:space="preserve">
+    <value>Edit Search</value>
+  </data>
+  <data name="SearchEditorView_Name" xml:space="preserve">
+    <value>Name:</value>
+  </data>
+  <data name="SearchEditorView_NamePlaceholder" xml:space="preserve">
+    <value>the name with which to save this search</value>
+  </data>
+  <data name="SearchEditor_EntryUpdated" xml:space="preserve">
+    <value>Entry updated.</value>
+  </data>
+  <data name="SearchEditorView_DeleteConfirmGroups" xml:space="preserve">
+    <value>groups: {0}</value>
+  </data>
+  <data name="SearchEditorView_DeleteConfirmEntries" xml:space="preserve">
+    <value>entries: {0}</value>
+  </data>
+  <data name="SearchEditorView_DeleteConfirmMessage" xml:space="preserve">
+    <value>Delete the selected items ({0})?</value>
+  </data>
+  <data name="SearchEditorView_Details" xml:space="preserve">
+    <value>Details</value>
   </data>
   <data name="SelectClipWindow_Title" xml:space="preserve">
     <value>Insert Clip</value>
@@ -1561,6 +1585,9 @@ Do you want to save the changes?</value>
   </data>
   <data name="SearchEditorWindow_Keep" xml:space="preserve">
     <value>Keep</value>
+  </data>
+  <data name="SearchEditorWindow_UnsavedSearchPrompt" xml:space="preserve">
+    <value>This search has not been saved. Save it before closing?</value>
   </data>
   <data name="PreferencesWindow_IconTheme" xml:space="preserve">
     <value>Icon theme:</value>
@@ -2982,9 +3009,6 @@ Only HTML files can be merged.</value>
   </data>
   <data name="SearchEditor_NothingSelected" xml:space="preserve">
     <value>No searches selected.</value>
-  </data>
-  <data name="SearchEditor_CountsSummary" xml:space="preserve">
-    <value>Total matches: {0} ({1} searches).</value>
   </data>
   <data name="CodeEditor_ClassRenamed" xml:space="preserve">
     <value>Class renamed.</value>
@@ -4650,6 +4674,36 @@ It does not change the files, their names or their IDs.</value>
   <data name="PreferencesWindow_FindUsagesFitUsageColumnHint" xml:space="preserve">
     <value>The first column (the files) is as wide as its widest entry plus a small margin. When the option is off, the window keeps the width the column had last (e.g. one set by hand).</value>
   </data>
+  <data name="PreferencesWindow_SearchEditorWindow" xml:space="preserve">
+    <value>Saved Searches</value>
+  </data>
+  <data name="PreferencesWindow_SearchEditorHeaderFont" xml:space="preserve">
+    <value>"Name" column header</value>
+  </data>
+  <data name="PreferencesWindow_SearchEditorRowsFont" xml:space="preserve">
+    <value>Tree rows, Details preview and the Name field</value>
+  </data>
+  <data name="FontPreview_SearchEditorHeader" xml:space="preserve">
+    <value>Name</value>
+  </data>
+  <data name="FontPreview_SearchEditorRows" xml:space="preserve">
+    <value>lighthouse → tower</value>
+  </data>
+  <data name="PreferencesWindow_SearchEditorBackgroundInTheme" xml:space="preserve">
+    <value>Tree background: Appearance › Interface Colors</value>
+  </data>
+  <data name="PreferencesWindow_SearchEditorSampleGroup" xml:space="preserve">
+    <value>Sample group</value>
+  </data>
+  <data name="PreferencesWindow_SearchEditorSampleEntry" xml:space="preserve">
+    <value>Sample search</value>
+  </data>
+  <data name="PreferencesWindow_SearchEditorListPreview" xml:space="preserve">
+    <value>List</value>
+  </data>
+  <data name="PreferencesWindow_SearchEditorEditPreview" xml:space="preserve">
+    <value>Add/Edit</value>
+  </data>
   <data name="Status_FindUsages" xml:space="preserve">
     <value>Usages of class “{0}”: {1}.</value>
   </data>
@@ -6208,6 +6262,18 @@ Close the tab</value>
   <data name="ThemeKey_ui_dangerButton_text" xml:space="preserve">
     <value>Destructive button text</value>
   </data>
+  <data name="ThemeKey_ui_cautionButton" xml:space="preserve">
+    <value>Caution button</value>
+  </data>
+  <data name="ThemeKey_ui_cautionButton_hover" xml:space="preserve">
+    <value>Caution button (hover)</value>
+  </data>
+  <data name="ThemeKey_ui_cautionButton_pressed" xml:space="preserve">
+    <value>Caution button (pressed)</value>
+  </data>
+  <data name="ThemeKey_ui_cautionButton_text" xml:space="preserve">
+    <value>Caution button text</value>
+  </data>
   <data name="ThemeKey_ui_frame" xml:space="preserve">
     <value>Frame</value>
   </data>
@@ -6234,6 +6300,9 @@ Close the tab</value>
   </data>
   <data name="ThemeKey_ui_bookBrowser_background" xml:space="preserve">
     <value>Book Browser background</value>
+  </data>
+  <data name="ThemeKey_ui_searchEditor_background" xml:space="preserve">
+    <value>Saved Searches tree background</value>
   </data>
   <data name="ThemeKey_ui_findUsages_usage_background" xml:space="preserve">
     <value>Find Usages window background: Usage column</value>

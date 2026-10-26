@@ -563,6 +563,20 @@ public sealed class SettingsStore
     }
 
     /// <summary>
+    /// How the Saved Searches window's batch action buttons (Load Search, Find Next, Replace, …) show their icon
+    /// and text. Icon and text by default.
+    /// </summary>
+    public FindActionButtonDisplay SearchEditorActionButtonDisplay
+    {
+        get => Enum.TryParse(
+            ReadString("search_editor_action_button_display", nameof(FindActionButtonDisplay.IconAndText)),
+            ignoreCase: true, out FindActionButtonDisplay parsed)
+            ? parsed
+            : FindActionButtonDisplay.IconAndText;
+        set => Write("search_editor_action_button_display", value.ToString());
+    }
+
+    /// <summary>
     /// Whether Code Editor closes the open tag after <c>&lt;/</c> is typed (enabled by default).
     /// </summary>
     public bool CodeEditorAutoCloseTags
@@ -1447,6 +1461,37 @@ public sealed class SettingsStore
     }
 
     /// <summary>
+    /// The fonts of the Saved Searches window (<see cref="SearchEditorAppearance"/>): the "Name" column header and
+    /// the rows / Details preview / Name field. Always read normalized.
+    /// </summary>
+    public SearchEditorAppearance SearchEditorAppearance
+    {
+        get
+        {
+            SearchEditorAppearance d = SearchEditorAppearance.Default;
+            return new SearchEditorAppearance(
+                ReadString("search_editor_font_header_family", d.HeaderFontFamily),
+                ReadInt("search_editor_font_header_size", d.HeaderFontSize),
+                ReadString("search_editor_font_rows_family", d.RowsFontFamily),
+                ReadInt("search_editor_font_rows_size", d.RowsFontSize),
+                ReadInt("search_editor_font_header_weight", d.HeaderFontWeight),
+                ReadInt("search_editor_font_rows_weight", d.RowsFontWeight)).Normalized();
+        }
+
+        set
+        {
+            SearchEditorAppearance v = value.Normalized();
+            WriteSilent("search_editor_font_header_family", v.HeaderFontFamily);
+            WriteSilent("search_editor_font_header_size", v.HeaderFontSize);
+            WriteSilent("search_editor_font_rows_family", v.RowsFontFamily);
+            WriteSilent("search_editor_font_rows_size", v.RowsFontSize);
+            WriteSilent("search_editor_font_header_weight", v.HeaderFontWeight);
+            WriteSilent("search_editor_font_rows_weight", v.RowsFontWeight);
+            RaiseChanged("search_editor_appearance");
+        }
+    }
+
+    /// <summary>
     /// Whether a Book Browser folder (Text, Styles, …) is expanded when a book is loaded. Only Text by default.
     /// </summary>
     public bool GetBookBrowserExpandOnLoad(OpfModelGroupKind kind) =>
@@ -2178,6 +2223,12 @@ public sealed class SettingsStore
         yield return "find_usages_font_cells_family";
         yield return "find_usages_font_cells_size";
         yield return "find_usages_font_cells_weight";
+        yield return "search_editor_font_header_family";
+        yield return "search_editor_font_header_size";
+        yield return "search_editor_font_header_weight";
+        yield return "search_editor_font_rows_family";
+        yield return "search_editor_font_rows_size";
+        yield return "search_editor_font_rows_weight";
         foreach (TooltipArea area in Enum.GetValues<TooltipArea>())
         {
             yield return TooltipFontKey(area, "family");

@@ -249,8 +249,23 @@ public static class ThemeKeys
     /// <summary>The text of a button of a destructive action.</summary>
     public static readonly ThemeKey UiDangerButtonText = Color("ui.dangerButton.text", ThemePage.Interface, "Controls", Rgb(0xFFFFFF));
 
+    /// <summary>A button that discards unsaved changes (e.g. Cancel in an editing view).</summary>
+    public static readonly ThemeKey UiCautionButton = Color("ui.cautionButton", ThemePage.Interface, "Controls", Rgb(0xCA5010));
+
+    /// <summary>A button that discards unsaved changes, under the mouse.</summary>
+    public static readonly ThemeKey UiCautionButtonHover = Color("ui.cautionButton.hover", ThemePage.Interface, "Controls", Rgb(0xAC440E));
+
+    /// <summary>A pressed button that discards unsaved changes.</summary>
+    public static readonly ThemeKey UiCautionButtonPressed = Color("ui.cautionButton.pressed", ThemePage.Interface, "Controls", Rgb(0x923A0C));
+
+    /// <summary>The text of a button that discards unsaved changes.</summary>
+    public static readonly ThemeKey UiCautionButtonText = Color("ui.cautionButton.text", ThemePage.Interface, "Controls", Rgb(0xFFFFFF));
+
     /// <summary>The background of the Book Browser tree; unset = the background of the panel.</summary>
     public static readonly ThemeKey UiBookBrowserBackground = Color("ui.bookBrowser.background", ThemePage.Interface, "Controls", null);
+
+    /// <summary>The background of the Saved Searches window's tree; unset = the background of the panel.</summary>
+    public static readonly ThemeKey UiSearchEditorBackground = Color("ui.searchEditor.background", ThemePage.Interface, "Controls", null);
 
     /// <summary>The selected row of the Book Browser (only there): its background and text; nothing set = the colors of the controls.</summary>
     public static readonly ThemeKey UiBookBrowserSelection = Attributes("ui.bookBrowser.selection", ThemePage.Interface, "Controls", TextAttributes.Empty);

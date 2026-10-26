@@ -101,6 +101,9 @@ public sealed partial class PreferencesViewModel : ObservableObject
         // ---- Find and Replace: action button look ----
         _findActionButtonDisplay = _settings.FindActionButtonDisplay;
 
+        // ---- Saved Searches: action button look ----
+        _searchEditorActionButtonDisplay = _settings.SearchEditorActionButtonDisplay;
+
         SpecialCharacterAppearance specialChar = _settings.SpecialCharacterAppearance;
         _specialCharacterFontFamily = specialChar.FontFamily;
         _specialCharacterFontSize = specialChar.FontSize;
@@ -122,6 +125,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         LoadBookBrowserAppearance();
         LoadStartScreenAppearance();
         LoadFindUsagesFonts();
+        LoadSearchEditorFonts();
         LoadLineNumbersFont();
         LoadDocumentTabFont();
         LoadToolHeaderFont();
@@ -847,6 +851,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         LoadBookBrowserAppearance();
         LoadStartScreenAppearance();
         LoadFindUsagesFonts();
+        LoadSearchEditorFonts();
         LoadLineNumbersFont();
         LoadDocumentTabFont();
         LoadToolHeaderFont();

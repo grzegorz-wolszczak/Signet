@@ -337,6 +337,7 @@ public partial class PreferencesWindow : Window
         yield return CleanupFontsViewWidth;
         yield return FootnotesFontsViewWidth;
         yield return FindUsagesFontsViewWidth;
+        yield return SearchEditorFontsViewWidth;
     }
 
     private static string PaneSuffix(Grid host) => host.RowDefinitions.Count > 0 ? PreviewPaneHeightSuffix : PreviewPaneWidthSuffix;
@@ -351,6 +352,7 @@ public partial class PreferencesWindow : Window
         yield return CodeEditorPreviewHost;
         yield return FindUsagesPreviewHost;
         yield return FindReplacePreviewHost;
+        yield return SearchEditorPreviewHost;
         yield return SpecialCharactersPreviewHost;
         yield return CleanupPreviewHost;
         yield return FootnotesPreviewHost;
@@ -438,6 +440,8 @@ public partial class PreferencesWindow : Window
             FindReplaceSampleTip.DataContext = vm.FindReplaceFonts.Fonts.Single(f => f.Key == "Tooltip" + TooltipArea.FindReplace);
             vm.FindReplaceSample.ActionButtonDisplay = vm.FindActionButtonDisplay;
             FindUsagesPreview.DataContext = vm.FindUsagesSample;
+            SearchEditorListPreview.DataContext = vm.SearchEditorListSample;
+            SearchEditorEditPreview.DataContext = vm.SearchEditorEditSample;
             CodeEditorPreview.DataContext = vm.CodeEditorSample;
             DocumentTabsPreview.DataContext = vm.CodeEditorFonts.Fonts.Single(f => f.Key == "DocumentTabs");
             CodeEditorSampleHint.DataContext = vm.CodeEditorFonts.Fonts.Single(f => f.Key == "OpenTagHint");
@@ -460,6 +464,7 @@ public partial class PreferencesWindow : Window
             TableOfContentsFontsView.DataContext = vm.TableOfContentsFonts;
             FindReplaceFontsView.DataContext = vm.FindReplaceFonts;
             FindUsagesFontsView.DataContext = vm.FindUsagesFonts;
+            SearchEditorFontsView.DataContext = vm.SearchEditorFonts;
             CheckpointsFontsView.DataContext = vm.CheckpointsFonts;
             ValidationFontsView.DataContext = vm.ValidationFonts;
             MetadataEditorFontsView.DataContext = vm.MetadataEditorFonts;

@@ -6,7 +6,7 @@
         x:Class="Signet.App.Views.SearchEditorWindow"
         x:DataType="vm:SearchEditorViewModel"
         Title="{loc:Loc SearchEditorWindow_Title}"
-        Width="900" Height="720"
+        Width="1050" Height="720"
         MinWidth="640" MinHeight="420"
         WindowStartupLocation="CenterOwner">
 
@@ -17,6 +17,6 @@
       <Button Content="{loc:Loc SearchEditorWindow_Keep}" Command="{Binding SaveCommand}" MinWidth="80" />
       <Button Content="{loc:Loc Common_Close}" Click="OnCloseClick" MinWidth="80" />
     </StackPanel>
-    <views:SearchEditorView />
+    <views:SearchEditorView x:Name="View" />
   </DockPanel>
 </Window>

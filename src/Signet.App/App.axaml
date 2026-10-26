@@ -287,6 +287,19 @@
       <Setter Property="Background" Value="{DynamicResource SignetDangerButtonPressedBrush}" />
       <Setter Property="Foreground" Value="{DynamicResource SignetDangerButtonTextBrush}" />
     </Style>
+    <!-- Buttons that discard unsaved changes (e.g. Cancel in an editing view) are orange (Classes="caution"). -->
+    <Style Selector="Button.caution">
+      <Setter Property="Background" Value="{DynamicResource SignetCautionButtonBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource SignetCautionButtonTextBrush}" />
+    </Style>
+    <Style Selector="Button.caution:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource SignetCautionButtonHoverBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource SignetCautionButtonTextBrush}" />
+    </Style>
+    <Style Selector="Button.caution:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource SignetCautionButtonPressedBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource SignetCautionButtonTextBrush}" />
+    </Style>
     <!-- Every TreeDataGrid: resizable columns, each at least as wide as its header (TreeDataGridHeaderSizing). -->
     <Style Selector="TreeDataGrid">
       <Setter Property="CanUserResizeColumns" Value="True" />

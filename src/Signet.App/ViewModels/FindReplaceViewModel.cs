@@ -265,6 +265,9 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
     /// <summary>Whether the selected scope covers more than the current file.</summary>
     public bool IsMultiFileScope => _lookWhere != LookWhere.CurrentFile;
 
+    /// <summary>Whether a book is loaded — the Saved Searches window's batch actions need one.</summary>
+    public bool HasBook => _host.HasBook;
+
     /// <summary>Report rows of the last multi-file operation (Replace All).</summary>
     public ObservableCollection<MultiFileReportRow> ReportRows { get; } = new();
 
@@ -972,14 +975,6 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
             ? Strings.Get("FindReplace_NoMatches")
             : Strings.Format("FindReplace_TotalMatches", total));
         return total;
-    }
-
-    /// <summary>Counts matches for a single entry (for the "Counts Report").</summary>
-    public int CountForEntry(SearchEntry entry)
-    {
-        ArgumentNullException.ThrowIfNull(entry);
-        LoadSearch(entry);
-        return CountCore(showUsages: false);
     }
 
     // Checkpoint before Replace All — skipped when replacing in selected text; rolled back when nothing was replaced. The checkpoint (a copy

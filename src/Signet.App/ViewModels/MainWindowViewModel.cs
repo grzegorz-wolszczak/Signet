@@ -173,7 +173,12 @@ public sealed partial class MainWindowViewModel
         string savedSearchPath = System.IO.Path.Combine(
             System.IO.Path.GetDirectoryName(settings.FilePath) ?? AppDirectories.PrefsDirectory,
             SavedSearchStore.DefaultFileName);
-        _searchEditor = new SearchEditorViewModel(new SavedSearchStore(savedSearchPath), _findReplace);
+
+        // Its own instance (not _findReplace) for the Add/Edit view: editing a search must not change what is
+        // typed in the real Find & Replace panel until "Load Search" says so — the two panels share the book (the
+        // same host) but not their Find/Replace fields.
+        FindReplaceViewModel searchEditorFindReplace = new(settings, statusBar, () => ActiveCodeTab, this);
+        _searchEditor = new SearchEditorViewModel(new SavedSearchStore(savedSearchPath), settings, _findReplace, searchEditorFindReplace);
 
         string clipsPath = System.IO.Path.Combine(
             System.IO.Path.GetDirectoryName(settings.FilePath) ?? AppDirectories.PrefsDirectory,
@@ -1287,6 +1292,7 @@ public sealed partial class MainWindowViewModel
         _actions.SetBookOpen(open);
         _dockFactory.SetBookOpen(open);
         StartScreen.IsVisible = !open;
+        _searchEditor.RefreshBookAvailability();
     }
 
     // ------------------------------------------------------ IRecentFilesMenu --- //

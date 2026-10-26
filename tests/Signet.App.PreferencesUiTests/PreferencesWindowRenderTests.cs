@@ -563,7 +563,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         // Assert
         root.Children.Select(n => n.Title).Should().Equal(
             appearance, codeEditor, Strings.Get("PreferencesWindow_Preview"), Strings.Get("PreferencesWindow_FindUsagesWindow"),
-            Strings.Get("PreferencesWindow_Footnotes"));
+            Strings.Get("PreferencesWindow_SearchEditorWindow"), Strings.Get("PreferencesWindow_Footnotes"));
         PreferencesSectionNode look = root.Children.Single(n => n.Title == appearance);
         look.Children.Select(n => n.Title).Should().Equal(PartsWithFonts.Select(s => Strings.Get("PreferencesWindow_" + s)));
         look.Children.Should().OnlyContain(n => n.Children.Count == 0,

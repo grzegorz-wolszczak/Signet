@@ -3,15 +3,17 @@
              xmlns:infra="using:Signet.App.Infrastructure"
              xmlns:vm="using:Signet.App.ViewModels"
              xmlns:loc="using:Signet.App.Resources"
+             xmlns:views="using:Signet.App.Views"
              x:Class="Signet.App.Views.SearchEditorView"
              infra:TooltipFonts.Area="FindReplace"
              x:DataType="vm:SearchEditorViewModel">
 
   <UserControl.Styles>
-    <!-- The fixed, non-configurable icon toolbar at the top (Save, Add Entry/Group, Delete, Import/Export): one
-         colored icon from the current icon set (Preferences › Appearance), no text — the tooltip carries the label.
-         The icon key is the button's Tag (not Content, which is scanned for hardcoded user-facing text), read by
-         the icon Panel below like Button.findAction's icon in FindReplaceView.axaml. -->
+    <!-- The fixed, non-configurable icon toolbar at the top (Save, Add/Edit Search, Add Group, Delete,
+         Import/Export): one colored icon from the current icon set (Preferences › Appearance), no text — the
+         tooltip carries the label. The icon key is the button's Tag (not Content, which is scanned for
+         hardcoded user-facing text), read by the icon Panel below like Button.findAction's icon in
+         FindReplaceView.axaml. -->
     <Style Selector="Button.iconToolbar">
       <Setter Property="Padding" Value="5" />
       <Setter Property="Background" Value="Transparent" />
@@ -20,186 +22,301 @@
     <Style Selector="Button.iconToolbar:disabled">
       <Setter Property="Opacity" Value="0.4" />
     </Style>
+
+    <!-- The batch search actions on the right (Load Search, Find Next, Replace, Replace/Find, Replace All, Count
+         All): the same icon-or-text display as FindReplaceView.axaml's Button.findAction, through this window's
+         own setting (Preferences › Appearance › Saved Searches › Action buttons). -->
+    <Style Selector="Button.findAction">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="ContentTemplate">
+        <DataTemplate x:DataType="x:String">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <Panel Width="16" Height="16" VerticalAlignment="Center"
+                   IsVisible="{Binding $parent[Button].((vm:SearchEditorViewModel)DataContext).ActionButtonDisplay, Converter={x:Static infra:FindActionButtonDisplayConverters.ShowIcon}}">
+              <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                     IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+              <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                        IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            </Panel>
+            <TextBlock Text="{Binding}" VerticalAlignment="Center"
+                       IsVisible="{Binding $parent[Button].((vm:SearchEditorViewModel)DataContext).ActionButtonDisplay, Converter={x:Static infra:FindActionButtonDisplayConverters.ShowText}}" />
+          </StackPanel>
+        </DataTemplate>
+      </Setter>
+    </Style>
   </UserControl.Styles>
 
   <UserControl.Resources>
-    <!-- Cell templates of the saved searches tree (looked up by key from the code-behind); a group has only a name. -->
+    <!-- The tree's only cell template (Name): a plain label normally (bold for a group, so it reads apart from
+         its entries) — a single click only selects the row. A double click on a group starts renaming it in
+         place (the code-behind shows the TextBox and focuses it); a double click on an entry opens the Add/Edit
+         view instead (an entry's name is never typed directly in the tree). -->
     <DataTemplate x:Key="NameCellTemplate" x:DataType="vm:SearchEntryNodeViewModel">
-      <TextBox Text="{Binding Name, Mode=TwoWay}" BorderThickness="0" Background="Transparent" MinHeight="26" />
-    </DataTemplate>
-    <DataTemplate x:Key="FindCellTemplate" x:DataType="vm:SearchEntryNodeViewModel">
-      <TextBox Text="{Binding Find, Mode=TwoWay}" IsVisible="{Binding !IsGroup}"
-               PlaceholderText="{loc:Loc FindReplaceView_FindNext}" />
-    </DataTemplate>
-    <DataTemplate x:Key="ReplaceCellTemplate" x:DataType="vm:SearchEntryNodeViewModel">
-      <TextBox Text="{Binding Replace, Mode=TwoWay}" IsVisible="{Binding !IsGroup}"
-               PlaceholderText="{loc:Loc FindReplaceView_ReplaceButton}" />
-    </DataTemplate>
-    <DataTemplate x:Key="ControlsCellTemplate" x:DataType="vm:SearchEntryNodeViewModel">
-      <TextBox Text="{Binding Controls, Mode=TwoWay}" IsVisible="{Binding !IsGroup}" ToolTip.Tip="{Binding ControlsToolTip}"
-               PlaceholderText="{loc:Loc SearchEditorView_Controls}" />
+      <Grid Background="Transparent" MinHeight="26">
+        <Panel IsVisible="{Binding !IsEditing}">
+          <TextBlock Text="{Binding Name}" VerticalAlignment="Center" FontWeight="Bold" IsVisible="{Binding IsGroup}" />
+          <TextBlock Text="{Binding Name}" VerticalAlignment="Center" IsVisible="{Binding !IsGroup}" />
+        </Panel>
+        <TextBox Classes="inPlaceRename" Text="{Binding EditText, Mode=TwoWay}"
+                 IsVisible="{Binding IsEditing}" MinWidth="140"
+                 MinHeight="0" Padding="2,0" VerticalAlignment="Center" VerticalContentAlignment="Center" />
+      </Grid>
     </DataTemplate>
   </UserControl.Resources>
 
-  <Grid Margin="8" RowDefinitions="Auto,Auto,*,Auto,Auto" RowSpacing="6">
+  <Grid Margin="8">
 
-    <!-- Fixed icon toolbar, not configurable (unlike the main window's toolbars): the core entry/group/import-export
-         actions. The rest (Load Search, the Find & Replace actions, Reload/Expand/Collapse) stay where they were.
-         Each button's icon key is its Tag; the icon Panel is the same shape as Button.findAction's in
-         FindReplaceView.axaml, repeated per button like the panelTool icons below. -->
-    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="2">
-      <Button Classes="iconToolbar accent" Tag="document-save" Command="{Binding SaveCurrentSearchCommand}"
-              ToolTip.Tip="{loc:Loc SearchEditorView_SaveCurrentFR}">
-        <Panel Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}">
-          <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
-                 IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
-          <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
-                    IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
-        </Panel>
-      </Button>
-      <Separator Margin="4,0" />
-      <Button Classes="iconToolbar" Tag="add-entry" Command="{Binding AddEntryCommand}"
-              ToolTip.Tip="{loc:Loc ClipEditorWindow_AddEntry}">
-        <Panel Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}">
-          <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
-                 IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
-          <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
-                    IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
-        </Panel>
-      </Button>
-      <Button Classes="iconToolbar" Tag="add-group" Command="{Binding AddGroupCommand}"
-              ToolTip.Tip="{loc:Loc ClipEditorWindow_AddGroup}">
-        <Panel Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}">
-          <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
-                 IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
-          <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
-                    IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
-        </Panel>
-      </Button>
-      <Button Classes="iconToolbar danger" Tag="delete" Command="{Binding DeleteCommand}"
-              ToolTip.Tip="{loc:Loc Common_Delete}">
-        <Panel Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}">
-          <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
-                 IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
-          <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
-                    IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
-        </Panel>
-      </Button>
-      <Button Classes="iconToolbar" Tag="fill-controls" Command="{Binding FillControlsCommand}"
-              ToolTip.Tip="{loc:Loc SearchEditorView_FillControls}">
-        <Panel Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}">
-          <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
-                 IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
-          <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
-                    IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
-        </Panel>
-      </Button>
-      <Separator Margin="4,0" />
-      <Button Classes="iconToolbar" Tag="import" Command="{Binding ImportCommand}"
-              ToolTip.Tip="{loc:Loc Common_Import}">
-        <Panel Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}">
-          <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
-                 IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
-          <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
-                    IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
-        </Panel>
-      </Button>
-      <Button Classes="iconToolbar" Tag="export" Command="{Binding ExportCommand}"
-              ToolTip.Tip="{loc:Loc Common_Export}">
-        <Panel Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}">
-          <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
-                 IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
-          <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
-                    IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
-        </Panel>
-      </Button>
-      <Button Classes="iconToolbar" Tag="export" Command="{Binding ExportAllCommand}"
-              ToolTip.Tip="{loc:Loc ClipEditorWindow_ExportAll}">
-        <Panel Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}">
-          <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
-                 IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
-          <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
-                    IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
-        </Panel>
-      </Button>
-    </StackPanel>
+    <!-- ================= List view: the tree (Name only) + a read-only preview of the selected entry,
+         like Calibre's Saved Searches window. ================= -->
+    <Grid IsVisible="{Binding !IsEditing}" RowDefinitions="Auto,Auto,*,Auto" RowSpacing="6">
 
-    <!-- Filter -->
-    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="6">
-      <TextBlock Text="{loc:Loc ClipEditorWindow_Filter}" VerticalAlignment="Center" />
-      <TextBox Text="{Binding FilterText, Mode=TwoWay}" Width="240"
-               PlaceholderText="{loc:Loc SearchEditorView_FilterPlaceholder}" />
-      <CheckBox Content="{loc:Loc SearchEditorView_AllColumns}" IsChecked="{Binding FilterAll, Mode=TwoWay}"
-                VerticalAlignment="Center" />
-    </StackPanel>
-
-    <!-- Left icon toolbar + tree + button panel -->
-    <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
-      <!-- Reload / Expand All / Collapse All, icon-only — the same look as the Find Usages window's left toolbar. -->
-      <Border Grid.Column="0" BorderThickness="0,0,1,0" Padding="2"
-              BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
-        <StackPanel Spacing="4">
-          <Button Classes="panelTool" Command="{Binding ReloadCommand}" ToolTip.Tip="{loc:Loc Common_Reload}">
-            <!-- Material Design "sync" icon (Apache License 2.0): two arrows turning around. -->
-            <Path Data="M12,18A6,6 0 0,1 6,12C6,11 6.25,10.03 6.7,9.2L5.24,7.74C4.46,8.97 4,10.43 4,12A8,8 0 0,0 12,20V23L16,19L12,15M12,4V1L8,5L12,9V6A6,6 0 0,1 18,12C18,13 17.75,13.97 17.3,14.8L18.76,16.26C19.54,15.03 20,13.57 20,12A8,8 0 0,0 12,4Z" />
-          </Button>
-          <Button Classes="panelTool" Command="{Binding ExpandAllCommand}" ToolTip.Tip="{loc:Loc Common_Expand}">
-            <!-- Material Design "unfold-more-horizontal" icon (Apache License 2.0): two chevrons pointing apart. -->
-            <Path Data="M12,18.17L8.83,15L7.42,16.41L12,21L16.59,16.41L15.17,15M12,5.83L15.17,9L16.58,7.59L12,3L7.41,7.59L8.83,9L12,5.83Z" />
-          </Button>
-          <Button Classes="panelTool" Command="{Binding CollapseAllCommand}" ToolTip.Tip="{loc:Loc Common_Collapse}">
-            <!-- Material Design "unfold-less-horizontal" icon (Apache License 2.0): two chevrons pointing together. -->
-            <Path Data="M16.59,5.59L18,7L12,13L6,7L7.41,5.59L12,10.17L16.59,5.59M16.59,18.41L12,13.83L7.41,18.41L6,17L12,11L18,17L16.59,18.41Z" />
-          </Button>
-        </StackPanel>
-      </Border>
-
-      <!-- The saved searches tree (Name, Find, Replace, Controls - edited in place): source built in the code-behind;
-           the filter hides nodes through VisibleItemsView, several nodes can be selected. -->
-      <TreeDataGrid x:Name="Tree" Grid.Column="1" CanUserSortColumns="False"
-                    BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
-
-      <StackPanel Grid.Column="2" Spacing="4" Width="130">
-        <!-- Core search actions, grouped. -->
-        <Button Content="{loc:Loc SearchEditorView_LoadSearch}" Command="{Binding LoadSearchCommand}" HorizontalAlignment="Stretch" />
-        <Separator Margin="0,6" />
-        <Button Content="{loc:Loc FindReplaceView_FindNext}" Command="{Binding FindCommand}" HorizontalAlignment="Stretch" />
-        <Button Content="{loc:Loc FindReplaceView_ReplaceButton}" Command="{Binding ReplaceCurrentCommand}" HorizontalAlignment="Stretch" />
-        <Separator Margin="0,6" />
-        <Button Content="{loc:Loc FindReplaceView_ReplaceFind}" Command="{Binding ReplaceCommand}" HorizontalAlignment="Stretch" />
-        <Button Content="{loc:Loc FindReplaceView_ReplaceAll}" Command="{Binding ReplaceAllCommand}" HorizontalAlignment="Stretch" />
-        <Separator Margin="0,6" />
-        <Button Content="{loc:Loc FindReplaceView_CountAll}" Command="{Binding CountAllCommand}" HorizontalAlignment="Stretch" />
-        <Button Content="{loc:Loc SearchEditorView_CountsReport}" Command="{Binding CountsReportCommand}" HorizontalAlignment="Stretch" />
-        <Separator Margin="0,6" />
-        <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,*" HorizontalAlignment="Center">
-          <Button Grid.Row="0" Grid.ColumnSpan="2" Content="↑" Command="{Binding MoveUpCommand}" HorizontalAlignment="Center" />
-          <Button Grid.Row="1" Grid.Column="0" Content="←" Command="{Binding MoveLeftCommand}" />
-          <Button Grid.Row="1" Grid.Column="1" Content="→" Command="{Binding MoveRightCommand}" />
-          <Button Grid.Row="2" Grid.ColumnSpan="2" Content="↓" Command="{Binding MoveDownCommand}" HorizontalAlignment="Center" />
-        </Grid>
+      <!-- Fixed icon toolbar, not configurable (unlike the main window's toolbars): the core entry/group/
+           import-export actions, in one unbroken row (no separators). The rest (Load Search, the Find &
+           Replace actions, Reload/Expand/Collapse) stay where they were. Each button's icon key is its Tag;
+           the icon Panel is the same shape as Button.findAction's in FindReplaceView.axaml, repeated per
+           button like the panelTool icons below. -->
+      <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="2">
+        <Button Classes="iconToolbar" Tag="document-save" Command="{Binding SaveCurrentSearchCommand}"
+                ToolTip.Tip="{loc:Loc SearchEditorView_SaveCurrentFR}">
+          <Panel Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}">
+            <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          </Panel>
+        </Button>
+        <Button Classes="iconToolbar" Tag="add-entry" Command="{Binding AddEntryCommand}"
+                ToolTip.Tip="{loc:Loc SearchEditorView_AddSearch}">
+          <Panel Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}">
+            <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          </Panel>
+        </Button>
+        <Button Classes="iconToolbar" Tag="edit-search" Command="{Binding EditSearchCommand}"
+                ToolTip.Tip="{loc:Loc SearchEditorView_EditSearch}">
+          <Panel Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}">
+            <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          </Panel>
+        </Button>
+        <Button Classes="iconToolbar" Tag="add-group" Command="{Binding AddGroupCommand}"
+                ToolTip.Tip="{loc:Loc ClipEditorWindow_AddGroup}">
+          <Panel Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}">
+            <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          </Panel>
+        </Button>
+        <Button Classes="iconToolbar danger" Tag="delete" Command="{Binding DeleteCommand}"
+                ToolTip.Tip="{loc:Loc Common_Delete}">
+          <Panel Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}">
+            <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          </Panel>
+        </Button>
+        <Button Classes="iconToolbar" Tag="import" Command="{Binding ImportCommand}"
+                ToolTip.Tip="{loc:Loc Common_Import}">
+          <Panel Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}">
+            <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          </Panel>
+        </Button>
+        <Button Classes="iconToolbar" Tag="export" Command="{Binding ExportCommand}"
+                ToolTip.Tip="{loc:Loc Common_Export}">
+          <Panel Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}">
+            <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          </Panel>
+        </Button>
+        <Button Classes="iconToolbar" Tag="export-all" Command="{Binding ExportAllCommand}"
+                ToolTip.Tip="{loc:Loc ClipEditorWindow_ExportAll}">
+          <Panel Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}">
+            <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            <PathIcon Data="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          </Panel>
+        </Button>
       </StackPanel>
+
+      <!-- Filter: as in Calibre, a single box that narrows the tree as you type (names, groups included) with a
+           "✕" to clear it (same shape as the Preferences window's section filter). -->
+      <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="6">
+        <TextBlock Text="{loc:Loc ClipEditorWindow_Filter}" VerticalAlignment="Center" />
+        <TextBox x:Name="FilterBox" Text="{Binding FilterText, Mode=TwoWay}" Width="240"
+                 PlaceholderText="{loc:Loc SearchEditorView_FilterPlaceholder}">
+          <TextBox.InnerRightContent>
+            <Button x:Name="FilterClearButton" Content="✕" Padding="6,2" Background="Transparent" Focusable="False"
+                    Command="{Binding ClearFilterCommand}"
+                    IsVisible="{Binding FilterText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          </TextBox.InnerRightContent>
+        </TextBox>
+        <CheckBox Content="{loc:Loc SearchEditorView_AllColumns}" IsChecked="{Binding FilterAll, Mode=TwoWay}"
+                  VerticalAlignment="Center" />
+      </StackPanel>
+
+      <!-- Left icon toolbar + (tree above a read-only preview of the selection) + button panel. The tree column
+           keeps a minimum width (the batch action buttons' own column is Auto, wider than before now that it is a
+           2×3 grid, more so with full icon+text buttons) so the tree never collapses to an unusable — and
+           unclickable — sliver on a narrow window. -->
+      <Grid Grid.Row="2" ColumnSpacing="8">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="Auto" />
+          <ColumnDefinition Width="*" MinWidth="220" />
+          <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+        <!-- Reload / Expand All / Collapse All, icon-only — the same look as the Find Usages window's left toolbar. -->
+        <Border Grid.Column="0" BorderThickness="0,0,1,0" Padding="2"
+                BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+          <StackPanel Spacing="4">
+            <Button Classes="panelTool" Command="{Binding ReloadCommand}" ToolTip.Tip="{loc:Loc Common_Reload}">
+              <!-- Material Design "sync" icon (Apache License 2.0): two arrows turning around. -->
+              <Path Data="M12,18A6,6 0 0,1 6,12C6,11 6.25,10.03 6.7,9.2L5.24,7.74C4.46,8.97 4,10.43 4,12A8,8 0 0,0 12,20V23L16,19L12,15M12,4V1L8,5L12,9V6A6,6 0 0,1 18,12C18,13 17.75,13.97 17.3,14.8L18.76,16.26C19.54,15.03 20,13.57 20,12A8,8 0 0,0 12,4Z" />
+            </Button>
+            <Button Classes="panelTool" Command="{Binding ExpandAllCommand}" ToolTip.Tip="{loc:Loc Common_Expand}">
+              <!-- Two same-size chevrons pointing apart (up / down), with a visible gap between them so they read
+                   as two separate chevrons rather than an "X". -->
+              <Path Data="M8.42,9.29L12,5.72L15.58,9.29L16.68,8.19L12,3.51L7.32,8.19Z M8.42,14.71L12,18.28L15.58,14.71L16.68,15.81L12,20.49L7.32,15.81Z" />
+            </Button>
+            <Button Classes="panelTool" Command="{Binding CollapseAllCommand}" ToolTip.Tip="{loc:Loc Common_Collapse}">
+              <!-- Two same-size chevrons pointing together (down / up), with a visible gap between them so they read
+                   as two separate chevrons rather than an "X". -->
+              <Path Data="M8.42,4.11L12,7.68L15.58,4.11L16.68,5.21L12,9.89L7.32,5.21Z M8.42,19.89L12,16.32L15.58,19.89L16.68,18.79L12,14.11L7.32,18.79Z" />
+            </Button>
+          </StackPanel>
+        </Border>
+
+        <Grid Grid.Column="1">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="*" MinHeight="120" />
+            <RowDefinition Height="8" />
+            <RowDefinition Height="170" MinHeight="60" />
+          </Grid.RowDefinitions>
+          <!-- The saved searches tree, one column (Name) — source and columns built in the code-behind; the
+               filter hides nodes through VisibleItemsView, several nodes can be selected. A right click offers
+               Fill Controls (copying the options between ≥2 selected entries), which no longer has a visible
+               "Controls" column of its own to work from. -->
+          <TreeDataGrid x:Name="Tree" Grid.Row="0" CanUserSortColumns="False"
+                        BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+                        Background="{DynamicResource SignetSearchEditorBackgroundBrush}">
+            <TreeDataGrid.ContextMenu>
+              <ContextMenu>
+                <MenuItem Header="{loc:Loc SearchEditorView_FillControls}" Command="{Binding FillControlsCommand}" />
+              </ContextMenu>
+            </TreeDataGrid.ContextMenu>
+          </TreeDataGrid>
+
+          <!-- Draggable, like the Footnote Conversion window's tree/details split. -->
+          <GridSplitter x:Name="DetailsSplitter" Grid.Row="1" ResizeDirection="Rows" Background="Transparent" />
+
+          <!-- Read-only preview of the selected entry (Calibre shows the same at the bottom of its list): Find /
+               Replace / the "Controls" options, decoded to plain text. Hidden for a group (it has none) or when
+               nothing is selected. To change these, use Edit Search. -->
+          <Border x:Name="DetailsPane" Grid.Row="2" Padding="8" BorderThickness="1" CornerRadius="4"
+                  BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+                  IsVisible="{Binding ShowDetails}">
+            <ScrollViewer>
+              <StackPanel Spacing="4">
+                <TextBlock Text="{loc:Loc SearchEditorView_Details}" FontWeight="SemiBold" />
+                <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" RowSpacing="2" ColumnSpacing="8">
+                  <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc SearchEditorView_ColumnFind}" />
+                  <TextBox Grid.Row="0" Grid.Column="1" Text="{Binding SelectedNode.Find}" IsReadOnly="True"
+                           BorderThickness="0" Background="Transparent" />
+                  <TextBlock Grid.Row="1" Grid.Column="0" Text="{loc:Loc FindReplaceView_ReplaceButton}" />
+                  <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding SelectedNode.Replace}" IsReadOnly="True"
+                           BorderThickness="0" Background="Transparent" />
+                  <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc SearchEditorView_Controls}" />
+                  <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding SelectedNode.ControlsToolTip}" IsReadOnly="True"
+                           TextWrapping="Wrap" BorderThickness="0" Background="Transparent" />
+                </Grid>
+              </StackPanel>
+            </ScrollViewer>
+          </Border>
+        </Grid>
+
+        <StackPanel Grid.Column="2" Spacing="8" HorizontalAlignment="Left">
+          <!-- The batch search actions: act on the selected entry/entries (a group means all the entries under
+               it), disabled until both a book is loaded and something applicable is selected. The same 2×3 icon
+               grid as the embedded Find & Replace panel's own action buttons (Button.findAction above), with the
+               same tooltips — every button keeps its tooltip even disabled (the global Button.ToolTip.ShowOnDisabled
+               style in App.axaml). -->
+          <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="Auto,Auto,Auto" RowSpacing="4" ColumnSpacing="4">
+            <Button Grid.Row="0" Grid.Column="0" Classes="findAction" Tag="saved-search"
+                    Content="{loc:Loc SearchEditorView_LoadSearch}" Command="{Binding LoadSearchCommand}"
+                    ToolTip.Tip="{loc:Loc SearchEditorView_LoadSearch}" />
+            <Button Grid.Row="0" Grid.Column="1" Classes="findAction" Tag="find"
+                    Content="{loc:Loc FindReplaceView_FindNext}" Command="{Binding FindCommand}"
+                    ToolTip.Tip="{loc:Loc FindReplaceView_FindNextTooltip}" />
+            <Button Grid.Row="0" Grid.Column="2" Classes="findAction" Tag="replace"
+                    Content="{loc:Loc FindReplaceView_ReplaceButton}" Command="{Binding ReplaceCurrentCommand}"
+                    ToolTip.Tip="{loc:Loc FindReplaceView_ReplaceTooltip}" />
+            <Button Grid.Row="1" Grid.Column="0" Classes="findAction" Tag="replace-find"
+                    Content="{loc:Loc FindReplaceView_ReplaceFind}" Command="{Binding ReplaceCommand}"
+                    ToolTip.Tip="{loc:Loc FindReplaceView_ReplaceFindTooltip}" />
+            <Button Grid.Row="1" Grid.Column="1" Classes="findAction" Tag="replace-all"
+                    Content="{loc:Loc FindReplaceView_ReplaceAll}" Command="{Binding ReplaceAllCommand}"
+                    ToolTip.Tip="{loc:Loc FindReplaceView_ReplaceAllTooltip}" />
+            <Button Grid.Row="1" Grid.Column="2" Classes="findAction" Tag="count-all"
+                    Content="{loc:Loc FindReplaceView_CountAll}" Command="{Binding CountAllCommand}"
+                    ToolTip.Tip="{loc:Loc FindReplaceView_CountAllTooltip}" />
+          </Grid>
+          <Separator Margin="0,6" />
+          <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*,*" HorizontalAlignment="Center">
+            <Button Grid.Row="0" Grid.ColumnSpan="2" Content="↑" Command="{Binding MoveUpCommand}" HorizontalAlignment="Center" />
+            <Button Grid.Row="1" Grid.Column="0" Content="←" Command="{Binding MoveLeftCommand}" />
+            <Button Grid.Row="1" Grid.Column="1" Content="→" Command="{Binding MoveRightCommand}" />
+            <Button Grid.Row="2" Grid.ColumnSpan="2" Content="↓" Command="{Binding MoveDownCommand}" HorizontalAlignment="Center" />
+          </Grid>
+        </StackPanel>
+      </Grid>
+
+      <TextBlock Grid.Row="3" Text="{Binding Message}"
+                 Foreground="{DynamicResource SystemAccentColor}" TextWrapping="Wrap" />
     </Grid>
 
-    <TextBlock Grid.Row="3" Text="{Binding Message}"
-               Foreground="{DynamicResource SystemAccentColor}" TextWrapping="Wrap" />
+    <!-- ================= Add/Edit view: Calibre's "Add search" screen — Name, then the shared Find & Replace
+         panel embedded so the search can be tried out right away (Find / Replace / Replace All / Count All, …),
+         Done to save, ✕ to discard and go back to the list. ================= -->
+    <Grid IsVisible="{Binding IsEditing}" RowDefinitions="Auto,*,Auto" RowSpacing="8">
+      <!-- Each logical part of the Add/Edit view (Name; the Find & Replace panel to try the search out) is its
+           own box, so the screen reads as sections rather than one undivided wall of controls. -->
+      <Border x:Name="EditNamePane" Grid.Row="0" Padding="8" BorderThickness="1" CornerRadius="4"
+              BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+          <TextBlock Grid.Column="0" Text="{loc:Loc SearchEditorView_Name}" VerticalAlignment="Center" />
+          <TextBox Grid.Column="1" x:Name="EditNameBox" Text="{Binding EditingName, Mode=TwoWay}"
+                   PlaceholderText="{loc:Loc SearchEditorView_NamePlaceholder}" />
+          <Button Grid.Column="2" Content="✕" Padding="8,4" Background="Transparent" BorderThickness="0"
+                  Command="{Binding CancelEditCommand}" ToolTip.Tip="{loc:Loc Common_Cancel}" />
+        </Grid>
+      </Border>
 
-    <Grid Grid.Row="4" ColumnDefinitions="*,Auto" ColumnSpacing="4"
-          IsVisible="{Binding HasReport}">
-      <Expander Grid.Column="0" x:Name="ReportExpander"
-                Header="{Binding ReportSummary}" IsExpanded="False"
-                HorizontalAlignment="Stretch">
-        <ScrollViewer x:Name="ReportScroll" MaxHeight="160"
-                      HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-          <ItemsControl ItemsSource="{Binding ReportRows}" />
-        </ScrollViewer>
-      </Expander>
-      <Button Grid.Column="1" x:Name="CloseReportButton"
-              VerticalAlignment="Top" Padding="8,4"
-              Background="Transparent" BorderThickness="0"
-              Command="{Binding CloseReportCommand}"
-              Content="✕"
-              ToolTip.Tip="{loc:Loc Common_CloseReportTooltip}" />
+      <Border Grid.Row="1" BorderThickness="1" CornerRadius="4"
+              BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+        <views:FindReplaceView DataContext="{Binding FindReplace}" VerticalAlignment="Top" />
+      </Border>
+
+      <Border Grid.Row="2" Padding="8" BorderThickness="1" CornerRadius="4"
+              BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+          <Button Classes="caution" Content="{loc:Loc Common_Cancel}" Command="{Binding CancelEditCommand}"
+                  MinWidth="90" />
+          <Button Classes="accent" Content="{loc:Loc Common_Save}" Command="{Binding DoneEditCommand}" IsDefault="True"
+                  MinWidth="90" />
+        </StackPanel>
+      </Border>
     </Grid>
   </Grid>
 </UserControl>
