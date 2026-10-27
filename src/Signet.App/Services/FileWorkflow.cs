@@ -503,11 +503,17 @@ public sealed class FileWorkflow : IDisposable
 
         private readonly IProgress<WorkProgress> _target;
         private readonly ProgressDebouncer<BookSaveProgress> _debouncer;
+        private readonly ILogger? _logger;
+        private readonly System.Diagnostics.Stopwatch _stageStopwatch = System.Diagnostics.Stopwatch.StartNew();
         private BookSaveStage? _lastStage;
+        private int _lastTotal;
 
-        public BookSaveMap(IProgress<WorkProgress> target)
+        // _logger is optional (tests construct this without one): the timing lines are diagnostics for a slow save, not
+        // behavior anything depends on.
+        public BookSaveMap(IProgress<WorkProgress> target, ILogger? logger = null)
         {
             _target = target;
+            _logger = logger;
             _debouncer = new ProgressDebouncer<BookSaveProgress>(ReportWindow, Forward);
         }
 
@@ -516,12 +522,34 @@ public sealed class FileWorkflow : IDisposable
             // A stage's first and last file are never coalesced away: the first shows the phase change at once, the
             // last shows the phase as done instead of its state from up to ReportWindow earlier.
             bool stageChanged = value.Stage != _lastStage;
-            _lastStage = value.Stage;
+            if (stageChanged)
+            {
+                LogStageDone(_lastStage, _lastTotal);
+                _lastStage = value.Stage;
+                _stageStopwatch.Restart();
+            }
+
+            _lastTotal = value.Total;
             bool isLastOfStage = value.Total > 0 && value.Done >= value.Total - 1;
             _debouncer.Report(value, flushNow: stageChanged || isLastOfStage);
         }
 
-        public void Dispose() => _debouncer.Dispose();
+        // Logged once per stage (on the way into the next one, and once more on Dispose for the last stage): how long
+        // SaveAllResourcesToDisk / the working-folder copy / the ZIP write each actually took, to find where a slow
+        // save's time really goes (Preferences has no setting for this — it is always on, like the other save/load logs).
+        private void LogStageDone(BookSaveStage? stage, int fileCount)
+        {
+            if (stage is { } s)
+            {
+                _logger?.LogInformation("Save stage {Stage} done: {Files} files in {Elapsed} ms", s, fileCount, _stageStopwatch.ElapsedMilliseconds);
+            }
+        }
+
+        public void Dispose()
+        {
+            LogStageDone(_lastStage, _lastTotal);
+            _debouncer.Dispose();
+        }
 
         private void Forward(BookSaveProgress value)
         {
@@ -725,7 +753,7 @@ public sealed class FileWorkflow : IDisposable
                     Strings.Get("File_SavingTitle"),
                     progress =>
                     {
-                        using BookSaveMap map = new(progress);
+                        using BookSaveMap map = new(progress, _logger);
                         new ExportEpub(book).WriteBook(fullFilePath, progress: map);
                     })
                     .ConfigureAwait(true))
