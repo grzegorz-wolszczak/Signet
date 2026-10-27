@@ -30,7 +30,8 @@
                ItemsSource="{Binding Entries}"
                IsVisible="{Binding HasEntries}"
                BorderThickness="1"
-               BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}">
+               BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
+               Background="{DynamicResource SignetNotificationsBackgroundBrush}">
         <ListBox.ItemTemplate>
           <DataTemplate x:DataType="vm:NotificationEntry">
             <Grid ColumnDefinitions="18,Auto,*" MinHeight="20">
@@ -40,9 +41,9 @@
                     Stretch="Uniform" Width="13" Height="13"
                     VerticalAlignment="Center"
                     IsVisible="{Binding IsWarning}" />
-              <TextBlock Grid.Column="1" Text="{Binding TimeText}"
+              <TextBlock Grid.Column="1" Classes="entryFont" Text="{Binding TimeText}"
                          Opacity="0.7" Margin="0,0,10,0" VerticalAlignment="Center" />
-              <SelectableTextBlock Grid.Column="2" Text="{Binding Message}"
+              <SelectableTextBlock Grid.Column="2" Classes="entryFont" Text="{Binding Message}"
                                    Classes.error="{Binding IsWarning}"
                                    TextWrapping="Wrap" VerticalAlignment="Center" />
             </Grid>

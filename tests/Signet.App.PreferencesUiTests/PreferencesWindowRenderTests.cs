@@ -536,7 +536,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     private static readonly string[] PartsWithFonts =
     {
         "StartScreen", "BookBrowser", "TableOfContents", "CodeEditor", "Preview", "FindReplace", "SpecialCharacters",
-        "Checkpoints", "Validation", "MetadataEditor", "Cleanup", "Footnotes",
+        "Checkpoints", "Validation", "Notifications", "MetadataEditor", "Cleanup", "Footnotes",
     };
 
     /// <summary>
@@ -585,7 +585,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
                 ? new[] { general, fonts, Strings.Get("PreferencesWindow_InterfaceColors") } // the themes, the fonts, the colors of the theme
                 : bothTabs.Contains(part)
                     ? new[] { Strings.Get("PreferencesWindow_" + part), fonts }
-                    : part is "BookBrowser" or "StartScreen" or "CodeEditor" or "FindReplace"
+                    : part is "BookBrowser" or "StartScreen" or "CodeEditor" or "FindReplace" or "Notifications"
                         ? new[] { general, fonts } // the general settings, then the fonts
                         : new[] { fonts };
 

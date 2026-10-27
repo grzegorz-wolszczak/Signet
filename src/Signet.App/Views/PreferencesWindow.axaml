@@ -742,6 +742,54 @@
         </Grid>
       </TabItem>
 
+      <!-- Appearance › Notifications: the font of the rows, the space between them (General), and the background (a link to
+           the theme, as Book Browser and Saved Searches do). -->
+      <TabItem x:Name="NotificationsAppearancePage" Header="{loc:Loc PreferencesWindow_Notifications}" views:PreferencesPage.Parent="AppearanceGeneralPage">
+        <Grid x:Name="NotificationsPreviewHost">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="*" MinHeight="150" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="250" MinHeight="120" />
+          </Grid.RowDefinitions>
+          <TabControl x:Name="NotificationsAppearanceTabs">
+            <TabItem Header="{loc:Loc PreferencesWindow_General}">
+              <ScrollViewer>
+                <StackPanel Spacing="10" Margin="8">
+                  <Border Classes="section">
+                    <StackPanel Spacing="6">
+                      <TextBlock Text="{loc:Loc PreferencesWindow_NotificationsLook}" FontWeight="Bold" />
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_NotificationsEntrySpacing}" />
+                        <NumericUpDown x:Name="NotificationsEntrySpacingBox" Grid.Column="1" Value="{Binding NotificationsEntrySpacing}"
+                                       Minimum="0"
+                                       Maximum="{x:Static vm:PreferencesViewModel.NotificationsEntrySpacingMax}"
+                                       Increment="1" FormatString="0" HorizontalAlignment="Right" Width="130" />
+                      </Grid>
+                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_NotificationsBackgroundInTheme}" Padding="0"
+                                       views:PreferencesPage.Target="AppearanceGeneralPage"
+                                       views:PreferencesPage.TargetKey="ui.notifications.background" />
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+              </ScrollViewer>
+            </TabItem>
+            <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+              <views:FontsPageView x:Name="NotificationsFontsView" HasSharedPreview="True" />
+            </TabItem>
+          </TabControl>
+          <GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Background="Transparent" />
+          <!-- The preview: the real Notifications panel over a handful of fabricated entries. Not searched: it holds no settings. -->
+          <Border x:Name="NotificationsPreviewPane" Grid.Row="2" Classes="section noSearchTree" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" Padding="8">
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
+              <Border Classes="listFrame previewFrame">
+                <views:NotificationsView x:Name="NotificationsPreview" />
+              </Border>
+            </DockPanel>
+          </Border>
+        </Grid>
+      </TabItem>
+
       <!-- Appearance › MetadataEditor: Fonts only. -->
       <TabItem x:Name="MetadataEditorAppearancePage" Header="{loc:Loc PreferencesWindow_MetadataEditor}" views:PreferencesPage.Parent="AppearanceGeneralPage">
         <TabControl x:Name="MetadataEditorAppearanceTabs">

@@ -3794,6 +3794,15 @@ You can later restore the book to this checkpoint via the "Revert to..." entries
   <data name="Panel_Notifications" xml:space="preserve">
     <value>Notifications</value>
   </data>
+  <data name="NotificationsSample_Saved" xml:space="preserve">
+    <value>The book was saved.</value>
+  </data>
+  <data name="NotificationsSample_BrokenLink" xml:space="preserve">
+    <value>Found a broken link in chapter 3.</value>
+  </data>
+  <data name="NotificationsSample_Validated" xml:space="preserve">
+    <value>Validation finished with no errors.</value>
+  </data>
   <data name="NotificationsView_Empty" xml:space="preserve">
     <value>No notifications.</value>
   </data>
@@ -6307,6 +6316,9 @@ Close the tab</value>
   <data name="ThemeKey_ui_searchEditor_background" xml:space="preserve">
     <value>Saved Searches tree background</value>
   </data>
+  <data name="ThemeKey_ui_notifications_background" xml:space="preserve">
+    <value>Notifications list background</value>
+  </data>
   <data name="ThemeKey_ui_findUsages_usage_background" xml:space="preserve">
     <value>Find Usages window background: Usage column</value>
   </data>
@@ -6627,6 +6639,24 @@ Close the tab</value>
   </data>
   <data name="PreferencesWindow_BookBrowserBackgroundInTheme" xml:space="preserve">
     <value>Book Browser background color: Appearance › Interface Colors</value>
+  </data>
+  <data name="PreferencesWindow_Notifications" xml:space="preserve">
+    <value>Notifications</value>
+  </data>
+  <data name="PreferencesWindow_NotificationsLook" xml:space="preserve">
+    <value>Look of the notifications list</value>
+  </data>
+  <data name="PreferencesWindow_NotificationsEntrySpacing" xml:space="preserve">
+    <value>Space between entries (px)</value>
+  </data>
+  <data name="PreferencesWindow_NotificationsBackgroundInTheme" xml:space="preserve">
+    <value>Notifications list background color: Appearance › Interface Colors</value>
+  </data>
+  <data name="PreferencesWindow_NotificationsEntriesFont" xml:space="preserve">
+    <value>List entries</value>
+  </data>
+  <data name="FontPreview_NotificationsEntries" xml:space="preserve">
+    <value>12:34:56   The book was saved</value>
   </data>
   <data name="PreferencesWindow_StartScreenTitleFont" xml:space="preserve">
     <value>Names of the recent files</value>

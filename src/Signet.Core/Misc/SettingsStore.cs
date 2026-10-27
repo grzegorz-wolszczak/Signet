@@ -736,6 +736,37 @@ public sealed class SettingsStore
     }
 
     /// <summary>
+    /// Whether the document tabs use the font of a tool panel's title bar (<see cref="ToolHeaderFontAppearance"/>) instead
+    /// of their own (<see cref="DocumentTabFontAppearance"/>) — off by default. The own font stays stored while this is
+    /// on, for when it is turned off again.
+    /// </summary>
+    public bool DocumentTabFontInheritsToolHeader
+    {
+        get => ReadBool("document_tab_font_inherit_tool_header", false);
+        set
+        {
+            WriteSilent("document_tab_font_inherit_tool_header", value);
+            RaiseChanged("document_tab_font");
+        }
+    }
+
+    /// <summary>The font the document tabs use now: their own, or — while <see cref="DocumentTabFontInheritsToolHeader"/> — a
+    /// tool panel's title bar font.</summary>
+    public DocumentTabFontAppearance EffectiveDocumentTabFontAppearance
+    {
+        get
+        {
+            if (!DocumentTabFontInheritsToolHeader)
+            {
+                return DocumentTabFontAppearance;
+            }
+
+            ToolHeaderFontAppearance parent = ToolHeaderFontAppearance;
+            return new DocumentTabFontAppearance(parent.FontFamily, parent.FontSize, parent.FontWeight);
+        }
+    }
+
+    /// <summary>
     /// The font of the title bar of a tool panel (empty / 0 = the interface font at the default size). Always read
     /// normalized (<see cref="ToolHeaderFontAppearance.Normalized"/>).
     /// </summary>
@@ -757,6 +788,65 @@ public sealed class SettingsStore
             WriteSilent("tool_header_font_size", v.FontSize);
             WriteSilent("tool_header_font_weight", v.FontWeight);
             RaiseChanged("tool_header_font");
+        }
+    }
+
+    /// <summary>
+    /// The font of the rows of the Notifications panel and the space between them (empty / 0 = the interface font at
+    /// the default size and spacing). Always read normalized (<see cref="NotificationsAppearance.Normalized"/>).
+    /// </summary>
+    public NotificationsAppearance NotificationsAppearance
+    {
+        get
+        {
+            NotificationsAppearance d = NotificationsAppearance.Default;
+            return new NotificationsAppearance(
+                ReadString("notifications_font_family", d.FontFamily),
+                ReadInt("notifications_font_size", d.FontSize),
+                ReadInt("notifications_font_weight", d.FontWeight),
+                ReadInt("notifications_entry_spacing", d.EntrySpacing)).Normalized();
+        }
+
+        set
+        {
+            NotificationsAppearance v = value.Normalized();
+            WriteSilent("notifications_font_family", v.FontFamily);
+            WriteSilent("notifications_font_size", v.FontSize);
+            WriteSilent("notifications_font_weight", v.FontWeight);
+            WriteSilent("notifications_entry_spacing", v.EntrySpacing);
+            RaiseChanged("notifications_appearance");
+        }
+    }
+
+    /// <summary>
+    /// Whether the Notifications panel's rows use the font of a tool panel's title bar (<see cref="ToolHeaderFontAppearance"/>)
+    /// instead of their own (<see cref="NotificationsAppearance"/>) — off by default. The own font stays stored while this is
+    /// on, for when it is turned off again.
+    /// </summary>
+    public bool NotificationsFontInheritsToolHeader
+    {
+        get => ReadBool("notifications_font_inherit_tool_header", false);
+        set
+        {
+            WriteSilent("notifications_font_inherit_tool_header", value);
+            RaiseChanged("notifications_appearance");
+        }
+    }
+
+    /// <summary>The look the Notifications panel uses now: its own font, or — while
+    /// <see cref="NotificationsFontInheritsToolHeader"/> — a tool panel's title bar font; the spacing is always its own.</summary>
+    public NotificationsAppearance EffectiveNotificationsAppearance
+    {
+        get
+        {
+            NotificationsAppearance own = NotificationsAppearance;
+            if (!NotificationsFontInheritsToolHeader)
+            {
+                return own;
+            }
+
+            ToolHeaderFontAppearance parent = ToolHeaderFontAppearance;
+            return new NotificationsAppearance(parent.FontFamily, parent.FontSize, parent.FontWeight, own.EntrySpacing);
         }
     }
 
@@ -2252,9 +2342,15 @@ public sealed class SettingsStore
         yield return "document_tab_font_family";
         yield return "document_tab_font_size";
         yield return "document_tab_font_weight";
+        yield return "document_tab_font_inherit_tool_header";
         yield return "tool_header_font_family";
         yield return "tool_header_font_size";
         yield return "tool_header_font_weight";
+        yield return "notifications_font_family";
+        yield return "notifications_font_size";
+        yield return "notifications_font_weight";
+        yield return "notifications_entry_spacing";
+        yield return "notifications_font_inherit_tool_header";
     }
 
     // The colors the settings held before the themes (by their old keys).

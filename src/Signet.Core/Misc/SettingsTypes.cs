@@ -297,6 +297,36 @@ public readonly record struct ToolHeaderFontAppearance(string FontFamily, int Fo
 }
 
 /// <summary>
+/// Font of the rows of the Notifications panel, and the vertical space between them; the colors come from the theme
+/// (<c>ui.notifications.background</c>, the error row from <c>ui.errorNotification</c>).
+/// </summary>
+/// <param name="FontFamily">Font family of a row; empty = the interface font.</param>
+/// <param name="FontSize">Font size (px) of a row; 0 = the interface size.</param>
+/// <param name="FontWeight">Weight of a row (<see cref="FontWeightScale"/>); 0 = not set.</param>
+/// <param name="EntrySpacing">Vertical space (px) between two rows; 0 = the default spacing of the list.</param>
+public readonly record struct NotificationsAppearance(string FontFamily, int FontSize, int FontWeight = 0, int EntrySpacing = 0)
+{
+    /// <summary>Lower bound of an explicit <see cref="FontSize"/>.</summary>
+    public const int FontSizeMin = 6;
+
+    /// <summary>Upper bound of an explicit <see cref="FontSize"/>.</summary>
+    public const int FontSizeMax = 72;
+
+    /// <summary>Upper bound of <see cref="EntrySpacing"/>.</summary>
+    public const int EntrySpacingMax = 20;
+
+    /// <summary>Default values: the interface font at the default size, the default spacing of the list.</summary>
+    public static NotificationsAppearance Default => new(string.Empty, 0);
+
+    /// <summary>A copy with the size and the spacing clamped (0 stays "the default").</summary>
+    public NotificationsAppearance Normalized() => new(
+        FontFamily?.Trim() ?? string.Empty,
+        FontSize <= 0 ? 0 : Math.Clamp(FontSize, FontSizeMin, FontSizeMax),
+        FontWeightScale.Normalize(FontWeight),
+        Math.Clamp(EntrySpacing, 0, EntrySpacingMax));
+}
+
+/// <summary>
 /// Font of the line numbers of Code Editor; the colors come from the theme (<c>editor.lineNumbers</c>,
 /// <c>editor.currentLineNumber</c>).
 /// </summary>

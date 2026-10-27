@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Threading;
 using CommunityToolkit.Mvvm.Input;
 using Signet.App.Services;
+using Signet.Core.Misc;
 
 namespace Signet.App.ViewModels;
 
@@ -23,17 +24,45 @@ public sealed partial class NotificationsViewModel : ViewModelBase
     public const int MaxEntries = 500;
 
     private readonly SynchronizationContext? _context = SynchronizationContext.Current;
+    private readonly SettingsStore? _settings;
     private int _unreadWarnings;
 
     /// <summary>Creates the panel and starts recording the messages of <paramref name="statusBar"/>.</summary>
-    public NotificationsViewModel(IStatusBarService statusBar)
+    /// <param name="statusBar">The service whose shown messages are recorded.</param>
+    /// <param name="settings">The settings the look of the list comes from (<see cref="Appearance"/>); the panel follows
+    /// their changes. <c>null</c> = the default look (used by the sample panel of the Preferences preview, which reads
+    /// the draft settings directly through the view's binding instead).</param>
+    public NotificationsViewModel(IStatusBarService statusBar, SettingsStore? settings = null)
     {
         ArgumentNullException.ThrowIfNull(statusBar);
         statusBar.MessageShown += OnMessageShown;
+        _settings = settings;
+        if (_settings is not null)
+        {
+            _settings.SettingChanged += OnSettingChanged;
+        }
     }
 
     /// <summary>Raised after a <see cref="NotificationLevel.Warning"/> message was recorded.</summary>
     public event EventHandler? WarningArrived;
+
+    /// <summary>
+    /// The look of the list now (the settings) — its own font, or, while it inherits, a tool panel's title bar font; the
+    /// default look without settings.
+    /// </summary>
+    public NotificationsAppearance Appearance => _settings?.EffectiveNotificationsAppearance ?? NotificationsAppearance.Default;
+
+    /// <summary>Raised when a setting of the look of the list changed (the view applies <see cref="Appearance"/> again).</summary>
+    public event EventHandler? AppearanceChanged;
+
+    private void OnSettingChanged(object? sender, SettingChangedEventArgs e)
+    {
+        if (e.QualifiedKey.Contains("notifications_", StringComparison.Ordinal)
+            || e.QualifiedKey.Contains("tool_header_font", StringComparison.Ordinal))
+        {
+            AppearanceChanged?.Invoke(this, EventArgs.Empty);
+        }
+    }
 
     /// <summary>The recorded messages, newest first.</summary>
     public ObservableCollection<NotificationEntry> Entries { get; } = new();
