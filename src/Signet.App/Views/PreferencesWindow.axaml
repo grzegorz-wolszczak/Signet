@@ -1031,25 +1031,24 @@
             </TabItem>
           </TabControl>
           <GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Background="Transparent" />
-          <!-- The preview: both of the window's views (list, Add/Edit), side by side, with no book behind them. Not
-               searched: it holds no settings. -->
+          <!-- The preview: both of the window's views (list, Add/Edit), as sub-tabs, with no book behind them. The real
+               window is wider than it is tall, so the two do not fit side by side here the way the window itself shows
+               them. Not searched: it holds no settings. -->
           <Border x:Name="SearchEditorPreviewPane" Grid.Row="2" Classes="section noSearchTree" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" Padding="8">
             <DockPanel>
               <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
-              <Grid ColumnDefinitions="*,8,*">
-                <DockPanel Grid.Column="0">
-                  <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_SearchEditorListPreview}" Opacity="0.75" Margin="0,0,0,4" />
+              <TabControl Classes="noSearch">
+                <TabItem Header="{loc:Loc PreferencesWindow_SearchEditorListPreview}">
                   <Border Classes="listFrame previewFrame">
                     <views:SearchEditorView x:Name="SearchEditorListPreview" />
                   </Border>
-                </DockPanel>
-                <DockPanel Grid.Column="2">
-                  <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_SearchEditorEditPreview}" Opacity="0.75" Margin="0,0,0,4" />
+                </TabItem>
+                <TabItem Header="{loc:Loc PreferencesWindow_SearchEditorEditPreview}">
                   <Border Classes="listFrame previewFrame">
                     <views:SearchEditorView x:Name="SearchEditorEditPreview" />
                   </Border>
-                </DockPanel>
-              </Grid>
+                </TabItem>
+              </TabControl>
             </DockPanel>
           </Border>
         </Grid>
