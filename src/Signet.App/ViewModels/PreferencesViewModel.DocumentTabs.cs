@@ -1,3 +1,5 @@
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -77,5 +79,16 @@ public sealed partial class PreferencesViewModel
             weight: (() => DocumentTabFontWeight, v => DocumentTabFontWeight = v),
             placeholder: () => string.Empty,
             previewForeground: () => AppTheme.Current.Foreground(ThemeKeys.UiDocumentTab)?.ToString(),
-            previewBackground: () => AppTheme.Current.Background(ThemeKeys.UiDocumentTab)?.ToString());
+            previewBackground: () => AppTheme.Current.Background(ThemeKeys.UiDocumentTab)?.ToString(),
+            inheritance: ToolHeaderInheritance(() => _settings.DocumentTabFontInheritsToolHeader, v => _settings.DocumentTabFontInheritsToolHeader = v));
+
+    // The inheritance of a panel's font from "Fonts › Font of the panel headers" (Appearance › General), the one setting
+    // meant to cover every panel's title bar — the document tabs and the Notifications rows can follow it too instead of
+    // having a typeface of their own. get/set is the inherit flag of the particular consumer (its own stored bool).
+    private FontInheritance ToolHeaderInheritance(Func<bool> get, Action<bool> set) => new(
+        get,
+        set,
+        Strings.Get("PreferencesWindow_ToolHeaderFont"),
+        () => (ToolHeaderFontFamily.Length > 0 ? ToolHeaderFontFamily : EffectiveUiFontFamily) + ", " + (ToolHeaderFontSize > 0 ? ToolHeaderFontSize : 12),
+        () => AppearanceFonts.Fonts.Single(f => f.Key == "ToolHeader"));
 }

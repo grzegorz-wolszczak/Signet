@@ -72,6 +72,7 @@ public sealed partial class PreferencesViewModel : IDisposable
         _findUsagesSample = null;
         _searchEditorListSample = null;
         _searchEditorEditSample = null;
+        _notificationsSample = null;
         _codeEditorSample?.Dispose();
         _codeEditorSample = null;
         _codeEditorSampleTabs?.Dispose();
@@ -221,7 +222,8 @@ public sealed partial class PreferencesViewModel : IDisposable
         string key, string labelKey, string previewKey,
         Func<string> family, Action<string> setFamily, Func<int> size, Action<int> setSize,
         Action reset, System.Windows.Input.ICommand choose, Func<int> weight, Action<int> setWeight,
-        int? defaultSize = null, string sizeHintKey = "PreferencesWindow_FontSizeZeroAsInterface", int defaultWeight = 0) =>
+        int? defaultSize = null, string sizeHintKey = "PreferencesWindow_FontSizeZeroAsInterface", int defaultWeight = 0,
+        FontInheritance? inheritance = null) =>
         new(
             key,
             Strings.Get(labelKey),
@@ -235,7 +237,8 @@ public sealed partial class PreferencesViewModel : IDisposable
             placeholder: () => EffectiveUiFontFamily,
             sizeHint: Strings.Get(sizeHintKey),
             weight: (weight, setWeight),
-            effectiveWeight: () => weight() > 0 ? weight() : defaultWeight);
+            effectiveWeight: () => weight() > 0 ? weight() : defaultWeight,
+            inheritance: inheritance);
 }
 
 /// <summary>A "expand this folder on load" checkbox of the Book Browser preferences.</summary>

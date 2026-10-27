@@ -136,12 +136,15 @@ public sealed class UiDensityManager(
     /// <summary>The application resource of the font weight of the document tabs (<c>SignetDocumentTabFontWeight</c>).</summary>
     public const string DocumentTabFontWeightKey = "SignetDocumentTabFontWeight";
 
-    /// <summary>Applies the saved font of the document tabs live (Preferences → Appearance › Code Editor › Fonts).</summary>
+    /// <summary>
+    /// Applies the saved font of the document tabs live (Preferences → Appearance › Code Editor › Fonts) — its own, or, while
+    /// it inherits, a tool panel's title bar font.
+    /// </summary>
     public void ApplyDocumentTabFont()
     {
         if (Application.Current is { } app)
         {
-            ApplyDocumentTab(app, _settings.DocumentTabFontAppearance);
+            ApplyDocumentTab(app, _settings.EffectiveDocumentTabFontAppearance);
         }
     }
 

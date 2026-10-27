@@ -3794,6 +3794,15 @@ Do tego stanu książki możesz później wrócić przez pozycje „Przywróć d
   <data name="Panel_Notifications" xml:space="preserve">
     <value>Powiadomienia</value>
   </data>
+  <data name="NotificationsSample_Saved" xml:space="preserve">
+    <value>Zapisano książkę.</value>
+  </data>
+  <data name="NotificationsSample_BrokenLink" xml:space="preserve">
+    <value>Znaleziono uszkodzony odnośnik w rozdziale 3.</value>
+  </data>
+  <data name="NotificationsSample_Validated" xml:space="preserve">
+    <value>Walidacja zakończona bez błędów.</value>
+  </data>
   <data name="NotificationsView_Empty" xml:space="preserve">
     <value>Brak powiadomień.</value>
   </data>
@@ -6307,6 +6316,9 @@ Zamknij zakładkę</value>
   <data name="ThemeKey_ui_searchEditor_background" xml:space="preserve">
     <value>Tło drzewa zapisanych wyszukiwań</value>
   </data>
+  <data name="ThemeKey_ui_notifications_background" xml:space="preserve">
+    <value>Tło listy powiadomień</value>
+  </data>
   <data name="ThemeKey_ui_findUsages_usage_background" xml:space="preserve">
     <value>Tło okna znalezionych użyć: kolumna Użycie</value>
   </data>
@@ -6627,6 +6639,24 @@ Zamknij zakładkę</value>
   </data>
   <data name="PreferencesWindow_BookBrowserBackgroundInTheme" xml:space="preserve">
     <value>Kolor tła przeglądarki książki: Wygląd › Kolory interfejsu</value>
+  </data>
+  <data name="PreferencesWindow_Notifications" xml:space="preserve">
+    <value>Powiadomienia</value>
+  </data>
+  <data name="PreferencesWindow_NotificationsLook" xml:space="preserve">
+    <value>Wygląd listy powiadomień</value>
+  </data>
+  <data name="PreferencesWindow_NotificationsEntrySpacing" xml:space="preserve">
+    <value>Odstęp między wpisami (px)</value>
+  </data>
+  <data name="PreferencesWindow_NotificationsBackgroundInTheme" xml:space="preserve">
+    <value>Kolor tła listy powiadomień: Wygląd › Kolory interfejsu</value>
+  </data>
+  <data name="PreferencesWindow_NotificationsEntriesFont" xml:space="preserve">
+    <value>Wpisy listy</value>
+  </data>
+  <data name="FontPreview_NotificationsEntries" xml:space="preserve">
+    <value>12:34:56   Zapisano książkę</value>
   </data>
   <data name="PreferencesWindow_StartScreenTitleFont" xml:space="preserve">
     <value>Nazwy ostatnich plików</value>

@@ -1,7 +1,13 @@
 using System;
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Documents;
 using Avalonia.Layout;
+using Avalonia.Media;
+using Avalonia.Styling;
 using Avalonia.Threading;
+using Signet.Core.Misc;
+using Signet.App.Infrastructure;
 using Signet.App.ViewModels;
 
 namespace Signet.App.Views;
@@ -14,6 +20,7 @@ public partial class NotificationsView : UserControl
 {
     private NotificationsViewModel? _boundViewModel;
     private bool _isShown;
+    private Style[] _appearanceStyles = Array.Empty<Style>();
 
     /// <summary>Initializes the view.</summary>
     public NotificationsView()
@@ -22,6 +29,7 @@ public partial class NotificationsView : UserControl
         DataContextChanged += OnDataContextChanged;
         EffectiveViewportChanged += OnEffectiveViewportChanged;
         DetachedFromVisualTree += (_, _) => _isShown = false;
+        AttachedToVisualTree += (_, _) => ApplyAppearance();
     }
 
     private void OnDataContextChanged(object? sender, EventArgs e)
@@ -29,12 +37,59 @@ public partial class NotificationsView : UserControl
         if (_boundViewModel is not null)
         {
             _boundViewModel.WarningArrived -= OnWarningArrived;
+            _boundViewModel.AppearanceChanged -= OnAppearanceChanged;
         }
 
         _boundViewModel = DataContext as NotificationsViewModel;
         if (_boundViewModel is not null)
         {
             _boundViewModel.WarningArrived += OnWarningArrived;
+            _boundViewModel.AppearanceChanged += OnAppearanceChanged;
+        }
+
+        ApplyAppearance();
+    }
+
+    private void OnAppearanceChanged(object? sender, EventArgs e) => ApplyAppearance();
+
+    // The font of a row's text (the time and the message) and the vertical space between rows — Preferences ›
+    // Appearance › General › Fonts › "Notifications entries" and the spacing setting of the panel's General page.
+    private void ApplyAppearance()
+    {
+        foreach (Style old in _appearanceStyles)
+        {
+            List.Styles.Remove(old);
+        }
+
+        if (_boundViewModel is null)
+        {
+            _appearanceStyles = Array.Empty<Style>();
+            return;
+        }
+
+        NotificationsAppearance look = _boundViewModel.Appearance;
+
+        Style entries = new(x => x.Is<TextBlock>().Class("entryFont"));
+        // Always set (Regular when not set): a style taken away does not give the text its weight back, a style added
+        // later wins over it.
+        entries.Setters.Add(new Setter(TextElement.FontWeightProperty, FontWeightOptions.ToAvalonia(look.FontWeight)));
+        if (look.FontFamily.Length > 0)
+        {
+            entries.Setters.Add(new Setter(TextElement.FontFamilyProperty, new FontFamily(look.FontFamily)));
+        }
+
+        if (look.FontSize > 0)
+        {
+            entries.Setters.Add(new Setter(TextElement.FontSizeProperty, (double)look.FontSize));
+        }
+
+        Style rows = new(x => x.OfType<ListBoxItem>());
+        rows.Setters.Add(new Setter(Layoutable.MarginProperty, new Thickness(0, 0, 0, look.EntrySpacing)));
+
+        _appearanceStyles = new[] { entries, rows };
+        foreach (Style style in _appearanceStyles)
+        {
+            List.Styles.Add(style);
         }
     }
 

@@ -238,7 +238,7 @@ public sealed partial class MainWindowViewModel
             }
         };
 
-        _notifications = new NotificationsViewModel(statusBar);
+        _notifications = new NotificationsViewModel(statusBar, _settings);
         InitNotifications();
 
         StartScreen = new StartScreenViewModel(

@@ -267,6 +267,9 @@ public static class ThemeKeys
     /// <summary>The background of the Saved Searches window's tree; unset = the background of the panel.</summary>
     public static readonly ThemeKey UiSearchEditorBackground = Color("ui.searchEditor.background", ThemePage.Interface, "Controls", null);
 
+    /// <summary>The background of the Notifications panel's list; unset = the background of the panel.</summary>
+    public static readonly ThemeKey UiNotificationsBackground = Color("ui.notifications.background", ThemePage.Interface, "Controls", null);
+
     /// <summary>The selected row of the Book Browser (only there): its background and text; nothing set = the colors of the controls.</summary>
     public static readonly ThemeKey UiBookBrowserSelection = Attributes("ui.bookBrowser.selection", ThemePage.Interface, "Controls", TextAttributes.Empty);
 

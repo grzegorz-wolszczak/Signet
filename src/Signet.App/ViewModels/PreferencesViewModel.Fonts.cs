@@ -68,6 +68,9 @@ public sealed partial class PreferencesViewModel
     /// <summary>Appearance › Footnotes › Fonts: the tooltip font.</summary>
     public FontPageViewModel FootnotesFonts { get; private set; } = null!;
 
+    /// <summary>Appearance › Notifications › Fonts: the font of the rows.</summary>
+    public FontPageViewModel NotificationsFonts { get; private set; } = null!;
+
     /// <summary>The font of the code previews of the Appearance › Color Scheme pages (a row of the Color Scheme page).</summary>
     public FontSettingViewModel ColorSchemePreviewFont { get; private set; } = null!;
 
@@ -286,6 +289,7 @@ public sealed partial class PreferencesViewModel
                 ChooseSearchEditorRowsFontCommand,
                 () => SearchEditorRowsFontWeight, v => SearchEditorRowsFontWeight = v),
         });
+        NotificationsFonts = new FontPageViewModel(new[] { NotificationsFontRow() });
         TableOfContentsFonts = TooltipPage(TooltipArea.TableOfContents);
         FindReplaceFonts = TooltipPage(TooltipArea.FindReplace);
         CheckpointsFonts = TooltipPage(TooltipArea.Checkpoints);
@@ -297,7 +301,7 @@ public sealed partial class PreferencesViewModel
         {
             AppearanceFonts, StartScreenFonts, BookBrowserFonts, TableOfContentsFonts, CodeEditorFonts, PreviewFonts,
             FindReplaceFonts, FindUsagesFonts, SearchEditorFonts, SpecialCharacterFonts, CheckpointsFonts, ValidationFonts, MetadataEditorFonts,
-            CleanupFonts, FootnotesFonts,
+            CleanupFonts, FootnotesFonts, NotificationsFonts,
         });
 
         // The pages show values that change elsewhere too ("Restore Appearance Defaults", the compact mode): they are
