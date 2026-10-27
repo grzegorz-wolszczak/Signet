@@ -286,7 +286,7 @@
                       <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_CustomIconFolder}" />
                       <Grid Grid.Column="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
                         <TextBox x:Name="CustomIconFolderValue" Grid.Column="0" Text="{Binding CustomIconFolderDisplay}"
-                                 IsReadOnly="True" VerticalContentAlignment="Center"
+                                 IsReadOnly="True" CaretBrush="Transparent" VerticalContentAlignment="Center"
                                  ToolTip.Tip="{Binding CustomIconFolderDisplay}" />
                         <Button x:Name="CustomIconFolderBrowseButton" Grid.Column="1" Click="OnPickCustomIconFolderClicked"
                                 Content="{loc:Loc PreferencesWindow_CustomIconFolderBrowse}" />
@@ -1273,7 +1273,7 @@
                   <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_TempFolder}" VerticalAlignment="Center" />
                   <Grid Grid.Column="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
                     <TextBox x:Name="TempFolderValue" Grid.Column="0" Text="{Binding TempFolderDisplay}"
-                             IsReadOnly="True" VerticalContentAlignment="Center"
+                             IsReadOnly="True" CaretBrush="Transparent" VerticalContentAlignment="Center"
                              ToolTip.Tip="{Binding TempFolderDisplay}" />
                     <Button x:Name="TempFolderBrowseButton" Grid.Column="1" Click="OnPickTempFolderClicked"
                             Content="{loc:Loc PreferencesWindow_TempFolderBrowse}" />
