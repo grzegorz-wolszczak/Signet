@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using System;
 using Signet.App.Resources;
 
@@ -44,6 +45,40 @@ public static class ExternalOpen
         }
 
         return TryStart(folderPath, out error);
+    }
+
+    /// <summary>
+    /// Tries to open the system file manager with <paramref name="fullPath"/> selected in its containing folder
+    /// (Explorer's <c>/select,</c> on Windows; elsewhere, the containing folder itself — there is no cross-platform
+    /// way to select one file in it). Returns <c>false</c> (and fills <paramref name="error"/>) when the file does
+    /// not exist or the shell refused.
+    /// </summary>
+    public static bool TryShowInFolder(string fullPath, out string? error)
+    {
+        ArgumentNullException.ThrowIfNull(fullPath);
+
+        if (!File.Exists(fullPath))
+        {
+            error = Strings.Get("ExternalOpen_FileMissing");
+            return false;
+        }
+
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return TryOpenFolder(Path.GetDirectoryName(fullPath) ?? fullPath, out error);
+        }
+
+        try
+        {
+            using Process? process = Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{fullPath}\""));
+            error = null;
+            return true;
+        }
+        catch (Exception ex) when (ex is Win32Exception or InvalidOperationException or PlatformNotSupportedException)
+        {
+            error = ex.Message;
+            return false;
+        }
     }
 
     private static bool TryStart(string path, out string? error)

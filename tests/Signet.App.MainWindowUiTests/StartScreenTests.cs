@@ -141,7 +141,7 @@ public sealed class StartScreenTests
         // Act
         first.ContextMenu!.Open(first); // the items bind to the entry once the menu is in the visual tree
         Dispatcher.UIThread.RunJobs();
-        MenuItem remove = first.ContextMenu.Items.OfType<MenuItem>().Single();
+        MenuItem remove = first.ContextMenu.Items.OfType<MenuItem>().Last();
         remove.Command!.Execute(remove.CommandParameter);
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
