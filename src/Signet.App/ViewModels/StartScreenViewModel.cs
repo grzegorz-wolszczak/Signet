@@ -5,6 +5,7 @@ using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Signet.App.Resources;
+using Signet.App.Services;
 using Signet.Core.Misc;
 
 namespace Signet.App.ViewModels;
@@ -15,15 +16,18 @@ namespace Signet.App.ViewModels;
 /// <param name="Path">The full path.</param>
 /// <param name="OpenCommand">Opens the file.</param>
 /// <param name="RemoveCommand">Removes the file from the list of recent files (the context menu of the entry).</param>
+/// <param name="OpenFolderCommand">
+/// "Open File Location" (the context menu of the entry): shows the file selected in the system file manager.
+/// </param>
 /// <param name="IsHighlighted">Whether the entry is drawn as if the pointer were on it (the sample in Preferences only).</param>
 /// <param name="IsMissing">
 /// Whether the file is no longer on disk: the entry is drawn dimmed and its tooltip says why it cannot be opened, but it
-/// stays clickable — the click offers to take it off the list.
+/// stays clickable — the click offers to take it off the list. "Open File Location" does not apply to it.
 /// </param>
 /// <param name="ToolTip">The tooltip of the entry: the full path, and the reason when <paramref name="IsMissing"/>.</param>
 public sealed record StartScreenRecentFile(
-    string Name, string Folder, string Path, ICommand OpenCommand, ICommand RemoveCommand, bool IsHighlighted = false,
-    bool IsMissing = false, string ToolTip = "");
+    string Name, string Folder, string Path, ICommand OpenCommand, ICommand RemoveCommand, ICommand OpenFolderCommand,
+    bool IsHighlighted = false, bool IsMissing = false, string ToolTip = "");
 
 /// <summary>
 /// The start screen shown in the empty document area while no book is open: "Open…", "New book" and the recent files.
@@ -172,6 +176,7 @@ public sealed partial class StartScreenViewModel : ObservableObject, IDisposable
                     path,
                     new RelayCommand(() => _openRecent(path)),
                     new RelayCommand(() => _removeRecent?.Invoke(path), () => _removeRecent is not null),
+                    new RelayCommand(() => ExternalOpen.TryShowInFolder(path, out _), () => !missing && !IsSample),
                     IsSample && index == SampleHighlightedIndex,
                     missing,
                     missing ? path + Environment.NewLine + Strings.Get("RecentFiles_FileMissingTooltip") : path);

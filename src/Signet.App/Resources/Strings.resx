@@ -3460,6 +3460,9 @@ Tego typu pliku nie można jeszcze edytować w Signet.</value>
   <data name="Menu_RemoveFromRecentFiles" xml:space="preserve">
     <value>Usuń z listy ostatnich plików</value>
   </data>
+  <data name="Menu_OpenFileLocation" xml:space="preserve">
+    <value>Otwórz lokalizację pliku</value>
+  </data>
   <data name="Menu_ClearRecentFiles" xml:space="preserve">
     <value>Wyczyść listę</value>
   </data>
