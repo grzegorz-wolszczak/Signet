@@ -40,8 +40,15 @@ public sealed class TempFolder : IDisposable
     // by a live instance (the window between creating the directory and creating the lock) and is left alone.
     private static readonly TimeSpan LocklessGracePeriod = TimeSpan.FromSeconds(30);
 
-    private static string s_scratchpadRoot =
+    /// <summary>
+    /// The scratchpad root used when no custom temp folder is set, regardless of what
+    /// <see cref="ScratchpadRoot"/> is currently overridden to. Shown in Preferences so the user
+    /// knows what the system default resolves to.
+    /// </summary>
+    public static readonly string DefaultScratchpadRoot =
         SysPath.Combine(SysPath.GetTempPath(), ApplicationInfo.Name, "scratch");
+
+    private static string s_scratchpadRoot = DefaultScratchpadRoot;
 
     private FileStream? _lock;
     private bool _disposed;

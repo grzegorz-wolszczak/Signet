@@ -25,6 +25,7 @@ using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.App.ViewModels;
 using Signet.App.Views;
+using Signet.Core;
 using Signet.Core.Footnotes;
 using Signet.Core.Misc;
 using Signet.Core.Tests.TestSupport;
@@ -2349,7 +2350,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         window.Show();
         Dispatcher.UIThread.RunJobs();
         TabControl tabs = window.GetVisualDescendants().OfType<TabControl>().First();
-        SelectTab(tabs, "PreferencesWindow_General");
+        SelectTab(tabs, "PreferencesWindow_EditionPage");
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
@@ -2492,11 +2493,12 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     }
 
     /// <summary>
-    /// The temp folder is shown, not typed in: a label with the setting, "Browse…" for the folder dialog and "Clear",
-    /// which goes back to the system default and is off while that default is in use.
+    /// The temp folder is shown, not typed in: a read-only TextBox (selectable/scrollable, unlike a label) with the
+    /// setting, "Browse…" for the folder dialog and "Clear", which goes back to the system default and is off while
+    /// that default is in use. While the default is in use, the path it resolves to is shown too.
     /// </summary>
     [AvaloniaFact]
-    public void The_temp_folder_is_a_label_with_a_browse_and_a_clear_button()
+    public void The_temp_folder_is_a_read_only_text_box_with_a_browse_and_a_clear_button()
     {
         // Arrange
         PreferencesWindow window = BuildWindow();
@@ -2508,12 +2510,13 @@ public sealed class PreferencesWindowRenderTests : IDisposable
 
         // Act
         ShowPage(window, "GeneralPage");
-        TextBlock value = window.FindControl<TextBlock>("TempFolderValue")!;
+        TextBox value = window.FindControl<TextBox>("TempFolderValue")!;
         Button clear = window.FindControl<Button>("TempFolderClearButton")!;
 
         // Assert
         window.FindControl<Button>("TempFolderBrowseButton").Should().NotBeNull();
-        value.Text.Should().Be(Strings.Get("PreferencesWindow_TempFolderDefault"));
+        value.IsReadOnly.Should().BeTrue();
+        value.Text.Should().Be(Strings.Format("PreferencesWindow_TempFolderDefault", TempFolder.DefaultScratchpadRoot));
         clear.IsEffectivelyEnabled.Should().BeFalse("there is no folder of one's own to clear");
 
         // Act
@@ -2531,7 +2534,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         Dispatcher.UIThread.RunJobs();
 
         // Assert
-        value.Text.Should().Be(Strings.Get("PreferencesWindow_TempFolderDefault"));
+        value.Text.Should().Be(Strings.Format("PreferencesWindow_TempFolderDefault", TempFolder.DefaultScratchpadRoot));
         window.Close();
     }
 
