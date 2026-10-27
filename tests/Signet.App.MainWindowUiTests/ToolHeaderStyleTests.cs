@@ -49,7 +49,11 @@ public sealed class ToolHeaderStyleTests
         Host host = Show();
         ToolChromeControl[] headers = host.Window.GetVisualDescendants().OfType<ToolChromeControl>().ToArray();
         headers.Should().NotBeEmpty("the default layout docks tool panels such as the Book Browser");
-        double normal = headers[0].FontSize;
+        ToolChromeControl header = headers[0];
+        // The rendered title TextBlock itself, not only ToolChromeControl's own (inherited) property: Dock.Avalonia's
+        // template sets FontSize directly on "PART_Title", which otherwise wins over it.
+        TextBlock title = header.GetVisualDescendants().OfType<TextBlock>().First(t => t.Name == "PART_Title");
+        double normal = title.FontSize;
         try
         {
             // Act
@@ -57,7 +61,10 @@ public sealed class ToolHeaderStyleTests
             Settle(host.Window);
 
             // Assert
-            headers.Should().OnlyContain(h => h.FontSize == 23 && h.FontFamily.Name == "Courier New");
+            header.FontSize.Should().Be(23);
+            header.FontFamily.Name.Should().Be("Courier New");
+            title.FontSize.Should().Be(23);
+            title.FontFamily.Name.Should().Be("Courier New");
         }
         finally
         {
@@ -68,6 +75,7 @@ public sealed class ToolHeaderStyleTests
         Settle(host.Window);
 
         // Assert
-        headers.Should().OnlyContain(h => h.FontSize == normal);
+        header.FontSize.Should().Be(normal);
+        title.FontSize.Should().Be(normal);
     }
 }

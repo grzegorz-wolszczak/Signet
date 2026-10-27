@@ -1,4 +1,7 @@
 using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Signet.App.Resources;
@@ -73,5 +76,14 @@ public sealed partial class PreferencesViewModel
             },
             ChooseToolHeaderFontCommand,
             weight: (() => ToolHeaderFontWeight, v => ToolHeaderFontWeight = v),
-            placeholder: () => string.Empty);
+            placeholder: () => string.Empty,
+            // The title bar of an active tool panel (Dock.Avalonia's own Fluent theme colors; Signet has no copy of them
+            // in its own theme), so the preview looks like a real panel header, not plain text.
+            previewForeground: () => ToolHeaderPreviewColor("DockTabActiveForegroundBrush"),
+            previewBackground: () => ToolHeaderPreviewColor("DockSurfaceHeaderActiveBrush"));
+
+    private static string? ToolHeaderPreviewColor(string resourceKey) =>
+        Application.Current?.TryFindResource(resourceKey, out object? resource) == true && resource is ISolidColorBrush brush
+            ? brush.Color.ToString()
+            : null;
 }

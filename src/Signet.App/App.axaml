@@ -255,8 +255,22 @@
     </Style>
     <!-- The title bar of a tool panel (Book Browser, Preview, Validation Results, …): the font from Preferences ›
          Appearance › General › Fonts. A resource that is not set leaves the title as the controls have it (the
-         interface font). -->
+         interface font). Dock.Avalonia's own ToolChromeControl template sets FontSize directly on the title
+         TextBlock ("PART_Title", in both its default and its ":active" state), which otherwise always wins over a
+         FontFamily/FontSize/FontWeight set on ToolChromeControl itself (those are only inherited, and a direct
+         setter on the element beats an inherited value) — so the title bar's own style targets "PART_Title" to
+         match and override it. -->
     <Style Selector="dock|ToolChromeControl">
+      <Setter Property="FontFamily" Value="{DynamicResource SignetToolHeaderFontFamily}" />
+      <Setter Property="FontSize" Value="{DynamicResource SignetToolHeaderFontSize}" />
+      <Setter Property="FontWeight" Value="{DynamicResource SignetToolHeaderFontWeight}" />
+    </Style>
+    <Style Selector="dock|ToolChromeControl /template/ TextBlock#PART_Title">
+      <Setter Property="FontFamily" Value="{DynamicResource SignetToolHeaderFontFamily}" />
+      <Setter Property="FontSize" Value="{DynamicResource SignetToolHeaderFontSize}" />
+      <Setter Property="FontWeight" Value="{DynamicResource SignetToolHeaderFontWeight}" />
+    </Style>
+    <Style Selector="dock|ToolChromeControl:active /template/ TextBlock#PART_Title">
       <Setter Property="FontFamily" Value="{DynamicResource SignetToolHeaderFontFamily}" />
       <Setter Property="FontSize" Value="{DynamicResource SignetToolHeaderFontSize}" />
       <Setter Property="FontWeight" Value="{DynamicResource SignetToolHeaderFontWeight}" />
