@@ -357,9 +357,7 @@
               </ScrollViewer>
             </TabItem>
             <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-              <views:PageWidthHost x:Name="StartScreenFontsViewWidth">
-                <views:FontsPageView x:Name="StartScreenFontsView" HasSharedPreview="True" />
-              </views:PageWidthHost>
+              <views:FontsPageView x:Name="StartScreenFontsView" HasSharedPreview="True" />
             </TabItem>
           </TabControl>
           <GridSplitter Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Background="Transparent" />
@@ -445,9 +443,7 @@
               </ScrollViewer>
             </TabItem>
             <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-              <views:PageWidthHost x:Name="BookBrowserFontsViewWidth">
-                <views:FontsPageView x:Name="BookBrowserFontsView" HasSharedPreview="True" />
-              </views:PageWidthHost>
+              <views:FontsPageView x:Name="BookBrowserFontsView" HasSharedPreview="True" />
             </TabItem>
           </TabControl>
           <GridSplitter Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Background="Transparent" />
@@ -508,9 +504,7 @@
               </ScrollViewer>
             </TabItem>
             <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-              <views:PageWidthHost x:Name="CodeEditorFontsViewWidth">
-                <views:FontsPageView x:Name="CodeEditorFontsView" HasSharedPreview="True" />
-              </views:PageWidthHost>
+              <views:FontsPageView x:Name="CodeEditorFontsView" HasSharedPreview="True" />
             </TabItem>
           </TabControl>
           <GridSplitter Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Background="Transparent" />
@@ -601,9 +595,7 @@
                 </ScrollViewer>
             </TabItem>
             <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-              <views:PageWidthHost x:Name="PreviewFontsViewWidth">
-                <views:FontsPageView x:Name="PreviewFontsView" HasSharedPreview="True" />
-              </views:PageWidthHost>
+              <views:FontsPageView x:Name="PreviewFontsView" HasSharedPreview="True" />
             </TabItem>
           </TabControl>
           <GridSplitter Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Background="Transparent" />
@@ -650,9 +642,7 @@
               </ScrollViewer>
             </TabItem>
             <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-              <views:PageWidthHost x:Name="FindReplaceFontsViewWidth">
-                <views:FontsPageView x:Name="FindReplaceFontsView" HasSharedPreview="True" />
-              </views:PageWidthHost>
+              <views:FontsPageView x:Name="FindReplaceFontsView" HasSharedPreview="True" />
             </TabItem>
           </TabControl>
           <GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Background="Transparent" />
@@ -681,9 +671,7 @@
           </Grid.RowDefinitions>
           <TabControl x:Name="SpecialCharactersAppearanceTabs">
             <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-              <views:PageWidthHost x:Name="SpecialCharacterFontsViewWidth">
-                <views:FontsPageView x:Name="SpecialCharacterFontsView" HasSharedPreview="True" />
-              </views:PageWidthHost>
+              <views:FontsPageView x:Name="SpecialCharacterFontsView" HasSharedPreview="True" />
             </TabItem>
           </TabControl>
           <GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Background="Transparent" />
@@ -721,9 +709,7 @@
           </Grid.RowDefinitions>
           <TabControl x:Name="ValidationAppearanceTabs">
             <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-              <views:PageWidthHost x:Name="ValidationFontsViewWidth">
-                <views:FontsPageView x:Name="ValidationFontsView" HasSharedPreview="True" />
-              </views:PageWidthHost>
+              <views:FontsPageView x:Name="ValidationFontsView" HasSharedPreview="True" />
             </TabItem>
           </TabControl>
           <GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Background="Transparent" />
@@ -809,9 +795,7 @@
           </Grid.ColumnDefinitions>
           <TabControl x:Name="CleanupAppearanceTabs">
             <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-              <views:PageWidthHost x:Name="CleanupFontsViewWidth">
-                <views:FontsPageView x:Name="CleanupFontsView" HasSharedPreview="True" />
-              </views:PageWidthHost>
+              <views:FontsPageView x:Name="CleanupFontsView" HasSharedPreview="True" />
             </TabItem>
           </TabControl>
           <GridSplitter Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Background="Transparent" />
@@ -840,9 +824,7 @@
           </Grid.RowDefinitions>
           <TabControl x:Name="FootnotesAppearanceTabs">
             <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-              <views:PageWidthHost x:Name="FootnotesFontsViewWidth">
-                <views:FontsPageView x:Name="FootnotesFontsView" HasSharedPreview="True" />
-              </views:PageWidthHost>
+              <views:FontsPageView x:Name="FootnotesFontsView" HasSharedPreview="True" />
             </TabItem>
           </TabControl>
           <GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Background="Transparent" />
@@ -1016,9 +998,7 @@
               </views:PageWidthHost>
             </TabItem>
             <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-              <views:PageWidthHost x:Name="FindUsagesFontsViewWidth">
-                <views:FontsPageView x:Name="FindUsagesFontsView" HasSharedPreview="True" />
-              </views:PageWidthHost>
+              <views:FontsPageView x:Name="FindUsagesFontsView" HasSharedPreview="True" />
             </TabItem>
           </TabControl>
           <GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Background="Transparent" />
@@ -1073,9 +1053,7 @@
               </ScrollViewer>
             </TabItem>
             <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-              <views:PageWidthHost x:Name="SearchEditorFontsViewWidth">
-                <views:FontsPageView x:Name="SearchEditorFontsView" HasSharedPreview="True" />
-              </views:PageWidthHost>
+              <views:FontsPageView x:Name="SearchEditorFontsView" HasSharedPreview="True" />
             </TabItem>
           </TabControl>
           <GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Background="Transparent" />
