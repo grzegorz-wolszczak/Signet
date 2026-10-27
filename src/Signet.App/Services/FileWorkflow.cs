@@ -493,14 +493,37 @@ public sealed class FileWorkflow : IDisposable
     }
 
     // What the export reports as what the progress window shows: the files copied and the entries written are counted in a phase each;
-    // the preparation before them has only a bar that works.
-    private sealed class BookSaveMap : IProgress<BookSaveProgress>
+    // the preparation before them has only a bar that works. A book of thousands of files reports once per file — forwarding every
+    // one of those to the window (a Dispatcher post each) is visible drag for no benefit, since the window cannot show more than a
+    // few updates a second anyway, so reports are coalesced through a ProgressDebouncer; dispose it when the save is done, so the
+    // last report pending in it is not lost.
+    private sealed class BookSaveMap : IProgress<BookSaveProgress>, IDisposable
     {
-        private readonly IProgress<WorkProgress> _target;
+        private static readonly TimeSpan ReportWindow = TimeSpan.FromMilliseconds(500);
 
-        public BookSaveMap(IProgress<WorkProgress> target) => _target = target;
+        private readonly IProgress<WorkProgress> _target;
+        private readonly ProgressDebouncer<BookSaveProgress> _debouncer;
+        private BookSaveStage? _lastStage;
+
+        public BookSaveMap(IProgress<WorkProgress> target)
+        {
+            _target = target;
+            _debouncer = new ProgressDebouncer<BookSaveProgress>(ReportWindow, Forward);
+        }
 
         public void Report(BookSaveProgress value)
+        {
+            // A stage's first and last file are never coalesced away: the first shows the phase change at once, the
+            // last shows the phase as done instead of its state from up to ReportWindow earlier.
+            bool stageChanged = value.Stage != _lastStage;
+            _lastStage = value.Stage;
+            bool isLastOfStage = value.Total > 0 && value.Done >= value.Total - 1;
+            _debouncer.Report(value, flushNow: stageChanged || isLastOfStage);
+        }
+
+        public void Dispose() => _debouncer.Dispose();
+
+        private void Forward(BookSaveProgress value)
         {
             PhaseInfo phase = new((int)value.Stage + 1, Enum.GetValues<BookSaveStage>().Length, Strings.Get("BookSave_Phase_" + value.Stage));
             _target.Report(WorkProgress.InPhase(phase, Strings.Format("Progress_Detail_File", value.Done, value.Total), value.Done, value.Total));
@@ -700,7 +723,11 @@ public sealed class FileWorkflow : IDisposable
             // Writing the archive of a big book takes a while: off the UI thread, under a progress window.
             if (!await _workspace.RunBookWorkAsync(
                     Strings.Get("File_SavingTitle"),
-                    progress => new ExportEpub(book).WriteBook(fullFilePath, progress: new BookSaveMap(progress)))
+                    progress =>
+                    {
+                        using BookSaveMap map = new(progress);
+                        new ExportEpub(book).WriteBook(fullFilePath, progress: map);
+                    })
                     .ConfigureAwait(true))
             {
                 return false;

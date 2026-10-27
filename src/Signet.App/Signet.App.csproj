@@ -49,6 +49,7 @@
     <PackageReference Include="SkiaSharp" />
     <PackageReference Include="Tmds.DBus.Protocol" />
     <PackageReference Include="System.CommandLine" />
+    <PackageReference Include="System.Reactive" />
   </ItemGroup>
 
   <ItemGroup>
