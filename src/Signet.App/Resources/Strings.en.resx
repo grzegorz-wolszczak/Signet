@@ -636,7 +636,7 @@
     <value>Temp folder:</value>
   </data>
   <data name="PreferencesWindow_TempFolderDefault" xml:space="preserve">
-    <value>(the system default)</value>
+    <value>[default] {0}</value>
   </data>
   <data name="PreferencesWindow_TempFolderBrowse" xml:space="preserve">
     <value>Browse…</value>

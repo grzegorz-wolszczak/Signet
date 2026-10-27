@@ -12,6 +12,7 @@ using Signet.App.Infrastructure;
 using Signet.App.Input;
 using Signet.App.Resources;
 using Signet.App.Services;
+using Signet.Core;
 using Signet.Core.Footnotes;
 using Signet.Core.MainUI;
 using Signet.Core.Misc;
@@ -997,11 +998,13 @@ public sealed partial class PreferencesViewModel : ObservableObject
     partial void OnTempFolderHomeChanged(string value) => _settings.TempFolderHome = value;
 
     /// <summary>
-    /// What the page shows for the temp folder: the chosen one, or a note that the system default is in use. The
-    /// folder is picked in a folder dialog, so the page shows the setting instead of letting it be typed in.
+    /// What the page shows for the temp folder: the chosen one, or the system default with the path it resolves to
+    /// (<see cref="TempFolder.DefaultScratchpadRoot"/>), so the user can see what "default" means without guessing.
+    /// The folder is picked in a folder dialog, so the page shows the setting instead of letting it be typed in.
     /// </summary>
-    public string TempFolderDisplay =>
-        TempFolderHome.Length > 0 ? TempFolderHome : Strings.Get("PreferencesWindow_TempFolderDefault");
+    public string TempFolderDisplay => TempFolderHome.Length > 0
+        ? TempFolderHome
+        : Strings.Format("PreferencesWindow_TempFolderDefault", TempFolder.DefaultScratchpadRoot);
 
     /// <summary>Whether a folder of one's own is set — only then has "Clear" anything to undo.</summary>
     public bool HasCustomTempFolder => TempFolderHome.Length > 0;

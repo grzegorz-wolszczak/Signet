@@ -278,14 +278,16 @@
                     <CheckBox x:Name="PreferencesModalBox" Content="{loc:Loc PreferencesWindow_Modal}" IsChecked="{Binding PreferencesWindowModal}"
                               ToolTip.Tip="{loc:Loc PreferencesWindow_ModalTip}" />
 
-                    <Grid Classes="labeled" ColumnDefinitions="260,*" ColumnSpacing="8">
+                    <!-- The folder is chosen in a folder dialog, so the setting is shown, not typed in; "Clear" empties
+                         it and is enabled only while a folder is set — the same pattern as the temp folder (General).
+                         The value sits in a read-only TextBox (not a Label) so a long path can be selected, copied and
+                         scrolled into view; the label column is Auto-width so the TextBox starts right after the label. -->
+                    <Grid Classes="labeled" ColumnDefinitions="Auto,*" ColumnSpacing="8">
                       <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_CustomIconFolder}" />
-                      <!-- The folder is chosen in a folder dialog, so the setting is shown, not typed in; "Clear" empties
-                           it and is enabled only while a folder is set — the same pattern as the temp folder (General). -->
                       <Grid Grid.Column="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
-                        <TextBlock x:Name="CustomIconFolderValue" Grid.Column="0" Text="{Binding CustomIconFolderDisplay}"
-                                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
-                                   ToolTip.Tip="{Binding CustomIconFolderDisplay}" />
+                        <TextBox x:Name="CustomIconFolderValue" Grid.Column="0" Text="{Binding CustomIconFolderDisplay}"
+                                 IsReadOnly="True" VerticalContentAlignment="Center"
+                                 ToolTip.Tip="{Binding CustomIconFolderDisplay}" />
                         <Button x:Name="CustomIconFolderBrowseButton" Grid.Column="1" Click="OnPickCustomIconFolderClicked"
                                 Content="{loc:Loc PreferencesWindow_CustomIconFolderBrowse}" />
                         <Button x:Name="CustomIconFolderClearButton" Grid.Column="2" Command="{Binding ClearCustomIconFolderCommand}"
@@ -1264,14 +1266,15 @@
                 </Grid>
 
                 <!-- The folder is chosen in a folder dialog, so the setting is shown, not typed in; "Clear" goes back
-                     to the system default and is enabled only while a folder of one's own is set. This row keeps the
-                     "260,*" layout (unlike the rows around it) so the shown path can grow with the splitter. -->
-                <Grid Classes="labeled" ColumnDefinitions="260,*" ColumnSpacing="8">
+                     to the system default and is enabled only while a folder of one's own is set. The value sits in
+                     a read-only TextBox (not a Label) so a long path can be selected, copied and scrolled into view;
+                     the label column is Auto-width so the TextBox starts right after the label text, however long it is. -->
+                <Grid Classes="labeled" ColumnDefinitions="Auto,*" ColumnSpacing="8">
                   <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_TempFolder}" VerticalAlignment="Center" />
                   <Grid Grid.Column="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="6">
-                    <TextBlock x:Name="TempFolderValue" Grid.Column="0" Text="{Binding TempFolderDisplay}"
-                               VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
-                               ToolTip.Tip="{Binding TempFolderDisplay}" />
+                    <TextBox x:Name="TempFolderValue" Grid.Column="0" Text="{Binding TempFolderDisplay}"
+                             IsReadOnly="True" VerticalContentAlignment="Center"
+                             ToolTip.Tip="{Binding TempFolderDisplay}" />
                     <Button x:Name="TempFolderBrowseButton" Grid.Column="1" Click="OnPickTempFolderClicked"
                             Content="{loc:Loc PreferencesWindow_TempFolderBrowse}" />
                     <Button x:Name="TempFolderClearButton" Grid.Column="2" Command="{Binding ClearTempFolderCommand}"
