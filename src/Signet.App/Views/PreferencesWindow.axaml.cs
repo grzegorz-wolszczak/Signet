@@ -327,17 +327,6 @@ public partial class PreferencesWindow : Window
         yield return MendPrettifyWidth;
         yield return SpellcheckWidth;
         yield return PreserveEntitiesWidth;
-        yield return StartScreenFontsViewWidth;
-        yield return BookBrowserFontsViewWidth;
-        yield return CodeEditorFontsViewWidth;
-        yield return PreviewFontsViewWidth;
-        yield return FindReplaceFontsViewWidth;
-        yield return SpecialCharacterFontsViewWidth;
-        yield return ValidationFontsViewWidth;
-        yield return CleanupFontsViewWidth;
-        yield return FootnotesFontsViewWidth;
-        yield return FindUsagesFontsViewWidth;
-        yield return SearchEditorFontsViewWidth;
     }
 
     private static string PaneSuffix(Grid host) => host.RowDefinitions.Count > 0 ? PreviewPaneHeightSuffix : PreviewPaneWidthSuffix;

@@ -275,6 +275,14 @@
       <Setter Property="FontSize" Value="{DynamicResource SignetToolHeaderFontSize}" />
       <Setter Property="FontWeight" Value="{DynamicResource SignetToolHeaderFontWeight}" />
     </Style>
+    <!-- The row of tabs at the bottom of a group of docked tool panels (e.g. Preview / Table Of Contents / Checkpoints
+         sharing one area): the same "Font of the panel headers" setting as a panel's own title bar, since it is the
+         same kind of label — Dock.Avalonia's own theme otherwise hardcodes its size and weight regardless of it. -->
+    <Style Selector="dock|ToolTabStripItem">
+      <Setter Property="FontFamily" Value="{DynamicResource SignetToolHeaderFontFamily}" />
+      <Setter Property="FontSize" Value="{DynamicResource SignetToolHeaderFontSize}" />
+      <Setter Property="FontWeight" Value="{DynamicResource SignetToolHeaderFontWeight}" />
+    </Style>
     <!-- Tabs that do not fit in a row go to several rows instead of the scrolling arrows (Preferences › Code Editor; the
          class is on the windows that hold tabs). -->
     <Style Selector="Window.multilineTabs dock|DocumentTabStrip">
