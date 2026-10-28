@@ -41,6 +41,9 @@ public sealed class HeadingSelectorViewModel : ViewModelBase
 
         IncreaseLevelCommand = new RelayCommand(() => ChangeLevel(1), () => _selectedNode is not null);
         DecreaseLevelCommand = new RelayCommand(() => ChangeLevel(-1), () => _selectedNode is not null);
+        EditTitleCommand = new RelayCommand(
+            () => EditTitleRequested?.Invoke(this, EventArgs.Empty),
+            () => _selectedNode is not null);
         AcceptCommand = new RelayCommand(Accept);
         CancelCommand = new RelayCommand(() => CloseRequested?.Invoke(this, EventArgs.Empty));
 
@@ -51,6 +54,9 @@ public sealed class HeadingSelectorViewModel : ViewModelBase
     /// <summary>Raised when the dialog should close (after "OK" or "Cancel").</summary>
     public event EventHandler? CloseRequested;
 
+    /// <summary>Raised when the view should start editing the selected heading's title.</summary>
+    public event EventHandler? EditTitleRequested;
+
     /// <summary>Visible nodes of the heading tree (top level).</summary>
     public ObservableCollection<HeadingNodeViewModel> Nodes { get; } = new();
 
@@ -59,6 +65,9 @@ public sealed class HeadingSelectorViewModel : ViewModelBase
 
     /// <summary>The "◀" command — decrease the selected heading's level by 1.</summary>
     public RelayCommand DecreaseLevelCommand { get; }
+
+    /// <summary>The edit button command — start editing the selected heading's title.</summary>
+    public RelayCommand EditTitleCommand { get; }
 
     /// <summary>The "▶" command — increase the selected heading's level by 1.</summary>
     public RelayCommand IncreaseLevelCommand { get; }
@@ -88,7 +97,7 @@ public sealed class HeadingSelectorViewModel : ViewModelBase
         }
     }
 
-    /// <summary>Selected tree node (for the level change buttons).</summary>
+    /// <summary>Selected tree node (for actions that require one selection).</summary>
     public HeadingNodeViewModel? SelectedNode
     {
         get => _selectedNode;
@@ -98,6 +107,7 @@ public sealed class HeadingSelectorViewModel : ViewModelBase
             {
                 IncreaseLevelCommand.NotifyCanExecuteChanged();
                 DecreaseLevelCommand.NotifyCanExecuteChanged();
+                EditTitleCommand.NotifyCanExecuteChanged();
             }
         }
     }
