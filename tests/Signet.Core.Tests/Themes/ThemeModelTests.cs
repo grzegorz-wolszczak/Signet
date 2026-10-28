@@ -220,6 +220,16 @@ public sealed class ThemeModelTests
         sut.Attributes(child.Without(ThemeKeys.XhtmlTag.Id), ThemeKeys.XhtmlTag).Should().Be(Fg("#010101"));
     }
 
+    [Fact]
+    public void A_key_a_panel_owns_resolves_and_is_found_by_id_but_is_left_out_of_its_pages_shared_tree()
+    {
+        // Act & Assert
+        ThemeKeys.UiNotificationsTimestampBackground.OwnedByPanel.Should().BeTrue();
+        ThemeKeys.On(ThemePage.Interface).Should().NotContain(ThemeKeys.UiNotificationsTimestampBackground);
+        ThemeKeys.All.Should().Contain(ThemeKeys.UiNotificationsTimestampBackground);
+        ThemeKeys.Get("ui.notifications.timestamp.background").Should().Be(ThemeKeys.UiNotificationsTimestampBackground);
+    }
+
     private static ThemeResolver Resolver(params Theme[] themes) =>
         new(id => themes.FirstOrDefault(t => t.Id == id));
 

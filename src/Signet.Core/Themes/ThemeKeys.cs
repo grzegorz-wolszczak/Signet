@@ -267,32 +267,36 @@ public static class ThemeKeys
     /// <summary>The background of the Saved Searches window's tree; unset = the background of the panel.</summary>
     public static readonly ThemeKey UiSearchEditorBackground = Color("ui.searchEditor.background", ThemePage.Interface, "Controls", null);
 
+    // The Notifications panel's own colors (ownedByPanel: true) — edited on Appearance › Notifications itself
+    // (ColorKeyEditorViewModel), not in this shared tree; see ThemeKey.OwnedByPanel.
+
     /// <summary>The background of the Notifications panel's list; unset = the background of the panel.</summary>
-    public static readonly ThemeKey UiNotificationsBackground = Color("ui.notifications.background", ThemePage.Interface, "Controls", null);
+    public static readonly ThemeKey UiNotificationsBackground =
+        Color("ui.notifications.background", ThemePage.Interface, "Controls", null, ownedByPanel: true);
 
     /// <summary>The background of the timestamp column of the Notifications panel; unset = the list background.</summary>
     public static readonly ThemeKey UiNotificationsTimestampBackground =
-        Color("ui.notifications.timestamp.background", ThemePage.Interface, "Controls", null);
+        Color("ui.notifications.timestamp.background", ThemePage.Interface, "Controls", null, ownedByPanel: true);
 
     /// <summary>The text color of the timestamp column of the Notifications panel; unset = the normal text color.</summary>
     public static readonly ThemeKey UiNotificationsTimestampForeground =
-        Color("ui.notifications.timestamp.foreground", ThemePage.Interface, "Controls", null);
+        Color("ui.notifications.timestamp.foreground", ThemePage.Interface, "Controls", null, ownedByPanel: true);
 
     /// <summary>The background of the message column of an ordinary (not a warning) row of the Notifications panel; unset = the list background.</summary>
     public static readonly ThemeKey UiNotificationsMessageInfoBackground =
-        Color("ui.notifications.message.info.background", ThemePage.Interface, "Controls", null);
+        Color("ui.notifications.message.info.background", ThemePage.Interface, "Controls", null, ownedByPanel: true);
 
     /// <summary>The text color of the message column of an ordinary (not a warning) row of the Notifications panel; unset = the normal text color.</summary>
     public static readonly ThemeKey UiNotificationsMessageInfoForeground =
-        Color("ui.notifications.message.info.foreground", ThemePage.Interface, "Controls", null);
+        Color("ui.notifications.message.info.foreground", ThemePage.Interface, "Controls", null, ownedByPanel: true);
 
     /// <summary>The background of the message column of a warning row of the Notifications panel; unset = the list background.</summary>
     public static readonly ThemeKey UiNotificationsMessageWarningBackground =
-        Color("ui.notifications.message.warning.background", ThemePage.Interface, "Controls", null);
+        Color("ui.notifications.message.warning.background", ThemePage.Interface, "Controls", null, ownedByPanel: true);
 
     /// <summary>The text color of the message column of a warning row of the Notifications panel; unset = <see cref="UiErrorNotification"/>.</summary>
     public static readonly ThemeKey UiNotificationsMessageWarningForeground =
-        Color("ui.notifications.message.warning.foreground", ThemePage.Interface, "Controls", null);
+        Color("ui.notifications.message.warning.foreground", ThemePage.Interface, "Controls", null, ownedByPanel: true);
 
     /// <summary>The selected row of the Book Browser (only there): its background and text; nothing set = the colors of the controls.</summary>
     public static readonly ThemeKey UiBookBrowserSelection = Attributes("ui.bookBrowser.selection", ThemePage.Interface, "Controls", TextAttributes.Empty);
@@ -417,11 +421,13 @@ public static class ThemeKeys
         return "fluent." + char.ToLowerInvariant(paletteColor[0]) + paletteColor[1..];
     }
 
-    /// <summary>The keys of a page, in the order of its tree.</summary>
-    public static IEnumerable<ThemeKey> On(ThemePage page) => AllKeys.Where(k => k.Page == page);
+    /// <summary>The keys of a page shown in its shared tree, in the order of its tree — a key a panel owns
+    /// (<see cref="ThemeKey.OwnedByPanel"/>) is left out, since it lives in that panel's own Preferences section
+    /// instead; it still resolves, serializes and inherits like any other key through <see cref="Get"/> / <see cref="All"/>.</summary>
+    public static IEnumerable<ThemeKey> On(ThemePage page) => AllKeys.Where(k => k.Page == page && !k.OwnedByPanel);
 
-    private static ThemeKey Color(string id, ThemePage page, string group, ThemeColor? value) =>
-        new(id, page, group, ThemeKeyKind.Color, null, value, null);
+    private static ThemeKey Color(string id, ThemePage page, string group, ThemeColor? value, bool ownedByPanel = false) =>
+        new(id, page, group, ThemeKeyKind.Color, null, value, null, ownedByPanel);
 
     private static ThemeKey Attributes(string id, ThemePage page, string group, TextAttributes value, string? baseId = null) =>
         new(id, page, group, ThemeKeyKind.TextAttributes, baseId, null, value);

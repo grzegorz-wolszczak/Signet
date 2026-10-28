@@ -1543,6 +1543,28 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         window.Close();
     }
 
+    /// <summary>The Notifications page embeds its own 7 color editors (background, per-column) instead of linking
+    /// out to Interface Colors, and the shared Interface Colors tree does not list them (<see cref="ThemeKey.OwnedByPanel"/>).</summary>
+    [AvaloniaFact]
+    public void The_notifications_colors_are_embedded_on_their_own_page_not_the_shared_Interface_Colors_tree()
+    {
+        // Act
+        PreferencesWindow window = BuildWindow();
+        PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+        window.Width = 1100;
+        window.Height = 860;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, "NotificationsAppearancePage");
+
+        // Assert
+        window.GetVisualDescendants().OfType<ColorKeyEditorView>().Should().HaveCount(7);
+        ThemeKeysPageViewModel interfaceColors = vm.Theme.PageFor(ThemePage.Interface);
+        interfaceColors.Roots.SelectMany(r => r.IsGroup ? (IEnumerable<ThemeKeyNode>)r.Children : new[] { r })
+            .Should().NotContain(n => n.Key == ThemeKeys.UiNotificationsBackground || n.Key == ThemeKeys.UiNotificationsTimestampBackground);
+        window.Close();
+    }
+
     /// <summary>
     /// Both splitters of a color scheme page move (the width of the tree, the height of the preview), and every page
     /// keeps its own sizes, which the window hands out to be remembered and takes back.

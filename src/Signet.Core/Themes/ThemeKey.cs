@@ -65,6 +65,11 @@ public sealed record ThemeKey
     /// <param name="defaultColor">For a color key: the value when no theme sets it; <c>null</c> = the platform's
     /// (e.g. the system accent).</param>
     /// <param name="defaultAttributes">For a text attributes key: the value when no theme sets it.</param>
+    /// <param name="ownedByPanel">Whether a single panel/window embeds its own small editor of this key directly in
+    /// its Preferences section (e.g. Appearance › Notifications), so the key is left out of the shared tree of its
+    /// page (<see cref="ThemeKeys.On"/> as the general editor pages use it) — it would otherwise be a key no one but
+    /// that one panel cares about, sitting flat among keys that are actually shared (the accent, the button colors,
+    /// the generic "Messages" group, …). The key still resolves, serializes and inherits exactly like any other.</param>
     internal ThemeKey(
         string id,
         ThemePage page,
@@ -72,7 +77,8 @@ public sealed record ThemeKey
         ThemeKeyKind kind,
         string? baseId,
         ThemeColor? defaultColor,
-        TextAttributes? defaultAttributes)
+        TextAttributes? defaultAttributes,
+        bool ownedByPanel = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         Id = id;
@@ -82,6 +88,7 @@ public sealed record ThemeKey
         BaseId = baseId;
         DefaultColor = defaultColor;
         DefaultAttributes = kind == ThemeKeyKind.TextAttributes ? defaultAttributes ?? TextAttributes.Empty : null;
+        OwnedByPanel = ownedByPanel;
     }
 
     /// <summary>The identifier, e.g. <c>xhtml.attribute.name</c>.</summary>
@@ -107,4 +114,10 @@ public sealed record ThemeKey
 
     /// <summary>For a text attributes key: the value when no theme sets it; <c>null</c> for a color key.</summary>
     public TextAttributes? DefaultAttributes { get; }
+
+    /// <summary>
+    /// Whether a panel/window embeds its own editor of this key directly in its Preferences section instead of the
+    /// key sitting in the shared tree of its page.
+    /// </summary>
+    public bool OwnedByPanel { get; }
 }

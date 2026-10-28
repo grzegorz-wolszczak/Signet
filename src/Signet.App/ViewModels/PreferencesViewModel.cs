@@ -224,6 +224,8 @@ public sealed partial class PreferencesViewModel : ObservableObject
             };
         }
 
+        CreateNotificationsColorEditors();
+
         // A bundled color scheme follows the variant of the theme chosen (a dark theme, the dark scheme), as in Rider; a
         // scheme of the user stays as it is, and the scheme never changes the theme.
         Theme.SelectionChangedByUser += (_, _) =>

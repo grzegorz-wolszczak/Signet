@@ -1,0 +1,37 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Signet.App.ViewModels"
+             xmlns:loc="using:Signet.App.Resources"
+             xmlns:infra="using:Signet.App.Infrastructure"
+             x:Class="Signet.App.Views.ColorKeyEditorView"
+             x:DataType="vm:ColorKeyEditorViewModel">
+
+  <!-- A compact, reusable stand-in for ThemeKeysView's single-color panel (the "own color" check box, the hex field,
+       the swatch), for a panel's own Preferences section to embed a color that only it uses, instead of sending the
+       user to the shared Interface Colors tree. -->
+  <UserControl.Styles>
+    <Style Selector="Button.swatch">
+      <Setter Property="Padding" Value="2" />
+      <Setter Property="Width" Value="30" />
+      <Setter Property="Height" Value="26" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.swatch > Border">
+      <Setter Property="BorderBrush" Value="{DynamicResource SignetFrameBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="TextBox.hex">
+      <Setter Property="Width" Value="100" />
+    </Style>
+  </UserControl.Styles>
+
+  <StackPanel Orientation="Horizontal" Spacing="6">
+    <CheckBox IsChecked="{Binding HasColor}" IsVisible="{Binding CanBeEmpty}"
+              ToolTip.Tip="{loc:Loc ColorScheme_OwnColor}" />
+    <TextBox Classes="hex" IsEnabled="{Binding HasColor}" Text="{Binding Color, UpdateSourceTrigger=LostFocus}" />
+    <Button Classes="swatch" IsEnabled="{Binding HasColor}" Command="{Binding PickColorCommand}"
+            ToolTip.Tip="{loc:Loc ColorScheme_PickColor}">
+      <Border Background="{Binding Color, Converter={x:Static infra:ColorConverters.ToBrush}, FallbackValue={x:Null}}" />
+    </Button>
+  </StackPanel>
+</UserControl>
