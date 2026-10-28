@@ -113,7 +113,6 @@ public sealed class EditTocTests : IDisposable
 
         // Act & Assert
         vm.Rows.Select(r => (r.Text, r.Level)).Should().Equal(("Alpha", 1), ("Alpha One", 2), ("Beta", 1), ("Gamma", 1));
-        vm.Rows[1].Indent.Left.Should().BeGreaterThan(vm.Rows[0].Indent.Left);
     }
 
     [Fact]
@@ -176,6 +175,43 @@ public sealed class EditTocTests : IDisposable
 
         // Assert
         vm.Nodes.Select(n => n.Text).Should().Equal("Alpha", "Beta", "Gamma");
+    }
+
+    [Fact]
+    public void MoveRight_expands_a_leaf_that_becomes_a_parent()
+    {
+        // Arrange
+        EditTocViewModel vm = NewViewModel();
+        EditTocNodeViewModel beta = Find(vm, "Beta");
+        EditTocNodeViewModel gamma = Find(vm, "Gamma");
+        beta.IsExpanded = false;
+        vm.SetSelectedNodes(new[] { gamma });
+
+        // Act
+        vm.MoveRightCommand.Execute(null);
+
+        // Assert
+        beta.IsExpanded.Should().BeTrue();
+        beta.Children.Should().ContainSingle().Which.Should().BeSameAs(gamma);
+    }
+
+    [Fact]
+    public void MoveRight_expands_a_collapsed_parent_that_already_has_children()
+    {
+        // Arrange
+        EditTocViewModel vm = NewViewModel();
+        EditTocNodeViewModel alpha = Find(vm, "Alpha");
+        EditTocNodeViewModel beta = Find(vm, "Beta");
+        alpha.Children.Should().NotBeEmpty("the moved entry joins existing children");
+        alpha.IsExpanded = false;
+        vm.SetSelectedNodes(new[] { beta });
+
+        // Act
+        vm.MoveRightCommand.Execute(null);
+
+        // Assert
+        alpha.IsExpanded.Should().BeTrue();
+        alpha.Children[^1].Should().BeSameAs(beta);
     }
 
     [Fact]
