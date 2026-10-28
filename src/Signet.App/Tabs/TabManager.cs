@@ -6,6 +6,7 @@ using System;
 using Dock.Model.Controls;
 using Dock.Model.Core;
 using Dock.Model.Core.Events;
+using Avalonia.Threading;
 using Signet.App.Docking;
 using Signet.App.Infrastructure;
 using Signet.App.Resources;
@@ -543,7 +544,10 @@ public sealed class TabManager : IDisposable
         }
     }
 
-    private void OnModelTabOpened(object? sender, TabEventArgs e)
+    private void OnModelTabOpened(object? sender, TabEventArgs e) =>
+        InvokeOnUiThread(() => HandleModelTabOpened(e));
+
+    private void HandleModelTabOpened(TabEventArgs e)
     {
         DebugLog.Write("Tab", $"opened {e.Tab.Resource.BookPath} ({e.Tab.Kind})");
         ContentTabViewModel view = CreateTab(e.Tab);
@@ -575,7 +579,10 @@ public sealed class TabManager : IDisposable
         }
     }
 
-    private void OnModelTabActivated(object? sender, TabEventArgs e)
+    private void OnModelTabActivated(object? sender, TabEventArgs e) =>
+        InvokeOnUiThread(() => HandleModelTabActivated(e));
+
+    private void HandleModelTabActivated(TabEventArgs e)
     {
         ContentTabViewModel? outgoing = _current;
         _views.TryGetValue(e.Tab, out ContentTabViewModel? incoming);
@@ -604,7 +611,10 @@ public sealed class TabManager : IDisposable
         }
     }
 
-    private void OnModelTabClosed(object? sender, TabEventArgs e)
+    private void OnModelTabClosed(object? sender, TabEventArgs e) =>
+        InvokeOnUiThread(() => HandleModelTabClosed(e));
+
+    private void HandleModelTabClosed(TabEventArgs e)
     {
         DebugLog.Write("Tab", $"closed {e.Tab.Resource.BookPath}");
         if (!_views.Remove(e.Tab, out ContentTabViewModel? view))
@@ -641,11 +651,26 @@ public sealed class TabManager : IDisposable
         view.Release();
     }
 
-    private void OnModelTabCaptionChanged(object? sender, TabEventArgs e)
+    private void OnModelTabCaptionChanged(object? sender, TabEventArgs e) =>
+        InvokeOnUiThread(() => HandleModelTabCaptionChanged(e));
+
+    private void HandleModelTabCaptionChanged(TabEventArgs e)
     {
         if (_views.TryGetValue(e.Tab, out ContentTabViewModel? view))
         {
             view.RefreshCaption();
+        }
+    }
+
+    private static void InvokeOnUiThread(Action action)
+    {
+        if (Dispatcher.UIThread.CheckAccess())
+        {
+            action();
+        }
+        else
+        {
+            Dispatcher.UIThread.InvokeAsync(action).GetAwaiter().GetResult();
         }
     }
 
