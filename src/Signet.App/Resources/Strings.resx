@@ -206,6 +206,12 @@
   <data name="EditTocWindow_SortByBookOrderTip" xml:space="preserve">
     <value>Ustaw wpisy na każdym poziomie w kolejności, w jakiej ich cele występują w książce</value>
   </data>
+  <data name="EditTocWindow_ExpandAllTip" xml:space="preserve">
+    <value>Rozwiń wszystkie wpisy.</value>
+  </data>
+  <data name="EditTocWindow_CollapseAllTip" xml:space="preserve">
+    <value>Zwiń wszystkie wpisy.</value>
+  </data>
   <data name="EditToc_AlreadyInBookOrder" xml:space="preserve">
     <value>Wpisy są już w kolejności książki.</value>
   </data>

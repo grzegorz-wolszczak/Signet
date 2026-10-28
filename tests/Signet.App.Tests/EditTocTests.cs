@@ -69,6 +69,29 @@ public sealed class EditTocTests : IDisposable
     }
 
     [Fact]
+    public void Expand_and_collapse_all_changes_every_nested_branch()
+    {
+        // Arrange
+        EditTocViewModel vm = NewViewModel();
+        EditTocNodeViewModel alphaOne = vm.Nodes[0].Children[0];
+        alphaOne.Children.Add(new EditTocNodeViewModel { Parent = alphaOne });
+        EditTocNodeViewModel[] expandable = Flatten(vm).Where(node => node.Children.Count > 0).ToArray();
+
+        // Act
+        vm.CollapseAllCommand.Execute(null);
+
+        // Assert
+        expandable.Should().HaveCount(2, "the test tree includes a grandchild");
+        expandable.Should().OnlyContain(node => !node.IsExpanded);
+
+        // Act
+        vm.ExpandAllCommand.Execute(null);
+
+        // Assert
+        expandable.Should().OnlyContain(node => node.IsExpanded);
+    }
+
+    [Fact]
     public void Sort_puts_the_entries_of_every_level_back_in_book_order()
     {
         // Arrange
