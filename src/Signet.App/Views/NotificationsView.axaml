@@ -6,9 +6,27 @@
              x:DataType="vm:NotificationsViewModel">
 
   <UserControl.Styles>
-    <!-- An error (a blocked or failed operation): the error color. -->
-    <Style Selector="SelectableTextBlock.error">
-      <Setter Property="Foreground" Value="{DynamicResource SignetErrorBrush}" />
+    <!-- The timestamp column: one background and one text color for every row (Appearance › Interface Colors). -->
+    <Style Selector="Border.timestampCell">
+      <Setter Property="Background" Value="{DynamicResource SignetNotificationsTimestampBackgroundBrush}" />
+    </Style>
+    <Style Selector="TextBlock.timestampText">
+      <Setter Property="Foreground" Value="{DynamicResource SignetNotificationsTimestampForegroundBrush}" />
+    </Style>
+
+    <!-- The message column: an ordinary row and a warning row (a blocked or failed operation) each have their own
+         background and text color (Appearance › Interface Colors). -->
+    <Style Selector="Border.messageCell">
+      <Setter Property="Background" Value="{DynamicResource SignetNotificationsMessageInfoBackgroundBrush}" />
+    </Style>
+    <Style Selector="Border.messageCell.error">
+      <Setter Property="Background" Value="{DynamicResource SignetNotificationsMessageWarningBackgroundBrush}" />
+    </Style>
+    <Style Selector="SelectableTextBlock.messageText">
+      <Setter Property="Foreground" Value="{DynamicResource SignetNotificationsMessageInfoForegroundBrush}" />
+    </Style>
+    <Style Selector="SelectableTextBlock.messageText.error">
+      <Setter Property="Foreground" Value="{DynamicResource SignetNotificationsMessageWarningForegroundBrush}" />
     </Style>
   </UserControl.Styles>
 
@@ -41,11 +59,14 @@
                     Stretch="Uniform" Width="13" Height="13"
                     VerticalAlignment="Center"
                     IsVisible="{Binding IsWarning}" />
-              <TextBlock Grid.Column="1" Classes="entryFont" Text="{Binding TimeText}"
-                         Opacity="0.7" Margin="0,0,10,0" VerticalAlignment="Center" />
-              <SelectableTextBlock Grid.Column="2" Classes="entryFont" Text="{Binding Message}"
-                                   Classes.error="{Binding IsWarning}"
-                                   TextWrapping="Wrap" VerticalAlignment="Center" />
+              <Border Grid.Column="1" Classes="timestampCell" Margin="0,0,10,0">
+                <TextBlock Classes="entryFont timestampFont timestampText" Text="{Binding TimeText}"
+                           Opacity="0.7" VerticalAlignment="Center" />
+              </Border>
+              <Border Grid.Column="2" Classes="messageCell" Classes.error="{Binding IsWarning}">
+                <SelectableTextBlock Classes="entryFont messageFont messageText" Classes.error="{Binding IsWarning}"
+                                     Text="{Binding Message}" TextWrapping="Wrap" VerticalAlignment="Center" />
+              </Border>
             </Grid>
           </DataTemplate>
         </ListBox.ItemTemplate>

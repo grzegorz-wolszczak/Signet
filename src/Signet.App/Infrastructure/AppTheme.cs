@@ -145,6 +145,21 @@ public static class AppTheme
         SetBrush(app, "SignetDocumentTabSelectedBackgroundBrush", theme.Background(ThemeKeys.UiDocumentTabSelected));
         SetBrush(app, "SignetTextSelectionBrush", theme.Background(ThemeKeys.UiTextSelection));
         SetBrush(app, "SignetTextSelectionForegroundBrush", theme.Foreground(ThemeKeys.UiTextSelection));
+
+        // The two columns of the Notifications panel: each background unset = the list background
+        // (ui.notifications.background); the warning message foreground unset = the error notification color; the rest
+        // unset = the normal text color.
+        Color? notificationsBackground = theme.Color(ThemeKeys.UiNotificationsBackground);
+        SetBrush(app, "SignetNotificationsTimestampBackgroundBrush",
+            theme.Color(ThemeKeys.UiNotificationsTimestampBackground) ?? notificationsBackground);
+        SetBrush(app, "SignetNotificationsTimestampForegroundBrush", theme.Color(ThemeKeys.UiNotificationsTimestampForeground));
+        SetBrush(app, "SignetNotificationsMessageInfoBackgroundBrush",
+            theme.Color(ThemeKeys.UiNotificationsMessageInfoBackground) ?? notificationsBackground);
+        SetBrush(app, "SignetNotificationsMessageInfoForegroundBrush", theme.Color(ThemeKeys.UiNotificationsMessageInfoForeground));
+        SetBrush(app, "SignetNotificationsMessageWarningBackgroundBrush",
+            theme.Color(ThemeKeys.UiNotificationsMessageWarningBackground) ?? notificationsBackground);
+        SetBrush(app, "SignetNotificationsMessageWarningForegroundBrush",
+            theme.Color(ThemeKeys.UiNotificationsMessageWarningForeground) ?? theme.Color(ThemeKeys.UiErrorNotification));
         app.Resources[FolderIconKey] = FolderIcon(theme);
         app.Resources[FileIconKey] = FileIcon(theme);
         ActionIcons.SetStateColors(
