@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:actions="using:Signet.App.Actions"
              xmlns:infra="using:Signet.App.Infrastructure"
              xmlns:vm="using:Signet.App.ViewModels"
              xmlns:loc="using:Signet.App.Resources"
@@ -113,7 +114,7 @@
                       IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
           </Panel>
         </Button>
-        <Button Classes="iconToolbar danger" Tag="delete" Command="{Binding DeleteCommand}"
+        <Button Classes="iconToolbar danger" Tag="{x:Static actions:ActionIconKeys.Delete}" Command="{Binding DeleteCommand}"
                 ToolTip.Tip="{loc:Loc Common_Delete}">
           <Panel Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}">
             <Image Source="{Binding $parent[Button].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"

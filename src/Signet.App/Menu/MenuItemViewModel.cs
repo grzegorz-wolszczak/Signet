@@ -31,11 +31,13 @@ public sealed partial class MenuItemViewModel : ObservableObject
         IReadOnlyList<MenuItemViewModel>? items,
         bool isSeparator,
         ICommand? command = null,
-        bool isCheckable = false)
+        bool isCheckable = false,
+        string? iconKey = null)
     {
         _header = header;
         _action = action;
         _externalCommand = command;
+        _iconKey = iconKey;
         Items = items;
         IsSeparator = isSeparator;
         _isCheckable = isCheckable || (action?.IsCheckable ?? false);
@@ -125,6 +127,7 @@ public sealed partial class MenuItemViewModel : ObservableObject
     }
 
     private readonly ICommand? _externalCommand;
+    private readonly string? _iconKey;
 
     /// <summary>Creates a separator.</summary>
     public static MenuItemViewModel Separator() => new(SeparatorHeader, null, null, isSeparator: true);
@@ -137,9 +140,9 @@ public sealed partial class MenuItemViewModel : ObservableObject
     public static MenuItemViewModel ForAction(AppAction action) =>
         new(action.Text, action, null, isSeparator: false);
 
-    /// <summary>Creates an item with its own command (e.g. "Customize…").</summary>
-    public static MenuItemViewModel ForCommand(string header, ICommand command) =>
-        new(header, null, null, isSeparator: false, command);
+    /// <summary>Creates an item with its own command (e.g. "Customize…"), optionally with an icon.</summary>
+    public static MenuItemViewModel ForCommand(string header, ICommand command, string? iconKey = null) =>
+        new(header, null, null, isSeparator: false, command: command, iconKey: iconKey);
 
     /// <summary>Creates a checkable (checkbox) item with its own toggling command.</summary>
     public static MenuItemViewModel ForToggle(string header, bool isChecked, ICommand command) =>
@@ -195,10 +198,10 @@ public sealed partial class MenuItemViewModel : ObservableObject
     public KeyGesture? InputGesture => _action?.Gesture;
 
     /// <summary>
-    /// Action icon key (the menu shows icons). Checkable items have no icon —
+    /// Icon key (the menu shows icons). Checkable items have no icon —
     /// Avalonia draws the check mark in its place.
     /// </summary>
-    public string? IconKey => IsCheckable ? null : _action?.IconKey;
+    public string? IconKey => IsCheckable ? null : _action?.IconKey ?? _iconKey;
 
     /// <summary>Icon appearance state (e.g. the gray/red "Save" floppy disk).</summary>
     public ActionIconState IconState => _action?.IconState ?? ActionIconState.Normal;

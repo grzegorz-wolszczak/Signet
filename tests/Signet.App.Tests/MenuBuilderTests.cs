@@ -367,11 +367,14 @@ public sealed class MenuBuilderTests
         MenuItemViewModel first = file.Items!.Single(i => i.Header == $"_1. {Path.GetFileName(existingPath)}");
         MenuItemViewModel[] firstContextItems = first.ContextItems!.ToArray();
         firstContextItems.Select(i => i.Header).Should().Equal("Open File Location", "Remove from Recent Files");
+        firstContextItems[0].IconKey.Should().Be(host.Registry.Get(AppActionIds.Open)!.IconKey);
+        firstContextItems[1].IconKey.Should().Be(ActionIconKeys.Delete);
         firstContextItems[0].Command!.CanExecute(null).Should().BeTrue("the file exists");
 
         MenuItemViewModel second = file.Items!.Single(i => i.Header == "_2. b.epub");
         MenuItemViewModel remove = second.ContextItems!.Should().ContainSingle().Subject;
         remove.Header.Should().Be("Remove from Recent Files");
+        remove.IconKey.Should().Be(ActionIconKeys.Delete);
 
         // Act
         remove.Command!.Execute(null);

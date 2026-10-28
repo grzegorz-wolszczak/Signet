@@ -7,7 +7,11 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AwesomeAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using CommunityToolkit.Mvvm.Input;
+using Signet.App.Actions;
+using Signet.App.Infrastructure;
+using Signet.Core.Misc;
 using Signet.App.ViewModels;
 using Signet.Core.Tests.TestSupport;
 using Signet.App.Views;
@@ -185,6 +189,45 @@ public sealed class StartScreenTests
         open.Bounds.Y.Should().Be(openTop, "the buttons did not move");
         heading.Bounds.Y.Should().Be(headingTop, "the heading did not move");
         (scroll.Bounds.Bottom + 32).Should().BeLessThanOrEqualTo(window.Bounds.Height + 1, "the list ends within the window");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void RecentFileContextMenu_WhenOpened_ShowsExpectedIcons()
+    {
+        // Arrange
+        using TempDir temp = new();
+        string path = temp.Combine("Book.epub");
+        File.WriteAllText(path, string.Empty);
+        new IconThemeManager(new SettingsStore(temp.Combine("icon-theme-settings.xml")), NullLogger<IconThemeManager>.Instance).ApplySaved();
+        using StartScreenViewModel vm = new(
+            new RelayCommand(() => { }), new RelayCommand(() => { }),
+            () => new[] { path }, _ => { })
+        {
+            IsVisible = true,
+        };
+        Window window = new() { Width = 600, Height = 400, Content = new StartScreenView { DataContext = vm } };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Button entry = window.GetVisualDescendants().OfType<Button>().First(b => b.Classes.Contains("recentFile"));
+
+        // Act
+        entry.ContextMenu!.Open(entry);
+        Dispatcher.UIThread.RunJobs();
+        MenuItem[] items = entry.ContextMenu.Items.OfType<MenuItem>().ToArray();
+
+        // Assert
+        items.Select(i => i.Tag).Should().Equal(ActionIconKeys.Open, ActionIconKeys.Delete);
+        foreach (MenuItem item in items)
+        {
+            Control icon = item.Icon.Should().BeAssignableTo<Control>().Subject;
+            icon.GetVisualDescendants().Should().Contain(
+                c => c.IsVisible && ((c is Image && ((Image)c).Source != null) || (c is PathIcon && ((PathIcon)c).Data != null)),
+                "the icon of {0} is drawn from its Tag", item.Header);
+        }
+
+        entry.ContextMenu.Close();
         window.Close();
     }
 }

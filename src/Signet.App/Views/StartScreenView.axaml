@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:actions="using:Signet.App.Actions"
              xmlns:infra="using:Signet.App.Infrastructure"
              xmlns:vm="using:Signet.App.ViewModels"
              xmlns:loc="using:Signet.App.Resources"
@@ -61,8 +62,28 @@
                     Command="{Binding OpenCommand}" ToolTip.Tip="{Binding ToolTip}">
               <Button.ContextMenu>
                 <ContextMenu>
-                  <MenuItem Header="{loc:Loc Menu_OpenFileLocation}" Command="{Binding OpenFolderCommand}" IsVisible="{Binding !IsMissing}" />
-                  <MenuItem Header="{loc:Loc Menu_RemoveFromRecentFiles}" Command="{Binding RemoveCommand}" />
+                  <ContextMenu.Styles>
+                    <!-- The icon key of an item is its Tag, as on the toolbar buttons. -->
+                    <Style Selector="MenuItem.withIcon">
+                      <Setter Property="Icon">
+                        <Template>
+                          <Panel>
+                            <Image Width="16" Height="16"
+                                   Source="{Binding $parent[MenuItem].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                            <PathIcon Width="16" Height="16"
+                                      Data="{Binding $parent[MenuItem].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                          </Panel>
+                        </Template>
+                      </Setter>
+                    </Style>
+                  </ContextMenu.Styles>
+                  <MenuItem Classes="withIcon" Tag="{x:Static actions:ActionIconKeys.Open}"
+                            Header="{loc:Loc Menu_OpenFileLocation}" Command="{Binding OpenFolderCommand}"
+                            IsVisible="{Binding !IsMissing}" />
+                  <MenuItem Classes="withIcon" Tag="{x:Static actions:ActionIconKeys.Delete}"
+                            Header="{loc:Loc Menu_RemoveFromRecentFiles}" Command="{Binding RemoveCommand}" />
                 </ContextMenu>
               </Button.ContextMenu>
               <StackPanel>
