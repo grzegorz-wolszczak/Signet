@@ -156,7 +156,7 @@ public sealed partial class MenuItemViewModel : ObservableObject
     public bool IsSeparator { get; }
 
     /// <summary>
-    /// Items of the context menu shown on a right click on this item (e.g. "Remove from Recent Files"),
+    /// Items of the context menu shown on a right click on this item (e.g. "Open File Location" or "Remove from Recent Files"),
     /// or <see langword="null"/> when the item has none.
     /// </summary>
     public IReadOnlyList<MenuItemViewModel>? ContextItems { get; set; }

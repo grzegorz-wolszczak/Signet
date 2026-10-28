@@ -355,13 +355,19 @@ public sealed class MenuBuilderTests
     }
 
     [Fact]
-    public void A_recent_file_has_a_context_item_that_removes_it_from_the_list()
+    public void A_recent_file_has_context_items_to_open_its_location_or_remove_it()
     {
         // Arrange
         using UiCultureScope culture = new("en");
         using TestHost host = new();
-        FakeRecentFiles recent = new() { Files = new[] { "/books/a.epub", "/books/b.epub" } };
+        string existingPath = typeof(MenuBuilderTests).Assembly.Location;
+        FakeRecentFiles recent = new() { Files = new[] { existingPath, "/books/b.epub" } };
         MenuItemViewModel file = BuildWith(host, recent).Single(m => m.Header == "_File");
+
+        MenuItemViewModel first = file.Items!.Single(i => i.Header == $"_1. {Path.GetFileName(existingPath)}");
+        MenuItemViewModel[] firstContextItems = first.ContextItems!.ToArray();
+        firstContextItems.Select(i => i.Header).Should().Equal("Open File Location", "Remove from Recent Files");
+        firstContextItems[0].Command!.CanExecute(null).Should().BeTrue("the file exists");
 
         MenuItemViewModel second = file.Items!.Single(i => i.Header == "_2. b.epub");
         MenuItemViewModel remove = second.ContextItems!.Should().ContainSingle().Subject;
