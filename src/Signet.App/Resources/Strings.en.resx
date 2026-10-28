@@ -3809,6 +3809,9 @@ You can later restore the book to this checkpoint via the "Revert to..." entries
   <data name="NotificationsView_Clear" xml:space="preserve">
     <value>Clear</value>
   </data>
+  <data name="NotificationsView_WrapRows" xml:space="preserve">
+    <value>Wrap Rows</value>
+  </data>
   <data name="MainWindow_UnreadWarningsTooltip" xml:space="preserve">
     <value>Unread errors: {0}. Click to open the Notifications panel.</value>
   </data>

@@ -879,6 +879,14 @@ public sealed class SettingsStore
         }
     }
 
+    /// <summary>Whether a message that does not fit the message column wraps onto more lines (the row grows) instead
+    /// of being cut with an ellipsis.</summary>
+    public bool NotificationsWrapRows
+    {
+        get => ReadBool("notifications_wrap_rows", false);
+        set => Write("notifications_wrap_rows", value);
+    }
+
     /// <summary>
     /// After how many milliseconds of resting on a closing tag the opening tag tooltip appears
     /// (<see cref="CodeEditorOpenTagHint"/>); 0–<see cref="OpenTagHintDelayMaxMs"/>, 500 by default.

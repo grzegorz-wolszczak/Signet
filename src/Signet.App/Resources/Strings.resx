@@ -3809,6 +3809,9 @@ Do tego stanu książki możesz później wrócić przez pozycje „Przywróć d
   <data name="NotificationsView_Clear" xml:space="preserve">
     <value>Wyczyść</value>
   </data>
+  <data name="NotificationsView_WrapRows" xml:space="preserve">
+    <value>Zawijaj wiersze</value>
+  </data>
   <data name="MainWindow_UnreadWarningsTooltip" xml:space="preserve">
     <value>Nieprzeczytane błędy: {0}. Kliknij, aby otworzyć panel Powiadomienia.</value>
   </data>

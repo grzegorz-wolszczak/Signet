@@ -28,15 +28,36 @@
     <Style Selector="SelectableTextBlock.messageText.error">
       <Setter Property="Foreground" Value="{DynamicResource SignetNotificationsMessageWarningForegroundBrush}" />
     </Style>
+
+    <!-- The message does not wrap by default (an ellipsis cuts it); the "wrap rows" toggle of the left toolbar turns
+         it on, as Find Usages does for its own columns. -->
+    <Style Selector="SelectableTextBlock.messageText">
+      <Setter Property="TextWrapping" Value="NoWrap" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+    <Style Selector="ListBox.wrapRows SelectableTextBlock.messageText">
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="TextTrimming" Value="None" />
+    </Style>
   </UserControl.Styles>
 
   <DockPanel Margin="4">
-    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,4">
-      <Button Content="{loc:Loc NotificationsView_Clear}"
-              Command="{Binding ClearCommand}"
-              IsEnabled="{Binding HasEntries}"
-              Padding="8,2" />
-    </StackPanel>
+    <!-- The left toolbar, like the Find tool window of the JetBrains IDEs (Find Usages has the same one). -->
+    <Border DockPanel.Dock="Left" BorderThickness="0,0,1,0" Padding="2"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <StackPanel Spacing="4">
+        <Button x:Name="ClearButton" Classes="panelTool" Command="{Binding ClearCommand}"
+                IsEnabled="{Binding HasEntries}" ToolTip.Tip="{loc:Loc NotificationsView_Clear}">
+          <!-- Material Design "delete" icon (Apache License 2.0). -->
+          <Path Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
+        </Button>
+        <ToggleButton x:Name="WrapRowsButton" Classes="panelTool" IsChecked="{Binding WrapRows, Mode=TwoWay}"
+                      ToolTip.Tip="{loc:Loc NotificationsView_WrapRows}">
+          <!-- Material Design "wrap" icon (Apache License 2.0): a line that turns back under itself. -->
+          <Path Data="M21,5H3V7H21V5M3,19H10V17H3V19M3,13H18C19,13 20,13.43 20,15C20,16.57 19,17 18,17H16V15L12,18L16,21V19H18C20.95,19 22,17.73 22,15C22,12.27 20.95,11 18,11H3V13Z" />
+        </ToggleButton>
+      </StackPanel>
+    </Border>
 
     <Panel>
       <TextBlock Text="{loc:Loc NotificationsView_Empty}"
@@ -52,7 +73,7 @@
                Background="{DynamicResource SignetNotificationsBackgroundBrush}">
         <ListBox.ItemTemplate>
           <DataTemplate x:DataType="vm:NotificationEntry">
-            <Grid ColumnDefinitions="18,Auto,*" MinHeight="20">
+            <Grid ColumnDefinitions="18,Auto,*">
               <Path Grid.Column="0"
                     Data="{StaticResource SignetWarningGeometry}"
                     Fill="{DynamicResource SignetErrorBrush}"
@@ -65,7 +86,7 @@
               </Border>
               <Border Grid.Column="2" Classes="messageCell" Classes.error="{Binding IsWarning}">
                 <SelectableTextBlock Classes="entryFont messageFont messageText" Classes.error="{Binding IsWarning}"
-                                     Text="{Binding Message}" TextWrapping="Wrap" VerticalAlignment="Center" />
+                                     Text="{Binding Message}" VerticalAlignment="Center" />
               </Border>
             </Grid>
           </DataTemplate>

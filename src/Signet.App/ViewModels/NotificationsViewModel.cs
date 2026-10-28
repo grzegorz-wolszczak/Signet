@@ -2,6 +2,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Threading;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Signet.App.Services;
 using Signet.Core.Misc;
@@ -37,6 +38,7 @@ public sealed partial class NotificationsViewModel : ViewModelBase
         ArgumentNullException.ThrowIfNull(statusBar);
         statusBar.MessageShown += OnMessageShown;
         _settings = settings;
+        _wrapRows = settings?.NotificationsWrapRows ?? false;
         if (_settings is not null)
         {
             _settings.SettingChanged += OnSettingChanged;
@@ -94,6 +96,21 @@ public sealed partial class NotificationsViewModel : ViewModelBase
 
     /// <summary>Marks all warnings as read (the user opened or clicked the panel).</summary>
     public void MarkAsRead() => UnreadWarnings = 0;
+
+    /// <summary>
+    /// Whether a message that does not fit the message column wraps onto more lines (the row grows) instead of being
+    /// cut with an ellipsis; remembered in the settings.
+    /// </summary>
+    [ObservableProperty]
+    private bool _wrapRows;
+
+    partial void OnWrapRowsChanged(bool value)
+    {
+        if (!IsSample && _settings is not null)
+        {
+            _settings.NotificationsWrapRows = value;
+        }
+    }
 
     /// <summary>Clears the list (and the unread counter).</summary>
     [RelayCommand]
