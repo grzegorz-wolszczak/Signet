@@ -80,6 +80,28 @@ public sealed class EditTocWindowTests : IDisposable
         control.TranslatePoint(new Point(control.Bounds.Width / 2, control.Bounds.Height / 2), window)!.Value;
 
     [AvaloniaFact]
+    public void ExpandCollapseButtons_WhenDisplayed_AreLeftOfTable()
+    {
+        // Arrange
+        (EditTocWindow window, _, TreeDataGrid grid, Book book) = Show();
+        using (book)
+        {
+            Button expand = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "ExpandAllButton");
+            Button collapse = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "CollapseAllButton");
+
+            // Act
+            double tableLeft = grid.TranslatePoint(new Point(0, 0), window)!.Value.X;
+            double expandRight = expand.TranslatePoint(new Point(expand.Bounds.Width, expand.Bounds.Height / 2), window)!.Value.X;
+            double collapseRight = collapse.TranslatePoint(new Point(collapse.Bounds.Width, collapse.Bounds.Height / 2), window)!.Value.X;
+
+            // Assert
+            expandRight.Should().BeLessThan(tableLeft);
+            collapseRight.Should().BeLessThan(tableLeft);
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public void The_entries_are_a_hierarchical_table_with_resizable_title_level_and_target_columns()
     {
         // Arrange
