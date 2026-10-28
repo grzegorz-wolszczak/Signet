@@ -741,12 +741,41 @@ public sealed class MainWindowBookOperationsTests : IDisposable
         });
     }
 
+    [Fact]
+    public async Task Reordering_text_uses_the_delayed_progress_runner()
+    {
+        await SingleThreadContext.RunAsync(async () =>
+        {
+            // Arrange
+            using UiCultureScope culture = new("en");
+            TempDir temp = _disposables.Add(new TempDir());
+            (MainWindowViewModel sut, _) = Open(temp, CorpusPaths.Epub3WithNcx);
+            Runs immediate = new(sut);
+            Runs delayed = new(sut);
+            sut.ProgressRunner = immediate.Runner;
+            sut.DelayedProgressRunner = delayed.Runner;
+
+            BookBrowserNode selected = sut.BookBrowser.Nodes.Single(node => node.Header == "Text").Children
+                .First(node => node.Entry is { ReadingOrder: >= 0 });
+            sut.BookBrowser.UpdateSelection(new object?[] { selected });
+
+            // Act
+            await sut.BookBrowser.MoveTextDownCommand.ExecuteAsync(null);
+
+            // Assert
+            immediate.Windows.Should().BeEmpty();
+            delayed.Windows.Select(window => window.Cancellable).Should().Equal(true, false);
+            sut.BookBrowser.SelectedResources.Should().ContainSingle().Which.Should().BeSameAs(selected.Entry!.Resource);
+        });
+    }
+
     // Stands in for the main window while it is busy: every operation is refused before its work runs.
     private sealed class RefusingOperationHost : IBookOperationHost
     {
         public List<string> Titles { get; } = new();
 
-        public Task<BookOperationOutcome<T>> RunAsync<T>(string title, string? checkpointName, Func<T> work)
+        public Task<BookOperationOutcome<T>> RunAsync<T>(
+            string title, string? checkpointName, Func<T> work, bool delayedProgressWindow = false)
         {
             Titles.Add(title);
             return Task.FromResult(new BookOperationOutcome<T>(false, default, false));

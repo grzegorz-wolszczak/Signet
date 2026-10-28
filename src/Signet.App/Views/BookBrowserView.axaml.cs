@@ -66,6 +66,16 @@ public partial class BookBrowserView : UserControl
     private Dictionary<string, IColumn<BookBrowserNode>> _optionalColumns = new();
     private IReadOnlyList<BookBrowserNode> _selectedNodes = Array.Empty<BookBrowserNode>();
     private BookBrowserNode? _editingNode;
+    private IPointer? _textReorderPointer;
+    private TreeDataGridRow? _textReorderSourceRow;
+    private BookBrowserNode? _textReorderCandidate;
+    private BookBrowserNode? _textReorderFolder;
+    private Dictionary<BookBrowserNode, int>? _textReorderIndexes;
+    private int _textReorderSourceIndex = -1;
+    private Point _textReorderStart;
+    private bool _isTextReorderDragging;
+
+    private const double TextReorderDragThreshold = 4;
 
     /// <summary>Initializes the view.</summary>
     public BookBrowserView()
@@ -77,6 +87,10 @@ public partial class BookBrowserView : UserControl
         Tree.DoubleTapped += OnDoubleTapped;
         Tree.AddHandler(ContextRequestedEvent, OnTreeContextRequested, RoutingStrategies.Tunnel);
         Tree.AddHandler(PointerPressedEvent, OnPointerPressed, RoutingStrategies.Tunnel);
+        Tree.AddHandler(PointerPressedEvent, OnTextReorderPointerPressed, RoutingStrategies.Tunnel);
+        Tree.AddHandler(PointerMovedEvent, OnTextReorderPointerMoved, RoutingStrategies.Bubble);
+        Tree.AddHandler(PointerReleasedEvent, OnTextReorderPointerReleased, RoutingStrategies.Bubble);
+        Tree.PointerCaptureLost += OnTextReorderPointerCaptureLost;
         // Tunnel: in the bubble phase Enter is already consumed before it reaches the tree.
         Tree.AddHandler(KeyDownEvent, OnRenameEditorKeyDown, RoutingStrategies.Tunnel);
         Tree.AddHandler(LostFocusEvent, OnRenameEditorLostFocus, RoutingStrategies.Bubble);
@@ -85,7 +99,11 @@ public partial class BookBrowserView : UserControl
             AppTheme.Changed += OnAppThemeChanged;
             ApplyAppearance();
         };
-        DetachedFromVisualTree += (_, _) => AppTheme.Changed -= OnAppThemeChanged;
+        DetachedFromVisualTree += (_, _) =>
+        {
+            AppTheme.Changed -= OnAppThemeChanged;
+            ResetTextReorderDrag(releasePointer: true);
+        };
     }
 
     private void OnAppThemeChanged(object? sender, EventArgs e) => ApplyAppearance();
@@ -177,6 +195,7 @@ public partial class BookBrowserView : UserControl
 
     private void OnDataContextChanged(object? sender, EventArgs e)
     {
+        ResetTextReorderDrag(releasePointer: true);
         if (_boundViewModel is not null)
         {
             _boundViewModel.AppearanceChanged -= OnAppearanceChanged;
@@ -411,6 +430,253 @@ public partial class BookBrowserView : UserControl
         {
             SelectNodes(new[] { node });
         }
+    }
+
+    private void OnTextReorderPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (!e.GetCurrentPoint(Tree).Properties.IsLeftButtonPressed)
+        {
+            return;
+        }
+
+        ResetTextReorderDrag(releasePointer: true);
+        TreeDataGridRow? row = (e.Source as Visual)?.FindAncestorOfType<TreeDataGridRow>(includeSelf: true);
+        if (_boundViewModel is not { HasBook: true, IsSample: false } vm
+            || IsInRenameEditor(e.Source)
+            || row?.Model is not BookBrowserNode node
+            || node.Entry is not { ResourceType: ResourceType.Html }
+            || node.IsEditing)
+        {
+            return;
+        }
+
+        BookBrowserNode? folder = vm.Nodes.FirstOrDefault(n => n.FolderKind == OpfModelGroupKind.Text);
+        int sourceIndex = folder?.Children.IndexOf(node) ?? -1;
+        if (folder is null || sourceIndex < 0)
+        {
+            return;
+        }
+
+        _textReorderPointer = e.Pointer;
+        _textReorderSourceRow = row;
+        _textReorderCandidate = node;
+        _textReorderFolder = folder;
+        _textReorderSourceIndex = sourceIndex;
+        _textReorderStart = e.GetPosition(Tree);
+    }
+
+    private void OnTextReorderPointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (!ReferenceEquals(_textReorderPointer, e.Pointer) || _textReorderCandidate is not { } candidate)
+        {
+            return;
+        }
+
+        if (!e.GetCurrentPoint(Tree).Properties.IsLeftButtonPressed)
+        {
+            ResetTextReorderDrag(releasePointer: true);
+            return;
+        }
+
+        Point position = e.GetPosition(Tree);
+        Vector delta = position - _textReorderStart;
+        if (!_isTextReorderDragging)
+        {
+            if (Math.Abs(delta.X) < TextReorderDragThreshold && Math.Abs(delta.Y) < TextReorderDragThreshold)
+            {
+                return;
+            }
+
+            if (_boundViewModel is not { HasBook: true, IsSample: false } vm
+                || _selectedNodes.Count != 1
+                || !ReferenceEquals(_selectedNodes[0], candidate)
+                || vm.SelectedResources is not { Count: 1 } selected
+                || !ReferenceEquals(selected[0], candidate.Entry?.Resource)
+                || _textReorderFolder is not { } folder
+                || _textReorderSourceRow is not { } sourceRow)
+            {
+                e.Handled = true;
+                ResetTextReorderDrag(releasePointer: false);
+                return;
+            }
+
+            _textReorderIndexes = new Dictionary<BookBrowserNode, int>(folder.Children.Count);
+            for (int i = 0; i < folder.Children.Count; i++)
+            {
+                _textReorderIndexes.Add(folder.Children[i], i);
+            }
+
+            _isTextReorderDragging = true;
+            e.Pointer.Capture(sourceRow);
+        }
+
+        if (TryResolveTextReorderTarget(position, out TextReorderDropTarget target))
+        {
+            TextReorderIndicator.Margin = new Thickness(0, target.IndicatorY, 0, 0);
+            TextReorderIndicator.IsVisible = true;
+        }
+        else
+        {
+            TextReorderIndicator.IsVisible = false;
+        }
+
+        e.Handled = true;
+    }
+
+    private bool TryResolveTextReorderTarget(Point pointerPosition, out TextReorderDropTarget target)
+    {
+        target = default;
+        if (_textReorderFolder is not { } folder
+            || _textReorderIndexes is not { } indexes
+            || _textReorderSourceIndex < 0
+            || _textReorderSourceIndex >= folder.Children.Count
+            || !ReferenceEquals(folder.Children[_textReorderSourceIndex], _textReorderCandidate)
+            || Tree.RowsPresenter is not { } rowsPresenter
+            || rowsPresenter.TranslatePoint(default, Tree) is not { } rowsOrigin)
+        {
+            return false;
+        }
+
+        Rect rowsBounds = new(rowsOrigin, rowsPresenter.Bounds.Size);
+        if (!rowsBounds.Contains(pointerPosition) || pointerPosition.X < 0 || pointerPosition.X > Tree.Bounds.Width)
+        {
+            return false;
+        }
+
+        List<TextReorderRowBounds> visibleRows = new();
+        foreach (TreeDataGridRow row in Tree.GetVisualDescendants().OfType<TreeDataGridRow>())
+        {
+            if (!row.IsEffectivelyVisible
+                || row.Model is not BookBrowserNode node
+                || !indexes.TryGetValue(node, out int index)
+                || row.Bounds.Height <= 0
+                || row.TranslatePoint(default, Tree) is not { } rowOrigin)
+            {
+                continue;
+            }
+
+            double bottom = rowOrigin.Y + row.Bounds.Height;
+            if (bottom <= rowsBounds.Top || rowOrigin.Y >= rowsBounds.Bottom)
+            {
+                continue;
+            }
+
+            visibleRows.Add(new TextReorderRowBounds(index, rowOrigin.Y, bottom));
+        }
+
+        if (visibleRows.Count == 0)
+        {
+            return false;
+        }
+
+        visibleRows.Sort(static (left, right) => left.Top.CompareTo(right.Top));
+        if (pointerPosition.Y < visibleRows[0].Top || pointerPosition.Y > visibleRows[^1].Bottom)
+        {
+            return false;
+        }
+
+        int insertionIndex = -1;
+        double indicatorY = 0;
+        for (int i = 0; i < visibleRows.Count; i++)
+        {
+            TextReorderRowBounds row = visibleRows[i];
+            if (pointerPosition.Y <= row.Center)
+            {
+                insertionIndex = row.Index;
+                indicatorY = row.Top;
+                break;
+            }
+
+            if (pointerPosition.Y <= row.Bottom)
+            {
+                insertionIndex = row.Index + 1;
+                indicatorY = row.Bottom;
+                break;
+            }
+
+            if (i + 1 < visibleRows.Count && pointerPosition.Y < visibleRows[i + 1].Top)
+            {
+                insertionIndex = row.Index + 1;
+                indicatorY = row.Bottom;
+                break;
+            }
+        }
+
+        int targetIndex = insertionIndex > _textReorderSourceIndex ? insertionIndex - 1 : insertionIndex;
+        if (targetIndex < 0 || targetIndex >= folder.Children.Count || targetIndex == _textReorderSourceIndex)
+        {
+            return false;
+        }
+
+        double visibleBottom = Math.Max(rowsBounds.Top, rowsBounds.Bottom - TextReorderIndicator.Height);
+        target = new TextReorderDropTarget(
+            targetIndex,
+            Math.Clamp(indicatorY, rowsBounds.Top, visibleBottom));
+        return true;
+    }
+
+    private async void OnTextReorderPointerReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        if (!ReferenceEquals(_textReorderPointer, e.Pointer))
+        {
+            return;
+        }
+
+        bool wasDragging = _isTextReorderDragging;
+        BookBrowserNode? node = _textReorderCandidate;
+        TextReorderDropTarget? target = wasDragging && TryResolveTextReorderTarget(
+            e.GetPosition(Tree), out TextReorderDropTarget resolvedTarget)
+            ? resolvedTarget
+            : null;
+        BookBrowserViewModel? vm = _boundViewModel;
+        ResetTextReorderDrag(releasePointer: true);
+
+        if (!wasDragging)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        if (target is { } readyTarget && node is not null && vm is not null)
+        {
+            await vm.MoveTextToIndexAsync(node, readyTarget.Index);
+        }
+    }
+
+    private void OnTextReorderPointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
+    {
+        if (_isTextReorderDragging
+            && ReferenceEquals(_textReorderPointer, e.Pointer))
+        {
+            TextReorderIndicator.IsVisible = false;
+        }
+    }
+
+    private void ResetTextReorderDrag(bool releasePointer)
+    {
+        IPointer? pointer = _textReorderPointer;
+        bool wasDragging = _isTextReorderDragging;
+        _textReorderPointer = null;
+        _textReorderSourceRow = null;
+        _textReorderCandidate = null;
+        _textReorderFolder = null;
+        _textReorderIndexes = null;
+        _textReorderSourceIndex = -1;
+        _isTextReorderDragging = false;
+        TextReorderIndicator.IsVisible = false;
+        TextReorderIndicator.Margin = default;
+
+        if (releasePointer && wasDragging)
+        {
+            pointer?.Capture(null);
+        }
+    }
+
+    private readonly record struct TextReorderDropTarget(int Index, double IndicatorY);
+
+    private readonly record struct TextReorderRowBounds(int Index, double Top, double Bottom)
+    {
+        public double Center => (Top + Bottom) / 2;
     }
 
     // --- in-place rename ---- //
@@ -748,13 +1014,13 @@ public partial class BookBrowserView : UserControl
     {
         SelectNodes(nodes);
 
-        // One file (the Book Browser follows the active tab): it is scrolled into view, once its folder has been expanded.
-        if (nodes.Count == 1)
+        if (nodes.Count > 0)
         {
-            BookBrowserNode node = nodes[0];
+            BookBrowserNode[] requested = nodes.ToArray();
             Dispatcher.UIThread.Post(
                 () =>
                 {
+                    BookBrowserNode node = requested.FirstOrDefault(candidate => RowOf(candidate) is not null) ?? requested[0];
                     if (_selection?.FindPath(node) is { } path && Tree.Rows?.ModelIndexToRowIndex(new IndexPath(path)) is >= 0 and var index)
                     {
                         Tree.RowsPresenter?.BringIntoView(index);

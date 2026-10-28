@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
@@ -34,7 +35,8 @@ public sealed class BookBrowserTreeTests
 
         public SuspendingBookOperationHost(BookBrowserViewModel viewModel) => _viewModel = viewModel;
 
-        public Task<BookOperationOutcome<T>> RunAsync<T>(string title, string? checkpointName, Func<T> work)
+        public Task<BookOperationOutcome<T>> RunAsync<T>(
+            string title, string? checkpointName, Func<T> work, bool delayedProgressWindow = false)
         {
             _viewModel.SuspendRebuilds = true;
             try
@@ -111,6 +113,10 @@ public sealed class BookBrowserTreeTests
             // Assert
             string[] expected = before.Select(node => node.Header).ToArray();
             (expected[0], expected[1]) = (expected[1], expected[0]);
+            BookBrowserNode reordered = vm.Nodes.Single(node => node.Header == "Text").Children
+                .Single(node => ReferenceEquals(node.Entry?.Resource, first.Entry!.Resource));
+            reordered.Should().BeSameAs(first);
+            vm.SelectedResources.Should().ContainSingle().Which.Should().BeSameAs(first.Entry!.Resource);
             string[] visible = tree.GetVisualDescendants().OfType<TreeDataGridRow>()
                 .Where(row => row.IsVisible)
                 .OrderBy(row => row.RowIndex)
@@ -120,6 +126,246 @@ public sealed class BookBrowserTreeTests
                 .Select(node => node.Header)
                 .ToArray();
             visible.Should().Equal(expected);
+            tree.GetVisualDescendants().OfType<TreeDataGridRow>().Where(row => row.IsVisible)
+                .Should().Contain(row => ReferenceEquals(row.Model, first));
+        }
+        finally
+        {
+            window.Close();
+            vm.Dispose();
+        }
+    }
+
+    [AvaloniaFact]
+    public async Task Reordering_keeps_visible_selection_and_scroll_but_reveals_an_edge_move()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = new ImportEpub(SyntheticBook.BuildEpub(temp, files: 100)).GetBook();
+        (Window window, BookBrowserViewModel vm, _, TreeDataGrid tree) =
+            Show(new SettingsStore(temp.Combine("settings.xml")), book);
+        vm.Operations = new SuspendingBookOperationHost(vm);
+
+        try
+        {
+            BookBrowserNode textFolder = vm.Nodes.Single(node => node.Header == "Text");
+            textFolder.IsExpanded = true;
+            Render(window);
+
+            int folderIndex = vm.Nodes.IndexOf(textFolder);
+            int targetIndex = 50;
+            int targetRow = tree.Rows!.ModelIndexToRowIndex(new IndexPath(folderIndex, targetIndex));
+            tree.RowsPresenter!.BringIntoView(targetRow);
+            Render(window);
+
+            BookBrowserNode[] visibleNodes = tree.GetVisualDescendants().OfType<TreeDataGridRow>()
+                .Where(row => row.IsVisible)
+                .OrderBy(row => row.RowIndex)
+                .Select(row => row.Model)
+                .OfType<BookBrowserNode>()
+                .Where(node => node.Entry is { ReadingOrder: >= 0 })
+                .ToArray();
+            visibleNodes.Should().NotBeEmpty();
+            BookBrowserNode selected = visibleNodes[visibleNodes.Length / 2];
+            int selectedIndex = textFolder.Children.IndexOf(selected);
+            tree.RowSelection!.Select(new IndexPath(folderIndex, selectedIndex));
+            Render(window);
+            double offsetBeforeMove = tree.Scroll!.Offset.Y;
+            offsetBeforeMove.Should().BeGreaterThan(0);
+
+            // Act
+            await vm.MoveTextDownCommand.ExecuteAsync(null);
+            Render(window);
+
+            // Assert
+            textFolder.Children.IndexOf(selected).Should().Be(selectedIndex + 1);
+            vm.SelectedResources.Should().ContainSingle().Which.Should().BeSameAs(selected.Entry!.Resource);
+            tree.Scroll!.Offset.Y.Should().Be(offsetBeforeMove);
+            tree.GetVisualDescendants().OfType<TreeDataGridRow>().Where(row => row.IsVisible)
+                .Should().Contain(row => ReferenceEquals(row.Model, selected));
+
+            double offsetBeforeEdgeMove = tree.Scroll.Offset.Y;
+
+            // Act
+            await vm.MoveTextToBottomCommand.ExecuteAsync(null);
+            Render(window);
+
+            // Assert
+            textFolder.Children.Where(node => node.Entry is { ReadingOrder: >= 0 }).Last().Should().BeSameAs(selected);
+            vm.SelectedResources.Should().ContainSingle().Which.Should().BeSameAs(selected.Entry!.Resource);
+            tree.Scroll.Offset.Y.Should().BeGreaterThan(offsetBeforeEdgeMove);
+            tree.GetVisualDescendants().OfType<TreeDataGridRow>().Where(row => row.IsVisible)
+                .Should().Contain(row => ReferenceEquals(row.Model, selected));
+        }
+        finally
+        {
+            window.Close();
+            vm.Dispose();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Dragging_a_text_file_shows_the_insertion_line_and_reorders_on_drop()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3WithNcx, temp)).GetBook();
+        (Window window, BookBrowserViewModel vm, BookBrowserView view, TreeDataGrid tree) =
+            Show(new SettingsStore(temp.Combine("settings.xml")), book);
+        vm.Operations = new SuspendingBookOperationHost(vm);
+
+        try
+        {
+            BookBrowserNode textFolder = vm.Nodes.Single(node => node.FolderKind == Signet.Core.MainUI.OpfModelGroupKind.Text);
+            textFolder.IsExpanded = true;
+            Render(window);
+
+            BookBrowserNode[] before = textFolder.Children.ToArray();
+            before.Should().HaveCountGreaterThan(1);
+            BookBrowserNode dragged = before[0];
+            BookBrowserNode destination = before[^1];
+            TreeDataGridRow sourceRow = tree.GetVisualDescendants().OfType<TreeDataGridRow>()
+                .Single(row => ReferenceEquals(row.Model, dragged));
+            TreeDataGridRow destinationRow = tree.GetVisualDescendants().OfType<TreeDataGridRow>()
+                .Single(row => ReferenceEquals(row.Model, destination));
+            Point start = sourceRow.TranslatePoint(
+                new Point(sourceRow.Bounds.Width / 2, sourceRow.Bounds.Height / 2), window)!.Value;
+            Point drop = destinationRow.TranslatePoint(
+                new Point(destinationRow.Bounds.Width / 2, destinationRow.Bounds.Height * 0.9), window)!.Value;
+
+            // Act
+            window.MouseDown(start, MouseButton.Left);
+
+            // Assert
+            vm.SelectedResources.Should().ContainSingle().Which.Should().BeSameAs(dragged.Entry!.Resource);
+
+            // Act
+            window.MouseMove(drop, RawInputModifiers.LeftMouseButton);
+            Render(window);
+
+            // Assert
+            Border indicator = view.FindControl<Border>("TextReorderIndicator")!;
+            indicator.IsVisible.Should().BeTrue();
+            double expectedLineY = destinationRow.TranslatePoint(
+                new Point(0, destinationRow.Bounds.Height), tree)!.Value.Y;
+            indicator.Margin.Top.Should().BeApproximately(expectedLineY, 0.1);
+
+            // Act
+            window.MouseUp(drop, MouseButton.Left);
+            Render(window);
+
+            // Assert
+            textFolder.Children.Should().Equal(before.Skip(1).Append(dragged));
+            vm.SelectedResources.Should().ContainSingle().Which.Should().BeSameAs(dragged.Entry!.Resource);
+            indicator.IsVisible.Should().BeFalse();
+        }
+        finally
+        {
+            window.Close();
+            vm.Dispose();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Dragging_multiple_selected_text_files_does_not_reorder_them()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3WithNcx, temp)).GetBook();
+        (Window window, BookBrowserViewModel vm, BookBrowserView view, TreeDataGrid tree) =
+            Show(new SettingsStore(temp.Combine("settings.xml")), book);
+        vm.Operations = new SuspendingBookOperationHost(vm);
+
+        try
+        {
+            BookBrowserNode textFolder = vm.Nodes.Single(node => node.FolderKind == Signet.Core.MainUI.OpfModelGroupKind.Text);
+            textFolder.IsExpanded = true;
+            Render(window);
+
+            BookBrowserNode[] originalOrder = textFolder.Children.ToArray();
+            BookBrowserNode[] textFiles = originalOrder.Where(node => node.Entry is { ReadingOrder: >= 0 }).ToArray();
+            textFiles.Should().HaveCountGreaterThan(1);
+            int folderIndex = vm.Nodes.IndexOf(textFolder);
+            tree.RowSelection!.Select(new IndexPath(folderIndex, textFolder.Children.IndexOf(textFiles[0])));
+            tree.RowSelection.Select(new IndexPath(folderIndex, textFolder.Children.IndexOf(textFiles[^1])));
+            Render(window);
+
+            vm.SelectedResources.Should().HaveCount(2);
+            TreeDataGridRow sourceRow = tree.GetVisualDescendants().OfType<TreeDataGridRow>()
+                .Single(row => ReferenceEquals(row.Model, textFiles[0]));
+            TreeDataGridRow destinationRow = tree.GetVisualDescendants().OfType<TreeDataGridRow>()
+                .Single(row => ReferenceEquals(row.Model, textFiles[^1]));
+            Point start = sourceRow.TranslatePoint(
+                new Point(sourceRow.Bounds.Width / 2, sourceRow.Bounds.Height / 2), window)!.Value;
+            Point drop = destinationRow.TranslatePoint(
+                new Point(destinationRow.Bounds.Width / 2, destinationRow.Bounds.Height * 0.9), window)!.Value;
+
+            // Act
+            window.MouseDown(start, MouseButton.Left);
+            window.MouseMove(drop, RawInputModifiers.LeftMouseButton);
+            Render(window);
+
+            // Assert
+            view.FindControl<Border>("TextReorderIndicator")!.IsVisible.Should().BeFalse();
+            vm.SelectedResources.Should().HaveCount(2);
+
+            // Act
+            window.MouseUp(drop, MouseButton.Left);
+            Render(window);
+
+            // Assert
+            textFolder.Children.Should().Equal(originalOrder);
+        }
+        finally
+        {
+            window.Close();
+            vm.Dispose();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Dragging_a_non_text_file_does_not_show_the_insertion_line()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        (Window window, BookBrowserViewModel vm, BookBrowserView view, TreeDataGrid tree) =
+            Show(new SettingsStore(temp.Combine("settings.xml")), book);
+
+        try
+        {
+            BookBrowserNode textFolder = vm.Nodes.Single(node => node.FolderKind == Signet.Core.MainUI.OpfModelGroupKind.Text);
+            BookBrowserNode stylesFolder = vm.Nodes.Single(node => node.FolderKind == Signet.Core.MainUI.OpfModelGroupKind.Styles);
+            textFolder.IsExpanded = true;
+            stylesFolder.IsExpanded = true;
+            Render(window);
+
+            BookBrowserNode[] originalOrder = textFolder.Children.ToArray();
+            BookBrowserNode source = stylesFolder.Children.First(node => node.Entry is not null);
+            BookBrowserNode destination = textFolder.Children.First(node => node.Entry is { ReadingOrder: >= 0 });
+            TreeDataGridRow sourceRow = tree.GetVisualDescendants().OfType<TreeDataGridRow>()
+                .Single(row => ReferenceEquals(row.Model, source));
+            TreeDataGridRow destinationRow = tree.GetVisualDescendants().OfType<TreeDataGridRow>()
+                .Single(row => ReferenceEquals(row.Model, destination));
+            Point start = sourceRow.TranslatePoint(
+                new Point(sourceRow.Bounds.Width / 2, sourceRow.Bounds.Height / 2), window)!.Value;
+            Point drop = destinationRow.TranslatePoint(
+                new Point(destinationRow.Bounds.Width / 2, destinationRow.Bounds.Height * 0.9), window)!.Value;
+
+            // Act
+            window.MouseDown(start, MouseButton.Left);
+            window.MouseMove(drop, RawInputModifiers.LeftMouseButton);
+            Render(window);
+
+            // Assert
+            view.FindControl<Border>("TextReorderIndicator")!.IsVisible.Should().BeFalse();
+
+            // Act
+            window.MouseUp(drop, MouseButton.Left);
+            Render(window);
+
+            // Assert
+            textFolder.Children.Should().Equal(originalOrder);
         }
         finally
         {

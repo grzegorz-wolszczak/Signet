@@ -21,6 +21,8 @@ public interface IBookOperationHost
     /// checkpoint <paramref name="checkpointName"/> (none when <c>null</c>), off the UI thread, under a progress window. Taking the
     /// checkpoint can be cancelled (nothing happens then); the work itself cannot (it does not check a token). An exception of
     /// the work is thrown here — a work that wants the checkpoint rewound catches its own exceptions and returns them.
+    /// When <paramref name="delayedProgressWindow"/> is <see langword="true"/>, the delayed progress runner is used.
     /// </summary>
-    Task<BookOperationOutcome<T>> RunAsync<T>(string title, string? checkpointName, Func<T> work);
+    Task<BookOperationOutcome<T>> RunAsync<T>(
+        string title, string? checkpointName, Func<T> work, bool delayedProgressWindow = false);
 }

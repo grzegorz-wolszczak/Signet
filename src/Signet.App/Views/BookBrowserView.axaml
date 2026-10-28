@@ -67,65 +67,73 @@
     <!-- The files tree: Name (expandable) and the optional columns # / Semantics / Properties, chosen from the
          context menu of the column headers (remembered in the settings). Source and columns are built in the
          code-behind. Not sortable: the order of the files is the book's (Move Up / Down). -->
-    <TreeDataGrid x:Name="Tree"
-                  IsVisible="{Binding HasBook}"
-                  Background="{DynamicResource SignetBookBrowserBackgroundBrush}"
-                  CanUserSortColumns="False">
-      <TreeDataGrid.Styles>
-        <!-- The defaults of the look settings until a view model is bound (ApplyAppearance replaces them): a row is as
-             high as its content, at least 16 px; the space between the rows is the row spacing (the margin of a row). -->
-        <Style Selector=":is(TreeDataGridCell)">
-          <Setter Property="MinHeight" Value="16" />
-        </Style>
-        <Style Selector="TreeDataGridTextCell">
-          <Setter Property="Padding" Value="4,0" />
-        </Style>
-      </TreeDataGrid.Styles>
-      <TreeDataGrid.ContextMenu>
-        <ContextMenu x:DataType="vm:BookBrowserViewModel">
-          <MenuItem Header="{loc:Loc BookBrowserView_Open}" Command="{Binding OpenSelectedCommand}" />
-          <MenuItem Header="{loc:Loc Common_RenameEllipsis}" Command="{Binding RenameSelectedCommand}" />
-          <MenuItem Header="{loc:Loc BookBrowserView_RenameWithTemplate}" Command="{Binding RenameSelectedWithTemplateCommand}" />
-          <MenuItem Header="{loc:Loc RegexRenameWindow_Title}" Command="{Binding BulkRegexRenameSelectedCommand}" />
-          <MenuItem Header="{loc:Loc Common_Delete}" Command="{Binding DeleteSelectedCommand}" />
-          <MenuItem Header="{loc:Loc BookBrowserView_MoveToFolder}" Command="{Binding MoveSelectedCommand}" />
-          <Separator />
-          <MenuItem Header="{loc:Loc BookBrowserView_MoveUp}" Command="{Binding MoveTextUpCommand}" />
-          <MenuItem Header="{loc:Loc BookBrowserView_MoveDown}" Command="{Binding MoveTextDownCommand}" />
-          <MenuItem Header="{loc:Loc BookBrowserView_MoveToTop}" Command="{Binding MoveTextToTopCommand}" />
-          <MenuItem Header="{loc:Loc BookBrowserView_MoveToBottom}" Command="{Binding MoveTextToBottomCommand}" />
-          <MenuItem Header="{loc:Loc BookBrowserView_SortSelected}" Command="{Binding SortTextCommand}" />
-          <MenuItem Header="{loc:Loc BookBrowserView_MergeSelected}" Command="{Binding MergeSelectedCommand}" />
-          <MenuItem Header="{loc:Loc BookBrowserView_SplitAtMarkers}" Command="{Binding SplitSelectedCommand}" />
-          <!-- The "add" actions only on a folder (none on files), and only the ones that fit that folder are enabled. -->
-          <Separator IsVisible="{Binding ShowAddItems}" />
-          <MenuItem Header="{loc:Loc BookBrowserView_AddBlankHtml}" Command="{Binding AddBlankHtmlCommand}"
-                    IsVisible="{Binding ShowAddItems}" IsEnabled="{Binding CanAddBlankHtmlHere}" />
-          <MenuItem Header="{loc:Loc BookBrowserView_AddBlankCss}" Command="{Binding AddBlankCssCommand}"
-                    IsVisible="{Binding ShowAddItems}" IsEnabled="{Binding CanAddBlankCssHere}" />
-          <MenuItem Header="{loc:Loc BookBrowserView_AddBlankSvg}" Command="{Binding AddBlankSvgCommand}"
-                    IsVisible="{Binding ShowAddItems}" IsEnabled="{Binding CanAddBlankSvgHere}" />
-          <MenuItem Header="{loc:Loc BookBrowserView_AddBlankJs}" Command="{Binding AddBlankJsCommand}"
-                    IsVisible="{Binding ShowAddItems}" IsEnabled="{Binding CanAddBlankJsHere}"
-                    ToolTip.Tip="{Binding AddBlankJsTip}" ToolTip.ShowOnDisabled="True" />
-          <MenuItem Header="{Binding AddExistingFilesHeader}" Command="{Binding AddExistingFilesCommand}"
-                    IsVisible="{Binding ShowAddItems}" IsEnabled="{Binding CanAddExistingFilesHere}" />
-          <Separator />
-          <MenuItem Header="{loc:Loc BookBrowserView_AddSemantics}" Command="{Binding AddSemanticsSelectedCommand}" />
-          <MenuItem Header="{loc:Loc BookBrowserView_CoverImage}" Command="{Binding CoverImageSelectedCommand}" />
-          <MenuItem Header="{loc:Loc BookBrowserView_MarkAsNav}" Command="{Binding MarkAsNavSelectedCommand}" />
-          <Separator />
-          <MenuItem Header="{loc:Loc BookBrowserView_LinkStylesheetsMenu}" Command="{Binding LinkStylesheetsSelectedCommand}" />
-          <MenuItem Header="{loc:Loc BookBrowserView_LinkJavascriptsMenu}" Command="{Binding LinkJavascriptsSelectedCommand}" />
-          <MenuItem Header="{loc:Loc BookBrowserView_ValidateWithW3C}" Command="{Binding ValidateSelectedWithW3CCommand}" />
-          <Separator />
-          <MenuItem Header="{loc:Loc BookBrowserView_AddCopy}" Command="{Binding AddCopySelectedCommand}" />
-          <MenuItem Header="{loc:Loc BookBrowserView_RenumberToc}" Command="{Binding RenumberTocSelectedCommand}" />
-          <MenuItem Header="{loc:Loc BookBrowserView_SaveAs}" Command="{Binding SaveAsSelectedCommand}" />
-          <MenuItem Header="{loc:Loc BookBrowserView_SelectAll}" Command="{Binding SelectAllInFolderCommand}" />
-          <MenuItem Header="{loc:Loc BookBrowserView_GetInfo}" Command="{Binding GetInfoSelectedCommand}" />
-        </ContextMenu>
-      </TreeDataGrid.ContextMenu>
-    </TreeDataGrid>
+    <Grid IsVisible="{Binding HasBook}">
+      <TreeDataGrid x:Name="Tree"
+                    Background="{DynamicResource SignetBookBrowserBackgroundBrush}"
+                    CanUserSortColumns="False">
+        <TreeDataGrid.Styles>
+          <!-- The defaults of the look settings until a view model is bound (ApplyAppearance replaces them): a row is as
+               high as its content, at least 16 px; the space between the rows is the row spacing (the margin of a row). -->
+          <Style Selector=":is(TreeDataGridCell)">
+            <Setter Property="MinHeight" Value="16" />
+          </Style>
+          <Style Selector="TreeDataGridTextCell">
+            <Setter Property="Padding" Value="4,0" />
+          </Style>
+        </TreeDataGrid.Styles>
+        <TreeDataGrid.ContextMenu>
+          <ContextMenu x:DataType="vm:BookBrowserViewModel">
+            <MenuItem Header="{loc:Loc BookBrowserView_Open}" Command="{Binding OpenSelectedCommand}" />
+            <MenuItem Header="{loc:Loc Common_RenameEllipsis}" Command="{Binding RenameSelectedCommand}" />
+            <MenuItem Header="{loc:Loc BookBrowserView_RenameWithTemplate}" Command="{Binding RenameSelectedWithTemplateCommand}" />
+            <MenuItem Header="{loc:Loc RegexRenameWindow_Title}" Command="{Binding BulkRegexRenameSelectedCommand}" />
+            <MenuItem Header="{loc:Loc Common_Delete}" Command="{Binding DeleteSelectedCommand}" />
+            <MenuItem Header="{loc:Loc BookBrowserView_MoveToFolder}" Command="{Binding MoveSelectedCommand}" />
+            <Separator />
+            <MenuItem Header="{loc:Loc BookBrowserView_MoveUp}" Command="{Binding MoveTextUpCommand}" />
+            <MenuItem Header="{loc:Loc BookBrowserView_MoveDown}" Command="{Binding MoveTextDownCommand}" />
+            <MenuItem Header="{loc:Loc BookBrowserView_MoveToTop}" Command="{Binding MoveTextToTopCommand}" />
+            <MenuItem Header="{loc:Loc BookBrowserView_MoveToBottom}" Command="{Binding MoveTextToBottomCommand}" />
+            <MenuItem Header="{loc:Loc BookBrowserView_SortSelected}" Command="{Binding SortTextCommand}" />
+            <MenuItem Header="{loc:Loc BookBrowserView_MergeSelected}" Command="{Binding MergeSelectedCommand}" />
+            <MenuItem Header="{loc:Loc BookBrowserView_SplitAtMarkers}" Command="{Binding SplitSelectedCommand}" />
+            <!-- The "add" actions only on a folder (none on files), and only the ones that fit that folder are enabled. -->
+            <Separator IsVisible="{Binding ShowAddItems}" />
+            <MenuItem Header="{loc:Loc BookBrowserView_AddBlankHtml}" Command="{Binding AddBlankHtmlCommand}"
+                      IsVisible="{Binding ShowAddItems}" IsEnabled="{Binding CanAddBlankHtmlHere}" />
+            <MenuItem Header="{loc:Loc BookBrowserView_AddBlankCss}" Command="{Binding AddBlankCssCommand}"
+                      IsVisible="{Binding ShowAddItems}" IsEnabled="{Binding CanAddBlankCssHere}" />
+            <MenuItem Header="{loc:Loc BookBrowserView_AddBlankSvg}" Command="{Binding AddBlankSvgCommand}"
+                      IsVisible="{Binding ShowAddItems}" IsEnabled="{Binding CanAddBlankSvgHere}" />
+            <MenuItem Header="{loc:Loc BookBrowserView_AddBlankJs}" Command="{Binding AddBlankJsCommand}"
+                      IsVisible="{Binding ShowAddItems}" IsEnabled="{Binding CanAddBlankJsHere}"
+                      ToolTip.Tip="{Binding AddBlankJsTip}" ToolTip.ShowOnDisabled="True" />
+            <MenuItem Header="{Binding AddExistingFilesHeader}" Command="{Binding AddExistingFilesCommand}"
+                      IsVisible="{Binding ShowAddItems}" IsEnabled="{Binding CanAddExistingFilesHere}" />
+            <Separator />
+            <MenuItem Header="{loc:Loc BookBrowserView_AddSemantics}" Command="{Binding AddSemanticsSelectedCommand}" />
+            <MenuItem Header="{loc:Loc BookBrowserView_CoverImage}" Command="{Binding CoverImageSelectedCommand}" />
+            <MenuItem Header="{loc:Loc BookBrowserView_MarkAsNav}" Command="{Binding MarkAsNavSelectedCommand}" />
+            <Separator />
+            <MenuItem Header="{loc:Loc BookBrowserView_LinkStylesheetsMenu}" Command="{Binding LinkStylesheetsSelectedCommand}" />
+            <MenuItem Header="{loc:Loc BookBrowserView_LinkJavascriptsMenu}" Command="{Binding LinkJavascriptsSelectedCommand}" />
+            <MenuItem Header="{loc:Loc BookBrowserView_ValidateWithW3C}" Command="{Binding ValidateSelectedWithW3CCommand}" />
+            <Separator />
+            <MenuItem Header="{loc:Loc BookBrowserView_AddCopy}" Command="{Binding AddCopySelectedCommand}" />
+            <MenuItem Header="{loc:Loc BookBrowserView_RenumberToc}" Command="{Binding RenumberTocSelectedCommand}" />
+            <MenuItem Header="{loc:Loc BookBrowserView_SaveAs}" Command="{Binding SaveAsSelectedCommand}" />
+            <MenuItem Header="{loc:Loc BookBrowserView_SelectAll}" Command="{Binding SelectAllInFolderCommand}" />
+            <MenuItem Header="{loc:Loc BookBrowserView_GetInfo}" Command="{Binding GetInfoSelectedCommand}" />
+          </ContextMenu>
+        </TreeDataGrid.ContextMenu>
+      </TreeDataGrid>
+      <Border x:Name="TextReorderIndicator"
+              IsVisible="False"
+              IsHitTestVisible="False"
+              HorizontalAlignment="Stretch"
+              VerticalAlignment="Top"
+              Height="2"
+              Background="{DynamicResource SystemControlHighlightAccentBrush}" />
+    </Grid>
   </Panel>
 </UserControl>

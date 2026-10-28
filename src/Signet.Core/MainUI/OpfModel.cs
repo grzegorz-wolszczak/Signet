@@ -38,7 +38,6 @@ public sealed class OpfModel : IDisposable
     private readonly List<OpfModelEntry> _topLevel = new();
     private readonly List<Resource> _watchedResources = new();
     private bool _disposed;
-    private bool _suppressRefresh;
 
     /// <summary>Creates a model for the given book and builds the tree right away.</summary>
     /// <param name="book">The book whose resources the model represents.</param>
@@ -73,7 +72,7 @@ public sealed class OpfModel : IDisposable
         }
     }
 
-    /// <summary>Raised after every tree rebuild (resource added/removed/renamed, reorder).</summary>
+    /// <summary>Raised after the tree changes (resource added/removed/renamed, reorder).</summary>
     public event EventHandler? Changed;
 
     /// <summary>
@@ -181,10 +180,7 @@ public sealed class OpfModel : IDisposable
             _folders.Add(new OpfModelFolder(kind, groupName, _folderKeeper.GetDefaultFolderForGroup(groupName), list));
         }
 
-        if (!_suppressRefresh)
-        {
-            Changed?.Invoke(this, EventArgs.Empty);
-        }
+        Changed?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>
@@ -209,13 +205,14 @@ public sealed class OpfModel : IDisposable
                 "The new order must contain exactly the same Text files as the current one.", nameof(newOrder));
         }
 
+        List<OpfModelEntry> orderedEntries = newOrder.ToList();
         OpfResource opf = _book.GetOpf();
         string navBookPath = opf.EpubVersion.StartsWith('3') ? opf.GetNavResourceBookPath() : string.Empty;
         HashSet<string> currentSpine = opf.GetSpineOrderBookPaths().ToHashSet(StringComparer.Ordinal);
 
         // A navigation document that is not in the spine keeps its position in the Text folder,
         // but does not go into the spine.
-        List<HtmlResource> htmls = newOrder
+        List<HtmlResource> htmls = orderedEntries
             .Select(e => e.Resource)
             .OfType<HtmlResource>()
             .Where(h => currentSpine.Contains(h.BookPath) ||
@@ -225,16 +222,18 @@ public sealed class OpfModel : IDisposable
         opf.UpdateSpineOrder(htmls);
         _book.Modified = true;
 
-        _suppressRefresh = true;
-        try
+        Dictionary<string, int> readingOrders = new(StringComparer.Ordinal);
+        for (int i = 0; i < htmls.Count; i++)
         {
-            Refresh();
-        }
-        finally
-        {
-            _suppressRefresh = false;
+            readingOrders[htmls[i].BookPath] = i;
         }
 
+        foreach (OpfModelEntry entry in orderedEntries)
+        {
+            entry.ReadingOrder = readingOrders.TryGetValue(entry.BookPath, out int readingOrder) ? readingOrder : -1;
+        }
+
+        text.ReplaceEntries(orderedEntries);
         Changed?.Invoke(this, EventArgs.Empty);
         return true;
     }
@@ -258,13 +257,42 @@ public sealed class OpfModel : IDisposable
         }
 
         int target = Math.Clamp(index + delta, 0, order.Count - 1);
-        if (target == index)
+        return MoveTextEntry(order, index, target);
+    }
+
+    /// <summary>Moves a single Text file to the given zero-based position.</summary>
+    /// <param name="entry">The Text file to move.</param>
+    /// <param name="targetIndex">Its zero-based position in the resulting Text order.</param>
+    /// <returns><c>true</c> when the move was performed.</returns>
+    public bool MoveTextToIndex(OpfModelEntry entry, int targetIndex)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        OpfModelFolder? text = GetFolder(OpfModelGroupKind.Text);
+        if (text is null)
         {
             return false;
         }
 
-        order.RemoveAt(index);
-        order.Insert(target, entry);
+        List<OpfModelEntry> order = text.Entries.ToList();
+        int index = order.FindIndex(e => e.Identifier == entry.Identifier);
+        if (index < 0 || targetIndex < 0 || targetIndex >= order.Count || targetIndex == index)
+        {
+            return false;
+        }
+
+        return MoveTextEntry(order, index, targetIndex);
+    }
+
+    private bool MoveTextEntry(List<OpfModelEntry> order, int sourceIndex, int targetIndex)
+    {
+        if (sourceIndex == targetIndex)
+        {
+            return false;
+        }
+
+        OpfModelEntry moving = order[sourceIndex];
+        order.RemoveAt(sourceIndex);
+        order.Insert(targetIndex, moving);
         return ReorderText(order);
     }
 
@@ -859,17 +887,11 @@ public sealed class OpfModel : IDisposable
 
     private void OnFolderKeeperChanged(object? sender, ResourceEventArgs e)
     {
-        if (!_suppressRefresh)
-        {
-            Refresh();
-        }
+        Refresh();
     }
 
     private void OnResourcePathChanged(object? sender, ResourcePathChangedEventArgs e)
     {
-        if (!_suppressRefresh)
-        {
-            Refresh();
-        }
+        Refresh();
     }
 }
