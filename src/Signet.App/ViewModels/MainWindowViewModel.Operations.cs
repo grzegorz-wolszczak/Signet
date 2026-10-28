@@ -90,8 +90,11 @@ public sealed partial class MainWindowViewModel : IBookOperationHost
     }
 
     /// <inheritdoc/>
-    Task<BookOperationOutcome<T>> IBookOperationHost.RunAsync<T>(string title, string? checkpointName, Func<T> work) =>
-        RunBookOperationAsync(title, checkpointName, editsBook: true, (_, _) => work(), interruptible: false);
+    Task<BookOperationOutcome<T>> IBookOperationHost.RunAsync<T>(
+        string title, string? checkpointName, Func<T> work, bool delayedProgressWindow) =>
+        RunBookOperationAsync(
+            title, checkpointName, editsBook: true, (_, _) => work(), interruptible: false,
+            delayedProgressWindow: delayedProgressWindow);
 
     /// <inheritdoc/>
     async Task<bool> IBookWorkspace.RunBookWorkAsync(string title, Action<IProgress<WorkProgress>> work)
@@ -176,7 +179,7 @@ public sealed partial class MainWindowViewModel : IBookOperationHost
     /// </summary>
     private async Task<BookOperationOutcome<T>> RunBookOperationAsync<T>(
         string title, string? checkpointName, bool editsBook, Func<IProgress<WorkProgress>, CancellationToken, T> work,
-        ProgressRunner? runner = null, bool interruptible = true)
+        ProgressRunner? runner = null, bool interruptible = true, bool delayedProgressWindow = false)
     {
         if (!TryEnterBookOperation())
         {
@@ -196,7 +199,8 @@ public sealed partial class MainWindowViewModel : IBookOperationHost
 
             try
             {
-                T result = await RunInBackgroundAsync(title, runner ?? ProgressRunner, editsBook, cancellable: interruptible && (!editsBook || checkpoint), work)
+                ProgressRunner? operationRunner = delayedProgressWindow ? DelayedProgressRunner : runner ?? ProgressRunner;
+                T result = await RunInBackgroundAsync(title, operationRunner, editsBook, cancellable: interruptible && (!editsBook || checkpoint), work)
                     .ConfigureAwait(true);
                 return new BookOperationOutcome<T>(true, result, checkpoint);
             }

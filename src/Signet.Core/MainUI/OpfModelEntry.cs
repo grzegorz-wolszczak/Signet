@@ -112,5 +112,7 @@ public sealed class OpfModelFolder
     public string DefaultFolder { get; }
 
     /// <summary>The files in the group in display order (may be empty).</summary>
-    public IReadOnlyList<OpfModelEntry> Entries { get; }
+    public IReadOnlyList<OpfModelEntry> Entries { get; private set; }
+
+    internal void ReplaceEntries(IReadOnlyList<OpfModelEntry> entries) => Entries = entries;
 }

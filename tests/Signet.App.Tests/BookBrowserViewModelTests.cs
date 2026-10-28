@@ -51,7 +51,8 @@ public sealed class BookBrowserViewModelTests
 
         public SuspendingBookOperationHost(BookBrowserViewModel viewModel) => _viewModel = viewModel;
 
-        public Task<BookOperationOutcome<T>> RunAsync<T>(string title, string? checkpointName, Func<T> work)
+        public Task<BookOperationOutcome<T>> RunAsync<T>(
+            string title, string? checkpointName, Func<T> work, bool delayedProgressWindow = false)
         {
             _viewModel.SuspendRebuilds = true;
             try
@@ -1191,7 +1192,8 @@ public sealed class BookBrowserViewModelTests
         await sut.MoveTextDownCommand.ExecuteAsync(null);
 
         // Assert
-        sut.Nodes.Single(n => n.Header == "Text").Children[1].Header.Should().Be(first.Header);
+        sut.Nodes.Single(n => n.Header == "Text").Children[1].Should().BeSameAs(first);
+        sut.SelectedResources.Should().ContainSingle().Which.Should().BeSameAs(first.Entry!.Resource);
 
         BookBrowserNode moved = sut.Nodes.Single(n => n.Header == "Text").Children[1];
         sut.UpdateSelection(new object?[] { moved });
@@ -1200,7 +1202,8 @@ public sealed class BookBrowserViewModelTests
         await sut.MoveTextUpCommand.ExecuteAsync(null);
 
         // Assert
-        sut.Nodes.Single(n => n.Header == "Text").Children[0].Header.Should().Be(first.Header);
+        sut.Nodes.Single(n => n.Header == "Text").Children[0].Should().BeSameAs(first);
+        sut.SelectedResources.Should().ContainSingle().Which.Should().BeSameAs(first.Entry!.Resource);
     }
 
     [Theory]
@@ -1236,12 +1239,14 @@ public sealed class BookBrowserViewModelTests
             .ToArray();
         if (toTop)
         {
-            after[0].Header.Should().Be(selected.Header);
+            after[0].Should().BeSameAs(selected);
         }
         else
         {
-            after[after.Length - 1].Header.Should().Be(selected.Header);
+            after[after.Length - 1].Should().BeSameAs(selected);
         }
+
+        sut.SelectedResources.Should().ContainSingle().Which.Should().BeSameAs(selected.Entry!.Resource);
     }
 
     [Fact]

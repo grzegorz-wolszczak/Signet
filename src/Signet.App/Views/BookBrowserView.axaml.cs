@@ -77,6 +77,12 @@ public partial class BookBrowserView : UserControl
         Tree.DoubleTapped += OnDoubleTapped;
         Tree.AddHandler(ContextRequestedEvent, OnTreeContextRequested, RoutingStrategies.Tunnel);
         Tree.AddHandler(PointerPressedEvent, OnPointerPressed, RoutingStrategies.Tunnel);
+        // Dragging a Text file reorders the spine: the TreeDataGrid's own row drag & drop (insertion line, auto-scroll),
+        // restricted by the handlers below to one Text file dropped among the Text files.
+        Tree.AutoDragDropRows = true;
+        Tree.RowDragStarted += OnTextRowDragStarted;
+        Tree.RowDragOver += OnTextRowDragOver;
+        Tree.RowDrop += OnTextRowDrop;
         // Tunnel: in the bubble phase Enter is already consumed before it reaches the tree.
         Tree.AddHandler(KeyDownEvent, OnRenameEditorKeyDown, RoutingStrategies.Tunnel);
         Tree.AddHandler(LostFocusEvent, OnRenameEditorLostFocus, RoutingStrategies.Bubble);
@@ -413,6 +419,87 @@ public partial class BookBrowserView : UserControl
         }
     }
 
+    // --- reordering Text files by dragging ---- //
+
+    // Only a single selected Text file can be dragged (the spine order is what moves); anything else does not start a drag.
+    private void OnTextRowDragStarted(object? sender, TreeDataGridRowDragStartedEventArgs e)
+    {
+        if (DraggableTextFile() is null)
+        {
+            e.AllowedEffects = DragDropEffects.None;
+        }
+    }
+
+    private void OnTextRowDragOver(object? sender, TreeDataGridRowDragEventArgs e)
+    {
+        if (TextDropTarget(e) is { } target)
+        {
+            e.Position = target.Position;
+            e.Inner.DragEffects = DragDropEffects.Move;
+        }
+        else
+        {
+            e.Position = TreeDataGridRowDropPosition.None;
+            e.Inner.DragEffects = DragDropEffects.None;
+        }
+    }
+
+    private async void OnTextRowDrop(object? sender, TreeDataGridRowDragEventArgs e)
+    {
+        if (!IsOwnRowDrag(e))
+        {
+            return;
+        }
+
+        // Always handled: the TreeDataGrid would otherwise move the nodes in the view model's collections itself.
+        e.Handled = true;
+        if (TextDropTarget(e) is { } target && _boundViewModel is { } vm)
+        {
+            await vm.MoveTextToIndexAsync(target.Dragged, target.Index);
+        }
+    }
+
+    // The selected node when it is the only one, a Text file, and the book can be edited.
+    private BookBrowserNode? DraggableTextFile() =>
+        _boundViewModel is { HasBook: true, IsSample: false } vm
+        && _selectedNodes.Count == 1
+        && _selectedNodes[0] is { Entry.ResourceType: ResourceType.Html, IsEditing: false } node
+        && TextFolder(vm)?.Children.Contains(node) == true
+            ? node
+            : null;
+
+    private static BookBrowserNode? TextFolder(BookBrowserViewModel vm) =>
+        vm.Nodes.FirstOrDefault(n => n.FolderKind == OpfModelGroupKind.Text);
+
+    private bool IsOwnRowDrag(TreeDataGridRowDragEventArgs e) =>
+        e.Inner.DataTransfer.TryGetValue(DragInfo.DataFormat) is { } info && ReferenceEquals(info.Source, Tree.Source);
+
+    // Where a drop over the event's row puts the dragged Text file: the target row must be another Text file; the upper
+    // half of it means "before", the lower half "after". Null when the drop would not move anything.
+    private TextDrop? TextDropTarget(TreeDataGridRowDragEventArgs e)
+    {
+        if (!IsOwnRowDrag(e)
+            || DraggableTextFile() is not { } dragged
+            || _boundViewModel is not { } vm
+            || TextFolder(vm) is not { } folder
+            || e.TargetRow is not { Model: BookBrowserNode over } row
+            || folder.Children.IndexOf(over) is not (var overIndex and >= 0)
+            || row.Bounds.Height <= 0)
+        {
+            return null;
+        }
+
+        bool after = e.Inner.GetPosition(row).Y >= row.Bounds.Height / 2;
+        int insertion = overIndex + (after ? 1 : 0);
+        int from = folder.Children.IndexOf(dragged);
+        int to = insertion > from ? insertion - 1 : insertion;
+        return to == from
+            ? null
+            : new TextDrop(dragged, to, after ? TreeDataGridRowDropPosition.After : TreeDataGridRowDropPosition.Before);
+    }
+
+    private readonly record struct TextDrop(BookBrowserNode Dragged, int Index, TreeDataGridRowDropPosition Position);
+
     // --- in-place rename ---- //
 
     private void OnRenameRequested(object? sender, OpfModelEntry entry) =>
@@ -748,13 +835,13 @@ public partial class BookBrowserView : UserControl
     {
         SelectNodes(nodes);
 
-        // One file (the Book Browser follows the active tab): it is scrolled into view, once its folder has been expanded.
-        if (nodes.Count == 1)
+        if (nodes.Count > 0)
         {
-            BookBrowserNode node = nodes[0];
+            BookBrowserNode[] requested = nodes.ToArray();
             Dispatcher.UIThread.Post(
                 () =>
                 {
+                    BookBrowserNode node = requested.FirstOrDefault(candidate => RowOf(candidate) is not null) ?? requested[0];
                     if (_selection?.FindPath(node) is { } path && Tree.Rows?.ModelIndexToRowIndex(new IndexPath(path)) is >= 0 and var index)
                     {
                         Tree.RowsPresenter?.BringIntoView(index);

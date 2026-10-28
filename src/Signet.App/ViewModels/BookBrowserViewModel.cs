@@ -1371,14 +1371,15 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     {
         OpfModel? model = _model;
         List<OpfModelEntry> entries = _selection.Select(n => n.Entry!).ToList();
+        string[] selectedIdentifiers = entries.Select(entry => entry.Identifier).ToArray();
         string title = Strings.Get("CheckpointOp_ReorderText");
         BookOperationOutcome<bool> run = await RunOperationAsync(title, title, () =>
         {
             return model?.MoveTextToEdge(entries, toTop) ?? false;
-        }).ConfigureAwait(true);
-        if (Operations is not null && run.Completed && run.Result)
+        }, delayedProgressWindow: true).ConfigureAwait(true);
+        if (run.Completed && run.Result)
         {
-            model?.Refresh();
+            ReorderTextNodes(model, selectedIdentifiers);
         }
     }
 
@@ -1387,12 +1388,73 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     {
         OpfModel? model = _model;
         List<OpfModelEntry> entries = _selection.Select(n => n.Entry!).Where(IsText).ToList();
+        string[] selectedIdentifiers = entries.Select(entry => entry.Identifier).ToArray();
         string title = Strings.Get("CheckpointOp_ReorderText");
-        await RunOperationAsync(title, title, () =>
+        BookOperationOutcome<bool> run = await RunOperationAsync(title, title, () =>
         {
-            model?.SortTextByFilename(entries);
-            return true;
-        }).ConfigureAwait(true);
+            return model?.SortTextByFilename(entries) ?? false;
+        }, delayedProgressWindow: true).ConfigureAwait(true);
+        if (run.Completed && run.Result)
+        {
+            ReorderTextNodes(model, selectedIdentifiers);
+        }
+    }
+
+    private void ReorderTextNodes(OpfModel? model, IReadOnlyList<string> selectedIdentifiers)
+    {
+        if (model?.GetFolder(OpfModelGroupKind.Text) is not { } text)
+        {
+            return;
+        }
+
+        BookBrowserNode? folderNode = Nodes.FirstOrDefault(node => node.FolderKind == OpfModelGroupKind.Text);
+        if (folderNode is null)
+        {
+            Rebuild();
+            folderNode = Nodes.FirstOrDefault(node => node.FolderKind == OpfModelGroupKind.Text);
+        }
+
+        if (folderNode is null)
+        {
+            return;
+        }
+
+        Dictionary<string, BookBrowserNode> nodesByIdentifier = folderNode.Children
+            .Where(node => node.Entry is not null)
+            .ToDictionary(node => node.Entry!.Identifier, StringComparer.Ordinal);
+        if (nodesByIdentifier.Count != text.Entries.Count
+            || text.Entries.Any(entry => !nodesByIdentifier.ContainsKey(entry.Identifier)))
+        {
+            Rebuild();
+            folderNode = Nodes.FirstOrDefault(node => node.FolderKind == OpfModelGroupKind.Text);
+            if (folderNode is null)
+            {
+                return;
+            }
+
+            nodesByIdentifier = folderNode.Children
+                .Where(node => node.Entry is not null)
+                .ToDictionary(node => node.Entry!.Identifier, StringComparer.Ordinal);
+        }
+
+        for (int i = 0; i < text.Entries.Count; i++)
+        {
+            BookBrowserNode node = nodesByIdentifier[text.Entries[i].Identifier];
+            node.NotifyReadingOrderChanged();
+
+            int currentIndex = folderNode.Children.IndexOf(node);
+            if (currentIndex != i)
+            {
+                folderNode.Children.Move(currentIndex, i);
+            }
+        }
+
+        BookBrowserNode[] selectedNodes = selectedIdentifiers
+            .Where(nodesByIdentifier.ContainsKey)
+            .Select(identifier => nodesByIdentifier[identifier])
+            .ToArray();
+        UpdateSelection(selectedNodes);
+        TreeSelectionRequested?.Invoke(this, selectedNodes);
     }
 
     [RelayCommand(CanExecute = nameof(CanMergeText))]
@@ -1699,24 +1761,50 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         {
             OpfModel? model = _model;
             OpfModelEntry entry = _selection[0].Entry!;
+            string[] selectedIdentifiers = { entry.Identifier };
             string title = Strings.Get("CheckpointOp_ReorderText");
             BookOperationOutcome<bool> run = await RunOperationAsync(title, title, () =>
             {
                 return model?.MoveText(entry, delta) ?? false;
-            }).ConfigureAwait(true);
-            if (Operations is not null && run.Completed && run.Result)
+            }, delayedProgressWindow: true).ConfigureAwait(true);
+            if (run.Completed && run.Result)
             {
-                model?.Refresh();
+                ReorderTextNodes(model, selectedIdentifiers);
             }
+        }
+    }
+
+    /// <summary>Moves one selected Text file to a zero-based position in the Text folder.</summary>
+    internal async Task MoveTextToIndexAsync(BookBrowserNode node, int targetIndex)
+    {
+        ArgumentNullException.ThrowIfNull(node);
+        if (_model is not { } model
+            || _selection.Length != 1
+            || _selectedFolders.Length != 0
+            || !ReferenceEquals(_selection[0], node)
+            || node.Entry is not { } entry
+            || !IsText(entry))
+        {
+            return;
+        }
+
+        string[] selectedIdentifiers = { entry.Identifier };
+        string title = Strings.Get("CheckpointOp_ReorderText");
+        BookOperationOutcome<bool> run = await RunOperationAsync(
+            title, title, () => model.MoveTextToIndex(entry, targetIndex), delayedProgressWindow: true).ConfigureAwait(true);
+        if (run.Completed && run.Result)
+        {
+            ReorderTextNodes(model, selectedIdentifiers);
         }
     }
 
     // Runs `work`, which changes the book, as a book operation behind the checkpoint `checkpointName` (see IBookOperationHost). A work that
     // fails catches its exceptions and returns them in its result, so that the caller can rewind the checkpoint.
-    private async Task<BookOperationOutcome<T>> RunOperationAsync<T>(string title, string? checkpointName, Func<T> work) =>
+    private async Task<BookOperationOutcome<T>> RunOperationAsync<T>(
+        string title, string? checkpointName, Func<T> work, bool delayedProgressWindow = false) =>
         Operations is null
             ? new BookOperationOutcome<T>(true, work(), false)
-            : await Operations.RunAsync(title, checkpointName, work).ConfigureAwait(true);
+            : await Operations.RunAsync(title, checkpointName, work, delayedProgressWindow).ConfigureAwait(true);
 
     private void Rewind(bool checkpointCreated)
     {
@@ -1885,6 +1973,8 @@ public sealed partial class BookBrowserNode : ObservableObject
 
     /// <summary>The "#" column: the 1-based position in the reading order (spine), or <c>null</c> outside it.</summary>
     public int? ReadingOrderNumber => Entry is { ReadingOrder: >= 0 } entry ? entry.ReadingOrder + 1 : null;
+
+    internal void NotifyReadingOrderChanged() => OnPropertyChanged(nameof(ReadingOrderNumber));
 
     /// <summary>The "Semantics" column: the landmark / guide types of the file.</summary>
     public string SemanticsText => Entry is null ? string.Empty : string.Join(", ", Entry.SemanticTypes);
