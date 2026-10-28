@@ -1,0 +1,3 @@
+# Copilot instructions
+
+@../AGENTS.md
