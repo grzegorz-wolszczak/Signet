@@ -7,6 +7,7 @@ using System;
 using CommunityToolkit.Mvvm.Input;
 using Signet.App.Actions;
 using Signet.App.Resources;
+using Signet.App.Services;
 using Signet.App.Toolbars;
 
 namespace Signet.App.Menu;
@@ -210,11 +211,22 @@ public sealed class MenuBuilder
                 bool missing = !File.Exists(path);
                 entry.IsDimmed = missing;
                 entry.ToolTip = missing ? path + Environment.NewLine + Strings.Get("RecentFiles_FileMissingTooltip") : path;
-                entry.ContextItems = new[]
+                MenuItemViewModel remove = MenuItemViewModel.ForCommand(
+                    Strings.Get("Menu_RemoveFromRecentFiles"), new RelayCommand(() => _recentFiles!.Remove(captured)));
+                if (missing)
                 {
-                    MenuItemViewModel.ForCommand(
-                        Strings.Get("Menu_RemoveFromRecentFiles"), new RelayCommand(() => _recentFiles!.Remove(captured))),
-                };
+                    entry.ContextItems = new[] { remove };
+                }
+                else
+                {
+                    entry.ContextItems = new[]
+                    {
+                        MenuItemViewModel.ForCommand(
+                            Strings.Get("Menu_OpenFileLocation"),
+                            new RelayCommand(() => ExternalOpen.TryShowInFolder(captured, out _))),
+                        remove,
+                    };
+                }
                 entries.Add(entry);
                 index++;
             }
