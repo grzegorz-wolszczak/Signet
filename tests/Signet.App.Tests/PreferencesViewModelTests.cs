@@ -14,6 +14,7 @@ using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.App.Tests.TestSupport;
 using Signet.App.ViewModels;
+using Signet.Core;
 using Signet.Core.Footnotes;
 using Signet.Core.MainUI;
 using Signet.Core.Misc;
@@ -103,7 +104,7 @@ public sealed class PreferencesViewModelTests : IDisposable
         string folder = _disposables.Add(new TempDir("temp-home-")).Path;
 
         // Act & Assert
-        vm.TempFolderDisplay.Should().Be(Strings.Get("PreferencesWindow_TempFolderDefault"));
+        vm.TempFolderDisplay.Should().Be(Strings.Format("PreferencesWindow_TempFolderDefault", TempFolder.DefaultScratchpadRoot));
         vm.HasCustomTempFolder.Should().BeFalse();
 
         // Act
@@ -125,7 +126,7 @@ public sealed class PreferencesViewModelTests : IDisposable
 
         // Assert
         vm.TempFolderHome.Should().BeEmpty();
-        vm.TempFolderDisplay.Should().Be(Strings.Get("PreferencesWindow_TempFolderDefault"));
+        vm.TempFolderDisplay.Should().Be(Strings.Format("PreferencesWindow_TempFolderDefault", TempFolder.DefaultScratchpadRoot));
         vm.HasCustomTempFolder.Should().BeFalse();
         host.Settings.TempFolderHome.Should().BeEmpty();
     }
