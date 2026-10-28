@@ -11,9 +11,11 @@
         Title="{loc:Loc HeadingSelectorWindow_Title}">
 
   <Window.Resources>
-    <!-- Cell templates of the headings tree (looked up by key from the code-behind): the title is edited in place, the
-         check box includes the heading in the TOC. -->
+    <!-- The title is read-only until editing starts; the check box includes the heading in the TOC. -->
     <DataTemplate x:Key="TitleCellTemplate" x:DataType="vm:HeadingNodeViewModel">
+      <TextBlock Text="{Binding TitleText}" Padding="2,1" VerticalAlignment="Center" />
+    </DataTemplate>
+    <DataTemplate x:Key="TitleEditingTemplate" x:DataType="vm:HeadingNodeViewModel">
       <TextBox Text="{Binding TitleText, Mode=TwoWay}" BorderThickness="0" Background="Transparent" Padding="2,1" />
     </DataTemplate>
     <DataTemplate x:Key="IncludeCellTemplate" x:DataType="vm:HeadingNodeViewModel">
@@ -44,6 +46,10 @@
               ToolTip.Tip="{loc:Loc HeadingSelectorWindow_DecreaseLevelTip}" />
       <Button Content="▶" MinWidth="40" Command="{Binding IncreaseLevelCommand}"
               ToolTip.Tip="{loc:Loc HeadingSelectorWindow_IncreaseLevelTip}" />
+      <Button x:Name="EditTitleButton" MinWidth="40" Command="{Binding EditTitleCommand}"
+              ToolTip.Tip="{loc:Loc HeadingSelectorWindow_EditTitleTip}">
+        <PathIcon Width="16" Height="16" Data="M 11 1 L 15 5 L 6 14 L 1 15 L 2 10 Z M 10 3 L 13 6" />
+      </Button>
     </StackPanel>
 
     <Border BorderBrush="{DynamicResource SignetFrameBrush}" BorderThickness="1">

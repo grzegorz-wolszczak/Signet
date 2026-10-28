@@ -1,12 +1,16 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.VisualTree;
 using Signet.App.Infrastructure;
 using Signet.App.ViewModels;
 using Signet.Controls.TreeDataGrid;
+using Signet.Controls.TreeDataGrid.Models;
+using Signet.Controls.TreeDataGrid.Primitives;
 
 namespace Signet.App.Views;
 
@@ -14,9 +18,10 @@ namespace Signet.App.Views;
 /// The modal "Generate Table Of Contents" dialog — choosing the headings for the table of contents.
 /// </summary>
 /// <remarks>
-/// The headings tree is a <see cref="TreeDataGrid"/> over <see cref="HeadingSelectorViewModel.Nodes"/> (Title edited
-/// in place, Level, In TOC), built here (a TreeDataGrid source is bound to the UI thread); its selection and
-/// <see cref="HeadingSelectorViewModel.SelectedNode"/> follow each other.
+/// The headings tree is a <see cref="TreeDataGrid"/> over <see cref="HeadingSelectorViewModel.Nodes"/> (Title, Level,
+/// In TOC), built here (a TreeDataGrid source is bound to the UI thread); its selection and
+/// <see cref="HeadingSelectorViewModel.SelectedNode"/> follow each other. The Title cell enters edit mode from the
+/// edit button or a double-tap.
 /// </remarks>
 [SuppressMessage(
     "Reliability",
@@ -55,6 +60,7 @@ public partial class HeadingSelectorWindow : Window
         if (_bound is not null)
         {
             _bound.CloseRequested -= OnCloseRequested;
+            _bound.EditTitleRequested -= OnEditTitleRequested;
             _bound.PropertyChanged -= OnViewModelPropertyChanged;
         }
 
@@ -66,6 +72,7 @@ public partial class HeadingSelectorWindow : Window
         if (_bound is not null)
         {
             _bound.CloseRequested += OnCloseRequested;
+            _bound.EditTitleRequested += OnEditTitleRequested;
             _bound.PropertyChanged += OnViewModelPropertyChanged;
             HeadingSelectorViewModel vm = _bound;
             _source = BuildSource(vm);
@@ -85,7 +92,16 @@ public partial class HeadingSelectorWindow : Window
             Columns =
             {
                 _columns.Expander(
-                    _columns.Template("EditTocWindow_ColumnTitle", "TitleCellTemplate", new GridLength(1, GridUnitType.Star)),
+                    _columns.Template(
+                        "EditTocWindow_ColumnTitle",
+                        "TitleCellTemplate",
+                        new GridLength(1, GridUnitType.Star),
+                        new TemplateColumnOptions<HeadingNodeViewModel>
+                        {
+                            CanUserSortColumn = false,
+                            BeginEditGestures = BeginEditGestures.F2 | BeginEditGestures.DoubleTap,
+                        },
+                        cellEditingTemplateResourceKey: "TitleEditingTemplate"),
                     n => n.Children,
                     n => n.Children.Count > 0,
                     n => n.IsExpanded),
@@ -105,6 +121,26 @@ public partial class HeadingSelectorWindow : Window
     }
 
     private void OnCloseRequested(object? sender, EventArgs e) => Close();
+
+    private void OnEditTitleRequested(object? sender, EventArgs e)
+    {
+        if (_bound is null ||
+            _bound.SelectedNode is not { } node ||
+            _selection?.FindPath(node) is not { } path ||
+            _source?.Rows is not { } rows)
+        {
+            return;
+        }
+
+        int rowIndex = rows.ModelIndexToRowIndex(new IndexPath(path));
+        Tree.RowsPresenter?.BringIntoView(rowIndex);
+        if (Tree.TryGetCell(0, rowIndex) is { } cell)
+        {
+            TreeDataGridTemplateCell? titleCell = cell as TreeDataGridTemplateCell
+                ?? cell.GetVisualDescendants().OfType<TreeDataGridTemplateCell>().FirstOrDefault();
+            titleCell?.BeginEdit();
+        }
+    }
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {

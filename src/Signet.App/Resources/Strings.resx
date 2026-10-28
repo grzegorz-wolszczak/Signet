@@ -437,6 +437,9 @@
   <data name="HeadingSelectorWindow_IncreaseLevelTip" xml:space="preserve">
     <value>Zwiększ poziom nagłówka o 1 (strzałka w prawo).</value>
   </data>
+  <data name="HeadingSelectorWindow_EditTitleTip" xml:space="preserve">
+    <value>Edytuj tytuł wybranego nagłówka.</value>
+  </data>
   <data name="HeadingSelectorWindow_IncludeInTocTip" xml:space="preserve">
     <value>Dołącz ten nagłówek do spisu treści.</value>
   </data>
