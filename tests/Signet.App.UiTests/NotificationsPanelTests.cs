@@ -202,6 +202,32 @@ public sealed class NotificationsPanelTests
     }
 
     [AvaloniaFact]
+    public void WrapRows_toggle_switches_the_message_text_wrapping()
+    {
+        // Arrange
+        using StatusBarService statusBar = new();
+        NotificationsViewModel vm = new(statusBar);
+        statusBar.ShowMessage("A message long enough to need wrapping or an ellipsis to fit the column", TimeSpan.FromSeconds(1));
+
+        var window = new Window { Width = 300, Height = 200, Content = new NotificationsView { DataContext = vm } };
+        Render(window);
+
+        SelectableTextBlock Message() => window.GetVisualDescendants().OfType<SelectableTextBlock>().Single();
+
+        // Assert
+        vm.WrapRows.Should().BeFalse("off by default");
+        Message().TextWrapping.Should().Be(TextWrapping.NoWrap);
+
+        // Act
+        vm.WrapRows = true;
+        Render(window);
+
+        // Assert
+        Message().TextWrapping.Should().Be(TextWrapping.Wrap);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public void Clear_on_the_sample_panel_does_not_clear_the_entries()
     {
         // Arrange

@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
@@ -30,7 +31,11 @@ public partial class NotificationsView : UserControl
         DataContextChanged += OnDataContextChanged;
         EffectiveViewportChanged += OnEffectiveViewportChanged;
         DetachedFromVisualTree += (_, _) => _isShown = false;
-        AttachedToVisualTree += (_, _) => ApplyAppearance();
+        AttachedToVisualTree += (_, _) =>
+        {
+            ApplyAppearance();
+            UpdateWrapRows();
+        };
     }
 
     private void OnDataContextChanged(object? sender, EventArgs e)
@@ -39,6 +44,7 @@ public partial class NotificationsView : UserControl
         {
             _boundViewModel.WarningArrived -= OnWarningArrived;
             _boundViewModel.AppearanceChanged -= OnAppearanceChanged;
+            _boundViewModel.PropertyChanged -= OnViewModelPropertyChanged;
         }
 
         _boundViewModel = DataContext as NotificationsViewModel;
@@ -46,12 +52,25 @@ public partial class NotificationsView : UserControl
         {
             _boundViewModel.WarningArrived += OnWarningArrived;
             _boundViewModel.AppearanceChanged += OnAppearanceChanged;
+            _boundViewModel.PropertyChanged += OnViewModelPropertyChanged;
         }
 
         ApplyAppearance();
+        UpdateWrapRows();
     }
 
     private void OnAppearanceChanged(object? sender, EventArgs e) => ApplyAppearance();
+
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(NotificationsViewModel.WrapRows))
+        {
+            UpdateWrapRows();
+        }
+    }
+
+    // The "Wrap rows" toggle of the left toolbar: the message does not wrap (an ellipsis cuts it) until this class is set.
+    private void UpdateWrapRows() => List.Classes.Set("wrapRows", _boundViewModel?.WrapRows == true);
 
     // The font of a row's text (the time and the message) and the vertical space between rows — Preferences ›
     // Appearance › General › Fonts › "Notifications entries" and the spacing setting of the panel's General page.

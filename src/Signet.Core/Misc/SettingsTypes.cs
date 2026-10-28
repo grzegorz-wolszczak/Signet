@@ -306,11 +306,11 @@ public readonly record struct ToolHeaderFontAppearance(string FontFamily, int Fo
 /// <param name="MessageFontFamily">Font family of the message column; empty = the interface font.</param>
 /// <param name="MessageFontSize">Font size (px) of the message column; 0 = the interface size.</param>
 /// <param name="MessageFontWeight">Weight of the message column (<see cref="FontWeightScale"/>); 0 = not set.</param>
-/// <param name="EntrySpacing">Vertical space (px) between two rows; 0 = the default spacing of the list.</param>
+/// <param name="EntrySpacing">Vertical space (px) between two rows; 2 by default.</param>
 public readonly record struct NotificationsAppearance(
     string TimestampFontFamily, int TimestampFontSize, int TimestampFontWeight,
     string MessageFontFamily, int MessageFontSize, int MessageFontWeight,
-    int EntrySpacing = 0)
+    int EntrySpacing = 2)
 {
     /// <summary>Lower bound of an explicit font size.</summary>
     public const int FontSizeMin = 6;
@@ -321,7 +321,7 @@ public readonly record struct NotificationsAppearance(
     /// <summary>Upper bound of <see cref="EntrySpacing"/>.</summary>
     public const int EntrySpacingMax = 20;
 
-    /// <summary>Default values: the interface font at the default size, the default spacing of the list.</summary>
+    /// <summary>Default values: the interface font at the default size, the default spacing between rows.</summary>
     public static NotificationsAppearance Default => new(string.Empty, 0, 0, string.Empty, 0, 0);
 
     /// <summary>A copy with the sizes and the spacing clamped (0 stays "the default").</summary>
