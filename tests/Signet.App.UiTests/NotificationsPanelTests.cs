@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Headless;
@@ -7,12 +8,14 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using AutoFixture;
 using AwesomeAssertions;
 using Dock.Avalonia.Controls;
 using Dock.Model.Controls;
 using Dock.Model.Core;
 using Dock.Model.Mvvm;
 using Signet.App.Docking;
+using Signet.App.Infrastructure;
 using Signet.App.Services;
 using Signet.App.ViewModels;
 using Signet.App.Views;
@@ -85,6 +88,25 @@ public sealed class NotificationsPanelTests
         var window = new Window { Width = 600, Height = 300, Content = new DockControl { Layout = root, Factory = factory } };
         Render(window);
         return (window, notifications, factory);
+    }
+
+    private static Window ShowNotificationsTool(NotificationsViewModel viewModel)
+    {
+        Factory factory = new();
+        NotificationsTool notifications = new() { ViewModel = viewModel };
+        IToolDock toolDock = factory.CreateToolDock();
+        toolDock.Alignment = Alignment.Bottom;
+        toolDock.VisibleDockables = factory.CreateList<IDockable>(notifications);
+        toolDock.ActiveDockable = notifications;
+        IRootDock root = factory.CreateRootDock();
+        root.VisibleDockables = factory.CreateList<IDockable>(toolDock);
+        root.ActiveDockable = toolDock;
+        root.DefaultDockable = toolDock;
+        factory.InitLayout(root);
+
+        var window = new Window { Width = 600, Height = 300, Content = new DockControl { Layout = root, Factory = factory } };
+        Render(window);
+        return window;
     }
 
     private static Color ErrorColor(Window window)
@@ -198,7 +220,69 @@ public sealed class NotificationsPanelTests
         // Assert
         rows.Should().HaveCount(2);
         (rows[1].Bounds.Top - rows[0].Bounds.Bottom).Should().Be(0);
+        rows[0].Padding.Should().Be(new Thickness(0));
+        rows[0].Margin.Should().Be(new Thickness(0));
+
+        Border[] messageCells = rows.Select(row => row.GetVisualDescendants().OfType<Border>()
+            .Single(border => border.Classes.Contains("messageCell"))).ToArray();
+        messageCells[0].Bounds.Height.Should().Be(rows[0].Bounds.Height);
         window.Close();
+    }
+
+    [AvaloniaFact]
+    public void FontFallback_ToolHeaderFontDiffers_MatchesPreferencesPreview()
+    {
+        // Arrange
+        Fixture fixture = new();
+        using TempDir temp = new();
+        SettingsStore settings = new(temp.Combine("settings.xml"));
+        settings.NotificationsAppearance = settings.NotificationsAppearance with { EntrySpacing = 0 };
+        using StatusBarService statusBar = new();
+        NotificationsViewModel actualViewModel = new(statusBar, settings);
+        NotificationsViewModel previewViewModel = new(statusBar, settings) { IsSample = true };
+        StatusNotification[] entries =
+        [
+            new StatusNotification(fixture.Create<DateTime>(), fixture.Create<string>(), NotificationLevel.Info),
+            new StatusNotification(fixture.Create<DateTime>(), fixture.Create<string>(), NotificationLevel.Warning)
+        ];
+        foreach (StatusNotification entry in entries)
+        {
+            actualViewModel.Add(entry);
+            previewViewModel.Add(entry);
+        }
+
+        Application app = Application.Current!;
+        UiDensityManager.ApplyToolHeader(app, new ToolHeaderFontAppearance("Courier New", 24));
+
+        // Act
+        Window actualWindow = ShowNotificationsTool(actualViewModel);
+        var previewWindow = new Window
+        {
+            Width = 600,
+            Height = 300,
+            Content = new NotificationsView { DataContext = previewViewModel }
+        };
+        Render(previewWindow);
+
+        // Assert
+        SelectableTextBlock actualMessage = actualWindow.GetVisualDescendants().OfType<SelectableTextBlock>().First();
+        SelectableTextBlock previewMessage = previewWindow.GetVisualDescendants().OfType<SelectableTextBlock>().First();
+        actualMessage.FontFamily.Name.Should().Be(previewMessage.FontFamily.Name);
+        actualMessage.FontSize.Should().Be(previewMessage.FontSize);
+
+        ListBoxItem[] actualRows = actualWindow.GetVisualDescendants().OfType<NotificationsView>().Single()
+            .GetVisualDescendants().OfType<ListBoxItem>().OrderBy(row => row.Bounds.Top).ToArray();
+        ListBoxItem[] previewRows = previewWindow.GetVisualDescendants().OfType<ListBoxItem>()
+            .OrderBy(row => row.Bounds.Top).ToArray();
+        actualRows.Should().HaveCount(2);
+        previewRows.Should().HaveCount(2);
+        actualRows[0].Bounds.Height.Should().Be(previewRows[0].Bounds.Height);
+        (actualRows[1].Bounds.Top - actualRows[0].Bounds.Bottom).Should().Be(0);
+        (previewRows[1].Bounds.Top - previewRows[0].Bounds.Bottom).Should().Be(0);
+
+        actualWindow.Close();
+        previewWindow.Close();
+        UiDensityManager.ApplyToolHeader(app, ToolHeaderFontAppearance.Default);
     }
 
     [AvaloniaFact]

@@ -65,9 +65,12 @@
                  FontSize="16" Opacity="0.6"
                  HorizontalAlignment="Center" VerticalAlignment="Center" />
 
+      <!-- Dock's ToolChromeControl font reaches its content; unset notification fonts must use the interface font. -->
       <ListBox x:Name="List"
                ItemsSource="{Binding Entries}"
                IsVisible="{Binding HasEntries}"
+               FontFamily="{DynamicResource ContentControlThemeFontFamily}"
+               FontSize="{DynamicResource ControlContentThemeFontSize}"
                BorderThickness="1"
                BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"
                Background="{DynamicResource SignetNotificationsBackgroundBrush}">
