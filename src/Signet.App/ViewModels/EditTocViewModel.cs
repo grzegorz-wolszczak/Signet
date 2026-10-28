@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System;
-using Avalonia;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Signet.App.Resources;
@@ -84,9 +83,12 @@ public sealed class EditTocViewModel : ViewModelBase
     /// <summary>Top-level nodes of the tree (children of the artificial root).</summary>
     public ObservableCollection<EditTocNodeViewModel> Nodes => _root.Children;
 
+    /// <summary>Currently selected entries, including multiple selections.</summary>
+    public IReadOnlyList<EditTocNodeViewModel> SelectedNodes => _selectedNodes;
+
     /// <summary>
-    /// All entries as a flat list in reading order (depth-first) — the rows of the table; the level of each one is
-    /// <see cref="EditTocNodeViewModel.Level"/>. Rebuilt after every change of the structure.
+    /// All entries as a flat list in reading order (depth-first), including children hidden by a collapsed tree node.
+    /// The level of each one is <see cref="EditTocNodeViewModel.Level"/>. Rebuilt after every structural change.
     /// </summary>
     public ObservableCollection<EditTocNodeViewModel> Rows { get; } = new();
 
@@ -438,6 +440,9 @@ public sealed class EditTocViewModel : ViewModelBase
                 newParent.Children.Add(child);
                 moved.Add(child);
             }
+
+            // The moved entries stay in sight: a collapsed new parent (a former leaf, or one the user folded) opens.
+            newParent.IsExpanded = true;
         }
 
         Reselect(moved);
@@ -675,12 +680,20 @@ public sealed class EditTocNodeViewModel : ObservableObject
     private string _text = string.Empty;
     private string _target = string.Empty;
     private int _level = 1;
+    private bool _isExpanded = true;
 
     /// <summary>Parent in the tree (an artificial root for top-level entries).</summary>
     public EditTocNodeViewModel? Parent { get; set; }
 
     /// <summary>Child nodes.</summary>
     public ObservableCollection<EditTocNodeViewModel> Children { get; } = new();
+
+    /// <summary>Whether the children are visible in the TOC editor tree.</summary>
+    public bool IsExpanded
+    {
+        get => _isExpanded;
+        set => SetProperty(ref _isExpanded, value);
+    }
 
     /// <summary>Entry text (editable inline).</summary>
     public string Text
@@ -705,21 +718,15 @@ public sealed class EditTocNodeViewModel : ObservableObject
     /// <summary>Target label shown in the "Target" column.</summary>
     public string TargetDisplay => _target.Length > 0 ? _target : Strings.Get("EditToc_NoTarget");
 
-    /// <summary>The level of the entry (1 = top level); the "Level" column and the indentation of the title.</summary>
+    /// <summary>The tree depth of the entry (1 = top level), shown in the "Level" column.</summary>
     public int Level
     {
         get => _level;
         internal set
         {
-            if (SetProperty(ref _level, value))
-            {
-                OnPropertyChanged(nameof(Indent));
-            }
+            SetProperty(ref _level, value);
         }
     }
-
-    /// <summary>The indentation of the title in the table — 16 px per level below the top one.</summary>
-    public Thickness Indent => new((_level - 1) * 16, 0, 0, 0);
 
     /// <summary>Sets the initial values without notifications (while building the tree).</summary>
     internal void SetInitial(string text, string target)

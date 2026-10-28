@@ -13,11 +13,11 @@
   <Window.Resources>
     <!-- Cell templates of the entries table (looked up by key from the code-behind). -->
     <DataTemplate x:Key="TitleCellTemplate" x:DataType="vm:EditTocNodeViewModel">
-      <TextBlock Text="{Binding Text}" Margin="{Binding Indent}" Padding="6,0" VerticalAlignment="Center"
+      <TextBlock Text="{Binding Text}" Padding="6,0" VerticalAlignment="Center"
                  TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Text}" />
     </DataTemplate>
     <DataTemplate x:Key="TitleEditingTemplate" x:DataType="vm:EditTocNodeViewModel">
-      <TextBox Text="{Binding Text, Mode=TwoWay}" Margin="{Binding Indent}"
+      <TextBox Text="{Binding Text, Mode=TwoWay}"
                PlaceholderText="{loc:Loc EditTocWindow_EntryTextPlaceholder}" />
     </DataTemplate>
     <DataTemplate x:Key="TargetCellTemplate" x:DataType="vm:EditTocNodeViewModel">
@@ -59,9 +59,8 @@
 
     </StackPanel>
 
-    <!-- A flat table in reading order: the level is shown as the indentation of the title and in its own column;
-         ← → change it. Sorting is off — the order of the rows is the order of the table of contents. The source and the
-         columns (Title, Level, Target) are built in the code-behind from the cell templates below. -->
+    <!-- A hierarchical table in reading order; ← → change the level. Sorting is off. The source and the columns
+         (Title, Level, Target) are built in the code-behind from the cell templates below. -->
     <TreeDataGrid x:Name="Grid"
                   Classes="gridLines"
                   CanUserSortColumns="False"
