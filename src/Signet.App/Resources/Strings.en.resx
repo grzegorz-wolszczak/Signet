@@ -437,6 +437,9 @@
   <data name="HeadingSelectorWindow_IncreaseLevelTip" xml:space="preserve">
     <value>Increase heading level by 1 (right arrow).</value>
   </data>
+  <data name="HeadingSelectorWindow_EditTitleTip" xml:space="preserve">
+    <value>Edit the selected heading's title.</value>
+  </data>
   <data name="HeadingSelectorWindow_IncludeInTocTip" xml:space="preserve">
     <value>Include this heading in the table of contents.</value>
   </data>

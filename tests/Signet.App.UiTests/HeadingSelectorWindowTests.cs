@@ -1,8 +1,10 @@
 using System;
 using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AwesomeAssertions;
@@ -35,6 +37,29 @@ public sealed class HeadingSelectorWindowTests : IDisposable
         }
     }
 
+    private static Point CenterInWindow(Control control, Window window) =>
+        control.TranslatePoint(new Point(control.Bounds.Width / 2, control.Bounds.Height / 2), window)!.Value;
+
+    private static void Click(Window window, Point point)
+    {
+        window.MouseDown(point, MouseButton.Left);
+        window.MouseUp(point, MouseButton.Left);
+    }
+
+    private static Button EditTitleButton(HeadingSelectorWindow window) =>
+        window.GetVisualDescendants().OfType<Button>().Single(button => button.Name == "EditTitleButton");
+
+    private static TreeDataGridTemplateCell TitleCell(TreeDataGrid tree, int rowIndex)
+    {
+        Control cell = tree.TryGetCell(0, rowIndex)!;
+        if (cell is TreeDataGridTemplateCell titleCell)
+        {
+            return titleCell;
+        }
+
+        return cell.GetVisualDescendants().OfType<TreeDataGridTemplateCell>().Should().ContainSingle().Subject;
+    }
+
     // Headings Alpha (h1) > Alpha One (h2), Beta (h1); the dialog shown on them.
     private (HeadingSelectorWindow Window, HeadingSelectorViewModel Vm, TreeDataGrid Tree, Book Book) Show()
     {
@@ -64,7 +89,10 @@ public sealed class HeadingSelectorWindowTests : IDisposable
                 Strings.Get("HeadingSelectorWindow_ColumnInToc"));
             tree.CanUserSortColumns.Should().BeFalse();
             tree.Rows!.Count.Should().Be(3);
-            tree.GetVisualDescendants().OfType<TextBox>().Select(t => t.Text).Should().Equal("Alpha", "Alpha One", "Beta");
+            tree.GetVisualDescendants().OfType<TextBlock>()
+                .Where(t => t.Text is "Alpha" or "Alpha One" or "Beta")
+                .Select(t => t.Text)
+                .Should().Equal("Alpha", "Alpha One", "Beta");
             tree.GetVisualDescendants().OfType<TreeDataGridTextCell>().Select(c => c.Value?.ToString())
                 .Should().Equal("h1", "h2", "h1");
 
@@ -77,6 +105,118 @@ public sealed class HeadingSelectorWindowTests : IDisposable
 
             // Assert
             alphaOne.Heading.IncludeInToc.Should().Be(!before, "the check box edits the heading");
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void ClickTitle_SingleClick_SelectsWithoutEditing()
+    {
+        // Arrange
+        (HeadingSelectorWindow window, HeadingSelectorViewModel vm, TreeDataGrid tree, Book book) = Show();
+        using (book)
+        {
+            TreeDataGridTemplateCell cell = TitleCell(tree, 0);
+            Point point = CenterInWindow(cell, window);
+
+            // Act
+            Click(window, point);
+            Settle(window);
+
+            // Assert
+            tree.RowSelection!.SelectedItem.Should().BeSameAs(vm.Nodes[0]);
+            cell.IsEditing.Should().BeFalse();
+            cell.GetVisualDescendants().OfType<TextBox>().Should().BeEmpty();
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void ClickTitle_DoubleClick_StartsEditing()
+    {
+        // Arrange
+        (HeadingSelectorWindow window, HeadingSelectorViewModel vm, TreeDataGrid tree, Book book) = Show();
+        using (book)
+        {
+            TreeDataGridTemplateCell cell = TitleCell(tree, 0);
+            Point point = CenterInWindow(cell, window);
+
+            // Act
+            Click(window, point);
+            Settle(window);
+
+            // Assert
+            tree.RowSelection!.SelectedItem.Should().BeSameAs(vm.Nodes[0]);
+            cell.IsEditing.Should().BeFalse();
+
+            // Act
+            Click(window, point);
+            Settle(window);
+
+            // Assert
+            cell.IsEditing.Should().BeTrue();
+            cell.GetVisualDescendants().OfType<TextBox>().Should().ContainSingle();
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void EditTitleButton_NoSelection_Disabled()
+    {
+        // Arrange
+        (HeadingSelectorWindow window, HeadingSelectorViewModel vm, TreeDataGrid tree, Book book) = Show();
+        using (book)
+        {
+            Button editTitleButton = EditTitleButton(window);
+            tree.RowSelection!.SingleSelect.Should().BeTrue();
+
+            // Act
+            vm.SelectedNode = null;
+            tree.RowSelection.Clear();
+            Settle(window);
+
+            // Assert
+            vm.SelectedNode?.TitleText.Should().BeNull();
+            vm.EditTitleCommand.CanExecute(null).Should().BeFalse();
+            editTitleButton.Command.Should().BeSameAs(vm.EditTitleCommand);
+            editTitleButton.IsEffectivelyEnabled.Should().BeFalse();
+
+            // Act
+            tree.RowSelection.SelectedIndex = new IndexPath(0);
+            Settle(window);
+
+            // Assert
+            editTitleButton.IsEffectivelyEnabled.Should().BeTrue();
+            vm.SelectedNode.Should().BeSameAs(vm.Nodes[0]);
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void EditTitleButton_SingleSelection_StartsEditing()
+    {
+        // Arrange
+        (HeadingSelectorWindow window, HeadingSelectorViewModel vm, TreeDataGrid tree, Book book) = Show();
+        using (book)
+        {
+            Button editTitleButton = EditTitleButton(window);
+            tree.RowSelection!.SelectedIndex = new IndexPath(0);
+            Settle(window);
+
+            // Act
+            editTitleButton.Command!.Execute(null);
+            Settle(window);
+
+            // Assert
+            TreeDataGridTemplateCell cell = TitleCell(tree, 0);
+            cell.IsEditing.Should().BeTrue();
+            TextBox editor = cell.GetVisualDescendants().OfType<TextBox>().Should().ContainSingle().Subject;
+
+            // Act
+            editor.Text = "Renamed";
+
+            // Assert
+            vm.SelectedNode!.TitleText.Should().Be("Renamed");
             window.Close();
         }
     }
