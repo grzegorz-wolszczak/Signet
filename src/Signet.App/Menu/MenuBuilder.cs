@@ -212,7 +212,9 @@ public sealed class MenuBuilder
                 entry.IsDimmed = missing;
                 entry.ToolTip = missing ? path + Environment.NewLine + Strings.Get("RecentFiles_FileMissingTooltip") : path;
                 MenuItemViewModel remove = MenuItemViewModel.ForCommand(
-                    Strings.Get("Menu_RemoveFromRecentFiles"), new RelayCommand(() => _recentFiles!.Remove(captured)));
+                    Strings.Get("Menu_RemoveFromRecentFiles"),
+                    new RelayCommand(() => _recentFiles!.Remove(captured)),
+                    ActionIconKeys.Delete);
                 if (missing)
                 {
                     entry.ContextItems = new[] { remove };
@@ -223,7 +225,8 @@ public sealed class MenuBuilder
                     {
                         MenuItemViewModel.ForCommand(
                             Strings.Get("Menu_OpenFileLocation"),
-                            new RelayCommand(() => ExternalOpen.TryShowInFolder(captured, out _))),
+                            new RelayCommand(() => ExternalOpen.TryShowInFolder(captured, out _)),
+                            ActionIconKeys.Open),
                         remove,
                     };
                 }

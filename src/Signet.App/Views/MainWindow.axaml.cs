@@ -9,6 +9,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
@@ -107,6 +108,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
                 .Select(c => new MenuItem
                 {
                     Header = c.Header,
+                    Icon = CreateActionIcon(c.IconKey),
                     // Posted: the command may rebuild the list (removing the item this menu is opened on)
                     // — let the context menu close first.
                     Command = new CommunityToolkit.Mvvm.Input.RelayCommand(
@@ -116,6 +118,22 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         };
         menu.Open(item);
         e.Handled = true;
+    }
+
+    private static Control? CreateActionIcon(string? iconKey)
+    {
+        if (ActionIcons.Resolve(iconKey, ActionIconState.Normal) is { } image)
+        {
+            return new Image { Width = 16, Height = 16, Source = image };
+        }
+
+        if (IconKeyToGeometryConverter.Instance.Convert(
+                iconKey, typeof(Geometry), null, CultureInfo.InvariantCulture) is not Geometry geometry)
+        {
+            return null;
+        }
+
+        return new PathIcon { Width = 16, Height = 16, Data = geometry };
     }
 
     private static string? FirstDroppedFilePath(DragEventArgs e) =>
