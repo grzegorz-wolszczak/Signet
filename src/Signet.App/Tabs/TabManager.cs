@@ -649,6 +649,19 @@ public sealed class TabManager : IDisposable
         }
     }
 
+    /// <summary>
+    /// Whether the tabs wait for the end of a book operation before following the files it deletes, renames or moves: set
+    /// while the operation edits the book off the UI thread, where the tab model, Dock and the tab views must not be
+    /// touched. Clearing it — on the UI thread, once the operation is over — closes and renames the tabs in order, as
+    /// <c>BookBrowserViewModel.SuspendRebuilds</c> does for the Book Browser (see
+    /// <see cref="TabManagerModel.DeferResourceEvents"/>).
+    /// </summary>
+    public bool DeferResourceEvents
+    {
+        get => _model.DeferResourceEvents;
+        set => _model.DeferResourceEvents = value;
+    }
+
     private void OnDockActiveDockableChanged(object? sender, ActiveDockableChangedEventArgs e)
     {
         if (_bridging || e.Dockable is not ContentTabViewModel view)

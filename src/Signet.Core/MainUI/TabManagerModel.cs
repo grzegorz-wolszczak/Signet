@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Signet.Core.Resources;
@@ -27,7 +28,9 @@ public sealed class TabManagerModel : IDisposable
 
     private readonly List<OpenTab> _tabs = new();
     private readonly List<OpenTab> _history = new();
+    private readonly ConcurrentQueue<Action> _deferredResourceEvents = new();
     private int _activeIndex = -1;
+    private volatile bool _deferResourceEvents;
     private bool _disposed;
 
     /// <summary>Raised after a new tab is added. Carries the tab and its position.</summary>
@@ -324,6 +327,7 @@ public sealed class TabManagerModel : IDisposable
             Detach(tab);
         }
 
+        _deferredResourceEvents.Clear();
         _tabs.Clear();
         _history.Clear();
         _activeIndex = -1;
@@ -379,21 +383,58 @@ public sealed class TabManagerModel : IDisposable
         tab.Resource.Moved -= OnResourcePathChanged;
     }
 
+    /// <summary>
+    /// Whether the events of the open resources (deleted, renamed, moved) wait instead of changing the tabs at once. Set
+    /// while the book is edited off the UI thread: a resource is deleted or renamed on the thread that edits the book, and
+    /// the tabs — with every handler of <see cref="TabClosed"/> and <see cref="TabCaptionChanged"/> — belong to the UI
+    /// thread. Clearing it, on that thread, handles the waiting events in order; the tabs do not change in between.
+    /// </summary>
+    public bool DeferResourceEvents
+    {
+        get => _deferResourceEvents;
+        set
+        {
+            _deferResourceEvents = value;
+            if (!value)
+            {
+                while (_deferredResourceEvents.TryDequeue(out Action? handler))
+                {
+                    handler();
+                }
+            }
+        }
+    }
+
+    private void HandleOrDefer(Action handler)
+    {
+        if (_deferResourceEvents)
+        {
+            _deferredResourceEvents.Enqueue(handler);
+        }
+        else
+        {
+            handler();
+        }
+    }
+
     private void OnResourceDeleted(object? sender, EventArgs e)
     {
         if (sender is Resource resource)
         {
-            CloseResource(resource, force: true);
+            HandleOrDefer(() => CloseResource(resource, force: true));
         }
     }
 
     private void OnResourcePathChanged(object? sender, ResourcePathChangedEventArgs e)
     {
-        if (sender is not Resource resource)
+        if (sender is Resource resource)
         {
-            return;
+            HandleOrDefer(() => RaiseCaptionChanged(resource));
         }
+    }
 
+    private void RaiseCaptionChanged(Resource resource)
+    {
         int index = IndexOfResource(resource);
         if (index >= 0)
         {

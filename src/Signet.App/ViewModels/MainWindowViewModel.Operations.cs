@@ -143,6 +143,7 @@ public sealed partial class MainWindowViewModel : IBookOperationHost
         {
             _bookEditedInBackground = true;
             BookBrowser.SuspendRebuilds = true;
+            _tabManager.DeferResourceEvents = true;
         }
 
         try
@@ -161,6 +162,7 @@ public sealed partial class MainWindowViewModel : IBookOperationHost
             {
                 _bookEditedInBackground = false;
                 BookBrowser.SuspendRebuilds = false;
+                _tabManager.DeferResourceEvents = false;
                 RefreshTitle();
                 _toc.Refresh();
                 UpdateNavigationPlace();

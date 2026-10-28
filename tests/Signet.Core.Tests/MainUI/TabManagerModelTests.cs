@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using AwesomeAssertions;
 using Signet.Core.BookManipulation;
 using Signet.Core.MainUI;
@@ -212,6 +214,64 @@ public sealed class TabManagerModelTests
         // Assert
         renamed.Should().NotBeNull();
         renamed!.Resource.Should().BeSameAs(css);
+    }
+
+    [Fact]
+    public async Task A_resource_deleted_on_another_thread_while_events_are_deferred_closes_its_tab_only_when_they_resume()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = Load(temp);
+        using TabManagerModel sut = new();
+        List<Resource> resources = ThreeDistinctResources(book);
+        resources.ForEach(r => sut.OpenResource(r));
+        List<int> closedOnThreads = new();
+        sut.TabClosed += (_, _) => closedOnThreads.Add(Environment.CurrentManagedThreadId);
+        sut.DeferResourceEvents = true;
+
+        // Act
+        Resource[] toDelete = { resources[1] };
+        await Task.Run(() => book.GetFolderKeeper().BulkRemoveResources(toDelete), TestContext.Current.CancellationToken);
+
+        // Assert
+        sut.Count.Should().Be(3, "the tabs do not change while the book is edited off their thread");
+        closedOnThreads.Should().BeEmpty();
+
+        // Act
+        int resumingThread = Environment.CurrentManagedThreadId;
+        sut.DeferResourceEvents = false;
+
+        // Assert
+        sut.Tabs.Select(t => t.Resource).Should().Equal(resources[0], resources[2]);
+        closedOnThreads.Should().Equal(resumingThread);
+    }
+
+    [Fact]
+    public void A_rename_while_events_are_deferred_changes_the_caption_only_when_they_resume()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = Load(temp);
+        using TabManagerModel sut = new();
+        Resource css = book.GetAllResources().First(r => r.Type == ResourceType.Css);
+        sut.OpenResource(css);
+        List<OpenTab> renamed = new();
+        sut.TabCaptionChanged += (_, e) => renamed.Add(e.Tab);
+        sut.DeferResourceEvents = true;
+        Resource[] toRename = { css };
+        string[] newNames = { "renamed.css" };
+
+        // Act
+        book.GetFolderKeeper().BulkRenameResources(toRename, newNames);
+
+        // Assert
+        renamed.Should().BeEmpty();
+
+        // Act
+        sut.DeferResourceEvents = false;
+
+        // Assert
+        renamed.Should().ContainSingle().Which.Resource.Should().BeSameAs(css);
     }
 
     [Fact]
