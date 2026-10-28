@@ -8,6 +8,7 @@ using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AwesomeAssertions;
 using CommunityToolkit.Mvvm.Input;
+using Signet.App.Actions;
 using Signet.App.ViewModels;
 using Signet.Core.Tests.TestSupport;
 using Signet.App.Views;
@@ -185,6 +186,43 @@ public sealed class StartScreenTests
         open.Bounds.Y.Should().Be(openTop, "the buttons did not move");
         heading.Bounds.Y.Should().Be(headingTop, "the heading did not move");
         (scroll.Bounds.Bottom + 32).Should().BeLessThanOrEqualTo(window.Bounds.Height + 1, "the list ends within the window");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void RecentFileContextMenu_WhenOpened_ShowsExpectedIcons()
+    {
+        // Arrange
+        using TempDir temp = new();
+        string path = temp.Combine("Book.epub");
+        File.WriteAllText(path, string.Empty);
+        using StartScreenViewModel vm = new(
+            new RelayCommand(() => { }), new RelayCommand(() => { }),
+            () => new[] { path }, _ => { })
+        {
+            IsVisible = true,
+        };
+        Window window = new() { Width = 600, Height = 400, Content = new StartScreenView { DataContext = vm } };
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Button entry = window.GetVisualDescendants().OfType<Button>().First(b => b.Classes.Contains("recentFile"));
+
+        // Act
+        entry.ContextMenu!.Open(entry);
+        Dispatcher.UIThread.RunJobs();
+        MenuItem[] items = entry.ContextMenu.Items.OfType<MenuItem>().ToArray();
+
+        // Assert
+        vm.RecentFileItems.Single().OpenFolderIconKey.Should().Be(ActionIconKeys.Open);
+        vm.RecentFileItems.Single().RemoveIconKey.Should().Be(ActionIconKeys.Delete);
+        items.Should().HaveCount(2);
+        foreach (MenuItem item in items)
+        {
+            item.Icon.Should().NotBeNull();
+        }
+
+        entry.ContextMenu.Close();
         window.Close();
     }
 }

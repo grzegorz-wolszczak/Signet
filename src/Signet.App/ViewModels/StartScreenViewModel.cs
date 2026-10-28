@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Signet.App.Actions;
 using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.Core.Misc;
@@ -27,7 +28,14 @@ namespace Signet.App.ViewModels;
 /// <param name="ToolTip">The tooltip of the entry: the full path, and the reason when <paramref name="IsMissing"/>.</param>
 public sealed record StartScreenRecentFile(
     string Name, string Folder, string Path, ICommand OpenCommand, ICommand RemoveCommand, ICommand OpenFolderCommand,
-    bool IsHighlighted = false, bool IsMissing = false, string ToolTip = "");
+    bool IsHighlighted = false, bool IsMissing = false, string ToolTip = "")
+{
+    /// <summary>The Open File Location icon.</summary>
+    public string OpenFolderIconKey => ActionIconKeys.Open;
+
+    /// <summary>The Remove from Recent Files icon.</summary>
+    public string RemoveIconKey => ActionIconKeys.Delete;
+}
 
 /// <summary>
 /// The start screen shown in the empty document area while no book is open: "Open…", "New book" and the recent files.

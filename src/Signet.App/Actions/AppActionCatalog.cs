@@ -37,7 +37,7 @@ public static class AppActionCatalog
         new("MainWindow.NewJSFile", "Blank Javascript", "", "file-new-js", "File"),
         new("MainWindow.NewSVGFile", "Blank SVG Image", "", "file-new-svg", "File"),
         new("MainWindow.AddExistingFile", "Existing Files...", "", "document-add", "File"),
-        new("MainWindow.Open", "&Open...", "Ctrl+O", "document-open", "File"),
+        new("MainWindow.Open", "&Open...", "Ctrl+O", ActionIconKeys.Open, "File"),
         new("MainWindow.Close", "Close", "Ctrl+Shift+W", "document-close", "File"),
         new("MainWindow.Save", "&Save", "Ctrl+S", "document-save", "File"),
         new("MainWindow.SaveAs", "Save &As...", "Ctrl+Shift+S", "document-save-as", "File"),

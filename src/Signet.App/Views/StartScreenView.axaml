@@ -61,8 +61,41 @@
                     Command="{Binding OpenCommand}" ToolTip.Tip="{Binding ToolTip}">
               <Button.ContextMenu>
                 <ContextMenu>
-                  <MenuItem Header="{loc:Loc Menu_OpenFileLocation}" Command="{Binding OpenFolderCommand}" IsVisible="{Binding !IsMissing}" />
-                  <MenuItem Header="{loc:Loc Menu_RemoveFromRecentFiles}" Command="{Binding RemoveCommand}" />
+                  <ContextMenu.Styles>
+                    <Style Selector="MenuItem.recentOpenFileLocation">
+                      <Setter Property="Icon">
+                        <Template>
+                          <Panel x:DataType="vm:StartScreenRecentFile">
+                            <Image Width="16" Height="16"
+                                   Source="{Binding OpenFolderIconKey, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                            <PathIcon Width="16" Height="16"
+                                      Data="{Binding OpenFolderIconKey, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                          </Panel>
+                        </Template>
+                      </Setter>
+                    </Style>
+                    <Style Selector="MenuItem.recentRemoveFile">
+                      <Setter Property="Icon">
+                        <Template>
+                          <Panel x:DataType="vm:StartScreenRecentFile">
+                            <Image Width="16" Height="16"
+                                   Source="{Binding RemoveIconKey, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                                   IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                            <PathIcon Width="16" Height="16"
+                                      Data="{Binding RemoveIconKey, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                                      IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                          </Panel>
+                        </Template>
+                      </Setter>
+                    </Style>
+                  </ContextMenu.Styles>
+                  <MenuItem Classes="recentOpenFileLocation" Header="{loc:Loc Menu_OpenFileLocation}"
+                            Command="{Binding OpenFolderCommand}"
+                            IsVisible="{Binding !IsMissing}" />
+                  <MenuItem Classes="recentRemoveFile" Header="{loc:Loc Menu_RemoveFromRecentFiles}"
+                            Command="{Binding RemoveCommand}" />
                 </ContextMenu>
               </Button.ContextMenu>
               <StackPanel>
