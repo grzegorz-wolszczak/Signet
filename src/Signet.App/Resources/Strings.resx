@@ -212,6 +212,12 @@
   <data name="EditTocWindow_CollapseAllTip" xml:space="preserve">
     <value>Zwiń wszystkie wpisy.</value>
   </data>
+  <data name="EditTocWindow_PreviousInvalidEntryTip" xml:space="preserve">
+    <value>Przejdź do poprzedniego błędnego wpisu.</value>
+  </data>
+  <data name="EditTocWindow_NextInvalidEntryTip" xml:space="preserve">
+    <value>Przejdź do następnego błędnego wpisu.</value>
+  </data>
   <data name="EditToc_AlreadyInBookOrder" xml:space="preserve">
     <value>Wpisy są już w kolejności książki.</value>
   </data>

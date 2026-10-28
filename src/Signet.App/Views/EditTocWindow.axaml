@@ -34,9 +34,21 @@
       <Button Content="{loc:Loc Common_Cancel}" IsCancel="True" MinWidth="80" Command="{Binding CancelCommand}" />
     </StackPanel>
 
-    <TextBlock DockPanel.Dock="Bottom" Text="{Binding Message}" Margin="0,8,0,0"
-               TextWrapping="Wrap" Foreground="{DynamicResource SystemAccentColor}"
-               IsVisible="{Binding Message, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+    <Grid DockPanel.Dock="Bottom" Margin="0,8,0,0" ColumnDefinitions="*,Auto,Auto"
+          IsVisible="{Binding Message, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+      <TextBlock Grid.Column="0" Text="{Binding Message}" TextWrapping="Wrap"
+                 Foreground="{DynamicResource SystemAccentColor}" VerticalAlignment="Center" />
+      <Button x:Name="PreviousInvalidEntryButton" Grid.Column="1" Content="←" MinWidth="30"
+              Margin="8,0,0,0" VerticalAlignment="Center"
+              Command="{Binding PreviousInvalidEntryCommand}"
+              ToolTip.Tip="{loc:Loc EditTocWindow_PreviousInvalidEntryTip}"
+              IsVisible="{Binding HasInvalidEntries}" />
+      <Button x:Name="NextInvalidEntryButton" Grid.Column="2" Content="→" MinWidth="30"
+              Margin="4,0,0,0" VerticalAlignment="Center"
+              Command="{Binding NextInvalidEntryCommand}"
+              ToolTip.Tip="{loc:Loc EditTocWindow_NextInvalidEntryTip}"
+              IsVisible="{Binding HasInvalidEntries}" />
+    </Grid>
 
     <Border DockPanel.Dock="Left" BorderThickness="0,0,1,0" Padding="2"
             BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
