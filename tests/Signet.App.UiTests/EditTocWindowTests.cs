@@ -178,6 +178,55 @@ public sealed class EditTocWindowTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void NextInvalidEntryCommand_WhenIssueIsCollapsed_ExpandsAndSelectsTheEntry()
+    {
+        // Arrange
+        (EditTocWindow window, EditTocViewModel vm, TreeDataGrid grid, Book book) = Show();
+        using (book)
+        {
+            try
+            {
+                EditTocNodeViewModel parent = vm.Nodes[0];
+                EditTocNodeViewModel invalid = parent.Children[0];
+                invalid.Target = string.Empty;
+                parent.IsExpanded = false;
+
+                // Act
+                vm.AcceptCommand.Execute(null);
+                Settle(window);
+
+                // Assert
+                Button previous = window.GetVisualDescendants().OfType<Button>()
+                    .Single(button => button.Name == "PreviousInvalidEntryButton");
+                Button next = window.GetVisualDescendants().OfType<Button>()
+                    .Single(button => button.Name == "NextInvalidEntryButton");
+                previous.IsVisible.Should().BeTrue();
+                next.IsVisible.Should().BeTrue();
+                parent.IsExpanded.Should().BeFalse();
+                window.GetVisualDescendants().OfType<TextBlock>().Select(text => text.Text)
+                    .Should().NotContain("Alpha One");
+
+                // Act
+                Point point = Center(next, window);
+                window.MouseDown(point, MouseButton.Left);
+                window.MouseUp(point, MouseButton.Left);
+                Settle(window);
+
+                // Assert
+                parent.IsExpanded.Should().BeTrue();
+                vm.SelectedNode.Should().BeSameAs(invalid);
+                grid.RowSelection!.SelectedItem.Should().BeSameAs(invalid);
+                window.GetVisualDescendants().OfType<TextBlock>().Select(text => text.Text)
+                    .Should().Contain("Alpha One");
+            }
+            finally
+            {
+                window.Close();
+            }
+        }
+    }
+
+    [AvaloniaFact]
     public void Toolbar_buttons_collapse_and_expand_all_tree_levels()
     {
         // Arrange

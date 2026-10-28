@@ -29,6 +29,7 @@ public sealed class EditTocViewModel : ViewModelBase
 
     private IReadOnlyList<EditTocNodeViewModel> _selectedNodes = Array.Empty<EditTocNodeViewModel>();
     private string _message = string.Empty;
+    private bool _hasInvalidEntries;
 
     /// <summary>Creates the view model for a publication and builds the tree from its current table of contents.</summary>
     public EditTocViewModel(Book book)
@@ -66,6 +67,8 @@ public sealed class EditTocViewModel : ViewModelBase
         RenameCommand = new RelayCommand(() => RenameRequested?.Invoke(this, EventArgs.Empty));
         AcceptCommand = new RelayCommand(Accept);
         CancelCommand = new RelayCommand(() => CloseRequested?.Invoke(this, EventArgs.Empty));
+        PreviousInvalidEntryCommand = new RelayCommand(() => NavigateInvalidEntry(next: false));
+        NextInvalidEntryCommand = new RelayCommand(() => NavigateInvalidEntry(next: true));
 
         Build();
     }
@@ -140,8 +143,21 @@ public sealed class EditTocViewModel : ViewModelBase
     /// <summary>"Cancel" — close without saving.</summary>
     public RelayCommand CancelCommand { get; }
 
+    /// <summary>Selects the previous entry without text or target.</summary>
+    public RelayCommand PreviousInvalidEntryCommand { get; }
+
+    /// <summary>Selects the next entry without text or target.</summary>
+    public RelayCommand NextInvalidEntryCommand { get; }
+
     /// <summary>Whether the user accepted the dialog and saving succeeded.</summary>
     public bool Accepted { get; private set; }
+
+    /// <summary>Whether the current message reports invalid entries.</summary>
+    public bool HasInvalidEntries
+    {
+        get => _hasInvalidEntries;
+        private set => SetProperty(ref _hasInvalidEntries, value);
+    }
 
     /// <summary>Validation / status message below the tree.</summary>
     public string Message
@@ -352,6 +368,7 @@ public sealed class EditTocViewModel : ViewModelBase
         }
 
         Sort(_root);
+        HasInvalidEntries = false;
         Message = changed ? string.Empty : Strings.Get("EditToc_AlreadyInBookOrder");
         if (changed)
         {
@@ -637,6 +654,58 @@ public sealed class EditTocViewModel : ViewModelBase
         SelectionChangeRequested?.Invoke(this, nodes);
     }
 
+    private void NavigateInvalidEntry(bool next)
+    {
+        List<EditTocNodeViewModel> invalidEntries = Rows.Where(IsInvalid).ToList();
+        if (invalidEntries.Count == 0)
+        {
+            HasInvalidEntries = false;
+            Message = string.Empty;
+            return;
+        }
+
+        HasInvalidEntries = true;
+        Message = InvalidEntriesMessage(invalidEntries.Count);
+
+        int[] selectedIndexes = _selectedNodes
+            .Select(Rows.IndexOf)
+            .Where(index => index >= 0)
+            .ToArray();
+
+        int anchorIndex;
+        if (selectedIndexes.Length == 0)
+        {
+            anchorIndex = next ? -1 : Rows.Count;
+        }
+        else if (next)
+        {
+            anchorIndex = selectedIndexes.Max();
+        }
+        else
+        {
+            anchorIndex = selectedIndexes.Min();
+        }
+
+        EditTocNodeViewModel target;
+        if (next)
+        {
+            target = invalidEntries.FirstOrDefault(node => Rows.IndexOf(node) > anchorIndex) ?? invalidEntries[0];
+        }
+        else
+        {
+            target = invalidEntries.LastOrDefault(node => Rows.IndexOf(node) < anchorIndex) ?? invalidEntries[^1];
+        }
+
+        for (EditTocNodeViewModel? ancestor = target.Parent;
+            ancestor is not null && !ReferenceEquals(ancestor, _root);
+            ancestor = ancestor.Parent)
+        {
+            ancestor.IsExpanded = true;
+        }
+
+        RequestSelection(new[] { target });
+    }
+
     // --- saving ---
 
     private void Accept()
@@ -644,23 +713,31 @@ public sealed class EditTocViewModel : ViewModelBase
         int invalid = CountInvalid(_root.Children);
         if (invalid > 0)
         {
-            Message = invalid == 1
-                ? Strings.Get("EditToc_OneInvalidEntry")
-                : Strings.Format("EditToc_InvalidEntries", invalid);
+            HasInvalidEntries = true;
+            Message = InvalidEntriesMessage(invalid);
             return;
         }
 
+        HasInvalidEntries = false;
         TocEditModel.Save(_book, BuildRoot());
         Accepted = true;
         CloseRequested?.Invoke(this, EventArgs.Empty);
     }
+
+    private static string InvalidEntriesMessage(int count) =>
+        count == 1
+            ? Strings.Get("EditToc_OneInvalidEntry")
+            : Strings.Format("EditToc_InvalidEntries", count);
+
+    private static bool IsInvalid(EditTocNodeViewModel node) =>
+        string.IsNullOrWhiteSpace(node.Text) || node.Target.Length == 0;
 
     private static int CountInvalid(IEnumerable<EditTocNodeViewModel> nodes)
     {
         int count = 0;
         foreach (EditTocNodeViewModel node in nodes)
         {
-            if (string.IsNullOrWhiteSpace(node.Text) || node.Target.Length == 0)
+            if (IsInvalid(node))
             {
                 count++;
             }
