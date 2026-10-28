@@ -8,20 +8,36 @@ using Signet.Core.Misc;
 
 namespace Signet.App.ViewModels;
 
-/// <summary>Appearance › Notifications: the font of the rows, the space between them and the sample panel of the preview.</summary>
+/// <summary>
+/// Appearance › Notifications: the fonts of the timestamp and the message columns (independent of each other), the
+/// space between the rows, and the sample panel of the preview. The colors of the two columns (and of an ordinary
+/// row vs. a warning row) are set on the Appearance › Interface Colors page.
+/// </summary>
 public sealed partial class PreferencesViewModel
 {
-    /// <summary>The font of the rows of the Notifications panel; empty = the interface font.</summary>
+    /// <summary>The font of the timestamp column of the Notifications panel; empty = the interface font.</summary>
     [ObservableProperty]
-    private string _notificationsFontFamily = string.Empty;
+    private string _notificationsTimestampFontFamily = string.Empty;
 
-    /// <summary>The size (px) of the rows of the Notifications panel; 0 = the interface size.</summary>
+    /// <summary>The size (px) of the timestamp column of the Notifications panel; 0 = the interface size.</summary>
     [ObservableProperty]
-    private int _notificationsFontSize;
+    private int _notificationsTimestampFontSize;
 
-    /// <summary>The weight of the rows of the Notifications panel; 0 = not set.</summary>
+    /// <summary>The weight of the timestamp column of the Notifications panel; 0 = not set.</summary>
     [ObservableProperty]
-    private int _notificationsFontWeight;
+    private int _notificationsTimestampFontWeight;
+
+    /// <summary>The font of the message column of the Notifications panel; empty = the interface font.</summary>
+    [ObservableProperty]
+    private string _notificationsMessageFontFamily = string.Empty;
+
+    /// <summary>The size (px) of the message column of the Notifications panel; 0 = the interface size.</summary>
+    [ObservableProperty]
+    private int _notificationsMessageFontSize;
+
+    /// <summary>The weight of the message column of the Notifications panel; 0 = not set.</summary>
+    [ObservableProperty]
+    private int _notificationsMessageFontWeight;
 
     /// <summary>Upper bound of <see cref="NotificationsEntrySpacing"/>.</summary>
     public static decimal NotificationsEntrySpacingMax => NotificationsAppearance.EntrySpacingMax;
@@ -30,11 +46,17 @@ public sealed partial class PreferencesViewModel
     [ObservableProperty]
     private int _notificationsEntrySpacing;
 
-    partial void OnNotificationsFontFamilyChanged(string value) => PersistNotificationsAppearance();
+    partial void OnNotificationsTimestampFontFamilyChanged(string value) => PersistNotificationsAppearance();
 
-    partial void OnNotificationsFontSizeChanged(int value) => PersistNotificationsAppearance();
+    partial void OnNotificationsTimestampFontSizeChanged(int value) => PersistNotificationsAppearance();
 
-    partial void OnNotificationsFontWeightChanged(int value) => PersistNotificationsAppearance();
+    partial void OnNotificationsTimestampFontWeightChanged(int value) => PersistNotificationsAppearance();
+
+    partial void OnNotificationsMessageFontFamilyChanged(string value) => PersistNotificationsAppearance();
+
+    partial void OnNotificationsMessageFontSizeChanged(int value) => PersistNotificationsAppearance();
+
+    partial void OnNotificationsMessageFontWeightChanged(int value) => PersistNotificationsAppearance();
 
     partial void OnNotificationsEntrySpacingChanged(int value) => PersistNotificationsAppearance();
 
@@ -42,48 +64,87 @@ public sealed partial class PreferencesViewModel
     private void LoadNotificationsAppearance()
     {
         NotificationsAppearance look = _settings.NotificationsAppearance;
-        NotificationsFontFamily = look.FontFamily;
-        NotificationsFontSize = look.FontSize;
-        NotificationsFontWeight = look.FontWeight;
+        NotificationsTimestampFontFamily = look.TimestampFontFamily;
+        NotificationsTimestampFontSize = look.TimestampFontSize;
+        NotificationsTimestampFontWeight = look.TimestampFontWeight;
+        NotificationsMessageFontFamily = look.MessageFontFamily;
+        NotificationsMessageFontSize = look.MessageFontSize;
+        NotificationsMessageFontWeight = look.MessageFontWeight;
         NotificationsEntrySpacing = look.EntrySpacing;
     }
 
     private void PersistNotificationsAppearance() =>
         _settings.NotificationsAppearance = new NotificationsAppearance(
-            NotificationsFontFamily, NotificationsFontSize, NotificationsFontWeight, NotificationsEntrySpacing);
+            NotificationsTimestampFontFamily, NotificationsTimestampFontSize, NotificationsTimestampFontWeight,
+            NotificationsMessageFontFamily, NotificationsMessageFontSize, NotificationsMessageFontWeight,
+            NotificationsEntrySpacing);
 
-    /// <summary>"Choose…" — the font picker, starting from the font of the Notifications rows.</summary>
+    /// <summary>"Choose…" — the font picker, starting from the font of the timestamp column.</summary>
     [RelayCommand]
-    private async Task ChooseNotificationsFont()
+    private async Task ChooseNotificationsTimestampFont()
     {
-        string family = NotificationsFontFamily.Length > 0 ? NotificationsFontFamily : string.Empty;
-        int size = NotificationsFontSize > 0 ? NotificationsFontSize : 12;
+        string family = NotificationsTimestampFontFamily.Length > 0 ? NotificationsTimestampFontFamily : string.Empty;
+        int size = NotificationsTimestampFontSize > 0 ? NotificationsTimestampFontSize : 12;
         await PickFontAsync(
-            new FontPickRequest(family, size, false, NotificationsFontWeight),
-            new FontPickResult(NotificationsFontFamily, NotificationsFontSize, NotificationsFontWeight),
+            new FontPickRequest(family, size, false, NotificationsTimestampFontWeight),
+            new FontPickResult(NotificationsTimestampFontFamily, NotificationsTimestampFontSize, NotificationsTimestampFontWeight),
             result =>
             {
-                NotificationsFontFamily = result.Family;
-                NotificationsFontSize = result.Size;
-                NotificationsFontWeight = result.Weight;
+                NotificationsTimestampFontFamily = result.Family;
+                NotificationsTimestampFontSize = result.Size;
+                NotificationsTimestampFontWeight = result.Weight;
             });
     }
 
-    // The row of the Appearance "Fonts" page.
-    private FontSettingViewModel NotificationsFontRow() =>
+    /// <summary>"Choose…" — the font picker, starting from the font of the message column.</summary>
+    [RelayCommand]
+    private async Task ChooseNotificationsMessageFont()
+    {
+        string family = NotificationsMessageFontFamily.Length > 0 ? NotificationsMessageFontFamily : string.Empty;
+        int size = NotificationsMessageFontSize > 0 ? NotificationsMessageFontSize : 12;
+        await PickFontAsync(
+            new FontPickRequest(family, size, false, NotificationsMessageFontWeight),
+            new FontPickResult(NotificationsMessageFontFamily, NotificationsMessageFontSize, NotificationsMessageFontWeight),
+            result =>
+            {
+                NotificationsMessageFontFamily = result.Family;
+                NotificationsMessageFontSize = result.Size;
+                NotificationsMessageFontWeight = result.Weight;
+            });
+    }
+
+    // The rows of the Appearance "Fonts" page.
+    private FontSettingViewModel NotificationsTimestampFontRow() =>
         InterfaceFontRow(
-            "NotificationsEntries", "PreferencesWindow_NotificationsEntriesFont", "FontPreview_NotificationsEntries",
-            () => NotificationsFontFamily, v => NotificationsFontFamily = v,
-            () => NotificationsFontSize, v => NotificationsFontSize = v,
+            "NotificationsTimestamp", "PreferencesWindow_NotificationsTimestampFont", "FontPreview_NotificationsTimestamp",
+            () => NotificationsTimestampFontFamily, v => NotificationsTimestampFontFamily = v,
+            () => NotificationsTimestampFontSize, v => NotificationsTimestampFontSize = v,
             () =>
             {
-                NotificationsFontFamily = string.Empty;
-                NotificationsFontSize = 0;
-                NotificationsFontWeight = 0;
+                NotificationsTimestampFontFamily = string.Empty;
+                NotificationsTimestampFontSize = 0;
+                NotificationsTimestampFontWeight = 0;
             },
-            ChooseNotificationsFontCommand,
-            () => NotificationsFontWeight, v => NotificationsFontWeight = v,
-            inheritance: ToolHeaderInheritance(() => _settings.NotificationsFontInheritsToolHeader, v => _settings.NotificationsFontInheritsToolHeader = v));
+            ChooseNotificationsTimestampFontCommand,
+            () => NotificationsTimestampFontWeight, v => NotificationsTimestampFontWeight = v,
+            inheritance: ToolHeaderInheritance(
+                () => _settings.NotificationsTimestampFontInheritsToolHeader, v => _settings.NotificationsTimestampFontInheritsToolHeader = v));
+
+    private FontSettingViewModel NotificationsMessageFontRow() =>
+        InterfaceFontRow(
+            "NotificationsMessage", "PreferencesWindow_NotificationsMessageFont", "FontPreview_NotificationsMessage",
+            () => NotificationsMessageFontFamily, v => NotificationsMessageFontFamily = v,
+            () => NotificationsMessageFontSize, v => NotificationsMessageFontSize = v,
+            () =>
+            {
+                NotificationsMessageFontFamily = string.Empty;
+                NotificationsMessageFontSize = 0;
+                NotificationsMessageFontWeight = 0;
+            },
+            ChooseNotificationsMessageFontCommand,
+            () => NotificationsMessageFontWeight, v => NotificationsMessageFontWeight = v,
+            inheritance: ToolHeaderInheritance(
+                () => _settings.NotificationsMessageFontInheritsToolHeader, v => _settings.NotificationsMessageFontInheritsToolHeader = v));
 
     private NotificationsViewModel? _notificationsSample;
 
@@ -95,7 +156,7 @@ public sealed partial class PreferencesViewModel
 
     private NotificationsViewModel CreateNotificationsSample()
     {
-        NotificationsViewModel sample = new(SampleStatusBar, _settings);
+        NotificationsViewModel sample = new(SampleStatusBar, _settings) { IsSample = true };
         DateTime now = DateTime.Now;
         sample.Add(new StatusNotification(now.AddMinutes(-6), Strings.Get("NotificationsSample_Saved"), NotificationLevel.Info));
         sample.Add(new StatusNotification(now.AddMinutes(-3), Strings.Get("NotificationsSample_BrokenLink"), NotificationLevel.Warning));

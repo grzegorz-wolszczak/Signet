@@ -6319,6 +6319,24 @@ Close the tab</value>
   <data name="ThemeKey_ui_notifications_background" xml:space="preserve">
     <value>Notifications list background</value>
   </data>
+  <data name="ThemeKey_ui_notifications_timestamp_background" xml:space="preserve">
+    <value>Notifications: timestamp column background</value>
+  </data>
+  <data name="ThemeKey_ui_notifications_timestamp_foreground" xml:space="preserve">
+    <value>Notifications: timestamp column text</value>
+  </data>
+  <data name="ThemeKey_ui_notifications_message_info_background" xml:space="preserve">
+    <value>Notifications: message column background (an ordinary entry)</value>
+  </data>
+  <data name="ThemeKey_ui_notifications_message_info_foreground" xml:space="preserve">
+    <value>Notifications: message column text (an ordinary entry)</value>
+  </data>
+  <data name="ThemeKey_ui_notifications_message_warning_background" xml:space="preserve">
+    <value>Notifications: message column background (a warning)</value>
+  </data>
+  <data name="ThemeKey_ui_notifications_message_warning_foreground" xml:space="preserve">
+    <value>Notifications: message column text (a warning)</value>
+  </data>
   <data name="ThemeKey_ui_findUsages_usage_background" xml:space="preserve">
     <value>Find Usages window background: Usage column</value>
   </data>
@@ -6652,11 +6670,35 @@ Close the tab</value>
   <data name="PreferencesWindow_NotificationsBackgroundInTheme" xml:space="preserve">
     <value>Notifications list background color: Appearance › Interface Colors</value>
   </data>
-  <data name="PreferencesWindow_NotificationsEntriesFont" xml:space="preserve">
-    <value>List entries</value>
+  <data name="PreferencesWindow_NotificationsTimestampBackgroundInTheme" xml:space="preserve">
+    <value>Timestamp column background color: Appearance › Interface Colors</value>
   </data>
-  <data name="FontPreview_NotificationsEntries" xml:space="preserve">
-    <value>12:34:56   The book was saved</value>
+  <data name="PreferencesWindow_NotificationsTimestampForegroundInTheme" xml:space="preserve">
+    <value>Timestamp column text color: Appearance › Interface Colors</value>
+  </data>
+  <data name="PreferencesWindow_NotificationsMessageInfoBackgroundInTheme" xml:space="preserve">
+    <value>Message column background color (an ordinary entry): Appearance › Interface Colors</value>
+  </data>
+  <data name="PreferencesWindow_NotificationsMessageInfoForegroundInTheme" xml:space="preserve">
+    <value>Message column text color (an ordinary entry): Appearance › Interface Colors</value>
+  </data>
+  <data name="PreferencesWindow_NotificationsMessageWarningBackgroundInTheme" xml:space="preserve">
+    <value>Message column background color (a warning): Appearance › Interface Colors</value>
+  </data>
+  <data name="PreferencesWindow_NotificationsMessageWarningForegroundInTheme" xml:space="preserve">
+    <value>Message column text color (a warning): Appearance › Interface Colors</value>
+  </data>
+  <data name="PreferencesWindow_NotificationsTimestampFont" xml:space="preserve">
+    <value>Timestamp column</value>
+  </data>
+  <data name="PreferencesWindow_NotificationsMessageFont" xml:space="preserve">
+    <value>Message column</value>
+  </data>
+  <data name="FontPreview_NotificationsTimestamp" xml:space="preserve">
+    <value>12:34:56</value>
+  </data>
+  <data name="FontPreview_NotificationsMessage" xml:space="preserve">
+    <value>The book was saved</value>
   </data>
   <data name="PreferencesWindow_StartScreenTitleFont" xml:space="preserve">
     <value>Names of the recent files</value>

@@ -6319,6 +6319,24 @@ Zamknij zakładkę</value>
   <data name="ThemeKey_ui_notifications_background" xml:space="preserve">
     <value>Tło listy powiadomień</value>
   </data>
+  <data name="ThemeKey_ui_notifications_timestamp_background" xml:space="preserve">
+    <value>Powiadomienia: tło kolumny czasu</value>
+  </data>
+  <data name="ThemeKey_ui_notifications_timestamp_foreground" xml:space="preserve">
+    <value>Powiadomienia: tekst kolumny czasu</value>
+  </data>
+  <data name="ThemeKey_ui_notifications_message_info_background" xml:space="preserve">
+    <value>Powiadomienia: tło kolumny treści (zwykły wpis)</value>
+  </data>
+  <data name="ThemeKey_ui_notifications_message_info_foreground" xml:space="preserve">
+    <value>Powiadomienia: tekst kolumny treści (zwykły wpis)</value>
+  </data>
+  <data name="ThemeKey_ui_notifications_message_warning_background" xml:space="preserve">
+    <value>Powiadomienia: tło kolumny treści (ostrzeżenie)</value>
+  </data>
+  <data name="ThemeKey_ui_notifications_message_warning_foreground" xml:space="preserve">
+    <value>Powiadomienia: tekst kolumny treści (ostrzeżenie)</value>
+  </data>
   <data name="ThemeKey_ui_findUsages_usage_background" xml:space="preserve">
     <value>Tło okna znalezionych użyć: kolumna Użycie</value>
   </data>
@@ -6652,11 +6670,35 @@ Zamknij zakładkę</value>
   <data name="PreferencesWindow_NotificationsBackgroundInTheme" xml:space="preserve">
     <value>Kolor tła listy powiadomień: Wygląd › Kolory interfejsu</value>
   </data>
-  <data name="PreferencesWindow_NotificationsEntriesFont" xml:space="preserve">
-    <value>Wpisy listy</value>
+  <data name="PreferencesWindow_NotificationsTimestampBackgroundInTheme" xml:space="preserve">
+    <value>Kolor tła kolumny czasu: Wygląd › Kolory interfejsu</value>
   </data>
-  <data name="FontPreview_NotificationsEntries" xml:space="preserve">
-    <value>12:34:56   Zapisano książkę</value>
+  <data name="PreferencesWindow_NotificationsTimestampForegroundInTheme" xml:space="preserve">
+    <value>Kolor tekstu kolumny czasu: Wygląd › Kolory interfejsu</value>
+  </data>
+  <data name="PreferencesWindow_NotificationsMessageInfoBackgroundInTheme" xml:space="preserve">
+    <value>Kolor tła kolumny treści (zwykły wpis): Wygląd › Kolory interfejsu</value>
+  </data>
+  <data name="PreferencesWindow_NotificationsMessageInfoForegroundInTheme" xml:space="preserve">
+    <value>Kolor tekstu kolumny treści (zwykły wpis): Wygląd › Kolory interfejsu</value>
+  </data>
+  <data name="PreferencesWindow_NotificationsMessageWarningBackgroundInTheme" xml:space="preserve">
+    <value>Kolor tła kolumny treści (ostrzeżenie): Wygląd › Kolory interfejsu</value>
+  </data>
+  <data name="PreferencesWindow_NotificationsMessageWarningForegroundInTheme" xml:space="preserve">
+    <value>Kolor tekstu kolumny treści (ostrzeżenie): Wygląd › Kolory interfejsu</value>
+  </data>
+  <data name="PreferencesWindow_NotificationsTimestampFont" xml:space="preserve">
+    <value>Kolumna czasu</value>
+  </data>
+  <data name="PreferencesWindow_NotificationsMessageFont" xml:space="preserve">
+    <value>Kolumna treści</value>
+  </data>
+  <data name="FontPreview_NotificationsTimestamp" xml:space="preserve">
+    <value>12:34:56</value>
+  </data>
+  <data name="FontPreview_NotificationsMessage" xml:space="preserve">
+    <value>Zapisano książkę</value>
   </data>
   <data name="PreferencesWindow_StartScreenTitleFont" xml:space="preserve">
     <value>Nazwy ostatnich plików</value>

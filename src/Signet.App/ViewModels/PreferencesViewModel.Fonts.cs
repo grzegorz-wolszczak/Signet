@@ -68,7 +68,7 @@ public sealed partial class PreferencesViewModel
     /// <summary>Appearance › Footnotes › Fonts: the tooltip font.</summary>
     public FontPageViewModel FootnotesFonts { get; private set; } = null!;
 
-    /// <summary>Appearance › Notifications › Fonts: the font of the rows.</summary>
+    /// <summary>Appearance › Notifications › Fonts: the font of the timestamp column and of the message column.</summary>
     public FontPageViewModel NotificationsFonts { get; private set; } = null!;
 
     /// <summary>The font of the code previews of the Appearance › Color Scheme pages (a row of the Color Scheme page).</summary>
@@ -289,7 +289,7 @@ public sealed partial class PreferencesViewModel
                 ChooseSearchEditorRowsFontCommand,
                 () => SearchEditorRowsFontWeight, v => SearchEditorRowsFontWeight = v),
         });
-        NotificationsFonts = new FontPageViewModel(new[] { NotificationsFontRow() });
+        NotificationsFonts = new FontPageViewModel(new[] { NotificationsTimestampFontRow(), NotificationsMessageFontRow() });
         TableOfContentsFonts = TooltipPage(TooltipArea.TableOfContents);
         FindReplaceFonts = TooltipPage(TooltipArea.FindReplace);
         CheckpointsFonts = TooltipPage(TooltipArea.Checkpoints);

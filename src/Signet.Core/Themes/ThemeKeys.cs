@@ -270,6 +270,30 @@ public static class ThemeKeys
     /// <summary>The background of the Notifications panel's list; unset = the background of the panel.</summary>
     public static readonly ThemeKey UiNotificationsBackground = Color("ui.notifications.background", ThemePage.Interface, "Controls", null);
 
+    /// <summary>The background of the timestamp column of the Notifications panel; unset = the list background.</summary>
+    public static readonly ThemeKey UiNotificationsTimestampBackground =
+        Color("ui.notifications.timestamp.background", ThemePage.Interface, "Controls", null);
+
+    /// <summary>The text color of the timestamp column of the Notifications panel; unset = the normal text color.</summary>
+    public static readonly ThemeKey UiNotificationsTimestampForeground =
+        Color("ui.notifications.timestamp.foreground", ThemePage.Interface, "Controls", null);
+
+    /// <summary>The background of the message column of an ordinary (not a warning) row of the Notifications panel; unset = the list background.</summary>
+    public static readonly ThemeKey UiNotificationsMessageInfoBackground =
+        Color("ui.notifications.message.info.background", ThemePage.Interface, "Controls", null);
+
+    /// <summary>The text color of the message column of an ordinary (not a warning) row of the Notifications panel; unset = the normal text color.</summary>
+    public static readonly ThemeKey UiNotificationsMessageInfoForeground =
+        Color("ui.notifications.message.info.foreground", ThemePage.Interface, "Controls", null);
+
+    /// <summary>The background of the message column of a warning row of the Notifications panel; unset = the list background.</summary>
+    public static readonly ThemeKey UiNotificationsMessageWarningBackground =
+        Color("ui.notifications.message.warning.background", ThemePage.Interface, "Controls", null);
+
+    /// <summary>The text color of the message column of a warning row of the Notifications panel; unset = <see cref="UiErrorNotification"/>.</summary>
+    public static readonly ThemeKey UiNotificationsMessageWarningForeground =
+        Color("ui.notifications.message.warning.foreground", ThemePage.Interface, "Controls", null);
+
     /// <summary>The selected row of the Book Browser (only there): its background and text; nothing set = the colors of the controls.</summary>
     public static readonly ThemeKey UiBookBrowserSelection = Attributes("ui.bookBrowser.selection", ThemePage.Interface, "Controls", TextAttributes.Empty);
 

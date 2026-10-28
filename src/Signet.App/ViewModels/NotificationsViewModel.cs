@@ -47,6 +47,12 @@ public sealed partial class NotificationsViewModel : ViewModelBase
     public event EventHandler? WarningArrived;
 
     /// <summary>
+    /// Whether this is the sample panel of the Preferences preview — its "Clear" button stays clickable,
+    /// to look at, but does not actually clear the fabricated entries.
+    /// </summary>
+    public bool IsSample { get; init; }
+
+    /// <summary>
     /// The look of the list now (the settings) — its own font, or, while it inherits, a tool panel's title bar font; the
     /// default look without settings.
     /// </summary>
@@ -93,6 +99,11 @@ public sealed partial class NotificationsViewModel : ViewModelBase
     [RelayCommand]
     private void Clear()
     {
+        if (IsSample)
+        {
+            return;
+        }
+
         Entries.Clear();
         UnreadWarnings = 0;
         OnPropertyChanged(nameof(HasEntries));

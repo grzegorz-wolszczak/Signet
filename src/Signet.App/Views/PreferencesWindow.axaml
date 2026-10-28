@@ -730,8 +730,8 @@
         </Grid>
       </TabItem>
 
-      <!-- Appearance › Notifications: the font of the rows, the space between them (General), and the background (a link to
-           the theme, as Book Browser and Saved Searches do). -->
+      <!-- Appearance › Notifications: the space between the rows (General); the timestamp and message column fonts are on
+           the Fonts tab, their colors (and the warning row's) are links to the theme, as Book Browser and Saved Searches do. -->
       <TabItem x:Name="NotificationsAppearancePage" Header="{loc:Loc PreferencesWindow_Notifications}" views:PreferencesPage.Parent="AppearanceGeneralPage">
         <Grid x:Name="NotificationsPreviewHost">
           <Grid.RowDefinitions>
@@ -756,6 +756,24 @@
                       <HyperlinkButton Content="{loc:Loc PreferencesWindow_NotificationsBackgroundInTheme}" Padding="0"
                                        views:PreferencesPage.Target="AppearanceGeneralPage"
                                        views:PreferencesPage.TargetKey="ui.notifications.background" />
+                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_NotificationsTimestampBackgroundInTheme}" Padding="0"
+                                       views:PreferencesPage.Target="AppearanceGeneralPage"
+                                       views:PreferencesPage.TargetKey="ui.notifications.timestamp.background" />
+                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_NotificationsTimestampForegroundInTheme}" Padding="0"
+                                       views:PreferencesPage.Target="AppearanceGeneralPage"
+                                       views:PreferencesPage.TargetKey="ui.notifications.timestamp.foreground" />
+                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_NotificationsMessageInfoBackgroundInTheme}" Padding="0"
+                                       views:PreferencesPage.Target="AppearanceGeneralPage"
+                                       views:PreferencesPage.TargetKey="ui.notifications.message.info.background" />
+                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_NotificationsMessageInfoForegroundInTheme}" Padding="0"
+                                       views:PreferencesPage.Target="AppearanceGeneralPage"
+                                       views:PreferencesPage.TargetKey="ui.notifications.message.info.foreground" />
+                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_NotificationsMessageWarningBackgroundInTheme}" Padding="0"
+                                       views:PreferencesPage.Target="AppearanceGeneralPage"
+                                       views:PreferencesPage.TargetKey="ui.notifications.message.warning.background" />
+                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_NotificationsMessageWarningForegroundInTheme}" Padding="0"
+                                       views:PreferencesPage.Target="AppearanceGeneralPage"
+                                       views:PreferencesPage.TargetKey="ui.notifications.message.warning.foreground" />
                     </StackPanel>
                   </Border>
                 </StackPanel>

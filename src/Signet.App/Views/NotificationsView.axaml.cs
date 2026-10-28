@@ -2,6 +2,7 @@ using System;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
+using Avalonia.Controls.Primitives;
 using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Styling;
@@ -69,28 +70,40 @@ public partial class NotificationsView : UserControl
 
         NotificationsAppearance look = _boundViewModel.Appearance;
 
-        Style entries = new(x => x.Is<TextBlock>().Class("entryFont"));
-        // Always set (Regular when not set): a style taken away does not give the text its weight back, a style added
-        // later wins over it.
-        entries.Setters.Add(new Setter(TextElement.FontWeightProperty, FontWeightOptions.ToAvalonia(look.FontWeight)));
-        if (look.FontFamily.Length > 0)
-        {
-            entries.Setters.Add(new Setter(TextElement.FontFamilyProperty, new FontFamily(look.FontFamily)));
-        }
-
-        if (look.FontSize > 0)
-        {
-            entries.Setters.Add(new Setter(TextElement.FontSizeProperty, (double)look.FontSize));
-        }
+        Style timestampFont = ColumnFontStyle("timestampFont", look.TimestampFontFamily, look.TimestampFontSize, look.TimestampFontWeight);
+        Style messageFont = ColumnFontStyle("messageFont", look.MessageFontFamily, look.MessageFontSize, look.MessageFontWeight);
 
         Style rows = new(x => x.OfType<ListBoxItem>());
+        // The Fluent theme's default ListBoxItem padding leaves visible space between rows even when
+        // EntrySpacing is 0 — zero it out so the spacing setting is the only source of vertical gap.
+        rows.Setters.Add(new Setter(TemplatedControl.PaddingProperty, new Thickness(0)));
         rows.Setters.Add(new Setter(Layoutable.MarginProperty, new Thickness(0, 0, 0, look.EntrySpacing)));
 
-        _appearanceStyles = new[] { entries, rows };
+        _appearanceStyles = new[] { timestampFont, messageFont, rows };
         foreach (Style style in _appearanceStyles)
         {
             List.Styles.Add(style);
         }
+    }
+
+    // A font style of a column of a row (the "timestampFont" / "messageFont" class of its text element).
+    private static Style ColumnFontStyle(string cssClass, string fontFamily, int fontSize, int fontWeight)
+    {
+        Style style = new(x => x.Is<TextBlock>().Class(cssClass));
+        // Always set (Regular when not set): a style taken away does not give the text its weight back, a style added
+        // later wins over it.
+        style.Setters.Add(new Setter(TextElement.FontWeightProperty, FontWeightOptions.ToAvalonia(fontWeight)));
+        if (fontFamily.Length > 0)
+        {
+            style.Setters.Add(new Setter(TextElement.FontFamilyProperty, new FontFamily(fontFamily)));
+        }
+
+        if (fontSize > 0)
+        {
+            style.Setters.Add(new Setter(TextElement.FontSizeProperty, (double)fontSize));
+        }
+
+        return style;
     }
 
     // The panel became visible (e.g. a collapsed tab was slid out) — the user can see the list.

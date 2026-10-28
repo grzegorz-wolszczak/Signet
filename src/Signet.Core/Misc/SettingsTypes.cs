@@ -297,32 +297,41 @@ public readonly record struct ToolHeaderFontAppearance(string FontFamily, int Fo
 }
 
 /// <summary>
-/// Font of the rows of the Notifications panel, and the vertical space between them; the colors come from the theme
-/// (<c>ui.notifications.background</c>, the error row from <c>ui.errorNotification</c>).
+/// Font of the timestamp column and of the message column of the Notifications panel (independent of each other), and
+/// the vertical space between rows; the colors come from the theme (<c>ui.notifications.*</c>, see <see cref="Signet.Core.Themes.ThemeKeys"/>).
 /// </summary>
-/// <param name="FontFamily">Font family of a row; empty = the interface font.</param>
-/// <param name="FontSize">Font size (px) of a row; 0 = the interface size.</param>
-/// <param name="FontWeight">Weight of a row (<see cref="FontWeightScale"/>); 0 = not set.</param>
+/// <param name="TimestampFontFamily">Font family of the timestamp column; empty = the interface font.</param>
+/// <param name="TimestampFontSize">Font size (px) of the timestamp column; 0 = the interface size.</param>
+/// <param name="TimestampFontWeight">Weight of the timestamp column (<see cref="FontWeightScale"/>); 0 = not set.</param>
+/// <param name="MessageFontFamily">Font family of the message column; empty = the interface font.</param>
+/// <param name="MessageFontSize">Font size (px) of the message column; 0 = the interface size.</param>
+/// <param name="MessageFontWeight">Weight of the message column (<see cref="FontWeightScale"/>); 0 = not set.</param>
 /// <param name="EntrySpacing">Vertical space (px) between two rows; 0 = the default spacing of the list.</param>
-public readonly record struct NotificationsAppearance(string FontFamily, int FontSize, int FontWeight = 0, int EntrySpacing = 0)
+public readonly record struct NotificationsAppearance(
+    string TimestampFontFamily, int TimestampFontSize, int TimestampFontWeight,
+    string MessageFontFamily, int MessageFontSize, int MessageFontWeight,
+    int EntrySpacing = 0)
 {
-    /// <summary>Lower bound of an explicit <see cref="FontSize"/>.</summary>
+    /// <summary>Lower bound of an explicit font size.</summary>
     public const int FontSizeMin = 6;
 
-    /// <summary>Upper bound of an explicit <see cref="FontSize"/>.</summary>
+    /// <summary>Upper bound of an explicit font size.</summary>
     public const int FontSizeMax = 72;
 
     /// <summary>Upper bound of <see cref="EntrySpacing"/>.</summary>
     public const int EntrySpacingMax = 20;
 
     /// <summary>Default values: the interface font at the default size, the default spacing of the list.</summary>
-    public static NotificationsAppearance Default => new(string.Empty, 0);
+    public static NotificationsAppearance Default => new(string.Empty, 0, 0, string.Empty, 0, 0);
 
-    /// <summary>A copy with the size and the spacing clamped (0 stays "the default").</summary>
+    /// <summary>A copy with the sizes and the spacing clamped (0 stays "the default").</summary>
     public NotificationsAppearance Normalized() => new(
-        FontFamily?.Trim() ?? string.Empty,
-        FontSize <= 0 ? 0 : Math.Clamp(FontSize, FontSizeMin, FontSizeMax),
-        FontWeightScale.Normalize(FontWeight),
+        TimestampFontFamily?.Trim() ?? string.Empty,
+        TimestampFontSize <= 0 ? 0 : Math.Clamp(TimestampFontSize, FontSizeMin, FontSizeMax),
+        FontWeightScale.Normalize(TimestampFontWeight),
+        MessageFontFamily?.Trim() ?? string.Empty,
+        MessageFontSize <= 0 ? 0 : Math.Clamp(MessageFontSize, FontSizeMin, FontSizeMax),
+        FontWeightScale.Normalize(MessageFontWeight),
         Math.Clamp(EntrySpacing, 0, EntrySpacingMax));
 }
 

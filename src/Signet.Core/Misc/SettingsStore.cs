@@ -801,52 +801,81 @@ public sealed class SettingsStore
         {
             NotificationsAppearance d = NotificationsAppearance.Default;
             return new NotificationsAppearance(
-                ReadString("notifications_font_family", d.FontFamily),
-                ReadInt("notifications_font_size", d.FontSize),
-                ReadInt("notifications_font_weight", d.FontWeight),
+                ReadString("notifications_timestamp_font_family", d.TimestampFontFamily),
+                ReadInt("notifications_timestamp_font_size", d.TimestampFontSize),
+                ReadInt("notifications_timestamp_font_weight", d.TimestampFontWeight),
+                ReadString("notifications_message_font_family", d.MessageFontFamily),
+                ReadInt("notifications_message_font_size", d.MessageFontSize),
+                ReadInt("notifications_message_font_weight", d.MessageFontWeight),
                 ReadInt("notifications_entry_spacing", d.EntrySpacing)).Normalized();
         }
 
         set
         {
             NotificationsAppearance v = value.Normalized();
-            WriteSilent("notifications_font_family", v.FontFamily);
-            WriteSilent("notifications_font_size", v.FontSize);
-            WriteSilent("notifications_font_weight", v.FontWeight);
+            WriteSilent("notifications_timestamp_font_family", v.TimestampFontFamily);
+            WriteSilent("notifications_timestamp_font_size", v.TimestampFontSize);
+            WriteSilent("notifications_timestamp_font_weight", v.TimestampFontWeight);
+            WriteSilent("notifications_message_font_family", v.MessageFontFamily);
+            WriteSilent("notifications_message_font_size", v.MessageFontSize);
+            WriteSilent("notifications_message_font_weight", v.MessageFontWeight);
             WriteSilent("notifications_entry_spacing", v.EntrySpacing);
             RaiseChanged("notifications_appearance");
         }
     }
 
     /// <summary>
-    /// Whether the Notifications panel's rows use the font of a tool panel's title bar (<see cref="ToolHeaderFontAppearance"/>)
-    /// instead of their own (<see cref="NotificationsAppearance"/>) — off by default. The own font stays stored while this is
-    /// on, for when it is turned off again.
+    /// Whether the Notifications panel's timestamp column uses the font of a tool panel's title bar
+    /// (<see cref="ToolHeaderFontAppearance"/>) instead of its own (<see cref="NotificationsAppearance"/>) — off by
+    /// default. The own font stays stored while this is on, for when it is turned off again.
     /// </summary>
-    public bool NotificationsFontInheritsToolHeader
+    public bool NotificationsTimestampFontInheritsToolHeader
     {
-        get => ReadBool("notifications_font_inherit_tool_header", false);
+        get => ReadBool("notifications_timestamp_font_inherit_tool_header", false);
         set
         {
-            WriteSilent("notifications_font_inherit_tool_header", value);
+            WriteSilent("notifications_timestamp_font_inherit_tool_header", value);
             RaiseChanged("notifications_appearance");
         }
     }
 
-    /// <summary>The look the Notifications panel uses now: its own font, or — while
-    /// <see cref="NotificationsFontInheritsToolHeader"/> — a tool panel's title bar font; the spacing is always its own.</summary>
+    /// <summary>
+    /// Whether the Notifications panel's message column uses the font of a tool panel's title bar
+    /// (<see cref="ToolHeaderFontAppearance"/>) instead of its own (<see cref="NotificationsAppearance"/>) — off by
+    /// default. The own font stays stored while this is on, for when it is turned off again.
+    /// </summary>
+    public bool NotificationsMessageFontInheritsToolHeader
+    {
+        get => ReadBool("notifications_message_font_inherit_tool_header", false);
+        set
+        {
+            WriteSilent("notifications_message_font_inherit_tool_header", value);
+            RaiseChanged("notifications_appearance");
+        }
+    }
+
+    /// <summary>The look the Notifications panel uses now: its own fonts, or — per column, while
+    /// <see cref="NotificationsTimestampFontInheritsToolHeader"/> / <see cref="NotificationsMessageFontInheritsToolHeader"/> —
+    /// a tool panel's title bar font; the spacing is always its own.</summary>
     public NotificationsAppearance EffectiveNotificationsAppearance
     {
         get
         {
             NotificationsAppearance own = NotificationsAppearance;
-            if (!NotificationsFontInheritsToolHeader)
+            if (!NotificationsTimestampFontInheritsToolHeader && !NotificationsMessageFontInheritsToolHeader)
             {
                 return own;
             }
 
             ToolHeaderFontAppearance parent = ToolHeaderFontAppearance;
-            return new NotificationsAppearance(parent.FontFamily, parent.FontSize, parent.FontWeight, own.EntrySpacing);
+            return new NotificationsAppearance(
+                NotificationsTimestampFontInheritsToolHeader ? parent.FontFamily : own.TimestampFontFamily,
+                NotificationsTimestampFontInheritsToolHeader ? parent.FontSize : own.TimestampFontSize,
+                NotificationsTimestampFontInheritsToolHeader ? parent.FontWeight : own.TimestampFontWeight,
+                NotificationsMessageFontInheritsToolHeader ? parent.FontFamily : own.MessageFontFamily,
+                NotificationsMessageFontInheritsToolHeader ? parent.FontSize : own.MessageFontSize,
+                NotificationsMessageFontInheritsToolHeader ? parent.FontWeight : own.MessageFontWeight,
+                own.EntrySpacing);
         }
     }
 
@@ -2346,11 +2375,15 @@ public sealed class SettingsStore
         yield return "tool_header_font_family";
         yield return "tool_header_font_size";
         yield return "tool_header_font_weight";
-        yield return "notifications_font_family";
-        yield return "notifications_font_size";
-        yield return "notifications_font_weight";
+        yield return "notifications_timestamp_font_family";
+        yield return "notifications_timestamp_font_size";
+        yield return "notifications_timestamp_font_weight";
+        yield return "notifications_message_font_family";
+        yield return "notifications_message_font_size";
+        yield return "notifications_message_font_weight";
         yield return "notifications_entry_spacing";
-        yield return "notifications_font_inherit_tool_header";
+        yield return "notifications_timestamp_font_inherit_tool_header";
+        yield return "notifications_message_font_inherit_tool_header";
     }
 
     // The colors the settings held before the themes (by their old keys).

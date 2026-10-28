@@ -16,6 +16,8 @@ using Signet.App.Docking;
 using Signet.App.Services;
 using Signet.App.ViewModels;
 using Signet.App.Views;
+using Signet.Core.Misc;
+using Signet.Core.Tests.TestSupport;
 
 namespace Signet.App.UiTests;
 
@@ -171,5 +173,47 @@ public sealed class NotificationsPanelTests
         ((ISolidColorBrush)error.Foreground!).Color.Should().Be(ErrorColor(window));
         ((ISolidColorBrush)info.Foreground!).Color.Should().NotBe(ErrorColor(window));
         window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Zero_entry_spacing_leaves_no_gap_between_rows()
+    {
+        // Arrange
+        using TempDir temp = new();
+        SettingsStore settings = new(temp.Combine("settings.xml"));
+        settings.NotificationsAppearance = settings.NotificationsAppearance with { EntrySpacing = 0 };
+        using StatusBarService statusBar = new();
+        NotificationsViewModel vm = new(statusBar, settings);
+
+        // Act
+        statusBar.ShowMessage("First", TimeSpan.FromSeconds(1));
+        statusBar.ShowMessage("Second", TimeSpan.FromSeconds(1));
+
+        var window = new Window { Width = 600, Height = 300, Content = new NotificationsView { DataContext = vm } };
+        Render(window);
+
+        ListBoxItem[] rows = window.GetVisualDescendants().OfType<ListBoxItem>()
+            .OrderBy(r => r.Bounds.Top).ToArray();
+
+        // Assert
+        rows.Should().HaveCount(2);
+        (rows[1].Bounds.Top - rows[0].Bounds.Bottom).Should().Be(0);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Clear_on_the_sample_panel_does_not_clear_the_entries()
+    {
+        // Arrange
+        using StatusBarService statusBar = new();
+        NotificationsViewModel vm = new(statusBar) { IsSample = true };
+        statusBar.ShowMessage("Book loaded", TimeSpan.FromSeconds(1));
+
+        // Act
+        vm.ClearCommand.Execute(null);
+
+        // Assert
+        vm.HasEntries.Should().BeTrue();
+        vm.Entries.Should().HaveCount(1);
     }
 }
