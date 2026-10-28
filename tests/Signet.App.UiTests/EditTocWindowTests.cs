@@ -79,6 +79,16 @@ public sealed class EditTocWindowTests : IDisposable
     private static Point Center(Control control, Window window) =>
         control.TranslatePoint(new Point(control.Bounds.Width / 2, control.Bounds.Height / 2), window)!.Value;
 
+    private static void DoubleClick(Window window, Control control)
+    {
+        Point point = Center(control, window);
+        window.MouseDown(point, MouseButton.Left);
+        window.MouseUp(point, MouseButton.Left);
+        window.MouseDown(point, MouseButton.Left);
+        window.MouseUp(point, MouseButton.Left);
+        Settle(window);
+    }
+
     [AvaloniaFact]
     public void ExpandCollapseButtons_WhenDisplayed_AreLeftOfTable()
     {
@@ -98,6 +108,39 @@ public sealed class EditTocWindowTests : IDisposable
             expandRight.Should().BeLessThan(tableLeft);
             collapseRight.Should().BeLessThan(tableLeft);
             window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void DoubleClicking_target_cell_selects_its_entry_and_requests_target_selection()
+    {
+        // Arrange
+        (EditTocWindow window, EditTocViewModel vm, TreeDataGrid grid, Book book) = Show();
+        using (book)
+        {
+            try
+            {
+                EditTocNodeViewModel expected = vm.Nodes[1];
+                grid.RowSelection!.Select(new IndexPath(0));
+                Settle(window);
+                vm.SelectedNode.Should().BeSameAs(vm.Nodes[0]);
+                int requests = 0;
+                vm.SelectTargetRequested += (_, _) => requests++;
+                int row = grid.Rows!.ModelIndexToRowIndex(new IndexPath(1));
+                Control targetCell = grid.TryGetCell(2, row)!;
+
+                // Act
+                DoubleClick(window, targetCell);
+
+                // Assert
+                vm.SelectedNode.Should().BeSameAs(expected);
+                grid.RowSelection!.SelectedItem.Should().BeSameAs(expected);
+                requests.Should().Be(1);
+            }
+            finally
+            {
+                window.Close();
+            }
         }
     }
 

@@ -152,6 +152,19 @@ public partial class EditTocWindow : Window
         }
     }
 
+    private void OnTargetDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (_bound is null || (sender as Control)?.DataContext is not EditTocNodeViewModel node)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        _bound.SetSelectedNodes(new[] { node });
+        _selection?.SelectFromViewModel();
+        Execute(_bound.SelectTargetCommand);
+    }
+
     private async void OnSelectTargetRequested(object? sender, EventArgs e)
     {
         if (_bound is null || _bound.SelectedNode is null)

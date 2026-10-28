@@ -21,8 +21,10 @@
                PlaceholderText="{loc:Loc EditTocWindow_EntryTextPlaceholder}" />
     </DataTemplate>
     <DataTemplate x:Key="TargetCellTemplate" x:DataType="vm:EditTocNodeViewModel">
-      <TextBlock Text="{Binding TargetDisplay}" Padding="6,0" VerticalAlignment="Center" Opacity="0.7"
-                 TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding TargetDisplay}" />
+      <Grid Background="Transparent" DoubleTapped="OnTargetDoubleTapped">
+        <TextBlock Text="{Binding TargetDisplay}" Padding="6,0" VerticalAlignment="Center" Opacity="0.7"
+                   TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding TargetDisplay}" />
+      </Grid>
     </DataTemplate>
   </Window.Resources>
 
