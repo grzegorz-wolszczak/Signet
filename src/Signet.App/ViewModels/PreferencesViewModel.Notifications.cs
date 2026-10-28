@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.Core.Misc;
+using Signet.Core.Themes;
 
 namespace Signet.App.ViewModels;
 
@@ -145,6 +146,40 @@ public sealed partial class PreferencesViewModel
             () => NotificationsMessageFontWeight, v => NotificationsMessageFontWeight = v,
             inheritance: ToolHeaderInheritance(
                 () => _settings.NotificationsMessageFontInheritsToolHeader, v => _settings.NotificationsMessageFontInheritsToolHeader = v));
+
+    /// <summary>The background of the whole list; embedded here instead of linking out to Interface Colors.</summary>
+    public ColorKeyEditorViewModel NotificationsBackgroundColor { get; private set; } = null!;
+
+    /// <summary>The background of the timestamp column.</summary>
+    public ColorKeyEditorViewModel NotificationsTimestampBackgroundColor { get; private set; } = null!;
+
+    /// <summary>The text color of the timestamp column.</summary>
+    public ColorKeyEditorViewModel NotificationsTimestampForegroundColor { get; private set; } = null!;
+
+    /// <summary>The background of the message column of an ordinary row.</summary>
+    public ColorKeyEditorViewModel NotificationsMessageInfoBackgroundColor { get; private set; } = null!;
+
+    /// <summary>The text color of the message column of an ordinary row.</summary>
+    public ColorKeyEditorViewModel NotificationsMessageInfoForegroundColor { get; private set; } = null!;
+
+    /// <summary>The background of the message column of a warning row.</summary>
+    public ColorKeyEditorViewModel NotificationsMessageWarningBackgroundColor { get; private set; } = null!;
+
+    /// <summary>The text color of the message column of a warning row.</summary>
+    public ColorKeyEditorViewModel NotificationsMessageWarningForegroundColor { get; private set; } = null!;
+
+    // The panel's own colors, embedded directly on this page instead of only linking out to Interface Colors — only
+    // this panel uses them. Made once Theme exists (called from the constructor).
+    private void CreateNotificationsColorEditors()
+    {
+        NotificationsBackgroundColor = new ColorKeyEditorViewModel(Theme, ThemeKeys.UiNotificationsBackground);
+        NotificationsTimestampBackgroundColor = new ColorKeyEditorViewModel(Theme, ThemeKeys.UiNotificationsTimestampBackground);
+        NotificationsTimestampForegroundColor = new ColorKeyEditorViewModel(Theme, ThemeKeys.UiNotificationsTimestampForeground);
+        NotificationsMessageInfoBackgroundColor = new ColorKeyEditorViewModel(Theme, ThemeKeys.UiNotificationsMessageInfoBackground);
+        NotificationsMessageInfoForegroundColor = new ColorKeyEditorViewModel(Theme, ThemeKeys.UiNotificationsMessageInfoForeground);
+        NotificationsMessageWarningBackgroundColor = new ColorKeyEditorViewModel(Theme, ThemeKeys.UiNotificationsMessageWarningBackground);
+        NotificationsMessageWarningForegroundColor = new ColorKeyEditorViewModel(Theme, ThemeKeys.UiNotificationsMessageWarningForeground);
+    }
 
     private NotificationsViewModel? _notificationsSample;
 

@@ -6670,26 +6670,8 @@ Close the tab</value>
   <data name="PreferencesWindow_NotificationsEntrySpacing" xml:space="preserve">
     <value>Space between entries (px)</value>
   </data>
-  <data name="PreferencesWindow_NotificationsBackgroundInTheme" xml:space="preserve">
-    <value>Notifications list background color: Appearance › Interface Colors</value>
-  </data>
-  <data name="PreferencesWindow_NotificationsTimestampBackgroundInTheme" xml:space="preserve">
-    <value>Timestamp column background color: Appearance › Interface Colors</value>
-  </data>
-  <data name="PreferencesWindow_NotificationsTimestampForegroundInTheme" xml:space="preserve">
-    <value>Timestamp column text color: Appearance › Interface Colors</value>
-  </data>
-  <data name="PreferencesWindow_NotificationsMessageInfoBackgroundInTheme" xml:space="preserve">
-    <value>Message column background color (an ordinary entry): Appearance › Interface Colors</value>
-  </data>
-  <data name="PreferencesWindow_NotificationsMessageInfoForegroundInTheme" xml:space="preserve">
-    <value>Message column text color (an ordinary entry): Appearance › Interface Colors</value>
-  </data>
-  <data name="PreferencesWindow_NotificationsMessageWarningBackgroundInTheme" xml:space="preserve">
-    <value>Message column background color (a warning): Appearance › Interface Colors</value>
-  </data>
-  <data name="PreferencesWindow_NotificationsMessageWarningForegroundInTheme" xml:space="preserve">
-    <value>Message column text color (a warning): Appearance › Interface Colors</value>
+  <data name="PreferencesWindow_NotificationsColors" xml:space="preserve">
+    <value>Colors</value>
   </data>
   <data name="PreferencesWindow_NotificationsTimestampFont" xml:space="preserve">
     <value>Timestamp column</value>

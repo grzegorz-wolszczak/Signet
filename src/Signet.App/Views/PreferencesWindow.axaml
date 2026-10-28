@@ -753,27 +753,42 @@
                                        Maximum="{x:Static vm:PreferencesViewModel.NotificationsEntrySpacingMax}"
                                        Increment="1" FormatString="0" HorizontalAlignment="Right" Width="130" />
                       </Grid>
-                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_NotificationsBackgroundInTheme}" Padding="0"
-                                       views:PreferencesPage.Target="AppearanceGeneralPage"
-                                       views:PreferencesPage.TargetKey="ui.notifications.background" />
-                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_NotificationsTimestampBackgroundInTheme}" Padding="0"
-                                       views:PreferencesPage.Target="AppearanceGeneralPage"
-                                       views:PreferencesPage.TargetKey="ui.notifications.timestamp.background" />
-                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_NotificationsTimestampForegroundInTheme}" Padding="0"
-                                       views:PreferencesPage.Target="AppearanceGeneralPage"
-                                       views:PreferencesPage.TargetKey="ui.notifications.timestamp.foreground" />
-                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_NotificationsMessageInfoBackgroundInTheme}" Padding="0"
-                                       views:PreferencesPage.Target="AppearanceGeneralPage"
-                                       views:PreferencesPage.TargetKey="ui.notifications.message.info.background" />
-                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_NotificationsMessageInfoForegroundInTheme}" Padding="0"
-                                       views:PreferencesPage.Target="AppearanceGeneralPage"
-                                       views:PreferencesPage.TargetKey="ui.notifications.message.info.foreground" />
-                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_NotificationsMessageWarningBackgroundInTheme}" Padding="0"
-                                       views:PreferencesPage.Target="AppearanceGeneralPage"
-                                       views:PreferencesPage.TargetKey="ui.notifications.message.warning.background" />
-                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_NotificationsMessageWarningForegroundInTheme}" Padding="0"
-                                       views:PreferencesPage.Target="AppearanceGeneralPage"
-                                       views:PreferencesPage.TargetKey="ui.notifications.message.warning.foreground" />
+                    </StackPanel>
+                  </Border>
+                  <Border Classes="section">
+                    <StackPanel Spacing="6">
+                      <!-- The panel's own colors, right here — not a link out to the shared Interface Colors tree,
+                           since only this panel uses them (each defaults to "no color of its own": the background
+                           follows the list's, the warning text follows the error notification color). -->
+                      <TextBlock Text="{loc:Loc PreferencesWindow_NotificationsColors}" FontWeight="Bold" />
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc ThemeKey_ui_notifications_background}" VerticalAlignment="Center" />
+                        <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding NotificationsBackgroundColor}" />
+                      </Grid>
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc ThemeKey_ui_notifications_timestamp_background}" VerticalAlignment="Center" />
+                        <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding NotificationsTimestampBackgroundColor}" />
+                      </Grid>
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc ThemeKey_ui_notifications_timestamp_foreground}" VerticalAlignment="Center" />
+                        <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding NotificationsTimestampForegroundColor}" />
+                      </Grid>
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc ThemeKey_ui_notifications_message_info_background}" VerticalAlignment="Center" />
+                        <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding NotificationsMessageInfoBackgroundColor}" />
+                      </Grid>
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc ThemeKey_ui_notifications_message_info_foreground}" VerticalAlignment="Center" />
+                        <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding NotificationsMessageInfoForegroundColor}" />
+                      </Grid>
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc ThemeKey_ui_notifications_message_warning_background}" VerticalAlignment="Center" />
+                        <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding NotificationsMessageWarningBackgroundColor}" />
+                      </Grid>
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc ThemeKey_ui_notifications_message_warning_foreground}" VerticalAlignment="Center" />
+                        <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding NotificationsMessageWarningForegroundColor}" />
+                      </Grid>
                     </StackPanel>
                   </Border>
                 </StackPanel>

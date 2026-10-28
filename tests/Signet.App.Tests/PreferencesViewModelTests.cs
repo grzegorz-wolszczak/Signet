@@ -1908,4 +1908,24 @@ public sealed class PreferencesViewModelTests : IDisposable
         vm.EffectiveUiFontFamily.Should().Be("Segoe UI");
         vm.UiFontDescription.Should().Contain("14");
     }
+
+    [Fact]
+    public void The_notifications_color_editors_write_through_to_the_theme_being_edited()
+    {
+        // Arrange
+        (TestHost host, PreferencesViewModel vm) = New();
+        using TestHost _ = host;
+
+        // Act & Assert: unset by default, the shared tree does not list them either.
+        vm.NotificationsTimestampBackgroundColor.HasColor.Should().BeFalse();
+        ThemeKeys.On(ThemePage.Interface).Should().NotContain(ThemeKeys.UiNotificationsTimestampBackground);
+
+        // Act
+        vm.NotificationsTimestampBackgroundColor.HasColor = true;
+        vm.NotificationsTimestampBackgroundColor.Color = "#112233";
+
+        // Assert
+        vm.NotificationsTimestampBackgroundColor.Color.Should().Be("#112233");
+        vm.Theme.Resolved!.ColorOf(ThemeKeys.UiNotificationsTimestampBackground).Should().Be(ThemeColor.Parse("#112233"));
+    }
 }

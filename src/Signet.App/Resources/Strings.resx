@@ -6670,26 +6670,8 @@ Zamknij zakładkę</value>
   <data name="PreferencesWindow_NotificationsEntrySpacing" xml:space="preserve">
     <value>Odstęp między wpisami (px)</value>
   </data>
-  <data name="PreferencesWindow_NotificationsBackgroundInTheme" xml:space="preserve">
-    <value>Kolor tła listy powiadomień: Wygląd › Kolory interfejsu</value>
-  </data>
-  <data name="PreferencesWindow_NotificationsTimestampBackgroundInTheme" xml:space="preserve">
-    <value>Kolor tła kolumny czasu: Wygląd › Kolory interfejsu</value>
-  </data>
-  <data name="PreferencesWindow_NotificationsTimestampForegroundInTheme" xml:space="preserve">
-    <value>Kolor tekstu kolumny czasu: Wygląd › Kolory interfejsu</value>
-  </data>
-  <data name="PreferencesWindow_NotificationsMessageInfoBackgroundInTheme" xml:space="preserve">
-    <value>Kolor tła kolumny treści (zwykły wpis): Wygląd › Kolory interfejsu</value>
-  </data>
-  <data name="PreferencesWindow_NotificationsMessageInfoForegroundInTheme" xml:space="preserve">
-    <value>Kolor tekstu kolumny treści (zwykły wpis): Wygląd › Kolory interfejsu</value>
-  </data>
-  <data name="PreferencesWindow_NotificationsMessageWarningBackgroundInTheme" xml:space="preserve">
-    <value>Kolor tła kolumny treści (ostrzeżenie): Wygląd › Kolory interfejsu</value>
-  </data>
-  <data name="PreferencesWindow_NotificationsMessageWarningForegroundInTheme" xml:space="preserve">
-    <value>Kolor tekstu kolumny treści (ostrzeżenie): Wygląd › Kolory interfejsu</value>
+  <data name="PreferencesWindow_NotificationsColors" xml:space="preserve">
+    <value>Kolory</value>
   </data>
   <data name="PreferencesWindow_NotificationsTimestampFont" xml:space="preserve">
     <value>Kolumna czasu</value>
