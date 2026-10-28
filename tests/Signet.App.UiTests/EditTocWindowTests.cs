@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
@@ -24,20 +25,22 @@ namespace Signet.App.UiTests;
 /// <summary>Rendering of the "Edit Table Of Contents" window.</summary>
 public sealed class EditTocWindowTests : IDisposable
 {
+    private const string DefaultHeadings = "  <h1>Alpha</h1>\n  <h2>Alpha One</h2>\n  <h1>Beta</h1>";
+
     private readonly Disposables _disposables = new();
 
     /// <inheritdoc />
     public void Dispose() => _disposables.Dispose();
 
     // A book whose TOC is Alpha (h1) > Alpha One (h2), Beta (h1); the window shown on it.
-    private (EditTocWindow Window, EditTocViewModel Vm, TreeDataGrid Grid, Book Book) Show()
+    private (EditTocWindow Window, EditTocViewModel Vm, TreeDataGrid Grid, Book Book) Show(string headings = DefaultHeadings)
     {
         Book book = _disposables.Add(BookCreator.CreateNewBook("3.0"));
         HtmlResource html = book.GetHtmlResourcesExcludingNav().First();
         string text = html.GetText();
         int start = text.IndexOf("<body", StringComparison.Ordinal);
         int end = text.IndexOf("</body>", StringComparison.Ordinal) + "</body>".Length;
-        html.SetText(text[..start] + "<body>\n  <h1>Alpha</h1>\n  <h2>Alpha One</h2>\n  <h1>Beta</h1>\n</body>" + text[end..]);
+        html.SetText(text[..start] + "<body>\n" + headings + "\n</body>" + text[end..]);
         new HeadingSelectorModel(book).Apply();
         TocGenerator.GenerateToc(book);
 
@@ -59,29 +62,95 @@ public sealed class EditTocWindowTests : IDisposable
 
     private static Point TitleCellCenter(TreeDataGrid grid, Window window, int row)
     {
-        Control cell = grid.TryGetCell(0, row)!;
+        Control cell = TitleCell(grid, row);
         return cell.TranslatePoint(new Point(cell.Bounds.Width / 2, cell.Bounds.Height / 2), window)!.Value;
     }
 
-    [AvaloniaFact]
-    public void The_entries_are_a_flat_table_with_resizable_title_level_and_target_columns()
+    private static TreeDataGridTemplateCell TitleCell(TreeDataGrid grid, int row)
     {
-        // Act
+        Control cell = grid.TryGetCell(0, row)!;
+        return cell as TreeDataGridTemplateCell
+            ?? cell.GetVisualDescendants().OfType<TreeDataGridTemplateCell>().Single();
+    }
+
+    private static ToggleButton ExpanderToggle(TreeDataGrid grid, int row) =>
+        grid.TryGetCell(0, row)!.GetVisualDescendants().OfType<ToggleButton>().Single();
+
+    private static Point Center(Control control, Window window) =>
+        control.TranslatePoint(new Point(control.Bounds.Width / 2, control.Bounds.Height / 2), window)!.Value;
+
+    [AvaloniaFact]
+    public void The_entries_are_a_hierarchical_table_with_resizable_title_level_and_target_columns()
+    {
+        // Arrange
         (EditTocWindow window, _, TreeDataGrid grid, Book book) = Show();
         using (book)
         {
+            // Act
+            object?[] headers = grid.Columns!.Select(c => c.Header).ToArray();
+            int headerCount = grid.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().Count();
+            bool canResize = grid.CanUserResizeColumns;
+            bool canSort = grid.CanUserSortColumns;
+            bool hasGridLines = grid.Classes.Contains("gridLines");
+            string?[] texts = window.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).ToArray();
+
+            TreeDataGridExpanderCell[] titleCells = grid.GetVisualDescendants()
+                .OfType<TreeDataGridExpanderCell>().OrderBy(c => c.RowIndex).ToArray();
+
             // Assert
-            grid.Columns!.Select(c => c.Header).Should().Equal(
+            headers.Should().Equal(
                 Strings.Get("EditTocWindow_ColumnTitle"), Strings.Get("EditTocWindow_ColumnLevel"), Strings.Get("EditTocWindow_ColumnTarget"));
-            grid.GetVisualDescendants().OfType<TreeDataGridColumnHeader>().Should().HaveCount(3, "every column is shown");
-            grid.CanUserResizeColumns.Should().BeTrue();
-            grid.CanUserSortColumns.Should().BeFalse();
-            grid.Classes.Should().Contain("gridLines");
-            var texts = window.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).ToList();
+            headerCount.Should().Be(3, "every column is shown");
+            canResize.Should().BeTrue();
+            canSort.Should().BeFalse();
+            hasGridLines.Should().BeTrue();
             texts.Should().Contain("Alpha").And.Contain("Alpha One").And.Contain("Beta");
-            window.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Text == "Alpha One").Margin.Left
-                .Should().BeGreaterThan(window.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Text == "Alpha").Margin.Left,
-                    "the title is indented by its level");
+            titleCells.Should().HaveCount(3);
+            titleCells[0].ShowExpander.Should().BeTrue("Alpha has a child");
+            titleCells[1].ShowExpander.Should().BeFalse("Alpha One has no children");
+            titleCells[0].Indent.Should().Be(0);
+            titleCells[1].Indent.Should().Be(1);
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Clicking_the_expander_hides_and_restores_child_entries()
+    {
+        // Arrange
+        (EditTocWindow window, EditTocViewModel vm, TreeDataGrid grid, Book book) = Show();
+        using (book)
+        {
+            TreeDataGridExpanderCell alphaCell = grid.TryGetCell(0, 0).Should()
+                .BeOfType<TreeDataGridExpanderCell>().Subject;
+
+            // Assert
+            alphaCell.ShowExpander.Should().BeTrue();
+            ToggleButton toggle = ExpanderToggle(grid, 0);
+            toggle.IsVisible.Should().BeTrue();
+
+            // Act
+            Point collapsePoint = Center(toggle, window);
+            window.MouseDown(collapsePoint, MouseButton.Left);
+            window.MouseUp(collapsePoint, MouseButton.Left);
+            Settle(window);
+
+            // Assert
+            alphaCell.IsExpanded.Should().BeFalse();
+            vm.Nodes[0].IsExpanded.Should().BeFalse();
+            vm.Rows.Should().HaveCount(3, "collapsing does not remove child entries");
+            window.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).Should().NotContain("Alpha One");
+
+            // Act
+            toggle = ExpanderToggle(grid, 0);
+            Point expandPoint = Center(toggle, window);
+            window.MouseDown(expandPoint, MouseButton.Left);
+            window.MouseUp(expandPoint, MouseButton.Left);
+            Settle(window);
+
+            // Assert
+            vm.Nodes[0].IsExpanded.Should().BeTrue();
+            window.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).Should().Contain("Alpha One");
             window.Close();
         }
     }
@@ -89,11 +158,12 @@ public sealed class EditTocWindowTests : IDisposable
     [AvaloniaFact]
     public void Rename_puts_the_selected_title_in_edit_mode_and_the_text_goes_to_the_entry()
     {
-        // Act
+        // Arrange
         (EditTocWindow window, EditTocViewModel vm, TreeDataGrid grid, Book book) = Show();
         using (book)
         {
-            grid.RowSelection!.SelectedIndex = new IndexPath(2);
+            // Act
+            grid.RowSelection!.SelectedIndex = new IndexPath(1);
             Settle(window);
 
             // Assert
@@ -103,7 +173,7 @@ public sealed class EditTocWindowTests : IDisposable
             vm.RenameCommand.Execute(null);
             Settle(window);
 
-            TreeDataGridCell cell = grid.TryGetCell(0, 2).Should().BeAssignableTo<TreeDataGridCell>().Subject;
+            TreeDataGridTemplateCell cell = TitleCell(grid, 2);
 
             // Assert
             cell.IsEditing.Should().BeTrue();
@@ -119,12 +189,60 @@ public sealed class EditTocWindowTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void Clicking_a_selected_title_enters_edit_mode()
+    {
+        // Arrange
+        (EditTocWindow window, _, TreeDataGrid grid, Book book) = Show();
+        using (book)
+        {
+            grid.RowSelection!.SelectedIndex = new IndexPath(1);
+            Settle(window);
+            Point beta = TitleCellCenter(grid, window, 2);
+
+            // Act
+            window.MouseDown(beta, MouseButton.Left);
+            window.MouseUp(beta, MouseButton.Left);
+            Settle(window);
+
+            // Assert
+            TitleCell(grid, 2).IsEditing.Should().BeTrue();
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Moving_an_entry_under_a_leaf_expands_the_new_parent()
+    {
+        // Arrange
+        (EditTocWindow window, EditTocViewModel vm, TreeDataGrid grid, Book book) =
+            Show("  <h1>Alpha</h1>\n  <h1>Beta</h1>\n  <h1>Gamma</h1>");
+        using (book)
+        {
+            grid.RowSelection!.SelectedIndex = new IndexPath(2);
+            Settle(window);
+
+            // Act
+            vm.MoveRightCommand.Execute(null);
+            Settle(window);
+
+            // Assert
+            TreeDataGridExpanderCell betaCell = grid.TryGetCell(0, 1).Should()
+                .BeOfType<TreeDataGridExpanderCell>().Subject;
+            betaCell.ShowExpander.Should().BeTrue();
+            betaCell.IsExpanded.Should().BeTrue();
+            window.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).Should().Contain("Gamma");
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public void Ctrl_click_selects_several_entries_and_moving_keeps_the_moved_entry_selected()
     {
-        // Act
+        // Arrange
         (EditTocWindow window, EditTocViewModel vm, TreeDataGrid grid, Book book) = Show();
         using (book)
         {
+            // Act
             Point alpha = TitleCellCenter(grid, window, 0);
             Point beta = TitleCellCenter(grid, window, 2);
             window.MouseDown(alpha, MouseButton.Left);
@@ -138,7 +256,7 @@ public sealed class EditTocWindowTests : IDisposable
             vm.SelectedNode.Should().BeNull("two entries are selected");
 
             // Act
-            grid.RowSelection.SelectedIndex = new IndexPath(2);
+            grid.RowSelection.SelectedIndex = new IndexPath(1);
             Settle(window);
             EditTocNodeViewModel betaNode = vm.Rows[2];
             vm.MoveUpCommand.Execute(null);
