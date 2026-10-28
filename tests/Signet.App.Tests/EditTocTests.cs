@@ -301,6 +301,100 @@ public sealed class EditTocTests : IDisposable
     }
 
     [Fact]
+    public void NextInvalidEntryCommand_WhenMultipleEntriesAreInvalid_CyclesThroughReadingOrder()
+    {
+        // Arrange
+        EditTocViewModel vm = NewViewModel();
+        EditTocNodeViewModel alpha = vm.Nodes[0];
+        EditTocNodeViewModel alphaOne = alpha.Children[0];
+        EditTocNodeViewModel gamma = vm.Nodes[vm.Nodes.Count - 1];
+        alpha.Text = string.Empty;
+        alphaOne.Target = string.Empty;
+        gamma.Target = string.Empty;
+        vm.AcceptCommand.Execute(null);
+        vm.SetSelectedNodes(new[] { alpha });
+
+        // Act
+        vm.NextInvalidEntryCommand.Execute(null);
+
+        // Assert
+        vm.SelectedNode.Should().BeSameAs(alphaOne);
+
+        // Act
+        vm.NextInvalidEntryCommand.Execute(null);
+
+        // Assert
+        vm.SelectedNode.Should().BeSameAs(gamma);
+
+        // Act
+        vm.PreviousInvalidEntryCommand.Execute(null);
+
+        // Assert
+        vm.SelectedNode.Should().BeSameAs(alphaOne);
+
+        // Act
+        vm.NextInvalidEntryCommand.Execute(null);
+
+        // Assert
+        vm.SelectedNode.Should().BeSameAs(gamma);
+
+        // Act
+        vm.NextInvalidEntryCommand.Execute(null);
+
+        // Assert
+        vm.SelectedNode.Should().BeSameAs(alpha, "next wraps to the first invalid entry");
+
+        // Act
+        vm.PreviousInvalidEntryCommand.Execute(null);
+
+        // Assert
+        vm.SelectedNode.Should().BeSameAs(gamma, "previous wraps to the last invalid entry");
+    }
+
+    [Fact]
+    public void InvalidEntryNavigation_WhenNothingIsSelected_StartsAtFirstOrLastEntry()
+    {
+        // Arrange
+        EditTocViewModel vm = NewViewModel();
+        EditTocNodeViewModel alpha = vm.Nodes[0];
+        EditTocNodeViewModel gamma = vm.Nodes[vm.Nodes.Count - 1];
+        alpha.Text = string.Empty;
+        gamma.Target = string.Empty;
+        vm.AcceptCommand.Execute(null);
+
+        // Act
+        vm.NextInvalidEntryCommand.Execute(null);
+
+        // Assert
+        vm.SelectedNode.Should().BeSameAs(alpha);
+
+        // Act
+        vm.SetSelectedNodes(Array.Empty<EditTocNodeViewModel>());
+        vm.PreviousInvalidEntryCommand.Execute(null);
+
+        // Assert
+        vm.SelectedNode.Should().BeSameAs(gamma);
+    }
+
+    [Fact]
+    public void InvalidEntryNavigation_WhenEntriesBecomeValid_ClearsValidationMessage()
+    {
+        // Arrange
+        EditTocViewModel vm = NewViewModel();
+        EditTocNodeViewModel alpha = vm.Nodes[0];
+        alpha.Text = string.Empty;
+        vm.AcceptCommand.Execute(null);
+        alpha.Text = "Alpha";
+
+        // Act
+        vm.NextInvalidEntryCommand.Execute(null);
+
+        // Assert
+        vm.HasInvalidEntries.Should().BeFalse();
+        vm.Message.Should().BeEmpty();
+    }
+
+    [Fact]
     public void Accept_saves_edited_titles_to_the_book()
     {
         // Arrange

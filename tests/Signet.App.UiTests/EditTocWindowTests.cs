@@ -178,6 +178,55 @@ public sealed class EditTocWindowTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void NextInvalidEntryCommand_WhenIssueIsCollapsed_ExpandsAndSelectsTheEntry()
+    {
+        // Arrange
+        (EditTocWindow window, EditTocViewModel vm, TreeDataGrid grid, Book book) = Show();
+        using (book)
+        {
+            try
+            {
+                EditTocNodeViewModel parent = vm.Nodes[0];
+                EditTocNodeViewModel invalid = parent.Children[0];
+                invalid.Target = string.Empty;
+                parent.IsExpanded = false;
+
+                // Act
+                vm.AcceptCommand.Execute(null);
+                Settle(window);
+
+                // Assert
+                Button previous = window.GetVisualDescendants().OfType<Button>()
+                    .Single(button => button.Name == "PreviousInvalidEntryButton");
+                Button next = window.GetVisualDescendants().OfType<Button>()
+                    .Single(button => button.Name == "NextInvalidEntryButton");
+                previous.IsVisible.Should().BeTrue();
+                next.IsVisible.Should().BeTrue();
+                parent.IsExpanded.Should().BeFalse();
+                window.GetVisualDescendants().OfType<TextBlock>().Select(text => text.Text)
+                    .Should().NotContain("Alpha One");
+
+                // Act
+                Point point = Center(next, window);
+                window.MouseDown(point, MouseButton.Left);
+                window.MouseUp(point, MouseButton.Left);
+                Settle(window);
+
+                // Assert
+                parent.IsExpanded.Should().BeTrue();
+                vm.SelectedNode.Should().BeSameAs(invalid);
+                grid.RowSelection!.SelectedItem.Should().BeSameAs(invalid);
+                window.GetVisualDescendants().OfType<TextBlock>().Select(text => text.Text)
+                    .Should().Contain("Alpha One");
+            }
+            finally
+            {
+                window.Close();
+            }
+        }
+    }
+
+    [AvaloniaFact]
     public void Toolbar_buttons_collapse_and_expand_all_tree_levels()
     {
         // Arrange
@@ -253,6 +302,33 @@ public sealed class EditTocWindowTests : IDisposable
 
             // Assert
             vm.Rows[2].Text.Should().Be("Gamma");
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Rename_of_an_entry_hidden_in_a_collapsed_parent_expands_the_parent_and_edits_the_entry()
+    {
+        // Arrange
+        (EditTocWindow window, EditTocViewModel vm, TreeDataGrid grid, Book book) = Show();
+        using (book)
+        {
+            grid.RowSelection!.SelectedIndex = new IndexPath(0, 0);
+            Settle(window);
+            vm.CollapseAllCommand.Execute(null);
+            Settle(window);
+
+            // Assert
+            vm.SelectedNode.Should().BeSameAs(vm.Rows[1], "collapsing keeps the hidden entry selected");
+            vm.Rows[0].IsExpanded.Should().BeFalse();
+
+            // Act
+            vm.RenameCommand.Execute(null);
+            Settle(window);
+
+            // Assert
+            vm.Rows[0].IsExpanded.Should().BeTrue();
+            TitleCell(grid, 1).IsEditing.Should().BeTrue();
             window.Close();
         }
     }

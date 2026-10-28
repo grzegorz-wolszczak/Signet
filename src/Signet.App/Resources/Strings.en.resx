@@ -212,6 +212,12 @@
   <data name="EditTocWindow_CollapseAllTip" xml:space="preserve">
     <value>Collapse all entries.</value>
   </data>
+  <data name="EditTocWindow_PreviousInvalidEntryTip" xml:space="preserve">
+    <value>Go to previous invalid entry.</value>
+  </data>
+  <data name="EditTocWindow_NextInvalidEntryTip" xml:space="preserve">
+    <value>Go to next invalid entry.</value>
+  </data>
   <data name="EditToc_AlreadyInBookOrder" xml:space="preserve">
     <value>The entries are already in book order.</value>
   </data>
