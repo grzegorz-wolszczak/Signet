@@ -59,6 +59,8 @@ public sealed class EditTocViewModel : ViewModelBase
         MoveDownCommand = new RelayCommand(MoveDown);
         MoveLeftCommand = new RelayCommand(MoveLeft);
         MoveRightCommand = new RelayCommand(MoveRight);
+        ExpandAllCommand = new RelayCommand(() => SetExpanded(true));
+        CollapseAllCommand = new RelayCommand(() => SetExpanded(false));
         SortByBookOrderCommand = new RelayCommand(SortByBookOrder);
         SelectTargetCommand = new RelayCommand(() => SelectTargetRequested?.Invoke(this, EventArgs.Empty));
         RenameCommand = new RelayCommand(() => RenameRequested?.Invoke(this, EventArgs.Empty));
@@ -119,6 +121,12 @@ public sealed class EditTocViewModel : ViewModelBase
 
     /// <summary>"Move Right" — increase the level (into the entry directly above).</summary>
     public RelayCommand MoveRightCommand { get; }
+
+    /// <summary>Expands all entries with children, recursively.</summary>
+    public RelayCommand ExpandAllCommand { get; }
+
+    /// <summary>Collapses all entries with children, recursively.</summary>
+    public RelayCommand CollapseAllCommand { get; }
 
     /// <summary>"Select Target" — open the target picker dialog.</summary>
     public RelayCommand SelectTargetCommand { get; }
@@ -446,6 +454,23 @@ public sealed class EditTocViewModel : ViewModelBase
         }
 
         Reselect(moved);
+    }
+
+    private void SetExpanded(bool expanded)
+    {
+        Stack<EditTocNodeViewModel> pending = new(Nodes);
+        while (pending.TryPop(out EditTocNodeViewModel? node))
+        {
+            if (node.Children.Count > 0)
+            {
+                node.IsExpanded = expanded;
+            }
+
+            foreach (EditTocNodeViewModel child in node.Children)
+            {
+                pending.Push(child);
+            }
+        }
     }
 
     private void MoveUp()

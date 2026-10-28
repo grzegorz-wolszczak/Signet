@@ -38,6 +38,20 @@
                TextWrapping="Wrap" Foreground="{DynamicResource SystemAccentColor}"
                IsVisible="{Binding Message, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
+    <Border DockPanel.Dock="Right" BorderThickness="1,0,0,0" Padding="2"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <StackPanel Spacing="4">
+        <Button x:Name="ExpandAllButton" Classes="panelTool" Command="{Binding ExpandAllCommand}"
+                ToolTip.Tip="{loc:Loc EditTocWindow_ExpandAllTip}">
+          <Path Data="M8.42,9.29L12,5.72L15.58,9.29L16.68,8.19L12,3.51L7.32,8.19Z M8.42,14.71L12,18.28L15.58,14.71L16.68,15.81L12,20.49L7.32,15.81Z" />
+        </Button>
+        <Button x:Name="CollapseAllButton" Classes="panelTool" Command="{Binding CollapseAllCommand}"
+                ToolTip.Tip="{loc:Loc EditTocWindow_CollapseAllTip}">
+          <Path Data="M8.42,4.11L12,7.68L15.58,4.11L16.68,5.21L12,9.89L7.32,5.21Z M8.42,19.89L12,16.32L15.58,19.89L16.68,18.79L12,14.11L7.32,18.79Z" />
+        </Button>
+      </StackPanel>
+    </Border>
+
     <StackPanel DockPanel.Dock="Right" Width="120" Margin="8,0,0,0" Spacing="4">
       <Button Content="{loc:Loc EditTocWindow_AddAbove}" HorizontalAlignment="Stretch" Command="{Binding AddAboveCommand}"
               ToolTip.Tip="{loc:Loc EditTocWindow_AddAboveTip}" />
