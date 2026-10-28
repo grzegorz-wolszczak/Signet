@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
@@ -27,6 +28,26 @@ namespace Signet.App.UiTests;
 /// </summary>
 public sealed class BookBrowserTreeTests
 {
+    private sealed class SuspendingBookOperationHost : IBookOperationHost
+    {
+        private readonly BookBrowserViewModel _viewModel;
+
+        public SuspendingBookOperationHost(BookBrowserViewModel viewModel) => _viewModel = viewModel;
+
+        public Task<BookOperationOutcome<T>> RunAsync<T>(string title, string? checkpointName, Func<T> work)
+        {
+            _viewModel.SuspendRebuilds = true;
+            try
+            {
+                return Task.FromResult(new BookOperationOutcome<T>(true, work(), false));
+            }
+            finally
+            {
+                _viewModel.SuspendRebuilds = false;
+            }
+        }
+    }
+
     private static void Render(Window window)
     {
         for (int i = 0; i < 3; i++)
@@ -45,6 +66,66 @@ public sealed class BookBrowserTreeTests
         window.Show();
         Render(window);
         return (window, vm, view, window.GetVisualDescendants().OfType<TreeDataGrid>().Single());
+    }
+
+    [AvaloniaFact]
+    public async Task MoveDown_menu_command_reorders_visible_spine_rows()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3WithNcx, temp)).GetBook();
+        SettingsStore settings = new(temp.Combine("settings.xml"));
+        (Window window, BookBrowserViewModel vm, _, TreeDataGrid tree) = Show(settings, book);
+        vm.Operations = new SuspendingBookOperationHost(vm);
+
+        try
+        {
+            BookBrowserNode textFolder = vm.Nodes.Single(node => node.Header == "Text");
+            textFolder.IsExpanded = true;
+            Render(window);
+
+            BookBrowserNode[] before = textFolder.Children
+                .Where(node => node.Entry!.ReadingOrder >= 0)
+                .ToArray();
+            before.Should().HaveCountGreaterThan(1);
+            BookBrowserNode first = before[0];
+            tree.RowSelection!.Select(new IndexPath(
+                vm.Nodes.IndexOf(textFolder), textFolder.Children.IndexOf(first)));
+            Render(window);
+
+            ContextMenu menu = tree.ContextMenu!;
+            menu.Close();
+            menu.Open(tree);
+            Render(window);
+            MenuItem moveDown = menu.Items.OfType<MenuItem>()
+                .Single(item => Equals(item.Header, Strings.Get("BookBrowserView_MoveDown")));
+
+            // Assert
+            moveDown.IsEffectivelyEnabled.Should().BeTrue();
+            moveDown.Command.Should().BeSameAs(vm.MoveTextDownCommand);
+
+            // Act
+            await vm.MoveTextDownCommand.ExecuteAsync(null);
+            Render(window);
+
+            // Assert
+            string[] expected = before.Select(node => node.Header).ToArray();
+            (expected[0], expected[1]) = (expected[1], expected[0]);
+            string[] visible = tree.GetVisualDescendants().OfType<TreeDataGridRow>()
+                .Where(row => row.IsVisible)
+                .OrderBy(row => row.RowIndex)
+                .Select(row => row.Model)
+                .OfType<BookBrowserNode>()
+                .Where(node => node.Entry is { ReadingOrder: >= 0 })
+                .Select(node => node.Header)
+                .ToArray();
+            visible.Should().Equal(expected);
+        }
+        finally
+        {
+            window.Close();
+            vm.Dispose();
+        }
     }
 
     private static string?[] Headers(TreeDataGrid tree) =>

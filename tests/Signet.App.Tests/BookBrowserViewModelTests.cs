@@ -45,6 +45,26 @@ public sealed class BookBrowserViewModelTests
         }
     }
 
+    private sealed class SuspendingBookOperationHost : IBookOperationHost
+    {
+        private readonly BookBrowserViewModel _viewModel;
+
+        public SuspendingBookOperationHost(BookBrowserViewModel viewModel) => _viewModel = viewModel;
+
+        public Task<BookOperationOutcome<T>> RunAsync<T>(string title, string? checkpointName, Func<T> work)
+        {
+            _viewModel.SuspendRebuilds = true;
+            try
+            {
+                return Task.FromResult(new BookOperationOutcome<T>(true, work(), false));
+            }
+            finally
+            {
+                _viewModel.SuspendRebuilds = false;
+            }
+        }
+    }
+
     [Fact]
     public void Without_a_book_there_are_no_nodes()
     {
@@ -1151,14 +1171,13 @@ public sealed class BookBrowserViewModelTests
     }
 
     [Fact]
-    public void MoveText_reorders_the_spine()
+    public async Task MoveText_reorders_the_spine()
     {
         // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3WithNcx, temp);
-        BookBrowserViewModel sut = NewViewModel(out _);
-
-        // Act
+        using BookBrowserViewModel sut = NewViewModel(out _);
+        sut.Operations = new SuspendingBookOperationHost(sut);
         sut.SetBook(book);
 
         BookBrowserNode text = sut.Nodes.Single(n => n.Header == "Text");
@@ -1169,10 +1188,60 @@ public sealed class BookBrowserViewModelTests
         sut.MoveTextDownCommand.CanExecute(null).Should().BeTrue();
 
         // Act
-        sut.MoveTextDownCommand.Execute(null);
+        await sut.MoveTextDownCommand.ExecuteAsync(null);
 
         // Assert
         sut.Nodes.Single(n => n.Header == "Text").Children[1].Header.Should().Be(first.Header);
+
+        BookBrowserNode moved = sut.Nodes.Single(n => n.Header == "Text").Children[1];
+        sut.UpdateSelection(new object?[] { moved });
+
+        // Act
+        await sut.MoveTextUpCommand.ExecuteAsync(null);
+
+        // Assert
+        sut.Nodes.Single(n => n.Header == "Text").Children[0].Header.Should().Be(first.Header);
+    }
+
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task MoveTextToEdge_WhenOperationSuspendsRefresh_RebuildsBrowserTree(bool toTop)
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = Load(CorpusPaths.Epub3WithNcx, temp);
+        using BookBrowserViewModel sut = NewViewModel(out _);
+        sut.Operations = new SuspendingBookOperationHost(sut);
+        sut.SetBook(book);
+
+        BookBrowserNode text = sut.Nodes.Single(n => n.Header == "Text");
+        BookBrowserNode[] before = text.Children.Where(node => node.Entry!.ReadingOrder >= 0).ToArray();
+        BookBrowserNode selected = toTop ? before[before.Length - 1] : before[0];
+        sut.UpdateSelection(new object?[] { selected });
+
+        // Act
+        if (toTop)
+        {
+            await sut.MoveTextToTopCommand.ExecuteAsync(null);
+        }
+        else
+        {
+            await sut.MoveTextToBottomCommand.ExecuteAsync(null);
+        }
+
+        // Assert
+        BookBrowserNode[] after = sut.Nodes.Single(n => n.Header == "Text").Children
+            .Where(node => node.Entry!.ReadingOrder >= 0)
+            .ToArray();
+        if (toTop)
+        {
+            after[0].Header.Should().Be(selected.Header);
+        }
+        else
+        {
+            after[after.Length - 1].Header.Should().Be(selected.Header);
+        }
     }
 
     [Fact]

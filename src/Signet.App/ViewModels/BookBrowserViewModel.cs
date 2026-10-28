@@ -1372,11 +1372,14 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         OpfModel? model = _model;
         List<OpfModelEntry> entries = _selection.Select(n => n.Entry!).ToList();
         string title = Strings.Get("CheckpointOp_ReorderText");
-        await RunOperationAsync(title, title, () =>
+        BookOperationOutcome<bool> run = await RunOperationAsync(title, title, () =>
         {
-            model?.MoveTextToEdge(entries, toTop);
-            return true;
+            return model?.MoveTextToEdge(entries, toTop) ?? false;
         }).ConfigureAwait(true);
+        if (Operations is not null && run.Completed && run.Result)
+        {
+            model?.Refresh();
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanSortText))]
@@ -1697,11 +1700,14 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
             OpfModel? model = _model;
             OpfModelEntry entry = _selection[0].Entry!;
             string title = Strings.Get("CheckpointOp_ReorderText");
-            await RunOperationAsync(title, title, () =>
+            BookOperationOutcome<bool> run = await RunOperationAsync(title, title, () =>
             {
-                model?.MoveText(entry, delta);
-                return true;
+                return model?.MoveText(entry, delta) ?? false;
             }).ConfigureAwait(true);
+            if (Operations is not null && run.Completed && run.Result)
+            {
+                model?.Refresh();
+            }
         }
     }
 
