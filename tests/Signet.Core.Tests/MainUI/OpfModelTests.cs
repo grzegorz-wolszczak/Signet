@@ -156,18 +156,31 @@ public sealed class OpfModelTests
         int changed = 0;
         model.Changed += (_, _) => changed++;
 
-        var text = model.GetFolder(OpfModelGroupKind.Text)!;
-        var reversed = text.Entries.Reverse().ToList();
+        OpfModelFolder text = model.GetFolder(OpfModelGroupKind.Text)!;
+        List<OpfModelEntry> reversed = text.Entries.Reverse().ToList();
 
         // Act
         model.ReorderText(reversed).Should().BeTrue();
 
         // Assert
-        changed.Should().BeGreaterThan(0);
+        changed.Should().Be(1);
+        model.GetFolder(OpfModelGroupKind.Text).Should().BeSameAs(text);
+        model.GetFolder(OpfModelGroupKind.Text)!.Entries.Should().Equal(reversed);
         var spine = book.GetOpf().GetSpineOrderBookPaths();
         spine.Should().HaveCount(2);
         spine[0].Should().EndWith("chapter2.xhtml");
         spine[1].Should().EndWith("chapter1.xhtml");
+        Dictionary<string, int> readingOrders = new(StringComparer.Ordinal);
+        for (int i = 0; i < spine.Count; i++)
+        {
+            readingOrders[spine[i]] = i;
+        }
+
+        foreach (OpfModelEntry entry in text.Entries)
+        {
+            entry.ReadingOrder.Should().Be(readingOrders.TryGetValue(entry.BookPath, out int order) ? order : -1);
+        }
+
         book.Modified.Should().BeTrue();
     }
 
@@ -204,6 +217,23 @@ public sealed class OpfModelTests
 
         // Assert
         model.GetFolder(OpfModelGroupKind.Text)!.Entries[1].BookPath.Should().Be(first.BookPath);
+    }
+
+    [Fact]
+    public void MoveTextToIndex_moves_a_document_to_the_requested_position()
+    {
+        // Arrange
+        using Book book = BookWithChapters(4);
+        using OpfModel model = new(book);
+        OpfModelFolder text = model.GetFolder(OpfModelGroupKind.Text)!;
+        string[] before = text.Entries.Select(entry => entry.BookPath).ToArray();
+
+        // Act
+        model.MoveTextToIndex(text.Entries[0], text.Entries.Count - 1).Should().BeTrue();
+
+        // Assert
+        text.Entries.Select(entry => entry.BookPath).Should().Equal(before.Skip(1).Append(before[0]));
+        book.GetOpf().GetSpineOrderBookPaths().Should().Equal(text.Entries.Select(entry => entry.BookPath));
     }
 
     private static Book BookWithChapters(int count)
