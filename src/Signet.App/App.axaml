@@ -202,8 +202,8 @@
   <Application.Styles>
     <FluentTheme />
     <dockFluent:DockFluentTheme />
-    <!-- The small, flat, icon-only buttons of a window's own left toolbar (Find Usages, Saved Searches, …): one
-         vector icon, no text. Shared so every such toolbar looks the same. -->
+    <!-- The small, flat, icon-only buttons of a panel toolbar (Find Usages, Saved Searches, Edit TOC, …): one vector
+         icon, no text. Shared so every such toolbar looks the same. -->
     <Style Selector=":is(Button).panelTool">
       <Setter Property="Width" Value="28" />
       <Setter Property="Height" Value="28" />

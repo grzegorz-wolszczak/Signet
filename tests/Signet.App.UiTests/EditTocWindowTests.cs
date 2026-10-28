@@ -156,6 +156,53 @@ public sealed class EditTocWindowTests : IDisposable
     }
 
     [AvaloniaFact]
+    public void Toolbar_buttons_collapse_and_expand_all_tree_levels()
+    {
+        // Arrange
+        (EditTocWindow window, EditTocViewModel vm, TreeDataGrid grid, Book book) =
+            Show("  <h1>Alpha</h1>\n  <h2>Alpha One</h2>\n  <h3>Alpha One Deep</h3>\n  <h1>Beta</h1>");
+        using (book)
+        {
+            try
+            {
+                Button expand = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "ExpandAllButton");
+                Button collapse = window.GetVisualDescendants().OfType<Button>().Single(b => b.Name == "CollapseAllButton");
+
+                // Act
+                Point collapsePoint = Center(collapse, window);
+                window.MouseDown(collapsePoint, MouseButton.Left);
+                window.MouseUp(collapsePoint, MouseButton.Left);
+                Settle(window);
+
+                // Assert
+                vm.Nodes[0].IsExpanded.Should().BeFalse();
+                vm.Nodes[0].Children[0].IsExpanded.Should().BeFalse();
+                grid.GetVisualDescendants().OfType<TreeDataGridExpanderCell>().Should().HaveCount(2);
+                string?[] collapsedTexts = window.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).ToArray();
+                collapsedTexts.Should().Contain("Alpha").And.Contain("Beta")
+                    .And.NotContain("Alpha One").And.NotContain("Alpha One Deep");
+
+                // Act
+                Point expandPoint = Center(expand, window);
+                window.MouseDown(expandPoint, MouseButton.Left);
+                window.MouseUp(expandPoint, MouseButton.Left);
+                Settle(window);
+
+                // Assert
+                vm.Nodes[0].IsExpanded.Should().BeTrue();
+                vm.Nodes[0].Children[0].IsExpanded.Should().BeTrue();
+                grid.GetVisualDescendants().OfType<TreeDataGridExpanderCell>().Should().HaveCount(4);
+                string?[] expandedTexts = window.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text).ToArray();
+                expandedTexts.Should().Contain("Alpha One").And.Contain("Alpha One Deep");
+            }
+            finally
+            {
+                window.Close();
+            }
+        }
+    }
+
+    [AvaloniaFact]
     public void Rename_puts_the_selected_title_in_edit_mode_and_the_text_goes_to_the_entry()
     {
         // Arrange

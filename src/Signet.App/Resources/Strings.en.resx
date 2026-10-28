@@ -206,6 +206,12 @@
   <data name="EditTocWindow_SortByBookOrderTip" xml:space="preserve">
     <value>Put the entries on every level in the order their targets appear in the book</value>
   </data>
+  <data name="EditTocWindow_ExpandAllTip" xml:space="preserve">
+    <value>Expand all entries.</value>
+  </data>
+  <data name="EditTocWindow_CollapseAllTip" xml:space="preserve">
+    <value>Collapse all entries.</value>
+  </data>
   <data name="EditToc_AlreadyInBookOrder" xml:space="preserve">
     <value>The entries are already in book order.</value>
   </data>
