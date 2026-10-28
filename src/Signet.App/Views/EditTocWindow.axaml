@@ -38,7 +38,7 @@
                TextWrapping="Wrap" Foreground="{DynamicResource SystemAccentColor}"
                IsVisible="{Binding Message, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
-    <Border DockPanel.Dock="Right" BorderThickness="1,0,0,0" Padding="2"
+    <Border DockPanel.Dock="Left" BorderThickness="0,0,1,0" Padding="2"
             BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
       <StackPanel Spacing="4">
         <Button x:Name="ExpandAllButton" Classes="panelTool" Command="{Binding ExpandAllCommand}"
