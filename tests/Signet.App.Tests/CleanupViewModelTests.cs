@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using AwesomeAssertions;
+using Signet.App.Resources;
 using Signet.App.ViewModels;
 using Signet.Core.BookManipulation;
 using Signet.Core.Tests.TestSupport;
@@ -181,6 +182,41 @@ public sealed class CleanupViewModelTests : IDisposable
     }
 
     [Fact]
+    public void Undefined_class_groups_show_files_and_toggle_removal_for_every_file()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = MultiFileUndefinedClassBook(temp);
+        List<(string BookPath, int Offset)> navigated = new();
+        CleanupViewModel vm = new(
+            CleanupAnalysis.Prepare(book).Analysis!,
+            new[] { CleanupStep.UndefinedClasses },
+            (path, offset) => navigated.Add((path, offset)),
+            NoApply);
+        CleanupSectionViewModel section = Section(vm, CleanupStep.UndefinedClasses);
+        CleanupClassTreeNodeViewModel classGroup = section.ClassGroups.Should().ContainSingle().Subject;
+        CleanupClassTreeNodeViewModel fileNode = classGroup.Children[0];
+
+        // Act
+        vm.Navigate(fileNode.Item!);
+
+        // Assert
+        classGroup.Text.Should().Be(".cleanup-orphan");
+        classGroup.Children.Select(file => file.Item!.BookPath).Should().HaveCount(2);
+        classGroup.IsChecked.Should().BeTrue();
+        navigated.Should().ContainSingle().Which.Should().Be((fileNode.Item!.BookPath, fileNode.Item.Offset));
+        section.Summary.Should().Be(Strings.Format("Cleanup_UndefinedClasses_Summary", 1, 1, 2));
+
+        // Act
+        classGroup.IsChecked = false;
+
+        // Assert
+        classGroup.IsChecked.Should().BeFalse();
+        section.Items.Should().OnlyContain(item => !item.IsChecked);
+        section.Summary.Should().Be(Strings.Format("Cleanup_UndefinedClasses_Summary", 0, 1, 0));
+    }
+
+    [Fact]
     public void Cleaning_a_tab_applies_only_its_plan_and_replans_the_other_tabs_on_the_changed_book()
     {
         // Arrange
@@ -283,6 +319,27 @@ public sealed class CleanupViewModelTests : IDisposable
         string chapter = Path.Combine(tree, "EPUB", "text", "chapter1.xhtml");
         File.WriteAllText(chapter, File.ReadAllText(chapter).Replace("<p>Hello, world.</p>", "<p class=\"a b\">Hello, world.</p>", StringComparison.Ordinal));
         return new ImportEpub(EpubBuilder.BuildInto(tree, temp, "risky.epub")).GetBook();
+    }
+
+    private static Book MultiFileUndefinedClassBook(TempDir temp)
+    {
+        string tree = temp.Combine("undefined-classes");
+        TestFs.CopyDirectory(CorpusPaths.Epub3WithNcx, tree);
+        string chapter1 = Path.Combine(tree, "EPUB", "text", "chapter1.xhtml");
+        File.WriteAllText(
+            chapter1,
+            File.ReadAllText(chapter1).Replace(
+                "<p>First chapter.</p>",
+                "<p class=\"cleanup-orphan\">First chapter.</p>",
+                StringComparison.Ordinal));
+        string chapter2 = Path.Combine(tree, "EPUB", "text", "chapter2.xhtml");
+        File.WriteAllText(
+            chapter2,
+            File.ReadAllText(chapter2).Replace(
+                "<p>Second chapter.</p>",
+                "<p class=\"cleanup-orphan\">Second chapter.</p>",
+                StringComparison.Ordinal));
+        return new ImportEpub(EpubBuilder.BuildInto(tree, temp, "undefined-classes.epub")).GetBook();
     }
 
     [Fact]

@@ -1,3 +1,5 @@
+using System;
+using System.IO;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -9,6 +11,7 @@ using AwesomeAssertions;
 using Signet.App.Resources;
 using Signet.App.ViewModels;
 using Signet.App.Views;
+using Signet.Controls.TreeDataGrid;
 using Signet.Core.BookManipulation;
 using Signet.Core.Tests.TestSupport;
 
@@ -95,5 +98,54 @@ public sealed class CleanupWindowTests
         window.GetVisualDescendants().OfType<TextBlock>()
             .Should().Contain(t => t.Text == section.Description && t.IsEffectivelyVisible);
         window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Undefined_class_details_show_one_tree_with_the_files_for_each_class()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = MultiFileUndefinedClassBook(temp);
+        CleanupViewModel vm = new(
+            CleanupAnalysis.Prepare(book).Analysis!,
+            new[] { CleanupStep.UndefinedClasses },
+            (_, _) => { },
+            (_, _) => System.Threading.Tasks.Task.FromResult<CleanupAnalysis?>(null));
+        CleanupSectionViewModel section = vm.Sections.Single(s => s.Step == CleanupStep.UndefinedClasses);
+        section.IsExpanded = true;
+        CleanupWindow window = new() { DataContext = vm };
+
+        // Act
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+
+        // Assert
+        TreeDataGrid tree = window.GetVisualDescendants().OfType<TreeDataGrid>().Single(t => t.Source is not null);
+        tree.IsEffectivelyVisible.Should().BeTrue();
+        section.ClassGroups.Should().ContainSingle().Which.Children.Should().HaveCount(2);
+
+        window.Close();
+    }
+
+    private static Book MultiFileUndefinedClassBook(TempDir temp)
+    {
+        string tree = temp.Combine("undefined-classes");
+        TestFs.CopyDirectory(CorpusPaths.Epub3WithNcx, tree);
+        string chapter1 = Path.Combine(tree, "EPUB", "text", "chapter1.xhtml");
+        File.WriteAllText(
+            chapter1,
+            File.ReadAllText(chapter1).Replace(
+                "<p>First chapter.</p>",
+                "<p class=\"cleanup-orphan\">First chapter.</p>",
+                StringComparison.Ordinal));
+        string chapter2 = Path.Combine(tree, "EPUB", "text", "chapter2.xhtml");
+        File.WriteAllText(
+            chapter2,
+            File.ReadAllText(chapter2).Replace(
+                "<p>Second chapter.</p>",
+                "<p class=\"cleanup-orphan\">Second chapter.</p>",
+                StringComparison.Ordinal));
+        return new ImportEpub(EpubBuilder.BuildInto(tree, temp, "undefined-classes.epub")).GetBook();
     }
 }
