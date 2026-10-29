@@ -269,6 +269,81 @@ public sealed class ClassRenamerTests
     }
 
     [Fact]
+    public void From_a_stylesheet_renames_the_class_on_an_ancestor_in_a_descendant_selector()
+    {
+        // Arrange
+        const string html = "<html><head>" + LinkA + "</head><body>"
+            + "<div class=\"warn_center\"><p class=\"warn_center\">inside</p></div>"
+            + "<p class=\"warn_center\">outside</p></body></html>";
+        ClassRenamer sut = Renamer(html, "div.warn_center p { text-align: center }\n");
+        ClassRenameRequest request = ClassRenameRequest.ForStyleSource(
+            new StyleClassAtCaret("warn_center", "styles/a.css", -1));
+
+        // Act
+        ClassRenameResult result = sut.Rename(request, "warning");
+
+        // Assert
+        result.ChangedTexts["text/ch1.xhtml"].Should().Contain(
+            "<div class=\"warning\"><p class=\"warn_center\">inside</p></div><p class=\"warn_center\">outside</p>");
+        result.ChangedTexts["styles/a.css"].Should().Be("div.warning p { text-align: center }\n");
+        result.Stats.ChangedOccurrences.Should().Be(1);
+    }
+
+    // Each case: one element matches the rule through every combinator and is renamed; the other carries the class
+    // too but the rest of the selector does not hold around it, so it keeps the old name.
+    [Theory]
+    [InlineData( // child: the p must be a direct child
+        "div.c1 > p { color: red }",
+        "<div class=\"c1\"><p>a</p></div>", "<div class=\"c1\"><span><p>b</p></span></div>")]
+    [InlineData( // adjacent sibling: the p must follow at once
+        "h1.c1 + p { color: red }",
+        "<h1 class=\"c1\">a</h1><p>a</p>", "<h1 class=\"c1\">b</h1><div>b</div>")]
+    [InlineData( // general sibling: a p must follow somewhere after
+        ".c1 ~ p { color: red }",
+        "<span class=\"c1\">a</span><b>a</b><p>a</p>", "<div><p>b</p><span class=\"c1\">b</span></div>")]
+    [InlineData( // the class in the middle compound: needs a div above and a p below
+        "div .c1 p { color: red }",
+        "<div><span class=\"c1\"><p>a</p></span></div>", "<section><span class=\"c1\"><p>b</p></span></section>")]
+    [InlineData( // an attribute value holding a space and a ">" is not a combinator
+        "a[title=\"x > y\"] .c1 { color: red }",
+        "<a title=\"x > y\"><span class=\"c1\">a</span></a>", "<a title=\"x\"><span class=\"c1\">b</span></a>")]
+    [InlineData( // a selector list inside :is() is one compound
+        ":is(div, section) > .c1 { color: red }",
+        "<div><b class=\"c1\">a</b></div>", "<p><b class=\"c1\">b</b></p>")]
+    public void From_a_stylesheet_combinators_decide_which_elements_use_the_rule(
+        string css, string renamedPart, string keptPart)
+    {
+        // Arrange
+        string html = "<html><head>" + LinkA + "</head><body>" + renamedPart + keptPart + "</body></html>";
+        ClassRenamer sut = Renamer(html, css + "\n");
+
+        // Act
+        ClassRenameResult result = sut.Rename(FromSheet("styles/a.css"), "lead");
+
+        // Assert
+        result.ChangedTexts["text/ch1.xhtml"].Should().Contain(
+            renamedPart.Replace("class=\"c1\"", "class=\"lead\"", StringComparison.Ordinal) + keptPart);
+        result.ChangedTexts["styles/a.css"].Should().Be(css.Replace(".c1", ".lead", StringComparison.Ordinal) + "\n");
+        result.Stats.ChangedOccurrences.Should().Be(1);
+    }
+
+    [Fact]
+    public void From_an_element_a_descendant_selector_with_the_class_on_the_ancestor_is_renamed_in_place()
+    {
+        // Arrange
+        const string html = "<html><head>" + LinkA + "</head><body>"
+            + "<p class=\"c1\"><span>a</span></p></body></html>";
+        ClassRenamer sut = Renamer(html, "p.c1 span { color: red }\n");
+
+        // Act
+        ClassRenameResult result = sut.Rename(SameNesting, "lead");
+
+        // Assert
+        result.ChangedTexts["text/ch1.xhtml"].Should().Contain("<p class=\"lead\"><span>a</span></p>");
+        result.ChangedTexts["styles/a.css"].Should().Be("p.lead span { color: red }\n");
+    }
+
+    [Fact]
     public void From_a_stylesheet_state_pseudo_classes_and_pseudo_elements_count_as_matching()
     {
         // Arrange

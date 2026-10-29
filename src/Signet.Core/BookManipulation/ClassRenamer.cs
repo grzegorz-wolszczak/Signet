@@ -167,12 +167,12 @@ public sealed record ClassRenameResult(ClassRenameStats Stats, IReadOnlyDictiona
 /// </summary>
 /// <remarks>
 /// <para>
-/// An element uses a style source when the source is visible to its document (a stylesheet linked
+/// A class occurrence uses a style source when the source is visible to its document (a stylesheet linked
 /// via <c>&lt;link rel="stylesheet"&gt;</c>, also indirectly through an <c>@import</c> chain, or a
-/// <c>&lt;style&gt;</c> block of that document) and the element matches a selector with the class in one of its
-/// rules. State pseudo-classes (<c>:hover</c>…) and pseudo-elements (<c>::before</c>…) are
-/// ignored when matching, <c>@media</c> is treated as always satisfied, and a selector that AngleSharp does not
-/// understand is treated as matching (safer to change too much than to lose a style).
+/// <c>&lt;style&gt;</c> block of that document) and its element matches the selector compound containing the
+/// class in a rule that matches through all combinators. State pseudo-classes (<c>:hover</c>…) and pseudo-elements
+/// (<c>::before</c>…) are ignored when matching, <c>@media</c> is treated as always satisfied, and a selector that
+/// AngleSharp does not understand is treated as matching (safer to change too much than to lose a style).
 /// </para>
 /// <para>
 /// For each source defining the class: when none of the renamed elements uses it —
@@ -510,7 +510,7 @@ public sealed class ClassRenamer
                 IElement? element = elements.GetValueOrDefault(occurrence.Attribute.TagPos);
                 foreach ((StyleSheet source, List<string> selectors) in candidates)
                 {
-                    if (element is null || selectors.Any(sel => Matches(element, sel)))
+                    if (element is null || selectors.Any(sel => UsesClassInMatchingSelector(element, sel, className)))
                     {
                         if (!usage.UsersBySource.TryGetValue(source, out HashSet<Occurrence>? users))
                         {
@@ -531,6 +531,319 @@ public sealed class ClassRenamer
     // A selector AngleSharp does not understand is treated as matching (safer to change too much than to lose a style).
     private static bool Matches(IElement element, string selector) =>
         CssSelectorMatching.TryMatch(element, selector) ?? true;
+
+    private static bool UsesClassInMatchingSelector(IElement element, string selector, string className)
+    {
+        if (CssSelectorMatching.TryMatch(element, selector) is null
+            || !TrySplitSelectorPath(selector, out string[] compounds, out SelectorCombinator[] combinators))
+        {
+            return true;
+        }
+
+        for (int i = 0; i < compounds.Length; i++)
+        {
+            if (ClassPositions(compounds[i], className).Count == 0)
+            {
+                continue;
+            }
+
+            bool? matchesCompound = CssSelectorMatching.TryMatch(element, compounds[i]);
+            if (matchesCompound is null)
+            {
+                return true;
+            }
+
+            if (matchesCompound.Value
+                && MatchesBefore(element, i - 1, compounds, combinators)
+                && MatchesAfter(element, i + 1, compounds, combinators))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool MatchesBefore(
+        IElement element,
+        int compoundIndex,
+        string[] compounds,
+        SelectorCombinator[] combinators)
+    {
+        if (compoundIndex < 0)
+        {
+            return true;
+        }
+
+        foreach (IElement candidate in PreviousElements(element, combinators[compoundIndex]))
+        {
+            if (Matches(candidate, compounds[compoundIndex])
+                && MatchesBefore(candidate, compoundIndex - 1, compounds, combinators))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool MatchesAfter(
+        IElement element,
+        int compoundIndex,
+        string[] compounds,
+        SelectorCombinator[] combinators)
+    {
+        if (compoundIndex >= compounds.Length)
+        {
+            return true;
+        }
+
+        foreach (IElement candidate in NextElements(element, combinators[compoundIndex - 1]))
+        {
+            if (Matches(candidate, compounds[compoundIndex])
+                && MatchesAfter(candidate, compoundIndex + 1, compounds, combinators))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static IEnumerable<IElement> PreviousElements(IElement element, SelectorCombinator combinator)
+    {
+        switch (combinator)
+        {
+            case SelectorCombinator.Descendant:
+                for (IElement? parent = element.ParentElement; parent is not null; parent = parent.ParentElement)
+                {
+                    yield return parent;
+                }
+
+                break;
+            case SelectorCombinator.Child:
+                if (element.ParentElement is { } parentElement)
+                {
+                    yield return parentElement;
+                }
+
+                break;
+            case SelectorCombinator.AdjacentSibling:
+                if (element.PreviousElementSibling is { } previousSibling)
+                {
+                    yield return previousSibling;
+                }
+
+                break;
+            case SelectorCombinator.GeneralSibling:
+                for (IElement? sibling = element.PreviousElementSibling; sibling is not null; sibling = sibling.PreviousElementSibling)
+                {
+                    yield return sibling;
+                }
+
+                break;
+        }
+    }
+
+    private static IEnumerable<IElement> NextElements(IElement element, SelectorCombinator combinator)
+    {
+        switch (combinator)
+        {
+            case SelectorCombinator.Descendant:
+                foreach (IElement descendant in element.QuerySelectorAll("*"))
+                {
+                    yield return descendant;
+                }
+
+                break;
+            case SelectorCombinator.Child:
+                for (IElement? child = element.FirstElementChild; child is not null; child = child.NextElementSibling)
+                {
+                    yield return child;
+                }
+
+                break;
+            case SelectorCombinator.AdjacentSibling:
+                if (element.NextElementSibling is { } nextSibling)
+                {
+                    yield return nextSibling;
+                }
+
+                break;
+            case SelectorCombinator.GeneralSibling:
+                for (IElement? sibling = element.NextElementSibling; sibling is not null; sibling = sibling.NextElementSibling)
+                {
+                    yield return sibling;
+                }
+
+                break;
+        }
+    }
+
+    private static bool TrySplitSelectorPath(
+        string selector,
+        out string[] compounds,
+        out SelectorCombinator[] combinators)
+    {
+        List<string> parts = new();
+        List<SelectorCombinator> relations = new();
+        StringBuilder current = new();
+        char quote = '\0';
+        int bracketDepth = 0;
+        int parenthesisDepth = 0;
+        SelectorCombinator? pendingCombinator = null;
+
+        void AddCompound()
+        {
+            string compound = current.ToString().Trim();
+            if (compound.Length == 0)
+            {
+                return;
+            }
+
+            if (parts.Count > 0)
+            {
+                relations.Add(pendingCombinator ?? SelectorCombinator.Descendant);
+            }
+
+            parts.Add(compound);
+            current.Clear();
+            pendingCombinator = null;
+        }
+
+        for (int i = 0; i < selector.Length; i++)
+        {
+            char c = selector[i];
+            if (quote != '\0')
+            {
+                current.Append(c);
+                if (c == '\\' && i + 1 < selector.Length)
+                {
+                    current.Append(selector[++i]);
+                }
+                else if (c == quote)
+                {
+                    quote = '\0';
+                }
+
+                continue;
+            }
+
+            if (c == '\\')
+            {
+                current.Append(c);
+                if (i + 1 < selector.Length)
+                {
+                    current.Append(selector[++i]);
+                }
+
+                continue;
+            }
+
+            if (c is '"' or '\'')
+            {
+                quote = c;
+                current.Append(c);
+                continue;
+            }
+
+            if (c == '/' && i + 1 < selector.Length && selector[i + 1] == '*')
+            {
+                int commentEnd = selector.IndexOf("*/", i + 2, StringComparison.Ordinal);
+                if (commentEnd < 0)
+                {
+                    compounds = Array.Empty<string>();
+                    combinators = Array.Empty<SelectorCombinator>();
+                    return false;
+                }
+
+                current.Append(selector.AsSpan(i, commentEnd + 2 - i));
+                i = commentEnd + 1;
+                continue;
+            }
+
+            if (c == '[')
+            {
+                bracketDepth++;
+                current.Append(c);
+                continue;
+            }
+
+            if (c == ']' && bracketDepth > 0)
+            {
+                bracketDepth--;
+                current.Append(c);
+                continue;
+            }
+
+            if (bracketDepth == 0)
+            {
+                if (c == '(')
+                {
+                    parenthesisDepth++;
+                }
+                else if (c == ')' && parenthesisDepth > 0)
+                {
+                    parenthesisDepth--;
+                }
+            }
+
+            if (bracketDepth > 0 || parenthesisDepth > 0)
+            {
+                current.Append(c);
+                continue;
+            }
+
+            if (IsCssWhitespace(c))
+            {
+                AddCompound();
+                if (parts.Count > 0)
+                {
+                    pendingCombinator ??= SelectorCombinator.Descendant;
+                }
+
+                continue;
+            }
+
+            if (c is '>' or '+' or '~')
+            {
+                AddCompound();
+                pendingCombinator = c switch
+                {
+                    '>' => SelectorCombinator.Child,
+                    '+' => SelectorCombinator.AdjacentSibling,
+                    _ => SelectorCombinator.GeneralSibling,
+                };
+                continue;
+            }
+
+            if (c == '|' && i + 1 < selector.Length && selector[i + 1] == '|')
+            {
+                compounds = Array.Empty<string>();
+                combinators = Array.Empty<SelectorCombinator>();
+                return false;
+            }
+
+            current.Append(c);
+        }
+
+        AddCompound();
+        compounds = parts.ToArray();
+        combinators = relations.ToArray();
+        return compounds.Length > 0
+            && combinators.Length == compounds.Length - 1
+            && pendingCombinator is not (SelectorCombinator.Child or SelectorCombinator.AdjacentSibling or SelectorCombinator.GeneralSibling);
+    }
+
+    private static bool IsCssWhitespace(char c) => c is ' ' or '\t' or '\r' or '\n' or '\f';
+
+    private enum SelectorCombinator
+    {
+        Descendant,
+        Child,
+        AdjacentSibling,
+        GeneralSibling,
+    }
 
     // Stylesheets visible to a document: the linked ones (document order) and the ones imported by its
     // <style> blocks, with @import expanded.
