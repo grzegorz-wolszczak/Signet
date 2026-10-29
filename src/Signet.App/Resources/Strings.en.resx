@@ -641,6 +641,9 @@
   <data name="PreferencesWindow_PreviewRefreshDelay" xml:space="preserve">
     <value>Preview refresh delay after editing, ms (100–10000):</value>
   </data>
+  <data name="PreferencesWindow_FollowFootnotesInCodeView" xml:space="preserve">
+    <value>Follow footnotes and endnotes in Code View</value>
+  </data>
   <data name="PreferencesWindow_Preview" xml:space="preserve">
     <value>Preview</value>
   </data>

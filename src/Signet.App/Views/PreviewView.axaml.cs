@@ -22,13 +22,27 @@ namespace Signet.App.Views;
 public partial class PreviewView : UserControl
 {
     // A script injected when each document is created: on click it sends the host
-    // "signet-loc:{offset}" of the nearest ancestor with a data-signet-loc attribute (Preview → Code Editor).
+    // "signet-loc:{offset}" of the nearest ancestor with a data-signet-loc attribute. Footnote references and
+    // backlinks instead send their target URI so the host can follow them across XHTML files.
     private const string ClickBridgeScript =
         "(function(){if(window.__signetPreviewBridge)return;window.__signetPreviewBridge=true;"
-        + "document.addEventListener('click',function(e){var el=e.target;"
+        + "function post(m){try{window.chrome.webview.postMessage(m);}catch(x){}}"
+        + "document.addEventListener('click',function(e){var a=e.target;if(a&&a.nodeType!==1)a=a.parentElement;"
+        + "while(a&&a.nodeType===1&&a.tagName.toLowerCase()!=='a')a=a.parentElement;"
+        + "if(a&&a.nodeType===1&&a.tagName.toLowerCase()==='a'){"
+        + "var t=(a.getAttribute('epub:type')||'').split(/\\s+/),r=(a.getAttribute('role')||'').split(/\\s+/);"
+        + "var n=a,inNote=false;while(n&&n.nodeType===1){var nt=(n.getAttribute('epub:type')||'').split(/\\s+/);"
+        + "if(n.classList.contains('signet-fn')||nt.indexOf('footnote')>=0||nt.indexOf('endnote')>=0){inNote=true;break;}"
+        + "n=n.parentElement;}"
+        + "var isReference=a.classList.contains('signet-fn-ref')||t.indexOf('noteref')>=0||r.indexOf('doc-noteref')>=0;"
+        + "var isBacklink=t.indexOf('backlink')>=0||r.indexOf('doc-backlink')>=0"
+        + "||(inNote&&(a.hash||'').toLowerCase().endsWith('-ref'));"
+        + "if(isReference&&a.href){e.preventDefault();post('signet-note-ref:'+a.href);return;}"
+        + "if(isBacklink&&a.href){e.preventDefault();post('signet-note-backlink:'+a.href);return;}}"
+        + "var el=e.target;if(el&&el.nodeType!==1)el=el.parentElement;"
         + "while(el&&el.nodeType===1&&!el.hasAttribute('data-signet-loc'))el=el.parentElement;"
-        + "if(el&&el.nodeType===1&&el.hasAttribute('data-signet-loc')){try{"
-        + "window.chrome.webview.postMessage('signet-loc:'+el.getAttribute('data-signet-loc'));}catch(x){}}"
+        + "if(el&&el.nodeType===1&&el.hasAttribute('data-signet-loc'))"
+        + "post('signet-loc:'+el.getAttribute('data-signet-loc'));"
         + "},true);})();";
 
     // A script injected when each document is created: Ctrl+wheel and Ctrl+Plus/Minus/0 in the page do not change

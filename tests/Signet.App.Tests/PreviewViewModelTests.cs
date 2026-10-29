@@ -562,6 +562,91 @@ public sealed class PreviewViewModelTests
     }
 
     [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void HandlePreviewMessage_FootnoteReference_navigates_to_the_note_and_optionally_moves_code(
+        bool followFootnotesInCodeView)
+    {
+        // Arrange
+        using Book book = BookCreator.CreateNewBook("3.0");
+        HtmlResource chapter = book.GetHtmlResourcesExcludingNav().First();
+        HtmlResource note = book.CreateEmptyHtmlFile();
+        chapter.SetText("<html><body><p><a class=\"signet-fn-ref\" href=\"#note\">[1]</a></p></body></html>");
+        note.SetText("<html><body>\n<p id=\"note\">Global note.</p>\n</body></html>");
+        using PreviewViewModel sut = New();
+        sut.FollowFootnotesInCodeView = followFootnotesInCodeView;
+        List<Uri> navigated = new();
+        int? jumped = null;
+        sut.NavigateRequested += (_, url) => navigated.Add(url);
+        sut.CodeCaretJumpRequested += (_, offset) => jumped = offset;
+        sut.SetBook(book);
+        sut.ShowResource(chapter);
+        navigated.Clear();
+
+        Uri noteUrl = new UriBuilder(
+            new Uri(Path.Combine(sut.MirrorRootPath!, note.BookPath.Replace('/', Path.DirectorySeparatorChar))))
+        {
+            Fragment = "note",
+        }.Uri;
+        int expectedOffset = XhtmlDoc.OffsetFromNode(XhtmlDoc.Parse(note.GetText()).GetElementById("note")!);
+
+        // Act
+        sut.HandlePreviewMessage("signet-note-ref:" + noteUrl.AbsoluteUri);
+
+        // Assert
+        sut.CurrentBookPath.Should().Be(note.BookPath);
+        navigated.Should().ContainSingle().Which.Should().Be(noteUrl);
+        if (followFootnotesInCodeView)
+        {
+            jumped.Should().Be(expectedOffset);
+        }
+        else
+        {
+            jumped.Should().BeNull();
+        }
+    }
+
+    [Fact]
+    public void HandlePreviewMessage_FootnoteBacklink_navigates_to_the_reference_and_moves_code()
+    {
+        // Arrange
+        using Book book = BookCreator.CreateNewBook("3.0");
+        HtmlResource chapter = book.GetHtmlResourcesExcludingNav().First();
+        HtmlResource note = book.CreateEmptyHtmlFile();
+        const string referenceId = "note-ref";
+        chapter.SetText(
+            "<html><body><h1><a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\""
+            + note.BookPath + "#note\" id=\"" + referenceId + "\">[1]</a></h1></body></html>");
+        note.SetText(
+            "<html><body><aside class=\"signet-fn\" epub:type=\"endnote\" id=\"note\">"
+            + "<p><a href=\"" + chapter.BookPath + "#" + referenceId + "\">1.</a> Note.</p></aside></body></html>");
+        using PreviewViewModel sut = New();
+        List<Uri> navigated = new();
+        int? jumped = null;
+        sut.NavigateRequested += (_, url) => navigated.Add(url);
+        sut.CodeCaretJumpRequested += (_, offset) => jumped = offset;
+        sut.SetBook(book);
+        sut.ShowResource(note);
+        navigated.Clear();
+
+        Uri referenceUrl = new UriBuilder(
+            new Uri(Path.Combine(sut.MirrorRootPath!, chapter.BookPath.Replace('/', Path.DirectorySeparatorChar))))
+        {
+            Fragment = referenceId,
+        }.Uri;
+        int expectedOffset = XhtmlDoc.OffsetFromNode(
+            XhtmlDoc.Parse(chapter.GetText()).GetElementById(referenceId)!);
+
+        // Act
+        sut.HandlePreviewMessage("signet-note-backlink:" + referenceUrl.AbsoluteUri);
+
+        // Assert
+        sut.CurrentBookPath.Should().Be(chapter.BookPath);
+        navigated.Should().ContainSingle().Which.Should().Be(referenceUrl);
+        jumped.Should().Be(expectedOffset);
+    }
+
+    [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("hello world")]
