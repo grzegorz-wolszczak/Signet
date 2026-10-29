@@ -3,15 +3,16 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using CommunityToolkit.Mvvm.Input;
+using Signet.App.Resources;
 using Signet.Core.Parsers;
 
 namespace Signet.App.ViewModels;
 
-/// <summary>A CSS property and its display-context markers.</summary>
-public sealed record CssPropertyReferenceRow(string Display, string Name);
+/// <summary>A CSS property, its display-context markers, and its localized tooltip.</summary>
+public sealed record CssPropertyReferenceRow(string Display, string Name, string Tooltip);
 
 /// <summary>The read-only inherited and non-inherited CSS property lists shown by the reference window.</summary>
-public sealed class CssPropertyReferenceViewModel : ViewModelBase
+public sealed class CssPropertyReferenceViewModel : ViewModelBase, ILanguageAware
 {
     private static readonly (CssDisplayContext Context, string Marker)[] DisplayMarkers =
     {
@@ -32,6 +33,7 @@ public sealed class CssPropertyReferenceViewModel : ViewModelBase
     public CssPropertyReferenceViewModel()
     {
         ClearSearchCommand = new RelayCommand(() => SearchText = string.Empty);
+        Strings.RegisterLanguageAware(this);
         RefreshProperties();
     }
 
@@ -68,6 +70,9 @@ public sealed class CssPropertyReferenceViewModel : ViewModelBase
     /// <summary>Clears the search.</summary>
     public RelayCommand ClearSearchCommand { get; }
 
+    /// <inheritdoc />
+    public void OnLanguageChanged() => RefreshProperties();
+
     /// <summary>Inherited properties, sorted alphabetically.</summary>
     public IReadOnlyList<CssPropertyReferenceRow> InheritedProperties
     {
@@ -97,10 +102,14 @@ public sealed class CssPropertyReferenceViewModel : ViewModelBase
     private static ReadOnlyCollection<CssPropertyReferenceRow> CreateRows(IEnumerable<string> properties, string filter) =>
         Array.AsReadOnly(
             properties.OrderBy(property => property, StringComparer.OrdinalIgnoreCase)
-                .Select(property => new CssPropertyReferenceRow(DisplayText(property), property))
+                .Select(property => new { Name = property, Display = DisplayText(property) })
                 .Where(row => filter.Length == 0
                     || row.Name.Contains(filter, StringComparison.CurrentCultureIgnoreCase)
                     || row.Display.Contains(filter, StringComparison.CurrentCultureIgnoreCase))
+                .Select(row => new CssPropertyReferenceRow(
+                    row.Display,
+                    row.Name,
+                    CssPropertyReferenceDocumentation.TooltipFor(row.Name)))
                 .ToArray());
 
     private static string DisplayText(string property)

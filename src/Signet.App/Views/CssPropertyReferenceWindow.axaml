@@ -10,9 +10,20 @@
         WindowStartupLocation="CenterOwner"
         CanResize="True">
 
+  <Window.Resources>
+    <DataTemplate x:Key="PropertyNameCellTemplate" x:DataType="vm:CssPropertyReferenceRow">
+      <TextBlock Text="{Binding Name}" Background="Transparent" VerticalAlignment="Center">
+        <ToolTip.Tip>
+          <TextBlock DataContext="{Binding}" Text="{Binding Tooltip}" TextWrapping="Wrap" MaxWidth="440" />
+        </ToolTip.Tip>
+      </TextBlock>
+    </DataTemplate>
+  </Window.Resources>
+
   <Grid Margin="12" RowDefinitions="Auto,Auto,Auto,*" ColumnDefinitions="*,*" ColumnSpacing="12" RowSpacing="10">
     <CheckBox Grid.Row="0" Grid.ColumnSpan="2"
               Content="{loc:Loc CssPropertyReferenceWindow_All}"
+              ToolTip.Tip="{loc:Loc CssPropertyReferenceWindow_AllTooltip}"
               IsChecked="{Binding ShowAll, Mode=TwoWay}" />
 
     <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Spacing="2">

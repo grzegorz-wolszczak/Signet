@@ -2,6 +2,7 @@ using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AwesomeAssertions;
@@ -36,11 +37,21 @@ public sealed class CssPropertyReferenceWindowTests
         {
             // Assert
             allCheckBox.Content.Should().Be(Strings.Get("CssPropertyReferenceWindow_All"));
+            ToolTip.GetTip(allCheckBox).Should().Be(Strings.Get("CssPropertyReferenceWindow_AllTooltip"));
             viewModel.ShowAll.Should().BeFalse();
             searchTextBox.PlaceholderText.Should().Be(Strings.Get("CssPropertyReferenceWindow_SearchPlaceholder"));
             clearSearchButton.IsVisible.Should().BeFalse();
             AssertColumnHeaders(inheritedGrid);
             AssertColumnHeaders(nonInheritedGrid);
+            TextBlock displayCell = nonInheritedGrid.GetVisualDescendants().OfType<TextBlock>()
+                .Single(textBlock => textBlock.Text == "display");
+            string displayTooltipText = viewModel.NonInheritedProperties.Single(row => row.Name == "display").Tooltip;
+            ToolTip.SetIsOpen(displayCell, true);
+            Dispatcher.UIThread.RunJobs();
+            TextBlock displayTooltip = ToolTip.GetTip(displayCell).Should().BeOfType<TextBlock>().Subject;
+            displayTooltip.Text.Should().Be(displayTooltipText);
+            displayTooltip.TextWrapping.Should().Be(TextWrapping.Wrap);
+            ToolTip.SetIsOpen(displayCell, false);
 
             // Act
             searchTextBox.Text = "f, g";

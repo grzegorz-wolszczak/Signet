@@ -129,7 +129,10 @@ public partial class CssPropertyReferenceWindow : Window
             Columns =
             {
                 columns.Text("CssPropertyReferenceWindow_Display", row => row.Display, new GridLength(125)),
-                columns.Text("CssPropertyReferenceWindow_Name", row => row.Name, new GridLength(1, GridUnitType.Star)),
+                columns.Template(
+                    "CssPropertyReferenceWindow_Name",
+                    "PropertyNameCellTemplate",
+                    new GridLength(1, GridUnitType.Star)),
             },
         };
 
