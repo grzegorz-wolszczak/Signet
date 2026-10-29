@@ -74,6 +74,7 @@ public sealed partial class CleanupViewModel : ViewModelBase
     {
         CleanupStep.UnreferencedStylesheets,
         CleanupStep.UnusedSelectors,
+        CleanupStep.UndefinedClasses,
         CleanupStep.MergeSameSelectors,
         CleanupStep.MergeSameProperties,
     };
@@ -518,7 +519,7 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
             return Strings.Get("Cleanup_NothingFound");
         }
 
-        string summary = Step is CleanupStep.MergeSameSelectors or CleanupStep.MergeSameProperties or CleanupStep.UnusedIds
+        string summary = Step is CleanupStep.MergeSameSelectors or CleanupStep.MergeSameProperties or CleanupStep.UndefinedClasses or CleanupStep.UnusedIds
             or CleanupStep.InheritedAttributes or CleanupStep.EmptyElements or CleanupStep.BareSpans or CleanupStep.MergeDivs
             or CleanupStep.NestedDivs
             ? Strings.Format($"Cleanup_{Step}_Summary", result.AppliedCount, result.Items.Count, result.AppliedRuleCount)

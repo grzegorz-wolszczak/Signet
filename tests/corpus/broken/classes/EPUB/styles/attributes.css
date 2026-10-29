@@ -1,0 +1,15 @@
+/* Added in October 2026: the Cleanup step "classes without CSS definitions" knew a class as defined only from ".name"
+   selectors, so the classes below looked undefined and were stripped from the XHTML, taking their style with them.
+   None of them is written as ".name". */
+
+/* A word of the class attribute. */
+p[class~="note"] { font-size: 0.8em; }
+
+/* The start of the class attribute: verse-1, verse-2, ... */
+[class^="verse-"] { margin-left: 2em; }
+
+/* A hyphen-separated prefix: lang-en, lang-la. */
+span[class|="lang"] { font-style: italic; }
+
+/* An ordinary class selector, so the sheet is not only hard cases. */
+.chapter { text-align: center; }

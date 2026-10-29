@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="en" xml:lang="en">
+<head>
+  <title>Classes styled by attribute selectors</title>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" type="text/css" href="../styles/attributes.css"/>
+</head>
+<body>
+  <h1 class="chapter">Classes styled by attribute selectors</h1>
+
+  <!-- Each of these classes is styled, by p[class~="note"], [class^="verse-"] and span[class|="lang"]. -->
+  <p class="note">A note, smaller.</p>
+  <p class="verse-1">The first verse, indented.</p>
+  <p class="verse-2">The second verse, indented.</p>
+  <p>A word in <span class="lang-la">Latin</span>, in italics.</p>
+
+  <!-- No selector names this class. Once the sheet reads the class attribute itself, which classes are styled can no
+       longer be told from the names, so the whole file is left alone, this class too. -->
+  <p class="stray">A class nothing styles.</p>
+</body>
+</html>

@@ -24,6 +24,14 @@ public enum CleanupStep
     /// <summary>Remove CSS selectors (from stylesheets and <c>&lt;style&gt;</c> blocks) that match nothing.</summary>
     UnusedSelectors,
 
+    /// <summary>
+    /// Remove class tokens from XHTML attributes when no selector in the file's visible stylesheets or its
+    /// <c>&lt;style&gt;</c> blocks defines them. Script and Media Overlay class references are preserved. A file whose
+    /// visible CSS does not parse, or reads the class attribute through an attribute selector (<c>[class~="x"]</c>),
+    /// is left alone.
+    /// </summary>
+    UndefinedClasses,
+
     /// <summary>Merge rules with an identical selector within one stylesheet.</summary>
     MergeSameSelectors,
 
@@ -84,8 +92,8 @@ public enum CleanupStep
 /// </param>
 /// <param name="Text">A readable description (selector text, merge description, file path).</param>
 /// <param name="BookPath">The file the item concerns (for navigation).</param>
-/// <param name="Offset">The 0-based offset of the item in the current text of <paramref name="BookPath"/> (for navigation).</param>
-/// <param name="RuleCount">For merge groups: the number of rules in the group; otherwise 0.</param>
+/// <param name="Offset">The 0-based offset of the item in <paramref name="BookPath"/> (for navigation).</param>
+/// <param name="RuleCount">The number of underlying changes represented by this item, or 0 when not applicable.</param>
 public sealed record CleanupItem(CleanupStep Step, string Key, string Text, string BookPath, int Offset, int RuleCount = 0)
 {
     /// <summary>
@@ -104,7 +112,7 @@ public sealed record CleanupItem(CleanupStep Step, string Key, string Text, stri
 /// <param name="Step">The step.</param>
 /// <param name="Items">All items the step found (including the ones the user excluded).</param>
 /// <param name="AppliedCount">How many of <paramref name="Items"/> will be applied (not excluded).</param>
-/// <param name="AppliedRuleCount">For merge steps: the number of rules in the applied groups; otherwise 0.</param>
+/// <param name="AppliedRuleCount">The number of underlying changes in applied items, such as merged rules or removed attributes.</param>
 /// <param name="RiskyCount">How many of <paramref name="Items"/> are risky (<see cref="CleanupItem.IsRisky"/>).</param>
 public sealed record CleanupStepResult(CleanupStep Step, IReadOnlyList<CleanupItem> Items, int AppliedCount, int AppliedRuleCount, int RiskyCount)
 {
@@ -187,17 +195,20 @@ public sealed record CleanupPreparation(CleanupAnalysis? Analysis, HtmlResource?
 /// enough to run after every toggle.
 /// </summary>
 /// <remarks>
-/// <b>Execution order</b> (<see cref="CleanupStep"/>): unreferenced stylesheets → unused selectors → merging
-/// identical selectors → merging identical properties → unused ids → empty elements → bare spans → merging adjacent
-/// divs → nested divs → unused media.
-/// Unused selectors are always computed on the original texts (only whole stylesheets can disappear before them),
-/// merges and the HTML steps on the texts left by the previous steps, and media references on the CSS that remains
-/// at the end.
+/// <b>Execution order</b> (<see cref="CleanupStep"/>): unreferenced stylesheets → unused selectors → undefined
+/// classes → merging identical selectors → merging identical properties → unused ids → empty elements → bare spans
+/// → merging adjacent divs → nested divs → unused media.
+/// Unused selectors are computed on the original texts (only whole stylesheets can disappear before them).
+/// Undefined classes account for selectors removed by that step; merges and HTML steps use texts left by previous
+/// steps, and media references use the CSS that remains at the end.
 /// </remarks>
 public sealed class CleanupAnalysis
 {
+    private readonly record struct SelectorKey(string BookPath, int Position, string Text);
+
     private const string SheetKeyPrefix = "sheet|";
     private const string SelectorKeyPrefix = "selector|";
+    private const string UndefinedClassesKeyPrefix = "undefinedclass|";
     private const string MergeSelectorKeyPrefix = "mergesel|";
     private const string MergePropertiesKeyPrefix = "mergeprop|";
     private const string MediaKeyPrefix = "media|";
@@ -221,6 +232,10 @@ public sealed class CleanupAnalysis
         @"(?:xlink:)?href\s*=\s*[""'](?<href>[^""']+)[""']", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     // src="…" of the <audio>/<text> elements of a Media Overlays (SMIL) document.
+    // An attribute selector on the class attribute: [class], [class="x"], [class~="x"], [ns|class^="x"], …
+    private static readonly Regex ClassAttributeSelectorRegex = new(
+        @"\[\s*(?:[\w-]*\|)?class\s*(?:[~|^$*]?=|\])", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
     private static readonly Regex SmilSrcRegex = new(
         @"\bsrc\s*=\s*[""'](?<src>[^""']+)[""']", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
@@ -230,6 +245,14 @@ public sealed class CleanupAnalysis
     private readonly Dictionary<string, string> _htmlFolders = new(StringComparer.Ordinal);
     private readonly IReadOnlyList<CssResource> _unreferencedSheets;
     private readonly IReadOnlyList<CssSelectorUsage> _unusedSelectors;
+    private readonly HashSet<string> _mediaOverlayActiveClassSelectors;
+    private readonly Dictionary<string, IReadOnlyList<ClassAttributeToken>> _classUsesByHtml = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, Dictionary<string, int>> _classDefinitionsByHtml = new(StringComparer.Ordinal);
+    private readonly Dictionary<SelectorKey, IReadOnlyList<string>> _classNamesBySelector = new();
+    // XHTML files whose class definitions cannot be listed with confidence: a visible stylesheet or <style> block does
+    // not parse cleanly, or one of its selectors reads the class attribute itself ([class~="x"], [class^="x"], …), so
+    // a class token may be styled without any ".x" in sight. The undefined-classes step leaves such files alone.
+    private readonly HashSet<string> _htmlWithUncheckableClassDefinitions = new(StringComparer.Ordinal);
     private readonly HashSet<string> _mediaReferencedFromHtml = new(StringComparer.Ordinal);
     private readonly IReadOnlyList<Resource> _media;
     private readonly string _coverImagePath;
@@ -314,6 +337,7 @@ public sealed class CleanupAnalysis
 
         // A manifest item named in another item's fallback attribute is used by the reading system.
         OpfResource opf = book.GetOpf();
+        _mediaOverlayActiveClassSelectors = new(opf.GetMediaOverlayActiveClassSelectors(), StringComparer.Ordinal);
         List<ManifestEntry> manifest = opf.GetOpfDocument().Manifest.ToList();
         foreach (string fallbackId in manifest.Select(e => e.Attributes.Value("fallback")).Where(id => id.Length > 0))
         {
@@ -333,6 +357,7 @@ public sealed class CleanupAnalysis
             _visibleSheets[htmlBookPath] = sheets;
         }
 
+        PrepareClassDefinitions(cancellationToken);
         _unreferencedSheets = book.FindUnusedStylesheets();
         _unusedSelectors = CssSelectorUsageAnalyzer.GetUnusedSelectorsCancellable(book, cancellationToken);
         _media = book.GetMediaResources();
@@ -413,9 +438,15 @@ public sealed class CleanupAnalysis
             steps.Add(Result(CleanupStep.UnreferencedStylesheets, items));
         }
 
+        HashSet<SelectorKey> removedSelectors = new();
         if (enabledSteps.Contains(CleanupStep.UnusedSelectors))
         {
-            steps.Add(PlanUnusedSelectors(cssTexts, htmlTexts, ruleOrigins, excludedKeys));
+            steps.Add(PlanUnusedSelectors(cssTexts, htmlTexts, ruleOrigins, excludedKeys, removedSelectors));
+        }
+
+        if (enabledSteps.Contains(CleanupStep.UndefinedClasses))
+        {
+            steps.Add(PlanUndefinedClasses(htmlTexts, excludedKeys, removedSelectors));
         }
 
         if (enabledSteps.Contains(CleanupStep.MergeSameSelectors))
@@ -494,7 +525,8 @@ public sealed class CleanupAnalysis
         Dictionary<string, string> cssTexts,
         Dictionary<string, string> htmlTexts,
         Dictionary<string, List<int>?> ruleOrigins,
-        IReadOnlySet<string> excludedKeys)
+        IReadOnlySet<string> excludedKeys,
+        ISet<SelectorKey> removedSelectorKeys)
     {
         // Selectors of a stylesheet removed in the previous step are gone with it.
         List<CleanupItem> items = _unusedSelectors
@@ -525,6 +557,11 @@ public sealed class CleanupAnalysis
                 string? newText = info.RemoveMatchingSelectors(removed);
                 if (newText is not null)
                 {
+                    foreach (CssSelector selector in removed)
+                    {
+                        removedSelectorKeys.Add(new SelectorKey(file.Key, selector.Pos, selector.Text));
+                    }
+
                     ruleOrigins[file.Key] = SurvivingRuleOrigins(info, removed, ruleOrigins[file.Key], newText);
                     cssTexts[file.Key] = newText;
                 }
@@ -533,11 +570,197 @@ public sealed class CleanupAnalysis
             {
                 string htmlText = htmlTexts[file.Key];
                 HtmlStyleInfo styleInfo = new(htmlText);
-                htmlTexts[file.Key] = styleInfo.RemoveMatchingSelectors(styleInfo.GetAllSelectors().Where(Matches));
+                List<CssSelector> removed = styleInfo.GetAllSelectors().Where(Matches).ToList();
+                foreach (CssSelector selector in removed)
+                {
+                    removedSelectorKeys.Add(new SelectorKey(file.Key, selector.Pos, selector.Text));
+                }
+
+                htmlTexts[file.Key] = styleInfo.RemoveMatchingSelectors(removed);
             }
         }
 
         return Result(CleanupStep.UnusedSelectors, items);
+    }
+
+    private CleanupStepResult PlanUndefinedClasses(
+        Dictionary<string, string> htmlTexts,
+        IReadOnlySet<string> excludedKeys,
+        IReadOnlySet<SelectorKey> removedSelectorKeys)
+    {
+        List<CleanupItem> items = new();
+        Dictionary<string, List<SelectorKey>> removedBySource = removedSelectorKeys
+            .GroupBy(selector => selector.BookPath, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.ToList(), StringComparer.Ordinal);
+
+        foreach (string path in htmlTexts.Keys.ToList())
+        {
+            string text = htmlTexts[path];
+            IReadOnlyList<ClassAttributeToken> classUses = _classUsesByHtml[path];
+            if (classUses.Count == 0)
+            {
+                continue;
+            }
+
+            if (_htmlWithUncheckableClassDefinitions.Contains(path))
+            {
+                continue;
+            }
+
+            Dictionary<string, int> definedClasses = new(_classDefinitionsByHtml[path], StringComparer.Ordinal);
+            HashSet<string> visibleSources = new(_visibleSheets[path], StringComparer.Ordinal) { path };
+            foreach (string sourcePath in visibleSources)
+            {
+                if (!removedBySource.TryGetValue(sourcePath, out List<SelectorKey>? selectors))
+                {
+                    continue;
+                }
+
+                foreach (SelectorKey selector in selectors)
+                {
+                    if (!_classNamesBySelector.TryGetValue(selector, out IReadOnlyList<string>? classNames))
+                    {
+                        continue;
+                    }
+
+                    foreach (string className in classNames)
+                    {
+                        if (!definedClasses.TryGetValue(className, out int count))
+                        {
+                            continue;
+                        }
+
+                        if (count == 1)
+                        {
+                            definedClasses.Remove(className);
+                        }
+                        else
+                        {
+                            definedClasses[className] = count - 1;
+                        }
+                    }
+                }
+            }
+
+            HashSet<string> toRemove = new(StringComparer.Ordinal);
+            foreach (IGrouping<string, ClassAttributeToken> group in classUses.GroupBy(use => use.Name, StringComparer.Ordinal))
+            {
+                if (definedClasses.ContainsKey(group.Key)
+                    || _mediaOverlayActiveClassSelectors.Contains("." + group.Key)
+                    || _idReferences.Value.IsMentionedInScript(group.Key))
+                {
+                    continue;
+                }
+
+                string key = $"{UndefinedClassesKeyPrefix}{path}|{Uri.EscapeDataString(group.Key)}";
+                bool isApplied = !excludedKeys.Contains(key);
+                ClassAttributeToken first = group.MinBy(use => use.Offset);
+                int occurrenceCount = group.Count();
+                items.Add(new CleanupItem(CleanupStep.UndefinedClasses, key, "." + group.Key, path, first.Offset, occurrenceCount)
+                {
+                    IsApplied = isApplied,
+                });
+                if (isApplied)
+                {
+                    toRemove.Add(group.Key);
+                }
+            }
+
+            if (toRemove.Count > 0)
+            {
+                htmlTexts[path] = ClassAttributeEditor.Remove(text, toRemove);
+            }
+        }
+
+        return Result(CleanupStep.UndefinedClasses, items);
+    }
+
+    private void PrepareClassDefinitions(CancellationToken cancellationToken)
+    {
+        Dictionary<string, IReadOnlyList<string>> classNamesBySource = new(StringComparer.Ordinal);
+        HashSet<string> uncheckableSources = new(StringComparer.Ordinal);
+
+        foreach ((string path, string text) in _cssTexts)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            CssInfo info = new(text);
+            classNamesBySource[path] = AddClassSelectors(path, info, out bool readsClassAttribute);
+            if (info.ParseErrors.Count > 0 || readsClassAttribute)
+            {
+                uncheckableSources.Add(path);
+            }
+        }
+
+        foreach ((string path, string text) in _htmlTexts)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            _classUsesByHtml[path] = ClassAttributeEditor.Find(text);
+            List<string> classNames = new();
+            foreach (CssInfo style in new HtmlStyleInfo(text).Styles)
+            {
+                classNames.AddRange(AddClassSelectors(path, style, out bool readsClassAttribute));
+                if (style.ParseErrors.Count > 0 || readsClassAttribute)
+                {
+                    uncheckableSources.Add(path);
+                }
+            }
+
+            classNamesBySource[path] = classNames;
+        }
+
+        foreach ((string htmlPath, IReadOnlyList<string> visibleSheets) in _visibleSheets)
+        {
+            Dictionary<string, int> definitions = new(StringComparer.Ordinal);
+            HashSet<string> sources = new(visibleSheets, StringComparer.Ordinal) { htmlPath };
+            foreach (string sourcePath in sources)
+            {
+                if (uncheckableSources.Contains(sourcePath))
+                {
+                    _htmlWithUncheckableClassDefinitions.Add(htmlPath);
+                }
+
+                if (!classNamesBySource.TryGetValue(sourcePath, out IReadOnlyList<string>? classNames))
+                {
+                    continue;
+                }
+
+                foreach (string className in classNames)
+                {
+                    if (definitions.TryGetValue(className, out int count))
+                    {
+                        definitions[className] = count + 1;
+                    }
+                    else
+                    {
+                        definitions[className] = 1;
+                    }
+                }
+            }
+
+            _classDefinitionsByHtml[htmlPath] = definitions;
+        }
+    }
+
+    private List<string> AddClassSelectors(string bookPath, CssInfo info, out bool readsClassAttribute)
+    {
+        List<string> classNames = new();
+        readsClassAttribute = false;
+        foreach (CssSelector selector in info.GetAllSelectors())
+        {
+            readsClassAttribute |= ClassAttributeSelectorRegex.IsMatch(selector.Text);
+            List<string> selectorClassNames = CssToolbox.FindClassesInSelector(selector.Text)
+                .Select(className => className.Name)
+                .ToList();
+            if (selectorClassNames.Count == 0)
+            {
+                continue;
+            }
+
+            _classNamesBySelector[new SelectorKey(bookPath, selector.Pos, selector.Text)] = selectorClassNames;
+            classNames.AddRange(selectorClassNames);
+        }
+
+        return classNames;
     }
 
     private CleanupStepResult PlanMerges(

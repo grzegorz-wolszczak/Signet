@@ -4010,6 +4010,15 @@ Insert anyway?</value>
   <data name="Cleanup_UnusedSelectors_Summary" xml:space="preserve">
     <value>Selectors to remove: {0} of {1}.</value>
   </data>
+  <data name="Cleanup_UndefinedClasses_Title" xml:space="preserve">
+    <value>Remove classes without CSS definitions</value>
+  </data>
+  <data name="Cleanup_UndefinedClasses_Description" xml:space="preserve">
+    <value>Removes class names from class attributes when no selector in the file's visible stylesheets or its &lt;style&gt; blocks defines them. Keeps names mentioned in scripts and Media Overlay active-class metadata.</value>
+  </data>
+  <data name="Cleanup_UndefinedClasses_Summary" xml:space="preserve">
+    <value>Class names to remove: {0} of {1} (class tokens removed: {2}).</value>
+  </data>
   <data name="Cleanup_MergeSameSelectors_Title" xml:space="preserve">
     <value>Merge CSS rules with identical selectors</value>
   </data>

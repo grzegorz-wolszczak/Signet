@@ -72,6 +72,7 @@ public sealed class ClassRemover
         int attributeOccurrences = 0;
         int rulesRemoved = 0;
         Dictionary<string, string> changed = new(StringComparer.Ordinal);
+        HashSet<string> classNames = new(StringComparer.Ordinal) { className };
 
         foreach (ClassUsageSource source in _sources)
         {
@@ -88,7 +89,7 @@ public sealed class ClassRemover
             }
             else
             {
-                attributeOccurrences += RemoveFromAttributes(edits, source.Text, className);
+                attributeOccurrences += ClassAttributeEditor.AddRemovalEdits(edits, source.Text, classNames);
                 foreach (CssInfo block in new HtmlStyleInfo(source.Text).Styles)
                 {
                     rulesRemoved += RemoveFromSelectors(edits, source.Text, block.Rules, className);
@@ -97,89 +98,11 @@ public sealed class ClassRemover
 
             if (edits.Count > 0)
             {
-                changed[source.BookPath] = ApplyEdits(source.Text, edits);
+                changed[source.BookPath] = ClassAttributeEditor.ApplyEdits(source.Text, edits);
             }
         }
 
         return new ClassRemovalResult(new ClassRemovalStats(attributeOccurrences, rulesRemoved, changed.Count), changed);
-    }
-
-    // ---- class="…" attributes ----
-
-    private static int RemoveFromAttributes(List<(int Start, int End, string? Replacement)> edits, string text, string className)
-    {
-        int removed = 0;
-        foreach ((int pos, int len) in TagLister.EnumerateOpeningTags(text))
-        {
-            if (!text.AsSpan(pos, len).Contains(className, StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            TagLister.AttInfo attribute = TagLister.ParseAttribute(text.Substring(pos, len), "class");
-            if (attribute.Pos == -1 || attribute.VLen <= 0)
-            {
-                continue;
-            }
-
-            List<string> tokens = SplitClassTokens(attribute.AValue).ToList();
-            int before = tokens.Count;
-            tokens.RemoveAll(t => string.Equals(t, className, StringComparison.Ordinal));
-            int matched = before - tokens.Count;
-            if (matched == 0)
-            {
-                continue;
-            }
-
-            removed += matched;
-            if (tokens.Count == 0)
-            {
-                // Remove the whole "class='…'" attribute, plus one adjacent whitespace character.
-                int attrStart = pos + attribute.Pos;
-                int attrEnd = attrStart + attribute.Len;
-                if (attrStart > pos && char.IsWhiteSpace(text[attrStart - 1]))
-                {
-                    attrStart--;
-                }
-                else if (attrEnd < pos + len && char.IsWhiteSpace(text[attrEnd]))
-                {
-                    attrEnd++;
-                }
-
-                edits.Add((attrStart, attrEnd, null));
-            }
-            else
-            {
-                int valueStart = pos + attribute.VPos;
-                edits.Add((valueStart, valueStart + attribute.AValue.Length, string.Join(" ", tokens)));
-            }
-        }
-
-        return removed;
-    }
-
-    // Class names in a class attribute value, split on whitespace (no positions — the value is always rebuilt whole).
-    private static IEnumerable<string> SplitClassTokens(string value)
-    {
-        int i = 0;
-        while (i < value.Length)
-        {
-            while (i < value.Length && char.IsWhiteSpace(value[i]))
-            {
-                i++;
-            }
-
-            int start = i;
-            while (i < value.Length && !char.IsWhiteSpace(value[i]))
-            {
-                i++;
-            }
-
-            if (i > start)
-            {
-                yield return value[start..i];
-            }
-        }
     }
 
     // ---- CSS selectors (stylesheets and <style> blocks) ----
@@ -252,20 +175,4 @@ public sealed class ClassRemover
         return sb.ToString();
     }
 
-    // ---- applying edits ----
-
-    private static string ApplyEdits(string text, List<(int Start, int End, string? Replacement)> edits)
-    {
-        StringBuilder sb = new(text);
-        foreach ((int start, int end, string? replacement) in edits.OrderByDescending(e => e.Start))
-        {
-            sb.Remove(start, end - start);
-            if (replacement is not null)
-            {
-                sb.Insert(start, replacement);
-            }
-        }
-
-        return sb.ToString();
-    }
 }
