@@ -17,6 +17,7 @@ using Signet.Core;
 using Signet.Core.BookManipulation;
 using Signet.Core.Misc;
 using Signet.Core.Resources;
+using Signet.Core.Search;
 using Signet.Core.Tests.TestSupport;
 using Signet.App.Tests.TestSupport;
 using Xunit;
@@ -97,6 +98,74 @@ public sealed class MainWindowViewModelTests : IDisposable
         sut.BookFileName.Should().Be(System.IO.Path.GetFileName(epub));
         sut.BookFileTooltip.Should().Be(epub, "the status bar shows the full path of the book in the tooltip");
         sut.StatusMessage.Should().Be(Strings.Format("Status_FileLoaded", epub), "books of the same name may come from other folders");
+    }
+
+    [Fact]
+    public void SearchAllFilesOfSameType_action_opens_find_panel_and_selects_scope_by_active_resource()
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
+        MainWindowViewModel sut = New();
+        Book book = _disposables.Add(new ImportEpub(epub).GetBook());
+        sut.LoadBook(book, epub);
+        sut.IsFindReplaceVisible = false;
+        sut.FindReplace.FindText = "search value";
+        sut.FindReplace.ReplaceText = "replacement value";
+        HtmlResource html = book.GetHtmlResources().First();
+        CssResource css = book.GetCssResources().First();
+        OpfResource opf = book.GetOpf();
+        AppAction action = sut.Actions.Require(AppActionIds.SearchAllFilesOfSameType);
+
+        // Act
+        sut.Tabs.OpenResources(new Resource[] { html });
+        action.Execute(null);
+
+        // Assert
+        sut.IsFindReplaceVisible.Should().BeTrue();
+        sut.FindReplace.LookWhereIndex.Should().Be((int)LookWhere.AllHtmlFiles);
+        sut.FindReplace.FindText.Should().Be("search value");
+        sut.FindReplace.ReplaceText.Should().Be("replacement value");
+
+        // Act
+        sut.IsFindReplaceVisible = false;
+        sut.Tabs.OpenResources(new Resource[] { css });
+        action.Execute(null);
+
+        // Assert
+        sut.IsFindReplaceVisible.Should().BeTrue();
+        sut.FindReplace.LookWhereIndex.Should().Be((int)LookWhere.AllCssFiles);
+        sut.FindReplace.FindText.Should().Be("search value");
+        sut.FindReplace.ReplaceText.Should().Be("replacement value");
+
+        // Act
+        sut.IsFindReplaceVisible = false;
+        sut.Tabs.OpenResources(new Resource[] { opf });
+        action.Execute(null);
+
+        // Assert
+        sut.IsFindReplaceVisible.Should().BeTrue();
+        sut.FindReplace.LookWhereIndex.Should().Be((int)LookWhere.AllFiles);
+        sut.FindReplace.FindText.Should().Be("search value");
+        sut.FindReplace.ReplaceText.Should().Be("replacement value");
+    }
+
+    [Fact]
+    public void FindReplace_all_files_scope_resolves_every_text_resource_in_book()
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
+        MainWindowViewModel sut = New();
+        Book book = _disposables.Add(new ImportEpub(epub).GetBook());
+        sut.LoadBook(book, epub);
+        IReadOnlyList<TextResource> expected = book.GetAllResources().OfType<TextResource>().ToList();
+
+        // Act
+        IReadOnlyList<TextResource> actual = ((IMultiFileSearchHost)sut).ResolveLookWhere(LookWhere.AllFiles);
+
+        // Assert
+        actual.Should().Equal(expected);
     }
 
     [Fact]

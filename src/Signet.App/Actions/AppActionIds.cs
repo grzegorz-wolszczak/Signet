@@ -92,6 +92,7 @@ public static class AppActionIds
 
     // Search
     public const string Find = "MainWindow.Find";
+    public const string SearchAllFilesOfSameType = "MainWindow.SearchAllFilesOfSameType";
     public const string HideFind = "MainWindow.HideFind";
     public const string FindNext = "MainWindow.FindNext";
     public const string FindPrevious = "MainWindow.FindPrevious";

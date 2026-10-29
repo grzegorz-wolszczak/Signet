@@ -70,6 +70,19 @@ public sealed class SearchControlsTests
     }
 
     [Fact]
+    public void BuildThenParse_AllFilesScope_RoundTrips()
+    {
+        // Arrange
+        SearchControlValues original = SearchControlValues.Defaults with { LookWhere = LookWhere.AllFiles };
+
+        // Act
+        SearchControlValues parsed = SearchControls.Parse(SearchControls.Build(original));
+
+        // Assert
+        parsed.Should().Be(original);
+    }
+
+    [Fact]
     public void ToSearchOptions_MapsRegexFlags()
     {
         // Arrange

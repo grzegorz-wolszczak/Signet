@@ -363,6 +363,7 @@ public sealed partial class MainWindowViewModel
 
         // Find & Replace in the current file.
         _actions.SetHandler(AppActionIds.Find, ShowFindPanel);
+        _actions.SetHandler(AppActionIds.SearchAllFilesOfSameType, SearchAllFilesOfSameType);
         _actions.SetHandler(AppActionIds.HideFind, HideFindPanel);
         _actions.SetHandler(AppActionIds.FindNext, () => _findReplace.FindNext());
         _actions.SetHandler(AppActionIds.FindPrevious, () => _findReplace.FindPrevious());
@@ -1000,6 +1001,7 @@ public sealed partial class MainWindowViewModel
         {
             LookWhere.AllHtmlFiles => Cast(book.GetHtmlResources()),
             LookWhere.AllCssFiles => Cast(book.GetCssResources()),
+            LookWhere.AllFiles => book.GetAllResources().OfType<TextResource>().ToList(),
             LookWhere.OpfFile => new List<TextResource> { book.GetOpf() },
             LookWhere.NcxFile => book.GetNcx() is { } ncx
                 ? new List<TextResource> { ncx }
@@ -1468,6 +1470,18 @@ public sealed partial class MainWindowViewModel
     {
         IsFindReplaceVisible = true;
         _findReplace.SeedFindFromSelection();
+        FindPanelFocusRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void SearchAllFilesOfSameType()
+    {
+        _findReplace.LookWhereIndex = (int)(ActiveCodeTab?.Resource switch
+        {
+            CssResource => LookWhere.AllCssFiles,
+            HtmlResource => LookWhere.AllHtmlFiles,
+            _ => LookWhere.AllFiles,
+        });
+        IsFindReplaceVisible = true;
         FindPanelFocusRequested?.Invoke(this, EventArgs.Empty);
     }
 

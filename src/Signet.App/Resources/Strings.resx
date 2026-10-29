@@ -1916,6 +1916,9 @@ Czy chcesz zapisać zmiany?</value>
   <data name="Action_MainWindow_Find" xml:space="preserve">
     <value>&amp;Znajdź i zamień...</value>
   </data>
+  <data name="Action_MainWindow_SearchAllFilesOfSameType" xml:space="preserve">
+    <value>Szukaj we wszystkich plikach tego samego typu</value>
+  </data>
   <data name="Action_MainWindow_HideFind" xml:space="preserve">
     <value>&amp;Ukryj „Znajdź i zamień”...</value>
   </data>
@@ -2758,6 +2761,9 @@ Czy chcesz zapisać zmiany?</value>
   </data>
   <data name="FindReplace_LookInSelectedOtherXml" xml:space="preserve">
     <value>Zaznaczone pozostałe pliki XML</value>
+  </data>
+  <data name="FindReplace_LookInAllFiles" xml:space="preserve">
+    <value>Wszystkie pliki</value>
   </data>
   <data name="FindReplace_SelectToRestrict" xml:space="preserve">
     <value>Zaznacz fragment, aby ograniczyć wyszukiwanie.</value>

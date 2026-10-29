@@ -41,4 +41,7 @@ public enum LookWhere
 
     /// <summary>Other XML files selected in the Book Browser.</summary>
     SelectedMiscXmlFiles = 11,
+
+    /// <summary>All text resources in the book.</summary>
+    AllFiles = 12,
 }
