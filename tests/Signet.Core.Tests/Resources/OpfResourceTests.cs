@@ -464,6 +464,52 @@ public sealed class OpfResourceTests
     }
 
     [Fact]
+    public void RemoveWholeFileGuideReferencesForResource_removes_every_whole_file_reference_and_keeps_fragments()
+    {
+        // Arrange
+        using TempDir root = new();
+        OpfResource opf = NewOpf(root);
+        Resource html = Stub(root, "OEBPS/Text/ch.xhtml", "application/xhtml+xml");
+        opf.AddResource(html);
+        opf.AddGuideSemanticCode(html, "text");
+        opf.AddGuideSemanticCode(html, "preface", tgtId: "intro");
+
+        // A book from elsewhere may name one file twice in its guide; the editor never writes that itself.
+        opf.SetText(opf.GetText().Replace(
+            "</guide>", "  <reference type=\"cover\" title=\"Cover\" href=\"Text/ch.xhtml\"/>\n  </guide>",
+            System.StringComparison.Ordinal));
+        opf.GetOpfDocument().Guide.Count(g => g.Href == "Text/ch.xhtml").Should().Be(2);
+
+        // Act
+        bool removed = opf.RemoveWholeFileGuideReferencesForResource(html);
+
+        // Assert
+        removed.Should().BeTrue();
+        opf.GetGuideSemanticCodeForResource(html).Should().BeEmpty();
+        opf.GetOpfDocument().Guide.Should().ContainSingle()
+            .Which.Href.Should().Be("Text/ch.xhtml#intro");
+    }
+
+    [Fact]
+    public void RemoveWholeFileGuideReferencesForResource_without_a_reference_leaves_the_opf_alone()
+    {
+        // Arrange
+        using TempDir root = new();
+        OpfResource opf = NewOpf(root);
+        Resource html = Stub(root, "OEBPS/Text/ch.xhtml", "application/xhtml+xml");
+        opf.AddResource(html);
+        opf.AddGuideSemanticCode(html, "preface", tgtId: "intro");
+        string before = opf.GetText();
+
+        // Act
+        bool removed = opf.RemoveWholeFileGuideReferencesForResource(html);
+
+        // Assert
+        removed.Should().BeFalse();
+        opf.GetText().Should().Be(before);
+    }
+
+    [Fact]
     public void AddGuideSemanticCode_replaces_previous_holder_of_same_code()
     {
         // Arrange

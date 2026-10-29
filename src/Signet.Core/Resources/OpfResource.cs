@@ -1383,6 +1383,25 @@ public sealed class OpfResource : XmlResource
         UpdateText(document);
     }
 
+    /// <summary>
+    /// Removes every guide reference to the whole of <paramref name="htmlResource"/> (an <c>href</c> without a
+    /// fragment); references to a fragment of it stay. The OPF is rewritten only when something was removed.
+    /// </summary>
+    /// <returns><c>true</c> when at least one reference was removed.</returns>
+    public bool RemoveWholeFileGuideReferencesForResource(Resource htmlResource)
+    {
+        ArgumentNullException.ThrowIfNull(htmlResource);
+        OpfDocument document = GetOpfDocument();
+        if (GetGuideReferencePos(document, htmlResource, string.Empty) < 0)
+        {
+            return false;
+        }
+
+        RemoveGuideReferenceForResource(document, htmlResource, string.Empty);
+        UpdateText(document);
+        return true;
+    }
+
     // =====================================================================
     //  Cover
     // =====================================================================

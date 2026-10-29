@@ -244,6 +244,7 @@ public static class AppActionCatalog
         new(AppActionIds.BookBrowserAddExistingFiles, "Add Existing Files...", "", null, AppActionIds.BookBrowserCategory),
         new(AppActionIds.BookBrowserAddFontFiles, "Add Font Files...", "", null, AppActionIds.BookBrowserCategory),
         new(AppActionIds.BookBrowserAddSemantics, "Add Semantics...", "", null, AppActionIds.BookBrowserCategory),
+        new(AppActionIds.BookBrowserRemoveSemantics, "Remove Semantics", "", ActionIconKeys.Delete, AppActionIds.BookBrowserCategory),
         new(AppActionIds.BookBrowserCoverImage, "Cover Image", "", null, AppActionIds.BookBrowserCategory),
         new(AppActionIds.BookBrowserMarkAsNav, "Mark As Table Of Contents (NAV)", "", null, AppActionIds.BookBrowserCategory),
         new(AppActionIds.BookBrowserLinkStylesheets, "Link Stylesheets...", "", null, AppActionIds.BookBrowserCategory),

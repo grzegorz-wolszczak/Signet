@@ -293,6 +293,51 @@ public sealed class NavProcessorTests
     }
 
     [Fact]
+    public void RemoveWholeFileLandmarksForResource_removes_every_whole_file_entry_and_keeps_fragments()
+    {
+        // Arrange
+        using TempDir root = new();
+        HtmlResource resource = Nav(root, NestedNav);
+        NavProcessor nav = new(resource);
+        HtmlResource chapter = Chapter(root, "EPUB/text/ch1.xhtml");
+
+        // A book from elsewhere may name one file twice among its landmarks; the editor never writes that itself.
+        nav.SetLandmarks(new[]
+        {
+            new NavLandmarkEntry { EpubType = "bodymatter", Title = "Start", Href = "text/ch1.xhtml" },
+            new NavLandmarkEntry { EpubType = "preface", Title = "Preface", Href = "text/ch1.xhtml" },
+            new NavLandmarkEntry { EpubType = "epigraph", Title = "Epigraph", Href = "text/ch1.xhtml#motto" },
+            new NavLandmarkEntry { EpubType = "toc", Title = "Contents", Href = "nav.xhtml" },
+        });
+
+        // Act
+        bool removed = nav.RemoveWholeFileLandmarksForResource(chapter);
+
+        // Assert
+        removed.Should().BeTrue();
+        nav.GetLandmarkCodeForResource(chapter).Should().BeEmpty();
+        nav.GetLandmarks().Select(e => e.Href).Should().Equal("text/ch1.xhtml#motto", "nav.xhtml");
+    }
+
+    [Fact]
+    public void RemoveWholeFileLandmarksForResource_without_an_entry_leaves_the_nav_alone()
+    {
+        // Arrange
+        using TempDir root = new();
+        HtmlResource resource = Nav(root, NestedNav);
+        NavProcessor nav = new(resource);
+        HtmlResource chapter = Chapter(root, "EPUB/text/ch2.xhtml");
+        string before = resource.GetText();
+
+        // Act
+        bool removed = nav.RemoveWholeFileLandmarksForResource(chapter);
+
+        // Assert
+        removed.Should().BeFalse();
+        resource.GetText().Should().Be(before);
+    }
+
+    [Fact]
     public void GetAllLandmarkInfoByBookPath_splits_path_fragment_code_title()
     {
         // Arrange

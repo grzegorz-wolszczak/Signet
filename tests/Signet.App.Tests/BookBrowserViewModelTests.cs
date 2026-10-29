@@ -1360,7 +1360,7 @@ public sealed class BookBrowserViewModelTests
         // Arrange
         using TempDir temp = new();
         using Book book = Load(CorpusPaths.Epub3Media, temp);
-        BookBrowserViewModel sut = NewViewModel(out _);
+        using BookBrowserViewModel sut = NewViewModel(out _);
 
         // Act
         sut.SetBook(book);
@@ -1375,6 +1375,65 @@ public sealed class BookBrowserViewModelTests
 
         // Assert
         updated.SemanticTypes.Should().Contain(Landmarks.GetName("preface")).And.NotContain(Landmarks.GetName("bodymatter"));
+        book.Modified.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task RemoveSemanticsSelected_Epub3_RemovesFileLevelLandmarkAndPreservesFragmentLandmark()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = Load(CorpusPaths.Epub3Media, temp);
+        using BookBrowserViewModel sut = NewViewModel(out _);
+        sut.SetBook(book);
+
+        BookBrowserNode chapterNode = sut.Nodes.Single(n => n.Header == "Text")
+            .Children.Single(n => n.Entry!.Resource.Filename == "chapter1.xhtml");
+        HtmlResource chapter = (HtmlResource)chapterNode.Entry!.Resource;
+        HtmlResource nav = book.GetNavResource() ?? throw new InvalidOperationException();
+        new NavProcessor(nav).AddLandmarkCode(chapter, "preface", toggle: false, targetId: "section");
+        sut.UpdateSelection(new object?[] { chapterNode });
+
+        // Act & Assert
+        sut.RemoveSemanticsSelectedCommand.CanExecute(null).Should().BeTrue();
+
+        // Act
+        await sut.RemoveSemanticsSelectedCommand.ExecuteAsync(null);
+
+        // Assert
+        NavProcessor updated = new(nav);
+        updated.GetLandmarkCodeForResource(chapter).Should().BeEmpty();
+        updated.GetLandmarkCodeForResource(chapter, "section").Should().Be("preface");
+        sut.RemoveSemanticsSelectedCommand.CanExecute(null).Should().BeFalse();
+        book.Modified.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task RemoveSemanticsSelected_Epub2_RemovesFileLevelGuideAndPreservesFragmentGuide()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = Load(CorpusPaths.Epub2Minimal, temp);
+        using BookBrowserViewModel sut = NewViewModel(out _);
+        sut.SetBook(book);
+
+        BookBrowserNode chapterNode = sut.Nodes.Single(n => n.Header == "Text").Children[0];
+        HtmlResource chapter = (HtmlResource)chapterNode.Entry!.Resource;
+        OpfResource opf = book.GetOpf();
+        opf.AddGuideSemanticCode(chapter, "preface", toggle: false);
+        opf.AddGuideSemanticCode(chapter, "text", toggle: false, tgtId: "section");
+        sut.UpdateSelection(new object?[] { chapterNode });
+
+        // Act & Assert
+        sut.RemoveSemanticsSelectedCommand.CanExecute(null).Should().BeTrue();
+
+        // Act
+        await sut.RemoveSemanticsSelectedCommand.ExecuteAsync(null);
+
+        // Assert
+        opf.GetGuideSemanticCodeForResource(chapter).Should().BeEmpty();
+        opf.GetGuideSemanticCodeForResource(chapter, "section").Should().Be("text");
+        sut.RemoveSemanticsSelectedCommand.CanExecute(null).Should().BeFalse();
         book.Modified.Should().BeTrue();
     }
 
