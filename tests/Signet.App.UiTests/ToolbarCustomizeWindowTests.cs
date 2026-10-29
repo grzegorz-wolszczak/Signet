@@ -98,4 +98,47 @@ public sealed class ToolbarCustomizeWindowTests : IDisposable
         sut.AvailableActions.Single(e => e.Id == ToolbarManager.CaseMenu).IconKey.Should().Be("case-change");
         sut.AvailableActions.Single(e => e.Id == AppActionIds.Save).IconKey.Should().NotBeNullOrEmpty();
     }
+
+    [AvaloniaFact]
+    public void Available_actions_filter_by_label_and_clear_restores_all_entries()
+    {
+        // Arrange
+        ToolbarCustomizeWindow window = Show();
+        try
+        {
+            ToolbarCustomizeViewModel vm = (ToolbarCustomizeViewModel)window.DataContext!;
+            ToolbarEntry entry = new("test.unique", "Unique test action");
+            vm.AvailableActions.Add(entry);
+            int unfilteredCount = vm.AvailableActions.Count;
+            TextBox searchBox = window.GetVisualDescendants().OfType<TextBox>()
+                .Single(textBox => !string.IsNullOrEmpty(textBox.PlaceholderText));
+            ListBox availableActionsList = window.GetVisualDescendants().OfType<ListBox>().First();
+            Button clearButton = window.GetVisualDescendants().OfType<Button>()
+                .Single(button => Equals(button.Content, "✕"));
+
+            // Act
+            searchBox.Text = "UNIQUE TEST";
+            Dispatcher.UIThread.RunJobs();
+
+            // Assert
+            vm.SearchText.Should().Be("UNIQUE TEST");
+            vm.FilteredAvailableActions.Should().ContainSingle().Which.Should().BeSameAs(entry);
+            availableActionsList.Items.OfType<ToolbarEntry>().Should().ContainSingle().Which.Should().BeSameAs(entry);
+            clearButton.IsEffectivelyVisible.Should().BeTrue();
+
+            // Act
+            clearButton.Command!.Execute(null);
+            Dispatcher.UIThread.RunJobs();
+
+            // Assert
+            vm.SearchText.Should().BeEmpty();
+            vm.FilteredAvailableActions.Should().HaveCount(unfilteredCount);
+            availableActionsList.Items.OfType<ToolbarEntry>().Should().HaveCount(unfilteredCount);
+            clearButton.IsEffectivelyVisible.Should().BeFalse();
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
 }

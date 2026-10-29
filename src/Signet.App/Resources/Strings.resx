@@ -1463,6 +1463,12 @@ Czy chcesz zapisać zmiany?</value>
   <data name="ToolbarCustomizeWindow_AvailableActions" xml:space="preserve">
     <value>Dostępne polecenia</value>
   </data>
+  <data name="ToolbarCustomizeWindow_SearchPlaceholder" xml:space="preserve">
+    <value>Szukaj poleceń...</value>
+  </data>
+  <data name="ToolbarCustomizeWindow_ClearSearch" xml:space="preserve">
+    <value>Wyczyść wyszukiwanie</value>
+  </data>
   <data name="ToolbarCustomizeWindow_Add" xml:space="preserve">
     <value>Dodaj →</value>
   </data>
