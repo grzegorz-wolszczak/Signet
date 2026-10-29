@@ -1,4 +1,6 @@
 using Avalonia.Controls;
+using Avalonia.Interactivity;
+using Signet.App.ViewModels;
 
 namespace Signet.App.Views;
 
@@ -11,6 +13,29 @@ namespace Signet.App.Views;
 /// </summary>
 public partial class LiveCssPanelWindow : Window
 {
+    private CssPropertyReferenceWindow? _cssPropertiesWindow;
+
     /// <summary>Initializes the window.</summary>
     public LiveCssPanelWindow() => InitializeComponent();
+
+    private void OnCssReferenceClick(object? sender, RoutedEventArgs e)
+    {
+        if (_cssPropertiesWindow is { IsVisible: true })
+        {
+            _cssPropertiesWindow.Activate();
+            return;
+        }
+
+        CssPropertyReferenceWindow window = new() { DataContext = new CssPropertyReferenceViewModel() };
+        window.Closed += (_, _) =>
+        {
+            if (ReferenceEquals(_cssPropertiesWindow, window))
+            {
+                _cssPropertiesWindow = null;
+            }
+        };
+        _cssPropertiesWindow = window;
+        MainWindow.RememberPlacement(window);
+        window.Show(this);
+    }
 }
