@@ -8,7 +8,8 @@ note in a `.md` file.**
 Several findings of October 2026 lived only in a throwaway probe and a commit message, and the next
 session had to work them out again. A case written into a book is a case every later run exercises.
 Adding one is: put the markup into the file it belongs in (or a new file in a new book), then assert
-the behaviour in `BrokenBookFootnoteTests`, and say in a comment *when* and *why* the case was added.
+the behaviour in the test of the feature it caught out (`BrokenBookFootnoteTests` for the footnotes,
+`CleanupAnalysisTests` for Cleanup, …), and say in a comment *when* and *why* the case was added.
 If the behaviour is wrong and not yet fixed, the test still goes in — asserting the wrong behaviour
 and saying so, so the day it changes, something says it changed.
 
@@ -79,3 +80,18 @@ Content that reads as markup but is not, and ids that are not unique.
   is what `ElementIds` promises and `ElementIdsTests` holds it to.
 - A footnote reference's id **repeated on an unrelated element further down**, and a link to an id
   that is written twice. The pairing may not be misled by either.
+
+## `classes`
+
+Classes styled without being named. Added in October 2026, when the Cleanup step "classes without CSS
+definitions" knew a class as defined only from `.name` selectors.
+
+**`attributes.xhtml`** sees `styles/attributes.css`, whose selectors read the class attribute itself:
+`p[class~="note"]`, `[class^="verse-"]`, `span[class|="lang"]`. Its classes looked undefined, so the
+step stripped them from the XHTML and the style went with them. Once a sheet reads the class attribute,
+which classes are styled cannot be told from the names any more, so the step leaves the whole file
+alone — `stray`, which nothing styles, included.
+
+**`plain.xhtml`** uses the same class names but sees `styles/plain.css`, which has class selectors only:
+there `note` and `stray` really are undefined and are removed. Both are asserted by
+`CleanupAnalysisTests.UndefinedClasses_on_the_broken_classes_book_strips_only_the_file_whose_css_names_classes_by_name`.

@@ -35,6 +35,7 @@ internal sealed partial class IdReferenceIndex
     private readonly HashSet<string> _targets = new(StringComparer.Ordinal);
     private readonly HashSet<string> _stylesheetFragments = new(StringComparer.Ordinal);
     private readonly List<string> _scripts = new();
+    private readonly Dictionary<string, bool> _scriptMentions = new(StringComparer.Ordinal);
 
     /// <summary>Indexes the references of <paramref name="book"/>.</summary>
     public IdReferenceIndex(Book book)
@@ -87,7 +88,21 @@ internal sealed partial class IdReferenceIndex
         ArgumentNullException.ThrowIfNull(id);
         return _targets.Contains(Key(bookPath, id))
             || _stylesheetFragments.Contains(id)
-            || _scripts.Any(s => s.Contains(id, StringComparison.Ordinal));
+            || IsMentionedInScript(id);
+    }
+
+    /// <summary>Whether a script contains <paramref name="name"/>.</summary>
+    public bool IsMentionedInScript(string name)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        if (_scriptMentions.TryGetValue(name, out bool mentioned))
+        {
+            return mentioned;
+        }
+
+        mentioned = _scripts.Any(s => s.Contains(name, StringComparison.Ordinal));
+        _scriptMentions[name] = mentioned;
+        return mentioned;
     }
 
     private void IndexElement(IElement element, string bookPath, string folder)

@@ -1,0 +1,2 @@
+/* Only class selectors: a class without a definition here really is undefined. */
+.chapter { text-align: center; }

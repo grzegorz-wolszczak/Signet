@@ -162,7 +162,7 @@ public sealed class CleanupAnalysisTests
         // Assert
         Step(plan, CleanupStep.UnusedMedia).Items.Select(i => i.BookPath).Should().Equal(orphan.BookPath);
 
-        // Act
+        // Act & Assert
         book.ApplyCleanup(plan).Should().BeTrue();
 
         // Assert
@@ -252,6 +252,222 @@ public sealed class CleanupAnalysisTests
         string chapter = book.GetHtmlResources().Single(h => h.Filename == "chapter1.xhtml").GetText();
         chapter.Should().NotContain(".ghost2");
         chapter.Should().Contain("purple");
+    }
+
+    [Fact]
+    public void UndefinedClasses_removes_only_classes_without_visible_definitions()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadMinimal(temp, tree =>
+        {
+            ReplaceInChapter1(
+                tree,
+                "<p>Hello, world.</p>",
+                "<p class=\"orphan\">Missing.</p>\n<p class=\"linked inline unlinked\">Kept.</p>");
+            AppendCss(tree, ".linked { color: red }");
+            ReplaceInChapter1(tree, "</head>", "<style>.inline { color: blue }</style>\n</head>");
+            AddOrphanStylesheet(tree, "unlinked.css", ".unlinked { color: green }");
+        });
+
+        // Act
+        CleanupPlan plan = Plan(book, CleanupStep.UndefinedClasses);
+        CleanupStepResult step = Step(plan, CleanupStep.UndefinedClasses);
+
+        // Assert
+        step.Items.Should().Contain(i => i.Text == ".orphan");
+        step.Items.Should().Contain(i => i.Text == ".unlinked");
+        step.Items.Should().NotContain(i => i.Text == ".linked" || i.Text == ".inline");
+        step.Items.Single(i => i.Text == ".orphan").RuleCount.Should().Be(1);
+
+        // Act & Assert
+        book.ApplyCleanup(plan).Should().BeTrue();
+
+        // Assert
+        string chapter = book.GetHtmlResources().Single(h => h.Filename == "chapter1.xhtml").GetText();
+        chapter.Should().Contain("<p>Missing.</p>");
+        chapter.Should().Contain("<p class=\"linked inline\">Kept.</p>");
+        chapter.Should().NotContain("orphan").And.NotContain("unlinked");
+    }
+
+    [Fact]
+    public void UndefinedClasses_accounts_for_selectors_removed_by_previous_step()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadMinimal(temp, tree =>
+        {
+            ReplaceInChapter1(tree, "<p>Hello, world.</p>", "<p class=\"orphan shared\">Text.</p>");
+            AppendCss(tree, "h1.orphan { color: red }\nh1.shared { color: blue }\np.shared { color: green }");
+        });
+        HashSet<CleanupStep> enabledSteps = new()
+        {
+            CleanupStep.UnusedSelectors,
+            CleanupStep.UndefinedClasses,
+        };
+
+        // Act
+        CleanupPlan plan = Analyse(book).Plan(enabledSteps, NoExclusions);
+        CleanupStepResult unusedSelectors = Step(plan, CleanupStep.UnusedSelectors);
+        CleanupStepResult undefinedClasses = Step(plan, CleanupStep.UndefinedClasses);
+
+        // Assert
+        unusedSelectors.Items.Should().Contain(i => i.Text == "h1.orphan");
+        unusedSelectors.Items.Should().Contain(i => i.Text == "h1.shared");
+        undefinedClasses.Items.Should().Contain(i => i.Text == ".orphan");
+        undefinedClasses.Items.Should().NotContain(i => i.Text == ".shared");
+
+        // Act & Assert
+        book.ApplyCleanup(plan).Should().BeTrue();
+
+        // Assert
+        book.GetHtmlResources().Single(h => h.Filename == "chapter1.xhtml").GetText()
+            .Should().Contain("<p class=\"shared\">Text.</p>");
+    }
+
+    // Added in the review of October 2026: the step listed only ".name" selectors, so a class styled through an
+    // attribute selector on the class attribute looked undefined and was stripped — and the style with it.
+    [Theory]
+    [InlineData("p[class~=\"note\"] { color: red }")]
+    [InlineData("[class^=\"no\"] { color: red }")]
+    [InlineData("p[CLASS=note] { color: red }")]
+    public void UndefinedClasses_leaves_a_file_alone_when_its_css_reads_the_class_attribute(string rule)
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadMinimal(temp, tree =>
+        {
+            ReplaceInChapter1(tree, "<p>Hello, world.</p>", "<p class=\"note\">Styled by an attribute selector.</p>");
+            AppendCss(tree, rule);
+        });
+
+        // Act
+        CleanupStepResult step = Step(Plan(book, CleanupStep.UndefinedClasses), CleanupStep.UndefinedClasses);
+
+        // Assert
+        step.Items.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void UndefinedClasses_leaves_a_file_alone_when_its_style_block_reads_the_class_attribute()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadMinimal(temp, tree =>
+        {
+            ReplaceInChapter1(tree, "<p>Hello, world.</p>", "<p class=\"note\">Styled by an attribute selector.</p>");
+            ReplaceInChapter1(tree, "</head>", "<style>[class|=\"note\"] { color: blue }</style>\n</head>");
+        });
+
+        // Act
+        CleanupStepResult step = Step(Plan(book, CleanupStep.UndefinedClasses), CleanupStep.UndefinedClasses);
+
+        // Assert
+        step.Items.Should().BeEmpty();
+    }
+
+    // The same case as a book of tests/corpus/broken (classes): two files with the same class names, one seeing a sheet
+    // that styles them through attribute selectors, the other a sheet of class selectors only.
+    [Fact]
+    public void UndefinedClasses_on_the_broken_classes_book_strips_only_the_file_whose_css_names_classes_by_name()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Broken("classes"), temp)).GetBook();
+        HtmlResource attributes = book.GetHtmlResources().Single(h => h.Filename == "attributes.xhtml");
+        HtmlResource plain = book.GetHtmlResources().Single(h => h.Filename == "plain.xhtml");
+        string attributesBefore = attributes.GetText();
+
+        // Act
+        CleanupPlan plan = Plan(book, CleanupStep.UndefinedClasses);
+        CleanupStepResult step = Step(plan, CleanupStep.UndefinedClasses);
+
+        // Assert
+        step.Items.Should().OnlyContain(i => i.BookPath.EndsWith("plain.xhtml", StringComparison.Ordinal));
+        step.Items.Select(i => i.Text).Should().BeEquivalentTo(".note", ".stray");
+
+        // Act & Assert
+        book.ApplyCleanup(plan).Should().BeTrue();
+
+        // Assert
+        attributes.GetText().Should().Be(attributesBefore);
+        plain.GetText().Should().Contain("<p>A note.</p>")
+            .And.Contain("<p>A class nothing styles.</p>")
+            .And.Contain("<h1 class=\"chapter\">");
+    }
+
+    [Fact]
+    public void UndefinedClasses_preserves_classes_referenced_by_scripts_and_media_overlays()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadMinimal(temp, tree =>
+        {
+            ReplaceInChapter1(tree, "<p>Hello, world.</p>", "<p class=\"script-hook overlay-active\">Kept.</p>");
+            AppendToChapter1Body(tree, "<script>document.body.classList.add('script-hook');</script>");
+
+            string opfPath = Path.Combine(tree, "EPUB", "package.opf");
+            string opf = File.ReadAllText(opfPath).Replace(
+                "<meta property=\"dcterms:modified\">2026-01-01T00:00:00Z</meta>",
+                "<meta property=\"dcterms:modified\">2026-01-01T00:00:00Z</meta>\n"
+                + "    <meta property=\"media:active-class\">overlay-active</meta>",
+                StringComparison.Ordinal);
+            File.WriteAllText(opfPath, opf);
+        });
+
+        // Act
+        CleanupStepResult step = Step(Plan(book, CleanupStep.UndefinedClasses), CleanupStep.UndefinedClasses);
+
+        // Assert
+        step.Items.Should().NotContain(i => i.Text == ".script-hook" || i.Text == ".overlay-active");
+    }
+
+    [Fact]
+    public void UndefinedClasses_excluded_item_keeps_class_while_other_items_are_applied()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadMinimal(temp, tree =>
+            ReplaceInChapter1(tree, "<p>Hello, world.</p>", "<p class=\"keep-class remove-class\">Text.</p>"));
+        CleanupAnalysis analysis = Analyse(book);
+        HashSet<CleanupStep> steps = new() { CleanupStep.UndefinedClasses };
+        string excludedKey = analysis.Plan(steps, NoExclusions).GetStep(CleanupStep.UndefinedClasses)!
+            .Items.Single(i => i.Text == ".keep-class").Key;
+
+        // Act
+        CleanupPlan plan = analysis.Plan(steps, new HashSet<string> { excludedKey });
+
+        // Assert
+        Step(plan, CleanupStep.UndefinedClasses).Items.Single(i => i.Text == ".keep-class").IsApplied.Should().BeFalse();
+        Step(plan, CleanupStep.UndefinedClasses).Items.Single(i => i.Text == ".remove-class").IsApplied.Should().BeTrue();
+
+        // Act & Assert
+        book.ApplyCleanup(plan).Should().BeTrue();
+
+        // Assert
+        book.GetHtmlResources().Single(h => h.Filename == "chapter1.xhtml").GetText()
+            .Should().Contain("<p class=\"keep-class\">Text.</p>");
+    }
+
+    [Fact]
+    public void UndefinedClasses_item_offset_uses_original_html_after_unused_style_removal()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadMinimal(temp, tree =>
+        {
+            ReplaceInChapter1(tree, "</head>", "<style>.ghost { color: red }</style>\n</head>");
+            ReplaceInChapter1(tree, "<p>Hello, world.</p>", "<p class=\"orphan\">Text.</p>");
+        });
+        HtmlResource chapter = book.GetHtmlResources().Single(h => h.Filename == "chapter1.xhtml");
+        int originalOffset = chapter.GetText().IndexOf("orphan", StringComparison.Ordinal);
+        HashSet<CleanupStep> steps = new() { CleanupStep.UnusedSelectors, CleanupStep.UndefinedClasses };
+
+        // Act
+        CleanupPlan plan = Analyse(book).Plan(steps, NoExclusions);
+
+        // Assert
+        Step(plan, CleanupStep.UndefinedClasses).Items.Single(i => i.Text == ".orphan").Offset.Should().Be(originalOffset);
     }
 
     [Fact]
