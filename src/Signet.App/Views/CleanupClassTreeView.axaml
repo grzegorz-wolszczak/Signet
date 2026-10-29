@@ -1,0 +1,18 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Signet.App.ViewModels"
+             x:Class="Signet.App.Views.CleanupClassTreeView">
+
+  <UserControl.Resources>
+    <DataTemplate x:Key="CleanupClassTreeCellTemplate" x:DataType="vm:CleanupClassTreeNodeViewModel">
+      <Grid ColumnDefinitions="Auto,*" ColumnSpacing="6">
+        <CheckBox Grid.Column="0" IsVisible="{Binding IsClass}" IsChecked="{Binding IsChecked, Mode=TwoWay}"
+                  VerticalAlignment="Center" />
+        <TextBlock Grid.Column="1" Text="{Binding Text}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                   Background="Transparent" ToolTip.Tip="{Binding Text}" />
+      </Grid>
+    </DataTemplate>
+  </UserControl.Resources>
+
+  <TreeDataGrid x:Name="ClassTree" MaxHeight="320" />
+</UserControl>

@@ -4019,6 +4019,9 @@ Wstawić mimo to?</value>
   <data name="Cleanup_UndefinedClasses_Summary" xml:space="preserve">
     <value>Nazwy klas do usunięcia: {0} z {1} (wystąpienia tokenów class: {2}).</value>
   </data>
+  <data name="Cleanup_UndefinedClasses_ClassFilesHeader" xml:space="preserve">
+    <value>Klasa / plik</value>
+  </data>
   <data name="Cleanup_MergeSameSelectors_Title" xml:space="preserve">
     <value>Scal reguły CSS z identycznymi selektorami</value>
   </data>

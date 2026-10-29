@@ -4,6 +4,7 @@
              xmlns:vm="using:Signet.App.ViewModels"
              xmlns:loc="using:Signet.App.Resources"
              xmlns:core="using:Signet.Core.BookManipulation"
+             xmlns:views="using:Signet.App.Views"
              x:Class="Signet.App.Views.CleanupView"
              infra:TooltipFonts.Area="Cleanup"
              x:DataType="vm:CleanupViewModel">
@@ -142,7 +143,8 @@
                                 <TextBlock Classes="note" Text="{loc:Loc CleanupWindow_DoubleClickHint}"
                                            VerticalAlignment="Center" />
                               </StackPanel>
-                              <ListBox ItemsSource="{Binding Items}" MaxHeight="320"
+                              <views:CleanupClassTreeView IsVisible="{Binding UsesClassTree}" />
+                              <ListBox ItemsSource="{Binding Items}" IsVisible="{Binding UsesItemList}" MaxHeight="320"
                                        DoubleTapped="OnItemsDoubleTapped">
                                 <ListBox.ItemTemplate>
                                   <DataTemplate x:DataType="vm:CleanupItemViewModel">

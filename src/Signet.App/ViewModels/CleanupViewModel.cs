@@ -210,11 +210,17 @@ public sealed partial class CleanupViewModel : ViewModelBase
 
     internal void SetAllItems(CleanupSectionViewModel section, bool isChecked, bool includeRisky = false)
     {
+        // "Select all" does not accept risky items — that takes the separate "Also check risky" button.
+        SetItems(section.Items.Where(i => !isChecked || includeRisky || !i.IsRisky), isChecked);
+    }
+
+    internal void SetItems(IEnumerable<CleanupItemViewModel> items, bool isChecked)
+    {
+        ArgumentNullException.ThrowIfNull(items);
         _updating = true;
         try
         {
-            // "Select all" does not accept risky items — that takes the separate "Also check risky" button.
-            foreach (CleanupItemViewModel item in section.Items.Where(i => !isChecked || includeRisky || !i.IsRisky))
+            foreach (CleanupItemViewModel item in items)
             {
                 Remember(item, isChecked);
             }
@@ -441,6 +447,15 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
     /// <summary>The changes the step will make (in the context of the steps before it).</summary>
     public ObservableCollection<CleanupItemViewModel> Items { get; } = new();
 
+    /// <summary>The classes and their affected files (<see cref="CleanupStep.UndefinedClasses"/>).</summary>
+    public ObservableCollection<CleanupClassTreeNodeViewModel> ClassGroups { get; } = new();
+
+    /// <summary>Whether the step's details use a class-and-file tree.</summary>
+    public bool UsesClassTree => Step == CleanupStep.UndefinedClasses;
+
+    /// <summary>Whether the step's details use the regular item list.</summary>
+    public bool UsesItemList => !UsesClassTree;
+
     /// <summary>Checks every item of the section except the risky ones (they need <see cref="SelectRiskyCommand"/>).</summary>
     public IRelayCommand SelectAllCommand { get; }
 
@@ -484,10 +499,51 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
             }
         }
 
+        UpdateClassGroups(rows);
         HasItems = Items.Count > 0;
         HasRiskyItems = Items.Any(i => i.IsRisky);
         UpdateLevels(result?.Levels ?? Array.Empty<CleanupLevelFile>());
         Summary = result is null ? string.Empty : FormatSummary(result);
+    }
+
+    internal void SetClassItems(IReadOnlyList<CleanupItemViewModel> items, bool isChecked) =>
+        _owner.SetItems(items, isChecked);
+
+    internal void Navigate(CleanupItemViewModel item) => _owner.Navigate(item);
+
+    private void UpdateClassGroups(IReadOnlyList<CleanupItemViewModel> items)
+    {
+        if (!UsesClassTree)
+        {
+            ClassGroups.Clear();
+            return;
+        }
+
+        Dictionary<string, CleanupClassTreeNodeViewModel> existing = ClassGroups
+            .ToDictionary(group => group.Text, StringComparer.Ordinal);
+        List<CleanupClassTreeNodeViewModel> groups = items
+            .GroupBy(item => item.Text, StringComparer.Ordinal)
+            .OrderBy(group => group.Key, StringComparer.Ordinal)
+            .Select(group =>
+            {
+                if (!existing.TryGetValue(group.Key, out CleanupClassTreeNodeViewModel? node))
+                {
+                    node = new CleanupClassTreeNodeViewModel(this, group.Key);
+                }
+
+                node.UpdateFiles(group.OrderBy(item => item.BookPath, StringComparer.Ordinal).ToList());
+                return node;
+            })
+            .ToList();
+
+        if (!groups.SequenceEqual(ClassGroups))
+        {
+            ClassGroups.Clear();
+            foreach (CleanupClassTreeNodeViewModel group in groups)
+            {
+                ClassGroups.Add(group);
+            }
+        }
     }
 
     // Rebuilt only when the files or their levels change, so the checkboxes do not flicker on every toggle.
@@ -519,11 +575,23 @@ public sealed partial class CleanupSectionViewModel : ObservableObject
             return Strings.Get("Cleanup_NothingFound");
         }
 
-        string summary = Step is CleanupStep.MergeSameSelectors or CleanupStep.MergeSameProperties or CleanupStep.UndefinedClasses or CleanupStep.UnusedIds
+        string summary;
+        if (Step == CleanupStep.UndefinedClasses)
+        {
+            int appliedClasses = ClassGroups.Count(group => group.IsChecked);
+            summary = Strings.Format($"Cleanup_{Step}_Summary", appliedClasses, ClassGroups.Count, result.AppliedRuleCount);
+        }
+        else if (Step is CleanupStep.MergeSameSelectors or CleanupStep.MergeSameProperties or CleanupStep.UnusedIds
             or CleanupStep.InheritedAttributes or CleanupStep.EmptyElements or CleanupStep.BareSpans or CleanupStep.MergeDivs
-            or CleanupStep.NestedDivs
-            ? Strings.Format($"Cleanup_{Step}_Summary", result.AppliedCount, result.Items.Count, result.AppliedRuleCount)
-            : Strings.Format($"Cleanup_{Step}_Summary", result.AppliedCount, result.Items.Count);
+            or CleanupStep.NestedDivs)
+        {
+            summary = Strings.Format($"Cleanup_{Step}_Summary", result.AppliedCount, result.Items.Count, result.AppliedRuleCount);
+        }
+        else
+        {
+            summary = Strings.Format($"Cleanup_{Step}_Summary", result.AppliedCount, result.Items.Count);
+        }
+
         return result.RiskyCount > 0 ? summary + Strings.Format("Cleanup_RiskySummary", result.RiskyCount) : summary;
     }
 }
@@ -585,6 +653,91 @@ public sealed partial class CleanupItemViewModel : ObservableObject
         Offset = item.Offset;
         Consequences = item.Consequences;
         IsChecked = item.IsApplied;
+    }
+}
+
+/// <summary>A class in the Cleanup tree, or a file containing that class.</summary>
+public sealed partial class CleanupClassTreeNodeViewModel : ObservableObject
+{
+    private readonly CleanupSectionViewModel? _section;
+    private readonly string _className;
+    private IReadOnlyList<CleanupItemViewModel> _items = Array.Empty<CleanupItemViewModel>();
+    private CleanupItemViewModel? _item;
+
+    [ObservableProperty]
+    private bool _isExpanded;
+
+    internal CleanupClassTreeNodeViewModel(CleanupSectionViewModel section, string className)
+    {
+        _section = section;
+        _className = className;
+        _isExpanded = true;
+    }
+
+    private CleanupClassTreeNodeViewModel(CleanupItemViewModel item)
+    {
+        _className = string.Empty;
+        _item = item;
+    }
+
+    /// <summary>Whether this node represents a class rather than a file.</summary>
+    public bool IsClass => _section is not null;
+
+    /// <summary>The class name, or the book path of a file containing it.</summary>
+    public string Text => IsClass ? _className : _item!.BookPath;
+
+    /// <summary>The cleanup item for a file node; <c>null</c> for a class node.</summary>
+    public CleanupItemViewModel? Item => _item;
+
+    /// <summary>The affected files of a class; empty for a file node.</summary>
+    public ObservableCollection<CleanupClassTreeNodeViewModel> Children { get; } = new();
+
+    /// <summary>Whether the node has file children.</summary>
+    public bool HasChildren => Children.Count > 0;
+
+    /// <summary>Whether the class is checked for removal from every listed file.</summary>
+    public bool IsChecked
+    {
+        get => IsClass && _items.Count > 0 && _items.All(item => item.IsChecked);
+        set
+        {
+            if (IsClass && value != IsChecked)
+            {
+                _section!.SetClassItems(_items, value);
+            }
+        }
+    }
+
+    internal void UpdateFiles(IReadOnlyList<CleanupItemViewModel> items)
+    {
+        _items = items;
+        Dictionary<string, CleanupClassTreeNodeViewModel> existing = Children
+            .ToDictionary(node => node.Item!.Key, StringComparer.Ordinal);
+        List<CleanupClassTreeNodeViewModel> files = items
+            .Select(item => existing.TryGetValue(item.Key, out CleanupClassTreeNodeViewModel? node)
+                ? node.With(item)
+                : new CleanupClassTreeNodeViewModel(item))
+            .ToList();
+
+        if (!files.SequenceEqual(Children))
+        {
+            Children.Clear();
+            foreach (CleanupClassTreeNodeViewModel file in files)
+            {
+                Children.Add(file);
+            }
+        }
+
+        OnPropertyChanged(nameof(HasChildren));
+        OnPropertyChanged(nameof(IsChecked));
+    }
+
+    private CleanupClassTreeNodeViewModel With(CleanupItemViewModel item)
+    {
+        _item = item;
+        OnPropertyChanged(nameof(Text));
+        OnPropertyChanged(nameof(Item));
+        return this;
     }
 }
 
