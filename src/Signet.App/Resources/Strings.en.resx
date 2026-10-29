@@ -200,6 +200,264 @@
   <data name="CssPropertyReferenceWindow_ClearSearch" xml:space="preserve">
     <value>Clear search</value>
   </data>
+  <data name="CssPropertyReferenceWindow_AllTooltip" xml:space="preserve">
+    <value>When ALL is unchecked, only the most common CSS properties are shown. Check ALL to display the full list.</value>
+  </data>
+  <data name="CssPropertyReferenceTooltip_WithKeywords" xml:space="preserve">
+    <value>{0}&#10;Keywords: {1}</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_background" xml:space="preserve">
+    <value>Sets several background layers and related values at once.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_background_color" xml:space="preserve">
+    <value>Sets the element's background color.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_background_image" xml:space="preserve">
+    <value>Sets images and gradients painted behind content.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_border" xml:space="preserve">
+    <value>Sets width, style, and color for all borders.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_border_bottom" xml:space="preserve">
+    <value>Sets width, style, and color for the bottom border.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_border_left" xml:space="preserve">
+    <value>Sets width, style, and color for the left border.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_border_right" xml:space="preserve">
+    <value>Sets width, style, and color for the right border.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_border_top" xml:space="preserve">
+    <value>Sets width, style, and color for the top border.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_bottom" xml:space="preserve">
+    <value>Sets the offset from the bottom edge of the containing block.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_break_after" xml:space="preserve">
+    <value>Controls page or column breaks after the element.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_break_before" xml:space="preserve">
+    <value>Controls page or column breaks before the element.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_clear" xml:space="preserve">
+    <value>Controls which sides may have floating elements beside them.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_color" xml:space="preserve">
+    <value>Sets the text and foreground color.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_display" xml:space="preserve">
+    <value>Controls box generation and participation in layout.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_direction" xml:space="preserve">
+    <value>Sets text direction and inline flow direction.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_float" xml:space="preserve">
+    <value>Moves an element to an edge so text can flow around it.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_font" xml:space="preserve">
+    <value>Sets several font-related properties at once.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_font_family" xml:space="preserve">
+    <value>Selects one or more typefaces for text.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_font_size" xml:space="preserve">
+    <value>Sets the size of text glyphs.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_font_style" xml:space="preserve">
+    <value>Selects normal, italic, or oblique text.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_font_weight" xml:space="preserve">
+    <value>Sets the weight or boldness of text.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_height" xml:space="preserve">
+    <value>Sets the height of an element's box.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_hyphens" xml:space="preserve">
+    <value>Controls how words are hyphenated when wrapping.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_left" xml:space="preserve">
+    <value>Sets the offset from the left edge of the containing block.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_letter_spacing" xml:space="preserve">
+    <value>Sets the spacing between characters.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_line_height" xml:space="preserve">
+    <value>Sets the height of a line box.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_list_style" xml:space="preserve">
+    <value>Sets list marker style, position, and image together.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_list_style_type" xml:space="preserve">
+    <value>Selects a list marker symbol or numbering style.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_margin" xml:space="preserve">
+    <value>Sets the outer spacing around an element's box.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_margin_bottom" xml:space="preserve">
+    <value>Sets the outer spacing below an element's box.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_margin_left" xml:space="preserve">
+    <value>Sets the outer spacing to the left of an element's box.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_margin_right" xml:space="preserve">
+    <value>Sets the outer spacing to the right of an element's box.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_margin_top" xml:space="preserve">
+    <value>Sets the outer spacing above an element's box.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_opacity" xml:space="preserve">
+    <value>Sets the opacity of an element and its contents.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_orphans" xml:space="preserve">
+    <value>Sets the minimum lines left at the bottom of a page.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_overflow" xml:space="preserve">
+    <value>Controls content that extends beyond an element's box.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_padding" xml:space="preserve">
+    <value>Sets the spacing between content and its border.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_padding_bottom" xml:space="preserve">
+    <value>Sets the inner spacing below the content.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_padding_left" xml:space="preserve">
+    <value>Sets the inner spacing to the left of the content.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_padding_right" xml:space="preserve">
+    <value>Sets the inner spacing to the right of the content.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_padding_top" xml:space="preserve">
+    <value>Sets the inner spacing above the content.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_page_break_after" xml:space="preserve">
+    <value>Controls the legacy page break after the element.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_page_break_before" xml:space="preserve">
+    <value>Controls the legacy page break before the element.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_page_break_inside" xml:space="preserve">
+    <value>Controls the legacy page break inside the element.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_position" xml:space="preserve">
+    <value>Selects the positioning method for an element.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_right" xml:space="preserve">
+    <value>Sets the offset from the right edge of the containing block.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_text_align" xml:space="preserve">
+    <value>Sets the alignment of inline content within line boxes.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_text_decoration" xml:space="preserve">
+    <value>Sets text decoration lines, style, and related properties together.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_text_indent" xml:space="preserve">
+    <value>Sets the indentation of the first line in a block.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_text_transform" xml:space="preserve">
+    <value>Changes text casing or character presentation.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_top" xml:space="preserve">
+    <value>Sets the offset from the top edge of the containing block.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_transform" xml:space="preserve">
+    <value>Translates, rotates, scales, or skews an element.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_vertical_align" xml:space="preserve">
+    <value>Vertically aligns inline boxes or table-cell content.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_visibility" xml:space="preserve">
+    <value>Hides or shows an element while preserving its layout space.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_white_space" xml:space="preserve">
+    <value>Controls whitespace collapsing and text wrapping.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_width" xml:space="preserve">
+    <value>Sets the width of an element's box.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_widows" xml:space="preserve">
+    <value>Sets the minimum lines moved to the top of a page.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_word_spacing" xml:space="preserve">
+    <value>Sets the spacing between words.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_z_index" xml:space="preserve">
+    <value>Sets the stacking order of positioned elements.</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Background" xml:space="preserve">
+    <value>Controls background layers, images, clipping, or positioning ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Border" xml:space="preserve">
+    <value>Controls borders, their sides, radii, or shape ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Font" xml:space="preserve">
+    <value>Controls font selection, metrics, or glyph rendering ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Box" xml:space="preserve">
+    <value>Sets dimensions, spacing, or box sizing ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Grid" xml:space="preserve">
+    <value>Controls grid tracks, placement, or layout ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Flex" xml:space="preserve">
+    <value>Controls flex container or item layout ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Layout" xml:space="preserve">
+    <value>Controls how layout items are placed or aligned ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Text" xml:space="preserve">
+    <value>Controls text flow, spacing, line breaking, or decoration ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Scrolling" xml:space="preserve">
+    <value>Controls scrolling, snap points, or scrollbars ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Lists" xml:space="preserve">
+    <value>Controls list markers or CSS counters ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Pagination" xml:space="preserve">
+    <value>Controls page, column, or fragment breaks ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Position" xml:space="preserve">
+    <value>Controls positioning, offsets, or stacking ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Transforms" xml:space="preserve">
+    <value>Controls geometric transformations of an element ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Animation" xml:space="preserve">
+    <value>Controls animation or transition timing and playback ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Images" xml:space="preserve">
+    <value>Controls image fitting, orientation, or rendering ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Effects" xml:space="preserve">
+    <value>Controls clipping, masks, filters, or visual effects ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Svg" xml:space="preserve">
+    <value>Controls SVG geometry, painting, or rendering ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Content" xml:space="preserve">
+    <value>Controls generated content or quotation marks ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Containment" xml:space="preserve">
+    <value>Controls content containment or container queries ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Interaction" xml:space="preserve">
+    <value>Controls interaction, pointers, selection, or the caret ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Ruby" xml:space="preserve">
+    <value>Controls ruby annotation layout ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Color" xml:space="preserve">
+    <value>Controls color selection or color processing ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Overflow" xml:space="preserve">
+    <value>Controls content clipping or overflow ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Tables" xml:space="preserve">
+    <value>Controls table layout or cell rendering ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Generic" xml:space="preserve">
+    <value>Controls CSS behavior for {0}.</value>
+  </data>
   <data name="Common_Refresh" xml:space="preserve">
     <value>Refresh</value>
   </data>

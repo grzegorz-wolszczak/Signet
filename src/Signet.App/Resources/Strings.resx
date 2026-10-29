@@ -200,6 +200,264 @@
   <data name="CssPropertyReferenceWindow_ClearSearch" xml:space="preserve">
     <value>Wyczyść wyszukiwanie</value>
   </data>
+  <data name="CssPropertyReferenceWindow_AllTooltip" xml:space="preserve">
+    <value>Gdy ALL jest odznaczone, widoczne są tylko najczęściej spotykane właściwości CSS. Zaznacz ALL, aby wyświetlić pełną listę.</value>
+  </data>
+  <data name="CssPropertyReferenceTooltip_WithKeywords" xml:space="preserve">
+    <value>{0}&#10;Słowa kluczowe: {1}</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_background" xml:space="preserve">
+    <value>Ustawia skrótowo warstwy tła elementu.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_background_color" xml:space="preserve">
+    <value>Ustawia kolor tła elementu.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_background_image" xml:space="preserve">
+    <value>Ustawia obrazy i gradienty rysowane w tle.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_border" xml:space="preserve">
+    <value>Ustawia szerokość, styl i kolor wszystkich obramowań.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_border_bottom" xml:space="preserve">
+    <value>Ustawia szerokość, styl i kolor dolnego obramowania.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_border_left" xml:space="preserve">
+    <value>Ustawia szerokość, styl i kolor lewego obramowania.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_border_right" xml:space="preserve">
+    <value>Ustawia szerokość, styl i kolor prawego obramowania.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_border_top" xml:space="preserve">
+    <value>Ustawia szerokość, styl i kolor górnego obramowania.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_bottom" xml:space="preserve">
+    <value>Określa odsunięcie elementu od dolnej krawędzi bloku zawierającego.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_break_after" xml:space="preserve">
+    <value>Steruje podziałem strony lub kolumny po elemencie.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_break_before" xml:space="preserve">
+    <value>Steruje podziałem strony lub kolumny przed elementem.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_clear" xml:space="preserve">
+    <value>Określa, po której stronie mogą znajdować się elementy pływające.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_color" xml:space="preserve">
+    <value>Ustawia kolor tekstu i pierwszego planu.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_display" xml:space="preserve">
+    <value>Określa sposób tworzenia pudełka i udział elementu w układzie.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_direction" xml:space="preserve">
+    <value>Ustawia kierunek tekstu oraz przepływu wiersza.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_float" xml:space="preserve">
+    <value>Umieszcza element przy krawędzi, pozwalając tekstowi opływać go.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_font" xml:space="preserve">
+    <value>Ustawia skrótowo właściwości kroju pisma.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_font_family" xml:space="preserve">
+    <value>Wybiera krój lub listę krojów pisma.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_font_size" xml:space="preserve">
+    <value>Ustawia rozmiar znaków.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_font_style" xml:space="preserve">
+    <value>Wybiera styl normalny, kursywę lub pochylenie.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_font_weight" xml:space="preserve">
+    <value>Ustawia grubość znaków.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_height" xml:space="preserve">
+    <value>Ustawia wysokość pudełka elementu.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_hyphens" xml:space="preserve">
+    <value>Steruje dzieleniem wyrazów przenoszonych do kolejnej linii.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_left" xml:space="preserve">
+    <value>Określa odsunięcie elementu od lewej krawędzi bloku zawierającego.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_letter_spacing" xml:space="preserve">
+    <value>Ustawia odstęp między znakami.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_line_height" xml:space="preserve">
+    <value>Ustawia wysokość wiersza tekstu.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_list_style" xml:space="preserve">
+    <value>Ustawia skrótowo wygląd i położenie znaczników listy.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_list_style_type" xml:space="preserve">
+    <value>Wybiera symbol lub styl numeracji znacznika listy.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_margin" xml:space="preserve">
+    <value>Ustawia zewnętrzne odstępy pudełka.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_margin_bottom" xml:space="preserve">
+    <value>Ustawia zewnętrzny odstęp poniżej pudełka.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_margin_left" xml:space="preserve">
+    <value>Ustawia zewnętrzny odstęp po lewej stronie pudełka.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_margin_right" xml:space="preserve">
+    <value>Ustawia zewnętrzny odstęp po prawej stronie pudełka.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_margin_top" xml:space="preserve">
+    <value>Ustawia zewnętrzny odstęp nad pudełkiem.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_opacity" xml:space="preserve">
+    <value>Ustawia nieprzezroczystość elementu i jego zawartości.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_orphans" xml:space="preserve">
+    <value>Określa minimalną liczbę wierszy pozostawianych na dole strony.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_overflow" xml:space="preserve">
+    <value>Określa sposób obsługi zawartości wystającej poza pudełko.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_padding" xml:space="preserve">
+    <value>Ustawia odstępy między zawartością a obramowaniem.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_padding_bottom" xml:space="preserve">
+    <value>Ustawia wewnętrzny odstęp pod zawartością.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_padding_left" xml:space="preserve">
+    <value>Ustawia wewnętrzny odstęp po lewej stronie zawartości.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_padding_right" xml:space="preserve">
+    <value>Ustawia wewnętrzny odstęp po prawej stronie zawartości.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_padding_top" xml:space="preserve">
+    <value>Ustawia wewnętrzny odstęp nad zawartością.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_page_break_after" xml:space="preserve">
+    <value>Steruje historycznym podziałem strony po elemencie.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_page_break_before" xml:space="preserve">
+    <value>Steruje historycznym podziałem strony przed elementem.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_page_break_inside" xml:space="preserve">
+    <value>Steruje historycznym podziałem strony wewnątrz elementu.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_position" xml:space="preserve">
+    <value>Wybiera sposób pozycjonowania elementu.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_right" xml:space="preserve">
+    <value>Określa odsunięcie elementu od prawej krawędzi bloku zawierającego.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_text_align" xml:space="preserve">
+    <value>Ustawia wyrównanie zawartości w wierszach tekstu.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_text_decoration" xml:space="preserve">
+    <value>Ustawia skrótowo podkreślenie, przekreślenie i inne dekoracje tekstu.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_text_indent" xml:space="preserve">
+    <value>Ustawia wcięcie pierwszej linii akapitu.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_text_transform" xml:space="preserve">
+    <value>Zmienia wielkość liter lub formę znaków.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_top" xml:space="preserve">
+    <value>Określa odsunięcie elementu od górnej krawędzi bloku zawierającego.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_transform" xml:space="preserve">
+    <value>Przesuwa, obraca, skaluje lub pochyla element.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_vertical_align" xml:space="preserve">
+    <value>Ustawia pionowe wyrównanie elementu liniowego lub komórki tabeli.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_visibility" xml:space="preserve">
+    <value>Ukrywa lub pokazuje element, zachowując jego miejsce w układzie.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_white_space" xml:space="preserve">
+    <value>Steruje zwijaniem białych znaków i zawijaniem tekstu.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_width" xml:space="preserve">
+    <value>Ustawia szerokość pudełka elementu.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_widows" xml:space="preserve">
+    <value>Określa minimalną liczbę wierszy przenoszonych na górę strony.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_word_spacing" xml:space="preserve">
+    <value>Ustawia odstęp między wyrazami.</value>
+  </data>
+  <data name="CssPropertyReferenceDescription_z_index" xml:space="preserve">
+    <value>Określa kolejność nakładania elementów.</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Background" xml:space="preserve">
+    <value>Steruje warstwami tła, obrazami, przycinaniem lub ich położeniem ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Border" xml:space="preserve">
+    <value>Steruje obramowaniem, jego stronami, promieniem lub kształtem ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Font" xml:space="preserve">
+    <value>Steruje wyborem czcionki, jej metrykami lub rysowaniem znaków ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Box" xml:space="preserve">
+    <value>Określa wymiary, odstępy lub model pudełka ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Grid" xml:space="preserve">
+    <value>Steruje ścieżkami siatki, rozmieszczeniem lub układem ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Flex" xml:space="preserve">
+    <value>Steruje układem kontenera flex lub jego elementów ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Layout" xml:space="preserve">
+    <value>Steruje rozmieszczeniem lub wyrównaniem elementów ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Text" xml:space="preserve">
+    <value>Steruje przepływem tekstu, odstępami, łamaniem wierszy lub dekoracją ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Scrolling" xml:space="preserve">
+    <value>Steruje przewijaniem, punktami przyciągania lub paskami przewijania ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Lists" xml:space="preserve">
+    <value>Steruje znacznikami list lub licznikami CSS ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Pagination" xml:space="preserve">
+    <value>Steruje podziałami stron, kolumn lub fragmentów ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Position" xml:space="preserve">
+    <value>Steruje pozycjonowaniem, odsunięciami lub kolejnością nakładania ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Transforms" xml:space="preserve">
+    <value>Steruje transformacją geometryczną elementu ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Animation" xml:space="preserve">
+    <value>Steruje przebiegiem animacji lub przejścia ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Images" xml:space="preserve">
+    <value>Steruje dopasowaniem, orientacją lub renderowaniem obrazów ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Effects" xml:space="preserve">
+    <value>Steruje przycinaniem, maskami, filtrami lub efektami wizualnymi ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Svg" xml:space="preserve">
+    <value>Steruje geometrią, malowaniem lub renderowaniem SVG ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Content" xml:space="preserve">
+    <value>Steruje zawartością generowaną przez CSS lub cudzysłowami ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Containment" xml:space="preserve">
+    <value>Steruje izolowaniem zawartości lub zapytaniami kontenerów ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Interaction" xml:space="preserve">
+    <value>Steruje interakcją, kursorem, zaznaczeniem lub karetką ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Ruby" xml:space="preserve">
+    <value>Steruje układem adnotacji ruby ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Color" xml:space="preserve">
+    <value>Steruje wyborem lub przetwarzaniem kolorów ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Overflow" xml:space="preserve">
+    <value>Steruje przycinaniem zawartości lub przepełnieniem ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Tables" xml:space="preserve">
+    <value>Steruje układem tabel lub renderowaniem komórek ({0}).</value>
+  </data>
+  <data name="CssPropertyReferenceFamily_Generic" xml:space="preserve">
+    <value>Określa zachowanie właściwości CSS {0}.</value>
+  </data>
   <data name="Common_Refresh" xml:space="preserve">
     <value>Odśwież</value>
   </data>
