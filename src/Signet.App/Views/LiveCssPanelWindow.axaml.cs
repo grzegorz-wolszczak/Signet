@@ -1,6 +1,5 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using Signet.App.ViewModels;
 
 namespace Signet.App.Views;
 
@@ -20,22 +19,15 @@ public partial class LiveCssPanelWindow : Window
 
     private void OnCssReferenceClick(object? sender, RoutedEventArgs e)
     {
-        if (_cssPropertiesWindow is { IsVisible: true })
+        // The main window keeps the one reference window shared with Help; without it (a panel shown on its own, as in
+        // the tests) the panel keeps its own.
+        if (Owner is MainWindow mainWindow)
         {
-            _cssPropertiesWindow.Activate();
-            return;
+            mainWindow.ShowCssPropertyReferenceWindow();
         }
-
-        CssPropertyReferenceWindow window = new() { DataContext = new CssPropertyReferenceViewModel() };
-        window.Closed += (_, _) =>
+        else
         {
-            if (ReferenceEquals(_cssPropertiesWindow, window))
-            {
-                _cssPropertiesWindow = null;
-            }
-        };
-        _cssPropertiesWindow = window;
-        MainWindow.RememberPlacement(window);
-        window.Show(this);
+            _cssPropertiesWindow = CssPropertyReferenceWindow.ShowOrActivate(this, _cssPropertiesWindow);
+        }
     }
 }

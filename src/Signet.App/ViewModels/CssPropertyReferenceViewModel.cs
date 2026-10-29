@@ -1,19 +1,39 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
+using CommunityToolkit.Mvvm.Input;
 using Signet.Core.Parsers;
 
 namespace Signet.App.ViewModels;
 
+/// <summary>A CSS property and its display-context markers.</summary>
+public sealed record CssPropertyReferenceRow(string Display, string Name);
+
 /// <summary>The read-only inherited and non-inherited CSS property lists shown by the reference window.</summary>
 public sealed class CssPropertyReferenceViewModel : ViewModelBase
 {
+    private static readonly (CssDisplayContext Context, string Marker)[] DisplayMarkers =
+    {
+        (CssDisplayContext.Inline, "i"),
+        (CssDisplayContext.Block, "b"),
+        (CssDisplayContext.InlineBlock, "ib"),
+        (CssDisplayContext.Flex, "f"),
+        (CssDisplayContext.Grid, "g"),
+        (CssDisplayContext.Table, "t"),
+    };
+
     private bool _showAll;
-    private IReadOnlyList<string> _inheritedProperties = Array.Empty<string>();
-    private IReadOnlyList<string> _nonInheritedProperties = Array.Empty<string>();
+    private string _searchText = string.Empty;
+    private IReadOnlyList<CssPropertyReferenceRow> _inheritedProperties = Array.Empty<CssPropertyReferenceRow>();
+    private IReadOnlyList<CssPropertyReferenceRow> _nonInheritedProperties = Array.Empty<CssPropertyReferenceRow>();
 
     /// <summary>Creates the reference with the common EPUB properties selected.</summary>
-    public CssPropertyReferenceViewModel() => RefreshProperties();
+    public CssPropertyReferenceViewModel()
+    {
+        ClearSearchCommand = new RelayCommand(() => SearchText = string.Empty);
+        RefreshProperties();
+    }
 
     /// <summary>Whether the lists contain all catalogued EPUB properties rather than the common subset.</summary>
     public bool ShowAll
@@ -28,15 +48,35 @@ public sealed class CssPropertyReferenceViewModel : ViewModelBase
         }
     }
 
-    /// <summary>Inherited property names, sorted alphabetically.</summary>
-    public IReadOnlyList<string> InheritedProperties
+    /// <summary>Searches property names and display markers in both lists.</summary>
+    public string SearchText
+    {
+        get => _searchText;
+        set
+        {
+            if (SetProperty(ref _searchText, value ?? string.Empty))
+            {
+                OnPropertyChanged(nameof(HasSearchText));
+                RefreshProperties();
+            }
+        }
+    }
+
+    /// <summary>Whether the search text is non-empty.</summary>
+    public bool HasSearchText => !string.IsNullOrWhiteSpace(SearchText);
+
+    /// <summary>Clears the search.</summary>
+    public RelayCommand ClearSearchCommand { get; }
+
+    /// <summary>Inherited properties, sorted alphabetically.</summary>
+    public IReadOnlyList<CssPropertyReferenceRow> InheritedProperties
     {
         get => _inheritedProperties;
         private set => SetProperty(ref _inheritedProperties, value);
     }
 
-    /// <summary>Non-inherited property names, sorted alphabetically.</summary>
-    public IReadOnlyList<string> NonInheritedProperties
+    /// <summary>Non-inherited properties, sorted alphabetically.</summary>
+    public IReadOnlyList<CssPropertyReferenceRow> NonInheritedProperties
     {
         get => _nonInheritedProperties;
         private set => SetProperty(ref _nonInheritedProperties, value);
@@ -47,14 +87,29 @@ public sealed class CssPropertyReferenceViewModel : ViewModelBase
         IReadOnlyList<string> properties = ShowAll
             ? EpubCssPropertyCatalog.AllProperties
             : EpubCssPropertyCatalog.CommonProperties;
+        string filter = SearchText.Trim();
 
-        InheritedProperties = Array.AsReadOnly(
-            properties.Where(CssInheritedProperties.IsInherited)
-                .OrderBy(property => property, StringComparer.OrdinalIgnoreCase)
+        InheritedProperties = CreateRows(properties.Where(CssInheritedProperties.IsInherited), filter);
+        NonInheritedProperties = CreateRows(
+            properties.Where(property => !CssInheritedProperties.IsInherited(property)), filter);
+    }
+
+    private static ReadOnlyCollection<CssPropertyReferenceRow> CreateRows(IEnumerable<string> properties, string filter) =>
+        Array.AsReadOnly(
+            properties.OrderBy(property => property, StringComparer.OrdinalIgnoreCase)
+                .Select(property => new CssPropertyReferenceRow(DisplayText(property), property))
+                .Where(row => filter.Length == 0
+                    || row.Name.Contains(filter, StringComparison.CurrentCultureIgnoreCase)
+                    || row.Display.Contains(filter, StringComparison.CurrentCultureIgnoreCase))
                 .ToArray());
-        NonInheritedProperties = Array.AsReadOnly(
-            properties.Where(property => !CssInheritedProperties.IsInherited(property))
-                .OrderBy(property => property, StringComparer.OrdinalIgnoreCase)
-                .ToArray());
+
+    private static string DisplayText(string property)
+    {
+        CssDisplayContext applicability = CssDisplayApplicability.ForProperty(property);
+        string[] markers = DisplayMarkers
+            .Where(item => (applicability & item.Context) != CssDisplayContext.None)
+            .Select(item => item.Marker)
+            .ToArray();
+        return markers.Length == 0 ? "—" : string.Join(", ", markers);
     }
 }
