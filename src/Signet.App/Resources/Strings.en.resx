@@ -1457,6 +1457,12 @@ Do you want to save the changes?</value>
   <data name="ToolbarCustomizeWindow_AvailableActions" xml:space="preserve">
     <value>Available actions</value>
   </data>
+  <data name="ToolbarCustomizeWindow_SearchPlaceholder" xml:space="preserve">
+    <value>Search actions...</value>
+  </data>
+  <data name="ToolbarCustomizeWindow_ClearSearch" xml:space="preserve">
+    <value>Clear search</value>
+  </data>
   <data name="ToolbarCustomizeWindow_Add" xml:space="preserve">
     <value>Add →</value>
   </data>
