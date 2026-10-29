@@ -43,7 +43,18 @@
     <Grid Grid.Row="1" ColumnDefinitions="*,Auto,*">
       <DockPanel Grid.Column="0">
         <TextBlock DockPanel.Dock="Top" Text="{loc:Loc ToolbarCustomizeWindow_AvailableActions}" FontWeight="Bold" Margin="0,0,0,4" />
-        <ListBox ItemsSource="{Binding AvailableActions}"
+        <TextBox DockPanel.Dock="Top"
+                 Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                 PlaceholderText="{loc:Loc ToolbarCustomizeWindow_SearchPlaceholder}"
+                 Margin="0,0,0,4">
+          <TextBox.InnerRightContent>
+            <Button Content="✕" Padding="6,2" Background="Transparent" Focusable="False"
+                    ToolTip.Tip="{loc:Loc ToolbarCustomizeWindow_ClearSearch}"
+                    Command="{Binding ClearSearchCommand}"
+                    IsVisible="{Binding SearchText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+          </TextBox.InnerRightContent>
+        </TextBox>
+        <ListBox ItemsSource="{Binding FilteredAvailableActions}"
                  SelectedItem="{Binding SelectedAvailable}"
                  ItemTemplate="{StaticResource EntryTemplate}" />
       </DockPanel>

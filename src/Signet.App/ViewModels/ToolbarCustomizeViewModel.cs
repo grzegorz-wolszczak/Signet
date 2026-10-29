@@ -82,6 +82,27 @@ public sealed partial class ToolbarCustomizeViewModel : ObservableObject
     /// <summary>Actions that can be added.</summary>
     public ObservableCollection<ToolbarEntry> AvailableActions { get; }
 
+    /// <summary>Actions matching the available-actions search.</summary>
+    public IEnumerable<ToolbarEntry> FilteredAvailableActions
+    {
+        get
+        {
+            string filter = SearchText.Trim();
+            if (filter.Length == 0)
+            {
+                return AvailableActions;
+            }
+
+            return AvailableActions
+                .Where(entry => entry.Label.Contains(filter, StringComparison.CurrentCultureIgnoreCase))
+                .ToArray();
+        }
+    }
+
+    /// <summary>Text used to filter available actions by their labels.</summary>
+    [ObservableProperty]
+    private string _searchText = string.Empty;
+
     /// <summary>The current layout of the selected toolbar.</summary>
     public ObservableCollection<ToolbarEntry> CurrentItems { get; } = new();
 
@@ -97,7 +118,21 @@ public sealed partial class ToolbarCustomizeViewModel : ObservableObject
     [ObservableProperty]
     private ToolbarEntry? _selectedCurrent;
 
+    partial void OnSearchTextChanged(string value)
+    {
+        if (SelectedAvailable is { } selected && !FilteredAvailableActions.Contains(selected))
+        {
+            SelectedAvailable = null;
+        }
+
+        OnPropertyChanged(nameof(FilteredAvailableActions));
+    }
+
     partial void OnSelectedToolbarChanged(ToolbarId value) => LoadCurrent();
+
+    /// <summary>Clears the available-actions search.</summary>
+    [RelayCommand]
+    private void ClearSearch() => SearchText = string.Empty;
 
     /// <summary>Adds the selected action to the end of the toolbar.</summary>
     [RelayCommand]
