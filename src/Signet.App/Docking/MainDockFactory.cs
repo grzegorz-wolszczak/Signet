@@ -731,11 +731,24 @@ public sealed class MainDockFactory : Factory
             ? dock.ActiveDockable as Tool ?? dock.VisibleDockables?.OfType<Tool>().FirstOrDefault()
             : null;
 
+    // Dock places a floating window at the pointer position stored on the dockable it floats. A region's title bar
+    // dragged out stores it on the region; the panel floated instead must carry it, or the window opens at the panel's
+    // stale position. Copied only when the region has a whole position (Dock leaves NaN when there is none).
+    private static void CopyPointerScreenPosition(IDockable source, Tool target)
+    {
+        source.GetPointerScreenPosition(out double x, out double y);
+        if (!double.IsNaN(x) && !double.IsNaN(y))
+        {
+            target.SetPointerScreenPosition(x, y);
+        }
+    }
+
     /// <inheritdoc />
     public override void FloatDockable(IDockable dockable)
     {
         if (PanelInsteadOfRegion(dockable) is { } panel)
         {
+            CopyPointerScreenPosition(dockable, panel);
             DebugLog.Write("Panel", $"float {NameOf(dockable)} requested (its title bar dragged out): floating the panel {panel.Id} instead");
             FloatDockable(panel);
             return;
@@ -752,6 +765,7 @@ public sealed class MainDockFactory : Factory
     {
         if (PanelInsteadOfRegion(dockable) is { } panel)
         {
+            CopyPointerScreenPosition(dockable, panel);
             DebugLog.Write("Panel", $"float {NameOf(dockable)} requested (with options): floating the panel {panel.Id} instead");
             FloatDockable(panel, options);
             return;
