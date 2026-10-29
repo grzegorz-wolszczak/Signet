@@ -40,6 +40,9 @@ the shapes did not before October 2026.
   out as two edits written over each other — `href="#fn-1#fn-2-ref"` — and a footnote lost.
   Replacing every reference before cutting any note settles both shapes with no ordering at all.
 - An ordinary footnote, so the file is not only hard cases.
+- The preview follows these links into the code view only when `FootnoteNavigation` tells them footnote
+  links by the scanned footnotes (`BrokenBookFootnoteTests.Links_of_the_broken_book_are_told_apart_by_its_footnotes`):
+  the references inside notes and both notes citing each other are references, every note's link back is a link back.
 
 **`awkward.xhtml`**
 

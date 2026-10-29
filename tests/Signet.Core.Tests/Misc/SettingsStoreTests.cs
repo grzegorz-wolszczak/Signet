@@ -46,6 +46,7 @@ public sealed class SettingsStoreTests
         sut.StartScreenRecentFilesLimit.Should().Be(30);
         sut.CssEpub3ValidationSpec.Should().Be("css30");
         sut.HighlightOpenCloseTags.Should().BeTrue();
+        sut.PreviewFollowFootnotesInCodeView.Should().BeTrue();
         sut.PreserveEntityCodeNames.Should().ContainSingle()
             .Which.Should().Be(((ushort)160, "&#160;"));
     }
@@ -66,6 +67,7 @@ public sealed class SettingsStoreTests
         writer.FavoriteSpecialCharacters = new[] { "—", "§" };
         writer.CleanupEnabledSteps = new[] { CleanupStep.UnusedSelectors, CleanupStep.UnusedMedia };
         writer.StandardizationEnabledSteps = new[] { StandardizationStep.RebaseManifestIds };
+        writer.PreviewFollowFootnotesInCodeView = false;
         writer.WarningAppearance = new WarningAppearance(16);
         writer.EditionPage = new EditionPageSettings(
             true, EditionPagePosition.Second, new[] { new EditionPageField("Edited by", "GreatWorksPublishing", true), new EditionPageField("Note", "x", false) },
@@ -90,6 +92,7 @@ public sealed class SettingsStoreTests
         reader.FavoriteSpecialCharacters.Should().Equal("—", "§");
         reader.CleanupEnabledSteps.Should().Equal(CleanupStep.UnusedSelectors, CleanupStep.UnusedMedia);
         reader.StandardizationEnabledSteps.Should().Equal(StandardizationStep.RebaseManifestIds);
+        reader.PreviewFollowFootnotesInCodeView.Should().BeFalse();
         reader.WarningAppearance.Should().Be(new WarningAppearance(16));
         reader.EditionPage.Should().Be(new EditionPageSettings(
             true, EditionPagePosition.Second, new[] { new EditionPageField("Edited by", "GreatWorksPublishing", true), new EditionPageField("Note", "x", false) },

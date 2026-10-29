@@ -13,6 +13,7 @@ using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.App.Toolbars;
 using Signet.App.ViewModels;
+using Signet.App.ViewModels.Tabs;
 using Signet.Core;
 using Signet.Core.BookManipulation;
 using Signet.Core.Misc;
@@ -1158,6 +1159,83 @@ public sealed class MainWindowViewModelTests : IDisposable
         HtmlResource chapter = book.GetHtmlResources().Single(h => h.Filename == "chapter1.xhtml");
         sut.Tabs.OpenResources(new Resource[] { chapter });
         return (sut, book, chapter);
+    }
+
+    [Fact]
+    public void Preview_footnote_reference_opens_note_in_code_view()
+    {
+        // Arrange
+        Book book = _disposables.Add(BookCreator.CreateNewBook("3.0"));
+        HtmlResource chapter = book.GetHtmlResourcesExcludingNav().First();
+        HtmlResource note = book.CreateEmptyHtmlFile();
+        chapter.SetText("<html><body><p>Text<a epub:type=\"noteref\" href=\"" + note.Filename
+            + "#note\" id=\"ref\">[1]</a></p></body></html>");
+        note.SetText("<html><body>\n<aside epub:type=\"footnote\" id=\"note\"><p><a href=\"" + chapter.Filename
+            + "#ref\">1.</a> Global note.</p></aside>\n</body></html>");
+        MainWindowViewModel sut = New();
+        sut.LoadBook(book, string.Empty);
+        sut.Tabs.OpenResources(new Resource[] { note, chapter });
+        CodeTabViewModel noteTab = sut.Tabs.OpenTabViews
+            .OfType<CodeTabViewModel>()
+            .Single(tab => tab.ResourceBookPath == note.BookPath);
+        int? requestedOffset = null;
+        noteTab.ScrollToOffsetRequested += offset => requestedOffset = offset;
+        Uri noteUrl = new UriBuilder(
+            new Uri(Path.Combine(sut.Preview.MirrorRootPath!, note.BookPath.Replace('/', Path.DirectorySeparatorChar))))
+        {
+            Fragment = "note",
+        }.Uri;
+        int expectedOffset = XhtmlDoc.OffsetFromNode(XhtmlDoc.Parse(note.GetText()).GetElementById("note")!);
+
+        // Act
+        sut.Preview.HandlePreviewMessage("signet-link:-1 " + noteUrl.AbsoluteUri);
+
+        // Assert
+        sut.Preview.CurrentBookPath.Should().Be(note.BookPath);
+        sut.ActiveCodeTab!.ResourceBookPath.Should().Be(note.BookPath);
+        requestedOffset.Should().Be(expectedOffset);
+    }
+
+    [Fact]
+    public void Preview_footnote_backlink_opens_reference_and_restores_code_sync()
+    {
+        // Arrange
+        Book book = _disposables.Add(BookCreator.CreateNewBook("3.0"));
+        HtmlResource chapter = book.GetHtmlResourcesExcludingNav().First();
+        HtmlResource note = book.CreateEmptyHtmlFile();
+        const string referenceId = "note-ref";
+        chapter.SetText(
+            "<html><body><h1><a class=\"signet-fn-ref\" epub:type=\"noteref\" href=\""
+            + note.Filename + "#note\" id=\"" + referenceId + "\">[1]</a></h1>"
+            + "<p id=\"body\">Body text.</p></body></html>");
+        note.SetText(
+            "<html><body><aside class=\"signet-fn\" epub:type=\"endnote\" id=\"note\">"
+            + "<p><a href=\"" + chapter.Filename + "#" + referenceId + "\">1.</a> Note.</p></aside></body></html>");
+        MainWindowViewModel sut = New();
+        sut.LoadBook(book, string.Empty);
+        sut.Tabs.OpenResources(new Resource[] { chapter, note });
+        CodeTabViewModel chapterTab = sut.Tabs.OpenTabViews
+            .OfType<CodeTabViewModel>()
+            .Single(tab => tab.ResourceBookPath == chapter.BookPath);
+        List<int> requestedOffsets = new();
+        chapterTab.ScrollToOffsetRequested += requestedOffsets.Add;
+        Uri referenceUrl = new UriBuilder(
+            new Uri(Path.Combine(sut.Preview.MirrorRootPath!, chapter.BookPath.Replace('/', Path.DirectorySeparatorChar))))
+        {
+            Fragment = referenceId,
+        }.Uri;
+        int referenceOffset = XhtmlDoc.OffsetFromNode(
+            XhtmlDoc.Parse(chapter.GetText()).GetElementById(referenceId)!);
+        const int contentOffset = 5;
+
+        // Act
+        sut.Preview.HandlePreviewMessage("signet-link:-1 " + referenceUrl.AbsoluteUri);
+        sut.Preview.HandlePreviewMessage("signet-loc:" + contentOffset);
+
+        // Assert
+        sut.Preview.CurrentBookPath.Should().Be(chapter.BookPath);
+        sut.ActiveCodeTab!.ResourceBookPath.Should().Be(chapter.BookPath);
+        requestedOffsets.Should().Equal(referenceOffset, contentOffset);
     }
 
     [Fact]

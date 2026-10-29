@@ -470,6 +470,7 @@ public sealed partial class MainWindowViewModel
         // The same goes for highlighting the caret position in the preview (PreviewHighlight).
         _preview.DebounceInterval = TimeSpan.FromMilliseconds(_settings.UiPreviewTimeout);
         _preview.Highlight = _settings.PreviewHighlight;
+        _preview.FollowFootnotesInCodeView = _settings.PreviewFollowFootnotesInCodeView;
         _preview.Fonts = _settings.PreviewAppearance;
         // The preview's own zoom, remembered across restarts (saved with the rest of the settings on exit).
         _preview.SetZoom(_settings.ZoomPreview);
@@ -491,6 +492,10 @@ public sealed partial class MainWindowViewModel
             else if (e.QualifiedKey.EndsWith("/preview_highlight", StringComparison.Ordinal))
             {
                 _preview.Highlight = _settings.PreviewHighlight;
+            }
+            else if (e.QualifiedKey.EndsWith("/preview_follow_footnotes_in_code_view", StringComparison.Ordinal))
+            {
+                _preview.FollowFootnotesInCodeView = _settings.PreviewFollowFootnotesInCodeView;
             }
             else if (e.QualifiedKey.EndsWith("/preview_appearance", StringComparison.Ordinal))
             {

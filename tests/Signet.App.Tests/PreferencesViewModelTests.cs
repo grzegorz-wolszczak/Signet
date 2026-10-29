@@ -198,6 +198,25 @@ public sealed class PreferencesViewModelTests : IDisposable
     }
 
     [Fact]
+    public void Follow_footnotes_setting_starts_from_settings_and_persists_on_apply()
+    {
+        // Arrange
+        using TestHost host = new();
+        host.Settings.PreviewFollowFootnotesInCodeView = false;
+        PreferencesViewModel vm = NewOn(host);
+
+        // Act & Assert
+        vm.PreviewFollowFootnotesInCodeView.Should().BeFalse();
+
+        // Act
+        vm.PreviewFollowFootnotesInCodeView = true;
+        vm.ApplyCommand.Execute(null);
+
+        // Assert
+        host.Settings.PreviewFollowFootnotesInCodeView.Should().BeTrue();
+    }
+
+    [Fact]
     public void Warning_fields_start_from_settings_and_changes_persist_on_apply()
     {
         // Arrange

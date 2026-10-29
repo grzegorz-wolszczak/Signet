@@ -155,6 +155,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _recentFilesLimit = _settings.RecentFilesLimit;
         _startScreenRecentFilesLimit = _settings.StartScreenRecentFilesLimit;
         _previewRefreshDelay = _settings.UiPreviewTimeout;
+        _previewFollowFootnotesInCodeView = _settings.PreviewFollowFootnotesInCodeView;
         _tempFolderHome = _settings.TempFolderHome;
         _cssEpub2ValidationSpec = _settings.CssEpub2ValidationSpec;
         _cssEpub3ValidationSpec = _settings.CssEpub3ValidationSpec;
@@ -990,6 +991,13 @@ public sealed partial class PreferencesViewModel : ObservableObject
 
     partial void OnPreviewRefreshDelayChanged(int value) =>
         _settings.UiPreviewTimeout = Math.Clamp(value, SettingsStore.UiPreviewTimeoutMin, SettingsStore.UiPreviewTimeoutMax);
+
+    /// <summary>Whether Preview reference clicks should open the target note in Code View.</summary>
+    [ObservableProperty]
+    private bool _previewFollowFootnotesInCodeView;
+
+    partial void OnPreviewFollowFootnotesInCodeViewChanged(bool value) =>
+        _settings.PreviewFollowFootnotesInCodeView = value;
 
     /// <summary>Parent directory of the working directory (empty = the system default).</summary>
     [ObservableProperty]

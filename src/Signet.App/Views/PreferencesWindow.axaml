@@ -977,6 +977,11 @@
                 </StackPanel>
               </Border>
 
+              <Border Classes="section">
+                <CheckBox Content="{loc:Loc PreferencesWindow_FollowFootnotesInCodeView}"
+                          IsChecked="{Binding PreviewFollowFootnotesInCodeView}" />
+              </Border>
+
             </StackPanel>
           </ScrollViewer>
         </views:PageWidthHost>

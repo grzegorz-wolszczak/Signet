@@ -151,4 +151,51 @@ public sealed class BrokenBookFootnoteTests
         FootnoteValidator.Validate(book).Should().BeEmpty();
         LinkIntegrityValidator.Validate(book).Should().BeEmpty();
     }
+
+    /// <summary>
+    /// Added in the review of October 2026, for the preview following footnotes: a link is told a footnote link by the
+    /// scanned footnotes, not by its look — including a reference written inside another note and two notes citing
+    /// each other.
+    /// </summary>
+    [Theory]
+    [InlineData("one", FootnoteLinkKind.Reference)]
+    [InlineData("aside", FootnoteLinkKind.Reference)]
+    [InlineData("left", FootnoteLinkKind.Reference)]
+    [InlineData("right", FootnoteLinkKind.Reference)]
+    [InlineData("one-ref", FootnoteLinkKind.Backlink)]
+    [InlineData("aside-ref", FootnoteLinkKind.Backlink)]
+    [InlineData("right-ref", FootnoteLinkKind.Backlink)]
+    [InlineData("no-such-id", FootnoteLinkKind.None)]
+    [InlineData("", FootnoteLinkKind.None)]
+    public void Links_of_the_broken_book_are_told_apart_by_its_footnotes(string fragment, FootnoteLinkKind expected)
+    {
+        // Arrange
+        using TempDir temp = new("broken-");
+        using Book book = Open(temp, "footnotes");
+        IReadOnlyList<Footnote> footnotes = FootnoteScanner.Scan(book);
+        string citing = book.GetHtmlResources().Single(h => h.Filename == "citing.xhtml").BookPath;
+
+        // Act
+        FootnoteLinkKind kind = FootnoteNavigation.Classify(footnotes, citing, citing, fragment);
+
+        // Assert
+        kind.Should().Be(expected);
+    }
+
+    [Fact]
+    public void A_link_to_a_note_from_a_file_without_its_reference_is_no_footnote_link()
+    {
+        // Arrange
+        using TempDir temp = new("broken-");
+        using Book book = Open(temp, "footnotes");
+        IReadOnlyList<Footnote> footnotes = FootnoteScanner.Scan(book);
+        string citing = book.GetHtmlResources().Single(h => h.Filename == "citing.xhtml").BookPath;
+        string awkward = book.GetHtmlResources().Single(h => h.Filename == "awkward.xhtml").BookPath;
+
+        // Act
+        FootnoteLinkKind kind = FootnoteNavigation.Classify(footnotes, awkward, citing, "one");
+
+        // Assert
+        kind.Should().Be(FootnoteLinkKind.None);
+    }
 }

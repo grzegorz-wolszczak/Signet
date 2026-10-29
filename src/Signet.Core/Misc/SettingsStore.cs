@@ -251,6 +251,13 @@ public sealed class SettingsStore
         set => Write("ui_preview_timeout", value);
     }
 
+    /// <summary>Whether Preview clicks on footnote and endnote references move Code View to the note.</summary>
+    public bool PreviewFollowFootnotesInCodeView
+    {
+        get => ReadBool("preview_follow_footnotes_in_code_view", true);
+        set => Write("preview_follow_footnotes_in_code_view", value);
+    }
+
     /// <summary>Whether to highlight the focused control.</summary>
     public bool UiHighlightFocusWidgetEnabled
     {
