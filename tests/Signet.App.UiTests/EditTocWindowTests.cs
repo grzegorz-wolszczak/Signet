@@ -168,6 +168,7 @@ public sealed class EditTocWindowTests : IDisposable
             headerCount.Should().Be(3, "every column is shown");
             canResize.Should().BeTrue();
             canSort.Should().BeFalse();
+            grid.RowsPresenter!.KeepEstimatedScrollExtentStable.Should().BeTrue();
             hasGridLines.Should().BeTrue();
             texts.Should().Contain("Alpha").And.Contain("Alpha One").And.Contain("Beta");
             titleCells.Should().HaveCount(3);

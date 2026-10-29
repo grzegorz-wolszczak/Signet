@@ -41,6 +41,24 @@
     <CheckBox DockPanel.Dock="Bottom" Margin="0,8,0,0" Content="{loc:Loc HeadingSelectorWindow_TocItemsOnly}"
               IsChecked="{Binding TocItemsOnly}" />
 
+    <CheckBox DockPanel.Dock="Bottom" Margin="0,8,0,0"
+              Content="{loc:Loc HeadingSelectorWindow_UpdateChildHeadingsLevels}"
+              IsChecked="{Binding UpdateChildHeadingsLevels}" />
+
+    <Border DockPanel.Dock="Left" BorderThickness="0,0,1,0" Padding="2"
+            BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <StackPanel Spacing="4">
+        <Button x:Name="ExpandAllButton" Classes="panelTool" Command="{Binding ExpandAllCommand}"
+                ToolTip.Tip="{loc:Loc HeadingSelectorWindow_ExpandAllTip}">
+          <Path Data="M8.42,9.29L12,5.72L15.58,9.29L16.68,8.19L12,3.51L7.32,8.19Z M8.42,14.71L12,18.28L15.58,14.71L16.68,15.81L12,20.49L7.32,15.81Z" />
+        </Button>
+        <Button x:Name="CollapseAllButton" Classes="panelTool" Command="{Binding CollapseAllCommand}"
+                ToolTip.Tip="{loc:Loc HeadingSelectorWindow_CollapseAllTip}">
+          <Path Data="M8.42,4.11L12,7.68L15.58,4.11L16.68,5.21L12,9.89L7.32,5.21Z M8.42,19.89L12,16.32L15.58,19.89L16.68,18.79L12,14.11L7.32,18.79Z" />
+        </Button>
+      </StackPanel>
+    </Border>
+
     <StackPanel DockPanel.Dock="Right" Width="46" Margin="8,0,0,0" Spacing="6">
       <Button Content="◀" MinWidth="40" Command="{Binding DecreaseLevelCommand}"
               ToolTip.Tip="{loc:Loc HeadingSelectorWindow_DecreaseLevelTip}" />
@@ -55,7 +73,7 @@
     <Border BorderBrush="{DynamicResource SignetFrameBrush}" BorderThickness="1">
       <!-- The headings tree (Title, Level, In TOC), not sortable; source built in the code-behind, the selection
            follows SelectedNode. -->
-      <TreeDataGrid x:Name="Tree" CanUserSortColumns="False" />
+      <TreeDataGrid x:Name="Tree" CanUserSortColumns="False" KeepEstimatedScrollExtentStable="True" />
     </Border>
   </DockPanel>
 </Window>

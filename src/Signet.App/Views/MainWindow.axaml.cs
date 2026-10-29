@@ -1108,6 +1108,9 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             return;
         }
 
+        selector.NavigateToSource = heading =>
+            vm.NavigateToBookPathAtOffset(heading.ResourceFile.BookPath, heading.SourceOffset);
+
         bool accepted = await HeadingSelectorWindow.RunAsync(this, selector);
         if (accepted)
         {
