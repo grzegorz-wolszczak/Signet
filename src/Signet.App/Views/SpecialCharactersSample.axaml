@@ -24,7 +24,11 @@
 
   <DockPanel Margin="8">
     <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="0,0,0,6">
-      <TextBox Grid.Column="0" PlaceholderText="{loc:Loc SpecialCharacterWindow_FilterPlaceholder}" />
+      <TextBox Grid.Column="0" PlaceholderText="{loc:Loc SpecialCharacterWindow_FilterPlaceholder}">
+        <TextBox.InnerLeftContent>
+          <Path Classes="filterSearchIcon" />
+        </TextBox.InnerLeftContent>
+      </TextBox>
       <ComboBox Grid.Column="1" SelectedIndex="0" MinWidth="150" VerticalAlignment="Center">
         <ComboBoxItem Content="{loc:Loc SpecialCharacterWindow_PopularCategory}" />
       </ComboBox>
