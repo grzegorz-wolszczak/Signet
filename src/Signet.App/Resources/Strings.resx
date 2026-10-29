@@ -2009,6 +2009,9 @@ Czy chcesz zapisać zmiany?</value>
   <data name="Action_MainWindow_SearchAllFilesOfSameType" xml:space="preserve">
     <value>Szukaj we wszystkich plikach tego samego typu</value>
   </data>
+  <data name="Action_MainWindow_SearchAllTextFiles" xml:space="preserve">
+    <value>Szukaj we wszystkich plikach tekstowych</value>
+  </data>
   <data name="Action_MainWindow_HideFind" xml:space="preserve">
     <value>&amp;Ukryj „Znajdź i zamień”...</value>
   </data>

@@ -167,6 +167,35 @@ public sealed class MainWindowViewModelTests : IDisposable
     }
 
     [Fact]
+    public void SearchAllTextFiles_action_opens_find_panel_and_selects_all_files_scope()
+    {
+        // Arrange
+        using UiCultureScope culture = new("en");
+        TempDir temp = _disposables.Add(new TempDir());
+        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
+        MainWindowViewModel sut = New();
+        Book book = _disposables.Add(new ImportEpub(epub).GetBook());
+        sut.LoadBook(book, epub);
+        HtmlResource html = book.GetHtmlResources().First();
+        sut.Tabs.OpenResources(new Resource[] { html });
+        sut.IsFindReplaceVisible = false;
+        sut.FindReplace.LookWhereIndex = (int)LookWhere.AllCssFiles;
+        sut.FindReplace.FindText = "search value";
+        sut.FindReplace.ReplaceText = "replacement value";
+        AppAction action = sut.Actions.Require(AppActionIds.SearchAllTextFiles);
+
+        // Act
+        action.Execute(null);
+
+        // Assert
+        sut.IsFindReplaceVisible.Should().BeTrue();
+        sut.FindReplace.LookWhereIndex.Should().Be((int)LookWhere.AllFiles);
+        sut.FindReplace.LookWhereOptions[(int)LookWhere.AllFiles].Should().Be("All Files");
+        sut.FindReplace.FindText.Should().Be("search value");
+        sut.FindReplace.ReplaceText.Should().Be("replacement value");
+    }
+
+    [Fact]
     public void FindReplace_all_files_scope_resolves_every_text_resource_in_book()
     {
         // Arrange
