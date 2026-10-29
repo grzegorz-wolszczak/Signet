@@ -80,6 +80,157 @@ public sealed class LiveCssPanelViewModelTests
         winner.HasOverriddenBy.Should().BeFalse();
     }
 
+    [Fact]
+    public void Update_explains_when_the_same_selector_matches_a_closer_element()
+    {
+        // Arrange
+        using UiCultureScope culture = new("en");
+        CssDeclarationSource source = new(CssPath, 0, "*", false);
+        CssMatchedRule bodyRule = new(CssPath, 0, "*", new CssSpecificity(0, 0, 0, 0), false,
+            new[]
+            {
+                new CssMatchedDeclaration(
+                    "font-family",
+                    "\"Old Font\"",
+                    false,
+                    true,
+                    AffectsElement: false,
+                    OverriddenBy: source,
+                    OverriddenByElementDescription: "p.paragraph"),
+                new CssMatchedDeclaration(
+                    "font-family",
+                    "\"New Font\"",
+                    false,
+                    false,
+                    AffectsElement: false,
+                    OverriddenBy: source,
+                    OverriddenByElementDescription: "p.paragraph",
+                    IsRepeated: true),
+            });
+        CssMatchedRule paragraphRule = new(CssPath, 0, "*", new CssSpecificity(0, 0, 0, 0), false,
+            new[]
+            {
+                new CssMatchedDeclaration(
+                    "font-family",
+                    "\"Old Font\"",
+                    false,
+                    true,
+                    AffectsElement: false,
+                    OverriddenBy: source),
+                new CssMatchedDeclaration("font-family", "\"New Font\"", false, false),
+            });
+        CssCascadeResult result = new(
+            "EPUB/text/chapter1.xhtml",
+            0,
+            "p.paragraph",
+            new[]
+            {
+                new CssCascadeLevel("body.body01", 0, false, new[] { bodyRule }),
+                new CssCascadeLevel("p.paragraph", 10, true, new[] { paragraphRule }),
+            });
+        LiveCssPanelViewModel vm = new();
+
+        // Act
+        vm.Update(result, _ => CssText, (_, _) => { });
+        LiveCssDeclarationViewModel overridden = vm.Levels[0].Rules.Single().Declarations.First();
+
+        // Assert
+        overridden.OverriddenByText.Should().Be("(the same selector also matches p.paragraph)");
+    }
+
+    [Fact]
+    public void Update_marks_a_same_value_in_an_ancestor_as_repeated_not_overridden()
+    {
+        // Arrange
+        using UiCultureScope culture = new("en");
+        const string cssText = ".body01 { text-align: justify; }\n.paragraph { text-align: justify; }";
+        CssDeclarationSource childSource = new(
+            CssPath,
+            cssText.IndexOf(".paragraph", StringComparison.Ordinal),
+            ".paragraph",
+            false);
+        CssMatchedRule bodyRule = new(CssPath, 0, ".body01", new CssSpecificity(0, 0, 1, 0), false,
+            new[]
+            {
+                new CssMatchedDeclaration(
+                    "text-align",
+                    "justify",
+                    false,
+                    false,
+                    AffectsElement: false,
+                    OverriddenBy: childSource,
+                    OverriddenByElementDescription: "p.paragraph",
+                    IsRepeated: true),
+            });
+        CssMatchedRule paragraphRule = new(
+            CssPath,
+            childSource.Offset,
+            ".paragraph",
+            new CssSpecificity(0, 0, 1, 0),
+            false,
+            new[] { new CssMatchedDeclaration("text-align", "justify", false, false) });
+        CssCascadeResult result = new(
+            "EPUB/text/chapter1.xhtml",
+            0,
+            "p.paragraph",
+            new[]
+            {
+                new CssCascadeLevel("body.body01", 0, false, new[] { bodyRule }),
+                new CssCascadeLevel("p.paragraph", 10, true, new[] { paragraphRule }),
+            });
+        LiveCssPanelViewModel vm = new();
+
+        // Act
+        vm.Update(result, _ => cssText, (_, _) => { });
+        LiveCssDeclarationViewModel repeated = vm.Levels[0].Rules.Single().Declarations.Single();
+
+        // Assert
+        repeated.IsOverridden.Should().BeFalse();
+        repeated.IsRepeated.Should().BeTrue();
+        repeated.IsDimmed.Should().BeTrue();
+        repeated.OverriddenByText.Should().Contain("repeated by .paragraph");
+    }
+
+    [Fact]
+    public void Update_explains_when_the_same_rule_repeats_a_value_on_a_closer_element()
+    {
+        // Arrange
+        using UiCultureScope culture = new("en");
+        CssDeclarationSource source = new(CssPath, 0, "*", false);
+        CssMatchedRule bodyRule = new(CssPath, 0, "*", new CssSpecificity(0, 0, 0, 0), false,
+            new[]
+            {
+                new CssMatchedDeclaration(
+                    "font-family",
+                    "\"KCaecilia Condensed\"",
+                    false,
+                    false,
+                    AffectsElement: false,
+                    OverriddenBy: source,
+                    OverriddenByElementDescription: "p.paragraph",
+                    IsRepeated: true),
+            });
+        CssMatchedRule paragraphRule = new(CssPath, 0, "*", new CssSpecificity(0, 0, 0, 0), false,
+            new[] { new CssMatchedDeclaration("font-family", "\"KCaecilia Condensed\"", false, false) });
+        CssCascadeResult result = new(
+            "EPUB/text/chapter1.xhtml",
+            0,
+            "p.paragraph",
+            new[]
+            {
+                new CssCascadeLevel("body.body01", 0, false, new[] { bodyRule }),
+                new CssCascadeLevel("p.paragraph", 10, true, new[] { paragraphRule }),
+            });
+        LiveCssPanelViewModel vm = new();
+
+        // Act
+        vm.Update(result, _ => CssText, (_, _) => { });
+        LiveCssDeclarationViewModel repeated = vm.Levels[0].Rules.Single().Declarations.Single();
+
+        // Assert
+        repeated.OverriddenByText.Should().Be("(the same rule repeats this value on p.paragraph)");
+    }
+
     private static CssCascadeResult ResultWithInherited() =>
         HierarchyResult() with
         {

@@ -152,6 +152,18 @@
   <data name="LiveCssPanelWindow_Inline" xml:space="preserve">
     <value>(inline style)</value>
   </data>
+  <data name="LiveCssPanelWindow_OverriddenBySameSelectorOnElement" xml:space="preserve">
+    <value>(the same selector also matches {0})</value>
+  </data>
+  <data name="LiveCssPanelWindow_OverriddenByAnotherDeclarationInRule" xml:space="preserve">
+    <value>(another declaration in this rule wins)</value>
+  </data>
+  <data name="LiveCssPanelWindow_RepeatedBy" xml:space="preserve">
+    <value>(repeated by {0})</value>
+  </data>
+  <data name="LiveCssPanelWindow_RepeatedBySameRuleOnElement" xml:space="preserve">
+    <value>(the same rule repeats this value on {0})</value>
+  </data>
   <data name="Common_Refresh" xml:space="preserve">
     <value>Refresh</value>
   </data>
