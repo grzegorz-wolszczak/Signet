@@ -319,6 +319,7 @@ public sealed partial class MainWindowViewModel
         _actions.SetHandler(AppActionIds.Undo, () => ActiveTab?.Undo());
         _actions.SetHandler(AppActionIds.Redo, () => ActiveTab?.Redo());
         _actions.SetHandler(AppActionIds.GoToLine, () => GoToLineRequested?.Invoke(this, EventArgs.Empty));
+        _actions.SetHandler(AppActionIds.CssPropertyReference, () => CssPropertyReferenceRequested?.Invoke(this, EventArgs.Empty));
         _actions.SetHandler(AppActionIds.About, () => AboutRequested?.Invoke(this, EventArgs.Empty));
         _actions.SetHandler(AppActionIds.ZoomIn, () => AdjustActiveZoom(1.1));
         _actions.SetHandler(AppActionIds.ZoomOut, () => AdjustActiveZoom(1 / 1.1));
@@ -600,6 +601,9 @@ public sealed partial class MainWindowViewModel
 
     /// <summary>Raised by the "About" action — the view shows the About window.</summary>
     public event EventHandler? AboutRequested;
+
+    /// <summary>Raised by the CSS properties reference action — the view opens the reference window.</summary>
+    public event EventHandler? CssPropertyReferenceRequested;
 
     /// <summary>
     /// "Rename Tag" — the view asks for a new name (argument: the current name of the enclosing element)

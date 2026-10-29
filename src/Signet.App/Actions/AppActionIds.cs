@@ -231,6 +231,7 @@ public static class AppActionIds
 
     // Help
     public const string About = "MainWindow.About";
+    public const string CssPropertyReference = "MainWindow.CssPropertyReference";
 
     // Panel focus / visibility toggles
     public const string FocusCodeEditor = "MainWindow.FocusOnCodeEditor";
@@ -280,11 +281,12 @@ public static class AppActionIds
 
     /// <summary>
     /// The actions that make sense while no book is open: creating and opening a book, quitting, the settings and the
-    /// user's libraries (clips, saved searches), showing the panels and About. Every other action needs a book.
+    /// user's libraries (clips, saved searches), showing the panels, About, and CSS documentation.
     /// </summary>
     private static readonly System.Collections.Generic.HashSet<string> NoBookActionIds = new(System.StringComparer.Ordinal)
     {
-        NewDefault, NewEpub2, NewEpub3, Open, Exit, Preferences, CustomLayout, ClipEditor, SearchEditor, About,
+        NewDefault, NewEpub2, NewEpub3, Open, Exit, Preferences, CustomLayout, ClipEditor, SearchEditor,
+        About, CssPropertyReference,
         ToggleBookBrowser, ToggleClips, TogglePreview, ToggleToc, ToggleValidationResults, ToggleCheckpoints,
         ToggleNotifications, ToggleFindReplace, ToggleFindUsages,
         FocusCodeEditor, FocusBookBrowser, FocusPreview, FocusToc, FocusClips,

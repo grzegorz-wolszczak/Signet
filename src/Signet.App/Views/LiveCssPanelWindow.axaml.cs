@@ -20,6 +20,12 @@ public partial class LiveCssPanelWindow : Window
 
     private void OnCssReferenceClick(object? sender, RoutedEventArgs e)
     {
+        if (Owner is MainWindow mainWindow)
+        {
+            mainWindow.ShowCssPropertyReferenceWindow();
+            return;
+        }
+
         if (_cssPropertiesWindow is { IsVisible: true })
         {
             _cssPropertiesWindow.Activate();

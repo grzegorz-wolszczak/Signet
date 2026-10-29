@@ -41,6 +41,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
     private MainWindowViewModel? _boundViewModel;
     private bool _forceClose;
     private SearchEditorWindow? _searchEditorWindow;
+    private CssPropertyReferenceWindow? _cssPropertyReferenceWindow;
 
     private static readonly FilePickerFileType EpubFileType =
         new("EPUB") { Patterns = new[] { "*.epub" } };
@@ -168,6 +169,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
             _boundViewModel.CustomizeToolbarRequested -= OnCustomizeToolbarRequested;
             _boundViewModel.GoToLineRequested -= OnGoToLineRequested;
             _boundViewModel.AboutRequested -= OnAboutRequested;
+            _boundViewModel.CssPropertyReferenceRequested -= OnCssPropertyReferenceRequested;
             _boundViewModel.RenameTagRequested -= OnRenameTagRequested;
             _boundViewModel.MergeContentConfirmationRequested -= OnMergeContentConfirmationRequested;
             _boundViewModel.UnwrapDivConfirmationRequested -= OnUnwrapDivConfirmationRequested;
@@ -226,6 +228,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         _boundViewModel.CustomizeToolbarRequested += OnCustomizeToolbarRequested;
         _boundViewModel.GoToLineRequested += OnGoToLineRequested;
         _boundViewModel.AboutRequested += OnAboutRequested;
+        _boundViewModel.CssPropertyReferenceRequested += OnCssPropertyReferenceRequested;
         _boundViewModel.RenameTagRequested += OnRenameTagRequested;
         _boundViewModel.MergeContentConfirmationRequested += OnMergeContentConfirmationRequested;
         _boundViewModel.UnwrapDivConfirmationRequested += OnUnwrapDivConfirmationRequested;
@@ -526,6 +529,29 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
 
     private async void OnAboutRequested(object? sender, EventArgs e) =>
         await new AboutWindow().ShowDialog(this);
+
+    private void OnCssPropertyReferenceRequested(object? sender, EventArgs e) => ShowCssPropertyReferenceWindow();
+
+    internal void ShowCssPropertyReferenceWindow()
+    {
+        if (_cssPropertyReferenceWindow is { IsVisible: true } existing)
+        {
+            existing.Activate();
+            return;
+        }
+
+        CssPropertyReferenceWindow window = new() { DataContext = new CssPropertyReferenceViewModel() };
+        window.Closed += (_, _) =>
+        {
+            if (ReferenceEquals(_cssPropertyReferenceWindow, window))
+            {
+                _cssPropertyReferenceWindow = null;
+            }
+        };
+        _cssPropertyReferenceWindow = window;
+        RememberPlacement(window);
+        window.Show(this);
+    }
 
     private async void OnGoToLineRequested(object? sender, EventArgs e)
     {
