@@ -195,7 +195,7 @@
     <value>— means no typical direct effect. i/b/ib include replaced elements; f/g/t include containers and layout items.</value>
   </data>
   <data name="CssPropertyReferenceWindow_SearchPlaceholder" xml:space="preserve">
-    <value>Search properties...</value>
+    <value>Filter CSS properties by name or display marker…</value>
   </data>
   <data name="CssPropertyReferenceWindow_ClearSearch" xml:space="preserve">
     <value>Clear search</value>
@@ -1484,7 +1484,7 @@ Unwrap anyway?</value>
     <value>Insert from disk…</value>
   </data>
   <data name="SelectFilesWindow_FilterPlaceholder" xml:space="preserve">
-    <value>Filter…</value>
+    <value>Filter files by name…</value>
   </data>
   <data name="SelectFilesWindow_MoveUpTip" xml:space="preserve">
     <value>Move up</value>
@@ -2487,7 +2487,7 @@ Do you want to save the changes?</value>
     <value>Show edited only</value>
   </data>
   <data name="RecentLocations_FilterPlaceholder" xml:space="preserve">
-    <value>Type to filter</value>
+    <value>Filter by file name, context or text…</value>
   </data>
   <data name="RecentLocations_Empty" xml:space="preserve">
     <value>No recent locations found</value>

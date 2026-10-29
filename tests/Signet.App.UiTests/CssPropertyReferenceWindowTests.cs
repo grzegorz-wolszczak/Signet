@@ -1,5 +1,6 @@
 using System.Linq;
 using Avalonia.Controls;
+using Avalonia.Controls.Shapes;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
@@ -43,6 +44,11 @@ public sealed class CssPropertyReferenceWindowTests
             clearSearchButton.IsVisible.Should().BeFalse();
             AssertColumnHeaders(inheritedGrid);
             AssertColumnHeaders(nonInheritedGrid);
+            TextBox searchBox = window.GetVisualDescendants().OfType<TextBox>()
+                .Single(textBox => textBox.PlaceholderText == Strings.Get("CssPropertyReferenceWindow_SearchPlaceholder"));
+            Path searchIcon = searchBox.InnerLeftContent.Should().BeOfType<Path>().Subject;
+            searchIcon.Classes.Should().Contain("filterSearchIcon");
+            searchIcon.Data.Should().NotBeNull();
             TextBlock displayCell = nonInheritedGrid.GetVisualDescendants().OfType<TextBlock>()
                 .Single(textBlock => textBlock.Text == "display");
             string displayTooltipText = viewModel.NonInheritedProperties.Single(row => row.Name == "display").Tooltip;

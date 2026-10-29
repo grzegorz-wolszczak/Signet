@@ -25,7 +25,11 @@
     <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8">
       <TextBlock Text="{loc:Loc ClipEditorWindow_Filter}" VerticalAlignment="Center" />
       <TextBox Text="{Binding FilterText, Mode=TwoWay}" Width="360"
-               PlaceholderText="{loc:Loc DryRunReplaceWindow_FilterPlaceholder}" />
+               PlaceholderText="{loc:Loc DryRunReplaceWindow_FilterPlaceholder}">
+        <TextBox.InnerLeftContent>
+          <Path Classes="filterSearchIcon" />
+        </TextBox.InnerLeftContent>
+      </TextBox>
     </StackPanel>
 
     <Border Grid.Row="2" BorderBrush="{DynamicResource SystemControlForegroundBaseMediumLowBrush}"

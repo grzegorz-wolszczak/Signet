@@ -195,7 +195,7 @@
     <value>— oznacza brak typowego bezpośredniego wpływu. i/b/ib uwzględniają elementy zastępowane; f/g/t obejmują kontener i elementy układu.</value>
   </data>
   <data name="CssPropertyReferenceWindow_SearchPlaceholder" xml:space="preserve">
-    <value>Szukaj właściwości...</value>
+    <value>Filtruj właściwości CSS po nazwie lub znaczniku display…</value>
   </data>
   <data name="CssPropertyReferenceWindow_ClearSearch" xml:space="preserve">
     <value>Wyczyść wyszukiwanie</value>
@@ -1484,7 +1484,7 @@ Rozpakować mimo to?</value>
     <value>Wstaw z dysku…</value>
   </data>
   <data name="SelectFilesWindow_FilterPlaceholder" xml:space="preserve">
-    <value>Filtruj…</value>
+    <value>Filtruj pliki po nazwie…</value>
   </data>
   <data name="SelectFilesWindow_MoveUpTip" xml:space="preserve">
     <value>Przesuń w górę</value>
@@ -2487,7 +2487,7 @@ Czy chcesz zapisać zmiany?</value>
     <value>Tylko edytowane</value>
   </data>
   <data name="RecentLocations_FilterPlaceholder" xml:space="preserve">
-    <value>Wpisz, aby filtrować</value>
+    <value>Filtruj po nazwie pliku, kontekście lub treści…</value>
   </data>
   <data name="RecentLocations_Empty" xml:space="preserve">
     <value>Brak ostatnich miejsc</value>

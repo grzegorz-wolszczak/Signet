@@ -30,7 +30,11 @@
     </Border>
 
     <TextBox x:Name="FilterBox" DockPanel.Dock="Top" Margin="6" Text="{Binding Filter}"
-             PlaceholderText="{loc:Loc RecentLocations_FilterPlaceholder}" />
+             PlaceholderText="{loc:Loc RecentLocations_FilterPlaceholder}">
+      <TextBox.InnerLeftContent>
+        <Path Classes="filterSearchIcon" />
+      </TextBox.InnerLeftContent>
+    </TextBox>
 
     <Panel>
       <ListBox x:Name="Locations" ItemsSource="{Binding Items}" SelectedItem="{Binding Selected}"
