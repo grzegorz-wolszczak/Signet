@@ -4,9 +4,7 @@ using Avalonia.Media;
 namespace Signet.App.Infrastructure;
 
 /// <summary>
-/// Converters from <c>LiveCssDeclarationViewModel.IsOverridden</c>/<c>IsDimmed</c> to the row appearance in the
-/// "Live CSS Panel" — strikethrough of overridden declarations and dimming of declarations that do not take
-/// effect on the inspected element.
+/// Converters from <c>LiveCssDeclarationViewModel</c> flags to declaration appearance in the Live CSS panel.
 /// </summary>
 public static class OverriddenDeclarationConverters
 {
@@ -15,7 +13,12 @@ public static class OverriddenDeclarationConverters
         new FuncValueConverter<bool, TextDecorationCollection?>(
             overridden => overridden ? TextDecorations.Strikethrough : null);
 
+    /// <summary><c>true</c> → italic font style, otherwise normal.</summary>
+    public static readonly IValueConverter ItalicWhenRepeated =
+        new FuncValueConverter<bool, FontStyle>(
+            repeated => repeated ? FontStyle.Italic : FontStyle.Normal);
+
     /// <summary><c>true</c> → 0.55 (dimmed), otherwise 1.0.</summary>
     public static readonly IValueConverter Opacity =
-        new FuncValueConverter<bool, double>(overridden => overridden ? 0.55 : 1.0);
+        new FuncValueConverter<bool, double>(isDimmed => isDimmed ? 0.55 : 1.0);
 }

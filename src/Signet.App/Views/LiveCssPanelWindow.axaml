@@ -129,6 +129,7 @@
                               <DataTemplate x:DataType="vm:LiveCssDeclarationViewModel">
                                 <WrapPanel Opacity="{Binding IsDimmed, Converter={x:Static infra:OverriddenDeclarationConverters.Opacity}}">
                                   <views:CssSyntaxText CssText="{Binding Text}" FontFamily="Consolas,Cascadia Mono,monospace"
+                                                       FontStyle="{Binding IsRepeated, Converter={x:Static infra:OverriddenDeclarationConverters.ItalicWhenRepeated}}"
                                                        TextDecorations="{Binding IsOverridden, Converter={x:Static infra:OverriddenDeclarationConverters.Strikethrough}}" />
                                   <Button Classes="sourceLink" IsVisible="{Binding HasOverriddenBy}" Margin="8,0,0,0"
                                           Command="{Binding JumpCommand}"

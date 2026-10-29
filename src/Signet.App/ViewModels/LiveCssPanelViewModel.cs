@@ -13,22 +13,43 @@ namespace Signet.App.ViewModels;
 
 /// <summary>
 /// A single CSS declaration in the Live CSS panel — <see cref="Text"/> is ready for display,
-/// <see cref="IsOverridden"/> drives the strikethrough and <see cref="IsDimmed"/> the dimming in the view;
-/// <see cref="OverriddenByText"/> says which rule wins instead.
+/// <see cref="IsOverridden"/> drives the strikethrough, <see cref="IsRepeated"/> the italic style, and
+/// <see cref="IsDimmed"/> the dimming in the view; <see cref="OverriddenByText"/> explains the winning match.
 /// </summary>
 public sealed class LiveCssDeclarationViewModel
 {
     internal LiveCssDeclarationViewModel(
-        CssMatchedDeclaration declaration, Func<string, string> resolveBookText, Action<string, int> jumpTo)
+        CssMatchedDeclaration declaration,
+        CssDeclarationSource ruleSource,
+        Func<string, string> resolveBookText,
+        Action<string, int> jumpTo)
     {
         Text = declaration.IsImportant
             ? $"{declaration.Property}: {declaration.Value} !important;"
             : $"{declaration.Property}: {declaration.Value};";
         IsOverridden = declaration.IsOverridden;
+        IsRepeated = declaration.IsRepeated;
         IsDimmed = !declaration.AffectsElement;
         if (declaration.OverriddenBy is { } source)
         {
-            OverriddenByText = Strings.Format("LiveCssPanelWindow_OverriddenBy", LiveCssFormat.Source(source, resolveBookText));
+            if (declaration.IsRepeated)
+            {
+                OverriddenByText = source == ruleSource
+                    && declaration.OverriddenByElementDescription is { } repeatedOn
+                        ? Strings.Format("LiveCssPanelWindow_RepeatedBySameRuleOnElement", repeatedOn)
+                        : Strings.Format("LiveCssPanelWindow_RepeatedBy", LiveCssFormat.Source(source, resolveBookText));
+            }
+            else if (source == ruleSource)
+            {
+                OverriddenByText = declaration.OverriddenByElementDescription is { } elementDescription
+                    ? Strings.Format("LiveCssPanelWindow_OverriddenBySameSelectorOnElement", elementDescription)
+                    : Strings.Get("LiveCssPanelWindow_OverriddenByAnotherDeclarationInRule");
+            }
+            else
+            {
+                OverriddenByText = Strings.Format("LiveCssPanelWindow_OverriddenBy", LiveCssFormat.Source(source, resolveBookText));
+            }
+
             JumpCommand = new RelayCommand(() => jumpTo(source.BookPath, source.Offset));
         }
     }
@@ -38,17 +59,20 @@ public sealed class LiveCssDeclarationViewModel
 
     /// <summary>
     /// Whether this declaration is overridden — by a rule with a higher cascade priority on the same element,
-    /// or (inherited properties) by a declaration on an element closer to the inspected one.
+    /// or (inherited properties) by a declaration with a different value on a closer element.
     /// </summary>
     public bool IsOverridden { get; }
 
+    /// <summary>Whether a closer element repeats the same inherited value.</summary>
+    public bool IsRepeated { get; }
+
     /// <summary>
     /// Whether the declaration does not take effect on the inspected element (overridden, or a non-inherited
-    /// property of an ancestor) — shown dimmed.
+    /// property of an ancestor, or repeated by a child) — shown dimmed.
     /// </summary>
     public bool IsDimmed { get; }
 
-    /// <summary>"(overridden by selector, file:line)" for an overridden declaration, otherwise empty.</summary>
+    /// <summary>An explanation of what overrides or repeats this declaration, or empty when neither happens.</summary>
     public string OverriddenByText { get; } = string.Empty;
 
     /// <summary>Whether <see cref="OverriddenByText"/> is shown.</summary>
@@ -100,7 +124,7 @@ public sealed class LiveCssRuleViewModel
         SelectorText = rule.IsInlineStyle ? Strings.Get("LiveCssPanelWindow_Inline") : rule.SelectorText;
         HeaderSuffix = rule.IsInlineStyle ? string.Empty : Header[SelectorText.Length..];
         Declarations = new ObservableCollection<LiveCssDeclarationViewModel>(
-            rule.Declarations.Select(d => new LiveCssDeclarationViewModel(d, resolveBookText, jumpTo)));
+            rule.Declarations.Select(d => new LiveCssDeclarationViewModel(d, rule.Source, resolveBookText, jumpTo)));
         JumpCommand = new RelayCommand(() => jumpTo(rule.BookPath, rule.Offset));
     }
 

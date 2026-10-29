@@ -28,6 +28,7 @@ public sealed class CssSyntaxText : TextBlock
     {
         CssTextProperty.Changed.AddClassHandler<CssSyntaxText>((t, _) => t.Rebuild());
         IsSelectorProperty.Changed.AddClassHandler<CssSyntaxText>((t, _) => t.Rebuild());
+        FontStyleProperty.Changed.AddClassHandler<CssSyntaxText>((t, _) => t.Rebuild());
     }
 
     /// <inheritdoc cref="CssTextProperty"/>
@@ -72,16 +73,16 @@ public sealed class CssSyntaxText : TextBlock
             ResolvedTheme theme = AppTheme.Current;
             foreach (UsageContextSegment segment in CssSyntaxSegments.Of(text, IsSelector))
             {
-                inlines.Add(Run(segment, theme));
+                inlines.Add(Run(segment, theme, FontStyle));
             }
         }
 
         Inlines = inlines;
     }
 
-    private static Run Run(UsageContextSegment segment, ResolvedTheme theme)
+    private static Run Run(UsageContextSegment segment, ResolvedTheme theme, FontStyle baseFontStyle)
     {
-        Run run = new(segment.Text);
+        Run run = new(segment.Text) { FontStyle = baseFontStyle };
         if (segment.Format is { } format && SyntaxColorizer.SyntaxKeys.TryGetValue(format, out ThemeKey? key))
         {
             TextAttributes look = theme.Attributes(key);
@@ -91,7 +92,9 @@ public sealed class CssSyntaxText : TextBlock
             }
 
             run.FontWeight = look.Bold ? FontWeight.Bold : FontWeight.Normal;
-            run.FontStyle = look.Italic ? FontStyle.Italic : FontStyle.Normal;
+            run.FontStyle = baseFontStyle == FontStyle.Normal && look.Italic
+                ? FontStyle.Italic
+                : baseFontStyle;
         }
 
         return run;
