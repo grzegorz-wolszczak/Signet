@@ -4,6 +4,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Documents;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AwesomeAssertions;
@@ -22,6 +23,7 @@ public sealed class LiveCssPanelWindowTests
 {
     private const string CssPath = "EPUB/styles/style.css";
     private const string CssText = ".a { color: red; }\n.b { color: blue; }";
+    private const string RepeatedCssText = ".body01 { text-align: justify; }\n.paragraph { text-align: justify; }";
 
     private static CssCascadeResult Result() =>
         new(
@@ -50,14 +52,56 @@ public sealed class LiveCssPanelWindowTests
         };
 
     private static (LiveCssPanelWindow Window, LiveCssPanelViewModel Vm) Open()
+        => Open(Result(), CssText);
+
+    private static (LiveCssPanelWindow Window, LiveCssPanelViewModel Vm) Open(CssCascadeResult result, string cssText)
     {
         LiveCssPanelViewModel vm = new();
-        vm.Update(Result(), _ => CssText, (_, _) => { });
+        vm.Update(result, _ => cssText, (_, _) => { });
         LiveCssPanelWindow window = new() { DataContext = vm };
         window.Show();
         Dispatcher.UIThread.RunJobs();
         window.CaptureRenderedFrame();
         return (window, vm);
+    }
+
+    private static CssCascadeResult RepeatedResult()
+    {
+        CssDeclarationSource paragraphSource = new(
+            CssPath,
+            RepeatedCssText.IndexOf(".paragraph", System.StringComparison.Ordinal),
+            ".paragraph",
+            false);
+        CssMatchedRule bodyRule = new(CssPath, 0, ".body01", new CssSpecificity(0, 0, 1, 0), false,
+            new[]
+            {
+                new CssMatchedDeclaration(
+                    "text-align",
+                    "justify",
+                    false,
+                    false,
+                    AffectsElement: false,
+                    OverriddenBy: paragraphSource,
+                    OverriddenByElementDescription: "p.paragraph",
+                    IsRepeated: true),
+            });
+        CssMatchedRule paragraphRule = new(
+            CssPath,
+            paragraphSource.Offset,
+            ".paragraph",
+            new CssSpecificity(0, 0, 1, 0),
+            false,
+            new[] { new CssMatchedDeclaration("text-align", "justify", false, false) });
+
+        return new CssCascadeResult(
+            "EPUB/text/chapter1.xhtml",
+            0,
+            "p.paragraph",
+            new[]
+            {
+                new CssCascadeLevel("body.body01", 0, false, new[] { bodyRule }),
+                new CssCascadeLevel("p.paragraph", 10, true, new[] { paragraphRule }),
+            });
     }
 
     private static void Settle(Window window)
@@ -138,6 +182,40 @@ public sealed class LiveCssPanelWindowTests
         runs.Select(r => r.Foreground).Distinct().Should().HaveCountGreaterThan(1);
 
         texts.Should().Contain(t => t.CssText == ".a" && t.IsSelector);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Css_reference_button_is_visible_in_the_panel_header()
+    {
+        // Arrange
+        (LiveCssPanelWindow window, _) = Open();
+
+        // Act
+        Button button = window.GetVisualDescendants().OfType<Button>()
+            .Single(candidate => Equals(candidate.Content, Strings.Get("LiveCssPanelWindow_CssReferenceButton")));
+
+        // Assert
+        button.IsEffectivelyVisible.Should().BeTrue();
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Repeated_declarations_are_italic_and_keep_css_syntax_coloring()
+    {
+        // Arrange
+        (LiveCssPanelWindow window, _) = Open(RepeatedResult(), RepeatedCssText);
+
+        // Act
+        CssSyntaxText declaration = window.GetVisualDescendants().OfType<CssSyntaxText>()
+            .Single(t => t.CssText == "text-align: justify;" && t.FontStyle == FontStyle.Italic);
+        Run[] runs = declaration.Inlines!.OfType<Run>().ToArray();
+
+        // Assert
+        declaration.FontStyle.Should().Be(FontStyle.Italic);
+        runs.Should().NotBeEmpty();
+        runs.Should().OnlyContain(run => run.FontStyle == FontStyle.Italic);
+        runs.Select(run => run.Foreground).Distinct().Should().HaveCountGreaterThan(1);
         window.Close();
     }
 }

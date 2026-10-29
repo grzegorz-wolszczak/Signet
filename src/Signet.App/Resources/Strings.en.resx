@@ -122,6 +122,12 @@
   <data name="LiveCssPanelWindow_Title" xml:space="preserve">
     <value>Live CSS Panel</value>
   </data>
+  <data name="LiveCssPanelWindow_CssReferenceButton" xml:space="preserve">
+    <value>[i] CSS</value>
+  </data>
+  <data name="LiveCssPanelWindow_CssReferenceTooltip" xml:space="preserve">
+    <value>Show CSS property inheritance reference</value>
+  </data>
   <data name="LiveCssPanelWindow_NoRules" xml:space="preserve">
     <value>No CSS rule matches this element.</value>
   </data>
@@ -146,12 +152,6 @@
   <data name="LiveCssPanelWindow_OverriddenBy" xml:space="preserve">
     <value>(overridden by {0})</value>
   </data>
-  <data name="LiveCssPanelWindow_InspectedElement" xml:space="preserve">
-    <value>(element at caret)</value>
-  </data>
-  <data name="LiveCssPanelWindow_Inline" xml:space="preserve">
-    <value>(inline style)</value>
-  </data>
   <data name="LiveCssPanelWindow_OverriddenBySameSelectorOnElement" xml:space="preserve">
     <value>(the same selector also matches {0})</value>
   </data>
@@ -163,6 +163,24 @@
   </data>
   <data name="LiveCssPanelWindow_RepeatedBySameRuleOnElement" xml:space="preserve">
     <value>(the same rule repeats this value on {0})</value>
+  </data>
+  <data name="LiveCssPanelWindow_InspectedElement" xml:space="preserve">
+    <value>(element at caret)</value>
+  </data>
+  <data name="LiveCssPanelWindow_Inline" xml:space="preserve">
+    <value>(inline style)</value>
+  </data>
+  <data name="CssPropertyReferenceWindow_Title" xml:space="preserve">
+    <value>CSS properties in EPUB</value>
+  </data>
+  <data name="CssPropertyReferenceWindow_All" xml:space="preserve">
+    <value>ALL</value>
+  </data>
+  <data name="CssPropertyReferenceWindow_Inherited" xml:space="preserve">
+    <value>Inherited</value>
+  </data>
+  <data name="CssPropertyReferenceWindow_NonInherited" xml:space="preserve">
+    <value>Non-inherited</value>
   </data>
   <data name="Common_Refresh" xml:space="preserve">
     <value>Refresh</value>

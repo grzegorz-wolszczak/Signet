@@ -122,6 +122,12 @@
   <data name="LiveCssPanelWindow_Title" xml:space="preserve">
     <value>Panel CSS na żywo</value>
   </data>
+  <data name="LiveCssPanelWindow_CssReferenceButton" xml:space="preserve">
+    <value>[i] CSS</value>
+  </data>
+  <data name="LiveCssPanelWindow_CssReferenceTooltip" xml:space="preserve">
+    <value>Pokaż zestawienie dziedziczenia właściwości CSS</value>
+  </data>
   <data name="LiveCssPanelWindow_NoRules" xml:space="preserve">
     <value>Żadna reguła CSS nie pasuje do tego elementu.</value>
   </data>
@@ -146,12 +152,6 @@
   <data name="LiveCssPanelWindow_OverriddenBy" xml:space="preserve">
     <value>(nadpisane przez {0})</value>
   </data>
-  <data name="LiveCssPanelWindow_InspectedElement" xml:space="preserve">
-    <value>(element pod kursorem)</value>
-  </data>
-  <data name="LiveCssPanelWindow_Inline" xml:space="preserve">
-    <value>(styl inline)</value>
-  </data>
   <data name="LiveCssPanelWindow_OverriddenBySameSelectorOnElement" xml:space="preserve">
     <value>(ten sam selektor pasuje też do {0})</value>
   </data>
@@ -163,6 +163,24 @@
   </data>
   <data name="LiveCssPanelWindow_RepeatedBySameRuleOnElement" xml:space="preserve">
     <value>(ta sama reguła powtarza tę wartość na {0})</value>
+  </data>
+  <data name="LiveCssPanelWindow_InspectedElement" xml:space="preserve">
+    <value>(element pod kursorem)</value>
+  </data>
+  <data name="LiveCssPanelWindow_Inline" xml:space="preserve">
+    <value>(styl inline)</value>
+  </data>
+  <data name="CssPropertyReferenceWindow_Title" xml:space="preserve">
+    <value>Właściwości CSS w EPUB</value>
+  </data>
+  <data name="CssPropertyReferenceWindow_All" xml:space="preserve">
+    <value>ALL</value>
+  </data>
+  <data name="CssPropertyReferenceWindow_Inherited" xml:space="preserve">
+    <value>Dziedziczone</value>
+  </data>
+  <data name="CssPropertyReferenceWindow_NonInherited" xml:space="preserve">
+    <value>Niediedziczone</value>
   </data>
   <data name="Common_Refresh" xml:space="preserve">
     <value>Odśwież</value>

@@ -47,8 +47,14 @@
 
   <Grid Margin="10" RowDefinitions="Auto,*" RowSpacing="8">
 
-    <TextBlock Grid.Row="0" Text="{Binding ElementDescription}" FontWeight="Bold" FontSize="14"
-               TextTrimming="CharacterEllipsis" />
+    <Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+      <TextBlock Grid.Column="0" Text="{Binding ElementDescription}" FontWeight="Bold" FontSize="14"
+                 TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
+      <Button Grid.Column="1"
+              Content="{loc:Loc LiveCssPanelWindow_CssReferenceButton}"
+              ToolTip.Tip="{loc:Loc LiveCssPanelWindow_CssReferenceTooltip}"
+              Click="OnCssReferenceClick" />
+    </Grid>
 
     <ScrollViewer Grid.Row="1">
       <ItemsControl ItemsSource="{Binding Levels}">
