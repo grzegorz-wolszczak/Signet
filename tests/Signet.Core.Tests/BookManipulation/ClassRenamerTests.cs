@@ -269,6 +269,27 @@ public sealed class ClassRenamerTests
     }
 
     [Fact]
+    public void From_a_stylesheet_renames_the_class_on_an_ancestor_in_a_descendant_selector()
+    {
+        // Arrange
+        const string html = "<html><head>" + LinkA + "</head><body>"
+            + "<div class=\"warn_center\"><p class=\"warn_center\">inside</p></div>"
+            + "<p class=\"warn_center\">outside</p></body></html>";
+        ClassRenamer sut = Renamer(html, "div.warn_center p { text-align: center }\n");
+        ClassRenameRequest request = ClassRenameRequest.ForStyleSource(
+            new StyleClassAtCaret("warn_center", "styles/a.css", -1));
+
+        // Act
+        ClassRenameResult result = sut.Rename(request, "warning");
+
+        // Assert
+        result.ChangedTexts["text/ch1.xhtml"].Should().Contain(
+            "<div class=\"warning\"><p class=\"warn_center\">inside</p></div><p class=\"warn_center\">outside</p>");
+        result.ChangedTexts["styles/a.css"].Should().Be("div.warning p { text-align: center }\n");
+        result.Stats.ChangedOccurrences.Should().Be(1);
+    }
+
+    [Fact]
     public void From_a_stylesheet_state_pseudo_classes_and_pseudo_elements_count_as_matching()
     {
         // Arrange
