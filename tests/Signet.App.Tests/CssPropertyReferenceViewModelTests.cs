@@ -17,10 +17,16 @@ public sealed class CssPropertyReferenceViewModelTests
 
         // Assert
         showAll.Should().BeFalse();
-        viewModel.InheritedProperties.Should().Contain("font-family");
-        viewModel.InheritedProperties.Should().NotContain("margin");
-        viewModel.NonInheritedProperties.Should().Contain("margin");
-        viewModel.NonInheritedProperties.Should().NotContain("font-family");
+        viewModel.InheritedProperties.Should().Contain(property => property.Name == "font-family");
+        viewModel.InheritedProperties.Should().NotContain(property => property.Name == "margin");
+        viewModel.NonInheritedProperties.Should().Contain(property => property.Name == "margin");
+        viewModel.NonInheritedProperties.Should().NotContain(property => property.Name == "font-family");
+        viewModel.InheritedProperties.Should().ContainSingle(property => property.Name == "font-family")
+            .Subject.Display.Should().Be("i, b, ib, f, g, t");
+        viewModel.InheritedProperties.Should().ContainSingle(property => property.Name == "text-align")
+            .Subject.Display.Should().Be("b, ib, f, g, t");
+        viewModel.NonInheritedProperties.Should().ContainSingle(property => property.Name == "vertical-align")
+            .Subject.Display.Should().Be("i, ib, t");
     }
 
     [Fact]
@@ -33,11 +39,15 @@ public sealed class CssPropertyReferenceViewModelTests
         viewModel.ShowAll = true;
 
         // Assert
-        viewModel.InheritedProperties.Should().Contain("-epub-ruby-position");
-        viewModel.InheritedProperties.Should().Contain("fill");
-        viewModel.NonInheritedProperties.Should().Contain("grid-template-columns");
-        viewModel.NonInheritedProperties.Should().Contain("-webkit-column-break-after");
-        viewModel.NonInheritedProperties.Should().Contain("padding-bottom");
+        viewModel.InheritedProperties.Should().Contain(property => property.Name == "-epub-ruby-position");
+        viewModel.InheritedProperties.Should().Contain(property => property.Name == "fill");
+        viewModel.NonInheritedProperties.Should().Contain(property => property.Name == "grid-template-columns");
+        viewModel.NonInheritedProperties.Should().Contain(property => property.Name == "-webkit-column-break-after");
+        viewModel.NonInheritedProperties.Should().Contain(property => property.Name == "padding-bottom");
+        viewModel.NonInheritedProperties.Should().ContainSingle(property => property.Name == "grid-template-columns")
+            .Subject.Display.Should().Be("g");
+        viewModel.InheritedProperties.Should().ContainSingle(property => property.Name == "-epub-ruby-position")
+            .Subject.Display.Should().Be("—");
     }
 
     [Fact]
@@ -51,8 +61,40 @@ public sealed class CssPropertyReferenceViewModelTests
         viewModel.ShowAll = false;
 
         // Assert
-        viewModel.InheritedProperties.Should().Contain("font-family");
-        viewModel.NonInheritedProperties.Should().Contain("margin");
-        viewModel.NonInheritedProperties.Should().NotContain("grid-template-columns");
+        viewModel.InheritedProperties.Should().Contain(property => property.Name == "font-family");
+        viewModel.NonInheritedProperties.Should().Contain(property => property.Name == "margin");
+        viewModel.NonInheritedProperties.Should().NotContain(property => property.Name == "grid-template-columns");
+    }
+
+    [Fact]
+    public void SearchText_FiltersBothListsByNameOrDisplayAndClearRestoresRows()
+    {
+        // Arrange
+        CssPropertyReferenceViewModel viewModel = new() { ShowAll = true };
+
+        // Act
+        viewModel.SearchText = "f, g";
+
+        // Assert
+        viewModel.HasSearchText.Should().BeTrue();
+        viewModel.InheritedProperties.Should().Contain(property => property.Name == "font-family");
+        viewModel.NonInheritedProperties.Should().Contain(property => property.Name == "margin");
+        viewModel.InheritedProperties.Should().OnlyContain(property => property.Display.Contains("f, g"));
+        viewModel.NonInheritedProperties.Should().OnlyContain(property => property.Display.Contains("f, g"));
+
+        // Act
+        viewModel.SearchText = "grid-template-columns";
+
+        // Assert
+        viewModel.InheritedProperties.Should().BeEmpty();
+        viewModel.NonInheritedProperties.Should().ContainSingle(property => property.Name == "grid-template-columns");
+
+        // Act
+        viewModel.ClearSearchCommand.Execute(null);
+
+        // Assert
+        viewModel.SearchText.Should().BeEmpty();
+        viewModel.HasSearchText.Should().BeFalse();
+        viewModel.NonInheritedProperties.Should().Contain(property => property.Name == "margin");
     }
 }

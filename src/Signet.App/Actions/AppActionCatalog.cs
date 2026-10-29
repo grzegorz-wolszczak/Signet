@@ -203,6 +203,7 @@ public static class AppActionCatalog
         new("MainWindow.IgnoreMispelledWord", "&Ignore Misspelled Word", "", "spellcheck-ignore", "Tools"),
         new("MainWindow.ClearIgnoredWords", "&Clear Ignored Words", "", "spellcheck-clear-ignored", "Tools"),
 
+        new("MainWindow.CssPropertyReference", "&CSS Properties in EPUB...", "", "help-browser", "Help"),
         new("MainWindow.About", "&About...", "", "help-browser", "Help"),
 
         // Panels.

@@ -216,6 +216,8 @@ public static class MenuLayout
             MenuNode.Bookmarks("&Bookmarks")),
 
         MenuNode.Sub("&Help",
+            A("MainWindow.CssPropertyReference"),
+            Sep,
             A("MainWindow.About")),
     };
 }

@@ -82,6 +82,21 @@ public sealed class MainWindowViewModelTests : IDisposable
     }
 
     [Fact]
+    public void Css_property_reference_action_requests_the_reference_window()
+    {
+        // Arrange
+        MainWindowViewModel sut = New();
+        int requestCount = 0;
+        sut.CssPropertyReferenceRequested += (_, _) => requestCount++;
+
+        // Act
+        sut.Actions.Require(AppActionIds.CssPropertyReference).Execute(null);
+
+        // Assert
+        requestCount.Should().Be(1);
+    }
+
+    [Fact]
     public void LoadBook_feeds_the_book_browser_and_updates_the_title()
     {
         // Arrange
@@ -317,6 +332,7 @@ public sealed class MainWindowViewModelTests : IDisposable
                      AppActionIds.Open, AppActionIds.NewDefault, AppActionIds.NewEpub2, AppActionIds.Preferences,
                      AppActionIds.Exit, AppActionIds.ClipEditor, AppActionIds.SearchEditor, AppActionIds.CustomLayout,
                      AppActionIds.ToggleBookBrowser, AppActionIds.ToggleNotifications, AppActionIds.About,
+                     AppActionIds.CssPropertyReference,
                  })
         {
             sut.Actions.Require(id).IsEnabled.Should().BeTrue(id + " works without a book");

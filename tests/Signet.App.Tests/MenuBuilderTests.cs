@@ -196,7 +196,7 @@ public sealed class MenuBuilderTests
     }
 
     [Fact]
-    public void Help_menu_contains_only_about()
+    public void Help_menu_contains_CSS_reference_and_about()
     {
         // Arrange
         using UiCultureScope culture = new("en");
@@ -204,7 +204,7 @@ public sealed class MenuBuilderTests
 
         // Act & Assert
         Build(host).Single(m => m.Header == "_Help").Items!.Select(i => i.Header)
-            .Should().Equal("_About...");
+            .Should().Equal("_CSS Properties in EPUB...", "-", "_About...");
     }
 
     [Fact]

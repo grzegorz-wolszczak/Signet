@@ -182,6 +182,24 @@
   <data name="CssPropertyReferenceWindow_NonInherited" xml:space="preserve">
     <value>Niediedziczone</value>
   </data>
+  <data name="CssPropertyReferenceWindow_Display" xml:space="preserve">
+    <value>Display</value>
+  </data>
+  <data name="CssPropertyReferenceWindow_Name" xml:space="preserve">
+    <value>Nazwa</value>
+  </data>
+  <data name="CssPropertyReferenceWindow_DisplayLegend" xml:space="preserve">
+    <value>Display: inline [i], block [b], inline-block [ib], flex [f], grid [g], table [t]</value>
+  </data>
+  <data name="CssPropertyReferenceWindow_DisplayHint" xml:space="preserve">
+    <value>— oznacza brak typowego bezpośredniego wpływu. i/b/ib uwzględniają elementy zastępowane; f/g/t obejmują kontener i elementy układu.</value>
+  </data>
+  <data name="CssPropertyReferenceWindow_SearchPlaceholder" xml:space="preserve">
+    <value>Szukaj właściwości...</value>
+  </data>
+  <data name="CssPropertyReferenceWindow_ClearSearch" xml:space="preserve">
+    <value>Wyczyść wyszukiwanie</value>
+  </data>
   <data name="Common_Refresh" xml:space="preserve">
     <value>Odśwież</value>
   </data>
@@ -2245,6 +2263,9 @@ Czy chcesz zapisać zmiany?</value>
   </data>
   <data name="Action_MainWindow_About" xml:space="preserve">
     <value>&amp;O programie...</value>
+  </data>
+  <data name="Action_MainWindow_CssPropertyReference" xml:space="preserve">
+    <value>&amp;Właściwości CSS w EPUB...</value>
   </data>
   <data name="Action_MainWindow_BookBrowser" xml:space="preserve">
     <value>&amp;Przeglądarka książki</value>
