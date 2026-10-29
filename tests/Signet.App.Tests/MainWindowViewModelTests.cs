@@ -2013,7 +2013,8 @@ public sealed class MainWindowViewModelTests : IDisposable
             .ToArray();
 
         // Assert
-        bookBrowserActions.Should().HaveCount(30);
+        bookBrowserActions.Should().HaveCount(31);
+        bookBrowserActions.Should().Contain(a => a.Id == AppActionIds.BookBrowserRemoveSemantics);
         bookBrowserActions.Should().OnlyContain(a => a.IsEnabled, "each one has a handler attached");
         sut.Actions.Require(AppActionIds.BookBrowserRename).InputGestureText.Should().Be("F2");
     }

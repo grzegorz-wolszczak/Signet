@@ -269,6 +269,25 @@ public sealed class NavProcessor
         SetLandmarks(list);
     }
 
+    /// <summary>
+    /// Removes every landmark entry pointing at the whole of <paramref name="resource"/> (an <c>href</c> without a
+    /// fragment); entries pointing at a fragment of it stay. The nav is rewritten only when something was removed.
+    /// </summary>
+    /// <returns><c>true</c> when at least one entry was removed.</returns>
+    public bool RemoveWholeFileLandmarksForResource(Resource resource)
+    {
+        ArgumentNullException.ThrowIfNull(resource);
+        string target = Utility.UrlEncodePath(resource.BookPath);
+        List<NavLandmarkEntry> list = GetLandmarks().ToList();
+        if (list.RemoveAll(entry => string.Equals(ConvertHrefToBookPath(entry.Href), target, StringComparison.Ordinal)) == 0)
+        {
+            return false;
+        }
+
+        SetLandmarks(list);
+        return true;
+    }
+
     /// <summary>Removes all landmark entries pointing at the given resource.</summary>
     public void RemoveAllLandmarksForResource(Resource resource)
     {
