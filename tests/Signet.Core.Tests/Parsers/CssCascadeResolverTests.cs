@@ -30,6 +30,9 @@ public sealed class CssCascadeResolverTests
         File.WriteAllText(path, File.ReadAllText(path) + "\n" + css + "\n");
     }
 
+    private static void SetCss(string tree, string css) =>
+        File.WriteAllText(Path.Combine(tree, "EPUB", "styles", "style.css"), css);
+
     private static void SetChapter1Body(string tree, string bodyHtml)
     {
         string path = Path.Combine(tree, "EPUB", "text", "chapter1.xhtml");
@@ -284,6 +287,71 @@ public sealed class CssCascadeResolverTests
     }
 
     [Fact]
+    public void Resolve_marks_the_same_value_from_the_same_rule_as_repeated_on_a_closer_element()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadModifiedMinimal(
+            temp,
+            tree =>
+            {
+                SetCss(tree, "* { font-family: serif; }");
+                SetChapter1Body(tree, "<p class=\"note\">hi</p>");
+            });
+
+        HtmlResource html = Chapter1(book);
+        int caret = OffsetOfTag(html, "<p class=\"note\">");
+
+        // Act
+        CssCascadeResult? result = CssCascadeResolver.Resolve(html, caret, ResolveCssInfo(book));
+
+        // Assert
+        result.Should().NotBeNull();
+        CssMatchedRule bodyRule = result!.Levels.Single(l => l.ElementDescription == "body")
+            .MatchedRules.Single(r => r.SelectorText == "*");
+        CssMatchedRule paragraphRule = result.MatchedRules.Single(r => r.SelectorText == "*");
+        CssMatchedDeclaration bodyFontFamily = bodyRule.Declarations.Single(d => d.Property == "font-family");
+
+        bodyFontFamily.IsOverridden.Should().BeFalse();
+        bodyFontFamily.IsRepeated.Should().BeTrue();
+        bodyFontFamily.AffectsElement.Should().BeFalse();
+        bodyFontFamily.OverriddenBy.Should().Be(paragraphRule.Source);
+        bodyFontFamily.OverriddenByElementDescription.Should().Be("p.note");
+    }
+
+    [Fact]
+    public void Resolve_marks_an_inherited_value_repeated_by_a_closer_element()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = LoadModifiedMinimal(
+            temp,
+            tree =>
+            {
+                SetCss(tree, "body { text-align: justify; }\n.note { text-align: justify; }");
+                SetChapter1Body(tree, "<p class=\"note\">hi</p>");
+            });
+
+        HtmlResource html = Chapter1(book);
+        int caret = OffsetOfTag(html, "<p class=\"note\">");
+
+        // Act
+        CssCascadeResult? result = CssCascadeResolver.Resolve(html, caret, ResolveCssInfo(book));
+
+        // Assert
+        result.Should().NotBeNull();
+        CssMatchedDeclaration bodyTextAlign = result!.Levels.Single(l => l.ElementDescription == "body")
+            .MatchedRules.Single(r => r.SelectorText == "body")
+            .Declarations.Single(d => d.Property == "text-align");
+
+        bodyTextAlign.IsOverridden.Should().BeFalse();
+        bodyTextAlign.IsRepeated.Should().BeTrue();
+        bodyTextAlign.AffectsElement.Should().BeFalse();
+        bodyTextAlign.OverriddenBy.Should().NotBeNull();
+        bodyTextAlign.OverriddenByElementDescription.Should().Be("p.note");
+    }
+
+    [Fact]
     public void Resolve_keeps_an_inherited_ancestor_property_that_no_descendant_redefines()
     {
         // Arrange
@@ -403,9 +471,12 @@ public sealed class CssCascadeResolverTests
     [InlineData("color", true)]
     [InlineData("Font-Size", true)]
     [InlineData("-epub-hyphens", true)]
+    [InlineData("fill", true)]
+    [InlineData("color-interpolation-filters", true)]
     [InlineData("--accent", true)]
     [InlineData("margin", false)]
     [InlineData("background-color", false)]
+    [InlineData("padding-bottom", false)]
     public void CssInheritedProperties_knows_which_properties_are_inherited(string property, bool expected)
     {
         // Act & Assert

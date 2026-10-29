@@ -22,15 +22,23 @@ public sealed record CssDeclarationSource(string BookPath, int Offset, string Se
 /// <param name="IsOverridden">
 /// Whether this declaration is overridden — by another declaration of the same property with a higher cascade
 /// priority on the same element, or (for an inherited property declared on an ancestor) by a declaration on an
-/// element closer to the inspected one. Struck through in the UI.
+/// element closer to the inspected one with a different value. Struck through in the UI.
 /// </param>
 /// <param name="AffectsElement">
-/// Whether the declaration takes effect on the inspected element. <c>false</c> for overridden declarations and
-/// for non-inherited properties (e.g. <c>margin</c>) declared on an ancestor — those are shown dimmed.
+/// Whether this declaration supplies the value on the inspected element. <c>false</c> for overridden or repeated
+/// declarations and for non-inherited properties (e.g. <c>margin</c>) declared on an ancestor — those are dimmed.
 /// </param>
 /// <param name="OverriddenBy">
-/// For an overridden declaration: the rule whose declaration actually wins (on the inspected element for
-/// inherited properties, on the declaring element otherwise). <c>null</c> when not overridden.
+/// For an overridden or repeated declaration: the rule whose declaration actually wins (on the inspected element
+/// for inherited properties, on the declaring element otherwise). <c>null</c> when neither.
+/// </param>
+/// <param name="OverriddenByElementDescription">
+/// The closer element on which an inherited winner is matched; <c>null</c> when the winner is on this same element
+/// or the declaration is neither overridden nor repeated.
+/// </param>
+/// <param name="IsRepeated">
+/// Whether a closer element declares the same literal value for this inherited property. Shown dimmed and italic,
+/// without strikethrough.
 /// </param>
 public readonly record struct CssMatchedDeclaration(
     string Property,
@@ -38,7 +46,9 @@ public readonly record struct CssMatchedDeclaration(
     bool IsImportant,
     bool IsOverridden,
     bool AffectsElement = true,
-    CssDeclarationSource? OverriddenBy = null);
+    CssDeclarationSource? OverriddenBy = null,
+    string? OverriddenByElementDescription = null,
+    bool IsRepeated = false);
 
 /// <summary>A CSS rule matched to an element (via <see cref="IElement.Matches"/>).</summary>
 /// <param name="BookPath">The file containing the rule (a CSS stylesheet, or the HTML file itself for an inline style/<c>&lt;style&gt;</c>).</param>
@@ -386,13 +396,22 @@ public static class CssCascadeResolver
 
                     if (CssInheritedProperties.IsInherited(decl.Property))
                     {
-                        (int effectiveLevel, CssDeclarationSource effectiveSource, _) = effectiveInherited[decl.Property];
-                        bool overridden = !isLocalWinner || effectiveLevel != level;
+                        (int effectiveLevel, CssDeclarationSource effectiveSource, CssMatchedDeclaration effectiveDeclaration) =
+                            effectiveInherited[decl.Property];
+                        bool hasCloserWinner = effectiveLevel != level;
+                        bool hasWinningDeclaration = !isLocalWinner || hasCloserWinner;
+                        bool isRepeated = isLocalWinner
+                            && hasCloserWinner
+                            && string.Equals(decl.Value, effectiveDeclaration.Value, StringComparison.Ordinal);
                         declarations.Add(decl with
                         {
-                            IsOverridden = overridden,
-                            AffectsElement = !overridden,
-                            OverriddenBy = overridden ? effectiveSource : null,
+                            IsOverridden = hasWinningDeclaration && !isRepeated,
+                            IsRepeated = isRepeated,
+                            AffectsElement = isLocalWinner && !hasCloserWinner,
+                            OverriddenBy = hasWinningDeclaration ? effectiveSource : null,
+                            OverriddenByElementDescription = hasWinningDeclaration && hasCloserWinner
+                                ? DescribeElement(chain[effectiveLevel])
+                                : null,
                         });
                     }
                     else
@@ -400,8 +419,10 @@ public static class CssCascadeResolver
                         declarations.Add(decl with
                         {
                             IsOverridden = !isLocalWinner,
+                            IsRepeated = false,
                             AffectsElement = isLocalWinner && isInspected,
                             OverriddenBy = isLocalWinner ? null : cascade.Rules[localWinner.RuleIndex].Source,
+                            OverriddenByElementDescription = null,
                         });
                     }
                 }
