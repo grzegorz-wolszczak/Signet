@@ -1916,6 +1916,9 @@ Do you want to save the changes?</value>
   <data name="Action_MainWindow_Find" xml:space="preserve">
     <value>&amp;Find &amp;&amp; Replace...</value>
   </data>
+  <data name="Action_MainWindow_SearchAllFilesOfSameType" xml:space="preserve">
+    <value>Search in All Files of Same Type</value>
+  </data>
   <data name="Action_MainWindow_HideFind" xml:space="preserve">
     <value>&amp;Hide Find &amp;&amp; Replace...</value>
   </data>
@@ -2758,6 +2761,9 @@ Do you want to save the changes?</value>
   </data>
   <data name="FindReplace_LookInSelectedOtherXml" xml:space="preserve">
     <value>Selected Other XML Files</value>
+  </data>
+  <data name="FindReplace_LookInAllFiles" xml:space="preserve">
+    <value>All Files</value>
   </data>
   <data name="FindReplace_SelectToRestrict" xml:space="preserve">
     <value>Select text to restrict the search.</value>

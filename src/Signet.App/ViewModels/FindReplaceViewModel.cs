@@ -215,6 +215,7 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
         Strings.Get("FindReplace_LookInSelectedSvg"),
         Strings.Get("FindReplace_LookInSelectedJs"),
         Strings.Get("FindReplace_LookInSelectedOtherXml"),
+        Strings.Get("FindReplace_LookInAllFiles"),
     ];
 
     /// <summary>Recomputes the "Look in" scope labels after a language change (preserving the selection).</summary>
@@ -1409,7 +1410,7 @@ public sealed partial class FindReplaceViewModel : ViewModelBase
             or LookWhere.OpfFile or LookWhere.NcxFile
             or LookWhere.SelectedSvgFiles or LookWhere.SelectedMiscXmlFiles => true,
         LookWhere.AllCssFiles or LookWhere.SelectedCssFiles or LookWhere.TabbedCssFiles
-            or LookWhere.SelectedJsFiles => false,
+            or LookWhere.SelectedJsFiles or LookWhere.AllFiles => false,
         _ => _activeCodeTab()?.ResourceIsXml ?? false,
     };
 
