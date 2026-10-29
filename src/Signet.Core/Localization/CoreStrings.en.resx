@@ -494,6 +494,9 @@
   <data name="SearchControl_SX" xml:space="preserve">
     <value>Scope: selected other XML files</value>
   </data>
+  <data name="SearchControl_AF" xml:space="preserve">
+    <value>Scope: all searchable files</value>
+  </data>
   <data name="SearchControl_DA" xml:space="preserve">
     <value>Option: DotAll</value>
   </data>

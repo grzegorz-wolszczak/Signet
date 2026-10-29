@@ -494,6 +494,9 @@
   <data name="SearchControl_SX" xml:space="preserve">
     <value>Zakres: zaznaczone pozostałe pliki XML</value>
   </data>
+  <data name="SearchControl_AF" xml:space="preserve">
+    <value>Zakres: wszystkie przeszukiwalne pliki</value>
+  </data>
   <data name="SearchControl_DA" xml:space="preserve">
     <value>Opcja: DotAll</value>
   </data>

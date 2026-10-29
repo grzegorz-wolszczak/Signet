@@ -58,7 +58,7 @@ public static class SearchControls
     // The order matches the LookWhere enum.
     private static readonly string[] LookWhereTokens =
     {
-        "CF", "AH", "SH", "TH", "AC", "SC", "TC", "OP", "NX", "SV", "SJ", "SX",
+        "CF", "AH", "SH", "TH", "AC", "SC", "TC", "OP", "NX", "SV", "SJ", "SX", "AF",
     };
 
     /// <summary>Builds the "Controls" string from the options.</summary>
@@ -200,6 +200,7 @@ public static class SearchControls
         Add("SV");
         Add("SJ");
         Add("SX");
+        Add("AF");
         Add("DA");
         Add("MM");
         Add("AT");

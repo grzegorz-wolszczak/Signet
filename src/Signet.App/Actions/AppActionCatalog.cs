@@ -113,6 +113,8 @@ public static class AppActionCatalog
         new("MainWindow.HeadingPreserveAttributes", "&Preserve Existing Attributes", "", "preserve-attributes", "Format"),
 
         new("MainWindow.Find", "&Find && Replace...", "Ctrl+F", "edit-find", "Search"),
+        // Intentionally absent from MenuLayout so the keymap lists it under "Other".
+        new("MainWindow.SearchAllFilesOfSameType", "Search in All Files of Same Type", "", "find", "Search"),
         new("MainWindow.HideFind", "&Hide Find && Replace...", "", "find-hide", "Search"),
         new("MainWindow.FindNext", "Find &Next", "Ctrl+G", "find-next", "Search"),
         new("MainWindow.FindPrevious", "Find &Previous", "Ctrl+Shift+G", "find-previous", "Search"),
