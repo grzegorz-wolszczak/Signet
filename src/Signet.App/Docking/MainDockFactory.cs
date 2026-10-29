@@ -731,11 +731,21 @@ public sealed class MainDockFactory : Factory
             ? dock.ActiveDockable as Tool ?? dock.VisibleDockables?.OfType<Tool>().FirstOrDefault()
             : null;
 
+    private static void CopyPointerScreenPosition(IDockable source, Tool target)
+    {
+        source.GetPointerScreenPosition(out double x, out double y);
+        if (!double.IsNaN(x) || !double.IsNaN(y))
+        {
+            target.SetPointerScreenPosition(x, y);
+        }
+    }
+
     /// <inheritdoc />
     public override void FloatDockable(IDockable dockable)
     {
         if (PanelInsteadOfRegion(dockable) is { } panel)
         {
+            CopyPointerScreenPosition(dockable, panel);
             DebugLog.Write("Panel", $"float {NameOf(dockable)} requested (its title bar dragged out): floating the panel {panel.Id} instead");
             FloatDockable(panel);
             return;
@@ -752,6 +762,7 @@ public sealed class MainDockFactory : Factory
     {
         if (PanelInsteadOfRegion(dockable) is { } panel)
         {
+            CopyPointerScreenPosition(dockable, panel);
             DebugLog.Write("Panel", $"float {NameOf(dockable)} requested (with options): floating the panel {panel.Id} instead");
             FloatDockable(panel, options);
             return;
