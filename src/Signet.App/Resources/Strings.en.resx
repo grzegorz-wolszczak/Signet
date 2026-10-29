@@ -2015,6 +2015,9 @@ Do you want to save the changes?</value>
   <data name="Action_MainWindow_SearchAllFilesOfSameType" xml:space="preserve">
     <value>Search in All Files of Same Type</value>
   </data>
+  <data name="Action_MainWindow_SearchAllTextFiles" xml:space="preserve">
+    <value>Search in All Text Files</value>
+  </data>
   <data name="Action_MainWindow_HideFind" xml:space="preserve">
     <value>&amp;Hide Find &amp;&amp; Replace...</value>
   </data>

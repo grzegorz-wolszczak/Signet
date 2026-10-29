@@ -62,6 +62,23 @@ public sealed class KeymapViewModelTests
     }
 
     [Fact]
+    public void Search_all_text_files_action_is_available_under_Other_without_default_shortcut()
+    {
+        // Arrange
+        using UiCultureScope culture = new("en");
+        (TestHost host, KeymapViewModel keymap) = New();
+        using TestHost _ = host;
+
+        // Act
+        KeymapNode action = Action(keymap, AppActionIds.SearchAllTextFiles);
+
+        // Assert
+        action.Path.Should().Be("Other");
+        action.Name.Should().Be("Search in All Text Files");
+        action.Shortcuts.Should().BeEmpty();
+    }
+
+    [Fact]
     public void Clip_slots_are_labelled_with_their_slot_number()
     {
         // Arrange

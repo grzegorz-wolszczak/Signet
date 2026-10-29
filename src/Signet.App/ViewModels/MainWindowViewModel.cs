@@ -365,6 +365,7 @@ public sealed partial class MainWindowViewModel
         // Find & Replace in the current file.
         _actions.SetHandler(AppActionIds.Find, ShowFindPanel);
         _actions.SetHandler(AppActionIds.SearchAllFilesOfSameType, SearchAllFilesOfSameType);
+        _actions.SetHandler(AppActionIds.SearchAllTextFiles, SearchAllTextFiles);
         _actions.SetHandler(AppActionIds.HideFind, HideFindPanel);
         _actions.SetHandler(AppActionIds.FindNext, () => _findReplace.FindNext());
         _actions.SetHandler(AppActionIds.FindPrevious, () => _findReplace.FindPrevious());
@@ -1497,6 +1498,8 @@ public sealed partial class MainWindowViewModel
         IsFindReplaceVisible = true;
         FindPanelFocusRequested?.Invoke(this, EventArgs.Empty);
     }
+
+    private void SearchAllTextFiles() => ShowFindPanelIn(LookWhere.AllFiles);
 
     /// <summary>Whether the Find &amp; Replace panel (non-dockable, at the bottom of the window) is visible.</summary>
     public bool IsFindReplaceVisible
