@@ -1,4 +1,7 @@
+using System.Globalization;
+using System.Linq;
 using AwesomeAssertions;
+using Signet.App.Tests.TestSupport;
 using Signet.App.ViewModels;
 using Xunit;
 
@@ -96,5 +99,43 @@ public sealed class CssPropertyReferenceViewModelTests
         viewModel.SearchText.Should().BeEmpty();
         viewModel.HasSearchText.Should().BeFalse();
         viewModel.NonInheritedProperties.Should().Contain(property => property.Name == "margin");
+    }
+
+    [Fact]
+    public void ShowAll_TooltipsCoverCatalogAndExplainCommonKeywordValues()
+    {
+        // Arrange
+        using UiCultureScope culture = new("en");
+        CssPropertyReferenceViewModel viewModel = new();
+
+        // Act
+        viewModel.ShowAll = true;
+
+        // Assert
+        viewModel.InheritedProperties.Concat(viewModel.NonInheritedProperties)
+            .Should().OnlyContain(row => !string.IsNullOrWhiteSpace(row.Tooltip));
+        CssPropertyReferenceRow display = viewModel.NonInheritedProperties.Single(row => row.Name == "display");
+        display.Tooltip.Should().Contain("Controls box generation and participation in layout.");
+        display.Tooltip.Should().Contain("Keywords:");
+        display.Tooltip.Should().Contain("inline");
+    }
+
+    [Fact]
+    public void OnLanguageChanged_RebuildsLocalizedPropertyTooltips()
+    {
+        // Arrange
+        using UiCultureScope culture = new("pl");
+        CssPropertyReferenceViewModel viewModel = new();
+        string polishTooltip = viewModel.NonInheritedProperties.Single(row => row.Name == "display").Tooltip;
+
+        // Act
+        CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("en");
+        viewModel.OnLanguageChanged();
+
+        // Assert
+        string englishTooltip = viewModel.NonInheritedProperties.Single(row => row.Name == "display").Tooltip;
+        polishTooltip.Should().Contain("Określa sposób tworzenia pudełka");
+        englishTooltip.Should().Contain("Controls box generation and participation in layout.");
+        englishTooltip.Should().NotBe(polishTooltip);
     }
 }
