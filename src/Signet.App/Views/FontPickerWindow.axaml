@@ -39,7 +39,11 @@
     </Grid>
 
     <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" ColumnSpacing="10" Margin="0,0,0,8">
-      <TextBox x:Name="FilterBox" Text="{Binding Filter}" PlaceholderText="{loc:Loc FontPickerWindow_Search}" />
+      <TextBox x:Name="FilterBox" Text="{Binding Filter}" PlaceholderText="{loc:Loc FontPickerWindow_Search}">
+        <TextBox.InnerLeftContent>
+          <Path Classes="filterSearchIcon" />
+        </TextBox.InnerLeftContent>
+      </TextBox>
       <CheckBox Grid.Column="1" Content="{loc:Loc FontPickerWindow_MonospaceOnly}" IsChecked="{Binding MonospaceOnly}"
                 VerticalAlignment="Center" />
     </Grid>

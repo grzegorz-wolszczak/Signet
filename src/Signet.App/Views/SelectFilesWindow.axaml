@@ -20,7 +20,11 @@
       <Button x:Name="CancelButton" Content="{loc:Loc Common_Cancel}" IsCancel="True" MinWidth="80" />
     </StackPanel>
 
-    <TextBox x:Name="FilterBox" DockPanel.Dock="Top" PlaceholderText="{loc:Loc SelectFilesWindow_FilterPlaceholder}" Margin="0,0,0,8" />
+    <TextBox x:Name="FilterBox" DockPanel.Dock="Top" PlaceholderText="{loc:Loc SelectFilesWindow_FilterPlaceholder}" Margin="0,0,0,8">
+      <TextBox.InnerLeftContent>
+        <Path Classes="filterSearchIcon" />
+      </TextBox.InnerLeftContent>
+    </TextBox>
 
     <ListBox x:Name="TypeFilterList" DockPanel.Dock="Left" Width="90" Margin="0,0,8,0" SelectionMode="Single" />
 

@@ -48,7 +48,11 @@
       <Button Grid.Column="2" Classes="keymapTool" Click="OnEditClicked" ToolTip.Tip="{loc:Loc Keymap_EditShortcut}">
         <PathIcon Width="14" Height="14" Data="M 11 1 L 15 5 L 6 14 L 1 15 L 2 10 Z M 10 3 L 13 6" />
       </Button>
-      <TextBox Grid.Column="3" Text="{Binding Filter}" PlaceholderText="{loc:Loc Keymap_SearchPlaceholder}" Margin="8,0,0,0" />
+      <TextBox Grid.Column="3" Text="{Binding Filter}" PlaceholderText="{loc:Loc Keymap_SearchPlaceholder}" Margin="8,0,0,0">
+        <TextBox.InnerLeftContent>
+          <Path Classes="filterSearchIcon" />
+        </TextBox.InnerLeftContent>
+      </TextBox>
       <!-- A green dot on the icon tells that "Find Shortcut" filters the tree (the search box is empty then). -->
       <Button x:Name="FindShortcutButton" Grid.Column="4" Classes="keymapTool" Click="OnFindShortcutClicked"
               ToolTip.Tip="{loc:Loc Keymap_FindShortcut}">

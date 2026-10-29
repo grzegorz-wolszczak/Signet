@@ -158,6 +158,9 @@
         <TextBlock Text="{loc:Loc ClipEditorWindow_Filter}" VerticalAlignment="Center" />
         <TextBox x:Name="FilterBox" Text="{Binding FilterText, Mode=TwoWay}" Width="240"
                  PlaceholderText="{loc:Loc SearchEditorView_FilterPlaceholder}">
+          <TextBox.InnerLeftContent>
+            <Path Classes="filterSearchIcon" />
+          </TextBox.InnerLeftContent>
           <TextBox.InnerRightContent>
             <Button x:Name="FilterClearButton" Content="✕" Padding="6,2" Background="Transparent" Focusable="False"
                     Command="{Binding ClearFilterCommand}"

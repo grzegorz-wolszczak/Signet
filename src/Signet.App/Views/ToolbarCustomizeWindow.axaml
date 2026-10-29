@@ -47,6 +47,9 @@
                  Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                  PlaceholderText="{loc:Loc ToolbarCustomizeWindow_SearchPlaceholder}"
                  Margin="0,0,0,4">
+          <TextBox.InnerLeftContent>
+            <Path Classes="filterSearchIcon" />
+          </TextBox.InnerLeftContent>
           <TextBox.InnerRightContent>
             <Button Content="✕" Padding="6,2" Background="Transparent" Focusable="False"
                     ToolTip.Tip="{loc:Loc ToolbarCustomizeWindow_ClearSearch}"

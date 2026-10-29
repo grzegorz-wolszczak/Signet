@@ -171,9 +171,7 @@
           <TextBox x:Name="SectionSearch" DockPanel.Dock="Top" Margin="6" PlaceholderText="{loc:Loc PreferencesWindow_Search}">
             <!-- A magnifying glass in front of the text, as in Rider. -->
             <TextBox.InnerLeftContent>
-              <Path Data="M 6.5,1.5 A 5,5 0 1 1 6.5,11.5 A 5,5 0 1 1 6.5,1.5 M 10.2,10.2 L 14.5,14.5"
-                    Stroke="{DynamicResource SystemControlForegroundBaseMediumBrush}" StrokeThickness="1.5"
-                    Width="16" Height="16" Margin="8,0,0,0" VerticalAlignment="Center" />
+              <Path Classes="filterSearchIcon" />
             </TextBox.InnerLeftContent>
             <TextBox.InnerRightContent>
               <Button x:Name="ClearSectionSearchButton" Content="✕" Padding="6,2" Background="Transparent"

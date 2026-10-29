@@ -35,7 +35,11 @@
     <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="6">
       <TextBlock Text="{loc:Loc ClipEditorWindow_Filter}" VerticalAlignment="Center" />
       <TextBox Text="{Binding FilterText, Mode=TwoWay}" Width="240"
-               PlaceholderText="{loc:Loc ClipEditorWindow_FilterPlaceholder}" />
+               PlaceholderText="{loc:Loc ClipEditorWindow_FilterPlaceholder}">
+        <TextBox.InnerLeftContent>
+          <Path Classes="filterSearchIcon" />
+        </TextBox.InnerLeftContent>
+      </TextBox>
       <CheckBox Content="{loc:Loc ClipEditorWindow_FilterNameAndText}" IsChecked="{Binding FilterAll, Mode=TwoWay}"
                 VerticalAlignment="Center" />
     </StackPanel>
