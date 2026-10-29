@@ -2857,10 +2857,13 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         ShowPage(window, "PreviewPage");
 
         // Assert
+        // Live refresh, and following footnotes into the code view.
         window.GetVisualDescendants().OfType<Border>().Where(b => b.Classes.Contains("section"))
-            .Should().ContainSingle();
+            .Should().HaveCount(2);
         window.GetVisualDescendants().OfType<TextBlock>()
             .Should().Contain(t => t.Text == Strings.Get("PreferencesWindow_PreviewRefreshDelay"));
+        window.GetVisualDescendants().OfType<CheckBox>()
+            .Should().Contain(c => Equals(c.Content, Strings.Get("PreferencesWindow_FollowFootnotesInCodeView")));
 
         // Act
         ShowPage(window, "PreviewAppearancePage");

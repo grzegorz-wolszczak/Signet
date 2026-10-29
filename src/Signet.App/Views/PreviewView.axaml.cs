@@ -21,14 +21,21 @@ namespace Signet.App.Views;
 /// </summary>
 public partial class PreviewView : UserControl
 {
-    // A script injected when each document is created: on click it sends the host
-    // "signet-loc:{offset}" of the nearest ancestor with a data-signet-loc attribute (Preview → Code Editor).
+    // A script injected when each document is created. A click on an element sends the host "signet-loc:{offset}" of the
+    // nearest ancestor with a data-signet-loc attribute (Preview → Code Editor). A plain click on a link inside the book
+    // sends "signet-link:{offset} {address}" instead and leaves the navigation to the host, which follows footnote
+    // references and links back into Code View and navigates to any other link as the page would.
     private const string ClickBridgeScript =
         "(function(){if(window.__signetPreviewBridge)return;window.__signetPreviewBridge=true;"
-        + "document.addEventListener('click',function(e){var el=e.target;"
-        + "while(el&&el.nodeType===1&&!el.hasAttribute('data-signet-loc'))el=el.parentElement;"
-        + "if(el&&el.nodeType===1&&el.hasAttribute('data-signet-loc')){try{"
-        + "window.chrome.webview.postMessage('signet-loc:'+el.getAttribute('data-signet-loc'));}catch(x){}}"
+        + "function post(m){try{window.chrome.webview.postMessage(m);}catch(x){}}"
+        + "document.addEventListener('click',function(e){var t=e.target;if(t&&t.nodeType!==1)t=t.parentElement;"
+        + "var el=t;while(el&&el.nodeType===1&&!el.hasAttribute('data-signet-loc'))el=el.parentElement;"
+        + "var loc=el&&el.nodeType===1?el.getAttribute('data-signet-loc'):null;"
+        + "var a=t&&t.closest?t.closest('a[href]'):null;"
+        + "if(a&&typeof a.href==='string'&&a.origin===location.origin&&!a.target&&e.button===0"
+        + "&&!e.ctrlKey&&!e.shiftKey&&!e.altKey&&!e.metaKey){"
+        + "e.preventDefault();post('signet-link:'+(loc===null?'-1':loc)+' '+a.href);return;}"
+        + "if(loc!==null)post('signet-loc:'+loc);"
         + "},true);})();";
 
     // A script injected when each document is created: Ctrl+wheel and Ctrl+Plus/Minus/0 in the page do not change

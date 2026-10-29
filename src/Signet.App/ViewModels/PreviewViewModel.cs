@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 using Signet.App.Resources;
 using Signet.App.Services;
 using Signet.Core.BookManipulation;
+using Signet.Core.Footnotes;
 using Signet.Core.Misc;
 using Signet.Core.Preview;
 using Signet.Core.Resources;
@@ -51,6 +52,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     private TimeSpan _debounceInterval = DefaultDebounce;
     private Book? _book;
     private string? _currentBookPath;
+    private string? _currentFragment;
 
     // The shown resource itself: a rename (Book Browser) changes its book path, which the preview then follows.
     private HtmlResource? _currentResource;
@@ -217,6 +219,9 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     /// <summary>Whether the preview currently has something to show (an (X)HTML resource is selected).</summary>
     public bool HasContent => _currentBookPath is not null;
 
+    /// <summary>Whether Preview clicks on footnote and endnote references move Code View to the note.</summary>
+    public bool FollowFootnotesInCodeView { get; set; } = true;
+
     /// <summary>Book path of the currently shown resource (for the address label and tests).</summary>
     public string? CurrentBookPath => _currentBookPath;
 
@@ -255,6 +260,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
         ThrowIfDisposed();
         _book = book;
         _currentBookPath = null;
+        _currentFragment = null;
         _currentResource = null;
         _lastCaretOffset = null;
         _restoreCaretAfterLoad = false;
@@ -277,15 +283,27 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
             return;
         }
 
+        bool sameResource = ReferenceEquals(_currentResource, html)
+            && string.Equals(_currentBookPath, html.BookPath, StringComparison.Ordinal);
         if (!string.Equals(_currentBookPath, html.BookPath, StringComparison.Ordinal))
         {
             _lastCaretOffset = null;
+            _currentFragment = null;
         }
 
         _currentBookPath = html.BookPath;
         _currentResource = html;
         OnPropertyChanged(nameof(HasContent));
         OnPropertyChanged(nameof(CurrentBookPath));
+
+        if (sameResource && _currentFragment is not null)
+        {
+            // The tab of a footnote's target became active because the preview went there: the page is already shown,
+            // at the note. The fragment is used up, so a later navigation does not jump back to it.
+            _currentFragment = null;
+            return;
+        }
+
         SyncAndNavigate();
     }
 
@@ -297,6 +315,7 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     {
         ThrowIfDisposed();
         _currentBookPath = null;
+        _currentFragment = null;
         _currentResource = null;
         _lastCaretOffset = null;
         _restoreCaretAfterLoad = false;
@@ -422,9 +441,8 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
     }
 
     /// <summary>
-    /// Handles a message from the preview page script. Recognizes <c>signet-loc:{offset}</c>
-    /// (an element click) → <see cref="CodeCaretJumpRequested"/>, and <c>signet-zoom:in</c> / <c>out</c> /
-    /// <c>reset</c> (Ctrl+wheel, Ctrl+Plus/Minus/0 in the page, whose native zoom the script suppresses) → the
+    /// Handles messages from the preview page script: source locations → Code View, clicked links inside the book →
+    /// <see cref="FollowLink"/> (footnote references and links back also move Code View), and zoom actions → the
     /// preview's own zoom.
     /// </summary>
     /// <param name="message">The message content from <c>WebMessageReceived</c>.</param>
@@ -448,6 +466,22 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
                 return;
         }
 
+        // "signet-link:{source offset of the clicked element, -1 when unknown} {address}"
+        const string linkPrefix = "signet-link:";
+        if (message.StartsWith(linkPrefix, StringComparison.Ordinal))
+        {
+            string link = message[linkPrefix.Length..];
+            int space = link.IndexOf(' ', StringComparison.Ordinal);
+            if (space > 0
+                && int.TryParse(link.AsSpan(0, space), NumberStyles.Integer, CultureInfo.InvariantCulture, out int linkOffset)
+                && Uri.TryCreate(link[(space + 1)..], UriKind.Absolute, out Uri? target))
+            {
+                FollowLink(target, linkOffset);
+            }
+
+            return;
+        }
+
         const string prefix = "signet-loc:";
         if (message.StartsWith(prefix, StringComparison.Ordinal)
             && int.TryParse(
@@ -457,9 +491,15 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
                 out int offset)
             && offset >= 0)
         {
-            _previewClick = (offset, Environment.TickCount64);
-            CodeCaretJumpRequested?.Invoke(this, offset);
+            JumpToSource(offset);
         }
+    }
+
+    // A click in the page moves the Code View caret to the clicked element's source.
+    private void JumpToSource(int offset)
+    {
+        _previewClick = (offset, Environment.TickCount64);
+        CodeCaretJumpRequested?.Invoke(this, offset);
     }
 
     private void OnDebounceElapsed(object? state)
@@ -674,9 +714,122 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
             return;
         }
 
-        Uri url = _mirror!.UrlForBookPath(_currentBookPath!);
+        Uri url = CurrentPageUrl();
         CurrentUrlText = _currentBookPath!;
         NavigateRequested?.Invoke(this, url);
+    }
+
+    // A link clicked in the page (the script leaves the navigation to the host). A footnote reference or a note's link
+    // back — as FootnoteScanner sees the book, the same footnotes the footnote editor works on — is followed with the
+    // preview's state and, when enabled, Code View; any other link moves Code View to the clicked element, as any click
+    // does, and is navigated to as the page would have.
+    private void FollowLink(Uri target, int clickedOffset)
+    {
+        if (_book is null || _mirror is null || _currentBookPath is null || !AllowNavigation(target))
+        {
+            return;
+        }
+
+        string fragment = target.Fragment.Length > 1 ? Uri.UnescapeDataString(target.Fragment[1..]) : string.Empty;
+        FootnoteLinkKind kind = _mirror.BookPathForUri(target) is { } targetBookPath && fragment.Length > 0
+            ? FootnoteNavigation.Classify(FootnoteScanner.Scan(_book), _currentBookPath, targetBookPath, fragment)
+            : FootnoteLinkKind.None;
+        if (kind == FootnoteLinkKind.None)
+        {
+            if (clickedOffset >= 0)
+            {
+                JumpToSource(clickedOffset);
+            }
+
+            NavigateRequested?.Invoke(this, target);
+            return;
+        }
+
+        NavigateToFootnote(target);
+    }
+
+    private void NavigateToFootnote(Uri target)
+    {
+        if (_book is null || _mirror is null || !AllowNavigation(target))
+        {
+            return;
+        }
+
+        string? bookPath = _mirror.BookPathForUri(target);
+        if (bookPath is null)
+        {
+            return;
+        }
+
+        if (_book.GetFolderKeeper().GetResourceByBookPathNoThrow(bookPath) is not HtmlResource html)
+        {
+            NavigateRequested?.Invoke(this, target);
+            return;
+        }
+
+        string? previousBookPath = _currentBookPath;
+        HtmlResource? previousResource = _currentResource;
+        string? previousFragment = _currentFragment;
+        bool pathChanged = !string.Equals(_currentBookPath, html.BookPath, StringComparison.Ordinal);
+
+        _currentBookPath = html.BookPath;
+        _currentResource = html;
+        _currentFragment = target.Fragment.Length > 1 ? target.Fragment : null;
+
+        IReadOnlyDictionary<string, string>? overrides = _workingTexts?.Invoke();
+        if (!TrySync(overrides))
+        {
+            _currentBookPath = previousBookPath;
+            _currentResource = previousResource;
+            _currentFragment = previousFragment;
+            return;
+        }
+
+        if (pathChanged)
+        {
+            _lastCaretOffset = null;
+        }
+
+        _previewClick = null;
+        _restoreCaretAfterLoad = false;
+        OnPropertyChanged(nameof(HasContent));
+        OnPropertyChanged(nameof(CurrentBookPath));
+        CurrentUrlText = html.BookPath;
+        NavigateRequested?.Invoke(this, target);
+
+        if (FollowFootnotesInCodeView)
+        {
+            int offset = OffsetForFootnote(html, target, overrides);
+            _previewClick = (offset, Environment.TickCount64);
+            CodeCaretJumpRequested?.Invoke(this, offset);
+        }
+    }
+
+    private static int OffsetForFootnote(
+        HtmlResource resource,
+        Uri target,
+        IReadOnlyDictionary<string, string>? overrides)
+    {
+        if (target.Fragment.Length <= 1)
+        {
+            return 0;
+        }
+
+        string source = overrides is not null && overrides.TryGetValue(resource.BookPath, out string? working)
+            ? working
+            : resource.GetText();
+        string id = Uri.UnescapeDataString(target.Fragment[1..]);
+        var element = XhtmlDoc.Parse(source).GetElementById(id);
+        int offset = element is null ? -1 : XhtmlDoc.OffsetFromNode(element);
+        return Math.Max(0, offset);
+    }
+
+    private Uri CurrentPageUrl()
+    {
+        Uri url = _mirror!.UrlForBookPath(_currentBookPath!);
+        return _currentFragment is null
+            ? url
+            : new UriBuilder(url) { Fragment = _currentFragment[1..] }.Uri;
     }
 
     private bool TrySync(IReadOnlyDictionary<string, string>? overrides)
@@ -742,6 +895,6 @@ public sealed partial class PreviewViewModel : ViewModelBase, IDisposable
             return null;
         }
 
-        return _mirror.UrlForBookPath(_currentBookPath);
+        return CurrentPageUrl();
     }
 }
