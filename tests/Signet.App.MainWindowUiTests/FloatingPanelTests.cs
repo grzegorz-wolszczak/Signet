@@ -14,6 +14,7 @@ using Signet.App.Docking;
 using Signet.App.Infrastructure;
 using Signet.App.ViewModels;
 using Signet.App.Views;
+using Xunit;
 
 namespace Signet.App.MainWindowUiTests;
 
@@ -129,6 +130,42 @@ public sealed class FloatingPanelTests
         host.Root.Windows.Should().BeNullOrEmpty("the emptied window is closed");
         host.Factory.DescribePlaces().Should().Contain(DockableIds.BookBrowser + "=" + region.Id);
         host.Window.Close();
+    }
+
+    [AvaloniaTheory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FloatDockable_RedirectingRegion_PreservesReleasePosition(bool withWindowOptions)
+    {
+        // Arrange
+        Host host = Show();
+        try
+        {
+            IToolDock region = RegionOf(host, DockableIds.BookBrowser);
+            IDockable bookBrowser = Panel(host, DockableIds.BookBrowser);
+            region.SetPointerScreenPosition(320, 210);
+            bookBrowser.SetPointerScreenPosition(40, 50);
+
+            // Act
+            if (withWindowOptions)
+            {
+                host.Factory.FloatDockable(region, new DockWindowOptions());
+            }
+            else
+            {
+                host.Factory.FloatDockable(region);
+            }
+
+            IDockWindow window = host.Root.Windows!.Should().ContainSingle().Subject;
+
+            // Assert
+            (window.X, window.Y).Should().Be((320d, 210d));
+        }
+        finally
+        {
+            host.Factory.CloseFloatingWindows();
+            host.Window.Close();
+        }
     }
 
     /// <summary>"Dock" on a floating panel docks it back; it must not start docking back again from Dock's own unpin call.</summary>
