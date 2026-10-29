@@ -1,0 +1,48 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Signet.App.ViewModels"
+        xmlns:loc="using:Signet.App.Resources"
+        x:Class="Signet.App.Views.CssPropertyReferenceWindow"
+        x:DataType="vm:CssPropertyReferenceViewModel"
+        Title="{loc:Loc CssPropertyReferenceWindow_Title}"
+        Width="720" Height="600"
+        MinWidth="520" MinHeight="360"
+        WindowStartupLocation="CenterOwner"
+        CanResize="True">
+
+  <Grid Margin="12" RowDefinitions="Auto,*" ColumnDefinitions="*,*" ColumnSpacing="12" RowSpacing="10">
+    <CheckBox Grid.Row="0" Grid.ColumnSpan="2"
+              Content="{loc:Loc CssPropertyReferenceWindow_All}"
+              IsChecked="{Binding ShowAll, Mode=TwoWay}" />
+
+    <GroupBox Grid.Row="1" Grid.Column="0" Header="{loc:Loc CssPropertyReferenceWindow_Inherited}">
+      <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <ItemsControl ItemsSource="{Binding InheritedProperties}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock Text="•" />
+                <TextBlock Text="{Binding}" FontFamily="Consolas,Cascadia Mono,monospace" />
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </GroupBox>
+
+    <GroupBox Grid.Row="1" Grid.Column="1" Header="{loc:Loc CssPropertyReferenceWindow_NonInherited}">
+      <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <ItemsControl ItemsSource="{Binding NonInheritedProperties}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="x:String">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock Text="•" />
+                <TextBlock Text="{Binding}" FontFamily="Consolas,Cascadia Mono,monospace" />
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </GroupBox>
+  </Grid>
+</Window>
