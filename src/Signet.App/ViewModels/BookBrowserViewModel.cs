@@ -502,8 +502,8 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Announces that the "add" items of the context menu may have changed (the selection, the book or the language
-    /// changed); the view calls it when the menu opens.
+    /// Announces that context-menu items may have changed (the selection, the book or the language changed); the view
+    /// calls it when the menu opens.
     /// </summary>
     public void RefreshAddItems()
     {
@@ -516,6 +516,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(AddBlankJsTip));
         OnPropertyChanged(nameof(CanAddExistingFilesHere));
         OnPropertyChanged(nameof(AddExistingFilesHeader));
+        RemoveSemanticsSelectedCommand.NotifyCanExecuteChanged();
     }
 
     /// <summary>Stores the current selection from the view (in tree order).</summary>
@@ -1104,6 +1105,7 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
 
         _book.Modified = true;
         _model?.Refresh();
+        RemoveSemanticsSelectedCommand.NotifyCanExecuteChanged();
     }
 
     /// <inheritdoc />
@@ -1532,6 +1534,68 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     [RelayCommand(CanExecute = nameof(CanAddSemantics))]
     private void AddSemanticsSelected() => AddSemanticsRequested?.Invoke(this, _selection[0].Entry!);
 
+    [RelayCommand(CanExecute = nameof(CanRemoveSemantics))]
+    private async Task RemoveSemanticsSelectedAsync()
+    {
+        Book? book = _book;
+        if (book is null || _selection.Length != 1 || _selection[0].Entry?.Resource is not HtmlResource html)
+        {
+            return;
+        }
+
+        string title = Strings.Get("CheckpointOp_SetSemantics");
+        BookOperationOutcome<bool> run;
+        if (book.IsEpub3)
+        {
+            HtmlResource? nav = book.GetNavResource();
+            if (nav is null)
+            {
+                return;
+            }
+
+            HtmlResource navResource = nav;
+            if (new NavProcessor(navResource).GetLandmarkCodeForResource(html).Length == 0)
+            {
+                return;
+            }
+
+            run = await RunOperationAsync(title, title, () =>
+            {
+                NavProcessor navProcessor = new(navResource);
+                while (navProcessor.GetLandmarkCodeForResource(html).Length > 0)
+                {
+                    navProcessor.RemoveLandmarkForResource(html);
+                }
+
+                return true;
+            }).ConfigureAwait(true);
+        }
+        else
+        {
+            OpfResource opf = book.GetOpf();
+            string currentCode = opf.GetGuideSemanticCodeForResource(html);
+            if (currentCode.Length == 0)
+            {
+                return;
+            }
+
+            run = await RunOperationAsync(title, title, () =>
+            {
+                opf.AddGuideSemanticCode(html, currentCode, toggle: true);
+                return true;
+            }).ConfigureAwait(true);
+        }
+
+        if (!run.Completed)
+        {
+            return;
+        }
+
+        book.Modified = true;
+        _model?.Refresh();
+        RemoveSemanticsSelectedCommand.NotifyCanExecuteChanged();
+    }
+
     [RelayCommand(CanExecute = nameof(CanLinkStylesheets))]
     private void LinkStylesheetsSelected() =>
         LinkStylesheetsRequested?.Invoke(this, SelectedHtmlResources());
@@ -1707,6 +1771,23 @@ public sealed partial class BookBrowserViewModel : ObservableObject, IDisposable
     private bool HasSingleSelection => _selection.Length == 1;
 
     private bool CanAddSemantics => _selection.Length == 1 && IsText(_selection[0].Entry!);
+
+    private bool CanRemoveSemantics =>
+        _selection.Length == 1
+        && _selection[0].Entry?.Resource is HtmlResource html
+        && _book is { } book
+        && GetWholeFileSemanticCode(book, html).Length > 0;
+
+    private static string GetWholeFileSemanticCode(Book book, HtmlResource html)
+    {
+        if (book.IsEpub3)
+        {
+            HtmlResource? nav = book.GetNavResource();
+            return nav is not null ? new NavProcessor(nav).GetLandmarkCodeForResource(html) : string.Empty;
+        }
+
+        return book.GetOpf().GetGuideSemanticCodeForResource(html);
+    }
 
     private bool HasHtmlSelection =>
         _selection.Length > 0 && _selection.All(n => IsText(n.Entry!));

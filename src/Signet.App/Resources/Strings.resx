@@ -1520,6 +1520,9 @@ Czy chcesz zapisać zmiany?</value>
   <data name="BookBrowserView_AddSemantics" xml:space="preserve">
     <value>Dodaj semantykę…</value>
   </data>
+  <data name="BookBrowserView_RemoveSemantics" xml:space="preserve">
+    <value>Usuń semantykę</value>
+  </data>
   <data name="BookBrowserView_MarkAsNav" xml:space="preserve">
     <value>Oznacz jako spis treści (NAV)</value>
   </data>
@@ -2251,6 +2254,9 @@ Czy chcesz zapisać zmiany?</value>
   </data>
   <data name="Action_MainWindow_BookBrowser_AddSemantics" xml:space="preserve">
     <value>Dodaj semantykę...</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_RemoveSemantics" xml:space="preserve">
+    <value>Usuń semantykę</value>
   </data>
   <data name="Action_MainWindow_BookBrowser_MarkAsNav" xml:space="preserve">
     <value>Oznacz jako spis treści (NAV)</value>

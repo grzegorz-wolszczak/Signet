@@ -1520,6 +1520,9 @@ Do you want to save the changes?</value>
   <data name="BookBrowserView_AddSemantics" xml:space="preserve">
     <value>Add Semantics…</value>
   </data>
+  <data name="BookBrowserView_RemoveSemantics" xml:space="preserve">
+    <value>Remove Semantics</value>
+  </data>
   <data name="BookBrowserView_MarkAsNav" xml:space="preserve">
     <value>Mark As Table Of Contents (NAV)</value>
   </data>
@@ -2251,6 +2254,9 @@ Do you want to save the changes?</value>
   </data>
   <data name="Action_MainWindow_BookBrowser_AddSemantics" xml:space="preserve">
     <value>Add Semantics...</value>
+  </data>
+  <data name="Action_MainWindow_BookBrowser_RemoveSemantics" xml:space="preserve">
+    <value>Remove Semantics</value>
   </data>
   <data name="Action_MainWindow_BookBrowser_MarkAsNav" xml:space="preserve">
     <value>Mark As Table Of Contents (NAV)</value>

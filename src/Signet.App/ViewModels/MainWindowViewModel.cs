@@ -4233,6 +4233,7 @@ public sealed partial class MainWindowViewModel
         Wire(AppActionIds.BookBrowserAddExistingFiles, BookBrowser.AddExistingFilesCommand);
         Wire(AppActionIds.BookBrowserAddFontFiles, BookBrowser.AddFontFilesCommand);
         Wire(AppActionIds.BookBrowserAddSemantics, BookBrowser.AddSemanticsSelectedCommand);
+        Wire(AppActionIds.BookBrowserRemoveSemantics, BookBrowser.RemoveSemanticsSelectedCommand);
         Wire(AppActionIds.BookBrowserCoverImage, BookBrowser.CoverImageSelectedCommand);
         Wire(AppActionIds.BookBrowserMarkAsNav, BookBrowser.MarkAsNavSelectedCommand);
         Wire(AppActionIds.BookBrowserLinkStylesheets, BookBrowser.LinkStylesheetsSelectedCommand);

@@ -361,6 +361,9 @@ public static class AppActionIds
     /// <summary>Adds semantics to the selected files.</summary>
     public const string BookBrowserAddSemantics = "MainWindow.BookBrowser.AddSemantics";
 
+    /// <summary>Removes file-level semantics from the selected file.</summary>
+    public const string BookBrowserRemoveSemantics = "MainWindow.BookBrowser.RemoveSemantics";
+
     /// <summary>Marks the image as the cover.</summary>
     public const string BookBrowserCoverImage = "MainWindow.BookBrowser.CoverImage";
 

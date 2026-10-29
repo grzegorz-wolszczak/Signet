@@ -112,6 +112,8 @@
                       IsVisible="{Binding ShowAddItems}" IsEnabled="{Binding CanAddExistingFilesHere}" />
             <Separator />
             <MenuItem Header="{loc:Loc BookBrowserView_AddSemantics}" Command="{Binding AddSemanticsSelectedCommand}" />
+            <MenuItem Classes="actionIcon" Tag="delete" Header="{loc:Loc BookBrowserView_RemoveSemantics}"
+                      Command="{Binding RemoveSemanticsSelectedCommand}" />
             <MenuItem Header="{loc:Loc BookBrowserView_CoverImage}" Command="{Binding CoverImageSelectedCommand}" />
             <MenuItem Header="{loc:Loc BookBrowserView_MarkAsNav}" Command="{Binding MarkAsNavSelectedCommand}" />
             <Separator />
