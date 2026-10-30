@@ -153,6 +153,10 @@
 
     <views:ToolbarAreaView x:Name="BottomToolbarArea" DockPanel.Dock="Bottom" DataContext="{Binding BottomToolbars}" />
 
+    <!-- The stripes of the panels (IntelliJ's tool window bars) along the sides of the dock area. -->
+    <views:PanelStripeView x:Name="LeftPanelStripe" DockPanel.Dock="Left" DataContext="{Binding PanelStripes.Left}" />
+    <views:PanelStripeView x:Name="RightPanelStripe" DockPanel.Dock="Right" DataContext="{Binding PanelStripes.Right}" />
+
     <dc:DockControl Layout="{Binding Layout}"
                     Factory="{Binding DockFactory}"
                     InitializeLayout="False" />

@@ -514,6 +514,72 @@
         </TabControl>
       </TabItem>
 
+      <!-- Appearance & Behavior › Action Bars: the stripes of the panels along the sides of the main window. General: how
+           wide they are while they show the names of the panels; Fonts: the font of the names; under them the preview:
+           the two stripes with the names, in the look the settings give them now (the unsaved ones too). -->
+      <TabItem x:Name="ActionBarsAppearancePage" Header="{loc:Loc PreferencesWindow_ActionBars}" views:PreferencesPage.Parent="AppearancePage">
+        <Grid x:Name="ActionBarsPreviewHost">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="*" MinHeight="150" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="320" MinHeight="120" />
+          </Grid.RowDefinitions>
+          <TabControl x:Name="ActionBarsAppearanceTabs">
+            <TabItem Header="{loc:Loc PreferencesWindow_General}">
+              <ScrollViewer>
+                <StackPanel Spacing="10" Margin="8">
+                  <Border Classes="section">
+                    <StackPanel Spacing="6">
+                      <TextBlock Text="{loc:Loc PreferencesWindow_ActionBarsSection}" FontWeight="Bold" />
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_PanelStripeWidth}" />
+                        <ComboBox x:Name="PanelStripeWidthModeBox" Grid.Column="1" MinWidth="220"
+                                  ItemsSource="{x:Static vm:PreferencesViewModel.AvailablePanelStripeWidthModes}"
+                                  SelectedItem="{Binding PanelStripeWidthMode}">
+                          <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                              <TextBlock Text="{Binding Converter={x:Static infra:DisplayNameConverters.PanelStripeWidthMode}}" />
+                            </DataTemplate>
+                          </ComboBox.ItemTemplate>
+                        </ComboBox>
+                      </Grid>
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_PanelStripeFixedWidth}" />
+                        <NumericUpDown x:Name="PanelStripeFixedWidthBox" Grid.Column="1" Value="{Binding PanelStripeFixedWidth}"
+                                       IsEnabled="{Binding IsPanelStripeWidthFixed}"
+                                       Minimum="{x:Static vm:PreferencesViewModel.PanelStripeWidthMin}"
+                                       Maximum="{x:Static vm:PreferencesViewModel.PanelStripeWidthMax}"
+                                       Increment="1" FormatString="0" HorizontalAlignment="Right" Width="130" />
+                      </Grid>
+                      <TextBlock Text="{loc:Loc PreferencesWindow_PanelStripeWidthHint}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
+                    </StackPanel>
+                  </Border>
+                </StackPanel>
+              </ScrollViewer>
+            </TabItem>
+            <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+              <views:FontsPageView x:Name="PanelStripeFontsView" HasSharedPreview="True" />
+            </TabItem>
+          </TabControl>
+          <GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Background="Transparent" />
+          <!-- The preview: real stripes (PanelStripeView) over the draft of the settings (PreferencesViewModel.PanelStripesSample),
+               with the font of the names put into the resources of the pane (not the application's). Only to look at. Not
+               searched: it holds no settings. -->
+          <Border x:Name="ActionBarsPreviewPane" Grid.Row="2" Classes="section noSearchTree" Padding="8">
+            <DockPanel>
+              <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
+              <Border Classes="listFrame previewFrame">
+                <Grid ColumnDefinitions="Auto,*,Auto" IsHitTestVisible="False">
+                  <views:PanelStripeView x:Name="ActionBarsPreviewLeft" Grid.Column="0" />
+                  <Border Grid.Column="1" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" />
+                  <views:PanelStripeView x:Name="ActionBarsPreviewRight" Grid.Column="2" />
+                </Grid>
+              </Border>
+            </DockPanel>
+          </Border>
+        </Grid>
+      </TabItem>
+
       <!-- Appearance & Behavior › BookBrowser: which folders are expanded when a book is loaded; Fonts. -->
       <TabItem x:Name="BookBrowserAppearancePage" Header="{loc:Loc PreferencesWindow_BookBrowser}" views:PreferencesPage.Parent="AppearancePage">
         <Grid x:Name="BookBrowserPreviewHost">

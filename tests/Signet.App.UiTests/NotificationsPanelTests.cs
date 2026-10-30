@@ -66,7 +66,7 @@ public sealed class NotificationsPanelTests
         window.Close();
     }
 
-    private static (Window Window, NotificationsTool Notifications, IFactory Factory) ShowToolDock(bool pinNotifications)
+    private static (Window Window, NotificationsTool Notifications, IFactory Factory) ShowToolDock()
     {
         Factory factory = new();
         NotificationsTool notifications = new();
@@ -80,10 +80,6 @@ public sealed class NotificationsPanelTests
         root.ActiveDockable = toolDock;
         root.DefaultDockable = toolDock;
         factory.InitLayout(root);
-        if (pinNotifications)
-        {
-            factory.PinDockable(notifications);
-        }
 
         var window = new Window { Width = 600, Height = 300, Content = new DockControl { Layout = root, Factory = factory } };
         Render(window);
@@ -148,7 +144,7 @@ public sealed class NotificationsPanelTests
     public void Tool_tab_shows_the_bell_with_the_unread_count()
     {
         // Act
-        (Window window, NotificationsTool notifications, _) = ShowToolDock(pinNotifications: false);
+        (Window window, NotificationsTool notifications, _) = ShowToolDock();
 
         ToolTabStripItem tab = window.GetVisualDescendants().OfType<ToolTabStripItem>().Single(t => t.DataContext == notifications);
         BellFollowsAttention(window, tab, notifications);
@@ -157,19 +153,6 @@ public sealed class NotificationsPanelTests
 
         // Assert
         other.GetVisualDescendants().OfType<NotificationBell>().Should().OnlyContain(b => !b.IsVisible, "only the Notifications tab has a bell");
-        window.Close();
-    }
-
-    [AvaloniaFact]
-    public void Collapsed_tab_shows_the_bell_with_the_unread_count()
-    {
-        // Act
-        (Window window, NotificationsTool notifications, _) = ShowToolDock(pinNotifications: true);
-
-        ToolPinItemControl pin = window.GetVisualDescendants().OfType<ToolPinItemControl>().Single(t => t.DataContext == notifications);
-
-        // Act & Assert
-        BellFollowsAttention(window, pin, notifications);
         window.Close();
     }
 

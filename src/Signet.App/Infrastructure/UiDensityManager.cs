@@ -106,6 +106,7 @@ public sealed class UiDensityManager(
         ApplyDocumentTabFont();
         ApplyToolHeaderFont();
         ApplyContextMenuFonts();
+        ApplyPanelStripeFont();
     }
 
     /// <summary>
@@ -117,6 +118,18 @@ public sealed class UiDensityManager(
         if (Application.Current is { } app)
         {
             ContextMenuLook.Apply(app, _settings.ContextMenuAppearance);
+        }
+    }
+
+    /// <summary>
+    /// Applies the saved font of the names on the stripes of the panels (Preferences → Appearance &amp; Behavior › Action
+    /// Bars); also after the interface font changes, which the empty settings follow (<see cref="PanelStripeLook"/>).
+    /// </summary>
+    public void ApplyPanelStripeFont()
+    {
+        if (Application.Current is { } app)
+        {
+            PanelStripeLook.Apply(app, _settings.PanelStripeAppearance);
         }
     }
 
@@ -298,6 +311,7 @@ public sealed class UiDensityManager(
         ApplyTooltipFonts();
         _iconTheme.RefreshToolbarIconSize();
         ApplyContextMenuFonts();
+        ApplyPanelStripeFont();
     }
 
     // The interface font: the family and the size given (empty / 0 = the mode default).

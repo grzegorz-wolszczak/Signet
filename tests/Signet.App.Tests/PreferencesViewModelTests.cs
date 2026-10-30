@@ -325,6 +325,40 @@ public sealed class PreferencesViewModelTests : IDisposable
     }
 
     [Fact]
+    public void Action_bars_start_from_settings_drive_the_sample_and_persist_on_apply_keeping_the_dragged_width()
+    {
+        // Arrange
+        using TestHost host = new();
+        host.Settings.PanelStripeAppearance = new PanelStripeAppearance(PanelStripeWidthMode.Resizable, 50, 80, string.Empty, 0, 0);
+
+        // Act
+        PreferencesViewModel sut = NewOn(host);
+
+        // Assert
+        sut.PanelStripeWidthMode.Should().Be(PanelStripeWidthMode.Resizable);
+        sut.IsPanelStripeWidthFixed.Should().BeFalse();
+        sut.PanelStripeFonts.Fonts.Select(f => f.Key).Should().Equal("PanelStripeNames");
+        sut.PanelStripesSample.ShowNames.Should().BeTrue("the preview always shows the names");
+        sut.PanelStripesSample.Width.Should().Be(80);
+
+        // Act
+        sut.PanelStripeWidthMode = PanelStripeWidthMode.Fixed;
+        sut.PanelStripeFixedWidth = 70;
+        sut.PanelStripeFontSize = 12;
+
+        // Assert
+        sut.IsPanelStripeWidthFixed.Should().BeTrue();
+        sut.PanelStripesSample.Width.Should().Be(70, "the preview follows the draft");
+        host.Settings.PanelStripeAppearance.WidthMode.Should().Be(PanelStripeWidthMode.Resizable, "nothing is saved before Apply");
+
+        // Act
+        sut.ApplyCommand.Execute(null);
+
+        // Assert
+        host.Settings.PanelStripeAppearance.Should().Be(new PanelStripeAppearance(PanelStripeWidthMode.Fixed, 70, 80, string.Empty, 12, 0));
+    }
+
+    [Fact]
     public void Restoring_the_appearance_defaults_restores_the_toolbars()
     {
         // Arrange

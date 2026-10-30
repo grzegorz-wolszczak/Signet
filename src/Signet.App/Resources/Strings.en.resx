@@ -7330,6 +7330,39 @@ Close the tab</value>
   <data name="FontPreview_Toolbar" xml:space="preserve">
     <value>Open   Save   Bold</value>
   </data>
+  <data name="PreferencesWindow_ActionBars" xml:space="preserve">
+    <value>Action Bars</value>
+  </data>
+  <data name="PreferencesWindow_ActionBarsSection" xml:space="preserve">
+    <value>Panel bars along the sides of the main window</value>
+  </data>
+  <data name="PreferencesWindow_PanelStripeWidth" xml:space="preserve">
+    <value>Width with the panel names</value>
+  </data>
+  <data name="PreferencesWindow_PanelStripeFixedWidth" xml:space="preserve">
+    <value>Fixed width (px)</value>
+  </data>
+  <data name="PreferencesWindow_PanelStripeWidthHint" xml:space="preserve">
+    <value>The width applies to bars with "Show Tool Window Names" on; without the names a bar is one icon wide. Resizable: drag the inner edge of a bar (38 to 100 px). Fixed and Resizable cut names that are too long.</value>
+  </data>
+  <data name="PanelStripeWidthMode_Dynamic" xml:space="preserve">
+    <value>Dynamic (fits the longest name)</value>
+  </data>
+  <data name="PanelStripeWidthMode_Fixed" xml:space="preserve">
+    <value>Fixed</value>
+  </data>
+  <data name="PanelStripeWidthMode_Resizable" xml:space="preserve">
+    <value>Resizable (drag the edge)</value>
+  </data>
+  <data name="PreferencesWindow_PanelStripeFont" xml:space="preserve">
+    <value>Panel names</value>
+  </data>
+  <data name="FontPreview_PanelStripe" xml:space="preserve">
+    <value>Book Browser   Notifications</value>
+  </data>
+  <data name="PreferencesWindow_FontSizeZeroAsDefault10" xml:space="preserve">
+    <value>Size 0 = default (10)</value>
+  </data>
   <data name="PreferencesWindow_FontSizeZeroAsDefault11" xml:space="preserve">
     <value>Size 0 = default (11)</value>
   </data>
@@ -7515,5 +7548,35 @@ Close the tab</value>
   </data>
   <data name="Checkpoint_CreatingTitle" xml:space="preserve">
     <value>Creating a checkpoint</value>
+  </data>
+  <data name="PanelPlace_LeftTop" xml:space="preserve">
+    <value>Left Top</value>
+  </data>
+  <data name="PanelPlace_LeftBottom" xml:space="preserve">
+    <value>Left Bottom</value>
+  </data>
+  <data name="PanelPlace_BottomLeft" xml:space="preserve">
+    <value>Bottom Left</value>
+  </data>
+  <data name="PanelPlace_BottomRight" xml:space="preserve">
+    <value>Bottom Right</value>
+  </data>
+  <data name="PanelPlace_RightBottom" xml:space="preserve">
+    <value>Right Bottom</value>
+  </data>
+  <data name="PanelPlace_RightTop" xml:space="preserve">
+    <value>Right Top</value>
+  </data>
+  <data name="PanelStripe_Hide" xml:space="preserve">
+    <value>Hide</value>
+  </data>
+  <data name="PanelStripe_MoveTo" xml:space="preserve">
+    <value>Move To</value>
+  </data>
+  <data name="PanelStripe_ShowNames" xml:space="preserve">
+    <value>Show Tool Window Names</value>
+  </data>
+  <data name="PanelStripe_More" xml:space="preserve">
+    <value>More Tool Windows</value>
   </data>
 </root>

@@ -332,6 +332,69 @@ public readonly record struct ContextMenuAppearance(
     private static int Size(int size) => size <= 0 ? 0 : Math.Clamp(size, FontSizeMin, FontSizeMax);
 }
 
+/// <summary>
+/// How wide the stripes of the panels are while they show the names of the panels ("Show Tool Window Names"); without
+/// the names they are as wide as an icon.
+/// </summary>
+public enum PanelStripeWidthMode
+{
+    /// <summary>As wide as the longest name: no name is cut (the default).</summary>
+    Dynamic,
+
+    /// <summary>The width set in Preferences; a longer name is cut short with "…".</summary>
+    Fixed,
+
+    /// <summary>The user drags the inner edge of a stripe to widen or narrow it (as in Rider); a longer name is cut short.</summary>
+    Resizable,
+}
+
+/// <summary>
+/// The look of the stripes of the panels along the sides of the main window (Preferences › Appearance &amp; Behavior ›
+/// Action Bars): how wide they are while they show the names of the panels and the font of the names.
+/// </summary>
+/// <param name="WidthMode">How the width is decided.</param>
+/// <param name="FixedWidth">The width (px) in <see cref="PanelStripeWidthMode.Fixed"/>.</param>
+/// <param name="ResizedWidth">The width (px) the user dragged the stripes to, in <see cref="PanelStripeWidthMode.Resizable"/>.</param>
+/// <param name="FontFamily">Font family of the names; empty = the interface font.</param>
+/// <param name="FontSize">Font size (px) of the names; 0 = the default (<see cref="DefaultFontSize"/>).</param>
+/// <param name="FontWeight">Weight of the names (<see cref="FontWeightScale"/>); 0 = that of the interface.</param>
+public readonly record struct PanelStripeAppearance(
+    PanelStripeWidthMode WidthMode, int FixedWidth, int ResizedWidth, string FontFamily, int FontSize, int FontWeight)
+{
+    /// <summary>The narrowest a stripe can be (one icon); also its width without the names.</summary>
+    public const int MinWidth = 38;
+
+    /// <summary>The widest a stripe can be set or dragged to.</summary>
+    public const int MaxWidth = 100;
+
+    /// <summary>The width of <see cref="PanelStripeWidthMode.Fixed"/> and <see cref="PanelStripeWidthMode.Resizable"/> until set.</summary>
+    public const int DefaultWidth = 64;
+
+    /// <summary>The size (px) of the names while <see cref="FontSize"/> is not set.</summary>
+    public const int DefaultFontSize = 10;
+
+    /// <summary>Lower bound of an explicit <see cref="FontSize"/>.</summary>
+    public const int FontSizeMin = 6;
+
+    /// <summary>Upper bound of an explicit <see cref="FontSize"/>.</summary>
+    public const int FontSizeMax = 72;
+
+    /// <summary>Default values: as wide as the longest name, the interface font at <see cref="DefaultFontSize"/>.</summary>
+    public static PanelStripeAppearance Default =>
+        new(PanelStripeWidthMode.Dynamic, DefaultWidth, DefaultWidth, string.Empty, 0, 0);
+
+    /// <summary>A copy with unknown values replaced by the defaults and the widths and the size clamped (0 stays "the default").</summary>
+    public PanelStripeAppearance Normalized() => new(
+        Enum.IsDefined(WidthMode) ? WidthMode : PanelStripeWidthMode.Dynamic,
+        Width(FixedWidth),
+        Width(ResizedWidth),
+        FontFamily?.Trim() ?? string.Empty,
+        FontSize <= 0 ? 0 : Math.Clamp(FontSize, FontSizeMin, FontSizeMax),
+        FontWeightScale.Normalize(FontWeight));
+
+    private static int Width(int width) => width <= 0 ? DefaultWidth : Math.Clamp(width, MinWidth, MaxWidth);
+}
+
 /// <summary>Where the buttons of the main window's toolbars show their text.</summary>
 public enum ToolbarTextPosition
 {

@@ -911,7 +911,7 @@ public sealed class MainWindowViewModelTests : IDisposable
     }
 
     [Fact]
-    public void Blocked_action_shows_the_notifications_panel_collapsed_with_an_unread_warning()
+    public void Blocked_action_marks_the_notifications_stripe_button_with_an_unread_warning_without_opening_the_panel()
     {
         // Arrange
         TempDir temp = _disposables.Add(new TempDir());
@@ -931,8 +931,8 @@ public sealed class MainWindowViewModelTests : IDisposable
         // Assert
         sut.Notifications.Entries[0].IsWarning.Should().BeTrue();
         sut.IsStatusMessageWarning.Should().BeTrue();
-        factory.IsToolVisible(DockableIds.Notifications).Should().BeTrue();
-        factory.IsToolPinned(DockableIds.Notifications).Should().BeTrue("the panel appears collapsed, not over the editor");
+        factory.IsToolVisible(DockableIds.Notifications).Should().BeFalse("the panel is not opened over the editor");
+        factory.IsOnStripe(DockableIds.Notifications).Should().BeTrue("its stripe button shows the warning");
         sut.HasUnreadWarnings.Should().BeTrue();
         sut.Notifications.UnreadWarnings.Should().Be(1);
 
@@ -941,6 +941,7 @@ public sealed class MainWindowViewModelTests : IDisposable
 
         // Assert
         sut.HasUnreadWarnings.Should().BeFalse("opening the panel marks the warnings as read");
+        factory.IsToolVisible(DockableIds.Notifications).Should().BeTrue();
     }
 
     [Fact]

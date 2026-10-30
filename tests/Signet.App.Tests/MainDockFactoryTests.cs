@@ -17,8 +17,8 @@ using Xunit;
 namespace Signet.App.Tests;
 
 /// <summary>
-/// Restoring the side panel widths (Book Browser / Preview) after a restart:
-/// <see cref="MainDockFactory.ApplySideRegionWidths"/>.
+/// The dock layout of the main window (<see cref="MainDockFactory"/>): the six places of the panels, moving panels
+/// between them, the stripe buttons, and restoring the layout after a restart (the side widths, the places).
 /// </summary>
 public sealed class MainDockFactoryTests
 {
@@ -136,8 +136,8 @@ public sealed class MainDockFactoryTests
         after.ApplySideRegionWidths(new SettingsStore(path).MainWindowDockLayout!);
 
         // Assert
-        Width(after, "LeftDock").Should().BeApproximately(0.22, 1e-9);
-        Width(after, "RightDock").Should().BeApproximately(0.33, 1e-9);
+        Width(after, MainDockFactory.LeftColumnId).Should().BeApproximately(0.22, 1e-9);
+        Width(after, MainDockFactory.RightColumnId).Should().BeApproximately(0.33, 1e-9);
     }
 
     [Fact]
@@ -161,10 +161,8 @@ public sealed class MainDockFactoryTests
     }
 
     [Fact]
-    public void Bottom_region_spans_the_whole_width_under_the_side_regions()
+    public void The_panels_have_six_places_around_the_documents_and_the_bottom_row_spans_the_whole_width()
     {
-        // Collapsed ("Auto Hide") bottom panels slide out along the whole window, so the docked bottom region is
-        // as wide too — pinning a panel back does not move it into the middle column.
         // Arrange
         MainDockFactory factory = new();
 
@@ -181,9 +179,21 @@ public sealed class MainDockFactoryTests
         IProportionalDock row = parts[0].Should().BeAssignableTo<IProportionalDock>().Subject;
         row.Orientation.Should().Be(Orientation.Horizontal);
         row.VisibleDockables!.Where(d => d is not IProportionalDockSplitter).Select(d => d.Id)
-            .Should().Equal("LeftDock", DockableIds.Documents, "RightDock");
-        parts[1].Id.Should().Be("BottomDock");
+            .Should().Equal(MainDockFactory.LeftColumnId, DockableIds.Documents, MainDockFactory.RightColumnId);
+        parts[1].Id.Should().Be(MainDockFactory.BottomRowId, "the bottom row is under the side columns too");
+        Halves(row, MainDockFactory.LeftColumnId).Should().Equal(PanelPlaces.DockId(PanelPlace.LeftTop), PanelPlaces.DockId(PanelPlace.LeftBottom));
+        Halves(row, MainDockFactory.RightColumnId).Should().Equal(PanelPlaces.DockId(PanelPlace.RightTop), PanelPlaces.DockId(PanelPlace.RightBottom));
+        Halves(layout, MainDockFactory.BottomRowId).Should().Equal(PanelPlaces.DockId(PanelPlace.BottomLeft), PanelPlaces.DockId(PanelPlace.BottomRight));
+        factory.PanelsAt(PanelPlace.LeftTop).Should().Equal(DockableIds.BookBrowser, DockableIds.Clips);
+        factory.PanelsAt(PanelPlace.RightTop).Should().Equal(DockableIds.Preview, DockableIds.TableOfContents, DockableIds.Checkpoints);
+        factory.PanelsAt(PanelPlace.BottomLeft).Should().Equal(DockableIds.ValidationResults, DockableIds.Notifications, DockableIds.FindUsages);
+        new[] { PanelPlace.LeftBottom, PanelPlace.RightBottom, PanelPlace.BottomRight }
+            .Should().OnlyContain(p => factory.PanelsAt(p).Count == 0, "the second halves start empty");
     }
+
+    private static string[] Halves(IProportionalDock parent, string id) =>
+        parent.VisibleDockables!.OfType<IProportionalDock>().Single(d => d.Id == id).VisibleDockables!
+            .Where(d => d is not IProportionalDockSplitter).Select(d => d.Id).ToArray();
 
     [Fact]
     public void Captured_layout_state_has_no_unset_proportions()
@@ -217,15 +227,15 @@ public sealed class MainDockFactoryTests
     {
         // Arrange
         MainDockFactory sut = NewFactory();
-        double defaultLeft = Width(sut, "LeftDock");
-        double defaultRight = Width(sut, "RightDock");
+        double defaultLeft = Width(sut, MainDockFactory.LeftColumnId);
+        double defaultRight = Width(sut, MainDockFactory.RightColumnId);
 
         // Act
         sut.ApplySideRegionWidths(Saved(0, double.NaN));
 
         // Assert
-        Width(sut, "LeftDock").Should().Be(defaultLeft);
-        Width(sut, "RightDock").Should().Be(defaultRight);
+        Width(sut, MainDockFactory.LeftColumnId).Should().Be(defaultLeft);
+        Width(sut, MainDockFactory.RightColumnId).Should().Be(defaultRight);
     }
 
     [Fact]
@@ -238,14 +248,14 @@ public sealed class MainDockFactoryTests
         sut.ApplySideRegionWidths(Saved(0.001, 0.95));
 
         // Assert
-        Width(sut, "LeftDock").Should().BeGreaterThanOrEqualTo(0.08);
-        Width(sut, "RightDock").Should().BeLessThanOrEqualTo(0.6);
+        Width(sut, MainDockFactory.LeftColumnId).Should().BeGreaterThanOrEqualTo(0.08);
+        Width(sut, MainDockFactory.RightColumnId).Should().BeLessThanOrEqualTo(0.6);
 
         // Act
         sut.ApplySideRegionWidths(Saved(0.55, 0.55));
 
         // Assert
-        (Width(sut, "LeftDock") + Width(sut, "RightDock")).Should().BeLessThanOrEqualTo(0.8 + 1e-9);
+        (Width(sut, MainDockFactory.LeftColumnId) + Width(sut, MainDockFactory.RightColumnId)).Should().BeLessThanOrEqualTo(0.8 + 1e-9);
     }
 
     private static (MainDockFactory Factory, IRootDock Root) NewWithRoot()
@@ -260,28 +270,35 @@ public sealed class MainDockFactoryTests
         factory.FindDockable(root, d => d.Id == id)!;
 
     [Fact]
-    public void Auto_hidden_panel_opens_inline_instead_of_overlaying_the_native_preview()
-    {
-        // Arrange
-        (_, IRootDock root) = NewWithRoot();
-
-        // Act & Assert
-        root.PinnedDockDisplayMode.Should().Be(PinnedDockDisplayMode.Inline);
-    }
-
-    [Fact]
-    public void Auto_hidden_panel_is_captured_as_pinned_not_as_visible()
+    public void A_panel_saved_as_collapsed_by_auto_hide_starts_closed_with_its_stripe_button()
     {
         // Arrange
         (MainDockFactory sut, IRootDock root) = NewWithRoot();
 
         // Act
-        sut.PinDockable(Tool(sut, root, DockableIds.TableOfContents));
+        sut.ApplyToolVisibility(new Dictionary<string, string> { [DockableIds.TableOfContents] = MainDockFactory.PinnedState });
 
         // Assert
-        sut.IsToolPinned(DockableIds.TableOfContents).Should().BeTrue();
-        sut.CaptureToolVisibility()[DockableIds.TableOfContents].Should().Be(MainDockFactory.PinnedState);
-        sut.CaptureToolVisibility()[DockableIds.Preview].Should().Be("1");
+        sut.IsToolVisible(DockableIds.TableOfContents).Should().BeFalse();
+        sut.IsOnStripe(DockableIds.TableOfContents).Should().BeTrue();
+        sut.CaptureToolVisibility()[DockableIds.TableOfContents].Should().Be("0");
+        root.RightPinnedDockables.Should().BeNullOrEmpty();
+    }
+
+    [Fact]
+    public void A_docked_panel_is_never_collapsed_by_auto_hide()
+    {
+        // Arrange
+        (MainDockFactory sut, IRootDock root) = NewWithRoot();
+        IDockable toc = Tool(sut, root, DockableIds.TableOfContents);
+
+        // Act
+        sut.PinDockable(toc);
+
+        // Assert
+        toc.CanPin.Should().BeFalse();
+        root.RightPinnedDockables.Should().BeNullOrEmpty();
+        toc.Owner!.Id.Should().Be(PanelPlaces.DockId(PanelPlace.RightTop));
     }
 
     [Fact]
@@ -317,93 +334,154 @@ public sealed class MainDockFactoryTests
             .Should().OnlyContain(t => t.CanClose);
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void Showing_a_panel_collapsed_in_auto_hide_slides_it_out(bool viaExpand)
+    [Fact]
+    public void Moving_a_shown_panel_puts_it_in_the_other_place_in_front_and_keeps_the_order()
     {
         // Arrange
         (MainDockFactory sut, IRootDock root) = NewWithRoot();
-        sut.PinDockable(Tool(sut, root, DockableIds.TableOfContents));
-
-        sut.IsToolPinned(DockableIds.TableOfContents).Should().BeTrue();
-        root.PinnedDock.Should().BeNull("a collapsed panel is not slid out");
+        int changes = 0;
+        sut.PanelsChanged += (_, _) => changes++;
 
         // Act
-        if (viaExpand)
-        {
-            sut.ExpandTool(DockableIds.TableOfContents);
-        }
-        else
-        {
-            sut.FocusTool(DockableIds.TableOfContents);
-        }
+        sut.MoveTool(DockableIds.TableOfContents, PanelPlace.LeftBottom, 0);
 
         // Assert
-        root.PinnedDock.Should().NotBeNull("focusing a collapsed panel slides it out");
+        sut.PlaceOf(DockableIds.TableOfContents).Should().Be(PanelPlace.LeftBottom);
+        sut.PanelsAt(PanelPlace.RightTop).Should().Equal(DockableIds.Preview, DockableIds.Checkpoints);
+        IToolDock leftBottom = (IToolDock)Tool(sut, root, DockableIds.TableOfContents).Owner!;
+        leftBottom.Id.Should().Be(PanelPlaces.DockId(PanelPlace.LeftBottom));
+        leftBottom.ActiveDockable!.Id.Should().Be(DockableIds.TableOfContents);
+        changes.Should().Be(1, "one move is one notice for the stripes");
+
+        // Act
+        sut.MoveTool(DockableIds.Clips, PanelPlace.LeftTop, 0);
+
+        // Assert
+        sut.PanelsAt(PanelPlace.LeftTop).Should().Equal(DockableIds.Clips, DockableIds.BookBrowser);
     }
 
     [Fact]
-    public void Pinned_state_is_restored_on_next_start()
+    public void A_closed_panel_moved_to_another_place_shows_there_next_time()
     {
         // Arrange
-        (MainDockFactory before, IRootDock beforeRoot) = NewWithRoot();
+        (MainDockFactory sut, IRootDock root) = NewWithRoot();
+        sut.IsToolVisible(DockableIds.Notifications).Should().BeFalse();
 
         // Act
-        before.PinDockable(Tool(before, beforeRoot, DockableIds.TableOfContents));
-        IReadOnlyDictionary<string, string> saved = before.CaptureToolVisibility();
-
-        (MainDockFactory after, IRootDock afterRoot) = NewWithRoot();
-        after.ApplyToolVisibility(saved);
+        sut.MoveTool(DockableIds.Notifications, PanelPlace.BottomRight, 0);
 
         // Assert
-        after.IsToolVisible(DockableIds.TableOfContents).Should().BeTrue();
-        after.IsToolPinned(DockableIds.TableOfContents).Should().BeTrue();
-        afterRoot.RightPinnedDockables!.Select(d => d.Id).Should().Contain(DockableIds.TableOfContents);
-        after.IsToolPinned(DockableIds.Preview).Should().BeFalse();
+        sut.IsToolVisible(DockableIds.Notifications).Should().BeFalse("moving does not open it");
+
+        // Act
+        sut.ToggleTool(DockableIds.Notifications);
+
+        // Assert
+        Tool(sut, root, DockableIds.Notifications).Owner!.Id.Should().Be(PanelPlaces.DockId(PanelPlace.BottomRight));
     }
 
     [Fact]
-    public void Slid_out_size_of_an_auto_hidden_panel_is_restored_on_next_start()
+    public void The_places_of_the_panels_survive_a_restart()
     {
         // Arrange
-        (MainDockFactory before, IRootDock beforeRoot) = NewWithRoot();
-        IDockable preview = Tool(before, beforeRoot, DockableIds.Preview);
+        (MainDockFactory before, _) = NewWithRoot();
+        before.MoveTool(DockableIds.TableOfContents, PanelPlace.RightBottom, 0);
+        before.MoveTool(DockableIds.Notifications, PanelPlace.BottomRight, 0);
+        before.MoveTool(DockableIds.Clips, PanelPlace.LeftTop, 0);
+        DockLayoutState saved = before.CaptureLayoutState();
 
         // Act
-        before.PinDockable(preview);
-        preview.SetPinnedBounds(0, 0, 640.5, 900);
-        IReadOnlyDictionary<string, string> saved = before.CapturePinnedSizes();
-
         (MainDockFactory after, IRootDock afterRoot) = NewWithRoot();
-        IDockable restored = Tool(after, afterRoot, DockableIds.Preview);
+        after.ApplyPanelPlaces(saved);
         after.ApplyToolVisibility(before.CaptureToolVisibility());
-        after.ApplyPinnedSizes(saved);
 
         // Assert
-        after.IsToolPinned(DockableIds.Preview).Should().BeTrue();
-        restored.GetPinnedBounds(out _, out _, out double width, out double height);
-        (width, height).Should().Be((640.5, 900));
-        saved.Should().ContainSingle("only panels with a known slid-out size are saved");
+        foreach (PanelPlace place in PanelPlaces.All)
+        {
+            after.PanelsAt(place).Should().Equal(before.PanelsAt(place), "the panels of {0}", place);
+        }
+
+        Tool(after, afterRoot, DockableIds.TableOfContents).Owner!.Id.Should().Be(PanelPlaces.DockId(PanelPlace.RightBottom));
     }
 
-    [Theory]
-    [InlineData("abc")]
-    [InlineData("10;900")]
-    [InlineData("640;NaN")]
-    [InlineData("640")]
-    public void Unusable_saved_slid_out_sizes_are_ignored(string stored)
+    [Fact]
+    public void A_layout_saved_before_the_places_were_split_puts_the_panels_in_the_first_halves()
     {
         // Arrange
         (MainDockFactory sut, IRootDock root) = NewWithRoot();
+        DockLayoutState legacy = new(
+            new[]
+            {
+                new DockRegionState(PanelPlaces.LegacyLeftDock, 0.2, new[] { DockableIds.BookBrowser, DockableIds.TableOfContents }, DockableIds.BookBrowser),
+                new DockRegionState(PanelPlaces.LegacyRightDock, 0.25, new[] { DockableIds.Preview }, DockableIds.Preview),
+                new DockRegionState(PanelPlaces.LegacyBottomDock, 0.3, new[] { DockableIds.Checkpoints }, null),
+            },
+            0.72);
 
         // Act
-        sut.ApplyPinnedSizes(new Dictionary<string, string> { [DockableIds.Preview] = stored });
+        sut.ApplyPanelPlaces(legacy);
 
         // Assert
-        sut.CapturePinnedSizes().Should().BeEmpty();
-        Tool(sut, root, DockableIds.Preview).GetPinnedBounds(out _, out _, out double width, out _);
-        (double.IsFinite(width) && width >= 50).Should().BeFalse();
+        sut.PlaceOf(DockableIds.TableOfContents).Should().Be(PanelPlace.LeftTop);
+        sut.PlaceOf(DockableIds.Checkpoints).Should().Be(PanelPlace.BottomLeft);
+        sut.PanelsAt(PanelPlace.LeftTop).Take(2).Should().Equal(DockableIds.BookBrowser, DockableIds.TableOfContents);
+        Tool(sut, root, DockableIds.TableOfContents).Owner!.Id.Should().Be(PanelPlaces.DockId(PanelPlace.LeftTop));
+    }
+
+    [Fact]
+    public void A_click_on_a_stripe_button_opens_brings_to_front_or_closes_the_panel()
+    {
+        // Arrange
+        (MainDockFactory sut, _) = NewWithRoot();
+        sut.IsToolInFront(DockableIds.Preview).Should().BeTrue();
+        sut.IsToolInFront(DockableIds.TableOfContents).Should().BeFalse("it is behind the Preview tab");
+
+        // Act
+        sut.ClickStripeButton(DockableIds.TableOfContents);
+
+        // Assert
+        sut.IsToolInFront(DockableIds.TableOfContents).Should().BeTrue();
+        sut.IsToolInFront(DockableIds.Preview).Should().BeFalse();
+
+        // Act
+        sut.ClickStripeButton(DockableIds.TableOfContents);
+
+        // Assert
+        sut.IsToolVisible(DockableIds.TableOfContents).Should().BeFalse("a click on the panel in front closes it");
+
+        // Act
+        sut.ClickStripeButton(DockableIds.TableOfContents);
+
+        // Assert
+        sut.IsToolInFront(DockableIds.TableOfContents).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Hiding_a_stripe_button_closes_its_panel_and_showing_the_panel_brings_the_button_back()
+    {
+        // Arrange
+        (MainDockFactory sut, _) = NewWithRoot();
+
+        // Act
+        sut.SetOnStripe(DockableIds.Preview, false);
+
+        // Assert
+        sut.IsOnStripe(DockableIds.Preview).Should().BeFalse();
+        sut.IsToolVisible(DockableIds.Preview).Should().BeFalse();
+        sut.CaptureOffStripe().Should().Equal(new Dictionary<string, string> { [DockableIds.Preview] = "0" });
+
+        // Act
+        (MainDockFactory restarted, _) = NewWithRoot();
+        restarted.ApplyOffStripe(sut.CaptureOffStripe());
+
+        // Assert
+        restarted.IsOnStripe(DockableIds.Preview).Should().BeFalse();
+
+        // Act
+        sut.ToggleTool(DockableIds.Preview);
+
+        // Assert
+        sut.IsOnStripe(DockableIds.Preview).Should().BeTrue("a panel shown in any way gets its button back");
     }
 
     [Theory]
@@ -419,32 +497,6 @@ public sealed class MainDockFactoryTests
 
         // Assert
         sut.IsToolVisible(DockableIds.ValidationResults).Should().BeFalse();
-        sut.IsToolPinned(DockableIds.ValidationResults).Should().BeFalse();
         sut.CaptureToolVisibility()[DockableIds.ValidationResults].Should().Be("0");
-    }
-
-    [Fact]
-    public void Toggling_an_auto_hidden_panel_hides_it_and_toggling_again_docks_it_back()
-    {
-        // Arrange
-        (MainDockFactory sut, IRootDock root) = NewWithRoot();
-
-        // Act
-        sut.ToggleTool(DockableIds.ValidationResults).Should().BeTrue();
-        sut.PinDockable(Tool(sut, root, DockableIds.ValidationResults));
-
-        // Act & Assert
-        sut.ToggleTool(DockableIds.ValidationResults).Should().BeFalse();
-
-        // Assert
-        sut.CaptureToolVisibility()[DockableIds.ValidationResults].Should().Be("0");
-        root.BottomPinnedDockables.Should().BeNullOrEmpty();
-
-        // Act
-        sut.ToggleTool(DockableIds.ValidationResults).Should().BeTrue();
-
-        // Assert
-        sut.IsToolPinned(DockableIds.ValidationResults).Should().BeFalse();
-        Tool(sut, root, DockableIds.ValidationResults).Owner!.Id.Should().Be("BottomDock");
     }
 }

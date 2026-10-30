@@ -261,6 +261,9 @@ def badge_color(name):
     return MAIN_ADD if name in ADD_BADGES else MAIN_REMOVE if name in REMOVE_BADGES else MAIN_OTHER
 
 
+# The canvas of the drawn icons (spec 'drawn'), the size of the Fluent glyphs.
+DRAWN_CANVAS = 16
+
 FAMILY_FILES = {'main': 'MainIcons.axaml', 'fluent': 'FluentIcons.axaml', 'material': 'MaterialIcons.axaml'}
 
 
@@ -282,6 +285,10 @@ def icon_children(key, family):
     """Returns (canvas size, drawing elements) of a spec icon in a family."""
     v = spec.ICONS[key]
     mono = family != 'main'
+    if v.get('drawn'):
+        return DRAWN_CANVAS, [geometry_drawing(d, 'evenodd', (ACCENT if mono else MAIN_BASE) if part == 'frame'
+                                               else (ACCENT if mono else MAIN_OTHER))
+                              for d, part in v['drawn']]
     gfam = 'fluent' if family == 'fluent' else 'material'
     base_name = v['f'] if family == 'fluent' else v['m']
     badge_name = v['fb'] if family == 'fluent' else v['mb']
