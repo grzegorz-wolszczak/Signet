@@ -215,9 +215,12 @@ public sealed class StartScreenTests
         // Act
         entry.ContextMenu!.Open(entry);
         Dispatcher.UIThread.RunJobs();
-        MenuItem[] items = entry.ContextMenu.Items.OfType<MenuItem>().ToArray();
+        MenuItem title = entry.ContextMenu.Items.OfType<MenuItem>().First();
+        MenuItem[] items = entry.ContextMenu.Items.OfType<MenuItem>().Skip(1).ToArray();
 
         // Assert
+        title.Classes.Should().Contain("menuTitle");
+        title.Header.Should().Be("Book.epub", "the title names the right-clicked file");
         items.Select(i => i.Tag).Should().Equal(ActionIconKeys.Open, ActionIconKeys.Delete);
         foreach (MenuItem item in items)
         {

@@ -470,6 +470,13 @@
     <Style Selector=":is(TemplatedControl)">
       <Setter Property="ScrollViewer.AllowAutoHide" Value="False" />
     </Style>
+    <!-- The title of a context menu (MenuTitle): bold, neither clickable nor reachable with the keyboard; a separator
+         follows it. A menu written in XAML puts <MenuItem Classes="menuTitle" Header="…" /> and <Separator /> first. -->
+    <Style Selector="MenuItem.menuTitle">
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="IsHitTestVisible" Value="False" />
+      <Setter Property="Focusable" Value="False" />
+    </Style>
   </Application.Styles>
 
 </Application>

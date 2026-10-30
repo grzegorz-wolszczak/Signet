@@ -167,6 +167,9 @@ public sealed partial class MenuItemViewModel : ObservableObject
     /// </summary>
     public IReadOnlyList<MenuItemViewModel>? ContextItems { get; set; }
 
+    /// <summary>The title of the context menu of <see cref="ContextItems"/> (e.g. the name of a recent file).</summary>
+    public string? ContextTitle { get; set; }
+
     /// <summary>The tooltip of the item (e.g. the full path of a recent file), or <see langword="null"/> for none.</summary>
     public string? ToolTip { get; set; }
 

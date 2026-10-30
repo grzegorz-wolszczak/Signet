@@ -747,7 +747,8 @@ public sealed class SearchEditorViewTests
             .Should().NotContain(b => (string)b.Tag! == "fill-controls");
         tree.ContextMenu!.Open(tree);
         Dispatcher.UIThread.RunJobs();
-        MenuItem item = tree.ContextMenu!.Items.OfType<MenuItem>().Single();
+        MenuItem item = tree.ContextMenu!.Items.OfType<MenuItem>()
+            .Single(i => !i.Classes.Contains(Signet.App.Infrastructure.MenuTitle.TitleClass));
         item.Header.Should().Be(Strings.Get("SearchEditorView_FillControls"));
         item.Command.Should().BeSameAs(vm.FillControlsCommand);
         window.Close();

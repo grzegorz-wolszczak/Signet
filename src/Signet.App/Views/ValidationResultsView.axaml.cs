@@ -39,6 +39,7 @@ public partial class ValidationResultsView : UserControl
     {
         InitializeComponent();
         DataContextChanged += (_, _) => BuildTable();
+        MenuTitle.AddTo(RowMenu, () => MenuTitle.ForSelection(SelectedRows.Select(r => r.FileName), Strings.Get("Panel_ValidationResults")));
     }
 
     private ValidationResultsViewModel? ViewModel => DataContext as ValidationResultsViewModel;

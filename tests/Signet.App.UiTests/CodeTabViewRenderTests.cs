@@ -662,7 +662,12 @@ public sealed class CodeTabViewRenderTests : IDisposable
 
         // Assert
         menu.IsOpen.Should().BeTrue();
-        string[] headers = menu.Items.OfType<MenuItem>().Select(i => (string)i.Header!).ToArray();
+        MenuItem title = menu.Items.OfType<MenuItem>().First();
+        title.Classes.Should().Contain(Signet.App.Infrastructure.MenuTitle.TitleClass);
+        title.Header.Should().Be(
+            Signet.App.Infrastructure.MenuTitle.Escape(((CodeTabViewModel)editor.DataContext!).Resource.Filename),
+            "the title names the file of the tab");
+        string[] headers = menu.Items.OfType<MenuItem>().Skip(1).Select(i => (string)i.Header!).ToArray();
         headers.Should().Equal(
             Signet.App.Resources.Strings.Get("CodeEditorMenu_Clips"),
             Signet.App.Resources.Strings.Get("CodeEditorMenu_AddToClips"),

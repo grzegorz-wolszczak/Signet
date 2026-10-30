@@ -79,6 +79,8 @@
                       </Setter>
                     </Style>
                   </ContextMenu.Styles>
+                  <MenuItem Classes="menuTitle" Header="{Binding Name, Converter={x:Static infra:MenuTitle.EscapeConverter}}" />
+                  <Separator />
                   <MenuItem Classes="withIcon" Tag="{x:Static actions:ActionIconKeys.Open}"
                             Header="{loc:Loc Menu_OpenFileLocation}" Command="{Binding OpenFolderCommand}"
                             IsVisible="{Binding !IsMissing}" />

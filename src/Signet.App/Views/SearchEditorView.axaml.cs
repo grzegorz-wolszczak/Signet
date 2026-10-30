@@ -71,6 +71,12 @@ public partial class SearchEditorView : UserControl
     {
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
+        if (Tree.ContextMenu is { } menu)
+        {
+            MenuTitle.AddTo(menu, () => MenuTitle.ForSelection(
+                (DataContext as SearchEditorViewModel)?.SelectedNodes.Select(n => n.Name) ?? Enumerable.Empty<string>(),
+                Strings.Get("SearchEditorWindow_Title")));
+        }
         Tree.DoubleTapped += OnDoubleTapped;
         Tree.AddHandler(KeyDownEvent, OnTreeKeyDown, RoutingStrategies.Tunnel);
         Tree.AddHandler(LostFocusEvent, OnRenameEditorLostFocus, RoutingStrategies.Bubble);

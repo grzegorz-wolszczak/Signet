@@ -105,7 +105,7 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
 
         ContextMenu menu = new()
         {
-            ItemsSource = contextItems
+            ItemsSource = TitleOf(item).Concat(contextItems
                 .Select(c => new MenuItem
                 {
                     Header = c.Header,
@@ -114,12 +114,18 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
                     // — let the context menu close first.
                     Command = new CommunityToolkit.Mvvm.Input.RelayCommand(
                         () => Dispatcher.UIThread.Post(() => c.Command?.Execute(null))),
-                })
+                }))
                 .ToList(),
         };
         menu.Open(item);
         e.Handled = true;
     }
+
+    // The title of a main menu item's context menu (the name of a recent file) and the separator under it.
+    private static Control[] TitleOf(MenuItem item) =>
+        item.DataContext is Menu.MenuItemViewModel { ContextTitle: { Length: > 0 } title }
+            ? new Control[] { MenuTitle.CreateItem(title), new Separator() }
+            : Array.Empty<Control>();
 
     private static Control? CreateActionIcon(string? iconKey)
     {
