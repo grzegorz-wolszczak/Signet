@@ -204,7 +204,7 @@
     <value>Gdy ALL jest odznaczone, widoczne są tylko najczęściej spotykane właściwości CSS. Zaznacz ALL, aby wyświetlić pełną listę.</value>
   </data>
   <data name="CssPropertyReferenceTooltip_WithKeywords" xml:space="preserve">
-    <value>{0}&#10;Słowa kluczowe: {1}</value>
+    <value>{0}&#10;**Słowa kluczowe:** {1}</value>
   </data>
   <data name="CssPropertyReferenceDescription_background" xml:space="preserve">
     <value>Ustawia skrótowo warstwy tła elementu.</value>
@@ -6939,6 +6939,9 @@ Zamknij zakładkę</value>
   </data>
   <data name="ThemeKey_ui_contextMenu_title_background" xml:space="preserve">
     <value>Tło tytułu menu kontekstowego</value>
+  </data>
+  <data name="ThemeKey_ui_tooltip_code" xml:space="preserve">
+    <value>Kod w sformatowanej podpowiedzi (słowa kluczowe CSS, nazwy…)</value>
   </data>
   <data name="ThemeKey_ui_startScreen_title" xml:space="preserve">
     <value>Nazwa ostatniego pliku na ekranie startowym</value>

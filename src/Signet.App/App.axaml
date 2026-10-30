@@ -11,10 +11,16 @@
              xmlns:tabVm="using:Signet.App.ViewModels.Tabs"
              xmlns:vm="using:Signet.App.ViewModels"
              xmlns:infra="using:Signet.App.Infrastructure"
+             xmlns:rich="using:Signet.Core.RichContent"
              x:Class="Signet.App.App"
              RequestedThemeVariant="Light">
 
   <Application.DataTemplates>
+    <!-- Formatted text (a tooltip given a RichText instead of a string): bold, code, highlighted blocks. A plain string
+         tooltip keeps the default look. -->
+    <DataTemplate DataType="rich:RichText">
+      <views:RichTextView Document="{Binding}" MaxWidth="480" />
+    </DataTemplate>
     <DataTemplate DataType="docking:BookBrowserTool">
       <Panel IsEnabled="{Binding IsContentEnabled}">
         <views:BookBrowserView DataContext="{Binding ViewModel}" />
@@ -106,6 +112,9 @@
       <!-- Menus and flyouts: Fluent caps their popup width at FlyoutThemeMaxWidth (456), which
            clipped longer menu labels (no ellipsis). Lift the cap so popups size to their content. -->
       <x:Double x:Key="FlyoutThemeMaxWidth">Infinity</x:Double>
+
+      <!-- The font of code in formatted text (RichTextView: tooltips with code fragments or blocks). -->
+      <FontFamily x:Key="SignetRichTextCodeFontFamily">Cascadia Mono, Consolas, Menlo, DejaVu Sans Mono, monospace</FontFamily>
 
       <!-- The fonts of the context menus until ContextMenuLook sets them from the settings (at startup). -->
       <x:Double x:Key="SignetContextMenuItemsFontSize">14</x:Double>
