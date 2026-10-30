@@ -67,4 +67,20 @@ public sealed class ToolbarItemViewModelTests
         // Assert
         requested.Should().BeTrue();
     }
+
+    [Theory]
+    [InlineData("Mend Code in Current File", "Mend Code in\nCurrent File")]
+    [InlineData("Generate Table Of Contents", "Generate Table\nOf Contents")]
+    [InlineData("Bookmark Location", "Bookmark\nLocation")]
+    [InlineData("Metadata Editor", "Metadata Editor")]
+    [InlineData("Spellcheck", "Spellcheck")]
+    [InlineData("Averyveryverylongword", "Averyveryverylongword")]
+    public void A_long_label_is_shown_in_two_even_lines(string label, string expected)
+    {
+        // Act
+        string shown = ToolbarItemViewModel.WrapLabel(label);
+
+        // Assert
+        shown.Should().Be(expected);
+    }
 }

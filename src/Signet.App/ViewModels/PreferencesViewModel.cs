@@ -125,6 +125,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         _openTagHintFontWeight = hintLook.FontWeight;
         LoadBookBrowserAppearance();
         LoadStartScreenAppearance();
+        LoadToolbarAppearance();
         LoadFindUsagesFonts();
         LoadSearchEditorFonts();
         LoadLineNumbersFont();
@@ -855,6 +856,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         FindUsagesRowSpacing = _settings.FindUsagesRowSpacing;
         LoadBookBrowserAppearance();
         LoadStartScreenAppearance();
+        LoadToolbarAppearance();
         LoadFindUsagesFonts();
         LoadSearchEditorFonts();
         LoadLineNumbersFont();

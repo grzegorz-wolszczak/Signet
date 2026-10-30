@@ -5,15 +5,132 @@
              xmlns:infra="using:Signet.App.Infrastructure"
              xmlns:actions="using:Signet.App.Actions"
              xmlns:loc="using:Signet.App.Resources"
+             xmlns:misc="using:Signet.Core.Misc"
+             xmlns:views="using:Signet.App.Views"
              x:Class="Signet.App.Views.ToolbarStripView"
              x:DataType="vm:ToolbarViewModel"
+             Classes.showsText="{Binding ShowsText}"
+             Classes.textOnly="{Binding IsTextOnly}"
+             Classes.textUnder="{Binding IsTextUnderIcons}"
+             Classes.customFontFamily="{Binding HasCustomFontFamily}"
+             Classes.customFontSize="{Binding HasCustomFontSize}"
+             Classes.customFontWeight="{Binding HasCustomFontWeight}"
              Margin="0,0,8,0">
 
-  <!-- Right click anywhere on the toolbar: hide it (as View → Toolbars does) or edit its buttons. -->
+  <!-- The look shared by all toolbars (ToolbarManager.Appearance): the icon size and the font of the texts come from
+       the application resources, where the text sits from the classes of the view. A button without an icon always
+       shows its text. A font setting applies only while it is set: a style setter whose resource is missing would put
+       the property's default in place (not the font of the buttons, which the text inherits otherwise). -->
+  <UserControl.Styles>
+    <!-- The buttons of a row take its full height (the row is as high as its tallest button, e.g. one with a label in
+         two lines) and keep their content at the top, so that the icons of a row stay in one line. -->
+    <Style Selector="ItemsControl#Items Button.toolbar, ItemsControl#Items SplitButton.toolbar">
+      <Setter Property="VerticalAlignment" Value="Stretch" />
+      <Setter Property="VerticalContentAlignment" Value="Top" />
+    </Style>
+    <Style Selector="Panel.toolbarIcon > :is(Control)">
+      <Setter Property="Width" Value="{DynamicResource SignetMainToolbarIconSize}" />
+      <Setter Property="Height" Value="{DynamicResource SignetMainToolbarIconSize}" />
+    </Style>
+    <Style Selector="TextBlock.toolbarLabel">
+      <Setter Property="IsVisible" Value="False" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="TextAlignment" Value="Center" />
+    </Style>
+    <Style Selector="views|ToolbarStripView.customFontFamily TextBlock.toolbarLabel">
+      <Setter Property="FontFamily" Value="{DynamicResource SignetToolbarFontFamily}" />
+    </Style>
+    <Style Selector="views|ToolbarStripView.customFontSize TextBlock.toolbarLabel">
+      <Setter Property="FontSize" Value="{DynamicResource SignetToolbarFontSize}" />
+    </Style>
+    <Style Selector="views|ToolbarStripView.customFontWeight TextBlock.toolbarLabel">
+      <Setter Property="FontWeight" Value="{DynamicResource SignetToolbarFontWeight}" />
+    </Style>
+    <Style Selector="TextBlock.toolbarLabel.noIcon">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="views|ToolbarStripView.showsText TextBlock.toolbarLabel">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="Panel.toolbarIcon.noIcon">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="views|ToolbarStripView.textOnly Panel.toolbarIcon">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="StackPanel.toolbarContent">
+      <Setter Property="Orientation" Value="Horizontal" />
+      <Setter Property="Spacing" Value="4" />
+    </Style>
+    <Style Selector="views|ToolbarStripView.textUnder StackPanel.toolbarContent">
+      <Setter Property="Orientation" Value="Vertical" />
+      <Setter Property="Spacing" Value="1" />
+    </Style>
+  </UserControl.Styles>
+
+  <!-- Right click anywhere on the toolbar: hide it (as View → Toolbars does), then, under a separator, the settings
+       shared by all toolbars (text position, icon size, configuring the buttons, locking the positions). -->
   <UserControl.ContextMenu>
-    <ContextMenu x:DataType="vm:ToolbarViewModel">
-      <MenuItem Header="{loc:Loc ToolbarStripView_Hide}" Command="{Binding HideCommand}" />
-      <MenuItem Header="{loc:Loc ToolbarStripView_Edit}" Command="{Binding EditCommand}" />
+    <ContextMenu x:Name="ToolbarMenu" x:DataType="vm:ToolbarViewModel">
+      <ContextMenu.Styles>
+        <!-- The icon key of an item is its Tag, as on the toolbar buttons. -->
+        <Style Selector="MenuItem.withIcon">
+          <Setter Property="Icon">
+            <Template>
+              <Border Classes="menuIcon">
+                <Panel>
+                  <Image Width="16" Height="16"
+                         Source="{Binding $parent[MenuItem].Tag, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
+                         IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                  <PathIcon Width="16" Height="16"
+                            Data="{Binding $parent[MenuItem].Tag, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                            IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                </Panel>
+              </Border>
+            </Template>
+          </Setter>
+        </Style>
+        <!-- "Lock Toolbar Positions" is an on/off item with an icon: while on, its icon sits in a pressed frame. -->
+        <Style Selector="MenuItem.withIcon.on Border.menuIcon">
+          <Setter Property="Background" Value="{DynamicResource SystemControlHighlightListAccentLowBrush}" />
+          <Setter Property="BorderBrush" Value="{DynamicResource SystemControlHighlightAccentBrush}" />
+          <Setter Property="BorderThickness" Value="1" />
+          <Setter Property="CornerRadius" Value="2" />
+          <Setter Property="Margin" Value="-2" />
+          <Setter Property="Padding" Value="1" />
+        </Style>
+      </ContextMenu.Styles>
+      <MenuItem x:Name="HideItem" Header="{loc:Loc ToolbarStripView_Hide}" Command="{Binding HideCommand}" />
+      <!-- Below the line: the settings shared by all toolbars. -->
+      <Separator x:Name="SettingsSeparator" />
+      <MenuItem x:Name="TextPositionItem" Header="{loc:Loc ToolbarStripView_TextPosition}">
+        <MenuItem Header="{loc:Loc ToolbarStripView_IconsOnly}" ToggleType="Radio" GroupName="ToolbarTextPosition"
+                  IsChecked="{Binding IsIconsOnly, Mode=OneWay}"
+                  Command="{Binding SetTextPositionCommand}" CommandParameter="{x:Static misc:ToolbarTextPosition.IconsOnly}" />
+        <MenuItem Header="{loc:Loc ToolbarStripView_TextOnly}" ToggleType="Radio" GroupName="ToolbarTextPosition"
+                  IsChecked="{Binding IsTextOnly, Mode=OneWay}"
+                  Command="{Binding SetTextPositionCommand}" CommandParameter="{x:Static misc:ToolbarTextPosition.TextOnly}" />
+        <MenuItem Header="{loc:Loc ToolbarStripView_TextBesideIcons}" ToggleType="Radio" GroupName="ToolbarTextPosition"
+                  IsChecked="{Binding IsTextBesideIcons, Mode=OneWay}"
+                  Command="{Binding SetTextPositionCommand}" CommandParameter="{x:Static misc:ToolbarTextPosition.TextBesideIcons}" />
+        <MenuItem Header="{loc:Loc ToolbarStripView_TextUnderIcons}" ToggleType="Radio" GroupName="ToolbarTextPosition"
+                  IsChecked="{Binding IsTextUnderIcons, Mode=OneWay}"
+                  Command="{Binding SetTextPositionCommand}" CommandParameter="{x:Static misc:ToolbarTextPosition.TextUnderIcons}" />
+      </MenuItem>
+      <MenuItem x:Name="IconSizeItem" Header="{loc:Loc ToolbarStripView_IconSize}">
+        <MenuItem Header="{loc:Loc ToolbarStripView_SmallIcons}" ToggleType="Radio" GroupName="ToolbarIconSize"
+                  IsChecked="{Binding IsSmallIcons, Mode=OneWay}"
+                  Command="{Binding SetIconSizeCommand}" CommandParameter="{x:Static misc:ToolbarIconSize.Small}" />
+        <MenuItem Header="{loc:Loc ToolbarStripView_LargeIcons}" ToggleType="Radio" GroupName="ToolbarIconSize"
+                  IsChecked="{Binding IsLargeIcons, Mode=OneWay}"
+                  Command="{Binding SetIconSizeCommand}" CommandParameter="{x:Static misc:ToolbarIconSize.Large}" />
+      </MenuItem>
+      <MenuItem x:Name="ConfigureItem" Classes="withIcon" Tag="{x:Static actions:ActionIconKeys.ToolbarConfigure}"
+                Header="{loc:Loc ToolbarStripView_Configure}" Command="{Binding ConfigureCommand}" />
+      <MenuItem x:Name="LockItem" Classes="withIcon" Classes.on="{Binding ArePositionsLocked}"
+                Tag="{x:Static actions:ActionIconKeys.Lock}"
+                Header="{loc:Loc ToolbarStripView_LockPositions}" Command="{Binding TogglePositionsLockedCommand}" />
     </ContextMenu>
   </UserControl.ContextMenu>
 
@@ -26,6 +143,7 @@
          the other toolbar area). Two columns of dots, always visible. -->
     <Border x:Name="Grip"
             DockPanel.Dock="Left"
+            IsVisible="{Binding !ArePositionsLocked}"
             Width="10"
             Background="Transparent"
             Cursor="SizeAll"
@@ -62,11 +180,12 @@
                     Classes="toolbar"
                     Padding="3"
                     FontSize="11">
-              <Panel>
+              <StackPanel Classes="toolbarContent">
+              <Panel Classes="toolbarIcon" HorizontalAlignment="Center"
+                     Classes.noIcon="{Binding IconKey, Converter={x:Static StringConverters.IsNullOrEmpty}}">
                 <!-- Built-in sets (Default/Fluent/Material) are colored DrawingImages;
                      "Custom" is a monochrome Geometry drawn by a PathIcon. -->
-                <Image Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
-                       IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <Image IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}">
                   <!-- Action icon state (e.g. the gray/red "Save" floppy disk) — ActionIcons. -->
                   <Image.Source>
                     <MultiBinding Converter="{x:Static infra:ActionIcons.ImageForState}">
@@ -77,12 +196,12 @@
                 </Image>
                 <PathIcon Data="{Binding IconKey, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
                           Foreground="{Binding Action.IconState, Converter={x:Static infra:ActionIcons.ForegroundForState}, FallbackValue={x:Static AvaloniaProperty.UnsetValue}}"
-                          Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
                           IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
-                <TextBlock Text="{Binding Label}"
-                           VerticalAlignment="Center"
-                           IsVisible="{Binding IconKey, Converter={x:Static StringConverters.IsNullOrEmpty}}" />
               </Panel>
+              <TextBlock Classes="toolbarLabel"
+                         Classes.noIcon="{Binding IconKey, Converter={x:Static StringConverters.IsNullOrEmpty}}"
+                         Text="{Binding DisplayLabel}" />
+              </StackPanel>
             </Button>
             <!-- Menu button (tbHeadings / tbCase): click = last chosen action, arrow = menu. -->
             <SplitButton IsVisible="{Binding IsDropDown}"
@@ -92,14 +211,15 @@
                          Padding="3"
                          FontSize="11"
                          Loaded="OnDropDownLoaded">
-              <Panel>
+              <StackPanel Classes="toolbarContent">
+              <Panel Classes="toolbarIcon" HorizontalAlignment="Center">
                 <Image Source="{Binding IconKey, Converter={x:Static infra:IconKeyToImageConverter.Instance}}"
-                       Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
                        IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}" />
                 <PathIcon Data="{Binding IconKey, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
-                          Width="{DynamicResource ToolbarIconSize}" Height="{DynamicResource ToolbarIconSize}"
                           IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
               </Panel>
+              <TextBlock Classes="toolbarLabel" Text="{Binding DisplayLabel}" />
+              </StackPanel>
             </SplitButton>
           </Panel>
         </DataTemplate>

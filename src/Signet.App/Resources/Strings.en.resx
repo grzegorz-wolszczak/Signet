@@ -1865,8 +1865,35 @@ Do you want to save the changes?</value>
   <data name="ToolbarStripView_Hide" xml:space="preserve">
     <value>Hide toolbar</value>
   </data>
-  <data name="ToolbarStripView_Edit" xml:space="preserve">
-    <value>Edit toolbar…</value>
+  <data name="ToolbarStripView_TextPosition" xml:space="preserve">
+    <value>Text Position</value>
+  </data>
+  <data name="ToolbarStripView_IconsOnly" xml:space="preserve">
+    <value>Icons Only</value>
+  </data>
+  <data name="ToolbarStripView_TextOnly" xml:space="preserve">
+    <value>Text Only</value>
+  </data>
+  <data name="ToolbarStripView_TextBesideIcons" xml:space="preserve">
+    <value>Text Alongside Icons</value>
+  </data>
+  <data name="ToolbarStripView_TextUnderIcons" xml:space="preserve">
+    <value>Text Under Icons</value>
+  </data>
+  <data name="ToolbarStripView_IconSize" xml:space="preserve">
+    <value>Icon Size</value>
+  </data>
+  <data name="ToolbarStripView_SmallIcons" xml:space="preserve">
+    <value>Small (16×16)</value>
+  </data>
+  <data name="ToolbarStripView_LargeIcons" xml:space="preserve">
+    <value>Large (24×24)</value>
+  </data>
+  <data name="ToolbarStripView_Configure" xml:space="preserve">
+    <value>Configure Toolbars…</value>
+  </data>
+  <data name="ToolbarStripView_LockPositions" xml:space="preserve">
+    <value>Lock Toolbar Positions</value>
   </data>
   <data name="ToolbarStripView_MoreTip" xml:space="preserve">
     <value>More toolbar buttons</value>
@@ -7260,6 +7287,21 @@ Close the tab</value>
   </data>
   <data name="PreferencesWindow_StartScreenHighlightInTheme" xml:space="preserve">
     <value>Background of the highlighted file: Appearance › Interface Colors</value>
+  </data>
+  <data name="PreferencesWindow_Toolbars" xml:space="preserve">
+    <value>Toolbars</value>
+  </data>
+  <data name="PreferencesWindow_ToolbarsSection" xml:space="preserve">
+    <value>Toolbars of the main window</value>
+  </data>
+  <data name="PreferencesWindow_ToolbarsHint" xml:space="preserve">
+    <value>The same settings are in the context menu of every toolbar (below the line). The button bars of the panels (e.g. Preview) do not use them.</value>
+  </data>
+  <data name="PreferencesWindow_ToolbarFont" xml:space="preserve">
+    <value>Button texts</value>
+  </data>
+  <data name="FontPreview_Toolbar" xml:space="preserve">
+    <value>Open   Save   Bold</value>
   </data>
   <data name="PreferencesWindow_FontSizeZeroAsDefault11" xml:space="preserve">
     <value>Size 0 = default (11)</value>

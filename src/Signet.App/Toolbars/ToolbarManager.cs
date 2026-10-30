@@ -1,7 +1,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using Avalonia;
+using Avalonia.Media;
 using Signet.App.Actions;
+using Signet.App.Infrastructure;
 using Signet.App.Resources;
 using Signet.Core.Misc;
 
@@ -146,11 +149,114 @@ public sealed class ToolbarManager
     private readonly Dictionary<ToolbarId, bool> _visible = new();
     private readonly Dictionary<ToolbarArea, List<List<ToolbarId>>> _placement = new();
 
-    /// <summary>Creates the manager and loads the saved layout (or the default one).</summary>
+    /// <summary>Application resource holding the size (px) of the icons of the main window's toolbars.</summary>
+    public const string IconSizeResourceKey = "SignetMainToolbarIconSize";
+
+    /// <summary>Application resource holding the font family of the toolbar button texts (absent = the interface font).</summary>
+    public const string FontFamilyResourceKey = "SignetToolbarFontFamily";
+
+    /// <summary>Application resource holding the font size of the toolbar button texts (absent = the default).</summary>
+    public const string FontSizeResourceKey = "SignetToolbarFontSize";
+
+    /// <summary>Application resource holding the font weight of the toolbar button texts (absent = not set).</summary>
+    public const string FontWeightResourceKey = "SignetToolbarFontWeight";
+
+    /// <summary>
+    /// Creates the manager, loads the saved layout (or the default one) and applies the saved look
+    /// (<see cref="Appearance"/>) to the application resources.
+    /// </summary>
     public ToolbarManager(SettingsStore settings)
     {
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         Load();
+        _settings.SettingChanged += OnSettingChanged;
+        ApplyAppearance();
+    }
+
+    /// <summary>
+    /// Raised after the look of the toolbars changed (<see cref="Appearance"/>) — from a toolbar's context menu, from
+    /// Preferences (once applied) or by restoring the appearance defaults. The resources are already updated.
+    /// </summary>
+    public event EventHandler? AppearanceChanged;
+
+    /// <summary>The look of the toolbars, shared by all of them (kept in the settings).</summary>
+    public ToolbarAppearance Appearance => _settings.ToolbarAppearance;
+
+    /// <summary>Sets where the buttons show their text (saved at once).</summary>
+    public void SetTextPosition(ToolbarTextPosition position) => SetAppearance(Appearance with { TextPosition = position });
+
+    /// <summary>Sets the size of the icons (saved at once).</summary>
+    public void SetIconSize(ToolbarIconSize size) => SetAppearance(Appearance with { IconSize = size });
+
+    /// <summary>Locks or unlocks the positions of the toolbars: locked toolbars have no grip (saved at once).</summary>
+    public void SetPositionsLocked(bool locked) => SetAppearance(Appearance with { PositionsLocked = locked });
+
+    /// <summary>Puts the look of the toolbars into the application resources (the toolbar views take it from there).</summary>
+    public void ApplyAppearance()
+    {
+        if (Application.Current is { } app)
+        {
+            ApplyResources(app, Appearance);
+        }
+    }
+
+    /// <summary>
+    /// Sets the resources of the toolbars' look: the icon size always, the font of the button texts only for what is
+    /// set (what is left empty / 0 is no resource, so the text keeps the font of the buttons).
+    /// </summary>
+    public static void ApplyResources(Application app, ToolbarAppearance look)
+    {
+        ArgumentNullException.ThrowIfNull(app);
+        app.Resources[IconSizeResourceKey] = (double)look.IconPixels;
+        if (look.FontFamily.Length > 0)
+        {
+            app.Resources[FontFamilyResourceKey] = FontFamily.Parse(look.FontFamily);
+        }
+        else
+        {
+            app.Resources.Remove(FontFamilyResourceKey);
+        }
+
+        if (look.FontSize > 0)
+        {
+            app.Resources[FontSizeResourceKey] = (double)look.FontSize;
+        }
+        else
+        {
+            app.Resources.Remove(FontSizeResourceKey);
+        }
+
+        if (look.FontWeight > 0)
+        {
+            app.Resources[FontWeightResourceKey] = FontWeightOptions.ToAvalonia(look.FontWeight);
+        }
+        else
+        {
+            app.Resources.Remove(FontWeightResourceKey);
+        }
+    }
+
+    private void SetAppearance(ToolbarAppearance look)
+    {
+        if (look == Appearance)
+        {
+            return;
+        }
+
+        // The settings raise SettingChanged, which applies the look (OnSettingChanged).
+        _settings.ToolbarAppearance = look;
+        _settings.Save();
+    }
+
+    // The look changes from this manager, from Preferences (the draft committed) and with the appearance defaults restored.
+    private void OnSettingChanged(object? sender, SettingChangedEventArgs e)
+    {
+        if (e.QualifiedKey.EndsWith("/toolbar_appearance", StringComparison.Ordinal)
+            || e.QualifiedKey.EndsWith("/appearance_settings_cleared", StringComparison.Ordinal))
+        {
+            ApplyAppearance();
+            AppearanceChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     /// <summary>Raised after every layout or visibility change (argument = the changed toolbar).</summary>

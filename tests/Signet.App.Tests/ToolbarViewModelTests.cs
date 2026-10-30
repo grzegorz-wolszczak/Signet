@@ -1,6 +1,7 @@
 using AwesomeAssertions;
 using Signet.App.Toolbars;
 using Signet.App.ViewModels;
+using Signet.Core.Misc;
 using Xunit;
 
 namespace Signet.App.Tests;
@@ -26,18 +27,60 @@ public sealed class ToolbarViewModelTests
     }
 
     [Fact]
-    public void Edit_raises_EditRequested()
+    public void Configure_raises_ConfigureRequested()
     {
         // Arrange
         using TestHost host = new();
         ToolbarViewModel sut = new(ToolbarId.Align, host.Toolbars, host.Registry);
         object? raisedBy = null;
-        sut.EditRequested += (s, _) => raisedBy = s;
+        sut.ConfigureRequested += (s, _) => raisedBy = s;
 
         // Act
-        sut.EditCommand.Execute(null);
+        sut.ConfigureCommand.Execute(null);
 
         // Assert
         raisedBy.Should().BeSameAs(sut);
+    }
+
+    [Fact]
+    public void The_settings_of_the_menu_are_shared_by_every_toolbar_and_saved()
+    {
+        // Arrange
+        using TestHost host = new();
+        ToolbarViewModel sut = new(ToolbarId.Align, host.Toolbars, host.Registry);
+        ToolbarViewModel other = new(ToolbarId.Format, host.Toolbars, host.Registry);
+        host.Toolbars.AppearanceChanged += (_, _) => other.RefreshAppearance();
+
+        // Assert
+        other.IsIconsOnly.Should().BeTrue();
+        other.ShowsText.Should().BeFalse();
+        other.IsLargeIcons.Should().BeTrue();
+        other.ArePositionsLocked.Should().BeFalse();
+
+        // Act
+        sut.SetTextPositionCommand.Execute(ToolbarTextPosition.TextUnderIcons);
+        sut.SetIconSizeCommand.Execute(ToolbarIconSize.Small);
+        sut.TogglePositionsLockedCommand.Execute(null);
+
+        // Assert
+        other.IsTextUnderIcons.Should().BeTrue();
+        other.IsIconsOnly.Should().BeFalse();
+        other.ShowsText.Should().BeTrue();
+        other.IsSmallIcons.Should().BeTrue();
+        other.IsLargeIcons.Should().BeFalse();
+        other.ArePositionsLocked.Should().BeTrue();
+        host.ReopenSettings().ToolbarAppearance.Should().Be(
+            ToolbarAppearance.Default with
+            {
+                TextPosition = ToolbarTextPosition.TextUnderIcons,
+                IconSize = ToolbarIconSize.Small,
+                PositionsLocked = true,
+            });
+
+        // Act
+        sut.TogglePositionsLockedCommand.Execute(null);
+
+        // Assert
+        other.ArePositionsLocked.Should().BeFalse();
     }
 }

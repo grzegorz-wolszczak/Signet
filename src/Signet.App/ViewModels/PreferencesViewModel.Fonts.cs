@@ -36,6 +36,9 @@ public sealed partial class PreferencesViewModel
     /// <summary>Appearance › Start Screen › Fonts: the tooltip font.</summary>
     public FontPageViewModel StartScreenFonts { get; private set; } = null!;
 
+    /// <summary>Appearance › Toolbars › Fonts: the font of the toolbar button texts.</summary>
+    public FontPageViewModel ToolbarFonts { get; private set; } = null!;
+
     /// <summary>Appearance › Book Browser › Fonts: the font of the names and cells, of the column headers and the tooltip font.</summary>
     public FontPageViewModel BookBrowserFonts { get; private set; } = null!;
 
@@ -195,6 +198,7 @@ public sealed partial class PreferencesViewModel
         });
 
         StartScreenFonts = new FontPageViewModel(StartScreenFontRows().Append(TooltipRow(TooltipArea.StartScreen)).ToArray());
+        ToolbarFonts = new FontPageViewModel(new[] { ToolbarFontRow() });
         BookBrowserFonts = new FontPageViewModel(new[]
         {
             InterfaceFontRow(
@@ -299,7 +303,7 @@ public sealed partial class PreferencesViewModel
         FootnotesFonts = TooltipPage(TooltipArea.Footnotes);
         _fontPages.AddRange(new[]
         {
-            AppearanceFonts, StartScreenFonts, BookBrowserFonts, TableOfContentsFonts, CodeEditorFonts, PreviewFonts,
+            AppearanceFonts, StartScreenFonts, ToolbarFonts, BookBrowserFonts, TableOfContentsFonts, CodeEditorFonts, PreviewFonts,
             FindReplaceFonts, FindUsagesFonts, SearchEditorFonts, SpecialCharacterFonts, CheckpointsFonts, ValidationFonts, MetadataEditorFonts,
             CleanupFonts, FootnotesFonts, NotificationsFonts,
         });

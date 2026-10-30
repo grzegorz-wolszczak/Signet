@@ -273,7 +273,7 @@ public sealed partial class MainWindowViewModel
             ToolbarManager.AllToolbars.Select(id => new ToolbarViewModel(id, _toolbarManager, _actions)));
         foreach (ToolbarViewModel toolbar in Toolbars)
         {
-            toolbar.EditRequested += (_, _) => CustomizeToolbarRequested?.Invoke(this, toolbar.Id);
+            toolbar.ConfigureRequested += (_, _) => CustomizeToolbarRequested?.Invoke(this, toolbar.Id);
         }
 
         TopToolbars = new ToolbarAreaViewModel(ToolbarArea.Top, _toolbarManager, Toolbars);
@@ -283,6 +283,13 @@ public sealed partial class MainWindowViewModel
         {
             ToolbarViewModel? vm = Toolbars.FirstOrDefault(t => t.Id == id);
             vm?.Refresh();
+        };
+        _toolbarManager.AppearanceChanged += (_, _) =>
+        {
+            foreach (ToolbarViewModel toolbar in Toolbars)
+            {
+                toolbar.RefreshAppearance();
+            }
         };
 
         _statusBar.PropertyChanged += OnStatusBarPropertyChanged;
