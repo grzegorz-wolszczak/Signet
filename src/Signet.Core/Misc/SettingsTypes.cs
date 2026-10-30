@@ -312,14 +312,21 @@ public enum ToolbarTextPosition
     TextUnderIcons,
 }
 
-/// <summary>The size of the icons of the main window's toolbars.</summary>
+/// <summary>
+/// The size of the icons of the main window's toolbars. The first version had only Small and Large, Large being
+/// 24 px; a saved "Large" is no value of this enum any more and reads as the default, <see cref="Medium"/> — the same
+/// 24 px — so the icons do not grow on their own.
+/// </summary>
 public enum ToolbarIconSize
 {
     /// <summary>16 × 16 px.</summary>
     Small,
 
     /// <summary>24 × 24 px (the default).</summary>
-    Large,
+    Medium,
+
+    /// <summary>32 × 32 px.</summary>
+    Big,
 }
 
 /// <summary>
@@ -340,8 +347,11 @@ public readonly record struct ToolbarAppearance(
     /// <summary>The size (px) of a small icon.</summary>
     public const int SmallIconPixels = 16;
 
-    /// <summary>The size (px) of a large icon.</summary>
-    public const int LargeIconPixels = 24;
+    /// <summary>The size (px) of a medium icon.</summary>
+    public const int MediumIconPixels = 24;
+
+    /// <summary>The size (px) of a big icon.</summary>
+    public const int BigIconPixels = 32;
 
     /// <summary>The size (px) of the button texts while <see cref="FontSize"/> is not set.</summary>
     public const int DefaultFontSize = 11;
@@ -352,16 +362,21 @@ public readonly record struct ToolbarAppearance(
     /// <summary>Upper bound of an explicit <see cref="FontSize"/>.</summary>
     public const int FontSizeMax = 72;
 
-    /// <summary>Default values: large icons without text, movable toolbars, the interface font.</summary>
-    public static ToolbarAppearance Default => new(ToolbarTextPosition.IconsOnly, ToolbarIconSize.Large, false, string.Empty, 0);
+    /// <summary>Default values: medium icons without text, movable toolbars, the interface font.</summary>
+    public static ToolbarAppearance Default => new(ToolbarTextPosition.IconsOnly, ToolbarIconSize.Medium, false, string.Empty, 0);
 
     /// <summary>The size (px) of the icons.</summary>
-    public int IconPixels => IconSize == ToolbarIconSize.Small ? SmallIconPixels : LargeIconPixels;
+    public int IconPixels => IconSize switch
+    {
+        ToolbarIconSize.Small => SmallIconPixels,
+        ToolbarIconSize.Big => BigIconPixels,
+        _ => MediumIconPixels,
+    };
 
     /// <summary>A copy with unknown values replaced by the defaults and the size clamped (0 stays "the default").</summary>
     public ToolbarAppearance Normalized() => new(
         Enum.IsDefined(TextPosition) ? TextPosition : ToolbarTextPosition.IconsOnly,
-        Enum.IsDefined(IconSize) ? IconSize : ToolbarIconSize.Large,
+        Enum.IsDefined(IconSize) ? IconSize : ToolbarIconSize.Medium,
         PositionsLocked,
         FontFamily?.Trim() ?? string.Empty,
         FontSize <= 0 ? 0 : Math.Clamp(FontSize, FontSizeMin, FontSizeMax),

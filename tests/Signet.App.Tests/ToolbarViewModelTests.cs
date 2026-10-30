@@ -54,7 +54,7 @@ public sealed class ToolbarViewModelTests
         // Assert
         other.IsIconsOnly.Should().BeTrue();
         other.ShowsText.Should().BeFalse();
-        other.IsLargeIcons.Should().BeTrue();
+        other.IsMediumIcons.Should().BeTrue();
         other.ArePositionsLocked.Should().BeFalse();
 
         // Act
@@ -67,7 +67,8 @@ public sealed class ToolbarViewModelTests
         other.IsIconsOnly.Should().BeFalse();
         other.ShowsText.Should().BeTrue();
         other.IsSmallIcons.Should().BeTrue();
-        other.IsLargeIcons.Should().BeFalse();
+        other.IsMediumIcons.Should().BeFalse();
+        other.IsBigIcons.Should().BeFalse();
         other.ArePositionsLocked.Should().BeTrue();
         host.ReopenSettings().ToolbarAppearance.Should().Be(
             ToolbarAppearance.Default with

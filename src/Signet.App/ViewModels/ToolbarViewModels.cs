@@ -307,8 +307,11 @@ public sealed partial class ToolbarViewModel : ObservableObject
     /// <summary>The icons are small (16 × 16).</summary>
     public bool IsSmallIcons => _appearance.IconSize == ToolbarIconSize.Small;
 
-    /// <summary>The icons are large (24 × 24).</summary>
-    public bool IsLargeIcons => _appearance.IconSize == ToolbarIconSize.Large;
+    /// <summary>The icons are medium (24 × 24).</summary>
+    public bool IsMediumIcons => _appearance.IconSize == ToolbarIconSize.Medium;
+
+    /// <summary>The icons are big (32 × 32).</summary>
+    public bool IsBigIcons => _appearance.IconSize == ToolbarIconSize.Big;
 
     /// <summary>The toolbars cannot be moved: their grips are hidden.</summary>
     public bool ArePositionsLocked => _appearance.PositionsLocked;
@@ -347,7 +350,7 @@ public sealed partial class ToolbarViewModel : ObservableObject
     private static readonly string[] AppearanceProperties =
     {
         nameof(IsIconsOnly), nameof(IsTextOnly), nameof(IsTextBesideIcons), nameof(IsTextUnderIcons), nameof(ShowsText),
-        nameof(IsSmallIcons), nameof(IsLargeIcons), nameof(ArePositionsLocked),
+        nameof(IsSmallIcons), nameof(IsMediumIcons), nameof(IsBigIcons), nameof(ArePositionsLocked),
         nameof(HasCustomFontFamily), nameof(HasCustomFontSize), nameof(HasCustomFontWeight),
     };
 

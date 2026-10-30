@@ -122,9 +122,12 @@
         <MenuItem Header="{loc:Loc ToolbarStripView_SmallIcons}" ToggleType="Radio" GroupName="ToolbarIconSize"
                   IsChecked="{Binding IsSmallIcons, Mode=OneWay}"
                   Command="{Binding SetIconSizeCommand}" CommandParameter="{x:Static misc:ToolbarIconSize.Small}" />
-        <MenuItem Header="{loc:Loc ToolbarStripView_LargeIcons}" ToggleType="Radio" GroupName="ToolbarIconSize"
-                  IsChecked="{Binding IsLargeIcons, Mode=OneWay}"
-                  Command="{Binding SetIconSizeCommand}" CommandParameter="{x:Static misc:ToolbarIconSize.Large}" />
+        <MenuItem Header="{loc:Loc ToolbarStripView_MediumIcons}" ToggleType="Radio" GroupName="ToolbarIconSize"
+                  IsChecked="{Binding IsMediumIcons, Mode=OneWay}"
+                  Command="{Binding SetIconSizeCommand}" CommandParameter="{x:Static misc:ToolbarIconSize.Medium}" />
+        <MenuItem Header="{loc:Loc ToolbarStripView_BigIcons}" ToggleType="Radio" GroupName="ToolbarIconSize"
+                  IsChecked="{Binding IsBigIcons, Mode=OneWay}"
+                  Command="{Binding SetIconSizeCommand}" CommandParameter="{x:Static misc:ToolbarIconSize.Big}" />
       </MenuItem>
       <MenuItem x:Name="ConfigureItem" Classes="withIcon" Tag="{x:Static actions:ActionIconKeys.ToolbarConfigure}"
                 Header="{loc:Loc ToolbarStripView_Configure}" Command="{Binding ConfigureCommand}" />

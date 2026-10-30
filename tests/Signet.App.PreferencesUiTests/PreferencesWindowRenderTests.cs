@@ -931,7 +931,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         // Assert
         position.IsEffectivelyVisible.Should().BeTrue();
         position.SelectedItem.Should().Be(Signet.Core.Misc.ToolbarTextPosition.IconsOnly);
-        size.SelectedItem.Should().Be(Signet.Core.Misc.ToolbarIconSize.Large);
+        size.SelectedItem.Should().Be(Signet.Core.Misc.ToolbarIconSize.Medium);
 
         // Act
         position.SelectedItem = Signet.Core.Misc.ToolbarTextPosition.TextUnderIcons;

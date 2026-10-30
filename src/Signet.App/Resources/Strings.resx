@@ -1886,8 +1886,11 @@ Czy chcesz zapisać zmiany?</value>
   <data name="ToolbarStripView_SmallIcons" xml:space="preserve">
     <value>Małe (16×16)</value>
   </data>
-  <data name="ToolbarStripView_LargeIcons" xml:space="preserve">
-    <value>Duże (24×24)</value>
+  <data name="ToolbarStripView_MediumIcons" xml:space="preserve">
+    <value>Średnie (24×24)</value>
+  </data>
+  <data name="ToolbarStripView_BigIcons" xml:space="preserve">
+    <value>Duże (32×32)</value>
   </data>
   <data name="ToolbarStripView_Configure" xml:space="preserve">
     <value>Konfiguruj paski narzędzi…</value>
