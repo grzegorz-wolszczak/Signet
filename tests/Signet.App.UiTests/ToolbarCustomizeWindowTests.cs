@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
@@ -100,6 +101,64 @@ public sealed class ToolbarCustomizeWindowTests : IDisposable
         sut.AvailableActions.Single(e => e.Id == ToolbarManager.HeadingsMenu).IconKey.Should().Be("heading-all");
         sut.AvailableActions.Single(e => e.Id == ToolbarManager.CaseMenu).IconKey.Should().Be("case-change");
         sut.AvailableActions.Single(e => e.Id == AppActionIds.Save).IconKey.Should().NotBeNullOrEmpty();
+    }
+
+    private static void Click(Window window, ListBox list, int index, RawInputModifiers modifiers = RawInputModifiers.None)
+    {
+        Control item = (Control)list.ContainerFromIndex(index)!;
+        Point center = item.TranslatePoint(new Point(item.Bounds.Width / 2, item.Bounds.Height / 2), window)!.Value;
+        window.MouseDown(center, MouseButton.Left, modifiers);
+        window.MouseUp(center, MouseButton.Left, modifiers);
+        Dispatcher.UIThread.RunJobs();
+    }
+
+    [AvaloniaFact]
+    public void Ctrl_and_Shift_select_several_entries_and_a_double_click_adds_or_removes_one()
+    {
+        // Arrange
+        ToolbarCustomizeWindow window = Show();
+        try
+        {
+            ToolbarCustomizeViewModel vm = (ToolbarCustomizeViewModel)window.DataContext!;
+            ListBox available = window.FindControl<ListBox>("AvailableList")!;
+            ListBox current = window.FindControl<ListBox>("CurrentList")!;
+            ToolbarEntry[] shown = vm.FilteredAvailableActions.ToArray();
+
+            // Act
+            Click(window, available, 0);
+            Click(window, available, 3, RawInputModifiers.Shift);
+
+            // Assert
+            vm.SelectedAvailableItems.Should().BeEquivalentTo(shown.Take(4), "Shift selects the range");
+
+            // Act
+            Click(window, available, 1, RawInputModifiers.Control);
+
+            // Assert
+            vm.SelectedAvailableItems.Should().BeEquivalentTo(new[] { shown[0], shown[2], shown[3] }, "Ctrl takes one out");
+
+            // Act
+            int before = vm.CurrentItems.Count;
+            Click(window, available, 2);
+            Click(window, available, 2);
+
+            // Assert
+            vm.CurrentItems.Should().HaveCount(before + 1, "a double click on an available action adds it");
+            vm.CurrentItems[^1].Id.Should().Be(shown[2].Id);
+
+            // Act
+            string firstId = vm.CurrentItems[0].Id;
+            Click(window, current, 0);
+            Click(window, current, 0);
+
+            // Assert
+            vm.CurrentItems.Should().HaveCount(before, "a double click on an item of the layout removes it");
+            vm.CurrentItems.Select(e => e.Id).Should().NotContain(firstId);
+        }
+        finally
+        {
+            window.Close();
+        }
     }
 
     [AvaloniaFact]

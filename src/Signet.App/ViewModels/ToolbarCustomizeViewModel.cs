@@ -110,19 +110,25 @@ public sealed partial class ToolbarCustomizeViewModel : ObservableObject
     [ObservableProperty]
     private ToolbarId _selectedToolbar;
 
-    /// <summary>The action selected in the list of available ones.</summary>
-    [ObservableProperty]
-    private ToolbarEntry? _selectedAvailable;
+    /// <summary>
+    /// The actions selected in the list of available ones (several with Ctrl / Shift): <see cref="AddCommand"/> adds them
+    /// all. The list's own selection (<c>ListBox.SelectedItems</c>).
+    /// </summary>
+    public ObservableCollection<ToolbarEntry> SelectedAvailableItems { get; } = new();
 
-    /// <summary>The item selected in the current layout.</summary>
-    [ObservableProperty]
-    private ToolbarEntry? _selectedCurrent;
+    /// <summary>
+    /// The items selected in the current layout (several with Ctrl / Shift): Remove, Up and Down act on them all. The
+    /// list's own selection (<c>ListBox.SelectedItems</c>).
+    /// </summary>
+    public ObservableCollection<ToolbarEntry> SelectedCurrentItems { get; } = new();
 
     partial void OnSearchTextChanged(string value)
     {
-        if (SelectedAvailable is { } selected && !FilteredAvailableActions.Contains(selected))
+        // A selected action the search hides is not added by a click on Add.
+        HashSet<ToolbarEntry> shown = FilteredAvailableActions.ToHashSet();
+        foreach (ToolbarEntry hidden in SelectedAvailableItems.Where(e => !shown.Contains(e)).ToList())
         {
-            SelectedAvailable = null;
+            SelectedAvailableItems.Remove(hidden);
         }
 
         OnPropertyChanged(nameof(FilteredAvailableActions));
@@ -134,15 +140,23 @@ public sealed partial class ToolbarCustomizeViewModel : ObservableObject
     [RelayCommand]
     private void ClearSearch() => SearchText = string.Empty;
 
-    /// <summary>Adds the selected action to the end of the toolbar.</summary>
+    /// <summary>
+    /// Adds the selected actions, in the order of the list, to the end of the toolbar, and selects them in the current
+    /// layout. Each is a new item, so the same action added twice is two items of its own.
+    /// </summary>
     [RelayCommand]
     private void Add()
     {
-        if (SelectedAvailable is { } entry)
+        List<ToolbarEntry> chosen = FilteredAvailableActions.Where(SelectedAvailableItems.Contains).ToList();
+        if (chosen.Count == 0)
         {
-            CurrentItems.Add(entry);
-            Persist();
+            return;
         }
+
+        List<ToolbarEntry> added = chosen.Select(e => new ToolbarEntry(e.Id, e.Label, e.IconKey)).ToList();
+        added.ForEach(CurrentItems.Add);
+        Persist();
+        SelectCurrent(added);
     }
 
     /// <summary>Adds a separator to the end of the toolbar.</summary>
@@ -153,39 +167,71 @@ public sealed partial class ToolbarCustomizeViewModel : ObservableObject
         Persist();
     }
 
-    /// <summary>Removes the selected item.</summary>
+    /// <summary>Removes the selected items.</summary>
     [RelayCommand]
     private void Remove()
     {
-        if (SelectedCurrent is { } entry)
+        List<ToolbarEntry> removed = CurrentItems.Where(SelectedCurrentItems.Contains).ToList();
+        if (removed.Count == 0)
         {
-            CurrentItems.Remove(entry);
+            return;
+        }
+
+        removed.ForEach(e => CurrentItems.Remove(e));
+        SelectedCurrentItems.Clear();
+        Persist();
+    }
+
+    /// <summary>Moves the selected items up by one place (a selected item at the top, and those right below it, stay).</summary>
+    [RelayCommand]
+    private void MoveUp() => MoveSelected(-1);
+
+    /// <summary>Moves the selected items down by one place (a selected item at the bottom, and those right above it, stay).</summary>
+    [RelayCommand]
+    private void MoveDown() => MoveSelected(1);
+
+    // Moves every selected item one place in `step`'s direction, nearest to that end first, so that a block moves as a
+    // whole; an item blocked by the end of the list, or by a selected item that could not move, stays.
+    private void MoveSelected(int step)
+    {
+        List<ToolbarEntry> selected = CurrentItems.Where(SelectedCurrentItems.Contains).ToList();
+        if (selected.Count == 0)
+        {
+            return;
+        }
+
+        if (step > 0)
+        {
+            selected.Reverse();
+        }
+
+        bool moved = false;
+        foreach (ToolbarEntry entry in selected)
+        {
+            int from = CurrentItems.IndexOf(entry);
+            int to = from + step;
+            if (to < 0 || to >= CurrentItems.Count || SelectedCurrentItems.Contains(CurrentItems[to]))
+            {
+                continue;
+            }
+
+            CurrentItems.Move(from, to);
+            moved = true;
+        }
+
+        if (moved)
+        {
             Persist();
+            SelectCurrent(selected);
         }
     }
 
-    /// <summary>Moves the selected item up.</summary>
-    [RelayCommand]
-    private void MoveUp()
+    // Makes `entries` the selection of the current layout (the list may drop its selection while items move).
+    private void SelectCurrent(IEnumerable<ToolbarEntry> entries)
     {
-        int i = SelectedCurrent is null ? -1 : CurrentItems.IndexOf(SelectedCurrent);
-        if (i > 0)
-        {
-            CurrentItems.Move(i, i - 1);
-            Persist();
-        }
-    }
-
-    /// <summary>Moves the selected item down.</summary>
-    [RelayCommand]
-    private void MoveDown()
-    {
-        int i = SelectedCurrent is null ? -1 : CurrentItems.IndexOf(SelectedCurrent);
-        if (i >= 0 && i < CurrentItems.Count - 1)
-        {
-            CurrentItems.Move(i, i + 1);
-            Persist();
-        }
+        List<ToolbarEntry> keep = entries.ToList();
+        SelectedCurrentItems.Clear();
+        keep.ForEach(SelectedCurrentItems.Add);
     }
 
     /// <summary>Restores the factory layout of all toolbars.</summary>
