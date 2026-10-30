@@ -1,9 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Signet.App.Resources;
 using Signet.Core.BookManipulation;
 using Signet.Core.MainUI;
 
@@ -20,10 +23,9 @@ namespace Signet.App.ViewModels;
 /// </remarks>
 public sealed class HeadingSelectorViewModel : ViewModelBase
 {
-    private const string LevelChoicePrompt = "<Select headings to include in TOC>";
-
     private readonly HeadingSelectorModel _model;
     private bool _tocItemsOnly = true;
+    private bool _updateChildHeadingsLevels = true;
     private HeadingNodeViewModel? _selectedNode;
     private int _selectedLevelChoiceIndex;
     private string _countsSummary = string.Empty;
@@ -39,12 +41,12 @@ public sealed class HeadingSelectorViewModel : ViewModelBase
     {
         _model = model ?? throw new ArgumentNullException(nameof(model));
 
-        IncreaseLevelCommand = new RelayCommand(() => ChangeLevel(1), () => _selectedNode is not null);
-        DecreaseLevelCommand = new RelayCommand(() => ChangeLevel(-1), () => _selectedNode is not null);
-        EditTitleCommand = new RelayCommand(
-            () => EditTitleRequested?.Invoke(this, EventArgs.Empty),
-            () => _selectedNode is not null);
-        AcceptCommand = new RelayCommand(Accept);
+        IncreaseLevelCommand = new AsyncRelayCommand(() => ChangeLevelAsync(1), () => _selectedNode is not null);
+        DecreaseLevelCommand = new AsyncRelayCommand(() => ChangeLevelAsync(-1), () => _selectedNode is not null);
+        ExpandAllCommand = new RelayCommand(() => SetExpanded(true));
+        CollapseAllCommand = new RelayCommand(() => SetExpanded(false));
+        EditTitleCommand = new RelayCommand(EditTitle, () => _selectedNode is not null);
+        AcceptCommand = new AsyncRelayCommand(AcceptAsync);
         CancelCommand = new RelayCommand(() => CloseRequested?.Invoke(this, EventArgs.Empty));
 
         RebuildLevelChoices();
@@ -57,6 +59,15 @@ public sealed class HeadingSelectorViewModel : ViewModelBase
     /// <summary>Raised when the view should start editing the selected heading's title.</summary>
     public event EventHandler? EditTitleRequested;
 
+    /// <summary>Confirms a level change that would leave headings at h6 unchanged.</summary>
+    public Func<IReadOnlyList<Heading>, Task<bool>>? ConfirmHeadingLevelOverflowAsync { get; set; }
+
+    /// <summary>Confirms writing changed heading levels to the book.</summary>
+    public Func<Task<bool>>? ConfirmHeadingLevelChangesAsync { get; set; }
+
+    /// <summary>Raised after <see cref="RevealHeading"/> selected a node: the view scrolls it into view.</summary>
+    public event EventHandler<HeadingNodeViewModel>? HeadingRevealed;
+
     /// <summary>Visible nodes of the heading tree (top level).</summary>
     public ObservableCollection<HeadingNodeViewModel> Nodes { get; } = new();
 
@@ -64,16 +75,22 @@ public sealed class HeadingSelectorViewModel : ViewModelBase
     public ObservableCollection<string> LevelChoices { get; } = new();
 
     /// <summary>The "◀" command — decrease the selected heading's level by 1.</summary>
-    public RelayCommand DecreaseLevelCommand { get; }
+    public AsyncRelayCommand DecreaseLevelCommand { get; }
 
     /// <summary>The edit button command — start editing the selected heading's title.</summary>
     public RelayCommand EditTitleCommand { get; }
 
     /// <summary>The "▶" command — increase the selected heading's level by 1.</summary>
-    public RelayCommand IncreaseLevelCommand { get; }
+    public AsyncRelayCommand IncreaseLevelCommand { get; }
+
+    /// <summary>Expands all headings with children, recursively.</summary>
+    public RelayCommand ExpandAllCommand { get; }
+
+    /// <summary>Collapses all headings with children, recursively.</summary>
+    public RelayCommand CollapseAllCommand { get; }
 
     /// <summary>The "OK" command — write the changes to the sources and close.</summary>
-    public RelayCommand AcceptCommand { get; }
+    public AsyncRelayCommand AcceptCommand { get; }
 
     /// <summary>The "Cancel" command — close without saving.</summary>
     public RelayCommand CancelCommand { get; }
@@ -95,6 +112,13 @@ public sealed class HeadingSelectorViewModel : ViewModelBase
                 RebuildNodes();
             }
         }
+    }
+
+    /// <summary>Whether changing a heading level also changes its descendants by the same amount.</summary>
+    public bool UpdateChildHeadingsLevels
+    {
+        get => _updateChildHeadingsLevels;
+        set => SetProperty(ref _updateChildHeadingsLevels, value);
     }
 
     /// <summary>Selected tree node (for actions that require one selection).</summary>
@@ -142,7 +166,7 @@ public sealed class HeadingSelectorViewModel : ViewModelBase
         private set => SetProperty(ref _countsSummary, value);
     }
 
-    private void ChangeLevel(int delta)
+    private async Task ChangeLevelAsync(int delta)
     {
         if (_selectedNode is null)
         {
@@ -150,7 +174,24 @@ public sealed class HeadingSelectorViewModel : ViewModelBase
         }
 
         Heading target = _selectedNode.Heading;
-        if (_model.ChangeHeadingLevel(target, delta))
+        List<Heading> headingsToLeaveUnchanged = new();
+        if (UpdateChildHeadingsLevels && delta > 0)
+        {
+            AddHeadingsBeyondH6(target, delta, headingsToLeaveUnchanged);
+        }
+
+        if (headingsToLeaveUnchanged.Count > 0
+            && (ConfirmHeadingLevelOverflowAsync is null
+                || !await ConfirmHeadingLevelOverflowAsync(headingsToLeaveUnchanged)))
+        {
+            return;
+        }
+
+        if (_model.ChangeHeadingLevel(
+                target,
+                delta,
+                UpdateChildHeadingsLevels,
+                new HashSet<Heading>(headingsToLeaveUnchanged)))
         {
             RebuildNodes();
             SelectedNode = FindNode(Nodes, target);
@@ -158,17 +199,53 @@ public sealed class HeadingSelectorViewModel : ViewModelBase
         }
     }
 
-    private void Accept()
+    private async Task AcceptAsync()
     {
+        if (_model.HasHeadingLevelChanges
+            && (ConfirmHeadingLevelChangesAsync is null || !await ConfirmHeadingLevelChangesAsync()))
+        {
+            return;
+        }
+
         BookChanged = _model.Apply();
         Accepted = true;
         CloseRequested?.Invoke(this, EventArgs.Empty);
     }
 
+    private static void AddHeadingsBeyondH6(Heading heading, int delta, List<Heading> accumulator)
+    {
+        foreach (Heading child in heading.Children)
+        {
+            if (child.Level + delta > 6)
+            {
+                accumulator.Add(child);
+            }
+
+            AddHeadingsBeyondH6(child, delta, accumulator);
+        }
+    }
+
+    private void SetExpanded(bool expanded)
+    {
+        Stack<HeadingNodeViewModel> pending = new(Nodes);
+        while (pending.TryPop(out HeadingNodeViewModel? node))
+        {
+            if (node.Children.Count > 0)
+            {
+                node.IsExpanded = expanded;
+            }
+
+            foreach (HeadingNodeViewModel child in node.Children)
+            {
+                pending.Push(child);
+            }
+        }
+    }
+
     private void RebuildLevelChoices()
     {
         LevelChoices.Clear();
-        LevelChoices.Add(LevelChoicePrompt);
+        LevelChoices.Add(Strings.Get("HeadingSelectorWindow_LevelChoicePrompt"));
         foreach (HeadingLevelChoice choice in _model.GetLevelChoices())
         {
             LevelChoices.Add(choice.Label);
@@ -241,8 +318,70 @@ public sealed class HeadingSelectorViewModel : ViewModelBase
         }
 
         CountsSummary = sb.Length > 0
-            ? "Poziom: włączone / ukryte —    " + sb
-            : "Brak nagłówków w publikacji.";
+            ? Strings.Get("HeadingSelectorWindow_CountsSummary") + sb
+            : Strings.Get("HeadingSelectorWindow_NoHeadings");
+    }
+
+    /// <summary>
+    /// Selects <paramref name="heading"/> in the tree and expands its ancestors. A heading left out of the TOC is hidden
+    /// while <see cref="TocItemsOnly"/> is on, so that filter is switched off first.
+    /// </summary>
+    public void RevealHeading(Heading heading)
+    {
+        ArgumentNullException.ThrowIfNull(heading);
+        if (FindPath(Nodes, heading) is null && _tocItemsOnly)
+        {
+            TocItemsOnly = false;
+        }
+
+        if (FindPath(Nodes, heading) is not { } path)
+        {
+            return;
+        }
+
+        ExpandAncestors(path);
+        SelectedNode = path[^1];
+        HeadingRevealed?.Invoke(this, path[^1]);
+    }
+
+    // The selection stays on a heading when its parent is collapsed: the parent is expanded first, so that the heading
+    // has a row whose title can be edited.
+    private void EditTitle()
+    {
+        if (_selectedNode is not null && FindPath(Nodes, _selectedNode.Heading) is { } path)
+        {
+            ExpandAncestors(path);
+        }
+
+        EditTitleRequested?.Invoke(this, EventArgs.Empty);
+    }
+
+    private static void ExpandAncestors(List<HeadingNodeViewModel> path)
+    {
+        foreach (HeadingNodeViewModel ancestor in path.Take(path.Count - 1))
+        {
+            ancestor.IsExpanded = true;
+        }
+    }
+
+    // The nodes from a top-level one down to the node of `heading`, or null when the tree does not show it.
+    private static List<HeadingNodeViewModel>? FindPath(IEnumerable<HeadingNodeViewModel> nodes, Heading heading)
+    {
+        foreach (HeadingNodeViewModel node in nodes)
+        {
+            if (ReferenceEquals(node.Heading, heading))
+            {
+                return new List<HeadingNodeViewModel> { node };
+            }
+
+            if (FindPath(node.Children, heading) is { } below)
+            {
+                below.Insert(0, node);
+                return below;
+            }
+        }
+
+        return null;
     }
 
     private static HeadingNodeViewModel? FindNode(IEnumerable<HeadingNodeViewModel> nodes, Heading heading)
@@ -269,6 +408,7 @@ public sealed class HeadingNodeViewModel : ObservableObject
 {
     private readonly HeadingSelectorModel _model;
     private readonly Action _onInclusionChanged;
+    private bool _isExpanded = true;
 
     /// <summary>Creates a node for a heading.</summary>
     public HeadingNodeViewModel(HeadingSelectorModel model, Heading heading, Action onInclusionChanged)
@@ -287,8 +427,12 @@ public sealed class HeadingNodeViewModel : ObservableObject
     /// <summary>Level label, e.g. <c>h2</c>.</summary>
     public string LevelLabel => "h" + Heading.Level;
 
-    /// <summary>Whether the node is expanded in the dialog's tree (all are).</summary>
-    public bool IsExpanded { get; set; } = true;
+    /// <summary>Whether the node's children are visible in the dialog's tree.</summary>
+    public bool IsExpanded
+    {
+        get => _isExpanded;
+        set => SetProperty(ref _isExpanded, value);
+    }
 
     /// <summary>TOC entry text (editable — saved as the <c>title</c> attribute).</summary>
     public string TitleText

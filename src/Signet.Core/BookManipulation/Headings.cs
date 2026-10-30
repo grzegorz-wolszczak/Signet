@@ -28,6 +28,9 @@ public sealed class Heading
     /// <summary>The position among the file's <c>h1</c>–<c>h6</c> elements (document order, from 0).</summary>
     public required int HeadingIndex { get; init; }
 
+    /// <summary>The 0-based source offset of the heading's opening tag.</summary>
+    public int SourceOffset { get; init; } = -1;
+
     /// <summary>The text the heading shows in the TOC (the <c>title</c> attribute or, failing that, the element's text).</summary>
     public string Text { get; set; } = string.Empty;
 
@@ -141,6 +144,7 @@ public static class Headings
             {
                 ResourceFile = htmlResource,
                 HeadingIndex = i,
+                SourceOffset = XhtmlDoc.OffsetFromNode(node),
                 Title = title,
                 OrigTitle = title,
                 Id = id,

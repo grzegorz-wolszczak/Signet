@@ -437,11 +437,50 @@
   <data name="HeadingSelectorWindow_Title" xml:space="preserve">
     <value>Generate Table Of Contents</value>
   </data>
+  <data name="HeadingSelectorWindow_LevelChoicePrompt" xml:space="preserve">
+    <value>Select headings to include in TOC</value>
+  </data>
+  <data name="HeadingSelectorWindow_CountsSummary" xml:space="preserve">
+    <value>Level: included / hidden —    </value>
+  </data>
+  <data name="HeadingSelectorWindow_NoHeadings" xml:space="preserve">
+    <value>No headings in publication.</value>
+  </data>
+  <data name="HeadingSelectorWindow_UpdateChildHeadingsLevels" xml:space="preserve">
+    <value>Update child heading levels</value>
+  </data>
+  <data name="HeadingSelectorWindow_HeadingLevelOverflowTitle" xml:space="preserve">
+    <value>Some headings will remain at h6</value>
+  </data>
+  <data name="HeadingSelectorWindow_HeadingLevelOverflowMessage" xml:space="preserve">
+    <value>Some headings will remain at level h6. Click a heading to select it in the list (the level is not changed then).</value>
+  </data>
+  <data name="HeadingSelectorWindow_HeadingLocation" xml:space="preserve">
+    <value>{0}, line {1}</value>
+  </data>
+  <data name="HeadingSelectorWindow_ShowHeadingTip" xml:space="preserve">
+    <value>Select this heading in the list</value>
+  </data>
+  <data name="HeadingSelectorWindow_Continue" xml:space="preserve">
+    <value>Continue</value>
+  </data>
+  <data name="HeadingSelectorWindow_HeadingLevelsChangedTitle" xml:space="preserve">
+    <value>Apply heading level changes?</value>
+  </data>
+  <data name="HeadingSelectorWindow_HeadingLevelsChangedMessage" xml:space="preserve">
+    <value>Heading levels have changed. Continuing will write those changes to the book's XHTML files. Do you want to continue?</value>
+  </data>
   <data name="HeadingSelectorWindow_LevelChoiceTip" xml:space="preserve">
     <value>Quickly select which headings go into the TOC.</value>
   </data>
   <data name="HeadingSelectorWindow_TocItemsOnly" xml:space="preserve">
     <value>Show only TOC items</value>
+  </data>
+  <data name="HeadingSelectorWindow_ExpandAllTip" xml:space="preserve">
+    <value>Expand all headings.</value>
+  </data>
+  <data name="HeadingSelectorWindow_CollapseAllTip" xml:space="preserve">
+    <value>Collapse all headings.</value>
   </data>
   <data name="HeadingSelectorWindow_DecreaseLevelTip" xml:space="preserve">
     <value>Decrease heading level by 1 (left arrow).</value>
