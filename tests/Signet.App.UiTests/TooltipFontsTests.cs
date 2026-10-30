@@ -142,7 +142,7 @@ public sealed class TooltipFontsTests
             Dispatcher.UIThread.RunJobs();
 
             // Act & Assert
-            Application.Current!.TryGetResource("ContentControlThemeFontFamily", null, out object? interfaceFont).Should().BeTrue();
+            Application.Current!.TryGetResource(FluentResourceKeys.ContentControlThemeFontFamily, null, out object? interfaceFont).Should().BeTrue();
 
             // Assert
             TipFont(button).Should().Be((((FontFamily)interfaceFont!).Name, 16d));

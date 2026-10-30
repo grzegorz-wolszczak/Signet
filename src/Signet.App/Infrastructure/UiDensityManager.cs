@@ -327,12 +327,12 @@ public sealed class UiDensityManager(
         ResourceDictionary resources = new();
         if (!string.IsNullOrWhiteSpace(family))
         {
-            resources["ContentControlThemeFontFamily"] = FontFamily.Parse(family);
+            resources[FluentResourceKeys.ContentControlThemeFontFamily] = FontFamily.Parse(family);
         }
 
         if (size > 0)
         {
-            resources["ControlContentThemeFontSize"] = (double)size;
+            resources[FluentResourceKeys.ControlContentThemeFontSize] = (double)size;
         }
 
         return resources.Count > 0 ? resources : null;
@@ -345,8 +345,8 @@ public sealed class UiDensityManager(
     /// </summary>
     public static ResourceDictionary CreateCompactResources() => new()
     {
-        ["ContentControlThemeFontFamily"] = FontFamily.Default,
-        ["ControlContentThemeFontSize"] = CompactFontSize,
+        [FluentResourceKeys.ContentControlThemeFontFamily] = FontFamily.Default,
+        [FluentResourceKeys.ControlContentThemeFontSize] = CompactFontSize,
         ["MenuFlyoutItemThemePadding"] = new Thickness(8, 3, 8, 4),
         ["MenuFlyoutItemThemePaddingNarrow"] = new Thickness(4, 3, 8, 4),
         ["MenuFlyoutSeparatorThemePadding"] = new Thickness(4, 3, 4, 3),

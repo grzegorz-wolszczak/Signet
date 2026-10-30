@@ -7,6 +7,7 @@ using Avalonia.Controls.Templates;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Signet.App.Infrastructure;
 
 namespace Signet.App.Views;
 
@@ -37,7 +38,7 @@ public sealed class HeightResizeGrip : Thumb
         Template = new FuncControlTemplate<HeightResizeGrip>((_, _) =>
         {
             Path path = new() { Data = Geometry.Parse("M 11,2 L 2,11 M 11,6 L 6,11 M 11,10 L 10,11"), StrokeThickness = 1 };
-            path.Bind(Shape.StrokeProperty, path.GetResourceObservable("SystemControlForegroundBaseMediumBrush"));
+            path.Bind(Shape.StrokeProperty, path.GetResourceObservable(FluentResourceKeys.SystemControlForegroundBaseMediumBrush));
             return new Border { Background = Brushes.Transparent, Child = path };
         });
         DragDelta += OnDragDelta;

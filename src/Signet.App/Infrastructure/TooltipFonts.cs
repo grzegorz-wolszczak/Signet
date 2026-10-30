@@ -96,7 +96,7 @@ public static class TooltipFonts
     public static FontFamily FamilyOf(TooltipFont font) =>
         !string.IsNullOrWhiteSpace(font.FontFamily)
             ? FontFamily.Parse(font.FontFamily)
-            : Application.Current?.TryGetResource("ContentControlThemeFontFamily", null, out object? family) == true
+            : Application.Current?.TryGetResource(FluentResourceKeys.ContentControlThemeFontFamily, null, out object? family) == true
               && family is FontFamily interfaceFont
                 ? interfaceFont
                 : FontFamily.Default;

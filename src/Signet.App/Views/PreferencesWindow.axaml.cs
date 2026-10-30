@@ -857,7 +857,7 @@ public partial class PreferencesWindow : Window
             Margin = new Thickness(-4, -2),
             IsHitTestVisible = false,
         };
-        frame.Bind(Border.BorderBrushProperty, frame.GetResourceObservable("SystemControlHighlightAccentBrush"));
+        frame.Bind(Border.BorderBrushProperty, frame.GetResourceObservable(FluentResourceKeys.SystemControlHighlightAccentBrush));
         AdornerLayer.SetIsClipEnabled(frame, false);
         return frame;
     }

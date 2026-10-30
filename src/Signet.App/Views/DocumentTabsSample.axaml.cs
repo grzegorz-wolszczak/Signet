@@ -76,12 +76,12 @@ public partial class DocumentTabsSample : UserControl
     private void ApplyColors()
     {
         ResolvedTheme theme = AppTheme.Current;
-        Resources["SampleTabForeground"] = Brush(theme.Foreground(ThemeKeys.UiDocumentTab), "SystemControlForegroundBaseMediumBrush");
+        Resources["SampleTabForeground"] = Brush(theme.Foreground(ThemeKeys.UiDocumentTab), FluentResourceKeys.SystemControlForegroundBaseMediumBrush);
         Resources["SampleTabBackground"] = Brush(theme.Background(ThemeKeys.UiDocumentTab), null);
         Resources["SampleTabSelectedForeground"] =
-            Brush(theme.Foreground(ThemeKeys.UiDocumentTabSelected), "SystemControlForegroundBaseHighBrush");
+            Brush(theme.Foreground(ThemeKeys.UiDocumentTabSelected), FluentResourceKeys.SystemControlForegroundBaseHighBrush);
         Resources["SampleTabSelectedBackground"] =
-            Brush(theme.Background(ThemeKeys.UiDocumentTabSelected), "SystemControlBackgroundAltHighBrush");
+            Brush(theme.Background(ThemeKeys.UiDocumentTabSelected), FluentResourceKeys.SystemControlBackgroundAltHighBrush);
     }
 
     private IBrush? Brush(Color? color, string? fallbackResource)

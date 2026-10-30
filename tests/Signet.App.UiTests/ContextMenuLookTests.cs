@@ -30,7 +30,7 @@ public sealed class ContextMenuLookTests
     {
         // Arrange
         Application app = Application.Current!;
-        app.Resources["ControlContentThemeFontSize"] = 17.0;
+        app.Resources[FluentResourceKeys.ControlContentThemeFontSize] = 17.0;
 
         // Act
         ContextMenuLook.Apply(app, ContextMenuAppearance.Default);
@@ -76,7 +76,7 @@ public sealed class ContextMenuLookTests
 
         // Assert
         title.Background.Should().BeOfType<SolidColorBrush>()
-            .Which.Color.Should().Be((Color)app.FindResource("SystemAccentColorLight2")!);
+            .Which.Color.Should().Be((Color)app.FindResource(FluentResourceKeys.SystemAccentColorLight2)!);
         menu.Close();
         window.Close();
     }

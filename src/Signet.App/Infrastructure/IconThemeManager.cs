@@ -88,7 +88,7 @@ public sealed class IconThemeManager(SettingsStore settings, ILogger<IconThemeMa
             return;
         }
 
-        double fontSize = app.TryFindResource("ControlContentThemeFontSize", out object? size) && size is double d
+        double fontSize = app.TryFindResource(FluentResourceKeys.ControlContentThemeFontSize, out object? size) && size is double d
             ? d
             : 14;
         FormattedText probe = new(
