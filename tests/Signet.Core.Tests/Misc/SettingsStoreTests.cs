@@ -578,6 +578,37 @@ public sealed class SettingsStoreTests
         reader.ToolbarAppearance.IconPixels.Should().Be(16);
     }
 
+    [Theory]
+    [InlineData(ToolbarIconSize.Small, 16)]
+    [InlineData(ToolbarIconSize.Medium, 24)]
+    [InlineData(ToolbarIconSize.Big, 32)]
+    public void Toolbar_icon_sizes_are_16_24_and_32_pixels(ToolbarIconSize size, int pixels)
+    {
+        // Act & Assert
+        (ToolbarAppearance.Default with { IconSize = size }).IconPixels.Should().Be(pixels);
+    }
+
+    [Fact]
+    public void A_toolbar_icon_size_saved_as_Large_by_the_first_version_reads_as_the_same_24_pixels()
+    {
+        // Arrange
+        using TempDir dir = new();
+        string path = dir.Combine("settings.xml");
+        SettingsStore writer = new(path);
+        writer.ToolbarAppearance = ToolbarAppearance.Default with { IconSize = ToolbarIconSize.Big };
+        writer.Save();
+        string saved = File.ReadAllText(path);
+        saved.Should().Contain(">Big<", "the premise: the size is saved by its name");
+        File.WriteAllText(path, saved.Replace(">Big<", ">Large<", StringComparison.Ordinal));
+
+        // Act
+        SettingsStore reader = new(path);
+
+        // Assert
+        reader.ToolbarAppearance.IconSize.Should().Be(ToolbarIconSize.Medium);
+        reader.ToolbarAppearance.IconPixels.Should().Be(24);
+    }
+
     [Fact]
     public void Toolbar_appearance_is_normalized()
     {
@@ -590,7 +621,7 @@ public sealed class SettingsStoreTests
 
         // Assert
         sut.ToolbarAppearance.Should().Be(
-            new ToolbarAppearance(ToolbarTextPosition.IconsOnly, ToolbarIconSize.Large, false, "Arial", ToolbarAppearance.FontSizeMax));
+            new ToolbarAppearance(ToolbarTextPosition.IconsOnly, ToolbarIconSize.Medium, false, "Arial", ToolbarAppearance.FontSizeMax));
     }
 
     [Fact]

@@ -279,7 +279,7 @@ public sealed class PreferencesViewModelTests : IDisposable
         // Assert
         sut.ToolbarTextPosition.Should().Be(ToolbarTextPosition.TextBesideIcons, "the menu and the page share one setting");
         sut.ToolbarPositionsLocked.Should().BeTrue();
-        sut.ToolbarIconSize.Should().Be(ToolbarIconSize.Large);
+        sut.ToolbarIconSize.Should().Be(ToolbarIconSize.Medium);
         sut.ToolbarFonts.Fonts.Should().ContainSingle(f => f.Key == "Toolbars");
 
         // Act
@@ -312,7 +312,7 @@ public sealed class PreferencesViewModelTests : IDisposable
         sut.RestoreAppearanceDefaultsCommand.Execute(null);
 
         // Assert
-        sut.ToolbarIconSize.Should().Be(ToolbarIconSize.Large);
+        sut.ToolbarIconSize.Should().Be(ToolbarIconSize.Medium);
 
         // Act
         sut.ApplyCommand.Execute(null);

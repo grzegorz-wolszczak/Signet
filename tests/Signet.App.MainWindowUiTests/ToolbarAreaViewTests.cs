@@ -186,7 +186,7 @@ public sealed class ToolbarAreaViewTests : IDisposable
         menu.Items[1].Should().BeOfType<Separator>("the settings are set apart by a plain line");
         MenuItem[] items = menu.Items.OfType<MenuItem>().ToArray();
         items[1].Items.OfType<MenuItem>().Should().HaveCount(4);
-        items[2].Items.OfType<MenuItem>().Should().HaveCount(2);
+        items[2].Items.OfType<MenuItem>().Should().HaveCount(3);
         items[3].Tag.Should().Be(ActionIconKeys.ToolbarConfigure);
         items[4].Tag.Should().Be(ActionIconKeys.Lock);
 
@@ -304,9 +304,19 @@ public sealed class ToolbarAreaViewTests : IDisposable
         DrawnIcon(open).Bounds.Width.Should().Be(16);
         RadioItem(Strip(top, ToolbarId.Format), "IconSizeItem", 0).IsChecked.Should().BeTrue();
         RadioItem(Strip(top, ToolbarId.Format), "IconSizeItem", 1).IsChecked.Should().BeFalse();
+        RadioItem(Strip(top, ToolbarId.Format), "IconSizeItem", 2).IsChecked.Should().BeFalse();
 
         // Act
-        format.SetIconSizeCommand.Execute(ToolbarIconSize.Large);
+        format.SetIconSizeCommand.Execute(ToolbarIconSize.Big);
+        Flush(window);
+
+        // Assert
+        DrawnIcon(open).Bounds.Width.Should().Be(32);
+        RadioItem(Strip(top, ToolbarId.Format), "IconSizeItem", 2).IsChecked.Should().BeTrue();
+        RadioItem(Strip(top, ToolbarId.Format), "IconSizeItem", 0).IsChecked.Should().BeFalse();
+
+        // Act
+        format.SetIconSizeCommand.Execute(ToolbarIconSize.Medium);
         Flush(window);
 
         // Assert
