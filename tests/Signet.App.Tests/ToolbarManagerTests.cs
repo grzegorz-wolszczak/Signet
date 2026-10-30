@@ -3,6 +3,7 @@ using System.Linq;
 using AwesomeAssertions;
 using Signet.App.Actions;
 using Signet.App.Toolbars;
+using Signet.Core.Misc;
 using Xunit;
 
 namespace Signet.App.Tests;
@@ -314,5 +315,64 @@ public sealed class ToolbarManagerTests
 
         // Assert
         changed.Should().Be(ToolbarId.Find);
+    }
+
+    [Fact]
+    public void Changing_the_look_saves_it_and_raises_AppearanceChanged_once()
+    {
+        // Arrange
+        using TestHost host = new();
+        int raised = 0;
+        host.Toolbars.AppearanceChanged += (_, _) => raised++;
+
+        // Act
+        host.Toolbars.SetIconSize(ToolbarIconSize.Small);
+
+        // Assert
+        raised.Should().Be(1);
+        host.Toolbars.Appearance.IconSize.Should().Be(ToolbarIconSize.Small);
+        host.ReopenSettings().ToolbarAppearance.IconSize.Should().Be(ToolbarIconSize.Small);
+
+        // Act
+        host.Toolbars.SetIconSize(ToolbarIconSize.Small);
+
+        // Assert
+        raised.Should().Be(1, "setting the same value changes nothing");
+    }
+
+    [Fact]
+    public void A_look_committed_from_the_preferences_draft_raises_AppearanceChanged()
+    {
+        // Arrange
+        using TestHost host = new();
+        SettingsStore draft = host.Settings.CreateDraft();
+        draft.ToolbarAppearance = draft.ToolbarAppearance with { FontSize = 15, TextPosition = ToolbarTextPosition.TextBesideIcons };
+        int raised = 0;
+        host.Toolbars.AppearanceChanged += (_, _) => raised++;
+
+        // Act
+        host.Settings.CommitDraft(draft);
+
+        // Assert
+        raised.Should().Be(1);
+        host.Toolbars.Appearance.FontSize.Should().Be(15);
+        host.Toolbars.Appearance.TextPosition.Should().Be(ToolbarTextPosition.TextBesideIcons);
+    }
+
+    [Fact]
+    public void Restoring_the_appearance_defaults_raises_AppearanceChanged()
+    {
+        // Arrange
+        using TestHost host = new();
+        host.Toolbars.SetPositionsLocked(true);
+        int raised = 0;
+        host.Toolbars.AppearanceChanged += (_, _) => raised++;
+
+        // Act
+        host.Settings.ClearAppearanceSettings();
+
+        // Assert
+        raised.Should().Be(1);
+        host.Toolbars.Appearance.Should().Be(ToolbarAppearance.Default);
     }
 }

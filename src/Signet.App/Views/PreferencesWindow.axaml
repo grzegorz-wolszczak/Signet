@@ -378,6 +378,55 @@
         </Grid>
       </TabItem>
 
+      <!-- Appearance › Toolbars: the toolbars of the main window — the settings of the "Toolbar Settings" section of a
+           toolbar's context menu (General) and the font of the button texts (Fonts). The button bars of the panels do
+           not follow them. -->
+      <TabItem x:Name="ToolbarsAppearancePage" Header="{loc:Loc PreferencesWindow_Toolbars}" views:PreferencesPage.Parent="AppearanceGeneralPage">
+        <TabControl x:Name="ToolbarsAppearanceTabs">
+          <TabItem Header="{loc:Loc PreferencesWindow_General}">
+            <ScrollViewer>
+              <StackPanel Spacing="10" Margin="8">
+                <Border Classes="section">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="{loc:Loc PreferencesWindow_ToolbarsSection}" FontWeight="Bold" />
+                    <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                      <TextBlock Grid.Column="0" Text="{loc:Loc ToolbarStripView_TextPosition}" />
+                      <ComboBox x:Name="ToolbarTextPositionBox" Grid.Column="1" MinWidth="180"
+                                ItemsSource="{x:Static vm:PreferencesViewModel.AvailableToolbarTextPositions}"
+                                SelectedItem="{Binding ToolbarTextPosition}">
+                        <ComboBox.ItemTemplate>
+                          <DataTemplate>
+                            <TextBlock Text="{Binding Converter={x:Static infra:DisplayNameConverters.ToolbarTextPosition}}" />
+                          </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                      </ComboBox>
+                    </Grid>
+                    <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                      <TextBlock Grid.Column="0" Text="{loc:Loc ToolbarStripView_IconSize}" />
+                      <ComboBox x:Name="ToolbarIconSizeBox" Grid.Column="1" MinWidth="180"
+                                ItemsSource="{x:Static vm:PreferencesViewModel.AvailableToolbarIconSizes}"
+                                SelectedItem="{Binding ToolbarIconSize}">
+                        <ComboBox.ItemTemplate>
+                          <DataTemplate>
+                            <TextBlock Text="{Binding Converter={x:Static infra:DisplayNameConverters.ToolbarIconSize}}" />
+                          </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                      </ComboBox>
+                    </Grid>
+                    <CheckBox x:Name="ToolbarPositionsLockedBox" Content="{loc:Loc ToolbarStripView_LockPositions}"
+                              IsChecked="{Binding ToolbarPositionsLocked}" />
+                    <TextBlock Text="{loc:Loc PreferencesWindow_ToolbarsHint}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
+          </TabItem>
+          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+            <views:FontsPageView x:Name="ToolbarFontsView" />
+          </TabItem>
+        </TabControl>
+      </TabItem>
+
       <!-- Appearance › BookBrowser: which folders are expanded when a book is loaded; Fonts. -->
       <TabItem x:Name="BookBrowserAppearancePage" Header="{loc:Loc PreferencesWindow_BookBrowser}" views:PreferencesPage.Parent="AppearanceGeneralPage">
         <Grid x:Name="BookBrowserPreviewHost">

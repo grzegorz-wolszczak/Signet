@@ -123,6 +123,10 @@ icon('export', m='arrow_forward', f='arrow_right')
 icon('fill-controls', m='content_copy', f='copy', mb='arrow_forward', fb='arrow_right')
 icon('edit-search', m='edit', f='edit')
 
+# ---- Toolbar context menu (plain commands, not catalog actions) -------------------------------------------------
+icon('toolbar-configure', m='tune', f='options')
+icon('lock', m='lock', f='lock_closed')
+
 # ---- Action id -> icon key (existing keys are reused as they are) -----------------------------------------------
 W = 'MainWindow.'
 ACTIONS = {

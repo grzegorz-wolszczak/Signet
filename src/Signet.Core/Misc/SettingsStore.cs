@@ -1135,6 +1135,41 @@ public sealed class SettingsStore
         set => Write("code_editor_highlight_open_close_tags", value);
     }
 
+    /// <summary>
+    /// How the main window's toolbars look and whether they can be moved (<see cref="ToolbarAppearance"/>). Always read
+    /// normalized.
+    /// </summary>
+    public ToolbarAppearance ToolbarAppearance
+    {
+        get
+        {
+            ToolbarAppearance d = ToolbarAppearance.Default;
+            return new ToolbarAppearance(
+                Enum.TryParse(ReadString("toolbar_text_position", d.TextPosition.ToString()), ignoreCase: true, out ToolbarTextPosition position)
+                    ? position
+                    : d.TextPosition,
+                Enum.TryParse(ReadString("toolbar_icon_size", d.IconSize.ToString()), ignoreCase: true, out ToolbarIconSize size)
+                    ? size
+                    : d.IconSize,
+                ReadBool("toolbar_positions_locked", d.PositionsLocked),
+                ReadString("toolbar_font_family", d.FontFamily),
+                ReadInt("toolbar_font_size", d.FontSize),
+                ReadInt("toolbar_font_weight", d.FontWeight)).Normalized();
+        }
+
+        set
+        {
+            ToolbarAppearance v = value.Normalized();
+            WriteSilent("toolbar_text_position", v.TextPosition.ToString());
+            WriteSilent("toolbar_icon_size", v.IconSize.ToString());
+            WriteSilent("toolbar_positions_locked", v.PositionsLocked);
+            WriteSilent("toolbar_font_family", v.FontFamily);
+            WriteSilent("toolbar_font_size", v.FontSize);
+            WriteSilent("toolbar_font_weight", v.FontWeight);
+            RaiseChanged("toolbar_appearance");
+        }
+    }
+
     /// <summary>Main menu icon size (multiplier).</summary>
     public double MainMenuIconSize
     {
@@ -2390,6 +2425,12 @@ public sealed class SettingsStore
         yield return "tool_header_font_family";
         yield return "tool_header_font_size";
         yield return "tool_header_font_weight";
+        yield return "toolbar_text_position";
+        yield return "toolbar_icon_size";
+        yield return "toolbar_positions_locked";
+        yield return "toolbar_font_family";
+        yield return "toolbar_font_size";
+        yield return "toolbar_font_weight";
         yield return "notifications_timestamp_font_family";
         yield return "notifications_timestamp_font_size";
         yield return "notifications_timestamp_font_weight";

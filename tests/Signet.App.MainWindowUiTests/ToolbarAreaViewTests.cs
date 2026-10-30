@@ -6,13 +6,18 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.Layout;
+using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AwesomeAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Signet.App.Actions;
+using Signet.App.Infrastructure;
 using Signet.App.Toolbars;
 using Signet.App.ViewModels;
 using Signet.App.Views;
+using Signet.Core.Misc;
 using Signet.Core.Tests.TestSupport;
 
 namespace Signet.App.MainWindowUiTests;
@@ -166,7 +171,7 @@ public sealed class ToolbarAreaViewTests : IDisposable
     }
 
     [AvaloniaFact]
-    public void Right_click_menu_of_a_toolbar_offers_hide_and_edit_bound_to_that_toolbar()
+    public void Right_click_menu_of_a_toolbar_offers_hide_and_the_toolbar_settings_bound_to_that_toolbar()
     {
         // Arrange
         (MainWindow window, MainWindowViewModel vm) = ShowMainWindow();
@@ -176,17 +181,23 @@ public sealed class ToolbarAreaViewTests : IDisposable
 
         menu.Should().NotBeNull();
         menu.DataContext = format.DataContext;
+        menu.Items.OfType<Control>().Select(c => c.Name).Should().Equal(
+            "HideItem", "SettingsSeparator", "TextPositionItem", "IconSizeItem", "ConfigureItem", "LockItem");
+        menu.Items[1].Should().BeOfType<Separator>("the settings are set apart by a plain line");
         MenuItem[] items = menu.Items.OfType<MenuItem>().ToArray();
-        items.Should().HaveCount(2);
+        items[1].Items.OfType<MenuItem>().Should().HaveCount(4);
+        items[2].Items.OfType<MenuItem>().Should().HaveCount(2);
+        items[3].Tag.Should().Be(ActionIconKeys.ToolbarConfigure);
+        items[4].Tag.Should().Be(ActionIconKeys.Lock);
 
-        ToolbarId? edited = null;
-        vm.CustomizeToolbarRequested += (_, id) => edited = id;
+        ToolbarId? configured = null;
+        vm.CustomizeToolbarRequested += (_, id) => configured = id;
 
         // Act
-        items[1].Command!.Execute(null);
+        items[3].Command!.Execute(null);
 
         // Assert
-        edited.Should().Be(ToolbarId.Format);
+        configured.Should().Be(ToolbarId.Format, "the window opens on the toolbar the menu was opened on");
 
         // Act
         items[0].Command!.Execute(null);
@@ -194,6 +205,210 @@ public sealed class ToolbarAreaViewTests : IDisposable
 
         // Assert
         format.IsVisible.Should().BeFalse();
+    }
+
+    [AvaloniaFact]
+    public void The_text_position_chosen_in_the_menu_shows_on_every_toolbar()
+    {
+        // Arrange
+        (MainWindow window, MainWindowViewModel vm) = ShowMainWindow();
+        ToolbarAreaView top = Area(window, vm.TopToolbars);
+        ToolbarViewModel format = (ToolbarViewModel)Strip(top, ToolbarId.Format).DataContext!;
+        Button bold = ActionButton(top, AppActionIds.Bold);
+        Button open = ActionButton(top, AppActionIds.Open);
+
+        // Assert
+        Label(bold).IsEffectivelyVisible.Should().BeFalse("icons only by default");
+        Icon(bold).IsEffectivelyVisible.Should().BeTrue();
+
+        // Act
+        format.SetTextPositionCommand.Execute(ToolbarTextPosition.TextUnderIcons);
+        Flush(window);
+
+        // Assert
+        Label(ActionButton(top, AppActionIds.MendCurrentHtml)).Text.Should().Contain("\n", "a long label takes two lines");
+        Label(open).IsEffectivelyVisible.Should().BeTrue("the setting is shared by every toolbar");
+        Label(open).Text.Should().NotBeEmpty();
+        Content(open).Orientation.Should().Be(Orientation.Vertical);
+        Icon(open).IsEffectivelyVisible.Should().BeTrue();
+
+        // Act
+        format.SetTextPositionCommand.Execute(ToolbarTextPosition.TextBesideIcons);
+        Flush(window);
+
+        // Assert
+        Content(open).Orientation.Should().Be(Orientation.Horizontal);
+        Label(open).IsEffectivelyVisible.Should().BeTrue();
+
+        // Act
+        format.SetTextPositionCommand.Execute(ToolbarTextPosition.TextOnly);
+        Flush(window);
+
+        // Assert
+        Icon(open).IsEffectivelyVisible.Should().BeFalse();
+        Label(open).IsEffectivelyVisible.Should().BeTrue();
+        RadioItem(Strip(top, ToolbarId.Format), "TextPositionItem", 1).IsChecked.Should().BeTrue();
+        RadioItem(Strip(top, ToolbarId.Format), "TextPositionItem", 0).IsChecked.Should().BeFalse();
+    }
+
+    [AvaloniaFact]
+    public void With_labels_in_one_and_in_two_lines_the_icons_of_a_row_stay_aligned_at_the_top()
+    {
+        // Arrange
+        using TempDir temp = new();
+        new IconThemeManager(new SettingsStore(temp.Combine("icon-theme-settings.xml")), NullLogger<IconThemeManager>.Instance).ApplySaved();
+        (MainWindow window, MainWindowViewModel vm) = ShowMainWindow();
+        window.Width = 2400;
+        ToolbarAreaView top = Area(window, vm.TopToolbars);
+        ToolbarViewModel format = (ToolbarViewModel)Strip(top, ToolbarId.Format).DataContext!;
+
+        // Act
+        format.SetTextPositionCommand.Execute(ToolbarTextPosition.TextUnderIcons);
+        Flush(window);
+        Button open = ActionButton(top, AppActionIds.Open);
+        Button mend = ActionButton(top, AppActionIds.MendCurrentHtml);
+
+        // Assert
+        Label(open).Text.Should().NotContain("\n", "the premise: a label in one line");
+        Label(mend).Text.Should().Contain("\n", "the premise: a label in two lines");
+        double TopOf(Button button) => DrawnIcon(button).TranslatePoint(default, window)!.Value.Y;
+        TopOf(open).Should().BeApproximately(TopOf(mend), 0.5);
+
+        // Act
+        format.SetTextPositionCommand.Execute(ToolbarTextPosition.TextBesideIcons);
+        Flush(window);
+
+        // Assert
+        TopOf(open).Should().BeApproximately(TopOf(mend), 0.5);
+    }
+
+    [AvaloniaFact]
+    public void The_icon_size_chosen_in_the_menu_resizes_the_icons_of_every_toolbar()
+    {
+        // Arrange
+        using TempDir temp = new();
+        new IconThemeManager(new SettingsStore(temp.Combine("icon-theme-settings.xml")), NullLogger<IconThemeManager>.Instance).ApplySaved();
+        (MainWindow window, MainWindowViewModel vm) = ShowMainWindow();
+        ToolbarAreaView top = Area(window, vm.TopToolbars);
+        ToolbarViewModel format = (ToolbarViewModel)Strip(top, ToolbarId.Format).DataContext!;
+        Button open = ActionButton(top, AppActionIds.Open);
+
+        // Assert
+        DrawnIcon(open).Bounds.Width.Should().Be(24);
+
+        // Act
+        format.SetIconSizeCommand.Execute(ToolbarIconSize.Small);
+        Flush(window);
+
+        // Assert
+        DrawnIcon(open).Bounds.Width.Should().Be(16);
+        RadioItem(Strip(top, ToolbarId.Format), "IconSizeItem", 0).IsChecked.Should().BeTrue();
+        RadioItem(Strip(top, ToolbarId.Format), "IconSizeItem", 1).IsChecked.Should().BeFalse();
+
+        // Act
+        format.SetIconSizeCommand.Execute(ToolbarIconSize.Large);
+        Flush(window);
+
+        // Assert
+        DrawnIcon(open).Bounds.Width.Should().Be(24);
+        RadioItem(Strip(top, ToolbarId.Format), "IconSizeItem", 1).IsChecked.Should().BeTrue("the radio follows a change made again");
+    }
+
+    [AvaloniaFact]
+    public void Locking_the_positions_hides_every_grip_and_marks_the_lock_item()
+    {
+        // Arrange
+        (MainWindow window, MainWindowViewModel vm) = ShowMainWindow();
+        ToolbarAreaView top = Area(window, vm.TopToolbars);
+        ToolbarStripView formatStrip = Strip(top, ToolbarId.Format);
+        ToolbarViewModel format = (ToolbarViewModel)formatStrip.DataContext!;
+        MenuItem lockItem = formatStrip.ContextMenu!.Items.OfType<MenuItem>().Single(i => i.Name == "LockItem");
+        lockItem.DataContext = format;
+
+        // Act
+        format.TogglePositionsLockedCommand.Execute(null);
+        Flush(window);
+
+        // Assert
+        Grips(top).Should().OnlyContain(g => !g.IsVisible);
+        lockItem.Classes.Should().Contain("on");
+
+        // Act
+        format.TogglePositionsLockedCommand.Execute(null);
+        Flush(window);
+
+        // Assert
+        Grips(top).Should().OnlyContain(g => g.IsVisible);
+        lockItem.Classes.Should().NotContain("on");
+    }
+
+    [AvaloniaFact]
+    public void The_font_of_the_button_texts_follows_the_settings()
+    {
+        // Arrange
+        using TempDir temp = new();
+        MainWindowViewModel actions = _disposables.Add(new MainWindowViewModel());
+        SettingsStore settings = new(temp.Combine("settings.xml"));
+        ToolbarManager manager = new(settings);
+        ToolbarViewModel file = new(ToolbarId.File, manager, actions.Actions);
+        manager.AppearanceChanged += (_, _) => file.RefreshAppearance();
+        Window window = new() { Width = 600, Height = 100, Content = new ToolbarStripView { DataContext = file } };
+        window.Show();
+        Button open = window.GetVisualDescendants().OfType<Button>()
+            .First(b => b.DataContext is ToolbarItemViewModel { Action: { } a } && a.Id == AppActionIds.Open);
+
+        System.IO.File.WriteAllText("/tmp/claude-1000/-home-gregw-repos-my-github-Signet/2bce09ea-53ad-4cc6-9b74-f5985c828d1b/scratchpad/dbg.txt",
+            $"label size={Label(open).FontSize} fam={Label(open).FontFamily} w={Label(open).FontWeight}; button size={open.FontSize} fam={open.FontFamily}");
+        // Act
+        settings.ToolbarAppearance = settings.ToolbarAppearance with
+        {
+            TextPosition = ToolbarTextPosition.TextBesideIcons,
+            FontSize = 17,
+            FontWeight = 700,
+        };
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+
+        // Assert
+        Label(open).IsEffectivelyVisible.Should().BeTrue();
+        Label(open).FontSize.Should().Be(17);
+        Label(open).FontWeight.Should().Be(FontWeight.Bold);
+
+        // Act
+        settings.ToolbarAppearance = settings.ToolbarAppearance with { FontSize = 0, FontWeight = 0 };
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+
+        // Assert
+        Label(open).FontSize.Should().Be(open.FontSize, "without a size the text keeps the size of the buttons");
+        Label(open).FontFamily.Should().Be(open.FontFamily, "without a family the text keeps the interface font");
+        Label(open).FontWeight.Should().Be(open.FontWeight);
+        window.Close();
+    }
+
+    private static Button ActionButton(ToolbarAreaView area, string actionId) =>
+        area.GetVisualDescendants().OfType<Button>().First(b => b.DataContext is ToolbarItemViewModel { Action: { } a } && a.Id == actionId);
+
+    private static TextBlock Label(Button button) =>
+        button.GetVisualDescendants().OfType<TextBlock>().Single(t => t.Classes.Contains("toolbarLabel"));
+
+    private static Panel Icon(Button button) =>
+        button.GetVisualDescendants().OfType<Panel>().First(p => p.Classes.Contains("toolbarIcon"));
+
+    private static StackPanel Content(Button button) =>
+        button.GetVisualDescendants().OfType<StackPanel>().Single(p => p.Classes.Contains("toolbarContent"));
+
+    private static Control DrawnIcon(Button button) =>
+        Icon(button).Children.Single(c => c.IsVisible);
+
+    private static IEnumerable<Border> Grips(ToolbarAreaView area) =>
+        area.GetVisualDescendants().OfType<ToolbarStripView>().Select(s => s.FindControl<Border>("Grip")!);
+
+    private static MenuItem RadioItem(ToolbarStripView strip, string submenu, int index)
+    {
+        MenuItem parent = strip.ContextMenu!.Items.OfType<MenuItem>().Single(i => i.Name == submenu);
+        parent.DataContext = strip.DataContext;
+        return parent.Items.OfType<MenuItem>().ElementAt(index);
     }
 
     [AvaloniaFact]

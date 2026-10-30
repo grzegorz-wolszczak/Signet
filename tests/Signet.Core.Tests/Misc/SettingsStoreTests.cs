@@ -335,6 +335,7 @@ public sealed class SettingsStoreTests
         sut.LineNumberFontAppearance = new LineNumberFontAppearance(string.Empty, 0, 300);
         sut.DocumentTabFontAppearance = new DocumentTabFontAppearance(string.Empty, 0, 300);
         sut.ToolHeaderFontAppearance = new ToolHeaderFontAppearance(string.Empty, 0, 300);
+        sut.ToolbarAppearance = new ToolbarAppearance(ToolbarTextPosition.TextOnly, ToolbarIconSize.Small, true, "Arial", 12, 300);
         sut.BookBrowserAppearance = BookBrowserAppearance.Default with { ItemsFontWeight = 300, HeaderFontWeight = 300 };
         sut.FindUsagesAppearance = FindUsagesAppearance.Default with { HeaderFontWeight = 300, ContextFontWeight = 300, CellsFontWeight = 300 };
         sut.SpecialCharacterAppearance = new SpecialCharacterAppearance("Arial", 24, 300);
@@ -349,6 +350,7 @@ public sealed class SettingsStoreTests
         sut.LineNumberFontAppearance.IsInherited.Should().BeTrue();
         sut.DocumentTabFontAppearance.FontWeight.Should().Be(0);
         sut.ToolHeaderFontAppearance.FontWeight.Should().Be(0);
+        sut.ToolbarAppearance.Should().Be(ToolbarAppearance.Default);
         sut.BookBrowserAppearance.Should().Be(BookBrowserAppearance.Default);
         sut.FindUsagesAppearance.Should().Be(FindUsagesAppearance.Default);
         sut.SpecialCharacterAppearance.FontWeight.Should().Be(0);
@@ -536,6 +538,59 @@ public sealed class SettingsStoreTests
 
         // Assert
         sut.ToolHeaderFontAppearance.Should().Be(ToolHeaderFontAppearance.Default);
+    }
+
+    [Fact]
+    public void Toolbar_appearance_defaults_to_large_icons_without_text_and_movable_toolbars()
+    {
+        // Arrange
+        using TempDir dir = new();
+
+        // Act
+        SettingsStore sut = new(dir.Combine("settings.xml"));
+
+        // Assert
+        sut.ToolbarAppearance.Should().Be(ToolbarAppearance.Default);
+        sut.ToolbarAppearance.TextPosition.Should().Be(ToolbarTextPosition.IconsOnly);
+        sut.ToolbarAppearance.IconPixels.Should().Be(24);
+        sut.ToolbarAppearance.PositionsLocked.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Toolbar_appearance_survives_save_and_reload_and_raises_one_change()
+    {
+        // Arrange
+        using TempDir dir = new();
+        string path = dir.Combine("settings.xml");
+        SettingsStore writer = new(path);
+        ToolbarAppearance look = new(ToolbarTextPosition.TextUnderIcons, ToolbarIconSize.Small, true, "Arial", 12, 600);
+        List<string> changed = new();
+        writer.SettingChanged += (_, e) => changed.Add(e.QualifiedKey);
+
+        // Act
+        writer.ToolbarAppearance = look;
+        writer.Save();
+        SettingsStore reader = new(path);
+
+        // Assert
+        changed.Should().ContainSingle().Which.Should().EndWith("/toolbar_appearance");
+        reader.ToolbarAppearance.Should().Be(look);
+        reader.ToolbarAppearance.IconPixels.Should().Be(16);
+    }
+
+    [Fact]
+    public void Toolbar_appearance_is_normalized()
+    {
+        // Arrange
+        using TempDir dir = new();
+        SettingsStore sut = new(dir.Combine("settings.xml"));
+
+        // Act
+        sut.ToolbarAppearance = new ToolbarAppearance((ToolbarTextPosition)42, (ToolbarIconSize)42, false, "  Arial  ", 500);
+
+        // Assert
+        sut.ToolbarAppearance.Should().Be(
+            new ToolbarAppearance(ToolbarTextPosition.IconsOnly, ToolbarIconSize.Large, false, "Arial", ToolbarAppearance.FontSizeMax));
     }
 
     [Fact]

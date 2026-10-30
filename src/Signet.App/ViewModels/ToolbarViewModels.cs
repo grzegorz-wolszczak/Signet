@@ -7,6 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 using Signet.App.Actions;
 using Signet.App.Resources;
 using Signet.App.Toolbars;
+using Signet.Core.Misc;
 
 namespace Signet.App.ViewModels;
 
@@ -94,6 +95,43 @@ public sealed partial class ToolbarItemViewModel : ObservableObject
         : Action is null ? string.Empty : StripMnemonics(Action.DefaultText);
 
     /// <summary>
+    /// The <see cref="Label"/> as the button shows it: a long one in two lines (<see cref="WrapLabel"/>), so that the
+    /// text does not make the button much wider than its icon.
+    /// </summary>
+    public string DisplayLabel => WrapLabel(Label);
+
+    /// <summary>Labels up to this many characters stay in one line.</summary>
+    public const int SingleLineLabelMax = 16;
+
+    /// <summary>
+    /// Breaks a label longer than <see cref="SingleLineLabelMax"/> into two lines at the space that gives the most even
+    /// lines ("Mend Code in Current File" → "Mend Code in" / "Current File"); a shorter label, or one without a space,
+    /// stays as it is.
+    /// </summary>
+    public static string WrapLabel(string label)
+    {
+        System.ArgumentNullException.ThrowIfNull(label);
+        if (label.Length <= SingleLineLabelMax)
+        {
+            return label;
+        }
+
+        int best = -1;
+        int bestLongest = int.MaxValue;
+        for (int i = label.IndexOf(' ', System.StringComparison.Ordinal); i >= 0; i = label.IndexOf(' ', i + 1))
+        {
+            int longest = System.Math.Max(i, label.Length - i - 1);
+            if (longest < bestLongest)
+            {
+                best = i;
+                bestLongest = longest;
+            }
+        }
+
+        return best < 0 ? label : label[..best] + "\n" + label[(best + 1)..];
+    }
+
+    /// <summary>
     /// Icon key — the name of a resource merged by
     /// <see cref="Signet.App.Infrastructure.IconThemeManager"/>, or <c>null</c> when the catalog
     /// assigned no icon (the button then shows just the <see cref="Label"/>).
@@ -166,6 +204,7 @@ public sealed partial class ToolbarViewModel : ObservableObject
         _actions = actions;
         _name = ToolbarManager.DisplayName(id);
         _isVisible = manager.IsVisible(id);
+        _appearance = manager.Appearance;
         Rebuild();
     }
 
@@ -232,16 +271,85 @@ public sealed partial class ToolbarViewModel : ObservableObject
 
     partial void OnIsVisibleChanged(bool value) => _manager.SetVisible(Id, value);
 
-    /// <summary>Raised when the user chooses "Edit toolbar" in the toolbar's context menu.</summary>
-    public event System.EventHandler? EditRequested;
+    /// <summary>Raised when the user chooses "Configure Toolbars…" in the toolbar's context menu.</summary>
+    public event System.EventHandler? ConfigureRequested;
 
     /// <summary>Hides the toolbar (as unchecking it in View → Toolbars does).</summary>
     [RelayCommand]
     private void Hide() => IsVisible = false;
 
-    /// <summary>Asks for the window that edits the toolbar's buttons (<see cref="EditRequested"/>).</summary>
+    /// <summary>
+    /// Asks for the window that configures the toolbars' buttons (<see cref="ConfigureRequested"/>), opened on this
+    /// toolbar.
+    /// </summary>
     [RelayCommand]
-    private void Edit() => EditRequested?.Invoke(this, System.EventArgs.Empty);
+    private void Configure() => ConfigureRequested?.Invoke(this, System.EventArgs.Empty);
+
+    // ---- the look shared by all toolbars (ToolbarManager.Appearance): the "Toolbar Settings" section of the menu ----
+
+    private ToolbarAppearance _appearance;
+
+    /// <summary>The buttons show icons only (a button without an icon shows its text).</summary>
+    public bool IsIconsOnly => _appearance.TextPosition == ToolbarTextPosition.IconsOnly;
+
+    /// <summary>The buttons show text only.</summary>
+    public bool IsTextOnly => _appearance.TextPosition == ToolbarTextPosition.TextOnly;
+
+    /// <summary>The buttons show the text to the right of the icon.</summary>
+    public bool IsTextBesideIcons => _appearance.TextPosition == ToolbarTextPosition.TextBesideIcons;
+
+    /// <summary>The buttons show the text under the icon.</summary>
+    public bool IsTextUnderIcons => _appearance.TextPosition == ToolbarTextPosition.TextUnderIcons;
+
+    /// <summary>The buttons show their text (every position but <see cref="IsIconsOnly"/>).</summary>
+    public bool ShowsText => !IsIconsOnly;
+
+    /// <summary>The icons are small (16 × 16).</summary>
+    public bool IsSmallIcons => _appearance.IconSize == ToolbarIconSize.Small;
+
+    /// <summary>The icons are large (24 × 24).</summary>
+    public bool IsLargeIcons => _appearance.IconSize == ToolbarIconSize.Large;
+
+    /// <summary>The toolbars cannot be moved: their grips are hidden.</summary>
+    public bool ArePositionsLocked => _appearance.PositionsLocked;
+
+    /// <summary>The button texts have a font family of their own (otherwise the interface font).</summary>
+    public bool HasCustomFontFamily => _appearance.FontFamily.Length > 0;
+
+    /// <summary>The button texts have a size of their own (otherwise the size of the buttons).</summary>
+    public bool HasCustomFontSize => _appearance.FontSize > 0;
+
+    /// <summary>The button texts have a weight of their own.</summary>
+    public bool HasCustomFontWeight => _appearance.FontWeight > 0;
+
+    /// <summary>Re-reads the shared look after <see cref="ToolbarManager.AppearanceChanged"/>.</summary>
+    public void RefreshAppearance()
+    {
+        _appearance = _manager.Appearance;
+        foreach (string name in AppearanceProperties)
+        {
+            OnPropertyChanged(name);
+        }
+    }
+
+    /// <summary>Text Position › … — for all toolbars.</summary>
+    [RelayCommand]
+    private void SetTextPosition(ToolbarTextPosition position) => _manager.SetTextPosition(position);
+
+    /// <summary>Icon Size › … — for all toolbars.</summary>
+    [RelayCommand]
+    private void SetIconSize(ToolbarIconSize size) => _manager.SetIconSize(size);
+
+    /// <summary>Lock Toolbar Positions — for all toolbars.</summary>
+    [RelayCommand]
+    private void TogglePositionsLocked() => _manager.SetPositionsLocked(!_manager.Appearance.PositionsLocked);
+
+    private static readonly string[] AppearanceProperties =
+    {
+        nameof(IsIconsOnly), nameof(IsTextOnly), nameof(IsTextBesideIcons), nameof(IsTextUnderIcons), nameof(ShowsText),
+        nameof(IsSmallIcons), nameof(IsLargeIcons), nameof(ArePositionsLocked),
+        nameof(HasCustomFontFamily), nameof(HasCustomFontSize), nameof(HasCustomFontWeight),
+    };
 
     // Actions of the heading and case menu buttons, in display order.
     private static readonly string[] HeadingActionIds =

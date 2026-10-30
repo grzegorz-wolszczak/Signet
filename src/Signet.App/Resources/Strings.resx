@@ -1865,8 +1865,35 @@ Czy chcesz zapisać zmiany?</value>
   <data name="ToolbarStripView_Hide" xml:space="preserve">
     <value>Schowaj pasek</value>
   </data>
-  <data name="ToolbarStripView_Edit" xml:space="preserve">
-    <value>Edytuj pasek…</value>
+  <data name="ToolbarStripView_TextPosition" xml:space="preserve">
+    <value>Pozycja tekstu</value>
+  </data>
+  <data name="ToolbarStripView_IconsOnly" xml:space="preserve">
+    <value>Tylko ikony</value>
+  </data>
+  <data name="ToolbarStripView_TextOnly" xml:space="preserve">
+    <value>Tylko tekst</value>
+  </data>
+  <data name="ToolbarStripView_TextBesideIcons" xml:space="preserve">
+    <value>Tekst obok ikon</value>
+  </data>
+  <data name="ToolbarStripView_TextUnderIcons" xml:space="preserve">
+    <value>Tekst pod ikonami</value>
+  </data>
+  <data name="ToolbarStripView_IconSize" xml:space="preserve">
+    <value>Rozmiar ikon</value>
+  </data>
+  <data name="ToolbarStripView_SmallIcons" xml:space="preserve">
+    <value>Małe (16×16)</value>
+  </data>
+  <data name="ToolbarStripView_LargeIcons" xml:space="preserve">
+    <value>Duże (24×24)</value>
+  </data>
+  <data name="ToolbarStripView_Configure" xml:space="preserve">
+    <value>Konfiguruj paski narzędzi…</value>
+  </data>
+  <data name="ToolbarStripView_LockPositions" xml:space="preserve">
+    <value>Zablokuj położenie pasków</value>
   </data>
   <data name="ToolbarStripView_MoreTip" xml:space="preserve">
     <value>Pozostałe przyciski paska</value>
@@ -7260,6 +7287,21 @@ Zamknij zakładkę</value>
   </data>
   <data name="PreferencesWindow_StartScreenHighlightInTheme" xml:space="preserve">
     <value>Tło podświetlonego pliku: Wygląd › Kolory interfejsu</value>
+  </data>
+  <data name="PreferencesWindow_Toolbars" xml:space="preserve">
+    <value>Paski narzędzi</value>
+  </data>
+  <data name="PreferencesWindow_ToolbarsSection" xml:space="preserve">
+    <value>Paski narzędzi okna głównego</value>
+  </data>
+  <data name="PreferencesWindow_ToolbarsHint" xml:space="preserve">
+    <value>Te same ustawienia są w menu kontekstowym każdego paska narzędzi (pod kreską). Paski przycisków w panelach (np. Podgląd) z nich nie korzystają.</value>
+  </data>
+  <data name="PreferencesWindow_ToolbarFont" xml:space="preserve">
+    <value>Teksty przycisków</value>
+  </data>
+  <data name="FontPreview_Toolbar" xml:space="preserve">
+    <value>Otwórz   Zapisz   Pogrubienie</value>
   </data>
   <data name="PreferencesWindow_FontSizeZeroAsDefault11" xml:space="preserve">
     <value>Rozmiar 0 = domyślny (11)</value>

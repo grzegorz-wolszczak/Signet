@@ -416,6 +416,7 @@ public partial class PreferencesWindow : Window
             PreviewFontsView.DataContext = vm.PreviewFonts;
             SpecialCharacterFontsView.DataContext = vm.SpecialCharacterFonts;
             StartScreenFontsView.DataContext = vm.StartScreenFonts;
+            ToolbarFontsView.DataContext = vm.ToolbarFonts;
             BookBrowserFontsView.DataContext = vm.BookBrowserFonts;
             PreviewSampleTip.DataContext = vm.PreviewFonts.Fonts.Single(f => f.Key == "Tooltip" + TooltipArea.Preview);
             ValidationPreview.DataContext = vm.ValidationSample;

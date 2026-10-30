@@ -25,4 +25,14 @@ public static class DisplayNameConverters
     public static readonly IValueConverter FindActionButtonDisplay =
         new FuncValueConverter<Core.Misc.FindActionButtonDisplay, string>(
             value => Strings.TryGet("FindActionButtonDisplay_" + value) ?? value.ToString());
+
+    /// <summary><see cref="Core.Misc.ToolbarTextPosition"/> → the same names as in a toolbar's context menu (keys <c>ToolbarStripView_*</c>).</summary>
+    public static readonly IValueConverter ToolbarTextPosition =
+        new FuncValueConverter<Core.Misc.ToolbarTextPosition, string>(
+            value => Strings.TryGet("ToolbarStripView_" + value) ?? value.ToString());
+
+    /// <summary><see cref="Core.Misc.ToolbarIconSize"/> → the same names as in a toolbar's context menu (keys <c>ToolbarStripView_*Icons</c>).</summary>
+    public static readonly IValueConverter ToolbarIconSize =
+        new FuncValueConverter<Core.Misc.ToolbarIconSize, string>(
+            value => Strings.TryGet("ToolbarStripView_" + value + "Icons") ?? value.ToString());
 }

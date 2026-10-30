@@ -536,7 +536,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     // through editing, to cleaning up.
     private static readonly string[] PartsWithFonts =
     {
-        "StartScreen", "BookBrowser", "TableOfContents", "CodeEditor", "Preview", "FindReplace", "SpecialCharacters",
+        "StartScreen", "Toolbars", "BookBrowser", "TableOfContents", "CodeEditor", "Preview", "FindReplace", "SpecialCharacters",
         "Checkpoints", "Validation", "Notifications", "MetadataEditor", "Cleanup", "Footnotes",
     };
 
@@ -586,7 +586,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
                 ? new[] { general, fonts, Strings.Get("PreferencesWindow_InterfaceColors") } // the themes, the fonts, the colors of the theme
                 : bothTabs.Contains(part)
                     ? new[] { Strings.Get("PreferencesWindow_" + part), fonts }
-                    : part is "BookBrowser" or "StartScreen" or "CodeEditor" or "FindReplace" or "Notifications"
+                    : part is "BookBrowser" or "StartScreen" or "Toolbars" or "CodeEditor" or "FindReplace" or "Notifications"
                         ? new[] { general, fonts } // the general settings, then the fonts
                         : new[] { fonts };
 
@@ -912,6 +912,52 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     /// The Start Screen page has the same kind of panel: the real start screen with fabricated books, following the settings of
     /// both tabs, and the sample of a tooltip; the settings fill their tab.
     /// </summary>
+    [AvaloniaFact]
+    public void The_Toolbars_page_edits_the_toolbar_settings_and_the_font_of_the_button_texts()
+    {
+        // Arrange
+        PreferencesWindow window = BuildWindow();
+        PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+        window.Width = 1100;
+        window.Height = 860;
+
+        // Act
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, "ToolbarsAppearancePage");
+        ComboBox position = window.FindControl<ComboBox>("ToolbarTextPositionBox")!;
+        ComboBox size = window.FindControl<ComboBox>("ToolbarIconSizeBox")!;
+
+        // Assert
+        position.IsEffectivelyVisible.Should().BeTrue();
+        position.SelectedItem.Should().Be(Signet.Core.Misc.ToolbarTextPosition.IconsOnly);
+        size.SelectedItem.Should().Be(Signet.Core.Misc.ToolbarIconSize.Large);
+
+        // Act
+        position.SelectedItem = Signet.Core.Misc.ToolbarTextPosition.TextUnderIcons;
+        size.SelectedItem = Signet.Core.Misc.ToolbarIconSize.Small;
+        window.FindControl<CheckBox>("ToolbarPositionsLockedBox")!.IsChecked = true;
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        vm.ToolbarTextPosition.Should().Be(Signet.Core.Misc.ToolbarTextPosition.TextUnderIcons);
+        vm.ToolbarIconSize.Should().Be(Signet.Core.Misc.ToolbarIconSize.Small);
+        vm.ToolbarPositionsLocked.Should().BeTrue();
+
+        // Act
+        TabControl tabs = window.FindControl<TabControl>("ToolbarsAppearanceTabs")!;
+        tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(t => Equals(t.Header, Strings.Get("PreferencesWindow_Fonts")));
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        FontsPageView fonts = window.FindControl<FontsPageView>("ToolbarFontsView")!;
+        fonts.DataContext.Should().BeSameAs(vm.ToolbarFonts);
+        fonts.GetVisualDescendants().OfType<FontSettingView>().Should().ContainSingle();
+        window.Close();
+    }
+
     [AvaloniaFact]
     public void The_Start_Screen_page_has_one_preview_panel_with_the_list_of_recent_files_that_follows_the_settings()
     {

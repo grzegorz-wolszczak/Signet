@@ -264,6 +264,64 @@ public sealed class PreferencesViewModelTests : IDisposable
     }
 
     [Fact]
+    public void Toolbar_appearance_starts_from_settings_and_reaches_the_toolbars_on_apply()
+    {
+        // Arrange
+        using TestHost host = new();
+        host.Toolbars.SetTextPosition(ToolbarTextPosition.TextBesideIcons);
+        host.Toolbars.SetPositionsLocked(true);
+        int raised = 0;
+        host.Toolbars.AppearanceChanged += (_, _) => raised++;
+
+        // Act
+        PreferencesViewModel sut = NewOn(host);
+
+        // Assert
+        sut.ToolbarTextPosition.Should().Be(ToolbarTextPosition.TextBesideIcons, "the menu and the page share one setting");
+        sut.ToolbarPositionsLocked.Should().BeTrue();
+        sut.ToolbarIconSize.Should().Be(ToolbarIconSize.Large);
+        sut.ToolbarFonts.Fonts.Should().ContainSingle(f => f.Key == "Toolbars");
+
+        // Act
+        sut.ToolbarIconSize = ToolbarIconSize.Small;
+        sut.ToolbarFontFamily = "Arial";
+        sut.ToolbarFontSize = 14;
+        sut.ToolbarFontWeight = 600;
+
+        // Assert
+        raised.Should().Be(0, "the toolbars change only once the page is applied");
+
+        // Act
+        sut.ApplyCommand.Execute(null);
+
+        // Assert
+        raised.Should().BeGreaterThan(0);
+        host.Toolbars.Appearance.Should().Be(
+            new ToolbarAppearance(ToolbarTextPosition.TextBesideIcons, ToolbarIconSize.Small, true, "Arial", 14, 600));
+    }
+
+    [Fact]
+    public void Restoring_the_appearance_defaults_restores_the_toolbars()
+    {
+        // Arrange
+        using TestHost host = new();
+        host.Toolbars.SetIconSize(ToolbarIconSize.Small);
+        PreferencesViewModel sut = NewOn(host);
+
+        // Act
+        sut.RestoreAppearanceDefaultsCommand.Execute(null);
+
+        // Assert
+        sut.ToolbarIconSize.Should().Be(ToolbarIconSize.Large);
+
+        // Act
+        sut.ApplyCommand.Execute(null);
+
+        // Assert
+        host.Toolbars.Appearance.Should().Be(ToolbarAppearance.Default);
+    }
+
+    [Fact]
     public void Find_action_button_display_starts_from_settings_and_changes_persist_on_apply()
     {
         // Arrange

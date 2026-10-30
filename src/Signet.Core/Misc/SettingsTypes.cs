@@ -296,6 +296,78 @@ public readonly record struct ToolHeaderFontAppearance(string FontFamily, int Fo
         FontWeightScale.Normalize(FontWeight));
 }
 
+/// <summary>Where the buttons of the main window's toolbars show their text.</summary>
+public enum ToolbarTextPosition
+{
+    /// <summary>Icons only (the default); a button without an icon shows its text.</summary>
+    IconsOnly,
+
+    /// <summary>Text only, no icons.</summary>
+    TextOnly,
+
+    /// <summary>The text to the right of the icon.</summary>
+    TextBesideIcons,
+
+    /// <summary>The text under the icon.</summary>
+    TextUnderIcons,
+}
+
+/// <summary>The size of the icons of the main window's toolbars.</summary>
+public enum ToolbarIconSize
+{
+    /// <summary>16 × 16 px.</summary>
+    Small,
+
+    /// <summary>24 × 24 px (the default).</summary>
+    Large,
+}
+
+/// <summary>
+/// How the main window's toolbars look and whether they can be moved: set from a toolbar's context menu and on the
+/// Appearance › Toolbars page of Preferences. The small button bars of the panels (Preview, Saved Searches, …) do not
+/// follow it.
+/// </summary>
+/// <param name="TextPosition">Where the buttons show their text.</param>
+/// <param name="IconSize">The size of the icons.</param>
+/// <param name="PositionsLocked">Whether the toolbars stay where they are: their grips are hidden.</param>
+/// <param name="FontFamily">Font family of the button texts; empty = the interface font.</param>
+/// <param name="FontSize">Font size (px) of the button texts; 0 = the default (11).</param>
+/// <param name="FontWeight">Weight of the font (<see cref="FontWeightScale"/>); 0 = not set.</param>
+public readonly record struct ToolbarAppearance(
+    ToolbarTextPosition TextPosition, ToolbarIconSize IconSize, bool PositionsLocked,
+    string FontFamily, int FontSize, int FontWeight = 0)
+{
+    /// <summary>The size (px) of a small icon.</summary>
+    public const int SmallIconPixels = 16;
+
+    /// <summary>The size (px) of a large icon.</summary>
+    public const int LargeIconPixels = 24;
+
+    /// <summary>The size (px) of the button texts while <see cref="FontSize"/> is not set.</summary>
+    public const int DefaultFontSize = 11;
+
+    /// <summary>Lower bound of an explicit <see cref="FontSize"/>.</summary>
+    public const int FontSizeMin = 6;
+
+    /// <summary>Upper bound of an explicit <see cref="FontSize"/>.</summary>
+    public const int FontSizeMax = 72;
+
+    /// <summary>Default values: large icons without text, movable toolbars, the interface font.</summary>
+    public static ToolbarAppearance Default => new(ToolbarTextPosition.IconsOnly, ToolbarIconSize.Large, false, string.Empty, 0);
+
+    /// <summary>The size (px) of the icons.</summary>
+    public int IconPixels => IconSize == ToolbarIconSize.Small ? SmallIconPixels : LargeIconPixels;
+
+    /// <summary>A copy with unknown values replaced by the defaults and the size clamped (0 stays "the default").</summary>
+    public ToolbarAppearance Normalized() => new(
+        Enum.IsDefined(TextPosition) ? TextPosition : ToolbarTextPosition.IconsOnly,
+        Enum.IsDefined(IconSize) ? IconSize : ToolbarIconSize.Large,
+        PositionsLocked,
+        FontFamily?.Trim() ?? string.Empty,
+        FontSize <= 0 ? 0 : Math.Clamp(FontSize, FontSizeMin, FontSizeMax),
+        FontWeightScale.Normalize(FontWeight));
+}
+
 /// <summary>
 /// Font of the timestamp column and of the message column of the Notifications panel (independent of each other), and
 /// the vertical space between rows; the colors come from the theme (<c>ui.notifications.*</c>, see <see cref="Signet.Core.Themes.ThemeKeys"/>).
