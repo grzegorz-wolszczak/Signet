@@ -1166,7 +1166,7 @@ public sealed class SettingsStore
             WriteSilent("toolbar_font_family", v.FontFamily);
             WriteSilent("toolbar_font_size", v.FontSize);
             WriteSilent("toolbar_font_weight", v.FontWeight);
-            RaiseChanged("toolbar_appearance");
+            RaiseChanged(SettingChangeKeys.ToolbarAppearance);
         }
     }
 
@@ -1194,7 +1194,7 @@ public sealed class SettingsStore
             WriteSilent("context_menu_items_font_family", v.ItemsFontFamily);
             WriteSilent("context_menu_items_font_size", v.ItemsFontSize);
             WriteSilent("context_menu_items_font_weight", v.ItemsFontWeight);
-            RaiseChanged("context_menu_appearance");
+            RaiseChanged(SettingChangeKeys.ContextMenuAppearance);
         }
     }
 
@@ -1772,7 +1772,7 @@ public sealed class SettingsStore
             _file.Remove(Group, key);
         }
 
-        RaiseChanged("appearance_settings_cleared");
+        RaiseChanged(SettingChangeKeys.AppearanceSettingsCleared);
     }
 
     // --------------------------------------------------- Window / recent - //

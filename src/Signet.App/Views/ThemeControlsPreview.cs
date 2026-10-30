@@ -289,7 +289,7 @@ public sealed class ThemeControlsPreview : Border
     }
 
     private static IBrush AccentFallback() =>
-        Application.Current?.FindResource("SystemAccentColor") is Color accent ? new SolidColorBrush(accent) : Brushes.SteelBlue;
+        Application.Current?.FindResource(FluentResourceKeys.SystemAccentColor) is Color accent ? new SolidColorBrush(accent) : Brushes.SteelBlue;
 
     private static SolidColorBrush? Brush(Color? color) => color is { } c ? new SolidColorBrush(c) : null;
 

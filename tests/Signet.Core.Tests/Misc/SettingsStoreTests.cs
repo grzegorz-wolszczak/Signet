@@ -573,7 +573,7 @@ public sealed class SettingsStoreTests
         SettingsStore reader = new(path);
 
         // Assert
-        changed.Should().ContainSingle().Which.Should().EndWith("/toolbar_appearance");
+        changed.Should().ContainSingle().Which.Should().EndWith("/" + SettingChangeKeys.ToolbarAppearance);
         reader.ToolbarAppearance.Should().Be(look);
         reader.ToolbarAppearance.IconPixels.Should().Be(16);
     }

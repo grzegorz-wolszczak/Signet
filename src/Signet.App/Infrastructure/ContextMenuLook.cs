@@ -39,10 +39,10 @@ public static class ContextMenuLook
     public static void Apply(Application app, ContextMenuAppearance look)
     {
         ArgumentNullException.ThrowIfNull(app);
-        FontFamily uiFamily = app.TryFindResource("ContentControlThemeFontFamily", out object? f) && f is FontFamily family
+        FontFamily uiFamily = app.TryFindResource(FluentResourceKeys.ContentControlThemeFontFamily, out object? f) && f is FontFamily family
             ? family
             : FontFamily.Default;
-        double uiSize = app.TryFindResource("ControlContentThemeFontSize", out object? s) && s is double size ? size : 14;
+        double uiSize = app.TryFindResource(FluentResourceKeys.ControlContentThemeFontSize, out object? s) && s is double size ? size : 14;
         FontWeight uiWeight = app.TryFindResource(UiDensityManager.UiFontWeightKey, out object? w) && w is FontWeight weight
             ? weight
             : FontWeight.Normal;

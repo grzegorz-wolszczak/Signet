@@ -263,8 +263,8 @@ public sealed class ToolbarManager
     // The look changes from this manager, from Preferences (the draft committed) and with the appearance defaults restored.
     private void OnSettingChanged(object? sender, SettingChangedEventArgs e)
     {
-        if (e.QualifiedKey.EndsWith("/toolbar_appearance", StringComparison.Ordinal)
-            || e.QualifiedKey.EndsWith("/appearance_settings_cleared", StringComparison.Ordinal))
+        if (SettingChangeKeys.Is(e, SettingChangeKeys.ToolbarAppearance)
+            || SettingChangeKeys.Is(e, SettingChangeKeys.AppearanceSettingsCleared))
         {
             ApplyAppearance();
             AppearanceChanged?.Invoke(this, EventArgs.Empty);

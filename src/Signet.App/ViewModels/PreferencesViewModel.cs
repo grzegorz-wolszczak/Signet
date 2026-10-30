@@ -307,7 +307,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
             _uiDensity.ApplyToolHeaderFont();
         }
 
-        if (Changed("context_menu_appearance", "appearance_settings_cleared"))
+        if (Changed(SettingChangeKeys.ContextMenuAppearance, SettingChangeKeys.AppearanceSettingsCleared))
         {
             _uiDensity.ApplyContextMenuFonts();
         }
