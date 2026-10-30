@@ -113,11 +113,11 @@ public sealed class CssPropertyReferenceViewModelTests
 
         // Assert
         viewModel.InheritedProperties.Concat(viewModel.NonInheritedProperties)
-            .Should().OnlyContain(row => !string.IsNullOrWhiteSpace(row.Tooltip));
+            .Should().OnlyContain(row => !string.IsNullOrWhiteSpace(row.Tooltip.ToPlainText()));
         CssPropertyReferenceRow display = viewModel.NonInheritedProperties.Single(row => row.Name == "display");
-        display.Tooltip.Should().Contain("Controls box generation and participation in layout.");
-        display.Tooltip.Should().Contain("Keywords:");
-        display.Tooltip.Should().Contain("inline");
+        display.Tooltip.ToPlainText().Should().Contain("Controls box generation and participation in layout.");
+        display.Tooltip.ToPlainText().Should().Contain("Keywords:");
+        display.Tooltip.ToPlainText().Should().Contain("inline");
     }
 
     [Fact]
@@ -126,14 +126,14 @@ public sealed class CssPropertyReferenceViewModelTests
         // Arrange
         using UiCultureScope culture = new("pl");
         CssPropertyReferenceViewModel viewModel = new();
-        string polishTooltip = viewModel.NonInheritedProperties.Single(row => row.Name == "display").Tooltip;
+        string polishTooltip = viewModel.NonInheritedProperties.Single(row => row.Name == "display").Tooltip.ToPlainText();
 
         // Act
         CultureInfo.CurrentUICulture = CultureInfo.GetCultureInfo("en");
         viewModel.OnLanguageChanged();
 
         // Assert
-        string englishTooltip = viewModel.NonInheritedProperties.Single(row => row.Name == "display").Tooltip;
+        string englishTooltip = viewModel.NonInheritedProperties.Single(row => row.Name == "display").Tooltip.ToPlainText();
         polishTooltip.Should().Contain("Określa sposób tworzenia pudełka");
         englishTooltip.Should().Contain("Controls box generation and participation in layout.");
         englishTooltip.Should().NotBe(polishTooltip);
@@ -157,6 +157,6 @@ public sealed class CssPropertyReferenceViewModelTests
             .Single(r => r.Name == property);
 
         // Assert
-        row.Tooltip.Should().Contain(expected);
+        row.Tooltip.ToPlainText().Should().Contain(expected);
     }
 }

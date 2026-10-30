@@ -1,16 +1,19 @@
 using System;
+using System.Linq;
 using Signet.App.Resources;
 using Signet.Core.Parsers;
+using Signet.Core.RichContent;
 
 namespace Signet.App.ViewModels;
 
 /// <summary>
-/// The tooltip text of a property in the CSS property reference: its own description when there is one (a prefixed name
-/// uses the unprefixed one's), otherwise the description of its family; then its finite keyword values.
+/// The tooltip of a property in the CSS property reference: its own description when there is one (a prefixed name
+/// uses the unprefixed one's), otherwise the description of its family; then its finite keyword values — formatted
+/// (the label in bold, the values as code) through the markup of the resource <c>CssPropertyReferenceTooltip_WithKeywords</c>.
 /// </summary>
 internal static class CssPropertyReferenceDocumentation
 {
-    public static string TooltipFor(string property)
+    public static RichText TooltipFor(string property)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(property);
 
@@ -20,9 +23,14 @@ internal static class CssPropertyReferenceDocumentation
             ?? Strings.Format($"CssPropertyReferenceFamily_{FamilyFor(normalized)}", normalized);
         string? keywords = CssPropertyKeywordCatalog.ForProperty(property);
 
-        return keywords is null
-            ? summary
-            : Strings.Format("CssPropertyReferenceTooltip_WithKeywords", summary, keywords);
+        if (keywords is null)
+        {
+            return RichText.Plain(summary);
+        }
+
+        string values = string.Join(", ", keywords.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .Select(k => "`" + RichTextMarkup.EscapeCode(k) + "`"));
+        return RichTextMarkup.Parse(Strings.Format("CssPropertyReferenceTooltip_WithKeywords", RichTextMarkup.Escape(summary), values));
     }
 
     private static string FamilyFor(string property)

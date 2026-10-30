@@ -142,8 +142,13 @@ public static class AppTheme
             SetBrush(app, resource, theme.Color(key));
         }
 
+        // Code in a formatted tooltip; unset: the accent color (a lighter shade on a dark theme, to be readable).
+        string codeAccent = app.ActualThemeVariant == ThemeVariant.Dark ? FluentResourceKeys.SystemAccentColorLight2 : FluentResourceKeys.SystemAccentColor;
+        SetBrush(app, Views.RichTextView.CodeBrushKey, theme.Color(ThemeKeys.UiTooltipCode)
+            ?? (app.TryGetResource(codeAccent, app.ActualThemeVariant, out object? accentColor) && accentColor is Color code ? code : null));
+
         // Unset: a light shade of the accent color (lighter on a light theme, darker on a dark one).
-        string accentShade = app.ActualThemeVariant == ThemeVariant.Dark ? "SystemAccentColorDark2" : "SystemAccentColorLight2";
+        string accentShade = app.ActualThemeVariant == ThemeVariant.Dark ? FluentResourceKeys.SystemAccentColorDark2 : FluentResourceKeys.SystemAccentColorLight2;
         SetBrush(app, ContextMenuTitleBackgroundKey, theme.Color(ThemeKeys.UiContextMenuTitleBackground)
             ?? (app.TryGetResource(accentShade, app.ActualThemeVariant, out object? accent) && accent is Color shade ? shade : null));
 

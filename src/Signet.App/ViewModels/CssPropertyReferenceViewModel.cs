@@ -5,11 +5,12 @@ using System.Linq;
 using CommunityToolkit.Mvvm.Input;
 using Signet.App.Resources;
 using Signet.Core.Parsers;
+using Signet.Core.RichContent;
 
 namespace Signet.App.ViewModels;
 
 /// <summary>A CSS property, its display-context markers, and its localized tooltip.</summary>
-public sealed record CssPropertyReferenceRow(string Display, string Name, string Tooltip);
+public sealed record CssPropertyReferenceRow(string Display, string Name, RichText Tooltip);
 
 /// <summary>The read-only inherited and non-inherited CSS property lists shown by the reference window.</summary>
 public sealed class CssPropertyReferenceViewModel : ViewModelBase, ILanguageAware

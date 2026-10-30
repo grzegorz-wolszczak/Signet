@@ -204,7 +204,7 @@
     <value>When ALL is unchecked, only the most common CSS properties are shown. Check ALL to display the full list.</value>
   </data>
   <data name="CssPropertyReferenceTooltip_WithKeywords" xml:space="preserve">
-    <value>{0}&#10;Keywords: {1}</value>
+    <value>{0}&#10;**Keywords:** {1}</value>
   </data>
   <data name="CssPropertyReferenceDescription_background" xml:space="preserve">
     <value>Sets several background layers and related values at once.</value>
@@ -6939,6 +6939,9 @@ Close the tab</value>
   </data>
   <data name="ThemeKey_ui_contextMenu_title_background" xml:space="preserve">
     <value>Background of the title of a context menu</value>
+  </data>
+  <data name="ThemeKey_ui_tooltip_code" xml:space="preserve">
+    <value>Code in a formatted tooltip (CSS keywords, names…)</value>
   </data>
   <data name="ThemeKey_ui_startScreen_title" xml:space="preserve">
     <value>Name of a recent file on the start screen</value>

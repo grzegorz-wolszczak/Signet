@@ -3,7 +3,6 @@ using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
-using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using AwesomeAssertions;
@@ -11,6 +10,8 @@ using Signet.App.Resources;
 using Signet.App.ViewModels;
 using Signet.App.Views;
 using Signet.Controls.TreeDataGrid;
+using Signet.Core.RichContent;
+using Avalonia;
 
 namespace Signet.App.UiTests;
 
@@ -51,13 +52,13 @@ public sealed class CssPropertyReferenceWindowTests
             searchIcon.Data.Should().NotBeNull();
             TextBlock displayCell = nonInheritedGrid.GetVisualDescendants().OfType<TextBlock>()
                 .Single(textBlock => textBlock.Text == "display");
-            string displayTooltipText = viewModel.NonInheritedProperties.Single(row => row.Name == "display").Tooltip;
-            ToolTip.SetIsOpen(displayCell, true);
-            Dispatcher.UIThread.RunJobs();
-            TextBlock displayTooltip = ToolTip.GetTip(displayCell).Should().BeOfType<TextBlock>().Subject;
-            displayTooltip.Text.Should().Be(displayTooltipText);
-            displayTooltip.TextWrapping.Should().Be(TextWrapping.Wrap);
-            ToolTip.SetIsOpen(displayCell, false);
+            RichText displayTooltip = viewModel.NonInheritedProperties.Single(row => row.Name == "display").Tooltip;
+            ToolTip.GetTip(displayCell).Should().BeSameAs(displayTooltip, "the tooltip is the formatted text of the row");
+            displayTooltip.Blocks.OfType<RichParagraph>().SelectMany(p => p.Spans)
+                .Should().Contain(s => s.Kind == RichSpanKind.Bold && s.Text == Strings.Get("CssPropertyReferenceTooltip_WithKeywords").Split("**")[1])
+                .And.Contain(s => s.Kind == RichSpanKind.Code && s.Text == "inline");
+            Application.Current!.DataTemplates.First(t => t.Match(displayTooltip)).Build(displayTooltip)
+                .Should().BeOfType<RichTextView>("the application draws formatted text with RichTextView");
 
             // Act
             searchTextBox.Text = "f, g";

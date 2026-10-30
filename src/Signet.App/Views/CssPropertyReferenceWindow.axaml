@@ -12,11 +12,9 @@
 
   <Window.Resources>
     <DataTemplate x:Key="PropertyNameCellTemplate" x:DataType="vm:CssPropertyReferenceRow">
-      <TextBlock Text="{Binding Name}" Background="Transparent" VerticalAlignment="Center">
-        <ToolTip.Tip>
-          <TextBlock DataContext="{Binding}" Text="{Binding Tooltip}" TextWrapping="Wrap" MaxWidth="440" />
-        </ToolTip.Tip>
-      </TextBlock>
+      <!-- The tooltip is formatted text (RichText): the description, then the keywords in the font and color of code. -->
+      <TextBlock Text="{Binding Name}" Background="Transparent" VerticalAlignment="Center"
+                 ToolTip.Tip="{Binding Tooltip}" />
     </DataTemplate>
   </Window.Resources>
 
