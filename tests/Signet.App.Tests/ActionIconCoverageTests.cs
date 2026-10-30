@@ -48,6 +48,20 @@ public sealed partial class ActionIconCoverageTests
         }
     }
 
+    // Added in October 2026: most Book Browser actions had no icon, so on a toolbar they showed as a bare label.
+    [Fact]
+    public void Every_Book_Browser_and_Clip_Editor_action_has_an_icon()
+    {
+        // Act
+        string[] withoutIcon = AppActionCatalog.All
+            .Where(a => a.Category is AppActionIds.BookBrowserCategory or AppActionIds.ClipEditorCategory && a.IconKey is null)
+            .Select(a => a.Id)
+            .ToArray();
+
+        // Assert
+        withoutIcon.Should().BeEmpty();
+    }
+
     [Fact]
     public void The_three_icon_sets_define_the_same_keys()
     {
