@@ -28,6 +28,9 @@ namespace Signet.Controls.TreeDataGrid
         public static readonly StyledProperty<bool> CanUserSortColumnsProperty =
             AvaloniaProperty.Register<TreeDataGrid, bool>(nameof(CanUserSortColumns), true);
 
+        public static readonly StyledProperty<bool> KeepEstimatedScrollExtentStableProperty =
+            AvaloniaProperty.Register<TreeDataGrid, bool>(nameof(KeepEstimatedScrollExtentStable), false);
+
         public static readonly DirectProperty<TreeDataGrid, IColumns?> ColumnsProperty =
             AvaloniaProperty.RegisterDirect<TreeDataGrid, IColumns?>(
                 nameof(Columns),
@@ -121,6 +124,12 @@ namespace Signet.Controls.TreeDataGrid
         {
             get => GetValue(CanUserSortColumnsProperty);
             set => SetValue(CanUserSortColumnsProperty, value);
+        }
+
+        public bool KeepEstimatedScrollExtentStable
+        {
+            get => GetValue(KeepEstimatedScrollExtentStableProperty);
+            set => SetValue(KeepEstimatedScrollExtentStableProperty, value);
         }
 
         public IColumns? Columns

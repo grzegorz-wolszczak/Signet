@@ -46,6 +46,8 @@ namespace Signet.Controls.TreeDataGrid.Primitives
         private RealizedStackElements? _realizedElements;
         private ScrollViewer? _scrollViewer;
         private double _lastEstimatedElementSizeU = 25;
+        private double? _stableEstimatedScrollExtentU;
+        private bool _hasStableElementSizeEstimate;
         private Control? _focusedElement;
         private int _focusedIndex = -1;
 
@@ -75,6 +77,10 @@ namespace Signet.Controls.TreeDataGrid.Primitives
                     _items = value;
 
                     SubscribeToItemChanges();
+                    if (UseStableEstimatedScrollExtent)
+                    {
+                        ResetEstimatedScrollExtent();
+                    }
 
                     RaisePropertyChanged(
                         ItemsProperty,
@@ -88,7 +94,15 @@ namespace Signet.Controls.TreeDataGrid.Primitives
         internal IReadOnlyList<Control?> RealizedElements => _realizedElements?.Elements ?? Array.Empty<Control>();
 
         protected abstract Orientation Orientation { get; }
+        protected virtual bool UseStableEstimatedScrollExtent => false;
         protected Rect Viewport { get; private set; } = s_invalidViewport;
+
+        protected void ResetEstimatedScrollExtent()
+        {
+            _lastEstimatedElementSizeU = 25;
+            _stableEstimatedScrollExtentU = null;
+            _hasStableElementSizeEstimate = false;
+        }
 
         public Control? BringIntoView(int index, Rect? rect = null)
         {
@@ -113,7 +127,10 @@ namespace Signet.Controls.TreeDataGrid.Primitives
                 scrollToElement.Measure(Size.Infinity);
 
                 // Get the expected position of the element and put it in place.
-                var anchorU = _realizedElements.GetOrEstimateElementU(index, ref _lastEstimatedElementSizeU);
+                var anchorU = _realizedElements.GetOrEstimateElementU(
+                    index,
+                    ref _lastEstimatedElementSizeU,
+                    useExistingEstimate: UseStableEstimatedScrollExtent && _hasStableElementSizeEstimate);
                 var elementRect = Orientation == Orientation.Horizontal ?
                     new Rect(anchorU, 0, scrollToElement.DesiredSize.Width, scrollToElement.DesiredSize.Height) :
                     new Rect(0, anchorU, scrollToElement.DesiredSize.Width, scrollToElement.DesiredSize.Height);
@@ -406,7 +423,8 @@ namespace Signet.Controls.TreeDataGrid.Primitives
                 viewportStart,
                 viewportEnd,
                 itemCount,
-                ref _lastEstimatedElementSizeU);
+                ref _lastEstimatedElementSizeU,
+                useExistingEstimate: UseStableEstimatedScrollExtent && _hasStableElementSizeEstimate);
         }
 
         protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
@@ -556,10 +574,18 @@ namespace Signet.Controls.TreeDataGrid.Primitives
             var sizeU = 0.0;
             var sizeV = viewport.measuredV;
 
-            if (viewport.lastIndex >= 0)
+            if (UseStableEstimatedScrollExtent && _stableEstimatedScrollExtentU is { } stableExtent)
+            {
+                sizeU = stableExtent;
+            }
+            else if (viewport.lastIndex >= 0)
             {
                 var remaining = itemCount - viewport.lastIndex - 1;
                 sizeU = viewport.realizedEndU + (remaining * EstimateElementSizeU());
+                if (UseStableEstimatedScrollExtent)
+                {
+                    _stableEstimatedScrollExtentU = sizeU;
+                }
             }
 
             return orientation == Orientation.Horizontal ? new(sizeU, sizeV) : new(sizeV, sizeU);
@@ -643,12 +669,24 @@ namespace Signet.Controls.TreeDataGrid.Primitives
 
         private double EstimateElementSizeU()
         {
+            if (UseStableEstimatedScrollExtent && _hasStableElementSizeEstimate)
+            {
+                return _lastEstimatedElementSizeU;
+            }
+
             if (_realizedElements is null)
                 return _lastEstimatedElementSizeU;
 
             var result = _realizedElements.EstimateElementSizeU();
             if (result >= 0)
+            {
                 _lastEstimatedElementSizeU = result;
+                if (UseStableEstimatedScrollExtent)
+                {
+                    _hasStableElementSizeEstimate = true;
+                }
+            }
+
             return _lastEstimatedElementSizeU;
         }
 
@@ -737,6 +775,11 @@ namespace Signet.Controls.TreeDataGrid.Primitives
             {
                 if (_focusedElement is not null && _focusedIndex >= index && _focusedIndex < index + count)
                     RecycleElementOnItemRemoved(_focusedElement);
+            }
+
+            if (UseStableEstimatedScrollExtent)
+            {
+                ResetEstimatedScrollExtent();
             }
 
             InvalidateMeasure();

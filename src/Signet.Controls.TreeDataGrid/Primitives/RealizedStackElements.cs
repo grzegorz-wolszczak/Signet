@@ -107,6 +107,7 @@ namespace Signet.Controls.TreeDataGrid.Primitives
         /// <param name="viewportEndU">The U position of the end of the viewport.</param>
         /// <param name="itemCount">The number of items in the list.</param>
         /// <param name="estimatedElementSizeU">The current estimated element size.</param>
+        /// <param name="useExistingEstimate">Whether to use <paramref name="estimatedElementSizeU"/> without recalculating it.</param>
         /// <returns>
         /// A tuple containing:
         /// - The index of the anchor element, or -1 if an anchor could not be determined
@@ -121,7 +122,8 @@ namespace Signet.Controls.TreeDataGrid.Primitives
             double viewportStartU,
             double viewportEndU,
             int itemCount,
-            ref double estimatedElementSizeU)
+            ref double estimatedElementSizeU,
+            bool useExistingEstimate = false)
         {
             // We have no elements, nothing to do here.
             if (itemCount <= 0)
@@ -155,11 +157,11 @@ namespace Signet.Controls.TreeDataGrid.Primitives
             // StartU being valid. Estimate the index using only the estimated size. First,
             // estimate the element size, using defaultElementSizeU if we don't have any realized
             // elements.
-            var estimatedSize = EstimateElementSizeU() switch
+            var estimatedSize = useExistingEstimate ? -1 : EstimateElementSizeU();
+            if (estimatedSize < 0)
             {
-                -1 => estimatedElementSizeU,
-                double v => v,
-            };
+                estimatedSize = estimatedElementSizeU;
+            }
 
             // Store the estimated size for the next layout pass.
             estimatedElementSizeU = estimatedSize;
@@ -193,7 +195,10 @@ namespace Signet.Controls.TreeDataGrid.Primitives
             return u;
         }
 
-        public double GetOrEstimateElementU(int index, ref double estimatedElementSizeU)
+        public double GetOrEstimateElementU(
+            int index,
+            ref double estimatedElementSizeU,
+            bool useExistingEstimate = false)
         {
             // Return the position of the existing element if realized.
             var u = GetElementU(index);
@@ -203,11 +208,11 @@ namespace Signet.Controls.TreeDataGrid.Primitives
 
             // Estimate the element size, using defaultElementSizeU if we don't have any realized
             // elements.
-            var estimatedSize = EstimateElementSizeU() switch
+            var estimatedSize = useExistingEstimate ? -1 : EstimateElementSizeU();
+            if (estimatedSize < 0)
             {
-                -1 => estimatedElementSizeU,
-                double v => v,
-            };
+                estimatedSize = estimatedElementSizeU;
+            }
 
             // Store the estimated size for the next layout pass.
             estimatedElementSizeU = estimatedSize;

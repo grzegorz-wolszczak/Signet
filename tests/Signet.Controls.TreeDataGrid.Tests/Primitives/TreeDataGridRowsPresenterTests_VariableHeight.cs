@@ -76,6 +76,24 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
             lastIndex.Should().Be(items.Count - 1);
         }
 
+        [AvaloniaFact]
+        public void Stable_scroll_extent_does_not_change_while_scrolling_through_variable_height_rows()
+        {
+            // Arrange
+            var (target, scroll, _) = CreateTarget(keepEstimatedScrollExtentStable: true);
+
+            // Act
+            Layout(target);
+            double initialExtent = scroll.Extent.Height;
+            int initialIndex = GetFirstRowIndex(target);
+            scroll.Offset = new Vector(0, 2500);
+            Layout(target);
+
+            // Assert
+            GetFirstRowIndex(target).Should().BeGreaterThan(initialIndex);
+            scroll.Extent.Height.Should().Be(initialExtent);
+        }
+
         private static int GetFirstRowIndex(TreeDataGridRowsPresenter target)
         {
             return target!.GetVisualChildren()
@@ -100,7 +118,8 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
             IColumns? columns = null, 
             List<IStyle>? additionalStyles = null,
             int itemCount = 100,
-            Size? rootSize = null)
+            Size? rootSize = null,
+            bool keepEstimatedScrollExtentStable = false)
         {
             var rnd = new Random(0);
             var items = new AvaloniaList<Model>(Enumerable.Range(0, itemCount).Select(x =>
@@ -118,6 +137,7 @@ namespace Signet.Controls.TreeDataGrid.Tests.Primitives
                 ElementFactory = new TreeDataGridElementFactory(),
                 Items = rows,
                 Columns = columns,
+                KeepEstimatedScrollExtentStable = keepEstimatedScrollExtentStable,
             };
 
             var scrollViewer = new ScrollViewer
