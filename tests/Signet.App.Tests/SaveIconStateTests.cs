@@ -49,6 +49,44 @@ public sealed class SaveIconStateTests : IDisposable
         save.IconState.Should().Be(ActionIconState.Attention);
     }
 
+    /// <summary>
+    /// Activating another tab flushes the edited one into its file: its changes become the book's, so the icon stays red
+    /// (it went gray — the changes were then neither in the tab nor in the book, and closing did not ask about saving).
+    /// Closing the edited tab does the same.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Save_icon_stays_red_when_the_edited_tab_is_left_or_closed(bool close)
+    {
+        // Arrange
+        TempDir temp = _disposables.Add(new TempDir());
+        string epub = EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp);
+        MainWindowViewModel sut = _disposables.Add(new MainWindowViewModel());
+        Book book = _disposables.Add(new ImportEpub(epub).GetBook());
+        sut.LoadBook(book, epub);
+        AppAction save = sut.Actions.Require(AppActionIds.Save);
+        sut.Tabs.OpenResources(new Resource[] { book.GetAllResources().OfType<HtmlResource>().First() });
+        var edited = (CodeTabViewModel)sut.Tabs.ActiveTab!;
+        edited.Document.Insert(0, "<!-- change -->");
+        save.IconState.Should().Be(ActionIconState.Attention);
+
+        // Act
+        if (close)
+        {
+            sut.Tabs.CloseActiveTab();
+        }
+        else
+        {
+            sut.Tabs.OpenResources(new Resource[] { book.GetAllResources().OfType<CssResource>().First() });
+        }
+
+        // Assert
+        edited.IsModified.Should().BeFalse("its text went into the file");
+        book.Modified.Should().BeTrue("the change is the book's now");
+        save.IconState.Should().Be(ActionIconState.Attention);
+    }
+
     [Theory]
     [InlineData(0xEA, 0x4B, 0x4B)]
     [InlineData(0x1E, 0x88, 0xE5)]
