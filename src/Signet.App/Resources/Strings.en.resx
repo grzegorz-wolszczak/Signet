@@ -4030,6 +4030,9 @@ This file type cannot be edited in Signet yet.</value>
   <data name="Menu_ClearBookmarks" xml:space="preserve">
     <value>Clear Bookmarks</value>
   </data>
+  <data name="Menu_HideAllToolbars" xml:space="preserve">
+    <value>&amp;Hide All Toolbars</value>
+  </data>
   <data name="Menu_CustomizeToolbars" xml:space="preserve">
     <value>&amp;Customize Toolbars...</value>
   </data>

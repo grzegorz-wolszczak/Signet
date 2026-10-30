@@ -118,8 +118,61 @@ public sealed class MenuBuilderTests
         MenuItemViewModel toolbars = view.Items!.Single(m => m.Header == "_Toolbars");
 
         // Act & Assert
-        toolbars.Items!.Count(i => i.IsCheckable).Should().Be(Signet.App.Toolbars.ToolbarManager.AllToolbars.Count);
+        toolbars.Items!.Count(i => i.IsCheckable).Should().Be(
+            Signet.App.Toolbars.ToolbarManager.AllToolbars.Count + 1, "one toggle for each toolbar and Hide All Toolbars");
         toolbars.Items!.Should().Contain(i => i.Header == "_Customize Toolbars...");
+    }
+
+    [Fact]
+    public void Toolbars_submenu_stays_open_on_its_toggles_and_ends_with_hide_all_under_a_separator()
+    {
+        // Arrange
+        using UiCultureScope culture = new("en");
+        using TestHost host = new();
+        MenuItemViewModel view = Build(host).Single(m => m.Header == "_View");
+
+        // Act
+        MenuItemViewModel[] items = view.Items!.Single(m => m.Header == "_Toolbars").Items!.ToArray();
+
+        // Assert
+        items.Take(Signet.App.Toolbars.ToolbarManager.AllToolbars.Count).Should().OnlyContain(i => i.IsCheckable && i.StaysOpenOnClick);
+        items[^4].IsSeparator.Should().BeTrue();
+        items[^3].Header.Should().Be("_Customize Toolbars...");
+        items[^2].IsSeparator.Should().BeTrue("Hide All Toolbars is set apart by a line of its own");
+        items[^1].Header.Should().Be("_Hide All Toolbars");
+        items[^1].IsCheckable.Should().BeTrue();
+        items[^1].StaysOpenOnClick.Should().BeTrue();
+        items[^1].IsChecked.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Hide_all_toolbars_hides_them_and_disables_the_toggles_of_the_single_toolbars()
+    {
+        // Arrange
+        using UiCultureScope culture = new("en");
+        using TestHost host = new();
+        MenuItemViewModel view = Build(host).Single(m => m.Header == "_View");
+        MenuItemViewModel[] items = view.Items!.Single(m => m.Header == "_Toolbars").Items!.ToArray();
+        MenuItemViewModel hideAll = items[^1];
+        MenuItemViewModel[] toggles = items.Take(Signet.App.Toolbars.ToolbarManager.AllToolbars.Count).ToArray();
+        bool formatShown = host.Toolbars.IsVisible(Signet.App.Toolbars.ToolbarId.Format);
+
+        // Act
+        hideAll.Command!.Execute(null);
+
+        // Assert
+        host.Toolbars.AllHidden.Should().BeTrue();
+        hideAll.IsChecked.Should().BeTrue();
+        toggles.Should().OnlyContain(t => !t.Command!.CanExecute(null), "there is nothing to switch on a hidden toolbar");
+        host.Toolbars.IsVisible(Signet.App.Toolbars.ToolbarId.Format).Should().Be(formatShown, "each toolbar keeps its own visibility");
+
+        // Act
+        hideAll.Command!.Execute(null);
+
+        // Assert
+        host.Toolbars.AllHidden.Should().BeFalse();
+        hideAll.IsChecked.Should().BeFalse();
+        toggles.Should().OnlyContain(t => t.Command!.CanExecute(null));
     }
 
     [Fact]

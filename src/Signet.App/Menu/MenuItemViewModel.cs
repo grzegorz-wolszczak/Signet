@@ -144,9 +144,12 @@ public sealed partial class MenuItemViewModel : ObservableObject
     public static MenuItemViewModel ForCommand(string header, ICommand command, string? iconKey = null) =>
         new(header, null, null, isSeparator: false, command: command, iconKey: iconKey);
 
-    /// <summary>Creates a checkable (checkbox) item with its own toggling command.</summary>
-    public static MenuItemViewModel ForToggle(string header, bool isChecked, ICommand command) =>
-        new(header, null, null, isSeparator: false, command, isCheckable: true) { IsChecked = isChecked };
+    /// <summary>
+    /// Creates a checkable (checkbox) item with its own toggling command; with <paramref name="staysOpenOnClick"/> the menu
+    /// stays open after a click (<see cref="StaysOpenOnClick"/>).
+    /// </summary>
+    public static MenuItemViewModel ForToggle(string header, bool isChecked, ICommand command, bool staysOpenOnClick = false) =>
+        new(header, null, null, isSeparator: false, command, isCheckable: true) { IsChecked = isChecked, StaysOpenOnClick = staysOpenOnClick };
 
     /// <summary>Item header (for an action it tracks <see cref="AppAction.Text"/>).</summary>
     [ObservableProperty]
@@ -176,6 +179,12 @@ public sealed partial class MenuItemViewModel : ObservableObject
 
     /// <summary>The opacity the item is drawn with (<see cref="IsDimmed"/>).</summary>
     public double Opacity => IsDimmed ? 0.5 : 1.0;
+
+    /// <summary>
+    /// Whether the menu stays open after the item is clicked (e.g. the toolbar toggles of View › Toolbars, so that several
+    /// can be switched in a row); it closes when the pointer leaves it or another item is clicked.
+    /// </summary>
+    public bool StaysOpenOnClick { get; init; }
 
     /// <summary>Whether the item is checkable (rendered as a checkbox).</summary>
     [ObservableProperty]

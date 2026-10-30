@@ -92,6 +92,7 @@
           <Setter Property="Opacity" Value="{Binding Opacity}" />
           <Setter Property="InputGesture" Value="{Binding InputGesture}" />
           <Setter Property="ToggleType" Value="{Binding ToggleType}" />
+          <Setter Property="StaysOpenOnClick" Value="{Binding StaysOpenOnClick}" />
           <Setter Property="IsChecked" Value="{Binding IsChecked, Mode=TwoWay}" />
           <!-- Action icons in the menu (from the current icon set); the icon state
                (e.g. the gray/red "Save" floppy disk) goes through ActionIcons. -->
