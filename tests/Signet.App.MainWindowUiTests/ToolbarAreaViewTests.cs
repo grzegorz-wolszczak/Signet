@@ -183,10 +183,17 @@ public sealed class ToolbarAreaViewTests : IDisposable
 
         menu.Should().NotBeNull();
         menu.DataContext = format.DataContext;
-        menu.Items.OfType<Control>().Select(c => c.Name).Should().Equal(
+        menu.Open(format);
+        Dispatcher.UIThread.RunJobs();
+        MenuItem title = menu.Items.OfType<MenuItem>().First();
+        title.Classes.Should().Contain(MenuTitle.TitleClass);
+        title.Header.Should().Be(ToolbarManager.DisplayName(ToolbarId.Format), "the title names the toolbar");
+        menu.Items[1].Should().BeOfType<Separator>();
+        menu.Close();
+        menu.Items.OfType<Control>().Skip(2).Select(c => c.Name).Should().Equal(
             "HideItem", "SettingsSeparator", "TextPositionItem", "IconSizeItem", "ConfigureItem", "LockItem");
-        menu.Items[1].Should().BeOfType<Separator>("the settings are set apart by a plain line");
-        MenuItem[] items = menu.Items.OfType<MenuItem>().ToArray();
+        menu.Items[3].Should().BeOfType<Separator>("the settings are set apart by a plain line");
+        MenuItem[] items = menu.Items.OfType<MenuItem>().Skip(1).ToArray();
         items[1].Items.OfType<MenuItem>().Should().HaveCount(4);
         items[2].Items.OfType<MenuItem>().Should().HaveCount(3);
         items[3].Tag.Should().Be(ActionIconKeys.ToolbarConfigure);

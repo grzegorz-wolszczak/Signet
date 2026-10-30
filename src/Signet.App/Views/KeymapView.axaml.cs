@@ -275,6 +275,9 @@ public partial class KeymapView : UserControl
             items.Add(Item(Strings.Get("Keymap_ResetShortcuts"), () => _bound.ResetShortcuts(node)));
         }
 
+        // The title: the action whose shortcuts the menu edits.
+        items.Insert(0, MenuTitle.CreateItem(node.Name));
+        items.Insert(1, new Separator());
         ContextMenu menu = new() { ItemsSource = items, Placement = PlacementMode.Pointer };
         menu.Open(anchor);
 

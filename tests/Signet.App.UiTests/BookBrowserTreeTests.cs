@@ -582,6 +582,52 @@ public sealed class BookBrowserTreeTests
     }
 
     [AvaloniaFact]
+    public void The_files_menu_is_titled_with_the_selected_file_or_how_many_are_selected()
+    {
+        // Arrange
+        using TempDir temp = new();
+        using Book book = new ImportEpub(EpubBuilder.BuildInto(CorpusPaths.Epub3Media, temp)).GetBook();
+        (Window window, BookBrowserViewModel vm, _, TreeDataGrid tree) = Show(new SettingsStore(temp.Combine("settings.xml")), book);
+        try
+        {
+            BookBrowserNode textFolder = vm.Nodes.Single(node => node.Header == "Text");
+            textFolder.IsExpanded = true;
+            Render(window);
+            int folder = vm.Nodes.IndexOf(textFolder);
+            ContextMenu menu = tree.ContextMenu!;
+
+            string TitleAfterOpening()
+            {
+                menu.Close();
+                menu.Open(tree);
+                Render(window);
+                MenuItem title = menu.Items.OfType<MenuItem>().First();
+                title.Classes.Should().Contain(MenuTitle.TitleClass);
+                menu.Items[1].Should().BeOfType<Separator>();
+                return (string)title.Header!;
+            }
+
+            // Act
+            tree.RowSelection!.Select(new IndexPath(folder, 0));
+            Render(window);
+
+            // Assert
+            TitleAfterOpening().Should().Be(MenuTitle.Escape(textFolder.Children[0].Header));
+
+            // Act
+            tree.RowSelection.Select(new IndexPath(folder, 1));
+            Render(window);
+
+            // Assert
+            TitleAfterOpening().Should().Be(Strings.Format("MenuTitle_Selected", 2));
+        }
+        finally
+        {
+            window.Close();
+        }
+    }
+
+    [AvaloniaFact]
     public void The_files_menu_has_the_add_actions_only_on_a_folder_and_enables_the_ones_that_fit_it()
     {
         // Arrange

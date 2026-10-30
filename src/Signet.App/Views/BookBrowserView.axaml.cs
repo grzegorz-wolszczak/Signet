@@ -72,6 +72,18 @@ public partial class BookBrowserView : UserControl
     {
         InitializeComponent();
         _treeMenu = Tree.ContextMenu;
+
+        // The title of both menus: the right-clicked (selected) file or folder, "N selected", or the panel.
+        string Title() => MenuTitle.ForSelection(_selectedNodes.Select(n => n.Header), Strings.Get("Panel_BookBrowser"));
+        if (_treeMenu is not null)
+        {
+            MenuTitle.AddTo(_treeMenu, Title);
+        }
+
+        if (Resources["FontContextMenu"] is ContextMenu fontMenu)
+        {
+            MenuTitle.AddTo(fontMenu, Title);
+        }
         _shortcutBindings = new ShortcutKeyBindings(this);
         DataContextChanged += OnDataContextChanged;
         Tree.DoubleTapped += OnDoubleTapped;

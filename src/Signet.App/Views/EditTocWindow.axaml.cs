@@ -1,3 +1,4 @@
+using Signet.App.Resources;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -43,6 +44,11 @@ public partial class EditTocWindow : Window
     {
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
+        if (Grid.ContextMenu is { } menu)
+        {
+            MenuTitle.AddTo(menu, () => MenuTitle.ForSelection(
+                _bound?.SelectedNodes.Select(n => n.Text) ?? Enumerable.Empty<string>(), Strings.Get("EditTocWindow_Title")));
+        }
         AddHandler(KeyDownEvent, OnKeyDown, Avalonia.Interactivity.RoutingStrategies.Tunnel);
     }
 

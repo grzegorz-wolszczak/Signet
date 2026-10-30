@@ -210,6 +210,7 @@ public sealed class MenuBuilder
                 MenuItemViewModel entry = MenuItemViewModel.ForCommand(label, new RelayCommand(() => _recentFiles!.Open(captured)));
                 bool missing = !File.Exists(path);
                 entry.IsDimmed = missing;
+                entry.ContextTitle = Path.GetFileName(path);
                 entry.ToolTip = missing ? path + Environment.NewLine + Strings.Get("RecentFiles_FileMissingTooltip") : path;
                 MenuItemViewModel remove = MenuItemViewModel.ForCommand(
                     Strings.Get("Menu_RemoveFromRecentFiles"),

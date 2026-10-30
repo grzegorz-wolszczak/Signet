@@ -10,6 +10,7 @@ using Avalonia.VisualTree;
 using Signet.App.Infrastructure;
 using Signet.App.ViewModels;
 using Signet.Controls.TreeDataGrid;
+using Signet.App.Resources;
 
 namespace Signet.App.Views;
 
@@ -48,6 +49,11 @@ public partial class ClipsPanelView : UserControl
     {
         InitializeComponent();
         _keys = new ShortcutKeyBindings(this);
+        if (Tree.ContextMenu is { } menu)
+        {
+            MenuTitle.AddTo(menu, () => MenuTitle.ForSelection(
+                _bound?.SelectedNodes.Select(n => n.Name) ?? Enumerable.Empty<string>(), Strings.Get("Panel_Clips")));
+        }
         DataContextChanged += (_, _) => BuildTree();
         Tree.DoubleTapped += OnDoubleTapped;
         Tree.AddHandler(KeyDownEvent, OnTreeKeyDown, RoutingStrategies.Tunnel);

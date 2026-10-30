@@ -29,6 +29,7 @@ public partial class ToolbarStripView : UserControl
     {
         InitializeComponent();
         Items.LayoutUpdated += OnItemsLayoutUpdated;
+        MenuTitle.AddTo(ToolbarMenu, () => (DataContext as ToolbarViewModel)?.Name ?? string.Empty);
     }
 
     // ItemsPanelRoot exists only after the template is applied — hook up on the first layout pass.

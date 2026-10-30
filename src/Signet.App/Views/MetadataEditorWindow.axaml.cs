@@ -43,6 +43,11 @@ public partial class MetadataEditorWindow : Window
     {
         InitializeComponent();
         DataContextChanged += OnDataContextChanged;
+        if (Tree.ContextMenu is { } menu)
+        {
+            MenuTitle.AddTo(menu, () => (DataContext as MetadataEditorViewModel)?.SelectedNode?.NameDisplay
+                ?? Strings.Get("MetadataEditorWindow_Title"));
+        }
         AddElementButton.Click += async (_, _) => await AddElementAsync();
         AddPropertyButton.Click += async (_, _) => await AddPropertyAsync();
         AddElementMenuItem.Click += async (_, _) => await AddElementAsync();
