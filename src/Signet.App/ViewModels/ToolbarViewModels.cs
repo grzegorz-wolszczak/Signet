@@ -219,6 +219,13 @@ public sealed partial class ToolbarViewModel : ObservableObject
     [ObservableProperty]
     private bool _isVisible;
 
+    /// <summary>
+    /// Whether another shown toolbar stands before this one in its row: the toolbar then starts with a line, so that
+    /// it shows where the previous one ends (set by <see cref="ToolbarRowViewModel"/>).
+    /// </summary>
+    [ObservableProperty]
+    private bool _followsAnotherToolbar;
+
     /// <summary>Toolbar items.</summary>
     public ObservableCollection<ToolbarItemViewModel> Items { get; } = new();
 
@@ -385,6 +392,8 @@ public sealed class ToolbarRowViewModel : ObservableObject, System.IDisposable
         {
             toolbar.PropertyChanged += OnToolbarPropertyChanged;
         }
+
+        MarkFollowingToolbars();
     }
 
     /// <summary>Toolbars of the row.</summary>
@@ -406,7 +415,19 @@ public sealed class ToolbarRowViewModel : ObservableObject, System.IDisposable
     {
         if (e.PropertyName == nameof(ToolbarViewModel.IsVisible))
         {
+            MarkFollowingToolbars();
             OnPropertyChanged(nameof(HasVisibleToolbars));
+        }
+    }
+
+    // Every shown toolbar but the first one of the row follows another one.
+    private void MarkFollowingToolbars()
+    {
+        bool anyBefore = false;
+        foreach (ToolbarViewModel toolbar in Toolbars)
+        {
+            toolbar.FollowsAnotherToolbar = anyBefore;
+            anyBefore |= toolbar.IsVisible;
         }
     }
 }
