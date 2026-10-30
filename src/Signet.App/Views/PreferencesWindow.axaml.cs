@@ -16,6 +16,7 @@ using Avalonia.Threading;
 using Signet.App.CodeEditor;
 using Signet.App.Infrastructure;
 using Signet.App.Resources;
+using Signet.App.Toolbars;
 using Signet.App.ViewModels;
 using Signet.Controls.TreeDataGrid;
 using Signet.Core.Misc;
@@ -348,6 +349,7 @@ public partial class PreferencesWindow : Window
         yield return ValidationPreviewHost;
         yield return PreviewPreviewHost;
         yield return NotificationsPreviewHost;
+        yield return ToolbarsPreviewHost;
     }
 
     // The Fonts pages (every Appearance section and the theme's own) each have a width of the preview of their own: the
@@ -417,6 +419,13 @@ public partial class PreferencesWindow : Window
             SpecialCharacterFontsView.DataContext = vm.SpecialCharacterFonts;
             StartScreenFontsView.DataContext = vm.StartScreenFonts;
             ToolbarFontsView.DataContext = vm.ToolbarFonts;
+
+            // The sample toolbars take their look from the resources of the preview (the draft's look), which come before
+            // the application's (the saved look of the main window's toolbars).
+            ToolbarsPreview.ItemsSource = vm.ToolbarSampleRows;
+            ToolbarManager.ApplyResources(ToolbarsPreviewPane.Resources, vm.ToolbarSampleManager.Appearance);
+            vm.ToolbarSampleManager.AppearanceChanged +=
+                (_, _) => ToolbarManager.ApplyResources(ToolbarsPreviewPane.Resources, vm.ToolbarSampleManager.Appearance);
             ContextMenuFontsView.DataContext = vm.ContextMenuFonts;
             BookBrowserFontsView.DataContext = vm.BookBrowserFonts;
             PreviewSampleTip.DataContext = vm.PreviewFonts.Fonts.Single(f => f.Key == "Tooltip" + TooltipArea.Preview);
@@ -824,22 +833,31 @@ public partial class PreferencesWindow : Window
     }
 
     // When the page has a tab bar and the selected tab has no match for the search, selects the first tab that has one.
+    // A tab may hold a tab bar of its own (e.g. Preview Panel › Appearance › Fonts): the bars are walked down from the
+    // page, through the selected tabs, and the first one whose selected tab has no match is switched.
     private bool ShowTabWithMatch(ILogical page)
     {
-        // The tab bar of a page is the page itself, or (a page with a preview panel next to its tabs) the first one in it.
-        if ((page as TabControl ?? SelfAndLogicalDescendants(page).OfType<TabControl>().FirstOrDefault()) is not { } tabs
-            || tabs.SelectedItem is not TabItem selected || TabHasMatch(selected))
+        // The tab bar of a page or a tab is itself, or (one with a preview panel next to its tabs) the first one in it.
+        ILogical? scope = page;
+        while (scope is not null
+               && (scope as TabControl ?? SelfAndLogicalDescendants(scope).OfType<TabControl>().FirstOrDefault()) is { } tabs
+               && tabs.SelectedItem is TabItem selected)
         {
-            return false;
+            if (!TabHasMatch(selected))
+            {
+                if (tabs.Items.OfType<TabItem>().FirstOrDefault(TabHasMatch) is not { } other)
+                {
+                    return false;
+                }
+
+                tabs.SelectedItem = other;
+                return true;
+            }
+
+            scope = selected.Content as ILogical;
         }
 
-        if (tabs.Items.OfType<TabItem>().FirstOrDefault(TabHasMatch) is not { } other)
-        {
-            return false;
-        }
-
-        tabs.SelectedItem = other;
-        return true;
+        return false;
     }
 
     private bool TabHasMatch(TabItem tab) =>

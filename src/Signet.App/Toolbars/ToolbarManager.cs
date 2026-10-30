@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System;
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Media;
 using Signet.App.Actions;
 using Signet.App.Infrastructure;
@@ -157,6 +158,7 @@ public sealed class ToolbarManager
     public const string Separator = "|";
 
     private readonly SettingsStore _settings;
+    private readonly bool _appliesResources;
     private readonly Dictionary<ToolbarId, List<string>> _layout = new();
     private readonly Dictionary<ToolbarId, bool> _visible = new();
     private readonly Dictionary<ToolbarArea, List<List<ToolbarId>>> _placement = new();
@@ -178,8 +180,19 @@ public sealed class ToolbarManager
     /// (<see cref="Appearance"/>) to the application resources.
     /// </summary>
     public ToolbarManager(SettingsStore settings)
+        : this(settings, appliesResources: true)
+    {
+    }
+
+    /// <summary>
+    /// Creates the manager; with <paramref name="appliesResources"/> <c>false</c> it never touches the application
+    /// resources — a manager of a sample (the preview of Preferences over the draft of the settings), whose look the
+    /// host puts into the resources of the sample itself (<see cref="ApplyResources(IResourceDictionary, ToolbarAppearance)"/>).
+    /// </summary>
+    public ToolbarManager(SettingsStore settings, bool appliesResources)
     {
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
+        _appliesResources = appliesResources;
         Load();
         _settings.SettingChanged += OnSettingChanged;
         ApplyAppearance();
@@ -206,7 +219,7 @@ public sealed class ToolbarManager
     /// <summary>Puts the look of the toolbars into the application resources (the toolbar views take it from there).</summary>
     public void ApplyAppearance()
     {
-        if (Application.Current is { } app)
+        if (_appliesResources && Application.Current is { } app)
         {
             ApplyResources(app, Appearance);
         }
@@ -219,32 +232,42 @@ public sealed class ToolbarManager
     public static void ApplyResources(Application app, ToolbarAppearance look)
     {
         ArgumentNullException.ThrowIfNull(app);
-        app.Resources[IconSizeResourceKey] = (double)look.IconPixels;
+        ApplyResources(app.Resources, look);
+    }
+
+    /// <summary>
+    /// Sets the resources of the toolbars' look in <paramref name="resources"/> (the application's, or those of a sample
+    /// of the toolbars, which then take precedence over the application's).
+    /// </summary>
+    public static void ApplyResources(IResourceDictionary resources, ToolbarAppearance look)
+    {
+        ArgumentNullException.ThrowIfNull(resources);
+        resources[IconSizeResourceKey] = (double)look.IconPixels;
         if (look.FontFamily.Length > 0)
         {
-            app.Resources[FontFamilyResourceKey] = FontFamily.Parse(look.FontFamily);
+            resources[FontFamilyResourceKey] = FontFamily.Parse(look.FontFamily);
         }
         else
         {
-            app.Resources.Remove(FontFamilyResourceKey);
+            resources.Remove(FontFamilyResourceKey);
         }
 
         if (look.FontSize > 0)
         {
-            app.Resources[FontSizeResourceKey] = (double)look.FontSize;
+            resources[FontSizeResourceKey] = (double)look.FontSize;
         }
         else
         {
-            app.Resources.Remove(FontSizeResourceKey);
+            resources.Remove(FontSizeResourceKey);
         }
 
         if (look.FontWeight > 0)
         {
-            app.Resources[FontWeightResourceKey] = FontWeightOptions.ToAvalonia(look.FontWeight);
+            resources[FontWeightResourceKey] = FontWeightOptions.ToAvalonia(look.FontWeight);
         }
         else
         {
-            app.Resources.Remove(FontWeightResourceKey);
+            resources.Remove(FontWeightResourceKey);
         }
     }
 

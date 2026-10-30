@@ -25,26 +25,6 @@
 
   <DockPanel>
     <DockPanel.Styles>
-      <!-- Flat toolbar buttons: no background at rest,
-           highlighted only on hover (the Fluent style for :pointerover stays). -->
-      <Style Selector="Button.toolbar">
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderThickness" Value="0" />
-      </Style>
-      <!-- A disabled action: no gray Fluent background, a dimmed icon. -->
-      <Style Selector="Button.toolbar:disabled /template/ ContentPresenter#PART_ContentPresenter">
-        <Setter Property="Background" Value="Transparent" />
-      </Style>
-      <Style Selector="Button.toolbar:disabled">
-        <Setter Property="Opacity" Value="0.4" />
-      </Style>
-      <Style Selector="SplitButton.toolbar">
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="BorderThickness" Value="0" />
-      </Style>
-      <Style Selector="SplitButton.toolbar:disabled">
-        <Setter Property="Opacity" Value="0.4" />
-      </Style>
       <!-- The status bar message: a flat clickable area (opens the Notifications panel). -->
       <Style Selector="Button.statusMessage">
         <Setter Property="Background" Value="Transparent" />

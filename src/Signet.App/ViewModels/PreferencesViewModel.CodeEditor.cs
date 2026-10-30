@@ -6,7 +6,7 @@ using Signet.Core.Resources;
 
 namespace Signet.App.ViewModels;
 
-/// <summary>Appearance › Code Editor: the sample tab of the preview.</summary>
+/// <summary>Code Editor › Appearance: the sample tab of the preview.</summary>
 public sealed partial class PreferencesViewModel
 {
     private TabManagerModel? _codeEditorSampleTabs;

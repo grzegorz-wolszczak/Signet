@@ -77,8 +77,29 @@ public sealed partial class ToolbarItemViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(ToolTip))]
     private AppAction? _defaultAction;
 
-    /// <summary>The button's command (for a button with a menu: running the default action).</summary>
-    public ICommand? Command => IsDropDown ? TriggerDefaultCommand : Action;
+    /// <summary>
+    /// Whether the button only shows the look (a sample toolbar, e.g. the preview of Preferences): it has no command, so
+    /// it is not grayed out when its action cannot run now (without a book). Its command does nothing (a button whose
+    /// bound command is null is shown disabled).
+    /// </summary>
+    public bool IsInert { get; private set; }
+
+    // The command of an inert button: always available, does nothing.
+    private static readonly ICommand InertCommand = new RelayCommand(() => { });
+
+    /// <summary>The button's command (for a button with a menu: running the default action); for an inert button one that does nothing.</summary>
+    public ICommand? Command => IsInert ? InertCommand : IsDropDown ? TriggerDefaultCommand : Action;
+
+    // The same button, inert (a separator is shared and stays as it is).
+    internal ToolbarItemViewModel AsInert()
+    {
+        if (!IsSeparator)
+        {
+            IsInert = true;
+        }
+
+        return this;
+    }
 
     /// <summary>Runs the default action of a button with a menu.</summary>
     public IRelayCommand TriggerDefaultCommand { get; }
@@ -196,12 +217,24 @@ public sealed partial class ToolbarViewModel : ObservableObject
 {
     private readonly ToolbarManager _manager;
     private readonly AppActionRegistry _actions;
+    private readonly bool _isSample;
 
+    /// <summary>Creates the view model of a toolbar of the main window.</summary>
     public ToolbarViewModel(ToolbarId id, ToolbarManager manager, AppActionRegistry actions)
+        : this(id, manager, actions, isSample: false)
+    {
+    }
+
+    /// <summary>
+    /// Creates the view model; a sample toolbar (<paramref name="isSample"/>, e.g. the preview of Preferences) has inert
+    /// buttons (<see cref="ToolbarItemViewModel.IsInert"/>).
+    /// </summary>
+    public ToolbarViewModel(ToolbarId id, ToolbarManager manager, AppActionRegistry actions, bool isSample)
     {
         Id = id;
         _manager = manager;
         _actions = actions;
+        _isSample = isSample;
         _name = ToolbarManager.DisplayName(id);
         _isVisible = manager.IsVisible(id);
         _appearance = manager.Appearance;
@@ -256,14 +289,14 @@ public sealed partial class ToolbarViewModel : ObservableObject
 
             if (entry == ToolbarManager.HeadingsMenu)
             {
-                Items.Add(ToolbarItemViewModel.ForDropDown(
+                Add(ToolbarItemViewModel.ForDropDown(
                     Resolve(HeadingActionIds), "heading-all", "h*", Strings.Get("Toolbar_HeadingMenuTip")));
                 continue;
             }
 
             if (entry == ToolbarManager.CaseMenu)
             {
-                Items.Add(ToolbarItemViewModel.ForDropDown(
+                Add(ToolbarItemViewModel.ForDropDown(
                     Resolve(CaseActionIds), "case-change", "Aa", Strings.Get("Toolbar_CaseMenuTip")));
                 continue;
             }
@@ -271,10 +304,12 @@ public sealed partial class ToolbarViewModel : ObservableObject
             AppAction? action = _actions.Get(entry);
             if (action is not null)
             {
-                Items.Add(ToolbarItemViewModel.ForAction(action));
+                Add(ToolbarItemViewModel.ForAction(action));
             }
         }
     }
+
+    private void Add(ToolbarItemViewModel item) => Items.Add(_isSample ? item.AsInert() : item);
 
     partial void OnIsVisibleChanged(bool value) => _manager.SetVisible(Id, value);
 

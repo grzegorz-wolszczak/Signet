@@ -134,7 +134,7 @@ public static class PreviewThemeScript
 }
 
 /// <summary>
-/// Preview page script: the fonts of Preferences › Appearance › Preview › Fonts as the default fonts of the book, as a
+/// Preview page script: the fonts of Preferences › Preview Panel › Appearance › Fonts as the default fonts of the book, as a
 /// browser's font settings work (Sigil sets them on its web engine; the native web views have no such setting):
 /// <list type="bullet">
 /// <item>the standard font and the size go to <c>html</c> in a style element put first in <c>&lt;head&gt;</c>, so any

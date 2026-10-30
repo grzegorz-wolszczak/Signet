@@ -262,13 +262,15 @@ public static class ThemeKeys
     public static readonly ThemeKey UiCautionButtonText = Color("ui.cautionButton.text", ThemePage.Interface, "Controls", Rgb(0xFFFFFF));
 
     /// <summary>The background of the Book Browser tree; unset = the background of the panel.</summary>
-    public static readonly ThemeKey UiBookBrowserBackground = Color("ui.bookBrowser.background", ThemePage.Interface, "Controls", null);
+    public static readonly ThemeKey UiBookBrowserBackground = Color("ui.bookBrowser.background", ThemePage.Interface, "Controls", null, ownedByPanel: true);
 
     /// <summary>The background of the Saved Searches window's tree; unset = the background of the panel.</summary>
-    public static readonly ThemeKey UiSearchEditorBackground = Color("ui.searchEditor.background", ThemePage.Interface, "Controls", null);
+    public static readonly ThemeKey UiSearchEditorBackground = Color("ui.searchEditor.background", ThemePage.Interface, "Controls", null, ownedByPanel: true);
 
-    // The Notifications panel's own colors (ownedByPanel: true) — edited on Appearance › Notifications itself
-    // (ColorKeyEditorViewModel), not in this shared tree; see ThemeKey.OwnedByPanel.
+    // The colors of a single panel or window (ownedByPanel: true) — the Book Browser, Saved Searches, Notifications, the
+    // start screen, the context menus, Find Usages — are edited on that part's own Preferences page
+    // (ColorKeyEditorViewModel), not in this shared tree, which keeps only what the whole application shares; see
+    // ThemeKey.OwnedByPanel.
 
     /// <summary>The background of the Notifications panel's list; unset = the background of the panel.</summary>
     public static readonly ThemeKey UiNotificationsBackground =
@@ -299,37 +301,37 @@ public static class ThemeKeys
         Color("ui.notifications.message.warning.foreground", ThemePage.Interface, "Controls", null, ownedByPanel: true);
 
     /// <summary>The selected row of the Book Browser (only there): its background and text; nothing set = the colors of the controls.</summary>
-    public static readonly ThemeKey UiBookBrowserSelection = Attributes("ui.bookBrowser.selection", ThemePage.Interface, "Controls", TextAttributes.Empty);
+    public static readonly ThemeKey UiBookBrowserSelection = Attributes("ui.bookBrowser.selection", ThemePage.Interface, "Controls", TextAttributes.Empty, ownedByPanel: true);
 
     /// <summary>The name of a recent file on the start screen; unset = the accent color.</summary>
-    public static readonly ThemeKey UiStartScreenTitle = Color("ui.startScreen.title", ThemePage.Interface, "Controls", null);
+    public static readonly ThemeKey UiStartScreenTitle = Color("ui.startScreen.title", ThemePage.Interface, "Controls", null, ownedByPanel: true);
 
     /// <summary>The folder of a recent file on the start screen; unset = the text color, dimmed.</summary>
-    public static readonly ThemeKey UiStartScreenLocation = Color("ui.startScreen.location", ThemePage.Interface, "Controls", null);
+    public static readonly ThemeKey UiStartScreenLocation = Color("ui.startScreen.location", ThemePage.Interface, "Controls", null, ownedByPanel: true);
 
     /// <summary>The background of the recent file under the pointer on the start screen; unset = the colors of the controls.</summary>
-    public static readonly ThemeKey UiStartScreenHighlight = Color("ui.startScreen.highlight", ThemePage.Interface, "Controls", null);
+    public static readonly ThemeKey UiStartScreenHighlight = Color("ui.startScreen.highlight", ThemePage.Interface, "Controls", null, ownedByPanel: true);
 
     /// <summary>The color of code in a formatted tooltip (a CSS keyword, a property name…); unset = the accent color.</summary>
     public static readonly ThemeKey UiTooltipCode = Color("ui.tooltip.code", ThemePage.Interface, "Controls", null);
 
     /// <summary>The background of the title of a context menu (the line naming what was clicked); unset = a light shade of the accent color.</summary>
-    public static readonly ThemeKey UiContextMenuTitleBackground = Color("ui.contextMenu.title.background", ThemePage.Interface, "Controls", null);
+    public static readonly ThemeKey UiContextMenuTitleBackground = Color("ui.contextMenu.title.background", ThemePage.Interface, "Controls", null, ownedByPanel: true);
 
     /// <summary>The background of the "Usage" column of the Find Usages window; unset = none.</summary>
-    public static readonly ThemeKey UiFindUsagesUsageBackground = Color("ui.findUsages.usage.background", ThemePage.Interface, "Controls", null);
+    public static readonly ThemeKey UiFindUsagesUsageBackground = Color("ui.findUsages.usage.background", ThemePage.Interface, "Controls", null, ownedByPanel: true);
 
     /// <summary>The background of the "Line" column of the Find Usages window; unset = none.</summary>
-    public static readonly ThemeKey UiFindUsagesLineBackground = Color("ui.findUsages.line.background", ThemePage.Interface, "Controls", null);
+    public static readonly ThemeKey UiFindUsagesLineBackground = Color("ui.findUsages.line.background", ThemePage.Interface, "Controls", null, ownedByPanel: true);
 
     /// <summary>The background of the "Col." column of the Find Usages window; unset = none.</summary>
-    public static readonly ThemeKey UiFindUsagesColumnBackground = Color("ui.findUsages.column.background", ThemePage.Interface, "Controls", null);
+    public static readonly ThemeKey UiFindUsagesColumnBackground = Color("ui.findUsages.column.background", ThemePage.Interface, "Controls", null, ownedByPanel: true);
 
     /// <summary>The background of the "Kind" column of the Find Usages window; unset = none.</summary>
-    public static readonly ThemeKey UiFindUsagesKindBackground = Color("ui.findUsages.kind.background", ThemePage.Interface, "Controls", null);
+    public static readonly ThemeKey UiFindUsagesKindBackground = Color("ui.findUsages.kind.background", ThemePage.Interface, "Controls", null, ownedByPanel: true);
 
     /// <summary>The background of the "Context" column of the Find Usages window; unset = none.</summary>
-    public static readonly ThemeKey UiFindUsagesContextBackground = Color("ui.findUsages.context.background", ThemePage.Interface, "Controls", null);
+    public static readonly ThemeKey UiFindUsagesContextBackground = Color("ui.findUsages.context.background", ThemePage.Interface, "Controls", null, ownedByPanel: true);
 
     /// <summary>A frame around a list or a preview in a dialog.</summary>
     public static readonly ThemeKey UiFrame = Color("ui.frame", ThemePage.Interface, "Controls", Rgb(0x808080));
@@ -435,8 +437,9 @@ public static class ThemeKeys
     private static ThemeKey Color(string id, ThemePage page, string group, ThemeColor? value, bool ownedByPanel = false) =>
         new(id, page, group, ThemeKeyKind.Color, null, value, null, ownedByPanel);
 
-    private static ThemeKey Attributes(string id, ThemePage page, string group, TextAttributes value, string? baseId = null) =>
-        new(id, page, group, ThemeKeyKind.TextAttributes, baseId, null, value);
+    private static ThemeKey Attributes(
+        string id, ThemePage page, string group, TextAttributes value, string? baseId = null, bool ownedByPanel = false) =>
+        new(id, page, group, ThemeKeyKind.TextAttributes, baseId, null, value, ownedByPanel);
 
     private static TextAttributes Fg(int rgb) => new() { Foreground = Rgb(rgb) };
 

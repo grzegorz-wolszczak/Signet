@@ -505,6 +505,28 @@
       <Setter Property="FontWeight" Value="{DynamicResource SignetContextMenuTitleFontWeight}" />
       <Setter Property="Background" Value="{DynamicResource SignetContextMenuTitleBackgroundBrush}" />
     </Style>
+
+    <!-- Flat toolbar buttons (the toolbars, the status bar, the button bars of panels): no background at rest, highlighted
+         only on hover (the Fluent style for :pointerover stays). Here, not in the main window, so that they look the same
+         in every window: a floating panel, the sample toolbars of Preferences. -->
+    <Style Selector="Button.toolbar">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <!-- A disabled action: no gray Fluent background, a dimmed icon. -->
+    <Style Selector="Button.toolbar:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.toolbar:disabled">
+      <Setter Property="Opacity" Value="0.4" />
+    </Style>
+    <Style Selector="SplitButton.toolbar">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="SplitButton.toolbar:disabled">
+      <Setter Property="Opacity" Value="0.4" />
+    </Style>
   </Application.Styles>
 
 </Application>

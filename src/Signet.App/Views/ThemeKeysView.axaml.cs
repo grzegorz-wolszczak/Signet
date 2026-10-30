@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Avalonia.Threading;
 using Signet.App.CodeEditor;
 using Signet.App.Infrastructure;
 using Signet.App.ViewModels;
@@ -31,6 +33,9 @@ public partial class ThemeKeysView : UserControl
     // The preview: its editors (code pages) or its sample controls (Preview, Interface).
     private readonly List<ThemePreviewEditor> _editors = new();
     private ThemeControlsPreview? _controls;
+
+    // A scroll to the selected key waits for the tree to be shown (a link selects the key before its tab is shown).
+    private bool _scrollPending;
 
     /// <summary>Initializes the view.</summary>
     public ThemeKeysView()
@@ -166,11 +171,64 @@ public partial class ThemeKeysView : UserControl
     // the XHTML page, is ignored).
     private void OnPreviewKeyClicked(object? sender, ThemeKey key) => _bound?.SelectKey(key);
 
+    // Expands the groups of the selected key in the tree (the view model's IsExpanded of a group does not reach the
+    // rows of the source once they exist), so its row exists and can be scrolled to.
+    private void ExpandToSelected()
+    {
+        if (_source is null || _bound?.Selected is not { } node || _selection?.FindPath(node) is not { } path)
+        {
+            return;
+        }
+
+        for (int depth = 1; depth < path.Count; depth++)
+        {
+            _source.Expand(new IndexPath(path.Take(depth)));
+        }
+    }
+
+    // Brings the selected key into view — a link to a key (from another page, or the base of an inherited key) shows it
+    // even when it is far down the tree. When the tree is not shown yet (the link's page or tab is being opened), it
+    // waits for the tree's next layout.
+    private void ScrollToSelected()
+    {
+        if (!Tree.IsEffectivelyVisible || TopLevel.GetTopLevel(Tree) is null || Tree.RowsPresenter is null)
+        {
+            if (!_scrollPending)
+            {
+                _scrollPending = true;
+                Tree.LayoutUpdated += OnTreeLayoutUpdated;
+            }
+
+            return;
+        }
+
+        if (_source is not null && _bound?.Selected is { } node && _selection?.FindPath(node) is { } path)
+        {
+            int row = _source.Rows.ModelIndexToRowIndex(new IndexPath(path));
+            if (row >= 0)
+            {
+                Tree.RowsPresenter.BringIntoView(row);
+            }
+        }
+    }
+
+    private void OnTreeLayoutUpdated(object? sender, EventArgs e)
+    {
+        if (Tree.IsEffectivelyVisible && TopLevel.GetTopLevel(Tree) is not null && Tree.RowsPresenter is not null)
+        {
+            Tree.LayoutUpdated -= OnTreeLayoutUpdated;
+            _scrollPending = false;
+            Dispatcher.UIThread.Post(ScrollToSelected, DispatcherPriority.Loaded);
+        }
+    }
+
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(ThemeKeysPageViewModel.Selected))
         {
+            ExpandToSelected();
             _selection?.SelectFromViewModel();
+            Dispatcher.UIThread.Post(ScrollToSelected, DispatcherPriority.Loaded);
             ThemeKey? key = _bound?.Key;
             foreach (ThemePreviewEditor editor in _editors)
             {

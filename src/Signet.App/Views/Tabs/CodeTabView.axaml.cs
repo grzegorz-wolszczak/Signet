@@ -1620,7 +1620,7 @@ public partial class CodeTabView : UserControl
 
     /// <summary>
     /// Sets the editor's typeface and font size from <see cref="CodeEditorAppearance"/>
-    /// (Preferences → Appearance › Code Editor › Fonts), scaled by the current zoom. Called when a tab is
+    /// (Preferences → Code Editor › Appearance › Fonts), scaled by the current zoom. Called when a tab is
     /// bound and when the zoom changes.
     /// </summary>
     private void ApplyFont()

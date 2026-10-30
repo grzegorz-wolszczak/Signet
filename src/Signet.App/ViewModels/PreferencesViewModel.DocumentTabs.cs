@@ -10,7 +10,7 @@ using Signet.Core.Themes;
 
 namespace Signet.App.ViewModels;
 
-/// <summary>Appearance › Code Editor › Fonts: the font of the titles of the document tabs.</summary>
+/// <summary>Code Editor › Appearance › Fonts: the font of the titles of the document tabs.</summary>
 public sealed partial class PreferencesViewModel
 {
     /// <summary>The font of the titles of the document tabs; empty = the interface font.</summary>
