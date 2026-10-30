@@ -161,6 +161,21 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         await workflow.OpenDroppedFileAsync(path);
     }
 
+    // The items of View › Toolbars (the same view models as in the main menu) under the title "Toolbars"; the items
+    // take the main menu's style (ContextMenu.toolbarsMenu in MainWindow.axaml).
+    private static ContextMenu ToolbarsContextMenu(MainWindowViewModel vm)
+    {
+        ContextMenu menu = new();
+        menu.Classes.Add("toolbarsMenu");
+        foreach (Menu.MenuItemViewModel item in vm.ToolbarsMenuItems)
+        {
+            menu.Items.Add(item);
+        }
+
+        MenuTitle.AddTo(menu, () => Strings.Get("Menu_Toolbars").Replace("&", string.Empty, StringComparison.Ordinal));
+        return menu;
+    }
+
     private void OnDataContextChanged(object? sender, EventArgs e)
     {
         if (_boundViewModel is not null)
@@ -223,6 +238,11 @@ public partial class MainWindow : Window, IFileWorkflowPrompts, IMissingDoctypeP
         {
             return;
         }
+
+        // A right click on the empty part of a toolbar area: View › Toolbars as a context menu (on a toolbar, the
+        // toolbar's own menu opens instead).
+        TopToolbarArea.ContextMenu = ToolbarsContextMenu(_boundViewModel);
+        BottomToolbarArea.ContextMenu = ToolbarsContextMenu(_boundViewModel);
 
         _boundViewModel.CustomizeToolbarsRequested += OnCustomizeToolbarsRequested;
         _boundViewModel.CustomizeToolbarRequested += OnCustomizeToolbarRequested;

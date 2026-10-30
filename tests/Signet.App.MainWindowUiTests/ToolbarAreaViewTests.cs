@@ -15,6 +15,7 @@ using AwesomeAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Signet.App.Actions;
 using Signet.App.Infrastructure;
+using Signet.App.Resources;
 using Signet.App.Toolbars;
 using Signet.App.ViewModels;
 using Signet.App.Views;
@@ -206,6 +207,51 @@ public sealed class ToolbarAreaViewTests : IDisposable
 
         // Assert
         format.IsVisible.Should().BeFalse();
+    }
+
+    [AvaloniaFact]
+    public void Right_click_on_the_empty_part_of_the_area_opens_the_Toolbars_menu_under_a_title()
+    {
+        // Arrange
+        (MainWindow window, MainWindowViewModel vm) = ShowMainWindow();
+        window.Width = 2400;
+        Flush(window);
+        ToolbarAreaView top = Area(window, vm.TopToolbars);
+        ToolbarStripView format = Strip(top, ToolbarId.Format);
+        Point empty = top.TranslatePoint(new Point(top.Bounds.Width - 10, 8), window)!.Value;
+
+        // Act
+        window.MouseDown(empty, MouseButton.Right);
+        window.MouseUp(empty, MouseButton.Right);
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        ContextMenu menu = top.ContextMenu!;
+        menu.IsOpen.Should().BeTrue();
+        object[] items = menu.Items.Cast<object>().ToArray();
+        MenuItem title = items[0].Should().BeOfType<MenuItem>().Subject;
+        title.Header.Should().Be(Strings.Get("Menu_Toolbars").Replace("&", string.Empty, StringComparison.Ordinal));
+        title.FontWeight.Should().Be(FontWeight.Bold);
+        title.IsHitTestVisible.Should().BeFalse("the title is not an item to click");
+        items[1].Should().BeOfType<Separator>();
+        items.Skip(2).Should().Equal(vm.ToolbarsMenuItems, "the same items as View › Toolbars");
+        MenuItem formatToggle = menu.GetLogicalChildren().OfType<MenuItem>()
+            .Single(m => m.DataContext is Signet.App.Menu.MenuItemViewModel { Header: var h } && h == ToolbarManager.DisplayName(ToolbarId.Format));
+        formatToggle.IsChecked.Should().BeTrue("the items take the style of the main menu");
+        formatToggle.StaysOpenOnClick.Should().BeTrue();
+
+        // Act
+        menu.Close();
+        Dispatcher.UIThread.RunJobs();
+        Point onToolbar = format.TranslatePoint(new Point(format.Bounds.Width / 2, format.Bounds.Height / 2), window)!.Value;
+        window.MouseDown(onToolbar, MouseButton.Right);
+        window.MouseUp(onToolbar, MouseButton.Right);
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        format.ContextMenu!.IsOpen.Should().BeTrue("on a toolbar its own menu opens");
+        menu.IsOpen.Should().BeFalse();
+        format.ContextMenu.Close();
     }
 
     [AvaloniaFact]
