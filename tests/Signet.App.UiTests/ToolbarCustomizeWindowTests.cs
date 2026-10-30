@@ -59,7 +59,10 @@ public sealed class ToolbarCustomizeWindowTests : IDisposable
 
         // Assert
         icons.Should().NotBeEmpty("the default layout holds actions with icons (e.g. the Tools toolbar)");
-        icons.Should().OnlyContain(i => i.Bounds.Width > 0 && i.Bounds.Height > 0);
+        icons.Should().OnlyContain(
+            i => System.Math.Abs(i.Bounds.Width - Signet.Core.Misc.ToolbarAppearance.BigIconPixels) < 0.01
+                && System.Math.Abs(i.Bounds.Height - Signet.Core.Misc.ToolbarAppearance.BigIconPixels) < 0.01,
+            "the icons show at the biggest toolbar size, as they can look on a toolbar");
     }
 
     [AvaloniaFact]
