@@ -610,6 +610,32 @@ public sealed class SettingsStoreTests
     }
 
     [Fact]
+    public void Context_menu_fonts_default_to_the_interface_font_and_survive_save_and_reload()
+    {
+        // Arrange
+        using TempDir dir = new();
+        string path = dir.Combine("settings.xml");
+        SettingsStore writer = new(path);
+        ContextMenuAppearance look = new("Georgia", 15, 600, "Arial", 13, 300);
+
+        // Assert
+        writer.ContextMenuAppearance.Should().Be(ContextMenuAppearance.Default);
+
+        // Act
+        writer.ContextMenuAppearance = look;
+        writer.Save();
+
+        // Assert
+        new SettingsStore(path).ContextMenuAppearance.Should().Be(look);
+
+        // Act
+        writer.ClearAppearanceSettings();
+
+        // Assert
+        writer.ContextMenuAppearance.Should().Be(ContextMenuAppearance.Default, "the defaults of Appearance restore it");
+    }
+
+    [Fact]
     public void Toolbar_appearance_is_normalized()
     {
         // Arrange

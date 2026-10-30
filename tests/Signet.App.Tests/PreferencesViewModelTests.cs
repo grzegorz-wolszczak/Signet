@@ -301,6 +301,30 @@ public sealed class PreferencesViewModelTests : IDisposable
     }
 
     [Fact]
+    public void Context_menu_fonts_start_from_settings_and_persist_on_apply()
+    {
+        // Arrange
+        using TestHost host = new();
+        host.Settings.ContextMenuAppearance = new ContextMenuAppearance("Georgia", 15, 600, string.Empty, 0, 0);
+
+        // Act
+        PreferencesViewModel sut = NewOn(host);
+
+        // Assert
+        sut.ContextMenuTitleFontFamily.Should().Be("Georgia");
+        sut.ContextMenuTitleFontSize.Should().Be(15);
+        sut.ContextMenuFonts.Fonts.Select(f => f.Key).Should().Equal("ContextMenuTitle", "ContextMenuItems");
+
+        // Act
+        sut.ContextMenuItemsFontFamily = "Arial";
+        sut.ContextMenuItemsFontSize = 13;
+        sut.ApplyCommand.Execute(null);
+
+        // Assert
+        host.Settings.ContextMenuAppearance.Should().Be(new ContextMenuAppearance("Georgia", 15, 600, "Arial", 13, 0));
+    }
+
+    [Fact]
     public void Restoring_the_appearance_defaults_restores_the_toolbars()
     {
         // Arrange

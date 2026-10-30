@@ -296,6 +296,42 @@ public readonly record struct ToolHeaderFontAppearance(string FontFamily, int Fo
         FontWeightScale.Normalize(FontWeight));
 }
 
+/// <summary>
+/// The fonts of the context menus (the menus of a right click): the title naming what was clicked and the items. The
+/// main menu and the drop-down menus of buttons keep the interface font. The background of the title is a color of the
+/// theme (<c>ui.contextMenu.title.background</c>).
+/// </summary>
+/// <param name="TitleFontFamily">Font family of the title; empty = the font of the items.</param>
+/// <param name="TitleFontSize">Font size (px) of the title; 0 = the size of the items.</param>
+/// <param name="TitleFontWeight">Weight of the title (<see cref="FontWeightScale"/>); 0 = bold.</param>
+/// <param name="ItemsFontFamily">Font family of the items; empty = the interface font.</param>
+/// <param name="ItemsFontSize">Font size (px) of the items; 0 = the interface size.</param>
+/// <param name="ItemsFontWeight">Weight of the items; 0 = that of the interface.</param>
+public readonly record struct ContextMenuAppearance(
+    string TitleFontFamily, int TitleFontSize, int TitleFontWeight,
+    string ItemsFontFamily, int ItemsFontSize, int ItemsFontWeight)
+{
+    /// <summary>Lower bound of an explicit font size.</summary>
+    public const int FontSizeMin = 6;
+
+    /// <summary>Upper bound of an explicit font size.</summary>
+    public const int FontSizeMax = 72;
+
+    /// <summary>Default values: the interface font everywhere, the title in bold.</summary>
+    public static ContextMenuAppearance Default => new(string.Empty, 0, 0, string.Empty, 0, 0);
+
+    /// <summary>A copy with the sizes clamped and the families trimmed (0 / empty stay "the default").</summary>
+    public ContextMenuAppearance Normalized() => new(
+        TitleFontFamily?.Trim() ?? string.Empty,
+        Size(TitleFontSize),
+        FontWeightScale.Normalize(TitleFontWeight),
+        ItemsFontFamily?.Trim() ?? string.Empty,
+        Size(ItemsFontSize),
+        FontWeightScale.Normalize(ItemsFontWeight));
+
+    private static int Size(int size) => size <= 0 ? 0 : Math.Clamp(size, FontSizeMin, FontSizeMax);
+}
+
 /// <summary>Where the buttons of the main window's toolbars show their text.</summary>
 public enum ToolbarTextPosition
 {

@@ -126,6 +126,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         LoadBookBrowserAppearance();
         LoadStartScreenAppearance();
         LoadToolbarAppearance();
+        LoadContextMenuAppearance();
         LoadFindUsagesFonts();
         LoadSearchEditorFonts();
         LoadLineNumbersFont();
@@ -304,6 +305,11 @@ public sealed partial class PreferencesViewModel : ObservableObject
         if (Changed("tool_header_font"))
         {
             _uiDensity.ApplyToolHeaderFont();
+        }
+
+        if (Changed("context_menu_appearance", "appearance_settings_cleared"))
+        {
+            _uiDensity.ApplyContextMenuFonts();
         }
 
         if (Changed("ui_theme_id", "editor_scheme_id") || themesChanged)
@@ -857,6 +863,7 @@ public sealed partial class PreferencesViewModel : ObservableObject
         LoadBookBrowserAppearance();
         LoadStartScreenAppearance();
         LoadToolbarAppearance();
+        LoadContextMenuAppearance();
         LoadFindUsagesFonts();
         LoadSearchEditorFonts();
         LoadLineNumbersFont();

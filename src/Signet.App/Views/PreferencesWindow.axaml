@@ -378,6 +378,31 @@
         </Grid>
       </TabItem>
 
+      <!-- Appearance › Context Menus: the menus of a right click — the font of their title and of their items (General has
+           the link to the color of the title's background in the theme). The main menu keeps the interface font. -->
+      <TabItem x:Name="ContextMenusAppearancePage" Header="{loc:Loc PreferencesWindow_ContextMenus}" views:PreferencesPage.Parent="AppearanceGeneralPage">
+        <TabControl x:Name="ContextMenusAppearanceTabs">
+          <TabItem Header="{loc:Loc PreferencesWindow_General}">
+            <ScrollViewer>
+              <StackPanel Spacing="10" Margin="8">
+                <Border Classes="section">
+                  <StackPanel Spacing="6">
+                    <TextBlock Text="{loc:Loc PreferencesWindow_ContextMenusSection}" FontWeight="Bold" />
+                    <TextBlock Text="{loc:Loc PreferencesWindow_ContextMenusHint}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
+                    <HyperlinkButton Content="{loc:Loc PreferencesWindow_ContextMenuTitleBackgroundInTheme}" Padding="0"
+                                     views:PreferencesPage.Target="AppearanceGeneralPage"
+                                     views:PreferencesPage.TargetKey="ui.contextMenu.title.background" />
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </ScrollViewer>
+          </TabItem>
+          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+            <views:FontsPageView x:Name="ContextMenuFontsView" />
+          </TabItem>
+        </TabControl>
+      </TabItem>
+
       <!-- Appearance › Toolbars: the toolbars of the main window — the settings of the "Toolbar Settings" section of a
            toolbar's context menu (General) and the font of the button texts (Fonts). The button bars of the panels do
            not follow them. -->

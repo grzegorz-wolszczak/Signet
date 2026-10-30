@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Data.Converters;
-using Avalonia.Media;
 using Signet.App.Resources;
 
 namespace Signet.App.Infrastructure;
@@ -56,9 +55,9 @@ public static class MenuTitle
         MenuItem title = new()
         {
             Header = Escape(text),
-            FontWeight = FontWeight.Bold,
 
-            // Enabled, so that it is not drawn grayed out, but neither clickable nor reachable with the keyboard.
+            // Enabled, so that it is not drawn grayed out, but neither clickable nor reachable with the keyboard (also
+            // set by the style of App.axaml, which gives a title in a context menu its font and background).
             IsHitTestVisible = false,
             Focusable = false,
         };

@@ -6937,6 +6937,9 @@ Zamknij zakładkę</value>
   <data name="PreferencesWindow_FindUsagesBackgroundInTheme" xml:space="preserve">
     <value>Tło kolumn: Wygląd › Kolory interfejsu</value>
   </data>
+  <data name="ThemeKey_ui_contextMenu_title_background" xml:space="preserve">
+    <value>Tło tytułu menu kontekstowego</value>
+  </data>
   <data name="ThemeKey_ui_startScreen_title" xml:space="preserve">
     <value>Nazwa ostatniego pliku na ekranie startowym</value>
   </data>
@@ -7299,6 +7302,30 @@ Zamknij zakładkę</value>
   </data>
   <data name="PreferencesWindow_StartScreenHighlightInTheme" xml:space="preserve">
     <value>Tło podświetlonego pliku: Wygląd › Kolory interfejsu</value>
+  </data>
+  <data name="PreferencesWindow_ContextMenus" xml:space="preserve">
+    <value>Menu kontekstowe</value>
+  </data>
+  <data name="PreferencesWindow_ContextMenusSection" xml:space="preserve">
+    <value>Menu prawego przycisku myszy</value>
+  </data>
+  <data name="PreferencesWindow_ContextMenusHint" xml:space="preserve">
+    <value>Każde menu kontekstowe zaczyna się tytułem z nazwą klikniętego elementu. Czcionki tytułu i pozycji są na karcie Czcionki; menu główne i menu rozwijane przycisków zostają z czcionką interfejsu.</value>
+  </data>
+  <data name="PreferencesWindow_ContextMenuTitleBackgroundInTheme" xml:space="preserve">
+    <value>Tło tytułu: Wygląd › Kolory interfejsu</value>
+  </data>
+  <data name="PreferencesWindow_ContextMenuTitleFont" xml:space="preserve">
+    <value>Tytuł menu</value>
+  </data>
+  <data name="PreferencesWindow_ContextMenuItemsFont" xml:space="preserve">
+    <value>Pozycje menu</value>
+  </data>
+  <data name="FontPreview_ContextMenuTitle" xml:space="preserve">
+    <value>rozdzial_01.xhtml</value>
+  </data>
+  <data name="FontPreview_ContextMenuItems" xml:space="preserve">
+    <value>Otwórz   Zmień nazwę…   Usuń</value>
   </data>
   <data name="PreferencesWindow_Toolbars" xml:space="preserve">
     <value>Paski narzędzi</value>
