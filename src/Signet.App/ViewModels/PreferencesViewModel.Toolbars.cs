@@ -1,18 +1,54 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Signet.App.Actions;
+using Signet.App.Toolbars;
 using Signet.Core.Misc;
 
 namespace Signet.App.ViewModels;
 
 /// <summary>
-/// Appearance › Toolbars: the look of the main window's toolbars — the same settings as the "Toolbar Settings" section
-/// of a toolbar's context menu (text position, icon size, locked positions) and the font of the button texts.
+/// Toolbars: the main window's toolbars — the same settings as the "Toolbar Settings" section of a toolbar's context
+/// menu (locked positions on General; text position, icon size and the font of the button texts on Appearance), and the
+/// sample toolbars of the preview of Appearance.
 /// </summary>
 public sealed partial class PreferencesViewModel
 {
+    // The toolbars of the preview, in rows: ones whose buttons have long labels (wrapped in two lines under the icons).
+    private static readonly ToolbarId[][] ToolbarSampleLayout =
+    {
+        new[] { ToolbarId.File, ToolbarId.Tools, ToolbarId.PrettifyMend },
+        new[] { ToolbarId.Insert },
+    };
+
+    /// <summary>
+    /// The manager of the sample toolbars: over the draft of the settings (so it takes the look not saved yet), and never
+    /// touching the application resources — the view puts its look into the resources of the preview.
+    /// </summary>
+    public ToolbarManager ToolbarSampleManager { get; private set; } = null!;
+
+    /// <summary>The rows of the sample toolbars of the preview (real toolbars with the buttons of the user's layout).</summary>
+    public IReadOnlyList<ToolbarRowViewModel> ToolbarSampleRows { get; private set; } = Array.Empty<ToolbarRowViewModel>();
+
+    // Made by the constructor. Every change of the look in the draft reaches the sample toolbars through the manager.
+    private void CreateToolbarSample(AppActionRegistry actions)
+    {
+        ToolbarSampleManager = new ToolbarManager(_settings, appliesResources: false);
+        ToolbarSampleRows = ToolbarSampleLayout
+            .Select(row => new ToolbarRowViewModel(row.Select(id => new ToolbarViewModel(id, ToolbarSampleManager, actions, isSample: true)).ToList()))
+            .ToList();
+        ToolbarSampleManager.AppearanceChanged += (_, _) =>
+        {
+            foreach (ToolbarViewModel toolbar in ToolbarSampleRows.SelectMany(r => r.Toolbars))
+            {
+                toolbar.RefreshAppearance();
+            }
+        };
+    }
+
     /// <summary>Values to choose from in the "Text position" field.</summary>
     public static IReadOnlyList<ToolbarTextPosition> AvailableToolbarTextPositions { get; } = Enum.GetValues<ToolbarTextPosition>();
 

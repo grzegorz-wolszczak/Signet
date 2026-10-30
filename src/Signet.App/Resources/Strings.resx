@@ -1097,6 +1097,9 @@
   <data name="PreferencesWindow_FollowFootnotesInCodeView" xml:space="preserve">
     <value>Podążaj za przypisami dolnymi i końcowymi w widoku kodu</value>
   </data>
+  <data name="PreferencesWindow_PreviewPanel" xml:space="preserve">
+    <value>Panel podglądu</value>
+  </data>
   <data name="PreferencesWindow_Preview" xml:space="preserve">
     <value>Podgląd</value>
   </data>
@@ -5283,9 +5286,6 @@ Nie zmienia plików, ich nazw ani ID.</value>
   <data name="FontPreview_SearchEditorRows" xml:space="preserve">
     <value>latarnia morska → wieża</value>
   </data>
-  <data name="PreferencesWindow_SearchEditorBackgroundInTheme" xml:space="preserve">
-    <value>Tło drzewa: Wygląd › Kolory interfejsu</value>
-  </data>
   <data name="PreferencesWindow_SearchEditorSampleGroup" xml:space="preserve">
     <value>Przykładowa grupa</value>
   </data>
@@ -6934,9 +6934,6 @@ Zamknij zakładkę</value>
   <data name="ThemeKey_ui_findUsages_context_background" xml:space="preserve">
     <value>Tło okna znalezionych użyć: kolumna Kontekst</value>
   </data>
-  <data name="PreferencesWindow_FindUsagesBackgroundInTheme" xml:space="preserve">
-    <value>Tło kolumn: Wygląd › Kolory interfejsu</value>
-  </data>
   <data name="ThemeKey_ui_contextMenu_title_background" xml:space="preserve">
     <value>Tło tytułu menu kontekstowego</value>
   </data>
@@ -6955,8 +6952,11 @@ Zamknij zakładkę</value>
   <data name="ThemeKey_ui_bookBrowser_selection" xml:space="preserve">
     <value>Zaznaczenie w przeglądarce książki</value>
   </data>
-  <data name="PreferencesWindow_BookBrowserSelectionInTheme" xml:space="preserve">
-    <value>Kolor zaznaczonego pliku: Wygląd › Kolory interfejsu</value>
+  <data name="PreferencesWindow_BookBrowserSelectionText" xml:space="preserve">
+    <value>Zaznaczony plik: tekst</value>
+  </data>
+  <data name="PreferencesWindow_BookBrowserSelectionBackground" xml:space="preserve">
+    <value>Zaznaczony plik: tło</value>
   </data>
   <data name="ThemeKey_ui_icon_inactive" xml:space="preserve">
     <value>Ikona nieaktywna</value>
@@ -7243,9 +7243,6 @@ Zamknij zakładkę</value>
   <data name="PreferencesWindow_BookBrowserCellPadding" xml:space="preserve">
     <value>Pionowy padding komórki (px)</value>
   </data>
-  <data name="PreferencesWindow_BookBrowserBackgroundInTheme" xml:space="preserve">
-    <value>Kolor tła przeglądarki książki: Wygląd › Kolory interfejsu</value>
-  </data>
   <data name="PreferencesWindow_Notifications" xml:space="preserve">
     <value>Powiadomienia</value>
   </data>
@@ -7297,15 +7294,6 @@ Zamknij zakładkę</value>
   <data name="PreferencesWindow_StartScreenIndent" xml:space="preserve">
     <value>Wcięcie wpisów względem nagłówka listy (px)</value>
   </data>
-  <data name="PreferencesWindow_StartScreenTitleColorInTheme" xml:space="preserve">
-    <value>Kolor nazw plików: Wygląd › Kolory interfejsu</value>
-  </data>
-  <data name="PreferencesWindow_StartScreenLocationColorInTheme" xml:space="preserve">
-    <value>Kolor folderów plików: Wygląd › Kolory interfejsu</value>
-  </data>
-  <data name="PreferencesWindow_StartScreenHighlightInTheme" xml:space="preserve">
-    <value>Tło podświetlonego pliku: Wygląd › Kolory interfejsu</value>
-  </data>
   <data name="PreferencesWindow_ContextMenus" xml:space="preserve">
     <value>Menu kontekstowe</value>
   </data>
@@ -7314,9 +7302,6 @@ Zamknij zakładkę</value>
   </data>
   <data name="PreferencesWindow_ContextMenusHint" xml:space="preserve">
     <value>Każde menu kontekstowe zaczyna się tytułem z nazwą klikniętego elementu. Czcionki tytułu i pozycji są na karcie Czcionki; menu główne i menu rozwijane przycisków zostają z czcionką interfejsu.</value>
-  </data>
-  <data name="PreferencesWindow_ContextMenuTitleBackgroundInTheme" xml:space="preserve">
-    <value>Tło tytułu: Wygląd › Kolory interfejsu</value>
   </data>
   <data name="PreferencesWindow_ContextMenuTitleFont" xml:space="preserve">
     <value>Tytuł menu</value>

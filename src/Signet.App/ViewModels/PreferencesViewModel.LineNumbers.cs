@@ -6,7 +6,7 @@ using Signet.Core.Misc;
 
 namespace Signet.App.ViewModels;
 
-/// <summary>Appearance › Code Editor › Fonts: the font of the line numbers.</summary>
+/// <summary>Code Editor › Appearance › Fonts: the font of the line numbers.</summary>
 public sealed partial class PreferencesViewModel
 {
     /// <summary>The font of the line numbers; empty = the Code Editor font.</summary>

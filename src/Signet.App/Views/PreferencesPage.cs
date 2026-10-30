@@ -21,14 +21,14 @@ public static class PreferencesPage
     public static void SetParent(TabItem page, string? value) => page.SetValue(ParentProperty, value);
 
     /// <summary>
-    /// On a link of a page: the <c>x:Name</c> of the page it opens (e.g. "Appearance" on the Preview section opens
-    /// Appearance › Preview).
+    /// On a link of a page: the <c>x:Name</c> of the page it opens (e.g. "ColorSchemePage" on the Code Editor section
+    /// opens Code Editor › Color Scheme).
     /// </summary>
     public static readonly AttachedProperty<string?> TargetProperty =
         AvaloniaProperty.RegisterAttached<HyperlinkButton, string?>("Target", typeof(PreferencesPage));
 
     /// <summary>
-    /// On a link of a page that opens a page of the color scheme: the id of the key (e.g. <c>ui.bookBrowser.background</c>)
+    /// On a link of a page that opens a page of the color scheme: the id of the key (e.g. <c>ui.accent</c>)
     /// to select there, with its group expanded.
     /// </summary>
     public static readonly AttachedProperty<string?> TargetKeyProperty =

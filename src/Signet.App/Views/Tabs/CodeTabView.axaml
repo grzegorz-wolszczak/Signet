@@ -7,7 +7,7 @@
 
   <!-- FontFamily and FontSize below are fallback values (designer preview); in the running
        application CodeTabView.ApplyFont overrides the typeface and size with values from
-       CodeEditorAppearance (Preferences → Appearance › Code Editor › Fonts); the colors come from the theme. -->
+       CodeEditorAppearance (Preferences → Code Editor › Appearance › Fonts); the colors come from the theme. -->
   <Panel>
     <ae:TextEditor x:Name="Editor"
                    Document="{Binding Document}"

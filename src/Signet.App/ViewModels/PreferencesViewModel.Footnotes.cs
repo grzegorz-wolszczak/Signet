@@ -2,7 +2,7 @@ using Signet.Core.Footnotes;
 
 namespace Signet.App.ViewModels;
 
-/// <summary>Appearance › Footnotes: the sample footnote window of the preview.</summary>
+/// <summary>Footnotes › Appearance: the sample footnote window of the preview.</summary>
 public sealed partial class PreferencesViewModel
 {
     private FootnoteViewModel? _footnoteSample;

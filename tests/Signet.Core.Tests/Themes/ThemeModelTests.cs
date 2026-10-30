@@ -230,6 +230,27 @@ public sealed class ThemeModelTests
         ThemeKeys.Get("ui.notifications.timestamp.background").Should().Be(ThemeKeys.UiNotificationsTimestampBackground);
     }
 
+    [Fact]
+    public void The_colors_of_a_single_part_of_the_application_are_owned_by_its_page_not_the_shared_Interface_Colors()
+    {
+        // Arrange
+        ThemeKey[] owned =
+        {
+            ThemeKeys.UiStartScreenTitle, ThemeKeys.UiStartScreenLocation, ThemeKeys.UiStartScreenHighlight,
+            ThemeKeys.UiContextMenuTitleBackground, ThemeKeys.UiBookBrowserBackground, ThemeKeys.UiBookBrowserSelection,
+            ThemeKeys.UiSearchEditorBackground, ThemeKeys.UiFindUsagesUsageBackground, ThemeKeys.UiFindUsagesLineBackground,
+            ThemeKeys.UiFindUsagesColumnBackground, ThemeKeys.UiFindUsagesKindBackground, ThemeKeys.UiFindUsagesContextBackground,
+        };
+
+        // Act
+        ThemeKey[] shared = ThemeKeys.On(ThemePage.Interface).ToArray();
+
+        // Assert
+        owned.Should().OnlyContain(k => k.OwnedByPanel);
+        shared.Should().NotIntersectWith(owned);
+        shared.Should().Contain(new[] { ThemeKeys.UiAccent, ThemeKeys.UiTooltipCode, ThemeKeys.UiFrame }, "what the whole application shares stays");
+    }
+
     private static ThemeResolver Resolver(params Theme[] themes) =>
         new(id => themes.FirstOrDefault(t => t.Id == id));
 

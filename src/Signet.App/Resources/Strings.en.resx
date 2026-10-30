@@ -1097,6 +1097,9 @@
   <data name="PreferencesWindow_FollowFootnotesInCodeView" xml:space="preserve">
     <value>Follow footnotes and endnotes in Code View</value>
   </data>
+  <data name="PreferencesWindow_PreviewPanel" xml:space="preserve">
+    <value>Preview Panel</value>
+  </data>
   <data name="PreferencesWindow_Preview" xml:space="preserve">
     <value>Preview</value>
   </data>
@@ -5283,9 +5286,6 @@ It does not change the files, their names or their IDs.</value>
   <data name="FontPreview_SearchEditorRows" xml:space="preserve">
     <value>lighthouse → tower</value>
   </data>
-  <data name="PreferencesWindow_SearchEditorBackgroundInTheme" xml:space="preserve">
-    <value>Tree background: Appearance › Interface Colors</value>
-  </data>
   <data name="PreferencesWindow_SearchEditorSampleGroup" xml:space="preserve">
     <value>Sample group</value>
   </data>
@@ -6934,9 +6934,6 @@ Close the tab</value>
   <data name="ThemeKey_ui_findUsages_context_background" xml:space="preserve">
     <value>Find Usages window background: Context column</value>
   </data>
-  <data name="PreferencesWindow_FindUsagesBackgroundInTheme" xml:space="preserve">
-    <value>Column backgrounds: Appearance › Interface Colors</value>
-  </data>
   <data name="ThemeKey_ui_contextMenu_title_background" xml:space="preserve">
     <value>Background of the title of a context menu</value>
   </data>
@@ -6955,8 +6952,11 @@ Close the tab</value>
   <data name="ThemeKey_ui_bookBrowser_selection" xml:space="preserve">
     <value>Selection in the Book Browser</value>
   </data>
-  <data name="PreferencesWindow_BookBrowserSelectionInTheme" xml:space="preserve">
-    <value>Color of the selected file: Appearance › Interface Colors</value>
+  <data name="PreferencesWindow_BookBrowserSelectionText" xml:space="preserve">
+    <value>Selected file: text</value>
+  </data>
+  <data name="PreferencesWindow_BookBrowserSelectionBackground" xml:space="preserve">
+    <value>Selected file: background</value>
   </data>
   <data name="ThemeKey_ui_icon_inactive" xml:space="preserve">
     <value>Inactive icon</value>
@@ -7243,9 +7243,6 @@ Close the tab</value>
   <data name="PreferencesWindow_BookBrowserCellPadding" xml:space="preserve">
     <value>Vertical padding of a cell (px)</value>
   </data>
-  <data name="PreferencesWindow_BookBrowserBackgroundInTheme" xml:space="preserve">
-    <value>Book Browser background color: Appearance › Interface Colors</value>
-  </data>
   <data name="PreferencesWindow_Notifications" xml:space="preserve">
     <value>Notifications</value>
   </data>
@@ -7297,15 +7294,6 @@ Close the tab</value>
   <data name="PreferencesWindow_StartScreenIndent" xml:space="preserve">
     <value>Indentation of the entries under the list heading (px)</value>
   </data>
-  <data name="PreferencesWindow_StartScreenTitleColorInTheme" xml:space="preserve">
-    <value>Color of the file names: Appearance › Interface Colors</value>
-  </data>
-  <data name="PreferencesWindow_StartScreenLocationColorInTheme" xml:space="preserve">
-    <value>Color of the file folders: Appearance › Interface Colors</value>
-  </data>
-  <data name="PreferencesWindow_StartScreenHighlightInTheme" xml:space="preserve">
-    <value>Background of the highlighted file: Appearance › Interface Colors</value>
-  </data>
   <data name="PreferencesWindow_ContextMenus" xml:space="preserve">
     <value>Context Menus</value>
   </data>
@@ -7314,9 +7302,6 @@ Close the tab</value>
   </data>
   <data name="PreferencesWindow_ContextMenusHint" xml:space="preserve">
     <value>Every context menu starts with a title naming what was clicked. The fonts of the title and of the items are on the Fonts tab; the main menu and the drop-down menus of buttons keep the interface font.</value>
-  </data>
-  <data name="PreferencesWindow_ContextMenuTitleBackgroundInTheme" xml:space="preserve">
-    <value>Title background: Appearance › Interface Colors</value>
   </data>
   <data name="PreferencesWindow_ContextMenuTitleFont" xml:space="preserve">
     <value>Menu title</value>

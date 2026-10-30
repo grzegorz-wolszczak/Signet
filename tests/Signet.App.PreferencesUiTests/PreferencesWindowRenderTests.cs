@@ -23,6 +23,7 @@ using Signet.App.Actions;
 using Signet.App.CodeEditor;
 using Signet.App.Resources;
 using Signet.App.Services;
+using Signet.App.Toolbars;
 using Signet.App.ViewModels;
 using Signet.App.Views;
 using Signet.Core;
@@ -31,6 +32,7 @@ using Signet.Core.Misc;
 using Signet.Core.Tests.TestSupport;
 using Signet.Core.Themes;
 using Signet.Core.Spellcheck;
+using Xunit;
 
 namespace Signet.App.PreferencesUiTests;
 
@@ -61,10 +63,33 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         return tabs;
     }
 
-    // Shows the Fonts tab of an Appearance section ("CodeEditor" = Appearance › Code Editor › Fonts) and lays it out.
+    // The parts that also have behaviour: their look is the Appearance tab of their section (its tab bar: <part>Tabs, or
+    // FootnotesTabs), not a section of its own.
+    private static readonly string[] PartsWithAppearanceTab = { "CodeEditor", "Preview", "Footnotes", "Toolbars" };
+
+    // Shows the look of a part and lays it out: its section (<part>AppearancePage), or for a part that also has
+    // behaviour, the Appearance tab of its section (<part>Page).
+    private static void ShowAppearance(PreferencesWindow window, string part)
+    {
+        if (!PartsWithAppearanceTab.Contains(part))
+        {
+            ShowPage(window, part + "AppearancePage");
+            return;
+        }
+
+        // Toolbars kept the name of its page from when it was a section of Appearance.
+        ShowPage(window, part == "Toolbars" ? "ToolbarsAppearancePage" : part + "Page");
+        TabControl tabs = window.FindControl<TabControl>(part + "Tabs")!;
+        tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(t => Equals(t.Header, Strings.Get("PreferencesWindow_Appearance")));
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+    }
+
+    // Shows the Fonts tab of the look of a part ("CodeEditor" = Code Editor › Appearance › Fonts) and lays it out.
     private static TabControl ShowFontsTab(PreferencesWindow window, string part)
     {
-        ShowPage(window, part + "AppearancePage");
+        ShowAppearance(window, part);
         TabControl tabs = window.FindControl<TabControl>(part + "AppearanceTabs")!;
         tabs.SelectedItem = tabs.Items.OfType<TabItem>().Single(t => Equals(t.Header, Strings.Get("PreferencesWindow_Fonts")));
         Dispatcher.UIThread.RunJobs();
@@ -540,10 +565,19 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         "Checkpoints", "Validation", "Notifications", "MetadataEditor", "Cleanup", "Footnotes",
     };
 
+    // The parts whose section is directly under Appearance and Behavior (no longer under Appearance), in the order of the tree.
+    private static readonly string[] PartsUnderAppearanceAndBehavior =
+    {
+        "StartScreen", "ContextMenus", "Toolbars", "BookBrowser", "TableOfContents", "FindReplace", "SpecialCharacters",
+        "Checkpoints", "Validation", "Notifications", "MetadataEditor", "Cleanup",
+    };
+
     /// <summary>
-    /// Appearance and Behavior holds Appearance (the themes, one section per part of the application below it, each page
-    /// with a tab bar: the look of the part where it has more than fonts, and Fonts), then the sections of the behaviour
-    /// of Code Editor (with its Color Scheme), Preview and Footnotes. The path of a section is shown above its page.
+    /// Appearance and Behavior holds Appearance (what the whole application shares: the themes, the fonts, the colors),
+    /// one section per part of the application (each page with a tab bar: the look of the part where it has more than
+    /// fonts, and Fonts), then the sections of Code Editor (with its Color Scheme), Preview Panel, Find Usages, Saved
+    /// Searches and Footnotes — the parts with behaviour have a General tab and their look on an Appearance tab. The
+    /// path of a section is shown above its page.
     /// </summary>
     [AvaloniaFact]
     public void The_parts_are_sections_of_appearance_with_a_tab_bar()
@@ -563,12 +597,17 @@ public sealed class PreferencesWindowRenderTests : IDisposable
 
         // Assert
         root.Children.Select(n => n.Title).Should().Equal(
-            appearance, codeEditor, Strings.Get("PreferencesWindow_Preview"), Strings.Get("PreferencesWindow_FindUsagesWindow"),
-            Strings.Get("PreferencesWindow_SearchEditorWindow"), Strings.Get("PreferencesWindow_Footnotes"));
-        PreferencesSectionNode look = root.Children.Single(n => n.Title == appearance);
-        look.Children.Select(n => n.Title).Should().Equal(PartsWithFonts.Select(s => Strings.Get("PreferencesWindow_" + s)));
-        look.Children.Should().OnlyContain(n => n.Children.Count == 0,
-            "the parts are no sections with subsections: their tabs are inside the page");
+            new[] { appearance }
+                .Concat(PartsUnderAppearanceAndBehavior.Select(s => Strings.Get("PreferencesWindow_" + s)))
+                .Concat(new[]
+                {
+                    codeEditor, Strings.Get("PreferencesWindow_PreviewPanel"), Strings.Get("PreferencesWindow_FindUsagesWindow"),
+                    Strings.Get("PreferencesWindow_SearchEditorWindow"), Strings.Get("PreferencesWindow_Footnotes"),
+                }));
+        root.Children.Single(n => n.Title == appearance).Children.Should().BeEmpty("the parts have sections of their own");
+        window.Sections.All.Where(n => PartsWithFonts.Any(p => n.Id == p + "AppearancePage"))
+            .Should().HaveCount(PartsUnderAppearanceAndBehavior.Length)
+            .And.OnlyContain(n => n.Children.Count == 0, "the parts are no sections with subsections: their tabs are inside the page");
         root.Children.Single(n => n.Title == codeEditor).Children.Select(n => n.Title)
             .Should().Equal(Strings.Get("PreferencesWindow_ColorScheme")); // the color scheme is managed under Code Editor
         window.Sections.Roots.Should().NotContain(n => n.Title == appearance, "Appearance is a subsection now");
@@ -576,11 +615,18 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         string[] bothTabs = { "Preview" };
         foreach (string part in PartsWithFonts.Prepend("General"))
         {
-            string pageName = (part == "General" ? "AppearanceGeneral" : part + "Appearance") + "Page";
             string tabsName = (part == "General" ? "AppearanceGeneral" : part + "Appearance") + "Tabs";
 
             // Act
-            ShowPage(window, pageName);
+            if (part == "General")
+            {
+                ShowPage(window, "AppearanceGeneralPage");
+            }
+            else
+            {
+                ShowAppearance(window, part);
+            }
+
             string[] headers = window.FindControl<TabControl>(tabsName)!.Items.OfType<TabItem>().Select(t => (string)t.Header!).ToArray();
             string[] expected = part == "General"
                 ? new[] { general, fonts, Strings.Get("PreferencesWindow_InterfaceColors") } // the themes, the fonts, the colors of the theme
@@ -594,14 +640,23 @@ public sealed class PreferencesWindowRenderTests : IDisposable
             headers.Should().Equal(expected, "the tab bar of {0}", part);
         }
 
-        PreferencesSectionNode codeEditorLook = look.Children.Single(n => n.Title == codeEditor);
+        foreach (string part in PartsWithAppearanceTab)
+        {
+            // Act
+            ShowPage(window, part == "Toolbars" ? "ToolbarsAppearancePage" : part + "Page");
+            string[] headers = window.FindControl<TabControl>(part + "Tabs")!.Items.OfType<TabItem>().Select(t => (string)t.Header!).ToArray();
+
+            // Assert
+            headers.Should().StartWith(new[] { general }, "the behaviour of {0} comes first", part)
+                .And.EndWith(new[] { appearance }, "the look of {0} is its last tab", part);
+        }
 
         // Act
-        window.Sections.Selected = codeEditorLook;
+        window.Sections.Selected = root.Children.Single(n => n.Title == codeEditor);
         Dispatcher.UIThread.RunJobs();
 
         // Assert
-        window.FindControl<TextBlock>("Breadcrumb")!.Text.Should().Be(string.Join(" › ", appearanceAndBehavior, appearance, codeEditor));
+        window.FindControl<TextBlock>("Breadcrumb")!.Text.Should().Be(string.Join(" › ", appearanceAndBehavior, codeEditor));
         window.Close();
     }
 
@@ -909,40 +964,63 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     }
 
     /// <summary>
-    /// The Start Screen page has the same kind of panel: the real start screen with fabricated books, following the settings of
-    /// both tabs, and the sample of a tooltip; the settings fill their tab.
+    /// The Toolbars page: the locked positions on General; on Appearance the text position and the icon size (its General
+    /// tab) and the font of the button texts (Fonts), with a preview under them — sample toolbars that follow the settings
+    /// not saved yet (long labels wrapped in two lines under the icons), while the main window's toolbars keep the saved look.
     /// </summary>
     [AvaloniaFact]
-    public void The_Toolbars_page_edits_the_toolbar_settings_and_the_font_of_the_button_texts()
+    public void The_Toolbars_page_edits_the_toolbar_settings_and_its_preview_follows_them()
     {
         // Arrange
         PreferencesWindow window = BuildWindow();
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
         window.Width = 1100;
         window.Height = 860;
-
-        // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
+        object? appIconSize = Application.Current!.Resources[ToolbarManager.IconSizeResourceKey];
+
+        // Act
         ShowPage(window, "ToolbarsAppearancePage");
-        ComboBox position = window.FindControl<ComboBox>("ToolbarTextPositionBox")!;
-        ComboBox size = window.FindControl<ComboBox>("ToolbarIconSizeBox")!;
+        CheckBox locked = window.FindControl<CheckBox>("ToolbarPositionsLockedBox")!;
 
         // Assert
+        locked.IsEffectivelyVisible.Should().BeTrue("the locked positions are on the General tab");
+        window.GetVisualDescendants().OfType<ComboBox>().Should().NotContain(c => c.Name == "ToolbarTextPositionBox", "the look is on the Appearance tab");
+
+        // Act
+        locked.IsChecked = true;
+        ShowAppearance(window, "Toolbars");
+        ComboBox position = window.FindControl<ComboBox>("ToolbarTextPositionBox")!;
+        ComboBox size = window.FindControl<ComboBox>("ToolbarIconSizeBox")!;
+        ItemsControl preview = window.FindControl<ItemsControl>("ToolbarsPreview")!;
+
+        // Assert
+        vm.ToolbarPositionsLocked.Should().BeTrue();
         position.IsEffectivelyVisible.Should().BeTrue();
         position.SelectedItem.Should().Be(Signet.Core.Misc.ToolbarTextPosition.IconsOnly);
         size.SelectedItem.Should().Be(Signet.Core.Misc.ToolbarIconSize.Medium);
+        preview.IsEffectivelyVisible.Should().BeTrue();
+        preview.GetVisualDescendants().OfType<ToolbarStripView>().Should().HaveCount(4, "the sample has four toolbars");
+        preview.GetVisualDescendants().OfType<Button>().Where(b => b.Classes.Contains("toolbar") && b.IsVisible)
+            .Should().OnlyContain(b => b.IsEffectivelyEnabled, "the sample buttons are not grayed out without a book");
+        PreviewIconWidth(preview).Should().Be(24);
+        PreviewLabels(preview).Should().BeEmpty("icons only");
 
         // Act
         position.SelectedItem = Signet.Core.Misc.ToolbarTextPosition.TextUnderIcons;
         size.SelectedItem = Signet.Core.Misc.ToolbarIconSize.Small;
-        window.FindControl<CheckBox>("ToolbarPositionsLockedBox")!.IsChecked = true;
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
 
         // Assert
         vm.ToolbarTextPosition.Should().Be(Signet.Core.Misc.ToolbarTextPosition.TextUnderIcons);
         vm.ToolbarIconSize.Should().Be(Signet.Core.Misc.ToolbarIconSize.Small);
-        vm.ToolbarPositionsLocked.Should().BeTrue();
+        PreviewIconWidth(preview).Should().Be(16, "the preview takes the icon size not saved yet");
+        PreviewLabels(preview).Should().Contain(t => t.Text!.Contains('\n'), "a long label is wrapped in two lines under its icon");
+        Application.Current.Resources[ToolbarManager.IconSizeResourceKey].Should().Be(appIconSize,
+            "the main window's toolbars keep the saved look until Save");
 
         // Act
         TabControl tabs = window.FindControl<TabControl>("ToolbarsAppearanceTabs")!;
@@ -955,9 +1033,28 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         FontsPageView fonts = window.FindControl<FontsPageView>("ToolbarFontsView")!;
         fonts.DataContext.Should().BeSameAs(vm.ToolbarFonts);
         fonts.GetVisualDescendants().OfType<FontSettingView>().Should().ContainSingle();
+        preview.IsEffectivelyVisible.Should().BeTrue("the preview is under both tabs");
         window.Close();
     }
 
+    // The width the style of the sample toolbars gives their icons (the icon size; the icon set is not loaded here).
+    private static double PreviewIconWidth(ItemsControl preview) =>
+        preview.GetVisualDescendants().OfType<Panel>()
+            .Where(p => p.Classes.Contains("toolbarIcon"))
+            .SelectMany(p => p.Children)
+            .First()
+            .Width;
+
+    // The button labels shown in the sample toolbars.
+    private static TextBlock[] PreviewLabels(ItemsControl preview) =>
+        preview.GetVisualDescendants().OfType<TextBlock>()
+            .Where(t => t.Classes.Contains("toolbarLabel") && t.IsEffectivelyVisible && !t.Classes.Contains("noIcon"))
+            .ToArray();
+
+    /// <summary>
+    /// The Start Screen page has the same kind of panel: the real start screen with fabricated books, following the settings of
+    /// both tabs, and the sample of a tooltip; the settings fill their tab.
+    /// </summary>
     [AvaloniaFact]
     public void The_Start_Screen_page_has_one_preview_panel_with_the_list_of_recent_files_that_follows_the_settings()
     {
@@ -1047,7 +1144,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         // Act
         window.Show();
         Dispatcher.UIThread.RunJobs();
-        ShowPage(window, "CodeEditorAppearancePage");
+        ShowAppearance(window, "CodeEditor");
         TabControl tabs = window.FindControl<TabControl>("CodeEditorAppearanceTabs")!;
         Border pane = window.FindControl<Border>("CodeEditorPreviewPane")!;
         Signet.App.Views.Tabs.CodeTabView preview = window.FindControl<Signet.App.Views.Tabs.CodeTabView>("CodeEditorPreview")!;
@@ -1189,9 +1286,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         window.Height = 900;
         window.Show();
         Dispatcher.UIThread.RunJobs();
-        ShowPage(window, part + "AppearancePage");
-        window.CaptureRenderedFrame();
-        Dispatcher.UIThread.RunJobs();
+        ShowAppearance(window, part);
         Border pane = window.FindControl<Border>(paneName)!;
         TabControl tabs = window.FindControl<TabControl>(part + "AppearanceTabs")!;
         pane.IsEffectivelyVisible.Should().BeTrue("the page has a preview panel");
@@ -1559,33 +1654,127 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     }
 
     /// <summary>
-    /// The link of the Book Browser page to the color of its background opens the Interface Colors tab of Appearance with
-    /// that very key selected (its group expanded).
+    /// A key selected far down the Interface Colors tree (as a link to a key selects it) is scrolled into view — also when
+    /// the tree is not shown yet at the moment of the selection and its tab is opened just after.
     /// </summary>
     [AvaloniaFact]
-    public void The_link_to_the_book_browser_background_selects_its_key_in_the_theme()
+    public void A_key_selected_in_the_interface_colors_tree_is_scrolled_into_view()
     {
+        // Arrange
+        PreferencesWindow window = BuildWindow();
+        PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+        window.Width = 1100;
+        window.Height = 700;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+        ShowPage(window, "AppearanceGeneralPage");
+        TabControl tabs = window.FindControl<TabControl>("AppearanceGeneralTabs")!;
+        ThemeKeysView view = window.FindControl<ThemeKeysView>("ThemeInterfaceView")!;
+        ThemeKeysPageViewModel page = vm.Theme.PageFor(ThemePage.Interface);
+        ThemeKey last = ThemeKeys.FluentPalette.Last().Key;
+        ThemeKey first = ThemeKeys.UiAccent;
+
         // Act
+        page.SelectKey(last);
+        tabs.SelectedItem = window.FindControl<TabItem>("InterfaceColorsTab");
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        page.Key.Should().Be(last);
+        IsRowInView(view, last).Should().BeTrue("the key selected before the tab was shown is scrolled to once it is");
+
+        // Act
+        page.SelectKey(first);
+        Dispatcher.UIThread.RunJobs();
+        window.CaptureRenderedFrame();
+        Dispatcher.UIThread.RunJobs();
+
+        // Assert
+        IsRowInView(view, first).Should().BeTrue("a key selected in the shown tree is scrolled to at once");
+        window.Close();
+    }
+
+    // Whether the row of the key is realized and lies inside the visible part of the tree.
+    private static bool IsRowInView(ThemeKeysView view, ThemeKey key)
+    {
+        TreeDataGrid tree = view.FindControl<TreeDataGrid>("Tree")!;
+        TreeDataGridRow? row = tree.GetVisualDescendants().OfType<TreeDataGridRow>()
+            .FirstOrDefault(r => r.IsEffectivelyVisible && r.DataContext is ThemeKeyNode node && node.Key == key);
+        if (row?.TranslatePoint(default, tree) is not { } top)
+        {
+            return false;
+        }
+
+        return top.Y >= 0 && top.Y + row.Bounds.Height <= tree.Bounds.Height;
+    }
+
+    /// <summary>
+    /// The colors only one part of the application uses are edited on that part's own page (in place of the links to
+    /// Interface Colors there were), and the shared Interface Colors tree does not list them.
+    /// </summary>
+    [AvaloniaTheory]
+    [InlineData("StartScreenAppearancePage", 3)]
+    [InlineData("ContextMenusAppearancePage", 1)]
+    [InlineData("BookBrowserAppearancePage", 3)]
+    [InlineData("FindUsagesPage", 5)]
+    [InlineData("SearchEditorPage", 1)]
+    public void The_colors_of_a_part_of_the_application_are_edited_on_its_own_page(string pageName, int colors)
+    {
+        // Arrange
         PreferencesWindow window = BuildWindow();
         PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
         window.Width = 1100;
         window.Height = 860;
         window.Show();
         Dispatcher.UIThread.RunJobs();
-        ShowPage(window, "BookBrowserAppearancePage");
-        HyperlinkButton link = window.GetVisualDescendants().OfType<HyperlinkButton>()
-            .Single(l => l.IsEffectivelyVisible && Equals(l.Content, Strings.Get("PreferencesWindow_BookBrowserBackgroundInTheme")));
 
-        link.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
-        Dispatcher.UIThread.RunJobs();
+        // Act
+        ShowPage(window, pageName);
 
         // Assert
-        window.Sections.Selected!.Title.Should().Be(Strings.Get("PreferencesWindow_Appearance"));
-        window.FindControl<TabControl>("AppearanceGeneralTabs")!.SelectedItem.Should().BeSameAs(window.FindControl<TabItem>("InterfaceColorsTab"));
-        window.FindControl<ThemeKeysView>("ThemeInterfaceView")!.IsEffectivelyVisible.Should().BeTrue();
-        ThemeKeysPageViewModel page = vm.Theme.PageFor(ThemePage.Interface);
-        page.Key.Should().Be(ThemeKeys.UiBookBrowserBackground);
-        page.Roots.Single(r => r.Children.Any(c => c.Key == ThemeKeys.UiBookBrowserBackground)).IsExpanded.Should().BeTrue();
+        TabItem page = window.FindControl<TabItem>(pageName)!;
+        window.GetVisualDescendants().OfType<ColorKeyEditorView>().Where(e => e.IsEffectivelyVisible).Should().HaveCount(colors);
+        page.GetLogicalDescendants().OfType<HyperlinkButton>().Should().NotContain(
+            l => PreferencesPage.GetTarget(l) == "AppearanceGeneralPage", "no link sends the user to Interface Colors any more");
+        IEnumerable<ThemeKey> shared = vm.Theme.PageFor(ThemePage.Interface).Roots
+            .SelectMany(r => r.IsGroup ? (IEnumerable<ThemeKeyNode>)r.Children : new[] { r })
+            .Select(n => n.Key)
+            .OfType<ThemeKey>();
+        shared.Should().NotContain(k => k.OwnedByPanel);
+        window.Close();
+    }
+
+    /// <summary>
+    /// The color of the selected file of the Book Browser (text attributes: a text and a background) is edited on its page
+    /// as two colors; turning one on keeps the other unset.
+    /// </summary>
+    [AvaloniaFact]
+    public void The_selection_of_the_book_browser_is_edited_on_its_page_as_a_text_and_a_background()
+    {
+        // Arrange
+        PreferencesWindow window = BuildWindow();
+        PreferencesViewModel vm = (PreferencesViewModel)window.DataContext!;
+        window.Show();
+        Dispatcher.UIThread.RunJobs();
+
+        // Act
+        vm.BookBrowserSelectionBackgroundColor.Color = "#112233";
+
+        // Assert
+        TextAttributes selection = vm.Theme.Resolved!.Attributes(ThemeKeys.UiBookBrowserSelection);
+        selection.Background.Should().Be(ThemeColor.Parse("#112233"));
+        selection.Foreground.Should().BeNull();
+        vm.BookBrowserSelectionBackgroundColor.HasColor.Should().BeTrue();
+        vm.BookBrowserSelectionForegroundColor.HasColor.Should().BeFalse();
+        vm.BookBrowserSelectionForegroundColor.CanBeEmpty.Should().BeTrue();
+
+        // Act
+        vm.BookBrowserSelectionBackgroundColor.HasColor = false;
+
+        // Assert
+        vm.Theme.Resolved!.Attributes(ThemeKeys.UiBookBrowserSelection).Background.Should().BeNull();
         window.Close();
     }
 
@@ -1737,25 +1926,22 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         return ((ISolidColorBrush)element.TextRunProperties.ForegroundBrush!).Color;
     }
 
-    /// <summary>The Preview section (behaviour) links to its Appearance section; a click opens it in the tree.</summary>
+    /// <summary>The Code Editor section links to its Color Scheme; a click opens it in the tree, also when its branch is collapsed.</summary>
     [AvaloniaFact]
-    public void The_preview_section_links_to_its_appearance()
+    public void The_code_editor_section_links_to_its_color_scheme()
     {
-        // Act
+        // Arrange
         PreferencesWindow window = BuildWindow();
         window.Show();
         Dispatcher.UIThread.RunJobs();
         PreferencesSectionNode top = window.Sections.Roots.Single(n => n.Title == Strings.Get("PreferencesWindow_AppearanceAndBehavior"));
-        PreferencesSectionNode appearance = top.Children.Single(n => n.Title == Strings.Get("PreferencesWindow_Appearance"));
+        PreferencesSectionNode codeEditor = top.Children.Single(n => n.Id == "CodeEditorPage");
         var source = (HierarchicalTreeDataGridSource<PreferencesSectionNode>)window.FindControl<TreeDataGrid>("SectionTree")!.Source!;
-        source.Collapse(new IndexPath(window.Sections.Roots.IndexOf(top), top.Children.IndexOf(appearance)));
-        appearance.IsExpanded = false;
-        ShowPage(window, "PreviewPage");
-        HyperlinkButton link = window.FindControl<HyperlinkButton>("PreviewAppearanceLink")!;
-
-        // Assert
-        link.Content.Should().Be(Strings.Get("PreferencesWindow_Appearance"));
-        ((StackPanel)link.Parent!).Children[0].Should().BeSameAs(link, "the link is above every other setting");
+        source.Collapse(new IndexPath(window.Sections.Roots.IndexOf(top), top.Children.IndexOf(codeEditor)));
+        codeEditor.IsExpanded = false;
+        ShowPage(window, "CodeEditorPage");
+        HyperlinkButton link = window.GetVisualDescendants().OfType<HyperlinkButton>()
+            .Single(l => l.IsEffectivelyVisible && PreferencesPage.GetTarget(l) == "ColorSchemePage");
 
         // Act
         link.RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
@@ -1765,8 +1951,8 @@ public sealed class PreferencesWindowRenderTests : IDisposable
 
         // Assert
         target.Path.Should().Be(string.Join(
-            " › ", Strings.Get("PreferencesWindow_AppearanceAndBehavior"), Strings.Get("PreferencesWindow_Appearance"), Strings.Get("PreferencesWindow_Preview")));
-        appearance.IsExpanded.Should().BeTrue("the link opens the collapsed branch, as a click in the tree");
+            " › ", Strings.Get("PreferencesWindow_AppearanceAndBehavior"), Strings.Get("PreferencesWindow_CodeEditor"), Strings.Get("PreferencesWindow_ColorScheme")));
+        codeEditor.IsExpanded.Should().BeTrue("the link opens the collapsed branch, as a click in the tree");
         source.RowSelection!.SelectedItem.Should().BeSameAs(target, "the section is selected in the tree itself");
         window.Close();
     }
@@ -1954,11 +2140,12 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         { "ConfirmFootnoteRemovalBox", "FootnoteGroupByChapterBox", "FootnoteLetterStyleBox" };
 
     /// <summary>
-    /// The Footnotes page has two tabs: General first (the behaviour: the removal confirmation, the grouping and the
-    /// letters of shared notes, with its hint), then CSS (the definitions of the footnote classes).
+    /// The Footnotes page has three tabs: General first (the behaviour: the removal confirmation, the grouping and the
+    /// letters of shared notes, with its hint), then CSS (the definitions of the footnote classes), then Appearance (the
+    /// fonts of the footnote window).
     /// </summary>
     [AvaloniaFact]
-    public void The_footnotes_page_has_a_general_tab_and_a_css_tab()
+    public void The_footnotes_page_has_a_general_tab_a_css_tab_and_an_appearance_tab()
     {
         // Act
         PreferencesWindow window = BuildWindow();
@@ -1967,7 +2154,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         TabControl footnotes = ShowPage(window, "FootnotesPage").SelectedContent.Should().BeOfType<TabControl>().Subject;
 
         // Assert
-        footnotes.Items.OfType<TabItem>().Select(t => t.Name).Should().Equal("FootnotesGeneralTab", "FootnotesCssTab");
+        footnotes.Items.OfType<TabItem>().Select(t => t.Name).Should().Equal("FootnotesGeneralTab", "FootnotesCssTab", "FootnotesAppearanceTab");
         footnotes.SelectedIndex.Should().Be(0, "General is shown first");
         TabItem general = (TabItem)footnotes.Items[0]!;
         TabItem css = (TabItem)footnotes.Items[1]!;
@@ -2479,7 +2666,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     }
 
     /// <summary>
-    /// The number fields of the caret highlight (Appearance › Preview) sit at the right edge of their box, like those of the
+    /// The number fields of the caret highlight (Preview Panel › Appearance) sit at the right edge of their box, like those of the
     /// Book Browser — previously they were left-aligned in the column and did not reach the edge.
     /// </summary>
     [AvaloniaFact]
@@ -2493,7 +2680,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
         Dispatcher.UIThread.RunJobs();
 
         // Act
-        ShowPage(window, "PreviewAppearancePage");
+        ShowAppearance(window, "Preview");
         window.CaptureRenderedFrame();
         Dispatcher.UIThread.RunJobs();
         string[] names = { "PreviewHighlightOpacityBox", "PreviewHighlightOutlineWidthBox", "PreviewHighlightAutoHideDelayBox" };
@@ -2874,8 +3061,9 @@ public sealed class PreferencesWindowRenderTests : IDisposable
 
         // Assert
         window.Sections.Selected!.Path.Should().Be(string.Join(
-            " › ", Strings.Get("PreferencesWindow_AppearanceAndBehavior"), Strings.Get("PreferencesWindow_Appearance"),
-            Strings.Get("PreferencesWindow_CodeEditor")));
+            " › ", Strings.Get("PreferencesWindow_AppearanceAndBehavior"), Strings.Get("PreferencesWindow_CodeEditor")));
+        window.FindControl<TabControl>("CodeEditorTabs")!.SelectedItem.Should().BeAssignableTo<TabItem>()
+            .Which.Header.Should().Be(Strings.Get("PreferencesWindow_Appearance"), "the hit is inside the Appearance tab");
         window.FindControl<TabControl>("CodeEditorAppearanceTabs")!.SelectedItem.Should().BeAssignableTo<TabItem>()
             .Which.Header.Should().Be(Strings.Get("PreferencesWindow_Fonts"), "the hit is on the Fonts tab, which the search shows");
 
@@ -2889,8 +3077,8 @@ public sealed class PreferencesWindowRenderTests : IDisposable
     }
 
     /// <summary>
-    /// The "Preview" section: the refresh delay on its page, the highlighting of the cursor position under Appearance
-    /// (its color field in its own color) and the preview fonts under Appearance › Preview › Fonts.
+    /// The "Preview Panel" section: the refresh delay on its General tab, the highlighting of the cursor position on its
+    /// Appearance tab (the color is in the color scheme) and the preview fonts under Appearance › Fonts.
     /// </summary>
     [AvaloniaFact]
     public void Preview_section_splits_refresh_highlight_and_fonts()
@@ -2912,7 +3100,7 @@ public sealed class PreferencesWindowRenderTests : IDisposable
             .Should().Contain(c => Equals(c.Content, Strings.Get("PreferencesWindow_FollowFootnotesInCodeView")));
 
         // Act
-        ShowPage(window, "PreviewAppearancePage");
+        ShowAppearance(window, "Preview");
 
         // Assert
         window.GetVisualDescendants().OfType<TextBox>().Should().NotContain(t => t.Classes.Contains("colorValue"),

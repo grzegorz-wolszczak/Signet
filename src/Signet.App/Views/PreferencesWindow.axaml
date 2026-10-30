@@ -6,6 +6,7 @@
         xmlns:infra="using:Signet.App.Infrastructure"
         xmlns:tabs="using:Signet.App.Views.Tabs"
         xmlns:views="using:Signet.App.Views"
+        xmlns:tb="using:Signet.App.Toolbars"
         x:Class="Signet.App.Views.PreferencesWindow"
         x:DataType="vm:PreferencesViewModel"
         Width="820" Height="640"
@@ -220,10 +221,11 @@
 
 
       <!-- ========================= Appearance and Behavior ========================= -->
-      <!-- As in Rider, the section has no settings of its own: it lists its subsections. "Appearance" holds the theme of
-           the interface and, one level down, the look and the fonts of every part of the application. The parts that also
-           have behaviour (Code Editor, Preview, Footnotes) have a section of their own directly under it; the color
-           scheme of the editors is under Code Editor. -->
+      <!-- As in Rider, the section has no settings of its own: it lists its subsections. "Appearance" holds only what the
+           whole application shares (the theme of the interface, its fonts and colors); every part of the application has
+           its section directly under Appearance and Behavior (the look and the fonts of the part; where the part also has
+           behaviour — Code Editor, Preview, Footnotes — its look is the Appearance tab of its section). The color scheme
+           of the editors is under Code Editor. -->
       <TabItem x:Name="AppearancePage" Header="{loc:Loc PreferencesWindow_AppearanceAndBehavior}" />
 
       <!-- Appearance (Rider's page of the same name): the theme of the interface and the color scheme of the editors, each
@@ -313,8 +315,8 @@
         </TabControl>
       </TabItem>
 
-      <!-- Appearance › StartScreen: the list of recent files (General, Fonts), with one preview panel for both tabs. -->
-      <TabItem x:Name="StartScreenAppearancePage" Header="{loc:Loc PreferencesWindow_StartScreen}" views:PreferencesPage.Parent="AppearanceGeneralPage">
+      <!-- Appearance & Behavior › StartScreen: the list of recent files (General, Fonts), with one preview panel for both tabs. -->
+      <TabItem x:Name="StartScreenAppearancePage" Header="{loc:Loc PreferencesWindow_StartScreen}" views:PreferencesPage.Parent="AppearancePage">
         <Grid x:Name="StartScreenPreviewHost">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" MinWidth="300" />
@@ -342,15 +344,18 @@
                                        Maximum="{x:Static vm:PreferencesViewModel.StartScreenIndentMax}"
                                        Increment="1" FormatString="0" HorizontalAlignment="Right" Width="130" />
                       </Grid>
-                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_StartScreenTitleColorInTheme}" Padding="0"
-                                       views:PreferencesPage.Target="AppearanceGeneralPage"
-                                       views:PreferencesPage.TargetKey="ui.startScreen.title" />
-                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_StartScreenLocationColorInTheme}" Padding="0"
-                                       views:PreferencesPage.Target="AppearanceGeneralPage"
-                                       views:PreferencesPage.TargetKey="ui.startScreen.location" />
-                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_StartScreenHighlightInTheme}" Padding="0"
-                                       views:PreferencesPage.Target="AppearanceGeneralPage"
-                                       views:PreferencesPage.TargetKey="ui.startScreen.highlight" />
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc ThemeKey_ui_startScreen_title}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                        <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding StartScreenTitleColor}" />
+                      </Grid>
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc ThemeKey_ui_startScreen_location}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                        <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding StartScreenLocationColor}" />
+                      </Grid>
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc ThemeKey_ui_startScreen_highlight}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                        <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding StartScreenHighlightColor}" />
+                      </Grid>
                     </StackPanel>
                   </Border>
                 </StackPanel>
@@ -378,9 +383,9 @@
         </Grid>
       </TabItem>
 
-      <!-- Appearance › Context Menus: the menus of a right click — the font of their title and of their items (General has
-           the link to the color of the title's background in the theme). The main menu keeps the interface font. -->
-      <TabItem x:Name="ContextMenusAppearancePage" Header="{loc:Loc PreferencesWindow_ContextMenus}" views:PreferencesPage.Parent="AppearanceGeneralPage">
+      <!-- Appearance & Behavior › Context Menus: the menus of a right click — the font of their title and of their items, and (General)
+           the color of the title's background in the theme. The main menu keeps the interface font. -->
+      <TabItem x:Name="ContextMenusAppearancePage" Header="{loc:Loc PreferencesWindow_ContextMenus}" views:PreferencesPage.Parent="AppearancePage">
         <TabControl x:Name="ContextMenusAppearanceTabs">
           <TabItem Header="{loc:Loc PreferencesWindow_General}">
             <ScrollViewer>
@@ -389,9 +394,10 @@
                   <StackPanel Spacing="6">
                     <TextBlock Text="{loc:Loc PreferencesWindow_ContextMenusSection}" FontWeight="Bold" />
                     <TextBlock Text="{loc:Loc PreferencesWindow_ContextMenusHint}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
-                    <HyperlinkButton Content="{loc:Loc PreferencesWindow_ContextMenuTitleBackgroundInTheme}" Padding="0"
-                                     views:PreferencesPage.Target="AppearanceGeneralPage"
-                                     views:PreferencesPage.TargetKey="ui.contextMenu.title.background" />
+                    <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                      <TextBlock Grid.Column="0" Text="{loc:Loc ThemeKey_ui_contextMenu_title_background}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                      <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding ContextMenuTitleBackgroundColor}" />
+                    </Grid>
                   </StackPanel>
                 </Border>
               </StackPanel>
@@ -403,57 +409,113 @@
         </TabControl>
       </TabItem>
 
-      <!-- Appearance › Toolbars: the toolbars of the main window — the settings of the "Toolbar Settings" section of a
-           toolbar's context menu (General) and the font of the button texts (Fonts). The button bars of the panels do
-           not follow them. -->
-      <TabItem x:Name="ToolbarsAppearancePage" Header="{loc:Loc PreferencesWindow_Toolbars}" views:PreferencesPage.Parent="AppearanceGeneralPage">
-        <TabControl x:Name="ToolbarsAppearanceTabs">
+      <!-- Appearance & Behavior › Toolbars: the toolbars of the main window — the settings of the "Toolbar Settings" section of
+           a toolbar's context menu. General: the locked positions; Appearance: where the texts sit and the icon size (its
+           General tab), the font of the button texts (Fonts), and under them the preview: sample toolbars with long labels,
+           in the look the settings give them now (the unsaved ones too). The button bars of the panels do not follow them. -->
+      <TabItem x:Name="ToolbarsAppearancePage" Header="{loc:Loc PreferencesWindow_Toolbars}" views:PreferencesPage.Parent="AppearancePage">
+        <TabControl x:Name="ToolbarsTabs">
           <TabItem Header="{loc:Loc PreferencesWindow_General}">
             <ScrollViewer>
               <StackPanel Spacing="10" Margin="8">
                 <Border Classes="section">
                   <StackPanel Spacing="6">
                     <TextBlock Text="{loc:Loc PreferencesWindow_ToolbarsSection}" FontWeight="Bold" />
-                    <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                      <TextBlock Grid.Column="0" Text="{loc:Loc ToolbarStripView_TextPosition}" />
-                      <ComboBox x:Name="ToolbarTextPositionBox" Grid.Column="1" MinWidth="180"
-                                ItemsSource="{x:Static vm:PreferencesViewModel.AvailableToolbarTextPositions}"
-                                SelectedItem="{Binding ToolbarTextPosition}">
-                        <ComboBox.ItemTemplate>
-                          <DataTemplate>
-                            <TextBlock Text="{Binding Converter={x:Static infra:DisplayNameConverters.ToolbarTextPosition}}" />
-                          </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                      </ComboBox>
-                    </Grid>
-                    <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                      <TextBlock Grid.Column="0" Text="{loc:Loc ToolbarStripView_IconSize}" />
-                      <ComboBox x:Name="ToolbarIconSizeBox" Grid.Column="1" MinWidth="180"
-                                ItemsSource="{x:Static vm:PreferencesViewModel.AvailableToolbarIconSizes}"
-                                SelectedItem="{Binding ToolbarIconSize}">
-                        <ComboBox.ItemTemplate>
-                          <DataTemplate>
-                            <TextBlock Text="{Binding Converter={x:Static infra:DisplayNameConverters.ToolbarIconSize}}" />
-                          </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                      </ComboBox>
-                    </Grid>
                     <CheckBox x:Name="ToolbarPositionsLockedBox" Content="{loc:Loc ToolbarStripView_LockPositions}"
                               IsChecked="{Binding ToolbarPositionsLocked}" />
-                    <TextBlock Text="{loc:Loc PreferencesWindow_ToolbarsHint}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
                   </StackPanel>
                 </Border>
               </StackPanel>
             </ScrollViewer>
           </TabItem>
-          <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-            <views:FontsPageView x:Name="ToolbarFontsView" />
+          <TabItem Header="{loc:Loc PreferencesWindow_Appearance}">
+            <Grid x:Name="ToolbarsPreviewHost">
+              <!-- The toolbars are wide, so their preview is under the settings, not at their right. -->
+              <Grid.RowDefinitions>
+                <RowDefinition Height="*" MinHeight="150" />
+                <RowDefinition Height="12" />
+                <RowDefinition Height="260" MinHeight="120" />
+              </Grid.RowDefinitions>
+              <TabControl x:Name="ToolbarsAppearanceTabs">
+                <TabItem Header="{loc:Loc PreferencesWindow_General}">
+                  <ScrollViewer>
+                    <StackPanel Spacing="10" Margin="8">
+                      <Border Classes="section">
+                        <StackPanel Spacing="6">
+                          <TextBlock Text="{loc:Loc PreferencesWindow_ToolbarsSection}" FontWeight="Bold" />
+                          <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                            <TextBlock Grid.Column="0" Text="{loc:Loc ToolbarStripView_TextPosition}" />
+                            <ComboBox x:Name="ToolbarTextPositionBox" Grid.Column="1" MinWidth="180"
+                                      ItemsSource="{x:Static vm:PreferencesViewModel.AvailableToolbarTextPositions}"
+                                      SelectedItem="{Binding ToolbarTextPosition}">
+                              <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                  <TextBlock Text="{Binding Converter={x:Static infra:DisplayNameConverters.ToolbarTextPosition}}" />
+                                </DataTemplate>
+                              </ComboBox.ItemTemplate>
+                            </ComboBox>
+                          </Grid>
+                          <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                            <TextBlock Grid.Column="0" Text="{loc:Loc ToolbarStripView_IconSize}" />
+                            <ComboBox x:Name="ToolbarIconSizeBox" Grid.Column="1" MinWidth="180"
+                                      ItemsSource="{x:Static vm:PreferencesViewModel.AvailableToolbarIconSizes}"
+                                      SelectedItem="{Binding ToolbarIconSize}">
+                              <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                  <TextBlock Text="{Binding Converter={x:Static infra:DisplayNameConverters.ToolbarIconSize}}" />
+                                </DataTemplate>
+                              </ComboBox.ItemTemplate>
+                            </ComboBox>
+                          </Grid>
+                          <TextBlock Text="{loc:Loc PreferencesWindow_ToolbarsHint}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
+                        </StackPanel>
+                      </Border>
+                    </StackPanel>
+                  </ScrollViewer>
+                </TabItem>
+                <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+                  <views:FontsPageView x:Name="ToolbarFontsView" HasSharedPreview="True" />
+                </TabItem>
+              </TabControl>
+              <GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Background="Transparent" />
+              <!-- The preview: real toolbars (ToolbarStripView) over the draft of the settings (PreferencesViewModel.ToolbarSampleRows),
+                   with the look of the toolbars put into the resources of the pane (not the application's). Only to look at:
+                   no clicks, no context menu, no dragging. Not searched: it holds no settings. -->
+              <Border x:Name="ToolbarsPreviewPane" Grid.Row="2" Classes="section noSearchTree" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" Padding="8">
+                <DockPanel>
+                  <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
+                  <Border Classes="listFrame previewFrame">
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                      <ItemsControl x:Name="ToolbarsPreview" IsHitTestVisible="False" VerticalAlignment="Top" Padding="2,1"
+                                    Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}">
+                        <ItemsControl.ItemTemplate>
+                          <DataTemplate x:DataType="vm:ToolbarRowViewModel">
+                            <ItemsControl ItemsSource="{Binding Toolbars}" Margin="0,1">
+                              <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                  <tb:ToolbarRowPanel />
+                                </ItemsPanelTemplate>
+                              </ItemsControl.ItemsPanel>
+                              <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ToolbarViewModel">
+                                  <views:ToolbarStripView />
+                                </DataTemplate>
+                              </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                          </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                      </ItemsControl>
+                    </ScrollViewer>
+                  </Border>
+                </DockPanel>
+              </Border>
+            </Grid>
           </TabItem>
         </TabControl>
       </TabItem>
 
-      <!-- Appearance › BookBrowser: which folders are expanded when a book is loaded; Fonts. -->
-      <TabItem x:Name="BookBrowserAppearancePage" Header="{loc:Loc PreferencesWindow_BookBrowser}" views:PreferencesPage.Parent="AppearanceGeneralPage">
+      <!-- Appearance & Behavior › BookBrowser: which folders are expanded when a book is loaded; Fonts. -->
+      <TabItem x:Name="BookBrowserAppearancePage" Header="{loc:Loc PreferencesWindow_BookBrowser}" views:PreferencesPage.Parent="AppearancePage">
         <Grid x:Name="BookBrowserPreviewHost">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" MinWidth="300" />
@@ -504,12 +566,18 @@
                       </Grid>
                       <CheckBox x:Name="BookBrowserShowFoldersBox" Content="{loc:Loc PreferencesWindow_BookBrowserShowFolders}"
                                 IsChecked="{Binding BookBrowserShowFolders}" ToolTip.Tip="{loc:Loc PreferencesWindow_BookBrowserShowFoldersTip}" />
-                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_BookBrowserBackgroundInTheme}" Padding="0"
-                                       views:PreferencesPage.Target="AppearanceGeneralPage"
-                                       views:PreferencesPage.TargetKey="ui.bookBrowser.background" />
-                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_BookBrowserSelectionInTheme}" Padding="0"
-                                       views:PreferencesPage.Target="AppearanceGeneralPage"
-                                       views:PreferencesPage.TargetKey="ui.bookBrowser.selection" />
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc ThemeKey_ui_bookBrowser_background}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                        <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding BookBrowserBackgroundColor}" />
+                      </Grid>
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_BookBrowserSelectionText}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                        <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding BookBrowserSelectionForegroundColor}" />
+                      </Grid>
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_BookBrowserSelectionBackground}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                        <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding BookBrowserSelectionBackgroundColor}" />
+                      </Grid>
 
                     </StackPanel>
                   </Border>
@@ -540,8 +608,8 @@
         </Grid>
       </TabItem>
 
-      <!-- Appearance › TableOfContents: Fonts only. -->
-      <TabItem x:Name="TableOfContentsAppearancePage" Header="{loc:Loc PreferencesWindow_TableOfContents}" views:PreferencesPage.Parent="AppearanceGeneralPage">
+      <!-- Appearance & Behavior › TableOfContents: Fonts only. -->
+      <TabItem x:Name="TableOfContentsAppearancePage" Header="{loc:Loc PreferencesWindow_TableOfContents}" views:PreferencesPage.Parent="AppearancePage">
         <TabControl x:Name="TableOfContentsAppearanceTabs">
           <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
             <views:FontsPageView x:Name="TableOfContentsFontsView" />
@@ -549,148 +617,10 @@
         </TabControl>
       </TabItem>
 
-      <!-- Appearance › CodeEditor: what the editor looks like (General, Fonts), with one preview panel for both tabs: the
-           document tabs and the editor itself. -->
-      <TabItem x:Name="CodeEditorAppearancePage" Header="{loc:Loc PreferencesWindow_CodeEditor}" views:PreferencesPage.Parent="AppearanceGeneralPage">
-        <Grid x:Name="CodeEditorPreviewHost">
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" MinWidth="300" />
-            <ColumnDefinition Width="12" />
-            <ColumnDefinition Width="380" MinWidth="240" />
-          </Grid.ColumnDefinitions>
-          <TabControl x:Name="CodeEditorAppearanceTabs">
-            <TabItem Header="{loc:Loc PreferencesWindow_General}">
-              <ScrollViewer>
-                <StackPanel Spacing="10" Margin="8">
-                  <Border Classes="section">
-                    <StackPanel Spacing="6">
-                      <TextBlock Text="{loc:Loc PreferencesWindow_CodeEditorLook}" FontWeight="Bold" />
-                      <CheckBox x:Name="ExtendedHighlightingBox" Content="{loc:Loc PreferencesWindow_ExtendedHighlighting}"
-                                IsChecked="{Binding ExtendedHighlighting}" />
-                      <!-- The document tabs: several rows when they do not fit. -->
-                      <CheckBox x:Name="MultilineTabsBox" Content="{loc:Loc PreferencesWindow_MultilineTabs}" IsChecked="{Binding MultilineTabs}" />
-                      <!-- The colors of the editor and of the hint are in the color scheme, the colors of the tabs in the theme. -->
-                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInScheme}" Padding="0"
-                                       views:PreferencesPage.Target="ColorSchemePage" />
-                    </StackPanel>
-                  </Border>
-                </StackPanel>
-              </ScrollViewer>
-            </TabItem>
-            <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-              <views:FontsPageView x:Name="CodeEditorFontsView" HasSharedPreview="True" />
-            </TabItem>
-          </TabControl>
-          <GridSplitter Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Background="Transparent" />
-          <!-- The preview, common to the tabs of the page: the tabs of the documents and the real Code Editor tab over a
-               chapter of the sample book, in the look the settings give them now (the unsaved ones too), and the opening tag
-               hint (which a real one shows only over a closing tag) under it. Not searched: it holds no settings. -->
-          <Border x:Name="CodeEditorPreviewPane" Grid.Column="2" Classes="section noSearchTree" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" Padding="8">
-            <DockPanel>
-              <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
-              <Border Classes="listFrame previewFrame">
-                <DockPanel>
-                  <views:DocumentTabsSample x:Name="DocumentTabsPreview" DockPanel.Dock="Top" Margin="4,4,4,0" />
-                  <views:TooltipSample x:Name="CodeEditorSampleHint" DockPanel.Dock="Bottom" Margin="8" />
-                  <tabs:CodeTabView x:Name="CodeEditorPreview" />
-                </DockPanel>
-              </Border>
-            </DockPanel>
-          </Border>
-        </Grid>
-      </TabItem>
 
-      <!-- Appearance › Preview: the highlight of the caret location; Fonts: the preview fonts. -->
-      <TabItem x:Name="PreviewAppearancePage" Header="{loc:Loc PreferencesWindow_Preview}" views:PreferencesPage.Parent="AppearanceGeneralPage">
-        <Grid x:Name="PreviewPreviewHost">
-          <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" MinWidth="300" />
-            <ColumnDefinition Width="12" />
-            <ColumnDefinition Width="340" MinWidth="220" />
-          </Grid.ColumnDefinitions>
-          <TabControl x:Name="PreviewAppearanceTabs">
-            <TabItem Header="{loc:Loc PreferencesWindow_Preview}">
-                <ScrollViewer>
-                  <StackPanel Spacing="10" Margin="8">
-                    <Border Classes="section">
-                      <StackPanel Spacing="6">
-                        <TextBlock Text="{loc:Loc PreferencesWindow_PreviewHighlight}" FontWeight="Bold" />
-                        <Grid Classes="labeled" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
-                          <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightStyle}" VerticalAlignment="Center" />
-                          <ComboBox Grid.Row="0" Grid.Column="1" MinWidth="190" ItemsSource="{Binding AvailablePreviewHighlightStyles}" SelectedItem="{Binding PreviewHighlightStyle}">
-                            <ComboBox.ItemTemplate>
-                              <DataTemplate>
-                                <TextBlock Text="{Binding Converter={x:Static infra:DisplayNameConverters.PreviewHighlightStyle}}" />
-                              </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                          </ComboBox>
 
-                          <!-- The color of the highlight is in the color scheme (preview.highlight). -->
-                          <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInScheme}" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Padding="0"
-                                           views:PreferencesPage.Target="ColorSchemePage" />
-
-                          <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightOpacity}" VerticalAlignment="Center" TextWrapping="Wrap"
-                                     IsEnabled="{Binding IsPreviewHighlightBackground}"
-                                     ToolTip.Tip="{loc:Loc PreferencesWindow_PreviewHighlightOpacityTip}" ToolTip.ShowOnDisabled="True" />
-                          <NumericUpDown x:Name="PreviewHighlightOpacityBox" Grid.Row="2" Grid.Column="1" Value="{Binding PreviewHighlightOpacity}"
-                                         Minimum="{x:Static vm:PreferencesViewModel.PreviewHighlightOpacityMin}"
-                                         Maximum="{x:Static vm:PreferencesViewModel.PreviewHighlightOpacityMax}"
-                                         Increment="1" FormatString="0" Width="130" HorizontalAlignment="Right"
-                                         IsEnabled="{Binding IsPreviewHighlightBackground}"
-                                         ToolTip.Tip="{loc:Loc PreferencesWindow_PreviewHighlightOpacityTip}" ToolTip.ShowOnDisabled="True" />
-
-                          <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightOutlineWidth}" VerticalAlignment="Center" TextWrapping="Wrap"
-                                     IsEnabled="{Binding IsPreviewHighlightOutline}"
-                                     ToolTip.Tip="{loc:Loc PreferencesWindow_PreviewHighlightOutlineWidthTip}" ToolTip.ShowOnDisabled="True" />
-                          <NumericUpDown x:Name="PreviewHighlightOutlineWidthBox" Grid.Row="3" Grid.Column="1" Value="{Binding PreviewHighlightOutlineWidth}"
-                                         Minimum="{x:Static vm:PreferencesViewModel.PreviewHighlightOutlineWidthMin}"
-                                         Maximum="{x:Static vm:PreferencesViewModel.PreviewHighlightOutlineWidthMax}"
-                                         Increment="1" FormatString="0" Width="130" HorizontalAlignment="Right"
-                                         IsEnabled="{Binding IsPreviewHighlightOutline}"
-                                         ToolTip.Tip="{loc:Loc PreferencesWindow_PreviewHighlightOutlineWidthTip}" ToolTip.ShowOnDisabled="True" />
-
-                          <CheckBox Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Content="{loc:Loc PreferencesWindow_PreviewHighlightAutoHide}"
-                                    IsChecked="{Binding PreviewHighlightAutoHide}" />
-
-                          <TextBlock Grid.Row="5" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightAutoHideDelay}" VerticalAlignment="Center" TextWrapping="Wrap"
-                                     IsEnabled="{Binding PreviewHighlightAutoHide}"
-                                     ToolTip.Tip="{loc:Loc PreferencesWindow_PreviewHighlightAutoHideDelayTip}" ToolTip.ShowOnDisabled="True" />
-                          <NumericUpDown x:Name="PreviewHighlightAutoHideDelayBox" Grid.Row="5" Grid.Column="1" Value="{Binding PreviewHighlightAutoHideDelay}"
-                                         Minimum="{x:Static vm:PreferencesViewModel.PreviewHighlightAutoHideDelayMin}"
-                                         Maximum="{x:Static vm:PreferencesViewModel.PreviewHighlightAutoHideDelayMax}"
-                                         Increment="100" FormatString="0" Width="130" HorizontalAlignment="Right"
-                                         IsEnabled="{Binding PreviewHighlightAutoHide}"
-                                         ToolTip.Tip="{loc:Loc PreferencesWindow_PreviewHighlightAutoHideDelayTip}" ToolTip.ShowOnDisabled="True" />
-                        </Grid>
-                      </StackPanel>
-                    </Border>
-
-                  </StackPanel>
-                </ScrollViewer>
-            </TabItem>
-            <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-              <views:FontsPageView x:Name="PreviewFontsView" HasSharedPreview="True" />
-            </TabItem>
-          </TabControl>
-          <GridSplitter Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Background="Transparent" />
-          <!-- The preview, common to the tabs of the page: a page drawn in the fonts of the settings with the mark of the caret as the
-               real preview draws it (the real one is a web view), and a sample of its tooltip. Not searched: it holds no settings. -->
-          <Border x:Name="PreviewPreviewPane" Grid.Column="2" Classes="section noSearchTree" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" Padding="8">
-            <DockPanel>
-              <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
-              <Border Classes="listFrame previewFrame">
-                <Grid RowDefinitions="*,Auto">
-                  <views:PreviewSample x:Name="PreviewSamplePage" />
-                  <views:TooltipSample x:Name="PreviewSampleTip" Grid.Row="1" Margin="8" />
-                </Grid>
-              </Border>
-            </DockPanel>
-          </Border>
-        </Grid>
-      </TabItem>
-
-      <!-- Appearance › FindReplace: General (the look of the action buttons), Fonts. -->
-      <TabItem x:Name="FindReplaceAppearancePage" Header="{loc:Loc PreferencesWindow_FindReplace}" views:PreferencesPage.Parent="AppearanceGeneralPage">
+      <!-- Appearance & Behavior › FindReplace: General (the look of the action buttons), Fonts. -->
+      <TabItem x:Name="FindReplaceAppearancePage" Header="{loc:Loc PreferencesWindow_FindReplace}" views:PreferencesPage.Parent="AppearancePage">
         <Grid x:Name="FindReplacePreviewHost">
           <Grid.RowDefinitions>
             <RowDefinition Height="*" MinHeight="150" />
@@ -735,8 +665,8 @@
         </Grid>
       </TabItem>
 
-      <!-- Appearance › SpecialCharacters: Fonts only. -->
-      <TabItem x:Name="SpecialCharactersAppearancePage" Header="{loc:Loc PreferencesWindow_SpecialCharacters}" views:PreferencesPage.Parent="AppearanceGeneralPage">
+      <!-- Appearance & Behavior › SpecialCharacters: Fonts only. -->
+      <TabItem x:Name="SpecialCharactersAppearancePage" Header="{loc:Loc PreferencesWindow_SpecialCharacters}" views:PreferencesPage.Parent="AppearancePage">
         <Grid x:Name="SpecialCharactersPreviewHost">
           <Grid.RowDefinitions>
             <RowDefinition Height="*" MinHeight="150" />
@@ -764,8 +694,8 @@
         </Grid>
       </TabItem>
 
-      <!-- Appearance › Checkpoints: Fonts only. -->
-      <TabItem x:Name="CheckpointsAppearancePage" Header="{loc:Loc PreferencesWindow_Checkpoints}" views:PreferencesPage.Parent="AppearanceGeneralPage">
+      <!-- Appearance & Behavior › Checkpoints: Fonts only. -->
+      <TabItem x:Name="CheckpointsAppearancePage" Header="{loc:Loc PreferencesWindow_Checkpoints}" views:PreferencesPage.Parent="AppearancePage">
         <TabControl x:Name="CheckpointsAppearanceTabs">
           <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
             <views:FontsPageView x:Name="CheckpointsFontsView" />
@@ -773,8 +703,8 @@
         </TabControl>
       </TabItem>
 
-      <!-- Appearance › Validation: Fonts only. -->
-      <TabItem x:Name="ValidationAppearancePage" Header="{loc:Loc PreferencesWindow_Validation}" views:PreferencesPage.Parent="AppearanceGeneralPage">
+      <!-- Appearance & Behavior › Validation: Fonts only. -->
+      <TabItem x:Name="ValidationAppearancePage" Header="{loc:Loc PreferencesWindow_Validation}" views:PreferencesPage.Parent="AppearancePage">
         <Grid x:Name="ValidationPreviewHost">
           <Grid.RowDefinitions>
             <RowDefinition Height="*" MinHeight="150" />
@@ -802,9 +732,9 @@
         </Grid>
       </TabItem>
 
-      <!-- Appearance › Notifications: the space between the rows (General); the timestamp and message column fonts are on
+      <!-- Appearance & Behavior › Notifications: the space between the rows (General); the timestamp and message column fonts are on
            the Fonts tab, their colors (and the warning row's) are links to the theme, as Book Browser and Saved Searches do. -->
-      <TabItem x:Name="NotificationsAppearancePage" Header="{loc:Loc PreferencesWindow_Notifications}" views:PreferencesPage.Parent="AppearanceGeneralPage">
+      <TabItem x:Name="NotificationsAppearancePage" Header="{loc:Loc PreferencesWindow_Notifications}" views:PreferencesPage.Parent="AppearancePage">
         <Grid x:Name="NotificationsPreviewHost">
           <Grid.RowDefinitions>
             <RowDefinition Height="*" MinHeight="150" />
@@ -883,8 +813,8 @@
         </Grid>
       </TabItem>
 
-      <!-- Appearance › MetadataEditor: Fonts only. -->
-      <TabItem x:Name="MetadataEditorAppearancePage" Header="{loc:Loc PreferencesWindow_MetadataEditor}" views:PreferencesPage.Parent="AppearanceGeneralPage">
+      <!-- Appearance & Behavior › MetadataEditor: Fonts only. -->
+      <TabItem x:Name="MetadataEditorAppearancePage" Header="{loc:Loc PreferencesWindow_MetadataEditor}" views:PreferencesPage.Parent="AppearancePage">
         <TabControl x:Name="MetadataEditorAppearanceTabs">
           <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
             <views:FontsPageView x:Name="MetadataEditorFontsView" />
@@ -892,8 +822,8 @@
         </TabControl>
       </TabItem>
 
-      <!-- Appearance › Cleanup: Fonts only. -->
-      <TabItem x:Name="CleanupAppearancePage" Header="{loc:Loc PreferencesWindow_Cleanup}" views:PreferencesPage.Parent="AppearanceGeneralPage">
+      <!-- Appearance & Behavior › Cleanup: Fonts only. -->
+      <TabItem x:Name="CleanupAppearancePage" Header="{loc:Loc PreferencesWindow_Cleanup}" views:PreferencesPage.Parent="AppearancePage">
         <Grid x:Name="CleanupPreviewHost">
           <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*" MinWidth="300" />
@@ -921,66 +851,91 @@
         </Grid>
       </TabItem>
 
-      <!-- Appearance › Footnotes: Fonts only. -->
-      <TabItem x:Name="FootnotesAppearancePage" Header="{loc:Loc PreferencesWindow_Footnotes}" views:PreferencesPage.Parent="AppearanceGeneralPage">
-        <Grid x:Name="FootnotesPreviewHost">
-          <Grid.RowDefinitions>
-            <RowDefinition Height="*" MinHeight="150" />
-            <RowDefinition Height="12" />
-            <RowDefinition Height="300" MinHeight="120" />
-          </Grid.RowDefinitions>
-          <TabControl x:Name="FootnotesAppearanceTabs">
-            <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
-              <views:FontsPageView x:Name="FootnotesFontsView" HasSharedPreview="True" />
-            </TabItem>
-          </TabControl>
-          <GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Background="Transparent" />
-          <!-- The preview: the footnote window (wide, so it is under the settings) with a note filled in, and a sample of its tooltip. Not searched: it holds no settings. -->
-          <Border x:Name="FootnotesPreviewPane" Grid.Row="2" Classes="section noSearchTree" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" Padding="8">
-            <DockPanel>
-              <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
-              <Border Classes="listFrame previewFrame">
-                <Grid RowDefinitions="*,Auto">
-                  <views:FootnoteView x:Name="FootnotesPreview" />
-                  <views:TooltipSample x:Name="FootnotesSampleTip" Grid.Row="1" Margin="8" />
-                </Grid>
-              </Border>
-            </DockPanel>
-          </Border>
-        </Grid>
-      </TabItem>
 
       <!-- ============================== Code Editor ============================== -->
-      <!-- The behaviour of Code Editor: highlighting and the opening tag hint. Its look is under Appearance; its color
-           scheme is the subsection below. -->
+      <!-- General: the behaviour of Code Editor (the opening tag hint, following the active tab); Appearance: what the editor
+           looks like (its own General and Fonts tabs), with one preview panel for both: the document tabs and the editor
+           itself. Its color scheme is the subsection below. -->
       <TabItem x:Name="CodeEditorPage" Header="{loc:Loc PreferencesWindow_CodeEditor}" views:PreferencesPage.Parent="AppearancePage">
-        <views:PageWidthHost x:Name="CodeEditorWidth">
-          <ScrollViewer>
-            <StackPanel Spacing="10" Margin="8">
-              <!-- The Book Browser follows the active document tab (the look of the tabs and of the editor is under Appearance). -->
-              <CheckBox x:Name="BookBrowserFollowsTabBox" Content="{loc:Loc PreferencesWindow_BookBrowserFollowsTab}"
-                        IsChecked="{Binding BookBrowserFollowsActiveTab}" />
+        <TabControl x:Name="CodeEditorTabs">
+          <TabItem Header="{loc:Loc PreferencesWindow_General}">
+            <views:PageWidthHost x:Name="CodeEditorWidth">
+              <ScrollViewer>
+                <StackPanel Spacing="10" Margin="8">
+                  <!-- The Book Browser follows the active document tab (the look of the tabs and of the editor is on the Appearance tab). -->
+                  <CheckBox x:Name="BookBrowserFollowsTabBox" Content="{loc:Loc PreferencesWindow_BookBrowserFollowsTab}"
+                            IsChecked="{Binding BookBrowserFollowsActiveTab}" />
 
-              <!-- Code Editor: the opening tag tooltip over a closing tag, with its delay. -->
-              <CheckBox Content="{loc:Loc PreferencesWindow_OpenTagHint}" IsChecked="{Binding OpenTagHint}" />
-              <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="28,0,0,0">
-                <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_OpenTagHintDelay}" IsEnabled="{Binding OpenTagHint}" />
-                <NumericUpDown x:Name="OpenTagHintDelayBox" Grid.Column="1" Value="{Binding OpenTagHintDelay}"
-                               Minimum="0" Maximum="{x:Static vm:PreferencesViewModel.OpenTagHintDelayMax}"
-                               Increment="100" FormatString="0" Width="130" HorizontalAlignment="Right"
-                               IsEnabled="{Binding OpenTagHint}" />
-              </Grid>
+                  <!-- Code Editor: the opening tag tooltip over a closing tag, with its delay. -->
+                  <CheckBox Content="{loc:Loc PreferencesWindow_OpenTagHint}" IsChecked="{Binding OpenTagHint}" />
+                  <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8" Margin="28,0,0,0">
+                    <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_OpenTagHintDelay}" IsEnabled="{Binding OpenTagHint}" />
+                    <NumericUpDown x:Name="OpenTagHintDelayBox" Grid.Column="1" Value="{Binding OpenTagHintDelay}"
+                                   Minimum="0" Maximum="{x:Static vm:PreferencesViewModel.OpenTagHintDelayMax}"
+                                   Increment="100" FormatString="0" Width="130" HorizontalAlignment="Right"
+                                   IsEnabled="{Binding OpenTagHint}" />
+                  </Grid>
 
-              <!-- The colors of the editor and of the hint are in the color scheme (its section is below), their fonts are under Appearance. -->
-              <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInScheme}" Padding="0"
-                               views:PreferencesPage.Target="ColorSchemePage" />
+                  <!-- The colors of the editor and of the hint are in the color scheme (its section is below), their fonts on the Appearance tab. -->
+                  <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInScheme}" Padding="0"
+                                   views:PreferencesPage.Target="ColorSchemePage" />
 
-              <TextBlock Text="{loc:Loc PreferencesWindow_FontColorRestartNotice}"
-                         IsVisible="{Binding RestartNoticeVisible}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
+                  <TextBlock Text="{loc:Loc PreferencesWindow_FontColorRestartNotice}"
+                             IsVisible="{Binding RestartNoticeVisible}" Opacity="0.7" FontStyle="Italic" TextWrapping="Wrap" />
 
-            </StackPanel>
-          </ScrollViewer>
-        </views:PageWidthHost>
+                </StackPanel>
+              </ScrollViewer>
+            </views:PageWidthHost>
+          </TabItem>
+          <TabItem Header="{loc:Loc PreferencesWindow_Appearance}">
+            <Grid x:Name="CodeEditorPreviewHost">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MinWidth="300" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="380" MinWidth="240" />
+              </Grid.ColumnDefinitions>
+              <TabControl x:Name="CodeEditorAppearanceTabs">
+                <TabItem Header="{loc:Loc PreferencesWindow_General}">
+                  <ScrollViewer>
+                    <StackPanel Spacing="10" Margin="8">
+                      <Border Classes="section">
+                        <StackPanel Spacing="6">
+                          <TextBlock Text="{loc:Loc PreferencesWindow_CodeEditorLook}" FontWeight="Bold" />
+                          <CheckBox x:Name="ExtendedHighlightingBox" Content="{loc:Loc PreferencesWindow_ExtendedHighlighting}"
+                                    IsChecked="{Binding ExtendedHighlighting}" />
+                          <!-- The document tabs: several rows when they do not fit. -->
+                          <CheckBox x:Name="MultilineTabsBox" Content="{loc:Loc PreferencesWindow_MultilineTabs}" IsChecked="{Binding MultilineTabs}" />
+                          <!-- The colors of the editor and of the hint are in the color scheme, the colors of the tabs in the theme. -->
+                          <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInScheme}" Padding="0"
+                                           views:PreferencesPage.Target="ColorSchemePage" />
+                        </StackPanel>
+                      </Border>
+                    </StackPanel>
+                  </ScrollViewer>
+                </TabItem>
+                <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+                  <views:FontsPageView x:Name="CodeEditorFontsView" HasSharedPreview="True" />
+                </TabItem>
+              </TabControl>
+              <GridSplitter Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Background="Transparent" />
+              <!-- The preview, common to the tabs of the page: the tabs of the documents and the real Code Editor tab over a
+                   chapter of the sample book, in the look the settings give them now (the unsaved ones too), and the opening tag
+                   hint (which a real one shows only over a closing tag) under it. Not searched: it holds no settings. -->
+              <Border x:Name="CodeEditorPreviewPane" Grid.Column="2" Classes="section noSearchTree" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" Padding="8">
+                <DockPanel>
+                  <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
+                  <Border Classes="listFrame previewFrame">
+                    <DockPanel>
+                      <views:DocumentTabsSample x:Name="DocumentTabsPreview" DockPanel.Dock="Top" Margin="4,4,4,0" />
+                      <views:TooltipSample x:Name="CodeEditorSampleHint" DockPanel.Dock="Bottom" Margin="8" />
+                      <tabs:CodeTabView x:Name="CodeEditorPreview" />
+                    </DockPanel>
+                  </Border>
+                </DockPanel>
+              </Border>
+            </Grid>
+          </TabItem>
+        </TabControl>
       </TabItem>
 
       <!-- Code Editor › Color Scheme (Rider's Editor › Color Scheme): the color scheme in use and the actions on schemes (the
@@ -1024,39 +979,129 @@
       </TabItem>
 
 
-      <!-- ================================ Preview ================================ -->
-      <TabItem x:Name="PreviewPage" Header="{loc:Loc PreferencesWindow_Preview}" views:PreferencesPage.Parent="AppearancePage">
-        <views:PageWidthHost x:Name="PreviewWidth">
-          <ScrollViewer>
-            <StackPanel Spacing="10" Margin="8">
+      <!-- ============================= Preview Panel ============================= -->
+      <!-- General: the live refresh, following footnotes; Appearance: the highlight of the caret location and the preview
+           fonts (its own tabs), with the preview of a page beside them. -->
+      <TabItem x:Name="PreviewPage" Header="{loc:Loc PreferencesWindow_PreviewPanel}" views:PreferencesPage.Parent="AppearancePage">
+        <TabControl x:Name="PreviewTabs">
+          <TabItem Header="{loc:Loc PreferencesWindow_General}">
+            <views:PageWidthHost x:Name="PreviewWidth">
+              <ScrollViewer>
+                <StackPanel Spacing="10" Margin="8">
 
-              <!-- The look of the preview (the highlight of the caret location, the fonts) is under Appearance; its colors in the color scheme. -->
-              <HyperlinkButton x:Name="PreviewAppearanceLink" Content="{loc:Loc PreferencesWindow_Appearance}" Padding="0"
-                               views:PreferencesPage.Target="PreviewAppearancePage" />
 
-              <!-- The box takes the whole width of the settings (up to the splitter); the label takes what is left and the field
-                   sits at the right edge of the box. -->
-              <Border Classes="section">
-                <StackPanel Spacing="6">
-                  <TextBlock Text="{loc:Loc PreferencesWindow_PreviewLiveRefresh}" FontWeight="Bold" />
-                  <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                    <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewRefreshDelay}" VerticalAlignment="Center" TextWrapping="Wrap" />
-                    <NumericUpDown x:Name="PreviewRefreshDelayBox" Grid.Column="1" Value="{Binding PreviewRefreshDelay}"
-                                   Minimum="{x:Static vm:PreferencesViewModel.PreviewRefreshDelayMin}"
-                                   Maximum="{x:Static vm:PreferencesViewModel.PreviewRefreshDelayMax}"
-                                   Increment="100" FormatString="0" Width="130" HorizontalAlignment="Right" />
-                  </Grid>
+                  <!-- The box takes the whole width of the settings (up to the splitter); the label takes what is left and the field
+                       sits at the right edge of the box. -->
+                  <Border Classes="section">
+                    <StackPanel Spacing="6">
+                      <TextBlock Text="{loc:Loc PreferencesWindow_PreviewLiveRefresh}" FontWeight="Bold" />
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewRefreshDelay}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                        <NumericUpDown x:Name="PreviewRefreshDelayBox" Grid.Column="1" Value="{Binding PreviewRefreshDelay}"
+                                       Minimum="{x:Static vm:PreferencesViewModel.PreviewRefreshDelayMin}"
+                                       Maximum="{x:Static vm:PreferencesViewModel.PreviewRefreshDelayMax}"
+                                       Increment="100" FormatString="0" Width="130" HorizontalAlignment="Right" />
+                      </Grid>
+                    </StackPanel>
+                  </Border>
+
+                  <Border Classes="section">
+                    <CheckBox Content="{loc:Loc PreferencesWindow_FollowFootnotesInCodeView}"
+                              IsChecked="{Binding PreviewFollowFootnotesInCodeView}" />
+                  </Border>
+
                 </StackPanel>
-              </Border>
+              </ScrollViewer>
+            </views:PageWidthHost>
+          </TabItem>
+          <TabItem Header="{loc:Loc PreferencesWindow_Appearance}">
+            <Grid x:Name="PreviewPreviewHost">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" MinWidth="300" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="340" MinWidth="220" />
+              </Grid.ColumnDefinitions>
+              <TabControl x:Name="PreviewAppearanceTabs">
+                <TabItem Header="{loc:Loc PreferencesWindow_Preview}">
+                    <ScrollViewer>
+                      <StackPanel Spacing="10" Margin="8">
+                        <Border Classes="section">
+                          <StackPanel Spacing="6">
+                            <TextBlock Text="{loc:Loc PreferencesWindow_PreviewHighlight}" FontWeight="Bold" />
+                            <Grid Classes="labeled" ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" ColumnSpacing="8" RowSpacing="6">
+                              <TextBlock Grid.Row="0" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightStyle}" VerticalAlignment="Center" />
+                              <ComboBox Grid.Row="0" Grid.Column="1" MinWidth="190" ItemsSource="{Binding AvailablePreviewHighlightStyles}" SelectedItem="{Binding PreviewHighlightStyle}">
+                                <ComboBox.ItemTemplate>
+                                  <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={x:Static infra:DisplayNameConverters.PreviewHighlightStyle}}" />
+                                  </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                              </ComboBox>
 
-              <Border Classes="section">
-                <CheckBox Content="{loc:Loc PreferencesWindow_FollowFootnotesInCodeView}"
-                          IsChecked="{Binding PreviewFollowFootnotesInCodeView}" />
-              </Border>
+                              <!-- The color of the highlight is in the color scheme (preview.highlight). -->
+                              <HyperlinkButton Content="{loc:Loc PreferencesWindow_ColorsInScheme}" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Padding="0"
+                                               views:PreferencesPage.Target="ColorSchemePage" />
 
-            </StackPanel>
-          </ScrollViewer>
-        </views:PageWidthHost>
+                              <TextBlock Grid.Row="2" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightOpacity}" VerticalAlignment="Center" TextWrapping="Wrap"
+                                         IsEnabled="{Binding IsPreviewHighlightBackground}"
+                                         ToolTip.Tip="{loc:Loc PreferencesWindow_PreviewHighlightOpacityTip}" ToolTip.ShowOnDisabled="True" />
+                              <NumericUpDown x:Name="PreviewHighlightOpacityBox" Grid.Row="2" Grid.Column="1" Value="{Binding PreviewHighlightOpacity}"
+                                             Minimum="{x:Static vm:PreferencesViewModel.PreviewHighlightOpacityMin}"
+                                             Maximum="{x:Static vm:PreferencesViewModel.PreviewHighlightOpacityMax}"
+                                             Increment="1" FormatString="0" Width="130" HorizontalAlignment="Right"
+                                             IsEnabled="{Binding IsPreviewHighlightBackground}"
+                                             ToolTip.Tip="{loc:Loc PreferencesWindow_PreviewHighlightOpacityTip}" ToolTip.ShowOnDisabled="True" />
+
+                              <TextBlock Grid.Row="3" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightOutlineWidth}" VerticalAlignment="Center" TextWrapping="Wrap"
+                                         IsEnabled="{Binding IsPreviewHighlightOutline}"
+                                         ToolTip.Tip="{loc:Loc PreferencesWindow_PreviewHighlightOutlineWidthTip}" ToolTip.ShowOnDisabled="True" />
+                              <NumericUpDown x:Name="PreviewHighlightOutlineWidthBox" Grid.Row="3" Grid.Column="1" Value="{Binding PreviewHighlightOutlineWidth}"
+                                             Minimum="{x:Static vm:PreferencesViewModel.PreviewHighlightOutlineWidthMin}"
+                                             Maximum="{x:Static vm:PreferencesViewModel.PreviewHighlightOutlineWidthMax}"
+                                             Increment="1" FormatString="0" Width="130" HorizontalAlignment="Right"
+                                             IsEnabled="{Binding IsPreviewHighlightOutline}"
+                                             ToolTip.Tip="{loc:Loc PreferencesWindow_PreviewHighlightOutlineWidthTip}" ToolTip.ShowOnDisabled="True" />
+
+                              <CheckBox Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Content="{loc:Loc PreferencesWindow_PreviewHighlightAutoHide}"
+                                        IsChecked="{Binding PreviewHighlightAutoHide}" />
+
+                              <TextBlock Grid.Row="5" Grid.Column="0" Text="{loc:Loc PreferencesWindow_PreviewHighlightAutoHideDelay}" VerticalAlignment="Center" TextWrapping="Wrap"
+                                         IsEnabled="{Binding PreviewHighlightAutoHide}"
+                                         ToolTip.Tip="{loc:Loc PreferencesWindow_PreviewHighlightAutoHideDelayTip}" ToolTip.ShowOnDisabled="True" />
+                              <NumericUpDown x:Name="PreviewHighlightAutoHideDelayBox" Grid.Row="5" Grid.Column="1" Value="{Binding PreviewHighlightAutoHideDelay}"
+                                             Minimum="{x:Static vm:PreferencesViewModel.PreviewHighlightAutoHideDelayMin}"
+                                             Maximum="{x:Static vm:PreferencesViewModel.PreviewHighlightAutoHideDelayMax}"
+                                             Increment="100" FormatString="0" Width="130" HorizontalAlignment="Right"
+                                             IsEnabled="{Binding PreviewHighlightAutoHide}"
+                                             ToolTip.Tip="{loc:Loc PreferencesWindow_PreviewHighlightAutoHideDelayTip}" ToolTip.ShowOnDisabled="True" />
+                            </Grid>
+                          </StackPanel>
+                        </Border>
+
+                      </StackPanel>
+                    </ScrollViewer>
+                </TabItem>
+                <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+                  <views:FontsPageView x:Name="PreviewFontsView" HasSharedPreview="True" />
+                </TabItem>
+              </TabControl>
+              <GridSplitter Grid.Column="1" ResizeDirection="Columns" ResizeBehavior="PreviousAndNext" Background="Transparent" />
+              <!-- The preview, common to the tabs of the page: a page drawn in the fonts of the settings with the mark of the caret as the
+                   real preview draws it (the real one is a web view), and a sample of its tooltip. Not searched: it holds no settings. -->
+              <Border x:Name="PreviewPreviewPane" Grid.Column="2" Classes="section noSearchTree" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" Padding="8">
+                <DockPanel>
+                  <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
+                  <Border Classes="listFrame previewFrame">
+                    <Grid RowDefinitions="*,Auto">
+                      <views:PreviewSample x:Name="PreviewSamplePage" />
+                      <views:TooltipSample x:Name="PreviewSampleTip" Grid.Row="1" Margin="8" />
+                    </Grid>
+                  </Border>
+                </DockPanel>
+              </Border>
+            </Grid>
+          </TabItem>
+        </TabControl>
       </TabItem>
 
 
@@ -1086,10 +1131,27 @@
                         <TextBlock Text="{loc:Loc PreferencesWindow_FindUsagesFitUsageColumnHint}" TextWrapping="Wrap" Opacity="0.75"
                                    Margin="28,0,0,0" />
                       </StackPanel>
-                      <!-- The background of each column is a color of the theme (ui.findUsages.*.background). -->
-                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_FindUsagesBackgroundInTheme}" Padding="0"
-                                       views:PreferencesPage.Target="AppearanceGeneralPage"
-                                       views:PreferencesPage.TargetKey="ui.findUsages.usage.background" />
+                      <!-- The background of each column: colors of the theme (ui.findUsages.*.background), edited here. -->
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc ThemeKey_ui_findUsages_usage_background}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                        <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding FindUsagesUsageBackgroundColor}" />
+                      </Grid>
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc ThemeKey_ui_findUsages_line_background}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                        <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding FindUsagesLineBackgroundColor}" />
+                      </Grid>
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc ThemeKey_ui_findUsages_column_background}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                        <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding FindUsagesColumnBackgroundColor}" />
+                      </Grid>
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc ThemeKey_ui_findUsages_kind_background}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                        <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding FindUsagesKindBackgroundColor}" />
+                      </Grid>
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc ThemeKey_ui_findUsages_context_background}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                        <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding FindUsagesContextBackgroundColor}" />
+                      </Grid>
                     </StackPanel>
                   </Border>
 
@@ -1155,10 +1217,11 @@
                           </ComboBox.ItemTemplate>
                         </ComboBox>
                       </Grid>
-                      <!-- The background of the tree is a color of the theme (ui.searchEditor.background). -->
-                      <HyperlinkButton Content="{loc:Loc PreferencesWindow_SearchEditorBackgroundInTheme}" Padding="0"
-                                       views:PreferencesPage.Target="AppearanceGeneralPage"
-                                       views:PreferencesPage.TargetKey="ui.searchEditor.background" />
+                      <!-- The background of the tree: a color of the theme (ui.searchEditor.background), edited here. -->
+                      <Grid Classes="labeled" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <TextBlock Grid.Column="0" Text="{loc:Loc ThemeKey_ui_searchEditor_background}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                        <views:ColorKeyEditorView Grid.Column="1" DataContext="{Binding SearchEditorBackgroundColor}" />
+                      </Grid>
                     </StackPanel>
                   </Border>
                 </StackPanel>
@@ -1194,7 +1257,8 @@
 
       <!-- =============================== Footnotes =============================== -->
       <!-- General: how the footnote operations behave; CSS: the CSS of Signet's footnote classes (FootnoteStyles),
-           written to the book on every footnote operation. -->
+           written to the book on every footnote operation; Appearance: the fonts of the footnote window, with its preview
+           under them. -->
       <TabItem x:Name="FootnotesPage" Header="{loc:Loc PreferencesWindow_Footnotes}" views:PreferencesPage.Parent="AppearancePage">
         <TabControl x:Name="FootnotesTabs">
           <TabItem x:Name="FootnotesGeneralTab" Header="{loc:Loc PreferencesWindow_FootnotesGeneralTab}">
@@ -1341,6 +1405,33 @@
                 </StackPanel>
               </ScrollViewer>
             </views:PageWidthHost>
+          </TabItem>
+          <TabItem x:Name="FootnotesAppearanceTab" Header="{loc:Loc PreferencesWindow_Appearance}">
+            <Grid x:Name="FootnotesPreviewHost">
+              <Grid.RowDefinitions>
+                <RowDefinition Height="*" MinHeight="150" />
+                <RowDefinition Height="12" />
+                <RowDefinition Height="300" MinHeight="120" />
+              </Grid.RowDefinitions>
+              <TabControl x:Name="FootnotesAppearanceTabs">
+                <TabItem Header="{loc:Loc PreferencesWindow_Fonts}">
+                  <views:FontsPageView x:Name="FootnotesFontsView" HasSharedPreview="True" />
+                </TabItem>
+              </TabControl>
+              <GridSplitter Grid.Row="1" ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" Background="Transparent" />
+              <!-- The preview: the footnote window (wide, so it is under the settings) with a note filled in, and a sample of its tooltip. Not searched: it holds no settings. -->
+              <Border x:Name="FootnotesPreviewPane" Grid.Row="2" Classes="section noSearchTree" Background="{DynamicResource SystemControlBackgroundChromeMediumLowBrush}" Padding="8">
+                <DockPanel>
+                  <TextBlock DockPanel.Dock="Top" Text="{loc:Loc PreferencesWindow_Preview}" FontWeight="Bold" Margin="0,0,0,6" />
+                  <Border Classes="listFrame previewFrame">
+                    <Grid RowDefinitions="*,Auto">
+                      <views:FootnoteView x:Name="FootnotesPreview" />
+                      <views:TooltipSample x:Name="FootnotesSampleTip" Grid.Row="1" Margin="8" />
+                    </Grid>
+                  </Border>
+                </DockPanel>
+              </Border>
+            </Grid>
           </TabItem>
         </TabControl>
       </TabItem>

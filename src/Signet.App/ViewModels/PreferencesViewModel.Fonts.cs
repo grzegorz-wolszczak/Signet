@@ -24,10 +24,10 @@ public sealed partial class PreferencesViewModel
     /// </summary>
     public FontPageViewModel AppearanceFonts { get; private set; } = null!;
 
-    /// <summary>Appearance › Code Editor › Fonts: the editor font and the opening tag hint font.</summary>
+    /// <summary>Code Editor › Appearance › Fonts: the editor font and the opening tag hint font.</summary>
     public FontPageViewModel CodeEditorFonts { get; private set; } = null!;
 
-    /// <summary>Appearance › Preview › Fonts: the standard, serif and sans-serif fonts and their size.</summary>
+    /// <summary>Preview Panel › Appearance › Fonts: the standard, serif and sans-serif fonts and their size.</summary>
     public FontPageViewModel PreviewFonts { get; private set; } = null!;
 
     /// <summary>Appearance › Special Characters › Fonts: the font of the "Insert Special Character" window.</summary>
@@ -68,7 +68,7 @@ public sealed partial class PreferencesViewModel
     /// <summary>Appearance › Cleanup › Fonts: the tooltip font.</summary>
     public FontPageViewModel CleanupFonts { get; private set; } = null!;
 
-    /// <summary>Appearance › Footnotes › Fonts: the tooltip font.</summary>
+    /// <summary>Footnotes › Appearance › Fonts: the tooltip font.</summary>
     public FontPageViewModel FootnotesFonts { get; private set; } = null!;
 
     /// <summary>Appearance › Notifications › Fonts: the font of the timestamp column and of the message column.</summary>
