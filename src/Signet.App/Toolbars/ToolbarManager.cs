@@ -46,6 +46,12 @@ public sealed class ToolbarManager
     /// </summary>
     public const string CaseMenu = "@case";
 
+    // The items of the Prettify & Mend toolbar; until it existed they ended the Tools toolbar (MovePrettifyMendOutOfTools).
+    private static readonly string[] PrettifyMendItems =
+    {
+        AppActionIds.PrettifyCurrentHtml, AppActionIds.MendCurrentHtml, AppActionIds.PrettifyCurrentCss,
+    };
+
     private static readonly Dictionary<ToolbarId, string[]> DefaultLayout = new()
     {
         [ToolbarId.New] = new[] { AppActionIds.NewEpub2, AppActionIds.NewEpub3 },
@@ -64,9 +70,9 @@ public sealed class ToolbarManager
         [ToolbarId.Tools] = new[]
         {
             AppActionIds.MetaEditor, AppActionIds.GenerateToc, AppActionIds.EditToc, AppActionIds.SpellcheckEditor,
-            // Prettify / Mend the current file — the HTML pair and, for a stylesheet, Prettify Stylesheet.
-            Separator, AppActionIds.PrettifyCurrentHtml, AppActionIds.MendCurrentHtml, AppActionIds.PrettifyCurrentCss,
         },
+        // Prettify / Mend the current file — the HTML pair and, for a stylesheet, Prettify Stylesheet.
+        [ToolbarId.PrettifyMend] = PrettifyMendItems,
         [ToolbarId.Heading] = new[] { HeadingsMenu },
         [ToolbarId.Format] = new[]
         {
@@ -88,6 +94,12 @@ public sealed class ToolbarManager
         [ToolbarId.Clips] = new[] { AppActionIds.SelectClip, Separator }.Concat(ClipSlotIds(1, 30)).ToArray(),
         [ToolbarId.Clips2] = ClipSlotIds(31, 60).ToArray(),
     };
+
+    /// <summary>
+    /// Settings group of the one-off changes made to a saved layout when a version moves buttons between toolbars
+    /// (name → <c>1</c> once done), so that each is made once and never undoes a later choice of the user.
+    /// </summary>
+    public const string MigrationsGroup = "toolbar_migrations_v1";
 
     private static IEnumerable<string> ClipSlotIds(int from, int to)
     {
@@ -474,17 +486,32 @@ public sealed class ToolbarManager
             }
         }
 
-        // Toolbars missing from the file (e.g. added by a newer version) go to the end of the last top row.
-        List<ToolbarId> missing = AllToolbars.Where(id => !placed.Contains(id)).ToList();
-        if (missing.Count > 0)
+        // Toolbars missing from the file (e.g. added by a newer version) go right after the toolbar before them in the
+        // default order (Prettify & Mend after Tools), wherever that one is; without it, to the end of the last top row.
+        foreach (ToolbarId id in AllToolbars.Where(id => !placed.Contains(id)))
         {
-            List<List<ToolbarId>> top = _placement[ToolbarArea.Top];
-            if (top.Count == 0)
+            List<ToolbarId>? row = null;
+            int at = 0;
+            for (int i = (int)id - 1; i >= 0 && row is null; i--)
             {
-                top.Add(new List<ToolbarId>());
+                row = _placement.Values.SelectMany(rows => rows).FirstOrDefault(r => r.Contains((ToolbarId)i));
+                at = row is null ? 0 : row.IndexOf((ToolbarId)i) + 1;
             }
 
-            top[^1].AddRange(missing);
+            if (row is null)
+            {
+                List<List<ToolbarId>> top = _placement[ToolbarArea.Top];
+                if (top.Count == 0)
+                {
+                    top.Add(new List<ToolbarId>());
+                }
+
+                row = top[^1];
+                at = row.Count;
+            }
+
+            row.Insert(at, id);
+            placed.Add(id);
         }
     }
 
@@ -523,6 +550,44 @@ public sealed class ToolbarManager
                 ? v == "1"
                 : DefaultVisibility[toolbar];
         }
+
+        MovePrettifyMendOutOfTools(storedLayout);
+    }
+
+    // Prettify / Mend Code in Current File and Prettify Stylesheet ended the Tools toolbar until they got a toolbar of
+    // their own. A Tools layout saved by then still holds them, and they would be on both toolbars: they are taken off
+    // Tools (with the separator before them) once, unless the user had also changed the new toolbar.
+    private void MovePrettifyMendOutOfTools(IReadOnlyDictionary<string, string> storedLayout)
+    {
+        const string Name = "prettify_mend_toolbar";
+        IReadOnlyDictionary<string, string> done = _settings.GetStringMap(MigrationsGroup);
+        if (done.ContainsKey(Name))
+        {
+            return;
+        }
+
+        if (storedLayout.ContainsKey(nameof(ToolbarId.Tools)) && !storedLayout.ContainsKey(nameof(ToolbarId.PrettifyMend)))
+        {
+            List<string> tools = _layout[ToolbarId.Tools];
+            int first = tools.FindIndex(PrettifyMendItems.Contains);
+            if (first >= 0)
+            {
+                tools.RemoveAll(PrettifyMendItems.Contains);
+
+                // The separator that stood before them, now left at the end or next to another one.
+                int separator = first - 1;
+                if (separator >= 0 && separator < tools.Count && tools[separator] == Separator
+                    && (separator == tools.Count - 1 || tools[separator + 1] == Separator))
+                {
+                    tools.RemoveAt(separator);
+                }
+
+                PersistLayout();
+            }
+        }
+
+        _settings.SetStringMap(MigrationsGroup, new Dictionary<string, string>(done) { [Name] = "1" });
+        _settings.Save();
     }
 
     private void PersistLayout()

@@ -203,11 +203,10 @@ public sealed class ReformatCurrentFileActionsTests : IDisposable
     }
 
     [Fact]
-    public void Tools_toolbar_ends_with_prettify_and_mend_by_default()
+    public void Prettify_and_mend_have_their_own_toolbar_by_default()
     {
         // Act & Assert
-        ToolbarManager.GetDefaultItems(ToolbarId.Tools).TakeLast(4).Should().Equal(
-            ToolbarManager.Separator, AppActionIds.PrettifyCurrentHtml, AppActionIds.MendCurrentHtml,
-            AppActionIds.PrettifyCurrentCss);
+        ToolbarManager.GetDefaultItems(ToolbarId.PrettifyMend).Should().Equal(
+            AppActionIds.PrettifyCurrentHtml, AppActionIds.MendCurrentHtml, AppActionIds.PrettifyCurrentCss);
     }
 }

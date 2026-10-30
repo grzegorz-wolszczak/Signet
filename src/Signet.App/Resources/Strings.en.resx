@@ -3919,6 +3919,9 @@ This file type cannot be edited in Signet yet.</value>
   <data name="Toolbar_Tools" xml:space="preserve">
     <value>Tools</value>
   </data>
+  <data name="Toolbar_PrettifyMend" xml:space="preserve">
+    <value>Prettify &amp; Mend</value>
+  </data>
   <data name="Toolbar_Heading" xml:space="preserve">
     <value>Heading</value>
   </data>

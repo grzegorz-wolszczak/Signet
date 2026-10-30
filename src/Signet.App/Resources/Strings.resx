@@ -3919,6 +3919,9 @@ Tego typu pliku nie można jeszcze edytować w Signet.</value>
   <data name="Toolbar_Tools" xml:space="preserve">
     <value>Narzędzia</value>
   </data>
+  <data name="Toolbar_PrettifyMend" xml:space="preserve">
+    <value>Upiększ i popraw</value>
+  </data>
   <data name="Toolbar_Heading" xml:space="preserve">
     <value>Nagłówki</value>
   </data>
