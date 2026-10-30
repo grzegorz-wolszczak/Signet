@@ -29,8 +29,11 @@ public enum ToolbarId
     /// <summary>"Back": Bookmark Location, Go Back.</summary>
     Back,
 
-    /// <summary>"Tools": Metadata, Generate/Edit TOC, Spellcheck (+ Prettify/Mend Code for the current file).</summary>
+    /// <summary>"Tools": Metadata, Generate/Edit TOC, Spellcheck.</summary>
     Tools,
+
+    /// <summary>"Prettify &amp; Mend": Prettify / Mend Code in Current File, Prettify Stylesheet.</summary>
+    PrettifyMend,
 
     /// <summary>"Heading": button with an H1–H6/Normal menu. Starts the second row.</summary>
     Heading,

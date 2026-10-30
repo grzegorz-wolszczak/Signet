@@ -18,7 +18,7 @@ public sealed class ToolbarManagerTests
         using TestHost host = new();
 
         // Act & Assert
-        ToolbarManager.AllToolbars.Should().HaveCount(18);
+        ToolbarManager.AllToolbars.Should().HaveCount(19);
         host.Toolbars.GetItems(ToolbarId.UndoRedo).Should().Equal(AppActionIds.Undo, AppActionIds.Redo);
         host.Toolbars.GetItems(ToolbarId.Edit).Should().Equal(
             AppActionIds.Cut, AppActionIds.Copy, AppActionIds.Paste, AppActionIds.RemoveTagPair);
@@ -35,7 +35,7 @@ public sealed class ToolbarManagerTests
         // Act & Assert
         ToolbarManager.DefaultRows.Select(r => r[0]).Should().Equal(
             ToolbarId.New, ToolbarId.Heading, ToolbarId.Clips, ToolbarId.Clips2);
-        ToolbarManager.DefaultRows[0].Should().EndWith(ToolbarId.Tools);
+        ToolbarManager.DefaultRows[0].Should().EndWith(new[] { ToolbarId.Tools, ToolbarId.PrettifyMend });
         ToolbarManager.DefaultRows[1].Should().EndWith(ToolbarId.TextDirection);
     }
 
@@ -204,7 +204,7 @@ public sealed class ToolbarManagerTests
     }
 
     [Fact]
-    public void Placement_with_a_missing_toolbar_gets_it_back_in_the_last_top_row()
+    public void Placement_with_missing_toolbars_puts_each_after_the_toolbar_before_it()
     {
         // Arrange
         using TestHost host = new();
@@ -218,9 +218,10 @@ public sealed class ToolbarManagerTests
         ToolbarManager sut = new(host.Settings);
 
         // Assert
-        sut.GetRows(ToolbarArea.Top)[0].Should().Equal(ToolbarId.New, ToolbarId.File);
+        sut.GetRows(ToolbarArea.Top)[0].Take(3).Should().Equal(
+            new[] { ToolbarId.New, ToolbarId.File, ToolbarId.AddExisting }, "the missing ones follow the toolbar before them");
         sut.GetRows(ToolbarArea.Bottom).Should().HaveCount(1);
-        sut.GetRows(ToolbarArea.Bottom)[0].Should().Equal(ToolbarId.Format);
+        sut.GetRows(ToolbarArea.Bottom)[0].Take(2).Should().Equal(ToolbarId.Format, ToolbarId.Align);
         sut.GetRows(ToolbarArea.Top)[1].Take(1).Should().Equal(ToolbarId.Heading);
         sut.GetRows(ToolbarArea.Top).Concat(sut.GetRows(ToolbarArea.Bottom)).SelectMany(r => r)
             .Should().OnlyHaveUniqueItems().And.HaveCount(ToolbarManager.AllToolbars.Count);
@@ -315,6 +316,75 @@ public sealed class ToolbarManagerTests
 
         // Assert
         changed.Should().Be(ToolbarId.Find);
+    }
+
+    [Fact]
+    public void Prettify_and_mend_have_a_toolbar_of_their_own_after_Tools()
+    {
+        // Arrange
+        using TestHost host = new();
+
+        // Act & Assert
+        ToolbarManager.DisplayName(ToolbarId.PrettifyMend).Should().NotBe(nameof(ToolbarId.PrettifyMend), "it has a name in the resources");
+        host.Toolbars.GetItems(ToolbarId.PrettifyMend).Should().Equal(
+            AppActionIds.PrettifyCurrentHtml, AppActionIds.MendCurrentHtml, AppActionIds.PrettifyCurrentCss);
+        host.Toolbars.GetItems(ToolbarId.Tools).Should().NotContain(new[]
+        {
+            AppActionIds.PrettifyCurrentHtml, AppActionIds.MendCurrentHtml, AppActionIds.PrettifyCurrentCss, ToolbarManager.Separator,
+        });
+        host.Toolbars.IsVisible(ToolbarId.PrettifyMend).Should().BeTrue();
+    }
+
+    [Fact]
+    public void A_Tools_layout_saved_with_prettify_and_mend_loses_them_once()
+    {
+        // Arrange
+        using TestHost host = new();
+        string[] oldTools =
+        {
+            AppActionIds.MetaEditor, AppActionIds.SpellcheckEditor, ToolbarManager.Separator,
+            AppActionIds.PrettifyCurrentHtml, AppActionIds.MendCurrentHtml, AppActionIds.PrettifyCurrentCss,
+        };
+        host.Settings.SetStringMap(ToolbarManager.LayoutGroup, new Dictionary<string, string> { [nameof(ToolbarId.Tools)] = string.Join(',', oldTools) });
+        host.Settings.SetStringMap(ToolbarManager.MigrationsGroup, new Dictionary<string, string>()); // settings of a version before the move
+        host.Settings.Save();
+
+        // Act
+        ToolbarManager sut = new(host.ReopenSettings());
+
+        // Assert
+        sut.GetItems(ToolbarId.Tools).Should().Equal(AppActionIds.MetaEditor, AppActionIds.SpellcheckEditor);
+        sut.GetItems(ToolbarId.PrettifyMend).Should().Equal(
+            AppActionIds.PrettifyCurrentHtml, AppActionIds.MendCurrentHtml, AppActionIds.PrettifyCurrentCss);
+
+        // Act
+        sut.SetItems(ToolbarId.Tools, new[] { AppActionIds.MetaEditor, AppActionIds.MendCurrentHtml });
+        ToolbarManager reopened = new(host.ReopenSettings());
+
+        // Assert
+        reopened.GetItems(ToolbarId.Tools).Should().Equal(
+            new[] { AppActionIds.MetaEditor, AppActionIds.MendCurrentHtml }, "the move is made once and a later choice stays");
+    }
+
+    [Fact]
+    public void A_saved_placement_without_the_new_toolbar_puts_it_after_Tools()
+    {
+        // Arrange
+        using TestHost host = new();
+        host.Settings.SetStringMap(ToolbarManager.PlacementGroup, new Dictionary<string, string>
+        {
+            ["Top"] = "New,File,Tools,AddExisting;Heading,Format;Clips;Clips2",
+        });
+        host.Settings.Save();
+
+        // Act
+        ToolbarManager sut = new(host.ReopenSettings());
+
+        // Assert
+        sut.GetRows(ToolbarArea.Top)[0].Take(5).Should().Equal(
+            ToolbarId.New, ToolbarId.File, ToolbarId.Tools, ToolbarId.PrettifyMend, ToolbarId.AddExisting);
+        sut.GetRows(ToolbarArea.Top).SelectMany(r => r).Should().OnlyHaveUniqueItems()
+            .And.HaveCount(ToolbarManager.AllToolbars.Count);
     }
 
     [Fact]
