@@ -15,7 +15,7 @@
              Classes.customFontFamily="{Binding HasCustomFontFamily}"
              Classes.customFontSize="{Binding HasCustomFontSize}"
              Classes.customFontWeight="{Binding HasCustomFontWeight}"
-             Margin="0,0,8,0">
+             Margin="0,0,4,0">
 
   <!-- The look shared by all toolbars (ToolbarManager.Appearance): the icon size and the font of the texts come from
        the application resources, where the text sits from the classes of the view. A button without an icon always
@@ -142,6 +142,14 @@
   <!-- Transparent background: a disabled button is not hit-testable, so without it a right click over one would
        fall through to the area behind the toolbar and the toolbar menu would not open. -->
   <DockPanel Background="Transparent">
+    <!-- Where the previous toolbar of the row ends: a line before the grip (none on the first toolbar of a row). -->
+    <Rectangle x:Name="ToolbarSeparator"
+               DockPanel.Dock="Left"
+               IsVisible="{Binding FollowsAnotherToolbar}"
+               Width="1"
+               Margin="0,4,4,4"
+               VerticalAlignment="Stretch"
+               Fill="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
     <!-- The grip: dragging it moves the whole toolbar (to another place in the row, another row, a new row or
          the other toolbar area). Two columns of dots, always visible. -->
     <Border x:Name="Grip"
