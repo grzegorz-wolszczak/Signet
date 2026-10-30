@@ -321,9 +321,16 @@ public sealed class MenuBuilder
         items.Add(MenuItemViewModel.ForCommand(Strings.Get("Menu_ClearBookmarks"), new RelayCommand(() => _bookmarks!.ClearBookmarks())));
     }
 
+    /// <summary>
+    /// The items of View › Toolbars (built by <see cref="Build"/>): the toggles of the toolbars, Customize Toolbars and Hide
+    /// All Toolbars. The context menu of the empty part of a toolbar area shows the same items.
+    /// </summary>
+    public IReadOnlyList<MenuItemViewModel> ToolbarsItems { get; private set; } = Array.Empty<MenuItemViewModel>();
+
     private List<MenuItemViewModel> BuildToolbarsSubmenu()
     {
         List<MenuItemViewModel> items = new();
+        ToolbarsItems = items;
 
         // While all toolbars are hidden the toggles of the single toolbars are disabled: there is nothing to see.
         List<RelayCommand> toggles = new();

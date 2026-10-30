@@ -888,6 +888,12 @@ public sealed partial class MainWindowViewModel
     public IReadOnlyList<MenuItemViewModel> MenuItems { get; }
 
     /// <summary>
+    /// The items of View › Toolbars, shown also by the context menu of the empty part of a toolbar area (the same item
+    /// view models, so both menus show the same state).
+    /// </summary>
+    public IReadOnlyList<MenuItemViewModel> ToolbarsMenuItems => _menuBuilder.ToolbarsItems;
+
+    /// <summary>
     /// Builds the entries of the "Recent Files" list of the menu again — the window calls it whenever a menu is
     /// opened, so that a file removed from disk meanwhile is shown as missing.
     /// </summary>

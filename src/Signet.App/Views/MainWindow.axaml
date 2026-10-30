@@ -78,51 +78,51 @@
           </ControlTemplate>
         </Setter>
       </Style>
+      <!-- The items of the main menu and of the toolbar areas' context menu (View › Toolbars, the same item view models);
+         the title of that context menu is a plain MenuItem of its own. -->
+      <Style Selector="Menu#MainMenu MenuItem, ContextMenu.toolbarsMenu MenuItem:not(.menuTitle)" x:DataType="menu:MenuItemViewModel">
+        <Setter Property="Header" Value="{Binding Header}" />
+        <Setter Property="ItemsSource" Value="{Binding Items}" />
+        <Setter Property="Command" Value="{Binding Command}" />
+        <Setter Property="IsEnabled" Value="{Binding IsEnabled}" />
+        <Setter Property="ToolTip.Tip" Value="{Binding ToolTip}" />
+        <!-- A recent file that is no longer on disk is dimmed while staying clickable (MenuItemViewModel.IsDimmed). -->
+        <Setter Property="Opacity" Value="{Binding Opacity}" />
+        <Setter Property="InputGesture" Value="{Binding InputGesture}" />
+        <Setter Property="ToggleType" Value="{Binding ToggleType}" />
+        <Setter Property="StaysOpenOnClick" Value="{Binding StaysOpenOnClick}" />
+        <Setter Property="IsChecked" Value="{Binding IsChecked, Mode=TwoWay}" />
+        <!-- Action icons in the menu (from the current icon set); the icon state
+             (e.g. the gray/red "Save" floppy disk) goes through ActionIcons. -->
+        <Setter Property="Icon">
+          <Template>
+            <Panel x:DataType="menu:MenuItemViewModel">
+              <Image Width="16" Height="16"
+                     IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <Image.Source>
+                  <MultiBinding Converter="{x:Static infra:ActionIcons.ImageForState}">
+                    <Binding Path="IconKey" />
+                    <Binding Path="IconState" />
+                  </MultiBinding>
+                </Image.Source>
+              </Image>
+              <PathIcon Width="16" Height="16"
+                        Data="{Binding IconKey, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
+                        Foreground="{Binding IconState, Converter={x:Static infra:ActionIcons.ForegroundForState}}"
+                        IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
+            </Panel>
+          </Template>
+        </Setter>
+      </Style>
     </DockPanel.Styles>
 
     <Menu x:Name="MainMenu" DockPanel.Dock="Top" ItemsSource="{Binding MenuItems}">
-      <Menu.Styles>
-        <Style Selector="MenuItem" x:DataType="menu:MenuItemViewModel">
-          <Setter Property="Header" Value="{Binding Header}" />
-          <Setter Property="ItemsSource" Value="{Binding Items}" />
-          <Setter Property="Command" Value="{Binding Command}" />
-          <Setter Property="IsEnabled" Value="{Binding IsEnabled}" />
-          <Setter Property="ToolTip.Tip" Value="{Binding ToolTip}" />
-          <!-- A recent file that is no longer on disk is dimmed while staying clickable (MenuItemViewModel.IsDimmed). -->
-          <Setter Property="Opacity" Value="{Binding Opacity}" />
-          <Setter Property="InputGesture" Value="{Binding InputGesture}" />
-          <Setter Property="ToggleType" Value="{Binding ToggleType}" />
-          <Setter Property="StaysOpenOnClick" Value="{Binding StaysOpenOnClick}" />
-          <Setter Property="IsChecked" Value="{Binding IsChecked, Mode=TwoWay}" />
-          <!-- Action icons in the menu (from the current icon set); the icon state
-               (e.g. the gray/red "Save" floppy disk) goes through ActionIcons. -->
-          <Setter Property="Icon">
-            <Template>
-              <Panel x:DataType="menu:MenuItemViewModel">
-                <Image Width="16" Height="16"
-                       IsVisible="{Binding $self.Source, Converter={x:Static ObjectConverters.IsNotNull}}">
-                  <Image.Source>
-                    <MultiBinding Converter="{x:Static infra:ActionIcons.ImageForState}">
-                      <Binding Path="IconKey" />
-                      <Binding Path="IconState" />
-                    </MultiBinding>
-                  </Image.Source>
-                </Image>
-                <PathIcon Width="16" Height="16"
-                          Data="{Binding IconKey, Converter={x:Static infra:IconKeyToGeometryConverter.Instance}}"
-                          Foreground="{Binding IconState, Converter={x:Static infra:ActionIcons.ForegroundForState}}"
-                          IsVisible="{Binding $self.Data, Converter={x:Static ObjectConverters.IsNotNull}}" />
-              </Panel>
-            </Template>
-          </Setter>
-        </Style>
-      </Menu.Styles>
     </Menu>
 
     <!-- Toolbar areas under the menu and above the status bar: rows of toolbars that can be moved by their
          grips (between rows, into new rows, between the two areas). The bottom one is declared after the status
          bar so that it sits above it. -->
-    <views:ToolbarAreaView DockPanel.Dock="Top" DataContext="{Binding TopToolbars}" />
+    <views:ToolbarAreaView x:Name="TopToolbarArea" DockPanel.Dock="Top" DataContext="{Binding TopToolbars}" />
 
     <Border DockPanel.Dock="Bottom"
             Padding="8,3"
@@ -171,7 +171,7 @@
       </Grid>
     </Border>
 
-    <views:ToolbarAreaView DockPanel.Dock="Bottom" DataContext="{Binding BottomToolbars}" />
+    <views:ToolbarAreaView x:Name="BottomToolbarArea" DockPanel.Dock="Bottom" DataContext="{Binding BottomToolbars}" />
 
     <dc:DockControl Layout="{Binding Layout}"
                     Factory="{Binding DockFactory}"
